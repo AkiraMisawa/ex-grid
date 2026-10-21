@@ -55,6 +55,7 @@ public sealed class BoundBoard
                 throw new BoardRefusedException($"inputs.{input.Name}", $"Input '{input.Name}' is bound to no data.");
             bound[input.Name] = input.Bind(snapshot);
         }
+        var inputs = board.Inputs.ToDictionary(i => i.Name, StringComparer.Ordinal);
         var views = new List<BoundView>();
         for (var i = 0; i < board.Views.Count; i++)
         {
@@ -62,18 +63,22 @@ public sealed class BoundBoard
             {
                 BoardGridView grid => new BoundGridView(grid, ShapedGrid.Of(bound[grid.Grid.Data], grid.Grid, culture)),
                 BoardPivotView pivot => new BoundPivotView(pivot, PivotSource.From(bound[pivot.Input])),
-                BoardChartView chart => new BoundChartView(chart, ReadChart(chart, bound, $"views[{i}].chart")),
+                BoardChartView chart => new BoundChartView(chart, ReadChart(chart, bound, inputs, $"views[{i}].chart")),
                 var other => throw new InvalidOperationException($"Unknown view {other.GetType().Name}."),
             });
         }
         return new BoundBoard(board, bound, views);
     }
 
-    private static ChartSpecReading ReadChart(BoardChartView chart, Dictionary<string, Snapshot> bound, string path)
+    private static ChartSpecReading ReadChart(BoardChartView chart, Dictionary<string, Snapshot> bound, Dictionary<string, BoardInput> inputs, string path)
     {
         try
         {
-            return ChartSpec.Read(chart.Spec, name => bound.TryGetValue(name, out var snapshot) ? new SnapshotChartData(snapshot) : null);
+            // A chart reads only what its inputs declare: a column the source has beside them is
+            // not there for it, as it is not for a grid or a pivot (ADR-0341).
+            return ChartSpec.Read(chart.Spec, name => bound.TryGetValue(name, out var snapshot) && inputs.TryGetValue(name, out var input)
+                ? new DeclaredChartData(new SnapshotChartData(snapshot), input)
+                : null);
         }
         catch (ChartSpecRefusedException e)
         {
@@ -126,4 +131,16 @@ public sealed class BoundChartView : BoundView
 
     /// <summary>The chart's title and definition.</summary>
     public ChartSpecReading Reading { get; }
+}
+
+/// <summary>A chart's table showing only the columns its input declares.</summary>
+internal sealed class DeclaredChartData(IChartData data, BoardInput input) : IChartData
+{
+    public IReadOnlyList<string> Columns { get; } = [.. input.Columns.Select(c => c.Name)];
+
+    public int RowCount => data.RowCount;
+
+    public object? Value(string column, int row) => input.Shape.TryGetColumn(column, out _)
+        ? data.Value(column, row)
+        : throw new ArgumentException($"Input '{input.Name}' does not declare column '{column}'.", nameof(column));
 }

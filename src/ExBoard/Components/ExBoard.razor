@@ -32,22 +32,22 @@
                              aria-label="@(string.IsNullOrEmpty(view.View.Title) ? cell.View : view.View.Title)">
                         @if (!string.IsNullOrEmpty(view.View.Title))
                         {
-                            <h3 class="ex-board-view-title">@view.View.Title</h3>
+                            <h3 class="ex-board-view-title" style="@TitleStyle">@view.View.Title</h3>
                         }
                         @switch (view)
                         {
                             case BoundGridView grid:
                                 <ExGrid TRow="ShapedRow" Source="grid.Grid.Source" Columns="grid.Grid.Columns" PinnedColumnCount="grid.Grid.PinnedColumnCount"
-                                        Chrome="Chrome" ViewportHeight="ViewHeight(row, view)" ViewportWidth="ViewportSize.Stretch" />
+                                        Chrome="Chrome" ViewportHeight="row.Height" ViewportWidth="ViewportSize.Stretch" />
                                 break;
                             case BoundPivotView pivot:
                                 <ExPivot Source="pivot.Source" Layout="LayoutOf(pivot)" LayoutChanged="_layoutChanged[cell.View]"
                                          Chrome="Chrome" PivotChrome="PivotChrome" ShowFieldList="false"
-                                         ViewportHeight="ViewHeight(row, view)" ViewportWidth="ViewportSize.Stretch" />
+                                         ViewportHeight="row.Height" ViewportWidth="ViewportSize.Stretch" />
                                 break;
                             case BoundChartView chart:
                                 <ExChart Definition="chart.Reading.Definition" Title="@chart.Reading.Title" Chrome="ChartChrome"
-                                         Width="ChartWidth(row, cell, shares)" Height="ViewHeight(row, view) - ChartToolbarHeight" />
+                                         Width="ChartWidth(row, cell, shares)" Height="row.Height" />
                                 break;
                         }
                     </section>

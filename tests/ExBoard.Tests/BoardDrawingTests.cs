@@ -80,9 +80,26 @@ public sealed class BoardDrawingTests : BunitContext
         Assert.Equal(2, rows.Count);
         Assert.Equal(["blotter", "byDesk"], rows[0].QuerySelectorAll(".ex-board-view").Select(v => v.GetAttribute("data-ex-view")));
         Assert.Contains("flex: 2 1 0", rows[0].QuerySelectorAll(".ex-board-view")[0].GetAttribute("style"), StringComparison.Ordinal);
-        Assert.Contains("height: 300px", rows[1].GetAttribute("style"), StringComparison.Ordinal);
+        Assert.Contains("height:300px", cut.Find("[data-ex-view=curve] .ex-chart-stage").GetAttribute("style"), StringComparison.Ordinal);
         Assert.NotNull(cut.Find("[data-ex-view=blotter] .ex-grid"));
         Assert.NotNull(cut.Find("[data-ex-view=byDesk] .ex-grid"));
         Assert.NotNull(cut.Find("[data-ex-view=curve] svg"));
+    }
+
+    [Fact] // ADR-0341: a chart reads only what its input declares, as a grid and a pivot do
+    public void A_chart_naming_a_column_its_input_does_not_declare_is_refused()
+    {
+        var builder = new SnapshotColumnsBuilder();
+        builder.Text("desk").Append("Rates");
+        builder.Decimal("pnl").Append(1m);
+        builder.Date("day").Append(new DateOnly(2026, 10, 20));
+        builder.Decimal("notional").Append(5m);
+        var json = Json.Replace("\"y\": \"pnl\"", "\"y\": \"notional\"");
+
+        var refused = Assert.Throws<BoardRefusedException>(() =>
+            BoundBoard.Bind(BoardSpec.Read(json), new Dictionary<string, Snapshot> { ["trades"] = builder.Build() }));
+
+        Assert.StartsWith("views[2].chart", refused.Path, StringComparison.Ordinal);
+        Assert.Contains("notional", refused.Message, StringComparison.Ordinal);
     }
 }

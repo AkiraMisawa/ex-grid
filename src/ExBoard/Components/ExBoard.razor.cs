@@ -19,14 +19,13 @@ public partial class ExBoard
     /// <summary>The gap between views and between rows, in CSS pixels.</summary>
     public const double Gap = 12;
 
-    /// <summary>The height a view's title takes, in CSS pixels.</summary>
+    /// <summary>The height a view's title takes, in CSS pixels, emitted on the title itself so the
+    /// view under it is drawn at exactly what is left.</summary>
     public const double TitleHeight = 28;
-
-    /// <summary>The height a chart's toolbar takes, in CSS pixels.</summary>
-    public const double ChartToolbarHeight = 40;
 
     private BoardReading? _boundBoard;
     private IReadOnlyDictionary<string, Snapshot>? _boundData;
+    private CultureInfo? _boundCulture;
     private BoundBoard? _bound;
     private string? _refusal;
     private readonly Dictionary<string, PivotLayout> _layouts = new(StringComparer.Ordinal);
@@ -67,10 +66,11 @@ public partial class ExBoard
     {
         ArgumentNullException.ThrowIfNull(Board);
         ArgumentNullException.ThrowIfNull(Data);
-        if (ReferenceEquals(Board, _boundBoard) && ReferenceEquals(Data, _boundData))
+        if (ReferenceEquals(Board, _boundBoard) && ReferenceEquals(Data, _boundData) && Equals(Culture, _boundCulture))
             return;
         _boundBoard = Board;
         _boundData = Data;
+        _boundCulture = Culture;
         _layouts.Clear();
         _layoutChanged.Clear();
         try
@@ -97,15 +97,19 @@ public partial class ExBoard
 
     private static string RootStyle => FormattableString.Invariant($"display: flex; flex-direction: column; gap: {Gap}px");
 
+    // A row's height is each view's own: a grid's or a pivot's viewport, a chart's stage. A chart's
+    // toolbar sits above its stage at the height its stylesheet gives it, so the row grows to hold
+    // it rather than pair a pixel here with one there; nothing is clipped.
     private static string RowStyle(BoardRow row) =>
-        FormattableString.Invariant($"display: flex; gap: {Gap}px; height: {row.Height}px");
+        FormattableString.Invariant($"display: flex; gap: {Gap}px; align-items: flex-start");
 
     private static string CellStyle(BoardCell cell) =>
-        FormattableString.Invariant($"flex: {cell.Width} 1 0; min-width: 0; display: flex; flex-direction: column; overflow: hidden");
+        FormattableString.Invariant($"flex: {cell.Width} 1 0; min-width: 0; display: flex; flex-direction: column");
+
+    private static string TitleStyle => FormattableString.Invariant(
+        $"margin: 0; height: {TitleHeight}px; line-height: {TitleHeight}px; font-size: inherit; overflow: hidden; white-space: nowrap; text-overflow: ellipsis");
 
     private double ChartWidth(BoardRow row, BoardCell cell, int shares) =>
         Math.Max(120, Math.Floor((Width - (Gap * (row.Cells.Count - 1))) * cell.Width / shares));
 
-    private static double ViewHeight(BoardRow row, BoundView view) =>
-        Math.Max(60, row.Height - (string.IsNullOrEmpty(view.View.Title) ? 0 : TitleHeight));
 }

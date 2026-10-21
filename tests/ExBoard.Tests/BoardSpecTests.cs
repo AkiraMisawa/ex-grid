@@ -41,6 +41,7 @@ public sealed class BoardSpecTests
     [InlineData("""{"title": "x"}""", "version", "A Board says its version; this reader reads version 1.")]
     [InlineData("""{"version": 2}""", "version", "The Board is version 2, and this reader reads version 1 only.")]
     [InlineData("""{"version": 1, "theme": "dark"}""", "theme", "The Board has no member 'theme'.")]
+    [InlineData("""{"version": 2, "links": []}""", "version", "The Board is version 2, and this reader reads version 1 only.")]
     public void A_board_without_a_version_this_reader_reads_is_refused(string json, string path, string message)
     {
         var refused = Assert.Throws<BoardRefusedException>(() => BoardSpec.Read(json));

@@ -3,7 +3,6 @@ abstract ExBoard.BoardView.<Clone>$() -> ExBoard.BoardView!
 abstract ExBoard.BoardView.Data.get -> System.Collections.Generic.IReadOnlyList<string!>!
 const ExBoard.BoardSpec.DefaultRowHeight = 320 -> double
 const ExBoard.BoardSpec.Version = 1 -> int
-const ExBoard.Components.ExBoard.ChartToolbarHeight = 40 -> double
 const ExBoard.Components.ExBoard.Gap = 12 -> double
 const ExBoard.Components.ExBoard.TitleHeight = 28 -> double
 ExBoard.BoardCell

@@ -91,9 +91,10 @@ public sealed record BoardChartView : BoardView
 }
 
 /// <summary>A row of a Board's layout: its views, left to right, each with its share of the row's
-/// width, and the row's height.</summary>
+/// width, and the height their data is drawn at.</summary>
 /// <param name="Cells">The views in the row.</param>
-/// <param name="Height">The row's height in CSS pixels.</param>
+/// <param name="Height">The height, in CSS pixels, of each view's data: a grid's or a pivot's viewport,
+/// a chart's stage. A view's title and a chart's toolbar stand above it.</param>
 public sealed record BoardRow(IReadOnlyList<BoardCell> Cells, double Height);
 
 /// <summary>A view's place in a row.</summary>
@@ -159,11 +160,12 @@ public static class BoardSpec
     {
         if (root.ValueKind != JsonValueKind.Object)
             throw new BoardRefusedException("", "A Board is a JSON object.");
-        Members(root, RootKeys, "", "The Board");
+        // The version first: a Board of another version is told so, not about a member it may have.
         if (!root.TryGetProperty("version", out var version) || version.ValueKind != JsonValueKind.Number)
             throw new BoardRefusedException("version", $"A Board says its version; this reader reads version {Version}.");
         if (!version.TryGetInt32(out var number) || number != Version)
             throw new BoardRefusedException("version", $"The Board is version {version.GetRawText()}, and this reader reads version {Version} only.");
+        Members(root, RootKeys, "", "The Board");
         var title = OptionalText(root, "title", "title", "The Board's title");
 
         if (!root.TryGetProperty("inputs", out var inputsValue) || inputsValue.ValueKind != JsonValueKind.Object)
