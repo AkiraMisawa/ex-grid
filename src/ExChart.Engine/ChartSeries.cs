@@ -98,6 +98,12 @@ public sealed record ChartSeries
     /// <summary>An Observation's horizontal Interval, one bound a row in the points' order, its bounds in the axis' units across (ADR-0304).</summary>
     public SeriesInterval? XInterval { get; init; }
 
+    /// <summary>
+    /// What each pixel its Chart Source thinned held (ADR-0344): its points are the ones kept, and the
+    /// tooltip says the range and the count of every row under a pixel. Empty for a series handed in whole.
+    /// </summary>
+    public IReadOnlyList<PixelSummary> Thinned { get; init; } = [];
+
     /// <summary>The function it is sampled from, or null when it is handed in as points.</summary>
     public SeriesSampler? Sampler { get; init; }
 

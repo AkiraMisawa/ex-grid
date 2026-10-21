@@ -35,6 +35,52 @@ public static class Thinning
         return new ThinnedDrawing(new SeriesDrawing(lines, []), summaries);
     }
 
+    /// <summary>
+    /// What each pixel holds when the points were thinned before they came (ADR-0344): a pixel the drawing
+    /// thinned again counts every row the source's pixels inside it held, not the points the source kept,
+    /// and a source pixel the drawing left alone says what it held.
+    /// </summary>
+    /// <param name="source">What each of the source's thinned pixels held.</param>
+    /// <param name="drawn">What the drawing's own Thinning said of the points it was given.</param>
+    /// <param name="kept">The positions of the points the drawing was given.</param>
+    public static IReadOnlyList<PixelSummary> Through(IReadOnlyList<PixelSummary> source, IReadOnlyList<PixelSummary> drawn, IReadOnlyList<double> kept)
+    {
+        ArgumentNullException.ThrowIfNull(source);
+        ArgumentNullException.ThrowIfNull(drawn);
+        ArgumentNullException.ThrowIfNull(kept);
+        if (source.Count == 0)
+            return drawn;
+        var taken = new bool[source.Count];
+        var result = new List<PixelSummary>();
+        foreach (var pixel in drawn)
+        {
+            var from = pixel.From;
+            var to = pixel.To;
+            var count = pixel.Count;
+            var min = pixel.Min;
+            var max = pixel.Max;
+            for (var i = 0; i < source.Count; i++)
+            {
+                var s = source[i];
+                if (taken[i] || s.From < pixel.From || s.From > pixel.To)
+                    continue;
+                taken[i] = true;
+                // The source's pixel stands for its rows: its kept points here are counted as all of them.
+                count += s.Count - kept.Count(x => x >= s.From && x <= s.To && x >= pixel.From && x <= pixel.To);
+                to = Math.Max(to, s.To);
+                min = Math.Min(min, s.Min);
+                max = Math.Max(max, s.Max);
+            }
+            result.Add(new PixelSummary(from, to, min, max, count));
+        }
+        for (var i = 0; i < source.Count; i++)
+        {
+            if (!taken[i])
+                result.Add(source[i]);
+        }
+        return result;
+    }
+
     private static IReadOnlyList<DrawnPoint> Line(IReadOnlyList<DrawnPoint> line, Func<double, double> toPixel, List<PixelSummary> summaries)
     {
         var kept = new List<DrawnPoint>();

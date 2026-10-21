@@ -73,6 +73,25 @@ public class ChartFileTests : BunitContext
         Assert.Contains("ENE", text, StringComparison.Ordinal);
     }
 
+    [Fact] // ADR-0344 / spine rule 1: a chart its Chart Source thinned saves no CSV and shows no table of the points it holds
+    public async Task A_chart_thinned_at_its_source_saves_no_csv_and_shows_no_table()
+    {
+        var thinned = Exposure();
+        thinned = new ChartDefinition(thinned.Axis, [thinned.Series[0] with { Thinned = [new PixelSummary(0, 1, 1, 5, 400)] }, thinned.Series[1]]);
+        var cut = Render<ChartComponent>(ps => ps.Add(c => c.Definition, thinned).Add(c => c.Title, "Exposure profile"));
+
+        var csv = cut.Find(".ex-chart-download-csv");
+        Assert.True(csv.HasAttribute("disabled"));
+        Assert.Contains("where the data lives", csv.GetAttribute("title"), StringComparison.Ordinal);
+        Assert.False(await cut.Instance.DownloadAsync(ChartFileFormat.Csv));
+        Assert.Empty(_module.Invocations["save"]);
+
+        cut.Find(".ex-chart-table-toggle").Click();
+        Assert.Empty(cut.FindAll(".ex-chart-table"));
+        Assert.Contains("where the data lives", cut.Find(".ex-chart-table-notice").TextContent, StringComparison.Ordinal);
+        Assert.False(cut.Find(".ex-chart-download-svg").HasAttribute("disabled"));
+    }
+
     [Theory] // ADR-0282: a file name names a file: unsafe characters become underscores, and a stem of dots falls back
     [InlineData("a/b:c", "a_b_c.csv")]
     [InlineData("..", "chart.csv")]

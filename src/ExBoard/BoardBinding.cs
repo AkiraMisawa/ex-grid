@@ -105,44 +105,10 @@ public sealed class BoundBoard
             : throw new ArgumentException($"The link starts at grid '{link.From}', whose selection narrows by its rows.", nameof(link));
     }
 
-    private static LinkCondition? CellCondition(BoundPivotView pivot, IReadOnlyList<string> on, IReadOnlyList<PivotCellItems> cells)
-    {
-        if (cells.Count == 0)
-            return null;
-        // A link from a pivot over a source held on a server is refused at binding (ADR-0343).
-        var snapshot = pivot.Source!.Snapshot;
-        var hidden = PivotQuery.For(pivot.Layout).Placed.Where(f => f.HiddenItems.Count > 0 && snapshot.TryGetColumn(f.Field, out _))
-            .Select(f => (Column: snapshot[f.Field], Hidden: f.HiddenItems.ToHashSet())).ToArray();
-        // The cells grouped by the fields their paths name, each group a set of the Items they name
-        // there, so a row's keys are read once and looked up, not compared with every cell. A step naming
-        // no column of the data would constrain nothing, and so let through rows the cell does not stand for.
-        var groups = new Dictionary<string, (SnapshotColumn[] Columns, HashSet<PivotItemKey[]> Items)>(StringComparer.Ordinal);
-        foreach (var cell in cells)
-        {
-            var steps = cell.Items.ToArray();
-            var fields = string.Join("\u001f", steps.Select(i => i.Field));
-            if (!groups.TryGetValue(fields, out var group))
-            {
-                group = (steps.Select(i => snapshot.TryGetColumn(i.Field, out var column) ? column
-                    : throw new ArgumentException($"A cell names field '{i.Field}', which pivot '{pivot.View.Id}' does not read from its data.", nameof(cells))).ToArray(),
-                    new HashSet<PivotItemKey[]>(ItemsComparer.Instance));
-                groups.Add(fields, group);
-            }
-            group.Items.Add([.. steps.Select(i => i.Item)]);
-        }
-        var columns = on.Select(n => snapshot[n]).ToArray();
-        var tuples = new List<object?[]>();
-        foreach (var row in snapshot.Rows)
-        {
-            if (hidden.Any(h => h.Hidden.Contains(PivotItemKey.For(snapshot.ValueAt(row, h.Column)))))
-                continue;
-            if (groups.Values.Any(g => g.Items.Contains([.. g.Columns.Select(c => PivotItemKey.For(snapshot.ValueAt(row, c)))])))
-                tuples.Add([.. columns.Select(c => snapshot.ValueAt(row, c))]);
-        }
-        return new LinkCondition(on, tuples);
-    }
+    private static LinkCondition? CellCondition(BoundPivotView pivot, IReadOnlyList<string> on, IReadOnlyList<PivotCellItems> cells) =>
+        cells.Count == 0 ? null : BoardSource.ValuesUnder(pivot.Source!.Snapshot, new BoardCellsQuery(pivot.View.Id, pivot.Layout, cells, on, []));
 
-    private sealed class ItemsComparer : IEqualityComparer<PivotItemKey[]>
+    internal sealed class ItemsComparer : IEqualityComparer<PivotItemKey[]>
     {
         public static readonly ItemsComparer Instance = new();
 
@@ -262,16 +228,58 @@ public sealed class BoundBoard
     /// narrowed once. Null, a selection the pivot could not read, narrows nothing, as no selection does.
     /// </summary>
     /// <returns>Whether any view was narrowed again.</returns>
+    /// <exception cref="InvalidOperationException">The pivot is over a source held on a server, whose rows
+    /// are asked for there (<see cref="SelectCellsAsync"/>).</exception>
     public bool SelectCells(string from, IReadOnlyList<PivotCellItems>? cells)
     {
         ArgumentNullException.ThrowIfNull(from);
         if (this[from] is not BoundPivotView pivot)
             throw new ArgumentException($"View '{from}' is not a pivot.", nameof(from));
+        if (pivot.ReportSource is not null)
+            throw new InvalidOperationException($"Pivot '{from}' is over a source held on a server, which is asked for the values under its cells: select them with SelectCellsAsync.");
         var targets = new HashSet<string>(StringComparer.Ordinal);
         foreach (var link in Board.Links.Where(l => l.From == from))
         {
             if (Set(link, cells is null ? null : CellCondition(pivot, link.On, cells)))
                 targets.UnionWith(link.To);
+        }
+        foreach (var target in targets)
+            NarrowView(target);
+        return targets.Count > 0;
+    }
+
+    /// <summary>
+    /// <see cref="SelectCells"/> for any pivot: over a source held on a server, each link from it asks the
+    /// source for the values under the cells (ADR-0345), and the views it reaches are narrowed once every
+    /// answer has come. A selection a later one has replaced narrows nothing when its answers come (spine
+    /// rule 6), and answers false.
+    /// </summary>
+    /// <returns>Whether any view was narrowed again.</returns>
+    /// <exception cref="Exception">The source failed to answer; nothing is narrowed.</exception>
+    public async Task<bool> SelectCellsAsync(string from, IReadOnlyList<PivotCellItems>? cells, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(from);
+        if (this[from] is not BoundPivotView pivot)
+            throw new ArgumentException($"View '{from}' is not a pivot.", nameof(from));
+        if (pivot.ReportSource is null)
+            return SelectCells(from, cells);
+        var selected = ++pivot.Selected;
+        var links = Board.Links.Where(l => l.From == from).ToArray();
+        var conditions = new LinkCondition?[links.Length];
+        if (cells is { Count: > 0 })
+        {
+            var narrowing = _conditions.Where(c => c.Key.To.Contains(from)).Select(c => c.Value).ToArray();
+            var under = Sources[pivot.Input].Under!;
+            for (var i = 0; i < links.Length; i++)
+                conditions[i] = await under(new BoardCellsQuery(from, pivot.Layout, cells, links[i].On, narrowing), cancellationToken).ConfigureAwait(false);
+        }
+        if (selected != pivot.Selected)
+            return false;
+        var targets = new HashSet<string>(StringComparer.Ordinal);
+        for (var i = 0; i < links.Length; i++)
+        {
+            if (Set(links[i], conditions[i]))
+                targets.UnionWith(links[i].To);
         }
         foreach (var target in targets)
             NarrowView(target);
@@ -341,6 +349,11 @@ public sealed class BoundBoard
                 break;
             case BoundPivotView { ReportSource: not null } pivot:
                 pivot.ReportSource = Sources[pivot.Input].Report!(conditions);
+                // Its report changed, so its selection is dropped, with an answer still on its way for it,
+                // and what it narrowed is let go now (ADR-0345).
+                pivot.Selected++;
+                foreach (var link in Board.Links.Where(l => l.From == id))
+                    Narrow(link, null);
                 break;
             case BoundPivotView pivot:
                 var data = Data[pivot.Input];
@@ -348,6 +361,10 @@ public sealed class BoundBoard
                 // Its report changed, so its selection is dropped, and what it narrowed is let go now.
                 foreach (var link in Board.Links.Where(l => l.From == id))
                     Narrow(link, null);
+                break;
+            case BoundChartView { Thinned: true } chart:
+                // Asked again, handed the conditions, as a fetched grid is; drawn when the answer comes.
+                _ = AskAsync(chart, default);
                 break;
             case BoundChartView chart:
                 var path = $"views[{Board.Views.ToList().FindIndex(v => v.Id == id)}].chart";
@@ -439,7 +456,95 @@ public sealed class BoundBoard
             }
             held[input.Name] = source;
         }
-        return Make(board, BindData(board, data, held), held, culture, diff);
+        var made = Make(board, BindData(board, data, held), held, culture, diff);
+        // A chart over a server input is read from its sources' first answers before the Board is
+        // drawn, and a spec they cannot draw is refused by path, as one over a Snapshot is.
+        for (var i = 0; i < board.Views.Count; i++)
+        {
+            if (made.Views[i] is BoundChartView { Thinned: true } chart)
+            {
+                try
+                {
+                    var read = await made.ReadThroughSourcesAsync(chart, [], cancellationToken).ConfigureAwait(false);
+                    chart.Reading = read.Reading;
+                    chart.Versions = read.Versions;
+                }
+                catch (ChartSpecRefusedException e)
+                {
+                    throw new BoardRefusedException(e.Path.Length == 0 ? $"views[{i}].chart" : $"views[{i}].chart.{e.Path}", e.Message);
+                }
+            }
+        }
+        return made;
+    }
+
+    /// <summary>
+    /// How many pixels a chart over a server input asks its source for (ADR-0344): the device pixels of a
+    /// plot 1,024 CSS pixels wide, at the two device pixels a CSS pixel ExChart counts in. A wider plot
+    /// thins on top in the browser, which keeps every extreme the source kept.
+    /// </summary>
+    public const int ChartPixels = 2048;
+
+    // A chart read through Chart Sources: a server input through its BoardSource, an input held in
+    // memory through the reference implementation over its declared columns, each under the narrowing.
+    private Task<ChartSourceReading> ReadThroughSourcesAsync(BoundChartView chart, IReadOnlyList<LinkCondition> conditions, CancellationToken cancellationToken)
+    {
+        var inputs = Board.Inputs.ToDictionary(i => i.Name, StringComparer.Ordinal);
+        var view = (BoardChartView)chart.View;
+        return ChartSpec.ReadAsync(view.Spec, name =>
+        {
+            if (!inputs.TryGetValue(name, out var input))
+                return null;
+            if (Sources.TryGetValue(name, out var source))
+                return new SourceThinning(source, view.Id, conditions);
+            var snapshot = Data[name];
+            return ChartSource.Over(new DeclaredChartData(new SnapshotChartData(snapshot), input,
+                conditions.Count == 0 ? null : Narrowing.Positions(snapshot, conditions)), snapshot.Version);
+        }, ChartPixels, chart.Range?.From, chart.Range?.To, cancellationToken);
+    }
+
+    // Asks a chart over a server input again, under the narrowing and the range it has now. Only the
+    // newest ask is drawn, and never an answer older than the version the chart shows (ADR-0322).
+    internal async Task AskAsync(BoundChartView chart, CancellationToken cancellationToken)
+    {
+        var asked = ++chart.Asked;
+        var conditions = _conditions.Where(c => c.Key.To.Contains(chart.View.Id)).Select(c => c.Value).ToArray();
+        string? refusal = null;
+        ChartSourceReading? read = null;
+        try
+        {
+            read = await ReadThroughSourcesAsync(chart, conditions, cancellationToken).ConfigureAwait(false);
+        }
+        catch (ChartSpecRefusedException e)
+        {
+            var path = $"views[{Board.Views.ToList().FindIndex(v => v.Id == chart.View.Id)}].chart";
+            refusal = $"{(e.Path.Length == 0 ? path : $"{path}.{e.Path}")}: {e.Message}";
+        }
+        catch (Exception e) when (e is not OperationCanceledException)
+        {
+            refusal = $"The source did not answer the chart: {e.Message}";
+        }
+        if (asked != chart.Asked)
+            return;
+        if (read is not null)
+        {
+            if (read.Versions.Any(v => chart.Versions.TryGetValue(v.Key, out var shown) && v.Value < shown))
+                return;
+            chart.Reading = read.Reading;
+            chart.Versions = read.Versions;
+            chart.Refusal = null;
+        }
+        else
+        {
+            chart.Refusal = refusal;
+        }
+        chart.RaiseAnswered();
+    }
+
+    private sealed class SourceThinning(BoardSource source, string view, IReadOnlyList<LinkCondition> conditions) : IChartSource
+    {
+        public ValueTask<ChartSourceAnswer> ThinAsync(ChartSourceQuery query, CancellationToken cancellationToken = default) =>
+            source.Thin!(new BoardChartQuery(view, query, conditions), cancellationToken);
     }
 
     private static Dictionary<string, Snapshot> BindData(BoardReading board, IReadOnlyDictionary<string, Snapshot> data, Dictionary<string, BoardSource> held)
@@ -469,18 +574,20 @@ public sealed class BoundBoard
                     ? new BoundPivotView(pivot, report([]), inputs[pivot.Input].Shape)
                     : throw new BoardRefusedException($"{path}.pivot", $"Input '{pivot.Input}' is held on a server, and its source makes no report source for a pivot."),
                 BoardPivotView pivot => new BoundPivotView(pivot, PivotSource.From(bound[pivot.Input]), inputs[pivot.Input].Shape),
-                BoardChartView chart when chart.Data.FirstOrDefault(held.ContainsKey) is { } server => throw new BoardRefusedException($"{path}.chart",
-                    $"Input '{server}' is held on a server, and a chart over it waits for the Chart Source that thins where the data lives (ADR-0322)."),
+                BoardChartView chart when chart.Data.FirstOrDefault(d => held.TryGetValue(d, out var s) && s.Thin is null) is { } unthinned => throw new BoardRefusedException($"{path}.chart",
+                    $"Input '{unthinned}' is held on a server, and its source thins no chart's points (BoardSource.Thin)."),
+                // Read through Chart Sources, the server's thinning where the data lives, once bound (ADR-0344).
+                BoardChartView chart when chart.Data.Any(held.ContainsKey) => new BoundChartView(chart, null!) { Thinned = true },
                 BoardChartView chart => new BoundChartView(chart, ReadChart(chart, bound, inputs, $"{path}.chart", null)),
                 var other => throw new InvalidOperationException($"Unknown view {other.GetType().Name}."),
             });
         }
         for (var l = 0; l < board.Links.Count; l++)
         {
-            if (board.View(board.Links[l].From) is BoardPivotView pivot && held.ContainsKey(pivot.Input))
+            if (board.View(board.Links[l].From) is BoardPivotView pivot && held.TryGetValue(pivot.Input, out var source) && source.Under is null)
             {
                 throw new BoardRefusedException($"links[{l}].from",
-                    $"Pivot '{pivot.Id}' is over input '{pivot.Input}', held on a server, where the rows under a cell are; a link from it cannot be read in the client yet (ADR-0343).");
+                    $"Pivot '{pivot.Id}' is over input '{pivot.Input}', held on a server, where the rows under a cell are, and its source answers no values under cells (BoardSource.Under).");
             }
         }
         var fitted = (diff ?? BoardDiff.Empty).FitTo(board);
@@ -499,7 +606,10 @@ public sealed class BoundBoard
                     break;
             }
         }
-        return new BoundBoard(board, bound, held, views, fitted.Dropped);
+        var made = new BoundBoard(board, bound, held, views, fitted.Dropped);
+        foreach (var chart in views.OfType<BoundChartView>().Where(c => c.Thinned))
+            chart.Ask = () => made.AskAsync(chart, default);
+        return made;
     }
 
     // Each fetch hands the source the grid's query and the narrowing the view holds when it is asked.
@@ -745,6 +855,9 @@ public sealed class BoundPivotView : BoundView
 
     internal SnapshotPivotSource? Unnarrowed { get; }
 
+    // The selections made in a pivot over a server, so only the newest one's answers narrow (ADR-0345).
+    internal int Selected { get; set; }
+
     internal string Input { get; }
 
     /// <summary>The layout shown: the Board's, until the user changes it.</summary>
@@ -782,8 +895,34 @@ public sealed class BoundChartView : BoundView
             HiddenSeries = hidden;
     }
 
-    /// <summary>The range narrowed, or returned to the whole with null (ADR-0273).</summary>
-    public void ChangeRange(ChartRange? range) => Range = range;
+    /// <summary>The range narrowed, or returned to the whole with null (ADR-0273). A chart over a server
+    /// input asks its sources again for the range, drawn at full detail (ADR-0344).</summary>
+    public void ChangeRange(ChartRange? range)
+    {
+        var moved = range?.From != Range?.From || range?.To != Range?.To;
+        Range = range;
+        if (moved && Ask is { } ask)
+            _ = ask();
+    }
+
+    /// <summary>
+    /// Whether the chart is read through Chart Sources (ADR-0344): an input of it is held on a server,
+    /// thinned there, so it holds only the points drawn, and is asked again as it is narrowed.
+    /// </summary>
+    public bool Thinned { get; internal init; }
+
+    /// <summary>Raised when an answer to the chart's sources has been taken, or has said why it is not drawn.</summary>
+    public event Action? Answered;
+
+    internal void RaiseAnswered() => Answered?.Invoke();
+
+    // How it asks again, set by the Board that bound it, and the asks made so far.
+    internal Func<Task>? Ask { get; set; }
+
+    internal int Asked { get; set; }
+
+    // The version of each input the reading drawn was read at.
+    internal IReadOnlyDictionary<string, long> Versions { get; set; } = new Dictionary<string, long>();
 
     /// <summary>The axis switched under Chart Filters (ADR-0251).</summary>
     public void ChangeScale(AxisScale scale) => Scale = scale;

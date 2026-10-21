@@ -62,8 +62,18 @@
         <p>
             A Snapshot never changes in place; its next version is a new one. A chart drawn from a spec follows its
             handle by being read again against the Snapshot the host now holds, and <code>SnapshotChartData.Version</code>
-            names the one it was read from (ADR-0322). A Chart Source that thins a large table where it lives, so
-            only what the pixels show crosses to the chart, is not built yet.
+            names the one it was read from (ADR-0322). 
+        </p>
+        <p>
+            A table too large to send is read through a Chart Source (<code>IChartSource</code>), which thins it where
+            it lives, so only what the pixels show crosses to the chart (ADR-0344).
+            <code>ChartSpec.ReadAsync(json, sources, pixels)</code> asks each series for its column, from a range at a
+            number of pixels; the source answers with each pixel's first, last, lowest and highest row, what each pixel
+            held, and the version it read. <code>ChartSource.Thin</code> is the reference a server's source answers
+            as, and <code>ChartSource.Over</code> thins a table held in the process. The tooltip counts every row under a
+            pixel, not the points sent. Two series answered at different versions are refused, and so is anything a
+            thinned point cannot stand for: an observation's points, a price range's candles, a label, colour, size,
+            key or edge per point, and a labels axis, each by its path.
         </p>
     </DocsSection>
 </DocsPage>

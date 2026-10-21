@@ -685,7 +685,8 @@ public sealed record ChartScene(EquatableList<PanelScene> Panels, EquatableList<
             thinned.Drawing.Lines.Select(l => l.Select(Px).ToEquatableList()).ToEquatableList(),
             (marked ? thinned.Drawing.Markers : []).Select(m => m with { X = map(m.X), Y = YOf(axis, m.Y, plot) }).ToEquatableList(),
             s.Segments.Where(g => g.Extrapolated).Select(g => (map(Math.Max(g.From, from)), map(Math.Min(g.To, to)))).ToEquatableList(),
-            thinned.Thinned.ToEquatableList())
+            Thinning.Through(s.Thinned.Where(t => t.To >= from && t.From <= to).ToList(), thinned.Thinned,
+                inRange.Lines.SelectMany(l => l.Select(p => p.X)).ToList()).ToEquatableList())
         {
             Whiskers = whiskers.Select(Wpx).ToEquatableList(),
             Bands = bands.Select(b => b.Select(Wpx).ToEquatableList()).ToEquatableList(),

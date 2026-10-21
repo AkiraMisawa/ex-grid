@@ -47,5 +47,7 @@ decided here.
 
 - The Chart Source is a public seam; its shape, and the Snapshot version an answer carries, are
   settled when it is built and tested against the reference implementation.
+  *Settled 2026-10-21 by [ADR-0344](0344-a-chart-source-answers-thinned-points-and-a-board-charts-a-server-input-through-it.md):
+  `IChartSource.ThinAsync`, answered as `ChartSource.Thin` answers.*
 - A chart made in C# from a `ChartDefinition` with its points keeps working as it does; the source is
   how a Chart Spec's chart reads, and a Consumer may give one to a definition too.

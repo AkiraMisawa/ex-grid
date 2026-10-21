@@ -20,7 +20,7 @@
             <button type="button" class="ex-chart-button ex-chart-reset" disabled="@(_range is null)" @onclick="ResetRangeAsync">Reset range</button>
             <button type="button" class="ex-chart-button ex-chart-table-toggle" aria-expanded="@(_tableOpen ? "true" : "false")" @onclick="ToggleTable">View as table</button>
             <span class="ex-chart-downloads" role="group" aria-label="Download">
-                <button type="button" class="ex-chart-button ex-chart-download-csv" disabled="@FilesUnavailable" @onclick="DownloadCsvAsync">CSV</button>
+                <button type="button" class="ex-chart-button ex-chart-download-csv" disabled="@CsvUnavailable" title="@CsvTitle" @onclick="DownloadCsvAsync">CSV</button>
                 <button type="button" class="ex-chart-button ex-chart-download-svg" disabled="@FilesUnavailable" @onclick="DownloadSvgAsync">SVG</button>
                 <button type="button" class="ex-chart-button ex-chart-download-png" disabled="@FilesUnavailable" @onclick="DownloadPngAsync">PNG</button>
             </span>
@@ -98,7 +98,11 @@
             }
         </ul>
     }
-    @if (_tableOpen)
+    @if (_tableOpen && ThinnedAtSource)
+    {
+        <p class="ex-chart-table-notice" role="note">@ThinnedAtSourceWords</p>
+    }
+    else if (_tableOpen)
     {
         <div class="ex-chart-table-wrap">
             <table class="ex-chart-table">
