@@ -658,10 +658,11 @@ async function attachJournals(testInfo, journals, hostLog) {
         return;
     }
     const core = hostLog.filter((line) => line.includes(' ExGrid.InputOrder: '));
-    await testInfo.attach('input-journal.json', {
-        contentType: 'application/json',
-        body: JSON.stringify({ script: journals, core }, null, 1),
-    });
+    const body = JSON.stringify({ script: journals, core }, null, 1);
+    await testInfo.attach('input-journal.json', { contentType: 'application/json', body });
+    // And in the run's own output, on one line, where a failure's report prints it: a run's log can be
+    // read where its artifacts cannot be fetched.
+    console.log(`input-journal ${JSON.stringify({ script: journals, core })}`);
 }
 
 // A test with a document of its own (ADR-0056): a context of its own, every navigation real.

@@ -1,4 +1,6 @@
 using ExBoard;
+using ExChart;
+using ExChart.Engine;
 using ExGrid;
 using ExGrid.Data;
 using ExPivot.Engine;
@@ -7,8 +9,9 @@ namespace ExGrid.DemoPages;
 
 /// <summary>
 /// A server holding 50,000 trades, as a host's own code reaches it (ADR-0343): it answers the input's
-/// shape, each grid's query under the narrowing the Board hands it, and a pivot's report over the rows
-/// that narrowing lets through. In process here; a host would send the query and the condition's values
+/// shape, each grid's query under the narrowing the Board hands it, a pivot's report over the rows that
+/// narrowing lets through, a chart's points thinned where the trades are (ADR-0344), and the values under
+/// a pivot's selected cells (ADR-0345). In process here; a host would send the query and the condition's values
 /// over its own protocol and read the page back as Arrow.
 /// </summary>
 public static class DemoBoardServer
@@ -31,6 +34,9 @@ public static class DemoBoardServer
     })
     {
         Report = narrowing => PivotReportSource.From(PivotSource.From(Copy(Held, Through(narrowing)))),
+        // Thinned here, as ChartSource.Thin thins: only the points kept cross to the chart.
+        Thin = (query, _) => ValueTask.FromResult(ChartSource.Thin(new SnapshotChartData(Copy(Held, Through(query.Narrowing))), query.Chart, Held.Version)),
+        Under = (query, _) => ValueTask.FromResult(BoardSource.ValuesUnder(Held, query)),
     };
 
     // The positions every condition lets through, each read as the Board reads it: the tuple of the
@@ -53,6 +59,7 @@ public static class DemoBoardServer
         var id = builder.Text("id");
         var desk = builder.Text("desk");
         var day = builder.Date("day");
+        var seq = builder.Integer("seq");
         var pnl = builder.Decimal("pnl");
         var rows = from.Rows;
         foreach (var p in positions)
@@ -60,6 +67,7 @@ public static class DemoBoardServer
             id.Append((string)from.ValueAt(rows[p], from["id"])!);
             desk.Append((string)from.ValueAt(rows[p], from["desk"])!);
             day.Append((DateTime)from.ValueAt(rows[p], from["day"])!);
+            seq.Append((long)from.ValueAt(rows[p], from["seq"])!);
             pnl.Append((decimal)from.ValueAt(rows[p], from["pnl"])!);
         }
         return builder.Build();
@@ -71,12 +79,14 @@ public static class DemoBoardServer
         var id = builder.Text("id");
         var desk = builder.Text("desk");
         var day = builder.Date("day");
+        var seq = builder.Integer("seq");
         var pnl = builder.Decimal("pnl");
         for (var i = 0; i < count; i++)
         {
             id.Append($"T-{i + 1:D5}");
             desk.Append(Desks[i % Desks.Length]);
             day.Append(new DateOnly(2026, 1, 1).AddDays(i / 200));
+            seq.Append(i + 1);
             pnl.Append((i * 7919 % 20001) - 10000);
         }
         return builder.Build();

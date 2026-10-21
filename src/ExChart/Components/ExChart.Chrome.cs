@@ -32,7 +32,7 @@ public partial class ExChart
             new(ChartCommandIds.Filters, "Chart Filters", true, _toggleFilters) { Expanded = _filtersOpen },
             new(ChartCommandIds.ResetRange, "Reset range", _range is not null, _resetRange),
             new(ChartCommandIds.Table, "View as table", true, _toggleTable) { Expanded = _tableOpen },
-            new(ChartCommandIds.DownloadCsv, "CSV", !FilesUnavailable, _csv),
+            new(ChartCommandIds.DownloadCsv, "CSV", !CsvUnavailable, _csv),
             new(ChartCommandIds.DownloadSvg, "SVG", !FilesUnavailable, _svg),
             new(ChartCommandIds.DownloadPng, "PNG", !FilesUnavailable, _png),
         ]),
@@ -55,7 +55,7 @@ public partial class ExChart
         [
             new(ChartCommandIds.ResetRange, "Reset range", _range is not null, _fromMenu[ChartCommandIds.ResetRange]),
             new(ChartCommandIds.Table, _tableOpen ? "Hide table" : "View as table", true, _fromMenu[ChartCommandIds.Table]) { Expanded = _tableOpen },
-            new(ChartCommandIds.DownloadCsv, "Download CSV", !FilesUnavailable, _fromMenu[ChartCommandIds.DownloadCsv]),
+            new(ChartCommandIds.DownloadCsv, "Download CSV", !CsvUnavailable, _fromMenu[ChartCommandIds.DownloadCsv]),
             new(ChartCommandIds.DownloadSvg, "Download SVG", !FilesUnavailable, _fromMenu[ChartCommandIds.DownloadSvg]),
             new(ChartCommandIds.DownloadPng, "Download PNG", !FilesUnavailable, _fromMenu[ChartCommandIds.DownloadPng]),
         ]));

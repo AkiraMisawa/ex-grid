@@ -20,7 +20,9 @@
             the CSV of the visible series, the SVG of the drawing on screen with its stylesheet inside it, and
             a PNG painted from that SVG at the screen's Device Pixel. The files take the theme's colours as the
             screen shows them, and are named after <code>FileName</code>, or the title. A page may save the same
-            files with <code>DownloadAsync</code>.
+            files with <code>DownloadAsync</code>. A chart whose series were thinned by a Chart Source holds only the
+            points kept, so it saves no CSV and shows no table, which would look like the data and not be it; its SVG
+            and PNG save as drawn (ADR-0344).
         </p>
         <DocsExample Builtin="typeof(Export)" Mud="typeof(ExportMud)" Files="@(["Examples/Chart/ChartData.cs"])" CodeOpen="true" />
     </DocsSection>
