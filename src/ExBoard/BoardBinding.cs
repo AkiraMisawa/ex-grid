@@ -72,11 +72,81 @@ public sealed class BoundBoard
     /// the values in the link's columns of every row the selection covers, in any column, read from
     /// the rows the grid shows; null when it selects nothing, which narrows nothing (ADR-0011).
     /// </summary>
-    /// <exception cref="ArgumentException"><paramref name="link"/> is not one of the Board's.</exception>
+    /// <exception cref="ArgumentException"><paramref name="link"/> is not one of the Board's, or starts at a pivot.</exception>
     public LinkCondition? ConditionOf(BoardLink link, GridSelection selection)
     {
         ArgumentNullException.ThrowIfNull(selection);
-        return Condition(GridOf(link).Grid, link.On, selection);
+        return LinkFrom(link) is BoundGridView grid
+            ? Condition(grid.Grid, link.On, selection)
+            : throw new ArgumentException($"The link starts at pivot '{link.From}', whose selection narrows by the Items its cells stand for.", nameof(link));
+    }
+
+    /// <summary>
+    /// The condition <paramref name="cells"/>, selected in <paramref name="link"/>'s pivot, narrows by
+    /// (ADR-0340, Q5): the values in the link's columns of every row of the pivot's data under any of
+    /// the cells, read from the rows the pivot shows. A cell is over the rows whose values are the Items
+    /// its paths name, so a cell on a subtotal stands for every Item below it and a grand total for
+    /// every row; an Item the pivot hides is under none. Null when no cell is selected, which narrows
+    /// nothing (ADR-0011).
+    /// </summary>
+    /// <exception cref="ArgumentException"><paramref name="link"/> is not one of the Board's, or starts at a grid.</exception>
+    public LinkCondition? ConditionOf(BoardLink link, IReadOnlyList<PivotCellItems> cells)
+    {
+        ArgumentNullException.ThrowIfNull(cells);
+        return LinkFrom(link) is BoundPivotView pivot
+            ? CellCondition(pivot, link.On, cells)
+            : throw new ArgumentException($"The link starts at grid '{link.From}', whose selection narrows by its rows.", nameof(link));
+    }
+
+    private static LinkCondition? CellCondition(BoundPivotView pivot, IReadOnlyList<string> on, IReadOnlyList<PivotCellItems> cells)
+    {
+        if (cells.Count == 0)
+            return null;
+        var snapshot = pivot.Source.Snapshot;
+        var hidden = PivotQuery.For(pivot.Layout).Placed.Where(f => f.HiddenItems.Count > 0 && snapshot.TryGetColumn(f.Field, out _))
+            .Select(f => (Column: snapshot[f.Field], Hidden: f.HiddenItems.ToHashSet())).ToArray();
+        // The cells grouped by the fields their paths name, each group a set of the Items they name
+        // there, so a row's keys are read once and looked up, not compared with every cell. A step naming
+        // no column of the data would constrain nothing, and so let through rows the cell does not stand for.
+        var groups = new Dictionary<string, (SnapshotColumn[] Columns, HashSet<PivotItemKey[]> Items)>(StringComparer.Ordinal);
+        foreach (var cell in cells)
+        {
+            var steps = cell.Items.ToArray();
+            var fields = string.Join("\u001f", steps.Select(i => i.Field));
+            if (!groups.TryGetValue(fields, out var group))
+            {
+                group = (steps.Select(i => snapshot.TryGetColumn(i.Field, out var column) ? column
+                    : throw new ArgumentException($"A cell names field '{i.Field}', which pivot '{pivot.View.Id}' does not read from its data.", nameof(cells))).ToArray(),
+                    new HashSet<PivotItemKey[]>(ItemsComparer.Instance));
+                groups.Add(fields, group);
+            }
+            group.Items.Add([.. steps.Select(i => i.Item)]);
+        }
+        var columns = on.Select(n => snapshot[n]).ToArray();
+        var tuples = new List<object?[]>();
+        foreach (var row in snapshot.Rows)
+        {
+            if (hidden.Any(h => h.Hidden.Contains(PivotItemKey.For(snapshot.ValueAt(row, h.Column)))))
+                continue;
+            if (groups.Values.Any(g => g.Items.Contains([.. g.Columns.Select(c => PivotItemKey.For(snapshot.ValueAt(row, c)))])))
+                tuples.Add([.. columns.Select(c => snapshot.ValueAt(row, c))]);
+        }
+        return new LinkCondition(on, tuples);
+    }
+
+    private sealed class ItemsComparer : IEqualityComparer<PivotItemKey[]>
+    {
+        public static readonly ItemsComparer Instance = new();
+
+        public bool Equals(PivotItemKey[]? x, PivotItemKey[]? y) => x is not null && y is not null && x.AsSpan().SequenceEqual(y);
+
+        public int GetHashCode(PivotItemKey[] items)
+        {
+            var hash = new HashCode();
+            foreach (var item in items)
+                hash.Add(item);
+            return hash.ToHashCode();
+        }
     }
 
     private static LinkCondition? Condition(ShapedGrid grid, IReadOnlyList<string> on, GridSelection selection)
@@ -156,6 +226,29 @@ public sealed class BoundBoard
         return targets.Count > 0;
     }
 
+    /// <summary>
+    /// Narrows by <paramref name="cells"/>, selected in pivot view <paramref name="from"/>, as its
+    /// <c>ItemsOf</c> reads them: each link from it narrows by the condition the cells make
+    /// (<see cref="ConditionOf(BoardLink, IReadOnlyList{PivotCellItems})"/>), and each view they reach is
+    /// narrowed once. Null, a selection the pivot could not read, narrows nothing, as no selection does.
+    /// </summary>
+    /// <returns>Whether any view was narrowed again.</returns>
+    public bool SelectCells(string from, IReadOnlyList<PivotCellItems>? cells)
+    {
+        ArgumentNullException.ThrowIfNull(from);
+        if (this[from] is not BoundPivotView pivot)
+            throw new ArgumentException($"View '{from}' is not a pivot.", nameof(from));
+        var targets = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var link in Board.Links.Where(l => l.From == from))
+        {
+            if (Set(link, cells is null ? null : CellCondition(pivot, link.On, cells)))
+                targets.UnionWith(link.To);
+        }
+        foreach (var target in targets)
+            NarrowView(target);
+        return targets.Count > 0;
+    }
+
     /// <summary>Whether output <paramref name="name"/> can be confirmed: its grid selects something.</summary>
     public bool CanConfirm(string name) => _taken.ContainsKey(name);
 
@@ -180,7 +273,7 @@ public sealed class BoundBoard
     // Records the link's condition; false when it is the one already held, which narrows nothing again.
     private bool Set(BoardLink link, LinkCondition? condition)
     {
-        GridOf(link);
+        LinkFrom(link);
         if (condition is not null && !condition.On.SequenceEqual(link.On, StringComparer.Ordinal))
             throw new ArgumentException($"The link compares {string.Join(", ", link.On)}, and the condition {string.Join(", ", condition.On)}.", nameof(condition));
         var held = _conditions.GetValueOrDefault(link);
@@ -193,12 +286,12 @@ public sealed class BoundBoard
         return true;
     }
 
-    private BoundGridView GridOf(BoardLink link)
+    private BoundView LinkFrom(BoardLink link)
     {
         ArgumentNullException.ThrowIfNull(link);
         if (!Board.Links.Contains(link))
             throw new ArgumentException("The link is not one of the Board's.", nameof(link));
-        return (BoundGridView)this[link.From];
+        return this[link.From];
     }
 
     private void NarrowView(string id)
@@ -221,6 +314,9 @@ public sealed class BoundBoard
             case BoundPivotView pivot:
                 var data = Data[pivot.Input];
                 pivot.Source = conditions.Length == 0 ? pivot.Unnarrowed : PivotSource.From(Narrowing.Copy(data, Narrowing.Positions(data, conditions)));
+                // Its report changed, so its selection is dropped, and what it narrowed is let go now.
+                foreach (var link in Board.Links.Where(l => l.From == id))
+                    Narrow(link, null);
                 break;
             case BoundChartView chart:
                 var path = $"views[{Board.Views.ToList().FindIndex(v => v.Id == id)}].chart";

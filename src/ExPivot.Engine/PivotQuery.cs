@@ -381,3 +381,22 @@ public sealed class PivotDetailsQuery : IEquatable<PivotDetailsQuery>
     public override int GetHashCode()
         => HashCode.Combine(SourceVersion, Start, Count, RowItems.Count, ColumnItems.Count, HiddenItems.Count);
 }
+
+/// <summary>
+/// What a cell of a Pivot Report stands for (ADR-0340, Q5): the Items its row's path names and, for a
+/// value cell, the Items its column's path names. A cell on a subtotal names only the fields above it,
+/// so it stands for every Item below; a grand total names none.
+/// </summary>
+/// <param name="Row">The Items its row's path names, outermost first.</param>
+/// <param name="Column">The Items its column's path names, outermost first; none for a label cell.</param>
+public sealed record PivotCellItems(IReadOnlyList<PivotFieldItem> Row, IReadOnlyList<PivotFieldItem> Column)
+{
+    /// <summary>The Items its row's path names, held as a copy no one can change.</summary>
+    public IReadOnlyList<PivotFieldItem> Row { get; } = Array.AsReadOnly((Row ?? throw new ArgumentNullException(nameof(Row))).ToArray());
+
+    /// <summary>The Items its column's path names, held as a copy no one can change.</summary>
+    public IReadOnlyList<PivotFieldItem> Column { get; } = Array.AsReadOnly((Column ?? throw new ArgumentNullException(nameof(Column))).ToArray());
+
+    /// <summary>Every Item it names, its row's first.</summary>
+    public IEnumerable<PivotFieldItem> Items => Row.Concat(Column);
+}

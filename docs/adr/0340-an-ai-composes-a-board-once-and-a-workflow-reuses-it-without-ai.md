@@ -88,8 +88,8 @@ here so they are not re-derived:
   handed the condition instead. A pivot's narrowed Snapshot is a copy, made once per change of
   condition (a selection moving within the same values narrows nothing again), so its cost is the
   input's size; a large input belongs on a server, where the copy is not made.
-- **A link starts at a grid** for now; a pivot's cell follows (it needs ExPivot to say which items a
-  selected cell stands for). A chart's selection does not narrow.
+- **A link starts at a grid or a pivot** (a pivot since ticket 11, below). A chart's selection does
+  not narrow.
 - **Links run one way**: a link that would let a view narrow, directly or along other links, the
   view that narrows it is refused. Such a view would drop its own selection each time it was
   narrowed. Along a chain, a narrowing that changes a grid's rows drops that grid's selection
@@ -101,7 +101,8 @@ here so they are not re-derived:
 
 - **An output's `from` names a grid view**, as a link's does: the Decision's example
   `{"from": "trades", …}` is read as a view's id, and the output is on the input that grid reads.
-  A pivot's cell as an output's source waits for ticket 11, as a link's does.
+  An output stays a grid's after ticket 11: it hands on rows the user chose, and a pivot's cell is
+  many rows the user did not see one by one.
 - **The confirm is the output's own `confirm`, its label**, drawn under its grid. It is never
   disabled: a press that follows a selection a round trip later is answered for that selection, where
   a button the browser still held disabled would drop it (spine rule 6). With nothing selected it says
@@ -158,3 +159,27 @@ here so they are not re-derived:
   Board keeps what the user has changed since; only a new Diff replaces it.
 - **A gesture behind the columns is refused.** A resize, an order or a pin naming a column no longer
   shown, a round trip behind a hide on the Server host, is not taken (spine rule 6).
+
+*A pivot's cell, 2026-10-21 (ExBoard ticket 11).*
+
+- **ExPivot says what a selected cell stands for** (`ExPivot.ItemsOf`, `PivotCellItems`): its row's
+  path and, for a value cell, its column's, as Show Details reads them. A selection reaching a row the
+  report does not hold drawn is read as nothing (null), not as the part it could read (spine rule 1);
+  the Board says so under the pivot and narrows nothing. In the outline and tabular forms a label
+  column of an outer field stands for that field's Item, the path down to it, not for the row's leaf.
+  It is read when the grid raises the selection, against the rows the grid holds then: ExPivot hands
+  its grid a new report's rows in the render that changes its own, and the grid drops a selection
+  whose rows changed (ADR-0011), so the two never disagree when a selection is raised.
+- **The rows under a cell are matched in the Board**, not through Show Details' query: a Board's
+  pivot reads its input's columns as they are, with no alias or date part, so a cell's Item is the
+  column's value keyed as the pivot keys it, and the hidden Items are the layout's the pivot is drawn
+  with. A Board that gains derived fields moves this onto the engine's query.
+- **The condition is the tuples of the rows under the cells**, read from the rows the pivot shows, in
+  the link's `on` fields: a row is under a cell when its value in each field the cell's paths name is
+  that Item (`PivotItemKey.For`, as the pivot groups it). A row whose value is an Item the pivot hides
+  is under none, its grand total included. So a cell constrains only the fields its paths name, and
+  the condition keeps ticket 05's form, tuples, whatever field the link compares.
+- **A pivot's link compares only fields it places in its rows or columns**; one placed as a value or
+  a filter, or not placed, is refused by path, since no cell names it.
+- **A pivot narrowed again, or given a new layout, lets go of what its cells narrowed at once**, as a
+  grid does: its report is computed again and its selection dropped (ADR-0011).

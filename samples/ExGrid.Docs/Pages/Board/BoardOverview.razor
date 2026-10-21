@@ -34,7 +34,7 @@
 
     <DocsSection Title="Links narrow by values">
         <p>
-            A link names a grid, the views it narrows and the columns it compares:
+            A link names a grid or a pivot, the views it narrows and the columns it compares:
             <code>{"from": "blotter", "to": ["byTrader", "daily"], "on": ["desk"]}</code>. Select rows in the grid, in any
             column, and each view the link reaches shows only the rows whose values in those columns are the selected
             rows' values. In the Board above, select an FX trade: the pivot shows FX's traders and the chart FX's days.
@@ -50,8 +50,18 @@
             never left narrowed by a selection that is no longer there.
         </p>
         <p>
-            Reading refuses a link that starts at a pivot or a chart (a pivot's cell is still to come), narrows its own
-            view, names a view or a column that is not there, compares a column of one type with one of another, or
+            A link from a pivot narrows by the cells selected in its report. A cell stands for the rows under it: a
+            trader's cell for that trader's trades, a subtotal for every Item below it, a grand total for every row the
+            pivot shows. An Item the pivot hides is under no cell. In the Board above, the pivot links to the chart on
+            <code>trader</code>: select Chen's cell and the chart shows Chen's day alone. A pivot's link compares only
+            fields placed in its rows or columns, since those are what a cell names. When another link narrows the
+            pivot, its report is computed again, its selection is dropped, and what its cells narrowed is let go. A
+            selection that reaches rows the report has not drawn yet narrows nothing, and the Board says so under
+            the pivot rather than narrowing by part of it.
+        </p>
+        <p>
+            Reading refuses a link that starts at a chart, compares a field a pivot does not place in its rows or
+            columns, narrows its own view, names a view or a column that is not there, compares a column of one type with one of another, or
             would close a loop: links run one way.
         </p>
     </DocsSection>
@@ -97,8 +107,7 @@
 
     <DocsSection Title="Still to come">
         <p>
-            A link from a pivot's cell is decided (ADR-0340) and not yet drawn. ExBoard is not yet published as a
-            package.
+            ExBoard is not yet published as a package.
         </p>
     </DocsSection>
 

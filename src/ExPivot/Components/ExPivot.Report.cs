@@ -508,6 +508,48 @@ public partial class ExPivot
         await Task.CompletedTask;
     }
 
+    /// <summary>
+    /// What each cell of <paramref name="selection"/>, a selection of the report grid as
+    /// <see cref="SelectionChanged"/> raised it, stands for (ADR-0340, Q5): its row's Items and, for a
+    /// value cell, its column's, as Show Details reads them. Each cell once, in the order selected. Null
+    /// when the selection reaches a row the report does not hold drawn now, which is read from no
+    /// Items rather than from some of them (spine rule 1), or when no report is shown.
+    /// </summary>
+    public IReadOnlyList<PivotCellItems>? ItemsOf(GridSelection selection)
+    {
+        ArgumentNullException.ThrowIfNull(selection);
+        if (_report is not { } report || _state is not { } state)
+            return null;
+        var labels = report.LabelColumns.Count;
+        var seen = new HashSet<(int, int)>();
+        var cells = new List<PivotCellItems>();
+        foreach (var range in selection.Ranges)
+        {
+            if (range.TopRow < state.Window.Start || range.BottomRow >= state.Window.Start + state.Rows.Count
+                || range.RightColumn >= labels + report.ValueColumns.Count)
+                return null;
+            for (var r = range.TopRow; r <= range.BottomRow; r++)
+            {
+                var row = state.Rows[r - state.Window.Start];
+                for (var c = range.LeftColumn; c <= range.RightColumn; c++)
+                {
+                    if (seen.Add((r, c)))
+                        cells.Add(new PivotCellItems(c < labels ? LabelPath(row.RowPath, report.LabelColumns[c]) : row.RowPath,
+                            c < labels ? [] : report.ValueColumns[c - labels].ColumnPath));
+                }
+            }
+        }
+        return cells.AsReadOnly();
+    }
+
+    // A label column of its own field (outline and tabular forms) shows that field's Item, so its cell
+    // stands for the path down to it; the compact form's one column shows the row's own.
+    private static IReadOnlyList<PivotFieldItem> LabelPath(IReadOnlyList<PivotFieldItem> path, PivotLabelColumn column)
+    {
+        var at = column.Field is null ? -1 : path.ToList().FindIndex(i => i.Field == column.Field);
+        return at < 0 ? path : path.Take(at + 1).ToArray();
+    }
+
     // ---- The double click and Show Details (ADR-0063) ------------------------------------------
 
     private async Task OnCellDoubleClickAsync(CellPosition cell)

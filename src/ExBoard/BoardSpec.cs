@@ -260,8 +260,13 @@ public static class BoardSpec
                 throw new BoardRefusedException($"{path}.from", "A link names the view whose selection narrows in 'from'.");
             var from = views.FirstOrDefault(v => v.Id == fromId)
                 ?? throw new BoardRefusedException($"{path}.from", $"The link starts at view '{fromId}', which the Board does not have.");
-            if (from is not BoardGridView fromGrid)
-                throw new BoardRefusedException($"{path}.from", $"The link starts at view '{fromId}', a {KindOf(from)}; a link starts at a grid, whose selected rows narrow.");
+            var fromData = from switch
+            {
+                BoardGridView grid => grid.Grid.Data,
+                BoardPivotView pivot => pivot.Input,
+                _ => throw new BoardRefusedException($"{path}.from",
+                    $"The link starts at view '{fromId}', a {KindOf(from)}; a link starts at a grid, whose selected rows narrow, or a pivot, whose selected cells do."),
+            };
 
             var to = Names(link, "to", $"{path}.to", "A link names the views it narrows, in 'to'.");
             for (var t = 0; t < to.Count; t++)
@@ -273,11 +278,18 @@ public static class BoardSpec
             }
 
             var on = Names(link, "on", $"{path}.on", "A link names the columns it compares, in 'on'.");
-            var fromShape = shape(fromGrid.Grid.Data)!;
+            var fromShape = shape(fromData)!;
             for (var c = 0; c < on.Count; c++)
             {
                 if (!fromShape.TryGetColumn(on[c], out var kind))
-                    throw new BoardRefusedException($"{path}.on[{c}]", $"The link compares column '{on[c]}', which input '{fromGrid.Grid.Data}' of view '{fromId}' does not declare.");
+                    throw new BoardRefusedException($"{path}.on[{c}]", $"The link compares column '{on[c]}', which input '{fromData}' of view '{fromId}' does not declare.");
+                // A pivot's cell names the Items of its rows and columns, never of a value or a filter:
+                // a link on one would narrow by nothing the cell says (ADR-0340, Q5).
+                if (from is BoardPivotView fromPivot && !fromPivot.Layout.Rows.Concat(fromPivot.Layout.Columns).Any(f => f.Field == on[c]))
+                {
+                    throw new BoardRefusedException($"{path}.on[{c}]", $"The link compares field '{on[c]}', which pivot '{fromId}' does not place in its rows or columns; "
+                        + "a pivot's cell names the items of its rows and columns.");
+                }
                 foreach (var target in to)
                 {
                     foreach (var data in views.First(v => v.Id == target).Data)
@@ -287,7 +299,7 @@ public static class BoardSpec
                         if (other.Kind != kind.Kind)
                         {
                             throw new BoardRefusedException($"{path}.on[{c}]", $"The link compares column '{on[c]}', a {BoardInput.NameOf(kind.Kind)} in input "
-                                + $"'{fromGrid.Grid.Data}' and a {BoardInput.NameOf(other.Kind)} in input '{data}'; a value is compared only with one of its kind.");
+                                + $"'{fromData}' and a {BoardInput.NameOf(other.Kind)} in input '{data}'; a value is compared only with one of its kind.");
                         }
                     }
                 }
