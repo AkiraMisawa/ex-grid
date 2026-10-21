@@ -33,7 +33,10 @@
             </li>
             <li>
                 <b>One undo stack covers the Workbook.</b> <kbd>Ctrl</kbd> + <kbd>Z</kbd> undoes the latest operation
-                whichever Sheet it was made on, and every command from your code is one step on it.
+                whichever Sheet it was made on, and every command from your code is one step on it. As in Excel, an undo
+                or a redo shows the Sheet its step was taken on and selects the range it changed — the cell typed in, the
+                range pasted, filled or formatted, the whole rows or columns inserted or deleted — with the Focus on its
+                top-left cell, so you see what came back. <code>UndoAsync</code> and <code>RedoAsync</code> do the same.
             </li>
         </ul>
         <DocsExample Builtin="typeof(WorkbookTabs)" Mud="typeof(WorkbookTabsMud)" CodeOpen="true"
@@ -45,7 +48,8 @@
             the line beside the buttons says what the Sheets are now, and <kbd>Ctrl</kbd> + <kbd>Z</kbd> takes it out
             again. The tabs do the same themselves: press <code>+</code>, double-click Claim and type a new name, or
             right-click a tab for Delete, Move Left, Move Right and Copy, or drag a tab onto another, and watch
-            Summary's Formulas follow.
+            Summary's Formulas follow. Change a quantity on Claim, select Summary and press <kbd>Ctrl</kbd> +
+            <kbd>Z</kbd>: Claim is shown again with that cell selected.
         </DocsExample>
     </DocsSection>
 
@@ -129,7 +133,11 @@ await sheet.DoAsync("Totals", SheetEdit.MoveSheet(0));</code></pre>
             </li>
             <li>
                 <b>Each is one step, and is said.</b> <kbd>Ctrl</kbd> + <kbd>Z</kbd> undoes it; a deleted Sheet comes back
-                with every Formula that read it, since ExSheet asks nothing before deleting. The Sheet's notice, its live
+                with every Formula that read it, since ExSheet asks nothing before deleting. The undo shows the Sheet it
+                brings back, or the one it leaves: a Sheet deleted, renamed or moved is shown, and when a Sheet added or
+                copied is taken away, the Sheet it was added beside or copied from is shown. A redo shows the Sheet added
+                or copied again, and for a Sheet deleted again the one that takes its place. Either way the Sheet keeps its
+                own Selection: a Sheet operation changes no cells to select. The Sheet's notice, its live
                 region, says what was done, and <code>SheetsChanged</code> is raised. While a cell is being edited none of
                 them is done, and the notice says why.
             </li>

@@ -170,11 +170,11 @@ public sealed partial class Workbook
                 done = sheetsEdit.Apply(this, target);
                 return (done.Sheet, done.Change);
             });
-            return new WorkbookStep(done!.Sheet, change, () => Collecting(done.Sheet, done.Undo), () => Collecting(done.Sheet, done.Redo));
+            return new WorkbookStep(done!.Sheet, change, () => Collecting(done.Sheet, done.Undo), () => Collecting(done.Sheet, done.Redo), []);
         }
         SheetStep? step = null;
         var made = Collecting(target, () => (step = target.Do(edit)).Change);
-        return new WorkbookStep(target, made, () => Collecting(target, step!.Undo), () => Collecting(target, step!.Redo));
+        return new WorkbookStep(target, made, () => Collecting(target, step!.Undo), () => Collecting(target, step!.Redo), edit.Ranges);
     }
 
     /// <summary>Whether <see cref="Do"/> would refuse <paramref name="edit"/> on the Sheet named <paramref name="sheet"/> as it stands, and why; <see langword="null"/> when it would not.</summary>
@@ -362,10 +362,11 @@ public sealed class WorkbookStep
     private readonly Func<WorkbookChange> _undo;
     private readonly Func<WorkbookChange> _redo;
 
-    internal WorkbookStep(Sheet sheet, WorkbookChange change, Func<WorkbookChange> undo, Func<WorkbookChange> redo)
+    internal WorkbookStep(Sheet sheet, WorkbookChange change, Func<WorkbookChange> undo, Func<WorkbookChange> redo, IReadOnlyList<CellRange> ranges)
     {
         Sheet = sheet;
         Change = change;
+        Ranges = ranges;
         _undo = undo;
         _redo = redo;
     }
@@ -375,6 +376,16 @@ public sealed class WorkbookStep
 
     /// <summary>What doing the operation changed.</summary>
     public WorkbookChange Change { get; }
+
+    /// <summary>
+    /// The ranges the operation changed on <see cref="Sheet"/>, the one it acted from first: what an
+    /// undo or a redo of it selects, as Excel's do (ADR-0331 §3). The cells an edit or a paste wrote, a
+    /// fill's source with what it filled, the ranges a Cell Format was set on, the whole columns a width
+    /// was set on, and the whole rows or columns inserted or deleted; for cells named one by one, the
+    /// smallest range that holds them. None for an operation on the Sheets themselves (adding, deleting,
+    /// renaming, moving or copying one), which changes no cells of its own.
+    /// </summary>
+    public IReadOnlyList<CellRange> Ranges { get; }
 
     /// <summary>Whether the step is currently undone.</summary>
     public bool IsUndone { get; private set; }
