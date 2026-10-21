@@ -165,3 +165,19 @@ on Chrome Server at 150 ms RTT floor and fourfold CPU throttling, three under ea
 The heading investigation remains pinned to `9a4ed03a` so this unrelated main update cannot
 change its reproduction. These integration passes do not resolve the heading stop or replace
 the required fifteen-spec gate.
+
+
+## IME main integration, 2026-10-21
+
+Main `eb025772` (PR #230) is integrated through responsive branch `6248c835` and stage 03
+`d926cd48`. The focus listener now passes the scroller's native focus to the Keyboard Field
+immediately, as main decided. Only generated assets conflicted; both merges regenerated
+them from their integrated Assets sources. Integration review found no actionable findings.
+
+All eighteen logic/component suites pass: 14,895 passed, 11 skipped. Fifteen targeted
+Chrome Server executions pass with a 150 ms RTT floor and fourfold CPU throttling: the
+new composition-on-a-just-pressed-cell regression and Point preservation under both Chromes,
+and text committed by a row press, three repetitions each. This integration adds no new
+Consumer behavior beyond main's documented IME correction; no additional Docs Site example
+or Change Note is needed for the merge itself. Latest-revision CI and the fifteen-spec
+related-input gate remain required; the Heading renderer investigation remains open.

@@ -110,3 +110,9 @@ input timing and avoids a native debugger creating the failure it is meant to ex
 original gesture bodies are byte-for-byte unchanged. Six local Chrome Server executions
 passed; the diagnostic delta was reviewed, and the stale import found in review was removed.
 This remains isolated diagnostic code, not a product fix.
+
+The fixed-.84 full-sequence job (119212430493 in 39597224314) completed 1,400
+executions with no failure in 23 minutes. That non-reproduction does not close the defect.
+The after-failure-only probe is isolated at `1e5bca80`, run
+[39599811038](https://github.com/AkiraMisawa/ex-grid/actions/runs/39599811038); the product
+PR retains its existing assertions while this investigation continues.
