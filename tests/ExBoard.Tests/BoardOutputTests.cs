@@ -178,12 +178,16 @@ public sealed class BoardOutputTests : BunitContext
         Assert.Null(raised);
         Assert.Equal("Select the rows to hand on first.", status());
 
+        // A press on the grid's second row, so the grid itself holds the selection the confirm reads; the
+        // stretched viewport's size is the browser's to report.
         var grid = cut.FindComponent<ExGrid.Components.ExGrid<ExGrid.ShapedRow>>();
-        await cut.InvokeAsync(() => grid.Instance.SelectionChanged.InvokeAsync(Rows(1)));
-        Assert.Equal("", status());
+        await cut.InvokeAsync(() => grid.Instance.OnViewportReportAsync(0, 0, 400, 200));
+        await cut.Find("[data-ex-view=blotter] .ex-viewport").MouseDownAsync(
+            new Microsoft.AspNetCore.Components.Web.MouseEventArgs { Button = 0, Buttons = 1, OffsetX = 10, OffsetY = 30 });
         Assert.Null(raised);
 
         await cut.InvokeAsync(() => confirm().Click());
+        Assert.Equal("", status());
         Assert.Equal([["T-2", new DateTime(2026, 10, 20)]], raised!.Condition.Values);
     }
 }
