@@ -12,8 +12,9 @@ using PivotComponent = ExPivot.Components.ExPivot;
 namespace ExPivot.Components.Tests;
 
 /// <summary>
-/// Find in ExPivot (ADR-0332 §1): Ctrl+F over the report as shown. Every cell the report lays out —
-/// row and column labels, values and totals — is matched on its displayed text; a collapsed group is
+/// Find in ExPivot (ADR-0332 §1): Ctrl+F over the report as shown. Every cell the report's grid lays
+/// out — row labels, values and totals — is matched on its displayed text (the column labels stand in
+/// the grid's headers, which Find cannot land on, and are not searched); a collapsed group is
 /// not searched inside, and nothing is expanded to show a match. The rows outside the Window are read
 /// from the report source by the Report Version on screen. The painted matches are marked by the
 /// reference rule over the same text (ADR-0332 §4).
@@ -44,6 +45,10 @@ public sealed class FindTests : PivotTestContext
 
     private static CellPosition Focus(IRenderedComponent<PivotComponent> cut)
         => Grid(cut).Instance.ReadSelection().Selection.Focus;
+
+    /// <summary>The Focus, or null while nothing is selected.</summary>
+    private static CellPosition? FocusOrNone(IRenderedComponent<PivotComponent> cut)
+        => Grid(cut).Instance.ReadSelection().Selection is { IsEmpty: false } selection ? selection.Focus : null;
 
     private static string Outcome(IRenderedComponent<PivotComponent> cut)
         => Grid(cut).Find(".ex-find-outcome").TextContent.Trim();
@@ -265,5 +270,204 @@ public sealed class FindTests : PivotTestContext
         await PreviousAsync(cut);
         cut.WaitForAssertion(() => Assert.Equal(new CellPosition(11990, 0), Focus(cut)));
         Assert.Single(copies);
+    }
+
+    // ---- Ctrl+H, and a step that cannot go on (ADR-0332 §1/§2, ADR-0025) ---------------------------
+
+    /// <summary>What the Pivot Toolbar says of the user's last gesture, or null.</summary>
+    private static string? Notice(IRenderedComponent<PivotComponent> cut)
+        => cut.FindAll(".ex-pivot-refusal-notice") is { Count: 1 } notices ? notices[0].TextContent.Trim() : null;
+
+    [Fact] // ADR-0332 §2: a report is not written, so Ctrl+H opens nothing, and ExPivot says so in Excel's words
+    public async Task ADR0332_ctrl_h_on_the_report_is_refused_and_said()
+    {
+        var cut = RenderPivot(RegionAmount);
+
+        await PressAsync(cut, "h", ctrl: true);
+
+        Assert.Empty(Grid(cut).FindAll(".ex-popover-find"));
+        cut.WaitForAssertion(() => Assert.Equal("Cannot change this part of a PivotTable report.", Notice(cut)));
+        Assert.Equal("Cannot change this part of a PivotTable report.", PivotWords.EnglishFor("replace-unavailable"));
+        Assert.Equal("alert", cut.Find(".ex-pivot-refusal-notice").GetAttribute("role"));
+    }
+
+    [Fact] // ADR-0332 §2 and ADR-0060: the refusal of Ctrl+H is Excel's Japanese edition's under PivotWords.Japanese
+    public async Task ADR0332_ctrl_h_is_refused_in_the_japanese_words()
+    {
+        var cut = RenderPivot(RegionAmount, ps => ps.Add(p => p.Label, PivotWords.Japanese));
+
+        await PressAsync(cut, "h", ctrl: true);
+
+        cut.WaitForAssertion(() => Assert.Equal("ピボットテーブル レポートのこの部分は変更できません。", Notice(cut)));
+    }
+
+    /// <summary>A report computed by a "server" over <see cref="LiveSource"/>, whose Copy — what Find
+    /// reads the report through — the test answers, holds or replaces; redrawn at once on a change.</summary>
+    private (IRenderedComponent<PivotComponent> Cut, LiveSource Live, HeldCopies Copies) RenderOverServer(IReadOnlyList<Sale>? records = null)
+    {
+        var live = new LiveSource(records);
+        var server = PivotReportSource.From(live);
+        var copies = new HeldCopies(server);
+        var remote = PivotReportSource.Fetch(server.Fields, server.Features, server.UpdateMode, server.WindowAsync,
+            items: server.RawItemsAsync, reportItems: server.ItemsAsync, copy: copies.CopyAsync,
+            summary: server.SummaryAsync, details: server.DetailsAsync);
+        live.Changed += change => remote.NotifyChanged(change.SourceVersion);
+        var cut = RenderPivot(RegionAmount, ps => ps.Add(p => p.RedrawInterval, TimeSpan.Zero), reportSource: remote);
+        cut.WaitForAssertion(() => Assert.NotEmpty(RowTexts(cut)));
+        return (cut, live, copies);
+    }
+
+    /// <summary>The sales with East's first sale at <paramref name="amount"/>: East's total is that
+    /// plus 80.</summary>
+    private static Sale[] EastAt(decimal amount) => [Sales[0] with { Amount = amount }, .. Sales[1..]];
+
+    private static PivotReportCopyResult NotHeld(PivotReportCopyQuery query)
+        => new(query.Version, [], new PivotReportRefusal(PivotReportRefusalKind.ReportVersionNotHeld, "Not held."));
+
+    /// <summary>Moves the data on while a step is out, and waits for the report on screen to show it.</summary>
+    private static async Task MoveOnAsync(IRenderedComponent<PivotComponent> cut, LiveSource live, decimal eastAmount)
+    {
+        var before = cut.Instance.Report!.Metadata.Version;
+        await cut.InvokeAsync(() => live.Publish(EastAt(eastAmount)));
+        cut.WaitForAssertion(() => Assert.Equal($"East | {eastAmount + 80}", RowTexts(cut)[0]));
+        Assert.NotEqual(before, cut.Instance.Report!.Metadata.Version);
+    }
+
+    [Fact] // ADR-0332 §1 and ADR-0025: a source that refuses to be read is said on the Pivot Toolbar, and the step is given up — nothing moves, and no "No match" is claimed
+    public async Task ADR0332_a_copy_refusal_is_said_and_the_step_is_given_up()
+    {
+        var (cut, _, copies) = RenderOverServer();
+        copies.Answer = query => new(query.Version, [], new PivotReportRefusal(PivotReportRefusalKind.SourceRefused, "The server is busy."));
+        await PressAsync(cut, "f", ctrl: true);
+        var focus = FocusOrNone(cut);
+
+        await TypeAsync(cut, "west");
+        await NextAsync(cut);
+
+        cut.WaitForAssertion(() => Assert.Equal("The source refused to answer: The server is busy.", Notice(cut)));
+        Assert.Equal("", Outcome(cut));
+        Assert.Equal(focus, FocusOrNone(cut));
+        Assert.Single(Grid(cut).FindAll(".ex-popover-find"));
+    }
+
+    [Fact] // ADR-0332 §1 and ADR-0025: a source that no longer holds the report on screen is said, and the step is given up
+    public async Task ADR0332_a_report_on_screen_the_source_no_longer_holds_is_said()
+    {
+        var (cut, _, copies) = RenderOverServer();
+        copies.Answer = NotHeld;
+        await PressAsync(cut, "f", ctrl: true);
+        var focus = FocusOrNone(cut);
+
+        await TypeAsync(cut, "west");
+        await NextAsync(cut);
+
+        cut.WaitForAssertion(() => Assert.Equal("The source no longer holds the report shown: refresh, then find again.", Notice(cut)));
+        Assert.Equal("", Outcome(cut));
+        Assert.Equal(focus, FocusOrNone(cut));
+    }
+
+    [Theory] // ADR-0332 §1 and ADR-0011: a live update under the same order while a step reads — the old version's cells answered, or no longer held — is searched again over the report now shown, never answered from the old one
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task ADR0332_a_step_under_a_live_update_searches_the_report_now_shown(bool notHeld)
+    {
+        var (cut, live, copies) = RenderOverServer();
+        await PressAsync(cut, "f", ctrl: true);
+        await TypeAsync(cut, "999");
+        var order = Grid(cut).Instance.RowSequenceVersion;
+
+        copies.Hold = true;
+        var step = NextAsync(cut);
+        var (query, reply) = await copies.NextHeldAsync();
+        copies.Hold = false;
+        // East becomes 999 while the step reads the report before it, where nothing shows 999.
+        await MoveOnAsync(cut, live, 919);
+        Assert.Equal(order, Grid(cut).Instance.RowSequenceVersion);
+        reply.SetResult(notHeld ? NotHeld(query) : await copies.ServerAsync(query));
+        await step;
+
+        cut.WaitForAssertion(() => Assert.Equal(new CellPosition(0, 1), Focus(cut)));
+        // The first read was of the version replaced; the step ends reading the version now shown.
+        Assert.NotEqual(cut.Instance.Report!.Metadata.Version, copies.Asked[0].Version);
+        Assert.Equal(cut.Instance.Report!.Metadata.Version, copies.Asked[^1].Version);
+        Assert.Null(Notice(cut));
+    }
+
+    [Fact] // ADR-0332 §1 and ADR-0025: a report that keeps changing under a step is searched again a bounded number of times, then said, and the step given up
+    public async Task ADR0332_a_report_that_keeps_changing_is_said_after_three_searches()
+    {
+        var (cut, live, copies) = RenderOverServer();
+        await PressAsync(cut, "f", ctrl: true);
+        await TypeAsync(cut, "no such text");
+        var focus = FocusOrNone(cut);
+
+        copies.Hold = true;
+        var step = NextAsync(cut);
+        foreach (var amount in new[] { 300m, 400m, 500m })
+        {
+            var (query, reply) = await copies.NextHeldAsync();
+            await MoveOnAsync(cut, live, amount);
+            reply.SetResult(NotHeld(query));
+        }
+        await step;
+
+        cut.WaitForAssertion(() => Assert.Equal("The report kept changing while it was searched: find again.", Notice(cut)));
+        Assert.Equal(3, copies.Asked.Count);
+        Assert.Equal("", Outcome(cut));
+        Assert.Equal(focus, FocusOrNone(cut));
+    }
+
+    [Fact] // ADR-0332 §1 and ADR-0055: a long walk is given up between its reads once the panel closes — nothing further is read, and nothing moves
+    public async Task ADR0332_closing_the_panel_stops_a_long_walk()
+    {
+        var records = Enumerable.Range(0, 12_000).Select(i => new Sale($"R{i:00000}", "Apples", i, 1, true)).ToArray();
+        var (cut, _, copies) = RenderOverServer(records);
+        await PressAsync(cut, "f", ctrl: true);
+        await TypeAsync(cut, "R11999");
+        var focus = FocusOrNone(cut);
+
+        copies.Hold = true;
+        var step = NextAsync(cut);
+        var (query, reply) = await copies.NextHeldAsync();
+        copies.Hold = false;
+        await PressAsync(cut, "Escape", fromDescendant: true);
+        Assert.Empty(Grid(cut).FindAll(".ex-popover-find"));
+        reply.SetResult(await copies.ServerAsync(query));
+        await step;
+
+        Assert.Single(copies.Asked);
+        Assert.Equal(focus, FocusOrNone(cut));
+        Assert.Null(Notice(cut));
+    }
+
+    /// <summary>Copy, as a server's transport: answered by the server, by <see cref="Answer"/>, or
+    /// held for the test while <see cref="Hold"/>.</summary>
+    private sealed class HeldCopies(PivotReportSource server)
+    {
+        private readonly System.Threading.Channels.Channel<(PivotReportCopyQuery, TaskCompletionSource<PivotReportCopyResult>)> _held =
+            System.Threading.Channels.Channel.CreateUnbounded<(PivotReportCopyQuery, TaskCompletionSource<PivotReportCopyResult>)>();
+
+        public bool Hold { get; set; }
+
+        public Func<PivotReportCopyQuery, PivotReportCopyResult>? Answer { get; set; }
+
+        public List<PivotReportCopyQuery> Asked { get; } = [];
+
+        public async ValueTask<PivotReportCopyResult> CopyAsync(PivotReportCopyQuery query, CancellationToken cancellationToken)
+        {
+            lock (Asked) Asked.Add(query);
+            if (Hold)
+            {
+                var reply = new TaskCompletionSource<PivotReportCopyResult>(TaskCreationOptions.RunContinuationsAsynchronously);
+                _held.Writer.TryWrite((query, reply));
+                return await reply.Task;
+            }
+            return Answer?.Invoke(query) ?? await server.CopyAsync(query, cancellationToken);
+        }
+
+        public async Task<(PivotReportCopyQuery Query, TaskCompletionSource<PivotReportCopyResult> Reply)> NextHeldAsync()
+            => await _held.Reader.ReadAsync().AsTask().WaitAsync(TimeSpan.FromSeconds(5));
+
+        public Task<PivotReportCopyResult> ServerAsync(PivotReportCopyQuery query) => server.CopyAsync(query).AsTask();
     }
 }

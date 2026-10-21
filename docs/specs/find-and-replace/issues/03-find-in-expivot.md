@@ -7,7 +7,7 @@ Roadmap: ExPivot — Ctrl+F finds a label or a value in the report as shown.
 
 - [x] ExPivot answers Find over the laid-out cells, by displayed text; collapsed groups not searched, nothing expanded
 - [x] Passes the reference match function, so matches are marked
-- [ ] Ctrl+H refused and said
+- [x] Ctrl+H refused and said
 - [x] Both Chromes; layer 2 and layer 3; Docs Site and Change Note
 
 **Blocked by:** 01 (done). The Ctrl+H item waits on 02, which gives ExGrid Ctrl+H and its refusal.
@@ -24,3 +24,15 @@ Roadmap: ExPivot — Ctrl+F finds a label or a value in the report as shown.
   Once 02 is merged, ExPivot binds `OnFindRefused` on the report grid and says that refusal in a live
   region in a word of its own (English and Japanese), with layer 2 and layer 3 tests and a sentence on
   the Layout page.
+- 2026-10-21: With 02 merged, Ctrl+H is refused and said: the report grid's `OnFindRefused` hears
+  `ReplaceUnavailable`, and the Pivot Toolbar says "Cannot change this part of a PivotTable report."
+  (`replace-unavailable`, in English and Japanese). A step that cannot read the report — the source
+  refuses, answers another version or range, no longer holds the report on screen, or the report keeps
+  changing across three searches — is said on the Pivot Toolbar and given up, moving nothing; a live
+  update while a step reads is searched again over the report now shown. For that, ExGrid now takes an
+  `OperationCanceledException` thrown by `OnFind` as a step its Consumer gave up, not as a crash.
+- 2026-10-21: **Awaiting a decision: column labels.** ADR-0332 §1 names the column labels among what
+  Find searches, but in ExPivot the column Items and the value captions stand in the report grid's
+  headers, and ExGrid's Find lands only on cells. They are not searched today; the Layout page, the
+  READMEs and the Change Note say so. Whether Find reaches the headers (and how a header match is
+  shown) is an ADR question put to the user; the first item stays ticked for what the cells cover.

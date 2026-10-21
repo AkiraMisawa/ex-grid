@@ -221,6 +221,29 @@ public class FindTests : GridTestContext
         Assert.NotEqual(new CellPosition(5, 0), heard.Selection?.IsEmpty == false ? heard.Selection.Focus : default);
     }
 
+    [Fact] // ADR-0055 / ADR-0025: a step the Consumer gives up by throwing OperationCanceledException moves nothing, is not said as "No match", and the panel stays usable
+    public async Task A_step_the_consumer_gives_up_moves_nothing_and_claims_no_match()
+    {
+        var heard = new Heard();
+        var calls = 0;
+        var cut = RenderGrid(heard, (_, _) => ++calls == 1
+            ? throw new OperationCanceledException("The source refused to be read.")
+            : Task.FromResult(GridFindResult.Found(4, "Book")));
+        await ClickCellAsync(cut, 50, 10);
+        await PressAsync(cut, "f", ctrl: true);
+        var focus = heard.Selection!.Focus;
+
+        await SearchAsync(cut, "Row");
+
+        Assert.Equal(focus, heard.Selection!.Focus);
+        Assert.Empty(heard.Refusals);
+        Assert.Equal("", cut.Find(".ex-find-outcome").TextContent.Trim());
+        Assert.Single(cut.FindAll(".ex-popover-find"));
+
+        await cut.Find("button.ex-find-next").ClickAsync(new MouseEventArgs());
+        Assert.Equal(new CellPosition(4, 0), heard.Selection!.Focus);
+    }
+
     [Fact] // ADR-0055 / FD-6: a step asked while one is out cancels it, and its answer is discarded
     public async Task A_new_step_cancels_the_one_that_is_out()
     {

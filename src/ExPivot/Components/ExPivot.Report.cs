@@ -145,6 +145,7 @@ public partial class ExPivot
         _summarize = SummarizeReportAsync;
         _copyAnswer = CopyReportAsync;
         _find = FindInReportAsync;
+        _findRefused = new EventCallback<ExGrid.Finding.FindRefusalReason>(null, (Func<ExGrid.Finding.FindRefusalReason, Task>)OnFindRefusedAsync);
         _rangeNeeded = new EventCallback<RowRange>(null, (Func<RowRange, Task>)WindowNeededAsync);
         _summaryFiguresChanged = new EventCallback<SummaryFigures>(null, (Func<SummaryFigures, Task>)OnSummaryFiguresChangedAsync);
         _gridFragment = RenderGrid;
@@ -473,7 +474,10 @@ public partial class ExPivot
         // (ADR-0332 §1 and §4). A report is not written, so no Replace is offered (§2).
         builder.AddComponentParameter(38, nameof(ExGrid<PivotDisplayRow>.OnFind), _find);
         builder.AddComponentParameter(39, nameof(ExGrid<PivotDisplayRow>.FindMatch), ReportMatch);
-        builder.AddComponentReferenceCapture(40, grid => _grid = (ExGrid<PivotDisplayRow>)grid);
+        // Ctrl+H on a report is refused by the grid, which has no Replace to offer here, and said by
+        // ExPivot (ADR-0332 §2).
+        builder.AddComponentParameter(40, nameof(ExGrid<PivotDisplayRow>.OnFindRefused), _findRefused);
+        builder.AddComponentReferenceCapture(41, grid => _grid = (ExGrid<PivotDisplayRow>)grid);
         builder.CloseComponent();
     }
 

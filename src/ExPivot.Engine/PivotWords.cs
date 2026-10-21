@@ -319,6 +319,15 @@ public static class PivotWords
         // are as of (ADR-0067/0152). {0} the time of the version shown, as the notice writes it.
         ["copy-stale-report"] = "The report shows the data as of {0}: Retry before copying.",
 
+        // Find over the report (ADR-0332 §1), said on the Pivot Toolbar where it cannot go on: the
+        // source no longer holds the report shown, it answered with another version or range than
+        // asked, or the report kept changing under the search. Replace (Ctrl+H) refused, in Excel's
+        // own words for a write to a PivotTable (§2).
+        ["find-report-not-held"] = "The source no longer holds the report shown: refresh, then find again.",
+        ["find-invalid-answer"] = "The source answered the search with another version or range than it was asked.",
+        ["find-report-changing"] = "The report kept changing while it was searched: find again.",
+        ["replace-unavailable"] = "Cannot change this part of a PivotTable report.",
+
         // Show Details: the tabs at the report's foot and the dialog (ADR-0059).
         ["details-title"] = "Details: {0}",
         ["report-tab"] = "PivotTable",
@@ -509,6 +518,10 @@ public static class PivotWords
         ["summary-another-version"] = "集計への応答が、別のバージョンのレポートのものでした。",
         ["summary-inconsistent-errors"] = "集計への応答で、エラーの数が食い違っていました。",
         ["copy-stale-report"] = "レポートは {0} 時点のデータを表示しています。コピーする前に再試行してください。",
+        ["find-report-not-held"] = "ソースは表示中のレポートを保持していません。更新してから、もう一度検索してください。",
+        ["find-invalid-answer"] = "ソースが検索に対して、要求と異なるバージョンまたは範囲で応答しました。",
+        ["find-report-changing"] = "検索中にレポートが変更され続けました。もう一度検索してください。",
+        ["replace-unavailable"] = "ピボットテーブル レポートのこの部分は変更できません。",
 
         ["details-title"] = "詳細: {0}",
         ["report-tab"] = "ピボットテーブル",
