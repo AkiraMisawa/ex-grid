@@ -55,3 +55,58 @@ frames; on Linux, process state and native stacks are requested only for rendere
 by this browser's process list. The probe is disarmed when the test finishes. The wrapped
 gesture passed three local repetitions on Chrome Server. These diagnostics are evidence
 collection for the next CI run, not a product fix or a replacement completion condition.
+
+## Column Heading observation in the focused diagnostic
+
+The pinned Server diagnostic [39588334803](https://github.com/AkiraMisawa/ex-grid/actions/runs/39588334803)
+used product revision `9a4ed03a`, Chrome 155.0.8059.84 and Edge 155.0.4283.62. Edge passed all
+1,400 executions (14 tests, 100 repetitions). Chrome passed 1,399, but the Column Heading
+right-edge drag failed on repetition 5 (the sixth run), job 119182726414. The test's two first
+scroll readings returned zero; its next locator read never returned. The 10-second assertion
+expired, and teardown's Input Journal read then stopped for five minutes. The final screenshot
+shows an eight-column whole-column Selection. This is another stopped-renderer observation,
+not a final scroll-position reading after a completed gesture.
+
+The temporary probe covered only the Row Heading test, so this Column Heading failure has no
+native stack. The Row Heading repetitions and the Edge pass do not establish a fix. The new
+trace is `headings-DC-43-a-Column-He-c78b9-lls-sideways-and-never-down-chrome-repeat5/trace.zip`
+in `heading-native-chrome` from that run.
+
+A further isolated diagnostic, [39593331016](https://github.com/AkiraMisawa/ex-grid/actions/runs/39593331016),
+wraps both edge drags. It leaves the debugger disabled during the original gesture, requests
+stacks after three seconds, and awaits and retains a started native capture even if the
+assertion times out first. One job retains the full heading sequence; another selects only
+the two edge drags to seek a smaller reproduction. Each stops at its first failure to collect
+evidence promptly. The unchanged assertions remain the verdict; this is not a completion gate.
+The wrapped gestures passed six local Chrome Server executions (three each), and the capture
+and cleanup delta was reviewed without actionable findings. Its code is isolated on diagnostic
+branch `c7944285`; it does not change the product PR's test behavior.
+
+An auxiliary local run used a headed Linux ARM64 Chromium 151.0.7922.34 container against
+this worktree's macOS Server host (`fcd295ba` integrated). Both original edge gestures passed
+100 repetitions each (200 executions); the watchdog did not fire. This is additional
+non-reproduction evidence, not the CI browser/version or a verification substitute. The
+container and the dedicated local host/proxy were stopped after the run.
+
+The full-sequence job in 39593331016 passed all 1,400 executions, but its setup log revealed
+Chrome **155.0.8059.39**, whereas the reproduced Column Heading failure used **155.0.8059.84**.
+The edge-only job used .39 too; it was stopped to collect its partial record and align the
+browser version. This difference is evidence about the environment, not proof of a browser
+regression. The full-sequence artifact contains no fired watchdog record.
+
+Diagnostic [39597224314](https://github.com/AkiraMisawa/ex-grid/actions/runs/39597224314), isolated
+branch `74f99f90`, installs and checks the exact official Chrome .84 package before either run.
+It keeps the full-sequence and edge-only scopes and stops at the first failure. Its 60-second
+diagnostic test bound shortens evidence collection; the product PR's assertions and timeouts
+are unchanged, and this run is not a completion gate. The native capture is independent of CDP.
+A disposable JavaScript busy-loop check showed that enabling the debugger after a stop cannot
+reliably retrieve JavaScript frames; native stacks are therefore the next evidence to read.
+Official .84 debug symbols are available for decoding those native addresses.
+
+A subsequent probe removes all setup before the gesture and all watchdog inspection during
+the original assertion. An `afterEach` hook gathers the browser's current renderer PIDs and
+native stacks only after an edge-drag test has already failed. This avoids changing the
+input timing and avoids a native debugger creating the failure it is meant to explain. The
+original gesture bodies are byte-for-byte unchanged. Six local Chrome Server executions
+passed; the diagnostic delta was reviewed, and the stale import found in review was removed.
+This remains isolated diagnostic code, not a product fix.
