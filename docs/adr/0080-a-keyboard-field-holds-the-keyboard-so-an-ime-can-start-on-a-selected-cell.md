@@ -124,6 +124,18 @@ display-only grid has none, and keeps the keyboard on its root, as before.
   key. The core's hand-back of the keyboard (ADR-0021's notes, `reclaimFocus`) puts it in the field.
   Every place that asks whether this grid holds the keyboard asks whether DOM focus is inside the
   root, as ADR-0018 section 6 already does.
+  *(2026-10-21: so is focus that lands on the scroller.* A press on the rows takes DOM focus to the
+  scroller by its default, and the scroller's hand-on was the core's (`OnScrollerFocusAsync`), a round
+  trip later on a circuit; only that hand-on's arrival at the root was passed on in script. Until it
+  landed, the keyboard was the scroller's, which takes no IME, so a composition begun and ended on a
+  cell just pressed composed nowhere and its text was lost without a word. ED-30's "the hold" read
+  `です` for `かなです` in CI on the Server host: the first press of the page, its `かな` composed
+  before the hand-on had landed and `です` after. Where no field of the grid's had held the keyboard
+  before, Chrome had no editable element to give the composition to. The scroller's focus is now
+  passed on to the field at once, in the same listener, so the IME has the field from the press on,
+  whatever the round trip; the core's hand-on then finds the keyboard already there. The test holds
+  the host's answers until the IME is done, which failed every time before. No listener is added and
+  no layout is read.)
 - **The root's focus ring stays KB-12's.** A text field matches `:focus-visible` on every focus, a
   click's too, so the field cannot say "the keyboard arrived by the keyboard". The script marks the
   root while its field holds the keyboard and did not get it from a press on the grid, and the

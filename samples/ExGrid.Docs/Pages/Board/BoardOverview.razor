@@ -155,9 +155,24 @@
         <p>
             A selection is read from the rows fetched. One that reaches rows the grid has not fetched, a Ctrl+A over
             twenty thousand trades, narrows nothing and hands nothing on, and the Board says so under the grid rather
-            than read part of it. An output hands on the version of the page its rows were read from. A chart over an
-            input held on a server, and a link from a pivot over one, are refused by path for now: a chart waits for a
-            source that thins where the data lives, and the rows under a pivot's cell are on the server.
+            than read part of it. An output hands on the version of the page its rows were read from.
+        </p>
+        <p>
+            A chart over such an input asks the source's <code>Thin</code> for its points: a column across, a column of
+            values, a range and 2,048 pixels (<code>BoundBoard.ChartPixels</code>), answered as
+            <code>ChartSource.Thin</code> answers, each pixel keeping its first, last, lowest and highest row. Only those
+            cross to the browser, and the tooltip still counts every row under a pixel. The chart is asked again when a
+            link narrows it and when you narrow its range, which is then drawn at full detail; an answer a later ask
+            has replaced is dropped. It saves no CSV and shows no table, which would be the points kept dressed as the
+            data. A series it cannot thin, an observation's points or a colour per point, is refused by path.
+        </p>
+        <p>
+            A link from a pivot over such an input asks the source's <code>Under</code> for the values under the cells
+            selected, since the rows are on the server: a subtotal or the grand total stands for every Item below it.
+            <code>BoardSource.ValuesUnder</code> is the reference a server answers as. The views the link reaches keep
+            their rows until the answer comes. A source with no <code>Thin</code> under a chart, or no
+            <code>Under</code> under such a link, is refused at binding. Select FX in the pivot below and the chart is
+            FX's; select the Grand Total and it is every desk's again.
         </p>
         <DocsExample Builtin="typeof(ServerBoardBuiltin)" Mud="typeof(ServerBoardMud)" Files="@(["Examples/Board/ServerBoard.cs"])" />
     </DocsSection>

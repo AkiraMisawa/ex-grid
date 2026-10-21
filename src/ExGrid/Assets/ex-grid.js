@@ -3279,11 +3279,6 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             root.toggleAttribute('data-ex-focus-visible', on);
         }
     };
-    // Focus that lands on the root itself — a press on a part of it that takes no focus of its
-    // own, a Consumer's or the scroller's hand-back — goes on to the Keyboard Field at once, before
-    // the next key: Blazor's own focus would land a round trip later on a circuit. One of the five
-    // decisions about focus made in script (ADR-0021). Heard in the capture phase, where the
-    // field's own focus, which does not bubble, is heard too.
     // The keyboard crossing the Input Root's edge (ADR-0240 sections 1 and 6; GridInputKind.KeyboardIn
     // and KeyboardOut), told as it crosses where the Input Root claims it (data-ex-claims: focusin,
     // focusout): the handler that hears it — ExSheet's word to its Pointing Scope of whether it holds the
@@ -3361,12 +3356,24 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // The claims (crossingClaims) the keyboard's arrival in the Input Root was told against, and its
     // departure not told since; null when none stands.
     let keyboardToldIn = null;
+    // Focus that lands on the root itself — a press on a part of it that takes no focus of its
+    // own, a Consumer's hand-back — goes on to the Keyboard Field at once, before the next key:
+    // Blazor's own focus would land a round trip later on a circuit. One of the five decisions
+    // about focus made in script (ADR-0021). Heard in the capture phase, where the field's own
+    // focus, which does not bubble, is heard too.
+    //
+    // So does focus that lands on this grid's own scroller, a press on the rows' default: the core
+    // hands it on (OnScrollerFocusAsync), a round trip later, and until then the keyboard was the
+    // scroller's, which takes no IME. A composition begun on the cell just pressed composed nowhere,
+    // and its text was lost: `かな` then `です` typed at once after a press read `です` (ED-30, the
+    // hold, Server host in CI; ADR-0080's note of 2026-10-21). Passed on here, the IME has the
+    // field from the press on, whatever the round trip, and the core's hand-on finds it there.
     const onFocused = (event) => {
         const field = keyFieldOf();
         if (field === null) {
             return;
         }
-        if (event.target === root) {
+        if (event.target === root || event.target === scroller) {
             field.focus({ preventScroll: true });
         } else if (event.target === field) {
             markFocusVisible(!keyboardByPress);

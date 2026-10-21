@@ -189,7 +189,7 @@ public partial class ExChart
         var previous = _scene;
         _scene = ChartScene.Build(Definition, _metrics, _view, AxisStyle, IndependentScales, Legend);
         _summary = ChartSummary.Of(Definition, _scene, _view, Title, Description);
-        _table = _tableOpen ? ChartCsv.WideTable(Definition, _metrics, _view) : null;
+        _table = _tableOpen && !ThinnedAtSource ? ChartCsv.WideTable(Definition, _metrics, _view) : null;
 
         if (definitionChanged || previous is null || !previous.Positions.Equals(_scene.Positions) || !previous.Marks.Equals(_scene.Marks)
             || !previous.Panels.Select(p => p.Plot).SequenceEqual(_scene.Panels.Select(p => p.Plot)))
@@ -401,7 +401,7 @@ public partial class ExChart
     private void ToggleTable()
     {
         _tableOpen = !_tableOpen;
-        _table = _tableOpen ? ChartCsv.WideTable(Definition, _metrics, _view) : null;
+        _table = _tableOpen && !ThinnedAtSource ? ChartCsv.WideTable(Definition, _metrics, _view) : null;
     }
 
     // The range typed under Chart Filters (ADR-0273), in the axis' own values. A value that does
@@ -566,7 +566,8 @@ public partial class ExChart
     /// Saves the chart as a file, as the user sees it: CSV of the visible series in the range shown,
     /// the SVG of the drawing, or that SVG painted to PNG at the screen's Device Pixel (ADR-0282).
     /// One call is one save. False when the chart's script is not loaded, which the chart says on
-    /// its face, or the circuit has gone.
+    /// its face, or the circuit has gone, and for a CSV of a chart its Chart Source thinned, which
+    /// would hold only the points drawn (ADR-0344).
     /// </summary>
     public async Task<bool> DownloadAsync(ChartFileFormat format)
     {
@@ -577,7 +578,7 @@ public partial class ExChart
         var metrics = _metrics;
         var view = _view;
         var summary = _summary;
-        if (module is null || _scriptRefused || _disposed) return false;
+        if (module is null || _scriptRefused || _disposed || (format == ChartFileFormat.Csv && ThinnedAtSource)) return false;
         var name = ChartFiles.Name(FileName, Title, format);
         try
         {
@@ -619,6 +620,17 @@ public partial class ExChart
     // A file needs the script: until it is told the first drawing, and when it is refused, the
     // buttons say so by being unavailable rather than doing nothing (spine rule 1).
     private bool FilesUnavailable => !_told || _scriptRefused;
+
+    // A chart whose Chart Source thinned it holds only the points drawn (ADR-0344): a CSV or a table of
+    // them would look like the data and not be it (spine rule 1), so neither is offered.
+    private bool ThinnedAtSource => Definition.Series.Any(s => s.Thinned.Count > 0);
+
+    private bool CsvUnavailable => FilesUnavailable || ThinnedAtSource;
+
+    private string? CsvTitle => ThinnedAtSource ? ThinnedAtSourceWords : null;
+
+    private const string ThinnedAtSourceWords =
+        "The rows are where the data lives: this chart holds only the points drawn, each pixel's first, last, lowest and highest, so it saves no CSV and shows no table.";
 
     // ---- The pointer entry (ADR-0255, thirteenth): imported at its versioned address, refused when
     // its stamp is not this build's (ADR-0123).

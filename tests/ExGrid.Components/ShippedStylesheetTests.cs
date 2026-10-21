@@ -1044,13 +1044,14 @@ public class ShippedStylesheetTests
         Assert.Matches(new Regex(@"if \(verdict === 'out'\) \{\s*(?://[^\n]*\n\s*)+core\?\.invokeMethodAsync\('OnHeldTabRefusedAsync', nextInput\(true\)\)"), script);
     }
 
-    [Fact] // ADR-0080 / ADR-0021 (decisions about focus): focus on the root itself goes on to its Keyboard Field, the hand-back puts the keyboard there, and DOM focus never moves while the field composes
+    [Fact] // ADR-0080 / ADR-0021 (decisions about focus): focus on the root itself, or on its scroller, goes on to its Keyboard Field, the hand-back puts the keyboard there, and DOM focus never moves while the field composes
     public void ADR0080_the_keyboard_goes_to_the_field_and_never_moves_while_it_composes()
     {
         var script = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.js", StringComparison.Ordinal)).Text;
 
-        // The root's own focus, passed on at once, without scrolling; heard in the capture phase.
-        Assert.Matches(new Regex(@"if \(event\.target === root\) \{\s*field\.focus\(\{ preventScroll: true \}\);"), ListenerBody(script, "onFocused"));
+        // The root's own focus and its scroller's — a press on the rows' default — passed on at once,
+        // without scrolling; heard in the capture phase (ADR-0080's note of 2026-10-21).
+        Assert.Matches(new Regex(@"if \(event\.target === root \|\| event\.target === scroller\) \{\s*field\.focus\(\{ preventScroll: true \}\);"), ListenerBody(script, "onFocused"));
         // The hand-back: the field where the grid has one, the root where it has none.
         var reclaim = Regex.Match(script, @"reclaimFocus: \(fromField, frame\) => \{.*?\n        \},", RegexOptions.Singleline).Value;
         Assert.Contains("(keyFieldOf() ?? root).focus({ preventScroll: true });", reclaim, StringComparison.Ordinal);
