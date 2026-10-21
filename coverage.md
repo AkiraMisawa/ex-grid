@@ -3,7 +3,7 @@
 | Product | Line | Branch |
 |---|---|---|
 | ExGrid | 95.6% | 88.4% |
-| ExSheet | 95.7% | 88.7% |
+| ExSheet | 95.7% | 88.6% |
 | ExPivot | 94.4% | 85.3% |
 | ExChart | 89.6% | 80.4% |
 | Data | 94.5% | 90.3% |
@@ -13,19 +13,19 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/20/2026 - 23:25:48 |
+| Generated on: | 10/21/2026 - 00:02:12 |
 | Parser: | MultiReport (16x Cobertura) |
 | Assemblies: | 13 |
 | Classes: | 1004 |
-| Files: | 527 |
-| **Line coverage:** | 94.7% (65925 of 69583) |
-| Covered lines: | 65925 |
+| Files: | 529 |
+| **Line coverage:** | 94.7% (65931 of 69589) |
+| Covered lines: | 65931 |
 | Uncovered lines: | 3658 |
-| Coverable lines: | 69583 |
-| Total lines: | 116361 |
-| **Branch coverage:** | 87.1% (39369 of 45166) |
-| Covered branches: | 39369 |
-| Total branches: | 45166 |
+| Coverable lines: | 69589 |
+| Total lines: | 116431 |
+| **Branch coverage:** | 87.1% (39361 of 45160) |
+| Covered branches: | 39361 |
+| Total branches: | 45160 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
@@ -368,8 +368,8 @@
 |ExGrid.IGridSource<TRow>|100%||
 |ExGrid.InMemoryGridSource.ChangePlan<TRow>|100%|100%|
 |ExGrid.InMemoryGridSource.Pending<TRow>|100%||
-|ExGrid.InMemoryGridSource<TRow>|93.5%|77.7%|
 |ExGrid.InMemoryGridSource<TRow>|96.5%|91.5%|
+|ExGrid.InMemoryGridSource<TRow>|93.5%|77.7%|
 |ExGrid.InputOrder|94%|82.6%|
 |ExGrid.InputOrder.Waiting|100%||
 |ExGrid.InputOrder<T>|94%|82.6%|
@@ -440,11 +440,11 @@
 |ExGrid.ViewStateDocument|100%||
 
 </details>
-<details><summary>ExGrid.Data - 94.6%</summary>
+<details><summary>ExGrid.Data - 94.7%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExGrid.Data**|**94.6%**|**90.6%**|
+|**ExGrid.Data**|**94.7%**|**90.6%**|
 |ExGrid.Data.AggregateAccumulator|86%|87.8%|
 |ExGrid.Data.AggregateArithmetic|96.5%|94.9%|
 |ExGrid.Data.AggregateResult|86.2%|55.5%|
@@ -533,7 +533,7 @@
 |ExGrid.Data.Storage.DoubleColumnWriter|100%||
 |ExGrid.Data.Storage.DoubleData|100%||
 |ExGrid.Data.Storage.DoubleObjectColumn<T>|100%|100%|
-|ExGrid.Data.Storage.FixedCodes|93.5%|75%|
+|ExGrid.Data.Storage.FixedCodes|96.7%|87.5%|
 |ExGrid.Data.Storage.Gather|98.8%|96.1%|
 |ExGrid.Data.Storage.Int32ObjectColumn<T>|82.3%|100%|
 |ExGrid.Data.Storage.IntegerColumnWriter|100%||
@@ -879,7 +879,7 @@
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExSheet**|**93%**|**84.8%**|
+|**ExSheet**|**93%**|**84.7%**|
 |ExSheet.AlignCenterItem|100%||
 |ExSheet.AlignLeftItem|100%||
 |ExSheet.AlignmentItem|100%|100%|
@@ -890,10 +890,10 @@
 |ExSheet.ColourItem|96%|100%|
 |ExSheet.CommaItem|83.3%||
 |ExSheet.Components.BrowserTurn|100%|83.3%|
-|ExSheet.Components.ExSheet|91%|82.9%|
+|ExSheet.Components.ExSheet|90.9%|82.6%|
 |ExSheet.Components.ExSheet.KeyboardListener|100%||
 |ExSheet.Components.ExSheet.KeyUpListener|100%||
-|ExSheet.Components.ExSheet<T>|91%|82.9%|
+|ExSheet.Components.ExSheet<T>|90.9%|82.6%|
 |ExSheet.Components.ExSheetStylesheet|100%||
 |ExSheet.Components.FormatCellsPanel|97.3%|87.5%|
 |ExSheet.DefaultToolbarRow|100%|50%|
@@ -997,7 +997,7 @@
 |ExSheet.Engine.Formulas.BinaryNode|100%||
 |ExSheet.Engine.Formulas.BooleanNode|100%||
 |ExSheet.Engine.Formulas.CorrectlyRounded|100%|89.2%|
-|ExSheet.Engine.Formulas.Draws|71.4%|25%|
+|ExSheet.Engine.Formulas.Draws|73.3%|50%|
 |ExSheet.Engine.Formulas.Dyadic|100%|89.4%|
 |ExSheet.Engine.Formulas.Enclosure|93.8%|79.6%|
 |ExSheet.Engine.Formulas.ErrorNode|100%||
@@ -1061,7 +1061,7 @@
 |ExSheet.Engine.RangeEdgeLines|100%||
 |ExSheet.Engine.ReferenceCycle|100%||
 |ExSheet.Engine.RepeatedKeyException|100%|88.8%|
-|ExSheet.Engine.Sheet|99.6%|96.4%|
+|ExSheet.Engine.Sheet|99.5%|96.4%|
 |ExSheet.Engine.Sheet.Cell|100%|100%|
 |ExSheet.Engine.Sheet.CellFormatOutcome|100%||
 |ExSheet.Engine.Sheet.CellFormatsOutcome|100%||
@@ -1103,7 +1103,7 @@
 |ExSheet.Engine.SheetRefusedException|100%|50%|
 |ExSheet.Engine.SheetStep|100%|100%|
 |ExSheet.Engine.Value|94.2%|79.4%|
-|ExSheet.Engine.Workbook|96.6%|91.3%|
+|ExSheet.Engine.Workbook|97.2%|92.6%|
 |ExSheet.Engine.Workbook.SheetRename|100%||
 |ExSheet.Engine.WorkbookChange|100%|100%|
 |ExSheet.Engine.WorkbookDocument|95.6%|85%|
