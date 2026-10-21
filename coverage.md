@@ -4,7 +4,7 @@
 |---|---|---|
 | ExGrid | 95.5% | 88.2% |
 | ExSheet | 95.6% | 88.4% |
-| ExPivot | 94.4% | 85.4% |
+| ExPivot | 94.4% | 85.5% |
 | ExChart | 89.9% | 80.6% |
 | ExBoard | 91.9% | 81.9% |
 | Data | 94.5% | 90% |
@@ -14,19 +14,19 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/21/2026 - 16:26:58 |
+| Generated on: | 10/21/2026 - 17:11:17 |
 | Parser: | MultiReport (19x Cobertura) |
 | Assemblies: | 14 |
 | Classes: | 1074 |
-| Files: | 557 |
-| **Line coverage:** | 94.6% (70693 of 74681) |
-| Covered lines: | 70693 |
-| Uncovered lines: | 3988 |
-| Coverable lines: | 74681 |
-| Total lines: | 124696 |
-| **Branch coverage:** | 86.9% (42196 of 48530) |
-| Covered branches: | 42196 |
-| Total branches: | 48530 |
+| Files: | 558 |
+| **Line coverage:** | 94.6% (70962 of 74954) |
+| Covered lines: | 70962 |
+| Uncovered lines: | 3992 |
+| Coverable lines: | 74954 |
+| Total lines: | 124940 |
+| **Branch coverage:** | 86.9% (42408 of 48768) |
+| Covered branches: | 42408 |
+| Total branches: | 48768 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
@@ -367,11 +367,11 @@
 |ExGrid.Components.ExGrid.TakenCopy<TRow, T>|94.4%|100%|
 |ExGrid.Components.ExGrid.TakenList<TRow>|100%||
 |ExGrid.Components.ExGrid.TakenMouseEventArgs<TRow>|100%||
-|ExGrid.Components.ExGrid<TRow>|90.8%|85.4%|
-|ExGrid.Components.ExGrid<TRow>|95.4%|90.3%|
+|ExGrid.Components.ExGrid<TRow>|90.9%|85.4%|
+|ExGrid.Components.ExGrid<TRow>|95.4%|90.4%|
 |ExGrid.Components.ExGridRow.ActionPaint<TRow>|100%||
 |ExGrid.Components.ExGridRow<TRow>|100%||
-|ExGrid.Components.ExGridRow<TRow>|99.6%|94.1%|
+|ExGrid.Components.ExGridRow<TRow>|100%|94.6%|
 |ExGrid.Components.ExGridStylesheet|100%||
 |ExGrid.Components.GridView|100%|50%|
 |ExGrid.Components.HeadingMarkStyles|95%|90%|
@@ -713,7 +713,7 @@
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExPivot**|**91.6%**|**82%**|
+|**ExPivot**|**91.6%**|**82.2%**|
 |ExPivot.Chrome.IPivotChrome|41.6%||
 |ExPivot.Chrome.PivotAreaEntryView|100%||
 |ExPivot.Chrome.PivotAreaView|100%||
@@ -735,12 +735,12 @@
 |ExPivot.Chrome.PivotToolbarContext|85.7%||
 |ExPivot.Chrome.PivotToolbarMenuView|100%||
 |ExPivot.Chrome.PivotValueFieldSettingsContext|100%||
-|ExPivot.Components.ExPivot|91.5%|82.1%|
+|ExPivot.Components.ExPivot|91.5%|82.3%|
 |ExPivot.Components.ExPivot.FieldDrag|100%||
 |ExPivot.Components.ExPivot.ItemsLoad|100%|100%|
 |ExPivot.Components.ExPivot.ItemsView|100%|100%|
 |ExPivot.Components.ExPivot.OpenSurface|100%|100%|
-|ExPivot.Components.ExPivot<TView, TContext>|91.5%|82.1%|
+|ExPivot.Components.ExPivot<TView, TContext>|91.5%|82.3%|
 |ExPivot.Components.ExPivotStylesheet|100%||
 |ExPivot.Components.PivotDetailsDialogView|100%||
 |ExPivot.Components.PivotDetailsGrid|94.1%|66.6%|
@@ -769,11 +769,11 @@
 |ExPivot.PivotDetails|100%||
 
 </details>
-<details><summary>ExPivot.Engine - 96%</summary>
+<details><summary>ExPivot.Engine - 96.1%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExPivot.Engine**|**96%**|**87.4%**|
+|**ExPivot.Engine**|**96.1%**|**87.6%**|
 |ExPivot.Engine.AggregateValue|100%|100%|
 |ExPivot.Engine.AggregationPass|98.7%|96.1%|
 |ExPivot.Engine.AxisNode|87%|80%|
@@ -796,7 +796,7 @@
 |ExPivot.Engine.ComputationReport.Part|0%||
 |ExPivot.Engine.DetailsPass|100%|100%|
 |ExPivot.Engine.Exactly|98.8%|86.5%|
-|ExPivot.Engine.FetchingPivotReportSource|69.6%|39.5%|
+|ExPivot.Engine.FetchingPivotReportSource|80.3%|48.9%|
 |ExPivot.Engine.FetchingPivotSource|94.3%|68.4%|
 |ExPivot.Engine.FieldBinding|96.4%|94.4%|
 |ExPivot.Engine.FieldMeta|100%|100%|
