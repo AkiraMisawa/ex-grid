@@ -22,6 +22,7 @@ docs/agent-runs/
 
 # The package smoke check (tests/ExGrid.PackageSmoke/check.sh)
 .feed/
+.feed-unreleased/
 .nuget-packages/
 .publish/
 
