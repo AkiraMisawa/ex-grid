@@ -1,0 +1,58 @@
+@* Written in each component, not in an _Imports.razor, whose class Razor makes public (ADR-0201).
+   Every product using is written with global::: inside ExBoard.Components a plain "ExBoard.X" would
+   be looked up against this component's class first (the CS0426 trap in AGENTS.md). *@
+@using Microsoft.AspNetCore.Components
+@using Microsoft.AspNetCore.Components.Web
+@using global::ExGrid
+@using global::ExGrid.Components
+@using global::ExPivot.Components
+@using global::ExChart.Components
+
+<div class="ex-board" style="@RootStyle">
+    @if (!string.IsNullOrEmpty(Board?.Title))
+    {
+        <h2 class="ex-board-title">@Board.Title</h2>
+    }
+    @if (_refusal is not null)
+    {
+        @* Nothing of a Board that does not bind is drawn: a part drawn beside a refusal would look
+           like the whole (spine rule 1). *@
+        <div class="ex-board-refusal" role="alert">@_refusal</div>
+    }
+    else if (_bound is { } bound)
+    {
+        @foreach (var row in bound.Board.Layout)
+        {
+            var shares = row.Cells.Sum(c => c.Width);
+            <div class="ex-board-row" style="@RowStyle(row)">
+                @foreach (var cell in row.Cells)
+                {
+                    var view = bound[cell.View];
+                    <section @key="cell.View" class="ex-board-view" data-ex-view="@cell.View" style="@CellStyle(cell)"
+                             aria-label="@(string.IsNullOrEmpty(view.View.Title) ? cell.View : view.View.Title)">
+                        @if (!string.IsNullOrEmpty(view.View.Title))
+                        {
+                            <h3 class="ex-board-view-title">@view.View.Title</h3>
+                        }
+                        @switch (view)
+                        {
+                            case BoundGridView grid:
+                                <ExGrid TRow="ShapedRow" Source="grid.Grid.Source" Columns="grid.Grid.Columns" PinnedColumnCount="grid.Grid.PinnedColumnCount"
+                                        Chrome="Chrome" ViewportHeight="ViewHeight(row, view)" ViewportWidth="ViewportSize.Stretch" />
+                                break;
+                            case BoundPivotView pivot:
+                                <ExPivot Source="pivot.Source" Layout="LayoutOf(pivot)" LayoutChanged="_layoutChanged[cell.View]"
+                                         Chrome="Chrome" PivotChrome="PivotChrome" ShowFieldList="false"
+                                         ViewportHeight="ViewHeight(row, view)" ViewportWidth="ViewportSize.Stretch" />
+                                break;
+                            case BoundChartView chart:
+                                <ExChart Definition="chart.Reading.Definition" Title="@chart.Reading.Title" Chrome="ChartChrome"
+                                         Width="ChartWidth(row, cell, shares)" Height="ViewHeight(row, view) - ChartToolbarHeight" />
+                                break;
+                        }
+                    </section>
+                }
+            </div>
+        }
+    }
+</div>

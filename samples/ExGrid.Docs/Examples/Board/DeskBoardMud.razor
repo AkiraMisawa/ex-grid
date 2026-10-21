@@ -1,0 +1,31 @@
+@using ExBoard
+@using ExBoard.Components
+@using ExChart.MudBlazor
+@using ExGrid.Data
+@using ExPivot.MudBlazor
+
+<MudTextField T="string" Label="Board" Lines="10" Variant="Variant.Outlined" @bind-Value="_json" />
+<MudStack Row="true" AlignItems="AlignItems.Center" Class="my-2">
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Draw">Draw</MudButton>
+    @if (_refusal is not null)
+    {
+        <MudAlert Severity="Severity.Warning" Dense="true">@_refusal</MudAlert>
+    }
+</MudStack>
+@if (_board is not null)
+{
+    <ExBoard Board="_board" Data="_data!" Width="900" Chrome="_chrome" PivotChrome="MudPivotChrome.Default" ChartChrome="MudChartChrome.Default" />
+}
+
+@code {
+    private static readonly MudGridChrome _chrome = new();
+
+    private string _json = DeskBoard.Json;
+    private BoardReading? _board;
+    private IReadOnlyDictionary<string, Snapshot>? _data;
+    private string? _refusal;
+
+    protected override void OnInitialized() => Draw();
+
+    private void Draw() => (_board, _data, _refusal) = DeskBoard.Read(_json);
+}

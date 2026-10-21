@@ -1,0 +1,137 @@
+#nullable enable
+abstract ExBoard.BoardView.<Clone>$() -> ExBoard.BoardView!
+abstract ExBoard.BoardView.Data.get -> System.Collections.Generic.IReadOnlyList<string!>!
+const ExBoard.BoardSpec.DefaultRowHeight = 320 -> double
+const ExBoard.BoardSpec.Version = 1 -> int
+const ExBoard.Components.ExBoard.ChartToolbarHeight = 40 -> double
+const ExBoard.Components.ExBoard.Gap = 12 -> double
+const ExBoard.Components.ExBoard.TitleHeight = 28 -> double
+ExBoard.BoardCell
+ExBoard.BoardCell.<Clone>$() -> ExBoard.BoardCell!
+ExBoard.BoardCell.BoardCell(string! View, int Width) -> void
+ExBoard.BoardCell.Deconstruct(out string! View, out int Width) -> void
+ExBoard.BoardCell.Equals(ExBoard.BoardCell? other) -> bool
+ExBoard.BoardCell.View.get -> string!
+ExBoard.BoardCell.View.init -> void
+ExBoard.BoardCell.Width.get -> int
+ExBoard.BoardCell.Width.init -> void
+ExBoard.BoardChartView
+ExBoard.BoardChartView.Equals(ExBoard.BoardChartView? other) -> bool
+ExBoard.BoardChartView.Spec.get -> string!
+ExBoard.BoardGridView
+ExBoard.BoardGridView.Equals(ExBoard.BoardGridView? other) -> bool
+ExBoard.BoardGridView.Grid.get -> ExGrid.GridViewSpecReading!
+ExBoard.BoardPivotView
+ExBoard.BoardPivotView.Equals(ExBoard.BoardPivotView? other) -> bool
+ExBoard.BoardPivotView.Input.get -> string!
+ExBoard.BoardPivotView.Layout.get -> ExPivot.Engine.PivotLayout!
+ExBoard.BoardReading
+ExBoard.BoardReading.<Clone>$() -> ExBoard.BoardReading!
+ExBoard.BoardReading.BoardReading(string! Title, System.Collections.Generic.IReadOnlyList<ExGrid.Data.BoardInput!>! Inputs, System.Collections.Generic.IReadOnlyList<ExBoard.BoardView!>! Views, System.Collections.Generic.IReadOnlyList<ExBoard.BoardRow!>! Layout) -> void
+ExBoard.BoardReading.Deconstruct(out string! Title, out System.Collections.Generic.IReadOnlyList<ExGrid.Data.BoardInput!>! Inputs, out System.Collections.Generic.IReadOnlyList<ExBoard.BoardView!>! Views, out System.Collections.Generic.IReadOnlyList<ExBoard.BoardRow!>! Layout) -> void
+ExBoard.BoardReading.Equals(ExBoard.BoardReading? other) -> bool
+ExBoard.BoardReading.Input(string! name) -> ExGrid.Data.BoardInput?
+ExBoard.BoardReading.Inputs.get -> System.Collections.Generic.IReadOnlyList<ExGrid.Data.BoardInput!>!
+ExBoard.BoardReading.Inputs.init -> void
+ExBoard.BoardReading.Layout.get -> System.Collections.Generic.IReadOnlyList<ExBoard.BoardRow!>!
+ExBoard.BoardReading.Layout.init -> void
+ExBoard.BoardReading.Title.get -> string!
+ExBoard.BoardReading.Title.init -> void
+ExBoard.BoardReading.View(string! id) -> ExBoard.BoardView?
+ExBoard.BoardReading.Views.get -> System.Collections.Generic.IReadOnlyList<ExBoard.BoardView!>!
+ExBoard.BoardReading.Views.init -> void
+ExBoard.BoardRow
+ExBoard.BoardRow.<Clone>$() -> ExBoard.BoardRow!
+ExBoard.BoardRow.BoardRow(System.Collections.Generic.IReadOnlyList<ExBoard.BoardCell!>! Cells, double Height) -> void
+ExBoard.BoardRow.Cells.get -> System.Collections.Generic.IReadOnlyList<ExBoard.BoardCell!>!
+ExBoard.BoardRow.Cells.init -> void
+ExBoard.BoardRow.Deconstruct(out System.Collections.Generic.IReadOnlyList<ExBoard.BoardCell!>! Cells, out double Height) -> void
+ExBoard.BoardRow.Equals(ExBoard.BoardRow? other) -> bool
+ExBoard.BoardRow.Height.get -> double
+ExBoard.BoardRow.Height.init -> void
+ExBoard.BoardSpec
+ExBoard.BoardView
+ExBoard.BoardView.BoardView(ExBoard.BoardView! original) -> void
+ExBoard.BoardView.Id.get -> string!
+ExBoard.BoardView.Title.get -> string!
+ExBoard.BoundBoard
+ExBoard.BoundBoard.Board.get -> ExBoard.BoardReading!
+ExBoard.BoundBoard.Data.get -> System.Collections.Generic.IReadOnlyDictionary<string!, ExGrid.Data.Snapshot!>!
+ExBoard.BoundBoard.this[string! id].get -> ExBoard.BoundView!
+ExBoard.BoundBoard.Views.get -> System.Collections.Generic.IReadOnlyList<ExBoard.BoundView!>!
+ExBoard.BoundChartView
+ExBoard.BoundChartView.Reading.get -> ExChart.Engine.ChartSpecReading!
+ExBoard.BoundGridView
+ExBoard.BoundGridView.Grid.get -> ExGrid.ShapedGrid!
+ExBoard.BoundPivotView
+ExBoard.BoundPivotView.Layout.get -> ExPivot.Engine.PivotLayout!
+ExBoard.BoundPivotView.Source.get -> ExPivot.Engine.SnapshotPivotSource!
+ExBoard.BoundView
+ExBoard.BoundView.View.get -> ExBoard.BoardView!
+ExBoard.Components.ExBoard
+ExBoard.Components.ExBoard.Board.get -> ExBoard.BoardReading!
+ExBoard.Components.ExBoard.Board.set -> void
+ExBoard.Components.ExBoard.ChartChrome.get -> ExChart.Chrome.IChartChrome?
+ExBoard.Components.ExBoard.ChartChrome.set -> void
+ExBoard.Components.ExBoard.Chrome.get -> ExGrid.Chrome.IGridChrome?
+ExBoard.Components.ExBoard.Chrome.set -> void
+ExBoard.Components.ExBoard.Culture.get -> System.Globalization.CultureInfo?
+ExBoard.Components.ExBoard.Culture.set -> void
+ExBoard.Components.ExBoard.Data.get -> System.Collections.Generic.IReadOnlyDictionary<string!, ExGrid.Data.Snapshot!>!
+ExBoard.Components.ExBoard.Data.set -> void
+ExBoard.Components.ExBoard.ExBoard() -> void
+ExBoard.Components.ExBoard.PivotChrome.get -> ExPivot.Chrome.IPivotChrome?
+ExBoard.Components.ExBoard.PivotChrome.set -> void
+ExBoard.Components.ExBoard.Width.get -> double
+ExBoard.Components.ExBoard.Width.set -> void
+override ExBoard.BoardCell.Equals(object? obj) -> bool
+override ExBoard.BoardCell.GetHashCode() -> int
+override ExBoard.BoardCell.ToString() -> string!
+override ExBoard.BoardChartView.<Clone>$() -> ExBoard.BoardChartView!
+override ExBoard.BoardChartView.Data.get -> System.Collections.Generic.IReadOnlyList<string!>!
+override ExBoard.BoardChartView.Equals(object? obj) -> bool
+override ExBoard.BoardChartView.GetHashCode() -> int
+override ExBoard.BoardChartView.ToString() -> string!
+override ExBoard.BoardGridView.<Clone>$() -> ExBoard.BoardGridView!
+override ExBoard.BoardGridView.Data.get -> System.Collections.Generic.IReadOnlyList<string!>!
+override ExBoard.BoardGridView.Equals(object? obj) -> bool
+override ExBoard.BoardGridView.GetHashCode() -> int
+override ExBoard.BoardGridView.ToString() -> string!
+override ExBoard.BoardPivotView.<Clone>$() -> ExBoard.BoardPivotView!
+override ExBoard.BoardPivotView.Data.get -> System.Collections.Generic.IReadOnlyList<string!>!
+override ExBoard.BoardPivotView.Equals(object? obj) -> bool
+override ExBoard.BoardPivotView.GetHashCode() -> int
+override ExBoard.BoardPivotView.ToString() -> string!
+override ExBoard.BoardReading.Equals(object? obj) -> bool
+override ExBoard.BoardReading.GetHashCode() -> int
+override ExBoard.BoardReading.ToString() -> string!
+override ExBoard.BoardRow.Equals(object? obj) -> bool
+override ExBoard.BoardRow.GetHashCode() -> int
+override ExBoard.BoardRow.ToString() -> string!
+override ExBoard.BoardView.Equals(object? obj) -> bool
+override ExBoard.BoardView.GetHashCode() -> int
+override ExBoard.BoardView.ToString() -> string!
+override ExBoard.Components.ExBoard.OnParametersSet() -> void
+override sealed ExBoard.BoardChartView.Equals(ExBoard.BoardView? other) -> bool
+override sealed ExBoard.BoardGridView.Equals(ExBoard.BoardView? other) -> bool
+override sealed ExBoard.BoardPivotView.Equals(ExBoard.BoardView? other) -> bool
+static ExBoard.BoardCell.operator !=(ExBoard.BoardCell? left, ExBoard.BoardCell? right) -> bool
+static ExBoard.BoardCell.operator ==(ExBoard.BoardCell? left, ExBoard.BoardCell? right) -> bool
+static ExBoard.BoardChartView.operator !=(ExBoard.BoardChartView? left, ExBoard.BoardChartView? right) -> bool
+static ExBoard.BoardChartView.operator ==(ExBoard.BoardChartView? left, ExBoard.BoardChartView? right) -> bool
+static ExBoard.BoardGridView.operator !=(ExBoard.BoardGridView? left, ExBoard.BoardGridView? right) -> bool
+static ExBoard.BoardGridView.operator ==(ExBoard.BoardGridView? left, ExBoard.BoardGridView? right) -> bool
+static ExBoard.BoardPivotView.operator !=(ExBoard.BoardPivotView? left, ExBoard.BoardPivotView? right) -> bool
+static ExBoard.BoardPivotView.operator ==(ExBoard.BoardPivotView? left, ExBoard.BoardPivotView? right) -> bool
+static ExBoard.BoardReading.operator !=(ExBoard.BoardReading? left, ExBoard.BoardReading? right) -> bool
+static ExBoard.BoardReading.operator ==(ExBoard.BoardReading? left, ExBoard.BoardReading? right) -> bool
+static ExBoard.BoardRow.operator !=(ExBoard.BoardRow? left, ExBoard.BoardRow? right) -> bool
+static ExBoard.BoardRow.operator ==(ExBoard.BoardRow? left, ExBoard.BoardRow? right) -> bool
+static ExBoard.BoardSpec.Read(string! json) -> ExBoard.BoardReading!
+static ExBoard.BoardView.operator !=(ExBoard.BoardView? left, ExBoard.BoardView? right) -> bool
+static ExBoard.BoardView.operator ==(ExBoard.BoardView? left, ExBoard.BoardView? right) -> bool
+static ExBoard.BoundBoard.Bind(ExBoard.BoardReading! board, System.Collections.Generic.IReadOnlyDictionary<string!, ExGrid.Data.Snapshot!>! data, System.Globalization.CultureInfo? culture = null) -> ExBoard.BoundBoard!
+virtual ExBoard.BoardView.EqualityContract.get -> System.Type!
+virtual ExBoard.BoardView.Equals(ExBoard.BoardView? other) -> bool
+virtual ExBoard.BoardView.PrintMembers(System.Text.StringBuilder! builder) -> bool
+~override ExBoard.Components.ExBoard.BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder __builder) -> void
