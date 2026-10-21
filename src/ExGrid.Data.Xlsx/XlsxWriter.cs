@@ -478,7 +478,8 @@ public sealed class XlsxSheetWriter
                 if (c.Width is { } width)
                 {
                     xml.WriteAttributeString("width", width.ToString("R", CultureInfo.InvariantCulture));
-                    xml.WriteAttributeString("customWidth", "1");
+                    if (c.CustomWidth)
+                        xml.WriteAttributeString("customWidth", "1");
                     if (c.BestFit)
                         xml.WriteAttributeString("bestFit", "1");
                 }

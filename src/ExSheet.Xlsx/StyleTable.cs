@@ -1,3 +1,4 @@
+using System.Globalization;
 using ExGrid.Data.Xlsx;
 using ExSheet.Engine;
 
@@ -8,7 +9,8 @@ namespace ExSheet.Xlsx;
 /// distinct Cell Format one cell format of the file, its index what a cell, a row or a column names. Index 0 is the default
 /// Cell Format. Every font is the workbook's own, Calibri 11, with the Font's emphasis; a colour is written as its RGB value,
 /// and Automatic as none, which Excel paints as its automatic colour. A Number Format is its built-in id where it is one
-/// (<see cref="XlsxNumberFormats.BuiltInId"/>), and a format of the file's own from 164 otherwise.
+/// (<see cref="XlsxNumberFormats.BuiltInId"/>), and a format of the file's own from 164 otherwise, the engine's built-in currency
+/// spelled in the Workbook culture's currency (<see cref="XlsxNumberFormats.WrittenCode"/>).
 /// </summary>
 internal sealed class StyleTable
 {
@@ -22,8 +24,12 @@ internal sealed class StyleTable
     private readonly Dictionary<XlsxFill, int> fills = [];
     private readonly Dictionary<XlsxBorder, int> borders = [];
 
-    public StyleTable()
+    private readonly CultureInfo culture;
+
+    /// <summary>A table for a Workbook of <paramref name="culture"/>, holding the default Cell Format.</summary>
+    public StyleTable(CultureInfo culture)
     {
+        this.culture = culture;
         Font(WorkbookFont);
         Fill(XlsxFill.None);
         Fill(XlsxFill.Gray125);
@@ -35,7 +41,7 @@ internal sealed class StyleTable
     public int Index(CellFormat format)
     {
         if (formats.TryGetValue(format, out var index)) return index;
-        var numberFormat = XlsxNumberFormats.BuiltInId(format.NumberFormat) ?? Code(format.NumberFormat.Code);
+        var numberFormat = XlsxNumberFormats.BuiltInId(format.NumberFormat) ?? Code(XlsxNumberFormats.WrittenCode(format.NumberFormat, culture));
         var f = format.Font;
         var font = Font(WorkbookFont with
         {

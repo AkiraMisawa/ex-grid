@@ -87,9 +87,12 @@ public readonly record struct XlsxCell(
 /// the range sets none.</param>
 /// <param name="Hidden">Whether the columns are hidden.</param>
 /// <param name="StyleIndex">The style the columns' empty cells take, or 0.</param>
-/// <param name="BestFit">Whether the width was fitted to what the columns hold (<c>bestFit</c>), as Excel marks a column a typed
-/// entry widened, which a longer entry widens again.</param>
-public sealed record XlsxColumn(int First, int Last, double? Width, bool Hidden = false, int StyleIndex = 0, bool BestFit = false);
+/// <param name="BestFit">Whether the width is marked as fitted to what the columns hold (<c>bestFit</c>). Excel marks it both where a
+/// typed entry widened the column, which a longer entry widens again, and where the column was fitted on purpose (a double-click
+/// on its edge, AutoFit Column Width); the file does not say which.</param>
+/// <param name="CustomWidth">Whether the width is one set for the columns (<c>customWidth</c>), rather than the default width written
+/// only so that a range that records a style has a width.</param>
+public sealed record XlsxColumn(int First, int Last, double? Width, bool Hidden = false, int StyleIndex = 0, bool BestFit = false, bool CustomWidth = true);
 
 /// <summary>
 /// A row that records a cell format of its own (<c>&lt;row s="…" customFormat="1"&gt;</c>): the format its cells take where the

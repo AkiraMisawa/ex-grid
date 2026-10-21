@@ -188,7 +188,8 @@ public sealed class XlsxSheetReader : IDisposable
                     throw new XlsxException(XlsxRefusal.Malformed, string.Create(CultureInfo.InvariantCulture,
                         $"The columns {min} to {max} name the cell format {style}, which the styles do not hold."), part, Sheet.Name);
                 }
-                columns.Add(new XlsxColumn(min - 1, max - 1, width, hidden, style, XlsxReader.Bool(xml.GetAttribute("bestFit"))));
+                columns.Add(new XlsxColumn(min - 1, max - 1, width, hidden, style, XlsxReader.Bool(xml.GetAttribute("bestFit")),
+                    width is null || XlsxReader.Bool(xml.GetAttribute("customWidth"))));
             }
             if (xml.NodeType == XmlNodeType.Element)
                 xml.Skip();

@@ -14,7 +14,7 @@ internal static class Saved
 {
     public static async Task<byte[]> WriteAsync(WorkbookDocument document)
     {
-        var styles = new StyleTable();
+        var styles = new StyleTable(CultureInfo.GetCultureInfo(document.Culture));
         var plans = document.Sheets.Select(s => SheetFormatPlan.For(s, styles)).ToList();
         var shown = document.Sheets.ToList().FindIndex(s => s.Name == document.Shown);
         using var stream = new MemoryStream();

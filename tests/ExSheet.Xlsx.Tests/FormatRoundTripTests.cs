@@ -78,7 +78,7 @@ public class FormatRoundTripTests
                 for (var column = 0; column < 9; column++)
                 {
                     var at = new CellAddress(row, column);
-                    Assert.Equal((at, before.Sheets[s].GetCellFormat(at)), (at, after.Sheets[s].GetCellFormat(at)));
+                    Assert.Equal((at, Written(before.Sheets[s].GetCellFormat(at))), (at, after.Sheets[s].GetCellFormat(at)));
                     Assert.Equal((at, before.Sheets[s].GetDisplay(at)), (at, after.Sheets[s].GetDisplay(at)));
                 }
                 Assert.Equal(before.Sheets[s].GetColumnWidth(row), after.Sheets[s].GetColumnWidth(row));
@@ -89,6 +89,15 @@ public class FormatRoundTripTests
             read.Sheet("Trades").Cells.Where(c => c.Entry is not null).Select(c => (c.Address, c.Entry)));
     }
 
+    /// <summary>
+    /// A format as it reads back: the built-in currency is written spelled in the Workbook's currency, a format of the file's own,
+    /// and shows as it did (ADR-0330 §4); every other format reads back as itself.
+    /// </summary>
+    private static CellFormat Written(CellFormat format) =>
+        string.Equals(format.NumberFormat.Code, NumberFormat.BuiltInCurrency(EnGb).Code, StringComparison.OrdinalIgnoreCase)
+            ? format with { NumberFormat = NumberFormat.Parse(format.NumberFormat.LocalCode(EnGb)) }
+            : format;
+
     [Fact] // ADR-0330 §4: a document read from a file, written and read again, is the same document
     public async Task ADR0330_a_files_formats_read_written_and_read_again_are_the_same_document()
     {
@@ -97,6 +106,33 @@ public class FormatRoundTripTests
         var second = (await ReadAsync(await Saved.WriteAsync(first), EnGb)).Document;
 
         Assert.Equal(first.ToJson(), second.ToJson());
+    }
+
+    [Fact] // ADR-0330 §4: a formatted row whose cells run past the reader's batch of 4,096 keeps its format on every cell, each read against it
+    public async Task ADR0330_a_formatted_rows_cells_past_a_batch_are_read_against_it()
+    {
+        var styles = XlsxStyles.Default with
+        {
+            Fonts = [XlsxStyles.Default.Fonts[0], XlsxStyles.Default.Fonts[0] with { Bold = true }],
+            CellFormats = [new XlsxCellFormat(), new XlsxCellFormat(0, 1, 0, 0)],
+        };
+        const int Last = 4_999;
+        var cells = Enumerable.Range(0, Last + 1).Select(c => new XlsxCell(2, c, XlsxCellType.Number, "1", StyleIndex: c == Last ? 0 : 1)).ToArray();
+        var file = await WriteAsync(new XlsxWriteOptions { Styles = styles }, new Page("Trades", cells, Rows: [new XlsxRow(2, 1)]));
+
+        var (document, report) = await ReadAsync(file, EnGb);
+
+        Assert.True(report.IsEmpty);
+        var sheet = Workbook.Open(document).Sheets[0];
+        var bold = new CellFont(Bold: true);
+        Assert.Equal(bold, sheet.GetCellFormat(new CellAddress(2, 0)).Font);
+        Assert.Equal(bold, sheet.GetCellFormat(new CellAddress(2, 4_500)).Font);
+        Assert.Equal(bold, sheet.GetCellFormat(new CellAddress(2, Last - 1)).Font);
+        Assert.Equal(CellFont.Default, sheet.GetCellFormat(new CellAddress(2, Last)).Font);
+        Assert.Equal(bold, sheet.GetCellFormat(new CellAddress(2, 6_000)).Font);
+        Assert.Equal(CellFont.Default, sheet.GetCellFormat(new CellAddress(3, 0)).Font);
+        // Only the cell that stands apart from its row records a format of its own.
+        Assert.Single(document.Sheet("Trades").Cells, c => c.Font is not null);
     }
 
     [Fact] // ADR-0330 §4, §8: a file as Excel styles it — theme colours, Text 1, a column, a row and cells — reads, writes and reads again the same

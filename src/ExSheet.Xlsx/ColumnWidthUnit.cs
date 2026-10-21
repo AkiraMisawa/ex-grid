@@ -25,12 +25,18 @@ internal static class ColumnWidthUnit
     public static double FromFile(double width) =>
         Math.Truncate((width * MaxDigitWidth - Padding) / MaxDigitWidth * 100 + 0.5) / 100;
 
-    /// <summary>The engine's width for a file's <paramref name="width"/>, or null where it records none: too narrow to hold a character, or the default.</summary>
+    /// <summary>The narrowest width the engine holds, in characters: a file's narrower width, above 0, opens at it.</summary>
+    public const double Narrowest = 0.01;
+
+    /// <summary>
+    /// The engine's width for a file's <paramref name="width"/>, or null where it records none: a width of 0 or less (a column
+    /// Excel shows hidden, which the Open Report lists), or the default. A width too narrow to hold a hundredth of a character
+    /// opens at the narrowest the engine holds, and one wider than the engine holds at the widest.
+    /// </summary>
     public static double? Read(double width)
     {
-        var characters = FromFile(width);
-        if (characters <= 0) return null;
-        characters = Math.Min(characters, Sheet.MaxColumnWidth);
+        if (width <= 0) return null;
+        var characters = Math.Clamp(FromFile(width), Narrowest, Sheet.MaxColumnWidth);
         return characters == Sheet.DefaultColumnWidth ? null : characters;
     }
 }

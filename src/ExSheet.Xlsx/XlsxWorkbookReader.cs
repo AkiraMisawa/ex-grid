@@ -498,7 +498,7 @@ public static class XlsxWorkbookReader
             }
             if (read.CustomRowHeights) Add(NotCarriedKind.RowHeights);
             if (read.HiddenRows) Add(NotCarriedKind.HiddenRows);
-            if (read.Columns.Any(c => c.Hidden)) Add(NotCarriedKind.HiddenColumns);
+            if (read.Columns.Any(c => c.Hidden || c.Width is <= 0)) Add(NotCarriedKind.HiddenColumns);
             if (read.FrozenPanes) Add(NotCarriedKind.FrozenPanes);
             foreach (var element in read.OtherElements)
             {

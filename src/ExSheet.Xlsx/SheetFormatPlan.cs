@@ -13,7 +13,7 @@ namespace ExSheet.Xlsx;
 /// over the default (in the file a row's format stands in place of its columns'), and every cell the Sheet records, and every
 /// cell where a formatted row crosses a formatted column and shows another format than the row's, writes the format the Sheet
 /// shows there. A width is written in the file's unit (<see cref="ColumnWidthUnit"/>), marked fitted (<c>bestFit</c>) where
-/// an entry widened it.
+/// an entry widened it; a column that records a format and no width is written at the default width, not marked as set.
 /// </remarks>
 /// <param name="Columns">The column ranges, in order, each with its width and its format's index.</param>
 /// <param name="Rows">The rows that record a format, in order, each with its format's index.</param>
@@ -76,10 +76,13 @@ internal sealed record SheetFormatPlan(IReadOnlyList<XlsxColumn> Columns, IReadO
         var ranges = new List<XlsxColumn>();
         foreach (var column in widths.Keys.Union(levels.Keys).Order())
         {
-            double? width = widths.TryGetValue(column, out var w) ? ColumnWidthUnit.ToFile(w.Width) : null;
+            // A column that records a format and no width of its own is written at the default width, not marked as set: a <col>
+            // with no width is believed to be read by Excel as a width of 0, which hides the column (ticket 07 asks Excel).
+            var custom = widths.TryGetValue(column, out var w);
+            var width = ColumnWidthUnit.ToFile(custom ? w!.Width : Sheet.DefaultColumnWidth);
             var bestFit = w is { Kind: SheetColumnWidthKind.WidenedByEntry };
             var style = levels.TryGetValue(column, out var level) ? styles.Index(level.Over(CellFormat.Default)) : 0;
-            var next = new XlsxColumn(column, column, width, StyleIndex: style, BestFit: bestFit);
+            var next = new XlsxColumn(column, column, width, StyleIndex: style, BestFit: bestFit, CustomWidth: custom);
             if (ranges.Count > 0 && ranges[^1] is var last && last.Last == column - 1 && last with { Last = column } == next with { First = last.First })
                 ranges[^1] = last with { Last = column };
             else

@@ -18,7 +18,6 @@ public class NumberFormatTests
     public static readonly Dictionary<int, string> Readable = new()
     {
         [0] = "General", [1] = "0", [2] = "0.00", [3] = "#,##0", [4] = "#,##0.00",
-        [6] = "$#,##0_);[Red]($#,##0)", [8] = "$#,##0.00_);[Red]($#,##0.00)",
         [9] = "0%", [10] = "0.00%", [11] = "0.00E+00",
         [14] = "m/d/yyyy", [15] = "d-mmm-yy", [16] = "d-mmm", [17] = "mmm-yy", [18] = "h:mm AM/PM", [19] = "h:mm:ss AM/PM",
         [20] = "h:mm", [21] = "h:mm:ss", [22] = "m/d/yyyy h:mm",
@@ -113,6 +112,10 @@ public class NumberFormatTests
     [InlineData("[<100]0;0")]
     [InlineData("[h]:mm:ss")]
     [InlineData("[$€-407]#,##0.00")]
+    [InlineData("[$-F800]dddd, mmmm dd, yyyy")] // the Home tab's Long Date
+    [InlineData("[$-F400]h:mm:ss AM/PM")] // the Home tab's Time
+    [InlineData("[h]:mm")]
+    [InlineData("mm:ss.0")]
     public async Task ADR0330_a_format_the_engine_does_not_read_refuses_the_file(string code)
     {
         var file = await OneCellAsync(StylesOf(164, new Dictionary<int, string> { [164] = code }));
@@ -140,6 +143,48 @@ public class NumberFormatTests
 
         Assert.Equal("\"$\"#,##0_);\\(\"$\"#,##0\\)", (await ReadAsync(spelled)).Document.Sheet("Trades").Cells.Single().NumberFormat!.Code);
         Assert.Equal(XlsxOpenRefusal.NumberFormat, (await RefusedAsync(accounting)).Reason);
+    }
+
+    [Theory] // ADR-0330 §4: Excel's built-in ids, as ECMA-376 Part 1 §18.8.30 lists them, show as Excel shows them under en-US
+    [InlineData(3, "1234567.891", "1,234,568")] // #,##0
+    [InlineData(10, "0.1234", "12.34%")] // 0.00%
+    [InlineData(14, "45000", "3/15/2023")] // mm-dd-yy, which Excel shows in the computer's short date
+    [InlineData(22, "45000.5", "3/15/2023 12:00")] // m/d/yy h:mm, likewise
+    [InlineData(49, "45000", "45000")] // @
+    public async Task ADR0330_built_in_ids_show_as_ECMA_376_lists_them(int id, string value, string shown)
+    {
+        var file = await OneCellAsync(StylesOf(id), Number("B7", value, style: 1));
+
+        var (document, _) = await ReadAsync(file, EnUs);
+
+        Assert.Equal(shown, Workbook.Open(document).Sheets[0].GetDisplay(CellAddress.Parse("B7")).Text);
+    }
+
+    [Theory] // ADR-0330 §4: a built-in currency (5 to 8) is the code the file spells: a euro amount opens in euros under en-US
+    [InlineData(8, """#,##0.00\ "€";[Red]\-#,##0.00\ "€" """, "1,000.00 €")]
+    [InlineData(6, """#,##0\ "€";[Red]\-#,##0\ "€" """, "1,000 €")]
+    [InlineData(7, """ "£"#,##0.00;\-"£"#,##0.00""", "£1,000.00")]
+    [InlineData(5, """ "¥"#,##0;"¥"\-#,##0""", "¥1,000")]
+    public async Task ADR0330_a_built_in_currency_is_the_code_the_file_spells(int id, string code, string shown)
+    {
+        var file = await OneCellAsync(StylesOf(id, new Dictionary<int, string> { [id] = code.Trim() }), Number("B7", "1000", style: 1));
+
+        var (document, _) = await ReadAsync(file, EnUs);
+
+        Assert.Equal(shown, Workbook.Open(document).Sheets[0].GetDisplay(CellAddress.Parse("B7")).Text);
+    }
+
+    [Theory] // ADR-0330 §4: a built-in currency the file does not spell is refused, naming its id: never shown in the reader's currency
+    [InlineData(5)]
+    [InlineData(6)]
+    [InlineData(7)]
+    [InlineData(8)]
+    public async Task ADR0330_a_built_in_currency_the_file_does_not_spell_is_refused(int id)
+    {
+        var refused = await RefusedAsync(await OneCellAsync(StylesOf(id)));
+
+        Assert.Equal((XlsxOpenRefusal.NumberFormat, $"Number Format {id}"), (refused.Reason, refused.Held));
+        Assert.Contains("follows the computer's locale", refused.Message, StringComparison.Ordinal);
     }
 
     [Fact] // ADR-0330 §4: a built-in the engine knows is that built-in, whatever code the styles part writes beside its id
@@ -224,6 +269,34 @@ public class NumberFormatTests
         Assert.Equal(XlsxNumberFormats.FirstCustomId, written);
         Assert.Equal(code, read!.Code);
     }
+
+    [Theory] // ADR-0330 §4: the engine's built-in currency is written as a code of the file's own spelling the Workbook's currency, so it keeps its symbol under any locale
+    [InlineData("de-DE", "€")]
+    [InlineData("ja-JP", "¥")]
+    [InlineData("en-GB", "£")]
+    [InlineData("en-US", "$")]
+    public async Task ADR0330_a_workbooks_built_in_currency_is_written_spelled_and_keeps_its_symbol(string name, string symbol)
+    {
+        var culture = CultureInfo.GetCultureInfo(name);
+        var sheet = new SheetDocument(culture, "Trades",
+            [new SheetDocumentCell(CellAddress.Parse("B7"), Entry.FromValue(Value.FromNumber(1234.5)), NumberFormat.BuiltInCurrency(culture), null, null, null, null)]);
+        var workbook = new WorkbookDocument(culture, "Trades", [sheet]);
+        var file = await Saved.WriteAsync(workbook);
+
+        using var reader = await XlsxReader.OpenAsync(new MemoryStream(file), cancellationToken: Token);
+        var id = reader.Styles.CellFormats[(await reader.ReadSheetAsync(0)).Cells.Single().StyleIndex].NumberFormatId;
+        var before = Workbook.Open(workbook).Sheets[0].GetDisplay(CellAddress.Parse("B7")).Text;
+        var after = Workbook.Open((await ReadAsync(file, EnUs)).Document).Sheets[0].GetDisplay(CellAddress.Parse("B7")).Text;
+
+        Assert.True(id >= XlsxNumberFormats.FirstCustomId, $"written as {id}");
+        Assert.Contains(symbol, reader.Styles.NumberFormats[id], StringComparison.Ordinal);
+        Assert.Contains(symbol, after, StringComparison.Ordinal);
+        // The same amount and symbol; only the separators are the reader's culture's.
+        Assert.Equal(WithoutSeparators(before), WithoutSeparators(after));
+    }
+
+    private static string WithoutSeparators(string shown) =>
+        new([.. shown.Where(c => c is not ('.' or ',' or ' ' or ' ' or ' '))]);
 
     /// <summary>A cell in <paramref name="format"/> written through the mapping: the id its cell format names, and the format read back.</summary>
     private static async Task<(int Written, NumberFormat? Read)> RoundTripAsync(NumberFormat format)

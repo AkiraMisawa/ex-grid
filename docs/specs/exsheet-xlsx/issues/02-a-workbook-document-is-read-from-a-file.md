@@ -42,7 +42,9 @@ in `FileRefusal`.
   with a year, a day, or a month in a section without hours or seconds) moves by 1,462 days. A time
   of day, a duration (an elapsed `[h]`, `[mm]` or `[ss]` makes a section one, so `[h]:mm`'s `mm` is
   minutes) and any other number are the same number on both systems, and stay. A Formula is carried as
-  written, and computes on 1900's.
+  written, and computes on 1900's. *(Since ticket 03, a duration no longer gets this far: the engine
+  does not read a bracketed elapsed format, so a cell in one, such as built-in 46 `[h]:mm:ss` or a
+  file's own `[h]:mm`, refuses the file as a Number Format the engine does not read, as Accounting 41–44 and 47 `mmss.0` do.)*
 - **Date cells (`t="d"`)** are read as ISO 8601 invariantly, ASCII digits only (another script's digits
   are refused by name), never by the server's culture, time zone or
   today's date: a date with a time is its serial and the time's fraction, a time alone its fraction. A

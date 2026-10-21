@@ -62,6 +62,67 @@ public class ColumnWidthTests
         Assert.Equal(new SheetColumnWidth(12, SheetColumnWidthKind.WidenedByEntry), sheet.GetColumnWidth(0));
     }
 
+    [Theory] // ADR-0330 §4: a width narrower than a hundredth of a character opens at the narrowest the engine holds, not silently at the default
+    [InlineData(0.71)]
+    [InlineData(0.5)]
+    [InlineData(0.00390625)]
+    public async Task ADR0330_a_width_too_narrow_for_a_hundredth_opens_at_the_narrowest(double width)
+    {
+        var file = await WriteAsync(new Page("Trades", [Number("A1", "1")], [new XlsxColumn(1, 1, width)]));
+
+        var (document, report) = await ReadAsync(file);
+
+        Assert.Equal([new SheetDocumentColumnWidth(1, 1, ColumnWidthUnit.Narrowest, SheetColumnWidthKind.SetByUser)], document.Sheet("Trades").ColumnWidths);
+        Assert.True(report.IsEmpty);
+    }
+
+    [Fact] // ADR-0330 §4: a column of width 0 is one Excel shows hidden: it opens at the default, and is listed
+    public async Task ADR0330_a_width_of_zero_is_listed_as_a_hidden_column()
+    {
+        var file = await WriteAsync(new Page("Trades", [Number("A1", "1")], [new XlsxColumn(1, 1, 0)]));
+
+        var (document, report) = await ReadAsync(file);
+
+        Assert.Empty(document.Sheet("Trades").ColumnWidths);
+        Assert.Equal([NotCarriedKind.HiddenColumns], report.NotCarried.Select(n => n.Kind));
+    }
+
+    [Fact] // ADR-0330 §4: every column written carries a width; one that records only a format is written at the default, not marked as set
+    public async Task ADR0330_every_written_column_carries_a_width()
+    {
+        var culture = System.Globalization.CultureInfo.GetCultureInfo("en-US");
+        var sheet = new SheetDocument(culture, "Trades", [])
+        {
+            Columns =
+            [
+                new SheetDocumentAxisFormat(1, 2, null, HorizontalAlignment.Right, null, null, null),
+                new SheetDocumentAxisFormat(4, 4, null, null, new CellFont(Bold: true), null, null),
+            ],
+            ColumnWidths = [new SheetDocumentColumnWidth(4, 5, 20)],
+        };
+        var file = await Saved.WriteAsync(new WorkbookDocument(culture, "Trades", [sheet]));
+
+        string xml;
+        using (var zip = new System.IO.Compression.ZipArchive(new MemoryStream(file)))
+        using (var part = new StreamReader(zip.GetEntry("xl/worksheets/sheet1.xml")!.Open()))
+            xml = await part.ReadToEndAsync(Token);
+        var columns = System.Text.RegularExpressions.Regex.Matches(xml, "<col [^>]*/>").Select(m => m.Value).ToList();
+        using var reader = await XlsxReader.OpenAsync(new MemoryStream(file), cancellationToken: Token);
+
+        Assert.Equal(3, columns.Count);
+        Assert.All(columns, c => Assert.Contains(" width=\"", c, StringComparison.Ordinal));
+        Assert.Equal(
+            [
+                new XlsxColumn(1, 2, 9.140625, StyleIndex: 1, CustomWidth: false),
+                new XlsxColumn(4, 4, 20.7109375, StyleIndex: 2),
+                new XlsxColumn(5, 5, 20.7109375),
+            ],
+            (await reader.ReadSheetAsync(0)).Columns);
+        var read = (await ReadAsync(file)).Document.Sheet("Trades");
+        Assert.Equal(sheet.ColumnWidths, read.ColumnWidths);
+        Assert.Equal(sheet.Columns, read.Columns);
+    }
+
     [Theory] // ADR-0330 §4: a Sheet's own default width is not carried, and is listed; Excel's own base of 8 is not
     [InlineData("""<sheetFormatPr defaultColWidth="12.5" defaultRowHeight="15"/>""", true)]
     [InlineData("""<sheetFormatPr baseColWidth="10" defaultRowHeight="16"/>""", true)]
