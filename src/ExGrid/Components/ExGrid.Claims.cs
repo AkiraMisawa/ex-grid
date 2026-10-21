@@ -30,7 +30,7 @@ namespace ExGrid.Components;
 public partial class ExGrid<TRow>
 {
     // The event the script told of last, and its number, until a handler claims it.
-    private (string Kind, int Input)? _claimTold;
+    private (string Kind, int Input, int RowCommand)? _claimTold;
 
     /// <summary>
     /// The next click, press, double click or context menu on one of the grid's own controls that
@@ -46,21 +46,32 @@ public partial class ExGrid<TRow>
     /// <c>contextmenu</c>, <c>keydown</c>, <c>submit</c> or <c>focus</c>.</param>
     /// <param name="input">The number the script gave the event, which the root names once it has
     /// been answered (ADR-0220).</param>
+    /// <param name="fieldText">The browser field's text at this input (ADR-0240 section 5).</param>
     /// <remarks>Not the contract (ADR-0201): the grid's script calls it, so it is public, but it is
     /// hidden from a Consumer's editor and may change in any version.</remarks>
     [JSInvokable, System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-    public void InputTakenAt(string kind, int input)
+    public void InputTakenAt(string kind, int input, GridInputText? fieldText = null)
+    {
+        RememberInputText(input, fieldText);
+        TellInput(kind, input);
+    }
+
+    private void TellInput(string kind, int input, int rowCommand = 0)
     {
         InputReached(input);
-        if (_claimTold is { } unheard)
-            InputVoid(unheard.Input);
+        var previous = _claimTold;
         _claimTold = null;
+        if (previous is { } unheard)
+        {
+            CancelRowClick(unheard.RowCommand);
+            InputVoid(unheard.Input);
+        }
         if (_disposed || string.IsNullOrEmpty(kind))
         {
             InputVoid(input);
             return;
         }
-        _claimTold = (kind, input);
+        _claimTold = (kind, input, rowCommand);
     }
 
     /// <summary>The number the script told the event of <paramref name="kind"/> by, taken by the
@@ -75,6 +86,7 @@ public partial class ExGrid<TRow>
         if (!string.Equals(claim.Kind, kind, StringComparison.Ordinal)
             && !string.Equals(claim.Kind, alsoKind, StringComparison.Ordinal))
         {
+            CancelRowClick(claim.RowCommand);
             InputVoid(claim.Input);
             return 0;
         }
@@ -285,7 +297,11 @@ public partial class ExGrid<TRow>
         => _onSelectWholeResult ??= () => ClaimedAsync(ClaimKinds.Click, SelectWholeResultAsync);
 
     private Func<MouseEventArgs, Task> RowsContextMenuHandler
-        => _onRowsContextMenu ??= e => ClaimedAsync(ClaimKinds.ContextMenu, () => OnContextMenuAsync(e));
+        => _onRowsContextMenu ??= e =>
+        {
+            e = AsTaken(e, ClaimKinds.ContextMenu, out var input);
+            return AnsweredAsync(() => OnContextMenuAsync(e), input > 0 ? input : ClaimInput(ClaimKinds.ContextMenu));
+        };
 
     private Func<Task> CancelPanelHandler => _onCancelPanel ??= () => ClaimedAsync(ClaimKinds.Click, CancelPanel);
 

@@ -17,6 +17,12 @@ const ExGrid.Chrome.FindPanelLabelIds.RowPlaceholder = "{row}" -> string!
 const ExGrid.Chrome.GridLabelIds.PasteAlreadyLanded = "paste-already-landed" -> string!
 const ExGrid.Chrome.GridLabelIds.PasteUnderWay = "paste-under-way" -> string!
 const ExGrid.Chrome.KeyRefusalLabelIds.KeyboardDidNotArrive = "key-refusal-keyboard-did-not-arrive" -> string!
+const ExGrid.Chrome.KeyRefusalLabelIds.RowCommandTargetLeft = "key-refusal-row-command-target-left" -> string!
+ExGrid.Components.ExGrid<TRow>.BarPressAnsweredAsync(bool barHoldsFocus, int input = 0, ExGrid.Components.GridInputText? fieldText = null) -> System.Threading.Tasks.Task!
+ExGrid.Components.ExGrid<TRow>.BeginRowClick(int ticket, int input, ExGrid.Components.GridInputText? fieldText = null) -> void
+ExGrid.Components.ExGrid<TRow>.BuildCopyPayloadAsync(bool withHeaders = false, int input = 0, ExGrid.Components.GridInputText? fieldText = null) -> System.Threading.Tasks.Task<ExGrid.Clipboard.ClipboardPayload?>!
+ExGrid.Components.ExGrid<TRow>.CancelRowClick(int ticket) -> void
+ExGrid.Components.ExGrid<TRow>.EndRowClickDispatch(int ticket) -> System.Threading.Tasks.Task!
 const ExGrid.Chrome.KeyRefusalLabelIds.LostOnTheWay = "key-refusal-lost-on-the-way" -> string!
 const ExGrid.Chrome.RefusalLabelIds.PasteCancelled = "refused-paste-cancelled" -> string!
 const ExGrid.Chrome.RefusalLabelIds.PasteUnreadable = "refused-paste-unreadable" -> string!
@@ -62,16 +68,48 @@ ExGrid.Chrome.GridPopoverContext.InOrder.get -> System.Func<ExGrid.Chrome.GridIn
 ExGrid.Chrome.GridPopoverContext.InOrder.init -> void
 ExGrid.Clipboard.PasteRefusalReason.Cancelled = 13 -> ExGrid.Clipboard.PasteRefusalReason
 ExGrid.Clipboard.PasteRefusalReason.Unreadable = 12 -> ExGrid.Clipboard.PasteRefusalReason
+ExGrid.Components.ExGrid<TRow>.HandOffHeardAsync(int input = 0, ExGrid.Components.GridInputText? fieldText = null) -> System.Threading.Tasks.Task!
 ExGrid.Components.ExGrid<TRow>.HandKeyboardToAsync(Microsoft.AspNetCore.Components.ElementReference control, bool preventScroll) -> System.Threading.Tasks.Task!
 ExGrid.Components.ExGrid<TRow>.FindMatch.get -> ExGrid.Finding.FindMatchOf<TRow!>?
 ExGrid.Components.ExGrid<TRow>.FindMatch.set -> void
-ExGrid.Components.ExGrid<TRow>.HandOffHeardAsync(int input = 0) -> System.Threading.Tasks.Task!
 ExGrid.Components.ExGrid<TRow>.InOrderAsync(ExGrid.Chrome.GridInputKind kind, System.Func<System.Threading.Tasks.Task!>! handling) -> System.Threading.Tasks.Task!
 ExGrid.Components.ExGrid<TRow>.InputsSent(int input) -> void
-ExGrid.Components.ExGrid<TRow>.InputTakenAt(string! kind, int input) -> void
-ExGrid.Components.ExGrid<TRow>.OnHeldInputsRefusedAsync(int input = 0) -> System.Threading.Tasks.Task!
-ExGrid.Components.ExGrid<TRow>.OnPasteCancelAsync(int paste, int input = 0) -> System.Threading.Tasks.Task!
-ExGrid.Components.ExGrid<TRow>.OnPasteTakenAsync(long textLength, long htmlLength, int paint = -1, int input = 0) -> System.Threading.Tasks.Task!
+ExGrid.Components.ExGrid<TRow>.InputTakenAt(string! kind, int input, ExGrid.Components.GridInputText? fieldText = null) -> void
+ExGrid.Components.ExGrid<TRow>.NameBoxAnsweredAsync(int input = 0, ExGrid.Components.GridInputText? fieldText = null) -> System.Threading.Tasks.Task!
+ExGrid.Components.ExGrid<TRow>.OnCopyLandedAsync(int landing, int input = 0, ExGrid.Components.GridInputText? fieldText = null) -> System.Threading.Tasks.Task!
+ExGrid.Components.ExGrid<TRow>.OnCopyWriteRejectedAsync(int input = 0, ExGrid.Components.GridInputText? fieldText = null) -> System.Threading.Tasks.Task!
+ExGrid.Components.ExGrid<TRow>.OnHeldInputsRefusedAsync(int input = 0, ExGrid.Components.GridInputText? fieldText = null) -> System.Threading.Tasks.Task!
+ExGrid.Components.ExGrid<TRow>.OnHeldTabRefusedAsync(int input = 0, ExGrid.Components.GridInputText? fieldText = null) -> System.Threading.Tasks.Task!
+ExGrid.Components.ExGrid<TRow>.OnKeyAsync(string! key, bool ctrl, bool shift, bool alt, bool meta, bool metaIsPrimary, bool fromDescendant = false, string? editorText = null, int editorCaret = -1, int editorSelectionEnd = -1, bool editorCaretMoved = false, bool repeat = false, int paint = -1, int input = 0, ExGrid.Components.GridInputText? fieldText = null) -> System.Threading.Tasks.Task!
+ExGrid.Components.ExGrid<TRow>.OnKeyFieldCompositionStartAsync(int input = 0, ExGrid.Components.GridInputText? fieldText = null) -> System.Threading.Tasks.Task!
+ExGrid.Components.ExGrid<TRow>.OnKeyFieldTextAsync(string! text, int paint = -1, int input = 0, ExGrid.Components.GridInputText? fieldText = null) -> System.Threading.Tasks.Task<bool>!
+ExGrid.Components.ExGrid<TRow>.OnPasteCancelAsync(int paste, int input = 0, ExGrid.Components.GridInputText? fieldText = null) -> System.Threading.Tasks.Task!
+ExGrid.Components.ExGrid<TRow>.OnPasteTakenAsync(long textLength, long htmlLength, int paint = -1, int input = 0, ExGrid.Components.GridInputText? fieldText = null) -> System.Threading.Tasks.Task!
+ExGrid.Components.ExGrid<TRow>.PressAnsweredAsync(int input = 0, ExGrid.Components.GridInputText? fieldText = null) -> System.Threading.Tasks.Task!
+ExGrid.Components.ExGrid<TRow>.PressTakenAt(string! kind, double offsetX, double offsetY, int firstRow, double scrollLeftPx, double scrollTopPx, int rowSequence, int layout, int editorRow = -1, int editorColumn = -1, int input = 0, int doubleClickInput = 0, ExGrid.Components.GridInputText? fieldText = null) -> void
+ExGrid.Components.ExGrid<TRow>.RememberRowClick(int ticket, int paint, int row, int column, int action, bool mark, bool wasMarked) -> void
+ExGrid.Components.GridInputText
+ExGrid.Components.GridInputText.Caret.get -> int
+ExGrid.Components.GridInputText.Caret.set -> void
+ExGrid.Components.GridInputText.GridInputText() -> void
+ExGrid.Components.GridInputText.Revision.get -> long
+ExGrid.Components.GridInputText.Revision.set -> void
+ExGrid.Components.GridInputText.Surface.get -> string!
+ExGrid.Components.GridInputText.Surface.set -> void
+ExGrid.Components.GridInputText.Text.get -> string!
+ExGrid.Components.GridInputText.Text.set -> void
+ExGrid.Rows.MarkRefusalReason.RowLeftTheWindow = 2 -> ExGrid.Rows.MarkRefusalReason
+*REMOVED*ExGrid.Components.ExGrid<TRow>.PressTakenAt(string! kind, double offsetX, double offsetY, int firstRow, double scrollLeftPx, double scrollTopPx, int rowSequence, int layout, int editorRow = -1, int editorColumn = -1, int input = 0, int doubleClickInput = 0) -> void
+*REMOVED*ExGrid.Components.ExGrid<TRow>.BarPressAnsweredAsync(bool barHoldsFocus, int input = 0) -> System.Threading.Tasks.Task!
+*REMOVED*ExGrid.Components.ExGrid<TRow>.BuildCopyPayloadAsync(bool withHeaders = false, int input = 0) -> System.Threading.Tasks.Task<ExGrid.Clipboard.ClipboardPayload?>!
+*REMOVED*ExGrid.Components.ExGrid<TRow>.NameBoxAnsweredAsync(int input = 0) -> System.Threading.Tasks.Task!
+*REMOVED*ExGrid.Components.ExGrid<TRow>.OnCopyLandedAsync(int landing, int input = 0) -> System.Threading.Tasks.Task!
+*REMOVED*ExGrid.Components.ExGrid<TRow>.OnCopyWriteRejectedAsync(int input = 0) -> System.Threading.Tasks.Task!
+*REMOVED*ExGrid.Components.ExGrid<TRow>.OnHeldTabRefusedAsync(int input = 0) -> System.Threading.Tasks.Task!
+*REMOVED*ExGrid.Components.ExGrid<TRow>.OnKeyAsync(string! key, bool ctrl, bool shift, bool alt, bool meta, bool metaIsPrimary, bool fromDescendant = false, string? editorText = null, int editorCaret = -1, int editorSelectionEnd = -1, bool editorCaretMoved = false, bool repeat = false, int paint = -1, int input = 0) -> System.Threading.Tasks.Task!
+*REMOVED*ExGrid.Components.ExGrid<TRow>.OnKeyFieldCompositionStartAsync(int input = 0) -> System.Threading.Tasks.Task!
+*REMOVED*ExGrid.Components.ExGrid<TRow>.OnKeyFieldTextAsync(string! text, int paint = -1, int input = 0) -> System.Threading.Tasks.Task<bool>!
+*REMOVED*ExGrid.Components.ExGrid<TRow>.PressAnsweredAsync(int input = 0) -> System.Threading.Tasks.Task!
 ExGrid.Components.ExGrid<TRow>.OnReplace.get -> System.Func<ExGrid.Finding.GridReplaceRequest!, System.Threading.Tasks.Task<ExGrid.Finding.GridReplaceResult!>!>?
 ExGrid.Components.ExGrid<TRow>.OnReplace.set -> void
 ExGrid.Components.ExGrid<TRow>.ReadEditText() -> string?

@@ -2512,13 +2512,13 @@ public class WritesLandAsEnteredTests : GridTestContext
             reader.Groups["body"].Value);
         // A key carries it from its keydown, held or not.
         Assert.Matches(new Regex(@"const snapshot = \(event\) => \(\{[^}]*paint: paintNow\(\),"), script);
-        Assert.Matches(new Regex(@"'OnKeyAsync',[^;]*k\.paint, nextInput\(neutral\)\)"), script);
+        Assert.Matches(new Regex(@"'OnKeyAsync',[^;]*k\.paint, nextInput\(neutral\), inputText\(input === null\)\)"), script);
         // A paste carries it from its event, held or not.
         Assert.Matches(new Regex(@"sendPaste\(event\.clipboardData\.getData\('text/plain'\), event\.clipboardData\.getData\('text/html'\), paintNow\(\)\)"), script);
         Assert.Matches(new Regex(@"clipboard: 'paste',[^}]*paint: paintNow\(\),"), script);
-        Assert.Matches(new Regex(@"const input = nextInput\(\);[^;]*;\s*pasteUnderWay = input;\s*return core\.invokeMethodAsync\('OnPasteTakenAsync', flavours\.text\?\.byteLength \?\? 0, flavours\.html\?\.byteLength \?\? 0, paint, input\)"), script);
+        Assert.Matches(new Regex(@"const input = nextInput\(\);[^;]*;\s*pasteUnderWay = input;\s*return core\.invokeMethodAsync\('OnPasteTakenAsync', flavours\.text\?\.byteLength \?\? 0, flavours\.html\?\.byteLength \?\? 0, paint, input, inputText\(\)\)"), script);
         // A press on an action carries it with the row, column and action it pressed.
-        Assert.Contains("'ActionPressTakenAt'", script);
+        Assert.Contains("'RememberRowClick'", script);
     }
 
     [Fact] // ADR-0142 / LV-12, ADR-0021: an action press reads its whole address — the paint, and the row, column and action its cell's id names — at the mousedown, and tells that at the release, so a keyed row's button moved in between still names the row it was pressed on; a press the platform makes a context menu of (Control with the primary button on macOS), which no click follows, is not told at all
@@ -2529,14 +2529,15 @@ public class WritesLandAsEnteredTests : GridTestContext
         var press = Regex.Match(script, @"const onPress = \(event\) => \{(?<body>.*?)\n    \};", RegexOptions.Singleline);
         Assert.True(press.Success, "onPress is defined");
         var pressed = press.Groups["body"].Value;
-        Assert.Contains("const contextPress = metaIsPrimary && event.ctrlKey;", pressed);
+        Assert.Contains("const contextPress = event.button === 2 || (metaIsPrimary && event.ctrlKey);", pressed);
         Assert.Contains("event.button === 0 && !contextPress ? ownAction(event.target) : null", pressed);
         Assert.Matches(new Regex(@"actionPress = button !== null \? \{\s*button,\s*paint: paintNow\(\),\s*row: [^\n]+\s*column: [^\n]+\s*index: "), pressed);
 
         var release = Regex.Match(script, @"const onRelease = \(event\) => \{(?<body>.*?)\n    \};", RegexOptions.Singleline);
         Assert.True(release.Success, "onRelease is defined");
         var released = release.Groups["body"].Value;
-        Assert.Contains("'ActionPressTakenAt', action.paint, action.row, action.column, action.index)", released);
+        Assert.Contains("rowCommandClick = { action };", released);
+        Assert.Contains("'RememberRowClick', ticket, press.paint, press.row,", script);
         // Nothing of the address is read again at the release.
         Assert.DoesNotContain("closest('[role=gridcell]')", released);
     }

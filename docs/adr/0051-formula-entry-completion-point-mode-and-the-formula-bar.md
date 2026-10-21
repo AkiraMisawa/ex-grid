@@ -32,6 +32,15 @@ Without it, the editor opens on the value, as it does today.
 
 ## Point mode
 
+*(2026-10-19, responsive/touch Q14, [ADR-0045](./0045-exgrid-is-a-desktop-grid.md): touch edits
+open in an editing dialog. An explicit reference-selection stage makes the Sheet operable while
+retaining the same uncommitted edit and caret; completing that stage returns to the editor.
+Focus stays on the edited cell, and the chosen range supplies a Reference through Point's
+existing meaning. This is not a commit/reopen cycle or an automatic mode change on rotation.
+Q21 later settles stage cancellation: restore its entry draft and caret, then continue the edit.
+The existing Pointing Scope still admits its other grids as Reference targets. The surface and
+keyboard return must implement ADR-0045's common frame and ownership contracts.)*
+
 In Excel, while a Formula is being typed at a place where a Reference can go (after `=`, an
 operator, `(` or `,`), the arrow keys and the mouse **point**. They move an outline over the Sheet
 and write its Reference into the Formula, where otherwise they would commit the edit and move.

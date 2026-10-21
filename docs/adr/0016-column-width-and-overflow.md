@@ -128,6 +128,11 @@ explicit "fit", that is the wrong surprise.
 
 ## Resizing by dragging — decided
 
+*(2026-10-19, responsive/touch Q16, [ADR-0045](./0045-exgrid-is-a-desktop-grid.md): the initial
+mobile delivery includes a dedicated touch resize grip with the same guide-and-release meaning.
+Size to fit remains the non-drag alternative. Ordinary header swipes scroll. This does not add
+numeric width entry or change the width bounds below.)*
+
 The three assumptions above are now a gesture. **A grip in the right-hand edge of the header cell;
 a guide line follows the pointer; the width is applied on release.** Not a live resize:
 `ColumnStyles` composes the width as an inline `style` per cell, so a live drag would rebuild every

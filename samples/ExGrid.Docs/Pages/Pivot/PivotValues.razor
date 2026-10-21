@@ -107,6 +107,10 @@
             behind it, Excel's drill-down. They open in a tab at the report's foot, beside the <em>PivotTable</em> tab that leads back, or in a dialog with <code>DetailsView="PivotDetailsView.Dialog"</code>, which Escape closes, leaving the report the keyboard, with the keys typed as it closes: ↓ typed straight after Escape moves the report's Focus, over Blazor Server too. This holds in the records' grid and on Close, with the keys kept in the order you typed them. The records are read
             under the report's Source Version: if the data has moved on meanwhile, ExPivot says so rather than
             show records that do not add up to the cell.
+            A menu key typed immediately after right-click waits for the Context Menu to receive
+            the keyboard, under either Chrome.
+            A report moved on the page while a secondary press is handled keeps that press's
+            original cell as the menu target.
         </p>
         <p>
             The question names the cell by its Items and that Source Version, not by the report it was shown

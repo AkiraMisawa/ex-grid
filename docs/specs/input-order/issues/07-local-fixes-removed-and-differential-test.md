@@ -8,6 +8,6 @@ Roadmap: internal
 - [ ] Each local fix decided and its ADR noted
 - [ ] The differential test, seed printed, on both hosts, every product
 - [ ] The Definition of Done gains its criterion
-- [ ] The hunt and the widened run green
+- [ ] Normal CI and the related input tests' repeated and widened runs green; the full hunt runs asynchronously (ADR-0240 §7, revised 2026-10-20)
 
 **Blocked by:** 02 to 06.

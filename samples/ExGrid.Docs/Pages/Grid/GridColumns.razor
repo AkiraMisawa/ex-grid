@@ -163,8 +163,9 @@
                 <code>OnMarkRefused</code> says why, once per press: <code>OrderMoved</code> when the header's checkbox
                 or "Mark all N rows" was pressed before a sort, a filter or a live reorder moved the rows it named,
                 and <code>SourceChanged</code> when any mark, a row's checkbox included, was pressed on what a
-                <code>Source</code> since replaced showed. The grid holds no words for it; the Example below writes
-                its own. A press on a row's checkbox whose row a live update re-rendered before the click arrived is
+                <code>Source</code> since replaced showed. For a row command waiting behind earlier input, <code>RowLeftTheWindow</code> means
+                its identity left the Window while waiting. The grid announces that queued refusal;
+                the Example below also writes the Consumer’s own words. A press on a row's checkbox whose row a live update re-rendered before the click arrived is
                 still heard: the grid answers it itself, marking the row or saying why it cannot.
             </li>
             <li>
@@ -197,6 +198,29 @@
                 <a href="exgrid/editing#editing-while-values-change">Editing while values change</a>.
             </li>
         </ul>
+        <p>
+            Row Action and row Mark clicks wait for earlier input, including an asynchronous Consumer
+            callback. They follow the current row by Row Key, or by instance without one, only while
+            it stays in the Window. Leaving the painted slice by scrolling is harmless. Leaving the
+            Window invalidates the waiting command permanently, even if the row returns before its
+            turn: it is refused as <code>RowLeftTheWindow</code>, and later inputs continue. Replacing
+            the Source instead reports <code>SourceChanged</code>. The grid announces the refusal;
+            <code>KeyRefusalLabelIds.RowCommandTargetLeft</code> supplies customizable words.
+        </p>
+        <p>
+            When no earlier input is held in the browser, successive row Marks are sent immediately
+            in order. Marking several rows before using a page button does not add a round trip
+            between Marks. A Mark behind a held key or Action still waits for that earlier input.
+            On Blazor Server, a row click made while the connection is down is refused when the
+            next input after reconnection exposes the loss; later input can continue.
+        </p>
+        <DocsExample Title="Row commands behind an asynchronous Consumer" Builtin="typeof(QueuedRowCommands)"
+                     Mud="typeof(QueuedRowCommandsMud)" Files="@(["Examples/Grid/QueuedRowCommands.razor"])">
+            Focus the grid and press <kbd>Control+B</kbd> (Command+B on macOS), then click Open on row 0
+            and the mark on row 1. Remove the first two rows, restore them, then Release: both commands
+            are refused. Click again to see new commands succeed. Without removing rows, Release lets
+            the waiting commands run in the order you made them.
+        </DocsExample>
         <DocsExample Title="Marks, a template and actions" Builtin="typeof(SpecialColumns)" Mud="typeof(SpecialColumnsMud)"
                      Files="@(["Examples/Grid/NoteField.razor", "Examples/Grid/Position.cs"])" />
     </DocsSection>

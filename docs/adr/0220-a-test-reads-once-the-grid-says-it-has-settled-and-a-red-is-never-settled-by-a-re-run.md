@@ -193,3 +193,12 @@ No difference, so the mark is always on, and there is no switch for it.
 - CI's minutes grow by the daily run. Nothing that gates a pull request grows.
 - The Definition of Done gains a criterion for the mark when it is built (its conditions, and that
   rows still skip their render), as every built feature does. *(Written 2026-10-17: ASY-7 and RR-14.)*
+
+## Typing joins the mark, 2026-10-20 (ADR-0240 ticket 03)
+
+The original exclusion above is narrowed: the Cell Editor, Formula Bar and Name Box now keep the
+mark off until the browser's text matches the owning surface's rendered `data-ex-mode-text`.
+The existing root input listener remembers only these owned surfaces; while a text is owed it
+checks that rendered fact on animation frames, reading no layout and sending no typing message.
+A removed surface is released; the command that removed it still owes its numbered answer.
+Popover/dialog drafts remain outside until their committing input. ASY-7 reflects this boundary.

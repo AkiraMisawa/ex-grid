@@ -4,6 +4,16 @@ JavaScript is used **only** where Blazor genuinely cannot do the job, or where a
 shows the Blazor-side approach is too slow. "Keep JS to a minimum" is too vague to enforce,
 so the rule is stronger: **there is a list, and anything not on it needs a new ADR.**
 
+*(2026-10-19, responsive/touch Q13 and Q23–Q26,
+[ADR-0045](./0045-exgrid-is-a-desktop-grid.md): four individually justified uses were accepted.
+Their formal records are [ADR-0260](./0260-touch-input-reports-browser-facts-and-keeps-command-meaning-in-csharp.md),
+[ADR-0261](./0261-touch-editing-prepares-the-keyboard-during-user-activation.md),
+[ADR-0262](./0262-external-frames-follow-visual-viewport-notifications.md) and
+[ADR-0263](./0263-pivot-touch-drag-resolves-only-registered-live-targets.md).
+The four touch uses extend the fifteen uses merged from main to nineteen. The four additions are approved for
+implementation, not claimed as shipped or verified. Product command meanings remain in C#;
+the new entries do not permit grid-cell measurement or rediscovering targets at replay time.)*
+
 ## The allowlist
 
 Every entry names the reason it cannot be done from Blazor.
@@ -26,7 +36,12 @@ Every entry names the reason it cannot be done from Blazor.
 | **ExChart: the 3D surface projected and drawn in the browser while it is turned** | Added 2026-10-19 ([ADR-0255](./0255-two-javascript-entries-the-charts-pointer-and-the-3d-surface.md)). Turning follows the pointer at the frame rate, which a round trip per frame cannot. .NET decides the mesh, its colour scale and its ticks; the module projects, orders the faces and draws inside its own box, and reports the angles when a drag ends. |
 | **ExChart: a chart's files — an SVG painted to PNG, and bytes saved under a file name** | Added 2026-10-19 ([ADR-0282](./0282-a-thirteenth-javascript-entry-paints-a-chart-to-png-and-saves-its-files.md)). A PNG is pixels with text laid out in fonts, which off the browser means a raster library or a font stack of our own; and Blazor cannot start a download. Once per click, never per render: it takes the SVG C# wrote and paints it to a PNG at the Device Pixel's scale, which it saves without the bytes coming back (amended 2026-10-20: a PNG larger than a Server circuit's message limit closed the circuit), or takes bytes and a file name and saves them through a `Blob`, or reads the chart's Visual Tokens from its computed style so a file has the theme's colours. No listener, no layout read, nothing measured. |
 
-That is the entire list. **Fifteen entries** (ten until 2026-10-18, when ADR-0240 added the two above ExChart's; twelve until 2026-10-19, when ADR-0255 added ExChart's two; fourteen until ADR-0282 added its files the same day).
+| **Touch pointer lifecycle and gesture candidates, with a one-time input-capability hint** ([ADR-0260](./0260-touch-input-reports-browser-facts-and-keeps-command-meaning-in-csharp.md)) | Pointer capture, event arbitration before defaults and original gesture timing must be handled in the browser. Scoped to the owning Input Root and registered external surfaces; preserves type, target/Paint and cancellation, deduplicates compatibility events and retains native pan/pinch and assistive activation. C# decides commands and grid hit testing; no per-cell listeners or unmeasured per-move optimization. |
+| **Provisional keyboard preparation during an activating touch edit gesture** ([ADR-0261](./0261-touch-editing-prepares-the-keyboard-during-user-activation.md)) | A Server response may arrive after the software keyboard's user-activation opportunity. Focus only the actual input preregistered by C#, retain immediate text for its candidate target, and leave final acceptance/refusal in the owner's Input Order. Selection alone does not prepare the keyboard; no second edit or focus theft by a late answer. |
+| **Visual viewport notifications while external surfaces are open** ([ADR-0262](./0262-external-frames-follow-visual-viewport-notifications.md)) | Blazor does not expose visual viewport offsets, dimensions, scale or resize/scroll notifications. Report initially and on change; last close unsubscribes. C# places external frames; no cell/anchor measurement, polling or guessed keyboard height. |
+| **Registered target lookup during active ExPivot touch drag** ([ADR-0263](./0263-pivot-touch-drag-resolves-only-registered-live-targets.md)) | Captured pointer input does not supply HTML drag target transitions for browser-laid-out Field List entries. `elementFromPoint()` resolves only that instance's registered Area/entry/removal targets during the gesture; report changes and the final target with rendering identity. C# validates the move; no grid lookup or target rediscovery at replay. |
+
+That is the entire list. **Nineteen entries: fifteen implemented and four touch additions approved for implementation** (ten until 2026-10-18, when ADR-0240 added the two above ExChart's; twelve until 2026-10-19, when ADR-0255 added ExChart's two; fourteen until ADR-0282 added its files the same day).
 
 *(2026-10-18, [ADR-0240](./0240-input-to-one-product-instance-is-taken-in-one-order.md) section 4.)* The
 reveal's write no longer gives up after 2 s: it ends on the render's `data-ex-reveal` or on disposal. The
@@ -188,7 +203,10 @@ These are the places where reaching for JS would be the easy answer, and where w
   ([ADR-0009](./0009-filter-panel-contract.md), ADR-0010,
   [ADR-0036](./0036-the-context-menu-is-the-column-menu-shape-over-a-selection.md)) need **no
   JS**: each stands under the instance root and stays inside the grid's box, bounded by a height
-  the core writes inline ([ADR-0040](./0040-a-popover-stays-inside-its-grids-box.md)).
+  the core writes inline ([ADR-0040](./0040-a-popover-stays-inside-its-grids-box.md)). The adaptive external frames
+  added by ADR-0045 use [ADR-0262](./0262-external-frames-follow-visual-viewport-notifications.md)'s
+  viewport notifications; C# still decides their presentation. This is a bounded exception to
+  the old in-grid-only scope, not permission to measure an anchor or position every popover in JS.
   *(Corrected 2026-09-24. This entry used to give the reason as the Popover API being driven
   by the `popover` and `popovertarget` attributes. That holds only for a popover opened by a
   click on a button. The grid's popovers also open from keys and a right-click, which would
@@ -198,7 +216,9 @@ These are the places where reaching for JS would be the easy answer, and where w
   Instead numeric columns assume `font-variant-numeric: tabular-nums` and estimate from digit
   count ([ADR-0016](./0016-column-width-and-overflow.md)). No measurement round-trip, and it
   works before the cell is painted.
-- **Focus.** `ElementReference.FocusAsync()` is enough. *(Refined while wiring the keyboard:
+- **Focus.** `ElementReference.FocusAsync()` is enough for ordinary focus requests. The
+  touch-edit activation exception is [ADR-0261](./0261-touch-editing-prepares-the-keyboard-during-user-activation.md):
+  a preregistered input is prepared during the gesture, with final acceptance still in C#. *(Refined while wiring the keyboard:
   that covers **taking** focus. **Releasing** it has no Blazor API, and Escape has to release
   it — Enter and Tab never leave the selection ([ADR-0012](./0012-anchor-focus-and-keyboard-navigation.md)),
   so without an exit the keyboard is trapped in the grid. The key handle therefore has a
@@ -645,3 +665,15 @@ service owns attachment and removal. Other Wrapper-owned interop remains prohibi
 and none adding an entry: whether an Escape on the root leaves (`data-ex-escape-leaves` on the Settled
 Stamp), the editing mode on the edit's surfaces (`data-ex-mode`, `data-ex-mode-version`), and the stamp's
 answered count before a held press into the Name Box selects the box's text.
+
+### Row click numbering, 2026-10-19
+
+The already allowed row Action/Mark press descriptor and capture-phase click listener register
+one row-click ticket in C# immediately. The descriptor is read at mousedown, matched at release,
+and registered at the click; a keyboard or script click reads the same rendered ids then.
+A Mark includes its painted `aria-checked` fact; C# decides the requested state. The click joins
+the existing browser hold, and receives its Input Order number only in its turn, after earlier
+held keys and presses. Its captured element is dispatched once; an explicit dispatch-finished
+notification recovers an event Blazor discarded, even if only a button disappeared. Dropping
+held input releases its ticket; the ticket holds only current-Window references (ADR-0160).
+No listener, layout measurement, target lookup at replay or per-cell render notification is added.

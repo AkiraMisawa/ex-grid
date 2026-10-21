@@ -75,8 +75,9 @@ public partial class ExGrid<TRow>
     /// hidden from a Consumer's editor and may change in any version.</remarks>
     /// <param name="input">The number the script gave this input, which the root names once it has
     /// been answered (ADR-0220); 0 for none.</param>
+    /// <param name="fieldText">The browser field's text carried by this input (ADR-0240 section 5).</param>
     [JSInvokable, System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-    public Task OnKeyFieldCompositionStartAsync(int input = 0)
+    public Task OnKeyFieldCompositionStartAsync(int input = 0, GridInputText? fieldText = null)
         => AnsweredAsync(() =>
         {
             if (!_disposed && _editMode == EditMode.None && !_selection.Selection.IsEmpty && !FocusCellIsPainted())
@@ -85,7 +86,7 @@ public partial class ExGrid<TRow>
                 _suppressRender = false;
                 StateHasChanged();
             }
-        }, input);
+        }, input, fieldText);
 
     /// <summary>
     /// A composition in the Keyboard Field has ended with <paramref name="text"/> — what the IME
@@ -110,9 +111,10 @@ public partial class ExGrid<TRow>
     /// hidden from a Consumer's editor and may change in any version.</remarks>
     /// <param name="input">The number the script gave this input, which the root names once it has
     /// been answered (ADR-0220); 0 for none.</param>
+    /// <param name="fieldText">The browser field's text carried by this input (ADR-0240 section 5).</param>
     [JSInvokable, System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-    public Task<bool> OnKeyFieldTextAsync(string text, int paint = PaintNotTold, int input = 0)
-        => AnsweredAsync(() => TakeKeyFieldTextAsync(text, paint), input);
+    public Task<bool> OnKeyFieldTextAsync(string text, int paint = PaintNotTold, int input = 0, GridInputText? fieldText = null)
+        => AnsweredAsync(() => TakeKeyFieldTextAsync(text, paint), input, fieldText);
 
     private async Task<bool> TakeKeyFieldTextAsync(string text, int paint)
     {

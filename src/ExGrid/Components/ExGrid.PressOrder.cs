@@ -52,14 +52,15 @@ public partial class ExGrid<TRow>
     /// been answered (ADR-0220): the answer's render is then in the DOM. 0 for none.</param>
     /// <remarks>Not the contract (ADR-0201): the grid's script calls it, so it is public, but it is
     /// hidden from a Consumer's editor and may change in any version.</remarks>
+    /// <param name="fieldText">The browser field's text carried by this input (ADR-0240 section 5).</param>
     [JSInvokable, System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-    public Task BarPressAnsweredAsync(bool barHoldsFocus, int input = 0)
+    public Task BarPressAnsweredAsync(bool barHoldsFocus, int input = 0, GridInputText? fieldText = null)
     {
         if (_disposed)
             return Task.CompletedTask;
         if (barHoldsFocus && _editMode == EditMode.None)
             _pressAnswer = FromChromeAsync(OnFormulaBarFocusAsync);
-        return PressAnsweredAsync(input);
+        return PressAnsweredAsync(input, fieldText);
     }
 
     /// <summary>
@@ -77,17 +78,18 @@ public partial class ExGrid<TRow>
     /// hidden from a Consumer's editor and may change in any version.</remarks>
     /// <param name="input">The number the script gave the question, which the root names once it has
     /// been answered (ADR-0220): the answer's render is then in the DOM. 0 for none.</param>
+    /// <param name="fieldText">The browser field's text carried by this input (ADR-0240 section 5).</param>
     [JSInvokable, System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-    public Task PressAnsweredAsync(int input = 0)
+    public Task PressAnsweredAsync(int input = 0, GridInputText? fieldText = null)
         => _disposed
             ? Task.CompletedTask
             : AnsweredAsync(() => _pressAnswer.ContinueWith(static _ => { }, CancellationToken.None,
-                TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default), input);
+                TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default), input, fieldText);
 
     // The Name Box's Enter the core heard last, while the core is answering it (NameBoxAnsweredAsync).
     private Task _nameBoxAnswer = Task.CompletedTask;
 
-    private Task OnNameBoxSubmitted() => _nameBoxAnswer = SubmitNameBoxAsync();
+    private Task OnNameBoxSubmitted() => _nameBoxAnswer = ClaimedAsync(ClaimKinds.Submit, SubmitNameBoxAsync);
 
     /// <summary>
     /// Completes once the Name Box's Enter the core heard last has been answered in full
@@ -105,12 +107,13 @@ public partial class ExGrid<TRow>
     /// hidden from a Consumer's editor and may change in any version.</remarks>
     /// <param name="input">The number the script gave the question, which the root names once it has
     /// been answered (ADR-0220): the answer's render is then in the DOM. 0 for none.</param>
+    /// <param name="fieldText">The browser field's text carried by this input (ADR-0240 section 5).</param>
     [JSInvokable, System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-    public Task NameBoxAnsweredAsync(int input = 0)
+    public Task NameBoxAnsweredAsync(int input = 0, GridInputText? fieldText = null)
         => _disposed
             ? Task.CompletedTask
             : AnsweredAsync(() => _nameBoxAnswer.ContinueWith(static _ => { }, CancellationToken.None,
-                TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default), input);
+                TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default), input, fieldText);
 
     // What the script said the next press or release on the rows was taken against (ED-31;
     // ADR-0021, note of 2026-10-02), until that event is heard. It is told just before Blazor
@@ -176,7 +179,8 @@ public partial class ExGrid<TRow>
     /// <para>Called by the grid's own script module and not for Consumers: it is public
     /// only because JavaScript interop requires it.</para>
     /// </summary>
-    /// <param name="kind">The event told of: <c>mousedown</c> or <c>mouseup</c>.</param>
+    /// <param name="kind">The event told of: <c>mousedown</c>, <c>mouseup</c>, or the rows'
+    /// <c>contextmenu</c> carrying the secondary press's target.</param>
     /// <param name="offsetX">The x the browser gave the event, from the Viewport's left edge.</param>
     /// <param name="offsetY">The y the browser gave the event, from the Viewport's top edge.</param>
     /// <param name="firstRow">The first row the Viewport painted then (<c>data-ex-first-row</c>);
@@ -196,15 +200,18 @@ public partial class ExGrid<TRow>
     /// <param name="doubleClickInput">For a release that ends a double click, the number the script
     /// gave the double click the browser fires next, answered once it has been (ADR-0220); 0 for
     /// none.</param>
+    /// <param name="fieldText">The browser field's text at this input (ADR-0240 section 5).</param>
     /// <remarks>Not the contract (ADR-0201): the grid's script calls it, so it is public, but it is
     /// hidden from a Consumer's editor and may change in any version.</remarks>
     [JSInvokable, System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     public void PressTakenAt(string kind, double offsetX, double offsetY, int firstRow,
         double scrollLeftPx, double scrollTopPx, int rowSequence, int layout, int editorRow = -1, int editorColumn = -1,
-        int input = 0, int doubleClickInput = 0)
+        int input = 0, int doubleClickInput = 0, GridInputText? fieldText = null)
     {
         InputReached(input);
         InputReached(doubleClickInput);
+        RememberInputText(input, fieldText);
+        RememberInputText(doubleClickInput, fieldText);
         // Told of before the event it describes was heard, the event never came: its number, and a
         // double click still awaited, are no longer owed (ADR-0220).
         if (_taken is { } unheard)

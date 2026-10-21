@@ -135,8 +135,26 @@ order the next input's text already gives.
 
 ### 7. How it is built: in stages, each green before the next
 
-Each stage is a pull request of its own, and the next starts only once the daily hunt and the widened
-run (ADR-0220 §4, §5) are green on it:
+Each stage is a pull request of its own. Normal CI must pass. Before the next stage starts, the
+**related input tests** must also pass the hunt's repeated run and the widened run
+(ADR-0220 §4, §5), on Server and WebAssembly in Chrome and Edge. Use the hunt's current settings:
+ten repetitions, plus the widened run with a 150 ms round-trip floor and CPU throttled by four.
+Record the selected specs, why they cover the changed input paths and their neighbours, the
+implementation revision, and the results in the stage's ticket or PR. Select the scope before
+reading its results; a failure is fixed, not excluded to make the gate green. Documentation-only
+changes do not invalidate results for an otherwise unchanged implementation and test revision.
+
+**The full hunt runs alongside the work; its completion is not a condition for starting the next
+stage.** Its findings still enter ADR-0220 §3's defect process. An observed defect in the stage's
+input paths must be resolved; an unfinished whole-suite run does not hold unrelated implementation.
+
+*Revised with the user, 2026-10-20:* this section originally required the whole daily hunt and
+widened run to finish before every stage. Running every browser test ten times made unrelated
+coverage the critical path for input work. The user chose to retain repeated and widened
+verification of the related input paths as the stage gate, and let the whole-suite hunt continue
+asynchronously. Normal CI and the rule against treating a passing re-run as a fix are unchanged.
+
+The stages are:
 
 1. **02** — the core's queue (3), numbers for every input the script hears (2), no clock (4), in ExGrid.
 2. **03** — field text rides with the next input (5), and the Settled Mark covers typing.
@@ -351,3 +369,79 @@ pull request, with its reason.
 - The Docs Site's page on automation (the Settled Mark) and the Chrome seams' pages say what the order
   is and how a Consumer's Chrome takes part; each stage writes its Change Note.
 - `CONTEXT.md` gains **Input Order** and **Input Root**.
+
+## Row Action and row Mark paths, 2026-10-19
+
+Upstream ticket 02's implementation left the row Action and row Mark callbacks outside the
+order: an isolated component reproduction on main `04530f84` passed ordered keys and header
+clicks, but both row callbacks overtook a preceding asynchronous Consumer key. These paths join
+the existing Input Order; no second queue is introduced.
+
+Decided with the user: a waiting row command tracks identity only while continuously present
+in the current Window. If it leaves, the command releases the row/key and is refused in its
+turn even if the identity returns. ADR-0160 records the retention tradeoff; ADR-0142 and ADR-0043
+record the resulting Action/Mark behavior. Source replacement continues to take precedence.
+
+The row listener registers the existing press descriptor at the click, before the browser
+hold, including a Mark's painted checked state. C# tracks its current-Window target from that
+point. The browser puts execution in its existing held sequence and assigns the number in
+that turn, so an earlier held key or heading click cannot be overtaken. It tells the ticket and
+number, dispatches the captured element once, and tells that dispatch finished. The normal
+Blazor callback claims the command; if it was discarded, the finishing notification recovers
+the same command and number. A missing target is never looked up anew in the DOM. Ticket
+cancellation and ordinary claim abandonment release the target and void any assigned number.
+Existing unnumbered interop methods remain callable; the shipped row listener uses the ticket
+protocol. This adds no parallel command queue: tickets capture targets, and Input Order still
+executes every command.
+
+*As built, corrected after the 2026-10-20 hunt (RI-13):* a row Mark with no earlier browser-held
+input is dispatched immediately through that same ticket protocol. Mark changes no keyboard mode
+(ADR-0043), so C# can serialise its handling without a browser round trip before the next Mark is
+sent. Holding every Mark until its reply had made a Consumer's button outside the root read only
+the first of two rapidly marked rows. A Mark behind a held key or Action still joins that hold;
+target retention, numbering, refusal and discarded-event recovery are unchanged.
+
+Integrating section 11 also removed the browser's wait for the unnumbered registration and
+dispatch-end replies. Those calls are still sent and their errors reported, but a row click waits
+for its numbered Begin and answered stamp. Otherwise a click made while disconnected kept the
+hold waiting for two replies Blazor never supplies, even after the core declared its number lost.
+The partial-wire exclusions in section 11 are unchanged.
+
+## As built: ticket 03 field text (2026-10-20)
+
+The existing numbered interop calls carry `GridInputText` for the owning Cell Editor, Formula Bar
+or Name Box. Keys reuse the editor text they already carry rather than sending it twice.
+Tellings ahead of Blazor events keep their text by input number; the existing Input Order adopts
+it in that number's turn, and voiding or disposal releases it. This is no second command queue.
+The existing overtaken-input rule covers presses and claims as well as keys. Name Box submission
+claims its existing form event before reading the carried text; a later acknowledgement cannot
+restore a Name Box submission that has already ended.
+
+The first implementation treated each carried reading as fresh typing. The widened Server
+run exposed the mistake: a press inserted a Reference, then its acknowledgement or release
+carried the same pre-render text and erased that Reference. The field reading now carries a
+revision shared by inputs that carry the same browser input event's text. The core adopts a
+revision once; unchanged text can still report a moved caret. The existing input listener
+advances the revision for new typing even when it returns to the same value. A rendered value
+with no matching input event in this edit is not fresh typing and cannot replace the core's
+newer text. The persistent Formula Bar's input belongs to the edit in which it was typed.
+These revisions add neither an input number nor an interop message per character.
+Keys carry the revision alongside their existing text argument, without repeating the string.
+
+The first revision fix also advanced a revision when reading a changed value, which was wrong:
+normal CI's cell-to-bar typing case showed the bar's older render acquiring a new revision and
+overwriting the cell's typing. Revisions now originate only in the existing input listener.
+Reading a surface or receiving a render does not create one.
+
+Typing still uses its existing Blazor input message. The existing root input listener remembers
+only typed owned surfaces, and the Settled Mark remains off until their rendered text agrees
+with the field. Animation frames check attributes and values while text is owed; they read no
+layout. A removed editor or a Formula Bar whose editing mark has gone no longer owes typing;
+its closing command still owes its numbered answer. No per-cell observer or new event listener
+is introduced. Popover and dialog drafts keep section 5's exclusion.
+
+The typing-then-menu regression also exposed two gaps in section 4's existing hand-off. A
+right-click now holds following keys for its popover just as Shift+F10 does, including when no
+edit was open. An older render's after-work must not consume a newer popover's focus request
+before that opening has rendered its control references. The request remains pending until
+the render bearing it is built. Neither wait uses a clock or adds another queue.

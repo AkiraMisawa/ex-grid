@@ -1,0 +1,50 @@
+@page "/responsive"
+@using global::ExGrid.MudBlazor
+@using global::MudBlazor
+
+<HeadContent>
+    <link href="_content/ExGrid.DemoPages/fonts/roboto/roboto.css" rel="stylesheet" />
+    <link href="_content/MudBlazor/MudBlazor.min.css" rel="stylesheet" />
+    <MudExGridStylesheet />
+</HeadContent>
+<MudThemeProvider />
+<MudPopoverProvider />
+<DemoNav />
+<h1>Responsive boxes preserve columns</h1>
+<p>Change the container without resizing the window. Columns keep their widths and order;
+    pinning returns when the scrolling band has room again (ADR-0045).</p>
+<button id="narrow" @onclick="() => _width = 240">Narrow container</button>
+<button id="wide" @onclick="() => _width = 800">Wide container</button>
+<p id="responsive-state">Requested pinned columns: 2; layout notifications: @_changes</p>
+@foreach (var layout in new[] { "flex", "grid" })
+{
+    <section id="@("responsive-" + layout)" style="@($"display: {layout}; grid-template-columns: auto 1fr; width: {_width}px; margin-top: 12px")">
+        <aside style="width: 40px; flex: none">Box</aside>
+        <MudExGridPaper Square="true" Elevation="0" Style="flex: 1 1 auto">
+            <ExGrid TRow="DemoTrade" Window="_rows" Columns="_columns" PinnedColumnCount="2"
+                    ViewportWidth="ViewportSize.Stretch" ViewportHeight="160" Chrome="_chrome"
+                    OnColumnWidthChanged="ChangedWidth" OnColumnOrderChanged="ChangedOrder" OnPinnedCountChanged="ChangedPinned" />
+        </MudExGridPaper>
+    </section>
+}
+<section id="responsive-fixed" style="width: 240px; margin-top: 12px">
+    <MudExGridPaper Square="true" Elevation="0">
+        <ExGrid TRow="DemoTrade" Window="_rows" Columns="_columns" ViewportWidth="600" ViewportHeight="100" />
+    </MudExGridPaper>
+</section>
+@code {
+    private int _width = 800;
+    private int _changes;
+    private readonly DemoTrade[] _rows = DemoData.Window(50, seed: 3);
+    private static readonly MudGridChrome _chrome = new();
+    private static readonly GridColumn<DemoTrade>[] _columns =
+    [
+        new("Book", ColumnType.Text, r => r.Book, width: new(ColumnWidth.Fixed(120))),
+        new("Trader", ColumnType.Text, r => r.Trader, width: new(ColumnWidth.Fixed(140))),
+        new("Notional", ColumnType.Number, r => r.Notional, width: new(ColumnWidth.Fixed(180))),
+        new("Id", ColumnType.Number, r => r.Id, width: new(ColumnWidth.Fixed(180))),
+    ];
+    private void ChangedWidth(ColumnWidthChange _) => _changes++;
+    private void ChangedOrder(IReadOnlyList<string> _) => _changes++;
+    private void ChangedPinned(int _) => _changes++;
+}

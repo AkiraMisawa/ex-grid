@@ -419,7 +419,7 @@ const CONTEXT_METHODS_THAT_OUTLIVE_A_NAVIGATION = ['addCookies', 'addInitScript'
 // (pivot.spec.mjs on WebAssembly, after #82; every time with the files held back 400 ms). What the
 // page says is read — the sheet each link holds — never a wait or a retry (ADR-0056). A file that
 // never loads is a hang, said by name; its console error fails the test besides (CON-1).
-async function stylesheetsLoaded(page) {
+export async function stylesheetsLoaded(page) {
     try {
         await page.waitForFunction(() => [...document.querySelectorAll('link[rel~="stylesheet"]')]
             .every((link) => link.sheet !== null), null, { timeout: 60_000 });
