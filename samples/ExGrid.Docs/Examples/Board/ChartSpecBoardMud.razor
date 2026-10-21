@@ -1,0 +1,28 @@
+@using ExBoard
+@using ExBoard.Components
+@using ExChart.MudBlazor
+@using ExGrid.Data
+
+<MudTextField T="string" Label="Chart Spec" Lines="6" Variant="Variant.Outlined" @bind-Value="_spec" @bind-Value:after="Draw" />
+@if (_refusal is not null)
+{
+    <MudAlert Severity="Severity.Warning" Dense="true" Class="my-2" role="status">@_refusal</MudAlert>
+}
+@if (_board is not null)
+{
+    <ExBoard Board="_board" Data="_data!" Width="700" Chrome="_chrome" ChartChrome="MudChartChrome.Default" />
+}
+
+@code {
+    private static readonly MudGridChrome _chrome = new();
+
+    private string _spec = ChartSpecBoard.Spec;
+    private BoardReading? _board;
+    private IReadOnlyDictionary<string, Snapshot>? _data;
+    private string? _refusal;
+
+    protected override void OnInitialized() => Draw();
+
+    // Edit the spec and leave the field: a column the table does not have is refused by the spec's path.
+    private void Draw() => (_board, _data, _refusal) = ChartSpecBoard.Read(_spec);
+}

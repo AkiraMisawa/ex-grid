@@ -1,4 +1,5 @@
 using System.Text.Json;
+using ExChart.Engine;
 using ExGrid;
 using ExGrid.Data;
 using ExPivot.Engine;
@@ -10,7 +11,10 @@ namespace ExBoard;
 /// <param name="Inputs">The inputs, in the order the Board declares them.</param>
 /// <param name="Views">The views, in the order the Board lists them.</param>
 /// <param name="Layout">The rows the views are laid out in, top to bottom.</param>
-public sealed record BoardReading(string Title, IReadOnlyList<BoardInput> Inputs, IReadOnlyList<BoardView> Views, IReadOnlyList<BoardRow> Layout)
+/// <param name="Links">The links, in the order the Board lists them.</param>
+/// <param name="Outputs">The outputs, in the order the Board declares them.</param>
+public sealed record BoardReading(string Title, IReadOnlyList<BoardInput> Inputs, IReadOnlyList<BoardView> Views, IReadOnlyList<BoardRow> Layout,
+    IReadOnlyList<BoardLink> Links, IReadOnlyList<BoardOutputDeclaration> Outputs)
 {
     /// <summary>The input named <paramref name="name"/>, or null.</summary>
     public BoardInput? Input(string name) => Inputs.FirstOrDefault(i => i.Name == name);
@@ -111,7 +115,9 @@ public sealed record BoardCell(string View, int Width);
 ///  "views": [{"id": "blotter", "title": "Trades", "grid": {…}},
 ///            {"id": "byDesk", "pivot": {"data": "trades", "layout": {…}}},
 ///            {"id": "curve", "chart": {…}}],
-///  "layout": [{"views": ["blotter", "byDesk"], "widths": [2, 1], "height": 360}, {"views": ["curve"]}]}
+///  "layout": [{"views": ["blotter", "byDesk"], "widths": [2, 1], "height": 360}, {"views": ["curve"]}],
+///  "links": [{"from": "blotter", "to": ["byDesk", "curve"], "on": ["desk"]}],
+///  "outputs": {"chosen": {"from": "blotter", "on": ["tradeId"], "confirm": "Book these trades"}}}
 /// </code>
 /// A grid is <see cref="GridViewSpec"/>'s spec, a pivot names its input and holds a
 /// <see cref="PivotLayoutJson"/> layout, and a chart is a Chart Spec whose series name inputs in their
@@ -121,10 +127,16 @@ public sealed record BoardCell(string View, int Width);
 /// <see cref="Version"/>; a member the Board does not have; an input's declaration
 /// (<see cref="BoardInput.Read"/>); a view with no id, an id twice, or other than one of grid, pivot and
 /// chart; a view naming an input the Board does not declare, or a column or field the input does not
-/// declare; a pivot layout its reader refuses; and a layout that places a view twice, leaves one out,
-/// names one that is not there, or gives widths or heights that are no widths or heights.</para>
+/// declare; a pivot layout its reader refuses; a Chart Spec its reader refuses when read against the
+/// declarations, a column they do not declare included; and a layout that places a view twice, leaves one out,
+/// names one that is not there, or gives widths or heights that are no widths or heights; and a link
+/// (<see cref="BoardLink"/>) from a view that is not a grid or a pivot, on a field a pivot does not place
+/// in its rows or columns, to a view that is not there, to its own
+/// view or one that narrows it, on a column its views' inputs do not all declare of one kind; and an
+/// output (<see cref="BoardOutputDeclaration"/>) from a view that is not a grid, on a column its input
+/// does not declare, or with no confirm action to raise it.</para>
 /// </summary>
-public static class BoardSpec
+public static partial class BoardSpec
 {
     /// <summary>The version of the Board this reader reads.</summary>
     public const int Version = 1;
@@ -132,7 +144,9 @@ public static class BoardSpec
     /// <summary>A row's height when the layout gives none, in CSS pixels.</summary>
     public const double DefaultRowHeight = 320;
 
-    private static readonly string[] RootKeys = ["version", "title", "inputs", "views", "layout"];
+    private static readonly string[] RootKeys = ["version", "title", "inputs", "views", "layout", "links", "outputs"];
+    private static readonly string[] OutputKeys = ["from", "on", "confirm"];
+    private static readonly string[] LinkKeys = ["from", "to", "on"];
     private static readonly string[] ViewKeys = ["id", "title", "grid", "pivot", "chart"];
     private static readonly string[] Kinds = ["grid", "pivot", "chart"];
     private static readonly string[] PivotKeys = ["data", "layout"];
@@ -155,6 +169,92 @@ public static class BoardSpec
         using (document)
             return Read(document.RootElement);
     }
+
+    /// <summary>
+    /// A Chart Spec as a Board of one view (ADR-0320 as rewritten by ADR-0340, Q4), as <c>draw_chart</c>
+    /// draws it while an AI composes: each Data Handle the spec names becomes an input declared with the
+    /// shape of the table the host holds for it, and the spec is the Board's one view, <see cref="ChartViewId"/>.
+    /// Bind it with each handle's Snapshot under the handle's name. The spec is read first as the tool reads
+    /// it, so a handle the host does not know, or a spec the tool refuses, is refused with the spec's own path.
+    /// </summary>
+    /// <param name="chartSpec">The Chart Spec, as <c>draw_chart</c> takes it.</param>
+    /// <param name="tables">The shape of each table the host holds, by its Data Handle.</param>
+    /// <exception cref="BoardRefusedException">The spec cannot be drawn; the path is the spec's own.</exception>
+    public static BoardReading OfChart(string chartSpec, IReadOnlyDictionary<string, DataShape> tables)
+    {
+        ArgumentNullException.ThrowIfNull(chartSpec);
+        ArgumentNullException.ThrowIfNull(tables);
+        var named = new List<string>();
+        try
+        {
+            ChartSpec.Read(chartSpec, handle =>
+            {
+                if (!tables.TryGetValue(handle, out var shape))
+                    return null;
+                if (!named.Contains(handle))
+                    named.Add(handle);
+                return new DeclaredColumns(shape);
+            });
+        }
+        catch (ChartSpecRefusedException e)
+        {
+            throw new BoardRefusedException(e.Path, e.Message);
+        }
+        var buffer = new System.Buffers.ArrayBufferWriter<byte>();
+        using (var json = new Utf8JsonWriter(buffer))
+        {
+            json.WriteStartObject();
+            json.WriteNumber("version", Version);
+            json.WriteStartObject("inputs");
+            foreach (var handle in named)
+            {
+                json.WriteStartObject(handle);
+                json.WriteStartArray("columns");
+                foreach (var column in tables[handle].Columns)
+                {
+                    json.WriteStartObject();
+                    json.WriteString("name", column.Name);
+                    json.WriteString("type", BoardInput.NameOf(column.Kind));
+                    json.WriteEndObject();
+                }
+                json.WriteEndArray();
+                json.WriteEndObject();
+            }
+            json.WriteEndObject();
+            json.WriteStartArray("views");
+            json.WriteStartObject();
+            json.WriteString("id", ChartViewId);
+            json.WritePropertyName("chart");
+            json.WriteRawValue(chartSpec);
+            json.WriteEndObject();
+            json.WriteEndArray();
+            json.WriteStartArray("layout");
+            json.WriteStartObject();
+            json.WriteStartArray("views");
+            json.WriteStringValue(ChartViewId);
+            json.WriteEndArray();
+            json.WriteEndObject();
+            json.WriteEndArray();
+            json.WriteEndObject();
+        }
+        try
+        {
+            return Read(System.Text.Encoding.UTF8.GetString(buffer.WrittenSpan));
+        }
+        catch (BoardRefusedException e)
+        {
+            // Anything else is in the inputs made from the host's tables, which the spec does not write. A
+            // DataShape already holds only what an input declares, so this is a guard, not a path taken.
+            throw e.Path.StartsWith(ChartPath, StringComparison.Ordinal)
+                ? new BoardRefusedException(e.Path[ChartPath.Length..].TrimStart('.'), e.Message)
+                : new BoardRefusedException("", $"A table the spec names cannot be a Board Input: {e.Message}");
+        }
+    }
+
+    /// <summary>The id of the one view of a Board <see cref="OfChart"/> makes.</summary>
+    public const string ChartViewId = "chart";
+
+    private const string ChartPath = "views[0].chart";
 
     private static BoardReading Read(JsonElement root)
     {
@@ -189,8 +289,166 @@ public static class BoardSpec
             views.Add(read);
         }
 
-        return new BoardReading(title, inputs, views, ReadLayout(root, views));
+        var layout = ReadLayout(root, views);
+        var links = ReadLinks(root, views, Shape);
+        return new BoardReading(title, inputs, views, layout, links, ReadOutputs(root, views, Shape));
     }
+
+    private static List<BoardOutputDeclaration> ReadOutputs(JsonElement root, List<BoardView> views, Func<string, DataShape?> shape)
+    {
+        var outputs = new List<BoardOutputDeclaration>();
+        if (!root.TryGetProperty("outputs", out var list))
+            return outputs;
+        if (list.ValueKind != JsonValueKind.Object)
+            throw new BoardRefusedException("outputs", "A Board declares its outputs, by name, in 'outputs'.");
+        foreach (var member in list.EnumerateObject())
+        {
+            var path = $"outputs.{member.Name}";
+            var output = member.Value;
+            if (member.Name.Length == 0)
+                throw new BoardRefusedException("outputs", "An output has a name.");
+            if (output.ValueKind != JsonValueKind.Object)
+                throw new BoardRefusedException(path, "An output is an object.");
+            Members(output, OutputKeys, path, "An output");
+            if (!output.TryGetProperty("from", out var fromValue) || fromValue.ValueKind != JsonValueKind.String || fromValue.GetString() is not { Length: > 0 } fromId)
+                throw new BoardRefusedException($"{path}.from", "An output names the view whose selection it hands on, in 'from'.");
+            var from = views.FirstOrDefault(v => v.Id == fromId)
+                ?? throw new BoardRefusedException($"{path}.from", $"Output '{member.Name}' is taken from view '{fromId}', which the Board does not have.");
+            if (from is not BoardGridView grid)
+                throw new BoardRefusedException($"{path}.from", $"Output '{member.Name}' is taken from view '{fromId}', a {KindOf(from)}; an output is taken from a grid's selected rows.");
+            var on = Names(output, "on", $"{path}.on", "An output names the columns whose values it hands on, in 'on'.");
+            var declared = shape(grid.Grid.Data)!;
+            for (var c = 0; c < on.Count; c++)
+            {
+                if (!declared.TryGetColumn(on[c], out _))
+                    throw new BoardRefusedException($"{path}.on[{c}]", $"Output '{member.Name}' hands on column '{on[c]}', which input '{grid.Grid.Data}' does not declare.");
+            }
+            // Raised only by a confirm the Board declares, never by a selection on the way (Q6).
+            if (!output.TryGetProperty("confirm", out var confirm) || confirm.ValueKind != JsonValueKind.String || confirm.GetString() is not { Length: > 0 } label)
+                throw new BoardRefusedException($"{path}.confirm", $"Output '{member.Name}' is raised by a confirm action, whose label is its 'confirm'.");
+            outputs.Add(new BoardOutputDeclaration(member.Name, fromId, on, label));
+        }
+        return outputs;
+    }
+
+    private static List<BoardLink> ReadLinks(JsonElement root, List<BoardView> views, Func<string, DataShape?> shape)
+    {
+        var links = new List<BoardLink>();
+        if (!root.TryGetProperty("links", out var list))
+            return links;
+        if (list.ValueKind != JsonValueKind.Array)
+            throw new BoardRefusedException("links", "A Board lists its links in 'links'.");
+        var l = 0;
+        foreach (var link in list.EnumerateArray())
+        {
+            var path = $"links[{l++}]";
+            if (link.ValueKind != JsonValueKind.Object)
+                throw new BoardRefusedException(path, "A link is an object.");
+            Members(link, LinkKeys, path, "A link");
+            if (!link.TryGetProperty("from", out var fromValue) || fromValue.ValueKind != JsonValueKind.String || fromValue.GetString() is not { Length: > 0 } fromId)
+                throw new BoardRefusedException($"{path}.from", "A link names the view whose selection narrows in 'from'.");
+            var from = views.FirstOrDefault(v => v.Id == fromId)
+                ?? throw new BoardRefusedException($"{path}.from", $"The link starts at view '{fromId}', which the Board does not have.");
+            var fromData = from switch
+            {
+                BoardGridView grid => grid.Grid.Data,
+                BoardPivotView pivot => pivot.Input,
+                _ => throw new BoardRefusedException($"{path}.from",
+                    $"The link starts at view '{fromId}', a {KindOf(from)}; a link starts at a grid, whose selected rows narrow, or a pivot, whose selected cells do."),
+            };
+
+            var to = Names(link, "to", $"{path}.to", "A link names the views it narrows, in 'to'.");
+            for (var t = 0; t < to.Count; t++)
+            {
+                if (to[t] == fromId)
+                    throw new BoardRefusedException($"{path}.to[{t}]", $"The link narrows its own view '{fromId}'; a view's selection narrows other views.");
+                if (!views.Any(v => v.Id == to[t]))
+                    throw new BoardRefusedException($"{path}.to[{t}]", $"The link narrows view '{to[t]}', which the Board does not have.");
+            }
+
+            var on = Names(link, "on", $"{path}.on", "A link names the columns it compares, in 'on'.");
+            var fromShape = shape(fromData)!;
+            for (var c = 0; c < on.Count; c++)
+            {
+                if (!fromShape.TryGetColumn(on[c], out var kind))
+                    throw new BoardRefusedException($"{path}.on[{c}]", $"The link compares column '{on[c]}', which input '{fromData}' of view '{fromId}' does not declare.");
+                // A pivot's cell names the Items of its rows and columns, never of a value or a filter:
+                // a link on one would narrow by nothing the cell says (ADR-0340, Q5).
+                if (from is BoardPivotView fromPivot && !fromPivot.Layout.Rows.Concat(fromPivot.Layout.Columns).Any(f => f.Field == on[c]))
+                {
+                    throw new BoardRefusedException($"{path}.on[{c}]", $"The link compares field '{on[c]}', which pivot '{fromId}' does not place in its rows or columns; "
+                        + "a pivot's cell names the items of its rows and columns.");
+                }
+                foreach (var target in to)
+                {
+                    foreach (var data in views.First(v => v.Id == target).Data)
+                    {
+                        if (!shape(data)!.TryGetColumn(on[c], out var other))
+                            throw new BoardRefusedException($"{path}.on[{c}]", $"The link compares column '{on[c]}', which input '{data}' of view '{target}' does not declare.");
+                        if (other.Kind != kind.Kind)
+                        {
+                            throw new BoardRefusedException($"{path}.on[{c}]", $"The link compares column '{on[c]}', a {BoardInput.NameOf(kind.Kind)} in input "
+                                + $"'{fromData}' and a {BoardInput.NameOf(other.Kind)} in input '{data}'; a value is compared only with one of its kind.");
+                        }
+                    }
+                }
+            }
+            links.Add(new BoardLink(fromId, to, on));
+
+            // Links run one way: a view narrowed, directly or along other links, by the view it would
+            // narrow would drop its own selection each time it narrowed, and never settle.
+            foreach (var target in to)
+            {
+                if (Reaches(links, target, fromId))
+                    throw new BoardRefusedException($"{path}.to", $"The link narrows view '{target}', which already narrows view '{fromId}'; links run one way.");
+            }
+        }
+        return links;
+    }
+
+    private static bool Reaches(List<BoardLink> links, string from, string to)
+    {
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        var next = new Stack<string>([from]);
+        while (next.TryPop(out var at))
+        {
+            if (at == to)
+                return true;
+            if (!seen.Add(at))
+                continue;
+            foreach (var link in links.Where(k => k.From == at))
+            {
+                foreach (var target in link.To)
+                    next.Push(target);
+            }
+        }
+        return false;
+    }
+
+    private static List<string> Names(JsonElement owner, string member, string path, string missing)
+    {
+        if (!owner.TryGetProperty(member, out var list) || list.ValueKind != JsonValueKind.Array || list.GetArrayLength() == 0)
+            throw new BoardRefusedException(path, missing);
+        var names = new List<string>();
+        var i = 0;
+        foreach (var item in list.EnumerateArray())
+        {
+            if (item.ValueKind != JsonValueKind.String || item.GetString() is not { Length: > 0 } name)
+                throw new BoardRefusedException($"{path}[{i}]", "A name is text.");
+            if (names.Contains(name))
+                throw new BoardRefusedException($"{path}[{i}]", $"'{name}' is named twice.");
+            names.Add(name);
+            i++;
+        }
+        return names;
+    }
+
+    internal static string KindOf(BoardView view) => view switch
+    {
+        BoardGridView => "grid",
+        BoardPivotView => "pivot",
+        _ => "chart",
+    };
 
     private static BoardView ReadView(JsonElement view, string path, Func<string, DataShape?> shape)
     {
@@ -244,8 +502,8 @@ public static class BoardSpec
     {
         if (spec.ValueKind != JsonValueKind.Object)
             throw new BoardRefusedException(path, "A chart is a Chart Spec, an object.");
-        // The spec is the Chart Spec's to read; here only the inputs its series name are checked, so
-        // that a chart reading an input the Board does not declare is refused with the rest.
+        // The inputs its series name are checked first, so that one the Board does not declare is said
+        // in the Board's words; the rest is the Chart Spec's reader's, below.
         var data = new List<string>();
         if (spec.TryGetProperty("series", out var series) && series.ValueKind == JsonValueKind.Array)
         {
@@ -260,7 +518,29 @@ public static class BoardSpec
                     CheckChartData(edges, $"{at}.edges", shape, data);
             }
         }
-        return new BoardChartView(id, title, spec.GetRawText(), data);
+        // Read once against the declarations alone, with no rows, so that a series naming a column its
+        // input does not declare, or a spec its reader refuses, is refused now, by path, with the rest of
+        // the Board, not when data is first bound (ADR-0320 as rewritten by ADR-0340, Q4).
+        var raw = spec.GetRawText();
+        try
+        {
+            ChartSpec.Read(raw, name => shape(name) is { } declared ? new DeclaredColumns(declared) : null);
+        }
+        catch (ChartSpecRefusedException e)
+        {
+            throw new BoardRefusedException(e.Path.Length == 0 ? path : $"{path}.{e.Path}", e.Message);
+        }
+        return new BoardChartView(id, title, raw, data);
+    }
+
+    // An input's declared columns as a table of no rows.
+    private sealed class DeclaredColumns(DataShape shape) : IChartData
+    {
+        public IReadOnlyList<string> Columns { get; } = [.. shape.Columns.Select(c => c.Name)];
+
+        public int RowCount => 0;
+
+        public object? Value(string column, int row) => throw new ArgumentOutOfRangeException(nameof(row), "A declaration holds no rows.");
     }
 
     private static void CheckChartData(JsonElement owner, string path, Func<string, DataShape?> shape, List<string> data)

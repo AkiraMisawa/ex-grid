@@ -1,0 +1,22 @@
+@using ExBoard
+@using ExBoard.Components
+@using ExChart.MudBlazor
+@using ExPivot.MudBlazor
+
+<MudText Typo="Typo.body2">The capability said of <code>h-7f3a</code>: <code>@BoardToolCall.Told</code></MudText>
+<MudTextField T="string" Label="draw_board call" Lines="8" Variant="Variant.Outlined" @bind-Value="_call" @bind-Value:after="Answer" />
+<MudAlert Severity="@(_answer.Accepted ? Severity.Info : Severity.Warning)" Dense="true" Class="my-2" role="status">@_answer.Text</MudAlert>
+@if (_answer is { Board: { } board, Bound: { } bound })
+{
+    <ExBoard Board="board" Data="bound.Data" Width="900" Chrome="_chrome" PivotChrome="MudPivotChrome.Default" ChartChrome="MudChartChrome.Default" />
+}
+
+@code {
+    private static readonly MudGridChrome _chrome = new();
+
+    private string _call = BoardToolCall.Call;
+    private BoardSpecAnswer _answer = BoardToolCall.Answer(BoardToolCall.Call);
+
+    // What the tool answers the model: the Board said in words, or one sentence naming the path and the reason.
+    private void Answer() => _answer = BoardToolCall.Answer(_call);
+}

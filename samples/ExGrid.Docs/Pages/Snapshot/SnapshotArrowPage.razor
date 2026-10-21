@@ -27,6 +27,16 @@
         </DocsExample>
     </DocsSection>
 
+    <DocsSection Title="The shape before the rows">
+        <p>
+            <code>SnapshotArrow.ReadShapeAsync(stream)</code> reads only a stream's schema, its first message, and
+            answers the <code>DataShape</code> the Snapshot would have: each column's name and kind, by the table
+            below. The stream is left at its first record batch. A server that answers a source's shape this way
+            lets a Board Input be checked before a row is sent (ADR-0341). An Arrow file says its schema in its
+            footer, after its rows, so its shape is refused rather than read whole.
+        </p>
+    </DocsSection>
+
     <DocsSection Title="What crosses">
         <MudSimpleTable Dense="true" Outlined="true" Class="docs-api-table">
             <thead>

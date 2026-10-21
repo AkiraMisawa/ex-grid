@@ -16,7 +16,7 @@ public sealed class BoardSpecTests
 
     private const string Grid = """{"id": "blotter", "title": "Trades", "grid": {"data": "trades", "columns": [{"column": "desk"}, {"column": "pnl", "format": "#,##0"}]}}""";
     private const string Pivot = """{"id": "byDesk", "pivot": {"data": "trades", "layout": {"version": 1, "rows": [{"field": "desk"}], "values": [{"field": "pnl", "aggregation": "sum"}]}}}""";
-    private const string Chart = """{"id": "curve", "chart": {"version": 1, "axis": {"values": "dates"}, "series": [{"kind": "level", "data": "trades", "x": "day", "y": "pnl"}]}}""";
+    private const string Chart = """{"id": "curve", "chart": {"version": 1, "axis": {"values": "dates"}, "series": [{"id": "pnl", "name": "P&L", "kind": "level", "data": "trades", "x": "day", "y": "pnl"}]}}""";
 
     [Fact] // ADR-0340: a Board lays out views of the family in rows, over its declared inputs
     public void A_board_reads_its_inputs_views_and_layout()
@@ -28,7 +28,7 @@ public sealed class BoardSpecTests
         Assert.Equal(["trades"], board.Inputs.Select(i => i.Name));
         var grid = Assert.IsType<BoardGridView>(board.View("blotter"));
         Assert.Equal("Trades", grid.Title);
-        Assert.Equal(["desk", "pnl"], grid.Grid.Columns.Select(c => c.Column));
+        Assert.Equal(["desk", "pnl"], grid.Grid!.Columns.Select(c => c.Column));
         var pivot = Assert.IsType<BoardPivotView>(board.View("byDesk"));
         Assert.Equal("desk", pivot.Layout.Rows[0].Field);
         Assert.Equal(["trades"], Assert.IsType<BoardChartView>(board.View("curve")).Data);
@@ -56,6 +56,9 @@ public sealed class BoardSpecTests
         { Board(Pivot.Replace("\"field\": \"desk\"", "\"field\": \"book\""), """{"views": ["byDesk"]}"""), "views[0].pivot.layout", "The pivot places field 'book', which input 'trades' does not declare." },
         { Board(Pivot.Replace("\"version\": 1, ", ""), """{"views": ["byDesk"]}"""), "views[0].pivot.layout", "The pivot's layout cannot be read: A Pivot Layout names its version." },
         { Board(Chart.Replace("\"data\": \"trades\"", "\"data\": \"quotes\""), """{"views": ["curve"]}"""), "views[0].chart.series[0].data", "The chart reads input 'quotes', which the Board does not declare." },
+        // ADR-0320 as rewritten by ADR-0340 (Q4): the Chart Spec is read against the declarations, when the Board is read.
+        { Board(Chart.Replace("\"y\": \"pnl\"", "\"y\": \"book\""), """{"views": ["curve"]}"""), "views[0].chart.series[0].y", "series[0].y: \"trades\" has no column \"book\"; its columns are desk, month, pnl, day." },
+        { Board(Chart.Replace("\"kind\": \"level\"", "\"kind\": \"flow\""), """{"views": ["curve"]}"""), "views[0].chart.series[0].kind", "series[0].kind \"flow\" is not a Series Kind" },
         { Board("""{"id": "x"}""", """{"views": ["x"]}"""), "views[0]", "View 'x' is one of grid, pivot and chart." },
         { Board($"{Grid}, {Grid}", """{"views": ["blotter"]}"""), "views[1].id", "Two views have the id 'blotter'." },
         { Board($"{Grid}, {Pivot}", """{"views": ["blotter"]}"""), "layout", "The layout leaves out view 'byDesk'; every view stands in it once." },

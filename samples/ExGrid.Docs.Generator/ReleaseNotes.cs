@@ -27,7 +27,7 @@ public sealed record NotesInput(string FullPath, string Name, SourceText Text);
 public static class ReleaseNotes
 {
     /// <summary>The products a note names, in the order the notes' headings put them.</summary>
-    public static readonly ImmutableArray<string> Products = ["ExGrid", "ExSheet", "ExPivot", "ExChart", "Data"];
+    public static readonly ImmutableArray<string> Products = ["ExGrid", "ExSheet", "ExPivot", "ExChart", "ExBoard", "Data"];
 
     /// <summary>What a Change Note says its change is.</summary>
     public static readonly ImmutableArray<string> Kinds = ["Added", "Fixed", "Behaviour", "Breaking"];
@@ -40,17 +40,18 @@ public static class ReleaseNotes
         "ExGrid.Data", "ExGrid.Data.Arrow",
         "ExPivot.Engine", "ExPivot", "ExPivot.MudBlazor",
         "ExChart.Engine", "ExChart", "ExChart.MudBlazor",
+        "ExBoard",
     ];
 
     /// <summary>
     /// The products that joined the family after versions were published, whose heading a version carries only
-    /// when its Packages line names one of their packages (ADR-0190, ADR-0280).
+    /// when its Packages line names one of their packages (ADR-0190, ADR-0280, ADR-0340).
     /// </summary>
-    public static readonly ImmutableArray<string> LaterProducts = ["ExChart"];
+    public static readonly ImmutableArray<string> LaterProducts = ["ExChart", "ExBoard"];
 
     /// <summary>A prerelease's headings, in order (ADR-0190).</summary>
     public static readonly ImmutableArray<string> Headings =
-        ["Highlights", "Breaking changes", "Behaviour changes", "ExGrid", "ExSheet", "ExPivot", "ExChart", "Data"];
+        ["Highlights", "Breaking changes", "Behaviour changes", "ExGrid", "ExSheet", "ExPivot", "ExChart", "ExBoard", "Data"];
 
     /// <summary>
     /// A release's blocks, the headings only a version without a suffix and a release candidate rehearsing it
@@ -68,7 +69,7 @@ public static class ReleaseNotes
     public static readonly ImmutableArray<string> StableOrder =
     [
         "Highlights", "Breaking changes", "Behaviour changes", "Known limitations",
-        "ExGrid", "ExSheet", "ExPivot", "ExChart", "Data",
+        "ExGrid", "ExSheet", "ExPivot", "ExChart", "ExBoard", "Data",
         "Signed off", "SHOULD criteria accepted failing", "Out of scope for this version", "Supported",
     ];
 

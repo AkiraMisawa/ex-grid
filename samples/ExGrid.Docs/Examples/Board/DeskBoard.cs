@@ -16,11 +16,14 @@ public static class DeskBoard
              "columns": [{"column": "day", "header": "Day"}, {"column": "desk", "header": "Desk"},
                          {"column": "trader", "header": "Trader"}, {"column": "pnl", "header": "P&L", "format": "#,##0;(#,##0)"}],
              "sorts": [{"column": "day", "direction": "Ascending"}]}},
-           {"id": "byDesk", "title": "By desk", "pivot": {"data": "trades", "layout": {"version": 1,
-             "rows": [{"field": "desk"}], "values": [{"field": "pnl", "aggregation": "sum", "numberFormat": "#,##0"}]}}},
+           {"id": "byTrader", "title": "By trader", "pivot": {"data": "trades", "layout": {"version": 1,
+             "rows": [{"field": "trader"}], "values": [{"field": "pnl", "aggregation": "sum", "numberFormat": "#,##0"}]}}},
            {"id": "daily", "title": "P&L by day", "chart": {"version": 1, "axis": {"values": "dates"},
              "series": [{"id": "pnl", "name": "P&L", "kind": "observation", "data": "trades", "x": "day", "y": "pnl"}]}}],
-         "layout": [{"views": ["blotter", "byDesk"], "widths": [2, 1], "height": 260}, {"views": ["daily"], "height": 300}]}
+         "layout": [{"views": ["blotter", "byTrader"], "widths": [2, 1], "height": 260}, {"views": ["daily"], "height": 300}],
+         "links": [{"from": "blotter", "to": ["byTrader", "daily"], "on": ["desk"]},
+                   {"from": "byTrader", "to": ["daily"], "on": ["trader"]}],
+         "outputs": {"review": {"from": "blotter", "on": ["day", "trader"], "confirm": "Send to review"}}}
         """;
 
     public const string Data = """
@@ -43,6 +46,21 @@ public static class DeskBoard
         catch (BoardRefusedException refused)
         {
             return (null, null, refused.Path.Length == 0 ? refused.Message : $"{refused.Path}: {refused.Message}");
+        }
+    }
+
+    // The user's changes read back, as the host does next time. What no longer fits the Board is
+    // dropped as it binds, and the Board says so above its views; a Diff this reader cannot read is
+    // refused whole.
+    public static (BoardDiff? Diff, string? Refusal) LayOver(string diff)
+    {
+        try
+        {
+            return (BoardDiff.Read(diff), null);
+        }
+        catch (BoardRefusedException refused)
+        {
+            return (null, $"The changes kept: {refused.Path}: {refused.Message}");
         }
     }
 }

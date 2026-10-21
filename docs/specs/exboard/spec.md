@@ -18,7 +18,7 @@ The grilling's record is `exchart/grilling-family-ai.md` in the project's shared
 | A grid's view read from a spec (Shaped Grid) | `ExGrid` |
 | A pivot's view read from a spec | `ExPivot.Engine` |
 | A chart's view read from a spec (the Chart Spec) | `ExChart.Engine` |
-| The Board: reader, layout, links, outputs, Board Diff, tool definition | `ExBoard` (new), `ExBoard.MudBlazor` (new) |
+| The Board: reader, layout, links, outputs, Board Diff, tool definition | `ExBoard` (new; no Wrapper, ADR-0340 "Shipping") |
 
 No Engine gains a reference. The family holds no workflow: it reads a Board, checks its inputs, draws
 it, and raises its outputs and its Diff.
@@ -28,12 +28,14 @@ it, and raises its outputs and its Diff.
 | # | Ticket | Status |
 |---|---|---|
 | 01 | [Board Inputs and the Shaped Grid](issues/01-board-inputs-and-the-shaped-grid.md) | done |
-| 02 | [A source held on a server answers its shape](issues/02-a-server-source-answers-its-shape.md) | ready-for-agent |
+| 02 | [A source held on a server answers its shape](issues/02-a-server-source-answers-its-shape.md) | done |
 | 03 | [The Board reader](issues/03-the-board-reader.md) | done |
 | 04 | [Drawing a Board](issues/04-drawing-a-board.md) | done |
-| 05 | [Links narrow by values](issues/05-links-narrow-by-values.md) | ready-for-agent |
-| 06 | [Outputs raised on a confirm](issues/06-outputs-raised-on-a-confirm.md) | ready-for-agent |
-| 07 | [The Board Diff](issues/07-the-board-diff.md) | ready-for-agent |
-| 08 | [The Chart Spec as a Board view](issues/08-the-chart-spec-as-a-board-view.md) | ready-for-agent |
-| 09 | [The Board tool and the Docs Site](issues/09-the-board-tool-and-the-docs-site.md) | ready-for-agent |
-| 10 | [ExBoard ships as packages](issues/10-exboard-ships-as-packages.md) | ready-for-agent |
+| 05 | [Links narrow by values](issues/05-links-narrow-by-values.md) | done |
+| 06 | [Outputs raised on a confirm](issues/06-outputs-raised-on-a-confirm.md) | done |
+| 07 | [The Board Diff](issues/07-the-board-diff.md) | done |
+| 08 | [The Chart Spec as a Board view](issues/08-the-chart-spec-as-a-board-view.md) | done |
+| 09 | [The Board tool and the Docs Site](issues/09-the-board-tool-and-the-docs-site.md) | done |
+| 10 | [ExBoard ships as packages](issues/10-exboard-ships-as-packages.md) | done |
+| 11 | [A pivot's cell links](issues/11-a-pivot-cell-links.md) | done |
+| 12 | [A Board over sources held on a server](issues/12-a-board-over-sources-held-on-a-server.md) | done |

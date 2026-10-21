@@ -35,6 +35,7 @@
     <PackageReference Include="ExChart.Engine" Version="$(ExGridVersion)" />
     <PackageReference Include="ExChart" Version="$(ExGridVersion)" />
     <PackageReference Include="ExChart.MudBlazor" Version="$(ExGridVersion)" />
+    <PackageReference Include="ExBoard" Version="$(ExGridVersion)" />
   </ItemGroup>
 
   <Target Name="RequireThePackedVersion" BeforeTargets="CollectPackageReferences">
