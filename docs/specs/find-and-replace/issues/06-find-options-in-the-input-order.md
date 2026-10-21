@@ -8,6 +8,6 @@ Roadmap: ExGrid, ExSheet — Ticking Match case or Whole cell and then pressing 
 - [x] Both options are claimed clicks in every Chrome (Built-in, MudBlazor, ExSheet's panels) and are applied in their place in the Input Order
 - [x] `FindContext.MatchCaseChanged` and `WholeCellChanged` become `Func<bool, Task>`; a Change Note says what a custom Chrome changes
 - [x] Layer 2
-- [ ] A layer-3 test that ticks and steps at machine speed with no wait between, both hosts (written in `find.spec.mjs` under both Chromes; not yet run)
+- [x] A layer-3 test that ticks and steps at machine speed with no wait between, both hosts (`find.spec.mjs`, under both Chromes)
 
 **Blocked by:** 04, 05.
