@@ -181,3 +181,38 @@ and text committed by a row press, three repetitions each. This integration adds
 Consumer behavior beyond main's documented IME correction; no additional Docs Site example
 or Change Note is needed for the merge itself. Latest-revision CI and the fifteen-spec
 related-input gate remain required; the Heading renderer investigation remains open.
+
+
+## Further upstream input integration, 2026-10-21
+
+Main advanced to `3fb720a3`, including ExSheet's Input Order surfaces (PR #228),
+Find/Replace and Workbook tab/Undo work. The responsive branch integrates it at
+`11bf9043`, with the shared click-kind follow-up at `c241c0a3`; stage 03 integrates
+that at `60a8cfb1`. The merge preserves row-command capture, carried text and the
+original secondary-press target alongside main's external surfaces, implicit
+submission and neutral focus numbering. The paired-click regression keeps its
+Settled Mark boundary and every expected value. Generated assets were regenerated.
+
+The first build identified three references to the old claim-kind constants; those
+now use main's shared `ClaimKinds`. The corrected solution builds with zero warnings
+or errors. All nineteen logic/component suites pass: 15,289 passed, 11 skipped.
+Standards and Spec reviews found no further actionable integration findings.
+The integration itself adds no Consumer behavior beyond the two branches' existing
+documented changes, so no additional Docs Site example or Change Note is required.
+
+Main now provides stage 04's implementation; this does not complete stage 03's
+outstanding acceptance. Add `key-field.spec.mjs`, `sheet-toolbar.spec.mjs` and
+`format-cells.spec.mjs` to the fifteen selected related specs before the next gate: the
+combined input paths now include main's IME focus correction, toolbar commands and
+Format Cells, all sharing the same carried-text/claim mechanism. The gate therefore
+has eighteen specs; none of the earlier scope is removed. The reproduced Heading
+stop remains open.
+
+Twenty-seven targeted browser executions passed on Chrome Server at 150 ms RTT
+and CPU4: held row commands, secondary-menu text and target, Name Box submission,
+paired click/key input, and immediate typing after a Sheet Tab press, three
+repetitions of every selected case. Six uninstrumented Heading edge-drag executions
+also passed. The Heading spec now matches main byte-for-byte; temporary diagnostics
+remain only on the isolated diagnostic branch. These passes do not close the
+previously observed stop. Latest-revision normal CI and the eighteen-spec gate
+remain outstanding.

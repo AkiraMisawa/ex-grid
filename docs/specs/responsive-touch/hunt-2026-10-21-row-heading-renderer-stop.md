@@ -116,3 +116,26 @@ executions with no failure in 23 minutes. That non-reproduction does not close t
 The after-failure-only probe is isolated at `1e5bca80`, run
 [39599811038](https://github.com/AkiraMisawa/ex-grid/actions/runs/39599811038); the product
 PR retains its existing assertions while this investigation continues.
+
+## After-failure diagnostic outcome
+
+Run 39599811038 completed on Chrome 155.0.8059.84: the complete sequence passed
+1,400 executions (14 tests repeated 100 times, job 119221162928), and the two edge
+gestures passed 2,000 executions (1,000 each, job 119221162609). No assertion failed,
+so the after-failure capture did not fire. These 3,400 passes are non-reproduction
+evidence, not a correction of the observed stop.
+
+The next diagnostic restores the exact Row probe used by run 39588334803, which
+reproduced the Column stop, and adds native capture only after an assertion has
+already failed. This controls for the diagnostic changes between runs. Its product
+hosts remain at 9a4ed03a and its Chrome version remains .84. Normal product tests
+return to the uninstrumented Heading tests from main; isolated diagnostics retain
+the probes. No original gesture or assertion is removed.
+
+The restored-probe diagnostic is `979b7935`, run
+[39646129492](https://github.com/AkiraMisawa/ex-grid/actions/runs/39646129492). It keeps
+the original 300-second test bound and saves after-failure captures with their own
+file prefix, preserving any earlier Row watchdog evidence. Its changed tests passed
+six local Chrome Server executions and were reviewed before push. The normal
+Heading spec, restored byte-for-byte from main, passed six further local executions.
+This cleanup does not claim that the renderer stop is fixed.

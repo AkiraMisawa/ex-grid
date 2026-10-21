@@ -89,7 +89,7 @@ public partial class ExGrid<TRow>
     // The Name Box's Enter the core heard last, while the core is answering it (NameBoxAnsweredAsync).
     private Task _nameBoxAnswer = Task.CompletedTask;
 
-    private Task OnNameBoxSubmitted() => _nameBoxAnswer = ClaimedAsync(ClaimSubmit, SubmitNameBoxAsync);
+    private Task OnNameBoxSubmitted() => _nameBoxAnswer = ClaimedAsync(ClaimKinds.Submit, SubmitNameBoxAsync);
 
     /// <summary>
     /// Completes once the Name Box's Enter the core heard last has been answered in full
