@@ -33,17 +33,20 @@ public enum GridInputKind
     Focus,
 
     /// <summary>
-    /// The keyboard coming into the Input Root from outside it: a <c>focusin</c> heard on an element that
-    /// declares <c>data-ex-claims="focusin"</c>. Only the one that crosses the Input Root's edge is an
-    /// input: the handling of a <c>focusin</c> that moves DOM focus inside the Input Root does not run.
+    /// The keyboard coming into a product's Input Root from outside it: a <c>focusin</c> on the element
+    /// marked <c>data-ex-input-root</c> around the grid, while that element itself declares
+    /// <c>data-ex-claims="focusin"</c>, as ExSheet's box does in a Pointing Scope. Only the one that crosses
+    /// that element's edge is an input, told by the grid: the handling of a <c>focusin</c> that moves DOM
+    /// focus inside it does not run, nor does one called anywhere else (<c>ExGrid.InOrderAsync</c>).
     /// </summary>
     KeyboardIn,
 
     /// <summary>
-    /// The keyboard leaving the Input Root for somewhere outside it: a <c>focusout</c> heard on an
-    /// element that declares <c>data-ex-claims="focusout"</c>. Only the one that crosses the Input Root's
-    /// edge is an input: the handling of a <c>focusout</c> that moves DOM focus inside the Input Root does
-    /// not run, nor does one the window's own losing focus raises.
+    /// The keyboard leaving a product's Input Root for somewhere outside it: a <c>focusout</c> on the
+    /// element marked <c>data-ex-input-root</c> around the grid, while that element itself declares
+    /// <c>data-ex-claims="focusout"</c>. Only the one that crosses that element's edge is an input, told by
+    /// the grid: the handling of a <c>focusout</c> that moves DOM focus inside it does not run, nor does one
+    /// the window's own losing focus raises, nor one called anywhere else (<c>ExGrid.InOrderAsync</c>).
     /// </summary>
     KeyboardOut,
 }

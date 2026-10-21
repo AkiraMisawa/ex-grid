@@ -69,7 +69,7 @@ public partial class ExGrid<TRow>
     /// popover, before the grid takes the keyboard back to its root. The keys typed after that Escape
     /// are held until the popover is gone and the keyboard has landed, and a hand-off the Consumer tells
     /// before its first await — <see cref="HandKeyboardToFrameAsync"/>, then
-    /// <see cref="HandKeyboardToAsync"/> — is where they land, in order. Told nothing, they are the
+    /// <see cref="HandKeyboardToAsync(ElementReference)"/> — is where they land, in order. Told nothing, they are the
     /// root's. It is not called when the popover closes any other way: a press elsewhere, the box
     /// shrinking, the contents' own <see cref="GridPopoverContext.Close"/>, another popover opened in
     /// its place, or <see cref="ClosePopoverAsync"/>.</para>
@@ -256,15 +256,28 @@ public partial class ExGrid<TRow>
     /// before held keys arrive; without a text field, its first enabled control. A control already
     /// chosen by the user keeps the keyboard (ADR-0039).</param>
     /// <returns>A task that completes once the request has been made.</returns>
-    public Task HandKeyboardToAsync(ElementReference control)
+    public Task HandKeyboardToAsync(ElementReference control) => HandKeyboardToAsync(control, preventScroll: false);
+
+    /// <summary>
+    /// <see cref="HandKeyboardToAsync(ElementReference)"/>, with the control taking the keyboard where it
+    /// stands when <paramref name="preventScroll"/> is true: nothing scrolls to bring it into view, as
+    /// <c>FocusAsync(preventScroll: true)</c> has it — for a control that is already where the user is
+    /// looking, such as the next tab of a tab list the arrow keys move along. The same request otherwise,
+    /// granted under the same condition; before the grid is attached, and after it is gone, the control's
+    /// own <c>FocusAsync</c> is asked the same way.
+    /// </summary>
+    /// <param name="control">The element to hand the keyboard to, as for <see cref="HandKeyboardToAsync(ElementReference)"/>.</param>
+    /// <param name="preventScroll">Whether the control takes the keyboard without scrolling into view.</param>
+    /// <returns>A task that completes once the request has been made.</returns>
+    public Task HandKeyboardToAsync(ElementReference control, bool preventScroll)
         => InvokeAsync(async () =>
         {
             try
             {
                 if (_disposed || _scrollHandle is null)
-                    await control.FocusAsync();
+                    await control.FocusAsync(preventScroll);
                 else
-                    await _scrollHandle.InvokeVoidAsync("handKeyboardTo", control);
+                    await _scrollHandle.InvokeVoidAsync("handKeyboardTo", control, false, preventScroll);
             }
             catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
             {

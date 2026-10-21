@@ -90,8 +90,7 @@
 
     private Task OpenChoicesInOrderAsync() => InOrderAsync(Item.OpenChoicesAsync);
 
-    private Task InOrderAsync(Func<Task> handling) =>
-        Item.Toolbar is { } toolbar ? toolbar.InOrderAsync(GridInputKind.Click, handling) : handling();
+    private Task InOrderAsync(Func<Task> handling) => Item.InOrderAsync(GridInputKind.Click, handling);
 
     private int _answeredOpen;
     private int _answeredClose;

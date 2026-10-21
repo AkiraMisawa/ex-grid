@@ -160,6 +160,21 @@ public class InputOrderSurfacesTests : SheetTestContext
         Assert.Equal(2, raised);
     }
 
+    [Fact] // ADR-0240 §6, ADR-0331 §4: → on the tab list hands the keyboard to the tab it selects, through the grid, without scrolling
+    public async Task ADR0240_an_arrow_on_the_tab_list_hands_the_keyboard_to_the_tab_without_scrolling()
+    {
+        var cut = RenderSheet(ps => ps.Add(s => s.Workbook, TwoSheets()));
+        var handed = HandedToCount;
+
+        await cut.FindAll(".ex-sheet-tab")[0].KeyDownAsync(new KeyboardEventArgs { Key = "ArrowRight" });
+
+        Assert.Equal("Two", SelectedTab(cut));
+        Assert.Equal(handed + 1, HandedToCount);
+        var (id, preventScroll) = LastHandedTo;
+        Assert.False(string.IsNullOrEmpty(id));
+        Assert.True(preventScroll, "the tab takes the keyboard where it stands, as its own focus asked before the Input Order");
+    }
+
     [Fact] // ADR-0240 §1, §6: Format Cells' OK is in the order — ↓ typed straight after Enter in it moves the Focus only once the format is set
     public async Task ADR0240_format_cells_ok_then_a_key_are_taken_in_order()
     {

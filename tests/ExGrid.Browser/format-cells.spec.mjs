@@ -1,4 +1,4 @@
-import { test, expect, setRoundTrip, circuitQuiet } from './fixtures.mjs';
+import { test, expect, setRoundTrip, circuitQuiet, alterPage, settled } from './fixtures.mjs';
 import { SERVER } from './hosting.mjs';
 import { sheet, openSheet, cell, pressCell, expectFocusAt, pressAt, boxOf, columnHeader, hashesAtTheStandardWidth } from './sheet-helpers.mjs';
 import { expectKeyboardOn } from './keyboard.mjs';
@@ -146,6 +146,38 @@ test.describe('on /sheet', () => {
         } finally {
             if (circuit) await setRoundTrip(0);
         }
+    });
+
+    // Input-order ticket 04's review: Enter on a radio button may submit its form (Chrome's and Edge's do,
+    // the standard leaves it to the browser), so the keys after it are held only once the submission has
+    // come. Where none comes — here a handler of the page's prevents the key's default, as a browser that
+    // does not submit would leave it — Format Cells stays open, and the ↑ typed after it moves the choice,
+    // as typed; it is not held for a submission that never comes.
+    test('ADR-0240/SH-45: Enter on a choice that submits nothing leaves the ↑ after it to the choices', async ({ page }) => {
+        const grid = sheet(page);
+        await pressCell(grid, 'C2');
+        await page.keyboard.press('Control+1');
+        await expect(formatCells(grid)).toBeVisible();
+        await pick(choice(grid, 'Percentage'));
+        await alterPage(page, () => {
+            const noSubmit = (event) => {
+                if (event.key === 'Enter' && event.target instanceof HTMLInputElement && event.target.type === 'radio'
+                    && event.target.closest('.ex-format-cells')) {
+                    event.preventDefault();
+                }
+            };
+            window.addEventListener('keydown', noSubmit, true);
+            return () => window.removeEventListener('keydown', noSubmit, true);
+        });
+
+        await page.keyboard.press('Enter');
+        await page.keyboard.press('ArrowUp');
+
+        await expect(choice(grid, 'Time')).toBeChecked();
+        await expect(choice(grid, 'Time')).toBeFocused();
+        await settled(grid);
+        await expect(formatCells(grid)).toBeVisible();
+        await expect(cell(grid, 'C2')).not.toHaveText(/%$/);
     });
 
     // A press inside Format Cells made as it appears keeps the keyboard where it was pressed (ticket 240,

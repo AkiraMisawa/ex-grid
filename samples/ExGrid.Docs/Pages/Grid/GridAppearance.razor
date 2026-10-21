@@ -183,10 +183,18 @@
             a button of your Chrome, a control in your popover, a command beside the grid — can run in its place among
             the keys and presses through <code>InOrderAsync(kind, handling)</code> on the grid, or the
             <code>InOrder</code> delegate on a popover's <code>GridPopoverContext</code>, with the
-            <code>GridInputKind</code> of the event it answers. Marked with <code>data-ex-claims</code>, the control's
-            event is numbered as it happens, and <code>handling</code> runs after every input made before it and before
-            every one made after it; one with no mark runs after every input the grid has received so far. ExSheet puts
-            its toolbar, its Sheet Tabs and Format Cells in its grid's order this way.
+            <code>GridInputKind</code> of the event it answers. Marked with <code>data-ex-claims</code>, a control inside
+            the grid's markup — your popover's contents in the grid's frame, your Chrome's controls — has its event
+            numbered as it happens, and <code>handling</code> runs after every input made before it and before every one
+            made after it; one with no mark, or outside the grid, runs after every input the grid has received so far.
+            <code>KeyboardIn</code> and <code>KeyboardOut</code> are the exception: they run only when the grid tells
+            the keyboard crossing the edge of a product's Input Root — the element marked
+            <code>data-ex-input-root</code> around the grid, naming <code>focusin</code> and <code>focusout</code> in its
+            own <code>data-ex-claims</code> — and a call anywhere else does nothing, since a focus change inside that
+            element is no input and the grid cannot tell the two apart. ExSheet puts its toolbar, its Sheet Tabs,
+            Format Cells and the keyboard crossing the Sheet's edge in its grid's order this way. A control of yours
+            that a hand-off should reach without scrolling, such as the next tab of a tab list, takes the keyboard
+            through <code>HandKeyboardToAsync(control, preventScroll: true)</code>.
         </p>
         <p>
             <strong>A frame of your own</strong> outside the grid — a dialog, a toolbar — takes the keyboard through

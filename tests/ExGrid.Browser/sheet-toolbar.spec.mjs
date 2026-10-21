@@ -1047,3 +1047,56 @@ for (const chrome of ['builtin', 'mud']) {
         });
     });
 }
+
+// Input-order ticket 04's review: the gate hears the whole Sheet (its Input Root), and holds a press on a
+// toolbar command made while an input before it is still being answered, its release and its click
+// behind it. Markup of the Sheet's that claims nothing — a control of a Consumer's or a design system's
+// — is not the gate's: a press, release and click there reach their handler as they come, whatever the
+// gate holds. Held, the release and the click never did.
+test.describe('the Sheet\'s own markup that claims nothing (input-order ticket 04)', () => {
+    test.beforeEach(async ({ page }) => {
+        await openSheet(page);
+    });
+
+    test('ADR-0240: a press on unclaimed markup in the Sheet while a toolbar press is held reaches its handler, release and click too', async ({ page }) => {
+        const grid = sheet(page);
+        await pressCell(grid, 'A4');
+        // A control of the Consumer's own in the Sheet's box, outside the toolbar band and the grid, that
+        // claims no event: it hears what reaches it.
+        await alterPage(page, () => {
+            const box = document.querySelector('.ex-sheet');
+            const control = document.createElement('button');
+            control.type = 'button';
+            control.id = 'consumer-control';
+            control.textContent = 'Consumer';
+            control.addEventListener('mousedown', (event) => event.preventDefault());
+            for (const type of ['mousedown', 'mouseup', 'click']) {
+                control.addEventListener(type, () => control.setAttribute(`data-heard-${type}`, ''));
+            }
+            box.append(control);
+            return () => control.remove();
+        });
+        const control = page.locator('#consumer-control');
+
+        // Bold's answer is held, so the press on Italic straight after it is held behind it; the press on
+        // the Consumer's control comes while Italic's press, its release and its click are held.
+        const circuit = await holdAnswers(true);
+        await toolbarItem(page, 'Bold').click();
+        await toolbarItem(page, 'Italic').click();
+        await control.click();
+
+        await expect(control).toHaveAttribute('data-heard-mousedown', '');
+        await expect(control).toHaveAttribute('data-heard-mouseup', '');
+        await expect(control).toHaveAttribute('data-heard-click', '');
+        await holdAnswers(false);
+
+        // The held press on Italic is handed on in its turn, after Bold's answer.
+        await expect(toolbarItem(page, 'Bold')).toHaveAttribute('aria-pressed', 'true');
+        await expect(toolbarItem(page, 'Italic')).toHaveAttribute('aria-pressed', 'true');
+        await settled(grid);
+        if (circuit) {
+            await circuitQuiet();
+        }
+        await expectKeyboardOn(grid);
+    });
+});

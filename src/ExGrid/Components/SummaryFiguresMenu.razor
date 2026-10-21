@@ -22,7 +22,7 @@
         var shown = (Shown & figure) != 0;
         <button type="button" class="@(shown ? "ex-summary-menu-item ex-summary-menu-shown" : "ex-summary-menu-item")"
                 role="menuitemcheckbox" aria-checked="@(shown ? "true" : "false")"
-                @ref="_items[index]" data-ex-claims="click" @onclick="() => Toggle(figure)">
+                @ref="_items[index]" data-ex-claims="@ClaimKinds.Click" @onclick="() => Toggle(figure)">
             <span class="ex-summary-menu-tick" aria-hidden="true">@(shown ? "✓" : "")</span>@Label(SummaryLabelIds.For(figure))
         </button>
     }

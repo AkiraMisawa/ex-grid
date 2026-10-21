@@ -1,4 +1,4 @@
-import { test, expect, settled } from './fixtures.mjs';
+import { test, expect, settled, alterPage } from './fixtures.mjs';
 import { sheet, cell, clickCell, pressCell, goTo, expectFocusAt, editor, bar, typeIntoNameBox, nameBox } from './sheet-helpers.mjs';
 import { expectKeyboardOn } from './keyboard.mjs';
 
@@ -136,6 +136,40 @@ for (const chrome of ['builtin', 'mud']) {
             await settled(grid);
             await expect(tab(page, 'Claim')).toHaveAttribute('aria-selected', 'true');
             await expectKeyboardOn(grid);
+        });
+
+        // Input-order ticket 04's review: the arrow keys on the tab list give the keyboard to the tab they
+        // select through the grid, in the Input Order, and the tab takes it where it stands, as its own focus
+        // did before: the page does not scroll to bring it into view.
+        test('WB-6/ADR-0240: → on the tab list selects the next tab without scrolling the page', async ({ page }) => {
+            await openWorkbook(page);
+            const grid = sheet(page);
+            await clickCell(grid, 'B2');
+            // Room below the Sheet, so the page can scroll; put back, and scrolled back, as the test ends.
+            await alterPage(page, () => {
+                const before = document.body.style.paddingBottom;
+                document.body.style.paddingBottom = '2000px';
+                return () => {
+                    document.body.style.paddingBottom = before;
+                    window.scrollTo(0, 0);
+                };
+            });
+            await tab(page, 'Claim').focus();
+            await expect(tab(page, 'Claim')).toBeFocused();
+            // The page scrolled until the tabs' middle is at the window's top edge, half of them out of view.
+            await tab(page, 'Claim').evaluate((element) => {
+                const box = element.getBoundingClientRect();
+                window.scrollBy(0, box.top + box.height / 2);
+            });
+            const scrolled = await page.evaluate(() => window.scrollY);
+            expect(scrolled).toBeGreaterThan(0);
+
+            await page.keyboard.press('ArrowRight');
+
+            await expect(tab(page, 'Summary')).toHaveAttribute('aria-selected', 'true');
+            await expect(tab(page, 'Summary')).toBeFocused();
+            await settled(grid);
+            expect(await page.evaluate(() => window.scrollY)).toBe(scrolled);
         });
 
         test('WB-5: the Name Box goes to a cell on another Sheet, shows that Sheet and scrolls the cell into view', async ({ page }) => {

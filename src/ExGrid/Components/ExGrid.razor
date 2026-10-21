@@ -247,7 +247,7 @@
             <div class="ex-viewport" style="@ViewportStyle()" data-ex-first-row="@(_visible?.Start)"
                  data-ex-sequence="@_sequenceVersion" data-ex-layout="@_paintLayoutId" data-ex-paint="@NotePaint()"
                  role="presentation" @attributes="_dragHandler" @onmousedown="RowsPressHandler" @onmousedown:preventDefault="RowsPressKeepsFocus" @onmouseup="OnMouseUp"
-                 @ondblclick="OnViewportDoubleClickAsync" data-ex-claims="contextmenu"
+                 @ondblclick="OnViewportDoubleClickAsync" data-ex-claims="@ClaimKinds.ContextMenu"
                  @oncontextmenu="RowsContextMenuHandler" @oncontextmenu:preventDefault="true">
                 @* The Keyboard Field (ADR-0080). While the grid has an editable column, the keyboard
                    with no edit open is held here instead of on the root itself, so that an IME has a
@@ -741,7 +741,7 @@
                    ask the filter for its first or last control. Blazor's own focus events, and
                    no key the filter's controls would have to give up; the keys typed while
                    either hand-off is under way are held by the key listener (ADR-0010). *@
-                <span class="ex-focus-wrap" tabindex="0" data-ex-claims="focus" @onfocus="ReturnToCommandsHandler"></span>
+                <span class="ex-focus-wrap" tabindex="0" data-ex-claims="@ClaimKinds.Focus" @onfocus="ReturnToCommandsHandler"></span>
                 <div class="ex-popover-filter">
                     @if (Chrome?.FilterPanel(panelContext) is { } panelFragment)
                     {
@@ -764,7 +764,7 @@
                            Cancel. OK shows it is unavailable while nothing is ticked among the
                            values the list shows; Enter is not gated on it, and what it submits is
                            refused on the same rule (ticket 76). *@
-                        <form class="ex-popover-form" data-ex-claims="submit" @onsubmit="() => ClaimedAsync(ClaimSubmit, () => ApplyPanelAsync(panelColumn))" @onsubmit:preventDefault>
+                        <form class="ex-popover-form" data-ex-claims="@ClaimKinds.Submit" @onsubmit="() => ClaimedAsync(ClaimKinds.Submit, () => ApplyPanelAsync(panelColumn))" @onsubmit:preventDefault>
                             @if (_panelValues is { IsTooMany: false } domain && _panelChecked is { } chosen)
                             {
                                 var shown = domain.Values.Where(v => FilterPanelChoices.Matches(_panelSearch, PanelText(v, panelColumn))).ToArray();
@@ -778,7 +778,7 @@
                                         Add current selection to filter
                                     </label>
                                 }
-                                <div class="ex-popover-list ex-value-list" data-ex-claims="keydown" @onkeydown="BuiltInValueListKeyHandler">
+                                <div class="ex-popover-list ex-value-list" data-ex-claims="@ClaimKinds.KeyDown" @onkeydown="BuiltInValueListKeyHandler">
                                     @* "(Select All)" over the values shown, with Excel's mixed state: a
                                        checkbox role on a button, because a native checkbox's mixed
                                        state is a property only script can set (ADR-0021). *@
@@ -837,13 +837,13 @@
                             @* Each closes the popover: marked so, the keys typed while it goes wait for the
                                keyboard to land (ex-popover-closes; ADR-0010, ADR-0044's note of 2026-10-12). *@
                             <div class="ex-popover-actions">
-                                <button type="button" class="ex-popover-closes" data-ex-claims="click" @onclick="() => ClaimedClickAsync(() => ApplyPanelAsync(panelColumn))" disabled="@(!PanelCanApply(panelColumn))">OK</button>
-                                <button type="button" class="ex-popover-closes" data-ex-claims="click" @ref="_panelLast" @onclick="CancelPanelHandler">Cancel</button>
+                                <button type="button" class="ex-popover-closes" data-ex-claims="@ClaimKinds.Click" @onclick="() => ClaimedClickAsync(() => ApplyPanelAsync(panelColumn))" disabled="@(!PanelCanApply(panelColumn))">OK</button>
+                                <button type="button" class="ex-popover-closes" data-ex-claims="@ClaimKinds.Click" @ref="_panelLast" @onclick="CancelPanelHandler">Cancel</button>
                             </div>
                         </form>
                     }
                 </div>
-                <span class="ex-focus-wrap" tabindex="0" data-ex-claims="focus" @onfocus="ReturnToCommandsHandler"></span>
+                <span class="ex-focus-wrap" tabindex="0" data-ex-claims="@ClaimKinds.Focus" @onfocus="ReturnToCommandsHandler"></span>
             }
         </div>
     }
@@ -873,7 +873,7 @@
         var findContext = BuildFindContext();
         <div class="ex-popover ex-popover-find" style="@FindPopoverStyle()" role="dialog"
              aria-label="@Label(FindPanelLabelIds.Title)" @key="_popoverFocusRequest">
-            <span class="ex-focus-wrap" tabindex="0" data-ex-claims="focus" @onfocus="ReturnToFindHandler"></span>
+            <span class="ex-focus-wrap" tabindex="0" data-ex-claims="@ClaimKinds.Focus" @onfocus="ReturnToFindHandler"></span>
             <div class="ex-popover-find-body ex-popover-body">
                 @if (Chrome?.FindPanel(findContext) is { } findFragment)
                 {
@@ -881,7 +881,7 @@
                 }
                 else
                 {
-                    <form class="ex-popover-form" data-ex-claims="submit" @onsubmit="SubmitFindHandler" @onsubmit:preventDefault>
+                    <form class="ex-popover-form" data-ex-claims="@ClaimKinds.Submit" @onsubmit="SubmitFindHandler" @onsubmit:preventDefault>
                         @FindField
                         <label>
                             <input type="checkbox" class="ex-find-match-case" checked="@_findMatchCase"
@@ -894,8 +894,8 @@
                             @Label(FindPanelLabelIds.WholeCell)
                         </label>
                         <div class="ex-popover-actions">
-                            <button type="button" class="ex-find-previous" data-ex-claims="click" @onclick="FindPreviousHandler">@Label(FindPanelLabelIds.Previous)</button>
-                            <button type="button" class="ex-find-next" data-ex-claims="click" @onclick="FindNextHandler">@Label(FindPanelLabelIds.Next)</button>
+                            <button type="button" class="ex-find-previous" data-ex-claims="@ClaimKinds.Click" @onclick="FindPreviousHandler">@Label(FindPanelLabelIds.Previous)</button>
+                            <button type="button" class="ex-find-next" data-ex-claims="@ClaimKinds.Click" @onclick="FindNextHandler">@Label(FindPanelLabelIds.Next)</button>
                         </div>
                         @* What the last step came to, announced: a step that moves nothing is
                            otherwise a key that did nothing and said nothing (ADR-0033). *@
@@ -903,7 +903,7 @@
                     </form>
                 }
             </div>
-            <span class="ex-focus-wrap" tabindex="0" data-ex-claims="focus" @onfocus="ReturnToFindHandler"></span>
+            <span class="ex-focus-wrap" tabindex="0" data-ex-claims="@ClaimKinds.Focus" @onfocus="ReturnToFindHandler"></span>
         </div>
     }
     @if (_consumerPopover is { } consumerPopover)
@@ -915,9 +915,9 @@
            the keyboard; before, a sentinel was entered from outside, and asks for the near end. *@
         <div class="ex-popover ex-popover-consumer" style="@ConsumerPopoverStyle()" role="dialog"
              aria-label="@consumerPopover.Label" @key="_popoverFocusRequest">
-            <span class="ex-focus-wrap" tabindex="0" data-ex-claims="focus" @onfocus="ConsumerLeadingSentinelHandler"></span>
+            <span class="ex-focus-wrap" tabindex="0" data-ex-claims="@ClaimKinds.Focus" @onfocus="ConsumerLeadingSentinelHandler"></span>
             <div class="ex-popover-body" @onfocusin="ConsumerContentsHeld">@consumerPopover.Content(BuildConsumerPopoverContext())</div>
-            <span class="ex-focus-wrap" tabindex="0" data-ex-claims="focus" @onfocus="ConsumerTrailingSentinelHandler"></span>
+            <span class="ex-focus-wrap" tabindex="0" data-ex-claims="@ClaimKinds.Focus" @onfocus="ConsumerTrailingSentinelHandler"></span>
         </div>
     }
     @if (MessageOnShow() is var (messageCell, messageText, isEditorError) && messageText is not null)
@@ -970,7 +970,7 @@
                             <div class="@(index == _completionSelected ? "ex-completion-item ex-completion-selected" : "ex-completion-item")"
                                  id="@(CompletionOptionPrefix + index.ToString(CultureInfo.InvariantCulture))" role="option"
                                  aria-selected="@(index == _completionSelected ? "true" : "false")"
-                                 data-ex-claims="mousedown" @onmousedown="() => ClaimedPressAsync(() => AcceptCandidate(index))">@completion.Candidates[index].Label</div>
+                                 data-ex-claims="@ClaimKinds.Press" @onmousedown="() => ClaimedPressAsync(() => AcceptCandidate(index))">@completion.Candidates[index].Label</div>
                         }
                     </div>
                 }
@@ -992,9 +992,9 @@
         @* The pager (ADR-0015): a page click raises the same notification shape as a
            scroll. TotalCount feeds the display. *@
         <div class="ex-pager" role="presentation">
-            <button type="button" data-ex-claims="click" @onclick="TurnBackHandler" disabled="@(_pageIndex == 0)">‹</button>
+            <button type="button" data-ex-claims="@ClaimKinds.Click" @onclick="TurnBackHandler" disabled="@(_pageIndex == 0)">‹</button>
             <span>@(_pageIndex + 1) / @PageCount</span>
-            <button type="button" data-ex-claims="click" @onclick="TurnOnHandler" disabled="@(_pageIndex >= PageCount - 1)">›</button>
+            <button type="button" data-ex-claims="@ClaimKinds.Click" @onclick="TurnOnHandler" disabled="@(_pageIndex >= PageCount - 1)">›</button>
         </div>
     }
     @{ ReviewSummary(); }
@@ -1010,11 +1010,11 @@
                 <span>@_selection.Selection.CellCount cells selected@(SelectionIntersectsView() ? "" : " (outside the visible range)")</span>
                 @if (!SelectionIntersectsView())
                 {
-                    <button type="button" data-ex-claims="click" @onclick="GoToSelectionHandler">Go to selection</button>
+                    <button type="button" data-ex-claims="@ClaimKinds.Click" @onclick="GoToSelectionHandler">Go to selection</button>
                 }
                 @if (PageSize is not null)
                 {
-                    <button type="button" data-ex-claims="click" @onclick="SelectWholeResultHandler">Select all @TotalRows rows</button>
+                    <button type="button" data-ex-claims="@ClaimKinds.Click" @onclick="SelectWholeResultHandler">Select all @TotalRows rows</button>
                 }
             }
             @if (MarkCountText() is { } markCount)
@@ -1023,7 +1023,7 @@
             }
             @if (PageSize is not null && _markColumn >= 0)
             {
-                <button type="button" class="ex-mark-result" data-ex-claims="click" @onclick="_onMarkWholeResult">Mark all @MarkableRows rows</button>
+                <button type="button" class="ex-mark-result" data-ex-claims="@ClaimKinds.Click" @onclick="_onMarkWholeResult">Mark all @MarkableRows rows</button>
             }
             @* Excel's status-bar figures over the selection (ADR-0130). *@
             @if (ShowsSummaryStrip)
@@ -5495,7 +5495,7 @@
             {
                 // A menu item's click, under any Chrome, takes the number the script told it by
                 // (ADR-0240 section 2); a key that runs the command finds none told, and runs as it is.
-                Invoke = () => InvokeAsync(() => ClaimedByKeyOrAsync(ClaimClick, async () =>
+                Invoke = () => InvokeAsync(() => ClaimedByKeyOrAsync(ClaimKinds.Click, async () =>
                 {
                     await RunCommandAsync(command);
                     StateHasChanged();
@@ -5638,15 +5638,15 @@
 
     // Their own methods so that only a miss captures anything: a lambda capturing a
     // parameter allocates its closure on entry to the method, cache hit or not.
-    private Func<Task> MenuOpenerFor(int column) => () => ClaimedAsync("click", () => OpenMenuAsync(column));
+    private Func<Task> MenuOpenerFor(int column) => () => ClaimedAsync(ClaimKinds.Click, () => OpenMenuAsync(column));
 
     // Numbered (ADR-0240): the script holds the drag's moves until this press is answered, because the
     // handlers that follow them are attached by the render that answers it.
-    private Func<MouseEventArgs, Task> GripDownFor(int column) => e => ClaimedAsync("mousedown", () => OnResizeGripDown(column, e));
+    private Func<MouseEventArgs, Task> GripDownFor(int column) => e => ClaimedAsync(ClaimKinds.Press, () => OnResizeGripDown(column, e));
 
     /// <summary>A double-click on a grip is Size to fit, the column menu's command
     /// (ADR-0016, FN-12a).</summary>
-    private Func<Task> GripFitterFor(int column) => () => ClaimedAsync("dblclick", () => OnColumnWidthChanged.HasDelegate && !PointedAtNow
+    private Func<Task> GripFitterFor(int column) => () => ClaimedAsync(ClaimKinds.DoubleClick, () => OnColumnWidthChanged.HasDelegate && !PointedAtNow
         ? SizeToFitAsync(ColumnsResizedWith(column))
         : Task.CompletedTask);
 
@@ -5818,7 +5818,7 @@
 
     /// <summary>The contexts' <c>Close</c>: what a Chrome's own × or backdrop invokes. It
     /// arrives from the Chrome's event, not the grid's, so the grid renders itself.</summary>
-    private Action CloseFromChrome => _closeFromChrome ??= () => _ = InvokeAsync(() => ClaimedByKeyOrAsync(ClaimClick, () =>
+    private Action CloseFromChrome => _closeFromChrome ??= () => _ = InvokeAsync(() => ClaimedByKeyOrAsync(ClaimKinds.Click, () =>
     {
         ClosePopoverAndReturnFocus();
         StateHasChanged();
@@ -6102,11 +6102,11 @@
 
     /// <summary>The filter context's <c>ValueListKey</c>: one delegate, whatever renders.</summary>
     private Func<KeyboardEventArgs, Task> ValueListKeyFromChrome
-        => _valueListKey ??= e => ClaimedAsync(ClaimKeyDown, async () => await OnValueListKeyAsync(e));
+        => _valueListKey ??= e => ClaimedAsync(ClaimKinds.KeyDown, async () => await OnValueListKeyAsync(e));
 
     /// <summary>The built-in list's keys, claimed in their place in the Input Order (ADR-0240).</summary>
     private Func<KeyboardEventArgs, Task> BuiltInValueListKeyHandler
-        => _builtInValueListKey ??= e => ClaimedAsync(ClaimKeyDown, () => OnBuiltInValueListKeyAsync(e));
+        => _builtInValueListKey ??= e => ClaimedAsync(ClaimKinds.KeyDown, () => OnBuiltInValueListKeyAsync(e));
 
     private Func<KeyboardEventArgs, Task>? _builtInValueListKey;
 
@@ -6254,7 +6254,7 @@
             FilterOperators.AllowedFor(declared.Type),
             declared.FilterUi,
             () => RequestDistinctValuesAsync(declared.Name),
-            spec => _ = InvokeAsync(() => ClaimedAsync(ClaimSubmit, () => ApplyFilterSpecAsync(declared.Name, spec))),
+            spec => _ = InvokeAsync(() => ClaimedAsync(ClaimKinds.Submit, () => ApplyFilterSpecAsync(declared.Name, spec))),
             () => _ = InvokeAsync(() => ApplyFilterSpecAsync(declared.Name, null)),
             CloseFromChrome,
             _panelFocusRequest,
@@ -7920,8 +7920,8 @@
         text => _findText = text,
         value => _findMatchCase = value,
         value => _findWholeCell = value,
-        () => InvokeAsync(() => ClaimedAsync(ClaimClick, ClaimSubmit, () => FindStepAsync(backward: false))),
-        () => InvokeAsync(() => ClaimedAsync(ClaimClick, ClaimSubmit, () => FindStepAsync(backward: true))),
+        () => InvokeAsync(() => ClaimedAsync(ClaimKinds.Click, ClaimKinds.Submit, () => FindStepAsync(backward: false))),
+        () => InvokeAsync(() => ClaimedAsync(ClaimKinds.Click, ClaimKinds.Submit, () => FindStepAsync(backward: true))),
         CloseFromChrome,
         _findFocusRequest,
         InnerPopupChangedFromChrome,
@@ -10064,7 +10064,7 @@
     private RenderFragment? _headerMark;
 
     private Func<Task> _onHeaderMark => _onHeaderMarkField ??= PressHeaderMarkAsync;
-    private Func<Task> _onMarkWholeResult => _onMarkWholeResultField ??= () => ClaimedAsync("click", MarkWholeResultAsync);
+    private Func<Task> _onMarkWholeResult => _onMarkWholeResultField ??= () => ClaimedAsync(ClaimKinds.Click, MarkWholeResultAsync);
 
     /// <summary>
     /// Finds the Mark Column and who holds its marks, refusing by name what cannot be
@@ -10779,7 +10779,7 @@
                (ADR-0044). On every grid, and under every Chrome: the button is the core's. *@
             <div class="@HeaderClass(i, pinned: true)" style="@HeaderCellStyle(i, pinned: true)" role="columnheader" aria-colindex="@CellIds.ColumnIndex(i)" aria-sort="@AriaSort(i)">@Columns[i].Header@if (Columns[i].IsMarkColumn)
                 {@HeaderMark}@if (ShowMenuButtons)
-                {<button type="button" class="ex-menu-button" tabindex="-1" aria-label="Column menu" data-ex-claims="click" @onclick="MenuOpener(i)" @onclick:stopPropagation @onmousedown:stopPropagation></button>}@if (OnColumnWidthChanged.HasDelegate)
+                {<button type="button" class="ex-menu-button" tabindex="-1" aria-label="Column menu" data-ex-claims="@ClaimKinds.Click" @onclick="MenuOpener(i)" @onclick:stopPropagation @onmousedown:stopPropagation></button>}@if (OnColumnWidthChanged.HasDelegate)
                 {<div class="ex-resize-grip" data-ex-claims="mousedown dblclick" @onmousedown="GripDown(i)" @onmousedown:stopPropagation @onclick:stopPropagation @ondblclick="GripFitter(i)"></div>}</div>
         }
         if (_scrollable is { } headerColumns)
@@ -10792,7 +10792,7 @@
             {
                 <div class="@HeaderClass(i, pinned: false)" style="@HeaderCellStyle(i, pinned: false)" role="columnheader" aria-colindex="@CellIds.ColumnIndex(i)" aria-sort="@AriaSort(i)">@Columns[i].Header@if (Columns[i].IsMarkColumn)
                     {@HeaderMark}@if (ShowMenuButtons)
-                    {<button type="button" class="ex-menu-button" tabindex="-1" aria-label="Column menu" data-ex-claims="click" @onclick="MenuOpener(i)" @onclick:stopPropagation @onmousedown:stopPropagation></button>}@if (OnColumnWidthChanged.HasDelegate)
+                    {<button type="button" class="ex-menu-button" tabindex="-1" aria-label="Column menu" data-ex-claims="@ClaimKinds.Click" @onclick="MenuOpener(i)" @onclick:stopPropagation @onmousedown:stopPropagation></button>}@if (OnColumnWidthChanged.HasDelegate)
                     {<div class="ex-resize-grip" data-ex-claims="mousedown dblclick" @onmousedown="GripDown(i)" @onmousedown:stopPropagation @onclick:stopPropagation @ondblclick="GripFitter(i)"></div>}</div>
             }
         }
@@ -10840,7 +10840,7 @@
             {
                 <button type="button" role="menuitem" @ref="_menuItems[item]" data-ex-claims="click keydown"
                         @onclick="command.Invoke"
-                        @onkeydown="e => ClaimedAsync(ClaimKeyDown, () => OnMenuItemKeyAsync(e, commands, resolve))" @onkeydown:preventDefault>@LabelWithLetter(command, lettered)</button>
+                        @onkeydown="e => ClaimedAsync(ClaimKinds.KeyDown, () => OnMenuItemKeyAsync(e, commands, resolve))" @onkeydown:preventDefault>@LabelWithLetter(command, lettered)</button>
             }
             else
             {

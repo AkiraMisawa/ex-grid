@@ -22,6 +22,7 @@ ExGrid.Chrome.GridPopoverContext.InOrder.get -> System.Func<ExGrid.Chrome.GridIn
 ExGrid.Chrome.GridPopoverContext.InOrder.init -> void
 ExGrid.Clipboard.PasteRefusalReason.Cancelled = 13 -> ExGrid.Clipboard.PasteRefusalReason
 ExGrid.Clipboard.PasteRefusalReason.Unreadable = 12 -> ExGrid.Clipboard.PasteRefusalReason
+ExGrid.Components.ExGrid<TRow>.HandKeyboardToAsync(Microsoft.AspNetCore.Components.ElementReference control, bool preventScroll) -> System.Threading.Tasks.Task!
 ExGrid.Components.ExGrid<TRow>.HandOffHeardAsync(int input = 0) -> System.Threading.Tasks.Task!
 ExGrid.Components.ExGrid<TRow>.InOrderAsync(ExGrid.Chrome.GridInputKind kind, System.Func<System.Threading.Tasks.Task!>! handling) -> System.Threading.Tasks.Task!
 ExGrid.Components.ExGrid<TRow>.InputsSent(int input) -> void

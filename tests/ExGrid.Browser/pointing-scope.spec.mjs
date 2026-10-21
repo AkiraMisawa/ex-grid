@@ -315,6 +315,66 @@ test.describe('/sheet', () => {
         await expectPointedAt(table);
     });
 
+    // Input-order ticket 04's review: the keyboard's crossings are told against the Sheet's claims as they
+    // stand. Taken out of its Scope while it holds the keyboard, the Sheet stops hearing it; given a Scope
+    // again with the keyboard still inside, the keyboard's next move inside — the Cell Editor taking it as
+    // = opens it — is told as its arrival, so the Sheet points. Told against the claims that had gone, the
+    // arrival was taken as standing, and the Sheet never pointed until the keyboard had left and come back.
+    test('ADR-0240/ADR-0058: a Sheet given its Scope again while it holds the keyboard points once = opens the editor', async ({ page }) => {
+        await page.goto('/sheet?scope=switch');
+        const grid = sheet(page);
+        const table = positions(page);
+        await expect(cell(grid, 'B12')).toHaveText('318.25', { timeout: 10_000 });
+        await pressCell(grid, 'F3');
+        await settled(grid);
+
+        // The button keeps the keyboard where it is: its press takes no focus.
+        const switcher = page.locator('#sheet-scope-switch');
+        await switcher.click();
+        await expect(switcher).toHaveText('Join the Pointing Scope');
+        await switcher.click();
+        await expect(switcher).toHaveText('Leave the Pointing Scope');
+        await expectKeyboardOn(grid);
+
+        await page.keyboard.type('=');
+        await expect(editor(grid)).toBeFocused();
+        await expectPointedAt(table);
+        await clickCell(table, 'C3');
+        await expect(editor(grid)).toHaveValue(LOOKUP_4471);
+        await expect(table.locator('.ex-focus, .ex-range')).toHaveCount(0);
+        await page.keyboard.press('Escape');
+        await expect(editor(grid)).toHaveCount(0);
+    });
+
+    // Input-order ticket 04's review: the window losing focus is no departure, and the focus that gives
+    // the keyboard back to the element it left is no arrival. That reading ends with any other focus or
+    // departure: left standing, it took a later arrival from nothing for the window's return, and the
+    // Sheet that had heard the keyboard leave never heard it come back.
+    test('ADR-0240/ADR-0058: after the window has left, the keyboard leaving the Sheet and coming back from nothing points again', async ({ page }) => {
+        const grid = sheet(page);
+        const table = positions(page);
+        await pressCell(grid, 'F3');
+        await page.keyboard.type('=');
+        await expect(editor(grid)).toBeFocused();
+        await expectPointedAt(table);
+
+        // The window losing focus, as the browser tells it: a focusout to nothing, with DOM focus left
+        // where it was.
+        await editor(grid).evaluate((field) => field.dispatchEvent(new FocusEvent('focusout', { bubbles: true, relatedTarget: null })));
+        // The keyboard leaving the Sheet for nothing, and the Scope stopping its pointing.
+        await editor(grid).evaluate((field) => field.blur());
+        await expectPointedAt(table, false);
+        await settled(grid);
+
+        // The keyboard coming back to the editor from nothing: an arrival.
+        await editor(grid).focus();
+        await expectPointedAt(table);
+        await clickCell(table, 'C3');
+        await expect(editor(grid)).toHaveValue(LOOKUP_4471);
+        await page.keyboard.press('Escape');
+        await expect(editor(grid)).toHaveCount(0);
+    });
+
     // Found on CI: as = opens the Cell Editor, DOM focus moves from the Sheet's root to it, and the
     // Sheet heard the focusout as the keyboard leaving, because on a circuit the focusin came in a
     // later message than the one turn it waited. The Scope stopped pointing for a round trip, and a

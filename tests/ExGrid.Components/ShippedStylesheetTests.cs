@@ -444,8 +444,8 @@ public class ShippedStylesheetTests
     public void The_hand_on_gives_the_consumers_control_the_keyboard_only_while_it_is_still_this_grids()
     {
         var script = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.js", StringComparison.Ordinal)).Text;
-        var handOn = Regex.Match(script, @"handKeyboardTo: \(element, inTurn\) => \{.*?\n        \},", RegexOptions.Singleline);
-        Assert.True(handOn.Success, "handKeyboardTo(element, inTurn) is not in the module");
+        var handOn = Regex.Match(script, @"handKeyboardTo: \(element, inTurn, preventScroll\) => \{.*?\n        \},", RegexOptions.Singleline);
+        Assert.True(handOn.Success, "handKeyboardTo(element, inTurn, preventScroll) is not in the module");
         var body = handOn.Value;
 
         // The hand-back's condition: this root's own focus, not a nested grid's, or a surface of the Input
@@ -458,10 +458,11 @@ public class ShippedStylesheetTests
         Assert.Contains("active.closest('.ex-formula-bar') !== null", body, StringComparison.Ordinal);
         Assert.Contains("active !== staleField", body, StringComparison.Ordinal);
         Assert.DoesNotContain("fromField", body, StringComparison.Ordinal);
-        // Only an element still on the page, focused as its own FocusAsync would focus it, scrolled
-        // into view; the field a press left standing is given up with the keyboard.
+        // Only an element still on the page, focused as its own FocusAsync would focus it: scrolled
+        // into view unless the caller asked it to stay where it stands (HandKeyboardToAsync's
+        // preventScroll, a Sheet Tab's); the field a press left standing is given up with the keyboard.
         Assert.Contains("element instanceof HTMLElement && element.isConnected", body, StringComparison.Ordinal);
-        Assert.Matches(new Regex(@"staleField = null;[\s\S]*target\.focus\(\);"), body);
+        Assert.Matches(new Regex(@"staleField = null;[\s\S]*target\.focus\(\{ preventScroll: preventScroll === true \}\);"), body);
         Assert.Contains("element.querySelectorAll('input, textarea')].find(isTextField)", body, StringComparison.Ordinal);
         Assert.Contains("target === firstText && isTextField(target)", body, StringComparison.Ordinal);
         Assert.Contains("target.select()", body, StringComparison.Ordinal);
@@ -470,7 +471,7 @@ public class ShippedStylesheetTests
         // control takes it in turn, from the hold, with the keys held for it (ADR-0050 item 16's
         // note of 2026-10-12): the same call, made then.
         Assert.Contains("if (inTurn !== true && handOff === 'frame' && answering", body, StringComparison.Ordinal);
-        Assert.Contains("handle.handKeyboardTo(frame, true);", script, StringComparison.Ordinal);
+        Assert.Contains("handle.handKeyboardTo(frame, true, frameInTurnStill);", script, StringComparison.Ordinal);
         // A read of document.activeElement, never of layout, and no listener of its own.
         Assert.DoesNotMatch(new Regex(@"getBoundingClientRect|offsetWidth|offsetHeight|getComputedStyle|addEventListener"), body);
     }
@@ -1679,7 +1680,8 @@ public class ShippedStylesheetTests
                 "new Set(['PageUp', 'PageDown'])",
                 "new Set(['Shift', 'Control', 'Alt', 'Meta'])",
                 "new Set(['text', 'search', 'url', 'tel', 'email', 'password', 'date', 'month', 'week', 'time', 'datetime-local', 'number'])",
-                "new Set(['text', 'search', 'url', 'tel', 'password', 'email', 'number', 'radio', 'checkbox'])",
+                "new Set(['text', 'search', 'url', 'tel', 'password', 'email', 'number'])",
+                "new Set(['radio', 'checkbox'])",
                 "new Set(['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Home', 'End', 'Enter'])",
                 "new Set(['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'])",
                 "new Set(['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End', 'PageUp', 'PageDown'])",

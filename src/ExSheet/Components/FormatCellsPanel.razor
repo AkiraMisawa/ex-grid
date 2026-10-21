@@ -230,7 +230,7 @@
     });
 
     private Task InOrderAsync(GridInputKind kind, Func<Task> handling) =>
-        Popover.InOrder is { } inOrder ? inOrder(kind, handling) : handling();
+        global::ExSheet.Components.ExSheet.InOrderAsync(Popover.InOrder, kind, handling);
 
     // ---- Number ----
 

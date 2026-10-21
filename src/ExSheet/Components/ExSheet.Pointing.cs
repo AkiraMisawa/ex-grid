@@ -146,7 +146,7 @@ public partial class ExSheet : IPointingSheet, IDisposable
     /// not told, and changes nothing here; except the first such move of a keyboard that came in untold,
     /// before the Sheet listened or as the page loaded, which is told as its arrival.
     /// </summary>
-    private Task OnKeyboardIn() => InKeyboardOrderAsync(GridInputKind.KeyboardIn, () =>
+    private Task OnKeyboardIn() => InOrderAsync(GridInputKind.KeyboardIn, () =>
     {
         _holdsKeyboard = true;
         TellScopeWhetherPointing();
@@ -160,27 +160,11 @@ public partial class ExSheet : IPointingSheet, IDisposable
     /// a focusout followed by a focusin made is never told as a departure, so the wait for the browser's
     /// turn that told the two apart before (input-order ticket 04) is gone.
     /// </summary>
-    private Task OnKeyboardOut() => InKeyboardOrderAsync(GridInputKind.KeyboardOut, () =>
+    private Task OnKeyboardOut() => InOrderAsync(GridInputKind.KeyboardOut, () =>
     {
         _holdsKeyboard = false;
         TellScopeWhetherPointing();
     });
-
-    // The keyboard's crossing, handled in the grid's order; with no grid yet, there is nothing to order
-    // it among, and it is heard at once.
-    private Task InKeyboardOrderAsync(GridInputKind kind, Action heard)
-    {
-        if (_grid is { } grid)
-        {
-            return grid.InOrderAsync(kind, () =>
-            {
-                heard();
-                return Task.CompletedTask;
-            });
-        }
-        heard();
-        return Task.CompletedTask;
-    }
 
     /// <inheritdoc />
     string? IPointingSheet.RootId => _grid?.RootId;

@@ -39,7 +39,7 @@ public partial class ExSheet
     /// <summary>A press on a tab (ADR-0331 §4): the user's own action, so the notice it leaves is behind
     /// them. In its place in the Input Order (ADR-0240 section 6): the keys typed after it are the shown
     /// Sheet's.</summary>
-    private Task ShowSheetByUserAsync(Sheet sheet) => InTabOrderAsync(GridInputKind.Click, async () =>
+    private Task ShowSheetByUserAsync(Sheet sheet) => InOrderAsync(GridInputKind.Click, async () =>
     {
         if (!RefuseSwitchWhileEditing(pointing: true))
         {
@@ -47,10 +47,6 @@ public partial class ExSheet
             await ShowSheetAsync(sheet);
         }
     });
-
-    // A Sheet Tab's input in the grid's order; with no grid, at once.
-    private Task InTabOrderAsync(GridInputKind kind, Func<Task> handling)
-        => _grid is { } grid ? grid.InOrderAsync(kind, handling) : handling();
 
     /// <summary>Ctrl+PageUp and Ctrl+PageDown (ADR-0331 §4): the Sheet before or after the one shown, never past the first or the last.</summary>
     private async Task OnSheetTabKeyAsync(GridDeclaredKeyPress press, int step)
@@ -67,7 +63,7 @@ public partial class ExSheet
     /// or back in the grid, before the key after it is taken, so that key acts where it lands. They show no other Sheet while an edit is open, even a Formula's: they
     /// move the keyboard to the tab, away from the edit, which points from the keyboard (ADR-0331 §5).
     /// </summary>
-    private Task OnSheetTabKeyAsync(KeyboardEventArgs key) => InTabOrderAsync(GridInputKind.KeyDown, async () =>
+    private Task OnSheetTabKeyAsync(KeyboardEventArgs key) => InOrderAsync(GridInputKind.KeyDown, async () =>
     {
         switch (key.Key)
         {
@@ -93,11 +89,12 @@ public partial class ExSheet
 
     /// <summary>Gives the keyboard to the selected Sheet's tab, through the grid's focus function, within
     /// the key that selected it: the tab is the instance's own (ADR-0240 section 6), and the keyboard is
-    /// there before the next key is taken.</summary>
+    /// there before the next key is taken. Where it stands: the tab list is where the user is, and
+    /// nothing scrolls.</summary>
     private async Task FocusSelectedTabAsync()
     {
         if (_sheet is not { } sheet || !_tabs.TryGetValue(sheet, out var tab)) return;
-        if (_grid is { } grid) await grid.HandKeyboardToAsync(tab);
+        if (_grid is { } grid) await grid.HandKeyboardToAsync(tab, preventScroll: true);
         else await tab.FocusAsync(preventScroll: true);
     }
 

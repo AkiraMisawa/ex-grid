@@ -1959,7 +1959,10 @@
         _toolbar ??= new SheetToolbarContext(this, "ex-sheet-" + RuntimeHelpers.GetHashCode(this).ToString(CultureInfo.InvariantCulture),
             OpenToolbarChoicesAsync, _returnKeyboard,
             sentence => { Tell(sentence); StateHasChanged(); },
-            () => _ = InvokeAsync(StateHasChanged));
+            () => _ = InvokeAsync(StateHasChanged),
+            // The band's keys and the built-in buttons' clicks take their place in the grid's Input Order
+            // (ADR-0240 section 6): the Sheet is their Input Root.
+            InOrderAsync);
         // The toolbar is a frame of the Sheet's own outside the grid (ADR-0050 item 16): the keys
         // typed while the keyboard goes to it are held for it, and the keys typed on it while the
         // keyboard comes back are handed to the grid (ADR-0050 item 16's note of 2026-10-12).
@@ -1967,9 +1970,6 @@
         _toolbar.GiveToolbarTheKeyboard ??= band => _grid?.HandKeyboardToAsync(band) ?? band.FocusAsync(preventScroll: true).AsTask();
         _toolbar.TakeKeyboardBack ??= TakeKeyboardBackFromToolbarAsync;
         _toolbar.CloseChoices ??= CloseToolbarChoicesAsync;
-        // The band's keys and the built-in buttons' clicks take their place in the grid's Input Order
-        // (ADR-0240 section 6): the Sheet is their Input Root.
-        _toolbar.InOrder ??= (kind, handling) => _grid is { } grid ? grid.InOrderAsync(kind, handling) : handling();
         // One Toolbar Row is the Formula Bar's height, from the same Density (ADR-0100, ADR-0028).
         ListenForKeyUps();
         _toolbar.RowHeightPx = GridMetrics.Resolve(Presentation?.Density ?? GridDensity.Compact, RowHeight, defaults: Presentation).FormulaBarHeightPx;

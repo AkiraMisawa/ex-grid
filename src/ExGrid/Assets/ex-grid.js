@@ -1576,6 +1576,8 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // rather than at once, where a key typed straight on it could overtake the keys still held for it
     // — Alt, H, O typed at once, the O on the band before the held H (ADR-0100's KeyTips, 2026-10-12).
     let frameInTurn = null;
+    // Whether that control was asked to take the keyboard without scrolling (handKeyboardTo).
+    let frameInTurnStill = false;
     // Whether `k` is a declared Alt going down alone, on the root or in an edit — or anywhere, while it is
     // held (`held`), where its turn decides (altPending).
     const altAlone = (k, held) => k.key === 'Alt' && k.repeat !== true && canonicalOf(k) === 'Alt+Alt' && declared.has('Alt+Alt')
@@ -1749,8 +1751,14 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         if (target instanceof HTMLInputElement && target.form && !submitsOnEnter(target.form)) {
             return null;
         }
-        const submitsClosing = target instanceof HTMLInputElement && implicitSubmitTypes.has(target.type)
+        const submitsClosing = target instanceof HTMLInputElement
+            && (implicitSubmitTypes.has(target.type) || enterMaySubmitTypes.has(target.type))
             && target.form?.querySelector('button[type=submit].ex-popover-closes:not(:disabled)');
+        // On a radio button or a checkbox the move is only possible: the submission, if it comes, starts
+        // it (implicitSubmit).
+        if (submitsClosing && enterMaySubmitTypes.has(target.type)) {
+            return { ...closes, implicit: true };
+        }
         return (isTextField(target) && target.closest('.ex-popover-filter')) || submitsClosing ? closes : null;
     };
     // Whether Enter in a field of `form` submits it, by the HTML standard's implicit submission: its
@@ -1768,11 +1776,19 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         }
         return elements.filter((e) => e instanceof HTMLInputElement && blocksImplicitSubmit.has(e.type)).length === 1;
     };
-    // The fields in which Enter submits the form they stand in, as the browser's implicit submission has it:
-    // Chrome's and Edge's radio buttons and checkboxes too — Enter on Format Cells' Percentage closed it,
-    // and on a circuit the ↓ typed straight after it moved the choice instead of the Focus (input-order
-    // ticket 04).
-    const implicitSubmitTypes = new Set(['text', 'search', 'url', 'tel', 'password', 'email', 'number', 'radio', 'checkbox']);
+    // The fields in which Enter submits the form they stand in, as the browser's implicit submission has it.
+    const implicitSubmitTypes = new Set(['text', 'search', 'url', 'tel', 'password', 'email', 'number']);
+    // The fields in which Enter may submit the form, by the keypress its keydown goes on to: Chrome's and
+    // Edge's radio buttons and checkboxes do — Enter on Format Cells' Percentage closed it, and on a
+    // circuit the ↓ typed straight after it moved the choice instead of the Focus (input-order ticket 04)
+    // — and the standard leaves it to the browser. So the keys after such an Enter are held only once the
+    // submission has come, in that key's own turn, before any key typed after it (implicitSubmit): a
+    // browser that does not submit, or a handler that prevents the key's default, leaves them to go on
+    // as typed, and nothing waits for a submission that never comes.
+    const enterMaySubmitTypes = new Set(['radio', 'checkbox']);
+    // An Enter on such a field, until the submission it may bring or the next key or press: the move it
+    // would start (handsOver) and the form.
+    let implicitSubmit = null;
     const onSentinel = (target) => target instanceof Element && target.classList.contains('ex-focus-wrap')
         && popoverOf(target) !== null;
     // A popover closing, and the keyboard in flight back from it (decided with the user on
@@ -1910,7 +1926,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             if (!disposed && handOff === 'frame' && frameInTurn !== null && editorReady && popoverReady && moved()) {
                 const frame = frameInTurn;
                 frameInTurn = null;
-                handle.handKeyboardTo(frame, true);
+                handle.handKeyboardTo(frame, true, frameInTurnStill);
             }
             const handOffReady = disposed || handedOver() || (handOff !== null && inOtherGrid());
             let ready = disposed || (editorReady && popoverReady && handOffReady && moved());
@@ -2839,7 +2855,14 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         // the core moves DOM focus within this very keydown, and the E would be typed into
         // the search box it has just been sent to. A close keeps it — Enter in the filter's
         // field submits its form by it.
-        const move = replaying ? null : handsOver(event.target, k);
+        let move = replaying ? null : handsOver(event.target, k);
+        if (!replaying) {
+            implicitSubmit = null;
+        }
+        if (move?.implicit === true) {
+            implicitSubmit = { move: { from: move.from, closes: move.closes }, form: event.target.form };
+            move = null;
+        }
         if (move) {
             if (move.into) {
                 event.preventDefault();
@@ -3255,10 +3278,23 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // Editor, the band to the root — crosses nothing and is not told, so its handler does nothing; that
     // is how a focusout followed by a focusin inside is told apart from the keyboard leaving, without
     // waiting for the browser's next turn. The one exception is a keyboard that came in untold, whose
-    // first move inside is told as its arrival (keyboardToldIn). The window losing focus is no departure (onFocusLeft), and
-    // its coming back no arrival. Reads the event's own targets; no layout is read.
+    // first move inside is told as its arrival (keyboardToldIn). The window losing focus is no departure
+    // (onFocusLeft), and its coming back no arrival (windowLeftFrom). Reads the event's own targets and
+    // one attribute; no layout is read.
     const inputRootClaims = (kind) => !!core && !!inputRoot
         && (inputRoot.getAttribute('data-ex-claims') ?? '').split(' ').includes(kind);
+    // The Input Root's claims as they stand, as the attribute node that holds them. ExSheet claims the
+    // crossings only while it is in a Pointing Scope: Blazor removes the attribute when the Scope is taken
+    // away and sets it again when one is given, and the browser makes a new node each time it is set. So
+    // an arrival told against a node that has gone since was told to handlers that are gone (the Sheet,
+    // out of its Scope, has stopped hearing the keyboard), and the keyboard, still inside, is untold
+    // again: its next move inside is told as its arrival, as on the page's first load.
+    const crossingClaims = () => inputRoot?.getAttributeNode('data-ex-claims') ?? null;
+    const toldInNow = () => keyboardToldIn !== null && keyboardToldIn === crossingClaims();
+    const tellArrival = () => {
+        keyboardToldIn = crossingClaims();
+        tellClaim('focusin');
+    };
     const tellCrossing = (event) => {
         const other = event.relatedTarget;
         if (event.type === 'focus') {
@@ -3268,43 +3304,49 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             if (event.target !== document.activeElement) {
                 return;
             }
+            // Back from another window, or a tab of the browser's: the element the window took the
+            // keyboard from has it again, and the keyboard never left. Any other focus ends that
+            // reading, so a later focus from nothing is the arrival it is.
+            const backFromWindow = other === null && windowLeftFrom === event.target;
+            windowLeftFrom = null;
             if (other instanceof Node && inputRoot?.contains(other)) {
                 // A move inside crosses nothing, unless the keyboard came in untold — before the Input
                 // Root claimed its crossings, or as the page loaded: the first move inside is then told
                 // as its arrival, and the handler that hears it learns that the keyboard is here.
-                if (!keyboardToldIn && inputRootClaims('focusin')) {
-                    keyboardToldIn = true;
-                    tellClaim('focusin');
+                if (!toldInNow() && inputRootClaims('focusin')) {
+                    tellArrival();
                 }
                 return;
             }
-            // Back from another window, or a tab of the browser's, the keyboard never left.
-            if (other === null && windowLeft) {
-                windowLeft = false;
+            if (backFromWindow && toldInNow()) {
                 return;
             }
             if (inputRootClaims('focusin')) {
-                keyboardToldIn = true;
-                tellClaim('focusin');
+                tellArrival();
             }
             return;
         }
         if (other instanceof Node && inputRoot?.contains(other)) {
             return;
         }
+        // The window losing focus leaves DOM focus where it was: no departure.
         if (event.target === document.activeElement) {
-            windowLeft = true;
+            windowLeftFrom = event.target;
             return;
         }
+        windowLeftFrom = null;
+        keyboardToldIn = null;
         if (inputRootClaims('focusout')) {
-            keyboardToldIn = false;
             tellClaim('focusout');
         }
     };
-    // The window, not the page, took the keyboard last: the focus that comes back with it is no arrival.
-    let windowLeft = false;
-    // The keyboard's arrival in the Input Root has been told, and its departure not since.
-    let keyboardToldIn = false;
+    // The element the window, not the page, took the keyboard from last: the focus that gives it back
+    // to that element is no arrival. Any other focus or departure since clears it (input-order ticket
+    // 04's review: left standing, it took a later arrival from nothing for the window's return).
+    let windowLeftFrom = null;
+    // The claims (crossingClaims) the keyboard's arrival in the Input Root was told against, and its
+    // departure not told since; null when none stands.
+    let keyboardToldIn = null;
     const onFocused = (event) => {
         const field = keyFieldOf();
         if (field === null) {
@@ -3814,16 +3856,21 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         if (!core || replaying) {
             return;
         }
+        heldPress = null;
         if ((answering || held.length > 0) && holdsClaimedPress(event.target)) {
             event.preventDefault();
             event.stopPropagation();
-            held.push({ press: 'mousedown', claim: true, target: event.target, init: mouseInit(event) });
+            heldPress = { press: 'mousedown', claim: true, target: event.target, init: mouseInit(event) };
+            held.push(heldPress);
             return;
         }
         if (claimOf(event.target, 'mousedown') !== null) {
             tellClaim('mousedown');
         }
     };
+    // The last press made, held on a control that claims its events (onPress, onOuterPress), while its
+    // release is still to come: null once that release has been heard, or another press has been made.
+    let heldPress = null;
     const onPress = (event) => {
         lookSettled();
         // A press while the Keyboard Field composes (ADR-0080): the press would end the
@@ -3834,6 +3881,9 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         // six decisions about focus made in script (ADR-0021).
         if (keyFieldComposing && core && !replaying && event.button === 0) {
             keyFieldOf()?.blur();
+        }
+        if (!replaying) {
+            heldPress = null;
         }
         // A press inside one of this grid's popovers keeps the keyboard there from its opening focus
         // (openingOvertaken).
@@ -3948,7 +3998,8 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             && holdsClaimedPress(event.target)) {
             event.preventDefault();
             event.stopPropagation();
-            held.push({ press: 'mousedown', claim: true, target: event.target, init: mouseInit(event) });
+            heldPress = { press: 'mousedown', claim: true, target: event.target, init: mouseInit(event) };
+            held.push(heldPress);
             return;
         }
         // A press on one of the menu's items runs its command and closes the menu, as Enter on it
@@ -4072,11 +4123,15 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     };
     // A release is held only behind its press: once the press has been handed on, the
     // release follows it to Blazor as it comes, and Blazor keeps the two in order.
-    // On the product's own markup around this root, only the release of a press held there is the
-    // gate's (onOuterPress).
+    // On the product's own markup around this root, only the release of a press held on a control
+    // that claims its events is the gate's (onOuterPress, onPress): the release of the last press made,
+    // while that press is still held. Any other release there — of a press the gate let through, on a
+    // Consumer's control on the toolbar band or a design system's — is left to go as it came, whatever
+    // the gate holds: held, it never reached its handler.
     const onOuterRelease = (event) => {
         lookSettled();
-        if (core && !replaying && held.findLast((k) => k.press === 'mousedown' || k.dragMove === true)?.claim === true) {
+        if (core && !replaying && heldPress !== null && held.includes(heldPress)) {
+            heldPress = null;
             event.stopPropagation();
             held.push({ press: 'mouseup', claim: true, target: event.target, init: mouseInit(event) });
         }
@@ -4240,8 +4295,10 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // answered it — the number the stamp names (answeredUpTo), and then the keyboard where its answer
     // left it (editorSettled). On the element it was made on: one a render has removed since was a
     // control that no longer stands, and the event carries out nothing there.
+    // One made on the product's own markup around this root is handed on there too, whether or not
+    // its element claims the event: the gate held it, so it is the gate's to deliver.
     const replayClaimed = async (k) => {
-        if (!k.target.isConnected || !(root.contains(k.target) || outerClaimant(k.target) !== null)) {
+        if (!k.target.isConnected || !(root.contains(k.target) || outsideRootWithin(k.target))) {
             return;
         }
         const input = claimOf(k.target, k.press) !== null ? tellClaim(k.press) : 0;
@@ -4270,6 +4327,11 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         if (!core || (replaying && event.type !== 'submit')) {
             return;
         }
+        // A form's submission ends what an Enter on a radio button or a checkbox was waiting for.
+        const implicit = event.type === 'submit' ? implicitSubmit : null;
+        if (event.type === 'submit') {
+            implicitSubmit = null;
+        }
         // A press on an item that did not end in a click on it moved nothing (onPress). The click Enter's
         // implicit submission makes on its form's default button is that Enter's own: its submission,
         // which comes next, numbers the move.
@@ -4279,7 +4341,12 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             awaitingMove = null;
             lookAgain();
         }
-        if (event.type !== 'submit' && held.some((k) => k.press === 'mousedown' || k.dragMove === true)) {
+        // Behind a held press. On the product's own markup around this root, only an event on a control
+        // that claims its press or its click is held (holdsClaimedPress), as its press is (onOuterPress):
+        // a click on a Consumer's control on the toolbar band, or a design system's, whose press went as
+        // it came, goes on to its handler as it comes too.
+        if (event.type !== 'submit' && held.some((k) => k.press === 'mousedown' || k.dragMove === true)
+            && (root.contains(event.target) || holdsClaimedPress(event.target))) {
             event.preventDefault();
             event.stopPropagation();
             held.push({ press: event.type, claim: true, target: event.target, init: mouseInit(event) });
@@ -4293,6 +4360,15 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
                 && (awaitingMove.from.contains(event.target) || event.target.contains(awaitingMove.from))) {
                 const { unnumbered, focusAtStart, ...move } = awaitingMove;
                 awaitingMove = { ...move, upTo: input };
+            }
+            // An Enter on a radio button or a checkbox brought its form's submission (enterMaySubmitTypes):
+            // the move it starts waits on the submission's number, and the keys typed after it wait for
+            // the popover to close.
+            if (implicit !== null && implicit.form === event.target && awaitingMove === null) {
+                awaitMove(implicit.move, input);
+                if (!answering) {
+                    startHold();
+                }
             }
             // A command run from the product's own surface around this root — a toolbar button, a Sheet
             // Tab — changes what the keys after it act on, and may send the keyboard on (a list opening):
@@ -5289,10 +5365,13 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         // hold stands, the control takes it in turn instead (frameInTurn, inTurn): when the hold has
         // reached it, with the keys held for the frame handed to it in the same task (ADR-0050 item
         // 16's note of 2026-10-12). The condition is the same, read then.
-        handKeyboardTo: (element, inTurn) => {
+        // Asked with `preventScroll`, the control takes the keyboard where it stands, scrolling nothing:
+        // a Sheet Tab the arrow keys select, as its own focus asked for it before the Input Order.
+        handKeyboardTo: (element, inTurn, preventScroll) => {
             if (inTurn !== true && handOff === 'frame' && answering && element instanceof HTMLElement
                 && !(root && root.contains(element))) {
                 frameInTurn = element;
+                frameInTurnStill = preventScroll === true;
                 return;
             }
             const active = document.activeElement;
@@ -5312,7 +5391,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
                 const target = direct ? element : firstText
                     ?? element.querySelector('button:not([disabled]), select:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])');
                 if (target instanceof HTMLElement) {
-                    target.focus();
+                    target.focus({ preventScroll: preventScroll === true });
                     if (target === firstText && isTextField(target)) {
                         target.select();
                     }
