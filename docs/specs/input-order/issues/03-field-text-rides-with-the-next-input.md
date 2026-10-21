@@ -124,3 +124,28 @@ Point preservation, queued row commands and immediate typing after a Sheet switc
 Chromes. The Docs Formula example's Point and cell-to-bar paths were exercised under both
 Chromes with no browser warnings or exceptions. Standards and Spec integration reviews found
 no actionable findings. Replacement CI and the fourteen-spec gate remain required.
+
+## Further main integration and CI failures, 2026-10-21
+
+Main advanced by nine commits to `bdea73f4`. Local integration `78cbbe1a` brings that main
+into the responsive preparation branch; `f9a283df` brings that branch into stage 03. The API
+list retains main's new members and the carried-text overloads, removing only the obsolete
+paste signatures that main reintroduced during the textual merge.
+
+The preceding PR #187 revision `ab1613c0` passed normal CI 39520753250. Stage 03 revision
+`430cc823` failed normal CI 39521503735 in the closing-menu test, and related-input run
+39521512192 in the Row Heading edge drag. The [menu preparation record](../../responsive-touch/hunt-2026-10-21-menu-opening-preparation.md)
+records a six-failure/six-pass reproduction with unchanged behavior assertions. The
+[Row Heading record](../../responsive-touch/hunt-2026-10-21-row-heading-renderer-stop.md)
+remains open; isolated local passes do not resolve its stopped renderer.
+
+Add `popovers.spec.mjs` to the fourteen selected related specs. The next gate has fifteen
+specs; none is removed. Current-integration verification and the gate remain required before
+stage 04 starts.
+
+The combined solution builds with zero warnings or errors. All eighteen logic/component
+suites pass: 14,865 passed, 11 skipped. The menu preparation correction passed all six local
+executions described in its record. Both integration reviews found no actionable findings.
+The unchanged heading file passed ten full repetitions locally under widened settings (140
+executions) and ten without additional latency or CPU throttling (140 executions); neither
+run reproduced the renderer stop, so those passes do not close that defect.

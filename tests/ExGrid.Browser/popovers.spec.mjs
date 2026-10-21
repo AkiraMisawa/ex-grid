@@ -1,4 +1,4 @@
-import { test, expect, alterPage, twoFrames, holdAnswers, circuitQuiet } from './fixtures.mjs';
+import { test, expect, alterPage, twoFrames, holdAnswers, circuitQuiet, settled } from './fixtures.mjs';
 import { expectKeyboardOn, keyboardCarrier, activeDescendant, expectActiveDescendant } from './keyboard.mjs';
 
 // The popovers' behaviour on /features, run once per Chrome (WR-5, FN-17): the built-in
@@ -412,6 +412,9 @@ for (const chrome of CHROMES) {
             await grid(page).locator("[id$='r2c1']").click({ button: 'right', force: true });
             const command = grid(page).locator('[role=menu] button[role=menuitem]').last();
             await expect(command).toBeVisible();
+            // Finish opening the menu before holding answers for the closing gesture. Visibility
+            // alone can precede its keyboard hand-off, which the hold would otherwise interrupt.
+            await settled(grid(page));
             const landed = await watchWhereKeysLand(page);
             // The host's answers are held across the keys, so the popover stands for every one of them however
             // fast they are typed: a round trip of 80ms only made that likely (ADR-0220).

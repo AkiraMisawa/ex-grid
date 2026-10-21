@@ -25,3 +25,21 @@ Three isolated local repetitions passed on Server Chrome with a 150 ms round-tri
 fourfold CPU throttling on 2026-10-21; they did not reproduce the stopped renderer. The next
 related gate remains pending. The separate field
 text and secondary-press fixes do not claim to resolve this observation.
+
+## Second observation, 2026-10-21
+
+The same test stopped responding on `430cc823`, Edge Server, repetition 1 (the second run),
+in [39521512192, job 118967489081](https://github.com/AkiraMisawa/ex-grid/actions/runs/39521512192/job/118967489081).
+The shard ran all 140 expected tests: 139 passed and this one failed. Its artifact is
+`hunt-server-msedge-8`, ID 12312736240, with trace
+`headings-DC-43-a-Row-Headi-1a259-lls-down-and-never-sideways-msedge-repeat1/trace.zip`.
+
+Here the vertical-scroll assertion already passed: the trace read scrollTop above 200 px.
+After the edge-band observation interval, the next locator read stopped returning. Trace
+screenshots stopped too, and teardown's diagnostic evaluation also hung. The last screenshot
+shows whole rows selected, a `41R x 16384C` Size Tip and blank space above the painted rows.
+This distinguishes the response failure from an assertion that scrolling never started.
+
+Three isolated repetitions on the integration of main `bdea73f4` (`f9a283df`), Chrome Server,
+150 ms RTT floor and fourfold CPU throttling, passed. They do not establish a fix. Investigation
+now includes the preceding heading gestures in the shared document, as CI ran them.
