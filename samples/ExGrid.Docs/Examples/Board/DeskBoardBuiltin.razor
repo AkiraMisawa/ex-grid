@@ -9,7 +9,8 @@
 </div>
 @if (_board is not null)
 {
-    <ExBoard Board="_board" Data="_data!" Width="900" />
+    <ExBoard Board="_board" Data="_data!" Width="900" OnOutput="Raised" />
+    <pre role="log" style="white-space: pre-wrap; font-size: 12px">@_raised</pre>
 }
 
 @code {
@@ -17,8 +18,12 @@
     private BoardReading? _board;
     private IReadOnlyDictionary<string, Snapshot>? _data;
     private string? _refusal;
+    private string? _raised;
 
     protected override void OnInitialized() => Draw();
+
+    // What the host hands on to the workflow's next step: here, only shown.
+    private void Raised(BoardOutput output) => _raised = output.ToJson();
 
     private void Draw() => (_board, _data, _refusal) = DeskBoard.Read(_json);
 }

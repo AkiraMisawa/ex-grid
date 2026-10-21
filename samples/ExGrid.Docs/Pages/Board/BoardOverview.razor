@@ -56,10 +56,27 @@
         </p>
     </DocsSection>
 
+    <DocsSection Title="Outputs raised on a confirm">
+        <p>
+            What the user chooses is handed on to the workflow's next step only when they say so. An output names a
+            grid, the columns whose values it hands on and the label of the action that raises it:
+            <code>"outputs": {"review": {"from": "blotter", "on": ["day", "trader"], "confirm": "Send to review"}}</code>.
+            The action is drawn under the grid, disabled while the grid selects nothing; a selection on the way raises
+            nothing. Select rows in the Board above and press <em>Send to review</em>: <code>OnOutput</code> is raised
+            with a <code>BoardOutput</code>, shown here as its JSON.
+        </p>
+        <p>
+            An output is a value condition, the selected rows' values in its columns, with the version of the input's
+            data they were taken against. The next step runs it where the data lives, or takes the rows with
+            <code>BoardOutput.Take</code>, which refuses data of another version: the rows the user chose are the rows
+            handed on, or nothing is.
+        </p>
+    </DocsSection>
+
     <DocsSection Title="Still to come">
         <p>
-            A link from a pivot's cell, outputs raised when the user confirms, and the Board Diff that hands back what
-            the user changed are decided (ADR-0340) and not yet drawn. ExBoard is not yet published as a package.
+            A link from a pivot's cell and the Board Diff that hands back what the user changed are decided (ADR-0340)
+            and not yet drawn. ExBoard is not yet published as a package.
         </p>
     </DocsSection>
 
@@ -67,6 +84,7 @@
         <ApiTable Type="typeof(global::ExBoard.BoardSpec)" />
         <ApiTable Type="typeof(global::ExBoard.BoundBoard)" />
         <ApiTable Type="typeof(global::ExBoard.LinkCondition)" />
+        <ApiTable Type="typeof(global::ExBoard.BoardOutput)" />
         <ApiTable Type="typeof(global::ExBoard.Components.ExBoard)" />
     </DocsSection>
 </DocsPage>

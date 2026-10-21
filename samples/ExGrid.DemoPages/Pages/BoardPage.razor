@@ -9,7 +9,7 @@
 
 @* ExBoard's page (/board): the browser layer's fixture for links (ADR-0340, ExBoard ticket 05). The
    blotter's selected rows narrow the pivot, the chart and the limits grid, which reads another input,
-   by desk. *@
+   by desk; its confirm hands on the chosen rows' days and traders, written under the Board. *@
 <DemoChromeAssets>
     <Head>
         <ExPivotStylesheet />
@@ -18,9 +18,14 @@
 </DemoChromeAssets>
 
 <h1>A Board</h1>
-<ExBoard Board="Reading" Data="Data" Width="1000" />
+<ExBoard Board="Reading" Data="Data" Width="1000" OnOutput="Raised" />
+<pre id="raised" role="log">@_raised</pre>
 
 @code {
+    private string? _raised;
+
+    private void Raised(BoardOutput output) => _raised = output.ToJson();
+
     private const string Json = """
         {"version": 1, "title": "Desk P&L",
          "inputs": {
@@ -38,7 +43,8 @@
            {"id": "daily", "title": "P&L by day", "chart": {"version": 1, "axis": {"values": "dates"},
              "series": [{"id": "pnl", "name": "P&L", "kind": "observation", "data": "trades", "x": "day", "y": "pnl"}]}}],
          "layout": [{"views": ["blotter", "byTrader", "limits"], "widths": [2, 1, 1], "height": 240}, {"views": ["daily"], "height": 260}],
-         "links": [{"from": "blotter", "to": ["byTrader", "limits", "daily"], "on": ["desk"]}]}
+         "links": [{"from": "blotter", "to": ["byTrader", "limits", "daily"], "on": ["desk"]}],
+         "outputs": {"review": {"from": "blotter", "on": ["day", "trader"], "confirm": "Send to review"}}}
         """;
 
     private static readonly BoardReading Reading = BoardSpec.Read(Json);

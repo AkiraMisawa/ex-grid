@@ -1,9 +1,10 @@
 import { test, expect, circuitQuiet, dataRowCount, settled } from './fixtures.mjs';
 
-// The Board on /board (ADR-0340, ExBoard ticket 05). A blotter of five trades, a pivot by trader and a
+// The Board on /board (ADR-0340, ExBoard tickets 05 and 06). A blotter of five trades, a pivot by trader and a
 // chart by day over the same input, and a limits grid over a second input; a link from the blotter to
 // the other three on "desk". A click on a blotter row narrows them to its desk; a Ctrl+click adds the
 // next row's desk; a sort of the blotter drops the selection, and the narrowing goes with it (ADR-0011).
+// Its confirm hands on the chosen rows' days and traders, written under the Board as JSON.
 
 const view = (page, id) => page.locator(`[data-ex-view="${id}"]`);
 const grid = (page, id) => view(page, id).locator('.ex-grid').first();
@@ -51,4 +52,17 @@ test('ADR-0340: a Ctrl+click adds the next row\'s desk; a sort drops the selecti
     await grid(page, 'blotter').locator('[role=columnheader]').filter({ hasText: 'P&L' }).click({ force: true });
 
     await expect.poll(() => shown(page)).toEqual({ limits: 3, traders: ['Aoki', 'Brandt', 'Chen', 'Dubois'], points: 5 });
+});
+
+test('ADR-0340: the confirm, disabled until the blotter selects, hands on the chosen rows\' values', async ({ page }) => {
+    const confirm = view(page, 'blotter').getByRole('button', { name: 'Send to review' });
+    await expect(confirm).toBeDisabled();
+    await expect(page.locator('#raised')).toHaveText('');
+
+    await cell(page, 'blotter', 'Chen').click({ force: true });
+    await expect(confirm).toBeEnabled();
+    await expect(page.locator('#raised')).toHaveText('');
+    await confirm.click();
+
+    await expect(page.locator('#raised')).toHaveText('{"output":"review","input":"trades","version":0,"on":["day","trader"],"values":[["2026-10-16","Chen"]]}');
 });

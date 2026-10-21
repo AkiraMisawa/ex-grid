@@ -59,6 +59,11 @@ public partial class ExBoard
     [Parameter]
     public IPivotChrome? PivotChrome { get; set; }
 
+    /// <summary>Raised when the user confirms an output the Board declares (ADR-0340, Q6), and only
+    /// then: a selection on the way raises nothing.</summary>
+    [Parameter]
+    public EventCallback<BoardOutput> OnOutput { get; set; }
+
     /// <summary>The chart Chrome; the built-in one by default.</summary>
     [Parameter]
     public IChartChrome? ChartChrome { get; set; }
@@ -94,7 +99,7 @@ public partial class ExBoard
             // Cached, so a render does not hand the pivot a new delegate (AGENTS.md).
             _layoutChanged[id] = EventCallback.Factory.Create<PivotLayout>(this, layout => _layouts[id] = layout);
         }
-        foreach (var from in _bound.Board.Links.Select(l => l.From).Distinct())
+        foreach (var from in _bound.Board.Links.Select(l => l.From).Concat(_bound.Board.Outputs.Select(o => o.From)).Distinct())
             _selectionChanged[from] = EventCallback.Factory.Create<GridSelection>(this, selection => Select(from, selection));
     }
 
@@ -103,6 +108,9 @@ public partial class ExBoard
     // A grid's selection narrows the views its links reach; a dropped selection, which the grid raises
     // as an empty one, takes the narrowing away with it (ADR-0011).
     private void Select(string from, GridSelection selection) => _bound?.Select(from, selection);
+
+    private Task ConfirmAsync(string output) =>
+        _bound?.Confirm(output) is { } raised ? OnOutput.InvokeAsync(raised) : Task.CompletedTask;
 
     private static string RefusalStyle(BoardRow row) => FormattableString.Invariant($"height: {row.Height}px");
 
@@ -118,6 +126,8 @@ public partial class ExBoard
 
     private static string CellStyle(BoardCell cell) =>
         FormattableString.Invariant($"flex: {cell.Width} 1 0; min-width: 0; display: flex; flex-direction: column");
+
+    private static string ConfirmStyle => FormattableString.Invariant($"margin-top: {Gap / 2}px; align-self: flex-start");
 
     private static string TitleStyle => FormattableString.Invariant(
         $"margin: 0; height: {TitleHeight}px; line-height: {TitleHeight}px; font-size: inherit; overflow: hidden; white-space: nowrap; text-overflow: ellipsis");

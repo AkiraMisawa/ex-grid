@@ -41,6 +41,12 @@
                                 <ExGrid TRow="ShapedRow" Source="grid.Grid.Source" Columns="grid.Grid.Columns" PinnedColumnCount="grid.Grid.PinnedColumnCount"
                                         Chrome="Chrome" ViewportHeight="row.Height" ViewportWidth="ViewportSize.Stretch"
                                         SelectionChanged="SelectionChangedOf(cell.View)" />
+                                @foreach (var output in bound.Board.Outputs.Where(o => o.From == cell.View))
+                                {
+                                    @* Disabled while the grid selects nothing: an output carries the rows chosen. *@
+                                    <button type="button" class="ex-board-confirm" data-ex-output="@output.Name" style="@ConfirmStyle"
+                                            disabled="@(!bound.CanConfirm(output.Name))" @onclick="() => ConfirmAsync(output.Name)">@output.Confirm</button>
+                                }
                                 break;
                             case BoundPivotView pivot:
                                 <ExPivot Source="pivot.Source" Layout="LayoutOf(pivot)" LayoutChanged="_layoutChanged[cell.View]"
