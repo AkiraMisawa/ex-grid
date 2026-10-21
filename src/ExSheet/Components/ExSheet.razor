@@ -125,7 +125,7 @@
             <div class="ex-sheet-tab-menu" role="menu" tabindex="-1" aria-label="@SheetWords.SheetMenuName(menu.Sheet)"
                  aria-activedescendant="@menu.Commands.FirstOrDefault(c => c.Active)?.Id" data-ex-claims="keydown click" @ref="_menuElement"
                  @onkeydown="OnTabMenuKeyAsync" @onkeydown:preventDefault="true" @onclick="OnTabMenuClickAsync"
-                 @onmousedown:preventDefault="true" @oncontextmenu:preventDefault="true" @onfocusout="() => OnTabMenuLeft(menuSession)">
+                 @onmousedown:preventDefault="true" @oncontextmenu:preventDefault="true" @onfocusout="() => OnTabMenuLeftAsync(menuSession)">
                 @if (sheetChrome?.SheetTabMenu(menu) is { } drawn)
                 {
                     @drawn

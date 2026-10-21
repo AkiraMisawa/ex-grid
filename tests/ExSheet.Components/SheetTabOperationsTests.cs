@@ -789,4 +789,67 @@ public class SheetTabOperationsTests : SheetTestContext
         Assert.Equal(["Alpha", "Beta", "Gamma"], TabNames(cut));
         Assert.Equal(3, Kept(cut, "_tabs"));
     }
+
+    // ---- An IME in the name's field ----------------------------------------------------------------
+
+    [Theory] // ADR-0010, ADR-0080, ADR-0331 §4: while an IME composes, its Enter and its Escape are its own: the name's edit neither commits nor ends
+    [InlineData("Enter", true)]
+    [InlineData("Escape", true)]
+    [InlineData("Process", false)]
+    public async Task A_composing_imes_keys_leave_the_name_alone(string key, bool composing)
+    {
+        var cut = RenderWorkbook(Sheets("One", "Two"));
+        await Tab(cut, "One").DoubleClickAsync(new MouseEventArgs());
+        await NameField(cut).InputAsync(new ChangeEventArgs { Value = "Costs" });
+        var returns = KeyboardReturns;
+
+        await NameField(cut).KeyDownAsync(new KeyboardEventArgs { Key = key, IsComposing = composing });
+
+        Assert.Equal("Costs", NameField(cut).GetAttribute("value"));
+        Assert.Equal(["One", "Two"], [.. cut.Instance.ToWorkbookDocument().Sheets.Select(s => s.Name)]);
+        Assert.Equal(returns, KeyboardReturns);
+
+        // The composition over, Enter commits the name.
+        await NameField(cut).KeyDownAsync(new KeyboardEventArgs { Key = "Enter" });
+        Assert.Equal(["Costs", "Two"], TabNames(cut));
+    }
+
+    [Fact] // ADR-0240 §6, ADR-0331 §4: the keyboard leaving the menu is taken in its turn: an Enter numbered on the menu before it left is still answered there
+    public async Task ADR0240_the_menu_closes_in_its_turn_behind_a_key_numbered_before()
+    {
+        var answer = new TaskCompletionSource();
+        var raised = 0;
+        var cut = RenderSheet(ps =>
+        {
+            ps.Add(s => s.Workbook, Sheets("One", "Two"));
+            ps.Add(s => s.WorkbookChanged, async (WorkbookDocument _) =>
+            {
+                if (raised++ == 0) await answer.Task;
+            });
+        });
+        await GoToAsync(cut, "A1");
+        await OpenMenuAsync(cut, "One");
+        await MenuKeyAsync(cut, "ArrowDown");
+        Assert.Equal("Delete", ActiveCommand(cut));
+        var menu = cut.Find(".ex-sheet-tab-menu");
+
+        // A key on the grid that waits on the Consumer, then the menu's Enter numbered behind it, then the
+        // keyboard leaving the menu before either has been answered.
+        Task clear = Task.CompletedTask;
+        await cut.InvokeAsync(() => { clear = KeyAsync(cut, "Delete", 1); });
+        await TellAsync(cut, "keydown", 2);
+        Task enter = Task.CompletedTask;
+        await cut.InvokeAsync(() => { enter = menu.KeyDownAsync(new KeyboardEventArgs { Key = "Enter" }); });
+        Task left = Task.CompletedTask;
+        await cut.InvokeAsync(() => { left = menu.TriggerEventAsync("onfocusout", new FocusEventArgs()); });
+        Assert.NotEmpty(cut.FindAll(".ex-sheet-tab-menu"));
+
+        answer.SetResult();
+        await clear;
+        await enter;
+        await left;
+
+        Assert.Equal(["Two"], TabNames(cut));
+        Assert.Empty(cut.FindAll(".ex-sheet-tab-menu"));
+    }
 }

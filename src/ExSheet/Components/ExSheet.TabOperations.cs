@@ -186,7 +186,12 @@ public partial class ExSheet
     private void OnRenameChanged(ChangeEventArgs change) => SetRenameText(change.Value as string);
 
     /// <summary>Enter commits the name and Escape keeps the old one, each giving the keyboard back to the grid, in their place in the order.</summary>
-    private Task OnRenameKeyAsync(KeyboardEventArgs key) => InOrderAsync(GridInputKind.KeyDown, async () =>
+    private Task OnRenameKeyAsync(KeyboardEventArgs key) =>
+        // An IME's keys are its own while it composes (ADR-0010, ADR-0080): its Enter confirms a candidate
+        // and its Escape cancels the composition, and neither ends the name's edit. The browser says so on
+        // the key itself (isComposing, or the key it names Process), and the grid's script numbers no such
+        // key, so it is no input of the order.
+        key.IsComposing || key.Key == "Process" ? Task.CompletedTask : InOrderAsync(GridInputKind.KeyDown, async () =>
     {
         switch (key.Key)
         {
@@ -394,14 +399,20 @@ public partial class ExSheet
     /// <summary>A click inside the menu that no command took — on its surface — is still an input in its place.</summary>
     private Task OnTabMenuClickAsync() => InOrderAsync(GridInputKind.Click, static () => Task.CompletedTask);
 
-    /// <summary>The keyboard has left the menu for somewhere else: the menu closes, the keyboard staying where it went.</summary>
-    private void OnTabMenuLeft(int session)
+    /// <summary>The keyboard has left the menu for somewhere else: the menu closes, the keyboard staying where
+    /// it went. In its turn, as the name's field takes its own (ADR-0240 section 6): a key typed on the menu
+    /// before the keyboard left, and still to be answered, is answered on the menu first.</summary>
+    private Task OnTabMenuLeftAsync(int session) => InOrderAsync(GridInputKind.Focus, () =>
     {
-        if (session != _menuSession || _menuSheet is null) return;
-        _menuSession++;
-        _menuSheet = null;
-        _menu = null;
-    }
+        if (session == _menuSession && _menuSheet is not null)
+        {
+            _menuSession++;
+            _menuSheet = null;
+            _menu = null;
+            StateHasChanged();
+        }
+        return Task.CompletedTask;
+    });
 
     private enum KeyboardTo
     {
