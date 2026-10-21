@@ -1,4 +1,4 @@
-import { test, expect, setRoundTrip, alterPage, circuitQuiet, settled } from './fixtures.mjs';
+import { test, expect, setRoundTrip, holdAnswers, alterPage, circuitQuiet, settled } from './fixtures.mjs';
 import { SERVER } from './hosting.mjs';
 import {
     sheet, openSheet, cell, clickCell, editor, nameBox, at,
@@ -296,6 +296,38 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(keyField(grid)).toBeFocused();
             expect(await fieldState(grid)).toEqual({ value: '', drawn: false, focused: true });
             await setRoundTrip(0);
+
+            await pressAt(grid, 'D10');
+            await page.keyboard.press('Delete');
+            await expect(cell(grid, 'D10')).toHaveText(before ?? '');
+        });
+
+        test('ED-30 / ADR-0080: a composition begun and ended on a cell just pressed, before the core has answered the press, is typed into that cell', async ({ page }) => {
+            const grid = sheet(page);
+            // spec-lint: early-read: nothing has been typed on the page since it opened
+            const before = await cell(grid, 'D10').textContent();
+            const client = await page.context().newCDPSession(page);
+            try {
+                // The first press since the page opened: no field of the grid's has held the keyboard,
+                // so the IME has nowhere to compose but where the press's default puts DOM focus — the
+                // scroller, which the core used to hand on to the Keyboard Field a round trip later. On
+                // a circuit its answers are held here until the IME is done, so the whole composition
+                // comes before any of them (ADR-0220): in CI the hold below lost `かな` so, composed
+                // before the hand-on had landed (ADR-0080's note of 2026-10-21).
+                await holdAnswers(true);
+                await clickCell(grid, 'D10');
+                await compose(client, 'か', 'かな');
+                await client.send('Input.insertText', { text: 'かな' });
+                await page.keyboard.press('Enter');
+            } finally {
+                await holdAnswers(false);
+                await client.detach();
+            }
+
+            await expect(cell(grid, 'D10')).toHaveText('かな');
+            await expectFieldFocusAt(grid, 'D11');
+            await expect(editor(grid)).toHaveCount(0);
+            await expect(keyField(grid)).toBeFocused();
 
             await pressAt(grid, 'D10');
             await page.keyboard.press('Delete');
