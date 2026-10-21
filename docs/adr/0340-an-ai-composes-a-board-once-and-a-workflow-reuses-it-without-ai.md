@@ -102,11 +102,16 @@ here so they are not re-derived:
 - **An output's `from` names a grid view**, as a link's does: the Decision's example
   `{"from": "trades", …}` is read as a view's id, and the output is on the input that grid reads.
   A pivot's cell as an output's source waits for ticket 11, as a link's does.
-- **The confirm is the output's own `confirm`, its label**, drawn under its grid and disabled while
-  the grid selects nothing. An output with no confirm is refused: nothing raises it but the user.
+- **The confirm is the output's own `confirm`, its label**, drawn under its grid. It is never
+  disabled: a press that follows a selection a round trip later is answered for that selection, where
+  a button the browser still held disabled would drop it (spine rule 6). With nothing selected it says
+  so. An output with no confirm is refused: nothing raises it but the user.
 - **The condition is a link's** (`LinkCondition`, the selected rows' tuples), and the version is the
-  bound Snapshot's `Version`. `BoardOutput.Take` refuses data of another version; data of the same
-  version is taken as it is, so a workflow that makes a new Snapshot for every run gives each its own
-  version.
+  bound Snapshot's `Version`. `BoardOutput.Take` refuses data of another version, and other data at
+  version 0, which names no version and so cannot vouch for itself; the very data it was taken from is
+  always taken. A source whose data moves on gives each version its number. It refuses a column of
+  another kind too, which would otherwise match nothing, quietly.
+- **A grid narrowed by a link lets go of its selection's output and links at once**, as it drops the
+  selection (ADR-0011), not when it next raises the dropped selection.
 - **Its JSON** names the output, the input, the version, the columns and each tuple, a date as
   `yyyy-MM-dd` (with `THH:mm:ss` when it holds a time), so an engine in any language can run it.

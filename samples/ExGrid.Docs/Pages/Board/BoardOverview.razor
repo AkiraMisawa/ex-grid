@@ -61,15 +61,17 @@
             What the user chooses is handed on to the workflow's next step only when they say so. An output names a
             grid, the columns whose values it hands on and the label of the action that raises it:
             <code>"outputs": {"review": {"from": "blotter", "on": ["day", "trader"], "confirm": "Send to review"}}</code>.
-            The action is drawn under the grid, disabled while the grid selects nothing; a selection on the way raises
-            nothing. Select rows in the Board above and press <em>Send to review</em>: <code>OnOutput</code> is raised
+            The action is drawn under the grid; a selection on the way raises nothing, and a press with nothing
+            selected says so. Select rows in the Board above and press <em>Send to review</em>: <code>OnOutput</code> is raised
             with a <code>BoardOutput</code>, shown here as its JSON.
         </p>
         <p>
             An output is a value condition, the selected rows' values in its columns, with the version of the input's
-            data they were taken against. The next step runs it where the data lives, or takes the rows with
-            <code>BoardOutput.Take</code>, which refuses data of another version: the rows the user chose are the rows
-            handed on, or nothing is.
+            data they were taken against. It hands on values, not rows: every row holding the chosen values is taken,
+            so an output meant to name single rows names a column that tells them apart, such as a trade's id. The next
+            step runs it where the data lives, or takes the rows with <code>BoardOutput.Take</code>, which refuses data
+            of another version, and other data at version 0, which names none: the values the user chose are taken
+            from the data they chose them in, or nothing is.
         </p>
     </DocsSection>
 

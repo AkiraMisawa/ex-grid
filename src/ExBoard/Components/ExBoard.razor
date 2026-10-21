@@ -43,9 +43,15 @@
                                         SelectionChanged="SelectionChangedOf(cell.View)" />
                                 @foreach (var output in bound.Board.Outputs.Where(o => o.From == cell.View))
                                 {
-                                    @* Disabled while the grid selects nothing: an output carries the rows chosen. *@
-                                    <button type="button" class="ex-board-confirm" data-ex-output="@output.Name" style="@ConfirmStyle"
-                                            disabled="@(!bound.CanConfirm(output.Name))" @onclick="() => ConfirmAsync(output.Name)">@output.Confirm</button>
+                                    @* Never disabled: a press that follows a selection a round trip later is
+                                       answered for the selection it follows, not dropped by a button the
+                                       browser still holds disabled (spine rule 6). With nothing selected,
+                                       it says so. *@
+                                    <div class="ex-board-confirm-row" style="@ConfirmStyle">
+                                        <button type="button" class="ex-board-confirm" data-ex-output="@output.Name"
+                                                @onclick="() => ConfirmAsync(output.Name)">@output.Confirm</button>
+                                        <span role="status" class="ex-board-confirm-status">@_confirmStatus.GetValueOrDefault(output.Name)</span>
+                                    </div>
                                 }
                                 break;
                             case BoundPivotView pivot:

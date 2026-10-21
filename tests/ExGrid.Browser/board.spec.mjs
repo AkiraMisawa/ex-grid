@@ -54,14 +54,14 @@ test('ADR-0340: a Ctrl+click adds the next row\'s desk; a sort drops the selecti
     await expect.poll(() => shown(page)).toEqual({ limits: 3, traders: ['Aoki', 'Brandt', 'Chen', 'Dubois'], points: 5 });
 });
 
-test('ADR-0340: the confirm, disabled until the blotter selects, hands on the chosen rows\' values', async ({ page }) => {
+test('ADR-0340: the confirm hands on the values of the selection it follows, and with none says so', async ({ page }) => {
     const confirm = view(page, 'blotter').getByRole('button', { name: 'Send to review' });
-    await expect(confirm).toBeDisabled();
+    await confirm.click();
+    await expect(view(page, 'blotter').locator('.ex-board-confirm-status')).toHaveText('Select the rows to hand on first.');
     await expect(page.locator('#raised')).toHaveText('');
 
+    // At machine speed: the press follows the click with no wait, and is answered for it (spine rule 6).
     await cell(page, 'blotter', 'Chen').click({ force: true });
-    await expect(confirm).toBeEnabled();
-    await expect(page.locator('#raised')).toHaveText('');
     await confirm.click();
 
     await expect(page.locator('#raised')).toHaveText('{"output":"review","input":"trades","version":0,"on":["day","trader"],"values":[["2026-10-16","Chen"]]}');

@@ -15,15 +15,22 @@ public sealed record BoardOutputDeclaration(string Name, string From, IReadOnlyL
 /// What a Board hands on when the user confirms (ADR-0340, Q6): a value condition on an input, and the
 /// version of the input's data it was taken against. The engine executes it where the data lives, or
 /// takes a Snapshot of it (<see cref="Take"/>), and refuses a version that has moved on (spine rule 6):
-/// the rows the user saw are the rows handed on, or nothing is.
+/// the values the user chose are taken from the data they chose them in, or nothing is. It hands on
+/// values, not rows: every row holding the chosen values in the output's columns is taken, so an output
+/// meant to name single rows names a column that tells them apart.
 /// </summary>
 public sealed class BoardOutput
 {
-    internal BoardOutput(string name, string input, long sourceVersion, LinkCondition condition)
+    private readonly Snapshot _takenFrom;
+    private readonly SnapshotKind[] _kinds;
+
+    internal BoardOutput(string name, string input, Snapshot takenFrom, LinkCondition condition, SnapshotKind[] kinds)
     {
         Name = name;
         Input = input;
-        SourceVersion = sourceVersion;
+        _takenFrom = takenFrom;
+        _kinds = kinds;
+        SourceVersion = takenFrom.Version;
         Condition = condition;
     }
 
@@ -44,19 +51,35 @@ public sealed class BoardOutput
     /// their own.
     /// </summary>
     /// <exception cref="BoardRefusedException"><paramref name="data"/> is of another version than the
-    /// one the output was taken against, or lacks a column the condition names.</exception>
+    /// one the output was taken against; is other data at version 0, which names no version, so that only
+    /// the very data it was taken from can vouch for it; or lacks a column the condition names, or holds
+    /// it of another kind.</exception>
     public Snapshot Take(Snapshot data)
     {
         ArgumentNullException.ThrowIfNull(data);
-        if (data.Version != SourceVersion)
+        if (!ReferenceEquals(data, _takenFrom))
         {
-            throw new BoardRefusedException($"outputs.{Name}", FormattableString.Invariant(
-                $"Output '{Name}' was taken against version {SourceVersion} of input '{Input}', and the data is version {data.Version}; the rows the user chose may no longer be these."));
+            if (data.Version != SourceVersion)
+            {
+                throw new BoardRefusedException($"outputs.{Name}", FormattableString.Invariant(
+                    $"Output '{Name}' was taken against version {SourceVersion} of input '{Input}', and the data is version {data.Version}; the values the user chose may no longer be these."));
+            }
+            if (SourceVersion == 0)
+            {
+                throw new BoardRefusedException($"outputs.{Name}",
+                    $"Output '{Name}' was taken against input '{Input}' at version 0, which names no version, so only that same data can be taken; a source that moves on gives its data a version.");
+            }
         }
-        foreach (var column in Condition.On)
+        for (var i = 0; i < Condition.On.Count; i++)
         {
-            if (!data.TryGetColumn(column, out _))
+            var column = Condition.On[i];
+            if (!data.TryGetColumn(column, out var held))
                 throw new BoardRefusedException($"outputs.{Name}", $"Output '{Name}' hands on column '{column}', which the data of input '{Input}' does not have.");
+            if (held.Kind != _kinds[i])
+            {
+                throw new BoardRefusedException($"outputs.{Name}",
+                    $"Output '{Name}', column '{column}': chosen as a {BoardInput.NameOf(_kinds[i])}, and the data holds a {BoardInput.NameOf(held.Kind)}.");
+            }
         }
         return Narrowing.Copy(data, Narrowing.Positions(data, [Condition]));
     }
@@ -65,7 +88,8 @@ public sealed class BoardOutput
     /// The output as JSON, so that any engine can take it:
     /// <c>{"output": "chosen", "input": "trades", "version": 3, "on": ["tradeId"], "values": [["T-1"], ["T-7"]]}</c>.
     /// A value is written as the input holds it: text and numbers as JSON's, a date as
-    /// <c>yyyy-MM-dd</c> or, with a time of day, <c>yyyy-MM-ddTHH:mm:ss</c>, a boolean as one, a Blank as null,
+    /// <c>yyyy-MM-dd</c> or, with a time of day, <c>yyyy-MM-ddTHH:mm:ss</c> and its fraction of a second
+    /// to the tick (as a Board Input reads one), a boolean as one, a Blank as null,
     /// and a double that is no number (NaN, an infinity) as text, which JSON's numbers cannot hold.
     /// </summary>
     public string ToJson()
@@ -122,7 +146,7 @@ public sealed class BoardOutput
                 json.WriteBooleanValue(flag);
                 break;
             case DateTime date:
-                json.WriteStringValue(date.ToString(date.TimeOfDay == TimeSpan.Zero ? "yyyy-MM-dd" : "yyyy-MM-dd'T'HH:mm:ss", CultureInfo.InvariantCulture));
+                json.WriteStringValue(date.ToString(date.TimeOfDay == TimeSpan.Zero ? "yyyy-MM-dd" : "yyyy-MM-dd'T'HH:mm:ss.FFFFFFF", CultureInfo.InvariantCulture));
                 break;
             default:
                 throw new InvalidOperationException($"A {value.GetType().Name} is no value an input holds.");

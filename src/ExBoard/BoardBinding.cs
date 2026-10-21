@@ -146,7 +146,8 @@ public sealed class BoundBoard
         if (!_taken.TryGetValue(name, out var condition))
             return null;
         var input = ((BoardGridView)Board.View(declared.From)!).Grid.Data;
-        return new BoardOutput(name, input, Data[input].Version, condition);
+        var shape = Board.Input(input)!.Shape;
+        return new BoardOutput(name, input, Data[input], condition, [.. declared.On.Select(c => shape.Columns.First(k => k.Name == c).Kind)]);
     }
 
     // Records the link's condition; false when it is the one already held, which narrows nothing again.
@@ -182,6 +183,13 @@ public sealed class BoundBoard
                 var snapshot = grid.Grid.Snapshot;
                 var rows = grid.Grid.Rows;
                 grid.Grid.Source.ReplaceAll(conditions.Length == 0 ? rows : [.. Narrowing.Positions(snapshot, conditions).Select(p => rows[p])]);
+                // Its rows changed, so its selection is dropped (ADR-0011): what the selection held is
+                // let go now, not when the grid next raises it, so nothing is confirmed or narrowed by
+                // a selection the grid no longer shows.
+                foreach (var output in Board.Outputs.Where(o => o.From == id))
+                    _taken.Remove(output.Name);
+                foreach (var link in Board.Links.Where(l => l.From == id))
+                    Narrow(link, null);
                 break;
             case BoundPivotView pivot:
                 var data = Data[pivot.Input];
