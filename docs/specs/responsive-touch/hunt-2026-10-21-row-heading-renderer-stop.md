@@ -43,3 +43,15 @@ This distinguishes the response failure from an assertion that scrolling never s
 Three isolated repetitions on the integration of main `bdea73f4` (`f9a283df`), Chrome Server,
 150 ms RTT floor and fourfold CPU throttling, passed. They do not establish a fix. Investigation
 now includes the preceding heading gestures in the shared document, as CI ran them.
+
+The whole heading file then passed ten local repetitions with those widened settings (140
+executions), and ten without extra latency or CPU throttling (140 executions). Neither run
+reproduced the stop. PR #228's release fix concerns presses on the surrounding Sheet controls;
+this trace stops before mouse-up inside the grid, so that change is not an established fix.
+
+Temporary diagnostics now wrap only this test. Its original inputs, assertions and timeout
+remain. If it has not completed after ten seconds, a CDP debugger pause records JavaScript
+frames; on Linux, process state and native stacks are requested only for renderers returned
+by this browser's process list. The probe is disarmed when the test finishes. The wrapped
+gesture passed three local repetitions on Chrome Server. These diagnostics are evidence
+collection for the next CI run, not a product fix or a replacement completion condition.

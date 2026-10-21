@@ -148,4 +148,6 @@ suites pass: 14,865 passed, 11 skipped. The menu preparation correction passed a
 executions described in its record. Both integration reviews found no actionable findings.
 The unchanged heading file passed ten full repetitions locally under widened settings (140
 executions) and ten without additional latency or CPU throttling (140 executions); neither
-run reproduced the renderer stop, so those passes do not close that defect.
+run reproduced the renderer stop, so those passes do not close that defect. Eighteen further
+Chrome Server executions passed at 150 ms / CPU4: three repetitions under both Chromes of
+cell-to-bar transfer, Point preservation and main's new cross-Sheet Point/commit case (WB-6).
