@@ -41,6 +41,9 @@ jobs:
           sudo apt-get update -qq
           sudo apt-get install -y gdb
           gdb --version
+          curl --fail --location --output /tmp/exgrid-chrome155.deb https://dl.google.com/linux/chrome/deb/pool/main/g/google-chrome-stable/google-chrome-stable_155.0.8059.84-1_amd64.deb
+          sudo apt-get install -y --allow-downgrades /tmp/exgrid-chrome155.deb
+          test "$(dpkg-query --show --showformat='${Version}' google-chrome-stable)" = '155.0.8059.84-1'
           google-chrome --version
           microsoft-edge --version
       - name: Install the suite
@@ -60,7 +63,7 @@ jobs:
         run: >
           xvfb-run --auto-servernum --server-args="-screen 0 2560x1600x24"
           ./counted-run.sh ${{ matrix.repeat }} headings.spec.mjs --project=chrome
-          --grep '${{ matrix.grep }}' --max-failures=1
+          --grep '${{ matrix.grep }}' --max-failures=1 --timeout=60000
       - name: Keep diagnostic records
         if: always()
         uses: actions/upload-artifact@v7
