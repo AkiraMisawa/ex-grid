@@ -224,4 +224,74 @@ public class SheetTabsTests : SheetTestContext
         Assert.True(withTabs < 400);
         Assert.Contains("display: contents", cut.Find(".ex-sheet").GetAttribute("style"));
     }
+
+    [Fact] // ADR-0331 §5: the Name Box takes a Sheet's name before the address, shows that Sheet and places the Selection there
+    public async Task The_name_box_goes_to_another_sheet()
+    {
+        WorkbookDocument? raised = null;
+        var cut = RenderWorkbook(TwoSheets(), d => raised = d);
+
+        await GoToAsync(cut, "two!B5:C6");
+
+        Assert.Equal("Two", SelectedTab(cut));
+        Assert.Equal("Two", raised?.Shown);
+        var held = Held(cut);
+        Assert.Equal([new SelectionRange(4, 1, 2, 2)], held.Selection.Ranges);
+        Assert.Equal(new CellPosition(4, 1), held.Selection.Focus);
+        Assert.Equal("42", CellText(cut, "A1"));
+        Assert.Equal("", cut.Find(".ex-sheet-notice").TextContent);
+    }
+
+    [Fact] // ADR-0331 §5: a quoted name doubles a quote inside it, as a Reference writes one
+    public async Task The_name_box_reads_a_quoted_sheet_name()
+    {
+        var workbook = new Workbook(Culture, ["One", "Bob's Q1"]);
+        var cut = RenderWorkbook(workbook.ToDocument());
+
+        await GoToAsync(cut, "'bob''s q1'!$C$3");
+
+        Assert.Equal("Bob's Q1", SelectedTab(cut));
+        Assert.Equal([new SelectionRange(2, 2, 1, 1)], Held(cut).Selection.Ranges);
+    }
+
+    [Fact] // ADR-0331 §5, ADR-0051: the Sheet shown, named, is placed on as an address alone is
+    public async Task The_name_box_naming_the_sheet_shown_places_there()
+    {
+        var cut = RenderWorkbook(TwoSheets());
+
+        await GoToAsync(cut, "One!D4");
+
+        Assert.Equal("One", SelectedTab(cut));
+        Assert.Equal([new SelectionRange(3, 3, 1, 1)], Held(cut).Selection.Ranges);
+    }
+
+    [Theory] // ADR-0331 §5, principle 1: a Sheet the Workbook does not hold, or no name before the bang, moves nothing and says so
+    [InlineData("Three!A1")]
+    [InlineData("!A1")]
+    [InlineData("'Two!A1")]
+    [InlineData("Two!")]
+    public async Task The_name_box_refuses_a_sheet_not_held(string typed)
+    {
+        var cut = RenderWorkbook(TwoSheets());
+        await GoToAsync(cut, "B2");
+
+        await GoToAsync(cut, typed);
+
+        Assert.Equal("One", SelectedTab(cut));
+        Assert.Equal([new SelectionRange(1, 1, 1, 1)], Held(cut).Selection.Ranges);
+        Assert.Contains($"'{typed}' is not a cell address", cut.Find(".ex-sheet-notice").TextContent);
+    }
+
+    [Fact] // ADR-0331 §4, §5: while an edit is open the Name Box does not show another Sheet, as a tab does not
+    public async Task The_name_box_does_not_show_another_sheet_while_editing()
+    {
+        var cut = RenderWorkbook(TwoSheets());
+        await GoToAsync(cut, "B1");
+        await PressAsync(cut, "7");
+
+        await GoToAsync(cut, "Two!A1");
+
+        Assert.Equal("One", SelectedTab(cut));
+        Assert.Contains("a cell is being edited", cut.Find(".ex-sheet-notice").TextContent);
+    }
 }

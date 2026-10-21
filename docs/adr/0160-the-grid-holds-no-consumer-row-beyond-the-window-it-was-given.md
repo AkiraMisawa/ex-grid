@@ -34,7 +34,7 @@ grid was last given.** Anything kept longer is kept as positions, strings or num
   cell it was made on (ED-31).
 - **The Cell Appearance cache forgets a row once it leaves the Window.** A new Window drops every entry
   whose row instance it does not hold; what is kept for the rows it does hold is their appearance values.
-- **Three holdings outlive a Window, bounded to one each, and are named here so they are not mistaken for
+- **Holdings that outlive a Window, bounded to one each, and are named here so they are not mistaken for
   leaks:**
   - **The Window last measured for Auto widths** (ADR-0016), while a fling or a hidden or zero-sized
     Viewport defers the next measure. It is replaced at the next measure.
@@ -44,6 +44,10 @@ grid was last given.** Anything kept longer is kept as positions, strings or num
     follow its row through an order move and a commit can tell that the row is gone
     ([ADR-0011](./0011-selection-is-rectangles-in-index-space-and-is-dropped-on-reorder.md)'s note of
     2026-10-07). *(Added the same day.)*
+  - **The row an open edit was opened on, while the edit is away** — a view of other rows shown in the
+    grid while it is typed (ADR-0331 §5, ExSheet's Sheets) — so its commit has a row to land on. Read as
+    the Window it was in is replaced, and let go when its rows are shown again or the edit ends. *(Added
+    2026-10-20; a fourth, bounded to one like the others.)*
 - **Blazor's renderer keeps the frames of the render before the newest** as the buffer it renders into
   next, and those frames hold the painted rows' parameters. So after the render that takes in a new
   Window, the rows the previous render painted stay reachable until the grid renders again. That is the

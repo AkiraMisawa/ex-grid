@@ -94,6 +94,17 @@ While a Formula is being typed, selecting another Sheet's tab and pointing at a 
 widened to the Sheets of its Workbook. What a tab press does while a constant (not a Formula) is being
 typed is a question to Excel, put in the next Windows run, and built as observed.
 
+*(As built, 2026-10-20, exsheet-workbook ticket 09: a press on a tab, Ctrl+PageUp and Ctrl+PageDown
+show another Sheet while the edit's text is a Formula, and are refused as before while it is a
+constant. The grid keeps the edit open with the rows it was opened among: on another Sheet its editor
+holds the keyboard unseen, the Formula Bar shows its text, and Point points from that Sheet's own
+Focus, writing `Sheet2!A1`, quoted as a Reference quotes a name. What was pointed on the Sheet left is
+replaced by the next point. The commit lands on the row the edit was opened on, and ExSheet shows that
+Sheet again before the move that completes the commit, so Enter moves down there; Escape, or any other
+end of the edit, shows it again too. Only the References naming the Sheet shown are outlined on it.
+Excel writing `Sheet2!` at the tab press itself, before a cell is pointed, and what a point back on the
+first Sheet writes, are put to the next Windows run with the constant case.)*
+
 ### 6. Commands and addresses name their Sheet (W6)
 
 - **A command or an address may name its Sheet.** A command that names none is taken only while the
@@ -109,6 +120,10 @@ typed is a question to Excel, put in the next Windows run, and built as observed
   An address names its Sheet: `DoAsync(sheet, edit)` and `CellFormatAt(sheet, address)`; the ones that
   name none are refused with `SheetRefusalReason.SheetNotNamed`. The application hears each change to
   the Sheets through `SheetsChanged`.
+- *As built, 2026-10-20:* the Name Box takes an address that names its Sheet, `Sheet2!B5`, and shows
+  that Sheet with the place selected and the Focus revealed. The place is handed to the grid with the
+  Sheet's rows, under the version that brings them (`ShowViewWith(view, range, focus)`), so it never
+  depends on when the grid takes that version. While an edit is open it is refused, as a tab press is.
 
 ### 7. 3D references are in the first version (W7)
 
