@@ -184,6 +184,7 @@ public partial class ExSheet : IPointingSheet, IDisposable
     /// <summary>Leaves the Pointing Scope, and stops keeping the Sheet Day: a disposed Sheet points at nothing and reads no clock.</summary>
     public void Dispose()
     {
+        _sheetDisposed = true;
         _joinedScope?.Leave(this);
         _joinedScope = null;
         StopTheDay();

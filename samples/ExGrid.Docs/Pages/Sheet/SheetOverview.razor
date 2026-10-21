@@ -126,7 +126,9 @@
             <code>SheetDocument.ToJson()</code> and <code>SheetDocument.FromJson(json)</code> are its serialised
             form. A document records Entries, Cell Formats, column widths and Linked Table declarations, under a
             version number; a newer engine reads every older version, and an unknown version is refused with a
-            <code>SheetDocumentException</code> rather than half-read.
+            <code>SheetDocumentException</code> rather than half-read. A workbook from Excel opens through
+            <code>OpenAsync</code> and saves through <code>SaveAsync</code>, each in its place among the user's
+            keys: see <a href="exsheet/xlsx">Open and save .xlsx</a>.
         </p>
         <p>
             Handing over a different document replaces the Sheet and clears its undo stack. If the user has an

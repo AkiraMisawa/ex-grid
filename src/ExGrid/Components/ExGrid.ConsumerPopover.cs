@@ -169,7 +169,7 @@ public partial class ExGrid<TRow>
     /// the grid is attached to the page, and after it is gone, it asks at once and drops them.</para>
     ///
     /// <para>A frame inside the product's Input Root that claims its keys (<c>data-ex-claims</c>), and puts
-    /// each in the grid's order through <see cref="InOrderAsync"/>, holds none: the grid holds the keys
+    /// each in the grid's order through <see cref="InOrderAsync(GridInputKind, Func{Task})"/>, holds none: the grid holds the keys
     /// typed after the one that gave the keyboard back until that one has been answered, and hands them
     /// on where the keyboard landed (ADR-0240 section 6). Its <paramref name="typedOnTheWay"/> then
     /// answers only the keys it held for some other reason.</para>

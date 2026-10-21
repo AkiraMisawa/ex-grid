@@ -194,11 +194,25 @@ public class WriterRefusalTests
             new SheetDocumentCell(At("C2"), Entry.FromValue(Value.FromNumber(7)), null, null, null, null, null),
             new SheetDocumentCell(At("H9"), Entry.FromValue(Value.FromNumber(8)), null, null, null, null, null));
 
-        var refused = await RefusedAsync(workbook, new XlsxSaveOptions { MaxCells = 6 });
-        var file = await Saved.WriteAsync(workbook, new XlsxSaveOptions { MaxCells = 7 });
+        // Seven cells and the two rows the row format writes (ticket 06 of docs/specs/exsheet-xlsx counts them).
+        var refused = await RefusedAsync(workbook, new XlsxSaveOptions { MaxCells = 8 });
+        var file = await Saved.WriteAsync(workbook, new XlsxSaveOptions { MaxCells = 9 });
 
         Assert.Equal(XlsxSaveRefusal.TooManyCells, refused.Reason);
         Assert.Equal(7, (await CellsAsync(file)).Count);
+    }
+
+    [Fact] // ADR-0330 §9, ticket 06: each row a row format writes counts toward the limit, holding a cell or not, so a row format over every row is bounded
+    public async Task ADR0330_the_rows_a_row_format_writes_count_toward_the_limit()
+    {
+        var everyRow = Formatted([], [new SheetDocumentAxisFormat(0, Sheet.RowCount - 1, null, null, new CellFont(Bold: true), null, null)]);
+
+        var refused = await RefusedAsync(everyRow, new XlsxSaveOptions { MaxCells = Sheet.RowCount - 1 });
+        var file = await Saved.WriteAsync(everyRow, new XlsxSaveOptions { MaxCells = Sheet.RowCount });
+
+        Assert.Equal((XlsxSaveRefusal.TooManyCells, "Sheet1"), (refused.Reason, refused.Sheet));
+        Assert.Contains($"{Sheet.RowCount.ToString("N0", CultureInfo.InvariantCulture)} rows its row formats write", refused.Message, StringComparison.Ordinal);
+        Assert.Empty(await CellsAsync(file));
     }
 
     [Theory] // ADR-0330 §6: a Formula Excel would not take is refused by name, with its Sheet, cell and text: a text constant over 255 characters, a call of more than 255 arguments, a bound name called

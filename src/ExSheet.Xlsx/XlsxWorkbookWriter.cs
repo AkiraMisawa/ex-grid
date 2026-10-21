@@ -47,14 +47,19 @@ public static class XlsxWorkbookWriter
     /// (<see cref="XlsxSaveException"/>) with nothing written to the stream.
     /// </summary>
     /// <param name="workbook">
-    /// The Workbook. It is read whole before this method first yields: the file is the Workbook as it stood when the call was
-    /// made, and the Workbook may change once the returned task is under way. The package is held in memory, compressed, until
-    /// then, and handed to the stream asynchronously.
+    /// The Workbook. Its snapshot is taken before this method first yields — every Sheet's document, every Value it shows,
+    /// its spills and each Linked Table's rows — and the file is built from that snapshot while yielding (ADR-0330 §9): the
+    /// file is the Workbook as it stood when the call was made, and the Workbook may change once the returned task is under
+    /// way. The package is held in memory, compressed, until it is built, and then handed to the stream asynchronously.
     /// </param>
     /// <param name="stream">Where the file goes; it need not seek, and is left open.</param>
-    /// <param name="options">What the write may produce; null for the defaults.</param>
-    /// <param name="cancellationToken">Cancels the hand-off to the stream.</param>
+    /// <param name="options">What the write may produce, and how it paces itself; null for the defaults.</param>
+    /// <param name="cancellationToken">
+    /// Cancels the write, between slices while the file is built, and while it is handed to the stream. Cancelled while it is
+    /// built, nothing reaches the stream.
+    /// </param>
     /// <exception cref="XlsxSaveException">The Workbook is refused, and nothing was written.</exception>
+    /// <exception cref="OperationCanceledException">The write was cancelled.</exception>
     public static async ValueTask WriteAsync(Workbook workbook, Stream stream, XlsxSaveOptions? options = null, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(workbook);
@@ -67,11 +72,13 @@ public static class XlsxWorkbookWriter
                 string.Create(CultureInfo.InvariantCulture, $"MaxUncompressedBytes is 1 to {XlsxReadOptions.DefaultMaxUncompressedBytes:N0}."));
         }
 
-        // Everything the file says is taken here, synchronously, before the hand-off first yields.
+        // Everything the file says is taken here, synchronously, before the write first yields; the rest reads only this.
+        var snapshot = Snapshot.Of(workbook);
+        var pacer = new SavePacer(options, cancellationToken);
         XlsxWriter writer;
         try
         {
-            writer = Write(workbook, stream, options);
+            writer = await BuildAsync(snapshot, stream, options, pacer).ConfigureAwait(false);
         }
         catch (XlsxException e) when (e.Reason == XlsxRefusal.TooLarge)
         {
@@ -96,40 +103,82 @@ public static class XlsxWorkbookWriter
             $"The workbook would hold more than the {options.MaxUncompressedBytes:N0} uncompressed bytes a file is written with, and read with by default; the part '{e.Part}' went past it."),
             e.Sheet);
 
+    /// <summary>
+    /// The Workbook as it stood when the write was called: all the write reads, taken synchronously, in time that grows with
+    /// the cells holding a Value and not with what the file writes for them.
+    /// </summary>
+    private sealed record Snapshot(
+        CultureInfo Culture, int Shown, IReadOnlyList<SheetSnapshot> Sheets, Dictionary<string, string> SheetNames,
+        IReadOnlyList<(LinkedTable Table, IReadOnlyList<IReadOnlyList<Value?>>? Columns)> Tables)
+    {
+        public static Snapshot Of(Workbook workbook)
+        {
+            var document = workbook.ToDocument();
+            var sheets = new List<SheetSnapshot>(workbook.Sheets.Count);
+            var names = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            for (var i = 0; i < workbook.Sheets.Count; i++)
+            {
+                var sheet = workbook.Sheets[i];
+                var values = new Dictionary<CellAddress, Value>();
+                var spilledFrom = new Dictionary<CellAddress, CellAddress>();
+                foreach (var at in sheet.ValueAddresses)
+                {
+                    if (sheet.GetValue(at) is { } value) values[at] = value;
+                    if (sheet.SpilledFrom(at) is { } anchor) spilledFrom[at] = anchor;
+                }
+                sheets.Add(new SheetSnapshot(sheet.Name, document.Sheets[i], values, spilledFrom));
+                names.TryAdd(sheet.Name, sheet.Name);
+            }
+            // A table's rows are read-only, and replaced whole by a later snapshot: holding the reference holds them as they are.
+            var tables = workbook.LinkedTables.Select(t => (t, t.IsWaiting ? null : workbook.LinkedTableColumns(t.Name))).ToList();
+            return new Snapshot(workbook.Culture, IndexOf(workbook, workbook.Shown), sheets, names, tables);
+        }
+    }
+
+    /// <summary>A Sheet as it stood: its document, the Value of every cell holding one, and the Anchor each spilled cell spills from.</summary>
+    private sealed record SheetSnapshot(string Name, SheetDocument Document, Dictionary<CellAddress, Value> Values, Dictionary<CellAddress, CellAddress> SpilledFrom)
+    {
+        public Value? ValueAt(CellAddress at) => Values.TryGetValue(at, out var value) ? value : null;
+    }
+
     /// <summary>One cell element a Sheet writes of its own: an Entry, a spilled Value, or a format.</summary>
     private readonly record struct Recorded(CellAddress At, Entry? Entry, int Style);
 
-    private sealed record Planned(Sheet Sheet, SheetFormatPlan Plan, List<(CellAddress At, Entry? Entry, FormatParts Own)> Cells);
+    private sealed record Planned(SheetSnapshot Sheet, SheetFormatPlan Plan, List<(CellAddress At, Entry? Entry, FormatParts Own)> Cells);
 
     /// <summary>A Linked Table to write as an Excel Table: its declaration, and its snapshot column by column.</summary>
     private sealed record PlannedTable(LinkedTable Table, IReadOnlyList<IReadOnlyList<Value?>> Columns);
 
-    /// <summary>The Workbook written into a package held in memory, every part but those written on completion.</summary>
-    private static XlsxWriter Write(Workbook workbook, Stream stream, XlsxSaveOptions options)
+    /// <summary>
+    /// The snapshot written into a package held in memory, every part but those written on completion: first every element
+    /// counted against the limit, then written, yielding between slices.
+    /// </summary>
+    private static async ValueTask<XlsxWriter> BuildAsync(Snapshot snapshot, Stream stream, XlsxSaveOptions options, SavePacer pacer)
     {
-        var tables = Tables(workbook);
-        var document = workbook.ToDocument();
-        var planned = new List<Planned>(workbook.Sheets.Count);
+        pacer.Sheets = snapshot.Sheets.Count + snapshot.Tables.Count;
+        var tables = await TablesAsync(snapshot, pacer).ConfigureAwait(false);
+        var planned = new List<Planned>(snapshot.Sheets.Count);
         long cells = 0;
-        for (var i = 0; i < workbook.Sheets.Count; i++)
+        foreach (var sheet in snapshot.Sheets)
         {
-            var sheet = workbook.Sheets[i];
             if (!Carries(sheet.Name, inName: true))
             {
                 throw new XlsxSaveException(XlsxSaveRefusal.Text,
                     "The Sheet's name holds a character a file cannot carry in a worksheet's name: a control character below U+0020, U+FFFE or U+FFFF, or half of a surrogate pair.", sheet.Name);
             }
-            var own = Own(sheet, document.Sheets[i]);
-            var plan = SheetFormatPlan.For(document.Sheets[i]);
+            var own = Own(sheet);
+            var plan = SheetFormatPlan.For(sheet.Document);
             var crossings = plan.Crossings(own.Select(c => c.At));
-            cells += own.Count + crossings;
+            var rows = plan.FormattedRows;
+            cells += own.Count + crossings + rows;
             if (cells > options.MaxCells)
             {
                 throw new XlsxSaveException(XlsxSaveRefusal.TooManyCells, string.Create(CultureInfo.InvariantCulture,
-                    $"The workbook would write more than {options.MaxCells:N0} cells, more than a file is read with; this Sheet writes {own.Count:N0} of its own and {crossings:N0} where its formatted rows cross its formatted columns."),
+                    $"The workbook would write more than the {options.MaxCells:N0} elements it may (XlsxSaveOptions.MaxCells, which counts the cells written and each row a row format writes; by default the cells a file is read with): this Sheet writes {own.Count:N0} cells of its own, {crossings:N0} where its formatted rows cross its formatted columns, and {rows:N0} rows its row formats write."),
                     sheet.Name);
             }
             planned.Add(new Planned(sheet, plan, own));
+            await pacer.CheckpointAsync().ConfigureAwait(false);
         }
         foreach (var (table, columns) in tables)
         {
@@ -137,41 +186,55 @@ public static class XlsxWorkbookWriter
             if (cells > options.MaxCells)
             {
                 throw new XlsxSaveException(XlsxSaveRefusal.TooManyCells, string.Create(CultureInfo.InvariantCulture,
-                    $"The workbook would write more than {options.MaxCells:N0} cells, more than a file is read with; the Linked Table '{table.Name}' writes {table.RowCount:N0} rows of {table.Columns.Count:N0} columns under its header."),
+                    $"The workbook would write more than the {options.MaxCells:N0} elements it may (XlsxSaveOptions.MaxCells, which counts the cells written and each row a row format writes; by default the cells a file is read with): the Linked Table '{table.Name}' writes {table.RowCount:N0} rows of {table.Columns.Count:N0} columns under its header."),
                     table.Name);
             }
         }
 
-        var styles = new StyleTable(workbook.Culture);
-        var sheets = new List<(Sheet Sheet, SheetFormatPlan Plan, List<Recorded> Cells, Dictionary<CellAddress, CellAddress> Spills)>(planned.Count);
+        var styles = new StyleTable(snapshot.Culture);
+        var sheets = new List<(SheetSnapshot Sheet, SheetFormatPlan Plan, List<Recorded> Cells, Dictionary<CellAddress, CellAddress> Spills)>(planned.Count);
         foreach (var (sheet, plan, own) in planned)
         {
             plan.Build(styles);
             var recorded = new List<Recorded>(own.Count);
-            foreach (var (at, entry, parts) in own) recorded.Add(new Recorded(at, entry, plan.Style(styles, parts, at)));
+            foreach (var (at, entry, parts) in own)
+            {
+                recorded.Add(new Recorded(at, entry, plan.Style(styles, parts, at)));
+                await pacer.StepAsync(0).ConfigureAwait(false);
+            }
             sheets.Add((sheet, plan, recorded, Spills(sheet)));
         }
 
+        pacer.Total = cells;
+        pacer.Sheet = 0;
         var writer = XlsxWriter.Create(stream, new XlsxWriteOptions
         {
             Styles = styles.Build(),
-            ActiveSheet = IndexOf(workbook, workbook.Shown),
+            ActiveSheet = snapshot.Shown,
             FullCalculationOnLoad = true,
             MaxUncompressedBytes = options.MaxUncompressedBytes,
         });
-        var declared = workbook.LinkedTables.ToDictionary(t => t.Name, t => t.Columns, StringComparer.OrdinalIgnoreCase);
+        var declared = snapshot.Tables.ToDictionary(t => t.Table.Name, t => t.Table.Columns, StringComparer.OrdinalIgnoreCase);
         IReadOnlyList<string>? ColumnsOf(string name) => declared.GetValueOrDefault(name);
         try
         {
             foreach (var (sheet, plan, recorded, spills) in sheets)
-                WriteSheet(writer.AddSheet(sheet.Name, plan.Columns), sheet, plan, recorded, spills, ColumnsOf);
+            {
+                await WriteSheetAsync(writer.AddSheet(sheet.Name, plan.Columns), sheet, snapshot, plan, recorded, spills, ColumnsOf, pacer).ConfigureAwait(false);
+                pacer.Sheet++;
+            }
             foreach (var table in tables)
-                WriteTable(writer, table);
+            {
+                await WriteTableAsync(writer, table, pacer).ConfigureAwait(false);
+                pacer.Sheet++;
+            }
+            pacer.Sheet = Math.Max(0, pacer.Sheets - 1);
+            pacer.Report();
             return writer;
         }
         catch
         {
-            writer.DisposeAsync().AsTask().GetAwaiter().GetResult();
+            await writer.DisposeAsync().ConfigureAwait(false);
             throw;
         }
     }
@@ -180,21 +243,21 @@ public static class XlsxWorkbookWriter
     /// Each Linked Table with its snapshot, in the order they were declared, or the refusal of the first that cannot be written
     /// as an Excel Table on a worksheet of its name (ADR-0330 §6).
     /// </summary>
-    private static List<PlannedTable> Tables(Workbook workbook)
+    private static async ValueTask<List<PlannedTable>> TablesAsync(Snapshot snapshot, SavePacer pacer)
     {
-        var tables = new List<PlannedTable>(workbook.LinkedTables.Count);
-        foreach (var table in workbook.LinkedTables)
+        var tables = new List<PlannedTable>(snapshot.Tables.Count);
+        foreach (var (table, held) in snapshot.Tables)
         {
             var name = table.Name;
-            if (table.IsWaiting || workbook.LinkedTableColumns(name) is not { } columns)
+            if (table.IsWaiting || held is not { } columns)
             {
                 throw new XlsxSaveException(XlsxSaveRefusal.LinkedTable,
                     $"The Linked Table '{name}' has not answered: it holds no rows yet, or its last snapshot was refused, and every Formula that reads it shows #GETTING_DATA. Its rows are written as they stand, and it has none to write.", name);
             }
-            if (workbook.Find(name) is { } sheet)
+            if (snapshot.SheetNames.TryGetValue(name, out var sheet))
             {
                 throw new XlsxSaveException(XlsxSaveRefusal.LinkedTable,
-                    $"The Linked Table '{name}' is written on a worksheet of its name, and the Sheet '{sheet.Name}' already has it.", name);
+                    $"The Linked Table '{name}' is written on a worksheet of its name, and the Sheet '{sheet}' already has it.", name);
             }
             if (!XlsxTable.IsValidName(name))
             {
@@ -230,6 +293,7 @@ public static class XlsxWorkbookWriter
                 {
                     if (columns[c][r] is { Kind: ValueKind.Text } value)
                         CheckTableText(name, value.Text, r + 1, c, string.Create(CultureInfo.InvariantCulture, $"in its column '{table.Columns[c]}', row {r + 1:N0},"));
+                    await pacer.StepAsync(0).ConfigureAwait(false);
                 }
             }
             tables.Add(new PlannedTable(table, columns));
@@ -256,13 +320,16 @@ public static class XlsxWorkbookWriter
     }
 
     /// <summary>A Linked Table's worksheet: its header at A1, each column's name, and its rows below as they stand, as an Excel Table of its name.</summary>
-    private static void WriteTable(XlsxWriter writer, PlannedTable planned)
+    private static async ValueTask WriteTableAsync(XlsxWriter writer, PlannedTable planned, SavePacer pacer)
     {
         var (table, columns) = planned;
         var sheet = writer.AddSheet(table.Name);
         sheet.AddTable(new XlsxTable(table.Name, 0, 0, table.Columns, table.RowCount));
         for (var c = 0; c < table.Columns.Count; c++)
+        {
             sheet.Write(new XlsxCell(0, c, XlsxCellType.SharedString, null) { Text = table.Columns[c] });
+            await pacer.StepAsync().ConfigureAwait(false);
+        }
         for (var r = 0; r < table.RowCount; r++)
         {
             for (var c = 0; c < columns.Count; c++)
@@ -276,6 +343,7 @@ public static class XlsxWorkbookWriter
                     ValueKind.Boolean => cell with { Type = XlsxCellType.Boolean, Value = value.Boolean ? "1" : "0" },
                     _ => cell with { Type = XlsxCellType.Error, Value = value.ToString() },
                 });
+                await pacer.StepAsync().ConfigureAwait(false);
             }
         }
     }
@@ -293,27 +361,23 @@ public static class XlsxWorkbookWriter
     /// The cells a Sheet writes of its own, in the sheet's order: each the document records (an Entry, or a format of its own),
     /// and each an array spills into.
     /// </summary>
-    private static List<(CellAddress At, Entry? Entry, FormatParts Own)> Own(Sheet sheet, SheetDocument document)
+    private static List<(CellAddress At, Entry? Entry, FormatParts Own)> Own(SheetSnapshot sheet)
     {
-        var cells = new Dictionary<CellAddress, (Entry? Entry, FormatParts Own)>(document.Cells.Count);
-        foreach (var cell in document.Cells)
+        var cells = new Dictionary<CellAddress, (Entry? Entry, FormatParts Own)>(sheet.Document.Cells.Count);
+        foreach (var cell in sheet.Document.Cells)
             cells[cell.Address] = (cell.Entry, new FormatParts(cell.NumberFormat, cell.Alignment, cell.Font, cell.Fill, cell.Borders));
-        foreach (var at in sheet.ValueAddresses)
-        {
-            if (sheet.SpilledFrom(at) is not null) cells.TryAdd(at, (null, default));
-        }
+        foreach (var at in sheet.SpilledFrom.Keys) cells.TryAdd(at, (null, default));
         var ordered = new List<(CellAddress, Entry?, FormatParts)>(cells.Count);
         foreach (var (at, (entry, own)) in cells.OrderBy(c => c.Key)) ordered.Add((at, entry, own));
         return ordered;
     }
 
     /// <summary>Each spilling Anchor, with the last cell of its Spill Range.</summary>
-    private static Dictionary<CellAddress, CellAddress> Spills(Sheet sheet)
+    private static Dictionary<CellAddress, CellAddress> Spills(SheetSnapshot sheet)
     {
         var spills = new Dictionary<CellAddress, CellAddress>();
-        foreach (var at in sheet.ValueAddresses)
+        foreach (var (at, anchor) in sheet.SpilledFrom)
         {
-            if (sheet.SpilledFrom(at) is not { } anchor) continue;
             spills[anchor] = spills.TryGetValue(anchor, out var last)
                 ? new CellAddress(Math.Max(last.Row, at.Row), Math.Max(last.Column, at.Column))
                 : at;
@@ -322,8 +386,9 @@ public static class XlsxWorkbookWriter
     }
 
     /// <summary>A Sheet's rows, in order: each formatted row with its format, and every cell element in it, its own and its crossings'.</summary>
-    private static void WriteSheet(
-        XlsxSheetWriter writer, Sheet sheet, SheetFormatPlan plan, List<Recorded> cells, Dictionary<CellAddress, CellAddress> spills, Func<string, IReadOnlyList<string>?> columnsOf)
+    private static async ValueTask WriteSheetAsync(
+        XlsxSheetWriter writer, SheetSnapshot sheet, Snapshot snapshot, SheetFormatPlan plan, List<Recorded> cells,
+        Dictionary<CellAddress, CellAddress> spills, Func<string, IReadOnlyList<string>?> columnsOf, SavePacer pacer)
     {
         var runs = plan.Rows;
         var run = 0;
@@ -339,17 +404,27 @@ public static class XlsxWorkbookWriter
             {
                 var formatted = runs[run];
                 writer.WriteRow(new XlsxRow(row, formatted.Style));
+                await pacer.StepAsync().ConfigureAwait(false);
                 var at = next;
                 foreach (var crossing in formatted.Crossings)
                 {
                     for (var column = crossing.First; column <= crossing.Last; column++)
                     {
-                        while (at < end && cells[at].At.Column < column) WriteCell(writer, sheet, cells[at++], spills, columnsOf);
+                        while (at < end && cells[at].At.Column < column)
+                        {
+                            WriteCell(writer, sheet, snapshot, cells[at++], spills, columnsOf);
+                            await pacer.StepAsync().ConfigureAwait(false);
+                        }
                         if (at < end && cells[at].At.Column == column) continue;
                         writer.Write(new XlsxCell(row, column, XlsxCellType.Number, null, StyleIndex: crossing.Style));
+                        await pacer.StepAsync().ConfigureAwait(false);
                     }
                 }
-                while (at < end) WriteCell(writer, sheet, cells[at++], spills, columnsOf);
+                while (at < end)
+                {
+                    WriteCell(writer, sheet, snapshot, cells[at++], spills, columnsOf);
+                    await pacer.StepAsync().ConfigureAwait(false);
+                }
                 runRow++;
                 if (runRow > formatted.Last)
                 {
@@ -359,14 +434,20 @@ public static class XlsxWorkbookWriter
             }
             else
             {
-                for (var at = next; at < end; at++) WriteCell(writer, sheet, cells[at], spills, columnsOf);
+                for (var at = next; at < end; at++)
+                {
+                    WriteCell(writer, sheet, snapshot, cells[at], spills, columnsOf);
+                    await pacer.StepAsync().ConfigureAwait(false);
+                }
             }
             next = end;
         }
     }
 
     /// <summary>One cell of the Sheet's own: its constant, or its Formula with the Value it shows, or a spilled Value, or its format alone.</summary>
-    private static void WriteCell(XlsxSheetWriter writer, Sheet sheet, Recorded cell, Dictionary<CellAddress, CellAddress> spills, Func<string, IReadOnlyList<string>?> columnsOf)
+    private static void WriteCell(
+        XlsxSheetWriter writer, SheetSnapshot sheet, Snapshot snapshot, Recorded cell, Dictionary<CellAddress, CellAddress> spills,
+        Func<string, IReadOnlyList<string>?> columnsOf)
     {
         var at = cell.At;
         var empty = new XlsxCell(at.Row, at.Column, XlsxCellType.Number, null, StyleIndex: cell.Style);
@@ -375,7 +456,7 @@ public static class XlsxWorkbookWriter
             writer.Write(constant.Kind == ValueKind.Text ? Shared(sheet, at, constant.Text, empty) : Valued(sheet, at, constant, empty, null));
             return;
         }
-        var value = sheet.GetValue(at);
+        var value = sheet.ValueAt(at);
         if (cell.Entry is { Formula: { } formula } entry)
         {
             if (formula.Length - 1 > MaxFormulaLength)
@@ -388,7 +469,7 @@ public static class XlsxWorkbookWriter
                 throw new XlsxSaveException(XlsxSaveRefusal.Formula,
                     "The Formula holds half of a surrogate pair, which a file cannot carry.", sheet.Name, at.ToString(), formula);
             }
-            var stored = WrittenFormula.Write(entry, name => sheet.Workbook.Find(name) is not null, out var problem, columnsOf);
+            var stored = WrittenFormula.Write(entry, snapshot.SheetNames.ContainsKey, out var problem, columnsOf);
             switch (problem)
             {
                 case WrittenFormulaProblem.BoundCall:
@@ -428,7 +509,7 @@ public static class XlsxWorkbookWriter
     }
 
     /// <summary>A cell holding <paramref name="value"/>: a number, a boolean or an Error Value in the cell, text in the cell as a Formula's result.</summary>
-    private static XlsxCell Valued(Sheet sheet, CellAddress at, Value value, XlsxCell cell, string? formula)
+    private static XlsxCell Valued(SheetSnapshot sheet, CellAddress at, Value value, XlsxCell cell, string? formula)
     {
         switch (value.Kind)
         {
@@ -453,7 +534,7 @@ public static class XlsxWorkbookWriter
         return cell with { Type = XlsxCellType.Error, Value = value.ToString() };
     }
 
-    private static XlsxCell Shared(Sheet sheet, CellAddress at, string text, XlsxCell cell)
+    private static XlsxCell Shared(SheetSnapshot sheet, CellAddress at, string text, XlsxCell cell)
     {
         CheckText(sheet, at, text, null);
         return cell with { Type = XlsxCellType.SharedString, Text = text };
@@ -480,7 +561,7 @@ public static class XlsxWorkbookWriter
         return true;
     }
 
-    private static void CheckText(Sheet sheet, CellAddress at, string text, string? formula)
+    private static void CheckText(SheetSnapshot sheet, CellAddress at, string text, string? formula)
     {
         if (text.Length > MaxTextLength)
         {

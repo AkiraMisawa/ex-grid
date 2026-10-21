@@ -102,7 +102,26 @@ ExSheet.Xlsx.XlsxSaveOptions.MaxCells.get -> long
 ExSheet.Xlsx.XlsxSaveOptions.MaxCells.init -> void
 ExSheet.Xlsx.XlsxSaveOptions.MaxUncompressedBytes.get -> long
 ExSheet.Xlsx.XlsxSaveOptions.MaxUncompressedBytes.init -> void
+ExSheet.Xlsx.XlsxSaveOptions.Progress.get -> System.IProgress<ExSheet.Xlsx.XlsxSaveProgress>?
+ExSheet.Xlsx.XlsxSaveOptions.Progress.init -> void
+ExSheet.Xlsx.XlsxSaveOptions.SliceBudget.get -> System.TimeSpan
+ExSheet.Xlsx.XlsxSaveOptions.SliceBudget.init -> void
 ExSheet.Xlsx.XlsxSaveOptions.XlsxSaveOptions() -> void
+ExSheet.Xlsx.XlsxSaveOptions.Yield.get -> System.Func<System.Threading.Tasks.ValueTask>?
+ExSheet.Xlsx.XlsxSaveOptions.Yield.init -> void
+ExSheet.Xlsx.XlsxSaveProgress
+ExSheet.Xlsx.XlsxSaveProgress.Deconstruct(out int Sheet, out int Sheets, out long Elements, out long TotalElements) -> void
+ExSheet.Xlsx.XlsxSaveProgress.Elements.get -> long
+ExSheet.Xlsx.XlsxSaveProgress.Elements.init -> void
+ExSheet.Xlsx.XlsxSaveProgress.Equals(ExSheet.Xlsx.XlsxSaveProgress other) -> bool
+ExSheet.Xlsx.XlsxSaveProgress.Sheet.get -> int
+ExSheet.Xlsx.XlsxSaveProgress.Sheet.init -> void
+ExSheet.Xlsx.XlsxSaveProgress.Sheets.get -> int
+ExSheet.Xlsx.XlsxSaveProgress.Sheets.init -> void
+ExSheet.Xlsx.XlsxSaveProgress.TotalElements.get -> long
+ExSheet.Xlsx.XlsxSaveProgress.TotalElements.init -> void
+ExSheet.Xlsx.XlsxSaveProgress.XlsxSaveProgress() -> void
+ExSheet.Xlsx.XlsxSaveProgress.XlsxSaveProgress(int Sheet, int Sheets, long Elements, long TotalElements) -> void
 ExSheet.Xlsx.XlsxSaveRefusal
 ExSheet.Xlsx.XlsxSaveRefusal.CircularReference = 1 -> ExSheet.Xlsx.XlsxSaveRefusal
 ExSheet.Xlsx.XlsxSaveRefusal.Formula = 2 -> ExSheet.Xlsx.XlsxSaveRefusal
@@ -121,11 +140,16 @@ override ExSheet.Xlsx.UnsupportedFunctionCell.ToString() -> string!
 override ExSheet.Xlsx.XlsxOpenResult.Equals(object? obj) -> bool
 override ExSheet.Xlsx.XlsxOpenResult.GetHashCode() -> int
 override ExSheet.Xlsx.XlsxOpenResult.ToString() -> string!
+override ExSheet.Xlsx.XlsxSaveProgress.GetHashCode() -> int
 static ExSheet.Xlsx.NotCarried.operator !=(ExSheet.Xlsx.NotCarried? left, ExSheet.Xlsx.NotCarried? right) -> bool
 static ExSheet.Xlsx.NotCarried.operator ==(ExSheet.Xlsx.NotCarried? left, ExSheet.Xlsx.NotCarried? right) -> bool
 static ExSheet.Xlsx.UnsupportedFunctionCell.operator !=(ExSheet.Xlsx.UnsupportedFunctionCell? left, ExSheet.Xlsx.UnsupportedFunctionCell? right) -> bool
 static ExSheet.Xlsx.UnsupportedFunctionCell.operator ==(ExSheet.Xlsx.UnsupportedFunctionCell? left, ExSheet.Xlsx.UnsupportedFunctionCell? right) -> bool
 static ExSheet.Xlsx.XlsxOpenResult.operator !=(ExSheet.Xlsx.XlsxOpenResult? left, ExSheet.Xlsx.XlsxOpenResult? right) -> bool
 static ExSheet.Xlsx.XlsxOpenResult.operator ==(ExSheet.Xlsx.XlsxOpenResult? left, ExSheet.Xlsx.XlsxOpenResult? right) -> bool
+static ExSheet.Xlsx.XlsxSaveProgress.operator !=(ExSheet.Xlsx.XlsxSaveProgress left, ExSheet.Xlsx.XlsxSaveProgress right) -> bool
+static ExSheet.Xlsx.XlsxSaveProgress.operator ==(ExSheet.Xlsx.XlsxSaveProgress left, ExSheet.Xlsx.XlsxSaveProgress right) -> bool
 static ExSheet.Xlsx.XlsxWorkbookReader.ReadAsync(System.IO.Stream! stream, System.Globalization.CultureInfo! culture, ExGrid.Data.Xlsx.XlsxReadOptions? options = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<ExSheet.Xlsx.XlsxOpenResult!>
 static ExSheet.Xlsx.XlsxWorkbookWriter.WriteAsync(ExSheet.Engine.Workbook! workbook, System.IO.Stream! stream, ExSheet.Xlsx.XlsxSaveOptions? options = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask
+~override ExSheet.Xlsx.XlsxSaveProgress.Equals(object obj) -> bool
+~override ExSheet.Xlsx.XlsxSaveProgress.ToString() -> string

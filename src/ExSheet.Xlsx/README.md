@@ -100,9 +100,13 @@ finally
 }
 ```
 
-**The Workbook is read whole before the write first yields**, so the file is the Workbook as it
-stood when the call was made; the package is held in memory, compressed, and handed to the stream
-asynchronously, which an ASP.NET response body accepts.
+**The write takes a snapshot of the Workbook before it first yields** — every Sheet's document, every
+Value shown, its spills and each Linked Table's rows — and builds the file from that snapshot, so the
+file is the Workbook as it stood when the call was made. It builds a slice at a time, as a read goes:
+`XlsxSaveOptions` takes `Progress` (`XlsxSaveProgress`, the elements written of those the file
+writes), `SliceBudget` and `Yield`, and the cancellation token stops it between slices with nothing
+written. The package is held in memory, compressed, and handed to the stream asynchronously, which
+an ASP.NET response body accepts.
 
 - **Every Formula is written with its Value**, `RAND()`'s included, and as a dynamic array over the
   cells it spills into, so Excel computes it as ExSheet does.
@@ -129,3 +133,64 @@ asynchronously, which an ASP.NET response body accepts.
   `XlsxSaveOptions.MaxUncompressedBytes`. Both limits are by default the most a file is read with,
   so what is written opens again; a Sheet formatted on many rows and many columns counts a cell
   wherever a formatted row crosses a formatted column that records a part the row does not.
+
+## Opening and saving in an ExSheet
+
+An ExSheet on the page opens a file at its place in the Input Order with `OpenAsync`, and saves at its
+own with `SaveAsync`. ExSheet references no file format: the application chooses the file (Blazor's
+`InputFile`) and hands over the read still to do, and it sends the written file where it wants.
+
+```razor
+<InputFile accept=".xlsx" OnChange="OpenAsync" />
+<button @onclick="SaveAsync">Save</button>
+<ExSheet @ref="_sheet" @bind-Workbook="_workbook" />
+
+@code {
+    private ExSheet? _sheet;
+    private WorkbookDocument? _workbook;
+
+    private async Task OpenAsync(InputFileChangeEventArgs e)
+    {
+        XlsxOpenResult? opened = null;
+        try
+        {
+            // The read takes its place now: what is typed meanwhile waits, and lands on the Workbook it opens.
+            if (await _sheet!.OpenAsync(async token =>
+            {
+                opened = await XlsxWorkbookReader.ReadAsync(e.File.OpenReadStream(10_000_000, token), CultureInfo.GetCultureInfo("en-GB"), null, token);
+                return opened.Document;
+            }))
+            {
+                // Show opened.Report.
+            }
+            // false: Escape cancelled it, and the Workbook is as it was.
+        }
+        catch (XlsxOpenException refused)
+        {
+            // Nothing opened; refused.Message names the Sheet and the cell.
+        }
+    }
+
+    private async Task SaveAsync()
+    {
+        using var file = new MemoryStream();
+        // The Workbook as the inputs before the save left it, its snapshot taken before the writer first yields.
+        await _sheet!.SaveAsync(workbook => XlsxWorkbookWriter.WriteAsync(workbook, file).AsTask());
+        // Send file.ToArray() where the application wants it.
+    }
+}
+```
+
+- **An opening while a cell is being edited is refused by name** (`SheetRefusedException`), as a save
+  is, and nothing is read.
+- **While the file is read, the Sheet says so** in its notice and its grid is busy. **A plain Escape in
+  the Sheet typed against a page that shows the opening cancels it**, whether it still waits behind earlier
+  inputs or is reading: the Sheet's grid shows it from the call on (its Settled Stamp's
+  `data-ex-work-placed`), the read's token is cancelled and the Workbook stays as it was. An Escape typed
+  against a page that did not yet show it is an ordinary key: what it was typed against decides it, not
+  when it arrives. A refused read leaves the Workbook as it was too, and says why; an Escape too late, or
+  with nothing to cancel, is said.
+- **When the document arrives it replaces the whole Workbook**: the undo stack is cleared, the Linked
+  Tables the application declared are gone with it, and `WorkbookChanged` is raised with it.
+- **A save while a cell is being edited is refused by name** (`SheetRefusedException`), since the file
+  would quietly lack what is being typed.

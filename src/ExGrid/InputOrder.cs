@@ -158,9 +158,13 @@ internal sealed class InputOrder
 
     /// <summary>Runs work the instance starts itself, outside any input, after every input received so
     /// far and before any received after it. Inside the flow of the handling under way it runs at once.</summary>
-    public Task AfterReceivedAsync(Func<Task> handling)
+    /// <param name="handling">The work.</param>
+    /// <param name="holds">Whether the inputs received while it runs wait for it even when it starts at once,
+    /// with nothing before it: work of the Consumer's that takes a place of its own (an opening of a file,
+    /// ADR-0330 section 10). Otherwise work that finds the order idle runs beside it, outside every flow.</param>
+    public Task AfterReceivedAsync(Func<Task> handling, bool holds = false)
     {
-        if (InFlow || _disposed || (Idle && _received == _done))
+        if (InFlow || _disposed || (!holds && Idle && _received == _done))
             return handling();
         var waiting = new Waiting(0, handling, After: _received);
         _unnumbered.Enqueue(waiting);

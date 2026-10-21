@@ -28,11 +28,18 @@ namespace ExGrid.Components;
 // - data-ex-owing: written while a render the grid owes is waiting on a timer of its own — the
 //   error message after the Focus stands still (PopoverDelay), the description of a selection
 //   (SettleDelay), and the Placeholders filling after a scroll (SettleDelay); and while a sentence
-//   said again is put back by the render after the one that emptied it (Announce).
+//   said again is put back by the render after the one that emptied it (Announce); and while
+//   cancellable work of the Consumer's has taken its place in the order and not ended
+//   (CancellableInOrderAsync), whose landing no number of the script's carries.
 // - data-ex-escape-leaves: an Escape on the root would leave the grid now, releasing Tab — no popover
-//   or menu, no Interactive cell, no Copied Range and no edit to peel first (ADR-0230 section 1). Said
+//   or menu, no Interactive cell, no Copied Range, no edit and no cancellable work to peel first (ADR-0230
+//   section 1). Said
 //   with the inputs answered, so the gate trusts it for an Escape typed once every input that could
 //   add a layer is answered, and takes the release at the keydown.
+// - data-ex-work-placed: the number of the latest cancellable work of the Consumer's placed in the order
+//   and not ended, waiting for its turn or under way (CancellableInOrderAsync). The script reads it at an
+//   Escape's keydown, and an Escape typed against it cancels that work (ADR-0240 section 12, ADR-0330
+//   section 10); one typed against a stamp without it is an ordinary key.
 // - data-ex-focus-owed: the core owes DOM focus to a control it will focus itself — an edit's surface
 //   not yet painted, a popover's first control, a filter's control while its values are on their way.
 //   With the inputs a wait began behind all answered and nothing owed, a keyboard that has not
@@ -76,7 +83,10 @@ public partial class ExGrid<TRow>
     private bool _placeholdersOwed;
 
     /// <summary>Whether a render is waiting on one of the grid's own timers (data-ex-owing).</summary>
-    private bool RenderOwed => _messageOwed || _announcementOwed || _placeholdersOwed || _announcePending is not null;
+    private bool RenderOwed => _messageOwed || _announcementOwed || _placeholdersOwed || _announcePending is not null
+        // Cancellable work of the Consumer's under way: its landing is a render the grid cannot answer for
+        // by number, since no input of the script's carries it (ExGrid.WorkUnderWay.cs).
+        || WorkCancellable;
 
     /// <summary>
     /// The input the script numbered <paramref name="input"/> has been handled: the stamp says so once
@@ -236,7 +246,7 @@ public partial class ExGrid<TRow>
     {
         if (_disposed || _rendersBuilt != _rendersAfterRendered)
             return;
-        _settledStamp?.Show(_answeredUpTo, RenderOwed, EscapeLeaves, FocusOwed);
+        _settledStamp?.Show(_answeredUpTo, RenderOwed, EscapeLeaves, FocusOwed, WorkPlaced);
     }
 
     /// <summary>Whether the core owes DOM focus to a control it will focus itself (data-ex-focus-owed):

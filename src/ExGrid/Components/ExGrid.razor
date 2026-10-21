@@ -69,7 +69,7 @@
 @* data-ex-pointed-from: while the grid is pointed at, the root of the grid that points, which the
    script tells of each press handed over (ADR-0058, "On a circuit"). *@
 <div class="@RootClass" style="@RootStyle()" tabindex="@RootTabIndex" dir="ltr" @ref="_root"
-     id="@RootId" role="grid" aria-multiselectable="true" aria-busy="@(Busy || Pasting ? "true" : null)"
+     id="@RootId" role="grid" aria-multiselectable="true" aria-busy="@(Busy || Pasting || WorkUnderWayId is not null ? "true" : null)" data-ex-work="@WorkUnderWayId"
      data-ex-reveal="@_revealToken" data-ex-follow="@_followToken" data-ex-follow-focus="@FollowFocusId()"
      data-ex-pointed-from="@PointedFrom"
      aria-rowcount="@((long)(_total ?? _window.Count) + HeaderRowCount)" aria-colcount="@Columns.Count"
@@ -7220,6 +7220,11 @@
     /// <para>The key also carries the number the script gave it, which the root names once the key
     /// has been answered (ADR-0220).</para>
     ///
+    /// <para>An Escape that comes here was typed against a page whose stamp named no work of the Consumer's
+    /// placed in the order, and is an ordinary key whatever has been placed since: it never cancels that
+    /// work. One typed against a stamp that named such work went to <c>OnWorkCancelAsync</c> at its keydown
+    /// instead (ADR-0240 section 12, ADR-0330 section 10).</para>
+    ///
     /// <para>Called by the grid's own script module and not for Consumers: it is public
     /// only because JavaScript interop requires it.</para>
     /// </summary>
@@ -10500,6 +10505,7 @@
     public async ValueTask DisposeAsync()
     {
         _disposed = true;
+        CancelWorksOnDispose();
         _inputOrder?.Dispose();
         _inputTexts.Clear();
         ReleaseWaitingRows();

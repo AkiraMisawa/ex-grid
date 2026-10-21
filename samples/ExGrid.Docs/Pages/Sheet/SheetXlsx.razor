@@ -1,0 +1,148 @@
+@page "/exsheet/xlsx"
+@using ExGrid.Docs.Examples.Sheet
+
+<DocsPage Product="ExSheet" Title="Open and save .xlsx"
+          Lead="A workbook from Excel opened into an ExSheet, every worksheet a Sheet and every Value computed again, with a report of what the file held that did not come across; and the Workbook saved back as an .xlsx that Excel opens and recalculates.">
+
+    <DocsSection Title="Two packages, and no component">
+        <p>
+            <code>ExSheet.Xlsx</code> maps a file to a <code>WorkbookDocument</code> and a Workbook to a file; the
+            file itself — the zip, its parts, shared strings, styles and cells read as a stream — is
+            <code>ExGrid.Data.Xlsx</code>'s. Neither references a component or anything outside .NET, so a server
+            converts files with no Blazor in the process, and an application that never touches <code>.xlsx</code>
+            carries neither. ExSheet itself references no file format: <b>choosing the file and delivering the
+            written one are your application's</b>, as persisting a Sheet Document is. Both packages are new, and
+            reach nuget.org with a coming version.
+        </p>
+        <ul>
+            <li>
+                <b>Reading:</b> <code>XlsxWorkbookReader.ReadAsync(stream, culture)</code> answers the
+                <code>WorkbookDocument</code> and its <b>Open Report</b>. Every worksheet becomes a Sheet, in the file's
+                order, and the one shown is shown. Numbers, text, booleans, Error Values and Formulas are carried, and
+                <b>no stored Value is taken</b>: opening computes every Value again.
+            </li>
+            <li>
+                <b>The culture is yours.</b> A workbook stores numbers and dates the same way in every language, so no
+                Value read from it depends on a culture. What does is how the user's typing is read afterwards and how
+                Values are shown, so you declare it, as you declare a CSV's encoding; it is never guessed from the file.
+            </li>
+            <li>
+                <b>Refused by name, and nothing opens</b>: anything that would change a Value or the number a cell
+                shows — a Formula the engine cannot read, a defined name, another workbook, an Excel Table, a legacy
+                array formula, a Number Format the engine does not read, a file that is not a plain
+                <code>.xlsx</code>. The <code>XlsxOpenException</code> names the Sheet, the cell and what it held.
+            </li>
+            <li>
+                <b>The Open Report</b> lists what was not carried — merged cells, conditional formatting, notes,
+                hyperlinks, frozen panes, font names and sizes and the rest — and the cells whose Formulas name a
+                function ExSheet does not support, which open as <code>#NAME?</code>. ExSheet shows nothing of it; the
+                Example below lists it. Saving again loses what it lists.
+            </li>
+        </ul>
+    </DocsSection>
+
+    <DocsSection Title="Opening a file in the Sheet">
+        <p>
+            <code>OpenAsync(read)</code> replaces the Workbook with the document <code>read</code> answers, and takes
+            its place in the Sheet's order at the call: call it from the handler that hears the user's choice — an
+            <code>InputFile</code>'s change — with the read still to do. The inputs made before it are taken
+            against the Workbook they were made on; <b>what is typed while the file is read waits, and lands on the
+            Workbook it opens</b>, however long the read takes. A paste aimed at the old cells is refused aloud
+            rather than written into the new ones.
+        </p>
+        <ul>
+            <li>
+                <b>Refused by name while a cell is being edited</b> (<code>SheetRefusedException</code>, said in the
+                Sheet), as a save is, and nothing is read: the opening would throw away what is being typed. The edit
+                stays open, and the typing goes on into it.
+            </li>
+            <li>
+                <b>While the file is read, the Sheet says so</b> — “Opening a file. Press Escape in the Sheet to
+                cancel.” — and its grid is busy, painted as a paste under way is (the <code>--ex-pasting-*</code>
+                tokens, <a href="exgrid/appearance">Appearance</a>).
+            </li>
+            <li>
+                <b><kbd>Escape</kbd> in the Sheet cancels it</b> — on its cells, its toolbar or its tabs: an Escape typed
+                elsewhere on your page is not the Sheet's. The Sheet's grid shows the opening from the call on, while
+                it waits behind earlier inputs and while it reads (its Settled Stamp names it), and a plain Escape
+                typed against a page that shows it cancels it and does nothing else: the read's token is cancelled,
+                <code>OpenAsync</code> answers <code>false</code>, the Workbook stays as it was, and the Sheet says
+                so; an opening cancelled before its turn ends cancelled, even if a cell was opened for editing
+                meanwhile. An Escape typed against a page that did not yet show the opening is an ordinary key, however
+                soon after the call it arrives: what it was typed against decides it, not when it comes. A second
+                Escape finds the opening cancelled and says there was nothing to cancel. An Escape that names an
+                opening that has landed changes nothing, and the Sheet says it came too late; one that finds it
+                already over otherwise — refused, or cancelled — says there was nothing to cancel. Whether the cancel
+                reaches the read before it lands is the one outcome that races, as a paste's does, and each is said.
+            </li>
+            <li>
+                <b>A refused read leaves the Workbook as it was</b>, the Sheet says why, and the exception is
+                <code>OpenAsync</code>'s, for you to show.
+            </li>
+            <li>
+                <b>When the file lands it replaces the whole Workbook</b>, as a different <code>Workbook</code>
+                handed over does: the undo stack is cleared, and <code>WorkbookChanged</code> is raised with it. <b>The
+                Linked Tables you declared are gone with the Workbook that held them</b>: a file declares none, so
+                declare them again on the Workbook opened if it should read them. An exception your handler throws
+                then is <code>OpenAsync</code>'s, and the file stays opened.
+            </li>
+            <li>
+                <b>Only the Sheet's own inputs wait behind the opening</b>: keys, presses, its toolbar and its tabs.
+                A method your application calls while the file is read — <code>UndoAsync</code>, a Linked Table pushed,
+                a parameter set — is not an input and is not held, and what it changes is replaced when the file lands.
+            </li>
+            <li>
+                Setting <code>Workbook</code> or <code>Document</code> keeps working, for a document you already hold.
+            </li>
+        </ul>
+    </DocsSection>
+
+    <DocsSection Title="Saving">
+        <p>
+            <code>SaveAsync(write)</code> lends <code>write</code> the Workbook as the inputs made before the call
+            left it, at its own place in the order: hand it to <code>XlsxWorkbookWriter.WriteAsync</code>, which takes
+            its snapshot before it first yields and builds the file from that snapshot a slice at a time, yielding
+            between slices as a read does, with progress (<code>XlsxSaveOptions.Progress</code>) and cancellation.
+            The inputs made after the save do not wait for the file to be written, and do not reach it. The progress
+            is told on whatever thread the write is running on: show it through a <code>Progress&lt;T&gt;</code> made
+            on the component, or <code>InvokeAsync</code>.
+            Every Sheet is written with its Cell Formats and widths, and <b>every Formula with the Value on screen</b>,
+            <code>RAND()</code>'s included, so a program that does not calculate still reads what the user saw; the
+            workbook is marked to be calculated in full when Excel opens it.
+        </p>
+        <ul>
+            <li>
+                <b>Refused by name while a cell is being edited</b> (<code>SheetRefusedException</code>): the file would
+                quietly lack what is being typed. Commit or cancel the edit, then save.
+            </li>
+            <li>
+                <b>Refused by name, with nothing written</b> (<code>XlsxSaveException</code>): a cell that shows
+                <code>#CIRC!</code>, a Formula Excel would not take, text longer than a cell holds, and more than the
+                limits <code>XlsxSaveOptions</code> sets. <code>MaxCells</code> counts every element the file
+                writes: the cells, and each row a row format covers, so a row format over every row writes a
+                million of them.
+            </li>
+            <li>
+                <b>Each Linked Table is saved as an Excel Table</b>, on a worksheet of its own name after the Sheets,
+                holding its rows as they stand, and a Formula that reads it is written as it is
+                (<code>=SUM(Positions[PV])</code>), so it keeps working in Excel. <b>Such a file opens in Excel, and not
+                in ExSheet</b>: nothing in a file can say that a table is your application's data, so the worksheet is
+                not read back as a Linked Table, and a Formula that reads an Excel Table is refused on opening until
+                ExSheet reads Excel Tables. A Linked Table that has not answered (<code>#GETTING_DATA</code>), or whose
+                name is already a Sheet's, refuses the save.
+            </li>
+        </ul>
+    </DocsSection>
+
+    <DocsSection Title="Example">
+        <p>
+            Open an <code>.xlsx</code> of your own, or save this claim and open what you saved. The Example keeps the
+            saved file in a link you click to download, since a WebAssembly page cannot start a download by itself
+            without a script. The link carries the file in its address, and a browser takes at most 2 MB there
+            (2,097,152 characters, about 1.5 MB of file): a larger saved file is said and given no link, never cut
+            short. A file over 10,000,000 bytes is refused as it is read. While a large file is read, type into the
+            Sheet, or press <kbd>Escape</kbd> in it.
+        </p>
+        <DocsExample Builtin="typeof(XlsxOpenSave)" Mud="typeof(XlsxOpenSaveMud)" Files="@(["Examples/Sheet/Expenses.cs"])" />
+    </DocsSection>
+</DocsPage>

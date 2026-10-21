@@ -71,12 +71,12 @@ public partial class ExGrid<TRow>
         });
 
     /// <summary>Whether an Escape on the root would leave the grid now, releasing Tab: no popover or
-    /// menu open, no Interactive cell, no Copied Range and no edit, each of which an Escape peels
-    /// first (ADR-0012's layering). The Settled Stamp says it with the inputs answered, and the key
+    /// menu open, no Interactive cell, no Copied Range, no edit and no cancellable work (which an Escape
+    /// cancels), each of which an Escape peels first (ADR-0012's layering). The Settled Stamp says it with the inputs answered, and the key
     /// gate takes the release at the keydown when nothing unanswered could add a layer (ADR-0230
     /// section 1).</summary>
     private bool EscapeLeaves
-        => !AnyPopoverOpen && InteractiveChoice() is null && _copied is null && _editMode == EditMode.None;
+        => !AnyPopoverOpen && InteractiveChoice() is null && _copied is null && _editMode == EditMode.None && !WorkCancellable;
 
     /// <summary>
     /// A Tab typed so soon after an Escape that it was held behind the Escape's answer, which turned out

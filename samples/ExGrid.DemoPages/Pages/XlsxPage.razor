@@ -1,0 +1,170 @@
+@page "/xlsx"
+@using System.Globalization
+@using Microsoft.AspNetCore.Components.Forms
+@* global::, for the reasons SheetPage.razor gives. *@
+@using global::ExSheet
+@using global::ExSheet.Components
+@using global::ExSheet.Engine
+@using global::ExSheet.Xlsx
+@using global::ExGrid.Chrome
+@using global::ExGrid.MudBlazor
+
+@* ?chrome=mud runs the Workbook with ExSheet.MudBlazor's Chrome on the Wrapper's paper, as /workbook does.
+   ?hold=1 holds each read, once the file is chosen, until "Let the read go" is pressed: the opening is
+   under way for as long as a test needs, with no clock (ADR-0220), so what is typed meanwhile, and an
+   Escape, meet it there. *@
+<DemoChromeAssets Name="@ChromeName" Paper="true" Sheet="true" />
+
+<DemoNav />
+
+<h1>Open and save .xlsx</h1>
+
+<p>
+    One ExSheet opening a workbook from an <code>.xlsx</code> and saving it to one (ADR-0330), through
+    <code>ExSheet.Xlsx</code>. Each takes its place in the Input Order: what is typed while the file is
+    read waits, and lands on the Workbook it opened; Escape cancels the opening, and the Workbook stays as
+    it was. The page chooses the file and delivers the written one: ExSheet references no file format.
+</p>
+
+<div class="demo-toolbar">
+    @* Disabled until it can hear a choice: on Blazor Server, InputFile's script is attached a round
+       trip after the input is drawn, and a file chosen before that is lost (AttachedInputFile). *@
+    <label>Open a workbook <AttachedInputFile id="xlsx-file" accept=".xlsx" OnChange="OpenAsync" OnAttached="() => _attached = true" disabled="@(!_attached)" /></label>
+    <button id="xlsx-save" type="button" @onclick="SaveAsync">Save</button>
+    @if (_saved is { } saved)
+    {
+        <a id="xlsx-saved" download="workbook.xlsx" href="@saved">Download the saved workbook</a>
+    }
+    @if (_sample is { } sample)
+    {
+        <a id="xlsx-sample" download="sample.xlsx" href="@sample">A sample workbook of two Sheets</a>
+    }
+    @if (_held is not null)
+    {
+        <button id="xlsx-release" type="button" @onclick="Release">Let the read go</button>
+    }
+</div>
+
+<p id="xlsx-said" role="status">@_said</p>
+@if (_report.Count > 0)
+{
+    <ul id="xlsx-report">
+        @foreach (var line in _report)
+        {
+            <li>@line</li>
+        }
+    </ul>
+}
+
+<div id="xlsx">
+    @OnPaper(@<ExSheet @ref="_sheet" @bind-Workbook="_workbook" Chrome="_chrome" ViewportHeight="360" ViewportWidth="640" />)
+</div>
+
+@code {
+    private static readonly CultureInfo Culture = CultureInfo.GetCultureInfo("en-US");
+    private const string Xlsx = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+
+    // The longest address Chromium takes, which a data: link is.
+    private const int MaxLink = 2 * 1024 * 1024;
+
+    /// <summary>Which Chrome the Workbook runs with (<see cref="DemoChrome"/>).</summary>
+    [SupplyParameterFromQuery(Name = "chrome")]
+    public string? ChromeName { get; set; }
+
+    /// <summary>Holds each read until "Let the read go" is pressed (1).</summary>
+    [SupplyParameterFromQuery(Name = "hold")]
+    public int Hold { get; set; }
+
+    private IGridChrome? _chrome;
+    private ExSheet? _sheet;
+    private bool _attached;
+    private WorkbookDocument? _workbook = Before();
+    private string _said = "Choose a workbook, or save this one.";
+    private List<string> _report = [];
+    private string? _saved;
+    private TaskCompletionSource? _held;
+
+    protected override void OnParametersSet() => _chrome = DemoChrome.ForSheet(ChromeName);
+
+    private RenderFragment OnPaper(RenderFragment sheet)
+        => DemoChrome.IsMud(ChromeName) ? @<MudExGridPaper>@sheet</MudExGridPaper> : sheet;
+
+    private static WorkbookDocument Before()
+    {
+        var workbook = new global::ExSheet.Engine.Workbook(Culture, ["Before"]);
+        workbook.Do("Before", SheetEdit.Enter(CellAddress.Parse("A1"), "Before the file"));
+        return workbook.ToDocument();
+    }
+
+    // Two Sheets, so a key that shows the next one acts only on the Workbook the file opens.
+    private string? _sample;
+
+    protected override async Task OnInitializedAsync() => _sample = await WrittenSampleAsync();
+
+    private static async Task<string> WrittenSampleAsync()
+    {
+        var workbook = new global::ExSheet.Engine.Workbook(Culture, ["One", "Two"]);
+        workbook.Do("One", SheetEdit.Enter(CellAddress.Parse("A1"), "21"));
+        workbook.Do("Two", SheetEdit.Enter(CellAddress.Parse("A1"), "=One!A1*2"));
+        using var file = new MemoryStream();
+        await XlsxWorkbookWriter.WriteAsync(workbook, file);
+        return $"data:{Xlsx};base64,{Convert.ToBase64String(file.ToArray())}";
+    }
+
+    private async Task OpenAsync(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+        XlsxOpenResult? result = null;
+        try
+        {
+            var opened = await _sheet!.OpenAsync(async token =>
+            {
+                if (Hold == 1)
+                {
+                    _held = new TaskCompletionSource();
+                    StateHasChanged();
+                    try
+                    {
+                        await _held.Task.WaitAsync(token);
+                    }
+                    finally
+                    {
+                        _held = null;
+                    }
+                }
+                result = await XlsxWorkbookReader.ReadAsync(file.OpenReadStream(10_000_000, token), Culture, null, token);
+                return result.Document;
+            });
+            _said = opened ? $"Opened {file.Name}." : $"{file.Name} was not opened: the opening was cancelled.";
+            _report = opened ? [.. result!.Report.NotCarried.Select(n => n.Description), .. result.Report.UnsupportedFunctions.Select(u => $"{u.Sheet}!{u.Cell}: {string.Join(", ", u.Functions)}")] : [];
+        }
+        catch (Exception refused) when (refused is XlsxOpenException or IOException or SheetDocumentException or SheetRefusedException)
+        {
+            // A refusal by name, a file over the size the stream allows, a document the engine does not read, an edit open.
+            _said = $"{file.Name} was refused: {refused.Message}";
+            _report = [];
+        }
+    }
+
+    private void Release() => _held?.TrySetResult();
+
+    private async Task SaveAsync()
+    {
+        using var file = new MemoryStream();
+        try
+        {
+            await _sheet!.SaveAsync(workbook => XlsxWorkbookWriter.WriteAsync(workbook, file).AsTask());
+            var link = $"data:{Xlsx};base64,{Convert.ToBase64String(file.ToArray())}";
+            // The link carries the file in its address, which Chromium caps at 2 MB: refused by name, not cut short.
+            _saved = link.Length <= MaxLink ? link : null;
+            _said = _saved is not null
+                ? $"Saved {file.Length:N0} bytes."
+                : $"Saved {file.Length:N0} bytes, too many for this page's download link: a browser takes at most {MaxLink:N0} characters in its address.";
+        }
+        catch (Exception refused) when (refused is SheetRefusedException or XlsxSaveException)
+        {
+            _saved = null;
+            _said = $"Not saved: {refused.Message}";
+        }
+    }
+}

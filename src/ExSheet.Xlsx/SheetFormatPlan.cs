@@ -85,6 +85,9 @@ internal sealed class SheetFormatPlan
     /// <summary>The runs of formatted rows, in order; set by <see cref="Build"/>.</summary>
     public IReadOnlyList<RowRun> Rows { get; private set; } = [];
 
+    /// <summary>The rows the row formats write, each a <c>&lt;row&gt;</c> element whether or not it holds a cell.</summary>
+    public long FormattedRows => rowRuns.Sum(r => (long)(r.Last - r.First + 1));
+
     /// <summary>
     /// How many cells of no value the crossings write: every place a formatted row crosses a formatted column that records a
     /// part the row leaves open, less those of <paramref name="recorded"/>, which are written as the Sheet's own cells. Counted

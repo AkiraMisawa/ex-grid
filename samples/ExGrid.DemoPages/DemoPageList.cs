@@ -74,6 +74,8 @@ public static class DemoPageList
             "Two ExSheets on one page: keys, completion, undo and the Formula Bar stay with the Sheet that has the keyboard, and each outlines a Linked Table's columns only in the grid its page wired to it (ADR-0018, ADR-0048, ADR-0057)."),
         new("workbook", "Workbook", "ExSheet",
             "One ExSheet holding a Workbook of two Sheets behind Sheet Tabs: a press or Ctrl+PageUp and Ctrl+PageDown shows another Sheet, each keeping its own Selection and scroll position (ADR-0331)."),
+        new("xlsx", "Open and save .xlsx", "ExSheet",
+            "A Workbook opened from an .xlsx and saved to one, each at its place in the Input Order: a key typed while the file is read lands on the Workbook it opened, and Escape cancels the opening (ADR-0330)."),
         new("pivot", "Pivot", "ExPivot",
             "The basics of Excel's PivotTable drawn by ExGrid: fields declared with PivotFields.Of, Month as a part of the trade date, the Fields pane, the Layout menu, Show Details in tabs, and Excel's Japanese words; ?chrome=mud dresses it in MudBlazor (ADR-0059, ADR-0060, ADR-0061, ADR-0062)."),
         new("pivot-csv", "Pivot over a CSV", "ExPivot",

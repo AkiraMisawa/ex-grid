@@ -27,6 +27,32 @@ internal static class SheetWords
     internal static string EditIsOpen =>
         "Nothing was changed: a cell is being edited. Press Enter to commit the edit or Escape to cancel it, then try again.";
 
+    // ADR-0330 §10: a save while an edit is open would quietly lack what is being typed.
+    internal static string SaveWhileEditing =>
+        "Nothing was saved: a cell is being edited. Press Enter to commit the edit or Escape to cancel it, then save again.";
+
+    // ADR-0330 §10: an opening under way, said once as it starts, as a paste under way is (ADR-0240 §12).
+    internal static string Opening => "Opening a file. Press Escape in the Sheet to cancel.";
+
+    // ADR-0330 §10, as a save is refused (ADR-0048): what is being typed would be thrown away by the opening.
+    internal static string OpenWhileEditing =>
+        "Nothing was opened: a cell is being edited. Press Enter to commit the edit or Escape to cancel it, then open the file again.";
+
+    internal static string Opened => "The file was opened.";
+
+    internal static string OpeningCancelled => "Nothing was opened: the opening was cancelled. The Workbook is as it was.";
+
+    internal static string OpeningRefused(string reason) => $"Nothing was opened, and the Workbook is as it was. {reason}";
+
+    // ADR-0240 §12: the Escape that found the opening landed says so, in its own turn.
+    internal static string OpeningAlreadyLanded => "The file had already opened: Escape cancelled nothing.";
+
+    // ADR-0240 §12: an Escape that found the opening over — refused, or cancelled already — is said, never swallowed.
+    internal static string OpeningNothingToCancel => "There was nothing to cancel: the opening had already ended.";
+
+    internal static string EditDiscardedByOpening =>
+        "What was typed was not entered: a file was opened while the cell was being edited.";
+
     // ADR-0071: in this state Excel formats the selected characters, and a Cell Format is per cell.
     internal static string FormatKeyWhileEditing =>
         "Nothing was formatted: a cell is being edited, and a format applies to whole cells, not to part of the text. Press Enter to commit the edit or Escape to cancel it, then try again.";

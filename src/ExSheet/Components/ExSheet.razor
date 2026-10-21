@@ -1403,11 +1403,16 @@
         }
     }
 
-    private void Open(SheetDocument? document, WorkbookDocument? workbook)
-    {
-        _workbook = workbook is not null ? global::ExSheet.Engine.Workbook.Open(workbook)
+    private void Open(SheetDocument? document, WorkbookDocument? workbook) => Open(
+        workbook is not null ? global::ExSheet.Engine.Workbook.Open(workbook)
             : document is not null ? global::ExSheet.Engine.Workbook.Open(document)
-            : new global::ExSheet.Engine.Workbook(Culture ?? CultureInfo.CurrentCulture);
+            : new global::ExSheet.Engine.Workbook(Culture ?? CultureInfo.CurrentCulture));
+
+    /// <summary>Shows <paramref name="opened"/> in place of the Workbook held: a document handed over, or a
+    /// file's Workbook Document opened in the Input Order (OpenAsync).</summary>
+    private void Open(global::ExSheet.Engine.Workbook opened)
+    {
+        _workbook = opened;
         _sheet = _workbook.Shown;
         HearSheetNames();
         _views.Clear();
