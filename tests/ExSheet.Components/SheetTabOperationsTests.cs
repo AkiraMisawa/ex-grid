@@ -683,4 +683,110 @@ public class SheetTabOperationsTests : SheetTestContext
             return null;
         }
     }
+
+    // ---- A Sheet that leaves while a gesture stands on it -----------------------------------------
+
+    [Fact] // ADR-0331 §4: a Consumer's command that deletes the Sheet whose name is being edited ends the edit, the keyboard back in the grid
+    public async Task A_rename_ends_when_the_consumer_deletes_its_sheet()
+    {
+        var cut = RenderWorkbook(Sheets("One", "Two"));
+        await Tab(cut, "One").DoubleClickAsync(new MouseEventArgs());
+        var returns = KeyboardReturns;
+
+        await cut.Instance.DoAsync("One", SheetEdit.DeleteSheet());
+
+        Assert.Equal(["Two"], TabNames(cut));
+        Assert.Empty(cut.FindAll(".ex-sheet-tab-name"));
+        Assert.Equal(returns + 1, KeyboardReturns);
+    }
+
+    [Fact] // ADR-0331 §4: an undo that takes away the Sheet whose name is being edited ends the edit; nothing is renamed after
+    public async Task A_rename_ends_when_an_undo_takes_its_sheet_away()
+    {
+        var cut = RenderWorkbook(Sheets("One", "Two"));
+        await cut.Find(".ex-sheet-tab-add").ClickAsync(new MouseEventArgs());
+        await Tab(cut, "Sheet1").DoubleClickAsync(new MouseEventArgs());
+        await NameField(cut).InputAsync(new ChangeEventArgs { Value = "Costs" });
+
+        Assert.True(await cut.InvokeAsync(() => cut.Instance.UndoAsync()));
+
+        Assert.Equal(["One", "Two"], TabNames(cut));
+        Assert.Empty(cut.FindAll(".ex-sheet-tab-name"));
+    }
+
+    [Fact] // ADR-0331 §4: a Consumer's command that deletes the menu's Sheet closes the menu, the keyboard back in the grid
+    public async Task The_menu_closes_when_the_consumer_deletes_its_sheet()
+    {
+        var cut = RenderWorkbook(Sheets("One", "Two"));
+        await OpenMenuAsync(cut, "One");
+        var returns = KeyboardReturns;
+
+        await cut.Instance.DoAsync("One", SheetEdit.DeleteSheet());
+
+        Assert.Empty(cut.FindAll(".ex-sheet-tab-menu"));
+        Assert.Equal(returns + 1, KeyboardReturns);
+    }
+
+    [Fact] // ADR-0331 §4: a menu still standing follows the Sheets as they stand: its Sheet now the only one, it can be neither deleted nor moved
+    public async Task The_menu_follows_the_sheets_as_they_stand()
+    {
+        var cut = RenderWorkbook(Sheets("One", "Two"));
+        await OpenMenuAsync(cut, "Two");
+        Assert.Null(Command(cut, "Move Left").GetAttribute("aria-disabled"));
+
+        await cut.Instance.DoAsync("One", SheetEdit.DeleteSheet());
+
+        Assert.Equal("true", Command(cut, "Delete").GetAttribute("aria-disabled"));
+        Assert.Equal("true", Command(cut, "Move Left").GetAttribute("aria-disabled"));
+        Assert.Equal("Rename", ActiveCommand(cut));
+    }
+
+    [Fact] // ADR-0331 §4: a command is judged on the Workbook as it stands when it runs, after the menu's close has waited on the browser
+    public async Task A_command_is_judged_on_the_workbook_as_it_stands_when_it_runs()
+    {
+        var cut = RenderWorkbook(Sheets("One", "Two"));
+        await cut.Find(".ex-sheet-tab-add").ClickAsync(new MouseEventArgs());
+        await OpenMenuAsync(cut, "Sheet1");
+        await MenuKeyAsync(cut, "End");
+        await MenuKeyAsync(cut, "ArrowUp");
+        await MenuKeyAsync(cut, "ArrowUp");
+        Assert.Equal("Move Left", ActiveCommand(cut));
+        var answer = HoldKeyboardHandBack();
+
+        Task enter = Task.CompletedTask;
+        await cut.InvokeAsync(() => { enter = cut.Find(".ex-sheet-tab-menu").KeyDownAsync(new KeyboardEventArgs { Key = "Enter" }); });
+        Task<bool> undo = Task.FromResult(false);
+        await cut.InvokeAsync(() => { undo = cut.Instance.UndoAsync(); });
+        answer();
+        await enter;
+        Assert.True(await undo);
+
+        Assert.Equal(["One", "Two"], TabNames(cut));
+        Assert.Equal("No Sheet was changed: The Sheet is no longer in the Workbook.", Notice(cut));
+    }
+
+    private static int Kept(IRenderedComponent<SheetComponent> cut, string field) =>
+        ((System.Collections.ICollection)typeof(SheetComponent)
+            .GetField(field, System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
+            .GetValue(cut.Instance)!).Count;
+
+    [Fact] // ADR-0331 §4: a Sheet that leaves the Workbook leaves no tab and no view kept behind, and a Workbook opened afresh none of the one it replaced
+    public async Task A_sheet_that_leaves_keeps_no_tab_and_no_view()
+    {
+        var cut = RenderWorkbook(Sheets("One", "Two"));
+        await Tab(cut, "Two").ClickAsync(new MouseEventArgs());
+        await Tab(cut, "One").ClickAsync(new MouseEventArgs());
+        Assert.Equal(2, Kept(cut, "_tabs"));
+        Assert.Equal(2, Kept(cut, "_views"));
+
+        await cut.Instance.DoAsync("Two", SheetEdit.DeleteSheet());
+
+        Assert.Equal(1, Kept(cut, "_tabs"));
+        Assert.Equal(1, Kept(cut, "_views"));
+
+        cut.Render(ps => ps.Add(s => s.Workbook, Sheets("Alpha", "Beta", "Gamma")));
+
+        Assert.Equal(["Alpha", "Beta", "Gamma"], TabNames(cut));
+        Assert.Equal(3, Kept(cut, "_tabs"));
+    }
 }

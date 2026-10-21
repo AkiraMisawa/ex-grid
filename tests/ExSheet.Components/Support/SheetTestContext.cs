@@ -77,6 +77,14 @@ public abstract class SheetTestContext : BunitContext
         }
     }
 
+    /// <summary>Holds the browser's answer to every hand-back from a frame (takeKeyboardBack) from now on,
+    /// until the returned action answers them all.</summary>
+    internal Action HoldKeyboardHandBack()
+    {
+        var pending = _handle.SetupVoid("takeKeyboardBack", _ => true);
+        return () => pending.SetVoidResult();
+    }
+
     /// <summary>How many times the keyboard has been asked back for the Sheet, either way.</summary>
     internal int KeyboardReturns => ReclaimCount + TakeBackCount;
 

@@ -84,6 +84,10 @@ internal static class SheetWords
 
     internal static string OnlySheet => "A Workbook holds at least one Sheet.";
 
+    internal static string SheetGone => "The Sheet is no longer in the Workbook.";
+
+    internal static string SheetNotChanged(string reason) => $"No Sheet was changed: {reason}";
+
     internal static string FirstSheet => "The Sheet is already the first.";
 
     internal static string LastSheet => "The Sheet is already the last.";

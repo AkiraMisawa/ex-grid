@@ -93,13 +93,15 @@
          @onmouseup="DropOnTabAreaAsync" @attributes="_dragListeners">
         <div class="ex-sheet-tabs" role="tablist" aria-label="@SheetWords.SheetTabsName" @ref="_tabList"
              @onkeydown="OnSheetTabKeyAsync">
+            @* Keyed by its Sheet: an element reference is captured only as its element is made, so a tab
+               element is made for each Sheet, never handed on to another, and _tabs holds every tab. *@
             @foreach (var tabSheet in tabbedWorkbook.Sheets)
             {
                 var sheet = tabSheet;
                 var selected = sheet == _sheet;
                 if (_renaming == sheet)
                 {
-                    <span class="ex-sheet-tab ex-sheet-tab-renaming" role="tab" aria-selected="@(selected ? "true" : "false")" @ref="_renameBox">
+                    <span @key="sheet" class="ex-sheet-tab ex-sheet-tab-renaming" role="tab" aria-selected="@(selected ? "true" : "false")" @ref="_renameBox">
                         <input type="text" class="ex-sheet-tab-name" aria-label="@SheetWords.SheetNameField" spellcheck="false" autocomplete="off"
                                aria-invalid="@(_renameRefused ? "true" : null)" data-ex-claims="keydown"
                                @bind:get="_renameText" @bind:set="SetRenameText" @bind:event="oninput" @onchange="OnRenameChanged"
@@ -108,7 +110,7 @@
                 }
                 else
                 {
-                    <button type="button" role="tab" class="ex-sheet-tab" @ref="_tabs[sheet]" aria-selected="@(selected ? "true" : "false")" tabindex="@(selected ? "0" : "-1")"
+                    <button @key="sheet" type="button" role="tab" class="ex-sheet-tab" @ref="_tabs[sheet]" aria-selected="@(selected ? "true" : "false")" tabindex="@(selected ? "0" : "-1")"
                             aria-haspopup="menu" data-ex-claims="@TabClaims" @onmousedown="e => StartTabDrag(e, sheet)" @onmousedown:preventDefault="true"
                             @onmouseup="e => DropOnTabAsync(e, sheet)" @onmouseup:stopPropagation="true"
                             @onclick="() => ShowSheetByUserAsync(sheet)" @ondblclick="() => RenameByUserAsync(sheet)"
@@ -2233,12 +2235,14 @@
         if (changes.Any(change => change.ChangesSheets) && ShowSheet(CurrentWorkbook.Shown))
         {
             if (byUser) ClearNotice();
+            await ForgetSheetsGoneAsync();
             if (_grid is { } summarized) await summarized.RefreshSummaryAsync();
             if (raiseDocument) await RaiseDocumentsAsync();
             await RaiseSheetsChangedAsync();
             return;
         }
         var sheet = CurrentSheet;
+        if (changes.Any(change => change.ChangesSheets)) await ForgetSheetsGoneAsync();
         await ChangedAsync([.. changes.Select(change => change.For(sheet))], raiseDocument, byUser);
         if (changes.Any(change => change.ChangesSheets)) await RaiseSheetsChangedAsync();
     }

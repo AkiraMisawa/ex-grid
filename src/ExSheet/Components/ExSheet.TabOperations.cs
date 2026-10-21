@@ -35,6 +35,7 @@ public partial class ExSheet
     private string _renameText = "";
     private bool _renameRefused;
     private int _renameSession;
+    private bool _renameEnding;
     private ElementReference _renameBox;
 
     // The tab's menu, the Sheet it acts on, the command the keyboard is on, whether the keyboard came
@@ -75,10 +76,12 @@ public partial class ExSheet
         return drawn.Task;
     }
 
-    /// <summary>A Workbook opened afresh: nothing of a gesture on the tabs it replaced stands.</summary>
+    /// <summary>A Workbook opened afresh: nothing of a gesture on the tabs it replaced stands, nor a tab of its Sheets.</summary>
     private void ForgetTabGestures()
     {
+        _tabs.Clear();
         _renaming = null;
+        _renameEnding = false;
         _renameRefused = false;
         _renameSession++;
         _menu = null;
@@ -105,6 +108,8 @@ public partial class ExSheet
     private async Task<WorkbookStep?> DoSheetOperationAsync(Sheet sheet, SheetEdit edit, Func<WorkbookStep, Sheet>? show = null)
     {
         var workbook = CurrentWorkbook;
+        // A Sheet taken away while the gesture was on its way — a Consumer's command, an undo — is not done to.
+        if (!workbook.Sheets.Contains(sheet)) return null;
         WorkbookStep step;
         try
         {
@@ -211,7 +216,12 @@ public partial class ExSheet
     /// </summary>
     private async Task<bool> CommitRenameAsync(bool returnKeyboard)
     {
-        if (_renaming is not { } sheet) return true;
+        if (_renaming is not { } sheet || _renameEnding) return true;
+        if (!CurrentWorkbook.Sheets.Contains(sheet))
+        {
+            await EndRenameAsync(returnKeyboard);
+            return true;
+        }
         var name = _renameText;
         if (string.Equals(name, sheet.Name, StringComparison.Ordinal))
         {
@@ -252,10 +262,14 @@ public partial class ExSheet
     /// <summary>Ends the name's edit: the keyboard goes back to the grid first, when asked, while the field still holds it, and the field then goes.</summary>
     private async Task EndRenameAsync(bool returnKeyboard)
     {
-        if (_renaming is null) return;
+        // Ended once: an end asked again while the keyboard is on its way back — the Sheet taken away by an
+        // undo meanwhile — finds it ending.
+        if (_renaming is null || _renameEnding) return;
+        _renameEnding = true;
         _renameSession++;
         if (returnKeyboard && _grid is { } grid) await grid.ReturnKeyboardAsync(_tabArea, static () => []);
         _renaming = null;
+        _renameEnding = false;
         _renameRefused = false;
         StateHasChanged();
     }
@@ -283,7 +297,7 @@ public partial class ExSheet
         _menuSheet = sheet;
         _menuFromTab = fromTab;
         _menuSession++;
-        _menuActive = MenuOrder.First(kind => CommandEnabled(kind, out _));
+        _menuActive = MenuOrder.First(kind => CommandEnabled(kind, sheet, out _));
         BuildTabMenu();
         await DrawnAsync();
         if (_menuSheet == sheet && _grid is { } grid) await grid.HandKeyboardToAsync(_menuElement, preventScroll: true);
@@ -300,7 +314,7 @@ public partial class ExSheet
         var prefix = "ex-sheet-tab-menu-" + RuntimeHelpers.GetHashCode(this).ToString(CultureInfo.InvariantCulture);
         _menu = new SheetTabMenuContext(sheet.Name, [.. MenuOrder.Select(kind =>
         {
-            var enabled = CommandEnabled(kind, out var reason);
+            var enabled = CommandEnabled(kind, sheet, out var reason);
             return new SheetTabCommand(prefix + "-" + kind.ToString().ToLowerInvariant(), kind, TabCommandLabel(kind), enabled, reason,
                 kind == _menuActive, () => InOrderAsync(GridInputKind.Click, () => DoTabCommandAsync(kind)));
         })]);
@@ -315,11 +329,17 @@ public partial class ExSheet
         _ => "Copy",
     };
 
-    private bool CommandEnabled(SheetTabCommandKind kind, out string? reason)
+    /// <summary>Whether <paramref name="kind"/> can be done on <paramref name="sheet"/> in the Workbook as it stands now, and why not.</summary>
+    private bool CommandEnabled(SheetTabCommandKind kind, Sheet sheet, out string? reason)
     {
         reason = null;
-        if (_menuSheet is not { } sheet || _workbook is not { } workbook) return false;
+        if (_workbook is not { } workbook) return false;
         var at = IndexOf(workbook, sheet);
+        if (at < 0)
+        {
+            reason = SheetWords.SheetGone;
+            return false;
+        }
         reason = kind switch
         {
             SheetTabCommandKind.Delete when workbook.Sheets.Count == 1 => SheetWords.OnlySheet,
@@ -338,8 +358,8 @@ public partial class ExSheet
     /// </summary>
     private Task OnTabMenuKeyAsync(KeyboardEventArgs key) => InOrderAsync(GridInputKind.KeyDown, async () =>
     {
-        if (_menuSheet is null) return;
-        var enabled = MenuOrder.Where(kind => CommandEnabled(kind, out _)).ToList();
+        if (_menuSheet is not { } menuSheet) return;
+        var enabled = MenuOrder.Where(kind => CommandEnabled(kind, menuSheet, out _)).ToList();
         switch (key.Key)
         {
             case "ArrowDown":
@@ -394,14 +414,16 @@ public partial class ExSheet
     private async Task CloseTabMenuAsync(KeyboardTo keyboard)
     {
         if (_menuSheet is not { } sheet) return;
-        _menuSession++;
+        // Closed at once, for every key and command after this one, while the menu stays drawn, holding the
+        // keyboard, until the keyboard has gone on.
+        _menuSheet = null;
+        var session = ++_menuSession;
         if (_grid is { } grid)
         {
             if (keyboard == KeyboardTo.Grid) await grid.ReturnKeyboardAsync(_tabArea, static () => []);
             else if (keyboard == KeyboardTo.Tab && _tabs.TryGetValue(sheet, out var tab)) await grid.HandKeyboardToAsync(tab, preventScroll: true);
         }
-        _menuSheet = null;
-        _menu = null;
+        if (session == _menuSession) _menu = null;
         StateHasChanged();
     }
 
@@ -412,7 +434,7 @@ public partial class ExSheet
     /// </summary>
     private async Task DoTabCommandAsync(SheetTabCommandKind kind)
     {
-        if (_menuSheet is not { } sheet || !CommandEnabled(kind, out _)) return;
+        if (_menuSheet is not { } sheet || !CommandEnabled(kind, sheet, out _)) return;
         if (kind == SheetTabCommandKind.Rename)
         {
             await CloseTabMenuAsync(KeyboardTo.Nowhere);
@@ -421,6 +443,14 @@ public partial class ExSheet
         }
         await CloseTabMenuAsync(KeyboardTo.Grid);
         if (RefuseSheetOperationWhileEditing()) return;
+        // The close waited on the browser, and the Workbook may have changed meanwhile — a Consumer's
+        // command, an undo: the command is judged again on the Workbook as it stands now.
+        if (!CommandEnabled(kind, sheet, out var reason))
+        {
+            Tell(SheetWords.SheetNotChanged(reason!));
+            StateHasChanged();
+            return;
+        }
         var workbook = CurrentWorkbook;
         var name = sheet.Name;
         switch (kind)
@@ -441,6 +471,30 @@ public partial class ExSheet
                 break;
         }
         StateHasChanged();
+    }
+
+    /// <summary>
+    /// The Sheets have changed — by a gesture, a Consumer's command, an undo or a redo: a Sheet no longer
+    /// in the Workbook has no tab and no view kept for it, a name being edited on its tab ends, the
+    /// keyboard going back to the grid, and its menu closes the same way. A menu still standing is built
+    /// again, so what it offers follows the Sheets as they stand.
+    /// </summary>
+    private async Task ForgetSheetsGoneAsync()
+    {
+        if (_workbook is not { } workbook) return;
+        var sheets = workbook.Sheets;
+        foreach (var gone in _tabs.Keys.Where(sheet => !sheets.Contains(sheet)).ToList()) _tabs.Remove(gone);
+        foreach (var gone in _views.Keys.Where(sheet => !sheets.Contains(sheet)).ToList()) _views.Remove(gone);
+        if (_renaming is { } renaming && !sheets.Contains(renaming)) await EndRenameAsync(returnKeyboard: true);
+        if (_menuSheet is { } menuSheet)
+        {
+            if (!sheets.Contains(menuSheet)) await CloseTabMenuAsync(KeyboardTo.Grid);
+            else
+            {
+                if (!CommandEnabled(_menuActive, menuSheet, out _)) _menuActive = MenuOrder.First(kind => CommandEnabled(kind, menuSheet, out _));
+                BuildTabMenu();
+            }
+        }
     }
 
     /// <summary>A name being edited is committed — or, refused, kept as it was — and a menu closes, before another gesture on the tabs.</summary>
