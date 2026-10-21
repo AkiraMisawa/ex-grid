@@ -2,6 +2,7 @@ using System.Globalization;
 using ExChart;
 using ExChart.Engine;
 using ExGrid;
+using ExGrid.Columns;
 using ExGrid.Data;
 using ExGrid.Selection;
 using ExPivot.Engine;
@@ -18,11 +19,37 @@ public sealed class BoundBoard
     private readonly Dictionary<BoardLink, LinkCondition> _conditions = [];
     private readonly Dictionary<string, LinkCondition> _taken = new(StringComparer.Ordinal);
 
-    private BoundBoard(BoardReading board, IReadOnlyDictionary<string, Snapshot> data, IReadOnlyList<BoundView> views)
+    private BoundBoard(BoardReading board, IReadOnlyDictionary<string, Snapshot> data, IReadOnlyList<BoundView> views, IReadOnlyList<string> dropped)
     {
         Board = board;
         Data = data;
         Views = views;
+        Dropped = dropped;
+    }
+
+    /// <summary>What of the Diff laid over at <see cref="Bind"/> no longer fit the Board, one sentence
+    /// per part naming its path (<see cref="BoardDiff.FitTo"/>); empty when everything applied.</summary>
+    public IReadOnlyList<string> Dropped { get; }
+
+    /// <summary>
+    /// What the user has changed, as one Board Diff (ADR-0340, Q7): each view's part that differs from
+    /// what the Board writes. The Board itself is never rewritten.
+    /// </summary>
+    public BoardDiff Diff => new(
+        Parts(Views.OfType<BoundGridView>().Select(v => (v.View.Id, v.Change))),
+        Parts(Views.OfType<BoundPivotView>().Select(v => (v.View.Id, v.Change))),
+        Parts(Views.OfType<BoundChartView>().Select(v => (v.View.Id, v.Change))));
+
+    // Each view's part read once, and those with none left out.
+    private static Dictionary<string, T> Parts<T>(IEnumerable<(string Id, T? Part)> parts) where T : class
+    {
+        var kept = new Dictionary<string, T>(StringComparer.Ordinal);
+        foreach (var (id, part) in parts)
+        {
+            if (part is not null)
+                kept[id] = part;
+        }
+        return kept;
     }
 
     /// <summary>The Board.</summary>
@@ -221,8 +248,10 @@ public sealed class BoundBoard
     /// <param name="data">The Snapshot for each input, by the input's name. Data for a name the Board
     /// does not declare is not read.</param>
     /// <param name="culture">The culture a grid's text is written in; the invariant culture by default.</param>
+    /// <param name="diff">What the user changed last time, laid over the Board (ADR-0340, Q7): what
+    /// still fits applies, and what does not is dropped and named in <see cref="Dropped"/>.</param>
     /// <exception cref="BoardRefusedException">An input or a view is refused.</exception>
-    public static BoundBoard Bind(BoardReading board, IReadOnlyDictionary<string, Snapshot> data, CultureInfo? culture = null)
+    public static BoundBoard Bind(BoardReading board, IReadOnlyDictionary<string, Snapshot> data, CultureInfo? culture = null, BoardDiff? diff = null)
     {
         ArgumentNullException.ThrowIfNull(board);
         ArgumentNullException.ThrowIfNull(data);
@@ -240,12 +269,28 @@ public sealed class BoundBoard
             views.Add(board.Views[i] switch
             {
                 BoardGridView grid => new BoundGridView(grid, GridOf(bound[grid.Grid.Data], grid.Grid, culture)),
-                BoardPivotView pivot => new BoundPivotView(pivot, PivotSource.From(bound[pivot.Input])),
+                BoardPivotView pivot => new BoundPivotView(pivot, PivotSource.From(bound[pivot.Input]), inputs[pivot.Input].Shape),
                 BoardChartView chart => new BoundChartView(chart, ReadChart(chart, bound, inputs, $"views[{i}].chart", null)),
                 var other => throw new InvalidOperationException($"Unknown view {other.GetType().Name}."),
             });
         }
-        return new BoundBoard(board, bound, views);
+        var fitted = (diff ?? BoardDiff.Empty).FitTo(board);
+        foreach (var view in views)
+        {
+            switch (view)
+            {
+                case BoundGridView grid when fitted.Diff.Grids.TryGetValue(grid.View.Id, out var change):
+                    grid.LayOver(change);
+                    break;
+                case BoundPivotView pivot when fitted.Diff.Pivots.TryGetValue(pivot.View.Id, out var layout):
+                    pivot.ChangeLayout(layout.Layout);
+                    break;
+                case BoundChartView chart when fitted.Diff.Charts.TryGetValue(chart.View.Id, out var change):
+                    chart.LayOver(change);
+                    break;
+            }
+        }
+        return new BoundBoard(board, bound, views, fitted.Dropped);
     }
 
     private static ShapedGrid GridOf(Snapshot snapshot, GridViewSpecReading spec, CultureInfo? culture)
@@ -284,26 +329,162 @@ public abstract class BoundView
     public BoardView View { get; }
 }
 
-/// <summary>A grid view, its columns built from its input's shape (ADR-0342).</summary>
+/// <summary>
+/// A grid view, its columns built from its input's shape (ADR-0342), and shown as the user has
+/// changed them since: the columns' order, widths, pinning and those hidden, here, and the sort and the
+/// filter in its source. The Board's own spec is never rewritten (ADR-0340, Q7); what differs from it
+/// is <see cref="Change"/>.
+/// </summary>
 public sealed class BoundGridView : BoundView
 {
-    internal BoundGridView(BoardGridView view, ShapedGrid grid)
-        : base(view) => Grid = grid;
+    private readonly Dictionary<string, GridColumn<ShapedRow>> _declared;
+    private List<ColumnViewState> _shown;
+    private SortedSet<string> _hidden = new(StringComparer.Ordinal);
 
-    /// <summary>The grid.</summary>
+    internal BoundGridView(BoardGridView view, ShapedGrid grid)
+        : base(view)
+    {
+        Grid = grid;
+        _declared = grid.Columns.ToDictionary(c => c.Name, StringComparer.Ordinal);
+        _shown = [.. grid.Spec.ViewState.Columns];
+        Columns = grid.Columns;
+    }
+
+    /// <summary>The grid, as the Board's spec builds it.</summary>
     public ShapedGrid Grid { get; }
+
+    /// <summary>The columns shown, in the user's order at the user's widths: a new list each time
+    /// they change, which is what tells the grid (ADR-0003).</summary>
+    public IReadOnlyList<GridColumn<ShapedRow>> Columns { get; private set; }
+
+    /// <summary>How many leading columns are pinned.</summary>
+    public int PinnedColumnCount => _shown.Count(c => c.Pinned);
+
+    /// <summary>The columns the user hid, in the order of their names.</summary>
+    public IReadOnlyList<string> Hidden => [.. _hidden];
+
+    /// <summary>The View State the grid is shown under now (ADR-0207).</summary>
+    public GridViewState ViewState => new(_shown, Grid.Source.Sorts, Grid.Source.Filter);
+
+    /// <summary>What differs from the Board's spec, or null where nothing does.</summary>
+    public BoardGridChange? Change
+    {
+        get
+        {
+            var state = ViewState;
+            if (state == Grid.Spec.ViewState && _hidden.Count == 0)
+                return null;
+            var kinds = Grid.Spec.Columns.ToDictionary(c => c.Column, c => c.Kind, StringComparer.Ordinal);
+            return new BoardGridChange(state, _hidden,
+                state.Filter?.Columns.Keys.Where(kinds.ContainsKey).ToDictionary(c => c, c => kinds[c], StringComparer.Ordinal));
+        }
+    }
+
+    // A gesture is taken against the columns the grid was shown: one naming a column no longer shown,
+    // a round trip behind a hide, is refused rather than applied to others (spine rule 6), and each says
+    // whether it was taken.
+
+    /// <summary>A resize drag released (ADR-0016): the column takes the width as Fixed.</summary>
+    /// <returns>Whether it was taken: false for a column not shown, or a width that is not a number.</returns>
+    public bool Resize(ColumnWidthChange change)
+    {
+        ArgumentNullException.ThrowIfNull(change);
+        var at = Shown(change.Column);
+        if (at < 0 || !double.IsFinite(change.WidthPx) || change.WidthPx <= 0)
+            return false;
+        _shown[at] = new ColumnViewState(change.Column, ColumnWidth.Fixed(change.WidthPx), _shown[at].Pinned);
+        Rebuild();
+        return true;
+    }
+
+    /// <summary>A header drag dropped (ADR-0011/0032): the shown columns take <paramref name="order"/>,
+    /// the pinned ones still leading; a shown column it leaves out keeps its place after them.</summary>
+    /// <returns>Whether it was taken: false for an order naming a column not shown, or one twice.</returns>
+    public bool Reorder(IReadOnlyList<string> order)
+    {
+        ArgumentNullException.ThrowIfNull(order);
+        if (order.Distinct(StringComparer.Ordinal).Count() != order.Count || order.Any(name => Shown(name) < 0))
+            return false;
+        var pinned = PinnedColumnCount;
+        var moved = order.Select(name => _shown[Shown(name)]).ToList();
+        moved.AddRange(_shown.Where(c => !order.Contains(c.Column, StringComparer.Ordinal)));
+        _shown = [.. moved.Select((c, i) => new ColumnViewState(c.Column, c.Width, i < pinned))];
+        Rebuild();
+        return true;
+    }
+
+    /// <summary>The column menu's "hide this column" (ADR-0010). The last column shown is kept: a grid
+    /// of none could not be shown a column again.</summary>
+    /// <returns>Whether the column was hidden: false for a column not shown, or the last one.</returns>
+    public bool Hide(string column)
+    {
+        var at = Shown(column);
+        if (at < 0 || _shown.Count == 1)
+            return false;
+        _shown.RemoveAt(at);
+        _hidden.Add(column);
+        Rebuild();
+        return true;
+    }
+
+    /// <summary>The column menu's "pin up to this column" (ADR-0004/0010): the leading
+    /// <paramref name="count"/> columns are pinned.</summary>
+    /// <returns>Whether it was taken: false for a count outside [0, the columns shown].</returns>
+    public bool Pin(int count)
+    {
+        if (count < 0 || count > _shown.Count)
+            return false;
+        _shown = [.. _shown.Select((c, i) => new ColumnViewState(c.Column, c.Width, i < count))];
+        return true;
+    }
+
+    // A part of a Diff already fitted to this view (BoardDiff.FitTo).
+    internal void LayOver(BoardGridChange change)
+    {
+        _shown = [.. change.ViewState.Columns];
+        _hidden = new SortedSet<string>(change.Hidden, StringComparer.Ordinal);
+        Rebuild();
+        Grid.Source.OnSortChanged(change.ViewState.Sorts);
+        Grid.Source.OnFilterChanged(change.ViewState.Filter);
+    }
+
+    private int Shown(string column)
+    {
+        ArgumentNullException.ThrowIfNull(column);
+        return _shown.FindIndex(c => c.Column == column);
+    }
+
+    private void Rebuild() => Columns = [.. _shown.Select(c => Sized(_declared[c.Column], c.Width))];
+
+    private static GridColumn<ShapedRow> Sized(GridColumn<ShapedRow> column, ColumnWidth width) => width == column.Width.Width
+        ? column
+        : new(column.Name, column.Type, column.Value, column.Header,
+            new ColumnWidthSpec(width, column.Width.MinWidthPx, column.Width.MaxWidthPx),
+            align: column.Align, format: column.Format,
+            dateType: column.Type == ColumnType.Date ? column.DateType : null);
 }
 
 /// <summary>A pivot view over its input's Snapshot.</summary>
 public sealed class BoundPivotView : BoundView
 {
-    internal BoundPivotView(BoardPivotView view, SnapshotPivotSource source)
+    internal BoundPivotView(BoardPivotView view, SnapshotPivotSource source, DataShape shape)
         : base(view)
     {
         Source = Unnarrowed = source;
         Input = view.Input;
         Layout = view.Layout;
+        _shape = shape;
     }
+
+    private readonly DataShape _shape;
+
+    /// <summary>The user changed the layout from the field list or a header (ADR-0059).</summary>
+    public void ChangeLayout(PivotLayout layout) => Layout = layout ?? throw new ArgumentNullException(nameof(layout));
+
+    /// <summary>The layout, or null where it is the Board's.</summary>
+    public BoardPivotChange? Change => PivotLayoutJson.Write(Layout) == PivotLayoutJson.Write(((BoardPivotView)View).Layout)
+        ? null
+        : new BoardPivotChange(Layout, BoardDiff.KindsOf(_shape, BoardDiff.Placed(Layout)));
 
     /// <summary>The pivot's source: over its input's rows, or, while a link narrows it, over the rows
     /// let through.</summary>
@@ -313,8 +494,8 @@ public sealed class BoundPivotView : BoundView
 
     internal string Input { get; }
 
-    /// <summary>The layout the Board writes.</summary>
-    public PivotLayout Layout { get; }
+    /// <summary>The layout shown: the Board's, until the user changes it.</summary>
+    public PivotLayout Layout { get; private set; }
 }
 
 /// <summary>A chart view, its Chart Spec read from its inputs' data.</summary>
@@ -325,6 +506,41 @@ public sealed class BoundChartView : BoundView
 
     /// <summary>The chart's title and definition, read from the rows its links let through.</summary>
     public ChartSpecReading Reading { get; internal set; }
+
+    /// <summary>The keys of the series the user hid: a new set each time it changes, which is what
+    /// tells the chart (ADR-0272).</summary>
+    public IReadOnlySet<string> HiddenSeries { get; private set; } = new SortedSet<string>(StringComparer.Ordinal);
+
+    /// <summary>The range the user narrowed the chart to, or null for the whole.</summary>
+    public ChartRange? Range { get; private set; }
+
+    /// <summary>The axis the user switched to, or null for the declared one.</summary>
+    public AxisScale? Scale { get; private set; }
+
+    /// <summary>What the user changed, or null where nothing is.</summary>
+    public BoardChartChange? Change => HiddenSeries.Count == 0 && Range is null && Scale is null ? null : new BoardChartChange(HiddenSeries, Range, Scale);
+
+    /// <summary>A series hidden or shown from the legend (ADR-0271).</summary>
+    public void ChangeVisibility(SeriesVisibility change)
+    {
+        ArgumentNullException.ThrowIfNull(change);
+        var hidden = new SortedSet<string>(HiddenSeries, StringComparer.Ordinal);
+        if (change.Hidden ? hidden.Add(change.Key) : hidden.Remove(change.Key))
+            HiddenSeries = hidden;
+    }
+
+    /// <summary>The range narrowed, or returned to the whole with null (ADR-0273).</summary>
+    public void ChangeRange(ChartRange? range) => Range = range;
+
+    /// <summary>The axis switched under Chart Filters (ADR-0251).</summary>
+    public void ChangeScale(AxisScale scale) => Scale = scale;
+
+    internal void LayOver(BoardChartChange change)
+    {
+        HiddenSeries = new SortedSet<string>(change.HiddenSeries, StringComparer.Ordinal);
+        Range = change.Range;
+        Scale = change.Scale;
+    }
 
     /// <summary>Why the chart is not drawn, naming the path, when its spec cannot draw the rows its links
     /// let through; null while it is drawn. <see cref="Reading"/> is then of other rows, and not shown.</summary>

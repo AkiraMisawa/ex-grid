@@ -342,7 +342,7 @@ public static class BoardSpec
         return names;
     }
 
-    private static string KindOf(BoardView view) => view switch
+    internal static string KindOf(BoardView view) => view switch
     {
         BoardGridView => "grid",
         BoardPivotView => "pivot",

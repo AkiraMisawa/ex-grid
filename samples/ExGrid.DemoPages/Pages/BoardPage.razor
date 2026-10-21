@@ -9,7 +9,9 @@
 
 @* ExBoard's page (/board): the browser layer's fixture for links (ADR-0340, ExBoard ticket 05). The
    blotter's selected rows narrow the pivot, the chart and the limits grid, which reads another input,
-   by desk; its confirm hands on the chosen rows' days and traders, written under the Board. *@
+   by desk; its confirm hands on the chosen rows' days and traders, written under the Board. What the user
+   changes is written as its Board Diff, and "Draw again" binds the Board afresh with it laid over
+   (ExBoard ticket 07). *@
 <DemoChromeAssets>
     <Head>
         <ExPivotStylesheet />
@@ -18,13 +20,27 @@
 </DemoChromeAssets>
 
 <h1>A Board</h1>
-<ExBoard Board="Reading" Data="Data" Width="1000" OnOutput="Raised" />
+<ExBoard Board="Reading" Data="_data" Width="1000" OnOutput="Raised" Diff="_laid" OnDiff="Changed" />
 <pre id="raised" role="log">@_raised</pre>
+<button type="button" id="again" @onclick="DrawAgain">Draw again with these changes</button>
+<pre id="diff" role="log">@_diff</pre>
 
 @code {
     private string? _raised;
+    private string? _diff;
+    private BoardDiff? _laid;
+    private IReadOnlyDictionary<string, Snapshot> _data = Data;
 
     private void Raised(BoardOutput output) => _raised = output.ToJson();
+
+    private void Changed(BoardDiff diff) => _diff = diff.ToJson();
+
+    // As a host does next time: the Diff read back from its JSON, and the Board bound afresh.
+    private void DrawAgain()
+    {
+        _laid = _diff is null ? null : BoardDiff.Read(_diff);
+        _data = new Dictionary<string, Snapshot>(Data);
+    }
 
     private const string Json = """
         {"version": 1, "title": "Desk P&L",

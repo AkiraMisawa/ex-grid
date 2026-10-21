@@ -1,5 +1,9 @@
 using System.Globalization;
+using ExChart;
 using ExChart.Chrome;
+using ExChart.Engine;
+using ExGrid;
+using ExGrid.Columns;
 using ExGrid.Chrome;
 using ExGrid.Data;
 using ExGrid.Selection;
@@ -15,7 +19,7 @@ namespace ExBoard.Components;
 /// Board that does not bind draws nothing but the refusal, naming the input or the path. Running a
 /// Board never rewrites it.
 /// </summary>
-public partial class ExBoard
+public partial class ExBoard : IDisposable
 {
     /// <summary>The gap between views and between rows, in CSS pixels.</summary>
     public const double Gap = 12;
@@ -29,7 +33,11 @@ public partial class ExBoard
     private CultureInfo? _boundCulture;
     private BoundBoard? _bound;
     private string? _refusal;
-    private readonly Dictionary<string, PivotLayout> _layouts = new(StringComparer.Ordinal);
+    private BoardDiff? _boundDiff;
+    private BoardDiff? _raised;
+    private Action? _sourceChanged;
+    private readonly Dictionary<string, GridChanges> _gridChanges = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, ChartChanges> _chartChanges = new(StringComparer.Ordinal);
     private readonly Dictionary<string, EventCallback<PivotLayout>> _layoutChanged = new(StringComparer.Ordinal);
     private readonly Dictionary<string, EventCallback<GridSelection>> _selectionChanged = new(StringComparer.Ordinal);
     private readonly Dictionary<string, string> _confirmStatus = new(StringComparer.Ordinal);
@@ -66,6 +74,27 @@ public partial class ExBoard
     [Parameter]
     public EventCallback<BoardOutput> OnOutput { get; set; }
 
+    /// <summary>
+    /// What the user changed last time, laid over the Board as it binds (ADR-0340, Q7), as
+    /// <see cref="BoardDiff.Read"/> reads it back. What no longer fits the Board is dropped and said above
+    /// its views, and the rest applies; the Diff that did is then raised (<see cref="OnDiff"/>), so a host
+    /// keeping each one raised keeps no part that will not apply. It is read when it changes: a new one
+    /// binds the Board again, unless it is the one already shown, as when the host hands back each Diff
+    /// raised, and the same instance is not read twice. A Board bound again for new data keeps what the
+    /// user has changed since.
+    /// </summary>
+    [Parameter]
+    public BoardDiff? Diff { get; set; }
+
+    /// <summary>
+    /// Raised when the user changes a view — a sort, a filter, a column's width, order, pinning or
+    /// hiding, a pivot's layout, a chart's series, range or axis — with the whole Board Diff: every
+    /// view's part that differs from the Board. The Board is never rewritten; the host keeps this
+    /// (<see cref="BoardDiff.ToJson"/>) and hands it back as <see cref="Diff"/> next time.
+    /// </summary>
+    [Parameter]
+    public EventCallback<BoardDiff> OnDiff { get; set; }
+
     /// <summary>The chart Chrome; the built-in one by default.</summary>
     [Parameter]
     public IChartChrome? ChartChrome { get; set; }
@@ -75,19 +104,26 @@ public partial class ExBoard
     {
         ArgumentNullException.ThrowIfNull(Board);
         ArgumentNullException.ThrowIfNull(Data);
-        if (ReferenceEquals(Board, _boundBoard) && ReferenceEquals(Data, _boundData) && Equals(Culture, _boundCulture))
+        if (ReferenceEquals(Board, _boundBoard) && ReferenceEquals(Data, _boundData) && Equals(Culture, _boundCulture)
+            && (ReferenceEquals(Diff, _boundDiff) || (_bound is not null && (Diff ?? BoardDiff.Empty).SameAs(_bound.Diff))))
             return;
+        // Bound again for a new Board or new data, the user's changes since are kept: only a new Diff
+        // replaces them.
+        var laid = ReferenceEquals(Diff, _boundDiff) && _bound is not null ? _bound.Diff : Diff;
         _boundBoard = Board;
         _boundData = Data;
         _boundCulture = Culture;
-        _layouts.Clear();
+        _boundDiff = Diff;
+        Unsubscribe();
         _layoutChanged.Clear();
+        _gridChanges.Clear();
+        _chartChanges.Clear();
         _selectionChanged.Clear();
         _confirmStatus.Clear();
         _grids.Clear();
         try
         {
-            _bound = BoundBoard.Bind(Board, Data, Culture);
+            _bound = BoundBoard.Bind(Board, Data, Culture, laid);
             _refusal = null;
         }
         catch (BoardRefusedException refused)
@@ -96,16 +132,55 @@ public partial class ExBoard
             _refusal = refused.Path.Length == 0 ? refused.Message : $"{refused.Path}: {refused.Message}";
             return;
         }
-        foreach (var view in _bound.Views.OfType<BoundPivotView>())
+        // What is laid over is not the user's change this time: only a change from it is raised, and the
+        // Diff that applied, when some of it did not (OnParametersSetAsync).
+        _raised = _bound.Dropped.Count > 0 ? null : _bound.Diff;
+        // Each cached, so a render does not hand a view a new delegate (AGENTS.md).
+        foreach (var view in _bound.Views)
         {
             var id = view.View.Id;
-            _layouts[id] = view.Layout;
-            // Cached, so a render does not hand the pivot a new delegate (AGENTS.md).
-            _layoutChanged[id] = EventCallback.Factory.Create<PivotLayout>(this, layout => _layouts[id] = layout);
+            switch (view)
+            {
+                case BoundGridView grid:
+                    _gridChanges[id] = new GridChanges(
+                        EventCallback.Factory.Create<ColumnWidthChange>(this, change => Changed(() => grid.Resize(change))),
+                        EventCallback.Factory.Create<IReadOnlyList<string>>(this, order => Changed(() => grid.Reorder(order))),
+                        EventCallback.Factory.Create<string>(this, column => Changed(() => grid.Hide(column))),
+                        EventCallback.Factory.Create<int>(this, count => Changed(() => grid.Pin(count))));
+                    break;
+                case BoundPivotView pivot:
+                    _layoutChanged[id] = EventCallback.Factory.Create<PivotLayout>(this, layout => Changed(() => pivot.ChangeLayout(layout)));
+                    break;
+                case BoundChartView chart:
+                    _chartChanges[id] = new ChartChanges(
+                        EventCallback.Factory.Create<SeriesVisibility>(this, change => Changed(() => chart.ChangeVisibility(change))),
+                        EventCallback.Factory.Create<ChartRange?>(this, range => Changed(() => chart.ChangeRange(range))),
+                        EventCallback.Factory.Create<AxisScale>(this, scale => Changed(() => chart.ChangeScale(scale))));
+                    break;
+            }
         }
+        // A grid's sort and filter are its source's (ADR-0001), which says when they move; a narrowing
+        // moves only its rows, and raises no Diff.
+        _sourceChanged = () => _ = InvokeAsync(async () =>
+        {
+            try
+            {
+                await Changed(() => { });
+            }
+            catch (Exception e)
+            {
+                // Heard outside a Blazor event, so handed to the renderer, never dropped.
+                await DispatchExceptionAsync(e);
+            }
+        });
+        foreach (var grid in _bound.Views.OfType<BoundGridView>())
+            grid.Grid.Source.StateChanged += _sourceChanged;
         foreach (var from in _bound.Board.Links.Select(l => l.From).Concat(_bound.Board.Outputs.Select(o => o.From)).Distinct())
             _selectionChanged[from] = EventCallback.Factory.Create<GridSelection>(this, selection => Select(from, selection));
     }
+
+    /// <inheritdoc />
+    protected override Task OnParametersSetAsync() => Changed(() => { });
 
     private EventCallback<GridSelection> SelectionChangedOf(string view) => _selectionChanged.GetValueOrDefault(view);
 
@@ -145,9 +220,42 @@ public partial class ExBoard
         await OnOutput.InvokeAsync(raised);
     }
 
-    private static string RefusalStyle(BoardRow row) => FormattableString.Invariant($"height: {row.Height}px");
+    // Applies the user's change, and raises the Diff when it now differs from the one last raised.
+    private Task Changed(Action change)
+    {
+        if (_bound is not { } bound)
+            return Task.CompletedTask;
+        change();
+        var diff = bound.Diff;
+        if (diff.SameAs(_raised))
+            return Task.CompletedTask;
+        _raised = diff;
+        return OnDiff.InvokeAsync(diff);
+    }
 
-    private PivotLayout LayoutOf(BoundPivotView pivot) => _layouts[pivot.View.Id];
+    private void Unsubscribe()
+    {
+        if (_bound is not null && _sourceChanged is not null)
+        {
+            foreach (var grid in _bound.Views.OfType<BoundGridView>())
+                grid.Grid.Source.StateChanged -= _sourceChanged;
+        }
+        _sourceChanged = null;
+    }
+
+    /// <inheritdoc />
+    public void Dispose()
+    {
+        Unsubscribe();
+        GC.SuppressFinalize(this);
+    }
+
+    private sealed record GridChanges(EventCallback<ColumnWidthChange> Width, EventCallback<IReadOnlyList<string>> Order,
+        EventCallback<string> Hidden, EventCallback<int> Pinned);
+
+    private sealed record ChartChanges(EventCallback<SeriesVisibility> Visibility, EventCallback<ChartRange?> Range, EventCallback<AxisScale> Scale);
+
+    private static string RefusalStyle(BoardRow row) => FormattableString.Invariant($"height: {row.Height}px");
 
     private static string RootStyle => FormattableString.Invariant($"display: flex; flex-direction: column; gap: {Gap}px");
 

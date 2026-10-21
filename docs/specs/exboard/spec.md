@@ -33,7 +33,7 @@ it, and raises its outputs and its Diff.
 | 04 | [Drawing a Board](issues/04-drawing-a-board.md) | done |
 | 05 | [Links narrow by values](issues/05-links-narrow-by-values.md) | done |
 | 06 | [Outputs raised on a confirm](issues/06-outputs-raised-on-a-confirm.md) | done |
-| 07 | [The Board Diff](issues/07-the-board-diff.md) | ready-for-agent |
+| 07 | [The Board Diff](issues/07-the-board-diff.md) | done |
 | 08 | [The Chart Spec as a Board view](issues/08-the-chart-spec-as-a-board-view.md) | ready-for-agent |
 | 09 | [The Board tool and the Docs Site](issues/09-the-board-tool-and-the-docs-site.md) | ready-for-agent |
 | 10 | [ExBoard ships as packages](issues/10-exboard-ships-as-packages.md) | ready-for-agent |

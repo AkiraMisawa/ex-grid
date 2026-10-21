@@ -1,6 +1,7 @@
 #nullable enable
 abstract ExBoard.BoardView.<Clone>$() -> ExBoard.BoardView!
 abstract ExBoard.BoardView.Data.get -> System.Collections.Generic.IReadOnlyList<string!>!
+const ExBoard.BoardDiff.Version = 1 -> int
 const ExBoard.BoardSpec.DefaultRowHeight = 320 -> double
 const ExBoard.BoardSpec.Version = 1 -> int
 const ExBoard.Components.ExBoard.Gap = 12 -> double
@@ -14,9 +15,37 @@ ExBoard.BoardCell.View.get -> string!
 ExBoard.BoardCell.View.init -> void
 ExBoard.BoardCell.Width.get -> int
 ExBoard.BoardCell.Width.init -> void
+ExBoard.BoardChartChange
+ExBoard.BoardChartChange.BoardChartChange(System.Collections.Generic.IEnumerable<string!>! hiddenSeries, ExChart.ChartRange? range, ExChart.Engine.AxisScale? scale) -> void
+ExBoard.BoardChartChange.HiddenSeries.get -> System.Collections.Generic.IReadOnlySet<string!>!
+ExBoard.BoardChartChange.Range.get -> ExChart.ChartRange?
+ExBoard.BoardChartChange.Scale.get -> ExChart.Engine.AxisScale?
 ExBoard.BoardChartView
 ExBoard.BoardChartView.Equals(ExBoard.BoardChartView? other) -> bool
 ExBoard.BoardChartView.Spec.get -> string!
+ExBoard.BoardDiff
+ExBoard.BoardDiff.BoardDiff(System.Collections.Generic.IReadOnlyDictionary<string!, ExBoard.BoardGridChange!>? grids, System.Collections.Generic.IReadOnlyDictionary<string!, ExBoard.BoardPivotChange!>? pivots, System.Collections.Generic.IReadOnlyDictionary<string!, ExBoard.BoardChartChange!>? charts) -> void
+ExBoard.BoardDiff.Charts.get -> System.Collections.Generic.IReadOnlyDictionary<string!, ExBoard.BoardChartChange!>!
+ExBoard.BoardDiff.FitTo(ExBoard.BoardReading! board) -> ExBoard.BoardDiffReading!
+ExBoard.BoardDiff.Grids.get -> System.Collections.Generic.IReadOnlyDictionary<string!, ExBoard.BoardGridChange!>!
+ExBoard.BoardDiff.IsEmpty.get -> bool
+ExBoard.BoardDiff.Pivots.get -> System.Collections.Generic.IReadOnlyDictionary<string!, ExBoard.BoardPivotChange!>!
+ExBoard.BoardDiff.SameAs(ExBoard.BoardDiff? other) -> bool
+ExBoard.BoardDiff.ToJson() -> string!
+ExBoard.BoardDiffReading
+ExBoard.BoardDiffReading.<Clone>$() -> ExBoard.BoardDiffReading!
+ExBoard.BoardDiffReading.BoardDiffReading(ExBoard.BoardDiff! Diff, System.Collections.Generic.IReadOnlyList<string!>! Dropped) -> void
+ExBoard.BoardDiffReading.Deconstruct(out ExBoard.BoardDiff! Diff, out System.Collections.Generic.IReadOnlyList<string!>! Dropped) -> void
+ExBoard.BoardDiffReading.Diff.get -> ExBoard.BoardDiff!
+ExBoard.BoardDiffReading.Diff.init -> void
+ExBoard.BoardDiffReading.Dropped.get -> System.Collections.Generic.IReadOnlyList<string!>!
+ExBoard.BoardDiffReading.Dropped.init -> void
+ExBoard.BoardDiffReading.Equals(ExBoard.BoardDiffReading? other) -> bool
+ExBoard.BoardGridChange
+ExBoard.BoardGridChange.BoardGridChange(ExGrid.GridViewState! viewState, System.Collections.Generic.IEnumerable<string!>! hidden, System.Collections.Generic.IReadOnlyDictionary<string!, ExGrid.Data.SnapshotKind>? kinds = null) -> void
+ExBoard.BoardGridChange.Hidden.get -> System.Collections.Generic.IReadOnlyList<string!>!
+ExBoard.BoardGridChange.Kinds.get -> System.Collections.Generic.IReadOnlyDictionary<string!, ExGrid.Data.SnapshotKind>!
+ExBoard.BoardGridChange.ViewState.get -> ExGrid.GridViewState!
 ExBoard.BoardGridView
 ExBoard.BoardGridView.Equals(ExBoard.BoardGridView? other) -> bool
 ExBoard.BoardGridView.Grid.get -> ExGrid.GridViewSpecReading!
@@ -51,6 +80,10 @@ ExBoard.BoardOutputDeclaration.Name.get -> string!
 ExBoard.BoardOutputDeclaration.Name.init -> void
 ExBoard.BoardOutputDeclaration.On.get -> System.Collections.Generic.IReadOnlyList<string!>!
 ExBoard.BoardOutputDeclaration.On.init -> void
+ExBoard.BoardPivotChange
+ExBoard.BoardPivotChange.BoardPivotChange(ExPivot.Engine.PivotLayout! layout, System.Collections.Generic.IReadOnlyDictionary<string!, ExGrid.Data.SnapshotKind>? kinds = null) -> void
+ExBoard.BoardPivotChange.Kinds.get -> System.Collections.Generic.IReadOnlyDictionary<string!, ExGrid.Data.SnapshotKind>!
+ExBoard.BoardPivotChange.Layout.get -> ExPivot.Engine.PivotLayout!
 ExBoard.BoardPivotView
 ExBoard.BoardPivotView.Equals(ExBoard.BoardPivotView? other) -> bool
 ExBoard.BoardPivotView.Input.get -> string!
@@ -94,16 +127,36 @@ ExBoard.BoundBoard.ConditionOf(ExBoard.BoardLink! link) -> ExBoard.LinkCondition
 ExBoard.BoundBoard.ConditionOf(ExBoard.BoardLink! link, ExGrid.Selection.GridSelection! selection) -> ExBoard.LinkCondition?
 ExBoard.BoundBoard.Confirm(string! name) -> ExBoard.BoardOutput?
 ExBoard.BoundBoard.Data.get -> System.Collections.Generic.IReadOnlyDictionary<string!, ExGrid.Data.Snapshot!>!
+ExBoard.BoundBoard.Diff.get -> ExBoard.BoardDiff!
+ExBoard.BoundBoard.Dropped.get -> System.Collections.Generic.IReadOnlyList<string!>!
 ExBoard.BoundBoard.Narrow(ExBoard.BoardLink! link, ExBoard.LinkCondition? condition) -> void
 ExBoard.BoundBoard.Select(string! from, ExGrid.Selection.GridSelection! selection) -> bool
 ExBoard.BoundBoard.this[string! id].get -> ExBoard.BoundView!
 ExBoard.BoundBoard.Views.get -> System.Collections.Generic.IReadOnlyList<ExBoard.BoundView!>!
 ExBoard.BoundChartView
+ExBoard.BoundChartView.Change.get -> ExBoard.BoardChartChange?
+ExBoard.BoundChartView.ChangeRange(ExChart.ChartRange? range) -> void
+ExBoard.BoundChartView.ChangeScale(ExChart.Engine.AxisScale scale) -> void
+ExBoard.BoundChartView.ChangeVisibility(ExChart.SeriesVisibility! change) -> void
+ExBoard.BoundChartView.HiddenSeries.get -> System.Collections.Generic.IReadOnlySet<string!>!
+ExBoard.BoundChartView.Range.get -> ExChart.ChartRange?
 ExBoard.BoundChartView.Reading.get -> ExChart.Engine.ChartSpecReading!
 ExBoard.BoundChartView.Refusal.get -> string?
+ExBoard.BoundChartView.Scale.get -> ExChart.Engine.AxisScale?
 ExBoard.BoundGridView
+ExBoard.BoundGridView.Change.get -> ExBoard.BoardGridChange?
+ExBoard.BoundGridView.Columns.get -> System.Collections.Generic.IReadOnlyList<ExGrid.GridColumn<ExGrid.ShapedRow!>!>!
 ExBoard.BoundGridView.Grid.get -> ExGrid.ShapedGrid!
+ExBoard.BoundGridView.Hidden.get -> System.Collections.Generic.IReadOnlyList<string!>!
+ExBoard.BoundGridView.Hide(string! column) -> bool
+ExBoard.BoundGridView.Pin(int count) -> bool
+ExBoard.BoundGridView.PinnedColumnCount.get -> int
+ExBoard.BoundGridView.Reorder(System.Collections.Generic.IReadOnlyList<string!>! order) -> bool
+ExBoard.BoundGridView.Resize(ExGrid.ColumnWidthChange! change) -> bool
+ExBoard.BoundGridView.ViewState.get -> ExGrid.GridViewState!
 ExBoard.BoundPivotView
+ExBoard.BoundPivotView.Change.get -> ExBoard.BoardPivotChange?
+ExBoard.BoundPivotView.ChangeLayout(ExPivot.Engine.PivotLayout! layout) -> void
 ExBoard.BoundPivotView.Layout.get -> ExPivot.Engine.PivotLayout!
 ExBoard.BoundPivotView.Source.get -> ExPivot.Engine.SnapshotPivotSource!
 ExBoard.BoundView
@@ -119,7 +172,12 @@ ExBoard.Components.ExBoard.Culture.get -> System.Globalization.CultureInfo?
 ExBoard.Components.ExBoard.Culture.set -> void
 ExBoard.Components.ExBoard.Data.get -> System.Collections.Generic.IReadOnlyDictionary<string!, ExGrid.Data.Snapshot!>!
 ExBoard.Components.ExBoard.Data.set -> void
+ExBoard.Components.ExBoard.Diff.get -> ExBoard.BoardDiff?
+ExBoard.Components.ExBoard.Diff.set -> void
+ExBoard.Components.ExBoard.Dispose() -> void
 ExBoard.Components.ExBoard.ExBoard() -> void
+ExBoard.Components.ExBoard.OnDiff.get -> Microsoft.AspNetCore.Components.EventCallback<ExBoard.BoardDiff!>
+ExBoard.Components.ExBoard.OnDiff.set -> void
 ExBoard.Components.ExBoard.OnOutput.get -> Microsoft.AspNetCore.Components.EventCallback<ExBoard.BoardOutput!>
 ExBoard.Components.ExBoard.OnOutput.set -> void
 ExBoard.Components.ExBoard.PivotChrome.get -> ExPivot.Chrome.IPivotChrome?
@@ -140,6 +198,9 @@ override ExBoard.BoardChartView.Data.get -> System.Collections.Generic.IReadOnly
 override ExBoard.BoardChartView.Equals(object? obj) -> bool
 override ExBoard.BoardChartView.GetHashCode() -> int
 override ExBoard.BoardChartView.ToString() -> string!
+override ExBoard.BoardDiffReading.Equals(object? obj) -> bool
+override ExBoard.BoardDiffReading.GetHashCode() -> int
+override ExBoard.BoardDiffReading.ToString() -> string!
 override ExBoard.BoardGridView.<Clone>$() -> ExBoard.BoardGridView!
 override ExBoard.BoardGridView.Data.get -> System.Collections.Generic.IReadOnlyList<string!>!
 override ExBoard.BoardGridView.Equals(object? obj) -> bool
@@ -166,6 +227,7 @@ override ExBoard.BoardView.Equals(object? obj) -> bool
 override ExBoard.BoardView.GetHashCode() -> int
 override ExBoard.BoardView.ToString() -> string!
 override ExBoard.Components.ExBoard.OnParametersSet() -> void
+override ExBoard.Components.ExBoard.OnParametersSetAsync() -> System.Threading.Tasks.Task!
 override sealed ExBoard.BoardChartView.Equals(ExBoard.BoardView? other) -> bool
 override sealed ExBoard.BoardGridView.Equals(ExBoard.BoardView? other) -> bool
 override sealed ExBoard.BoardPivotView.Equals(ExBoard.BoardView? other) -> bool
@@ -173,6 +235,10 @@ static ExBoard.BoardCell.operator !=(ExBoard.BoardCell? left, ExBoard.BoardCell?
 static ExBoard.BoardCell.operator ==(ExBoard.BoardCell? left, ExBoard.BoardCell? right) -> bool
 static ExBoard.BoardChartView.operator !=(ExBoard.BoardChartView? left, ExBoard.BoardChartView? right) -> bool
 static ExBoard.BoardChartView.operator ==(ExBoard.BoardChartView? left, ExBoard.BoardChartView? right) -> bool
+static ExBoard.BoardDiff.Empty.get -> ExBoard.BoardDiff!
+static ExBoard.BoardDiff.Read(string! json) -> ExBoard.BoardDiff!
+static ExBoard.BoardDiffReading.operator !=(ExBoard.BoardDiffReading? left, ExBoard.BoardDiffReading? right) -> bool
+static ExBoard.BoardDiffReading.operator ==(ExBoard.BoardDiffReading? left, ExBoard.BoardDiffReading? right) -> bool
 static ExBoard.BoardGridView.operator !=(ExBoard.BoardGridView? left, ExBoard.BoardGridView? right) -> bool
 static ExBoard.BoardGridView.operator ==(ExBoard.BoardGridView? left, ExBoard.BoardGridView? right) -> bool
 static ExBoard.BoardLink.operator !=(ExBoard.BoardLink? left, ExBoard.BoardLink? right) -> bool
@@ -188,7 +254,7 @@ static ExBoard.BoardRow.operator ==(ExBoard.BoardRow? left, ExBoard.BoardRow? ri
 static ExBoard.BoardSpec.Read(string! json) -> ExBoard.BoardReading!
 static ExBoard.BoardView.operator !=(ExBoard.BoardView? left, ExBoard.BoardView? right) -> bool
 static ExBoard.BoardView.operator ==(ExBoard.BoardView? left, ExBoard.BoardView? right) -> bool
-static ExBoard.BoundBoard.Bind(ExBoard.BoardReading! board, System.Collections.Generic.IReadOnlyDictionary<string!, ExGrid.Data.Snapshot!>! data, System.Globalization.CultureInfo? culture = null) -> ExBoard.BoundBoard!
+static ExBoard.BoundBoard.Bind(ExBoard.BoardReading! board, System.Collections.Generic.IReadOnlyDictionary<string!, ExGrid.Data.Snapshot!>! data, System.Globalization.CultureInfo? culture = null, ExBoard.BoardDiff? diff = null) -> ExBoard.BoundBoard!
 virtual ExBoard.BoardView.EqualityContract.get -> System.Type!
 virtual ExBoard.BoardView.Equals(ExBoard.BoardView? other) -> bool
 virtual ExBoard.BoardView.PrintMembers(System.Text.StringBuilder! builder) -> bool

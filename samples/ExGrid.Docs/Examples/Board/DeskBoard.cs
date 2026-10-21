@@ -47,4 +47,19 @@ public static class DeskBoard
             return (null, null, refused.Path.Length == 0 ? refused.Message : $"{refused.Path}: {refused.Message}");
         }
     }
+
+    // The user's changes read back, as the host does next time. What no longer fits the Board is
+    // dropped as it binds, and the Board says so above its views; a Diff this reader cannot read is
+    // refused whole.
+    public static (BoardDiff? Diff, string? Refusal) LayOver(string diff)
+    {
+        try
+        {
+            return (BoardDiff.Read(diff), null);
+        }
+        catch (BoardRefusedException refused)
+        {
+            return (null, $"The changes kept: {refused.Path}: {refused.Message}");
+        }
+    }
 }
