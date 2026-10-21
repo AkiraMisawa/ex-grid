@@ -3093,7 +3093,14 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             }, restDelayMs);
         }
     };
-    const onPointerLeave = () => {
+    const onPointerLeave = (event) => {
+        // A drag's moves held behind its press (holdDragMove) are handed to Blazor at their turn, after
+        // the leaving Blazor heard as it came: the last of them, in the edge band, armed an auto-scroll
+        // nothing stopped, and the selection grew row by row with the pointer long gone (WB-13, Server
+        // host, CI, 2026-10-21). So the leaving is held behind them too, and handed on after the last.
+        if (core && !replaying && event.isTrusted && held.some((k) => k.dragMove === true)) {
+            held.push({ press: 'mouseleave', claim: true, target: root, init: { ...mouseInit(event), bubbles: false } });
+        }
         clearTimeout(restTimer);
         lastPointerRow = -2;
         // Unconditionally: a message opened while rests were reported outlives the

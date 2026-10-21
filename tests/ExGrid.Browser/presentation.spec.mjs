@@ -1,4 +1,4 @@
-import { test, expect, alterPage, circuitQuiet, twoFrames } from './fixtures.mjs';
+import { test, expect, alterPage, circuitQuiet, twoFrames, holdAnswers, settled } from './fixtures.mjs';
 import { painted, sameColour } from './pixels.mjs';
 import { expectActiveDescendant } from './keyboard.mjs';
 import { sheet, openSheet, pressCell as pressSheetCell, editor as sheetEditor } from './sheet-helpers.mjs';
@@ -577,6 +577,38 @@ test('the pointer leaving the grid stops the auto-scroll (SL-14/SL-15)', async (
     // spec-lint: fixed-wait: the pointer's return with the button up is no input the gate takes, and the band's steps run on the script's own timer, which the Settled Mark does not cover (ADR-0220, As built); nothing marks that no scroll will start
     await page.waitForTimeout(400);
     expect(await g.locator('.ex-scroller').evaluate((el) => el.scrollTop)).toBe(afterWait);
+});
+
+// The same leaving made at machine speed, before the press is answered: the drag's moves are held
+// behind the press and handed on at its turn, and the leaving with them, after the last. Handed on
+// ahead of them, it stopped nothing, and the move in the band armed a scroll that never ended
+// (WB-13, Server host, CI, 2026-10-21).
+test('a drag that leaves the grid before its press is answered stops the auto-scroll at its turn (SL-14, ADR-0240)', async ({ page }) => {
+    await open(page);
+    const g = grid(page);
+    const box = await g.locator('.ex-scroller').boundingBox();
+
+    // On a circuit the host's answers are held across the gesture, so every move and the leaving
+    // are made while the press is unanswered, however fast the browser takes them (ADR-0220).
+    await holdAnswers(true);
+    await page.mouse.move(box.x + 60, box.y + 60);
+    await page.mouse.down();
+    await page.mouse.move(box.x + 60, box.y + box.height - 6, { steps: 4 });
+    await page.mouse.move(box.x + 60, box.y + box.height + 200, { steps: 4 });
+    await page.mouse.up();
+    await holdAnswers(false);
+    await settled(g);
+    await circuitQuiet();
+
+    // Stopped by the leaving within a step or two of the move in the band: far short of a page, where
+    // a scroll nothing stopped runs on to the last row.
+    const { atRest, page: onePage } = await g.locator('.ex-scroller')
+        .evaluate((el) => ({ atRest: el.scrollTop, page: el.clientHeight }));
+    expect(atRest, 'the scroll stopped when the pointer left (SL-14)').toBeLessThan(onePage);
+    // spec-lint: fixed-wait: the band's steps run on the core's own timer, which the Settled Mark does not cover (ADR-0220, As built); nothing marks that no further step will come
+    await page.waitForTimeout(800);
+    expect(await g.locator('.ex-scroller').evaluate((el) => el.scrollTop), 'no runaway scroll after the pointer left (SL-14)')
+        .toBe(atRest);
 });
 
 test('the Blazor error UI never appears (CON-5)', async ({ page }) => {
