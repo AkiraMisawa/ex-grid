@@ -19,7 +19,8 @@ public sealed class GridInputText
     /// <summary>The caret offset, or -1 when the field has no text selection.</summary>
     public int Caret { get; set; } = -1;
 
-    /// <summary>The browser field text's revision, shared by inputs carrying the same reading;
-    /// 0 for a caller that does not supply revisions.</summary>
+    /// <summary>The browser input event's revision, shared by inputs carrying that text;
+    /// -1 for a rendered value with no matching input event in this edit,
+    /// or 0 for a caller that does not supply revisions.</summary>
     public long Revision { get; set; }
 }

@@ -98,3 +98,9 @@ reading the last argument as the input number after the field payload was append
 reads the number's actual position and requires positive safe integers. Its original checks
 of count, order, replies and the answered stamp remain. `input-journal.spec.mjs` is added to
 the next related gate; none of the original eleven specs is removed.
+
+Normal CI then exposed a cell-to-Formula-Bar transfer adopting the bar's older rendered value
+as new typing. The [surface-transfer record](../../responsive-touch/hunt-2026-10-21-field-surface-transfer.md)
+records the red/green reproduction and distinguishes native input from a rendered reading.
+`declarations.spec.mjs`, covering Formula Bar transfers and F4, is added to the existing twelve
+related specs. Omitting it from the earlier scope was a coverage gap; no selected spec is removed.

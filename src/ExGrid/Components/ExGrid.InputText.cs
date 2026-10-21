@@ -24,9 +24,9 @@ public partial class ExGrid<TRow>
             return;
         // Several inputs can leave the browser before the first one's render returns. Its
         // answer may have rewritten the field (Point, F4); the same reading is not new typing.
-        if (text.Revision > 0)
+        if (text.Revision != 0)
         {
-            if (text.Revision <= _adoptedInputTextRevision)
+            if (text.Revision < 0 || text.Revision <= _adoptedInputTextRevision)
             {
                 if (text.Surface is "cell" or "bar" && string.Equals(text.Text, _editText, StringComparison.Ordinal))
                     AdoptKeyText(text.Text, text.Caret);

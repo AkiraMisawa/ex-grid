@@ -150,6 +150,8 @@
             still waits for its Apply or OK command.
             If the command rewrites an open edit, as Point does when inserting a Reference, its answer
             survives the following release; only fresh typing replaces that text.
+            Moving from the Cell Editor to the Formula Bar also keeps the full text already typed;
+            the bar's older display cannot replace it while the Server catches up.
         </p>
         <DocsExample Title="Text before the next command" Builtin="typeof(OrderedFieldText)"
                      Mud="typeof(OrderedFieldTextMud)" Files="@(["Examples/Grid/OrderedFieldText.razor"])">

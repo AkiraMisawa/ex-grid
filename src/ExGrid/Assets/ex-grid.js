@@ -1151,16 +1151,17 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // message for typing. A press can already have moved DOM focus by its click; the standing
     // editor still supplies that edit's text. Nested grids and popover drafts belong elsewhere.
     let fieldTextRevision = 0;
+    let fieldTextEdit = 0;
     const fieldTexts = new WeakMap();
     const readFieldText = (field, surface, includeText) => {
-        let reading = fieldTexts.get(field);
-        if (reading === undefined || reading.text !== field.value) {
-            reading = { text: field.value, revision: ++fieldTextRevision };
-            fieldTexts.set(field, reading);
-        }
+        const reading = fieldTexts.get(field);
+        const edit = surface === 'name' ? 0 : fieldTextEdit;
+        // Reading a render is not typing. The other surface of the same edit can still show
+        // an older render when the keyboard enters it, and must not overwrite the newer text.
+        const revision = reading?.text === field.value && reading.edit === edit ? reading.revision : -1;
         return {
-            surface, ...(includeText ? { text: reading.text } : {}),
-            caret: field.selectionStart ?? -1, revision: reading.revision,
+            surface, ...(includeText ? { text: field.value } : {}),
+            caret: field.selectionStart ?? -1, revision,
         };
     };
     const inputText = (includeText = true) => {
@@ -1203,9 +1204,10 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         noteSurface(input);
         const surface = ownNameBox(input)?.closest('.ex-name-box') ?? ownSurface(input);
         if (surface?.hasAttribute('data-ex-mode-text') && isTextField(input)) {
-            // Typing away and back to the same value is still new typing. A render changes
-            // a field without this event; its next reading notices the changed value above.
-            fieldTexts.set(input, { text: input.value, revision: ++fieldTextRevision });
+            // Typing away and back to the same value is still new typing. A render cannot
+            // create a revision, and the persistent bar's typing belongs to this edit only.
+            fieldTexts.set(input, { text: input.value, revision: ++fieldTextRevision,
+                edit: ownNameBox(input) !== null ? 0 : fieldTextEdit });
             // Drop an old surface when a render replaced it, before adding its replacement.
             typingAnswered();
             typedFields.set(surface, input);
@@ -4841,6 +4843,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         // event.target, which is true whether focus arrived by click or by key.)
         setEditing: (mode, reportsCaret, cyclesReferences, version) => {
             const opened = editing === 'none' && mode !== 'none';
+            if (opened) fieldTextEdit++;
             editing = mode;
             editingVersion = Number(version) || 0;
             reportCaret = reportsCaret === true;

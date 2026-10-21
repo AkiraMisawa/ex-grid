@@ -392,11 +392,18 @@ restore a Name Box submission that has already ended.
 The first implementation treated each carried reading as fresh typing. The widened Server
 run exposed the mistake: a press inserted a Reference, then its acknowledgement or release
 carried the same pre-render text and erased that Reference. The field reading now carries a
-revision shared by inputs that saw the same text. The core adopts a revision once; unchanged
-text can still report a moved caret. The existing input listener advances the revision for
-new typing even when it returns to the same value, and a changed field value also advances it
-when read. These revisions add neither an input number nor an interop message per character.
+revision shared by inputs that carry the same browser input event's text. The core adopts a
+revision once; unchanged text can still report a moved caret. The existing input listener
+advances the revision for new typing even when it returns to the same value. A rendered value
+with no matching input event in this edit is not fresh typing and cannot replace the core's
+newer text. The persistent Formula Bar's input belongs to the edit in which it was typed.
+These revisions add neither an input number nor an interop message per character.
 Keys carry the revision alongside their existing text argument, without repeating the string.
+
+The first revision fix also advanced a revision when reading a changed value, which was wrong:
+normal CI's cell-to-bar typing case showed the bar's older render acquiring a new revision and
+overwriting the cell's typing. Revisions now originate only in the existing input listener.
+Reading a surface or receiving a render does not create one.
 
 Typing still uses its existing Blazor input message. The existing root input listener remembers
 only typed owned surfaces, and the Settled Mark remains off until their rendered text agrees
