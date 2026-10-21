@@ -405,17 +405,18 @@ for (const chrome of ['builtin', 'mud']) {
             await clickCell(grid, 'B2');
             await settled(grid);
 
-            // Pressed on a tab and taken off the strip at once, before the press's answer could have been
-            // drawn: the strip hears the pointer leave whatever it has drawn.
+            // Every place is read before the first input, so no reading waits on a grid still answering.
             const from = await tab(page, 'Claim').boundingBox();
             const away = await cell(grid, 'C3').boundingBox();
+            const start = await cell(grid, 'B2').boundingBox();
+            const to = await tab(page, 'Summary').boundingBox();
+            // Pressed on a tab and taken off the strip at once, before the press's answer could have been
+            // drawn: the strip hears the pointer leave whatever it has drawn.
             await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
             await page.mouse.down();
             await page.mouse.move(away.x + away.width / 2, away.y + away.height / 2);
             await page.mouse.up();
             // A press on a cell, released on the other tab: no drag of a tab was under way.
-            const start = await cell(grid, 'B2').boundingBox();
-            const to = await tab(page, 'Summary').boundingBox();
             await page.mouse.move(start.x + start.width / 2, start.y + start.height / 2);
             await page.mouse.down();
             await page.mouse.move(to.x + to.width / 2, to.y + to.height / 2, { steps: 4 });
