@@ -1,6 +1,6 @@
 # 11: A pivot's cell links
 
-Status: ready-for-agent
+Status: done
 Roadmap: internal
 
 ADR-0340 (Q5): a selection of a pivot's cells narrows the views a link from the pivot reaches, by the

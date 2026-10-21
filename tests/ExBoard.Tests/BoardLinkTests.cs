@@ -3,6 +3,7 @@ using ExGrid;
 using ExGrid.Components;
 using ExGrid.Data;
 using ExGrid.Selection;
+using ExPivot.Engine;
 using BoardComponent = ExBoard.Components.ExBoard;
 
 namespace ExBoard.Tests;
@@ -76,8 +77,10 @@ public sealed class BoardLinkTests : BunitContext
 
     public static TheoryData<string, string, string> Refusals => new()
     {
-        { """{"from": "byDesk", "to": ["blotter"], "on": ["desk"]}""", "links[0].from", "The link starts at view 'byDesk', a pivot; a link starts at a grid, whose selected rows narrow." },
-        { """{"from": "curve", "to": ["blotter"], "on": ["desk"]}""", "links[0].from", "The link starts at view 'curve', a chart; a link starts at a grid, whose selected rows narrow." },
+        { """{"from": "curve", "to": ["blotter"], "on": ["desk"]}""", "links[0].from", "The link starts at view 'curve', a chart; a link starts at a grid, whose selected rows narrow, or a pivot, whose selected cells do." },
+        { """{"from": "byDesk", "to": ["blotter"], "on": ["month"]}""", "links[0].on[0]", "The link compares field 'month', which pivot 'byDesk' does not place in its rows or columns; a pivot's cell names the items of its rows and columns." },
+        { """{"from": "byDesk", "to": ["blotter"], "on": ["pnl"]}""", "links[0].on[0]", "The link compares field 'pnl', which pivot 'byDesk' does not place in its rows or columns; a pivot's cell names the items of its rows and columns." },
+        { """{"from": "byDesk", "to": ["quotes"], "on": ["desk"]}""", "links[0].on[0]", "The link compares column 'desk', a text in input 'trades' and a integer in input 'quotes'; a value is compared only with one of its kind." },
         { """{"from": "book", "to": ["blotter"], "on": ["desk"]}""", "links[0].from", "The link starts at view 'book', which the Board does not have." },
         { """{"from": "blotter", "to": ["byBook"], "on": ["desk"]}""", "links[0].to[0]", "The link narrows view 'byBook', which the Board does not have." },
         { """{"from": "blotter", "to": ["blotter"], "on": ["desk"]}""", "links[0].to[0]", "The link narrows its own view 'blotter'; a view's selection narrows other views." },
@@ -243,6 +246,86 @@ public sealed class BoardLinkTests : BunitContext
         Assert.Equal(["FX"], Desks((BoundGridView)board["other"]));
     }
 
+    private const string Matrix = """{"id": "matrix", "pivot": {"data": "trades", "layout": {"version": 1, "rows": [{"field": "desk"HIDDEN}], "columns": [{"field": "month"}], "values": [{"field": "pnl", "aggregation": "sum"}]}}}""";
+
+    private static PivotCellItems Cell(string? desk = null, string? month = null) => new(
+        desk is null ? [] : [new PivotFieldItem("desk", PivotItemKey.Text(desk))],
+        month is null ? [] : [new PivotFieldItem("month", PivotItemKey.Text(month))]);
+
+    private static BoundBoard MatrixBoard(string links, string hidden = "")
+    {
+        var reading = BoardSpec.Read(Board(links, $"{Blotter}, {Other}, {Matrix.Replace("HIDDEN", hidden, StringComparison.Ordinal)}"));
+        return BoundBoard.Bind(reading, Data(reading));
+    }
+
+    [Fact] // ADR-0340 Q5: a pivot's cell stands for the rows under it; a subtotal for every Item below, a grand total for all
+    public void A_pivot_cell_narrows_by_the_rows_under_it()
+    {
+        var board = MatrixBoard("""{"from": "matrix", "to": ["blotter"], "on": ["desk", "month"]}""");
+        var link = board.Board.Links[0];
+
+        Assert.Equal([["Rates", "Jan"]], board.ConditionOf(link, [Cell("Rates", "Jan")])!.Values);
+        Assert.Equal([["Rates", "Jan"], ["Rates", "Feb"]], board.ConditionOf(link, [Cell("Rates")])!.Values);
+        Assert.Equal([["Credit", "Feb"], ["Rates", "Feb"]], board.ConditionOf(link, [Cell(month: "Feb")])!.Values);
+        Assert.Equal(5, board.ConditionOf(link, [Cell()])!.Values.Count);
+        // Two cells are the rows under either, and a cell over no rows lets nothing through.
+        Assert.Equal([["Rates", "Jan"], ["FX", "Jan"]], board.ConditionOf(link, [Cell("Rates", "Jan"), Cell("FX")])!.Values);
+        Assert.Empty(board.ConditionOf(link, [Cell("FX", "Feb")])!.Values);
+        Assert.Null(board.ConditionOf(link, []));
+    }
+
+    [Fact] // ADR-0340 Q5: an Item the pivot hides is under no cell, its grand total included
+    public void A_hidden_item_is_under_no_cell()
+    {
+        var board = MatrixBoard("""{"from": "matrix", "to": ["blotter"], "on": ["desk"]}""", """, "hiddenItems": [{"kind": "text", "value": "FX"}]""");
+
+        Assert.Equal([["Rates"], ["Credit"]], board.ConditionOf(board.Board.Links[0], [Cell()])!.Values);
+    }
+
+    [Fact] // ADR-0340 Q5: a selection is read by the kind of view it starts at
+    public void A_selection_is_read_by_the_kind_of_its_view()
+    {
+        var board = MatrixBoard("""{"from": "matrix", "to": ["blotter"], "on": ["desk"]}, {"from": "other", "to": ["blotter"], "on": ["desk"]}""");
+
+        Assert.Throws<ArgumentException>(() => board.ConditionOf(board.Board.Links[0], Rows(0)));
+        Assert.Throws<ArgumentException>(() => board.ConditionOf(board.Board.Links[1], [Cell()]));
+        Assert.Throws<ArgumentException>(() => board.SelectCells("other", [Cell()]));
+        // A cell naming a field the pivot's data does not hold would constrain nothing: refused, not let through.
+        Assert.Throws<ArgumentException>(() => board.ConditionOf(board.Board.Links[0], [new PivotCellItems([new PivotFieldItem("book", PivotItemKey.Text("A"))], [])]));
+    }
+
+    [Fact] // ADR-0340 Q5 / ADR-0011: selected cells narrow; none, or cells the pivot could not read, restore
+    public void Selected_cells_narrow_and_unread_cells_restore()
+    {
+        var board = MatrixBoard("""{"from": "matrix", "to": ["blotter"], "on": ["desk"]}""");
+        var blotter = (BoundGridView)board["blotter"];
+
+        Assert.True(board.SelectCells("matrix", [Cell("Credit", "Jan")]));
+        Assert.Equal(["Credit", "Credit"], Desks(blotter));
+        Assert.False(board.SelectCells("matrix", [Cell("Credit", "Feb")]));
+
+        Assert.True(board.SelectCells("matrix", null));
+        Assert.Equal(5, blotter.Grid.Source.Window.Count);
+        board.SelectCells("matrix", [Cell("FX")]);
+        Assert.True(board.SelectCells("matrix", []));
+        Assert.Equal(5, blotter.Grid.Source.Window.Count);
+    }
+
+    [Fact] // ADR-0340 Q5 / ADR-0011: a pivot narrowed again drops its selection, and lets go of what it narrowed
+    public void A_pivot_narrowed_again_lets_go_of_what_its_cells_narrowed()
+    {
+        var board = MatrixBoard("""{"from": "other", "to": ["matrix"], "on": ["month"]}, {"from": "matrix", "to": ["blotter"], "on": ["desk"]}""");
+        var blotter = (BoundGridView)board["blotter"];
+        board.SelectCells("matrix", [Cell("Rates")]);
+        Assert.Equal(2, blotter.Grid.Source.Window.Count);
+
+        board.Select("other", Rows(0));
+
+        Assert.Equal(3, ((BoundPivotView)board["matrix"]).Source.Snapshot.RowCount);
+        Assert.Null(board.ConditionOf(board.Board.Links[1]));
+        Assert.Equal(5, blotter.Grid.Source.Window.Count);
+    }
+
     [Fact] // ADR-0340 Q5: the grid's raised selection narrows, and its drop, raised as an empty one, restores
     public async Task The_board_narrows_on_the_selection_its_grid_raises()
     {
@@ -259,5 +342,35 @@ public sealed class BoardLinkTests : BunitContext
 
         await cut.InvokeAsync(() => blotter.Instance.SelectionChanged.InvokeAsync(GridSelection.Empty));
         Assert.Equal(5, ((ExPivot.Engine.SnapshotPivotSource)Assert.Single(pivots).Instance.Source!).Snapshot.RowCount);
+    }
+
+    [Fact] // ADR-0340 Q5: the pivot's raised selection narrows by its cells; one it cannot read narrows nothing, aloud
+    public async Task The_board_narrows_on_the_cells_its_pivot_raises()
+    {
+        JSInterop.Mode = JSRuntimeMode.Loose;
+        SetRendererInfo(new Microsoft.AspNetCore.Components.RendererInfo("WebAssembly", isInteractive: true));
+        var reading = BoardSpec.Read(Board("""{"from": "matrix", "to": ["blotter"], "on": ["desk"]}""", $"{Blotter}, {Matrix.Replace("HIDDEN", "", StringComparison.Ordinal)}"));
+        var cut = Render<BoardComponent>(ps => ps.Add(b => b.Board, reading).Add(b => b.Data, Data(reading)));
+        var pivot = cut.FindComponent<ExPivot.Components.ExPivot>();
+        var rows = () => ((InMemoryGridSource<ShapedRow>)cut.FindComponent<ExGrid<ShapedRow>>().Instance.Source!).Window.Count;
+        var extent = new GridExtent(100, 10);
+        GridSelection At(int row, int rows = 1) => GridSelection.Empty.Place(new SelectionRange(row, 2, rows, 1), new CellPosition(row, 2), extent);
+        var status = () => cut.FindAll("[data-ex-view=matrix] .ex-board-link-status").Select(s => s.TextContent).SingleOrDefault();
+
+        // Credit, FX, Rates, Grand Total under Feb, Jan, Grand Total: FX in Jan.
+        await cut.InvokeAsync(() => pivot.Instance.SelectionChanged.InvokeAsync(At(1)));
+        Assert.Equal(1, rows());
+        Assert.Null(status());
+
+        // A new layout is a new report: what its cells narrowed is let go at once.
+        await cut.InvokeAsync(() => pivot.Instance.LayoutChanged.InvokeAsync(pivot.Instance.Layout! with { Columns = [] }));
+        Assert.Equal(5, rows());
+
+        await cut.InvokeAsync(() => pivot.Instance.SelectionChanged.InvokeAsync(At(0, 50)));
+        Assert.Equal(5, rows());
+        Assert.Equal("The selection cannot be read from the report as drawn, so it narrows nothing.", status());
+
+        await cut.InvokeAsync(() => pivot.Instance.SelectionChanged.InvokeAsync(GridSelection.Empty));
+        Assert.Null(status());
     }
 }

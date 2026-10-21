@@ -41,6 +41,8 @@ public partial class ExBoard : IDisposable
     private readonly Dictionary<string, EventCallback<PivotLayout>> _layoutChanged = new(StringComparer.Ordinal);
     private readonly Dictionary<string, EventCallback<GridSelection>> _selectionChanged = new(StringComparer.Ordinal);
     private readonly Dictionary<string, string> _confirmStatus = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, string> _linkStatus = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, global::ExPivot.Components.ExPivot> _pivots = new(StringComparer.Ordinal);
     private readonly Dictionary<string, global::ExGrid.Components.ExGrid<global::ExGrid.ShapedRow>> _grids = new(StringComparer.Ordinal);
 
     /// <summary>The Board to draw, as <see cref="BoardSpec.Read(string)"/> read it.</summary>
@@ -120,7 +122,9 @@ public partial class ExBoard : IDisposable
         _chartChanges.Clear();
         _selectionChanged.Clear();
         _confirmStatus.Clear();
+        _linkStatus.Clear();
         _grids.Clear();
+        _pivots.Clear();
         try
         {
             _bound = BoundBoard.Bind(Board, Data, Culture, laid);
@@ -149,7 +153,13 @@ public partial class ExBoard : IDisposable
                         EventCallback.Factory.Create<int>(this, count => Changed(() => grid.Pin(count))));
                     break;
                 case BoundPivotView pivot:
-                    _layoutChanged[id] = EventCallback.Factory.Create<PivotLayout>(this, layout => Changed(() => pivot.ChangeLayout(layout)));
+                    // A new layout is a new report, so what its cells narrowed is let go now, as a narrowing
+                    // of it lets go (ADR-0011), not when its grid next raises the dropped selection.
+                    _layoutChanged[id] = EventCallback.Factory.Create<PivotLayout>(this, layout => Changed(() =>
+                    {
+                        pivot.ChangeLayout(layout);
+                        Select(id, GridSelection.Empty);
+                    }));
                     break;
                 case BoundChartView chart:
                     _chartChanges[id] = new ChartChanges(
@@ -190,9 +200,42 @@ public partial class ExBoard : IDisposable
     {
         if (_bound is not { } bound)
             return;
-        bound.Select(from, selection);
-        foreach (var output in bound.Board.Outputs.Where(o => o.From == from))
-            _confirmStatus.Remove(output.Name);
+        if (bound[from] is BoundPivotView)
+        {
+            // A pivot's cells narrow by the Items they stand for, read as the selection is raised, from
+            // the report its grid holds then. One the pivot cannot read narrows nothing, and says so.
+            var cells = selection.Ranges.Count == 0 ? [] : _pivots.GetValueOrDefault(from)?.ItemsOf(selection);
+            bound.SelectCells(from, cells);
+            if (cells is null)
+                _linkStatus[from] = "The selection cannot be read from the report as drawn, so it narrows nothing.";
+            else
+                _linkStatus.Remove(from);
+        }
+        else
+        {
+            bound.Select(from, selection);
+            foreach (var output in bound.Board.Outputs.Where(o => o.From == from))
+                _confirmStatus.Remove(output.Name);
+        }
+        // A pivot narrowed again has let go of its selection, so what was said of it goes too.
+        foreach (var reached in Reached(bound.Board, from))
+            _linkStatus.Remove(reached);
+    }
+
+    // The views a selection in <paramref name="from"/> narrows, along links, itself not included.
+    private static HashSet<string> Reached(BoardReading board, string from)
+    {
+        var reached = new HashSet<string>(StringComparer.Ordinal);
+        var next = new Queue<string>([from]);
+        while (next.TryDequeue(out var view))
+        {
+            foreach (var target in board.Links.Where(l => l.From == view).SelectMany(l => l.To))
+            {
+                if (reached.Add(target))
+                    next.Enqueue(target);
+            }
+        }
+        return reached;
     }
 
     private async Task ConfirmAsync(string output)

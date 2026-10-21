@@ -125,12 +125,14 @@ ExBoard.BoundBoard.Board.get -> ExBoard.BoardReading!
 ExBoard.BoundBoard.CanConfirm(string! name) -> bool
 ExBoard.BoundBoard.ConditionOf(ExBoard.BoardLink! link) -> ExBoard.LinkCondition?
 ExBoard.BoundBoard.ConditionOf(ExBoard.BoardLink! link, ExGrid.Selection.GridSelection! selection) -> ExBoard.LinkCondition?
+ExBoard.BoundBoard.ConditionOf(ExBoard.BoardLink! link, System.Collections.Generic.IReadOnlyList<ExPivot.Engine.PivotCellItems!>! cells) -> ExBoard.LinkCondition?
 ExBoard.BoundBoard.Confirm(string! name) -> ExBoard.BoardOutput?
 ExBoard.BoundBoard.Data.get -> System.Collections.Generic.IReadOnlyDictionary<string!, ExGrid.Data.Snapshot!>!
 ExBoard.BoundBoard.Diff.get -> ExBoard.BoardDiff!
 ExBoard.BoundBoard.Dropped.get -> System.Collections.Generic.IReadOnlyList<string!>!
 ExBoard.BoundBoard.Narrow(ExBoard.BoardLink! link, ExBoard.LinkCondition? condition) -> void
 ExBoard.BoundBoard.Select(string! from, ExGrid.Selection.GridSelection! selection) -> bool
+ExBoard.BoundBoard.SelectCells(string! from, System.Collections.Generic.IReadOnlyList<ExPivot.Engine.PivotCellItems!>? cells) -> bool
 ExBoard.BoundBoard.this[string! id].get -> ExBoard.BoundView!
 ExBoard.BoundBoard.Views.get -> System.Collections.Generic.IReadOnlyList<ExBoard.BoundView!>!
 ExBoard.BoundChartView

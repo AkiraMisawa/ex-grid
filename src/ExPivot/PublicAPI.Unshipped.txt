@@ -1,1 +1,2 @@
 #nullable enable
+ExPivot.Components.ExPivot.ItemsOf(ExGrid.Selection.GridSelection! selection) -> System.Collections.Generic.IReadOnlyList<ExPivot.Engine.PivotCellItems!>?

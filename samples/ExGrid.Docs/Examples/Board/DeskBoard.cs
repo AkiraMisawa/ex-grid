@@ -21,7 +21,8 @@ public static class DeskBoard
            {"id": "daily", "title": "P&L by day", "chart": {"version": 1, "axis": {"values": "dates"},
              "series": [{"id": "pnl", "name": "P&L", "kind": "observation", "data": "trades", "x": "day", "y": "pnl"}]}}],
          "layout": [{"views": ["blotter", "byTrader"], "widths": [2, 1], "height": 260}, {"views": ["daily"], "height": 300}],
-         "links": [{"from": "blotter", "to": ["byTrader", "daily"], "on": ["desk"]}],
+         "links": [{"from": "blotter", "to": ["byTrader", "daily"], "on": ["desk"]},
+                   {"from": "byTrader", "to": ["daily"], "on": ["trader"]}],
          "outputs": {"review": {"from": "blotter", "on": ["day", "trader"], "confirm": "Send to review"}}}
         """;
 

@@ -1,1 +1,14 @@
 #nullable enable
+ExPivot.Engine.PivotCellItems
+ExPivot.Engine.PivotCellItems.<Clone>$() -> ExPivot.Engine.PivotCellItems!
+ExPivot.Engine.PivotCellItems.Column.get -> System.Collections.Generic.IReadOnlyList<ExPivot.Engine.PivotFieldItem!>!
+ExPivot.Engine.PivotCellItems.Deconstruct(out System.Collections.Generic.IReadOnlyList<ExPivot.Engine.PivotFieldItem!>! Row, out System.Collections.Generic.IReadOnlyList<ExPivot.Engine.PivotFieldItem!>! Column) -> void
+ExPivot.Engine.PivotCellItems.Equals(ExPivot.Engine.PivotCellItems? other) -> bool
+ExPivot.Engine.PivotCellItems.Items.get -> System.Collections.Generic.IEnumerable<ExPivot.Engine.PivotFieldItem!>!
+ExPivot.Engine.PivotCellItems.PivotCellItems(System.Collections.Generic.IReadOnlyList<ExPivot.Engine.PivotFieldItem!>! Row, System.Collections.Generic.IReadOnlyList<ExPivot.Engine.PivotFieldItem!>! Column) -> void
+ExPivot.Engine.PivotCellItems.Row.get -> System.Collections.Generic.IReadOnlyList<ExPivot.Engine.PivotFieldItem!>!
+override ExPivot.Engine.PivotCellItems.Equals(object? obj) -> bool
+override ExPivot.Engine.PivotCellItems.GetHashCode() -> int
+override ExPivot.Engine.PivotCellItems.ToString() -> string!
+static ExPivot.Engine.PivotCellItems.operator !=(ExPivot.Engine.PivotCellItems? left, ExPivot.Engine.PivotCellItems? right) -> bool
+static ExPivot.Engine.PivotCellItems.operator ==(ExPivot.Engine.PivotCellItems? left, ExPivot.Engine.PivotCellItems? right) -> bool

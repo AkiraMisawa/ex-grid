@@ -6,6 +6,7 @@ import { test, expect, circuitQuiet, dataRowCount, settled } from './fixtures.mj
 // next row's desk; a sort of the blotter drops the selection, and the narrowing goes with it (ADR-0011).
 // Its confirm hands on the chosen rows' days and traders, written under the Board as JSON. What the
 // user changes is written as the Board Diff, and "Draw again" lays it over a Board bound afresh (ticket 07).
+// The pivot's selected cells narrow the chart by trader (ticket 11).
 
 const view = (page, id) => page.locator(`[data-ex-view="${id}"]`);
 const grid = (page, id) => view(page, id).locator('.ex-grid').first();
@@ -84,4 +85,18 @@ test('ADR-0340: a sort is raised as the Board Diff, not a narrowing, and lays ov
     await expect.poll(() => shown(page)).toEqual({ limits: 3, traders: ['Aoki', 'Brandt', 'Chen', 'Dubois'], points: 5 });
     await expect(grid(page, 'blotter').locator('[role=row]:has([role=gridcell])').first()).toContainText('(42,000)');
     await expect(page.locator('.ex-board-dropped')).toHaveCount(0);
+});
+
+test('ADR-0340: a pivot\'s selected cells narrow by their items; narrowed by the blotter, it lets go of them (ADR-0011)', async ({ page }) => {
+    const trader = name => grid(page, 'byTrader').locator('[role=rowheader], [role=gridcell]').filter({ hasText: new RegExp(`^${name}$`) }).first();
+
+    await trader('Chen').click({ force: true });
+    await expect.poll(() => shown(page)).toEqual({ limits: 3, traders: ['Aoki', 'Brandt', 'Chen', 'Dubois'], points: 1 });
+    await trader('Aoki').click({ force: true, modifiers: ['ControlOrMeta'] });
+    await expect.poll(() => shown(page)).toEqual({ limits: 3, traders: ['Aoki', 'Brandt', 'Chen', 'Dubois'], points: 3 });
+
+    // The blotter narrows the pivot to FX, whose report drops its selection: the chart is FX's alone.
+    await cell(page, 'blotter', 'FX').click({ force: true });
+
+    await expect.poll(() => shown(page)).toEqual({ limits: 1, traders: ['Aoki', 'Brandt'], points: 2 });
 });

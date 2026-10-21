@@ -11,7 +11,7 @@
    blotter's selected rows narrow the pivot, the chart and the limits grid, which reads another input,
    by desk; its confirm hands on the chosen rows' days and traders, written under the Board. What the user
    changes is written as its Board Diff, and "Draw again" binds the Board afresh with it laid over
-   (ExBoard ticket 07). *@
+   (ExBoard ticket 07). The pivot's selected cells narrow the chart by trader (ExBoard ticket 11). *@
 <DemoChromeAssets>
     <Head>
         <ExPivotStylesheet />
@@ -59,7 +59,8 @@
            {"id": "daily", "title": "P&L by day", "chart": {"version": 1, "axis": {"values": "dates"},
              "series": [{"id": "pnl", "name": "P&L", "kind": "observation", "data": "trades", "x": "day", "y": "pnl"}]}}],
          "layout": [{"views": ["blotter", "byTrader", "limits"], "widths": [2, 1, 1], "height": 240}, {"views": ["daily"], "height": 260}],
-         "links": [{"from": "blotter", "to": ["byTrader", "limits", "daily"], "on": ["desk"]}],
+         "links": [{"from": "blotter", "to": ["byTrader", "limits", "daily"], "on": ["desk"]},
+                   {"from": "byTrader", "to": ["daily"], "on": ["trader"]}],
          "outputs": {"review": {"from": "blotter", "on": ["day", "trader"], "confirm": "Send to review"}}}
         """;
 

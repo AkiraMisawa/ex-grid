@@ -71,9 +71,14 @@
                                 }
                                 break;
                             case BoundPivotView pivot:
-                                <ExPivot Source="pivot.Source" Layout="pivot.Layout" LayoutChanged="_layoutChanged[cell.View]"
+                                <ExPivot @ref="_pivots[cell.View]" Source="pivot.Source" Layout="pivot.Layout" LayoutChanged="_layoutChanged[cell.View]"
                                          Chrome="Chrome" PivotChrome="PivotChrome" ShowFieldList="false"
-                                         ViewportHeight="row.Height" ViewportWidth="ViewportSize.Stretch" />
+                                         ViewportHeight="row.Height" ViewportWidth="ViewportSize.Stretch"
+                                         SelectionChanged="SelectionChangedOf(cell.View)" />
+                                @if (_linkStatus.GetValueOrDefault(cell.View) is { } said)
+                                {
+                                    <span role="status" class="ex-board-link-status">@said</span>
+                                }
                                 break;
                             case BoundChartView { Refusal: { } refusal }:
                                 @* The rows a link lets through are not a chart its spec draws: said in

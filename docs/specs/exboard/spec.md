@@ -37,4 +37,4 @@ it, and raises its outputs and its Diff.
 | 08 | [The Chart Spec as a Board view](issues/08-the-chart-spec-as-a-board-view.md) | ready-for-agent |
 | 09 | [The Board tool and the Docs Site](issues/09-the-board-tool-and-the-docs-site.md) | ready-for-agent |
 | 10 | [ExBoard ships as packages](issues/10-exboard-ships-as-packages.md) | ready-for-agent |
-| 11 | [A pivot's cell links](issues/11-a-pivot-cell-links.md) | ready-for-agent |
+| 11 | [A pivot's cell links](issues/11-a-pivot-cell-links.md) | done |
