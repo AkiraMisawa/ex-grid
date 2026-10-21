@@ -381,9 +381,18 @@ public sealed class NumberFormat : IEquatable<NumberFormat>
     /// ja-JP, where the built-in shows <c>2026/09/26</c>. <see langword="false"/> where
     /// <see cref="TryParse"/> refuses the code.
     /// </summary>
-    internal static bool TryParseAsWritten(string code, [NotNullWhen(true)] out NumberFormat? format)
+    internal static bool TryParseAsWritten(string code, [NotNullWhen(true)] out NumberFormat? format) => TryParseAsWritten(code, out format, out _);
+
+    /// <summary>
+    /// Reads a code a file stores as a format of its own, as <c>TEXT</c> reads a code (ADR-0120, ADR-0330): the invariant
+    /// spelling, as written. A code that spells a built-in shown in the culture's own form is a code of its own, recorded with
+    /// its separators escaped, so <c>m/d/yyyy</c> stored as an <c>.xlsx</c>'s own format shows <c>9/26/2026</c> under every
+    /// culture, as Excel shows it, where the built-in short date shows the culture's pattern. Says why when it cannot read
+    /// the code, as <see cref="TryParse"/> does.
+    /// </summary>
+    public static bool TryParseAsWritten(string code, [NotNullWhen(true)] out NumberFormat? format, [NotNullWhen(false)] out string? reason)
     {
-        if (!TryParse(code, out format, out _)) return false;
+        if (!TryParse(code, out format, out reason)) return false;
         var written = format.Code;
         if (LocalisedBuiltIns.Any(builtIn => string.Equals(builtIn.Code, written, StringComparison.OrdinalIgnoreCase))) format = Parse(OwnSpelling(written));
         return true;
