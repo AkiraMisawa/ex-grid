@@ -43,7 +43,9 @@
             <code>=Claim!</code> and that cell, and <kbd>Enter</kbd> puts it on Summary. "Add a
             sheet" inserts an empty Sheet after the last, named <code>Sheet</code> and the next number no Sheet has,
             the line beside the buttons says what the Sheets are now, and <kbd>Ctrl</kbd> + <kbd>Z</kbd> takes it out
-            again.
+            again. The tabs do the same themselves: press <code>+</code>, double-click Claim and type a new name, or
+            right-click a tab for Delete, Move Left, Move Right and Copy, or drag a tab onto another, and watch
+            Summary's Formulas follow.
         </DocsExample>
     </DocsSection>
 
@@ -92,6 +94,53 @@ await sheet.DoAsync("Totals", SheetEdit.MoveSheet(0));</code></pre>
             place among the Sheet's keys: what is typed straight after them, over Blazor Server too, lands on the Sheet
             they show, at its own Focus, or in the grid they hand the keyboard back to.
         </p>
+        <p>
+            The tabs also add, rename, move, copy and delete Sheets, as Excel's do, and every one of them works from
+            the keyboard alone:
+        </p>
+        <ul>
+            <li>
+                <b>Add.</b> <code>+</code> after the tabs adds an empty Sheet after the one shown;
+                <kbd>Shift</kbd> + <kbd>F11</kbd>, in the grid or on a tab, adds one before it, as Excel's does. It is
+                named <code>Sheet</code> and the next number no Sheet has, and shown.
+            </li>
+            <li>
+                <b>Rename.</b> Double-click a tab, or choose Rename on its menu, and the name is edited on the tab, all of
+                it selected. <kbd>Enter</kbd> commits it, <kbd>Escape</kbd> keeps the old one, and pressing elsewhere
+                commits it, as in Excel. Every Formula that names the Sheet is rewritten. A name Excel refuses (empty,
+                longer than 31 characters, holding one of <code>: \ / ? * [ ]</code>, beginning or ending with an
+                apostrophe, <code>History</code>, or another Sheet's name in any case) is refused, the notice says which
+                rule it broke, and the name stays open to correct.
+            </li>
+            <li>
+                <b>The tab's menu.</b> Right-click a tab, or press <kbd>Shift</kbd> + <kbd>F10</kbd> or the menu key on
+                it, for Rename, Delete, Move Left, Move Right and Copy. <kbd>&uarr;</kbd> and <kbd>&darr;</kbd> move among
+                the commands that can be done, <kbd>Enter</kbd> does one, <kbd>Escape</kbd> closes the menu. Delete cannot
+                be done on the Workbook's only Sheet, nor Move Left on the first or Move Right on the last, and each says
+                why. Copy places <code>Name (2)</code> after the Sheet, with its Entries, formats and widths, and shows it.
+            </li>
+            <li>
+                <b>Drag.</b> Press a tab and release it on another: it takes that tab's place, and its Sheet is shown.
+                Released past the last tab it goes last; leaving the strip cancels the drag.
+            </li>
+            <li>
+                <b>Each is one step, and is said.</b> <kbd>Ctrl</kbd> + <kbd>Z</kbd> undoes it; a deleted Sheet comes back
+                with every Formula that read it, since ExSheet asks nothing before deleting. The Sheet's notice, its live
+                region, says what was done, and <code>SheetsChanged</code> is raised. While a cell is being edited none of
+                them is done, and the notice says why.
+            </li>
+            <li>
+                <b>Each takes its place among the keys.</b> A key typed straight after <code>+</code>, a menu command, a
+                drag or the <kbd>Enter</kbd> that commits a name, over Blazor Server too, acts on what it left: the Sheet
+                added or shown, back in the grid.
+            </li>
+            <li>
+                <b>Drawn by the Chrome.</b> With <code>MudSheetChrome</code> the tabs' names, the <code>+</code> button and
+                the menu are drawn in MudBlazor's controls; what each press does is ExSheet's under either Chrome. A Chrome
+                of your own draws them through <code>ISheetChrome.SheetTab</code>, <code>SheetTabAdd</code> and
+                <code>SheetTabMenu</code>.
+            </li>
+        </ul>
         <ul>
             <li>
                 <b>Each Sheet keeps its own view.</b> The Selection and the scroll position a Sheet had when you left it
@@ -135,5 +184,7 @@ await sheet.DoAsync("Totals", SheetEdit.MoveSheet(0));</code></pre>
         <ApiTable Type="typeof(global::ExSheet.Engine.WorkbookDocument)" />
         <ApiTable Type="typeof(global::ExSheet.Engine.WorkbookChange)" />
         <ApiTable Type="typeof(global::ExSheet.SheetsChange)" />
+        <ApiTable Type="typeof(global::ExSheet.SheetTabMenuContext)" />
+        <ApiTable Type="typeof(global::ExSheet.SheetTabCommand)" />
     </DocsSection>
 </DocsPage>

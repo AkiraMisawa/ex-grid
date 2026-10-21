@@ -76,19 +76,71 @@
    (ADR-0028), and the Sheet's ViewportHeight includes it. A tab's press and the keys on the tab list
    take their place in the grid's Input Order (ADR-0240 section 6): each tab claims them (data-ex-claims),
    and a key typed straight after either acts on the Sheet it showed. *@
+@* What the tabs do (ADR-0331 §4, exsheet-workbook ticket 06): + adds a Sheet after the one shown, a
+   double click edits a tab's name in place, the context menu — a secondary press, Shift+F10 or the menu
+   key on a tab — offers Rename, Delete, Move Left, Move Right and Copy, and a drag moves a tab: pressed on
+   one and released on another, or past the last, with Blazor's own mouse events, so the drag reads no
+   layout and adds no script (ADR-0021). Each is claimed (data-ex-claims) and taken in its place in the
+   Input Order, one step on the undo stack, and said in the Sheet's notice, its live region. A Chrome that
+   is an ISheetChrome draws the tabs' faces, the + button's and the menu; the elements that hold the
+   keyboard and hear the input are these. *@
 @if (ShowSheetTabs && _workbook is { } tabbedWorkbook)
 {
-    <div class="ex-sheet-tabs" role="tablist" aria-label="@SheetWords.SheetTabsName" style="@SheetTabsStyle" @ref="_tabList"
-         @onkeydown="OnSheetTabKeyAsync">
-        @foreach (var tabSheet in tabbedWorkbook.Sheets)
+    var sheetChrome = Chrome as ISheetChrome;
+    var renameSession = _renameSession;
+    var menuSession = _menuSession;
+    <div class="ex-sheet-tab-area" style="@SheetTabsStyle" @ref="_tabArea" data-ex-dragging="@(_dragFrom is not null ? "true" : null)"
+         @onmouseup="DropOnTabAreaAsync" @attributes="_dragListeners">
+        <div class="ex-sheet-tabs" role="tablist" aria-label="@SheetWords.SheetTabsName" @ref="_tabList"
+             @onkeydown="OnSheetTabKeyAsync">
+            @foreach (var tabSheet in tabbedWorkbook.Sheets)
+            {
+                var sheet = tabSheet;
+                var selected = sheet == _sheet;
+                if (_renaming == sheet)
+                {
+                    <span class="ex-sheet-tab ex-sheet-tab-renaming" role="tab" aria-selected="@(selected ? "true" : "false")" @ref="_renameBox">
+                        <input type="text" class="ex-sheet-tab-name" aria-label="@SheetWords.SheetNameField" spellcheck="false" autocomplete="off"
+                               aria-invalid="@(_renameRefused ? "true" : null)" data-ex-claims="keydown"
+                               @bind:get="_renameText" @bind:set="SetRenameText" @bind:event="oninput" @onchange="OnRenameChanged"
+                               @onkeydown="OnRenameKeyAsync" @onkeydown:stopPropagation="true" @onfocusout="() => OnRenameLeftAsync(renameSession)" />
+                    </span>
+                }
+                else
+                {
+                    <button type="button" role="tab" class="ex-sheet-tab" @ref="_tabs[sheet]" aria-selected="@(selected ? "true" : "false")" tabindex="@(selected ? "0" : "-1")"
+                            aria-haspopup="menu" data-ex-claims="@TabClaims" @onmousedown="e => StartTabDrag(e, sheet)" @onmousedown:preventDefault="true"
+                            @onmouseup="e => DropOnTabAsync(e, sheet)" @onmouseup:stopPropagation="true"
+                            @onclick="() => ShowSheetByUserAsync(sheet)" @ondblclick="() => RenameByUserAsync(sheet)"
+                            @oncontextmenu="() => OpenTabMenuByUserAsync(sheet, GridInputKind.ContextMenu)" @oncontextmenu:preventDefault="true">@if (sheetChrome?.SheetTab(new SheetTabContext(sheet.Name, selected)) is { } face) {@face} else {@sheet.Name}</button>
+                }
+            }
+        </div>
+        <button type="button" class="ex-sheet-tab-add" tabindex="-1" aria-label="@SheetWords.NewSheetName" title="@SheetWords.NewSheetName"
+                data-ex-claims="click" @onmousedown:preventDefault="true" @onclick="AddSheetByUserAsync">@if (sheetChrome?.SheetTabAdd() is { } add) {@add} else {<span aria-hidden="true">+</span>}</button>
+        @if (_menu is { } menu)
         {
-            var sheet = tabSheet;
-            var selected = sheet == _sheet;
-            <button type="button" role="tab" class="ex-sheet-tab" @ref="_tabs[sheet]" aria-selected="@(selected ? "true" : "false")" tabindex="@(selected ? "0" : "-1")"
-                    data-ex-claims="@TabClaims" @onmousedown:preventDefault="true" @onclick="() => ShowSheetByUserAsync(sheet)">@sheet.Name</button>
+            <div class="ex-sheet-tab-menu" role="menu" tabindex="-1" aria-label="@SheetWords.SheetMenuName(menu.Sheet)"
+                 aria-activedescendant="@menu.Commands.FirstOrDefault(c => c.Active)?.Id" data-ex-claims="keydown click" @ref="_menuElement"
+                 @onkeydown="OnTabMenuKeyAsync" @onkeydown:preventDefault="true" @onclick="OnTabMenuClickAsync"
+                 @onmousedown:preventDefault="true" @oncontextmenu:preventDefault="true" @onfocusout="() => OnTabMenuLeft(menuSession)">
+                @if (sheetChrome?.SheetTabMenu(menu) is { } drawn)
+                {
+                    @drawn
+                }
+                else
+                {
+                    @foreach (var command in menu.Commands)
+                    {
+                        <div id="@command.Id" role="menuitem" class="ex-sheet-tab-command@(command.Active ? " ex-sheet-tab-command-active" : "")"
+                             aria-disabled="@(command.Enabled ? null : "true")" title="@command.DisabledReason" @onclick="command.Invoke">@command.Label</div>
+                    }
+                }
+            </div>
         }
     </div>
 }
+@{ NoteDrawn(); }
 @* Format Cells in a frame of the Chrome's own (ADR-0071, ADR-0010's note of 2026-09-30): beside the
    grid and outside its root, from the opening until OK or Cancel. Under the built-in Chrome it
    stands in the grid's popover frame instead (ADR-0050 item 16), and nothing is rendered here. *@
@@ -885,6 +937,11 @@
     private async Task OnFormatKeyAsync(GridDeclaredKeyPress press)
     {
         if (await OnToolbarKeyAsync(press)) return;
+        if (press.Key == SheetTabKeys.Insert)
+        {
+            await AddSheetAsync(before: true);
+            return;
+        }
         if (SheetTabKeys.StepOf(press.Key) is { } step)
         {
             await OnSheetTabKeyAsync(press, step);
@@ -1311,6 +1368,8 @@
         _sheet = _workbook.Shown;
         HearSheetNames();
         _views.Clear();
+        // A name being edited, a tab's menu and a drag belong to the Sheets replaced.
+        ForgetTabGestures();
         // A Workbook opened from a document has no day: the Sheet Day is not recorded (ADR-0121).
         GiveTheDay(_workbook);
         // Nor a seed: the Consumer's, or one chosen now, at a count of 0 changes (ADR-0180).

@@ -2306,6 +2306,10 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
                 // A dispatched keydown does neither: a change-bound field such as More Colours'
                 // HEX would show the held text while its Consumer still held the old value.
                 // Keep the key first for handlers such as Find's Shift+Enter (ADR-0055).
+                // On the product's own surface around this root — a Sheet Tab's name being edited — the
+                // field's Enter is numbered and its handler reads the text in that number's turn, as a
+                // native Enter's does after commitOnEnter: the held text is committed ahead of the key.
+                if (heldTextEdit?.field === target && outsideRootWithin(target)) commitHeldText();
                 replayInto(target, k);
                 if (heldTextEdit?.field === target) commitHeldText();
                 target.form?.requestSubmit();

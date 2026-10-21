@@ -232,6 +232,28 @@ public interface ISheetChrome : IGridChrome
     /// must not take DOM focus, so the keyboard stays on the Sheet. Null draws the built-in item.
     /// </summary>
     RenderFragment? ToolbarItem(ToolbarItemContext context) => null;
+
+    /// <summary>
+    /// The face of a Sheet Tab, drawn in this Chrome's controls (ADR-0331 §4): what stands inside the
+    /// tab ExSheet keeps, which takes the keyboard and hears every press. The face shows the Sheet's name
+    /// as its only text, takes no keyboard and hears nothing. Null draws the built-in face, the name.
+    /// </summary>
+    RenderFragment? SheetTab(SheetTabContext context) => null;
+
+    /// <summary>
+    /// The face of the button that adds a Sheet after the one shown (ADR-0331 §4), inside the button
+    /// ExSheet keeps. It takes no keyboard and hears nothing. Null draws the built-in face, <c>+</c>.
+    /// </summary>
+    RenderFragment? SheetTabAdd() => null;
+
+    /// <summary>
+    /// A Sheet Tab's menu — its surface and its commands — drawn in this Chrome's controls (ADR-0331 §4),
+    /// inside the element ExSheet keeps, which holds the keyboard and answers the menu's keys. Each
+    /// command's element carries its <see cref="SheetTabCommand.Id"/>, the role <c>menuitem</c> and
+    /// <c>aria-disabled</c> while it cannot be done; a pointer press on it must not take DOM focus, and its
+    /// click calls <see cref="SheetTabCommand.Invoke"/>. Null draws the built-in menu.
+    /// </summary>
+    RenderFragment? SheetTabMenu(SheetTabMenuContext context) => null;
 }
 
 /// <summary>

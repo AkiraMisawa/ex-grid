@@ -58,6 +58,36 @@ internal static class SheetWords
     internal static string SheetSwitchWhileEditing =>
         "Another Sheet was not shown: a cell is being edited. Press Enter to commit the edit or Escape to cancel it, then try again. While a Formula is typed, another Sheet can be shown to point at its cells.";
 
+    // ADR-0331 §4 (exsheet-workbook ticket 06): what the Sheet Tabs add, rename, move, copy and delete,
+    // said in the Sheet's live region as each is done, and why one is refused while an edit is open.
+    internal static string SheetOperationWhileEditing =>
+        "No Sheet was changed: a cell is being edited. Press Enter to commit the edit or Escape to cancel it, then try again.";
+
+    internal static string SheetAdded(string name) => $"Sheet '{name}' was added.";
+
+    internal static string SheetRenamed(string from, string to) => $"Sheet '{from}' was renamed '{to}'.";
+
+    internal static string SheetDeleted(string name) => $"Sheet '{name}' was deleted. Ctrl+Z gives it back.";
+
+    internal static string SheetMoved(string name, int position, int count) =>
+        string.Create(CultureInfo.InvariantCulture, $"Sheet '{name}' was moved to position {position} of {count}.");
+
+    internal static string SheetCopied(string name, string copy) => $"Sheet '{name}' was copied as '{copy}'.";
+
+    internal static string SheetNotRenamed(string reason) => $"The Sheet was not renamed: {reason}";
+
+    internal static string NewSheetName => "New sheet";
+
+    internal static string SheetNameField => "Sheet name";
+
+    internal static string SheetMenuName(string sheet) => $"Sheet '{sheet}'";
+
+    internal static string OnlySheet => "A Workbook holds at least one Sheet.";
+
+    internal static string FirstSheet => "The Sheet is already the first.";
+
+    internal static string LastSheet => "The Sheet is already the last.";
+
     // ADR-0100: Excel's Comma Style pads with *, as Accounting does (FormatCellsOffer).
     internal static string CommaStyleUnread =>
         "Excel's Comma Style pads each value with * to fill its column, which ExSheet does not read. Use Number with the thousands separator in Format Cells.";

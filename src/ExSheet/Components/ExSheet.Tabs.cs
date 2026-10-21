@@ -28,9 +28,10 @@ public partial class ExSheet
     private readonly Dictionary<Sheet, ElementReference> _tabs = [];
 
     // The Sheet Tabs' events, which their handlers put in the grid's Input Order (ADR-0240 section 6):
-    // a tab's click and its keys, so a key typed straight after a press on a tab, or after a key on the
-    // tab list, acts on the Sheet the tab showed, where its answer left the keyboard.
-    private const string TabClaims = "click keydown";
+    // a tab's click, its double click (rename), its context menu and its keys, so a key typed straight
+    // after a press on a tab, or after a key on the tab list, acts on the Sheet the tab showed, where its
+    // answer left the keyboard. Its press is not claimed: it only notes where a drag starts.
+    private const string TabClaims = "click dblclick contextmenu keydown";
 
     // The Sheet the open edit was opened on, once another Sheet has been shown while it is typed
     // (ADR-0331 §5): its Formula is committed there, and the edit's end shows it again.
@@ -62,6 +63,7 @@ public partial class ExSheet
     /// their place in the Input Order (ADR-0240 section 6): the keyboard is on the tab the key selected,
     /// or back in the grid, before the key after it is taken, so that key acts where it lands. They show no other Sheet while an edit is open, even a Formula's: they
     /// move the keyboard to the tab, away from the edit, which points from the keyboard (ADR-0331 §5).
+    /// Shift+F10 and the menu key open the tab's menu, and Shift+F11 adds a Sheet (ticket 06).
     /// </summary>
     private Task OnSheetTabKeyAsync(KeyboardEventArgs key) => InOrderAsync(GridInputKind.KeyDown, async () =>
     {
@@ -83,6 +85,16 @@ public partial class ExSheet
             case "Escape":
             case "Enter":
                 if (_grid is { } grid) await grid.ReturnKeyboardAsync(_tabList, static () => []);
+                break;
+            // The tab's menu (ticket 06): Shift+F10 or the menu key, as on a cell. The browser's own
+            // context menu event that may follow finds the menu open, and leaves it as it is.
+            case "F10" when key.ShiftKey && !key.CtrlKey && !key.AltKey && !key.MetaKey:
+            case "ContextMenu":
+                if (_sheet is { } shown) await OpenTabMenuAsync(shown, fromTab: true);
+                break;
+            // Shift+F11 on the tab list, as in the grid: a Sheet before the one shown.
+            case "F11" when key.ShiftKey && !key.CtrlKey && !key.AltKey && !key.MetaKey:
+                await AddSheetAsync(before: true);
                 break;
         }
     });

@@ -76,7 +76,8 @@ public class InputOrderSurfacesTests : SheetTestContext
         Assert.False(cut.Find(".ex-sheet").HasAttribute("data-ex-claims"));
         Assert.Equal("keydown", cut.Find(".ex-sheet-toolbar").GetAttribute("data-ex-claims"));
         Assert.All(cut.FindAll(".ex-sheet-toolbar button"), button => Assert.Equal("click", button.GetAttribute("data-ex-claims")));
-        Assert.All(cut.FindAll(".ex-sheet-tab"), tab => Assert.Equal("click keydown", tab.GetAttribute("data-ex-claims")));
+        Assert.All(cut.FindAll(".ex-sheet-tab"), tab => Assert.Equal("click dblclick contextmenu keydown", tab.GetAttribute("data-ex-claims")));
+        Assert.Equal("click", cut.Find(".ex-sheet-tab-add").GetAttribute("data-ex-claims"));
     }
 
     [Fact] // ADR-0240 §6: a toolbar command clicked, then ↓ at once — the ↓ is taken after the command, which sets bold where the Focus was
