@@ -11,7 +11,9 @@ namespace ExBoard;
 /// <param name="Views">The views, in the order the Board lists them.</param>
 /// <param name="Layout">The rows the views are laid out in, top to bottom.</param>
 /// <param name="Links">The links, in the order the Board lists them.</param>
-public sealed record BoardReading(string Title, IReadOnlyList<BoardInput> Inputs, IReadOnlyList<BoardView> Views, IReadOnlyList<BoardRow> Layout, IReadOnlyList<BoardLink> Links)
+/// <param name="Outputs">The outputs, in the order the Board declares them.</param>
+public sealed record BoardReading(string Title, IReadOnlyList<BoardInput> Inputs, IReadOnlyList<BoardView> Views, IReadOnlyList<BoardRow> Layout,
+    IReadOnlyList<BoardLink> Links, IReadOnlyList<BoardOutputDeclaration> Outputs)
 {
     /// <summary>The input named <paramref name="name"/>, or null.</summary>
     public BoardInput? Input(string name) => Inputs.FirstOrDefault(i => i.Name == name);
@@ -113,7 +115,8 @@ public sealed record BoardCell(string View, int Width);
 ///            {"id": "byDesk", "pivot": {"data": "trades", "layout": {…}}},
 ///            {"id": "curve", "chart": {…}}],
 ///  "layout": [{"views": ["blotter", "byDesk"], "widths": [2, 1], "height": 360}, {"views": ["curve"]}],
-///  "links": [{"from": "blotter", "to": ["byDesk", "curve"], "on": ["desk"]}]}
+///  "links": [{"from": "blotter", "to": ["byDesk", "curve"], "on": ["desk"]}],
+///  "outputs": {"chosen": {"from": "blotter", "on": ["tradeId"], "confirm": "Book these trades"}}}
 /// </code>
 /// A grid is <see cref="GridViewSpec"/>'s spec, a pivot names its input and holds a
 /// <see cref="PivotLayoutJson"/> layout, and a chart is a Chart Spec whose series name inputs in their
@@ -126,7 +129,9 @@ public sealed record BoardCell(string View, int Width);
 /// declare; a pivot layout its reader refuses; and a layout that places a view twice, leaves one out,
 /// names one that is not there, or gives widths or heights that are no widths or heights; and a link
 /// (<see cref="BoardLink"/>) from a view that is not a grid, to a view that is not there, to its own
-/// view or one that narrows it, on a column its views' inputs do not all declare of one kind.</para>
+/// view or one that narrows it, on a column its views' inputs do not all declare of one kind; and an
+/// output (<see cref="BoardOutputDeclaration"/>) from a view that is not a grid, on a column its input
+/// does not declare, or with no confirm action to raise it.</para>
 /// </summary>
 public static class BoardSpec
 {
@@ -136,7 +141,8 @@ public static class BoardSpec
     /// <summary>A row's height when the layout gives none, in CSS pixels.</summary>
     public const double DefaultRowHeight = 320;
 
-    private static readonly string[] RootKeys = ["version", "title", "inputs", "views", "layout", "links"];
+    private static readonly string[] RootKeys = ["version", "title", "inputs", "views", "layout", "links", "outputs"];
+    private static readonly string[] OutputKeys = ["from", "on", "confirm"];
     private static readonly string[] LinkKeys = ["from", "to", "on"];
     private static readonly string[] ViewKeys = ["id", "title", "grid", "pivot", "chart"];
     private static readonly string[] Kinds = ["grid", "pivot", "chart"];
@@ -195,7 +201,45 @@ public static class BoardSpec
         }
 
         var layout = ReadLayout(root, views);
-        return new BoardReading(title, inputs, views, layout, ReadLinks(root, views, Shape));
+        var links = ReadLinks(root, views, Shape);
+        return new BoardReading(title, inputs, views, layout, links, ReadOutputs(root, views, Shape));
+    }
+
+    private static List<BoardOutputDeclaration> ReadOutputs(JsonElement root, List<BoardView> views, Func<string, DataShape?> shape)
+    {
+        var outputs = new List<BoardOutputDeclaration>();
+        if (!root.TryGetProperty("outputs", out var list))
+            return outputs;
+        if (list.ValueKind != JsonValueKind.Object)
+            throw new BoardRefusedException("outputs", "A Board declares its outputs, by name, in 'outputs'.");
+        foreach (var member in list.EnumerateObject())
+        {
+            var path = $"outputs.{member.Name}";
+            var output = member.Value;
+            if (member.Name.Length == 0)
+                throw new BoardRefusedException("outputs", "An output has a name.");
+            if (output.ValueKind != JsonValueKind.Object)
+                throw new BoardRefusedException(path, "An output is an object.");
+            Members(output, OutputKeys, path, "An output");
+            if (!output.TryGetProperty("from", out var fromValue) || fromValue.ValueKind != JsonValueKind.String || fromValue.GetString() is not { Length: > 0 } fromId)
+                throw new BoardRefusedException($"{path}.from", "An output names the view whose selection it hands on, in 'from'.");
+            var from = views.FirstOrDefault(v => v.Id == fromId)
+                ?? throw new BoardRefusedException($"{path}.from", $"Output '{member.Name}' is taken from view '{fromId}', which the Board does not have.");
+            if (from is not BoardGridView grid)
+                throw new BoardRefusedException($"{path}.from", $"Output '{member.Name}' is taken from view '{fromId}', a {KindOf(from)}; an output is taken from a grid's selected rows.");
+            var on = Names(output, "on", $"{path}.on", "An output names the columns whose values it hands on, in 'on'.");
+            var declared = shape(grid.Grid.Data)!;
+            for (var c = 0; c < on.Count; c++)
+            {
+                if (!declared.TryGetColumn(on[c], out _))
+                    throw new BoardRefusedException($"{path}.on[{c}]", $"Output '{member.Name}' hands on column '{on[c]}', which input '{grid.Grid.Data}' does not declare.");
+            }
+            // Raised only by a confirm the Board declares, never by a selection on the way (Q6).
+            if (!output.TryGetProperty("confirm", out var confirm) || confirm.ValueKind != JsonValueKind.String || confirm.GetString() is not { Length: > 0 } label)
+                throw new BoardRefusedException($"{path}.confirm", $"Output '{member.Name}' is raised by a confirm action, whose label is its 'confirm'.");
+            outputs.Add(new BoardOutputDeclaration(member.Name, fromId, on, label));
+        }
+        return outputs;
     }
 
     private static List<BoardLink> ReadLinks(JsonElement root, List<BoardView> views, Func<string, DataShape?> shape)

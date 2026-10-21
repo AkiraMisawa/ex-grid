@@ -16,6 +16,7 @@ namespace ExBoard;
 public sealed class BoundBoard
 {
     private readonly Dictionary<BoardLink, LinkCondition> _conditions = [];
+    private readonly Dictionary<string, LinkCondition> _taken = new(StringComparer.Ordinal);
 
     private BoundBoard(BoardReading board, IReadOnlyDictionary<string, Snapshot> data, IReadOnlyList<BoundView> views)
     {
@@ -48,12 +49,16 @@ public sealed class BoundBoard
     public LinkCondition? ConditionOf(BoardLink link, GridSelection selection)
     {
         ArgumentNullException.ThrowIfNull(selection);
-        var grid = GridOf(link).Grid;
+        return Condition(GridOf(link).Grid, link.On, selection);
+    }
+
+    private static LinkCondition? Condition(ShapedGrid grid, IReadOnlyList<string> on, GridSelection selection)
+    {
         if (selection.Ranges.Count == 0)
             return null;
         var shown = grid.Source.Window;
         var snapshot = grid.Snapshot;
-        var columns = link.On.Select(n => snapshot[n]).ToArray();
+        var columns = on.Select(n => snapshot[n]).ToArray();
         var taken = new bool[shown.Count];
         var tuples = new List<object?[]>();
         foreach (var range in selection.Ranges)
@@ -69,7 +74,7 @@ public sealed class BoundBoard
                 tuples.Add([.. columns.Select(c => snapshot.ValueAt(shown[r].At, c))]);
             }
         }
-        return new LinkCondition(link.On, tuples);
+        return new LinkCondition(on, tuples);
     }
 
     /// <summary>
@@ -101,6 +106,18 @@ public sealed class BoundBoard
     {
         ArgumentNullException.ThrowIfNull(from);
         ArgumentNullException.ThrowIfNull(selection);
+        if (Board.View(from) is BoardGridView)
+        {
+            var grid = ((BoundGridView)this[from]).Grid;
+            foreach (var output in Board.Outputs.Where(o => o.From == from))
+            {
+                var condition = Condition(grid, output.On, selection);
+                if (condition is null)
+                    _taken.Remove(output.Name);
+                else
+                    _taken[output.Name] = condition;
+            }
+        }
         var targets = new HashSet<string>(StringComparer.Ordinal);
         foreach (var link in Board.Links.Where(l => l.From == from))
         {
@@ -110,6 +127,27 @@ public sealed class BoundBoard
         foreach (var target in targets)
             NarrowView(target);
         return targets.Count > 0;
+    }
+
+    /// <summary>Whether output <paramref name="name"/> can be confirmed: its grid selects something.</summary>
+    public bool CanConfirm(string name) => _taken.ContainsKey(name);
+
+    /// <summary>
+    /// What confirming output <paramref name="name"/> hands on (ADR-0340, Q6): the values its grid's
+    /// selection holds in its columns, on its input, with the version of the input's data they were
+    /// taken against; null while its grid selects nothing. Nothing is raised by a selection on the
+    /// way: only this, called when the user confirms.
+    /// </summary>
+    /// <exception cref="ArgumentException">The Board declares no output <paramref name="name"/>.</exception>
+    public BoardOutput? Confirm(string name)
+    {
+        var declared = Board.Outputs.FirstOrDefault(o => o.Name == name)
+            ?? throw new ArgumentException($"The Board declares no output '{name}'.", nameof(name));
+        if (!_taken.TryGetValue(name, out var condition))
+            return null;
+        var input = ((BoardGridView)Board.View(declared.From)!).Grid.Data;
+        var shape = Board.Input(input)!.Shape;
+        return new BoardOutput(name, input, Data[input], condition, [.. declared.On.Select(c => shape.Columns.First(k => k.Name == c).Kind)]);
     }
 
     // Records the link's condition; false when it is the one already held, which narrows nothing again.
@@ -145,6 +183,13 @@ public sealed class BoundBoard
                 var snapshot = grid.Grid.Snapshot;
                 var rows = grid.Grid.Rows;
                 grid.Grid.Source.ReplaceAll(conditions.Length == 0 ? rows : [.. Narrowing.Positions(snapshot, conditions).Select(p => rows[p])]);
+                // Its rows changed, so its selection is dropped (ADR-0011): what the selection held is
+                // let go now, not when the grid next raises it, so nothing is confirmed or narrowed by
+                // a selection the grid no longer shows.
+                foreach (var output in Board.Outputs.Where(o => o.From == id))
+                    _taken.Remove(output.Name);
+                foreach (var link in Board.Links.Where(l => l.From == id))
+                    Narrow(link, null);
                 break;
             case BoundPivotView pivot:
                 var data = Data[pivot.Input];

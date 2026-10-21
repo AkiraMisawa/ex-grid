@@ -96,3 +96,30 @@ here so they are not re-derived:
   (ADR-0011), and the views it narrowed are restored with it.
 - **The selection is read against the rows as the grid shows them** when it is raised; a range past
   them narrows nothing.
+
+*Outputs, 2026-10-21 (ExBoard ticket 06).*
+
+- **An output's `from` names a grid view**, as a link's does: the Decision's example
+  `{"from": "trades", …}` is read as a view's id, and the output is on the input that grid reads.
+  A pivot's cell as an output's source waits for ticket 11, as a link's does.
+- **The confirm is the output's own `confirm`, its label**, drawn under its grid. It is never
+  disabled: a press that follows a selection a round trip later is answered for that selection, where
+  a button the browser still held disabled would drop it (spine rule 6). With nothing selected it says
+  so. An output with no confirm is refused: nothing raises it but the user.
+- **The confirm reads the selection from its grid, not from the last `SelectionChanged`.** A grid
+  raises its selection after the render that paints it, which on the Server host is a round trip after
+  the press, so a confirm pressed straight after a click found the selection before it (seen in CI's
+  repeat of the confirm test on the Server host). The confirm asks the grid for its selection once the
+  grid has answered every input it received before the press (`ExGrid.SelectionAfterInputsAsync`, in
+  the grid's Input Order, ADR-0240), so the press acts on the selection it was made against, at any
+  speed (spine rule 6). The Board is not given an Input Root of its own: each grid keeps its order,
+  and a confirm outside them waits on the one it reads.
+- **The condition is a link's** (`LinkCondition`, the selected rows' tuples), and the version is the
+  bound Snapshot's `Version`. `BoardOutput.Take` refuses data of another version, and other data at
+  version 0, which names no version and so cannot vouch for itself; the very data it was taken from is
+  always taken. A source whose data moves on gives each version its number. It refuses a column of
+  another kind too, which would otherwise match nothing, quietly.
+- **A grid narrowed by a link lets go of its selection's output and links at once**, as it drops the
+  selection (ADR-0011), not when it next raises the dropped selection.
+- **Its JSON** names the output, the input, the version, the columns and each tuple, a date as
+  `yyyy-MM-dd` (with `THH:mm:ss` when it holds a time), so an engine in any language can run it.
