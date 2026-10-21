@@ -159,6 +159,13 @@
             <code>(row, column, pattern) =&gt; GridFind.Matches(column.Info.TextOf(row), pattern)</code>, and hold
             the function in a field: a new one makes every row on screen judge its cells again.
         </p>
+        <p>
+            <strong>A step you cannot answer is given up, not answered "no match".</strong> When your search cannot
+            read what it searches — a server refused, or the data moved under it — throw
+            <code>OperationCanceledException</code> from <code>OnFind</code>: the Focus does not move, the panel stays
+            open and says nothing, and you say why yourself, as ExPivot does on its toolbar. Answering
+            <code>NotFound</code> instead would claim that cells nobody read hold no match.
+        </p>
         <DocsExample Title="Your own find, and its marks" Builtin="typeof(FindMarks)" Mud="typeof(FindMarksMud)"
                      Files="@(["Examples/Data/Trade.cs"])" />
     </DocsSection>

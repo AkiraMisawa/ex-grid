@@ -95,6 +95,11 @@
                 newest even when its Pivot Source cannot tell; the browser still receives only the Window and its Window Changes.
             </li>
             <li>Culture, formats and display words are explicit; custom Order Keys select policies registered on the server.</li>
+            <li>
+                <strong>Find reads the report through Copy.</strong> <kbd>Ctrl+F</kbd> searches every cell the report lays
+                out, so the rows beyond the Window are asked of your <code>copy</code> transport, by the Report Version on
+                screen, a block of rows at a time, until the match (<a href="expivot/layout#find">Find</a>).
+            </li>
             <li>The Consumer owns transport and report-state disposal. A missing baseline is recovered automatically; an unavailable older operation refuses by name.</li>
             <li>
                 <strong>A server's report is read ahead, and asked for early.</strong> Each round trip to the server would

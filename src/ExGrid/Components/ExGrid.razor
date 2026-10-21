@@ -1738,7 +1738,9 @@
     /// name; with neither, Ctrl+F is refused rather than left to the browser, whose find sees
     /// only the painted rows. A step asked while one is out cancels it, and its answer is
     /// discarded. An answer outside the request — a column it did not name, a row the result
-    /// does not have — throws, naming the request.
+    /// does not have — throws, naming the request. A step the Consumer gives up, by throwing
+    /// <see cref="OperationCanceledException"/>, moves nothing and is not said as "no match": the
+    /// Consumer says why itself — a source that refused to be read, say — as ExPivot does.
     /// </summary>
     [Parameter] public Func<GridFindRequest, CancellationToken, Task<GridFindResult>>? OnFind { get; set; }
 
@@ -7868,6 +7870,20 @@
         }
         catch (OperationCanceledException) when (cancellation.IsCancellationRequested)
         {
+            return;
+        }
+        catch (OperationCanceledException)
+        {
+            // Given up by whoever answers, who says why itself — a source that refused to be read,
+            // say: nothing moves, the panel says nothing of its own, and no "No match" is claimed for
+            // cells nobody read (ADR-0055, ADR-0025).
+            if (!_disposed && ReferenceEquals(cancellation, _findCancellation))
+            {
+                _findCancellation = null;
+                _findOutcome = FindOutcome.None;
+                _suppressRender = false;
+                StateHasChanged();
+            }
             return;
         }
         // Superseded by a later step, or the panel closed while the question was out: the
