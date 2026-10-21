@@ -8,12 +8,12 @@ permissions:
   actions: read
 
 concurrency:
-  group: hunt-${{ github.ref }}
+  group: hunt-after-failure-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   heading:
-    name: Heading diagnosis, Server Chrome, ${{ matrix.scope }}
+    name: Heading after-failure diagnosis, Server Chrome, ${{ matrix.scope }}
     runs-on: ubuntu-latest
     timeout-minutes: 150
     strategy:
@@ -68,7 +68,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: heading-native-${{ matrix.scope }}
+          name: heading-after-failure-${{ matrix.scope }}
           path: |
             verification/
             tests/ExGrid.Browser/test-results/
