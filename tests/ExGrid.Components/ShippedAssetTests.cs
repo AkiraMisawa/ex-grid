@@ -107,7 +107,7 @@ public class ShippedAssetTests
 
         var answer = Regex.Match(minified, $@"function (?<name>[\w$]+)\(\)\{{return""{stamp}""\}}");
         Assert.True(answer.Success, "ex-grid.min.js has no function answering its source's SHA-256: run tools/assets/minify.mjs");
-        Assert.Matches(new Regex($@"export\{{[^}}]*\b{Regex.Escape(answer.Groups["name"].Value)} as stamp\b"), minified);
+        Assert.Matches(new Regex($@"export\{{[^}}]*(?<![\w$]){Regex.Escape(answer.Groups["name"].Value)} as stamp\b"), minified);
     }
 
     [Theory, MemberData(nameof(Sources))] // ADR-0123 / ERR-11: each stylesheet shows its product's notice for any stamp and hides it for its own, and nothing after them undoes that

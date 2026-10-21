@@ -30,7 +30,10 @@
                 to find again, and <code>OnFindRefused</code> says <code>OrderChanged</code> or
                 <code>SourceChanged</code>.
                 Characters and completed IME compositions typed as the panel opens reach its text field in
-                order, including over Blazor Server.
+                order, including over Blazor Server. Ticking <em>Match case</em> or <em>Match entire cell
+                contents</em> takes its place in that order too, with the steps and the keys: a step clicked
+                straight after a tick searches with the option ticked, and one clicked before it with the option
+                as it stood, however fast they come and over any round trip.
             </li>
             <li>
                 <strong>While the panel holds a search, every matching cell on screen is marked</strong>, as you

@@ -2812,10 +2812,54 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // or the tab before the keyboard had left it, or the Sheet before the command had run. A key on an
     // element there that claims nothing — a design system's control a Wrapper draws on the band, the
     // Wrapper's Format Cells frame on its way out — is left to it, as before the Input Root (ticket 06).
+    // An Escape typed while a paste is under way cancels it, and does nothing else (ADR-0240
+    // section 12). It is not held behind the paste, which is what it races: numbered as a cancel
+    // naming the paste, its call is heard at once, and its turn says so if it came too late. Work a
+    // Consumer has placed in the order, waiting for its turn or under way, is cancelled the same way
+    // (ADR-0330 section 10): the stamp names the latest such work (data-ex-work-placed), read here at the
+    // keydown, held or not, and the Escape is numbered here as a cancel naming it. What the core does with
+    // it is decided from that number alone — a second Escape too, which the core finds already cancelled.
+    // An Escape typed against a stamp that names none is an ordinary key, whatever is placed by its turn.
+    const cancelUnderWay = (event) => {
+        if (replaying || event.key !== 'Escape' || event.repeat
+            || event.ctrlKey || event.altKey || event.metaKey || event.shiftKey) {
+            return false;
+        }
+        if (pasteUnderWay !== 0) {
+            event.preventDefault();
+            event.stopPropagation();
+            const paste = pasteUnderWay;
+            pasteUnderWay = 0;
+            core.invokeMethodAsync('OnPasteCancelAsync', paste, nextInput(true), inputText()).catch((error) => {
+                if (core) {
+                    console.error('[ex-grid] the grid failed to cancel a paste', error);
+                }
+            });
+            return true;
+        }
+        const work = Number(stamp?.getAttribute('data-ex-work-placed') ?? 0);
+        if (!(work > 0)) {
+            return false;
+        }
+        event.preventDefault();
+        event.stopPropagation();
+        core.invokeMethodAsync('OnWorkCancelAsync', work, nextInput(true), inputText()).catch((error) => {
+            if (core) {
+                console.error('[ex-grid] the grid failed to cancel the work under way', error);
+            }
+        });
+        return true;
+    };
     const onOuterKey = (event) => {
         lookSettled();
-        if (!core || event.isComposing || event.keyCode === 229 || outerSurface(event.target) === null
-            || claimOf(event.target, 'keydown') === null) {
+        if (!core || event.isComposing || event.keyCode === 229 || outerSurface(event.target) === null) {
+            return;
+        }
+        // An Escape on the product's own surface — the Sheet's toolbar or tabs — cancels as one in the grid does.
+        if (cancelUnderWay(event)) {
+            return;
+        }
+        if (claimOf(event.target, 'keydown') === null) {
             return;
         }
         if (replaying) {
@@ -2874,20 +2918,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             event.preventDefault();
             return;
         }
-        // An Escape typed while a paste is under way cancels it, and does nothing else (ADR-0240
-        // section 12). It is not held behind the paste, which is what it races: numbered as a cancel
-        // naming the paste, its call is heard at once, and its turn says so if it came too late.
-        if (pasteUnderWay !== 0 && !replaying && event.key === 'Escape' && !event.repeat
-            && !event.ctrlKey && !event.altKey && !event.metaKey && !event.shiftKey) {
-            event.preventDefault();
-            event.stopPropagation();
-            const paste = pasteUnderWay;
-            pasteUnderWay = 0;
-            core.invokeMethodAsync('OnPasteCancelAsync', paste, nextInput(true), inputText()).catch((error) => {
-                if (core) {
-                    console.error('[ex-grid] the grid failed to cancel a paste', error);
-                }
-            });
+        if (cancelUnderWay(event)) {
             return;
         }
         const k = snapshot(event);

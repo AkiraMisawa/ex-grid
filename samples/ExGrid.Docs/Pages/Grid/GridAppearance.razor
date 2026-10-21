@@ -51,7 +51,7 @@
                 <tr><td><code>--ex-state-stale-color</code>, <code>--ex-state-error-color</code>, <code>--ex-state-missing-background</code>, <code>--ex-state-modified-mark</code></td><td>Cell States. Each is a colour: the modified mark's is the corner triangle's.</td></tr>
                 <tr><td><code>--ex-change-highlight-background</code></td><td>The Change Highlight on live data.</td></tr>
                 <tr><td><code>--ex-match-mark-fill</code>, <code>--ex-match-mark-current-fill</code></td><td>The matches on screen while the find panel holds a search, and the current match: by default a light and a strong tint of one orange (<code>#ff9632</code> at 25% and 55%), apart from the Change Highlight's yellow.</td></tr>
-                <tr><td><code>--ex-pasting-bar</code>, <code>--ex-pasting-bar-height</code>, <code>--ex-pasting-cursor</code></td><td>A paste under way: the bar across the grid's top edge (<code>Highlight</code>, 3px) and the pointer over it (<code>progress</code>), from the paste's start until it lands or is refused. See Clipboard.</td></tr>
+                <tr><td><code>--ex-pasting-bar</code>, <code>--ex-pasting-bar-height</code>, <code>--ex-pasting-cursor</code></td><td>A paste under way: the bar across the grid's top edge (<code>Highlight</code>, 3px) and the pointer over it (<code>progress</code>), from the paste's start until it lands or is refused. See Clipboard. They paint work you run through <code>CancellableInOrderAsync</code> the same way, such as ExSheet opening a file.</td></tr>
             </tbody>
         </MudSimpleTable>
         <p>
@@ -176,7 +176,12 @@
             <code>keydown</code>, <code>submit</code> — as the built-in and MudBlazor ones do. Its handler then calls
             the grid through the context's delegates every time that event comes: a menu resolves the key through
             <code>ResolveKey</code>, and a filter form hands each submission to <code>Apply</code>, one that cannot
-            be applied as the answer <code>Apply</code> refuses (an <code>In</code> with no values). A claimed
+            be applied as the answer <code>Apply</code> refuses (an <code>In</code> with no values). A find panel
+            hands its steps to <code>FindContext.Next</code> and <code>Previous</code>, and each tick of its two
+            options to <code>MatchCaseChanged</code> and <code>WholeCellChanged</code>, which return a
+            <code>Task</code> the handler returns in turn; the claim goes on the checkbox itself
+            (a <code>MudCheckBox</code> passes it there), not on a label around it, whose click the browser
+            passes on to the checkbox as a second one. A claimed
             event that never reaches the grid leaves the keys after it waiting for the next one.
         </p>
         <p>
@@ -196,6 +201,28 @@
             Format Cells and the keyboard crossing the Sheet's edge in its grid's order this way. A control of yours
             that a hand-off should reach without scrolling, such as the next tab of a tab list, takes the keyboard
             through <code>HandKeyboardToAsync(control, preventScroll: true)</code>.
+        </p>
+        <p>
+            <strong>Work of your own in the grid's order.</strong> A command no control numbered — a button outside the
+            grid, a service's call — takes a place of its own through <code>InOrderAsync(handling)</code>: after every
+            input the grid has received, and the inputs made after it wait until it has finished. It never takes a
+            number told for a control's event. Work that may take a while and that the user may cancel, such as reading a
+            file, goes through <code>CancellableInOrderAsync(handling, cancelledTooLate)</code>. From the call until
+            the work ends — waiting behind earlier inputs or running — the Settled Stamp names it
+            (<code>data-ex-work-placed</code>), no longer says that an Escape leaves, and the Settled Mark is off; once
+            its turn starts the root carries <code>aria-busy</code> and <code>data-ex-work</code> and is painted as a
+            paste under way is. A plain <kbd>Escape</kbd> typed in the grid against a page whose stamp named the work
+            cancels <code>handling</code>'s token and does nothing else: it closes no editor or popover, and does not
+            release Tab. An Escape typed against a page whose stamp did not yet name it is an ordinary key, however
+            soon it arrives: what it was typed against decides it, not when it comes. A second Escape finds the work
+            cancelled, and is answered as one that came after it ended. Your work looks at the token until the point where it lands,
+            and ends in <code>OperationCanceledException</code> once it is cancelled; past that point it lands
+            synchronously whatever the token says. An Escape that came too late runs <code>cancelledTooLate(true)</code>
+            in its own turn, and one that found the work already over otherwise <code>cancelledTooLate(false)</code>,
+            for you to say so. The task answers whether the work ran to its end. Saying what the work did is yours: the
+            grid says nothing of it. Both may be called from any thread; one cancellable work cannot run inside
+            another, and disposing of the grid cancels the work under way. ExSheet opens a file this way
+            (<a href="exsheet/xlsx">Open and save .xlsx</a>).
         </p>
         <p>
             <strong>A frame of your own</strong> outside the grid — a dialog, a toolbar — takes the keyboard through

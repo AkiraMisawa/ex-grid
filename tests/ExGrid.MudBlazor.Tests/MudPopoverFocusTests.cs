@@ -66,7 +66,7 @@ public class MudPopoverFocusTests : MudTestContext
     public void The_find_panel_takes_the_keyboard_through_the_cores_function()
     {
         var cut = Render(MudGridChrome.Default.FindPanel(new FindContext(
-            "", false, false, FindOutcome.None, _ => { }, _ => { }, _ => { },
+            "", false, false, FindOutcome.None, _ => { }, _ => Task.CompletedTask, _ => Task.CompletedTask,
             () => Task.CompletedTask, () => Task.CompletedTask, () => { }, FocusRequest: 1, TakeFocus: Take))!);
 
         var (element, preventScroll) = Assert.Single(_taken);

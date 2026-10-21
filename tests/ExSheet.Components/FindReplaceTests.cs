@@ -338,4 +338,61 @@ public class FindReplaceTests : SheetTestContext
         Assert.Equal("pear pie", EntryOn("Two", "C3"));
         Assert.Equal(("One", "A1"), (SelectedTab(cut), NameBox(cut)));
     }
+
+    [Fact] // ADR-0240 §2, find ticket 06: the panel's two options claim their clicks, on the checkboxes alone
+    public async Task ADR0240_the_options_claim_their_clicks()
+    {
+        var cut = RenderWorkbook(Workbook(("One", "A1", "apple")));
+        await OpenAsync(cut, replace: false);
+
+        Assert.Equal("click", cut.Find("input.ex-find-match-case").GetAttribute("data-ex-claims"));
+        Assert.Equal("click", cut.Find("input.ex-find-whole-cell").GetAttribute("data-ex-claims"));
+        Assert.All(cut.FindAll("form.ex-sheet-find label"), label => Assert.False(label.HasAttribute("data-ex-claims")));
+    }
+
+    [Theory] // ADR-0240 §2, find ticket 06: a step numbered before a tick of Match case or Whole cell, both behind an input still being handled, searches with the option as it stood; the next step, with it ticked
+    [InlineData("input.ex-find-match-case", "APPLE", "apple", "APPLE")]
+    [InlineData("input.ex-find-whole-cell", "apple", "apple pie", "apple")]
+    public async Task ADR0240_a_tick_of_an_option_is_taken_in_its_place(string option, string text, string b1, string c1)
+    {
+        TaskCompletionSource? held = null;
+        var cut = RenderSheet(ps =>
+        {
+            ps.Add(s => s.ShowToolbar, true);
+            ps.Add(s => s.DocumentChanged, async (SheetDocument _) =>
+            {
+                if (held is { } answer)
+                    await answer.Task;
+            });
+        });
+        // In columns of their own, so AutoComplete does not finish one as the other.
+        await EnterAsync(cut, "B1", b1);
+        await EnterAsync(cut, "C1", c1);
+        await GoToAsync(cut, "A1");
+        await OpenAsync(cut, replace: false);
+        await cut.Find("input.ex-find-field").InputAsync(new ChangeEventArgs { Value = text });
+        held = new TaskCompletionSource();
+        var grid = Grid(cut);
+        Task Tell(int input) => grid.InvokeAsync(() => grid.Instance.InputTakenAt("click", input));
+
+        // A toolbar command whose change the Consumer has not yet answered holds the order behind it.
+        Task bold = Task.CompletedTask, step = Task.CompletedTask, tick = Task.CompletedTask;
+        await Tell(1);
+        await cut.InvokeAsync(() => { bold = cut.FindAll(".ex-sheet-toolbar button.ex-sheet-toolbar-item").Single(b => b.GetAttribute("aria-label") == "Bold").ClickAsync(new MouseEventArgs { Detail = 1 }); });
+        await Tell(2);
+        await cut.InvokeAsync(() => { step = cut.Find("button.ex-find-next").ClickAsync(new MouseEventArgs()); });
+        await Tell(3);
+        await cut.InvokeAsync(() => { tick = cut.Find(option).ChangeAsync(new ChangeEventArgs { Value = true }); });
+        Assert.Equal("A1", NameBox(cut));
+
+        held.SetResult();
+        await bold;
+        await step;
+        await tick;
+        Assert.Equal("B1", NameBox(cut));
+        Assert.True(cut.Find(option).HasAttribute("checked"));
+
+        await cut.Find("button.ex-find-next").ClickAsync(new MouseEventArgs());
+        Assert.Equal("C1", NameBox(cut));
+    }
 }

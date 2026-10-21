@@ -174,6 +174,25 @@ refuses.
   Sheet: the file would quietly lack what the user is typing. *(Settled by ADR-0048's rule, not put to
   the user.)*
 
+*As built (xlsx ticket 06, 2026-10-21):*
+
+- **The shape.** `ExSheet.OpenAsync(read)` takes the read as a function of a `CancellationToken`, so the
+  read starts at the opening's turn in the order, not when the application calls; it returns whether the
+  document landed. `ExSheet.SaveAsync(write)` hands the application the Workbook as the inputs before it
+  left it, and the application writes the file (`XlsxSaveOptions.Progress` reports the write as it goes).
+- **Opening while an edit is open is refused** (`SheetRefusedException`, `EditIsOpen`), as saving is,
+  and the edit stays open. *Decided with the user, 2026-10-21*, in place of the discard-and-announce
+  this section first said: a document that replaces the one being typed in would quietly lose the typing.
+- **Escape cancels the opening when typed against a page that shows it.** From the call on, waiting or
+  being read, the Sheet's grid names the opening in its Settled Stamp; a plain Escape typed against it
+  cancels the opening, and one typed before the page showed it is an ordinary key (ADR-0240 §12, as built
+  for work of the Consumer's). An opening cancelled before its turn ends cancelled, even if an edit was
+  opened meanwhile. An Escape that comes too late is answered aloud: the opening had landed, or had
+  otherwise ended.
+- **Disposing the Sheet cancels the opening**, and nothing lands afterwards.
+- `MaxCells` counts every cell written and every row a row format writes, so a sheet of formatted empty
+  rows cannot get round it.
+
 ## Consequences
 
 - Two new shipped packages, packed and smoke-tested as the others are (ADR-0042).

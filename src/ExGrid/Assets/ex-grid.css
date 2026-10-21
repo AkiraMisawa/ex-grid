@@ -838,8 +838,11 @@
    across the root's top edge and a progress pointer say the grid is busy with it, and that an
    Escape now cancels it. Nothing is dimmed: the rows are still the ones being pasted over. The
    root's aria-busy says the same to a screen reader. */
-.ex-pasting { cursor: var(--ex-pasting-cursor, progress); }
-.ex-pasting::after { content: ""; position: absolute; inset: 0 0 auto 0; height: var(--ex-pasting-bar-height, 3px); background: var(--ex-pasting-bar, Highlight); pointer-events: none; z-index: 10; }
+/* Work a Consumer runs in the order that Escape cancels — ExSheet opening a file, still being read
+   (ADR-0330 section 10) — is painted the same way while the root names it (data-ex-work): it, too,
+   holds every input behind it, and an Escape cancels it. */
+.ex-pasting, .ex-grid[data-ex-work] { cursor: var(--ex-pasting-cursor, progress); }
+.ex-pasting::after, .ex-grid[data-ex-work]::after { content: ""; position: absolute; inset: 0 0 auto 0; height: var(--ex-pasting-bar-height, 3px); background: var(--ex-pasting-bar, Highlight); pointer-events: none; z-index: 10; }
 /* The scrollbar's look, by token rather than by reaching the internal element
    (ADR-0029). The grid always draws its own bar: in Chrome and Edge any rule on
    ::-webkit-scrollbar makes the bar a custom one, and a custom bar paints no native

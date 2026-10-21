@@ -10,7 +10,7 @@ namespace ExGrid.Components.Tests;
 /// <summary>
 /// The Input Order's public seam (ADR-0240 section 6; input-order ticket 04): a surface outside the
 /// grid's own markup — a Chrome's, a Consumer's, a product's own such as ExSheet's toolbar — puts its
-/// input in the instance's order through <see cref="ExGrid{TRow}.InOrderAsync"/>, or through
+/// input in the instance's order through <see cref="ExGrid{TRow}.InOrderAsync(GridInputKind, Func{Task})"/>, or through
 /// <see cref="GridPopoverContext.InOrder"/> from a popover's contents. A told input is handled in its
 /// number; one that was not told runs after every input received so far; the keyboard crossing the
 /// Input Root's edge runs only when it was told. The input before is held by a paste whose reading has

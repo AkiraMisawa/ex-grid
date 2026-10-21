@@ -344,6 +344,31 @@ painted from Visual Tokens (`--ex-pasting-bar`, `--ex-pasting-bar-height`, `--ex
 bar across the top edge and a progress pointer, nothing dimmed, since the rows shown are the ones
 being pasted over.
 
+*As built (2026-10-21, xlsx ticket 06): the exception extended to work of the Consumer's.* Opening a
+file (ADR-0330 §10) is work the Consumer starts outside the grid and may take as long as a read takes.
+The grid gains two seams for it. `InOrderAsync(handling)` places a call of the Consumer's after every
+input received so far and holds the inputs behind it until it ends; unlike the overload that claims the
+number a control's event was told, it takes no number of its own, because a call from outside the grid
+has none. `CancellableInOrderAsync(handling, cancelledTooLate)` does the same with a cancellation token,
+and from the moment it takes its place until it ends the Settled Stamp names it (`data-ex-work-placed`,
+the latest such work) and drops `data-ex-escape-leaves`; once its turn starts the root says so as a paste
+does (`aria-busy`, `data-ex-work`). Under this section's terms an Escape cancels it, both outcomes are said
+aloud, and `cancelledTooLate` is told whether the work had landed or had otherwise ended. One work of this
+kind runs at a time; a second started inside the first is refused.
+
+What the Escape is taken against decides it, not when it arrives. The gate reads the stamp at the
+Escape's keydown, held or not. A plain Escape typed against a stamp that names work is numbered there as a
+cancel naming it and heard at once (`OnWorkCancelAsync`), and the core decides from that number alone:
+the first work placed up to it that is not cancelled is cancelled; one already cancelled consumes the
+Escape, which is answered as the work ends, so a second Escape gets the same answer whether it arrives
+before or after; one that has ended answers it at once. An Escape typed against a stamp that names no
+work is an ordinary key, whatever has been placed by the time it arrives: it never cancels, and one the
+gate took as leaving leaves, and a Tab typed after it leaves the grid as it would have. A test that means
+to cancel therefore types its Escape once the page shows the work, as a user does: it acts on what the
+page shows, not after a wait. *(The first build decided by the Escape's number against the work's place,
+which a held key took at its drain and not at its keydown, and kept a second path for an Escape the root
+had named the work for; review of 2026-10-21 replaced both with this one rule.)*
+
 ## What it may cost
 
 Nothing per character (5) and nothing per cell. A click that was not numbered gains the number told

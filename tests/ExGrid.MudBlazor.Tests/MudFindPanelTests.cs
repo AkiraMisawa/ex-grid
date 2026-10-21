@@ -19,12 +19,15 @@ public class MudFindPanelTests : MudTestContext
 {
     private readonly List<string> _texts = [];
     private readonly List<bool> _matchCase = [];
+    private readonly List<bool> _wholeCell = [];
     private int _next;
     private int _previous;
 
     private FindContext Context(string text = "", FindOutcome outcome = FindOutcome.None) => new(
         text, MatchCase: false, WholeCell: false, outcome,
-        _texts.Add, _matchCase.Add, _ => { },
+        _texts.Add,
+        value => { _matchCase.Add(value); return Task.CompletedTask; },
+        value => { _wholeCell.Add(value); return Task.CompletedTask; },
         () => { _next++; return Task.CompletedTask; },
         () => { _previous++; return Task.CompletedTask; },
         () => { }, FocusRequest: 1);
@@ -53,6 +56,23 @@ public class MudFindPanelTests : MudTestContext
 
         Assert.Equal("click", cut.Find(".mud-ex-grid-find-next").GetAttribute("data-ex-claims"));
         Assert.Equal("click", cut.Find(".mud-ex-grid-find-previous").GetAttribute("data-ex-claims"));
+    }
+
+    [Fact] // ADR-0240 §2, find ticket 06: the two options' ticks are clicks in the grid's Input Order, claimed by the checkboxes' inputs alone, and handed to the context as they come
+    public async Task ADR0240_the_options_claim_their_clicks_on_their_inputs()
+    {
+        var cut = RenderPanel(Context());
+
+        Assert.Equal("click", cut.Find(".mud-ex-grid-find-match-case input").GetAttribute("data-ex-claims"));
+        Assert.Equal("click", cut.Find(".mud-ex-grid-find-whole-cell input").GetAttribute("data-ex-claims"));
+        // A click on the label reaches the input as a second click; only the input's is numbered.
+        Assert.Empty(cut.FindAll(".mud-ex-grid-find-match-case label[data-ex-claims], .mud-ex-grid-find-whole-cell label[data-ex-claims]"));
+
+        await cut.Find(".mud-ex-grid-find-match-case input").ChangeAsync(new ChangeEventArgs { Value = true });
+        await cut.Find(".mud-ex-grid-find-whole-cell input").ChangeAsync(new ChangeEventArgs { Value = true });
+
+        Assert.Equal([true], _matchCase);
+        Assert.Equal([true], _wholeCell);
     }
 
     [Fact] // ADR-0055: Enter is the form's submission — next, and previous with Shift held

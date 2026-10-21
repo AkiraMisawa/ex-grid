@@ -117,6 +117,43 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(page.locator('#find-refused-status')).toContainText('NotFound');
         });
 
+        test('ADR-0240: a tick of Match case or Match entire cell contents and the step clicked straight after it are taken in the order they were made (find ticket 06)', async ({ page }) => {
+            // Each phase is driven at machine speed, nothing awaited between the step, the tick and the
+            // step after it: a tick is a click in the Input Order, so the step clicked before it searches
+            // with the option as it stood and the one clicked after it with the option ticked, on every
+            // host. The tick is a click on the option's words, which the browser passes on to the
+            // checkbox as a second click; only the checkbox's is numbered.
+            await page.keyboard.press('ControlOrMeta+f');
+            const panel = grid(page).locator('.ex-popover-find');
+            const field = panel.locator('input').first();
+            await expect(field).toBeFocused();
+            const next = panel.locator('button.ex-find-next, button.mud-ex-grid-find-next');
+            const matchCase = panel.getByText('Match case', { exact: true });
+            const wholeCell = panel.getByText('Match entire cell contents', { exact: true });
+            const box = (option) => panel.locator(`input.ex-find-${option}, .mud-ex-grid-find-${option} input`);
+            const outcome = panel.locator('[role=status]');
+
+            // "NOVAK" is Novak's name without Match case, and no one's with it.
+            await page.keyboard.type('NOVAK');
+            await next.click();
+            await matchCase.click();
+            await next.click();
+            await expect.poll(() => focusedCell(page)).toMatch(/r3c1$/);
+            await expect(outcome).toHaveText('No match');
+            await expect(box('match-case')).toBeChecked();
+
+            // "nova" is in Novak's name, and is not the whole of it.
+            await matchCase.click();
+            await field.fill('nova');
+            await next.click();
+            await wholeCell.click();
+            await next.click();
+            await expect.poll(() => focusedCell(page)).toMatch(/r4c1$/);
+            await expect(outcome).toHaveText('No match');
+            await expect(box('match-case')).not.toBeChecked();
+            await expect(box('whole-cell')).toBeChecked();
+        });
+
         test('Ctrl+F in the find field selects its text, and the browser\'s find stays shut (FD-1, ADR-0055)', async ({ page }) => {
             await page.keyboard.press('ControlOrMeta+f');
             const field = grid(page).locator('.ex-popover-find input').first();

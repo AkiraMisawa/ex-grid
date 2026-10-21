@@ -46,9 +46,12 @@ public enum XlsxSaveRefusal
     Text,
 
     /// <summary>
-    /// The workbook would write more cells than <see cref="XlsxSaveOptions.MaxCells"/>: by default, more than a file is read
-    /// with (<see cref="XlsxReadOptions.DefaultMaxCells"/>), so it would not open again. A Sheet formatted on many rows and many
-    /// columns writes a cell wherever a formatted row crosses a formatted column that records a part the row does not.
+    /// The workbook would write more elements than <see cref="XlsxSaveOptions.MaxCells"/>, which counts each cell written and
+    /// each row a row format writes. A Sheet formatted on many rows and many columns writes a cell wherever a formatted row
+    /// crosses a formatted column that records a part the row does not, and a row format writes a row element for every row
+    /// it covers, holding a cell or not. The default limit is the cells a file is read with
+    /// (<see cref="XlsxReadOptions.DefaultMaxCells"/>); the reader counts cells only, so a file within it opens again, and
+    /// rows are counted here so that a row format over every row is bounded too.
     /// </summary>
     TooManyCells,
 
@@ -107,15 +110,22 @@ public sealed class XlsxSaveException : Exception
     }
 }
 
-/// <summary>What a write may produce (ADR-0330 §6, §9).</summary>
+/// <summary>
+/// What a write may produce, and how it paces itself (ADR-0330 §6, §9). Beyond either limit the Workbook is refused by name,
+/// never written in part. The write takes its snapshot of the Workbook before it first yields, then builds the file from it
+/// in slices sized by time, yielding between them so that a browser keeps painting, and reports its progress after each, as
+/// a read does (<see cref="XlsxReadOptions"/>).
+/// </summary>
 public sealed class XlsxSaveOptions
 {
     /// <summary>
-    /// The cells the whole workbook may write, every worksheet counted, each cell element a cell: the Sheets' own, the cells an
-    /// array spills into, and the cells of no value written where a formatted row crosses a formatted column. The default is
-    /// <see cref="XlsxReadOptions.DefaultMaxCells"/>, the most a file is read with by default, so that what is written opens
-    /// again; an application that raises its read limit may raise this one with it. Beyond it the write is refused by name
-    /// (<see cref="XlsxSaveRefusal.TooManyCells"/>) before anything is written.
+    /// The cells the whole workbook may write, every worksheet counted, each element a cell: the Sheets' own cells, the cells
+    /// an array spills into, the cells of no value written where a formatted row crosses a formatted column, a Linked Table's
+    /// cells and its header's, and each row a row format writes, which is an element of its own whether or not it holds a
+    /// cell (a row format over every row writes 1,048,576). The default is <see cref="XlsxReadOptions.DefaultMaxCells"/>, the
+    /// most a file is read with by default, so that what is written opens again; an application that raises its read limit
+    /// may raise this one with it. Beyond it the write is refused by name (<see cref="XlsxSaveRefusal.TooManyCells"/>) before
+    /// anything is written.
     /// </summary>
     public long MaxCells { get; init; } = XlsxReadOptions.DefaultMaxCells;
 
@@ -126,4 +136,35 @@ public sealed class XlsxSaveOptions
     /// name (<see cref="XlsxSaveRefusal.TooLarge"/>) before anything is written.
     /// </summary>
     public long MaxUncompressedBytes { get; init; } = XlsxReadOptions.DefaultMaxUncompressedBytes;
+
+    /// <summary>
+    /// Told how far the write has come after every slice, and once more when every element is written. It is told on the
+    /// thread the write is running on, which after its first yield need not be a component's renderer: a component that
+    /// shows it passes a <see cref="Progress{T}"/> made on its renderer, which posts there, or marshals with
+    /// <c>InvokeAsync</c>.
+    /// </summary>
+    public IProgress<XlsxSaveProgress>? Progress { get; init; }
+
+    /// <summary>
+    /// How long one slice works before the write yields. A slice always does some work, so a zero budget yields after every
+    /// batch. The default is 30 ms, a read's.
+    /// </summary>
+    public TimeSpan SliceBudget { get; init; } = TimeSpan.FromMilliseconds(30);
+
+    /// <summary>
+    /// What the write awaits between slices. By default it is <see cref="Task.Yield"/>, in a browser too, where it gives the
+    /// page a turn of its event loop to paint in.
+    /// </summary>
+    public Func<ValueTask>? Yield { get; init; }
 }
+
+/// <summary>How far a write has come (<see cref="XlsxSaveOptions.Progress"/>): the Workbook's snapshot being planned, then
+/// the worksheets being written.</summary>
+/// <param name="Sheet">The index of the worksheet being written, in the file's order, from zero, a Linked Table's after the
+/// Sheets'; -1 while the snapshot is planned: its cells counted against the limit and checked.</param>
+/// <param name="Sheets">The worksheets the file holds: one for each Sheet and one for each Linked Table.</param>
+/// <param name="Elements">The elements written so far, counted as <see cref="XlsxSaveOptions.MaxCells"/> counts them; 0 while
+/// the snapshot is planned.</param>
+/// <param name="TotalElements">The elements the file writes, counted as <see cref="XlsxSaveOptions.MaxCells"/> counts them;
+/// 0 while the snapshot is planned.</param>
+public readonly record struct XlsxSaveProgress(int Sheet, int Sheets, long Elements, long TotalElements);
