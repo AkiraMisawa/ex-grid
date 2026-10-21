@@ -134,6 +134,47 @@
         </DocsExample>
     </DocsSection>
 
+    <DocsSection Title="Find">
+        <p>
+            <kbd>Ctrl+F</kbd> in the report opens the report grid's find panel, as in
+            <a href="exgrid/sorting-filtering#with-gridsource-from">ExGrid</a>, and Enter (Shift+Enter backward) moves
+            the Focus to the next match. ExPivot answers it over the report <strong>as shown</strong>, as Excel's Find
+            over a PivotTable reads the cells on the sheet.
+        </p>
+        <ul>
+            <li>
+                <strong>Every cell the report lays out</strong> is searched: the row labels, the values, the subtotals
+                and the grand totals, the rows beyond the ones on screen included. A cell matches on its
+                <strong>displayed text</strong>, its number format applied (<code>1,235</code>, not the
+                <code>1234.5</code> behind it), by ExGrid's rule: case ignored unless <em>Match case</em>, contained
+                unless <em>Whole cell</em>. With more than one cell selected, only the selection is searched.
+            </li>
+            <li>
+                <strong>A collapsed group is not searched inside, and nothing is expanded to show a match.</strong>
+                Its rows are not laid out, so they are not found, and a search never changes the report's shape.
+                Expand the group to search it.
+            </li>
+            <li>
+                <strong>The matches on screen are marked</strong> as you type, the current one apart, and the rows
+                scrolled into view are marked as they are painted: ExPivot judges them by the rule it finds by, through
+                ExGrid's Match Mark, in the Visual Tokens <code>--ex-match-mark-fill</code> and
+                <code>--ex-match-mark-current-fill</code>.
+            </li>
+            <li>
+                <strong>There is no Replace.</strong> A report is computed, not written, so nothing in it can be replaced.
+            </li>
+        </ul>
+        <p>
+            Nothing is wired for it. Over a server's report, the rows beyond the Window are read through the
+            <code>copy</code> transport of <code>PivotReportSource.Fetch</code>, by the Report Version on screen, a block
+            of rows at a time, until the match.
+        </p>
+        <DocsExample Builtin="typeof(FindInReport)" Mud="typeof(FindInReportMud)" Files="@(["Examples/Pivot/Sales.cs"])">
+            Click the report, press Ctrl+F and type "laptop": only Europe's rows are found and marked, because the other
+            regions are collapsed. Then type a revenue figure as it is shown, with its thousands separator.
+        </DocsExample>
+    </DocsSection>
+
     <DocsSection Title="An Order Key on a server">
         <p>
             An Order Key orders a field's Items by a key it gives each one, rather than by label: over local data,

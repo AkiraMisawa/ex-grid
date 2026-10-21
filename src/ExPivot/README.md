@@ -13,6 +13,8 @@ clipboard. The application persists the **Pivot Layout**.
   collapse, Hidden Items, sorting by label or by value, Show Values As, and Show Details.
 - A number that does not fit is `####`, never a shorter number; a copy carries the full-precision
   values; money is summed exactly.
+- Find (Ctrl+F) over the report as shown: every label, value and total laid out, by its displayed
+  text, the matches on screen marked; a collapsed group is not searched inside, and nothing expands.
 
 > **ExPivot ships with ExGrid, at the same version;** upgrade them together. While the version is
 > `0.x`, the API may change from one version to the next; each version's

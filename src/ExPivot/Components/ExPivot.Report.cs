@@ -78,6 +78,7 @@ public partial class ExPivot
     private readonly RenderFragment _gridFragment;
     private readonly EventCallback<RowRange> _rangeNeeded;
     private readonly Func<ExGrid.Clipboard.GridCopyRequest, CancellationToken, Task<ExGrid.Clipboard.GridCopyAnswer>> _copyAnswer;
+    private readonly Func<ExGrid.Finding.GridFindRequest, CancellationToken, Task<ExGrid.Finding.GridFindResult>> _find;
 
     private PivotReportMetadata? _report;
     private int _rowSequenceVersion;
@@ -143,6 +144,7 @@ public partial class ExPivot
         _cellChangedAt = CellChangedAt;
         _summarize = SummarizeReportAsync;
         _copyAnswer = CopyReportAsync;
+        _find = FindInReportAsync;
         _rangeNeeded = new EventCallback<RowRange>(null, (Func<RowRange, Task>)WindowNeededAsync);
         _summaryFiguresChanged = new EventCallback<SummaryFigures>(null, (Func<SummaryFigures, Task>)OnSummaryFiguresChangedAsync);
         _gridFragment = RenderGrid;
@@ -467,7 +469,11 @@ public partial class ExPivot
         // smaller of ten and its source's read-ahead; a local one, which reads none ahead, only once
         // they do (ADR-0183).
         builder.AddComponentParameter(36, nameof(ExGrid<PivotDisplayRow>.RangeRequestMargin), RangeRequestMargin);
-        builder.AddComponentReferenceCapture(37, grid => _grid = (ExGrid<PivotDisplayRow>)grid);
+        // Find over the report as shown, and its matches in view marked by the rule it finds by
+        // (ADR-0332 §1 and §4). A report is not written, so no Replace is offered (§2).
+        builder.AddComponentParameter(38, nameof(ExGrid<PivotDisplayRow>.OnFind), _find);
+        builder.AddComponentParameter(39, nameof(ExGrid<PivotDisplayRow>.FindMatch), ReportMatch);
+        builder.AddComponentReferenceCapture(40, grid => _grid = (ExGrid<PivotDisplayRow>)grid);
         builder.CloseComponent();
     }
 
