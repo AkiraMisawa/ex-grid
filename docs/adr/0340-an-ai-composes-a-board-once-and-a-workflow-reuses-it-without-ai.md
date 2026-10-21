@@ -123,3 +123,38 @@ here so they are not re-derived:
   selection (ADR-0011), not when it next raises the dropped selection.
 - **Its JSON** names the output, the input, the version, the columns and each tuple, a date as
   `yyyy-MM-dd` (with `THH:mm:ss` when it holds a time), so an engine in any language can run it.
+
+*The Board Diff, 2026-10-21 (ExBoard ticket 07).*
+
+- **A part is a view's, and only where it differs from the Board.** A grid's part is its View State
+  (ADR-0207) and the columns the user hid; a pivot's is its layout; a chart's its hidden series, range
+  and axis (ADR-0272). A view the user has not changed, or has changed back, has none. The JSON is
+  `{"version": 1, "views": {"<id>": {"grid" | "pivot" | "chart": …}}}`, each part in its own reader's
+  form, so the View State and the layout keep their versions.
+- **A grid's part names the columns hidden as well as those shown.** The View State leaves a hidden
+  column out, which next time would hide a column the Board added since as well; named, a column in
+  neither list is one the Board added, and is shown, last.
+- **Fitting drops by the smallest part that no longer fits.** A view gone, or now of another kind,
+  drops its part; within a grid, a column, a sort level or a column's filter on a column the grid no
+  longer shows is dropped alone and the rest applies; a pivot layout placing a field its input no
+  longer declares, or declares as another kind, is dropped whole, as a layout without one of its fields
+  is another layout. A part names the kinds of the columns it depends on, a grid's filtered columns and
+  a pivot's placed fields, so a filter set on a column declared another kind since is dropped, never
+  laid over a column its operands no longer read (spine rule 1). A chart's part is not checked against
+  its spec: a hidden key naming no series, or a range holding no point, is said on the chart
+  (ADR-0272). A hidden column the grid no longer shows is named among the drops too. Each drop
+  is one sentence naming its path, in `BoundBoard.Dropped`, and the component says them above the
+  views. A Diff that is not one this reader reads (another version, a member it does not have) is
+  refused whole, as a Board is: that is not a Board that has changed, but text that is not a Diff.
+- **The user's changes are applied in the Board, not in the spec.** The grid's gestures (width, order,
+  hide, pin; ADR-0010/0016) are taken by the bound view and pushed back as its Columns, so a Board's
+  grid now offers them; its sort and filter stay its source's. The last column shown cannot be
+  hidden, since a Board offers no way to show one again.
+- **Raised only on a change.** A narrowing moves a grid's rows, not its View State, and raises
+  nothing; a Diff laid over is the starting point, not a change, unless some of it was dropped: then
+  the Diff that applied is raised, so a host keeping each one raised keeps no part that will not apply.
+  The component reads `Diff` when it changes, as it reads `Data`, and compares by the JSON, so a host
+  that hands back each Diff it is raised binds nothing again. A Board bound again for new data or a new
+  Board keeps what the user has changed since; only a new Diff replaces it.
+- **A gesture behind the columns is refused.** A resize, an order or a pin naming a column no longer
+  shown, a round trip behind a hide on the Server host, is not taken (spine rule 6).

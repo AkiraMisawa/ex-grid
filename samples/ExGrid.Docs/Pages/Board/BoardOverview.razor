@@ -75,10 +75,30 @@
         </p>
     </DocsSection>
 
+    <DocsSection Title="What the user changes, kept as a Board Diff">
+        <p>
+            Running a Board never rewrites it. The user may still sort and filter a grid, drag its columns' widths
+            and order, pin or hide a column, rearrange a pivot, hide a chart's series, narrow its range or switch its
+            axis. Each change raises <code>OnDiff</code> with the whole <code>BoardDiff</code>: one part for each view
+            that differs from what the Board writes, a grid's View State and the columns hidden from it, a pivot's
+            layout, a chart's series, range and axis. A selection, and the narrowing a link makes of it, is not a
+            change to the Board and raises nothing. Sort the blotter above to see its JSON.
+        </p>
+        <p>
+            The host keeps <code>ToJson()</code> for its user and hands it back next time: it reads it with
+            <code>BoardDiff.Read</code> and passes it as <code>Diff</code>, laid against the Board as it is then. A part that no longer fits, a
+            view the Board no longer has, a column its grid no longer shows, a filter on a column its input now declares
+            another kind, is dropped by name and the rest applies;
+            the Board says what it dropped above its views. A column the Board has added since is shown, not taken for
+            one the user hid. Press <em>Draw with my changes</em>, or first remove the blotter's P&amp;L column from the
+            JSON, to see both. Making the user's view the default is writing a new Board.
+        </p>
+    </DocsSection>
+
     <DocsSection Title="Still to come">
         <p>
-            A link from a pivot's cell and the Board Diff that hands back what the user changed are decided (ADR-0340)
-            and not yet drawn. ExBoard is not yet published as a package.
+            A link from a pivot's cell is decided (ADR-0340) and not yet drawn. ExBoard is not yet published as a
+            package.
         </p>
     </DocsSection>
 
@@ -87,6 +107,7 @@
         <ApiTable Type="typeof(global::ExBoard.BoundBoard)" />
         <ApiTable Type="typeof(global::ExBoard.LinkCondition)" />
         <ApiTable Type="typeof(global::ExBoard.BoardOutput)" />
+        <ApiTable Type="typeof(global::ExBoard.BoardDiff)" />
         <ApiTable Type="typeof(global::ExBoard.Components.ExBoard)" />
     </DocsSection>
 </DocsPage>

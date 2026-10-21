@@ -22,6 +22,20 @@
 
     else if (_bound is { } bound)
     {
+        @if (bound.Dropped.Count > 0)
+        {
+            @* What of the user's last changes no longer fits is said, never applied to something else
+               (ADR-0340, Q7; spine rule 1). *@
+            <div class="ex-board-dropped" role="status">
+                <span>Not laid over, as the Board has changed:</span>
+                <ul>
+                    @foreach (var dropped in bound.Dropped)
+                    {
+                        <li>@dropped</li>
+                    }
+                </ul>
+            </div>
+        }
         @foreach (var row in bound.Board.Layout)
         {
             var shares = row.Cells.Sum(c => c.Width);
@@ -38,9 +52,11 @@
                         @switch (view)
                         {
                             case BoundGridView grid:
-                                <ExGrid @ref="_grids[cell.View]" TRow="ShapedRow" Source="grid.Grid.Source" Columns="grid.Grid.Columns" PinnedColumnCount="grid.Grid.PinnedColumnCount"
+                                <ExGrid @ref="_grids[cell.View]" TRow="ShapedRow" Source="grid.Grid.Source" Columns="grid.Columns" PinnedColumnCount="grid.PinnedColumnCount"
                                         Chrome="Chrome" ViewportHeight="row.Height" ViewportWidth="ViewportSize.Stretch"
-                                        SelectionChanged="SelectionChangedOf(cell.View)" />
+                                        SelectionChanged="SelectionChangedOf(cell.View)"
+                                        OnColumnWidthChanged="_gridChanges[cell.View].Width" OnColumnOrderChanged="_gridChanges[cell.View].Order"
+                                        OnColumnHidden="_gridChanges[cell.View].Hidden" OnPinnedCountChanged="_gridChanges[cell.View].Pinned" />
                                 @foreach (var output in bound.Board.Outputs.Where(o => o.From == cell.View))
                                 {
                                     @* Never disabled: a press that follows a selection a round trip later is
@@ -55,7 +71,7 @@
                                 }
                                 break;
                             case BoundPivotView pivot:
-                                <ExPivot Source="pivot.Source" Layout="LayoutOf(pivot)" LayoutChanged="_layoutChanged[cell.View]"
+                                <ExPivot Source="pivot.Source" Layout="pivot.Layout" LayoutChanged="_layoutChanged[cell.View]"
                                          Chrome="Chrome" PivotChrome="PivotChrome" ShowFieldList="false"
                                          ViewportHeight="row.Height" ViewportWidth="ViewportSize.Stretch" />
                                 break;
@@ -66,7 +82,10 @@
                                 break;
                             case BoundChartView chart:
                                 <ExChart Definition="chart.Reading.Definition" Title="@chart.Reading.Title" Chrome="ChartChrome"
-                                         Width="ChartWidth(row, cell, shares)" Height="row.Height" />
+                                         Width="ChartWidth(row, cell, shares)" Height="row.Height"
+                                         HiddenSeries="chart.HiddenSeries" OnSeriesVisibilityChanged="_chartChanges[cell.View].Visibility"
+                                         Range="chart.Range" OnRangeChanged="_chartChanges[cell.View].Range"
+                                         Scale="chart.Scale" OnScaleChanged="_chartChanges[cell.View].Scale" />
                                 break;
                         }
                     </section>
