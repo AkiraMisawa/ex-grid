@@ -214,8 +214,8 @@ What this section said before is quoted beside each change.
 
 ### The family ships together *(added 2026-10-03)*
 
-A tag publishes thirteen packages, all at its one version *(ten until 2026-10-19, when ExChart's three
-joined the train: ADR-0283)*:
+A tag publishes fourteen packages, all at its one version *(ten until 2026-10-19, when ExChart's three
+joined the train: ADR-0283; thirteen until 2026-10-21, when ExBoard joined it: ADR-0340)*:
 
 | Product | Packages |
 |---|---|
@@ -224,6 +224,7 @@ joined the train: ADR-0283)*:
 | The Snapshot | `ExGrid.Data`, `ExGrid.Data.Arrow` |
 | ExPivot | `ExPivot.Engine`, `ExPivot`, `ExPivot.MudBlazor` |
 | ExChart | `ExChart.Engine`, `ExChart`, `ExChart.MudBlazor` |
+| ExBoard | `ExBoard` |
 
 - **One version, not one per product.** Every reference inside the family is exact (`[x]`), as the
   Wrapper's on the core is above. ExSheet and ExPivot draw with ExGrid and depend on exactly the
@@ -338,3 +339,7 @@ the public surface below is decided in an ADR of its own.)*
 decided with the user: ExChart's `ExChart.Engine`, `ExChart` and `ExChart.MudBlazor` join this train
 once they are in `src/`, making thirteen packages at the tag's one version. Until then the list above
 stands.)*
+
+*(2026-10-21, [ADR-0340](./0340-an-ai-composes-a-board-once-and-a-workflow-reuses-it-without-ai.md) "Shipping":
+`ExBoard` joins the train, with exact references to the ExGrid, ExPivot and ExChart it was built with
+and no Wrapper, making fourteen packages.)*

@@ -123,7 +123,7 @@
             the Board, which is what a workflow saves and runs again without the model, and the Board bound to draw now.
             Edit the call below and leave the field.
         </p>
-        <DocsExample Builtin="typeof(BoardToolCallBuiltin)" Files="@(["Examples/Board/BoardToolCall.cs"])" />
+        <DocsExample Builtin="typeof(BoardToolCallBuiltin)" Mud="typeof(BoardToolCallMud)" Files="@(["Examples/Board/BoardToolCall.cs"])" />
     </DocsSection>
 
     <DocsSection Title="A Chart Spec is a Board of one view">
@@ -139,14 +139,24 @@
             the tool says it. Bind it with each handle's Snapshot under the handle's name. Below, the spec is a
             <code>draw_chart</code> call's; write <code>"y": "book"</code> and leave the field to see it refused.
         </p>
-        <DocsExample Builtin="typeof(ChartSpecBoardBuiltin)" Files="@(["Examples/Board/ChartSpecBoard.cs"])" />
+        <DocsExample Builtin="typeof(ChartSpecBoardBuiltin)" Mud="typeof(ChartSpecBoardMud)" Files="@(["Examples/Board/ChartSpecBoard.cs"])" />
     </DocsSection>
 
     <DocsSection Title="Still to come">
         <p>
             A source held on a server already says its shape before any row, and <code>BoardInput.CheckAsync</code>
             checks an input against it; a Board drawn over such a source, rather than over Snapshots, is still to
-            come. ExBoard is not yet published as a package.
+            come.
+        </p>
+    </DocsSection>
+
+    <DocsSection Title="The package">
+        <p>
+            ExBoard is one package, <code>ExBoard</code>, published at the family's one version with exact references
+            to the ExGrid, ExPivot and ExChart it was built with. It has no MudBlazor Wrapper: each view already takes
+            its product's Chrome, and the Board passes <code>Chrome</code>, <code>PivotChrome</code> and
+            <code>ChartChrome</code> through, so a MudBlazor application hands it the Wrappers' Chromes, as the
+            Examples above do under the MudBlazor switch.
         </p>
     </DocsSection>
 

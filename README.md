@@ -20,7 +20,7 @@ keep the same DOM, and a grid that refuses rather than guesses: a number that do
 
 [![A trade blotter in ExGrid: prices tick and the changed cells flash, a desk is chosen, and a rectangle of P&L is selected with the mouse and extended with the keyboard](docs/readme/blotter-builtin.gif)](https://akiramisawa.github.io/ex-grid/showcase/blotter)
 
-One repository, four products, each a separate package:
+One repository, five products, each a separate package:
 
 | | |
 |---|---|
@@ -28,8 +28,10 @@ One repository, four products, each a separate package:
 | **ExSheet** | A general-purpose sheet — cells addressed `A1`, Formulas computed as Excel computes them — drawn by ExGrid |
 | **ExPivot** | Excel's PivotTable — Filters, Columns, Rows and Values in a Fields pane — drawn by ExGrid |
 | **ExChart** | Charts of the data the grids show, or your application hands over, drawn as SVG — charted from a selection in a click |
+| **ExBoard** | A Board: grids, pivots and charts laid out over typed inputs, composed once as JSON (by an AI, say) and run again without it |
 
-Each has a MudBlazor Wrapper (`ExGrid.MudBlazor`, `ExSheet.MudBlazor`, `ExPivot.MudBlazor`, `ExChart.MudBlazor`).
+The first four each have a MudBlazor Wrapper (`ExGrid.MudBlazor`, `ExSheet.MudBlazor`, `ExPivot.MudBlazor`,
+`ExChart.MudBlazor`); ExBoard takes their Chromes as they are.
 
 ## Features
 
@@ -181,6 +183,21 @@ The parts of a chart, as [the Docs Site](https://akiramisawa.github.io/ex-grid/e
 <!-- figure chart-anatomy -->
 [![An ExChart of two years of an equity index as weekly candles with a 25-day average and the volume in a panel below, the pointer resting on the plot; each part the list names is ringed and numbered](samples/ExGrid.Docs/wwwroot/figures/chart-anatomy.png)](https://akiramisawa.github.io/ex-grid/exchart)
 
+### ExBoard
+
+A Board is JSON composed once, by an AI from a request in words or by hand, and run again every day
+without it: rows of ExGrid, ExPivot and ExChart views over typed Board Inputs.
+
+- **Checked before it is drawn** — each input declares its columns and kinds, and a source that
+  answers otherwise is refused by name, before a row is read
+- **Linked by value** — a selection in one view narrows the views it links to, on the fields it names
+- **Outputs on a confirm** — what the user hands on is a value condition and the version of the
+  source it was taken against, never a list of row numbers
+- **The user's changes kept apart** — a Board Diff holds what the user changed, laid over the Board
+  the next time, and what no longer fits is dropped and said
+- **A tool for an AI** — `draw_board` takes a Board and the handles of its data, and answers with
+  the Board as read, or the refusal and where
+
 1. **Chart Filters**: the series shown and the range, raised to your application, which holds them
 2. **Export**: the CSV, SVG and PNG of what the chart draws, each saved on one click
 3. **Legend**: a click on an entry hides its series
@@ -281,6 +298,7 @@ dotnet add package ExPivot --prerelease             # the pivot table; ExPivot.E
 dotnet add package ExPivot.MudBlazor --prerelease
 dotnet add package ExChart --prerelease             # the charts; ExChart.Engine alone holds the definitions
 dotnet add package ExChart.MudBlazor --prerelease
+dotnet add package ExBoard --prerelease             # a Board of grids, pivots and charts over typed inputs
 dotnet add package ExGrid.Data.Arrow --prerelease   # a Snapshot as Apache Arrow
 ```
 
@@ -292,6 +310,7 @@ Each package's own readme takes it from there:
 | ExSheet | [`ExSheet`](src/ExSheet/README.md), [`ExSheet.Engine`](src/ExSheet.Engine/README.md), [`ExSheet.MudBlazor`](src/ExSheet.MudBlazor/README.md) |
 | ExPivot | [`ExPivot`](src/ExPivot/README.md), [`ExPivot.Engine`](src/ExPivot.Engine/README.md), [`ExPivot.MudBlazor`](src/ExPivot.MudBlazor/README.md) |
 | ExChart | [`ExChart`](src/ExChart/README.md), [`ExChart.Engine`](src/ExChart.Engine/README.md), [`ExChart.MudBlazor`](src/ExChart.MudBlazor/README.md) |
+| ExBoard | [`ExBoard`](src/ExBoard/README.md) |
 | Data | [`ExGrid.Data`](src/ExGrid.Data/README.md), [`ExGrid.Data.Arrow`](src/ExGrid.Data.Arrow/README.md) |
 
 **Requirements:** .NET 10 or newer, Chrome or Edge, and an interactive render mode. ExGrid is
@@ -335,7 +354,7 @@ Every decision is recorded with its reasons in [`docs/adr/`](docs/adr/), and the
 ## Status
 
 **Beta.** The specification is settled and every test layer passes in CI, but the API may change
-between prereleases. The family's thirteen packages, ExChart's three among them from the next prerelease, ship together as `0.1.0-beta.N`, then as release
+between prereleases. The family's fourteen packages, ExChart's three and ExBoard among them from the next prerelease, ship together as `0.1.0-beta.N`, then as release
 candidates `0.1.0-rc.N`; a stable version waits
 for the [Definition of Done](docs/definition-of-done.md) to be signed off. What remains is in
 [`docs/implementation-status.md`](docs/implementation-status.md).

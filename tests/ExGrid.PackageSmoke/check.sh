@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
-# Packs the family's thirteen packages — ExGrid and ExGrid.MudBlazor; ExSheet.Engine, ExSheet and
+# Packs the family's fourteen packages — ExGrid and ExGrid.MudBlazor; ExSheet.Engine, ExSheet and
 # ExSheet.MudBlazor; ExGrid.Data and ExGrid.Data.Arrow; ExPivot.Engine, ExPivot and
-# ExPivot.MudBlazor; ExChart.Engine, ExChart and ExChart.MudBlazor (ADR-0283) — reads back what
+# ExPivot.MudBlazor; ExChart.Engine, ExChart and ExChart.MudBlazor (ADR-0283); and ExBoard
+# (ADR-0340) — reads back what
 # each declares, and builds and publishes an application that takes them from the packed files
 # alone (ADR-0042; the family ships at one version since its note of 2026-10-03). A Snapshot is written to an Arrow stream and read back through the packed data
 # packages, and the check fails if it comes back different (DA-16). A trimmed Consumer also
@@ -27,7 +28,7 @@ rm -rf "$feed" "$cache" "$out" "$here/bin" "$here/obj" "$here/RoundTrip/bin" "$h
 mkdir -p "$feed"
 
 echo "== pack $version"
-packages="ExGrid ExGrid.MudBlazor ExSheet.Engine ExSheet ExSheet.MudBlazor ExGrid.Data ExGrid.Data.Arrow ExPivot.Engine ExPivot ExPivot.MudBlazor ExChart.Engine ExChart ExChart.MudBlazor"
+packages="ExGrid ExGrid.MudBlazor ExSheet.Engine ExSheet ExSheet.MudBlazor ExGrid.Data ExGrid.Data.Arrow ExPivot.Engine ExPivot ExPivot.MudBlazor ExChart.Engine ExChart ExChart.MudBlazor ExBoard"
 for project in $packages; do
   dotnet pack "$root/src/$project" -c Release -o "$feed" -p:Version="$version" --nologo
 done
@@ -108,7 +109,7 @@ enginedeps=$(grep -o '<dependency id="[^"]*" version="[^"]*"' <<<"$(nuspec ExPiv
 # Nothing else the family packs references a data package directly (DA-1), and nothing but the
 # Arrow package itself references ExGrid.Data.Arrow.
 if grep -q '<dependency id="ExGrid.Data.Arrow"' <<<"$(nuspec ExGrid)"; then fail "ExGrid references ExGrid.Data.Arrow"; fi
-for id in ExGrid.MudBlazor ExSheet.Engine ExSheet ExSheet.MudBlazor ExPivot ExPivot.MudBlazor ExChart.Engine ExChart ExChart.MudBlazor; do
+for id in ExGrid.MudBlazor ExSheet.Engine ExSheet ExSheet.MudBlazor ExPivot ExPivot.MudBlazor ExChart.Engine ExChart ExChart.MudBlazor ExBoard; do
   if grep -qE '<dependency id="ExGrid\.Data(\.Arrow)?"' <<<"$(nuspec "$id")"; then fail "$id references a data package"; fi
 done
 # ExPivot depends on exactly the core and the engine it was built with, and on nothing else.
@@ -134,10 +135,17 @@ mudchartdeps=$(grep -o '<dependency id="[^"]*" version="[^"]*"' <<<"$(nuspec ExC
   || fail "ExChart.MudBlazor's dependencies are not exactly ExChart and ExGrid.MudBlazor $version and MudBlazor [9.6.0, 10.0.0): $mudchartdeps"
 if grep -qiE '\.(js|mjs|cjs)$' <<<"$(entries ExChart.MudBlazor)"; then fail "ExChart.MudBlazor ships a script"; fi
 
-# The release publishes .feed as it is, so it holds the thirteen packages and their symbol packages, and
+# ExBoard depends on exactly the three products it lays out, of the version it was built with, and on
+# nothing else: no engine references it, and it serves no file of its own (ADR-0340).
+boarddeps=$(grep -o '<dependency id="[^"]*" version="[^"]*"' <<<"$(nuspec ExBoard)" | sort)
+[ "$boarddeps" = "$(printf '%s\n' "<dependency id=\"ExChart\" version=\"[$version]\"" "<dependency id=\"ExGrid\" version=\"[$version]\"" "<dependency id=\"ExPivot\" version=\"[$version]\"" | sort)" ] \
+  || fail "ExBoard's dependencies are not exactly ExGrid, ExPivot and ExChart $version: $boarddeps"
+if grep -qE '^staticwebassets/' <<<"$(entries ExBoard)"; then fail "ExBoard ships a static asset"; fi
+
+# The release publishes .feed as it is, so it holds the fourteen packages and their symbol packages, and
 # nothing else (ADR-0042).
 expected=$(for id in $packages; do printf '%s\n' "$id.$version.nupkg" "$id.$version.snupkg"; done | sort)
-[ "$(ls "$feed" | sort)" = "$expected" ] || fail "the release feed $feed does not hold exactly the thirteen packages: $(ls "$feed" | tr '\n' ' ')"
+[ "$(ls "$feed" | sort)" = "$expected" ] || fail "the release feed $feed does not hold exactly the fourteen packages: $(ls "$feed" | tr '\n' ' ')"
 
 echo "== an application that takes them"
 dotnet publish "$here" -c Release -o "$out" --nologo \
