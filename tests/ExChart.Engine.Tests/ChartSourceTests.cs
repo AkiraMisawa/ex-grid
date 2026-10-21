@@ -100,6 +100,8 @@ public class ChartSourceTests
     [Theory] // ADR-0344: what a thinned point cannot stand for is refused by path, before any source is asked
     [InlineData("""{"id": "s", "name": "S", "kind": "observation", "data": "trades", "x": "day", "y": "pnl"}""", "series[0].kind")]
     [InlineData("""{"id": "s", "name": "S", "kind": "level", "data": "trades", "x": "day", "y": "pnl", "label": "day"}""", "series[0].label")]
+    [InlineData("""{"id": "s", "name": "S", "kind": "priceRange", "data": "trades", "x": "day", "y": "pnl"}""", "series[0].kind")]
+    [InlineData("""{"id": "s", "name": "S", "kind": "level", "data": "trades", "x": "day"}""", "series[0].y")]
     [InlineData("""{"id": "s", "name": "S", "kind": "level", "data": "trades", "x": "day", "y": "pnl", "colour": {"column": "pnl", "scale": "sequential"}}""", "series[0].colour")]
     public async Task What_a_thinned_point_cannot_stand_for_is_refused_by_path(string series, string path)
     {
@@ -144,6 +146,19 @@ public class ChartSourceTests
 
         Assert.Equal(new PixelSummary(0, 19, -1, 7, 1500), said);
         Assert.Equal(source, Thinning.Through(source, [], kept));
+    }
+
+    [Fact] // ADR-0344: a source pixel whose kept points fall in two drawn pixels joins them, counting no row twice
+    public void A_source_pixel_across_two_drawn_pixels_joins_them()
+    {
+        var source = new List<PixelSummary> { new(5, 14, -3, 9, 100) };
+        var drawn = new List<PixelSummary> { new(0, 9, -1, 4, 4), new(10, 19, 0, 6, 4), new(30, 39, 1, 2, 2) };
+        double[] kept = [0, 3, 5, 9, 12, 14, 15, 19, 30, 39];
+
+        var said = Thinning.Through(source, drawn, kept);
+
+        // 100 rows under the source's pixel, and 0, 3, 15 and 19, each a row of its own.
+        Assert.Equal([new PixelSummary(0, 19, -3, 9, 104), new PixelSummary(30, 39, 1, 2, 2)], said);
     }
 
     [Fact] // ADR-0344: the scene's tooltip says the source's count where the drawing did not thin again

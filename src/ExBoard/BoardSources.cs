@@ -54,7 +54,9 @@ public sealed class BoardSource(Func<CancellationToken, ValueTask<DataShape>> sh
     {
         ArgumentNullException.ThrowIfNull(data);
         ArgumentNullException.ThrowIfNull(query);
-        var snapshot = query.Narrowing.Count == 0 ? data : Narrowing.Copy(data, Narrowing.Positions(data, query.Narrowing));
+        var snapshot = data;
+        // The rows the narrowing lets through, read in place rather than copied.
+        IEnumerable<int> through = query.Narrowing.Count == 0 ? Enumerable.Range(0, data.Rows.Count) : Narrowing.Positions(data, query.Narrowing);
         var hidden = PivotQuery.For(query.Layout).Placed.Where(f => f.HiddenItems.Count > 0 && snapshot.TryGetColumn(f.Field, out _))
             .Select(f => (Column: snapshot[f.Field], Hidden: f.HiddenItems.ToHashSet())).ToArray();
         // The cells grouped by the fields their paths name, each group a set of the Items they name
@@ -77,8 +79,9 @@ public sealed class BoardSource(Func<CancellationToken, ValueTask<DataShape>> sh
         var columns = query.On.Select(n => snapshot.TryGetColumn(n, out var column) ? column
             : throw new ArgumentException($"The link compares column '{n}', which pivot '{query.View}' does not read from its data.", nameof(query))).ToArray();
         var tuples = new List<object?[]>();
-        foreach (var row in snapshot.Rows)
+        foreach (var position in through)
         {
+            var row = snapshot.Rows[position];
             if (hidden.Any(h => h.Hidden.Contains(PivotItemKey.For(snapshot.ValueAt(row, h.Column)))))
                 continue;
             if (groups.Values.Any(g => g.Items.Contains([.. g.Columns.Select(c => PivotItemKey.For(snapshot.ValueAt(row, c)))])))

@@ -38,7 +38,9 @@ public static class Thinning
     /// <summary>
     /// What each pixel holds when the points were thinned before they came (ADR-0344): a pixel the drawing
     /// thinned again counts every row the source's pixels inside it held, not the points the source kept,
-    /// and a source pixel the drawing left alone says what it held.
+    /// and a source pixel the drawing left alone says what it held. A source pixel whose kept points fall in
+    /// two of the drawing's pixels joins them into one, so no row is counted twice and no two summaries
+    /// overlap.
     /// </summary>
     /// <param name="source">What each of the source's thinned pixels held.</param>
     /// <param name="drawn">What the drawing's own Thinning said of the points it was given.</param>
@@ -50,33 +52,38 @@ public static class Thinning
         ArgumentNullException.ThrowIfNull(kept);
         if (source.Count == 0)
             return drawn;
-        var taken = new bool[source.Count];
+        // Every summary, in order across; overlapping ones are one region, swept once.
+        var all = source.Select(p => (Pixel: p, Source: true)).Concat(drawn.Select(p => (Pixel: p, Source: false)))
+            .OrderBy(p => p.Pixel.From).ThenBy(p => p.Pixel.To).ToList();
+        var points = kept.Order().ToArray();
         var result = new List<PixelSummary>();
-        foreach (var pixel in drawn)
+        var next = 0;
+        var i = 0;
+        while (i < all.Count)
         {
-            var from = pixel.From;
-            var to = pixel.To;
-            var count = pixel.Count;
-            var min = pixel.Min;
-            var max = pixel.Max;
-            for (var i = 0; i < source.Count; i++)
+            var (from, to, min, max) = (all[i].Pixel.From, all[i].Pixel.To, all[i].Pixel.Min, all[i].Pixel.Max);
+            var sources = new List<PixelSummary>();
+            for (; i < all.Count && all[i].Pixel.From <= to; i++)
             {
-                var s = source[i];
-                if (taken[i] || s.From < pixel.From || s.From > pixel.To)
-                    continue;
-                taken[i] = true;
-                // The source's pixel stands for its rows: its kept points here are counted as all of them.
-                count += s.Count - kept.Count(x => x >= s.From && x <= s.To && x >= pixel.From && x <= pixel.To);
-                to = Math.Max(to, s.To);
-                min = Math.Min(min, s.Min);
-                max = Math.Max(max, s.Max);
+                var p = all[i].Pixel;
+                (to, min, max) = (Math.Max(to, p.To), Math.Min(min, p.Min), Math.Max(max, p.Max));
+                if (all[i].Source)
+                    sources.Add(p);
             }
-            result.Add(new PixelSummary(from, to, min, max, count));
-        }
-        for (var i = 0; i < source.Count; i++)
-        {
-            if (!taken[i])
-                result.Add(source[i]);
+            // A source pixel stands for its rows; a point kept outside every one stands for itself.
+            long count = sources.Sum(p => (long)p.Count);
+            var s = 0;
+            for (; next < points.Length && points[next] <= to; next++)
+            {
+                var x = points[next];
+                if (x < from)
+                    continue;
+                while (s < sources.Count && sources[s].To < x)
+                    s++;
+                if (s == sources.Count || x < sources[s].From)
+                    count++;
+            }
+            result.Add(new PixelSummary(from, to, min, max, (int)Math.Min(count, int.MaxValue)));
         }
         return result;
     }

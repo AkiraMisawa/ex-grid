@@ -201,20 +201,21 @@ public static class ChartSource
         {
             var path = $"series[{i++}]";
             if (s.ValueKind != JsonValueKind.Object)
-                return (AxisValues.Numbers, []);
+                throw new ChartSpecRefusedException(path, $"{path} is not an object: each series names its id, name, kind, data, x and y.");
             foreach (var p in s.EnumerateObject())
             {
                 if (!SeriesKeys.Contains(p.Name) && ChartSpec.SeriesKeys.Contains(p.Name))
                     throw new ChartSpecRefusedException($"{path}.{p.Name}", $"{path}.{p.Name} is one value a point, and a point read from a Chart Source stands for every row of its pixel; a series read from one draws its line from x and y.");
             }
             var kind = s.TryGetProperty("kind", out var k) && k.ValueKind == JsonValueKind.String ? k.GetString() : null;
-            if (kind is "observation" or "priceRange")
+            // A kind no Chart Spec knows is the reader's to refuse; one it knows and a thinned line cannot stand for, here.
+            if (kind is not null && !Kinds.Contains(kind) && ChartSpec.KindNames.Contains(kind))
                 throw new ChartSpecRefusedException($"{path}.kind", kind == "observation"
                     ? $"{path}.kind \"observation\" draws each row as a point of its own, which a Chart Source does not thin; a series read from one is a level, a rateOverInterval or an amountPerPeriod."
-                    : $"{path}.kind \"priceRange\" merges its rows into periods, which a Chart Source does not; a series read from one is a level, a rateOverInterval or an amountPerPeriod.");
-            string? Text(string key) => s.TryGetProperty(key, out var e) && e.ValueKind == JsonValueKind.String ? e.GetString() : null;
-            if (Text("data") is not { } data || Text("x") is not { } x || Text("y") is not { } y)
-                return (AxisValues.Numbers, []);
+                    : $"{path}.kind \"{kind}\" does not draw a line a Chart Source can thin; a series read from one is a level, a rateOverInterval or an amountPerPeriod.");
+            string Text(string key) => s.TryGetProperty(key, out var e) && e.ValueKind == JsonValueKind.String ? e.GetString()!
+                : throw new ChartSpecRefusedException($"{path}.{key}", $"{path}.{key} names a column, and is needed: a series read from a Chart Source is asked for its \"data\", its \"x\" and its \"y\".");
+            var (data, x, y) = (Text("data"), Text("x"), Text("y"));
             asked.Add((data, x, y));
         }
         return (values == "dates" ? AxisValues.Dates : AxisValues.Numbers, asked);

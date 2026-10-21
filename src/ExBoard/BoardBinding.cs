@@ -255,7 +255,7 @@ public sealed class BoundBoard
     /// rule 6), and answers false.
     /// </summary>
     /// <returns>Whether any view was narrowed again.</returns>
-    /// <exception cref="Exception">The source failed to answer; nothing is narrowed.</exception>
+    /// <exception cref="Exception">The source failed to answer the newest selection; its links let go, so nothing is narrowed by it.</exception>
     public async Task<bool> SelectCellsAsync(string from, IReadOnlyList<PivotCellItems>? cells, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(from);
@@ -270,8 +270,33 @@ public sealed class BoundBoard
         {
             var narrowing = _conditions.Where(c => c.Key.To.Contains(from)).Select(c => c.Value).ToArray();
             var under = Sources[pivot.Input].Under!;
-            for (var i = 0; i < links.Length; i++)
-                conditions[i] = await under(new BoardCellsQuery(from, pivot.Layout, cells, links[i].On, narrowing), cancellationToken).ConfigureAwait(false);
+            // Asked together, and resumed where the Board was called (no ConfigureAwait(false)): what follows
+            // narrows views, whose renderer is the caller's.
+            var asks = links.Select(l => under(new BoardCellsQuery(from, pivot.Layout, cells, l.On, narrowing), cancellationToken).AsTask()).ToArray();
+            try
+            {
+                var answered = await Task.WhenAll(asks);
+                answered.CopyTo(conditions, 0);
+            }
+            catch when (selected == pivot.Selected)
+            {
+                // The newest selection was not answered: its links let go, so no view stays narrowed by the
+                // selection before it while the pivot shows this one (spine rule 1).
+                var released = new HashSet<string>(StringComparer.Ordinal);
+                foreach (var link in links)
+                {
+                    if (Set(link, null))
+                        released.UnionWith(link.To);
+                }
+                foreach (var target in released)
+                    NarrowView(target);
+                throw;
+            }
+            catch
+            {
+                // A selection a later one replaced: its failure says nothing about what is shown (spine rule 6).
+                return false;
+            }
         }
         if (selected != pivot.Selected)
             return false;
@@ -422,8 +447,9 @@ public sealed class BoundBoard
     /// declaration, before any view is made or any row is fetched (ADR-0341). Nothing is drawn unless
     /// every input binds and every view can be made. Over a source, a grid's rows are fetched a page at a
     /// time, each fetch handed the narrowing the Board's links put on it; a pivot's report source is made
-    /// by the source, given that narrowing; and a chart, and a link from a pivot, are refused by path
-    /// until they can be drawn there.
+    /// by the source, given that narrowing; a chart is read through the source's <see cref="BoardSource.Thin"/>
+    /// (ADR-0344); and a link from a pivot asks its <see cref="BoardSource.Under"/> (ADR-0345). A chart or
+    /// such a link over a source that answers no such question is refused by path.
     /// </summary>
     /// <param name="board">The Board.</param>
     /// <param name="data">The Snapshot for each input held in memory, by the input's name.</param>
@@ -513,7 +539,8 @@ public sealed class BoundBoard
         ChartSourceReading? read = null;
         try
         {
-            read = await ReadThroughSourcesAsync(chart, conditions, cancellationToken).ConfigureAwait(false);
+            // Resumed where the ask was made (no ConfigureAwait(false)): the chart's reading is the renderer's.
+            read = await ReadThroughSourcesAsync(chart, conditions, cancellationToken);
         }
         catch (ChartSpecRefusedException e)
         {
@@ -526,10 +553,14 @@ public sealed class BoundBoard
         }
         if (asked != chart.Asked)
             return;
-        if (read is not null)
+        if (read is not null && read.Versions.FirstOrDefault(v => chart.Versions.TryGetValue(v.Key, out var shown) && v.Value < shown) is { Key: not null } older)
         {
-            if (read.Versions.Any(v => chart.Versions.TryGetValue(v.Key, out var shown) && v.Value < shown))
-                return;
+            // Never drawn over the newer data shown, and not left drawing what was asked before as if it were
+            // the answer: the chart says so in its place (spine rule 1).
+            chart.Refusal = $"The source answered the chart from version {older.Value} of '{older.Key}', older than version {chart.Versions[older.Key]} the chart was drawn from, so it is not drawn.";
+        }
+        else if (read is not null)
+        {
             chart.Reading = read.Reading;
             chart.Versions = read.Versions;
             chart.Refusal = null;

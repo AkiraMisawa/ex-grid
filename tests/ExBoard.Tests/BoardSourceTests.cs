@@ -65,6 +65,9 @@ public sealed class BoardSourceTests : BunitContext
         // Each chart query answered by a task the test may hold, in the order asked; null answers at once.
         public Func<BoardChartQuery, Task>? HoldChart { get; set; }
 
+        // The version a chart's answer names; null names the held data's own.
+        public long? ChartVersion { get; set; }
+
         public List<BoardCellsQuery> Cells { get; } = [];
 
         // Each cells query answered by a task the test may hold; null answers at once.
@@ -90,7 +93,7 @@ public sealed class BoardSourceTests : BunitContext
                 if (HoldChart is { } hold)
                     await hold(query);
                 var through = Narrowing.Copy(Held, Narrowing.Positions(Held, query.Narrowing));
-                return ChartSource.Thin(new SnapshotChartData(through), query.Chart, Held.Version);
+                return ChartSource.Thin(new SnapshotChartData(through), query.Chart, ChartVersion ?? Held.Version);
             } : null,
             Under = under ? async (query, _) =>
             {
@@ -261,6 +264,43 @@ public sealed class BoardSourceTests : BunitContext
         Assert.Equal([["FX"]], board.ConditionOf(board.Board.Links[0])!.Values);
     }
 
+    [Fact] // ADR-0345 / spine rule 1: a source that fails the newest selection lets its links go, so no view stays narrowed by the one before
+    public async Task A_source_that_fails_the_selection_lets_its_links_go()
+    {
+        var server = new Server();
+        var board = await Bind(Board($"{Pivot}, {Blotter}", """{"from": "byDesk", "to": ["blotter"], "on": ["desk"]}"""), server);
+        Assert.True(await board.SelectCellsAsync("byDesk", [Desk("Rates")], Xunit.TestContext.Current.CancellationToken));
+        server.HoldCells = _ => Task.FromException(new InvalidOperationException("the server is down"));
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => board.SelectCellsAsync("byDesk", [Desk("FX")], Xunit.TestContext.Current.CancellationToken));
+
+        Assert.Null(board.ConditionOf(board.Board.Links[0]));
+        Assert.Empty(server.Asked[^1].Narrowing);
+    }
+
+    [Fact] // ADR-0345 / spine rule 6: a failure for a selection a later one replaced says nothing, and leaves the later one's narrowing
+    public async Task A_failure_for_a_replaced_selection_is_dropped()
+    {
+        var server = new Server();
+        var board = await Bind(Board($"{Pivot}, {Blotter}", """{"from": "byDesk", "to": ["blotter"], "on": ["desk"]}"""), server);
+        var held = new List<TaskCompletionSource>();
+        server.HoldCells = _ =>
+        {
+            var gate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            held.Add(gate);
+            return gate.Task;
+        };
+
+        var first = board.SelectCellsAsync("byDesk", [Desk("Rates")], Xunit.TestContext.Current.CancellationToken);
+        var second = board.SelectCellsAsync("byDesk", [Desk("FX")], Xunit.TestContext.Current.CancellationToken);
+        held[1].SetResult();
+        Assert.True(await second);
+        held[0].SetException(new InvalidOperationException("the server is down"));
+        Assert.False(await first);
+
+        Assert.Equal([["FX"]], board.ConditionOf(board.Board.Links[0])!.Values);
+    }
+
     [Fact] // ADR-0345: the reference implementation reads a subtotal's rows and leaves out the Items the layout hides
     public void The_reference_reads_a_total_and_leaves_hidden_items_out()
     {
@@ -386,6 +426,19 @@ public sealed class BoardSourceTests : BunitContext
 
         await WaitFor(() => answered == 1);
         Assert.Equal("The source did not answer the chart: the server is down", chart.Refusal);
+    }
+
+    [Fact] // ADR-0344 / spine rule 1: an answer from older data than the chart shows is not drawn, and the chart says so
+    public async Task An_answer_from_older_data_is_said_not_drawn()
+    {
+        var server = new Server();
+        var board = await Bind(Board(Chart), server);
+        var chart = (BoundChartView)board["curve"];
+        server.ChartVersion = server.Held.Version - 1;
+
+        await board.AskAsync(chart, Xunit.TestContext.Current.CancellationToken);
+
+        Assert.Equal($"The source answered the chart from version {server.Held.Version - 1} of 'trades', older than version {server.Held.Version} the chart was drawn from, so it is not drawn.", chart.Refusal);
     }
 
     private static async Task WaitFor(Func<bool> condition)
