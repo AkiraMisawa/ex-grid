@@ -40,9 +40,18 @@ nothing reaches the stream.
 - **Refused by name:** a Workbook that declares a Linked Table (`LinkedTable`; ticket 05 writes it as an Excel Table and
   narrows this to the refusals ADR-0330 §6 lists), a cell that shows `#CIRC!` (`CircularReference`: a file holds Excel's Error
   Values only, Excel shows 0 there, and ExSheet refuses to, ADR-0047, so no Value the file can hold is the one shown — the
-  same reasoning as §6's `#GETTING_DATA`), a Formula longer than Excel's 8,192 characters, one that reads a Sheet the
-  Workbook does not have (Excel would read it as another workbook's) or one whose names bind otherwise (`Formula`), text longer than 32,767 characters or holding half of a surrogate pair, and a Sheet name with a control
-  character (`Text`), and more cells than `XlsxSaveOptions.MaxCells` (`TooManyCells`).
+  same reasoning as §6's `#GETTING_DATA`); a Formula Excel would not take — longer than its 8,192 characters, a text
+  constant over 255, calls nested past 64 levels, a call of more than 255 arguments, half of a surrogate pair — one that
+  reads a Sheet the Workbook does not have (Excel would read it as another workbook's), one that calls a name a `LET` binds
+  or a `LAMBDA` takes (the engine reads the call as one of an unknown function, `#NAME?`, and Excel would call the binding),
+  or one whose names bind otherwise (`Formula`); text longer than 32,767 characters or holding half of a surrogate pair, and
+  a Sheet name a worksheet's name cannot carry (below U+0020, U+FFFE, U+FFFF, half a surrogate pair; the C1 controls are
+  carried) (`Text`); more cells than `XlsxSaveOptions.MaxCells` (`TooManyCells`); and parts holding more uncompressed bytes
+  than `XlsxSaveOptions.MaxUncompressedBytes` (`TooLarge`), counted by the file layer as each part is written
+  (`XlsxWriteOptions.MaxUncompressedBytes`, refused there as `XlsxRefusal.TooLarge` naming the part).
+- **A call of a function is the function's.** A name followed by `(` is the declared function of that name wherever the
+  engine declares one, as the engine's parser takes it, though a `LET` binds the same spelling: `=LET(sum,1,SUM(sum,2))` is
+  written `_xlfn.LET(_xlpm.sum,1,SUM(_xlpm.sum,2))`. Ticket 07 asks Excel whether it reads it so.
 - **The crossings are bounded by the read limit.** A cell element is a cell (the Sheet's own, the cells an array spills into,
   and the cells of no value at crossings), and the default `MaxCells` is `XlsxReadOptions.DefaultMaxCells`, so whatever is
   written opens again under the reader's defaults; an application that raises one may raise the other. `SheetFormatPlan` now

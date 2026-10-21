@@ -194,6 +194,25 @@ public class RoundTripTests
         Assert.Throws<ArgumentException>(() => XlsxWriter.Create(new MemoryStream(), new XlsxWriteOptions { Styles = Styles with { Fills = [XlsxFill.None] } }));
     }
 
+    [Fact] // ADR-0330 §9: a workbook whose parts would hold more uncompressed bytes than the limit is refused by name, naming the part and the sheet it met, and nothing is handed to the stream
+    public async Task Writing_past_the_uncompressed_limit_is_refused_by_name()
+    {
+        using var output = new MemoryStream();
+        var writer = XlsxWriter.Create(output, new XlsxWriteOptions { MaxUncompressedBytes = 2_000 });
+        var refused = Assert.Throws<XlsxException>(() =>
+        {
+            var sheet = writer.AddSheet("One");
+            for (var row = 0; row < 1_000; row++)
+                sheet.Write(new XlsxCell(row, 0, XlsxCellType.Number, "1"));
+        });
+        await writer.DisposeAsync();
+
+        Assert.Equal((XlsxRefusal.TooLarge, "xl/worksheets/sheet1.xml", "One"), (refused.Reason, refused.Part, refused.Sheet));
+        Assert.Equal(0, output.Length);
+        Assert.Equal(XlsxReadOptions.DefaultMaxUncompressedBytes, new XlsxWriteOptions().MaxUncompressedBytes);
+        Assert.Throws<ArgumentOutOfRangeException>(() => XlsxWriter.Create(new MemoryStream(), new XlsxWriteOptions { MaxUncompressedBytes = 0 }));
+    }
+
     [Fact] // ADR-0330 §1: a cell is checked whole before anything of it is written, so a refused one leaves the sheet writable and the package well-formed
     public async Task A_refused_cell_leaves_the_sheet_as_it_was()
     {

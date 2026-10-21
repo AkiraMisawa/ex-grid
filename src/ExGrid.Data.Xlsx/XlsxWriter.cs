@@ -25,6 +25,17 @@ public sealed class XlsxWriteOptions
 
     /// <summary>The defined names the workbook part writes.</summary>
     public IReadOnlyList<XlsxDefinedName>? DefinedNames { get; init; }
+
+    /// <summary>
+    /// The uncompressed bytes the package's parts may hold together. A write that would go past it is refused by name
+    /// (<see cref="XlsxException"/>, <see cref="XlsxRefusal.TooLarge"/>), naming the part, and the sheet, it met; the package
+    /// is then abandoned, and only what an earlier <see cref="XlsxSheetWriter.FlushAsync"/> handed over has reached the
+    /// stream. The default is <see cref="XlsxReadOptions.DefaultMaxUncompressedBytes"/>, the most a file is read with by
+    /// default, so that what is written opens again. The package waits in memory between hand-offs, so a writer that never
+    /// flushes before <see cref="XlsxWriter.CompleteAsync"/> holds about this much, compressed, at most; it is 1 to
+    /// <see cref="XlsxReadOptions.DefaultMaxUncompressedBytes"/>.
+    /// </summary>
+    public long MaxUncompressedBytes { get; init; } = XlsxReadOptions.DefaultMaxUncompressedBytes;
 }
 
 /// <summary>
@@ -60,6 +71,8 @@ public sealed class XlsxWriter : IAsyncDisposable
         this.output = output;
         this.options = options;
         styles = options.Styles ?? XlsxStyles.Default;
+        if (options.MaxUncompressedBytes is < 1 or > XlsxReadOptions.DefaultMaxUncompressedBytes)
+            throw new ArgumentOutOfRangeException(nameof(options), options.MaxUncompressedBytes, $"MaxUncompressedBytes is 1 to {XlsxReadOptions.DefaultMaxUncompressedBytes:N0}.");
         Validate(styles);
         Validate(options.DefinedNames);
         zip = new ZipArchive(buffer, ZipArchiveMode.Create, leaveOpen: true);
@@ -103,7 +116,7 @@ public sealed class XlsxWriter : IAsyncDisposable
         var index = sheets.Count;
         sheets.Add((name, visibility));
         var entry = zip.CreateEntry($"xl/worksheets/sheet{index + 1}.xml", CompressionLevel.Optimal);
-        current = new XlsxSheetWriter(this, name, XmlWriter.Create(entry.Open(), Settings), columns, index == options.ActiveSheet);
+        current = new XlsxSheetWriter(this, name, XmlWriter.Create(new CountedPart(this, entry.Open(), entry.FullName, name), Settings), columns, index == options.ActiveSheet);
         return current;
     }
 
@@ -181,12 +194,32 @@ public sealed class XlsxWriter : IAsyncDisposable
 
     internal ValueTask DrainAsync(CancellationToken cancellationToken) => buffer.DrainAsync(output, cancellationToken);
 
+    /// <summary>The uncompressed bytes the parts hold so far.</summary>
+    private long uncompressed;
+
+    /// <summary>Whether the parts went past <see cref="XlsxWriteOptions.MaxUncompressedBytes"/>: the package is abandoned.</summary>
+    private bool tooLarge;
+
+    /// <summary>Counts <paramref name="count"/> bytes more into a part, or refuses them past the limit; false once refused, and the bytes are dropped.</summary>
+    internal bool Count(int count, string part, string? sheet)
+    {
+        if (tooLarge)
+            return false;
+        uncompressed += count;
+        if (uncompressed <= options.MaxUncompressedBytes)
+            return true;
+        tooLarge = true;
+        throw new XlsxException(XlsxRefusal.TooLarge, string.Create(CultureInfo.InvariantCulture,
+            $"The workbook would hold more than the {options.MaxUncompressedBytes:N0} uncompressed bytes a file is written with (XlsxWriteOptions.MaxUncompressedBytes)."),
+            part, sheet);
+    }
+
     // ---- the parts -----------------------------------------------------------------------------
 
     private void Part(string name, Action<XmlWriter> write)
     {
         var entry = zip.CreateEntry(name, CompressionLevel.Optimal);
-        using var writer = XmlWriter.Create(entry.Open(), Settings);
+        using var writer = XmlWriter.Create(new CountedPart(this, entry.Open(), name, null), Settings);
         writer.WriteStartDocument(standalone: true);
         write(writer);
         writer.WriteEndDocument();
@@ -698,6 +731,38 @@ public sealed class XlsxSheetWriter
 }
 
 /// <summary>
+/// A part's stream, counting what is written into it against <see cref="XlsxWriteOptions.MaxUncompressedBytes"/>. Past it,
+/// the first write is refused by name and every later one dropped, so that closing the abandoned part throws nothing more.
+/// </summary>
+internal sealed class CountedPart(XlsxWriter owner, Stream inner, string part, string? sheet) : Stream
+{
+    public override void Write(byte[] buffer, int offset, int count) => Write(buffer.AsSpan(offset, count));
+
+    public override void Write(ReadOnlySpan<byte> buffer)
+    {
+        if (owner.Count(buffer.Length, part, sheet))
+            inner.Write(buffer);
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing)
+            inner.Dispose();
+        base.Dispose(disposing);
+    }
+
+    public override bool CanRead => false;
+    public override bool CanSeek => false;
+    public override bool CanWrite => true;
+    public override long Length => throw new NotSupportedException();
+    public override long Position { get => throw new NotSupportedException(); set => throw new NotSupportedException(); }
+    public override void Flush() => inner.Flush();
+    public override int Read(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+    public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
+    public override void SetLength(long value) => throw new NotSupportedException();
+}
+
+/// <summary>
 /// Where the zip writes: memory, handed to the output stream asynchronously in <see cref="DrainAsync"/>. The archive writes
 /// synchronously; this keeps every write to the caller's stream asynchronous.
 /// </summary>
@@ -712,6 +777,8 @@ internal sealed class ForwardBuffer : Stream
             return;
         var full = pending;
         pending = new MemoryStream();
+        // A memory stream holds less than 2 GiB, and the parts at most XlsxReadOptions.DefaultMaxUncompressedBytes (1 GiB)
+        // together, which no compression enlarges past it: the length is an int.
         await output.WriteAsync(full.GetBuffer().AsMemory(0, (int)full.Length), cancellationToken).ConfigureAwait(false);
     }
 

@@ -17,6 +17,21 @@ internal enum WrittenFormulaProblem
 
     /// <summary>A Reference names a Sheet the Workbook does not have: Excel would read it as another workbook's.</summary>
     MissingSheet,
+
+    /// <summary>
+    /// A name a <c>LET</c> binds or a <c>LAMBDA</c> takes is called, and the engine declares no function of that name: the
+    /// engine reads the call as one of an unknown function (<c>#NAME?</c>), and Excel calls what the name is bound to.
+    /// </summary>
+    BoundCall,
+
+    /// <summary>A text constant in the Formula is longer than the 255 characters Excel takes in one.</summary>
+    LongText,
+
+    /// <summary>Calls are nested deeper than the 64 levels Excel takes.</summary>
+    TooDeep,
+
+    /// <summary>A call has more than the 255 arguments Excel takes.</summary>
+    TooManyArguments,
 }
 
 /// <summary>
@@ -111,7 +126,13 @@ internal static partial class WrittenFormula
             problem = WrittenFormulaProblem.MissingSheet;
             return formula[1..];
         }
-        Bind(tokens);
+        problem = Bind(tokens);
+        if (problem != WrittenFormulaProblem.None) return formula[1..];
+        if (tokens.Any(t => t.Kind == Kind.Text && t.Text.Length - 2 - Count(t.Text, "\"\"") > MaxText))
+        {
+            problem = WrittenFormulaProblem.LongText;
+            return formula[1..];
+        }
         if (!SameUnbound(tokens, entry.UnboundNames))
         {
             problem = WrittenFormulaProblem.Unreadable;
@@ -137,6 +158,22 @@ internal static partial class WrittenFormula
             }
         }
         return text.ToString();
+    }
+
+    /// <summary>The longest text constant Excel takes in a Formula, in characters.</summary>
+    internal const int MaxText = 255;
+
+    /// <summary>The deepest Excel nests calls in a Formula.</summary>
+    internal const int MaxDepth = 64;
+
+    /// <summary>The most arguments Excel takes in one call.</summary>
+    internal const int MaxArguments = 255;
+
+    private static int Count(string text, string of)
+    {
+        var n = 0;
+        for (var at = text.IndexOf(of, StringComparison.Ordinal); at >= 0; at = text.IndexOf(of, at + of.Length, StringComparison.Ordinal)) n++;
+        return n;
     }
 
     /// <summary>The Formula's tokens after its <c>=</c>, split as the engine's lexer splits them.</summary>
@@ -248,13 +285,17 @@ internal static partial class WrittenFormula
         public List<List<int>> Arguments { get; } = [[]];
     }
 
-    /// <summary>Marks every name a <c>LET</c> binds or a <c>LAMBDA</c> takes, and each use of one where it is bound.</summary>
-    private static void Bind(List<Token> tokens)
+    /// <summary>
+    /// Marks every name a <c>LET</c> binds or a <c>LAMBDA</c> takes, and each use of one where it is bound; or the problem
+    /// that refuses the Formula: calls nested or argued beyond Excel's limits, or a bound name called.
+    /// </summary>
+    private static WrittenFormulaProblem Bind(List<Token> tokens)
     {
         // Each binding: the name, and the tokens it is bound over.
         var bindings = new List<(string Name, int First, int Last)>();
         var frames = new Stack<Frame>();
         frames.Push(new Frame(null));
+        var calls = 0;
         for (var i = 0; i < tokens.Count; i++)
         {
             var token = tokens[i];
@@ -262,13 +303,17 @@ internal static partial class WrittenFormula
             {
                 case Kind.Open:
                     frames.Peek().Arguments[^1].Add(i);
-                    frames.Push(new Frame(Previous(tokens, i) is { Kind: Kind.Name, Called: true } function ? function : null));
+                    var called = Previous(tokens, i) is { Kind: Kind.Name, Called: true } function ? function : null;
+                    if (called is not null && ++calls > MaxDepth) return WrittenFormulaProblem.TooDeep;
+                    frames.Push(new Frame(called));
                     break;
                 case Kind.Comma when frames.Count > 1:
                     frames.Peek().Arguments.Add([]);
+                    if (frames.Peek().Function is not null && frames.Peek().Arguments.Count > MaxArguments) return WrittenFormulaProblem.TooManyArguments;
                     break;
                 case Kind.Close when frames.Count > 1:
                     var frame = frames.Pop();
+                    if (frame.Function is not null) calls--;
                     frames.Peek().Arguments[^1].Add(i);
                     Binds(frame, tokens, i, bindings);
                     break;
@@ -281,9 +326,17 @@ internal static partial class WrittenFormula
         }
         for (var i = 0; i < tokens.Count; i++)
         {
-            if (tokens[i] is { Kind: Kind.Name } name && bindings.Any(b => b.First <= i && i <= b.Last && string.Equals(b.Name, name.Text, StringComparison.OrdinalIgnoreCase)))
+            if (tokens[i] is not { Kind: Kind.Name } name
+                || !bindings.Any(b => b.First <= i && i <= b.Last && string.Equals(b.Name, name.Text, StringComparison.OrdinalIgnoreCase)))
+                continue;
+            // A call is of a function wherever the engine declares one of its name, bound or not, as the engine's parser
+            // takes it; a bound name called otherwise is a call the engine and Excel read differently.
+            if (!name.Called)
                 name.Bound = true;
+            else if (DeclaredFunction.Find(name.Text) is null)
+                return WrittenFormulaProblem.BoundCall;
         }
+        return WrittenFormulaProblem.None;
     }
 
     /// <summary>What a closed <c>LET</c> or <c>LAMBDA</c> call binds: a <c>LET</c>'s names over what follows each in the call, and a <c>LAMBDA</c>'s parameters over its last argument.</summary>

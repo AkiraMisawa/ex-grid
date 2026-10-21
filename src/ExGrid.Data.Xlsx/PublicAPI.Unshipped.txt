@@ -409,6 +409,8 @@ ExGrid.Data.Xlsx.XlsxWriteOptions.DefinedNames.get -> System.Collections.Generic
 ExGrid.Data.Xlsx.XlsxWriteOptions.DefinedNames.init -> void
 ExGrid.Data.Xlsx.XlsxWriteOptions.FullCalculationOnLoad.get -> bool
 ExGrid.Data.Xlsx.XlsxWriteOptions.FullCalculationOnLoad.init -> void
+ExGrid.Data.Xlsx.XlsxWriteOptions.MaxUncompressedBytes.get -> long
+ExGrid.Data.Xlsx.XlsxWriteOptions.MaxUncompressedBytes.init -> void
 ExGrid.Data.Xlsx.XlsxWriteOptions.Styles.get -> ExGrid.Data.Xlsx.XlsxStyles?
 ExGrid.Data.Xlsx.XlsxWriteOptions.Styles.init -> void
 ExGrid.Data.Xlsx.XlsxWriteOptions.XlsxWriteOptions() -> void

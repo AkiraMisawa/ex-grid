@@ -52,14 +52,40 @@ public static class XlsxWorkbookWriter
         ArgumentNullException.ThrowIfNull(stream);
         cancellationToken.ThrowIfCancellationRequested();
         options ??= new XlsxSaveOptions();
+        if (options.MaxUncompressedBytes is < 1 or > XlsxReadOptions.DefaultMaxUncompressedBytes)
+        {
+            throw new ArgumentOutOfRangeException(nameof(options), options.MaxUncompressedBytes,
+                string.Create(CultureInfo.InvariantCulture, $"MaxUncompressedBytes is 1 to {XlsxReadOptions.DefaultMaxUncompressedBytes:N0}."));
+        }
 
         // Everything the file says is taken here, synchronously, before the hand-off first yields.
-        var writer = Write(workbook, stream, options);
+        XlsxWriter writer;
+        try
+        {
+            writer = Write(workbook, stream, options);
+        }
+        catch (XlsxException e) when (e.Reason == XlsxRefusal.TooLarge)
+        {
+            throw TooLarge(e, options);
+        }
         await using (writer.ConfigureAwait(false))
         {
-            await writer.CompleteAsync(cancellationToken).ConfigureAwait(false);
+            // The parts written last are written here, before anything is handed to the stream.
+            try
+            {
+                await writer.CompleteAsync(cancellationToken).ConfigureAwait(false);
+            }
+            catch (XlsxException e) when (e.Reason == XlsxRefusal.TooLarge)
+            {
+                throw TooLarge(e, options);
+            }
         }
     }
+
+    private static XlsxSaveException TooLarge(XlsxException e, XlsxSaveOptions options) =>
+        new(XlsxSaveRefusal.TooLarge, string.Create(CultureInfo.InvariantCulture,
+            $"The workbook would hold more than the {options.MaxUncompressedBytes:N0} uncompressed bytes a file is written with, and read with by default; the part '{e.Part}' went past it."),
+            e.Sheet);
 
     /// <summary>One cell element a Sheet writes of its own: an Entry, a spilled Value, or a format.</summary>
     private readonly record struct Recorded(CellAddress At, Entry? Entry, int Style);
@@ -82,8 +108,11 @@ public static class XlsxWorkbookWriter
         for (var i = 0; i < workbook.Sheets.Count; i++)
         {
             var sheet = workbook.Sheets[i];
-            if (sheet.Name.Any(char.IsControl))
-                throw new XlsxSaveException(XlsxSaveRefusal.Text, "The Sheet's name holds a control character, which a file cannot carry in a worksheet's name.", sheet.Name);
+            if (!Carries(sheet.Name, inName: true))
+            {
+                throw new XlsxSaveException(XlsxSaveRefusal.Text,
+                    "The Sheet's name holds a character a file cannot carry in a worksheet's name: a control character below U+0020, U+FFFE or U+FFFF, or half of a surrogate pair.", sheet.Name);
+            }
             var own = Own(sheet, document.Sheets[i]);
             var plan = SheetFormatPlan.For(document.Sheets[i]);
             var crossings = plan.Crossings(own.Select(c => c.At));
@@ -112,6 +141,7 @@ public static class XlsxWorkbookWriter
             Styles = styles.Build(),
             ActiveSheet = IndexOf(workbook, workbook.Shown),
             FullCalculationOnLoad = true,
+            MaxUncompressedBytes = options.MaxUncompressedBytes,
         });
         try
         {
@@ -228,9 +258,26 @@ public static class XlsxWorkbookWriter
                 throw new XlsxSaveException(XlsxSaveRefusal.Formula, string.Create(CultureInfo.InvariantCulture,
                     $"The Formula is {formula.Length - 1:N0} characters long, and Excel holds at most {MaxFormulaLength:N0}."), sheet.Name, at.ToString());
             }
+            if (!Carries(formula, inName: false))
+            {
+                throw new XlsxSaveException(XlsxSaveRefusal.Formula,
+                    "The Formula holds half of a surrogate pair, which a file cannot carry.", sheet.Name, at.ToString(), formula);
+            }
             var stored = WrittenFormula.Write(entry, name => sheet.Workbook.Find(name) is not null, out var problem);
             switch (problem)
             {
+                case WrittenFormulaProblem.BoundCall:
+                    throw new XlsxSaveException(XlsxSaveRefusal.Formula,
+                        "The Formula calls a name a LET binds or a LAMBDA takes, which ExSheet reads as an unknown function and Excel would call.", sheet.Name, at.ToString(), formula);
+                case WrittenFormulaProblem.LongText:
+                    throw new XlsxSaveException(XlsxSaveRefusal.Formula, string.Create(CultureInfo.InvariantCulture,
+                        $"The Formula holds a text constant longer than the {WrittenFormula.MaxText} characters Excel takes in one."), sheet.Name, at.ToString(), formula);
+                case WrittenFormulaProblem.TooDeep:
+                    throw new XlsxSaveException(XlsxSaveRefusal.Formula, string.Create(CultureInfo.InvariantCulture,
+                        $"The Formula nests its calls deeper than the {WrittenFormula.MaxDepth} levels Excel takes."), sheet.Name, at.ToString(), formula);
+                case WrittenFormulaProblem.TooManyArguments:
+                    throw new XlsxSaveException(XlsxSaveRefusal.Formula, string.Create(CultureInfo.InvariantCulture,
+                        $"The Formula makes a call with more than the {WrittenFormula.MaxArguments} arguments Excel takes."), sheet.Name, at.ToString(), formula);
                 case WrittenFormulaProblem.MissingSheet:
                     throw new XlsxSaveException(XlsxSaveRefusal.Formula,
                         "The Formula reads a Sheet the Workbook does not have, which Excel would read as another workbook's.", sheet.Name, at.ToString(), formula);
@@ -279,6 +326,27 @@ public static class XlsxWorkbookWriter
     {
         CheckText(sheet, at, text, null);
         return cell with { Type = XlsxCellType.SharedString, Text = text };
+    }
+
+    /// <summary>
+    /// Whether a file carries <paramref name="text"/>, as the file layer writes it: no half of a surrogate pair anywhere, and in
+    /// a worksheet's name, which is written as it is, no control character below U+0020 and no U+FFFE or U+FFFF. Elsewhere the
+    /// file layer escapes those (<c>_x0001_</c>).
+    /// </summary>
+    private static bool Carries(string text, bool inName)
+    {
+        for (var i = 0; i < text.Length; i++)
+        {
+            var c = text[i];
+            if (char.IsHighSurrogate(c) && i + 1 < text.Length && char.IsLowSurrogate(text[i + 1]))
+            {
+                i++;
+                continue;
+            }
+            if (char.IsSurrogate(c)) return false;
+            if (inName && (c < 0x20 || c is '\uFFFE' or '\uFFFF')) return false;
+        }
+        return true;
     }
 
     private static void CheckText(Sheet sheet, CellAddress at, string text, string? formula)

@@ -200,4 +200,96 @@ public class WriterRefusalTests
         Assert.Equal(XlsxSaveRefusal.TooManyCells, refused.Reason);
         Assert.Equal(7, (await CellsAsync(file)).Count);
     }
+
+    [Theory] // ADR-0330 §6: a Formula Excel would not take is refused by name, with its Sheet, cell and text: a text constant over 255 characters, calls nested past 64 levels, a call of more than 255 arguments, a bound name called
+    [InlineData("long text", "255 characters")]
+    [InlineData("deep", "64 levels")]
+    [InlineData("many arguments", "255 arguments")]
+    [InlineData("bound call", "LET binds or a LAMBDA takes")]
+    public async Task ADR0330_a_formula_excel_would_not_take_is_refused_by_name(string kind, string said)
+    {
+        var formula = kind switch
+        {
+            "long text" => "=LEN(\"" + new string('x', 256) + "\")",
+            "deep" => "=" + string.Concat(Enumerable.Repeat("ABS(", 65)) + "1" + new string(')', 65),
+            "many arguments" => "=HSTACK(" + string.Join(",", Enumerable.Repeat("1", 256)) + ")",
+            _ => "=LET(f,LAMBDA(x,x+1),f(2))",
+        };
+
+        var refused = await RefusedAsync(Entered(("D4", Entry.Parse(formula, EnUs))));
+
+        Assert.Equal((XlsxSaveRefusal.Formula, "Sheet1", "D4", formula), (refused.Reason, refused.Sheet, refused.Cell, refused.Held));
+        Assert.Contains(said, refused.Message, StringComparison.Ordinal);
+    }
+
+    [Fact] // ADR-0330 §6: a Formula holding half of a surrogate pair is refused by name, not left to the file layer's unnamed ArgumentException
+    public async Task ADR0330_a_formula_a_file_cannot_carry_is_refused_by_name()
+    {
+        var refused = await RefusedAsync(Entered(("A1", Entry.Parse("=LEN(\"a\uD800\")", EnUs))));
+
+        Assert.Equal((XlsxSaveRefusal.Formula, "Sheet1", "A1"), (refused.Reason, refused.Sheet, refused.Cell));
+    }
+
+    [Theory] // ADR-0330 §6: a Sheet's name a worksheet's name cannot carry in a file is refused by name, naming the Sheet and no cell
+    // The character as a number: an attribute's string cannot hold half of a surrogate pair.
+    [InlineData(0x0001)]
+    [InlineData(0xD800)]
+    [InlineData(0xDC00)]
+    [InlineData(0xFFFE)]
+    [InlineData(0xFFFF)]
+    public async Task ADR0330_a_sheet_name_a_file_cannot_carry_is_refused_by_name(int character)
+    {
+        var name = "Desk" + (char)character;
+
+        var refused = await RefusedAsync(new Workbook(EnUs, ["Trades", name]));
+
+        Assert.Equal((XlsxSaveRefusal.Text, name, null), (refused.Reason, refused.Sheet, refused.Cell));
+    }
+
+    [Fact] // ADR-0330 §6: the C1 controls (U+007F to U+009F) are characters XML carries, and a Sheet named with one is written and read back
+    public async Task ADR0330_a_sheet_name_with_a_c1_control_is_written()
+    {
+        var workbook = new Workbook(EnUs, ["Desk\u0085", "Book\u007F"]);
+        workbook.Do("Desk\u0085", SheetEdit.Enter(At("A1"), "1"));
+
+        var file = await Saved.WriteAsync(workbook);
+
+        Assert.Equal(["Desk\u0085", "Book\u007F"], (await ReadAsync(file)).Document.Sheets.Select(s => s.Name));
+    }
+
+    [Fact] // ADR-0330 §6, §9: a workbook whose parts would hold more uncompressed bytes than a file is read with is refused by name, naming the Sheet whose worksheet went past it
+    public async Task ADR0330_more_uncompressed_bytes_than_the_limit_are_refused_at_a_worksheet()
+    {
+        var workbook = new Workbook(EnUs, ["Trades"]);
+        workbook.Do("Trades", SheetEdit.Enter(Enumerable.Range(1, 500).ToDictionary(r => new CellAddress(r, 0), r => r.ToString(CultureInfo.InvariantCulture))));
+
+        var refused = await RefusedAsync(workbook, new XlsxSaveOptions { MaxUncompressedBytes = 4_000 });
+
+        Assert.Equal((XlsxSaveRefusal.TooLarge, "Trades", null), (refused.Reason, refused.Sheet, refused.Cell));
+        Assert.Contains("xl/worksheets/sheet1.xml", refused.Message, StringComparison.Ordinal);
+        Assert.Equal(XlsxReadOptions.DefaultMaxUncompressedBytes, new XlsxSaveOptions().MaxUncompressedBytes);
+    }
+
+    [Fact] // ADR-0330 §6, §9: the parts written last count too: text that fills the shared strings past the limit is refused, and no Sheet is named
+    public async Task ADR0330_more_uncompressed_bytes_than_the_limit_are_refused_at_the_shared_strings()
+    {
+        var workbook = Entered(("A1", Entry.FromValue(Value.FromText(new string('x', 30_000)))));
+
+        var refused = await RefusedAsync(workbook, new XlsxSaveOptions { MaxUncompressedBytes = 20_000 });
+
+        Assert.Equal((XlsxSaveRefusal.TooLarge, null), (refused.Reason, refused.Sheet));
+        Assert.Contains("xl/sharedStrings.xml", refused.Message, StringComparison.Ordinal);
+    }
+
+    [Theory] // ADR-0330 §9: the limit is 1 byte to the most a file is read with by default, since the file waits in memory until it is handed over
+    [InlineData(0L)]
+    [InlineData(XlsxReadOptions.DefaultMaxUncompressedBytes + 1)]
+    public async Task ADR0330_an_uncompressed_byte_limit_out_of_range_is_refused(long limit)
+    {
+        using var stream = new MemoryStream();
+
+        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(async () =>
+            await XlsxWorkbookWriter.WriteAsync(new Workbook(EnUs), stream, new XlsxSaveOptions { MaxUncompressedBytes = limit }, Token));
+        Assert.Equal(0, stream.Length);
+    }
 }

@@ -21,10 +21,20 @@ public enum XlsxSaveRefusal
     /// </summary>
     CircularReference,
 
-    /// <summary>A Formula that cannot be written as Excel stores it: its text is longer than Excel's 8,192 characters, it reads a Sheet the Workbook does not have (Excel would read another workbook's), or it does not read back as the Formula it is.</summary>
+    /// <summary>
+    /// A Formula that cannot be written as Excel stores it, or as Excel takes it: its text is longer than Excel's 8,192
+    /// characters, holds a text constant longer than 255, nests its calls deeper than 64 levels or makes one with more than
+    /// 255 arguments; it holds half of a surrogate pair, which a file cannot carry; it reads a Sheet the Workbook does not have
+    /// (Excel would read another workbook's); it calls a name a <c>LET</c> binds or a <c>LAMBDA</c> takes, which ExSheet
+    /// reads as an unknown function and Excel would call; or it does not read back as the Formula it is.
+    /// </summary>
     Formula,
 
-    /// <summary>A cell's text is longer than the 32,767 characters a cell of Excel holds, or holds half of a surrogate pair, which a file cannot carry.</summary>
+    /// <summary>
+    /// A cell's text is longer than the 32,767 characters a cell of Excel holds, or holds half of a surrogate pair, which a
+    /// file cannot carry; or a Sheet's name holds a character a worksheet's name cannot carry in a file: a control character
+    /// below U+0020, U+FFFE or U+FFFF, or half of a surrogate pair. The refusal then names the Sheet and no cell.
+    /// </summary>
     Text,
 
     /// <summary>
@@ -33,6 +43,13 @@ public enum XlsxSaveRefusal
     /// columns writes a cell wherever a formatted row crosses a formatted column that records a part the row does not.
     /// </summary>
     TooManyCells,
+
+    /// <summary>
+    /// The workbook would hold more uncompressed bytes than <see cref="XlsxSaveOptions.MaxUncompressedBytes"/>: by default,
+    /// more than a file is read with (<see cref="XlsxReadOptions.DefaultMaxUncompressedBytes"/>), so it would not open again.
+    /// The refusal names the Sheet whose worksheet went past it, when one did.
+    /// </summary>
+    TooLarge,
 }
 
 /// <summary>
@@ -93,4 +110,12 @@ public sealed class XlsxSaveOptions
     /// (<see cref="XlsxSaveRefusal.TooManyCells"/>) before anything is written.
     /// </summary>
     public long MaxCells { get; init; } = XlsxReadOptions.DefaultMaxCells;
+
+    /// <summary>
+    /// The uncompressed bytes the file's parts may hold together. The default is
+    /// <see cref="XlsxReadOptions.DefaultMaxUncompressedBytes"/>, the most a file is read with by default, and also the most
+    /// it may be: the file is held in memory, compressed, until it is handed to the stream. Beyond it the write is refused by
+    /// name (<see cref="XlsxSaveRefusal.TooLarge"/>) before anything is written.
+    /// </summary>
+    public long MaxUncompressedBytes { get; init; } = XlsxReadOptions.DefaultMaxUncompressedBytes;
 }

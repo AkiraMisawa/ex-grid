@@ -80,14 +80,21 @@ it between them. See `ExGrid.Data.Xlsx` for the limits and what they count.
 ## Saving a workbook
 
 ```csharp
-await using var file = File.Create("book.xlsx");
+// Written beside the file and moved over it, so a refused Workbook leaves no empty or partial book.xlsx.
+var temporary = "book.xlsx.tmp";
 try
 {
-    await XlsxWorkbookWriter.WriteAsync(workbook, file);
+    await using (var file = File.Create(temporary))
+        await XlsxWorkbookWriter.WriteAsync(workbook, file);
+    File.Move(temporary, "book.xlsx", overwrite: true);
 }
 catch (XlsxSaveException refused)
 {
     Console.WriteLine(refused.Message);   // Sheet 'Trades', cell B2 (=C2+1): The cell shows #CIRC! …
+}
+finally
+{
+    File.Delete(temporary);
 }
 ```
 
@@ -98,8 +105,11 @@ asynchronously, which an ASP.NET response body accepts.
 - **Every Formula is written with its Value**, `RAND()`'s included, and as a dynamic array over the
   cells it spills into, so Excel computes it as ExSheet does.
 - **Refused by name, with nothing written:** a Workbook that declares a Linked Table (not written
-  yet), a cell that shows `#CIRC!` (a file cannot hold it, and Excel would show 0), a Formula longer
-  than Excel's 8,192 characters, text longer than its 32,767, and more cells than
-  `XlsxSaveOptions.MaxCells`. That limit is by default the most a file is read with, so what is
-  written opens again; a Sheet formatted on many rows and many columns counts a cell wherever a
-  formatted row crosses a formatted column that records a part the row does not.
+  yet), a cell that shows `#CIRC!` (a file cannot hold it, and Excel would show 0), a Formula Excel
+  would not take (longer than its 8,192 characters, a text constant over 255, calls nested past
+  64 levels, a call of more than 255 arguments, a name a `LET` binds or a `LAMBDA` takes called as
+  a function), text longer than its 32,767, half of a surrogate pair, a Sheet's name a file cannot
+  carry, more cells than `XlsxSaveOptions.MaxCells`, and more uncompressed bytes than
+  `XlsxSaveOptions.MaxUncompressedBytes`. Both limits are by default the most a file is read with,
+  so what is written opens again; a Sheet formatted on many rows and many columns counts a cell
+  wherever a formatted row crosses a formatted column that records a part the row does not.

@@ -114,4 +114,78 @@ public class WrittenFormulaTests
 
         Assert.Equal(newer, DeclaredFunction.All.Select(f => f.Name).Where(WrittenFormula.Newer.Contains).Order(StringComparer.Ordinal));
     }
+
+    /// <summary>Excel 2007's functions the engine declares, which a file stores with no prefix.</summary>
+    private static readonly string[] Excel2007 =
+    [
+        "ABS", "ACOS", "ACOSH", "AND", "ASIN", "ASINH", "ATAN", "ATAN2", "ATANH", "AVERAGE", "AVERAGEIF", "AVERAGEIFS", "CHOOSE",
+        "COLUMN", "COLUMNS", "CONCATENATE", "COS", "COSH", "COUNT", "COUNTA", "COUNTBLANK", "COUNTIF", "COUNTIFS", "DATE", "DATEDIF",
+        "DAY", "DEGREES", "EDATE", "EOMONTH", "ERROR.TYPE", "EXACT", "EXP", "FIND", "FV", "HLOOKUP", "HOUR", "IF", "IFERROR",
+        "INDEX", "INDIRECT", "INT", "ISBLANK", "ISERROR", "ISNA", "ISNUMBER", "ISTEXT", "LARGE", "LEFT", "LEN", "LN", "LOG", "LOG10",
+        "LOWER", "MATCH", "MAX", "MEDIAN", "MID", "MIN", "MINUTE", "MOD", "MONTH", "MROUND", "NA", "NETWORKDAYS", "NOT", "NOW",
+        "OFFSET", "OR", "PI", "PMT", "POWER", "PRODUCT", "PROPER", "PV", "RADIANS", "RAND", "RANDBETWEEN", "REPLACE", "REPT",
+        "RIGHT", "ROUND", "ROUNDDOWN", "ROUNDUP", "ROW", "ROWS", "SEARCH", "SECOND", "SIGN", "SIN", "SINH", "SMALL", "SQRT",
+        "SUBSTITUTE", "SUBTOTAL", "SUM", "SUMIF", "SUMIFS", "SUMPRODUCT", "TAN", "TANH", "TEXT", "TIME", "TODAY", "TRANSPOSE",
+        "TRIM", "TRUNC", "UPPER", "VALUE", "VLOOKUP", "WEEKDAY", "WORKDAY", "XNPV", "YEAR", "YEARFRAC",
+    ];
+
+    [Fact] // ADR-0330 §4: every function the engine declares is either one of Excel 2007's, written bare, or a newer one, written with its prefix; one the engine adds fails here until it is placed
+    public void ADR0330_every_declared_function_is_placed_as_excel_2007s_or_newer()
+    {
+        var excel2007 = Excel2007.ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        Assert.All(DeclaredFunction.All.Select(f => f.Name), name =>
+            Assert.True(excel2007.Contains(name) != WrittenFormula.Newer.Contains(name), $"{name} is placed in {(excel2007.Contains(name) ? "both lists" : "neither list")}."));
+    }
+
+    [Theory] // ADR-0330 §4: a call of a function the engine declares is the function's, though a LET binds a name of the same spelling: only the name read is the binding's
+    [InlineData("=LET(sum,1,SUM(sum,2))", "_xlfn.LET(_xlpm.sum,1,SUM(_xlpm.sum,2))")]
+    [InlineData("=LET(xor,TRUE,XOR(xor,FALSE))", "_xlfn.LET(_xlpm.xor,TRUE,_xlfn.XOR(_xlpm.xor,FALSE))")]
+    [InlineData("=LET(max,5,MAX(max,1))", "_xlfn.LET(_xlpm.max,5,MAX(_xlpm.max,1))")]
+    [InlineData("=LET(seq,2,SEQUENCE(seq))", "_xlfn.LET(_xlpm.seq,2,_xlfn.SEQUENCE(_xlpm.seq))")]
+    public void ADR0330_a_declared_function_called_where_a_let_binds_its_name_is_the_function(string formula, string stored)
+    {
+        Assert.Equal(stored, Written(formula));
+    }
+
+    [Theory] // ADR-0330 §4: a bound name called is a call of an unknown function to the engine (#NAME?) and of the binding to Excel: refused, not written to mean another thing
+    [InlineData("=LET(f,LAMBDA(x,x+1),f(2))")]
+    [InlineData("=MAP(A1:A3,LAMBDA(g,g(1)))")]
+    public void ADR0330_a_bound_name_called_is_refused(string formula)
+    {
+        WrittenFormula.Write(Entry.Parse(formula, CultureInfo.InvariantCulture)!, null, out var problem);
+
+        Assert.Equal(WrittenFormulaProblem.BoundCall, problem);
+    }
+
+    [Fact] // ADR-0330 §6: a text constant in a Formula is at most 255 characters in Excel, a doubled quote counting as one
+    public void ADR0330_a_text_constant_longer_than_excel_takes_is_refused()
+    {
+        var longest = "=LEN(\"" + new string('x', 254) + "\"\"\")";
+        var tooLong = "=LEN(\"" + new string('x', 256) + "\")";
+
+        Assert.Equal(longest[1..], Written(longest));
+        WrittenFormula.Write(Entry.Parse(tooLong, CultureInfo.InvariantCulture)!, null, out var problem);
+        Assert.Equal(WrittenFormulaProblem.LongText, problem);
+    }
+
+    [Fact] // ADR-0330 §6: Excel nests calls 64 levels deep at most; parentheses that call nothing are no level
+    public void ADR0330_calls_nested_deeper_than_excel_takes_are_refused()
+    {
+        static string Nested(int depth) => "=" + string.Concat(Enumerable.Repeat("ABS(", depth)) + "((1))" + new string(')', depth);
+
+        Assert.Equal(Nested(WrittenFormula.MaxDepth)[1..], Written(Nested(WrittenFormula.MaxDepth)));
+        WrittenFormula.Write(Entry.Parse(Nested(WrittenFormula.MaxDepth + 1), CultureInfo.InvariantCulture)!, null, out var problem);
+        Assert.Equal(WrittenFormulaProblem.TooDeep, problem);
+    }
+
+    [Fact] // ADR-0330 §6: a call takes 255 arguments at most in Excel
+    public void ADR0330_a_call_with_more_arguments_than_excel_takes_is_refused()
+    {
+        static string Call(int arguments) => "=HSTACK(" + string.Join(",", Enumerable.Repeat("1", arguments)) + ")";
+
+        Assert.Equal("_xlfn." + Call(WrittenFormula.MaxArguments)[1..], Written(Call(WrittenFormula.MaxArguments)));
+        WrittenFormula.Write(Entry.Parse(Call(WrittenFormula.MaxArguments + 1), CultureInfo.InvariantCulture)!, null, out var problem);
+        Assert.Equal(WrittenFormulaProblem.TooManyArguments, problem);
+    }
 }

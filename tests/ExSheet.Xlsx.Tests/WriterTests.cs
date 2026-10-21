@@ -282,6 +282,12 @@ public class WriterTests
         var metadata = parts["xl/metadata.xml"].Root!;
         Assert.Equal("XLDAPR", metadata.Element(S + "metadataTypes")!.Element(S + "metadataType")!.Attribute("name")!.Value);
         Assert.Equal("1", metadata.Element(S + "cellMetadata")!.Attribute("count")!.Value);
+        XNamespace xda = "http://schemas.microsoft.com/office/spreadsheetml/2017/dynamicarray";
+        var ext = metadata.Element(S + "futureMetadata")!.Element(S + "bk")!.Element(S + "extLst")!.Element(S + "ext")!;
+        Assert.Equal("{bdbb8cdc-fa1e-496e-a857-3c3f30c029c3}", (string?)ext.Attribute("uri"));
+        Assert.Equal("1", (string?)ext.Element(xda + "dynamicArrayProperties")!.Attribute("fDynamic"));
+        var rc = metadata.Element(S + "cellMetadata")!.Element(S + "bk")!.Element(S + "rc")!;
+        Assert.Equal(("1", "0"), ((string?)rc.Attribute("t"), (string?)rc.Attribute("v")));
     }
 
     [Fact] // ADR-0330 §6: the file reads back as the Workbook it was written from, every Value computed again

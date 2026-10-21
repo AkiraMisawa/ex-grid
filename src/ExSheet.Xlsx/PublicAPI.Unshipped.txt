@@ -99,12 +99,15 @@ ExSheet.Xlsx.XlsxSaveException.XlsxSaveException(ExSheet.Xlsx.XlsxSaveRefusal re
 ExSheet.Xlsx.XlsxSaveOptions
 ExSheet.Xlsx.XlsxSaveOptions.MaxCells.get -> long
 ExSheet.Xlsx.XlsxSaveOptions.MaxCells.init -> void
+ExSheet.Xlsx.XlsxSaveOptions.MaxUncompressedBytes.get -> long
+ExSheet.Xlsx.XlsxSaveOptions.MaxUncompressedBytes.init -> void
 ExSheet.Xlsx.XlsxSaveOptions.XlsxSaveOptions() -> void
 ExSheet.Xlsx.XlsxSaveRefusal
 ExSheet.Xlsx.XlsxSaveRefusal.CircularReference = 1 -> ExSheet.Xlsx.XlsxSaveRefusal
 ExSheet.Xlsx.XlsxSaveRefusal.Formula = 2 -> ExSheet.Xlsx.XlsxSaveRefusal
 ExSheet.Xlsx.XlsxSaveRefusal.LinkedTable = 0 -> ExSheet.Xlsx.XlsxSaveRefusal
 ExSheet.Xlsx.XlsxSaveRefusal.Text = 3 -> ExSheet.Xlsx.XlsxSaveRefusal
+ExSheet.Xlsx.XlsxSaveRefusal.TooLarge = 5 -> ExSheet.Xlsx.XlsxSaveRefusal
 ExSheet.Xlsx.XlsxSaveRefusal.TooManyCells = 4 -> ExSheet.Xlsx.XlsxSaveRefusal
 ExSheet.Xlsx.XlsxWorkbookReader
 ExSheet.Xlsx.XlsxWorkbookWriter
