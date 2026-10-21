@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text;
 using System.Xml;
 
 namespace ExGrid.Data.Xlsx;
@@ -20,7 +21,7 @@ public sealed class XlsxSheetReader : IDisposable
     private readonly string part;
     private readonly List<XlsxCell> batch = new(BatchSize);
     private readonly List<XlsxColumn> columns = [];
-    private readonly List<string> other = [];
+    private readonly List<XlsxElement> other = [];
     private State state;
     private int row = -1;
     private int column = -1;
@@ -48,12 +49,15 @@ public sealed class XlsxSheetReader : IDisposable
     public IReadOnlyList<XlsxColumn> Columns => columns;
 
     /// <summary>
-    /// The local names of what else the worksheet holds, beside its cells and columns, in the file's order, complete once
-    /// <see cref="ReadAsync"/> has returned false: <c>mergeCells</c>, <c>conditionalFormatting</c>, <c>dataValidations</c>,
-    /// <c>hyperlinks</c>, <c>drawing</c>, <c>legacyDrawing</c> (notes), <c>tableParts</c>, <c>sheetProtection</c>,
-    /// <c>pageSetup</c> and the rest. None of it is read.
+    /// Every element of the worksheet the reader does not read, beside its cells and columns, in the file's order, complete
+    /// once <see cref="ReadAsync"/> has returned false: <c>dimension</c>, <c>sheetViews</c> (of which only
+    /// <see cref="FrozenPanes"/> is read), <c>sheetFormatPr</c>, <c>mergeCells</c>, <c>conditionalFormatting</c>,
+    /// <c>dataValidations</c>, <c>hyperlinks</c>, <c>drawing</c>, <c>legacyDrawing</c> (notes), <c>tableParts</c>,
+    /// <c>sheetProtection</c>, <c>pageMargins</c>, <c>pageSetup</c>, <c>extLst</c> and the rest, each with its attributes,
+    /// its text and its children as far as <see cref="XlsxElement"/> keeps them. None of it is judged here: whether an
+    /// element holds anything that matters is for the reader of the file to say.
     /// </summary>
-    public IReadOnlyList<string> OtherElements => other;
+    public IReadOnlyList<XlsxElement> OtherElements => other;
 
     /// <summary>Whether a row read so far sets a height of its own.</summary>
     public bool CustomRowHeights { get; private set; }
@@ -138,14 +142,12 @@ public sealed class XlsxSheetReader : IDisposable
                     ReadColumns();
                     break;
                 case "sheetViews":
-                    ReadViews();
-                    break;
-                case "dimension" or "sheetFormatPr":
-                    xml.Skip();
+                    var views = ReadElement(0);
+                    other.Add(views);
+                    FrozenPanes = views.Children.Any(view => view.Children.Any(pane => pane.Name == "pane" && pane.Attribute("state") is "frozen" or "frozenSplit"));
                     break;
                 default:
-                    other.Add(xml.LocalName);
-                    xml.Skip();
+                    other.Add(ReadElement(0));
                     break;
             }
         }
@@ -187,17 +189,57 @@ public sealed class XlsxSheetReader : IDisposable
         xml.Read();
     }
 
-    private void ReadViews()
+    /// <summary>
+    /// The element at the reader, kept as <see cref="XlsxElement"/> keeps it, <paramref name="depth"/> levels below the
+    /// worksheet's element; the reader is left past its end.
+    /// </summary>
+    private XlsxElement ReadElement(int depth)
     {
-        using (var sub = xml.ReadSubtree())
+        var name = xml.LocalName;
+        var attributes = new Dictionary<string, string>(StringComparer.Ordinal);
+        if (xml.MoveToFirstAttribute())
         {
-            while (sub.Read())
+            do
             {
-                if (sub.NodeType == XmlNodeType.Element && sub.LocalName == "pane" && sub.GetAttribute("state") is "frozen" or "frozenSplit")
-                    FrozenPanes = true;
+                if (xml.NamespaceURI != "http://www.w3.org/2000/xmlns/") attributes.TryAdd(xml.LocalName, xml.Value);
+            }
+            while (xml.MoveToNextAttribute());
+            xml.MoveToElement();
+        }
+        if (xml.IsEmptyElement)
+        {
+            xml.Read();
+            return new XlsxElement(name, attributes, [], null, false);
+        }
+        var children = new List<XlsxElement>();
+        StringBuilder? text = null;
+        var cut = false;
+        var end = xml.Depth;
+        xml.Read();
+        while (!xml.EOF && !(xml.NodeType == XmlNodeType.EndElement && xml.Depth == end))
+        {
+            switch (xml.NodeType)
+            {
+                case XmlNodeType.Element when depth < XlsxElement.MaxDepth && children.Count < XlsxElement.MaxChildren:
+                    children.Add(ReadElement(depth + 1));
+                    break;
+                case XmlNodeType.Element:
+                    cut = true;
+                    xml.Skip();
+                    break;
+                case XmlNodeType.Text or XmlNodeType.CDATA or XmlNodeType.SignificantWhitespace:
+                    text ??= new StringBuilder();
+                    var value = xml.Value;
+                    text.Append(value, 0, Math.Min(value.Length, XlsxElement.MaxText - text.Length));
+                    xml.Read();
+                    break;
+                default:
+                    xml.Read();
+                    break;
             }
         }
-        xml.Skip();
+        xml.Read();
+        return new XlsxElement(name, attributes, children, text?.ToString(), cut);
     }
 
     /// <summary>Reads cells until the batch is full or <c>&lt;sheetData&gt;</c> ends.</summary>
@@ -439,8 +481,7 @@ public sealed class XlsxSheetReader : IDisposable
         {
             if (xml.NodeType == XmlNodeType.Element)
             {
-                other.Add(xml.LocalName);
-                xml.Skip();
+                other.Add(ReadElement(0));
             }
             else
             {

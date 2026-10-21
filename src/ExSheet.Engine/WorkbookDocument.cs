@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text;
 using System.Text.Json;
 
@@ -31,6 +32,46 @@ public sealed class WorkbookDocument
         Shown = shown;
         LinkedTables = linkedTables;
         Sheets = sheets;
+    }
+
+    /// <summary>
+    /// A Workbook Document built from its Sheets, as a reader of another format builds one
+    /// (ADR-0330 §3): <paramref name="sheets"/> in the order their tabs stand, the one named
+    /// <paramref name="shown"/> shown, under <paramref name="culture"/>, declaring no Linked Table.
+    /// </summary>
+    /// <param name="culture">The Workbook's culture; one this engine knows by name, and the culture every Sheet records.</param>
+    /// <param name="shown">The name of the Sheet shown, one of <paramref name="sheets"/> named without regard to case.</param>
+    /// <param name="sheets">The Sheets, in order: at least one, no two named alike without regard to case, each under <paramref name="culture"/> and declaring no Linked Table of its own.</param>
+    /// <exception cref="ArgumentException">
+    /// The culture is not one this engine knows by name, there is no Sheet, two share a name, a Sheet
+    /// records another culture or declares a Linked Table, or no Sheet is named <paramref name="shown"/>.
+    /// Nothing is guessed.
+    /// </exception>
+    public WorkbookDocument(CultureInfo culture, string shown, IEnumerable<SheetDocument> sheets)
+    {
+        ArgumentNullException.ThrowIfNull(culture);
+        ArgumentNullException.ThrowIfNull(shown);
+        ArgumentNullException.ThrowIfNull(sheets);
+        SheetDocument.CheckCulture(culture, nameof(culture));
+        var list = new List<SheetDocument>();
+        foreach (var sheet in sheets)
+        {
+            ArgumentNullException.ThrowIfNull(sheet, nameof(sheets));
+            if (list.Any(s => string.Equals(s.Name, sheet.Name, StringComparison.OrdinalIgnoreCase)))
+                throw new ArgumentException($"Two Sheets are named '{sheet.Name}'.", nameof(sheets));
+            if (sheet.Culture != culture.Name)
+                throw new ArgumentException($"The Sheet '{sheet.Name}' records the culture '{sheet.Culture}', not the Workbook's '{culture.Name}'.", nameof(sheets));
+            if (sheet.LinkedTables.Count > 0)
+                throw new ArgumentException($"The Sheet '{sheet.Name}' declares a Linked Table; a Workbook's Linked Tables are declared on the Workbook.", nameof(sheets));
+            list.Add(sheet);
+        }
+        if (list.Count == 0) throw new ArgumentException("A Workbook holds at least one Sheet.", nameof(sheets));
+        var shownSheet = list.FirstOrDefault(s => string.Equals(s.Name, shown, StringComparison.OrdinalIgnoreCase))
+            ?? throw new ArgumentException($"The Sheet shown, '{shown}', is not one of the Sheets.", nameof(shown));
+        Culture = culture.Name;
+        Shown = shownSheet.Name;
+        LinkedTables = [];
+        Sheets = list;
     }
 
     /// <summary>The format version the document is written in: <see cref="CurrentVersion"/>, whatever it was read from.</summary>
