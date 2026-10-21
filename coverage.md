@@ -4,7 +4,7 @@
 |---|---|---|
 | ExGrid | 95.4% | 88.2% |
 | ExSheet | 95.7% | 88.7% |
-| ExPivot | 94.4% | 85.3% |
+| ExPivot | 94.4% | 85.4% |
 | ExChart | 89.7% | 80.6% |
 | Data | 94.5% | 90% |
 
@@ -13,19 +13,19 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/21/2026 - 02:57:48 |
+| Generated on: | 10/21/2026 - 03:38:55 |
 | Parser: | MultiReport (17x Cobertura) |
 | Assemblies: | 13 |
-| Classes: | 1015 |
+| Classes: | 1016 |
 | Files: | 535 |
-| **Line coverage:** | 94.7% (66796 of 70508) |
-| Covered lines: | 66796 |
-| Uncovered lines: | 3712 |
-| Coverable lines: | 70508 |
-| Total lines: | 117881 |
-| **Branch coverage:** | 87.1% (39985 of 45879) |
-| Covered branches: | 39985 |
-| Total branches: | 45879 |
+| **Line coverage:** | 94.7% (66856 of 70570) |
+| Covered lines: | 66856 |
+| Uncovered lines: | 3714 |
+| Coverable lines: | 70570 |
+| Total lines: | 117942 |
+| **Branch coverage:** | 87.1% (40037 of 45935) |
+| Covered branches: | 40037 |
+| Total branches: | 45935 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
@@ -651,7 +651,7 @@
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExPivot**|**91.6%**|**81.8%**|
+|**ExPivot**|**91.6%**|**82%**|
 |ExPivot.Chrome.IPivotChrome|41.6%||
 |ExPivot.Chrome.PivotAreaEntryView|100%||
 |ExPivot.Chrome.PivotAreaView|100%||
@@ -673,12 +673,12 @@
 |ExPivot.Chrome.PivotToolbarContext|85.7%||
 |ExPivot.Chrome.PivotToolbarMenuView|100%||
 |ExPivot.Chrome.PivotValueFieldSettingsContext|100%||
-|ExPivot.Components.ExPivot|91.5%|81.9%|
+|ExPivot.Components.ExPivot|91.5%|82.1%|
 |ExPivot.Components.ExPivot.FieldDrag|100%||
 |ExPivot.Components.ExPivot.ItemsLoad|100%|100%|
 |ExPivot.Components.ExPivot.ItemsView|100%|100%|
 |ExPivot.Components.ExPivot.OpenSurface|100%|100%|
-|ExPivot.Components.ExPivot<TView, TContext>|91.5%|81.9%|
+|ExPivot.Components.ExPivot<TView, TContext>|91.5%|82.1%|
 |ExPivot.Components.ExPivotStylesheet|100%||
 |ExPivot.Components.PivotDetailsDialogView|100%||
 |ExPivot.Components.PivotDetailsGrid|94.1%|66.6%|
@@ -758,6 +758,7 @@
 |ExPivot.Engine.PivotAnswerBuilder|96.5%|81.2%|
 |ExPivot.Engine.PivotAnswerBuilder.LeafKey|88.8%|50%|
 |ExPivot.Engine.PivotAnswerValues|100%|88.8%|
+|ExPivot.Engine.PivotCellItems|100%|50%|
 |ExPivot.Engine.PivotChangeTimes|100%|95.4%|
 |ExPivot.Engine.PivotComputationResult|100%|100%|
 |ExPivot.Engine.PivotComputationSession|97.2%|93.9%|
@@ -890,7 +891,7 @@
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExSheet**|**93.1%**|**85%**|
+|**ExSheet**|**93.1%**|**85.1%**|
 |ExSheet.AlignCenterItem|100%||
 |ExSheet.AlignLeftItem|100%||
 |ExSheet.AlignmentItem|100%|100%|
@@ -901,10 +902,10 @@
 |ExSheet.ColourItem|96%|100%|
 |ExSheet.CommaItem|83.3%||
 |ExSheet.Components.BrowserTurn|100%|83.3%|
-|ExSheet.Components.ExSheet|91.3%|83.4%|
+|ExSheet.Components.ExSheet|91.3%|83.5%|
 |ExSheet.Components.ExSheet.KeyboardListener|100%||
 |ExSheet.Components.ExSheet.KeyUpListener|100%||
-|ExSheet.Components.ExSheet<T>|91.3%|83.4%|
+|ExSheet.Components.ExSheet<T>|91.3%|83.5%|
 |ExSheet.Components.ExSheetStylesheet|100%||
 |ExSheet.Components.FormatCellsPanel|97.3%|87.5%|
 |ExSheet.DefaultToolbarRow|100%|50%|
