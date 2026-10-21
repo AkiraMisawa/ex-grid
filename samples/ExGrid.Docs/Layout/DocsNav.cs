@@ -128,6 +128,10 @@ public static class DocsNav
             new("Charts from a Chart Spec", "exchart/spec"),
             new("Reading and export", "exchart/export"),
         ]),
+        new("ExBoard", DocsNavSection.Docs,
+        [
+            new("Overview", "exboard"),
+        ]),
         new("Data", DocsNavSection.Docs,
         [
             new("Snapshot", "data"),
@@ -183,6 +187,7 @@ public static class DocsNav
         new(new("ExSheet", "exsheet"), "A sheet with Formulas, drawn by ExGrid"),
         new(new("ExPivot", "expivot"), "Excel's PivotTable, drawn by ExGrid"),
         new(new("ExChart", "exchart"), "Charts of the family's data, drawn as SVG Blazor diffs"),
+        new(new("ExBoard", "exboard"), "Grids, pivots and charts laid out from JSON an AI composes once"),
         new(new("Data", "data"), "The Snapshot, the family's immutable data, and Apache Arrow"),
     ];
 

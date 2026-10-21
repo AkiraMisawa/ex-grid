@@ -26,10 +26,11 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\ExSheet.MudBlazor\ExSheet.MudBlazor.csproj" />
     <!-- Only so NoColourParameterTests reads every shipped component package at once (UX-1);
-         nothing here uses ExPivot or ExChart. -->
+         nothing here uses ExPivot, ExChart or ExBoard. -->
     <ProjectReference Include="..\..\src\ExPivot.MudBlazor\ExPivot.MudBlazor.csproj" />
     <ProjectReference Include="..\..\src\ExChart\ExChart.csproj" />
     <ProjectReference Include="..\..\src\ExChart.MudBlazor\ExChart.MudBlazor.csproj" />
+    <ProjectReference Include="..\..\src\ExBoard\ExBoard.csproj" />
   </ItemGroup>
 
 </Project>

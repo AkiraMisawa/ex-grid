@@ -1,0 +1,48 @@
+@page "/exboard"
+@using ExGrid.Docs.Examples.Board
+
+<DocsPage Product="ExBoard" Title="Overview"
+          Lead="A Board is JSON an AI composes once and a workflow runs again and again without AI: grids, pivots and charts laid out in rows over typed Board Inputs, each input checked against its data's shape before anything is drawn.">
+
+    <DocsSection Title="Composed once, run without AI">
+        <p>
+            The data a workflow obtains is not known until it runs: which columns, which types, a grid, a pivot or a
+            chart. A Board says it in JSON. Its <code>inputs</code> name the data and declare each column's type, written
+            while whoever composed it knew what the data means; its <code>views</code> are grids, pivots and charts over
+            those inputs; its <code>layout</code> is rows of views, each its share of the row, never free placement. The
+            Board is saved, and each run binds every input to that run's data. ExBoard holds no workflow: it reads the
+            Board, checks its inputs, and draws it.
+        </p>
+        <p>
+            <code>BoardSpec.Read</code> reads a Board, and refuses what cannot be drawn with one sentence naming the path
+            and the reason, as a Chart Spec does: a version other than 1, a member a Board does not have, a view naming
+            a column its input does not declare, a decimal column with no format, a layout that leaves a view out or
+            places one twice. A grid view is <a href="exgrid/columns">a grid built at run time</a>, a pivot view holds a
+            Pivot Layout, and a chart view is a Chart Spec whose series name inputs in their <code>data</code>.
+        </p>
+        <p>
+            The <code>ExBoard</code> component draws a read Board with each input bound to a Snapshot. Binding checks the
+            Snapshot's shape against the input's declaration first; a column missing or of another type draws nothing but
+            the refusal, naming the input and the column, so a change upstream is caught on the run that meets it. Grids
+            and pivots stretch to their share of the row; a chart is drawn at its share of the Board's <code>Width</code>.
+            Change the Board below and draw again: remove the grid's <code>format</code>, have the pivot place a field
+            the input does not declare, or make the chart's series an <code>amountPerPeriod</code>, which a day's
+            P&amp;L with no interval cannot be drawn as.
+        </p>
+        <DocsExample Builtin="typeof(DeskBoardBuiltin)" Mud="typeof(DeskBoardMud)" Files="@(["Examples/Board/DeskBoard.cs"])" />
+    </DocsSection>
+
+    <DocsSection Title="Still to come">
+        <p>
+            Links that narrow one view by another's selection, outputs raised when the user confirms, and the Board Diff
+            that hands back what the user changed are decided (ADR-0340) and not yet drawn. ExBoard is not yet published
+            as a package.
+        </p>
+    </DocsSection>
+
+    <DocsSection Title="API">
+        <ApiTable Type="typeof(global::ExBoard.BoardSpec)" />
+        <ApiTable Type="typeof(global::ExBoard.BoundBoard)" />
+        <ApiTable Type="typeof(global::ExBoard.Components.ExBoard)" />
+    </DocsSection>
+</DocsPage>

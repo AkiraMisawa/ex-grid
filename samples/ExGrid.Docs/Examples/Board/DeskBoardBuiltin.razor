@@ -1,0 +1,24 @@
+@using ExBoard
+@using ExBoard.Components
+@using ExGrid.Data
+
+<textarea rows="10" style="width: 100%; font-family: monospace; font-size: 12px" @bind="_json"></textarea>
+<div style="margin: 8px 0">
+    <button type="button" @onclick="Draw">Draw</button>
+    <span role="status" style="margin-left: 8px">@_refusal</span>
+</div>
+@if (_board is not null)
+{
+    <ExBoard Board="_board" Data="_data!" Width="900" />
+}
+
+@code {
+    private string _json = DeskBoard.Json;
+    private BoardReading? _board;
+    private IReadOnlyDictionary<string, Snapshot>? _data;
+    private string? _refusal;
+
+    protected override void OnInitialized() => Draw();
+
+    private void Draw() => (_board, _data, _refusal) = DeskBoard.Read(_json);
+}
