@@ -62,12 +62,4 @@ public sealed record SheetTabCommand(
 /// </summary>
 /// <param name="Sheet">The name of the Sheet the menu acts on.</param>
 /// <param name="Commands">The commands, in the order the menu offers them.</param>
-public sealed record SheetTabMenuContext(string Sheet, IReadOnlyList<SheetTabCommand> Commands)
-{
-    /// <inheritdoc />
-    public bool Equals(SheetTabMenuContext? other) =>
-        other is not null && Sheet == other.Sheet && Commands.SequenceEqual(other.Commands);
-
-    /// <inheritdoc />
-    public override int GetHashCode() => HashCode.Combine(Sheet, Commands.Count);
-}
+public sealed record SheetTabMenuContext(string Sheet, IReadOnlyList<SheetTabCommand> Commands);

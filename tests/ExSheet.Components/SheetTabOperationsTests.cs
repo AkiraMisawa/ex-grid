@@ -643,4 +643,44 @@ public class SheetTabOperationsTests : SheetTestContext
         Assert.Equal("Two", SelectedTab(cut));
         Assert.True(cut.Instance.IsEditing);
     }
+
+    // ---- The menu's context ------------------------------------------------------------------------
+
+    [Fact] // ADR-0331 §4: a menu's context claims no equality of its own: each one built is its own, as its commands' Invoke are
+    public async Task Each_menu_built_is_a_context_of_its_own()
+    {
+        var contexts = new List<SheetTabMenuContext>();
+        var cut = RenderSheet(ps =>
+        {
+            ps.Add(s => s.Workbook, Sheets("One", "Two"));
+            ps.Add(s => s.Chrome, new MenuRecordingChrome(contexts));
+        });
+        await OpenMenuAsync(cut, "One");
+        await MenuKeyAsync(cut, "ArrowDown");
+        await MenuKeyAsync(cut, "ArrowUp");
+
+        var first = contexts.First(c => c.Commands.Single(k => k.Active).Kind == SheetTabCommandKind.Rename);
+        var again = contexts.Last();
+        Assert.Equal(SheetTabCommandKind.Rename, again.Commands.Single(k => k.Active).Kind);
+        Assert.NotSame(first, again);
+        Assert.NotEqual(first, again);
+        Assert.Equal(first with { }, first);
+    }
+
+    private sealed class MenuRecordingChrome(List<SheetTabMenuContext> contexts) : ISheetChrome
+    {
+        public RenderFragment? FilterPanel(global::ExGrid.Chrome.FilterPanelContext context) => null;
+
+        public RenderFragment? ColumnMenu(global::ExGrid.Chrome.ColumnMenuContext context) => null;
+
+        public RenderFragment? CellEditor(global::ExGrid.Chrome.CellEditorContext context) => null;
+
+        public RenderFragment? LoadingIndicator(global::ExGrid.Chrome.LoadingContext context) => null;
+
+        public RenderFragment? SheetTabMenu(SheetTabMenuContext context)
+        {
+            contexts.Add(context);
+            return null;
+        }
+    }
 }
