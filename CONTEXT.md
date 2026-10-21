@@ -821,6 +821,13 @@ format that replaces the default, and the width (`Auto | Fixed` plus `MinWidth` 
 from data (each tenor of a tenor ladder) are the same Column, not distinguished.
 _Avoid_: field, column definition
 
+**Shaped Grid**:
+A grid whose Columns are built at run time from a source's shape and a grid view's spec, with no row
+type of the Consumer's: a row is a position in a Snapshot, and a decimal or double column carries the
+Excel format code the spec writes
+([ADR-0342](./docs/adr/0342-a-grid-builds-its-columns-at-run-time-from-a-sources-shape.md)).
+_Avoid_: dynamic grid, schema-less grid
+
 **Size to fit**:
 Fixing a column's width at what its header and the fetched values need at that moment, bounded by
 its `MinWidth` / `MaxWidth`. It is asked for by the user, through a double-click on the column's

@@ -110,6 +110,22 @@
         </DocsExample>
     </DocsSection>
 
+    <DocsSection Title="From JSON, under a Board Input">
+        <p>
+            Data a tool returns is usually JSON, which tells no decimal from a double, no integer, and no date. A
+            <code>BoardInput</code> names the data and declares each column's kind; <code>FromJson</code> makes a Snapshot by
+            that declaration, one column per declared column. A missing member or <code>null</code> is a Blank, and a
+            member the input does not declare is not read. A value that does not convert, <code>"abc"</code> as a decimal,
+            is refused naming the input, the row and the column, never dropped or read as zero. Kinds are never inferred
+            from the rows: a first page of nulls, or <code>1</code> beside <code>1.5</code>, would be guessed wrong.
+        </p>
+        <p>
+            <code>Bind</code> and <code>Check</code> hold a source's shape, a <code>DataShape</code>, against the declaration
+            before any row is read, and refuse a missing column or one of another kind by name, so a change upstream is
+            caught on the run that meets it. <a href="exgrid/columns">Columns built at run time</a> draws such a Snapshot.
+        </p>
+    </DocsSection>
+
     <DocsSection Title="API">
         <ApiTable Type="typeof(global::ExGrid.Data.Snapshot)" />
         <ApiTable Type="typeof(global::ExGrid.Data.SnapshotBuilder<>)" />
@@ -117,5 +133,7 @@
         <ApiTable Type="typeof(global::ExGrid.Data.CsvColumn)" />
         <ApiTable Type="typeof(global::ExGrid.Data.SnapshotColumnsBuilder)" />
         <ApiTable Type="typeof(global::ExGrid.Data.SnapshotChange)" />
+        <ApiTable Type="typeof(global::ExGrid.Data.BoardInput)" />
+        <ApiTable Type="typeof(global::ExGrid.Data.DataShape)" />
     </DocsSection>
 </DocsPage>

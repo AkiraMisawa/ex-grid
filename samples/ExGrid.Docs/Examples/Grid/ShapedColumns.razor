@@ -1,0 +1,29 @@
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 8px; font-size: 13px">
+    <label>Input<textarea rows="9" style="width: 100%; font-family: monospace" @bind="_input"></textarea></label>
+    <label>Data<textarea rows="9" style="width: 100%; font-family: monospace" @bind="_data"></textarea></label>
+    <label>Grid<textarea rows="9" style="width: 100%; font-family: monospace" @bind="_spec"></textarea></label>
+</div>
+<div style="margin: 8px 0">
+    <button type="button" @onclick="Draw">Draw</button>
+    <span role="status" style="margin-left: 8px">@_refusal</span>
+</div>
+
+@if (_grid is { } grid)
+{
+    @* A new ShapedGrid is a new source and a new column list, so the grid starts again. *@
+    <ExGrid @key="grid" TRow="ShapedRow" Source="grid.Source" Columns="grid.Columns" PinnedColumnCount="grid.PinnedColumnCount"
+            ViewportHeight="180" ViewportWidth="ViewportSize.Stretch" />
+}
+
+@code {
+    private string _input = ShapedTrades.Input;
+    private string _data = ShapedTrades.Data;
+    private string _spec = ShapedTrades.Spec;
+    private ShapedGrid? _grid;
+    private string? _refusal;
+
+    protected override void OnInitialized() => Draw();
+
+    // A refusal takes the last grid off the screen: what is shown is what the texts say.
+    private void Draw() => (_grid, _refusal) = ShapedTrades.Build(_input, _data, _spec);
+}

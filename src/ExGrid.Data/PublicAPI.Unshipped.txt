@@ -1,1 +1,35 @@
 #nullable enable
+ExGrid.Data.BoardInput
+ExGrid.Data.BoardInput.Bind(ExGrid.Data.Snapshot! snapshot) -> ExGrid.Data.Snapshot!
+ExGrid.Data.BoardInput.BoardInput(string! name, System.Collections.Generic.IEnumerable<ExGrid.Data.DataShapeColumn>! columns) -> void
+ExGrid.Data.BoardInput.Check(ExGrid.Data.DataShape! shape) -> void
+ExGrid.Data.BoardInput.Columns.get -> System.Collections.Generic.IReadOnlyList<ExGrid.Data.DataShapeColumn>!
+ExGrid.Data.BoardInput.FromJson(string! json) -> ExGrid.Data.Snapshot!
+ExGrid.Data.BoardInput.FromJson(System.Text.Json.JsonElement rows) -> ExGrid.Data.Snapshot!
+ExGrid.Data.BoardInput.Name.get -> string!
+ExGrid.Data.BoardInput.Shape.get -> ExGrid.Data.DataShape!
+ExGrid.Data.BoardRefusedException
+ExGrid.Data.BoardRefusedException.BoardRefusedException(string! path, string! message) -> void
+ExGrid.Data.BoardRefusedException.Path.get -> string!
+ExGrid.Data.DataShape
+ExGrid.Data.DataShape.Columns.get -> System.Collections.Generic.IReadOnlyList<ExGrid.Data.DataShapeColumn>!
+ExGrid.Data.DataShape.DataShape(System.Collections.Generic.IEnumerable<ExGrid.Data.DataShapeColumn>! columns) -> void
+ExGrid.Data.DataShape.TryGetColumn(string! name, out ExGrid.Data.DataShapeColumn column) -> bool
+ExGrid.Data.DataShapeColumn
+ExGrid.Data.DataShapeColumn.DataShapeColumn() -> void
+ExGrid.Data.DataShapeColumn.DataShapeColumn(string! Name, ExGrid.Data.SnapshotKind Kind) -> void
+ExGrid.Data.DataShapeColumn.Deconstruct(out string! Name, out ExGrid.Data.SnapshotKind Kind) -> void
+ExGrid.Data.DataShapeColumn.Equals(ExGrid.Data.DataShapeColumn other) -> bool
+ExGrid.Data.DataShapeColumn.Kind.get -> ExGrid.Data.SnapshotKind
+ExGrid.Data.DataShapeColumn.Kind.init -> void
+ExGrid.Data.DataShapeColumn.Name.get -> string!
+ExGrid.Data.DataShapeColumn.Name.init -> void
+override ExGrid.Data.DataShapeColumn.GetHashCode() -> int
+static ExGrid.Data.BoardInput.KindNames.get -> System.Collections.Generic.IReadOnlyCollection<string!>!
+static ExGrid.Data.BoardInput.NameOf(ExGrid.Data.SnapshotKind kind) -> string!
+static ExGrid.Data.BoardInput.Read(string! name, System.Text.Json.JsonElement declaration, string! path) -> ExGrid.Data.BoardInput!
+static ExGrid.Data.DataShape.Of(ExGrid.Data.Snapshot! snapshot) -> ExGrid.Data.DataShape!
+static ExGrid.Data.DataShapeColumn.operator !=(ExGrid.Data.DataShapeColumn left, ExGrid.Data.DataShapeColumn right) -> bool
+static ExGrid.Data.DataShapeColumn.operator ==(ExGrid.Data.DataShapeColumn left, ExGrid.Data.DataShapeColumn right) -> bool
+~override ExGrid.Data.DataShapeColumn.Equals(object obj) -> bool
+~override ExGrid.Data.DataShapeColumn.ToString() -> string
