@@ -83,15 +83,49 @@ public sealed class BoundBoard
     /// <paramref name="condition"/> compares other columns than it does.</exception>
     public void Narrow(BoardLink link, LinkCondition? condition)
     {
+        if (Set(link, condition))
+        {
+            foreach (var target in link.To)
+                NarrowView(target);
+        }
+    }
+
+    /// <summary>
+    /// Narrows by <paramref name="selection"/>, made in grid view <paramref name="from"/>: each link
+    /// from it narrows by the condition the selection makes (<see cref="ConditionOf(BoardLink, GridSelection)"/>),
+    /// and each view they reach is narrowed once. A selection that moves within the same values, an
+    /// arrow key inside the selected rows, narrows nothing again.
+    /// </summary>
+    /// <returns>Whether any view was narrowed again.</returns>
+    public bool Select(string from, GridSelection selection)
+    {
+        ArgumentNullException.ThrowIfNull(from);
+        ArgumentNullException.ThrowIfNull(selection);
+        var targets = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var link in Board.Links.Where(l => l.From == from))
+        {
+            if (Set(link, ConditionOf(link, selection)))
+                targets.UnionWith(link.To);
+        }
+        foreach (var target in targets)
+            NarrowView(target);
+        return targets.Count > 0;
+    }
+
+    // Records the link's condition; false when it is the one already held, which narrows nothing again.
+    private bool Set(BoardLink link, LinkCondition? condition)
+    {
         GridOf(link);
         if (condition is not null && !condition.On.SequenceEqual(link.On, StringComparer.Ordinal))
             throw new ArgumentException($"The link compares {string.Join(", ", link.On)}, and the condition {string.Join(", ", condition.On)}.", nameof(condition));
+        var held = _conditions.GetValueOrDefault(link);
+        if (held is null ? condition is null : held.LetsThroughAs(condition))
+            return false;
         if (condition is null)
             _conditions.Remove(link);
         else
             _conditions[link] = condition;
-        foreach (var target in link.To)
-            NarrowView(target);
+        return true;
     }
 
     private BoundGridView GridOf(BoardLink link)
@@ -160,13 +194,22 @@ public sealed class BoundBoard
         {
             views.Add(board.Views[i] switch
             {
-                BoardGridView grid => new BoundGridView(grid, ShapedGrid.Of(bound[grid.Grid.Data], grid.Grid, culture)),
+                BoardGridView grid => new BoundGridView(grid, GridOf(bound[grid.Grid.Data], grid.Grid, culture)),
                 BoardPivotView pivot => new BoundPivotView(pivot, PivotSource.From(bound[pivot.Input])),
                 BoardChartView chart => new BoundChartView(chart, ReadChart(chart, bound, inputs, $"views[{i}].chart", null)),
                 var other => throw new InvalidOperationException($"Unknown view {other.GetType().Name}."),
             });
         }
         return new BoundBoard(board, bound, views);
+    }
+
+    private static ShapedGrid GridOf(Snapshot snapshot, GridViewSpecReading spec, CultureInfo? culture)
+    {
+        var grid = ShapedGrid.Of(snapshot, spec, culture);
+        // Its rows change only when a link narrows them, a step the user took, which reaches the grid
+        // at once rather than at the end of a live feed's gathering interval.
+        grid.Source.GatherInterval = TimeSpan.Zero;
+        return grid;
     }
 
     private static ChartSpecReading ReadChart(BoardChartView chart, IReadOnlyDictionary<string, Snapshot> bound, Dictionary<string, BoardInput> inputs, string path,

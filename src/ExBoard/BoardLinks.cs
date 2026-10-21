@@ -11,7 +11,31 @@ namespace ExBoard;
 /// <param name="To">The views it narrows.</param>
 /// <param name="On">The columns compared, declared by the input of <paramref name="From"/> and by every
 /// input each of <paramref name="To"/> reads, of the same kind in each.</param>
-public sealed record BoardLink(string From, IReadOnlyList<string> To, IReadOnlyList<string> On);
+public sealed record BoardLink(string From, IReadOnlyList<string> To, IReadOnlyList<string> On)
+{
+    /// <summary>The views it narrows, as given when it was made; held as a copy no one can change.</summary>
+    public IReadOnlyList<string> To { get; init; } = Array.AsReadOnly([.. To]);
+
+    /// <summary>The columns it compares, as given when it was made; held as a copy no one can change.</summary>
+    public IReadOnlyList<string> On { get; init; } = Array.AsReadOnly([.. On]);
+
+    /// <summary>Whether <paramref name="other"/> is the same link: the same view, the same views
+    /// narrowed and the same columns, in the same order.</summary>
+    public bool Equals(BoardLink? other) => other is not null && From == other.From
+        && To.SequenceEqual(other.To, StringComparer.Ordinal) && On.SequenceEqual(other.On, StringComparer.Ordinal);
+
+    /// <inheritdoc />
+    public override int GetHashCode()
+    {
+        var hash = new HashCode();
+        hash.Add(From, StringComparer.Ordinal);
+        foreach (var to in To)
+            hash.Add(to, StringComparer.Ordinal);
+        foreach (var on in On)
+            hash.Add(on, StringComparer.Ordinal);
+        return hash.ToHashCode();
+    }
+}
 
 /// <summary>
 /// What a link's selection narrows to (ADR-0340, Q5): the columns it compares, and each tuple of
@@ -56,6 +80,11 @@ public sealed class LinkCondition
 
     /// <summary>The tuples let through, each once, in the order first selected.</summary>
     public IReadOnlyList<IReadOnlyList<object?>> Values { get; }
+
+    /// <summary>Whether <paramref name="other"/> compares the same columns and lets through the same
+    /// tuples, in any order.</summary>
+    public bool LetsThroughAs(LinkCondition? other) => other is not null && On.SequenceEqual(other.On, StringComparer.Ordinal)
+        && _set.SetEquals(other._set);
 
     /// <summary>Whether <paramref name="tuple"/>, the values of <see cref="On"/> in their order, is let through.</summary>
     public bool Matches(object?[] tuple) => _set.Contains(tuple);

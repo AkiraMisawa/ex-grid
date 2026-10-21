@@ -83,10 +83,7 @@ public sealed class ShapedGrid
             columns[i] = Column(snapshot, held, shown, widths[shown.Column], culture);
         }
         var rows = ShapedRow.Of(snapshot);
-        // Its rows change only when its Consumer narrows them, a step the user took, which reaches
-        // the grid at once rather than at the end of a live feed's gathering interval.
         var source = GridSource.From<ShapedRow>(rows, row => row);
-        source.GatherInterval = TimeSpan.Zero;
         source.OnColumnsChanged([.. columns.Select(c => c.Info)]);
         source.OnSortChanged(spec.ViewState.Sorts);
         source.OnFilterChanged(spec.ViewState.Filter);

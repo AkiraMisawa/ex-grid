@@ -85,7 +85,9 @@ here so they are not re-derived:
 - **In memory, ExBoard executes it** over the bound Snapshots: a grid's rows are handed again to its
   source, which keeps the user's sort and filter; a pivot is given a source over a Snapshot of the
   rows let through; a chart reads only those rows. A source held where the data lives (ticket 02) is
-  handed the condition instead.
+  handed the condition instead. A pivot's narrowed Snapshot is a copy, made once per change of
+  condition (a selection moving within the same values narrows nothing again), so its cost is the
+  input's size; a large input belongs on a server, where the copy is not made.
 - **A link starts at a grid** for now; a pivot's cell follows (it needs ExPivot to say which items a
   selected cell stands for). A chart's selection does not narrow.
 - **Links run one way**: a link that would let a view narrow, directly or along other links, the

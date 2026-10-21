@@ -214,6 +214,35 @@ public sealed class BoardLinkTests : BunitContext
         Assert.Equal(5, chart.Reading.Definition.Series[0].Points.Count);
     }
 
+    [Fact] // ADR-0340 Q5: a selection that moves within the same values narrows nothing again
+    public void A_selection_within_the_same_values_narrows_nothing_again()
+    {
+        var reading = BoardSpec.Read(Board("""{"from": "blotter", "to": ["byDesk"], "on": ["desk"]}"""));
+        var board = BoundBoard.Bind(reading, Data(reading));
+
+        Assert.True(board.Select("blotter", Rows(0)));
+        var pivot = ((BoundPivotView)board["byDesk"]).Source;
+        // Row 2 is Rates too: the same condition, so the pivot keeps its source.
+        Assert.False(board.Select("blotter", Rows(2)));
+        Assert.Same(pivot, ((BoundPivotView)board["byDesk"]).Source);
+        Assert.True(board.Select("blotter", GridSelection.Empty));
+        Assert.False(board.Select("blotter", GridSelection.Empty));
+    }
+
+    [Fact] // ADR-0340 Q5: a link is the same link by what it says, and is held as a copy
+    public void A_link_is_compared_by_what_it_says()
+    {
+        var reading = BoardSpec.Read(Board("""{"from": "blotter", "to": ["other"], "on": ["desk"]}"""));
+        var board = BoundBoard.Bind(reading, Data(reading));
+        var to = new List<string> { "other" };
+        var link = new BoardLink("blotter", to, ["desk"]);
+        to.Add("limits");
+
+        Assert.Equal(reading.Links[0], link);
+        board.Narrow(link, new LinkCondition(["desk"], [["FX"]]));
+        Assert.Equal(["FX"], Desks((BoundGridView)board["other"]));
+    }
+
     [Fact] // ADR-0340 Q5: the grid's raised selection narrows, and its drop, raised as an empty one, restores
     public async Task The_board_narrows_on_the_selection_its_grid_raises()
     {

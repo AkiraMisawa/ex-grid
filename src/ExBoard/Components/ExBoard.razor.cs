@@ -102,13 +102,7 @@ public partial class ExBoard
 
     // A grid's selection narrows the views its links reach; a dropped selection, which the grid raises
     // as an empty one, takes the narrowing away with it (ADR-0011).
-    private void Select(string from, GridSelection selection)
-    {
-        if (_bound is not { } bound)
-            return;
-        foreach (var link in bound.Board.Links.Where(l => l.From == from))
-            bound.Narrow(link, bound.ConditionOf(link, selection));
-    }
+    private void Select(string from, GridSelection selection) => _bound?.Select(from, selection);
 
     private static string RefusalStyle(BoardRow row) => FormattableString.Invariant($"height: {row.Height}px");
 

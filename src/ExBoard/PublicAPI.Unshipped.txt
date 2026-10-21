@@ -71,6 +71,7 @@ ExBoard.BoundBoard.ConditionOf(ExBoard.BoardLink! link) -> ExBoard.LinkCondition
 ExBoard.BoundBoard.ConditionOf(ExBoard.BoardLink! link, ExGrid.Selection.GridSelection! selection) -> ExBoard.LinkCondition?
 ExBoard.BoundBoard.Data.get -> System.Collections.Generic.IReadOnlyDictionary<string!, ExGrid.Data.Snapshot!>!
 ExBoard.BoundBoard.Narrow(ExBoard.BoardLink! link, ExBoard.LinkCondition? condition) -> void
+ExBoard.BoundBoard.Select(string! from, ExGrid.Selection.GridSelection! selection) -> bool
 ExBoard.BoundBoard.this[string! id].get -> ExBoard.BoundView!
 ExBoard.BoundBoard.Views.get -> System.Collections.Generic.IReadOnlyList<ExBoard.BoundView!>!
 ExBoard.BoundChartView
@@ -100,6 +101,7 @@ ExBoard.Components.ExBoard.PivotChrome.set -> void
 ExBoard.Components.ExBoard.Width.get -> double
 ExBoard.Components.ExBoard.Width.set -> void
 ExBoard.LinkCondition
+ExBoard.LinkCondition.LetsThroughAs(ExBoard.LinkCondition? other) -> bool
 ExBoard.LinkCondition.LinkCondition(System.Collections.Generic.IReadOnlyList<string!>! on, System.Collections.Generic.IEnumerable<System.Collections.Generic.IReadOnlyList<object?>!>! values) -> void
 ExBoard.LinkCondition.Matches(object?[]! tuple) -> bool
 ExBoard.LinkCondition.On.get -> System.Collections.Generic.IReadOnlyList<string!>!
