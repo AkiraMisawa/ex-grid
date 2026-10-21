@@ -94,7 +94,6 @@ public class WrittenFormulaTests
     [InlineData("=SUM(Positions[PV])", "SUM(Positions[PV])")]
     [InlineData("=SUM(positions[[pv]])", "SUM(positions[pv])")]
     [InlineData("=XLOOKUP(1,Positions[Market value],Positions[PV])", "_xlfn.XLOOKUP(1,Positions[Market value],Positions[PV])")]
-    [InlineData("=SUM(Positions[[Total $]])", "SUM(Positions[Total $])")]
     [InlineData("=SUM(Positions[[a'#b]])", "SUM(Positions[a'#b])")]
     [InlineData("=SUM(Positions[[it''s]])", "SUM(Positions[it''s])")]
     [InlineData("=SUM(Positions[['[x']]])", "SUM(Positions['[x']])")]
@@ -108,9 +107,10 @@ public class WrittenFormulaTests
         Assert.Equal(stored, text);
     }
 
-    [Theory] // ADR-0330 §6: a column whose name begins or ends with a space, which Excel's structured reference does not keep, or holds @, whose form in a file is still a question to Excel (ticket 07), is refused
+    [Theory] // ADR-0330 §6: a column whose name begins or ends with a space, which Excel's structured reference does not keep, or holds @ or a character Excel has not been seen to write there, is refused (ticket 07 asks)
     [InlineData("=SUM(Positions[PV ])")]
     [InlineData("=SUM(Positions[['@PV]])")]
+    [InlineData("=SUM(Positions[[Total $]])")]
     public void ADR0330_a_column_excel_would_read_otherwise_is_not_written(string formula)
     {
         var entry = Entry.Parse(formula, CultureInfo.InvariantCulture)!;
@@ -118,6 +118,17 @@ public class WrittenFormulaTests
         WrittenFormula.Write(entry, null, out var problem, Columns);
 
         Assert.Equal(WrittenFormulaProblem.ColumnName, problem);
+    }
+
+    [Theory] // ADR-0330 §6: a Linked Table's name read as a name of its own is #NAME? in ExSheet and the table in Excel, and is refused; one a LET binds is the LET's
+    [InlineData("=SUM(Positions)", "TableName")]
+    [InlineData("=ROWS(positions)+1", "TableName")]
+    [InlineData("=LET(Positions,1,Positions+1)", "None")]
+    public void ADR0330_a_linked_tables_bare_name_is_not_written(string formula, string expected)
+    {
+        WrittenFormula.Write(Entry.Parse(formula, CultureInfo.InvariantCulture)!, null, out var problem, Columns);
+
+        Assert.Equal(expected, problem.ToString());
     }
 
     [Fact] // ADR-0330 §4: a name a LET binds is prefixed only where it is bound; read outside the LET it is a name of its own, unprefixed

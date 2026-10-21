@@ -115,9 +115,12 @@ asynchronously, which an ASP.NET response body accepts.
 - **Refused by name, with nothing written:** a Linked Table that has not answered (its Formulas
   show `#GETTING_DATA`), one that holds no rows (an Excel Table holds at least one, and its Formulas
   would answer otherwise), more rows than a worksheet holds under its header (1,048,575) or more
-  columns than its 16,384, and one whose name is already a Sheet's or one a worksheet cannot have; a
-  Formula that reads a Linked Table or a column the Workbook does not declare, or a column whose
-  name begins or ends with a space or holds `@`; a cell that shows `#CIRC!` (a file cannot hold it,
+  columns than its 16,384, and one whose name is already a Sheet's, one a worksheet cannot have or
+  one Excel gives no Table (`A01`); a Formula that reads a Linked Table or a column the Workbook does
+  not declare, a column whose name begins or ends with a space or holds `@`, a tab, a line break or
+  one of `, : . " { } $ ^ & * + = - < > /` (until Excel is asked how a file stores one), or a
+  Linked Table's name on its own (`=SUM(Positions)`, `#NAME?` in ExSheet and the table in Excel); a
+  cell that shows `#CIRC!` (a file cannot hold it,
   and Excel would show 0), a Formula Excel
   would not take (longer than its 8,192 characters, a text constant over 255, calls nested past
   64 levels, a call of more than 255 arguments, a name a `LET` binds or a `LAMBDA` takes called as

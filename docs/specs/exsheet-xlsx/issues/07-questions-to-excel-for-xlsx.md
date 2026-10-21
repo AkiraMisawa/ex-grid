@@ -9,8 +9,9 @@ Roadmap: internal
 - [ ] The corpus files' readings (Number Formats, theme colours, widths) match what Excel shows
 - [ ] A Linked Table's worksheet opens as an Excel Table whose Formulas answer
 - [ ] A structured reference written in the form Excel shows (ticket 05: single brackets, `'` before `[ ] # '`, as in
-      `Positions[Total $]` and `Positions[Rate'#]`) is the form a file stores, and opens with no repair prompt; and how Excel
-      stores a column whose name holds `@` (ticket 05 refuses one) or begins or ends with a space (refused too)
+      `Positions[Market Value]` and `Positions[Rate'#]`) is the form a file stores, and opens with no repair prompt; and how
+      Excel stores a column whose name holds `@`, a tab, a line break or one of `, : . " { } $ ^ & * + = - < > /`, or begins
+      or ends with a space (ticket 05 refuses each until answered: single brackets or double, and which are escaped)
 - [ ] A table column's name holding a line feed (written as XML carries it, `&#xA;`, where Excel writes `_x000a_`) opens
       equal to its header cell's text; and whether a table column's name has a length limit below a cell's 32,767
 - [ ] Built-in Number Formats 5 to 8 (currency): how Excel shows them under other locales, with the code the file writes and

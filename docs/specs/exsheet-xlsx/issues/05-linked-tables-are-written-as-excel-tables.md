@@ -35,14 +35,19 @@ toward `XlsxSaveOptions.MaxCells`, the header's included. The Sheet shown stays 
     than ExSheet's (`ROWS` gives 1 where ExSheet gives 0, `COUNTBLANK` 1, the column itself 0 where ExSheet shows
     `#VALUE!`), with nothing on the file saying so;
   - a name **a worksheet cannot have**, since the worksheet is named after the table: longer than 31 characters, holding `\`,
-    or `History` (a Linked Table's name may be 255 characters and begin with `\`);
+    or `History` (a Linked Table's name may be 255 characters and begin with `\`); and a name **Excel gives no Table**
+    though the engine takes it (`A01`, which a file reads as the cell A1), by `XlsxTable.IsValidName`, the rule the file
+    layer checks;
   - more than **16,384 columns**;
   - the rows limit is **1,048,575**, a worksheet's 1,048,576 less the header's row (`XlsxWorkbookWriter.MaxLinkedTableRows`);
   - a Formula that reads, by a structured reference, a table or a column **no Linked Table declares** (the engine shows
     `#NAME?` or `#REF!`; Excel refuses such a Formula on entry, TABLE-011 and TABLE-013);
   - a Formula that reads a column whose name **begins or ends with a space**, which Excel's structured reference does not
-    keep, or **holds `@`**, whose form in a file ticket 07 asks Excel (Excel reads `Positions[@PV]` as the row the Formula
-    stands in).
+    keep, or **holds `@`**, a tab, a line break or one of `, : . " { } $ ^ & * + = - < > /`: Microsoft's documentation puts
+    such a column in double brackets, and single brackets holding one were never observed; ticket 07 asks Excel how a file
+    stores each (Excel reads `Positions[@PV]` as the row the Formula stands in);
+  - a Formula that reads a **Linked Table's name on its own** (`=SUM(Positions)`): ExSheet shows `#NAME?`, and Excel, once
+    the file holds the Excel Table, reads its rows on the full calculation.
 - **Opened again by ExSheet** (X1): with a Formula reading the table, the open is refused by name (`ExcelTable`); with
   none, the table's worksheet opens as a Sheet of its cells and the Open Report lists its Excel Table as not carried.
 - **Found and fixed:** the engine stored a column whose name holds `@` unescaped (`=SUM(Positions[['@PV]])` was stored as

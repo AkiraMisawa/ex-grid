@@ -529,6 +529,7 @@ static ExGrid.Data.Xlsx.XlsxSheetInfo.operator ==(ExGrid.Data.Xlsx.XlsxSheetInfo
 static ExGrid.Data.Xlsx.XlsxStyles.Default.get -> ExGrid.Data.Xlsx.XlsxStyles!
 static ExGrid.Data.Xlsx.XlsxStyles.operator !=(ExGrid.Data.Xlsx.XlsxStyles? left, ExGrid.Data.Xlsx.XlsxStyles? right) -> bool
 static ExGrid.Data.Xlsx.XlsxStyles.operator ==(ExGrid.Data.Xlsx.XlsxStyles? left, ExGrid.Data.Xlsx.XlsxStyles? right) -> bool
+static ExGrid.Data.Xlsx.XlsxTable.IsValidName(string? name) -> bool
 static ExGrid.Data.Xlsx.XlsxTable.operator !=(ExGrid.Data.Xlsx.XlsxTable? left, ExGrid.Data.Xlsx.XlsxTable? right) -> bool
 static ExGrid.Data.Xlsx.XlsxTable.operator ==(ExGrid.Data.Xlsx.XlsxTable? left, ExGrid.Data.Xlsx.XlsxTable? right) -> bool
 static ExGrid.Data.Xlsx.XlsxTheme.ApplyTint(uint argb, double tint) -> uint

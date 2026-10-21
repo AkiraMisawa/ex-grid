@@ -57,7 +57,7 @@ public class LinkedTableWriterTests
     private static Workbook Booked()
     {
         var workbook = new Workbook(EnUs, ["Trades", "Summary"]);
-        workbook.DeclareLinkedTable("Positions", ["Desk", "PV", "Live", "Total $"], key: "Desk");
+        workbook.DeclareLinkedTable("Positions", ["Desk", "PV", "Live", "Total#"], key: "Desk");
         workbook.DeclareLinkedTable("Rates", ["Ccy", "Rate"]);
         workbook.PushLinkedTable("Positions",
         [
@@ -70,7 +70,7 @@ public class LinkedTableWriterTests
         {
             [At("A1")] = "=SUM(Positions[PV])",
             [At("A2")] = "=XLOOKUP(\"APAC\",positions[desk],Positions[[PV]])",
-            [At("A3")] = "=SUM(Positions[Total $])",
+            [At("A3")] = "=SUM(Positions[[Total'#]])",
             [At("A4")] = "=Rates[Rate]*2",
         }));
         workbook.Do("Summary", SheetEdit.Enter(At("B2"), "=COUNTA(Positions[Desk])&\" desks\""));
@@ -112,7 +112,7 @@ public class LinkedTableWriterTests
 
         foreach (var (sheet, table, name, reference, columns) in new[]
         {
-            (3, 1, "Positions", "A1:D4", new[] { "Desk", "PV", "Live", "Total $" }),
+            (3, 1, "Positions", "A1:D4", new[] { "Desk", "PV", "Live", "Total#" }),
             (4, 2, "Rates", "A1:B2", new[] { "Ccy", "Rate" }),
         })
         {
@@ -184,7 +184,7 @@ public class LinkedTableWriterTests
         Assert.Equal("999750.25", Shown(trades, "A1"));
         Assert.Equal("_xlfn.XLOOKUP(\"APAC\",positions[desk],Positions[PV])", Formula(trades, "A2"));
         Assert.Equal("-250", Shown(trades, "A2"));
-        Assert.Equal("SUM(Positions[Total $])", Formula(trades, "A3"));
+        Assert.Equal("SUM(Positions[Total'#])", Formula(trades, "A3"));
         Assert.Equal("Rates[Rate]*2", Formula(trades, "A4"));
         Assert.Equal("COUNTA(Positions[Desk])&\" desks\"", Formula(parts["xl/worksheets/sheet2.xml"], "B2"));
         Assert.Equal("3 desks", Shown(parts["xl/worksheets/sheet2.xml"], "B2"));
@@ -233,7 +233,7 @@ public class LinkedTableWriterTests
 
         Assert.Equal(XlsxSaveRefusal.LinkedTable, refused.Reason);
         Assert.Contains("'Positions' has not answered", refused.Message, StringComparison.Ordinal);
-        Assert.Null(refused.Sheet);
+        Assert.Equal("Positions", refused.Sheet);
     }
 
     [Fact] // ADR-0330 §6, ADR-0049: a Linked Table whose last snapshot was refused for a repeated key waits again, and is refused as one that has not answered
@@ -277,6 +277,33 @@ public class LinkedTableWriterTests
 
         Assert.Equal(XlsxSaveRefusal.LinkedTable, refused.Reason);
         Assert.Contains("a worksheet cannot have it", refused.Message, StringComparison.Ordinal);
+    }
+
+    [Fact] // ADR-0330 §6: a Linked Table's name the engine takes and Excel gives no Table (A01 reads as the cell A1) is refused by name, not thrown as an argument
+    public async Task ADR0330_a_linked_table_whose_name_excel_gives_no_table_is_refused()
+    {
+        var workbook = new Workbook(EnUs);
+        workbook.DeclareLinkedTable("A01", ["Desk"]);
+        workbook.PushLinkedTable("A01", [[T("EMEA")]]);
+
+        var refused = await RefusedAsync(workbook);
+
+        Assert.Equal((XlsxSaveRefusal.LinkedTable, "A01"), (refused.Reason, refused.Sheet));
+        Assert.Contains("Excel gives a Table no such name", refused.Message, StringComparison.Ordinal);
+    }
+
+    [Fact] // ADR-0330 §6 (spine rule 1): a Linked Table's name read as a name of its own is #NAME? in ExSheet, and Excel would read the table written: refused by name
+    public async Task ADR0330_a_linked_tables_bare_name_is_refused()
+    {
+        var workbook = new Workbook(EnUs);
+        workbook.DeclareLinkedTable("Positions", ["PV"]);
+        workbook.PushLinkedTable("Positions", [[N(1)]]);
+        workbook.Do("Sheet1", SheetEdit.Enter(At("B2"), "=SUM(Positions)"));
+
+        var refused = await RefusedAsync(workbook);
+
+        Assert.Equal((XlsxSaveRefusal.Formula, "Sheet1", "B2", "=SUM(Positions)"), (refused.Reason, refused.Sheet, refused.Cell, refused.Held));
+        Assert.Contains("name of its own", refused.Message, StringComparison.Ordinal);
     }
 
     [Fact] // ADR-0330 §6 (spine rule 1): a Linked Table of no rows is refused: an Excel Table holds one empty row, and its Formulas would answer otherwise
@@ -340,6 +367,7 @@ public class LinkedTableWriterTests
         Assert.Equal(XlsxSaveRefusal.Text, refused.Reason);
         Assert.Contains("'Notes'", refused.Message, StringComparison.Ordinal);
         Assert.Contains("column 'Note', row 2", refused.Message, StringComparison.Ordinal);
+        Assert.Equal(("Notes", "B3"), (refused.Sheet, refused.Cell));
     }
 
     [Theory] // ADR-0330 §6: a structured reference to a table or column no Linked Table declares has no Excel Table to read, and is refused by name
@@ -358,18 +386,22 @@ public class LinkedTableWriterTests
         Assert.Contains("does not declare", refused.Message, StringComparison.Ordinal);
     }
 
-    [Fact] // ADR-0330 §6: a structured reference to a column whose name begins or ends with a space is refused: Excel's structured reference does not keep it
-    public async Task ADR0330_a_structured_reference_to_a_column_with_an_outer_space_is_refused()
+    [Theory] // ADR-0330 §6: a structured reference to a column whose name has an outer space, which Excel does not keep, or a character whose form Excel has not been seen to write, is refused
+    [InlineData("PV ", "=SUM(Positions[PV ])")]
+    [InlineData("Total $", "=SUM(Positions[Total $])")]
+    [InlineData("P&L", "=SUM(Positions[P&L])")]
+    [InlineData("1/2", "=SUM(Positions[1/2])")]
+    public async Task ADR0330_a_structured_reference_to_a_column_excel_may_read_otherwise_is_refused(string column, string formula)
     {
         var workbook = new Workbook(EnUs);
-        workbook.DeclareLinkedTable("Positions", ["Desk", "PV "]);
+        workbook.DeclareLinkedTable("Positions", ["Desk", column]);
         workbook.PushLinkedTable("Positions", [[T("EMEA"), N(1)]]);
-        workbook.Do("Sheet1", SheetEdit.Enter(At("A1"), "=SUM(Positions[PV ])"));
+        workbook.Do("Sheet1", SheetEdit.Enter(At("A1"), formula));
         Assert.Equal(Value.FromNumber(1), workbook.Sheets[0].GetValue(At("A1")));
 
         var refused = await RefusedAsync(workbook);
 
         Assert.Equal((XlsxSaveRefusal.Formula, "A1"), (refused.Reason, refused.Cell));
-        Assert.Contains("begins or ends with a space", refused.Message, StringComparison.Ordinal);
+        Assert.Contains("has not been seen to write", refused.Message, StringComparison.Ordinal);
     }
 }

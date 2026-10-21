@@ -17,10 +17,17 @@ internal enum WrittenFormulaProblem
 
     /// <summary>
     /// A structured reference to a Linked Table's column whose name begins or ends with a space, which a structured reference
-    /// in Excel does not keep, or holds <c>@</c>: how a file stores one is not known yet (ticket 07), and Excel reads
-    /// <c>[@PV]</c> as the row the Formula stands in.
+    /// in Excel does not keep; holds <c>@</c>, which Excel reads at the start as the row the Formula stands in; or holds a
+    /// character whose form in a structured reference has not been seen in Excel (<see cref="WrittenFormula.UnseenInColumns"/>). Ticket 07
+    /// asks Excel how a file stores each.
     /// </summary>
     ColumnName,
+
+    /// <summary>
+    /// A Linked Table's name read as a name of its own (<c>=SUM(Positions)</c>): ExSheet shows <c>#NAME?</c> there, and Excel,
+    /// once the file holds the Excel Table, reads the table's rows.
+    /// </summary>
+    TableName,
 
     /// <summary>The text does not split into the tokens the engine reads, or its names do not bind as the engine binds them.</summary>
     Unreadable,
@@ -146,6 +153,11 @@ internal static partial class WrittenFormula
         }
         problem = Bind(tokens);
         if (problem != WrittenFormulaProblem.None) return formula[1..];
+        if (columnsOf is not null && tokens.Any(t => t is { Kind: Kind.Name, Called: false, Bound: false } && columnsOf(t.Text) is not null))
+        {
+            problem = WrittenFormulaProblem.TableName;
+            return formula[1..];
+        }
         if (tokens.Any(t => t.Kind == Kind.Text && t.Text.Length - 2 - Count(t.Text, "\"\"") > MaxText))
         {
             problem = WrittenFormulaProblem.LongText;
@@ -272,7 +284,7 @@ internal static partial class WrittenFormula
                         problem = WrittenFormulaProblem.StructuredReference;
                         return tokens;
                     }
-                    if (column[0] == ' ' || column[^1] == ' ' || column.Contains('@'))
+                    if (column[0] == ' ' || column[^1] == ' ' || column.AsSpan().IndexOfAny(UnseenInColumns) >= 0)
                     {
                         problem = WrittenFormulaProblem.ColumnName;
                         return tokens;
@@ -336,6 +348,13 @@ internal static partial class WrittenFormula
         after = i + 1;
         return column.ToString();
     }
+
+    /// <summary>
+    /// The characters of a column's name whose form in a structured reference Excel has not been seen to write: <c>@</c>, and
+    /// those Microsoft's documentation of structured references lists as needing the column in double brackets, which single
+    /// brackets (TEXT-021, TEXT-022) may not carry as Excel stores them. Ticket 07 asks.
+    /// </summary>
+    internal const string UnseenInColumns = "@,:.\"{}$^&*+=-<>/\t\n\r";
 
     /// <summary>
     /// A column of a structured reference as the engine stores it and Excel writes it back (TEXT-021, TEXT-022): in single

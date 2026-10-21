@@ -126,6 +126,7 @@ public class TableTests
     [InlineData("1Table")]
     [InlineData("Has space")]
     [InlineData("A1")]
+    [InlineData("A01")]
     [InlineData("XFD1048576")]
     [InlineData("R")]
     [InlineData("r1c1")]
@@ -184,6 +185,24 @@ public class TableTests
         sheet.Write(Header(1, 0, "Not the table's"));
         sheet.Write(Header(1, 1, "Desk"));
         sheet.Write(Header(1, 2, "PV"));
+    }
+
+    [Fact] // ADR-0330 §6: the table's columns are taken when it is added, so a list changed afterwards changes neither its part nor what its header holds
+    public async Task ADR0330_a_tables_columns_are_taken_when_it_is_added()
+    {
+        var columns = new List<string> { "Desk", "PV" };
+        var file = await WriteAsync(book =>
+        {
+            var sheet = book.AddSheet("Sheet1");
+            sheet.AddTable(new XlsxTable("T", 0, 0, columns, 1));
+            columns[1] = "Changed";
+            sheet.Write(Header(0, 0, "Desk"));
+            Assert.Throws<ArgumentException>(() => sheet.Write(Header(0, 1, "Changed")));
+            sheet.Write(Header(0, 1, "PV"));
+            return Task.CompletedTask;
+        });
+
+        Assert.Equal(["Desk", "PV"], Parts(file)["xl/tables/table1.xml"].Descendants(S + "tableColumn").Select(c => (string)c.Attribute("name")!));
     }
 
     [Fact] // ADR-0330 §6: a table is added before its header's row is begun, and a sheet that ends with its header unwritten is refused

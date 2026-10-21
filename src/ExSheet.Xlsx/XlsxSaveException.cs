@@ -31,8 +31,10 @@ public enum XlsxSaveRefusal
     /// 255 arguments; it holds half of a surrogate pair, which a file cannot carry; it reads a Sheet the Workbook does not have
     /// (Excel would read another workbook's); it calls a name a <c>LET</c> binds or a <c>LAMBDA</c> takes, which ExSheet
     /// reads as an unknown function and Excel would call; it reads, by a structured reference, a Linked Table or a column the
-    /// Workbook does not declare, or a column whose name begins or ends with a space or holds <c>@</c>, which Excel would
-    /// read otherwise; or it does not read back as the Formula it is.
+    /// Workbook does not declare, or a column whose name begins or ends with a space or holds <c>@</c>, a tab, a line break
+    /// or one of <c>, : . " { } $ ^ &amp; * + = - &lt; &gt; /</c>, whose form Excel has not been seen to write; it reads a
+    /// Linked Table's name as a name of its own (<c>=SUM(Positions)</c>), which ExSheet shows as <c>#NAME?</c> and Excel
+    /// would read as the table; or it does not read back as the Formula it is.
     /// </summary>
     Formula,
 

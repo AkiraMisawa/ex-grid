@@ -1,7 +1,6 @@
 using System.Globalization;
 using System.IO.Compression;
 using System.Text;
-using System.Text.RegularExpressions;
 using System.Xml;
 
 namespace ExGrid.Data.Xlsx;
@@ -46,7 +45,7 @@ public sealed class XlsxWriteOptions
 /// a time and handed to the output stream asynchronously by <see cref="XlsxSheetWriter.FlushAsync"/> and
 /// <see cref="CompleteAsync"/>, so a response body that refuses synchronous writes takes it.
 /// </summary>
-public sealed partial class XlsxWriter : IAsyncDisposable
+public sealed class XlsxWriter : IAsyncDisposable
 {
     internal static readonly XmlWriterSettings Settings = new()
     {
@@ -516,14 +515,13 @@ public sealed partial class XlsxWriter : IAsyncDisposable
     private static void CheckTable(XlsxTable table)
     {
         ArgumentNullException.ThrowIfNull(table);
-        if (table.Name is not { Length: > 0 and <= 255 } name || !TableName().IsMatch(name)
-            || XlsxCellReference.TryParse(name, out _, out _) || RowColumnName().IsMatch(name)
-            || name.Equals("TRUE", StringComparison.OrdinalIgnoreCase) || name.Equals("FALSE", StringComparison.OrdinalIgnoreCase))
+        if (!XlsxTable.IsValidName(table.Name))
         {
             throw new ArgumentException(
                 $"'{table.Name}' is not a name a table can have: a letter, _ or \\, then letters, digits, _ and ., at most 255 characters, and not a cell's address.",
                 nameof(table));
         }
+        var name = table.Name;
         if (table.Columns is not { Count: > 0 } columns)
             throw new ArgumentException($"The table '{name}' has at least one column.", nameof(table));
         var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -543,12 +541,6 @@ public sealed partial class XlsxWriter : IAsyncDisposable
             || (long)table.FirstColumn + columns.Count > XlsxCellReference.MaxColumns)
             throw new ArgumentException($"The table '{name}' lies outside the sheet.", nameof(table));
     }
-
-    [GeneratedRegex(@"^[\p{L}_\\][\p{L}\p{Nd}_.]*$", RegexOptions.CultureInvariant)]
-    private static partial Regex TableName();
-
-    [GeneratedRegex(@"^[Rr][0-9]*[Cc][0-9]*$|^[RrCc]$", RegexOptions.CultureInvariant)]
-    private static partial Regex RowColumnName();
 
     private static void Validate(XlsxStyles styles)
     {
@@ -670,6 +662,10 @@ public sealed class XlsxSheetWriter
         if (ended)
             throw new InvalidOperationException($"The sheet '{Name}' is ended: another sheet was begun, or the workbook completed.");
         ArgumentNullException.ThrowIfNull(table);
+        ArgumentNullException.ThrowIfNull(table.Columns, nameof(table));
+        // A copy of the columns, so that a list the caller changes afterwards cannot make the table part's names differ from
+        // the header written.
+        table = table with { Columns = [.. table.Columns] };
         if (table.HeaderRow <= row)
         {
             throw new ArgumentException(
@@ -883,7 +879,8 @@ public sealed class XlsxSheetWriter
     {
         if (ended)
             return;
-        // A table whose header was not written whole would be repaired by Excel: the sheet is refused, and abandoned.
+        // A table whose header was not written whole would be repaired by Excel: the sheet is not ended, and the caller
+        // abandons the workbook (DisposeAsync).
         foreach (var (table, _, written) in tables)
         {
             if (written[0] != table.Columns.Count)
