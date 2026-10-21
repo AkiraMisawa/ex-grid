@@ -192,6 +192,21 @@ public class ReleaseNotesTests
         Assert.Contains("'## ExChart' is not one of the notes' headings", One(run, "EXDOCS008").GetMessage());
     }
 
+    [Fact] // ADR-0190, ADR-0340: a version that publishes ExBoard carries its heading, and one that never did has none
+    public void ExBoard_has_a_heading_only_in_a_version_that_publishes_it()
+    {
+        var text = Version("0.1.0-beta.2").Replace("Packages: ExGrid, ExGrid.MudBlazor", "Packages: ExGrid, ExGrid.MudBlazor, ExBoard");
+        var run = Run(Valid().Where(f => !f.Item1.EndsWith("0.1.0-beta.2.md")).Append(Notes("0.1.0-beta.2.md", text)));
+        Assert.Contains("'## ExBoard' is missing before '## Data'", One(run, "EXDOCS008").GetMessage());
+
+        var carried = text.Replace("## Data\n", "## ExBoard\n\n- **Added:** The Board (ADR-0130).\n\n## Data\n");
+        Assert.Empty(Notices(Run(Valid().Where(f => !f.Item1.EndsWith("0.1.0-beta.2.md")).Append(Notes("0.1.0-beta.2.md", carried)))));
+
+        var never = Version("0.1.0-beta.2").Replace("## Data\n", "## ExBoard\n\nNo change.\n\n## Data\n");
+        run = Run(Valid().Where(f => !f.Item1.EndsWith("0.1.0-beta.2.md")).Append(Notes("0.1.0-beta.2.md", never)));
+        Assert.Contains("'## ExBoard' is not one of the notes' headings", One(run, "EXDOCS008").GetMessage());
+    }
+
     [Fact] // ADR-0190: a heading left out is an error at the heading that follows it
     public void A_missing_heading_is_an_error_where_it_belongs()
     {
@@ -397,7 +412,7 @@ public class ReleaseNotesTests
     [Theory] // ADR-0190: a Change Note names its Product and its Kind, and says what changed in a paragraph
     [InlineData("Kind: Added\n\nText.", "names no Product")]
     [InlineData("Product: ExGrid\n\nText.", "names no Kind")]
-    [InlineData("Product: ExPlot\nKind: Added\n\nText.", "Product is one of ExGrid, ExSheet, ExPivot, ExChart, Data, and 'ExPlot' is not")]
+    [InlineData("Product: ExPlot\nKind: Added\n\nText.", "Product is one of ExGrid, ExSheet, ExPivot, ExChart, ExBoard, Data, and 'ExPlot' is not")]
     [InlineData("Product: ExGrid\nKind: Behavior\n\nText.", "(British spelling: Behaviour)")]
     [InlineData("Product: ExGrid\nKind: Added\nPR: 65\n\nText.", "PR: is not a Change Note's header line")]
     [InlineData("Product: ExGrid\nProduct: ExSheet\nKind: Added\n\nText.", "Product: is written twice")]

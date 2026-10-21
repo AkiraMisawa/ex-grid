@@ -54,3 +54,6 @@ it: a tool's result is usually JSON, which tells no decimal from a double, no in
   footer after its rows, is refused rather than read whole.
 - **ADR-0322's Chart Source is not built yet**, so it gains the call when it is. A chart in a Board
   reads Snapshots today, whose shape is their own.
+
+*A Board bound to a source held on a server, 2026-10-21 (ExBoard ticket 12).* How a bound source is
+asked for rows, and how a link's narrowing reaches it, is [ADR-0343](0343-a-board-over-a-source-held-on-a-server-hands-it-the-query-and-the-narrowing.md).

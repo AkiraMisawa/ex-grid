@@ -38,7 +38,7 @@ public sealed class BoardDrawingTests : BunitContext
         var bound = BoundBoard.Bind(BoardSpec.Read(Json), new Dictionary<string, Snapshot> { ["trades"] = Data() });
 
         var grid = Assert.IsType<BoundGridView>(bound["blotter"]);
-        Assert.Equal(3, grid.Grid.Source.Window.Count);
+        Assert.Equal(3, grid.Grid!.Source.Window.Count);
         Assert.IsType<BoundPivotView>(bound["byDesk"]);
         var chart = Assert.IsType<BoundChartView>(bound["curve"]);
         Assert.Equal(3, chart.Reading.Definition.Series[0].Points.Count);

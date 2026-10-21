@@ -28,7 +28,7 @@ public sealed class BoardSpecTests
         Assert.Equal(["trades"], board.Inputs.Select(i => i.Name));
         var grid = Assert.IsType<BoardGridView>(board.View("blotter"));
         Assert.Equal("Trades", grid.Title);
-        Assert.Equal(["desk", "pnl"], grid.Grid.Columns.Select(c => c.Column));
+        Assert.Equal(["desk", "pnl"], grid.Grid!.Columns.Select(c => c.Column));
         var pivot = Assert.IsType<BoardPivotView>(board.View("byDesk"));
         Assert.Equal("desk", pivot.Layout.Rows[0].Field);
         Assert.Equal(["trades"], Assert.IsType<BoardChartView>(board.View("curve")).Data);

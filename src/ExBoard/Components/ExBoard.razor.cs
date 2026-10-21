@@ -15,7 +15,8 @@ namespace ExBoard.Components;
 
 /// <summary>
 /// Draws a Board (ADR-0340): its views laid out in its rows, each input bound to the Snapshot
-/// <see cref="Data"/> holds under its name and checked against its declaration first (ADR-0341). A
+/// <see cref="Data"/> holds under its name, or to the source held where the data lives
+/// <see cref="Sources"/> holds (ADR-0343), and checked against its declaration first (ADR-0341). A
 /// Board that does not bind draws nothing but the refusal, naming the input or the path. Running a
 /// Board never rewrites it.
 /// </summary>
@@ -30,6 +31,9 @@ public partial class ExBoard : IDisposable
 
     private BoardReading? _boundBoard;
     private IReadOnlyDictionary<string, Snapshot>? _boundData;
+    private IReadOnlyDictionary<string, BoardSource>? _boundSources;
+    private BoardDiff? _pendingDiff;
+    private int _binding;
     private CultureInfo? _boundCulture;
     private BoundBoard? _bound;
     private string? _refusal;
@@ -53,6 +57,14 @@ public partial class ExBoard : IDisposable
     /// again; the same one is not read twice.</summary>
     [Parameter, EditorRequired]
     public IReadOnlyDictionary<string, Snapshot> Data { get; set; } = null!;
+
+    /// <summary>
+    /// The source each input held where the data lives is bound to, by the input's name (ADR-0343): its
+    /// shape is asked and checked before anything is drawn, and its views ask it for what they draw. A new
+    /// dictionary binds again; the same one is not read twice.
+    /// </summary>
+    [Parameter]
+    public IReadOnlyDictionary<string, BoardSource>? Sources { get; set; }
 
     /// <summary>The Board's width in CSS pixels, from which a chart's width is its share of its row
     /// (a chart is drawn at a width it is told). Grids and pivots stretch to their share.</summary>
@@ -106,7 +118,7 @@ public partial class ExBoard : IDisposable
     {
         ArgumentNullException.ThrowIfNull(Board);
         ArgumentNullException.ThrowIfNull(Data);
-        if (ReferenceEquals(Board, _boundBoard) && ReferenceEquals(Data, _boundData) && Equals(Culture, _boundCulture)
+        if (ReferenceEquals(Board, _boundBoard) && ReferenceEquals(Data, _boundData) && ReferenceEquals(Sources, _boundSources) && Equals(Culture, _boundCulture)
             && (ReferenceEquals(Diff, _boundDiff) || (_bound is not null && (Diff ?? BoardDiff.Empty).SameAs(_bound.Diff))))
             return;
         // Bound again for a new Board or new data, the user's changes since are kept: only a new Diff
@@ -114,8 +126,10 @@ public partial class ExBoard : IDisposable
         var laid = ReferenceEquals(Diff, _boundDiff) && _bound is not null ? _bound.Diff : Diff;
         _boundBoard = Board;
         _boundData = Data;
+        _boundSources = Sources;
         _boundCulture = Culture;
         _boundDiff = Diff;
+        _binding++;
         Unsubscribe();
         _layoutChanged.Clear();
         _gridChanges.Clear();
@@ -125,17 +139,36 @@ public partial class ExBoard : IDisposable
         _linkStatus.Clear();
         _grids.Clear();
         _pivots.Clear();
+        _bound = null;
+        _pendingDiff = null;
+        if (Sources is { Count: > 0 })
+        {
+            // The sources are asked their shapes first, a round trip away (OnParametersSetAsync).
+            _pendingDiff = laid;
+            _refusal = null;
+            return;
+        }
         try
         {
-            _bound = BoundBoard.Bind(Board, Data, Culture, laid);
-            _refusal = null;
+            Adopt(BoundBoard.Bind(Board, Data, Culture, laid));
         }
         catch (BoardRefusedException refused)
         {
-            _bound = null;
-            _refusal = refused.Path.Length == 0 ? refused.Message : $"{refused.Path}: {refused.Message}";
-            return;
+            Refuse(refused);
         }
+    }
+
+    private void Refuse(BoardRefusedException refused)
+    {
+        _bound = null;
+        _refusal = refused.Path.Length == 0 ? refused.Message : $"{refused.Path}: {refused.Message}";
+    }
+
+    // Wires up a bound Board: its callbacks cached, its grids' sources heard.
+    private void Adopt(BoundBoard bound)
+    {
+        _bound = bound;
+        _refusal = null;
         // What is laid over is not the user's change this time: only a change from it is raised, and the
         // Diff that applied, when some of it did not (OnParametersSetAsync).
         _raised = _bound.Dropped.Count > 0 ? null : _bound.Diff;
@@ -184,13 +217,37 @@ public partial class ExBoard : IDisposable
             }
         });
         foreach (var grid in _bound.Views.OfType<BoundGridView>())
-            grid.Grid.Source.StateChanged += _sourceChanged;
+            grid.Source.StateChanged += _sourceChanged;
         foreach (var from in _bound.Board.Links.Select(l => l.From).Concat(_bound.Board.Outputs.Select(o => o.From)).Distinct())
             _selectionChanged[from] = EventCallback.Factory.Create<GridSelection>(this, selection => Select(from, selection));
     }
 
     /// <inheritdoc />
-    protected override Task OnParametersSetAsync() => Changed(() => { });
+    protected override async Task OnParametersSetAsync()
+    {
+        if (_bound is null && _refusal is null && _boundSources is { Count: > 0 } sources)
+        {
+            // A binding carries the parameters it was asked for: one answered after they changed is
+            // dropped, never drawn over the new ones (spine rule 6).
+            var binding = _binding;
+            try
+            {
+                var bound = await BoundBoard.BindAsync(_boundBoard!, _boundData!, sources, _boundCulture, _pendingDiff);
+                if (binding != _binding)
+                {
+                    Dispose(bound);
+                    return;
+                }
+                Adopt(bound);
+            }
+            catch (BoardRefusedException refused) when (binding == _binding)
+            {
+                Refuse(refused);
+                return;
+            }
+        }
+        await Changed(() => { });
+    }
 
     private EventCallback<GridSelection> SelectionChangedOf(string view) => _selectionChanged.GetValueOrDefault(view);
 
@@ -216,6 +273,11 @@ public partial class ExBoard : IDisposable
             bound.Select(from, selection);
             foreach (var output in bound.Board.Outputs.Where(o => o.From == from))
                 _confirmStatus.Remove(output.Name);
+            // Over a source held on a server, a selection reaching rows not fetched is said, not read.
+            if (((BoundGridView)bound[from]).Unread is { } unread)
+                _linkStatus[from] = unread;
+            else
+                _linkStatus.Remove(from);
         }
         // A pivot narrowed again has let go of its selection, so what was said of it goes too.
         foreach (var reached in Reached(bound.Board, from))
@@ -256,7 +318,7 @@ public partial class ExBoard : IDisposable
         }
         if (bound.Confirm(output) is not { } raised)
         {
-            _confirmStatus[output] = "Select the rows to hand on first.";
+            _confirmStatus[output] = ((BoundGridView)bound[from]).Unread ?? "Select the rows to hand on first.";
             return;
         }
         _confirmStatus.Remove(output);
@@ -281,9 +343,18 @@ public partial class ExBoard : IDisposable
         if (_bound is not null && _sourceChanged is not null)
         {
             foreach (var grid in _bound.Views.OfType<BoundGridView>())
-                grid.Grid.Source.StateChanged -= _sourceChanged;
+                grid.Source.StateChanged -= _sourceChanged;
         }
         _sourceChanged = null;
+        if (_bound is not null)
+            Dispose(_bound);
+    }
+
+    // A fetched grid's source holds its questions to the server; it is let go with the Board bound.
+    private static void Dispose(BoundBoard bound)
+    {
+        foreach (var grid in bound.Views.OfType<BoundGridView>())
+            grid.Fetched?.Source.Dispose();
     }
 
     /// <inheritdoc />

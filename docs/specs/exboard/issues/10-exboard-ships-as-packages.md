@@ -1,6 +1,6 @@
 # 10: ExBoard ships as packages
 
-Status: ready-for-agent
+Status: done
 Roadmap: internal
 
 ADR-0340 names `ExBoard` and `ExBoard.MudBlazor`. Before a release carries them: the release workflow's

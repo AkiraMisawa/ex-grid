@@ -61,7 +61,7 @@ public sealed class BoardDiffTests : BunitContext
         grid.Reorder(["id", "pnl", "desk"]);
         Assert.True(grid.Hide("desk"));
         grid.Pin(2);
-        grid.Grid.Source.OnSortChanged([new SortSpec("pnl", SortDirection.Descending)]);
+        grid.Grid!.Source.OnSortChanged([new SortSpec("pnl", SortDirection.Descending)]);
         ((BoundPivotView)board["byDesk"]).ChangeLayout(ByDay);
         var chart = (BoundChartView)board["curve"];
         chart.ChangeVisibility(new SeriesVisibility("pnl", true));
@@ -127,8 +127,8 @@ public sealed class BoardDiffTests : BunitContext
         var grid = (BoundGridView)again["blotter"];
         Assert.Equal(["id", "pnl"], grid.Columns.Select(c => c.Name));
         Assert.Equal(2, grid.PinnedColumnCount);
-        Assert.Equal([new SortSpec("pnl", SortDirection.Descending)], grid.Grid.Source.Sorts);
-        Assert.Equal(0, grid.Grid.Source.Window[0].Position);
+        Assert.Equal([new SortSpec("pnl", SortDirection.Descending)], grid.Grid!.Source.Sorts);
+        Assert.Equal(0, grid.Grid!.Source.Window[0].Position);
         Assert.Equal(PivotLayoutJson.Write(ByDay), PivotLayoutJson.Write(((BoundPivotView)again["byDesk"]).Layout));
         var chart = (BoundChartView)again["curve"];
         Assert.Equal(new[] { "pnl" }, chart.HiddenSeries);
@@ -172,7 +172,7 @@ public sealed class BoardDiffTests : BunitContext
         // id stays pinned; desk stays hidden; day, which the Board added, is shown, last.
         Assert.Equal(["id", "day"], grid.Columns.Select(c => c.Name));
         Assert.Equal(1, grid.PinnedColumnCount);
-        Assert.Empty(grid.Grid.Source.Sorts);
+        Assert.Empty(grid.Grid!.Source.Sorts);
     }
 
     [Fact] // ADR-0340 Q7: a pivot layout placing a field its input no longer declares is dropped whole
@@ -194,7 +194,7 @@ public sealed class BoardDiffTests : BunitContext
     {
         var reading = BoardSpec.Read(Board());
         var board = Bound(reading);
-        ((BoundGridView)board["blotter"]).Grid.Source.OnFilterChanged(new GridFilter(new Dictionary<string, FilterSpec>
+        ((BoundGridView)board["blotter"]).Grid!.Source.OnFilterChanged(new GridFilter(new Dictionary<string, FilterSpec>
         {
             ["desk"] = new FilterSpec([new FilterClause(FilterOperator.Equals, "Rates")]),
         }));

@@ -50,7 +50,8 @@ next step.
   Snapshot, since every product uses them. Each product reads its own view: the grid in `ExGrid`
   ([ADR-0342](0342-a-grid-builds-its-columns-at-run-time-from-a-sources-shape.md)), the pivot in `ExPivot.Engine`, the chart in `ExChart.Engine`, so each can still be
   drawn from a spec alone. The Board, its layout, links, outputs, Diff and tool definition, is a new
-  package, `ExBoard`, referencing the three, with an `ExBoard.MudBlazor` Wrapper ([ADR-0019](0019-one-repository-many-packages.md)). No
+  package, `ExBoard`, referencing the three, with an `ExBoard.MudBlazor` Wrapper ([ADR-0019](0019-one-repository-many-packages.md)); *amended 2026-10-21:*
+  no Wrapper for now, see "Shipping" under the implementation notes. No
   Engine gains a reference. *The user chose the name:* `Ex` claims the operability of the views it
   lays out; the nearest thing in Excel is a sheet of PivotTables and charts narrowed by slicers.
 - **The family holds no workflow.** It reads a Board, checks its inputs, draws it, and raises its
@@ -84,7 +85,7 @@ here so they are not re-derived:
   type, a Blank only to a Blank).
 - **In memory, ExBoard executes it** over the bound Snapshots: a grid's rows are handed again to its
   source, which keeps the user's sort and filter; a pivot is given a source over a Snapshot of the
-  rows let through; a chart reads only those rows. A source held where the data lives (ticket 02) is
+  rows let through; a chart reads only those rows. A source held where the data lives (ticket 12, ADR-0343) is
   handed the condition instead. A pivot's narrowed Snapshot is a copy, made once per change of
   condition (a selection moving within the same values narrows nothing again), so its cost is the
   input's size; a large input belongs on a server, where the copy is not made.
@@ -214,3 +215,19 @@ here so they are not re-derived:
   A refusal is one sentence, prefixed by its path (`board.views[0].grid.columns[2].format: …`).
 - **The answer carries the Board read and the Board bound**, so a host draws what it answered without
   reading the call twice.
+
+*Shipping, 2026-10-21 (ExBoard ticket 10).* A default taken in the user's absence, under their standing
+authorization for such forks:
+
+- **ExBoard ships without a Wrapper.** The decision above named `ExBoard.MudBlazor`, written before the
+  component existed. As built, ExBoard draws nothing of MudBlazor's kind beyond its views: each view is
+  a product that already takes its Chrome, and ExBoard passes `Chrome`, `PivotChrome` and `ChartChrome`
+  through, so a MudBlazor application hands it the Wrappers' Chromes (the Docs Site's Examples do, under
+  its MudBlazor switch). What is left is a title, a confirm button per output and status lines, plain
+  elements with `ex-board-` classes that take the page's own type and colour, so an application styles
+  them as it styles its page. A Wrapper would be a package that re-exports three parameters. One is added
+  when the Board draws a control of its own that a Chrome cannot reach, such as an input's picker.
+- **The package is the family's fourteenth**, carried by `release.yml`, checked by the package smoke
+  (its dependencies are exactly ExGrid, ExPivot and ExChart of the same version, and it ships no static
+  web assets), reported by the coverage summary, and named a product by the Release Notes and the
+  Roadmap, so a Change Note says `Product: ExBoard`.

@@ -488,6 +488,20 @@ public sealed class FetchingGridSource<TRow> : IGridSource<TRow>, IDisposable, I
     }
 
     /// <summary>
+    /// The query's meaning changed outside its sort and filter: the fetch reads state of the Consumer's
+    /// own that has changed, such as a Board's narrowing (ADR-0343). Drops the Window, bumps
+    /// <see cref="RowSequenceVersion"/>, so the grid drops its selection (ADR-0011), and fetches the
+    /// first page again, as a new sort does (ADR-0025). Not for data that moved on under the same
+    /// query, which is <see cref="NotifyChanged()"/>.
+    /// </summary>
+    public void Requery()
+    {
+        if (_disposed)
+            return;
+        Restart();
+    }
+
+    /// <summary>
     /// The grid needs these rows. A range the Window already covers asks nothing;
     /// otherwise the range widened by the read-ahead is fetched and supersedes whatever
     /// was in flight — unless it is that same range, whose fetch is handed back rather

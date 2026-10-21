@@ -34,6 +34,12 @@ ExGrid.Components.GridView.ScrollTopPx.get -> double
 ExGrid.Components.GridView.ScrollTopPx.init -> void
 ExGrid.Components.GridView.Selection.get -> ExGrid.Selection.GridSelection!
 ExGrid.Components.GridView.Selection.init -> void
+ExGrid.FetchedShapedGrid
+ExGrid.FetchedShapedGrid.Columns.get -> System.Collections.Generic.IReadOnlyList<ExGrid.GridColumn<ExGrid.ShapedRow!>!>!
+ExGrid.FetchedShapedGrid.PinnedColumnCount.get -> int
+ExGrid.FetchedShapedGrid.Source.get -> ExGrid.FetchingGridSource<ExGrid.ShapedRow!>!
+ExGrid.FetchedShapedGrid.Spec.get -> ExGrid.GridViewSpecReading!
+ExGrid.FetchingGridSource<TRow>.Requery() -> void
 ExGrid.FetchingGridSource<TRow>.Shape.get -> System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<ExGrid.Data.DataShape!>>?
 ExGrid.FetchingGridSource<TRow>.Shape.set -> void
 ExGrid.FetchingGridSource<TRow>.ShapeAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<ExGrid.Data.DataShape?>
@@ -69,8 +75,16 @@ ExGrid.ShapedGrid.Snapshot.get -> ExGrid.Data.Snapshot!
 ExGrid.ShapedGrid.Rows.get -> System.Collections.Generic.IReadOnlyList<ExGrid.ShapedRow!>!
 ExGrid.ShapedGrid.Source.get -> ExGrid.InMemoryGridSource<ExGrid.ShapedRow!>!
 ExGrid.ShapedGrid.Spec.get -> ExGrid.GridViewSpecReading!
+ExGrid.ShapedPage
+ExGrid.ShapedPage.<Clone>$() -> ExGrid.ShapedPage!
+ExGrid.ShapedPage.Equals(ExGrid.ShapedPage? other) -> bool
+ExGrid.ShapedPage.Rows.get -> ExGrid.Data.Snapshot!
+ExGrid.ShapedPage.ShapedPage(ExGrid.Data.Snapshot! rows, int start, int totalCount) -> void
+ExGrid.ShapedPage.Start.get -> int
+ExGrid.ShapedPage.TotalCount.get -> int
 ExGrid.ShapedRow
 ExGrid.ShapedRow.At.get -> ExGrid.Data.SnapshotRow
+ExGrid.ShapedRow.Page.get -> ExGrid.Data.Snapshot!
 ExGrid.ShapedRow.Position.get -> int
 override ExGrid.Components.GridView.GetHashCode() -> int
 override ExGrid.GridViewSpecReading.Equals(object? obj) -> bool
@@ -79,6 +93,9 @@ override ExGrid.GridViewSpecReading.ToString() -> string!
 override ExGrid.ShapedColumn.Equals(object? obj) -> bool
 override ExGrid.ShapedColumn.GetHashCode() -> int
 override ExGrid.ShapedColumn.ToString() -> string!
+override ExGrid.ShapedPage.Equals(object? obj) -> bool
+override ExGrid.ShapedPage.GetHashCode() -> int
+override ExGrid.ShapedPage.ToString() -> string!
 static ExGrid.Components.GridView.operator !=(ExGrid.Components.GridView left, ExGrid.Components.GridView right) -> bool
 static ExGrid.Components.GridView.operator ==(ExGrid.Components.GridView left, ExGrid.Components.GridView right) -> bool
 static ExGrid.GridViewSpec.Read(string! json, System.Func<string!, ExGrid.Data.DataShape?>! inputs) -> ExGrid.GridViewSpecReading!
@@ -87,6 +104,9 @@ static ExGrid.GridViewSpecReading.operator !=(ExGrid.GridViewSpecReading? left, 
 static ExGrid.GridViewSpecReading.operator ==(ExGrid.GridViewSpecReading? left, ExGrid.GridViewSpecReading? right) -> bool
 static ExGrid.ShapedColumn.operator !=(ExGrid.ShapedColumn? left, ExGrid.ShapedColumn? right) -> bool
 static ExGrid.ShapedColumn.operator ==(ExGrid.ShapedColumn? left, ExGrid.ShapedColumn? right) -> bool
+static ExGrid.ShapedGrid.Fetch(ExGrid.GridViewSpecReading! spec, System.Func<ExGrid.GridQuery!, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<ExGrid.ShapedPage!>>! fetch, System.Globalization.CultureInfo? culture = null, int readAheadRows = 60) -> ExGrid.FetchedShapedGrid!
 static ExGrid.ShapedGrid.Of(ExGrid.Data.Snapshot! snapshot, ExGrid.GridViewSpecReading! spec, System.Globalization.CultureInfo? culture = null) -> ExGrid.ShapedGrid!
+static ExGrid.ShapedPage.operator !=(ExGrid.ShapedPage? left, ExGrid.ShapedPage? right) -> bool
+static ExGrid.ShapedPage.operator ==(ExGrid.ShapedPage? left, ExGrid.ShapedPage? right) -> bool
 ~override ExGrid.Components.GridView.Equals(object obj) -> bool
 ~override ExGrid.Components.GridView.ToString() -> string

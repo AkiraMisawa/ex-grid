@@ -1,0 +1,13 @@
+@using ExBoard
+@using ExBoard.Components
+@using ExGrid.Data
+@using ExPivot.MudBlazor
+
+@* The rows are fetched a page at a time; a selected row hands the server its desk, and the pivot is asked again. *@
+<ExBoard Board="ServerBoard.Board" Data="NoData" Sources="_sources" Width="900" Chrome="_chrome" PivotChrome="MudPivotChrome.Default" />
+
+@code {
+    private static readonly MudGridChrome _chrome = new();
+    private static readonly IReadOnlyDictionary<string, Snapshot> NoData = new Dictionary<string, Snapshot>();
+    private readonly IReadOnlyDictionary<string, BoardSource> _sources = ServerBoard.Sources();
+}

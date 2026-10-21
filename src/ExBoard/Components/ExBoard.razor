@@ -19,7 +19,11 @@
            like the whole (spine rule 1). *@
         <div class="ex-board-refusal" role="alert">@_refusal</div>
     }
-
+    else if (_bound is null)
+    {
+        @* Its sources are asked their shapes before anything is drawn (ADR-0341). *@
+        <div class="ex-board-binding" role="status">Asking the sources for their shapes.</div>
+    }
     else if (_bound is { } bound)
     {
         @if (bound.Dropped.Count > 0)
@@ -52,11 +56,15 @@
                         @switch (view)
                         {
                             case BoundGridView grid:
-                                <ExGrid @ref="_grids[cell.View]" TRow="ShapedRow" Source="grid.Grid.Source" Columns="grid.Columns" PinnedColumnCount="grid.PinnedColumnCount"
+                                <ExGrid @ref="_grids[cell.View]" TRow="ShapedRow" Source="grid.Source" Columns="grid.Columns" PinnedColumnCount="grid.PinnedColumnCount"
                                         Chrome="Chrome" ViewportHeight="row.Height" ViewportWidth="ViewportSize.Stretch"
                                         SelectionChanged="SelectionChangedOf(cell.View)"
                                         OnColumnWidthChanged="_gridChanges[cell.View].Width" OnColumnOrderChanged="_gridChanges[cell.View].Order"
                                         OnColumnHidden="_gridChanges[cell.View].Hidden" OnPinnedCountChanged="_gridChanges[cell.View].Pinned" />
+                                @if (_linkStatus.GetValueOrDefault(cell.View) is { } unread)
+                                {
+                                    <span role="status" class="ex-board-link-status">@unread</span>
+                                }
                                 @foreach (var output in bound.Board.Outputs.Where(o => o.From == cell.View))
                                 {
                                     @* Never disabled: a press that follows a selection a round trip later is
@@ -71,7 +79,7 @@
                                 }
                                 break;
                             case BoundPivotView pivot:
-                                <ExPivot @ref="_pivots[cell.View]" Source="pivot.Source" Layout="pivot.Layout" LayoutChanged="_layoutChanged[cell.View]"
+                                <ExPivot @ref="_pivots[cell.View]" Source="pivot.Source" ReportSource="pivot.ReportSource" Layout="pivot.Layout" LayoutChanged="_layoutChanged[cell.View]"
                                          Chrome="Chrome" PivotChrome="PivotChrome" ShowFieldList="false"
                                          ViewportHeight="row.Height" ViewportWidth="ViewportSize.Stretch"
                                          SelectionChanged="SelectionChangedOf(cell.View)" />

@@ -18,7 +18,7 @@ The grilling's record is `exchart/grilling-family-ai.md` in the project's shared
 | A grid's view read from a spec (Shaped Grid) | `ExGrid` |
 | A pivot's view read from a spec | `ExPivot.Engine` |
 | A chart's view read from a spec (the Chart Spec) | `ExChart.Engine` |
-| The Board: reader, layout, links, outputs, Board Diff, tool definition | `ExBoard` (new), `ExBoard.MudBlazor` (new) |
+| The Board: reader, layout, links, outputs, Board Diff, tool definition | `ExBoard` (new; no Wrapper, ADR-0340 "Shipping") |
 
 No Engine gains a reference. The family holds no workflow: it reads a Board, checks its inputs, draws
 it, and raises its outputs and its Diff.
@@ -36,6 +36,6 @@ it, and raises its outputs and its Diff.
 | 07 | [The Board Diff](issues/07-the-board-diff.md) | done |
 | 08 | [The Chart Spec as a Board view](issues/08-the-chart-spec-as-a-board-view.md) | done |
 | 09 | [The Board tool and the Docs Site](issues/09-the-board-tool-and-the-docs-site.md) | done |
-| 10 | [ExBoard ships as packages](issues/10-exboard-ships-as-packages.md) | ready-for-agent |
+| 10 | [ExBoard ships as packages](issues/10-exboard-ships-as-packages.md) | done |
 | 11 | [A pivot's cell links](issues/11-a-pivot-cell-links.md) | done |
-| 12 | [A Board over sources held on a server](issues/12-a-board-over-sources-held-on-a-server.md) | ready-for-agent |
+| 12 | [A Board over sources held on a server](issues/12-a-board-over-sources-held-on-a-server.md) | done |
