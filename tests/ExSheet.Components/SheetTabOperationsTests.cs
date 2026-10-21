@@ -97,8 +97,8 @@ public class SheetTabOperationsTests : SheetTestContext
 
         await cut.InvokeAsync(() => cut.Instance.UndoAsync());
         Assert.Equal(["One", "Two"], TabNames(cut));
-        // The Sheet taken out by the undo leaves the one in its place shown, as a deletion does.
-        Assert.Equal("Two", SelectedTab(cut));
+        // The undo shows the Sheet the one taken out was added beside (ADR-0331 §3, ticket 08).
+        Assert.Equal("One", SelectedTab(cut));
     }
 
     [Fact] // ADR-0331 §4: Shift+F11, a key the Sheet declares to its grid, adds a Sheet before the one shown, as Excel's does

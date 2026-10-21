@@ -51,6 +51,7 @@ ExSheet.Engine.WorkbookDocument.WorkbookDocument(System.Globalization.CultureInf
 ExSheet.Engine.WorkbookStep
 ExSheet.Engine.WorkbookStep.Change.get -> ExSheet.Engine.WorkbookChange!
 ExSheet.Engine.WorkbookStep.IsUndone.get -> bool
+ExSheet.Engine.WorkbookStep.Ranges.get -> System.Collections.Generic.IReadOnlyList<ExSheet.Engine.CellRange>!
 ExSheet.Engine.WorkbookStep.Redo() -> ExSheet.Engine.WorkbookChange!
 ExSheet.Engine.WorkbookStep.Sheet.get -> ExSheet.Engine.Sheet!
 ExSheet.Engine.WorkbookStep.Undo() -> ExSheet.Engine.WorkbookChange!

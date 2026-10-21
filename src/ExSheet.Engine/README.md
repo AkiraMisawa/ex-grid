@@ -506,6 +506,9 @@ observation run did not resolve existing Supported functions' other `uncertain` 
 
 Every user operation is a `SheetEdit`, and `Workbook.Do` returns the one `WorkbookStep` that undoes
 and redoes it, each with one recalculation across the Workbook. The stack of steps is the caller's.
+`WorkbookStep.Ranges` names the ranges the step changed on its Sheet (the cells written, the ranges
+formatted, the whole rows or columns inserted or deleted; none for an operation on the Sheets themselves),
+which ExSheet's undo and redo select, as Excel's do (ADR-0331 §3).
 
 ```csharp
 var step = workbook.Do("Sheet1", SheetEdit.InsertRows(row: 2));   // References are rewritten to keep naming the same cells

@@ -136,8 +136,15 @@
             Each ExSheet has one undo stack. Ctrl+Z and Ctrl+Y work from the keyboard; <code>UndoAsync</code>
             and <code>RedoAsync</code> do the same from your buttons. A command you give —
             <code>DoAsync(SheetEdit)</code>, <code>SetCellFormatAsync</code> — goes onto the same stack in its
-            place in the order, so the user can undo it like anything they typed. In a Workbook of several Sheets
-            a command names the Sheet it acts on, <code>DoAsync("Claim", edit)</code>
+            place in the order, so the user can undo it like anything they typed. An undo or a redo selects the
+            range its step changed, as Excel's does — the cell typed in, not the one <kbd>Enter</kbd> moved to; the
+            range pasted, filled or formatted; the whole rows or columns inserted or deleted — and scrolls its
+            top-left cell into view. The grid selects one range, so a step over several selects the range they make
+            together when they make one rectangle, as the whole columns of one resize of B to D do, and otherwise
+            the first of them in Selection order, the one it acted from: <kbd>Ctrl</kbd> + <kbd>Enter</kbd> over a
+            Selection of several ranges selects the one it was typed in, and a resize of B and D alone selects B.
+            In a Workbook of several Sheets an undo shows the Sheet its step was taken on, and a command names the
+            Sheet it acts on, <code>DoAsync("Claim", edit)</code>
             (<a href="exsheet/workbook#commands-name-their-sheet">Commands name their Sheet</a>).
         </p>
         <p>

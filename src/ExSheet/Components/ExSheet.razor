@@ -769,26 +769,49 @@
 
     /// <summary>
     /// Undoes the latest operation — the user's or a Consumer command's, whichever came last
-    /// (ADR-0048). Answers false when there is nothing to undo.
+    /// (ADR-0048) — on whichever Sheet it was done, and shows that Sheet with the range the operation
+    /// changed selected, as Excel's undo does (ADR-0331 §3). An operation on the Sheets themselves shows
+    /// the Sheet its undo brings back — a Sheet deleted, or the one renamed or moved — or, for a Sheet
+    /// added or copied, the one it was added beside or copied from. Answers false when there is nothing
+    /// to undo.
     /// </summary>
     /// <exception cref="SheetRefusedException">An edit is open (<see cref="IsEditing"/>); nothing changed.</exception>
     public Task<bool> UndoAsync() => OnDispatcherAsync(async () =>
     {
         RefuseWhileEditing();
-        if (_history.Undo() is not { } changes) return false;
-        await ChangedAsync(changes);
+        if (_history.Undo() is not { } undone) return false;
+        await SteppedAsync(undone);
         return true;
     });
 
-    /// <summary>Redoes the operation undone last. Answers false when there is nothing to redo.</summary>
+    /// <summary>
+    /// Redoes the operation undone last, and shows and selects what it changed as
+    /// <see cref="UndoAsync"/> does: a Sheet added or copied is shown again, and a Sheet deleted again is
+    /// taken away, the Sheet shown staying shown unless it is the one deleted, when the Sheet that takes its
+    /// place is. Answers false when there is nothing to redo.
+    /// </summary>
     /// <exception cref="SheetRefusedException">An edit is open (<see cref="IsEditing"/>); nothing changed.</exception>
     public Task<bool> RedoAsync() => OnDispatcherAsync(async () =>
     {
         RefuseWhileEditing();
-        if (_history.Redo() is not { } changes) return false;
-        await ChangedAsync(changes);
+        if (_history.Redo() is not { } redone) return false;
+        await SteppedAsync(redone);
         return true;
     });
+
+    /// <summary>
+    /// An operation undone or redone (ADR-0331 §3): the Sheet it was taken on is shown, with the range it
+    /// changed selected and its Focus, the range's top-left cell, scrolled into view — handed with the
+    /// Sheet's rows when another Sheet is shown, placed on the Sheet shown otherwise. An operation on the
+    /// Sheets themselves selects nothing: the Sheet it shows keeps its own Selection.
+    /// </summary>
+    private Task SteppedAsync(SheetOperationStepped stepped)
+    {
+        var operation = stepped.Operation;
+        var show = operation.ShownAfter(CurrentWorkbook);
+        var select = show == operation.Steps[0].Sheet ? operation.Selects() : null;
+        return ChangedAsync(stepped.Changes, show: show, select: select);
+    }
 
     /// <summary>
     /// A Consumer command: does <paramref name="edit"/> as one operation on the user's undo
@@ -1686,7 +1709,10 @@
         {
             // The typed fields and the exact numbers are one engine edit: one step on the undo
             // stack (ADR-0048), and one change, which draws once (ADR-0180).
-            await PerformAsync(exact.Count == 0 ? SheetEdit.PasteText(typed) : SheetEdit.PasteText(typed, exact));
+            // Its undo selects the ranges pasted over, the first the one it acted from (ADR-0331 §3), as
+            // the Sheet's own copy pasted over them does, not the range that holds them all.
+            await PerformAsync(exact.Count == 0 ? SheetEdit.PasteText(typed) : SheetEdit.PasteText(typed, exact),
+                selects: [.. intent.Plan.Targets.Select(SheetFormulaAids.RangeOf)]);
         }
         catch (SheetRefusedException refused)
         {
@@ -1842,7 +1868,8 @@
         if (cleared.Count == 0) return;
         try
         {
-            await PerformAsync(SheetEdit.SetEntries(cleared));
+            // Its undo selects what Delete was pressed over, as Excel's does, not only the cells it cleared.
+            await PerformAsync(SheetEdit.SetEntries(cleared), selects: [.. intent.Targets.Select(SheetFormulaAids.RangeOf)]);
         }
         catch (SheetRefusedException refused)
         {
@@ -1928,7 +1955,11 @@
         return true;
     }
 
-    private async Task PerformAsync(SheetEdit edit, IReadOnlyList<CellRange>? widenOver = null)
+    /// <summary>
+    /// <paramref name="edit"/> on the Sheet shown, as one operation on the undo stack; its undo selects
+    /// <paramref name="selects"/>, when given, in place of the ranges the edit names (ADR-0331 §3).
+    /// </summary>
+    private async Task PerformAsync(SheetEdit edit, IReadOnlyList<CellRange>? widenOver = null, IReadOnlyList<CellRange>? selects = null)
     {
         var step = Do(edit);
         // The operation and the widths it widens its columns to are one operation: one undo puts
@@ -1936,11 +1967,11 @@
         if (widenOver is not null && Widen(widenOver) is { Count: > 0 } widened)
         {
             WorkbookStep[] steps = [step, .. widened];
-            _history.Record(steps);
+            _history.Record(steps, CurrentSheet, selects);
             await ChangedAsync([.. steps.Select(s => s.Change)]);
             return;
         }
-        _history.Record(step);
+        _history.Record([step], CurrentSheet, selects);
         await ChangedAsync([step.Change]);
     }
 
@@ -1966,7 +1997,7 @@
         }
         else
         {
-            _history.Record(step);
+            _history.Record(step, CurrentSheet);
             // The whole columns the grid resizes with this one, as it reports them (FN-12c): from
             // the Selection it holds, which it chose them by.
             AdoptGridSelection();
@@ -2241,9 +2272,16 @@
     /// it changed there; another Sheet's rows are read afresh when its tab is selected. An operation that
     /// took the Sheet shown out of the Workbook — its deletion, or the undo of its insertion — shows the
     /// Sheet the Workbook now shows, read whole.</summary>
-    private async Task ChangedAsync(IReadOnlyList<WorkbookChange> changes, bool raiseDocument = true, bool byUser = true)
+    /// <remarks>An undo or a redo names the Sheet to <paramref name="show"/> and the range to
+    /// <paramref name="select"/> on it (ADR-0331 §3): handed with the rows of another Sheet, so it lands
+    /// under the version that brings them, and placed on the Sheet shown under its own.</remarks>
+    private async Task ChangedAsync(IReadOnlyList<WorkbookChange> changes, bool raiseDocument = true, bool byUser = true, Sheet? show = null, CellRange? select = null)
     {
-        if (changes.Any(change => change.ChangesSheets) && ShowSheet(CurrentWorkbook.Shown))
+        (SelectionRange Range, CellPosition Focus)? place = select is { } range
+            ? (SheetFormulaAids.SelectionOf(range), new CellPosition(range.First.Row, range.First.Column))
+            : null;
+        var target = show ?? (changes.Any(change => change.ChangesSheets) ? CurrentWorkbook.Shown : null);
+        if (target is not null && ShowSheet(target, place))
         {
             if (byUser) ClearNotice();
             await ForgetSheetsGoneAsync();
@@ -2252,9 +2290,20 @@
             await RaiseSheetsChangedAsync();
             return;
         }
+        // The Sheet and the version the change was made under, read before anything awaits: the range is
+        // placed under them, before any Consumer handler runs, and not at all once another Sheet is shown or
+        // another document opened (rows are places, so the version is the Sheet's own, ADR-0046). Placed after
+        // the Consumer heard the change, a handler that awaits would let the next undo's range land first and
+        // this one over it, and one that opens another document would put it among other rows.
         var sheet = CurrentSheet;
+        var version = _sequence;
+        // The tabs, views and gestures of Sheets gone are the Sheet's own to forget, and are forgotten
+        // before the repaint that shows what is left.
         if (changes.Any(change => change.ChangesSheets)) await ForgetSheetsGoneAsync();
-        await ChangedAsync([.. changes.Select(change => change.For(sheet))], raiseDocument, byUser);
+        await ChangedAsync([.. changes.Select(change => change.For(sheet))], raiseDocument: false, byUser);
+        if (place is { } placed && _grid is { } grid && _sheet == sheet && _sequence == version)
+            await grid.PlaceSelectionAsync(placed.Range, placed.Focus, version);
+        if (raiseDocument) await RaiseDocumentsAsync();
         if (changes.Any(change => change.ChangesSheets)) await RaiseSheetsChangedAsync();
     }
 

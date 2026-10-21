@@ -482,5 +482,59 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(tab(page, 'Summary')).toHaveAttribute('aria-selected', 'true');
             await expectKeyboardOn(grid);
         });
+
+        // Exsheet-workbook ticket 08: an undo or a redo shows the Sheet its step was taken on, with the
+        // range it changed selected, as Excel's do.
+        test('WB-17/ADR-0331: Ctrl+Z typed at once after a press on another tab shows the Sheet of the step and selects its cell; Ctrl+Y does again', async ({ page }) => {
+            await openWorkbook(page);
+            const grid = sheet(page);
+            await clickCell(grid, 'C3');
+            await page.keyboard.type('77');
+            await page.keyboard.press('Enter');
+            await settled(grid);
+            await expect(cell(grid, 'C3')).toHaveText('77');
+            await expectFocusAt(grid, 'C4');
+
+            // At machine speed: the press and the undo, with nothing awaited between them.
+            await tab(page, 'Summary').click();
+            await page.keyboard.press('Control+z');
+            await settled(grid);
+
+            await expect(tab(page, 'Claim')).toHaveAttribute('aria-selected', 'true');
+            await expect(page.locator('#workbook-shown')).toHaveText('Claim');
+            await expect(cell(grid, 'C3')).toHaveText('289.5');
+            await expectFocusAt(grid, 'C3');
+            await expectKeyboardOn(grid);
+
+            await tab(page, 'Summary').click();
+            await page.keyboard.press('Control+y');
+            await settled(grid);
+
+            await expect(tab(page, 'Claim')).toHaveAttribute('aria-selected', 'true');
+            await expect(cell(grid, 'C3')).toHaveText('77');
+            await expectFocusAt(grid, 'C3');
+            await expectKeyboardOn(grid);
+        });
+
+        test('WB-18/ADR-0331: Ctrl+Z typed at once after a press on another tab takes a Sheet added away and shows the Sheet it was added beside', async ({ page }) => {
+            await openWorkbook(page);
+            const grid = sheet(page);
+            await clickCell(grid, 'B2');
+            await settled(grid);
+            await page.locator('.ex-sheet-tab-add').click();
+            await settled(grid);
+            await expect(tab(page, 'Sheet1')).toHaveAttribute('aria-selected', 'true');
+
+            await tab(page, 'Summary').click();
+            await page.keyboard.press('Control+z');
+            await settled(grid);
+
+            await expect(tabNames(page)).toHaveText(['Claim', 'Summary']);
+            await expect(tab(page, 'Claim')).toHaveAttribute('aria-selected', 'true');
+            await expect(cell(grid, 'A1')).toHaveText('Item');
+            // A Sheet operation selects nothing of its own: the Sheet shown keeps its own Selection.
+            await expectFocusAt(grid, 'B2');
+            await expectKeyboardOn(grid);
+        });
     });
 }

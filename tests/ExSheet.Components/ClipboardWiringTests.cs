@@ -585,6 +585,25 @@ public class ClipboardWiringTests : SheetTestContext
         Assert.Equal("3", CellText(cut, "D2"));
     }
 
+    [Fact] // ADR-0331 §3, ADR-0014: text from another program pasted over several ranges selects, undone, the one it acted from, as the Sheet's own copy does
+    public async Task ADR0331_a_text_paste_over_several_ranges_selects_the_first_undone()
+    {
+        var cut = RenderSheet();
+        await GoToAsync(cut, "B2");
+        await CtrlClickAsync(cut, "D4");
+
+        await PasteAsync(cut, "7\r\n", "<table><tr><td>7</td></tr></table>");
+        Assert.Equal("7", CellText(cut, "B2"));
+        Assert.Equal("7", CellText(cut, "D4"));
+        await GoToAsync(cut, "A1");
+
+        Assert.True(await cut.Instance.UndoAsync());
+
+        Assert.Equal("", CellText(cut, "D4"));
+        var held = Grid(cut).Instance.ReadSelection().Selection;
+        Assert.Equal([new global::ExGrid.Selection.SelectionRange(1, 1, 1, 1)], held.Ranges);
+    }
+
     [Fact] // ADR-0048: the own copy's paste is one undo step
     public async Task The_own_copys_paste_is_one_undo_step()
     {

@@ -1,5 +1,6 @@
 using Bunit;
 using ExSheet.Components.Tests.Support;
+using ExSheet.Engine;
 using Xunit;
 
 namespace ExSheet.Components.Tests;
@@ -49,7 +50,8 @@ public class SelectionSummaryWiringTests : SheetTestContext
         await GoToAsync(cut, "A1:A2");
         cut.WaitForAssertion(() => Assert.Contains("Sum: 3", Summary(cut)));
 
-        await cut.InvokeAsync(() => cut.Instance.UndoAsync());
+        // A command changes A2 and leaves the Selection where it is (an undo would select what it changed).
+        await cut.InvokeAsync(() => cut.Instance.DoAsync(SheetEdit.Enter(CellAddress.Parse("A2"), "")));
 
         cut.WaitForAssertion(() => Assert.Contains("Sum: 1", Summary(cut)));
     }

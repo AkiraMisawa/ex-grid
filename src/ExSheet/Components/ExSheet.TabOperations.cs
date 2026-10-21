@@ -127,7 +127,7 @@ public partial class ExSheet
             StateHasChanged();
             return null;
         }
-        _history.Record(step);
+        _history.Record(step, sheet);
         if (show?.Invoke(step) is { } shown && workbook.Sheets.Contains(shown)) workbook.Shown = shown;
         await ChangedAsync([step.Change]);
         return step;
@@ -261,7 +261,7 @@ public partial class ExSheet
             RefuseRename(refused.Refusal.Message);
             return false;
         }
-        _history.Record(step);
+        _history.Record(step, sheet);
         await EndRenameAsync(keyboard);
         await ChangedAsync([step.Change]);
         Tell(SheetWords.SheetRenamed(from, sheet.Name));
