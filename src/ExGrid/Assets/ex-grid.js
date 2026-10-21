@@ -2197,10 +2197,11 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // as the editor's are, and Enter submits the field's form, as the key itself would
     // (ADR-0010).
     let replaying = false;
+    // Whether no handler prevented the key's default.
     const replayInto = (target, k) => {
         replaying = true;
         try {
-            target.dispatchEvent(new KeyboardEvent('keydown', {
+            return target.dispatchEvent(new KeyboardEvent('keydown', {
                 key: k.key, ctrlKey: k.ctrlKey, shiftKey: k.shiftKey, altKey: k.altKey, metaKey: k.metaKey,
                 bubbles: true, cancelable: true,
             }));
@@ -2225,7 +2226,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // The keys that move the caret in a field without changing its text.
     const caretMoveKeys = new Set(['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End', 'PageUp', 'PageDown']);
     const reproducible = (target, k) => {
-        if (k.key === 'Escape' || target.closest('[role=menu]')) {
+        if (k.key === 'Escape' || target.closest('[role=menu]') || submitsByEnter(target, k)) {
             return true;
         }
         if (isTextField(target)) {
@@ -2317,8 +2318,21 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
                 return;
             }
         }
+        // Enter on a radio button or a checkbox submits its form in Chrome and Edge, unless a handler
+        // prevents it (enterMaySubmitTypes): a dispatched keydown does not, so held, it is done here as the
+        // key would have done it typed. Format Cells' Percentage chosen, then Enter typed while Ctrl+1's
+        // hand-off was still being answered on a circuit, was refused instead of closing it with OK.
+        if (submitsByEnter(target, k)) {
+            if (replayInto(target, k)) {
+                target.form.requestSubmit();
+            }
+            return;
+        }
         replayInto(target, k);
     };
+    const submitsByEnter = (target, k) => k.key === 'Enter' && plain(k) && !k.shiftKey
+        && target instanceof HTMLInputElement && enterMaySubmitTypes.has(target.type)
+        && target.form !== null && submitsOnEnter(target.form);
 
     // The held keys dropped, every one behind the key that could not be handed on (ADR-0010). A
     // copy among them is abandoned, and its write lands nothing: the clipboard keeps what it held,
