@@ -20,7 +20,9 @@ written, and the matches on screen marked as other grids mark them.
 - **ExPivot** answers it over the report **as shown**: every cell that is laid out (row and column
   labels, values and totals) matched on its displayed text. **A collapsed group is not searched
   inside, and nothing is expanded to show a match**, as Excel's Find over a PivotTable reads only the
-  cells on the sheet. A search never changes the report's shape.
+  cells on the sheet. A search never changes the report's shape. *(The column labels sit in the
+  grid's headers, which ADR-0055's Find could not reach; [ADR-0333](./0333-find-reaches-the-column-headers-and-marks-a-header-it-finds.md)
+  makes every grid's Find reach its headers, 2026-10-21.)*
 
 ### 2. Replace is offered where cells can be written: ExGrid and ExSheet
 

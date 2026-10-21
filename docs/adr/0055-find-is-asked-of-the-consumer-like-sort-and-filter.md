@@ -164,3 +164,5 @@ other key claims.
 middle of the view; ExSheet's reveals it as every Focus move does, as far as it must, so a cell below
 the view lands on its bottom row. **Kept**: FD-5 asks that the cell be revealed, and it is, and
 ExGrid keeps one reveal rule rather than a second one for Find.
+
+*(2026-10-21: [ADR-0333](./0333-find-reaches-the-column-headers-and-marks-a-header-it-finds.md) widens Find to the column headers and Header Group labels: a header match is marked as the current match and the Focus stays.)*
