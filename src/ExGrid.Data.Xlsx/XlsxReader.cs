@@ -170,9 +170,14 @@ public sealed class XlsxReader : IDisposable
     {
         using var reader = OpenSheet(index);
         var all = new List<XlsxCell>();
+        var rows = new List<XlsxRow>();
         while (await reader.ReadAsync().ConfigureAwait(false))
+        {
             all.AddRange(reader.Cells);
-        return new XlsxWorksheet(reader.Sheet, reader.Columns, all, reader.OtherElements, reader.CustomRowHeights, reader.HiddenRows, reader.FrozenPanes);
+            rows.AddRange(reader.Rows);
+        }
+        return new XlsxWorksheet(reader.Sheet, reader.Columns, all, reader.OtherElements, rows, reader.CustomRowHeights, reader.HiddenRows,
+            reader.FrozenPanes);
     }
 
     /// <summary>Disposes the package and its stream.</summary>
@@ -640,6 +645,8 @@ public sealed class XlsxReader : IDisposable
 /// <param name="Columns">Its column widths.</param>
 /// <param name="Cells">Its cells, in the file's order: row by row, left to right.</param>
 /// <param name="OtherElements">What else it holds, as <see cref="XlsxSheetReader.OtherElements"/> lists it.</param>
+/// <param name="Rows">The rows that record a cell format of their own, in order, as <see cref="XlsxSheetReader.Rows"/> gives them;
+/// empty for none.</param>
 /// <param name="CustomRowHeights">Whether a row sets a height of its own.</param>
 /// <param name="HiddenRows">Whether a row is hidden.</param>
 /// <param name="FrozenPanes">Whether the sheet's view freezes panes.</param>
@@ -648,6 +655,7 @@ public sealed record XlsxWorksheet(
     IReadOnlyList<XlsxColumn> Columns,
     IReadOnlyList<XlsxCell> Cells,
     IReadOnlyList<XlsxElement> OtherElements,
+    IReadOnlyList<XlsxRow> Rows,
     bool CustomRowHeights = false,
     bool HiddenRows = false,
     bool FrozenPanes = false);
