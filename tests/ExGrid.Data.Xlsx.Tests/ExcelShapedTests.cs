@@ -99,7 +99,7 @@ public class ExcelShapedTests
             new XlsxCell(3, 2, XlsxCellType.FormulaString, "Total:127.5", Formula: new XlsxFormula("_xlfn.CONCAT(A4,\":\",B4)")),
         ], book.Cells);
         Assert.Equal([new XlsxColumn(0, 0, 12.36328125), new XlsxColumn(1, 2, 10.90625, StyleIndex: 3)], book.Columns);
-        Assert.Equal(["conditionalFormatting"], book.OtherElements);
+        Assert.Equal(["dimension", "sheetViews", "sheetFormatPr", "conditionalFormatting", "pageMargins"], book.OtherElements.Select(e => e.Name));
     }
 
     [Fact] // ADR-0330 §4, §8: Excel's styles part — named styles, differential formats, extension lists — gives what §4 carries, and its theme resolves the fill

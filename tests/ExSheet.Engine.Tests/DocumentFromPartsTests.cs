@@ -1,5 +1,6 @@
 using System.Globalization;
 using ExSheet.Engine;
+using ExSheet.Engine.Formulas;
 using Xunit;
 
 namespace ExSheet.Engine.Tests;
@@ -57,6 +58,40 @@ public class DocumentFromPartsTests
         // A parameter is bound only inside its own LAMBDA.
         Assert.Equal(["v"], Formula("=MAP(A1:A3,LAMBDA(v,v*2))+v").UnboundNames);
         Assert.Empty(Formula("=LET(f,LAMBDA(x,x+1),MAP(A1:A2,LAMBDA(y,f(y))))").UnboundNames);
+    }
+
+    [Fact] // ADR-0330 §4: a LAMBDA's parameters are bound by its name alone, so declaring LAMBDA one day leaves them bound
+    public void ADR0330_a_declared_LAMBDAs_parameters_are_bound()
+    {
+        var declared = Assert.IsType<FunctionDefinition>(FunctionLibrary.Find("SUM"));
+        var lambda = new FunctionNode("LAMBDA", [new NameNode("v", 0, null), new BinaryNode("*", new NameNode("v", 0, null), new NumberNode(2))], declared);
+
+        Assert.Empty(UnboundNameWalk.Of(lambda));
+    }
+
+    [Fact] // ADR-0330 §4: an error cell's text is read by the engine's own table, exactly as written: every Error Value a cell can hold, and nothing else
+    public void ADR0330_error_text_is_read_by_the_engines_table()
+    {
+        foreach (var error in Enum.GetValues<ErrorValue>().Where(e => e is not (ErrorValue.GettingData or ErrorValue.Circ)))
+        {
+            var text = Value.FromError(error).ToString();
+            Assert.Equal(Value.FromError(error), Entry.FromErrorText(text)!.Constant);
+            Assert.Null(Entry.FromErrorText(text.ToLowerInvariant()));
+        }
+        Assert.Null(Entry.FromErrorText("#GETTING_DATA"));
+        Assert.Null(Entry.FromErrorText("#CIRC!"));
+        Assert.Null(Entry.FromErrorText("=NA()"));
+        Assert.Null(Entry.FromErrorText("1"));
+    }
+
+    [Theory] // ADR-0330 §4: the 1900 date system's serials, Excel's 29 February 1900 included
+    [InlineData(1900, 1, 1, 1)]
+    [InlineData(1900, 2, 29, 60)]
+    [InlineData(1900, 3, 1, 61)]
+    [InlineData(2023, 3, 15, 45000)]
+    public void ADR0330_date_serials_are_Excels(int year, int month, int day, int serial)
+    {
+        Assert.Equal(serial, DateSerial.FromDate(year, month, day));
     }
 
     [Fact] // ADR-0330 §3: a Workbook Document built from its Sheets opens as the Workbook it describes

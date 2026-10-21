@@ -41,7 +41,10 @@ public enum NotCarriedKind
     /// <summary>A sheet that is not a worksheet — a chart sheet, a dialog or macro sheet — which holds no cells.</summary>
     ChartSheet,
 
-    /// <summary>A defined name, which no Formula carried reads; <see cref="NotCarried.Detail"/> is its name.</summary>
+    /// <summary>
+    /// A defined name, which no Formula carried reads; <see cref="NotCarried.Detail"/> is its name, and
+    /// <see cref="NotCarried.Sheet"/> the sheet it is local to, or null for a name of the whole workbook.
+    /// </summary>
     DefinedName,
 
     /// <summary>Rows given heights of their own.</summary>
@@ -77,7 +80,7 @@ public enum NotCarriedKind
     /// <summary>The Sheet's protection.</summary>
     Protection,
 
-    /// <summary>Print settings beyond Excel's defaults: a page set-up of its own, headers and footers with text, page breaks, printed gridlines or headings, a fit to pages. Margins alone are not listed: every file holds them.</summary>
+    /// <summary>Print settings beyond Excel's defaults: margins, a page set-up of its own, headers and footers with text, page breaks, printed gridlines or headings, a fit to pages, a print area or print titles.</summary>
     PrintSettings,
 
     /// <summary>An AutoFilter, and the sort state it keeps.</summary>
@@ -103,6 +106,9 @@ public enum NotCarriedKind
 
     /// <summary>Slicers and timelines.</summary>
     Slicers,
+
+    /// <summary>View settings that change how the Sheet looks: hidden gridlines, headings or zeros, Formulas shown, right to left, a zoom, a page layout.</summary>
+    View,
 
     /// <summary>Anything else a worksheet holds; <see cref="NotCarried.Detail"/> names its element, as <c>customSheetViews</c>.</summary>
     Other,

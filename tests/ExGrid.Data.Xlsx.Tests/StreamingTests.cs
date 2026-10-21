@@ -172,42 +172,37 @@ public class StreamingTests
 
         var read = await reader.ReadSheetAsync(0);
 
-        Assert.Equal(["sheetPr", "mergeCells", "legacyDrawing"], read.OtherElements);
+        Assert.Equal(["sheetPr", "dimension", "sheetViews", "mergeCells", "pageMargins", "legacyDrawing"], read.OtherElements.Select(e => e.Name));
         Assert.True(read.CustomRowHeights);
         Assert.True(read.HiddenRows);
         Assert.True(read.FrozenPanes);
         Assert.Equal(2, read.Cells.Count);
     }
 
-    [Fact] // ADR-0330 §4: what every file carries and no sheet shows — margins, phonetic settings, error marks, print settings at their defaults — is not listed
-    public async Task What_holds_nothing_is_not_listed()
+    [Fact] // ADR-0330 §4, §9: an element the reader does not read comes with its attributes, its text and its first children, for the program reading the file to judge
+    public async Task What_else_a_sheet_holds_comes_with_what_judges_it()
     {
+        var breaks = string.Concat(Enumerable.Range(1, 20).Select(i => $"""<brk id="{i}" max="16383" man="1"/>"""));
         var sheet = Sheet(
             """<row r="1"><c r="A1"><v>1</v></c></row>""",
-            head: """<sheetPr codeName="Sheet1" filterMode="0"><outlinePr summaryBelow="1"/><pageSetUpPr fitToPage="0"/></sheetPr>""",
-            tail: """<phoneticPr fontId="1"/><printOptions gridLinesSet="1"/><pageMargins left="0.7" right="0.7" top="0.75" bottom="0.75" header="0.3" footer="0.3"/>"""
-                + """<pageSetup paperSize="9" orientation="portrait" horizontalDpi="300" verticalDpi="300" r:id="rId1"/><headerFooter><oddHeader></oddHeader></headerFooter><rowBreaks count="0" manualBreakCount="0"/>"""
-                + """<ignoredErrors><ignoredError sqref="A1" numberStoredAsText="1"/></ignoredErrors>""");
+            head: """<sheetPr><tabColor rgb="FFFF0000"/></sheetPr>""",
+            tail: """<pageMargins left="0.25" right="0.25" top="0.75" bottom="0.75" header="0.3" footer="0.3"/><pageSetup paperSize="9" orientation="landscape" r:id="rId1"/>"""
+                + """<headerFooter><oddFooter>&amp;P of &amp;N</oddFooter></headerFooter>"""
+                + $"""<rowBreaks count="20" manualBreakCount="20">{breaks}</rowBreaks>"""
+                + """<extLst><ext uri="{78C0D931-6437-407d-A8EE-F0AAD7539E65}" xmlns:x14="http://schemas.microsoft.com/office/spreadsheetml/2009/9/main"><x14:conditionalFormattings><x14:conditionalFormatting/></x14:conditionalFormattings></ext></extLst>""");
         using var reader = await OpenAsync(Book(sheet));
 
         var read = await reader.ReadSheetAsync(0);
+        var elements = read.OtherElements.ToDictionary(e => e.Name);
 
-        Assert.Empty(read.OtherElements);
-    }
-
-    [Fact] // ADR-0330 §4: print settings beyond the defaults, a tab colour, a fit to pages and each extension are listed by name
-    public async Task What_holds_something_is_listed()
-    {
-        var sheet = Sheet(
-            """<row r="1"><c r="A1"><v>1</v></c></row>""",
-            head: """<sheetPr><pageSetUpPr fitToPage="1"/></sheetPr>""",
-            tail: """<printOptions gridLines="1"/><pageSetup paperSize="9" orientation="landscape"/><headerFooter><oddFooter>&amp;P</oddFooter></headerFooter><rowBreaks count="1"><brk id="5" max="16383" man="1"/></rowBreaks>"""
-                + """<extLst><ext uri="{78C0D931-6437-407d-A8EE-F0AAD7539E65}" xmlns:x14="http://schemas.microsoft.com/office/spreadsheetml/2009/9/main"><x14:conditionalFormattings/></ext></extLst>""");
-        using var reader = await OpenAsync(Book(sheet));
-
-        var read = await reader.ReadSheetAsync(0);
-
-        Assert.Equal(["pageSetUpPr", "printOptions", "pageSetup", "headerFooter", "rowBreaks", "conditionalFormattings"], read.OtherElements);
+        Assert.Equal("FFFF0000", elements["sheetPr"].Children.Single().Attribute("rgb"));
+        Assert.Equal("0.25", elements["pageMargins"].Attribute("left"));
+        Assert.Equal("rId1", elements["pageSetup"].Attribute("id"));
+        Assert.Equal("&P of &N", elements["headerFooter"].Children.Single().Text);
+        Assert.Equal(XlsxElement.MaxChildren, elements["rowBreaks"].Children.Count);
+        Assert.True(elements["rowBreaks"].ChildrenCut);
+        Assert.Equal("conditionalFormattings", elements["extLst"].Children.Single().Children.Single().Name);
+        Assert.Null(elements["pageMargins"].Text);
     }
 
     [Fact] // ADR-0330 §9: a cell or row that names no place takes the one after the last

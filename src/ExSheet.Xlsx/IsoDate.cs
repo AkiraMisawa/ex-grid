@@ -12,10 +12,11 @@ namespace ExSheet.Xlsx;
 /// </summary>
 internal static partial class IsoDate
 {
-    [GeneratedRegex(@"^(?:(?<y>\d{4})-(?<mo>\d{2})-(?<d>\d{2}))?(?:(?(y)T)(?<h>\d{2}):(?<mi>\d{2})(?::(?<s>\d{2})(?<f>\.\d+)?)?)?(?<z>Z|[+-]\d{2}(?::?\d{2})?)?$", RegexOptions.CultureInvariant)]
+    // [0-9], never \d: \d matches every script's digits, which ISO 8601 does not write.
+    [GeneratedRegex(@"^(?:(?<y>[0-9]{4})-(?<mo>[0-9]{2})-(?<d>[0-9]{2}))?(?:(?(y)T)(?<h>[0-9]{2}):(?<mi>[0-9]{2})(?::(?<s>[0-9]{2})(?<f>\.[0-9]+)?)?)?(?<z>Z|[+-][0-9]{2}(?::?[0-9]{2})?)?\z", RegexOptions.CultureInvariant)]
     private static partial Regex Shape();
 
-    /// <summary>The serial of <paramref name="text"/>, or null when it is not an ISO 8601 date or time, or lies before 1900.</summary>
+    /// <summary>The serial of <paramref name="text"/>, or null when it is not an ISO 8601 date or time, or lies outside 1900 to 9999.</summary>
     public static double? Serial(string text)
     {
         var match = Shape().Match(text);
@@ -36,12 +37,8 @@ internal static partial class IsoDate
         }
         if (!hasDate) return time;
 
-        int year = Int(match.Groups["y"]), month = Int(match.Groups["mo"]), day = Int(match.Groups["d"]);
-        if (year < 1900 || month is < 1 or > 12 || day < 1 || day > DateTime.DaysInMonth(year, month)) return null;
-        var date = new DateTime(year, month, day, 0, 0, 0, DateTimeKind.Unspecified);
-        // 1 is 1 January 1900; Excel keeps a 29 February 1900 (60) for Lotus's sake, so from 1 March 1900 days count from 30 December 1899.
-        var serial = date < new DateTime(1900, 3, 1) ? (date - new DateTime(1899, 12, 31)).Days : (date - new DateTime(1899, 12, 30)).Days;
-        return serial + time;
+        // The engine's own count of the 1900 date system, its 29 February 1900 (60) included.
+        return ExSheet.Engine.DateSerial.FromDate(Int(match.Groups["y"]), Int(match.Groups["mo"]), Int(match.Groups["d"])) is { } serial ? serial + time : null;
     }
 
     private static int Int(Group group) => int.Parse(group.Value, NumberStyles.None, CultureInfo.InvariantCulture);

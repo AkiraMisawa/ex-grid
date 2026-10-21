@@ -82,15 +82,18 @@ public class CarriedTests
         Assert.Equal(Value.FromNumber(45000 + 23.0 / 24), sheet.EntryAt("A3")!.Constant);
     }
 
-    [Fact] // ADR-0330 §4: a date cell that is not ISO 8601 is refused, not read by the server's culture
-    public async Task ADR0330_a_date_cell_that_is_not_ISO_is_refused()
+    [Theory] // ADR-0330 §4: a date cell that is not ISO 8601 — another culture's order, another script's digits — is refused by name, not read
+    [InlineData("15/03/2023")]
+    [InlineData("\uFF12\uFF10\uFF12\uFF13-03-15")]
+    [InlineData("\u0662\u0660\u0662\u0663-\u0660\u0663-\u0661\u0665")]
+    public async Task ADR0330_a_date_cell_that_is_not_ISO_is_refused(string held)
     {
-        var file = await WriteAsync(new Page("Sheet1", [Cell("A1", XlsxCellType.Date, "15/03/2023")]));
+        var file = await WriteAsync(new Page("Sheet1", [Cell("A1", XlsxCellType.Date, held)]));
 
         var refused = await RefusedAsync(file);
 
         Assert.Equal(XlsxOpenRefusal.UnreadableConstant, refused.Reason);
-        Assert.Equal(("Sheet1", "A1", "15/03/2023"), (refused.Sheet, refused.Cell, refused.Held));
+        Assert.Equal(("Sheet1", "A1", held), (refused.Sheet, refused.Cell, refused.Held));
     }
 
     [Fact] // ADR-0330 §4, ADR-0125: Spill Ranges behind the reader are passed, and a constant below or beside one is carried

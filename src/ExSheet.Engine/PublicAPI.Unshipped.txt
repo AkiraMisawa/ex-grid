@@ -1,6 +1,7 @@
 #nullable enable
 const ExSheet.Engine.WorkbookDocument.CurrentVersion = 1 -> int
 const ExSheet.Engine.WorkbookDocument.OldestReadableVersion = 1 -> int
+ExSheet.Engine.DateSerial
 ExSheet.Engine.Entry.MovedBy(int rows, int columns) -> ExSheet.Engine.Entry!
 ExSheet.Engine.Entry.UnboundNames.get -> System.Collections.Generic.IReadOnlyList<string!>!
 ExSheet.Engine.Entry.UndeclaredFunctions.get -> System.Collections.Generic.IReadOnlyList<string!>!
@@ -53,6 +54,8 @@ ExSheet.Engine.WorkbookStep.IsUndone.get -> bool
 ExSheet.Engine.WorkbookStep.Redo() -> ExSheet.Engine.WorkbookChange!
 ExSheet.Engine.WorkbookStep.Sheet.get -> ExSheet.Engine.Sheet!
 ExSheet.Engine.WorkbookStep.Undo() -> ExSheet.Engine.WorkbookChange!
+static ExSheet.Engine.DateSerial.FromDate(int year, int month, int day) -> int?
+static ExSheet.Engine.Entry.FromErrorText(string! text) -> ExSheet.Engine.Entry?
 static ExSheet.Engine.FormulaEntry.ReferenceText(ExSheet.Engine.CellRange range, string! sheet) -> string!
 static ExSheet.Engine.SheetEdit.CopySheet(int? index = null) -> ExSheet.Engine.SheetEdit!
 static ExSheet.Engine.SheetEdit.DeleteSheet() -> ExSheet.Engine.SheetEdit!

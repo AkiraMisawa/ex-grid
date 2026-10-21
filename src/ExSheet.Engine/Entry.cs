@@ -69,6 +69,19 @@ public sealed class Entry : IEquatable<Entry>
     public Entry MovedBy(int rows, int columns) => ReferenceShift.Shift(this, rows, columns);
 
     /// <summary>
+    /// The constant Entry of an Error Value written exactly as Excel writes one in a file, case and all
+    /// (<c>#N/A</c>, <c>#DIV/0!</c>, <c>#SPILL!</c>), or <see langword="null"/> when the text is no Error
+    /// Value a cell can hold: <c>#GETTING_DATA</c> and <c>#CIRC!</c> are not one, and nothing else is read
+    /// as a Formula or a number. A reader of another program's workbook takes an error cell through it
+    /// (ADR-0330 §4).
+    /// </summary>
+    public static Entry? FromErrorText(string text)
+    {
+        ArgumentNullException.ThrowIfNull(text);
+        return ErrorValues.TryParseWritten(text, out var error) ? new Entry(Value.FromError(error)) : null;
+    }
+
+    /// <summary>
     /// A constant Entry. <c>#GETTING_DATA</c> and <c>#CIRC!</c> are states of a computation and cannot be one,
     /// and neither can the <c>#VALUE!</c> of a cell whose Formula ExSheet refuses, read from it: held as a
     /// constant it would be an Error Value a Formula can catch (ADR-0047; 2026-10-12, decided with the user:

@@ -3,7 +3,7 @@ namespace ExSheet.Engine.Formulas;
 /// <summary>
 /// The names a parsed Formula reads that nothing in it binds (<see cref="Entry.UnboundNames"/>): every
 /// <see cref="NameNode"/> of the tree the parser has already built, less those a <c>LET</c> binds and those
-/// a <c>LAMBDA</c> takes as parameters. The engine does not compute <c>LAMBDA</c> (a call of it is
+/// a <c>LAMBDA</c> takes as parameters, whether or not the engine declares <c>LAMBDA</c>. Today it does not (a call is
 /// <c>#NAME?</c>), but Excel's workbooks write it, and its parameters are no names a workbook defines
 /// (ADR-0330 §4): <c>LAMBDA(x, y, x+y)</c> binds <c>x</c> and <c>y</c> in its last argument, and its other
 /// arguments are the parameters themselves.
@@ -33,7 +33,7 @@ internal static class UnboundNameWalk
                 foreach (var binding in let.Bindings) Walk(binding.Value, parameters, found);
                 Walk(let.Calculation, parameters, found);
                 break;
-            case FunctionNode { Function: null } call when call.Name.Equals("LAMBDA", StringComparison.OrdinalIgnoreCase) && call.Arguments.Count > 0:
+            case FunctionNode call when call.Name.Equals("LAMBDA", StringComparison.OrdinalIgnoreCase) && call.Arguments.Count > 0:
                 var inner = new List<string>(parameters);
                 for (var i = 0; i < call.Arguments.Count - 1; i++)
                 {

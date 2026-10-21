@@ -47,6 +47,8 @@ public class StoredFormulaTests
     [InlineData("06:00:00", 0.25)]
     [InlineData("1900-02-28", 59.0)]
     [InlineData("1900-03-01", 61.0)]
+    [InlineData("1900-02-29", 60.0)]
+    [InlineData("9999-12-31", 2958465.0)]
     public void ADR0330_ISO_dates_are_their_serials(string text, double serial)
     {
         Assert.Equal(serial, IsoDate.Serial(text));
@@ -63,6 +65,9 @@ public class StoredFormulaTests
     [InlineData("12:60")]
     [InlineData("Z")]
     [InlineData("March 15, 2023")]
+    [InlineData("\uFF12\uFF10\uFF12\uFF13-03-15")]
+    [InlineData("\u0662\u0660\u0662\u0663-03-15")]
+    [InlineData("2023-03-15\n")]
     public void ADR0330_text_that_is_not_ISO_is_no_serial(string text)
     {
         Assert.Null(IsoDate.Serial(text));

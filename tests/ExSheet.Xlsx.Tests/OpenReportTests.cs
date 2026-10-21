@@ -54,8 +54,84 @@ public class OpenReportTests
         Assert.Contains(report.NotCarried, n => n is { Kind: NotCarriedKind.HiddenColumns, Sheet: "Trades" });
         Assert.Contains(report.NotCarried, n => n is { Kind: NotCarriedKind.HiddenSheet, Sheet: "Back" });
         Assert.Contains(report.NotCarried, n => n is { Kind: NotCarriedKind.DefinedName, Sheet: null, Detail: "Rate" });
-        Assert.Contains(report.NotCarried, n => n is { Kind: NotCarriedKind.DefinedName, Detail: "_xlnm.Print_Area" });
         Assert.All(report.NotCarried, n => Assert.False(string.IsNullOrWhiteSpace(n.Description)));
+    }
+
+    [Fact] // ADR-0330 §4: Excel's built-in names are said as what they are: a print area or titles is its Sheet's print setting, an AutoFilter's range is the AutoFilter's
+    public async Task ADR0330_built_in_names_are_said_as_what_they_are()
+    {
+        var file = await WriteAsync(new XlsxWriteOptions
+            {
+                DefinedNames =
+                [
+                    new XlsxDefinedName("_xlnm.Print_Area", "Trades!$A$1:$B$2", 0), new XlsxDefinedName("_xlnm.Print_Titles", "Back!$1:$1", 1),
+                    new XlsxDefinedName("_xlnm._FilterDatabase", "Trades!$A$1:$A$2", 0, Hidden: true),
+                ],
+            },
+            new Page("Trades", [Number("A1", "1")]), new Page("Back", [Number("A1", "1")]));
+
+        var report = (await ReadAsync(file)).Report;
+
+        Assert.Equal([(NotCarriedKind.PrintSettings, "Trades"), (NotCarriedKind.PrintSettings, "Back")], report.NotCarried.Select(n => (n.Kind, n.Sheet)));
+    }
+
+    [Fact] // ADR-0330 §4: a name local to a Sheet is said with that Sheet, so two Sheets' own 'Rate' are two entries
+    public async Task ADR0330_names_local_to_a_Sheet_are_said_with_it()
+    {
+        var file = await WriteAsync(new XlsxWriteOptions
+            {
+                DefinedNames = [new XlsxDefinedName("Rate", "Trades!$A$1", 0), new XlsxDefinedName("Rate", "Back!$A$1", 1), new XlsxDefinedName("Fx", "Back!$B$1")],
+            },
+            new Page("Trades", [Number("A1", "1")]), new Page("Back", [Number("A1", "1")]));
+
+        var report = (await ReadAsync(file)).Report;
+
+        Assert.Equal([(NotCarriedKind.DefinedName, null, "Fx"), (NotCarriedKind.DefinedName, "Trades", "Rate"), (NotCarriedKind.DefinedName, "Back", "Rate")],
+            report.NotCarried.Select(n => (n.Kind, n.Sheet, n.Detail)));
+    }
+
+    [Theory] // ADR-0330 §4: margins, a paper or a view that differ from Excel's defaults are said; Letter and A4, Excel's papers by locale, are not
+    [InlineData("""<pageMargins left="0.25" right="0.25" top="0.75" bottom="0.75" header="0.3" footer="0.3"/>""", NotCarriedKind.PrintSettings)]
+    [InlineData("""<pageMargins left="0.7" right="0.7" top="0.75" bottom="0.75" header="0.3" footer="0.5"/>""", NotCarriedKind.PrintSettings)]
+    [InlineData("""<pageSetup paperSize="5"/>""", NotCarriedKind.PrintSettings)]
+    [InlineData("""<pageSetup paperHeight="297mm" paperWidth="210mm"/>""", NotCarriedKind.PrintSettings)]
+    [InlineData("""<pageSetup paperSize="1" orientation="portrait"/>""", null)]
+    [InlineData("""<pageSetup paperSize="9" horizontalDpi="600" verticalDpi="600"/>""", null)]
+    [InlineData("""<rowBreaks count="1"><brk id="4" max="16383" man="1"/></rowBreaks>""", NotCarriedKind.PrintSettings)]
+    public async Task ADR0330_print_settings_beyond_the_defaults_are_said(string tail, NotCarriedKind? said)
+    {
+        var file = await WriteAsync(new Page("Trades", [Number("A1", "1")]));
+        var edited = Edit(file, Sheet1, AfterCells(tail));
+
+        var report = (await ReadAsync(edited)).Report;
+
+        Assert.Equal(said is { } kind ? [kind] : [], report.NotCarried.Select(n => n.Kind));
+    }
+
+    [Theory] // ADR-0330 §4: a view that hides gridlines or zeros, zooms or runs right to left changes how the Sheet looks, and is said; a selection is not
+    [InlineData("showGridLines=\"0\" ", true)]
+    [InlineData("rightToLeft=\"1\" ", true)]
+    [InlineData("zoomScale=\"85\" ", true)]
+    [InlineData("zoomScale=\"100\" showGridLines=\"1\" ", false)]
+    public async Task ADR0330_view_settings_are_said(string attributes, bool said)
+    {
+        var file = await WriteAsync(new Page("Trades", [Number("A1", "1")]));
+        var edited = Edit(file, Sheet1, xml => xml.Replace("<sheetView ", "<sheetView " + attributes, StringComparison.Ordinal));
+
+        var report = (await ReadAsync(edited)).Report;
+
+        Assert.Equal(said ? [NotCarriedKind.View] : [], report.NotCarried.Select(n => n.Kind));
+    }
+
+    [Fact] // ADR-0330 §4: a sheet whose rows are hidden by default (sheetFormatPr zeroHeight) says so
+    public async Task ADR0330_rows_hidden_by_default_are_said()
+    {
+        var file = await WriteAsync(new Page("Trades", [Number("A1", "1")]));
+        var edited = Edit(file, Sheet1, xml => xml.Replace("<sheetFormatPr ", "<sheetFormatPr zeroHeight=\"1\" ", StringComparison.Ordinal));
+
+        var report = (await ReadAsync(edited)).Report;
+
+        Assert.Equal([NotCarriedKind.HiddenRows], report.NotCarried.Select(n => n.Kind));
     }
 
     [Fact] // ADR-0330 §4: what a worksheet holds beside its cells is listed, once per Sheet and kind, in the file's order
