@@ -13,16 +13,16 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/21/2026 - 01:40:55 |
+| Generated on: | 10/21/2026 - 02:28:39 |
 | Parser: | MultiReport (17x Cobertura) |
 | Assemblies: | 13 |
 | Classes: | 1015 |
 | Files: | 535 |
-| **Line coverage:** | 94.7% (66783 of 70499) |
-| Covered lines: | 66783 |
-| Uncovered lines: | 3716 |
-| Coverable lines: | 70499 |
-| Total lines: | 117861 |
+| **Line coverage:** | 94.7% (66793 of 70508) |
+| Covered lines: | 66793 |
+| Uncovered lines: | 3715 |
+| Coverable lines: | 70508 |
+| Total lines: | 117881 |
 | **Branch coverage:** | 87.1% (39979 of 45879) |
 | Covered branches: | 39979 |
 | Total branches: | 45879 |
@@ -316,8 +316,8 @@
 |ExGrid.Components.ExGrid.TakenCopy<TRow, T>|94.4%|100%|
 |ExGrid.Components.ExGrid.TakenList<TRow>|100%||
 |ExGrid.Components.ExGrid.TakenMouseEventArgs<TRow>|100%||
-|ExGrid.Components.ExGrid<TRow>|90.6%|85.6%|
-|ExGrid.Components.ExGrid<TRow>|95.3%|90.3%|
+|ExGrid.Components.ExGrid<TRow>|95.4%|90.3%|
+|ExGrid.Components.ExGrid<TRow>|90.7%|85.6%|
 |ExGrid.Components.ExGridRow.ActionPaint<TRow>|100%||
 |ExGrid.Components.ExGridRow<TRow>|100%|94.7%|
 |ExGrid.Components.ExGridRow<TRow>|100%||
