@@ -60,7 +60,7 @@ public class FindReplaceTests : SheetTestContext
     }
 
     private static Task WithinWorkbookAsync(IRenderedComponent<SheetComponent> cut)
-        => cut.Find("input.ex-sheet-find-within-workbook").ChangeAsync(new ChangeEventArgs { Value = "on" });
+        => cut.Find("input.ex-sheet-find-within-workbook").ClickAsync(new MouseEventArgs());
 
     private static async Task FindAsync(IRenderedComponent<SheetComponent> cut, string text, bool backward = false)
     {
@@ -282,6 +282,31 @@ public class FindReplaceTests : SheetTestContext
         await ReplaceAllAsync(cut);
 
         Assert.Contains("No match", Outcome(cut));
+        Assert.False(cut.Instance.CanUndo);
+    }
+
+    [Fact] // ADR-0332 §4, §5: after a Replace All over the Workbook no match is current, so the next Replace finds one and writes nothing
+    public async Task ADR0332_replace_after_a_workbook_replace_all_finds_before_it_writes()
+    {
+        var cut = RenderWorkbook(Workbook(("One", "A1", "hotel"), ("Two", "A1", "travel")));
+        await GoToAsync(cut, "B5");
+        await TypeReplaceAsync(cut, "el", "EL");
+        await WithinWorkbookAsync(cut);
+        await ReplaceAsync(cut);
+        Assert.Equal(("Two", "A1"), (SelectedTab(cut), NameBox(cut)));
+        Assert.Contains("ex-match-mark-current", Cell(cut, "A1").ClassName);
+
+        await ReplaceAllAsync(cut);
+        Assert.Equal("travEL", EntryOn("Two", "A1"));
+        Assert.Empty(cut.FindAll(".ex-match-mark-current"));
+
+        // What was written still matches: the press finds, back on One, and writes nothing.
+        await ReplaceAsync(cut);
+        Assert.Equal(("One", "A1"), (SelectedTab(cut), NameBox(cut)));
+
+        Assert.True(await cut.Instance.UndoAsync());
+        Assert.Equal("hotel", EntryOn("One", "A1"));
+        Assert.Equal("travel", EntryOn("Two", "A1"));
         Assert.False(cut.Instance.CanUndo);
     }
 

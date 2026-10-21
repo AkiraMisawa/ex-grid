@@ -202,6 +202,10 @@ public sealed partial class Workbook
     /// the edits done before it are put back, and the count of changes with them. A Sheet operation
     /// (adding, renaming, moving, copying or deleting a Sheet) is done alone, with
     /// <see cref="Do(string, SheetEdit)"/>.
+    /// <para>Each edit is recalculated across the Workbook as it is done, before the next, and so is each
+    /// as it is undone or redone: the operation is not one recalculation but one per edit, its change
+    /// reporting them together once the last has completed. The Values it names are the last
+    /// recalculation's.</para>
     /// </summary>
     /// <param name="edits">The edits, each with the name of the Sheet it is done on; at least one.</param>
     /// <exception cref="ArgumentException">No edit is given, a Sheet operation is among them, or no Sheet of
@@ -410,7 +414,8 @@ public sealed partial class Workbook
 /// <summary>
 /// What one change to a Workbook did, Sheet by Sheet, reported after its recalculation has
 /// completed: every Value it names is already published, and all of them come from that one
-/// recalculation (ADR-0047, ADR-0331).
+/// recalculation (ADR-0047, ADR-0331) — or, for an operation of several edits, from the last of the
+/// recalculations its edits were done with, one after another.
 /// </summary>
 public sealed class WorkbookChange
 {
@@ -444,9 +449,10 @@ public sealed class WorkbookChange
 }
 
 /// <summary>
-/// One operation a Workbook has done on one of its Sheets, as one step of ExSheet's one undo stack
-/// (ADR-0048, ADR-0331): undoing it restores what it changed on that Sheet exactly, with one
-/// recalculation across the Workbook; redoing it does it again.
+/// One operation a Workbook has done on one of its Sheets, or on several
+/// (<see cref="Workbook.Do(IReadOnlyList{ValueTuple{string, SheetEdit}})"/>), as one step of ExSheet's one undo
+/// stack (ADR-0048, ADR-0331): undoing it restores what it changed exactly, with one recalculation across the
+/// Workbook for each edit it holds; redoing it does it again.
 /// </summary>
 public sealed class WorkbookStep
 {

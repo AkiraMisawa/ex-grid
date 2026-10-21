@@ -48,8 +48,8 @@ internal sealed class SheetFindPanel : ComponentBase
     private EventCallback<KeyboardEventArgs>? _keyDown;
     private EventCallback<ChangeEventArgs>? _matchCase;
     private EventCallback<ChangeEventArgs>? _wholeCell;
-    private EventCallback<ChangeEventArgs>? _withinSheet;
-    private EventCallback<ChangeEventArgs>? _withinWorkbook;
+    private EventCallback<MouseEventArgs>? _withinSheet;
+    private EventCallback<MouseEventArgs>? _withinWorkbook;
     private EventCallback? _previous;
     private EventCallback? _next;
     private EventCallback? _replace;
@@ -145,8 +145,8 @@ internal sealed class SheetFindPanel : ComponentBase
         builder.OpenElement(52, "legend");
         builder.AddContent(53, words(SheetFindLabelIds.Within));
         builder.CloseElement();
-        Within(builder, 60, "ex-sheet-find-within-sheet", SheetFindWithin.Sheet, _withinSheet ??= EventCallback.Factory.Create<ChangeEventArgs>(this, _ => ChooseWithin(SheetFindWithin.Sheet)), words(SheetFindLabelIds.WithinSheet));
-        Within(builder, 70, "ex-sheet-find-within-workbook", SheetFindWithin.Workbook, _withinWorkbook ??= EventCallback.Factory.Create<ChangeEventArgs>(this, _ => ChooseWithin(SheetFindWithin.Workbook)), words(SheetFindLabelIds.WithinWorkbook));
+        Within(builder, 60, "ex-sheet-find-within-sheet", SheetFindWithin.Sheet, _withinSheet ??= EventCallback.Factory.Create<MouseEventArgs>(this, _ => ChooseWithin(SheetFindWithin.Sheet)), words(SheetFindLabelIds.WithinSheet));
+        Within(builder, 70, "ex-sheet-find-within-workbook", SheetFindWithin.Workbook, _withinWorkbook ??= EventCallback.Factory.Create<MouseEventArgs>(this, _ => ChooseWithin(SheetFindWithin.Workbook)), words(SheetFindLabelIds.WithinWorkbook));
         builder.CloseElement();
 
         builder.OpenElement(80, "div");
@@ -200,7 +200,10 @@ internal sealed class SheetFindPanel : ComponentBase
         builder.CloseElement();
     }
 
-    private void Within(RenderTreeBuilder builder, int sequence, string cssClass, SheetFindWithin within, EventCallback<ChangeEventArgs> chosen, string label)
+    // A radio's choice is its click — a label's click, an arrow key in the group and a press all reach the
+    // radio as one — claimed on the radio alone and taken in its place in the Input Order (ADR-0240), so a
+    // step numbered before it searches where the panel searched then.
+    private void Within(RenderTreeBuilder builder, int sequence, string cssClass, SheetFindWithin within, EventCallback<MouseEventArgs> chosen, string label)
     {
         builder.OpenElement(sequence, "label");
         builder.OpenElement(sequence + 1, "input");
@@ -208,9 +211,10 @@ internal sealed class SheetFindPanel : ComponentBase
         builder.AddAttribute(sequence + 3, "name", _group);
         builder.AddAttribute(sequence + 4, "class", cssClass);
         builder.AddAttribute(sequence + 5, "checked", _within == within);
-        builder.AddAttribute(sequence + 6, "onchange", chosen);
+        builder.AddAttribute(sequence + 6, "data-ex-claims", "click");
+        builder.AddAttribute(sequence + 7, "onclick", chosen);
         builder.CloseElement();
-        builder.AddContent(sequence + 7, label);
+        builder.AddContent(sequence + 8, label);
         builder.CloseElement();
     }
 
@@ -237,10 +241,10 @@ internal sealed class SheetFindPanel : ComponentBase
         Find.ReplaceTextChanged?.Invoke(_replaceText);
     }
 
-    private void ChooseWithin(SheetFindWithin within)
+    private Task ChooseWithin(SheetFindWithin within)
     {
         _within = within;
-        Context.WithinChanged(within);
+        return Context.WithinChanged(within);
     }
 
     private void OnFieldKeyDown(KeyboardEventArgs e)

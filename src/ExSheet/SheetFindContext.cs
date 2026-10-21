@@ -31,8 +31,12 @@ public enum SheetFindWithin
 /// All over the Workbook.</param>
 /// <param name="Within">Where the panel searches as it opens: the Sheet shown, or the Workbook. ExSheet keeps
 /// it across a close and reopen, as the grid keeps the find text.</param>
-/// <param name="WithinChanged">The Chrome reports the user's choice of Within; the next step searches there.
-/// The Chrome shows the choice itself from then on: the context is not made again for it.</param>
+/// <param name="WithinChanged">The Chrome reports the user's choice of Within, a click taken in its place in the
+/// Input Order (ADR-0240): a step numbered after it searches there, one numbered before it where the panel
+/// searched until then. Call it from the click's handler as the handler starts, and return the task it gives;
+/// the control clicked claims its click (<c>data-ex-claims="click"</c>), as the panel's buttons do, and nothing
+/// else around it does. The Chrome shows the choice itself from then on: the context is not made again for
+/// it.</param>
 /// <param name="OutcomeText">What the last step or Replace came to, as one sentence, or the empty string for
 /// nothing to say: asked when the Chrome draws, so it is current after a Replace All the Chrome awaited.
 /// Written into a live region, as the grid holds no sentence (ADR-0033).</param>
@@ -44,7 +48,7 @@ public enum SheetFindWithin
 public sealed record SheetFindContext(
     FindContext Find,
     SheetFindWithin Within,
-    Action<SheetFindWithin> WithinChanged,
+    Func<SheetFindWithin, Task> WithinChanged,
     Func<string> OutcomeText,
     Func<FindOutcome> Outcome,
     Func<string, string> Words);

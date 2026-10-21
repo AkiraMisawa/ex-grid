@@ -69,6 +69,7 @@ ExGrid.Chrome.GridPopoverContext.InOrder.init -> void
 ExGrid.Clipboard.PasteRefusalReason.Cancelled = 13 -> ExGrid.Clipboard.PasteRefusalReason
 ExGrid.Clipboard.PasteRefusalReason.Unreadable = 12 -> ExGrid.Clipboard.PasteRefusalReason
 ExGrid.Components.ExGrid<TRow>.HandOffHeardAsync(int input = 0, ExGrid.Components.GridInputText? fieldText = null) -> System.Threading.Tasks.Task!
+ExGrid.Components.ExGrid<TRow>.ForgetCurrentMatch() -> void
 ExGrid.Components.ExGrid<TRow>.HandKeyboardToAsync(Microsoft.AspNetCore.Components.ElementReference control, bool preventScroll) -> System.Threading.Tasks.Task!
 ExGrid.Components.ExGrid<TRow>.FindMatch.get -> ExGrid.Finding.FindMatchOf<TRow!>?
 ExGrid.Components.ExGrid<TRow>.FindMatch.set -> void

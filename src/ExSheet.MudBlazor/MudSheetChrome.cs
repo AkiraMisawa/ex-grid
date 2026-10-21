@@ -177,7 +177,7 @@ public sealed class MudSheetChrome : ISheetChrome
 
     /// <summary>
     /// A Sheet's find panel in MudBlazor's controls (ADR-0332 §5): <see cref="Grid"/>'s find panel, control for
-    /// control, with Within as a <c>MudRadioGroup</c>. What a step finds and what Replace writes are ExSheet's,
+    /// control, with Within as two <c>MudButton</c>s, the chosen one filled. What a step finds and what Replace writes are ExSheet's,
     /// in <paramref name="context"/>.
     /// </summary>
     public RenderFragment? SheetFindPanel(SheetFindContext context)

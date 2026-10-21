@@ -13,7 +13,7 @@ namespace ExSheet.MudBlazor.Tests;
 
 /// <summary>
 /// A Sheet's find panel under the MudBlazor Chrome (ADR-0332 §5; find-and-replace ticket 04): ExGrid.MudBlazor's
-/// panel with Within as a MudRadioGroup, and every step and write meaning what it means under the built-in
+/// panel with Within as a pair of MudButtons, and every step and write meaning what it means under the built-in
 /// Chrome — ExSheet decides, the Chrome draws (the spine's fourth rule).
 /// </summary>
 public class MudSheetFindTests : MudSheetTestContext
@@ -55,12 +55,12 @@ public class MudSheetFindTests : MudSheetTestContext
         page.Find(".mud-ex-name-box").GetAttribute("value") ?? "";
 
     private static async Task WithinWorkbookAsync(IRenderedComponent<ContainerFragment> page)
-        => await page.Find(".mud-ex-sheet-find-within-workbook input").ClickAsync(new MouseEventArgs());
+        => await page.Find("button.mud-ex-sheet-find-within-workbook").ClickAsync(new MouseEventArgs());
 
     private static async Task TypeAsync(IRenderedComponent<ContainerFragment> page, string field, string text)
         => await page.Find($".{field} input").InputAsync(new ChangeEventArgs { Value = text });
 
-    [Fact] // ADR-0332 §5: the Sheet's panel is drawn in MudBlazor's controls, Within a MudRadioGroup with the Sheet chosen
+    [Fact] // ADR-0332 §5: the Sheet's panel is drawn in MudBlazor's controls, Within two MudButtons claiming their clicks, the Sheet chosen
     public async Task ADR0332_the_panel_is_drawn_in_mudblazors_controls_with_within()
     {
         var page = RenderWorkbook();
@@ -70,7 +70,10 @@ public class MudSheetFindTests : MudSheetTestContext
         var panel = page.Find(".ex-popover-find form.mud-ex-sheet-find");
         Assert.NotNull(panel.QuerySelector(".mud-ex-grid-find-field.mud-input-control"));
         Assert.NotNull(panel.QuerySelector(".mud-ex-grid-find-replace-field.mud-input-control"));
-        Assert.NotNull(panel.QuerySelector(".mud-ex-sheet-find-within .mud-radio-group"));
+        var sheet = panel.QuerySelector("button.mud-button-root.mud-ex-sheet-find-within-sheet")!;
+        var workbook = panel.QuerySelector("button.mud-button-root.mud-ex-sheet-find-within-workbook")!;
+        Assert.Equal(("radio", "true", "click"), (sheet.GetAttribute("role"), sheet.GetAttribute("aria-checked"), sheet.GetAttribute("data-ex-claims")));
+        Assert.Equal(("radio", "false", "click"), (workbook.GetAttribute("role"), workbook.GetAttribute("aria-checked"), workbook.GetAttribute("data-ex-claims")));
         Assert.Contains("Within", panel.QuerySelector(".mud-ex-sheet-find-within")!.TextContent);
         Assert.Contains("Sheet", panel.QuerySelector(".mud-ex-sheet-find-within-sheet")!.TextContent);
         Assert.Contains("Workbook", panel.QuerySelector(".mud-ex-sheet-find-within-workbook")!.TextContent);

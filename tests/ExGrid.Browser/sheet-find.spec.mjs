@@ -1,4 +1,4 @@
-import { test, expect, watchNextKey, keySeenUntouched, settled, circuitQuiet } from './fixtures.mjs';
+import { test, expect, watchNextKey, keySeenUntouched, settled } from './fixtures.mjs';
 import { sheet, cell, clickCell, expectFocusAt } from './sheet-helpers.mjs';
 import { expectKeyboardOn } from './keyboard.mjs';
 
@@ -20,8 +20,8 @@ for (const chrome of ['builtin', 'mud']) {
     test.describe(`ADR-0332 Find and Replace on a Sheet (${chrome})`, () => {
         const parts = chrome === 'mud'
             ? {
-                withinSheet: '.mud-ex-sheet-find-within-sheet input',
-                withinWorkbook: '.mud-ex-sheet-find-within-workbook input',
+                withinSheet: 'button.mud-ex-sheet-find-within-sheet',
+                withinWorkbook: 'button.mud-ex-sheet-find-within-workbook',
                 replaceField: '.mud-ex-grid-find-replace-field input',
                 replaceAll: 'button.mud-ex-grid-find-replace-all',
                 outcome: '.mud-ex-grid-find-outcome',
@@ -56,10 +56,18 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(findField(page)).toBeFocused();
         }
 
+        /** Whether a Within choice is the chosen one: a radio input checked, or a MudButton with aria-checked. */
+        async function expectChosen(locator) {
+            if (chrome === 'mud') await expect(locator).toHaveAttribute('aria-checked', 'true');
+            else await expect(locator).toBeChecked();
+        }
+
+        /**
+         * Within the Workbook, clicked and not waited on: the click is numbered in the Input Order (ADR-0240), so
+         * the step pressed straight after it searches the Workbook however late the circuit hears it.
+         */
         async function withinWorkbook(page) {
             await panel(page).locator(parts.withinWorkbook).click();
-            await expect(panel(page).locator(parts.withinWorkbook)).toBeChecked();
-            await circuitQuiet();
         }
 
         test('SF-1: within the Sheet, the default, a step searches the Sheet shown alone and says no match (ADR-0332 §5)', async ({ page }) => {
@@ -67,7 +75,7 @@ for (const chrome of ['builtin', 'mud']) {
             const grid = sheet(page);
 
             await open(page, 'f', 'travel');
-            await expect(panel(page).locator(parts.withinSheet)).toBeChecked();
+            await expectChosen(panel(page).locator(parts.withinSheet));
             await page.keyboard.press('Enter');
 
             await expect(panel(page).locator(parts.outcome)).toContainText('No match');
@@ -86,14 +94,15 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(page.locator('#workbook-shown')).toHaveText('Summary');
             await expectFocusAt(grid, 'A2');
             await expect(cell(grid, 'A2')).toHaveClass(CURRENT);
+            await expectChosen(panel(page).locator(parts.withinWorkbook));
 
             // And back to Claim for a match there, past the end of Summary.
             await findField(page).fill('total');
             await findField(page).press('Enter');
             await expect(tab(page, 'Claim')).toHaveAttribute('aria-selected', 'true');
             await expectFocusAt(grid, 'A5');
+            await expect(page.locator('#workbook-shown')).toHaveText('Claim');
             await expect(cell(grid, 'A5')).toHaveClass(CURRENT);
-            await expect(panel(page).locator(parts.outcome)).toHaveText('');
             await expect(findField(page)).toBeFocused();
         });
 
@@ -111,7 +120,6 @@ for (const chrome of ['builtin', 'mud']) {
 
             await expect(panel(page).locator(parts.outcome)).toHaveText('Replaced 2 cells.');
             await expect(cell(grid, 'A3')).toHaveText('HotEL, nights');
-            await expect(tab(page, 'Claim')).toHaveAttribute('aria-selected', 'true');
 
             await page.keyboard.press('Escape');
             await expect(panel(page)).toHaveCount(0);

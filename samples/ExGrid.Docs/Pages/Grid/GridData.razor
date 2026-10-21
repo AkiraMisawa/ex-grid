@@ -99,7 +99,14 @@
             hand it with them: <code>ShowViewWith(view, range, focus)</code> places <code>range</code> with the
             Focus on <code>focus</code> under the same version, and scrolls the Focus into view from the view's
             offsets, as <code>PlaceSelectionAsync</code> does among the rows already shown. ExSheet's Name Box takes
-            <code>Sheet2!B5</code> this way. An edit open as you show other rows stays open with the rows it was
+            <code>Sheet2!B5</code> this way. A find step your <code>OnFind</code> answers by showing other rows —
+            ExSheet's Find within the Workbook, finding the next match on another Sheet — hands the match with them:
+            <code>ShowViewWithMatch(view, match)</code> places the one cell as <code>ShowViewWith</code> places a
+            range, and if the find panel is open when the version is taken, that cell is the current match, marked
+            apart, and the cell Replace writes. Your answer cannot name a cell among rows the step was not asked
+            about, so it then gives the step up by throwing <code>OperationCanceledException</code>, and the step
+            moves nothing itself. When you write cells behind the grid's back — a Replace All over rows it does not
+            show — call <code>ForgetCurrentMatch()</code> first, so the next Replace finds before it writes. An edit open as you show other rows stays open with the rows it was
             opened among: its editor keeps the keyboard unseen, the Formula Bar shows its text, Point points at the
             rows shown, and its commit raises <code>OnEdit</code> with the row it was opened on. A view you read of its
             rows, handed back, brings the editor back over its cell. <code>ReadEditText()</code> reads the open

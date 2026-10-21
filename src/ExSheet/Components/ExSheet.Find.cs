@@ -51,7 +51,7 @@ public partial class ExSheet
     private sealed record OwnFindOutcome(FindOutcome Outcome, int Count, IReadOnlyList<FindPanelRefusedCell> Cells, int Events, int FocusRequest);
 
     // Delegates handed into the panel's context, made once (ADR-0003).
-    private Action<SheetFindWithin>? _withinChanged;
+    private Func<SheetFindWithin, Task>? _withinChanged;
     private Func<string>? _findOutcomeText;
     private Func<FindOutcome>? _findOutcome;
     private Func<string, string>? _findWords;
@@ -72,11 +72,13 @@ public partial class ExSheet
     {
         _replace = AnswerReplaceAsync;
         _findRefused = new EventCallback<FindRefusalReason>(null, (Action<FindRefusalReason>)(_ => _findEvents++));
-        _withinChanged = within =>
+        // A choice of Within is a click taken in its place in the Input Order (ADR-0240): a step numbered
+        // before it searches where the panel searched then, one numbered after it where it searches now.
+        _withinChanged = within => InOrderAsync(GridInputKind.Click, () =>
         {
             _findWithin = within;
             _ownFindOutcome = null;
-        };
+        });
         _findOutcomeText = FindOutcomeText;
         _findOutcome = () => FindSaid()?.Outcome ?? FindOutcome.None;
         _findWords = id => WordsTheGridSaid(id);
@@ -120,16 +122,24 @@ public partial class ExSheet
         _findEvents++;
         if (request.RowSequenceVersion != _sequence || _sheet is not { } shown)
             return GridReplaceResult.Replaced(0, _sequence);
-        var plan = SheetFind.PlanReplace([shown], request.Pattern, request.Replacement, SheetFind.PositionsOf(request.Columns), request.Scope);
+        // Answered under the version it was checked in, which the write does not move: a handler of the
+        // Consumer's that showed other rows meanwhile cannot turn a write that happened into "order changed".
+        var version = request.RowSequenceVersion;
+        var positions = SheetFind.PositionsOf(request.Columns);
+        var plan = SheetFind.PlanReplace([shown], request.Pattern, request.Replacement, positions, request.Scope);
         if (plan.Refused.Count > 0)
         {
             return GridReplaceResult.Refused(
                 [.. plan.Refused.Select(cell => new GridReplaceRefusedCell(cell.Address.Row, request.Columns[cell.Position], cell.Reason))],
-                _sequence);
+                version);
         }
-        if (plan.Writes.Count > 0)
-            await WriteReplacementsAsync(plan.Writes);
-        return GridReplaceResult.Replaced(plan.Writes.Count, _sequence);
+        if (plan.Writes.Count > 0 && await WriteReplacementsAsync(plan.Writes) is { } refused)
+        {
+            return GridReplaceResult.Refused(
+                [.. plan.Writes.Select(write => new GridReplaceRefusedCell(write.Address.Row, request.Columns[positions[write.Address.Column]], refused))],
+                version);
+        }
+        return GridReplaceResult.Replaced(plan.Writes.Count, version);
     }
 
     /// <summary>
@@ -149,6 +159,9 @@ public partial class ExSheet
             StateHasChanged();
             return;
         }
+        // The write moves the Focus nowhere, and no match is current after it, as after the grid's own
+        // Replace All (ADR-0332 §4): the next Replace finds one before it writes.
+        _grid?.ForgetCurrentMatch();
         var pattern = new GridFindPattern(_findTextSeen, _findMatchCaseSeen, _findWholeCellSeen);
         var plan = SheetFind.PlanReplace(workbook.Sheets, pattern, _replaceTextSeen);
         if (plan.Refused.Count > 0)
@@ -165,7 +178,14 @@ public partial class ExSheet
             return;
         }
         ClearNotice();
-        await WriteReplacementsAsync(plan.Writes);
+        if (await WriteReplacementsAsync(plan.Writes) is { } refused)
+        {
+            SayOwnFindOutcome(FindOutcome.ReplaceRefused, 0,
+                [.. plan.Writes.Select(write => new FindPanelRefusedCell(write.Address.Row + 1,
+                    SheetQualifier(write.Sheet) + CellAddress.ColumnName(write.Address.Column), refused))],
+                context.FocusRequest);
+            return;
+        }
         SayOwnFindOutcome(FindOutcome.Replaced, plan.Writes.Count, [], context.FocusRequest);
     }
 
@@ -185,16 +205,34 @@ public partial class ExSheet
     /// <summary>
     /// The replaced Entries, typed into their cells on whichever Sheets they lie, as one operation: one engine
     /// step across the Sheets (one change, ADR-0180), with the widths a typed number widens its column to, as
-    /// typing it would (ADR-0047), one step on the undo stack (ADR-0048).
+    /// typing it would (ADR-0047), one step on the undo stack (ADR-0048). One the engine refuses — a Formula it
+    /// cannot read after all, a Sheet that refuses the edit — writes nothing: it is said in the Sheet's notice,
+    /// as a typed one is, and its words are returned for the panel; null once written.
     /// </summary>
-    private async Task WriteReplacementsAsync(IReadOnlyList<SheetReplaceWrite> writes)
+    private async Task<string?> WriteReplacementsAsync(IReadOnlyList<SheetReplaceWrite> writes)
     {
         var workbook = CurrentWorkbook;
         var bySheet = writes.GroupBy(write => write.Sheet).ToList();
         var edits = bySheet
             .Select(group => (group.Key.Name, SheetEdit.Enter(group.Select(write => new KeyValuePair<CellAddress, string>(write.Address, write.Text)))))
             .ToList();
-        var step = workbook.Do(edits);
+        WorkbookStep step;
+        try
+        {
+            step = workbook.Do(edits);
+        }
+        catch (FormulaSyntaxException error)
+        {
+            var words = SheetWords.FormulaUnreadable(error);
+            Tell(words);
+            return words;
+        }
+        catch (SheetRefusedException refused)
+        {
+            var words = SheetWords.Refused(refused.Refusal);
+            Tell(words);
+            return words;
+        }
         var steps = new List<WorkbookStep> { step };
         var metrics = CellMetrics;
         foreach (var group in bySheet)
@@ -207,6 +245,7 @@ public partial class ExSheet
         }
         _history.Record(steps);
         await ChangedAsync([.. steps.Select(s => s.Change)]);
+        return null;
     }
 
     /// <summary>What the panel says now: ExSheet's own Replace All's outcome while it stands, else the grid's

@@ -19,7 +19,7 @@ ExSheet.ISheetChrome.SheetTabAdd() -> Microsoft.AspNetCore.Components.RenderFrag
 ExSheet.ISheetChrome.SheetTabMenu(ExSheet.SheetTabMenuContext! context) -> Microsoft.AspNetCore.Components.RenderFragment?
 ExSheet.SheetFindContext
 ExSheet.SheetFindContext.<Clone>$() -> ExSheet.SheetFindContext!
-ExSheet.SheetFindContext.Deconstruct(out ExGrid.Chrome.FindContext! Find, out ExSheet.SheetFindWithin Within, out System.Action<ExSheet.SheetFindWithin>! WithinChanged, out System.Func<string!>! OutcomeText, out System.Func<ExGrid.Finding.FindOutcome>! Outcome, out System.Func<string!, string!>! Words) -> void
+ExSheet.SheetFindContext.Deconstruct(out ExGrid.Chrome.FindContext! Find, out ExSheet.SheetFindWithin Within, out System.Func<ExSheet.SheetFindWithin, System.Threading.Tasks.Task!>! WithinChanged, out System.Func<string!>! OutcomeText, out System.Func<ExGrid.Finding.FindOutcome>! Outcome, out System.Func<string!, string!>! Words) -> void
 ExSheet.SheetFindContext.Equals(ExSheet.SheetFindContext? other) -> bool
 ExSheet.SheetFindContext.Find.get -> ExGrid.Chrome.FindContext!
 ExSheet.SheetFindContext.Find.init -> void
@@ -27,10 +27,10 @@ ExSheet.SheetFindContext.Outcome.get -> System.Func<ExGrid.Finding.FindOutcome>!
 ExSheet.SheetFindContext.Outcome.init -> void
 ExSheet.SheetFindContext.OutcomeText.get -> System.Func<string!>!
 ExSheet.SheetFindContext.OutcomeText.init -> void
-ExSheet.SheetFindContext.SheetFindContext(ExGrid.Chrome.FindContext! Find, ExSheet.SheetFindWithin Within, System.Action<ExSheet.SheetFindWithin>! WithinChanged, System.Func<string!>! OutcomeText, System.Func<ExGrid.Finding.FindOutcome>! Outcome, System.Func<string!, string!>! Words) -> void
+ExSheet.SheetFindContext.SheetFindContext(ExGrid.Chrome.FindContext! Find, ExSheet.SheetFindWithin Within, System.Func<ExSheet.SheetFindWithin, System.Threading.Tasks.Task!>! WithinChanged, System.Func<string!>! OutcomeText, System.Func<ExGrid.Finding.FindOutcome>! Outcome, System.Func<string!, string!>! Words) -> void
 ExSheet.SheetFindContext.Within.get -> ExSheet.SheetFindWithin
 ExSheet.SheetFindContext.Within.init -> void
-ExSheet.SheetFindContext.WithinChanged.get -> System.Action<ExSheet.SheetFindWithin>!
+ExSheet.SheetFindContext.WithinChanged.get -> System.Func<ExSheet.SheetFindWithin, System.Threading.Tasks.Task!>!
 ExSheet.SheetFindContext.WithinChanged.init -> void
 ExSheet.SheetFindContext.Words.get -> System.Func<string!, string!>!
 ExSheet.SheetFindContext.Words.init -> void

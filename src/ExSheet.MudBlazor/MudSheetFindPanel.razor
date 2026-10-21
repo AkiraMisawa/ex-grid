@@ -15,8 +15,11 @@
 @*
     A Sheet's find panel under MudBlazor (ADR-0332 §5): ExGrid.MudBlazor's find panel, control for control
     and class for class — a MudTextField, the two options as MudCheckBoxes, the two steps as MudButtons and,
-    opened by Ctrl+H, the replacement and Replace and Replace All — with Within added as a MudRadioGroup of
-    two choices, the Sheet shown or the Workbook. The search, the Focus it moves, the writes and what closes
+    opened by Ctrl+H, the replacement and Replace and Replace All — with Within added as two MudButtons that
+    act as a pair of radios, the Sheet shown or the Workbook, the chosen one filled. Not a MudRadioGroup: a
+    choice is a click taken in its place in the Input Order (ADR-0240), claimed by the element clicked
+    alone, and a MudRadio's label and its input are each clicked for one press, where a MudButton is
+    clicked once, as the panel's steps are. The search, the Focus it moves, the writes and what closes
     the panel are the grid's and ExSheet's; this draws and calls back, and says the outcome ExSheet words.
 
     Enter in a field is the browser's implicit submission — which an IME's candidate Enter is not — through a
@@ -36,12 +39,16 @@
     @* Within (ADR-0332 §5): the Sheet shown, the default, or the Workbook. *@
     <div class="mud-ex-sheet-find-within" role="group" aria-label="@Context.Words(SheetFindLabelIds.Within)">
         <MudText Typo="Typo.caption" HtmlTag="span">@Context.Words(SheetFindLabelIds.Within)</MudText>
-        <MudRadioGroup T="SheetFindWithin" Value="_within" ValueChanged="ChooseWithin">
-            <MudRadio T="SheetFindWithin" Value="SheetFindWithin.Sheet" Dense="true" Size="Size.Small"
-                      Class="mud-ex-sheet-find-within-sheet">@Context.Words(SheetFindLabelIds.WithinSheet)</MudRadio>
-            <MudRadio T="SheetFindWithin" Value="SheetFindWithin.Workbook" Dense="true" Size="Size.Small"
-                      Class="mud-ex-sheet-find-within-workbook">@Context.Words(SheetFindLabelIds.WithinWorkbook)</MudRadio>
-        </MudRadioGroup>
+        <div role="radiogroup" class="mud-ex-sheet-find-within-choices">
+            <MudButton Variant="@(_within == SheetFindWithin.Sheet ? Variant.Filled : Variant.Outlined)" Color="Color.Primary"
+                       Size="Size.Small" OnClick="_chooseSheet" data-ex-claims="click" role="radio"
+                       aria-checked="@(_within == SheetFindWithin.Sheet ? "true" : "false")"
+                       Class="mud-ex-sheet-find-within-sheet">@Context.Words(SheetFindLabelIds.WithinSheet)</MudButton>
+            <MudButton Variant="@(_within == SheetFindWithin.Workbook ? Variant.Filled : Variant.Outlined)" Color="Color.Primary"
+                       Size="Size.Small" OnClick="_chooseWorkbook" data-ex-claims="click" role="radio"
+                       aria-checked="@(_within == SheetFindWithin.Workbook ? "true" : "false")"
+                       Class="mud-ex-sheet-find-within-workbook">@Context.Words(SheetFindLabelIds.WithinWorkbook)</MudButton>
+        </div>
     </div>
     <div class="mud-ex-grid-find-actions">
         <MudButton Variant="Variant.Text" Size="Size.Small" StartIcon="@Icons.Material.Filled.KeyboardArrowUp"
@@ -150,10 +157,21 @@
         }
     }
 
-    private void ChooseWithin(SheetFindWithin within)
+    // Made once, so a render between two clicks keeps each button's handler (FD-6).
+    private EventCallback<MouseEventArgs> _chooseSheet;
+    private EventCallback<MouseEventArgs> _chooseWorkbook;
+
+    /// <inheritdoc />
+    protected override void OnInitialized()
+    {
+        _chooseSheet = EventCallback.Factory.Create<MouseEventArgs>(this, () => ChooseWithin(SheetFindWithin.Sheet));
+        _chooseWorkbook = EventCallback.Factory.Create<MouseEventArgs>(this, () => ChooseWithin(SheetFindWithin.Workbook));
+    }
+
+    private Task ChooseWithin(SheetFindWithin within)
     {
         _within = within;
-        Context.WithinChanged(within);
+        return Context.WithinChanged(within);
     }
 
     private void OnFieldKeyDown(KeyboardEventArgs e)
