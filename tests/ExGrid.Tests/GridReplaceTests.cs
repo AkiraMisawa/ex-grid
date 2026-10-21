@@ -319,6 +319,33 @@ public class GridReplaceTests
         Assert.Equal(["Rossi", "Rossi", "Osei"], keyed.Window.Select(t => t.Trader));
     }
 
+    [Fact] // ADR-0332 §3 / ADR-0141: a row changed under the plan applies nothing, and the answer is refused as the order having moved
+    public void A_row_changed_while_planning_applies_nothing()
+    {
+        var keyed = SourceOf(
+            [new("A", "Novak", 1m), new("B", "novak", 2m), new("C", "Osei", 3m)],
+            t => t.Book);
+        var request = Ask("novak", "Rossi", version: keyed.RowSequenceVersion);
+        var fed = false;
+
+        // A feed's change lands while the Consumer's write plans: row B is a newer instance by then.
+        var answer = keyed.Replace(request, (row, column, text) =>
+        {
+            if (!fed)
+            {
+                fed = true;
+                keyed.Apply(new GridChangeBatch<Trade>(changed: [new("B", "novak", 20m)]));
+            }
+            return Write(row, column, text);
+        });
+        keyed.PublishGathered();
+
+        Assert.NotEqual(request.RowSequenceVersion, answer.Result.RowSequenceVersion);
+        Assert.Empty(answer.Changes);
+        Assert.Equal(["Novak", "novak", "Osei"], keyed.Window.Select(t => t.Trader));
+        Assert.Equal(20m, keyed.Window[1].Notional);
+    }
+
     [Fact] // ADR-0332 §2: the entry is the editor's, where the Consumer passes one
     public void The_source_matches_the_entry_it_is_given()
     {

@@ -874,6 +874,7 @@
            field is the form's implicit submission, which an IME's candidate Enter is not. *@
         var findContext = BuildFindContext();
         <div class="ex-popover ex-popover-find" style="@FindPopoverStyle()" role="dialog"
+             data-ex-replace="@(findContext.ReplaceShown ? "" : null)"
              aria-label="@Label(findContext.ReplaceShown ? FindPanelLabelIds.ReplaceTitle : FindPanelLabelIds.Title)" @key="_popoverFocusRequest">
             <span class="ex-focus-wrap" tabindex="0" data-ex-claims="@ClaimKinds.Focus" @onfocus="ReturnToFindHandler"></span>
             <div class="ex-popover-find-body ex-popover-body">
@@ -884,6 +885,10 @@
                 else
                 {
                     <form class="ex-popover-form" data-ex-claims="@ClaimKinds.Submit" @onsubmit="SubmitFindHandler" @onsubmit:preventDefault>
+                        @* The default button Enter's implicit submission needs once the Replace field
+                           makes the form's second field, which without one submits nothing (as in the
+                           filter panel, KB-31). *@
+                        <button type="submit" class="ex-find-default" hidden tabindex="-1" aria-hidden="true"></button>
                         @FindField
                         <label>
                             <input type="checkbox" class="ex-find-match-case" checked="@_findMatchCase"
@@ -7786,6 +7791,22 @@
         {
             if (OnFindRefused.HasDelegate)
                 await OnFindRefused.InvokeAsync(FindRefusalReason.Unavailable);
+            return;
+        }
+        // The panel already open stays as it is, keyed as it was: only what it shows changes, and the
+        // keyboard goes to its field. Opened afresh, the keyboard would be reclaimed for the root on
+        // its way, and that reclaim lands behind or ahead of the field's focus as the round trip falls
+        // (ADR-0332, Ctrl+F from the panel with Replace).
+        if (_findOpen)
+        {
+            _findOutcome = FindOutcome.None;
+            _findCurrent = null;
+            _findReplace = false;
+            _replacedCount = 0;
+            _replaceRefused = [];
+            _chromeFocusOwed = true;
+            _findFocusRequest++;
+            _popoverFocusPending = PopoverFocus.FindField;
             return;
         }
         if (AnyPopoverOpen)

@@ -71,6 +71,9 @@
                 <code>OnEdit</code> Edit Intent, with the column's Edit Verdict. With no current match it finds one
                 first, so you see what the next press writes. A match in a column that is not Editable, a Reject,
                 or an intent you <code>Refuse</code> writes nothing, and the panel says which cell and why.
+                Replace moves as Find's steps do, so it reaches the cells whose shown text matches; a cell whose
+                entry matches and whose shown text does not (a number shown formatted) is reached by Replace All
+                only, and one whose shown text matches and whose entry does not is passed over.
             </li>
             <li>
                 <strong>Replace All</strong> is one <code>GridReplaceRequest</code>: Find's text and options, the

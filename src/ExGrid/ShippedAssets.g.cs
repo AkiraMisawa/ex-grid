@@ -15,10 +15,10 @@ internal static class ShippedAssets
     internal const string ScriptPath = "_content/ExGrid/ex-grid.min.js";
 
     /// <summary>The first 12 hex digits of the SHA-256 of that file as shipped: the version its address carries.</summary>
-    internal const string ScriptVersion = "96c65090e2cb";
+    internal const string ScriptVersion = "80bedc3741bd";
 
     /// <summary>The SHA-256 of <c>Assets/ex-grid.js</c>, which the shipped file names and answers: its stamp.</summary>
-    internal const string ScriptStamp = "136b8a7d88ba7cb316139898137c3c004b0cf7c4acfd93336c7da63893d01b68";
+    internal const string ScriptStamp = "720549ab900935829685bfa18d69ff0dbcb1f1cc8728d685932f59203fab22ea";
 
     /// <summary>Where the package serves <c>ex-grid.css</c>, minified, under the application's base.</summary>
     internal const string StylesheetPath = "_content/ExGrid/ex-grid.min.css";

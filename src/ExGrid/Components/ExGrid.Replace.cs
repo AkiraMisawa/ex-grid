@@ -183,6 +183,9 @@ public partial class ExGrid<TRow>
             RowSequenceVersion = _sequenceVersion,
         };
 
+        // The answer belongs to the Source it was asked of: one replaced meanwhile by another instance
+        // may count from 0 again under the same version, and its rows are not these (ADR-0142).
+        var binding = _binding;
         GridReplaceResult? answer = null;
         await HandleWriteAsync(async () => answer = await replace(request));
         if (_disposed)
@@ -191,7 +194,7 @@ public partial class ExGrid<TRow>
         await TakeInGatheredAsync();
         if (answer is null)
             throw new InvalidOperationException("ExGrid: OnReplace answered null; it answers with GridReplaceResult.Replaced or Refused (ADR-0332).");
-        if (answer.RowSequenceVersion != request.RowSequenceVersion)
+        if (answer.RowSequenceVersion != request.RowSequenceVersion || binding != _binding)
         {
             await RefuseFindAsync(FindRefusalReason.OrderChanged);
             return;

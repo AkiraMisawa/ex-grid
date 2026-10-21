@@ -467,7 +467,15 @@ public sealed class InMemoryGridSource<TRow> : IGridSource<TRow>, IBindsToOneCir
         ArgumentNullException.ThrowIfNull(request);
         ArgumentNullException.ThrowIfNull(write);
         var columns = _columns ?? [];
-        var answer = Finding.GridReplace.Plan(Window, RowSequenceVersion, request, name =>
+        // The result and its version read together, as one state of this source.
+        IReadOnlyList<TRow> rows;
+        int version;
+        lock (_gate)
+        {
+            rows = Window;
+            version = RowSequenceVersion;
+        }
+        var answer = Finding.GridReplace.Plan(rows, version, request, name =>
         {
             foreach (var column in columns)
             {
@@ -479,15 +487,19 @@ public sealed class InMemoryGridSource<TRow> : IGridSource<TRow>, IBindsToOneCir
             }
             return null;
         }, write);
-        if (answer.Changes.Count > 0)
-            ReplaceRows(answer.Changes);
+        // A row changed under the plan, by a change taken in while the Consumer's write planned:
+        // nothing is applied, and the answer is under no version the request was read in, which the
+        // grid refuses as the order having moved rather than write over the newer row.
+        if (answer.Changes.Count > 0 && !ReplaceRows(answer.Changes))
+            return new(Finding.GridReplaceResult.Replaced(0, ~request.RowSequenceVersion), []);
         return answer;
     }
 
     /// <summary>Applies a Replace All's rewritten rows as one change (ADR-0332 §3): each by identity,
     /// as <see cref="ReplaceRow"/> places one, every one checked before any is taken in, and the
-    /// result requeried once.</summary>
-    private void ReplaceRows(IReadOnlyList<Finding.GridReplacedRow<TRow>> changes)
+    /// result requeried once. False, with nothing applied, when a row under a Row Key is no longer
+    /// the version planned on.</summary>
+    private bool ReplaceRows(IReadOnlyList<Finding.GridReplacedRow<TRow>> changes)
     {
         RequireColumns();
         if (_keyed is { } keyed)
@@ -501,11 +513,7 @@ public sealed class InMemoryGridSource<TRow> : IGridSource<TRow>, IBindsToOneCir
                 {
                     var key = keyed.KeyOf(row, "The row");
                     if (!keyed.TryGet(key, out var held, out _) || !ReferenceEquals(held, row))
-                    {
-                        throw new ArgumentException(
-                            $"The row under the Row Key '{key}' is not the version this source holds: a Replace All is planned " +
-                            "on the rows as they are held (ADR-0141/0332).", nameof(changes));
-                    }
+                        return false;
                     if (!Equals(keyed.KeyOf(replacement, "The replacement"), key))
                     {
                         throw new ArgumentException(
@@ -521,7 +529,7 @@ public sealed class InMemoryGridSource<TRow> : IGridSource<TRow>, IBindsToOneCir
             }
             if (raise)
                 StateChanged?.Invoke();
-            return;
+            return true;
         }
 
         var index = new Dictionary<object, int>(_rows.Length, ReferenceEqualityComparer.Instance);
@@ -557,6 +565,7 @@ public sealed class InMemoryGridSource<TRow> : IGridSource<TRow>, IBindsToOneCir
             RowSequenceVersion++;
         Window = next;
         StateChanged?.Invoke();
+        return true;
     }
 
     /// <summary>Always: every row is in hand (ADR-0130).</summary>

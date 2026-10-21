@@ -796,6 +796,9 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // neither (null).
     const opensFind = (canonical) => (findKeys.has(canonical) ? canFind
         : replaceKeys.has(canonical) ? canReplace === true : null);
+    // The find panel showing Find alone, where Find's key selects the field's text. With Replace
+    // shown the key is the core's in every field: it turns the panel back into Find alone (ADR-0332).
+    const findAloneSelector = '.ex-popover-find:not([data-ex-replace])';
     const modifierKeys = new Set(['Shift', 'Control', 'Alt', 'Meta']);
 
     // What the gate decides a key is for (ADR-0010): 'popover' — the core's, and it opens a
@@ -870,9 +873,10 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
                 // selection instead of a caret and Ctrl+A would select the grid instead
                 // of the field's text.
                 // Ctrl+F in one of the grid's own popovers is the grid's too (ADR-0055, settled
-                // 2026-09-27): the browser's find would see only the painted rows. In the find
-                // field it selects the field's text, the field's own behaviour and no meaning of
-                // the core's; anywhere else in a popover it opens Find, as from the root. Ctrl+H
+                // 2026-09-27): the browser's find would see only the painted rows. In the field of
+                // a panel showing Find alone it selects the field's text, the field's own behaviour
+                // and no meaning of the core's; anywhere else in a popover, a panel showing Replace
+                // included, it opens Find alone, as from the root. Ctrl+H
                 // opens the panel with Replace from anywhere in a popover, its field included
                 // (ADR-0332). A Consumer's control in a Template cell keeps the key, as it keeps
                 // every other.
@@ -1050,7 +1054,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         onRoot: isRoot(event.target),
         inEditor: event.target instanceof Element && event.target.closest('.ex-editor') !== null,
         inPopover: popoverOf(event.target) !== null,
-        inFindField: isTextField(event.target) && event.target.closest('.ex-popover-find') !== null,
+        inFindField: isTextField(event.target) && event.target.closest(findAloneSelector) !== null,
         paint: paintNow(),
     });
 
@@ -2581,7 +2585,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             // key after it. In the find field it selects the text; anywhere else in a popover
             // the core is asked to open Find, and the keys after it wait for the panel.
             if (target && popoverOf(target) && opensFind(canonicalOf(k)) !== null) {
-                if (findKeys.has(canonicalOf(k)) && isTextField(target) && target.closest('.ex-popover-find')) {
+                if (findKeys.has(canonicalOf(k)) && isTextField(target) && target.closest(findAloneSelector)) {
                     target.select();
                     continue;
                 }

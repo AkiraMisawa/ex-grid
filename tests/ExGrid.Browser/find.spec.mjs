@@ -315,6 +315,30 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(panel.locator(replaceParts.field)).toHaveValue('Rossi');
         });
 
+        test('with Replace shown, Enter in either field finds the next match (ADR-0332, ADR-0055)', async ({ page }) => {
+            const panel = await openReplace(page, 'novak', 'Rossi');
+
+            // The keyboard is in the Replace field: the form's second field must not stop the step.
+            await page.keyboard.press('Enter');
+            await expect.poll(() => focusedCell(page)).toMatch(/r3c1$/);
+            await panel.locator('input').first().focus();
+            await page.keyboard.press('Enter');
+            await expect.poll(() => focusedCell(page)).toMatch(/r4c1$/);
+            // A step writes nothing.
+            await expect(grid(page).locator("[id$='r3c1']")).toHaveText('Novak');
+        });
+
+        test('Ctrl+F in a field of the panel with Replace turns it back into Find alone (ADR-0332)', async ({ page }) => {
+            const panel = await openReplace(page, 'novak', 'Rossi');
+
+            await page.keyboard.press('ControlOrMeta+f');
+            await expect(panel.locator(replaceParts.field)).toHaveCount(0);
+            await expect(panel.locator(replaceParts.all)).toHaveCount(0);
+            const field = panel.locator('input').first();
+            await expect(field).toBeFocused();
+            await expect(field).toHaveValue('novak');
+        });
+
         test('a match in a column that cannot be edited refuses Replace All, naming the cells (ADR-0332)', async ({ page }) => {
             // Alpha is every fourth row's Book, which is not Editable: nothing is written.
             const panel = await openReplace(page, 'alpha', 'Omega');

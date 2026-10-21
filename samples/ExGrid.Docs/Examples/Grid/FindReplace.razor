@@ -51,7 +51,9 @@
         var answer = _source.Replace(request, Write);
         if (answer.Changes.Count > 0)
             _undo.Push(answer.Changes);
-        _message = answer.Result.IsReplaced
+        _message = answer.Result.RowSequenceVersion != request.RowSequenceVersion
+            ? "Nothing replaced: the rows moved while it was asked."
+            : answer.Result.IsReplaced
             ? $"Replaced {answer.Result.Count} cells in one step."
             : $"Nothing replaced: {answer.Result.RefusedCells.Count} cells could not be written.";
         StateHasChanged();
