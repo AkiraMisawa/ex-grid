@@ -36,17 +36,17 @@
         @switch (filters.Values)
         {
             case AxisValues.Dates:
-                <MudDatePicker Label="From" Date="@AsDate(_from)" DateChanged="@(d => _from = AsText(d))" DateFormat="yyyy-MM-dd" Clearable="true" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mud-ex-chart-from" />
-                <MudDatePicker Label="To" Date="@AsDate(_to)" DateChanged="@(d => _to = AsText(d))" DateFormat="yyyy-MM-dd" Clearable="true" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mud-ex-chart-to" />
+                <MudDatePicker Label="From" Date="@AsDate(_from)" DateChanged="@(d => _from = AsText(d))" DateFormat="yyyy-MM-dd" Clearable="true" Variant="Variant.Outlined" Margin="Margin.Dense" ShrinkLabel="true" Class="mud-ex-chart-from" />
+                <MudDatePicker Label="To" Date="@AsDate(_to)" DateChanged="@(d => _to = AsText(d))" DateFormat="yyyy-MM-dd" Clearable="true" Variant="Variant.Outlined" Margin="Margin.Dense" ShrinkLabel="true" Class="mud-ex-chart-to" />
                 break;
             case AxisValues.Labels:
-                <MudSelect T="string" Label="From" @bind-Value="_from" Clearable="true" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mud-ex-chart-from">
+                <MudSelect T="string" Label="From" @bind-Value="_from" Clearable="true" Variant="Variant.Outlined" Margin="Margin.Dense" ShrinkLabel="true" Class="mud-ex-chart-from">
                     @foreach (var label in filters.Labels)
                     {
                         <MudSelectItem Value="@label">@label</MudSelectItem>
                     }
                 </MudSelect>
-                <MudSelect T="string" Label="To" @bind-Value="_to" Clearable="true" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mud-ex-chart-to">
+                <MudSelect T="string" Label="To" @bind-Value="_to" Clearable="true" Variant="Variant.Outlined" Margin="Margin.Dense" ShrinkLabel="true" Class="mud-ex-chart-to">
                     @foreach (var label in filters.Labels)
                     {
                         <MudSelectItem Value="@label">@label</MudSelectItem>
@@ -54,14 +54,14 @@
                 </MudSelect>
                 break;
             default:
-                <MudTextField T="string" Label="From" @bind-Value="_from" Placeholder="@filters.Hint" Clearable="true" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mud-ex-chart-from" />
-                <MudTextField T="string" Label="To" @bind-Value="_to" Placeholder="@filters.Hint" Clearable="true" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mud-ex-chart-to" />
+                <MudTextField T="string" Label="From" @bind-Value="_from" Placeholder="@filters.Hint" Clearable="true" Variant="Variant.Outlined" Margin="Margin.Dense" ShrinkLabel="true" Class="mud-ex-chart-from" />
+                <MudTextField T="string" Label="To" @bind-Value="_to" Placeholder="@filters.Hint" Clearable="true" Variant="Variant.Outlined" Margin="Margin.Dense" ShrinkLabel="true" Class="mud-ex-chart-to" />
                 break;
         }
-        <MudButton Variant="Variant.Outlined" Size="Size.Small" Class="mud-ex-chart-apply" OnClick="() => filters.Apply(_from, _to)">Apply</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" DropShadow="false" Class="mud-ex-chart-apply" OnClick="() => filters.Apply(_from, _to)">Apply</MudButton>
         @if (filters.Scale is { } scale)
         {
-            <MudSelect T="AxisScale" Label="Axis" Value="scale" ValueChanged="filters.SetScale" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mud-ex-chart-scale">
+            <MudSelect T="AxisScale" Label="Axis" Value="scale" ValueChanged="filters.SetScale" Variant="Variant.Outlined" Margin="Margin.Dense" ShrinkLabel="true" Class="mud-ex-chart-scale">
                 <MudSelectItem Value="AxisScale.Proportional">Proportional</MudSelectItem>
                 <MudSelectItem Value="AxisScale.Categories">Categories</MudSelectItem>
             </MudSelect>

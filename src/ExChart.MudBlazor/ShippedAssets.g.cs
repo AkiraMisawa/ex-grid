@@ -15,10 +15,10 @@ internal static class ShippedAssets
     internal const string StylesheetPath = "_content/ExChart.MudBlazor/mud-ex-chart.min.css";
 
     /// <summary>The first 12 hex digits of the SHA-256 of that file as shipped: the version its address carries.</summary>
-    internal const string StylesheetVersion = "97181f3a25c7";
+    internal const string StylesheetVersion = "5267e7064cfd";
 
     /// <summary>The SHA-256 of <c>Assets/mud-ex-chart.css</c>, which the shipped file names and answers: its stamp.</summary>
-    internal const string StylesheetStamp = "8bd761e58784038516d426f59cf0e15ad0512f57a4302ea31b9e54a8d4f461cf";
+    internal const string StylesheetStamp = "18a378abed1b1598569ec627d41cb498d78c1ac750e615bce90f8c19864ea043";
 
     /// <summary>The source's name, by which the stylesheet's notice rules find this package's notice.</summary>
     internal const string StylesheetName = "mud-ex-chart.css";
