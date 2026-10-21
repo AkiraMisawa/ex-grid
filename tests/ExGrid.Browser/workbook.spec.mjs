@@ -425,5 +425,61 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(tabNames(page)).toHaveText(['Claim', 'Summary']);
             await expect(page.locator('.ex-sheet-tab-area')).not.toHaveAttribute('data-ex-dragging', /.*/);
         });
+
+        test('WB-14/ADR-0331: a rename begun from the keys on a tab gives the keyboard back to the tab, so → typed at once selects the next', async ({ page }) => {
+            await openWorkbook(page);
+            const grid = sheet(page);
+            await clickCell(grid, 'B2');
+            await tab(page, 'Claim').focus();
+            await expect(tab(page, 'Claim')).toBeFocused();
+            await settled(grid);
+
+            await page.keyboard.press('Shift+F10');
+            await page.keyboard.press('Enter');
+            await page.keyboard.type('Costs');
+            await page.keyboard.press('Enter');
+            await page.keyboard.press('ArrowRight');
+            await settled(grid);
+
+            await expect(tabNames(page)).toHaveText(['Costs', 'Summary']);
+            await expect(tab(page, 'Summary')).toHaveAttribute('aria-selected', 'true');
+            await expect(tab(page, 'Summary')).toBeFocused();
+        });
+
+        test('WB-15/ADR-0331: a press on another tab while a name is edited commits it, and ↓ typed at once moves in the grid', async ({ page }) => {
+            await openWorkbook(page);
+            const grid = sheet(page);
+            await clickCell(grid, 'B2');
+            await settled(grid);
+
+            await tab(page, 'Claim').dblclick();
+            await page.keyboard.type('Costs');
+            await tab(page, 'Summary').click();
+            await page.keyboard.press('ArrowDown');
+            await settled(grid);
+
+            await expect(tabNames(page)).toHaveText(['Costs', 'Summary']);
+            await expect(tab(page, 'Summary')).toHaveAttribute('aria-selected', 'true');
+            await expect(page.locator('.ex-sheet-tab-name')).toHaveCount(0);
+            await expectKeyboardOn(grid);
+            await expect(cell(grid, 'B1')).toHaveText('4561.25');
+        });
+
+        test('WB-16/ADR-0331: + pressed while a name is edited commits it and gives the keyboard to the grid, so Ctrl+PageDown typed at once steps from the Sheet added', async ({ page }) => {
+            await openWorkbook(page);
+            const grid = sheet(page);
+            await clickCell(grid, 'B2');
+            await settled(grid);
+
+            await tab(page, 'Claim').dblclick();
+            await page.keyboard.type('Costs');
+            await page.locator('.ex-sheet-tab-add').click();
+            await page.keyboard.press('Control+PageDown');
+            await settled(grid);
+
+            await expect(tabNames(page)).toHaveText(['Costs', 'Sheet1', 'Summary']);
+            await expect(tab(page, 'Summary')).toHaveAttribute('aria-selected', 'true');
+            await expectKeyboardOn(grid);
+        });
     });
 }

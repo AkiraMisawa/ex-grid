@@ -104,11 +104,16 @@
                 var selected = sheet == _sheet;
                 if (_renaming == sheet)
                 {
-                    <span @key="sheet" class="ex-sheet-tab ex-sheet-tab-renaming" role="tab" aria-selected="@(selected ? "true" : "false")" @ref="_renameBox">
-                        <input type="text" class="ex-sheet-tab-name" aria-label="@SheetWords.SheetNameField" spellcheck="false" autocomplete="off"
-                               aria-invalid="@(_renameRefused ? "true" : null)" data-ex-claims="keydown"
-                               @bind:get="_renameText" @bind:set="SetRenameText" @bind:event="oninput" @onchange="OnRenameChanged"
-                               @onkeydown="OnRenameKeyAsync" @onkeydown:stopPropagation="true" @onfocusout="() => OnRenameLeftAsync(renameSession)" />
+                    @* The tab keeps its place in the Tab order while its name is edited. The keyboard is handed to the
+                       box inside it, which takes no focus itself, so the grid gives it to the field with its name
+                       selected. *@
+                    <span @key="sheet" class="ex-sheet-tab ex-sheet-tab-renaming" role="tab" aria-selected="@(selected ? "true" : "false")" tabindex="@(selected ? "0" : "-1")">
+                        <span class="ex-sheet-tab-name-box" @ref="_renameBox">
+                            <input type="text" class="ex-sheet-tab-name" aria-label="@SheetWords.SheetNameField" spellcheck="false" autocomplete="off"
+                                   aria-invalid="@(_renameRefused ? "true" : null)" data-ex-claims="keydown"
+                                   @bind:get="_renameText" @bind:set="SetRenameText" @bind:event="oninput" @onchange="OnRenameChanged"
+                                   @onkeydown="OnRenameKeyAsync" @onkeydown:stopPropagation="true" @onfocusout="() => OnRenameLeftAsync(renameSession)" />
+                        </span>
                     </span>
                 }
                 else

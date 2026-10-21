@@ -886,4 +886,129 @@ public class SheetTabOperationsTests : SheetTestContext
         Assert.Equal(["Two"], TabNames(cut));
         Assert.Empty(cut.FindAll(".ex-sheet-tab-menu"));
     }
+
+    // ---- Where the keyboard goes when a gesture on the tabs ends --------------------------------------
+
+    [Fact] // ADR-0331 §4: + pressed while a name is edited commits it and gives the keyboard, which the field held, to the grid; both are said
+    public async Task Plus_while_renaming_commits_the_name_and_gives_the_keyboard_to_the_grid()
+    {
+        var cut = RenderWorkbook(Sheets("One", "Two"));
+        await Tab(cut, "One").DoubleClickAsync(new MouseEventArgs());
+        await NameField(cut).InputAsync(new ChangeEventArgs { Value = "Costs" });
+        var returns = KeyboardReturns;
+
+        await cut.Find(".ex-sheet-tab-add").ClickAsync(new MouseEventArgs());
+
+        Assert.Equal(["Costs", "Sheet1", "Two"], TabNames(cut));
+        Assert.Equal(returns + 1, KeyboardReturns);
+        Assert.Equal("Sheet 'One' was renamed 'Costs'. Sheet 'Sheet1' was added.", Notice(cut));
+    }
+
+    [Fact] // ADR-0331 §4: + pressed while a refused name stands keeps the old name, gives the keyboard to the grid, and the refusal is still said
+    public async Task Plus_while_a_name_is_refused_keeps_the_refusal_said()
+    {
+        var cut = RenderWorkbook(Sheets("One", "Two"));
+        await RenameAsync(cut, "One", "Q1/Q2");
+        var returns = KeyboardReturns;
+
+        await cut.Find(".ex-sheet-tab-add").ClickAsync(new MouseEventArgs());
+
+        Assert.Equal(["One", "Sheet1", "Two"], TabNames(cut));
+        Assert.Equal(returns + 1, KeyboardReturns);
+        Assert.StartsWith("The Sheet was not renamed:", Notice(cut));
+        Assert.EndsWith("Sheet 'Sheet1' was added.", Notice(cut));
+    }
+
+    [Fact] // ADR-0331 §4: a drag while the menu is open closes it and gives the keyboard, which the menu held, to the grid
+    public async Task A_drag_while_the_menu_is_open_gives_the_keyboard_to_the_grid()
+    {
+        var cut = RenderWorkbook(Sheets("One", "Two"));
+        await OpenMenuAsync(cut, "Two");
+        var returns = KeyboardReturns;
+
+        await Tab(cut, "One").MouseDownAsync(new MouseEventArgs { Button = 0 });
+        await Tab(cut, "Two").MouseUpAsync(new MouseEventArgs { Button = 0 });
+
+        Assert.Equal(["Two", "One"], TabNames(cut));
+        Assert.Empty(cut.FindAll(".ex-sheet-tab-menu"));
+        Assert.Equal(returns + 1, KeyboardReturns);
+    }
+
+    [Fact] // ADR-0331 §4: a press on another tab commits a name being edited first, then shows its Sheet, the keyboard in the grid
+    public async Task A_press_on_another_tab_commits_the_name_first()
+    {
+        var cut = RenderWorkbook(Sheets("One", "Two"));
+        await Tab(cut, "One").DoubleClickAsync(new MouseEventArgs());
+        await NameField(cut).InputAsync(new ChangeEventArgs { Value = "Costs" });
+        var returns = KeyboardReturns;
+
+        await Tab(cut, "Two").ClickAsync(new MouseEventArgs());
+
+        Assert.Equal(["Costs", "Two"], TabNames(cut));
+        Assert.Empty(cut.FindAll(".ex-sheet-tab-name"));
+        Assert.Equal("Two", SelectedTab(cut));
+        Assert.Equal(returns + 1, KeyboardReturns);
+        Assert.Equal("Sheet 'One' was renamed 'Costs'.", Notice(cut));
+    }
+
+    [Fact] // ADR-0331 §4: a press on another tab closes an open menu first, then shows its Sheet
+    public async Task A_press_on_another_tab_closes_the_menu_first()
+    {
+        var cut = RenderWorkbook(Sheets("One", "Two"));
+        await OpenMenuAsync(cut, "One");
+        var returns = KeyboardReturns;
+
+        await Tab(cut, "Two").ClickAsync(new MouseEventArgs());
+
+        Assert.Empty(cut.FindAll(".ex-sheet-tab-menu"));
+        Assert.Equal("Two", SelectedTab(cut));
+        Assert.Equal(returns + 1, KeyboardReturns);
+    }
+
+    [Theory] // ADR-0331 §4: a rename begun from the keyboard on the tab list — Shift+F10, Rename — gives the keyboard back to the tab on Enter and on Escape
+    [InlineData("Enter", "Costs")]
+    [InlineData("Escape", "One")]
+    public async Task A_rename_from_the_tab_list_gives_the_keyboard_back_to_the_tab(string key, string name)
+    {
+        var cut = RenderWorkbook(Sheets("One", "Two"));
+        await Tab(cut, "One").KeyDownAsync(new KeyboardEventArgs { Key = "F10", ShiftKey = true });
+        await MenuKeyAsync(cut, "Enter");
+        // While the name is edited the tab list keeps a tab in the Tab order: the one being renamed.
+        Assert.Equal("0", cut.Find(".ex-sheet-tab-renaming").GetAttribute("tabindex"));
+        await NameField(cut).InputAsync(new ChangeEventArgs { Value = "Costs" });
+        var returns = KeyboardReturns;
+        var handed = HandedToCount;
+
+        await NameField(cut).KeyDownAsync(new KeyboardEventArgs { Key = key });
+
+        Assert.Equal([name, "Two"], TabNames(cut));
+        Assert.Equal(returns, KeyboardReturns);
+        Assert.Equal(handed + 1, HandedToCount);
+        Assert.Equal(TabReference(cut, name), LastHandedTo.Id);
+    }
+
+    [Fact] // ADR-0331 §4: a rename begun by a double click gives the keyboard back to the grid, as before
+    public async Task A_rename_from_a_double_click_gives_the_keyboard_to_the_grid()
+    {
+        var cut = RenderWorkbook(Sheets("One", "Two"));
+        await Tab(cut, "One").DoubleClickAsync(new MouseEventArgs());
+        var returns = KeyboardReturns;
+
+        await NameField(cut).KeyDownAsync(new KeyboardEventArgs { Key = "Escape" });
+
+        Assert.Equal(returns + 1, KeyboardReturns);
+    }
+
+    // The element reference ExSheet holds for the tab of the Sheet named `name`, as the grid is handed it.
+    private static string TabReference(IRenderedComponent<SheetComponent> cut, string name)
+    {
+        var tabs = (System.Collections.IDictionary)typeof(SheetComponent)
+            .GetField("_tabs", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
+            .GetValue(cut.Instance)!;
+        foreach (System.Collections.DictionaryEntry entry in tabs)
+        {
+            if (((Sheet)entry.Key).Name == name) return ((ElementReference)entry.Value!).Id;
+        }
+        return "";
+    }
 }

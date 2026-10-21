@@ -36,6 +36,12 @@ public partial class ExSheet
     private bool _renameRefused;
     private int _renameSession;
     private bool _renameEnding;
+    // Whether the edit was begun from the keyboard on the tab list (Shift+F10, Rename): Enter and Escape
+    // give the keyboard back to the tab, where it came from, and not to the grid.
+    private bool _renameFromTab;
+    // What ending a gesture on the tabs said — a name committed, or refused and kept — when the operation
+    // that ended it says something of its own: both are said, the first not lost under the second.
+    private string? _saidOnLeaving;
     private ElementReference _renameBox;
 
     // The tab's menu, the Sheet it acts on, the command the keyboard is on, whether the keyboard came
@@ -81,6 +87,8 @@ public partial class ExSheet
         _tabs.Clear();
         _renaming = null;
         _renameEnding = false;
+        _renameFromTab = false;
+        _saidOnLeaving = null;
         _renameRefused = false;
         _renameSession++;
         _menu = null;
@@ -137,32 +145,38 @@ public partial class ExSheet
     private async Task AddSheetAsync(bool before)
     {
         if (RefuseSheetOperationWhileEditing() || _sheet is not { } shown) return;
-        await LeaveTabGesturesAsync();
-        if (await DoSheetOperationAsync(shown, SheetEdit.InsertSheet(before: before), step => step.Sheet) is not { } step) return;
-        Tell(SheetWords.SheetAdded(step.Sheet.Name));
+        await LeaveTabGesturesAsync(KeyboardTo.Grid);
+        if (await DoSheetOperationAsync(shown, SheetEdit.InsertSheet(before: before), step => step.Sheet) is not { } step)
+        {
+            SayLeftOrClear();
+            return;
+        }
+        Say(SheetWords.SheetAdded(step.Sheet.Name));
         StateHasChanged();
     }
 
     // ---- Renaming ------------------------------------------------------------------------------
 
     /// <summary>A double click on a tab: its name is edited on the tab, in its place in the order.</summary>
-    private Task RenameByUserAsync(Sheet sheet) => InOrderAsync(GridInputKind.DoubleClick, () => BeginRenameAsync(sheet));
+    private Task RenameByUserAsync(Sheet sheet) => InOrderAsync(GridInputKind.DoubleClick, () => BeginRenameAsync(sheet, fromTab: false));
 
     /// <summary>
     /// Edits <paramref name="sheet"/>'s name on its tab, its whole name selected, the keyboard handed to
     /// the field through the grid within this input, so the keys typed straight after it are the field's.
+    /// <paramref name="fromTab"/>: begun from the keyboard on the tab list, where Enter and Escape give it back.
     /// </summary>
-    private async Task BeginRenameAsync(Sheet sheet)
+    private async Task BeginRenameAsync(Sheet sheet, bool fromTab)
     {
         if (RefuseSheetOperationWhileEditing() || _workbook is not { } workbook || !workbook.Sheets.Contains(sheet)) return;
         if (_renaming == sheet) return;
-        await LeaveTabGesturesAsync();
+        await LeaveTabGesturesAsync(KeyboardTo.Nowhere);
         if (sheet != _sheet)
         {
-            ClearNotice();
+            SayLeftOrClear();
             await ShowSheetAsync(sheet);
         }
         _renaming = sheet;
+        _renameFromTab = fromTab;
         _renameText = sheet.Name;
         _renameRefused = false;
         _renameSession++;
@@ -194,10 +208,10 @@ public partial class ExSheet
         switch (key.Key)
         {
             case "Enter":
-                await CommitRenameAsync(returnKeyboard: true);
+                await CommitRenameAsync(RenameKeyboardBack);
                 break;
             case "Escape":
-                await EndRenameAsync(returnKeyboard: true);
+                await EndRenameAsync(RenameKeyboardBack);
                 break;
         }
     });
@@ -208,27 +222,27 @@ public partial class ExSheet
     private Task OnRenameLeftAsync(int session) => InOrderAsync(GridInputKind.Focus, async () =>
     {
         if (_renaming is null || session != _renameSession) return;
-        if (!await CommitRenameAsync(returnKeyboard: false)) await EndRenameAsync(returnKeyboard: false);
+        if (!await CommitRenameAsync(KeyboardTo.Nowhere)) await EndRenameAsync(KeyboardTo.Nowhere);
     });
 
     /// <summary>
     /// Commits the name typed: one step, every Formula naming the Sheet rewritten (ADR-0331 §4). A name
     /// Excel's rules refuse — empty, longer than 31 characters, holding one of <c>: \ / ? * [ ]</c>, or
     /// another Sheet's — is refused by name, and the field stays, holding the keyboard. Answers whether
-    /// the edit ended.
+    /// the edit ended; the keyboard goes <paramref name="keyboard"/> as it ends.
     /// </summary>
-    private async Task<bool> CommitRenameAsync(bool returnKeyboard)
+    private async Task<bool> CommitRenameAsync(KeyboardTo keyboard)
     {
         if (_renaming is not { } sheet || _renameEnding) return true;
         if (!CurrentWorkbook.Sheets.Contains(sheet))
         {
-            await EndRenameAsync(returnKeyboard);
+            await EndRenameAsync(keyboard);
             return true;
         }
         var name = _renameText;
         if (string.Equals(name, sheet.Name, StringComparison.Ordinal))
         {
-            await EndRenameAsync(returnKeyboard);
+            await EndRenameAsync(keyboard);
             return true;
         }
         if (!Sheet.IsValidName(name, out var reason))
@@ -248,7 +262,7 @@ public partial class ExSheet
             return false;
         }
         _history.Record(step);
-        await EndRenameAsync(returnKeyboard);
+        await EndRenameAsync(keyboard);
         await ChangedAsync([step.Change]);
         Tell(SheetWords.SheetRenamed(from, sheet.Name));
         StateHasChanged();
@@ -262,19 +276,35 @@ public partial class ExSheet
         StateHasChanged();
     }
 
-    /// <summary>Ends the name's edit: the keyboard goes back to the grid first, when asked, while the field still holds it, and the field then goes.</summary>
-    private async Task EndRenameAsync(bool returnKeyboard)
+    // Where Enter and Escape in the name's field give the keyboard: back to the tab list when the edit was
+    // begun from it, else to the grid.
+    private KeyboardTo RenameKeyboardBack => _renameFromTab ? KeyboardTo.Tab : KeyboardTo.Grid;
+
+    /// <summary>
+    /// Ends the name's edit, the keyboard going <paramref name="keyboard"/>: back to the grid first, while
+    /// the field still holds it, and the field then goes; or, to the tab, once the tab is drawn again in the
+    /// field's place, within the same input, so the keys typed after it wait and reach the tab.
+    /// </summary>
+    private async Task EndRenameAsync(KeyboardTo keyboard)
     {
         // Ended once: an end asked again while the keyboard is on its way back — the Sheet taken away by an
         // undo meanwhile — finds it ending.
-        if (_renaming is null || _renameEnding) return;
+        if (_renaming is not { } sheet || _renameEnding) return;
         _renameEnding = true;
         _renameSession++;
-        if (returnKeyboard && _grid is { } grid) await grid.ReturnKeyboardAsync(_tabArea, static () => []);
+        if (keyboard == KeyboardTo.Tab && _workbook?.Sheets.Contains(sheet) != true) keyboard = KeyboardTo.Grid;
+        if (keyboard == KeyboardTo.Grid && _grid is { } grid) await grid.ReturnKeyboardAsync(_tabArea, static () => []);
         _renaming = null;
         _renameEnding = false;
+        _renameFromTab = false;
         _renameRefused = false;
-        StateHasChanged();
+        if (keyboard != KeyboardTo.Tab)
+        {
+            StateHasChanged();
+            return;
+        }
+        await DrawnAsync();
+        if (_renaming is null && _tabs.TryGetValue(sheet, out var tab) && _grid is { } tabs) await tabs.HandKeyboardToAsync(tab, preventScroll: true);
     }
 
     // ---- The tab's menu ------------------------------------------------------------------------
@@ -291,10 +321,10 @@ public partial class ExSheet
     {
         if (_menuSheet == sheet) return;
         if (RefuseSheetOperationWhileEditing() || _workbook is not { } workbook || !workbook.Sheets.Contains(sheet)) return;
-        await LeaveTabGesturesAsync();
+        await LeaveTabGesturesAsync(KeyboardTo.Nowhere);
         if (sheet != _sheet)
         {
-            ClearNotice();
+            SayLeftOrClear();
             await ShowSheetAsync(sheet);
         }
         _menuSheet = sheet;
@@ -446,8 +476,9 @@ public partial class ExSheet
         if (_menuSheet is not { } sheet || !CommandEnabled(kind, sheet, out _)) return;
         if (kind == SheetTabCommandKind.Rename)
         {
+            var fromTab = _menuFromTab;
             await CloseTabMenuAsync(KeyboardTo.Nowhere);
-            await BeginRenameAsync(sheet);
+            await BeginRenameAsync(sheet, fromTab);
             return;
         }
         await CloseTabMenuAsync(KeyboardTo.Grid);
@@ -494,7 +525,7 @@ public partial class ExSheet
         var sheets = workbook.Sheets;
         foreach (var gone in _tabs.Keys.Where(sheet => !sheets.Contains(sheet)).ToList()) _tabs.Remove(gone);
         foreach (var gone in _views.Keys.Where(sheet => !sheets.Contains(sheet)).ToList()) _views.Remove(gone);
-        if (_renaming is { } renaming && !sheets.Contains(renaming)) await EndRenameAsync(returnKeyboard: true);
+        if (_renaming is { } renaming && !sheets.Contains(renaming)) await EndRenameAsync(KeyboardTo.Grid);
         if (_menuSheet is { } menuSheet)
         {
             if (!sheets.Contains(menuSheet)) await CloseTabMenuAsync(KeyboardTo.Grid);
@@ -507,10 +538,34 @@ public partial class ExSheet
     }
 
     /// <summary>A name being edited is committed — or, refused, kept as it was — and a menu closes, before another gesture on the tabs.</summary>
-    private async Task LeaveTabGesturesAsync()
+    /// <remarks>The keyboard, which the field or the menu held, goes <paramref name="keyboard"/>: to the grid
+    /// for an operation that leaves it there — <c>+</c>, a drag, a press on another tab — so that it is not
+    /// left on the page's body as the field or the menu goes; nowhere for one that hands it on itself. What
+    /// the edit's end said is kept, and said with what the operation says next (<see cref="Say"/>).</remarks>
+    private async Task LeaveTabGesturesAsync(KeyboardTo keyboard)
     {
-        if (_renaming is not null && !await CommitRenameAsync(returnKeyboard: false)) await EndRenameAsync(returnKeyboard: false);
-        if (_menuSheet is not null) await CloseTabMenuAsync(KeyboardTo.Nowhere);
+        _saidOnLeaving = null;
+        if (_renaming is not null)
+        {
+            if (!await CommitRenameAsync(keyboard)) await EndRenameAsync(keyboard);
+            _saidOnLeaving = _notice;
+        }
+        if (_menuSheet is not null) await CloseTabMenuAsync(keyboard);
+    }
+
+    /// <summary>Says <paramref name="sentence"/>, after what ending a gesture on the tabs said, if it said anything.</summary>
+    private void Say(string sentence)
+    {
+        Tell(_saidOnLeaving is { } said ? said + " " + sentence : sentence);
+        _saidOnLeaving = null;
+    }
+
+    /// <summary>For an operation that says nothing of its own: what ending a gesture on the tabs said stands, else the notice is cleared.</summary>
+    private void SayLeftOrClear()
+    {
+        if (_saidOnLeaving is { } said) Tell(said);
+        else ClearNotice();
+        _saidOnLeaving = null;
     }
 
     // ---- Dragging ------------------------------------------------------------------------------
@@ -552,16 +607,21 @@ public partial class ExSheet
     {
         if (RefuseSheetOperationWhileEditing() || _workbook is not { } workbook || !workbook.Sheets.Contains(sheet)) return;
         if (target is not null && !workbook.Sheets.Contains(target)) return;
-        await LeaveTabGesturesAsync();
+        await LeaveTabGesturesAsync(KeyboardTo.Grid);
         var to = target is null ? workbook.Sheets.Count - 1 : IndexOf(workbook, target);
         if (to == IndexOf(workbook, sheet))
         {
+            SayLeftOrClear();
             if (sheet != _sheet) await ShowSheetAsync(sheet);
             return;
         }
         var name = sheet.Name;
-        if (await DoSheetOperationAsync(sheet, SheetEdit.MoveSheet(to), _ => sheet) is null) return;
-        Tell(SheetWords.SheetMoved(name, to + 1, workbook.Sheets.Count));
+        if (await DoSheetOperationAsync(sheet, SheetEdit.MoveSheet(to), _ => sheet) is null)
+        {
+            SayLeftOrClear();
+            return;
+        }
+        Say(SheetWords.SheetMoved(name, to + 1, workbook.Sheets.Count));
         StateHasChanged();
     }
 }

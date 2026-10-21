@@ -107,7 +107,10 @@ await sheet.DoAsync("Totals", SheetEdit.MoveSheet(0));</code></pre>
             <li>
                 <b>Rename.</b> Double-click a tab, or choose Rename on its menu, and the name is edited on the tab, all of
                 it selected. <kbd>Enter</kbd> commits it, <kbd>Escape</kbd> keeps the old one, and pressing elsewhere
-                commits it, as in Excel. Every Formula that names the Sheet is rewritten. A name Excel refuses (empty,
+                — another tab, <code>+</code> — commits it, as in Excel. Every Formula that names the Sheet is
+                rewritten. Begun from the keyboard on a tab, <kbd>Enter</kbd> and <kbd>Escape</kbd> give the keyboard
+                back to the tab; begun with the pointer, to the grid. While an IME composes, its <kbd>Enter</kbd> and
+                <kbd>Escape</kbd> are its own. A name Excel refuses (empty,
                 longer than 31 characters, holding one of <code>: \ / ? * [ ]</code>, beginning or ending with an
                 apostrophe, <code>History</code>, or another Sheet's name in any case) is refused, the notice says which
                 rule it broke, and the name stays open to correct.
@@ -121,7 +124,8 @@ await sheet.DoAsync("Totals", SheetEdit.MoveSheet(0));</code></pre>
             </li>
             <li>
                 <b>Drag.</b> Press a tab and release it on another: it takes that tab's place, and its Sheet is shown.
-                Released past the last tab it goes last; leaving the strip cancels the drag.
+                Released past the last tab, on <code>+</code> or the strip's empty end, it goes last; released anywhere
+                else in the strip, or taken off it, the drag ends with nothing moved.
             </li>
             <li>
                 <b>Each is one step, and is said.</b> <kbd>Ctrl</kbd> + <kbd>Z</kbd> undoes it; a deleted Sheet comes back

@@ -24,8 +24,18 @@ MudMenu, whose list MudBlazor draws outside the Sheet, where a click is not in t
 ExSheet's plain input under both Chromes, styled by the MudBlazor stylesheet. Shift+F11 is a key the Sheet
 now declares to its grid. The menu opens at the strip's start, above the tabs, not at the pointer: nothing is
 measured. The drag is Blazor's own mouse events, a press on a tab and its release on another or past the
-last, with no script (ADR-0021); leaving the strip cancels it. The one change to the script is a reorder
+last (the `+` button or the strip's empty end), with no script (ADR-0021); a release anywhere else in the
+strip, or the pointer leaving it, ends it with nothing moved. The one change to the script is a reorder
 within the tenth entry (ADR-0210): an Enter replayed into a text field outside the root, typed while held,
 first commits the held text with its change event, so the name typed at machine speed is the one Enter
 commits. A Sheet operation's undo shows the Sheet the engine shows (the one in the place of a Sheet taken
 away), until 08 decides it.
+
+**After review (2026-10-21):** a gesture whose Sheet leaves the Workbook (a Consumer's command, an undo)
+ends — the name's edit, the menu — with the keyboard back in the grid, and a menu command is judged again
+once its close has waited on the browser. An operation that ends a gesture holding the keyboard (`+`, a
+drag, a press on another tab) gives the keyboard to the grid and says what the ending said with what it
+says itself. A rename begun from the keyboard on a tab gives the keyboard back to that tab, and the tab
+being renamed keeps its place in the Tab order. An IME's composing keys are left to it in the name's
+field. The menu's focusout is taken in its turn in the Input Order. Each tab element is keyed by its
+Sheet, since an element reference is captured only as its element is made.

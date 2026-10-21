@@ -42,9 +42,13 @@ public partial class ExSheet
     /// Sheet's.</summary>
     private Task ShowSheetByUserAsync(Sheet sheet) => InOrderAsync(GridInputKind.Click, async () =>
     {
+        if (_workbook?.Sheets.Contains(sheet) != true) return;
+        // A name being edited on another tab is committed, or kept as it was, and a tab's menu closes, the
+        // keyboard back in the grid, before the Sheet pressed is shown (ticket 06).
+        await LeaveTabGesturesAsync(KeyboardTo.Grid);
         if (!RefuseSwitchWhileEditing(pointing: true))
         {
-            ClearNotice();
+            SayLeftOrClear();
             await ShowSheetAsync(sheet);
         }
     });
@@ -72,13 +76,15 @@ public partial class ExSheet
             case "ArrowLeft":
             case "ArrowRight":
                 if (RefuseSwitchWhileEditing()) return;
-                ClearNotice();
+                await LeaveTabGesturesAsync(KeyboardTo.Nowhere);
+                SayLeftOrClear();
                 if (await StepSheetAsync(key.Key == "ArrowLeft" ? -1 : 1)) await FocusSelectedTabAsync();
                 break;
             case "Home":
             case "End":
                 if (RefuseSwitchWhileEditing() || _workbook is not { } workbook) return;
-                ClearNotice();
+                await LeaveTabGesturesAsync(KeyboardTo.Nowhere);
+                SayLeftOrClear();
                 await ShowSheetAsync(key.Key == "Home" ? workbook.Sheets[0] : workbook.Sheets[^1]);
                 await FocusSelectedTabAsync();
                 break;
