@@ -158,6 +158,35 @@ public class LinkedTableTests
         Assert.Equal(["A1", "A2", "A3"], change.ValueChanges.Addresses());
     }
 
+    [Theory] // ADR-0049, ADR-0047: a column's name holding @ [ ] # or ' is stored escaped, and the stored text reads back as the same reference, again and again
+    [InlineData("=SUM(Positions[['@PV]])", "=SUM(Positions['@PV])", "@PV")]
+    [InlineData("=SUM(Positions[[PV'@EOD]])", "=SUM(Positions[PV'@EOD])", "PV@EOD")]
+    [InlineData("=SUM(Positions[['[x']]])", "=SUM(Positions['[x']])", "[x]")]
+    [InlineData("=SUM(Positions[[a'#b]])", "=SUM(Positions[a'#b])", "a#b")]
+    [InlineData("=SUM(Positions[[it''s]])", "=SUM(Positions[it''s])", "it's")]
+    [InlineData("=SUM(Positions[['@'['#''']]])", "=SUM(Positions['@'['#''']])", "@[#']")]
+    public void A_column_name_with_special_characters_round_trips(string typed, string stored, string column)
+    {
+        var first = Entry.Parse(typed, System.Globalization.CultureInfo.InvariantCulture)!;
+        Assert.Equal(stored, first.Formula);
+        var second = Entry.Parse(first.Formula!, System.Globalization.CultureInfo.InvariantCulture)!;
+        Assert.Equal(stored, second.Formula);
+
+        var sheet = NewSheet();
+        sheet.DeclareLinkedTable("Positions", ["Id", column]);
+        sheet.PushLinkedTable("Positions", [[T("R-1"), N(2)], [T("R-2"), N(40)]]);
+        sheet.Enter("A1", typed);
+        Assert.Equal(42, sheet.Number("A1"));
+
+        var document = sheet.ToDocument();
+        var reopened = Sheet.Open(SheetDocument.FromJson(document.ToJson()));
+        reopened.PushLinkedTable("Positions", [[T("R-1"), N(5)], [T("R-2"), N(37)]]);
+
+        Assert.Equal(stored, document.Cells.Single(c => c.Address == CellAddress.Parse("A1")).Entry!.Formula);
+        Assert.Equal(stored, reopened.ToDocument().Cells.Single(c => c.Address == CellAddress.Parse("A1")).Entry!.Formula);
+        Assert.Equal(42, reopened.Number("A1"));
+    }
+
     [Fact] // ADR-0049: declaring the same table again — as a Consumer does at start-up over a document that carries it — changes nothing
     public void An_identical_declaration_changes_nothing()
     {

@@ -108,7 +108,7 @@ public class WrittenFormulaTests
         Assert.Equal(stored, text);
     }
 
-    [Theory] // ADR-0330 §6: a column whose name begins or ends with a space, which Excel's structured reference does not keep, or holds @, which the engine stores unescaped where Excel reads the Formula's own row, is refused
+    [Theory] // ADR-0330 §6: a column whose name begins or ends with a space, which Excel's structured reference does not keep, or holds @, whose form in a file is still a question to Excel (ticket 07), is refused
     [InlineData("=SUM(Positions[PV ])")]
     [InlineData("=SUM(Positions[['@PV]])")]
     public void ADR0330_a_column_excel_would_read_otherwise_is_not_written(string formula)

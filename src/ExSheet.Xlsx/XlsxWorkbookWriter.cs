@@ -399,7 +399,7 @@ public static class XlsxWorkbookWriter
                         "The Formula reads, by a structured reference, a Linked Table or a column the Workbook does not declare; the file would hold no Excel Table of it for Excel to read.", sheet.Name, at.ToString(), formula);
                 case WrittenFormulaProblem.ColumnName:
                     throw new XlsxSaveException(XlsxSaveRefusal.Formula,
-                        "The Formula reads a Linked Table's column whose name begins or ends with a space, which a structured reference in Excel does not keep, or holds @, which ExSheet stores where Excel would read the row the Formula stands in.", sheet.Name, at.ToString(), formula);
+                        "The Formula reads a Linked Table's column whose name begins or ends with a space, which a structured reference in Excel does not keep, or holds @, whose form in a file Excel has not yet been asked (Excel reads [@PV] as the row the Formula stands in).", sheet.Name, at.ToString(), formula);
                 case WrittenFormulaProblem.Unreadable:
                     throw new XlsxSaveException(XlsxSaveRefusal.Formula,
                         "The Formula cannot be written as Excel stores it: its names do not bind as the engine binds them.", sheet.Name, at.ToString(), formula);

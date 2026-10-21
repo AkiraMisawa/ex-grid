@@ -41,10 +41,11 @@ toward `XlsxSaveOptions.MaxCells`, the header's included. The Sheet shown stays 
   - a Formula that reads, by a structured reference, a table or a column **no Linked Table declares** (the engine shows
     `#NAME?` or `#REF!`; Excel refuses such a Formula on entry, TABLE-011 and TABLE-013);
   - a Formula that reads a column whose name **begins or ends with a space**, which Excel's structured reference does not
-    keep, or **holds `@`**, which the engine stores unescaped (`Positions[@PV]`), where Excel reads the row the Formula
-    stands in.
+    keep, or **holds `@`**, whose form in a file ticket 07 asks Excel (Excel reads `Positions[@PV]` as the row the Formula
+    stands in).
 - **Opened again by ExSheet** (X1): with a Formula reading the table, the open is refused by name (`ExcelTable`); with
   none, the table's worksheet opens as a Sheet of its cells and the Open Report lists its Excel Table as not carried.
-- **Found, not fixed:** the engine stores a column whose name holds `@` unescaped (`=SUM(Positions[['@PV]])` is stored as
-  `=SUM(Positions[@PV])`), and its own lexer refuses that text, so such a Formula does not read back from a Sheet Document
-  either. It is the engine's (`FormulaText.WriteStructuredReference`); the writer refuses it by name.
+- **Found and fixed:** the engine stored a column whose name holds `@` unescaped (`=SUM(Positions[['@PV]])` was stored as
+  `=SUM(Positions[@PV])`), which its own lexer refuses, so such a Formula did not read back from a Sheet Document.
+  `FormulaText.WriteStructuredReference` now writes `'@`, as Excel's own form escapes it (`=SUM(Positions['@PV])`); the
+  writer still refuses such a column by name until ticket 07 settles its form in a file.

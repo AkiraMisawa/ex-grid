@@ -128,17 +128,19 @@ internal static class FormulaText
 
     /// <summary>
     /// A structured reference into a Linked Table, <c>Table[Column]</c> (ADR-0049), in single
-    /// brackets whatever the column's name holds, with <c>'</c> before each of <c>[ ] # '</c>:
+    /// brackets whatever the column's name holds, with <c>'</c> before each of <c>[ ] # ' @</c>:
     /// Excel writes <c>Positions[[Market Value]]</c> back as <c>Positions[Market Value]</c> and
     /// <c>Positions[[Rate'#]]</c> as <c>Positions[Rate'#]</c> (observed,
-    /// verification/2026-09-27-windows-excel). Double brackets are still read.
+    /// verification/2026-09-27-windows-excel). Double brackets are still read. An <c>@</c> is
+    /// escaped too, as Excel's own form escapes it: unescaped, the lexer refuses it, and Excel reads
+    /// <c>[@Column]</c> as the row the Formula stands in.
     /// </summary>
     internal static void WriteStructuredReference(StringBuilder text, string table, string column)
     {
         text.Append(table).Append('[');
         foreach (var c in column)
         {
-            if (c is '[' or ']' or '#' or '\'') text.Append('\'');
+            if (c is '[' or ']' or '#' or '\'' or '@') text.Append('\'');
             text.Append(c);
         }
         text.Append(']');

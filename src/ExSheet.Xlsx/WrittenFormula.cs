@@ -17,8 +17,8 @@ internal enum WrittenFormulaProblem
 
     /// <summary>
     /// A structured reference to a Linked Table's column whose name begins or ends with a space, which a structured reference
-    /// in Excel does not keep, or holds <c>@</c>, which the engine stores unescaped (<c>Positions[@PV]</c>), where Excel reads
-    /// the row the Formula stands in.
+    /// in Excel does not keep, or holds <c>@</c>: how a file stores one is not known yet (ticket 07), and Excel reads
+    /// <c>[@PV]</c> as the row the Formula stands in.
     /// </summary>
     ColumnName,
 
@@ -299,7 +299,7 @@ internal static partial class WrittenFormula
     /// <summary>
     /// The column a structured reference names, read from its <c>[</c> as the engine's lexer reads it — <c>[Column]</c> or
     /// <c>[[Column]]</c>, with <c>'</c> taking the next character as it is — or null where the engine reads none; then
-    /// <paramref name="at"/> says whether it met an <c>@</c>, which the engine stores unescaped in a column's name.
+    /// <paramref name="at"/> says whether it met an unescaped <c>@</c>, which the engine reads in no column's name.
     /// </summary>
     private static string? StructuredColumn(string formula, int open, out int after, out bool at)
     {
