@@ -34,6 +34,9 @@ ExGrid.Components.GridView.ScrollTopPx.get -> double
 ExGrid.Components.GridView.ScrollTopPx.init -> void
 ExGrid.Components.GridView.Selection.get -> ExGrid.Selection.GridSelection!
 ExGrid.Components.GridView.Selection.init -> void
+ExGrid.FetchingGridSource<TRow>.Shape.get -> System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<ExGrid.Data.DataShape!>>?
+ExGrid.FetchingGridSource<TRow>.Shape.set -> void
+ExGrid.FetchingGridSource<TRow>.ShapeAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<ExGrid.Data.DataShape?>
 ExGrid.GridViewSpec
 ExGrid.GridViewSpecReading
 ExGrid.GridViewSpecReading.<Clone>$() -> ExGrid.GridViewSpecReading!

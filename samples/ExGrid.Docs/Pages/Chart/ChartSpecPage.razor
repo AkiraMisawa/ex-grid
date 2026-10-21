@@ -48,6 +48,16 @@
         </p>
     </DocsSection>
 
+    <DocsSection Title="One view of a Board">
+        <p>
+            A Chart Spec is also one view of an <a href="exboard">ExBoard</a>, beside grids and pivots, where its
+            <code>data</code> names a Board Input declared with its columns and types instead of a Data Handle, which
+            lives for one conversation (ADR-0340). <code>draw_chart</code> stays as it is, and a host that draws its
+            chart with ExBoard makes the spec a Board of one view with <code>BoardSpec.OfChart</code>; the ExBoard
+            page runs it.
+        </p>
+    </DocsSection>
+
     <DocsSection Title="Following the data">
         <p>
             A Snapshot never changes in place; its next version is a new one. A chart drawn from a spec follows its

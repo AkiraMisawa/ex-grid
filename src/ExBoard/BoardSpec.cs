@@ -1,4 +1,5 @@
 using System.Text.Json;
+using ExChart.Engine;
 using ExGrid;
 using ExGrid.Data;
 using ExPivot.Engine;
@@ -126,9 +127,11 @@ public sealed record BoardCell(string View, int Width);
 /// <see cref="Version"/>; a member the Board does not have; an input's declaration
 /// (<see cref="BoardInput.Read"/>); a view with no id, an id twice, or other than one of grid, pivot and
 /// chart; a view naming an input the Board does not declare, or a column or field the input does not
-/// declare; a pivot layout its reader refuses; and a layout that places a view twice, leaves one out,
+/// declare; a pivot layout its reader refuses; a Chart Spec its reader refuses when read against the
+/// declarations, a column they do not declare included; and a layout that places a view twice, leaves one out,
 /// names one that is not there, or gives widths or heights that are no widths or heights; and a link
-/// (<see cref="BoardLink"/>) from a view that is not a grid, to a view that is not there, to its own
+/// (<see cref="BoardLink"/>) from a view that is not a grid or a pivot, on a field a pivot does not place
+/// in its rows or columns, to a view that is not there, to its own
 /// view or one that narrows it, on a column its views' inputs do not all declare of one kind; and an
 /// output (<see cref="BoardOutputDeclaration"/>) from a view that is not a grid, on a column its input
 /// does not declare, or with no confirm action to raise it.</para>
@@ -166,6 +169,92 @@ public static class BoardSpec
         using (document)
             return Read(document.RootElement);
     }
+
+    /// <summary>
+    /// A Chart Spec as a Board of one view (ADR-0320 as rewritten by ADR-0340, Q4), as <c>draw_chart</c>
+    /// draws it while an AI composes: each Data Handle the spec names becomes an input declared with the
+    /// shape of the table the host holds for it, and the spec is the Board's one view, <see cref="ChartViewId"/>.
+    /// Bind it with each handle's Snapshot under the handle's name. The spec is read first as the tool reads
+    /// it, so a handle the host does not know, or a spec the tool refuses, is refused with the spec's own path.
+    /// </summary>
+    /// <param name="chartSpec">The Chart Spec, as <c>draw_chart</c> takes it.</param>
+    /// <param name="tables">The shape of each table the host holds, by its Data Handle.</param>
+    /// <exception cref="BoardRefusedException">The spec cannot be drawn; the path is the spec's own.</exception>
+    public static BoardReading OfChart(string chartSpec, IReadOnlyDictionary<string, DataShape> tables)
+    {
+        ArgumentNullException.ThrowIfNull(chartSpec);
+        ArgumentNullException.ThrowIfNull(tables);
+        var named = new List<string>();
+        try
+        {
+            ChartSpec.Read(chartSpec, handle =>
+            {
+                if (!tables.TryGetValue(handle, out var shape))
+                    return null;
+                if (!named.Contains(handle))
+                    named.Add(handle);
+                return new DeclaredColumns(shape);
+            });
+        }
+        catch (ChartSpecRefusedException e)
+        {
+            throw new BoardRefusedException(e.Path, e.Message);
+        }
+        var buffer = new System.Buffers.ArrayBufferWriter<byte>();
+        using (var json = new Utf8JsonWriter(buffer))
+        {
+            json.WriteStartObject();
+            json.WriteNumber("version", Version);
+            json.WriteStartObject("inputs");
+            foreach (var handle in named)
+            {
+                json.WriteStartObject(handle);
+                json.WriteStartArray("columns");
+                foreach (var column in tables[handle].Columns)
+                {
+                    json.WriteStartObject();
+                    json.WriteString("name", column.Name);
+                    json.WriteString("type", BoardInput.NameOf(column.Kind));
+                    json.WriteEndObject();
+                }
+                json.WriteEndArray();
+                json.WriteEndObject();
+            }
+            json.WriteEndObject();
+            json.WriteStartArray("views");
+            json.WriteStartObject();
+            json.WriteString("id", ChartViewId);
+            json.WritePropertyName("chart");
+            json.WriteRawValue(chartSpec);
+            json.WriteEndObject();
+            json.WriteEndArray();
+            json.WriteStartArray("layout");
+            json.WriteStartObject();
+            json.WriteStartArray("views");
+            json.WriteStringValue(ChartViewId);
+            json.WriteEndArray();
+            json.WriteEndObject();
+            json.WriteEndArray();
+            json.WriteEndObject();
+        }
+        try
+        {
+            return Read(System.Text.Encoding.UTF8.GetString(buffer.WrittenSpan));
+        }
+        catch (BoardRefusedException e)
+        {
+            // Anything else is in the inputs made from the host's tables, which the spec does not write. A
+            // DataShape already holds only what an input declares, so this is a guard, not a path taken.
+            throw e.Path.StartsWith(ChartPath, StringComparison.Ordinal)
+                ? new BoardRefusedException(e.Path[ChartPath.Length..].TrimStart('.'), e.Message)
+                : new BoardRefusedException("", $"A table the spec names cannot be a Board Input: {e.Message}");
+        }
+    }
+
+    /// <summary>The id of the one view of a Board <see cref="OfChart"/> makes.</summary>
+    public const string ChartViewId = "chart";
+
+    private const string ChartPath = "views[0].chart";
 
     private static BoardReading Read(JsonElement root)
     {
@@ -413,8 +502,8 @@ public static class BoardSpec
     {
         if (spec.ValueKind != JsonValueKind.Object)
             throw new BoardRefusedException(path, "A chart is a Chart Spec, an object.");
-        // The spec is the Chart Spec's to read; here only the inputs its series name are checked, so
-        // that a chart reading an input the Board does not declare is refused with the rest.
+        // The inputs its series name are checked first, so that one the Board does not declare is said
+        // in the Board's words; the rest is the Chart Spec's reader's, below.
         var data = new List<string>();
         if (spec.TryGetProperty("series", out var series) && series.ValueKind == JsonValueKind.Array)
         {
@@ -429,7 +518,29 @@ public static class BoardSpec
                     CheckChartData(edges, $"{at}.edges", shape, data);
             }
         }
-        return new BoardChartView(id, title, spec.GetRawText(), data);
+        // Read once against the declarations alone, with no rows, so that a series naming a column its
+        // input does not declare, or a spec its reader refuses, is refused now, by path, with the rest of
+        // the Board, not when data is first bound (ADR-0320 as rewritten by ADR-0340, Q4).
+        var raw = spec.GetRawText();
+        try
+        {
+            ChartSpec.Read(raw, name => shape(name) is { } declared ? new DeclaredColumns(declared) : null);
+        }
+        catch (ChartSpecRefusedException e)
+        {
+            throw new BoardRefusedException(e.Path.Length == 0 ? path : $"{path}.{e.Path}", e.Message);
+        }
+        return new BoardChartView(id, title, raw, data);
+    }
+
+    // An input's declared columns as a table of no rows.
+    private sealed class DeclaredColumns(DataShape shape) : IChartData
+    {
+        public IReadOnlyList<string> Columns { get; } = [.. shape.Columns.Select(c => c.Name)];
+
+        public int RowCount => 0;
+
+        public object? Value(string column, int row) => throw new ArgumentOutOfRangeException(nameof(row), "A declaration holds no rows.");
     }
 
     private static void CheckChartData(JsonElement owner, string path, Func<string, DataShape?> shape, List<string> data)

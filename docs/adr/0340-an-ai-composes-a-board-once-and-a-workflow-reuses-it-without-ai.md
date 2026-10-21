@@ -183,3 +183,16 @@ here so they are not re-derived:
   a filter, or not placed, is refused by path, since no cell names it.
 - **A pivot narrowed again, or given a new layout, lets go of what its cells narrowed at once**, as a
   grid does: its report is computed again and its selection dropped (ADR-0011).
+
+*The Chart Spec as a view, 2026-10-21 (ExBoard ticket 08).*
+
+- **A chart view is read against its inputs' declarations when the Board is read**, by the Chart
+  Spec's own reader over tables of no rows that hold the declared columns. A series on a column its
+  input does not declare, or anything else the reader refuses, is refused then, by its path under the
+  view, not when data is first bound. A column's kind is not checked there: the reader checks kinds by
+  the values it reads, and binding checks the source's shape against the declaration (ADR-0341), so a
+  kind can only be wrong in data that binding has already refused.
+- **`draw_chart` stays as it is**, naming Data Handles. `BoardSpec.OfChart` makes its spec a Board of
+  one view, `chart`: each handle the spec names, and only those, becomes an input declared with the
+  shape of the table the host holds for it, and a refusal keeps the spec's own path, as the tool says
+  it. The tool's answer is still `ChartSpec.Answer`; the Board is how a host draws it beside the rest.

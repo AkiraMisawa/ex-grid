@@ -37,3 +37,20 @@ it: a tool's result is usually JSON, which tells no decimal from a double, no in
 - The declaration, the check and the JSON conversion live in `ExGrid.Data`, used by every product.
 - A source held on a server gains a call that answers its shape; ADR-0322's Chart Source and the
   bundled grid and pivot sources each say it.
+
+## Implementation notes
+
+*A source answers its shape, 2026-10-21 (ExBoard ticket 02).*
+
+- **One call, `IShapedSource.ShapeAsync`**, in `ExGrid.Data`, answers a `DataShape` or null for a
+  source that was given none to say. `BoardInput.CheckAsync` asks it and checks the answer as
+  `Check` checks a Snapshot's own; a null is refused, since kinds are never inferred from rows.
+- **The bundled fetching grid source and the fetching report source take a `Shape` call** that asks
+  the server, set before the source is bound: a property, not a parameter of their factories, whose
+  shipped signatures stay as they are. A report source over a Snapshot, records' included, answers
+  the Snapshot's own; any other `PivotReportSource` answers none unless it says otherwise.
+- **An Arrow stream's schema answers it** (`SnapshotArrow.ReadShapeAsync`): the first message alone,
+  by ADR-0065's table, the stream left at its first record batch. An Arrow file, whose schema is in its
+  footer after its rows, is refused rather than read whole.
+- **ADR-0322's Chart Source is not built yet**, so it gains the call when it is. A chart in a Board
+  reads Snapshots today, whose shape is their own.

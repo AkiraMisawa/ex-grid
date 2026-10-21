@@ -2,6 +2,7 @@
 abstract ExBoard.BoardView.<Clone>$() -> ExBoard.BoardView!
 abstract ExBoard.BoardView.Data.get -> System.Collections.Generic.IReadOnlyList<string!>!
 const ExBoard.BoardDiff.Version = 1 -> int
+const ExBoard.BoardSpec.ChartViewId = "chart" -> string!
 const ExBoard.BoardSpec.DefaultRowHeight = 320 -> double
 const ExBoard.BoardSpec.Version = 1 -> int
 const ExBoard.Components.ExBoard.Gap = 12 -> double
@@ -253,6 +254,7 @@ static ExBoard.BoardReading.operator !=(ExBoard.BoardReading? left, ExBoard.Boar
 static ExBoard.BoardReading.operator ==(ExBoard.BoardReading? left, ExBoard.BoardReading? right) -> bool
 static ExBoard.BoardRow.operator !=(ExBoard.BoardRow? left, ExBoard.BoardRow? right) -> bool
 static ExBoard.BoardRow.operator ==(ExBoard.BoardRow? left, ExBoard.BoardRow? right) -> bool
+static ExBoard.BoardSpec.OfChart(string! chartSpec, System.Collections.Generic.IReadOnlyDictionary<string!, ExGrid.Data.DataShape!>! tables) -> ExBoard.BoardReading!
 static ExBoard.BoardSpec.Read(string! json) -> ExBoard.BoardReading!
 static ExBoard.BoardView.operator !=(ExBoard.BoardView? left, ExBoard.BoardView? right) -> bool
 static ExBoard.BoardView.operator ==(ExBoard.BoardView? left, ExBoard.BoardView? right) -> bool
