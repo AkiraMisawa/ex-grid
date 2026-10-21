@@ -176,7 +176,12 @@
             <code>keydown</code>, <code>submit</code> — as the built-in and MudBlazor ones do. Its handler then calls
             the grid through the context's delegates every time that event comes: a menu resolves the key through
             <code>ResolveKey</code>, and a filter form hands each submission to <code>Apply</code>, one that cannot
-            be applied as the answer <code>Apply</code> refuses (an <code>In</code> with no values). A claimed
+            be applied as the answer <code>Apply</code> refuses (an <code>In</code> with no values). A find panel
+            hands its steps to <code>FindContext.Next</code> and <code>Previous</code>, and each tick of its two
+            options to <code>MatchCaseChanged</code> and <code>WholeCellChanged</code>, which return a
+            <code>Task</code> the handler returns in turn; the claim goes on the checkbox itself
+            (a <code>MudCheckBox</code> passes it there), not on a label around it, whose click the browser
+            passes on to the checkbox as a second one. A claimed
             event that never reaches the grid leaves the keys after it waiting for the next one.
         </p>
         <p>

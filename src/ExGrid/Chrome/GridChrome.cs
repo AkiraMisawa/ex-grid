@@ -352,7 +352,13 @@ public sealed record CellEditorContext(
 /// <para><see cref="Text"/>, <see cref="MatchCase"/> and <see cref="WholeCell"/> are what the
 /// panel shows; the Chrome reports changes through <see cref="TextChanged"/>,
 /// <see cref="MatchCaseChanged"/> and <see cref="WholeCellChanged"/>, and the core keeps them
-/// across a close and reopen within the instance, as Excel's dialog keeps its last search.
+/// across a close and reopen within the instance, as Excel's dialog keeps its last search. A tick of
+/// either option is a click taken in its place in the Input Order (ADR-0240), as a step is: a step
+/// numbered before it searches with the option as it stood, one numbered after it with the option
+/// ticked. The Chrome calls the callback from the change's handler as the handler starts and returns
+/// the task it gives, and the option's control — the checkbox itself, not a label around it, which a
+/// browser clicks again on the checkbox — claims its click (<c>data-ex-claims="click"</c>).
+/// <see cref="MatchCase"/> and <see cref="WholeCell"/> show the change once the core has taken it.
 /// <see cref="Next"/> and <see cref="Previous"/> run a step — Enter and Shift+Enter in the
 /// field, and whatever buttons the Chrome draws. <see cref="Outcome"/> is what the last step
 /// came to; the grid holds no sentence for it, so the Chrome words it, into a live region
@@ -374,8 +380,8 @@ public sealed record FindContext(
     bool WholeCell,
     Finding.FindOutcome Outcome,
     Action<string> TextChanged,
-    Action<bool> MatchCaseChanged,
-    Action<bool> WholeCellChanged,
+    Func<bool, Task> MatchCaseChanged,
+    Func<bool, Task> WholeCellChanged,
     Func<Task> Next,
     Func<Task> Previous,
     Action Close,

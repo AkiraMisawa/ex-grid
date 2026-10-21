@@ -155,7 +155,7 @@ public class MudSheetPackageTests : MudSheetTestContext
         var chrome = new MudSheetChrome { Grid = new MudGridChrome { Label = id => id == FindPanelLabelIds.Next ? "Weiter" : null } };
         var context = new FindContext(
             "", MatchCase: false, WholeCell: false, FindOutcome.None,
-            _ => { }, _ => { }, _ => { }, () => Task.CompletedTask, () => Task.CompletedTask, () => { }, FocusRequest: 1);
+            _ => { }, _ => Task.CompletedTask, _ => Task.CompletedTask, () => Task.CompletedTask, () => Task.CompletedTask, () => { }, FocusRequest: 1);
 
         var cut = Render(chrome.FindPanel(context)!);
 

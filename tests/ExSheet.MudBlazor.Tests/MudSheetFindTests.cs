@@ -79,6 +79,29 @@ public class MudSheetFindTests : MudSheetTestContext
         Assert.Contains("Workbook", panel.QuerySelector(".mud-ex-sheet-find-within-workbook")!.TextContent);
     }
 
+    [Fact] // ADR-0240 §2, find ticket 06: the two options' ticks are clicks in the Input Order, claimed by the MudCheckBoxes' inputs alone, and reach the search
+    public async Task ADR0240_the_options_claim_their_clicks_on_their_inputs()
+    {
+        var page = RenderWorkbook();
+        await GoToAsync(page, "B2");
+        await PressAsync(page, "f", ctrl: true);
+
+        var panel = page.Find(".ex-popover-find form.mud-ex-sheet-find");
+        Assert.Equal("click", panel.QuerySelector(".mud-ex-grid-find-match-case input")!.GetAttribute("data-ex-claims"));
+        Assert.Equal("click", panel.QuerySelector(".mud-ex-grid-find-whole-cell input")!.GetAttribute("data-ex-claims"));
+        Assert.Empty(panel.QuerySelectorAll(".mud-ex-grid-find-match-case label[data-ex-claims], .mud-ex-grid-find-whole-cell label[data-ex-claims]"));
+
+        // "Apple" is no match with Match case ticked, and A1's "apple" is found without it.
+        await TypeAsync(page, "mud-ex-grid-find-field", "Apple");
+        await page.Find(".mud-ex-grid-find-match-case input").ChangeAsync(new ChangeEventArgs { Value = true });
+        await page.Find("button.mud-ex-grid-find-next").ClickAsync(new MouseEventArgs());
+        Assert.Equal("B2", NameBox(page));
+
+        await page.Find(".mud-ex-grid-find-match-case input").ChangeAsync(new ChangeEventArgs { Value = false });
+        await page.Find("button.mud-ex-grid-find-next").ClickAsync(new MouseEventArgs());
+        Assert.Equal("A1", NameBox(page));
+    }
+
     [Fact] // ADR-0332 §5: within the Workbook, a step shows the Sheet of the match, and Replace All writes every Sheet and says the count, as under the built-in Chrome
     public async Task ADR0332_within_the_workbook_steps_and_replaces_as_the_built_in_panel_does()
     {

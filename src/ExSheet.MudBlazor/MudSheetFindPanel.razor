@@ -32,9 +32,12 @@
                   Label="@Context.Words(FindPanelLabelIds.Field)" Variant="Variant.Outlined" Margin="Margin.Dense"
                   Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
                   OnKeyDown="OnFieldKeyDown" Class="mud-ex-grid-find-field" />
-    <MudCheckBox T="bool" Value="Find.MatchCase" ValueChanged="Find.MatchCaseChanged"
+    @* The two options, each tick a click taken in its place in the Input Order (ADR-0240), claimed by the
+       checkbox alone: a MudCheckBox hands its attributes to its input, so a click on its label, which the
+       browser passes on to the input as a second click, is not numbered, and the input's is. *@
+    <MudCheckBox T="bool" Value="Find.MatchCase" ValueChanged="Find.MatchCaseChanged" data-ex-claims="click"
                  Label="@Context.Words(FindPanelLabelIds.MatchCase)" Dense="true" Size="Size.Small" Class="mud-ex-grid-find-match-case" />
-    <MudCheckBox T="bool" Value="Find.WholeCell" ValueChanged="Find.WholeCellChanged"
+    <MudCheckBox T="bool" Value="Find.WholeCell" ValueChanged="Find.WholeCellChanged" data-ex-claims="click"
                  Label="@Context.Words(FindPanelLabelIds.WholeCell)" Dense="true" Size="Size.Small" Class="mud-ex-grid-find-whole-cell" />
     @* Within (ADR-0332 §5): the Sheet shown, the default, or the Workbook. *@
     <div class="mud-ex-sheet-find-within" role="group" aria-label="@Context.Words(SheetFindLabelIds.Within)">

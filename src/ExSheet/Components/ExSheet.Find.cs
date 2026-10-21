@@ -58,8 +58,8 @@ public partial class ExSheet
     private Func<FindOutcome>? _findOutcome;
     private Func<string, string>? _findWords;
     private Action<string>? _findTextChanged;
-    private Action<bool>? _findMatchCaseChanged;
-    private Action<bool>? _findWholeCellChanged;
+    private Func<bool, Task>? _findMatchCaseChanged;
+    private Func<bool, Task>? _findWholeCellChanged;
     private Action<string>? _replaceTextChanged;
     private Func<Task>? _replaceAll;
 
@@ -281,16 +281,19 @@ public partial class ExSheet
                 _findTextSeen = text;
                 _findContext?.TextChanged(text);
             },
-            MatchCaseChanged = _findMatchCaseChanged ??= value =>
+            // A tick of either option is a click taken in its place in the Input Order (ADR-0240): ExSheet's own
+            // Replace All over the Workbook numbered before it matches with the option as it stood. The grid's
+            // own setter, called inside this input, is part of it.
+            MatchCaseChanged = _findMatchCaseChanged ??= value => InOrderAsync(GridInputKind.Click, () =>
             {
                 _findMatchCaseSeen = value;
-                _findContext?.MatchCaseChanged(value);
-            },
-            WholeCellChanged = _findWholeCellChanged ??= value =>
+                return _findContext?.MatchCaseChanged(value) ?? Task.CompletedTask;
+            }),
+            WholeCellChanged = _findWholeCellChanged ??= value => InOrderAsync(GridInputKind.Click, () =>
             {
                 _findWholeCellSeen = value;
-                _findContext?.WholeCellChanged(value);
-            },
+                return _findContext?.WholeCellChanged(value) ?? Task.CompletedTask;
+            }),
         };
         if (context.ReplaceShown)
         {

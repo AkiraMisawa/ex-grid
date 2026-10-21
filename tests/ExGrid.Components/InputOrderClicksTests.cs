@@ -1,7 +1,9 @@
 using Bunit;
 using ExGrid.Columns;
 using ExGrid.Components.Tests.Support;
+using ExGrid.Finding;
 using ExGrid.Selection;
+using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Xunit;
 
@@ -19,14 +21,18 @@ public class InputOrderClicksTests : GridTestContext
 {
     private static readonly ColumnWidthSpec Fixed100 = new(ColumnWidth.Fixed(100));
 
-    private IRenderedComponent<ExGrid<TestRow>> RenderGrid(int? pageSize = null)
+    private IRenderedComponent<ExGrid<TestRow>> RenderGrid(int? pageSize = null, List<GridFindRequest>? finds = null)
     {
         var source = new TestSource();
         source.Push(TestRows.Many(50), totalCount: 50);
         return Render<ExGrid<TestRow>>(ps =>
         {
-            ps.Add(g => g.Source, source)
-              .Add(g => g.Columns,
+            // A Source answers Find itself; a grid that hears the requests is given its rows pushed.
+            if (finds is null)
+                ps.Add(g => g.Source, source);
+            else
+                ps.Add(g => g.Window, TestRows.Many(50)).Add(g => g.TotalCount, 50);
+            ps.Add(g => g.Columns,
               [
                   new GridColumn<TestRow>("Book", ColumnType.Text, r => r.Book, width: Fixed100, editable: true),
                   new GridColumn<TestRow>("Amount", ColumnType.Number, r => r.Amount, width: Fixed100, editable: true),
@@ -36,6 +42,14 @@ public class InputOrderClicksTests : GridTestContext
               .Add(g => g.ViewportWidth, 350);
             if (pageSize is { } size)
                 ps.Add(g => g.PageSize, size);
+            if (finds is not null)
+            {
+                ps.Add(g => g.OnFind, (request, _) =>
+                {
+                    finds.Add(request);
+                    return Task.FromResult(GridFindResult.Found(3, "Book"));
+                });
+            }
         });
     }
 
@@ -210,5 +224,53 @@ public class InputOrderClicksTests : GridTestContext
 
         Assert.Equal([false, false], Assert.Single(JSInterop.Invocations["writeCopy"]).Arguments);
         Assert.Equal(new CellPosition(0, 0), Focus(cut));
+    }
+
+    [Fact] // ADR-0240 §2, find ticket 06: the find panel's two options claim their clicks, on the checkboxes alone, as its steps do
+    public async Task ADR0240_the_find_options_claim_their_clicks()
+    {
+        var cut = RenderGrid(finds: []);
+        await cut.InvokeAsync(() => cut.Instance.OnKeyAsync("f", true, false, false, false, false));
+
+        Assert.Equal("click", cut.Find("input.ex-find-match-case").GetAttribute("data-ex-claims"));
+        Assert.Equal("click", cut.Find("input.ex-find-whole-cell").GetAttribute("data-ex-claims"));
+        Assert.All(cut.FindAll(".ex-popover-find label"), label => Assert.False(label.HasAttribute("data-ex-claims")));
+    }
+
+    [Theory] // ADR-0240 §2, find ticket 06: a step numbered before a tick of Match case or Whole cell, both behind an input still being handled, searches with the option as it stood; the step numbered after it, with the option ticked
+    [InlineData("input.ex-find-match-case")]
+    [InlineData("input.ex-find-whole-cell")]
+    public async Task ADR0240_a_tick_of_a_find_option_is_taken_in_its_place(string option)
+    {
+        var finds = new List<GridFindRequest>();
+        var cut = RenderGrid(finds: finds);
+        await cut.InvokeAsync(() => cut.Instance.OnKeyAsync("f", true, false, false, false, false));
+        await cut.Find("input.ex-find-field").InputAsync(new ChangeEventArgs { Value = "row" });
+        var opens = new TaskCompletionSource();
+        var paste = await HoldTheOrderAsync(cut, opens);
+
+        Task before = Task.CompletedTask, tick = Task.CompletedTask, after = Task.CompletedTask;
+        await TellAsync(cut, "click", input: 2);
+        await cut.InvokeAsync(() => { before = cut.Find("button.ex-find-next").ClickAsync(new MouseEventArgs()); });
+        await TellAsync(cut, "click", input: 3);
+        await cut.InvokeAsync(() => { tick = cut.Find(option).ChangeAsync(new ChangeEventArgs { Value = true }); });
+        await TellAsync(cut, "click", input: 4);
+        await cut.InvokeAsync(() => { after = cut.Find("button.ex-find-next").ClickAsync(new MouseEventArgs()); });
+        await WhenIdleAsync();
+        Assert.Empty(finds);
+        Assert.False(cut.Find(option).HasAttribute("checked"));
+
+        opens.SetResult();
+        await paste;
+        await before;
+        await tick;
+        await after;
+
+        Assert.Equal(2, finds.Count);
+        Func<GridFindRequest, bool> ticked = option.EndsWith("match-case", StringComparison.Ordinal) ? r => r.MatchCase : r => r.WholeCell;
+        Assert.False(ticked(finds[0]));
+        Assert.True(ticked(finds[1]));
+        Assert.True(cut.Find(option).HasAttribute("checked"));
+        Assert.Equal("4", await AnsweredAsync(cut));
     }
 }

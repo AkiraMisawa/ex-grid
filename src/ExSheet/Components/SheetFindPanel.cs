@@ -187,6 +187,10 @@ internal sealed class SheetFindPanel : ComponentBase
         builder.CloseElement();
     }
 
+    // An option's tick is a click — a label's click and a Space on the checkbox reach the checkbox as one —
+    // claimed on the checkbox alone and taken in its place in the Input Order (ADR-0240), so a step numbered
+    // before it searches with the option as it stood. Heard as the change that click makes, which says the
+    // checkbox's state.
     private static void Option(RenderTreeBuilder builder, int sequence, string cssClass, bool value, EventCallback<ChangeEventArgs> changed, string label)
     {
         builder.OpenElement(sequence, "label");
@@ -194,9 +198,10 @@ internal sealed class SheetFindPanel : ComponentBase
         builder.AddAttribute(sequence + 2, "type", "checkbox");
         builder.AddAttribute(sequence + 3, "class", cssClass);
         builder.AddAttribute(sequence + 4, "checked", value);
-        builder.AddAttribute(sequence + 5, "onchange", changed);
+        builder.AddAttribute(sequence + 5, "data-ex-claims", "click");
+        builder.AddAttribute(sequence + 6, "onchange", changed);
         builder.CloseElement();
-        builder.AddContent(sequence + 6, label);
+        builder.AddContent(sequence + 7, label);
         builder.CloseElement();
     }
 

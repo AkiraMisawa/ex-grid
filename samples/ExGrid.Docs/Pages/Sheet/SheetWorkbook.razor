@@ -238,9 +238,11 @@ await sheet.DoAsync("Totals", SheetEdit.MoveSheet(0));</code></pre>
                 <b>Drawn by the Chrome.</b> With <code>MudSheetChrome</code> the panel is ExGrid.MudBlazor's, Within two
                 <code>MudButton</code>s, the chosen one filled. A Chrome of your own draws it through <code>ISheetChrome.SheetFindPanel</code>,
                 which is handed a <code>SheetFindContext</code>: the grid's <code>FindContext</code>, Within and its
-                callback, and the outcome in words. Within's callback is a click in the grid's Input Order: call it from
-                the click handler as it starts, on a control that claims its click with
-                <code>data-ex-claims="click"</code>, so a step clicked after it searches where it says. Its words are <code>SheetFindLabelIds</code>, translated through
+                callback, and the outcome in words. Within's callback is a click in the grid's Input Order, as are
+                Match case's and Match entire cell contents' (<code>FindContext.MatchCaseChanged</code> and
+                <code>WholeCellChanged</code>): call each from its handler as it starts and return the task it gives,
+                on a control that claims its click with <code>data-ex-claims="click"</code> — the checkbox itself, not
+                a label around it — so a step clicked after it searches where and how it says. Its words are <code>SheetFindLabelIds</code>, translated through
                 <code>CommandLabel</code> or the Chrome's own. A Chrome that draws no Sheet panel gets the built-in one; the
                 grid's own <code>IGridChrome.FindPanel</code> is not asked on a Sheet.
             </li>

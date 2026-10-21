@@ -895,14 +895,17 @@
                            filter panel, KB-31). *@
                         <button type="submit" class="ex-find-default" hidden tabindex="-1" aria-hidden="true"></button>
                         @FindField
+                        @* The two options, each tick a click taken in its place in the Input Order
+                           (ADR-0240), claimed by the checkbox alone: a click on its label reaches the
+                           checkbox as a second click, which is the one numbered. *@
                         <label>
                             <input type="checkbox" class="ex-find-match-case" checked="@_findMatchCase"
-                                   @onchange="FindMatchCaseChanged" />
+                                   data-ex-claims="@ClaimKinds.Click" @onchange="FindMatchCaseChanged" />
                             @Label(FindPanelLabelIds.MatchCase)
                         </label>
                         <label>
                             <input type="checkbox" class="ex-find-whole-cell" checked="@_findWholeCell"
-                                   @onchange="FindWholeCellChanged" />
+                                   data-ex-claims="@ClaimKinds.Click" @onchange="FindWholeCellChanged" />
                             @Label(FindPanelLabelIds.WholeCell)
                         </label>
                         <div class="ex-popover-actions">
@@ -8063,16 +8066,8 @@
             _findText = text;
             FindHeldChanged();
         },
-        _findMatchCaseSet ??= value =>
-        {
-            _findMatchCase = value;
-            FindHeldChanged();
-        },
-        _findWholeCellSet ??= value =>
-        {
-            _findWholeCell = value;
-            FindHeldChanged();
-        },
+        FindMatchCaseSet,
+        FindWholeCellSet,
         () => InvokeAsync(() => ClaimedAsync(ClaimKinds.Click, ClaimKinds.Submit, () => FindStepAsync(backward: false))),
         () => InvokeAsync(() => ClaimedAsync(ClaimKinds.Click, ClaimKinds.Submit, () => FindStepAsync(backward: true))),
         CloseFromChrome,
@@ -8105,14 +8100,32 @@
 
     private RenderFragment? _findFieldFragment;
     private Action<string>? _findTextChanged;
-    private Action<bool>? _findMatchCaseSet;
-    private Action<bool>? _findWholeCellSet;
     private EventCallback<ChangeEventArgs>? _findTextInput;
     private EventCallback<KeyboardEventArgs>? _findFieldKeyDown;
-    private Action<ChangeEventArgs> FindMatchCaseChanged => _findMatchCaseChanged ??= e => _findMatchCase = e.Value is true;
-    private Action<ChangeEventArgs>? _findMatchCaseChanged;
-    private Action<ChangeEventArgs> FindWholeCellChanged => _findWholeCellChanged ??= e => _findWholeCell = e.Value is true;
-    private Action<ChangeEventArgs>? _findWholeCellChanged;
+
+    // Match case and Whole cell, set in their place in the Input Order (ADR-0240): a tick is a click,
+    // numbered as it happens on a checkbox that claims it, so a step numbered before it searches with
+    // the option as it stood and one numbered after it with the option ticked. One delegate each, for
+    // the built-in checkboxes and a substituted panel's context alike (FindContext.MatchCaseChanged);
+    // called from inside an input under way (ExSheet's own handler of the tick), part of that input.
+    private Func<bool, Task> FindMatchCaseSet => _findMatchCaseSet ??= value => InvokeAsync(() => InOrderAsync(GridInputKind.Click, () =>
+    {
+        _findMatchCase = value;
+        FindHeldChanged();
+        return Task.CompletedTask;
+    }));
+    private Func<bool, Task>? _findMatchCaseSet;
+    private Func<bool, Task> FindWholeCellSet => _findWholeCellSet ??= value => InvokeAsync(() => InOrderAsync(GridInputKind.Click, () =>
+    {
+        _findWholeCell = value;
+        FindHeldChanged();
+        return Task.CompletedTask;
+    }));
+    private Func<bool, Task>? _findWholeCellSet;
+    private Func<ChangeEventArgs, Task> FindMatchCaseChanged => _findMatchCaseChanged ??= e => FindMatchCaseSet(e.Value is true);
+    private Func<ChangeEventArgs, Task>? _findMatchCaseChanged;
+    private Func<ChangeEventArgs, Task> FindWholeCellChanged => _findWholeCellChanged ??= e => FindWholeCellSet(e.Value is true);
+    private Func<ChangeEventArgs, Task>? _findWholeCellChanged;
 
     /// <summary>Enter in the built-in field is the form's implicit submission — which an IME
     /// confirming a candidate does not trigger — and Shift says which way it runs.</summary>

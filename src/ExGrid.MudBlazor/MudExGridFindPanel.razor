@@ -29,9 +29,12 @@
                   Label="@Own(FindPanelLabelIds.Field)" Variant="Variant.Outlined" Margin="Margin.Dense"
                   Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
                   OnKeyDown="OnFieldKeyDown" Class="mud-ex-grid-find-field" />
-    <MudCheckBox T="bool" Value="Context.MatchCase" ValueChanged="Context.MatchCaseChanged"
+    @* The two options, each tick a click taken in its place in the Input Order (ADR-0240), claimed by the
+       checkbox alone: a MudCheckBox hands its attributes to its input, so a click on its label, which the
+       browser passes on to the input as a second click, is not numbered, and the input's is. *@
+    <MudCheckBox T="bool" Value="Context.MatchCase" ValueChanged="Context.MatchCaseChanged" data-ex-claims="click"
                  Label="@Own(FindPanelLabelIds.MatchCase)" Dense="true" Size="Size.Small" Class="mud-ex-grid-find-match-case" />
-    <MudCheckBox T="bool" Value="Context.WholeCell" ValueChanged="Context.WholeCellChanged"
+    <MudCheckBox T="bool" Value="Context.WholeCell" ValueChanged="Context.WholeCellChanged" data-ex-claims="click"
                  Label="@Own(FindPanelLabelIds.WholeCell)" Dense="true" Size="Size.Small" Class="mud-ex-grid-find-whole-cell" />
     <div class="mud-ex-grid-find-actions">
         <MudButton Variant="Variant.Text" Size="Size.Small" StartIcon="@Icons.Material.Filled.KeyboardArrowUp"
