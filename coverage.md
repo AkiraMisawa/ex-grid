@@ -14,18 +14,18 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/21/2026 - 17:35:21 |
+| Generated on: | 10/21/2026 - 17:56:38 |
 | Parser: | MultiReport (19x Cobertura) |
 | Assemblies: | 14 |
 | Classes: | 1076 |
 | Files: | 558 |
-| **Line coverage:** | 94.6% (71067 of 75052) |
-| Covered lines: | 71067 |
-| Uncovered lines: | 3985 |
-| Coverable lines: | 75052 |
-| Total lines: | 125114 |
-| **Branch coverage:** | 86.9% (42497 of 48862) |
-| Covered branches: | 42497 |
+| **Line coverage:** | 94.6% (71069 of 75053) |
+| Covered lines: | 71069 |
+| Uncovered lines: | 3984 |
+| Coverable lines: | 75053 |
+| Total lines: | 125123 |
+| **Branch coverage:** | 86.9% (42502 of 48862) |
+| Covered branches: | 42502 |
 | Total branches: | 48862 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
@@ -963,10 +963,10 @@
 |ExSheet.BuiltInToolbarItem|96.4%|97.3%|
 |ExSheet.ColourItem|96%|100%|
 |ExSheet.CommaItem|83.3%||
-|ExSheet.Components.ExSheet|92.2%|83.1%|
+|ExSheet.Components.ExSheet|92.2%|83.2%|
 |ExSheet.Components.ExSheet.KeyboardListener|100%||
 |ExSheet.Components.ExSheet.KeyUpListener|100%||
-|ExSheet.Components.ExSheet<T>|92.2%|83.1%|
+|ExSheet.Components.ExSheet<T>|92.2%|83.2%|
 |ExSheet.Components.ExSheetStylesheet|100%||
 |ExSheet.Components.FormatCellsPanel|97.3%|87.5%|
 |ExSheet.DefaultToolbarRow|100%|50%|
@@ -1130,7 +1130,7 @@
 |ExSheet.Engine.FormulaSyntaxException|90%||
 |ExSheet.Engine.LinkedTable|100%|100%|
 |ExSheet.Engine.LinkedTableColumn|100%|100%|
-|ExSheet.Engine.NumberFormat|95.1%|91.7%|
+|ExSheet.Engine.NumberFormat|95.1%|92%|
 |ExSheet.Engine.NumberFormat.Part|100%||
 |ExSheet.Engine.NumberFormat.Section|95.5%|91.9%|
 |ExSheet.Engine.NumberFormatColours|94.7%|92.3%|
@@ -1156,7 +1156,7 @@
 |ExSheet.Engine.SheetChange|100%|95.8%|
 |ExSheet.Engine.SheetColumnWidth|100%||
 |ExSheet.Engine.SheetCopy|100%||
-|ExSheet.Engine.SheetDocument|99.4%|93.1%|
+|ExSheet.Engine.SheetDocument|99.6%|93.4%|
 |ExSheet.Engine.SheetDocumentAxisFormat|100%||
 |ExSheet.Engine.SheetDocumentCell|100%||
 |ExSheet.Engine.SheetDocumentColumnWidth|100%||
