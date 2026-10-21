@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- Single-target net10.0; newer runtimes load it as-is (ADR-0022). -->
+    <TargetFramework>net10.0</TargetFramework>
+    <Description>The cells of an .xlsx workbook read and written as a stream, with no dependency: the workbook's sheets, shared strings, cells with their Formulas, the styles a sheet carries and the theme's colours, read part by part with every file it cannot read faithfully refused by name. Ships at the same version as ExGrid.Data and depends on exactly that version.</Description>
+    <PackageTags>snapshot;xlsx;excel;spreadsheet;openxml;workbook</PackageTags>
+    <!-- Trimmable, as ExGrid.Data is (ADR-0064): an application that only reads publishes without
+         the writer. It also turns the trim analysers on. -->
+    <IsTrimmable>true</IsTrimmable>
+  </PropertyGroup>
+
+  <!-- No package reference, deliberately (ADR-0330 §1): System.IO.Compression and System.Xml read
+       and write the format. -->
+
+  <ItemGroup>
+    <!-- The one direction there is (ADR-0330 §2): this package sits beside ExGrid.Data.Arrow and
+         references ExGrid.Data, whose Snapshot a worksheet will be read into (an ADR of its own);
+         nothing in ExGrid.Data knows it exists. -->
+    <ProjectReference Include="..\ExGrid.Data\ExGrid.Data.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="ExGrid.Data.Xlsx.Tests" />
+  </ItemGroup>
+
+  <!-- ExGrid.Data.Xlsx depends on exactly the ExGrid.Data version it was built with, as
+       ExGrid.Data.Arrow does (ADR-0065, DA-1). NuGet offers no range on a ProjectReference, so the
+       version pack computed is made exact here; the package check reads it back from the .nuspec. -->
+  <Target Name="DependOnExactlyThisData" AfterTargets="_GetProjectReferenceVersions">
+    <ItemGroup>
+      <_ProjectReferencesWithVersions Update="@(_ProjectReferencesWithVersions)" ProjectVersion="[%(ProjectVersion)]" />
+    </ItemGroup>
+  </Target>
+
+</Project>

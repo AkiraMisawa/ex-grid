@@ -136,7 +136,7 @@ jobs:
           product ExSheet "+ExSheet;+ExSheet.Engine;+ExSheet.MudBlazor"
           product ExPivot "+ExPivot;+ExPivot.Engine;+ExPivot.MudBlazor"
           product ExChart "+ExChart;+ExChart.Engine;+ExChart.MudBlazor"
-          product Data    "+ExGrid.Data;+ExGrid.Data.Arrow"
+          product Data    "+ExGrid.Data;+ExGrid.Data.Arrow;+ExGrid.Data.Xlsx"
           {
             echo '## Coverage per product'
             echo

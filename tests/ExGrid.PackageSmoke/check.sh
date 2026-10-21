@@ -7,6 +7,10 @@
 # packages, and the check fails if it comes back different (DA-16). A trimmed Consumer also
 # round-trips report Windows, Window Changes and versioned operations with reflection disabled (ADR-0152).
 #
+# ExGrid.Data.Xlsx (ADR-0330) is packed and checked the same way, and a workbook is written and read
+# back through it, but it goes to .feed-unreleased, not to .feed: the release publishes the packages
+# ADR-0042 names, and that list does not name it yet.
+#
 #   tests/ExGrid.PackageSmoke/check.sh [version]
 #
 # The version defaults to a throwaway 0.0.0-smoke.<time>; CI passes its own, and the release
@@ -18,28 +22,35 @@ here=$(cd "$(dirname "$0")" && pwd)
 root=$(cd "$here/../.." && pwd)
 version=${1:-0.0.0-smoke.$(date +%s)}
 feed="$here/.feed"
+unreleased="$here/.feed-unreleased"
 cache="$here/.nuget-packages"
 out="$here/.publish"
 
 fail() { echo "package check: $*" >&2; exit 1; }
 
-rm -rf "$feed" "$cache" "$out" "$here/bin" "$here/obj" "$here/RoundTrip/bin" "$here/RoundTrip/obj"
-mkdir -p "$feed"
+rm -rf "$feed" "$unreleased" "$cache" "$out" "$here/bin" "$here/obj" "$here/RoundTrip/bin" "$here/RoundTrip/obj"
+mkdir -p "$feed" "$unreleased"
 
 echo "== pack $version"
 packages="ExGrid ExGrid.MudBlazor ExSheet.Engine ExSheet ExSheet.MudBlazor ExGrid.Data ExGrid.Data.Arrow ExPivot.Engine ExPivot ExPivot.MudBlazor ExChart.Engine ExChart ExChart.MudBlazor"
 for project in $packages; do
   dotnet pack "$root/src/$project" -c Release -o "$feed" -p:Version="$version" --nologo
 done
+held="ExGrid.Data.Xlsx"
+for project in $held; do
+  dotnet pack "$root/src/$project" -c Release -o "$unreleased" -p:Version="$version" --nologo
+done
 
 echo "== what the packages declare"
-nuspec() { unzip -p "$feed/$1.$version.nupkg" "$1.nuspec"; }
+# A package held back from the release is read from where it was packed.
+nupkg() { if [ -f "$feed/$1.$version.nupkg" ]; then echo "$feed/$1.$version.nupkg"; else echo "$unreleased/$1.$version.nupkg"; fi; }
+nuspec() { unzip -p "$(nupkg "$1")" "$1.nuspec"; }
 # Read into a string before a grep -q, never piped to one: grep -q exits at its first match, unzip
 # then dies of SIGPIPE, and under pipefail the pipeline fails — a file that is there reported missing,
 # or, inside an if, a forbidden one passed over.
-entries() { unzip -Z1 "$feed/$1.$version.nupkg"; }
-for id in $packages; do
-  [ -f "$feed/$id.$version.snupkg" ] || fail "$id has no symbol package"
+entries() { unzip -Z1 "$(nupkg "$1")"; }
+for id in $packages $held; do
+  [ -f "$(nupkg "$id" | sed 's/\.nupkg$/.snupkg/')" ] || fail "$id has no symbol package"
   spec=$(nuspec "$id")
   grep -q '<license type="expression">MIT</license>' <<<"$spec" || fail "$id does not declare MIT"
   grep -q '<readme>README.md</readme>' <<<"$spec" || fail "$id has no readme"
@@ -100,16 +111,25 @@ if grep -q '<dependency ' <<<"$(nuspec ExGrid.Data)"; then fail "ExGrid.Data dec
 arrowdeps=$(grep -o '<dependency id="[^"]*" version="[^"]*"' <<<"$(nuspec ExGrid.Data.Arrow)" | sort)
 [ "$arrowdeps" = "$(printf '%s\n' "<dependency id=\"Apache.Arrow\" version=\"[23.0.0, 24.0.0)\"" "<dependency id=\"ExGrid.Data\" version=\"[$version]\"" | sort)" ] \
   || fail "ExGrid.Data.Arrow's dependencies are not exactly ExGrid.Data $version and Apache.Arrow [23.0.0, 24.0.0): $arrowdeps"
+# Its xlsx package depends on exactly the ExGrid.Data it was built with, and on nothing else: the
+# file layer is the platform's zip and XML (ADR-0330).
+xlsxdeps=$(grep -o '<dependency id="[^"]*" version="[^"]*"' <<<"$(nuspec ExGrid.Data.Xlsx)" | sort)
+[ "$xlsxdeps" = "<dependency id=\"ExGrid.Data\" version=\"[$version]\"" ] \
+  || fail "ExGrid.Data.Xlsx's dependencies are not exactly ExGrid.Data $version: $xlsxdeps"
+[ "$(ls "$unreleased" | sort)" = "$(for id in $held; do printf '%s\n' "$id.$version.nupkg" "$id.$version.snupkg"; done | sort)" ] \
+  || fail "$unreleased does not hold exactly the packages held back from the release: $(ls "$unreleased" | tr '\n' ' ')"
 # ExPivot's engine depends on exactly the ExGrid.Data it was built with, and on nothing else: it
 # aggregates a Snapshot (ADR-0064, PV-1).
 enginedeps=$(grep -o '<dependency id="[^"]*" version="[^"]*"' <<<"$(nuspec ExPivot.Engine)" | sort)
 [ "$enginedeps" = "<dependency id=\"ExGrid.Data\" version=\"[$version]\"" ] \
   || fail "ExPivot.Engine's dependencies are not exactly ExGrid.Data $version: $enginedeps"
 # Nothing else the family packs references a data package directly (DA-1), and nothing but the
-# Arrow package itself references ExGrid.Data.Arrow.
-if grep -q '<dependency id="ExGrid.Data.Arrow"' <<<"$(nuspec ExGrid)"; then fail "ExGrid references ExGrid.Data.Arrow"; fi
+# Arrow and xlsx packages themselves reference ExGrid.Data.Arrow or ExGrid.Data.Xlsx.
+if grep -qE '<dependency id="ExGrid\.Data\.(Arrow|Xlsx)"' <<<"$(nuspec ExGrid)"; then fail "ExGrid references ExGrid.Data.Arrow or ExGrid.Data.Xlsx"; fi
+if grep -q '<dependency id="ExGrid.Data.Arrow"' <<<"$(nuspec ExGrid.Data.Xlsx)"; then fail "ExGrid.Data.Xlsx references ExGrid.Data.Arrow"; fi
+if grep -q '<dependency id="ExGrid.Data.Xlsx"' <<<"$(nuspec ExGrid.Data.Arrow)"; then fail "ExGrid.Data.Arrow references ExGrid.Data.Xlsx"; fi
 for id in ExGrid.MudBlazor ExSheet.Engine ExSheet ExSheet.MudBlazor ExPivot ExPivot.MudBlazor ExChart.Engine ExChart ExChart.MudBlazor; do
-  if grep -qE '<dependency id="ExGrid\.Data(\.Arrow)?"' <<<"$(nuspec "$id")"; then fail "$id references a data package"; fi
+  if grep -qE '<dependency id="ExGrid\.Data(\.Arrow|\.Xlsx)?"' <<<"$(nuspec "$id")"; then fail "$id references a data package"; fi
 done
 # ExPivot depends on exactly the core and the engine it was built with, and on nothing else.
 pivotdeps=$(grep -o '<dependency id="[^"]*" version="[^"]*"' <<<"$(nuspec ExPivot)" | sort)
@@ -150,6 +170,11 @@ for id in $packages; do
   [ -f "$meta" ] || fail "$id $version was not restored"
   grep -qF "$feed" "$meta" || fail "$id $version came from somewhere other than $feed"
 done
+for id in $held; do
+  meta="$cache/${id,,}/$version/.nupkg.metadata"
+  [ -f "$meta" ] || fail "$id $version was not restored"
+  grep -qF "$unreleased" "$meta" || fail "$id $version came from somewhere other than $unreleased"
+done
 
 # Each package asks for the files it was built with (ADR-0123): its stylesheet component, and the
 # grid's import, ask for the shipped file at its path with the first twelve hex digits of its SHA-256
@@ -176,7 +201,7 @@ for pair in ExGrid:ex-grid.min.css ExGrid:ex-grid.min.js ExGrid.MudBlazor:mud-ex
   grep -qF "$stamp" <<<"$assembly" || fail "$id.dll does not carry the stamp of the $f it packs ($stamp)"
 done
 
-echo "== trimmed packed Consumer: Arrow and report protocol round trips"
+echo "== trimmed packed Consumer: Arrow, xlsx and report protocol round trips"
 # RoundTrip runs what the application above compiled for a browser: it writes a Snapshot of every
 # kind, with Blanks, captions, a Record Key and a version, and reads it back (ADR-0065, DA-16).
 dotnet publish "$here/RoundTrip" -c Release --nologo -o "$out/roundtrip" --self-contained true -p:PublishTrimmed=true \
@@ -184,7 +209,8 @@ dotnet publish "$here/RoundTrip" -c Release --nologo -o "$out/roundtrip" --self-
 for id in exgrid.data exgrid.data.arrow expivot.engine; do
   grep -qF "$feed" "$cache/$id/$version/.nupkg.metadata" || fail "the round trip took $id $version from somewhere other than $feed"
 done
+grep -qF "$unreleased" "$cache/exgrid.data.xlsx/$version/.nupkg.metadata" || fail "the round trip took exgrid.data.xlsx $version from somewhere other than $unreleased"
 dotnet "$out/roundtrip/PackageSmoke.RoundTrip.dll" \
-  || fail "a packed data or report protocol round trip changed its result"
+  || fail "a packed data, workbook or report protocol round trip changed its result"
 
 echo "package check: $version passed"
