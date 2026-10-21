@@ -2,7 +2,7 @@
 
 | Product | Line | Branch |
 |---|---|---|
-| ExGrid | 95.4% | 88.2% |
+| ExGrid | 95.4% | 88.3% |
 | ExSheet | 95.7% | 88.7% |
 | ExPivot | 94.4% | 85.4% |
 | ExChart | 89.9% | 80.6% |
@@ -14,19 +14,19 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/21/2026 - 13:37:37 |
+| Generated on: | 10/21/2026 - 14:15:58 |
 | Parser: | MultiReport (18x Cobertura) |
 | Assemblies: | 14 |
-| Classes: | 1059 |
-| Files: | 545 |
-| **Line coverage:** | 94.6% (69143 of 73049) |
-| Covered lines: | 69143 |
-| Uncovered lines: | 3906 |
-| Coverable lines: | 73049 |
-| Total lines: | 122214 |
-| **Branch coverage:** | 86.9% (41353 of 47534) |
-| Covered branches: | 41353 |
-| Total branches: | 47534 |
+| Classes: | 1061 |
+| Files: | 548 |
+| **Line coverage:** | 94.6% (69284 of 73188) |
+| Covered lines: | 69284 |
+| Uncovered lines: | 3904 |
+| Coverable lines: | 73188 |
+| Total lines: | 122572 |
+| **Branch coverage:** | 87% (41445 of 47630) |
+| Covered branches: | 41445 |
+| Total branches: | 47630 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
@@ -339,7 +339,7 @@
 |ExGrid.Components.AppearanceStyles.PartKey|0%||
 |ExGrid.Components.CellAppearances<TRow>|0%||
 |ExGrid.Components.CellAppearances<TRow>|90.4%|87.1%|
-|ExGrid.Components.CellClasses|95.4%|92.3%|
+|ExGrid.Components.CellClasses|95.3%|91.9%|
 |ExGrid.Components.CellEngagement|100%||
 |ExGrid.Components.CellIds|100%||
 |ExGrid.Components.ChangeHighlightEnds|95.2%|92.8%|
@@ -367,14 +367,15 @@
 |ExGrid.Components.ExGrid.TakenList<TRow>|100%||
 |ExGrid.Components.ExGrid.TakenMouseEventArgs<TRow>|100%||
 |ExGrid.Components.ExGrid<TRow>|90.7%|85.6%|
-|ExGrid.Components.ExGrid<TRow>|95.2%|90.2%|
+|ExGrid.Components.ExGrid<TRow>|95.3%|90.2%|
 |ExGrid.Components.ExGridRow.ActionPaint<TRow>|100%||
-|ExGrid.Components.ExGridRow<TRow>|100%|94.7%|
 |ExGrid.Components.ExGridRow<TRow>|100%||
+|ExGrid.Components.ExGridRow<TRow>|99.6%|94.1%|
 |ExGrid.Components.ExGridStylesheet|100%||
 |ExGrid.Components.GridView|100%|50%|
 |ExGrid.Components.HeadingMarkStyles|95%|90%|
 |ExGrid.Components.InstanceIds|100%||
+|ExGrid.Components.MatchMarks<TRow>|100%|100%|
 |ExGrid.Components.PackageStylesheet|100%|100%|
 |ExGrid.Components.ReferenceHighlights|100%|97.7%|
 |ExGrid.Components.RowAppearance|100%|75%|
@@ -398,7 +399,8 @@
 |ExGrid.FilterSpec|100%||
 |ExGrid.FilterSpecDocument|100%||
 |ExGrid.Finding.GridFind|100%|100%|
-|ExGrid.Finding.GridFindRequest|88.8%||
+|ExGrid.Finding.GridFindPattern|100%||
+|ExGrid.Finding.GridFindRequest|90%||
 |ExGrid.Finding.GridFindResult|100%||
 |ExGrid.FormatCode|86.5%|85.2%|
 |ExGrid.GridChangeBatch<TRow>|96.6%|68.7%|
@@ -423,7 +425,7 @@
 |ExGrid.IGridSource<TRow>|100%||
 |ExGrid.InMemoryGridSource.ChangePlan<TRow>|100%|100%|
 |ExGrid.InMemoryGridSource.Pending<TRow>|100%||
-|ExGrid.InMemoryGridSource<TRow>|93.5%|77.7%|
+|ExGrid.InMemoryGridSource<TRow>|93.5%|83.3%|
 |ExGrid.InMemoryGridSource<TRow>|96.5%|91.5%|
 |ExGrid.InputOrder|94%|84.7%|
 |ExGrid.InputOrder.Waiting|100%||
