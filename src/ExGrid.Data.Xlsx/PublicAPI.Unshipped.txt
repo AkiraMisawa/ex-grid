@@ -340,6 +340,7 @@ ExGrid.Data.Xlsx.XlsxSheetVisibility.Hidden = 1 -> ExGrid.Data.Xlsx.XlsxSheetVis
 ExGrid.Data.Xlsx.XlsxSheetVisibility.VeryHidden = 2 -> ExGrid.Data.Xlsx.XlsxSheetVisibility
 ExGrid.Data.Xlsx.XlsxSheetVisibility.Visible = 0 -> ExGrid.Data.Xlsx.XlsxSheetVisibility
 ExGrid.Data.Xlsx.XlsxSheetWriter
+ExGrid.Data.Xlsx.XlsxSheetWriter.AddTable(ExGrid.Data.Xlsx.XlsxTable! table) -> void
 ExGrid.Data.Xlsx.XlsxSheetWriter.FlushAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask
 ExGrid.Data.Xlsx.XlsxSheetWriter.Name.get -> string!
 ExGrid.Data.Xlsx.XlsxSheetWriter.Write(in ExGrid.Data.Xlsx.XlsxCell cell) -> void
@@ -362,6 +363,24 @@ ExGrid.Data.Xlsx.XlsxStyles.IndexedColors.init -> void
 ExGrid.Data.Xlsx.XlsxStyles.NumberFormats.get -> System.Collections.Generic.IReadOnlyDictionary<int, string!>!
 ExGrid.Data.Xlsx.XlsxStyles.NumberFormats.init -> void
 ExGrid.Data.Xlsx.XlsxStyles.XlsxStyles(System.Collections.Generic.IReadOnlyDictionary<int, string!>! NumberFormats, System.Collections.Generic.IReadOnlyList<ExGrid.Data.Xlsx.XlsxFont!>! Fonts, System.Collections.Generic.IReadOnlyList<ExGrid.Data.Xlsx.XlsxFill!>! Fills, System.Collections.Generic.IReadOnlyList<ExGrid.Data.Xlsx.XlsxBorder!>! Borders, System.Collections.Generic.IReadOnlyList<ExGrid.Data.Xlsx.XlsxCellFormat!>! CellFormats, System.Collections.Generic.IReadOnlyList<uint>? IndexedColors = null) -> void
+ExGrid.Data.Xlsx.XlsxTable
+ExGrid.Data.Xlsx.XlsxTable.<Clone>$() -> ExGrid.Data.Xlsx.XlsxTable!
+ExGrid.Data.Xlsx.XlsxTable.AutoFilter.get -> bool
+ExGrid.Data.Xlsx.XlsxTable.AutoFilter.init -> void
+ExGrid.Data.Xlsx.XlsxTable.Columns.get -> System.Collections.Generic.IReadOnlyList<string!>!
+ExGrid.Data.Xlsx.XlsxTable.Columns.init -> void
+ExGrid.Data.Xlsx.XlsxTable.DataRows.get -> int
+ExGrid.Data.Xlsx.XlsxTable.DataRows.init -> void
+ExGrid.Data.Xlsx.XlsxTable.Deconstruct(out string! Name, out int HeaderRow, out int FirstColumn, out System.Collections.Generic.IReadOnlyList<string!>! Columns, out int DataRows) -> void
+ExGrid.Data.Xlsx.XlsxTable.Equals(ExGrid.Data.Xlsx.XlsxTable? other) -> bool
+ExGrid.Data.Xlsx.XlsxTable.FirstColumn.get -> int
+ExGrid.Data.Xlsx.XlsxTable.FirstColumn.init -> void
+ExGrid.Data.Xlsx.XlsxTable.HeaderRow.get -> int
+ExGrid.Data.Xlsx.XlsxTable.HeaderRow.init -> void
+ExGrid.Data.Xlsx.XlsxTable.Name.get -> string!
+ExGrid.Data.Xlsx.XlsxTable.Name.init -> void
+ExGrid.Data.Xlsx.XlsxTable.Reference.get -> string!
+ExGrid.Data.Xlsx.XlsxTable.XlsxTable(string! Name, int HeaderRow, int FirstColumn, System.Collections.Generic.IReadOnlyList<string!>! Columns, int DataRows) -> void
 ExGrid.Data.Xlsx.XlsxTheme
 ExGrid.Data.Xlsx.XlsxTheme.Resolve(ExGrid.Data.Xlsx.XlsxColor color, System.Collections.Generic.IReadOnlyList<uint>? indexedColors = null) -> uint?
 ExGrid.Data.Xlsx.XlsxTheme.SchemeColors.get -> System.Collections.Generic.IReadOnlyList<uint>!
@@ -409,6 +428,8 @@ ExGrid.Data.Xlsx.XlsxWriteOptions.DefinedNames.get -> System.Collections.Generic
 ExGrid.Data.Xlsx.XlsxWriteOptions.DefinedNames.init -> void
 ExGrid.Data.Xlsx.XlsxWriteOptions.FullCalculationOnLoad.get -> bool
 ExGrid.Data.Xlsx.XlsxWriteOptions.FullCalculationOnLoad.init -> void
+ExGrid.Data.Xlsx.XlsxWriteOptions.MaxUncompressedBytes.get -> long
+ExGrid.Data.Xlsx.XlsxWriteOptions.MaxUncompressedBytes.init -> void
 ExGrid.Data.Xlsx.XlsxWriteOptions.Styles.get -> ExGrid.Data.Xlsx.XlsxStyles?
 ExGrid.Data.Xlsx.XlsxWriteOptions.Styles.init -> void
 ExGrid.Data.Xlsx.XlsxWriteOptions.XlsxWriteOptions() -> void
@@ -456,6 +477,9 @@ override ExGrid.Data.Xlsx.XlsxSheetInfo.ToString() -> string!
 override ExGrid.Data.Xlsx.XlsxStyles.Equals(object? obj) -> bool
 override ExGrid.Data.Xlsx.XlsxStyles.GetHashCode() -> int
 override ExGrid.Data.Xlsx.XlsxStyles.ToString() -> string!
+override ExGrid.Data.Xlsx.XlsxTable.Equals(object? obj) -> bool
+override ExGrid.Data.Xlsx.XlsxTable.GetHashCode() -> int
+override ExGrid.Data.Xlsx.XlsxTable.ToString() -> string!
 override ExGrid.Data.Xlsx.XlsxWorksheet.Equals(object? obj) -> bool
 override ExGrid.Data.Xlsx.XlsxWorksheet.GetHashCode() -> int
 override ExGrid.Data.Xlsx.XlsxWorksheet.ToString() -> string!
@@ -505,6 +529,9 @@ static ExGrid.Data.Xlsx.XlsxSheetInfo.operator ==(ExGrid.Data.Xlsx.XlsxSheetInfo
 static ExGrid.Data.Xlsx.XlsxStyles.Default.get -> ExGrid.Data.Xlsx.XlsxStyles!
 static ExGrid.Data.Xlsx.XlsxStyles.operator !=(ExGrid.Data.Xlsx.XlsxStyles? left, ExGrid.Data.Xlsx.XlsxStyles? right) -> bool
 static ExGrid.Data.Xlsx.XlsxStyles.operator ==(ExGrid.Data.Xlsx.XlsxStyles? left, ExGrid.Data.Xlsx.XlsxStyles? right) -> bool
+static ExGrid.Data.Xlsx.XlsxTable.IsValidName(string? name) -> bool
+static ExGrid.Data.Xlsx.XlsxTable.operator !=(ExGrid.Data.Xlsx.XlsxTable? left, ExGrid.Data.Xlsx.XlsxTable? right) -> bool
+static ExGrid.Data.Xlsx.XlsxTable.operator ==(ExGrid.Data.Xlsx.XlsxTable? left, ExGrid.Data.Xlsx.XlsxTable? right) -> bool
 static ExGrid.Data.Xlsx.XlsxTheme.ApplyTint(uint argb, double tint) -> uint
 static ExGrid.Data.Xlsx.XlsxTheme.DefaultIndexedColors.get -> System.Collections.Generic.IReadOnlyList<uint>!
 static ExGrid.Data.Xlsx.XlsxTheme.Office.get -> ExGrid.Data.Xlsx.XlsxTheme!

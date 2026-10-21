@@ -85,6 +85,14 @@ internal static class XlsxRoundTrip
         }
         if (report.UnsupportedFunctions.Count != 0)
             differences.Add("ExSheet.Xlsx reported a function the engine supports as unsupported");
+
+        // Saved through the packed writer and opened again, the Workbook is the same document (ADR-0330 §6).
+        using var saved = new MemoryStream();
+        await XlsxWorkbookWriter.WriteAsync(Workbook.Open(document), saved, cancellationToken: token);
+        saved.Position = 0;
+        var (again, _) = await XlsxWorkbookReader.ReadAsync(saved, CultureInfo.InvariantCulture, cancellationToken: token);
+        if (again.ToJson() != document.ToJson())
+            differences.Add("ExSheet.Xlsx saved the workbook, and opened it again as another document");
     }
 
     private static void Compare(List<string> differences, string name, XlsxCell[] written, XlsxWorksheet read)

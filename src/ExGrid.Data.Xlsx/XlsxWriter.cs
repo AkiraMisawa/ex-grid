@@ -25,6 +25,17 @@ public sealed class XlsxWriteOptions
 
     /// <summary>The defined names the workbook part writes.</summary>
     public IReadOnlyList<XlsxDefinedName>? DefinedNames { get; init; }
+
+    /// <summary>
+    /// The uncompressed bytes the package's parts may hold together. A write that would go past it is refused by name
+    /// (<see cref="XlsxException"/>, <see cref="XlsxRefusal.TooLarge"/>), naming the part, and the sheet, it met; the package
+    /// is then abandoned, and only what an earlier <see cref="XlsxSheetWriter.FlushAsync"/> handed over has reached the
+    /// stream. The default is <see cref="XlsxReadOptions.DefaultMaxUncompressedBytes"/>, the most a file is read with by
+    /// default, so that what is written opens again. The package waits in memory between hand-offs, so a writer that never
+    /// flushes before <see cref="XlsxWriter.CompleteAsync"/> holds about this much, compressed, at most; it is 1 to
+    /// <see cref="XlsxReadOptions.DefaultMaxUncompressedBytes"/>.
+    /// </summary>
+    public long MaxUncompressedBytes { get; init; } = XlsxReadOptions.DefaultMaxUncompressedBytes;
 }
 
 /// <summary>
@@ -50,6 +61,7 @@ public sealed class XlsxWriter : IAsyncDisposable
     private readonly List<(string Name, XlsxSheetVisibility Visibility)> sheets = [];
     private readonly Dictionary<string, int> sharedIndex = new(StringComparer.Ordinal);
     private readonly List<string> shared = [];
+    private readonly List<(int Sheet, XlsxTable Table)> tables = [];
     private XlsxSheetWriter? current;
     private bool completed;
     private bool packageClosed;
@@ -60,6 +72,8 @@ public sealed class XlsxWriter : IAsyncDisposable
         this.output = output;
         this.options = options;
         styles = options.Styles ?? XlsxStyles.Default;
+        if (options.MaxUncompressedBytes is < 1 or > XlsxReadOptions.DefaultMaxUncompressedBytes)
+            throw new ArgumentOutOfRangeException(nameof(options), options.MaxUncompressedBytes, $"MaxUncompressedBytes is 1 to {XlsxReadOptions.DefaultMaxUncompressedBytes:N0}.");
         Validate(styles);
         Validate(options.DefinedNames);
         zip = new ZipArchive(buffer, ZipArchiveMode.Create, leaveOpen: true);
@@ -103,7 +117,7 @@ public sealed class XlsxWriter : IAsyncDisposable
         var index = sheets.Count;
         sheets.Add((name, visibility));
         var entry = zip.CreateEntry($"xl/worksheets/sheet{index + 1}.xml", CompressionLevel.Optimal);
-        current = new XlsxSheetWriter(this, name, XmlWriter.Create(entry.Open(), Settings), columns, index == options.ActiveSheet);
+        current = new XlsxSheetWriter(this, index, name, XmlWriter.Create(new CountedPart(this, entry.Open(), entry.FullName, name), Settings), columns, index == options.ActiveSheet);
         return current;
     }
 
@@ -130,6 +144,14 @@ public sealed class XlsxWriter : IAsyncDisposable
         Part("xl/styles.xml", w => StylesWriter.Write(w, styles));
         if (dynamic)
             Part("xl/metadata.xml", WriteMetadata);
+        for (var i = 0; i < tables.Count; i++)
+        {
+            var (_, table) = tables[i];
+            var id = i + 1;
+            Part($"xl/tables/table{id}.xml", w => WriteTable(w, table, id));
+        }
+        foreach (var sheet in tables.Select(t => t.Sheet).Distinct())
+            Part($"xl/worksheets/_rels/sheet{sheet + 1}.xml.rels", w => WriteSheetRelationships(w, sheet));
         Part("xl/workbook.xml", WriteWorkbook);
         Part("xl/_rels/workbook.xml.rels", w => WriteWorkbookRelationships(w, dynamic));
         Part("_rels/.rels", WriteRootRelationships);
@@ -181,12 +203,53 @@ public sealed class XlsxWriter : IAsyncDisposable
 
     internal ValueTask DrainAsync(CancellationToken cancellationToken) => buffer.DrainAsync(output, cancellationToken);
 
+    /// <summary>
+    /// Records a table on the sheet <paramref name="sheet"/>, checked against every other table and defined name of the
+    /// workbook: the id of the relationship the sheet's <c>tablePart</c> names.
+    /// </summary>
+    internal string AddTable(int sheet, XlsxTable table)
+    {
+        CheckTable(table);
+        if (tables.Any(t => string.Equals(t.Table.Name, table.Name, StringComparison.OrdinalIgnoreCase))
+            || (options.DefinedNames ?? []).Any(n => string.Equals(n.Name, table.Name, StringComparison.OrdinalIgnoreCase)))
+            throw new ArgumentException($"The workbook already has a table or a defined name named '{table.Name}', in some case.", nameof(table));
+        var own = tables.Where(t => t.Sheet == sheet).Select(t => t.Table).ToList();
+        if (own.FirstOrDefault(t => Overlaps(t, table)) is { } other)
+            throw new ArgumentException($"The table '{table.Name}' ({table.Reference}) overlaps the table '{other.Name}' ({other.Reference}).", nameof(table));
+        tables.Add((sheet, table));
+        return "rId" + (own.Count + 1).ToString(CultureInfo.InvariantCulture);
+    }
+
+    private static bool Overlaps(XlsxTable a, XlsxTable b) =>
+        a.HeaderRow <= b.HeaderRow + b.DataRows && b.HeaderRow <= a.HeaderRow + a.DataRows
+        && a.FirstColumn < b.FirstColumn + b.Columns.Count && b.FirstColumn < a.FirstColumn + a.Columns.Count;
+
+    /// <summary>The uncompressed bytes the parts hold so far.</summary>
+    private long uncompressed;
+
+    /// <summary>Whether the parts went past <see cref="XlsxWriteOptions.MaxUncompressedBytes"/>: the package is abandoned.</summary>
+    private bool tooLarge;
+
+    /// <summary>Counts <paramref name="count"/> bytes more into a part, or refuses them past the limit; false once refused, and the bytes are dropped.</summary>
+    internal bool Count(int count, string part, string? sheet)
+    {
+        if (tooLarge)
+            return false;
+        uncompressed += count;
+        if (uncompressed <= options.MaxUncompressedBytes)
+            return true;
+        tooLarge = true;
+        throw new XlsxException(XlsxRefusal.TooLarge, string.Create(CultureInfo.InvariantCulture,
+            $"The workbook would hold more than the {options.MaxUncompressedBytes:N0} uncompressed bytes a file is written with (XlsxWriteOptions.MaxUncompressedBytes)."),
+            part, sheet);
+    }
+
     // ---- the parts -----------------------------------------------------------------------------
 
     private void Part(string name, Action<XmlWriter> write)
     {
         var entry = zip.CreateEntry(name, CompressionLevel.Optimal);
-        using var writer = XmlWriter.Create(entry.Open(), Settings);
+        using var writer = XmlWriter.Create(new CountedPart(this, entry.Open(), name, null), Settings);
         writer.WriteStartDocument(standalone: true);
         write(writer);
         writer.WriteEndDocument();
@@ -258,6 +321,59 @@ public sealed class XlsxWriter : IAsyncDisposable
         w.WriteEndElement();
         w.WriteEndElement();
         w.WriteEndElement();
+        w.WriteEndElement();
+    }
+
+    /// <summary>A table part (CT_Table): its range, an AutoFilter over it, its columns and Excel's default style.</summary>
+    private static void WriteTable(XmlWriter w, XlsxTable table, int id)
+    {
+        w.WriteStartElement("table", Names.Main);
+        w.WriteAttributeString("id", id.ToString(CultureInfo.InvariantCulture));
+        w.WriteAttributeString("name", table.Name);
+        w.WriteAttributeString("displayName", table.Name);
+        w.WriteAttributeString("ref", table.Reference);
+        w.WriteAttributeString("totalsRowShown", "0");
+        if (table.AutoFilter)
+        {
+            w.WriteStartElement("autoFilter");
+            w.WriteAttributeString("ref", table.Reference);
+            w.WriteEndElement();
+        }
+        w.WriteStartElement("tableColumns");
+        w.WriteAttributeString("count", table.Columns.Count.ToString(CultureInfo.InvariantCulture));
+        for (var i = 0; i < table.Columns.Count; i++)
+        {
+            w.WriteStartElement("tableColumn");
+            w.WriteAttributeString("id", (i + 1).ToString(CultureInfo.InvariantCulture));
+            w.WriteAttributeString("name", XString.Encode(table.Columns[i]));
+            w.WriteEndElement();
+        }
+        w.WriteEndElement();
+        w.WriteStartElement("tableStyleInfo");
+        w.WriteAttributeString("name", "TableStyleMedium2");
+        w.WriteAttributeString("showFirstColumn", "0");
+        w.WriteAttributeString("showLastColumn", "0");
+        w.WriteAttributeString("showRowStripes", "1");
+        w.WriteAttributeString("showColumnStripes", "0");
+        w.WriteEndElement();
+        w.WriteEndElement();
+    }
+
+    /// <summary>A worksheet's relationships: one to each of its tables, in the order they were added.</summary>
+    private void WriteSheetRelationships(XmlWriter w, int sheet)
+    {
+        w.WriteStartElement("Relationships", Names.PackageRelationships);
+        var id = 1;
+        for (var i = 0; i < tables.Count; i++)
+        {
+            if (tables[i].Sheet != sheet)
+                continue;
+            w.WriteStartElement("Relationship");
+            w.WriteAttributeString("Id", "rId" + id++.ToString(CultureInfo.InvariantCulture));
+            w.WriteAttributeString("Type", Names.TableType);
+            w.WriteAttributeString("Target", $"../tables/table{i + 1}.xml");
+            w.WriteEndElement();
+        }
         w.WriteEndElement();
     }
 
@@ -373,6 +489,8 @@ public sealed class XlsxWriter : IAsyncDisposable
             Override("/xl/sharedStrings.xml", Names.SharedStringsContent);
         if (dynamic)
             Override("/xl/metadata.xml", Names.SheetMetadataContent);
+        for (var i = 0; i < tables.Count; i++)
+            Override($"/xl/tables/table{i + 1}.xml", Names.TableContent);
         w.WriteEndElement();
     }
 
@@ -391,6 +509,37 @@ public sealed class XlsxWriter : IAsyncDisposable
             throw new ArgumentException($"A sheet's name does not begin or end with an apostrophe; '{name}' does.", nameof(name));
         if (sheets.Any(s => string.Equals(s.Name, name, StringComparison.OrdinalIgnoreCase)))
             throw new ArgumentException($"The workbook already has a sheet named '{name}', in some case.", nameof(name));
+    }
+
+    /// <summary>A table's own shape: its name as Excel names a Table, its columns, and its range within a sheet.</summary>
+    private static void CheckTable(XlsxTable table)
+    {
+        ArgumentNullException.ThrowIfNull(table);
+        if (!XlsxTable.IsValidName(table.Name))
+        {
+            throw new ArgumentException(
+                $"'{table.Name}' is not a name a table can have: a letter, _ or \\, then letters, digits, _ and ., at most 255 characters, and not a cell's address.",
+                nameof(table));
+        }
+        var name = table.Name;
+        if (table.Columns is not { Count: > 0 } columns)
+            throw new ArgumentException($"The table '{name}' has at least one column.", nameof(table));
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var column in columns)
+        {
+            if (string.IsNullOrEmpty(column))
+                throw new ArgumentException($"A column of the table '{name}' has no name.", nameof(table));
+            if (!XString.Carries(column, encoded: true))
+                throw new ArgumentException($"A column's name in the table '{name}' holds half of a surrogate pair, which XML cannot carry.", nameof(table));
+            if (!seen.Add(column))
+                throw new ArgumentException($"The table '{name}' names the column '{column}' twice, in some case.", nameof(table));
+        }
+        if (table.DataRows < 1)
+            throw new ArgumentException($"The table '{name}' has at least one row of data; Excel holds a table of none as one empty row.", nameof(table));
+        if (table.HeaderRow < 0 || table.FirstColumn < 0
+            || (long)table.HeaderRow + table.DataRows >= XlsxCellReference.MaxRows
+            || (long)table.FirstColumn + columns.Count > XlsxCellReference.MaxColumns)
+            throw new ArgumentException($"The table '{name}' lies outside the sheet.", nameof(table));
     }
 
     private static void Validate(XlsxStyles styles)
@@ -444,15 +593,18 @@ public sealed class XlsxSheetWriter
 {
     private readonly XlsxWriter owner;
     private readonly XmlWriter xml;
+    private readonly int index;
+    private readonly List<(XlsxTable Table, string RelationshipId, int[] Header)> tables = [];
     private bool rowOpen;
     private bool ended;
     private int row = -1;
     private int column = -1;
 
-    internal XlsxSheetWriter(XlsxWriter owner, string name, XmlWriter xml, IReadOnlyList<XlsxColumn>? columns, bool active)
+    internal XlsxSheetWriter(XlsxWriter owner, int index, string name, XmlWriter xml, IReadOnlyList<XlsxColumn>? columns, bool active)
     {
         this.owner = owner;
         this.xml = xml;
+        this.index = index;
         Name = name;
         xml.WriteStartDocument(standalone: true);
         xml.WriteStartElement("worksheet", Names.Main);
@@ -496,6 +648,33 @@ public sealed class XlsxSheetWriter
 
     /// <summary>The sheet's name.</summary>
     public string Name { get; }
+
+    /// <summary>
+    /// Adds an Excel Table over cells of this sheet (<c>tableParts</c>, and a table part of its own), before the first cell of
+    /// its header's row is written. Each cell of its header must then be written, as text equal to its column's name
+    /// (<see cref="XlsxCellType.SharedString"/> or <see cref="XlsxCellType.InlineString"/>, no Formula), or the cell, or the
+    /// sheet's end, is refused; its rows of data hold whatever is written there. A table whose name is another table's or a
+    /// defined name's in the workbook, in any case, or that overlaps another table of the sheet, is refused.
+    /// </summary>
+    /// <param name="table">The table.</param>
+    public void AddTable(XlsxTable table)
+    {
+        if (ended)
+            throw new InvalidOperationException($"The sheet '{Name}' is ended: another sheet was begun, or the workbook completed.");
+        ArgumentNullException.ThrowIfNull(table);
+        ArgumentNullException.ThrowIfNull(table.Columns, nameof(table));
+        // A copy of the columns, so that a list the caller changes afterwards cannot make the table part's names differ from
+        // the header written.
+        table = table with { Columns = [.. table.Columns] };
+        if (table.HeaderRow <= row)
+        {
+            throw new ArgumentException(
+                string.Create(CultureInfo.InvariantCulture, $"The table '{table.Name}' is added after row {row + 1} was begun: a table is added before its header's row."),
+                nameof(table));
+        }
+        var id = owner.AddTable(index, table);
+        tables.Add((table, id, new int[1]));
+    }
 
     /// <summary>
     /// Begins <paramref name="row"/> with the cell format of its own that its empty cells take (<c>customFormat</c>), after
@@ -562,6 +741,7 @@ public sealed class XlsxSheetWriter
         };
         if (!carried)
             throw new ArgumentException($"The cell {cell.Reference} holds text XML cannot carry: a control character, or half of a surrogate pair.", nameof(cell));
+        var header = HeaderOf(cell);
         if (cell.Row != row)
         {
             if (rowOpen)
@@ -572,6 +752,8 @@ public sealed class XlsxSheetWriter
             row = cell.Row;
         }
         column = cell.Column;
+        if (header is { } counted)
+            counted[0]++;
         xml.WriteStartElement("c");
         xml.WriteAttributeString("r", cell.Reference);
         if (cell.StyleIndex != 0)
@@ -670,14 +852,59 @@ public sealed class XlsxSheetWriter
         return owner.DrainAsync(cancellationToken);
     }
 
+    /// <summary>
+    /// The count of header cells written of the table whose header holds <paramref name="cell"/>, or null when none does; a
+    /// header's cell that does not hold its column's name as text is refused.
+    /// </summary>
+    private int[]? HeaderOf(in XlsxCell cell)
+    {
+        foreach (var (table, _, written) in tables)
+        {
+            if (cell.Row != table.HeaderRow || cell.Column < table.FirstColumn || cell.Column >= table.FirstColumn + table.Columns.Count)
+                continue;
+            var name = table.Columns[cell.Column - table.FirstColumn];
+            if (cell.Type is not (XlsxCellType.SharedString or XlsxCellType.InlineString) || cell.Formula is not null
+                || !string.Equals(cell.Text, name, StringComparison.Ordinal))
+            {
+                throw new ArgumentException(
+                    $"The cell {cell.Reference} is in the header of the table '{table.Name}', and holds its column's name, '{name}', as text, with no Formula.",
+                    nameof(cell));
+            }
+            return written;
+        }
+        return null;
+    }
+
     internal void End()
     {
         if (ended)
             return;
+        // A table whose header was not written whole would be repaired by Excel: the sheet is not ended, and the caller
+        // abandons the workbook (DisposeAsync).
+        foreach (var (table, _, written) in tables)
+        {
+            if (written[0] != table.Columns.Count)
+            {
+                throw new InvalidOperationException(string.Create(CultureInfo.InvariantCulture,
+                    $"The sheet '{Name}' ends with {written[0]} of the {table.Columns.Count} cells of the header of the table '{table.Name}' written; each holds its column's name."));
+            }
+        }
         ended = true;
         if (rowOpen)
             xml.WriteEndElement();
         xml.WriteEndElement();
+        if (tables.Count > 0)
+        {
+            xml.WriteStartElement("tableParts");
+            xml.WriteAttributeString("count", tables.Count.ToString(CultureInfo.InvariantCulture));
+            foreach (var (_, id, _) in tables)
+            {
+                xml.WriteStartElement("tablePart");
+                xml.WriteAttributeString("id", Names.Relationships, id);
+                xml.WriteEndElement();
+            }
+            xml.WriteEndElement();
+        }
         xml.WriteEndElement();
         xml.WriteEndDocument();
         xml.Dispose();
@@ -698,6 +925,38 @@ public sealed class XlsxSheetWriter
 }
 
 /// <summary>
+/// A part's stream, counting what is written into it against <see cref="XlsxWriteOptions.MaxUncompressedBytes"/>. Past it,
+/// the first write is refused by name and every later one dropped, so that closing the abandoned part throws nothing more.
+/// </summary>
+internal sealed class CountedPart(XlsxWriter owner, Stream inner, string part, string? sheet) : Stream
+{
+    public override void Write(byte[] buffer, int offset, int count) => Write(buffer.AsSpan(offset, count));
+
+    public override void Write(ReadOnlySpan<byte> buffer)
+    {
+        if (owner.Count(buffer.Length, part, sheet))
+            inner.Write(buffer);
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing)
+            inner.Dispose();
+        base.Dispose(disposing);
+    }
+
+    public override bool CanRead => false;
+    public override bool CanSeek => false;
+    public override bool CanWrite => true;
+    public override long Length => throw new NotSupportedException();
+    public override long Position { get => throw new NotSupportedException(); set => throw new NotSupportedException(); }
+    public override void Flush() => inner.Flush();
+    public override int Read(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+    public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
+    public override void SetLength(long value) => throw new NotSupportedException();
+}
+
+/// <summary>
 /// Where the zip writes: memory, handed to the output stream asynchronously in <see cref="DrainAsync"/>. The archive writes
 /// synchronously; this keeps every write to the caller's stream asynchronous.
 /// </summary>
@@ -712,6 +971,8 @@ internal sealed class ForwardBuffer : Stream
             return;
         var full = pending;
         pending = new MemoryStream();
+        // A memory stream holds less than 2 GiB, and the parts at most XlsxReadOptions.DefaultMaxUncompressedBytes (1 GiB)
+        // together, which no compression enlarges past it: the length is an int.
         await output.WriteAsync(full.GetBuffer().AsMemory(0, (int)full.Length), cancellationToken).ConfigureAwait(false);
     }
 

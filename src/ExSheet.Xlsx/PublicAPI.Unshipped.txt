@@ -1,4 +1,7 @@
 #nullable enable
+const ExSheet.Xlsx.XlsxWorkbookWriter.MaxFormulaLength = 8192 -> int
+const ExSheet.Xlsx.XlsxWorkbookWriter.MaxLinkedTableRows = 1048575 -> int
+const ExSheet.Xlsx.XlsxWorkbookWriter.MaxTextLength = 32767 -> int
 ExSheet.Xlsx.NotCarried
 ExSheet.Xlsx.NotCarried.<Clone>$() -> ExSheet.Xlsx.NotCarried!
 ExSheet.Xlsx.NotCarried.Deconstruct(out ExSheet.Xlsx.NotCarriedKind Kind, out string? Sheet, out string? Detail, out string! Description) -> void
@@ -88,7 +91,27 @@ ExSheet.Xlsx.XlsxOpenResult.Equals(ExSheet.Xlsx.XlsxOpenResult? other) -> bool
 ExSheet.Xlsx.XlsxOpenResult.Report.get -> ExSheet.Xlsx.OpenReport!
 ExSheet.Xlsx.XlsxOpenResult.Report.init -> void
 ExSheet.Xlsx.XlsxOpenResult.XlsxOpenResult(ExSheet.Engine.WorkbookDocument! Document, ExSheet.Xlsx.OpenReport! Report) -> void
+ExSheet.Xlsx.XlsxSaveException
+ExSheet.Xlsx.XlsxSaveException.Cell.get -> string?
+ExSheet.Xlsx.XlsxSaveException.Held.get -> string?
+ExSheet.Xlsx.XlsxSaveException.Reason.get -> ExSheet.Xlsx.XlsxSaveRefusal
+ExSheet.Xlsx.XlsxSaveException.Sheet.get -> string?
+ExSheet.Xlsx.XlsxSaveException.XlsxSaveException(ExSheet.Xlsx.XlsxSaveRefusal reason, string! message, string? sheet = null, string? cell = null, string? held = null) -> void
+ExSheet.Xlsx.XlsxSaveOptions
+ExSheet.Xlsx.XlsxSaveOptions.MaxCells.get -> long
+ExSheet.Xlsx.XlsxSaveOptions.MaxCells.init -> void
+ExSheet.Xlsx.XlsxSaveOptions.MaxUncompressedBytes.get -> long
+ExSheet.Xlsx.XlsxSaveOptions.MaxUncompressedBytes.init -> void
+ExSheet.Xlsx.XlsxSaveOptions.XlsxSaveOptions() -> void
+ExSheet.Xlsx.XlsxSaveRefusal
+ExSheet.Xlsx.XlsxSaveRefusal.CircularReference = 1 -> ExSheet.Xlsx.XlsxSaveRefusal
+ExSheet.Xlsx.XlsxSaveRefusal.Formula = 2 -> ExSheet.Xlsx.XlsxSaveRefusal
+ExSheet.Xlsx.XlsxSaveRefusal.LinkedTable = 0 -> ExSheet.Xlsx.XlsxSaveRefusal
+ExSheet.Xlsx.XlsxSaveRefusal.Text = 3 -> ExSheet.Xlsx.XlsxSaveRefusal
+ExSheet.Xlsx.XlsxSaveRefusal.TooLarge = 5 -> ExSheet.Xlsx.XlsxSaveRefusal
+ExSheet.Xlsx.XlsxSaveRefusal.TooManyCells = 4 -> ExSheet.Xlsx.XlsxSaveRefusal
 ExSheet.Xlsx.XlsxWorkbookReader
+ExSheet.Xlsx.XlsxWorkbookWriter
 override ExSheet.Xlsx.NotCarried.Equals(object? obj) -> bool
 override ExSheet.Xlsx.NotCarried.GetHashCode() -> int
 override ExSheet.Xlsx.NotCarried.ToString() -> string!
@@ -105,3 +128,4 @@ static ExSheet.Xlsx.UnsupportedFunctionCell.operator ==(ExSheet.Xlsx.Unsupported
 static ExSheet.Xlsx.XlsxOpenResult.operator !=(ExSheet.Xlsx.XlsxOpenResult? left, ExSheet.Xlsx.XlsxOpenResult? right) -> bool
 static ExSheet.Xlsx.XlsxOpenResult.operator ==(ExSheet.Xlsx.XlsxOpenResult? left, ExSheet.Xlsx.XlsxOpenResult? right) -> bool
 static ExSheet.Xlsx.XlsxWorkbookReader.ReadAsync(System.IO.Stream! stream, System.Globalization.CultureInfo! culture, ExGrid.Data.Xlsx.XlsxReadOptions? options = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<ExSheet.Xlsx.XlsxOpenResult!>
+static ExSheet.Xlsx.XlsxWorkbookWriter.WriteAsync(ExSheet.Engine.Workbook! workbook, System.IO.Stream! stream, ExSheet.Xlsx.XlsxSaveOptions? options = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask

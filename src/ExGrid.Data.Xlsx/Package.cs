@@ -22,6 +22,7 @@ internal static class Names
     public const string StylesType = Relationships + "/styles";
     public const string ThemeType = Relationships + "/theme";
     public const string SheetMetadataType = Relationships + "/sheetMetadata";
+    public const string TableType = Relationships + "/table";
 
     public const string WorkbookContent = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml";
     public const string TemplateContent = "application/vnd.openxmlformats-officedocument.spreadsheetml.template.main+xml";
@@ -30,6 +31,7 @@ internal static class Names
     public const string SharedStringsContent = "application/vnd.openxmlformats-officedocument.spreadsheetml.sharedStrings+xml";
     public const string StylesContent = "application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml";
     public const string SheetMetadataContent = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheetMetadata+xml";
+    public const string TableContent = "application/vnd.openxmlformats-officedocument.spreadsheetml.table+xml";
     public const string RelationshipsContent = "application/vnd.openxmlformats-package.relationships+xml";
     public const string VbaProjectContent = "application/vnd.ms-office.vbaProject";
 

@@ -452,7 +452,7 @@ public static partial class FormulaEntry
     /// <summary>
     /// What Point writes for a pressed column of a Linked Table, through a Pointing Scope
     /// (ADR-0058): Excel's structured reference, <c>Positions[PV]</c>, written as the engine writes
-    /// one back — single brackets, with <c>'</c> before each of <c>[ ] # '</c> in the column's name.
+    /// one back — single brackets, with <c>'</c> before each of <c>[ ] # ' @</c> in the column's name.
     /// </summary>
     /// <param name="table">The table's name, as declared.</param>
     /// <param name="column">The column's name, as declared.</param>

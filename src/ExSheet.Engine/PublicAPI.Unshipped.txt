@@ -19,6 +19,7 @@ ExSheet.Engine.Workbook.DeclareLinkedTable(string! name, System.Collections.Gene
 ExSheet.Engine.Workbook.Do(string! sheet, ExSheet.Engine.SheetEdit! edit) -> ExSheet.Engine.WorkbookStep!
 ExSheet.Engine.Workbook.Find(string! name) -> ExSheet.Engine.Sheet?
 ExSheet.Engine.Workbook.HasVolatileFormulas.get -> bool
+ExSheet.Engine.Workbook.LinkedTableColumns(string! name) -> System.Collections.Generic.IReadOnlyList<System.Collections.Generic.IReadOnlyList<ExSheet.Engine.Value?>!>?
 ExSheet.Engine.Workbook.LinkedTables.get -> System.Collections.Generic.IReadOnlyList<ExSheet.Engine.LinkedTable!>!
 ExSheet.Engine.Workbook.NowSource.get -> System.Func<System.DateTime?>?
 ExSheet.Engine.Workbook.NowSource.set -> void

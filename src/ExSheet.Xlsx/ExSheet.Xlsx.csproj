@@ -3,7 +3,7 @@
   <PropertyGroup>
     <!-- Single-target net10.0; newer runtimes load it as-is (ADR-0022). -->
     <TargetFramework>net10.0</TargetFramework>
-    <Description>ExSheet's .xlsx support: a workbook read into a Workbook Document, every worksheet a Sheet with its constants and Formulas, beside an Open Report of what the file held that was not carried. Anything that would change a Value is refused by name, naming the Sheet and the cell. No component, so a server converts files with no Blazor in the process. Ships at the same version as ExSheet.Engine and ExGrid.Data.Xlsx, and depends on exactly those versions.</Description>
+    <Description>ExSheet's .xlsx support: a workbook read into a Workbook Document, every worksheet a Sheet with its constants and Formulas, beside an Open Report of what the file held that was not carried, and a Workbook written back to a file, each Formula with its Value. Anything that would change a Value is refused by name, naming the Sheet and the cell. No component, so a server converts files with no Blazor in the process. Ships at the same version as ExSheet.Engine and ExGrid.Data.Xlsx, and depends on exactly those versions.</Description>
     <PackageTags>excel;xlsx;spreadsheet;sheet;workbook;openxml</PackageTags>
     <IsTrimmable>true</IsTrimmable>
   </PropertyGroup>

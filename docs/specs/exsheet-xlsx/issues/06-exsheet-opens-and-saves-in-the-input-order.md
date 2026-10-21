@@ -9,6 +9,12 @@ Roadmap: ExSheet — Opening a file is shown while under way, can be cancelled w
 - [ ] Said aloud while under way; Escape cancels; a refused or cancelled read leaves the Workbook as it was
 - [ ] On landing: the undo stack cleared, an open edit discarded and announced
 - [ ] Saving at its own place, refused by name while an edit is open
+- [ ] Saving takes a snapshot of the Workbook first (ticket 04 reads it whole, synchronously, before the first yield) and
+      builds the file from it while yielding, with progress and cancellation, as ADR-0330 §9 does for a read
+- [ ] Bound the rows a row format writes: a row format covering every row writes about a million `<row>` elements, which
+      `XlsxSaveOptions.MaxCells` does not count (only `MaxUncompressedBytes` bounds them today)
 - [ ] Docs Site page and Example (open, Open Report, save) with the Built-in / MudBlazor switch; layer 2 and layer 3 at machine speed on both hosts; Change Note
+- [ ] The page says ticket 05's Linked Tables: each is saved as an Excel Table on a worksheet of its name, and a file that
+      holds one opens in Excel, not in ExSheet, until ExSheet reads Excel Tables (ADR-0330 §6, X1)
 
 **Blocked by:** 02, 04, and input-order ticket 04.

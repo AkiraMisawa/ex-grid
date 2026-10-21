@@ -252,6 +252,24 @@ public class WorkbookTests
         Assert.Equal(["Sheet1", "Sheet2"], change.Sheets.Select(s => s.Name));
     }
 
+    [Fact] // ADR-0049, ADR-0330 §6: a Linked Table's snapshot is read as it stands, column by column, none while it waits, and a later snapshot replaces it without changing it
+    public void A_linked_tables_snapshot_is_read_column_by_column()
+    {
+        var workbook = NewWorkbook("Sheet1");
+        workbook.DeclareLinkedTable("Trades", ["Id", "Amount"], ["Id"]);
+        Assert.Null(workbook.LinkedTableColumns("trades"));
+
+        workbook.PushLinkedTable("Trades", [[Value.FromNumber(1), Value.FromNumber(10)], [Value.FromNumber(2), null]]);
+        var first = workbook.LinkedTableColumns("Trades")!;
+        workbook.PushLinkedTable("Trades", [[Value.FromNumber(3), Value.FromNumber(7)]]);
+
+        Assert.Equal([[Value.FromNumber(1), Value.FromNumber(2)], [Value.FromNumber(10), null]], first.Select(c => c.ToArray()));
+        Assert.Equal([[Value.FromNumber(3)], [Value.FromNumber(7)]], workbook.LinkedTableColumns("Trades")!.Select(c => c.ToArray()));
+        Assert.Throws<InvalidOperationException>(() => workbook.LinkedTableColumns("Positions"));
+        Assert.Throws<RepeatedKeyException>(() => workbook.PushLinkedTable("Trades", [[Value.FromNumber(3), null], [Value.FromNumber(3), null]]));
+        Assert.Null(workbook.LinkedTableColumns("Trades"));
+    }
+
     [Fact] // ADR-0331, ADR-0049: a waiting cell on another Sheet makes its reader wait, which IFERROR does not catch
     public void A_wait_on_another_sheet_taints_its_reader()
     {

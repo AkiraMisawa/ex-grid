@@ -30,7 +30,10 @@ public enum XlsxRefusal
     /// <summary>A part is not well-formed XML, or does not hold what its place in the package says it does.</summary>
     Malformed,
 
-    /// <summary>The file holds more uncompressed bytes than <see cref="XlsxReadOptions.MaxUncompressedBytes"/> allows.</summary>
+    /// <summary>
+    /// The file holds more uncompressed bytes than <see cref="XlsxReadOptions.MaxUncompressedBytes"/> allows; or, from an
+    /// <see cref="XlsxWriter"/>, the workbook written would hold more than <see cref="XlsxWriteOptions.MaxUncompressedBytes"/>.
+    /// </summary>
     TooLarge,
 
     /// <summary>The workbook holds more cells than <see cref="XlsxReadOptions.MaxCells"/> allows.</summary>

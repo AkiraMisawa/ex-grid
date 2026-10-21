@@ -141,3 +141,45 @@ public enum XlsxSheetKind
 /// <param name="LocalSheet">The index of the sheet it is local to, or null for a name of the whole workbook.</param>
 /// <param name="Hidden">Whether it is hidden.</param>
 public sealed record XlsxDefinedName(string Name, string Text, int? LocalSheet = null, bool Hidden = false);
+
+/// <summary>
+/// An Excel Table on a worksheet (ECMA-376 Part 1, §18.5), as <see cref="XlsxSheetWriter.AddTable"/> writes it: a header row
+/// holding each column's name, its rows of data below, an AutoFilter over them and Excel's default table style. The header's
+/// cells are the worksheet's own, written as any others, each holding its column's name as text.
+/// </summary>
+/// <param name="Name">
+/// The name a Formula reads it by (<c>Positions[PV]</c>), as Excel names a Table: a letter, <c>_</c> or <c>\</c>, then letters,
+/// digits, <c>_</c> and <c>.</c>; at most 255 characters; not a cell's address or an R1C1 one, <c>R</c> or <c>C</c>, and no
+/// other table's or defined name's in the workbook, in any case.
+/// </param>
+/// <param name="HeaderRow">The header's row, from zero (row 1 is 0).</param>
+/// <param name="FirstColumn">The first column, from zero (column A is 0).</param>
+/// <param name="Columns">The columns' names, in order: at least one, none empty, no two the same in any case.</param>
+/// <param name="DataRows">The rows of data below the header: at least one, as Excel holds a table of none as one empty row.</param>
+public sealed partial record XlsxTable(string Name, int HeaderRow, int FirstColumn, IReadOnlyList<string> Columns, int DataRows)
+{
+    /// <summary>
+    /// Whether <paramref name="name"/> is a name Excel gives a Table: a letter, <c>_</c> or <c>\</c>, then letters, digits,
+    /// <c>_</c> and <c>.</c>; at most 255 characters; not a cell's address (<c>A1</c>, <c>A01</c>), not an R1C1 one, <c>R</c>
+    /// or <c>C</c>, and not <c>TRUE</c> or <c>FALSE</c>. Whether another table or a defined name has it is the workbook's
+    /// to say.
+    /// </summary>
+    /// <param name="name">The name.</param>
+    public static bool IsValidName(string? name) =>
+        name is { Length: > 0 and <= 255 } && NamePattern().IsMatch(name)
+        && !XlsxCellReference.TryParse(name, out _, out _) && !RowColumnPattern().IsMatch(name)
+        && !name.Equals("TRUE", StringComparison.OrdinalIgnoreCase) && !name.Equals("FALSE", StringComparison.OrdinalIgnoreCase);
+
+    [System.Text.RegularExpressions.GeneratedRegex(@"^[\p{L}_\\][\p{L}\p{Nd}_.]*$", System.Text.RegularExpressions.RegexOptions.CultureInvariant)]
+    private static partial System.Text.RegularExpressions.Regex NamePattern();
+
+    [System.Text.RegularExpressions.GeneratedRegex(@"^[Rr][0-9]*[Cc][0-9]*$|^[RrCc]$", System.Text.RegularExpressions.RegexOptions.CultureInvariant)]
+    private static partial System.Text.RegularExpressions.Regex RowColumnPattern();
+
+    /// <summary>Whether the header's cells carry an AutoFilter's buttons, as a table Excel makes does.</summary>
+    public bool AutoFilter { get; init; } = true;
+
+    /// <summary>The cells the table covers, its header's included, as <c>A1:C4</c>.</summary>
+    public string Reference =>
+        XlsxCellReference.Format(HeaderRow, FirstColumn) + ":" + XlsxCellReference.Format(HeaderRow + DataRows, FirstColumn + Columns.Count - 1);
+}

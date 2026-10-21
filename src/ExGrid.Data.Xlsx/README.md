@@ -97,3 +97,21 @@ await book.CompleteAsync();
 Cells are written row by row, left to right. Text written as a shared string is gathered into the
 shared strings part; every write to the output stream is asynchronous, so an ASP.NET Core response
 body takes it directly.
+
+**An Excel Table** is added to a sheet before its header's row is written, and its header's cells
+are then written as text equal to its columns' names; the writer refuses a header cell that is not,
+and a sheet that ends without one. The table part, the sheet's relationship to it and its content
+type are written for it, with an AutoFilter and Excel's default table style. Its name follows
+Excel's rules for a Table's, and no other table or defined name of the workbook has it.
+
+```csharp
+var positions = book.AddSheet("Positions");
+positions.AddTable(new XlsxTable("Positions", HeaderRow: 0, FirstColumn: 0, ["Desk", "PV"], DataRows: 1));
+positions.Write(new XlsxCell(0, 0, XlsxCellType.SharedString, null, Text: "Desk"));
+positions.Write(new XlsxCell(0, 1, XlsxCellType.SharedString, null, Text: "PV"));
+positions.Write(new XlsxCell(1, 0, XlsxCellType.SharedString, null, Text: "EMEA"));
+positions.Write(new XlsxCell(1, 1, XlsxCellType.Number, "1000000.25"));
+```
+
+The reader does not read a table part yet: a worksheet's `tableParts` is among the elements it keeps
+unread.

@@ -298,10 +298,23 @@ public class NumberFormatTests
     private static string WithoutSeparators(string shown) =>
         new([.. shown.Where(c => c is not ('.' or ',' or ' ' or ' ' or ' '))]);
 
-    /// <summary>A cell in <paramref name="format"/> written through the mapping: the id its cell format names, and the format read back.</summary>
-    private static async Task<(int Written, NumberFormat? Read)> RoundTripAsync(NumberFormat format)
+    [Theory] // ADR-0330 §6, ADR-0071: a code of its own that spells the Workbook culture's built-in is that built-in once the Workbook is open, as Excel records it, and is written as its id
+    [InlineData("m\\/d\\/yyyy", 14)]
+    [InlineData("d\\-mmm\\-yy", 15)]
+    public async Task ADR0330_a_code_that_spells_the_cultures_built_in_is_written_as_the_built_in(string code, int id)
     {
-        var culture = CultureInfo.GetCultureInfo("en-US");
+        var (written, _) = await RoundTripAsync(NumberFormat.Parse(code), "en-US");
+
+        Assert.Equal(id, written);
+    }
+
+    /// <summary>
+    /// A cell in <paramref name="format"/> written from a Workbook of the culture <paramref name="name"/>: the id its cell format
+    /// names, and the format read back. Under ja-JP no code of the theory above spells a built-in in the culture's own form.
+    /// </summary>
+    private static async Task<(int Written, NumberFormat? Read)> RoundTripAsync(NumberFormat format, string name = "ja-JP")
+    {
+        var culture = CultureInfo.GetCultureInfo(name);
         var sheet = new SheetDocument(culture, "Trades", [new SheetDocumentCell(CellAddress.Parse("B7"), Entry.FromValue(Value.FromNumber(45000.25)), format, null, null, null, null)]);
         var file = await Saved.WriteAsync(new WorkbookDocument(culture, "Trades", [sheet]));
 
