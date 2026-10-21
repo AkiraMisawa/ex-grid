@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- The measurement behind ExGrid.Data.Xlsx's default limits (ticket 01 of docs/specs/exsheet-xlsx).
+       Run by hand, never gated (AGENTS.md):
+         nix develop -c dotnet run -c Release (the project tests/ExGrid.Data.Xlsx.Tests/Measure, given a directory and the cell counts to measure)
+       It is outside the solution, and the test project beside it leaves this folder alone. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <IsPackable>false</IsPackable>
+    <UseAppHost>false</UseAppHost>
+    <ServerGarbageCollection>false</ServerGarbageCollection>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\src\ExGrid.Data.Xlsx\ExGrid.Data.Xlsx.csproj" />
+  </ItemGroup>
+
+</Project>

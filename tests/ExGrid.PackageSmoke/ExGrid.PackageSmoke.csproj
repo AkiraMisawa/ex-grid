@@ -28,6 +28,7 @@
     <PackageReference Include="ExSheet.MudBlazor" Version="$(ExGridVersion)" />
     <PackageReference Include="ExGrid.Data" Version="$(ExGridVersion)" />
     <PackageReference Include="ExGrid.Data.Arrow" Version="$(ExGridVersion)" />
+    <PackageReference Include="ExGrid.Data.Xlsx" Version="$(ExGridVersion)" />
     <PackageReference Include="ExPivot.Engine" Version="$(ExGridVersion)" />
     <PackageReference Include="ExPivot" Version="$(ExGridVersion)" />
     <PackageReference Include="ExPivot.MudBlazor" Version="$(ExGridVersion)" />
