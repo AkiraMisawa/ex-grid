@@ -2,7 +2,7 @@
 
 | Product | Line | Branch |
 |---|---|---|
-| ExGrid | 95.5% | 88.2% |
+| ExGrid | 94.9% | 87.8% |
 | ExSheet | 95.7% | 88.5% |
 | ExPivot | 94.4% | 85.5% |
 | ExChart | 89.9% | 80.6% |
@@ -14,19 +14,19 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/21/2026 - 18:44:39 |
+| Generated on: | 10/21/2026 - 19:22:15 |
 | Parser: | MultiReport (19x Cobertura) |
 | Assemblies: | 14 |
-| Classes: | 1076 |
-| Files: | 558 |
-| **Line coverage:** | 94.6% (71069 of 75053) |
-| Covered lines: | 71069 |
-| Uncovered lines: | 3984 |
-| Coverable lines: | 75053 |
-| Total lines: | 125123 |
-| **Branch coverage:** | 86.9% (42502 of 48862) |
-| Covered branches: | 42502 |
-| Total branches: | 48862 |
+| Classes: | 1080 |
+| Files: | 561 |
+| **Line coverage:** | 94.5% (74065 of 78346) |
+| Covered lines: | 74065 |
+| Uncovered lines: | 4281 |
+| Coverable lines: | 78346 |
+| Total lines: | 125562 |
+| **Branch coverage:** | 86.9% (44234 of 50902) |
+| Covered branches: | 44234 |
+| Total branches: | 50902 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
@@ -233,11 +233,11 @@
 |ExChart.MudBlazor.MudExChartStylesheet|0%||
 
 </details>
-<details><summary>ExGrid - 95.2%</summary>
+<details><summary>ExGrid - 94.6%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExGrid**|**95.2%**|**88.4%**|
+|**ExGrid**|**94.6%**|**87.9%**|
 |ExGrid.CellChangeTimes.KeyTimes<TRow>|76.6%|66.6%|
 |ExGrid.CellChangeTimes<TRow>|90.2%|78.5%|
 |ExGrid.Cells.Border|100%|75%|
@@ -268,7 +268,7 @@
 |ExGrid.Cells.RgbColour|100%|100%|
 |ExGrid.Cells.TemplateCellContext<TRow>|100%||
 |ExGrid.ChangeGatherer|97.8%|90.9%|
-|ExGrid.Chrome.BuiltInCommandLabels|100%|69.3%|
+|ExGrid.Chrome.BuiltInCommandLabels|100%|69.6%|
 |ExGrid.Chrome.CellEditorContext|93.7%||
 |ExGrid.Chrome.CellMessageContext|100%||
 |ExGrid.Chrome.ChromeStylesheet|100%||
@@ -362,17 +362,21 @@
 |ExGrid.Components.ExGrid.PlaceholderPosition<TRow>|0%||
 |ExGrid.Components.ExGrid.PointBefore<TRow>|100%||
 |ExGrid.Components.ExGrid.PointedDrag<TRow>|100%||
+|ExGrid.Components.ExGrid.RememberedRowCommand<TRow>|100%||
 |ExGrid.Components.ExGrid.SummaryQuestion<TRow>|100%||
 |ExGrid.Components.ExGrid.TakenAt<TRow>|100%||
 |ExGrid.Components.ExGrid.TakenCopy<TRow, T>|94.4%|100%|
 |ExGrid.Components.ExGrid.TakenList<TRow>|100%||
 |ExGrid.Components.ExGrid.TakenMouseEventArgs<TRow>|100%||
-|ExGrid.Components.ExGrid<TRow>|90.9%|85.4%|
-|ExGrid.Components.ExGrid<TRow>|95.4%|90.4%|
+|ExGrid.Components.ExGrid.WaitingRow<TRow>|100%||
+|ExGrid.Components.ExGrid<TRow, T>|90.8%|85%|
+|ExGrid.Components.ExGrid<TRow>|90.8%|85%|
+|ExGrid.Components.ExGrid<TRow>|95.3%|90.1%|
 |ExGrid.Components.ExGridRow.ActionPaint<TRow>|100%||
-|ExGrid.Components.ExGridRow<TRow>|100%||
 |ExGrid.Components.ExGridRow<TRow>|100%|94.6%|
+|ExGrid.Components.ExGridRow<TRow>|100%||
 |ExGrid.Components.ExGridStylesheet|100%||
+|ExGrid.Components.GridInputText|100%||
 |ExGrid.Components.GridView|100%|50%|
 |ExGrid.Components.HeadingMarkStyles|95%|90%|
 |ExGrid.Components.InstanceIds|100%||
@@ -435,9 +439,9 @@
 |ExGrid.InMemoryGridSource.Pending<TRow>|100%||
 |ExGrid.InMemoryGridSource<TRow>|90.2%|80.7%|
 |ExGrid.InMemoryGridSource<TRow>|95.7%|90.9%|
-|ExGrid.InputOrder|94%|84.7%|
+|ExGrid.InputOrder|94.6%|88%|
 |ExGrid.InputOrder.Waiting|100%||
-|ExGrid.InputOrder<T>|94%|84.7%|
+|ExGrid.InputOrder<T>|94.6%|88%|
 |ExGrid.InternedStrings|100%|100%|
 |ExGrid.KeyedRows.Held<TRow>|100%||
 |ExGrid.KeyedRows<TRow>|97.5%|87.5%|
