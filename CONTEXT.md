@@ -732,6 +732,20 @@ as it answers for sort and filter; the grid only moves the Focus
 _Avoid_: search (that is the filter panel's box over the value list), filter (that hides rows;
 Find hides nothing), lookup
 
+**Replace**:
+Writing a replacement over cells whose entry matches what the user typed: the current match alone, or
+every match at once, all or nothing, as one undo step. In ExGrid the grid raises a request and the
+Consumer performs it, as it answers Find; ExSheet answers over its cells. ExPivot has none
+([ADR-0332](./docs/adr/0332-find-reaches-every-product-replace-is-a-write-asked-of-the-consumer-and-the-matches-in-view-are-marked.md)).
+_Avoid_: substitute, find-and-replace (two gestures in one panel), bulk edit
+
+**Match Mark**:
+The paint on every painted cell that matches the search the find panel holds, the current match apart.
+Only the cells in view are marked and nothing is counted; the grid judges them with a match function,
+and a Consumer that answers Find by a rule of its own gets marks only by passing one
+([ADR-0332](./docs/adr/0332-find-reaches-every-product-replace-is-a-write-asked-of-the-consumer-and-the-matches-in-view-are-marked.md)).
+_Avoid_: highlight (that word is the Change Highlight's), search results
+
 ### Selection
 
 **Selection**:
