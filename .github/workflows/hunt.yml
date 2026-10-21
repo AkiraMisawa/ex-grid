@@ -1,245 +1,69 @@
-# The daily hunt for failures that come one run in forty (ADR-0220 §4 and §5). Gates nothing: no
-# pull request waits on it, and it is not a required check. What it finds enters ADR-0220 §3's
-# list, a ticket each, until the change that fixes it merges.
-#
-# - The hunt: all of layer 3, every test ten times over, against both hosts in both browsers.
-# - The widened run: all of layer 3 once more, with the latency proxy's round trip raised and the
-#   browser's CPU throttled, so a race that needs a narrow window fails nearly every run.
-#
-# Every job runs through counted-run.sh, which fails unless every repetition of every test
-# Playwright lists ran, so "ten times" is a count the run's summary shows, not a flag it was given.
-# chrome-150 is CI's (ci.yml): a display scale, not a race.
-#
-# A pull request that changes this workflow, or the pieces it runs through, runs one small spec
-# file through every job instead, so the jobs are seen to work before they are trusted to hunt.
 name: Hunt
 
 on:
-  schedule:
-    # Daily, 04:23 UTC: off the hour, and clear of the weekly long run (ci.yml, Monday 03:17).
-    - cron: '23 4 * * *'
   workflow_dispatch:
     inputs:
       repeat:
-        description: 'How many times the hunt runs each test'
+        description: Heading repetitions per browser
         type: number
-        default: 10
-      specs:
-        description: 'Spec files to run, space-separated; empty for all of layer 3'
-        type: string
-        default: ''
-  pull_request:
-    paths:
-      - .github/workflows/hunt.yml
-      - tests/ExGrid.Browser/counted-run.sh
-      - tests/ExGrid.Browser/shard-files.mjs
-      - tests/ExGrid.Browser/fixtures.mjs
-      - tests/ExGrid.Browser/latency-proxy.mjs
+        default: 100
 
 permissions:
   contents: read
+  actions: read
 
 concurrency:
   group: hunt-${{ github.ref }}
   cancel-in-progress: true
 
-env:
-  DOTNET_CLI_TELEMETRY_OPTOUT: '1'
-  DOTNET_NOLOGO: '1'
-  # The hunt's repeat: ten to start with (ADR-0220 §4); a pull request's check of the jobs, three.
-  REPEAT: ${{ github.event_name == 'pull_request' && 3 || inputs.repeat || 10 }}
-  # A pull request's check runs one small file: the harness's own readings, which read the circuit
-  # and the pictures the way every other spec does.
-  SPECS: ${{ github.event_name == 'pull_request' && 'harness-reading.spec.mjs' || inputs.specs || '' }}
-  # The widened run's starting values (ADR-0220 §5). The ADR has them chosen from the hunt's
-  # failures; this job is built before the hunt has run, so these start where the suite's own
-  # circuit tests already put a round trip (150 ms, ED-22 and ticket 202) and at DevTools' "4x
-  # slowdown", to be revised from what the hunt finds.
-  RTT_FLOOR: '150'
-  CPU_THROTTLE: '4'
-
 jobs:
-  # As in ci.yml: the hosts published once in Release and handed to every runner.
-  hosts:
-    name: Layer 3's hosts, published in Release
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    steps:
-      - uses: actions/checkout@v7
-
-      - uses: actions/setup-dotnet@v6
-        with:
-          global-json-file: global.json
-
-      - name: Publish the WebAssembly DemoHost
-        run: dotnet publish samples/ExGrid.DemoHost -c Release -o hosts/wasm
-
-      - name: Publish the Server host
-        run: dotnet publish samples/ExGrid.DemoHost.Server -c Release -o hosts/server
-
-      - name: Publish the demo API server
-        run: dotnet publish samples/ExGrid.DemoApi -c Release -o hosts/api
-
-      - uses: actions/upload-artifact@v7
-        with:
-          name: hunt-hosts
-          path: hosts/
-          if-no-files-found: error
-          retention-days: 3
-
-  # Ten shards each: CI's full run takes about forty minutes a browser on one runner, so ten
-  # repeats in ten shards take about forty minutes a shard. A shard is whole spec files, as in
-  # ci.yml, and --repeat-each repeats every test of a file inside its shard.
-  hunt:
-    name: Hunt, ${{ github.event_name == 'pull_request' && 'three' || 'ten' }} times, against ${{ matrix.hosting }} on ${{ matrix.project }}, shard ${{ matrix.shard }}/10 (Linux, headed)
-    needs: hosts
+  heading:
+    name: Row Heading diagnosis, Server on ${{ matrix.project }}
     runs-on: ubuntu-latest
     timeout-minutes: 150
     strategy:
       fail-fast: false
       matrix:
-        hosting: [wasm, server]
         project: [chrome, msedge]
-        shard: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
     steps:
       - uses: actions/checkout@v7
-
       - uses: actions/setup-dotnet@v6
         with:
           global-json-file: global.json
-
       - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: npm
           cache-dependency-path: tests/ExGrid.Browser/package-lock.json
-
-      - name: The installed browsers the suite resolves by channel
+      - name: Install native diagnostic tool
         run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y gdb
+          gdb --version
           google-chrome --version
           microsoft-edge --version
-
       - name: Install the suite
         working-directory: tests/ExGrid.Browser
         run: npm ci
-
       - uses: actions/download-artifact@v8
         with:
           name: hunt-hosts
           path: hosts
-
-      # Whole spec files, every repetition of each (shard-files.mjs): Playwright's --shard cuts the
-      # tests after --repeat-each has multiplied them, and the first run of this workflow ran a third
-      # of a shard's repetitions that way. A pull request's check runs one file, which falls in one
-      # shard; the others take none and have nothing to count. All of layer 3 fills every shard, so
-      # there a shard with no file is sharding that failed, and the job says so rather than passing.
-      - name: Which spec files this shard takes
-        id: shard
-        working-directory: tests/ExGrid.Browser
-        shell: bash
-        run: |
-          files=$(node shard-files.mjs ${{ matrix.shard }} 10 ${SPECS})
-          echo "files=${files}" >> "$GITHUB_OUTPUT"
-          if [ -n "${files}" ]; then
-            echo "Shard ${{ matrix.shard }}/10: ${files}"
-          elif [ -z "${SPECS}" ]; then
-            echo "Shard ${{ matrix.shard }}/10 of all of layer 3 takes no spec file: the sharding is broken, not empty." >&2
-            exit 1
-          else
-            echo "Shard ${{ matrix.shard }}/10 of \`${SPECS}\` takes no spec file." >> "$GITHUB_STEP_SUMMARY"
-          fi
-
-      - name: Layer 3, each test ${{ env.REPEAT }} times, headed under xvfb
-        if: steps.shard.outputs.files != ''
+          run-id: 39587602626
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Repeat the unchanged heading gestures
         working-directory: tests/ExGrid.Browser
         env:
           EXGRID_HOSTS: ${{ github.workspace }}/hosts
-          EXGRID_HOSTING: ${{ matrix.hosting }}
+          EXGRID_HOSTING: server
         run: >
           xvfb-run --auto-servernum --server-args="-screen 0 2560x1600x24"
-          ./counted-run.sh ${REPEAT} ${{ steps.shard.outputs.files }} --project=${{ matrix.project }}
-
-      - name: Keep the run's records
-        if: always() && steps.shard.outputs.files != ''
+          ./counted-run.sh ${{ inputs.repeat }} headings.spec.mjs --project=${{ matrix.project }}
+      - name: Keep diagnostic records
+        if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: hunt-${{ matrix.hosting }}-${{ matrix.project }}-${{ matrix.shard }}
-          path: |
-            verification/
-            tests/ExGrid.Browser/test-results/
-          if-no-files-found: ignore
-          retention-days: 30
-
-  # The widened run: each test once, slowed. On the Server host the proxy adds RTT_FLOOR to every
-  # round trip, a test's own included (latency-proxy.mjs); in both hosts every page the suite opens
-  # runs CPU_THROTTLE times slower (fixtures.mjs). A page a test opens in a context of its own
-  # making (browser.newContext in a spec) is not slowed.
-  widened:
-    name: Widened against ${{ matrix.hosting }} on ${{ matrix.project }}, shard ${{ matrix.shard }}/4 (Linux, headed)
-    needs: hosts
-    runs-on: ubuntu-latest
-    timeout-minutes: 150
-    strategy:
-      fail-fast: false
-      matrix:
-        hosting: [wasm, server]
-        project: [chrome, msedge]
-        shard: [1, 2, 3, 4]
-    steps:
-      - uses: actions/checkout@v7
-
-      - uses: actions/setup-dotnet@v6
-        with:
-          global-json-file: global.json
-
-      - uses: actions/setup-node@v7
-        with:
-          node-version: 22
-          cache: npm
-          cache-dependency-path: tests/ExGrid.Browser/package-lock.json
-
-      - name: Install the suite
-        working-directory: tests/ExGrid.Browser
-        run: npm ci
-
-      - uses: actions/download-artifact@v8
-        with:
-          name: hunt-hosts
-          path: hosts
-
-      - name: Which spec files this shard takes
-        id: shard
-        working-directory: tests/ExGrid.Browser
-        shell: bash
-        run: |
-          files=$(node shard-files.mjs ${{ matrix.shard }} 4 ${SPECS})
-          echo "files=${files}" >> "$GITHUB_OUTPUT"
-          if [ -n "${files}" ]; then
-            echo "Shard ${{ matrix.shard }}/4: ${files}"
-          elif [ -z "${SPECS}" ]; then
-            echo "Shard ${{ matrix.shard }}/4 of all of layer 3 takes no spec file: the sharding is broken, not empty." >&2
-            exit 1
-          else
-            echo "Shard ${{ matrix.shard }}/4 of \`${SPECS}\` takes no spec file." >> "$GITHUB_STEP_SUMMARY"
-          fi
-
-      - name: Layer 3 widened, headed under xvfb
-        if: steps.shard.outputs.files != ''
-        working-directory: tests/ExGrid.Browser
-        env:
-          EXGRID_HOSTS: ${{ github.workspace }}/hosts
-          EXGRID_HOSTING: ${{ matrix.hosting }}
-          EXGRID_RTT_FLOOR: ${{ env.RTT_FLOOR }}
-          EXGRID_CPU_THROTTLE: ${{ env.CPU_THROTTLE }}
-        run: >
-          xvfb-run --auto-servernum --server-args="-screen 0 2560x1600x24"
-          ./counted-run.sh 1 ${{ steps.shard.outputs.files }} --project=${{ matrix.project }}
-
-      - name: Keep the run's records
-        if: always() && steps.shard.outputs.files != ''
-        uses: actions/upload-artifact@v7
-        with:
-          name: widened-${{ matrix.hosting }}-${{ matrix.project }}-${{ matrix.shard }}
+          name: heading-native-${{ matrix.project }}
           path: |
             verification/
             tests/ExGrid.Browser/test-results/
