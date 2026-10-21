@@ -14,19 +14,19 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/21/2026 - 12:01:08 |
+| Generated on: | 10/21/2026 - 13:37:37 |
 | Parser: | MultiReport (18x Cobertura) |
 | Assemblies: | 14 |
-| Classes: | 1060 |
+| Classes: | 1059 |
 | Files: | 545 |
-| **Line coverage:** | 94.6% (69109 of 73008) |
-| Covered lines: | 69109 |
-| Uncovered lines: | 3899 |
-| Coverable lines: | 73008 |
-| Total lines: | 122001 |
-| **Branch coverage:** | 86.9% (41333 of 47510) |
-| Covered branches: | 41333 |
-| Total branches: | 47510 |
+| **Line coverage:** | 94.6% (69143 of 73049) |
+| Covered lines: | 69143 |
+| Uncovered lines: | 3906 |
+| Coverable lines: | 73049 |
+| Total lines: | 122214 |
+| **Branch coverage:** | 86.9% (41353 of 47534) |
+| Covered branches: | 41353 |
+| Total branches: | 47534 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
@@ -366,11 +366,11 @@
 |ExGrid.Components.ExGrid.TakenCopy<TRow, T>|94.4%|100%|
 |ExGrid.Components.ExGrid.TakenList<TRow>|100%||
 |ExGrid.Components.ExGrid.TakenMouseEventArgs<TRow>|100%||
-|ExGrid.Components.ExGrid<TRow>|95.4%|90.3%|
 |ExGrid.Components.ExGrid<TRow>|90.7%|85.6%|
+|ExGrid.Components.ExGrid<TRow>|95.2%|90.2%|
 |ExGrid.Components.ExGridRow.ActionPaint<TRow>|100%||
-|ExGrid.Components.ExGridRow<TRow>|100%||
 |ExGrid.Components.ExGridRow<TRow>|100%|94.7%|
+|ExGrid.Components.ExGridRow<TRow>|100%||
 |ExGrid.Components.ExGridStylesheet|100%||
 |ExGrid.Components.GridView|100%|50%|
 |ExGrid.Components.HeadingMarkStyles|95%|90%|
@@ -425,9 +425,9 @@
 |ExGrid.InMemoryGridSource.Pending<TRow>|100%||
 |ExGrid.InMemoryGridSource<TRow>|93.5%|77.7%|
 |ExGrid.InMemoryGridSource<TRow>|96.5%|91.5%|
-|ExGrid.InputOrder|94%|82.6%|
+|ExGrid.InputOrder|94%|84.7%|
 |ExGrid.InputOrder.Waiting|100%||
-|ExGrid.InputOrder<T>|94%|82.6%|
+|ExGrid.InputOrder<T>|94%|84.7%|
 |ExGrid.InternedStrings|100%|100%|
 |ExGrid.KeyedRows.Held<TRow>|100%||
 |ExGrid.KeyedRows<TRow>|97.5%|87.5%|
@@ -445,8 +445,8 @@
 |ExGrid.RangeDocument|100%||
 |ExGrid.RowChange<TRow>|100%||
 |ExGrid.RowRange|100%||
-|ExGrid.Rows.FetchingRowMarks<TRow>|95.4%|84.6%|
 |ExGrid.Rows.FetchingRowMarks<TRow>|90.4%|75.9%|
+|ExGrid.Rows.FetchingRowMarks<TRow>|95.4%|84.6%|
 |ExGrid.Rows.InMemoryRowMarks<TRow>|90.3%|77.4%|
 |ExGrid.Rows.RowMarkAdapter<TRow>|100%||
 |ExGrid.Rows.RowMarkCounts|100%||
@@ -596,7 +596,7 @@
 |ExGrid.Data.Storage.DoubleColumnWriter|100%||
 |ExGrid.Data.Storage.DoubleData|100%||
 |ExGrid.Data.Storage.DoubleObjectColumn<T>|100%|100%|
-|ExGrid.Data.Storage.FixedCodes|93.5%|75%|
+|ExGrid.Data.Storage.FixedCodes|96.7%|87.5%|
 |ExGrid.Data.Storage.Gather|98.8%|96.1%|
 |ExGrid.Data.Storage.Int32ObjectColumn<T>|82.3%|100%|
 |ExGrid.Data.Storage.IntegerColumnWriter|100%||
@@ -939,25 +939,24 @@
 |ExPivot.MudBlazor.MudPivotValueFieldSettings|96.8%|77.2%|
 
 </details>
-<details><summary>ExSheet - 93.1%</summary>
+<details><summary>ExSheet - 93.2%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExSheet**|**93.1%**|**85.1%**|
+|**ExSheet**|**93.2%**|**85%**|
 |ExSheet.AlignCenterItem|100%||
 |ExSheet.AlignLeftItem|100%||
 |ExSheet.AlignmentItem|100%|100%|
 |ExSheet.AlignRightItem|100%||
 |ExSheet.BoldItem|100%|100%|
 |ExSheet.BordersItem|95.8%|100%|
-|ExSheet.BuiltInToolbarItem|96.5%|97.3%|
+|ExSheet.BuiltInToolbarItem|96.4%|97.3%|
 |ExSheet.ColourItem|96%|100%|
 |ExSheet.CommaItem|83.3%||
-|ExSheet.Components.BrowserTurn|100%|83.3%|
-|ExSheet.Components.ExSheet|91.3%|83.5%|
+|ExSheet.Components.ExSheet|91.6%|83.5%|
 |ExSheet.Components.ExSheet.KeyboardListener|100%||
 |ExSheet.Components.ExSheet.KeyUpListener|100%||
-|ExSheet.Components.ExSheet<T>|91.3%|83.5%|
+|ExSheet.Components.ExSheet<T>|91.6%|83.5%|
 |ExSheet.Components.ExSheetStylesheet|100%||
 |ExSheet.Components.FormatCellsPanel|97.3%|87.5%|
 |ExSheet.DefaultToolbarRow|100%|50%|
@@ -1005,8 +1004,8 @@
 |ExSheet.SheetStructureKeys|100%|90.9%|
 |ExSheet.SheetSummary|97.8%|82.5%|
 |ExSheet.SheetTabKeys|100%|100%|
-|ExSheet.SheetToolbar|90.9%|79.6%|
-|ExSheet.SheetToolbarContext|95%|78.5%|
+|ExSheet.SheetToolbar|89.2%|79%|
+|ExSheet.SheetToolbarContext|95.1%|78.5%|
 |ExSheet.SheetWidening|100%|97.5%|
 |ExSheet.SheetWords|94.6%|89.4%|
 |ExSheet.StrikethroughItem|100%|100%|
@@ -1014,7 +1013,7 @@
 |ExSheet.ToolbarChoice|100%||
 |ExSheet.ToolbarChoicesPanel|83.3%|68%|
 |ExSheet.ToolbarIcons|100%|100%|
-|ExSheet.ToolbarItemBase|95.5%|90.3%|
+|ExSheet.ToolbarItemBase|95.6%|90.3%|
 |ExSheet.ToolbarItemContext|96.9%|98%|
 |ExSheet.ToolbarItemFace|100%||
 |ExSheet.ToolbarOrder|100%|83.3%|
