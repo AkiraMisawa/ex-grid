@@ -366,7 +366,7 @@ public sealed class WorkbookStep
     {
         Sheet = sheet;
         Change = change;
-        Ranges = ranges;
+        Ranges = [.. ranges];
         _undo = undo;
         _redo = redo;
     }

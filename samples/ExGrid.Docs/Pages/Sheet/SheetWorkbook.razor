@@ -136,7 +136,8 @@ await sheet.DoAsync("Totals", SheetEdit.MoveSheet(0));</code></pre>
                 with every Formula that read it, since ExSheet asks nothing before deleting. The undo shows the Sheet it
                 brings back, or the one it leaves: a Sheet deleted, renamed or moved is shown, and when a Sheet added or
                 copied is taken away, the Sheet it was added beside or copied from is shown. A redo shows the Sheet added
-                or copied again, and for a Sheet deleted again the one that takes its place. Either way the Sheet keeps its
+                or copied again; a Sheet deleted again is taken away, and the Sheet shown stays shown, unless it is the
+                one deleted, when the Sheet that takes its place is. Either way the Sheet keeps its
                 own Selection: a Sheet operation changes no cells to select. The Sheet's notice, its live
                 region, says what was done, and <code>SheetsChanged</code> is raised. While a cell is being edited none of
                 them is done, and the notice says why.

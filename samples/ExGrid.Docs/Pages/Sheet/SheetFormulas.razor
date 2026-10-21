@@ -360,7 +360,9 @@
         <p>
             Every operation a user can perform is a <code>SheetEdit</code> — insert or delete rows and columns, set
             a Cell Format, paste, fill — and <code>Workbook.Do(sheet, edit)</code> returns the one
-            <code>WorkbookStep</code> that undoes and redoes it. A paste that writes in parts is still one edit: a copied block over several ranges
+            <code>WorkbookStep</code> that undoes and redoes it. Its <code>Ranges</code> name the ranges it changed on its
+            Sheet — the cells written, the ranges formatted, the whole rows or columns inserted or deleted, none for an
+            operation on the Sheets themselves — which ExSheet's undo selects, as Excel's does. A paste that writes in parts is still one edit: a copied block over several ranges
             (<code>SheetEdit.Paste(block, targets)</code>), and pasted text some of whose fields carry an exact
             number (<code>SheetEdit.PasteText(fields, entries)</code>). Each is one step, and one change, so
             <code>RAND</code> draws once for it. <code>Workbook.Check(sheet, edit)</code> says whether an edit would be refused,

@@ -105,6 +105,50 @@ public class UndoShowsTheSheetTests : SheetTestContext
         AssertSelected(cut, "B4");
     }
 
+    [Fact] // ADR-0331 §3, spine 6: two undos at once under a DocumentChanged handler that awaits end with the second's range selected, over the data both left
+    public async Task ADR0331_two_undos_under_an_awaiting_handler_select_the_second_ones_range()
+    {
+        var delays = new Queue<TaskCompletionSource>();
+        var cut = RenderSheet(ps => ps.Add(s => s.DocumentChanged, async (SheetDocument _) =>
+        {
+            if (delays.TryDequeue(out var wait)) await wait.Task;
+        }));
+        await EnterAsync(cut, "A1", "1");
+        await EnterAsync(cut, "C5", "2");
+        var first = new TaskCompletionSource();
+        delays.Enqueue(first);
+
+        // The first undo's handler is still awaiting as the second undo runs and completes.
+        var firstUndo = cut.InvokeAsync(() => cut.Instance.UndoAsync());
+        await cut.InvokeAsync(() => cut.Instance.UndoAsync());
+        first.SetResult();
+        await firstUndo;
+
+        Assert.Equal("", CellText(cut, "C5"));
+        Assert.Equal("", CellText(cut, "A1"));
+        AssertSelected(cut, "A1");
+    }
+
+    [Fact] // ADR-0331 §3: an undo placed on the Sheet shown is not placed once the Consumer's handler opens another document
+    public async Task ADR0331_an_undos_range_is_not_placed_among_another_documents_rows()
+    {
+        SheetDocument? replacement = null;
+        IRenderedComponent<SheetComponent>? rendered = null;
+        var cut = RenderSheet(ps => ps.Add(s => s.DocumentChanged, (SheetDocument _) =>
+        {
+            if (replacement is { } next) rendered!.Render(p => p.Add(s => s.Document, next));
+        }));
+        rendered = cut;
+        await EnterAsync(cut, "C5", "2");
+        await GoToAsync(cut, "A1");
+        replacement = new Sheet(Culture).ToDocument();
+
+        await cut.InvokeAsync(() => cut.Instance.UndoAsync());
+
+        // The range was placed before the handler ran; the document it opened starts with its own Selection.
+        Assert.DoesNotContain(Range("C5"), Selection(cut).Ranges);
+    }
+
     [Fact] // ADR-0331 §3, ADR-0054: Delete's undo selects what Delete was pressed over, not only the cells it cleared
     public async Task ADR0331_deletes_undo_selects_what_it_was_pressed_over()
     {
