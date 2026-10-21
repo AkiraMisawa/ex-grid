@@ -2,7 +2,7 @@
 
 | Product | Line | Branch |
 |---|---|---|
-| ExGrid | 95.5% | 88.3% |
+| ExGrid | 95.5% | 88.2% |
 | ExSheet | 95.6% | 88.4% |
 | ExPivot | 94.4% | 85.4% |
 | ExChart | 89.9% | 80.6% |
@@ -14,19 +14,19 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/21/2026 - 15:47:42 |
+| Generated on: | 10/21/2026 - 16:26:58 |
 | Parser: | MultiReport (19x Cobertura) |
 | Assemblies: | 14 |
-| Classes: | 1066 |
-| Files: | 552 |
-| **Line coverage:** | 94.6% (70264 of 74230) |
-| Covered lines: | 70264 |
-| Uncovered lines: | 3966 |
-| Coverable lines: | 74230 |
-| Total lines: | 123718 |
-| **Branch coverage:** | 86.9% (41985 of 48281) |
-| Covered branches: | 41985 |
-| Total branches: | 48281 |
+| Classes: | 1074 |
+| Files: | 557 |
+| **Line coverage:** | 94.6% (70693 of 74681) |
+| Covered lines: | 70693 |
+| Uncovered lines: | 3988 |
+| Coverable lines: | 74681 |
+| Total lines: | 124696 |
+| **Branch coverage:** | 86.9% (42196 of 48530) |
+| Covered branches: | 42196 |
+| Total branches: | 48530 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
@@ -237,7 +237,7 @@
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExGrid**|**95.2%**|**88.5%**|
+|**ExGrid**|**95.2%**|**88.4%**|
 |ExGrid.CellChangeTimes.KeyTimes<TRow>|76.6%|66.6%|
 |ExGrid.CellChangeTimes<TRow>|90.2%|78.5%|
 |ExGrid.Cells.Border|100%|75%|
@@ -268,7 +268,7 @@
 |ExGrid.Cells.RgbColour|100%|100%|
 |ExGrid.Cells.TemplateCellContext<TRow>|100%||
 |ExGrid.ChangeGatherer|97.8%|90.9%|
-|ExGrid.Chrome.BuiltInCommandLabels|100%|69.2%|
+|ExGrid.Chrome.BuiltInCommandLabels|100%|69.3%|
 |ExGrid.Chrome.CellEditorContext|93.7%||
 |ExGrid.Chrome.CellMessageContext|100%||
 |ExGrid.Chrome.ChromeStylesheet|100%||
@@ -278,8 +278,9 @@
 |ExGrid.Chrome.EditorCompletionContext|100%||
 |ExGrid.Chrome.FilterPanelChoices|95.9%|90.3%|
 |ExGrid.Chrome.FilterPanelContext|88.8%||
-|ExGrid.Chrome.FindContext|85.7%||
+|ExGrid.Chrome.FindContext|90.4%||
 |ExGrid.Chrome.FindPanelLabelIds|100%|100%|
+|ExGrid.Chrome.FindPanelRefusedCell|100%||
 |ExGrid.Chrome.FormulaBarTextContext|100%||
 |ExGrid.Chrome.GridCommand|100%||
 |ExGrid.Chrome.GridPopoverContext|100%||
@@ -366,7 +367,7 @@
 |ExGrid.Components.ExGrid.TakenCopy<TRow, T>|94.4%|100%|
 |ExGrid.Components.ExGrid.TakenList<TRow>|100%||
 |ExGrid.Components.ExGrid.TakenMouseEventArgs<TRow>|100%||
-|ExGrid.Components.ExGrid<TRow>|90.7%|85.6%|
+|ExGrid.Components.ExGrid<TRow>|90.8%|85.4%|
 |ExGrid.Components.ExGrid<TRow>|95.4%|90.3%|
 |ExGrid.Components.ExGridRow.ActionPaint<TRow>|100%||
 |ExGrid.Components.ExGridRow<TRow>|100%||
@@ -402,6 +403,13 @@
 |ExGrid.Finding.GridFindPattern|100%||
 |ExGrid.Finding.GridFindRequest|90%||
 |ExGrid.Finding.GridFindResult|100%||
+|ExGrid.Finding.GridReplace|100%|100%|
+|ExGrid.Finding.GridReplaceAnswer<TRow>|100%||
+|ExGrid.Finding.GridReplacedRow<TRow>|100%||
+|ExGrid.Finding.GridReplaceRefusedCell|100%||
+|ExGrid.Finding.GridReplaceRequest|90%||
+|ExGrid.Finding.GridReplaceResult|100%|100%|
+|ExGrid.Finding.GridReplaceWrite<TRow>|93.3%||
 |ExGrid.FormatCode|86.5%|85.2%|
 |ExGrid.GridChangeBatch<TRow>|96.6%|68.7%|
 |ExGrid.GridColumn<TRow>|50%||
@@ -425,8 +433,8 @@
 |ExGrid.IGridSource<TRow>|100%||
 |ExGrid.InMemoryGridSource.ChangePlan<TRow>|100%|100%|
 |ExGrid.InMemoryGridSource.Pending<TRow>|100%||
-|ExGrid.InMemoryGridSource<TRow>|93.5%|83.3%|
-|ExGrid.InMemoryGridSource<TRow>|96.5%|91.5%|
+|ExGrid.InMemoryGridSource<TRow>|90.2%|80.7%|
+|ExGrid.InMemoryGridSource<TRow>|95.7%|90.9%|
 |ExGrid.InputOrder|94%|84.7%|
 |ExGrid.InputOrder.Waiting|100%||
 |ExGrid.InputOrder<T>|94%|84.7%|
@@ -598,7 +606,7 @@
 |ExGrid.Data.Storage.DoubleColumnWriter|100%||
 |ExGrid.Data.Storage.DoubleData|100%||
 |ExGrid.Data.Storage.DoubleObjectColumn<T>|100%|100%|
-|ExGrid.Data.Storage.FixedCodes|93.5%|75%|
+|ExGrid.Data.Storage.FixedCodes|96.7%|87.5%|
 |ExGrid.Data.Storage.Gather|98.8%|96.1%|
 |ExGrid.Data.Storage.Int32ObjectColumn<T>|82.3%|100%|
 |ExGrid.Data.Storage.IntegerColumnWriter|100%||
@@ -687,7 +695,7 @@
 |ExGrid.MudBlazor.MudEditorCompletion|100%|100%|
 |ExGrid.MudBlazor.MudExGridFilterPanel|98.7%|86.4%|
 |ExGrid.MudBlazor.MudExGridFilterPanel.OperandDateConverter|93.7%|87.5%|
-|ExGrid.MudBlazor.MudExGridFindPanel|92.8%|100%|
+|ExGrid.MudBlazor.MudExGridFindPanel|93.6%|100%|
 |ExGrid.MudBlazor.MudExGridFont|100%||
 |ExGrid.MudBlazor.MudExGridMenu|95.9%|92.3%|
 |ExGrid.MudBlazor.MudExGridMenuItem|100%||
