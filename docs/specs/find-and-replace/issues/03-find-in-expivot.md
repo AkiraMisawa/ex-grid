@@ -34,5 +34,5 @@ Roadmap: ExPivot — Ctrl+F finds a label or a value in the report as shown.
 - 2026-10-21: **Column labels: decided by ADR-0333 and built in ticket 05.** ADR-0332 §1 names the
   column labels among what Find searches; in ExPivot the column Items and the value captions stand in
   the report grid's headers, which ExGrid's Find now searches itself before the rows, so they are found,
-  marked and said ("Found in a header") with the Focus left where it was. The Layout page, the README
+  marked and said ("Found in the header Plums") with the Focus left where it was. The Layout page, the README
   and the Change Note say so.

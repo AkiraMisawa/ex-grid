@@ -458,7 +458,7 @@ public sealed class FindTests : PivotTestContext
         await NextAsync(cut);
 
         Assert.Equal(["Plums"], CurrentHeaders(cut));
-        Assert.Equal("Found in a header", Outcome(cut));
+        Assert.Equal("Found in the header Plums", Outcome(cut));
         Assert.Null(FocusOrNone(cut));
 
         // No row label or value says it: the walk comes round to the header again.

@@ -89,7 +89,7 @@ public partial class ExGrid<TRow>
         if (_findCurrent is null && _findCurrentHeader is null)
             return;
         _findCurrent = null;
-        ForgetCurrentHeader();
+        DropCurrentHeader();
         _suppressRender = false;
         StateHasChanged();
     }
@@ -99,6 +99,8 @@ public partial class ExGrid<TRow>
     /// Asked wherever the Selection is replaced, and again before each render.</summary>
     private void ForgetCurrentMatchOffFocus()
     {
+        // A header found is the current match only under the Selection it was found under (ADR-0333).
+        ForgetCurrentHeaderOffSelection();
         if (_findCurrent is not { } current)
             return;
         var selection = _selection.Selection;
@@ -112,10 +114,12 @@ public partial class ExGrid<TRow>
         => marks is not null && _findCurrent is { } current && current.Row == row ? current.Column : -1;
 
     /// <summary>A substituted panel's change to what the panel holds (ADR-0055): the grid renders
-    /// for it where the marks may move, as it does for the built-in panel's own fields.</summary>
+    /// for it where the marks may move, as it does for the built-in panel's own fields — on the cells
+    /// where somebody judges them, on the headers wherever they are searched, as the grid judges those
+    /// itself whoever answers Find (ADR-0333).</summary>
     private void FindHeldChanged()
     {
-        if (_findOpen && FindMatchRule() is not null)
+        if (_findOpen && (FindMatchRule() is not null || (FindsHeaders && !HideHeader)))
             StateHasChanged();
     }
 }

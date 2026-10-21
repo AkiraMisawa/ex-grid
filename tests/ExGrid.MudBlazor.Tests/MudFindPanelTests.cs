@@ -78,14 +78,14 @@ public class MudFindPanelTests : MudTestContext
         Assert.Equal("No match", outcome.TextContent.Trim());
     }
 
-    [Fact] // ADR-0333 §1 / ADR-0033: a match found in a header is said in the live region, as the Focus does not move to it, and not in the colour of a fault
+    [Fact] // ADR-0333 §1 / ADR-0033: a match found in a header is said, naming the header, in the live region, as the Focus does not move to it, and not in the colour of a fault
     public void ADR0333_a_match_in_a_header_is_said_and_is_no_fault()
     {
-        var cut = RenderPanel(Context(outcome: FindOutcome.FoundInHeader));
+        var cut = RenderPanel(Context(outcome: FindOutcome.FoundInHeader) with { FoundHeader = "As of" });
 
         var outcome = cut.Find(".mud-ex-grid-find-outcome");
         Assert.Equal("status", outcome.GetAttribute("role"));
-        Assert.Equal("Found in a header", outcome.TextContent.Trim());
+        Assert.Equal("Found in the header As of", outcome.TextContent.Trim());
         Assert.DoesNotContain("mud-error-text", outcome.ClassList);
         Assert.Contains("mud-error-text", RenderPanel(Context(outcome: FindOutcome.NotFound)).Find(".mud-ex-grid-find-outcome").ClassList);
     }

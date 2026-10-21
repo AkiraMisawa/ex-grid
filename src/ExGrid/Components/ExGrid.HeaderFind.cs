@@ -9,7 +9,7 @@ namespace ExGrid.Components;
 // Group labels itself, by the reference rule over the text it shows, and asks the Consumer only about
 // rows, with ADR-0055's request unchanged. The header rows come before the data rows in the walk
 // (HeaderFindWalk). A header a step finds is the current match: it wears the current Match Mark, is
-// scrolled into view across, and the panel says it was found in a header; the Focus does not move, and
+// scrolled into view across, and the panel names it; the Focus does not move, and
 // the next step continues from it. Every header in view that matches wears the Match Mark. A selection
 // as the scope searches no header, and Replace never writes one.
 public partial class ExGrid<TRow>
@@ -19,7 +19,7 @@ public partial class ExGrid<TRow>
     /// on, a Find step walks the header rows before the data rows — the top Header Group row first, down
     /// to the column header row, each left to right in the current column order — and wraps, forward and
     /// backward. A header that matches becomes the current match: it wears the current Match Mark, is
-    /// scrolled into view across, and the panel says it was found in a header
+    /// scrolled into view across, and the panel names it, <see cref="global::ExGrid.Chrome.FindContext.FoundHeader"/>
     /// (<see cref="FindOutcome.FoundInHeader"/>); <b>the Focus does not move</b>, as a header is not a
     /// cell, and the next step continues from it. Every header in view that matches wears the Match Mark,
     /// judged by <see cref="GridFind.Matches(string, GridFindPattern)"/> over the header's text, whoever
@@ -33,11 +33,16 @@ public partial class ExGrid<TRow>
     /// </summary>
     [Parameter] public bool FindsHeaders { get; set; } = true;
 
-    // The header a step found, and the Selection it was found under: the current match while that
-    // Selection stands, forgotten the moment it is replaced, so the next step starts from the Focus the
-    // user moved to rather than from a header they have left.
-    private FindHeader? _findCurrentHeader;
+    // The header a step found, by which header it is, and the Selection it was found under: the current
+    // match while that Selection stands and the header is still shown, forgotten the moment either goes,
+    // so the next step starts from the Focus the user moved to rather than from a header they have left.
+    private FindHeaderId? _findCurrentHeader;
     private GridSelection? _findCurrentHeaderSelection;
+
+    // The header the panel says a step found it in, as it read when found (FindContext.FoundHeader).
+    private string _foundHeaderText = "";
+
+    private string FoundHeaderNow => _findOutcome == FindOutcome.FoundInHeader ? _foundHeaderText : "";
 
     // The columns a header found is revealed across: its first and last.
     private (int First, int Last)? _revealHeaderAcross;
@@ -64,14 +69,38 @@ public partial class ExGrid<TRow>
             {
                 var group = groups[g];
                 if (group.TopTier == tier)
-                    headers.Add(new FindHeader(headerRow, group.FirstColumn, group.FirstColumn + group.MemberCount - 1, group.Label, null));
+                    headers.Add(new FindHeader(headerRow, group.FirstColumn, group.FirstColumn + group.MemberCount - 1, group.Label, IdOf(group)));
             }
             // Declared in any order; walked left to right.
             headers.Sort(start, headers.Count - start, Comparer<FindHeader>.Create(static (a, b) => a.FirstColumn.CompareTo(b.FirstColumn)));
         }
         for (var c = 0; c < Columns.Count; c++)
-            headers.Add(new FindHeader(_headerLayout.TierCount, c, c, Columns[c].Header, Columns[c].Name));
+            headers.Add(new FindHeader(_headerLayout.TierCount, c, c, Columns[c].Header, IdOf(Columns[c])));
         return [.. headers];
+    }
+
+    /// <summary>Which header a column's header is (ADR-0333): its column's name.</summary>
+    private static FindHeaderId IdOf(GridColumn<TRow> column) => new(0, column.Name);
+
+    /// <summary>Which header a Header Group's label is (ADR-0333): its declared top tier and the first
+    /// member column it declares.</summary>
+    private static FindHeaderId IdOf(ResolvedHeaderGroup group) => new(group.Group.Tier, group.Group.Columns[0]);
+
+    /// <summary>Whether two walks hold the same headers in the same places, whatever their text: what
+    /// a step read before it asked still stands where it stood.</summary>
+    private static bool SameHeaders(FindHeader[] read, FindHeader[] now)
+    {
+        if (read.Length != now.Length)
+            return false;
+        for (var i = 0; i < read.Length; i++)
+        {
+            if (read[i].Id != now[i].Id || read[i].HeaderRow != now[i].HeaderRow
+                || read[i].FirstColumn != now[i].FirstColumn || read[i].LastColumn != now[i].LastColumn)
+            {
+                return false;
+            }
+        }
+        return true;
     }
 
     /// <summary>The indices of the headers that match <paramref name="pattern"/>, ascending.</summary>
@@ -97,29 +126,54 @@ public partial class ExGrid<TRow>
         return -1;
     }
 
-    /// <summary>The current header's index among <paramref name="headers"/>, or null: none is current,
-    /// the Selection it was found under has been replaced, or it no longer stands where it stood.</summary>
+    /// <summary>The current header's index among <paramref name="headers"/>, wherever the columns have
+    /// moved it, or null: none is current, the Selection it was found under has been replaced, or it is
+    /// not among them — and then it is forgotten.</summary>
     private int? CurrentHeaderIn(FindHeader[] headers)
     {
         ForgetCurrentHeaderOffSelection();
         if (_findCurrentHeader is not { } current)
             return null;
-        var index = Array.IndexOf(headers, current);
-        return index < 0 ? null : index;
+        for (var i = 0; i < headers.Length; i++)
+        {
+            if (headers[i].Id == current)
+                return i;
+        }
+        DropCurrentHeader();
+        return null;
     }
 
     /// <summary>The current header is forgotten once the Selection it was found under is replaced: the
-    /// user has moved, and the next step starts from where they moved to.</summary>
+    /// user has moved, and the next step starts from where they moved to. Asked wherever the Selection
+    /// is replaced, with the current cell match (ForgetCurrentMatchOffFocus).</summary>
     private void ForgetCurrentHeaderOffSelection()
     {
         if (_findCurrentHeader is not null && !ReferenceEquals(_findCurrentHeaderSelection, _selection.Selection))
-        {
-            _findCurrentHeader = null;
-            _findCurrentHeaderSelection = null;
-        }
+            DropCurrentHeader();
     }
 
-    /// <summary>No header is current any more: a new step, a write, or the panel opened again.</summary>
+    /// <summary>The current header is forgotten once it is no longer shown — its column gone or
+    /// hidden, its Header Group no longer declared, the headers hidden or no longer searched. Asked
+    /// where the columns and the Header Groups are taken in, before the render that shows them.</summary>
+    private void ForgetCurrentHeaderGone()
+    {
+        if (_findCurrentHeader is { } current && !Array.Exists(FindHeaders(), header => header.Id == current))
+            DropCurrentHeader();
+    }
+
+    /// <summary>No header is current any more, and the panel no longer says one was found: it would
+    /// name a header that is not the current match.</summary>
+    private void DropCurrentHeader()
+    {
+        if (_findCurrentHeader is null)
+            return;
+        ForgetCurrentHeader();
+        if (_findOutcome == FindOutcome.FoundInHeader)
+            _findOutcome = FindOutcome.None;
+    }
+
+    /// <summary>No header is current any more: a new step, or the panel opened again, each of which
+    /// sets the panel's outcome itself.</summary>
     private void ForgetCurrentHeader()
     {
         _findCurrentHeader = null;
@@ -128,15 +182,16 @@ public partial class ExGrid<TRow>
 
     /// <summary>
     /// A step's header becomes the current match (ADR-0333 §1): the current Match Mark on it, the
-    /// columns under it scrolled into view across, the panel saying it was found in a header. The Focus
+    /// columns under it scrolled into view across, the panel naming it. The Focus
     /// and the Selection stay where they are.
     /// </summary>
     private void LandOnHeader(FindHeader header)
     {
         _findCurrent = null;
-        _findCurrentHeader = header;
+        _findCurrentHeader = header.Id;
         _findCurrentHeaderSelection = _selection.Selection;
         _findOutcome = FindOutcome.FoundInHeader;
+        _foundHeaderText = header.Text;
         _revealHeaderAcross = (header.FirstColumn, header.LastColumn);
         _revealColumnAcross = null;
         _revealTarget = null;
@@ -179,7 +234,7 @@ public partial class ExGrid<TRow>
         for (var c = 0; c < Columns.Count; c++)
         {
             if (GridFind.Matches(Columns[c].Header, pattern))
-                leaves[c] = _findCurrentHeader is { Column: { } name } && name == Columns[c].Name ? HeaderMatchMarks.Current : HeaderMatchMarks.Match;
+                leaves[c] = _findCurrentHeader == IdOf(Columns[c]) ? HeaderMatchMarks.Current : HeaderMatchMarks.Match;
         }
         var groups = _headerLayout.Groups;
         var groupMarks = new byte[groups.Count];
@@ -188,8 +243,7 @@ public partial class ExGrid<TRow>
             var group = groups[g];
             if (!GridFind.Matches(group.Label, pattern))
                 continue;
-            var header = new FindHeader(_headerLayout.TierCount - group.TopTier, group.FirstColumn, group.FirstColumn + group.MemberCount - 1, group.Label, null);
-            groupMarks[g] = _findCurrentHeader == header ? HeaderMatchMarks.Current : HeaderMatchMarks.Match;
+            groupMarks[g] = _findCurrentHeader == IdOf(group) ? HeaderMatchMarks.Current : HeaderMatchMarks.Match;
         }
         return _headerMarks = new HeaderMatchMarks(pattern, Columns, _headerLayout, _findCurrentHeader, leaves, groupMarks);
     }
@@ -201,19 +255,27 @@ public partial class ExGrid<TRow>
     private static string GroupClass(int group, HeaderMatchMarks? marks)
         => GroupClasses[marks?.GroupMark(group) ?? 0];
 
+    /// <summary>The current header says so to assistive technology (ADR-0333 §1), as its mark says it
+    /// to the eye: <c>aria-current="true"</c>, and no attribute on any other.</summary>
+    private static string? GroupCurrent(int group, HeaderMatchMarks? marks)
+        => marks?.GroupMark(group) == HeaderMatchMarks.Current ? "true" : null;
+
+    private static string? LeafCurrent(int column, HeaderMatchMarks? marks)
+        => marks?.LeafMark(column) == HeaderMatchMarks.Current ? "true" : null;
+
     private static int LeafMark(int column, HeaderMatchMarks? marks) => marks?.LeafMark(column) ?? 0;
 
     /// <summary>What the header band marks (ADR-0333 §1): for each column header and each Header Group,
     /// none, a match, or the current match.</summary>
     private sealed class HeaderMatchMarks(
         GridFindPattern pattern, IReadOnlyList<GridColumn<TRow>> columns, HeaderGroupLayout layout,
-        FindHeader? current, byte[] leaves, byte[] groups)
+        FindHeaderId? current, byte[] leaves, byte[] groups)
     {
         public const byte Match = 1;
         public const byte Current = 2;
 
         public bool Same(string text, bool matchCase, bool wholeCell, IReadOnlyList<GridColumn<TRow>> nowColumns,
-            HeaderGroupLayout nowLayout, FindHeader? nowCurrent)
+            HeaderGroupLayout nowLayout, FindHeaderId? nowCurrent)
             => ReferenceEquals(columns, nowColumns) && ReferenceEquals(layout, nowLayout) && current == nowCurrent
                 && string.Equals(pattern.Text, text, StringComparison.Ordinal)
                 && pattern.MatchCase == matchCase && pattern.WholeCell == wholeCell;

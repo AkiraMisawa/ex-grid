@@ -170,7 +170,7 @@ for (const chrome of ['builtin', 'mud']) {
 
             await step(page);
             await expect(bond).toHaveClass(/ex-match-mark-current/);
-            await expect(report(page).locator('.ex-popover-find [role=status]')).toHaveText('Found in a header');
+            await expect(report(page).locator('.ex-popover-find [role=status]')).toHaveText('Found in the header Bond');
             await expect(report(page)).toHaveAttribute('aria-activedescendant', /-r1c1$/);
 
             // A lone match finds itself: the step goes round the rows and comes back to it.

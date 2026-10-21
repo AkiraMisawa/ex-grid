@@ -588,6 +588,7 @@ public partial class ExGrid<TRow>
             // pointed cell when the outline moves, the far end when Shift extends it. The Focus
             // itself does not move.
             _revealTarget = new ExtentReveal(_pointer.Extent, _pointer.FocusRange);
+            _revealHeaderAcross = null;
             _revealFocus = true;
         }
     }

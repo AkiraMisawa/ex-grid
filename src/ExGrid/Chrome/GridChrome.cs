@@ -422,6 +422,13 @@ public sealed record FindContext(
     /// Chrome may show the first few and count the rest, as
     /// <see cref="FindPanelLabelIds.OutcomeText"/> does.</summary>
     public IReadOnlyList<FindPanelRefusedCell> ReplaceRefusedCells { get; init; } = [];
+
+    /// <summary>The header the last step found its match in, as the grid shows it — a column's header or
+    /// a Header Group's label — while <see cref="Outcome"/> is <see cref="Finding.FindOutcome.FoundInHeader"/>;
+    /// empty otherwise (ADR-0333). The Focus does not move to a header, so the panel names it:
+    /// <see cref="FindPanelLabelIds.OutcomeText"/> puts it at
+    /// <see cref="FindPanelLabelIds.ColumnPlaceholder"/>.</summary>
+    public string FoundHeader { get; init; } = "";
 }
 
 /// <summary>

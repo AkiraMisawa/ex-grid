@@ -3,14 +3,21 @@ using ExGrid.Selection;
 namespace ExGrid.Finding;
 
 /// <summary>
+/// Which header a <see cref="FindHeader"/> is, whatever the column order or its text (ADR-0333): a
+/// column header by its column's name, at <paramref name="Tier"/> 0; a Header Group label by its declared
+/// top tier and the first member column it declares, which no other rectangle of that tier holds, as
+/// rectangles may not overlap (ADR-0032). The current header is kept by this, so a reorder, or a header's
+/// text changed, leaves it the same header, and the walk and the marks agree on which one it is.
+/// </summary>
+internal readonly record struct FindHeaderId(int Tier, string Column);
+
+/// <summary>
 /// One header Find can stop on (ADR-0333): a Header Group's label or a column's header, as the grid
 /// shows it. <paramref name="HeaderRow"/> counts the header's rows from the top Header Group row, 0,
 /// down to the column header row; <paramref name="FirstColumn"/> and <paramref name="LastColumn"/> are
-/// the columns it stands over in the current order; <paramref name="Column"/> is the column's name for
-/// a column header and null for a Header Group label. Compared by value, so a header found under one
-/// render is the same header under the next while nothing it shows has moved.
+/// the columns it stands over in the current order; <paramref name="Id"/> is which header it is.
 /// </summary>
-internal readonly record struct FindHeader(int HeaderRow, int FirstColumn, int LastColumn, string Text, string? Column);
+internal readonly record struct FindHeader(int HeaderRow, int FirstColumn, int LastColumn, string Text, FindHeaderId Id);
 
 /// <summary>
 /// The order a Find step walks once the headers are searched (ADR-0333 §3): the header rows first, top

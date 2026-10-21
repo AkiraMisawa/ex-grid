@@ -392,7 +392,7 @@ for (const chrome of ['builtin', 'mud']) {
 
             await page.keyboard.press('Enter');
             await expect(trader).toHaveClass(/ex-match-mark-current/);
-            await expect(grid(page).locator('.ex-popover-find [role=status]')).toHaveText('Found in a header');
+            await expect(grid(page).locator('.ex-popover-find [role=status]')).toHaveText('Found in the header Trader');
             await expect.poll(() => focusedCell(page)).toMatch(/r0c0$/);
             await expect(field).toBeFocused();
 
@@ -428,7 +428,7 @@ for (const chrome of ['builtin', 'mud']) {
 
             await page.keyboard.press('Enter');
             await expect(header(page, 'Who')).toHaveClass(/ex-match-mark-current/);
-            await expect(grid(page).locator('.ex-popover-find [role=status]')).toHaveText('Found in a header');
+            await expect(grid(page).locator('.ex-popover-find [role=status]')).toHaveText('Found in the header Who');
 
             // Novak is in Trader's rows: from the header the rows are searched from their start.
             await page.keyboard.press('ControlOrMeta+a');

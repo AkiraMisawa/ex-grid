@@ -30,6 +30,8 @@ const ExGrid.Chrome.RefusalLabelIds.PasteUnreadable = "refused-paste-unreadable"
 const ExGrid.ShapedGrid.DateFormat = "yyyy-mm-dd" -> string!
 const ExGrid.ShapedGrid.DateTimeFormat = "yyyy-mm-dd hh:mm:ss" -> string!
 const ExGrid.ShapedGrid.IntegerFormat = "#,##0" -> string!
+ExGrid.Chrome.FindContext.FoundHeader.get -> string!
+ExGrid.Chrome.FindContext.FoundHeader.init -> void
 ExGrid.Chrome.FindContext.Replace.get -> System.Func<System.Threading.Tasks.Task!>?
 ExGrid.Chrome.FindContext.Replace.init -> void
 ExGrid.Chrome.FindContext.ReplaceAll.get -> System.Func<System.Threading.Tasks.Task!>?

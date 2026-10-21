@@ -65,9 +65,12 @@
             <li>
                 <strong>A header found is the current match, and the Focus stays where it is</strong>: a header is
                 not a cell, and moving the Focus to a cell under it would show something that did not match. The
-                header wears the current match's mark, is scrolled into view across, and the panel says "Found
-                in a header". The next step goes on from that header. Selecting a cell leaves it, and the next
-                step starts from your Focus.
+                header wears the current match's mark, is scrolled into view across, and the panel names it —
+                "Found in the header Trader" — which a screen reader hears, as the header itself says it is the
+                current one (<code>aria-current</code>). The next step goes on from that header, wherever the
+                columns have moved it meanwhile. Selecting a cell leaves it, and the panel says no more of it;
+                the next step starts from your Focus. A substituted Chrome reads the header's text from
+                <code>FindContext.FoundHeader</code>.
             </li>
             <li>
                 <strong>Every header on screen that matches is marked</strong>, as matching cells are, with the

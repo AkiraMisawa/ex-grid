@@ -62,7 +62,7 @@ public static class BuiltInCommandLabels
         FindPanelLabelIds.Next => "Find next",
         FindPanelLabelIds.Previous => "Find previous",
         FindPanelLabelIds.NotFound => "No match",
-        FindPanelLabelIds.FoundInHeader => "Found in a header",
+        FindPanelLabelIds.FoundInHeader => "Found in the header " + FindPanelLabelIds.ColumnPlaceholder,
         FindPanelLabelIds.OrderChanged => "The rows moved; find again",
         FindPanelLabelIds.SourceChanged => "The data was replaced; find again",
         FindPanelLabelIds.ReplaceTitle => "Find and Replace",

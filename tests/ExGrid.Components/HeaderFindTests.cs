@@ -1,6 +1,7 @@
 using AngleSharp.Dom;
 using Bunit;
 using ExGrid.Cells;
+using ExGrid.Chrome;
 using ExGrid.Columns;
 using ExGrid.Components.Tests.Support;
 using ExGrid.Finding;
@@ -115,8 +116,12 @@ public class HeaderFindTests : GridTestContext
         Assert.Equal(new CellPosition(1, 0), heard.Selection!.Focus);
         Assert.Equal(["Amount"], Current(cut));
         Assert.Contains("ex-match-mark", Header(cut, "Amount").ClassList);
-        Assert.Equal("Found in a header", Outcome(cut));
+        // The panel names the header, as the Focus does not show where the match is; the header says it
+        // is the current one to assistive technology, and no other header does.
+        Assert.Equal("Found in the header Amount", Outcome(cut));
         Assert.Equal("status", cut.Find(".ex-find-outcome").GetAttribute("role"));
+        Assert.Equal("true", Header(cut, "Amount").GetAttribute("aria-current"));
+        Assert.Single(cut.FindAll("[aria-current]"));
         Assert.Empty(heard.Refusals);
     }
 
@@ -216,9 +221,12 @@ public class HeaderFindTests : GridTestContext
         await NextAsync(cut);
         Assert.Equal(["Desks"], Current(cut));
         Assert.Contains("ex-match-mark-current", Header(cut, "Desks").ClassList);
+        Assert.Equal("true", Header(cut, "Desks").GetAttribute("aria-current"));
+        Assert.Equal("Found in the header Desks", Outcome(cut));
 
         await NextAsync(cut);
         Assert.Equal(["Desk A"], Current(cut));
+        Assert.Null(Header(cut, "Desks").GetAttribute("aria-current"));
         Assert.DoesNotContain("ex-match-mark-current", Header(cut, "Desks").ClassList);
         Assert.Contains("ex-match-mark", Header(cut, "Desks").ClassList);
     }
@@ -319,6 +327,8 @@ public class HeaderFindTests : GridTestContext
         await cut.InvokeAsync(() => cut.Instance.PlaceSelectionAsync(new SelectionRange(4, 0, 1, 1), new CellPosition(4, 0), 0));
 
         Assert.Empty(cut.FindAll(".ex-match-mark-current"));
+        // The panel no longer says a header was found: none is the current match.
+        Assert.Equal("", Outcome(cut));
         await NextAsync(cut);
         Assert.Equal(new CellPosition(4, 0), heard.Requests[^1].From);
         Assert.Equal(new CellPosition(4, 1), heard.Selection!.Focus);
@@ -363,5 +373,144 @@ public class HeaderFindTests : GridTestContext
         Assert.Equal(["Book"], Current(cut));
         Assert.Null(heard.Requests[^1].From);
         Assert.Equal(new CellPosition(RowCount - 1, 0), heard.Selection!.Focus);
+    }
+
+    /// <summary>A Chrome whose find panel records what it was handed and renders a marker.</summary>
+    private sealed class FindChrome : IGridChrome
+    {
+        public FindContext? Find { get; private set; }
+
+        public RenderFragment? FindPanel(FindContext context)
+        {
+            Find = context;
+            return builder => builder.AddMarkupContent(0, "<div class='ex-stub-find'>stub find</div>");
+        }
+
+        public RenderFragment? FilterPanel(FilterPanelContext context) => null;
+
+        public RenderFragment? ColumnMenu(ColumnMenuContext context) => null;
+
+        public RenderFragment? ContextMenu<TRow>(ContextMenuContext<TRow> context) => null;
+
+        public RenderFragment? CellEditor(CellEditorContext context) => null;
+
+        public RenderFragment? LoadingIndicator(LoadingContext context) => null;
+    }
+
+    [Fact] // ADR-0333 §1 / ADR-0055: a substituted panel's text marks the headers as it is typed, though OnFind answers with no match function, and the context names the header a step found
+    public async Task ADR0333_a_substituted_panel_marks_the_headers_as_it_is_typed()
+    {
+        var heard = new Heard();
+        var chrome = new FindChrome();
+        var cut = RenderGrid(heard, more: ps => ps.Add(g => g.Chrome, chrome));
+        await PressAsync(cut, "f", ctrl: true);
+
+        // From the Chrome's own event, not the grid's: the grid renders itself where a mark moves.
+        await cut.InvokeAsync(() => chrome.Find!.TextChanged("amount"));
+
+        Assert.Contains("ex-match-mark", Header(cut, "Amount").ClassList);
+
+        await cut.InvokeAsync(chrome.Find!.Next);
+
+        Assert.Equal(FindOutcome.FoundInHeader, chrome.Find!.Outcome);
+        Assert.Equal("Amount", chrome.Find.FoundHeader);
+        Assert.Equal("Found in the header Amount", FindPanelLabelIds.OutcomeText(chrome.Find, BuiltInCommandLabels.For));
+    }
+
+    [Fact] // ADR-0333 §3: with no Focus, the header found is still the one the next step goes on from after the columns are reordered, and the one marked current
+    public async Task ADR0333_a_reorder_with_no_focus_keeps_the_header_found()
+    {
+        var heard = new Heard();
+        var cut = RenderGrid(heard);
+        await OpenAsync(cut, "Desk");
+        await NextAsync(cut);
+        Assert.Equal(["Desk A"], Current(cut));
+
+        var columns = Columns();
+        cut.Render(ps => ps.Add(g => g.Columns, [columns[0], columns[1], columns[2], columns[4], columns[3], columns[5]]));
+
+        Assert.Equal(["Desk A"], Current(cut));
+        Assert.Equal("Found in the header Desk A", Outcome(cut));
+        await NextAsync(cut);
+        Assert.Equal(["Desk B"], Current(cut));
+        Assert.Empty(heard.Requests);
+    }
+
+    [Fact] // ADR-0333 §1: a Header Group found stays the current match while it is declared again as it was, and is forgotten, with what the panel said, once it is no longer declared
+    public async Task ADR0333_a_header_group_found_follows_the_header_groups()
+    {
+        var heard = new Heard();
+        var cut = RenderGrid(heard, more: ps => ps.Add(g => g.HeaderGroups, (HeaderGroup[])[new("Desks", ["DeskA", "DeskB"])]));
+        await OpenAsync(cut, "Desk");
+        await NextAsync(cut);
+        Assert.Equal(["Desks"], Current(cut));
+
+        cut.Render(ps => ps.Add(g => g.HeaderGroups, (HeaderGroup[])[new("Desks", ["DeskA", "DeskB"])]));
+        Assert.Equal(["Desks"], Current(cut));
+        Assert.Equal("Found in the header Desks", Outcome(cut));
+
+        cut.Render(ps => ps.Add(g => g.HeaderGroups, (HeaderGroup[])[]));
+        Assert.Empty(cut.FindAll(".ex-match-mark-current"));
+        Assert.Equal("", Outcome(cut));
+
+        // The next step starts from the top again: the first header that matches.
+        await NextAsync(cut);
+        Assert.Equal(["Desk A"], Current(cut));
+    }
+
+    [Fact] // ADR-0333 §2: a column left out of Columns is not searched, nor marked
+    public async Task ADR0333_a_column_left_out_is_not_searched()
+    {
+        var heard = new Heard();
+        var cut = RenderGrid(heard);
+        cut.Render(ps => ps.Add(g => g.Columns, Columns().Where(c => c.Name != "Amount").ToArray()));
+        await OpenAsync(cut, "Amount");
+
+        await NextAsync(cut);
+
+        Assert.Empty(cut.FindAll(".ex-header-cell.ex-match-mark"));
+        Assert.Equal([FindRefusalReason.NotFound], heard.Refusals);
+        Assert.Equal("No match", Outcome(cut));
+    }
+
+    [Fact] // ADR-0333 §2 / ADR-0055: the headers turned off while a step was out are not searched, and the answer stands alone — no match, not a reorder
+    public async Task ADR0333_finds_headers_turned_off_while_the_step_was_out_falls_to_the_answer()
+    {
+        var heard = new Heard();
+        var answer = new TaskCompletionSource<GridFindResult>();
+        var cut = RenderGrid(heard, _ => answer.Task);
+        await ClickCellAsync(cut, 50, 30);
+        await OpenAsync(cut, "Amount");
+        // Not awaited: the step waits on the answer given below.
+        var step = NextAsync(cut);
+
+        cut.Render(ps => ps.Add(g => g.FindsHeaders, false));
+        await cut.InvokeAsync(() => answer.SetResult(GridFindResult.NotFound));
+        await step;
+
+        Assert.Equal([FindRefusalReason.NotFound], heard.Refusals);
+        Assert.Empty(cut.FindAll(".ex-match-mark-current"));
+    }
+
+    [Fact] // ADR-0333 §3: a header whose text changed while the step was out is judged as it now reads, and stands where it stood
+    public async Task ADR0333_a_header_retitled_while_the_step_was_out_is_judged_as_it_reads()
+    {
+        var heard = new Heard();
+        var answer = new TaskCompletionSource<GridFindResult>();
+        var cut = RenderGrid(heard, _ => answer.Task);
+        await ClickCellAsync(cut, 50, 30);
+        await OpenAsync(cut, "Total");
+        // Not awaited: the step waits on the answer given below.
+        var step = NextAsync(cut);
+
+        var columns = Columns();
+        columns[2] = new("Amount", ColumnType.Number, r => r.Amount, header: "Total amount", width: Fixed100);
+        cut.Render(ps => ps.Add(g => g.Columns, columns));
+        await cut.InvokeAsync(() => answer.SetResult(GridFindResult.NotFound));
+        await step;
+
+        Assert.Empty(heard.Refusals);
+        Assert.Equal(["Total"], Current(cut));
+        Assert.Equal("Found in the header Total", Outcome(cut));
     }
 }
