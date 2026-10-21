@@ -201,9 +201,8 @@ public class WriterRefusalTests
         Assert.Equal(7, (await CellsAsync(file)).Count);
     }
 
-    [Theory] // ADR-0330 §6: a Formula Excel would not take is refused by name, with its Sheet, cell and text: a text constant over 255 characters, calls nested past 64 levels, a call of more than 255 arguments, a bound name called
+    [Theory] // ADR-0330 §6: a Formula Excel would not take is refused by name, with its Sheet, cell and text: a text constant over 255 characters, a call of more than 255 arguments, a bound name called
     [InlineData("long text", "255 characters")]
-    [InlineData("deep", "64 levels")]
     [InlineData("many arguments", "255 arguments")]
     [InlineData("bound call", "LET binds or a LAMBDA takes")]
     public async Task ADR0330_a_formula_excel_would_not_take_is_refused_by_name(string kind, string said)
@@ -211,7 +210,6 @@ public class WriterRefusalTests
         var formula = kind switch
         {
             "long text" => "=LEN(\"" + new string('x', 256) + "\")",
-            "deep" => "=" + string.Concat(Enumerable.Repeat("ABS(", 65)) + "1" + new string(')', 65),
             "many arguments" => "=HSTACK(" + string.Join(",", Enumerable.Repeat("1", 256)) + ")",
             _ => "=LET(f,LAMBDA(x,x+1),f(2))",
         };

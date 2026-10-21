@@ -245,7 +245,7 @@ public partial class ExSheet
             foreach (var widened in SheetWidening.Of(sheet, cells, columns, metrics))
                 steps.Add(workbook.Do(sheet.Name, WidenedByEntry(widened.Column, widened.Characters)));
         }
-        _history.Record(steps);
+        _history.Record(steps, step.Sheet);
         await ChangedAsync([.. steps.Select(s => s.Change)]);
         return null;
     }

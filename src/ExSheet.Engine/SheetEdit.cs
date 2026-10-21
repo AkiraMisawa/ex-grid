@@ -356,7 +356,7 @@ public abstract class SheetEdit
     internal virtual IReadOnlyList<CellRange> Ranges => [];
 
     /// <summary>The smallest range holding every one of <paramref name="cells"/>; none for no cells.</summary>
-    private static IReadOnlyList<CellRange> Bounding(IEnumerable<CellAddress> cells)
+    internal static IReadOnlyList<CellRange> Bounding(IEnumerable<CellAddress> cells)
     {
         int top = int.MaxValue, left = int.MaxValue, bottom = -1, right = -1;
         foreach (var cell in cells)

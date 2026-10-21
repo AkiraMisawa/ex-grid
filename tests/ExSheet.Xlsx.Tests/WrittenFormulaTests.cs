@@ -222,8 +222,8 @@ public class WrittenFormulaTests
         static string Nested(int depth) => "=" + string.Concat(Enumerable.Repeat("ABS(", depth)) + "((1))" + new string(')', depth);
 
         Assert.Equal(Nested(WrittenFormula.MaxDepth)[1..], Written(Nested(WrittenFormula.MaxDepth)));
-        WrittenFormula.Write(Entry.Parse(Nested(WrittenFormula.MaxDepth + 1), CultureInfo.InvariantCulture)!, null, out var problem);
-        Assert.Equal(WrittenFormulaProblem.TooDeep, problem);
+        // One level deeper never reaches the writer: the engine refuses it as it is typed (ADR-0047).
+        Assert.Throws<FormulaSyntaxException>(() => Entry.Parse(Nested(WrittenFormula.MaxDepth + 1), CultureInfo.InvariantCulture));
     }
 
     [Fact] // ADR-0330 §6: a call takes 255 arguments at most in Excel

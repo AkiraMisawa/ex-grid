@@ -269,7 +269,11 @@ public sealed partial class Workbook
             {
                 foreach (var step in steps) Collect(step.Sheet, step.Redo());
                 return (first, SheetChange.None);
-            })));
+            })),
+            // What an undo or a redo selects is on the Sheet acted on first: the smallest range holding what
+            // the edits on it changed (ADR-0331 §3, one range selected).
+            SheetEdit.Bounding(edits.Where((_, i) => targets[i] == first)
+                .SelectMany(e => e.Edit.Ranges).SelectMany(r => new[] { r.First, r.Last })));
     }
 
     /// <summary>Whether <see cref="Do(string, SheetEdit)"/> would refuse <paramref name="edit"/> on the Sheet named <paramref name="sheet"/> as it stands, and why; <see langword="null"/> when it would not.</summary>
