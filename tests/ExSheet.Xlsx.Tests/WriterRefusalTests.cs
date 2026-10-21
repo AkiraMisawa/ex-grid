@@ -34,8 +34,8 @@ public class WriterRefusalTests
         return refused;
     }
 
-    [Fact] // ADR-0330 §6: a Workbook that declares a Linked Table is refused until its Excel Table is written (ticket 05)
-    public async Task ADR0330_a_workbook_with_a_linked_table_is_refused()
+    [Fact] // ADR-0330 §6: a Workbook whose Linked Table has not answered is refused: its rows are written as they stand, and it has none (ticket 05)
+    public async Task ADR0330_a_workbook_with_a_linked_table_not_answered_is_refused()
     {
         var workbook = new Workbook(EnUs);
         workbook.DeclareLinkedTable("Positions", ["Desk", "PV"]);

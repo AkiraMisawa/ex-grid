@@ -8,9 +8,10 @@ namespace ExSheet.Xlsx;
 /// Writes a Workbook as it stands to an <c>.xlsx</c> (ADR-0330 §6): every Sheet, in order, as a worksheet of its name, the
 /// Sheet shown shown; every constant; every Formula with the Value it shows, Excel's stored prefixes put back; the cells an
 /// array spills into with their Values; the Cell Formats at cell, row and column level and the column widths in Excel's
-/// unit. The workbook is marked to be calculated in full when Excel opens it, and a program that does not calculate reads
-/// the Values the user saw, <c>RAND()</c>'s included. What cannot be written faithfully is refused by name, and nothing
-/// reaches the stream.
+/// unit. Each Linked Table is written after the Sheets as an Excel Table of its name, on a worksheet of its name, holding
+/// its rows as they stand, so that a Formula that reads it (<c>Positions[PV]</c>) reads it in Excel too. The workbook is
+/// marked to be calculated in full when Excel opens it, and a program that does not calculate reads the Values the user saw,
+/// <c>RAND()</c>'s included. What cannot be written faithfully is refused by name, and nothing reaches the stream.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -24,6 +25,11 @@ namespace ExSheet.Xlsx;
 /// Text is written into the shared strings, as Excel writes it; a Formula's text result is written in its cell
 /// (<c>t="str"</c>). Fonts are the workbook's own, Calibri 11, and colours their RGB values (ADR-0330 §8).
 /// </para>
+/// <para>
+/// A Linked Table's worksheet is written for Excel, and is not read back as a Linked Table (ADR-0330 §6, X1): opened again by
+/// <see cref="XlsxWorkbookReader"/>, it is a worksheet of the table's cells, and a Formula that reads the Excel Table is
+/// refused until ExSheet reads Excel Tables. Its header, at A1, holds the columns' names, and its rows follow.
+/// </para>
 /// </remarks>
 public static class XlsxWorkbookWriter
 {
@@ -32,6 +38,9 @@ public static class XlsxWorkbookWriter
 
     /// <summary>The longest text a cell of Excel holds, in characters.</summary>
     public const int MaxTextLength = 32_767;
+
+    /// <summary>The most rows a Linked Table written as an Excel Table holds: a worksheet's 1,048,576, less its header's.</summary>
+    public const int MaxLinkedTableRows = XlsxCellReference.MaxRows - 1;
 
     /// <summary>
     /// Writes <paramref name="workbook"/> as it stands into <paramref name="stream"/> as an <c>.xlsx</c>, or refuses it by name
@@ -92,16 +101,13 @@ public static class XlsxWorkbookWriter
 
     private sealed record Planned(Sheet Sheet, SheetFormatPlan Plan, List<(CellAddress At, Entry? Entry, FormatParts Own)> Cells);
 
+    /// <summary>A Linked Table to write as an Excel Table: its declaration, and its snapshot column by column.</summary>
+    private sealed record PlannedTable(LinkedTable Table, IReadOnlyList<IReadOnlyList<Value?>> Columns);
+
     /// <summary>The Workbook written into a package held in memory, every part but those written on completion.</summary>
     private static XlsxWriter Write(Workbook workbook, Stream stream, XlsxSaveOptions options)
     {
-        if (workbook.LinkedTables.Count > 0)
-        {
-            var table = workbook.LinkedTables[0].Name;
-            throw new XlsxSaveException(XlsxSaveRefusal.LinkedTable,
-                $"The Workbook declares the Linked Table '{table}', which is written as an Excel Table on a worksheet of its own; this version does not write one yet, and without it a Formula that reads the table would read nothing in Excel.");
-        }
-
+        var tables = Tables(workbook);
         var document = workbook.ToDocument();
         var planned = new List<Planned>(workbook.Sheets.Count);
         long cells = 0;
@@ -125,6 +131,16 @@ public static class XlsxWorkbookWriter
             }
             planned.Add(new Planned(sheet, plan, own));
         }
+        foreach (var (table, columns) in tables)
+        {
+            cells += table.Columns.Count + columns.Sum(c => (long)c.Count(v => v is not null));
+            if (cells > options.MaxCells)
+            {
+                throw new XlsxSaveException(XlsxSaveRefusal.TooManyCells, string.Create(CultureInfo.InvariantCulture,
+                    $"The workbook would write more than {options.MaxCells:N0} cells, more than a file is read with; the Linked Table '{table.Name}' writes {table.RowCount:N0} rows of {table.Columns.Count:N0} columns under its header."),
+                    table.Name);
+            }
+        }
 
         var styles = new StyleTable(workbook.Culture);
         var sheets = new List<(Sheet Sheet, SheetFormatPlan Plan, List<Recorded> Cells, Dictionary<CellAddress, CellAddress> Spills)>(planned.Count);
@@ -143,16 +159,112 @@ public static class XlsxWorkbookWriter
             FullCalculationOnLoad = true,
             MaxUncompressedBytes = options.MaxUncompressedBytes,
         });
+        var declared = workbook.LinkedTables.ToDictionary(t => t.Name, t => t.Columns, StringComparer.OrdinalIgnoreCase);
+        IReadOnlyList<string>? ColumnsOf(string name) => declared.GetValueOrDefault(name);
         try
         {
             foreach (var (sheet, plan, recorded, spills) in sheets)
-                WriteSheet(writer.AddSheet(sheet.Name, plan.Columns), sheet, plan, recorded, spills);
+                WriteSheet(writer.AddSheet(sheet.Name, plan.Columns), sheet, plan, recorded, spills, ColumnsOf);
+            foreach (var table in tables)
+                WriteTable(writer, table);
             return writer;
         }
         catch
         {
             writer.DisposeAsync().AsTask().GetAwaiter().GetResult();
             throw;
+        }
+    }
+
+    /// <summary>
+    /// Each Linked Table with its snapshot, in the order they were declared, or the refusal of the first that cannot be written
+    /// as an Excel Table on a worksheet of its name (ADR-0330 §6).
+    /// </summary>
+    private static List<PlannedTable> Tables(Workbook workbook)
+    {
+        var tables = new List<PlannedTable>(workbook.LinkedTables.Count);
+        foreach (var table in workbook.LinkedTables)
+        {
+            var name = table.Name;
+            if (table.IsWaiting || workbook.LinkedTableColumns(name) is not { } columns)
+            {
+                throw new XlsxSaveException(XlsxSaveRefusal.LinkedTable,
+                    $"The Linked Table '{name}' has not answered: it holds no rows yet, or its last snapshot was refused, and every Formula that reads it shows #GETTING_DATA. Its rows are written as they stand, and it has none to write.");
+            }
+            if (workbook.Find(name) is { } sheet)
+            {
+                throw new XlsxSaveException(XlsxSaveRefusal.LinkedTable,
+                    $"The Linked Table '{name}' is written on a worksheet of its name, and the Sheet '{sheet.Name}' already has it.");
+            }
+            if (!Sheet.IsValidName(name, out var why))
+            {
+                throw new XlsxSaveException(XlsxSaveRefusal.LinkedTable,
+                    $"The Linked Table '{name}' is written on a worksheet of its name, and a worksheet cannot have it: {why}");
+            }
+            if (table.Columns.Count > XlsxCellReference.MaxColumns)
+            {
+                throw new XlsxSaveException(XlsxSaveRefusal.LinkedTable, string.Create(CultureInfo.InvariantCulture,
+                    $"The Linked Table '{name}' has {table.Columns.Count:N0} columns, and a worksheet of Excel holds {XlsxCellReference.MaxColumns:N0}."));
+            }
+            if (table.RowCount == 0)
+            {
+                // ROWS(Positions[PV]) is 0 in ExSheet, and 1 in Excel, which holds a table of no rows as one empty row.
+                throw new XlsxSaveException(XlsxSaveRefusal.LinkedTable,
+                    $"The Linked Table '{name}' holds no rows, and an Excel Table holds at least one: written with one empty row, its Formulas would answer otherwise in Excel (ROWS gives 1, COUNTBLANK 1, the column itself 0 where ExSheet shows #VALUE!).");
+            }
+            if (table.RowCount > MaxLinkedTableRows)
+            {
+                throw new XlsxSaveException(XlsxSaveRefusal.LinkedTable, string.Create(CultureInfo.InvariantCulture,
+                    $"The Linked Table '{name}' holds {table.RowCount:N0} rows, and a worksheet of Excel holds {XlsxCellReference.MaxRows:N0}, its header's included."));
+            }
+            for (var c = 0; c < columns.Count; c++)
+            {
+                CheckTableText(name, table.Columns[c], null, "column's name");
+                for (var r = 0; r < columns[c].Count; r++)
+                {
+                    if (columns[c][r] is { Kind: ValueKind.Text } value) CheckTableText(name, value.Text, r, $"column '{table.Columns[c]}'");
+                }
+            }
+            tables.Add(new PlannedTable(table, columns));
+        }
+        return tables;
+    }
+
+    /// <summary>Refuses text of a Linked Table that a cell of Excel cannot hold: longer than 32,767 characters, or holding half of a surrogate pair.</summary>
+    private static void CheckTableText(string table, string text, int? row, string where)
+    {
+        var at = row is { } r ? string.Create(CultureInfo.InvariantCulture, $"in its {where}, row {r + 1:N0},") : $"as a {where},";
+        if (text.Length > MaxTextLength)
+        {
+            throw new XlsxSaveException(XlsxSaveRefusal.Text, string.Create(CultureInfo.InvariantCulture,
+                $"The Linked Table '{table}' holds, {at} text {text.Length:N0} characters long, and a cell of Excel holds at most {MaxTextLength:N0}."));
+        }
+        if (!Carries(text, inName: false))
+            throw new XlsxSaveException(XlsxSaveRefusal.Text, $"The Linked Table '{table}' holds, {at} text with half of a surrogate pair, which a file cannot carry.");
+    }
+
+    /// <summary>A Linked Table's worksheet: its header at A1, each column's name, and its rows below as they stand, as an Excel Table of its name.</summary>
+    private static void WriteTable(XlsxWriter writer, PlannedTable planned)
+    {
+        var (table, columns) = planned;
+        var sheet = writer.AddSheet(table.Name);
+        sheet.AddTable(new XlsxTable(table.Name, 0, 0, table.Columns, table.RowCount));
+        for (var c = 0; c < table.Columns.Count; c++)
+            sheet.Write(new XlsxCell(0, c, XlsxCellType.SharedString, null) { Text = table.Columns[c] });
+        for (var r = 0; r < table.RowCount; r++)
+        {
+            for (var c = 0; c < columns.Count; c++)
+            {
+                if (columns[c][r] is not { } value) continue;
+                var cell = new XlsxCell(r + 1, c, XlsxCellType.Number, null);
+                sheet.Write(value.Kind switch
+                {
+                    ValueKind.Number => cell with { Value = value.Number.ToString("R", CultureInfo.InvariantCulture) },
+                    ValueKind.Text => cell with { Type = XlsxCellType.SharedString, Text = value.Text },
+                    ValueKind.Boolean => cell with { Type = XlsxCellType.Boolean, Value = value.Boolean ? "1" : "0" },
+                    _ => cell with { Type = XlsxCellType.Error, Value = value.ToString() },
+                });
+            }
         }
     }
 
@@ -198,7 +310,8 @@ public static class XlsxWorkbookWriter
     }
 
     /// <summary>A Sheet's rows, in order: each formatted row with its format, and every cell element in it, its own and its crossings'.</summary>
-    private static void WriteSheet(XlsxSheetWriter writer, Sheet sheet, SheetFormatPlan plan, List<Recorded> cells, Dictionary<CellAddress, CellAddress> spills)
+    private static void WriteSheet(
+        XlsxSheetWriter writer, Sheet sheet, SheetFormatPlan plan, List<Recorded> cells, Dictionary<CellAddress, CellAddress> spills, Func<string, IReadOnlyList<string>?> columnsOf)
     {
         var runs = plan.Rows;
         var run = 0;
@@ -219,12 +332,12 @@ public static class XlsxWorkbookWriter
                 {
                     for (var column = crossing.First; column <= crossing.Last; column++)
                     {
-                        while (at < end && cells[at].At.Column < column) WriteCell(writer, sheet, cells[at++], spills);
+                        while (at < end && cells[at].At.Column < column) WriteCell(writer, sheet, cells[at++], spills, columnsOf);
                         if (at < end && cells[at].At.Column == column) continue;
                         writer.Write(new XlsxCell(row, column, XlsxCellType.Number, null, StyleIndex: crossing.Style));
                     }
                 }
-                while (at < end) WriteCell(writer, sheet, cells[at++], spills);
+                while (at < end) WriteCell(writer, sheet, cells[at++], spills, columnsOf);
                 runRow++;
                 if (runRow > formatted.Last)
                 {
@@ -234,14 +347,14 @@ public static class XlsxWorkbookWriter
             }
             else
             {
-                for (var at = next; at < end; at++) WriteCell(writer, sheet, cells[at], spills);
+                for (var at = next; at < end; at++) WriteCell(writer, sheet, cells[at], spills, columnsOf);
             }
             next = end;
         }
     }
 
     /// <summary>One cell of the Sheet's own: its constant, or its Formula with the Value it shows, or a spilled Value, or its format alone.</summary>
-    private static void WriteCell(XlsxSheetWriter writer, Sheet sheet, Recorded cell, Dictionary<CellAddress, CellAddress> spills)
+    private static void WriteCell(XlsxSheetWriter writer, Sheet sheet, Recorded cell, Dictionary<CellAddress, CellAddress> spills, Func<string, IReadOnlyList<string>?> columnsOf)
     {
         var at = cell.At;
         var empty = new XlsxCell(at.Row, at.Column, XlsxCellType.Number, null, StyleIndex: cell.Style);
@@ -263,7 +376,7 @@ public static class XlsxWorkbookWriter
                 throw new XlsxSaveException(XlsxSaveRefusal.Formula,
                     "The Formula holds half of a surrogate pair, which a file cannot carry.", sheet.Name, at.ToString(), formula);
             }
-            var stored = WrittenFormula.Write(entry, name => sheet.Workbook.Find(name) is not null, out var problem);
+            var stored = WrittenFormula.Write(entry, name => sheet.Workbook.Find(name) is not null, out var problem, columnsOf);
             switch (problem)
             {
                 case WrittenFormulaProblem.BoundCall:
@@ -283,7 +396,10 @@ public static class XlsxWorkbookWriter
                         "The Formula reads a Sheet the Workbook does not have, which Excel would read as another workbook's.", sheet.Name, at.ToString(), formula);
                 case WrittenFormulaProblem.StructuredReference:
                     throw new XlsxSaveException(XlsxSaveRefusal.Formula,
-                        "The Formula reads a table by a structured reference, which the workbook written holds no table for.", sheet.Name, at.ToString(), formula);
+                        "The Formula reads, by a structured reference, a Linked Table or a column the Workbook does not declare; the file would hold no Excel Table of it for Excel to read.", sheet.Name, at.ToString(), formula);
+                case WrittenFormulaProblem.ColumnName:
+                    throw new XlsxSaveException(XlsxSaveRefusal.Formula,
+                        "The Formula reads a Linked Table's column whose name begins or ends with a space, which a structured reference in Excel does not keep, or holds @, which ExSheet stores where Excel would read the row the Formula stands in.", sheet.Name, at.ToString(), formula);
                 case WrittenFormulaProblem.Unreadable:
                     throw new XlsxSaveException(XlsxSaveRefusal.Formula,
                         "The Formula cannot be written as Excel stores it: its names do not bind as the engine binds them.", sheet.Name, at.ToString(), formula);

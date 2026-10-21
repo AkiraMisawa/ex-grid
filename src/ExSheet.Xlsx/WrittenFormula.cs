@@ -9,8 +9,18 @@ internal enum WrittenFormulaProblem
 {
     None,
 
-    /// <summary>A structured reference (<c>Positions[PV]</c>): a Linked Table, which is written as an Excel Table (ticket 05), or one no Workbook declares.</summary>
+    /// <summary>
+    /// A structured reference (<c>Positions[PV]</c>) to a table, or to a column of one, the Workbook does not declare: the
+    /// engine shows <c>#NAME?</c> or <c>#REF!</c>, and the file would hold no Excel Table for Excel to read.
+    /// </summary>
     StructuredReference,
+
+    /// <summary>
+    /// A structured reference to a Linked Table's column whose name begins or ends with a space, which a structured reference
+    /// in Excel does not keep, or holds <c>@</c>, which the engine stores unescaped (<c>Positions[@PV]</c>), where Excel reads
+    /// the row the Formula stands in.
+    /// </summary>
+    ColumnName,
 
     /// <summary>The text does not split into the tokens the engine reads, or its names do not bind as the engine binds them.</summary>
     Unreadable,
@@ -40,7 +50,10 @@ internal enum WrittenFormulaProblem
 /// 2007, <c>_xlfn._xlws.</c> before <c>FILTER</c> and <c>SORT</c>, <c>_xlpm.</c> before each name a <c>LET</c> binds or a
 /// <c>LAMBDA</c> takes, and the Spill Range reference <c>A1#</c> written <c>_xlfn.ANCHORARRAY(A1)</c>. Without its prefix,
 /// Excel reads a newer function as a name it does not know, and shows <c>#NAME?</c>. Text in quotes, a Sheet's name, a
-/// Reference and a number are never touched.
+/// Reference and a number are never touched. A structured reference to a Linked Table, which is written as an Excel Table of
+/// its name (ADR-0330 §6), is written as the engine stores it, which is Excel's own form: single brackets whatever the
+/// column's name holds, with <c>'</c> before each of <c>[ ] # '</c> (<c>Positions[Market Value]</c>, <c>Positions[Rate'#]</c>;
+/// observed, verification/2026-09-27-windows-excel, TEXT-021 and TEXT-022).
 /// </summary>
 /// <remarks>
 /// The text is split as the engine's lexer splits it. Which names a <c>LET</c> or a <c>LAMBDA</c> binds is read from the
@@ -95,6 +108,7 @@ internal static partial class WrittenFormula
         Close,
         Comma,
         Operator,
+        StructuredReference,
     }
 
     private sealed record Token(Kind Kind, string Text)
@@ -116,10 +130,14 @@ internal static partial class WrittenFormula
     /// <param name="entry">A Formula Entry.</param>
     /// <param name="hasSheet">Whether the Workbook written has a Sheet of a name a Reference qualifies, without regard to case; null to take every name.</param>
     /// <param name="problem">Why it cannot be written; <see cref="WrittenFormulaProblem.None"/> when it can.</param>
-    public static string Write(Entry entry, Func<string, bool>? hasSheet, out WrittenFormulaProblem problem)
+    /// <param name="columnsOf">
+    /// The columns of the Linked Table of a name, without regard to case, as declared, or null where none is; null to declare
+    /// none, so that every structured reference is refused.
+    /// </param>
+    public static string Write(Entry entry, Func<string, bool>? hasSheet, out WrittenFormulaProblem problem, Func<string, IReadOnlyList<string>?>? columnsOf = null)
     {
         var formula = entry.Formula!;
-        var tokens = Split(formula, out problem);
+        var tokens = Split(formula, columnsOf, out problem);
         if (problem != WrittenFormulaProblem.None) return formula[1..];
         if (hasSheet is not null && tokens.Any(t => t.Sheet is { } sheet && !hasSheet(sheet)))
         {
@@ -177,7 +195,7 @@ internal static partial class WrittenFormula
     }
 
     /// <summary>The Formula's tokens after its <c>=</c>, split as the engine's lexer splits them.</summary>
-    private static List<Token> Split(string formula, out WrittenFormulaProblem problem)
+    private static List<Token> Split(string formula, Func<string, IReadOnlyList<string>?>? columnsOf, out WrittenFormulaProblem problem)
     {
         problem = WrittenFormulaProblem.None;
         var tokens = new List<Token>();
@@ -242,8 +260,26 @@ internal static partial class WrittenFormula
                 var end = i + name.Length;
                 if (end < formula.Length && formula[end] == '[')
                 {
-                    problem = WrittenFormulaProblem.StructuredReference;
-                    return tokens;
+                    if (StructuredColumn(formula, end, out var after, out var at) is not { } column)
+                    {
+                        if (!at) return Unreadable(out problem);
+                        problem = WrittenFormulaProblem.ColumnName;
+                        return tokens;
+                    }
+                    var declared = columnsOf?.Invoke(name.Value);
+                    if (declared is null || !declared.Contains(column, StringComparer.OrdinalIgnoreCase))
+                    {
+                        problem = WrittenFormulaProblem.StructuredReference;
+                        return tokens;
+                    }
+                    if (column[0] == ' ' || column[^1] == ' ' || column.Contains('@'))
+                    {
+                        problem = WrittenFormulaProblem.ColumnName;
+                        return tokens;
+                    }
+                    tokens.Add(new Token(Kind.StructuredReference, name.Value + StoredColumn(column)));
+                    i = after;
+                    continue;
                 }
                 tokens.Add(new Token(Kind.Name, name.Value) { Called = end < formula.Length && formula[end] == '(' });
                 i = end;
@@ -258,6 +294,62 @@ internal static partial class WrittenFormula
             return Unreadable(out problem);
         }
         return tokens;
+    }
+
+    /// <summary>
+    /// The column a structured reference names, read from its <c>[</c> as the engine's lexer reads it — <c>[Column]</c> or
+    /// <c>[[Column]]</c>, with <c>'</c> taking the next character as it is — or null where the engine reads none; then
+    /// <paramref name="at"/> says whether it met an <c>@</c>, which the engine stores unescaped in a column's name.
+    /// </summary>
+    private static string? StructuredColumn(string formula, int open, out int after, out bool at)
+    {
+        after = open;
+        at = false;
+        var doubled = open + 1 < formula.Length && formula[open + 1] == '[';
+        var i = open + (doubled ? 2 : 1);
+        var column = new StringBuilder();
+        while (true)
+        {
+            if (i >= formula.Length) return null;
+            var c = formula[i];
+            if (c == '\'' && i + 1 < formula.Length)
+            {
+                column.Append(formula[i + 1]);
+                i += 2;
+                continue;
+            }
+            if (c is '[' or '#' or '@')
+            {
+                at = c == '@';
+                return null;
+            }
+            if (c == ']') break;
+            column.Append(c);
+            i++;
+        }
+        if (doubled)
+        {
+            if (i + 1 >= formula.Length || formula[i + 1] != ']') return null;
+            i++;
+        }
+        if (column.Length == 0) return null;
+        after = i + 1;
+        return column.ToString();
+    }
+
+    /// <summary>
+    /// A column of a structured reference as the engine stores it and Excel writes it back (TEXT-021, TEXT-022): in single
+    /// brackets, with <c>'</c> before each of <c>[ ] # '</c>.
+    /// </summary>
+    private static string StoredColumn(string column)
+    {
+        var text = new StringBuilder(column.Length + 4).Append('[');
+        foreach (var c in column)
+        {
+            if (c is '[' or ']' or '#' or '\'') text.Append('\'');
+            text.Append(c);
+        }
+        return text.Append(']').ToString();
     }
 
     /// <summary>The Sheet a match's qualifier names, unquoted, or null where it has none.</summary>

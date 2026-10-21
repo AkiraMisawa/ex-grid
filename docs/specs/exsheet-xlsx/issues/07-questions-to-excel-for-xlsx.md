@@ -8,6 +8,11 @@ Roadmap: internal
 - [ ] A file ExSheet saved opens in Excel with no repair prompt, recalculates, and shows the same Values
 - [ ] The corpus files' readings (Number Formats, theme colours, widths) match what Excel shows
 - [ ] A Linked Table's worksheet opens as an Excel Table whose Formulas answer
+- [ ] A structured reference written in the form Excel shows (ticket 05: single brackets, `'` before `[ ] # '`, as in
+      `Positions[Total $]` and `Positions[Rate'#]`) is the form a file stores, and opens with no repair prompt; and how Excel
+      stores a column whose name holds `@` (ticket 05 refuses one) or begins or ends with a space (refused too)
+- [ ] A table column's name holding a line feed (written as XML carries it, `&#xA;`, where Excel writes `_x000a_`) opens
+      equal to its header cell's text; and whether a table column's name has a length limit below a cell's 32,767
 - [ ] Built-in Number Formats 5 to 8 (currency): how Excel shows them under other locales, with the code the file writes and
       without one (ticket 03 reads them from the code, and refuses one with none)
 - [ ] Column widths when the workbook font is not Calibri 11 (a Mac's `baseColWidth="10"`), and whether Excel snaps a width

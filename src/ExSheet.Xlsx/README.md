@@ -27,8 +27,10 @@ is read and written by `ExGrid.Data.Xlsx`.
   widths in Excel's own unit. A theme colour is carried as the RGB value the file's theme gives it.
 - **Saving writes the Workbook as it stands**: every Sheet, each Formula with the Value it shows,
   Excel's prefixes put back, and the workbook marked to be calculated in full when Excel opens it,
-  so a program that does not calculate still reads the Values the user saw. What cannot be written
-  faithfully is refused by name, and nothing is written.
+  so a program that does not calculate still reads the Values the user saw. Each **Linked Table**
+  is written as an Excel Table on a worksheet of its name, holding its rows as they stand, so that
+  `Positions[PV]` keeps working in Excel. What cannot be written faithfully is refused by name, and
+  nothing is written.
 
 > **ExSheet.Xlsx ships with ExSheet, at the same version.** While the version is `0.x`, the API
 > may change from one version to the next; each version's
@@ -104,8 +106,19 @@ asynchronously, which an ASP.NET response body accepts.
 
 - **Every Formula is written with its Value**, `RAND()`'s included, and as a dynamic array over the
   cells it spills into, so Excel computes it as ExSheet does.
-- **Refused by name, with nothing written:** a Workbook that declares a Linked Table (not written
-  yet), a cell that shows `#CIRC!` (a file cannot hold it, and Excel would show 0), a Formula Excel
+- **Each Linked Table is written as an Excel Table** of its name, on a worksheet of its name after
+  the Sheets: its columns' names in a header at A1, its rows below as they stand when the call is
+  made. A Formula that reads it is written as it is (`SUM(Positions[PV])`), so it reads the table in
+  Excel. **The file opens in Excel, and opens in ExSheet only once ExSheet reads Excel Tables**:
+  nothing in a file can say that a table is the application's data, so the worksheet is not read
+  back as a Linked Table, and a Formula that reads an Excel Table is refused on opening.
+- **Refused by name, with nothing written:** a Linked Table that has not answered (its Formulas
+  show `#GETTING_DATA`), one that holds no rows (an Excel Table holds at least one, and its Formulas
+  would answer otherwise), more rows than a worksheet holds under its header (1,048,575) or more
+  columns than its 16,384, and one whose name is already a Sheet's or one a worksheet cannot have; a
+  Formula that reads a Linked Table or a column the Workbook does not declare, or a column whose
+  name begins or ends with a space or holds `@`; a cell that shows `#CIRC!` (a file cannot hold it,
+  and Excel would show 0), a Formula Excel
   would not take (longer than its 8,192 characters, a text constant over 255, calls nested past
   64 levels, a call of more than 255 arguments, a name a `LET` binds or a `LAMBDA` takes called as
   a function), text longer than its 32,767, half of a surrogate pair, a Sheet's name a file cannot

@@ -76,12 +76,48 @@ public class WrittenFormulaTests
         Assert.Equal(formula, read);
     }
 
-    [Fact] // ADR-0330 §6: a structured reference has no table to read in the file written, and is not written
-    public void ADR0330_a_structured_reference_is_not_written()
+    [Fact] // ADR-0330 §6: a structured reference to no declared Linked Table has no Excel Table to read in the file written, and is not written
+    public void ADR0330_a_structured_reference_to_no_declared_table_is_not_written()
     {
         WrittenFormula.Write(Entry.Parse("=SUM(Positions[PV])", CultureInfo.InvariantCulture)!, null, out var problem);
-
         Assert.Equal(WrittenFormulaProblem.StructuredReference, problem);
+
+        WrittenFormula.Write(Entry.Parse("=SUM(Positions[Delta])", CultureInfo.InvariantCulture)!, null, out problem, Columns);
+        Assert.Equal(WrittenFormulaProblem.StructuredReference, problem);
+    }
+
+    /// <summary>The Linked Table <c>Positions</c>, whose columns' names need every form a structured reference has.</summary>
+    private static IReadOnlyList<string>? Columns(string table) =>
+        table.Equals("Positions", StringComparison.OrdinalIgnoreCase) ? ["PV", "Market value", "Total $", "a#b", "it's", "[x]", "@PV", "Δ_2", "PV "] : null;
+
+    [Theory] // ADR-0330 §6 (Q5): a structured reference to a Linked Table is written in Excel's own form (TEXT-021, TEXT-022), single brackets with ' before [ ] # ', and the rest of the Formula as before
+    [InlineData("=SUM(Positions[PV])", "SUM(Positions[PV])")]
+    [InlineData("=SUM(positions[[pv]])", "SUM(positions[pv])")]
+    [InlineData("=XLOOKUP(1,Positions[Market value],Positions[PV])", "_xlfn.XLOOKUP(1,Positions[Market value],Positions[PV])")]
+    [InlineData("=SUM(Positions[[Total $]])", "SUM(Positions[Total $])")]
+    [InlineData("=SUM(Positions[[a'#b]])", "SUM(Positions[a'#b])")]
+    [InlineData("=SUM(Positions[[it''s]])", "SUM(Positions[it''s])")]
+    [InlineData("=SUM(Positions[['[x']]])", "SUM(Positions['[x']])")]
+    [InlineData("=SUM(Positions[Δ_2])", "SUM(Positions[Δ_2])")]
+    [InlineData("=LET(x,Positions[PV],SUM(x))", "_xlfn.LET(_xlpm.x,Positions[PV],SUM(_xlpm.x))")]
+    public void ADR0330_a_structured_reference_is_written_as_excel_stores_it(string formula, string stored)
+    {
+        var text = WrittenFormula.Write(Entry.Parse(formula, CultureInfo.InvariantCulture)!, null, out var problem, Columns);
+
+        Assert.Equal(WrittenFormulaProblem.None, problem);
+        Assert.Equal(stored, text);
+    }
+
+    [Theory] // ADR-0330 §6: a column whose name begins or ends with a space, which Excel's structured reference does not keep, or holds @, which the engine stores unescaped where Excel reads the Formula's own row, is refused
+    [InlineData("=SUM(Positions[PV ])")]
+    [InlineData("=SUM(Positions[['@PV]])")]
+    public void ADR0330_a_column_excel_would_read_otherwise_is_not_written(string formula)
+    {
+        var entry = Entry.Parse(formula, CultureInfo.InvariantCulture)!;
+
+        WrittenFormula.Write(entry, null, out var problem, Columns);
+
+        Assert.Equal(WrittenFormulaProblem.ColumnName, problem);
     }
 
     [Fact] // ADR-0330 §4: a name a LET binds is prefixed only where it is bound; read outside the LET it is a name of its own, unprefixed

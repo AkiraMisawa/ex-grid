@@ -145,6 +145,22 @@ public sealed partial class Workbook
     /// <summary>The Linked Tables declared, in the order they were first declared (ADR-0049).</summary>
     public IReadOnlyList<LinkedTable> LinkedTables => _sheets[0].LinkedTables;
 
+    /// <summary>
+    /// The current snapshot of the Linked Table named <paramref name="name"/>, without regard to case, column by column in
+    /// the order the columns are declared, each holding one Value per row (<see langword="null"/> for a blank), as its Formulas
+    /// read it; <see langword="null"/> while it waits (<see cref="LinkedTable.IsWaiting"/>). It is the snapshot as it stands,
+    /// read only, and is not changed by a later one, which replaces it whole. A file written from the Workbook writes it
+    /// (ADR-0330 §6).
+    /// </summary>
+    /// <param name="name">The declared table's name.</param>
+    /// <exception cref="InvalidOperationException">No table of that name is declared.</exception>
+    public IReadOnlyList<IReadOnlyList<Value?>>? LinkedTableColumns(string name)
+    {
+        ArgumentNullException.ThrowIfNull(name);
+        if (!Tables.TryGetValue(name, out var table)) throw new InvalidOperationException($"No Linked Table named '{name}' is declared.");
+        return table.Data is { } data ? Array.AsReadOnly(data) : null;
+    }
+
     /// <summary>The Linked Tables' state, which every Sheet of the Workbook reads (ADR-0331).</summary>
     internal Dictionary<string, Sheet.TableState> Tables { get; } = new(StringComparer.OrdinalIgnoreCase);
 

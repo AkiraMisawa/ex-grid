@@ -1,5 +1,6 @@
 #nullable enable
 const ExSheet.Xlsx.XlsxWorkbookWriter.MaxFormulaLength = 8192 -> int
+const ExSheet.Xlsx.XlsxWorkbookWriter.MaxLinkedTableRows = 1048575 -> int
 const ExSheet.Xlsx.XlsxWorkbookWriter.MaxTextLength = 32767 -> int
 ExSheet.Xlsx.NotCarried
 ExSheet.Xlsx.NotCarried.<Clone>$() -> ExSheet.Xlsx.NotCarried!

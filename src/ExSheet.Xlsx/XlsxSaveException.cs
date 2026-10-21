@@ -9,8 +9,12 @@ namespace ExSheet.Xlsx;
 public enum XlsxSaveRefusal
 {
     /// <summary>
-    /// The Workbook declares a Linked Table. Each is written as an Excel Table on a worksheet of its own (ADR-0330 §6), which
-    /// this version does not write yet; written without it, a Formula that reads the table would read nothing in Excel.
+    /// A Linked Table cannot be written as an Excel Table on a worksheet of its name, holding its rows as they stand
+    /// (ADR-0330 §6): it has not answered (every Formula that reads it shows <c>#GETTING_DATA</c>), it holds no rows (an Excel
+    /// Table holds at least one, and its Formulas would answer otherwise over one empty row), it holds more rows than a
+    /// worksheet's 1,048,576 less its header's or more columns than its 16,384, or its name is already a Sheet's or is one a
+    /// worksheet cannot have (longer than 31 characters, holding <c>\</c>, or <c>History</c>). Or a cell shows
+    /// <c>#GETTING_DATA</c>. The refusal names the table, and a cell's refusal the Sheet and the cell.
     /// </summary>
     LinkedTable,
 
@@ -26,7 +30,9 @@ public enum XlsxSaveRefusal
     /// characters, holds a text constant longer than 255, nests its calls deeper than 64 levels or makes one with more than
     /// 255 arguments; it holds half of a surrogate pair, which a file cannot carry; it reads a Sheet the Workbook does not have
     /// (Excel would read another workbook's); it calls a name a <c>LET</c> binds or a <c>LAMBDA</c> takes, which ExSheet
-    /// reads as an unknown function and Excel would call; or it does not read back as the Formula it is.
+    /// reads as an unknown function and Excel would call; it reads, by a structured reference, a Linked Table or a column the
+    /// Workbook does not declare, or a column whose name begins or ends with a space or holds <c>@</c>, which Excel would
+    /// read otherwise; or it does not read back as the Formula it is.
     /// </summary>
     Formula,
 

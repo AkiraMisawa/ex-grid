@@ -1,0 +1,5 @@
+Product: ExSheet
+Kind: Added
+ADR: 0330
+
+`XlsxWorkbookWriter.WriteAsync` now writes each Linked Table as an Excel Table of its name, on a worksheet of its name after the Sheets, its columns' names in a header and its rows as they stand when the call is made, and writes the Formulas that read it as they are (`SUM(Positions[PV])`), so they keep working in Excel; a Workbook that declares one is no longer refused for it. The file opens in Excel, and opens in ExSheet only once ExSheet reads Excel Tables: the worksheet is not read back as a Linked Table, and a Formula that reads an Excel Table is refused on opening. Refused by name: a Linked Table that has not answered, that holds no rows, more than 1,048,575 rows or 16,384 columns, or whose name is a Sheet's or one a worksheet cannot have, and a Formula that reads an undeclared table or column, or a column whose name begins or ends with a space or holds `@`. `Workbook.LinkedTableColumns` reads a Linked Table's current snapshot, column by column.

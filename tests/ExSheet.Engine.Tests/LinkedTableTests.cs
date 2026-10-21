@@ -200,7 +200,7 @@ public class LinkedTableTests
     public void A_table_is_never_undeclared()
     {
         Assert.Equal(
-            ["DeclareLinkedTable", "DeclareLinkedTable", "PushLinkedTable", "get_LinkedTables"],
+            ["DeclareLinkedTable", "DeclareLinkedTable", "LinkedTableColumns", "PushLinkedTable", "get_LinkedTables"],
             typeof(Workbook).GetMethods().Select(m => m.Name).Where(n => n.Contains("LinkedTable", StringComparison.Ordinal) || n.Contains("Undeclare", StringComparison.Ordinal)).Order(StringComparer.Ordinal));
     }
 
