@@ -1,0 +1,37 @@
+@using ExSheet
+@using ExSheet.Components
+@using ExSheet.Engine
+@using ExSheet.MudBlazor
+
+<MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Class="mb-3">
+    <MudButton Variant="Variant.Outlined" Size="Size.Small" Disabled="@(!(_sheet?.CanUndo ?? false))" OnClick="Undo">Undo</MudButton>
+    <MudText Typo="Typo.body2">@_said</MudText>
+</MudStack>
+
+<MudExGridPaper Class="docs-stretch-paper" Elevation="0" Outlined="true">
+    <ExSheet @ref="_sheet" Workbook="_workbook" WorkbookChanged="Changed" Chrome="MudSheetChrome.Default"
+             ViewportHeight="280" ViewportWidth="ViewportSize.Stretch" />
+</MudExGridPaper>
+
+@code {
+    private ExSheet? _sheet;
+
+    // The claim, and a summary that reads it.
+    private WorkbookDocument? _workbook = Expenses.Workbook();
+    private string _said = "";
+
+    // Ctrl+F and Ctrl+H are the Sheet's own: there is nothing to wire. A Replace All over the
+    // Workbook arrives here once, however many Sheets it wrote on.
+    private void Changed(WorkbookDocument workbook)
+    {
+        _workbook = workbook;
+        _said = $"WorkbookChanged: {workbook.Sheets.Sum(s => s.Cells.Count)} cells hold an Entry.";
+    }
+
+    // A Replace All is one step: one Undo takes it back on every Sheet.
+    private async Task Undo()
+    {
+        await _sheet!.UndoAsync();
+        _said = "Undone.";
+    }
+}

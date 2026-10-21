@@ -271,7 +271,7 @@ public sealed partial class Sheet
         ParenthesesNode p => BareNames(p.Inner),
         UnaryNode u => BareNames(u.Operand),
         PercentNode p => BareNames(p.Operand),
-        BinaryNode b => BareNames(b.Left).Concat(BareNames(b.Right)),
+        BinaryNode b => b.Operands.SelectMany(BareNames),
         FunctionNode f => f.Arguments.SelectMany(BareNames),
         LetNode l => l.Bindings.SelectMany(b => BareNames(b.Value)).Concat(BareNames(l.Calculation)),
         _ => [],

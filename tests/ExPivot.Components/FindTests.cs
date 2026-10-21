@@ -13,9 +13,9 @@ namespace ExPivot.Components.Tests;
 
 /// <summary>
 /// Find in ExPivot (ADR-0332 §1): Ctrl+F over the report as shown. Every cell the report's grid lays
-/// out — row labels, values and totals — is matched on its displayed text (the column labels stand in
-/// the grid's headers, which Find cannot land on, and are not searched); a collapsed group is
-/// not searched inside, and nothing is expanded to show a match. The rows outside the Window are read
+/// out — row labels, values and totals — is matched on its displayed text, and so is every column
+/// label and value caption, which stand in the grid's headers and are searched by the grid before the
+/// rows (ADR-0333); a collapsed group is not searched inside, and nothing is expanded to show a match. The rows outside the Window are read
 /// from the report source by the Report Version on screen. The painted matches are marked by the
 /// reference rule over the same text (ADR-0332 §4).
 /// </summary>
@@ -441,6 +441,49 @@ public sealed class FindTests : PivotTestContext
         Assert.Single(copies.Asked);
         Assert.Equal(focus, FocusOrNone(cut));
         Assert.Null(Notice(cut));
+    }
+
+    /// <summary>The headers that wear the current Match Mark, as their text.</summary>
+    private static string[] CurrentHeaders(IRenderedComponent<PivotComponent> cut)
+        => cut.InvokeAsync(() => Grid(cut).FindAll(".ex-header .ex-match-mark-current").Select(h => h.TextContent.Trim()).ToArray()).GetAwaiter().GetResult();
+
+    [Fact] // ADR-0333 / ADR-0332 §1: a column label is found — it is the current match, said in the panel, and the Focus stays; a lone match finds itself
+    public async Task ADR0333_a_column_label_is_found_and_the_focus_stays()
+    {
+        var cut = RenderPivot(RegionAmount with { Columns = [P("Product")] });
+        Assert.Contains("Plums", HeaderTexts(cut));
+        await PressAsync(cut, "f", ctrl: true);
+        await TypeAsync(cut, "plums");
+
+        await NextAsync(cut);
+
+        Assert.Equal(["Plums"], CurrentHeaders(cut));
+        Assert.Equal("Found in the header Plums", Outcome(cut));
+        Assert.Null(FocusOrNone(cut));
+
+        // No row label or value says it: the walk comes round to the header again.
+        await NextAsync(cut);
+        Assert.Equal(["Plums"], CurrentHeaders(cut));
+        Assert.Null(FocusOrNone(cut));
+    }
+
+    [Fact] // ADR-0333 / ADR-0332 §1: a value caption is found and marked, and the next step goes on from it to the rows
+    public async Task ADR0333_a_value_caption_is_found_then_the_rows()
+    {
+        var cut = RenderPivot(RegionAmount);
+        await PressAsync(cut, "f", ctrl: true);
+        await TypeAsync(cut, "sum of");
+
+        await NextAsync(cut);
+        Assert.Equal(["Sum of Amount"], CurrentHeaders(cut));
+        Assert.Equal(1, await cut.InvokeAsync(() => Grid(cut).FindAll(".ex-header-cell.ex-match-mark").Count));
+
+        // From the header the rows are next, from their start.
+
+        await TypeAsync(cut, "East");
+        await NextAsync(cut);
+        Assert.Empty(CurrentHeaders(cut));
+        Assert.Equal(new CellPosition(0, 0), Focus(cut));
     }
 
     /// <summary>Copy, as a server's transport: answered by the server, by <see cref="Answer"/>, or

@@ -40,11 +40,20 @@ internal static class KnownShape
                 return Of(u.Operand, isLocal);
             case PercentNode p:
                 return Of(p.Operand, isLocal);
-            case BinaryNode b when b.Operator is "+" or "-" or "*" or "/" or "^" or "&" or "=" or "<>" or "<" or ">" or "<=" or ">=":
-                if (Of(b.Left, isLocal) is not { } left || Of(b.Right, isLocal) is not { } right) return null;
-                var rows = left.Rows == 1 ? right.Rows : right.Rows == 1 ? left.Rows : Math.Max(left.Rows, right.Rows);
-                var columns = left.Columns == 1 ? right.Columns : right.Columns == 1 ? left.Columns : Math.Max(left.Columns, right.Columns);
-                return (long)rows * columns <= ValueArray.MostCells ? (rows, columns) : null;
+            case BinaryNode b:
+                // Along the chain of left operands in a loop, left to right: a long chain does not deepen the stack.
+                var spine = b.Spine;
+                if (Of(spine[0].Left, isLocal) is not { } shape) return null;
+                foreach (var binary in spine)
+                {
+                    if (binary.Operator is not ("+" or "-" or "*" or "/" or "^" or "&" or "=" or "<>" or "<" or ">" or "<=" or ">=")) return null;
+                    if (Of(binary.Right, isLocal) is not { } right) return null;
+                    var rows = shape.Rows == 1 ? right.Rows : right.Rows == 1 ? shape.Rows : Math.Max(shape.Rows, right.Rows);
+                    var columns = shape.Columns == 1 ? right.Columns : right.Columns == 1 ? shape.Columns : Math.Max(shape.Columns, right.Columns);
+                    if ((long)rows * columns > ValueArray.MostCells) return null;
+                    shape = (rows, columns);
+                }
+                return shape;
             case FunctionNode { Function: null }:
                 return one; // #NAME?, one Value
             case FunctionNode f when f.Name.Equals("TRANSPOSE", StringComparison.OrdinalIgnoreCase) && f.Arguments.Count == 1:

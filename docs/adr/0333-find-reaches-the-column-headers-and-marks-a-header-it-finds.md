@@ -53,6 +53,18 @@ headers at all, how a header it finds is shown, and where.
 - Replace (one) with a header as the current match writes nothing and finds the next match; Replace
   All asks about cells only, as before. A header is not an entry.
 
+## As built *(find ticket 05, 2026-10-21)*
+
+- **The panel names the header it found** ("Found in the header Trader"), so two header finds in a row are both
+  announced by the panel's live region; the current header also carries `aria-current="true"`. A Chrome reads the
+  name from `FindContext.FoundHeader`. The outcome clears when the current header is forgotten.
+- **A header is current by identity, not by position**: a column header by its column's name, a Header Group by its
+  tier and its first member. A reorder keeps it current and the next step goes on from it; a header no longer shown
+  (its column removed, its group no longer declared, headers turned off or hidden) stops being current.
+- **A step whose headers changed while the Consumer answered** lands on a header as the headers now read, and is
+  refused as the order having changed only where a header it would land on moved; with headers turned off meanwhile,
+  the Consumer's answer stands alone.
+
 ## Consequences
 
 - ADR-0332 §1 holds as written for ExPivot, now that the column labels are reached.

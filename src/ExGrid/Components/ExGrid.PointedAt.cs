@@ -604,6 +604,7 @@ public partial class ExGrid<TRow> : IPointedAtGrid<TRow>
         var cell = new CellPosition(row, c);
         _revealTarget = new ExtentReveal(cell, new SelectionRange(row, c, 1, 1));
         _revealColumnAcross = null;
+        _revealHeaderAcross = null;
         if (PageSize is { } pageSize && row / pageSize != _pageIndex)
         {
             _pageIndex = row / pageSize;
@@ -628,6 +629,7 @@ public partial class ExGrid<TRow> : IPointedAtGrid<TRow>
             return false;
         _revealColumnAcross = c;
         _revealTarget = null;
+        _revealHeaderAcross = null;
         _revealFocus = true;
         // Not a UI event of this grid's: an armed suppression would swallow this render.
         _suppressRender = false;

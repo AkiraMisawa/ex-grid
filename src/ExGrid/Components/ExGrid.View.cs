@@ -74,6 +74,10 @@ public partial class ExGrid<TRow>
     // (ShowViewWith(GridView, SelectionRange, CellPosition)); null when the view's Selection stands.
     private (SelectionRange Range, CellPosition Focus)? _viewAheadPlace;
 
+    // Whether the place handed ahead is a match a find step found (ShowViewWithMatch), which becomes the current
+    // match as it is placed.
+    private bool _viewAheadIsMatch;
+
     // The input whose handling handed the view ahead; 0 when none did.
     private int _viewAheadInput;
 
@@ -121,6 +125,7 @@ public partial class ExGrid<TRow>
             throw new ArgumentException("A view holds a Selection; start from GridSelection.Empty.", nameof(view));
         _viewAhead = view;
         _viewAheadPlace = null;
+        _viewAheadIsMatch = false;
         _viewAheadInput = Inputs.RunningInput;
     }
 
@@ -149,6 +154,28 @@ public partial class ExGrid<TRow>
         _viewAheadPlace = (range, focus);
     }
 
+    /// <summary>
+    /// Shows <paramref name="view"/> with <paramref name="match"/> placed as the one cell selected and the
+    /// Focus, as <see cref="ShowViewWith(GridView, SelectionRange, CellPosition)"/> places a range, and takes it
+    /// as the find panel's current match (ADR-0332 §4): marked apart from the other matches, and the cell
+    /// Replace writes, for as long as the Focus stays there. For a Consumer whose <see cref="OnFind"/> finds the
+    /// match among other rows than those shown — ExSheet's Find within the Workbook, finding it on another
+    /// Sheet (ADR-0332 §5) — and hands those rows with it, under a new Row Sequence Version, from inside its
+    /// answer to the step. Its answer cannot name a position in rows the step was not asked about, so it then
+    /// gives the step up, by throwing <see cref="OperationCanceledException"/>, and the step moves nothing
+    /// itself. A match that lies outside the rows and columns the version brings is not placed, and nothing
+    /// is the current match. While the find panel is closed it is placed and is no match.
+    /// </summary>
+    /// <param name="view">The view, written in the version the Consumer is about to hand the grid; its Selection is replaced.</param>
+    /// <param name="match">The cell the step found, among the rows the version brings.</param>
+    /// <exception cref="ArgumentException">The view holds no Selection (<c>default(GridView)</c>).</exception>
+    /// <exception cref="ArgumentOutOfRangeException">The match lies before the first row or column.</exception>
+    public void ShowViewWithMatch(GridView view, CellPosition match)
+    {
+        ShowViewWith(view, SelectionRange.FromCorners(match, match), match);
+        _viewAheadIsMatch = true;
+    }
+
     /// <summary>The view handed ahead of the version just taken, in place of what reconciling left
     /// (ReconcileSelection); the Selection as reconciled otherwise, or when its positions lie outside
     /// the grid's rows and columns.</summary>
@@ -160,6 +187,8 @@ public partial class ExGrid<TRow>
         TakeRowSet(ahead.RowSet is { } stamp && ReferenceEquals(stamp.Grid, this) ? stamp.Set : ++_rowSetsGiven);
         var place = _viewAheadPlace;
         _viewAheadPlace = null;
+        var isMatch = _viewAheadIsMatch;
+        _viewAheadIsMatch = false;
         _orderMovedByInput = _viewAheadInput > 0 ? (_viewAheadInput, _sequenceVersion, _orderPaintedFrom) : null;
         var top = Math.Max(0, ahead.ScrollTopPx);
         var left = Math.Max(0, ahead.ScrollLeftPx);
@@ -182,6 +211,10 @@ public partial class ExGrid<TRow>
             // Revealed from the view's offsets, in the render that takes them: the reveal's write, when the
             // Focus lies outside them, follows the view's and supersedes it (StageReveal).
             RequestFocusReveal();
+            // A match a find step found among these rows is the current match, under this version, once the
+            // Selection placed here stands (ADR-0332 §4).
+            if (isMatch && _findOpen)
+                TakeCurrentMatch(placed.Focus);
             return new HeldSelection(_sequenceVersion, GridSelection.Empty.Place(placed.Range, placed.Focus, extent));
         }
         foreach (var range in ahead.Selection.Ranges)

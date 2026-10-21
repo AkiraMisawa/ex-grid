@@ -10,7 +10,8 @@ namespace ExGrid.Chrome;
 public static class FindPanelLabelIds
 {
     /// <summary>The id of what the panel says about a step's outcome, or null for an outcome
-    /// that says nothing — no step yet, or a match, which the moved Focus shows.</summary>
+    /// that says nothing — no step yet, or a match in a cell, which the moved Focus shows. A match
+    /// in a header is said, as the Focus does not move to it (ADR-0333).</summary>
     public static string? For(Finding.FindOutcome outcome) => outcome switch
     {
         Finding.FindOutcome.NotFound => NotFound,
@@ -18,6 +19,7 @@ public static class FindPanelLabelIds
         Finding.FindOutcome.SourceChanged => SourceChanged,
         Finding.FindOutcome.Replaced => Replaced,
         Finding.FindOutcome.ReplaceRefused => ReplaceRefused,
+        Finding.FindOutcome.FoundInHeader => FoundInHeader,
         _ => null,
     };
 
@@ -30,7 +32,9 @@ public static class FindPanelLabelIds
     /// outcome that says nothing. A Replace All's count fills <see cref="CountPlaceholder"/>; a
     /// refused Replace names its first <see cref="RefusedCellsNamed"/> cells, each with
     /// <see cref="ReplaceRefusedCell"/>, and counts the rest with <see cref="ReplaceRefusedMore"/>
-    /// (ADR-0332 §2). The built-in panel and <c>ExGrid.MudBlazor</c>'s both say it through this.
+    /// (ADR-0332 §2). A match in a header names the header at <see cref="ColumnPlaceholder"/>
+    /// (<see cref="FindContext.FoundHeader"/>, ADR-0333). The built-in panel and <c>ExGrid.MudBlazor</c>'s
+    /// both say it through this.
     /// </summary>
     /// <param name="context">The panel's context.</param>
     /// <param name="words">The Chrome's words for an id.</param>
@@ -45,6 +49,8 @@ public static class FindPanelLabelIds
             var count = context.ReplacedCount.ToString(System.Globalization.CultureInfo.CurrentCulture);
             return words(context.ReplacedCount == 1 ? ReplacedOne : Replaced).Replace(CountPlaceholder, count, StringComparison.Ordinal);
         }
+        if (context.Outcome == Finding.FindOutcome.FoundInHeader)
+            return words(id).Replace(ColumnPlaceholder, context.FoundHeader, StringComparison.Ordinal);
         if (context.Outcome != Finding.FindOutcome.ReplaceRefused)
             return words(id);
         var said = new System.Text.StringBuilder(words(ReplaceRefused));
@@ -71,7 +77,8 @@ public static class FindPanelLabelIds
     /// <summary>Where <see cref="ReplaceRefusedCell"/> holds the refused cell's row number.</summary>
     public const string RowPlaceholder = "{row}";
 
-    /// <summary>Where <see cref="ReplaceRefusedCell"/> holds the refused cell's column header.</summary>
+    /// <summary>Where <see cref="ReplaceRefusedCell"/> holds the refused cell's column header, and
+    /// <see cref="FoundInHeader"/> the header the match was found in.</summary>
     public const string ColumnPlaceholder = "{column}";
 
     /// <summary>Where <see cref="ReplaceRefusedCell"/> holds why the cell cannot be written.</summary>
@@ -97,6 +104,11 @@ public static class FindPanelLabelIds
 
     /// <summary>What a step that matched nothing says.</summary>
     public const string NotFound = "find-not-found";
+
+    /// <summary>What a step that found its match in a column header or a Header Group label says
+    /// (ADR-0333), the header at <see cref="ColumnPlaceholder"/>: the Focus stays where it was, so the
+    /// words are what tells the user where the match is.</summary>
+    public const string FoundInHeader = "find-found-in-header";
 
     /// <summary>What a step whose answer arrived under another order says.</summary>
     public const string OrderChanged = "find-order-changed";

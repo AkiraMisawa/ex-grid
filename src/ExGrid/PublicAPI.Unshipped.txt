@@ -1,6 +1,7 @@
 #nullable enable
 const ExGrid.Chrome.FindPanelLabelIds.ColumnPlaceholder = "{column}" -> string!
 const ExGrid.Chrome.FindPanelLabelIds.CountPlaceholder = "{count}" -> string!
+const ExGrid.Chrome.FindPanelLabelIds.FoundInHeader = "find-found-in-header" -> string!
 const ExGrid.Chrome.FindPanelLabelIds.NotEditable = "find-not-editable" -> string!
 const ExGrid.Chrome.FindPanelLabelIds.ReasonPlaceholder = "{reason}" -> string!
 const ExGrid.Chrome.FindPanelLabelIds.RefusedCellsNamed = 5 -> int
@@ -29,6 +30,8 @@ const ExGrid.Chrome.RefusalLabelIds.PasteUnreadable = "refused-paste-unreadable"
 const ExGrid.ShapedGrid.DateFormat = "yyyy-mm-dd" -> string!
 const ExGrid.ShapedGrid.DateTimeFormat = "yyyy-mm-dd hh:mm:ss" -> string!
 const ExGrid.ShapedGrid.IntegerFormat = "#,##0" -> string!
+ExGrid.Chrome.FindContext.FoundHeader.get -> string!
+ExGrid.Chrome.FindContext.FoundHeader.init -> void
 ExGrid.Chrome.FindContext.Replace.get -> System.Func<System.Threading.Tasks.Task!>?
 ExGrid.Chrome.FindContext.Replace.init -> void
 ExGrid.Chrome.FindContext.ReplaceAll.get -> System.Func<System.Threading.Tasks.Task!>?
@@ -69,6 +72,9 @@ ExGrid.Chrome.GridPopoverContext.InOrder.init -> void
 ExGrid.Clipboard.PasteRefusalReason.Cancelled = 13 -> ExGrid.Clipboard.PasteRefusalReason
 ExGrid.Clipboard.PasteRefusalReason.Unreadable = 12 -> ExGrid.Clipboard.PasteRefusalReason
 ExGrid.Components.ExGrid<TRow>.HandOffHeardAsync(int input = 0, ExGrid.Components.GridInputText? fieldText = null) -> System.Threading.Tasks.Task!
+ExGrid.Components.ExGrid<TRow>.FindsHeaders.get -> bool
+ExGrid.Components.ExGrid<TRow>.FindsHeaders.set -> void
+ExGrid.Components.ExGrid<TRow>.ForgetCurrentMatch() -> void
 ExGrid.Components.ExGrid<TRow>.HandKeyboardToAsync(Microsoft.AspNetCore.Components.ElementReference control, bool preventScroll) -> System.Threading.Tasks.Task!
 ExGrid.Components.ExGrid<TRow>.FindMatch.get -> ExGrid.Finding.FindMatchOf<TRow!>?
 ExGrid.Components.ExGrid<TRow>.FindMatch.set -> void
@@ -117,6 +123,7 @@ ExGrid.Components.ExGrid<TRow>.ReadView() -> ExGrid.Components.GridView
 ExGrid.Components.ExGrid<TRow>.SelectionAfterInputsAsync() -> System.Threading.Tasks.Task<ExGrid.Selection.GridSelection!>!
 ExGrid.Components.ExGrid<TRow>.ShowViewWith(ExGrid.Components.GridView view) -> void
 ExGrid.Components.ExGrid<TRow>.ShowViewWith(ExGrid.Components.GridView view, ExGrid.Selection.SelectionRange range, ExGrid.Selection.CellPosition focus) -> void
+ExGrid.Components.ExGrid<TRow>.ShowViewWithMatch(ExGrid.Components.GridView view, ExGrid.Selection.CellPosition match) -> void
 ExGrid.Components.ExGridRow<TRow>.CurrentMatch.get -> int
 ExGrid.Components.ExGridRow<TRow>.CurrentMatch.set -> void
 ExGrid.Components.ExGridRow<TRow>.MatchMarks.get -> ExGrid.Components.MatchMarks<TRow!>?
@@ -145,6 +152,7 @@ ExGrid.FetchingGridSource<TRow>.Shape.get -> System.Func<System.Threading.Cancel
 ExGrid.FetchingGridSource<TRow>.Shape.set -> void
 ExGrid.FetchingGridSource<TRow>.ShapeAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<ExGrid.Data.DataShape?>
 ExGrid.Finding.FindMatchOf<TRow>
+ExGrid.Finding.FindOutcome.FoundInHeader = 7 -> ExGrid.Finding.FindOutcome
 ExGrid.Finding.FindOutcome.Replaced = 5 -> ExGrid.Finding.FindOutcome
 ExGrid.Finding.FindOutcome.ReplaceRefused = 6 -> ExGrid.Finding.FindOutcome
 ExGrid.Finding.FindRefusalReason.ReplaceRefused = 5 -> ExGrid.Finding.FindRefusalReason

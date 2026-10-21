@@ -482,6 +482,25 @@
 .ex-cell.ex-match-mark-current::before {
     background: var(--ex-match-mark-current-fill, color-mix(in srgb, #ff9632 55%, transparent));
 }
+/* A header Find stops on (ADR-0333 §1) wears the same mark, the current one apart: a column header
+   or a Header Group label, painted by its ::before over its own ground and beneath its text, as a
+   cell's is. Both are positioned already (relative, sticky when pinned, absolute for a group), and
+   their boxes are the columns' own, so the mark's edges lie on the Device Pixels the cells' do
+   (ADR-0090). The sort mark keeps ::after. */
+:where(.ex-header-cell.ex-match-mark, .ex-header-group.ex-match-mark) { isolation: isolate; }
+.ex-header-cell.ex-match-mark::before,
+.ex-header-group.ex-match-mark::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: var(--ex-match-mark-fill, color-mix(in srgb, #ff9632 25%, transparent));
+    pointer-events: none;
+}
+.ex-header-cell.ex-match-mark-current::before,
+.ex-header-group.ex-match-mark-current::before {
+    background: var(--ex-match-mark-current-fill, color-mix(in srgb, #ff9632 55%, transparent));
+}
 /* What stands in for the columns left out to the left of the first painted one. It must
    not be allowed to shrink: a flex-shrunk spacer would slide every painted column left
    of where the arithmetic put it, and the header and the body would disagree. */
@@ -1274,6 +1293,8 @@
        colours discard. */
     .ex-cell.ex-match-mark::before { background: none; inset: 3px; border: 2px dotted Highlight; }
     .ex-cell.ex-match-mark-current::before { background: none; border-style: solid; }
+    .ex-header-cell.ex-match-mark::before, .ex-header-group.ex-match-mark::before { background: none; inset: 3px; border: 2px dotted Highlight; }
+    .ex-header-cell.ex-match-mark-current::before, .ex-header-group.ex-match-mark-current::before { background: none; border-style: solid; }
     .ex-cell.ex-state-stale { color: GrayText; }
     .ex-cell.ex-state-missing { outline: 1px dotted GrayText; outline-offset: -2px; }
     .ex-cell.ex-state-error { color: LinkText; }

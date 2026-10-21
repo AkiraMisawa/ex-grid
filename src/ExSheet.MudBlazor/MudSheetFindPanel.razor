@@ -1,0 +1,189 @@
+@* Written in each component, not in an _Imports.razor, whose class Razor makes public (ADR-0201).
+   This project's root namespace is ExSheet.MudBlazor, so a plain "MudBlazor" here is this
+   namespace, not MudBlazor's, and every product using is written with global:: (the name
+   collisions in AGENTS.md). *@
+@using Microsoft.AspNetCore.Components
+@using Microsoft.AspNetCore.Components.Web
+@using global::ExGrid.Chrome
+@using global::ExGrid.Finding
+@using global::MudBlazor
+@using global::ExSheet
+@* Not the contract (ADR-0201): MudSheetChrome draws a Sheet's find panel with this, and no Consumer
+   places it. It is public only because Razor makes every component public, is hidden from a
+   Consumer's editor, and may change in any version. *@
+@attribute [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+@*
+    A Sheet's find panel under MudBlazor (ADR-0332 §5): ExGrid.MudBlazor's find panel, control for control
+    and class for class — a MudTextField, the two options as MudCheckBoxes, the two steps as MudButtons and,
+    opened by Ctrl+H, the replacement and Replace and Replace All — with Within added as two MudButtons that
+    act as a pair of radios, the Sheet shown or the Workbook, the chosen one filled. Not a MudRadioGroup: a
+    choice is a click taken in its place in the Input Order (ADR-0240), claimed by the element clicked
+    alone, and a MudRadio's label and its input are each clicked for one press, where a MudButton is
+    clicked once, as the panel's steps are. The search, the Focus it moves, the writes and what closes
+    the panel are the grid's and ExSheet's; this draws and calls back, and says the outcome ExSheet words.
+
+    Enter in a field is the browser's implicit submission — which an IME's candidate Enter is not — through a
+    hidden default button, Shift held on it making it "previous". The field takes DOM focus for each change of
+    the context's focus request, through the core's focus function (ADR-0204).
+*@
+<form class="mud-ex-grid-find mud-ex-sheet-find" data-ex-claims="submit" @onsubmit="SubmitAsync" @onsubmit:preventDefault>
+    <button type="submit" class="mud-ex-grid-find-default" hidden tabindex="-1" aria-hidden="true"></button>
+    <MudTextField @ref="_field" T="string" Value="_text" ValueChanged="TextChanged" Immediate="true"
+                  Label="@Context.Words(FindPanelLabelIds.Field)" Variant="Variant.Outlined" Margin="Margin.Dense"
+                  Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                  OnKeyDown="OnFieldKeyDown" Class="mud-ex-grid-find-field" />
+    <MudCheckBox T="bool" Value="Find.MatchCase" ValueChanged="Find.MatchCaseChanged"
+                 Label="@Context.Words(FindPanelLabelIds.MatchCase)" Dense="true" Size="Size.Small" Class="mud-ex-grid-find-match-case" />
+    <MudCheckBox T="bool" Value="Find.WholeCell" ValueChanged="Find.WholeCellChanged"
+                 Label="@Context.Words(FindPanelLabelIds.WholeCell)" Dense="true" Size="Size.Small" Class="mud-ex-grid-find-whole-cell" />
+    @* Within (ADR-0332 §5): the Sheet shown, the default, or the Workbook. *@
+    <div class="mud-ex-sheet-find-within" role="group" aria-label="@Context.Words(SheetFindLabelIds.Within)">
+        <MudText Typo="Typo.caption" HtmlTag="span">@Context.Words(SheetFindLabelIds.Within)</MudText>
+        <div role="radiogroup" class="mud-ex-sheet-find-within-choices">
+            <MudButton Variant="@(_within == SheetFindWithin.Sheet ? Variant.Filled : Variant.Outlined)" Color="Color.Primary"
+                       Size="Size.Small" OnClick="_chooseSheet" data-ex-claims="click" role="radio"
+                       aria-checked="@(_within == SheetFindWithin.Sheet ? "true" : "false")"
+                       Class="mud-ex-sheet-find-within-sheet">@Context.Words(SheetFindLabelIds.WithinSheet)</MudButton>
+            <MudButton Variant="@(_within == SheetFindWithin.Workbook ? Variant.Filled : Variant.Outlined)" Color="Color.Primary"
+                       Size="Size.Small" OnClick="_chooseWorkbook" data-ex-claims="click" role="radio"
+                       aria-checked="@(_within == SheetFindWithin.Workbook ? "true" : "false")"
+                       Class="mud-ex-sheet-find-within-workbook">@Context.Words(SheetFindLabelIds.WithinWorkbook)</MudButton>
+        </div>
+    </div>
+    <div class="mud-ex-grid-find-actions">
+        <MudButton Variant="Variant.Text" Size="Size.Small" StartIcon="@Icons.Material.Filled.KeyboardArrowUp"
+                   OnClick="Find.Previous" data-ex-claims="click" Class="mud-ex-grid-find-previous">@Context.Words(FindPanelLabelIds.Previous)</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small" StartIcon="@Icons.Material.Filled.KeyboardArrowDown"
+                   OnClick="Find.Next" data-ex-claims="click" Class="mud-ex-grid-find-next">@Context.Words(FindPanelLabelIds.Next)</MudButton>
+    </div>
+    @if (Find.ReplaceShown)
+    {
+        @* Replace (ADR-0332 §2): the replacement and the two writes, each a click taken in its place in the
+           Input Order (ADR-0240). Enter in this field is still "find next", as in Excel's dialog. *@
+        <MudTextField T="string" Value="_replaceText" ValueChanged="ReplaceTextChanged" Immediate="true"
+                      Label="@Context.Words(FindPanelLabelIds.ReplaceField)" Variant="Variant.Outlined" Margin="Margin.Dense"
+                      Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.FindReplace"
+                      OnKeyDown="OnFieldKeyDown" Class="mud-ex-grid-find-replace-field" />
+        <div class="mud-ex-grid-find-actions">
+            <MudButton Variant="Variant.Text" Size="Size.Small"
+                       OnClick="Find.Replace!" data-ex-claims="click" Class="mud-ex-grid-find-replace">@Context.Words(FindPanelLabelIds.Replace)</MudButton>
+            <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small"
+                       OnClick="Find.ReplaceAll!" data-ex-claims="click" Class="mud-ex-grid-find-replace-all">@Context.Words(FindPanelLabelIds.ReplaceAll)</MudButton>
+        </div>
+    }
+    <MudText Typo="Typo.caption" Color="@(Context.Outcome() == FindOutcome.Replaced ? Color.Success : Color.Error)"
+             Class="mud-ex-grid-find-outcome" role="status">@Context.OutcomeText()</MudText>
+</form>
+
+@code {
+    /// <summary>ExSheet's contract for the panel (ADR-0332 §5). The grid keys its popover by the opening, so
+    /// each opening is a new instance of this component.</summary>
+    [Parameter, EditorRequired] public SheetFindContext Context { get; set; } = default!;
+
+    private FindContext Find => Context.Find;
+
+    private MudTextField<string>? _field;
+    private int _focusedRequest;
+    private bool _focusOwed;
+    private bool _backwardOnSubmit;
+    private bool _withinRead;
+    private SheetFindWithin _within;
+
+    // The two fields' text as this panel last wrote it or was handed it. The context is the grid's as of its
+    // last render, and the grid does not render for a character typed in the Replace field: this panel renders
+    // after its own input event, and a value taken from the context then would write the text before the
+    // character back over the field.
+    private string _text = "";
+    private string _replaceText = "";
+    private string? _contextText;
+    private string? _contextReplaceText;
+
+    /// <inheritdoc />
+    protected override void OnParametersSet()
+    {
+        if (!_withinRead)
+        {
+            _withinRead = true;
+            _within = Context.Within;
+        }
+        if (Find.FocusRequest != _focusedRequest)
+        {
+            _focusedRequest = Find.FocusRequest;
+            _focusOwed = true;
+        }
+        // A text the grid holds that differs from the one it held before is the grid's to show.
+        if (Find.Text != _contextText)
+        {
+            _contextText = Find.Text;
+            _text = Find.Text;
+        }
+        if (Find.ReplaceText != _contextReplaceText)
+        {
+            _contextReplaceText = Find.ReplaceText;
+            _replaceText = Find.ReplaceText;
+        }
+    }
+
+    private void TextChanged(string text)
+    {
+        _text = text ?? "";
+        Find.TextChanged(_text);
+    }
+
+    private void ReplaceTextChanged(string text)
+    {
+        _replaceText = text ?? "";
+        Find.ReplaceTextChanged?.Invoke(_replaceText);
+    }
+
+    /// <inheritdoc />
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!_focusOwed || _field is null)
+            return;
+        _focusOwed = false;
+        try
+        {
+            // The core's focus function, which takes the keyboard only while it is still the grid's: on a
+            // circuit the opening focus lands a round trip after Ctrl+F, and a grid pressed in the meantime
+            // keeps it (ADR-0204).
+            if (Find.TakeFocus is { } take && _field.InputReference is { } input)
+                await take(input.ElementReference, true);
+            else
+                await _field.FocusAsync();
+        }
+        catch (Exception ex) when (ex is Microsoft.JSInterop.JSException or Microsoft.JSInterop.JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
+        {
+        }
+    }
+
+    // Made once, so a render between two clicks keeps each button's handler (FD-6).
+    private EventCallback<MouseEventArgs> _chooseSheet;
+    private EventCallback<MouseEventArgs> _chooseWorkbook;
+
+    /// <inheritdoc />
+    protected override void OnInitialized()
+    {
+        _chooseSheet = EventCallback.Factory.Create<MouseEventArgs>(this, () => ChooseWithin(SheetFindWithin.Sheet));
+        _chooseWorkbook = EventCallback.Factory.Create<MouseEventArgs>(this, () => ChooseWithin(SheetFindWithin.Workbook));
+    }
+
+    private Task ChooseWithin(SheetFindWithin within)
+    {
+        _within = within;
+        return Context.WithinChanged(within);
+    }
+
+    private void OnFieldKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+            _backwardOnSubmit = e.ShiftKey;
+    }
+
+    private Task SubmitAsync()
+    {
+        var backward = _backwardOnSubmit;
+        _backwardOnSubmit = false;
+        return backward ? Find.Previous() : Find.Next();
+    }
+}

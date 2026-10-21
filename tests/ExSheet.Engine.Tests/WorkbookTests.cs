@@ -320,4 +320,68 @@ public class WorkbookTests
 
         Assert.Equal(ErrorValue.Ref, sheet.Error("A1"));
     }
+
+    private static (string Sheet, SheetEdit Edit) EnterOn(string sheet, string address, string typed) =>
+        (sheet, SheetEdit.Enter(CellAddress.Parse(address), typed));
+
+    [Fact] // ADR-0332 §5, ADR-0180: edits on several Sheets are one operation: one change, counted once, one step
+    public void Edits_on_several_sheets_are_one_operation()
+    {
+        var workbook = NewWorkbook("One", "Two");
+        Enter(workbook, "One", "A1", "1");
+        Enter(workbook, "Two", "A1", "=One!A1+1");
+        var before = workbook.Changes;
+
+        var step = workbook.Do([EnterOn("One", "A1", "10"), EnterOn("Two", "B1", "x")]);
+
+        Assert.Equal(before + 1, workbook.Changes);
+        Assert.Equal(10, workbook.Sheets[0].Number("A1"));
+        Assert.Equal(11, workbook.Sheets[1].Number("A1"));
+        Assert.Equal("x", workbook.Sheets[1].GetEntryText(CellAddress.Parse("B1")));
+        Assert.Equal(["One", "Two"], step.Change.Sheets.Select(s => s.Name));
+    }
+
+    [Fact] // ADR-0332 §5, ADR-0048: the one step undoes every edit, on every Sheet, and redoes them all
+    public void The_step_of_several_sheets_is_undone_and_redone_whole()
+    {
+        var workbook = NewWorkbook("One", "Two");
+        Enter(workbook, "One", "A1", "1");
+        Enter(workbook, "Two", "A1", "=One!A1+1");
+        var step = workbook.Do([EnterOn("One", "A1", "10"), EnterOn("Two", "B1", "x")]);
+
+        step.Undo();
+
+        Assert.Equal(1, workbook.Sheets[0].Number("A1"));
+        Assert.Equal(2, workbook.Sheets[1].Number("A1"));
+        Assert.Null(workbook.Sheets[1].GetEntry(CellAddress.Parse("B1")));
+
+        step.Redo();
+
+        Assert.Equal(10, workbook.Sheets[0].Number("A1"));
+        Assert.Equal("x", workbook.Sheets[1].GetEntryText(CellAddress.Parse("B1")));
+    }
+
+    [Fact] // ADR-0332 §2, ADR-0180: a Formula that cannot be read leaves every Sheet, and the count of changes, as they were
+    public void An_unreadable_formula_leaves_every_sheet_as_it_was()
+    {
+        var workbook = NewWorkbook("One", "Two");
+        Enter(workbook, "One", "A1", "1");
+        var before = workbook.Changes;
+
+        Assert.Throws<FormulaSyntaxException>(() => workbook.Do([EnterOn("One", "A1", "2"), EnterOn("Two", "A1", "=1+")]));
+
+        Assert.Equal(1, workbook.Sheets[0].Number("A1"));
+        Assert.Null(workbook.Sheets[1].GetEntry(CellAddress.Parse("A1")));
+        Assert.Equal(before, workbook.Changes);
+    }
+
+    [Fact] // ADR-0331 §3: a Sheet operation is done alone, and an operation is at least one edit
+    public void Several_edits_refuse_a_sheet_operation_and_nothing()
+    {
+        var workbook = NewWorkbook("One", "Two");
+
+        Assert.Throws<ArgumentException>(() => workbook.Do([]));
+        Assert.Throws<ArgumentException>(() => workbook.Do([("One", SheetEdit.DeleteSheet())]));
+        Assert.Throws<ArgumentException>(() => workbook.Do([EnterOn("Three", "A1", "1")]));
+    }
 }

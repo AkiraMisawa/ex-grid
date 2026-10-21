@@ -162,6 +162,7 @@ public partial class ExGrid<TRow>
             return;
         // The write moves the Focus nowhere, and no match is current after it (ADR-0332 §4).
         _findCurrent = null;
+        DropCurrentHeader();
         var selection = _selection.Selection;
         var names = new string[Columns.Count];
         var editable = new List<string>(Columns.Count);
@@ -248,9 +249,10 @@ public partial class ExGrid<TRow>
     /// <summary>The panel's Replace part in its context, for a substituted Chrome: absent while it is
     /// not shown, so the Chrome draws Find alone.</summary>
     private FindContext WithReplace(FindContext context) => !ReplaceShown
-        ? context with { ReplacedCount = _replacedCount, ReplaceRefusedCells = _replaceRefused }
+        ? context with { ReplacedCount = _replacedCount, ReplaceRefusedCells = _replaceRefused, FoundHeader = FoundHeaderNow }
         : context with
         {
+            FoundHeader = FoundHeaderNow,
             ReplaceShown = true,
             ReplaceText = _replaceText,
             ReplaceTextChanged = _replaceTextChanged ??= text => _replaceText = text,

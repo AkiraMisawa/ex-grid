@@ -9,8 +9,9 @@ namespace ExPivot.Components;
 // Find over the report as shown (ADR-0332 §1): Ctrl+F opens the report grid's find panel, and ExPivot
 // answers each step as that grid's Consumer (ADR-0055). What is searched is every cell the report's
 // grid lays out — the row labels, values and totals — by its displayed text, the text the user reads.
-// The column Items and the value captions stand in the grid's headers, which Find cannot land on, so
-// they are not searched (ADR-0332 §1 names column labels too; that is an open question). A collapsed
+// The column Items and the value captions stand in the grid's headers and Header Groups, which the grid
+// searches itself, before the rows (ADR-0333): a step that wraps past the rows, or finds none, stops on
+// a matching column label, the Focus staying where it is, and the next step goes on from it. A collapsed
 // group is not searched inside, because its rows are not laid out, and nothing is expanded to show a
 // match: a search never changes the report's shape. The cells outside the Window are read from the
 // report source, by the Report Version on screen, as Copy reads them (ADR-0151/0152); a remote report

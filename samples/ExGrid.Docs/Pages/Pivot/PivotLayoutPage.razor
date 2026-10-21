@@ -155,9 +155,14 @@
                 Expand the group to search it.
             </li>
             <li>
-                <strong>The column labels are not searched yet.</strong> The column Items and the value captions
-                stand in the report grid's headers, and Find lands only on cells, so a text that appears only there
-                is not found. Whether, and how, Find reaches them is still to be decided.
+                <strong>The column labels and the value captions are searched too.</strong> They stand in the report
+                grid's headers, which ExGrid's Find walks before the first row: a step past the last row, or one that
+                finds no row, stops on the first column label that matches (the last, backward). A label found is the
+                current match: it wears the current mark, is scrolled into view, and the panel names it — <em>Found in
+                the header Plums</em>; the Focus stays on the cell it was on, and the next step goes on from the label to the
+                rows (<a href="exgrid/sorting-filtering#find-in-the-headers">ExGrid's Find in the headers</a>). Every
+                label on screen that matches is marked as you type. With more than one cell selected, no label is
+                searched.
             </li>
             <li>
                 <strong>The matches on screen are marked</strong> as you type, the current one apart, and the rows
@@ -181,7 +186,8 @@
         </p>
         <DocsExample Builtin="typeof(FindInReport)" Mud="typeof(FindInReportMud)" Files="@(["Examples/Pivot/Sales.cs"])">
             Click the report, press Ctrl+F and type "laptop": only Europe's rows are found and marked, because the other
-            regions are collapsed. Then type a revenue figure as it is shown, with its thousands separator.
+            regions are collapsed. Then type a revenue figure as it is shown, with its thousands separator, and then
+            "partner", a column label: the step stops on its header, and the Focus stays where it was.
         </DocsExample>
     </DocsSection>
 

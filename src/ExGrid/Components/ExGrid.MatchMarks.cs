@@ -77,11 +77,30 @@ public partial class ExGrid<TRow>
         _findCurrentVersion = _sequenceVersion;
     }
 
+    /// <summary>
+    /// Forgets the find panel's current match (ADR-0332 §4), as the grid's own Replace All does: after a
+    /// write the grid did not make, no match is current, so the next Replace finds one before it writes
+    /// rather than writing the cell the last step found. For a Consumer that performs a Replace All itself,
+    /// outside the Replace Request — ExSheet's over the Workbook (ADR-0332 §5). Call it on the renderer's
+    /// context, from the handler that writes; with no current match it does nothing.
+    /// </summary>
+    public void ForgetCurrentMatch()
+    {
+        if (_findCurrent is null && _findCurrentHeader is null)
+            return;
+        _findCurrent = null;
+        DropCurrentHeader();
+        _suppressRender = false;
+        StateHasChanged();
+    }
+
     /// <summary>The current match is the Focus a found step moved to only while the Focus stays
     /// there, in the order it was found in: once either moves it is forgotten, not merely hidden.
     /// Asked wherever the Selection is replaced, and again before each render.</summary>
     private void ForgetCurrentMatchOffFocus()
     {
+        // A header found is the current match only under the Selection it was found under (ADR-0333).
+        ForgetCurrentHeaderOffSelection();
         if (_findCurrent is not { } current)
             return;
         var selection = _selection.Selection;
@@ -95,10 +114,12 @@ public partial class ExGrid<TRow>
         => marks is not null && _findCurrent is { } current && current.Row == row ? current.Column : -1;
 
     /// <summary>A substituted panel's change to what the panel holds (ADR-0055): the grid renders
-    /// for it where the marks may move, as it does for the built-in panel's own fields.</summary>
+    /// for it where the marks may move, as it does for the built-in panel's own fields — on the cells
+    /// where somebody judges them, on the headers wherever they are searched, as the grid judges those
+    /// itself whoever answers Find (ADR-0333).</summary>
     private void FindHeldChanged()
     {
-        if (_findOpen && FindMatchRule() is not null)
+        if (_findOpen && (FindMatchRule() is not null || (FindsHeaders && !HideHeader)))
             StateHasChanged();
     }
 }

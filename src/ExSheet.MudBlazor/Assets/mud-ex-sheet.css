@@ -177,3 +177,6 @@ button.mud-ex-sheet-swatch { padding: 0; }
 .mud-ex-sheet-tab-command-active { background: var(--mud-palette-action-default-hover); }
 .mud-ex-sheet-tab-command-disabled { color: var(--mud-palette-text-disabled); cursor: default; }
 .mud-ex-sheet-tab-command-disabled:hover { background: none; }
+/* A Sheet's find panel (ADR-0332 §5): Within's label and its two choices on one line. */
+.mud-ex-sheet-find-within { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; }
+.mud-ex-sheet-find-within-choices { display: flex; gap: 4px; }

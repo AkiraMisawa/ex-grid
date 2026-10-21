@@ -55,7 +55,7 @@
                        OnClick="Context.ReplaceAll!" data-ex-claims="click" Class="mud-ex-grid-find-replace-all">@Own(FindPanelLabelIds.ReplaceAll)</MudButton>
         </div>
     }
-    <MudText Typo="Typo.caption" Color="@(Context.Outcome == FindOutcome.Replaced ? Color.Success : Color.Error)"
+    <MudText Typo="Typo.caption" Color="@OutcomeColour"
              Class="mud-ex-grid-find-outcome" role="status">@OutcomeText</MudText>
 </form>
 
@@ -75,6 +75,15 @@
     private string Own(string id) => MudExGridWords.Own(Chrome, id);
 
     private string OutcomeText => FindPanelLabelIds.OutcomeText(Context, Own);
+
+    // A count replaced is a success, and a match in a header (ADR-0333) is news, not a fault; every
+    // other outcome said is a step that moved nothing.
+    private Color OutcomeColour => Context.Outcome switch
+    {
+        FindOutcome.Replaced => Color.Success,
+        FindOutcome.FoundInHeader => Color.Default,
+        _ => Color.Error,
+    };
 
     protected override void OnParametersSet()
     {

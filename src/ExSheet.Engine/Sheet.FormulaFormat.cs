@@ -52,7 +52,8 @@ public sealed partial class Sheet
             ParenthesesNode p => Simple(p.Inner),
             UnaryNode u => u.Operator is '-' or '+' && Simple(u.Operand),
             PercentNode { Operand: NumberNode } => true,
-            BinaryNode b => b.Operator is "+" or "-" or "*" or "/" && Simple(b.Left) && Simple(b.Right),
+            // Along the chain of left operands in a loop: a long chain does not deepen the stack.
+            BinaryNode b => b.Spine.All(s => s.Operator is "+" or "-" or "*" or "/") && b.Operands.All(Simple),
             FunctionNode { Name: "DATE" or "TODAY" or "NOW", Function: not null } => true,
             FunctionNode f => f.Name is "MIN" or "MAX" or "SUM" && f.Function is not null && f.Arguments.All(a => a is ReferenceNode or NumberNode),
             _ => false,
@@ -79,18 +80,13 @@ public sealed partial class Sheet
                     return Operand(p.Inner);
                 case UnaryNode u:
                     return Operand(u.Operand);
-                case BinaryNode { Operator: "+" or "-" } b:
-                    var left = Operand(b.Left);
-                    var right = Operand(b.Right);
-                    if (IsPercentConstant(b.Left) || IsPercentConstant(b.Right))
-                    {
-                        var other = IsPercentConstant(b.Left) ? right : left;
-                        return other is null ? PercentConstant : null;
-                    }
-                    if (b.Operator == "-" && left is { IsDate: true } && right is { IsDate: true }) return null;
-                    return left ?? right;
-                case BinaryNode b:
-                    return (Operand(b.Left) ?? Operand(b.Right)) is { IsPercent: false } product ? product : null;
+                case BinaryNode chain:
+                    // Along the chain of left operands in a loop, each operator over the format the
+                    // operators before it gave: a long chain does not deepen the stack.
+                    var spine = chain.Spine;
+                    var left = Operand(spine[0].Left);
+                    foreach (var b in spine) left = Binary(b, left, Operand(b.Right));
+                    return left;
                 case FunctionNode { Name: "DATE" or "TODAY" }:
                     return NumberFormat.ShortDate;
                 case FunctionNode { Name: "NOW" }:
@@ -104,6 +100,19 @@ public sealed partial class Sheet
                 default:
                     return null;
             }
+        }
+
+        // The format one operator gives, from the formats of its operands.
+        static NumberFormat? Binary(BinaryNode b, NumberFormat? left, NumberFormat? right)
+        {
+            if (b.Operator is not ("+" or "-")) return (left ?? right) is { IsPercent: false } product ? product : null;
+            if (IsPercentConstant(b.Left) || IsPercentConstant(b.Right))
+            {
+                var other = IsPercentConstant(b.Left) ? right : left;
+                return other is null ? PercentConstant : null;
+            }
+            if (b.Operator == "-" && left is { IsDate: true } && right is { IsDate: true }) return null;
+            return left ?? right;
         }
     }
 }

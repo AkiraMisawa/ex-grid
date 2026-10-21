@@ -62,4 +62,8 @@ public enum FindOutcome
     /// <summary>A Replace or a Replace All wrote nothing, because a match could not be written:
     /// <c>FindContext.ReplaceRefusedCells</c> names them and why (ADR-0332 §2).</summary>
     ReplaceRefused,
+
+    /// <summary>A match was found in a column header or a Header Group label, which is now the
+    /// current match; the Focus did not move, as a header is not a cell (ADR-0333 §1).</summary>
+    FoundInHeader,
 }

@@ -178,7 +178,11 @@ public partial class ExSheet
 
     /// <summary>Shows <paramref name="sheet"/>, with <paramref name="place"/>, when given, placed as its
     /// Selection and its Focus revealed in place of the Selection kept for it (the Name Box, ADR-0331 §5).</summary>
-    private bool ShowSheet(Sheet sheet, (SelectionRange Range, CellPosition Focus)? place)
+    /// <param name="sheet">The Sheet to show.</param>
+    /// <param name="place">Where its Selection is placed, or null for the one kept for it.</param>
+    /// <param name="asMatch">Whether the place is a match a Find step found there (ADR-0332 §5): its Focus alone
+    /// is selected, and taken as the current match.</param>
+    private bool ShowSheet(Sheet sheet, (SelectionRange Range, CellPosition Focus)? place, bool asMatch = false)
     {
         if (_workbook is not { } workbook || sheet == _sheet) return false;
         if (_sheet is { } left && _grid is { } leaving) _views[left] = leaving.ReadView();
@@ -195,7 +199,8 @@ public partial class ExSheet
             : new GridView(_sequence, GridSelection.Empty, 0, 0);
         if (place is { } placed)
         {
-            _grid?.ShowViewWith(view, placed.Range, placed.Focus);
+            if (asMatch) _grid?.ShowViewWithMatch(view, placed.Focus);
+            else _grid?.ShowViewWith(view, placed.Range, placed.Focus);
             _selection = GridSelection.Empty;
         }
         else

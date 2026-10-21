@@ -33,4 +33,12 @@ public sealed class FormulaSyntaxException : FormatException
     /// rather than kept as text, since Excel makes it a Formula (ADR-0047, third run).
     /// </summary>
     internal bool IsUnimplemented { get; init; }
+
+    /// <summary>
+    /// Whether the Formula is refused for its size alone: functions nested past Excel's 64 levels, a
+    /// Formula nested past the engine's 256 levels, or one the host's stack cannot hold (ADR-0047).
+    /// Such text is still a Formula: typed without <c>=</c> after a sign, it is refused by name, not
+    /// kept as text, as <see cref="IsUnimplemented"/> is.
+    /// </summary>
+    internal bool IsBeyondLimit { get; init; }
 }

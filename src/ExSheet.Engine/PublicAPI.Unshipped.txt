@@ -17,6 +17,7 @@ ExSheet.Engine.Workbook.Culture.get -> System.Globalization.CultureInfo!
 ExSheet.Engine.Workbook.DeclareLinkedTable(string! name, System.Collections.Generic.IReadOnlyList<string!>! columns, string? key = null) -> ExSheet.Engine.WorkbookChange!
 ExSheet.Engine.Workbook.DeclareLinkedTable(string! name, System.Collections.Generic.IReadOnlyList<string!>! columns, System.Collections.Generic.IReadOnlyList<string!>! key) -> ExSheet.Engine.WorkbookChange!
 ExSheet.Engine.Workbook.Do(string! sheet, ExSheet.Engine.SheetEdit! edit) -> ExSheet.Engine.WorkbookStep!
+ExSheet.Engine.Workbook.Do(System.Collections.Generic.IReadOnlyList<(string! Sheet, ExSheet.Engine.SheetEdit! Edit)>! edits) -> ExSheet.Engine.WorkbookStep!
 ExSheet.Engine.Workbook.Find(string! name) -> ExSheet.Engine.Sheet?
 ExSheet.Engine.Workbook.HasVolatileFormulas.get -> bool
 ExSheet.Engine.Workbook.LinkedTableColumns(string! name) -> System.Collections.Generic.IReadOnlyList<System.Collections.Generic.IReadOnlyList<ExSheet.Engine.Value?>!>?

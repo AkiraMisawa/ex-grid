@@ -7,7 +7,8 @@ import { painted, paints, blend } from './pixels.mjs';
 // the report grid's own panel — never the browser's find bar — and the keys typed straight after it
 // land in its field; Enter steps through the cells the report lays out, by the text shown; a
 // collapsed group is not searched inside and nothing expands; and the painted matches are marked,
-// the current one apart. Ctrl+H opens nothing, since a report is not written, and the Pivot Toolbar
+// the current one apart. The column labels stand in the report grid's headers, which the grid searches
+// itself before the rows (ADR-0333). Ctrl+H opens nothing, since a report is not written, and the Pivot Toolbar
 // says so in Excel's words (§2).
 //
 // The page's first layout: Region and Desk on Rows in the Compact form, Product on Columns, Sum of P&L.
@@ -154,6 +155,30 @@ for (const chrome of ['builtin', 'mud']) {
             // The report kept its shape: APAC still collapsed, the Grand Total still on row 10.
             await expect(cell(page, 4, 0).locator('.ex-pivot-toggle')).toHaveAttribute('aria-expanded', 'false');
             await expect(cell(page, 10, 0)).toContainText('Grand Total');
+        });
+
+        test(`ADR-0333: a column label is found in the report's headers, marked and said, and the Focus stays (${chrome})`, async ({ page }) => {
+            await open(page, chrome);
+            // Bond is a Product, on Columns: it is a header of the report grid, and no row says it.
+            const bond = report(page).locator('.ex-header-cell').filter({ hasText: /^Bond$/ });
+            await expect(bond).toHaveCount(1);
+
+            await page.keyboard.press('ControlOrMeta+f');
+            await page.keyboard.type('bond');
+            await expect(findField(page)).toHaveValue('bond');
+            await expect(bond).toHaveClass(MARK);
+
+            await step(page);
+            await expect(bond).toHaveClass(/ex-match-mark-current/);
+            await expect(report(page).locator('.ex-popover-find [role=status]')).toHaveText('Found in the header Bond');
+            await expect(report(page)).toHaveAttribute('aria-activedescendant', /-r1c1$/);
+
+            // A lone match finds itself: the step goes round the rows and comes back to it.
+            await step(page);
+            await expect(bond).toHaveClass(/ex-match-mark-current/);
+            await expect(report(page).locator('.ex-match-mark-current')).toHaveCount(1);
+            await expect(report(page)).toHaveAttribute('aria-activedescendant', /-r1c1$/);
+            await expect(findField(page)).toBeFocused();
         });
 
         test(`ADR-0332 §2: Ctrl+H on the report opens nothing, keeps the key from the browser, and the Pivot Toolbar says why (${chrome})`, async ({ page }) => {

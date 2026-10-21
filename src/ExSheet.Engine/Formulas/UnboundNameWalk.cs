@@ -52,8 +52,8 @@ internal static class UnboundNameWalk
                 Walk(intersection.Right, parameters, found);
                 break;
             case BinaryNode binary:
-                Walk(binary.Left, parameters, found);
-                Walk(binary.Right, parameters, found);
+                // Along the chain of left operands in a loop: a chain of thousands of operators does not deepen the stack.
+                foreach (var operand in binary.Operands) Walk(operand, parameters, found);
                 break;
             case ParenthesesNode parentheses:
                 Walk(parentheses.Inner, parameters, found);
