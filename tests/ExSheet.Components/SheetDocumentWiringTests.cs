@@ -285,7 +285,7 @@ public class SheetDocumentWiringTests : SheetTestContext
 
         Assert.Equal(sentences.Length, sentences.Distinct().Count());
         var orderMoved = SheetWords.EditDiscarded(global::ExGrid.Cells.EditDiscardReason.OrderMoved);
-        Assert.Contains("another Sheet Document was opened", orderMoved);
+        Assert.Contains("another Sheet was shown, or another Sheet Document opened", orderMoved);
         Assert.Contains("nothing was written", orderMoved);
     }
 

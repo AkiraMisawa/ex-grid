@@ -96,16 +96,17 @@
     private readonly SheetDocument _document = MakeDocument();
     private static SheetDocument MakeDocument()
     {
-        var sheet = new Sheet(Culture);
-        sheet.Enter(new CellAddress(0, 0), "Account");
-        sheet.Enter(new CellAddress(0, 1), "Value");
-        sheet.Enter(new CellAddress(0, 2), "1234567890123.45");
-        sheet.Enter(new CellAddress(0, 3), "0.000000123456789");
-        sheet.Do(SheetEdit.SetColumnWidth(CellRange.Parse("A:B"), 18));
-        sheet.Do(SheetEdit.SetColumnWidth(CellRange.Parse("C:D"), 28));
-        sheet.Do(SheetEdit.SetNumberFormat(CellRange.Parse("C1"), NumberFormat.Parse("0.00")));
-        sheet.Do(SheetEdit.SetNumberFormat(CellRange.Parse("D1"), NumberFormat.Parse("0.000000000000000")));
-        return sheet.ToDocument();
+        var workbook = new Workbook(Culture);
+        var sheet = workbook.Sheets[0];
+        workbook.Do(sheet.Name, SheetEdit.Enter(new CellAddress(0, 0), "Account"));
+        workbook.Do(sheet.Name, SheetEdit.Enter(new CellAddress(0, 1), "Value"));
+        workbook.Do(sheet.Name, SheetEdit.Enter(new CellAddress(0, 2), "1234567890123.45"));
+        workbook.Do(sheet.Name, SheetEdit.Enter(new CellAddress(0, 3), "0.000000123456789"));
+        workbook.Do(sheet.Name, SheetEdit.SetColumnWidth(CellRange.Parse("A:B"), 18));
+        workbook.Do(sheet.Name, SheetEdit.SetColumnWidth(CellRange.Parse("C:D"), 28));
+        workbook.Do(sheet.Name, SheetEdit.SetNumberFormat(CellRange.Parse("C1"), NumberFormat.Parse("0.00")));
+        workbook.Do(sheet.Name, SheetEdit.SetNumberFormat(CellRange.Parse("D1"), NumberFormat.Parse("0.000000000000000")));
+        return workbook.ToDocument(sheet.Name);
     }
     private readonly PivotSource _source = PivotSource.From(Rows.Take(1).ToArray(), PivotFields.Of<PreciseRow>()
         .Text("Group", r => r.Group).Text("Item", r => r.Item)

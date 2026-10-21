@@ -76,6 +76,7 @@ internal static class DrawnFigures
                 new("Number Format", "turns a Value into the text shown, here 0.0%"),
                 new("Error Value", "an error, carried as data; here a division by nothing"),
                 new("Value", "what a cell's Entry evaluates to"),
+                new("Sheet Tab", "one for each Sheet of the Workbook; a press shows its Sheet"),
             ]),
     };
 }

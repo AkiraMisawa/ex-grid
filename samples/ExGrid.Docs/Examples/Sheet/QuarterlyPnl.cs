@@ -13,7 +13,8 @@ public static class QuarterlyPnl
     /// <summary>The statement, as a Sheet Document.</summary>
     public static SheetDocument Document()
     {
-        var sheet = new Sheet(CultureInfo.GetCultureInfo("en-US"));
+        var workbook = new Workbook(CultureInfo.GetCultureInfo("en-US"));
+        var sheet = workbook.Sheets[0];
         string[][] rows =
         [
             ["USD thousands", "Q1", "Q2", "Q3", "Q4", "FY"],
@@ -27,13 +28,13 @@ public static class QuarterlyPnl
         ];
         for (var r = 0; r < rows.Length; r++)
             for (var c = 0; c < rows[r].Length; c++)
-                sheet.Enter(new CellAddress(r, c), rows[r][c]);
+                workbook.Do(sheet.Name, SheetEdit.Enter(new CellAddress(r, c), rows[r][c]));
 
         void Format(string range, CellFormatChange change) =>
-            sheet.Do(SheetEdit.SetCellFormat([CellRange.Parse(range)], change));
+            workbook.Do(sheet.Name, SheetEdit.SetCellFormat([CellRange.Parse(range)], change));
 
-        sheet.Do(SheetEdit.SetColumnWidth(CellRange.Parse("A:A"), 22));
-        sheet.Do(SheetEdit.SetColumnWidth(CellRange.Parse("B:F"), 10));
+        workbook.Do(sheet.Name, SheetEdit.SetColumnWidth(CellRange.Parse("A:A"), 22));
+        workbook.Do(sheet.Name, SheetEdit.SetColumnWidth(CellRange.Parse("B:F"), 10));
 
         // Thousands with negatives in brackets, and margins as percentages.
         Format("B2:F7", new CellFormatChange { NumberFormat = NumberFormat.Parse("#,##0;(#,##0)") });
@@ -53,6 +54,6 @@ public static class QuarterlyPnl
             Borders = new BorderChange { Top = new BorderLine(BorderLineStyle.Thin), Bottom = new BorderLine(BorderLineStyle.Double) },
         });
         Format("F1:F8", new CellFormatChange { Bold = true });
-        return sheet.ToDocument();
+        return workbook.ToDocument(sheet.Name);
     }
 }

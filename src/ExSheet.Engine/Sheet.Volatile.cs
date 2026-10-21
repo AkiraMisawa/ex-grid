@@ -14,26 +14,21 @@ public sealed partial class Sheet
     /// <summary>The moment read at the start of the recalculation under way.</summary>
     private DateTime? _moment;
 
-    /// <summary>
-    /// Where the engine reads the current moment for <c>NOW</c>: the date and time of day in the
-    /// Sheet's zone, or <see langword="null"/> while it is not known, when <c>NOW</c> is
-    /// <c>#GETTING_DATA</c> (ADR-0124). The engine reads no clock itself; it calls this once at the
-    /// start of each recalculation, so every <c>NOW</c> in one recalculation answers the same moment.
-    /// Null, the default, leaves <c>NOW</c> waiting.
-    /// </summary>
-    public Func<DateTime?>? NowSource { get; set; }
+    /// <summary>Where the Workbook reads the current moment for <c>NOW</c> (<see cref="Workbook.NowSource"/>; ADR-0124).</summary>
+    internal Func<DateTime?>? NowSource
+    {
+        get => Workbook.NowSource;
+        set => Workbook.NowSource = value;
+    }
 
-    /// <summary>Whether any Formula calls a volatile function, so that moving the clock on can change a Value.</summary>
-    public bool HasVolatileFormulas => _volatileFormulas.Count > 0;
+    /// <summary>Whether any Formula of this Sheet calls a volatile function.</summary>
+    internal bool HasVolatileFormulas => _volatileFormulas.Count > 0;
 
-    /// <summary>
-    /// Recalculates the Formulas that call a volatile function, and what reads them, reading the
-    /// moment again: what ExSheet does as the minute turns (ADR-0124). It is not an operation a
-    /// user undoes.
-    /// </summary>
-    /// <returns>What the recalculation changed.</returns>
-    public SheetChange RecalculateVolatile() =>
-        _volatileFormulas.Count == 0 ? SheetChange.None : Recalculate([.. _volatileFormulas], []);
+    /// <summary>Recalculates the Workbook's volatile Formulas (<see cref="Workbook.RecalculateVolatile"/>): what it changed on this Sheet.</summary>
+    internal SheetChange RecalculateVolatile() => Workbook.RecalculateVolatile().For(this);
+
+    /// <summary>One recalculation of <paramref name="cells"/>, on any Sheet of the Workbook, started from this Sheet, with every volatile Formula of the Workbook: what it changed here.</summary>
+    internal SheetChange RecalculateCells(HashSet<SheetCell> cells) => Recalculate(cells, []);
 
     private void RegisterVolatile(CellAddress formulaCell, Node formula)
     {

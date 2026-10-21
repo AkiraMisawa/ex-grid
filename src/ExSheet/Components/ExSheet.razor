@@ -65,6 +65,24 @@
         OnCopyRowsNeeded="_rowsNeeded"
         OnUndo="_undo" OnRedo="_redo" OnEditingChanged="_editingChanged" OnEditDiscarded="_editDiscarded" OnCommitRefused="_commitRefused" OnOverwriteNotice="_overwriteNotice"
         DeclaredKeys="DeclaredSheetKeys" OnDeclaredKey="_formatKey" OnBrowserTimeZone="_browserTimeZone" />
+@* The Sheet Tabs (ADR-0331): one per Sheet of the Workbook, at the Sheet's foot, under the grid, as
+   Excel draws them. A tab list to assistive technology, the selected tab its one tab stop. A press
+   keeps the keyboard where it is, in the grid, and shows the Sheet; so do Ctrl+PageUp and
+   Ctrl+PageDown, which the grid claims for the Sheet. Its height is the Formula Bar's, written inline
+   (ADR-0028), and the Sheet's ViewportHeight includes it. *@
+@if (ShowSheetTabs && _workbook is { } tabbedWorkbook)
+{
+    <div class="ex-sheet-tabs" role="tablist" aria-label="@SheetWords.SheetTabsName" style="@SheetTabsStyle" @ref="_tabList"
+         @onkeydown="OnSheetTabKeyAsync">
+        @foreach (var tabSheet in tabbedWorkbook.Sheets)
+        {
+            var sheet = tabSheet;
+            var selected = sheet == _sheet;
+            <button type="button" role="tab" class="ex-sheet-tab" @ref="_tabs[sheet]" aria-selected="@(selected ? "true" : "false")" tabindex="@(selected ? "0" : "-1")"
+                    @onmousedown:preventDefault="true" @onclick="() => ShowSheetByUserAsync(sheet)">@sheet.Name</button>
+        }
+    </div>
+}
 @* Format Cells in a frame of the Chrome's own (ADR-0071, ADR-0010's note of 2026-09-30): beside the
    grid and outside its root, from the opening until OK or Cancel. Under the built-in Chrome it
    stands in the grid's popover frame instead (ADR-0050 item 16), and nothing is rendered here. *@
@@ -119,6 +137,8 @@
     // Document hands one of them in again, and that is the Sheet already open, not a
     // replacement: reopening it would clear the undo stack on every edit.
     private readonly ConditionalWeakTable<SheetDocument, object> _emitted = new();
+    // The same for the Workbook Documents it handed out through WorkbookChanged.
+    private readonly ConditionalWeakTable<WorkbookDocument, object> _emittedWorkbooks = new();
 
     private readonly Func<CellPosition, GridDirection, CellPosition> _dataEdge;
     private readonly Func<string, int, ValueTask<EditorCompletion?>> _complete;
@@ -174,8 +194,14 @@
     private CellAppearanceOf<SheetRow> _cellAppearance = SheetAppearance.Lookup(0);
     // A resize of several whole columns the grid is still reporting, one column at a time: the
     // step that began it, and the columns not yet reported (ADR-0016, FN-12c).
-    private (SheetStep First, HashSet<int> Pending)? _resizing;
+    private (WorkbookStep First, HashSet<int> Pending)? _resizing;
+    // The Workbook shown (ADR-0331), and the Sheet of it shown, which every part of this component
+    // reads and edits: the grid draws one Sheet at a time.
+    private global::ExSheet.Engine.Workbook? _workbook;
     private Sheet? _sheet;
+    // What the grid showed of each Sheet when it was last shown — its Selection and scroll offsets
+    // (ADR-0331 §1) — given back when its tab is selected again. A Sheet not yet shown has none.
+    private readonly Dictionary<Sheet, global::ExGrid.Components.GridView> _views = [];
     private SheetEdges _edges = new();
     private SheetRow[] _window = [];
     private int _windowStart;
@@ -198,6 +224,7 @@
     private string? _copyRefusal;
     private bool _initialised;
     private SheetDocument? _documentParameter;
+    private WorkbookDocument? _workbookParameter;
     // Set when a new Sheet Document was opened in place of the one shown, until any edit open
     // over it has been discarded (ADR-0048).
     private bool _documentReplaced;
@@ -392,6 +419,31 @@
     /// <exception cref="SheetDocumentException">The document's version is one the engine does not know.</exception>
     [Parameter] public SheetDocument? Document { get; set; }
 
+    /// <summary>
+    /// The Workbook Document to show (ADR-0331): every Sheet behind a Sheet Tab, the one it records as
+    /// shown in front. It acts as <see cref="Document"/> does — a different document replaces the
+    /// Workbook and clears the undo stack, and one this component raised through
+    /// <see cref="WorkbookChanged"/> changes nothing — and the two are not set together. Null, with
+    /// <see cref="Document"/> null too, is a Workbook of one empty Sheet in <see cref="Culture"/>.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">Both <see cref="Document"/> and this are set.</exception>
+    /// <exception cref="SheetDocumentException">The document is one the engine does not read.</exception>
+    [Parameter] public WorkbookDocument? Workbook { get; set; }
+
+    /// <summary>
+    /// Raised after every change to the Workbook with its Workbook Document (ADR-0331): a change to any
+    /// of its Sheets, and the Sheet shown, which the document records. The application persists it;
+    /// ExSheet never does.
+    /// </summary>
+    [Parameter] public EventCallback<WorkbookDocument> WorkbookChanged { get; set; }
+
+    /// <summary>
+    /// Whether the Sheet Tabs are shown at the foot of the Sheet (ADR-0331): on by default, as in
+    /// Excel, with one tab for each Sheet of the Workbook. The Sheet's <see cref="ViewportHeight"/>
+    /// includes them.
+    /// </summary>
+    [Parameter] public bool ShowSheetTabs { get; set; } = true;
+
     /// <summary>The Selection Summary's figures (ADR-0130): Excel's Average, Count and Sum by
     /// default. The Sheet holds the choice made in the figures menu from then on; a new value handed
     /// here replaces it.</summary>
@@ -409,7 +461,9 @@
 
     /// <summary>
     /// Raised after every change to the Sheet with its Sheet Document — Entries, never Values
-    /// (ADR-0048). The application persists it; ExSheet never does.
+    /// (ADR-0048) — while the Workbook holds one Sheet, which a Sheet Document records whole; with
+    /// several, only <see cref="WorkbookChanged"/> is raised. The application persists it; ExSheet
+    /// never does.
     /// </summary>
     [Parameter] public EventCallback<SheetDocument> DocumentChanged { get; set; }
 
@@ -537,12 +591,12 @@
     /// Whether an edit is open in the grid: from the moment a cell or the Formula Bar is typed in,
     /// or opened with F2 or a double click, until the edit is committed, cancelled or discarded.
     /// A commit the Sheet rejects — a Formula it cannot read — leaves it open (ADR-0034). While it
-    /// is, <see cref="DoAsync"/>, <see cref="UndoAsync"/>, <see cref="RedoAsync"/>,
+    /// is, <see cref="DoAsync(SheetEdit)"/>, <see cref="UndoAsync"/>, <see cref="RedoAsync"/>,
     /// <see cref="SetCellFormatAsync"/>, <see cref="SetNumberFormatAsync"/>,
     /// <see cref="SetAlignmentAsync"/> and <see cref="OpenFormatCellsAsync"/> are refused by name
     /// (ADR-0048, ADR-0071), and Excel's formatting keys change nothing
     /// (<see cref="OnFormatKeyRefused"/>).
-    /// <see cref="CellFormatAt"/> is a read, and answers. ExSheet learns it from its grid
+    /// <see cref="CellFormatAt(CellAddress)"/> is a read, and answers. ExSheet learns it from its grid
     /// (ADR-0050 section 6).
     /// </summary>
     public bool IsEditing { get; private set; }
@@ -554,6 +608,8 @@
     public bool CanRedo => _history.CanRedo;
 
     private Sheet CurrentSheet => _sheet ?? throw new InvalidOperationException("The Sheet opens when the component's parameters arrive.");
+
+    private global::ExSheet.Engine.Workbook CurrentWorkbook => _workbook ?? throw new InvalidOperationException("The Sheet opens when the component's parameters arrive.");
 
     // The Cell Metrics the grid resolves, which convert a width in characters to pixels and back
     // as the painted text converts the column's width (ADR-0047, third round).
@@ -567,12 +623,18 @@
         RefuseUnreachableRows();
         BindPointingScope();
         ResolveToolbar();
+        if (Document is not null && Workbook is not null)
+        {
+            throw new InvalidOperationException(
+                "Document and Workbook are both set. A Sheet Document opens as a Workbook of one Sheet; hand over one or the other (ADR-0331).");
+        }
         if (!_initialised)
         {
             _initialised = true;
             _documentParameter = Document;
+            _workbookParameter = Workbook;
             _cultureParameter = Culture;
-            Open(Document);
+            Open(Document, Workbook);
             FollowTheDayParameters();
             FollowTheSeedParameter();
             RefreshToolbar();
@@ -584,12 +646,16 @@
                 $"The Sheet's culture is {CurrentSheet.Culture.Name}, and it is the Sheet's own: Entries already typed were read under it (ADR-0048). " +
                 "To show a Sheet under another culture, hand over a Sheet Document declaring that culture.");
         }
-        if (!ReferenceEquals(Document, _documentParameter))
+        if (!ReferenceEquals(Document, _documentParameter) || !ReferenceEquals(Workbook, _workbookParameter))
         {
+            // A document this instance handed out, coming back, is the Workbook already open.
+            var replaced = Workbook is not null ? !_emittedWorkbooks.TryGetValue(Workbook, out _)
+                : Document is null || !_emitted.TryGetValue(Document, out _);
             _documentParameter = Document;
-            if (Document is null || !_emitted.TryGetValue(Document, out _))
+            _workbookParameter = Workbook;
+            if (replaced)
             {
-                Open(Document);
+                Open(Document, Workbook);
                 _documentReplaced = true;
                 _documentOpenedUnderWrite = _hearingWrite;
                 // Another document's cells stand at the old one's places (ADR-0142).
@@ -651,10 +717,13 @@
 
     /// <summary>
     /// A Consumer command: does <paramref name="edit"/> as one operation on the user's undo
-    /// stack, in its place in the order (ADR-0048), and raises <see cref="DocumentChanged"/>.
+    /// stack, in its place in the order (ADR-0048), and raises <see cref="DocumentChanged"/>. It
+    /// names no Sheet, so it is taken only while the Workbook holds one; with several, name the Sheet
+    /// with <see cref="DoAsync(string, SheetEdit)"/> (ADR-0331 §6).
     /// </summary>
-    /// <exception cref="SheetRefusedException">The Sheet refuses the operation, or an edit is open
-    /// (<see cref="IsEditing"/>); nothing changed.</exception>
+    /// <exception cref="SheetRefusedException">The Sheet refuses the operation, an edit is open
+    /// (<see cref="IsEditing"/>), or the Workbook holds several Sheets
+    /// (<see cref="SheetRefusalReason.SheetNotNamed"/>); nothing changed.</exception>
     /// <exception cref="FormulaSyntaxException">A typed Formula cannot be read; nothing changed.</exception>
     public Task DoAsync(SheetEdit edit)
     {
@@ -663,6 +732,7 @@
         // caller is already on the renderer's context and the work runs inline.
         return InvokeAsync(async () =>
         {
+            RefuseUnnamedSheet();
             RefuseWhileEditing();
             await PerformAsync(edit);
         });
@@ -697,7 +767,7 @@
     /// Format Cells' OK widens for any part of the Font instead, as Excel's Font tab did for bold,
     /// italic, underline and a colour (h7; R6, case (1)), <see cref="SetCellFormatFromFocusAsync"/>
     /// widens for a Font colour too, as Excel's Home tab Font Color button did (run 18a, case 5), and
-    /// <see cref="DoAsync"/> does an edit exactly as it is written, and widens nothing.
+    /// <see cref="DoAsync(SheetEdit)"/> does an edit exactly as it is written, and widens nothing.
     /// </remarks>
     public Task<bool> SetCellFormatAsync(CellFormatChange change)
     {
@@ -742,7 +812,7 @@
             AdoptGridSelection();
             if (_selection.IsEmpty) return false;
             var focus = _selection.Focus;
-            var made = change(CellFormatAt(new CellAddress(focus.Row, focus.Column)));
+            var made = change(CurrentSheet.GetCellFormat(new CellAddress(focus.Row, focus.Column)));
             ArgumentNullException.ThrowIfNull(made, nameof(change));
             if (made.IsEmpty) throw new ArgumentException("The change sets no part of a Cell Format.", nameof(change));
             return await FormatSelectionAsync(made, widen: SheetWidening.WidensAsAHomeTabButtonDoes(made));
@@ -774,9 +844,16 @@
     /// over column, as in Excel — and each Border side the edge as shown, which reads the same from
     /// the cell beside it (<see cref="Sheet.GetBorders"/>). What a toolbar reads for the Focus cell
     /// whenever the Selection changes. It is a read, so it answers while an edit is open too: until
-    /// the edit is committed, the cell is as it was.
+    /// the edit is committed, the cell is as it was. The address names no Sheet, so it is read only
+    /// while the Workbook holds one; with several, name the Sheet with
+    /// <see cref="CellFormatAt(string, CellAddress)"/> (ADR-0331 §6).
     /// </summary>
-    public CellFormat CellFormatAt(CellAddress address) => CurrentSheet.GetCellFormat(address);
+    /// <exception cref="SheetRefusedException">The Workbook holds several Sheets (<see cref="SheetRefusalReason.SheetNotNamed"/>).</exception>
+    public CellFormat CellFormatAt(CellAddress address)
+    {
+        RefuseUnnamedSheet();
+        return CurrentSheet.GetCellFormat(address);
+    }
 
     /// <summary>
     /// One of Excel's formatting keys (ADR-0071, "Keys"), claimed by the grid and raised with
@@ -798,6 +875,11 @@
     private async Task OnFormatKeyAsync(GridDeclaredKeyPress press)
     {
         if (await OnToolbarKeyAsync(press)) return;
+        if (SheetTabKeys.StepOf(press.Key) is { } step)
+        {
+            await OnSheetTabKeyAsync(press, step);
+            return;
+        }
         if (SheetStructureKeys.KindOf(press.Key) is { } structure)
         {
             await OnStructureKeyAsync(press, structure);
@@ -823,7 +905,7 @@
         }
         var focus = _selection.Focus;
         // On the Selection the key carries, which SetCellFormatAsync would read from the grid again.
-        var change = SheetFormatKeys.ChangeFor(kind, CellFormatAt(new CellAddress(focus.Row, focus.Column)), CurrentSheet.Culture);
+        var change = SheetFormatKeys.ChangeFor(kind, CurrentSheet.GetCellFormat(new CellAddress(focus.Row, focus.Column)), CurrentSheet.Culture);
         await FormatSelectionAsync(change, widen: SheetWidening.WidensAsAKeyDoes(change));
     }
 
@@ -1057,7 +1139,7 @@
     /// one's name, columns and key, whether it is waiting for a snapshot, and how many rows the
     /// last one held.
     /// </summary>
-    public IReadOnlyList<LinkedTable> LinkedTables => CurrentSheet.LinkedTables;
+    public IReadOnlyList<LinkedTable> LinkedTables => CurrentWorkbook.LinkedTables;
 
     /// <summary>
     /// Declares a Linked Table by name, columns and key, before any of its rows arrive (ADR-0049).
@@ -1105,10 +1187,10 @@
         ArgumentNullException.ThrowIfNull(key);
         return InvokeAsync(async () =>
         {
-            var sheet = CurrentSheet;
-            var before = sheet.LinkedTables;
-            var change = sheet.DeclareLinkedTable(name, columns, key);
-            await ChangedAsync(change, raiseDocument: !SameDeclarations(before, sheet.LinkedTables), byUser: false);
+            var workbook = CurrentWorkbook;
+            var before = workbook.LinkedTables;
+            var change = workbook.DeclareLinkedTable(name, columns, key);
+            await ChangedAsync([change], raiseDocument: !SameDeclarations(before, workbook.LinkedTables), byUser: false);
         });
     }
 
@@ -1135,19 +1217,22 @@
         ArgumentNullException.ThrowIfNull(rows);
         return InvokeAsync(async () =>
         {
-            SheetChange change;
+            WorkbookChange change;
             try
             {
-                change = CurrentSheet.PushLinkedTable(name, rows);
+                change = CurrentWorkbook.PushLinkedTable(name, rows);
             }
             catch (RepeatedKeyException refused)
             {
-                // The table went back to waiting: its readers show #GETTING_DATA, and then the
-                // Consumer hears why (ADR-0049, 2026-09-30).
-                await ChangedAsync(refused.Change, raiseDocument: false, byUser: false);
+                // The table went back to waiting: its readers show #GETTING_DATA, on every Sheet, and
+                // then the Consumer hears why (ADR-0049, 2026-09-30). The refusal names what it changed
+                // on the Workbook's first Sheet; every row of the Sheet shown is read again.
+                SheetChange[] shown = CurrentSheet == CurrentWorkbook.Sheets[0] ? [refused.Change] : [];
+                await ChangedAsync(shown, raiseDocument: false, byUser: false);
+                RefreshEveryRow();
                 throw;
             }
-            await ChangedAsync(change, raiseDocument: false, byUser: false);
+            await ChangedAsync([change], raiseDocument: false, byUser: false);
         });
     }
 
@@ -1176,7 +1261,13 @@
         a.Count == b.Count && a.Zip(b).All(p => p.First.Name == p.Second.Name && p.First.Columns.SequenceEqual(p.Second.Columns) && p.First.KeyColumns.SequenceEqual(p.Second.KeyColumns));
 
     /// <summary>The Sheet as it stands, as a Sheet Document: Entries, never Values (ADR-0048).</summary>
-    public SheetDocument ToDocument() => CurrentSheet.ToDocument();
+    /// <exception cref="InvalidOperationException">The Workbook holds several Sheets, which a Sheet Document cannot record (ADR-0331): <see cref="ToWorkbookDocument"/> records them.</exception>
+    public SheetDocument ToDocument() => CurrentWorkbook.Sheets.Count == 1
+        ? CurrentWorkbook.ToDocument(CurrentSheet.Name)
+        : throw new InvalidOperationException("The Workbook holds several Sheets, which a Sheet Document cannot record; ToWorkbookDocument records them (ADR-0331).");
+
+    /// <summary>The Workbook as it stands, as a Workbook Document: every Sheet in order, the Sheet shown, never a Value (ADR-0331).</summary>
+    public WorkbookDocument ToWorkbookDocument() => CurrentWorkbook.ToDocument();
 
     // A public method may be called from outside the renderer's context — a Consumer's timer,
     // a service — so each one runs its work there.
@@ -1202,13 +1293,18 @@
         }
     }
 
-    private void Open(SheetDocument? document)
+    private void Open(SheetDocument? document, WorkbookDocument? workbook)
     {
-        _sheet = document is null ? new Sheet(Culture ?? CultureInfo.CurrentCulture) : Sheet.Open(document);
-        // A Sheet opened from a document has no day: the Sheet Day is not recorded (ADR-0121).
-        GiveTheDay(_sheet);
+        _workbook = workbook is not null ? global::ExSheet.Engine.Workbook.Open(workbook)
+            : document is not null ? global::ExSheet.Engine.Workbook.Open(document)
+            : new global::ExSheet.Engine.Workbook(Culture ?? CultureInfo.CurrentCulture);
+        _sheet = _workbook.Shown;
+        HearSheetNames();
+        _views.Clear();
+        // A Workbook opened from a document has no day: the Sheet Day is not recorded (ADR-0121).
+        GiveTheDay(_workbook);
         // Nor a seed: the Consumer's, or one chosen now, at a count of 0 changes (ADR-0180).
-        GiveTheSeed(_sheet);
+        GiveTheSeed(_workbook);
         _edges = SheetEdges.Of(_sheet);
         _history.Clear();
         _resizing = null;
@@ -1545,7 +1641,7 @@
         var edit = SheetEdit.Fill(SheetFormulaAids.RangeOf(intent.Source), SheetFormulaAids.RangeOf(intent.Target), DirectionOf(intent.Direction));
         // Refused synchronously, before the handler's first await: the grid reads the answer
         // when the handler completes, and a refusal leaves the Selection on the source.
-        if (CurrentSheet.Check(edit) is { } refusal)
+        if (CurrentWorkbook.Check(CurrentSheet.Name, edit) is { } refusal)
         {
             intent.Refuse();
             Tell(SheetWords.Refused(refusal));
@@ -1566,7 +1662,7 @@
         var target = intent.Plan.Targets[0];
         var direction = target.TopRow > source.BottomRow ? FillDirection.Down : FillDirection.Right;
         var edit = SheetEdit.FillCopy(SheetFormulaAids.RangeOf(source), SheetFormulaAids.RangeOf(target), direction);
-        if (CurrentSheet.Check(edit) is { } refusal)
+        if (CurrentWorkbook.Check(CurrentSheet.Name, edit) is { } refusal)
         {
             intent.Refuse();
             Tell(SheetWords.Refused(refusal));
@@ -1720,19 +1816,22 @@
 
     private async Task PerformAsync(SheetEdit edit, IReadOnlyList<CellRange>? widenOver = null)
     {
-        var step = CurrentSheet.Do(edit);
+        var step = Do(edit);
         // The operation and the widths it widens its columns to are one operation: one undo puts
         // back both (ADR-0048; ADR-0071, case 17).
         if (widenOver is not null && Widen(widenOver) is { Count: > 0 } widened)
         {
-            SheetStep[] steps = [step, .. widened];
+            WorkbookStep[] steps = [step, .. widened];
             _history.Record(steps);
             await ChangedAsync([.. steps.Select(s => s.Change)]);
             return;
         }
         _history.Record(step);
-        await ChangedAsync(step.Change);
+        await ChangedAsync([step.Change]);
     }
+
+    /// <summary>An edit of the Sheet shown, as one step of the Workbook's (ADR-0331).</summary>
+    private WorkbookStep Do(SheetEdit edit) => CurrentWorkbook.Do(CurrentSheet.Name, edit);
 
     /// <summary>
     /// A column the user resized — dragged, or sized to fit on a double-click of its edge
@@ -1746,7 +1845,7 @@
     {
         if (!CellAddress.TryParseColumn(change.Column, out var column)) return;
         if (SheetColumns.CharactersOfColumn(change.WidthPx, CellMetrics) is not { } characters) return;
-        var step = CurrentSheet.Do(SheetEdit.SetColumnWidth(CellRange.WholeColumns(column, column), characters));
+        var step = Do(SheetEdit.SetColumnWidth(CellRange.WholeColumns(column, column), characters));
         if (_resizing is { } resizing && resizing.Pending.Remove(column) && _history.TryExtend(resizing.First, step))
         {
             if (resizing.Pending.Count == 0) _resizing = null;
@@ -1760,7 +1859,7 @@
             var resized = _selection.WholeColumns(new GridExtent(Sheet.RowCount, Sheet.ColumnCount));
             _resizing = resized.Contains(column) && resized.Count > 1 ? (step, [.. resized.Where(c => c != column)]) : null;
         }
-        await ChangedAsync(step.Change);
+        await ChangedAsync([step.Change]);
     }
 
     /// <summary>
@@ -1773,11 +1872,8 @@
     /// recorded in the Sheet like any other (ADR-0046), as a step of the operation's own; none
     /// where no column is widened.
     /// </summary>
-    private List<SheetStep> Widen(IReadOnlyList<CellRange> cells)
-    {
-        var sheet = CurrentSheet;
-        return [.. SheetWidening.Of(sheet, cells, _columns, CellMetrics).Select(widened => sheet.Do(WidenedByEntry(widened.Column, widened.Characters)))];
-    }
+    private List<WorkbookStep> Widen(IReadOnlyList<CellRange> cells) =>
+        [.. SheetWidening.Of(CurrentSheet, cells, _columns, CellMetrics).Select(widened => Do(WidenedByEntry(widened.Column, widened.Characters)))];
 
     /// <summary>The edit that records a width an entry widened a column to: the entry's kind, which a longer entry widens again (SH-26).</summary>
     private static SheetEdit WidenedByEntry(int column, double characters) =>
@@ -1788,10 +1884,15 @@
     /// <summary>The toolbar's height: its rows' count times one row's, nothing while it is hidden.</summary>
     private double ToolbarPx => ShowToolbar ? _toolbar.RowCount * _toolbar.RowHeightPx : 0;
 
-    /// <summary>What the grid is given: the Sheet's height less the toolbar's, where it is declared
-    /// (ADR-0028). Under Stretch the grid takes what the toolbar leaves in the Sheet's box.</summary>
+    /// <summary>The Sheet Tabs' height: one Toolbar Row's, the Formula Bar's (ADR-0331, ADR-0028); nothing while they are hidden.</summary>
+    private double SheetTabsPx => ShowSheetTabs ? _toolbar.RowHeightPx : 0;
+
+    private string SheetTabsStyle => FormattableString.Invariant($"height: {SheetTabsPx}px");
+
+    /// <summary>What the grid is given: the Sheet's height less the toolbar's and the Sheet Tabs', where
+    /// it is declared (ADR-0028). Under Stretch the grid takes what they leave in the Sheet's box.</summary>
     private ViewportSize GridViewportHeight =>
-        ShowToolbar && !ViewportHeight.IsStretch ? ViewportHeight.Px - ToolbarPx : ViewportHeight;
+        (ShowToolbar || ShowSheetTabs) && !ViewportHeight.IsStretch ? ViewportHeight.Px - ToolbarPx - SheetTabsPx : ViewportHeight;
 
     /// <summary>
     /// The Sheet's box. Without the toolbar the element lays out as if it were not there, as it always
@@ -1803,7 +1904,7 @@
     {
         get
         {
-            if (!ShowToolbar) return "display: contents";
+            if (!ShowToolbar && !ShowSheetTabs) return "display: contents";
             var width = ViewportWidth.IsStretch ? "; min-width: 0" : FormattableString.Invariant($"; width: {ViewportWidth.Px}px");
             return ViewportHeight.IsStretch
                 ? "display: flex; flex-direction: column; height: 100%; flex: 1 1 auto; min-height: 0" + width
@@ -1827,10 +1928,15 @@
         // One Toolbar Row is the Formula Bar's height, from the same Density (ADR-0100, ADR-0028).
         ListenForKeyUps();
         _toolbar.RowHeightPx = GridMetrics.Resolve(Presentation?.Density ?? GridDensity.Compact, RowHeight, defaults: Presentation).FormulaBarHeightPx;
-        if (ShowToolbar && !ViewportHeight.IsStretch && ViewportHeight.Px <= ToolbarPx)
+        if (ShowToolbar && !ViewportHeight.IsStretch && ViewportHeight.Px <= ToolbarPx + SheetTabsPx)
         {
             throw new ArgumentException(FormattableString.Invariant(
                 $"ViewportHeight ({ViewportHeight.Px}px) includes the Sheet Toolbar ({ToolbarPx}px) and must exceed it, with room for the grid (ADR-0100)."));
+        }
+        if (ShowSheetTabs && !ViewportHeight.IsStretch && ViewportHeight.Px <= ToolbarPx + SheetTabsPx)
+        {
+            throw new ArgumentException(FormattableString.Invariant(
+                $"ViewportHeight ({ViewportHeight.Px}px) includes the Sheet Tabs ({SheetTabsPx}px) and must exceed them, with room for the grid (ADR-0331)."));
         }
     }
 
@@ -1846,7 +1952,8 @@
     private const string ToolbarToggleKey = "Control+F1";
     // Excel's formatting keys (ADR-0071) and its insert and delete keys (ADR-0050 item 14, 2026-10-02),
     // which every Sheet declares whether or not its toolbar is shown.
-    private static readonly IReadOnlyCollection<string> SheetKeys = [.. SheetFormatKeys.Declared, .. SheetStructureKeys.Declared];
+    // And Ctrl+PageUp and Ctrl+PageDown, which show the Sheet before and after the one shown (ADR-0331).
+    private static readonly IReadOnlyCollection<string> SheetKeys = [.. SheetFormatKeys.Declared, .. SheetStructureKeys.Declared, .. SheetTabKeys.Declared];
     private static readonly IReadOnlyCollection<string> WithKeyTips = [.. SheetKeys, AltAlone, KeyTipsKey];
     private static readonly IReadOnlyCollection<string> WithToggle = [.. SheetKeys, ToolbarToggleKey];
     private static readonly IReadOnlyCollection<string> WithKeyTipsAndToggle = [.. SheetKeys, AltAlone, KeyTipsKey, ToolbarToggleKey];
@@ -1938,7 +2045,7 @@
     private void RefreshToolbar()
     {
         if (_toolbar is null || _sheet is null) return;
-        var focus = _selection.IsEmpty ? CellFormat.Default : CellFormatAt(new CellAddress(_selection.Focus.Row, _selection.Focus.Column));
+        var focus = _selection.IsEmpty ? CellFormat.Default : CurrentSheet.GetCellFormat(new CellAddress(_selection.Focus.Row, _selection.Focus.Column));
         _toolbar.Update(focus, !_selection.IsEmpty, IsEditing, _sheet.Culture, Chrome as ISheetChrome);
     }
 
@@ -2013,6 +2120,25 @@
 
     private Task ChangedAsync(SheetChange change, bool raiseDocument = true, bool byUser = true) => ChangedAsync([change], raiseDocument, byUser);
 
+    /// <summary>What one operation changed across the Workbook (ADR-0331): the Sheet shown repaints what
+    /// it changed there; another Sheet's rows are read afresh when its tab is selected. An operation that
+    /// took the Sheet shown out of the Workbook — its deletion, or the undo of its insertion — shows the
+    /// Sheet the Workbook now shows, read whole.</summary>
+    private async Task ChangedAsync(IReadOnlyList<WorkbookChange> changes, bool raiseDocument = true, bool byUser = true)
+    {
+        if (changes.Any(change => change.ChangesSheets) && ShowSheet(CurrentWorkbook.Shown))
+        {
+            if (byUser) ClearNotice();
+            if (_grid is { } summarized) await summarized.RefreshSummaryAsync();
+            if (raiseDocument) await RaiseDocumentsAsync();
+            await RaiseSheetsChangedAsync();
+            return;
+        }
+        var sheet = CurrentSheet;
+        await ChangedAsync([.. changes.Select(change => change.For(sheet))], raiseDocument, byUser);
+        if (changes.Any(change => change.ChangesSheets)) await RaiseSheetsChangedAsync();
+    }
+
     /// <summary>
     /// What one operation changed, in the order its engine steps changed it. An operation of the
     /// user's own clears the notice; a Consumer's programmatic change (<paramref name="byUser"/>
@@ -2049,11 +2175,24 @@
         // Selection Summary is asked again (ADR-0130).
         if (_grid is { } summarized) await summarized.RefreshSummaryAsync();
         RefreshToolbar();
-        if (raiseDocument && DocumentChanged.HasDelegate)
+        if (raiseDocument) await RaiseDocumentsAsync();
+    }
+
+    /// <summary>The Consumer hears the Workbook as it now stands: as a Workbook Document, and as a Sheet Document while it holds one Sheet (ADR-0331).</summary>
+    private async Task RaiseDocumentsAsync()
+    {
+        var workbook = CurrentWorkbook;
+        if (DocumentChanged.HasDelegate && workbook.Sheets.Count == 1)
         {
-            var document = sheet.ToDocument();
+            var document = workbook.ToDocument(workbook.Sheets[0].Name);
             _emitted.AddOrUpdate(document, document);
             await DocumentChanged.InvokeAsync(document);
+        }
+        if (WorkbookChanged.HasDelegate)
+        {
+            var document = workbook.ToDocument();
+            _emittedWorkbooks.AddOrUpdate(document, document);
+            await WorkbookChanged.InvokeAsync(document);
         }
     }
 }

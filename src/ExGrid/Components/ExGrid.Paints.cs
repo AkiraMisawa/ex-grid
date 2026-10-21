@@ -125,7 +125,8 @@ public partial class ExGrid<TRow>
         // Versions are, and two fresh sources both start at 0.
         if (told < _bindingPaintedFrom || (_painted is { } newest && newest.Binding != _binding))
             return AimedAway.SourceReplaced;
-        if (told < _orderPaintedFrom || _painted is not { } painted || painted.Sequence != _sequenceVersion)
+        if ((told < _orderPaintedFrom || _painted is not { } painted || painted.Sequence != _sequenceVersion)
+            && !TakenAfterTheMoveItTold(told))
             return AimedAway.OrderMoved;
         return null;
     }

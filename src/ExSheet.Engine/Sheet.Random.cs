@@ -3,98 +3,38 @@ using ExSheet.Engine.Formulas;
 namespace ExSheet.Engine;
 
 /// <summary>
-/// The Sheet Seed and the count of changes (ADR-0180): what <c>RAND</c> and <c>RANDBETWEEN</c> draw
-/// from, given to the Sheet as data, as the Sheet Day is (ADR-0121).
+/// The draws of <c>RAND</c> and <c>RANDBETWEEN</c> on this Sheet (ADR-0180), from the Workbook's seed
+/// and count of changes (ADR-0331 §9) and the Sheet's own name.
 /// </summary>
 public sealed partial class Sheet
 {
     /// <summary>The Formula cells that call <c>RAND</c> or <c>RANDBETWEEN</c>, recalculated when the seed or the count is set.</summary>
     private readonly HashSet<CellAddress> _randomReaders = [];
 
-    /// <summary>How deep the operations under way are nested: one operation counts as one change, however many steps it takes.</summary>
-    private int _operationDepth;
+    /// <summary>The Formula cells of this Sheet that call <c>RAND</c> or <c>RANDBETWEEN</c>, recalculated when the Workbook's seed or count is set.</summary>
+    internal IEnumerable<SheetCell> RandomReaders => _randomReaders.Select(address => new SheetCell(this, address));
 
-    /// <summary>Whether the operation under way has counted its change already.</summary>
-    private bool _operationCounted;
+    /// <summary>The Workbook's seed (<see cref="Workbook.Seed"/>; ADR-0180, ADR-0331 §9).</summary>
+    internal ulong? Seed => Workbook.Seed;
 
-    /// <summary>
-    /// The Sheet Seed: what every draw of <c>RAND</c> and <c>RANDBETWEEN</c> is made from, with the
-    /// cell, the call's place in its Formula and <see cref="Changes"/> (ADR-0180). <see langword="null"/>
-    /// while it is not set, when every Formula that calls either is <c>#GETTING_DATA</c>, as one that
-    /// calls <c>TODAY</c> waits for the Sheet Day. The engine never chooses a random number of its own:
-    /// whoever runs it gives the seed. It is not part of a <see cref="SheetDocument"/>.
-    /// </summary>
-    public ulong? Seed { get; private set; }
+    /// <summary>The Workbook's count of changes (<see cref="Workbook.Changes"/>).</summary>
+    internal long Changes => Workbook.Changes;
 
-    /// <summary>
-    /// How many changes the Sheet has had since it was made or opened (ADR-0180): each draws again.
-    /// An edit of an Entry, an insertion or a deletion, a rename of the Sheet, the undo or redo of
-    /// one of those, a Linked Table's snapshot whatever its rows, and a Linked Table's declaration
-    /// that declares it or replaces it, each count once. An edit that leaves every Entry as it was, a
-    /// rename to the name the Sheet has, the same declaration again, a change of format or width, a
-    /// recalculation by the clock, a new Sheet Day and a new seed do not. A Sheet opened from a Sheet
-    /// Document starts from 0.
-    /// </summary>
-    public long Changes { get; private set; }
+    /// <summary>Sets the Workbook's seed and keeps its count (<see cref="Workbook.SetSeed(ulong?)"/>): what it changed on this Sheet.</summary>
+    internal SheetChange SetSeed(ulong? seed) => Workbook.SetSeed(seed).For(this);
 
-    /// <summary>
-    /// Sets the Sheet Seed and keeps the count of changes, and recalculates only the Formulas that
-    /// draw and what reads them. Setting the seed the Sheet already has changes nothing. It is not a
-    /// change, and not an operation a user undoes.
-    /// </summary>
-    /// <param name="seed">The seed, or <see langword="null"/> to make the draws wait again.</param>
-    /// <returns>What the recalculation changed.</returns>
-    public SheetChange SetSeed(ulong? seed) => SetSeed(seed, Changes);
+    /// <summary>Sets the Workbook's seed and count (<see cref="Workbook.SetSeed(ulong?, long)"/>): what it changed on this Sheet.</summary>
+    internal SheetChange SetSeed(ulong? seed, long changes) => Workbook.SetSeed(seed, changes).For(this);
 
-    /// <summary>
-    /// Sets the Sheet Seed and the count of changes together: the same Entries, seed and count give
-    /// the same draws, so a Sheet opened from a Sheet Document and given the seed and count another
-    /// Sheet had shows that Sheet's Values (SH-17).
-    /// </summary>
-    /// <param name="seed">The seed, or <see langword="null"/> to make the draws wait again.</param>
-    /// <param name="changes">The count of changes to draw at.</param>
-    /// <returns>What the recalculation changed.</returns>
-    /// <exception cref="ArgumentOutOfRangeException">The count is below 0.</exception>
-    public SheetChange SetSeed(ulong? seed, long changes)
-    {
-        ArgumentOutOfRangeException.ThrowIfNegative(changes);
-        if (seed == Seed && changes == Changes) return SheetChange.None;
-        Seed = seed;
-        Changes = changes;
-        return _randomReaders.Count == 0 ? SheetChange.None : Recalculate([.. _randomReaders], []);
-    }
+    /// <summary>Does <paramref name="operation"/> as one operation of the Workbook (<see cref="Workbook.AsOneChange"/>).</summary>
+    internal T AsOneChange<T>(Func<T> operation) => Workbook.AsOneChange(operation);
 
-    /// <summary>Does <paramref name="operation"/> as one operation: whatever steps it takes, it counts as one change at most.</summary>
-    internal T AsOneChange<T>(Func<T> operation)
-    {
-        if (_operationDepth++ == 0) _operationCounted = false;
-        try
-        {
-            return operation();
-        }
-        finally
-        {
-            _operationDepth--;
-        }
-    }
-
-    /// <summary>Takes another Sheet's seed, as a copy of it does (ADR-0331).</summary>
-    internal void TakeSeedOf(Sheet other) => Seed = other.Seed;
-
-    /// <summary>Counts a change (ADR-0180), before the recalculation it brings draws: once for the operation under way, or once on its own.</summary>
-    internal void CountChange()
-    {
-        if (_operationDepth > 0)
-        {
-            if (_operationCounted) return;
-            _operationCounted = true;
-        }
-        Changes++;
-    }
+    /// <summary>Counts a change of the Workbook (<see cref="Workbook.CountChange"/>).</summary>
+    internal void CountChange() => Workbook.CountChange();
 
     /// <summary>The draw for the call at <paramref name="place"/> in the Formula of <paramref name="cell"/>, or <see langword="null"/> without a seed.</summary>
     private ulong? Draw(CellAddress cell, int place) =>
-        Seed is { } seed ? Draws.Of(seed, cell, place, Changes) : null;
+        Seed is { } seed ? Draws.Of(seed, Name, cell, place, Changes) : null;
 
     private void RegisterRandomReader(CellAddress formulaCell, Node formula)
     {

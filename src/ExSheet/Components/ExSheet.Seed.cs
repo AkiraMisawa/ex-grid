@@ -18,7 +18,7 @@ public partial class ExSheet
     /// A fixed Sheet Seed (ADR-0180): what <c>RAND()</c> and <c>RANDBETWEEN</c> draw from, with the
     /// cell, the call's place in its Formula and the count of changes since the Sheet Document was
     /// opened — for a sheet that must show the same draws whenever it is opened, such as a simulation
-    /// someone else reviews. The draws still change at each change of the Sheet, and never on the
+    /// someone else reviews. The draws still change at each change of the Workbook, and never on the
     /// clock. Null, the default, has ExSheet choose a seed whenever it opens a Sheet Document, so a
     /// reopened sheet draws again, as Excel's reopened workbook does; a prerender chooses none, and its
     /// draws show <c>#GETTING_DATA</c> until the page is interactive. The seed is not recorded in the
@@ -39,13 +39,13 @@ public partial class ExSheet
     private SheetChange? _seedChange;
 
     /// <summary>
-    /// Gives a Sheet just opened its seed, the Consumer's or one chosen now, at a count of 0 changes.
+    /// Gives a Workbook just opened its seed, the Consumer's or one chosen now, at a count of 0 changes.
     /// A prerender chooses none, so without the Consumer's its draws wait.
     /// </summary>
-    private void GiveTheSeed(Sheet sheet)
+    private void GiveTheSeed(global::ExSheet.Engine.Workbook workbook)
     {
         _chosenSeed = RendererInfo.IsInteractive ? ChooseSeed() : null;
-        sheet.SetSeed(Seed ?? _chosenSeed, 0);
+        workbook.SetSeed(Seed ?? _chosenSeed, 0);
     }
 
     private static ulong ChooseSeed()
@@ -65,8 +65,9 @@ public partial class ExSheet
         if (_seedParameterSeen && Seed == _seedParameter) return;
         _seedParameterSeen = true;
         _seedParameter = Seed;
-        if (_sheet is not { } sheet) return;
-        _seedChange = sheet.SetSeed(Seed ?? _chosenSeed);
+        if (_workbook is not { } workbook) return;
+        var change = workbook.SetSeed(Seed ?? _chosenSeed);
+        if (_sheet is { } shown) _seedChange = change.For(shown);
     }
 
     private async Task PaintTheSeedAsync()

@@ -158,6 +158,25 @@ The name a host's capability gives a Snapshot it made, which a Chart Spec names 
 ([ADR-0320](./docs/adr/0320-an-ai-draws-a-chart-by-writing-a-chart-spec-that-names-data-it-never-holds.md)).
 _Avoid_: dataset id, reference
 
+**Board**:
+JSON an AI writes once and a workflow runs without AI: views of the family (grids, pivots, charts)
+laid out in rows and columns, the links that narrow one by another's selection, and the outputs it
+hands on when the user confirms. Drawn by ExBoard, which never rewrites it
+([ADR-0340](./docs/adr/0340-an-ai-composes-a-board-once-and-a-workflow-reuses-it-without-ai.md)).
+_Avoid_: dashboard, layout, page
+
+**Board Input**:
+A name a Board gives its data, with each column's name and type, bound by the workflow at run time to
+a source whose shape is checked against it
+([ADR-0341](./docs/adr/0341-a-board-input-declares-its-columns-and-a-source-answers-its-shape-first.md)).
+_Avoid_: parameter, dataset
+
+**Board Diff**:
+What the user changed while a Board ran (sorts, widths, a pivot's layout, a chart's range), raised as
+one diff the host may lay over the Board next time
+([ADR-0340](./docs/adr/0340-an-ai-composes-a-board-once-and-a-workflow-reuses-it-without-ai.md)).
+_Avoid_: board state, user settings
+
 **Chart Source**:
 What a chart reads a column through, from one position to another at a number of pixels, answered
 already thinned, on whichever side holds the data
@@ -808,6 +827,13 @@ format that replaces the default, and the width (`Auto | Fixed` plus `MinWidth` 
 from data (each tenor of a tenor ladder) are the same Column, not distinguished.
 _Avoid_: field, column definition
 
+**Shaped Grid**:
+A grid whose Columns are built at run time from a source's shape and a grid view's spec, with no row
+type of the Consumer's: a row is a position in a Snapshot, and a decimal or double column carries the
+Excel format code the spec writes
+([ADR-0342](./docs/adr/0342-a-grid-builds-its-columns-at-run-time-from-a-sources-shape.md)).
+_Avoid_: dynamic grid, schema-less grid
+
 **Size to fit**:
 Fixing a column's width at what its header and the fetched values need at that moment, bounded by
 its `MinWidth` / `MaxWidth`. It is asked for by the user, through a double-click on the column's
@@ -913,9 +939,10 @@ it is now in a time zone: the Consumer's, or else the browser's. Until one is kn
 _Avoid_: system date, server date, current date
 
 **Sheet Seed**:
-The number a Sheet's `RAND` and `RANDBETWEEN` draw from. With the cell, the call and the count of
-changes since the Sheet was opened, it decides each draw, so the same seed and the same changes give
-the same draws. It is the Consumer's `Seed` when one is given, or else one ExSheet chooses when it
+The number `RAND` and `RANDBETWEEN` draw from, held by the Workbook for every one of its Sheets. With
+the Sheet's name, the cell, the call and the count of changes since the Workbook was opened, it decides
+each draw, so the same seed and the same changes give the same draws, and a change on any Sheet draws
+again on all of them. It is the Consumer's `Seed` when one is given, or else one ExSheet chooses when it
 opens a Sheet Document, which never records it
 ([ADR-0180](./docs/adr/0180-rand-and-randbetween-draw-from-the-sheet-seed-and-draw-again-at-each-change.md)).
 _Avoid_: random state, RNG state

@@ -19,6 +19,8 @@
          point, which SetEntries answers for a Consumer (ADR-0201). Granted to test projects only,
          never to a package. -->
     <InternalsVisibleTo Include="ExSheet.Components.Tests" />
+    <!-- So does the Wrapper's layer 2, building the Sheets its tests open. -->
+    <InternalsVisibleTo Include="ExSheet.MudBlazor.Tests" />
   </ItemGroup>
 
 </Project>

@@ -105,7 +105,9 @@
             Format. While a Formula is edited, the Cell Editor over the cell and the Formula Bar show the same
             text, the Name Box says where the Focus is, and a Reference Outline marks the cells each Reference
             names. An error is a Value too, carried into every Formula that uses it. The Sheet Toolbar shows only
-            when you ask for it.
+            when you ask for it. The Sheet Tabs under the grid show a tab for each Sheet of the
+            <a href="exsheet/workbook">Workbook</a>, one tab while it holds one Sheet; <code>ShowSheetTabs="false"</code>
+            hides them.
         </p>
         <p>
             Typing a Formula and immediately pressing a referenced cell keeps the inserted Reference,
@@ -152,7 +154,9 @@
             Each ExSheet has one undo stack. Ctrl+Z and Ctrl+Y work from the keyboard; <code>UndoAsync</code>
             and <code>RedoAsync</code> do the same from your buttons. A command you give —
             <code>DoAsync(SheetEdit)</code>, <code>SetCellFormatAsync</code> — goes onto the same stack in its
-            place in the order, so the user can undo it like anything they typed.
+            place in the order, so the user can undo it like anything they typed. In a Workbook of several Sheets
+            a command names the Sheet it acts on, <code>DoAsync("Claim", edit)</code>
+            (<a href="exsheet/workbook#commands-name-their-sheet">Commands name their Sheet</a>).
         </p>
         <p>
             While a cell or the Formula Bar is being edited, every command is refused with a

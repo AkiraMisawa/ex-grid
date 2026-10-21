@@ -47,8 +47,9 @@ internal sealed class InputOrder
     // Every number up to this one has reached the core or been found lost on the way (Reached).
     private int _arrived;
 
-    // The handling under way, and the token its flow carries.
+    // The handling under way, and the token its flow carries, and its number (0 for work with none).
     private object? _running;
+    private int _runningInput;
     private bool _disposed;
 
     /// <param name="answered">Told each number once it has been handled or voided, in order, every number
@@ -75,6 +76,10 @@ internal sealed class InputOrder
     /// is asked for later from inside the same flow is told apart from what another input, or no input,
     /// asks for.</summary>
     public object? Flow => InFlow ? _running : null;
+
+    /// <summary>The number of the input whose handling is under way, when this runs inside its flow; 0 outside
+    /// every input's flow, and for work the instance started itself.</summary>
+    public int RunningInput => InFlow ? _runningInput : 0;
 
     /// <summary>Whether no input is waiting or being handled.</summary>
     public bool Idle => _running is null && _waiting.Count == 0 && _unnumbered.Count == 0;
@@ -201,6 +206,7 @@ internal sealed class InputOrder
 
             var token = new object();
             _running = token;
+            _runningInput = next.Input;
             Note("started", next.Input, next.After);
             Task task;
             var outer = _flow.Value;
@@ -241,6 +247,7 @@ internal sealed class InputOrder
     private void Finish(Waiting waiting, Task task)
     {
         _running = null;
+        _runningInput = 0;
         Note(task.IsFaulted ? "faulted" : task.IsCanceled ? "cancelled" : "finished", waiting.Input, waiting.After);
         if (waiting.Input > 0)
         {

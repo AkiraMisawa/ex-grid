@@ -53,7 +53,19 @@ colour bar, a marker's size, and a legend hidden by the page's stylesheet.
 - **The first version covers everything ExChart draws**: 2D series with candles and scatter,
   colour and size, nodes and edges ([ADR-0321](0321-nodes-and-edges-are-two-snapshots-and-exchart-lays-out-nothing.md)), the 3D surface and Notes. Laying a grid beside the
   chart and linking the two is the page's; a declarative grid spec, if one is wanted, is ExGrid's
-  own decision.
+  own decision. *Rewritten 2026-10-20 by [ADR-0340](0340-an-ai-composes-a-board-once-and-a-workflow-reuses-it-without-ai.md):* a declarative grid and pivot came, and the chart
+  is one view of a Board beside them.
+
+## Rewritten 2026-10-20: a Chart Spec is one view of a Board
+
+The user then asked for the same of the grid, the pivot and the sheet, for workflows an AI composes
+once and that then run without AI ([ADR-0340](0340-an-ai-composes-a-board-once-and-a-workflow-reuses-it-without-ai.md)). A saved workflow cannot name data by a Data
+Handle, which lives for one conversation. What changed (Q4 of that grilling):
+
+- A Chart Spec's `data` names a **Board Input** ([ADR-0341](0341-a-board-input-declares-its-columns-and-a-source-answers-its-shape-first.md)), with declared columns and types, checked
+  against the source's shape when it is bound. The Data Handle is what a host binds an input to while
+  an AI is still composing; it is no longer what a saved spec names.
+- `draw_chart` stays, as a Board of one view. Everything else above stands.
 
 ## Consequences
 

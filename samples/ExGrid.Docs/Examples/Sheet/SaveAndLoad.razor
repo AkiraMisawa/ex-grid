@@ -21,7 +21,7 @@
 
     private void Save()
     {
-        _saved = (_document ?? new Sheet(Culture).ToDocument()).ToJson();
+        _saved = (_document ?? new Workbook(Culture).ToDocument(Sheet.DefaultName)).ToJson();
         _said = $"Saved {_saved.Length:N0} characters of JSON.";
     }
 

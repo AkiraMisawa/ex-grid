@@ -1,0 +1,75 @@
+@page "/workbook"
+@using System.Globalization
+@* global::, for the reasons SheetPage.razor gives. *@
+@using global::ExSheet
+@using global::ExSheet.Components
+@using global::ExSheet.Engine
+@using global::ExGrid.Chrome
+@using global::ExGrid.MudBlazor
+
+@* ?chrome=mud runs the Workbook with ExSheet.MudBlazor's Chrome on the Wrapper's paper, as /sheet does. *@
+<DemoChromeAssets Name="@ChromeName" Paper="true" Sheet="true" />
+
+<DemoNav />
+
+<h1>Workbook — Sheets behind Sheet Tabs</h1>
+
+<p>
+    One ExSheet holding a Workbook of two Sheets (ADR-0331): a claim, and a summary that reads it with
+    References qualified by the claim's name. A tab for each Sheet stands under the grid; a press on one,
+    or Ctrl+PageUp and Ctrl+PageDown, shows its Sheet, and each Sheet keeps its own Selection and scroll
+    position.
+</p>
+
+<div id="workbook">
+    @OnPaper(@<ExSheet @bind-Workbook="_workbook" Chrome="_chrome" ViewportHeight="360" ViewportWidth="640" />)
+</div>
+
+<p>Shown: <span id="workbook-shown">@_workbook?.Shown</span></p>
+
+@code {
+    /// <summary>Which Chrome the Workbook runs with (<see cref="DemoChrome"/>).</summary>
+    [SupplyParameterFromQuery(Name = "chrome")]
+    public string? ChromeName { get; set; }
+
+    private IGridChrome? _chrome;
+
+    protected override void OnParametersSet() => _chrome = DemoChrome.ForSheet(ChromeName);
+
+    private RenderFragment OnPaper(RenderFragment sheet)
+        => DemoChrome.IsMud(ChromeName) ? @<MudExGridPaper>@sheet</MudExGridPaper> : sheet;
+
+    private WorkbookDocument? _workbook = Build();
+
+    private static WorkbookDocument Build()
+    {
+        var workbook = new global::ExSheet.Engine.Workbook(CultureInfo.GetCultureInfo("en-US"), ["Claim", "Summary"]);
+        string[][] claim =
+        [
+            ["Item", "Qty", "Unit cost", "Amount"],
+            ["Flights", "2", "1240", "=B2*C2"],
+            ["Hotel, nights", "6", "289.5", "=B3*C3"],
+            ["Taxis", "9", "38.25", "=B4*C4"],
+            ["Total", "", "", "=SUM(D2:D4)"],
+        ];
+        string[][] summary =
+        [
+            ["Claimed", "=Claim!D5"],
+            ["Travel", "=Claim!D2+Claim!D4"],
+        ];
+        Fill(workbook, "Claim", claim);
+        Fill(workbook, "Summary", summary);
+        // Rows enough on Claim to scroll it, so a test can see each Sheet keep its own position.
+        for (var row = 40; row < 200; row++)
+            workbook.Do("Claim", SheetEdit.Enter(new CellAddress(row, 0), "Row " + (row + 1).ToString(CultureInfo.InvariantCulture)));
+        return workbook.ToDocument();
+    }
+
+    private static void Fill(global::ExSheet.Engine.Workbook workbook, string sheet, string[][] rows)
+    {
+        for (var r = 0; r < rows.Length; r++)
+            for (var c = 0; c < rows[r].Length; c++)
+                if (rows[r][c].Length > 0)
+                    workbook.Do(sheet, SheetEdit.Enter(new CellAddress(r, c), rows[r][c]));
+    }
+}

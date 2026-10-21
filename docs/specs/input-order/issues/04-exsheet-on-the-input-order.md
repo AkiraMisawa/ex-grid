@@ -8,5 +8,6 @@ Roadmap: ExSheet — The Sheet Toolbar, its KeyTips and Format Cells used at mac
 - [ ] The Input Root is the Sheet's; its grids take their place in the Sheet's order
 - [ ] The toolbar's own hold replaced by the seam
 - [ ] Format Cells' opening and commit in the order; its draft follows §1's rule
+- [ ] A press on a Sheet Tab (ADR-0331, exsheet-workbook ticket 05) numbered in the Sheet's order: the tabs stand outside the grid's root today
 
 **Blocked by:** 02, 03.

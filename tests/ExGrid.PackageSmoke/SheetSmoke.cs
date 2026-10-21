@@ -12,20 +12,22 @@ internal static class SheetSmoke
 {
     public static double Compute()
     {
-        var sheet = new Sheet(CultureInfo.GetCultureInfo("en-US"));
-        sheet.Enter(CellAddress.Parse("A1"), "2");
-        sheet.Enter(CellAddress.Parse("B1"), "3");
-        sheet.Enter(CellAddress.Parse("C1"), "=A1+B1");
+        var workbook = new Workbook(CultureInfo.GetCultureInfo("en-US"));
+        var sheet = workbook.Sheets[0];
+        workbook.Do("Sheet1", SheetEdit.Enter(CellAddress.Parse("A1"), "2"));
+        workbook.Do("Sheet1", SheetEdit.Enter(CellAddress.Parse("B1"), "3"));
+        workbook.Do("Sheet1", SheetEdit.Enter(CellAddress.Parse("C1"), "=A1+B1"));
         return sheet.GetValue(CellAddress.Parse("C1"))!.Value.Number;
     }
 
-    public static void Operate(Sheet sheet)
+    public static void Operate(Workbook workbook)
     {
-        var step = sheet.Do(SheetEdit.InsertRows(row: 2));
+        var step = workbook.Do("Sheet1", SheetEdit.InsertRows(row: 2));
         step.Undo();
 
-        sheet.DeclareLinkedTable("Positions", ["Id", "PV"]);
-        sheet.Enter(CellAddress.Parse("A1"), "=XLOOKUP(\"R-4471\", Positions[Id], Positions[PV])");
-        sheet.PushLinkedTable("Positions", [[Value.FromText("R-4471"), Value.FromNumber(250.5)]]);
+        workbook.DeclareLinkedTable("Positions", ["Id", "PV"]);
+        workbook.Do("Sheet1", SheetEdit.Enter(CellAddress.Parse("A1"), "=XLOOKUP(\"R-4471\", Positions[Id], Positions[PV])"));
+        workbook.PushLinkedTable("Positions", [[Value.FromText("R-4471"), Value.FromNumber(250.5)]]);
+        workbook.SetSeed(7);
     }
 }

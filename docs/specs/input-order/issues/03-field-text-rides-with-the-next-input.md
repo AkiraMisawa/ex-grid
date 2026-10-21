@@ -104,3 +104,23 @@ as new typing. The [surface-transfer record](../../responsive-touch/hunt-2026-10
 records the red/green reproduction and distinguishes native input from a rendered reading.
 `declarations.spec.mjs`, covering Formula Bar transfers and F4, is added to the existing twelve
 related specs. Omitting it from the earlier scope was a coverage gap; no selected spec is removed.
+
+## Main integration, 2026-10-21
+
+PR #187 now integrates main `96101164` at `ab1613c0`. This branch takes that integration,
+including the Workbook API, Sheet-switch Input Order handling and shaped grids. Its public
+API-list conflict keeps main's new members alongside the updated carried-text signatures.
+The responsive fixture now uses the Workbook API; its entries, formats and widths are unchanged.
+
+Add `workbook.spec.mjs` to the thirteen related specs above: main's Sheet switching shares the
+Input Order and must preserve immediate typing after a switch with the carried-text changes.
+The replacement gate therefore has fourteen specs; none of the earlier scope is removed.
+Earlier CI results apply to their named revisions and do not verify this integration.
+
+The integrated solution builds without warnings or errors. All sixteen logic/component suites
+pass: 14,613 passed, 11 skipped. Thirty targeted browser executions pass on Chrome Server at
+150 ms RTT floor and fourfold CPU throttling, three repetitions each: cell-to-bar transfer,
+Point preservation, queued row commands and immediate typing after a Sheet switch, under both
+Chromes. The Docs Formula example's Point and cell-to-bar paths were exercised under both
+Chromes with no browser warnings or exceptions. Standards and Spec integration reviews found
+no actionable findings. Replacement CI and the fourteen-spec gate remain required.
