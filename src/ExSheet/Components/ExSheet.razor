@@ -1373,11 +1373,16 @@
             // A Formula committed while another Sheet is shown lands on the Sheet it was typed on, which
             // is shown again first, with its own view, so the move that completes the commit moves there
             // (ADR-0331 §5).
-            if (intent.Row.Sheet != _sheet) ShowSheet(intent.Row.Sheet);
             if (intent.Row.Sheet != _sheet)
             {
-                intent.Refuse(SheetWords.EditSheetGone);
-                return;
+                if (_workbook is not { } workbook || !workbook.Sheets.Contains(intent.Row.Sheet))
+                {
+                    intent.Refuse(SheetWords.EditSheetGone);
+                    return;
+                }
+                // The Workbook Document records the Sheet shown (ADR-0331 §2), told before the commit,
+                // which may yet be refused.
+                await ShowSheetAsync(intent.Row.Sheet);
             }
             var address = new CellAddress(intent.Row.Index, column);
             await PerformAsync(SheetEdit.Enter(address, intent.Value), widenOver: [new CellRange(address)]);

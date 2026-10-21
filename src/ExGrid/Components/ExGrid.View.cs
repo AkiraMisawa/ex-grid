@@ -15,11 +15,25 @@ namespace ExGrid.Components;
 /// <param name="ScrollLeftPx">The scroller's horizontal offset, in pixels.</param>
 public readonly record struct GridView(int RowSequenceVersion, GridSelection Selection, double ScrollTopPx, double ScrollLeftPx)
 {
-    /// <summary>The set of rows the view was read of (<see cref="ExGrid{TRow}.ReadView"/>), carried through
-    /// <c>with</c>, so a view handed back brings the same set again; 0 for a view the grid did not read,
-    /// which brings a set of its own.</summary>
-    internal int RowSet { get; init; }
+    /// <summary>The grid and the set of rows the view was read of (<see cref="ExGrid{TRow}.ReadView"/>),
+    /// carried through <c>with</c>, so a view handed back to that grid brings the same set again; none for a
+    /// view that grid did not read, which brings a set of its own. Not part of the view's equality: two
+    /// views of the same Selection and offsets are the same view, whoever read them.</summary>
+    internal RowSetStamp? RowSet { get; init; }
+
+    /// <summary>Whether <paramref name="other"/> has the same Row Sequence Version, Selection and offsets.</summary>
+    /// <param name="other">The view to compare with.</param>
+    /// <returns>Whether the two are the same view.</returns>
+    public bool Equals(GridView other)
+        => RowSequenceVersion == other.RowSequenceVersion && Equals(Selection, other.Selection)
+           && ScrollTopPx.Equals(other.ScrollTopPx) && ScrollLeftPx.Equals(other.ScrollLeftPx);
+
+    /// <inheritdoc />
+    public override int GetHashCode() => HashCode.Combine(RowSequenceVersion, Selection, ScrollTopPx, ScrollLeftPx);
 }
+
+/// <summary>Which grid read a view, and of which of its sets of rows (<see cref="GridView.RowSet"/>).</summary>
+internal sealed record RowSetStamp(object Grid, int Set);
 
 // A view handed ahead of the Row Sequence Version it is written in (ADR-0331): the grid takes it in the
 // render that takes that version, in place of the empty Selection a new version leaves (ADR-0011). So the
@@ -73,7 +87,7 @@ public partial class ExGrid<TRow>
     /// (as <see cref="ReadSelection"/> reads it), and the scroll offsets the grid last knew. Read on the
     /// renderer's context, where the Consumer's handlers run.
     /// </summary>
-    public GridView ReadView() => new(_selection.RowSequenceVersion, _selection.Selection, _scrollTopPx, _scrollLeftPx) { RowSet = _rowSet };
+    public GridView ReadView() => new(_selection.RowSequenceVersion, _selection.Selection, _scrollTopPx, _scrollLeftPx) { RowSet = new RowSetStamp(this, _rowSet) };
 
     /// <summary>
     /// The open edit's text as the grid holds it — what the keys and the typing taken so far in the
@@ -143,7 +157,7 @@ public partial class ExGrid<TRow>
         if (_viewAhead is not { } ahead || ahead.RowSequenceVersion != _sequenceVersion)
             return reconciled;
         _viewAhead = null;
-        TakeRowSet(ahead.RowSet != 0 ? ahead.RowSet : ++_rowSetsGiven);
+        TakeRowSet(ahead.RowSet is { } stamp && ReferenceEquals(stamp.Grid, this) ? stamp.Set : ++_rowSetsGiven);
         var place = _viewAheadPlace;
         _viewAheadPlace = null;
         _orderMovedByInput = _viewAheadInput > 0 ? (_viewAheadInput, _sequenceVersion, _orderPaintedFrom) : null;

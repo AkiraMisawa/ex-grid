@@ -132,6 +132,21 @@ public class CrossSheetPointingTests : SheetTestContext
         Assert.Equal("B1", NameBox(cut));
     }
 
+    [Fact] // ADR-0331 §5: the tab list's arrows show no other Sheet while a Formula is typed; they would take the keyboard from the edit
+    public async Task Tab_list_arrows_show_no_other_sheet_while_a_formula_is_typed()
+    {
+        var cut = RenderWorkbook();
+        await StartTypingAsync(cut, "B1", "=");
+
+        await cut.Find(".ex-sheet-tabs").KeyDownAsync(new Microsoft.AspNetCore.Components.Web.KeyboardEventArgs { Key = "ArrowRight" });
+        await cut.Find(".ex-sheet-tabs").KeyDownAsync(new Microsoft.AspNetCore.Components.Web.KeyboardEventArgs { Key = "End" });
+
+        Assert.Equal("One", SelectedTab(cut));
+        Assert.True(cut.Instance.IsEditing);
+        Assert.Equal("=", FormulaBar(cut));
+        Assert.Contains("a cell is being edited", cut.Find(".ex-sheet-notice").TextContent);
+    }
+
     [Fact] // ADR-0331 §5, ticket 12: while a constant is typed another Sheet is not shown, and the notice says why
     public async Task Another_sheet_is_not_shown_while_a_constant_is_typed()
     {

@@ -51,20 +51,20 @@ public partial class ExSheet
         await StepSheetAsync(step);
     }
 
-    /// <summary>The keys on the tab list, where a Tab put the keyboard: ← and → select the tab before or after, Home and End the first and the last, and Escape or Enter gives the keyboard back to the grid.</summary>
+    /// <summary>The keys on the tab list, where a Tab put the keyboard: ← and → select the tab before or after, Home and End the first and the last, and Escape or Enter gives the keyboard back to the grid. They show no other Sheet while an edit is open, even a Formula's: they move the keyboard to the tab, away from the edit, which points from the keyboard (ADR-0331 §5).</summary>
     private async Task OnSheetTabKeyAsync(KeyboardEventArgs key)
     {
         switch (key.Key)
         {
             case "ArrowLeft":
             case "ArrowRight":
-                if (RefuseSwitchWhileEditing(pointing: true)) return;
+                if (RefuseSwitchWhileEditing()) return;
                 ClearNotice();
                 if (await StepSheetAsync(key.Key == "ArrowLeft" ? -1 : 1)) _tabToFocus = _sheet;
                 break;
             case "Home":
             case "End":
-                if (RefuseSwitchWhileEditing(pointing: true) || _workbook is not { } workbook) return;
+                if (RefuseSwitchWhileEditing() || _workbook is not { } workbook) return;
                 ClearNotice();
                 await ShowSheetAsync(key.Key == "Home" ? workbook.Sheets[0] : workbook.Sheets[^1]);
                 _tabToFocus = _sheet;

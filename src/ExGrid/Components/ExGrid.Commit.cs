@@ -143,9 +143,10 @@ public partial class ExGrid<TRow>
 
     /// <summary>Whether the Window holds, at the editor's position, the row the editor was opened on:
     /// with a Row Key, the row under the editor's key; without one, the row at its position while the
-    /// order it was opened under holds (ADR-0142, LV-20).</summary>
+    /// order it was opened under holds (ADR-0142, LV-20). Never while the edit is away among another set's
+    /// rows (ADR-0331 §5), whose Window holds none of the edit's.</summary>
     private bool EditedRowInHand()
-        => RowInHand(_editingCell.Row) is { } row
+        => !EditAway && RowInHand(_editingCell.Row) is { } row
            && (_rowKey is { } rowKey ? _editKey is { } key && Equals(rowKey(row), key) : _sequenceVersion == _editSequence);
 
     /// <summary>
