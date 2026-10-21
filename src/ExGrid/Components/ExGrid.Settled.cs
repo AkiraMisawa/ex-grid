@@ -1,4 +1,5 @@
 using ExGrid.Chrome;
+using ExGrid.Selection;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Logging;
 using Microsoft.JSInterop;
@@ -251,5 +252,24 @@ public partial class ExGrid<TRow>
             return;
         owed = false;
         ShowSettledStamp();
+    }
+
+    /// <summary>
+    /// The selection the grid holds once every input it has received so far has been answered
+    /// (ADR-0240): what <see cref="SelectionChanged"/> will raise after the render that paints it. A
+    /// control outside the grid that acts on the selection — a Board's confirm (ADR-0340) — reads it
+    /// here, so a press that follows a click at machine speed acts on the selection the click made, not
+    /// on the one raised before it: on the Server host the event comes a round trip after the paint
+    /// (spine rule 6).
+    /// </summary>
+    public async Task<GridSelection> SelectionAfterInputsAsync()
+    {
+        var selection = _selection.Selection;
+        await Inputs.AfterReceivedAsync(() =>
+        {
+            selection = _selection.Selection;
+            return Task.CompletedTask;
+        });
+        return selection;
     }
 }

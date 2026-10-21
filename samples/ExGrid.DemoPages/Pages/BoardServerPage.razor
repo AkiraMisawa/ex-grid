@@ -1,0 +1,47 @@
+@page "/board-server"
+@using global::ExBoard
+@using global::ExBoard.Components
+@using global::ExGrid.Data
+@using global::ExPivot.Components
+
+<DemoNav />
+
+@* A Board over a source held on a server (ADR-0343, ExBoard ticket 12): its one input, 50,000 trades, is
+   fetched a page at a time. The blotter's selected rows narrow the desk grid and the pivot by desk; the
+   server is handed the condition and they are asked again. A selection reaching rows not fetched is said
+   under the blotter, and narrows nothing. *@
+<DemoChromeAssets>
+    <Head>
+        <ExPivotStylesheet />
+    </Head>
+</DemoChromeAssets>
+
+<h1>A Board over a server</h1>
+<ExBoard Board="Reading" Data="NoData" Sources="_sources" Width="1000" OnOutput="Raised" />
+<pre id="raised" role="log">@_raised</pre>
+
+@code {
+    private string? _raised;
+    private readonly IReadOnlyDictionary<string, BoardSource> _sources = new Dictionary<string, BoardSource> { ["trades"] = DemoBoardServer.Source(Reading) };
+
+    private void Raised(BoardOutput output) => _raised = output.ToJson();
+
+    private static readonly IReadOnlyDictionary<string, Snapshot> NoData = new Dictionary<string, Snapshot>();
+
+    private static readonly BoardReading Reading = BoardSpec.Read("""
+        {"version": 1, "title": "All trades",
+         "inputs": {"trades": {"columns": [{"name": "id", "type": "text"}, {"name": "desk", "type": "text"},
+                                           {"name": "day", "type": "date"}, {"name": "pnl", "type": "decimal"}]}},
+         "views": [
+           {"id": "blotter", "title": "Trades", "grid": {"data": "trades",
+             "columns": [{"column": "id", "header": "Trade"}, {"column": "desk", "header": "Desk"},
+                         {"column": "day", "header": "Day", "format": "yyyy-mm-dd"}, {"column": "pnl", "header": "P&L", "format": "#,##0;(#,##0)"}]}},
+           {"id": "desk", "title": "The desk's trades", "grid": {"data": "trades",
+             "columns": [{"column": "id", "header": "Trade"}, {"column": "desk", "header": "Desk"}]}},
+           {"id": "byDesk", "title": "By desk", "pivot": {"data": "trades", "layout": {"version": 1,
+             "rows": [{"field": "desk"}], "values": [{"field": "pnl", "aggregation": "sum", "numberFormat": "#,##0"}]}}}],
+         "layout": [{"views": ["blotter", "desk", "byDesk"], "widths": [2, 1, 1], "height": 300}],
+         "links": [{"from": "blotter", "to": ["desk", "byDesk"], "on": ["desk"]}],
+         "outputs": {"review": {"from": "blotter", "on": ["id"], "confirm": "Send to review"}}}
+        """);
+}

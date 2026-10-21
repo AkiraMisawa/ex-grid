@@ -132,6 +132,23 @@ public sealed class BoardInput
         }
     }
 
+    /// <summary>
+    /// Asks <paramref name="source"/> its shape, before any row, and checks it against the declaration
+    /// (<see cref="Check"/>). A source that says no shape is refused: its kinds are never inferred from
+    /// rows, which a first page of Blanks, or <c>1</c> beside <c>1.5</c>, would get wrong.
+    /// </summary>
+    /// <returns>The shape the source answered.</returns>
+    /// <exception cref="BoardRefusedException">The source says no shape, or one that does not match the
+    /// declaration; the message names the input and the column.</exception>
+    public async ValueTask<DataShape> CheckAsync(IShapedSource source, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(source);
+        var shape = await source.ShapeAsync(cancellationToken).ConfigureAwait(false)
+            ?? throw new BoardRefusedException(Name, $"Input '{Name}' is bound to a source that does not say its shape, and its kinds are not guessed from its rows.");
+        Check(shape);
+        return shape;
+    }
+
     /// <summary>Binds <paramref name="snapshot"/> to this input: its shape checked, and the Snapshot
     /// itself returned, unchanged.</summary>
     /// <exception cref="BoardRefusedException">Its shape does not match the declaration.</exception>

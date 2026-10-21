@@ -26,7 +26,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <TrimmerRootAssembly Include="ExGrid;ExGrid.MudBlazor;ExSheet;ExSheet.Engine;ExSheet.MudBlazor;ExPivot;ExPivot.Engine;ExPivot.MudBlazor;ExChart;ExChart.Engine;ExChart.MudBlazor;ExGrid.Data;ExGrid.Data.Arrow" />
+    <TrimmerRootAssembly Include="ExGrid;ExGrid.MudBlazor;ExSheet;ExSheet.Engine;ExSheet.MudBlazor;ExPivot;ExPivot.Engine;ExPivot.MudBlazor;ExChart;ExChart.Engine;ExChart.MudBlazor;ExBoard;ExGrid.Data;ExGrid.Data.Arrow" />
   </ItemGroup>
 
   <ItemGroup>
@@ -46,6 +46,7 @@
     <ProjectReference Include="..\..\src\ExPivot.MudBlazor\ExPivot.MudBlazor.csproj" />
     <ProjectReference Include="..\..\src\ExChart\ExChart.csproj" />
     <ProjectReference Include="..\..\src\ExChart.MudBlazor\ExChart.MudBlazor.csproj" />
+    <ProjectReference Include="..\..\src\ExBoard\ExBoard.csproj" />
     <ProjectReference Include="..\..\src\ExGrid.Data\ExGrid.Data.csproj" />
     <ProjectReference Include="..\..\src\ExGrid.Data.Arrow\ExGrid.Data.Arrow.csproj" />
     <!-- ExChart's Showcases (ADR-0280), shared with the demo pages so layer 3 drives them on both hosts. -->

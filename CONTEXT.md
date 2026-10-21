@@ -171,6 +171,12 @@ a source whose shape is checked against it
 ([ADR-0341](./docs/adr/0341-a-board-input-declares-its-columns-and-a-source-answers-its-shape-first.md)).
 _Avoid_: parameter, dataset
 
+**Link**:
+A Board's statement that a selection in one view narrows others to the rows whose values in named
+columns are the selected rows' own, compared as tuples, never as a list per column
+([ADR-0340](./docs/adr/0340-an-ai-composes-a-board-once-and-a-workflow-reuses-it-without-ai.md)).
+_Avoid_: filter link, cross-filter, master-detail
+
 **Board Diff**:
 What the user changed while a Board ran (sorts, widths, a pivot's layout, a chart's range), raised as
 one diff the host may lay over the Board next time

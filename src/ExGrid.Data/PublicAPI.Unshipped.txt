@@ -3,6 +3,7 @@ ExGrid.Data.BoardInput
 ExGrid.Data.BoardInput.Bind(ExGrid.Data.Snapshot! snapshot) -> ExGrid.Data.Snapshot!
 ExGrid.Data.BoardInput.BoardInput(string! name, System.Collections.Generic.IEnumerable<ExGrid.Data.DataShapeColumn>! columns) -> void
 ExGrid.Data.BoardInput.Check(ExGrid.Data.DataShape! shape) -> void
+ExGrid.Data.BoardInput.CheckAsync(ExGrid.Data.IShapedSource! source, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<ExGrid.Data.DataShape!>
 ExGrid.Data.BoardInput.Columns.get -> System.Collections.Generic.IReadOnlyList<ExGrid.Data.DataShapeColumn>!
 ExGrid.Data.BoardInput.FromJson(string! json) -> ExGrid.Data.Snapshot!
 ExGrid.Data.BoardInput.FromJson(System.Text.Json.JsonElement rows) -> ExGrid.Data.Snapshot!
@@ -24,6 +25,8 @@ ExGrid.Data.DataShapeColumn.Kind.get -> ExGrid.Data.SnapshotKind
 ExGrid.Data.DataShapeColumn.Kind.init -> void
 ExGrid.Data.DataShapeColumn.Name.get -> string!
 ExGrid.Data.DataShapeColumn.Name.init -> void
+ExGrid.Data.IShapedSource
+ExGrid.Data.IShapedSource.ShapeAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<ExGrid.Data.DataShape?>
 override ExGrid.Data.DataShapeColumn.GetHashCode() -> int
 static ExGrid.Data.BoardInput.KindNames.get -> System.Collections.Generic.IReadOnlyCollection<string!>!
 static ExGrid.Data.BoardInput.NameOf(ExGrid.Data.SnapshotKind kind) -> string!

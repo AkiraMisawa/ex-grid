@@ -1,0 +1,185 @@
+@page "/exboard"
+@using ExGrid.Docs.Examples.Board
+
+<DocsPage Product="ExBoard" Title="Overview"
+          Lead="A Board is JSON an AI composes once and a workflow runs again and again without AI: grids, pivots and charts laid out in rows over typed Board Inputs, each input checked against its data's shape before anything is drawn.">
+
+    <DocsSection Title="Composed once, run without AI">
+        <p>
+            The data a workflow obtains is not known until it runs: which columns, which types, a grid, a pivot or a
+            chart. A Board says it in JSON. Its <code>inputs</code> name the data and declare each column's type, written
+            while whoever composed it knew what the data means; its <code>views</code> are grids, pivots and charts over
+            those inputs; its <code>layout</code> is rows of views, each its share of the row, never free placement. The
+            Board is saved, and each run binds every input to that run's data. ExBoard holds no workflow: it reads the
+            Board, checks its inputs, and draws it.
+        </p>
+        <p>
+            <code>BoardSpec.Read</code> reads a Board, and refuses what cannot be drawn with one sentence naming the path
+            and the reason, as a Chart Spec does: a version other than 1, a member a Board does not have, a view naming
+            a column its input does not declare, a decimal column with no format, a layout that leaves a view out or
+            places one twice. A grid view is <a href="exgrid/columns">a grid built at run time</a>, a pivot view holds a
+            Pivot Layout, and a chart view is a Chart Spec whose series name inputs in their <code>data</code>.
+        </p>
+        <p>
+            The <code>ExBoard</code> component draws a read Board with each input bound to a Snapshot. Binding checks the
+            Snapshot's shape against the input's declaration first; a column missing or of another type draws nothing but
+            the refusal, naming the input and the column, so a change upstream is caught on the run that meets it. Grids
+            and pivots stretch to their share of the row; a chart is drawn at its share of the Board's <code>Width</code>.
+            Change the Board below and draw again: remove the grid's <code>format</code>, have the pivot place a field
+            the input does not declare, or make the chart's series an <code>amountPerPeriod</code>, which a day's
+            P&amp;L with no interval cannot be drawn as.
+        </p>
+        <DocsExample Builtin="typeof(DeskBoardBuiltin)" Mud="typeof(DeskBoardMud)" Files="@(["Examples/Board/DeskBoard.cs"])" />
+    </DocsSection>
+
+    <DocsSection Title="Links narrow by values">
+        <p>
+            A link names a grid or a pivot, the views it narrows and the columns it compares:
+            <code>{"from": "blotter", "to": ["byTrader", "daily"], "on": ["desk"]}</code>. Select rows in the grid, in any
+            column, and each view the link reaches shows only the rows whose values in those columns are the selected
+            rows' values. In the Board above, select an FX trade: the pivot shows FX's traders and the chart FX's days.
+            A selection of several rows, with Ctrl or Shift, lets through every one of their values.
+        </p>
+        <p>
+            It narrows by values, not by rows, so it reaches views over other inputs that declare the same columns, and
+            keeps its meaning when the data moves on. On two columns it lets through the selected rows' own pairs:
+            rows (Rates, Jan) and (Credit, Feb) let through no (Rates, Feb). Text is compared as a grid's value list
+            compares it, without regard to case. A narrowed grid keeps the sort and the filter set on it; a pivot is
+            computed again over the rows let through, and a chart drawn from them. When the selection is dropped,
+            because the grid was sorted or filtered or the selection cleared, the narrowing goes with it: a view is
+            never left narrowed by a selection that is no longer there.
+        </p>
+        <p>
+            A link from a pivot narrows by the cells selected in its report. A cell stands for the rows under it: a
+            trader's cell for that trader's trades, a subtotal for every Item below it, a grand total for every row the
+            pivot shows. An Item the pivot hides is under no cell. In the Board above, the pivot links to the chart on
+            <code>trader</code>: select Chen's cell and the chart shows Chen's day alone. A pivot's link compares only
+            fields placed in its rows or columns, since those are what a cell names. When another link narrows the
+            pivot, its report is computed again, its selection is dropped, and what its cells narrowed is let go. A
+            selection that reaches rows the report has not drawn yet narrows nothing, and the Board says so under
+            the pivot rather than narrowing by part of it.
+        </p>
+        <p>
+            Reading refuses a link that starts at a chart, compares a field a pivot does not place in its rows or
+            columns, narrows its own view, names a view or a column that is not there, compares a column of one type with one of another, or
+            would close a loop: links run one way.
+        </p>
+    </DocsSection>
+
+    <DocsSection Title="Outputs raised on a confirm">
+        <p>
+            What the user chooses is handed on to the workflow's next step only when they say so. An output names a
+            grid, the columns whose values it hands on and the label of the action that raises it:
+            <code>"outputs": {"review": {"from": "blotter", "on": ["day", "trader"], "confirm": "Send to review"}}</code>.
+            The action is drawn under the grid; a selection on the way raises nothing, and a press with nothing
+            selected says so. Select rows in the Board above and press <em>Send to review</em>: <code>OnOutput</code> is raised
+            with a <code>BoardOutput</code>, shown here as its JSON.
+        </p>
+        <p>
+            An output is a value condition, the selected rows' values in its columns, with the version of the input's
+            data they were taken against. It hands on values, not rows: every row holding the chosen values is taken,
+            so an output meant to name single rows names a column that tells them apart, such as a trade's id. The next
+            step runs it where the data lives, or takes the rows with <code>BoardOutput.Take</code>, which refuses data
+            of another version, and other data at version 0, which names none: the values the user chose are taken
+            from the data they chose them in, or nothing is.
+        </p>
+    </DocsSection>
+
+    <DocsSection Title="What the user changes, kept as a Board Diff">
+        <p>
+            Running a Board never rewrites it. The user may still sort and filter a grid, drag its columns' widths
+            and order, pin or hide a column, rearrange a pivot, hide a chart's series, narrow its range or switch its
+            axis. Each change raises <code>OnDiff</code> with the whole <code>BoardDiff</code>: one part for each view
+            that differs from what the Board writes, a grid's View State and the columns hidden from it, a pivot's
+            layout, a chart's series, range and axis. A selection, and the narrowing a link makes of it, is not a
+            change to the Board and raises nothing. Sort the blotter above to see its JSON.
+        </p>
+        <p>
+            The host keeps <code>ToJson()</code> for its user and hands it back next time: it reads it with
+            <code>BoardDiff.Read</code> and passes it as <code>Diff</code>, laid against the Board as it is then. A part that no longer fits, a
+            view the Board no longer has, a column its grid no longer shows, a filter on a column its input now declares
+            another kind, is dropped by name and the rest applies;
+            the Board says what it dropped above its views. A column the Board has added since is shown, not taken for
+            one the user hid. Press <em>Draw with my changes</em>, or first remove the blotter's P&amp;L column from the
+            JSON, to see both. Making the user's view the default is writing a new Board.
+        </p>
+    </DocsSection>
+
+    <DocsSection Title="The draw_board tool">
+        <p>
+            <code>BoardSpec.Tool</code> is the tool definition a host hands its model, in the Chart Spec's form: a name,
+            <code>draw_board</code>, a description and the JSON Schema of its input. The input is the Board and the Data
+            Handle each input is bound to now: <code>{"board": {…}, "data": {"trades": "h-7f3a"}}</code>. The model never
+            sees a row. What it is told of a capability's table is its shape, written by
+            <code>BoardSpec.DeclarationOf(shape)</code> as the declaration a Board writes, so the types it declares are
+            the source's, not guessed from JSON.
+        </p>
+        <p>
+            When the model calls it, the host passes the input and its lookup from a handle to its Snapshot to
+            <code>BoardSpec.Answer</code> and returns <code>Text</code>. An accepted Board is said in words, view by view in
+            the layout's order, a chart by its summary, then its links and outputs, so the model can check it against what
+            it meant. A refused one is one sentence naming the path, such as
+            <code>data.trades: "h-9" is not known: name a Data Handle a capability returned.</code> The answer also carries
+            the Board, which is what a workflow saves and runs again without the model, and the Board bound to draw now.
+            Edit the call below and leave the field.
+        </p>
+        <DocsExample Builtin="typeof(BoardToolCallBuiltin)" Mud="typeof(BoardToolCallMud)" Files="@(["Examples/Board/BoardToolCall.cs"])" />
+    </DocsSection>
+
+    <DocsSection Title="A Chart Spec is a Board of one view">
+        <p>
+            A Board's chart view is a <a href="exchart/spec">Chart Spec</a> whose series name the Board's inputs. It is
+            read against the inputs' declarations when the Board is read, so a series on a column its input does not
+            declare is refused then, by path, with the rest of the Board, not when data first arrives.
+        </p>
+        <p>
+            <code>draw_chart</code> keeps naming Data Handles while an AI composes. <code>BoardSpec.OfChart(spec, shapes)</code>
+            makes that spec a Board of one view, <code>BoardSpec.ChartViewId</code>: each handle the spec names becomes an
+            input declared with the shape of the table the host holds for it, and a refusal keeps the spec's own path, as
+            the tool says it. Bind it with each handle's Snapshot under the handle's name. Below, the spec is a
+            <code>draw_chart</code> call's; write <code>"y": "book"</code> and leave the field to see it refused.
+        </p>
+        <DocsExample Builtin="typeof(ChartSpecBoardBuiltin)" Mud="typeof(ChartSpecBoardMud)" Files="@(["Examples/Board/ChartSpecBoard.cs"])" />
+    </DocsSection>
+
+    <DocsSection Title="A Board over a server">
+        <p>
+            An input too large to download is bound to a <code>BoardSource</code> in <code>Sources</code>, beside the
+            Snapshots in <code>Data</code>. A <code>BoardSource</code> is your own code: it answers the input's shape, which
+            is checked against the declaration before anything is drawn; fetches a grid's rows a page at a time, as a
+            Snapshot; and, if it can, makes a pivot's report source. Every fetch and every report source is handed the
+            link conditions narrowing the view (<code>BoardQuery.Narrowing</code>), for the server to execute where the
+            data lives. When a selection changes them, the view is asked again. The Board JSON is the same either way:
+            nothing in it says where an input is held.
+        </p>
+        <p>
+            A selection is read from the rows fetched. One that reaches rows the grid has not fetched, a Ctrl+A over
+            twenty thousand trades, narrows nothing and hands nothing on, and the Board says so under the grid rather
+            than read part of it. An output hands on the version of the page its rows were read from. A chart over an
+            input held on a server, and a link from a pivot over one, are refused by path for now: a chart waits for a
+            source that thins where the data lives, and the rows under a pivot's cell are on the server.
+        </p>
+        <DocsExample Builtin="typeof(ServerBoardBuiltin)" Mud="typeof(ServerBoardMud)" Files="@(["Examples/Board/ServerBoard.cs"])" />
+    </DocsSection>
+
+    <DocsSection Title="The package">
+        <p>
+            ExBoard is one package, <code>ExBoard</code>, published at the family's one version with exact references
+            to the ExGrid, ExPivot and ExChart it was built with. It has no MudBlazor Wrapper: each view already takes
+            its product's Chrome, and the Board passes <code>Chrome</code>, <code>PivotChrome</code> and
+            <code>ChartChrome</code> through, so a MudBlazor application hands it the Wrappers' Chromes, as the
+            Examples above do under the MudBlazor switch.
+        </p>
+    </DocsSection>
+
+    <DocsSection Title="API">
+        <ApiTable Type="typeof(global::ExBoard.BoardSpec)" />
+        <ApiTable Type="typeof(global::ExBoard.BoundBoard)" />
+        <ApiTable Type="typeof(global::ExBoard.LinkCondition)" />
+        <ApiTable Type="typeof(global::ExBoard.BoardSource)" />
+        <ApiTable Type="typeof(global::ExBoard.BoardQuery)" />
+        <ApiTable Type="typeof(global::ExBoard.BoardOutput)" />
+        <ApiTable Type="typeof(global::ExBoard.BoardDiff)" />
+        <ApiTable Type="typeof(global::ExBoard.Components.ExBoard)" />
+    </DocsSection>
+</DocsPage>

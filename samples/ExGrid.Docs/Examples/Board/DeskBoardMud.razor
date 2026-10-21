@@ -1,0 +1,56 @@
+@using ExBoard
+@using ExBoard.Components
+@using ExChart.MudBlazor
+@using ExGrid.Data
+@using ExPivot.MudBlazor
+
+<MudTextField T="string" Label="Board" Lines="10" Variant="Variant.Outlined" @bind-Value="_json" />
+<MudStack Row="true" AlignItems="AlignItems.Center" Class="my-2">
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Draw">Draw</MudButton>
+    <MudButton Variant="Variant.Outlined" Disabled="@(_diff is null)" OnClick="DrawAgain">Draw with my changes</MudButton>
+    @if (_refusal is not null)
+    {
+        <MudAlert Severity="Severity.Warning" Dense="true">@_refusal</MudAlert>
+    }
+</MudStack>
+@if (_board is not null)
+{
+    <ExBoard Board="_board" Data="_data!" Width="900" Chrome="_chrome" PivotChrome="MudPivotChrome.Default" ChartChrome="MudChartChrome.Default" OnOutput="Raised"
+             Diff="_laid" OnDiff="Changed" />
+    <MudText Typo="Typo.body2" Class="mt-2" Style="font-family: monospace; white-space: pre-wrap">@_raised</MudText>
+    <MudText Typo="Typo.body2" Class="mt-2" Style="font-family: monospace; white-space: pre-wrap">@_diff</MudText>
+}
+
+@code {
+    private static readonly MudGridChrome _chrome = new();
+
+    private string _json = DeskBoard.Json;
+    private BoardReading? _board;
+    private IReadOnlyDictionary<string, Snapshot>? _data;
+    private string? _refusal;
+    private string? _raised;
+    private string? _diff;
+    private BoardDiff? _laid;
+
+    protected override void OnInitialized() => Draw();
+
+    // What the host hands on to the workflow's next step: here, only shown.
+    private void Raised(BoardOutput output) => _raised = output.ToJson();
+
+    // What the host keeps for this user: here, only shown.
+    private void Changed(BoardDiff diff) => _diff = diff.ToJson();
+
+    private void Draw()
+    {
+        _laid = null;
+        (_board, _data, _refusal) = DeskBoard.Read(_json);
+    }
+
+    // Next time: the Board as written now, with the user's changes read back and laid over it.
+    private void DrawAgain()
+    {
+        (_board, _data, _refusal) = DeskBoard.Read(_json);
+        if (_board is not null)
+            (_laid, _refusal) = DeskBoard.LayOver(_diff!);
+    }
+}

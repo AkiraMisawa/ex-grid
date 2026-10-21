@@ -54,6 +54,13 @@
             select the whole column and see its different shade, then Ctrl+A to select every cell. Try Ctrl+click,
             then Ctrl+Shift+↓, and compare both Chromes.
         </DocsExample>
+        <p>
+            <code>SelectionChanged</code> is raised after the render that paints the selection, which on the Server
+            host is a round trip after the press. A button of your own that acts on the selection, pressed straight
+            after a click, would read the one before it. Ask the grid instead, through a reference to it:
+            <code>await grid.SelectionAfterInputsAsync()</code> gives the selection once the grid has answered every
+            input it received before the press, so the button acts on what the user selected at any speed.
+        </p>
     </DocsSection>
 
     <DocsSection Title="The keyboard">

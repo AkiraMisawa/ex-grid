@@ -312,7 +312,11 @@ public partial class ExGrid<TRow>
     /// has now, from the row the Window holds there; null with no row in hand, or for a cell that
     /// paints no text.</summary>
     private string? PaintedTextNow(int row, int column)
-        => column >= 0 && column < Columns.Count && RowInHand(row) is { } data
+        => RowInHand(row) is { } data ? PaintedTextOf(data, column) : null;
+
+    /// <summary>The text <paramref name="data"/> paints in <paramref name="column"/> now.</summary>
+    private string? PaintedTextOf(TRow data, int column)
+        => column >= 0 && column < Columns.Count
             ? PaintedTextFor(data, Columns[column], column, _columnStyles.Geometry, _metrics.CellMetrics, PaintedText, CellAppearance)
             : null;
 

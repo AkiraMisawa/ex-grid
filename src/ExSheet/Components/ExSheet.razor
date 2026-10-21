@@ -54,7 +54,7 @@
         RowHeadings="(ShowRowHeadings ? RowLabels : null)"
         DataEdge="_dataEdge"
         ShowFormulaBar="ShowFormulaBar" NameBoxLabel="NameBoxLabelOf" NameBoxSizeLabel="NameBoxSizeOf" OnNameBoxEntered="OnNameBoxEnteredAsync"
-        CompleteEditorText="_complete" PointAt="PointAtCaret" ReferenceText="ReferenceTextOf" CycleReference="CycleReferenceAt"
+        CompleteEditorText="_complete" PointAt="PointAtCaret" ReferenceText="_referenceText" CycleReference="CycleReferenceAt"
         OnPointStateChanged="_pointStateChanged" OnPointArrowFromOutside="_pointArrow"
         ReferencesIn="_references" OnReferenceKeyColoursChanged="_keyColoursChanged"
         ContextCommands="_contextCommands" CommandLabel="_commandLabel"
@@ -120,7 +120,9 @@
     // Point mode's two answers and F4's rewrite (ADR-0051) read only the text, the caret and the
     // range they are handed, so one instance of each serves every ExSheet.
     private static readonly Func<string, int, bool> PointAtCaret = SheetFormulaAids.PointAt;
-    private static readonly Func<SelectionRange, string> ReferenceTextOf = SheetFormulaAids.ReferenceText;
+    // The Reference Point writes: qualified with the Sheet shown's name while a Formula typed on another is
+    // edited (ADR-0331 §5).
+    private readonly Func<SelectionRange, string> _referenceText;
     private static readonly Func<string, int, int, EditorRewrite?> CycleReferenceAt = SheetFormulaAids.CycleReference;
 
     private static readonly Func<CellPosition, string?> NameBoxLabelOf =
@@ -142,7 +144,7 @@
 
     private readonly Func<CellPosition, GridDirection, CellPosition> _dataEdge;
     private readonly Func<string, int, ValueTask<EditorCompletion?>> _complete;
-    private readonly Func<string, IReadOnlyList<EditorReference>> _references;
+    private Func<string, IReadOnlyList<EditorReference>> _references;
     private readonly EventCallback<IReadOnlyList<ReferenceKeyColour>> _keyColoursChanged;
     private readonly Func<ContextMenuContext<SheetRow>, IEnumerable<GridCommand>> _contextCommands;
     private readonly Func<string, string?> _commandLabel;
@@ -291,7 +293,8 @@
         _complete = (text, caret) => ValueTask.FromResult(_sheet is { } sheet ? SheetFormulaAids.Complete(sheet, text, caret) : null);
         // The References the grid colours and outlines while a Formula is edited (ADR-0057),
         // answered from the engine at once. It reads this Sheet's name, so it is the instance's own.
-        _references = text => _sheet is { } sheet ? SheetFormulaAids.References(sheet, text) : [];
+        _references = ReferencesOnSheetShown();
+        _referenceText = range => _sheet is { } shown ? SheetFormulaAids.ReferenceText(range, shown, _editHome) : SheetFormulaAids.ReferenceText(range);
         // The grid tells the colour each Linked Table column's key was given; the Consumer is told
         // the columns (ADR-0057). No receiver: nothing on this Sheet changes for it.
         _keyColoursChanged = new EventCallback<IReadOnlyList<ReferenceKeyColour>>(null,
@@ -335,15 +338,18 @@
         // The grid says when an edit opens and ends, at the change and before the browser hears
         // of it (ADR-0050 section 6), so a command given in between is refused (ADR-0048). No
         // receiver: nothing this component paints depends on it.
-        _editingChanged = new EventCallback<bool>(null, (Func<bool, Task>)(open =>
+        _editingChanged = new EventCallback<bool>(null, (Func<bool, Task>)(async open =>
         {
             IsEditing = open;
+            // An edit ended while another Sheet than its own is shown — cancelled, or discarded — shows
+            // its own again, where its cell is (ADR-0331 §5). A commit has shown it already (EnterAsync).
+            if (!open) await ReturnToEditHomeAsync();
             // The toolbar greys out once the grid has answered the key or press that opened or
             // ended the edit, not inside that answer: drawn there, on a circuit, its render landed
             // among the keys and presses the grid holds behind the answer and lost what was typed
             // (layer 3, the Server host, SRV-5).
             if (ShowToolbar) _ = InvokeAsync(RefreshToolbarLaterAsync);
-            return EditingChanged.InvokeAsync(open);
+            await EditingChanged.InvokeAsync(open);
         }));
         // Typing thrown away is said, whoever discarded it: the grid, or ExSheet itself for a
         // replaced Sheet Document (ADR-0011, ADR-0048). No receiver: the notice renders itself.
@@ -1364,6 +1370,20 @@
         if (!CellAddress.TryParseColumn(intent.Column, out var column)) return;
         try
         {
+            // A Formula committed while another Sheet is shown lands on the Sheet it was typed on, which
+            // is shown again first, with its own view, so the move that completes the commit moves there
+            // (ADR-0331 §5).
+            if (intent.Row.Sheet != _sheet)
+            {
+                if (_workbook is not { } workbook || !workbook.Sheets.Contains(intent.Row.Sheet))
+                {
+                    intent.Refuse(SheetWords.EditSheetGone);
+                    return;
+                }
+                // The Workbook Document records the Sheet shown (ADR-0331 §2), told before the commit,
+                // which may yet be refused.
+                await ShowSheetAsync(intent.Row.Sheet);
+            }
             var address = new CellAddress(intent.Row.Index, column);
             await PerformAsync(SheetEdit.Enter(address, intent.Value), widenOver: [new CellRange(address)]);
         }
@@ -1425,15 +1445,33 @@
 
     private async Task OnNameBoxEnteredAsync(string typed)
     {
-        if (!NameBoxText.TryParse(typed, out var range))
+        if (!NameBoxText.TryParse(typed, out var named, out var range))
         {
             Tell(SheetWords.AddressUnreadable(typed));
             return;
         }
-        ClearNotice();
+        // A Sheet named before the address (ADR-0331 §5): one the Workbook does not hold is no place.
+        var sheet = named is null ? _sheet : _workbook?.Find(named);
+        if (sheet is null)
+        {
+            Tell(SheetWords.AddressUnreadable(typed));
+            return;
+        }
         var place = new SelectionRange(range.First.Row, range.First.Column, range.RowCount, range.ColumnCount);
+        var focus = new CellPosition(range.First.Row, range.First.Column);
+        if (sheet != _sheet)
+        {
+            // Another Sheet is shown with the place among its rows, as a tab shows it: not while an edit
+            // is open, and the place is handed with the rows, so it lands under the version that brings
+            // them whenever the grid takes it.
+            if (RefuseSwitchWhileEditing()) return;
+            ClearNotice();
+            if (ShowSheet(sheet, (place, focus))) await RaiseDocumentsAsync();
+            return;
+        }
+        ClearNotice();
         // Rows are places, so the Row Sequence Version is the document's (ADR-0046).
-        if (_grid is { } grid) await grid.PlaceSelectionAsync(place, new CellPosition(range.First.Row, range.First.Column), _sequence);
+        if (_grid is { } grid) await grid.PlaceSelectionAsync(place, focus, _sequence);
     }
 
     /// <summary>

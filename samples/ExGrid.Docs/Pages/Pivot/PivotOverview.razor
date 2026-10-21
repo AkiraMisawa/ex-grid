@@ -117,6 +117,17 @@
         <DocsExample Builtin="typeof(SavedLayout)" Mud="typeof(SavedLayoutMud)" Files="@(["Examples/Pivot/Sales.cs"])" />
     </DocsSection>
 
+    <DocsSection Title="What a selected cell stands for">
+        <p>
+            <code>SelectionChanged</code> raises the report's selection, and <code>ItemsOf</code> reads what each
+            selected cell stands for: a <code>PivotCellItems</code> holding the Items its row's path names and, for a
+            value cell, the Items its column's path names. A subtotal names only the fields above it, so it stands
+            for every Item below; a grand total names none. When the selection reaches rows the report has not drawn
+            yet, <code>ItemsOf</code> answers null rather than the part it could read. An
+            <a href="exboard">ExBoard</a> link from a pivot narrows other views this way; its Example runs it.
+        </p>
+    </DocsSection>
+
     <DocsSection Title="Showcase">
         <p>
             <a href="showcase/sales" target="_blank">The sales analysis</a> is ExPivot in a whole screen: 60,000 invented
@@ -130,6 +141,7 @@
     <DocsSection Title="API">
         <ApiTable Type="typeof(global::ExPivot.Components.ExPivot)" />
         <ApiTable Type="typeof(global::ExPivot.Engine.PivotLayout)" />
+        <ApiTable Type="typeof(global::ExPivot.Engine.PivotCellItems)" />
         <ApiTable Type="typeof(global::ExPivot.Engine.PivotFields<>)" />
     </DocsSection>
 </DocsPage>

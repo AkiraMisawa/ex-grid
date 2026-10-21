@@ -28,6 +28,9 @@ internal sealed class SheetRow
         Index = index;
     }
 
+    /// <summary>The Sheet the row is of: an edit committed while another Sheet is shown lands on it (ADR-0331 §5).</summary>
+    internal Sheet Sheet => _sheet;
+
     /// <summary>The row's position on the Sheet, from 0 (row <c>1</c> is 0).</summary>
     public int Index { get; }
 

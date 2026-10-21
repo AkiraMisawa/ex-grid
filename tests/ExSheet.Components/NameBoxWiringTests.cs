@@ -74,7 +74,7 @@ public class NameBoxWiringTests : SheetTestContext
     [InlineData("A0")]
     [InlineData("XFE1")]
     [InlineData("A1048577")]
-    [InlineData("Sheet1!A1")]
+    [InlineData("Nowhere!A1")]
     public async Task An_unreadable_address_moves_nothing_and_says_so(string typed)
     {
         var selections = new List<GridSelection>();

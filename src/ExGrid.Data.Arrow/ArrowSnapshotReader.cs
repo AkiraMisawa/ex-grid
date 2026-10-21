@@ -44,6 +44,29 @@ internal sealed class ArrowSnapshotReader(SnapshotLoadOptions? options, ICompres
         return await ReadBatchesAsync(reader, _ => source.BytesRead, total, null, () => source.ReachedEnd).ConfigureAwait(false);
     }
 
+    /// <summary>The shape a stream's schema says, read from its first message alone: no record batch
+    /// is read, or waited for.</summary>
+    public async ValueTask<DataShape> ReadShapeAsync(Stream stream)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        var head = new byte[8];
+        var got = await stream.ReadAtLeastAsync(head, head.Length, throwOnEndOfStream: false, cancellationToken).ConfigureAwait(false);
+        if (head.AsSpan(0, got).StartsWith(FileMagic))
+            throw new SnapshotException("An Arrow file says its schema in its footer, after its rows; a shape is read from an Arrow stream, whose schema comes first.");
+        var length = IpcFrames.FirstMessageLength(head.AsSpan(0, got));
+        var first = new byte[length];
+        head.AsSpan(0, got).CopyTo(first);
+        var rest = await stream.ReadAtLeastAsync(first.AsMemory(got), length - got, throwOnEndOfStream: false, cancellationToken).ConfigureAwait(false);
+        if (got + rest < length)
+            throw IpcFrames.EndsInFirstMessage();
+        IpcFrames.CheckSchema(first);
+
+        using var reader = new ArrowStreamReader(new MemoryStream(first, writable: false), ManagedMemory.Instance, codecs, leaveOpen: false);
+        var schema = await reader.GetSchema(cancellationToken).ConfigureAwait(false) ?? throw IpcFrames.Empty();
+        var columns = Declare(schema, new SnapshotColumnsBuilder(options, cancellationToken));
+        return new DataShape(columns.Select(c => new DataShapeColumn(c.Name, c.Kind)));
+    }
+
     public async ValueTask<Snapshot> ReadAsync(ReadOnlyMemory<byte> arrow)
     {
         cancellationToken.ThrowIfCancellationRequested();
