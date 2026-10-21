@@ -136,7 +136,7 @@ public sealed record BoardCell(string View, int Width);
 /// output (<see cref="BoardOutputDeclaration"/>) from a view that is not a grid, on a column its input
 /// does not declare, or with no confirm action to raise it.</para>
 /// </summary>
-public static class BoardSpec
+public static partial class BoardSpec
 {
     /// <summary>The version of the Board this reader reads.</summary>
     public const int Version = 1;

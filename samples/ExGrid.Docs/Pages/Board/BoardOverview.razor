@@ -105,6 +105,27 @@
         </p>
     </DocsSection>
 
+    <DocsSection Title="The draw_board tool">
+        <p>
+            <code>BoardSpec.Tool</code> is the tool definition a host hands its model, in the Chart Spec's form: a name,
+            <code>draw_board</code>, a description and the JSON Schema of its input. The input is the Board and the Data
+            Handle each input is bound to now: <code>{"board": {…}, "data": {"trades": "h-7f3a"}}</code>. The model never
+            sees a row. What it is told of a capability's table is its shape, written by
+            <code>BoardSpec.DeclarationOf(shape)</code> as the declaration a Board writes, so the types it declares are
+            the source's, not guessed from JSON.
+        </p>
+        <p>
+            When the model calls it, the host passes the input and its lookup from a handle to its Snapshot to
+            <code>BoardSpec.Answer</code> and returns <code>Text</code>. An accepted Board is said in words, view by view in
+            the layout's order, a chart by its summary, then its links and outputs, so the model can check it against what
+            it meant. A refused one is one sentence naming the path, such as
+            <code>data.trades: "h-9" is not known: name a Data Handle a capability returned.</code> The answer also carries
+            the Board, which is what a workflow saves and runs again without the model, and the Board bound to draw now.
+            Edit the call below and leave the field.
+        </p>
+        <DocsExample Builtin="typeof(BoardToolCallBuiltin)" Files="@(["Examples/Board/BoardToolCall.cs"])" />
+    </DocsSection>
+
     <DocsSection Title="A Chart Spec is a Board of one view">
         <p>
             A Board's chart view is a <a href="exchart/spec">Chart Spec</a> whose series name the Board's inputs. It is

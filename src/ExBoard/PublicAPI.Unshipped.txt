@@ -117,6 +117,30 @@ ExBoard.BoardRow.Equals(ExBoard.BoardRow? other) -> bool
 ExBoard.BoardRow.Height.get -> double
 ExBoard.BoardRow.Height.init -> void
 ExBoard.BoardSpec
+ExBoard.BoardSpecAnswer
+ExBoard.BoardSpecAnswer.<Clone>$() -> ExBoard.BoardSpecAnswer!
+ExBoard.BoardSpecAnswer.Accepted.get -> bool
+ExBoard.BoardSpecAnswer.Accepted.init -> void
+ExBoard.BoardSpecAnswer.Board.get -> ExBoard.BoardReading?
+ExBoard.BoardSpecAnswer.Board.init -> void
+ExBoard.BoardSpecAnswer.BoardSpecAnswer(bool Accepted, string! Text, ExBoard.BoardReading? Board, ExBoard.BoundBoard? Bound) -> void
+ExBoard.BoardSpecAnswer.Bound.get -> ExBoard.BoundBoard?
+ExBoard.BoardSpecAnswer.Bound.init -> void
+ExBoard.BoardSpecAnswer.Deconstruct(out bool Accepted, out string! Text, out ExBoard.BoardReading? Board, out ExBoard.BoundBoard? Bound) -> void
+ExBoard.BoardSpecAnswer.Equals(ExBoard.BoardSpecAnswer? other) -> bool
+ExBoard.BoardSpecAnswer.Text.get -> string!
+ExBoard.BoardSpecAnswer.Text.init -> void
+ExBoard.BoardSpecTool
+ExBoard.BoardSpecTool.<Clone>$() -> ExBoard.BoardSpecTool!
+ExBoard.BoardSpecTool.BoardSpecTool(string! Name, string! Description, string! InputSchema) -> void
+ExBoard.BoardSpecTool.Deconstruct(out string! Name, out string! Description, out string! InputSchema) -> void
+ExBoard.BoardSpecTool.Description.get -> string!
+ExBoard.BoardSpecTool.Description.init -> void
+ExBoard.BoardSpecTool.Equals(ExBoard.BoardSpecTool? other) -> bool
+ExBoard.BoardSpecTool.InputSchema.get -> string!
+ExBoard.BoardSpecTool.InputSchema.init -> void
+ExBoard.BoardSpecTool.Name.get -> string!
+ExBoard.BoardSpecTool.Name.init -> void
 ExBoard.BoardView
 ExBoard.BoardView.BoardView(ExBoard.BoardView! original) -> void
 ExBoard.BoardView.Id.get -> string!
@@ -226,6 +250,12 @@ override ExBoard.BoardReading.ToString() -> string!
 override ExBoard.BoardRow.Equals(object? obj) -> bool
 override ExBoard.BoardRow.GetHashCode() -> int
 override ExBoard.BoardRow.ToString() -> string!
+override ExBoard.BoardSpecAnswer.Equals(object? obj) -> bool
+override ExBoard.BoardSpecAnswer.GetHashCode() -> int
+override ExBoard.BoardSpecAnswer.ToString() -> string!
+override ExBoard.BoardSpecTool.Equals(object? obj) -> bool
+override ExBoard.BoardSpecTool.GetHashCode() -> int
+override ExBoard.BoardSpecTool.ToString() -> string!
 override ExBoard.BoardView.Equals(object? obj) -> bool
 override ExBoard.BoardView.GetHashCode() -> int
 override ExBoard.BoardView.ToString() -> string!
@@ -254,8 +284,16 @@ static ExBoard.BoardReading.operator !=(ExBoard.BoardReading? left, ExBoard.Boar
 static ExBoard.BoardReading.operator ==(ExBoard.BoardReading? left, ExBoard.BoardReading? right) -> bool
 static ExBoard.BoardRow.operator !=(ExBoard.BoardRow? left, ExBoard.BoardRow? right) -> bool
 static ExBoard.BoardRow.operator ==(ExBoard.BoardRow? left, ExBoard.BoardRow? right) -> bool
+static ExBoard.BoardSpec.Answer(string! json, System.Func<string!, ExGrid.Data.Snapshot?>! tables, System.Globalization.CultureInfo? culture = null) -> ExBoard.BoardSpecAnswer!
+static ExBoard.BoardSpec.DeclarationOf(ExGrid.Data.DataShape! shape) -> string!
 static ExBoard.BoardSpec.OfChart(string! chartSpec, System.Collections.Generic.IReadOnlyDictionary<string!, ExGrid.Data.DataShape!>! tables) -> ExBoard.BoardReading!
 static ExBoard.BoardSpec.Read(string! json) -> ExBoard.BoardReading!
+static ExBoard.BoardSpec.Say(ExBoard.BoundBoard! board) -> string!
+static ExBoard.BoardSpec.Tool.get -> ExBoard.BoardSpecTool!
+static ExBoard.BoardSpecAnswer.operator !=(ExBoard.BoardSpecAnswer? left, ExBoard.BoardSpecAnswer? right) -> bool
+static ExBoard.BoardSpecAnswer.operator ==(ExBoard.BoardSpecAnswer? left, ExBoard.BoardSpecAnswer? right) -> bool
+static ExBoard.BoardSpecTool.operator !=(ExBoard.BoardSpecTool? left, ExBoard.BoardSpecTool? right) -> bool
+static ExBoard.BoardSpecTool.operator ==(ExBoard.BoardSpecTool? left, ExBoard.BoardSpecTool? right) -> bool
 static ExBoard.BoardView.operator !=(ExBoard.BoardView? left, ExBoard.BoardView? right) -> bool
 static ExBoard.BoardView.operator ==(ExBoard.BoardView? left, ExBoard.BoardView? right) -> bool
 static ExBoard.BoundBoard.Bind(ExBoard.BoardReading! board, System.Collections.Generic.IReadOnlyDictionary<string!, ExGrid.Data.Snapshot!>! data, System.Globalization.CultureInfo? culture = null, ExBoard.BoardDiff? diff = null) -> ExBoard.BoundBoard!

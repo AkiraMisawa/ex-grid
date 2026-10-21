@@ -35,7 +35,7 @@ it, and raises its outputs and its Diff.
 | 06 | [Outputs raised on a confirm](issues/06-outputs-raised-on-a-confirm.md) | done |
 | 07 | [The Board Diff](issues/07-the-board-diff.md) | done |
 | 08 | [The Chart Spec as a Board view](issues/08-the-chart-spec-as-a-board-view.md) | done |
-| 09 | [The Board tool and the Docs Site](issues/09-the-board-tool-and-the-docs-site.md) | ready-for-agent |
+| 09 | [The Board tool and the Docs Site](issues/09-the-board-tool-and-the-docs-site.md) | done |
 | 10 | [ExBoard ships as packages](issues/10-exboard-ships-as-packages.md) | ready-for-agent |
 | 11 | [A pivot's cell links](issues/11-a-pivot-cell-links.md) | done |
 | 12 | [A Board over sources held on a server](issues/12-a-board-over-sources-held-on-a-server.md) | ready-for-agent |

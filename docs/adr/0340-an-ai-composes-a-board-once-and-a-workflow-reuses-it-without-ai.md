@@ -196,3 +196,21 @@ here so they are not re-derived:
   one view, `chart`: each handle the spec names, and only those, becomes an input declared with the
   shape of the table the host holds for it, and a refusal keeps the spec's own path, as the tool says
   it. The tool's answer is still `ChartSpec.Answer`; the Board is how a host draws it beside the rest.
+
+*The tool, 2026-10-21 (ExBoard ticket 09).* What Consequences left to the implementation:
+
+- **`draw_board` takes the Board and the Data Handle each input is bound to now**,
+  `{"board": {…}, "data": {"trades": "h-7f3a"}}`. The handles stay out of the Board, which is what is
+  saved; the call binds them for this conversation alone. Every declared input is bound, and a member
+  of `data` naming an input the Board does not declare, or a handle the host does not know, is
+  refused by its path under `data`; a table whose shape is not its input's declaration is refused
+  there too, naming the input and the column.
+- **What the AI is told of a source is its declaration**: `BoardSpec.DeclarationOf(shape)` writes the
+  shape as an input's `{"columns": […]}`, so the AI copies the types rather than reading them off JSON
+  rows (ADR-0341).
+- **An accepted Board is said in words**, as ADR-0320's answer is: its title and how many views and
+  rows; each view in the layout's order, a grid by its rows, input and headers, a pivot by its rows,
+  input, placed fields and values, a chart by its own summary (ADR-0275); then each link and output.
+  A refusal is one sentence, prefixed by its path (`board.views[0].grid.columns[2].format: …`).
+- **The answer carries the Board read and the Board bound**, so a host draws what it answered without
+  reading the call twice.
