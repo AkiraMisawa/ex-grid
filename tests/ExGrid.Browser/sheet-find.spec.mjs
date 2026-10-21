@@ -127,11 +127,12 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(cell(grid, 'A2')).toHaveText('TravEL');
             await expectKeyboardOn(grid);
 
-            // One step undoes the write on both Sheets.
+            // One step undoes the write on both Sheets, and shows the Sheet it was done from (ADR-0331 §3).
             await page.keyboard.press('ControlOrMeta+z');
-            await expect(cell(grid, 'A2')).toHaveText('Travel');
-            await tab(page, 'Claim').click();
+            await expect(tab(page, 'Claim')).toHaveAttribute('aria-selected', 'true');
             await expect(cell(grid, 'A3')).toHaveText('Hotel, nights');
+            await tab(page, 'Summary').click();
+            await expect(cell(grid, 'A2')).toHaveText('Travel');
             await settled(grid);
         });
     });
