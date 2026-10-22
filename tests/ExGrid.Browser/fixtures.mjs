@@ -594,6 +594,43 @@ async function arriveAt(page, target) {
 }
 
 /** The frames in which what a disposal left to later — a wait that outlived its grid — runs. */
+/**
+ * Holds the page's animation frames back until the function returned is called, then runs them in the
+ * order they were asked for (ADR-0240's note of 2026-10-21). A wait the grid looks at once a frame then
+ * does not look again of itself, so a key typed after the keyboard has arrived lands in the window a
+ * frame would otherwise close one run in hundreds: a test of "typed the moment it arrived" is then
+ * decided every time. Undone as the test ends if not let go before.
+ */
+export async function holdFrames(page) {
+    await alterPage(page, () => {
+        const request = window.requestAnimationFrame;
+        const cancel = window.cancelAnimationFrame;
+        const waiting = new Map();
+        let next = 0;
+        window.requestAnimationFrame = (callback) => {
+            next += 1;
+            waiting.set(next, callback);
+            return next;
+        };
+        window.cancelAnimationFrame = (id) => {
+            waiting.delete(id);
+        };
+        const letGo = () => {
+            window.requestAnimationFrame = request;
+            window.cancelAnimationFrame = cancel;
+            delete window.exFramesLetGo;
+            const callbacks = [...waiting.values()];
+            waiting.clear();
+            request((now) => callbacks.forEach((callback) => callback(now)));
+        };
+        window.exFramesLetGo = letGo;
+        return () => {
+            if (window.exFramesLetGo === letGo) letGo();
+        };
+    });
+    return () => page.evaluate(() => window.exFramesLetGo?.());
+}
+
 export const twoFrames = (page) => page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
 
 /**

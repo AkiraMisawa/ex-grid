@@ -470,3 +470,26 @@ right-click now holds following keys for its popover just as Shift+F10 does, inc
 edit was open. An older render's after-work must not consume a newer popover's focus request
 before that opening has rendered its control references. The request remains pending until
 the render bearing it is built. Neither wait uses a clock or adds another queue.
+
+## As built: a hold ends at the key that finds it met (2026-10-21)
+
+Section 4 removed the clock from the waits, but `editorSettled` still looked once an animation frame
+for what it waited on. A key typed after DOM focus had arrived and before the next frame was held, and
+whether it was depended on where the frame fell. For most keys that cost nothing, since a held key is
+handed on in its turn; a Tab or Shift+Tab cannot be handed on from script (ADR-0021), so it was refused
+with `KeyboardDidNotArrive` although the keyboard had arrived. DC-60 failed so on `main` twice in three
+runs, on both browsers on the Server host: Shift+Tab typed once Format Cells' tab held the keyboard.
+
+The script now looks again at a keydown under a hold that holds nothing — the root's, and that of a
+surface of the product's own around it (section 6) — when no press's answer is still to come, no frame of
+the Consumer's own is still to be handed the keyboard by the wait itself, and no standing wait has work
+of its own after it settles (the Formula Bar's caret put back after a press: `editorSettled(false)`).
+The wait is judged then exactly as the frame would judge it. When the keyboard has arrived, the hold
+ends at that key, and the key goes as it would a frame later; a drain the key ended takes no more keys
+(a hold epoch). When the wait judges the keyboard missed, the key is held behind it and refused with it,
+as before. It adds no listener and reads no layout.
+
+The same window, looked for on `main` with the page's animation frames held back (layer 3's
+`holdFrames`): a Tab typed once Find's field held the keyboard was refused too, under both Chromes. Keys a
+held replay reproduces — a menu's Tab, a tab's arrows — and the toolbar band after F10, which the wait
+hands the keyboard to itself, were only delayed, with the same outcome.

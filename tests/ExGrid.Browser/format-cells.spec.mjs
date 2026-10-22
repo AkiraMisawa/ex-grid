@@ -1,4 +1,4 @@
-import { test, expect, setRoundTrip, circuitQuiet, alterPage, settled } from './fixtures.mjs';
+import { test, expect, setRoundTrip, circuitQuiet, alterPage, settled, holdFrames } from './fixtures.mjs';
 import { SERVER } from './hosting.mjs';
 import { sheet, openSheet, cell, pressCell, expectFocusAt, pressAt, boxOf, columnHeader, hashesAtTheStandardWidth } from './sheet-helpers.mjs';
 import { expectKeyboardOn } from './keyboard.mjs';
@@ -278,6 +278,32 @@ test.describe('on /sheet', () => {
         await page.keyboard.press('Shift+Tab');
         await expect(cancel).toBeFocused();
         await page.keyboard.press('Tab');
+        await expect(tab(grid, 'Number')).toBeFocused();
+        await expect(formatCells(grid)).toBeVisible();
+    });
+
+    // The test above, failing on main (2026-10-21, both browsers, Server host): the hold that Format
+    // Cells' opening stands behind looks for the keyboard once a frame, so a Shift+Tab typed after its
+    // tab had taken the keyboard, but before that frame, was held — and a held Tab cannot be handed on
+    // from script, so it was refused. Whether it was turned on the frame. The hold now ends at a key
+    // typed once what it waits for has come (ADR-0240: no outcome turns on a clock). Here no frame comes
+    // until the keys have been typed, so the window the test above fell into one run in a few hundred
+    // is the only one there is. Opened by Ctrl+1, a key, so that nothing before it waits on a frame.
+    test('DC-60/ADR-0240: a Shift+Tab typed once Format Cells\' tab holds the keyboard wraps, before any frame has looked', async ({ page }) => {
+        const grid = sheet(page);
+        await pressCell(grid, 'C2');
+        await settled(grid);
+        const letGo = await holdFrames(page);
+
+        await page.keyboard.press('Control+1');
+        await expect(tab(grid, 'Number')).toBeFocused();
+        await page.keyboard.press('Shift+Tab');
+        await expect(formatCells(grid).getByRole('button', { name: 'Cancel' })).toBeFocused();
+        await page.keyboard.press('Tab');
+        await expect(tab(grid, 'Number')).toBeFocused();
+
+        await letGo();
+        await settled(grid);
         await expect(tab(grid, 'Number')).toBeFocused();
         await expect(formatCells(grid)).toBeVisible();
     });

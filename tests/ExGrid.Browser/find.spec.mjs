@@ -1,4 +1,4 @@
-import { test, expect, watchNextKey, keySeenUntouched, scrollRowToTop, circuitQuiet } from './fixtures.mjs';
+import { test, expect, watchNextKey, keySeenUntouched, scrollRowToTop, circuitQuiet, settled, holdFrames } from './fixtures.mjs';
 import { expectKeyboardOn, activeDescendant } from './keyboard.mjs';
 import { acrossEdges, blend, onDevicePixels, paints } from './pixels.mjs';
 
@@ -64,6 +64,27 @@ for (const chrome of ['builtin', 'mud']) {
             await expect.poll(() => focusedCell(page)).toMatch(/r3c1$/);
             // The panel stands through the steps, and the field keeps the keyboard.
             await expect(field).toBeFocused();
+        });
+
+        // ADR-0240's note of 2026-10-21. The panel's field takes the keyboard a round trip after Ctrl+F on a
+        // circuit, and the hold behind Ctrl+F looked for it once a frame: a Tab typed after the field had it
+        // but before that frame was held, and a held Tab cannot be handed on from script, so it was refused
+        // and the field kept the keyboard. On main it did so whenever no frame fell between the two. Here
+        // no frame falls until the Tab is typed, so that is the case every time.
+        test('FD-1/ADR-0240: a Tab typed once Find\'s field holds the keyboard moves on in the panel, before any frame has looked', async ({ page }) => {
+            await settled(grid(page));
+            const letGo = await holdFrames(page);
+            await page.keyboard.press('ControlOrMeta+f');
+            const panel = grid(page).locator('.ex-popover-find');
+            const field = panel.locator('input').first();
+            await expect(field).toBeFocused();
+
+            await page.keyboard.press('Tab');
+            await letGo();
+            await settled(grid(page));
+            await expect(field).not.toBeFocused();
+            await expect(panel).toBeVisible();
+            expect(await panel.evaluate((p) => p.contains(document.activeElement)), 'the keyboard is still the panel\'s').toBe(true);
         });
 
         test('a capital and a Shift+Enter typed straight after Ctrl+F keep their meaning (ADR-0055/0010, ED-22)', async ({ page }) => {
