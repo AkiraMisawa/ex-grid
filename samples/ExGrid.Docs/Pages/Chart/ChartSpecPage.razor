@@ -104,5 +104,17 @@
             thinned point cannot stand for: an observation's points, a price range's candles, a label, colour, size,
             key or edge per point, and a labels axis, each by its path.
         </p>
+        <p>
+            <code>ExChart</code> reads through the sources itself when it is given <code>Spec</code> and
+            <code>Sources</code> in place of a <code>Definition</code>. It asks for the device pixels of its width when
+            it is first drawn, and again each time the range changes, by a drag, under Chart Filters or through
+            <code>Range</code>, so a narrowed range is drawn at full detail rather than stretched from the whole.
+            Until the newest ask is answered it keeps what it shows and is Busy; an answer to an ask a later one
+            replaced is dropped, and one read from an older version of the data than the chart shows is said in its
+            place, never drawn. It saves no CSV and shows no table, since it holds only the points drawn. Below, two
+            hundred thousand ticks held by the page are read through <code>ChartSource.Over</code>: drag across the
+            plot to narrow it, and the spike stays at every width.
+        </p>
+        <DocsExample Builtin="typeof(ChartSourceExample)" Mud="typeof(ChartSourceExampleMud)" Files="@(["Examples/Chart/SourcedTicks.cs"])" />
     </DocsSection>
 </DocsPage>

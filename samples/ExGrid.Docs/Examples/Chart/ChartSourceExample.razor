@@ -1,0 +1,11 @@
+@using ExChart
+@using ExChart.Components
+
+@* Read through a Chart Source: the chart asks for its pixels, and again for a range dragged across it. *@
+<ExChart Spec="@SourcedTicks.Spec" Sources="SourcedTicks.Lookup" Title="Ticks" Width="720" Height="300"
+         Range="_range" OnRangeChanged="r => _range = r" />
+<p>Range: @(_range is { } r ? $"{r.From:0} to {r.To:0}" : "every tick")</p>
+
+@code {
+    private ChartRange? _range;
+}
