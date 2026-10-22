@@ -26,6 +26,8 @@ structured references under that rule.
 
 - [x] **The stored text uses the declared case** for the table's name and the column's, at entry
       and when a Formula is written again (an insertion, a deletion, a copy, a fill).
+      Written at entry; a rewrite replaces only References, so it keeps that case. A Formula whose text
+      predates the declaration is the next box's case.
 - [ ] **A table declared after the Formula was entered.** A reader of an undeclared table is
       `#NAME?` (ADR-0049). Decide, with Excel's answer, whether declaring the table rewrites the
       text or leaves it as typed until it is next written.

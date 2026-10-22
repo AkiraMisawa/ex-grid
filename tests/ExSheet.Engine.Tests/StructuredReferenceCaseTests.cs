@@ -43,6 +43,19 @@ public class StructuredReferenceCaseTests
         Assert.Equal(value, workbook.Sheets[0].Number("B2"));
     }
 
+    [Fact] // Ticket 180, ADR-0048: pasted as text, and entered with Ctrl+Enter, a Formula is written in the declared case too
+    public void A_pasted_or_ctrl_entered_formula_is_written_in_the_declared_case()
+    {
+        var workbook = Limits();
+
+        workbook.Do(Sheet.DefaultName, SheetEdit.PasteText([["=sum(limit[line])"]], CellAddress.Parse("B2")));
+        workbook.Do(Sheet.DefaultName, SheetEdit.EnterInto([CellRange.Parse("C2:C3")], CellAddress.Parse("C2"), "=sum(limit[net pv])"));
+
+        Assert.Equal("=SUM(LIMIT[Line])", Formula(workbook, "B2"));
+        Assert.Equal("=SUM(LIMIT[Net PV])", Formula(workbook, "C2"));
+        Assert.Equal("=SUM(LIMIT[Net PV])", Formula(workbook, "C3"));
+    }
+
     [Fact] // Ticket 180: a table or a column not declared is left as typed, and is #NAME? or #REF! as before
     public void An_undeclared_table_or_column_is_left_as_typed()
     {
