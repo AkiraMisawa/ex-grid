@@ -322,6 +322,12 @@ const SURFACE_REACH = 32;
 /** How far a press may move and still be a click, not a turn. */
 const SURFACE_CLICK = 4;
 
+/** How far a drag turns the surface: a whole turn for a drag the box's height, either way (as Plotly's turntable and three.js's OrbitControls do). */
+const SURFACE_TURN = 360;
+
+/** How far one wheel step of 100 pixels zooms, and the wheel zooms in proportion to how far it moved. */
+const SURFACE_WHEEL = Math.log(1.1) / 100;
+
 /**
  * Attaches the 3D entry to one surface's box and returns its handle. `core` is the surface's .NET
  * reference, which takes OnPointAsync, OnSliceAsync and OnViewAsync.
@@ -409,14 +415,18 @@ export function attachSurface(box, core) {
     const own = (event) => event.target === box;
 
     const onDown = (event) => {
-        if (event.button !== 0 || !mesh || !own(event)) {
+        // One pointer at a time: a second finger, or a second button, does not join the gesture.
+        if (drag || (event.button !== 0 && event.button !== 2) || !mesh || !own(event)) {
             return;
         }
-        drag = { x: event.offsetX, y: event.offsetY, view: { ...view }, pan: event.shiftKey, moved: false, version };
+        drag = { id: event.pointerId, x: event.offsetX, y: event.offsetY, view: { ...view }, pan: event.shiftKey || event.button === 2, moved: false, version };
         box.setPointerCapture?.(event.pointerId);
     };
 
     const onMove = (event) => {
+        if (drag && event.pointerId !== drag.id) {
+            return;
+        }
         if (drag) {
             const dx = event.offsetX - drag.x;
             const dy = event.offsetY - drag.y;
@@ -427,7 +437,10 @@ export function attachSurface(box, core) {
             if (drag.pan) {
                 view = { ...drag.view, panX: drag.view.panX + dx / width, panY: drag.view.panY + dy / height };
             } else {
-                view = { ...drag.view, yaw: turn(drag.view.yaw + dx * 0.4), pitch: clamp(drag.view.pitch + dy * 0.3, 0, 90) };
+                // The surface is held where it was pressed: a drag to the right brings its near side
+                // to the right, a drag down tips its top toward the viewer.
+                const degrees = SURFACE_TURN / Math.max(1, height);
+                view = { ...drag.view, yaw: turn(drag.view.yaw + dx * degrees), pitch: clamp(drag.view.pitch + dy * degrees, -90, 90) };
             }
             reportPoint(null, 0, 0);
             redraw();
@@ -440,6 +453,9 @@ export function attachSurface(box, core) {
     };
 
     const onUp = (event) => {
+        if (drag && event.pointerId !== drag.id) {
+            return;
+        }
         const pressed = drag;
         drag = null;
         if (!pressed || pressed.version !== version) {
@@ -449,6 +465,9 @@ export function attachSurface(box, core) {
             sendView();
             return;
         }
+        if (pressed.pan) {
+            return;
+        }
         const point = nearest(pressed.x, pressed.y);
         if (point && core) {
             const axis = sliceAxis(point, pressed.x, pressed.y);
@@ -456,7 +475,10 @@ export function attachSurface(box, core) {
         }
     };
 
-    const onCancel = () => {
+    const onCancel = (event) => {
+        if (drag && event.pointerId !== drag.id) {
+            return;
+        }
         if (drag?.moved) {
             sendView();
         }
@@ -492,7 +514,8 @@ export function attachSurface(box, core) {
         if (step && event.shiftKey) {
             view = { ...view, panX: view.panX + step[0] * 0.05, panY: view.panY + step[1] * 0.05 };
         } else if (step) {
-            view = { ...view, yaw: turn(view.yaw + step[0] * 5), pitch: clamp(view.pitch - step[1] * 5, 0, 90) };
+            // An arrow turns the surface as a drag the same way would.
+            view = { ...view, yaw: turn(view.yaw + step[0] * 5), pitch: clamp(view.pitch + step[1] * 5, -90, 90) };
         } else if (event.key === '+' || event.key === '=') {
             view = { ...view, zoom: clamp(view.zoom * 1.25, 0.5, 8) };
         } else if (event.key === '-') {
@@ -510,9 +533,19 @@ export function attachSurface(box, core) {
             return;
         }
         event.preventDefault();
-        view = { ...view, zoom: clamp(view.zoom * (event.deltaY < 0 ? 1.1 : 1 / 1.1), 0.5, 8) };
+        // A trackpad sends many small steps and a mouse a few large ones; each zooms by how far it
+        // moved, in pixels whatever the event's unit.
+        const pixels = event.deltaY * (event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? Math.max(1, height) : 1);
+        view = { ...view, zoom: clamp(view.zoom * Math.exp(-pixels * SURFACE_WHEEL), 0.5, 8) };
         redraw();
         sendView();
+    };
+
+    // The right button pans, so it opens no menu over the drawing.
+    const onMenu = (event) => {
+        if (mesh && own(event)) {
+            event.preventDefault();
+        }
     };
 
     box.addEventListener('pointerdown', onDown);
@@ -522,6 +555,7 @@ export function attachSurface(box, core) {
     box.addEventListener('pointerleave', onLeave);
     box.addEventListener('keydown', onKey);
     box.addEventListener('wheel', onWheel, { passive: false });
+    box.addEventListener('contextmenu', onMenu);
 
     return {
         /**
@@ -580,6 +614,7 @@ export function attachSurface(box, core) {
             box.removeEventListener('pointerleave', onLeave);
             box.removeEventListener('keydown', onKey);
             box.removeEventListener('wheel', onWheel);
+            box.removeEventListener('contextmenu', onMenu);
             svg.remove();
             core = null;
         },
@@ -652,10 +687,13 @@ function drawSurface(svg, mesh, view, slice, W, H) {
     const b = (view.pitch * Math.PI) / 180;
     // World: x across the floor, y along it, z up; each within [-0.5, 0.5], z squashed.
     const world = (x, y, z) => [x - 0.5, y - 0.5, ((z - zMin) / (zMax - zMin || 1) - 0.5) * 0.6];
+    // Turned by the yaw about the vertical, then seen from the front (−y) and above by the pitch,
+    // or below where it is negative: screen x, screen y down, and depth, larger farther. The axes
+    // stay right-handed, x to y counterclockwise seen from above, so the picture is never a mirror.
     const raw = ([x, y, z]) => {
         const x1 = x * Math.cos(a) - y * Math.sin(a);
         const y1 = x * Math.sin(a) + y * Math.cos(a);
-        return [x1, y1 * Math.sin(b) - z * Math.cos(b), y1 * Math.cos(b) + z * Math.sin(b)];
+        return [x1, -(y1 * Math.sin(b) + z * Math.cos(b)), y1 * Math.cos(b) - z * Math.sin(b)];
     };
     // Fitted to the box at every angle by the projected corners of the box the surface stands in,
     // with room round it for the labels; then zoomed about the centre and panned.
@@ -679,25 +717,30 @@ function drawSurface(svg, mesh, view, slice, W, H) {
     const heat = mesh.bar.diverging ? 'ex-chart-diverge-' : 'ex-chart-heat-';
 
     // The floor and the two walls behind the surface, each with its grid; which walls are behind
-    // depends on where the viewer stands.
+    // depends on where the viewer stands. Seen from below, the box's top is behind it instead of
+    // its floor. The grid's x and y lines run up the walls too, so a value is read across to them.
     const backX = Math.sin(a) > 0 ? 1 : 0;
     const backY = Math.cos(a) > 0 ? 1 : 0;
+    // The vertical's labels, and its title, stand on the outer side of the edge they mark.
+    const right = P(backX, 1 - backY, zMin)[0] > P(0.5, 0.5, zMin)[0];
+    const zBack = view.pitch >= 0 ? zMin : zMax;
     const walls = svgElement('g', { class: 'ex-chart-surface-walls' });
-    walls.append(poly([P(0, 0, zMin), P(1, 0, zMin), P(1, 1, zMin), P(0, 1, zMin)], 'ex-chart-surface-wall'));
-    const upright = view.pitch < 89;
+    walls.append(poly([P(0, 0, zBack), P(1, 0, zBack), P(1, 1, zBack), P(0, 1, zBack)], 'ex-chart-surface-wall'));
+    const upright = Math.abs(view.pitch) < 89;
     if (upright) {
         walls.append(poly([P(0, backY, zMin), P(1, backY, zMin), P(1, backY, zMax), P(0, backY, zMax)], 'ex-chart-surface-wall'));
         walls.append(poly([P(backX, 0, zMin), P(backX, 1, zMin), P(backX, 1, zMax), P(backX, 0, zMax)], 'ex-chart-surface-wall'));
+        for (const t of mesh.xLines) walls.append(line(P(t.value, backY, zMin), P(t.value, backY, zMax), 'ex-chart-surface-grid'));
+        for (const t of mesh.yLines) walls.append(line(P(backX, t.value, zMin), P(backX, t.value, zMax), 'ex-chart-surface-grid'));
         for (const tick of mesh.zTicks) {
             walls.append(line(P(0, backY, tick.value), P(1, backY, tick.value), 'ex-chart-surface-grid'));
             walls.append(line(P(backX, 0, tick.value), P(backX, 1, tick.value), 'ex-chart-surface-grid'));
             const at = P(backX, 1 - backY, tick.value);
-            const right = Math.sin(a) > 0;
             walls.append(svgElement('text', { x: f1(at[0] + (right ? 8 : -8)), y: f1(at[1] + 4), 'text-anchor': right ? 'start' : 'end', class: 'ex-chart-surface-label' }, tick.label));
         }
     }
-    for (const t of mesh.xLines) walls.append(line(P(t.value, 0, zMin), P(t.value, 1, zMin), 'ex-chart-surface-grid'));
-    for (const t of mesh.yLines) walls.append(line(P(0, t.value, zMin), P(1, t.value, zMin), 'ex-chart-surface-grid'));
+    for (const t of mesh.xLines) walls.append(line(P(t.value, 0, zBack), P(t.value, 1, zBack), 'ex-chart-surface-grid'));
+    for (const t of mesh.yLines) walls.append(line(P(0, t.value, zBack), P(1, t.value, zBack), 'ex-chart-surface-grid'));
     svg.append(walls);
 
     // The faces, the farthest first, each in its colour band.
@@ -753,7 +796,8 @@ function drawSurface(svg, mesh, view, slice, W, H) {
     label(P(0.5, out(frontY, 0.22), zMin), mesh.xTitle, 'ex-chart-surface-label ex-chart-surface-title');
     label(P(out(frontX, 0.26), 0.5, zMin), mesh.yTitle, 'ex-chart-surface-label ex-chart-surface-title');
     if (upright && mesh.zTitle) {
-        label(P(backX, 1 - backY, zMax + (zMax - zMin) * 0.12), mesh.zTitle, 'ex-chart-surface-label ex-chart-surface-title');
+        const at = P(backX, 1 - backY, zMax + (zMax - zMin) * 0.12);
+        labels.append(svgElement('text', { x: f1(at[0] + (right ? 8 : -8)), y: f1(at[1] + 4), 'text-anchor': right ? 'start' : 'end', class: 'ex-chart-surface-label ex-chart-surface-title' }, mesh.zTitle));
     }
     svg.append(labels);
 
