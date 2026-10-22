@@ -191,7 +191,7 @@ public partial class ExChart
         _summary = ChartSummary.Of(Definition, _scene, _view, Title, Description);
         _table = _tableOpen && !ThinnedAtSource ? ChartCsv.WideTable(Definition, _metrics, _view) : null;
 
-        if (definitionChanged || previous is null || !previous.Positions.Equals(_scene.Positions) || !previous.Marks.Equals(_scene.Marks)
+        if (definitionChanged || previous is null || !previous.Positions.Equals(_scene.Positions) || !previous.Marks.Equals(_scene.Marks) || !previous.EdgeMarks.Equals(_scene.EdgeMarks)
             || !previous.Panels.Select(p => p.Plot).SequenceEqual(_scene.Panels.Select(p => p.Plot)))
         {
             _version++;
@@ -232,20 +232,35 @@ public partial class ExChart
         _dots = _reading.Lines.Where(l => l.Y is not null).Select(l => (l.Y!.Value, l.Look)).ToEquatableList();
     }
 
-    // On a scatter the pointer is over the nearest mark, if any (ADR-0290).
+    // On a scatter the pointer is over the nearest mark, if any (ADR-0290), or else the nearest edge,
+    // counted after the marks (ADR-0321).
     private void ReadMark(int index)
     {
-        if (index < 0 || index >= _scene.Marks.Count)
+        if (index < 0 || index >= _scene.Marks.Count + _scene.EdgeMarks.Count)
         {
             ClearPointer();
             return;
         }
-        var m = _scene.Marks[index];
+        var (_, y, panel) = MarkAt(index);
         _pointerIndex = index;
-        _pointerPanel = m.Panel;
-        _readingY = m.Y;
-        _reading = ChartReadings.OfMark(Definition, _scene, index);
-        _dots = _reading.Lines.Select(l => (m.Y, l.Look)).ToEquatableList();
+        _pointerPanel = panel;
+        _readingY = y;
+        _reading = index < _scene.Marks.Count
+            ? ChartReadings.OfMark(Definition, _scene, index)
+            : ChartReadings.OfEdge(Definition, _scene, index - _scene.Marks.Count);
+        _dots = _reading.Lines.Select(l => (y, l.Look)).ToEquatableList();
+    }
+
+    // Where the pointer's mark stands: a marker's centre, or an edge's middle.
+    private (double X, double Y, int Panel) MarkAt(int index)
+    {
+        if (index < _scene.Marks.Count)
+        {
+            var m = _scene.Marks[index];
+            return (m.X, m.Y, m.Panel);
+        }
+        var e = _scene.EdgeMarks[index - _scene.Marks.Count];
+        return ((e.Edge.X1 + e.Edge.X2) / 2, (e.Edge.Y1 + e.Edge.Y2) / 2, e.Panel);
     }
 
     // The pointer entry's reports (ADR-0255), through ChartPointer. Each carries the drawing's
@@ -525,11 +540,11 @@ public partial class ExChart
 
     private double PlotsBottom => _scene.Panels.Count == 0 ? 0 : _scene.Panels[^1].Plot.Y + _scene.Panels[^1].Plot.Height;
 
-    private double? GuideX => _pointerIndex is { } i ? (_scene.Scatter ? _scene.Marks[i].X : _scene.Positions[i].X) : null;
+    private double? GuideX => _pointerIndex is { } i ? (_scene.Scatter ? MarkAt(i).X : _scene.Positions[i].X) : null;
 
-    private double GuideTop => _scene.Scatter && _pointerIndex is { } i ? _scene.Marks[i].Y : PlotsTop;
+    private double GuideTop => _scene.Scatter && _pointerIndex is { } i ? MarkAt(i).Y : PlotsTop;
 
-    private double GuideBottom => _scene.Scatter && _pointerIndex is { } i ? _scene.Marks[i].Y : PlotsBottom;
+    private double GuideBottom => _scene.Scatter && _pointerIndex is { } i ? MarkAt(i).Y : PlotsBottom;
 
     private (double From, double To)? BandSpan => _scene.Scatter
         ? _pressAt is { } q && q.Version == _version && _dragAt is { } d ? (q.X, d.X) : null
@@ -664,9 +679,13 @@ public partial class ExChart
             // A scatter's marks, as x, y and panel in turn, with how far from one the pointer still
             // finds it and the lattice a drag is reported on (ADR-0290).
             var marks = _scene.Scatter ? _scene.Marks.SelectMany(m => new[] { Math.Round(m.X, 2), Math.Round(m.Y, 2), m.Panel }).ToArray() : null;
+            // Its edges, as the two ends and the panel in turn, found where no mark is in reach (ADR-0321).
+            var edges = _scene.Scatter && _scene.EdgeMarks.Count > 0
+                ? _scene.EdgeMarks.SelectMany(e => new[] { Math.Round(e.Edge.X1, 2), Math.Round(e.Edge.Y1, 2), Math.Round(e.Edge.X2, 2), Math.Round(e.Edge.Y2, 2), e.Panel }).ToArray()
+                : null;
             try
             {
-                await _handle.InvokeVoidAsync("draw", version, xs, marks, Math.Round(_metrics.LineHeight * 0.6, 2), DragCell);
+                await _handle.InvokeVoidAsync("draw", version, xs, marks, Math.Round(_metrics.LineHeight * 0.6, 2), DragCell, edges);
                 if (!_told)
                 {
                     _told = true;

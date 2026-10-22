@@ -56,7 +56,9 @@
             ("step", nodes.Select(n => n.Step).ToArray()),
             ("spot", nodes.Select(n => Math.Round(n.Spot, 2)).ToArray()),
             ("value", nodes.Select(n => Math.Round(n.Value, 2)).ToArray()),
-            ("reach", nodes.Select(n => Math.Round(Choose(n.Step, n.Up) * Math.Pow(p, n.Up) * Math.Pow(1 - p, n.Step - n.Up), 4)).ToArray()));
+            ("reach", nodes.Select(n => Math.Round(Choose(n.Step, n.Up) * Math.Pow(p, n.Up) * Math.Pow(1 - p, n.Step - n.Up), 4)).ToArray()),
+            ("exercised", nodes.Select(n => n.Early ? "early" : "no").ToArray()),
+            ("spare", nodes.Select(n => "not named").ToArray()));
     }
 
     private static IChartData MakeBranches()
@@ -77,6 +79,7 @@
               "data": "lattice", "x": "step", "y": "spot", "key": "node", "label": "node",
               "colour": { "column": "value", "scale": "sequential", "title": "Value" },
               "size": { "column": "reach", "title": "Chance of reaching" },
+              "tooltip": ["exercised"],
               "edges": { "data": "branches", "from": "from", "to": "to" }
             }
           ]

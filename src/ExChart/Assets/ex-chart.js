@@ -112,6 +112,8 @@ export function attach(root, core) {
     // A scatter's marks (ADR-0290), as x, y and panel in turn, how near the pointer must be to one,
     // and the lattice a drag is reported on; null on a chart of lines.
     let marks = null;
+    // Its edges (ADR-0321), as the two ends and the panel in turn, found where no mark is in reach.
+    let edges = null;
     let reach = 0;
     let cell = 4;
     let lastCell = '';
@@ -142,8 +144,9 @@ export function attach(root, core) {
         return lo;
     };
 
-    // The mark nearest the point, in its panel and within reach, or -1. It reads only the positions
-    // .NET handed over with the drawing; nothing is measured (ADR-0255).
+    // The mark nearest the point, in its panel and within reach; where none is, the nearest edge in
+    // reach, counted after the marks (ADR-0321); or -1. It reads only the positions .NET handed over
+    // with the drawing; nothing is measured (ADR-0255).
     const nearestMark = (point) => {
         let best = -1;
         let bestDistance = reach * reach;
@@ -156,6 +159,24 @@ export function attach(root, core) {
             const distance = dx * dx + dy * dy;
             if (distance <= bestDistance) {
                 best = i / 3;
+                bestDistance = distance;
+            }
+        }
+        if (best >= 0 || !edges) {
+            return best;
+        }
+        for (let i = 0; i < edges.length; i += 5) {
+            if (edges[i + 4] !== point.panel) {
+                continue;
+            }
+            const [x1, y1, x2, y2] = [edges[i], edges[i + 1], edges[i + 2], edges[i + 3]];
+            const length = (x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1);
+            const t = length === 0 ? 0 : Math.max(0, Math.min(1, ((point.x - x1) * (x2 - x1) + (point.y - y1) * (y2 - y1)) / length));
+            const dx = x1 + t * (x2 - x1) - point.x;
+            const dy = y1 + t * (y2 - y1) - point.y;
+            const distance = dx * dx + dy * dy;
+            if (distance <= bestDistance) {
+                best = marks.length / 3 + i / 5;
                 bestDistance = distance;
             }
         }
@@ -275,12 +296,14 @@ export function attach(root, core) {
     return {
         /**
          * A new drawing: its version and its positions' offsets, left to right; on a scatter, its marks
-         * as x, y and panel in turn, how near the pointer must come to one, and the drag's lattice.
+         * as x, y and panel in turn, how near the pointer must come to one, the drag's lattice, and its
+         * edges as the two ends and the panel in turn.
          */
-        draw(newVersion, newXs, newMarks, newReach, newCell) {
+        draw(newVersion, newXs, newMarks, newReach, newCell, newEdges) {
             version = newVersion;
             xs = Array.isArray(newXs) ? newXs : [];
             marks = Array.isArray(newMarks) ? newMarks : null;
+            edges = marks && Array.isArray(newEdges) ? newEdges : null;
             reach = Number.isFinite(newReach) ? newReach : 0;
             cell = Number.isFinite(newCell) && newCell > 0 ? newCell : 4;
             lastIndex = -1;

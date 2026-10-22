@@ -13,7 +13,11 @@ public sealed record ChartEdge(object From, object To);
 /// <param name="Y1">Where it starts down.</param>
 /// <param name="X2">Where it ends across.</param>
 /// <param name="Y2">Where it ends down.</param>
-public readonly record struct DrawnEdge(double X1, double Y1, double X2, double Y2);
+public readonly record struct DrawnEdge(double X1, double Y1, double X2, double Y2)
+{
+    /// <summary>Which of its series' <see cref="ChartSeries.Edges"/> it is.</summary>
+    public int Index { get; init; }
+}
 
 internal static class Edges
 {
@@ -48,10 +52,10 @@ internal static class Edges
         var at = new Dictionary<object, (double X, double Y)>();
         foreach (var p in s.Points)
             at[p.Row!] = (mapX(p.X), mapY(p.Y!.Value.ToDouble()));
-        foreach (var e in s.Edges)
+        for (var i = 0; i < s.Edges.Count; i++)
         {
-            var (a, b) = (at[e.From], at[e.To]);
-            if (Clip(a.X, a.Y, b.X, b.Y, plot) is { } cut) yield return cut;
+            var (a, b) = (at[s.Edges[i].From], at[s.Edges[i].To]);
+            if (Clip(a.X, a.Y, b.X, b.Y, plot) is { } cut) yield return cut with { Index = i };
         }
     }
 

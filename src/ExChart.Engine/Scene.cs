@@ -74,6 +74,12 @@ public sealed record VerticalAxis(AxisSide Side, double Min, double Max, Equatab
 /// <param name="Count">How many of the series' points it stands for.</param>
 public readonly record struct ChartMark(string SeriesId, int Panel, double X, double Y, int Point, int Count);
 
+/// <summary>An edge as the pointer finds it (ADR-0321): which series, the panel it is drawn in, and where.</summary>
+/// <param name="SeriesId">The series' identity.</param>
+/// <param name="Panel">The panel it is drawn in.</param>
+/// <param name="Edge">The edge as drawn, cut to the plot; its <see cref="DrawnEdge.Index"/> names which of the series' edges it is.</param>
+public readonly record struct ChartEdgeMark(string SeriesId, int Panel, DrawnEdge Edge);
+
 /// <summary>One series as the scene draws it: everything its component needs, equal when nothing in it changed (ADR-0252).</summary>
 /// <param name="Id">The series' identity.</param>
 /// <param name="Name">Its name.</param>
@@ -146,6 +152,12 @@ public sealed record ChartScene(EquatableList<PanelScene> Panels, EquatableList<
 
     /// <summary>The Observation series' marks, in drawing order, which the pointer finds the nearest of (ADR-0290).</summary>
     public EquatableList<ChartMark> Marks { get; init; } = EquatableList<ChartMark>.Empty;
+
+    /// <summary>
+    /// The edges drawn, which the pointer finds the nearest of where no mark is within reach (ADR-0321);
+    /// the pointer's index counts them after <see cref="Marks"/>.
+    /// </summary>
+    public EquatableList<ChartEdgeMark> EdgeMarks { get; init; } = EquatableList<ChartEdgeMark>.Empty;
 
     /// <summary>Whether the axis across is logarithmic as drawn (ADR-0290).</summary>
     public bool LogarithmicX { get; init; }
@@ -283,6 +295,7 @@ public sealed record ChartScene(EquatableList<PanelScene> Panels, EquatableList<
 
         var panels = new List<PanelScene>();
         var marks = new List<ChartMark>();
+        var edgeMarks = new List<ChartEdgeMark>();
         var y = pad;
         for (var pi = 0; pi < specs.Count; pi++)
         {
@@ -325,6 +338,9 @@ public sealed record ChartScene(EquatableList<PanelScene> Panels, EquatableList<
                 foreach (var piece in pieces.Where(p => p.Kind == SeriesKind.Observation))
                     foreach (var m in piece.Markers)
                         marks.Add(new ChartMark(piece.Id, pi, m.X, m.Y, m.Point, m.Count));
+            foreach (var piece in pieces)
+                foreach (var e in piece.Edges)
+                    edgeMarks.Add(new ChartEdgeMark(piece.Id, pi, e));
             var zero = left is { } l && l.Min <= 0 && l.Max >= 0 ? YOf(l, 0, plot) : right is { } r && r.Min <= 0 && r.Max >= 0 ? YOf(r, 0, plot) : (double?)null;
             var entries = Legend(LegendSeries(definition.Series, name), rows[pi], legend, metrics, plot, legendY, looks,
                 s => definition.Series.Where(o => LegendKey(o, definition.Series) == LegendKey(s, definition.Series)).All(o => !visible.Contains(o)),
@@ -351,6 +367,7 @@ public sealed record ChartScene(EquatableList<PanelScene> Panels, EquatableList<
             XTitle = TitleOf(axis, merged.Select(m => (m.Value.Period, visible.First(s => s.Id == m.Key).MergeTo is not null))),
             Scatter = scatter,
             Marks = marks.ToEquatableList(),
+            EdgeMarks = edgeMarks.ToEquatableList(),
             LogarithmicX = logX,
             ColourKeys = colourKeys.ToEquatableList(),
             SizeKeys = sizeKeys.ToEquatableList(),

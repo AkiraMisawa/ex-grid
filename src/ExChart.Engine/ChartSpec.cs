@@ -46,7 +46,7 @@ public static class ChartSpec
     internal static readonly string[] RootKeys = ["version", "title", "axis", "series", "notes"];
     internal static readonly string[] AxisKeys = ["values", "title", "scale", "packed"];
     internal static readonly string[] SeriesKeys =
-        ["id", "name", "kind", "data", "x", "y", "open", "high", "low", "close", "volume", "label", "panel", "axis", "fromZero", "step", "colour", "size", "key", "edges"];
+        ["id", "name", "kind", "data", "x", "y", "open", "high", "low", "close", "volume", "label", "panel", "axis", "fromZero", "step", "colour", "size", "key", "edges", "tooltip"];
     internal static readonly string[] EdgeKeys = ["data", "from", "to"];
     internal static readonly string[] ColourKeys = ["column", "scale", "centre", "title"];
     internal static readonly string[] SizeKeys = ["column", "title"];
@@ -230,7 +230,8 @@ public static class ChartSpec
                 "colour": { "$ref": "#/$defs/colour" },
                 "size": { "$ref": "#/$defs/size" },
                 "key": { "type": "string", "description": "An observation's column of node keys, which its edges name." },
-                "edges": { "$ref": "#/$defs/edges" }
+                "edges": { "$ref": "#/$defs/edges" },
+                "tooltip": { "type": "array", "items": { "type": "string" }, "description": "An observation's columns its tooltip says beside its values, such as a node's probability; no other column is said." }
               }
             },
             "edges": {
@@ -412,6 +413,8 @@ public static class ChartSpec
                     edges[r] = new ChartEdge(Key(edgeTable.Value(from, r), $"{at}.from", edgeHandle, r), Key(edgeTable.Value(to, r), $"{at}.to", edgeHandle, r));
                 result = result with { Edges = edges };
             }
+            if (s.TryGetProperty("tooltip", out var tooltipElement))
+                result = result with { Details = Details(tooltipElement, $"{path}.tooltip", kind, handle, table) };
             if (s.TryGetProperty("colour", out var colourElement))
                 result = result with { ColourBy = Colour(colourElement, $"{path}.colour", handle, table) };
             if (s.TryGetProperty("size", out var sizeElement))
@@ -454,6 +457,33 @@ public static class ChartSpec
             else if (diverging)
                 throw Refuse($"{path}.centre", $"{path}.centre is missing: a diverging scale says the value that means nothing, such as 0 for a P&L or 1 for a ratio.");
             return new PointColour(String(c, "title", path) ?? column, Values(table, column, $"{path}.column", handle)) { Centre = centre };
+        }
+
+        // The columns an observation's tooltip says, each one value a row written as the table holds it (ADR-0321).
+        private static PointDetail[] Details(JsonElement t, string path, SeriesKind kind, string handle, IChartData table)
+        {
+            if (kind != SeriesKind.Observation)
+                throw Refuse(path, $"{path} belongs to an observation, whose tooltip names one point; a line's tooltip reads every series at a position.");
+            if (t.ValueKind != JsonValueKind.Array)
+                throw Refuse(path, $"{path} is a list of the columns its tooltip says.");
+            var details = new List<PointDetail>();
+            var n = 0;
+            foreach (var c in t.EnumerateArray())
+            {
+                var at = $"{path}[{n++}]";
+                if (c.ValueKind != JsonValueKind.String)
+                    throw Refuse(at, $"{at} names a column, as text.");
+                var name = c.GetString()!;
+                if (!table.Columns.Contains(name))
+                    throw Refuse(at, $"{at}: \"{handle}\" has no column \"{name}\"; its columns are {string.Join(", ", table.Columns)}.");
+                if (details.Any(d => d.Title == name))
+                    throw Refuse(at, $"{at} names \"{name}\" twice.");
+                var values = new string?[table.RowCount];
+                for (var r = 0; r < values.Length; r++)
+                    values[r] = table.Value(name, r) is { } v ? Text(v) : null;
+                details.Add(new PointDetail(name, values));
+            }
+            return details.ToArray();
         }
 
         // A key is compared as its text, so a key read as a number in one table meets the same key in another.

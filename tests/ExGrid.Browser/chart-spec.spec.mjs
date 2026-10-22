@@ -60,6 +60,22 @@ test('ADR-0320: the tooltip on a node reads its colour\'s and its size\'s values
     await expect(tooltip.locator('.ex-chart-tooltip-position')).toHaveText('0:0');
     await expect(tooltip).toContainText('Value ');
     await expect(tooltip).toContainText('Chance of reaching 1');
+    // Ticket 73: the column the spec names in "tooltip" is said, and a column it does not name is not.
+    await expect(tooltip).toContainText('exercised no');
+    await expect(tooltip).not.toContainText('not named');
+});
+
+test('ADR-0321: the tooltip over an edge, away from any node, says its two keys', async ({ page }) => {
+    const marks = await markers(page);
+    const root = marks.reduce((a, b) => (b.x < a.x ? b : a));
+    // The root's upper branch runs to the node of step 1 with the higher spot (drawn higher, so a smaller y).
+    const step1 = marks.filter(m => m.x > root.x).sort((a, b) => a.x - b.x).slice(0, 2).sort((a, b) => a.y - b.y)[0];
+    await chart(page).scrollIntoViewIfNeeded();
+    const box = await chart(page).locator('svg').first().boundingBox();
+    await page.mouse.move(box.x + (root.x + step1.x) / 2, box.y + (root.y + step1.y) / 2);
+    const tooltip = chart(page).locator('.ex-chart-tooltip');
+    await expect(tooltip.locator('.ex-chart-tooltip-position')).toHaveText('0:0 → 1:1');
+    await expect(tooltip).toContainText('edge from 0:0 to 1:1');
 });
 
 test('ADR-0320: a spec with numbers in it is refused with its path and reason, and no chart is drawn', async ({ page }) => {

@@ -39,9 +39,16 @@
             Notes say how many. The tooltip and the CSV carry both values.
         </p>
         <p>
+            The tooltip says a mark's name, its position and value, and its colour's and size's values; it says no
+            other column unless the spec names it in <code>tooltip</code>, a list of columns, such as the lattice's
+            <code>"tooltip": ["exercised"]</code>. Each is said with its column's name, and the table and the CSV
+            carry it too. In C#, <code>Details = [new PointDetail(title, values)]</code>.
+        </p>
+        <p>
             Edges join an Observation's nodes, each named by its key column, as the branches of a lattice or the
             links of a network (ADR-0321). An edge has no look of its own and reads only as a line between its nodes;
-            an edge to a key no node carries is refused, never dropped. In C#, the same are
+            an edge to a key no node carries is refused, never dropped. With the pointer near an edge and no node
+            in reach, the tooltip says the edge's two keys. In C#, the same are
             <code>ColourBy = new PointColour(title, values) { Centre = 0 }</code>,
             <code>SizeBy = new PointSize(title, values)</code> and <code>Edges = [new ChartEdge(from, to)]</code> on
             the series, each node's key its point's <code>Row</code>.
