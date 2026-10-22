@@ -18,7 +18,7 @@ public class SurfaceTests : BunitContext
         _handle = module.SetupModule("attachSurface", _ => true);
         _handle.SetupVoid("draw", _ => true).SetVoidResult();
         _handle.SetupVoid("dispose", _ => true).SetVoidResult();
-        _handle.Setup<string?>("svgText").SetResult("<svg xmlns=\"http://www.w3.org/2000/svg\"></svg>");
+        _handle.Setup<Microsoft.JSInterop.IJSStreamReference?>("svgBytes").SetResult(new Bytes("<svg xmlns=\"http://www.w3.org/2000/svg\"></svg>"));
     }
 
     private static SurfaceDefinition Vol(double? hole = 9.6) => new(
@@ -136,6 +136,18 @@ public class SurfaceTests : BunitContext
         Assert.Equal(before + 1, _handle.Invocations["draw"].Count);
         Assert.Equal(new SurfaceView(90, 10), draw.Arguments[2]);
         Assert.Equal(revision + 1, draw.Arguments[3]);
+    }
+
+    /// <summary>The drawing's bytes as the 3D entry hands them over, a stream whatever their size.</summary>
+    private sealed class Bytes(string text) : Microsoft.JSInterop.IJSStreamReference
+    {
+        private readonly byte[] _bytes = System.Text.Encoding.UTF8.GetBytes(text);
+        public long Length => _bytes.LongLength;
+        public ValueTask<Stream> OpenReadStreamAsync(long maxAllowedSize = 512000, CancellationToken cancellationToken = default) =>
+            Length > maxAllowedSize ? throw new ArgumentOutOfRangeException(nameof(maxAllowedSize)) : ValueTask.FromResult<Stream>(new MemoryStream(_bytes, writable: false));
+        public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+        public ValueTask<TValue> InvokeAsync<TValue>(string identifier, object?[]? args) => throw new NotSupportedException();
+        public ValueTask<TValue> InvokeAsync<TValue>(string identifier, CancellationToken cancellationToken, object?[]? args) => throw new NotSupportedException();
     }
 
     [Fact] // ADR-0282: the drawing as it stands is handed over as SVG text, for a file

@@ -143,7 +143,17 @@ public partial class ExSurface
         if (handle is null || _disposed) return null;
         try
         {
-            return await handle.InvokeAsync<string?>("svgText");
+            // The text crosses as a stream: a drawing of any size is more than one message of a Server
+            // circuit carries, and a message over it closes the circuit.
+            var reference = await handle.InvokeAsync<IJSStreamReference?>("svgBytes");
+            if (reference is null) return null;
+            await using (reference)
+            {
+                var bytes = new MemoryStream();
+                await using (var stream = await reference.OpenReadStreamAsync(maxAllowedSize: reference.Length))
+                    await stream.CopyToAsync(bytes);
+                return System.Text.Encoding.UTF8.GetString(bytes.GetBuffer(), 0, (int)bytes.Length);
+            }
         }
         catch (Exception ex) when (ex is JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
         {

@@ -587,6 +587,11 @@ export function attachSurface(box, core) {
          * The drawing as it stands, as SVG text that carries its own size and its colours resolved,
          * for a file (ADR-0282): painted off the page, it has no stylesheet to read.
          */
+        /** The drawing's text as UTF-8 bytes, which cross to .NET as a stream whatever its size. */
+        svgBytes() {
+            const text = this.svgText();
+            return text ? new TextEncoder().encode(text) : null;
+        },
         svgText() {
             const copy = svg.cloneNode(true);
             copy.setAttribute('xmlns', SVG_NS);
