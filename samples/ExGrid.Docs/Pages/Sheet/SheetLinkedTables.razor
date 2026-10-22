@@ -31,6 +31,12 @@ await sheet.PushLinkedTableAsync("CostCentres", centres.Select(c => c.ToRow()));
                 regardless; declaring the same table again changes nothing.
             </li>
             <li>
+                <b>A table and a column are matched without regard to case, and written as you declared them.</b>
+                <code>=sum(costcentres[actual])</code> is stored and shown as <code>=SUM(CostCentres[Actual])</code>,
+                as Excel writes a structured reference back in its table's case. A Formula typed before its table is
+                declared keeps the case it was typed in.
+            </li>
+            <li>
                 A column the table does not have is <code>#REF!</code>; a table that is not declared is
                 <code>#NAME?</code>. A declared table's name typed on its own is <code>#NAME?</code> as well, which no
                 Formula catches: a Linked Table is read by its columns, never whole.
