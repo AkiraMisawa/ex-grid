@@ -62,6 +62,7 @@ public class ChartSpecSurfaceTests
         Assert.Equal(8.7, s.At(2, 1)!.Value.ToDouble());
         Assert.Equal(["Mid quotes."], s.Notes);
         Assert.Throws<InvalidOperationException>(() => reading.Definition);
+        Assert.StartsWith("ChartSpecReading { Title = EURUSD volatility, Surface = ", reading.ToString()); // printed, not thrown
     }
 
     [Fact] // ADR-0320: the tool answers a surface with the surface said in words

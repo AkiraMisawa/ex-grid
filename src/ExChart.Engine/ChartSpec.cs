@@ -51,6 +51,15 @@ public sealed record ChartSpecReading
 
     /// <summary>The 3D surface a spec of one describes (ADR-0274), drawn by <c>ExSurface</c>; null for a spec of series.</summary>
     public SurfaceDefinition? Surface { get; }
+
+    // Printed from what it holds: the generated one would read Definition, which throws for a surface.
+    private bool PrintMembers(System.Text.StringBuilder builder)
+    {
+        builder.Append("Title = ").Append(Title).Append(", ");
+        if (Surface is { } surface) builder.Append("Surface = ").Append(surface);
+        else builder.Append("Definition = ").Append(_definition);
+        return true;
+    }
 }
 
 /// <summary>The tool an AI calls with a Chart Spec, as a host hands it to a model (ADR-0320).</summary>
@@ -551,10 +560,16 @@ public static class ChartSpec
                         };
                 }
                 // A row that alone holds its x, or its y, joins a surface only by interpolation, which is not the chart's.
-                foreach (var (axisValues, of, title, other, key0) in new[] { (xs.Values, xs.Of, xTitle, yTitle, "x"), (ys.Values, ys.Of, yTitle, xTitle, "y") })
+                // Counted once over the rows, each value looked up by its index on the axis.
+                foreach (var (axisValues, of, index, title, other, key0) in new[] { (xs.Values, xs.Of, xIndex, xTitle, yTitle, "x"), (ys.Values, ys.Of, yIndex, yTitle, xTitle, "y") })
+                {
+                    var held = new int[axisValues.Count];
+                    foreach (var o in of)
+                        held[index[o]]++;
                     foreach (var v in axisValues)
-                        if (of.Count(o => Equals(o, v)) < 2)
+                        if (held[index[v]] < 2)
                             throw Refuse($"{path}.{key0}", $"{path}.{key0}: {title} {Write(v)} has a value at only one {other}. Rows that form no grid join a surface only by interpolation, which the chart does not choose: have the capability interpolate them onto a grid and name its method, or hand its own triangles.");
+                }
                 var xAxis = new SurfaceAxis(xTitle, xs.Values, Format(xs.Values)) { Scale = xScale ?? AxisScale.Categories };
                 var yAxis = new SurfaceAxis(yTitle, ys.Values, Format(ys.Values)) { Scale = yScale ?? AxisScale.Categories };
                 surface = Defined(path, () => new SurfaceDefinition(xAxis, yAxis, grid, zTitle, null, method,

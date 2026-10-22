@@ -157,23 +157,40 @@ public class ChartRenderingTests : BunitContext
         [
             ChartSeries.Of("zero-quoted", "Zero rate", SeriesKind.Level, [P(1, 3.0), P(5, 3.2), P(10, 3.4)]) with { Keys = new("Zero", null, "circle") },
             ChartSeries.Of("zero-curve", "Zero rate", SeriesKind.Level, [P(1, 3.0), P(3, 3.1), P(5, 3.2), P(10, 3.4)]) with { Keys = new("Zero"), Interpolated = true },
-            ChartSeries.Of("hazard", "Hazard", SeriesKind.Level, [P(1, 1), P(10, 2)]),
+            ChartSeries.Of("Zero", "Hazard", SeriesKind.Level, [P(1, 1), P(10, 2)]) with { Keys = new("Hazard") },
         ]);
-        var cut = Render(definition, ps => ps.Add(c => c.OnSeriesVisibilityChanged, (SeriesVisibility v) => told = v));
-        Assert.Equal(["Zero", "hazard"], cut.FindAll("g.ex-chart-legend-entry").Select(e => e.GetAttribute("data-series")));
+        // The curve hidden by its own key: the entry still stands for it.
+        var cut = Render(definition, ps => ps
+            .Add(c => c.HiddenSeries, new HashSet<string> { "zero-curve" })
+            .Add(c => c.OnSeriesVisibilityChanged, (SeriesVisibility v) => told = v));
+        Assert.Equal(["zero-quoted", "Zero"], cut.FindAll("g.ex-chart-legend-entry").Select(e => e.GetAttribute("data-series")));
 
-        await cut.Find("g.ex-chart-legend-entry[data-series='Zero']").ClickAsync(new MouseEventArgs());
-        Assert.Equal(new SeriesVisibility("Zero", true), told);
+        await cut.Find("g.ex-chart-legend-entry[data-series='zero-quoted']").ClickAsync(new MouseEventArgs());
+        Assert.Equal(new SeriesVisibility("zero-quoted", true), told);
         Assert.Empty(cut.FindAll("g.ex-chart-series[data-series='zero-quoted']"));
         Assert.Empty(cut.FindAll("g.ex-chart-series[data-series='zero-curve']"));
-        Assert.Single(cut.FindAll("g.ex-chart-series[data-series='hazard']"));
-        Assert.Contains("ex-chart-hidden", cut.Find("g.ex-chart-legend-entry[data-series='Zero']").ClassName);
+        // A series whose identity is the pair's colour key is not hidden with it.
+        Assert.Single(cut.FindAll("g.ex-chart-series[data-series='Zero']"));
+        Assert.Contains("ex-chart-hidden", cut.Find("g.ex-chart-legend-entry[data-series='zero-quoted']").ClassName);
         Assert.DoesNotContain(cut.FindAll(".ex-chart-notes li"), n => n.TextContent.Contains("no series has that key"));
 
-        await cut.Find("g.ex-chart-legend-entry[data-series='Zero']").ClickAsync(new MouseEventArgs());
-        Assert.Equal(new SeriesVisibility("Zero", false), told);
+        await cut.Find("g.ex-chart-legend-entry[data-series='zero-quoted']").ClickAsync(new MouseEventArgs());
+        Assert.Equal(new SeriesVisibility("zero-quoted", false), told);
         Assert.Single(cut.FindAll("g.ex-chart-series[data-series='zero-quoted']"));
         Assert.Single(cut.FindAll("g.ex-chart-series[data-series='zero-curve']"));
+    }
+
+    [Fact] // ADR-0257: two quote series of one colour key are not guessed between: each keeps its entry
+    public void Two_quote_series_of_one_colour_key_keep_their_entries()
+    {
+        var definition = new ChartDefinition(ChartAxis.Numbers("Years"),
+        [
+            ChartSeries.Of("bid", "Bid", SeriesKind.Level, [P(1, 3.0), P(10, 3.4)]) with { Keys = new("Zero", null, "circle") },
+            ChartSeries.Of("ask", "Ask", SeriesKind.Level, [P(1, 3.1), P(10, 3.5)]) with { Keys = new("Zero", null, "circle") },
+            ChartSeries.Of("curve", "Curve", SeriesKind.Level, [P(1, 3.05), P(10, 3.45)]) with { Keys = new("Zero"), Interpolated = true },
+        ]);
+        var cut = Render(definition);
+        Assert.Equal(["bid", "ask", "curve"], cut.FindAll("g.ex-chart-legend-entry").Select(e => e.GetAttribute("data-series")));
     }
 
     [Fact] // ADR-0272: the hidden keys are taken back as a parameter, and kept across a data replacement

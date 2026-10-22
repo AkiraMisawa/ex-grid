@@ -11,3 +11,7 @@ entry. `ChartScene.Legend` writes an entry per series, so the Docs Site's "Serie
 - [x] The legend writes one entry for a colour key shared by quotes and an Interpolated series of the same panel
 - [x] Clicking it hides both, and `OnSeriesVisibilityChanged` names the key it raised
 - [x] Layer 2 test naming ADR-0257; the Docs page says "The legend shows one entry" again
+
+## Comments
+
+- 2026-10-22: built. The entry is keyed by the quotes' identity rather than the colour key, so a key never names another series; two quote series of one colour key keep an entry each, since which one the curve belongs to is not guessed; showing the entry again shows every series it stands for (`ChartScene.LegendMembers`).

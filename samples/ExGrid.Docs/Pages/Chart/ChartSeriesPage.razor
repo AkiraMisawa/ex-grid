@@ -25,8 +25,9 @@
             ExChart holds no interpolation. To show the difference between quotes and a curve, hand two series
             with the same colour key: the quotes, drawn as markers, and the curve your analytics evaluated,
             declared <code>Interpolated</code>. The tooltip says "(quoted)" or "(interpolated)". The legend shows one
-            entry for both, named by their colour key: clicking it hides the quotes and the curve together, and
-            <code>OnSeriesVisibilityChanged</code> names that key. A curve may declare its <code>Segments</code>, each a range with its method's
+            entry for both, keyed by the quotes' identity: clicking it hides the quotes and the curve together, and
+            <code>OnSeriesVisibilityChanged</code> names the quotes. Two quote series of one colour key are not
+            guessed between, so each keeps an entry of its own, as their curve does. A curve may declare its <code>Segments</code>, each a range with its method's
             name; the tooltip names the method at its position, no line is joined across a boundary, and an
             extrapolated segment is drawn distinctly. A curve may also be handed as a function with
             <code>ChartSeries.Sampled</code>, which ExChart asks at about one position per device pixel.

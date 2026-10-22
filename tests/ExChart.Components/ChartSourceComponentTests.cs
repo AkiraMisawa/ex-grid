@@ -103,6 +103,43 @@ public class ChartSourceComponentTests : BunitContext
         Assert.True(cut.Find(".ex-chart-stage").HasAttribute("hidden"));
     }
 
+    [Fact] // ADR-0344, spine rule 6: a spec built again with the same text, or the same sources, is not asked again
+    public void The_same_spec_and_sources_are_not_asked_again()
+    {
+        var source = new Gated(Ticks());
+        var cut = Render(source);
+        source.Answer(0);
+        cut.WaitForAssertion(() => Assert.Single(cut.FindAll("g.ex-chart-series")));
+
+        cut.Render(ps => ps.Add(c => c.Spec, new string(Spec.AsSpan())));
+        Assert.Single(source.Asks);
+        Assert.Single(cut.FindAll("g.ex-chart-series"));
+    }
+
+    [Fact] // ADR-0344, spine rule 6: a Definition given while an ask is out is drawn, and the ask's answer, or its failure, is dropped
+    public void An_ask_left_out_by_a_definition_is_dropped()
+    {
+        var source = new Gated(Ticks());
+        var cut = Render(source);
+        var definition = new ChartDefinition(ChartAxis.Numbers(), [ChartSeries.Of("d", "D", SeriesKind.Level, [new ChartPoint(0, ChartValue.Of(1.0)), new ChartPoint(1, ChartValue.Of(2.0))])]);
+        cut.Render(ps => ps.Add(c => c.Spec, (string?)null).Add(c => c.Sources, null).Add(c => c.Definition, definition));
+        Assert.Null(cut.Find(".ex-chart").GetAttribute("aria-busy"));
+
+        source.Asks[0].Answer.SetException(new TaskCanceledException("timed out"));
+        Assert.Empty(cut.FindAll(".ex-chart-source-refusal"));
+        Assert.Single(cut.FindAll("g.ex-chart-series[data-series='d']"));
+    }
+
+    [Fact] // ADR-0344: a source that cancels its own ask is said, and the chart is not left Busy
+    public void A_source_that_cancels_is_said_and_not_left_busy()
+    {
+        var source = new Gated(Ticks());
+        var cut = Render(source);
+        source.Asks[0].Answer.SetException(new TaskCanceledException("timed out"));
+        cut.WaitForAssertion(() => Assert.Contains("did not answer", cut.Find(".ex-chart-source-refusal").TextContent));
+        Assert.Null(cut.Find(".ex-chart").GetAttribute("aria-busy"));
+    }
+
     [Fact] // ADR-0344: a spec its sources cannot answer is said in the chart's place
     public void A_refused_spec_is_said_in_the_charts_place()
     {

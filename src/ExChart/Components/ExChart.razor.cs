@@ -184,7 +184,9 @@ public partial class ExChart
         if (!_parameters.Taken || _parameters.Scale != Scale) _scale = Scale;
         var rangeChanged = _asked == 0 || _askedRange != _range;
         _parameters = (HiddenSeries, Range, Scale, true);
-        if (Spec is not null && (!ReferenceEquals(_askedSpec, Spec) || !ReferenceEquals(_askedSources, Sources)))
+        // Compared by value: a spec built again on each render, or a method group's new delegate, is
+        // the same ask and is not read again.
+        if (Spec is not null && (!string.Equals(_askedSpec, Spec, StringComparison.Ordinal) || !Equals(_askedSources, Sources)))
         {
             // Another spec or other sources: what was read from the last is not drawn under the new.
             _read = null;
@@ -198,7 +200,9 @@ public partial class ExChart
         }
         else if (Spec is null)
         {
-            (_read, _askedSpec, _askedSources, _refusal) = (null, null, null, null);
+            // An ask still out is dropped when it answers: the Consumer's Definition is drawn now.
+            if (_askedSpec is not null) _asked++;
+            (_read, _askedSpec, _askedSources, _refusal, _asking) = (null, null, null, null, false);
         }
         Rebuild();
     }
@@ -243,8 +247,10 @@ public partial class ExChart
         {
             refusal = e.Message;
         }
-        catch (Exception e) when (e is not OperationCanceledException)
+        catch (Exception e)
         {
+            // A source's own cancellation or timeout too: the chart says it was not answered, and is
+            // never left waiting on an ask that ended.
             refusal = $"The source did not answer the chart: {e.Message}";
         }
         // Another ask replaced this one, or the chart is gone: dropped (spine rule 6).
@@ -504,6 +510,9 @@ public partial class ExChart
     {
         var hidden = new HashSet<string>(_hidden);
         var nowHidden = hidden.Add(key) || !hidden.Remove(key);
+        // Shown again, an entry shows every series it stands for, even one hidden by its own key (ADR-0257).
+        if (!nowHidden)
+            hidden.ExceptWith(ChartScene.LegendMembers(Drawn, key));
         _hidden = hidden;
         Rebuild();
         await OnSeriesVisibilityChanged.InvokeAsync(new SeriesVisibility(key, nowHidden));
