@@ -110,7 +110,7 @@ public sealed record SurfaceSlice(SurfaceSliceAxis Axis, object Value)
 /// centre's offset as fractions of the drawing's width and height. Never pixels.
 /// </summary>
 /// <param name="Yaw">The turn about the vertical, in degrees.</param>
-/// <param name="Pitch">The tilt from level, in degrees, 0 to 90.</param>
+/// <param name="Pitch">The tilt from level, in degrees, -90 (seen from below) to 90 (seen from above).</param>
 /// <param name="Zoom">The zoom, 1 fitting the surface to its box.</param>
 /// <param name="PanX">The centre's horizontal offset, as a fraction of the width.</param>
 /// <param name="PanY">The centre's vertical offset, as a fraction of the height.</param>

@@ -39,34 +39,120 @@ test('ADR-0274: the tooltip names the grid point nearest the pointer, each value
     await expect(tooltip).toHaveCount(0);
 });
 
-test('ADR-0274, ADR-0272: a drag turns the surface, and the view is raised when it ends', async ({ page }) => {
+/** The view the page last wrote, as numbers. */
+async function viewOf(page) {
+    const text = await events(page).textContent();
+    const [, yaw, pitch, zoom, panX, panY] = /^View: yaw (\S+), pitch (\S+), zoom (\S+), pan (\S+) (\S+)$/.exec(text);
+    return { yaw: Number(yaw), pitch: Number(pitch), zoom: Number(zoom), panX: Number(panX), panY: Number(panY) };
+}
+
+/** The wall polygons' corners, floor first, as the 3D entry drew them. */
+async function walls(page) {
+    const all = await box(page).locator('.ex-chart-surface-walls polygon.ex-chart-surface-wall').evaluateAll((polygons) =>
+        polygons.map((p) => p.getAttribute('points').split(' ').map((xy) => xy.split(',').map(Number))));
+    return all;
+}
+
+test('ADR-0274, ADR-0272: a drag turns the surface, a turn for the box\'s height, and the view is raised when it ends', async ({ page }) => {
     const before = await box(page).locator('polygon.ex-chart-surface-face').first().getAttribute('points');
     const frame = await box(page).boundingBox();
     await page.mouse.move(frame.x + 40, frame.y + 40);
     await page.mouse.down();
     await page.mouse.move(frame.x + 140, frame.y + 60, { steps: 5 });
     await page.mouse.up();
-    await expect(events(page)).toHaveText('View: yaw 5, pitch 34, zoom 1, pan 0 0');
+    await expect(events(page)).toHaveText(/^View: /);
+    const view = await viewOf(page);
+    expect(view.yaw).toBeCloseTo(-35 + (100 * 360) / frame.height, 0);
+    expect(view.pitch).toBeCloseTo(28 + (20 * 360) / frame.height, 0);
     expect(await box(page).locator('polygon.ex-chart-surface-face').first().getAttribute('points')).not.toBe(before);
+});
+
+test('ADR-0274: the surface is seen from above, so the walls behind it meet at the floor\'s far corner', async ({ page }) => {
+    const [floor, wallY, wallX] = await walls(page);
+    // The far corner is the floor's highest on screen; both walls stand on it.
+    const far = floor.reduce((best, p) => (p[1] < best[1] ? p : best));
+    const on = (wall) => wall.some((p) => Math.abs(p[0] - far[0]) < 0.2 && Math.abs(p[1] - far[1]) < 0.2);
+    expect(on(wallY)).toBe(true);
+    expect(on(wallX)).toBe(true);
+});
+
+test('ADR-0274: a drag to the right brings the near side of the surface to the right, and a drag down tips its top toward the viewer', async ({ page }) => {
+    // 10P at 1W is the corner nearest the viewer at the first view.
+    const [x0] = await dot(page, 0);
+    const frame = await box(page).boundingBox();
+    await page.mouse.move(frame.x + 40, frame.y + 40);
+    await page.mouse.down();
+    await page.mouse.move(frame.x + 60, frame.y + 40, { steps: 4 });
+    await page.mouse.up();
+    await expect(events(page)).toHaveText(/^View: /);
+    const [x1] = await dot(page, 0);
+    expect(x1).toBeGreaterThan(x0 + 5);
+
+    // Seen from higher, the floor's far corner rises against its near one: the floor opens up.
+    const span = (floor) => Math.max(...floor.map((p) => p[1])) - Math.min(...floor.map((p) => p[1]));
+    const open = span((await walls(page))[0]);
+    await page.mouse.move(frame.x + 40, frame.y + 40);
+    await page.mouse.down();
+    await page.mouse.move(frame.x + 40, frame.y + 70, { steps: 4 });
+    await page.mouse.up();
+    await expect(events(page)).toHaveText(/^View: /);
+    await expect.poll(async () => span((await walls(page))[0])).toBeGreaterThan(open + 5);
+});
+
+test('ADR-0274: the surface turns below its floor, to a pitch of -90, and seen from below its top is behind it', async ({ page }) => {
+    const frame = await box(page).boundingBox();
+    await page.mouse.move(frame.x + 40, frame.y + frame.height - 5);
+    await page.mouse.down();
+    await page.mouse.move(frame.x + 40, frame.y - frame.height, { steps: 8 });
+    await page.mouse.up();
+    await expect(events(page)).toHaveText(/pitch -90,/);
+    await box(page).focus();
+    for (let k = 0; k < 6; k++) await page.keyboard.press('ArrowDown');
+    await expect(events(page)).toHaveText(/pitch -60,/);
+    // Seen from below the far corner of the box's top is its lowest on screen; both walls stand on it.
+    const [top, wallY, wallX] = await walls(page);
+    const far = top.reduce((best, p) => (p[1] > best[1] ? p : best));
+    const on = (wall) => wall.some((p) => Math.abs(p[0] - far[0]) < 0.2 && Math.abs(p[1] - far[1]) < 0.2);
+    expect(on(wallY)).toBe(true);
+    expect(on(wallX)).toBe(true);
+});
+
+test('ADR-0274: a drag with the right button pans and opens no menu, and draws no slice', async ({ page }) => {
+    const frame = await box(page).boundingBox();
+    await page.mouse.move(frame.x + 40, frame.y + 40);
+    await page.mouse.down({ button: 'right' });
+    await page.mouse.move(frame.x + 40 + frame.width / 10, frame.y + 40, { steps: 4 });
+    await page.mouse.up({ button: 'right' });
+    await expect(events(page)).toHaveText(/^View: yaw -35, pitch 28, zoom 1, pan /);
+    const view = await viewOf(page);
+    expect(view.panX).toBeCloseTo(0.1, 2);
+    expect(view.panY).toBe(0);
+    await expect(surface(page).locator('.ex-chart-surface-slice-chart')).toHaveCount(0);
 });
 
 test('ADR-0274: the arrow keys turn the surface, + zooms and Shift with an arrow pans', async ({ page }) => {
     await box(page).focus();
     await page.keyboard.press('ArrowRight');
     await expect(events(page)).toHaveText('View: yaw -30, pitch 28, zoom 1, pan 0 0');
-    await page.keyboard.press('ArrowUp');
+    // Down tips the top toward the viewer, as a drag down does.
+    await page.keyboard.press('ArrowDown');
     await page.keyboard.press('+');
     await page.keyboard.press('Shift+ArrowLeft');
     await expect(events(page)).toHaveText('View: yaw -30, pitch 33, zoom 1.25, pan -0.05 0');
+    await page.keyboard.press('ArrowUp');
+    await expect(events(page)).toHaveText('View: yaw -30, pitch 28, zoom 1.25, pan -0.05 0');
     await surface(page).locator('.ex-chart-surface-reset').click();
     await expect(events(page)).toHaveText('View: yaw -35, pitch 28, zoom 1, pan 0 0');
 });
 
-test('ADR-0274: the wheel zooms the surface', async ({ page }) => {
+test('ADR-0274: the wheel zooms the surface by how far it moved', async ({ page }) => {
     const frame = await box(page).boundingBox();
     await page.mouse.move(frame.x + frame.width / 2, frame.y + frame.height / 2);
     await page.mouse.wheel(0, -100);
     await expect(events(page)).toHaveText('View: yaw -35, pitch 28, zoom 1.1, pan 0 0');
+    // A trackpad's small steps add up to the same zoom as one step as far.
+    for (let k = 0; k < 4; k++) await page.mouse.wheel(0, -25);
+    await expect(events(page)).toHaveText('View: yaw -35, pitch 28, zoom 1.21, pan 0 0');
 });
 
 test('ADR-0274: a click on a grid point draws its slice beside the surface, and new data keeps it', async ({ page }) => {
@@ -89,7 +175,7 @@ test('ADR-0274: the slice through the hole breaks there, and the 2D chart has a 
     // first point falls on it.
     await box(page).focus();
     for (let k = 0; k < 7; k++) await page.keyboard.press('ArrowRight');
-    for (let k = 0; k < 13; k++) await page.keyboard.press('ArrowUp');
+    for (let k = 0; k < 13; k++) await page.keyboard.press('ArrowDown');
     await expect(events(page)).toHaveText(/pitch 90/);
     const [x, y] = await dot(page, 6 * 5);
     await page.mouse.click(x + 6, y);

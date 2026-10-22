@@ -43,3 +43,32 @@ value or by logarithm (ADR-0312).
   slice is where it is read.
 
 Angles, zoom and centre are raised and taken back as ADR-0272 says, so a redraw keeps the view.
+
+## How it turns
+
+*Decided with the user, 2026-10-22, after the user tried the surface in the Docs app ("it moves the
+opposite way to what I expect, and turning it is awkward") and then Plotly's 3D surface beside a copy
+of ours ("the axes, and turning it round and round, are very intuitive").* The surface turns as
+Plotly's default **turntable** does; three.js's OrbitControls and MATLAB's `rotate3d` agree with it:
+
+- **It is seen from above, and never as a mirror.** The first drawing projected it as seen from below
+  its floor: the walls "behind" it met at the floor's nearest corner on screen, the eye read the
+  picture as a mirror image seen from above, and every turn then looked reversed. That was a defect,
+  not a convention. The axes are right-handed with the vertical up; the walls and the floor behind the
+  surface are the ones farthest from the viewer.
+- **A turntable, not a trackball.** The yaw turns about the vertical and the pitch tilts it; there is
+  no roll, so the value axis stays upright. An orbit that may roll was offered beside it and not chosen.
+- **The surface is held where it is pressed.** A drag to the right brings its near side to the right;
+  a drag down tips its top toward the viewer. An arrow key turns it as a drag the same way would.
+- **A drag the box's height turns it a whole turn**, either way, so a turn takes the same gesture in a
+  small box and a large one (OrbitControls; Plotly measured about the same).
+- **The pitch runs from −90° to 90°**, so it may be seen from below, as in Plotly; seen from below, the
+  box's top is behind it in place of its floor.
+- **The right button, or Shift, pans; the wheel zooms by how far it moved**, so a trackpad's many
+  small steps add up to a mouse's one step as far (one 100-pixel step is ×1.1).
+- **One pointer at a time.** A second finger or button does not join a gesture; there is no pinch.
+- **No inertia.** The view a drag leaves is where the pointer was released, whatever its speed
+  (spine rule 6).
+
+The survey and the measurements are kept with the project's research notes (3D interaction research,
+2026-10-22).

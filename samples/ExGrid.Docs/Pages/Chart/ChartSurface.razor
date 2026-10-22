@@ -7,8 +7,11 @@
     <DocsSection Title="A surface">
         <p>
             <code>ExSurface</code> takes a <code>SurfaceDefinition</code>: an axis across, an axis along, and a
-            value at each point of their grid, or none. Drag to turn it, or use the arrow keys; <kbd>Shift</kbd>
-            with a drag or an arrow pans, and the wheel or <kbd>+</kbd> and <kbd>-</kbd> zoom. Move over it to read
+            value at each point of their grid, or none. Drag to turn it as if you held it where you pressed: a
+            drag to the right brings its near side to the right, a drag down tips its top toward you, and a drag
+            the box's height turns it a whole turn. It turns about its upright axis and never rolls, and may be
+            tipped until it is seen from below. The arrow keys turn it as a drag would. The right button, or
+            <kbd>Shift</kbd> with a drag or an arrow, pans, and the wheel or <kbd>+</kbd> and <kbd>-</kbd> zoom. Move over it to read
             the grid point nearest the pointer. Click a tenor or a delta to draw that slice beside the surface,
             a smile or a term structure, as an ordinary chart. A point with no value is drawn as a hole, never as
             a zero: the surface below has no quote at 25C 5Y. "Reset view" returns it to where it started, and
