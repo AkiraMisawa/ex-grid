@@ -1938,6 +1938,10 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         && Number(stamp.getAttribute('data-ex-answered')) >= Math.max(upTo, awaitingMove?.upTo ?? 0,
             handOff === 'popover' ? handOffInput : 0)
         && !stamp.hasAttribute('data-ex-focus-owed');
+    // What a hold waits for has come, as editorSettled's look finds it, and nothing is judged missed:
+    // the edit or the popover holds the keyboard, the hand-off has reached it, and the move is made.
+    const keyboardArrived = () => (editing === 'none' || editorFocused())
+        && (!awaitingPopover || popoverFocused()) && handedOver() && moved();
     // The edit's own surface to type the held keys into when its focus did not come: the one that last
     // held the keyboard here, else the Cell Editor's.
     const declinedSurface = () => {
@@ -2463,12 +2467,18 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // A hold begins: the keys typed from now are held, in order, and handed on by drain — at
     // once, or once `answer` has come, for a key the core is answering. Each caller asks first whether
     // a hold stands, and a drain already running takes what it holds.
-    const startHold = (answer) => {
+    // `upTo`, where the answer is that of a key that opens a popover of the grid's own: the number the
+    // Settled Stamp answers it by, read by a key typed before the answer's own reply has come
+    // (endHoldAtKey).
+    const startHold = (answer, upTo = 0) => {
         answering = true;
+        const epoch = holdEpoch;
         if (answer) {
-            answer.then(drain);
+            holdAnswer = { upTo };
+            answer.then(() => drain(epoch));
         } else {
-            drain();
+            holdAnswer = null;
+            drain(epoch);
         }
         journal.note('hold');
     };
@@ -2496,8 +2506,13 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // Which hold a drain works for: a hold ended at a key (endHoldAtKey) leaves the drain that served it
     // nothing more to do once its wait has resolved.
     let holdEpoch = 0;
-    const drain = async () => {
-        const epoch = holdEpoch;
+    // The answer a hold waits for before its drain starts, until it does: null once it has.
+    let holdAnswer = null;
+    const drain = async (epoch = holdEpoch) => {
+        if (epoch !== holdEpoch) {
+            return;
+        }
+        holdAnswer = null;
         // Behind a press, its answer first (holdBehindPress); a press passed on behind it while
         // nothing was held replaces the question, and its answer comes after the first one's.
         while (pressAnswer !== null) {
@@ -2807,7 +2822,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
                 return;
             }
             if (held.length > 0 && core) {
-                return drain();
+                return drain(epoch);
             }
         }
         endHold();
@@ -2833,16 +2848,33 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // left to do once it settles, so nothing is overtaken; and only when the keyboard has arrived. Looked
     // at that key, a keyboard that has not arrived is judged as the frame would judge it, and the key is
     // held behind it and refused with it.
+    //
+    // Before the drain has started, while it waits for the answer to the key that started the hold, the
+    // answer counts as come once the Settled Stamp answers that key's number — its reply can come later:
+    // on WebAssembly Find's field held the keyboard a moment before Ctrl+F's reply, and a Tab typed
+    // between was held and refused (CI, PR #243). The wait is then judged as its first look would judge
+    // it, and only a keyboard already arrived ends the hold.
     const endHoldAtKey = () => {
-        if (!answering || held.length > 0 || pressAnswer !== null || frameInTurn !== null
-            || settledWaits.size === 0 || restlessWaits > 0) {
+        if (!answering || held.length > 0 || pressAnswer !== null || frameInTurn !== null || restlessWaits > 0) {
             return;
         }
-        const declined = focusDeclined;
-        lookAgain();
-        if (settledWaits.size > 0 || keyboardMissed || (focusDeclined && !declined)) {
-            return;
+        if (settledWaits.size === 0) {
+            if (holdAnswer === null || !(holdAnswer.upTo > 0) || !awaitingPopover || !coreAnswered(holdAnswer.upTo)
+                || !keyboardArrived()) {
+                return;
+            }
+            awaitingPopover = false;
+            awaitingMove = null;
+            handOff = null;
+            handOffFrom = null;
+        } else {
+            const declined = focusDeclined;
+            lookAgain();
+            if (settledWaits.size > 0 || keyboardMissed || (focusDeclined && !declined)) {
+                return;
+            }
         }
+        holdAnswer = null;
         holdEpoch++;
         endHold();
     };
@@ -3126,7 +3158,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         const answer = forward(k);
         if (verdict === 'mode' || verdict === 'popover') {
             awaitingPopover = verdict === 'popover';
-            startHold(answer);
+            startHold(answer, awaitingPopover ? inputsSent : 0);
         } else if (verdict === 'core' && closing !== null) {
             // Escape closing a popover: the keys after it wait until it is gone (escapeCloses), or
             // until its answer has come and the popover still stands.

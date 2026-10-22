@@ -489,6 +489,12 @@ ends at that key, and the key goes as it would a frame later; a drain the key en
 (a hold epoch). When the wait judges the keyboard missed, the key is held behind it and refused with it,
 as before. It adds no listener and reads no layout.
 
+The hold has one more wait before its drain starts: the reply to the key that started it. On
+WebAssembly Find's field held the keyboard a moment before Ctrl+F's reply came back, and a Tab typed in
+between was held and refused (CI on PR #243, msedge, once in three). For a key that opens one of the
+grid's own popovers, the hold keeps that key's number, and a key typed before the reply ends the hold
+when the Settled Stamp already answers that number, nothing is owed, and the popover holds the keyboard.
+
 The same window, looked for on `main` with the page's animation frames held back (layer 3's
 `holdFrames`): a Tab typed once Find's field held the keyboard was refused too, under both Chromes. Keys a
 held replay reproduces — a menu's Tab, a tab's arrows — and the toolbar band after F10, which the wait
