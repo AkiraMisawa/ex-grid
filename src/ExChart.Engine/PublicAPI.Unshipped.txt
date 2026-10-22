@@ -297,13 +297,11 @@ ExChart.Engine.ChartSpecAnswer.Text.get -> string!
 ExChart.Engine.ChartSpecAnswer.Text.init -> void
 ExChart.Engine.ChartSpecReading
 ExChart.Engine.ChartSpecReading.<Clone>$() -> ExChart.Engine.ChartSpecReading!
-ExChart.Engine.ChartSpecReading.ChartSpecReading(string! Title, ExChart.Engine.ChartDefinition! Definition) -> void
-ExChart.Engine.ChartSpecReading.Deconstruct(out string! Title, out ExChart.Engine.ChartDefinition! Definition) -> void
+ExChart.Engine.ChartSpecReading.ChartSpecReading(string! title, ExChart.Engine.ChartDefinition! definition) -> void
+ExChart.Engine.ChartSpecReading.ChartSpecReading(string! title, ExChart.Engine.SurfaceDefinition! surface) -> void
 ExChart.Engine.ChartSpecReading.Definition.get -> ExChart.Engine.ChartDefinition!
-ExChart.Engine.ChartSpecReading.Definition.init -> void
 ExChart.Engine.ChartSpecReading.Equals(ExChart.Engine.ChartSpecReading? other) -> bool
 ExChart.Engine.ChartSpecReading.Title.get -> string!
-ExChart.Engine.ChartSpecReading.Title.init -> void
 ExChart.Engine.ChartSpecRefusedException
 ExChart.Engine.ChartSpecRefusedException.ChartSpecRefusedException(string! path, string! message) -> void
 ExChart.Engine.ChartSpecRefusedException.Path.get -> string!
@@ -1544,3 +1542,4 @@ static ExChart.Engine.PointDetail.operator !=(ExChart.Engine.PointDetail? left, 
 static ExChart.Engine.PointDetail.operator ==(ExChart.Engine.PointDetail? left, ExChart.Engine.PointDetail? right) -> bool
 ~override ExChart.Engine.ChartEdgeMark.Equals(object obj) -> bool
 ~override ExChart.Engine.ChartEdgeMark.ToString() -> string
+ExChart.Engine.ChartSpecReading.Surface.get -> ExChart.Engine.SurfaceDefinition?

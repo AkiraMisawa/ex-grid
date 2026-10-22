@@ -21,11 +21,16 @@
 <h1>Charts from a Chart Spec</h1>
 <p>
     <button type="button" id="load-lattice" @onclick="() => Load(LatticeSpec)">The lattice</button>
+    <button type="button" id="load-surface" @onclick="() => Load(SurfaceSpec)">A 3D surface</button>
     <button type="button" id="load-numbers" @onclick="() => Load(NumbersSpec)">A spec with numbers in it</button>
 </p>
 <textarea id="spec" @bind="_spec" @bind:after="Draw" rows="18" cols="70" spellcheck="false" style="font-family: monospace"></textarea>
 <p id="answer" role="status">@_answer.Text</p>
-@if (_answer.Reading is { } reading)
+@if (_answer.Reading is { Surface: { } surface } read)
+{
+    <ExSurface Definition="surface" Title="@read.Title" Width="620" Height="380" SliceWidth="360" />
+}
+else if (_answer.Reading is { } reading)
 {
     <ExChart Definition="reading.Definition" Title="@reading.Title" Width="620" Height="380" />
 }
@@ -35,12 +40,20 @@
 
     private static readonly IChartData Nodes = MakeNodes();
     private static readonly IChartData Branches = MakeBranches();
+
+    // A third table, for the surface spec (ticket 77): three tenors by three deltas, a row a point,
+    // the 1M 25C quote missing.
+    private static readonly IChartData Smile = ChartData.Of(
+        ("tenor", new object?[] { "1W", "1W", "1W", "1M", "1M", "1M", "1Y", "1Y", "1Y" }),
+        ("delta", new object?[] { "25P", "ATM", "25C", "25P", "ATM", "25C", "25P", "ATM", "25C" }),
+        ("vol", new object?[] { 11.8, 11.3, 11.6, 11.2, 10.7, null, 10.1, 9.5, 9.9 }));
     private static readonly ChartMetrics Size = new(620, 380);
 
     private static IChartData? Lookup(string handle) => handle switch
     {
         "lattice" => Nodes,
         "branches" => Branches,
+        "smile" => Smile,
         _ => null,
     };
 
@@ -83,6 +96,14 @@
               "edges": { "data": "branches", "from": "from", "to": "to" }
             }
           ]
+        }
+        """;
+
+    private const string SurfaceSpec = """
+        {
+          "version": 1,
+          "title": "A small smile",
+          "surface": { "data": "smile", "x": "delta", "y": "tenor", "z": "vol", "zTitle": "Volatility" }
         }
         """;
 

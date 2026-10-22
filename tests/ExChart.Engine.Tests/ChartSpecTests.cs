@@ -219,7 +219,13 @@ public class ChartSpecToolTests
         Assert.Equal(ChartSpec.KindNames.Order(),
             root.GetProperty("$defs").GetProperty("series").GetProperty("properties").GetProperty("kind").GetProperty("enum").EnumerateArray().Select(e => e.GetString()!).Order());
         Assert.Equal(ChartSpec.Version, root.GetProperty("properties").GetProperty("version").GetProperty("const").GetInt32());
-        Assert.Equal(["axis", "series", "version"], root.GetProperty("required").EnumerateArray().Select(e => e.GetString()!).Order());
+        Assert.Equal(ChartSpec.IntervalKeys.Order(), Keys(root.GetProperty("$defs").GetProperty("interval")));
+        Assert.Equal(ChartSpec.SurfaceKeys.Order(), Keys(root.GetProperty("$defs").GetProperty("surface")));
+        Assert.Equal(ChartSpec.TriangleKeys.Order(), Keys(root.GetProperty("$defs").GetProperty("triangles")));
+        Assert.Equal(["version"], root.GetProperty("required").EnumerateArray().Select(e => e.GetString()!));
+        // A spec draws series on an axis, or a surface (ticket 77).
+        Assert.Equal([["axis", "series"], ["surface"]], root.GetProperty("oneOf").EnumerateArray()
+            .Select(o => o.GetProperty("required").EnumerateArray().Select(e => e.GetString()!).ToArray()));
         Assert.Equal("draw_chart", ChartSpec.Tool.Name);
         Assert.Contains("Data Handle", ChartSpec.Tool.Description);
     }

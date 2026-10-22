@@ -16,10 +16,42 @@ public sealed class ChartSpecRefusedException : Exception
     public string Path { get; }
 }
 
-/// <summary>A Chart Spec read: its title, and the Chart Definition it describes.</summary>
-/// <param name="Title">The chart's title, or empty when the spec gives none.</param>
-/// <param name="Definition">The chart, its points read from the tables the spec names.</param>
-public sealed record ChartSpecReading(string Title, ChartDefinition Definition);
+/// <summary>A Chart Spec read: its title, and the Chart Definition or the 3D surface it describes.</summary>
+public sealed record ChartSpecReading
+{
+    private readonly ChartDefinition? _definition;
+
+    /// <summary>A spec of series, read.</summary>
+    /// <param name="title">The chart's title, or empty when the spec gives none.</param>
+    /// <param name="definition">The chart, its points read from the tables the spec names.</param>
+    public ChartSpecReading(string title, ChartDefinition definition)
+    {
+        ArgumentNullException.ThrowIfNull(definition);
+        Title = title;
+        _definition = definition;
+    }
+
+    /// <summary>A spec of a 3D surface, read (ADR-0274).</summary>
+    /// <param name="title">The surface's title, or empty when the spec gives none.</param>
+    /// <param name="surface">The surface, its points read from the tables the spec names.</param>
+    public ChartSpecReading(string title, SurfaceDefinition surface)
+    {
+        ArgumentNullException.ThrowIfNull(surface);
+        Title = title;
+        Surface = surface;
+    }
+
+    /// <summary>The chart's title, or empty when the spec gives none.</summary>
+    public string Title { get; }
+
+    /// <summary>The chart of series, its points read from the tables the spec names.</summary>
+    /// <exception cref="InvalidOperationException">The spec is of a 3D surface, which <see cref="Surface"/> holds: a chart of series read from it would be no chart at all (spine rule 1).</exception>
+    public ChartDefinition Definition => _definition
+        ?? throw new InvalidOperationException("This Chart Spec is of a 3D surface: draw its Surface with ExSurface; it has no chart of series.");
+
+    /// <summary>The 3D surface a spec of one describes (ADR-0274), drawn by <c>ExSurface</c>; null for a spec of series.</summary>
+    public SurfaceDefinition? Surface { get; }
+}
 
 /// <summary>The tool an AI calls with a Chart Spec, as a host hands it to a model (ADR-0320).</summary>
 /// <param name="Name">The tool's name.</param>
@@ -43,13 +75,17 @@ public static class ChartSpec
     /// <summary>The version of the Chart Spec this reader reads.</summary>
     public const int Version = 1;
 
-    internal static readonly string[] RootKeys = ["version", "title", "axis", "series", "notes"];
+    internal static readonly string[] RootKeys = ["version", "title", "axis", "series", "surface", "notes"];
+    internal static readonly string[] SurfaceKeys =
+        ["data", "x", "y", "z", "xTitle", "yTitle", "zTitle", "xScale", "yScale", "zScale", "centre", "method", "interpolated", "key", "triangles"];
+    internal static readonly string[] TriangleKeys = ["data", "a", "b", "c"];
     internal static readonly string[] AxisKeys = ["values", "title", "scale", "packed"];
     internal static readonly string[] SeriesKeys =
-        ["id", "name", "kind", "data", "x", "y", "open", "high", "low", "close", "volume", "label", "panel", "axis", "fromZero", "step", "colour", "size", "key", "edges", "tooltip"];
+        ["id", "name", "kind", "data", "x", "y", "open", "high", "low", "close", "volume", "label", "panel", "axis", "fromZero", "step", "colour", "size", "key", "edges", "tooltip", "interval", "xInterval"];
     internal static readonly string[] EdgeKeys = ["data", "from", "to"];
     internal static readonly string[] ColourKeys = ["column", "scale", "centre", "title"];
     internal static readonly string[] SizeKeys = ["column", "title"];
+    internal static readonly string[] IntervalKeys = ["lower", "upper", "meaning", "style"];
     private static readonly string[] PriceColumns = ["open", "high", "low", "close", "volume"];
 
     private static readonly Dictionary<string, SeriesKind> Kinds = new(StringComparer.Ordinal)
@@ -68,7 +104,9 @@ public static class ChartSpec
         "Draws a chart of data a capability already made. Name each table by the Data Handle the capability returned, and its columns; "
         + "never write the values themselves. Every series says its kind: level (a quantity at an instant), rateOverInterval "
         + "(a rate constant over an interval), amountPerPeriod (a total over its interval), observation (one thing measured "
-        + "on two quantities, never joined) or priceRange (open, high, low and close). A spec that cannot be drawn is refused "
+        + "on two quantities, never joined) or priceRange (open, high, low and close); a level or an observation may carry an interval "
+        + "read from lower and upper columns, with its meaning. A 3D surface is a spec with a surface in place of axis and series: "
+        + "its x, y and z columns on a grid, or a mesh of the nodes' keys and a table of triangles. A spec that cannot be drawn is refused "
         + "with the path and the reason; an accepted one is answered with the chart said in words, to check against what was meant.",
         Schema);
 
@@ -90,6 +128,10 @@ public static class ChartSpec
         {
             return new ChartSpecAnswer(false, e.Message, null);
         }
+        // A surface is said as a screen reader hears it (ADR-0275), with why a scale it asked for is not drawn.
+        if (reading.Surface is { } surface)
+            return new ChartSpecAnswer(true, string.Join(" ",
+                new[] { SurfaceMesh.Summary(surface, reading.Title, null) }.Concat(surface.AllNotes.Except(surface.Notes).Where(n => !n.StartsWith("Interpolated by", StringComparison.Ordinal)))), reading);
         ChartScene scene;
         try
         {
@@ -186,15 +228,52 @@ public static class ChartSpec
           "title": "Chart Spec",
           "type": "object",
           "additionalProperties": false,
-          "required": ["version", "axis", "series"],
+          "required": ["version"],
+          "oneOf": [ { "required": ["axis", "series"] }, { "required": ["surface"] } ],
           "properties": {
             "version": { "const": 1, "description": "The version of the Chart Spec." },
             "title": { "type": "string", "description": "The chart's title." },
             "axis": { "$ref": "#/$defs/axis" },
             "series": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/series" } },
+            "surface": { "$ref": "#/$defs/surface" },
             "notes": { "type": "array", "items": { "type": "string" }, "description": "Lines said under the chart, such as the data's source." }
           },
           "$defs": {
+            "surface": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["data", "x", "y", "z"],
+              "description": "A 3D surface, in place of axis and series: a value at each x and y, on a grid the rows lie on, or on the Consumer's triangles. Nothing is interpolated.",
+              "properties": {
+                "data": { "type": "string", "description": "The Data Handle of the table of its points, or its nodes." },
+                "x": { "type": "string", "description": "The column of each point's x." },
+                "y": { "type": "string", "description": "The column of each point's y." },
+                "z": { "type": "string", "description": "The column of each point's value; null is a hole." },
+                "xTitle": { "type": "string", "description": "What x is; by default its column's name." },
+                "yTitle": { "type": "string", "description": "What y is; by default its column's name." },
+                "zTitle": { "type": "string", "description": "What the values are; by default their column's name." },
+                "xScale": { "enum": ["categories", "proportional", "logarithmic"], "description": "How x values are placed: a grid's evenly by default, a mesh's proportionally." },
+                "yScale": { "enum": ["categories", "proportional", "logarithmic"], "description": "How y values are placed." },
+                "zScale": { "enum": ["proportional", "logarithmic"], "description": "How the values are placed up." },
+                "centre": { "type": "number", "description": "The value the colours diverge from, such as 0 for a P&L; without it they run from the lowest value to the highest." },
+                "method": { "type": "string", "description": "The method the capability interpolated values with, which the chart says; never one the chart applies." },
+                "interpolated": { "type": "string", "description": "A grid's column of true where a value was interpolated by the method; without it every value is." },
+                "key": { "type": "string", "description": "A mesh's column of node keys, which its triangles name." },
+                "triangles": { "$ref": "#/$defs/triangles" }
+              }
+            },
+            "triangles": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["data", "a", "b", "c"],
+              "description": "A mesh's triangles, from a table of their own, each naming three nodes by key; each is drawn flat through its corners.",
+              "properties": {
+                "data": { "type": "string", "description": "The Data Handle of the triangles' table." },
+                "a": { "type": "string", "description": "Its column of each triangle's first node." },
+                "b": { "type": "string", "description": "Its column of the second." },
+                "c": { "type": "string", "description": "Its column of the third." }
+              }
+            },
             "axis": {
               "type": "object",
               "additionalProperties": false,
@@ -231,7 +310,20 @@ public static class ChartSpec
                 "size": { "$ref": "#/$defs/size" },
                 "key": { "type": "string", "description": "An observation's column of node keys, which its edges name." },
                 "edges": { "$ref": "#/$defs/edges" },
-                "tooltip": { "type": "array", "items": { "type": "string" }, "description": "An observation's columns its tooltip says beside its values, such as a node's probability; no other column is said." }
+                "tooltip": { "type": "array", "items": { "type": "string" }, "description": "An observation's columns its tooltip says beside its values, such as a node's probability; no other column is said." },
+                "interval": { "$ref": "#/$defs/interval", "description": "A level's or an observation's vertical interval: a lower and an upper bound a row, read from columns, never computed." },
+                "xInterval": { "$ref": "#/$defs/interval", "description": "An observation's horizontal interval, its bounds in the units across." }
+              }
+            },
+            "interval": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["lower", "upper", "meaning"],
+              "properties": {
+                "lower": { "type": "string", "description": "The column of each row's lower bound." },
+                "upper": { "type": "string", "description": "The column of each row's upper bound." },
+                "meaning": { "type": "string", "description": "What the bounds are, such as 95% CI, ±1σ or Bid–Ask; said in the legend and the tooltip." },
+                "style": { "enum": ["whiskers", "band"], "description": "Whiskers at each point, or a level's band joining neighbours; by default whiskers." }
               }
             },
             "edges": {
@@ -290,6 +382,14 @@ public static class ChartSpec
             if (version.ValueKind != JsonValueKind.Number || !version.TryGetInt32(out var v) || v != Version)
                 throw Refuse("version", $"version {version.GetRawText()} is not known: this reader reads version {Version}, and never reads a spec as the nearest version.");
             var title = String(root, "title", "") ?? "";
+            if (root.TryGetProperty("surface", out var surfaceElement))
+            {
+                foreach (var other in new[] { "axis", "series" })
+                    if (root.TryGetProperty(other, out _))
+                        throw Refuse(other, $"{other} belongs to a chart of series; a spec draws a surface or series, and its surface names its own x, y and z.");
+                var surface = Surface(surfaceElement, "surface", Notes(root));
+                return new ChartSpecReading(title, surface);
+            }
             var axisElement = Object(root, "axis", "");
             Known(axisElement, "axis", AxisKeys);
             var values = Choice(axisElement, "values", "axis", new Dictionary<string, AxisValues>
@@ -312,20 +412,7 @@ public static class ChartSpec
             var i = 0;
             foreach (var s in seriesArray.EnumerateArray())
                 series.Add(Series(s, $"series[{i++}]", values));
-            var notes = new List<string>();
-            if (root.TryGetProperty("notes", out var notesElement))
-            {
-                if (notesElement.ValueKind != JsonValueKind.Array)
-                    throw Refuse("notes", "notes is a list of lines.");
-                var n = 0;
-                foreach (var line in notesElement.EnumerateArray())
-                {
-                    if (line.ValueKind != JsonValueKind.String)
-                        throw Refuse($"notes[{n}]", $"notes[{n}] is a line of text.");
-                    notes.Add(line.GetString()!);
-                    n++;
-                }
-            }
+            var notes = Notes(root);
             var axis = new ChartAxis
             {
                 Values = values,
@@ -344,6 +431,177 @@ public static class ChartSpec
             }
             return new ChartSpecReading(title, Defined("", () => new ChartDefinition(axis, series, notes)));
         }
+
+        private static List<string> Notes(JsonElement root)
+        {
+            var notes = new List<string>();
+            if (root.TryGetProperty("notes", out var notesElement))
+            {
+                if (notesElement.ValueKind != JsonValueKind.Array)
+                    throw Refuse("notes", "notes is a list of lines.");
+                var n = 0;
+                foreach (var line in notesElement.EnumerateArray())
+                {
+                    if (line.ValueKind != JsonValueKind.String)
+                        throw Refuse($"notes[{n}]", $"notes[{n}] is a line of text.");
+                    notes.Add(line.GetString()!);
+                    n++;
+                }
+            }
+            return notes;
+        }
+
+        // A 3D surface (ADR-0274): a grid its rows lie on, or the Consumer's triangles over keyed nodes
+        // (ADR-0311); its colours' centre (ADR-0310) and its scales (ADR-0312). Nothing is interpolated:
+        // rows that form no grid are refused, as SurfaceDefinition.FromPoints refuses them.
+        private SurfaceDefinition Surface(JsonElement s, string path, IReadOnlyList<string> notes)
+        {
+            if (s.ValueKind != JsonValueKind.Object) throw Refuse(path, $"{path} is a JSON object.");
+            Known(s, path, SurfaceKeys);
+            var handle = String(s, "data", path) ?? throw Missing(path, "data", "the Data Handle of the table of its points");
+            var table = tables(handle) ?? throw Refuse($"{path}.data", $"{path}.data \"{handle}\" is not known: name a Data Handle a capability returned.");
+            var (x, y, z) = (Column(s, "x", path, handle, table, required: true)!, Column(s, "y", path, handle, table, required: true)!, Column(s, "z", path, handle, table, required: true)!);
+            var (xTitle, yTitle, zTitle) = (String(s, "xTitle", path) ?? x, String(s, "yTitle", path) ?? y, String(s, "zTitle", path) ?? z);
+            var scales = new Dictionary<string, AxisScale> { ["categories"] = AxisScale.Categories, ["proportional"] = AxisScale.Proportional, ["logarithmic"] = AxisScale.Logarithmic };
+            AxisScale? ScaleOf(string key) => s.TryGetProperty(key, out _) ? Choice(s, key, path, scales, "how its values are placed") : null;
+            var (xScale, yScale) = (ScaleOf("xScale"), ScaleOf("yScale"));
+            var zScale = s.TryGetProperty("zScale", out _)
+                ? Choice(s, "zScale", path, new Dictionary<string, AxisScale> { ["proportional"] = AxisScale.Proportional, ["logarithmic"] = AxisScale.Logarithmic }, "how the values are placed up")
+                : AxisScale.Proportional;
+            double? centre = null;
+            if (s.TryGetProperty("centre", out var centreElement))
+            {
+                if (centreElement.ValueKind != JsonValueKind.Number || !centreElement.TryGetDouble(out var mid) || !double.IsFinite(mid))
+                    throw Refuse($"{path}.centre", $"{path}.centre is a finite number.");
+                centre = mid;
+            }
+            var method = String(s, "method", path);
+            var rows = table.RowCount;
+            var zs = new ChartValue?[rows];
+            for (var r = 0; r < rows; r++)
+                zs[r] = ValueOf(table.Value(z, r), $"{path}.z", handle, r);
+
+            SurfaceDefinition surface;
+            if (s.TryGetProperty("triangles", out var trianglesElement))
+            {
+                var at = $"{path}.triangles";
+                foreach (var gridOnly in new[] { "interpolated", "method" })
+                    if (s.TryGetProperty(gridOnly, out _))
+                        throw Refuse($"{path}.{gridOnly}", $"{path}.{gridOnly} belongs to a grid; a mesh's nodes are its values, and between them it is read linearly on its triangles, which it says.");
+                var key = Column(s, "key", path, handle, table, required: false)
+                    ?? throw Missing(path, "key", "a triangle names its nodes by key, so the nodes say which column holds theirs");
+                var nodes = new SurfaceNode[rows];
+                var index = new Dictionary<string, int>(StringComparer.Ordinal);
+                for (var r = 0; r < rows; r++)
+                {
+                    var name = Key(table.Value(key, r), $"{path}.key", handle, r);
+                    if (!index.TryAdd(name, r))
+                        throw Refuse($"{path}.key", $"{path}.key: rows {index[name] + 1} and {r + 1} of \"{handle}\" are both keyed {name}; a triangle could not say which it names.");
+                    nodes[r] = new SurfaceNode(MeshPosition(table.Value(x, r), $"{path}.x", handle, r), MeshPosition(table.Value(y, r), $"{path}.y", handle, r), zs[r]);
+                }
+                if (trianglesElement.ValueKind != JsonValueKind.Object) throw Refuse(at, $"{at} is a JSON object.");
+                Known(trianglesElement, at, TriangleKeys);
+                var triangleHandle = String(trianglesElement, "data", at) ?? throw Missing(at, "data", "the Data Handle of the triangles' table");
+                var triangleTable = tables(triangleHandle) ?? throw Refuse($"{at}.data", $"{at}.data \"{triangleHandle}\" is not known: name a Data Handle a capability returned.");
+                var corners = new[] { "a", "b", "c" }.Select(c => (Key: c, Column: Column(trianglesElement, c, at, triangleHandle, triangleTable, required: true)!)).ToArray();
+                var triangles = new SurfaceTriangle[triangleTable.RowCount];
+                for (var r = 0; r < triangles.Length; r++)
+                {
+                    var n = corners.Select(c =>
+                    {
+                        var name = Key(triangleTable.Value(c.Column, r), $"{at}.{c.Key}", triangleHandle, r);
+                        return index.TryGetValue(name, out var i) ? i
+                            : throw Refuse($"{at}.{c.Key}", $"{at}.{c.Key}: row {r + 1} of \"{triangleHandle}\" names node {name}, but no node is keyed {name}.");
+                    }).ToArray();
+                    triangles[r] = new SurfaceTriangle(n[0], n[1], n[2]);
+                }
+                foreach (var (key0, scale) in new[] { ("xScale", xScale), ("yScale", yScale) })
+                    if (scale == AxisScale.Categories)
+                        throw Refuse($"{path}.{key0}", $"{path}.{key0} \"categories\": a mesh's nodes are placed by their position, proportionally or logarithmically.");
+                surface = Defined(path, () => SurfaceDefinition.FromTriangles(nodes, triangles, xTitle, yTitle, zTitle,
+                    xScale: xScale ?? AxisScale.Proportional, yScale: yScale ?? AxisScale.Proportional, notes: notes));
+            }
+            else
+            {
+                if (s.TryGetProperty("key", out _))
+                    throw Refuse($"{path}.key", $"{path}.key belongs to a mesh, whose triangles name its nodes; a grid's points stand at their x and y.");
+                var xs = GridValues(table, x, $"{path}.x", $"{path}.xScale", handle, xScale);
+                var ys = GridValues(table, y, $"{path}.y", $"{path}.yScale", handle, yScale);
+                var xIndex = xs.Values.Select((v, i) => (v, i)).ToDictionary(t => t.v, t => t.i);
+                var yIndex = ys.Values.Select((v, i) => (v, i)).ToDictionary(t => t.v, t => t.i);
+                var grid = ys.Values.Select(_ => new ChartValue?[xs.Values.Count]).ToArray();
+                var marked = ys.Values.Select(_ => new bool[xs.Values.Count]).ToArray();
+                var taken = ys.Values.Select(_ => new bool[xs.Values.Count]).ToArray();
+                var interpolated = Column(s, "interpolated", path, handle, table, required: false);
+                if (interpolated is not null && method is null)
+                    throw Missing(path, "method", "a surface that marks values interpolated names the method they were made with, which the chart says (ADR-0257)");
+                for (var r = 0; r < rows; r++)
+                {
+                    var (i, j) = (xIndex[xs.Of[r]], yIndex[ys.Of[r]]);
+                    if (taken[j][i])
+                        throw Refuse($"{path}.x", $"{path}: two rows of \"{handle}\" lie at {xTitle} {Write(xs.Of[r])} and {yTitle} {Write(ys.Of[r])}, the second row {r + 1}; a grid point holds one value.");
+                    taken[j][i] = true;
+                    grid[j][i] = zs[r];
+                    if (interpolated is not null)
+                        marked[j][i] = table.Value(interpolated, r) switch
+                        {
+                            bool b => b,
+                            null => false,
+                            var v => throw Refuse($"{path}.interpolated", $"{path}.interpolated: row {r + 1} of \"{handle}\" holds \"{Text(v)}\", which is not true or false."),
+                        };
+                }
+                // A row that alone holds its x, or its y, joins a surface only by interpolation, which is not the chart's.
+                foreach (var (axisValues, of, title, other, key0) in new[] { (xs.Values, xs.Of, xTitle, yTitle, "x"), (ys.Values, ys.Of, yTitle, xTitle, "y") })
+                    foreach (var v in axisValues)
+                        if (of.Count(o => Equals(o, v)) < 2)
+                            throw Refuse($"{path}.{key0}", $"{path}.{key0}: {title} {Write(v)} has a value at only one {other}. Rows that form no grid join a surface only by interpolation, which the chart does not choose: have the capability interpolate them onto a grid and name its method, or hand its own triangles.");
+                var xAxis = new SurfaceAxis(xTitle, xs.Values, Format(xs.Values)) { Scale = xScale ?? AxisScale.Categories };
+                var yAxis = new SurfaceAxis(yTitle, ys.Values, Format(ys.Values)) { Scale = yScale ?? AxisScale.Categories };
+                surface = Defined(path, () => new SurfaceDefinition(xAxis, yAxis, grid, zTitle, null, method,
+                    interpolated is null ? null : marked.Select(m => (IReadOnlyList<bool>)m).ToArray(), notes));
+            }
+            return Defined(path, () => surface with { ZScale = zScale, Centre = centre });
+        }
+
+        // A grid axis' values, each row's value among them: numbers and dates in order, labels as the data
+        // first shows them; one kind a column.
+        private static (IReadOnlyList<object> Values, object[] Of) GridValues(IChartData table, string column, string path, string scalePath, string handle, AxisScale? scale)
+        {
+            var of = new object[table.RowCount];
+            Type? kind = null;
+            for (var r = 0; r < of.Length; r++)
+            {
+                var value = table.Value(column, r);
+                object placed = value switch
+                {
+                    null => throw Refuse(path, $"{path}: row {r + 1} of \"{handle}\" has no position; a point needs one."),
+                    DateOnly d => d,
+                    DateTime t when t.TimeOfDay == TimeSpan.Zero => DateOnly.FromDateTime(t),
+                    DateTime => throw Refuse(path, $"{path}: row {r + 1} of \"{handle}\" holds {Text(value)}, a time of day; a surface places days."),
+                    string label => label,
+                    _ => ValueOf(value, path, handle, r)!.Value.ToDouble(),
+                };
+                kind ??= placed.GetType();
+                if (placed.GetType() != kind)
+                    throw Refuse(path, $"{path}: row {r + 1} of \"{handle}\" holds \"{Text(value)}\", but the rows before it hold {(kind == typeof(double) ? "numbers" : kind == typeof(DateOnly) ? "dates" : "labels")}; an axis places one kind of value.");
+                of[r] = placed;
+            }
+            if (scale is AxisScale.Proportional or AxisScale.Logarithmic && kind is not null && kind != typeof(double))
+                throw Refuse(scalePath, $"{scalePath}: only numbers are placed by value; {path}'s {(kind == typeof(DateOnly) ? "dates" : "labels")} are placed evenly, as categories.");
+            var distinct = of.Distinct().ToList();
+            if (kind != typeof(string))
+                distinct.Sort(Comparer<object>.Default);
+            return (distinct, of);
+        }
+
+        private static Func<object, string>? Format(IReadOnlyList<object> values) =>
+            values.Count > 0 && values[0] is DateOnly ? o => ((DateOnly)o).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) : null;
+
+        private static string Write(object value) => value is DateOnly d ? d.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) : Text(value);
+
+        private static double MeshPosition(object? value, string path, string handle, int row) =>
+            ValueOf(value, path, handle, row) is { } v ? v.ToDouble()
+            : throw Refuse(path, $"{path}: row {row + 1} of \"{handle}\" has no position; a node needs one in the plane.");
 
         private ChartSeries Series(JsonElement s, string path, AxisValues values)
         {
@@ -413,6 +671,25 @@ public static class ChartSpec
                     edges[r] = new ChartEdge(Key(edgeTable.Value(from, r), $"{at}.from", edgeHandle, r), Key(edgeTable.Value(to, r), $"{at}.to", edgeHandle, r));
                 result = result with { Edges = edges };
             }
+            if (s.TryGetProperty("interval", out var intervalElement))
+            {
+                if (kind is not (SeriesKind.Level or SeriesKind.Observation))
+                    throw Refuse($"{path}.interval", $"{path}.interval belongs to a level or an observation, whose points the bounds stand at.");
+                result = result with { Interval = ReadInterval(intervalElement, $"{path}.interval", handle, table, positions, (v, at, r) => ValueOf(v, at, handle, r)) };
+            }
+            if (s.TryGetProperty("xInterval", out var xIntervalElement))
+            {
+                var at = $"{path}.xInterval";
+                if (kind != SeriesKind.Observation)
+                    throw Refuse(at, $"{at} belongs to an observation, whose points each stand at a position of their own.");
+                if (values == AxisValues.Labels)
+                    throw Refuse(at, $"{at}: a labels axis has no units for a bound to stand in.");
+                result = result with
+                {
+                    XInterval = ReadInterval(xIntervalElement, at, handle, table, positions,
+                        (v, p, r) => v is null ? null : ChartValue.Of(Position(v, values, p, handle, r))),
+                };
+            }
             if (s.TryGetProperty("tooltip", out var tooltipElement))
                 result = result with { Details = Details(tooltipElement, $"{path}.tooltip", kind, handle, table) };
             if (s.TryGetProperty("colour", out var colourElement))
@@ -457,6 +734,26 @@ public static class ChartSpec
             else if (diverging)
                 throw Refuse($"{path}.centre", $"{path}.centre is missing: a diverging scale says the value that means nothing, such as 0 for a P&L or 1 for a ratio.");
             return new PointColour(String(c, "title", path) ?? column, Values(table, column, $"{path}.column", handle)) { Centre = centre };
+        }
+
+        // A series' interval: a lower and an upper bound a row, at the row's position (ADR-0303, ADR-0304).
+        private static SeriesInterval ReadInterval(JsonElement iv, string path, string handle, IChartData table, double[] positions,
+            Func<object?, string, int, ChartValue?> bound)
+        {
+            if (iv.ValueKind != JsonValueKind.Object) throw Refuse(path, $"{path} is a JSON object.");
+            Known(iv, path, IntervalKeys);
+            var lower = Column(iv, "lower", path, handle, table, required: true)!;
+            var upper = Column(iv, "upper", path, handle, table, required: true)!;
+            var meaning = String(iv, "meaning", path);
+            if (string.IsNullOrWhiteSpace(meaning))
+                throw Missing(path, "meaning", "what the bounds are, such as 95% CI, ±1σ or Bid–Ask; an interval that does not say is not drawn");
+            var style = iv.TryGetProperty("style", out _)
+                ? Choice(iv, "style", path, new Dictionary<string, IntervalStyle> { ["whiskers"] = IntervalStyle.Whiskers, ["band"] = IntervalStyle.Band }, "how the bounds are drawn")
+                : IntervalStyle.Whiskers;
+            var bounds = new IntervalBound[table.RowCount];
+            for (var r = 0; r < bounds.Length; r++)
+                bounds[r] = new IntervalBound(positions[r], bound(table.Value(lower, r), $"{path}.lower", r), bound(table.Value(upper, r), $"{path}.upper", r));
+            return new SeriesInterval(meaning, bounds, style);
         }
 
         // The columns an observation's tooltip says, each one value a row written as the table holds it (ADR-0321).
@@ -558,7 +855,7 @@ public static class ChartSpec
             return name;
         }
 
-        private static ChartDefinition Defined(string path, Func<ChartDefinition> define)
+        private static T Defined<T>(string path, Func<T> define)
         {
             try
             {

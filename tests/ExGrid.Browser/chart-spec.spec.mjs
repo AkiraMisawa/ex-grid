@@ -87,6 +87,15 @@ test('ADR-0320: a spec with numbers in it is refused with its path and reason, a
     await expect(chart(page)).toHaveCount(1);
 });
 
+test('ADR-0320, ADR-0274: a spec of a surface is drawn by ExSurface, its missing value a hole', async ({ page }) => {
+    await page.locator('#load-surface').click();
+    const box = page.locator('.ex-chart-surface .ex-chart-surface-box');
+    await expect(box.locator('circle.ex-chart-surface-point')).toHaveCount(3 * 3 - 1);
+    await expect(box).toHaveAttribute('aria-label', /^A small smile, a 3D surface of Volatility over delta from 25P to 25C and tenor from 1W to 1Y/);
+    await expect(answer(page)).toContainText('with 1 hole where the data has no value.');
+    await expect(page.locator('.ex-chart:not(.ex-chart-surface)')).toHaveCount(0);
+});
+
 test('ADR-0320: a spec edited in the field is read again when the field is left', async ({ page }) => {
     const field = page.locator('#spec');
     const text = await field.inputValue();

@@ -26,8 +26,12 @@ public static class LatticeTables
     {
         "lattice" => Nodes,
         "branches" => Branches,
+        "fx-vols" => Vols,
         _ => null,
     };
+
+    /// <summary>A third table: an FX volatility grid, a row a tenor and delta.</summary>
+    public static readonly IChartData Vols = VolSurface.Table();
 
     private static IChartData MakeNodes()
     {
@@ -82,6 +86,20 @@ public static class LatticeTables
             }
           ],
           "notes": ["Cox–Ross–Rubinstein: S 100, K 100, r 5%, σ 30%, T 1 year."]
+        }
+        """;
+
+    /// <summary>The spec of a 3D surface: the grid's x, y and z columns, its colours diverging from a centre.</summary>
+    public const string SurfaceSpec = """
+        {
+          "version": 1,
+          "title": "EURUSD volatility",
+          "surface": {
+            "data": "fx-vols", "x": "delta", "y": "tenor", "z": "vol",
+            "xTitle": "Delta", "yTitle": "Tenor", "zTitle": "Volatility (%)",
+            "centre": 10.5
+          },
+          "notes": ["Mid quotes; 25C at 5Y has none."]
         }
         """;
 

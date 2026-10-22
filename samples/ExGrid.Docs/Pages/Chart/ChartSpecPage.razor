@@ -26,7 +26,7 @@
             Below, a lattice priced by the page's own capability is drawn from the spec beside it. Edit the spec and
             leave the field to see the answer change, or load the spec with numbers in it to see a refusal.
         </p>
-        <DocsExample Builtin="typeof(ChartSpecLattice)" Mud="typeof(ChartSpecLatticeMud)" Files="@(["Examples/Chart/LatticeTables.cs"])" CodeOpen="true" />
+        <DocsExample Builtin="typeof(ChartSpecLattice)" Mud="typeof(ChartSpecLatticeMud)" Files="@(["Examples/Chart/LatticeTables.cs", "Examples/Chart/VolSurface.cs"])" CodeOpen="true" />
     </DocsSection>
 
     <DocsSection Title="Colour, size and edges from columns">
@@ -52,6 +52,28 @@
             <code>ColourBy = new PointColour(title, values) { Centre = 0 }</code>,
             <code>SizeBy = new PointSize(title, values)</code> and <code>Edges = [new ChartEdge(from, to)]</code> on
             the series, each node's key its point's <code>Row</code>.
+        </p>
+    </DocsSection>
+
+    <DocsSection Title="A 3D surface and intervals">
+        <p>
+            A spec draws a 3D surface when it holds a <code>surface</code> in place of <code>axis</code> and
+            <code>series</code>: the table's <code>x</code>, <code>y</code> and <code>z</code> columns, a row a point,
+            on a grid the rows lie on; a null value is a hole (ADR-0274). Labels keep the order the data first
+            shows them, as a tenor axis needs; numbers and dates are placed in order. Rows that form no grid are
+            refused, never interpolated onto one. With <code>key</code> and a <code>triangles</code> table naming
+            three nodes a row, it is drawn on the Consumer's own triangles instead (ADR-0311). It takes the
+            colours' <code>centre</code> (ADR-0310), each axis' scale (ADR-0312), and the <code>method</code> a
+            capability interpolated with, which the surface says. <code>ChartSpecReading.Surface</code> holds it, for
+            <code>ExSurface</code> to draw; its <code>Definition</code> throws, since there is no chart of series. The
+            "A 3D surface" button above loads one. A Board does not yet take a surface as a view, and says so by its
+            path.
+        </p>
+        <p>
+            A level's or an observation's vertical interval is read from two columns,
+            <code>"interval": {"lower": "lo", "upper": "hi", "meaning": "95% CI"}</code>, drawn as whiskers or, for a
+            level, as a <code>"band"</code>; an observation's horizontal one is <code>xInterval</code>, its bounds in
+            the units across (ADR-0303, ADR-0304). The meaning is required, and is said in the legend and the tooltip.
         </p>
     </DocsSection>
 

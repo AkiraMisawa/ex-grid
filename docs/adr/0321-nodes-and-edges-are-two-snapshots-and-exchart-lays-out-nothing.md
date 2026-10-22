@@ -23,6 +23,9 @@ says it.
 - **Refused by name:** an edge whose endpoint is not a node, two nodes with one key, and a node
   without a position. A node no edge reaches is drawn, alone, as given.
 - **The tooltip reads a node**, its key and its columns; an edge says its two keys.
+  *Settled while building it, 2026-10-22 (ticket 73):* "its columns" are the ones the spec names in
+  `tooltip`, besides its colour's and its size's, never every column of the table; the pointer finds
+  an edge where no node is within reach.
 - **"View as table" lists the nodes, then the edges** ([ADR-0275](0275-a-chart-is-read-aloud-as-a-summary-and-as-a-table.md)), and the summary says "N nodes
   and M edges".
 

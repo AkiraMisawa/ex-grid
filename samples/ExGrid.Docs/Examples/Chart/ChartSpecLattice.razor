@@ -4,6 +4,7 @@
 
 <p>
     <button @onclick="() => Load(LatticeTables.LatticeSpec)">The lattice</button>
+    <button @onclick="() => Load(LatticeTables.SurfaceSpec)">A 3D surface</button>
     <button @onclick="() => Load(LatticeTables.NumbersSpec)">A spec with numbers in it</button>
 </p>
 <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-start">
@@ -12,7 +13,11 @@
                   style="width: 100%; font-family: monospace; font-size: 12px"></textarea>
         <p class="chart-spec-answer" role="status">@_answer.Text</p>
     </div>
-    @if (_answer.Reading is { } reading)
+    @if (_answer.Reading is { Surface: { } surface } read)
+    {
+        <ExSurface Definition="surface" Title="@read.Title" Width="560" Height="380" SliceWidth="360" />
+    }
+    else if (_answer.Reading is { } reading)
     {
         <ExChart Definition="reading.Definition" Title="@reading.Title" Width="560" Height="380" />
     }
