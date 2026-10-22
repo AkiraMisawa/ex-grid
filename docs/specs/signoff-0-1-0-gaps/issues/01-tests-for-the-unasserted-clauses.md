@@ -50,3 +50,12 @@ restate.
 - **PV-18** (layer 3): Palette reaches the pane, entries and − button in both schemes and the stale token is probed under the Wrapper mapping; not every Visual Token is read in a browser.
 - **DA-18** (layers 1–2): Definitions are tested in ExGrid.Data and ExPivot tables are checked per Aggregation, but no test asserts that both ExPivot.Engine and the Selection Summary answer through the same ExGrid.Data accumulators ("inspect the references").
 - **LV-27** (layer 3): Server-path Window Changes are exercised end to end, but no layer-3 test targets digest verification, mismatch recovery or a stale fallback.
+
+## Comments
+
+- 2026-10-22: tests now assert FN-1, VZ-2, ED-13 (both layers), ED-19, SL-1, SL-2, SL-11, KB-3 (off
+  Apple), KB-5 (on the component), KB-9, KB-10, KB-11, KB-28, KB-40, KB-42 (both layers), A11Y-6, A11Y-9,
+  A11Y-10, CP-7, CTX-3, PST-4, ERR-1, ERR-7, DC-39, DC-40, SH-60 (the Consumer's zone), PV-13 (the
+  Context Menu and the double click) and DA-18. Still open: ASY-7, WR-1, DC-62, DC-63, SH-60
+  (#GETTING_DATA, the minute turning), PV-3, PV-7, PV-13 (a values-only refresh), PV-18 and LV-27.
+  WR-10 is not a Playwright test: its Check is the by-hand MudBlazor floor run under `verification/`.

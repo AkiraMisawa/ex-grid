@@ -23,3 +23,7 @@ only by reasoning, which is the gap the row exists to close.
 pressed `Control+Enter`, `Control+C` and `Control+V` literally, so on a Mac its Ctrl+Enter tests asked
 Control+Enter rather than Command+Enter, and its seven clipboard tests failed. They now press
 `ControlOrMeta+…`, which is Control everywhere CI runs and Command on a Mac.
+
+## Comments
+
+- 2026-10-22: the tests are written and pass on Linux, where the Apple-only ones skip by name. The run on a Mac with `--repeat-each=3` is what remains, and it cannot be made from a Linux container.

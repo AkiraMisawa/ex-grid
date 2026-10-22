@@ -1,4 +1,3 @@
-using ExGrid.Keys;
 using ExGrid.Selection;
 using Xunit;
 
@@ -275,64 +274,5 @@ public class SelectionKeyboardTests
         Assert.Equal([new SelectionRange(0, 0, rows, columns)], all.Ranges);
         Assert.Equal((long)rows * columns, all.CellCount);
         Assert.Equal(new CellPosition(rows - 1, columns - 1), all.Focus);
-    }
-
-    // ADR-0012's table, row by row, from B2:D4's mirror at F6:H8 — the Focus on F6 (5, 5), the Extent
-    // on H8 (7, 7) — on a grid of 100 rows and 26 columns: the key, through GridKeys' table, then the
-    // transition the core runs for its kind (ExGrid.razor's key switch, with no Consumer edge answer).
-    // The plain forms move the Focus and collapse; the Shift forms move the Extent and leave the Focus.
-    public static TheoryData<string, bool, bool, int, int, int, int> KB5Table => new()
-    {
-        // key, ctrl, shift, Focus row, Focus column, Extent row, Extent column
-        { "ArrowDown", false, false, 6, 5, 6, 5 },
-        { "ArrowUp", false, false, 4, 5, 4, 5 },
-        { "ArrowLeft", false, false, 5, 4, 5, 4 },
-        { "ArrowRight", false, false, 5, 6, 5, 6 },
-        { "ArrowDown", false, true, 5, 5, 8, 7 },
-        { "ArrowUp", false, true, 5, 5, 6, 7 },
-        { "ArrowLeft", false, true, 5, 5, 7, 6 },
-        { "ArrowRight", false, true, 5, 5, 7, 8 },
-        { "ArrowDown", true, false, 99, 5, 99, 5 },
-        { "ArrowUp", true, false, 0, 5, 0, 5 },
-        { "ArrowLeft", true, false, 5, 0, 5, 0 },
-        { "ArrowRight", true, false, 5, 25, 5, 25 },
-        { "ArrowDown", true, true, 5, 5, 99, 7 },
-        { "ArrowUp", true, true, 5, 5, 0, 7 },
-        { "ArrowLeft", true, true, 5, 5, 7, 0 },
-        { "ArrowRight", true, true, 5, 5, 7, 25 },
-        { "Home", false, false, 5, 0, 5, 0 },
-        { "End", false, false, 5, 25, 5, 25 },
-        { "Home", false, true, 5, 5, 7, 0 },
-        { "End", false, true, 5, 5, 7, 25 },
-        { "Home", true, false, 0, 0, 0, 0 },
-        { "End", true, false, 99, 25, 99, 25 },
-    };
-
-    [Theory] // ADR-0012 / ADR-0052 / KB-5: every row of the table, named — plain forms move the Focus, Shift forms move the Extent and leave the Focus
-    [MemberData(nameof(KB5Table))]
-    public void KB5_each_row_of_the_key_table_moves_the_focus_or_the_extent(
-        string key, bool ctrl, bool shift, int focusRow, int focusColumn, int extentRow, int extentColumn)
-    {
-        var start = GridSelection.Empty.Click(new(5, 5), Grid).ExtendTo(new(7, 7), Grid);
-        var action = GridKeys.Resolve(key, ctrl, shift, alt: false, meta: false, metaIsPrimary: false);
-
-        var next = action.Kind switch
-        {
-            GridKeyKind.Move => start.Move(action.Direction, Grid),
-            GridKeyKind.Extend => start.Extend(action.Direction, Grid),
-            GridKeyKind.MoveToEdge => start.MoveToEdge(action.Direction, Grid),
-            GridKeyKind.ExtendToEdge => start.ExtendToEdge(action.Direction, Grid),
-            GridKeyKind.MoveToCorner => start.Click(
-                action.Backward ? new CellPosition(0, 0) : new CellPosition(Grid.RowCount - 1, Grid.ColumnCount - 1), Grid),
-            _ => throw new InvalidOperationException($"{key} (ctrl {ctrl}, shift {shift}) resolved to {action.Kind}, not a row of ADR-0012's table"),
-        };
-
-        Assert.Equal(new CellPosition(focusRow, focusColumn), next.Focus);
-        Assert.Equal(new CellPosition(extentRow, extentColumn), next.Extent);
-        Assert.Single(next.Ranges);
-        if (shift)
-            Assert.Equal(start.Focus, next.Focus);
-        else
-            Assert.Equal(1L, next.CellCount);
     }
 }

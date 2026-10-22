@@ -210,13 +210,20 @@ public static class MenuKeys
     /// </summary>
     internal static IReadOnlyDictionary<string, IReadOnlyList<string>> HoldSets { get; } = BuildHoldSets();
 
-    // Every key a menu could be asked about, with Shift and without; a chord means nothing in a
-    // menu, so none is asked.
+    // Every key a menu could be asked about, with Shift and without: every printable character a
+    // keyboard types, and every named key it sends. Asked of the menu's own resolver rather than
+    // listed by what it answers today, so a key given a meaning there later is held without a second
+    // edit here. A chord means nothing in a menu, so none is asked.
     private static IEnumerable<(string Key, bool Shift)> Candidates()
     {
-        string[] named = ["Tab", "Enter", " ", "Escape", "ArrowUp", "ArrowDown", "Home", "End"];
-        var letters = Enumerable.Range('a', 26).SelectMany(c => new[] { ((char)c).ToString(), char.ToUpperInvariant((char)c).ToString() });
-        foreach (var key in named.Concat(letters))
+        string[] named =
+        [
+            "Tab", "Enter", "Escape", "Backspace", "Delete", "Insert",
+            "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Home", "End", "PageUp", "PageDown",
+            "ContextMenu", "F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8", "F9", "F10", "F11", "F12",
+        ];
+        var printable = Enumerable.Range(0x20, 0x7F - 0x20).Select(c => ((char)c).ToString());
+        foreach (var key in named.Concat(printable))
         {
             yield return (key, false);
             yield return (key, true);

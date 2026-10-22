@@ -51,10 +51,14 @@ test('typing opens Overwrite containing the character, Enter commits and moves (
     expect(active).toMatch(/r1c1$/);
 });
 
+// An Apple platform, where Meta is the Primary Modifier and Option types characters of its own.
+const onApple = (page) => page.evaluate(() => /mac|iphone|ipad|ipod/i.test(navigator.userAgentData?.platform ?? navigator.platform ?? ''));
+
 // An AltGr character reports Control and Alt held together, and is how several layouts type @ { [ €:
 // the script's gate passes it as typing, where Control or Alt alone is a shortcut the browser keeps
 // (ED-13, ADR-0010). The C# half is CellEditorTests'; this is the script's, with real keys.
 test('ED-13: Control and Alt held together open the editor with the character; either alone opens nothing (ADR-0010)', async ({ page }) => {
+    test.skip(await onApple(page), 'On an Apple platform Option types a character of its own (Option+q is œ), and AltGr is not a key there');
     const editor = grid(page).locator('input.ex-editor');
     await clickCell(page, 0, 1); // Trader, editable
     await expectActiveDescendant(grid(page), /r0c1$/);
@@ -994,8 +998,6 @@ test('with a 150 ms round trip, End, Ctrl+←, Shift+End typed straight after F2
 // move by a word (wordKeys). In Caret they are the field's, as the word moves are: the edit stands
 // and the caret lands at the start and the end. Pressed only where the platform gives them that
 // meaning; KB-3's macOS row runs it (ticket 280).
-const onApple = (page) => page.evaluate(() => /mac|iphone|ipad|ipod/i.test(navigator.userAgentData?.platform ?? navigator.platform ?? ''));
-
 test('on an Apple platform, in Caret ⌘+← and ⌘+→ move the caret to the text\'s start and end, in the field itself (ED-2, KB-3, ticket 280)', async ({ page }) => {
     test.skip(!(await onApple(page)), '⌘+←/→ go to the text\'s ends only on an Apple platform; elsewhere Ctrl\'s word moves are pressed above');
     const editor = await alphaBetaInTrader(page);
@@ -1582,19 +1584,28 @@ test('A11Y-6: a wheel scroll that takes the Focus out of the paint clears aria-a
     await expectActiveDescendant(grid(page), /r1c1$/);
 });
 
-// Holds a drag from the cell at (row, 1) in the edge band of the Viewport's top or bottom (ADR-0008),
-// and lets go once the status line says the Selection has reached `cells`.
+// Holds a drag from the cell at (row, 1) in the edge band of the Viewport's top or bottom (ADR-0008)
+// until the edge scroll has carried the Viewport to that end of the page and the Selection has
+// reached `cells`; then moves once more inside the band, so the boundary is pressed against after it
+// is reached, and lets go. The count is read whole, so a Selection that ran past the page fails.
 async function dragIntoBand(page, row, edge, cells) {
     const status = grid(page).locator('.ex-status');
+    const scroller = grid(page).locator('.ex-scroller');
     const start = await grid(page).locator(`[id$='r${row}c1']`).boundingBox();
-    const box = await grid(page).locator('.ex-scroller').boundingBox();
+    const box = await scroller.boundingBox();
     await page.mouse.move(start.x + start.width / 2, start.y + start.height / 2);
     await page.mouse.down();
     const y = edge === 'bottom' ? box.y + box.height - 18 : box.y + 28 + 6;
     await page.mouse.move(start.x + start.width / 2, y, { steps: 10 });
     await expect(status).toContainText(`${cells} cells selected`, { timeout: 20_000 });
+    await expect.poll(() => scroller.evaluate((el, end) => end === 'bottom'
+        ? el.scrollTop + el.clientHeight >= el.scrollHeight - 1
+        : el.scrollTop === 0, edge), { timeout: 20_000 }).toBe(true);
+    await page.mouse.move(start.x + start.width / 2 + 4, y + (edge === 'bottom' ? 2 : -2));
+    await settled(grid(page));
     await page.mouse.up();
     await settled(grid(page));
+    await expect(status).toContainText(new RegExp(`(^|\\D)${cells} cells selected`));
 }
 
 test('SL-11: a drag held against either boundary of a page does not turn it, and the Selection stops at the page (ADR-0015)', async ({ page }) => {
@@ -1606,7 +1617,7 @@ test('SL-11: a drag held against either boundary of a page does not turn it, and
     await clickCell(page, 0, 1);
     await dragIntoBand(page, 0, 'bottom', 50);
     await expect(pager).toContainText('1 / 8');
-    await expect(grid(page).locator('.ex-status')).toContainText('50 cells selected');
+    await expect(grid(page).locator('.ex-status')).toContainText(/(^|\D)50 cells selected/);
 
     // The second page's first row, from a row below it.
     await pager.locator('button').nth(1).click();
@@ -1615,7 +1626,7 @@ test('SL-11: a drag held against either boundary of a page does not turn it, and
     await clickCell(page, 55, 1);
     await dragIntoBand(page, 55, 'top', 6);
     await expect(pager).toContainText('2 / 8');
-    await expect(grid(page).locator('.ex-status')).toContainText('6 cells selected');
+    await expect(grid(page).locator('.ex-status')).toContainText(/(^|\D)6 cells selected/);
 });
 
 // Off an Apple platform Meta is the OS's own key, not the Primary Modifier: a key held with it stays
@@ -1649,7 +1660,6 @@ test('KB-3: off an Apple platform, Meta+↓ moves no Focus, and Meta+Enter in an
 // with Pinned Columns or without (KB-10, ADR-0012's note on pinned columns): /wide pins two of its
 // hundred columns, and its button unpins them.
 test('KB-10: Home and Ctrl+Home return the Viewport to the start of the row and the result, pinned and unpinned alike (ADR-0012)', async ({ page }) => {
-    const landed = {};
     for (const pinned of [2, 0]) {
         await page.goto('/wide?rows=1000');
         const wide = page.locator('.ex-grid').first();
@@ -1678,9 +1688,7 @@ test('KB-10: Home and Ctrl+Home return the Viewport to the start of the row and 
         await expectActiveDescendant(wide, /r0c0$/);
         await expect.poll(left).toBe(0);
         await expect.poll(top).toBe(0);
-        landed[pinned] = { left: await left(), top: await top() };
     }
-    expect(landed[2]).toEqual(landed[0]);
 });
 
 // While a range is extended the grid keeps the Extent in view; moved back inside the view, the Extent

@@ -36,7 +36,7 @@ public class VirtualisationTests : GridTestContext
         Assert.Equal(RowsPerViewport, cut.FindAll(".ex-row").Count);
     }
 
-    [Theory] // ADR-0003 P2 / VZ-2: the row components equal the rows per Viewport at every TotalCount — at the top and scrolled into the middle
+    [Theory] // ADR-0003 P2 / VZ-2: the row components equal the rows per Viewport at every TotalCount — at the top, and scrolled within the first Window
     [InlineData(5)]
     [InlineData(6)]
     [InlineData(50)]
@@ -52,6 +52,22 @@ public class VirtualisationTests : GridTestContext
         // Scrolled to a row inside the Window, a Viewport away from the top: the same count.
         var row = Math.Min(total, 500) - RowsPerViewport;
         await ScrollToAsync(cut.Find(".ex-scroller"), row * RowHeightPx);
+        Assert.Equal(RowsPerViewport, cut.FindComponents<ExGridRow<TestRow>>().Count);
+        Assert.Equal(RowsPerViewport, cut.FindAll(".ex-row").Count);
+    }
+
+    [Theory] // ADR-0003 P2 / VZ-2: deep in a large result, with the Window placed there and the Viewport scrolled to it, the count is the same
+    [InlineData(1_000)]
+    [InlineData(100_000)]
+    [InlineData(1_000_000)]
+    public async Task VZ2_row_components_equal_the_rows_per_viewport_deep_in_the_result(int total)
+    {
+        const int windowSize = 500;
+        var windowStart = total / 2;
+        var cut = RenderGrid(TestRows.Many(windowSize), windowStart: windowStart, total: total);
+
+        await ScrollToAsync(cut.Find(".ex-scroller"), (windowStart + windowSize / 2) * (double)RowHeightPx);
+
         Assert.Equal(RowsPerViewport, cut.FindComponents<ExGridRow<TestRow>>().Count);
         Assert.Equal(RowsPerViewport, cut.FindAll(".ex-row").Count);
     }

@@ -11,7 +11,8 @@ namespace ExPivot.Components.Tests;
 /// DA-18's inspection, made a test: the eleven Aggregations have one definition, in
 /// <c>ExGrid.Data</c>, and both <c>ExPivot.Engine</c> and ExGrid's Selection Summary answer through it
 /// (ADR-0130/0060). Read from each compiled assembly's own references, so a copy of the arithmetic
-/// written into either one, and read instead of ExGrid.Data's, shows as a reference that is gone.
+/// written into either one in place of ExGrid.Data's shows as a reference that is gone. A copy used
+/// beside a call that remains is not seen here: that half of DA-18 stays a reading of the code.
 /// </summary>
 public class OneAggregationDefinitionTests
 {
