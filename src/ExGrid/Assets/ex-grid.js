@@ -1,7 +1,8 @@
-// The six permitted uses of JavaScript (ADR-0021): the capture-phase keydown listener,
-// reading and setting scroll offsets, the clipboard, being told what the scrollbar takes
-// out of the box, being told about the pointer — when it moves onto another row, and
-// when it comes to rest — and being told the Layout Ceiling (ADR-0053). Beside them, the notes ADR-0021 has added since: a capture-phase
+// Twelve of the permitted uses of JavaScript (ADR-0021) are in this file; ExChart's three are in
+// its own module. The first six: the capture-phase keydown listener, reading and setting scroll
+// offsets (the page's follow of a revealed Focus among them, ADR-0204), the clipboard, being told
+// what the scrollbar takes out of the box, being told about the pointer — when it moves onto
+// another row, and when it comes to rest — and being told the Layout Ceiling (ADR-0053). Beside them, the notes ADR-0021 has added since: a capture-phase
 // mousedown and mouseup that keep a press on the rows in its place among held keys, and hold the
 // keys after one made while an edit is open; the root taking the keyboard back only while DOM
 // focus is still its own; that same mousedown bringing the keyboard back to an edit left
@@ -33,7 +34,8 @@
 // supplying its missing commit when it is left and retiring on a normal commit. The Input Order
 // (ADR-0240 section 2): a capture-phase click, dblclick and contextmenu on the root, beside the
 // mousedown and mouseup above, which number a click on one of the grid's own controls that claim it
-// (data-ex-claims) as it goes on to Blazor, and hold it in its place while the gate holds input. The Settled Mark
+// (data-ex-claims) as it goes on to Blazor, and hold it in its place while the gate holds input — the eleventh — and
+// the twelfth, a capture-phase submit and focus on the window, filtered to this root. The Settled Mark
 // (ADR-0220; ADR-0021's note of 2026-10-16) adds no listener: the listeners above write
 // `data-ex-settled` on the root, with one MutationObserver on two attributes the core's render
 // writes on the root's first child, as the reveal's and the follow's observe theirs. Anything
