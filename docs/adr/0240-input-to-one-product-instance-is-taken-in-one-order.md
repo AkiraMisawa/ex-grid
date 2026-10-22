@@ -493,7 +493,15 @@ The hold has one more wait before its drain starts: the reply to the key that st
 WebAssembly Find's field held the keyboard a moment before Ctrl+F's reply came back, and a Tab typed in
 between was held and refused (CI on PR #243, msedge, once in three). For a key that opens one of the
 grid's own popovers, the hold keeps that key's number, and a key typed before the reply ends the hold
-when the Settled Stamp already answers that number, nothing is owed, and the popover holds the keyboard.
+when the Settled Stamp already answers that number and the popover holds the keyboard. A focus the
+stamp still says is owed does not keep it, as it does not keep a frame's look: ExGrid.MudBlazor's Find
+field takes the keyboard from the core's focus call a round trip before the stamp stops saying it is
+owed, and on the Server host a Tab typed in between was refused the same way. Layer 3's `holdReplies`
+keeps the reply back in the page, so the render and the stamp come first every time; on the code before
+this note the Tab was refused under both Chromes, on both hosts.
+
+A hold started behind another — a key let through by a move's end can start one — ends at a key only
+once its own answer has come, or, for a popover key, once the stamp answers it.
 
 The same window, looked for on `main` with the page's animation frames held back (layer 3's
 `holdFrames`): a Tab typed once Find's field held the keyboard was refused too, under both Chromes. Keys a

@@ -593,7 +593,6 @@ async function arriveAt(page, target) {
     await ready(page);
 }
 
-/** The frames in which what a disposal left to later — a wait that outlived its grid — runs. */
 /**
  * Holds the page's animation frames back until the function returned is called, then runs them in the
  * order they were asked for (ADR-0240's note of 2026-10-21). A wait the grid looks at once a frame then
@@ -631,6 +630,51 @@ export async function holdFrames(page) {
     return () => page.evaluate(() => window.exFramesLetGo?.());
 }
 
+/**
+ * Holds back, in the page, the replies to the grid's calls of `method` on its core, until the function
+ * returned is called, then lets them through in order (ADR-0240's note of 2026-10-21). The call itself
+ * goes and is answered, and what it renders arrives: only the promise the grid's script waits on is
+ * kept, so the render and the Settled Stamp come ahead of the reply, on either host, every time. On
+ * WebAssembly Find's field held the keyboard a moment before Ctrl+F's reply, one run in many (CI,
+ * PR #243). Taken before the page the test mounts: the core is reached through the reference its
+ * attach revives. Undone as the test ends if not let go before.
+ */
+export async function holdReplies(page, method) {
+    await alterPage(page, (name) => {
+        const held = [];
+        let active = true;
+        let proto = null;
+        let original = null;
+        DotNet.attachReviver((key, value) => {
+            const candidate = value !== null && typeof value === 'object' ? Object.getPrototypeOf(value) : null;
+            if (active && proto === null && candidate !== null && candidate !== Object.prototype
+                && Object.prototype.hasOwnProperty.call(candidate, 'invokeMethodAsync')) {
+                proto = candidate;
+                original = candidate.invokeMethodAsync;
+                candidate.invokeMethodAsync = function (m, ...args) {
+                    const reply = original.call(this, m, ...args);
+                    return m === name && window.exRepliesLetGo !== undefined
+                        ? new Promise((resolve, reject) => held.push(() => reply.then(resolve, reject)))
+                        : reply;
+                };
+            }
+            return value;
+        });
+        const letGo = () => {
+            delete window.exRepliesLetGo;
+            held.splice(0).forEach((release) => release());
+        };
+        window.exRepliesLetGo = letGo;
+        return () => {
+            active = false;
+            if (window.exRepliesLetGo === letGo) letGo();
+            if (proto !== null) proto.invokeMethodAsync = original;
+        };
+    }, method);
+    return () => page.evaluate(() => window.exRepliesLetGo?.());
+}
+
+/** The frames in which what a disposal left to later — a wait that outlived its grid — runs. */
 export const twoFrames = (page) => page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
 
 /**

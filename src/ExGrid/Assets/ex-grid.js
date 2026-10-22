@@ -1934,10 +1934,11 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // the keys held for a list the ExSheet toolbar was opening were refused before it stood. The hand-off
     // is numbered as it is told (handOffInput), and answered once the core has opened what it hands to, so
     // the stamp that answers it says what is owed after the opening.
-    const coreAnswered = (upTo) => stamp !== null
+    // The first half of it: every input up to `upTo`, and the one the move waits on, answered.
+    const inputsAnswered = (upTo) => stamp !== null
         && Number(stamp.getAttribute('data-ex-answered')) >= Math.max(upTo, awaitingMove?.upTo ?? 0,
-            handOff === 'popover' ? handOffInput : 0)
-        && !stamp.hasAttribute('data-ex-focus-owed');
+            handOff === 'popover' ? handOffInput : 0);
+    const coreAnswered = (upTo) => inputsAnswered(upTo) && !stamp.hasAttribute('data-ex-focus-owed');
     // What a hold waits for has come, as editorSettled's look finds it, and nothing is judged missed:
     // the edit or the popover holds the keyboard, the hand-off has reached it, and the move is made.
     const keyboardArrived = () => (editing === 'none' || editorFocused())
@@ -2853,14 +2854,21 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // answer counts as come once the Settled Stamp answers that key's number — its reply can come later:
     // on WebAssembly Find's field held the keyboard a moment before Ctrl+F's reply, and a Tab typed
     // between was held and refused (CI, PR #243). The wait is then judged as its first look would judge
-    // it, and only a keyboard already arrived ends the hold.
+    // it, and only a keyboard already arrived ends the hold. The number is enough: a focus the stamp still
+    // says is owed has come if the keyboard is there, as a look judges it — a substituted Chrome's field
+    // takes the keyboard a round trip before the stamp says so on a circuit (ExGrid.MudBlazor's Find on
+    // the Server host).
     const endHoldAtKey = () => {
         if (!answering || held.length > 0 || pressAnswer !== null || frameInTurn !== null || restlessWaits > 0) {
             return;
         }
+        // An answer still to come counts only as the popover key's, answered by the stamp: a hold started
+        // behind another, which a key let through by a move's end can start, keeps its keys until then.
+        if (holdAnswer !== null && !(holdAnswer.upTo > 0 && inputsAnswered(holdAnswer.upTo))) {
+            return;
+        }
         if (settledWaits.size === 0) {
-            if (holdAnswer === null || !(holdAnswer.upTo > 0) || !awaitingPopover || !coreAnswered(holdAnswer.upTo)
-                || !keyboardArrived()) {
+            if (holdAnswer === null || !awaitingPopover || !keyboardArrived()) {
                 return;
             }
             awaitingPopover = false;

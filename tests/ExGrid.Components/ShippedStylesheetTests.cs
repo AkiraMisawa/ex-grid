@@ -1148,7 +1148,9 @@ public class ShippedStylesheetTests
         Assert.Matches(new Regex(@"lookAgain\(\);\s*if \(settledWaits\.size > 0 \|\| keyboardMissed \|\| \(focusDeclined && !declined\)\) \{\s*return;\s*\}"), endAtKey);
         // Before the drain has started, a popover key's answer counts as come once the stamp answers its number,
         // and only a keyboard already arrived there ends the hold.
-        Assert.Matches(new Regex(@"if \(holdAnswer === null \|\| !\(holdAnswer\.upTo > 0\) \|\| !awaitingPopover \|\| !coreAnswered\(holdAnswer\.upTo\)\s*\|\| !keyboardArrived\(\)\) \{\s*return;"), endAtKey);
+        // An answer still to come ends the hold only as the popover key's, answered by the stamp.
+        Assert.Matches(new Regex(@"if \(holdAnswer !== null && !\(holdAnswer\.upTo > 0 && inputsAnswered\(holdAnswer\.upTo\)\)\) \{\s*return;"), endAtKey);
+        Assert.Matches(new Regex(@"if \(holdAnswer === null \|\| !awaitingPopover \|\| !keyboardArrived\(\)\) \{\s*return;"), endAtKey);
         Assert.Matches(new Regex(@"holdAnswer = null;\s*holdEpoch\+\+;\s*endHold\(\);"), endAtKey);
         Assert.Contains("startHold(answer, awaitingPopover ? inputsSent : 0);", script, StringComparison.Ordinal);
         Assert.Contains("answer.then(() => drain(epoch));", script, StringComparison.Ordinal);

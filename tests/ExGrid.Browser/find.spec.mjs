@@ -1,4 +1,4 @@
-import { test, expect, watchNextKey, keySeenUntouched, scrollRowToTop, circuitQuiet, settled, holdFrames } from './fixtures.mjs';
+import { test, expect, watchNextKey, keySeenUntouched, scrollRowToTop, circuitQuiet, settled, holdFrames, holdReplies } from './fixtures.mjs';
 import { expectKeyboardOn, activeDescendant } from './keyboard.mjs';
 import { acrossEdges, blend, onDevicePixels, paints } from './pixels.mjs';
 
@@ -74,6 +74,28 @@ for (const chrome of ['builtin', 'mud']) {
         test('FD-1/ADR-0240: a Tab typed once Find\'s field holds the keyboard moves on in the panel, before any frame has looked', async ({ page }) => {
             await settled(grid(page));
             const letGo = await holdFrames(page);
+            await page.keyboard.press('ControlOrMeta+f');
+            const panel = grid(page).locator('.ex-popover-find');
+            const field = panel.locator('input').first();
+            await expect(field).toBeFocused();
+
+            await page.keyboard.press('Tab');
+            await letGo();
+            await settled(grid(page));
+            await expect(field).not.toBeFocused();
+            await expect(panel).toBeVisible();
+            expect(await panel.evaluate((p) => p.contains(document.activeElement)), 'the keyboard is still the panel\'s').toBe(true);
+        });
+
+        // The same Tab, typed once the field holds the keyboard but before Ctrl+F's own reply has come back: the
+        // hold behind Ctrl+F waited for that reply before it looked at anything, and held the Tab, which was
+        // refused once the reply came (CI on PR #243, WebAssembly, one run in three). Here the reply is kept
+        // back until the Tab is typed, so that is the case every time.
+        test('FD-1/ADR-0240: a Tab typed once Find\'s field holds the keyboard moves on in the panel, before Ctrl+F\'s reply has come', async ({ page }) => {
+            const letGo = await holdReplies(page, 'OnKeyAsync');
+            await page.goto(`/features?chrome=${chrome}`);
+            await grid(page).locator("[id$='r0c0']").click({ force: true });
+            await settled(grid(page));
             await page.keyboard.press('ControlOrMeta+f');
             const panel = grid(page).locator('.ex-popover-find');
             const field = panel.locator('input').first();
