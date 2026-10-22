@@ -14,19 +14,19 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/22/2026 - 02:36:18 |
+| Generated on: | 10/22/2026 - 22:11:34 |
 | Parser: | MultiReport (19x Cobertura) |
 | Assemblies: | 14 |
 | Classes: | 1095 |
 | Files: | 569 |
-| **Line coverage:** | 94.4% (75721 of 80142) |
-| Covered lines: | 75721 |
-| Uncovered lines: | 4421 |
-| Coverable lines: | 80142 |
-| Total lines: | 128215 |
-| **Branch coverage:** | 86.8% (45197 of 52047) |
-| Covered branches: | 45197 |
-| Total branches: | 52047 |
+| **Line coverage:** | 94.4% (75728 of 80150) |
+| Covered lines: | 75728 |
+| Uncovered lines: | 4422 |
+| Coverable lines: | 80150 |
+| Total lines: | 128225 |
+| **Branch coverage:** | 86.8% (45196 of 52049) |
+| Covered branches: | 45196 |
+| Total branches: | 52049 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
@@ -104,7 +104,7 @@
 |ExChart.Components.ChartTooltipView|100%|59%|
 |ExChart.Components.ExChart|89.8%|81.7%|
 |ExChart.Components.ExChartStylesheet|0%||
-|ExChart.Components.ExSurface|79.2%|79.4%|
+|ExChart.Components.ExSurface|79.5%|79.1%|
 |ExChart.Components.SurfaceReports|25%||
 |ExChart.Components.Svg|50%|25%|
 |ExChart.GridCell|100%||
@@ -962,7 +962,7 @@
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExSheet**|**92.6%**|**83.5%**|
+|**ExSheet**|**92.6%**|**83.4%**|
 |ExSheet.AlignCenterItem|100%||
 |ExSheet.AlignLeftItem|100%||
 |ExSheet.AlignmentItem|100%|100%|
