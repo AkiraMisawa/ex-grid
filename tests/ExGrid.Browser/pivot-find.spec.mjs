@@ -176,9 +176,25 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(toggle).toHaveAttribute('aria-expanded', 'true');
             await expect(cell(page, 13, 0)).toContainText('Grand Total');
             await expect(report(page)).toHaveAttribute('aria-activedescendant', /-r4c0$/);
-            // The double click on the label is PV-13's other clause: on CI's Edge under the
-            // MudBlazor Chrome it once collapsed APAC and left no Focus (signoff ticket 01's
-            // comment of 2026-10-22), so its test goes in with the fix.
+        });
+
+        test(`PV-13: an outer Item collapses and expands by a double click on its label, and the Focus stays on it (ADR-0059) (${chrome})`, async ({ page }) => {
+            // Open defect (signoff ticket 01, comment of 2026-10-22): on CI's Edge, Server host, under
+            // the MudBlazor Chrome, a double click on APAC's label once collapsed it and left no Focus.
+            test.fixme(chrome === 'mud', 'a double click on the label can leave the report with no Focus under the MudBlazor Chrome (signoff ticket 01)');
+            await open(page, chrome);
+            const toggle = cell(page, 4, 0).locator('.ex-pivot-toggle');
+            await cell(page, 4, 0).click({ force: true });
+            await expect(report(page)).toHaveAttribute('aria-activedescendant', /-r4c0$/);
+            await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+
+            await cell(page, 4, 0).dblclick({ force: true });
+            await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+            await expect(report(page)).toHaveAttribute('aria-activedescendant', /-r4c0$/);
+            await cell(page, 4, 0).dblclick({ force: true });
+            await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+            await expect(cell(page, 13, 0)).toContainText('Grand Total');
+            await expect(report(page)).toHaveAttribute('aria-activedescendant', /-r4c0$/);
         });
 
         test(`ADR-0333: a column label is found in the report's headers, marked and said, and the Focus stays (${chrome})`, async ({ page }) => {
