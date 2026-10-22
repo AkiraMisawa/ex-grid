@@ -56,6 +56,14 @@ restate.
 - 2026-10-22: tests now assert FN-1, VZ-2, ED-13 (both layers), ED-19, SL-1, SL-2, SL-11, KB-3 (off
   Apple), KB-5 (on the component), KB-9, KB-10, KB-11, KB-28, KB-40, KB-42 (both layers), A11Y-6, A11Y-9,
   A11Y-10, CP-7, CTX-3, PST-4, ERR-1, ERR-7, DC-39, DC-40, SH-60 (the Consumer's zone), PV-13 (the
-  Context Menu and the double click) and DA-18. Still open: ASY-7, WR-1, DC-62, DC-63, SH-60
-  (#GETTING_DATA, the minute turning), PV-3, PV-7, PV-13 (a values-only refresh), PV-18 and LV-27.
+  Context Menu) and DA-18. Still open: ASY-7, WR-1, DC-62, DC-63, SH-60
+  (#GETTING_DATA, the minute turning), PV-3, PV-7, PV-13 (the double click, a values-only refresh),
+  PV-18 and LV-27.
   WR-10 is not a Playwright test: its Check is the by-hand MudBlazor floor run under `verification/`.
+- 2026-10-22: PV-13's double click on the label found a defect. On CI (PR #246, Edge, Server host,
+  `/pivot?chrome=mud`, once in three) a double click on APAC's label after an Expand from the Context
+  Menu collapsed APAC and left the report with no Focus (`aria-activedescendant` absent for 60 s),
+  where the Context Menu's Collapse in the same run kept it. The input journal shows the double
+  click's four presses answered in order; the Focus is placed by `ExPivot.OnAfterRenderAsync` through
+  `PlaceSelectionAsync` once the toggled report lands. Not reproduced locally in 30 runs on Chromium.
+  The clause's test goes in with the fix.

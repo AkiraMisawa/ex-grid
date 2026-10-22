@@ -26,9 +26,6 @@
 <p class="demo-status">
     <span id="edit-status">Edited: @_editStatus</span>
     <span id="paste-status">Pasted: @_pasteStatus</span>
-    @* How many Edit Intents and paste intents the grid has raised: a gesture that raised none, or two,
-       shows here where a status line would read the same (ED-19). *@
-    <span id="intent-count">Intents: @_editCount edits, @_pasteCount pastes</span>
     @* What the last paste's source block held, field by field, with where each field came from
        (ADR-0005, ADR-0050 item 10): Excel's x:num is the raw value, read under the invariant
        culture, where the text flavour is the display, already rounded (CP-14). *@
@@ -100,6 +97,11 @@
         CellState="_rules.State"
         CellMessageOf="_rules.Message"
         Chrome="_chrome" />
+
+@* How many Edit Intents and paste intents the grid has raised: a gesture that raised none, or two,
+   shows here where a status line would read the same (ED-19). Below the grid, so a count that
+   changes never moves the rows a pointer is pressing on. *@
+<p class="demo-status"><span id="intent-count">Intents: @_editCount edits, @_pasteCount pastes</span></p>
 
 @* The Header Groups as this page declared them, written out after every render: a drag never
    changes them (ADR-0032, HG-15). Only under ?groups=1, so the page's default layout is unchanged. *@
