@@ -26,6 +26,9 @@
 <p class="demo-status">
     <span id="edit-status">Edited: @_editStatus</span>
     <span id="paste-status">Pasted: @_pasteStatus</span>
+    @* How many Edit Intents and paste intents the grid has raised: a gesture that raised none, or two,
+       shows here where a status line would read the same (ED-19). *@
+    <span id="intent-count">Intents: @_editCount edits, @_pasteCount pastes</span>
     @* What the last paste's source block held, field by field, with where each field came from
        (ADR-0005, ADR-0050 item 10): Excel's x:num is the raw value, read under the invariant
        culture, where the text flavour is the display, already rounded (CP-14). *@
@@ -67,6 +70,7 @@
         ViewportHeight="320"
         ViewportWidth="720"
         PinnedColumnCount="_pinned"
+        PageSize="PagedSize"
         HeaderGroups="_groups"
         HighlightFocusRow="true"
         OnEdit="OnEdit"
@@ -208,6 +212,15 @@
     public string? GroupsParameter { get; set; }
 
     private bool ShowGroups => GroupsParameter == "1";
+
+    /// <summary>
+    /// <c>?paged=1</c> gives the main grid a pager of 50 rows a page (ADR-0015), so the browser layer
+    /// can drag against a page's boundary and read that the page does not turn (SL-11).
+    /// </summary>
+    [SupplyParameterFromQuery(Name = "paged")]
+    public string? PagedParameter { get; set; }
+
+    private int? PagedSize => PagedParameter == "1" ? 50 : null;
 
     /// <summary>
     /// <c>?summary=held</c> adds a third grid whose Selection Summary the page answers itself
@@ -420,6 +433,8 @@
         => ((DateTime)value).ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
 
     private string _editStatus = "—";
+    private int _editCount;
+    private int _pasteCount;
     private string _clearStatus = "—";
     private string _findStatus = "—";
     private string _replaceStatus = "—";
@@ -554,6 +569,7 @@
 
     private void OnEdit(GridEditIntent<DemoTrade> intent)
     {
+        _editCount++;
         _editStatus = $"{intent.Column}={intent.Value} on {intent.Row.Book}/{intent.Row.Trader}" + (RowKeyOn ? $" #{intent.Row.Id}" : "");
         // The Consumer's half of ADR-0007: a NEW instance carrying the change goes
         // back through the source, and the screen follows the identity change. An
@@ -577,6 +593,7 @@
 
     private void OnPaste(GridPasteIntent intent)
     {
+        _pasteCount++;
         _pasteStatus = $"{intent.CellCount} cells from {intent.Plan.Source.Rows}x{intent.Plan.Source.Columns}";
         // Shown in part: the page is read by people and by tests, and a ten-megabyte paste written whole
         // into one text node cost the browser seconds of text shaping after every render (widened-run
