@@ -1934,10 +1934,15 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // the keys held for a list the ExSheet toolbar was opening were refused before it stood. The hand-off
     // is numbered as it is told (handOffInput), and answered once the core has opened what it hands to, so
     // the stamp that answers it says what is owed after the opening.
-    const coreAnswered = (upTo) => stamp !== null
+    // The first half of it: every input up to `upTo`, and the one the move waits on, answered.
+    const inputsAnswered = (upTo) => stamp !== null
         && Number(stamp.getAttribute('data-ex-answered')) >= Math.max(upTo, awaitingMove?.upTo ?? 0,
-            handOff === 'popover' ? handOffInput : 0)
-        && !stamp.hasAttribute('data-ex-focus-owed');
+            handOff === 'popover' ? handOffInput : 0);
+    const coreAnswered = (upTo) => inputsAnswered(upTo) && !stamp.hasAttribute('data-ex-focus-owed');
+    // What a hold waits for has come, as editorSettled's look finds it, and nothing is judged missed:
+    // the edit or the popover holds the keyboard, the hand-off has reached it, and the move is made.
+    const keyboardArrived = () => (editing === 'none' || editorFocused())
+        && (!awaitingPopover || popoverFocused()) && handedOver() && moved();
     // The edit's own surface to type the held keys into when its focus did not come: the one that last
     // held the keyboard here, else the Cell Editor's.
     const declinedSurface = () => {
@@ -1967,15 +1972,24 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             again();
         }
     };
-    const editorSettled = () => new Promise((settle) => {
+    // The waits with work of their own still to do once they settle (editorSettled's `rest`): while one
+    // stands, no key ends the hold (endHoldAtKey).
+    let restlessWaits = 0;
+    const editorSettled = (rest = true) => new Promise((settle) => {
         // Settled once: a wait looked at again leaves no second frame of its own behind, and none
         // looks after it has settled.
         let waiting = true;
+        if (!rest) {
+            restlessWaits++;
+        }
         // The inputs sent as the wait began: what they owe is all it waits for.
         const upTo = inputsSent;
         let lookFrame = 0;
         const resolve = () => {
             waiting = false;
+            if (!rest) {
+                restlessWaits--;
+            }
             settledWaits.delete(again);
             settle();
             lookSettled();
@@ -2454,12 +2468,18 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // A hold begins: the keys typed from now are held, in order, and handed on by drain — at
     // once, or once `answer` has come, for a key the core is answering. Each caller asks first whether
     // a hold stands, and a drain already running takes what it holds.
-    const startHold = (answer) => {
+    // `upTo`, where the answer is that of a key that opens a popover of the grid's own: the number the
+    // Settled Stamp answers it by, read by a key typed before the answer's own reply has come
+    // (endHoldAtKey).
+    const startHold = (answer, upTo = 0) => {
         answering = true;
+        const epoch = holdEpoch;
         if (answer) {
-            answer.then(drain);
+            holdAnswer = { upTo };
+            answer.then(() => drain(epoch));
         } else {
-            drain();
+            holdAnswer = null;
+            drain(epoch);
         }
         journal.note('hold');
     };
@@ -2484,7 +2504,16 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         }
     };
 
-    const drain = async () => {
+    // Which hold a drain works for: a hold ended at a key (endHoldAtKey) leaves the drain that served it
+    // nothing more to do once its wait has resolved.
+    let holdEpoch = 0;
+    // The answer a hold waits for before its drain starts, until it does: null once it has.
+    let holdAnswer = null;
+    const drain = async (epoch = holdEpoch) => {
+        if (epoch !== holdEpoch) {
+            return;
+        }
+        holdAnswer = null;
         // Behind a press, its answer first (holdBehindPress); a press passed on behind it while
         // nothing was held replaces the question, and its answer comes after the first one's.
         while (pressAnswer !== null) {
@@ -2501,7 +2530,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         // before the popover or the editor has taken DOM focus, and a key typed in that
         // gap must still be held, not gated against the root.
         await editorSettled();
-        while (held.length > 0 && core) {
+        while (held.length > 0 && core && epoch === holdEpoch) {
             // The keyboard is leaving for the Consumer's element around the root: the keys held are its.
             if (keysOut) {
                 passHeldOut();
@@ -2725,7 +2754,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
                     // in the cell (ADR-0050 item 16: a control takes the keyboard in turn, and the keys
                     // held for it are handed to it in the same task).
                     await core?.invokeMethodAsync('Ping').catch(() => false);
-                    await editorSettled();
+                    await editorSettled(false);
                 }
                 if (move) {
                     awaitMove(move, inputsSent > sentBefore ? inputsSent : 0);
@@ -2785,12 +2814,21 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         // and not yet reached: the hold stands until the keyboard arrives, so that the keys typed
         // meanwhile go there too, and none is gated against the root (ADR-0050 item 16's note of
         // 2026-10-12).
+        if (epoch !== holdEpoch) {
+            return;
+        }
         if (core && handOff !== null) {
             await editorSettled();
+            if (epoch !== holdEpoch) {
+                return;
+            }
             if (held.length > 0 && core) {
-                return drain();
+                return drain(epoch);
             }
         }
+        endHold();
+    };
+    const endHold = () => {
         answering = false;
         journal.note('hold over');
         keyboardMissed = false;
@@ -2801,6 +2839,52 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         while (questionsAfterHold.length > 0 && !answering) {
             questionsAfterHold.shift()();
         }
+    };
+    // A key typed once what the hold waits for has come, before the frame that would have looked
+    // (editorSettled): the hold ends at the key, which then goes as it would a frame later, rather than
+    // be held. Held, a key that cannot be handed on from script — a Tab, a Space on a control — was
+    // refused although nothing stood in its way, as the frame fell (DC-60 on main, 2026-10-21; ADR-0240:
+    // no outcome turns on a clock). Only where nothing is held, no press's answer is still to come, no
+    // frame of the Consumer's own is still to be handed the keyboard, and every wait standing has nothing
+    // left to do once it settles, so nothing is overtaken; and only when the keyboard has arrived. Looked
+    // at that key, a keyboard that has not arrived is judged as the frame would judge it, and the key is
+    // held behind it and refused with it.
+    //
+    // Before the drain has started, while it waits for the answer to the key that started the hold, the
+    // answer counts as come once the Settled Stamp answers that key's number — its reply can come later:
+    // on WebAssembly Find's field held the keyboard a moment before Ctrl+F's reply, and a Tab typed
+    // between was held and refused (CI, PR #243). The wait is then judged as its first look would judge
+    // it, and only a keyboard already arrived ends the hold. The number is enough: a focus the stamp still
+    // says is owed has come if the keyboard is there, as a look judges it — a substituted Chrome's field
+    // takes the keyboard a round trip before the stamp says so on a circuit (ExGrid.MudBlazor's Find on
+    // the Server host).
+    const endHoldAtKey = () => {
+        if (!answering || held.length > 0 || pressAnswer !== null || frameInTurn !== null || restlessWaits > 0) {
+            return;
+        }
+        // An answer still to come counts only as the popover key's, answered by the stamp: a hold started
+        // behind another, which a key let through by a move's end can start, keeps its keys until then.
+        if (holdAnswer !== null && !(holdAnswer.upTo > 0 && inputsAnswered(holdAnswer.upTo))) {
+            return;
+        }
+        if (settledWaits.size === 0) {
+            if (holdAnswer === null || !awaitingPopover || !keyboardArrived()) {
+                return;
+            }
+            awaitingPopover = false;
+            awaitingMove = null;
+            handOff = null;
+            handOffFrom = null;
+        } else {
+            const declined = focusDeclined;
+            lookAgain();
+            if (settledWaits.size > 0 || keyboardMissed || (focusDeclined && !declined)) {
+                return;
+            }
+        }
+        holdAnswer = null;
+        holdEpoch++;
+        endHold();
     };
 
     // A key on a surface of the product's own around this root (ADR-0240 section 6): ExSheet's toolbar
@@ -2854,6 +2938,9 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         lookSettled();
         if (!core || event.isComposing || event.keyCode === 229 || outerSurface(event.target) === null) {
             return;
+        }
+        if (!replaying) {
+            endHoldAtKey();
         }
         // An Escape on the product's own surface — the Sheet's toolbar or tabs — cancels as one in the grid does.
         if (cancelUnderWay(event)) {
@@ -2947,6 +3034,9 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         // straight to a popover that had just taken focus would overtake the keys typed
         // before it. A key this listener is handing on itself is let through.
         // A key landing on a sentinel is held too, until the commands have DOM focus.
+        if (!replaying) {
+            endHoldAtKey();
+        }
         const sentinel = !replaying && !answering && onSentinel(event.target);
         // A hold behind a move or a close is over the moment DOM focus has followed, though
         // its check runs a frame later: a key typed in between is the new holder's already.
@@ -3076,7 +3166,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         const answer = forward(k);
         if (verdict === 'mode' || verdict === 'popover') {
             awaitingPopover = verdict === 'popover';
-            startHold(answer);
+            startHold(answer, awaitingPopover ? inputsSent : 0);
         } else if (verdict === 'core' && closing !== null) {
             // Escape closing a popover: the keys after it wait until it is gone (escapeCloses), or
             // until its answer has come and the popover still stands.
@@ -3683,7 +3773,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
                 console.error('[ex-grid] the grid failed to answer a press', error);
             }
         });
-        await editorSettled();
+        await editorSettled(false);
         restoreBarPressCaret(k);
     };
 

@@ -559,9 +559,9 @@ public class ShippedStylesheetTests
         // bar, a press on the rows.
         Assert.Single(Regex.Matches(script.Text, @"answering = true;"));
         // Nothing in it counts time: a hold ends on what it waits for (ADR-0240 section 4).
-        Assert.Matches(new Regex(@"const startHold = \(answer\) => \{\s*answering = true;\s*if \(answer\)"), script.Text);
+        Assert.Matches(new Regex(@"const startHold = \(answer, upTo = 0\) => \{\s*answering = true;\s*const epoch = holdEpoch;\s*if \(answer\)"), script.Text);
         Assert.DoesNotContain("holdStartedAt", script.Text, StringComparison.Ordinal);
-        Assert.Matches(new Regex(@"const drain = async \(\) => \{.*?while \(pressAnswer !== null\) \{\s*const answer = pressAnswer;\s*await answer;.*?await editorSettled\(\);",
+        Assert.Matches(new Regex(@"const drain = async \(epoch = holdEpoch\) => \{.*?while \(pressAnswer !== null\) \{\s*const answer = pressAnswer;\s*await answer;.*?await editorSettled\(\);",
             RegexOptions.Singleline), script.Text);
         // The core answers for the press or the release it heard last, so the question goes after
         // the press and ahead of its release: from a later task (above), or from this grid's own
@@ -890,7 +890,7 @@ public class ShippedStylesheetTests
         var script = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.js", StringComparison.Ordinal)).Text;
         var keyUp = ListenerBody(script, "onRootKeyUp");
         var keyDown = ListenerBody(script, "onKeyDown");
-        var drain = Regex.Match(script, @"const drain = async \(\) => \{.*?\n    \};", RegexOptions.Singleline).Value;
+        var drain = Regex.Match(script, @"const drain = async \(epoch = holdEpoch\) => \{.*?\n    \};", RegexOptions.Singleline).Value;
         Assert.NotEmpty(drain);
 
         // One keyup listener, on the root, in the capture phase: no listener is added (MEM-4's count).
@@ -936,7 +936,7 @@ public class ShippedStylesheetTests
     {
         var script = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.js", StringComparison.Ordinal)).Text;
         var keyDown = ListenerBody(script, "onKeyDown");
-        var drain = Regex.Match(script, @"const drain = async \(\) => \{.*?\n    \};", RegexOptions.Singleline).Value;
+        var drain = Regex.Match(script, @"const drain = async \(epoch = holdEpoch\) => \{.*?\n    \};", RegexOptions.Singleline).Value;
         var passOut = Regex.Match(script, @"const passHeldOut = \(\) => \{.*?\n    \};", RegexOptions.Singleline).Value;
         Assert.NotEmpty(passOut);
 
@@ -956,7 +956,7 @@ public class ShippedStylesheetTests
         Assert.Contains("const parent = root?.parentElement;", passOut, StringComparison.Ordinal);
         Assert.Contains("const keys = held.splice(0, held.length);", passOut, StringComparison.Ordinal);
         Assert.Matches(new Regex(@"parent\.dispatchEvent\(new KeyboardEvent\("), passOut);
-        Assert.Matches(new Regex(@"while \(held\.length > 0 && core\) \{\s*(//[^\n]*\s*)*if \(keysOut\) \{\s*passHeldOut\(\);\s*break;"), drain);
+        Assert.Matches(new Regex(@"while \(held\.length > 0 && core && epoch === holdEpoch\) \{\s*(//[^\n]*\s*)*if \(keysOut\) \{\s*passHeldOut\(\);\s*break;"), drain);
         // A key typed meanwhile is not the grid's: its default goes, and it travels on to the element around.
         Assert.Matches(new Regex(@"if \(keysOut && !replaying\) \{\s*event\.preventDefault\(\);\s*return;\s*\}"), keyDown);
         Assert.DoesNotContain("stopPropagation", Regex.Match(keyDown, @"if \(keysOut && !replaying\) \{.*?\}", RegexOptions.Singleline).Value, StringComparison.Ordinal);
@@ -969,7 +969,7 @@ public class ShippedStylesheetTests
     public void Keys_a_frame_hands_back_while_a_hand_off_stands_wait_for_it()
     {
         var script = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.js", StringComparison.Ordinal)).Text;
-        var drain = Regex.Match(script, @"const drain = async \(\) => \{.*?\n    \};", RegexOptions.Singleline).Value;
+        var drain = Regex.Match(script, @"const drain = async \(epoch = holdEpoch\) => \{.*?\n    \};", RegexOptions.Singleline).Value;
         var typedOnTheWay = Regex.Match(drain, @"if \(k\.typedOnTheWay !== undefined\) \{.*?\n                continue;\n            \}", RegexOptions.Singleline).Value;
         Assert.NotEmpty(typedOnTheWay);
 
@@ -1136,12 +1136,42 @@ public class ShippedStylesheetTests
         Assert.Single(Regex.Matches(script, @"addEventListener\('focusout'"));
     }
 
+    [Fact] // DC-60 / FD-1 / ADR-0240 (note of 2026-10-21): a hold whose wait is met ends at the next key, not at the next frame, and only when nothing is held, nothing is left to do after the wait, and the keyboard arrived
+    public void ADR0240_a_hold_whose_wait_is_met_ends_at_the_key_not_at_the_next_frame()
+    {
+        var script = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.js", StringComparison.Ordinal)).Text;
+        var endAtKey = Regex.Match(script, @"const endHoldAtKey = \(\) => \{.*?\n    \};", RegexOptions.Singleline).Value;
+        Assert.NotEmpty(endAtKey);
+        // Only with nothing held, no press's answer or frame of the Consumer's own to come, and no wait with work after it.
+        Assert.Matches(new Regex(@"if \(!answering \|\| held\.length > 0 \|\| pressAnswer !== null \|\| frameInTurn !== null \|\| restlessWaits > 0\) \{\s*return;"), endAtKey);
+        // The waits are looked at now, as the frame would; a keyboard judged missed keeps the key held, to be refused.
+        Assert.Matches(new Regex(@"lookAgain\(\);\s*if \(settledWaits\.size > 0 \|\| keyboardMissed \|\| \(focusDeclined && !declined\)\) \{\s*return;\s*\}"), endAtKey);
+        // Before the drain has started, a popover key's answer counts as come once the stamp answers its number,
+        // and only a keyboard already arrived there ends the hold.
+        // An answer still to come ends the hold only as the popover key's, answered by the stamp.
+        Assert.Matches(new Regex(@"if \(holdAnswer !== null && !\(holdAnswer\.upTo > 0 && inputsAnswered\(holdAnswer\.upTo\)\)\) \{\s*return;"), endAtKey);
+        Assert.Matches(new Regex(@"if \(holdAnswer === null \|\| !awaitingPopover \|\| !keyboardArrived\(\)\) \{\s*return;"), endAtKey);
+        Assert.Matches(new Regex(@"holdAnswer = null;\s*holdEpoch\+\+;\s*endHold\(\);"), endAtKey);
+        Assert.Contains("startHold(answer, awaitingPopover ? inputsSent : 0);", script, StringComparison.Ordinal);
+        Assert.Contains("answer.then(() => drain(epoch));", script, StringComparison.Ordinal);
+        // Both keydown listeners that hold keys ask first: the root's and the product's own surfaces' around it.
+        foreach (var listener in new[] { "onKeyDown", "onOuterKey" })
+        {
+            var body = Regex.Match(script, $@"const {listener} = \(event\) => \{{.*?\n    \}};", RegexOptions.Singleline).Value;
+            Assert.Contains("endHoldAtKey();", body, StringComparison.Ordinal);
+        }
+        // The wait whose settling still has work to do — the bar's caret put back — says so.
+        Assert.Contains("await editorSettled(false);\n        restoreBarPressCaret(k);", script, StringComparison.Ordinal);
+        // A drain a key ended takes no more keys.
+        Assert.Matches(new Regex(@"if \(epoch !== holdEpoch\) \{\s*return;\s*\}"), script);
+    }
+
     [Fact] // ED-30 / ADR-0080 / ADR-0010 (the third composition, 2026-10-12): as the listener gives the editor the keyboard, what the hold has for the edit goes into it at once, never a frame later, when a composition the IME started there would come ahead of it
     public void ED30_the_text_held_for_the_edit_goes_into_it_as_the_editor_takes_the_keyboard()
     {
         var script = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.js", StringComparison.Ordinal)).Text;
         var focusEditor = Regex.Match(script, @"focusEditor: \(bar, fromField, toward\) => \{.*?\n        \},", RegexOptions.Singleline).Value;
-        var settled = Regex.Match(script, @"const editorSettled = \(\) => new Promise\(\(settle\) => \{.*?\n    \}\);", RegexOptions.Singleline).Value;
+        var settled = Regex.Match(script, @"const editorSettled = \(rest = true\) => new Promise\(\(settle\) => \{.*?\n    \}\);", RegexOptions.Singleline).Value;
         Assert.NotEmpty(focusEditor);
         Assert.NotEmpty(settled);
 
@@ -1154,7 +1184,7 @@ public class ShippedStylesheetTests
         // Every wait of the hold's is one lookAgain reaches, and leaves the set as it settles, by
         // whichever path; looked at again, it leaves no second frame of its own behind, and once
         // settled it is never looked at again.
-        Assert.Matches(new Regex(@"const resolve = \(\) => \{\s*waiting = false;\s*settledWaits\.delete\(again\);\s*settle\(\);\s*lookSettled\(\);\s*\};"), settled);
+        Assert.Matches(new Regex(@"const resolve = \(\) => \{\s*waiting = false;\s*if \(!rest\) \{\s*restlessWaits--;\s*\}\s*settledWaits\.delete\(again\);\s*settle\(\);\s*lookSettled\(\);\s*\};"), settled);
         Assert.Matches(new Regex(@"const again = \(\) => \{\s*if \(waiting\) \{\s*cancelAnimationFrame\(lookFrame\);\s*look\(\);\s*\}\s*\};\s*settledWaits\.add\(again\);\s*look\(\);"), settled);
         Assert.Contains("lookFrame = requestAnimationFrame(look);", settled, StringComparison.Ordinal);
         // The look settles the wait only through resolve, so that no path leaves it in the set.
@@ -1189,7 +1219,7 @@ public class ShippedStylesheetTests
     public void ADR0039_a_compositions_text_held_while_a_popover_opens_is_the_popovers()
     {
         var script = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.js", StringComparison.Ordinal)).Text;
-        var drain = Regex.Match(script, @"const drain = async \(\) => \{.*?\n    \};", RegexOptions.Singleline).Value;
+        var drain = Regex.Match(script, @"const drain = async \(epoch = holdEpoch\) => \{.*?\n    \};", RegexOptions.Singleline).Value;
         Assert.NotEmpty(drain);
         var branch = Regex.Match(drain, @"\n            if \(k\.text !== undefined\) \{.*?\n            \}\n", RegexOptions.Singleline).Value;
         Assert.NotEmpty(branch);
