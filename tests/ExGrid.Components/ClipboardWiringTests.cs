@@ -515,7 +515,7 @@ public class ClipboardWiringTests : GridTestContext
         var refusals = new List<PasteRefusalReason>();
         var cut = RenderGrid(ps => ps
             .Add(g => g.OnPaste, (GridPasteIntent i) => intents.Add(i))
-            .Add(g => g.OnEdit, (GridEditIntent<TestRow> _) => edits++)
+            .Add(g => g.OnEdit, (ExGrid.Cells.GridEditIntent<TestRow> _) => edits++)
             .Add(g => g.OnPasteRefused, (PasteRefusalReason r) => refusals.Add(r)));
         await ClickCellAsync(cut, 50, 10);
         await ShiftClickCellAsync(cut, 150, 30);                 // Book:Amount of rows 0 and 1, 2×2

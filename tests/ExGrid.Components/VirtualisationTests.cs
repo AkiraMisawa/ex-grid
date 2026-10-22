@@ -36,6 +36,34 @@ public class VirtualisationTests : GridTestContext
         Assert.Equal(RowsPerViewport, cut.FindAll(".ex-row").Count);
     }
 
+    [Theory] // ADR-0003 P2 / VZ-2: the row components equal the rows per Viewport at every TotalCount — at the top and scrolled into the middle
+    [InlineData(5)]
+    [InlineData(6)]
+    [InlineData(50)]
+    [InlineData(1_000)]
+    [InlineData(100_000)]
+    [InlineData(1_000_000)]
+    public async Task VZ2_row_components_equal_the_rows_per_viewport_at_every_total(int total)
+    {
+        var cut = RenderGrid(TestRows.Many(Math.Min(total, 500)), total: total);
+
+        Assert.Equal(RowsPerViewport, cut.FindComponents<ExGridRow<TestRow>>().Count);
+
+        // Scrolled to a row inside the Window, a Viewport away from the top: the same count.
+        var row = Math.Min(total, 500) - RowsPerViewport;
+        await ScrollToAsync(cut.Find(".ex-scroller"), row * RowHeightPx);
+        Assert.Equal(RowsPerViewport, cut.FindComponents<ExGridRow<TestRow>>().Count);
+        Assert.Equal(RowsPerViewport, cut.FindAll(".ex-row").Count);
+    }
+
+    [Fact] // ADR-0003 P2 / VZ-2: a result shorter than a Viewport paints a row component per row and no more
+    public void VZ2_a_result_shorter_than_a_viewport_paints_one_component_per_row()
+    {
+        var cut = RenderGrid(TestRows.Many(3), total: 3);
+
+        Assert.Equal(3, cut.FindComponents<ExGridRow<TestRow>>().Count);
+    }
+
     [Fact] // ADR-0013: the scrollbar spans every row plus the header; the painted rows are offset into it
     public async Task The_spacer_spans_the_whole_result_and_the_viewport_is_offset_by_the_first_row()
     {
