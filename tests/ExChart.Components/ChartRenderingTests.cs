@@ -149,6 +149,33 @@ public class ChartRenderingTests : BunitContext
         Assert.Single(cut.FindAll("g.ex-chart-series[data-series='epe-before']"));
     }
 
+    [Fact] // ADR-0257: quotes and their Interpolated curve, sharing a colour key, are one legend entry that hides both
+    public async Task Quotes_and_their_interpolated_curve_are_one_legend_entry()
+    {
+        SeriesVisibility? told = null;
+        var definition = new ChartDefinition(ChartAxis.Numbers("Years"),
+        [
+            ChartSeries.Of("zero-quoted", "Zero rate", SeriesKind.Level, [P(1, 3.0), P(5, 3.2), P(10, 3.4)]) with { Keys = new("Zero", null, "circle") },
+            ChartSeries.Of("zero-curve", "Zero rate", SeriesKind.Level, [P(1, 3.0), P(3, 3.1), P(5, 3.2), P(10, 3.4)]) with { Keys = new("Zero"), Interpolated = true },
+            ChartSeries.Of("hazard", "Hazard", SeriesKind.Level, [P(1, 1), P(10, 2)]),
+        ]);
+        var cut = Render(definition, ps => ps.Add(c => c.OnSeriesVisibilityChanged, (SeriesVisibility v) => told = v));
+        Assert.Equal(["Zero", "hazard"], cut.FindAll("g.ex-chart-legend-entry").Select(e => e.GetAttribute("data-series")));
+
+        await cut.Find("g.ex-chart-legend-entry[data-series='Zero']").ClickAsync(new MouseEventArgs());
+        Assert.Equal(new SeriesVisibility("Zero", true), told);
+        Assert.Empty(cut.FindAll("g.ex-chart-series[data-series='zero-quoted']"));
+        Assert.Empty(cut.FindAll("g.ex-chart-series[data-series='zero-curve']"));
+        Assert.Single(cut.FindAll("g.ex-chart-series[data-series='hazard']"));
+        Assert.Contains("ex-chart-hidden", cut.Find("g.ex-chart-legend-entry[data-series='Zero']").ClassName);
+        Assert.DoesNotContain(cut.FindAll(".ex-chart-notes li"), n => n.TextContent.Contains("no series has that key"));
+
+        await cut.Find("g.ex-chart-legend-entry[data-series='Zero']").ClickAsync(new MouseEventArgs());
+        Assert.Equal(new SeriesVisibility("Zero", false), told);
+        Assert.Single(cut.FindAll("g.ex-chart-series[data-series='zero-quoted']"));
+        Assert.Single(cut.FindAll("g.ex-chart-series[data-series='zero-curve']"));
+    }
+
     [Fact] // ADR-0272: the hidden keys are taken back as a parameter, and kept across a data replacement
     public void Hidden_keys_are_taken_back_and_kept_across_new_data()
     {

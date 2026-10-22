@@ -201,7 +201,7 @@ public sealed record ChartScene(EquatableList<PanelScene> Panels, EquatableList<
         var notes = new List<string>(definition.Notes);
 
         // What no longer matches is said, not ignored (ADR-0272).
-        foreach (var key in view.Hidden.Where(k => definition.Series.All(s => s.Id != k)).Order(StringComparer.Ordinal))
+        foreach (var key in view.Hidden.Where(k => definition.Series.All(s => s.Id != k && LegendKey(s, definition.Series) != k)).Order(StringComparer.Ordinal))
             notes.Add($"\"{key}\" is hidden, but no series has that key.");
         // A scale asked for and not drawn is said by name (ADR-0290).
         if (view.Scale == AxisScale.Logarithmic && !logX && axis.Values == AxisValues.Numbers
@@ -253,7 +253,7 @@ public sealed record ChartScene(EquatableList<PanelScene> Panels, EquatableList<
         var swatch = lh * 1.5;
         double EntryWidth(ChartSeries s) => swatch + pad / 2 + metrics.EffectiveTextWidth(LegendName(s)) + pad;
         var rows = specs.Select(spec => spec.VolumeOf is null && legend.Position is LegendPosition.Top or LegendPosition.Bottom
-            ? Rows(definition.Series.Where(s => s.Panel == spec.Name).ToList(), EntryWidth, plotWidth)
+            ? Rows(LegendSeries(definition.Series, spec.Name), EntryWidth, plotWidth)
             : []).ToList();
         double Band(int i) => rows[i].Count == 0 ? 0 : rows[i].Count * lh + pad / 2;
         static double Weight((string Name, ChartSeries? VolumeOf) spec) => spec.VolumeOf is null ? 1 : VolumeShare;
@@ -326,7 +326,9 @@ public sealed record ChartScene(EquatableList<PanelScene> Panels, EquatableList<
                     foreach (var m in piece.Markers)
                         marks.Add(new ChartMark(piece.Id, pi, m.X, m.Y, m.Point, m.Count));
             var zero = left is { } l && l.Min <= 0 && l.Max >= 0 ? YOf(l, 0, plot) : right is { } r && r.Min <= 0 && r.Max >= 0 ? YOf(r, 0, plot) : (double?)null;
-            var entries = Legend(definition.Series.Where(s => s.Panel == name).ToList(), rows[pi], legend, metrics, plot, legendY, looks, view.Hidden, EntryWidth);
+            var entries = Legend(LegendSeries(definition.Series, name), rows[pi], legend, metrics, plot, legendY, looks,
+                s => definition.Series.Where(o => LegendKey(o, definition.Series) == LegendKey(s, definition.Series)).All(o => !visible.Contains(o)),
+                s => LegendKey(s, definition.Series), EntryWidth);
             panels.Add(new PanelScene(name, plot, left, right, zero, pieces, entries));
         }
 
@@ -389,7 +391,7 @@ public sealed record ChartScene(EquatableList<PanelScene> Panels, EquatableList<
         ChartDefinition definition, ChartMetrics metrics, ChartView view, LegendPlacement? legend = null)
     {
         var axis = AxisOf(definition, view);
-        var visible = definition.Series.Where(s => !view.Hidden.Contains(s.Id)).ToList();
+        var visible = definition.Series.Where(s => !view.Hidden.Contains(s.Id) && !view.Hidden.Contains(LegendKey(s, definition.Series))).ToList();
         var (from, to) = Domain(axis, visible, view);
         var pad = metrics.Padding;
         var column = legend?.Position is LegendPosition.Left or LegendPosition.Right && definition.Series.Count > 0
@@ -473,12 +475,12 @@ public sealed record ChartScene(EquatableList<PanelScene> Panels, EquatableList<
     }
 
     private static EquatableList<LegendEntry> Legend(List<ChartSeries> series, List<List<ChartSeries>> rows, LegendPlacement legend, ChartMetrics metrics,
-        Box plot, double legendY, IReadOnlyDictionary<string, SeriesLook> looks, IReadOnlySet<string> hidden, Func<ChartSeries, double> width)
+        Box plot, double legendY, IReadOnlyDictionary<string, SeriesLook> looks, Func<ChartSeries, bool> hidden, Func<ChartSeries, string> key, Func<ChartSeries, double> width)
     {
         var lh = metrics.LineHeight;
         var pad = metrics.Padding;
         var entries = new List<LegendEntry>();
-        LegendEntry Entry(ChartSeries s, double x, double y) => new(s.Id, LegendName(s), looks[s.Id], hidden.Contains(s.Id), new Box(x, y, width(s), lh));
+        LegendEntry Entry(ChartSeries s, double x, double y) => new(key(s), LegendName(s), looks[s.Id], hidden(s), new Box(x, y, width(s), lh));
         double Offset(double space, double used) => legend.Align switch
         {
             LegendAlign.Centre => (space - used) / 2,
@@ -543,6 +545,22 @@ public sealed record ChartScene(EquatableList<PanelScene> Panels, EquatableList<
         }
         return (view.From ?? lo, view.To ?? hi);
     }
+
+    // The key a series' legend entry hides it by (ADR-0257): quotes and an Interpolated curve of one
+    // panel sharing a colour key are one entry, named by that key; any other series is its own.
+    internal static string LegendKey(ChartSeries s, IReadOnlyList<ChartSeries> all)
+    {
+        var colour = s.EffectiveKeys.Colour;
+        var shared = all.Where(o => o.Panel == s.Panel && o.EffectiveKeys.Colour == colour).ToList();
+        return shared.Any(o => o.Interpolated) && shared.Any(o => !o.Interpolated) ? colour : s.Id;
+    }
+
+    // The series a panel's legend has an entry for: one per legend key, the quotes standing for a pair.
+    private static List<ChartSeries> LegendSeries(IReadOnlyList<ChartSeries> all, string panel) =>
+        all.Where(s => s.Panel == panel)
+            .GroupBy(s => LegendKey(s, all))
+            .Select(g => g.FirstOrDefault(s => !s.Interpolated) ?? g.First())
+            .ToList();
 
     // The quotes an Interpolated series is paired with: the positions of the series that share its colour key.
     private static IReadOnlyCollection<double> Quotes(ChartSeries s, List<ChartSeries> visible) =>

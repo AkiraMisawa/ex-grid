@@ -16,7 +16,7 @@ public sealed record ChartRange(double? From, double? To, double? YFrom = null, 
 }
 
 /// <summary>A series the user hid or showed from the legend (ADR-0271, ADR-0272).</summary>
-/// <param name="Key">The series' identity, as the Chart Definition gives it.</param>
+/// <param name="Key">The legend entry's key: the series' identity, as the Chart Definition gives it, or the colour key quotes and their Interpolated curve share, which hides both (ADR-0257).</param>
 /// <param name="Hidden">Whether it is now hidden.</param>
 public sealed record SeriesVisibility(string Key, bool Hidden);
 
