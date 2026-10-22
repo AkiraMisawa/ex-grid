@@ -199,6 +199,50 @@ public static class MenuKeys
         return -1;
     }
 
+    /// <summary>
+    /// The keys, in <c>GridKeys.Canonical</c>'s form, that hand the keyboard on inside a column
+    /// menu, read off <see cref="ResolveInColumnMenu"/> and <see cref="Letter"/> so the script's
+    /// popover hold has no table of its own (ADR-0010; KB-2, signoff ticket 05): on a command with
+    /// the filter below, the keys that move into the filter (<c>menuIntoFilter</c>); on a command,
+    /// the keys that run the one they are pressed on and close the menu (<c>menuRuns</c>); on the
+    /// value list, the keys that move to the search (<c>valueListIntoSearch</c>). Handed at attach
+    /// among <c>GridKeys.GateSets</c>.
+    /// </summary>
+    internal static IReadOnlyDictionary<string, IReadOnlyList<string>> HoldSets { get; } = BuildHoldSets();
+
+    // Every key a menu could be asked about, with Shift and without; a chord means nothing in a
+    // menu, so none is asked.
+    private static IEnumerable<(string Key, bool Shift)> Candidates()
+    {
+        string[] named = ["Tab", "Enter", " ", "Escape", "ArrowUp", "ArrowDown", "Home", "End"];
+        var letters = Enumerable.Range('a', 26).SelectMany(c => new[] { ((char)c).ToString(), char.ToUpperInvariant((char)c).ToString() });
+        foreach (var key in named.Concat(letters))
+        {
+            yield return (key, false);
+            yield return (key, true);
+        }
+    }
+
+    private static Dictionary<string, IReadOnlyList<string>> BuildHoldSets()
+    {
+        // One enabled command no letter answers: what runs is the item the key is pressed on.
+        GridCommand[] one = [new("hold", Enabled: true, () => Task.CompletedTask)];
+        static string Canonical((string Key, bool Shift) press) => (press.Shift ? "Shift+" : "") + press.Key;
+        return new(StringComparer.Ordinal)
+        {
+            ["menuIntoFilter"] = [.. Candidates()
+                .Where(p => ResolveInColumnMenu(p.Key, p.Shift, false, one, 0, filterBelow: true).Kind
+                    is MenuKeyKind.FilterFirst or MenuKeyKind.FilterLast or MenuKeyKind.FilterSearch)
+                .Select(Canonical)],
+            ["menuRuns"] = [.. Candidates()
+                .Where(p => ResolveInColumnMenu(p.Key, p.Shift, false, one, 0, filterBelow: false) == new MenuKey(MenuKeyKind.Run, 0))
+                .Select(Canonical)],
+            ["valueListIntoSearch"] = [.. Candidates()
+                .Where(p => Letter(p.Key, false, [], filterBelow: true).Kind == MenuKeyKind.FilterSearch)
+                .Select(Canonical)],
+        };
+    }
+
     private static MenuKey MoveTo(int item) => item < 0 ? MenuKey.Nothing : new(MenuKeyKind.Move, item);
 
     private static bool IsEnabled(IReadOnlyList<GridCommand> commands, int item)

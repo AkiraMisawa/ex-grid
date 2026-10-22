@@ -507,6 +507,27 @@ public class ClipboardWiringTests : GridTestContext
         Assert.Equal(PasteRefusalReason.SingleCellTarget, refused);
     }
 
+    [Fact] // ADR-0014 / PST-4: a paste far larger than the target is refused by shape before any intent is raised — one refusal, no other notification
+    public async Task PST4_a_paste_far_larger_than_the_target_raises_nothing_but_its_refusal()
+    {
+        var intents = new List<GridPasteIntent>();
+        var edits = 0;
+        var refusals = new List<PasteRefusalReason>();
+        var cut = RenderGrid(ps => ps
+            .Add(g => g.OnPaste, (GridPasteIntent i) => intents.Add(i))
+            .Add(g => g.OnEdit, (GridEditIntent<TestRow> _) => edits++)
+            .Add(g => g.OnPasteRefused, (PasteRefusalReason r) => refusals.Add(r)));
+        await ClickCellAsync(cut, 50, 10);
+        await ShiftClickCellAsync(cut, 150, 30);                 // Book:Amount of rows 0 and 1, 2×2
+        // 5,000 rows of two cells onto four cells.
+        var payload = string.Concat(Enumerable.Repeat("a\tb\r\n", 5_000));
+        await cut.InvokeAsync(() => cut.Instance.OnPasteAsync(payload, null));
+
+        Assert.Empty(intents);
+        Assert.Equal(0, edits);
+        Assert.Equal([PasteRefusalReason.ShapeMismatch], refusals);
+    }
+
     private static Task CtrlClickCellAsync(IRenderedComponent<ExGrid<TestRow>> cut, double x, double y)
         => cut.Find(".ex-viewport").MouseDownAsync(new MouseEventArgs { Button = 0, Buttons = 1, OffsetX = x, OffsetY = y, CtrlKey = true });
 

@@ -51,6 +51,26 @@ test('typing opens Overwrite containing the character, Enter commits and moves (
     expect(active).toMatch(/r1c1$/);
 });
 
+// An AltGr character reports Control and Alt held together, and is how several layouts type @ { [ €:
+// the script's gate passes it as typing, where Control or Alt alone is a shortcut the browser keeps
+// (ED-13, ADR-0010). The C# half is CellEditorTests'; this is the script's, with real keys.
+test('ED-13: Control and Alt held together open the editor with the character; either alone opens nothing (ADR-0010)', async ({ page }) => {
+    const editor = grid(page).locator('input.ex-editor');
+    await clickCell(page, 0, 1); // Trader, editable
+    await expectActiveDescendant(grid(page), /r0c1$/);
+
+    await page.keyboard.press('Alt+q');
+    await page.keyboard.press('Control+q');
+    await settled(grid(page));
+    await expect(editor).toHaveCount(0);
+
+    await page.keyboard.press('Control+Alt+q');
+    await expect(editor).toHaveValue('q');
+    await page.keyboard.press('Escape');
+    await expect(editor).toHaveCount(0);
+    await expect(grid(page).locator("[id$='r0c1']")).not.toHaveText('q');
+});
+
 test('in Overwrite an arrow commits and moves; in Caret it moves the caret (ED-2)', async ({ page }) => {
     await clickCell(page, 0, 1);
     await page.keyboard.type('AB');
@@ -950,6 +970,79 @@ test('with a 150 ms round trip, End, Ctrl+←, Shift+End typed straight after F2
     await page.keyboard.press('Escape');
     await expect(editor).toHaveCount(0);
     await expect(grid(page).locator("[id$='r2c1']")).toHaveText('alpha beta');
+});
+
+// On an Apple platform ⌘+← and ⌘+→ go to the text's ends in a field, where elsewhere Ctrl's arrows
+// move by a word (wordKeys). In Caret they are the field's, as the word moves are: the edit stands
+// and the caret lands at the start and the end. Pressed only where the platform gives them that
+// meaning; KB-3's macOS row runs it (ticket 280).
+const onApple = (page) => page.evaluate(() => /mac|iphone|ipad|ipod/i.test(navigator.userAgentData?.platform ?? navigator.platform ?? ''));
+
+test('on an Apple platform, in Caret ⌘+← and ⌘+→ move the caret to the text\'s start and end, in the field itself (ED-2, KB-3, ticket 280)', async ({ page }) => {
+    test.skip(!(await onApple(page)), '⌘+←/→ go to the text\'s ends only on an Apple platform; elsewhere Ctrl\'s word moves are pressed above');
+    const editor = await alphaBetaInTrader(page);
+    await page.keyboard.press('F2');
+    await expect(editor).toBeFocused();
+    await circuitQuiet();
+
+    await page.keyboard.press('Meta+ArrowLeft');
+    await expect.poll(() => selectionOf(editor)).toEqual([0, 0]);
+    await page.keyboard.press('Meta+ArrowRight');
+    await expect.poll(() => selectionOf(editor)).toEqual([10, 10]);
+    await page.keyboard.press('Meta+Shift+ArrowLeft');
+    await expect.poll(() => extensionOf(editor)).toEqual([0, 10, 'backward']);
+
+    await page.keyboard.press('Escape');
+    await expect(editor).toHaveCount(0);
+    await expect(grid(page).locator("[id$='r2c1']")).toHaveText('alpha beta');
+});
+
+test('on an Apple platform, with a 150 ms round trip, ⌘+← and ⌘+→ typed straight after F2 land the caret at the text\'s start and end, as typed slowly (ED-2, KB-3, ADR-0010, ticket 280)', async ({ page }) => {
+    test.skip(!(await onApple(page)), '⌘+←/→ go to the text\'s ends only on an Apple platform');
+    test.skip(!SERVER, 'WebAssembly answers F2 before most keys: nothing is held for certain');
+    const editor = await alphaBetaInTrader(page);
+    await setRoundTrip(150);
+
+    await page.keyboard.press('F2');
+    await page.keyboard.press('Meta+ArrowLeft');
+    await expect.poll(() => selectionOf(editor)).toEqual([0, 0]);
+    await expect(editor).toHaveValue('alpha beta');
+
+    await page.keyboard.press('Escape');
+    await page.keyboard.press('F2');
+    await page.keyboard.press('Home');
+    await page.keyboard.press('Meta+ArrowRight');
+    await expect.poll(() => selectionOf(editor)).toEqual([10, 10]);
+
+    await page.keyboard.press('Escape');
+    await expect(editor).toHaveCount(0);
+    await expect(grid(page).locator("[id$='r2c1']")).toHaveText('alpha beta');
+});
+
+// Ctrl+., Ctrl+Backspace and Shift+Backspace are the active cell's keys with no edit open (ADR-0052);
+// with one open, none is taken from it: the field answers Backspace's forms as a field does, Ctrl+.
+// does nothing there, and the range and its Focus stand (KB-42).
+test('KB-42: with an edit open, Ctrl+. walks no corner, and Ctrl+Backspace and Shift+Backspace delete in the field; the range stands (ADR-0052)', async ({ page }) => {
+    const { word } = await wordKeys(page);
+    const editor = grid(page).locator('input.ex-editor');
+    await clickCell(page, 0, 1); // Trader, editable
+    await page.keyboard.press('Shift+ArrowDown');
+    await expectActiveDescendant(grid(page), /r0c1$/);
+    await page.keyboard.type('alpha beta');
+    await expect(editor).toHaveValue('alpha beta');
+
+    await page.keyboard.press('ControlOrMeta+Period');
+    await page.keyboard.press('Shift+Backspace');
+    await expect(editor).toHaveValue('alpha bet');
+    await page.keyboard.press(`${word}+Backspace`);
+    await expect(editor).toHaveValue('alpha ');
+    await expectActiveDescendant(grid(page), /r0c1$/);
+
+    // The range stood under the edit: with it gone, Ctrl+. walks to its next corner.
+    await page.keyboard.press('Escape');
+    await expect(editor).toHaveCount(0);
+    await page.keyboard.press('ControlOrMeta+Period');
+    await expectActiveDescendant(grid(page), /r1c1$/);
 });
 
 test('a Reject holds the commit Shift+↓ asks for in Overwrite, and the Selection stays (ED-2, ED-15, ADR-0034)', async ({ page }) => {

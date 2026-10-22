@@ -172,6 +172,25 @@ public class GridKeyboardTests : GridTestContext
         Assert.Equal(new CellPosition(31, 0), selection!.Focus);
     }
 
+    [Theory] // ADR-0012 / KB-9: the first key on an empty selection places the Focus on the first visible cell, and the Viewport does not move
+    [InlineData("ArrowDown")]
+    [InlineData("ArrowUp")]
+    [InlineData("ArrowRight")]
+    [InlineData("PageDown")]
+    public async Task KB9_the_first_key_places_the_focus_and_scrolls_nothing(string key)
+    {
+        GridSelection? selection = null;
+        var cut = RenderGrid(s => selection = s);
+        await ScrollToAsync(cut.Find(".ex-scroller"), top: 600, left: 0); // rows 30..
+
+        await PressAsync(cut, key);
+
+        Assert.Equal(new CellPosition(30, 0), selection!.Focus);
+        Assert.Equal(1, selection.CellCount);
+        // One keystroke, no scroll: the grid asked the browser for no offset.
+        Assert.Empty(Js.ScrolledTo);
+    }
+
     [Fact] // ADR-0012: the Focus must always be visible — the grid scrolls to it
     public async Task The_grid_scrolls_to_keep_the_focus_visible()
     {

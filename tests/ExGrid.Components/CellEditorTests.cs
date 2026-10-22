@@ -384,6 +384,28 @@ public class CellEditorTests : GridTestContext
         Assert.Equal(before, KeyboardHolder.ActiveDescendant(cut.Find(".ex-grid")));
     }
 
+    [Theory] // ADR-0052 / KB-42: Ctrl+., Ctrl+Backspace and Shift+Backspace are not taken from an open editor — no editing mode claims them, and the edit and the Selection stand
+    [InlineData(".", true, false)]
+    [InlineData("Backspace", true, false)]
+    [InlineData("Backspace", false, true)]
+    public async Task KB42_the_active_cell_keys_are_not_taken_from_an_open_editor(string key, bool ctrl, bool shift)
+    {
+        var canonical = (ctrl ? "Control+" : "") + (shift ? "Shift+" : "") + key;
+        foreach (var (mode, claimed) in ExGrid.Keys.GridEditingKeys.ByMode)
+            Assert.False(claimed.Contains(canonical), $"the {mode} mode claims {canonical}");
+
+        var cut = RenderGrid();
+        await ClickCellAsync(cut, 50, 10);
+        await PressAsync(cut, "ArrowDown", shift: true);   // Book 0:1, the Focus on row 0
+        await PressAsync(cut, "5");                        // Overwrite opens on the Focus
+        var focus = KeyboardHolder.ActiveDescendant(cut.Find(".ex-grid"));
+        await PressAsync(cut, "F2");                       // and Caret, the field's own keys
+        await PressAsync(cut, key, ctrl: ctrl, shift: shift);
+
+        Assert.Equal("5", cut.Find(".ex-editor").GetAttribute("value"));
+        Assert.Equal(focus, KeyboardHolder.ActiveDescendant(cut.Find(".ex-grid")));
+    }
+
     [Fact] // An AltGr character — Control+Alt held together on Windows — is typing, not a chord
     public async Task An_altgr_character_opens_the_editor()
     {

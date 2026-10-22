@@ -1769,9 +1769,12 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // opening a popover: the keys after it are held until DOM focus has moved, or the popover
     // is gone, then handed on in order. Which letters run a command is written by the core
     // on the commands (data-ex-letters: the enabled ones), and the value list is the element
-    // its Chrome marks ex-value-list; only Tab, Shift+Tab and E are this listener's own
-    // mirror of MenuKeys.ResolveInColumnMenu — the two must move together.
+    // its Chrome marks ex-value-list; the keys that move into the filter or the search, and the
+    // keys that run a command, are MenuKeys' own, handed at attach (MenuKeys.HoldSets; KB-2).
     let awaitingMove = null;
+    const menuIntoFilter = gateSet('menuIntoFilter');
+    const menuRuns = gateSet('menuRuns');
+    const valueListIntoSearch = gateSet('valueListIntoSearch');
     const popoverOf = (target) => {
         const popover = target instanceof Element ? target.closest('.ex-popover') : null;
         return popover && root.contains(popover) ? popover : null;
@@ -1788,12 +1791,12 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         }
         const closes = { from: target, closes: popover };
         const withFilter = popover.querySelector('.ex-popover-filter') !== null;
-        const letterE = k.key === 'e' || k.key === 'E';
+        const canonical = canonicalOf(k);
         if (target.closest('[role=menu]')) {
-            if (withFilter && (k.key === 'Tab' || letterE)) {
+            if (withFilter && menuIntoFilter.has(canonical)) {
                 return { from: target, into: '.ex-popover-filter' };
             }
-            if (target.matches('[role=menuitem]') && ((k.key === 'Enter' && !k.shiftKey) || (k.key === ' ' && !k.shiftKey))) {
+            if (target.matches('[role=menuitem]') && menuRuns.has(canonical)) {
                 return closes;
             }
             // A choice among others — a Consumer's list of them, the Sheet Toolbar's colours and
@@ -1806,7 +1809,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             return target.closest('.ex-popover-commands') && runsLetter(popover, k) ? closes : null;
         }
         if (target.closest('.ex-value-list')) {
-            if (letterE) {
+            if (valueListIntoSearch.has(canonical)) {
                 return { from: target, into: '.ex-popover-filter' };
             }
             return runsLetter(popover, k) ? closes : null;
