@@ -1251,6 +1251,25 @@ test('ADR-0070/0018 (DC-61): a second grid pressed while the keyboard is on its 
     await expect(reportOf(first)).toHaveAttribute('aria-activedescendant', /-r1c1$/);
 });
 
+for (const chrome of ['builtin', 'mud']) {
+    test(`PV-7 / ADR-0060: a number format the engine cannot write is refused by name, in the sample and on OK, and the report keeps its own (${chrome})`, async ({ page }) => {
+        await open(page, chrome);
+        const before = await report(page).locator('.ex-viewport').innerText();
+        await entry(page, 'Sum of P&L').click();
+        await page.getByRole('menuitem', { name: 'Value Field Settings…' }).click();
+        const panel = page.getByRole('dialog', { name: 'Value Field Settings…' });
+        await expect(panel).toBeVisible();
+
+        await panel.getByRole('textbox', { name: 'Number format' }).fill('N999999999');
+        await expect(panel.locator('.ex-pivot-sample, .mud-ex-pivot-sample')).toHaveText('This number format cannot be used.');
+        await panel.getByRole('button', { name: 'OK', exact: true }).click();
+        await expect(panel.getByRole('alert')).toHaveText('This number format cannot be used.');
+        await expect(panel).toBeVisible();
+        await settled(report(page));
+        expect(await report(page).locator('.ex-viewport').innerText()).toBe(before);
+    });
+}
+
 test('ADR-0039/0062: a MudSelect list inside Value Field Settings takes Escape before its panel', async ({ page }) => {
     await open(page, 'mud');
     await entry(page, 'Sum of P&L').click();
