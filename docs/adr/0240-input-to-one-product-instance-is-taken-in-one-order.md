@@ -361,6 +361,44 @@ The first part: the mechanism, and ExSheet.MudBlazor's Format Cells dialog and i
 - **Left for the second part:** the Wrapper's toolbar lists, ExGrid.MudBlazor's Find panel and toolbar
   items' focus through the seam, the drafts' sweep (section 1), and the pivot's Field Settings… gap.
 
+## As built: ticket 06, the second part — the toolbar's lists (2026-10-23)
+
+- **A Chrome's own toolbar list is on the seam, and the toolbar's queues for it are gone.**
+  `ToolbarItemContext` carries `InOrder`, `TakeKeyboard` and `JoinSurface`, as `FormatCellsContext` does;
+  `ChoicesClosing` and `ChoicesOpened` are removed, and `ChoicesClosed` takes the choice and whether Escape
+  closed the list (section 9: a Change Note). The outcomes decided with the user on 2026-10-12 and 2026-10-13
+  stand — the keys typed while a list opens are the list's, those typed while it closes go where the
+  keyboard lands — and the grid's hold now gives them, not a queue of the toolbar's or the Chrome's.
+- **Opening.** The key that asks for a Chrome's own list tells the grid a hand-off to a frame in its turn,
+  as the KeyTips do for the band: the keys after it are held until the list's control takes the keyboard
+  through the grid (`TakeKeyboard`, `HandKeyboardToAsync` in turn), and handed to it in order. The list
+  joins the Sheet's order first. A list that cannot open says so with `ChoicesClosed` and no choice, and
+  the toolbar gives its band the keyboard through the grid, which ends the hand-off with the held keys the
+  band's. The built-in list, the grid's popover, keeps the band's hold of ticket 04.
+- **Closing.** A key or a choice in the list is claimed and answered in its turn. That turn makes the
+  choice, hands the keyboard on from the list — granted there because the list has joined — to the Sheet,
+  or to the band for the KeyTips, and only then closes the list and leaves the order. The item's own
+  element the keyboard used to leave through (`mud-ex-sheet-toolbar-leaving`) is gone. MudBlazor's own
+  close, a press outside, still tells the toolbar at once; with the keyboard not in the list, once the
+  list has left the page.
+- **Every button of a MudBlazor item claims its click**, and its list's choices claim theirs and the list's
+  keys typed on them, a disabled choice none, since it hears no click. The nearest claimant is the one
+  asked: a choice claiming its click alone left an Escape typed on it unnumbered, and on the Server host
+  the key held behind it reached the list that Escape was closing.
+- **A list a press opened is heard before anything after the press is.** The press's turn ends once the
+  list has joined, and a press in the list leaves the keyboard where it was, as on the built-in list. Drawn
+  before it joins, the list is on the page, and a Ctrl+Z typed on a colour pressed there was the closing
+  list's, never the Sheet's: now the key is typed on the Sheet, and held behind the press.
+- **The Find panels' fallback.** Where MudBlazor has not yet handed out the field's input, the panel's form
+  goes to the core's focus function, which takes a box's first text field; the field's own focus is left
+  only for a panel drawn with no grid.
+- **The drafts' sweep (section 1)** found no other parameter set again over what a control holds: each
+  draft's value is set from the draft the user's change updates, and ticket 260's mode is the one case.
+- **Left:** the pivot's Field Settings… with an empty report. With no grid there is no script, and a box
+  drawn with `display: contents` cannot take focus; MudSelect hands out no reference to its input. Closing it
+  needs a seam member a Wrapper can name the field by, or a focus made in script with no grid, which is
+  another ADR-0021 entry: a decision, not left to an implementation.
+
 ## Added 2026-10-20, decided with the user: the Input Journal, a circuit that is down, and a paste cancelled
 
 Three questions the order left open, asked after the Hunt traces of 2026-10-19 had to infer which inputs

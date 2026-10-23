@@ -10,6 +10,8 @@
 @using global::ExSheet
 @using global::ExSheet.Engine
 @using HorizontalAlignment = global::ExSheet.Engine.HorizontalAlignment
+@using InputKind = global::ExGrid.Chrome.GridInputKind
+@implements IAsyncDisposable
 @* Not the contract (ADR-0201): MudSheetChrome draws each Toolbar Item with this, and no Consumer
    places it. It is public only because Razor makes every component public, is hidden from a
    Consumer's editor, and may change in any version. *@
@@ -32,26 +34,24 @@
     the keyboard where it is; Escape closes the list. Every key's default is prevented, and none
     reaches MudMenu, whose Escape and Tab would hand the keyboard to its button rather than the Sheet.
 
-    When a list closes — a choice, Escape, or MudBlazor's own means — the toolbar takes the keyboard on:
+    The list is drawn in MudBlazor's popover provider, outside the Sheet, and joins the Sheet's Input
+    Order while it is open (ToolbarItemContext.JoinSurface; ADR-0240 section 6, ticket 06): its keys and
+    its choices' presses claim their events (data-ex-claims) and are answered in their turn
+    (ToolbarItemContext.InOrder), as the item's buttons' presses are, and the keyboard in it is the
+    Sheet's. Opened from the toolbar's keys, the list takes the keyboard through the grid (TakeKeyboard):
+    the keys typed since the toolbar asked for it are held by the grid until then, and handed to it in
+    order. When a list closes — a choice, Escape — the toolbar is told in that input's turn
+    (ChoicesClosed), with the keyboard still in the list: it makes the choice and takes the keyboard on,
     back to the Sheet, or, after Escape in a list a KeyTip opened, to its KeyTips (ADR-0100's note of
-    2026-10-12). The core's focus function is granted only while DOM focus is in the grid, on nothing,
-    or in the toolbar's band it is taken back from (ADR-0021's note of 2026-09-30; ADR-0050 item 16's
-    note of 2026-10-12), and the list is drawn in MudBlazor's popover provider, outside the band, which
-    removes it in a render of its own. So where the keyboard was in the list, it is first put on an
-    empty element of this item's own, inside the band; the list closes, the choice is made, and the
-    toolbar takes the keyboard on from there. The keyboard is in flight from the key that closes the
-    list (decided with the user, 2026-10-12): the toolbar is told then (ChoicesClosing), and the keys
-    typed in the list from that moment, which on a circuit it stands a round trip to hear, are passed to
-    it in order, as the keys typed on that element reach its band; it holds them all and hands them on
-    with the keyboard. None is the list's, about to go, or the toolbar's — Enter pressed the last item
-    again. The element goes once the keyboard has left it. It is never aria-hidden: it holds focus. No
-    script is added (ADR-0021): DOM focus moves by Blazor's FocusAsync.
+    2026-10-12), and only then does the list close. The keys typed meanwhile are held by the grid behind
+    that input and handed on where the keyboard landed (decided with the user, 2026-10-12), so none is
+    the list's, about to go, or the toolbar's — Enter pressed the last item again. Closed by MudBlazor's
+    own means, the toolbar is told at once, or once the list has left the page when the keyboard was not
+    in it. No script is added (ADR-0021).
 
-    When the toolbar takes the keyboard back while the list may still be on its way (CloseRequest:
-    Escape typed on the band before the list took the keyboard), the list closes, a focus not yet
-    given is dropped, and the toolbar has the keyboard back already; a list that was given the
-    keyboard first holds it, and closes through this item's element as any close from here does,
-    telling the toolbar it is closing and that it has closed (ADR-0100's note of 2026-10-12).
+    When the toolbar takes the keyboard back while the list may still be on its way (CloseRequest), the
+    list closes and a focus not yet given is dropped; a list that was given the keyboard first holds it,
+    and closes as any close from here does (ADR-0100's note of 2026-10-12).
 *@
 <span class="@WrapperClass" id="@Context.Id" @onmousedown:preventDefault="true">
     @switch (Context.Kind)
@@ -64,14 +64,15 @@
                 <MudToggleIconButton Toggled="Context.Pressed" ToggledChanged="OnToggledAsync"
                                      Icon="@IconOf(Context.Icon)" ToggledIcon="@IconOf(Context.Icon)"
                                      ToggledColor="Color.Primary" Size="Size.Small" Disabled="!Context.Enabled"
-                                     tabindex="-1" aria-label="@Context.Name" aria-pressed="@(Context.Pressed ? "true" : "false")" />
+                                     tabindex="-1" aria-label="@Context.Name" aria-pressed="@(Context.Pressed ? "true" : "false")"
+                                     data-ex-claims="click" />
             </MudTooltip>
             break;
         case ToolbarItemKind.Menu:
             <MudTooltip Text="@Context.Tooltip" Placement="Placement.Top">
                 <MudButton Variant="Variant.Text" Size="Size.Small" EndIcon="@Icons.Material.Filled.ArrowDropDown"
                            Disabled="!Context.Enabled" tabindex="-1" aria-label="@Context.Name" aria-haspopup="menu"
-                           aria-expanded="@(_open ? "true" : "false")" OnClick="ToggleListAsync"
+                           aria-expanded="@(_open ? "true" : "false")" OnClick="ToggleListAsync" data-ex-claims="click"
                            Class="mud-ex-sheet-toolbar-menu">@(Context.Text ?? Context.Name)</MudButton>
             </MudTooltip>
             @List(360)
@@ -80,12 +81,12 @@
             <span class="mud-ex-sheet-toolbar-split" role="group" aria-label="@Context.Name">
                 <MudTooltip Text="@Context.Tooltip" Placement="Placement.Top">
                     <MudIconButton Icon="@IconOf(Context.Icon)" Size="Size.Small" Disabled="!Context.Enabled"
-                                   tabindex="-1" aria-label="@Context.Name" OnClick="() => Context.Invoke()"
+                                   tabindex="-1" aria-label="@Context.Name" OnClick="InvokeAsync" data-ex-claims="click"
                                    Style="@SwatchStyle" Class="mud-ex-sheet-toolbar-face" />
                 </MudTooltip>
                 <MudIconButton Icon="@Icons.Material.Filled.ArrowDropDown" Size="Size.Small" Disabled="!Context.Enabled"
                                tabindex="-1" aria-label="@($"{Context.Name}, more")" aria-haspopup="menu"
-                               aria-expanded="@(_open ? "true" : "false")" OnClick="ToggleListAsync"
+                               aria-expanded="@(_open ? "true" : "false")" OnClick="ToggleListAsync" data-ex-claims="click"
                                Class="mud-ex-sheet-toolbar-arrow" />
             </span>
             @List(420)
@@ -95,17 +96,17 @@
                 @if (Context.Content is { } content)
                 {
                     <MudButton Variant="Variant.Text" Size="Size.Small" Disabled="!Context.Enabled" tabindex="-1"
-                               aria-label="@Context.Name" OnClick="() => Context.Invoke()">@content</MudButton>
+                               aria-label="@Context.Name" OnClick="InvokeAsync" data-ex-claims="click">@content</MudButton>
                 }
                 else if (Context.Icon == ToolbarIcon.None || IconOf(Context.Icon) is null)
                 {
                     <MudButton Variant="Variant.Text" Size="Size.Small" Disabled="!Context.Enabled" tabindex="-1"
-                               aria-label="@Context.Name" OnClick="() => Context.Invoke()">@(Context.Text ?? TextOf(Context.Icon) ?? Context.Name)</MudButton>
+                               aria-label="@Context.Name" OnClick="InvokeAsync" data-ex-claims="click">@(Context.Text ?? TextOf(Context.Icon) ?? Context.Name)</MudButton>
                 }
                 else
                 {
                     <MudIconButton Icon="@IconOf(Context.Icon)" Size="Size.Small" Disabled="!Context.Enabled" tabindex="-1"
-                                   aria-label="@Context.Name" OnClick="() => Context.Invoke()" />
+                                   aria-label="@Context.Name" OnClick="InvokeAsync" data-ex-claims="click" />
                 }
             </MudTooltip>
             break;
@@ -114,13 +115,8 @@
     {
         <span class="ex-sheet-keytip mud-ex-sheet-keytip" aria-hidden="true">@letters</span>
     }
-    @if (_leaving)
-    {
-        @* Its keys reach the band, which holds them for the Sheet; their defaults are the element's, prevented. *@
-        <span class="mud-ex-sheet-toolbar-leaving" style="position: fixed; top: 0; left: 0" tabindex="-1"
-              @onkeydown:preventDefault="true" @ref="_leavingFrom"></span>
-    }
 </span>
+
 
 @code {
     /// <summary>The item, as ExSheet describes it.</summary>
@@ -152,21 +148,20 @@
     private readonly Dictionary<int, ElementReference> _swatches = [];
     private int _focused = -1;
     private readonly Func<KeyboardEventArgs, Task> _onChoiceKey;
-    private readonly Func<Task> _listDrawn;
+    private readonly Func<ElementReference, Task> _listDrawn;
 
     // The list opened from the toolbar's keys, and takes the keyboard once the browser has drawn it;
     // and whether the keyboard has been put in it since it opened.
     private bool _keyboardIntoList;
     private bool _keyboardInList;
 
-    // The list closing from here: the choice made, if any, and the element the keyboard leaves from.
-    // Where the keys typed in the list meanwhile go: the toolbar's (ToolbarItemContext.ChoicesClosing).
-    private Action<KeyboardEventArgs>? _typedWhileClosing;
+    // The list closing from here, in the turn of the input that closed it.
     private bool _closing;
-    private ToolbarChoice? _chosen;
-    private bool _leaving;
-    private bool _leftFromElement;
-    private ElementReference _leavingFrom;
+
+    // The list's membership of the Sheet's Input Order, while it is open (ADR-0240 section 6, ticket 06),
+    // and the press that opened it, waiting for it to join.
+    private IAsyncDisposable? _surface;
+    private TaskCompletionSource? _joining;
 
     private string WrapperClass => "mud-ex-sheet-toolbar-item" + (Context.Active ? " mud-ex-sheet-toolbar-active" : "");
 
@@ -190,9 +185,29 @@
         </MudMenu>
     };
 
-    // A press on the item's button, as MudMenu's own button would answer it: the list opens, or closes.
-    private Task ToggleListAsync() =>
-        _menu is null ? Task.CompletedTask : _open ? _menu.CloseMenuAsync() : _menu.OpenMenuAsync(EventArgs.Empty);
+    // A press on the item's button, in its turn, as MudMenu's own button would answer it: the list opens, or closes.
+    private Task ToggleListAsync() => Context.InOrder(InputKind.Click, async () =>
+    {
+        if (_menu is null) return;
+        if (_open)
+        {
+            await _menu.CloseMenuAsync();
+            return;
+        }
+        // The press's turn ends once the list has joined the Sheet's order, so what comes after it is
+        // heard: drawn before it joins, the list is on the page and no press or key on it is the Sheet's.
+        // A key typed meanwhile is held behind this press, and a press on the list keeps the keyboard
+        // where it was (ListFrame), so it is held there too.
+        var joining = _joining = Context.JoinSurface is null ? null : new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        await _menu.OpenMenuAsync(EventArgs.Empty);
+        if (!_open) joining?.TrySetResult();
+        if (joining is not null) await joining.Task;
+    });
+
+    // A press on the item, or on a split control's face, in its turn.
+    private Task InvokeAsync() => Context.InOrder(InputKind.Click, Context.Invoke);
+
+    private Task OnToggledAsync(bool _) => InvokeAsync();
 
     private RenderFragment Choices => builder =>
     {
@@ -208,17 +223,24 @@
             {
                 var at = i;
                 var made = words[at];
+                var enabled = made.DisabledReason is null;
                 list.OpenComponent<MudMenuItem>(10);
-                list.AddComponentParameter(11, nameof(MudMenuItem.Disabled), made.DisabledReason is not null);
+                list.AddComponentParameter(11, nameof(MudMenuItem.Disabled), !enabled);
                 // The list is closed from here, never by MudMenu's own AutoClose, which hands the
                 // keyboard to the menu's button.
                 list.AddComponentParameter(12, nameof(MudMenuItem.AutoClose), false);
-                list.AddComponentParameter(13, nameof(MudMenuItem.OnClick), EventCallback.Factory.Create<MouseEventArgs>(this, () => ChooseAsync(made, null)));
+                list.AddComponentParameter(13, nameof(MudMenuItem.OnClick), EventCallback.Factory.Create<MouseEventArgs>(this, () => PressedAsync(made)));
                 list.AddAttribute(14, "aria-checked", made.Selected ? "true" : "false");
                 list.AddAttribute(15, "role", "menuitemradio");
                 // Noted without a render: a focus changes nothing drawn.
                 list.AddAttribute(16, "onfocus", (Action)(() => Focused(at)));
-                list.AddComponentParameter(17, nameof(MudMenuItem.ChildContent), (RenderFragment)(item =>
+                // A disabled choice hears no click, so it claims none: a click claimed and never handled
+                // would hold every input behind it (ADR-0240 section 6). An enabled one claims the keys too,
+                // which the list hears in their turn (ListFrame): the nearest claimant is the one asked, and
+                // claiming the click alone, it left an Escape typed on it unnumbered, so the key after it
+                // reached the list that Escape was closing.
+                if (enabled) list.AddAttribute(17, "data-ex-claims", "click keydown");
+                list.AddComponentParameter(18, nameof(MudMenuItem.ChildContent), (RenderFragment)(item =>
                 {
                     item.OpenComponent<MudText>(0);
                     item.AddComponentParameter(1, nameof(MudText.Typo), Typo.body2);
@@ -234,7 +256,7 @@
                         item.CloseComponent();
                     }
                 }));
-                list.AddComponentReferenceCapture(18, reference => _words[at] = (MudMenuItem)reference);
+                list.AddComponentReferenceCapture(19, reference => _words[at] = (MudMenuItem)reference);
                 list.CloseComponent();
             }
             if (swatches.Count == 0) return;
@@ -254,9 +276,12 @@
                 list.AddAttribute(35, "aria-label", made.Label);
                 list.AddAttribute(36, "aria-checked", made.Selected ? "true" : "false");
                 list.AddAttribute(37, "style", $"background-color: {made.Colour}");
-                list.AddAttribute(38, "onclick", EventCallback.Factory.Create<MouseEventArgs>(this, () => ChooseAsync(made, null)));
-                list.AddAttribute(39, "onfocus", (Action)(() => Focused(at)));
-                list.AddElementReferenceCapture(40, element => _swatches[at] = element);
+                // Every swatch hears its click, and claims it; one that cannot be made does nothing in its turn.
+                // Its keys are the list's, claimed as on a choice.
+                list.AddAttribute(38, "data-ex-claims", "click keydown");
+                list.AddAttribute(39, "onclick", EventCallback.Factory.Create<MouseEventArgs>(this, () => PressedAsync(made)));
+                list.AddAttribute(40, "onfocus", (Action)(() => Focused(at)));
+                list.AddElementReferenceCapture(41, element => _swatches[at] = element);
                 list.CloseElement();
             }
             list.CloseElement();
@@ -276,15 +301,15 @@
     {
         // The toolbar took the keyboard back while the list may have been on its way (ADR-0100's note
         // of 2026-10-12): it closes, and a focus into it not yet given is dropped. One that was given
-        // first holds the keyboard, which the toolbar's hand-back does not take from it: it closes through
-        // this item's element as any close from here does, and the toolbar takes the keyboard on.
+        // first holds the keyboard, which the toolbar's hand-back does not take from it: it closes as
+        // any close from here does, and the toolbar takes the keyboard on.
         if (Context.CloseRequest != _answeredClose)
         {
             _answeredClose = Context.CloseRequest;
             _keyboardIntoList = false;
             if (_keyboardInList && !_closing)
             {
-                await CloseAsync(null, closedBy: null);
+                await CloseAsync(null, escaped: false);
                 return;
             }
             if (_menu is not null && _open && !_closing)
@@ -292,6 +317,7 @@
                 _closingForRequest = true;
                 await _menu.CloseMenuAsync();
                 _closingForRequest = false;
+                await LeaveAsync();
             }
         }
         // The toolbar's keys asked for the list (Enter on a menu, ↓ on a split control, a KeyTip); one
@@ -299,77 +325,61 @@
         if (Context.OpenRequest != _answeredOpen)
         {
             _answeredOpen = Context.OpenRequest;
-            if (_menu is not null && !_closing && Context.OpenRequest != Context.CloseRequest)
+            if (Context.OpenRequest != Context.CloseRequest)
             {
+                if (_menu is null || _closing)
+                {
+                    // It cannot open: the keys held for it are the toolbar's.
+                    await Context.ChoicesClosed(null, false);
+                    return;
+                }
                 var standing = _open;
                 _keyboardIntoList = true;
                 await _menu.OpenMenuAsync(EventArgs.Empty);
                 // A list a press opened is drawn already, and takes the keyboard now; one that did
-                // not open (its item disabled meanwhile) takes nothing.
-                if (standing) await OnListDrawnAsync();
+                // not open (its item disabled meanwhile) takes nothing, and the keys held for it are the
+                // toolbar's.
+                if (standing && _listElement is { } drawn) await OnListDrawnAsync(drawn);
                 else if (!_open)
                 {
-                    // It did not open: the keys the toolbar held for it are the toolbar's.
                     _keyboardIntoList = false;
-                    Context.ChoicesOpened(false);
+                    await Context.ChoicesClosed(null, false);
                 }
             }
-        }
-        if (_leaving && !_leftFromElement)
-        {
-            // The keyboard leaves the list for this item's own element inside the band, the list
-            // closes, the choice is made, and the toolbar takes the keyboard back from the band, with
-            // the keys typed on the element meanwhile; the element then goes.
-            _leftFromElement = true;
-            try
-            {
-                await _leavingFrom.FocusAsync(preventScroll: true);
-            }
-            catch (Exception ex) when (ex is Microsoft.JSInterop.JSException or Microsoft.JSInterop.JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
-            {
-                // The page went, or the circuit did.
-            }
-            if (_menu is not null && _open) await _menu.CloseMenuAsync();
-            if (_chosen is { } chosen)
-            {
-                _chosen = null;
-                await chosen.Choose();
-            }
-            await Context.ChoicesClosed();
-            _typedWhileClosing = null;
-            _leaving = false;
-            _leftFromElement = false;
-            _closing = false;
-            StateHasChanged();
-            return;
         }
         if (_giveBackAfterRender)
         {
             _giveBackAfterRender = false;
-            _leftFromElement = false;
-            _closing = false;
-            await Context.ChoicesClosed();
+            await LeaveAsync();
+            await Context.ChoicesClosed(null, false);
         }
     }
 
-    private Task OnToggledAsync(bool _) => Context.Invoke();
+    // A choice pressed with the pointer, in its turn.
+    private Task PressedAsync(ToolbarChoice choice) => Context.InOrder(InputKind.Click, () => ChooseAsync(choice, escaped: false));
 
-    private Task ChooseAsync(ToolbarChoice choice, KeyboardEventArgs? closedBy) =>
-        choice.DisabledReason is null ? CloseAsync(choice, closedBy) : Task.CompletedTask;
+    private Task ChooseAsync(ToolbarChoice choice, bool escaped) =>
+        choice.DisabledReason is null ? CloseAsync(choice, escaped) : Task.CompletedTask;
 
-    // Closes the list from here, with a choice or without, through this item's own element. The toolbar
-    // is told at once, with the key that closed it: the keyboard is in flight from now.
-    private Task CloseAsync(ToolbarChoice? chosen, KeyboardEventArgs? closedBy)
+    // Closes the list from here, with a choice or without, inside the turn of the input that closed it: the
+    // toolbar makes the choice and takes the keyboard on from the list, and only then does the list close.
+    // The keys typed meanwhile are held by the grid, and go where the keyboard landed.
+    private async Task CloseAsync(ToolbarChoice? chosen, bool escaped)
     {
-        if (_closing) return Task.CompletedTask;
-        _typedWhileClosing = Context.ChoicesClosing(closedBy);
+        if (_closing) return;
         _closing = true;
-        _chosen = chosen;
         _keyboardIntoList = false;
         _keyboardInList = false;
-        _leaving = true;
-        StateHasChanged();
-        return Task.CompletedTask;
+        try
+        {
+            await Context.ChoicesClosed(chosen, escaped);
+            if (_menu is not null && _open) await _menu.CloseMenuAsync();
+        }
+        finally
+        {
+            _closing = false;
+        }
+        await LeaveAsync();
     }
 
     private Task OnOpenChangedAsync(bool open)
@@ -378,18 +388,15 @@
         _focused = -1;
         if (open || _closing) return Task.CompletedTask;
         _keyboardIntoList = false;
+        Joined();
         // Closed because the toolbar asked: it has the keyboard back already.
         if (_closingForRequest) return Task.CompletedTask;
         if (_keyboardInList)
         {
-            // Closed by MudBlazor's own means while the keyboard was in the list: it leaves through
-            // this item's element, as a close from here does.
+            // Closed by MudBlazor's own means while the keyboard was in the list: the toolbar takes it on
+            // at once, from the list while it stands, granted from nothing once it has gone.
             _keyboardInList = false;
-            _typedWhileClosing = Context.ChoicesClosing(null);
-            _closing = true;
-            _leaving = true;
-            StateHasChanged();
-            return Task.CompletedTask;
+            return ClosedByItsOwnMeansAsync();
         }
         // Closed by MudBlazor's own means, with the keyboard on the Sheet or wherever a press put it:
         // the Sheet is asked once the list has left the page, and decides as it does for every Chrome.
@@ -398,36 +405,56 @@
         return Task.CompletedTask;
     }
 
-    // The browser has drawn the list. One opened from the keys takes the keyboard: the choice the
-    // Focus cell has, else the first that can be made, as the built-in list starts.
-    private async Task OnListDrawnAsync()
+    private async Task ClosedByItsOwnMeansAsync()
     {
+        await Context.ChoicesClosed(null, false);
+        await LeaveAsync();
+    }
+
+    // The list's frame, drawn by the browser: it joins the Sheet's Input Order, and, opened from the keys,
+    // takes the keyboard — on the choice the Focus cell has, else the first that can be made, as the
+    // built-in list starts.
+    private ElementReference? _listElement;
+
+    private async Task OnListDrawnAsync(ElementReference list)
+    {
+        _listElement = list;
+        if (_surface is null && Context.JoinSurface is { } join)
+        {
+            var surface = await join(list, null, null);
+            // Closed meanwhile, or drawn again and joined by that drawing: this membership leaves at once.
+            if (!_open || _surface is not null || _listElement is not { } now || now.Id != list.Id) await surface.DisposeAsync();
+            else _surface = surface;
+        }
+        Joined();
         // Not after the toolbar asked for the list to close: the keyboard is the Sheet's again.
         if (!_keyboardIntoList || _closing || Context.CloseRequest != _answeredClose) return;
         _keyboardIntoList = false;
         var selected = _drawn.Select((choice, at) => (choice, at)).FirstOrDefault(c => c.choice.Selected && c.choice.DisabledReason is null);
         _focused = selected.choice is null ? Next(-1, 1) : selected.at;
         _keyboardInList = true;
-        await FocusChoiceAsync(_focused, preventScroll: true);
-        // The keys typed on the toolbar while the list was on its way are the list's, in order, ahead of
-        // any typed in it since (decided with the user, 2026-10-13).
-        await AnswerInTurnAsync(Context.ChoicesOpened(true));
+        // Through the grid: the keys typed since the toolbar asked for the list are handed to it, in order.
+        await FocusChoiceAsync(_focused);
     }
 
-    // Keys answered in turn: those handed on first, and those typed in the list meanwhile behind them.
-    private List<KeyboardEventArgs>? _inTurn;
-
-    private async Task AnswerInTurnAsync(IReadOnlyList<KeyboardEventArgs> keys)
+    // The list has closed: it leaves the Sheet's Input Order.
+    private async Task LeaveAsync()
     {
-        if (keys.Count == 0) return;
-        _inTurn = [.. keys];
-        while (_inTurn.Count > 0)
-        {
-            var key = _inTurn[0];
-            _inTurn.RemoveAt(0);
-            await AnswerChoiceKeyAsync(key);
-        }
-        _inTurn = null;
+        Joined();
+        _listElement = null;
+        if (_surface is not { } surface) return;
+        _surface = null;
+        await surface.DisposeAsync();
+    }
+
+    /// <inheritdoc />
+    public ValueTask DisposeAsync() => new(LeaveAsync());
+
+    // The press that opened the list ends its turn: the list has joined, or will not.
+    private void Joined()
+    {
+        _joining?.TrySetResult();
+        _joining = null;
     }
 
     // A choice took DOM focus by other means than the keys here — a press, Tab from the page: the
@@ -438,38 +465,20 @@
         if (_focused < 0) _focused = at;
     }
 
-    // A key in the list: the built-in list's meanings, so that swapping the Chrome changes no
-    // behaviour (ADR-0100, ADR-0039).
-    private Task OnChoiceKeyAsync(KeyboardEventArgs e)
-    {
-        // A release means something only as the Alt key's, held while the list closes, for the Sheet
-        // (decided with the user, 2026-10-13); the list answers presses.
-        if (e.Type == "keyup" && (e.Key != "Alt" || !_closing)) return Task.CompletedTask;
-        // Behind keys the toolbar handed on, which are answered first.
-        if (_inTurn is { } waiting)
-        {
-            waiting.Add(e);
-            return Task.CompletedTask;
-        }
-        return AnswerChoiceKeyAsync(e);
-    }
+    // A key in the list, in its turn: the list claims every key (data-ex-claims), each of which reaches here.
+    private Task OnChoiceKeyAsync(KeyboardEventArgs e) => Context.InOrder(InputKind.KeyDown, () => AnswerChoiceKeyAsync(e));
 
+    // The built-in list's meanings, so that swapping the Chrome changes no behaviour (ADR-0100, ADR-0039).
     private async Task AnswerChoiceKeyAsync(KeyboardEventArgs e)
     {
-        // Typed while the list closes: the toolbar's to hold, in order, for where the keyboard lands.
-        if (_closing)
-        {
-            _typedWhileClosing?.Invoke(e);
-            return;
-        }
-        if (_drawn.Count == 0) return;
+        if (_closing || _drawn.Count == 0) return;
         switch (e.Key)
         {
             case "Escape":
-                await CloseAsync(null, e);
+                await CloseAsync(null, escaped: true);
                 return;
             case "Enter" or " ":
-                if (_focused >= 0 && _focused < _drawn.Count) await ChooseAsync(_drawn[_focused], e);
+                if (_focused >= 0 && _focused < _drawn.Count) await ChooseAsync(_drawn[_focused], escaped: false);
                 return;
         }
         var across = _focused >= 0 && _focused < _drawn.Count && _drawn[_focused].Colour is not null ? SwatchesAcross : 1;
@@ -486,7 +495,7 @@
         };
         if (moved == _focused) return;
         _focused = moved;
-        await FocusChoiceAsync(_focused, preventScroll: false);
+        await FocusChoiceAsync(_focused);
     }
 
     // The next choice from `from` that can be made, `step` at a time; `from` itself when none is.
@@ -499,7 +508,9 @@
         return Math.Clamp(from, 0, Math.Max(0, _drawn.Count - 1));
     }
 
-    private async Task FocusChoiceAsync(int at, bool preventScroll)
+    // The keyboard to a choice, through the Sheet's grid (ToolbarItemContext.TakeKeyboard): granted while the
+    // keyboard is the Sheet's, in the list or on the toolbar, so a press the user made elsewhere keeps it.
+    private async Task FocusChoiceAsync(int at)
     {
         ElementReference element;
         if (_words.TryGetValue(at, out var word)) element = word.ElementReference;
@@ -507,7 +518,7 @@
         if (element.Context is null) return;
         try
         {
-            await element.FocusAsync(preventScroll);
+            await Context.TakeKeyboard(element);
         }
         catch (Exception ex) when (ex is Microsoft.JSInterop.JSException or Microsoft.JSInterop.JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
         {
@@ -536,27 +547,35 @@
     private static string? TextOf(ToolbarIcon icon) => icon == ToolbarIcon.Comma ? "," : null;
 
     // The list's frame inside MudBlazor's popover, which its provider draws in a render of its own:
-    // its first OnAfterRender is the moment the browser has the choices on the page. It hears the
-    // list's keys, preventing each one's default and keeping it from MudMenu, and draws nothing for
-    // them: a key moves DOM focus, or closes the list from the item.
+    // its first OnAfterRender is the moment the browser has the choices on the page. It claims the
+    // list's keys (data-ex-claims) and hears every one, preventing its default and keeping it from
+    // MudMenu, whose Escape and Tab would hand the keyboard to its button rather than the Sheet; it
+    // draws nothing for them: a key moves the keyboard, or closes the list from the item. A press in it
+    // leaves the keyboard where it was, as a press on the built-in list does: on the Sheet when the
+    // pointer opened the list, where a key typed after the choice is the Sheet's whether or not the list
+    // had joined yet.
     private sealed class ListFrame : ComponentBase, IHandleEvent
     {
+        private ElementReference _element;
+
         [Parameter] public RenderFragment? ChildContent { get; set; }
 
         [Parameter] public Func<KeyboardEventArgs, Task>? Key { get; set; }
 
-        [Parameter] public Func<Task>? Drawn { get; set; }
+        [Parameter] public Func<ElementReference, Task>? Drawn { get; set; }
 
         protected override void BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder builder)
         {
             builder.OpenElement(0, "div");
             builder.AddAttribute(1, "class", "mud-ex-sheet-toolbar-choices");
             builder.AddAttribute(2, "role", "none");
-            builder.AddAttribute(3, "onkeydown", EventCallback.Factory.Create<KeyboardEventArgs>(this, OnKeyAsync));
-            builder.AddEventPreventDefaultAttribute(4, "onkeydown", true);
-            builder.AddEventStopPropagationAttribute(5, "onkeydown", true);
-            builder.AddAttribute(6, "onkeyup", EventCallback.Factory.Create<KeyboardEventArgs>(this, OnKeyAsync));
-            builder.AddContent(7, ChildContent);
+            builder.AddAttribute(3, "data-ex-claims", "keydown");
+            builder.AddAttribute(4, "onkeydown", EventCallback.Factory.Create<KeyboardEventArgs>(this, OnKeyAsync));
+            builder.AddEventPreventDefaultAttribute(5, "onkeydown", true);
+            builder.AddEventStopPropagationAttribute(6, "onkeydown", true);
+            builder.AddEventPreventDefaultAttribute(7, "onmousedown", true);
+            builder.AddElementReferenceCapture(8, element => _element = element);
+            builder.AddContent(9, ChildContent);
             builder.CloseElement();
         }
 
@@ -566,7 +585,7 @@
 
         protected override async Task OnAfterRenderAsync(bool firstRender)
         {
-            if (firstRender && Drawn is { } drawn) await drawn();
+            if (firstRender && Drawn is { } drawn) await drawn(_element);
         }
     }
 }

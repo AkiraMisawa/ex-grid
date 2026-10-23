@@ -5,10 +5,10 @@ Roadmap: ExGrid, ExSheet, ExPivot — The MudBlazor Wrappers behave as the Built
 
 **Why:** [ADR-0240](../../../adr/0240-input-to-one-product-instance-is-taken-in-one-order.md) §7, stage 5. A surface MudBlazor renders outside the Input Root joins the instance's handle while open (§6); its opening, commit and closing are in the order; the Format Cells dialog's own `_keysReady` gate is replaced; every unguarded `FocusAsync` from a render (`MudToolbarItem`, `MudFormatCellsFrame`, `MudExGridFindPanel`'s fallback, `PivotChrome`'s default `TakeKeyboard`) goes through the seam; a draft is never re-read from a parameter on a later render (§1). The public seam is documented on the Chrome pages, with a Change Note for each delegate whose shape changed (§9).
 
-- [ ] Out-of-root surfaces join the handle while open
-- [ ] Wrapper focus through the seam
-- [ ] Drafts follow §1's rule; ticket 260's pattern swept
-- [ ] Docs Site: the seam for a Consumer's Chrome, with an Example
+- [x] Out-of-root surfaces join the handle while open
+- [ ] Wrapper focus through the seam (the pivot's Field Settings… with an empty report waits on a decision)
+- [x] Drafts follow §1's rule; ticket 260's pattern swept
+- [x] Docs Site: the seam for a Consumer's Chrome, with an Example
 
 ExPivot.MudBlazor's part landed with ticket 05: every Pivot Chrome context carries `InOrder` and
 `TakeKeyboard`, the Wrapper's pivot buttons, boxes and drafts are on the order, its focus goes through the
@@ -22,5 +22,12 @@ The mechanism for a surface outside the Input Root landed on 2026-10-23 (`ExGrid
 its More Colours popup on it and the Grid Appearance page's prose (ADR-0240's note on ticket 06). Still to
 come: the Wrapper's toolbar lists, ExGrid.MudBlazor's Find panel fallback and toolbar items' focus through the
 seam, the drafts' sweep, the pivot's gap above, and an Example of a Consumer's own Chrome on the seam.
+
+The second part landed on 2026-10-23 (ADR-0240's note on it): the toolbar's lists under any Chrome are on the
+seam (`ToolbarItemContext.InOrder`, `TakeKeyboard`, `JoinSurface`; `ChoicesClosing` and `ChoicesOpened` gone),
+the MudBlazor items' buttons and lists claim their inputs, the Find panels' fallback goes through the core's
+focus function, the drafts' sweep found nothing more, and the Sheet Formatting page has an Example of a
+Chrome of the Consumer's own whose lists stand beside the Sheet. The pivot's Field Settings… gap with an empty
+report needs a decision (ADR-0240's note) and is left open.
 
 **Blocked by:** 02, 04, 05.

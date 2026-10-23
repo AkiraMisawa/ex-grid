@@ -417,10 +417,12 @@ that collide at one level are refused when the toolbar renders. ExSheet's items 
 - **The look is the Chrome's.** The built-in Chrome draws plain buttons with inline-SVG pictures.
   `MudSheetChrome` draws MudBlazor's controls. A Chrome of your own implements
   `ISheetChrome.ToolbarItem`, which receives what the item means as a `ToolbarItemContext`. A list
-  of its own opens when `OpenRequest` changes and closes when `CloseRequest` does, without calling
-  `ChoicesClosed` unless it already held the keyboard. Closing on its own — a choice, Escape — it calls
-  `ChoicesClosing` with the closing key and passes on every key typed in it until it has gone, then
-  `ChoicesClosed`: the toolbar hands those keys on with the keyboard.
+  of its own opens when `OpenRequest` changes and takes the keyboard through `TakeKeyboard`; drawn
+  outside the Sheet, it joins the Sheet's Input Order through `JoinSurface`, and it puts its keys and
+  presses in their turn through `InOrder`. Closing — a choice, Escape — it calls `ChoicesClosed` in that
+  input's turn with the choice, and the toolbar makes it and takes the keyboard on; the Sheet holds the
+  keys typed meanwhile. It closes without calling `ChoicesClosed` when `CloseRequest` changes, unless it
+  already held the keyboard.
 - **An item of your own** derives from `ToolbarItemBase`. It reads the Sheet through the cascaded
   `SheetToolbarContext` and acts through the Sheet's public commands.
   `SetCellFormatFromFocusAsync` is the command for a change made from the Focus cell's Cell

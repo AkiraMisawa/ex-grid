@@ -248,18 +248,31 @@
             <li>
                 <b>The look is the Chrome's.</b> The built-in Chrome draws plain buttons with inline-SVG pictures;
                 <code>MudSheetChrome</code> draws MudBlazor's controls; under either the toolbar is one Tab stop. A Chrome
-                of your own draws each item from its <code>ToolbarItemContext</code>: a list of its own opens when
-                <code>OpenRequest</code> changes, and once it holds the keyboard it calls <code>ChoicesOpened(true)</code>
-                and answers the keys that returns, typed on the toolbar while the list was on its way; it closes when
-                <code>CloseRequest</code> changes; as it begins to close from a key or a choice it calls
-                <code>ChoicesClosing</code> with that key and passes on every key typed in it, and once it has gone it
-                calls <code>ChoicesClosed</code>, and the toolbar takes the keyboard on from there.
+                of your own draws each item from its <code>ToolbarItemContext</code>, and its lists are on the Sheet's
+                seam as the built-in ones are. Its buttons claim their clicks (<code>data-ex-claims="click"</code>) and run
+                them through <code>InOrder</code>, so a press takes its place among the Sheet's keys and presses. A list
+                of its own opens when <code>OpenRequest</code> changes and takes the keyboard through
+                <code>TakeKeyboard</code>: the keys typed since the toolbar asked for it wait for it and arrive in order.
+                A list drawn outside the Sheet, in a design system's popover or a panel of your own, joins the Sheet's
+                order while it is open through <code>JoinSurface</code>, and claims its keys and its choices' clicks.
+                As it closes, from a key or a choice, it calls <code>ChoicesClosed</code> in that input's turn, with
+                the choice and whether Escape closed it: the toolbar makes the choice and takes the keyboard on, back
+                to the Sheet or to the KeyTips, and the keys typed meanwhile go where it lands; the list goes after
+                that. A list that cannot open calls <code>ChoicesClosed</code> with no choice, and one the toolbar no
+                longer wants closes when <code>CloseRequest</code> changes. <code>MudSheetChrome</code>'s lists are
+                built this way.
             </li>
         </ul>
         <DocsExample Builtin="typeof(Toolbar)" Mud="typeof(ToolbarMud)" Files="@(["Examples/Sheet/QuarterlyPnl.cs"])" CodeOpen="true">
             Select a few cells and press "Mark reviewed", or press Alt and then R, M. Try Alt, H, O, E to
             open Format Cells, or choose a Font Colour and press Ctrl+Z straight away to undo it. The
             same keys work with either Chrome.
+        </DocsExample>
+        <DocsExample Title="A Chrome of your own" Builtin="typeof(ToolbarOwnList)"
+                     Files="@(["Examples/Sheet/OwnListChrome.cs", "Examples/Sheet/OwnListButton.razor", "Examples/Sheet/OwnListPanel.razor"])">
+            This Chrome draws the toolbar's lists in a panel beside the Sheet, outside it, on the seam above. Press Alt,
+            H, N and ↓ ↓ Enter straight away: the keys wait for the panel and choose there, and the keyboard comes
+            back to the cell. Escape in the panel goes back to the Home row's KeyTips.
         </DocsExample>
     </DocsSection>
 

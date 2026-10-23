@@ -26,7 +26,7 @@
     hidden default button, Shift held on it making it "previous". The field takes DOM focus for each change of
     the context's focus request, through the core's focus function (ADR-0204).
 *@
-<form class="mud-ex-grid-find mud-ex-sheet-find" data-ex-claims="submit" @onsubmit="SubmitAsync" @onsubmit:preventDefault>
+<form class="mud-ex-grid-find mud-ex-sheet-find" data-ex-claims="submit" @ref="_form" @onsubmit="SubmitAsync" @onsubmit:preventDefault>
     <button type="submit" class="mud-ex-grid-find-default" hidden tabindex="-1" aria-hidden="true"></button>
     <MudTextField @ref="_field" T="string" Value="_text" ValueChanged="TextChanged" Immediate="true"
                   Label="@Context.Words(FindPanelLabelIds.Field)" Variant="Variant.Outlined" Margin="Margin.Dense"
@@ -139,6 +139,9 @@
         Find.ReplaceTextChanged?.Invoke(_replaceText);
     }
 
+    // The panel's form, which holds the field.
+    private ElementReference _form;
+
     /// <inheritdoc />
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -150,8 +153,10 @@
             // The core's focus function, which takes the keyboard only while it is still the grid's: on a
             // circuit the opening focus lands a round trip after Ctrl+F, and a grid pressed in the meantime
             // keeps it (ADR-0204).
-            if (Find.TakeFocus is { } take && _field.InputReference is { } input)
-                await take(input.ElementReference, true);
+            // The panel's form names the field when MudBlazor has not yet handed out its input: the
+            // core's focus function takes a box's first enabled text field (ticket 06 of the Input Order).
+            if (Find.TakeFocus is { } take)
+                await take(_field.InputReference is { } input ? input.ElementReference : _form, true);
             else
                 await _field.FocusAsync();
         }

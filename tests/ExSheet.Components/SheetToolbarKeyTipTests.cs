@@ -280,40 +280,57 @@ public class SheetToolbarKeyTipTests : SheetTestContext
         Assert.All(chrome.Drawn, c => Assert.Equal(0, c.CloseRequest));
     }
 
-    [Fact] // ADR-0100's ToolbarItemContext.ChoicesOpened (decided with the user, 2026-10-13): a Chrome whose list is its own is answered the keys typed on the toolbar while the list was on its way, in order, once it says the list holds the keyboard; the band does nothing with them
-    public async Task A_chromes_own_list_is_handed_the_keys_typed_while_it_opened()
+    [Fact] // ADR-0240 section 6, ticket 06 (decided with the user, 2026-10-13: the keys typed on the toolbar while a list opens are the list's): a Chrome's own list is a frame the keyboard is handed to — the grid is told as the key that asks for it is answered, and holds the keys after it, so the band holds none — and the list takes the keyboard through the grid, which hands it those keys
+    public async Task A_chromes_own_list_takes_the_keyboard_through_the_grid_with_the_keys_held_for_it()
     {
         var chrome = new OwnListsChrome();
         var cut = RenderToolbarSheet(ps => ps.Add(s => s.Chrome, chrome));
         await GoToAsync(cut, "B2");
-        var band = cut.Find(".ex-sheet-toolbar");
-        await band.FocusAsync(new FocusEventArgs());
+        await cut.Find(".ex-sheet-toolbar").FocusAsync(new FocusEventArgs());
         // Number Format, the eleventh item that can be pressed: Enter opens its list.
         foreach (var _ in Enumerable.Range(0, 10)) await cut.Find(".ex-sheet-toolbar").KeyDownAsync(new KeyboardEventArgs { Key = "ArrowRight" });
-        await cut.Find(".ex-sheet-toolbar").KeyDownAsync(new KeyboardEventArgs { Key = "Enter" });
-        var asked = chrome.Last("Number Format");
-        Assert.Equal(1, asked.OpenRequest);
-        var taken = KeyboardReturns;
+        var handOffs = HandOffs.Count;
+        var handedTo = HandedToCount;
 
-        await cut.Find(".ex-sheet-toolbar").KeyDownAsync(new KeyboardEventArgs { Key = "ArrowDown" });
-        await cut.Find(".ex-sheet-toolbar").KeyDownAsync(new KeyboardEventArgs { Key = "ArrowLeft" });
         await cut.Find(".ex-sheet-toolbar").KeyDownAsync(new KeyboardEventArgs { Key = "Enter" });
 
-        // Neither opened again nor moved on the band, nor given back to the Sheet: held for the list.
         Assert.Equal(1, chrome.Last("Number Format").OpenRequest);
-        Assert.True(chrome.Last("Number Format").Active);
-        Assert.Equal(taken, KeyboardReturns);
-        Assert.True(cut.Find(".ex-sheet-toolbar").HasAttribute("blazor:onkeydown:preventdefault"));
-
-        var keys = await cut.InvokeAsync(() => chrome.Last("Number Format").ChoicesOpened(true));
-        Assert.Equal(["ArrowDown", "ArrowLeft", "Enter"], keys.Select(k => k.Key));
-        // Answered once: the band's keys are its own again.
-        Assert.Empty(await cut.InvokeAsync(() => chrome.Last("Number Format").ChoicesOpened(true)));
+        Assert.Equal(["frame"], HandOffs.Skip(handOffs));
+        // The grid holds the keys typed after the Enter for the list: the band holds none of its own.
+        Assert.False(cut.Find(".ex-sheet-toolbar").HasAttribute("data-ex-holds"));
         Assert.False(cut.Find(".ex-sheet-toolbar").HasAttribute("blazor:onkeydown:preventdefault"));
+
+        await cut.InvokeAsync(() => chrome.Last("Number Format").TakeKeyboard(new ElementReference("list-choice")));
+
+        Assert.Equal(handedTo + 1, HandedToCount);
+        Assert.Equal("list-choice", LastHandedTo.Id);
     }
 
-    [Fact] // ADR-0100's ToolbarItemContext.ChoicesOpened: a Chrome that never says its list holds the keyboard does not trap it on the band — once the keyboard has left the band and comes back, the keys held are the band's and its own keys work again
-    public async Task A_list_that_never_says_it_took_the_keyboard_leaves_the_band_its_keys()
+    [Fact] // ADR-0240 section 6, ticket 06: a Chrome's own list joins the Sheet's Input Order through its context, and puts its input in that order, its handling run in its turn
+    public async Task A_chromes_own_list_joins_the_sheets_input_order()
+    {
+        var chrome = new OwnListsChrome();
+        var cut = RenderToolbarSheet(ps => ps.Add(s => s.Chrome, chrome));
+        await GoToAsync(cut, "B2");
+        var context = chrome.Last("Number Format");
+        var joined = JoinedSurfaces.Count;
+
+        var membership = await cut.InvokeAsync(() => context.JoinSurface!(new ElementReference("list"), null, null));
+        var ran = false;
+        await cut.InvokeAsync(() => context.InOrder(global::ExGrid.Chrome.GridInputKind.KeyDown, () =>
+        {
+            ran = true;
+            return Task.CompletedTask;
+        }));
+        await cut.InvokeAsync(() => membership.DisposeAsync().AsTask());
+
+        Assert.Equal(joined + 1, JoinedSurfaces.Count);
+        Assert.True(ran);
+        Assert.Equal(1, SurfacesLeft);
+    }
+
+    [Fact] // ADR-0100's ToolbarItemContext.ChoicesClosed (decided with the user, 2026-10-13): a Chrome's list that did not open gives the keys held for it to the band — the band is handed the keyboard through the grid, which ends the hold for the list — and the keyboard is not given back to the Sheet
+    public async Task A_list_that_did_not_open_gives_its_keys_to_the_band()
     {
         var chrome = new OwnListsChrome();
         var cut = RenderToolbarSheet(ps => ps.Add(s => s.Chrome, chrome));
@@ -321,20 +338,33 @@ public class SheetToolbarKeyTipTests : SheetTestContext
         await cut.Find(".ex-sheet-toolbar").FocusAsync(new FocusEventArgs());
         foreach (var _ in Enumerable.Range(0, 10)) await cut.Find(".ex-sheet-toolbar").KeyDownAsync(new KeyboardEventArgs { Key = "ArrowRight" });
         await cut.Find(".ex-sheet-toolbar").KeyDownAsync(new KeyboardEventArgs { Key = "Enter" });
+        var handedTo = HandedToCount;
+        var taken = KeyboardReturns;
+
+        await cut.InvokeAsync(() => chrome.Last("Number Format").ChoicesClosed(null, false));
+
+        Assert.Equal(handedTo + 1, HandedToCount);
+        Assert.Equal(taken, KeyboardReturns);
+        // The band's keys are its own.
         await cut.Find(".ex-sheet-toolbar").KeyDownAsync(new KeyboardEventArgs { Key = "ArrowLeft" });
-        Assert.True(chrome.Last("Number Format").Active);
-        // Refocused without leaving, the band keeps the hold for the list on its way.
-        await cut.Find(".ex-sheet-toolbar").FocusAsync(new FocusEventArgs());
-        Assert.True(chrome.Last("Number Format").Active);
-
-        // The keyboard leaves the band — for a list that never says so — and comes back.
-        await cut.Find(".ex-sheet-toolbar").FocusOutAsync(new FocusEventArgs());
-        await cut.Find(".ex-sheet-toolbar").FocusAsync(new FocusEventArgs());
-
         cut.WaitForAssertion(() => Assert.True(chrome.Last("Align Right").Active));
-        cut.WaitForAssertion(() => Assert.False(cut.Find(".ex-sheet-toolbar").HasAttribute("blazor:onkeydown:preventdefault")));
-        await cut.Find(".ex-sheet-toolbar").KeyDownAsync(new KeyboardEventArgs { Key = "ArrowLeft" });
-        Assert.True(chrome.Last("Centre").Active);
+    }
+
+    [Fact] // ADR-0240 section 6, ticket 06: a Chrome's list asked for, then left behind as the band gives the keyboard back before the list takes it, is no longer opening: closed later without a choice, it does not hand the band the keyboard
+    public async Task A_list_left_behind_as_the_keyboard_goes_back_is_no_longer_opening()
+    {
+        var chrome = new OwnListsChrome();
+        var cut = RenderToolbarSheet(ps => ps.Add(s => s.Chrome, chrome));
+        await GoToAsync(cut, "B2");
+        await cut.Find(".ex-sheet-toolbar").FocusAsync(new FocusEventArgs());
+        foreach (var _ in Enumerable.Range(0, 10)) await cut.Find(".ex-sheet-toolbar").KeyDownAsync(new KeyboardEventArgs { Key = "ArrowRight" });
+        await cut.Find(".ex-sheet-toolbar").KeyDownAsync(new KeyboardEventArgs { Key = "Enter" });
+        await cut.Find(".ex-sheet-toolbar").KeyDownAsync(new KeyboardEventArgs { Key = "Escape" });
+        var handedTo = HandedToCount;
+
+        await cut.InvokeAsync(() => chrome.Last("Number Format").ChoicesClosed(null, false));
+
+        Assert.Equal(handedTo, HandedToCount);
     }
 
     [Fact] // ADR-0100 (decided with the user, 2026-10-13: the keys typed while a list opens are its own): the built-in list makes the choice its keys are on when Enter reaches it, not the one DOM focus is still on, and the browser's click of that Enter chooses nothing more
@@ -355,23 +385,6 @@ public class SheetToolbarKeyTipTests : SheetTestContext
         await cut.Find(".ex-popover .ex-sheet-choices").KeyDownAsync(new KeyboardEventArgs { Key = "Enter" });
 
         cut.WaitForAssertion(() => Assert.Equal(CellColour.FromRgb(0x000000), FormatAt(cut, "B2").Fill.Colour));
-    }
-
-    [Fact] // ADR-0100's ToolbarItemContext.ChoicesOpened (decided with the user, 2026-10-13): a list that did not open gives the keys held for it back to the band, which answers them in order
-    public async Task A_list_that_did_not_open_gives_its_keys_to_the_band()
-    {
-        var chrome = new OwnListsChrome();
-        var cut = RenderToolbarSheet(ps => ps.Add(s => s.Chrome, chrome));
-        await GoToAsync(cut, "B2");
-        await cut.Find(".ex-sheet-toolbar").FocusAsync(new FocusEventArgs());
-        foreach (var _ in Enumerable.Range(0, 10)) await cut.Find(".ex-sheet-toolbar").KeyDownAsync(new KeyboardEventArgs { Key = "ArrowRight" });
-        await cut.Find(".ex-sheet-toolbar").KeyDownAsync(new KeyboardEventArgs { Key = "Enter" });
-        await cut.Find(".ex-sheet-toolbar").KeyDownAsync(new KeyboardEventArgs { Key = "ArrowLeft" });
-        Assert.True(chrome.Last("Number Format").Active);
-
-        Assert.Empty(await cut.InvokeAsync(() => chrome.Last("Number Format").ChoicesOpened(false)));
-
-        cut.WaitForAssertion(() => Assert.True(chrome.Last("Align Right").Active));
     }
 
     [Fact] // R2 (b) of the Windows readings of 2026-10-12 (observed: after Alt, H, F, C one Escape shows the Home tab's KeyTips, a second the tabs', a third none), under the built-in Chrome: Escape in the list a KeyTip opened, in the grid's popover, goes back to its row's KeyTips, and the band takes the keyboard through the grid with the keys typed after the Escape

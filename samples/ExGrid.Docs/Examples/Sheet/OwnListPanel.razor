@@ -1,0 +1,104 @@
+@using ExSheet
+@using InputKind = global::ExGrid.Chrome.GridInputKind
+@implements IAsyncDisposable
+
+@* The open list, drawn beside the Sheet. It claims every key (data-ex-claims) and each choice its click,
+   and answers them in their turn. A choice claims the keys too: the nearest claimant is the one asked, and
+   a key typed on a choice is the list's, numbered like one typed anywhere else in it. A press in it leaves
+   the keyboard where it was, as the toolbar's buttons do; it joins the Sheet's Input Order while open, so the keys typed in it
+   while an input is answered wait for it, and the keyboard in it is the Sheet's. *@
+@if (_open is { } open)
+{
+    <div role="listbox" aria-label="@open.Name" data-ex-claims="keydown" @ref="_list"
+         @onkeydown="OnKeyAsync" @onkeydown:preventDefault="true" @onkeydown:stopPropagation="true" @onmousedown:preventDefault="true"
+         style="display: flex; flex-direction: column; gap: 2px; padding: 4px; border: 1px solid currentColor; max-height: 300px; overflow: auto">
+        @for (var i = 0; i < open.Choices.Count; i++)
+        {
+            var at = i;
+            var choice = open.Choices[at];
+            <button type="button" role="option" tabindex="-1" aria-selected="@(choice.Selected ? "true" : "false")"
+                    disabled="@(choice.DisabledReason is not null)" data-ex-claims="@(choice.DisabledReason is null ? "click keydown" : null)"
+                    @onclick="() => PressAsync(choice)" @ref="_choices[at]"
+                    style="text-align: left; @(choice.Colour is { } colour ? $"border-left: 1em solid {colour}" : "")">
+                @choice.Label
+            </button>
+        }
+    </div>
+}
+else
+{
+    <p>Open a list from the toolbar: its choices are drawn here.</p>
+}
+
+@code {
+    [Parameter, EditorRequired] public OwnListChrome Chrome { get; set; } = default!;
+
+    private ToolbarItemContext? _open;
+    private ElementReference _list;
+    private ElementReference[] _choices = [];
+    private IAsyncDisposable? _surface;
+    private bool _drawnFresh;
+    private int _at;
+
+    protected override void OnInitialized() => Chrome.Changed += OnChromeChanged;
+
+    private void OnChromeChanged() => _ = InvokeAsync(() =>
+    {
+        _drawnFresh = Chrome.Open is not null && _open?.Id != Chrome.Open.Id;
+        _open = Chrome.Open;
+        _choices = new ElementReference[_open?.Choices.Count ?? 0];
+        StateHasChanged();
+    });
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!_drawnFresh || _open is not { } open) return;
+        _drawnFresh = false;
+        // Joined first, then handed the keyboard: the keys typed since the toolbar asked come with it.
+        _surface = await open.JoinSurface!(_list, null, null);
+        Chrome.Joined();
+        if (!Chrome.FromKeys) return;
+        _at = Math.Max(0, open.Choices.ToList().FindIndex(c => c.Selected && c.DisabledReason is null));
+        await open.TakeKeyboard(_choices[_at]);
+    }
+
+    private Task OnKeyAsync(KeyboardEventArgs e) => _open is not { } open ? Task.CompletedTask
+        : open.InOrder(InputKind.KeyDown, async () =>
+        {
+            switch (e.Key)
+            {
+                case "Escape":
+                    await CloseAsync(open, null, escaped: true);
+                    break;
+                case "Enter" or " ":
+                    if (open.Choices[_at].DisabledReason is null) await CloseAsync(open, open.Choices[_at], escaped: false);
+                    break;
+                case "ArrowDown" or "ArrowUp":
+                    _at = Math.Clamp(_at + (e.Key == "ArrowDown" ? 1 : -1), 0, open.Choices.Count - 1);
+                    await open.TakeKeyboard(_choices[_at]);
+                    break;
+            }
+        });
+
+    private Task PressAsync(ToolbarChoice choice) => _open is not { } open ? Task.CompletedTask
+        : open.InOrder(InputKind.Click, () => CloseAsync(open, choice, escaped: false));
+
+    // In the turn of the input that closed it: the toolbar makes the choice and takes the keyboard on from
+    // the list, which stands until then; then the list goes and leaves the Sheet's Input Order.
+    private async Task CloseAsync(ToolbarItemContext open, ToolbarChoice? choice, bool escaped)
+    {
+        await open.ChoicesClosed(choice, escaped);
+        Chrome.CloseList(open.Id);
+        if (_surface is { } surface)
+        {
+            _surface = null;
+            await surface.DisposeAsync();
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        Chrome.Changed -= OnChromeChanged;
+        if (_surface is { } surface) await surface.DisposeAsync();
+    }
+}

@@ -1,0 +1,55 @@
+@using ExSheet
+@using InputKind = global::ExGrid.Chrome.GridInputKind
+
+@* One list item on the toolbar: a button that claims its click, so the press takes its place among the
+   Sheet's keys and presses. A pointer press leaves the keyboard on the Sheet. *@
+<span id="@Context.Id" style="display: inline-flex">
+    <button type="button" tabindex="-1" disabled="@(!Context.Enabled)" title="@Context.Tooltip"
+            aria-haspopup="listbox" aria-expanded="@(Chrome.Open?.Id == Context.Id ? "true" : "false")"
+            data-ex-claims="click" @onmousedown:preventDefault="true" @onclick="PressAsync"
+            style="@(Context.Active ? "outline: 2px solid currentColor" : null)">
+        @(Context.Text ?? Context.Name) ▾
+    </button>
+</span>
+
+@code {
+    [Parameter, EditorRequired] public ToolbarItemContext Context { get; set; } = default!;
+
+    [Parameter, EditorRequired] public OwnListChrome Chrome { get; set; } = default!;
+
+    private int _answeredOpen;
+    private int _answeredClose;
+
+    protected override void OnInitialized()
+    {
+        _answeredOpen = Context.OpenRequest;
+        _answeredClose = Context.CloseRequest;
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        // The toolbar took the keyboard back before the list had it: the list closes, telling nothing.
+        if (Context.CloseRequest != _answeredClose)
+        {
+            _answeredClose = Context.CloseRequest;
+            Chrome.CloseList(Context.Id);
+        }
+        // The toolbar's keys asked for the list: it opens and takes the keyboard. One that cannot open
+        // says so, and the keys held for it go back to the toolbar.
+        if (Context.OpenRequest != _answeredOpen)
+        {
+            _answeredOpen = Context.OpenRequest;
+            if (Context.OpenRequest == Context.CloseRequest) return;
+            if (Context.Enabled && Context.Choices.Count > 0) _ = Chrome.OpenList(Context, fromKeys: true);
+            else await Context.ChoicesClosed(null, false);
+        }
+    }
+
+    // In the press's turn, which ends once the list has joined the Sheet's order.
+    private Task PressAsync() => Context.InOrder(InputKind.Click, () =>
+    {
+        if (Chrome.Open?.Id != Context.Id) return Chrome.OpenList(Context, fromKeys: false);
+        Chrome.CloseList(Context.Id);
+        return Task.CompletedTask;
+    });
+}
