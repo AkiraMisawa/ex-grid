@@ -62,6 +62,12 @@ was built.
   the Chart Source query and the narrowing. A Board with a chart over a server input whose
   source has no `Thin` is refused at binding, by path.
 
+- **`ExChart` reads a spec through its sources itself** (*settled while building ticket 76,
+  2026-10-22*): given `Spec` and `Sources` in place of a `Definition`, it asks as a Board's chart does —
+  for the device pixels of its width (two a CSS pixel), on its first drawing and on each change of
+  range — keeps the scene it shows and is Busy until the newest ask is answered, drops an overtaken
+  answer, and says one from older data in its place.
+
 ## Consequences
 
 - ExChart.Engine gains `IChartSource`, `ChartSourceQuery`, `ChartSourceAnswer`, `ChartSource` and

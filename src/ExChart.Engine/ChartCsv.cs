@@ -142,6 +142,10 @@ public static class ChartCsv
         var scales = shown.Where(t => t.Series.Kind == SeriesKind.Observation)
             .SelectMany(t => new[] { t.Series.ColourBy?.Title, t.Series.SizeBy?.Title }).OfType<string>().Distinct().ToList();
         header.AddRange(scales);
+        // So is a column the tooltip says (ADR-0321).
+        var details = shown.Where(t => t.Series.Kind == SeriesKind.Observation)
+            .SelectMany(t => t.Series.Details.Select(d => d.Title)).Where(t => !scales.Contains(t)).Distinct().ToList();
+        header.AddRange(details);
         var rows = new List<IReadOnlyList<string>>();
         foreach (var (s, points) in shown)
             foreach (var (p, i) in Observed(s, points))
@@ -159,6 +163,8 @@ public static class ChartCsv
                     var values = s.ColourBy?.Title == title ? s.ColourBy.Values : s.SizeBy?.Title == title ? s.SizeBy.Values : null;
                     row.Add(values?[i]?.ToInvariantString() ?? "");
                 }
+                foreach (var title in details)
+                    row.Add(s.Details.FirstOrDefault(d => d.Title == title)?.Values[i] ?? "");
                 rows.Add(row);
             }
         // A node series lists its edges after its nodes (ADR-0321).

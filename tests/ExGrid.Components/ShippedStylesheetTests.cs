@@ -6,6 +6,7 @@ using System.Text.RegularExpressions;
 using AngleSharp.Css;
 using AngleSharp.Css.Parser;
 using AngleSharp.Dom;
+using ExGrid.Chrome;
 using ExGrid.Keys;
 using Xunit;
 
@@ -1727,6 +1728,53 @@ public class ShippedStylesheetTests
         Assert.Contains("const gateSet = (name) => new Set(gateKeys?.[name] ?? []);", script, StringComparison.Ordinal);
         Assert.Equal(["Alt+ArrowDown", "ContextMenu", "Shift+F10"], GridKeys.GateSets["popoverOpeners"].Order(StringComparer.Ordinal));
         Assert.Equal(["Control+F", "Control+f"], GridKeys.GateSets["find"].Order(StringComparer.Ordinal));
+    }
+
+    [Fact] // ADR-0010 / ED-13: the JS gate admits an AltGr character — Control and Alt held together — as a key that opens the editor, and leaves either modifier alone to the browser, as the C# mirror does (CellEditorTests)
+    public void ED13_the_gate_admits_control_and_alt_together_and_neither_alone()
+    {
+        var script = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.js", StringComparison.Ordinal)).Text;
+
+        // On a grid that edits, and not under the OS's own Meta: a character with no Control and no
+        // Alt opens the editor; one with both held does too; anything else falls through to the taken
+        // set, which holds no Control+x or Alt+x character, so the browser keeps it.
+        Assert.Matches(new Regex(
+            @"if \(canEdit && !foreign\) \{\s*if \(!control && !k\.altKey && \(k\.key === 'F2' \|\| k\.key\.length === 1\)\) \{\s*return 'mode';\s*\}\s*if \(k\.ctrlKey && k\.altKey && k\.key\.length === 1\) \{\s*return 'mode';\s*\}\s*\}\s*if \(!taken\.has\(canonical\)\) \{\s*return null;\s*\}"),
+            script);
+        var claims = new GridKeyClaims(CanEdit: true, CanUndo: true, CanRedo: true);
+        foreach (var letter in "qe@")
+        {
+            Assert.DoesNotContain("Control+" + letter, GridKeys.TakenFor(claims));
+            Assert.DoesNotContain("Alt+" + letter, GridKeys.TakenFor(claims));
+        }
+    }
+
+    [Fact] // ADR-0010 / KB-2 / ADR-0044 (signoff ticket 05): the popover hold's keys that hand the keyboard on inside a column menu are MenuKeys' own, handed at attach, and the script spells none
+    public void KB2_the_popover_hold_reads_its_keys_from_MenuKeys()
+    {
+        var script = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.js", StringComparison.Ordinal)).Text;
+
+        // Read off ResolveInColumnMenu and Letter: Tab and Shift+Tab move into the filter, and E in
+        // either case, Shift or not; Enter and Space alone run the command they are pressed on.
+        Assert.Equal(
+            ["E", "Shift+E", "Shift+Tab", "Shift+e", "Tab", "e"],
+            GridKeys.GateSets["menuIntoFilter"].Order(StringComparer.Ordinal));
+        Assert.Equal([" ", "Enter"], GridKeys.GateSets["menuRuns"].Order(StringComparer.Ordinal));
+        Assert.Equal(["E", "Shift+E", "Shift+e", "e"], GridKeys.GateSets["valueListIntoSearch"].Order(StringComparer.Ordinal));
+        foreach (var key in GridKeys.GateSets["menuIntoFilter"])
+        {
+            var shift = key.StartsWith("Shift+", StringComparison.Ordinal);
+            var bare = shift ? key["Shift+".Length..] : key;
+            Assert.Contains(
+                MenuKeys.ResolveInColumnMenu(bare, shift, false, [new("x", true, () => Task.CompletedTask)], 0, filterBelow: true).Kind,
+                new[] { MenuKeyKind.FilterFirst, MenuKeyKind.FilterLast, MenuKeyKind.FilterSearch });
+        }
+
+        // The hold reads them by name, and no longer carries a mirror of its own.
+        foreach (var name in new[] { "menuIntoFilter", "menuRuns", "valueListIntoSearch" })
+            Assert.Contains($"gateSet('{name}')", script, StringComparison.Ordinal);
+        Assert.DoesNotContain("letterE", script, StringComparison.Ordinal);
+        Assert.DoesNotContain("mirror of MenuKeys", script, StringComparison.Ordinal);
     }
 
     [Fact] // ADR-0058 ("The keyboard") / SH-35: while what Point wrote came from outside, the gate claims Point's keys and the Primary Modifier's arrows, with Shift or without, and nothing else

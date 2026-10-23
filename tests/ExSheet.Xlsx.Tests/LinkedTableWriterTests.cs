@@ -182,7 +182,8 @@ public class LinkedTableWriterTests
 
         Assert.Equal("SUM(Positions[PV])", Formula(trades, "A1"));
         Assert.Equal("999750.25", Shown(trades, "A1"));
-        Assert.Equal("_xlfn.XLOOKUP(\"APAC\",positions[desk],Positions[PV])", Formula(trades, "A2"));
+        // Typed positions[desk], stored in the declared case (exsheet ticket 180), as Excel writes it.
+        Assert.Equal("_xlfn.XLOOKUP(\"APAC\",Positions[Desk],Positions[PV])", Formula(trades, "A2"));
         Assert.Equal("-250", Shown(trades, "A2"));
         Assert.Equal("SUM(Positions[Total'#])", Formula(trades, "A3"));
         Assert.Equal("Rates[Rate]*2", Formula(trades, "A4"));

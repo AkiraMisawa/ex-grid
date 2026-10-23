@@ -139,6 +139,35 @@ public class NoRowBeyondTheWindowTests : GridTestContext
             $"rows {string.Join(", ", aliveElsewhere)} of the Window before are alive, and the render before painted only {string.Join(", ", paintedBefore.Order())} (ADR-0160)");
     }
 
+    /// <summary>Hands the grid a Window of new row instances and answers a weak reference to the
+    /// Window itself — the list the Consumer pushed — and nothing that holds it.</summary>
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static WeakReference HandOverAWindowList(IRenderedComponent<ExGrid<TestRow>> cut, int version)
+    {
+        var rows = TestRows.Many(50);
+        cut.Render(ps => ps.Add(g => g.Window, rows).Add(g => g.RowSequenceVersion, version));
+        return new WeakReference(rows);
+    }
+
+    [Theory] // ADR-0001 / FN-1: the grid holds no data of its own — no field keeps a pushed Window once the parameter has changed, with CellAppearance and a Row Key declared and not
+    [InlineData(false, false)]
+    [InlineData(true, true)]
+    public async Task FN1_no_field_retains_a_window_after_the_parameter_changes(bool appearance, bool rowKey)
+    {
+        var cut = RenderEmpty(appearance, rowKey);
+        var first = HandOverAWindowList(cut, version: 0);
+        await ScrollAndSelectAsync(cut, 1);
+        var second = HandOverAWindowList(cut, version: 1);
+        await ScrollAndSelectAsync(cut, 2);
+        var current = HandOverAWindowList(cut, version: 2);
+
+        Collect();
+
+        Assert.True(current.IsAlive, "the Window in hand is the parameter, and is held");
+        Assert.False(first.IsAlive, "a Window two parameters ago is still held (ADR-0001)");
+        Assert.False(second.IsAlive, "the Window before the current one is still held (ADR-0001)");
+    }
+
     [Fact] // ADR-0160 / LV-22, ADR-0011 (note of 2026-10-07): an open editor holds the Row Key of its row, not the row — the rows of earlier Windows go while it stays open
     public async Task An_open_editor_holds_its_rows_key_and_no_row()
     {

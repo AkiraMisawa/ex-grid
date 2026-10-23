@@ -187,6 +187,16 @@ public static partial class BoardSpec
         var named = new List<string>();
         try
         {
+            using (var document = JsonDocument.Parse(chartSpec))
+                if (document.RootElement.ValueKind == JsonValueKind.Object && document.RootElement.TryGetProperty("surface", out _))
+                    throw new BoardRefusedException("surface", SurfaceRefusal);
+        }
+        catch (JsonException)
+        {
+            // Not JSON: the Chart Spec's reader says so below, in its own words.
+        }
+        try
+        {
             ChartSpec.Read(chartSpec, handle =>
             {
                 if (!tables.TryGetValue(handle, out var shape))
@@ -498,10 +508,16 @@ public static partial class BoardSpec
         return new BoardPivotView(id, title, data, layout);
     }
 
+    private const string SurfaceRefusal =
+        "A Board's chart view draws series; a Chart Spec of a 3D surface is drawn on its own, by ExSurface, and is not yet a view of a Board.";
+
     private static BoardChartView ReadChart(string id, string title, JsonElement spec, string path, Func<string, DataShape?> shape)
     {
         if (spec.ValueKind != JsonValueKind.Object)
             throw new BoardRefusedException(path, "A chart is a Chart Spec, an object.");
+        // A Board draws a chart of series; a spec of a 3D surface is drawn by ExSurface on its own.
+        if (spec.TryGetProperty("surface", out _))
+            throw new BoardRefusedException($"{path}.surface", SurfaceRefusal);
         // The inputs its series name are checked first, so that one the Board does not declare is said
         // in the Board's words; the rest is the Chart Spec's reader's, below.
         var data = new List<string>();

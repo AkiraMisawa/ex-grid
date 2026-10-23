@@ -187,6 +187,20 @@ public class PasteRuleTests
             ClipboardRules.PlanPaste(fiveColumns, new PasteShape(1, 3), Editable).Reason);
     }
 
+    [Theory] // ADR-0014 / PST-4: a payload far larger than the target is refused by shape, with no plan to raise an intent from
+    [InlineData(100_000, 50)]
+    [InlineData(1_000_000, 2)]
+    [InlineData(3, 16_384)]
+    public void PST4_a_payload_far_larger_than_the_target_is_refused_by_shape(int rows, int columns)
+    {
+        var target = GridSelection.Empty.Click(new(2, 2), Grid).ExtendTo(new(4, 3), Grid); // 3×2
+
+        var decision = ClipboardRules.PlanPaste(target, new PasteShape(rows, columns), Editable);
+
+        Assert.True(decision.IsRefused);
+        Assert.Equal(PasteRefusalReason.ShapeMismatch, decision.Reason);
+    }
+
     [Fact] // ADR-0014: a block into a disjoint target is refused even when every range is a multiple
     public void A_block_into_disjoint_ranges_is_refused_even_when_each_range_would_tile()
     {

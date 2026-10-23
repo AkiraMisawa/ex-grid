@@ -89,6 +89,30 @@ internal static class FormulaText
         return text.ToString();
     }
 
+    /// <summary>
+    /// The stored text with every structured reference written as <paramref name="spell"/> spells its
+    /// table and column — the Linked Table's declared case (ADR-0047, ADR-0049) — or left as it is where
+    /// it gives <see langword="null"/>. The same string when nothing changed.
+    /// </summary>
+    public static string RewriteStructuredReferences(string stored, Func<string, string, (string Table, string Column)?> spell)
+    {
+        var tokens = Lexer.Tokenize(stored, 1);
+        StringBuilder? text = null;
+        var at = 0;
+        foreach (var token in tokens)
+        {
+            if (token.Kind != TokenKind.StructuredReference || spell(token.TableName!, token.Text) is not { } spelled) continue;
+            if (string.Equals(spelled.Table, token.TableName, StringComparison.Ordinal) && string.Equals(spelled.Column, token.Text, StringComparison.Ordinal)) continue;
+            text ??= new StringBuilder(stored.Length);
+            text.Append(stored, at, token.Position - at);
+            WriteStructuredReference(text, spelled.Table, spelled.Column);
+            at = token.Position + token.Length;
+        }
+        if (text is null) return stored;
+        text.Append(stored, at, stored.Length - at);
+        return text.ToString();
+    }
+
     private static void WriteToken(StringBuilder text, string formula, Token token, Token? next)
     {
         switch (token.Kind)

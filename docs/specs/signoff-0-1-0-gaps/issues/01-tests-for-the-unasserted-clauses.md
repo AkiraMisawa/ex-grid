@@ -50,3 +50,35 @@ restate.
 - **PV-18** (layer 3): Palette reaches the pane, entries and − button in both schemes and the stale token is probed under the Wrapper mapping; not every Visual Token is read in a browser.
 - **DA-18** (layers 1–2): Definitions are tested in ExGrid.Data and ExPivot tables are checked per Aggregation, but no test asserts that both ExPivot.Engine and the Selection Summary answer through the same ExGrid.Data accumulators ("inspect the references").
 - **LV-27** (layer 3): Server-path Window Changes are exercised end to end, but no layer-3 test targets digest verification, mismatch recovery or a stale fallback.
+
+## Comments
+
+- 2026-10-22: tests now assert FN-1, VZ-2, ED-13 (both layers), ED-19, SL-1, SL-2, SL-11, KB-3 (off
+  Apple), KB-5 (on the component), KB-9, KB-10, KB-11, KB-28, KB-40, KB-42 (both layers), A11Y-6, A11Y-9,
+  A11Y-10, CP-7, CTX-3, PST-4, ERR-1, ERR-7, DC-39, DC-40, SH-60 (the Consumer's zone), PV-13 (the
+  Context Menu) and DA-18. Still open: ASY-7, WR-1, DC-62, DC-63, SH-60
+  (#GETTING_DATA, the minute turning), PV-3, PV-7, PV-13 (the double click, a values-only
+  refresh), PV-18 and LV-27.
+  WR-10 is not a Playwright test: its Check is the by-hand MudBlazor floor run under `verification/`.
+- 2026-10-22: PV-13's double click on the label found a defect. On CI (PR #246, Edge, Server host,
+  `/pivot?chrome=mud`, once in three) a double click on APAC's label after an Expand from the Context
+  Menu collapsed APAC and left the report with no Focus (`aria-activedescendant` absent for 60 s),
+  where the Context Menu's Collapse in the same run kept it. The input journal shows the double
+  click's four presses answered in order; the Focus is placed by `ExPivot.OnAfterRenderAsync` through
+  `PlaceSelectionAsync` once the toggled report lands. Not reproduced locally: 30 runs on Linux
+  Chromium against the Server host, both Chromes, and a run with the report scrolled before the double
+  click; Edge was not available. The double click is its own test in `pivot-find.spec.mjs`, marked
+  `test.fixme` under the MudBlazor Chrome until the fix, which removes the mark.
+- 2026-10-23: the same defect under the built-in Chrome, in Chrome (PR #246's repeat run of
+  0ad1f54, `pivot-find.spec.mjs`, once in three), on a fresh page: a click on APAC's label, then a
+  double click on it. Its input journal shows every press answered in order and the report settled
+  with no `aria-activedescendant`. The double click's test is `test.fixme` under both Chromes until
+  the fix.
+- 2026-10-23: PV-13's double click is fixed (PR #248) and asserted; its `test.fixme` is gone. On the
+  Server host an after-render runs when the browser acknowledges its batch, and an earlier batch's ran
+  the Focus placement with the toggled report in hand but not yet handed to the grid: the placement
+  was asked under a Row Sequence Version the grid did not have, dropped as stale, and its result was not
+  read. ExPivot now places it only from the render that handed the grid its current state. It
+  reproduces locally with a 60 or 150 ms round trip (7 failed of 24 before, 60 of 60 after);
+  `pivot.spec.mjs` repeats the pair three times at 150 ms. Still open from PV-13: a values-only
+  refresh keeping the Row Sequence Version and the Selection.

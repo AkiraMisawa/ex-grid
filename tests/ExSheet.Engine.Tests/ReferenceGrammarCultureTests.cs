@@ -44,10 +44,10 @@ public class ReferenceGrammarCultureTests
         (Sheet.DefaultName, "=sum(i3,$i$3:i$3)", "=SUM(I3,$I$3:I$3)", "=SUM(I4,$I$4:I$4)", 64),
         // A Sheet's name and a Linked Table's, upper case with an 'I', typed in lower case: matched
         // without the culture's case rules — under tr-TR, 'I' and 'i' are not one letter's two cases.
-        // The qualifier is written in the Sheet's own case; a structured reference keeps the case
-        // it was typed in.
+        // The qualifier is written in the Sheet's own case, and a structured reference in its table's
+        // and its column's declared case (ticket 180): LIMIT with a column Line.
         ("RISK", "=risk!i3", "=RISK!I3", "=RISK!I4", 32),
-        (Sheet.DefaultName, "=sum(limit[line])", "=SUM(limit[line])", "=SUM(limit[line])", 7),
+        (Sheet.DefaultName, "=sum(limit[line])", "=SUM(LIMIT[Line])", "=SUM(LIMIT[Line])", 7),
     ];
 
     public static TheoryData<string, string, string, string, string, double> FormsInCultures()
@@ -72,7 +72,7 @@ public class ReferenceGrammarCultureTests
 
     private static void PushPositions(Sheet sheet)
     {
-        sheet.DeclareLinkedTable("LIMIT", ["LINE"]);
+        sheet.DeclareLinkedTable("LIMIT", ["Line"]);
         PushLimit(sheet);
         sheet.DeclareLinkedTable("Positions", ["Id", "PV", "Net PV", "Rate#"]);
         sheet.PushLinkedTable("Positions",

@@ -57,6 +57,17 @@ test.describe('a zone the Consumer gives', () => {
         expect(shown).not.toBe(dateIn('Pacific/Pago_Pago'));
     });
 
+    test('SH-60 / ADR-0124: NOW() is the moment in the Consumer\'s zone, not the browser\'s', async ({ page }) => {
+        await page.goto('/sheet?case=today&zone=Pacific/Kiritimati');
+        const a3 = cell(sheet(page), 'A3');
+        await expect(a3).toHaveText(/^\d{4}-\d{2}-\d{2}$/);
+        const before = dateIn('Pacific/Kiritimati');
+        const shown = (await a3.textContent()).trim();
+        const after = dateIn('Pacific/Kiritimati');
+        expect([before, after]).toContain(shown);
+        expect(shown).not.toBe(dateIn('Pacific/Pago_Pago'));
+    });
+
     test('ADR-0121: a fixed day goes before any zone', async ({ page }) => {
         await page.goto('/sheet?case=today&zone=Pacific/Kiritimati&today=2026-09-30');
         await expect(cell(sheet(page), 'A1')).toHaveText('2026-09-30');

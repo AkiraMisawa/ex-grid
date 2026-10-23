@@ -15,7 +15,7 @@ public static class LatticeTables
     /// <summary>The lattice's steps.</summary>
     public const int Steps = 8;
 
-    /// <summary>The node table: node, step, spot, value, and the risk-neutral chance of reaching it.</summary>
+    /// <summary>The node table: node, step, spot, value, the risk-neutral chance of reaching it, and whether it is exercised early.</summary>
     public static readonly IChartData Nodes = MakeNodes();
 
     /// <summary>The branch table: each node to the two it moves to.</summary>
@@ -26,8 +26,12 @@ public static class LatticeTables
     {
         "lattice" => Nodes,
         "branches" => Branches,
+        "fx-vols" => Vols,
         _ => null,
     };
+
+    /// <summary>A third table: an FX volatility grid, a row a tenor and delta.</summary>
+    public static readonly IChartData Vols = VolSurface.Table();
 
     private static IChartData MakeNodes()
     {
@@ -41,7 +45,8 @@ public static class LatticeTables
             ("step", nodes.Select(n => n.Step).ToArray()),
             ("spot", nodes.Select(n => Math.Round(n.Spot, 2)).ToArray()),
             ("value", nodes.Select(n => Math.Round(n.Value, 2)).ToArray()),
-            ("reach", nodes.Select(Reach).ToArray()));
+            ("reach", nodes.Select(Reach).ToArray()),
+            ("exercised", nodes.Select(n => n.Early ? "early" : "no").ToArray()));
     }
 
     private static IChartData MakeBranches()
@@ -76,10 +81,25 @@ public static class LatticeTables
               "data": "lattice", "x": "step", "y": "spot", "key": "node", "label": "node",
               "colour": { "column": "value", "scale": "sequential", "title": "Value" },
               "size": { "column": "reach", "title": "Chance of reaching" },
+              "tooltip": ["exercised"],
               "edges": { "data": "branches", "from": "from", "to": "to" }
             }
           ],
           "notes": ["Cox–Ross–Rubinstein: S 100, K 100, r 5%, σ 30%, T 1 year."]
+        }
+        """;
+
+    /// <summary>The spec of a 3D surface: the grid's x, y and z columns, its colours diverging from a centre.</summary>
+    public const string SurfaceSpec = """
+        {
+          "version": 1,
+          "title": "EURUSD volatility",
+          "surface": {
+            "data": "fx-vols", "x": "delta", "y": "tenor", "z": "vol",
+            "xTitle": "Delta", "yTitle": "Tenor", "zTitle": "Volatility (%)",
+            "centre": 10.5
+          },
+          "notes": ["Mid quotes; 25C at 5Y has none."]
         }
         """;
 

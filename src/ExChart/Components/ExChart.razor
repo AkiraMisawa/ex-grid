@@ -54,7 +54,13 @@
             </div>
         }
     }
-    <div class="ex-chart-stage" style="@StageStyle" @oncontextmenu="OpenMenu" @oncontextmenu:preventDefault>
+    @if (_refusal is { } refusal)
+    {
+        @* A spec its sources cannot answer, or an answer older than the data shown: said in the
+           chart's place, never drawn as if it were the answer (ADR-0344, spine rule 1). *@
+        <p class="ex-chart-source-refusal" role="alert">@refusal</p>
+    }
+    <div class="ex-chart-stage" style="@StageStyle" hidden="@(_refusal is not null)" @oncontextmenu="OpenMenu" @oncontextmenu:preventDefault>
         <svg class="ex-chart-svg" width="@Svg.N(Width)" height="@Svg.N(Height)" role="img" aria-labelledby="@_summaryId">
             <title id="@_summaryId">@_summary</title>
             @Drawing

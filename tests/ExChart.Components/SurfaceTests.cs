@@ -99,8 +99,8 @@ public class SurfaceTests : BunitContext
         await cut.InvokeAsync(() => cut.Instance.OnSliceAsync(cut.Instance.Version, "y", 3));
         Assert.Equal(SurfaceSlice.AtY("1Y"), raised);
         var chart = cut.FindComponent<ChartComponent>();
-        Assert.Equal("Volatility at 1Y", chart.Instance.Definition.Series[0].Name);
-        Assert.Null(chart.Instance.Definition.Series[0].Points[1].Y);
+        Assert.Equal("Volatility at 1Y", chart.Instance.Definition!.Series[0].Name);
+        Assert.Null(chart.Instance.Definition!.Series[0].Points[1].Y);
         var draw = _handle.Invocations["draw"][^1];
         // The slice's line on the surface, along the 1Y row and broken at its hole.
         var path = Assert.IsAssignableFrom<IReadOnlyList<IReadOnlyList<SurfaceMeshPoint>>>(draw.Arguments[4]);

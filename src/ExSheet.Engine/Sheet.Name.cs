@@ -74,6 +74,23 @@ public sealed partial class Sheet
             q => Other(q) ? Name : q);
     }
 
+    /// <summary>
+    /// A typed Formula with every structured reference to a declared Linked Table written in the table's
+    /// and the column's declared case, as Excel writes one back, as it writes a function's name in upper
+    /// case (ADR-0047, ADR-0049; ticket 180): <c>=sum(limit[line])</c> over <c>LIMIT</c> with a column
+    /// <c>Line</c> is stored as <c>=SUM(LIMIT[Line])</c>. One naming a table or a column not declared is
+    /// left as typed. Later rewrites keep the case written here. The same instance when nothing changes.
+    /// </summary>
+    internal Entry InDeclaredCase(Entry entry)
+    {
+        if (entry.Parsed is null || !entry.Formula!.Contains('[', StringComparison.Ordinal)) return entry;
+        var rewritten = FormulaText.RewriteStructuredReferences(entry.Formula, (table, column) =>
+            Tables.TryGetValue(table, out var declared) && declared.ColumnIndex.TryGetValue(column, out var index)
+                ? (declared.Name, declared.Columns[index])
+                : null);
+        return ReferenceEquals(rewritten, entry.Formula) ? entry : Entry.FromFormula(rewritten);
+    }
+
     internal static string CheckName(string name, string parameter) =>
         IsValidName(name, out var reason) ? name : throw new ArgumentException(reason, parameter);
 

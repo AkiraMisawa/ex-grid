@@ -1,7 +1,8 @@
-// The six permitted uses of JavaScript (ADR-0021): the capture-phase keydown listener,
-// reading and setting scroll offsets, the clipboard, being told what the scrollbar takes
-// out of the box, being told about the pointer — when it moves onto another row, and
-// when it comes to rest — and being told the Layout Ceiling (ADR-0053). Beside them, the notes ADR-0021 has added since: a capture-phase
+// Twelve of the permitted uses of JavaScript (ADR-0021) are in this file; ExChart's three are in
+// its own module. The first six: the capture-phase keydown listener, reading and setting scroll
+// offsets (the page's follow of a revealed Focus among them, ADR-0204), the clipboard, being told
+// what the scrollbar takes out of the box, being told about the pointer — when it moves onto
+// another row, and when it comes to rest — and being told the Layout Ceiling (ADR-0053). Beside them, the notes ADR-0021 has added since: a capture-phase
 // mousedown and mouseup that keep a press on the rows in its place among held keys, and hold the
 // keys after one made while an edit is open; the root taking the keyboard back only while DOM
 // focus is still its own; that same mousedown bringing the keyboard back to an edit left
@@ -33,7 +34,8 @@
 // supplying its missing commit when it is left and retiring on a normal commit. The Input Order
 // (ADR-0240 section 2): a capture-phase click, dblclick and contextmenu on the root, beside the
 // mousedown and mouseup above, which number a click on one of the grid's own controls that claim it
-// (data-ex-claims) as it goes on to Blazor, and hold it in its place while the gate holds input. The Settled Mark
+// (data-ex-claims) as it goes on to Blazor, and hold it in its place while the gate holds input — the eleventh — and
+// the twelfth, a capture-phase submit and focus on the window, filtered to this root. The Settled Mark
 // (ADR-0220; ADR-0021's note of 2026-10-16) adds no listener: the listeners above write
 // `data-ex-settled` on the root, with one MutationObserver on two attributes the core's render
 // writes on the root's first child, as the reveal's and the follow's observe theirs. Anything
@@ -1767,9 +1769,12 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // opening a popover: the keys after it are held until DOM focus has moved, or the popover
     // is gone, then handed on in order. Which letters run a command is written by the core
     // on the commands (data-ex-letters: the enabled ones), and the value list is the element
-    // its Chrome marks ex-value-list; only Tab, Shift+Tab and E are this listener's own
-    // mirror of MenuKeys.ResolveInColumnMenu — the two must move together.
+    // its Chrome marks ex-value-list; the keys that move into the filter or the search, and the
+    // keys that run a command, are MenuKeys' own, handed at attach (MenuKeys.HoldSets; KB-2).
     let awaitingMove = null;
+    const menuIntoFilter = gateSet('menuIntoFilter');
+    const menuRuns = gateSet('menuRuns');
+    const valueListIntoSearch = gateSet('valueListIntoSearch');
     const popoverOf = (target) => {
         const popover = target instanceof Element ? target.closest('.ex-popover') : null;
         return popover && root.contains(popover) ? popover : null;
@@ -1786,12 +1791,12 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         }
         const closes = { from: target, closes: popover };
         const withFilter = popover.querySelector('.ex-popover-filter') !== null;
-        const letterE = k.key === 'e' || k.key === 'E';
+        const canonical = canonicalOf(k);
         if (target.closest('[role=menu]')) {
-            if (withFilter && (k.key === 'Tab' || letterE)) {
+            if (withFilter && menuIntoFilter.has(canonical)) {
                 return { from: target, into: '.ex-popover-filter' };
             }
-            if (target.matches('[role=menuitem]') && ((k.key === 'Enter' && !k.shiftKey) || (k.key === ' ' && !k.shiftKey))) {
+            if (target.matches('[role=menuitem]') && menuRuns.has(canonical)) {
                 return closes;
             }
             // A choice among others — a Consumer's list of them, the Sheet Toolbar's colours and
@@ -1804,7 +1809,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             return target.closest('.ex-popover-commands') && runsLetter(popover, k) ? closes : null;
         }
         if (target.closest('.ex-value-list')) {
-            if (letterE) {
+            if (valueListIntoSearch.has(canonical)) {
                 return { from: target, into: '.ex-popover-filter' };
             }
             return runsLetter(popover, k) ? closes : null;

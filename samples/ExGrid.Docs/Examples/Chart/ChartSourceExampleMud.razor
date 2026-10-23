@@ -1,0 +1,14 @@
+@using ExChart
+@using ExChart.Components
+@using ExChart.MudBlazor
+
+@* Read through a Chart Source: the chart asks for its pixels, and again for a range dragged across it. *@
+<MudExGridPaper Elevation="0" Outlined="true">
+    <ExChart Spec="@SourcedTicks.Spec" Sources="SourcedTicks.Lookup" Title="Ticks" Width="720" Height="300" Chrome="MudChartChrome.Default"
+             Range="_range" OnRangeChanged="r => _range = r" />
+</MudExGridPaper>
+<MudText Typo="Typo.body2" Class="mt-2">Range: @(_range is { } r ? $"{r.From:0} to {r.To:0}" : "every tick")</MudText>
+
+@code {
+    private ChartRange? _range;
+}

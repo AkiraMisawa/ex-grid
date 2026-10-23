@@ -5,6 +5,7 @@
 
 <MudStack Row="true" Class="mb-3">
     <MudButton Variant="Variant.Outlined" OnClick="() => Load(LatticeTables.LatticeSpec)">The lattice</MudButton>
+    <MudButton Variant="Variant.Outlined" OnClick="() => Load(LatticeTables.SurfaceSpec)">A 3D surface</MudButton>
     <MudButton Variant="Variant.Outlined" OnClick="() => Load(LatticeTables.NumbersSpec)">A spec with numbers in it</MudButton>
 </MudStack>
 <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-start">
@@ -13,7 +14,13 @@
                       Class="chart-spec-text" Style="font-family: monospace; font-size: 12px" spellcheck="false" />
         <MudText Typo="Typo.body2" Class="chart-spec-answer mt-2" role="status">@_answer.Text</MudText>
     </div>
-    @if (_answer.Reading is { } reading)
+    @if (_answer.Reading is { Surface: { } surface } read)
+    {
+        <MudExGridPaper Elevation="0" Outlined="true">
+            <ExSurface Definition="surface" Title="@read.Title" Width="560" Height="380" SliceWidth="360" />
+        </MudExGridPaper>
+    }
+    else if (_answer.Reading is { } reading)
     {
         <MudExGridPaper Elevation="0" Outlined="true">
             <ExChart Definition="reading.Definition" Title="@reading.Title" Width="560" Height="380" Chrome="MudChartChrome.Default" />

@@ -125,7 +125,7 @@ ExChart.Components.ExChart.Chrome.get -> ExChart.Chrome.IChartChrome?
 ExChart.Components.ExChart.Chrome.set -> void
 ExChart.Components.ExChart.ColourSlots.get -> int
 ExChart.Components.ExChart.ColourSlots.set -> void
-ExChart.Components.ExChart.Definition.get -> ExChart.Engine.ChartDefinition!
+ExChart.Components.ExChart.Definition.get -> ExChart.Engine.ChartDefinition?
 ExChart.Components.ExChart.Definition.set -> void
 ExChart.Components.ExChart.Density.get -> ExGrid.GridDensity
 ExChart.Components.ExChart.Density.set -> void
@@ -391,3 +391,7 @@ ExChart.SnapshotChartData.RowCount.get -> int
 ExChart.SnapshotChartData.SnapshotChartData(ExGrid.Data.Snapshot! snapshot) -> void
 ExChart.SnapshotChartData.Value(string! column, int row) -> object?
 ExChart.SnapshotChartData.Version.get -> long
+ExChart.Components.ExChart.Spec.get -> string?
+ExChart.Components.ExChart.Spec.set -> void
+ExChart.Components.ExChart.Sources.get -> System.Func<string!, ExChart.Engine.IChartSource?>?
+ExChart.Components.ExChart.Sources.set -> void

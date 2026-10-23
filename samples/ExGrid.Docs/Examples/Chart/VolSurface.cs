@@ -34,6 +34,16 @@ public static class VolSurface
             Quotes.Select(row => (IReadOnlyList<ChartValue?>)row.Select(v => v is { } x ? (ChartValue?)ChartValue.Of(x) : null).ToArray()).ToArray(),
             "Volatility", Percent);
 
+    /// <summary>The quotes as a capability would return them for a Chart Spec: a row a tenor and delta, the missing quote null.</summary>
+    public static IChartData Table()
+    {
+        var rows = Tenors.SelectMany((tenor, j) => Deltas.Select((delta, i) => (tenor, delta, Quotes[j][i]))).ToArray();
+        return global::ExChart.Engine.ChartData.Of(
+            ("tenor", rows.Select(r => r.tenor).ToArray()),
+            ("delta", rows.Select(r => r.delta).ToArray()),
+            ("vol", rows.Select(r => (object?)r.Item3).ToArray()));
+    }
+
     private static readonly double[] DeltaValues = [10, 25, 50, 75, 90];
     private static readonly double[] TenorYears = [7 / 365.0, 1 / 12.0, 0.25, 0.5, 1, 2, 5, 10];
 

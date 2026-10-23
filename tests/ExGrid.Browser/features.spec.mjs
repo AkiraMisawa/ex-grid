@@ -51,6 +51,30 @@ test('typing opens Overwrite containing the character, Enter commits and moves (
     expect(active).toMatch(/r1c1$/);
 });
 
+// An Apple platform, where Meta is the Primary Modifier and Option types characters of its own.
+const onApple = (page) => page.evaluate(() => /mac|iphone|ipad|ipod/i.test(navigator.userAgentData?.platform ?? navigator.platform ?? ''));
+
+// An AltGr character reports Control and Alt held together, and is how several layouts type @ { [ €:
+// the script's gate passes it as typing, where Control or Alt alone is a shortcut the browser keeps
+// (ED-13, ADR-0010). The C# half is CellEditorTests'; this is the script's, with real keys.
+test('ED-13: Control and Alt held together open the editor with the character; either alone opens nothing (ADR-0010)', async ({ page }) => {
+    test.skip(await onApple(page), 'On an Apple platform Option types a character of its own (Option+q is œ), and AltGr is not a key there');
+    const editor = grid(page).locator('input.ex-editor');
+    await clickCell(page, 0, 1); // Trader, editable
+    await expectActiveDescendant(grid(page), /r0c1$/);
+
+    await page.keyboard.press('Alt+q');
+    await page.keyboard.press('Control+q');
+    await settled(grid(page));
+    await expect(editor).toHaveCount(0);
+
+    await page.keyboard.press('Control+Alt+q');
+    await expect(editor).toHaveValue('q');
+    await page.keyboard.press('Escape');
+    await expect(editor).toHaveCount(0);
+    await expect(grid(page).locator("[id$='r0c1']")).not.toHaveText('q');
+});
+
 test('in Overwrite an arrow commits and moves; in Caret it moves the caret (ED-2)', async ({ page }) => {
     await clickCell(page, 0, 1);
     await page.keyboard.type('AB');
@@ -435,6 +459,24 @@ test('Ctrl+Enter fill across a non-editable column is refused, and says so (CP-1
     // ED-19: the Refusal judged the operation, not the text, so the editor is still
     // standing with the typing in it.
     await expect(grid(page).locator('.ex-editor')).toHaveValue('7');
+});
+
+test('ED-19: after a refused fill the editor stands, and Enter then raises exactly one Edit Intent, for the one cell; the fill raised none (ADR-0035)', async ({ page }) => {
+    const counts = page.locator('#intent-count');
+    await expect(counts).toHaveText('Intents: 0 edits, 0 pastes');
+    await clickCell(page, 0, 2);                   // Notional, editable
+    await page.keyboard.press('Shift+ArrowRight'); // over Narrow, which is not
+    await page.keyboard.type('7');
+    await page.keyboard.press('ControlOrMeta+Enter');
+    await expect(page.locator('#paste-refused-status')).toContainText('TargetNotEditable');
+    await expect(grid(page).locator('.ex-editor')).toHaveValue('7');
+
+    await page.keyboard.press('Enter');
+
+    await expect(grid(page).locator('.ex-editor')).toHaveCount(0);
+    await expect(page.locator('#edit-status')).toContainText('Notional=7');
+    await settled(grid(page));
+    await expect(counts).toHaveText('Intents: 1 edits, 0 pastes');
 });
 
 test('a refusal is announced in the root\'s live region in the built-in words, and again when repeated (A11Y-16, ADR-0203, ERR-2)', async ({ page }) => {
@@ -952,6 +994,77 @@ test('with a 150 ms round trip, End, Ctrl+←, Shift+End typed straight after F2
     await expect(grid(page).locator("[id$='r2c1']")).toHaveText('alpha beta');
 });
 
+// On an Apple platform ⌘+← and ⌘+→ go to the text's ends in a field, where elsewhere Ctrl's arrows
+// move by a word (wordKeys). In Caret they are the field's, as the word moves are: the edit stands
+// and the caret lands at the start and the end. Pressed only where the platform gives them that
+// meaning; KB-3's macOS row runs it (ticket 280).
+test('on an Apple platform, in Caret ⌘+← and ⌘+→ move the caret to the text\'s start and end, in the field itself (ED-2, KB-3, ticket 280)', async ({ page }) => {
+    test.skip(!(await onApple(page)), '⌘+←/→ go to the text\'s ends only on an Apple platform; elsewhere Ctrl\'s word moves are pressed above');
+    const editor = await alphaBetaInTrader(page);
+    await page.keyboard.press('F2');
+    await expect(editor).toBeFocused();
+    await circuitQuiet();
+
+    await page.keyboard.press('Meta+ArrowLeft');
+    await expect.poll(() => selectionOf(editor)).toEqual([0, 0]);
+    await page.keyboard.press('Meta+ArrowRight');
+    await expect.poll(() => selectionOf(editor)).toEqual([10, 10]);
+    await page.keyboard.press('Meta+Shift+ArrowLeft');
+    await expect.poll(() => extensionOf(editor)).toEqual([0, 10, 'backward']);
+
+    await page.keyboard.press('Escape');
+    await expect(editor).toHaveCount(0);
+    await expect(grid(page).locator("[id$='r2c1']")).toHaveText('alpha beta');
+});
+
+test('on an Apple platform, with a 150 ms round trip, ⌘+← and ⌘+→ typed straight after F2 land the caret at the text\'s start and end, as typed slowly (ED-2, KB-3, ADR-0010, ticket 280)', async ({ page }) => {
+    test.skip(!(await onApple(page)), '⌘+←/→ go to the text\'s ends only on an Apple platform');
+    test.skip(!SERVER, 'WebAssembly answers F2 before most keys: nothing is held for certain');
+    const editor = await alphaBetaInTrader(page);
+    await setRoundTrip(150);
+
+    await page.keyboard.press('F2');
+    await page.keyboard.press('Meta+ArrowLeft');
+    await expect.poll(() => selectionOf(editor)).toEqual([0, 0]);
+    await expect(editor).toHaveValue('alpha beta');
+
+    await page.keyboard.press('Escape');
+    await page.keyboard.press('F2');
+    await page.keyboard.press('Home');
+    await page.keyboard.press('Meta+ArrowRight');
+    await expect.poll(() => selectionOf(editor)).toEqual([10, 10]);
+
+    await page.keyboard.press('Escape');
+    await expect(editor).toHaveCount(0);
+    await expect(grid(page).locator("[id$='r2c1']")).toHaveText('alpha beta');
+});
+
+// Ctrl+., Ctrl+Backspace and Shift+Backspace are the active cell's keys with no edit open (ADR-0052);
+// with one open, none is taken from it: the field answers Backspace's forms as a field does, Ctrl+.
+// does nothing there, and the range and its Focus stand (KB-42).
+test('KB-42: with an edit open, Ctrl+. walks no corner, and Ctrl+Backspace and Shift+Backspace delete in the field; the range stands (ADR-0052)', async ({ page }) => {
+    const { word } = await wordKeys(page);
+    const editor = grid(page).locator('input.ex-editor');
+    await clickCell(page, 0, 1); // Trader, editable
+    await page.keyboard.press('Shift+ArrowDown');
+    await expectActiveDescendant(grid(page), /r0c1$/);
+    await page.keyboard.type('alpha beta');
+    await expect(editor).toHaveValue('alpha beta');
+
+    await page.keyboard.press('ControlOrMeta+Period');
+    await page.keyboard.press('Shift+Backspace');
+    await expect(editor).toHaveValue('alpha bet');
+    await page.keyboard.press(`${word}+Backspace`);
+    await expect(editor).toHaveValue('alpha ');
+    await expectActiveDescendant(grid(page), /r0c1$/);
+
+    // The range stood under the edit: with it gone, Ctrl+. walks to its next corner.
+    await page.keyboard.press('Escape');
+    await expect(editor).toHaveCount(0);
+    await page.keyboard.press('ControlOrMeta+Period');
+    await expectActiveDescendant(grid(page), /r1c1$/);
+});
+
 test('a Reject holds the commit Shift+↓ asks for in Overwrite, and the Selection stays (ED-2, ED-15, ADR-0034)', async ({ page }) => {
     const editor = grid(page).locator('input.ex-editor');
     await clickCell(page, 0, 2); // Notional, which carries the verdict
@@ -1185,6 +1298,35 @@ test('Escape returns the keyboard from a descendant control to the grid (ADR-002
     await expectKeyboardOn(cells);
 });
 
+test('KB-11: arrows typed in a Template Column\'s input move its caret, and the grid\'s Selection stays where it was (ADR-0010/0020)', async ({ page }) => {
+    await page.goto('/cells');
+    const cells = page.locator('.ex-grid').first();
+    await expect(cells.locator('.ex-row').first()).toBeVisible();
+    const note = cells.locator('input.demo-note').first();
+    await note.click({ force: true });
+    await expect(note).toBeFocused();
+    await note.pressSequentially('memo');
+    await expect(note).toHaveValue('memo');
+    const focus = await activeDescendant(cells);
+    const caret = () => note.evaluate((input) => [input.selectionStart, input.selectionEnd]);
+
+    await page.keyboard.press('ArrowLeft');
+    await page.keyboard.press('ArrowLeft');
+    await expect.poll(caret).toEqual([2, 2]);
+    await page.keyboard.press('Shift+ArrowLeft');
+    await expect.poll(caret).toEqual([1, 2]);
+    await page.keyboard.press('ArrowRight');
+    await page.keyboard.press('ArrowRight');
+    await expect.poll(caret).toEqual([3, 3]);
+    await page.keyboard.press('ArrowDown');
+    await page.keyboard.press('ArrowUp');
+    await settled(cells);
+
+    await expect(note).toBeFocused();
+    await expect(note).toHaveValue('memo');
+    expect(await activeDescendant(cells)).toBe(focus);
+});
+
 // Entering a cell by key (ADR-0037), on /cells. Columns there: Book 0 (pinned), Close of
 // business 1, Intraday 2, Limit used 3 (a Template), Note 4 (a Template with a real
 // field), Actions 5 (one action), Review 6 (three actions). The Focus is placed by
@@ -1360,4 +1502,277 @@ test('a press dragged off an action leaves no button holding the keyboard, and E
     await open.click();
     await expect(page.locator('#action-status')).toContainText("Pressed 'open' in column 'Actions'");
     await expect(page.locator('#action-status')).toContainText('Presses so far: 1.');
+});
+
+// The live region's writes, counted from now: each change of its text, in order, kept on the region
+// element itself (inside this test's own grid, gone with it) until writesTo reads and stops it.
+async function countWrites(region) {
+    await region.evaluate((el) => {
+        el.exWrites = [];
+        el.exWritesObserver = new MutationObserver(() => {
+            if (el.exWrites.at(-1) !== el.textContent) {
+                el.exWrites.push(el.textContent);
+            }
+        });
+        el.exWritesObserver.observe(el, { childList: true, characterData: true, subtree: true });
+    });
+}
+const writesTo = (region) => region.evaluate((el) => {
+    el.exWritesObserver.disconnect();
+    return el.exWrites;
+});
+
+test('A11Y-10: arrows with no Shift move the Focus and leave the live region unwritten (ADR-0033)', async ({ page }) => {
+    const region = grid(page).locator('.ex-announce');
+    await clickCell(page, 2, 1);
+    await expectActiveDescendant(grid(page), /r2c1$/);
+    await expect(region).toHaveText('');
+    await countWrites(region);
+
+    for (const key of ['ArrowDown', 'ArrowRight', 'ArrowUp', 'ArrowLeft', 'ArrowDown']) {
+        await page.keyboard.press(key);
+    }
+    await expectActiveDescendant(grid(page), /r3c1$/);
+    await settled(grid(page));
+
+    expect(await writesTo(region)).toEqual([]);
+    await expect(region).toHaveText('');
+});
+
+test('A11Y-9: a drag across 200 rows writes the live region once, after it settles (ADR-0033)', async ({ page }) => {
+    const region = grid(page).locator('.ex-announce');
+    const scroller = grid(page).locator('.ex-scroller');
+    await clickCell(page, 0, 1);
+    await expectActiveDescendant(grid(page), /r0c1$/);
+    await countWrites(region);
+
+    const start = await grid(page).locator("[id$='r0c1']").boundingBox();
+    const box = await scroller.boundingBox();
+    await page.mouse.move(start.x + start.width / 2, start.y + start.height / 2);
+    await page.mouse.down();
+    // Held in the band at the Viewport's bottom edge (ADR-0008): the rows scroll under the pointer
+    // and the Extent follows them, past row 200 of 24px.
+    await page.mouse.move(start.x + start.width / 2, box.y + box.height - 18, { steps: 10 });
+    await expect.poll(() => scroller.evaluate((el) => el.scrollTop), { timeout: 20_000 }).toBeGreaterThan(200 * 24);
+    await page.mouse.up();
+    await settled(grid(page));
+    await expect(region).toContainText('rows by 1 columns selected');
+
+    const writes = await writesTo(region);
+    expect(writes).toHaveLength(1);
+    expect(Number(writes[0].match(/^(\d+) rows/)?.[1])).toBeGreaterThan(200);
+});
+
+test('A11Y-6: a wheel scroll that takes the Focus out of the paint clears aria-activedescendant, and scrolling back restores it, never scrolling to the Focus itself (ADR-0033)', async ({ page }) => {
+    const scroller = grid(page).locator('.ex-scroller');
+    await clickCell(page, 1, 1);
+    await expectActiveDescendant(grid(page), /r1c1$/);
+    const box = await scroller.boundingBox();
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+
+    await page.mouse.wheel(0, 60 * 24);
+    await expect(grid(page).locator("[id$='r1c1']")).toHaveCount(0);
+    await settled(grid(page));
+    // Cleared, never naming an id that is not in the document.
+    expect(await activeDescendant(grid(page))).toBeFalsy();
+    // And the grid did not bring the Focus back: the page stays where the wheel left it.
+    const after = await scroller.evaluate((el) => el.scrollTop);
+    expect(after).toBeGreaterThan(24 * 10);
+
+    await page.mouse.wheel(0, -after);
+    await expect(grid(page).locator("[id$='r1c1']")).toHaveCount(1);
+    await expectActiveDescendant(grid(page), /r1c1$/);
+});
+
+// Holds a drag from the cell at (row, 1) in the edge band of the Viewport's top or bottom (ADR-0008)
+// until the edge scroll has carried the Viewport to that end of the page and the Selection has
+// reached `cells`; then moves once more inside the band, so the boundary is pressed against after it
+// is reached, and lets go. The count is read whole, so a Selection that ran past the page fails.
+async function dragIntoBand(page, row, edge, cells) {
+    const status = grid(page).locator('.ex-status');
+    const scroller = grid(page).locator('.ex-scroller');
+    const start = await grid(page).locator(`[id$='r${row}c1']`).boundingBox();
+    const box = await scroller.boundingBox();
+    await page.mouse.move(start.x + start.width / 2, start.y + start.height / 2);
+    await page.mouse.down();
+    const y = edge === 'bottom' ? box.y + box.height - 18 : box.y + 28 + 6;
+    await page.mouse.move(start.x + start.width / 2, y, { steps: 10 });
+    await expect(status).toContainText(`${cells} cells selected`, { timeout: 20_000 });
+    await expect.poll(() => scroller.evaluate((el, end) => end === 'bottom'
+        ? el.scrollTop + el.clientHeight >= el.scrollHeight - 1
+        : el.scrollTop === 0, edge), { timeout: 20_000 }).toBe(true);
+    await page.mouse.move(start.x + start.width / 2 + 4, y + (edge === 'bottom' ? 2 : -2));
+    await settled(grid(page));
+    await page.mouse.up();
+    await settled(grid(page));
+    await expect(status).toContainText(new RegExp(`(^|\\D)${cells} cells selected`));
+}
+
+test('SL-11: a drag held against either boundary of a page does not turn it, and the Selection stops at the page (ADR-0015)', async ({ page }) => {
+    await page.goto('/features?paged=1');
+    const pager = grid(page).locator('.ex-pager');
+    await expect(pager).toContainText('1 / 8');
+
+    // The first page's last row, from its first.
+    await clickCell(page, 0, 1);
+    await dragIntoBand(page, 0, 'bottom', 50);
+    await expect(pager).toContainText('1 / 8');
+    await expect(grid(page).locator('.ex-status')).toContainText(/(^|\D)50 cells selected/);
+
+    // The second page's first row, from a row below it.
+    await pager.locator('button').nth(1).click();
+    await expect(pager).toContainText('2 / 8');
+    await expect(grid(page).locator("[id$='r55c1']")).toBeVisible();
+    await clickCell(page, 55, 1);
+    await dragIntoBand(page, 55, 'top', 6);
+    await expect(pager).toContainText('2 / 8');
+    await expect(grid(page).locator('.ex-status')).toContainText(/(^|\D)6 cells selected/);
+});
+
+// Off an Apple platform Meta is the OS's own key, not the Primary Modifier: a key held with it stays
+// out of the table on every path, the editor's included (KB-3, ADR-0012). Win+↓ is a window manager's
+// chord, and Meta+Enter must not fill as Ctrl+Enter does. Where Meta is Command, KB-3's macOS row
+// presses Cmd+Enter instead (sheet-vs-excel.spec.mjs's ControlOrMeta+Enter).
+test('KB-3: off an Apple platform, Meta+↓ moves no Focus, and Meta+Enter in an open edit over a range fills nothing (ADR-0012)', async ({ page }) => {
+    test.skip(await onApple(page), 'Meta is Command on an Apple platform, and the Primary Modifier');
+    const editor = grid(page).locator('input.ex-editor');
+    await clickCell(page, 2, 2); // Notional, editable
+    await expectActiveDescendant(grid(page), /r2c2$/);
+
+    await page.keyboard.press('Meta+ArrowDown');
+    await settled(grid(page));
+    await expectActiveDescendant(grid(page), /r2c2$/);
+
+    await page.keyboard.press('Shift+ArrowDown');
+    await page.keyboard.type('7');
+    await expect(editor).toHaveValue('7');
+    await page.keyboard.press('Meta+Enter');
+    await settled(grid(page));
+    await expect(editor).toHaveValue('7');
+    await expect(page.locator('#intent-count')).toHaveText('Intents: 0 edits, 0 pastes');
+
+    // Ctrl+Enter is the key that fills.
+    await page.keyboard.press('Control+Enter');
+    await expect(page.locator('#intent-count')).toHaveText('Intents: 0 edits, 1 pastes');
+});
+
+// A key that names the start of the row or of the result puts the Viewport's left edge at the start,
+// with Pinned Columns or without (KB-10, ADR-0012's note on pinned columns): /wide pins two of its
+// hundred columns, and its button unpins them.
+test('KB-10: Home and Ctrl+Home return the Viewport to the start of the row and the result, pinned and unpinned alike (ADR-0012)', async ({ page }) => {
+    for (const pinned of [2, 0]) {
+        await page.goto('/wide?rows=1000');
+        const wide = page.locator('.ex-grid').first();
+        const scroller = wide.locator('.ex-scroller');
+        const left = () => scroller.evaluate((el) => el.scrollLeft);
+        const top = () => scroller.evaluate((el) => el.scrollTop);
+        if (pinned === 0) {
+            await page.locator('#toggle-pinned').click();
+            await expect(page.locator('#toggle-pinned')).toContainText('Pinned columns: 0');
+        }
+        await wide.locator("[id$='r3c4']").click({ force: true });
+        await expectActiveDescendant(wide, /r3c4$/);
+
+        await page.keyboard.press('End');
+        await expectActiveDescendant(wide, /r3c99$/);
+        await expect.poll(left).toBeGreaterThan(0);
+        await page.keyboard.press('Home');
+        await expectActiveDescendant(wide, /r3c0$/);
+        await expect.poll(left).toBe(0);
+
+        await page.keyboard.press('ControlOrMeta+End');
+        await expectActiveDescendant(wide, /r999c99$/);
+        await expect.poll(left).toBeGreaterThan(0);
+        await expect.poll(top).toBeGreaterThan(0);
+        await page.keyboard.press('ControlOrMeta+Home');
+        await expectActiveDescendant(wide, /r0c0$/);
+        await expect.poll(left).toBe(0);
+        await expect.poll(top).toBe(0);
+    }
+});
+
+// While a range is extended the grid keeps the Extent in view; moved back inside the view, the Extent
+// scrolls nothing (KB-40, ADR-0052). The Focus's half of the clause is layer 2's and the loop above.
+test('KB-40: an Extent carried below the view scrolls it, and moved back inside the view scrolls nothing (ADR-0052)', async ({ page }) => {
+    const scroller = grid(page).locator('.ex-scroller');
+    const top = () => scroller.evaluate((el) => el.scrollTop);
+    await clickCell(page, 1, 1);
+    await expectActiveDescendant(grid(page), /r1c1$/);
+
+    for (let i = 0; i < 15; i++) {
+        await page.keyboard.press('Shift+ArrowDown');
+    }
+    await expect(grid(page).locator('.ex-announce')).toContainText('16 rows by 1 columns selected');
+    await expect.poll(top).toBeGreaterThan(0);
+    await settled(grid(page));
+    const carried = await top();
+
+    for (let i = 0; i < 3; i++) {
+        await page.keyboard.press('Shift+ArrowUp');
+    }
+    await expect(grid(page).locator('.ex-announce')).toContainText('13 rows by 1 columns selected');
+    await settled(grid(page));
+    expect(await top()).toBe(carried);
+});
+
+// A selection beyond the Window takes the asynchronous route: the grid asks for the rows it has not
+// got, and the copy holds every one of them (CP-7, ADR-0005). /fetch holds a Window of the rows on
+// screen and sixty either side, of a hundred thousand.
+test('CP-7: a copy of rows beyond the Window takes the asynchronous route, and the clipboard holds every row the source was asked for (ADR-0005)', async ({ page }) => {
+    await page.goto('/fetch');
+    const fetchGrid = grid(page);
+    await expect(fetchGrid.locator("[id$='r0c0']")).toHaveText('0');
+    await fetchGrid.locator("[id$='r0c0']").click({ force: true });
+    await expectActiveDescendant(fetchGrid, /r0c0$/);
+    await page.evaluate(() => navigator.clipboard.writeText('SENTINEL'));
+
+    for (let i = 0; i < 12; i++) {
+        await page.keyboard.press('Shift+PageDown');
+    }
+    const announced = fetchGrid.locator('.ex-announce');
+    await expect(announced).toContainText('rows by 1 columns selected');
+    await settled(fetchGrid);
+    const rows = Number((await announced.textContent()).match(/(\d+) rows/)[1]);
+    expect(rows, 'the premise: the Selection runs past the Window\'s sixty rows of read-ahead').toBeGreaterThan(200);
+
+    await page.keyboard.press('ControlOrMeta+C');
+
+    await expect.poll(() => page.evaluate(() => navigator.clipboard.readText()), { timeout: 15_000 }).not.toBe('SENTINEL');
+    const lines = (await page.evaluate(() => navigator.clipboard.readText())).replace(/\r?\n$/, '').split(/\r?\n/);
+    expect(lines).toHaveLength(rows);
+    expect(lines[0]).toBe('0');
+    expect(lines.at(-1).replace(/,/g, '')).toBe(String(rows - 1));
+});
+
+// A grid disposed while its calls are still in flight — keys forwarded and a scroll reported, a round
+// trip from being answered on the Server host — leaves no exception and nothing on the console, and
+// the next grid mounted on the page works (ERR-7, ADR-0018). The console-clean fixture fails the test
+// on anything the browser or the circuit says.
+test('ERR-7: disposing a grid while its interop calls are in flight leaves the console clean, and a grid mounted after it works (ADR-0018)', async ({ page }) => {
+    await page.goto('/lifecycle');
+    const toggle = page.locator('#toggle-grid');
+    const mounted = page.locator('.ex-grid');
+    await toggle.click();
+    await expect(mounted.locator('.ex-row').first()).toBeVisible();
+    await expect(mounted).not.toHaveAttribute('aria-busy', /.*/);
+    await mounted.locator("[id$='r1c1']").click({ force: true });
+    await expectActiveDescendant(mounted, /r1c1$/);
+    await setRoundTrip(150);
+
+    const box = await mounted.locator('.ex-scroller').boundingBox();
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await page.mouse.wheel(0, 200);
+    await page.keyboard.press('ArrowDown');
+    await page.keyboard.press('ArrowDown');
+    await toggle.click();
+    await expect(mounted).toHaveCount(0);
+    await setRoundTrip(0);
+    await circuitQuiet();
+
+    await toggle.click();
+    await expect(mounted.locator('.ex-row').first()).toBeVisible();
+    await expect(mounted).not.toHaveAttribute('aria-busy', /.*/);
+    await mounted.locator("[id$='r1c1']").click({ force: true });
+    await page.keyboard.press('ArrowDown');
+    await expectActiveDescendant(mounted, /r2c1$/);
 });

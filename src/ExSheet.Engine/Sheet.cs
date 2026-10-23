@@ -287,7 +287,7 @@ public sealed partial class Sheet
             {
                 entry = Entry.FromValue(Value.FromText(text));
             }
-            return (entry is null ? null : InOwnName(entry), null);
+            return (entry is null ? null : InDeclaredCase(InOwnName(entry)), null);
         }
         // A date or a percentage typed into a General cell gives the cell its format, as in Excel.
         var (value, format) = ConstantParser.ParseWithFormat(text, Culture);
@@ -302,7 +302,7 @@ public sealed partial class Sheet
             // as a pasted Formula that cannot be read is (ADR-0048); typed, it is refused.
             signed = null;
         }
-        if (signed is not null) return (InOwnName(signed), null);
+        if (signed is not null) return (InDeclaredCase(InOwnName(signed)), null);
         // A plain number typed into a cell that shows percentages is read as a percentage,
         // Excel's automatic percent entry (on by default): 0.5 into a 0% cell is 0.005
         // (LVL-015, ADR-0047 second run). Only typed; a paste is taken as it is.

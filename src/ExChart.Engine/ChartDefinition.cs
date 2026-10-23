@@ -106,6 +106,13 @@ public sealed record ChartDefinition
                 throw new ChartRefusedException($"'{s.Name}' has rows of open, high, low and close, but is not a Price Range.");
             if (PointScales.Refusal(s) is { } scaleRefusal)
                 throw new ChartRefusedException(scaleRefusal);
+            foreach (var detail in s.Details)
+            {
+                if (s.Kind != SeriesKind.Observation)
+                    throw new ChartRefusedException($"'{s.Name}' says {detail.Title} in its tooltip, which belongs to marks drawn one a row: an observation.");
+                if (detail.Values.Count != s.Points.Count)
+                    throw new ChartRefusedException($"'{s.Name}' has {s.Points.Count} points and {detail.Values.Count} values of {detail.Title}: its tooltip says one a point.");
+            }
             if (ExChart.Engine.Edges.Refusal(s) is { } edgeRefusal)
                 throw new ChartRefusedException(edgeRefusal);
             if (s.MergeTo is not null && s.Kind != SeriesKind.PriceRange)
