@@ -4,7 +4,6 @@ using ExSheet.Engine;
 using Microsoft.AspNetCore.Components.Web;
 using Xunit;
 using Microsoft.Extensions.DependencyInjection;
-using IKeyInterceptorService = global::MudBlazor.IKeyInterceptorService;
 using MudColor = global::MudBlazor.Utilities.MudColor;
 using MudColorPicker = global::MudBlazor.MudColorPicker;
 using MudSelectOfAlignment = global::MudBlazor.MudSelect<ExSheet.Engine.HorizontalAlignment>;
@@ -24,52 +23,39 @@ public class MudFormatCellsTests : MudSheetTestContext
 {
     private static readonly CellColour Red = CellColour.FromRgb(0xFF0000);
 
-    [Fact] // ADR-0039: the frame holds the keyboard until the root subscription is installed.
-    public async Task ADR0039_dialog_keys_are_ready_before_tabs_take_the_keyboard()
+    [Fact] // ADR-0240 section 6, ticket 06: the dialog joins the Sheet's order before its tabs take the keyboard, so every key typed in it is heard
+    public async Task The_dialog_joins_the_sheets_order_before_the_tabs_take_the_keyboard()
     {
-        var connection = JSInterop.SetupVoid("mudKeyInterceptor.connect",
-            call => call.Arguments[1] is string id && id.StartsWith('_'));
+        var joined = HoldSurfaceJoins();
         var page = RenderPage(DocumentOf(("B2", "12")));
         await OpenAsync(page, "B2");
-        var root = Dialog(page).Id!;
-        Assert.Single(connection.Invocations);
-        Assert.Empty(page.FindAll(".mud-ex-sheet-format-cells-keys-ready"));
+        page.WaitForAssertion(() => Assert.Single(JoinedSurfaces));
         Assert.False(page.FindComponent<MudFormatCellsTabs>().Instance.FocusOnOpen);
+        Assert.Empty(page.FindAll(".mud-ex-sheet-format-cells-keys-ready"));
 
-        connection.SetVoidResult();
-        page.WaitForAssertion(() => Assert.Single(page.FindAll(".mud-ex-sheet-format-cells-keys-ready")));
-        Assert.True(page.FindComponent<MudFormatCellsTabs>().Instance.FocusOnOpen);
+        joined();
+        page.WaitForAssertion(() => Assert.True(page.FindComponent<MudFormatCellsTabs>().Instance.FocusOnOpen));
+        Assert.Single(page.FindAll(".mud-ex-sheet-format-cells-keys-ready"));
+        var before = SurfaceSteps.Count(step => step == "leaveSurface");
         await CancelAsync(page);
-        page.WaitForAssertion(() => Assert.Contains(JSInterop.Invocations["mudKeyInterceptor.disconnect"],
-            call => Equals(call.Arguments[0], root)));
+        page.WaitForAssertion(() => Assert.Equal(before + 1, SurfaceSteps.Count(step => step == "leaveSurface")));
     }
 
-    [Fact] // ADR-0039: an opening disposed during registration never exposes controls or retains its observer.
-    public async Task ADR0039_disposal_during_key_registration_releases_the_subscription()
+    [Fact] // ADR-0240 section 6, ticket 06: a dialog disposed while it joins leaves the Sheet's order, and its tabs never take the keyboard
+    public async Task A_dialog_disposed_while_it_joins_leaves_the_sheets_order()
     {
-        var connection = JSInterop.SetupVoid("mudKeyInterceptor.connect",
-            call => call.Arguments[1] is string id && id.StartsWith('_'));
+        var joined = HoldSurfaceJoins();
         var page = RenderPage(DocumentOf(("B2", "12")));
         await OpenAsync(page, "B2");
-        var root = Dialog(page).Id!;
+        page.WaitForAssertion(() => Assert.Single(JoinedSurfaces));
         var dialog = page.FindComponent<MudFormatCellsDialog>();
-        Task? disposing = null;
-        await page.InvokeAsync(() => { disposing = dialog.Instance.DisposeAsync().AsTask(); });
-        Assert.False(disposing!.IsCompleted);
+        var tabs = page.FindComponent<MudFormatCellsTabs>();
+        await page.InvokeAsync(() => dialog.Instance.DisposeAsync().AsTask());
 
-        connection.SetVoidResult();
-        await disposing;
-        Assert.Empty(page.FindAll(".mud-ex-sheet-format-cells-keys-ready"));
-        Assert.False(page.FindComponent<MudFormatCellsTabs>().Instance.FocusOnOpen);
-        Assert.Single(JSInterop.Invocations["mudKeyInterceptor.disconnect"],
-            call => Equals(call.Arguments[0], root));
+        joined();
+        page.WaitForAssertion(() => Assert.Contains("leaveSurface", SurfaceSteps));
+        Assert.False(tabs.Instance.FocusOnOpen);
     }
-
-    // Exercise the actual service's JS entry point. Its implementation type is internal;
-    // reflection stands in for JS invoking this public [JSInvokable] method in the browser.
-    private static Task DispatchDialogKeyAsync(IKeyInterceptorService service, string root, string key) =>
-        (Task)service.GetType().GetMethod("OnKeyDown")!.Invoke(service,
-            [root, new KeyboardEventArgs { Key = key }])!;
 
     // ---- The frame ----
 
@@ -161,31 +147,38 @@ public class MudFormatCellsTests : MudSheetTestContext
 
     // ---- The tabs ----
 
-    [Fact] // ADR-0039 / ADR-0071: an opening popup collects its frame's keys before asking HEX to take them
-    public async Task More_colours_holds_opening_keys_and_tells_their_destination_before_taking_the_keyboard()
+    [Fact] // ADR-0240 section 6, ticket 06: opening More Colours tells the Sheet the keyboard is on its way, then joins the popup to the Sheet's order, then hands it the keyboard
+    public async Task More_colours_opens_in_the_sheets_order_and_joins_its_popup_before_taking_the_keyboard()
+    {
+        var page = RenderPage(DocumentOf(("B2", "12")));
+        await OpenAsync(page, "B2");
+        await ShowTabAsync(page, "Fill");
+        var before = SurfaceSteps.Count;
+
+        await page.Find(".mud-ex-sheet-colour-entry button").ClickAsync(new MouseEventArgs());
+
+        page.WaitForAssertion(() => Assert.Equal(["handOff:frame", "joinSurface", "handKeyboardTo"], SurfaceSteps.Skip(before)));
+        Assert.True(IsOpen(page));
+    }
+
+    [Fact] // ADR-0240 section 6, ticket 06: More Colours asked for focus twice in one opening — by its opener and by MudPicker's own opening — joins its popup once
+    public async Task More_colours_joins_its_popup_once_however_often_it_is_asked_for_focus()
     {
         var page = RenderPage(DocumentOf(("B2", "12")));
         await OpenAsync(page, "B2");
         await ShowTabAsync(page, "Fill");
         var picker = page.FindComponent<MudMoreColours>();
-        var grid = page.FindComponent<ExGrid.Components.ExGrid<SheetRow>>();
-        var starts = new List<string>();
-        var returned = HoldKeyboardHandBack(starts);
-        var opening = page.InvokeAsync(() => picker.Instance.OpenAsync());
-        try
-        {
-            page.WaitForAssertion(() => Assert.Equal(["takeKeyboardBack", "handOff:frame"], starts));
-            await page.Find(".mud-ex-sheet-colour-entry").KeyDownAsync(new KeyboardEventArgs { Key = "#" });
-            await page.Find(".mud-ex-sheet-colour-entry").KeyDownAsync(new KeyboardEventArgs { Key = "F" });
-            Assert.Equal(["#", "F"], AnswerTakeBacks(grid).Select(key => key.Key));
-            Assert.True(IsOpen(page));
-        }
-        finally
-        {
-            returned();
-            await opening;
-        }
-        Assert.True(IsOpen(page));
+        var joins = JoinedSurfaces.Count;
+        var joined = HoldSurfaceJoins();
+
+        await picker.InvokeAsync(() => picker.Instance.OpenAsync());
+        var first = picker.InvokeAsync(() => picker.Instance.FocusAsync().AsTask());
+        var second = picker.InvokeAsync(() => picker.Instance.FocusAsync().AsTask());
+        page.WaitForAssertion(() => Assert.Equal(joins + 1, JoinedSurfaces.Count));
+        joined();
+        await Task.WhenAll(first, second);
+
+        Assert.Equal(joins + 1, JoinedSurfaces.Count);
     }
 
     [Fact] // ADR-0071 / ADR-0220, ticket 260: the mode the user switched to outlives the dialog's next render
@@ -203,69 +196,48 @@ public class MudFormatCellsTests : MudSheetTestContext
         Assert.Equal(global::MudBlazor.ColorPickerMode.RGB, picker.Instance.ColorPickerMode);
     }
 
-    [Fact] // ADR-0039 / ADR-0071: a closed picker's Escape belongs to its enclosing frame
+    [Fact] // ADR-0039 / ADR-0071: a closed picker's Escape belongs to its enclosing frame, and starts no hand-back
     public async Task More_colours_does_not_start_a_hand_back_when_the_picker_is_already_closed()
     {
         var page = RenderPage(DocumentOf(("B2", "12")));
         await OpenAsync(page, "B2");
         await ShowTabAsync(page, "Fill");
-        var collections = 0;
+        var takes = 0;
         var context = page.FindComponent<MudMoreColours>().Instance.Context with
         {
-            HoldKeysForPopup = (_, _) => { collections++; return Task.CompletedTask; },
-            TakeKeyboard = _ => Task.CompletedTask,
+            JoinSurface = null,
+            TakeKeyboard = _ => { takes++; return Task.CompletedTask; },
         };
         var picker = Render<MudMoreColours>(p => p.Add(x => x.Context, context));
         // The inherited key interceptor can ask to close on Escape/Tab even while closed.
         await picker.InvokeAsync(() => picker.Instance.CloseAsync(false));
-        Assert.Equal(0, collections);
+        Assert.Equal(0, takes);
         await picker.InvokeAsync(() => picker.Instance.OpenAsync());
+        var opened = takes;
         await picker.InvokeAsync(() => picker.Instance.CloseAsync(false));
-        Assert.Equal(2, collections);
+        Assert.Equal(opened + 1, takes);
         await picker.InvokeAsync(() => picker.Instance.CloseAsync(false));
-        Assert.Equal(2, collections);
+        Assert.Equal(opened + 1, takes);
     }
 
-    [Fact] // ADR-0039: a reply for an earlier opening cannot collect a later opening's keys
-    public async Task More_colours_keeps_each_openings_keys_with_its_own_collection_reply()
+    [Fact] // ADR-0240 section 6, ticket 06: the popup's Escape, told in its turn, closes it, the keyboard back on the opener before the popup leaves the Sheet's order
+    public async Task More_colours_escape_in_its_turn_hands_the_keyboard_to_the_opener_before_the_popup_leaves()
     {
         var page = RenderPage(DocumentOf(("B2", "12")));
         await OpenAsync(page, "B2");
         await ShowTabAsync(page, "Fill");
-        var requests = new List<(Func<IReadOnlyList<KeyboardEventArgs>> Take, TaskCompletionSource Answer)>();
-        var closing = false;
-        var context = page.FindComponent<MudMoreColours>().Instance.Context with
-        {
-            HoldKeysForPopup = (_, take) =>
-            {
-                if (closing) { take(); return Task.CompletedTask; }
-                var answer = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-                requests.Add((take, answer));
-                return answer.Task;
-            },
-            TakeKeyboard = _ => Task.CompletedTask,
-        };
-        var picker = Render<MudMoreColours>(p => p.Add(x => x.Context, context));
-        var first = picker.InvokeAsync(() => picker.Instance.OpenAsync());
-        Task second = Task.CompletedTask;
-        try
-        {
-            picker.WaitForAssertion(() => Assert.Single(requests));
-            await picker.Find(".mud-ex-sheet-colour-entry").KeyDownAsync(new KeyboardEventArgs { Key = "A" });
-            closing = true;
-            await picker.InvokeAsync(() => picker.Instance.CloseAsync(false));
-            closing = false;
-            second = picker.InvokeAsync(() => picker.Instance.OpenAsync());
-            picker.WaitForAssertion(() => Assert.Equal(2, requests.Count));
-            await picker.Find(".mud-ex-sheet-colour-entry").KeyDownAsync(new KeyboardEventArgs { Key = "B" });
-            Assert.Equal(["A"], requests[0].Take().Select(key => key.Key));
-            Assert.Equal(["B"], requests[1].Take().Select(key => key.Key));
-        }
-        finally
-        {
-            foreach (var request in requests) request.Answer.TrySetResult();
-            await Task.WhenAll(first, second);
-        }
+        await page.Find(".mud-ex-sheet-colour-entry button").ClickAsync(new MouseEventArgs());
+        page.WaitForAssertion(() => Assert.Single(page.FindAll(".mud-ex-sheet-colour-popup")));
+        var surface = JoinedSurfaces[^1];
+        var before = SurfaceSteps.Count;
+        var grid = page.FindComponent<global::ExGrid.Components.ExGrid<global::ExSheet.SheetRow>>();
+
+        await grid.InvokeAsync(() => grid.Instance.OnSurfaceEscapeAsync(surface));
+
+        page.WaitForAssertion(() => Assert.Empty(page.FindAll(".mud-ex-sheet-colour-popup")));
+        Assert.Equal(["handKeyboardTo", "leaveSurface"], SurfaceSteps.Skip(before));
+        // Format Cells stays: the Escape was the popup's.
+        Assert.True(IsOpen(page));
     }
 
     [Fact] // ADR-0071 / SH-45, case 22: the tabs are Number, Alignment, Font, Border and Fill, and the first opening is on Number
@@ -294,32 +266,6 @@ public class MudFormatCellsTests : MudSheetTestContext
         page.WaitForAssertion(() => Assert.Equal("Number", SelectedTab(page).TextContent.Trim()));
         await SelectedTab(page).KeyDownAsync(new KeyboardEventArgs { Key = "End" });
         page.WaitForAssertion(() => Assert.Equal("Fill", SelectedTab(page).TextContent.Trim()));
-    }
-
-    [Fact] // ADR-0071 / ADR-0010 / SH-45: a key typed while the keyboard waits on the frame's own element is the tab's — End shows Fill
-    public async Task A_key_typed_on_the_way_is_the_tabs()
-    {
-        var page = RenderPage();
-        await OpenAsync(page, "B2");
-
-        await page.Find(".mud-ex-sheet-format-cells-leaving").KeyDownAsync(new KeyboardEventArgs { Key = "End" });
-
-        page.WaitForAssertion(() => Assert.Equal("Fill", SelectedTab(page).TextContent.Trim()));
-    }
-
-    [Fact] // ADR-0071 / ADR-0010 / SH-45: Escape typed on the way is a Cancel, and the keyboard is handed back
-    public async Task Escape_typed_on_the_way_is_a_cancel()
-    {
-        var page = RenderPage(DocumentOf(("B2", "12")));
-        await OpenAsync(page, "B2");
-        await ChooseAsync(page, "Percentage");
-        var reclaims = KeyboardReturns;
-
-        await page.Find(".mud-ex-sheet-format-cells-leaving").KeyDownAsync(new KeyboardEventArgs { Key = "Escape" });
-
-        page.WaitForAssertion(() => Assert.True(KeyboardReturns > reclaims));
-        Assert.False(IsOpen(page));
-        Assert.Equal("General", FormatAt(page, "B2").NumberFormat.Code);
     }
 
     [Fact] // ADR-0071 / SH-45 / ADR-0018: two arrows typed together on a circuit — the second pressed on the tab the keyboard has not yet left — move two tabs
@@ -449,59 +395,51 @@ public class MudFormatCellsTests : MudSheetTestContext
         page.WaitForAssertion(() => Assert.True(KeyboardReturns > returns));
     }
 
-    [Fact] // ADR-0071, ADR-0050 item 16's note of 2026-10-12 (decided with the user, 2026-10-13: the keys typed while the keyboard comes back are held and handed on in order, under MudBlazor's Format Cells too): Escape closes the dialog through the frame, whose element takes the keyboard out of it first; the keys typed in the dialog after the Escape are held, and the core takes the keyboard back from the element with them
-    public async Task Keys_typed_after_escape_go_to_the_sheet_with_the_keyboard()
+    [Fact] // ADR-0240 section 6, ticket 06 (decided with the user, 2026-10-13: the keys typed while the keyboard comes back are held and handed on in order): the dialog's Escape, told in its turn, is a Cancel, and the keyboard goes back to the Sheet from the dialog before the dialog closes
+    public async Task Escape_in_its_turn_hands_the_keyboard_back_before_the_dialog_closes()
     {
         var page = RenderPage(DocumentOf(("B2", "12")));
         await OpenAsync(page, "B2");
-        var before = Sheet(page).ToDocument().ToJson();
-        var taken = TakeBackCount;
-        // The element's focus lands when the test says: until then the dialog stands, as it does on a
-        // circuit for a round trip after the Escape.
-        var focus = JSInterop.SetupVoid("Blazor._internal.domWrapper.focus", _ => true);
+        await ChooseAsync(page, "Percentage");
+        var before = SurfaceSteps.Count;
+        var returns = KeyboardReturns;
+        var returned = HoldKeyboardReturns();
+        var grid = page.FindComponent<global::ExGrid.Components.ExGrid<global::ExSheet.SheetRow>>();
 
-        var interceptor = Services.GetRequiredService<IKeyInterceptorService>();
-        var root = Dialog(page).Id!;
-        _ = page.InvokeAsync(() => DispatchDialogKeyAsync(interceptor, root, "Escape"));
-        page.WaitForAssertion(() => Assert.Single(page.FindAll(".mud-ex-sheet-format-cells-leaving")));
+        var escape = grid.InvokeAsync(() => grid.Instance.OnSurfaceEscapeAsync(JoinedSurfaces[^1]));
+        page.WaitForAssertion(() => Assert.True(KeyboardReturns > returns));
+        // The keyboard is on its way back: the dialog stands until it is, holding the keys typed in it.
         Assert.True(IsOpen(page));
-        // Typed in the dialog after the Escape, before it has gone: not the dialog's.
-        await page.InvokeAsync(() => DispatchDialogKeyAsync(interceptor, root, "ArrowDown"));
-        await page.InvokeAsync(() => DispatchDialogKeyAsync(interceptor, root, "ArrowRight"));
-        Assert.Equal(taken, TakeBackCount);
-        foreach (var invocation in focus.Invocations) focus.SetVoidResult();
+        returned();
+        await escape;
 
         page.WaitForAssertion(() => Assert.False(IsOpen(page)));
-        page.WaitForAssertion(() => Assert.Equal(taken + 1, TakeBackCount));
-        Assert.Equal(["ArrowDown", "ArrowRight"], AnswerTakeBacks(page.FindComponent<global::ExGrid.Components.ExGrid<global::ExSheet.SheetRow>>()).Select(k => k.Key));
-        Assert.Equal(before, Sheet(page).ToDocument().ToJson());
-        // The frame goes once the keyboard is back.
-        page.WaitForAssertion(() => Assert.Empty(page.FindAll(".mud-ex-sheet-format-cells-leaving")));
+        Assert.Equal("General", FormatAt(page, "B2").NumberFormat.Code);
+        Assert.Equal(["back", "leaveSurface"], SurfaceSteps.Skip(before).Where(step => step is "takeKeyboardBack" or "reclaimFocus" or "leaveSurface")
+            .Select(step => step == "leaveSurface" ? step : "back"));
     }
 
-    [Fact] // ADR-0071 (decided with the user, 2026-10-13: the keys typed as the keyboard goes back are held and handed on in order): Cancel closes through the frame too, setting nothing, and the keys typed in the dialog after it go to the Sheet with the keyboard
-    public async Task Keys_typed_after_cancel_go_to_the_sheet_with_the_keyboard()
+    [Fact] // ADR-0071 (decided with the user, 2026-10-13: the keys typed as the keyboard goes back are held and handed on in order): Cancel closes through the frame too, setting nothing, the keyboard back on the Sheet before the dialog goes
+    public async Task Cancel_hands_the_keyboard_back_before_the_dialog_closes()
     {
         var page = RenderPage(DocumentOf(("B2", "12")));
         await OpenAsync(page, "B2");
         await ShowTabAsync(page, "Font");
         await ChooseAsync(page, "Bold");
-        var taken = TakeBackCount;
-        var focus = JSInterop.SetupVoid("Blazor._internal.domWrapper.focus", _ => true);
+        var returns = KeyboardReturns;
+        var returned = HoldKeyboardReturns();
 
-        await page.Find(".mud-ex-sheet-format-cells-cancel").ClickAsync(new MouseEventArgs());
-        page.WaitForAssertion(() => Assert.Single(page.FindAll(".mud-ex-sheet-format-cells-leaving")));
-        var interceptor = Services.GetRequiredService<IKeyInterceptorService>();
-        await page.InvokeAsync(() => DispatchDialogKeyAsync(interceptor, Dialog(page).Id!, "ArrowDown"));
-        foreach (var invocation in focus.Invocations) focus.SetVoidResult();
+        var cancel = page.Find(".mud-ex-sheet-format-cells-cancel").ClickAsync(new MouseEventArgs());
+        page.WaitForAssertion(() => Assert.True(KeyboardReturns > returns));
+        Assert.True(IsOpen(page));
+        returned();
+        await cancel;
 
         page.WaitForAssertion(() => Assert.False(IsOpen(page)));
-        page.WaitForAssertion(() => Assert.Equal(taken + 1, TakeBackCount));
-        Assert.Equal(["ArrowDown"], AnswerTakeBacks(page.FindComponent<global::ExGrid.Components.ExGrid<global::ExSheet.SheetRow>>()).Select(k => k.Key));
         Assert.False(FormatAt(page, "B2").Font.Bold);
     }
 
-    [Fact] // ADR-0071 (the keys typed as the keyboard goes back held, decided with the user, 2026-10-13): OK sets what was touched as it is pressed, so a key typed in the dialog after it changes nothing it sets, and is the Sheet's
+    [Fact] // ADR-0071 (the keys typed as the keyboard goes back held, decided with the user, 2026-10-13): OK sets what was touched as it is pressed, so a choice made in the dialog after it changes nothing it sets
     public async Task Ok_sets_what_was_touched_as_it_is_pressed()
     {
         var page = RenderPage(DocumentOf(("B2", "12")));
@@ -509,14 +447,17 @@ public class MudFormatCellsTests : MudSheetTestContext
         await ShowTabAsync(page, "Font");
         await ChooseAsync(page, "Bold");
 
-        // The element's focus lands when the test says: the dialog stands meanwhile, as on a circuit.
-        var focus = JSInterop.SetupVoid("Blazor._internal.domWrapper.focus", _ => true);
-        await page.Find(".mud-ex-sheet-format-cells-ok").ClickAsync(new MouseEventArgs());
+        // The keyboard comes back when the test says: the dialog stands meanwhile, as on a circuit.
+        var returns = KeyboardReturns;
+        var returned = HoldKeyboardReturns();
+        var ok = page.Find(".mud-ex-sheet-format-cells-ok").ClickAsync(new MouseEventArgs());
+        page.WaitForAssertion(() => Assert.True(KeyboardReturns > returns));
         Assert.True(FormatAt(page, "B2").Font.Bold);
         Assert.True(IsOpen(page));
         // Italic chosen after OK: too late for what OK set.
         await ChooseAsync(page, "Bold Italic");
-        foreach (var invocation in focus.Invocations) focus.SetVoidResult();
+        returned();
+        await ok;
 
         page.WaitForAssertion(() => Assert.False(IsOpen(page)));
         Assert.False(FormatAt(page, "B2").Font.Italic);
@@ -873,7 +814,10 @@ public class MudFormatCellsTests : MudSheetTestContext
         // It holds focus, so it is never aria-hidden: Chromium refuses to hide a focused element and
         // says so in the console (the seventeenth Windows run, Part D, the Server host).
         Assert.False(leaving.HasAttribute("aria-hidden"));
-        Assert.Contains(JSInterop.Invocations, i => i.Identifier.EndsWith("focus", StringComparison.Ordinal));
+        // The grid puts the keyboard on it, and holds the keys typed there with the Sheet's, for the tabs
+        // (ADR-0240 section 6, ticket 06): it claims nothing of its own.
+        Assert.Contains("waitForFrameAt", SurfaceSteps);
+        Assert.Equal("", leaving.GetAttribute("data-ex-claims"));
 
         await page.Find("form.mud-ex-sheet-format-cells-form").FocusInAsync(new Microsoft.AspNetCore.Components.Web.FocusEventArgs());
 

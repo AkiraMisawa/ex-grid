@@ -16,3 +16,7 @@ override ExSheet.MudBlazor.MudSheetFindPanel.OnInitialized() -> void
 override ExSheet.MudBlazor.MudSheetFindPanel.OnParametersSet() -> void
 ~override ExSheet.MudBlazor.MudSheetFindPanel.BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder __builder) -> void
 ~override ExSheet.MudBlazor.MudSheetTabMenu.BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder __builder) -> void
+*REMOVED*ExSheet.MudBlazor.MudFormatCellsDialog.KeysArrive.get -> System.Func<System.Func<Microsoft.AspNetCore.Components.Web.KeyboardEventArgs!, System.Threading.Tasks.Task<bool>!>!, System.Threading.Tasks.Task!>?
+*REMOVED*ExSheet.MudBlazor.MudFormatCellsDialog.KeysArrive.set -> void
+*REMOVED*ExSheet.MudBlazor.MudFormatCellsDialog.KeyWhileClosing.get -> System.Action<Microsoft.AspNetCore.Components.Web.KeyboardEventArgs!>?
+*REMOVED*ExSheet.MudBlazor.MudFormatCellsDialog.KeyWhileClosing.set -> void

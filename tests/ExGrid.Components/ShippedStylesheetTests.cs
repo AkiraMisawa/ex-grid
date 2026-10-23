@@ -527,8 +527,10 @@ public class ShippedStylesheetTests
         // this grid's; the root's own focus passed on to its Keyboard Field; and the field given up
         // by a press during a composition; and, eighth since ADR-0240's note on ticket 05, a held press
         // replayed while a surface of the product's own still holds the keyboard it held as the press
-        // was made, which the press's default would have taken.
-        Assert.Equal(8, Regex.Matches(script.Text, @"\.(focus|blur)\(").Count);
+        // was made, which the press's default would have taken; and, ninth since ADR-0240's note on
+        // ticket 06, a frame's waiting element taking the keyboard as the hand-off to it is told
+        // (waitForFrameAt), granted from the Consumer's control the hand-off started on.
+        Assert.Equal(9, Regex.Matches(script.Text, @"\.(focus|blur)\(").Count);
         Assert.DoesNotMatch(new Regex(@"getBoundingClientRect|offsetWidth|offsetHeight|getComputedStyle"), body);
         // The surface is forgotten with the instance.
         Assert.Matches(new Regex(@"dispose: \(\) => \{.*lastSurface = null;", RegexOptions.Singleline), script.Text);
@@ -626,7 +628,8 @@ public class ShippedStylesheetTests
         // The window hears only a form's submission and a sentinel's focus, ahead of Blazor's document
         // listener for both (ADR-0240 section 4), and only those whose target is the instance's own.
         Assert.DoesNotMatch(new Regex(@"window\.addEventListener\('(?!(submit|focus)', onClaimedAhead, true\))|window\.dispatchEvent|document\.dispatchEvent|document\.addEventListener\('ex-"), script.Text);
-        Assert.Matches(new Regex(@"const onClaimedAhead = \(event\) => \{\s*if \(!root \|\| !\(event\.target instanceof Node\) \|\| !root\.contains\(event\.target\)\) \{\s*return;"), script.Text);
+        // A submission on a surface joined to the instance's order is its own too (ADR-0240 section 6, ticket 06).
+        Assert.Matches(new Regex(@"const onClaimedAhead = \(event\) => \{\s*if \(!root \|\| !\(event\.target instanceof Node\)\) \{\s*return;\s*\}\s*if \(!root\.contains\(event\.target\)\) \{\s*if \(event\.type === 'submit' && joinedControl\(event\.target\) !== null\) \{\s*onClaimedEvent\(event\);\s*\}\s*return;"), script.Text);
         // And no state outside an instance: the module's top-level statements are attach, and the
         // stamp the grid reads before it (ADR-0123), which holds nothing; so everything above lives
         // in one instance's closure and no instance keeps another's.
@@ -689,10 +692,10 @@ public class ShippedStylesheetTests
 
         // Selected in those two places alone, by no listener of its own, and no focus is moved: the
         // press's default gives the field the keyboard (ADR-0021's decisions about focus are not
-        // added to: six since 2026-10-02, seven since ADR-0204 and eight since ADR-0240's note on
-        // ticket 05, none of them this one's).
+        // added to: six since 2026-10-02, seven since ADR-0204, eight since ADR-0240's note on
+        // ticket 05 and nine since its note on ticket 06, none of them this one's).
         Assert.Equal(2, Regex.Matches(script, @"nameBox(Selected)?\.select\(\);").Count);
-        Assert.Equal(8, Regex.Matches(script, @"\.(focus|blur)\(").Count);
+        Assert.Equal(9, Regex.Matches(script, @"\.(focus|blur)\(").Count);
         Assert.DoesNotMatch(new Regex(@"getBoundingClientRect|offsetWidth|offsetHeight|offsetTop|offsetLeft|clientWidth|clientHeight|scrollWidth|scrollHeight|getComputedStyle|getClientRects"), script);
     }
 
@@ -751,8 +754,9 @@ public class ShippedStylesheetTests
         Assert.Matches(new Regex(@"const ownsFocus = \(active\) => !!root && active instanceof Element && root\.contains\(active\)\s*&& active\.closest\('\.ex-grid'\) === root;"), script.Text);
         // Where the core hands the keyboard on itself, a surface of the Input Root's own that claims its
         // input — ExSheet's toolbar band, its Sheet Tabs — is the instance's too (ADR-0240 section 6,
-        // input-order ticket 04); a focus asked back into the root is not taken from it.
-        Assert.Contains("const instanceHolds = (active) => ownsFocus(active) || outerSurface(active) !== null;", script.Text, StringComparison.Ordinal);
+        // input-order ticket 04), and so is a control of a surface joined to the instance's order (ticket 06);
+        // a focus asked back into the root is not taken from it.
+        Assert.Contains("const instanceHolds = (active) => ownsFocus(active) || outerSurface(active) !== null || joinedControl(active) !== null;", script.Text, StringComparison.Ordinal);
         Assert.DoesNotContain("instanceHolds(active)", body, StringComparison.Ordinal);
         // Where DOM focus is, or, granted as the keyboard leaves the Keyboard Field, where it is going:
         // the browser has it on nothing while it tells the departure (ADR-0080, 2026-10-12).
@@ -1212,7 +1216,7 @@ public class ShippedStylesheetTests
         Assert.Contains("!stamp.hasAttribute('data-ex-focus-owed')", script, StringComparison.Ordinal);
         Assert.Contains("core.invokeMethodAsync('OnHeldInputsRefusedAsync', nextInput(true), inputText())", script, StringComparison.Ordinal);
         // The keys, submissions and sentinel focus a popover answers itself are told, so moves wait on numbers.
-        Assert.Contains("claimOf(event.target, 'keydown') !== null ? tellClaim('keydown')", script, StringComparison.Ordinal);
+        Assert.Contains("keyClaimOf(event.target, event.key) !== null ? tellClaim('keydown')", script, StringComparison.Ordinal);
         // Heard on the window in the capture phase, ahead of Blazor's document listener for both.
         Assert.Contains("window.addEventListener('submit', onClaimedAhead, true);", script, StringComparison.Ordinal);
         Assert.Contains("window.addEventListener('focus', onClaimedAhead, true);", script, StringComparison.Ordinal);

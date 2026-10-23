@@ -795,27 +795,61 @@ public class FormatCellsTests : SheetTestContext
         cut.WaitForAssertion(() => Assert.Empty(cut.FindAll(".own-frame")));
     }
 
-    [Fact] // ADR-0071, ADR-0050 item 16's note of 2026-10-12 (decided with the user, 2026-10-13: keys typed while the keyboard comes back from a frame are held and handed on in order): a Chrome's frame gives the keyboard back from its own element with the keys typed in it on the way, which the grid asks for, and the frame OK ended goes once it has
-    public async Task A_frame_gives_the_keyboard_back_from_its_element_with_the_keys_typed_on_the_way()
+    [Fact] // ADR-0240 section 6, ticket 06: a Chrome's frame is handed the Sheet's order — its controls' handlers, its surfaces outside the Sheet, the keyboard waiting on an element of its own — and its Escape is handled in its turn
+    public async Task A_frames_context_carries_the_sheets_order_and_its_surface_joins_it()
     {
         var chrome = new OwnFrameChrome();
         var cut = RenderSheet(ps => ps.Add(s => s.Chrome, chrome).Add(s => s.Document, DocumentOf(cells: ("B2", "12"))));
         await GoToAsync(cut, "B2");
         Assert.True(await cut.Instance.OpenFormatCellsAsync());
         var context = chrome.Context!;
-        Assert.NotNull(context.ReturnKeyboardFrom);
-        context.Draft.SetFontStyle(FontStyle.Bold);
-        Assert.True(await cut.InvokeAsync(context.Ok));
+        Assert.NotNull(context.InOrder);
+        Assert.NotNull(context.TakeKeyboard);
+
+        // The keyboard waits on the frame's own element, named to the script, which tells the hand-off to
+        // the frame itself where none stands: one call, not two round trips.
+        var handOffs = HandOffs.Count;
+        await cut.InvokeAsync(() => context.HandKeyboardToFrame!(default(ElementReference)));
+        Assert.Empty(HandOffs.Skip(handOffs));
+        Assert.Equal(1, FrameWaits);
+
+        // A surface outside the Sheet joins its order, and its Escape is handled in its turn: here, Cancel.
+        var membership = await cut.InvokeAsync(() => context.JoinSurface!(default, "[role=\"dialog\"]", () =>
+        {
+            context.Cancel();
+            return Task.CompletedTask;
+        }));
+        var surface = Assert.Single(JoinedSurfaces);
+        await cut.InvokeAsync(() => cut.FindComponent<ExGrid.Components.ExGrid<SheetRow>>().Instance.OnSurfaceEscapeAsync(surface));
         Assert.Single(cut.FindAll(".own-frame"));
-        var taken = TakeBackCount;
-        var typed = new List<KeyboardEventArgs> { new() { Key = "ArrowDown" }, new() { Key = "ArrowDown" } };
+        await cut.InvokeAsync(context.ReturnKeyboard);
+        cut.WaitForAssertion(() => Assert.Empty(cut.FindAll(".own-frame")));
 
-        await cut.InvokeAsync(() => context.ReturnKeyboardFrom!(default, () => typed));
+        // Left, an Escape told for it does nothing.
+        await membership.DisposeAsync();
+        Assert.Equal(1, SurfacesLeft);
+        Assert.True(await cut.Instance.OpenFormatCellsAsync());
+        await cut.InvokeAsync(() => cut.FindComponent<ExGrid.Components.ExGrid<SheetRow>>().Instance.OnSurfaceEscapeAsync(surface));
+        Assert.Single(cut.FindAll(".own-frame"));
+    }
 
-        Assert.Equal(taken + 1, TakeBackCount);
-        Assert.Equal(["ArrowDown", "ArrowDown"], AnswerTakeBacks(cut).Select(k => k.Key));
-        Assert.Empty(cut.FindAll(".own-frame"));
-        Assert.True(FormatAt(cut, "B2").Font.Bold);
+    [Fact] // ADR-0240 section 6, ticket 06: a surface the script does not join — inside the Input Root, or another membership's already — is answered with a membership that does nothing, so disposing it leaves another's surface joined
+    public async Task A_surface_the_script_does_not_join_leaves_nothing_when_disposed()
+    {
+        var chrome = new OwnFrameChrome();
+        var cut = RenderSheet(ps => ps.Add(s => s.Chrome, chrome).Add(s => s.Document, DocumentOf(cells: ("B2", "12"))));
+        await GoToAsync(cut, "B2");
+        Assert.True(await cut.Instance.OpenFormatCellsAsync());
+        var context = chrome.Context!;
+
+        RefuseSurfaceJoins();
+        var membership = await cut.InvokeAsync(() => context.JoinSurface!(default, null, null));
+        await membership.DisposeAsync();
+
+        Assert.Single(JoinedSurfaces);
+        // Joined with no Escape of its own, an Escape typed in it goes as it comes.
+        Assert.Equal([false], JoinedWithEscape);
+        Assert.Equal(0, SurfacesLeft);
     }
 
     // ---- Keys typed while Format Cells opens (ticket 93; ADR-0050 item 16 and ADR-0039, notes of 2026-10-01) ----

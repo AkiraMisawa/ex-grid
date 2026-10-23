@@ -183,10 +183,15 @@
         <p>
             What the dialog offers and what OK sets do not change with the Chrome: the same choices set the same Cell
             Format under either. Switch the Example above to MudBlazor and press "Format Cells…" to compare.
-            A Chrome that draws a popup inside its own frame uses <code>FormatCellsContext.HoldKeysForPopup</code>
-            before its opening handler awaits, supplying the opener and its key queue; after the hold completes,
-            <code>TakeKeyboard</code> hands those keys to the drawn contents. The same callbacks can carry the
-            keyboard back to the opener when the inner popup closes, without ending Format Cells.
+            A Chrome's own Format Cells is in the Sheet's order through its <code>FormatCellsContext</code>:
+            <code>InOrder</code> runs a claimed control's handler in its place among the Sheet's keys and presses;
+            <code>JoinSurface</code> puts a dialog or a popup drawn outside the Sheet in the order while it is open, with
+            the Escape to run in its turn; <code>HandKeyboardToFrame</code> tells the Sheet the keyboard is on its way, and
+            can have it wait on an empty element of the frame's own; <code>TakeKeyboard</code> hands it to the control drawn
+            for it; and <code>ReturnKeyboard</code> gives it back to the Sheet. The keys typed meanwhile are the Sheet's to
+            hold, and go to wherever each step leaves the keyboard, in order: a popup inside the dialog, such as More
+            Colours, joins as it opens and hands the keyboard to its opener before it closes, without ending Format Cells
+            (<a href="exgrid/appearance">the grid's seam</a>).
         </p>
     </DocsSection>
 

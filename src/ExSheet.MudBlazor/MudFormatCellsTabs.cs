@@ -18,15 +18,15 @@ internal sealed class MudFormatCellsTabs : MudTabs
     /// <summary>Takes the keyboard to the tab shown, once, as soon as the tabs are drawn: Format Cells opens with the keyboard on its tab.</summary>
     [Parameter] public bool FocusOnOpen { get; set; }
 
-    /// <summary>Called once the tab shown holds the keyboard after <see cref="FocusOnOpen"/>.</summary>
-    [Parameter] public Func<Task>? Focused { get; set; }
+    /// <summary>
+    /// How a tab takes the keyboard: through the Sheet's guard (FormatCellsContext.TakeKeyboard), which
+    /// hands it the keys typed while the dialog was on its way, in order, and leaves the keyboard where the
+    /// user has put it meanwhile (ADR-0240 section 6); null for the tab's own focus.
+    /// </summary>
+    [Parameter] public Func<ElementReference, Task>? TakeKeyboard { get; set; }
 
     /// <summary>How many panels stand: fewer than the tabs while they register, and while they are removed as the dialog closes.</summary>
     internal int PanelCount => Panels.Count;
-
-    /// <summary>A key, as if pressed on the tab shown.</summary>
-    internal Task KeyAsync(KeyboardEventArgs key) =>
-        ActivePanel is { } shown ? HandleTabKeyDownAsync(key, shown) : Task.CompletedTask;
 
     /// <inheritdoc />
     protected override async Task HandleTabKeyDownAsync(KeyboardEventArgs e, MudTabPanel panel)
@@ -63,15 +63,15 @@ internal sealed class MudFormatCellsTabs : MudTabs
         if (!FocusOnOpen || _focused || ActivePanel is not { } shown || shown.PanelRef.Context is null) return;
         _focused = true;
         await FocusAsync(shown);
-        if (Focused is { } focused) await focused();
     }
 
-    private static async Task FocusAsync(MudTabPanel panel)
+    private async Task FocusAsync(MudTabPanel panel)
     {
         if (panel.PanelRef.Context is null) return;
         try
         {
-            await panel.PanelRef.FocusAsync();
+            if (TakeKeyboard is { } take) await take(panel.PanelRef);
+            else await panel.PanelRef.FocusAsync();
         }
         catch (Exception ex) when (ex is Microsoft.JSInterop.JSException or Microsoft.JSInterop.JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
         {

@@ -246,6 +246,26 @@
             A control the user already chose keeps the keyboard. More Colours in ExSheet's MudBlazor Format Cells
             uses this to start in HEX.
         </p>
+        <p>
+            <strong>A surface drawn outside the grid joins its order while it is open.</strong> A design system draws a
+            dialog under its provider and a popover at the page's body, outside the element marked
+            <code>data-ex-input-root</code>. <code>JoinSurfaceAsync(element, around, escape)</code> puts such a surface in
+            the grid's order until you dispose of what it returns, or the surface leaves the page: the surface is
+            <code>element</code>, or the nearest element around it that the CSS selector <code>around</code> matches — a
+            <code>MudDialog</code>'s <code>[role="dialog"]</code>, which your content gets no reference to. Joined, its
+            claimed clicks, presses, submissions and keys are numbered and handled in their place, the keyboard standing on
+            it counts as the grid's, so a hand-on from it is granted, and every key typed in it while an earlier input is
+            answered is held and handed on, in order, to where that input left the keyboard. A claim can name one key,
+            <code>data-ex-claims="keydown:Enter keydown:Space"</code>, and on a joined surface it is told after the controls
+            inside have heard the key, so a key a control keeps, Escape closing a dropdown's list, reaches no claim. An
+            Escape no control claims or keeps is the surface's: the grid runs <code>escape</code> in that Escape's turn.
+            Join before the surface takes the keyboard. A dialog that gives the keyboard back, as it closes, to whatever
+            held it as it opened can have it wait first on an empty element of yours, marked
+            <code>data-ex-claims=""</code>: <code>HandKeyboardToFrameAsync(element)</code> tells the hand-off and puts the
+            keyboard there, and the keys typed on it go to the control that next takes the keyboard. ExSheet's Format
+            Cells under the MudBlazor Chrome is built this way (<a href="exsheet/formatting#format-cells">Cell formatting</a>,
+            the MudBlazor switch of its Example).
+        </p>
     </DocsSection>
 
     <DocsSection Title="API">

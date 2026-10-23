@@ -35,7 +35,7 @@ public abstract class SheetTestContext : BunitContext
         _handle.Setup<bool>("metaIsPrimary").SetResult(false);
         _handle.Setup<ScrollOffset>("getScrollOffset").SetResult(default);
         _handle.Setup<bool>("anchorScrollTop", _ => true).SetResult(true);
-        foreach (var name in new[] { "setScrollOffset", "releaseTab", "setEditing", "setInnerPopup", "setClaims", "setCaret", "setPointerReporting", "forgetPointer", "writeCopy", "reclaimFocus", "focusEditor", "dispose", "handOff", "takeFocus", "followFocus", "takeKeyboardBack", "handKeyboardTo", "inputsLost" })
+        foreach (var name in new[] { "setScrollOffset", "releaseTab", "setEditing", "setInnerPopup", "setClaims", "setCaret", "setPointerReporting", "forgetPointer", "writeCopy", "reclaimFocus", "focusEditor", "dispose", "handOff", "takeFocus", "followFocus", "takeKeyboardBack", "handKeyboardTo", "inputsLost", "leaveSurface", "waitForFrameAt" })
         {
             _handle.SetupVoid(name, _ => true).SetVoidResult();
         }
@@ -43,6 +43,8 @@ public abstract class SheetTestContext : BunitContext
         // core ahead of the answer, as a browser's does, so the browser here answers "untouched".
         _handle.Setup<bool>("askUntouched", _ => true).SetResult(true);
         _handle.SetupVoid("closeAnswered", _ => true).SetVoidResult();
+        // A surface outside the Sheet joins its order (ADR-0240 section 6, ticket 06).
+        _handle.Setup<bool>("joinSurface", _ => true).SetResult(true);
     }
 
     internal FakeTimeProvider Clock { get; } = new();
@@ -60,6 +62,22 @@ public abstract class SheetTestContext : BunitContext
     /// <summary>How many times a frame of the Sheet's own has asked the grid to take the keyboard back
     /// from it, with the keys typed there on the way (ADR-0050 item 16's note of 2026-10-12).</summary>
     internal int TakeBackCount => _handle.Invocations["takeKeyboardBack"].Count;
+
+    /// <summary>The surfaces joined to the grid's Input Order, and left, so far, each by the number it joined
+    /// by (ExGrid's <c>JoinSurfaceAsync</c>; ADR-0240 section 6, ticket 06).</summary>
+    internal IReadOnlyList<int> JoinedSurfaces => [.. _handle.Invocations["joinSurface"].Select(i => (int)i.Arguments[2]!)];
+
+    /// <summary>Whether each surface joined with an Escape of its own, in the order joined.</summary>
+    internal IReadOnlyList<bool> JoinedWithEscape => [.. _handle.Invocations["joinSurface"].Select(i => (bool)i.Arguments[3]!)];
+
+    /// <summary>From now, the script joins no surface: one inside the Input Root, or one joined already.</summary>
+    internal void RefuseSurfaceJoins() => _handle.Setup<bool>("joinSurface", _ => true).SetResult(false);
+
+    /// <summary>How many surfaces have left the grid's Input Order.</summary>
+    internal int SurfacesLeft => _handle.Invocations["leaveSurface"].Count;
+
+    /// <summary>How many times the keyboard on its way to a frame was told to wait on an element of the frame's own.</summary>
+    internal int FrameWaits => _handle.Invocations["waitForFrameAt"].Count;
 
     /// <summary>How many times a control of the Sheet's own — the toolbar's band — has been handed the
     /// keyboard through the grid (ADR-0050 item 16's note of 2026-10-12).</summary>

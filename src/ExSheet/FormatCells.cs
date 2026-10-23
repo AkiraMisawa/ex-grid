@@ -160,9 +160,12 @@ public sealed record NumberFormatCategoryOffer(NumberFormatCategory Category, st
 /// Chrome's fragment, or closes the grid's popover under the built-in Chrome.</para>
 ///
 /// <para><see cref="ReturnKeyboard"/> is the core's focus function (ADR-0021's note of 2026-09-30).
-/// A Chrome whose frame lies outside the grid — a page-level dialog — calls it once that frame has
-/// closed, so the keyboard is the Sheet's again; it is granted only while DOM focus is inside the
-/// grid or on nothing. Under the built-in Chrome the grid's popover returns the keyboard itself.</para>
+/// A Chrome whose frame lies outside the grid — a page-level dialog — calls it as that frame closes,
+/// so the keyboard is the Sheet's again; it is granted only while DOM focus is inside the grid, on
+/// nothing, or in a surface of the frame's joined to the Sheet's Input Order (<see cref="JoinSurface"/>),
+/// which therefore gives the keyboard back before it goes, in the turn of the input that closed it
+/// (ADR-0240 section 6). ExSheet keeps the frame on the page after <see cref="Ok"/> or <see cref="Cancel"/>
+/// until it has been called. Under the built-in Chrome the grid's popover returns the keyboard itself.</para>
 /// </summary>
 /// <param name="Draft">What Format Cells opens on, and what the user has touched.</param>
 /// <param name="Tab">The tab to open on.</param>
@@ -179,27 +182,36 @@ public sealed record FormatCellsContext(
     Func<Task> ReturnKeyboard)
 {
     /// <summary>
-    /// The core's focus function from the Chrome's frame (ADR-0050 item 16's note of 2026-10-12): the
-    /// keyboard goes back to the Sheet from <c>from</c>, the frame's element that holds it, granted while
-    /// DOM focus is still there, with the keys typed in the frame since its close began, which the
-    /// second argument hands over once the grid asks, as the grid's ahead of any typed after (decided
-    /// with the user, 2026-10-13). A Chrome whose frame closes from a key or a choice — Escape, OK,
-    /// Cancel — calls <see cref="Ok"/> or <see cref="Cancel"/> as the key is pressed, puts the keyboard
-    /// on an element of the frame's own outside its dialog, holds what is typed from the closing key on,
-    /// closes the dialog, and then calls this in place of <see cref="ReturnKeyboard"/>. ExSheet keeps the
-    /// frame on the page after OK or Cancel until this, or <see cref="ReturnKeyboard"/>, has been called,
-    /// so the element stands until the keyboard has left it. Null for a context ExSheet did not make.
+    /// The Sheet's Input Order (ADR-0240 section 6, ticket 06): the handler of a control of the Chrome's
+    /// frame that claims its event (<c>data-ex-claims</c>) — OK, Cancel, the form's submission, a popup's
+    /// opener — runs in its place in the order, as the grid's <c>InOrderAsync</c> has it. Null for a
+    /// context ExSheet did not make.
     /// </summary>
-    public Func<ElementReference, Func<IReadOnlyList<KeyboardEventArgs>>, Task>? ReturnKeyboardFrom { get; init; }
+    public Func<GridInputKind, Func<Task>, Task>? InOrder { get; init; }
 
     /// <summary>
-    /// Holds the keys typed while a popup of this frame opens (ADR-0039): asks the grid for the
-    /// keyboard from the first argument, collecting the keys supplied by the second, then tells
-    /// it those keys are going to the popup. Call before the opening handler's first await.
-    /// It can also carry a popup's closing keys back to a control of this frame without ending
-    /// Format Cells. Null for a context ExSheet did not make.
+    /// A surface of the Chrome's frame that its design system draws outside the Sheet — a page-level
+    /// dialog, a popup at the page's body — joins the Sheet's Input Order while it is open (ADR-0240
+    /// section 6, ticket 06), as the grid's <c>JoinSurfaceAsync</c> has it: the element, the CSS selector of
+    /// the surface around it or null, and what an Escape typed in it does, in its turn. Dispose the answer
+    /// as the surface closes. Joined, the keyboard in it is the Sheet's: <see cref="ReturnKeyboard"/> and
+    /// <see cref="TakeKeyboard"/> are granted from it, and the keys typed in it while an input is still
+    /// being answered — an arrow typed as its Escape closes it — are held and handed on where that answer
+    /// left the keyboard. Null for a context ExSheet did not make.
     /// </summary>
-    public Func<ElementReference, Func<IReadOnlyList<KeyboardEventArgs>>, Task>? HoldKeysForPopup { get; init; }
+    public Func<ElementReference, string?, Func<Task>?, Task<IAsyncDisposable>>? JoinSurface { get; init; }
+
+    /// <summary>
+    /// The keyboard is going to a control of the frame not drawn yet — the dialog's tab as Format Cells
+    /// opens, a popup's field as its opener is pressed — as the grid's <c>HandKeyboardToFrameAsync</c> has
+    /// it (ADR-0050 item 16): the keys typed until that control takes it through <see cref="TakeKeyboard"/>
+    /// are held, and handed to it in order. With an element, the keyboard waits on that element of the
+    /// frame's own, inside the Sheet and marked <c>data-ex-claims=""</c>, which takes DOM focus now: a frame
+    /// whose design system hands the keyboard back, as it closes, to whatever held it as it opened waits
+    /// there, so that it hands it back to nothing. Call it in the turn of the input that opens the control,
+    /// before that turn's first await. Null for a context ExSheet did not make.
+    /// </summary>
+    public Func<ElementReference?, Task>? HandKeyboardToFrame { get; init; }
 
     /// <summary>
     /// Gives a popup's drawn control the keyboard held for it, through the grid's conditional

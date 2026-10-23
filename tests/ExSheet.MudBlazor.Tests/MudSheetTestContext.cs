@@ -41,10 +41,12 @@ public abstract class MudSheetTestContext : BunitContext
         _handle.Setup<bool>("metaIsPrimary").SetResult(false);
         _handle.Setup<ScrollOffset>("getScrollOffset").SetResult(default);
         _handle.Setup<bool>("anchorScrollTop", _ => true).SetResult(true);
-        foreach (var name in new[] { "setScrollOffset", "blur", "setEditing", "setInnerPopup", "setClaims", "setCaret", "setPointerReporting", "forgetPointer", "writeCopy", "reclaimFocus", "focusEditor", "handOff", "dispose", "takeKeyboardBack", "handKeyboardTo", "inputsLost" })
+        foreach (var name in new[] { "setScrollOffset", "blur", "setEditing", "setInnerPopup", "setClaims", "setCaret", "setPointerReporting", "forgetPointer", "writeCopy", "reclaimFocus", "focusEditor", "handOff", "dispose", "inputsLost" })
         {
             _handle.SetupVoid(name, _ => true).SetVoidResult();
         }
+        foreach (var name in SurfaceStepNames.Where(name => name != "joinSurface")) SetupStep(name).SetVoidResult();
+        SetupJoin().SetResult(true);
         // ST-2's question (ADR-0007's note of 2026-10-11, refined): the test's input reaches the
         // core ahead of the answer, as a browser's does, so the browser here answers "untouched".
         _handle.Setup<bool>("askUntouched", _ => true).SetResult(true);
@@ -89,6 +91,58 @@ public abstract class MudSheetTestContext : BunitContext
     protected IReadOnlyList<string> KeyboardWays =>
         [.. _handle.Invocations.Where(i => i.Identifier is "handOff" or "takeKeyboardBack")
             .Select(i => i.Identifier == "handOff" ? "handOff:" + (string)i.Arguments[0]! : i.Identifier)];
+
+    private static readonly string[] SurfaceStepNames = ["handOff", "waitForFrameAt", "joinSurface", "handKeyboardTo", "leaveSurface", "takeKeyboardBack", "reclaimFocus"];
+    private readonly List<string> _steps = [];
+
+    // Answers a call the steps are read from, recording it as it is made: bUnit keeps its invocations by name.
+    private JSRuntimeInvocationHandler SetupStep(string name) => _handle.SetupVoid(name, invocation =>
+    {
+        _steps.Add(invocation.Identifier == "handOff" ? "handOff:" + (string)invocation.Arguments[0]! : invocation.Identifier);
+        return true;
+    });
+
+    // A surface's joining, answered as the script does: whether it joined.
+    private JSRuntimeInvocationHandler<bool> SetupJoin() => _handle.Setup<bool>("joinSurface", invocation =>
+    {
+        _steps.Add(invocation.Identifier);
+        return true;
+    });
+
+    /// <summary>The grid's asks of its key gate about where the keyboard goes and which surfaces join its
+    /// Input Order, in the order made (ADR-0240 section 6, ticket 06): <c>handOff:frame</c>,
+    /// <c>waitForFrameAt</c>, <c>joinSurface</c>, <c>handKeyboardTo</c>, <c>leaveSurface</c>,
+    /// <c>takeKeyboardBack</c>, <c>reclaimFocus</c>.</summary>
+    protected IReadOnlyList<string> SurfaceSteps => [.. _steps];
+
+    /// <summary>Holds the browser's answer to every request for the keyboard back, either way (reclaimFocus,
+    /// takeKeyboardBack), until the returned action completes them; the requests made after it are answered at once.</summary>
+    protected Action HoldKeyboardReturns()
+    {
+        var reclaim = SetupStep("reclaimFocus");
+        var takeBack = SetupStep("takeKeyboardBack");
+        return () =>
+        {
+            reclaim.SetVoidResult();
+            takeBack.SetVoidResult();
+            SetupStep("reclaimFocus").SetVoidResult();
+            SetupStep("takeKeyboardBack").SetVoidResult();
+        };
+    }
+
+    /// <summary>Holds the browser's answer to each surface's joining until the returned action completes it.</summary>
+    protected Action HoldSurfaceJoins()
+    {
+        var pending = SetupJoin();
+        return () =>
+        {
+            pending.SetResult(true);
+            SetupJoin().SetResult(true);
+        };
+    }
+
+    /// <summary>The numbers the grid gave the surfaces that joined its Input Order, in order.</summary>
+    protected IReadOnlyList<int> JoinedSurfaces => [.. _handle.Invocations["joinSurface"].Select(i => (int)i.Arguments[2]!)];
 
     /// <summary>How many times the keyboard has been asked back for the Sheet, either way: the plain
     /// hand-back, or the hand-back from a frame with the keys typed on the way (decided with the user,
