@@ -1,5 +1,5 @@
 import { test, expect, circuitQuiet } from './fixtures.mjs';
-import { API_URL } from './hosting.mjs';
+import { API_URL, SERVER } from './hosting.mjs';
 import { expectCodeIsSource } from './demo-code.mjs';
 import { blend, contrast, onDeviceGrid, painted, wholePixelCentres } from './pixels.mjs';
 
@@ -304,4 +304,44 @@ test('ADR-0069/0067: the code the page shows is the code it runs: a Change Batch
     expect(code['PivotLivePage.razor#batch']).toContain('_local.Apply(DemoPivotData.Fields.Batch(changed: amended))');
     expect(code['PivotLivePage.razor#server']).toContain('server.NotifyChanged(version)');
     expect(code['PivotLivePage.razor#pivots']).toContain('RedrawInterval="RedrawInterval" ChangeHighlightDuration="Highlight"');
+});
+
+// LV-27 through the remote source: the demo server's Window gate spoils the digest of Window
+// Changes, or refuses Window questions with 503, on request (PivotWindowGate). A count, never a time.
+test.describe('a recovery the server refuses', () => {
+    // On WebAssembly the browser asks the server, and writes the 503 it refuses the recovery with;
+    // on the Server host the host asks it, and the browser hears nothing of it.
+    test.use({ expectedErrors: SERVER ? [] : [/Failed to load resource: the server responded with a status of 503/] });
+
+    test('LV-27 / ADR-0152: Window Changes whose digest does not match are refused, and a complete Window is asked for and shown; a recovery that fails leaves the report stale with Retry', async ({ page }) => {
+        const gate = (body) => post('/api/pivot/window-gate', body);
+        const state = () => api('/api/pivot/window-gate');
+        await open(page, 'builtin');
+        const shell = pivot(page, 'server').locator('.ex-pivot-report');
+        const notice = pivot(page, 'server').locator('.ex-pivot-stale[role=status]');
+        // Window Changes are arriving: a question names a Baseline Window, and values are marked.
+        await expect.poll(async () => (await state()).baselined.includes(true), { timeout: 30_000 }).toBe(true);
+        await expect.poll(() => marked(page, 'server').count(), { timeout: 30_000 }).toBeGreaterThan(0);
+
+        // One spoiled digest: the changes are refused, a complete Window is asked for, and it is shown.
+        const complete = (await state()).complete;
+        await gate({ spoil: 1 });
+        await expect.poll(async () => (await state()).spoiled, { timeout: 30_000 }).toBe(1);
+        await expect.poll(async () => (await state()).complete, { timeout: 30_000 }).toBeGreaterThan(complete);
+        await expect(shell).not.toHaveClass(/ex-pivot-report-stale/);
+        await expect(notice).toHaveText('');
+
+        // Every digest spoiled and every complete Window refused: the recovery cannot be had, and the
+        // report is the last complete one, stale, with Retry.
+        await gate({ spoil: 1000, fail: 1000 });
+        await expect(notice).toContainText('Showing the data as of', { timeout: 30_000 });
+        await expect(shell).toHaveClass(/ex-pivot-report-stale/);
+        expect((await state()).failed).toBeGreaterThan(0);
+
+        // Retry, with the server answering truly again: the newest is shown.
+        await gate({ spoil: 0, fail: 0 });
+        await notice.getByRole('button', { name: 'Retry' }).click();
+        await expect(shell).not.toHaveClass(/ex-pivot-report-stale/);
+        await expect(notice).toHaveText('');
+    });
 });

@@ -1323,3 +1323,57 @@ test('ADR-0062/0030: the palette reaches the pane, the entries and the − butto
     expect(dark.pane).toBe(dark.surface);
     expect(dark.toggle).toBe(dark.secondary);
 });
+
+test('PV-18 / ADR-0062/0030: every Visual Token ExPivot reads is the palette entry the Wrapper maps it to, inside the report, light and dark', async ({ page }) => {
+    await open(page, 'mud');
+    // Each token ExPivot's stylesheet reads with a default (a Visual Token; a Geometry Token is read
+    // without one, ADR-0027), resolved inside ExPivot's root, against the palette entry the Wrapper's
+    // paper rule names for it, resolved there too: four properties a probe can take, so a colour, a
+    // shadow, a radius and a size are each compared.
+    const readings = () => page.evaluate(() => {
+        const sheets = [...document.styleSheets];
+        const rulesOf = (sheet) => { try { return [...sheet.cssRules]; } catch { return []; } };
+        // Known by what they hold, not by name, which a host may fingerprint: ExPivot's writes rules
+        // against its own classes, the Wrapper's maps --ex-pivot-color on the paper.
+        const core = sheets.filter((s) => rulesOf(s).some((r) => r.selectorText?.startsWith('.ex-pivot')));
+        const wrapper = sheets.filter((s) => rulesOf(s).some((r) => r.selectorText === '.mud-ex-grid' && r.style.getPropertyValue('--ex-pivot-color')));
+        const tokens = [...new Set(core.flatMap(rulesOf).flatMap((r) => [...r.cssText.matchAll(/var\((--ex-pivot-[a-z0-9-]+)\s*,/g)].map((m) => m[1])))];
+        const paper = wrapper.flatMap(rulesOf).find((r) => r.selectorText === '.mud-ex-grid' && r.style.getPropertyValue('--ex-pivot-color'));
+        const root = document.querySelector('.ex-pivot');
+        const probe = (value) => {
+            const span = document.createElement('span');
+            span.style.color = value;
+            span.style.boxShadow = value;
+            span.style.borderTopLeftRadius = value;
+            span.style.fontSize = value;
+            root.append(span);
+            const style = getComputedStyle(span);
+            const read = [style.color, style.boxShadow, style.borderTopLeftRadius, style.fontSize].join(' | ');
+            span.remove();
+            return read;
+        };
+        return {
+            sheets: [core.length, wrapper.length],
+            tokens: Object.fromEntries(tokens.map((token) => {
+                const mapped = paper?.style.getPropertyValue(token).trim() ?? '';
+                return [token, { mapped, shown: probe(`var(${token})`), palette: mapped ? probe(mapped) : null }];
+            })),
+        };
+    });
+
+    const light = await readings();
+    expect(light.sheets, 'both stylesheets are on the page').toEqual([1, 1]);
+    expect(Object.keys(light.tokens).length).toBeGreaterThan(10);
+    for (const [token, { mapped, shown, palette }] of Object.entries(light.tokens)) {
+        expect(mapped, `${token} is mapped`).toMatch(/var\(--mud-|^transparent$/);
+        expect(shown, `${token}, light`).toBe(palette);
+    }
+
+    await page.locator('#toggle-dark').click();
+    await expect(page.locator('#dark-status')).toHaveText('Dark: True');
+    await expect.poll(async () => (await readings()).tokens['--ex-pivot-color'].shown).not.toBe(light.tokens['--ex-pivot-color'].shown);
+    const dark = await readings();
+    for (const [token, { shown, palette }] of Object.entries(dark.tokens)) {
+        expect(shown, `${token}, dark`).toBe(palette);
+    }
+});

@@ -1,6 +1,6 @@
 import { test, expect, setRoundTrip, settled } from './fixtures.mjs';
 import { SERVER } from './hosting.mjs';
-import { sheet, openSheet, cell, pressCell, editor, expectFocusAt } from './sheet-helpers.mjs';
+import { sheet, openSheet, cell, clickCell, pressCell, editor, expectFocusAt } from './sheet-helpers.mjs';
 
 // The Settled Mark (ADR-0220): the root carries `data-ex-settled` once every input its key gate has
 // taken has been handled and its effect is in the DOM. These tests drive at machine speed and read
@@ -103,4 +103,77 @@ test('ADR-0220: an edit opened by a key and committed by Enter is read once afte
     expect(await cell(grid, 'D10').textContent()).toBe('x');
     expect(await grid.locator('.ex-name-box').inputValue()).toBe('D11');
     await setRoundTrip(0);
+});
+
+// ASY-7's other inputs: a press on the rows, a paste, a copy in flight, a composition, and a render
+// owed on one of the grid's own timers. Each is read once, straight after the mark.
+
+test('ASY-7 / ADR-0220: a press on the rows is read once after the mark', async ({ page }) => {
+    const grid = sheet(page);
+    await setRoundTrip(150);
+    await pressCell(grid, 'A2');
+    await settled(grid);
+
+    await clickCell(grid, 'C5');
+    await settled(grid);
+    expect(await grid.locator('.ex-name-box').inputValue()).toBe('C5');
+    await setRoundTrip(0);
+});
+
+test('ASY-7 / ADR-0220: a paste, and the copy of what it wrote, are each read once after the mark', async ({ page, context }) => {
+    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+    const grid = sheet(page);
+    await setRoundTrip(150);
+    await pressCell(grid, 'F2');
+    await settled(grid);
+    await page.evaluate(() => navigator.clipboard.writeText('7\t8\r\n9\t10\r\n'));
+
+    await page.keyboard.press('ControlOrMeta+v');
+    await settled(grid);
+    expect([
+        await cell(grid, 'F2').textContent(),
+        await cell(grid, 'G2').textContent(),
+        await cell(grid, 'F3').textContent(),
+        await cell(grid, 'G3').textContent(),
+    ]).toEqual(['7', '8', '9', '10']);
+
+    // The pasted range is the selection; its copy is in flight until the clipboard has it.
+    await page.evaluate(() => navigator.clipboard.writeText('SENTINEL'));
+    await page.keyboard.press('ControlOrMeta+c');
+    await settled(grid);
+    const copied = await page.evaluate(() => navigator.clipboard.readText());
+    expect(copied.split(/\r?\n/).filter(Boolean)).toEqual(['7\t8', '9\t10']);
+    await setRoundTrip(0);
+});
+
+test('ASY-7 / ADR-0220/0080: a composition on a selected cell is read once after the mark, and so is its commit', async ({ page }) => {
+    const grid = sheet(page);
+    await setRoundTrip(150);
+    await pressCell(grid, 'D12');
+    await settled(grid);
+    // Chrome's own composition, through the DevTools protocol, as key-field.spec.mjs makes it.
+    const client = await page.context().newCDPSession(page);
+    await client.send('Input.imeSetComposition', { text: 'か', selectionStart: 1, selectionEnd: 1 });
+    await client.send('Input.insertText', { text: '株' });
+    await settled(grid);
+    expect(await editor(grid).inputValue()).toBe('株');
+
+    await page.keyboard.press('Enter');
+    await settled(grid);
+    expect(await editor(grid).count()).toBe(0);
+    expect(await cell(grid, 'D12').textContent()).toBe('株');
+    await client.detach();
+    await setRoundTrip(0);
+});
+
+test('ASY-7 / ADR-0220/0033: the description of a selection, owed on the grid\'s timer, is read once after the mark', async ({ page }) => {
+    const grid = sheet(page);
+    await pressCell(grid, 'B3');
+    await settled(grid);
+
+    await page.keyboard.press('Shift+ArrowRight');
+    await page.keyboard.press('Shift+ArrowDown');
+    await page.keyboard.press('Shift+ArrowDown');
+    await settled(grid);
+    expect(await grid.locator('.ex-announce').textContent()).toMatch(/^3 rows by 2 columns selected, /);
 });

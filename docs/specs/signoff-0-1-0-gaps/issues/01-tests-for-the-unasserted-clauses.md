@@ -91,3 +91,19 @@ restate.
   control in an Action, Template or Mark cell, and no listener). Still open: ASY-7, WR-1, DC-62,
   SH-60 (#GETTING_DATA, the minute turning), PV-3 (the order across kinds, and a declared order
   first), PV-13 (a values-only refresh), PV-18 and LV-27.
+- 2026-10-23: tests now assert DC-62 (`features.spec.mjs`, on `/cells?leave=1`: an edit cancelled,
+  the Context Menu closed, an Interactive cell left and a control returned from raise nothing; with
+  nothing left to dismiss it is raised once, the DOM focus stays, Tab is released, and a held Escape
+  raises once), SH-60 (`sheet-today.spec.mjs`: `#GETTING_DATA` while no zone is known, and NOW()
+  moving on as the minute turns), PV-18 (`pivot.spec.mjs`: every Visual Token ExPivot reads resolves
+  inside the report to the palette entry the Wrapper maps it to, light and dark), WR-1
+  (`filter-panel.spec.mjs` on the new `/filter-panel`: the Blank entry, the search, TooMany's condition
+  form, a declared condition form and Cancel, each giving the same Filter under both Chromes), ASY-7
+  (`settled-mark.spec.mjs`: a press on the rows, a paste, a copy in flight, a composition and the
+  description of a selection, each read once after the mark) and LV-27 (`pivot-live.spec.mjs`, through
+  the demo server's Window gate, which now spoils a digest or refuses a question on request: the
+  changes refused and a complete Window shown, and a refused recovery left stale with Retry). Still
+  open: DC-62's Inner Popup and Formula Entry list (no such layer on `/cells`; layer 2 holds them) and
+  the release made before the raise (one answer, not observable apart in a browser); ASY-7's
+  Placeholders and error message timers; PV-3 (the order across kinds, and a declared order first);
+  PV-13 (a values-only refresh). WR-10 is a run by hand.

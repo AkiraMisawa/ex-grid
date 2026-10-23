@@ -1,0 +1,94 @@
+@page "/filter-panel"
+@using System.Globalization
+@using ExGrid.Chrome
+@implements IDisposable
+
+@* The filter panel under either Chrome (?chrome=mud for ExGrid.MudBlazor's), with every case of
+   FilterPanelContext a column can ask for, and the Filter the source holds written out below the
+   grid, so the same choices made through both panels can be compared as the specs they produce
+   (WR-1, ADR-0009/0023/0044). *@
+<DemoChromeAssets Name="@ChromeName" />
+
+<DemoNav />
+
+<h1>Filter panel — the same choices through either Chrome</h1>
+
+<p>
+    Book and Trader offer their values and a condition; one trade in seven has no trader, so
+    Trader's list ends with its Blank entry. Id has more distinct values than the source will
+    list, so its panel answers with the condition form alone (TooMany). Notional asks for the
+    condition form only. Below the grid is the Filter the source holds, as it was applied.
+</p>
+
+<ExGrid TRow="DemoTrade"
+        Source="_source"
+        Columns="Columns"
+        RowHeight="24"
+        ViewportHeight="300"
+        ViewportWidth="620"
+        Chrome="_chrome" />
+
+<p class="demo-status">
+    <span id="filter-spec">@Describe(_source.Filter)</span>
+</p>
+
+@code {
+    /// <summary>Which Chrome the grid runs with (<see cref="DemoChrome"/>).</summary>
+    [SupplyParameterFromQuery(Name = "chrome")]
+    public string? ChromeName { get; set; }
+
+    // Past InMemoryGridSource's cap of distinct values, so Id's value list is TooMany (ADR-0009).
+    private const int RowCount = 1200;
+
+    private static readonly GridColumn<DemoTrade>[] Columns =
+    [
+        new("Book", ColumnType.Text, t => t.Book, width: new ColumnWidthSpec(ColumnWidth.Fixed(110)), filterUi: FilterUiMode.Both),
+        new("Trader", ColumnType.Text, t => t.Trader, width: new ColumnWidthSpec(ColumnWidth.Fixed(120)), filterUi: FilterUiMode.Both),
+        new("Id", ColumnType.Number, t => t.Id, width: new ColumnWidthSpec(ColumnWidth.Fixed(100)), filterUi: FilterUiMode.Both),
+        new("Notional", ColumnType.Number, t => t.Notional, width: new ColumnWidthSpec(ColumnWidth.Fixed(160))),
+    ];
+
+    private IGridChrome? _chrome;
+    private InMemoryGridSource<DemoTrade> _source = default!;
+    private Action? _stateChanged;
+
+    protected override void OnInitialized()
+    {
+        string[] books = ["Alpha", "Beta", "Gamma", "Delta"];
+        string[] traders = ["Ishikawa", "Novak", "Osei"];
+        var rows = new DemoTrade[RowCount];
+        for (var i = 0; i < rows.Length; i++)
+        {
+            rows[i] = new DemoTrade
+            {
+                Id = i,
+                Book = books[i % books.Length],
+                // A Blank is no value at all, which the value list offers as its own entry (ADR-0023).
+                Trader = i % 7 == 6 ? null! : traders[i % traders.Length],
+                Notional = 1_000_000m + (i * 1_000m),
+            };
+        }
+        _source = GridSource.From(rows);
+        _source.StateChanged += _stateChanged = () => _ = InvokeAsync(StateHasChanged);
+    }
+
+    protected override void OnParametersSet() => _chrome = DemoChrome.From(ChromeName);
+
+    public void Dispose() => _source.StateChanged -= _stateChanged;
+
+    /// <summary>The Filter as one line, columns by name and values in their order, so two pages'
+    /// lines are equal exactly when their Filters are.</summary>
+    private static string Describe(GridFilter? filter)
+        => filter is null || filter.Columns.Count == 0
+            ? "No filter."
+            : string.Join("; ", filter.Columns.OrderBy(c => c.Key, StringComparer.Ordinal).Select(c =>
+                $"{c.Key}: {c.Value.Combinator} [{string.Join(", ", c.Value.Clauses.Select(Clause))}]"));
+
+    private static string Clause(FilterClause clause)
+        => clause.Values is { } values
+            ? $"{clause.Operator} ({string.Join(", ", values.Select(Value))})"
+            : clause.Value is null ? $"{clause.Operator}" : $"{clause.Operator} {Value(clause.Value)}";
+
+    private static string Value(object? value)
+        => value is null ? "(blank)" : Convert.ToString(value, CultureInfo.InvariantCulture) ?? "";
+}
