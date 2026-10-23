@@ -22,7 +22,7 @@
    on its right, in this order, Layout ▾, Refresh when the source can be refreshed, and the Field
    List's toggle. Layout ▾'s wrapper is positioned, so the menu opens under it, over the report, at
    its right edge. Under the Pivot Toolbar, what the report could not do with the last change
-   is said. *@
+   is said. Every button claims its input, in the pivot's Input Order (ADR-0240 section 6). *@
 <div class="ex-pivot-toolbar">
     <div class="ex-pivot-toolbar-start">@Context.ReportFilters</div>
     <div class="ex-pivot-toolbar-end">
@@ -37,12 +37,12 @@
         </span>
         @if (Context.Refresh is { } refresh)
         {
-            <button type="button" class="ex-pivot-toolbar-button ex-pivot-refresh-button" disabled="@(!refresh.Enabled)"
-                    @onclick="refresh.Invoke">@refresh.Label</button>
+            <PivotFocusButton Class="ex-pivot-toolbar-button ex-pivot-refresh-button" Disabled="!refresh.Enabled"
+                              OnClick="refresh.Invoke">@refresh.Label</PivotFocusButton>
         }
-        <button type="button" class="ex-pivot-toolbar-button ex-pivot-field-list-toggle"
-                aria-pressed="@(Context.FieldList.Checked == true ? "true" : "false")"
-                @onclick="Context.FieldList.Invoke">@Context.FieldList.Label</button>
+        <PivotFocusButton Class="ex-pivot-toolbar-button ex-pivot-field-list-toggle"
+                          aria-pressed="@(Context.FieldList.Checked == true ? "true" : "false")"
+                          OnClick="Context.FieldList.Invoke">@Context.FieldList.Label</PivotFocusButton>
     </div>
 </div>
 @if (Context.Refusal is { } refusal)

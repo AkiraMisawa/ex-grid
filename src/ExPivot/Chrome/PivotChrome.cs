@@ -106,7 +106,28 @@ public sealed record PivotStaleReportContext(
     DateTimeOffset AsOf,
     string AsOfText,
     PivotCommand Retry,
-    Func<string, string> Word);
+    Func<string, string> Word)
+{
+    /// <summary>
+    /// The pivot's Input Order (ADR-0240 section 6), as <c>ExGrid.InOrderAsync</c> offers it: the handler
+    /// of a control of the Chrome's that changes the pivot or moves the keyboard — a command pressed, OK,
+    /// Cancel, a box ticked — calls it as it starts, with the kind of the event it hears and its work, and is
+    /// handled in its place among the report grid's keys, presses and clicks, the keys typed behind it held
+    /// until it is answered. The control declares the event in its <c>data-ex-claims</c> attribute
+    /// (<c>click</c>, <c>keydown</c>, …), so the report grid numbers it as it happens, and its handler calls
+    /// this every time it hears that event. What a draft holds — a field typed into — is not an input and
+    /// needs no call. Unset, the work runs at once.
+    /// </summary>
+    public Func<GridInputKind, Func<Task>, Task> InOrder { get; init; } = static (_, handling) => handling();
+
+    /// <summary>How a control of the Chrome's takes DOM focus when ExPivot asks: called with the
+    /// control's element in place of that element's own <c>FocusAsync</c>. ExPivot moves the keyboard
+    /// at the end of the turn of the input that asked, through the report's grid, which grants it only
+    /// while the keyboard is still the pivot's (ExGrid's <c>HandKeyboardToAsync</c>, ADR-0240 section 6);
+    /// the keys typed meanwhile are held and handed on where it lands. Unset, the element's own
+    /// focus.</summary>
+    public Func<ElementReference, Task> TakeKeyboard { get; init; } = static control => control.FocusAsync().AsTask();
+}
 
 /// <summary>What is being dragged in the Field List (ADR-0061): a declared field from the list
 /// of fields, or a placed entry of an Area.</summary>
@@ -176,6 +197,26 @@ public sealed record PivotFieldListContext(
     Action EndDrag,
     Func<string, string> Word)
 {
+    /// <summary>
+    /// The pivot's Input Order (ADR-0240 section 6), as <c>ExGrid.InOrderAsync</c> offers it: the handler
+    /// of a control of the Chrome's that changes the pivot or moves the keyboard — a command pressed, OK,
+    /// Cancel, a box ticked — calls it as it starts, with the kind of the event it hears and its work, and is
+    /// handled in its place among the report grid's keys, presses and clicks, the keys typed behind it held
+    /// until it is answered. The control declares the event in its <c>data-ex-claims</c> attribute
+    /// (<c>click</c>, <c>keydown</c>, …), so the report grid numbers it as it happens, and its handler calls
+    /// this every time it hears that event. What a draft holds — a field typed into — is not an input and
+    /// needs no call. Unset, the work runs at once.
+    /// </summary>
+    public Func<GridInputKind, Func<Task>, Task> InOrder { get; init; } = static (_, handling) => handling();
+
+    /// <summary>How a control of the Chrome's takes DOM focus when ExPivot asks: called with the
+    /// control's element in place of that element's own <c>FocusAsync</c>. ExPivot moves the keyboard
+    /// at the end of the turn of the input that asked, through the report's grid, which grants it only
+    /// while the keyboard is still the pivot's (ExGrid's <c>HandKeyboardToAsync</c>, ADR-0240 section 6);
+    /// the keys typed meanwhile are held and handed on where it lands. Unset, the element's own
+    /// focus.</summary>
+    public Func<ElementReference, Task> TakeKeyboard { get; init; } = static control => control.FocusAsync().AsTask();
+
     /// <summary>Hides the Field List from its heading, through the same visibility binding as
     /// the Pivot Toolbar's toggle. The layout and pending edits are kept (ADR-0061).</summary>
     public Func<Task> Close { get; init; } = static () => Task.CompletedTask;
@@ -266,7 +307,28 @@ public sealed record PivotCommand(string Id, string Label, bool Enabled, Func<Ta
 /// <param name="Close">Closes the menu without running anything.</param>
 /// <param name="FocusRequest">Changes when the menu should take DOM focus: its first enabled
 /// command.</param>
-public sealed record PivotMenuContext(string Title, IReadOnlyList<PivotCommand> Commands, Action Close, int FocusRequest);
+public sealed record PivotMenuContext(string Title, IReadOnlyList<PivotCommand> Commands, Action Close, int FocusRequest)
+{
+    /// <summary>
+    /// The pivot's Input Order (ADR-0240 section 6), as <c>ExGrid.InOrderAsync</c> offers it: the handler
+    /// of a control of the Chrome's that changes the pivot or moves the keyboard — a command pressed, OK,
+    /// Cancel, a box ticked — calls it as it starts, with the kind of the event it hears and its work, and is
+    /// handled in its place among the report grid's keys, presses and clicks, the keys typed behind it held
+    /// until it is answered. The control declares the event in its <c>data-ex-claims</c> attribute
+    /// (<c>click</c>, <c>keydown</c>, …), so the report grid numbers it as it happens, and its handler calls
+    /// this every time it hears that event. What a draft holds — a field typed into — is not an input and
+    /// needs no call. Unset, the work runs at once.
+    /// </summary>
+    public Func<GridInputKind, Func<Task>, Task> InOrder { get; init; } = static (_, handling) => handling();
+
+    /// <summary>How a control of the Chrome's takes DOM focus when ExPivot asks: called with the
+    /// control's element in place of that element's own <c>FocusAsync</c>. ExPivot moves the keyboard
+    /// at the end of the turn of the input that asked, through the report's grid, which grants it only
+    /// while the keyboard is still the pivot's (ExGrid's <c>HandKeyboardToAsync</c>, ADR-0240 section 6);
+    /// the keys typed meanwhile are held and handed on where it lands. Unset, the element's own
+    /// focus.</summary>
+    public Func<ElementReference, Task> TakeKeyboard { get; init; } = static control => control.FocusAsync().AsTask();
+}
 
 /// <summary>A labelled choice in a panel.</summary>
 /// <param name="Value">The choice.</param>
@@ -326,6 +388,18 @@ public sealed record PivotItemFilterContext(
     int FocusRequest,
     Func<string, string> Word)
 {
+    /// <summary>
+    /// The pivot's Input Order (ADR-0240 section 6), as <c>ExGrid.InOrderAsync</c> offers it: the handler
+    /// of a control of the Chrome's that changes the pivot or moves the keyboard — a command pressed, OK,
+    /// Cancel, a box ticked — calls it as it starts, with the kind of the event it hears and its work, and is
+    /// handled in its place among the report grid's keys, presses and clicks, the keys typed behind it held
+    /// until it is answered. The control declares the event in its <c>data-ex-claims</c> attribute
+    /// (<c>click</c>, <c>keydown</c>, …), so the report grid numbers it as it happens, and its handler calls
+    /// this every time it hears that event. What a draft holds — a field typed into — is not an input and
+    /// needs no call. Unset, the work runs at once.
+    /// </summary>
+    public Func<GridInputKind, Func<Task>, Task> InOrder { get; init; } = static (_, handling) => handling();
+
     /// <summary>Whether the field's Items are still on their way from the Pivot Source, which
     /// lists them under the report's Source Version (ADR-0066): a first listing, with nothing yet
     /// to list. OK cannot be pressed meanwhile.</summary>
@@ -345,11 +419,12 @@ public sealed record PivotItemFilterContext(
     public string? Unavailable { get; init; }
 
     /// <summary>How the search takes DOM focus when <see cref="FocusRequest"/> asks: called with the
-    /// search's element in place of that element's own <c>FocusAsync</c>. Opened from the report
-    /// filter band, the keys typed on its button while the panel opens are the search's (decided with
-    /// the user, 2026-10-13, ADR-0061): ExPivot carries the keyboard through the report's grid, which
-    /// holds them and types them into the search as it hands it the keyboard, ahead of any typed there
-    /// after (ExGrid's <c>HandKeyboardToAsync</c>). Unset, the element's own focus.</summary>
+    /// search's element in place of that element's own <c>FocusAsync</c>. The keys typed on the button
+    /// that opened the panel while it opens are the search's (decided with the user, 2026-10-13,
+    /// ADR-0061): ExPivot hands the search the keyboard at the end of the opening's turn, through the
+    /// report's grid, which holds those keys behind the opening and types them into the search as it
+    /// lands, ahead of any typed there after (ExGrid's <c>HandKeyboardToAsync</c>, ADR-0240 section 6).
+    /// Unset, the element's own focus.</summary>
     public Func<ElementReference, Task> TakeKeyboard { get; init; } = static control => control.FocusAsync().AsTask();
 }
 
@@ -378,7 +453,28 @@ public sealed record PivotFieldSettingsContext(
     Action Cancel,
     int FocusRequest,
     Action<bool> InnerPopupChanged,
-    Func<string, string> Word);
+    Func<string, string> Word)
+{
+    /// <summary>
+    /// The pivot's Input Order (ADR-0240 section 6), as <c>ExGrid.InOrderAsync</c> offers it: the handler
+    /// of a control of the Chrome's that changes the pivot or moves the keyboard — a command pressed, OK,
+    /// Cancel, a box ticked — calls it as it starts, with the kind of the event it hears and its work, and is
+    /// handled in its place among the report grid's keys, presses and clicks, the keys typed behind it held
+    /// until it is answered. The control declares the event in its <c>data-ex-claims</c> attribute
+    /// (<c>click</c>, <c>keydown</c>, …), so the report grid numbers it as it happens, and its handler calls
+    /// this every time it hears that event. What a draft holds — a field typed into — is not an input and
+    /// needs no call. Unset, the work runs at once.
+    /// </summary>
+    public Func<GridInputKind, Func<Task>, Task> InOrder { get; init; } = static (_, handling) => handling();
+
+    /// <summary>How a control of the Chrome's takes DOM focus when ExPivot asks: called with the
+    /// control's element in place of that element's own <c>FocusAsync</c>. ExPivot moves the keyboard
+    /// at the end of the turn of the input that asked, through the report's grid, which grants it only
+    /// while the keyboard is still the pivot's (ExGrid's <c>HandKeyboardToAsync</c>, ADR-0240 section 6);
+    /// the keys typed meanwhile are held and handed on where it lands. Unset, the element's own
+    /// focus.</summary>
+    public Func<ElementReference, Task> TakeKeyboard { get; init; } = static control => control.FocusAsync().AsTask();
+}
 
 /// <summary>Value Field Settings… (ADR-0061): the caption, the Aggregation, Show Values As and
 /// the number format, as a draft until OK, which a taken caption or an unusable format refuses.</summary>
@@ -418,14 +514,56 @@ public sealed record PivotValueFieldSettingsContext(
     Action Cancel,
     int FocusRequest,
     Action<bool> InnerPopupChanged,
-    Func<string, string> Word);
+    Func<string, string> Word)
+{
+    /// <summary>
+    /// The pivot's Input Order (ADR-0240 section 6), as <c>ExGrid.InOrderAsync</c> offers it: the handler
+    /// of a control of the Chrome's that changes the pivot or moves the keyboard — a command pressed, OK,
+    /// Cancel, a box ticked — calls it as it starts, with the kind of the event it hears and its work, and is
+    /// handled in its place among the report grid's keys, presses and clicks, the keys typed behind it held
+    /// until it is answered. The control declares the event in its <c>data-ex-claims</c> attribute
+    /// (<c>click</c>, <c>keydown</c>, …), so the report grid numbers it as it happens, and its handler calls
+    /// this every time it hears that event. What a draft holds — a field typed into — is not an input and
+    /// needs no call. Unset, the work runs at once.
+    /// </summary>
+    public Func<GridInputKind, Func<Task>, Task> InOrder { get; init; } = static (_, handling) => handling();
+
+    /// <summary>How a control of the Chrome's takes DOM focus when ExPivot asks: called with the
+    /// control's element in place of that element's own <c>FocusAsync</c>. ExPivot moves the keyboard
+    /// at the end of the turn of the input that asked, through the report's grid, which grants it only
+    /// while the keyboard is still the pivot's (ExGrid's <c>HandKeyboardToAsync</c>, ADR-0240 section 6);
+    /// the keys typed meanwhile are held and handed on where it lands. Unset, the element's own
+    /// focus.</summary>
+    public Func<ElementReference, Task> TakeKeyboard { get; init; } = static control => control.FocusAsync().AsTask();
+}
 
 /// <summary>The report filter band (ADR-0061): each field in Filters, as Excel shows its page
 /// fields above the report.</summary>
 /// <param name="Title">The band's accessible name.</param>
 /// <param name="Filters">One entry per field in Filters, in order.</param>
 /// <param name="Word">ExPivot's words, by id.</param>
-public sealed record PivotReportFiltersContext(string Title, IReadOnlyList<PivotReportFilterView> Filters, Func<string, string> Word);
+public sealed record PivotReportFiltersContext(string Title, IReadOnlyList<PivotReportFilterView> Filters, Func<string, string> Word)
+{
+    /// <summary>
+    /// The pivot's Input Order (ADR-0240 section 6), as <c>ExGrid.InOrderAsync</c> offers it: the handler
+    /// of a control of the Chrome's that changes the pivot or moves the keyboard — a command pressed, OK,
+    /// Cancel, a box ticked — calls it as it starts, with the kind of the event it hears and its work, and is
+    /// handled in its place among the report grid's keys, presses and clicks, the keys typed behind it held
+    /// until it is answered. The control declares the event in its <c>data-ex-claims</c> attribute
+    /// (<c>click</c>, <c>keydown</c>, …), so the report grid numbers it as it happens, and its handler calls
+    /// this every time it hears that event. What a draft holds — a field typed into — is not an input and
+    /// needs no call. Unset, the work runs at once.
+    /// </summary>
+    public Func<GridInputKind, Func<Task>, Task> InOrder { get; init; } = static (_, handling) => handling();
+
+    /// <summary>How a control of the Chrome's takes DOM focus when ExPivot asks: called with the
+    /// control's element in place of that element's own <c>FocusAsync</c>. ExPivot moves the keyboard
+    /// at the end of the turn of the input that asked, through the report's grid, which grants it only
+    /// while the keyboard is still the pivot's (ExGrid's <c>HandKeyboardToAsync</c>, ADR-0240 section 6);
+    /// the keys typed meanwhile are held and handed on where it lands. Unset, the element's own
+    /// focus.</summary>
+    public Func<ElementReference, Task> TakeKeyboard { get; init; } = static control => control.FocusAsync().AsTask();
+}
 
 /// <summary>One report filter (ADR-0061).</summary>
 /// <param name="Field">The field's name.</param>
@@ -473,7 +611,28 @@ public sealed record PivotToolbarContext(
     PivotCommand? Refresh,
     PivotCommand FieldList,
     string? Refusal,
-    Func<string, string> Word);
+    Func<string, string> Word)
+{
+    /// <summary>
+    /// The pivot's Input Order (ADR-0240 section 6), as <c>ExGrid.InOrderAsync</c> offers it: the handler
+    /// of a control of the Chrome's that changes the pivot or moves the keyboard — a command pressed, OK,
+    /// Cancel, a box ticked — calls it as it starts, with the kind of the event it hears and its work, and is
+    /// handled in its place among the report grid's keys, presses and clicks, the keys typed behind it held
+    /// until it is answered. The control declares the event in its <c>data-ex-claims</c> attribute
+    /// (<c>click</c>, <c>keydown</c>, …), so the report grid numbers it as it happens, and its handler calls
+    /// this every time it hears that event. What a draft holds — a field typed into — is not an input and
+    /// needs no call. Unset, the work runs at once.
+    /// </summary>
+    public Func<GridInputKind, Func<Task>, Task> InOrder { get; init; } = static (_, handling) => handling();
+
+    /// <summary>How a control of the Chrome's takes DOM focus when ExPivot asks: called with the
+    /// control's element in place of that element's own <c>FocusAsync</c>. ExPivot moves the keyboard
+    /// at the end of the turn of the input that asked, through the report's grid, which grants it only
+    /// while the keyboard is still the pivot's (ExGrid's <c>HandKeyboardToAsync</c>, ADR-0240 section 6);
+    /// the keys typed meanwhile are held and handed on where it lands. Unset, the element's own
+    /// focus.</summary>
+    public Func<ElementReference, Task> TakeKeyboard { get; init; } = static control => control.FocusAsync().AsTask();
+}
 
 /// <summary>A button of the Pivot Toolbar that opens a menu under it (ADR-0061):
 /// Layout ▾.</summary>
@@ -500,6 +659,18 @@ public sealed record PivotToolbarMenuView(string Id, string Label, bool IsOpen, 
 public sealed record PivotDetailsTabsContext(
     string Title, PivotDetailsTab Report, IReadOnlyList<PivotDetailsTab> Tabs, Func<string, string> Word)
 {
+    /// <summary>
+    /// The pivot's Input Order (ADR-0240 section 6), as <c>ExGrid.InOrderAsync</c> offers it: the handler
+    /// of a control of the Chrome's that changes the pivot or moves the keyboard — a command pressed, OK,
+    /// Cancel, a box ticked — calls it as it starts, with the kind of the event it hears and its work, and is
+    /// handled in its place among the report grid's keys, presses and clicks, the keys typed behind it held
+    /// until it is answered. The control declares the event in its <c>data-ex-claims</c> attribute
+    /// (<c>click</c>, <c>keydown</c>, …), so the report grid numbers it as it happens, and its handler calls
+    /// this every time it hears that event. What a draft holds — a field typed into — is not an input and
+    /// needs no call. Unset, the work runs at once.
+    /// </summary>
+    public Func<GridInputKind, Func<Task>, Task> InOrder { get; init; } = static (_, handling) => handling();
+
     /// <summary>How a control of the Chrome's takes DOM focus when ExPivot asks: called with the
     /// control's element in place of that element's own <c>FocusAsync</c>. ExPivot hands the
     /// keyboard on through the report's grid, which grants it only while the keyboard is still the
@@ -543,6 +714,18 @@ public sealed record PivotDetailsTab(string Id, string Title, bool IsSelected, A
 public sealed record PivotDetailsDialogContext(
     string Title, RenderFragment Records, Action Close, int FocusRequest, Func<string, string> Word)
 {
+    /// <summary>
+    /// The pivot's Input Order (ADR-0240 section 6), as <c>ExGrid.InOrderAsync</c> offers it: the handler
+    /// of a control of the Chrome's that changes the pivot or moves the keyboard — a command pressed, OK,
+    /// Cancel, a box ticked — calls it as it starts, with the kind of the event it hears and its work, and is
+    /// handled in its place among the report grid's keys, presses and clicks, the keys typed behind it held
+    /// until it is answered. The control declares the event in its <c>data-ex-claims</c> attribute
+    /// (<c>click</c>, <c>keydown</c>, …), so the report grid numbers it as it happens, and its handler calls
+    /// this every time it hears that event. What a draft holds — a field typed into — is not an input and
+    /// needs no call. Unset, the work runs at once.
+    /// </summary>
+    public Func<GridInputKind, Func<Task>, Task> InOrder { get; init; } = static (_, handling) => handling();
+
     /// <summary>How a control of the Chrome's takes DOM focus when ExPivot asks: called with the
     /// control's element in place of that element's own <c>FocusAsync</c>. ExPivot hands the
     /// keyboard on through the report's grid, which grants it only while the keyboard is still the

@@ -525,8 +525,10 @@ public class ShippedStylesheetTests
         // the open edit's own focus, the keyboard handed on to a control of the Consumer's, and a
         // popover's control taking it a round trip after a gesture, each only while the keyboard is
         // this grid's; the root's own focus passed on to its Keyboard Field; and the field given up
-        // by a press during a composition.
-        Assert.Equal(7, Regex.Matches(script.Text, @"\.(focus|blur)\(").Count);
+        // by a press during a composition; and, eighth since ADR-0240's note on ticket 05, a held press
+        // replayed while a surface of the product's own still holds the keyboard it held as the press
+        // was made, which the press's default would have taken.
+        Assert.Equal(8, Regex.Matches(script.Text, @"\.(focus|blur)\(").Count);
         Assert.DoesNotMatch(new Regex(@"getBoundingClientRect|offsetWidth|offsetHeight|getComputedStyle"), body);
         // The surface is forgotten with the instance.
         Assert.Matches(new Regex(@"dispose: \(\) => \{.*lastSurface = null;", RegexOptions.Singleline), script.Text);
@@ -687,9 +689,10 @@ public class ShippedStylesheetTests
 
         // Selected in those two places alone, by no listener of its own, and no focus is moved: the
         // press's default gives the field the keyboard (ADR-0021's decisions about focus are not
-        // added to: six since 2026-10-02 and seven since ADR-0204, none of them this one's).
+        // added to: six since 2026-10-02, seven since ADR-0204 and eight since ADR-0240's note on
+        // ticket 05, none of them this one's).
         Assert.Equal(2, Regex.Matches(script, @"nameBox(Selected)?\.select\(\);").Count);
-        Assert.Equal(7, Regex.Matches(script, @"\.(focus|blur)\(").Count);
+        Assert.Equal(8, Regex.Matches(script, @"\.(focus|blur)\(").Count);
         Assert.DoesNotMatch(new Regex(@"getBoundingClientRect|offsetWidth|offsetHeight|offsetTop|offsetLeft|clientWidth|clientHeight|scrollWidth|scrollHeight|getComputedStyle|getClientRects"), script);
     }
 
@@ -868,7 +871,7 @@ public class ShippedStylesheetTests
         Assert.Contains("const taken = core && !replaying && isOwnRows(event.target) ? takenAt(event) : null;", release, StringComparison.Ordinal);
         // Told where the event goes on to Blazor now, and kept with it where it is held.
         Assert.Equal(2, Regex.Matches(press, @"tellTaken\('mousedown', taken\);").Count);
-        Assert.Contains("held.push({ press: 'mousedown', target: event.target, init: mouseInit(event), taken });", press, StringComparison.Ordinal);
+        Assert.Contains("press: 'mousedown', target: event.target, init: mouseInit(event), taken,", press, StringComparison.Ordinal);
         Assert.Single(Regex.Matches(release, @"tellTaken\('mouseup', taken\);"));
         Assert.Contains("held.push({ press: 'mouseup', target: event.target, init: mouseInit(event), taken });", release, StringComparison.Ordinal);
         // At the replay, told before the event is dispatched, so the event the core hears next is

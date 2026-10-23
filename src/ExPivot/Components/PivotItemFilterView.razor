@@ -25,9 +25,11 @@
    way the panel says so, and when the source can no longer list them under it, the panel says the
    data has changed instead of listing Items that are not the report's. While a new version's Items
    are on their way, the earlier version's stay listed, the list marked busy and nothing dimmed
-   (ADR-0066 refined). *@
+   (ADR-0066 refined). The search and the ticks are a draft, outside the pivot's Input Order: each
+   claims nothing (data-ex-claims=""), which makes it, holding the keyboard, the pivot's own; OK and
+   Cancel claim their input (ADR-0240 section 1). *@
 <div class="ex-pivot-panel ex-pivot-item-filter">
-    <input @ref="_search" type="search" class="ex-pivot-search" placeholder="@Context.Word("search-items")"
+    <input @ref="_search" type="search" class="ex-pivot-search" data-ex-claims="" placeholder="@Context.Word("search-items")"
            aria-label="@Context.Word("search-items")"
            @bind:get="Context.Search" @bind:set="Context.SearchChanged" @bind:event="oninput" />
     <div class="ex-pivot-item-list" role="group" aria-label="@Context.FieldCaption" aria-busy="@(Context.IsLoading || Context.IsUpdating ? "true" : null)">
@@ -44,14 +46,14 @@
             @if (Context.Items.Count > 0)
             {
                 <label class="ex-pivot-item ex-pivot-select-all">
-                    <input type="checkbox" checked="@(Context.AllTicked == true)" @onchange="e => Context.SetAll(e.Value is true)" />
+                    <input type="checkbox" data-ex-claims="" checked="@(Context.AllTicked == true)" @onchange="e => Context.SetAll(e.Value is true)" />
                     <span>@Context.Word("select-all")</span>
                 </label>
             }
             @foreach (var item in Context.Items)
             {
                 <label @key="item.Key" class="ex-pivot-item">
-                    <input type="checkbox" checked="@item.Ticked" @onchange="e => Context.SetTicked(item.Key, e.Value is true)" />
+                    <input type="checkbox" data-ex-claims="" checked="@item.Ticked" @onchange="e => Context.SetTicked(item.Key, e.Value is true)" />
                     <span>@item.Label</span>
                 </label>
             }
@@ -70,8 +72,8 @@
         <div class="ex-pivot-refusal" role="alert">@refusal</div>
     }
     <div class="ex-pivot-panel-actions">
-        <button type="button" class="ex-pivot-ok" disabled="@(!Context.CanApply)" @onclick="Context.Apply">@Context.Word("ok")</button>
-        <button type="button" class="ex-pivot-cancel" @onclick="Context.Cancel">@Context.Word("cancel")</button>
+        <PivotFocusButton Class="ex-pivot-ok" Disabled="!Context.CanApply" OnClick="Context.Apply">@Context.Word("ok")</PivotFocusButton>
+        <PivotFocusButton Class="ex-pivot-cancel" OnClick="Context.Cancel">@Context.Word("cancel")</PivotFocusButton>
     </div>
 </div>
 

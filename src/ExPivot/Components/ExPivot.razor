@@ -38,9 +38,15 @@
     var paneLayout = PaneLayout;
     var reportShown = _selectedSheet is null && _dialog is null;
 }
-<div class="ex-pivot" style="@RootStyle" @ref="_pivotElement"
-     @onmousedown="() => DismissFieldMenu(fieldMenu)" @onmousedown:stopPropagation
-     @onfocusin="() => OnFocusInAsync(fieldMenu)" @onfocusin:stopPropagation>
+@* The pivot's box is its Input Root (ADR-0240 section 6, data-ex-input-root): the report grid's key
+   listener hears the whole pivot from here, and every control of the pivot's own that claims its input
+   (data-ex-claims) takes its place in the report grid's order. Each details grid stands in an Input
+   Root of its own, and keeps an order of its own (decided with the user, 2026-10-22). A press, or
+   focus coming in, outside an open field menu dismisses it, after every input received so far. *@
+<div class="ex-pivot" style="@RootStyle" @ref="_pivotElement" data-ex-input-root
+     @onmousedown="() => DismissInOrderAsync(fieldMenu)" @onmousedown:stopPropagation
+     @onfocusin="() => DismissInOrderAsync(fieldMenu)" @onfocusin:stopPropagation>
+  <CascadingValue Value="_input" IsFixed="true">
     @* ExPivot's stylesheet notice (ADR-0123, ERR-11), shown only by another version's stylesheet, and
        beside it one for each stylesheet the Pivot Chrome brings, with the same markup. *@
     <div data-ex-notice="stylesheet" data-ex-stylesheet="@NoticeStylesheet" data-ex-stamp="@NoticeStamp" style="display: none">@StylesheetNoticeWords</div>
@@ -53,9 +59,7 @@
        ex-pivot-report-stale, by which ExPivot's stylesheet paints its value cells in a muted colour
        (ADR-0067, 2026-10-09): a class here, so no row of the grid renders for it. *@
     <div class="@(IsStale ? "ex-pivot-report ex-pivot-report-stale" : "ex-pivot-report")" inert="@DialogHoldsTheKeyboard">
-        @* The keys typed on the Pivot Toolbar's buttons are heard here, so those typed while a menu or a
-           panel opens from one are held for it (decided with the user, 2026-10-13). It draws no box. *@
-        <div class="ex-pivot-toolbar-keys" style="display: contents" @onkeydown="_onToolbarKey">@Toolbar()</div>
+        @Toolbar()
         @* The Stale Report's notice, under the Pivot Toolbar (ADR-0061/0067): a polite live region
            that is always present, so a notice that appears in it is announced, without interrupting
            the reader as the Pivot Toolbar's refusal of their own change does. Empty, it takes
@@ -69,6 +73,7 @@
              @ondragover:preventDefault @ondrop="() => DropOnReportAsync(paneLayout, reportShown)" @ondrop:preventDefault @ondrop:stopPropagation>
             @if (_report is null || _report.IsEmpty)
             {
+                ForgetGrid();
                 <div class="ex-pivot-empty" style="@EmptyStyle" role="status">@EmptyText</div>
             }
             else
@@ -95,17 +100,17 @@
     </div>
     @if (_fieldListShown)
     {
-        <div class="ex-pivot-field-list" role="region" aria-label="@Word("field-list")" inert="@DialogHoldsTheKeyboard" @onkeydown="_onFieldListKey">
+        <div class="ex-pivot-field-list" role="region" aria-label="@Word("field-list")" inert="@DialogHoldsTheKeyboard">
             <div class="ex-pivot-field-list-scroll">@FieldList()</div>
         </div>
     }
     @if (Shown is { OnToolbar: true })
     {
-        <div class="ex-pivot-backdrop" @onclick="CloseOpen" aria-hidden="true"></div>
+        <div class="ex-pivot-backdrop" data-ex-claims="click" @onclick="() => InOrderAsync(GridInputKind.Click, CloseOpen)" aria-hidden="true"></div>
     }
     @if (_dialog is { } dialog)
     {
-        <div class="ex-pivot-dialog-backdrop" @onclick="CloseDialog" aria-hidden="true"></div>
+        <div class="ex-pivot-dialog-backdrop" data-ex-claims="click" @onclick="() => InOrderAsync(GridInputKind.Click, CloseDialog)" aria-hidden="true"></div>
         <PivotDialogFrame Label="@dialog.Details.Title" OnEscape="_closeDialog" OnKey="_onDialogKey" @ref="_dialogFrame">@DialogContent(dialog)</PivotDialogFrame>
     }
     @* The report's grid takes the keyboard back once the dialog, or the last details tab, has gone
@@ -115,6 +120,8 @@
        since the close began, and then it goes (decided with the user, 2026-10-13). *@
     @KeyboardReturn()
     @DialogKeyboardReturn()
+    @RenderedMark()
+  </CascadingValue>
 </div>
 
 @code {
@@ -520,5 +527,6 @@
         _sheets.Clear();
         _dialog?.Dispose();
         _dialog = null;
+        EndTurns();
     }
 }

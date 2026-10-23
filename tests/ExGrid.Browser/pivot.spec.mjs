@@ -317,6 +317,29 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(report(page)).toHaveAttribute('aria-activedescendant', /-r0c0$/);
         });
 
+        test(`ADR-0059/ADR-0011 (PV-13): a double click on an Item's label collapses and expands it over a round trip, and the Focus stays on it (${chrome})`, async ({ page }) => {
+            await open(page, chrome);
+            const label = report(page).locator("[id$='-r4c0']");
+            const toggle = label.locator('.ex-pivot-toggle');
+            await label.click({ force: true });
+            await expect(report(page)).toHaveAttribute('aria-activedescendant', /-r4c0$/);
+            await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+            // Over a circuit's round trip an earlier render's after-render could run with the toggled
+            // report in hand but not yet handed to the grid: the Focus was asked under a version the grid
+            // did not have, and dropped as stale, leaving the report with none.
+            // It came about one time in three, so the pair is made three times.
+            await setRoundTrip(150);
+
+            for (let round = 0; round < 3; round++) {
+                await label.dblclick({ force: true });
+                await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+                await expect(report(page)).toHaveAttribute('aria-activedescendant', /-r4c0$/);
+                await label.dblclick({ force: true });
+                await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+                await expect(report(page)).toHaveAttribute('aria-activedescendant', /-r4c0$/);
+            }
+        });
+
         test(`ADR-0059/0063: a double click on a value opens a tab at the report's foot, titled by the cell, holding the trades behind it (${chrome})`, async ({ page }) => {
             await open(page, chrome);
             const layout = await page.locator('#pivot-status').textContent();
@@ -998,6 +1021,28 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(report(page).getByRole('columnheader', { name: 'Desk', exact: true })).toBeVisible();
             await expect(button).toBeFocused();
             await expect(page.locator('#pivot-status')).toContainText('1 changes made in the pane');
+        });
+
+        test(`ADR-0240 §6: a click on Layout ▾ and Enter typed at once press the menu's first enabled choice, and the keyboard goes back to Layout, as typed slowly (${chrome})`, async ({ page }) => {
+            await open(page, chrome);
+            const button = toolbarButton(page, 'Layout');
+            const menu = page.getByRole('menu', { name: 'Layout', exact: true });
+            await setRoundTrip(150);
+
+            // The click takes its place in the report's Input Order, and its answer opens the menu and
+            // gives its first enabled choice, Do Not Show Subtotals, the keyboard. The Enter typed
+            // meanwhile is held behind it and handed on there, where it presses the choice at its keydown.
+            await button.click();
+            await page.keyboard.press('Enter');
+
+            await expect(page.locator('#pivot-status')).toContainText('1 changes made in the pane');
+            await expect(menu).toHaveCount(0);
+            await expect(button).toBeFocused();
+            await circuitQuiet();
+            await expect(button).toBeFocused();
+            await setRoundTrip(0);
+            await button.click();
+            await expect(menu.getByRole('menuitemradio', { name: 'Do Not Show Subtotals' })).toHaveAttribute('aria-checked', 'true');
         });
 
         test(`ADR-0061: the Field List's toggle hides and shows the pane, and the page binds it (${chrome})`, async ({ page }) => {

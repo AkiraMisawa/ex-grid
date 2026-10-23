@@ -67,12 +67,11 @@
         @for (var i = group.From; i < group.To; i++)
         {
             var command = Context.Commands[i];
-            var index = i;
             <PivotFocusButton @key="command.Id" Class="@(command.Checked is null ? "ex-pivot-menu-item" : "ex-pivot-menu-item ex-pivot-menu-choice")"
                               role="@(command.Checked is null ? "menuitem" : "menuitemradio")"
                               aria-checked="@(command.Checked is { } chosen ? (chosen ? "true" : "false") : null)"
                               Disabled="!command.Enabled" OnClick="command.Invoke"
-                              FocusRequest="@(index == FirstEnabled ? Context.FocusRequest : 0)">
+                              FocusRequest="@(command.Id == FocusedId ? Context.FocusRequest : 0)">
                 @if (command.Checked is { } mark)
                 {
                     <span class="ex-pivot-menu-mark" aria-hidden="true">@(mark ? "✓" : "")</span>
@@ -82,16 +81,31 @@
         }
     </text>;
 
-    private int FirstEnabled
+    private int _request;
+    private string? _focusedId;
+
+    // The command the request to take the keyboard was given to: the first enabled one when the
+    // request was made, and the same one after. A press can disable the command it pressed, as
+    // choosing a radio does; were the request to move on to the next enabled command, that one,
+    // never asked, would take the keyboard after the turn had handed it back to the opener.
+    private string? FocusedId
     {
         get
         {
-            for (var i = 0; i < Context.Commands.Count; i++)
+            if (Context.FocusRequest != _request)
             {
-                if (Context.Commands[i].Enabled)
-                    return i;
+                _request = Context.FocusRequest;
+                _focusedId = null;
+                foreach (var command in Context.Commands)
+                {
+                    if (command.Enabled)
+                    {
+                        _focusedId = command.Id;
+                        break;
+                    }
+                }
             }
-            return -1;
+            return _focusedId;
         }
     }
 }

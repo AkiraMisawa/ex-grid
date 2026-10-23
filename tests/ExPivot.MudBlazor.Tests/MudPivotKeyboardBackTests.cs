@@ -214,25 +214,18 @@ public class MudPivotKeyboardBackTests : MudPivotTestContext
         Assert.Equal(focusCalls, FocusCalls());
     }
 
-    [Fact] // ADR-0061 (decided with the user, 2026-10-13): under MudBlazor, the keys typed on a report filter's button while its Filter… opens are carried through the report's grid, and the MudTextField's input takes the keyboard from it, not by its own focus
-    public async Task Keys_typed_while_a_report_filters_panel_opens_reach_its_mud_search_through_the_grid()
+    [Fact] // ADR-0061 (decided with the user, 2026-10-13), ADR-0240 §6: under MudBlazor, Enter on a report filter's button opens its Filter… at the keydown, and the MudTextField's input takes the keyboard in the opening's turn through the report's grid, which types the keys held behind the opening into it, not by its own focus; the click the browser makes of the Enter is claimed with nothing done
+    public async Task A_report_filters_mud_search_takes_the_keyboard_through_the_grid_in_the_openings_turn()
     {
         var report = ReportGridHandle();
         var cut = RenderPivot(RegionProduct with { Filters = [P("Online")] });
         var focusCalls = FocusCalls();
 
-        await cut.InvokeAsync(() => cut.Find(".mud-ex-pivot-filter-button").ClickAsync(new MouseEventArgs()));
         await cut.InvokeAsync(() => cut.Find(".mud-ex-pivot-filter-button").KeyDownAsync(new KeyboardEventArgs { Key = "Enter", Type = "keydown" }));
-        await cut.InvokeAsync(() => cut.Find(".mud-ex-pivot-filter-button").ClickAsync(new MouseEventArgs()));
+        await cut.InvokeAsync(() => cut.Find(".mud-ex-pivot-filter-button").ClickAsync(new MouseEventArgs { Detail = 0 }));
 
-        // The Enter's press of the button is none: the panel stands, and the grid holds the Enter for it.
         Assert.Single(cut.FindAll(".ex-pivot-popup"));
-        Assert.Contains(report.Invocations, i => i.Identifier == "handOff" && (string?)i.Arguments[0] == "frame");
-        var takeBack = report.Invocations.Single(i => i.Identifier == "takeKeyboardBack");
-        IReadOnlyList<KeyboardEventArgs> typed = [];
-        await cut.InvokeAsync(() => typed = Grid(cut).Instance.KeysTypedOnTheWay((int)takeBack.Arguments[1]!));
-        Assert.Equal(["Enter"], typed.Select(k => k.Key));
-        var search = cut.FindComponent<MudTextField<string>>().Instance.InputReference!.ElementReference.Id;
+        var search = cut.FindComponent<MudPivotItemFilter>().FindComponent<MudTextField<string>>().Instance.InputReference!.ElementReference.Id;
         Assert.Equal([search], KeyboardHandOffs(report));
         Assert.Equal(focusCalls, FocusCalls());
     }

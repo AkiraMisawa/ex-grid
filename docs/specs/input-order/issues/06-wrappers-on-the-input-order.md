@@ -10,4 +10,11 @@ Roadmap: ExGrid, ExSheet, ExPivot — The MudBlazor Wrappers behave as the Built
 - [ ] Drafts follow §1's rule; ticket 260's pattern swept
 - [ ] Docs Site: the seam for a Consumer's Chrome, with an Example
 
+ExPivot.MudBlazor's part landed with ticket 05: every Pivot Chrome context carries `InOrder` and
+`TakeKeyboard`, the Wrapper's pivot buttons, boxes and drafts are on the order, its focus goes through the
+seam, and the Docs Site's ExPivot Layout page shows the seam with an Example (ADR-0240's note on ticket 05).
+What is left is ExGrid.MudBlazor's and ExSheet.MudBlazor's, and one gap of the pivot's: while the report is
+empty there is no grid to hand the keyboard into a box, so the Wrapper's Field Settings… opened from a Report
+Filter with nothing else placed leaves the keyboard where it was (ADR-0240's trade-offs on ticket 05).
+
 **Blocked by:** 02, 04, 05.

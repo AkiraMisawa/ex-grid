@@ -23,8 +23,8 @@
    source again. The region is ExPivot's, so this adds no role of its own. *@
 <div class="ex-pivot-stale-notice">
     <span class="ex-pivot-stale-message">@Context.Message</span>
-    <button type="button" class="ex-pivot-retry" disabled="@(!Context.Retry.Enabled)"
-            @onclick="Context.Retry.Invoke">@Context.Retry.Label</button>
+    <PivotFocusButton Class="ex-pivot-retry" Disabled="!Context.Retry.Enabled"
+                      OnClick="Context.Retry.Invoke">@Context.Retry.Label</PivotFocusButton>
 </div>
 
 @code {

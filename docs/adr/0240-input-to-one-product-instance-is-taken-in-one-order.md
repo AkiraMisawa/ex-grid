@@ -253,6 +253,69 @@ Five questions were put to the user on 2026-10-20; the user took the recommendat
   Enter on a radio button or a checkbox in a popover form holds the keys behind it only once the form's
   submission arrives, so a browser that submits nothing holds nothing.
 
+## As built: ticket 05, ExPivot in the order (2026-10-22)
+
+- **The pivot's box is the Input Root** (`data-ex-input-root` on `.ex-pivot`), and the report's
+  grid owns its order: the Field List, the Pivot Toolbar and its band, the menus and panels, the report's
+  expand toggles and the Details tabs and dialog put their input in it through the grid's seam. While the
+  report is empty there is no grid, and an input is handled at once, with nothing to order it among.
+- **Each details grid keeps an order of its own**, inside an Input Root of its own (decided with the user,
+  2026-10-22, on the recommended option): a details grid shows records, not the report, and holding its keys
+  behind the report's would make it wait on work it does not depend on.
+- **An input's turn ends with the keyboard where it leaves it.** A menu or a panel that opens takes the
+  keyboard, and one that closes gives it back to its opener, inside the turn of the input that opened or
+  closed it: the turn waits for the render that draws the control asked for, then hands the keyboard on
+  through the grid's guard. The keys typed meanwhile are held by the grid behind that input and handed on
+  where it left the keyboard, so the local queues of 2026-10-13 (`_popupKeys`, the opening queue) are gone.
+  A menu or a panel closed in a turn stands, doing nothing, until its opener has the keyboard, so DOM focus
+  never falls to the page's body, where no listener of the grid's hears a key. The render the turn waits
+  for is the one that carries its mark, and no other: under the Server host an after-render runs when the
+  browser acknowledges a batch, and an earlier batch's acknowledgement arriving during the turn ended it
+  before the menu asked for the keyboard, so the Enter held behind the opening click was handed to the
+  button that opened it. The Focus a toggled Item keeps is placed the same way, by the render that hands
+  the toggled report's Row Sequence Version to the grid and no earlier one: placed from an earlier batch's
+  acknowledgement, it was asked under a version the grid did not have yet, dropped as stale, and a double
+  click on the Item's label left the report with no Focus about one time in three (PV-13, 2026-10-23).
+  A menu's request to take the keyboard stays with the command it was given to:
+  a choice pressed is disabled, as a choice that would change nothing, and a request that moved on to the
+  next enabled choice took the keyboard from the opener after the turn had handed it back.
+- **A button presses at Enter's keydown.** A key held behind an input is handed on as a keydown, which
+  activates no button. The pivot's buttons therefore claim `click keydown`, press on Enter, and on Space
+  but its repeats, in that key's turn, and claim the click the browser then makes of the same key (detail 0)
+  with nothing done. Any other key on a button is the frame's around it.
+- **A draft's controls claim nothing** (`data-ex-claims=""`): the search, the ticks, the selects and the
+  fields of Filter…, Field Settings… and Value Field Settings…. That makes each, holding the keyboard, the
+  pivot's own, so the grid hands the keyboard on from it; what it holds takes no turn (section 1).
+- **A held press brings the keyboard from a standing surface.** A primary-button press held while the
+  keyboard stood on a surface of the product's own (a closing menu's command) is replayed with its default
+  gone, so the keyboard stayed there and the keys after it went to a surface already closed. At its turn,
+  when DOM focus is still on that surface, the script puts it on the grid's keyboard field before the press
+  is dispatched, as the press's own default would have (PV-11 under the Server host). It reads
+  `document.activeElement` and nothing of the layout; it is the first entry's hold (ADR-0021), not a new one.
+- **A press that may start a drag is not held.** A press on an element the browser may drag
+  (`draggable="true"`: a Field List entry) made while an earlier input is still answered went into the hold
+  with its default gone, and the drag the browser starts from it with it: an entry dragged off the report
+  straight after Defer Layout Update was ticked removed nothing. Such a press goes as it comes; its click is
+  numbered as it comes and handled in its turn. A drop takes what is dragged as it arrives, before the
+  dragend after it clears the drag, and makes its change in the order, behind every input received before
+  it, under any Chrome; it is refused when an input answered meanwhile replaced the layout it was made on.
+- **The seam reaches a Chrome of the Consumer's** (ticket 06's part for ExPivot): every Pivot Chrome context
+  carries `InOrder` and `TakeKeyboard`, and the MudBlazor Wrapper's pivot parts use them as the built-in
+  parts do: its buttons claim `click keydown` and press at Enter's keydown, its boxes claim `click`, its
+  drafts claim nothing, on the element that takes the keyboard. A box handed the keyboard gives it to its
+  first text field, and failing one to its first enabled control, a read-only input among them, because a
+  MudSelect's input is read-only and is still where its keys are heard. MudTabs' tab element carries no mark, so
+  the keys MudTabs answers on a Details tab stay outside the order; a click on the tab is claimed by the
+  wrapper around it.
+- **Trade-offs.** Keys typed into a draft's field while its panel closes are the draft's, and go with it.
+  A Tab held behind an input cannot be handed on from script, and is refused aloud as before (section 4).
+  An Enter or a Space held and handed on presses its button at the replayed keydown, which makes no
+  click; the click the button counts as owed by that key is taken by the next click on it that no pointer
+  makes (`element.click()`, an assistive technology's), until a key or a pointer presses it again. While
+  the report is empty there is no grid, and a box a Chrome names takes the keyboard by its own focus, which
+  a box drawn with `display: contents` cannot take: the MudBlazor Wrapper's Field Settings… opened from a
+  Report Filter while nothing else is placed leaves the keyboard where it was (ticket 06's remainder).
+
 ## Added 2026-10-20, decided with the user: the Input Journal, a circuit that is down, and a paste cancelled
 
 Three questions the order left open, asked after the Hunt traces of 2026-10-19 had to infer which inputs

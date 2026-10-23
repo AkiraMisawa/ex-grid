@@ -7,6 +7,7 @@
 @using global::ExPivot
 @using global::ExPivot.Chrome
 @using global::ExPivot.Engine
+@using global::ExGrid.Chrome
 @using global::MudBlazor
 @* Not the contract (ADR-0201): MudPivotChrome draws this part, and no Consumer places it. It is
    public only because Razor makes every component public, is hidden from a Consumer's editor, and
@@ -19,12 +20,15 @@
    beside it, while every Item is unticked. The search takes DOM focus for each request. A first
    listing on its way is a MudProgressLinear; while a new Source Version's Items are on their way,
    the earlier version's stay listed, the list marked busy and no progress drawn — a live report
-   brings a new version several times a second (ADR-0066 refined). *@
+   brings a new version several times a second (ADR-0066 refined). The search and the ticks are a
+   draft, outside the pivot's Input Order: each claims nothing (data-ex-claims=""), which makes it,
+   holding the keyboard, the pivot's own; OK and Cancel are pressed in the order, through the
+   context's InOrder (ADR-0240 sections 1 and 6). *@
 <div class="mud-ex-pivot-panel mud-ex-pivot-item-filter">
     <MudTextField @ref="_search" T="string" Value="Context.Search" ValueChanged="Context.SearchChanged" Immediate="true"
                   Label="@Context.Word("search-items")" Variant="Variant.Outlined" Margin="Margin.Dense"
                   Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
-                  Class="mud-ex-pivot-search" />
+                  Class="mud-ex-pivot-search" data-ex-claims="" />
     <div class="mud-ex-pivot-item-list" role="group" aria-label="@Context.FieldCaption" aria-busy="@(Context.IsLoading || Context.IsUpdating ? "true" : null)">
         @if (Context.Unavailable is { } unavailable)
         {
@@ -43,12 +47,12 @@
                    while all are, it unticks them — whatever state MudBlazor's own cycle would go to. *@
                 <MudCheckBox T="bool?" TriState="true" Value="Context.AllTicked" ValueChanged="@(_ => Context.SetAll(Context.AllTicked != true))"
                              Label="@Context.Word("select-all")" Dense="true" Size="Size.Small" Color="Color.Primary"
-                             Class="mud-ex-pivot-select-all" />
+                             Class="mud-ex-pivot-select-all" data-ex-claims="" />
             }
             @foreach (var item in Context.Items)
             {
                 <MudCheckBox @key="item.Key" T="bool" Value="item.Ticked" ValueChanged="@(on => Context.SetTicked(item.Key, on))"
-                             Label="@item.Label" Dense="true" Size="Size.Small" Color="Color.Primary" Class="mud-ex-pivot-item" />
+                             Label="@item.Label" Dense="true" Size="Size.Small" Color="Color.Primary" Class="mud-ex-pivot-item" data-ex-claims="" />
             }
             @if (Context.MatchCount > Context.Items.Count)
             {
@@ -65,9 +69,10 @@
         <MudText Typo="Typo.body2" Color="Color.Error" Class="mud-ex-pivot-refusal" role="alert">@refusal</MudText>
     }
     <div class="mud-ex-pivot-panel-actions">
-        <MudButton Variant="Variant.Text" Size="Size.Small" OnClick="Context.Cancel" Class="mud-ex-pivot-cancel">@Context.Word("cancel")</MudButton>
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small" Disabled="!Context.CanApply"
-                   OnClick="Context.Apply" Class="mud-ex-pivot-ok">@Context.Word("ok")</MudButton>
+        <MudPivotButton Variant="Variant.Text" Size="Size.Small" OnClick="Context.Cancel" InOrder="Context.InOrder"
+                        Class="mud-ex-pivot-cancel">@Context.Word("cancel")</MudPivotButton>
+        <MudPivotButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small" Disabled="!Context.CanApply"
+                        OnClick="Context.Apply" InOrder="Context.InOrder" Class="mud-ex-pivot-ok">@Context.Word("ok")</MudPivotButton>
     </div>
 </div>
 
@@ -85,8 +90,8 @@
     protected override Task OnAfterRenderAsync(bool firstRender)
         => MudPivotFocus.TakeAsync(Context.FocusRequest, ref _acted, SearchFocus());
 
-    // The search takes DOM focus as ExPivot says (Context.TakeKeyboard): through the report's grid when
-    // the keys typed on the band's button while the panel opened are the search's.
+    // The search takes DOM focus as ExPivot says (Context.TakeKeyboard): at the end of the opening's
+    // turn, through the report's grid, which types the keys held behind the opening into it.
     private Func<ValueTask>? SearchFocus()
     {
         if (_search?.InputReference is not { } input)

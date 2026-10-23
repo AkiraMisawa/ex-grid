@@ -957,7 +957,8 @@ nobody had asked for. What that means when writing a test:
   while a question is out cancels it, and the layout it was for is never raised, ADR-0066); report
   removal following Defer Layout Update, an unused field and a details grid
   changing nothing, and Escape cancelling the drag and its removal indication;
-  the `−` button collapsing an Item with the Focus kept (PV-13); a double click on a value
+  the `−` button collapsing an Item with the Focus kept, and a double click on its label
+  collapsing and expanding it over a 150 ms round trip with the Focus kept (PV-13); a double click on a value
   opening a tab at the report's foot, titled by the cell and holding the trades behind it, with
   the keyboard on the tab, a second tab beside it, and closing them; a dialog when the page asks
   for one (`?details=dialog`), taking the keyboard, inert behind it and closed by Escape; and the

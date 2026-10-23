@@ -1,0 +1,27 @@
+@using ExPivot.Chrome
+@using ExPivot.Components
+@using ExPivot.Engine
+
+<ExPivot Source="_source" @bind-Layout="_layout" PivotChrome="_chrome" ShowFieldList="false" ViewportHeight="320" />
+
+@code {
+    private readonly PivotSource _source = PivotSource.From(Sales.Sample(), Sales.Fields);
+    private readonly IPivotChrome _chrome = new OwnToolbarChrome();
+
+    private PivotLayout _layout = new()
+    {
+        Rows = [new PivotFieldPlacement("Region"), new PivotFieldPlacement("Country")],
+        Values = [new PivotValueField("Revenue", PivotAggregation.Sum) { NumberFormat = "#,##0" }],
+    };
+
+    // Your own Pivot Toolbar; every other member is left to ExPivot's built-in markup (null).
+    private sealed class OwnToolbarChrome : IPivotChrome
+    {
+        public RenderFragment? Toolbar(PivotToolbarContext context) => builder =>
+        {
+            builder.OpenComponent<OwnToolbarView>(0);
+            builder.AddComponentParameter(1, nameof(OwnToolbarView.Context), context);
+            builder.CloseComponent();
+        };
+    }
+}

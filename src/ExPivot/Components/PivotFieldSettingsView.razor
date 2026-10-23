@@ -19,23 +19,26 @@
    is hidden from a Consumer's editor, and may change in any version. *@
 @attribute [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
 @* The built-in Field Settings… (ADR-0061): a row or column field's subtotals and order, as
-   ExPivot's draft until OK. *@
+   ExPivot's draft until OK. Its controls are a draft, outside the pivot's Input Order: each claims
+   nothing (data-ex-claims=""), which makes it, holding the keyboard, the pivot's own; OK and Cancel
+   claim their input, and the first control takes the keyboard through the pivot's guard (ADR-0240
+   sections 1 and 6). *@
 <div class="ex-pivot-panel ex-pivot-field-settings">
     <div class="ex-pivot-panel-title">@Context.FieldCaption</div>
     <fieldset class="ex-pivot-fieldset">
         <legend>@Context.Word("subtotals")</legend>
         <label class="ex-pivot-choice">
-            <input @ref="_first" type="radio" name="@_group" checked="@Context.Subtotals" @onchange="() => Context.SubtotalsChanged(true)" />
+            <input @ref="_first" type="radio" data-ex-claims="" name="@_group" checked="@Context.Subtotals" @onchange="() => Context.SubtotalsChanged(true)" />
             <span>@Context.Word("subtotals-automatic")</span>
         </label>
         <label class="ex-pivot-choice">
-            <input type="radio" name="@_group" checked="@(!Context.Subtotals)" @onchange="() => Context.SubtotalsChanged(false)" />
+            <input type="radio" data-ex-claims="" name="@_group" checked="@(!Context.Subtotals)" @onchange="() => Context.SubtotalsChanged(false)" />
             <span>@Context.Word("subtotals-none")</span>
         </label>
     </fieldset>
     <label class="ex-pivot-row">
         <span>@Context.Word("sort-order")</span>
-        <select class="ex-pivot-select" value="@Context.Sort" @onchange="e => Context.SortChanged(int.Parse((string)e.Value!, System.Globalization.CultureInfo.InvariantCulture))">
+        <select class="ex-pivot-select" data-ex-claims="" value="@Context.Sort" @onchange="e => Context.SortChanged(int.Parse((string)e.Value!, System.Globalization.CultureInfo.InvariantCulture))">
             @for (var i = 0; i < Context.Sorts.Count; i++)
             {
                 <option value="@i">@Context.Sorts[i].Label</option>
@@ -43,8 +46,8 @@
         </select>
     </label>
     <div class="ex-pivot-panel-actions">
-        <button type="button" class="ex-pivot-ok" @onclick="Context.Apply">@Context.Word("ok")</button>
-        <button type="button" class="ex-pivot-cancel" @onclick="Context.Cancel">@Context.Word("cancel")</button>
+        <PivotFocusButton Class="ex-pivot-ok" OnClick="Context.Apply">@Context.Word("ok")</PivotFocusButton>
+        <PivotFocusButton Class="ex-pivot-cancel" OnClick="Context.Cancel">@Context.Word("cancel")</PivotFocusButton>
     </div>
 </div>
 
@@ -56,13 +59,15 @@
     /// <summary>The draft and the exits (ADR-0061).</summary>
     [Parameter, EditorRequired] public PivotFieldSettingsContext Context { get; set; } = default!;
 
+    [CascadingParameter] internal PivotInput? Input { get; set; }
+
     /// <inheritdoc />
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (Context.FocusRequest != 0 && Context.FocusRequest != _acted)
         {
             _acted = Context.FocusRequest;
-            await _first.FocusAsync();
+            await (Input?.TakeKeyboardAsync(_first) ?? _first.FocusAsync().AsTask());
         }
     }
 }

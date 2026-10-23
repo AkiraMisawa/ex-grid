@@ -277,7 +277,7 @@ public class ToolbarAndDeferTests : PivotTestContext
     {
         var cut = RenderPivot(RegionProduct);
         await OpenLayoutMenuAsync(cut);
-        var focusCalls = JSInterop.Invocations.Count(i => i.Identifier == "Blazor._internal.domWrapper.focus");
+        var focusCalls = KeyboardMoves;
 
         await RunMenuAsync(cut, "Show in Tabular Form");
 
@@ -286,7 +286,7 @@ public class ToolbarAndDeferTests : PivotTestContext
         Assert.Empty(cut.FindAll(".ex-pivot-toolbar .ex-pivot-popup"));
         Assert.Empty(cut.FindAll(".ex-pivot-backdrop"));
         Assert.Equal("false", cut.Find(".ex-pivot-layout-button").GetAttribute("aria-expanded"));
-        Assert.True(JSInterop.Invocations.Count(i => i.Identifier == "Blazor._internal.domWrapper.focus") > focusCalls);
+        Assert.True(KeyboardMoves > focusCalls);
 
         await OpenLayoutMenuAsync(cut);
         Assert.Equal(["Show all Subtotals at Bottom of Group", "On for Rows and Columns", "Show in Tabular Form", "Do Not Repeat Item Labels"],

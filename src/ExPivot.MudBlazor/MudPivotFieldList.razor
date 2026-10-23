@@ -7,6 +7,7 @@
 @using global::ExPivot
 @using global::ExPivot.Chrome
 @using global::ExPivot.Engine
+@using global::ExGrid.Chrome
 @using global::MudBlazor
 @* Not the contract (ADR-0201): MudPivotChrome draws this part, and no Consumer places it. It is
    public only because Razor makes every component public, is hidden from a Consumer's editor, and
@@ -21,21 +22,27 @@
    component cannot carry :preventDefault. Every Area and the list of fields prevent dragover's
    default, so a drop is never lost to a render still on its way; a drop that changes nothing is
    ExPivot's to ignore. Each entry's open menu or panel stands directly under it, in ExPivot's
-   frame, positioned against the full-width scrolling body so both scroll together. *@
+   frame, positioned against the full-width scrolling body so both scroll together.
+
+   In the pivot's Input Order (ADR-0240 section 6) each button is pressed, and each box ticked, through
+   the context's InOrder: a box claims its click (data-ex-claims="click") and its change is handled in
+   that click's turn. The search claims nothing (data-ex-claims=""): what is typed there is the pane's,
+   and the keyboard may be handed on from it. *@
 @* A delayed DOM gesture keeps the context from this render, including its layout (ADR-0061). *@
 @{ var renderedContext = Context; }
 <div class="mud-ex-pivot-pane">
     <div class="mud-ex-pivot-pane-heading">
         <MudText Typo="Typo.subtitle1" Class="mud-ex-pivot-pane-title" title="@Context.Title">@Context.Title</MudText>
-        <MudIconButton Icon="@Icons.Material.Filled.Close" Size="Size.Small" Class="mud-ex-pivot-pane-close"
-                       aria-label="@Context.Word("hide-field-list")" title="@Context.Word("hide-field-list")" OnClick="Context.Close" />
+        <MudPivotIconButton Icon="@Icons.Material.Filled.Close" Size="Size.Small" Class="mud-ex-pivot-pane-close"
+                            aria-label="@Context.Word("hide-field-list")" title="@Context.Word("hide-field-list")" OnClick="Context.Close"
+                            InOrder="Context.InOrder" />
     </div>
     <div class="mud-ex-pivot-pane-body">
         <MudText Typo="Typo.caption" Class="mud-ex-pivot-pane-caption">@Context.Word("choose-fields")</MudText>
         <MudTextField T="string" Value="Context.Search" ValueChanged="Context.SearchChanged" Immediate="true"
                       Label="@Context.Word("search-fields")" Variant="Variant.Outlined" Margin="Margin.Dense"
                       Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
-                      Class="mud-ex-pivot-search" />
+                      Class="mud-ex-pivot-search" data-ex-claims="" />
         <div class="@(Context.ListAcceptsDrop ? "mud-ex-pivot-fields mud-ex-pivot-drop-remove" : "mud-ex-pivot-fields")"
              role="list" aria-label="@Context.Title" @ondragover:preventDefault @ondrop="Context.DropOnList">
             @foreach (var field in Context.Fields)
@@ -44,8 +51,8 @@
                      class="@(Context.Dragging?.Field == field.Name ? "mud-ex-pivot-field mud-ex-pivot-dragging" : "mud-ex-pivot-field")"
                      @ondragstart="() => renderedContext.StartDrag(PivotDragSubject.FromList(field.Name))"
                      @ondragend="Context.EndDrag">
-                    <MudCheckBox T="bool" Value="field.IsPlaced" ValueChanged="@(_ => field.Toggle())" Label="@field.Caption"
-                                 Dense="true" Size="Size.Small" Color="Color.Primary" Class="mud-ex-pivot-field-check" />
+                    <MudCheckBox T="bool" Value="field.IsPlaced" ValueChanged="@(_ => Clicked(field.Toggle))" Label="@field.Caption"
+                                 Dense="true" Size="Size.Small" Color="Color.Primary" Class="mud-ex-pivot-field-check" data-ex-claims="click" />
                     @if (field.IsFiltered)
                     {
                         <MudIcon Icon="@Icons.Material.Filled.FilterAlt" Size="Size.Small" Color="Color.Primary"
@@ -81,6 +88,7 @@
                                                 Color="@(entry.IsFiltered ? Color.Primary : Color.Default)"
                                                 EndIcon="@Icons.Material.Filled.ArrowDropDown" Class="mud-ex-pivot-entry-button"
                                                 OnClick="entry.OpenMenu" FocusRequest="entry.FocusRequest"
+                                                InOrder="Context.InOrder" TakeKeyboard="Context.TakeKeyboard"
                                                 aria-haspopup="menu" aria-expanded="@(entry.IsMenuOpen ? "true" : "false")"
                                                 aria-label="@PivotWords.Fill(Context.Word("field-menu"), entry.Caption)">
                                     <span class="mud-ex-pivot-entry-caption">@entry.Caption</span>
@@ -100,11 +108,11 @@
            MudButton beside it. While it is ticked the pane's changes build ExPivot's pending layout,
            and Update applies it in one change. *@
         <div class="mud-ex-pivot-defer">
-            <MudCheckBox T="bool" Value="Context.DeferLayoutUpdate" ValueChanged="@(on => Context.DeferLayoutUpdateChanged(on))"
+            <MudCheckBox T="bool" Value="Context.DeferLayoutUpdate" ValueChanged="@(on => Clicked(() => Context.DeferLayoutUpdateChanged(on)))"
                          Label="@Context.Word("defer-layout-update")" Dense="true" Size="Size.Small" Color="Color.Primary"
-                         Class="mud-ex-pivot-defer-check" />
-            <MudButton Variant="Variant.Outlined" Size="Size.Small" Color="Color.Primary" Disabled="!Context.CanUpdate"
-                       OnClick="Context.Update" Class="mud-ex-pivot-update">@Context.Word("update")</MudButton>
+                         Class="mud-ex-pivot-defer-check" data-ex-claims="click" />
+            <MudPivotButton Variant="Variant.Outlined" Size="Size.Small" Color="Color.Primary" Disabled="!Context.CanUpdate"
+                            OnClick="Context.Update" InOrder="Context.InOrder" Class="mud-ex-pivot-update">@Context.Word("update")</MudPivotButton>
         </div>
     </div>
 </div>
@@ -115,6 +123,9 @@
 
     /// <summary>The Chrome this pane belongs to.</summary>
     [Parameter, EditorRequired] public MudPivotChrome Chrome { get; set; } = default!;
+
+    // A box ticked: the click that ticked it claims its turn in the pivot's Input Order.
+    private Task Clicked(Func<Task> toggle) => Context.InOrder(GridInputKind.Click, toggle);
 
     private static string AreaClass(PivotAreaView area)
         => area.DropIndex is not null && area.AcceptsDrop

@@ -179,10 +179,6 @@ for (const chrome of ['builtin', 'mud']) {
         });
 
         test(`PV-13: an outer Item collapses and expands by a double click on its label, and the Focus stays on it (ADR-0059) (${chrome})`, async ({ page }) => {
-            // Open defect (signoff ticket 01, comments of 2026-10-22): on CI's Server host, under both
-            // Chromes and in Chrome and Edge, a double click on APAC's label collapses it and, about one
-            // run in three, leaves the report with no Focus. The fix removes this mark.
-            test.fixme(true, 'a double click on an Item\'s label can leave the report with no Focus (signoff ticket 01)');
             await open(page, chrome);
             const toggle = cell(page, 4, 0).locator('.ex-pivot-toggle');
             await cell(page, 4, 0).click({ force: true });

@@ -74,3 +74,11 @@ restate.
   double click on it. Its input journal shows every press answered in order and the report settled
   with no `aria-activedescendant`. The double click's test is `test.fixme` under both Chromes until
   the fix.
+- 2026-10-23: PV-13's double click is fixed (PR #248) and asserted; its `test.fixme` is gone. On the
+  Server host an after-render runs when the browser acknowledges its batch, and an earlier batch's ran
+  the Focus placement with the toggled report in hand but not yet handed to the grid: the placement
+  was asked under a Row Sequence Version the grid did not have, dropped as stale, and its result was not
+  read. ExPivot now places it only from the render that handed the grid its current state. It
+  reproduces locally with a 60 or 150 ms round trip (7 failed of 24 before, 60 of 60 after);
+  `pivot.spec.mjs` repeats the pair three times at 150 ms. Still open from PV-13: a values-only
+  refresh keeping the Row Sequence Version and the Selection.
