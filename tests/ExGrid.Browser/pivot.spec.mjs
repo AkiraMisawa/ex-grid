@@ -317,6 +317,29 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(report(page)).toHaveAttribute('aria-activedescendant', /-r0c0$/);
         });
 
+        test(`ADR-0059/ADR-0011 (PV-13): a double click on an Item's label collapses and expands it over a round trip, and the Focus stays on it (${chrome})`, async ({ page }) => {
+            await open(page, chrome);
+            const label = report(page).locator("[id$='-r4c0']");
+            const toggle = label.locator('.ex-pivot-toggle');
+            await label.click({ force: true });
+            await expect(report(page)).toHaveAttribute('aria-activedescendant', /-r4c0$/);
+            await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+            // Over a circuit's round trip an earlier render's after-render could run with the toggled
+            // report in hand but not yet handed to the grid: the Focus was asked under a version the grid
+            // did not have, and dropped as stale, leaving the report with none.
+            // It came about one time in three, so the pair is made three times.
+            await setRoundTrip(150);
+
+            for (let round = 0; round < 3; round++) {
+                await label.dblclick({ force: true });
+                await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+                await expect(report(page)).toHaveAttribute('aria-activedescendant', /-r4c0$/);
+                await label.dblclick({ force: true });
+                await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+                await expect(report(page)).toHaveAttribute('aria-activedescendant', /-r4c0$/);
+            }
+        });
+
         test(`ADR-0059/0063: a double click on a value opens a tab at the report's foot, titled by the cell, holding the trades behind it (${chrome})`, async ({ page }) => {
             await open(page, chrome);
             const layout = await page.locator('#pivot-status').textContent();

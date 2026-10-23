@@ -90,6 +90,12 @@ public partial class ExPivot
     // The Item whose row should hold the Focus once the report it was toggled into has reached the
     // grid, and the label column its button is in.
     private (PivotToggle Toggle, int Column)? _focusAfterToggle;
+    // The grid's version (_gridVersion) last handed to the report's grid in a render. Under the Server
+    // host an after-render runs when the browser acknowledges its batch, and an earlier batch's can run
+    // once a newer report is in hand but before the render that hands it to the grid: the Focus placed
+    // then was asked under a Row Sequence Version the grid did not have yet, and dropped as stale (PV-13,
+    // the double click on a label; ADR-0011).
+    private int _gridVersionDrawn = -1;
 
     // The Selection Summary (ADR-0130): answered from the cells the report lays out, and the
     // figures shown, which ExPivot holds as the grid's Consumer — so the figures menu works on
@@ -419,6 +425,7 @@ public partial class ExPivot
     private void RenderGrid(RenderTreeBuilder builder)
     {
         var report = _report!;
+        _gridVersionDrawn = _gridVersion;
         builder.OpenComponent<ExGrid<PivotDisplayRow>>(0);
         builder.AddComponentParameter(1, nameof(ExGrid<PivotDisplayRow>.Window), _state!.Rows);
         builder.AddComponentParameter(2, nameof(ExGrid<PivotDisplayRow>.Columns), _columns);
@@ -487,7 +494,7 @@ public partial class ExPivot
         // The toggled Item keeps the Focus, as it does in Excel: placed once the report it was
         // toggled into has reached the grid, under that report's order (ADR-0050 item 4, ADR-0011).
         if (_focusAfterToggle is { } pending && _grid is { } grid && _report is { } report
-            && ReferenceEquals(report.Layout, _layout))
+            && ReferenceEquals(report.Layout, _layout) && _gridVersionDrawn == _gridVersion)
         {
             _focusAfterToggle = null;
             var (toggle, column) = pending;

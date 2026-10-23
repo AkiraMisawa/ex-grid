@@ -272,7 +272,11 @@ Five questions were put to the user on 2026-10-20; the user took the recommendat
   for is the one that carries its mark, and no other: under the Server host an after-render runs when the
   browser acknowledges a batch, and an earlier batch's acknowledgement arriving during the turn ended it
   before the menu asked for the keyboard, so the Enter held behind the opening click was handed to the
-  button that opened it. A menu's request to take the keyboard stays with the command it was given to:
+  button that opened it. The Focus a toggled Item keeps is placed the same way, by the render that hands
+  the toggled report's Row Sequence Version to the grid and no earlier one: placed from an earlier batch's
+  acknowledgement, it was asked under a version the grid did not have yet, dropped as stale, and a double
+  click on the Item's label left the report with no Focus about one time in three (PV-13, 2026-10-23).
+  A menu's request to take the keyboard stays with the command it was given to:
   a choice pressed is disabled, as a choice that would change nothing, and a request that moved on to the
   next enabled choice took the keyboard from the opener after the turn had handed it back.
 - **A button presses at Enter's keydown.** A key held behind an input is handed on as a keydown, which
