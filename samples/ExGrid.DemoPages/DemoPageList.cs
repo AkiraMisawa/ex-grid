@@ -44,6 +44,8 @@ public static class DemoPageList
             "A per-cell Font, Fill and Borders as Excel paints them; bold judged by bold widths, italic never cut (ADR-0050, ADR-0071)."),
         new("features", "Features", "Interaction",
             "Editing, the clipboard, sorting, filtering and Header Groups on one page, with every notification written out."),
+        new("filter-panel", "Filter panel", "Interaction",
+            "The filter panel's value list, Blank entry, search, condition form and TooMany under either Chrome, with the Filter it applied written out (ADR-0009, WR-1)."),
         new("row-command-order", "Queued row commands", "Interaction",
             "Row Actions and Marks wait behind an asynchronous Consumer; a row that leaves the Window is refused even if it returns (ADR-0240, ADR-0160)."),
         new("sizing", "Sizing", "Layout",

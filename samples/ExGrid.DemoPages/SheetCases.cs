@@ -112,6 +112,8 @@ public static class SheetCases
                 Enter(sheet, "A1", "=TEXT(TODAY(),\"yyyy-mm-dd\")");
                 Enter(sheet, "A2", "=TODAY()");
                 Enter(sheet, "A3", "=TEXT(NOW(),\"yyyy-mm-dd\")");
+                // To the minute, which moves on as each minute turns (ADR-0124, SH-60).
+                Enter(sheet, "A4", "=TEXT(NOW(),\"yyyy-mm-dd hh:mm\")");
                 break;
             case "spill":
                 // ADR-0125: C1's Formula spills down C1:C3.

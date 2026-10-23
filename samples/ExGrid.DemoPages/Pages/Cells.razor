@@ -5,7 +5,8 @@
    so the grid holds the keyboard in its Keyboard Field (ADR-0080) beside an Interactive cell: what
    A11Y-21 reads the chosen action's button through. Without them the page is what it always was:
    a grid that edits nothing, whose root is the tab stop. ?dblclick=1 listens to a double click
-   where no edit opens and adds a Mark Column, so DC-63 reads what was heard below the grid. *@
+   where no edit opens and adds a Mark Column, so DC-63 reads what was heard below the grid, and
+   ?leave=1 listens to the Escape that leaves the grid (OnLeave), which DC-62 reads there too. *@
 <DemoChromeAssets Name="@ChromeName" />
 
 <DemoNav />
@@ -59,6 +60,7 @@
             PinnedColumnCount="1"
             OnEdit="OnEdit"
             OnCellDoubleClick="_onDoubleClick"
+            OnLeave="_onLeave"
             Marks="_marks"
             Chrome="_chrome" />
 </CascadingValue>
@@ -69,6 +71,12 @@
 {
     <p class="demo-status">
         <span id="double-click-status">@_heardDoubleClick</span>
+    </p>
+}
+@if (Leave == "1")
+{
+    <p class="demo-status">
+        <span id="leave-status">@_heardLeave</span>
     </p>
 }
 
@@ -108,6 +116,11 @@
     [SupplyParameterFromQuery(Name = "dblclick")]
     public string? DoubleClick { get; set; }
 
+    /// <summary><c>?leave=1</c>: the page listens to the Escape that leaves the grid
+    /// (<c>OnLeave</c>, ADR-0070), and does nothing with it but count it.</summary>
+    [SupplyParameterFromQuery(Name = "leave")]
+    public string? Leave { get; set; }
+
     private static readonly GridColumn<DemoPosition>[] SecondColumns =
     [
         new("Book", ColumnType.Text, r => r.Book, width: new ColumnWidthSpec(ColumnWidth.Fixed(180))),
@@ -137,7 +150,15 @@
         };
         _onDoubleClick = listen ? EventCallback.Factory.Create(this, _hearDoubleClick ??= HearDoubleClick) : default;
         _marks = listen ? _marksHeard ??= new MarksHeard(this) : null;
+        _onLeave = Leave == "1" ? EventCallback.Factory.Create(this, _hearLeave ??= HearLeave) : default;
     }
+
+    private EventCallback _onLeave;
+    private Action? _hearLeave;
+    private string _heardLeave = "No leave heard yet.";
+    private int _leaves;
+
+    private void HearLeave() => _heardLeave = $"Leave heard. Heard so far: {++_leaves}.";
 
     private EventCallback<CellPosition> _onDoubleClick;
     private Action<CellPosition>? _hearDoubleClick;
