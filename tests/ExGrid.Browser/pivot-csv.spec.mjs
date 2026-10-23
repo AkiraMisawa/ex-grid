@@ -57,6 +57,8 @@ function writeExport(file, count, quantities = new Map()) {
 const pivot = (page) => page.locator('.ex-pivot');
 const report = (page) => pivot(page).locator('.ex-pivot-sheet > .ex-grid');
 const rows = (page) => report(page).locator('.ex-viewport .ex-row');
+/** The painted row whose label is the text given; rows are not painted in their order. */
+const rowLabelled = (page, label) => rows(page).filter({ has: page.getByRole('gridcell', { name: label, exact: true }) });
 const pane = (page) => page.getByRole('region', { name: 'PivotTable Fields' });
 const status = (page) => page.locator('#csv-status');
 
@@ -284,6 +286,85 @@ for (const chrome of ['builtin', 'mud']) {
                 ['1.23457E+11', '2'],
                 ['Grand Total', '3'],
             ]);
+        });
+
+        test(`PV-3 / ADR-0060: text Items are told apart ignoring case and labelled by the first spelling to arrive, dates by their clock value, a Blank as (blank), last in either direction (${chrome})`, async ({ page }, testInfo) => {
+            const file = testInfo.outputPath('pv3.csv');
+            fs.writeFileSync(file, `${[
+                'Name,When,Amount',
+                'beta,2026/3/1,1',
+                'Alpha,2026/10/1,2',
+                'ALPHA,2026/03/01,4',
+                ',,8',
+                'alpha,2025/12/31,16',
+            ].join('\r\n')}\r\n`);
+            await open(page, chrome);
+            await page.locator('#csv-unknown-file').setInputFiles(file);
+            const suggestion = page.locator('#csv-suggestion');
+            await expect(suggestion.getByRole('heading')).toHaveText('The Schema suggested for pv3.csv');
+            await expect(suggestion.locator('tr[data-column="When"]').getByRole('combobox')).toHaveValue('Date');
+            await page.locator('#csv-confirm').click();
+            await expect(status(page)).toHaveText(/^pv3\.csv: 5 rows read in [\d.]+ s\.$/);
+            await pane(page).getByRole('checkbox', { name: 'Name', exact: true }).check();
+            await pane(page).getByRole('checkbox', { name: 'Amount', exact: true }).check();
+
+            // One Item for Alpha, ALPHA and alpha, labelled as the first record spelled it; the Blank last.
+            await expect.poll(() => paintedRows(page)).toEqual([
+                ['Alpha', '22'],
+                ['beta', '1'],
+                ['(blank)', '8'],
+                ['Grand Total', '31'],
+            ]);
+            // Sorted Z to A, the Blank stays last.
+            await rowLabelled(page, 'Alpha').locator('[role=gridcell]').first().click({ button: 'right', force: true });
+            await page.getByRole('menuitem', { name: 'Sort Z to A', exact: true }).click();
+            await expect.poll(() => paintedRows(page)).toEqual([
+                ['beta', '1'],
+                ['Alpha', '22'],
+                ['(blank)', '8'],
+                ['Grand Total', '31'],
+            ]);
+
+            // Dates, in their clock order: 2026/10/1 after 2026/3/1, which text would put first, and
+            // 2026/3/1 and 2026/03/01 one Item, which text would keep apart.
+            await pane(page).getByRole('checkbox', { name: 'Name', exact: true }).uncheck();
+            await pane(page).getByRole('checkbox', { name: 'When', exact: true }).check();
+            const dates = async () => (await paintedRows(page)).map((r) => r[1]);
+            await expect.poll(dates).toEqual(['16', '5', '2', '8', '31']);
+            expect((await paintedRows(page))[3][0]).toBe('(blank)');
+        });
+
+        test(`PV-7 / ADR-0060: a value cell copied carries its full-precision number where it paints Excel's eleven characters (${chrome})`, async ({ page, context }, testInfo) => {
+            await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+            const file = testInfo.outputPath('pv7.csv');
+            fs.writeFileSync(file, `${['Group,Amount', 'B,123456789012.345678', 'C,1.23456789012345678'].join('\r\n')}\r\n`);
+            await open(page, chrome);
+            await page.locator('#csv-unknown-file').setInputFiles(file);
+            const suggestion = page.locator('#csv-suggestion');
+            await expect(suggestion.getByRole('heading')).toHaveText('The Schema suggested for pv7.csv');
+            // Every digit is held only by a Decimal; a Double would round them before the copy.
+            await expect(suggestion.locator('tr[data-column="Amount"]').getByRole('combobox')).toHaveValue('Decimal');
+            await page.locator('#csv-confirm').click();
+            await expect(status(page)).toHaveText(/^pv7\.csv: 2 rows read in [\d.]+ s\.$/);
+            await pane(page).getByRole('checkbox', { name: 'Group', exact: true }).check();
+            await pane(page).getByRole('checkbox', { name: 'Amount', exact: true }).check();
+            await expect.poll(() => paintedRows(page)).toEqual([
+                ['B', '1.23457E+11'],
+                ['C', '1.23456789'],
+                ['Grand Total', '1.23457E+11'],
+            ]);
+
+            const value = (label) => rowLabelled(page, label).locator('[role=gridcell][aria-colindex="2"]');
+            await value('B').click({ force: true });
+            await value('C').click({ modifiers: ['Shift'], force: true });
+            await page.evaluate(() => navigator.clipboard.writeText('SENTINEL'));
+            await page.keyboard.press('ControlOrMeta+c');
+            await expect.poll(async () => (await readClipboard(page))['text/plain'] ?? 'SENTINEL').not.toBe('SENTINEL');
+            // The text as painted; the HTML Excel reads, every digit the file gave.
+            const clipboard = await readClipboard(page);
+            expect(clipboard['text/plain']).toBe('1.23457E+11\r\n1.23456789\r\n');
+            expect(clipboard['text/html']).toContain('<td>123456789012.345678</td>');
+            expect(clipboard['text/html']).toContain('<td>1.23456789012345678</td>');
         });
 
         test(`ADR-0005/ADR-0060: a copy with headers takes a number column Item's header as painted into the text, and in full into the HTML Excel reads (${chrome})`, async ({ page, context }, testInfo) => {

@@ -1327,6 +1327,71 @@ test('KB-11: arrows typed in a Template Column\'s input move its caret, and the 
     expect(await activeDescendant(cells)).toBe(focus);
 });
 
+// DC-63 on /cells?dblclick=1, where the page listens to a double click and adds a Mark Column
+// (column 7) after the others: Book 0 (Editable under ?editable=1), Close of business 1,
+// Intraday 2, Limit used 3 (a Template with no control), Note 4 (a Template with a field),
+// Actions 5, Review 6. Row 0 is a Group row, rows 1 to 5 its Details, and a Mark is painted on a
+// Detail row only (ADR-0043). What was heard is written below the grid with a count.
+
+test('DC-63: a double click where no edit opens is heard once with its cell and the Focus placed there; an Editable cell opens its edit, an open edit and a control in an Action, Template or Mark cell raise nothing (ADR-0063)', async ({ page }) => {
+    await page.goto('/cells?editable=1&dblclick=1');
+    const cells = page.locator('.ex-grid').first();
+    await expect(cells.locator('.ex-row').first()).toBeVisible();
+    const heard = page.locator('#double-click-status');
+    const editor = cells.locator('input.ex-editor');
+    await expect(heard).toHaveText('No double click heard yet.');
+
+    await cells.locator("[id$='r2c2']").dblclick({ force: true });
+    await expect(heard).toHaveText('Double click heard on row 2, column 2. Heard so far: 1.');
+    await expectActiveDescendant(cells, /r2c2$/);
+    await expect(editor).toHaveCount(0);
+
+    // The empty part of a Template cell names that cell.
+    await cells.locator("[id$='r3c3']").dblclick({ force: true });
+    await expect(heard).toHaveText('Double click heard on row 3, column 3. Heard so far: 2.');
+    await expectActiveDescendant(cells, /r3c3$/);
+
+    // Where an edit opens, the edit is the double click's meaning; while it is open, a double
+    // click is the editor's.
+    await cells.locator("[id$='r2c0']").dblclick({ force: true });
+    await expect(editor).toBeVisible();
+    await editor.dblclick();
+    await expect(editor).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(editor).toHaveCount(0);
+
+    // A control inside a cell takes its own presses and the double click stops at its cell:
+    // the action fires twice, the Mark is pressed, and no cell is named.
+    await cells.locator("[id$='r2c4'] input.demo-note").dblclick();
+    await cells.locator("[id$='r2c5'] .ex-action").dblclick();
+    await expect(page.locator('#action-status')).toHaveText(/Presses so far: 2\.$/);
+    // The Mark Column lies past the Viewport's right edge, and a column is painted once it is in view.
+    await cells.locator('.ex-scroller').evaluate((scroller) => { scroller.scrollLeft = scroller.scrollWidth; });
+    await cells.locator("[id$='r4c7'] .ex-mark").dblclick();
+    await expect(page.locator('#action-status')).toHaveText(`Mark pressed on ${await cells.locator("[id$='r4c0']").innerText()}.`);
+    await settled(cells);
+    await circuitQuiet();
+    await expect(heard).toHaveText('Double click heard on row 3, column 3. Heard so far: 2.');
+    await expect(editor).toHaveCount(0);
+});
+
+test('DC-63: without a listener, a double click where no edit opens places the Focus and changes nothing else (ADR-0063, DC-1)', async ({ page }) => {
+    await page.goto('/cells?editable=1');
+    const cells = page.locator('.ex-grid').first();
+    await expect(cells.locator('.ex-row').first()).toBeVisible();
+    const before = await cells.locator('.ex-viewport').innerText();
+
+    await cells.locator("[id$='r2c2']").dblclick({ force: true });
+    await expectActiveDescendant(cells, /r2c2$/);
+    await settled(cells);
+    await circuitQuiet();
+
+    await expect(cells.locator('.ex-editor')).toHaveCount(0);
+    await expect(page.locator('#double-click-status')).toHaveCount(0);
+    await expect(page.locator('#action-status')).toHaveText('No action pressed yet.');
+    expect(await cells.locator('.ex-viewport').innerText()).toBe(before);
+});
+
 // Entering a cell by key (ADR-0037), on /cells. Columns there: Book 0 (pinned), Close of
 // business 1, Intraday 2, Limit used 3 (a Template), Note 4 (a Template with a real
 // field), Actions 5 (one action), Review 6 (three actions). The Focus is placed by

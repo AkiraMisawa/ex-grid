@@ -4,7 +4,8 @@
 @* ?chrome=mud runs the grid under ExGrid.MudBlazor's Chrome, and ?editable=1 makes Book editable,
    so the grid holds the keyboard in its Keyboard Field (ADR-0080) beside an Interactive cell: what
    A11Y-21 reads the chosen action's button through. Without them the page is what it always was:
-   a grid that edits nothing, whose root is the tab stop. *@
+   a grid that edits nothing, whose root is the tab stop. ?dblclick=1 listens to a double click
+   where no edit opens and adds a Mark Column, so DC-63 reads what was heard below the grid. *@
 <DemoChromeAssets Name="@ChromeName" />
 
 <DemoNav />
@@ -57,8 +58,19 @@
             ViewportWidth="1100"
             PinnedColumnCount="1"
             OnEdit="OnEdit"
+            OnCellDoubleClick="_onDoubleClick"
+            Marks="_marks"
             Chrome="_chrome" />
 </CascadingValue>
+
+@* Below the grid, so a line that changes between the two presses of a double click never moves
+   the rows under the pointer. *@
+@if (DoubleClick == "1")
+{
+    <p class="demo-status">
+        <span id="double-click-status">@_heardDoubleClick</span>
+    </p>
+}
 
 @* ?second=1: a second grid, for a press on another grid while a Note's request for the keyboard is
    on its way (ADR-0204, SRV-5): the other grid keeps the keyboard. *@
@@ -91,6 +103,11 @@
     [SupplyParameterFromQuery(Name = "second")]
     public string? Second { get; set; }
 
+    /// <summary><c>?dblclick=1</c>: the page listens to a double click where no edit opens
+    /// (ADR-0063), and a Mark Column follows the others (ADR-0043).</summary>
+    [SupplyParameterFromQuery(Name = "dblclick")]
+    public string? DoubleClick { get; set; }
+
     private static readonly GridColumn<DemoPosition>[] SecondColumns =
     [
         new("Book", ColumnType.Text, r => r.Book, width: new ColumnWidthSpec(ColumnWidth.Fixed(180))),
@@ -110,8 +127,28 @@
     protected override void OnParametersSet()
     {
         _chrome = DemoChrome.From(ChromeName);
-        _columns = Editable == "1" ? EditableColumns : Columns;
+        var listen = DoubleClick == "1";
+        _columns = (Editable == "1", listen) switch
+        {
+            (true, true) => EditableMarkedColumns,
+            (true, false) => EditableColumns,
+            (false, true) => MarkedColumns,
+            _ => Columns,
+        };
+        _onDoubleClick = listen ? EventCallback.Factory.Create(this, _hearDoubleClick ??= HearDoubleClick) : default;
+        _marks = listen ? _marksHeard ??= new MarksHeard(this) : null;
     }
+
+    private EventCallback<CellPosition> _onDoubleClick;
+    private Action<CellPosition>? _hearDoubleClick;
+    private IRowMarks<DemoPosition>? _marks;
+    private MarksHeard? _marksHeard;
+    private string _heardDoubleClick = "No double click heard yet.";
+    private int _doubleClicks;
+
+    // What was heard and how often: "raised once" is a count a test can read (DC-63).
+    private void HearDoubleClick(CellPosition cell)
+        => _heardDoubleClick = $"Double click heard on row {cell.Row}, column {cell.Column}. Heard so far: {++_doubleClicks}.";
 
     // An edit is reported and not kept: the page shows what was asked.
     private void OnEdit(GridEditIntent<DemoPosition> intent)
@@ -160,6 +197,10 @@
         new("Book", ColumnType.Text, r => r.Book, width: new ColumnWidthSpec(ColumnWidth.Fixed(180)), editable: true),
         .. Columns[1..],
     ];
+
+    private static readonly GridColumn<DemoPosition> Mark = GridColumn<DemoPosition>.MarkColumn(width: new ColumnWidthSpec(ColumnWidth.Fixed(60)));
+    private static readonly GridColumn<DemoPosition>[] MarkedColumns = [.. Columns, Mark];
+    private static readonly GridColumn<DemoPosition>[] EditableMarkedColumns = [.. EditableColumns, Mark];
 
     private static readonly Func<DemoPosition, RowKind> RowKindOf = row => row.Kind;
 
@@ -219,4 +260,20 @@
     // per auto-repeat, and Enter must never fire at all (ADR-0020/0037).
     private void OnAction(GridActionEventArgs<DemoPosition> args)
         => _lastAction = $"Pressed '{args.ActionName}' in column '{args.ColumnName}' on {args.Row.Book}. Presses so far: {++_presses}.";
+
+    // The page holds no marks: every intent is reported in the action line, and the boxes stay empty.
+    private sealed class MarksHeard(Cells page) : IRowMarks<DemoPosition>
+    {
+        public RowMarkCounts? Counts => null;
+        public bool IsMarked(DemoPosition row) => false;
+        public event Action? Changed { add { } remove { } }
+        public void OnRowKindChanged(Func<DemoPosition, RowKind>? rowKind) { }
+        public Task OnMarkIntentAsync(RowMarkIntent<DemoPosition> intent)
+        {
+            page._lastAction = intent is RowMarkIntent<DemoPosition>.OneRow one
+                ? $"Mark pressed on {one.Row.Book}."
+                : $"Mark intent heard: {intent.GetType().Name}, held by no one on this page.";
+            return page.InvokeAsync(page.StateHasChanged);
+        }
+    }
 }
