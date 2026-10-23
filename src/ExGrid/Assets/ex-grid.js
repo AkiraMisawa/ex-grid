@@ -4117,13 +4117,18 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // claims its events (outerClaimant) — a toolbar button, a Sheet Tab — it takes its place among the
     // held keys while the gate holds input, its release and its click behind it, and is otherwise told
     // as it goes on, as a press on one of the grid's own controls is. Nothing else there is the gate's.
+    // An element of the product's own the browser may drag (draggable="true": ExPivot's Field List
+    // entries). A press on it is not held: held, its default goes, and with it the drag the browser
+    // starts from it. Its click is numbered as it comes and handled in its turn, and a drop is put in
+    // the order by the product's handler (ADR-0240's note on ticket 05).
+    const startsDrag = (target) => target instanceof Element && target.closest('[draggable="true"]') !== null;
     const onOuterPress = (event) => {
         lookSettled();
         if (!core || replaying) {
             return;
         }
         heldPress = null;
-        if ((answering || held.length > 0) && holdsClaimedPress(event.target)) {
+        if ((answering || held.length > 0) && holdsClaimedPress(event.target) && !startsDrag(event.target)) {
             event.preventDefault();
             event.stopPropagation();
             heldPress = { press: 'mousedown', claim: true, target: event.target, init: mouseInit(event) };
@@ -4388,7 +4393,16 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         if (field !== null) {
             markStale(field);
         }
-        held.push({ press: 'mousedown', target: event.target, init: mouseInit(event), taken });
+        // A surface of the product's own around this root (outerSurface) holding DOM focus as the press is
+        // held — ExPivot's panel, an ExSheet's band, where the user ran a command still being answered: the
+        // default suppressed here would have taken the keyboard from it, so the keyboard left there is only
+        // left standing, not the user's choice. At the press's turn it comes to the root, as the press
+        // would have brought it, unless DOM focus has moved since (replayPress; ADR-0240, ticket 05).
+        const standing = document.activeElement;
+        held.push({
+            press: 'mousedown', target: event.target, init: mouseInit(event), taken,
+            standing: event.button === 0 && outerSurface(standing) !== null ? standing : null,
+        });
     };
     // A release is held only behind its press: once the press has been handed on, the
     // release follows it to Blazor as it comes, and Blazor keeps the two in order.
@@ -4551,6 +4565,11 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         });
         // The hand-back the press asked for, if it asked for one, has run by now.
         staleField = null;
+        // The keyboard a surface of the product's own was left holding as the press was held, still there:
+        // it comes to the root, as the press's default would have brought it (onPress).
+        if (k.standing && document.activeElement === k.standing && root && root.isConnected) {
+            (keyFieldOf() ?? root).focus({ preventScroll: true });
+        }
         // An edit the press kept stands with DOM focus in it, and one it ended is gone: the
         // keys after it are gated once that has settled, as after a key.
         await editorSettled();
@@ -5730,8 +5749,10 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
                 // still the same conditional hand-off: an early choice outside the root wins.
                 const direct = element.matches('input, textarea, select, button, a[href], [tabindex]');
                 const firstText = direct ? null : [...element.querySelectorAll('input, textarea')].find(isTextField);
+                // Without one, its first enabled control, a design system's select among them: a
+                // read-only input (MudSelect's combobox) counts, and no other input that is not a text field.
                 const target = direct ? element : firstText
-                    ?? element.querySelector('button:not([disabled]), select:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])');
+                    ?? element.querySelector('input[readonly]:not([disabled]):not([type="hidden"]), button:not([disabled]), select:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])');
                 if (target instanceof HTMLElement) {
                     target.focus({ preventScroll: preventScroll === true });
                     if (target === firstText && isTextField(target)) {

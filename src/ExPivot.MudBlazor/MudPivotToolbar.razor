@@ -19,7 +19,9 @@
    is open, the toggle whether it is pressed. Layout ▾'s wrapper is positioned, so ExPivot's menu
    frame opens under it, over the report, at its right edge; what closes it and what each choice
    does are ExPivot's. What the report could not do with the last change is an error MudAlert under
-   the Pivot Toolbar, an alert as the built-in notice is: it answers what the user just did. *@
+   the Pivot Toolbar, an alert as the built-in notice is: it answers what the user just did.
+   Each button is pressed in the pivot's Input Order, through the context's InOrder (ADR-0240
+   section 6). *@
 <div class="mud-ex-pivot-toolbar">
     <div class="mud-ex-pivot-toolbar-start">@Context.ReportFilters</div>
     <div class="mud-ex-pivot-toolbar-end">
@@ -27,19 +29,20 @@
             <MudPivotButton Variant="Variant.Text" Size="Size.Small" Class="mud-ex-pivot-toolbar-button mud-ex-pivot-layout-button"
                             StartIcon="@Chrome.IconFor(Context.LayoutMenu.Id)" EndIcon="@Icons.Material.Filled.ArrowDropDown"
                             OnClick="Context.LayoutMenu.Open" FocusRequest="Context.LayoutMenu.FocusRequest"
+                            InOrder="Context.InOrder" TakeKeyboard="Context.TakeKeyboard"
                             aria-haspopup="menu" aria-expanded="@(Context.LayoutMenu.IsOpen ? "true" : "false")">@Context.LayoutMenu.Label</MudPivotButton>
             @Context.LayoutMenu.Popup
         </span>
         @if (Context.Refresh is { } refresh)
         {
-            <MudButton Variant="Variant.Text" Size="Size.Small" Class="mud-ex-pivot-toolbar-button mud-ex-pivot-refresh-button"
-                       StartIcon="@Chrome.IconFor(refresh.Id)" Disabled="@(!refresh.Enabled)"
-                       OnClick="refresh.Invoke">@refresh.Label</MudButton>
+            <MudPivotButton Variant="Variant.Text" Size="Size.Small" Class="mud-ex-pivot-toolbar-button mud-ex-pivot-refresh-button"
+                            StartIcon="@Chrome.IconFor(refresh.Id)" Disabled="@(!refresh.Enabled)"
+                            OnClick="refresh.Invoke" InOrder="Context.InOrder">@refresh.Label</MudPivotButton>
         }
-        <MudButton Variant="Variant.Text" Size="Size.Small" Color="@(FieldListShown ? Color.Primary : Color.Default)"
-                   Class="@(FieldListShown ? "mud-ex-pivot-toolbar-button mud-ex-pivot-field-list-toggle mud-ex-pivot-pressed" : "mud-ex-pivot-toolbar-button mud-ex-pivot-field-list-toggle")"
-                   StartIcon="@Chrome.IconFor(Context.FieldList.Id)" aria-pressed="@(FieldListShown ? "true" : "false")"
-                   OnClick="Context.FieldList.Invoke">@Context.FieldList.Label</MudButton>
+        <MudPivotButton Variant="Variant.Text" Size="Size.Small" Color="@(FieldListShown ? Color.Primary : Color.Default)"
+                        Class="@(FieldListShown ? "mud-ex-pivot-toolbar-button mud-ex-pivot-field-list-toggle mud-ex-pivot-pressed" : "mud-ex-pivot-toolbar-button mud-ex-pivot-field-list-toggle")"
+                        StartIcon="@Chrome.IconFor(Context.FieldList.Id)" aria-pressed="@(FieldListShown ? "true" : "false")"
+                        OnClick="Context.FieldList.Invoke" InOrder="Context.InOrder">@Context.FieldList.Label</MudPivotButton>
     </div>
 </div>
 @if (Context.Refusal is { } refusal)

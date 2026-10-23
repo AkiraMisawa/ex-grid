@@ -81,31 +81,38 @@ internal sealed class PivotDetailsGrid : ComponentBase
             builder.CloseElement();
             return;
         }
-        builder.OpenComponent<ExGrid<PivotDetailRecord>>(4);
+        // An Input Root of its own (ADR-0240 section 6, decided with the user, 2026-10-22): the records'
+        // grid keeps an order of its own, apart from the report's, which hears the rest of the pivot. The
+        // box draws nothing.
+        builder.OpenElement(4, "div");
+        builder.AddAttribute(5, "data-ex-input-root", true);
+        builder.AddAttribute(6, "style", "display: contents");
+        builder.OpenComponent<ExGrid<PivotDetailRecord>>(7);
         // A grid is bound to its source for its lifetime: another sheet is another grid.
         builder.SetKey(Sheet);
-        builder.AddComponentParameter(5, nameof(ExGrid<PivotDetailRecord>.Source), Sheet.Source);
-        builder.AddComponentParameter(6, nameof(ExGrid<PivotDetailRecord>.Columns), Sheet.Columns);
-        builder.AddComponentParameter(7, nameof(ExGrid<PivotDetailRecord>.ViewportHeight), ViewportSize.Stretch);
-        builder.AddComponentParameter(8, nameof(ExGrid<PivotDetailRecord>.ViewportWidth), ViewportSize.Stretch);
+        builder.AddComponentParameter(8, nameof(ExGrid<PivotDetailRecord>.Source), Sheet.Source);
+        builder.AddComponentParameter(9, nameof(ExGrid<PivotDetailRecord>.Columns), Sheet.Columns);
+        builder.AddComponentParameter(10, nameof(ExGrid<PivotDetailRecord>.ViewportHeight), ViewportSize.Stretch);
+        builder.AddComponentParameter(11, nameof(ExGrid<PivotDetailRecord>.ViewportWidth), ViewportSize.Stretch);
         // The records are in the data's order and none is left out: the header click selects, and
         // there is no column menu to sort or filter them by (ADR-0059).
-        builder.AddComponentParameter(9, nameof(ExGrid<PivotDetailRecord>.HeaderClickSelects), true);
-        builder.AddComponentParameter(10, nameof(ExGrid<PivotDetailRecord>.HideColumnMenu), true);
-        builder.AddComponentParameter(11, nameof(ExGrid<PivotDetailRecord>.CellType), PivotDetailsSheet.CellTypeOf);
+        builder.AddComponentParameter(12, nameof(ExGrid<PivotDetailRecord>.HeaderClickSelects), true);
+        builder.AddComponentParameter(13, nameof(ExGrid<PivotDetailRecord>.HideColumnMenu), true);
+        builder.AddComponentParameter(14, nameof(ExGrid<PivotDetailRecord>.CellType), PivotDetailsSheet.CellTypeOf);
         if (CommandLabel is { } label)
-            builder.AddComponentParameter(12, nameof(ExGrid<PivotDetailRecord>.CommandLabel), label);
+            builder.AddComponentParameter(15, nameof(ExGrid<PivotDetailRecord>.CommandLabel), label);
         if (Chrome is { } chrome)
-            builder.AddComponentParameter(13, nameof(ExGrid<PivotDetailRecord>.Chrome), chrome);
+            builder.AddComponentParameter(16, nameof(ExGrid<PivotDetailRecord>.Chrome), chrome);
         if (RowHeight is { } rowHeight)
-            builder.AddComponentParameter(14, nameof(ExGrid<PivotDetailRecord>.RowHeight), rowHeight);
+            builder.AddComponentParameter(17, nameof(ExGrid<PivotDetailRecord>.RowHeight), rowHeight);
         if (Density is { } density)
-            builder.AddComponentParameter(15, nameof(ExGrid<PivotDetailRecord>.Density), density);
+            builder.AddComponentParameter(18, nameof(ExGrid<PivotDetailRecord>.Density), density);
         if (CellMetrics is { } metrics)
-            builder.AddComponentParameter(16, nameof(ExGrid<PivotDetailRecord>.CellMetrics), metrics);
+            builder.AddComponentParameter(19, nameof(ExGrid<PivotDetailRecord>.CellMetrics), metrics);
         if (OnLeave.HasDelegate)
-            builder.AddComponentParameter(17, nameof(ExGrid<PivotDetailRecord>.OnLeave), _leave);
-        builder.AddComponentReferenceCapture(18, grid => _grid = (ExGrid<PivotDetailRecord>)grid);
+            builder.AddComponentParameter(20, nameof(ExGrid<PivotDetailRecord>.OnLeave), _leave);
+        builder.AddComponentReferenceCapture(21, grid => _grid = (ExGrid<PivotDetailRecord>)grid);
         builder.CloseComponent();
+        builder.CloseElement();
     }
 }

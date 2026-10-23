@@ -90,6 +90,12 @@ public partial class ExPivot
     // The Item whose row should hold the Focus once the report it was toggled into has reached the
     // grid, and the label column its button is in.
     private (PivotToggle Toggle, int Column)? _focusAfterToggle;
+    // The grid's version (_gridVersion) last handed to the report's grid in a render. Under the Server
+    // host an after-render runs when the browser acknowledges its batch, and an earlier batch's can run
+    // once a newer report is in hand but before the render that hands it to the grid: the Focus placed
+    // then was asked under a Row Sequence Version the grid did not have yet, and dropped as stale (PV-13,
+    // the double click on a label; ADR-0011).
+    private int _gridVersionDrawn = -1;
 
     // The Selection Summary (ADR-0130): answered from the cells the report lays out, and the
     // figures shown, which ExPivot holds as the grid's Consumer — so the figures menu works on
@@ -138,9 +144,11 @@ public partial class ExPivot
         // Held in fields: a delegate's identity reaches the grid, and one made per render would
         // look like a change every time (ADR-0003). No receiver: each re-renders what it changes.
         _widthChanged = new EventCallback<ColumnWidthChange>(null, (Func<ColumnWidthChange, Task>)OnWidthChangedAsync);
-        _contextCommands = ContextCommandsFor;
+        _contextCommands = context => ContextCommandsFor(context).Select(command => command with { Invoke = () => InOrderAsync(command.Invoke) }).ToArray();
         _commandLabel = CommandLabelFor;
-        _doubleClick = new EventCallback<CellPosition>(null, (Func<CellPosition, Task>)OnCellDoubleClickAsync);
+        // The grid's callbacks run in the turn of the grid's own input, and end, as the pivot's do, with
+        // the keyboard where they leave it (ADR-0240 section 6, TurnAsync).
+        _doubleClick = new EventCallback<CellPosition>(null, (Func<CellPosition, Task>)(cell => InOrderAsync(() => OnCellDoubleClickAsync(cell))));
         _cellChangedAt = CellChangedAt;
         _summarize = SummarizeReportAsync;
         _copyAnswer = CopyReportAsync;
@@ -151,14 +159,9 @@ public partial class ExPivot
         _gridFragment = RenderGrid;
         _escape = new EventCallback(null, (Func<Task>)OnEscapeAsync);
         _onPopupKey = new EventCallback<KeyboardEventArgs>(null, (Func<KeyboardEventArgs, Task>)OnPopupKeyAsync);
-        _onPopupFocusIn = new EventCallback(null, (Func<Task>)OnPopupFocusInAsync);
-        // Heard where the buttons that open a menu or a panel stand, without a render: a key held for a
-        // menu opening repaints nothing (decided with the user, 2026-10-13).
-        _onFieldListKey = new EventCallback<KeyboardEventArgs>(null, (Action<KeyboardEventArgs>)(e => HeardWhereOpenersStand(OpenerRegion.FieldList, e)));
-        _onToolbarKey = new EventCallback<KeyboardEventArgs>(null, (Action<KeyboardEventArgs>)(e => HeardWhereOpenersStand(OpenerRegion.Toolbar, e)));
-        _onPopupFocusOut = new EventCallback(null, (Func<Task>)OnPopupFocusOutAsync);
         _closeDialog = new EventCallback(null, (Action)CloseDialog);
-        _onDialogKey = new EventCallback<KeyboardEventArgs>(null, (Action<KeyboardEventArgs>)OnDialogKey);
+        _onDialogKey = new EventCallback<KeyboardEventArgs>(null, (Func<KeyboardEventArgs, Task>)OnDialogKeyAsync);
+        _input = new PivotInput(this);
         _idPrefix = "ex-pivot-" + Guid.NewGuid().ToString("N")[..12];
     }
 
@@ -382,7 +385,9 @@ public partial class ExPivot
             builder.AddAttribute(2, "style", IndentStyle(label.Indent));
         if (label.Toggle is { } toggle)
         {
-            var onToggle = EventCallback.Factory.Create<MouseEventArgs>(this, () => ToggleAsync(toggle, column));
+            // The button claims its click (data-ex-claims), and the toggle is taken in its place in the
+            // pivot's Input Order (ADR-0240 section 6).
+            var onToggle = EventCallback.Factory.Create<MouseEventArgs>(this, () => InOrderAsync(GridInputKind.Click, () => ToggleAsync(toggle, column)));
             if (context.FocusRequest != 0)
             {
                 builder.OpenComponent<PivotToggleButton>(3);
@@ -398,6 +403,7 @@ public partial class ExPivot
                 builder.AddAttribute(9, "type", "button");
                 builder.AddAttribute(10, "class", PivotToggleButton.ClassFor(toggle.IsCollapsed));
                 builder.AddAttribute(11, "tabindex", "-1");
+                builder.AddAttribute(20, "data-ex-claims", "click");
                 builder.AddAttribute(12, "aria-expanded", toggle.IsCollapsed ? "false" : "true");
                 builder.AddAttribute(13, "aria-label", ToggleName(toggle));
                 builder.AddAttribute(14, "onclick", onToggle);
@@ -419,6 +425,7 @@ public partial class ExPivot
     private void RenderGrid(RenderTreeBuilder builder)
     {
         var report = _report!;
+        _gridVersionDrawn = _gridVersion;
         builder.OpenComponent<ExGrid<PivotDisplayRow>>(0);
         builder.AddComponentParameter(1, nameof(ExGrid<PivotDisplayRow>.Window), _state!.Rows);
         builder.AddComponentParameter(2, nameof(ExGrid<PivotDisplayRow>.Columns), _columns);
@@ -487,7 +494,7 @@ public partial class ExPivot
         // The toggled Item keeps the Focus, as it does in Excel: placed once the report it was
         // toggled into has reached the grid, under that report's order (ADR-0050 item 4, ADR-0011).
         if (_focusAfterToggle is { } pending && _grid is { } grid && _report is { } report
-            && ReferenceEquals(report.Layout, _layout))
+            && ReferenceEquals(report.Layout, _layout) && _gridVersionDrawn == _gridVersion)
         {
             _focusAfterToggle = null;
             var (toggle, column) = pending;

@@ -294,7 +294,11 @@ public partial class ExPivot
         // Retry is not offered twice at once: the question it asked, or the Refresh, is out.
         var retry = new PivotCommand(PivotCommandIds.Retry, Word(PivotCommandIds.Retry), !_loading && !_refreshing, RetryAsync);
         return new PivotStaleReportContext(
-            PivotWords.Fill(Word(StaleReportWords.Notice), asOfText, reason), reason, asOf, asOfText, retry, Word);
+            PivotWords.Fill(Word(StaleReportWords.Notice), asOfText, reason), reason, asOf, asOfText, retry, Word)
+        {
+            InOrder = InOrderSeam,
+            TakeKeyboard = TakeKeyboardSeam,
+        };
     }
 
     /// <summary>When the data the report shows arrived, in the clock's local zone, and as the notice

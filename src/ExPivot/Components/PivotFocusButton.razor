@@ -19,15 +19,25 @@
    from a Consumer's editor, and may change in any version. *@
 @attribute [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
 @* A button that takes DOM focus when ExPivot asks (ADR-0061): once for each request number it
-   has not acted on, as a template's control does (ADR-0037). The built-in views put the keyboard
-   back on an entry this way when its menu or panel closes. Where the keyboard comes from the
-   report's grid — the dialog's Close, a details tab — it is taken through TakeKeyboard, which the
-   grid grants only while the keyboard is still the report's (ADR-0070's note of 2026-10-02). *@
-<button @ref="_button" type="button" class="@Class" disabled="@Disabled" @onclick="OnClick" @attributes="Attributes">@ChildContent</button>
+   has not acted on, as a template's control does (ADR-0037), in the turn of the input that asked and
+   through the report grid's guard (ADR-0240 section 6; ADR-0070's note of 2026-10-02). The built-in
+   views put the keyboard back on an entry this way when its menu or panel closes.
+
+   It takes its place in the pivot's Input Order: it claims its click and its keys (data-ex-claims), so
+   the report grid numbers each, holds the keys typed behind one still being answered, and hands them on
+   where its answer left the keyboard. Enter, and Space but for its repeats, press it at the keydown, in
+   that key's turn, so a key the grid hands on — a keydown dispatched from script, which activates no
+   button — presses it too; the click the browser then makes of the same key (detail 0) is that key's,
+   and is claimed with nothing done. Any other key is the frame's around it, if any — Escape closes a
+   menu — in the same turn. *@
+<button @ref="_button" type="button" class="@Class" disabled="@Disabled" data-ex-claims="click keydown"
+        @onclick="OnClickAsync" @onkeydown="OnKeyDownAsync" @onkeydown:stopPropagation @attributes="Attributes">@ChildContent</button>
 
 @code {
     private ElementReference _button;
     private int _acted;
+    // The clicks the browser owes for the keys that pressed this button at their keydown.
+    private int _keyClicks;
 
     /// <summary>The button's classes.</summary>
     [Parameter] public string? Class { get; set; }
@@ -41,9 +51,8 @@
     /// <summary>The request to take DOM focus; zero asks nothing.</summary>
     [Parameter] public int FocusRequest { get; set; }
 
-    /// <summary>How the button takes DOM focus when asked: called with its element, in place of the
-    /// element's own <c>FocusAsync</c> — the report's grid handing the keyboard on (ADR-0070's note
-    /// of 2026-10-02). Null, the element's own focus.</summary>
+    /// <summary>How the button takes DOM focus when asked: called with its element. Null, the pivot's own
+    /// way: through the report grid's guard, in the turn of the input that asked.</summary>
     [Parameter] public Func<ElementReference, Task>? TakeKeyboard { get; set; }
 
     /// <summary>What the button shows.</summary>
@@ -52,13 +61,47 @@
     /// <summary>Any other attribute, on the button.</summary>
     [Parameter(CaptureUnmatchedValues = true)] public IReadOnlyDictionary<string, object>? Attributes { get; set; }
 
+    [CascadingParameter] internal PivotInput? Input { get; set; }
+
+    [CascadingParameter(Name = PivotPopupFrame.KeysName)] internal Func<KeyboardEventArgs, Task>? FrameKeys { get; set; }
+
+    private Task InOrderAsync(GridInputKind kind, Func<Task> handling)
+        => Input is { } input ? input.InOrderAsync(kind, handling) : handling();
+
+    private Task OnKeyDownAsync(KeyboardEventArgs e)
+    {
+        var press = e is { Key: "Enter" or " ", CtrlKey: false, AltKey: false, MetaKey: false, ShiftKey: false } && !(e.Key == " " && e.Repeat);
+        if (press)
+        {
+            // The key owes one click, made at its keydown (Enter) or its keyup (Space); a key typed
+            // between them, a Shift while Space is held, leaves it owed. A press held and replayed
+            // makes none, and the click it leaves owed is taken by the next click a key or nothing
+            // pointed makes on this button (ADR-0240's trade-offs).
+            _keyClicks = 1;
+            return InOrderAsync(GridInputKind.KeyDown, () => Disabled ? Task.CompletedTask : OnClick.InvokeAsync());
+        }
+        var frame = FrameKeys;
+        return InOrderAsync(GridInputKind.KeyDown, () => frame is null ? Task.CompletedTask : frame(e));
+    }
+
+    private Task OnClickAsync(MouseEventArgs e)
+    {
+        if (e.Detail == 0 && _keyClicks > 0)
+        {
+            _keyClicks--;
+            return InOrderAsync(GridInputKind.Click, () => Task.CompletedTask);
+        }
+        _keyClicks = 0;
+        return InOrderAsync(GridInputKind.Click, () => OnClick.InvokeAsync());
+    }
+
     /// <inheritdoc />
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (FocusRequest != 0 && FocusRequest != _acted)
         {
             _acted = FocusRequest;
-            await (TakeKeyboard is { } take ? take(_button) : _button.FocusAsync().AsTask());
+            await (TakeKeyboard?.Invoke(_button) ?? Input?.TakeKeyboardAsync(_button) ?? _button.FocusAsync().AsTask());
         }
     }
 }

@@ -1,13 +1,13 @@
 # 03: Text typed into a field rides with the next numbered input, and the Settled Mark covers typing
 
-Status: ready-for-agent
+Status: done
 Roadmap: ExGrid, ExSheet — Text typed into the Cell Editor, Formula Bar or Name Box at machine speed is never overtaken by the key, press or click that follows it.
 
 **Why:** [ADR-0240](../../../adr/0240-input-to-one-product-instance-is-taken-in-one-order.md) §7, stage 2. Every numbered input carries the text of the field that holds the keyboard; the core adopts it first and drops the older input events (§5), generalising `InputOvertaken`. The Settled Mark waits until a field's text is the text its surface last rendered; ASY-7's exclusion of typed text goes.
 
 - [x] Every numbered input carries the field's text, and the core adopts it
 - [x] The Settled Mark covers typing; ASY-7 rewritten
-- [ ] Layer 3: typing followed at once by a press, a heading click and a menu command, on both hosts
+- [x] Layer 3: typing followed at once by a press, a heading click and a menu command, on both hosts
 
 **Blocked by:** 02.
 
@@ -216,3 +216,23 @@ also passed. The Heading spec now matches main byte-for-byte; temporary diagnost
 remain only on the isolated diagnostic branch. These passes do not close the
 previously observed stop. Latest-revision normal CI and the eighteen-spec gate
 remain outstanding.
+
+
+## Gate passed on main, 2026-10-22
+
+Stage 03 merged as PR #213. The eighteen related specs selected above (`input-text-order`,
+`settled-mark`, `circuit`, `keyboard-return`, `row-command-order`, `write-lands`, `edit-stands`,
+`pointing-scope`, `headings`, `features`, `sheet`, `input-journal`, `declarations`, `workbook`,
+`popovers`, `key-field`, `sheet-toolbar`, `format-cells`) were not narrowed after reading any
+result. The scheduled Hunt of 2026-10-22 on main `19b3f008`
+([run 39723314452](https://github.com/AkiraMisawa/ex-grid/actions/runs/39723314452)) ran the
+whole of layer 3, a superset of that scope: ten repetitions on both hosts under Chrome and Edge,
+and the widened run with a 150 ms round-trip floor and CPU throttled by four. Every one of the
+eighteen specs passed in all forty repeated jobs and all sixteen widened jobs.
+
+The run's only failures were two widened Server shards, both in `find.spec.mjs` FD-1 (a Tab typed
+before Ctrl+F's reply, added by PR #243 after stage 03), outside this stage's input paths. It
+enters ADR-0220 §3's defect process on its own; it is not excluded from this gate, which never
+selected it. The Row Heading renderer stop recorded above did not recur in this run; its record
+stays open until a fix or a cause is found.
+

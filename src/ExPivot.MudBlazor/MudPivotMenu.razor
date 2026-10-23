@@ -17,7 +17,9 @@
    role="menuitem" and a Material icon. A choice among others is a menuitemradio, the current one
    marked as a checked radio button, and a group of them stands under its heading. The frame around them is
    ExPivot's, and so are what closes it and what each command does. The first enabled command takes
-   DOM focus when the menu opens, scrolled into view: a menu opened at the foot of the pane is shown. *@
+   DOM focus when the menu opens, scrolled into view: a menu opened at the foot of the pane is shown,
+   at the end of the opening's turn, through the context's TakeKeyboard; each command is pressed in
+   the pivot's Input Order, through the context's InOrder (ADR-0240 section 6). *@
 <div class="mud-ex-pivot-menu" role="none">
     @for (var i = 0; i < Context.Commands.Count; i++)
     {
@@ -30,7 +32,8 @@
                         aria-checked="@(command.Checked is { } chosen ? (chosen ? "true" : "false") : null)"
                         Variant="Variant.Text" Size="Size.Small" FullWidth="true"
                         Disabled="!command.Enabled" StartIcon="@IconOf(command)" OnClick="command.Invoke"
-                        FocusRequest="@(i == FirstEnabled ? Context.FocusRequest : 0)"
+                        FocusRequest="@(command.Id == FocusedId ? Context.FocusRequest : 0)"
+                        InOrder="Context.InOrder" TakeKeyboard="Context.TakeKeyboard"
                         Class="mud-ex-pivot-menu-item">@command.Label</MudPivotButton>
     }
 </div>
@@ -51,16 +54,31 @@
         null => Chrome.IconFor(command.Id),
     };
 
-    private int FirstEnabled
+    private int _request;
+    private string? _focusedId;
+
+    // The command the request to take the keyboard was given to: the first enabled one when the
+    // request was made, and the same one after. A press can disable the command it pressed, as
+    // choosing a radio does; were the request to move on to the next enabled command, that one,
+    // never asked, would take the keyboard after the turn had handed it back to the opener.
+    private string? FocusedId
     {
         get
         {
-            for (var i = 0; i < Context.Commands.Count; i++)
+            if (Context.FocusRequest != _request)
             {
-                if (Context.Commands[i].Enabled)
-                    return i;
+                _request = Context.FocusRequest;
+                _focusedId = null;
+                foreach (var command in Context.Commands)
+                {
+                    if (command.Enabled)
+                    {
+                        _focusedId = command.Id;
+                        break;
+                    }
+                }
             }
-            return -1;
+            return _focusedId;
         }
     }
 }

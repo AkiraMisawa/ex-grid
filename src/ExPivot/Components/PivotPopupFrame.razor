@@ -25,17 +25,30 @@
    over the report — the Layout menu at the button's right edge. Escape closes it — unless a popup
    of the content's own is open, which ExPivot hears through the context and leaves the key
    to (ADR-0039). A menu's frame takes focus on a press on padding or a disabled command, without
-   another Tab stop: Escape stays inside it (ADR-0061). It tells ExPivot every key heard inside it and
-   when DOM focus comes into it and leaves it: closed from inside, it stands until the keyboard has
-   left it, and the keys typed meanwhile are held for the button it opened from (decided with the
-   user, 2026-10-13). *@
-<div class="@FrameClass" role="@Role" aria-label="@Label" @onkeydown="OnKeyDownAsync"
-     tabindex="@(Role == "menu" ? "-1" : null)" @onmousedown:stopPropagation @onfocusin:stopPropagation
-     @onfocusin="OnFocusIn" @onfocusout="OnFocusOut">
-    @ChildContent
+   another Tab stop: Escape stays inside it (ADR-0061).
+
+   In the pivot's Input Order (ADR-0240 section 6) the frame claims nothing (data-ex-claims=""), which
+   makes it, holding the keyboard, the pivot's own: the grid may then hand the keyboard on from it. A
+   key a control inside claims reaches the frame's handler in that key's turn, through the cascade
+   (KeysName); one that bubbles up here from a draft's field, or is typed on the frame, goes after
+   every input received so far. *@
+<div class="@FrameClass" role="@Role" aria-label="@Label" @onkeydown="OnKeyDownAsync" data-ex-claims=""
+     tabindex="@(Role == "menu" ? "-1" : null)" @onmousedown:stopPropagation @onfocusin:stopPropagation>
+    <CascadingValue Name="@KeysName" Value="_keys" IsFixed="true">@ChildContent</CascadingValue>
 </div>
 
 @code {
+    /// <summary>The name the frame's key handler cascades under, to the ordered buttons inside it: a
+    /// button that claims its keys hands the frame a key it does not answer itself in that key's turn.
+    /// A button that cannot stop the key's propagation — a design system's — leaves the frame to hear
+    /// it again after, which then finds nothing left to close.</summary>
+    public const string KeysName = "ExPivotFrameKeys";
+
+    private readonly Func<KeyboardEventArgs, Task> _keys;
+
+    /// <summary>Creates the frame.</summary>
+    public PivotPopupFrame() => _keys = OnKeyDownAsync;
+
     /// <summary><c>menu</c> for a menu, <c>dialog</c> for a panel.</summary>
     [Parameter] public string Role { get; set; } = "dialog";
 
@@ -51,14 +64,8 @@
     /// <summary>Escape was pressed inside it.</summary>
     [Parameter] public EventCallback OnEscape { get; set; }
 
-    /// <summary>Every key heard inside it, in place of <see cref="OnEscape"/> (decided with the user, 2026-10-13).</summary>
+    /// <summary>Every key heard inside it, in place of <see cref="OnEscape"/>.</summary>
     [Parameter] public EventCallback<KeyboardEventArgs> OnKey { get; set; }
-
-    /// <summary>DOM focus came into it.</summary>
-    [Parameter] public EventCallback OnFocusIn { get; set; }
-
-    /// <summary>DOM focus left an element inside it.</summary>
-    [Parameter] public EventCallback OnFocusOut { get; set; }
 
     /// <summary>The Chrome's content.</summary>
     [Parameter] public RenderFragment? ChildContent { get; set; }

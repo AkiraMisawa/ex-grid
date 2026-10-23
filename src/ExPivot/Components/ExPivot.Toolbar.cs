@@ -53,21 +53,21 @@ public partial class ExPivot
             : null;
         var fieldList = new PivotCommand(PivotCommandIds.FieldListToggle, Word(PivotCommandIds.FieldListToggle), true,
             () => SetFieldListShownAsync(!_fieldListShown)) { Checked = _fieldListShown };
-        return new PivotToolbarContext(_layout.Filters.Count > 0 ? ReportFilters() : null, layoutMenu, refresh, fieldList, _refusal, Word);
+        return new PivotToolbarContext(_layout.Filters.Count > 0 ? ReportFilters() : null, layoutMenu, refresh, fieldList, _refusal, Word)
+        {
+            InOrder = InOrderSeam,
+            TakeKeyboard = TakeKeyboardSeam,
+        };
     }
 
     private void ToggleLayoutMenu()
     {
-        if (_open is { Kind: Surface.LayoutMenu } open)
+        if (_open is { Kind: Surface.LayoutMenu })
         {
-            if (TakeOpenerPress(open))
-                return;
             CloseOpen();
             return;
         }
-        var menu = new OpenSurface { Kind = Surface.LayoutMenu, FocusRequest = ++_focusSequence };
-        Open(menu);
-        BeginOpening(menu, OpenerRegion.Toolbar);
+        Open(new OpenSurface { Kind = Surface.LayoutMenu, FocusRequest = ++_focusSequence });
     }
 
     /// <summary>The Layout menu's commands (ADR-0061): Excel's Design tab choices, the current one
@@ -105,7 +105,11 @@ public partial class ExPivot
             return new PivotReportFilterView(field, InfoOf(field).Caption, BandSummary(placement), placement.HiddenItems.Count > 0, open,
                 () => ToggleBand(field), shown ? PopupFragment(Shown!) : null, _bandFocus.GetValueOrDefault(field));
         }).ToArray();
-        var context = new PivotReportFiltersContext(Word("report-filters"), filters, Word);
+        var context = new PivotReportFiltersContext(Word("report-filters"), filters, Word)
+        {
+            InOrder = InOrderSeam,
+            TakeKeyboard = TakeKeyboardSeam,
+        };
         if (PivotChrome?.ReportFilters(context) is { } custom)
         {
             builder.AddContent(0, custom);

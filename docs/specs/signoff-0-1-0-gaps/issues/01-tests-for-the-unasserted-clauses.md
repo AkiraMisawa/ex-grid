@@ -74,6 +74,14 @@ restate.
   double click on it. Its input journal shows every press answered in order and the report settled
   with no `aria-activedescendant`. The double click's test is `test.fixme` under both Chromes until
   the fix.
+- 2026-10-23: PV-13's double click is fixed (PR #248) and asserted; its `test.fixme` is gone. On the
+  Server host an after-render runs when the browser acknowledges its batch, and an earlier batch's ran
+  the Focus placement with the toggled report in hand but not yet handed to the grid: the placement
+  was asked under a Row Sequence Version the grid did not have, dropped as stale, and its result was not
+  read. ExPivot now places it only from the render that handed the grid its current state. It
+  reproduces locally with a 60 or 150 ms round trip (7 failed of 24 before, 60 of 60 after);
+  `pivot.spec.mjs` repeats the pair three times at 150 ms. Still open from PV-13: a values-only
+  refresh keeping the Row Sequence Version and the Selection.
 - 2026-10-23: tests now assert PV-7 (`pivot-csv.spec.mjs`: a value cell copied at full precision;
   `pivot.spec.mjs`: a number format the engine cannot write refused by name, in the sample and on
   OK), PV-3's text, date and Blank clauses (`pivot-csv.spec.mjs`: case-folded Items labelled by the
@@ -82,4 +90,4 @@ restate.
   `/cells?dblclick=1`, which listens and adds a Mark Column: an Editable cell, an open edit, a
   control in an Action, Template or Mark cell, and no listener). Still open: ASY-7, WR-1, DC-62,
   SH-60 (#GETTING_DATA, the minute turning), PV-3 (the order across kinds, and a declared order
-  first), PV-13 (the double click, a values-only refresh), PV-18 and LV-27.
+  first), PV-13 (a values-only refresh), PV-18 and LV-27.

@@ -1,2 +1,41 @@
 #nullable enable
+const ExPivot.Components.PivotPopupFrame.KeysName = "ExPivotFrameKeys" -> string!
+ExPivot.Chrome.PivotDetailsDialogContext.InOrder.get -> System.Func<ExGrid.Chrome.GridInputKind, System.Func<System.Threading.Tasks.Task!>!, System.Threading.Tasks.Task!>!
+ExPivot.Chrome.PivotDetailsDialogContext.InOrder.init -> void
+ExPivot.Chrome.PivotDetailsTabsContext.InOrder.get -> System.Func<ExGrid.Chrome.GridInputKind, System.Func<System.Threading.Tasks.Task!>!, System.Threading.Tasks.Task!>!
+ExPivot.Chrome.PivotDetailsTabsContext.InOrder.init -> void
+ExPivot.Chrome.PivotFieldListContext.InOrder.get -> System.Func<ExGrid.Chrome.GridInputKind, System.Func<System.Threading.Tasks.Task!>!, System.Threading.Tasks.Task!>!
+ExPivot.Chrome.PivotFieldListContext.InOrder.init -> void
+ExPivot.Chrome.PivotFieldListContext.TakeKeyboard.get -> System.Func<Microsoft.AspNetCore.Components.ElementReference, System.Threading.Tasks.Task!>!
+ExPivot.Chrome.PivotFieldListContext.TakeKeyboard.init -> void
+ExPivot.Chrome.PivotFieldSettingsContext.InOrder.get -> System.Func<ExGrid.Chrome.GridInputKind, System.Func<System.Threading.Tasks.Task!>!, System.Threading.Tasks.Task!>!
+ExPivot.Chrome.PivotFieldSettingsContext.InOrder.init -> void
+ExPivot.Chrome.PivotFieldSettingsContext.TakeKeyboard.get -> System.Func<Microsoft.AspNetCore.Components.ElementReference, System.Threading.Tasks.Task!>!
+ExPivot.Chrome.PivotFieldSettingsContext.TakeKeyboard.init -> void
+ExPivot.Chrome.PivotItemFilterContext.InOrder.get -> System.Func<ExGrid.Chrome.GridInputKind, System.Func<System.Threading.Tasks.Task!>!, System.Threading.Tasks.Task!>!
+ExPivot.Chrome.PivotItemFilterContext.InOrder.init -> void
+ExPivot.Chrome.PivotMenuContext.InOrder.get -> System.Func<ExGrid.Chrome.GridInputKind, System.Func<System.Threading.Tasks.Task!>!, System.Threading.Tasks.Task!>!
+ExPivot.Chrome.PivotMenuContext.InOrder.init -> void
+ExPivot.Chrome.PivotMenuContext.TakeKeyboard.get -> System.Func<Microsoft.AspNetCore.Components.ElementReference, System.Threading.Tasks.Task!>!
+ExPivot.Chrome.PivotMenuContext.TakeKeyboard.init -> void
+ExPivot.Chrome.PivotReportFiltersContext.InOrder.get -> System.Func<ExGrid.Chrome.GridInputKind, System.Func<System.Threading.Tasks.Task!>!, System.Threading.Tasks.Task!>!
+ExPivot.Chrome.PivotReportFiltersContext.InOrder.init -> void
+ExPivot.Chrome.PivotReportFiltersContext.TakeKeyboard.get -> System.Func<Microsoft.AspNetCore.Components.ElementReference, System.Threading.Tasks.Task!>!
+ExPivot.Chrome.PivotReportFiltersContext.TakeKeyboard.init -> void
+ExPivot.Chrome.PivotStaleReportContext.InOrder.get -> System.Func<ExGrid.Chrome.GridInputKind, System.Func<System.Threading.Tasks.Task!>!, System.Threading.Tasks.Task!>!
+ExPivot.Chrome.PivotStaleReportContext.InOrder.init -> void
+ExPivot.Chrome.PivotStaleReportContext.TakeKeyboard.get -> System.Func<Microsoft.AspNetCore.Components.ElementReference, System.Threading.Tasks.Task!>!
+ExPivot.Chrome.PivotStaleReportContext.TakeKeyboard.init -> void
+ExPivot.Chrome.PivotToolbarContext.InOrder.get -> System.Func<ExGrid.Chrome.GridInputKind, System.Func<System.Threading.Tasks.Task!>!, System.Threading.Tasks.Task!>!
+ExPivot.Chrome.PivotToolbarContext.InOrder.init -> void
+ExPivot.Chrome.PivotToolbarContext.TakeKeyboard.get -> System.Func<Microsoft.AspNetCore.Components.ElementReference, System.Threading.Tasks.Task!>!
+ExPivot.Chrome.PivotToolbarContext.TakeKeyboard.init -> void
+ExPivot.Chrome.PivotValueFieldSettingsContext.InOrder.get -> System.Func<ExGrid.Chrome.GridInputKind, System.Func<System.Threading.Tasks.Task!>!, System.Threading.Tasks.Task!>!
+ExPivot.Chrome.PivotValueFieldSettingsContext.InOrder.init -> void
+ExPivot.Chrome.PivotValueFieldSettingsContext.TakeKeyboard.get -> System.Func<Microsoft.AspNetCore.Components.ElementReference, System.Threading.Tasks.Task!>!
+ExPivot.Chrome.PivotValueFieldSettingsContext.TakeKeyboard.init -> void
 ExPivot.Components.ExPivot.ItemsOf(ExGrid.Selection.GridSelection! selection) -> System.Collections.Generic.IReadOnlyList<ExPivot.Engine.PivotCellItems!>?
+*REMOVED*ExPivot.Components.PivotPopupFrame.OnFocusIn.get -> Microsoft.AspNetCore.Components.EventCallback
+*REMOVED*ExPivot.Components.PivotPopupFrame.OnFocusIn.set -> void
+*REMOVED*ExPivot.Components.PivotPopupFrame.OnFocusOut.get -> Microsoft.AspNetCore.Components.EventCallback
+*REMOVED*ExPivot.Components.PivotPopupFrame.OnFocusOut.set -> void

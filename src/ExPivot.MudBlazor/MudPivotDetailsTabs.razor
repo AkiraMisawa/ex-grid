@@ -7,6 +7,7 @@
 @using global::ExPivot
 @using global::ExPivot.Chrome
 @using global::ExPivot.Engine
+@using global::ExGrid.Chrome
 @using global::MudBlazor
 @* Not the contract (ADR-0201): MudPivotChrome draws this part, and no Consumer places it. It is
    public only because Razor makes every component public, is hidden from a Consumer's editor, and
@@ -28,7 +29,12 @@
    the one selected when the tab holding the keyboard closed — on MudTabs' tab element, through the
    context's TakeKeyboard: the report's grid hands it on only while the keyboard is still the
    report's (ADR-0070's note of 2026-10-02). The panel ExPivot places is labelled by the tab's
-   title, which carries the tab's id (MudTabs gives its tab element an id of its own). *@
+   title, which carries the tab's id (MudTabs gives its tab element an id of its own).
+
+   A tab's click takes its place in the pivot's Input Order (ADR-0240 section 6): the wrapper around
+   the tab claims it, and the activation it brings is handled in its turn; the close button is pressed
+   in the order as ExPivot's other buttons are. The keys MudTabs answers on a tab are its own, outside
+   the order: MudBlazor draws the tab element and gives it no mark. *@
 @{ _rendered = _signature; }
 <MudTabs @key="_key" Position="Position.Bottom" HideSlider="true" MinimumTabWidth="72px"
          ActivePanelIndex="SelectedIndex" ActivePanelIndexChanged="_activated"
@@ -109,12 +115,17 @@
     }
 
     /// <summary>MudTabs activated the tab at <paramref name="index"/>: ExPivot selects it.</summary>
-    private void Activate(int index)
+    private Task Activate(int index) => Context.InOrder(GridInputKind.Click, () =>
     {
         var tab = Tabs.ElementAtOrDefault(index);
         if (tab is { IsSelected: false })
             tab.Select();
-    }
+        return Task.CompletedTask;
+    });
+
+    // A click on the tab claims its number whether or not MudTabs activates anything: one already
+    // selected activates nothing, and a number told and never claimed would hold the inputs behind it.
+    private Task Clicked() => Context.InOrder(GridInputKind.Click, static () => Task.CompletedTask);
 
     private void Close(string id)
     {
@@ -128,12 +139,13 @@
 
     // The tab, and beside it — not inside it, where its name would join the tab's — the close button.
     private RenderFragment<RenderFragment> WrapperOf(PivotDetailsTab tab) => content =>
-        @<span class="mud-ex-pivot-tab-wrapper">
+        @<span class="mud-ex-pivot-tab-wrapper" data-ex-claims="click" @onclick="Clicked">
             @content
             @if (tab.Close is not null)
             {
-                <MudIconButton Icon="@Icons.Material.Filled.Close" Size="Size.Small" Class="mud-ex-pivot-tab-close"
-                               aria-label="@tab.CloseLabel" title="@tab.CloseLabel" OnClick="() => Close(tab.Id)" />
+                <MudPivotIconButton Icon="@Icons.Material.Filled.Close" Size="Size.Small" Class="mud-ex-pivot-tab-close"
+                                    aria-label="@tab.CloseLabel" title="@tab.CloseLabel" OnClick="() => Close(tab.Id)"
+                                    InOrder="Context.InOrder" />
             }
         </span>;
 }

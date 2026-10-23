@@ -50,6 +50,14 @@ focus, a hand-off, a mode mark, a close): each ends on a number the Settled Stam
 renders (`data-ex-focus-owed`), and held input that can no longer be carried out is refused aloud
 (`KeyRefusalLabelIds.KeyboardDidNotArrive`).
 
+*(2026-10-22, [ADR-0240](./0240-input-to-one-product-instance-is-taken-in-one-order.md)'s note on ticket 05.)*
+A press held by the first entry's hold is replayed with its default gone, so DOM focus did not leave a
+surface of the product's own that held it as the press was made. When it still holds it at the press's
+turn, the replay puts the keyboard on the grid's keyboard field before dispatching the press, as the
+default would have. It reads `document.activeElement` only; the same entry, not a new one. A press on
+an element the browser may drag (`draggable="true"`) is not held at all, since holding it cancels the drag;
+that reads one attribute.
+
 *(2026-10-11, decided with the user, [ADR-0007](./0007-edits-are-an-overlay-owned-by-the-consumer.md)'s
 note on ST-2: when an untyped editor's row leaves the Window, the editor's listener answers one question,
 whether its field still holds the text it opened with and is not composing, and when it does, starts the

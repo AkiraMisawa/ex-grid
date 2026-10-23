@@ -38,6 +38,12 @@ public abstract class PivotTestContext : BunitContext
     /// on it out to the element around it (ExGrid's <c>PassKeysOutAsync</c>; decided with the user,
     /// 2026-10-13).</summary>
     internal int KeysPassedOut => _anyGrid.Invocations.Count(invocation => invocation.Identifier == "passKeysOut");
+    /// <summary>How many times a control has been asked to take the keyboard: by its own focus, or handed
+    /// it by a grid on the common handle — the report's, where the pivot's controls take it through its
+    /// guard (ADR-0240 section 6).</summary>
+    internal int KeyboardMoves => JSInterop.Invocations.Count(invocation => invocation.Identifier == "Blazor._internal.domWrapper.focus")
+        + _anyGrid.Invocations.Count(invocation => invocation.Identifier == "handKeyboardTo");
+
     // Where each handle says its scroller stands, as the browser would (ScrollReportAsync).
     private readonly List<JSRuntimeInvocationHandler<ScrollOffset>> _scrollOffsets = [];
     private bool _rendererInfoSet;
