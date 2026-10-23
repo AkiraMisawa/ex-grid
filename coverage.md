@@ -3,7 +3,7 @@
 | Product | Line | Branch |
 |---|---|---|
 | ExGrid | 95% | 88% |
-| ExSheet | 95.3% | 88% |
+| ExSheet | 95.4% | 88.3% |
 | ExPivot | 94.3% | 85.5% |
 | ExChart | 90.3% | 81.2% |
 | ExBoard | 91.7% | 81.8% |
@@ -14,19 +14,19 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/23/2026 - 10:44:10 |
+| Generated on: | 10/23/2026 - 11:22:17 |
 | Parser: | MultiReport (19x Cobertura) |
 | Assemblies: | 14 |
-| Classes: | 1101 |
-| Files: | 572 |
-| **Line coverage:** | 94.4% (76437 of 80919) |
-| Covered lines: | 76437 |
-| Uncovered lines: | 4482 |
-| Coverable lines: | 80919 |
-| Total lines: | 129480 |
-| **Branch coverage:** | 86.8% (45668 of 52581) |
-| Covered branches: | 45668 |
-| Total branches: | 52581 |
+| Classes: | 1102 |
+| Files: | 571 |
+| **Line coverage:** | 94.4% (76469 of 80933) |
+| Covered lines: | 76469 |
+| Uncovered lines: | 4464 |
+| Coverable lines: | 80933 |
+| Total lines: | 129489 |
+| **Branch coverage:** | 86.9% (45698 of 52579) |
+| Covered branches: | 45698 |
+| Total branches: | 52579 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
@@ -357,6 +357,7 @@
 |ExGrid.Components.ExGrid.HeaderPress<TRow>|100%||
 |ExGrid.Components.ExGrid.HeadingStateKey<TRow>|100%||
 |ExGrid.Components.ExGrid.MarkPress<TRow>|100%|50%|
+|ExGrid.Components.ExGrid.NoSurface<TRow>|100%||
 |ExGrid.Components.ExGrid.OwnWrite<TRow>|100%||
 |ExGrid.Components.ExGrid.PaintBasis<TRow>|100%|100%|
 |ExGrid.Components.ExGrid.PaintLayout<TRow>|100%||
@@ -367,14 +368,15 @@
 |ExGrid.Components.ExGrid.PointedDrag<TRow>|100%||
 |ExGrid.Components.ExGrid.RememberedRowCommand<TRow>|100%||
 |ExGrid.Components.ExGrid.SummaryQuestion<TRow>|100%||
+|ExGrid.Components.ExGrid.Surface<TRow>|100%||
 |ExGrid.Components.ExGrid.TakenAt<TRow>|100%||
 |ExGrid.Components.ExGrid.TakenCopy<TRow, T>|94.4%|100%|
 |ExGrid.Components.ExGrid.TakenList<TRow>|100%||
 |ExGrid.Components.ExGrid.TakenMouseEventArgs<TRow>|100%||
 |ExGrid.Components.ExGrid.WaitingRow<TRow>|100%||
 |ExGrid.Components.ExGrid.WorkUnderWay<TRow>|93.3%|50%|
-|ExGrid.Components.ExGrid<TRow, T>|91.1%|85.2%|
-|ExGrid.Components.ExGrid<TRow>|91.1%|85.2%|
+|ExGrid.Components.ExGrid<TRow, T>|90.8%|85.1%|
+|ExGrid.Components.ExGrid<TRow>|90.8%|85.1%|
 |ExGrid.Components.ExGrid<TRow>|95.5%|90.3%|
 |ExGrid.Components.ExGridRow.ActionPaint<TRow>|100%||
 |ExGrid.Components.ExGridRow<TRow>|100%|94.6%|
@@ -964,11 +966,11 @@
 |ExPivot.MudBlazor.MudPivotValueFieldSettings|94.7%|69.2%|
 
 </details>
-<details><summary>ExSheet - 92.6%</summary>
+<details><summary>ExSheet - 92.7%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExSheet**|**92.6%**|**83.5%**|
+|**ExSheet**|**92.7%**|**83.5%**|
 |ExSheet.AlignCenterItem|100%||
 |ExSheet.AlignLeftItem|100%||
 |ExSheet.AlignmentItem|100%|100%|
@@ -978,12 +980,12 @@
 |ExSheet.BuiltInToolbarItem|96.4%|97.3%|
 |ExSheet.ColourItem|96%|100%|
 |ExSheet.CommaItem|83.3%||
-|ExSheet.Components.ExSheet|91.1%|81.6%|
+|ExSheet.Components.ExSheet|91.3%|81.8%|
 |ExSheet.Components.ExSheet.KeyboardListener|100%||
 |ExSheet.Components.ExSheet.KeyUpListener|100%||
 |ExSheet.Components.ExSheet.OwnFindOutcome|100%||
 |ExSheet.Components.ExSheet.SheetGridChrome|86.6%|73%|
-|ExSheet.Components.ExSheet<T>|91.1%|81.6%|
+|ExSheet.Components.ExSheet<T>|91.3%|81.8%|
 |ExSheet.Components.ExSheetStylesheet|100%||
 |ExSheet.Components.FormatCellsPanel|97.3%|87.5%|
 |ExSheet.Components.SheetFindPanel|91.7%|76.5%|
@@ -1213,17 +1215,16 @@
 |ExSheet.Engine.WorkbookStep|100%|50%|
 
 </details>
-<details><summary>ExSheet.MudBlazor - 92.4%</summary>
+<details><summary>ExSheet.MudBlazor - 93.7%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExSheet.MudBlazor**|**92.4%**|**70.2%**|
-|ExSheet.MudBlazor.KeysOnTheirWay|100%|100%|
+|**ExSheet.MudBlazor**|**93.7%**|**74.7%**|
 |ExSheet.MudBlazor.MudExSheetStylesheet|100%||
-|ExSheet.MudBlazor.MudFormatCellsDialog|97.8%|78.4%|
-|ExSheet.MudBlazor.MudFormatCellsFrame|81.9%|63.6%|
-|ExSheet.MudBlazor.MudFormatCellsTabs|82%|78.1%|
-|ExSheet.MudBlazor.MudMoreColours|73.9%|30%|
+|ExSheet.MudBlazor.MudFormatCellsDialog|97.9%|80.9%|
+|ExSheet.MudBlazor.MudFormatCellsFrame|82.4%|68.5%|
+|ExSheet.MudBlazor.MudFormatCellsTabs|78.9%|76.6%|
+|ExSheet.MudBlazor.MudMoreColours|91.4%|58.3%|
 |ExSheet.MudBlazor.MudSheetChrome|94.3%|100%|
 |ExSheet.MudBlazor.MudSheetFindPanel|83.9%|67.8%|
 |ExSheet.MudBlazor.MudSheetTabMenu|100%|100%|
