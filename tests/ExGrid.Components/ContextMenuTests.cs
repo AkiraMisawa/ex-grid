@@ -113,6 +113,41 @@ public class ContextMenuTests : GridTestContext
         Assert.Single(seen.Selection);
     }
 
+    [Fact] // ADR-0011 / ADR-0036 / CTX-3: a command is handed the selection as rectangles and the Row Sequence Version they are written in, and no row beyond the Window is asked for
+    public async Task CTX3_the_context_carries_ranges_and_the_row_sequence_version_and_resolves_no_row_beyond_the_window()
+    {
+        ContextMenuContext<TestRow>? seen = null;
+        var asked = new List<RowRange>();
+        var cut = Render<ExGrid<TestRow>>(ps => ps
+            .Add(g => g.Window, _rows)                       // rows 0-49 of a million
+            .Add(g => g.WindowStart, 0)
+            .Add(g => g.TotalCount, 1_000_000)
+            .Add(g => g.RowSequenceVersion, 7)
+            .Add(g => g.OnRangeNeeded, (RowRange r) => asked.Add(r))
+            .Add(g => g.Columns, Columns())
+            .Add(g => g.RowHeight, 20d)
+            .Add(g => g.ViewportHeight, 120)
+            .Add(g => g.ViewportWidth, 350)
+            .Add(g => g.ContextCommands, context =>
+            {
+                seen = context;
+                return [];
+            }));
+        await ClickAsync(cut, 50, 10);
+        await cut.InvokeAsync(() => cut.Instance.OnKeyAsync("a", true, false, false, false, false)); // Ctrl+A: every row
+        var askedBefore = asked.Count;
+
+        await SecondaryClickAsync(cut, 150, 30);             // row 1, Amount, inside the Selection
+
+        Assert.NotNull(seen);
+        Assert.Same(_rows[1], seen.Row);
+        Assert.Equal("Amount", seen.Column);
+        Assert.Equal(7, seen.RowSequenceVersion);
+        Assert.Equal([new ExGrid.Selection.SelectionRange(0, 0, 1_000_000, 3)], seen.Selection);
+        // The million rows stay positions: opening the menu asked the Consumer for none of them.
+        Assert.Equal(askedBefore, asked.Count);
+    }
+
     [Fact] // ADR-0036: the menu is reachable without a mouse, on the Focus cell
     public async Task The_context_menu_key_opens_it_on_the_focus()
     {

@@ -261,6 +261,23 @@ test('active cell, case 2: while a drag is held the Name Box shows 4R x 3C, and 
     await expectSelection(page, 'B2', 'D5');
 });
 
+// The size is shown only while a pointer's button is down: the grid cannot tell when Shift is let go,
+// so a range extended by key shows the Focus throughout (DC-39, ADR-0052/0021).
+test('DC-39: a range extended by key shows no size in the Name Box: it names the Focus throughout (ADR-0052)', async ({ page }) => {
+    await click(page, 'D5');
+    await expect(nameBox(page)).toHaveValue('D5');
+    for (const key of ['Shift+ArrowUp', 'Shift+ArrowUp', 'Shift+ArrowLeft', 'Shift+ArrowUp', 'Shift+ArrowLeft']) {
+        await page.keyboard.press(key);
+    }
+    await expectSelection(page, 'B2', 'D5');
+    await settled(sheet(page));
+    await expect(nameBox(page)).toHaveValue('D5');
+    await page.keyboard.press('Shift+ArrowDown');
+    await expectSelection(page, 'B3', 'D5');
+    await settled(sheet(page));
+    await expect(nameBox(page)).toHaveValue('D5');
+});
+
 test('active cell, case 3: after Enter, Shift+arrow moves the edge opposite the Focus, and nothing from the middle (ADR-0052)', async ({ page }) => {
     await click(page, 'E1');
     await click(page, 'G3', { modifiers: ['Shift'] });

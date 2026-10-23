@@ -288,6 +288,25 @@ public class ExcelKeyTests : GridTestContext
         Assert.Null(heard.Pastes[1].EnteredAt);
     }
 
+    [Fact] // ADR-0050 item 5 (2026-09-28) / ADR-0035 / DC-40: on a range one cell deep, the fill key's intent names the row above, or the column to the left, as the range it read
+    public async Task DC40_a_fill_key_on_a_range_one_cell_deep_names_the_row_above_or_the_column_to_the_left()
+    {
+        var heard = new Heard();
+        var cut = RenderGrid(heard);
+        await ClickCellAsync(cut, 50, 50);  // (2, 0)
+        await ClickCellAsync(cut, 150, 50, shift: true); // (2, 1): one row deep
+        await PressAsync(cut, "d", ctrl: true);
+        await ClickCellAsync(cut, 150, 30);  // (1, 1)
+        await ClickCellAsync(cut, 150, 70, shift: true); // (3, 1): one column deep
+        await PressAsync(cut, "r", ctrl: true);
+
+        Assert.Equal(2, heard.Pastes.Count);
+        Assert.Equal(new SelectionRange(1, 0, 1, 2), heard.Pastes[0].FillSource);
+        Assert.Equal([new SelectionRange(2, 0, 1, 2)], heard.Pastes[0].Plan.Targets);
+        Assert.Equal(new SelectionRange(1, 0, 3, 1), heard.Pastes[1].FillSource);
+        Assert.Equal([new SelectionRange(1, 1, 3, 1)], heard.Pastes[1].Plan.Targets);
+    }
+
     [Fact] // ADR-0035 / CP-24: Ctrl+R on one column fills from the column to its left
     public async Task Ctrl_r_on_one_column_fills_from_the_left()
     {

@@ -10,3 +10,7 @@ by a scratch copy).
 
 **What:** the clipboard tests press `ControlOrMeta`, and a test of Cmd+Enter in the Sheet's editor, run
 on a Mac with `--repeat-each=3` before it goes in (AGENTS.md, "What counts as verified").
+
+## Comments
+
+- 2026-10-22: the tests are written and pass on Linux, where the Apple-only ones skip by name. The run on a Mac with `--repeat-each=3` is what remains, and it cannot be made from a Linux container.

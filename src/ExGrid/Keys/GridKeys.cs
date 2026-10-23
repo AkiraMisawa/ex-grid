@@ -101,7 +101,8 @@ internal static class GridKeys
     /// Every set of keys the listener gates by beside <see cref="TakenFor"/>'s and the declared
     /// keys, under the name it reads each by, handed at attach (ADR-0010; KB-2): the claimed sets of
     /// the editing modes (<see cref="GridEditingKeys.ByMode"/>), and <c>neutral</c>,
-    /// <c>popoverOpeners</c>, <c>find</c>, <c>replace</c> and <c>clipboard</c>.
+    /// <c>popoverOpeners</c>, <c>find</c>, <c>replace</c> and <c>clipboard</c>, and the popover
+    /// hold's keys that hand the keyboard on inside a column menu (<c>MenuKeys.HoldSets</c>).
     /// </summary>
     public static IReadOnlyDictionary<string, IReadOnlyList<string>> GateSets { get; } = BuildGateSets();
 
@@ -115,6 +116,8 @@ internal static class GridKeys
             ["replace"] = ReplaceKeys,
             ["clipboard"] = ClipboardKeys,
         };
+        foreach (var (name, keys) in ExGrid.Chrome.MenuKeys.HoldSets)
+            sets.Add(name, keys);
         return sets;
     }
 

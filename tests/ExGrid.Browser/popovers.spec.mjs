@@ -1007,3 +1007,51 @@ test.describe('Inner Popups under the mud Chrome', () => {
         await expectKeyboardOn(grid(page));
     });
 });
+
+// Alt+↓ is the grid's where the Focus's column has a menu: the keydown's default is prevented, so the
+// browser does nothing of its own with it, and the page does not move. On a grid with no column menu
+// it opens nothing, and the Focus stays (KB-28, ADR-0039).
+async function hearAltDown(page) {
+    await alterPage(page, () => {
+        // Heard first, in the window's capture phase (the grid stops the key's propagation at its
+        // root), and kept: its defaultPrevented is read once the dispatch is over.
+        window.__altDown = null;
+        const listener = (e) => {
+            if (e.key === 'ArrowDown' && e.altKey) {
+                window.__altDown = e;
+            }
+        };
+        window.addEventListener('keydown', listener, true);
+        return () => {
+            window.removeEventListener('keydown', listener, true);
+            delete window.__altDown;
+        };
+    });
+}
+
+test('KB-28: Alt+↓ is taken from the browser where the column has a menu, the page unmoved; on a grid with no column menu it opens nothing (ADR-0039)', async ({ page }) => {
+    await page.goto('/features');
+    await expect(grid(page).locator('.ex-row').first()).toBeVisible();
+    await hearAltDown(page);
+    await clickCell(page, 1, 0);
+    const scrolled = () => page.evaluate(() => [window.scrollX, window.scrollY]);
+    const before = await scrolled();
+
+    await page.keyboard.press('Alt+ArrowDown');
+    await expect(grid(page).locator('.ex-popover [role=menu]')).toHaveAttribute('aria-label', 'Book');
+    expect(await page.evaluate(() => window.__altDown?.defaultPrevented)).toBe(true);
+    expect(await scrolled()).toEqual(before);
+
+    // /wide asks for no sort, filter, hiding, pinning or widths: its columns have no menu.
+    await page.goto('/wide?rows=1000');
+    const wide = grid(page);
+    await expect(wide.locator('.ex-row').first()).toBeVisible();
+    await expect(wide.locator('.ex-menu-button')).toHaveCount(0);
+    await wide.locator("[id$='r2c3']").click({ force: true });
+    await expectActiveDescendant(wide, /r2c3$/);
+    await page.keyboard.press('Alt+ArrowDown');
+    await settled(wide);
+    await expect(wide.locator('.ex-popover')).toHaveCount(0);
+    await expectActiveDescendant(wide, /r2c3$/);
+    await expectKeyboardOn(wide);
+});

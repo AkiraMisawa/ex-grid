@@ -99,6 +99,22 @@ public class GridSourceBindingTests : GridTestContext
         Assert.Contains("Source", error.Message);
     }
 
+    [Fact] // ADR-0001 / ERR-1: both Window and Source, and neither, are refused, each naming its own rule — never one message for the two
+    public void ERR1_both_and_neither_are_refused_each_by_its_own_rule()
+    {
+        var both = Assert.Throws<InvalidOperationException>(() => Render<ExGrid<TestRow>>(ps => ps
+            .Add(g => g.Source, new TestSource())
+            .Add(g => g.Window, TestRows.Window())
+            .Add(g => g.Columns, Columns())));
+        var neither = Assert.Throws<InvalidOperationException>(
+            () => Render<ExGrid<TestRow>>(ps => ps.Add(g => g.Columns, Columns())));
+
+        Assert.StartsWith("Source was passed together with Window", both.Message);
+        Assert.StartsWith("Neither Window nor Source was passed", neither.Message);
+        Assert.Contains("ADR-0001", both.Message);
+        Assert.Contains("ADR-0001", neither.Message);
+    }
+
     [Fact] // ADR-0001: a Source built in OnInitializedAsync is null on the first render
     public void A_source_supplied_as_null_is_a_pull_grid_waiting_for_it()
     {

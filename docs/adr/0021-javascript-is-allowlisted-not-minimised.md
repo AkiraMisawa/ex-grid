@@ -64,6 +64,17 @@ browser, adds no listener, and runs once per attach, never per render. It is the
 entry. The stylesheet's check takes no script at all, and the module's versioned address is the
 existing import's.)*
 
+*(2026-10-22, recording [ADR-0204](./0204-the-page-follows-what-a-move-reveals-and-a-scripted-focus-asks-whether-the-keyboard-is-still-here.md),
+decided with the user on 2026-10-11: the 0.1.0 sign-off's inspection of PF-2 found it unrecorded here.)*
+When a keyboard move reveals the Focus inside the grid's own Viewport and the page around the grid does
+not show it, the script asks the browser to move the *page* with `scrollIntoView({ block: 'nearest',
+inline: 'nearest' })` on the revealed cell or its field, and puts back any offset that call changed on
+the grid's own scroller. The refusal of `scrollIntoView()` below still holds for the grid's own reveal,
+which is arithmetic over the Grid Metrics, because the browser knows nothing of a sticky header or a
+pinned block. This is the second entry, reading and setting scroll offsets, applied to the page; it
+reads no layout on the path to a paint, runs only when a move asked for it and the keyboard is still
+this grid's, and is not a new entry.
+
 ### The fourth entry, and why it is not the text measurement this ADR refuses
 
 A classic scrollbar is drawn **inside** the box the element declares, so the columns and rows
@@ -265,8 +276,9 @@ These are the places where reaching for JS would be the easy answer, and where w
   cell" is the obvious answer: the grid already knows where every row and column is, so the
   pointer's own offsets are enough. Cells are `pointer-events: none`, the row Viewport is
   therefore the event's target, and the offsets arrive measured from it. `scrollIntoView()` is
-  refused for the mirror-image reason — it knows nothing of a sticky header or a pinned block and
-  would tuck the revealed cell underneath them.)* **The fifth entry does not move this line**:
+  refused for the grid's own reveal, for the mirror-image reason — it knows nothing of a sticky header or a pinned block and
+  would tuck the revealed cell underneath them. The page's follow, which ADR-0204 allows, is the note
+  of 2026-10-22 above.)* **The fifth entry does not move this line**:
   during a drag the cell still comes from C# over the event's offsets, and JS still measures
   nothing. What the fifth entry adds is a *filter* on idle movement — whether the row changed,
   read off the Geometry Tokens C# wrote — so that only a row change or a rest crosses to .NET.

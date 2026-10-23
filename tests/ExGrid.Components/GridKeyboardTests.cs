@@ -172,6 +172,87 @@ public class GridKeyboardTests : GridTestContext
         Assert.Equal(new CellPosition(31, 0), selection!.Focus);
     }
 
+    [Theory] // ADR-0012 / KB-9: the first key on an empty selection places the Focus on the first visible cell, and the Viewport does not move
+    [InlineData("ArrowDown")]
+    [InlineData("ArrowUp")]
+    [InlineData("ArrowRight")]
+    [InlineData("PageDown")]
+    public async Task KB9_the_first_key_places_the_focus_and_scrolls_nothing(string key)
+    {
+        GridSelection? selection = null;
+        var cut = RenderGrid(s => selection = s);
+        await ScrollToAsync(cut.Find(".ex-scroller"), top: 600, left: 0); // rows 30..
+
+        await PressAsync(cut, key);
+
+        Assert.Equal(new CellPosition(30, 0), selection!.Focus);
+        Assert.Equal(1, selection.CellCount);
+        // One keystroke, no scroll: the grid asked the browser for no offset.
+        Assert.Empty(Js.ScrolledTo);
+    }
+
+    // ADR-0012's key table, row by row, pressed on the component from F6:H8 (Focus (5, 5), Extent
+    // (7, 7)) over 200 rows and 100 columns with no Consumer edge answer. The plain forms move the
+    // Focus and collapse; the Shift forms move the Extent and leave the Focus (KB-5).
+    public static TheoryData<string, bool, bool, int, int, int, int> KB5Table => new()
+    {
+        // key, ctrl, shift, Focus row, Focus column, Extent row, Extent column
+        { "ArrowDown", false, false, 6, 5, 6, 5 },
+        { "ArrowUp", false, false, 4, 5, 4, 5 },
+        { "ArrowLeft", false, false, 5, 4, 5, 4 },
+        { "ArrowRight", false, false, 5, 6, 5, 6 },
+        { "ArrowDown", false, true, 5, 5, 8, 7 },
+        { "ArrowUp", false, true, 5, 5, 6, 7 },
+        { "ArrowLeft", false, true, 5, 5, 7, 6 },
+        { "ArrowRight", false, true, 5, 5, 7, 8 },
+        { "ArrowDown", true, false, 199, 5, 199, 5 },
+        { "ArrowUp", true, false, 0, 5, 0, 5 },
+        { "ArrowLeft", true, false, 5, 0, 5, 0 },
+        { "ArrowRight", true, false, 5, 99, 5, 99 },
+        { "ArrowDown", true, true, 5, 5, 199, 7 },
+        { "ArrowUp", true, true, 5, 5, 0, 7 },
+        { "ArrowLeft", true, true, 5, 5, 7, 0 },
+        { "ArrowRight", true, true, 5, 5, 7, 99 },
+        { "Home", false, false, 5, 0, 5, 0 },
+        { "End", false, false, 5, 99, 5, 99 },
+        { "Home", false, true, 5, 5, 7, 0 },
+        { "End", false, true, 5, 5, 7, 99 },
+        { "Home", true, false, 0, 0, 0, 0 },
+        { "End", true, false, 199, 99, 199, 99 },
+    };
+
+    [Theory] // ADR-0012 / ADR-0052 / KB-5: every row of the table, named — plain forms move the Focus, Shift forms move the Extent and leave the Focus
+    [MemberData(nameof(KB5Table))]
+    public async Task KB5_each_row_of_the_key_table_moves_the_focus_or_the_extent(
+        string key, bool ctrl, bool shift, int focusRow, int focusColumn, int extentRow, int extentColumn)
+    {
+        GridSelection? selection = null;
+        var cut = RenderGrid(s => selection = s);
+        await ClickAsync(cut, 50, 10); // cell (0, 0)
+        for (var i = 0; i < 5; i++)
+        {
+            await PressAsync(cut, "ArrowDown");
+            await PressAsync(cut, "ArrowRight");
+        }
+        for (var i = 0; i < 2; i++)
+        {
+            await PressAsync(cut, "ArrowDown", shift: true);
+            await PressAsync(cut, "ArrowRight", shift: true);
+        }
+        Assert.Equal(new CellPosition(5, 5), selection!.Focus);
+        Assert.Equal(new CellPosition(7, 7), selection.Extent);
+
+        await PressAsync(cut, key, ctrl: ctrl, shift: shift, metaIsPrimary: false);
+
+        Assert.Equal(new CellPosition(focusRow, focusColumn), selection!.Focus);
+        Assert.Equal(new CellPosition(extentRow, extentColumn), selection.Extent);
+        Assert.Single(selection.Ranges);
+        if (shift)
+            Assert.Equal(new CellPosition(5, 5), selection.Focus);
+        else
+            Assert.Equal(1L, selection.CellCount);
+    }
+
     [Fact] // ADR-0012: the Focus must always be visible — the grid scrolls to it
     public async Task The_grid_scrolls_to_keep_the_focus_visible()
     {
