@@ -1392,6 +1392,77 @@ test('DC-63: without a listener, a double click where no edit opens places the F
     expect(await cells.locator('.ex-viewport').innerText()).toBe(before);
 });
 
+// DC-62 on /cells?editable=1&leave=1, where the page counts OnLeave below the grid and does
+// nothing else with it. A button either side of the grid shows where Tab goes once released.
+
+test('DC-62: with OnLeave declared, Escape with nothing left to dismiss raises it once, keeps the DOM focus and releases Tab; an Escape that cancels an edit, closes a popover, leaves an Interactive cell or returns from a control raises nothing, and a held one raises once (ADR-0070, KB-8)', async ({ page }) => {
+    await page.goto('/cells?editable=1&leave=1');
+    const cells = page.locator('.ex-grid').first();
+    await expect(cells.locator('.ex-row').first()).toBeVisible();
+    await aButtonEitherSide(page);
+    const heard = page.locator('#leave-status');
+    await expect(heard).toHaveText('No leave heard yet.');
+
+    // An edit cancelled.
+    await cells.locator("[id$='r2c0']").click({ force: true });
+    await page.keyboard.type('Q');
+    await expect(cells.locator('input.ex-editor')).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(cells.locator('.ex-editor')).toHaveCount(0);
+
+    // The Context Menu closed.
+    await page.keyboard.press('ArrowRight');
+    await page.keyboard.press('Shift+F10');
+    await expect(cells.locator('.ex-popover')).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(cells.locator('.ex-popover')).toHaveCount(0);
+
+    // An Interactive cell left: Space enters Review (column 6), Escape leaves it.
+    for (let i = 1; i < 6; i++) {
+        await page.keyboard.press('ArrowRight');
+    }
+    await expectActiveDescendant(cells, /r2c6$/);
+    await page.keyboard.press('Space');
+    await expect(cells.locator('.ex-action-chosen')).toHaveCount(1);
+    await page.keyboard.press('Escape');
+    await expect(cells.locator('.ex-action-chosen')).toHaveCount(0);
+
+    // A control inside a cell returned from.
+    const note = cells.locator("[id$='r2c4'] input.demo-note");
+    await note.click();
+    await expect(note).toBeFocused();
+    await page.keyboard.press('Escape');
+    await expectKeyboardOn(cells);
+
+    await settled(cells);
+    await circuitQuiet();
+    await expect(heard).toHaveText('No leave heard yet.');
+
+    // Nothing left to dismiss: heard once, and the grid keeps the keyboard with its Focus.
+    const focus = await activeDescendant(cells);
+    await page.keyboard.press('Escape');
+    await expect(heard).toHaveText('Leave heard. Heard so far: 1.');
+    await circuitQuiet();
+    await expectKeyboardOn(cells);
+    expect(await activeDescendant(cells)).toBe(focus);
+    // Tab was released with it: the next Tab is the page's.
+    await page.keyboard.press('Tab');
+    await expect(page.locator('#after-grid')).toBeFocused();
+
+    // Back in the grid, a held Escape raises once for its press, and its repeats nothing more.
+    await page.keyboard.press('Shift+Tab');
+    await expectKeyboardOn(cells);
+    await page.keyboard.down('Escape');
+    await page.keyboard.down('Escape');
+    await page.keyboard.down('Escape');
+    await page.keyboard.up('Escape');
+    await expect(heard).toHaveText('Leave heard. Heard so far: 2.');
+    await settled(cells);
+    await circuitQuiet();
+    await expect(heard).toHaveText('Leave heard. Heard so far: 2.');
+    await expectKeyboardOn(cells);
+});
+
 // Entering a cell by key (ADR-0037), on /cells. Columns there: Book 0 (pinned), Close of
 // business 1, Intraday 2, Limit used 3 (a Template), Note 4 (a Template with a real
 // field), Actions 5 (one action), Review 6 (three actions). The Focus is placed by

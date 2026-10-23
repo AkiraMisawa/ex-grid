@@ -53,16 +53,18 @@ internal static class PivotEndpoints
             Answer(request, store, ReadDetailsPage,
                 async (query, token) => PivotJson.Write(await source.DetailsAsync(query, token)), cancellationToken));
         MapReport<PivotReportRequest, PivotReportUpdate>(app, "window", true,
-            (source, query, ct) => source!.WindowAsync(query, ct));
+            async (source, query, gate, ct) => gate.Spoiled(await source!.WindowAsync(query, ct)));
         MapReport<PivotReportItemsQuery, PivotReportItemsResult>(app, "items", false,
-            (source, query, ct) => source is null ? ValueTask.FromResult(new PivotReportItemsResult(query.Version, "", [], 0, PivotReportStore.NotHeld())) : source.ItemsAsync(query, ct));
+            (source, query, _, ct) => source is null ? ValueTask.FromResult(new PivotReportItemsResult(query.Version, "", [], 0, PivotReportStore.NotHeld())) : source.ItemsAsync(query, ct));
         MapReport<PivotReportCopyQuery, PivotReportCopyResult>(app, "copy", false,
-            (source, query, ct) => source is null ? ValueTask.FromResult(new PivotReportCopyResult(query.Version, [], PivotReportStore.NotHeld())) : source.CopyAsync(query, ct));
+            (source, query, _, ct) => source is null ? ValueTask.FromResult(new PivotReportCopyResult(query.Version, [], PivotReportStore.NotHeld())) : source.CopyAsync(query, ct));
         MapReport<PivotReportSummaryQuery, PivotReportSummaryResult>(app, "summary", false,
-            (source, query, ct) => source is null ? ValueTask.FromResult(new PivotReportSummaryResult(query.Version, default, default, default, false, null, "", PivotReportStore.NotHeld())) : source.SummaryAsync(query, ct));
+            (source, query, _, ct) => source is null ? ValueTask.FromResult(new PivotReportSummaryResult(query.Version, default, default, default, false, null, "", PivotReportStore.NotHeld())) : source.SummaryAsync(query, ct));
         app.MapGet("/api/pivot/window-gate", (PivotWindowGate gate) => gate.State);
         app.MapPost("/api/pivot/window-gate", (PivotWindowGateRequest request, PivotWindowGate gate) =>
-            request.Hold is { } hold ? Results.Ok(gate.Set(hold)) : ApiResults.BadRequest("hold is true or false."));
+            request is { Hold: null, Spoil: null, Fail: null }
+                ? ApiResults.BadRequest("hold is true or false; spoil and fail are counts.")
+                : Results.Ok(gate.Set(request.Hold, request.Spoil, request.Fail)));
         app.MapDelete("/api/pivot/reports/{id}", async (string id, PivotReportStore reports, CancellationToken ct) =>
         {
             await reports.RemoveAsync(id, ct);
@@ -72,7 +74,7 @@ internal static class PivotEndpoints
     }
 
     private static void MapReport<TQuery, TResult>(IEndpointRouteBuilder app, string operation, bool create,
-        Func<LocalPivotReportSource?, TQuery, CancellationToken, ValueTask<TResult>> answer)
+        Func<LocalPivotReportSource?, TQuery, PivotWindowGate, CancellationToken, ValueTask<TResult>> answer)
         => app.MapPost("/api/pivot/reports/{id}/" + operation,
             (string id, HttpRequest request, PivotReportStore reports, TradeStore store, PivotWindowGate gate, CancellationToken ct) =>
                 Answer(request, store, document =>
@@ -80,8 +82,8 @@ internal static class PivotEndpoints
                     if (!Guid.TryParseExact(id, "N", out _)) throw new FormatException("A report identity must be a UUID in N format.");
                     return PivotReportJson.Read<TQuery>(document);
                 }, (query, token) => reports.AnswerAsync(id, create,
-                    async source => PivotReportJson.Write(await answer(source, query, token)), token), ct,
-                    // Only a Window question waits at the gate (PivotWindowGate).
+                    async source => PivotReportJson.Write(await answer(source, query, gate, token)), token), ct,
+                    // Only a Window question meets the gate (PivotWindowGate).
                     operation == "window" ? gate.PassAsync : null));
 
     /// <summary>The most records one Details page may ask for. A page is what a grid paints and
@@ -105,7 +107,7 @@ internal static class PivotEndpoints
         Func<string, TQuestion> read,
         Func<TQuestion, CancellationToken, ValueTask<string>> answer,
         CancellationToken cancellationToken,
-        Func<string, CancellationToken, Task>? before = null)
+        Func<string, CancellationToken, Task<bool>>? gate = null)
     {
         if (store.State != TradeStoreState.Ready)
             return ApiResults.NotReady(store, request.HttpContext.Response);
@@ -122,8 +124,8 @@ internal static class PivotEndpoints
         {
             return ApiResults.BadRequest(e.Message);
         }
-        if (before is not null)
-            await before(document, cancellationToken);
+        if (gate is not null && !await gate(document, cancellationToken))
+            return Results.StatusCode(StatusCodes.Status503ServiceUnavailable);
         return Results.Text(await answer(question, cancellationToken), JsonMediaType, Encoding.UTF8);
     }
 }
