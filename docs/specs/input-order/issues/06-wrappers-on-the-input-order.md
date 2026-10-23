@@ -17,4 +17,10 @@ What is left is ExGrid.MudBlazor's and ExSheet.MudBlazor's, and one gap of the p
 empty there is no grid to hand the keyboard into a box, so the Wrapper's Field Settings… opened from a Report
 Filter with nothing else placed leaves the keyboard where it was (ADR-0240's trade-offs on ticket 05).
 
+The mechanism for a surface outside the Input Root landed on 2026-10-23 (`ExGrid.JoinSurfaceAsync`,
+`HandKeyboardToFrameAsync(element)`, claims that name a key), with ExSheet.MudBlazor's Format Cells dialog and
+its More Colours popup on it and the Grid Appearance page's prose (ADR-0240's note on ticket 06). Still to
+come: the Wrapper's toolbar lists, ExGrid.MudBlazor's Find panel fallback and toolbar items' focus through the
+seam, the drafts' sweep, the pivot's gap above, and an Example of a Consumer's own Chrome on the seam.
+
 **Blocked by:** 02, 04, 05.

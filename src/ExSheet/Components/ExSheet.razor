@@ -161,7 +161,7 @@
 @* Format Cells in a frame of the Chrome's own (ADR-0071, ADR-0010's note of 2026-09-30): beside the
    grid and outside its root, from the opening until OK or Cancel. Under the built-in Chrome it
    stands in the grid's popover frame instead (ADR-0050 item 16), and nothing is rendered here. *@
-@* After OK or Cancel it stays until the keyboard has left it (FormatCellsContext.ReturnKeyboardFrom),
+@* After OK or Cancel it stays until the keyboard has left it (FormatCellsContext.ReturnKeyboard),
    so that the keys typed as the keyboard goes back reach the Sheet (decided with the user, 2026-10-13: they
    are held and handed on in order): one place in the markup, so the frame is the same instance. *@
 @* A toolbar list hands its keyboard and held keys back before the next frame can take focus. *@
@@ -245,7 +245,6 @@
     private readonly Action<FormatCellsTab> _formatCellsTabShown;
     private readonly Func<Task> _returnKeyboard;
     private readonly Func<Task> _returnKeyboardFromFormatCells;
-    private readonly Func<ElementReference, Func<IReadOnlyList<KeyboardEventArgs>>, Task> _returnKeyboardFromFormatCellsFrame;
     private readonly Func<Task> _formatCellsFromMenu;
 
     // Format Cells (ADR-0071): the tab it reopens on, this Sheet's own and Number at first (case
@@ -471,12 +470,6 @@
         _returnKeyboardFromFormatCells = async () =>
         {
             await _returnKeyboard();
-            LetFormatCellsFrameGo();
-        };
-        _returnKeyboardFromFormatCellsFrame = async (from, typedOnTheWay) =>
-        {
-            if (_grid is { } grid) await grid.ReturnKeyboardAsync(from, typedOnTheWay);
-            else typedOnTheWay();
             LetFormatCellsFrameGo();
         };
         _formatCellsFromMenu = OpenFormatCellsByUserAsync;
@@ -1106,20 +1099,10 @@
         context = new FormatCellsContext(draft, _formatCellsTab, _formatCellsTabShown,
             () => OkFormatCellsAsync(context!), () => CancelFormatCells(context!), _returnKeyboardFromFormatCells)
         {
-            ReturnKeyboardFrom = _returnKeyboardFromFormatCellsFrame,
-            HoldKeysForPopup = async (from, typedOnTheWay) =>
-            {
-                if (!ReferenceEquals(_formatCells, context))
-                {
-                    _ = typedOnTheWay();
-                    return;
-                }
-                // Request order matters: collect the frame's keys before declaring their new
-                // destination, as for ExPivot's report-filter search (ADR-0050 item 16).
-                var returned = grid.ReturnKeyboardAsync(from, typedOnTheWay);
-                var handed = grid.HandKeyboardToFrameAsync();
-                await Task.WhenAll(returned, handed);
-            },
+            InOrder = (kind, handling) => grid.InOrderAsync(kind, handling),
+            JoinSurface = (element, around, escape) => grid.JoinSurfaceAsync(element, around, escape),
+            HandKeyboardToFrame = waitingAt => !ReferenceEquals(_formatCells, context) ? Task.CompletedTask
+                : waitingAt is { } element ? grid.HandKeyboardToFrameAsync(element) : grid.HandKeyboardToFrameAsync(),
             TakeKeyboard = control => ReferenceEquals(_formatCells, context)
                 ? grid.HandKeyboardToAsync(control) : Task.CompletedTask,
         };
@@ -1203,7 +1186,7 @@
     // Ends Format Cells in whichever frame it stands: the Chrome's fragment is no longer rendered,
     // and the grid's popover closes and gives the keyboard back to the root (ADR-0039). Ended by the
     // Chrome's own OK or Cancel, its frame stays until it has given the keyboard back
-    // (FormatCellsContext.ReturnKeyboardFrom): the element the keyboard leaves from is in it.
+    // (FormatCellsContext.ReturnKeyboard): its dialog gives the keyboard back before it goes.
     private async Task EndFormatCellsAsync() => await EndFormatCellsAsync(byTheFrame: false);
 
     private async Task EndFormatCellsAsync(bool byTheFrame)

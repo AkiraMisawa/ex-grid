@@ -68,7 +68,7 @@ public partial class ExGrid<TRow>
     /// <para><paramref name="closedByEscape"/> is called on the renderer's context as Escape closes the
     /// popover, before the grid takes the keyboard back to its root. The keys typed after that Escape
     /// are held until the popover is gone and the keyboard has landed, and a hand-off the Consumer tells
-    /// before its first await — <see cref="HandKeyboardToFrameAsync"/>, then
+    /// before its first await — <see cref="HandKeyboardToFrameAsync()"/>, then
     /// <see cref="HandKeyboardToAsync(ElementReference)"/> — is where they land, in order. Told nothing, they are the
     /// root's. It is not called when the popover closes any other way: a press elsewhere, the box
     /// shrinking, the contents' own <see cref="GridPopoverContext.Close"/>, another popover opened in
@@ -139,7 +139,9 @@ public partial class ExGrid<TRow>
     /// (ADR-0021's note of 2026-09-30). A grid or a control of the page's that the user has moved
     /// to keeps the keyboard (ADR-0018), and so does a field of the grid's own beside the rows, the
     /// Formula Bar or the Name Box, where the user is typing (ADR-0021, widened 2026-09-28). A
-    /// Chrome calls it once its frame has closed, so that the next arrow moves the Focus again.
+    /// Chrome calls it once its frame has closed, so that the next arrow moves the Focus again; or,
+    /// from a surface joined to the grid's order (<see cref="JoinSurfaceAsync"/>), as it closes, before
+    /// it goes: the keyboard there is the instance's, and is granted back from it (ADR-0240 section 6).
     ///
     /// <para>It moves neither the Focus nor the Selection, and it scrolls nothing: the keyboard
     /// comes back to the cell it left. On Blazor Server the request lands a round trip after the
@@ -153,7 +155,7 @@ public partial class ExGrid<TRow>
     /// <summary>
     /// The core's focus function for a frame of the Consumer's own, outside the grid, that holds the
     /// keyboard and gives it back — a toolbar, a list of its own (ADR-0050 item 16's note of
-    /// 2026-10-12, the mirror of <see cref="HandKeyboardToFrameAsync"/>) — with the keys typed on the
+    /// 2026-10-12, the mirror of <see cref="HandKeyboardToFrameAsync()"/>) — with the keys typed on the
     /// frame on the way. The keyboard goes back to the grid's root, to its Keyboard Field on a grid that
     /// edits (ADR-0080), granted where <see cref="ReturnKeyboardAsync()"/> is granted and also while
     /// DOM focus is still on <paramref name="from"/> or inside it: the frame need not first give the
@@ -311,6 +313,151 @@ public partial class ExGrid<TRow>
                 return;
             await HandOffAsync("frame");
         });
+
+    /// <summary>
+    /// <see cref="HandKeyboardToFrameAsync()"/>, with the keyboard waiting on <paramref name="waitingAt"/>
+    /// until the frame's control takes it (ADR-0240 section 6, ticket 06): an element of the frame's own
+    /// inside the product's Input Root or a surface joined to it (<see cref="JoinSurfaceAsync"/>), marked
+    /// <c>data-ex-claims=""</c>, that takes DOM focus now. A frame needs one when its design system hands
+    /// the keyboard back, as it closes, to whatever held it as it opened: a MudDialog's does, and handed
+    /// back to the page's button that opened it, the keyboard would leave the Sheet it had just come back
+    /// to. Waiting on an element that goes once the frame's control has the keyboard, the dialog hands it
+    /// back to nothing.
+    ///
+    /// <para>The keys typed on the element are held with those typed on the grid, and handed to the frame's
+    /// control, in order, when it takes the keyboard through <see cref="HandKeyboardToAsync(ElementReference)"/>,
+    /// as they are without one. The element takes the keyboard only while the keyboard is still the
+    /// instance's, or still on the control it was on when the hand-off was told — the Consumer's button that
+    /// opened the frame. Told while no hand-off to a frame stands, it tells one first.</para>
+    /// </summary>
+    /// <param name="waitingAt">The frame's own element the keyboard waits on.</param>
+    /// <returns>A task that completes once the request has been made.</returns>
+    public Task HandKeyboardToFrameAsync(ElementReference waitingAt)
+        => InvokeAsync(async () =>
+        {
+            if (_disposed || _scrollHandle is null)
+                return;
+            try
+            {
+                // The script tells the hand-off first when none to a frame stands.
+                await _scrollHandle.InvokeVoidAsync("waitForFrameAt", waitingAt);
+            }
+            catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
+            {
+            }
+        });
+
+    /// <summary>
+    /// A surface a design system draws outside the product's Input Root — a <c>MudDialog</c> under its
+    /// provider, a <c>MudPopover</c> at the page's body — joins this grid's Input Order while it is open
+    /// (ADR-0240 section 6, ticket 06). The surface is <paramref name="element"/>, or, with
+    /// <paramref name="around"/>, the nearest element around it that the CSS selector matches: the box the
+    /// design system draws around the Chrome's content and gives it no reference to, such as a MudDialog's
+    /// <c>[role="dialog"]</c>.
+    ///
+    /// <para>Joined, the surface is heard as the Input Root is. A click, a press or a form's submission on a
+    /// control of it that claims the event (<c>data-ex-claims</c>) is numbered and handled in its place in the
+    /// order (<see cref="InOrderAsync(GridInputKind, Func{Task})"/>); so is a key on a control that claims
+    /// every key (<c>keydown</c>) or that key alone (<c>keydown:Enter</c>), told as it reaches that control.
+    /// An Escape typed in it that no control claims, and none inside keeps for itself — a dropdown closing its
+    /// open list keeps its Escape —, is numbered too, and <paramref name="escape"/> is handled in its place:
+    /// the surface's own Cancel, wherever in it the keyboard stands, its title and its empty space included.
+    /// Any other key goes as it comes: a draft's keys are the draft's (ADR-0240 section 1). While an input is
+    /// still being answered, every key typed in the surface is held, and handed on in its turn where that
+    /// answer left the keyboard: an arrow typed in a dialog as its Escape closes it reaches the Sheet, as
+    /// typed slowly.</para>
+    ///
+    /// <para>The keyboard on the surface is the instance's: the grid hands it into the surface
+    /// (<see cref="HandKeyboardToAsync(ElementReference)"/>) and takes it back to its root from there, so a
+    /// surface that closes in an input's turn gives the keyboard back before it goes, and the design system's
+    /// own hand-back on closing finds it given. Moving between the surface and the Input Root crosses nothing
+    /// (<see cref="GridInputKind.KeyboardIn"/>).</para>
+    ///
+    /// <para>A surface inside the Input Root is heard there already, one around the grid is not a surface,
+    /// and one joined already stays that membership's: none of them joins, and the membership answered does
+    /// nothing. Without <paramref name="escape"/>, an Escape typed in the surface goes as it comes. The surface leaves when the
+    /// membership is disposed, when the surface leaves the page, or when the grid is disposed. Before the
+    /// grid is attached to the page there is nothing to join.</para>
+    /// </summary>
+    /// <param name="element">An element of the surface, or the surface itself.</param>
+    /// <param name="around">A CSS selector naming the surface around <paramref name="element"/>; null for
+    /// <paramref name="element"/> itself.</param>
+    /// <param name="escape">What an Escape typed in the surface does, in its turn; null for nothing.</param>
+    /// <returns>The surface's membership, disposed as it closes, once the keyboard has left it.</returns>
+    public async Task<IAsyncDisposable> JoinSurfaceAsync(ElementReference element, string? around = null, Func<Task>? escape = null)
+    {
+        IAsyncDisposable joined = NoSurface.Instance;
+        await InvokeAsync(async () =>
+        {
+            if (_disposed || _scrollHandle is null)
+                return;
+            var id = ++_surfaceCount;
+            _surfaces[id] = escape;
+            try
+            {
+                // Refused where nothing joins, or where the surface is another membership's already.
+                if (await _scrollHandle.InvokeAsync<bool>("joinSurface", element, around, id, escape is not null))
+                    joined = new Surface(this, id);
+                else
+                    _surfaces.Remove(id);
+            }
+            catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
+            {
+                _surfaces.Remove(id);
+            }
+        });
+        return joined;
+    }
+
+    // The joined surfaces' Escapes, by the number the script knows each by (JoinSurfaceAsync).
+    private readonly Dictionary<int, Func<Task>?> _surfaces = [];
+    private int _surfaceCount;
+
+    /// <summary>
+    /// An Escape typed in the surface joined as <paramref name="surface"/>, numbered <paramref name="input"/>
+    /// by the key gate (ADR-0240 section 6, ticket 06): the surface's Escape, handled in its place in the
+    /// Input Order; nothing for a surface that has left.
+    /// </summary>
+    /// <remarks>Not the contract (ADR-0201): the grid's script calls it, so it is public, but it is
+    /// hidden from a Consumer's editor and may change in any version.</remarks>
+    /// <param name="surface">The number the surface joined by.</param>
+    /// <param name="input">The number the script gave the key, which the root names once it has been
+    /// answered (ADR-0220).</param>
+    /// <param name="fieldText">The browser field's text carried by this input (ADR-0240 section 5).</param>
+    /// <returns>A task that completes once the key is answered.</returns>
+    [JSInvokable, System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+    public Task OnSurfaceEscapeAsync(int surface, int input = 0, GridInputText? fieldText = null)
+        => AnsweredAsync(() => !_disposed && _surfaces.GetValueOrDefault(surface) is { } escape ? escape() : Task.CompletedTask,
+            input, fieldText);
+
+    private Task LeaveSurfaceAsync(int id)
+        => InvokeAsync(async () =>
+        {
+            if (!_surfaces.Remove(id) || _disposed || _scrollHandle is null)
+                return;
+            try
+            {
+                // By its number: the surface may have left the page already, where no reference reaches it.
+                await _scrollHandle.InvokeVoidAsync("leaveSurface", id);
+            }
+            catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
+            {
+            }
+        });
+
+    // A joined surface's membership: disposed, the surface leaves.
+    private sealed class Surface(ExGrid<TRow> grid, int id) : IAsyncDisposable
+    {
+        public ValueTask DisposeAsync() => new(grid.LeaveSurfaceAsync(id));
+    }
+
+    // The membership of a surface that joined nothing.
+    private sealed class NoSurface : IAsyncDisposable
+    {
+        public static readonly NoSurface Instance = new();
+
+        public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+    }
 
     /// <summary>Tells the key gate where the keyboard is going (ADR-0039, 2026-10-01): sent before
     /// the key's answer and before the render that closes the menu a command ran from.</summary>

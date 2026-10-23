@@ -15,6 +15,12 @@ ExSheet.Components.ExSheet.Workbook.get -> ExSheet.Engine.WorkbookDocument?
 ExSheet.Components.ExSheet.Workbook.set -> void
 ExSheet.Components.ExSheet.WorkbookChanged.get -> Microsoft.AspNetCore.Components.EventCallback<ExSheet.Engine.WorkbookDocument!>
 ExSheet.Components.ExSheet.WorkbookChanged.set -> void
+ExSheet.FormatCellsContext.HandKeyboardToFrame.get -> System.Func<Microsoft.AspNetCore.Components.ElementReference?, System.Threading.Tasks.Task!>?
+ExSheet.FormatCellsContext.HandKeyboardToFrame.init -> void
+ExSheet.FormatCellsContext.InOrder.get -> System.Func<ExGrid.Chrome.GridInputKind, System.Func<System.Threading.Tasks.Task!>!, System.Threading.Tasks.Task!>?
+ExSheet.FormatCellsContext.InOrder.init -> void
+ExSheet.FormatCellsContext.JoinSurface.get -> System.Func<Microsoft.AspNetCore.Components.ElementReference, string?, System.Func<System.Threading.Tasks.Task!>?, System.Threading.Tasks.Task<System.IAsyncDisposable!>!>?
+ExSheet.FormatCellsContext.JoinSurface.init -> void
 ExSheet.ISheetChrome.SheetFindPanel(ExSheet.SheetFindContext! context) -> Microsoft.AspNetCore.Components.RenderFragment?
 ExSheet.ISheetChrome.SheetTab(ExSheet.SheetTabContext! context) -> Microsoft.AspNetCore.Components.RenderFragment?
 ExSheet.ISheetChrome.SheetTabAdd() -> Microsoft.AspNetCore.Components.RenderFragment?
@@ -108,3 +114,7 @@ static ExSheet.SheetTabContext.operator !=(ExSheet.SheetTabContext? left, ExShee
 static ExSheet.SheetTabContext.operator ==(ExSheet.SheetTabContext? left, ExSheet.SheetTabContext? right) -> bool
 static ExSheet.SheetTabMenuContext.operator !=(ExSheet.SheetTabMenuContext? left, ExSheet.SheetTabMenuContext? right) -> bool
 static ExSheet.SheetTabMenuContext.operator ==(ExSheet.SheetTabMenuContext? left, ExSheet.SheetTabMenuContext? right) -> bool
+*REMOVED*ExSheet.FormatCellsContext.ReturnKeyboardFrom.get -> System.Func<Microsoft.AspNetCore.Components.ElementReference, System.Func<System.Collections.Generic.IReadOnlyList<Microsoft.AspNetCore.Components.Web.KeyboardEventArgs!>!>!, System.Threading.Tasks.Task!>?
+*REMOVED*ExSheet.FormatCellsContext.ReturnKeyboardFrom.init -> void
+*REMOVED*ExSheet.FormatCellsContext.HoldKeysForPopup.get -> System.Func<Microsoft.AspNetCore.Components.ElementReference, System.Func<System.Collections.Generic.IReadOnlyList<Microsoft.AspNetCore.Components.Web.KeyboardEventArgs!>!>!, System.Threading.Tasks.Task!>?
+*REMOVED*ExSheet.FormatCellsContext.HoldKeysForPopup.init -> void

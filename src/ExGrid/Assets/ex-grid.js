@@ -240,28 +240,68 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         const outer = root.parentElement?.closest('[data-ex-input-root], .ex-grid') ?? null;
         return outer !== null && outer.hasAttribute('data-ex-input-root') ? outer : root;
     })();
-    // Inside the Input Root and outside this root: the product's own markup around the grid.
-    const outsideRootWithin = (node) => node instanceof Node && !!root && !!inputRoot && inputRoot !== root
-        && inputRoot.contains(node) && !root.contains(node);
+    // The surfaces that have joined this instance's handle while they are open (ADR-0240 section 6,
+    // ticket 06): a dialog or a list a design system draws outside the Input Root — a MudDialog under
+    // its provider, a MudPopover at the body — whose Chrome named it (joinSurface). The same capture
+    // listeners hear it as hear the Input Root, so its input takes its place in this instance's order,
+    // and the keyboard on it is the instance's. It joins nothing else on the page, and leaves when its
+    // Chrome says so or when it leaves the page.
+    const joined = new Map();
+    // The frame's element the keyboard waits on while a hand-off to the frame stands (waitForFrameAt).
+    let frameWaitingAt = null;
+    // The joined surface around `node`, if one is; one no longer on the page is forgotten here.
+    const joinedAround = (node) => {
+        if (!(node instanceof Node) || joined.size === 0) {
+            return null;
+        }
+        for (const surface of joined.keys()) {
+            if (!surface.isConnected) {
+                leaveSurface(surface);
+            } else if (surface.contains(node)) {
+                return surface;
+            }
+        }
+        return null;
+    };
+    // Inside the Input Root or a joined surface: the keyboard moving between two such places crosses
+    // nothing (tellCrossing).
+    const withinInstance = (node) => node instanceof Node
+        && ((!!inputRoot && inputRoot.contains(node)) || joinedAround(node) !== null);
+    // Inside the Input Root or a joined surface, and outside this root: the product's own markup around
+    // the grid.
+    const outsideRootWithin = (node) => node instanceof Node && !!root && !!inputRoot && !root.contains(node)
+        && ((inputRoot !== root && inputRoot.contains(node)) || joinedAround(node) !== null);
     // A surface of the product's own around this root that puts its input in this instance's order
     // (ExGrid.InOrderAsync), and says which events its handler claims (data-ex-claims): the nearest
     // such element around `node` — ExSheet's toolbar band, a built-in toolbar button, a Sheet Tab — or
     // null. Not the Input Root itself, whose claims are the keyboard crossing its edge (onFocused), and
     // nothing inside another grid. An element of the product's that claims nothing — a design
     // system's control a Wrapper draws on the band — is not this order's (ADR-0240 section 7, ticket 06).
+    // In a joined surface, the nearest such element inside it, and nothing inside a grid it holds.
     const outerClaimant = (node) => {
         if (!outsideRootWithin(node)) {
             return null;
         }
         const element = node instanceof Element ? node : node.parentElement;
         const claimant = element?.closest('[data-ex-claims]') ?? null;
-        return claimant !== null && claimant !== inputRoot && claimant.closest('.ex-grid, [data-ex-input-root]') === inputRoot
-            ? claimant : null;
+        if (claimant === null || claimant === inputRoot) {
+            return null;
+        }
+        const bound = claimant.closest('.ex-grid, [data-ex-input-root]');
+        const surface = joinedAround(element);
+        if (surface !== null) {
+            return surface.contains(claimant) && (bound === null || !surface.contains(bound)) ? claimant : null;
+        }
+        return bound === inputRoot ? claimant : null;
     };
     // Such a surface that holds the keyboard itself — the band, a tab —, where a key typed is its own.
     const outerSurface = (node) => (node !== null && outerClaimant(node) === node ? node : null);
-    // The surface of the product's own that holds DOM focus, if one does (outerSurface).
-    const outerControl = () => outerSurface(document.activeElement);
+    // An element of a joined surface, outside this root: every one of them is the instance's while the
+    // surface stands, whatever it claims — the design system's tabs, radio buttons and fields included.
+    const joinedControl = (node) => (node instanceof Element && !!root && !root.contains(node)
+        && joinedAround(node) !== null ? node : null);
+    // The surface of the product's own that holds DOM focus, if one does (outerSurface, joinedControl).
+    const outerControl = () => outerSurface(document.activeElement) ?? joinedControl(document.activeElement);
 
     // The Settled Mark (ADR-0220; ADR-0021's note of 2026-10-16): `data-ex-settled` on the root while
     // every input the gate has taken has been handled and its effect is in the DOM, so that a test, or
@@ -586,7 +626,9 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // holds the keyboard — ExSheet's toolbar band, a Sheet Tab — is the instance's, so the arrow on a tab
     // gives the keyboard to the tab it selects. A focus the core asks for back into this root is not taken
     // from such a surface: asked a round trip before the band took the keyboard, it would take it back.
-    const instanceHolds = (active) => ownsFocus(active) || outerSurface(active) !== null;
+    // A joined surface holding the keyboard is the instance's too (joinedControl): a dialog's control hands
+    // the keyboard back to the grid, and the grid hands it on into the dialog, from there.
+    const instanceHolds = (active) => ownsFocus(active) || outerSurface(active) !== null || joinedControl(active) !== null;
     // DOM focus inside this root, or on nothing: the keyboard is still this grid's.
     const keyboardStillHere = () => {
         const active = document.activeElement;
@@ -2724,7 +2766,9 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
                 // A surface that is holding the keys typed on it itself (data-ex-holds) — the band while a
                 // list it opened is on its way to the keyboard — takes the rest straight on, in order, as
                 // typed there: waited for, the key after it went to the list ahead of the one it held.
-                if (outerSurface(target) !== null) {
+                // So is a key handed into a joined surface — a dialog's Escape, a list's arrow — which its
+                // claim numbered as it went on (onJoinedKeyClaim).
+                if (outerSurface(target) !== null || joinedControl(target) !== null) {
                     if (k.key === 'Alt') {
                         k.altAlone = false;
                     }
@@ -2951,11 +2995,16 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         if (cancelUnderWay(event)) {
             return;
         }
-        if (claimOf(event.target, 'keydown') === null) {
+        // The keys typed on a frame's waiting element (waitForFrameAt) are held for the frame's control, as
+        // those typed on the root are: the element claims nothing, and is where the keyboard waits.
+        const waiting = answering && handOff === 'frame' && event.target === frameWaitingAt;
+        if (keyClaimOf(event.target, event.key) === null && !waiting) {
             return;
         }
         if (replaying) {
-            tellClaim('keydown');
+            if (!waiting) {
+                tellClaim('keydown');
+            }
             return;
         }
         if (answering) {
@@ -2971,6 +3020,70 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             return;
         }
         // A press of Alt here starts no KeyTips of the root's: its release is this surface's.
+        altPending = null;
+        startHold(answeredUpTo(tellClaim('keydown')));
+    };
+    // A key typed on a joined surface (joinSurface; ADR-0240 section 6, ticket 06). While the gate holds
+    // input — behind a close or a commit still being answered — it is held, whatever it is, and handed on
+    // in its turn where that answer left the keyboard: an arrow typed in a dialog as its Escape closes it
+    // is the Sheet's, as typed slowly, never the closing dialog's. Otherwise it goes as it came: a draft's
+    // keys are the draft's (section 1), and a key the surface claims is told as it reaches the surface
+    // (onJoinedKeyClaim). An Escape cancels work under way first, as on the Sheet's own surfaces.
+    const onJoinedKey = (event) => {
+        lookSettled();
+        if (!core || replaying || event.isComposing || event.keyCode === 229 || joinedControl(event.target) === null) {
+            return;
+        }
+        endHoldAtKey();
+        if (cancelUnderWay(event) || !answering) {
+            return;
+        }
+        const k = snapshot(event);
+        if (isClipboardKey(k)) {
+            return;
+        }
+        event.preventDefault();
+        event.stopPropagation();
+        noteAlt(k, k, true);
+        held.push(k);
+    };
+    // A key a joined surface claims (data-ex-claims: `keydown`, or `keydown:<key>` for that key alone — a
+    // dialog's Escape), told as it reaches the claimant, in the bubble phase: after the controls inside
+    // the surface have heard it, so a key one of them keeps — Escape closing a dropdown's open list — is
+    // told to no one, and before Blazor, which hears it on the document, dispatches it to the claimant's
+    // handler, which claims the number. The keys after it wait until it has been answered. Handed on from
+    // the hold (replaying), it is told the same way, and the drain waits on it (joinedControl).
+    // An Escape no control of the surface claims is the surface's own (ExGrid.JoinSurfaceAsync's `escape`):
+    // numbered here and told to the core, which handles it in that number's turn, wherever in the surface
+    // the keyboard stands — its title, its empty space —, unless a control inside kept it for itself
+    // first, as a dropdown closing its open list does. Its default and Blazor's handlers do not hear it.
+    const onJoinedKeyClaim = (event) => {
+        if (!core || event.isComposing || event.keyCode === 229 || joinedControl(event.target) === null) {
+            return;
+        }
+        if (keyClaimOf(event.target, event.key) === null) {
+            const membership = joined.get(joinedAround(event.target));
+            if (event.key === 'Escape' && membership?.escape === true && plain(event) && !event.shiftKey && !event.repeat
+                && !event.defaultPrevented) {
+                event.preventDefault();
+                event.stopPropagation();
+                const input = nextInput();
+                core.invokeMethodAsync('OnSurfaceEscapeAsync', membership.id, input, inputText()).catch((error) => {
+                    if (core) {
+                        console.error('[ex-grid] the grid failed to hear an Escape', error);
+                    }
+                });
+                if (!replaying) {
+                    altPending = null;
+                    startHold(answeredUpTo(input));
+                }
+            }
+            return;
+        }
+        if (replaying) {
+            tellClaim('keydown');
+            return;
+        }
         altPending = null;
         startHold(answeredUpTo(tellClaim('keydown')));
     };
@@ -3543,7 +3656,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             // reading, so a later focus from nothing is the arrival it is.
             const backFromWindow = other === null && windowLeftFrom === event.target;
             windowLeftFrom = null;
-            if (other instanceof Node && inputRoot?.contains(other)) {
+            if (withinInstance(other)) {
                 // A move inside crosses nothing, unless the keyboard came in untold — before the Input
                 // Root claimed its crossings, or as the page loaded: the first move inside is then told
                 // as its arrival, and the handler that hears it learns that the keyboard is here.
@@ -3560,7 +3673,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             }
             return;
         }
-        if (other instanceof Node && inputRoot?.contains(other)) {
+        if (withinInstance(other)) {
             return;
         }
         // The window losing focus leaves DOM focus where it was: no departure.
@@ -3931,6 +4044,18 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         const claimant = claimantOf(target);
         return claimant !== null && claimant.getAttribute('data-ex-claims').split(' ').includes(kind) ? claimant : null;
     };
+    // The control that claims a keydown of `key` there: one that claims every key (`keydown`), or that key
+    // alone (`keydown:Enter`, the space bar's as `keydown:Space`), so a button numbers the keys that press
+    // it and leaves the rest to the surface around it (ADR-0240 section 1). Its handler claims the number
+    // for exactly the keys it names, whatever modifiers they carry.
+    const keyClaimOf = (target, key) => {
+        const claimant = claimantOf(target);
+        if (claimant === null) {
+            return null;
+        }
+        const claims = claimant.getAttribute('data-ex-claims').split(' ');
+        return claims.includes('keydown') || claims.includes(`keydown:${key === ' ' ? 'Space' : key}`) ? claimant : null;
+    };
     // A control a press on is held while the gate holds input, so that its release, its click and its
     // double click are held behind it (onPress): one whose handler a press, a click or a double click
     // reaches. The rows claim only their context menu, and keep their own hold.
@@ -3951,7 +4076,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     };
     // A keydown going on to the Blazor handler of a control that claims it — a menu's items, a value
     // list — told, and its number answered (tellClaim); 0 for one no control claims.
-    const tellKeyClaim = (event) => (core && claimOf(event.target, 'keydown') !== null ? tellClaim('keydown') : 0);
+    const tellKeyClaim = (event) => (core && keyClaimOf(event.target, event.key) !== null ? tellClaim('keydown') : 0);
     // The keyboard crossing the root's edge (focusin, focusout) adds no layer an Escape peels, so it is
     // numbered neutral (layerInputAt): an Escape typed straight after a Tab into the grid still releases
     // Tab at its keydown, and the Tab after it leaves (ADR-0230 section 1).
@@ -4745,8 +4870,15 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // reached the core after the handler had run, unnumbered, and the number told behind it was owed
     // until another telling voided it. They are heard on the window, in the capture phase, which the
     // browser runs before the document's: only those whose target is this instance's own.
+    // A joined surface's form is heard here too (joinSurface): Enter in a dialog's field is its OK.
     const onClaimedAhead = (event) => {
-        if (!root || !(event.target instanceof Node) || !root.contains(event.target)) {
+        if (!root || !(event.target instanceof Node)) {
+            return;
+        }
+        if (!root.contains(event.target)) {
+            if (event.type === 'submit' && joinedControl(event.target) !== null) {
+                onClaimedEvent(event);
+            }
             return;
         }
         if (event.type === 'submit') {
@@ -4794,6 +4926,56 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     for (const [type, listener] of outerListeners) {
         inputRoot.addEventListener(type, listener, true);
     }
+    // A joined surface (joinSurface) is heard by the same capture listeners while it stands, but for its
+    // keys: those it holds behind an input being answered (onJoinedKey), and tells as they reach the
+    // control that claims them (onJoinedKeyClaim, in the bubble phase). The keyboard moving between it and
+    // the Input Root crosses nothing (tellCrossing).
+    const onJoinedKeyUp = outer((event) => {
+        if (answering && joinedControl(event.target) !== null) {
+            onRootKeyUp(event);
+        }
+    });
+    const joinedListeners = [
+        ['keydown', outer(onJoinedKey), true], ['keydown', outer(onJoinedKeyClaim), false], ['keyup', onJoinedKeyUp, true],
+        ['mousedown', onOuterPressed, true], ['mouseup', onOuterReleased, true],
+        ['click', onOuterClaimed, true], ['dblclick', onOuterClaimed, true], ['contextmenu', onOuterClaimed, true],
+        ['focus', tellCrossing, true], ['focusout', tellCrossing, true],
+    ];
+    // The surface `element` names, or the nearest element around it that `around` matches — the box a
+    // design system draws around a Chrome's content and gives it no reference to, such as a MudDialog's
+    // `[role="dialog"]` —, joined to this instance's handle until it leaves (ADR-0240 section 6, ticket
+    // 06). One already inside the Input Root is heard there already, and one around this root or the Input
+    // Root is not a surface of it: neither joins.
+    const surfaceOf = (element, around) => {
+        if (!(element instanceof Element)) {
+            return null;
+        }
+        const surface = typeof around === 'string' && around.length > 0 ? element.closest(around) : element;
+        return surface !== null && root && inputRoot && !inputRoot.contains(surface) && !surface.contains(root)
+            && !surface.contains(inputRoot) ? surface : null;
+    };
+    // Joined by the number the core knows it by, which its Escape is told with (onJoinedKeyClaim), and
+    // whether it has an Escape of its own: one with none lets an Escape go as it comes. Answers whether it
+    // joined: a surface joined already is another membership's, and stays that one's.
+    const joinSurface = (element, around, id, escape) => {
+        const surface = surfaceOf(element, around);
+        if (surface === null || joined.has(surface) || !core) {
+            return false;
+        }
+        joined.set(surface, { id, escape: escape === true });
+        for (const [type, listener, capture] of joinedListeners) {
+            surface.addEventListener(type, listener, capture);
+        }
+        return true;
+    };
+    const leaveSurface = (surface) => {
+        if (!joined.delete(surface)) {
+            return;
+        }
+        for (const [type, listener, capture] of joinedListeners) {
+            surface.removeEventListener(type, listener, capture);
+        }
+    };
 
     // The clipboard (ADR-0005) — the fourth allowlist entry (ADR-0021). Both events
     // fire on the focused root — verified on the real Chrome: a non-editable,
@@ -5462,6 +5644,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             }
             handOff = to;
             handOffFrom = to === 'frame' ? outsideControl() : null;
+            frameWaitingAt = null;
             keyboardMissed = false;
             if (to === 'popover') {
                 handOffInput = nextInput(true);
@@ -5473,6 +5656,43 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             }
             if (!answering) {
                 startHold();
+            }
+        },
+        // The keyboard on its way to a frame of the Consumer's own (handOff 'frame') waits on `element`, an
+        // element of the frame's own on the product's surface that claims nothing (data-ex-claims=""), until
+        // the frame's control takes it (handKeyboardTo): Format Cells' frame, whose dialog is drawn round
+        // trips later, and whose design system hands the keyboard back on closing to whatever held it as the
+        // dialog opened — an element gone by then (ADR-0240 section 6, ticket 06). It takes DOM focus here,
+        // and becomes the place the keyboard comes from, so the hand-off arrives only at the next control to
+        // hold the keyboard; the keys typed on it are held with those typed on the root (onOuterKey), and
+        // handed to that control in their order. Granted where handKeyboardTo is, and from the element the
+        // keyboard was on when the hand-off was told: a Consumer's button that opened the frame. Reads
+        // document.activeElement and no layout. Told while no hand-off to a frame stands, it tells one first.
+        waitForFrameAt: (element) => {
+            if (!core || !(element instanceof HTMLElement) || !element.isConnected) {
+                return;
+            }
+            if (handOff !== 'frame') {
+                handle.handOff('frame');
+            }
+            const active = document.activeElement;
+            if (active && active !== document.body && active !== document.documentElement && !instanceHolds(active)
+                && active !== handOffFrom) {
+                return;
+            }
+            handOffFrom = element;
+            frameWaitingAt = element;
+            element.focus({ preventScroll: true });
+        },
+        // A surface a design system draws outside the Input Root joins this instance's handle while it is
+        // open, and leaves it (joinSurface, leaveSurface; ADR-0240 section 6, ticket 06).
+        // Left by its number: the surface may have left the page already, where no reference reaches it.
+        joinSurface: (element, around, id, escape) => joinSurface(element, around, id, escape),
+        leaveSurface: (id) => {
+            for (const [surface, membership] of joined) {
+                if (membership.id === id) {
+                    leaveSurface(surface);
+                }
             }
         },
         // A paste's flavour, asked for in the paste's turn (ExGrid.OnPasteTakenAsync): compressed, as the
@@ -5657,13 +5877,16 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         // (takeKeyboardBack), which then need not give it up to nothing first. From a frame, a keyboard
         // already inside this root — in a popover a command from the frame opened — is this grid's,
         // and stays where it is. Answers whether it was granted.
+        // And while DOM focus is in a joined surface (ADR-0240 section 6, ticket 06): the dialog or list
+        // is the instance's, and gives the keyboard back to the grid from where it stands, before it goes.
         reclaimFocus: (fromField, frame) => {
             const active = document.activeElement;
             const own = active instanceof Element && active !== staleField
                 && active.closest('.ex-formula-bar') !== null;
             if (root && (!active || active === document.body || active === document.documentElement
                 || (ownsFocus(active) && (fromField === true || !own))
-                || (frame instanceof Element && frame.contains(active)))) {
+                || (frame instanceof Element && frame.contains(active))
+                || joinedControl(active) !== null)) {
                 if (frame instanceof Element && active instanceof Element && root.contains(active)) {
                     return true;
                 }
@@ -5902,6 +6125,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             root.removeEventListener('cut', onHeldClipboard, true);
             root.removeEventListener('paste', onHeldClipboard, true);
             lastSurface = null;
+            frameWaitingAt = null;
             typedFields.clear();
             if (typingFrame !== null) cancelAnimationFrame(typingFrame);
             typingFrame = null;
@@ -5916,6 +6140,9 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             dropHeld();
             for (const [type, listener] of outerListeners) {
                 inputRoot.removeEventListener(type, listener, true);
+            }
+            for (const surface of [...joined.keys()]) {
+                leaveSurface(surface);
             }
             delete root[JOURNAL];
             root = null;

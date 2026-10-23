@@ -316,6 +316,51 @@ Five questions were put to the user on 2026-10-20; the user took the recommendat
   a box drawn with `display: contents` cannot take: the MudBlazor Wrapper's Field Settings… opened from a
   Report Filter while nothing else is placed leaves the keyboard where it was (ticket 06's remainder).
 
+## As built: ticket 06, the Wrappers' surfaces outside the Input Root (2026-10-23)
+
+The first part: the mechanism, and ExSheet.MudBlazor's Format Cells dialog and its More Colours popup on it.
+
+- **A surface joins by a call of the grid's** (`ExGrid.JoinSurfaceAsync`): the element, or with a selector
+  the nearest element around it that matches — the box a design system draws round the Chrome's content and
+  gives it no reference to, a MudDialog's `[role="dialog"]` —, and an Escape to run in its turn. Disposing
+  the membership leaves, by the number it joined by, since a surface already off the page has no reference
+  left; a surface removed from the page leaves by itself. One inside the Input Root, one around it, or one
+  joined already does not join, and its membership does nothing, so disposing it cannot unjoin another's. Joined, it is heard as the Input Root's surfaces are (section 6): a claimed
+  press, click or submission is numbered and handled in its place, focus crossing it is told, a keyboard
+  standing on it is the instance's (handed on from it, never taken from it), and the hold's replay waits on
+  a key told there.
+- **A claim may name a key** (`keydown:Enter`, `keydown:Space`), and the claim is told in the bubble phase
+  on a joined surface: after the controls inside it have heard the key, so a key one of them keeps — Escape
+  closing a dropdown's open list — reaches no claimant.
+- **The surface's own Escape** — one no control of it claims, and no control kept — is numbered by the
+  script and told straight to the core with the surface's number, which runs the Escape the surface joined
+  with in that number's turn. Its default and Blazor's handlers do not hear it. A surface that joined with
+  no Escape lets one go as it comes, to its own handlers. The dialog's Escape cancels
+  Format Cells, unless a More Colours popup of the dialog's is open; the popup's own closes the popup.
+- **While an input is answered, every key typed in a joined surface is held** behind it, with those typed on
+  the root, and handed on where its turn left the keyboard (decided with the user, 2026-10-13). So the keys
+  typed after Escape, OK, Cancel or × go to the Sheet, and those typed as More Colours opens go to HEX, with
+  no queue of the Wrapper's (`KeysOnTheirWay`, `HoldKeysForPopup` and the dialog's `_keysReady` gate are gone).
+- **The keyboard can wait on a frame's own element** (`ExGrid.HandKeyboardToFrameAsync(ElementReference)`).
+  MudBlazor's dialog gives the keyboard back, as it closes, to whatever held it as it opened; Format Cells
+  opened from a page's button would give it to the button. The frame's empty element (`data-ex-claims=""`)
+  takes DOM focus as the hand-off to the frame is told, granted where the grid's own hand-on is granted and
+  also from the control the hand-off started on, and becomes where the keyboard comes from, so the hand-off
+  arrives at the tab. The keys typed on it while it waits are held with those typed on the root, though it
+  claims nothing, and handed to the tab in order. The script moves DOM focus for it, a ninth place
+  (ADR-0021's note of today).
+- **A turn closes in order:** OK sets what was touched, or Cancel ends Format Cells, then the keyboard goes
+  back to the Sheet from the dialog — the instance's, so granted —, and only then does the dialog close;
+  More Colours hands the keyboard to its opener before its popup goes. The dialog's tabs take the keyboard
+  only once the dialog has joined.
+- **Trade-offs.** A press outside More Colours' popup closes it, MudBlazor's own close, and the keyboard
+  goes to the opener from wherever in the dialog it was. A press on the dialog's backdrop is MudBlazor's and
+  not in the order: it closes as before, the core's focus function called once the dialog has left the page.
+  The frame's one-second check that a `MudDialogProvider` drew the dialog stays: it reports a page set up
+  wrong, not a race. A key MudSelect keeps for its list is not told, and stays its.
+- **Left for the second part:** the Wrapper's toolbar lists, ExGrid.MudBlazor's Find panel and toolbar
+  items' focus through the seam, the drafts' sweep (section 1), and the pivot's Field Settings… gap.
+
 ## Added 2026-10-20, decided with the user: the Input Journal, a circuit that is down, and a paste cancelled
 
 Three questions the order left open, asked after the Hunt traces of 2026-10-19 had to infer which inputs

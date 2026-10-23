@@ -58,6 +58,18 @@ default would have. It reads `document.activeElement` only; the same entry, not 
 an element the browser may drag (`draggable="true"`) is not held at all, since holding it cancels the drag;
 that reads one attribute.
 
+*(2026-10-23, [ADR-0240](./0240-input-to-one-product-instance-is-taken-in-one-order.md)'s note on ticket 06.)*
+A surface a design system draws outside the Input Root (a MudDialog, a MudPopover at the page's body)
+joins the instance's handle while it is open: the listeners the eleventh entry puts on the Input Root's
+surfaces are put on it, by the core's call, and taken off as it leaves or is removed. It is the same entry,
+not a new one; it reads `closest` and `document.activeElement`, and no layout. Its Escape is told to the
+core in the bubble phase, after the surface's own controls, so a dropdown's list keeps its own. And the
+script moves DOM focus in one place more, the ninth: a frame's own waiting element takes the keyboard as
+the hand-off to the frame is told (`waitForFrameAt`), granted where the grid's hand-on to a frame's control
+is granted and also from the control the hand-off started on. Done from C#, a round trip later, the
+keyboard would sit on the Consumer's button meanwhile, and MudBlazor's dialog, saving what held it as it
+opened, would give it back there as it closed.
+
 *(2026-10-11, decided with the user, [ADR-0007](./0007-edits-are-an-overlay-owned-by-the-consumer.md)'s
 note on ST-2: when an untyped editor's row leaves the Window, the editor's listener answers one question,
 whether its field still holds the text it opened with and is not composing, and when it does, starts the
