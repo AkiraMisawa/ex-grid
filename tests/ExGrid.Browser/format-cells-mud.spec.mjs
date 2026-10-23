@@ -515,6 +515,10 @@ test.describe('on /sheet?chrome=mud', () => {
             await expect(hex).toHaveValue(/^#ff0000$/i);
             await expect(formatCells(page).getByRole('radio', { name: 'Red', exact: true })).toBeChecked();
             await page.keyboard.press('Escape');
+            // The Escape is the popup's, in the Sheet's order: a Tab typed while it is still answered is
+            // held, and a held Tab is refused aloud (ADR-0240's trade-offs on ticket 05). The Tab here
+            // comes once the close has been answered, the keyboard on the opener.
+            await circuitQuiet();
             await expect(opener).toBeFocused();
             await page.keyboard.press('Tab');
             await expect(formatCells(page).getByRole('button', { name: 'OK', exact: true })).toBeFocused();
