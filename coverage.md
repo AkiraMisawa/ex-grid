@@ -5,8 +5,8 @@
 | ExGrid | 95% | 88% |
 | ExSheet | 95.3% | 88% |
 | ExPivot | 94.4% | 85.5% |
-| ExChart | 89.9% | 80.6% |
-| ExBoard | 91.9% | 81.9% |
+| ExChart | 90.3% | 81.2% |
+| ExBoard | 91.7% | 81.8% |
 | Data | 94.5% | 90% |
 
 # Summary
@@ -14,29 +14,29 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/22/2026 - 22:11:34 |
+| Generated on: | 10/23/2026 - 08:38:35 |
 | Parser: | MultiReport (19x Cobertura) |
 | Assemblies: | 14 |
-| Classes: | 1095 |
+| Classes: | 1097 |
 | Files: | 569 |
-| **Line coverage:** | 94.4% (75728 of 80150) |
-| Covered lines: | 75728 |
-| Uncovered lines: | 4422 |
-| Coverable lines: | 80150 |
-| Total lines: | 128225 |
-| **Branch coverage:** | 86.8% (45196 of 52049) |
-| Covered branches: | 45196 |
-| Total branches: | 52049 |
+| **Line coverage:** | 94.4% (76356 of 80815) |
+| Covered lines: | 76356 |
+| Uncovered lines: | 4459 |
+| Coverable lines: | 80815 |
+| Total lines: | 128922 |
+| **Branch coverage:** | 86.8% (45700 of 52619) |
+| Covered branches: | 45700 |
+| Total branches: | 52619 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
 
 ## Coverage
-<details><summary>ExBoard - 91.9%</summary>
+<details><summary>ExBoard - 91.7%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExBoard**|**91.9%**|**81.9%**|
+|**ExBoard**|**91.7%**|**81.8%**|
 |ExBoard.BoardCell|100%||
 |ExBoard.BoardCellsQuery|100%||
 |ExBoard.BoardChartChange|100%|25%|
@@ -55,7 +55,7 @@
 |ExBoard.BoardReading|100%||
 |ExBoard.BoardRow|100%||
 |ExBoard.BoardSource|100%|84.6%|
-|ExBoard.BoardSpec|92%|75.2%|
+|ExBoard.BoardSpec|91.4%|75.1%|
 |ExBoard.BoardSpec.DeclaredColumns|75%|100%|
 |ExBoard.BoardSpecAnswer|100%||
 |ExBoard.BoardSpecTool|100%||
@@ -76,11 +76,11 @@
 |ExBoard.Narrowing|76.7%|59.5%|
 
 </details>
-<details><summary>ExChart - 84.5%</summary>
+<details><summary>ExChart - 85.4%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExChart**|**84.5%**|**73%**|
+|**ExChart**|**85.4%**|**74.9%**|
 |ExChart.ChartPointClick|100%||
 |ExChart.ChartRange|100%|50%|
 |ExChart.ChartTarget|100%||
@@ -91,7 +91,7 @@
 |ExChart.Chrome.IChartChrome|0%||
 |ExChart.ColumnSeries|100%||
 |ExChart.Components.ChartAxesView|97.9%|86.1%|
-|ExChart.Components.ChartBandView|100%|42.8%|
+|ExChart.Components.ChartBandView|100%|71.4%|
 |ExChart.Components.ChartDrawing|100%|100%|
 |ExChart.Components.ChartFileDrawing|100%||
 |ExChart.Components.ChartFileDrawing.Input|100%||
@@ -100,9 +100,9 @@
 |ExChart.Components.ChartKeysView|11.7%|25%|
 |ExChart.Components.ChartLegendView|98.2%|62.5%|
 |ExChart.Components.ChartPointer|16.6%||
-|ExChart.Components.ChartSeriesView|79.6%|80.4%|
-|ExChart.Components.ChartTooltipView|100%|59%|
-|ExChart.Components.ExChart|89.8%|81.7%|
+|ExChart.Components.ChartSeriesView|86.8%|84.1%|
+|ExChart.Components.ChartTooltipView|100%|90.9%|
+|ExChart.Components.ExChart|90.7%|84.1%|
 |ExChart.Components.ExChartStylesheet|0%||
 |ExChart.Components.ExSurface|79.5%|79.1%|
 |ExChart.Components.SurfaceReports|25%||
@@ -123,11 +123,11 @@
 |ExChart.SnapshotChartData|100%|100%|
 
 </details>
-<details><summary>ExChart.Engine - 95.8%</summary>
+<details><summary>ExChart.Engine - 95.3%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExChart.Engine**|**95.8%**|**84.7%**|
+|**ExChart.Engine**|**95.3%**|**84.5%**|
 |ExChart.Engine.Appearance|100%|100%|
 |ExChart.Engine.AppearanceKeys|100%||
 |ExChart.Engine.AxisStyle|100%||
@@ -135,27 +135,28 @@
 |ExChart.Engine.AxisTicks|100%|100%|
 |ExChart.Engine.Box|100%||
 |ExChart.Engine.ChartAxis|96%|81.8%|
-|ExChart.Engine.ChartCsv|97.6%|78.9%|
+|ExChart.Engine.ChartCsv|97.7%|79.5%|
 |ExChart.Engine.ChartData|95.4%|80%|
-|ExChart.Engine.ChartDefinition|86.6%|83.7%|
+|ExChart.Engine.ChartDefinition|85.9%|84.2%|
 |ExChart.Engine.ChartEdge|100%||
+|ExChart.Engine.ChartEdgeMark|100%||
 |ExChart.Engine.ChartMark|100%||
 |ExChart.Engine.ChartMetrics|100%|100%|
 |ExChart.Engine.ChartPoint|100%||
 |ExChart.Engine.ChartReading|100%||
-|ExChart.Engine.ChartReadings|90.5%|61.3%|
+|ExChart.Engine.ChartReadings|91.4%|62%|
 |ExChart.Engine.ChartRefusedException|100%||
-|ExChart.Engine.ChartScene|98.8%|89%|
+|ExChart.Engine.ChartScene|98.9%|90%|
 |ExChart.Engine.ChartSeries|100%|100%|
-|ExChart.Engine.ChartSource|91.3%|73.8%|
+|ExChart.Engine.ChartSource|91.4%|73.9%|
 |ExChart.Engine.ChartSource.InMemory|100%||
 |ExChart.Engine.ChartSourceAnswer|100%||
 |ExChart.Engine.ChartSourceQuery|100%||
 |ExChart.Engine.ChartSourceReading|100%||
-|ExChart.Engine.ChartSpec|93.1%|78.4%|
-|ExChart.Engine.ChartSpec.Reader|93%|77.6%|
+|ExChart.Engine.ChartSpec|92.4%|79%|
+|ExChart.Engine.ChartSpec.Reader|92.3%|78.2%|
 |ExChart.Engine.ChartSpecAnswer|100%||
-|ExChart.Engine.ChartSpecReading|100%||
+|ExChart.Engine.ChartSpecReading|91.3%|75%|
 |ExChart.Engine.ChartSpecRefusedException|100%||
 |ExChart.Engine.ChartSpecTool|100%||
 |ExChart.Engine.ChartSummary|100%|91.8%|
@@ -185,6 +186,7 @@
 |ExChart.Engine.PlacedCandle|100%||
 |ExChart.Engine.PlacedVolume|100%||
 |ExChart.Engine.PointColour|100%||
+|ExChart.Engine.PointDetail|100%||
 |ExChart.Engine.PointScales|98%|86.3%|
 |ExChart.Engine.PointSize|100%||
 |ExChart.Engine.PriceBar|100%||
@@ -273,7 +275,7 @@
 |ExGrid.Chrome.CellMessageContext|100%||
 |ExGrid.Chrome.ChromeStylesheet|100%||
 |ExGrid.Chrome.ColumnMenuContext|88.8%||
-|ExGrid.Chrome.ContextMenuContext<TRow>|83.3%||
+|ExGrid.Chrome.ContextMenuContext<TRow>|91.6%||
 |ExGrid.Chrome.DistinctValues|100%||
 |ExGrid.Chrome.EditorCompletionContext|100%||
 |ExGrid.Chrome.FilterPanelChoices|95.9%|90.3%|
@@ -287,7 +289,7 @@
 |ExGrid.Chrome.IGridChrome|66.6%||
 |ExGrid.Chrome.LoadingContext|100%||
 |ExGrid.Chrome.MenuKey|100%||
-|ExGrid.Chrome.MenuKeys|98.8%|87.1%|
+|ExGrid.Chrome.MenuKeys|98.3%|87.5%|
 |ExGrid.Chrome.NameBoxContext|100%||
 |ExGrid.Chrome.OperandReading|100%||
 |ExGrid.Chrome.RefusalLabelIds|93.1%|92.3%|
@@ -962,7 +964,7 @@
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExSheet**|**92.6%**|**83.4%**|
+|**ExSheet**|**92.6%**|**83.5%**|
 |ExSheet.AlignCenterItem|100%||
 |ExSheet.AlignLeftItem|100%||
 |ExSheet.AlignmentItem|100%|100%|
@@ -1102,7 +1104,7 @@
 |ExSheet.Engine.Formulas.ExactPayment|99.3%|91.3%|
 |ExSheet.Engine.Formulas.ExactPayment.Bound|100%||
 |ExSheet.Engine.Formulas.ExcelFunctionNames|100%||
-|ExSheet.Engine.Formulas.FormulaText|100%|97.7%|
+|ExSheet.Engine.Formulas.FormulaText|100%|98.1%|
 |ExSheet.Engine.Formulas.FunctionCall|100%|100%|
 |ExSheet.Engine.Formulas.FunctionDefinition|100%||
 |ExSheet.Engine.Formulas.FunctionLibrary|97.3%|88.3%|
