@@ -389,6 +389,12 @@ The first part: the mechanism, and ExSheet.MudBlazor's Format Cells dialog and i
   list has joined, and a press in the list leaves the keyboard where it was, as on the built-in list. Drawn
   before it joins, the list is on the page, and a Ctrl+Z typed on a colour pressed there was the closing
   list's, never the Sheet's: now the key is typed on the Sheet, and held behind the press.
+- **A surface's Escape voids a telling nobody claimed.** The keyboard crossing into a joined surface is
+  told, but the Input Root's handlers do not hear it there, and only the next telling voided it. The surface's
+  own Escape is told straight to the core and is no telling: in More Colours on the Server host, after a press
+  on the RGB/HSL switch moved the keyboard through the page, the Escape waited for that crossing, with every
+  input behind it. It now voids an unclaimed telling as a telling does, safely, since every event told before
+  it has reached its handler by then.
 - **The Find panels' fallback.** Where MudBlazor has not yet handed out the field's input, the panel's form
   goes to the core's focus function, which takes a box's first text field; the field's own focus is left
   only for a panel drawn with no grid.

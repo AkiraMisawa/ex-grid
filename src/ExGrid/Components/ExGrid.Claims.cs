@@ -59,6 +59,19 @@ public partial class ExGrid<TRow>
     private void TellInput(string kind, int input, int rowCommand = 0)
     {
         InputReached(input);
+        VoidUnheardTelling();
+        if (_disposed || string.IsNullOrEmpty(kind))
+        {
+            InputVoid(input);
+            return;
+        }
+        _claimTold = (kind, input, rowCommand);
+    }
+
+    /// <summary>A telling no handler has claimed is void: the event it was told for never came, and
+    /// the inputs behind it go on.</summary>
+    private void VoidUnheardTelling()
+    {
         var previous = _claimTold;
         _claimTold = null;
         if (previous is { } unheard)
@@ -66,12 +79,6 @@ public partial class ExGrid<TRow>
             CancelRowClick(unheard.RowCommand);
             InputVoid(unheard.Input);
         }
-        if (_disposed || string.IsNullOrEmpty(kind))
-        {
-            InputVoid(input);
-            return;
-        }
-        _claimTold = (kind, input, rowCommand);
     }
 
     /// <summary>The number the script told the event of <paramref name="kind"/> by, taken by the
