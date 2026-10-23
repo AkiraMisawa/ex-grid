@@ -82,3 +82,12 @@ restate.
   reproduces locally with a 60 or 150 ms round trip (7 failed of 24 before, 60 of 60 after);
   `pivot.spec.mjs` repeats the pair three times at 150 ms. Still open from PV-13: a values-only
   refresh keeping the Row Sequence Version and the Selection.
+- 2026-10-23: tests now assert PV-7 (`pivot-csv.spec.mjs`: a value cell copied at full precision;
+  `pivot.spec.mjs`: a number format the engine cannot write refused by name, in the sample and on
+  OK), PV-3's text, date and Blank clauses (`pivot-csv.spec.mjs`: case-folded Items labelled by the
+  first spelling, dates by clock value where text would order and split them otherwise, the Blank
+  last in either direction) and DC-63's remaining clauses (`features.spec.mjs`, on
+  `/cells?dblclick=1`, which listens and adds a Mark Column: an Editable cell, an open edit, a
+  control in an Action, Template or Mark cell, and no listener). Still open: ASY-7, WR-1, DC-62,
+  SH-60 (#GETTING_DATA, the minute turning), PV-3 (the order across kinds, and a declared order
+  first), PV-13 (a values-only refresh), PV-18 and LV-27.
