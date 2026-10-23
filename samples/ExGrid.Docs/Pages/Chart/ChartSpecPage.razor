@@ -26,7 +26,7 @@
             Below, a lattice priced by the page's own capability is drawn from the spec beside it. Edit the spec and
             leave the field to see the answer change, or load the spec with numbers in it to see a refusal.
         </p>
-        <DocsExample Builtin="typeof(ChartSpecLattice)" Mud="typeof(ChartSpecLatticeMud)" Files="@(["Examples/Chart/LatticeTables.cs"])" CodeOpen="true" />
+        <DocsExample Builtin="typeof(ChartSpecLattice)" Mud="typeof(ChartSpecLatticeMud)" Files="@(["Examples/Chart/LatticeTables.cs", "Examples/Chart/VolSurface.cs"])" CodeOpen="true" />
     </DocsSection>
 
     <DocsSection Title="Colour, size and edges from columns">
@@ -39,12 +39,41 @@
             Notes say how many. The tooltip and the CSV carry both values.
         </p>
         <p>
+            The tooltip says a mark's name, its position and value, and its colour's and size's values; it says no
+            other column unless the spec names it in <code>tooltip</code>, a list of columns, such as the lattice's
+            <code>"tooltip": ["exercised"]</code>. Each is said with its column's name, and the table and the CSV
+            carry it too. In C#, <code>Details = [new PointDetail(title, values)]</code>.
+        </p>
+        <p>
             Edges join an Observation's nodes, each named by its key column, as the branches of a lattice or the
             links of a network (ADR-0321). An edge has no look of its own and reads only as a line between its nodes;
-            an edge to a key no node carries is refused, never dropped. In C#, the same are
+            an edge to a key no node carries is refused, never dropped. With the pointer near an edge and no node
+            in reach, the tooltip says the edge's two keys. In C#, the same are
             <code>ColourBy = new PointColour(title, values) { Centre = 0 }</code>,
             <code>SizeBy = new PointSize(title, values)</code> and <code>Edges = [new ChartEdge(from, to)]</code> on
             the series, each node's key its point's <code>Row</code>.
+        </p>
+    </DocsSection>
+
+    <DocsSection Title="A 3D surface and intervals">
+        <p>
+            A spec draws a 3D surface when it holds a <code>surface</code> in place of <code>axis</code> and
+            <code>series</code>: the table's <code>x</code>, <code>y</code> and <code>z</code> columns, a row a point,
+            on a grid the rows lie on; a null value is a hole (ADR-0274). Labels keep the order the data first
+            shows them, as a tenor axis needs; numbers and dates are placed in order. Rows that form no grid are
+            refused, never interpolated onto one. With <code>key</code> and a <code>triangles</code> table naming
+            three nodes a row, it is drawn on the Consumer's own triangles instead (ADR-0311). It takes the
+            colours' <code>centre</code> (ADR-0310), each axis' scale (ADR-0312), and the <code>method</code> a
+            capability interpolated with, which the surface says. <code>ChartSpecReading.Surface</code> holds it, for
+            <code>ExSurface</code> to draw; its <code>Definition</code> throws, since there is no chart of series. The
+            "A 3D surface" button above loads one. A Board does not yet take a surface as a view, and says so by its
+            path.
+        </p>
+        <p>
+            A level's or an observation's vertical interval is read from two columns,
+            <code>"interval": {"lower": "lo", "upper": "hi", "meaning": "95% CI"}</code>, drawn as whiskers or, for a
+            level, as a <code>"band"</code>; an observation's horizontal one is <code>xInterval</code>, its bounds in
+            the units across (ADR-0303, ADR-0304). The meaning is required, and is said in the legend and the tooltip.
         </p>
     </DocsSection>
 
@@ -75,5 +104,17 @@
             thinned point cannot stand for: an observation's points, a price range's candles, a label, colour, size,
             key or edge per point, and a labels axis, each by its path.
         </p>
+        <p>
+            <code>ExChart</code> reads through the sources itself when it is given <code>Spec</code> and
+            <code>Sources</code> in place of a <code>Definition</code>. It asks for the device pixels of its width when
+            it is first drawn, and again each time the range changes, by a drag, under Chart Filters or through
+            <code>Range</code>, so a narrowed range is drawn at full detail rather than stretched from the whole.
+            Until the newest ask is answered it keeps what it shows and is Busy; an answer to an ask a later one
+            replaced is dropped, and one read from an older version of the data than the chart shows is said in its
+            place, never drawn. It saves no CSV and shows no table, since it holds only the points drawn. Below, two
+            hundred thousand ticks held by the page are read through <code>ChartSource.Over</code>: drag across the
+            plot to narrow it, and the spike stays at every width.
+        </p>
+        <DocsExample Builtin="typeof(ChartSourceExample)" Mud="typeof(ChartSourceExampleMud)" Files="@(["Examples/Chart/SourcedTicks.cs"])" />
     </DocsSection>
 </DocsPage>

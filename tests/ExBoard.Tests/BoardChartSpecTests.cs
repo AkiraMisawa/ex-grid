@@ -60,4 +60,15 @@ public sealed class BoardChartSpecTests
         Assert.Equal(path, refused.Path);
         Assert.StartsWith(message, refused.Message, StringComparison.Ordinal);
     }
+
+    [Fact] // ADR-0320: a spec of a 3D surface is not yet a view of a Board, and is refused by its path rather than drawn as no chart
+    public void A_surface_spec_is_refused_as_a_view()
+    {
+        const string surface = """
+            {"version": 1, "surface": {"data": "h-trades", "x": "desk", "y": "day", "z": "pnl"}}
+            """;
+        var refused = Assert.Throws<BoardRefusedException>(() => BoardSpec.OfChart(surface, Tables(Trades())));
+        Assert.Equal("surface", refused.Path);
+        Assert.Contains("ExSurface", refused.Message, StringComparison.Ordinal);
+    }
 }

@@ -12,6 +12,15 @@ public readonly record struct ChartPoint(double X, ChartValue? Y)
     public object? Row { get; init; }
 }
 
+/// <summary>
+/// A column an Observation's tooltip says beside its values, such as a node's probability (ADR-0321):
+/// one value a point, in the points' order, written as its table holds it. The tooltip says only the
+/// columns a Consumer names, never every column of the table.
+/// </summary>
+/// <param name="Title">What the values are, as the tooltip says it.</param>
+/// <param name="Values">One value a point, written; null where the point has none.</param>
+public sealed record PointDetail(string Title, IReadOnlyList<string?> Values);
+
 /// <summary>A range of an Interpolated series and the method the Consumer used over it (ADR-0257).</summary>
 /// <param name="From">Where the range starts.</param>
 /// <param name="To">Where it ends.</param>

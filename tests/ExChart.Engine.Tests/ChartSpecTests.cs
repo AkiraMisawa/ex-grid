@@ -219,7 +219,13 @@ public class ChartSpecToolTests
         Assert.Equal(ChartSpec.KindNames.Order(),
             root.GetProperty("$defs").GetProperty("series").GetProperty("properties").GetProperty("kind").GetProperty("enum").EnumerateArray().Select(e => e.GetString()!).Order());
         Assert.Equal(ChartSpec.Version, root.GetProperty("properties").GetProperty("version").GetProperty("const").GetInt32());
-        Assert.Equal(["axis", "series", "version"], root.GetProperty("required").EnumerateArray().Select(e => e.GetString()!).Order());
+        Assert.Equal(ChartSpec.IntervalKeys.Order(), Keys(root.GetProperty("$defs").GetProperty("interval")));
+        Assert.Equal(ChartSpec.SurfaceKeys.Order(), Keys(root.GetProperty("$defs").GetProperty("surface")));
+        Assert.Equal(ChartSpec.TriangleKeys.Order(), Keys(root.GetProperty("$defs").GetProperty("triangles")));
+        Assert.Equal(["version"], root.GetProperty("required").EnumerateArray().Select(e => e.GetString()!));
+        // A spec draws series on an axis, or a surface (ticket 77).
+        Assert.Equal([["axis", "series"], ["surface"]], root.GetProperty("oneOf").EnumerateArray()
+            .Select(o => o.GetProperty("required").EnumerateArray().Select(e => e.GetString()!).ToArray()));
         Assert.Equal("draw_chart", ChartSpec.Tool.Name);
         Assert.Contains("Data Handle", ChartSpec.Tool.Description);
     }
@@ -302,7 +308,8 @@ public class ChartSpecScaleTests
 public class ChartSpecEdgeTests
 {
     private static readonly ChartData Nodes = ChartData.Of(
-        ("id", new object?[] { 0, 1, 2 }), ("step", new object?[] { 0, 1, 1 }), ("price", new object?[] { 100m, 90m, 110m }));
+        ("id", new object?[] { 0, 1, 2 }), ("step", new object?[] { 0, 1, 1 }), ("price", new object?[] { 100m, 90m, 110m }),
+        ("probability", new object?[] { 1m, 0.5m, null }), ("exercise", new object?[] { "no", "yes", "no" }));
 
     private static readonly ChartData Links = ChartData.Of(("from", new object?[] { "0", "0" }), ("to", new object?[] { "1", "2" }));
 
@@ -321,6 +328,36 @@ public class ChartSpecEdgeTests
         Assert.Equal(2, s.Edges.Count);
         Assert.Equal("0", s.Points[0].Row);
         Assert.Equal(new ChartEdge("0", "2"), s.Edges[1]);
+    }
+
+    [Fact] // ADR-0321: a node's tooltip says the columns the spec names, and no other
+    public void A_nodes_tooltip_says_the_columns_the_spec_names()
+    {
+        var d = ChartSpec.Read(Spec.Replace("\"key\": \"id\",", "\"key\": \"id\", \"tooltip\": [\"probability\"],"), Tables).Definition;
+        var detail = Assert.Single(d.Series[0].Details);
+        Assert.Equal("probability", detail.Title);
+        Assert.Equal(["1", "0.5", null], detail.Values);
+        var scene = ChartScene.Build(d, new ChartMetrics(600, 400));
+        var mark = scene.Marks.ToList().FindIndex(m => m.Point == 1);
+        var note = ChartReadings.OfMark(d, scene, mark).Lines[0].Note;
+        Assert.Contains("probability 0.5", note);
+        Assert.DoesNotContain("exercise", note);
+        Assert.Contains("probability has no value", ChartReadings.OfMark(d, scene, scene.Marks.ToList().FindIndex(m => m.Point == 2)).Lines[0].Note);
+        Assert.Contains("probability", ChartCsv.WideTable(d, new ChartMetrics(600, 400)).Header);
+    }
+
+    [Fact] // ADR-0321: the tooltip's columns are an observation's, and each is one of its table's
+    public void A_tooltip_column_is_refused_by_its_path()
+    {
+        string Refused(string tooltip) => Assert.Throws<ChartSpecRefusedException>(() => ChartSpec.Read(
+            Spec.Replace("\"key\": \"id\",", $"\"key\": \"id\", \"tooltip\": {tooltip},"), Tables)).Message;
+        Assert.StartsWith("series[0].tooltip[1]: \"nodes\" has no column \"delta\"", Refused("""["probability", "delta"]"""));
+        Assert.StartsWith("series[0].tooltip is a list", Refused("\"probability\""));
+        const string level = """
+            { "version": 1, "axis": { "values": "numbers" },
+              "series": [ { "id": "t", "name": "T", "kind": "level", "data": "nodes", "x": "step", "y": "price", "tooltip": ["probability"] } ] }
+            """;
+        Assert.StartsWith("series[0].tooltip belongs to an observation", Assert.Throws<ChartSpecRefusedException>(() => ChartSpec.Read(level, Tables)).Message);
     }
 
     [Fact] // ADR-0321: edges need the nodes' keys

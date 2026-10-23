@@ -65,6 +65,24 @@ public class EdgeTests
         Assert.All(edges, e => Assert.True(e.X1 >= plot.X - 1e-6 && e.X2 <= plot.X + plot.Width + 1e-6));
     }
 
+    [Fact] // ADR-0321: the pointer can be over an edge, and its tooltip says its two keys
+    public void An_edges_tooltip_says_its_two_keys()
+    {
+        var d = new ChartDefinition(ChartAxis.Numbers(), [Lattice(Tree())]);
+        var scene = ChartScene.Build(d, new ChartMetrics(600, 400));
+        Assert.Equal(6, scene.EdgeMarks.Count);
+        var edge = scene.EdgeMarks.ToList().FindIndex(e => e.Edge.Index == 4);
+        var reading = ChartReadings.OfEdge(d, scene, edge);
+        Assert.Equal("1,1 → 2,1", reading.Position);
+        var line = Assert.Single(reading.Lines);
+        Assert.Equal("Tree", line.Name);
+        Assert.Equal("edge from 1,1 to 2,1", line.Value);
+
+        // Narrowed, an edge left out of the plot is not one the pointer can be over, and the rest keep their index.
+        var narrowed = ChartScene.Build(d, new ChartMetrics(600, 400), new ChartView(new HashSet<string>(), From: 1.5, To: 2));
+        Assert.Equal([2, 3, 4, 5], narrowed.EdgeMarks.Select(e => e.Edge.Index));
+    }
+
     [Fact] // ADR-0321, ADR-0275: the summary says the nodes and the edges, and the table lists the edges after the nodes
     public void The_summary_and_the_table_say_the_edges()
     {

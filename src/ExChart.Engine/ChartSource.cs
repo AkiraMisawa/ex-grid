@@ -189,6 +189,8 @@ public static class ChartSource
     /// <summary>What a spec asks of its sources, checked before any is asked (ADR-0344).</summary>
     internal static (AxisValues Values, IReadOnlyList<(string Data, string X, string Y)> Series) Asked(JsonElement root)
     {
+        if (root.ValueKind == JsonValueKind.Object && root.TryGetProperty("surface", out _))
+            throw new ChartSpecRefusedException("surface", "surface needs every point of its grid or its mesh, which a Chart Source does not thin; a chart read from one draws series.");
         if (root.ValueKind != JsonValueKind.Object || !root.TryGetProperty("axis", out var axis) || axis.ValueKind != JsonValueKind.Object
             || !root.TryGetProperty("series", out var series) || series.ValueKind != JsonValueKind.Array)
             return (AxisValues.Numbers, []);

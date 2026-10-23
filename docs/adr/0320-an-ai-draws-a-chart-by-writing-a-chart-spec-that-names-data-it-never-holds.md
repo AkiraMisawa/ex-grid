@@ -55,6 +55,12 @@ colour bar, a marker's size, and a legend hidden by the page's stylesheet.
   chart and linking the two is the page's; a declarative grid spec, if one is wanted, is ExGrid's
   own decision. *Rewritten 2026-10-20 by [ADR-0340](0340-an-ai-composes-a-board-once-and-a-workflow-reuses-it-without-ai.md):* a declarative grid and pivot came, and the chart
   is one view of a Board beside them.
+  *Settled while building it, 2026-10-22 (ticket 77):* a surface is a spec holding `surface` in place
+  of `axis` and `series` — a table's `x`, `y` and `z` columns on a grid its rows lie on, or a mesh's
+  `key` and a `triangles` table — so `draw_chart` stays one tool; rows that form no grid are refused,
+  as `SurfaceDefinition.FromPoints` refuses them. A series' interval is two columns and its meaning.
+  A Board does not yet take a surface as a view, and refuses one by its path rather than drawing no
+  chart in its place; drawing it there is a later step, not decided here.
 
 ## Rewritten 2026-10-20: a Chart Spec is one view of a Board
 

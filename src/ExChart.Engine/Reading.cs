@@ -73,9 +73,29 @@ public static class ChartReadings
             note = Join(note, $"{c.Title} {(c.Values[m.Point] is { } cv ? cv.ToInvariantString() : "has no value")}");
         if (s.SizeBy is { } z)
             note = Join(note, $"{z.Title} {(z.Values[m.Point] is { } zv ? zv.ToInvariantString() : "has no value")}");
+        // The columns the Consumer named for the tooltip, and no other (ADR-0321).
+        foreach (var d in s.Details)
+            note = Join(note, $"{d.Title} {d.Values[m.Point] ?? "has no value"}");
         // A node with no label is named by its key (ADR-0321).
         var named = p.Name ?? (s.Edges.Count > 0 ? Convert.ToString(p.Row, CultureInfo.InvariantCulture) : null);
         return new ChartReading(named ?? axis.Write(p.X), new[] { new ReadingLine(s.Id, s.Name, look, value, note, m.Y) }.ToEquatableList(), 0);
+    }
+
+    /// <summary>
+    /// What the tooltip says over an edge (ADR-0321): its two keys. An edge has no value of its own, and
+    /// nothing about it is read from its nodes.
+    /// </summary>
+    public static ChartReading OfEdge(ChartDefinition definition, ChartScene scene, int edge)
+    {
+        ArgumentNullException.ThrowIfNull(definition);
+        ArgumentNullException.ThrowIfNull(scene);
+        var m = scene.EdgeMarks[edge];
+        var s = definition.Series.First(x => x.Id == m.SeriesId);
+        var look = scene.Panels[m.Panel].Series.First(p => p.Id == s.Id).Look;
+        var e = s.Edges[m.Edge.Index];
+        string Key(object k) => Convert.ToString(k, CultureInfo.InvariantCulture) ?? "";
+        return new ChartReading($"{Key(e.From)} → {Key(e.To)}",
+            new[] { new ReadingLine(s.Id, s.Name, look, $"edge from {Key(e.From)} to {Key(e.To)}", null, (m.Edge.Y1 + m.Edge.Y2) / 2) }.ToEquatableList(), 0);
     }
 
     private static ReadingLine Line(ChartSeries s, SeriesPiece piece, PanelScene panel, ChartAxis axis, double x)

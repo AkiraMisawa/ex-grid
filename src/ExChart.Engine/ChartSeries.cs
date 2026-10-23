@@ -59,6 +59,9 @@ public sealed record ChartSeries
     /// <summary>An Observation's size read from a column, one value a point, with its key always drawn (ADR-0320).</summary>
     public PointSize? SizeBy { get; init; }
 
+    /// <summary>An Observation's columns its tooltip says beside its values, in order (ADR-0321).</summary>
+    public IReadOnlyList<PointDetail> Details { get; init; } = [];
+
     /// <summary>
     /// An Observation's edges, each joining two of its points by their <see cref="ChartPoint.Row"/>, its
     /// nodes (ADR-0321). ExChart lays out nothing: a node stands where its point does.

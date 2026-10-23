@@ -114,7 +114,7 @@ public sealed record LegendPlacement(LegendPosition Position = LegendPosition.To
 }
 
 /// <summary>One legend entry, laid out.</summary>
-/// <param name="Id">The series' identity.</param>
+/// <param name="Id">The key a click hides it by: the series' identity, which for quotes and their Interpolated curve is the quotes' and hides both (ADR-0257).</param>
 /// <param name="Name">Its name.</param>
 /// <param name="Look">Its look, which hiding does not change.</param>
 /// <param name="Hidden">Whether it is hidden, which fades the entry.</param>

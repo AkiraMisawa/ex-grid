@@ -45,6 +45,29 @@ public class ScatterTests : BunitContext
         Assert.Empty(cut.FindAll(".ex-chart-tooltip"));
     }
 
+    [Fact] // ADR-0321: the pointer entry is handed the edges after the marks, and one over an edge reads its two keys
+    public async Task ADR0321_the_tooltip_over_an_edge_says_its_two_keys()
+    {
+        var nodes = new[] { O(0, 100, "Root", "a"), O(1, 90, "Down", "b"), O(1, 110, "Up", "c") };
+        var lattice = new ChartDefinition(ChartAxis.Numbers("Step"),
+            [ChartSeries.Of("tree", "Tree", SeriesKind.Observation, nodes) with { Edges = [new ChartEdge("a", "b"), new ChartEdge("a", "c")] }]);
+        var clicks = new List<ChartPointClick>();
+        var cut = Render<ChartComponent>(ps => ps.Add(c => c.Definition, lattice).Add(c => c.OnPointClick, (ChartPointClick c) => clicks.Add(c)));
+        var chart = cut.Instance;
+        var edges = (double[])_draws[^1][5]!;
+        Assert.Equal(2 * 5, edges.Length);
+        var index = chart.Scene.Marks.Count + 1;
+        await cut.InvokeAsync(() => chart.OnPointer(chart.Version, index, 0, 0));
+        Assert.Contains("a → c", cut.Find(".ex-chart-tooltip").TextContent);
+        Assert.Contains("edge from a to c", cut.Find(".ex-chart-tooltip").TextContent);
+
+        // An edge has no row of its own: a click on it raises nothing.
+        var e = chart.Scene.EdgeMarks[1].Edge;
+        await cut.InvokeAsync(() => chart.OnPress(chart.Version, index, e.X1, e.Y1, 0));
+        await cut.InvokeAsync(() => chart.OnReleaseAsync(chart.Version, index, e.X1, e.Y1));
+        Assert.Empty(clicks);
+    }
+
     [Fact] // ADR-0290: a press and a release on one mark raise its point's Row Key
     public async Task ADR0290_a_click_on_a_mark_raises_its_row()
     {

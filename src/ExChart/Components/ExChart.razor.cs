@@ -21,8 +21,20 @@ namespace ExChart.Components;
 /// </summary>
 public partial class ExChart
 {
-    /// <summary>The chart, in the data's terms.</summary>
-    [Parameter, EditorRequired] public ChartDefinition Definition { get; set; } = null!;
+    /// <summary>The chart, in the data's terms; or null when it is read from a <see cref="Spec"/> through <see cref="Sources"/>.</summary>
+    [Parameter] public ChartDefinition? Definition { get; set; }
+
+    /// <summary>
+    /// A Chart Spec the chart reads through <see cref="Sources"/> in place of a <see cref="Definition"/>
+    /// (ADR-0322, ADR-0344): asked for the plot's pixels when it is first drawn and again whenever the
+    /// range changes, so a narrowed range is drawn at full detail. What it shows stays until the answer
+    /// to the newest ask arrives, Busy meanwhile; an answer to an ask a later one replaced is dropped, and
+    /// one from data older than the chart shows is said in its place, never drawn.
+    /// </summary>
+    [Parameter] public string? Spec { get; set; }
+
+    /// <summary>The Chart Source of each Data Handle <see cref="Spec"/> names, null for a handle the host does not know.</summary>
+    [Parameter] public Func<string, IChartSource?>? Sources { get; set; }
 
     /// <summary>The drawing's width in CSS pixels; geometry is a C# parameter, never only a stylesheet value (ADR-0027).</summary>
     [Parameter] public double Width { get; set; } = 800;
@@ -161,21 +173,118 @@ public partial class ExChart
     /// <inheritdoc />
     protected override void OnParametersSet()
     {
-        ArgumentNullException.ThrowIfNull(Definition);
+        if (Spec is null && Definition is null)
+            throw new InvalidOperationException("An ExChart is given its Definition, or a Spec and the Sources it is read through.");
+        if (Spec is not null && (Definition is not null || Sources is null))
+            throw new InvalidOperationException("An ExChart read from a Spec is given the Sources it is read through, and no Definition beside them (ADR-0344).");
         // Taken back as plain parameters (ADR-0272): a parameter that changed replaces what the
         // user last did; one that did not leaves it.
         if (!_parameters.Taken || !ReferenceEquals(_parameters.Hidden, HiddenSeries)) _hidden = HiddenSeries ?? NoneHidden;
         if (!_parameters.Taken || _parameters.Range != Range) _range = Range;
         if (!_parameters.Taken || _parameters.Scale != Scale) _scale = Scale;
+        var rangeChanged = _asked == 0 || _askedRange != _range;
         _parameters = (HiddenSeries, Range, Scale, true);
+        // Compared by value: a spec built again on each render, or a method group's new delegate, is
+        // the same ask and is not read again.
+        if (Spec is not null && (!string.Equals(_askedSpec, Spec, StringComparison.Ordinal) || !Equals(_askedSources, Sources)))
+        {
+            // Another spec or other sources: what was read from the last is not drawn under the new.
+            _read = null;
+            _versions = new Dictionary<string, long>();
+            _refusal = null;
+            _ = AskAsync();
+        }
+        else if (Spec is not null && rangeChanged)
+        {
+            _ = AskAsync();
+        }
+        else if (Spec is null)
+        {
+            // An ask still out is dropped when it answers: the Consumer's Definition is drawn now.
+            if (_askedSpec is not null) _asked++;
+            (_read, _askedSpec, _askedSources, _refusal, _asking) = (null, null, null, null, false);
+        }
         Rebuild();
+    }
+
+    // ---- Read through Chart Sources (ADR-0322, ADR-0344) ----
+
+    // The newest ask, and what it asked; the reading drawn, the version each Data Handle was read at,
+    // and what is said in the chart's place when no reading can be drawn.
+    private int _asked;
+    private bool _asking;
+    private string? _askedSpec;
+    private Func<string, IChartSource?>? _askedSources;
+    private ChartRange? _askedRange;
+    private ChartSpecReading? _read;
+    private IReadOnlyDictionary<string, long> _versions = new Dictionary<string, long>();
+    private string? _refusal;
+
+    // Shown until the first answer: no series, so nothing is drawn as if it were the data.
+    private static readonly ChartDefinition Unread = new(ChartAxis.Numbers(), []);
+
+    /// <summary>The definition drawn: the Consumer's, or the one read from the spec's sources.</summary>
+    private ChartDefinition Drawn => Definition ?? _read?.Definition ?? Unread;
+
+    // The device pixels a plot of the chart's width could have, at the two device pixels a CSS pixel
+    // ExChart counts in (ADR-0254): the source thins to them, and the plot thins on top if it is narrower.
+    private int SourcePixels => Math.Max(1, (int)Math.Ceiling(Width * 2));
+
+    private async Task AskAsync()
+    {
+        var asked = ++_asked;
+        var (spec, sources, range) = (Spec!, Sources!, _range);
+        (_askedSpec, _askedSources, _askedRange) = (spec, sources, range);
+        _asking = true;
+        ChartSourceReading? read = null;
+        string? refusal = null;
+        try
+        {
+            // Resumed where the ask was made: the reading is the renderer's.
+            read = await ChartSpec.ReadAsync(spec, sources, SourcePixels, range?.From, range?.To);
+        }
+        catch (ChartSpecRefusedException e)
+        {
+            refusal = e.Message;
+        }
+        catch (Exception e)
+        {
+            // A source's own cancellation or timeout too: the chart says it was not answered, and is
+            // never left waiting on an ask that ended.
+            refusal = $"The source did not answer the chart: {e.Message}";
+        }
+        // Another ask replaced this one, or the chart is gone: dropped (spine rule 6).
+        if (asked != _asked || _disposed)
+            return;
+        _asking = false;
+        if (read?.Versions.FirstOrDefault(v => _versions.TryGetValue(v.Key, out var shown) && v.Value < shown) is { Key: not null } older)
+        {
+            // Never drawn over the newer data shown, nor left showing what was asked before as if it
+            // were the answer: said in the chart's place (spine rule 1).
+            _refusal = $"The source answered the chart from version {older.Value} of '{older.Key}', older than version {_versions[older.Key]} the chart was drawn from, so it is not drawn.";
+        }
+        else if (read is not null)
+        {
+            _read = read.Reading;
+            _versions = read.Versions;
+            _refusal = null;
+        }
+        else
+        {
+            _refusal = refusal;
+        }
+        Rebuild();
+        StateHasChanged();
     }
 
     private void Rebuild()
     {
-        var builtFrom = new object?[] { Definition, Width, Height, Density, Legend, AxisStyle, IndependentScales, ColourSlots, _hidden, _range, _scale, YScale };
+        // Read through a source, the scene drawn stays until the newest ask is answered (ADR-0344): the
+        // points of another range, drawn at this one, are not what this range holds.
+        if (_asking && _read is not null) return;
+        var builtFrom = new object?[] { Drawn, Width, Height, Density, Legend, AxisStyle, IndependentScales, ColourSlots, _hidden, _range, _scale, YScale };
         if (builtFrom.SequenceEqual(_builtFrom)) return;
-        var definitionChanged = _builtFrom.Length == 0 || !ReferenceEquals(_builtFrom[0], Definition);
+        var definitionChanged = _builtFrom.Length == 0 || !ReferenceEquals(_builtFrom[0], Drawn);
         _builtFrom = builtFrom;
 
         var grid = GridMetrics.Resolve(Density);
@@ -187,11 +296,11 @@ public partial class ExChart
             PanelGap: Math.Round(font * 1.2), TextWidth: s => cells.TextWidthPx(s), ColourSlots: ColourSlots);
         _view = new ChartView(_hidden, _range?.From, _range?.To, _scale, _range?.YFrom, _range?.YTo, YScale);
         var previous = _scene;
-        _scene = ChartScene.Build(Definition, _metrics, _view, AxisStyle, IndependentScales, Legend);
-        _summary = ChartSummary.Of(Definition, _scene, _view, Title, Description);
-        _table = _tableOpen && !ThinnedAtSource ? ChartCsv.WideTable(Definition, _metrics, _view) : null;
+        _scene = ChartScene.Build(Drawn, _metrics, _view, AxisStyle, IndependentScales, Legend);
+        _summary = ChartSummary.Of(Drawn, _scene, _view, Title, Description);
+        _table = _tableOpen && !ThinnedAtSource ? ChartCsv.WideTable(Drawn, _metrics, _view) : null;
 
-        if (definitionChanged || previous is null || !previous.Positions.Equals(_scene.Positions) || !previous.Marks.Equals(_scene.Marks)
+        if (definitionChanged || previous is null || !previous.Positions.Equals(_scene.Positions) || !previous.Marks.Equals(_scene.Marks) || !previous.EdgeMarks.Equals(_scene.EdgeMarks)
             || !previous.Panels.Select(p => p.Plot).SequenceEqual(_scene.Panels.Select(p => p.Plot)))
         {
             _version++;
@@ -228,24 +337,39 @@ public partial class ExChart
         _pointerIndex = index;
         _pointerPanel = panel;
         _readingY = y;
-        _reading = ChartReadings.At(Definition, _scene, _metrics, _view, _scene.Positions[index].Position, panel, y);
+        _reading = ChartReadings.At(Drawn, _scene, _metrics, _view, _scene.Positions[index].Position, panel, y);
         _dots = _reading.Lines.Where(l => l.Y is not null).Select(l => (l.Y!.Value, l.Look)).ToEquatableList();
     }
 
-    // On a scatter the pointer is over the nearest mark, if any (ADR-0290).
+    // On a scatter the pointer is over the nearest mark, if any (ADR-0290), or else the nearest edge,
+    // counted after the marks (ADR-0321).
     private void ReadMark(int index)
     {
-        if (index < 0 || index >= _scene.Marks.Count)
+        if (index < 0 || index >= _scene.Marks.Count + _scene.EdgeMarks.Count)
         {
             ClearPointer();
             return;
         }
-        var m = _scene.Marks[index];
+        var (_, y, panel) = MarkAt(index);
         _pointerIndex = index;
-        _pointerPanel = m.Panel;
-        _readingY = m.Y;
-        _reading = ChartReadings.OfMark(Definition, _scene, index);
-        _dots = _reading.Lines.Select(l => (m.Y, l.Look)).ToEquatableList();
+        _pointerPanel = panel;
+        _readingY = y;
+        _reading = index < _scene.Marks.Count
+            ? ChartReadings.OfMark(Drawn, _scene, index)
+            : ChartReadings.OfEdge(Drawn, _scene, index - _scene.Marks.Count);
+        _dots = _reading.Lines.Select(l => (y, l.Look)).ToEquatableList();
+    }
+
+    // Where the pointer's mark stands: a marker's centre, or an edge's middle.
+    private (double X, double Y, int Panel) MarkAt(int index)
+    {
+        if (index < _scene.Marks.Count)
+        {
+            var m = _scene.Marks[index];
+            return (m.X, m.Y, m.Panel);
+        }
+        var e = _scene.EdgeMarks[index - _scene.Marks.Count];
+        return ((e.Edge.X1 + e.Edge.X2) / 2, (e.Edge.Y1 + e.Edge.Y2) / 2, e.Panel);
     }
 
     // The pointer entry's reports (ADR-0255), through ChartPointer. Each carries the drawing's
@@ -309,7 +433,7 @@ public partial class ExChart
             if (index >= 0 && index == p.Index && index < _scene.Marks.Count)
             {
                 var m = _scene.Marks[index];
-                var point = Definition.Series.First(s => s.Id == m.SeriesId).Points[m.Point];
+                var point = Drawn.Series.First(s => s.Id == m.SeriesId).Points[m.Point];
                 await OnPointClick.InvokeAsync(new ChartPointClick(m.SeriesId, point.X, point.Row));
             }
             return;
@@ -373,6 +497,8 @@ public partial class ExChart
         // Chart Filters shows the range as it now stands, however it was set (ADR-0273).
         _fromText = range?.From is { } f ? Invariant(f) : null;
         _toText = range?.To is { } t ? Invariant(t) : null;
+        if (Spec is not null)
+            _ = AskAsync();
         Rebuild();
         StateHasChanged();
         await OnRangeChanged.InvokeAsync(range);
@@ -384,6 +510,9 @@ public partial class ExChart
     {
         var hidden = new HashSet<string>(_hidden);
         var nowHidden = hidden.Add(key) || !hidden.Remove(key);
+        // Shown again, an entry shows every series it stands for, even one hidden by its own key (ADR-0257).
+        if (!nowHidden)
+            hidden.ExceptWith(ChartScene.LegendMembers(Drawn, key));
         _hidden = hidden;
         Rebuild();
         await OnSeriesVisibilityChanged.InvokeAsync(new SeriesVisibility(key, nowHidden));
@@ -401,7 +530,7 @@ public partial class ExChart
     private void ToggleTable()
     {
         _tableOpen = !_tableOpen;
-        _table = _tableOpen && !ThinnedAtSource ? ChartCsv.WideTable(Definition, _metrics, _view) : null;
+        _table = _tableOpen && !ThinnedAtSource ? ChartCsv.WideTable(Drawn, _metrics, _view) : null;
     }
 
     // The range typed under Chart Filters (ADR-0273), in the axis' own values. A value that does
@@ -430,25 +559,25 @@ public partial class ExChart
 
     private async Task SetScaleAsync(string value)
     {
-        if (!Enum.TryParse<AxisScale>(value, out var scale) || scale == (_scale ?? Definition.Axis.EffectiveScale)) return;
+        if (!Enum.TryParse<AxisScale>(value, out var scale) || scale == (_scale ?? Drawn.Axis.EffectiveScale)) return;
         _scale = scale;
         Rebuild();
         StateHasChanged();
         await OnScaleChanged.InvokeAsync(scale);
     }
 
-    private string ScaleText => (_scale ?? Definition.Axis.EffectiveScale).ToString();
+    private string ScaleText => (_scale ?? Drawn.Axis.EffectiveScale).ToString();
 
-    private bool ScaleSwitchable => Definition.Axis.Values != AxisValues.Labels && Definition.Series.All(s => s.Sampler is null);
+    private bool ScaleSwitchable => Drawn.Axis.Values != AxisValues.Labels && Drawn.Series.All(s => s.Sampler is null);
 
-    private string AxisKind => Definition.Axis.Values switch
+    private string AxisKind => Drawn.Axis.Values switch
     {
         AxisValues.Dates => "a date (yyyy-MM-dd)",
         AxisValues.Labels => "a category",
         _ => "a number",
     };
 
-    private string RangeHint => Definition.Axis.Values switch
+    private string RangeHint => Drawn.Axis.Values switch
     {
         AxisValues.Dates => "yyyy-MM-dd",
         AxisValues.Labels => "category",
@@ -460,7 +589,7 @@ public partial class ExChart
         position = null;
         if (string.IsNullOrWhiteSpace(text)) return true;
         var t = text.Trim();
-        var axis = Definition.Axis;
+        var axis = Drawn.Axis;
         switch (axis.Values)
         {
             case AxisValues.Dates:
@@ -480,10 +609,10 @@ public partial class ExChart
         return position is not null;
     }
 
-    private string Invariant(double position) => Definition.Axis.Values switch
+    private string Invariant(double position) => Drawn.Axis.Values switch
     {
         AxisValues.Dates => DateOnly.FromDayNumber((int)position).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
-        AxisValues.Labels when position >= 0 && position < Definition.Axis.Labels.Count => Definition.Axis.Labels[(int)position],
+        AxisValues.Labels when position >= 0 && position < Drawn.Axis.Labels.Count => Drawn.Axis.Labels[(int)position],
         _ => position.ToString("R", CultureInfo.InvariantCulture),
     };
 
@@ -525,11 +654,11 @@ public partial class ExChart
 
     private double PlotsBottom => _scene.Panels.Count == 0 ? 0 : _scene.Panels[^1].Plot.Y + _scene.Panels[^1].Plot.Height;
 
-    private double? GuideX => _pointerIndex is { } i ? (_scene.Scatter ? _scene.Marks[i].X : _scene.Positions[i].X) : null;
+    private double? GuideX => _pointerIndex is { } i ? (_scene.Scatter ? MarkAt(i).X : _scene.Positions[i].X) : null;
 
-    private double GuideTop => _scene.Scatter && _pointerIndex is { } i ? _scene.Marks[i].Y : PlotsTop;
+    private double GuideTop => _scene.Scatter && _pointerIndex is { } i ? MarkAt(i).Y : PlotsTop;
 
-    private double GuideBottom => _scene.Scatter && _pointerIndex is { } i ? _scene.Marks[i].Y : PlotsBottom;
+    private double GuideBottom => _scene.Scatter && _pointerIndex is { } i ? MarkAt(i).Y : PlotsBottom;
 
     private (double From, double To)? BandSpan => _scene.Scatter
         ? _pressAt is { } q && q.Version == _version && _dragAt is { } d ? (q.X, d.X) : null
@@ -574,7 +703,7 @@ public partial class ExChart
         // Taken now: the file is the drawing on screen at the click, whatever renders meanwhile.
         var module = _module;
         var scene = _scene;
-        var definition = Definition;
+        var definition = Drawn;
         var metrics = _metrics;
         var view = _view;
         var summary = _summary;
@@ -623,7 +752,7 @@ public partial class ExChart
 
     // A chart whose Chart Source thinned it holds only the points drawn (ADR-0344): a CSV or a table of
     // them would look like the data and not be it (spine rule 1), so neither is offered.
-    private bool ThinnedAtSource => Definition.Series.Any(s => s.Thinned.Count > 0);
+    private bool ThinnedAtSource => Spec is not null || Drawn.Series.Any(s => s.Thinned.Count > 0);
 
     private bool CsvUnavailable => FilesUnavailable || ThinnedAtSource;
 
@@ -664,9 +793,13 @@ public partial class ExChart
             // A scatter's marks, as x, y and panel in turn, with how far from one the pointer still
             // finds it and the lattice a drag is reported on (ADR-0290).
             var marks = _scene.Scatter ? _scene.Marks.SelectMany(m => new[] { Math.Round(m.X, 2), Math.Round(m.Y, 2), m.Panel }).ToArray() : null;
+            // Its edges, as the two ends and the panel in turn, found where no mark is in reach (ADR-0321).
+            var edges = _scene.Scatter && _scene.EdgeMarks.Count > 0
+                ? _scene.EdgeMarks.SelectMany(e => new[] { Math.Round(e.Edge.X1, 2), Math.Round(e.Edge.Y1, 2), Math.Round(e.Edge.X2, 2), Math.Round(e.Edge.Y2, 2), e.Panel }).ToArray()
+                : null;
             try
             {
-                await _handle.InvokeVoidAsync("draw", version, xs, marks, Math.Round(_metrics.LineHeight * 0.6, 2), DragCell);
+                await _handle.InvokeVoidAsync("draw", version, xs, marks, Math.Round(_metrics.LineHeight * 0.6, 2), DragCell, edges);
                 if (!_told)
                 {
                     _told = true;
@@ -684,7 +817,7 @@ public partial class ExChart
     // for the mark to go (spine rule 6). A refused script ends it too: nothing more is coming.
     private bool _told;
 
-    private bool Busy => !_told && !_scriptRefused;
+    private bool Busy => (!_told && !_scriptRefused) || _asking;
 
     private async Task AttachAsync()
     {

@@ -39,14 +39,14 @@ public partial class ExChart
         _filtersOpen ? FiltersContext : null);
 
     private ChartFiltersContext FiltersContext => new(
-        Definition.Axis.Values,
-        Definition.Axis.Values == AxisValues.Labels ? new EquatableList<string>(Definition.Axis.Labels) : EquatableList<string>.Empty,
+        Drawn.Axis.Values,
+        Drawn.Axis.Values == AxisValues.Labels ? new EquatableList<string>(Drawn.Axis.Labels) : EquatableList<string>.Empty,
         _fromText,
         _toText,
         RangeHint,
         _filterError,
         _apply,
-        ScaleSwitchable ? _scale ?? Definition.Axis.EffectiveScale : null,
+        ScaleSwitchable ? _scale ?? Drawn.Axis.EffectiveScale : null,
         _setScale);
 
     private ChartMenuContext MenuContext => new(

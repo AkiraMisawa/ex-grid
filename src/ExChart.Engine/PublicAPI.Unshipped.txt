@@ -297,13 +297,11 @@ ExChart.Engine.ChartSpecAnswer.Text.get -> string!
 ExChart.Engine.ChartSpecAnswer.Text.init -> void
 ExChart.Engine.ChartSpecReading
 ExChart.Engine.ChartSpecReading.<Clone>$() -> ExChart.Engine.ChartSpecReading!
-ExChart.Engine.ChartSpecReading.ChartSpecReading(string! Title, ExChart.Engine.ChartDefinition! Definition) -> void
-ExChart.Engine.ChartSpecReading.Deconstruct(out string! Title, out ExChart.Engine.ChartDefinition! Definition) -> void
+ExChart.Engine.ChartSpecReading.ChartSpecReading(string! title, ExChart.Engine.ChartDefinition! definition) -> void
+ExChart.Engine.ChartSpecReading.ChartSpecReading(string! title, ExChart.Engine.SurfaceDefinition! surface) -> void
 ExChart.Engine.ChartSpecReading.Definition.get -> ExChart.Engine.ChartDefinition!
-ExChart.Engine.ChartSpecReading.Definition.init -> void
 ExChart.Engine.ChartSpecReading.Equals(ExChart.Engine.ChartSpecReading? other) -> bool
 ExChart.Engine.ChartSpecReading.Title.get -> string!
-ExChart.Engine.ChartSpecReading.Title.init -> void
 ExChart.Engine.ChartSpecRefusedException
 ExChart.Engine.ChartSpecRefusedException.ChartSpecRefusedException(string! path, string! message) -> void
 ExChart.Engine.ChartSpecRefusedException.Path.get -> string!
@@ -1507,3 +1505,42 @@ override ExChart.Engine.ChartSeries.GetHashCode() -> int
 override ExChart.Engine.ChartSeries.ToString() -> string!
 static ExChart.Engine.ChartSeries.operator !=(ExChart.Engine.ChartSeries? left, ExChart.Engine.ChartSeries? right) -> bool
 static ExChart.Engine.ChartSeries.operator ==(ExChart.Engine.ChartSeries? left, ExChart.Engine.ChartSeries? right) -> bool
+ExChart.Engine.ChartEdgeMark
+ExChart.Engine.ChartEdgeMark.ChartEdgeMark() -> void
+ExChart.Engine.ChartEdgeMark.ChartEdgeMark(string! SeriesId, int Panel, ExChart.Engine.DrawnEdge Edge) -> void
+ExChart.Engine.ChartEdgeMark.Deconstruct(out string! SeriesId, out int Panel, out ExChart.Engine.DrawnEdge Edge) -> void
+ExChart.Engine.ChartEdgeMark.Edge.get -> ExChart.Engine.DrawnEdge
+ExChart.Engine.ChartEdgeMark.Edge.init -> void
+ExChart.Engine.ChartEdgeMark.Equals(ExChart.Engine.ChartEdgeMark other) -> bool
+ExChart.Engine.ChartEdgeMark.Panel.get -> int
+ExChart.Engine.ChartEdgeMark.Panel.init -> void
+ExChart.Engine.ChartEdgeMark.SeriesId.get -> string!
+ExChart.Engine.ChartEdgeMark.SeriesId.init -> void
+ExChart.Engine.ChartScene.EdgeMarks.get -> ExChart.Engine.EquatableList<ExChart.Engine.ChartEdgeMark>!
+ExChart.Engine.ChartScene.EdgeMarks.init -> void
+ExChart.Engine.ChartSeries.Details.get -> System.Collections.Generic.IReadOnlyList<ExChart.Engine.PointDetail!>!
+ExChart.Engine.ChartSeries.Details.init -> void
+ExChart.Engine.DrawnEdge.Index.get -> int
+ExChart.Engine.DrawnEdge.Index.init -> void
+ExChart.Engine.PointDetail
+ExChart.Engine.PointDetail.<Clone>$() -> ExChart.Engine.PointDetail!
+ExChart.Engine.PointDetail.Deconstruct(out string! Title, out System.Collections.Generic.IReadOnlyList<string?>! Values) -> void
+ExChart.Engine.PointDetail.Equals(ExChart.Engine.PointDetail? other) -> bool
+ExChart.Engine.PointDetail.PointDetail(string! Title, System.Collections.Generic.IReadOnlyList<string?>! Values) -> void
+ExChart.Engine.PointDetail.Title.get -> string!
+ExChart.Engine.PointDetail.Title.init -> void
+ExChart.Engine.PointDetail.Values.get -> System.Collections.Generic.IReadOnlyList<string?>!
+ExChart.Engine.PointDetail.Values.init -> void
+override ExChart.Engine.ChartEdgeMark.GetHashCode() -> int
+override ExChart.Engine.PointDetail.Equals(object? obj) -> bool
+override ExChart.Engine.PointDetail.GetHashCode() -> int
+override ExChart.Engine.PointDetail.ToString() -> string!
+static ExChart.Engine.ChartEdgeMark.operator !=(ExChart.Engine.ChartEdgeMark left, ExChart.Engine.ChartEdgeMark right) -> bool
+static ExChart.Engine.ChartEdgeMark.operator ==(ExChart.Engine.ChartEdgeMark left, ExChart.Engine.ChartEdgeMark right) -> bool
+static ExChart.Engine.ChartReadings.OfEdge(ExChart.Engine.ChartDefinition! definition, ExChart.Engine.ChartScene! scene, int edge) -> ExChart.Engine.ChartReading!
+static ExChart.Engine.PointDetail.operator !=(ExChart.Engine.PointDetail? left, ExChart.Engine.PointDetail? right) -> bool
+static ExChart.Engine.PointDetail.operator ==(ExChart.Engine.PointDetail? left, ExChart.Engine.PointDetail? right) -> bool
+~override ExChart.Engine.ChartEdgeMark.Equals(object obj) -> bool
+~override ExChart.Engine.ChartEdgeMark.ToString() -> string
+ExChart.Engine.ChartSpecReading.Surface.get -> ExChart.Engine.SurfaceDefinition?
+static ExChart.Engine.ChartScene.LegendMembers(ExChart.Engine.ChartDefinition! definition, string! key) -> System.Collections.Generic.IReadOnlyList<string!>!
