@@ -7,6 +7,10 @@ Roadmap: internal
 
 - [ ] Which functions take a 3D Reference, and what the others answer
 - [ ] A 3D Reference's span when a Sheet is moved into or out of it, an end Sheet is moved or deleted, and a Sheet is inserted inside it
+- [ ] A 3D Reference when a Sheet of its span is deleted (not an end), and when a Sheet is copied into it
+- [ ] A 3D Reference when rows or columns are inserted or deleted on one Sheet of its span, under what it reads
+- [ ] A copy of a Sheet whose own Formula holds a 3D Reference that begins or ends on it: which Sheet the copy's begins or ends on
+- [ ] How Excel writes a span typed last to first (`Sheet3:Sheet1!B2`) and one of a single Sheet (`Sheet2:Sheet2!B2`), and whether a Formula entered into a General cell takes a format from a 3D Reference
 - [ ] What a tab press does while a constant (not a Formula) is being typed
 - [ ] While a Formula is typed: whether a tab press writes `Sheet2!` at once, before a cell is pointed; what a point back on the Sheet typed on writes (`B2` or `Sheet1!B2`); and whether Escape shows the Sheet typed on again, as ExSheet does since 09
 - [ ] Ctrl+Z after a Sheet operation: which Sheet is shown and what is selected

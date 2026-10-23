@@ -24,20 +24,31 @@ structured references under that rule.
 
 **Blocked by:** None (can start after 0.1.0)
 
-- [ ] **The stored text uses the declared case** for the table's name and the column's, at entry
+- [x] **The stored text uses the declared case** for the table's name and the column's, at entry
       and when a Formula is written again (an insertion, a deletion, a copy, a fill).
+      Written at entry; a rewrite replaces only References, so it keeps that case. A Formula whose text
+      predates the declaration is the next box's case.
 - [ ] **A table declared after the Formula was entered.** A reader of an undeclared table is
       `#NAME?` (ADR-0049). Decide, with Excel's answer, whether declaring the table rewrites the
       text or leaves it as typed until it is next written.
-- [ ] **The SH-6 test changes its expectation.**
+- [x] **The SH-6 test changes its expectation.**
       `tests/ExSheet.Engine.Tests/ReferenceGrammarCultureTests.cs` pins today's behaviour in the
       form `(Sheet.DefaultName, "=sum(limit[line])", "=SUM(limit[line])", "=SUM(limit[line])", 7)`.
       Its written and after-insert texts become the declared case. Declare the table in that test
       with a column whose case differs from its name's (for example `LIMIT` with `Line`), so that
       the table's name and the column's are both checked.
-- [ ] **Layer 1** for the Sheet Document round trip: a reopened Sheet's text is the declared case.
+- [x] **Layer 1** for the Sheet Document round trip: a reopened Sheet's text is the declared case.
+- [ ] **Excel's exact spelling**, asked in a Windows run, including for a column whose name holds a space
+      or one of `[ ] # '`.
 
 ## Comments
 
 2026-10-13, claude/dod-gaps-sheet-pivot-tests. Found while closing SH-6: the culture round-trip
 test showed that the typed case is kept.
+
+2026-10-22, claude/project-thread-3klogz. The case is written when a Formula is typed or pasted as text
+(`Sheet.InDeclaredCase`, beside `InOwnName`): a table and a column the Workbook declares are written as
+declared, and one it does not is left as typed. A rewrite on an insertion, a deletion, a copy or a fill
+replaces only References, so it keeps the case written at entry; a Sheet Document is opened as it was saved.
+The second box waits on Excel's answer: until then a Formula typed before its table is declared keeps the case
+it was typed in. `LinkedTableWriterTests` now expects `Positions[Desk]` for a Formula typed `positions[desk]`.
