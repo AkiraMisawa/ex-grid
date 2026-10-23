@@ -11,6 +11,7 @@ ExSheet.MudBlazor.MudSheetTabMenu
 ExSheet.MudBlazor.MudSheetTabMenu.Context.get -> ExSheet.SheetTabMenuContext!
 ExSheet.MudBlazor.MudSheetTabMenu.Context.set -> void
 ExSheet.MudBlazor.MudSheetTabMenu.MudSheetTabMenu() -> void
+ExSheet.MudBlazor.MudToolbarItem.DisposeAsync() -> System.Threading.Tasks.ValueTask
 override ExSheet.MudBlazor.MudSheetFindPanel.OnAfterRenderAsync(bool firstRender) -> System.Threading.Tasks.Task!
 override ExSheet.MudBlazor.MudSheetFindPanel.OnInitialized() -> void
 override ExSheet.MudBlazor.MudSheetFindPanel.OnParametersSet() -> void

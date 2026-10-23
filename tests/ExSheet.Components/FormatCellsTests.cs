@@ -833,6 +833,32 @@ public class FormatCellsTests : SheetTestContext
         Assert.Single(cut.FindAll(".own-frame"));
     }
 
+    [Fact] // ADR-0240 section 6, ticket 06: a surface's Escape voids a telling no handler claimed — the keyboard crossing into the surface, which no handler on the Input Root hears — and is handled in its turn, not held behind it
+    public async Task A_surfaces_escape_is_not_held_behind_a_crossing_no_handler_heard()
+    {
+        var chrome = new OwnFrameChrome();
+        var cut = RenderSheet(ps => ps.Add(s => s.Chrome, chrome).Add(s => s.Document, DocumentOf(cells: ("B2", "12"))));
+        await GoToAsync(cut, "B2");
+        Assert.True(await cut.Instance.OpenFormatCellsAsync());
+        var context = chrome.Context!;
+        await cut.InvokeAsync(() => context.JoinSurface!(default, "[role=\"dialog\"]", () =>
+        {
+            context.Cancel();
+            return Task.CompletedTask;
+        }));
+        var surface = Assert.Single(JoinedSurfaces);
+        var grid = cut.FindComponent<ExGrid.Components.ExGrid<SheetRow>>();
+        var answered = int.Parse(grid.Find(".ex-grid > [data-ex-answered]").GetAttribute("data-ex-answered") ?? "0",
+            System.Globalization.CultureInfo.InvariantCulture);
+
+        await grid.InvokeAsync(() => grid.Instance.InputTakenAt("focusin", answered + 1));
+        var escape = grid.InvokeAsync(() => grid.Instance.OnSurfaceEscapeAsync(surface, answered + 2));
+
+        await escape.WaitAsync(TimeSpan.FromSeconds(5), Xunit.TestContext.Current.CancellationToken);
+        Assert.Equal(answered + 2, int.Parse(grid.Find(".ex-grid > [data-ex-answered]").GetAttribute("data-ex-answered") ?? "0",
+            System.Globalization.CultureInfo.InvariantCulture));
+    }
+
     [Fact] // ADR-0240 section 6, ticket 06: a surface the script does not join — inside the Input Root, or another membership's already — is answered with a membership that does nothing, so disposing it leaves another's surface joined
     public async Task A_surface_the_script_does_not_join_leaves_nothing_when_disposed()
     {

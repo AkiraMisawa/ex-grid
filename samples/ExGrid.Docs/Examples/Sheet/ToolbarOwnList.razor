@@ -1,0 +1,19 @@
+@using ExSheet
+@using ExSheet.Components
+@using ExSheet.Engine
+
+@* Your own Chrome's toolbar lists, drawn beside the Sheet and on its seam (OwnListChrome). *@
+<div style="display: flex; gap: 12px; align-items: flex-start">
+    <div style="flex: 1 1 auto; min-width: 0">
+        <ExSheet @bind-Document="_document" ShowToolbar="true" Chrome="_chrome"
+                 ViewportHeight="320" ViewportWidth="ViewportSize.Stretch" />
+    </div>
+    <div style="flex: 0 0 200px">
+        <OwnListPanel Chrome="_chrome" />
+    </div>
+</div>
+
+@code {
+    private readonly OwnListChrome _chrome = new();
+    private SheetDocument _document = QuarterlyPnl.Document();
+}

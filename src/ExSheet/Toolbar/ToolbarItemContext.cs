@@ -1,4 +1,5 @@
 using ExSheet.Engine;
+using Microsoft.AspNetCore.Components;
 
 namespace ExSheet;
 
@@ -118,7 +119,10 @@ public sealed record ToolbarChoice(
 /// <param name="Colour">For a colour control, the colour its face applies, drawn under its picture.</param>
 /// <param name="Active">Whether the keyboard is on this item inside the Sheet Toolbar.</param>
 /// <param name="OpenRequest">Changes whenever the item's choices are to open from the keyboard. A Chrome
-/// whose list is its own opens it when this changes, as a popover answers its focus requests.</param>
+/// whose list is its own opens it when this changes, as a popover answers its focus requests, and puts the
+/// keyboard in it through <see cref="TakeKeyboard"/>; one that cannot open it calls <see cref="ChoicesClosed"/>.
+/// The keys typed from the toolbar's request until then are held for the list (decided with the user,
+/// 2026-10-13), so a Chrome that answers neither way leaves them held.</param>
 /// <param name="CloseRequest">Changes whenever the Sheet Toolbar takes the keyboard back while the item's
 /// choices may be open from the keyboard (ADR-0100's note of 2026-10-12): a key typed on the toolbar
 /// before the list took the keyboard — Escape, a KeyTip — gave it back to the Sheet. A Chrome whose
@@ -129,28 +133,16 @@ public sealed record ToolbarChoice(
 /// <see cref="ChoicesClosed"/>. It takes the value <see cref="OpenRequest"/> had when the close was asked
 /// for, so a Chrome that answers both after one render knows which came last: an opening it has not yet
 /// answered is still asked for only while the two differ.</param>
-/// <param name="ChoicesClosed">A Chrome whose list is its own calls this once the list has closed, without a
-/// choice or after making one, so the Sheet Toolbar takes the keyboard on from wherever the close left it: back
+/// <param name="ChoicesClosed">A Chrome whose list is its own calls this as the list closes, in the turn of the
+/// input that closes it (<see cref="InOrder"/>) and with the keyboard still in the list: the choice made, or
+/// null, and whether Escape closed it. The Sheet Toolbar makes the choice, then takes the keyboard on — back
 /// to the Sheet, or, after Escape in a list a KeyTip opened, to the toolbar's KeyTips, as Excel went back one
-/// level when read on Windows (observed: the readings of 2026-10-12, R2 (b); ADR-0100's note of that day).</param>
-/// <param name="ChoicesClosing">A Chrome whose list is its own calls this as the list begins to close — a
-/// choice made, Escape, or the design system's own means while the keyboard is in it — with the key that
-/// closes it (null when no key does), and passes every key typed in the list from then until it has gone to
-/// the action this returns, in order (decided with the user, 2026-10-12). On a circuit the list stands a round
-/// trip after that key, and the keys typed meanwhile are not the list's: the Sheet Toolbar holds them, with
-/// the keys typed on its band, and hands them all on, in order, to where the keyboard goes when
-/// <see cref="ChoicesClosed"/> is called. A Chrome that does not call it leaves those keys to its list, which
-/// is about to go.</param>
-/// <param name="ChoicesOpened">A Chrome whose list is its own calls this once the list it opened for
-/// <see cref="OpenRequest"/> holds the keyboard, with true, or once it knows the list will not take it — it
-/// did not open — with false (decided with the user, 2026-10-13). On a circuit the list takes the keyboard a
-/// round trip after the toolbar asked for it, and the keys typed on the toolbar meanwhile are the list's, as
-/// they would be had they been typed a moment later: the Sheet Toolbar holds them from the moment it asks,
-/// and answers them, in order, to a call with true, for the Chrome to answer as typed in the list, ahead of
-/// any typed in it since; with false it answers none and gives them to the toolbar itself. The keys of a
-/// list the toolbar closes before it is opened (<see cref="CloseRequest"/>) go where the toolbar takes the
-/// keyboard, and a call after that answers none. A Chrome that never calls it leaves the toolbar holding
-/// them until the keyboard, having left the toolbar's band, comes back to it: they are then the band's.</param>
+/// level when read on Windows (observed: the readings of 2026-10-12, R2 (b); ADR-0100's note of that day) —
+/// and the Chrome removes the list once the task completes. The keys typed meanwhile are held by the grid
+/// behind that input and handed on where the keyboard landed (ADR-0240 section 6, ticket 06). A list the
+/// design system closes by its own means calls it once the list has closed, with no choice. A list asked to
+/// open (<see cref="OpenRequest"/>) that does not open calls it too, with no choice: the keys held for the
+/// list are then the toolbar's band's.</param>
 /// <param name="Content">A Consumer item's own content, drawn in place of a picture and text; null for
 /// ExSheet's items.</param>
 /// <param name="KeyTip">The item's KeyTip letters; null for none.</param>
@@ -171,13 +163,40 @@ public sealed record ToolbarItemContext(
     bool Active,
     int OpenRequest,
     int CloseRequest,
-    Func<Task> ChoicesClosed,
-    Func<Microsoft.AspNetCore.Components.Web.KeyboardEventArgs?, Action<Microsoft.AspNetCore.Components.Web.KeyboardEventArgs>> ChoicesClosing,
-    Func<bool, IReadOnlyList<Microsoft.AspNetCore.Components.Web.KeyboardEventArgs>> ChoicesOpened,
+    Func<ToolbarChoice?, bool, Task> ChoicesClosed,
     Microsoft.AspNetCore.Components.RenderFragment? Content,
     string? KeyTip,
     bool ShowKeyTip)
 {
+    /// <summary>
+    /// Puts an input of the Chrome's own control — a press on the item's button, a key or a press in its own
+    /// list — in its place in the Sheet's Input Order (ADR-0240 section 6), as the built-in item's are: the
+    /// control claims the event (<c>data-ex-claims</c>), and the handling runs in that input's turn. Every
+    /// event a control claims must reach it, or the inputs behind it are held until the next one does.
+    /// Without a Sheet to order it among, the handling runs at once.
+    /// </summary>
+    public Func<global::ExGrid.Chrome.GridInputKind, Func<Task>, Task> InOrder { get; init; } = static (_, handling) => handling();
+
+    /// <summary>
+    /// Hands the keyboard to a control of the Chrome's own list, in place of the control's own
+    /// <c>FocusAsync</c> (ADR-0240 section 6, ticket 06): granted only while the keyboard is still the
+    /// Sheet's — on the toolbar, in the grid, or in the list once it has joined the Sheet's Input Order
+    /// (<see cref="JoinSurface"/>) — so a press the user made elsewhere meanwhile keeps it there. A list
+    /// opened for <see cref="OpenRequest"/> takes the keyboard through it: the keys typed since the toolbar
+    /// asked for the list are held until then, and handed to the control in order, as the keydown each was.
+    /// </summary>
+    public Func<Microsoft.AspNetCore.Components.ElementReference, Task> TakeKeyboard { get; init; } = static control => control.FocusAsync().AsTask();
+
+    /// <summary>
+    /// Joins a list the Chrome's design system draws outside the Sheet — a <c>MudPopover</c> at the page's
+    /// body — to the Sheet's Input Order while it is open (ADR-0240 section 6, ticket 06), as the grid's
+    /// <c>JoinSurfaceAsync</c> has it: the element, the CSS selector of the surface around it or null, and
+    /// the surface's Escape or null. Joined, its claimed inputs are numbered and handled in their place, the
+    /// keyboard in it is the Sheet's, and the keys typed in it while an input is answered are held. Dispose
+    /// the membership once the list has closed. Null where there is no Sheet to join.
+    /// </summary>
+    public Func<Microsoft.AspNetCore.Components.ElementReference, string?, Func<Task>?, Task<IAsyncDisposable>>? JoinSurface { get; init; }
+
     /// <summary>The tooltip: the name, the key in brackets when there is one, and the reason it cannot be pressed.</summary>
     public string Tooltip =>
         (Shortcut is { } key ? $"{Name} ({key})" : Name) + (DisabledReason is { } reason ? " — " + reason : "");
@@ -190,8 +209,8 @@ public sealed record ToolbarItemContext(
         && DisabledReason == other.DisabledReason && ReferenceEquals(Invoke, other.Invoke)
         && Choices.SequenceEqual(other.Choices) && Colour == other.Colour && Active == other.Active
         && OpenRequest == other.OpenRequest && CloseRequest == other.CloseRequest
-        && ReferenceEquals(ChoicesClosed, other.ChoicesClosed) && ReferenceEquals(ChoicesClosing, other.ChoicesClosing)
-        && ReferenceEquals(ChoicesOpened, other.ChoicesOpened)
+        && ReferenceEquals(ChoicesClosed, other.ChoicesClosed) && ReferenceEquals(InOrder, other.InOrder)
+        && ReferenceEquals(TakeKeyboard, other.TakeKeyboard) && ReferenceEquals(JoinSurface, other.JoinSurface)
         && ReferenceEquals(Content, other.Content) && KeyTip == other.KeyTip && ShowKeyTip == other.ShowKeyTip;
 
     /// <inheritdoc />

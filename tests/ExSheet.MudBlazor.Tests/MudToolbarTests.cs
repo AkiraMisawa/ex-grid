@@ -17,8 +17,6 @@ namespace ExSheet.MudBlazor.Tests;
 /// </summary>
 public class MudToolbarTests : MudSheetTestContext
 {
-    private const string Focus = "Blazor._internal.domWrapper.focus";
-
     private static AngleSharp.Dom.IElement Wrapper(Bunit.IRenderedComponent<Bunit.Rendering.ContainerFragment> page, string name) =>
         page.FindAll(".mud-ex-sheet-toolbar-item").Single(w => w.QuerySelector($"[aria-label=\"{name}\"]") is not null);
 
@@ -44,16 +42,15 @@ public class MudToolbarTests : MudSheetTestContext
         page.Find(".mud-ex-sheet-toolbar-choices").KeyDownAsync(new KeyboardEventArgs { Key = key });
 
     /// <summary>
-    /// The name of what the last DOM focus asked for was asked on, read by the element's reference: a
-    /// MudMenuItem's text, a swatch's label, or null for anything else.
+    /// The name of the choice the keyboard was last handed to through the grid (ToolbarItemContext.TakeKeyboard),
+    /// read by the element's reference: a MudMenuItem's text, a swatch's label, or null for anything else.
     /// </summary>
     private string? LastFocused(Bunit.IRenderedComponent<Bunit.Rendering.ContainerFragment> page)
     {
-        var last = JSInterop.Invocations.LastOrDefault(i => i.Identifier == Focus);
-        if (last.Arguments is not [Microsoft.AspNetCore.Components.ElementReference element, ..]) return null;
-        if (page.FindComponents<global::MudBlazor.MudMenuItem>().FirstOrDefault(i => i.Instance.ElementReference.Id == element.Id) is { } item)
+        if (LastHandedToId is not { } id) return null;
+        if (page.FindComponents<global::MudBlazor.MudMenuItem>().FirstOrDefault(i => i.Instance.ElementReference.Id == id) is { } item)
             return string.Concat(item.Nodes.Select(n => n.TextContent)).Trim();
-        return page.FindAll("button.mud-ex-sheet-swatch").FirstOrDefault(e => e.GetAttribute("blazor:elementReference") == element.Id)?.GetAttribute("aria-label");
+        return page.FindAll("button.mud-ex-sheet-swatch").FirstOrDefault(e => e.GetAttribute("blazor:elementReference") == id)?.GetAttribute("aria-label");
     }
 
     [Fact] // ADR-0100, SH-50: every item is drawn in MudBlazor's controls, in the default row's order
@@ -174,19 +171,25 @@ public class MudToolbarTests : MudSheetTestContext
         Assert.Equal((1, SheetColumnWidthKind.WidenedByEntry), (widened.First, widened.Kind));
     }
 
-    [Fact] // ADR-0100, ADR-0039, SH-52 (the seventeenth Windows run, D-mud-lists): Alt, H, F, C opens the Font Colour list with the keyboard in it, on the choice the Focus cell has
+    [Fact] // ADR-0100, ADR-0039, SH-52 (the seventeenth Windows run, D-mud-lists), ADR-0240 section 6, ticket 06: Alt, H, F, C opens the Font Colour list, which joins the Sheet's Input Order and takes the keyboard through the grid, on the choice the Focus cell has
     public async Task A_list_opened_from_the_keys_takes_the_keyboard()
     {
         var page = RenderPage(DocumentOf(("B2", "12")), showToolbar: true);
         await GoToAsync(page, "B2");
+        var steps = SurfaceSteps.Count;
 
         await KeyTipsAsync(page, "h", "f", "c");
 
         page.WaitForAssertion(() => Assert.Single(Lists(page)));
         page.WaitForAssertion(() => Assert.Equal("Automatic", LastFocused(page)));
+        // Told the keyboard is on its way to a frame as the KeyTip is answered; joined before it takes it.
+        var after = SurfaceSteps.Skip(steps).ToList();
+        Assert.True(after.LastIndexOf("handOff:frame") < after.IndexOf("joinSurface"));
+        Assert.True(after.IndexOf("joinSurface") < after.LastIndexOf("handKeyboardTo"));
+        Assert.Equal("keydown", Lists(page)[0].GetAttribute("data-ex-claims"));
     }
 
-    [Fact] // ADR-0100, ADR-0039, SH-52 (the seventeenth Windows run, D-mud-lists) and R2 (b) of the Windows readings of 2026-10-12 (observed: after Alt, H, F, C one Escape shows the Home tab's KeyTips): Escape in a list a KeyTip opened closes it, through the item's own element inside the band, never aria-hidden, and goes back to its row's KeyTips with the keyboard on the band
+    [Fact] // ADR-0100, ADR-0039, SH-52 and R2 (b) of the Windows readings of 2026-10-12 (observed: after Alt, H, F, C one Escape shows the Home tab's KeyTips), ADR-0240 section 6, ticket 06: Escape in a list a KeyTip opened goes back to its row's KeyTips, the band taking the keyboard through the grid from the list in Escape's turn, and only then does the list close and leave the Sheet's Input Order
     public async Task Escape_in_a_list_a_keytip_opened_goes_back_to_its_rows_keytips()
     {
         var page = RenderPage(DocumentOf(("B2", "12")), showToolbar: true);
@@ -195,73 +198,21 @@ public class MudToolbarTests : MudSheetTestContext
         page.WaitForAssertion(() => Assert.Equal("No Fill", LastFocused(page)));
         await page.Find(".ex-sheet-toolbar").FocusOutAsync(new FocusEventArgs());
         var taken = TakeBackCount;
-        // The browser has not yet put the keyboard on the item's element: it stands a round trip.
-        var focus = JSInterop.SetupVoid(Focus, _ => true);
+        var steps = SurfaceSteps.Count;
 
         await TypeInListAsync(page, "Escape");
-        // Typed in the list while it closes: the KeyTips', once the band has the keyboard again.
-        await TypeInListAsync(page, "1");
 
-        var leaving = page.WaitForElement(".mud-ex-sheet-toolbar-leaving");
-        Assert.False(leaving.HasAttribute("aria-hidden"));
-        Assert.NotNull(leaving.Closest(".ex-sheet-toolbar"));
-        focus.SetVoidResult();
         page.WaitForAssertion(() => Assert.Empty(Lists(page)));
         page.WaitForAssertion(() => Assert.Contains("FC", KeyTips(page)));
+        Assert.Equal(["handKeyboardTo", "leaveSurface"], SurfaceSteps.Skip(steps));
         Assert.Equal(taken, TakeBackCount);
         Assert.Equal(CellFill.None, FormatAt(page, "B2").Fill);
-        Assert.False(FormatAt(page, "B2").Font.Bold);
-
-        // The browser puts the keyboard on the band: the key held for it is its own now.
-        await page.Find(".ex-sheet-toolbar").FocusAsync(new FocusEventArgs());
-        page.WaitForAssertion(() => Assert.True(FormatAt(page, "B2").Font.Bold));
-        Assert.Empty(KeyTips(page));
-        page.WaitForAssertion(() => Assert.Equal(taken + 1, TakeBackCount));
-        // The grid has the keyboard, and asks for what was typed on the way: nothing more.
-        Assert.Empty(AnswerTakeBacks(page.FindComponent<ExGrid<SheetRow>>()));
+        Assert.Empty(page.FindAll(".mud-ex-sheet-toolbar-leaving"));
 
         // And the next list is the only one.
-        await KeyTipsAsync(page, "h", "b");
-        page.WaitForAssertion(() => Assert.Single(Lists(page)));
-    }
-
-    [Fact] // ADR-0100, ADR-0050 item 16 (decided with the user, 2026-10-13: an Alt pressed alone, and the letters after it, typed at once while keys are held have the outcome they have typed slowly): Escape three times in a list a KeyTip opened, then Alt, H, H, typed as it closes — the first Escape goes back to its row's KeyTips, the band answers the second and third once it has the keyboard, the third giving it back to the Sheet — and the keys behind the third go with it, the Alt's release among them, though the grid asks for them before that Escape's own step has returned
-    public async Task Keys_typed_as_a_keytip_list_closes_go_on_in_order_past_the_escape_that_ends_the_keytips()
-    {
-        var page = RenderPage(DocumentOf(("B2", "12")), showToolbar: true);
-        await GoToAsync(page, "B2");
-        await KeyTipsAsync(page, "h", "f", "c");
-        page.WaitForAssertion(() => Assert.Equal("Automatic", LastFocused(page)));
-        await page.Find(".ex-sheet-toolbar").FocusOutAsync(new FocusEventArgs());
-        var taken = TakeBackCount;
-        // The browser has not yet put the keyboard on the item's element: it stands a round trip.
-        var focus = JSInterop.SetupVoid(Focus, _ => true);
-
-        await TypeInListAsync(page, "Escape");
-        await TypeInListAsync(page, "Escape");
-        await TypeInListAsync(page, "Escape");
-        await TypeInListAsync(page, "Alt");
-        await page.Find(".mud-ex-sheet-toolbar-choices").KeyUpAsync(new KeyboardEventArgs { Key = "Alt", Type = "keyup" });
-        await TypeInListAsync(page, "h");
-        await TypeInListAsync(page, "h");
-
-        focus.SetVoidResult();
-        page.WaitForAssertion(() => Assert.Empty(Lists(page)));
-        page.WaitForAssertion(() => Assert.Contains("FC", KeyTips(page)));
-        Assert.Equal(taken, TakeBackCount);
-
-        // The browser puts the keyboard on the band; the key gate asks for the keys typed on the way as
-        // soon as the third Escape has given the keyboard back, before that key's own step has returned.
-        var keys = new List<KeyboardEventArgs>();
-        AskForKeysWithinTakeBacks(page.FindComponent<ExGrid<SheetRow>>(), keys);
         await page.Find(".ex-sheet-toolbar").FocusAsync(new FocusEventArgs());
-        page.WaitForAssertion(() => Assert.Equal(taken + 1, TakeBackCount));
-        Assert.Empty(KeyTips(page));
-        Assert.Empty(AnswerTakeBacks(page.FindComponent<ExGrid<SheetRow>>()));
-
-        Assert.Equal([("Alt", false), ("Alt", true), ("h", false), ("h", false)], keys.Select(k => (k.Key, k.Type == "keyup")));
-        Assert.Equal(CellFill.None, FormatAt(page, "B2").Fill);
-        Assert.Empty(Lists(page));
+        await page.Find(".ex-sheet-toolbar").KeyDownAsync(new KeyboardEventArgs { Key = "b" });
+        page.WaitForAssertion(() => Assert.Single(Lists(page)));
     }
 
     [Fact] // ADR-0100, ADR-0039: Escape in a list the pointer opened closes it, and the keyboard goes back to the Sheet, as before
@@ -295,9 +246,9 @@ public class MudToolbarTests : MudSheetTestContext
         page.WaitForAssertion(() => Assert.Equal("Top Border", LastFocused(page)));
         await TypeInListAsync(page, "End");
         page.WaitForAssertion(() => Assert.Equal("Thick Outside Borders", LastFocused(page)));
-        var focusCalls = JSInterop.Invocations.Count(i => i.Identifier == Focus);
+        var steps = SurfaceSteps.Count;
         await TypeInListAsync(page, "Tab");
-        Assert.Equal(focusCalls, JSInterop.Invocations.Count(i => i.Identifier == Focus));
+        Assert.Equal(steps, SurfaceSteps.Count);
         Assert.Single(Lists(page));
         var taken = TakeBackCount;
 
@@ -349,21 +300,22 @@ public class MudToolbarTests : MudSheetTestContext
         var page = RenderPage(DocumentOf(("B2", "12")), showToolbar: true);
         await GoToAsync(page, "B2");
         await KeyTipsAsync(page, "h", "n");
+        page.WaitForAssertion(() => Assert.Single(Lists(page)));
         await TypeInListAsync(page, "End");
         var returned = HoldKeyboardHandBack();
         var taken = TakeBackCount;
 
-        await TypeInListAsync(page, "Enter");
+        var enter = TypeInListAsync(page, "Enter");
 
         page.WaitForAssertion(() => Assert.True(TakeBackCount > taken));
-        Assert.Empty(page.FindAll(".mud-ex-sheet-format-cells-leaving"));
         Assert.False(IsOpen(page));
 
         returned();
+        await enter;
         page.WaitForAssertion(() => Assert.True(IsOpen(page)));
     }
 
-    [Fact] // ADR-0100, SH-50: a choice pressed with the pointer closes the list and gives the keyboard back to the Sheet
+    [Fact] // ADR-0100, SH-50, ADR-0240 section 6: a choice pressed with the pointer claims its click, and the list's keys typed on it, closes the list and gives the keyboard back to the Sheet; a disabled choice, which hears no click, claims none
     public async Task A_pressed_choice_closes_the_list_and_gives_the_keyboard_back()
     {
         var page = RenderPage(DocumentOf(("B2", "12")), showToolbar: true);
@@ -371,46 +323,50 @@ public class MudToolbarTests : MudSheetTestContext
         await Wrapper(page, "Borders").QuerySelector("button.mud-ex-sheet-toolbar-arrow")!.ClickAsync(new MouseEventArgs());
         page.WaitForAssertion(() => Assert.Single(Lists(page)));
         var taken = TakeBackCount;
+        var top = page.FindAll(".mud-ex-sheet-toolbar-choices .mud-menu-item").Single(i => i.TextContent.Trim() == "Top Border");
+        Assert.Equal("click keydown", top.GetAttribute("data-ex-claims"));
 
-        await page.FindAll(".mud-ex-sheet-toolbar-choices .mud-menu-item").Single(i => i.TextContent.Trim() == "Top Border").ClickAsync(new MouseEventArgs());
+        await top.ClickAsync(new MouseEventArgs());
 
         page.WaitForAssertion(() => Assert.Empty(Lists(page)));
         page.WaitForAssertion(() => Assert.Equal(new BorderLine(BorderLineStyle.Thin), FormatAt(page, "B2").Borders.Top));
         page.WaitForAssertion(() => Assert.True(TakeBackCount > taken));
+
+        await Wrapper(page, "Number Format").QuerySelector("button[aria-label=\"Number Format\"]")!.ClickAsync(new MouseEventArgs());
+        page.WaitForAssertion(() => Assert.Single(Lists(page)));
+        var accounting = page.FindAll(".mud-ex-sheet-toolbar-choices .mud-menu-item").Single(i => i.TextContent.StartsWith("Accounting"));
+        Assert.False(accounting.HasAttribute("data-ex-claims"));
     }
 
-    [Fact] // ADR-0100, ADR-0050 item 16's note of 2026-10-12, and the seam member decided with the user on 2026-10-12: the keys typed in the list while it closes, then on the item's element while the keyboard goes back through it, are held in order and handed to the Sheet with the keyboard: Enter presses no item and chooses nothing again
-    public async Task Keys_typed_while_a_list_closes_are_the_sheets_in_order()
+    [Fact] // ADR-0100, ADR-0050 item 16's note of 2026-10-12 (decided with the user: the keys typed while a list closes go where the keyboard lands), ADR-0240 section 6, ticket 06: Enter in the list is answered in its turn, which makes the choice and gives the keyboard back from the list before the list closes and leaves the Sheet's Input Order, so the grid holds the keys typed after it until the keyboard has landed
+    public async Task A_choice_made_from_the_keys_gives_the_keyboard_back_before_the_list_goes()
     {
         var page = RenderPage(DocumentOf(("B2", "12")), showToolbar: true);
         await GoToAsync(page, "B2");
         await KeyTipsAsync(page, "h", "h");
         page.WaitForAssertion(() => Assert.Equal("No Fill", LastFocused(page)));
-        // The band gave the keyboard to the list: it holds it no longer.
         await page.Find(".ex-sheet-toolbar").FocusOutAsync(new FocusEventArgs());
         await TypeInListAsync(page, "ArrowDown");
         page.WaitForAssertion(() => Assert.Equal(FormatCellsOffer.ThemeColours[0][0].Name, LastFocused(page)));
-        // The browser has not yet put the keyboard on the item's element: it stands a round trip.
-        var focus = JSInterop.SetupVoid(Focus, _ => true);
-        await TypeInListAsync(page, "Enter");
+        var returned = HoldKeyboardReturns();
+        var steps = SurfaceSteps.Count;
 
-        // In the list itself, which stands until the keyboard has left it, and then on the element.
-        await TypeInListAsync(page, "Enter");
-        await TypeInListAsync(page, "ArrowUp");
-        var leaving = page.WaitForElement(".mud-ex-sheet-toolbar-leaving");
-        await leaving.KeyDownAsync(new KeyboardEventArgs { Key = "Enter" });
-        await leaving.KeyDownAsync(new KeyboardEventArgs { Key = "ArrowDown" });
+        var enter = TypeInListAsync(page, "Enter");
 
-        focus.SetVoidResult();
-        page.WaitForAssertion(() => Assert.Empty(Lists(page)));
-        page.WaitForAssertion(() => Assert.Empty(page.FindAll(".mud-ex-sheet-toolbar-leaving")));
+        // The choice is made and the keyboard asked back while the list stands.
+        page.WaitForAssertion(() => Assert.Equal(["takeKeyboardBack"], SurfaceSteps.Skip(steps)));
         Assert.Equal(CellFill.Solid(FormatCellsOffer.ThemeColours[0][0].Colour), FormatAt(page, "B2").Fill);
-        Assert.False(FormatAt(page, "B2").Font.Bold);
+        Assert.Single(Lists(page));
+
+        returned();
+        await enter;
+        page.WaitForAssertion(() => Assert.Empty(Lists(page)));
+        Assert.Equal(["takeKeyboardBack", "leaveSurface"], SurfaceSteps.Skip(steps));
         Assert.Empty(KeyTips(page));
-        Assert.Equal(["Enter", "ArrowUp", "Enter", "ArrowDown"], AnswerTakeBacks(page.FindComponent<ExGrid<SheetRow>>()).Select(k => k.Key));
+        Assert.Empty(page.FindAll(".mud-ex-sheet-toolbar-leaving"));
     }
 
-    [Fact] // ADR-0100's CloseRequest (decided with the user, 2026-10-12; stop 1 of round 2, kept) and R2 (b) of the Windows readings of 2026-10-12: Escape on the band while the list a KeyTip opened already holds the keyboard closes the list, which leaves through its element, and the KeyTips go back to its row's letters with the keyboard on the band — never on the Sheet
+    [Fact] // ADR-0100's CloseRequest (decided with the user, 2026-10-12; stop 1 of round 2, kept) and R2 (b) of the Windows readings of 2026-10-12: Escape on the band while the list a KeyTip opened already holds the keyboard closes the list, and the KeyTips go back to its row's letters with the keyboard on the band — never on the Sheet
     public async Task A_close_request_closes_a_list_that_holds_the_keyboard_back_to_the_keytips()
     {
         var page = RenderPage(DocumentOf(("B2", "12")), showToolbar: true);
@@ -423,7 +379,6 @@ public class MudToolbarTests : MudSheetTestContext
         await page.Find(".ex-sheet-toolbar").KeyDownAsync(new KeyboardEventArgs { Key = "Escape" });
 
         page.WaitForAssertion(() => Assert.Empty(Lists(page)));
-        page.WaitForAssertion(() => Assert.Empty(page.FindAll(".mud-ex-sheet-toolbar-leaving")));
         page.WaitForAssertion(() => Assert.Contains("FC", KeyTips(page)));
         Assert.Equal(taken, TakeBackCount);
         Assert.Equal(CellColour.Automatic, FormatAt(page, "B2").Font.Colour);
@@ -461,6 +416,17 @@ public class MudToolbarTests : MudSheetTestContext
         Assert.Empty(AnswerTakeBacks(page.FindComponent<ExGrid<SheetRow>>()));
     }
 
+    [Fact] // ADR-0240 section 6, ticket 06: every button of a MudBlazor item claims its click (data-ex-claims), so its press takes its place in the Sheet's Input Order, as the built-in item's does
+    public void The_items_buttons_claim_their_clicks()
+    {
+        var page = RenderPage(DocumentOf(("B2", "12")), showToolbar: true);
+
+        var buttons = page.FindAll(".mud-ex-sheet-toolbar-item button");
+
+        Assert.NotEmpty(buttons);
+        Assert.All(buttons, b => Assert.Equal("click", b.GetAttribute("data-ex-claims")));
+    }
+
     [Fact] // ADR-0100's CloseRequest (decided with the user, 2026-10-12): an opening and a close asked for before the Chrome answers either open nothing, and the Chrome gives no keyboard back for that close
     public void An_opening_closed_before_it_is_answered_opens_nothing()
     {
@@ -479,39 +445,71 @@ public class MudToolbarTests : MudSheetTestContext
         Assert.Equal(0, closed);
     }
 
-    [Fact] // ADR-0100's ToolbarItemContext.ChoicesOpened (decided with the user, 2026-10-13): once its list holds the keyboard, the MudBlazor item answers the keys the toolbar held for it, in order, as typed in the list
-    public void The_keys_held_while_the_list_opened_are_answered_in_it()
+    [Fact] // ADR-0100's OpenRequest and ADR-0240 section 6, ticket 06: a list opened for the toolbar's keys joins the Sheet's Input Order first, then takes the keyboard through the context, on the choice the Focus cell has, else the first that can be made
+    public void A_list_opened_for_the_keys_joins_then_takes_the_keyboard()
     {
         SetRendererInfo(new Microsoft.AspNetCore.Components.RendererInfo("Server", isInteractive: true));
-        var chosen = new List<string>();
-        var asked = new List<bool>();
+        var steps = new List<string>();
         var provider = Render<MudProviders.MudPopoverProvider>();
-        ToolbarItemContext Context(int open) => new(
-            "test-fill", ToolbarItemKind.Split, "Fill Colour", null, ToolbarIcon.Fill, null, false, true, null,
-            () => Task.CompletedTask,
-            [new ToolbarChoice("No Fill", () => { chosen.Add("No Fill"); return Task.CompletedTask; }),
-             new ToolbarChoice("Red", () => { chosen.Add("Red"); return Task.CompletedTask; }, Colour: CellColour.FromRgb(0xFF0000))],
-            null, false, open, 0, () => Task.CompletedTask, _ => _ => { },
-            took =>
+        ToolbarItemContext Context(int open) => ItemContext(open, 0, () => { }) with
+        {
+            JoinSurface = (_, _, _) =>
             {
-                asked.Add(took);
-                return [new KeyboardEventArgs { Key = "ArrowDown" }, new KeyboardEventArgs { Key = "Enter" }];
-            }, null, null, false);
+                steps.Add("join");
+                return Task.FromResult<IAsyncDisposable>(new Membership(() => steps.Add("leave")));
+            },
+            TakeKeyboard = _ =>
+            {
+                steps.Add("take");
+                return Task.CompletedTask;
+            },
+        };
         var item = Render<MudToolbarItem>(ps => ps.Add(p => p.Context, Context(0)));
 
         item.Render(ps => ps.Add(p => p.Context, Context(1)));
 
-        // ↓ from No Fill to Red, then Enter chooses it: the list closes with the choice made.
-        item.WaitForAssertion(() => Assert.Equal(["Red"], chosen));
-        Assert.Equal([true], asked);
+        provider.WaitForAssertion(() => Assert.Equal(["join", "take"], steps));
+    }
+
+    [Fact] // ADR-0100's OpenRequest and ChoicesClosed: a list asked to open that cannot — its item disabled meanwhile — says so with no choice, so the keys held for it go to the toolbar
+    public void A_list_that_cannot_open_says_it_closed_with_no_choice()
+    {
+        SetRendererInfo(new Microsoft.AspNetCore.Components.RendererInfo("Server", isInteractive: true));
+        var closed = new List<(ToolbarChoice? Choice, bool Escaped)>();
+        var provider = Render<MudProviders.MudPopoverProvider>();
+        ToolbarItemContext Context(int open) => ItemContext(open, 0, () => { }) with
+        {
+            Enabled = false,
+            ChoicesClosed = (choice, escaped) =>
+            {
+                closed.Add((choice, escaped));
+                return Task.CompletedTask;
+            },
+        };
+        var item = Render<MudToolbarItem>(ps => ps.Add(p => p.Context, Context(0)));
+
+        item.Render(ps => ps.Add(p => p.Context, Context(1)));
+
+        item.WaitForAssertion(() => Assert.Equal([(null, false)], closed));
+        Assert.Empty(provider.FindAll(".mud-ex-sheet-toolbar-choices"));
     }
 
     private static ToolbarItemContext ItemContext(int open, int close, Action closed) => new(
         "test-fill", ToolbarItemKind.Split, "Fill Colour", null, ToolbarIcon.Fill, null, false, true, null,
         () => Task.CompletedTask, [new ToolbarChoice("No Fill", () => Task.CompletedTask), new ToolbarChoice("Red", () => Task.CompletedTask, Colour: CellColour.FromRgb(0xFF0000))],
-        null, false, open, close, () =>
+        null, false, open, close, (_, _) =>
         {
             closed();
             return Task.CompletedTask;
-        }, _ => _ => { }, _ => [], null, null, false);
+        }, null, null, false);
+
+    // A list's membership of the Sheet's Input Order, as the context hands it back.
+    private sealed class Membership(Action left) : IAsyncDisposable
+    {
+        public ValueTask DisposeAsync()
+        {
+            left();
+            return ValueTask.CompletedTask;
+        }
+    }
 }

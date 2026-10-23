@@ -427,8 +427,14 @@ public partial class ExGrid<TRow>
     /// <returns>A task that completes once the key is answered.</returns>
     [JSInvokable, System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     public Task OnSurfaceEscapeAsync(int surface, int input = 0, GridInputText? fieldText = null)
-        => AnsweredAsync(() => !_disposed && _surfaces.GetValueOrDefault(surface) is { } escape ? escape() : Task.CompletedTask,
+    {
+        // Told as a telling is, after every event before it has reached its handler: one no handler has
+        // claimed never will. The keyboard crossing into a joined surface, which no handler on the Input
+        // Root hears, held this Escape behind it, and every input after it (More Colours on the Server host).
+        if (input > 0) VoidUnheardTelling();
+        return AnsweredAsync(() => !_disposed && _surfaces.GetValueOrDefault(surface) is { } escape ? escape() : Task.CompletedTask,
             input, fieldText);
+    }
 
     private Task LeaveSurfaceAsync(int id)
         => InvokeAsync(async () =>

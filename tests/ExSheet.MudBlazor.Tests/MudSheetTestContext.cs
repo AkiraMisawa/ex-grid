@@ -144,6 +144,12 @@ public abstract class MudSheetTestContext : BunitContext
     /// <summary>The numbers the grid gave the surfaces that joined its Input Order, in order.</summary>
     protected IReadOnlyList<int> JoinedSurfaces => [.. _handle.Invocations["joinSurface"].Select(i => (int)i.Arguments[2]!)];
 
+    /// <summary>The element last handed the keyboard through the grid (ExGrid's <c>HandKeyboardToAsync</c>), by
+    /// its reference's id; null when none has been.</summary>
+    protected string? LastHandedToId => _handle.Invocations["handKeyboardTo"] is { Count: > 0 } calls
+        ? ((ElementReference)calls[^1].Arguments[0]!).Id
+        : null;
+
     /// <summary>How many times the keyboard has been asked back for the Sheet, either way: the plain
     /// hand-back, or the hand-back from a frame with the keys typed on the way (decided with the user,
     /// 2026-10-13).</summary>

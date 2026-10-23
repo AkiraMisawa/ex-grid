@@ -128,39 +128,44 @@ public sealed class SheetToolbarContext
     /// </summary>
     internal ToolbarItemBase? KeyTipList { get; set; }
 
-    /// <summary>A Chrome's list begins to close (<see cref="ToolbarItemContext.ChoicesClosing"/>). Set by the toolbar.</summary>
-    internal Func<ToolbarItemBase, KeyboardEventArgs?, Action<KeyboardEventArgs>>? ListClosingHook { get; set; }
-
     /// <summary>A Chrome's list has closed (<see cref="ToolbarItemContext.ChoicesClosed"/>). Set by the toolbar.</summary>
-    internal Func<ToolbarItemBase, Task>? ListClosedHook { get; set; }
+    internal Func<ToolbarItemBase, ToolbarChoice?, bool, Task>? ListClosedHook { get; set; }
 
     /// <summary>Escape closed an item's list in the Sheet's built-in frame. Set by the toolbar.</summary>
     internal Func<ToolbarItemBase, Task>? ListEscapedHook { get; set; }
 
-    /// <summary>An item's list is asked to open from the toolbar's keys (decided with the user, 2026-10-13). Set by the toolbar.</summary>
-    internal Action<ToolbarItemBase>? ListOpeningHook { get; set; }
+    /// <summary>An item's list is asked to open from the toolbar's keys, in a Chrome's own list or the built-in
+    /// frame (decided with the user, 2026-10-13). Set by the toolbar.</summary>
+    internal Action<ToolbarItemBase, bool>? ListOpeningHook { get; set; }
 
-    /// <summary>A Chrome's list holds the keyboard, or will not (<see cref="ToolbarItemContext.ChoicesOpened"/>). Set by the toolbar.</summary>
-    internal Func<ToolbarItemBase, bool, IReadOnlyList<KeyboardEventArgs>>? ListOpenedHook { get; set; }
+    /// <summary>A Chrome's list hands the keyboard to one of its controls (<see cref="ToolbarItemContext.TakeKeyboard"/>). Set by the toolbar.</summary>
+    internal Func<ToolbarItemBase, ElementReference, Task>? ListTakesKeyboardHook { get; set; }
 
     /// <summary>The built-in frame's list was asked to open, and opened or not. Set by the toolbar.</summary>
     internal Func<ToolbarItemBase, bool, Task>? ListOpenedInGridHook { get; set; }
 
-    /// <summary>The list of <paramref name="item"/> is asked to open from the toolbar's keys: the keys typed on the toolbar are held for it.</summary>
-    internal void ListOpening(ToolbarItemBase item) => ListOpeningHook?.Invoke(item);
+    /// <summary>The list of <paramref name="item"/> is asked to open from the toolbar's keys, a Chrome's own
+    /// (<paramref name="ownList"/>) or the built-in frame's: the keys typed from now are held for it.</summary>
+    internal void ListOpening(ToolbarItemBase item, bool ownList) => ListOpeningHook?.Invoke(item, ownList);
 
-    /// <summary>A Chrome's list of <paramref name="item"/> holds the keyboard (<paramref name="took"/>), or will not: the keys held for it.</summary>
-    internal IReadOnlyList<KeyboardEventArgs> ListOpened(ToolbarItemBase item, bool took) => ListOpenedHook?.Invoke(item, took) ?? [];
+    /// <summary>A Chrome's list of <paramref name="item"/> hands the keyboard to <paramref name="control"/>.</summary>
+    internal Task ListTakesKeyboardAsync(ToolbarItemBase item, ElementReference control) =>
+        ListTakesKeyboardHook?.Invoke(item, control) ?? control.FocusAsync().AsTask();
 
     /// <summary>The built-in frame's list of <paramref name="item"/> was asked to open: the keys held for it go to the grid.</summary>
     internal Task ListOpenedInGridAsync(ToolbarItemBase item, bool opened) => ListOpenedInGridHook?.Invoke(item, opened) ?? Task.CompletedTask;
 
-    /// <summary>A Chrome's list of <paramref name="item"/> begins to close: where the keys typed in it go meanwhile.</summary>
-    internal Action<KeyboardEventArgs> ListClosing(ToolbarItemBase item, KeyboardEventArgs? closedBy) =>
-        ListClosingHook?.Invoke(item, closedBy) ?? (static _ => { });
-
-    /// <summary>A Chrome's list of <paramref name="item"/> has closed: the keyboard goes on from the toolbar.</summary>
-    internal Task ListClosedAsync(ToolbarItemBase item) => ListClosedHook?.Invoke(item) ?? ReturnKeyboardAsync();
+    /// <summary>A Chrome's list of <paramref name="item"/> closes: the choice is made, and the keyboard goes on from the toolbar.</summary>
+    internal async Task ListClosedAsync(ToolbarItemBase item, ToolbarChoice? choice, bool escaped)
+    {
+        if (ListClosedHook is { } closed)
+        {
+            await closed(item, choice, escaped);
+            return;
+        }
+        if (choice is not null) await choice.Choose();
+        await ReturnKeyboardAsync();
+    }
 
     /// <summary>The built-in frame's list of <paramref name="item"/> has gone, however it closed.</summary>
     internal void ListGone(ToolbarItemBase item)
@@ -175,9 +180,9 @@ public sealed class SheetToolbarContext
     internal bool KeyUpHeld { get; set; }
 
     /// <summary>
-    /// A Chrome's own list is closing (<see cref="ToolbarItemContext.ChoicesClosing"/>) and the toolbar has
-    /// not yet given the keyboard back: the keyboard is on the toolbar, and comes back through the grid. Set
-    /// by the toolbar.
+    /// A Chrome's own list is closing (<see cref="ToolbarItemContext.ChoicesClosed"/>) with its choice being
+    /// made, and the toolbar has not yet given the keyboard back: the keyboard is in the list, and comes back
+    /// through the grid. Set by the toolbar.
     /// </summary>
     internal bool ClosingList { get; set; }
 
@@ -221,6 +226,29 @@ public sealed class SheetToolbarContext
     /// (ADR-0240 section 6), through the seam the Sheet gave it.
     /// </summary>
     internal Task InOrderAsync(global::ExGrid.Chrome.GridInputKind kind, Func<Task> handling) => _inOrder(kind, handling);
+
+    /// <summary>The same seam as a delegate, the one instance every item's context carries.</summary>
+    internal Func<global::ExGrid.Chrome.GridInputKind, Func<Task>, Task> InOrderSeam => _inOrder;
+
+    /// <summary>
+    /// Joins a surface of a Chrome's own list to the Sheet's Input Order (the grid's <c>JoinSurfaceAsync</c>;
+    /// ADR-0240 section 6, ticket 06). Set by the Sheet.
+    /// </summary>
+    internal Func<ElementReference, string?, Func<Task>?, Task<IAsyncDisposable>>? JoinSurface { get; set; }
+
+    /// <summary>The joining every item's context carries, made once, so the context stays equal render after render.</summary>
+    internal Func<ElementReference, string?, Func<Task>?, Task<IAsyncDisposable>> JoinSurfaceSeam =>
+        _joinSurface ??= (element, around, escape) => JoinSurface?.Invoke(element, around, escape) ?? Task.FromResult<IAsyncDisposable>(NotJoined.Instance);
+
+    private Func<ElementReference, string?, Func<Task>?, Task<IAsyncDisposable>>? _joinSurface;
+
+    /// <summary>A surface with no Sheet to join: nothing to leave.</summary>
+    internal sealed class NotJoined : IAsyncDisposable
+    {
+        public static readonly NotJoined Instance = new();
+
+        public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+    }
 
     /// <summary>Closes the list titled so in the Sheet's built-in frame, if it is what the frame shows. Set by the Sheet.</summary>
     internal Func<string, Task>? CloseChoices { get; set; }

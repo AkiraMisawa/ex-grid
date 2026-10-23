@@ -1115,7 +1115,7 @@
             // The keyboard is the frame's from here, however Format Cells was opened — the menu's
             // command, Ctrl+1 or the Consumer's own call: the keys typed until the frame takes it
             // are held for it, never the grid's (ADR-0050 item 16, 2026-10-01). Chosen in a toolbar
-            // list of the Chrome's own as it closes, the keyboard is on the toolbar and comes back
+            // list of the Chrome's own as it closes, the keyboard is in that list and comes back
             // through the grid: the hand-off is told once the grid has asked for it back, so the keys
             // the toolbar hands back go on to Format Cells (TakeKeyboardBackFromToolbarAsync). Told now,
             // it would be taken as reached on the toolbar (ADR-0039's note of 2026-10-13).
@@ -2065,8 +2065,11 @@
         // typed while the keyboard goes to it are held for it, and the keys typed on it while the
         // keyboard comes back are handed to the grid (ADR-0050 item 16's note of 2026-10-12).
         _toolbar.HandKeyboardToToolbar ??= () => _grid?.HandKeyboardToFrameAsync() ?? Task.CompletedTask;
-        _toolbar.GiveToolbarTheKeyboard ??= band => _grid?.HandKeyboardToAsync(band) ?? band.FocusAsync(preventScroll: true).AsTask();
+        _toolbar.GiveToolbarTheKeyboard ??= band => _grid?.HandKeyboardToAsync(band, preventScroll: true) ?? band.FocusAsync(preventScroll: true).AsTask();
         _toolbar.TakeKeyboardBack ??= TakeKeyboardBackFromToolbarAsync;
+        // A Chrome's own list, drawn outside the Sheet, joins its Input Order while open (ADR-0240 section 6, ticket 06).
+        _toolbar.JoinSurface ??= (element, around, escape) => _grid is { } grid
+            ? grid.JoinSurfaceAsync(element, around, escape) : Task.FromResult<IAsyncDisposable>(SheetToolbarContext.NotJoined.Instance);
         _toolbar.CloseChoices ??= CloseToolbarChoicesAsync;
         // One Toolbar Row is the Formula Bar's height, from the same Density (ADR-0100, ADR-0028).
         ListenForKeyUps();

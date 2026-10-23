@@ -23,7 +23,7 @@
    around the panel turn into a request (ADR-0039) — through the core's focus function, which takes
    the keyboard only while it is still the grid's (ADR-0204). What the last step came to is worded here
    and written into a live region, because the grid holds no sentence (ADR-0033). *@
-<form class="mud-ex-grid-find" data-ex-claims="submit" @onsubmit="SubmitAsync" @onsubmit:preventDefault>
+<form class="mud-ex-grid-find" data-ex-claims="submit" @ref="_form" @onsubmit="SubmitAsync" @onsubmit:preventDefault>
     <button type="submit" class="mud-ex-grid-find-default" hidden tabindex="-1" aria-hidden="true"></button>
     <MudTextField @ref="_field" T="string" Value="Context.Text" ValueChanged="Context.TextChanged" Immediate="true"
                   Label="@Own(FindPanelLabelIds.Field)" Variant="Variant.Outlined" Margin="Margin.Dense"
@@ -97,6 +97,9 @@
         }
     }
 
+    // The panel's form, which holds the field.
+    private ElementReference _form;
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (!_focusOwed || _field is null)
@@ -108,8 +111,10 @@
             // a circuit the opening focus lands a round trip after Ctrl+F, and a grid pressed in the
             // meantime keeps it (ADR-0204). Without scrolling, as the core's own panel opens. Outside a
             // grid's context, the field's own FocusAsync.
-            if (Context.TakeFocus is { } take && _field.InputReference is { } input)
-                await take(input.ElementReference, true);
+            // The panel's form names the field when MudBlazor has not yet handed out its input: the
+            // core's focus function takes a box's first enabled text field (ticket 06 of the Input Order).
+            if (Context.TakeFocus is { } take)
+                await take(_field.InputReference is { } input ? input.ElementReference : _form, true);
             else
                 await _field.FocusAsync();
         }
