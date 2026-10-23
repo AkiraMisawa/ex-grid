@@ -2,6 +2,7 @@ using Bunit;
 using ExGrid.Components;
 using ExGrid.Selection;
 using ExPivot.Components.Tests.Support;
+using ExPivot.Chrome;
 using ExPivot.Engine;
 using Microsoft.AspNetCore.Components.Web;
 using Xunit;
@@ -159,9 +160,12 @@ public class KeyboardBackTests : PivotTestContext
         Assert.Single(cut.FindAll(".ex-pivot-dialog"));
         Assert.False(cut.Find(".ex-pivot-report").HasAttribute("inert"));
         Assert.False(cut.Find(".ex-pivot-field-list").HasAttribute("inert"));
-        // Keys passed out of the records grid, or typed on Close, reach the frame: held, not the dialog's.
+        // Keys passed out of the records grid reach the frame: held, not the dialog's. Close claims its
+        // keys (ADR-0240 section 6): the browser holds one typed on it behind the input under way, and one
+        // that reaches it presses nothing while the dialog closes.
         await cut.Find(".ex-pivot-dialog").KeyDownAsync(new KeyboardEventArgs { Key = "ArrowDown" });
         await cut.Find(".ex-pivot-dialog .ex-pivot-close").KeyDownAsync(new KeyboardEventArgs { Key = "Enter" });
+        await cut.Find(".ex-pivot-dialog").KeyDownAsync(new KeyboardEventArgs { Key = "ArrowRight" });
         Assert.Single(cut.FindAll(".ex-pivot-dialog"));
 
         // The browser has the keyboard back and asks for them: in order, the report's.
@@ -169,7 +173,7 @@ public class KeyboardBackTests : PivotTestContext
         var grid = Grid(cut);
         IReadOnlyList<KeyboardEventArgs> keys = [];
         await grid.InvokeAsync(() => { keys = grid.Instance.KeysTypedOnTheWay(ticket); });
-        Assert.Equal(["ArrowDown", "Enter"], keys.Select(k => k.Key));
+        Assert.Equal(["ArrowDown", "ArrowRight"], keys.Select(k => k.Key));
         takeBack.SetVoidResult();
 
         cut.WaitForAssertion(() => Assert.Empty(cut.FindAll(".ex-pivot-dialog")));
@@ -298,5 +302,20 @@ public class KeyboardBackTests : PivotTestContext
         Assert.Equal(ElementIdOf(TabButton(cut, "Details: East / Apples").Instance), KeyboardHandOffs(report)[^1]);
         Assert.Equal(focusCalls, FocusCalls());
         Assert.Equal(returns, KeyboardReturns(report));
+    }
+
+    [Fact] // ADR-0240 §6: a menu's request to take the keyboard stays with the command it was given to, when a press disables that command
+    public void A_menus_request_stays_with_its_command_when_a_press_disables_it()
+    {
+        PivotCommand[] commands = [new("first", "First", true, () => Task.CompletedTask), new("second", "Second", true, () => Task.CompletedTask)];
+        var menu = Render<PivotMenuView>(ps => ps.Add(m => m.Context, new PivotMenuContext("Menu", commands, () => { }, 1)));
+        var focusCalls = FocusCalls();
+        Assert.True(focusCalls > 0);
+
+        // Choosing a radio disables it, as a choice that would change nothing; the menu stands until
+        // its opener has the keyboard, and the next enabled command, never asked, takes nothing.
+        menu.Render(ps => ps.Add(m => m.Context, new PivotMenuContext("Menu", [commands[0] with { Enabled = false }, commands[1]], () => { }, 1)));
+
+        Assert.Equal(focusCalls, FocusCalls());
     }
 }

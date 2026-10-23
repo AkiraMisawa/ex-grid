@@ -1,5 +1,7 @@
 using System.ComponentModel;
+using ExGrid.Chrome;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
 
 namespace ExPivot.MudBlazor;
@@ -14,6 +16,10 @@ namespace ExPivot.MudBlazor;
 /// <see cref="TakeKeyboard"/>, which the grid grants only while the keyboard is still the report's
 /// (ADR-0070's note of 2026-10-02).
 ///
+/// <para>It takes its place in the pivot's Input Order (ADR-0240 section 6) through <see cref="InOrder"/>,
+/// the context's seam: it claims its click and its keys, and Enter and Space press it at their keydown
+/// (<see cref="MudPivotPress"/>).</para>
+///
 /// <para>Not the contract (ADR-0201): the Wrapper's own parts place it, and no Consumer does. It is
 /// public only because Razor places in markup only a public component, is hidden from a Consumer's
 /// editor, and may change in any version.</para>
@@ -21,7 +27,11 @@ namespace ExPivot.MudBlazor;
 [EditorBrowsable(EditorBrowsableState.Never)]
 public sealed class MudPivotButton : global::MudBlazor.MudButton
 {
+    private readonly MudPivotPress _press;
     private int _acted;
+
+    /// <summary>Creates the button.</summary>
+    public MudPivotButton() => _press = new MudPivotPress(this);
 
     /// <summary>Changes when the button should take DOM focus; zero asks nothing. Taking it
     /// scrolls the button into view, as the built-in views' buttons do: a menu opened at the foot
@@ -32,6 +42,22 @@ public sealed class MudPivotButton : global::MudBlazor.MudButton
     /// element's own <c>FocusAsync</c> — the report's grid handing the keyboard on (ADR-0070's note
     /// of 2026-10-02). Null, the element's own focus.</summary>
     [Parameter] public Func<ElementReference, Task>? TakeKeyboard { get; set; }
+
+    /// <summary>The context's seam into the pivot's Input Order; null leaves the button as MudBlazor's.</summary>
+    [Parameter] public Func<GridInputKind, Func<Task>, Task>? InOrder { get; set; }
+
+    /// <summary>ExPivot's frame's key handler around the button, cascaded by the frame.</summary>
+    [CascadingParameter(Name = global::ExPivot.Components.PivotPopupFrame.KeysName)]
+    internal Func<KeyboardEventArgs, Task>? FrameKeys { get; set; }
+
+    /// <inheritdoc />
+    protected override void OnParametersSet()
+    {
+        base.OnParametersSet();
+        _press.InOrder = InOrder;
+        _press.FrameKeys = FrameKeys;
+        OnClick = _press.Order(OnClick, UserAttributes);
+    }
 
     /// <inheritdoc />
     protected override async Task OnAfterRenderAsync(bool firstRender)

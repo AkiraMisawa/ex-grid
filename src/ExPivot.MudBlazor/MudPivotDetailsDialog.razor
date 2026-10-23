@@ -16,13 +16,15 @@
    never a MudDialog: where the dialog stands, its name, that it is modal and that Escape closes it
    are ExPivot's. Inside it, laid out as a MudDialog's: the cell's title as its heading, the
    records' grid ExPivot hands over, and Close as a MudButton in the actions, which takes the
-   keyboard when the dialog opens. *@
+   keyboard when the dialog opens and is pressed in the pivot's Input Order, through the context's
+   InOrder (ADR-0240 section 6). *@
 <div class="mud-ex-pivot-dialog-content">
     <MudText Typo="Typo.h6" Class="mud-ex-pivot-dialog-title">@Context.Title</MudText>
     <div class="mud-ex-pivot-dialog-records">@Context.Records</div>
     <div class="mud-ex-pivot-dialog-actions">
         <MudPivotButton Variant="Variant.Text" Color="Color.Primary" Class="mud-ex-pivot-dialog-close"
-                        OnClick="Context.Close" FocusRequest="Context.FocusRequest" TakeKeyboard="Context.TakeKeyboard">@Context.Word("close")</MudPivotButton>
+                        OnClick="Context.Close" FocusRequest="Context.FocusRequest" TakeKeyboard="Context.TakeKeyboard"
+                        InOrder="Context.InOrder">@Context.Word("close")</MudPivotButton>
     </div>
 </div>
 

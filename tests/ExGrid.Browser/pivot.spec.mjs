@@ -1000,6 +1000,28 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(page.locator('#pivot-status')).toContainText('1 changes made in the pane');
         });
 
+        test(`ADR-0240 §6: a click on Layout ▾ and Enter typed at once press the menu's first enabled choice, and the keyboard goes back to Layout, as typed slowly (${chrome})`, async ({ page }) => {
+            await open(page, chrome);
+            const button = toolbarButton(page, 'Layout');
+            const menu = page.getByRole('menu', { name: 'Layout', exact: true });
+            await setRoundTrip(150);
+
+            // The click takes its place in the report's Input Order, and its answer opens the menu and
+            // gives its first enabled choice, Do Not Show Subtotals, the keyboard. The Enter typed
+            // meanwhile is held behind it and handed on there, where it presses the choice at its keydown.
+            await button.click();
+            await page.keyboard.press('Enter');
+
+            await expect(page.locator('#pivot-status')).toContainText('1 changes made in the pane');
+            await expect(menu).toHaveCount(0);
+            await expect(button).toBeFocused();
+            await circuitQuiet();
+            await expect(button).toBeFocused();
+            await setRoundTrip(0);
+            await button.click();
+            await expect(menu.getByRole('menuitemradio', { name: 'Do Not Show Subtotals' })).toHaveAttribute('aria-checked', 'true');
+        });
+
         test(`ADR-0061: the Field List's toggle hides and shows the pane, and the page binds it (${chrome})`, async ({ page }) => {
             await open(page, chrome);
             const toggle = toolbarButton(page, 'Field List');

@@ -119,7 +119,7 @@ public class MudPivotToolbarTests : MudPivotTestContext
         Assert.Equal("false", cut.Find(".mud-ex-pivot-layout-button").GetAttribute("aria-expanded"));
     }
 
-    [Fact] // ADR-0039/0061 (PV-11): the Layout menu's first enabled choice takes DOM focus under MudBlazor; Escape closes it, and the keyboard goes back to Layout ▾
+    [Fact] // ADR-0039/0061 (PV-11), ADR-0240 §6: the Layout menu's first enabled choice takes DOM focus under MudBlazor, through the report grid's guard; Escape closes it, and the keyboard goes back to Layout ▾ the same way
     public async Task The_layout_menu_takes_the_keyboard()
     {
         var cut = RenderPivot(RegionAmount);
@@ -128,14 +128,14 @@ public class MudPivotToolbarTests : MudPivotTestContext
 
         var first = cut.FindComponents<MudPivotButton>().First(b => b.Instance.Class == "mud-ex-pivot-menu-item" && !b.Instance.Disabled);
         Assert.Equal("Do Not Show Subtotals", first.Find("button").TextContent.Trim());
-        Assert.Equal((ElementIdOf(first.Instance), false), LastFocus());
+        Assert.Equal(ElementIdOf(first.Instance), LastHandOff());
 
         await cut.Find(".ex-pivot-popup").KeyDownAsync(new KeyboardEventArgs { Key = "Escape" });
 
         Assert.Empty(cut.FindAll(".ex-pivot-popup"));
         Assert.Equal(RegionAmount.Form, cut.Instance.CurrentLayout.Form);
         var layout = cut.FindComponents<MudPivotButton>().Single(b => b.Instance.Class!.Contains("mud-ex-pivot-layout-button", StringComparison.Ordinal));
-        Assert.Equal((ElementIdOf(layout.Instance), false), LastFocus());
+        Assert.Equal(ElementIdOf(layout.Instance), LastHandOff());
     }
 
     [Fact] // ADR-0061/0062 (PV-30): the Pivot Toolbar is MudBlazor's controls in ExPivot's order and roles — the Mud band on its left, then Layout ▾ and the pane's toggle, and no Refresh for a source that cannot be refreshed
@@ -144,7 +144,7 @@ public class MudPivotToolbarTests : MudPivotTestContext
         var cut = RenderPivot(RegionAmount with { Filters = [P("Online")] });
 
         Assert.Empty(cut.FindAll(".ex-pivot-toolbar"));
-        var toolbar = cut.Find(".ex-pivot-report > .ex-pivot-toolbar-keys > .mud-ex-pivot-toolbar");
+        var toolbar = cut.Find(".ex-pivot-report > .mud-ex-pivot-toolbar");
         Assert.NotNull(toolbar.QuerySelector(".mud-ex-pivot-toolbar-start .mud-ex-pivot-filters .mud-ex-pivot-filter-button"));
         Assert.Equal(["Layout", "Field List"], ToolbarButtons(cut));
         var layout = cut.Find(".mud-ex-pivot-layout-button");
@@ -204,7 +204,7 @@ public class MudPivotToolbarTests : MudPivotTestContext
 
         var alert = cut.FindComponents<MudAlert>().Single(a => a.Instance.Class == "mud-ex-pivot-refusal-notice");
         Assert.Equal(Severity.Error, alert.Instance.Severity);
-        var notice = cut.Find(".ex-pivot-report > .ex-pivot-toolbar-keys > .mud-alert.mud-ex-pivot-refusal-notice");
+        var notice = cut.Find(".ex-pivot-report > .mud-alert.mud-ex-pivot-refusal-notice");
         Assert.Equal("alert", notice.GetAttribute("role"));
         Assert.Equal("The source does not answer Product.", notice.QuerySelector(".mud-alert-message")!.TextContent.Trim());
         Assert.Empty(cut.FindAll(".ex-pivot-refusal-notice"));

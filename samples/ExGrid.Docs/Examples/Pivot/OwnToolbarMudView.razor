@@ -1,0 +1,46 @@
+@using global::ExGrid.Chrome
+@using ExPivot.Chrome
+
+@* Each MudButton claims its click (data-ex-claims, which MudBlazor puts on its button element) and hands
+   its work to the context's InOrder, so the click is handled in its place among the report's keys and
+   presses. *@
+<div style="display: flex; gap: 8px; align-items: center; padding-bottom: 6px">
+    @Context.ReportFilters
+    <span style="position: relative; margin-left: auto">
+        <span style="display: contents" @ref="_layoutBox">
+        <MudButton Variant="Variant.Text" Size="Size.Small" EndIcon="@Icons.Material.Filled.ArrowDropDown"
+                   data-ex-claims="click" aria-haspopup="menu" aria-expanded="@(Context.LayoutMenu.IsOpen ? "true" : "false")"
+                   OnClick="() => Context.InOrder(GridInputKind.Click, OpenLayoutMenu)">@Context.LayoutMenu.Label</MudButton>
+        </span>
+        @Context.LayoutMenu.Popup
+    </span>
+    <MudButton Variant="Variant.Text" Size="Size.Small" Color="@(Context.FieldList.Checked == true ? Color.Primary : Color.Default)"
+               data-ex-claims="click" aria-pressed="@(Context.FieldList.Checked == true ? "true" : "false")"
+               OnClick="() => Context.InOrder(GridInputKind.Click, Context.FieldList.Invoke)">@Context.FieldList.Label</MudButton>
+</div>
+
+@code {
+    private ElementReference _layoutBox;
+    private int _acted;
+
+    [Parameter, EditorRequired] public PivotToolbarContext Context { get; set; } = default!;
+
+    private Task OpenLayoutMenu()
+    {
+        Context.LayoutMenu.Open();
+        return Task.CompletedTask;
+    }
+
+    // Layout ▾ takes the keyboard back when its menu closes, once for each request, through the
+    // context's TakeKeyboard. A MudButton gives no element of its own, so the box around it is handed
+    // over: the report's grid gives the keyboard to the first control inside.
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        var request = Context.LayoutMenu.FocusRequest;
+        if (request != 0 && request != _acted)
+        {
+            _acted = request;
+            await Context.TakeKeyboard(_layoutBox);
+        }
+    }
+}

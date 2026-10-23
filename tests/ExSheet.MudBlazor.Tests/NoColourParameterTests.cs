@@ -114,13 +114,15 @@ public class NoColourParameterTests
     /// <summary>
     /// The colour parameters a component inherits and does not offer, each with why (2026-10-13, decided with
     /// the user: inherited parameters are counted, and these are named). <c>MudPivotButton</c> is a
-    /// <c>MudButton</c> and inherits its <c>Color</c> and <c>IconColor</c>; it is marked
-    /// <c>EditorBrowsable(Never)</c> and is not the contract (ADR-0201). Any other inherited colour fails.
+    /// <c>MudButton</c> and inherits its <c>Color</c> and <c>IconColor</c>, and <c>MudPivotIconButton</c> is a
+    /// <c>MudIconButton</c> and inherits its <c>Color</c>; each is marked <c>EditorBrowsable(Never)</c> and is
+    /// not the contract (ADR-0201). Any other inherited colour fails.
     /// </summary>
     private static readonly IReadOnlySet<string> InheritedNotOffered = new HashSet<string>
     {
         "ExPivot.MudBlazor.MudPivotButton.Color",
         "ExPivot.MudBlazor.MudPivotButton.IconColor",
+        "ExPivot.MudBlazor.MudPivotIconButton.Color",
     };
 
     [Fact] // ADR-0027 / UX-1: no public parameter of a shipped component carries a colour, by its type or by a string its name says is one

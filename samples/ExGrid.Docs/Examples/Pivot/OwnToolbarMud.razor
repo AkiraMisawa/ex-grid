@@ -1,0 +1,42 @@
+@using global::ExGrid.Chrome
+@using ExPivot.Chrome
+@using ExPivot.Components
+@using ExPivot.Engine
+@using ExPivot.MudBlazor
+
+<MudExGridPaper Class="docs-stretch-paper" Elevation="0" Outlined="true">
+    <ExPivot Source="_source" @bind-Layout="_layout" PivotChrome="_chrome" ShowFieldList="false" ViewportHeight="320" />
+</MudExGridPaper>
+
+@code {
+    private readonly PivotSource _source = PivotSource.From(Sales.Sample(), Sales.Fields);
+    private readonly IPivotChrome _chrome = new OwnToolbarChrome(MudPivotChrome.Default);
+
+    private PivotLayout _layout = new()
+    {
+        Rows = [new PivotFieldPlacement("Region"), new PivotFieldPlacement("Country")],
+        Values = [new PivotValueField("Revenue", PivotAggregation.Sum) { NumberFormat = "#,##0" }],
+    };
+
+    // Your own Pivot Toolbar drawn with MudBlazor's buttons; every other part is MudPivotChrome's.
+    private sealed class OwnToolbarChrome(IPivotChrome mud) : IPivotChrome
+    {
+        public RenderFragment? Toolbar(PivotToolbarContext context) => builder =>
+        {
+            builder.OpenComponent<OwnToolbarMudView>(0);
+            builder.AddComponentParameter(1, nameof(OwnToolbarMudView.Context), context);
+            builder.CloseComponent();
+        };
+
+        public IGridChrome? GridChrome(Func<string, string?> commandLabel) => mud.GridChrome(commandLabel);
+        public RenderFragment? FieldList(PivotFieldListContext context) => mud.FieldList(context);
+        public RenderFragment? ReportFilters(PivotReportFiltersContext context) => mud.ReportFilters(context);
+        public RenderFragment? Menu(PivotMenuContext context) => mud.Menu(context);
+        public RenderFragment? ItemFilter(PivotItemFilterContext context) => mud.ItemFilter(context);
+        public RenderFragment? FieldSettings(PivotFieldSettingsContext context) => mud.FieldSettings(context);
+        public RenderFragment? ValueFieldSettings(PivotValueFieldSettingsContext context) => mud.ValueFieldSettings(context);
+        public RenderFragment? DetailsTabs(PivotDetailsTabsContext context) => mud.DetailsTabs(context);
+        public RenderFragment? DetailsDialog(PivotDetailsDialogContext context) => mud.DetailsDialog(context);
+        public RenderFragment? StaleReport(PivotStaleReportContext context) => mud.StaleReport(context);
+    }
+}

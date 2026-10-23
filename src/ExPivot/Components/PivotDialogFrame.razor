@@ -25,9 +25,11 @@
    the grid's own layers with them, and raises its OnLeave for the one it has nothing left to
    dismiss, which closes the dialog too (ADR-0070). While it closes, every key heard inside it is
    ExPivot's to hold for the report, the records' grid passing its own out to here (decided with the
-   user, 2026-10-13). *@
-<div class="ex-pivot-dialog" role="dialog" aria-modal="true" aria-label="@Label" tabindex="-1" @onkeydown="OnKeyDownAsync" @ref="_element">
-    @ChildContent
+   user, 2026-10-13). The frame claims nothing (data-ex-claims=""), which makes it, holding the
+   keyboard, the pivot's own; a key its Close claims reaches the frame's handler in that key's turn,
+   through the cascade, as in a menu's frame (ADR-0240 section 6). *@
+<div class="ex-pivot-dialog" role="dialog" aria-modal="true" aria-label="@Label" tabindex="-1" data-ex-claims="" @onkeydown="OnKeyDownAsync" @ref="_element">
+    <CascadingValue Name="@PivotPopupFrame.KeysName" Value="_keys" IsFixed="true">@ChildContent</CascadingValue>
 </div>
 
 @code {
@@ -44,6 +46,10 @@
     [Parameter] public EventCallback<KeyboardEventArgs> OnKey { get; set; }
 
     private ElementReference _element;
+    private readonly Func<KeyboardEventArgs, Task> _keys;
+
+    /// <summary>Creates the frame.</summary>
+    public PivotDialogFrame() => _keys = OnKeyDownAsync;
 
     /// <summary>The frame's element, which the report's grid takes the keyboard back from.</summary>
     internal ElementReference Element => _element;

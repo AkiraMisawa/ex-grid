@@ -40,7 +40,7 @@
                           aria-controls="@(tab.Close is null ? null : tab.Id + "-panel")">@tab.Title</PivotFocusButton>
         @if (tab.Close is { } close)
         {
-            <button type="button" class="ex-pivot-tab-close" aria-label="@tab.CloseLabel" title="@tab.CloseLabel" @onclick="close">×</button>
+            <PivotFocusButton Class="ex-pivot-tab-close" aria-label="@tab.CloseLabel" title="@tab.CloseLabel" OnClick="close">×</PivotFocusButton>
         }
     </div>;
 }

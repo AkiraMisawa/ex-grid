@@ -24,22 +24,27 @@
    default, so a drop is never lost to a render still on its way; a drop that changes nothing is
    ExPivot's to ignore. Each entry's open menu or panel stands directly under it, positioned
    against the full-width scrolling body. Defer Layout Update and Update stand
-   at the foot. *@
+   at the foot.
+
+   In the pivot's Input Order (ADR-0240 section 6) a tick, Defer Layout Update, Update, the heading's
+   close button and an entry claim their input (data-ex-claims), and a drop goes after every input
+   received so far; the search, which only narrows the list, claims nothing (data-ex-claims=""), which
+   makes it, holding the keyboard, the pivot's own. *@
 @* A delayed DOM gesture keeps the context from this render, including its layout (ADR-0061). *@
 @{ var renderedContext = Context; }
 <div class="ex-pivot-pane">
     <div class="ex-pivot-pane-heading">
         <div class="ex-pivot-pane-title" title="@Context.Title">@Context.Title</div>
-        <button type="button" class="ex-pivot-pane-close" aria-label="@Context.Word("hide-field-list")"
-                title="@Context.Word("hide-field-list")" @onclick="Context.Close"><span aria-hidden="true">×</span></button>
+        <PivotFocusButton Class="ex-pivot-pane-close" aria-label="@Context.Word("hide-field-list")"
+                          title="@Context.Word("hide-field-list")" OnClick="Context.Close"><span aria-hidden="true">×</span></PivotFocusButton>
     </div>
     <div class="ex-pivot-pane-body">
         <div class="ex-pivot-pane-caption">@Context.Word("choose-fields")</div>
-        <input type="search" class="ex-pivot-search" placeholder="@Context.Word("search-fields")"
+        <input type="search" class="ex-pivot-search" data-ex-claims="" placeholder="@Context.Word("search-fields")"
                aria-label="@Context.Word("search-fields")"
                @bind:get="Context.Search" @bind:set="Context.SearchChanged" @bind:event="oninput" />
         <ul class="@(Context.ListAcceptsDrop ? "ex-pivot-fields ex-pivot-drop-remove" : "ex-pivot-fields")"
-            aria-label="@Context.Title" @ondragover:preventDefault @ondrop="Context.DropOnList">
+            aria-label="@Context.Title" @ondragover:preventDefault @ondrop="renderedContext.DropOnList">
             @foreach (var field in Context.Fields)
             {
                 <li @key="field.Name" class="@(Context.Dragging?.Field == field.Name ? "ex-pivot-field ex-pivot-dragging" : "ex-pivot-field")"
@@ -47,7 +52,7 @@
                     @ondragstart="() => renderedContext.StartDrag(PivotDragSubject.FromList(field.Name))"
                     @ondragend="Context.EndDrag">
                     <label class="ex-pivot-field-label">
-                        <input type="checkbox" checked="@field.IsPlaced" @onchange="field.Toggle" />
+                        <input type="checkbox" data-ex-claims="click" checked="@field.IsPlaced" @onchange="() => ClickedAsync(field.Toggle)" />
                         <span class="ex-pivot-field-caption">@field.Caption</span>
                     </label>
                     @if (field.IsFiltered)
@@ -98,10 +103,10 @@
            changes build a pending layout, and Update applies it in one change. *@
         <div class="ex-pivot-defer">
             <label class="ex-pivot-defer-label">
-                <input type="checkbox" checked="@Context.DeferLayoutUpdate" @onchange="e => Context.DeferLayoutUpdateChanged(e.Value is true)" />
+                <input type="checkbox" data-ex-claims="click" checked="@Context.DeferLayoutUpdate" @onchange="e => ClickedAsync(() => renderedContext.DeferLayoutUpdateChanged(e.Value is true))" />
                 <span>@Context.Word("defer-layout-update")</span>
             </label>
-            <button type="button" class="ex-pivot-update" disabled="@(!Context.CanUpdate)" @onclick="Context.Update">@Context.Word("update")</button>
+            <PivotFocusButton Class="ex-pivot-update" Disabled="!Context.CanUpdate" OnClick="Context.Update">@Context.Word("update")</PivotFocusButton>
         </div>
     </div>
 </div>
@@ -109,6 +114,12 @@
 @code {
     /// <summary>What to draw and whom to call back (ADR-0061).</summary>
     [Parameter, EditorRequired] public PivotFieldListContext Context { get; set; } = default!;
+
+    [CascadingParameter] internal PivotInput? Input { get; set; }
+
+    // A tick's click, claimed (data-ex-claims): the change it makes is heard as the click's.
+    private Task ClickedAsync(Func<Task> handling) => Input is { } input ? input.InOrderAsync(GridInputKind.Click, handling) : handling();
+
 
     private static string AreaClass(PivotAreaView area)
         => area.DropIndex is not null && area.AcceptsDrop ? "ex-pivot-area ex-pivot-drop-target" : "ex-pivot-area";

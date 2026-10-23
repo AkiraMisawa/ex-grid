@@ -138,9 +138,11 @@ public partial class ExPivot
         // Held in fields: a delegate's identity reaches the grid, and one made per render would
         // look like a change every time (ADR-0003). No receiver: each re-renders what it changes.
         _widthChanged = new EventCallback<ColumnWidthChange>(null, (Func<ColumnWidthChange, Task>)OnWidthChangedAsync);
-        _contextCommands = ContextCommandsFor;
+        _contextCommands = context => ContextCommandsFor(context).Select(command => command with { Invoke = () => InOrderAsync(command.Invoke) }).ToArray();
         _commandLabel = CommandLabelFor;
-        _doubleClick = new EventCallback<CellPosition>(null, (Func<CellPosition, Task>)OnCellDoubleClickAsync);
+        // The grid's callbacks run in the turn of the grid's own input, and end, as the pivot's do, with
+        // the keyboard where they leave it (ADR-0240 section 6, TurnAsync).
+        _doubleClick = new EventCallback<CellPosition>(null, (Func<CellPosition, Task>)(cell => InOrderAsync(() => OnCellDoubleClickAsync(cell))));
         _cellChangedAt = CellChangedAt;
         _summarize = SummarizeReportAsync;
         _copyAnswer = CopyReportAsync;
@@ -151,14 +153,9 @@ public partial class ExPivot
         _gridFragment = RenderGrid;
         _escape = new EventCallback(null, (Func<Task>)OnEscapeAsync);
         _onPopupKey = new EventCallback<KeyboardEventArgs>(null, (Func<KeyboardEventArgs, Task>)OnPopupKeyAsync);
-        _onPopupFocusIn = new EventCallback(null, (Func<Task>)OnPopupFocusInAsync);
-        // Heard where the buttons that open a menu or a panel stand, without a render: a key held for a
-        // menu opening repaints nothing (decided with the user, 2026-10-13).
-        _onFieldListKey = new EventCallback<KeyboardEventArgs>(null, (Action<KeyboardEventArgs>)(e => HeardWhereOpenersStand(OpenerRegion.FieldList, e)));
-        _onToolbarKey = new EventCallback<KeyboardEventArgs>(null, (Action<KeyboardEventArgs>)(e => HeardWhereOpenersStand(OpenerRegion.Toolbar, e)));
-        _onPopupFocusOut = new EventCallback(null, (Func<Task>)OnPopupFocusOutAsync);
         _closeDialog = new EventCallback(null, (Action)CloseDialog);
-        _onDialogKey = new EventCallback<KeyboardEventArgs>(null, (Action<KeyboardEventArgs>)OnDialogKey);
+        _onDialogKey = new EventCallback<KeyboardEventArgs>(null, (Func<KeyboardEventArgs, Task>)OnDialogKeyAsync);
+        _input = new PivotInput(this);
         _idPrefix = "ex-pivot-" + Guid.NewGuid().ToString("N")[..12];
     }
 
@@ -382,7 +379,9 @@ public partial class ExPivot
             builder.AddAttribute(2, "style", IndentStyle(label.Indent));
         if (label.Toggle is { } toggle)
         {
-            var onToggle = EventCallback.Factory.Create<MouseEventArgs>(this, () => ToggleAsync(toggle, column));
+            // The button claims its click (data-ex-claims), and the toggle is taken in its place in the
+            // pivot's Input Order (ADR-0240 section 6).
+            var onToggle = EventCallback.Factory.Create<MouseEventArgs>(this, () => InOrderAsync(GridInputKind.Click, () => ToggleAsync(toggle, column)));
             if (context.FocusRequest != 0)
             {
                 builder.OpenComponent<PivotToggleButton>(3);
@@ -398,6 +397,7 @@ public partial class ExPivot
                 builder.AddAttribute(9, "type", "button");
                 builder.AddAttribute(10, "class", PivotToggleButton.ClassFor(toggle.IsCollapsed));
                 builder.AddAttribute(11, "tabindex", "-1");
+                builder.AddAttribute(20, "data-ex-claims", "click");
                 builder.AddAttribute(12, "aria-expanded", toggle.IsCollapsed ? "false" : "true");
                 builder.AddAttribute(13, "aria-label", ToggleName(toggle));
                 builder.AddAttribute(14, "onclick", onToggle);

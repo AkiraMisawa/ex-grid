@@ -175,20 +175,20 @@ public class MudPivotChromeTests : MudPivotTestContext
         Assert.Empty(cut.FindAll(".ex-pivot-popup"));
     }
 
-    [Fact] // ADR-0039/0061: the menu's first enabled command takes DOM focus, scrolled into view; closed, the entry takes it back
+    [Fact] // ADR-0039/0061, ADR-0240 §6: the menu's first enabled command takes DOM focus through the report grid's guard; closed, the entry takes it back the same way
     public async Task The_keyboard_goes_to_the_menu_and_back()
     {
         var cut = RenderPivot(RegionProduct);
 
         await OpenMenuAsync(cut, "Rows", "Region");
         var first = cut.FindComponents<MudPivotButton>().First(b => b.Instance.Class == "mud-ex-pivot-menu-item" && !b.Instance.Disabled);
-        Assert.Equal((ElementIdOf(first.Instance), false), LastFocus());
+        Assert.Equal(ElementIdOf(first.Instance), LastHandOff());
 
         await cut.Find(".ex-pivot-popup").KeyDownAsync(new KeyboardEventArgs { Key = "Escape" });
 
         Assert.Empty(cut.FindAll(".ex-pivot-popup"));
         var entry = cut.FindComponents<MudPivotButton>().First(b => b.Instance.Class == "mud-ex-pivot-entry-button");
-        Assert.Equal((ElementIdOf(entry.Instance), false), LastFocus());
+        Assert.Equal(ElementIdOf(entry.Instance), LastHandOff());
     }
 
     [Fact] // ADR-0061/0062: Filter… under MudBlazor — every Item, (Select All) tri-state; unticking one and OK hides it
