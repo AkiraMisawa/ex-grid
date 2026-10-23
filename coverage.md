@@ -4,7 +4,7 @@
 |---|---|---|
 | ExGrid | 95% | 88% |
 | ExSheet | 95.3% | 88% |
-| ExPivot | 94.4% | 85.5% |
+| ExPivot | 94.3% | 85.5% |
 | ExChart | 90.3% | 81.2% |
 | ExBoard | 91.7% | 81.8% |
 | Data | 94.5% | 90% |
@@ -14,19 +14,19 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/23/2026 - 08:38:35 |
+| Generated on: | 10/23/2026 - 09:08:21 |
 | Parser: | MultiReport (19x Cobertura) |
 | Assemblies: | 14 |
-| Classes: | 1097 |
-| Files: | 569 |
-| **Line coverage:** | 94.4% (76356 of 80815) |
-| Covered lines: | 76356 |
-| Uncovered lines: | 4459 |
-| Coverable lines: | 80815 |
-| Total lines: | 128922 |
-| **Branch coverage:** | 86.8% (45700 of 52619) |
-| Covered branches: | 45700 |
-| Total branches: | 52619 |
+| Classes: | 1101 |
+| Files: | 572 |
+| **Line coverage:** | 94.4% (76438 of 80919) |
+| Covered lines: | 76438 |
+| Uncovered lines: | 4481 |
+| Coverable lines: | 80919 |
+| Total lines: | 129480 |
+| **Branch coverage:** | 86.8% (45669 of 52581) |
+| Covered branches: | 45669 |
+| Total branches: | 52581 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
@@ -617,7 +617,7 @@
 |ExGrid.Data.Storage.DoubleColumnWriter|100%||
 |ExGrid.Data.Storage.DoubleData|100%||
 |ExGrid.Data.Storage.DoubleObjectColumn<T>|100%|100%|
-|ExGrid.Data.Storage.FixedCodes|93.5%|75%|
+|ExGrid.Data.Storage.FixedCodes|96.7%|87.5%|
 |ExGrid.Data.Storage.Gather|98.8%|96.1%|
 |ExGrid.Data.Storage.Int32ObjectColumn<T>|82.3%|100%|
 |ExGrid.Data.Storage.IntegerColumnWriter|100%||
@@ -720,59 +720,61 @@
 |ExGrid.MudBlazor.RobotoGlyphTable|100%||
 
 </details>
-<details><summary>ExPivot - 91.6%</summary>
+<details><summary>ExPivot - 91.3%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExPivot**|**91.6%**|**82.2%**|
+|**ExPivot**|**91.3%**|**82.2%**|
 |ExPivot.Chrome.IPivotChrome|41.6%||
 |ExPivot.Chrome.PivotAreaEntryView|100%||
 |ExPivot.Chrome.PivotAreaView|100%||
 |ExPivot.Chrome.PivotChoice<T>|100%||
 |ExPivot.Chrome.PivotCommand|100%||
-|ExPivot.Chrome.PivotDetailsDialogContext|66.6%|100%|
+|ExPivot.Chrome.PivotDetailsDialogContext|50%|100%|
 |ExPivot.Chrome.PivotDetailsTab|100%||
-|ExPivot.Chrome.PivotDetailsTabsContext|66.6%|100%|
+|ExPivot.Chrome.PivotDetailsTabsContext|50%|100%|
 |ExPivot.Chrome.PivotDragSubject|92.3%||
 |ExPivot.Chrome.PivotFieldEntry|100%||
-|ExPivot.Chrome.PivotFieldListContext|84.2%|100%|
-|ExPivot.Chrome.PivotFieldSettingsContext|100%||
+|ExPivot.Chrome.PivotFieldListContext|76.1%|100%|
+|ExPivot.Chrome.PivotFieldSettingsContext|85.7%|100%|
 |ExPivot.Chrome.PivotItemChoice|100%||
-|ExPivot.Chrome.PivotItemFilterContext|90.4%|100%|
-|ExPivot.Chrome.PivotMenuContext|100%||
-|ExPivot.Chrome.PivotReportFiltersContext|100%||
+|ExPivot.Chrome.PivotItemFilterContext|86.3%|100%|
+|ExPivot.Chrome.PivotMenuContext|33.3%|100%|
+|ExPivot.Chrome.PivotReportFiltersContext|33.3%|100%|
 |ExPivot.Chrome.PivotReportFilterView|100%||
-|ExPivot.Chrome.PivotStaleReportContext|85.7%||
-|ExPivot.Chrome.PivotToolbarContext|85.7%||
+|ExPivot.Chrome.PivotStaleReportContext|66.6%|100%|
+|ExPivot.Chrome.PivotToolbarContext|66.6%|100%|
 |ExPivot.Chrome.PivotToolbarMenuView|100%||
-|ExPivot.Chrome.PivotValueFieldSettingsContext|100%||
-|ExPivot.Components.ExPivot|91.5%|82.3%|
+|ExPivot.Chrome.PivotValueFieldSettingsContext|90.4%|100%|
+|ExPivot.Components.ExPivot|91.4%|82.3%|
 |ExPivot.Components.ExPivot.FieldDrag|100%||
 |ExPivot.Components.ExPivot.ItemsLoad|100%|100%|
 |ExPivot.Components.ExPivot.ItemsView|100%|100%|
 |ExPivot.Components.ExPivot.OpenSurface|100%|100%|
-|ExPivot.Components.ExPivot<TView, TContext>|91.5%|82.3%|
+|ExPivot.Components.ExPivot<TView, TContext>|91.4%|82.3%|
 |ExPivot.Components.ExPivotStylesheet|100%||
 |ExPivot.Components.PivotDetailsDialogView|100%||
-|ExPivot.Components.PivotDetailsGrid|94.1%|66.6%|
+|ExPivot.Components.PivotDetailsGrid|94.5%|66.6%|
 |ExPivot.Components.PivotDetailsSheet|85.1%|60.4%|
 |ExPivot.Components.PivotDetailsSheet.RefusedException|100%||
 |ExPivot.Components.PivotDetailsTabsView|100%|100%|
 |ExPivot.Components.PivotDialogFrame|100%|25%|
-|ExPivot.Components.PivotFieldListView|95.6%|93.7%|
-|ExPivot.Components.PivotFieldSettingsView|100%|83.3%|
-|ExPivot.Components.PivotFocusButton|100%|100%|
+|ExPivot.Components.PivotFieldListView|95.9%|91.1%|
+|ExPivot.Components.PivotFieldSettingsView|100%|70%|
+|ExPivot.Components.PivotFocusButton|100%|88.6%|
 |ExPivot.Components.PivotGridHost|100%||
+|ExPivot.Components.PivotInput|60%||
 |ExPivot.Components.PivotItemFilterView|100%|86.3%|
 |ExPivot.Components.PivotKeyboardReturn|100%|100%|
-|ExPivot.Components.PivotMenuView|97.8%|95.8%|
+|ExPivot.Components.PivotMenuView|100%|100%|
 |ExPivot.Components.PivotMenuView.Group|100%||
 |ExPivot.Components.PivotPopupFrame|100%|62.5%|
+|ExPivot.Components.PivotRendered|100%|50%|
 |ExPivot.Components.PivotReportFiltersView|100%|100%|
 |ExPivot.Components.PivotStaleReportView|100%||
-|ExPivot.Components.PivotToggleButton|10.5%|50%|
+|ExPivot.Components.PivotToggleButton|10%|33.3%|
 |ExPivot.Components.PivotToolbarView|100%|100%|
-|ExPivot.Components.PivotValueFieldSettingsView|100%|93.7%|
+|ExPivot.Components.PivotValueFieldSettingsView|100%|85%|
 |ExPivot.Components.SourceProblem|100%||
 |ExPivot.PivotCaps|90.9%|50%|
 |ExPivot.PivotCommandIds|95%|93.3%|
@@ -937,27 +939,29 @@
 |ExPivot.Engine.ValueFieldPlan|100%||
 
 </details>
-<details><summary>ExPivot.MudBlazor - 95.4%</summary>
+<details><summary>ExPivot.MudBlazor - 95.7%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExPivot.MudBlazor**|**95.4%**|**86.3%**|
+|**ExPivot.MudBlazor**|**95.7%**|**84.3%**|
 |ExPivot.MudBlazor.MudExPivotStylesheet|100%||
-|ExPivot.MudBlazor.MudPivotButton|78.5%|100%|
+|ExPivot.MudBlazor.MudPivotButton|86.9%|83.3%|
 |ExPivot.MudBlazor.MudPivotChrome|100%|75%|
 |ExPivot.MudBlazor.MudPivotChrome<TView, TContext>|100%|75%|
 |ExPivot.MudBlazor.MudPivotDetailsDialog|100%||
-|ExPivot.MudBlazor.MudPivotDetailsTabs|99.4%|93.3%|
-|ExPivot.MudBlazor.MudPivotFieldList|95.8%|96.6%|
-|ExPivot.MudBlazor.MudPivotFieldSettings|94.4%|62.5%|
+|ExPivot.MudBlazor.MudPivotDetailsTabs|99.5%|90.6%|
+|ExPivot.MudBlazor.MudPivotFieldList|95.9%|96.6%|
+|ExPivot.MudBlazor.MudPivotFieldSettings|95%|62.5%|
 |ExPivot.MudBlazor.MudPivotFocus|78.5%|100%|
-|ExPivot.MudBlazor.MudPivotIcons|96.8%|100%|
+|ExPivot.MudBlazor.MudPivotIconButton|100%||
+|ExPivot.MudBlazor.MudPivotIcons|100%|100%|
 |ExPivot.MudBlazor.MudPivotItemFilter|77.7%|65%|
-|ExPivot.MudBlazor.MudPivotMenu|96%|91.6%|
+|ExPivot.MudBlazor.MudPivotMenu|100%|100%|
+|ExPivot.MudBlazor.MudPivotPress|89.7%|83.3%|
 |ExPivot.MudBlazor.MudPivotReportFilters|100%|100%|
 |ExPivot.MudBlazor.MudPivotStaleReport|100%||
 |ExPivot.MudBlazor.MudPivotToolbar|100%|100%|
-|ExPivot.MudBlazor.MudPivotValueFieldSettings|96.8%|77.2%|
+|ExPivot.MudBlazor.MudPivotValueFieldSettings|94.7%|69.2%|
 
 </details>
 <details><summary>ExSheet - 92.6%</summary>
