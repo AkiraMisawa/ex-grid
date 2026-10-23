@@ -56,9 +56,9 @@ restate.
 - 2026-10-22: tests now assert FN-1, VZ-2, ED-13 (both layers), ED-19, SL-1, SL-2, SL-11, KB-3 (off
   Apple), KB-5 (on the component), KB-9, KB-10, KB-11, KB-28, KB-40, KB-42 (both layers), A11Y-6, A11Y-9,
   A11Y-10, CP-7, CTX-3, PST-4, ERR-1, ERR-7, DC-39, DC-40, SH-60 (the Consumer's zone), PV-13 (the
-  Context Menu; the double click under the built-in Chrome) and DA-18. Still open: ASY-7, WR-1, DC-62, DC-63, SH-60
-  (#GETTING_DATA, the minute turning), PV-3, PV-7, PV-13 (the double click under the MudBlazor
-  Chrome, a values-only refresh), PV-18 and LV-27.
+  Context Menu) and DA-18. Still open: ASY-7, WR-1, DC-62, DC-63, SH-60
+  (#GETTING_DATA, the minute turning), PV-3, PV-7, PV-13 (the double click, a values-only
+  refresh), PV-18 and LV-27.
   WR-10 is not a Playwright test: its Check is the by-hand MudBlazor floor run under `verification/`.
 - 2026-10-22: PV-13's double click on the label found a defect. On CI (PR #246, Edge, Server host,
   `/pivot?chrome=mud`, once in three) a double click on APAC's label after an Expand from the Context
@@ -69,3 +69,8 @@ restate.
   Chromium against the Server host, both Chromes, and a run with the report scrolled before the double
   click; Edge was not available. The double click is its own test in `pivot-find.spec.mjs`, marked
   `test.fixme` under the MudBlazor Chrome until the fix, which removes the mark.
+- 2026-10-23: the same defect under the built-in Chrome, in Chrome (PR #246's repeat run of
+  0ad1f54, `pivot-find.spec.mjs`, once in three), on a fresh page: a click on APAC's label, then a
+  double click on it. Its input journal shows every press answered in order and the report settled
+  with no `aria-activedescendant`. The double click's test is `test.fixme` under both Chromes until
+  the fix.
