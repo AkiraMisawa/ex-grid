@@ -29,7 +29,7 @@ Chrome, Overwrite, Caret, …); do not translate those.
 ### 2. JavaScript is allowlisted, not "minimised"
 
 JS is used only where Blazor genuinely cannot do the job, or where a **recorded measurement**
-shows the Blazor-side approach is too slow. There are currently **nineteen** permitted uses:
+shows the Blazor-side approach is too slow. There are currently **twenty** permitted uses:
 capture-phase `keydown`, reading/setting scroll offsets, the clipboard, a `ResizeObserver`
 reporting the Scrollbar Gutter, and a `mousemove` listener that reports the pointer **only when
 it moves onto another row, and when it comes to rest** (the hover band, ADR-0029; the error
@@ -54,6 +54,9 @@ ExChart plot only when it moves onto another, in the hover band's shape; the fou
 draws ExChart's 3D surface while it is turned, which a round trip per frame cannot follow (ADR-0255).
 The fifteenth paints a chart's SVG to PNG, saves its files and reads the theme's tokens for them, on the click, which Blazor cannot do
 (ADR-0282).
+The sixteenth focuses a box's first control where no grid stands to hand the keyboard on — an ExPivot
+report not yet drawn — in place of the control's own `FocusAsync`, which a `display: contents` box cannot
+take (ADR-0350).
 The four touch additions are approved for implementation: the scoped pointer bridge and initial
 capability hint ([ADR-0260](docs/adr/0260-touch-input-reports-browser-facts-and-keeps-command-meaning-in-csharp.md)),
 provisional keyboard preparation during an edit gesture

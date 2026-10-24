@@ -1292,6 +1292,34 @@ test('ADR-0039/0062: a MudSelect list inside Value Field Settings takes Escape b
     await expect(entry(page, 'Sum of P&L')).toBeFocused();
 });
 
+for (const chrome of ['builtin', 'mud']) {
+    test(`ADR-0350: with no report drawn, Field Settings' first control takes the keyboard (${chrome})`, async ({ page }) => {
+        // The source's first answer waits for the page's button: the pane stands, and no report grid
+        // does, so the keyboard cannot be handed on through one.
+        await page.goto(`/pivot?chrome=${chrome}&first=held`);
+        await stylesheetsLoaded(page);
+        await expect(entry(page, 'Region')).toBeVisible({ timeout: 30_000 });
+        await expect(report(page)).toHaveCount(0);
+
+        await entry(page, 'Region').click();
+        await page.getByRole('menuitem', { name: 'Field Settings…', exact: true }).click();
+        const settings = page.getByRole('dialog', { name: 'Field Settings…', exact: true });
+        await expect(settings).toBeVisible();
+        // The panel's first control: under MudBlazor the sort order's select, inside the
+        // `display: contents` box the Chrome named, which cannot take focus itself; under ExPivot's own
+        // markup, the first subtotals choice, named itself.
+        const first = chrome === 'mud' ? settings.locator('.mud-ex-pivot-sort input') : settings.getByRole('radio').first();
+        await expect(first).toBeFocused();
+
+        await page.keyboard.press('Escape');
+        await expect(settings).toHaveCount(0);
+        await expect(entry(page, 'Region')).toBeFocused();
+
+        await page.locator('#pivot-answer-first').click();
+        await expect(rows(page).first()).toBeVisible();
+    });
+}
+
 test('ADR-0062/0030: the palette reaches the pane, the entries and the − button, light and dark', async ({ page }) => {
     await open(page, 'mud');
     const colours = () => page.evaluate(() => {

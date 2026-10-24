@@ -1,4 +1,4 @@
-// Twelve of the permitted uses of JavaScript (ADR-0021) are in this file; ExChart's three are in
+// Thirteen of the permitted uses of JavaScript (ADR-0021) are in this file; ExChart's three are in
 // its own module. The first six: the capture-phase keydown listener, reading and setting scroll
 // offsets (the page's follow of a revealed Focus among them, ADR-0204), the clipboard, being told
 // what the scrollbar takes out of the box, being told about the pointer — when it moves onto
@@ -35,7 +35,9 @@
 // (ADR-0240 section 2): a capture-phase click, dblclick and contextmenu on the root, beside the
 // mousedown and mouseup above, which number a click on one of the grid's own controls that claim it
 // (data-ex-claims) as it goes on to Blazor, and hold it in its place while the gate holds input — the eleventh — and
-// the twelfth, a capture-phase submit and focus on the window, filtered to this root. The Settled Mark
+// the twelfth, a capture-phase submit and focus on the window, filtered to this root. The thirteenth
+// (ADR-0350), outside any instance: focusBox, a box's first control focused where no grid stands to
+// hand the keyboard on (ExPivot's report not yet drawn), with no listener. The Settled Mark
 // (ADR-0220; ADR-0021's note of 2026-10-16) adds no listener: the listeners above write
 // `data-ex-settled` on the root, with one MutationObserver on two attributes the core's render
 // writes on the root's first child, as the reveal's and the follow's observe theirs. Anything
@@ -63,6 +65,51 @@
 export function stamp() {
     // eslint-disable-next-line no-undef
     return typeof EX_SOURCE_SHA256 === 'string' ? EX_SOURCE_SHA256 : '';
+}
+
+// The text fields a held key can be typed into: those with a caret the selection API
+// reaches.
+// Not a read-only one — a picker's display, say — whose text a held key must not change,
+// nor one a design system dresses as a select.
+const isTextField = (element) => (element instanceof HTMLTextAreaElement
+    || (element instanceof HTMLInputElement && ['text', 'search', 'url', 'tel', 'password'].includes(element.type)))
+    && !element.readOnly && !element.disabled && element.getAttribute('role') !== 'combobox';
+
+// The control inside a box a Chrome names that takes the keyboard for it, as handKeyboardTo finds it: the
+// element itself when it is a control; else its first enabled text field, before other controls such as a
+// colour slider (More Colours, ADR-0039); else its first enabled control, a design system's select among
+// them — a read-only input (MudSelect's combobox) counts, and no other input that is not a text field.
+const boxTarget = (element) => {
+    if (element.matches('input, textarea, select, button, a[href], [tabindex]')) {
+        return element;
+    }
+    return [...element.querySelectorAll('input, textarea')].find(isTextField)
+        ?? element.querySelector('input[readonly]:not([disabled]):not([type="hidden"]), button:not([disabled]), select:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])');
+};
+
+// A box's first control takes the keyboard, where no grid stands to hand it on (ADR-0350): ExPivot's empty
+// report, whose panels a Chrome may draw in a box that cannot take focus itself — a design system's select
+// wrapped in `display: contents`. The control is found as handKeyboardTo finds it (boxTarget), and focused
+// as the pivot's own focus of a control was asked for: no condition is read, since with no grid there is no
+// Input Order to keep. Its text, a text field's, is selected, so the first character typed replaces it. It
+// reads no layout and adds no listener; it answers whether a control took the keyboard.
+/**
+ * @param {HTMLElement} element the box, or the control itself
+ * @returns {boolean} whether a control inside it took DOM focus
+ */
+export function focusBox(element) {
+    if (!(element instanceof HTMLElement) || !element.isConnected) {
+        return false;
+    }
+    const target = boxTarget(element);
+    if (!(target instanceof HTMLElement)) {
+        return false;
+    }
+    target.focus();
+    if (target !== element && isTextField(target)) {
+        target.select();
+    }
+    return document.activeElement === target;
 }
 
 /**
@@ -2317,14 +2364,6 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             typeInto(input, k);
         }
     };
-
-    // The text fields a held key can be typed into: those with a caret the selection API
-    // reaches.
-    // Not a read-only one — a picker's display, say — whose text a held key must not change,
-    // nor one a design system dresses as a select.
-    const isTextField = (element) => (element instanceof HTMLTextAreaElement
-        || (element instanceof HTMLInputElement && ['text', 'search', 'url', 'tel', 'password'].includes(element.type)))
-        && !element.readOnly && !element.disabled && element.getAttribute('role') !== 'combobox';
 
     // A held key handed to the popover that now holds DOM focus, as the keydown it would
     // have received: what it means there is the popover's (ADR-0039) — its own handlers
@@ -5966,19 +6005,14 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
                     || (instanceHolds(active) && !own))) {
                 staleField = null;
                 // A Chrome can name the box of a design-system control whose input it cannot
-                // reference in .NET (More Colours, ADR-0039). A box starts at its first enabled
-                // text field, before other controls such as a colour slider. Selecting its
-                // value makes the first held character replace the opening value. This is
-                // still the same conditional hand-off: an early choice outside the root wins.
-                const direct = element.matches('input, textarea, select, button, a[href], [tabindex]');
-                const firstText = direct ? null : [...element.querySelectorAll('input, textarea')].find(isTextField);
-                // Without one, its first enabled control, a design system's select among them: a
-                // read-only input (MudSelect's combobox) counts, and no other input that is not a text field.
-                const target = direct ? element : firstText
-                    ?? element.querySelector('input[readonly]:not([disabled]):not([type="hidden"]), button:not([disabled]), select:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])');
+                // reference in .NET (More Colours, ADR-0039): the box's control takes it (boxTarget).
+                // Selecting a text field's value makes the first held character replace the opening
+                // value. This is still the same conditional hand-off: an early choice outside the root
+                // wins.
+                const target = boxTarget(element);
                 if (target instanceof HTMLElement) {
                     target.focus({ preventScroll: preventScroll === true });
-                    if (target === firstText && isTextField(target)) {
+                    if (target !== element && isTextField(target)) {
                         target.select();
                     }
                     // Given to the frame the keyboard was on its way to, it has arrived, even where that

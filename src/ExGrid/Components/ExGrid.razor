@@ -4038,7 +4038,7 @@
             _module = module;
 
             // The script this build was made with, or nothing attaches (ADR-0123, ERR-10).
-            if (!await ScriptIsOwnAsync(module))
+            if (!await GridScriptStamp.IsOwnAsync(module))
             {
                 await RefuseScriptAsync(null);
                 return;

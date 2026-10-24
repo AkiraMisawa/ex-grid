@@ -1,12 +1,12 @@
 # 06: The Wrappers' dialogs and popovers join the Input Order, and their drafts are never written back
 
-Status: ready-for-agent
+Status: done
 Roadmap: ExGrid, ExSheet, ExPivot — The MudBlazor Wrappers behave as the Built-in Chrome does at machine speed: their menus, dialogs and popovers act in the order used.
 
 **Why:** [ADR-0240](../../../adr/0240-input-to-one-product-instance-is-taken-in-one-order.md) §7, stage 5. A surface MudBlazor renders outside the Input Root joins the instance's handle while open (§6); its opening, commit and closing are in the order; the Format Cells dialog's own `_keysReady` gate is replaced; every unguarded `FocusAsync` from a render (`MudToolbarItem`, `MudFormatCellsFrame`, `MudExGridFindPanel`'s fallback, `PivotChrome`'s default `TakeKeyboard`) goes through the seam; a draft is never re-read from a parameter on a later render (§1). The public seam is documented on the Chrome pages, with a Change Note for each delegate whose shape changed (§9).
 
 - [x] Out-of-root surfaces join the handle while open
-- [ ] Wrapper focus through the seam (the pivot's Field Settings… with an empty report waits on a decision)
+- [x] Wrapper focus through the seam (the pivot's Field Settings… with no report: ADR-0350, 2026-10-24)
 - [x] Drafts follow §1's rule; ticket 260's pattern swept
 - [x] Docs Site: the seam for a Consumer's Chrome, with an Example
 
@@ -29,5 +29,9 @@ the MudBlazor items' buttons and lists claim their inputs, the Find panels' fall
 focus function, the drafts' sweep found nothing more, and the Sheet Formatting page has an Example of a
 Chrome of the Consumer's own whose lists stand beside the Sheet. The pivot's Field Settings… gap with an empty
 report needs a decision (ADR-0240's note) and is left open.
+
+The pivot's gap closed on 2026-10-24 ([ADR-0350](../../../adr/0350-a-boxs-first-control-takes-the-keyboard-from-the-grids-script-where-no-grid-stands.md),
+decided with the user): with no report grid, ExPivot hands the keyboard on through the grid's script, which
+focuses the box's first control as the grid's hand-on does.
 
 **Blocked by:** 02, 04, 05.

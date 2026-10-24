@@ -527,6 +527,7 @@
         _sheets.Clear();
         _dialog?.Dispose();
         _dialog = null;
+        DisposeScriptFocus();
         EndTurns();
     }
 }

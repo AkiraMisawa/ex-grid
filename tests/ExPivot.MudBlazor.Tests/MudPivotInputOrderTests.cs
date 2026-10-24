@@ -99,6 +99,35 @@ public class MudPivotInputOrderTests : MudPivotTestContext
         Assert.Single(KeyboardHandOffs(handle).Skip(before));
     }
 
+    [Fact] // ADR-0350: while no report stands — the first one still on its way — there is no grid to hand the keyboard on, and Field Settings' select takes it from the grid's script, handed the box around it, not by the box's own focus
+    public async Task ADR0350_with_no_report_mud_field_settings_take_the_keyboard_from_the_grids_script()
+    {
+        var module = JSInterop.SetupModule(global::ExGrid.Testing.ShippedScript.Address);
+        module.Setup<string>("stamp").SetResult(global::ExGrid.Testing.ShippedScript.Stamp);
+        var focusBox = module.Setup<bool>("focusBox", _ => true);
+        focusBox.SetResult(true);
+        // The source's first answer never comes, so the pane shows the layout and no report is drawn.
+        var data = PivotSource.From(Sales, Fields);
+        var never = new TaskCompletionSource();
+        var source = PivotSource.Fetch(Fields, PivotSourceFeatures.All,
+            async (query, ct) => { await never.Task; return await data.AggregateAsync(query, ct); },
+            (query, ct) => data.ItemsAsync(query, ct),
+            (query, ct) => data.DetailsAsync(query, ct));
+        var cut = RenderPivot(RegionProduct, source: source);
+        Assert.Empty(cut.FindComponents<global::ExGrid.Components.ExGrid<PivotDisplayRow>>());
+        await cut.InvokeAsync(() => OpenMenuAsync(cut, "Rows", "Region"));
+        var focusCalls = FocusCalls();
+        var before = focusBox.Invocations.Count;
+
+        await cut.InvokeAsync(() => RunMenuAsync(cut, "Field Settings…"));
+
+        Assert.NotNull(cut.FindComponent<MudPivotFieldSettings>());
+        var box = cut.Find(".mud-ex-pivot-field-settings > div[style='display: contents']");
+        var asked = Assert.Single(focusBox.Invocations.Skip(before));
+        Assert.Equal(box.GetAttribute("blazor:elementreference"), ((ElementReference)asked.Arguments[0]!).Id);
+        Assert.Equal(focusCalls, FocusCalls());
+    }
+
     [Fact] // ADR-0240 §6: a Mud menu's request to take the keyboard stays with the command it was given to, when a press disables that command
     public void A_mud_menus_request_stays_with_its_command_when_a_press_disables_it()
     {

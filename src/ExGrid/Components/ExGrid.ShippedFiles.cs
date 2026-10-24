@@ -36,22 +36,6 @@ public partial class ExGrid<TRow>
     /// of its rows, attaches nothing, and is not busy: nothing it waits for will come.</summary>
     private bool _scriptRefused;
 
-    /// <summary>Whether the module answers the stamp this build of the grid was made with. A module
-    /// older than the stamp has no <c>stamp</c> to call, and throws, which the attach takes as the
-    /// same refusal.</summary>
-    private static async Task<bool> ScriptIsOwnAsync(IJSObjectReference module)
-    {
-        try
-        {
-            return await module.InvokeAsync<string?>("stamp") == ShippedAssets.ScriptStamp;
-        }
-        catch (JsonException)
-        {
-            // An answer that is not a string is no stamp of this family's.
-            return false;
-        }
-    }
-
     /// <summary>The script is not this build's, or did not load: nothing stays attached, and the
     /// refusal is shown and said once, in the built-in Chrome's words (ADR-0123, ADR-0203). A handle
     /// that had attached before it broke is let go, so no listener of a script the grid refused is
@@ -110,4 +94,25 @@ public partial class ExGrid<TRow>
     private string? _stylesheetNoticeWords;
     private Func<string, string?>? _stylesheetNoticeLabel;
     private IGridChrome? _stylesheetNoticeChrome;
+}
+
+/// <summary>The check of a module's stamp (ADR-0123), shared by every grid and by
+/// <see cref="GridScriptFocus"/>, which loads the grid's script where no grid stands (ADR-0350).</summary>
+internal static class GridScriptStamp
+{
+    /// <summary>Whether the module answers the stamp this build of the grid was made with. A module
+    /// older than the stamp has no <c>stamp</c> to call, and throws, which the attach takes as the
+    /// same refusal.</summary>
+    internal static async Task<bool> IsOwnAsync(IJSObjectReference module)
+    {
+        try
+        {
+            return await module.InvokeAsync<string?>("stamp") == ShippedAssets.ScriptStamp;
+        }
+        catch (JsonException)
+        {
+            // An answer that is not a string is no stamp of this family's.
+            return false;
+        }
+    }
 }

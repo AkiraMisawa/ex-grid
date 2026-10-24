@@ -38,11 +38,17 @@ public abstract class PivotTestContext : BunitContext
     /// on it out to the element around it (ExGrid's <c>PassKeysOutAsync</c>; decided with the user,
     /// 2026-10-13).</summary>
     internal int KeysPassedOut => _anyGrid.Invocations.Count(invocation => invocation.Identifier == "passKeysOut");
-    /// <summary>How many times a control has been asked to take the keyboard: by its own focus, or handed
+    /// <summary>How many times a control has been asked to take the keyboard: by its own focus, handed
     /// it by a grid on the common handle — the report's, where the pivot's controls take it through its
-    /// guard (ADR-0240 section 6).</summary>
+    /// guard (ADR-0240 section 6) — or, while no report stands, found inside its box by the grid's
+    /// script (ADR-0350).</summary>
     internal int KeyboardMoves => JSInterop.Invocations.Count(invocation => invocation.Identifier == "Blazor._internal.domWrapper.focus")
-        + _anyGrid.Invocations.Count(invocation => invocation.Identifier == "handKeyboardTo");
+        + _anyGrid.Invocations.Count(invocation => invocation.Identifier == "handKeyboardTo")
+        + BoxFocuses;
+
+    /// <summary>How many times, with no report grid to hand it on, a box's first control has been
+    /// focused by the grid's script (ADR-0350).</summary>
+    internal int BoxFocuses => _module.Invocations.Count(invocation => invocation.Identifier == "focusBox");
 
     // Where each handle says its scroller stands, as the browser would (ScrollReportAsync).
     private readonly List<JSRuntimeInvocationHandler<ScrollOffset>> _scrollOffsets = [];
@@ -54,6 +60,8 @@ public abstract class PivotTestContext : BunitContext
         _module = JSInterop.SetupModule(ModulePath);
         _module.Setup<string>("stamp").SetResult(ExGrid.Testing.ShippedScript.Stamp);
         _anyGrid = _module.SetupModule("attach", _ => true);
+        // The box's first control taking focus where no report grid stands (ADR-0350).
+        _module.Setup<bool>("focusBox", _ => true).SetResult(true);
         StandIn(_anyGrid);
         // Blazor's own FocusAsync, which the built-in views use to hand the keyboard on.
         JSInterop.SetupVoid("Blazor._internal.domWrapper.focus", _ => true).SetVoidResult();

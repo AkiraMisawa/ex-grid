@@ -80,7 +80,9 @@
             makes it, holding the keyboard, the pivot's own. A control asked to take the keyboard
             (<code>FocusRequest</code>) takes it through the context's <code>TakeKeyboard</code>, never its own
             <code>FocusAsync</code>: it lands at the end of the turn that asked, through the report's grid, and the keys
-            typed meanwhile follow it. A button that only claims its click is pressed by a key the user typed straight
+            typed meanwhile follow it. You may hand it the box around a design system's control whose input you cannot
+            reference: the box's first text field takes the keyboard, or else its first control, and that holds while no
+            report is drawn too — the report empty, its first answer still on its way, or failed. A button that only claims its click is pressed by a key the user typed straight
             away, but not by one held behind an earlier input, which is handed on as a keydown and presses no button:
             claim <code>keydown</code> too and press it at Enter's keydown, as ExPivot's own buttons do.
         </p>

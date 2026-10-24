@@ -24,6 +24,9 @@ namespace ExPivot.Components;
 /// </summary>
 public partial class ExPivot
 {
+    // The grid's script, imported on its own while the report is empty (ADR-0350).
+    [Inject] private IJSRuntime JS { get; set; } = default!;
+
     private readonly PivotInput _input;
 
     // The seam the Chrome contexts carry (InOrder, TakeKeyboard), made once so a context's delegates
@@ -175,22 +178,68 @@ public partial class ExPivot
 
     /// <summary>
     /// Hands the keyboard to <paramref name="control"/> through the report grid's guard, granted only
-    /// while the keyboard is still the pivot's (ADR-0070's note of 2026-10-02, ADR-0240 section 6); with
-    /// no report grid, the control's own focus.
+    /// while the keyboard is still the pivot's (ADR-0070's note of 2026-10-02, ADR-0240 section 6). With
+    /// no report grid — the report empty, its first answer on its way, or failed — the grid's script,
+    /// imported on its own, focuses the control, or the first control inside the box a Chrome named, as
+    /// the grid would have (ADR-0350): a box drawn with <c>display: contents</c> around a design system's
+    /// select cannot take focus itself. The control's own focus is still asked where the script is
+    /// refused, a script of another version, or where no control took the keyboard.
     /// </summary>
     internal async Task HandKeyboardToAsync(ElementReference control)
     {
         try
         {
+            var script = OrderGrid is null ? await LoadedScriptFocusAsync() : null;
+            // Checked again once the script is loaded: a report drawn meanwhile hands the keyboard on.
             if (OrderGrid is { } grid)
                 await grid.HandKeyboardToAsync(control);
-            else
+            else if (script is null || !await FocusBoxAsync(script, control))
                 await control.FocusAsync();
         }
         catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException or OperationCanceledException or InvalidOperationException)
         {
             // The circuit or the control went away first; there is nothing left to focus.
         }
+    }
+
+    // The grid's script, loaded the first time the keyboard is handed on with no report grid, and kept
+    // for the pivot's life, so each later hand-off is one call, as the control's own focus was (ADR-0350).
+    private GridScriptFocus? _scriptFocus;
+
+    /// <summary>The grid's script, loaded and this build's; or none, where it would not load or answered
+    /// with another version's stamp, which leaves the control's own focus to be asked.</summary>
+    private async Task<GridScriptFocus?> LoadedScriptFocusAsync()
+    {
+        var script = _scriptFocus ??= new GridScriptFocus(JS, Assets);
+        try
+        {
+            return await script.LoadAsync() ? script : null;
+        }
+        catch (JSException)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>Whether a control inside the box took the keyboard from the script; a call the script
+    /// threw on leaves the control's own focus to be asked.</summary>
+    private static async Task<bool> FocusBoxAsync(GridScriptFocus script, ElementReference control)
+    {
+        try
+        {
+            return await script.FocusBoxAsync(control);
+        }
+        catch (JSException)
+        {
+            return false;
+        }
+    }
+
+    private void DisposeScriptFocus()
+    {
+        if (_scriptFocus is { } focus)
+            _ = focus.DisposeAsync().AsTask();
+        _scriptFocus = null;
     }
 
     private void EndTurns()
