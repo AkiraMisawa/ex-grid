@@ -3,7 +3,8 @@
 *Decided with the user, 2026-10-24, for 0.3.0. It began from the user's question of what it would take
 to use ExGrid from React. The user chose the recommended strategy of three, the hybrid below, and set
 the order: the core in TypeScript and React in 0.3.0, Blazor's ExGrid on the same core once it holds.
-The open questions at the end are not decided.*
+Sections 9 to 13 answer the five questions the first draft left open, decided with the user the same
+day.*
 
 ## Context
 
@@ -76,8 +77,8 @@ It mounts the core on an element it renders, hands the core its props, hands the
 framework's callbacks, and unmounts it. It holds no state of the grid's, draws nothing inside the
 instance root, and decides nothing.
 
-The Script Core is also published as a custom element, `<ex-grid>`, so that any framework, or a page
-with none, can place it without an adapter of its own.
+React and Blazor are the only frameworks the family serves (section 10). The Script Core stays free of
+both, so that the boundary between core and adapter stays honest, not so that a third adapter is built.
 
 A Chrome seam ([ADR-0010](./0010-chrome-seams-column-menu-editor-loading.md)) and a Template cell
 ([ADR-0020](./0020-action-and-template-columns.md)) become a frame the core owns and a slot the adapter
@@ -138,6 +139,64 @@ or in the browser as .NET WebAssembly. Whether one is later ported to TypeScript
 recorded measurement of the browser case, not before (CLAUDE.md, "Measure before claiming anything about
 performance").
 
+### 9. The npm packages are `@exgrid/core`, `@exgrid/react` and `@exgrid/mui`
+
+npm has no rule for how a scope is spelled; a scope is simply the name of the npm organisation that
+owns it. The convention is the brand as people type it, in lower case: one word stays one word
+(`@tanstack`, `@mui`), a hyphenated brand keeps its hyphen (`ag-grid-community`). The brand and the
+NuGet identifiers are `ExGrid`, so the scope is `@exgrid`. The unscoped name `exgrid` belongs to an
+unrelated grid on npm (checked 2026-10-24), which a scope keeps apart. The organisation `exgrid` is
+created on npm by the user before the first publish.
+
+The later products, if they follow (section 1), take names under the same scope.
+
+### 10. React and Blazor only
+
+No adapter for Vue, Angular or any other framework is built, and no custom element is published.
+Section 3's custom element is withdrawn: it existed for frameworks the family does not serve.
+
+### 11. The MUI Wrapper ships in 0.3.0
+
+`@exgrid/mui` is React's counterpart of ExGrid.MudBlazor, under [ADR-0030](./0030-what-a-design-system-wrapper-owns-and-what-it-may-not-touch.md)'s limits as written: it maps
+MUI's palette to a Theme and its density words onto Density, supplies Cell Metrics for its font and
+fills the Chrome seams with MUI's components. It owns no geometry, no DOM inside the instance root and no
+state (P9).
+
+### 12. The Docs Site switches between frameworks
+
+The Docs Site gains a **framework switch**, Blazor or React, chosen once for the whole site and
+remembered, as ag-grid.com does. Each ExGrid Example exists in both and shows the code of the one
+chosen; the existing Built-in / MudBlazor switch becomes Built-in / MUI under React. A page whose feature
+is not in the React packages yet says so where its Example would be, rather than showing Blazor's in its
+place.
+
+The site stays the Blazor WebAssembly app of
+[ADR-0110](./0110-the-docs-site-is-a-webassembly-app-on-github-pages-and-its-examples-show-the-code-they-run.md).
+A React Example is built ahead of time into the site's static files and shown in a frame of its own,
+the way ag-grid.com shows each Example, so React never runs inside the Blazor app and the site's own
+JavaScript does not grow. The site's build fails when a React Example does not build, as it fails today
+for a Blazor one.
+
+### 13. Where the Script Core lives, and how it is tested
+
+- **Source.** An npm workspace at `src/npm/`, with a package per directory: `src/npm/core`,
+  `src/npm/react`, `src/npm/mui`. Shipped code stays under `src/`, as it does for NuGet. TypeScript is
+  compiled with `tsc` for the declarations and bundled with esbuild, which `tools/assets` already uses.
+- **The public surface.** API Extractor writes each package's surface to a report file kept in the
+  repository, and the build fails on an export that is not in it or a member without a doc comment:
+  the counterpart of `PublicAPI.Unshipped.txt` and the XML doc rule
+  ([ADR-0201](./0201-the-public-surface-is-what-consumers-chromes-and-the-sibling-products-use.md)).
+- **Layer 1.** Vitest in Node, for the Script Core's pure logic. The cases shared with xUnit
+  (section 5) live as JSON under `tests/cases/`, read by both.
+- **Layer 2.** Vitest on a DOM emulation: which rows the core creates, and that a row whose values did
+  not change is not touched, counted as bUnit counts renders today. The React adapter's own tests use
+  React Testing Library.
+- **Layer 3.** The existing Playwright suite, with a third host, `samples/ExGrid.DemoHost.React`, built
+  with Vite and serving the same page catalogue (section 4).
+- **The toolchain** stays nix's: the flake's `browser` shell already carries Node, and the Script Core's
+  build and tests run there, as `tools/assets` does. CI gains the npm
+  build, the two Vitest layers and the React host's layer 3.
+
 ## Consequences
 
 - ExGrid has two implementations from 0.3.0 until the later ADR of section 7. Section 5 and the shared
@@ -146,22 +205,8 @@ performance").
   ([ADR-0042](./0042-prereleases-ship-before-sign-off-and-only-a-stable-version-waits-for-it.md),
   [ADR-0205](./0205-0-1-0-is-grown-on-a-release-branch-rehearsed-by-release-candidates-and-signed-off-before-its-tag.md))
   gains a second registry.
-- The Docs Site ([ADR-0110](./0110-the-docs-site-is-a-webassembly-app-on-github-pages-and-its-examples-show-the-code-they-run.md))
-  needs React pages and Examples for ExGrid.
-- The toolchain gains a TypeScript build and a TypeScript test runner. The nix flake already provides
-  Node.
+- The Docs Site needs React Examples for ExGrid behind a framework switch (section 12).
+- The toolchain gains a TypeScript build and a TypeScript test runner (section 13).
 - `ADR-0122`'s time zone report is not needed in the Script Core: the browser's zone is read directly.
 - [ADR-0017](./0017-target-chromium-browsers-only.md) (Chromium only) and
   [ADR-0045](./0045-exgrid-is-a-desktop-grid.md) (desktop and touch) apply to the Script Core as written.
-
-## Open questions
-
-Each needs the user's answer before the work it names starts.
-
-1. **Package names on npm** (for example `@exgrid/core` and `@exgrid/react`), and whether 0.3.0 ships
-   them as prereleases only.
-2. **Other frameworks in 0.3.0.** The custom element makes the Script Core usable from any framework;
-   whether Vue or Angular get an adapter of their own in 0.3.0.
-3. **A React design system Wrapper** (MUI, as the counterpart of ExGrid.MudBlazor): in 0.3.0 or later.
-4. **How the Docs Site shows React Examples**: in the existing site, or a site of its own.
-5. **Where the Script Core's source lives** in the repository, and its test runner.
