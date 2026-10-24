@@ -214,14 +214,15 @@ What this section said before is quoted beside each change.
 
 ### The family ships together *(added 2026-10-03)*
 
-A tag publishes fourteen packages, all at its one version *(ten until 2026-10-19, when ExChart's three
-joined the train: ADR-0283; thirteen until 2026-10-21, when ExBoard joined it: ADR-0340)*:
+A tag publishes sixteen packages, all at its one version *(ten until 2026-10-19, when ExChart's three
+joined the train: ADR-0283; thirteen until 2026-10-21, when ExBoard joined it: ADR-0340; fourteen until
+2026-10-24, when ExSheet.Xlsx and ExGrid.Data.Xlsx joined it: the note of that date below)*:
 
 | Product | Packages |
 |---|---|
 | ExGrid | `ExGrid`, `ExGrid.MudBlazor` |
-| ExSheet | `ExSheet.Engine`, `ExSheet`, `ExSheet.MudBlazor` |
-| The Snapshot | `ExGrid.Data`, `ExGrid.Data.Arrow` |
+| ExSheet | `ExSheet.Engine`, `ExSheet`, `ExSheet.MudBlazor`, `ExSheet.Xlsx` |
+| The Snapshot | `ExGrid.Data`, `ExGrid.Data.Arrow`, `ExGrid.Data.Xlsx` |
 | ExPivot | `ExPivot.Engine`, `ExPivot`, `ExPivot.MudBlazor` |
 | ExChart | `ExChart.Engine`, `ExChart`, `ExChart.MudBlazor` |
 | ExBoard | `ExBoard` |
@@ -343,3 +344,10 @@ stands.)*
 *(2026-10-21, [ADR-0340](./0340-an-ai-composes-a-board-once-and-a-workflow-reuses-it-without-ai.md) "Shipping":
 `ExBoard` joins the train, with exact references to the ExGrid, ExPivot and ExChart it was built with
 and no Wrapper, making fourteen packages.)*
+
+*(2026-10-24, decided with the user: `ExGrid.Data.Xlsx` and `ExSheet.Xlsx`
+([ADR-0330](./0330-exsheet-opens-and-saves-xlsx-with-a-reader-and-writer-of-its-own.md)) join the train from
+`0.2.0`'s first tag, a release candidate included, making sixteen packages. Until then they were packed and smoke-tested as the others are, to a feed
+of their own that the release did not publish. Each references exactly the family packages it was built
+with — the file layer `ExGrid.Data`, ExSheet's mapping the file layer and `ExSheet.Engine` — and neither
+references a component.)*

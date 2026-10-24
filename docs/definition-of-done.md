@@ -176,6 +176,15 @@ the ten packages `0.1.0` carries ([ADR-0200](adr/0200-the-first-stable-version-i
 which is what the paragraph above asks of each product section. The dependencies each package is
 allowed are the ones its own rows already state; the rows below cite them rather than restate them.)*
 
+*(2026-10-24, decided with the user with [ADR-0042](adr/0042-prereleases-ship-before-sign-off-and-only-a-stable-version-waits-for-it.md)'s
+note of that date: from `0.2.0` they are checked for each of the sixteen packages a tag publishes. The six
+that joined after `0.1.0` declare, and reference as projects, exactly: `ExChart.Engine` — nothing (CH-13);
+`ExChart` — `ExChart.Engine` and `ExGrid` (CH-13); `ExChart.MudBlazor` — `ExChart`, `ExGrid.MudBlazor` and
+MudBlazor in the Wrappers' range; `ExBoard` — `ExGrid`, `ExPivot` and `ExChart` (ADR-0340);
+`ExGrid.Data.Xlsx` — `ExGrid.Data`; `ExSheet.Xlsx` — `ExGrid.Data.Xlsx` and `ExSheet.Engine` (ADR-0330 §2).
+`ExChart.MudBlazor` is the fourth Wrapper; PRE-4's grep reads every other package. `check.sh` reads each
+`.nuspec` against these lists.)*
+
 | ID | Level | Statement | Verification | Pass |
 |---|---|---|---|---|
 | **PRE-1** | MUST | The whole solution builds with zero warnings | `nix develop -c dotnet build ExGrid.slnx` | `0 Warning(s)` and `0 Error(s)` |
