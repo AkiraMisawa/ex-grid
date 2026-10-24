@@ -1,0 +1,205 @@
+{
+  "about": "Enter and Tab cycling, transcribed from ADR-0012's diagram, whose range B2:D4 is rows 1 to 3 by columns 1 to 3. From tests/ExGrid.Tests/SelectionCyclingTests.cs.",
+  "kind": "selection",
+  "extent": [10, 10],
+  "cases": [
+    {
+      "name": "ADR-0012: Enter runs down the columns and wraps back to the start",
+      "steps": [
+        { "click": "B2" },
+        { "extendTo": "D4" },
+        { "cycle": "enter", "focuses": [[2, 1], [3, 1], [1, 2], [2, 2], [3, 2], [1, 3], [2, 3], [3, 3], [1, 1]] }
+      ]
+    },
+    {
+      "name": "ADR-0012: Tab runs across the rows and wraps back to the start",
+      "steps": [
+        { "click": "B2" },
+        { "extendTo": "D4" },
+        { "cycle": "tab", "focuses": [[1, 2], [1, 3], [2, 1], [2, 2], [2, 3], [3, 1], [3, 2], [3, 3], [1, 1]] }
+      ]
+    },
+    {
+      "name": "ADR-0012: Shift+Enter runs the Enter sequence backwards; the first step wraps to D4",
+      "steps": [
+        { "click": "B2" },
+        { "extendTo": "D4" },
+        { "cycle": "shift+enter", "focuses": [[3, 3], [2, 3], [1, 3], [3, 2], [2, 2], [1, 2], [3, 1], [2, 1], [1, 1]] }
+      ]
+    },
+    {
+      "name": "ADR-0012: Shift+Tab runs the Tab sequence backwards",
+      "steps": [
+        { "click": "B2" },
+        { "extendTo": "D4" },
+        { "cycle": "shift+tab", "focuses": [[3, 3], [3, 2], [3, 1], [2, 3], [2, 2], [2, 1], [1, 3], [1, 2], [1, 1]] }
+      ]
+    },
+    {
+      "name": "ADR-0012/0052: the range stays selected while cycling; only the Focus moves",
+      "steps": [
+        { "click": "B2" },
+        { "extendTo": "D4" },
+        { "cycle": "enter" },
+        { "expect": { "ranges": "B2:D4", "focus": [2, 1] } }
+      ]
+    },
+    {
+      "name": "ADR-0052 case 4: C3:A1 selected from C3 makes C3 the Focus, and Enter from the last cell wraps to A1",
+      "steps": [
+        { "click": [2, 2] },
+        { "extendTo": [0, 0] },
+        { "expect": { "focus": [2, 2] } },
+        { "cycle": "enter", "focuses": [[0, 0], [1, 0], [2, 0], [0, 1]] }
+      ]
+    },
+    {
+      "name": "ADR-0012: with disjoint ranges, cycling visits them in the order they were made",
+      "steps": [
+        { "click": [0, 0] },
+        { "extendTo": [1, 1] },
+        { "toggleRange": [6, 6] },
+        { "extendTo": [5, 5] },
+        { "cycle": "enter", "focuses": [[0, 0], [1, 0], [0, 1], [1, 1], [5, 5]] }
+      ]
+    },
+    {
+      "name": "ADR-0012: the backward mirror: before a range's first cell, the previous range's last",
+      "steps": [
+        { "click": [0, 0] },
+        { "extendTo": [1, 1] },
+        { "toggleRange": [5, 5] },
+        { "cycle": "shift+enter" },
+        { "expect": { "focus": [1, 1] } }
+      ]
+    },
+    {
+      "name": "ADR-0012: with one cell, Enter moves down, Tab moves right, and the selection follows",
+      "steps": [
+        { "click": [2, 2] },
+        { "save": "start" },
+        { "cycle": "enter" },
+        { "expect": { "ranges": [[3, 2, 1, 1]], "focus": [3, 2] } },
+        { "restore": "start" },
+        { "cycle": "tab" },
+        { "expect": { "ranges": [[2, 3, 1, 1]] } },
+        { "restore": "start" },
+        { "cycle": "shift+enter" },
+        { "expect": { "focus": [1, 2] } }
+      ]
+    },
+    {
+      "name": "ADR-0012: one cell at the grid's bottom edge clamps under Enter; no wrap target is invented",
+      "extent": [3, 3],
+      "steps": [
+        { "click": [2, 1] },
+        { "cycle": "enter" },
+        { "expect": { "focus": [2, 1] } }
+      ]
+    },
+    {
+      "name": "ADR-0012: one cell at the grid's right edge clamps under Tab; no wrap target is invented",
+      "extent": [3, 3],
+      "steps": [
+        { "click": [1, 2] },
+        { "cycle": "tab" },
+        { "expect": { "focus": [1, 2] } }
+      ]
+    },
+    {
+      "name": "ADR-0012: cycling goes on when the Focus is where two ranges overlap",
+      "steps": [
+        { "click": [0, 0] },
+        { "extendTo": [2, 2] },
+        { "toggleRange": [5, 5] },
+        { "extendTo": [2, 2] },
+        { "nextCorner": true, "focuses": [[5, 2], [2, 2]] },
+        { "cycle": "enter" },
+        { "expect": { "focus": [3, 2] } }
+      ]
+    },
+    {
+      "name": "ADR-0052 (withdrawing ADR-0012's re-anchoring): Shift+arrow after cycling into another range extends that range, from the edge opposite the Focus",
+      "steps": [
+        { "click": [0, 0] },
+        { "extendTo": [1, 1] },
+        { "toggleRange": [5, 5] },
+        { "cycle": "shift+enter" },
+        { "extend": "down" },
+        { "expect": { "ranges": [[1, 0, 1, 2], [5, 5, 1, 1]], "focus": [1, 1] } }
+      ]
+    },
+    {
+      "name": "ADR-0052 case 3: A1:C3, Enter twice (A3), then Shift+Right moves the right edge and Shift+Down the top edge",
+      "steps": [
+        { "click": "A1" },
+        { "extendTo": "C3" },
+        { "cycle": "enter", "times": 2 },
+        { "expect": { "focus": "A3" } },
+        { "extend": "right" },
+        { "expect": { "ranges": "A1:D3" } },
+        { "extend": "down" },
+        { "expect": { "ranges": "A2:D3", "focus": "A3" } }
+      ]
+    },
+    {
+      "name": "ADR-0052 case 3: A1:C3, Enter three times (B1), then Shift+Up moves the bottom edge",
+      "steps": [
+        { "click": "A1" },
+        { "extendTo": "C3" },
+        { "cycle": "enter", "times": 3 },
+        { "expect": { "focus": "B1" } },
+        { "extend": "up" },
+        { "expect": { "ranges": "A1:C2", "focus": "B1" } }
+      ]
+    },
+    {
+      "name": "ADR-0052 case 3: with the Focus on neither edge of an axis (B2 in A1:C3), Shift+arrow along it changes nothing",
+      "steps": [
+        { "click": "A1" },
+        { "extendTo": "C3" },
+        { "cycle": "tab" },
+        { "cycle": "enter" },
+        { "expect": { "focus": "B2", "extent": "B2" } },
+        { "save": "b2" },
+        { "extend": "left" },
+        { "expect": { "sameAs": "b2" } },
+        { "extend": "down" },
+        { "expect": { "sameAs": "b2" } },
+        { "extendToEdge": "right" },
+        { "expect": { "sameAs": "b2" } },
+        { "extendByViewport": 20 },
+        { "expect": { "sameAs": "b2" } }
+      ]
+    },
+    {
+      "name": "ADR-0052: the Extent follows the Focus through cycling: the corner opposite, or the Focus's own line inside",
+      "steps": [
+        { "click": "B2" },
+        { "extendTo": "D4" },
+        { "expect": { "extent": [3, 3] } },
+        { "save": "b2d4" },
+        { "cycle": "shift+enter" },
+        { "expect": { "focus": [3, 3], "extent": [1, 1] } },
+        { "restore": "b2d4" },
+        { "cycle": "enter" },
+        { "expect": { "extent": [2, 3] } }
+      ]
+    },
+    {
+      "name": "ADR-0052 (withdrawing ADR-0012's detached state; third run): after the Focus's own cell is taken out, cycling goes on from where the Focus now is",
+      "steps": [
+        { "click": [1, 1] },
+        { "extendTo": [2, 2] },
+        { "toggleRange": [1, 1] },
+        { "expect": { "focus": [1, 2] } },
+        { "save": "takenOut" },
+        { "cycle": "enter" },
+        { "expect": { "focus": [2, 1] } },
+        { "restore": "takenOut" },
+        { "cycle": "shift+enter" },
+        { "expect": { "focus": [2, 2] } }
+      ]
+    }
+  ]
+}

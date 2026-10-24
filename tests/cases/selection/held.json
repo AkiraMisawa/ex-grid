@@ -1,0 +1,27 @@
+{
+  "about": "A selection held with the Row Sequence Version it was made under: dropped, never remapped, when the version changes (ADR-0011). From tests/ExGrid.Tests/HeldSelectionTests.cs.",
+  "kind": "held",
+  "extent": [10, 5],
+  "cases": [
+    {
+      "name": "ADR-0011: the same order keeps the selection",
+      "version": 7,
+      "steps": [{ "click": [2, 3] }, { "under": 7 }, { "expect": { "version": 7, "empty": false, "sameAsBefore": true } }]
+    },
+    {
+      "name": "ADR-0011: the selection is dropped when the sort order changes: dropped, never remapped",
+      "version": 7,
+      "steps": [{ "click": [2, 3] }, { "under": 8 }, { "expect": { "version": 8, "empty": true } }]
+    },
+    {
+      "name": "ADR-0011: versions name orders, not points in time, so any difference drops",
+      "version": 7,
+      "steps": [{ "click": [2, 3] }, { "under": 6 }, { "expect": { "version": 6, "empty": true } }]
+    },
+    {
+      "name": "ADR-0011: a gesture replaces the selection under the same version",
+      "version": 3,
+      "steps": [{ "click": [0, 0] }, { "expect": { "version": 3, "empty": false } }]
+    }
+  ]
+}

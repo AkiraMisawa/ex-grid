@@ -117,6 +117,12 @@ nix develop .#browser -c npx playwright test   # layer 3, from tests/ExGrid.Brow
   `wwwroot` holds its minified build (ADR-0123): after an edit run
   `nix develop .#browser -c bash -c 'cd tools/assets && npm ci && npm run minify'` and commit what
   it writes. A minified file older than its source fails `ShippedAssetTests`
+- **The Script Core is the npm workspace at `src/npm/`** (ADR-0350):
+  `nix develop .#browser -c bash -c 'cd src/npm && npm ci && npm run typecheck && npm run build && npm test'`.
+  A package's public surface is its `etc/<name>.api.md`, which API Extractor holds the build to, as
+  RS0016 holds a NuGet package to `PublicAPI.Unshipped.txt`: `npm run api` writes it, and you read
+  the diff. Layer 1's cases are JSON under `tests/cases/`, run by Vitest there and by xUnit against
+  the C# core; a case goes in green on the C# core first (`src/npm/README.md`)
 - **Only `src/` packs, and only a tag writes a version.** The projects say `0.0.0-dev`; pushing
   a `v*` tag runs `release.yml`, which publishes a prerelease, and refuses a version without a
   suffix unless its Release Notes name a sign-off, made against a release candidate, that the

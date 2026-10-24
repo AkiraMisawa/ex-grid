@@ -44,6 +44,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- The shared cases (ADR-0350, section 5): written once as data, run here against the C# core and
+         by Vitest against the Script Core. tests/cases/README.md says what a file holds. -->
+    <None Include="..\cases\**\*.json" Link="cases\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
     <!-- The glyph-width corpus and the painted widths of each face (ADR-0016, ticket 83);
          the core's estimate is held to them. tests/GlyphWidths/README.md says how they are made. -->
     <Compile Include="..\GlyphWidths\GlyphWidthRecord.cs" Link="GlyphWidths\GlyphWidthRecord.cs" />

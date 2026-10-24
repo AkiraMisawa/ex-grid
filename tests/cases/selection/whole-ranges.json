@@ -1,0 +1,171 @@
+{
+  "about": "Whole columns stay whole and whole rows stay whole (ADR-0012, decided 2026-09-25), Shift+click on a header selects whole columns, and the whole columns resizing acts on (ADR-0016). From tests/ExGrid.Tests/WholeRangeSelectionTests.cs.",
+  "kind": "selection",
+  "extent": [100, 26],
+  "cases": [
+    {
+      "name": "ADR-0012 / SR-2b: Ctrl+Space then Shift+Right gives two whole columns, not one row",
+      "steps": [
+        { "click": [5, 2] },
+        { "selectWholeColumns": true },
+        { "extend": "right" },
+        { "expect": { "ranges": [[0, 2, 100, 2]], "focus": [5, 2], "extent": [5, 3] } }
+      ]
+    },
+    {
+      "name": "ADR-0012/0052 / SR-2b: shrinking back through the Focus flips, still whole",
+      "steps": [
+        { "click": [5, 2] },
+        { "selectWholeColumns": true },
+        { "extend": "right" },
+        { "extend": "left" },
+        { "extend": "left" },
+        { "expect": { "ranges": [[0, 1, 100, 2]] } }
+      ]
+    },
+    {
+      "name": "ADR-0012 / SR-2b: Ctrl+Shift+Right on a whole column runs whole columns to the edge",
+      "steps": [
+        { "click": [5, 20] },
+        { "selectWholeColumns": true },
+        { "extendToEdge": "right" },
+        { "expect": { "ranges": [[0, 20, 100, 6]] } }
+      ]
+    },
+    {
+      "name": "ADR-0012 / SR-2b: Shift+Space then Shift+Down gives two whole rows",
+      "steps": [
+        { "click": [5, 2] },
+        { "selectWholeRows": true },
+        { "extend": "down" },
+        { "expect": { "ranges": [[5, 0, 2, 26]] } }
+      ]
+    },
+    {
+      "name": "ADR-0012 / SR-2b: Shift+PageDown on a whole row keeps every column",
+      "steps": [
+        { "click": [5, 2] },
+        { "selectWholeRows": true },
+        { "extendByViewport": 10 },
+        { "expect": { "ranges": [[5, 0, 11, 26]] } }
+      ]
+    },
+    {
+      "name": "ADR-0012/0052: only the axis the Extent moves along changes; an ordinary range keeps its rows",
+      "steps": [
+        { "click": [5, 2] },
+        { "extendTo": [7, 2] },
+        { "extend": "right" },
+        { "expect": { "ranges": [[5, 2, 3, 2]] } }
+      ]
+    },
+    {
+      "name": "ADR-0012/0052 / SR-2a: Shift+click on a header selects whole columns from the Focus's column, and the Focus stays",
+      "steps": [
+        { "click": [5, 2] },
+        { "extendToColumn": 6 },
+        { "expect": { "ranges": [[0, 2, 100, 5]], "focus": [5, 2], "extent": [5, 6] } }
+      ]
+    },
+    {
+      "name": "ADR-0052 (Excel item 3): D's letter, then Shift+click on B's, gives B:D with the Focus still on D1",
+      "steps": [
+        { "selectColumn": 3, "focusRow": 0 },
+        { "extendToColumn": 1 },
+        { "expect": { "ranges": [[0, 1, 100, 3]], "focus": [0, 3] } }
+      ]
+    },
+    {
+      "name": "ADR-0012 / SR-2a: Shift+click on a header to the left selects whole columns the same way",
+      "steps": [
+        { "click": [5, 4] },
+        { "extendToColumn": 1 },
+        { "expect": { "ranges": [[0, 1, 100, 4]] } }
+      ]
+    },
+    {
+      "name": "ADR-0012 / SR-2a: Shift+click on a header from nothing selected selects that column, the Focus on the row the holder names",
+      "steps": [
+        { "extendToColumn": 3, "focusRowIfEmpty": 40 },
+        { "expect": { "ranges": [[0, 3, 100, 1]], "focus": [40, 3] } }
+      ]
+    },
+    {
+      "name": "ADR-0052: after a cell is taken out, Shift+click on a header replaces the fragment holding the Focus",
+      "steps": [
+        { "click": [2, 2] },
+        { "extendTo": [4, 4] },
+        { "toggleRange": [3, 3] },
+        { "extendToColumn": 5 },
+        { "expect": { "rangeCount": 4, "rangeAt": [3, [0, 2, 100, 4]], "focus": [2, 2] } }
+      ]
+    },
+    {
+      "name": "ADR-0012/0052: Shift+click on a header replaces only the Focus range; the other ranges stay",
+      "steps": [
+        { "click": [1, 1] },
+        { "toggleRange": [9, 9] },
+        { "extendToColumn": 10 },
+        { "expect": { "ranges": [[1, 1, 1, 1], [0, 9, 100, 2]] } }
+      ]
+    },
+    {
+      "name": "ADR-0016 / FN-12c: the columns that whole-column ranges cover, in order, each once",
+      "steps": [
+        { "click": [0, 8] },
+        { "selectWholeColumns": true },
+        { "toggleRange": [3, 1] },
+        { "toggleRange": [0, 5] },
+        { "extendToColumn": 8 },
+        { "expect": { "wholeColumns": [5, 6, 7, 8] } }
+      ]
+    },
+    {
+      "name": "ADR-0016 / FN-12c: nothing whole, nothing listed",
+      "steps": [
+        { "expect": { "wholeColumns": [] } },
+        { "click": [0, 0] },
+        { "extendTo": [98, 3] },
+        { "expect": { "wholeColumns": [] } }
+      ]
+    },
+    {
+      "name": "ADR-0050 item 1: a column is covered when the ranges crossing it cover every row between them",
+      "steps": [
+        { "click": [0, 2] },
+        { "extendTo": [49, 3] },
+        { "toggleRange": [50, 2] },
+        { "extendTo": [99, 2] },
+        { "expect": { "coversColumn": [[2, true], [3, false], [4, false]], "coversRow": [[0, false]] } }
+      ]
+    },
+    {
+      "name": "ADR-0050 item 1: Ctrl+click on a Column Heading adds the whole column, and again takes it out",
+      "steps": [
+        { "click": [5, 1] },
+        { "toggleColumn": 4, "focusRow": 7 },
+        { "expect": { "ranges": [[5, 1, 1, 1], [0, 4, 100, 1]], "focus": [7, 4] } },
+        { "toggleColumn": 4, "focusRow": 7 },
+        { "expect": { "ranges": [[5, 1, 1, 1]], "focus": [5, 1] } }
+      ]
+    },
+    {
+      "name": "ADR-0050 item 1: Ctrl+click on the only selected column changes nothing; the selection is never taken out whole",
+      "steps": [
+        { "selectColumn": 3, "focusRow": 0 },
+        { "toggleColumn": 3, "focusRow": 0 },
+        { "expect": { "unchanged": true } }
+      ]
+    },
+    {
+      "name": "ADR-0050 item 1: Ctrl+click on a Row Heading adds the whole row, and again takes it out",
+      "steps": [
+        { "click": [5, 1] },
+        { "toggleRow": 9, "focusColumn": 2 },
+        { "expect": { "ranges": [[5, 1, 1, 1], [9, 0, 1, 26]], "focus": [9, 2], "coversRow": [[9, true], [5, false]] } },
+        { "toggleRow": 9, "focusColumn": 2 },
+        { "expect": { "ranges": [[5, 1, 1, 1]] } }
+      ]
+    }
+  ]
+}

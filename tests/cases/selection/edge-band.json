@@ -1,0 +1,349 @@
+{
+  "about": "The edge band's rate curve (ADR-0008): one row a tick at the inner lip, the ceiling at the very edge, rising between, zero outside. From tests/ExGrid.Tests/EdgeBandTests.cs.",
+  "kind": "edgeBand",
+  "cases": [
+    {
+      "name": "ADR-0008: outside the band nothing scrolls (100px of 200)",
+      "positionPx": 100,
+      "lengthPx": 200,
+      "rowsPerViewport": 11,
+      "expect": 0
+    },
+    {
+      "name": "ADR-0008: outside the band nothing scrolls (20px of 200)",
+      "positionPx": 20,
+      "lengthPx": 200,
+      "rowsPerViewport": 11,
+      "expect": 0
+    },
+    {
+      "name": "ADR-0008: outside the band nothing scrolls (180px of 200)",
+      "positionPx": 180,
+      "lengthPx": 200,
+      "rowsPerViewport": 11,
+      "expect": 0
+    },
+    {
+      "name": "ADR-0008: the rate rises with depth, from one row at the inner lip to eight at the edge (19.5px from the trailing edge)",
+      "positionPx": 180.5,
+      "lengthPx": 200,
+      "rowsPerViewport": 11,
+      "expect": 1
+    },
+    {
+      "name": "ADR-0008: the rate rises with depth, from one row at the inner lip to eight at the edge (19.0px from the trailing edge)",
+      "positionPx": 181.0,
+      "lengthPx": 200,
+      "rowsPerViewport": 11,
+      "expect": 1
+    },
+    {
+      "name": "ADR-0008: the rate rises with depth, from one row at the inner lip to eight at the edge (18.5px from the trailing edge)",
+      "positionPx": 181.5,
+      "lengthPx": 200,
+      "rowsPerViewport": 11,
+      "expect": 1
+    },
+    {
+      "name": "ADR-0008: the rate rises with depth, from one row at the inner lip to eight at the edge (18.0px from the trailing edge)",
+      "positionPx": 182.0,
+      "lengthPx": 200,
+      "rowsPerViewport": 11,
+      "expect": 1
+    },
+    {
+      "name": "ADR-0008: the rate rises with depth, from one row at the inner lip to eight at the edge (17.5px from the trailing edge)",
+      "positionPx": 182.5,
+      "lengthPx": 200,
+      "rowsPerViewport": 11,
+      "expect": 1
+    },
+    {
+      "name": "ADR-0008: the rate rises with depth, from one row at the inner lip to eight at the edge (17.0px from the trailing edge)",
+      "positionPx": 183.0,
+      "lengthPx": 200,
+      "rowsPerViewport": 11,
+      "expect": 2
+    },
+    {
+      "name": "ADR-0008: the rate rises with depth, from one row at the inner lip to eight at the edge (16.5px from the trailing edge)",
+      "positionPx": 183.5,
+      "lengthPx": 200,
+      "rowsPerViewport": 11,
+      "expect": 2
+    },
+    {
+      "name": "ADR-0008: the rate rises with depth, from one row at the inner lip to eight at the edge (16.0px from the trailing edge)",
+      "positionPx": 184.0,
+      "lengthPx": 200,
+      "rowsPerViewport": 11,
+      "expect": 2
+    },
+    {
+      "name": "ADR-0008: the rate rises with depth, from one row at the inner lip to eight at the edge (15.5px from the trailing edge)",
+      "positionPx": 184.5,
+      "lengthPx": 200,
+      "rowsPerViewport": 11,
+      "expect": 2
+    },
+    {
+      "name": "ADR-0008: the rate rises with depth, from one row at the inner lip to eight at the edge (15.0px from the trailing edge)",
+      "positionPx": 185.0,
+      "lengthPx": 200,
+      "rowsPerViewport": 11,
+      "expect": 2
+    },
+    {
+      "name": "ADR-0008: the rate rises with depth, from one row at the inner lip to eight at the edge (14.5px from the trailing edge)",
+      "positionPx": 185.5,
+      "lengthPx": 200,
+      "rowsPerViewport": 11,
+      "expect": 2
+    },
+    {
+      "name": "ADR-0008: the rate rises with depth, from one row at the inner lip to eight at the edge (14.0px from the trailing edge)",
+      "positionPx": 186.0,
+      "lengthPx": 200,
+      "rowsPerViewport": 11,
+      "expect": 3
+    },
+    {
+      "name": "ADR-0008: the rate rises with depth, from one row at the inner lip to eight at the edge (13.5px from the trailing edge)",
+      "positionPx": 186.5,
+      "lengthPx": 200,
+      "rowsPerViewport": 11,
+      "expect": 3
+    },
+    {
+      "name": "ADR-0008: the rate rises with depth, from one row at the inner lip to eight at the edge (13.0px from the trailing edge)",
+      "positionPx": 187.0,
+      "lengthPx": 200,
+      "rowsPerViewport": 11,
+      "expect": 3
+    },
+    {
+      "name": "ADR-0008: the rate rises with depth, from one row at the inner lip to eight at the edge (12.5px from the trailing edge)",
+      "positionPx": 187.5,
+      "lengthPx": 200,
+      "rowsPerViewport": 11,
+      "expect": 3
+    },
+    {
+      "name": "ADR-0008: the rate rises with depth, from one row at the inner lip to eight at the edge (12.0px from the trailing edge)",
+      "positionPx": 188.0,
+      "lengthPx": 200,
+      "rowsPerViewport": 11,
+      "expect": 3
+    },
+    {
+      "name": "ADR-0008: the rate rises with depth, from one row at the inner lip to eight at the edge (11.5px from the trailing edge)",
+      "positionPx": 188.5,
+      "lengthPx": 200,
+      "rowsPerViewport": 11,
+      "expect": 3
+    },
+    {
+      "name": "ADR-0008: the rate rises with depth, from one row at the inner lip to eight at the edge (11.0px from the trailing edge)",
+      "positionPx": 189.0,
+      "lengthPx": 200,
+      "rowsPerViewport": 11,
+      "expect": 4
+    },
+    {
+      "name": "ADR-0008: the rate rises with depth, from one row at the inner lip to eight at the edge (10.5px from the trailing edge)",
+      "positionPx": 189.5,
+      "lengthPx": 200,
+      "rowsPerViewport": 11,
+      "expect": 4
+    },
+    {
+      "name": "ADR-0008: the rate rises with depth, from one row at the inner lip to eight at the edge (10.0px from the trailing edge)",
+      "positionPx": 190.0,
+      "lengthPx": 200,
+      "rowsPerViewport": 11,
+      "expect": 4
+    },
+    {
+      "name": "ADR-0008: the rate rises with depth, from one row at the inner lip to eight at the edge (9.5px from the trailing edge)",
+      "positionPx": 190.5,
+      "lengthPx": 200,
+      "rowsPerViewport": 11,
+      "expect": 4
+    },
+    {
+      "name": "ADR-0008: the rate rises with depth, from one row at the inner lip to eight at the edge (9.0px from the trailing edge)",
+      "positionPx": 191.0,
+      "lengthPx": 200,
+      "rowsPerViewport": 11,
+      "expect": 4
+    },
+    {
+      "name": "ADR-0008: the rate rises with depth, from one row at the inner lip to eight at the edge (8.5px from the trailing edge)",
+      "positionPx": 191.5,
+      "lengthPx": 200,
+      "rowsPerViewport": 11,
+      "expect": 5
+    },
+    {
+      "name": "ADR-0008: the rate rises with depth, from one row at the inner lip to eight at the edge (8.0px from the trailing edge)",
+      "positionPx": 192.0,
+      "lengthPx": 200,
+      "rowsPerViewport": 11,
+      "expect": 5
+    },
+    {
+      "name": "ADR-0008: the rate rises with depth, from one row at the inner lip to eight at the edge (7.5px from the trailing edge)",
+      "positionPx": 192.5,
+      "lengthPx": 200,
+      "rowsPerViewport": 11,
+      "expect": 5
+    },
+    {
+      "name": "ADR-0008: the rate rises with depth, from one row at the inner lip to eight at the edge (7.0px from the trailing edge)",
+      "positionPx": 193.0,
+      "lengthPx": 200,
+      "rowsPerViewport": 11,
+      "expect": 5
+    },
+    {
+      "name": "ADR-0008: the rate rises with depth, from one row at the inner lip to eight at the edge (6.5px from the trailing edge)",
+      "positionPx": 193.5,
+      "lengthPx": 200,
+      "rowsPerViewport": 11,
+      "expect": 5
+    },
+    {
+      "name": "ADR-0008: the rate rises with depth, from one row at the inner lip to eight at the edge (6.0px from the trailing edge)",
+      "positionPx": 194.0,
+      "lengthPx": 200,
+      "rowsPerViewport": 11,
+      "expect": 5
+    },
+    {
+      "name": "ADR-0008: the rate rises with depth, from one row at the inner lip to eight at the edge (5.5px from the trailing edge)",
+      "positionPx": 194.5,
+      "lengthPx": 200,
+      "rowsPerViewport": 11,
+      "expect": 6
+    },
+    {
+      "name": "ADR-0008: the rate rises with depth, from one row at the inner lip to eight at the edge (5.0px from the trailing edge)",
+      "positionPx": 195.0,
+      "lengthPx": 200,
+      "rowsPerViewport": 11,
+      "expect": 6
+    },
+    {
+      "name": "ADR-0008: the rate rises with depth, from one row at the inner lip to eight at the edge (4.5px from the trailing edge)",
+      "positionPx": 195.5,
+      "lengthPx": 200,
+      "rowsPerViewport": 11,
+      "expect": 6
+    },
+    {
+      "name": "ADR-0008: the rate rises with depth, from one row at the inner lip to eight at the edge (4.0px from the trailing edge)",
+      "positionPx": 196.0,
+      "lengthPx": 200,
+      "rowsPerViewport": 11,
+      "expect": 6
+    },
+    {
+      "name": "ADR-0008: the rate rises with depth, from one row at the inner lip to eight at the edge (3.5px from the trailing edge)",
+      "positionPx": 196.5,
+      "lengthPx": 200,
+      "rowsPerViewport": 11,
+      "expect": 6
+    },
+    {
+      "name": "ADR-0008: the rate rises with depth, from one row at the inner lip to eight at the edge (3.0px from the trailing edge)",
+      "positionPx": 197.0,
+      "lengthPx": 200,
+      "rowsPerViewport": 11,
+      "expect": 6
+    },
+    {
+      "name": "ADR-0008: the rate rises with depth, from one row at the inner lip to eight at the edge (2.5px from the trailing edge)",
+      "positionPx": 197.5,
+      "lengthPx": 200,
+      "rowsPerViewport": 11,
+      "expect": 7
+    },
+    {
+      "name": "ADR-0008: the rate rises with depth, from one row at the inner lip to eight at the edge (2.0px from the trailing edge)",
+      "positionPx": 198.0,
+      "lengthPx": 200,
+      "rowsPerViewport": 11,
+      "expect": 7
+    },
+    {
+      "name": "ADR-0008: the rate rises with depth, from one row at the inner lip to eight at the edge (1.5px from the trailing edge)",
+      "positionPx": 198.5,
+      "lengthPx": 200,
+      "rowsPerViewport": 11,
+      "expect": 7
+    },
+    {
+      "name": "ADR-0008: the rate rises with depth, from one row at the inner lip to eight at the edge (1.0px from the trailing edge)",
+      "positionPx": 199.0,
+      "lengthPx": 200,
+      "rowsPerViewport": 11,
+      "expect": 7
+    },
+    {
+      "name": "ADR-0008: the rate rises with depth, from one row at the inner lip to eight at the edge (0.5px from the trailing edge)",
+      "positionPx": 199.5,
+      "lengthPx": 200,
+      "rowsPerViewport": 11,
+      "expect": 7
+    },
+    {
+      "name": "ADR-0008: the rate rises with depth, from one row at the inner lip to eight at the edge (0.0px from the trailing edge)",
+      "positionPx": 200.0,
+      "lengthPx": 200,
+      "rowsPerViewport": 11,
+      "expect": 8
+    },
+    {
+      "name": "ADR-0008: the leading edge is the same curve negated, at the inner lip",
+      "positionPx": 19.5,
+      "lengthPx": 200,
+      "rowsPerViewport": 11,
+      "expect": -1
+    },
+    {
+      "name": "ADR-0008: the leading edge is the same curve negated, at the edge",
+      "positionPx": 0,
+      "lengthPx": 200,
+      "rowsPerViewport": 11,
+      "expect": -8
+    },
+    {
+      "name": "ADR-0008 / SL-13: the ceiling stays one row short of the fling threshold: five rows to a Viewport tick four at most",
+      "positionPx": 200,
+      "lengthPx": 200,
+      "rowsPerViewport": 5,
+      "expect": 4
+    },
+    {
+      "name": "ADR-0008 / SL-13: the ceiling is never below one, so a two-row Viewport still scrolls",
+      "positionPx": 200,
+      "lengthPx": 200,
+      "rowsPerViewport": 2,
+      "expect": 1
+    },
+    {
+      "name": "ADR-0008: a band shorter than its two strips would be at the edge everywhere, so it scrolls nothing",
+      "positionPx": 10,
+      "lengthPx": 30,
+      "rowsPerViewport": 11,
+      "expect": 0
+    },
+    {
+      "name": "ADR-0008: a band of no length scrolls nothing",
+      "positionPx": 0,
+      "lengthPx": 0,
+      "rowsPerViewport": 11,
+      "expect": 0
+    }
+  ]
+}

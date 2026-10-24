@@ -1,0 +1,97 @@
+{
+  "about": "What a selection answers without data: its ranges, its cell count, whether it holds a cell, and equality. From tests/ExGrid.Tests/SelectionQueryTests.cs.",
+  "kind": "selection",
+  "extent": [100, 26],
+  "cases": [
+    {
+      "name": "ADR-0008: one overlay a range, so the ranges come normalised, in the order they were made",
+      "steps": [
+        { "click": [5, 5] },
+        { "extendTo": [2, 2] },
+        { "toggleRange": [8, 8] },
+        { "expect": { "ranges": [[2, 2, 4, 4], [8, 8, 1, 1]] } }
+      ]
+    },
+    {
+      "name": "ADR-0014: the selected-cell count is the sum of the rectangles' areas and needs no data",
+      "extent": [1000000, 50],
+      "steps": [
+        { "selectAll": true },
+        { "expect": { "cellCount": 50000000 } }
+      ]
+    },
+    {
+      "name": "ADR-0014: overlapping ranges count twice, as Excel's status bar counts them",
+      "steps": [
+        { "click": [0, 0] },
+        { "extendTo": [2, 2] },
+        { "toggleRange": [4, 4] },
+        { "extendTo": [1, 1] },
+        { "expect": { "cellCount": 25 } }
+      ]
+    },
+    {
+      "name": "ADR-0011: contains answers across disjoint ranges",
+      "steps": [
+        { "click": [1, 2] },
+        { "extendTo": [2, 3] },
+        { "toggleRange": [5, 2] },
+        { "extendTo": [6, 3] },
+        { "expect": { "ranges": [[1, 2, 2, 2], [5, 2, 2, 2]], "contains": [[1, 2], [6, 3]], "notContains": [[4, 2]] } }
+      ]
+    },
+    {
+      "name": "ADR-0003: identical gestures give equal selections, and a different one does not",
+      "steps": [
+        { "click": [1, 1] },
+        { "extendTo": [3, 3] },
+        { "toggleRange": [5, 5] },
+        { "save": "first" },
+        { "click": [0, 0] },
+        { "click": [1, 1] },
+        { "extendTo": [3, 3] },
+        { "toggleRange": [5, 5] },
+        { "expect": { "sameAs": "first" } },
+        { "extend": "down" },
+        { "expect": { "differsFrom": "first" } }
+      ]
+    },
+    {
+      "name": "ADR-0003/0052: the only selected cell cannot be taken out, so the gesture leaves an equal selection",
+      "steps": [
+        { "click": [0, 0] },
+        { "save": "one" },
+        { "toggleRange": [0, 0] },
+        { "expect": { "sameAs": "one" } }
+      ]
+    },
+    {
+      "name": "ADR-0011: nothing selected holds nothing and counts nothing",
+      "steps": [
+        { "expect": { "cellCount": 0, "notContains": [[0, 0]], "ranges": [] } }
+      ]
+    },
+    {
+      "name": "ADR-0014: the range made last gives its top-left cell, where one value is pasted alone",
+      "steps": [
+        { "expect": { "topLeftOfRangeMadeLast": null } },
+        { "click": "C3" },
+        { "extendTo": "A1" },
+        { "toggleRange": "E5" },
+        { "extendTo": "D4" },
+        { "expect": { "topLeftOfRangeMadeLast": "D4" } }
+      ]
+    },
+    {
+      "name": "ADR-0014/0052: after a take-out cuts the range made last, its top-left is the first cell, by rows, of its fragments",
+      "steps": [
+        { "click": "A1" },
+        { "extendTo": "B2" },
+        { "toggleRange": "D4" },
+        { "extendTo": "F6" },
+        { "toggleRange": "D4" },
+        { "expect": { "ranges": "A1:B2,D5:F6,E4:F4", "topLeftOfRangeMadeLast": "E4" } }
+      ]
+    }
+  ]
+}
