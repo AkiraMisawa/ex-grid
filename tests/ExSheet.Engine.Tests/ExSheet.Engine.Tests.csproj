@@ -21,6 +21,8 @@
   <ItemGroup>
     <!-- The Excel case corpus (ADR-0047): read by ExcelCaseTests here and by ExcelOracle/oracle.ps1 on Windows. -->
     <None Include="ExcelCases\*.json" CopyToOutputDirectory="PreserveNewest" />
+    <!-- Excel's answers for 3D References (ADR-0331 §7): read by ThreeDExcelReadingsTests. -->
+    <None Include="ThreeDReadings\*.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>

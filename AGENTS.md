@@ -56,7 +56,7 @@ The fifteenth paints a chart's SVG to PNG, saves its files and reads the theme's
 (ADR-0282).
 The sixteenth focuses a box's first control where no grid stands to hand the keyboard on — an ExPivot
 report not yet drawn — in place of the control's own `FocusAsync`, which a `display: contents` box cannot
-take (ADR-0350).
+take (ADR-0360).
 The four touch additions are approved for implementation: the scoped pointer bridge and initial
 capability hint ([ADR-0260](docs/adr/0260-touch-input-reports-browser-facts-and-keeps-command-meaning-in-csharp.md)),
 provisional keyboard preparation during an edit gesture

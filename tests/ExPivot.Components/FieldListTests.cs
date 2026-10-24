@@ -377,7 +377,7 @@ public class FieldListTests : PivotTestContext
         Assert.DoesNotContain(handle.Invocations, i => i.Identifier is "takeKeyboardBack" or "handOff");
     }
 
-    [Fact] // ADR-0240 §6 / ADR-0350: with no report grid there is nothing to order an input among: Escape typed in a panel closes it at once, and its search takes the keyboard from the grid's script, with no condition read
+    [Fact] // ADR-0240 §6 / ADR-0360: with no report grid there is nothing to order an input among: Escape typed in a panel closes it at once, and its search takes the keyboard from the grid's script, with no condition read
     public async Task With_no_report_a_report_filters_panel_opens_and_closes_at_once()
     {
         var cut = RenderPivot(new PivotLayout { Filters = [P("Online")] });

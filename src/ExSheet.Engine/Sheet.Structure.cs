@@ -143,9 +143,10 @@ public sealed partial class Sheet
                     rewritten.Add((cell.Address, entry));
                     dirty.Add(to);
                 }
-                else if (parsed.References.Any(r => edit.Reaches(r, this)))
+                else if (parsed.References.Any(r => edit.Reaches(r, this) || Workbook.Spans(r, this)))
                 {
-                    // A:A kept its text, but what it covers moved underneath it.
+                    // A:A kept its text, but what it covers moved underneath it; so did what a 3D Reference
+                    // spanning this Sheet reads here, which Excel never rewrites (ADR-0331 §7).
                     dirty.Add(to);
                 }
                 entry = mapped;
@@ -203,9 +204,10 @@ public sealed partial class Sheet
                     rewritten.Add((other, address, mapped, entry));
                     dirty.Add(new SheetCell(other, address));
                 }
-                else if (entry.Parsed!.References.Any(r => Mine(r) && edit.Reaches(r, this)))
+                else if (entry.Parsed!.References.Any(r => (Mine(r) && edit.Reaches(r, this)) || Workbook.Spans(r, this)))
                 {
-                    // Sheet1!A:A kept its text, but what it covers moved underneath it.
+                    // Sheet1!A:A kept its text, but what it covers moved underneath it; so did what a 3D Reference
+                    // spanning this Sheet reads here, which Excel never rewrites (ADR-0331 §7).
                     dirty.Add(new SheetCell(other, address));
                 }
             }

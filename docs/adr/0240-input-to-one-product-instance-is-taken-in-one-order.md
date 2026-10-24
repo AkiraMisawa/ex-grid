@@ -315,7 +315,7 @@ Five questions were put to the user on 2026-10-20; the user took the recommendat
   the report is empty there is no grid, and a box a Chrome names takes the keyboard by its own focus, which
   a box drawn with `display: contents` cannot take: the MudBlazor Wrapper's Field Settings… opened from a
   Report Filter while nothing else is placed leaves the keyboard where it was (ticket 06's remainder).
-  *(Closed 2026-10-24 by [ADR-0350](0350-a-boxs-first-control-takes-the-keyboard-from-the-grids-script-where-no-grid-stands.md):
+  *(Closed 2026-10-24 by [ADR-0360](0360-a-boxs-first-control-takes-the-keyboard-from-the-grids-script-where-no-grid-stands.md):
   with no report grid, the grid's script focuses the box's first control. Field Settings… is offered on
   a row or column field only, so the case is a report not yet drawn — its first answer on its way, or
   failed — rather than a Report Filter alone.)*
@@ -409,7 +409,7 @@ The first part: the mechanism, and ExSheet.MudBlazor's Format Cells dialog and i
   needs a seam member a Wrapper can name the field by, or a focus made in script with no grid, which is
   another ADR-0021 entry: a decision, not left to an implementation.
   *(Decided with the user 2026-10-24: the ADR-0021 entry,
-  [ADR-0350](0350-a-boxs-first-control-takes-the-keyboard-from-the-grids-script-where-no-grid-stands.md).
+  [ADR-0360](0360-a-boxs-first-control-takes-the-keyboard-from-the-grids-script-where-no-grid-stands.md).
   With no report grid, ExPivot's hand-off goes through the grid's script, which finds the box's control as
   the grid's hand-on does; ticket 06 is done.)*
 

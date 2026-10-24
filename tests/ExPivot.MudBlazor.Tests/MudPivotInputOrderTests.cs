@@ -99,8 +99,8 @@ public class MudPivotInputOrderTests : MudPivotTestContext
         Assert.Single(KeyboardHandOffs(handle).Skip(before));
     }
 
-    [Fact] // ADR-0350: while no report stands — the first one still on its way — there is no grid to hand the keyboard on, and Field Settings' select takes it from the grid's script, handed the box around it, not by the box's own focus
-    public async Task ADR0350_with_no_report_mud_field_settings_take_the_keyboard_from_the_grids_script()
+    [Fact] // ADR-0360: while no report stands — the first one still on its way — there is no grid to hand the keyboard on, and Field Settings' select takes it from the grid's script, handed the box around it, not by the box's own focus
+    public async Task ADR0360_with_no_report_mud_field_settings_take_the_keyboard_from_the_grids_script()
     {
         var module = JSInterop.SetupModule(global::ExGrid.Testing.ShippedScript.Address);
         module.Setup<string>("stamp").SetResult(global::ExGrid.Testing.ShippedScript.Stamp);

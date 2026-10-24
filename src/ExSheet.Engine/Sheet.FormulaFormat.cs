@@ -73,6 +73,9 @@ public sealed partial class Sheet
         {
             switch (node)
             {
+                // A 3D Reference gives none: which Sheet's format Excel takes, if any, is not yet asked of it (ADR-0331 §7).
+                case ReferenceNode { Reference.IsThreeD: true }:
+                    return null;
                 case ReferenceNode r when SheetNamed(r.Reference.SheetName) is { } owner:
                     // A cell of another Sheet gives its format as one of this Sheet's does (ADR-0331).
                     return owner.GetNumberFormat(new CellAddress(r.Reference.Row1, r.Reference.Column1)) is { ShowsNumbersAsGeneral: false } given ? given : null;

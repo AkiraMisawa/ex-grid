@@ -24,7 +24,7 @@ namespace ExPivot.Components;
 /// </summary>
 public partial class ExPivot
 {
-    // The grid's script, imported on its own while the report is empty (ADR-0350).
+    // The grid's script, imported on its own while the report is empty (ADR-0360).
     [Inject] private IJSRuntime JS { get; set; } = default!;
 
     private readonly PivotInput _input;
@@ -181,7 +181,7 @@ public partial class ExPivot
     /// while the keyboard is still the pivot's (ADR-0070's note of 2026-10-02, ADR-0240 section 6). With
     /// no report grid — the report empty, its first answer on its way, or failed — the grid's script,
     /// imported on its own, focuses the control, or the first control inside the box a Chrome named, as
-    /// the grid would have (ADR-0350): a box drawn with <c>display: contents</c> around a design system's
+    /// the grid would have (ADR-0360): a box drawn with <c>display: contents</c> around a design system's
     /// select cannot take focus itself. The control's own focus is still asked where the script is
     /// refused, a script of another version, or where no control took the keyboard.
     /// </summary>
@@ -203,7 +203,7 @@ public partial class ExPivot
     }
 
     // The grid's script, loaded the first time the keyboard is handed on with no report grid, and kept
-    // for the pivot's life, so each later hand-off is one call, as the control's own focus was (ADR-0350).
+    // for the pivot's life, so each later hand-off is one call, as the control's own focus was (ADR-0360).
     private GridScriptFocus? _scriptFocus;
 
     /// <summary>The grid's script, loaded and this build's; or none, where it would not load or answered

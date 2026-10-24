@@ -1,0 +1,16 @@
+@using ExSheet
+@using ExSheet.Components
+@using ExSheet.Engine
+
+<p class="mb-3">@_said</p>
+
+<ExSheet @bind-Workbook="_workbook" SheetsChanged="SheetsChanged" ViewportHeight="240" ViewportWidth="ViewportSize.Stretch" />
+
+@code {
+    // Year reads Jan to Mar with References such as Jan:Mar!B1.
+    private WorkbookDocument? _workbook = Quarters.Workbook();
+
+    private string _said = "Sheets: Jan, Feb, Mar, Notes, Year.";
+
+    private void SheetsChanged(SheetsChange change) => _said = $"Sheets: {string.Join(", ", change.After)}.";
+}

@@ -73,8 +73,9 @@ internal static class FormulaText
                 var kept = token.Position;
                 while (kept > at && Lexer.IsFormulaWhitespace(stored[kept - 1])) kept--;
                 text.Append(stored, at, kept - at);
-                // A qualifier requalified to none names a Sheet that is gone, and goes with it (ADR-0331).
-                if (token.Reference!.SheetName is { } sheet && (requalify is null || requalify(sheet) is not null)) text.Append(Reference.QuoteSheetName(sheet)).Append('!');
+                // A qualifier requalified to none names a Sheet that is gone, and goes with it (ADR-0331); a 3D
+                // Reference's span goes whole, as Excel's #REF!B2 in a copy shows (ADR-0331 §7).
+                if (token.Reference!.SheetName is { } sheet && !token.Reference.IsThreeD && (requalify is null || requalify(sheet) is not null)) text.Append(Reference.QuoteSheetName(sheet)).Append('!');
                 text.Append(ErrorValue.Ref.ToText());
             }
             else

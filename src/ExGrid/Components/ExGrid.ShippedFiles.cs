@@ -97,7 +97,7 @@ public partial class ExGrid<TRow>
 }
 
 /// <summary>The check of a module's stamp (ADR-0123), shared by every grid and by
-/// <see cref="GridScriptFocus"/>, which loads the grid's script where no grid stands (ADR-0350).</summary>
+/// <see cref="GridScriptFocus"/>, which loads the grid's script where no grid stands (ADR-0360).</summary>
 internal static class GridScriptStamp
 {
     /// <summary>Whether the module answers the stamp this build of the grid was made with. A module

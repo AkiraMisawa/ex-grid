@@ -36,7 +36,7 @@
 // mousedown and mouseup above, which number a click on one of the grid's own controls that claim it
 // (data-ex-claims) as it goes on to Blazor, and hold it in its place while the gate holds input — the eleventh — and
 // the twelfth, a capture-phase submit and focus on the window, filtered to this root. The thirteenth
-// (ADR-0350), outside any instance: focusBox, a box's first control focused where no grid stands to
+// (ADR-0360), outside any instance: focusBox, a box's first control focused where no grid stands to
 // hand the keyboard on (ExPivot's report not yet drawn), with no listener. The Settled Mark
 // (ADR-0220; ADR-0021's note of 2026-10-16) adds no listener: the listeners above write
 // `data-ex-settled` on the root, with one MutationObserver on two attributes the core's render
@@ -87,7 +87,7 @@ const boxTarget = (element) => {
         ?? element.querySelector('input[readonly]:not([disabled]):not([type="hidden"]), button:not([disabled]), select:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])');
 };
 
-// A box's first control takes the keyboard, where no grid stands to hand it on (ADR-0350): ExPivot's empty
+// A box's first control takes the keyboard, where no grid stands to hand it on (ADR-0360): ExPivot's empty
 // report, whose panels a Chrome may draw in a box that cannot take focus itself — a design system's select
 // wrapped in `display: contents`. The control is found as handKeyboardTo finds it (boxTarget), and focused
 // as the pivot's own focus of a control was asked for: no condition is read, since with no grid there is no

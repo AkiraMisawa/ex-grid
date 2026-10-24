@@ -5,7 +5,7 @@ using Microsoft.JSInterop;
 namespace ExGrid.Components;
 
 /// <summary>
-/// A box's first control taking the keyboard where no grid stands to hand it on (ADR-0350): the
+/// A box's first control taking the keyboard where no grid stands to hand it on (ADR-0360): the
 /// grid's script, imported on its own, finds the control inside the box as a grid hands the keyboard
 /// to one (<see cref="ExGrid{TRow}.HandKeyboardToAsync(ElementReference)"/>) and focuses it. ExPivot
 /// holds one while its report is not drawn, when a Chrome's panel names a box that cannot take focus

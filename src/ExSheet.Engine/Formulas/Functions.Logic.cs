@@ -37,7 +37,7 @@ internal static partial class FunctionLibrary
             var operand = call.Operand(i);
             switch (operand.Kind)
             {
-                case OperandKind.Area or OperandKind.Column or OperandKind.Array:
+                case OperandKind.Area or OperandKind.Column or OperandKind.Array or OperandKind.ThreeD:
                     foreach (var value in evaluator.RangeValues(operand))
                     {
                         if (value.IsError)
@@ -87,6 +87,8 @@ internal static partial class FunctionLibrary
         {
             if (!call.Has(1)) return Operand.Blank;
             var fallback = call.Operand(1);
+            // A 3D Reference is handed on, as Excel's fallback was (ADR-0331 §7).
+            if (fallback.Kind == OperandKind.ThreeD) return fallback;
             if (IsArray(fallback)) return Unlifted(call);
             return call.Evaluator.ScalarOf(fallback) is { } caught ? Operand.Of(caught) : Operand.Blank;
         }

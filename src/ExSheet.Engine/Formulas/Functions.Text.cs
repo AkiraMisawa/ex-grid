@@ -82,7 +82,7 @@ internal static partial class FunctionLibrary
             var operand = call.KeepingBlanks(i);
             switch (operand.Kind)
             {
-                case OperandKind.Area or OperandKind.Column or OperandKind.Array:
+                case OperandKind.Area or OperandKind.Column or OperandKind.Array or OperandKind.ThreeD:
                     foreach (var value in evaluator.RangeValues(operand))
                     {
                         if (value.IsError) return Operand.Of(value);
@@ -164,14 +164,32 @@ internal static partial class FunctionLibrary
     /// </summary>
     private static Operand TextJoin(FunctionCall call)
     {
-        if (!TryText(call, 0, out var delimiter, out var failure)) return failure;
-        if (!TryScalar(call, 1, out var ignoreValue, out failure)) return failure;
+        // A 3D Reference's cells are delimiters taken in turn, Sheet by Sheet, as Excel's TEXTJOIN took them
+        // (ADR-0331 §7, ticket 12); a delimiter of one Sheet's several cells is still refused.
+        var delimiters = new List<string>();
+        var given = call.OneValue(0);
+        if (given.Kind == OperandKind.ThreeD)
+        {
+            foreach (var item in Items(given))
+            {
+                if (item is { IsError: true } error) return Operand.Of(error);
+                delimiters.Add(call.Evaluator.ToText(item));
+            }
+        }
+        else
+        {
+            if (IsArray(given)) return Unlifted(call);
+            var value = call.Evaluator.ScalarOf(given);
+            if (value is { IsError: true } error) return Operand.Of(error);
+            delimiters.Add(call.Evaluator.ToText(value));
+        }
+        if (!TryScalar(call, 1, out var ignoreValue, out var failure)) return failure;
         var ignoreEmpty = false;
         if (ignoreValue is { } v && !TryTruth(v, out ignoreEmpty)) return Operand.Of(ErrorValue.Value);
 
         var evaluator = call.Evaluator;
         var joined = new StringBuilder();
-        var first = true;
+        var joins = 0;
         for (var i = 2; i < call.Count; i++)
         {
             foreach (var item in Items(call.Operand(i)))
@@ -179,9 +197,9 @@ internal static partial class FunctionLibrary
                 if (item is { IsError: true } error) return Operand.Of(error);
                 var text = evaluator.ToText(item);
                 if (ignoreEmpty && text.Length == 0) continue;
-                if (!first) joined.Append(delimiter);
+                if (joins > 0) joined.Append(delimiters[(joins - 1) % delimiters.Count]);
                 joined.Append(text);
-                first = false;
+                joins++;
                 if (joined.Length > TextLimit) return Operand.Of(ErrorValue.Value);
             }
         }
@@ -204,6 +222,16 @@ internal static partial class FunctionLibrary
                     break;
                 case OperandKind.Column:
                     foreach (var value in operand.Column!) yield return value;
+                    break;
+                case OperandKind.ThreeD:
+                    // Sheet by Sheet in tab order, each row by row (ADR-0331 §7).
+                    foreach (var sheet in operand.Sheets!)
+                    {
+                        for (var row = operand.Area.Row1; row <= operand.Area.Row2; row++)
+                        {
+                            for (var column = operand.Area.Column1; column <= operand.Area.Column2; column++) yield return sheet.Read(new CellAddress(row, column));
+                        }
+                    }
                     break;
                 case OperandKind.Array:
                     foreach (var value in operand.Array!.All()) yield return value;

@@ -1293,7 +1293,7 @@ test('ADR-0039/0062: a MudSelect list inside Value Field Settings takes Escape b
 });
 
 for (const chrome of ['builtin', 'mud']) {
-    test(`ADR-0350: with no report drawn, Field Settings' first control takes the keyboard (${chrome})`, async ({ page }) => {
+    test(`ADR-0360: with no report drawn, Field Settings' first control takes the keyboard (${chrome})`, async ({ page }) => {
         // The source's first answer waits for the page's button: the pane stands, and no report grid
         // does, so the keyboard cannot be handed on through one.
         await page.goto(`/pivot?chrome=${chrome}&first=held`);

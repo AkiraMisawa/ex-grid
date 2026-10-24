@@ -6,7 +6,7 @@ Roadmap: ExGrid, ExSheet, ExPivot — The MudBlazor Wrappers behave as the Built
 **Why:** [ADR-0240](../../../adr/0240-input-to-one-product-instance-is-taken-in-one-order.md) §7, stage 5. A surface MudBlazor renders outside the Input Root joins the instance's handle while open (§6); its opening, commit and closing are in the order; the Format Cells dialog's own `_keysReady` gate is replaced; every unguarded `FocusAsync` from a render (`MudToolbarItem`, `MudFormatCellsFrame`, `MudExGridFindPanel`'s fallback, `PivotChrome`'s default `TakeKeyboard`) goes through the seam; a draft is never re-read from a parameter on a later render (§1). The public seam is documented on the Chrome pages, with a Change Note for each delegate whose shape changed (§9).
 
 - [x] Out-of-root surfaces join the handle while open
-- [x] Wrapper focus through the seam (the pivot's Field Settings… with no report: ADR-0350, 2026-10-24)
+- [x] Wrapper focus through the seam (the pivot's Field Settings… with no report: ADR-0360, 2026-10-24)
 - [x] Drafts follow §1's rule; ticket 260's pattern swept
 - [x] Docs Site: the seam for a Consumer's Chrome, with an Example
 
@@ -30,7 +30,7 @@ focus function, the drafts' sweep found nothing more, and the Sheet Formatting p
 Chrome of the Consumer's own whose lists stand beside the Sheet. The pivot's Field Settings… gap with an empty
 report needs a decision (ADR-0240's note) and is left open.
 
-The pivot's gap closed on 2026-10-24 ([ADR-0350](../../../adr/0350-a-boxs-first-control-takes-the-keyboard-from-the-grids-script-where-no-grid-stands.md),
+The pivot's gap closed on 2026-10-24 ([ADR-0360](../../../adr/0360-a-boxs-first-control-takes-the-keyboard-from-the-grids-script-where-no-grid-stands.md),
 decided with the user): with no report grid, ExPivot hands the keyboard on through the grid's script, which
 focuses the box's first control as the grid's hand-on does.
 
