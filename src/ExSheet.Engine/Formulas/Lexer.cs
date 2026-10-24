@@ -56,6 +56,16 @@ internal static partial class Lexer
         RegexOptions.IgnorePatternWhitespace | RegexOptions.CultureInvariant)]
     private static partial Regex ReferencePattern();
 
+    /// <summary>
+    /// A 3D Reference's span before its <c>!</c> (ADR-0331 §7): <c>Sheet1:Sheet3!</c>, or quoted whole,
+    /// <c>'Q1 Sales:Sheet3'!</c>, as Excel writes one. A Sheet's name holds no <c>:</c>, so the one
+    /// inside the quotes is the span's.
+    /// </summary>
+    [GeneratedRegex(
+        @"\G(?:'(?<first>(?:[^':]|'')+):(?<last>(?:[^':]|'')+)'|(?<first>[A-Za-z_][A-Za-z0-9_.]*):(?<last>[A-Za-z_][A-Za-z0-9_.]*))!",
+        RegexOptions.CultureInvariant)]
+    private static partial Regex SheetSpanPattern();
+
     /// <summary><c>Sheet1!#REF!</c>: a qualified Reference whose cells were deleted, as Excel writes it.</summary>
     [GeneratedRegex(@"\G(?<sheet>'(?:[^']|'')+'|[A-Za-z_][A-Za-z0-9_.]*)!#REF!", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
     private static partial Regex QualifiedRefErrorPattern();
@@ -213,6 +223,20 @@ internal static partial class Lexer
                 continue;
             }
 
+            if (ReadThreeD(formula, i) is { } threeD)
+            {
+                // Sheet1:Sheet3!B2# is read as A1# is, and is #REF!, as Excel's (ADR-0331 §7).
+                var (spanned, spanLength) = threeD;
+                if (spanned.Shape == ReferenceShape.Cell && i + spanLength < formula.Length && formula[i + spanLength] == '#')
+                {
+                    spanned = spanned with { Spilled = true };
+                    spanLength++;
+                }
+                tokens.Add(new Token(TokenKind.Reference, i, formula.Substring(i, spanLength), afterSpace) { Reference = spanned, Length = spanLength });
+                i += spanLength;
+                continue;
+            }
+
             var reference = ReferencePattern().Match(formula, i);
             if (reference.Success && TryReadReference(reference) is { } parsed)
             {
@@ -353,6 +377,22 @@ internal static partial class Lexer
         {
             return null;
         }
+    }
+
+    /// <summary>
+    /// The 3D Reference written at <paramref name="at"/> (ADR-0331 §7) — a span of Sheets, then a cell,
+    /// a rectangle, whole columns or whole rows, as after one Sheet's name — and how many characters it
+    /// spans; <see langword="null"/> where none is. Only the lexer reads one: the readers the Formula Bar
+    /// and <c>INDIRECT</c> use (<see cref="ReadReference"/>) read a Reference of one Sheet.
+    /// </summary>
+    private static (Reference Reference, int Length)? ReadThreeD(string formula, int at)
+    {
+        var span = SheetSpanPattern().Match(formula, at);
+        if (!span.Success) return null;
+        var place = ReferencePattern().Match(formula, at + span.Length);
+        if (!place.Success || place.Groups["sheet"].Success || TryReadReference(place) is not { } reference) return null;
+        static string Unquoted(string name) => name.Replace("''", "'", StringComparison.Ordinal);
+        return (reference with { SheetName = Unquoted(span.Groups["first"].Value), LastSheetName = Unquoted(span.Groups["last"].Value) }, span.Length + place.Length);
     }
 
     private static Reference? TryReadReference(Match match)

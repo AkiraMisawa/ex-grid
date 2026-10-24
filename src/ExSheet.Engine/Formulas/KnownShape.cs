@@ -31,7 +31,7 @@ internal static class KnownShape
             case NumberNode or TextNode or BooleanNode or ErrorNode or MissingNode:
                 return one;
             case ReferenceNode { Reference: var reference }:
-                if (reference.Spilled || !isLocal(reference)) return null;
+                if (reference.Spilled || reference.IsThreeD || !isLocal(reference)) return null;
                 var area = reference.Area;
                 return (long)area.Rows * area.Columns <= ValueArray.MostCells ? (area.Rows, area.Columns) : null;
             case ParenthesesNode p:

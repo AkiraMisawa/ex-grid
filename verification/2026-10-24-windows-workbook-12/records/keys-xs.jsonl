@@ -1,0 +1,204 @@
+{"t": "22:40:02", "cmd": "start", "answer": "ok start pid=29384 book=Book1 sheet=Sheet1 openedByItself= before= layout=0x08090809 version=16.0 t=12742"}
+{"t": "22:40:02", "cmd": "addsheet Sheet2", "answer": "ok addsheet Sheet2 t=13176"}
+{"t": "22:40:03", "cmd": "addsheet Sheet3", "answer": "ok addsheet Sheet3 t=14170"}
+{"t": "22:40:06", "cmd": "uia", "answer": "ok uia Formula Bar:328,267,3840,324 Name Box:not found Status Bar:0,2055,3840,2088 Sheet Tab:not found Sheet1:160,2007,259,2055 Sheet2:259,2007,361,2055 Sheet3:361,2007,463,2055 t=16581"}
+{"t": "22:40:06", "cmd": "ps (Get-WmiObject Win32_DesktopMonitor | Select -First 1).ScreenWidth", "answer": "ok ps  t=17171"}
+{"t": "22:40:14", "cmd": "select A1", "answer": "ok select A1 t=25127"}
+{"t": "22:40:15", "cmd": "keys 40 12", "answer": "ok keys 2 t=26234"}
+{"t": "22:40:17", "cmd": "bar", "answer": "ok bar [{\"name\":\"Formula Bar\",\"value\":\"\",\"text\":\"12\",\"selection\":[\"\"],\"focus\":false,\"box\":[328,267,3840,324]}] t=27345"}
+{"t": "22:40:17", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Enter\",\"Accessibility Checker Accessibility: Good to go\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=28157"}
+{"t": "22:40:19", "cmd": "click 310 2031", "answer": "ok click t=29627"}
+{"t": "22:40:21", "cmd": "bar", "answer": "ok bar [{\"name\":\"Formula Bar\",\"value\":\"\",\"text\":\"\",\"selection\":[\"\"],\"focus\":false,\"box\":[328,267,3840,324]}] t=31450"}
+{"t": "22:40:21", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Ready\",\"Accessibility Checker Accessibility: Investigate\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Position\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=32166"}
+{"t": "22:40:23", "cmd": "shot k1-constant-tab", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\workbook-12\\xs\\shots\\k1-constant-tab.png windows: XLMAIN@-11,-11,3851,2099 t=33381"}
+{"t": "22:40:23", "cmd": "ready", "answer": "ok ready ready=True active=Sheet2!A1 selection=A1 t=34187"}
+{"t": "22:40:25", "cmd": "cell Sheet1!A1 Sheet2!A1", "answer": "ok cell Sheet1!A1: number 12 | formula \"12\" | text \"12\" | numberFormat \"General\" ;; Sheet2!A1: empty | formula \"\" | text \"\" | numberFormat \"General\" t=35513"}
+{"t": "22:40:31", "cmd": "click 210 2031", "answer": "ok click t=41642"}
+{"t": "22:40:32", "cmd": "select B1", "answer": "ok select B1 t=43193"}
+{"t": "22:40:33", "cmd": "keys 40 34", "answer": "ok keys 2 t=44283"}
+{"t": "22:40:34", "cmd": "keys 40 ^{PGDN}", "answer": "ok keys 1 t=45251"}
+{"t": "22:40:36", "cmd": "bar", "answer": "ok bar [{\"name\":\"Formula Bar\",\"value\":\"\",\"text\":\"\",\"selection\":[\"\"],\"focus\":false,\"box\":[328,267,3840,324]}] t=46497"}
+{"t": "22:40:36", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Ready\",\"Accessibility Checker Accessibility: Investigate\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Position\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=47224"}
+{"t": "22:40:37", "cmd": "ready", "answer": "ok ready ready=True active=Sheet2!A1 selection=A1 t=48224"}
+{"t": "22:40:39", "cmd": "cell Sheet1!B1", "answer": "ok cell Sheet1!B1: number 34 | formula \"34\" | text \"34\" | numberFormat \"General\" t=49313"}
+{"t": "22:40:45", "cmd": "click 210 2031", "answer": "ok click t=55687"}
+{"t": "22:40:46", "cmd": "geo B2 D2", "answer": "ok geo B2:137,381,233,411 D2:329,381,425,411 t=57271"}
+{"t": "22:40:47", "cmd": "select C1", "answer": "ok select C1 t=58247"}
+{"t": "22:40:49", "cmd": "keys 40 =", "answer": "ok keys 1 t=59297"}
+{"t": "22:40:50", "cmd": "click 310 2031", "answer": "ok click t=60717"}
+{"t": "22:40:52", "cmd": "bar2", "answer": "ok bar2 [{\"text\":\"=Sheet2!\",\"selection\":[{\"text\":\"\",\"start\":8,\"end\":8}],\"focus\":false}] t=62552"}
+{"t": "22:40:52", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Point\",\"Accessibility Checker Accessibility: Investigate\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=63277"}
+{"t": "22:40:54", "cmd": "shot k3-eq-tab", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\workbook-12\\xs\\shots\\k3-eq-tab.png windows: XLMAIN@-11,-11,3851,2099 t=64426"}
+{"t": "22:41:00", "cmd": "click 185 396", "answer": "ok click t=70734"}
+{"t": "22:41:01", "cmd": "bar2", "answer": "ok bar2 [{\"text\":\"=Sheet2!B2\",\"selection\":[{\"text\":\"\",\"start\":10,\"end\":10}],\"focus\":false}] t=71455"}
+{"t": "22:41:02", "cmd": "keys 40 +", "answer": "ok keys 1 t=72342"}
+{"t": "22:41:03", "cmd": "click 210 2031", "answer": "ok click t=73763"}
+{"t": "22:41:05", "cmd": "bar2", "answer": "ok bar2 [{\"text\":\"=Sheet2!B2+Sheet1!\",\"selection\":[{\"text\":\"\",\"start\":18,\"end\":18}],\"focus\":false}] t=75582"}
+{"t": "22:41:06", "cmd": "click 185 396", "answer": "ok click t=76767"}
+{"t": "22:41:07", "cmd": "bar2", "answer": "ok bar2 [{\"text\":\"=Sheet2!B2+Sheet1!B2\",\"selection\":[{\"text\":\"Sheet1!B2\",\"start\":11,\"end\":20}],\"focus\":false}] t=77474"}
+{"t": "22:41:08", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Point\",\"Accessibility Checker Accessibility: Investigate\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=78333"}
+{"t": "22:41:09", "cmd": "shot k3-point-back", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\workbook-12\\xs\\shots\\k3-point-back.png windows: XLMAIN@-11,-11,3851,2099 ; Net UI Tool Window@389,320,402,343 t=79462"}
+{"t": "22:41:10", "cmd": "keys 40 {ESC}", "answer": "ok keys 1 t=80372"}
+{"t": "22:41:11", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!C1 selection=C1 t=81345"}
+{"t": "22:41:12", "cmd": "bar2", "answer": "ok bar2 [{\"text\":\"\",\"selection\":[{\"text\":\"\",\"start\":0,\"end\":0}],\"focus\":false}] t=82625"}
+{"t": "22:41:13", "cmd": "cell Sheet1!C1", "answer": "ok cell Sheet1!C1: empty | formula \"\" | text \"\" | numberFormat \"General\" t=83489"}
+{"t": "22:41:22", "cmd": "select C1", "answer": "ok select C1 t=92364"}
+{"t": "22:41:23", "cmd": "keys 40 =", "answer": "ok keys 1 t=93401"}
+{"t": "22:41:24", "cmd": "click 310 2031", "answer": "ok click t=94827"}
+{"t": "22:41:26", "cmd": "click 185 396", "answer": "ok click t=96859"}
+{"t": "22:41:27", "cmd": "bar2", "answer": "ok bar2 [{\"text\":\"=Sheet2!B2\",\"selection\":[{\"text\":\"\",\"start\":10,\"end\":10}],\"focus\":false}] t=97671"}
+{"t": "22:41:28", "cmd": "keys 40 {ESC}", "answer": "ok keys 1 t=98434"}
+{"t": "22:41:29", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!C1 selection=C1 t=99402"}
+{"t": "22:41:30", "cmd": "shot k3-escape-on-other", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\workbook-12\\xs\\shots\\k3-escape-on-other.png windows: XLMAIN@-11,-11,3851,2099 t=100549"}
+{"t": "22:41:31", "cmd": "select C1", "answer": "ok select C1 t=101405"}
+{"t": "22:41:32", "cmd": "keys 40 =", "answer": "ok keys 1 t=102450"}
+{"t": "22:41:33", "cmd": "click 310 2031", "answer": "ok click t=103877"}
+{"t": "22:41:35", "cmd": "click 185 396", "answer": "ok click t=105885"}
+{"t": "22:41:36", "cmd": "keys 40 {ENTER}", "answer": "ok keys 1 t=106466"}
+{"t": "22:41:37", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!C2 selection=C2 t=107439"}
+{"t": "22:41:38", "cmd": "cell Sheet1!C1", "answer": "ok cell Sheet1!C1: number 0 | formula \"=Sheet2!B2\" | text \"0\" | numberFormat \"General\" t=108542"}
+{"t": "22:41:39", "cmd": "select D1", "answer": "ok select D1 t=109448"}
+{"t": "22:41:40", "cmd": "keys 40 =SUM(", "answer": "ok keys 5 t=110687"}
+{"t": "22:41:41", "cmd": "click 310 2031", "answer": "ok click t=111922"}
+{"t": "22:41:43", "cmd": "shiftclick 412 2031", "answer": "ok shiftclick t=113970"}
+{"t": "22:41:45", "cmd": "bar2", "answer": "ok bar2 [{\"text\":\"=SUM(\\u0027Sheet2:Sheet3\\u0027!\",\"selection\":[{\"text\":\"\",\"start\":21,\"end\":21}],\"focus\":false}] t=115748"}
+{"t": "22:41:46", "cmd": "click 185 396", "answer": "ok click t=116937"}
+{"t": "22:41:47", "cmd": "bar2", "answer": "ok bar2 [{\"text\":\"=SUM(\\u0027Sheet2:Sheet3\\u0027!B2\",\"selection\":[{\"text\":\"\",\"start\":23,\"end\":23}],\"focus\":false}] t=117639"}
+{"t": "22:41:48", "cmd": "keys 40 {ESC}", "answer": "ok keys 1 t=118534"}
+{"t": "22:41:49", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!D1 selection=D1 t=119499"}
+{"t": "22:42:02", "cmd": "ps foreach ($n in \"Sheet1\",\"Sheet2\",\"Sheet3\") { $s = $wb.Worksheets.Item($n); $s.Range(\"B2\").NumberFormat = \"0%\"; $s.Range(\"B2\").Value2 = 0.5 }; \"set\"", "answer": "ok ps set t=132556"}
+{"t": "22:42:03", "cmd": "select E1", "answer": "ok select E1 t=133513"}
+{"t": "22:42:04", "cmd": "keys 30 =SUM{(}Sheet2:Sheet3!B2{)}{ENTER}", "answer": "ok keys 23 t=135283"}
+{"t": "22:42:05", "cmd": "keys 30 =Sheet2!B2{ENTER}", "answer": "ok keys 11 t=135871"}
+{"t": "22:42:06", "cmd": "keys 30 =SUM{(}Sheet2!B2{)}{ENTER}", "answer": "ok keys 16 t=137066"}
+{"t": "22:42:07", "cmd": "keys 30 =sum{(}sheet3:sheet2!b2{)}{ENTER}", "answer": "ok keys 23 t=138274"}
+{"t": "22:42:09", "cmd": "keys 30 =SUM{(}Sheet2:Sheet2!B2{)}{ENTER}", "answer": "ok keys 23 t=139330"}
+{"t": "22:42:10", "cmd": "keys 30 =SUM{(}'Sheet2:Sheet3'!B2{)}{ENTER}", "answer": "ok keys 25 t=140345"}
+{"t": "22:42:10", "cmd": "keys 30 =Sheet2:Sheet3!B2{ENTER}", "answer": "ok keys 18 t=141137"}
+{"t": "22:42:11", "cmd": "keys 30 =SUM{(}Sheet1:Sheet3!B2{)}{ENTER}", "answer": "ok keys 23 t=142303"}
+{"t": "22:42:12", "cmd": "keys 30 =B2{ENTER}", "answer": "ok keys 4 t=142685"}
+{"t": "22:42:13", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!E10 selection=E10 t=143574"}
+{"t": "22:42:15", "cmd": "cell E1 E2 E3 E4 E5 E6 E7 E8 E9", "answer": "ok cell E1: number 1 | formula \"=SUM(Sheet2:Sheet3!B2)\" | text \"1\" | numberFormat \"General\" ;; E2: number 0.5 | formula \"=Sheet2!B2\" | text \"50%\" | numberFormat \"0%\" ;; E3: number 0.5 | formula \"=SUM(Sheet2!B2)\" | text \"50%\" | numberFormat \"0%\" ;; E4: number 1 | formula \"=SUM(Sheet2:Sheet3!B2)\" | text \"1\" | numberFormat \"General\" ;; E5: number 0.5 | formula \"=SUM(Sheet2!B2)\" | text \"0.5\" | numberFormat \"General\" ;; E6: number 1 | formula \"=SUM(Sheet2:Sheet3!B2)\" | text \"1\" | numberFormat \"General\" ;; E7: error #REF! | formula \"=Sheet2:Sheet3!B2\" | text \"#REF!\" | numberFormat \"General\" ;; E8: number 1.5 | formula \"=SUM(Sheet1:Sheet3!B2)\" | text \"1.5\" | numberFormat \"General\" ;; E9: number 0.5 | formula \"=B2\" | text \"50%\" | numberFormat \"0%\" t=145537"}
+{"t": "22:42:23", "cmd": "select F1", "answer": "ok select F1 t=153584"}
+{"t": "22:42:24", "cmd": "keys 30 =SUM{(}Sheet2:Nope!B2{)}{ENTER}", "answer": "ok keys 21 t=155258"}
+{"t": "22:42:27", "cmd": "windows", "answer": "ok windows 462360|XLMAIN|Book1 - Excel|-11,-11,3851,2099 t=157602"}
+{"t": "22:42:28", "cmd": "shot k6-missing-sheet", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\workbook-12\\xs\\shots\\k6-missing-sheet.png windows: XLMAIN@-11,-11,3851,2099 t=158750"}
+{"t": "22:42:33", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!F2 selection=F2 t=163613"}
+{"t": "22:42:34", "cmd": "bar2", "answer": "ok bar2 [{\"text\":\"\",\"selection\":[{\"text\":\"\",\"start\":0,\"end\":0}],\"focus\":false}] t=164912"}
+{"t": "22:42:35", "cmd": "status", "answer": "ok status [\"Status Bar\",\"Status Bar\",\"Cell Mode Ready\",\"Accessibility Checker Accessibility: Investigate\",\"Normal\",\"Page Layout\",\"Page Break Preview\",\"Zoom Out\",\"Zoom\",\"Zoom Out\",\"Position\",\"Zoom In\",\"Zoom In\",\"Zoom 100%\"] t=165631"}
+{"t": "22:42:40", "cmd": "cell F1", "answer": "ok cell F1: error #NAME? | formula \"=SUM(Sheet2:Nope!B2)\" | text \"#NAME?\" | numberFormat \"General\" t=170735"}
+{"t": "22:43:00", "cmd": "stop", "answer": "ok stop 29384 ended by Stop-Process (its own) t=190907"}
+{"t": "22:43:03", "cmd": "start", "answer": "ok start pid=25892 book=Book1 sheet=Sheet1 openedByItself= before= layout=0x08090809 version=16.0 t=193437"}
+{"t": "22:43:03", "cmd": "addsheet Sheet2", "answer": "ok addsheet Sheet2 t=193715"}
+{"t": "22:43:04", "cmd": "addsheet Sheet3", "answer": "ok addsheet Sheet3 t=194725"}
+{"t": "22:43:05", "cmd": "select A5", "answer": "ok select A5 t=195676"}
+{"t": "22:43:06", "cmd": "keys 30 1{ENTER}", "answer": "ok keys 2 t=196739"}
+{"t": "22:43:07", "cmd": "keys 30 2{ENTER}", "answer": "ok keys 2 t=197746"}
+{"t": "22:43:08", "cmd": "select B3", "answer": "ok select B3 t=198695"}
+{"t": "22:43:09", "cmd": "keys 40 +{F11}", "answer": "ok keys 1 t=199747"}
+{"t": "22:43:10", "cmd": "ready", "answer": "ok ready ready=True active=Sheet4!A1 selection=A1 t=200716"}
+{"t": "22:43:11", "cmd": "ps (1..$wb.Worksheets.Count | % { $wb.Worksheets.Item($_).Name }) -join \",\"", "answer": "ok ps Sheet4,Sheet1,Sheet2,Sheet3 t=201736"}
+{"t": "22:43:12", "cmd": "keys 40 ^z", "answer": "ok keys 1 t=202767"}
+{"t": "22:43:13", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!B3 selection=B3 t=203732"}
+{"t": "22:43:14", "cmd": "ps (1..$wb.Worksheets.Count | % { $wb.Worksheets.Item($_).Name }) -join \",\"", "answer": "ok ps Sheet1,Sheet2,Sheet3 t=204735"}
+{"t": "22:43:15", "cmd": "cell Sheet1!A5 Sheet1!A6", "answer": "ok cell Sheet1!A5: number 1 | formula \"1\" | text \"1\" | numberFormat \"General\" ;; Sheet1!A6: number 2 | formula \"2\" | text \"2\" | numberFormat \"General\" t=205941"}
+{"t": "22:43:16", "cmd": "shot u1-insert-undo", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\workbook-12\\xs\\shots\\u1-insert-undo.png windows: XLMAIN@-11,-11,3851,2099 t=206881"}
+{"t": "22:43:27", "cmd": "keys 40 ^z", "answer": "ok keys 1 t=217792"}
+{"t": "22:43:28", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A6 selection=A6 t=218763"}
+{"t": "22:43:29", "cmd": "cell Sheet1!A5 Sheet1!A6", "answer": "ok cell Sheet1!A5: number 1 | formula \"1\" | text \"1\" | numberFormat \"General\" ;; Sheet1!A6: empty | formula \"\" | text \"\" | numberFormat \"General\" t=220021"}
+{"t": "22:43:30", "cmd": "click 412 2031", "answer": "ok click t=221233"}
+{"t": "22:43:31", "cmd": "select C4", "answer": "ok select C4 t=221780"}
+{"t": "22:43:32", "cmd": "keys 40 %hor", "answer": "ok keys 3 t=222917"}
+{"t": "22:43:33", "cmd": "keys 30 Q3{ENTER}", "answer": "ok keys 3 t=223882"}
+{"t": "22:43:34", "cmd": "ps (1..$wb.Worksheets.Count | % { $wb.Worksheets.Item($_).Name }) -join \",\"", "answer": "ok ps Sheet1,Sheet2,Q3 t=224798"}
+{"t": "22:43:35", "cmd": "click 210 2031", "answer": "ok click t=226267"}
+{"t": "22:43:36", "cmd": "select D7", "answer": "ok select D7 t=226810"}
+{"t": "22:43:37", "cmd": "keys 40 ^z", "answer": "ok keys 1 t=227861"}
+{"t": "22:43:38", "cmd": "ready", "answer": "ok ready ready=True active=Sheet3!C4 selection=C4 t=228824"}
+{"t": "22:43:39", "cmd": "ps (1..$wb.Worksheets.Count | % { $wb.Worksheets.Item($_).Name }) -join \",\"", "answer": "ok ps Sheet1,Sheet2,Sheet3 t=229830"}
+{"t": "22:43:40", "cmd": "shot u2-rename-undo", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\workbook-12\\xs\\shots\\u2-rename-undo.png windows: XLMAIN@-11,-11,3851,2099 t=230980"}
+{"t": "22:43:50", "cmd": "click 310 2031", "answer": "ok click t=240308"}
+{"t": "22:43:50", "cmd": "select E5", "answer": "ok select E5 t=240853"}
+{"t": "22:43:51", "cmd": "keys 40 %hds", "answer": "ok keys 3 t=242000"}
+{"t": "22:43:53", "cmd": "windows", "answer": "ok windows 527890|XLMAIN|Book1 - Excel|-11,-11,3851,2099 t=243864"}
+{"t": "22:43:54", "cmd": "ready", "answer": "ok ready ready=True active=Sheet3!C4 selection=C4 t=244875"}
+{"t": "22:43:55", "cmd": "ps (1..$wb.Worksheets.Count | % { $wb.Worksheets.Item($_).Name }) -join \",\"", "answer": "ok ps Sheet1,Sheet3 t=245877"}
+{"t": "22:43:56", "cmd": "select F8", "answer": "ok select F8 t=246886"}
+{"t": "22:43:57", "cmd": "keys 40 ^z", "answer": "ok keys 1 t=247937"}
+{"t": "22:43:58", "cmd": "ready", "answer": "ok ready ready=True active=Sheet3!F8 selection=F8 t=248899"}
+{"t": "22:43:59", "cmd": "ps (1..$wb.Worksheets.Count | % { $wb.Worksheets.Item($_).Name }) -join \",\"", "answer": "ok ps Sheet1,Sheet3 t=249904"}
+{"t": "22:44:00", "cmd": "shot u3-delete-undo", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\workbook-12\\xs\\shots\\u3-delete-undo.png windows: XLMAIN@-11,-11,3851,2099 t=251062"}
+{"t": "22:44:10", "cmd": "cell Sheet1!A5", "answer": "ok cell Sheet1!A5: number 1 | formula \"1\" | text \"1\" | numberFormat \"General\" t=261021"}
+{"t": "22:44:11", "cmd": "keys 40 ^z", "answer": "ok keys 1 t=261966"}
+{"t": "22:44:12", "cmd": "cell Sheet1!A5", "answer": "ok cell Sheet1!A5: number 1 | formula \"1\" | text \"1\" | numberFormat \"General\" t=263039"}
+{"t": "22:44:13", "cmd": "ready", "answer": "ok ready ready=True active=Sheet3!F8 selection=F8 t=263943"}
+{"t": "22:44:23", "cmd": "select B6", "answer": "ok select B6 t=273952"}
+{"t": "22:44:24", "cmd": "keys 30 7{ENTER}", "answer": "ok keys 2 t=275014"}
+{"t": "22:44:25", "cmd": "select H2", "answer": "ok select H2 t=275964"}
+{"t": "22:44:27", "cmd": "drag 310 2031 170 2031", "answer": "ok drag t=277906"}
+{"t": "22:44:28", "cmd": "ps (1..$wb.Worksheets.Count | % { $wb.Worksheets.Item($_).Name }) -join \",\"", "answer": "ok ps Sheet3,Sheet1 t=278980"}
+{"t": "22:44:30", "cmd": "uia", "answer": "ok uia Formula Bar:328,267,3840,324 Name Box:not found Status Bar:0,2055,3840,2088 Sheet Tab:not found Sheet3:259,2007,361,2055 Sheet1:160,2007,259,2055 t=281185"}
+{"t": "22:44:31", "cmd": "ready", "answer": "ok ready ready=True active=Sheet3!H2 selection=H2 t=281996"}
+{"t": "22:44:46", "cmd": "ps $wb.Worksheets.Item(\"Sheet1\").Activate(); \"act\"", "answer": "ok ps act t=297054"}
+{"t": "22:44:47", "cmd": "select G9", "answer": "ok select G9 t=298013"}
+{"t": "22:44:48", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!G9 selection=G9 t=299022"}
+{"t": "22:44:49", "cmd": "keys 40 ^z", "answer": "ok keys 1 t=300064"}
+{"t": "22:44:50", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!G9 selection=G9 t=301034"}
+{"t": "22:44:51", "cmd": "ps (1..$wb.Worksheets.Count | % { $wb.Worksheets.Item($_).Name }) -join \",\"", "answer": "ok ps Sheet1,Sheet3 t=302038"}
+{"t": "22:44:52", "cmd": "shot u4-move-undo", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\workbook-12\\xs\\shots\\u4-move-undo.png windows: XLMAIN@-11,-11,3851,2099 t=303199"}
+{"t": "22:44:53", "cmd": "keys 40 ^z", "answer": "ok keys 1 t=304091"}
+{"t": "22:44:54", "cmd": "ready", "answer": "ok ready ready=True active=Sheet3!B6 selection=B6 t=305062"}
+{"t": "22:44:55", "cmd": "cell Sheet3!B6", "answer": "ok cell Sheet3!B6: empty | formula \"\" | text \"\" | numberFormat \"General\" t=306184"}
+{"t": "22:45:04", "cmd": "select C3", "answer": "ok select C3 t=315076"}
+{"t": "22:45:06", "cmd": "ctrldrag 210 2031 380 2031", "answer": "ok ctrldrag t=317065"}
+{"t": "22:45:08", "cmd": "ps (1..$wb.Worksheets.Count | % { $wb.Worksheets.Item($_).Name }) -join \",\"", "answer": "ok ps Sheet1,Sheet3 t=319091"}
+{"t": "22:45:09", "cmd": "ready", "answer": "ok ready ready=True active=Sheet3!C3 selection=C3 t=320102"}
+{"t": "22:45:10", "cmd": "ps $wb.Worksheets.Item(\"Sheet3\").Activate(); \"act\"", "answer": "ok ps act t=321108"}
+{"t": "22:45:11", "cmd": "select A3", "answer": "ok select A3 t=322112"}
+{"t": "22:45:12", "cmd": "keys 40 ^z", "answer": "ok keys 1 t=323155"}
+{"t": "22:45:13", "cmd": "ready", "answer": "ok ready ready=True active=Sheet3!A3 selection=A3 t=324125"}
+{"t": "22:45:14", "cmd": "ps (1..$wb.Worksheets.Count | % { $wb.Worksheets.Item($_).Name }) -join \",\"", "answer": "ok ps Sheet1,Sheet3 t=325129"}
+{"t": "22:45:16", "cmd": "shot u5-copy-undo", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\workbook-12\\xs\\shots\\u5-copy-undo.png windows: XLMAIN@-11,-11,3851,2099 t=326287"}
+{"t": "22:45:26", "cmd": "uia", "answer": "ok uia Formula Bar:328,267,3840,324 Name Box:not found Status Bar:0,2055,3840,2088 Sheet Tab:not found Sheet1:160,2007,259,2055 Sheet3:259,2007,361,2055 t=336365"}
+{"t": "22:45:26", "cmd": "screen tabs 0 2000 700 60", "answer": "ok screen C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\workbook-12\\xs\\shots\\tabs.png t=337169"}
+{"t": "22:45:48", "cmd": "click 210 2031", "answer": "ok click t=358636"}
+{"t": "22:45:48", "cmd": "ps (1..$wb.Worksheets.Count | % { $wb.Worksheets.Item($_).Name }) -join \",\"", "answer": "ok ps Sheet1,Sheet3 t=359179"}
+{"t": "22:45:49", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1!A3 selection=A3 t=360189"}
+{"t": "22:45:50", "cmd": "select C3", "answer": "ok select C3 t=361192"}
+{"t": "22:45:52", "cmd": "keys 60 %hom", "answer": "ok keys 3 t=362385"}
+{"t": "22:45:53", "cmd": "windows", "answer": "ok windows 593710|NUIDialog|Move or Copy|189,596,669,1211 ;; 527890|XLMAIN|Book1 - Excel|-11,-11,3851,2099 t=364207"}
+{"t": "22:45:55", "cmd": "shot u5-dialog", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\workbook-12\\xs\\shots\\u5-dialog.png windows: XLMAIN@-11,-11,3851,2099 ; NUIDialog@189,596,669,1211 t=365382"}
+{"t": "22:46:03", "cmd": "keys 80 {END}%c{ENTER}", "answer": "ok keys 3 t=373496"}
+{"t": "22:46:04", "cmd": "windows", "answer": "ok windows 527890|XLMAIN|Book1 - Excel|-11,-11,3851,2099 t=375225"}
+{"t": "22:46:05", "cmd": "ps (1..$wb.Worksheets.Count | % { $wb.Worksheets.Item($_).Name }) -join \",\"", "answer": "ok ps Sheet1,Sheet3,Sheet1 (2) t=376236"}
+{"t": "22:46:06", "cmd": "ready", "answer": "ok ready ready=True active=Sheet1 (2)!C3 selection=C3 t=377244"}
+{"t": "22:46:07", "cmd": "ps $wb.Worksheets.Item(\"Sheet3\").Activate(); \"act\"", "answer": "ok ps act t=378253"}
+{"t": "22:46:08", "cmd": "select A4", "answer": "ok select A4 t=379255"}
+{"t": "22:46:10", "cmd": "keys 40 ^z", "answer": "ok keys 1 t=380298"}
+{"t": "22:46:10", "cmd": "ready", "answer": "ok ready ready=True active=Sheet3!A4 selection=A4 t=381269"}
+{"t": "22:46:11", "cmd": "ps (1..$wb.Worksheets.Count | % { $wb.Worksheets.Item($_).Name }) -join \",\"", "answer": "ok ps Sheet1,Sheet3,Sheet1 (2) t=382274"}
+{"t": "22:46:13", "cmd": "shot u5-copy-undo", "answer": "ok shot C:\\Users\\amisa\\AppData\\Local\\exgrid-layer3\\workbook-12\\xs\\shots\\u5-copy-undo.png windows: XLMAIN@-11,-11,3851,2099 t=383434"}
+{"t": "22:46:20", "cmd": "select D9", "answer": "ok select D9 t=391292"}
+{"t": "22:46:22", "cmd": "keys 30 9{ENTER}", "answer": "ok keys 2 t=392355"}
+{"t": "22:46:23", "cmd": "keys 60 %hom", "answer": "ok keys 3 t=393494"}
+{"t": "22:46:25", "cmd": "keys 80 {END}%c{ENTER}", "answer": "ok keys 3 t=395574"}
+{"t": "22:46:27", "cmd": "ps (1..$wb.Worksheets.Count | % { $wb.Worksheets.Item($_).Name }) -join \",\"", "answer": "ok ps Sheet1,Sheet3,Sheet1 (2),Sheet3 (2) t=397322"}
+{"t": "22:46:28", "cmd": "keys 40 ^z", "answer": "ok keys 1 t=398362"}
+{"t": "22:46:29", "cmd": "ps (1..$wb.Worksheets.Count | % { $wb.Worksheets.Item($_).Name }) -join \",\"", "answer": "ok ps Sheet1,Sheet3,Sheet1 (2),Sheet3 (2) t=399334"}
+{"t": "22:46:30", "cmd": "cell Sheet3!D9", "answer": "ok cell Sheet3!D9: empty | formula \"\" | text \"\" | numberFormat \"General\" t=400444"}
+{"t": "22:46:31", "cmd": "ready", "answer": "ok ready ready=True active=Sheet3!D9 selection=D9 t=401347"}
+{"t": "22:46:42", "cmd": "keys 40 +{F11}", "answer": "ok keys 1 t=412393"}
+{"t": "22:46:43", "cmd": "ps (1..$wb.Worksheets.Count | % { $wb.Worksheets.Item($_).Name }) -join \",\"", "answer": "ok ps Sheet1,Sheet6,Sheet3,Sheet1 (2),Sheet3 (2) t=413368"}
+{"t": "22:46:44", "cmd": "keys 40 +{F11}", "answer": "ok keys 1 t=414406"}
+{"t": "22:46:45", "cmd": "ps (1..$wb.Worksheets.Count | % { $wb.Worksheets.Item($_).Name }) -join \",\"", "answer": "ok ps Sheet1,Sheet7,Sheet6,Sheet3,Sheet1 (2),Sheet3 (2) t=415382"}
+{"t": "22:46:56", "cmd": "stop", "answer": "ok stop 25892 ended by Stop-Process (its own) t=426608"}
+{"t": "22:46:58", "cmd": "start", "answer": "ok start pid=2780 book=Book1 sheet=Sheet1 openedByItself= before= layout=0x08090809 version=16.0 t=429192"}
+{"t": "22:46:59", "cmd": "addsheet Sheet2", "answer": "ok addsheet Sheet2 t=429460"}
+{"t": "22:47:00", "cmd": "addsheet Sheet3", "answer": "ok addsheet Sheet3 t=430477"}
+{"t": "22:47:01", "cmd": "ps $wb.Worksheets.Item(\"Sheet2\").Delete(); \"del\"", "answer": "ok ps del t=431427"}
+{"t": "22:47:02", "cmd": "keys 40 +{F11}", "answer": "ok keys 1 t=432456"}
+{"t": "22:47:03", "cmd": "ps (1..$wb.Worksheets.Count | % { $wb.Worksheets.Item($_).Name }) -join \",\"", "answer": "ok ps Sheet4,Sheet1,Sheet3 t=433431"}
+{"t": "22:47:04", "cmd": "ps $wb.Worksheets.Item(1).Name = \"Sheet9\"; \"ren\"", "answer": "ok ps ren t=434440"}
+{"t": "22:47:05", "cmd": "keys 40 +{F11}", "answer": "ok keys 1 t=435483"}
+{"t": "22:47:06", "cmd": "ps (1..$wb.Worksheets.Count | % { $wb.Worksheets.Item($_).Name }) -join \",\"", "answer": "ok ps Sheet5,Sheet9,Sheet1,Sheet3 t=436453"}
+{"t": "22:47:17", "cmd": "stop", "answer": "ok stop 2780 ended by Stop-Process (its own) t=447656"}

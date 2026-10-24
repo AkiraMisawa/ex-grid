@@ -56,21 +56,25 @@ public sealed partial class Sheet
     internal static bool Names(string? qualifier, string name) =>
         qualifier is null || string.Equals(qualifier, name, StringComparison.OrdinalIgnoreCase);
 
-    /// <summary>Whether a Reference names this Sheet's cells.</summary>
-    internal bool IsLocal(Reference reference) => IsThisSheet(reference.SheetName);
+    /// <summary>Whether a Reference names this Sheet's cells alone: a 3D Reference never does, even one whose span begins or ends here (ADR-0331 §7).</summary>
+    internal bool IsLocal(Reference reference) => !reference.IsThreeD && IsThisSheet(reference.SheetName);
 
     /// <summary>
     /// A typed Formula with every qualifier that names this Sheet written in the Sheet's own name,
     /// as Excel writes it back: <c>=sheet1!#ref!*2</c> is stored as <c>=Sheet1!#REF!*2</c>
-    /// (TEXT-083, ADR-0047 second run). A qualifier naming another Sheet is left as typed. The
-    /// same instance when nothing changes.
+    /// (TEXT-083, ADR-0047 second run), either end of a 3D Reference's span too. A qualifier naming
+    /// another Sheet is left as typed. The same instance when nothing changes.
     /// </summary>
     internal Entry InOwnName(Entry entry)
     {
         if (entry.Parsed is null || !entry.Formula!.Contains('!', StringComparison.Ordinal)) return entry;
         bool Other(string qualifier) => IsThisSheet(qualifier) && !string.Equals(qualifier, Name, StringComparison.Ordinal);
         return ReferenceRewriter.Rewrite(entry,
-            r => r.SheetName is { } s && Other(s) ? r with { SheetName = Name } : r,
+            r => r with
+            {
+                SheetName = r.SheetName is { } s && Other(s) ? Name : r.SheetName,
+                LastSheetName = r.LastSheetName is { } l && Other(l) ? Name : r.LastSheetName,
+            },
             q => Other(q) ? Name : q);
     }
 
