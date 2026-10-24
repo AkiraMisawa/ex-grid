@@ -3,30 +3,30 @@
 | Product | Line | Branch |
 |---|---|---|
 | ExGrid | 95% | 88% |
-| ExSheet | 95.3% | 88.1% |
+| ExSheet | 95.4% | 88% |
 | ExPivot | 94.3% | 85.5% |
 | ExChart | 90.3% | 81.2% |
 | ExBoard | 91.7% | 81.8% |
-| Data | 94.5% | 90% |
+| Data | 93.9% | 88.7% |
 
 # Summary
 <details open><summary>Summary</summary>
 
 |||
 |:---|:---|
-| Generated on: | 10/23/2026 - 13:45:19 |
+| Generated on: | 10/24/2026 - 22:08:50 |
 | Parser: | MultiReport (19x Cobertura) |
-| Assemblies: | 14 |
-| Classes: | 1103 |
-| Files: | 571 |
-| **Line coverage:** | 94.4% (76480 of 80973) |
-| Covered lines: | 76480 |
-| Uncovered lines: | 4493 |
-| Coverable lines: | 80973 |
-| Total lines: | 129610 |
-| **Branch coverage:** | 86.8% (45692 of 52605) |
-| Covered branches: | 45692 |
-| Total branches: | 52605 |
+| Assemblies: | 16 |
+| Classes: | 1179 |
+| Files: | 603 |
+| **Line coverage:** | 94.4% (81044 of 85829) |
+| Covered lines: | 81044 |
+| Uncovered lines: | 4785 |
+| Coverable lines: | 85829 |
+| Total lines: | 137160 |
+| **Branch coverage:** | 86.8% (48657 of 56033) |
+| Covered branches: | 48657 |
+| Total branches: | 56033 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
@@ -619,7 +619,7 @@
 |ExGrid.Data.Storage.DoubleColumnWriter|100%||
 |ExGrid.Data.Storage.DoubleData|100%||
 |ExGrid.Data.Storage.DoubleObjectColumn<T>|100%|100%|
-|ExGrid.Data.Storage.FixedCodes|93.5%|75%|
+|ExGrid.Data.Storage.FixedCodes|96.7%|87.5%|
 |ExGrid.Data.Storage.Gather|98.8%|96.1%|
 |ExGrid.Data.Storage.Int32ObjectColumn<T>|82.3%|100%|
 |ExGrid.Data.Storage.IntegerColumnWriter|100%||
@@ -696,6 +696,54 @@
 |ExGrid.Data.Arrow.TrackingStream|48.9%|60%|
 |ExGrid.Data.Arrow.Utf8Reader|93.1%|66.6%|
 |ExGrid.Data.Arrow.Utf8ViewReader|94.1%|87.5%|
+
+</details>
+<details><summary>ExGrid.Data.Xlsx - 92.1%</summary>
+
+|**Name**|**Line**|**Branch**|
+|:---|---:|---:|
+|**ExGrid.Data.Xlsx**|**92.1%**|**85%**|
+|ExGrid.Data.Xlsx.CountedPart|65%|100%|
+|ExGrid.Data.Xlsx.ForwardBuffer|72%|50%|
+|ExGrid.Data.Xlsx.OleFile|84.2%|71.4%|
+|ExGrid.Data.Xlsx.OleFile.ForwardFile|82.7%|75%|
+|ExGrid.Data.Xlsx.OleFile.SeekingFile|85.7%|50%|
+|ExGrid.Data.Xlsx.Pacer|100%|100%|
+|ExGrid.Data.Xlsx.Package|80.7%|89.2%|
+|ExGrid.Data.Xlsx.Package.PartStream|60.8%|100%|
+|ExGrid.Data.Xlsx.Sniff|77.3%|62%|
+|ExGrid.Data.Xlsx.StylesReader|92.4%|81.8%|
+|ExGrid.Data.Xlsx.StylesWriter|93.8%|93.6%|
+|ExGrid.Data.Xlsx.XlsxAlignment|100%||
+|ExGrid.Data.Xlsx.XlsxBorder|100%||
+|ExGrid.Data.Xlsx.XlsxBorderEdge|100%||
+|ExGrid.Data.Xlsx.XlsxCell|100%||
+|ExGrid.Data.Xlsx.XlsxCellFormat|100%|100%|
+|ExGrid.Data.Xlsx.XlsxCellReference|98%|97%|
+|ExGrid.Data.Xlsx.XlsxColor|100%||
+|ExGrid.Data.Xlsx.XlsxColumn|100%||
+|ExGrid.Data.Xlsx.XlsxDefinedName|100%||
+|ExGrid.Data.Xlsx.XlsxElement|93.3%||
+|ExGrid.Data.Xlsx.XlsxException|100%|100%|
+|ExGrid.Data.Xlsx.XlsxFill|100%||
+|ExGrid.Data.Xlsx.XlsxFont|100%||
+|ExGrid.Data.Xlsx.XlsxFormula|100%||
+|ExGrid.Data.Xlsx.XlsxProgress|100%||
+|ExGrid.Data.Xlsx.XlsxReader|91.3%|78%|
+|ExGrid.Data.Xlsx.XlsxReader.Relationship|100%||
+|ExGrid.Data.Xlsx.XlsxReadOptions|100%||
+|ExGrid.Data.Xlsx.XlsxRow|100%||
+|ExGrid.Data.Xlsx.XlsxSharedStrings|90.9%||
+|ExGrid.Data.Xlsx.XlsxSheetInfo|100%||
+|ExGrid.Data.Xlsx.XlsxSheetReader|92.9%|79.5%|
+|ExGrid.Data.Xlsx.XlsxSheetWriter|96%|89.7%|
+|ExGrid.Data.Xlsx.XlsxStyles|100%||
+|ExGrid.Data.Xlsx.XlsxTable|100%|100%|
+|ExGrid.Data.Xlsx.XlsxTheme|96.8%|90.5%|
+|ExGrid.Data.Xlsx.XlsxWorksheet|88.8%||
+|ExGrid.Data.Xlsx.XlsxWriteOptions|100%||
+|ExGrid.Data.Xlsx.XlsxWriter|98.1%|92.2%|
+|ExGrid.Data.Xlsx.XString|100%|97%|
 
 </details>
 <details><summary>ExGrid.MudBlazor - 98.4%</summary>
@@ -1231,5 +1279,47 @@
 |ExSheet.MudBlazor.MudSheetTabMenu|100%|100%|
 |ExSheet.MudBlazor.MudToolbarItem|87.7%|74.1%|
 |ExSheet.MudBlazor.MudToolbarItem.ListFrame|100%|75%|
+
+</details>
+<details><summary>ExSheet.Xlsx - 96.1%</summary>
+
+|**Name**|**Line**|**Branch**|
+|:---|---:|---:|
+|**ExSheet.Xlsx**|**96.1%**|**87.5%**|
+|ExSheet.Xlsx.ColumnWidthUnit|100%|100%|
+|ExSheet.Xlsx.DateFormats|92.4%|90.9%|
+|ExSheet.Xlsx.FormatParts|100%|100%|
+|ExSheet.Xlsx.IsoDate|100%|100%|
+|ExSheet.Xlsx.NotCarried|100%||
+|ExSheet.Xlsx.OpenReport|100%|100%|
+|ExSheet.Xlsx.ReadFormat|100%||
+|ExSheet.Xlsx.SavePacer|100%|100%|
+|ExSheet.Xlsx.SheetElements|89.2%|55.7%|
+|ExSheet.Xlsx.SheetFormatPlan|99.1%|97.5%|
+|ExSheet.Xlsx.SheetFormatPlan.Crossing|100%||
+|ExSheet.Xlsx.SheetFormatPlan.RowRun|100%||
+|ExSheet.Xlsx.StoredFormula|96%|89.8%|
+|ExSheet.Xlsx.StyleReading|99%|97%|
+|ExSheet.Xlsx.StyleTable|100%|100%|
+|ExSheet.Xlsx.UnsupportedFunctionCell|100%||
+|ExSheet.Xlsx.WrittenFormula|92.2%|80.8%|
+|ExSheet.Xlsx.WrittenFormula.Frame|100%||
+|ExSheet.Xlsx.WrittenFormula.Token|100%||
+|ExSheet.Xlsx.XlsxNumberFormats|98.6%|90%|
+|ExSheet.Xlsx.XlsxOpenException|100%|80%|
+|ExSheet.Xlsx.XlsxOpenResult|100%||
+|ExSheet.Xlsx.XlsxSaveException|100%|100%|
+|ExSheet.Xlsx.XlsxSaveOptions|100%||
+|ExSheet.Xlsx.XlsxSaveProgress|100%||
+|ExSheet.Xlsx.XlsxWorkbookReader|96%|90.1%|
+|ExSheet.Xlsx.XlsxWorkbookReader.Mapping|96.6%|90.1%|
+|ExSheet.Xlsx.XlsxWorkbookReader.Mapping.ColumnLevels|100%||
+|ExSheet.Xlsx.XlsxWorkbookReader.Mapping.SharedMaster|100%||
+|ExSheet.Xlsx.XlsxWorkbookWriter|96.1%|94.6%|
+|ExSheet.Xlsx.XlsxWorkbookWriter.Planned|100%||
+|ExSheet.Xlsx.XlsxWorkbookWriter.PlannedTable|100%||
+|ExSheet.Xlsx.XlsxWorkbookWriter.Recorded|100%||
+|ExSheet.Xlsx.XlsxWorkbookWriter.SheetSnapshot|100%|100%|
+|ExSheet.Xlsx.XlsxWorkbookWriter.Snapshot|100%|92.8%|
 
 </details>
