@@ -1,10 +1,15 @@
-# ExGrid's core moves to TypeScript; React takes it first, and Blazor follows if it holds
+# ExGrid's core moves to TypeScript, and React and Blazor both take it
 
 *Decided with the user, 2026-10-24, for 0.3.0. It began from the user's question of what it would take
 to use ExGrid from React. The user chose the recommended strategy of three, the hybrid below, and set
 the order: the core in TypeScript and React in 0.3.0, Blazor's ExGrid on the same core once it holds.
 Sections 9 to 13 answer the five questions the first draft left open, decided with the user the same
 day.*
+
+*(Rewritten the same day, decided with the user: Blazor's ExGrid moves onto the Script Core in 0.3.0
+too, rather than in a later version after a later ADR. The first draft's title was "ExGrid's core moves
+to TypeScript; React takes it first, and Blazor follows if it holds". Sections 1, 5, 6 and 7 changed;
+the order inside the version, React first, did not.)*
 
 ## Context
 
@@ -48,15 +53,20 @@ the gain smallest: a grid's speed is decided by its DOM, not by its arithmetic.
 
 ## Decision
 
-### 1. 0.3.0 ships ExGrid's core in TypeScript, and a React package over it
+### 1. 0.3.0 ships ExGrid's core in TypeScript, and both React and Blazor draw through it
 
 The **Script Core** is ExGrid's core written in TypeScript. It holds the instance's state and decides
 what each input means: the Selection, the Focus and the Extent, the keys, the Cell Editor's modes, the
 copy and paste rules, the overflow decision, Auto width, the Range Requests. It is the C# core's
 behaviour as the ADRs state it, moved, not redesigned. It depends on no UI framework.
 
-0.3.0 covers ExGrid only. ExSheet, ExPivot, ExChart, ExBoard and the MudBlazor Wrappers stay on Blazor
-and on the C# core in 0.3.0. Which of them follow, and how, is a later decision.
+In 0.3.0 the Script Core is ExGrid's only core. React takes it through `@ex-grid/react`; Blazor's
+ExGrid becomes a Framework Adapter over it (section 7), and the C# core's component, script and logic
+are removed.
+
+ExSheet, ExPivot, ExChart, ExBoard and the MudBlazor Wrappers stay Blazor products. They are not
+ported, but from 0.3.0 the ExGrid that draws them is Blazor's adapter over the Script Core, so each is
+verified again on it. Whether any of them reaches React is a later decision.
 
 ### 2. The Script Core owns the DOM inside the instance root
 
@@ -70,9 +80,10 @@ P1 to P9 of [ADR-0027](./0027-appearance-travels-in-css-geometry-travels-in-csha
 Script Core as written, with "in .NET" read as "in the Script Core". The Definition of Done's criteria
 that cite them are run against it.
 
-### 3. A Framework Adapter is thin, and the first is React's
+### 3. A Framework Adapter is thin: React's, and Blazor's ExGrid
 
-A **Framework Adapter** puts the Script Core into one framework's component model. React's is first.
+A **Framework Adapter** puts the Script Core into one framework's component model. React's is built
+first; Blazor's ExGrid becomes the second (section 7).
 It mounts the core on an element it renders, hands the core its props, hands the core's events to the
 framework's callbacks, and unmounts it. It holds no state of the grid's, draws nothing inside the
 instance root, and decides nothing.
@@ -98,17 +109,20 @@ Layer 3 runs the ExGrid specs against a React host as it runs them against the S
 hosts today. A spec that needs to know which host it is on says why. The React host is a third DemoHost,
 and the same page catalogue is served by all three.
 
-### 5. While two cores exist, their pure logic is held to the same cases
+### 5. The C# core's cases become the Script Core's, as data
 
-A layer-1 case that both cores implement (selection arithmetic, paste shape, copy refusal, overflow,
+A layer-1 case of the C# core's pure logic (selection arithmetic, paste shape, copy refusal, overflow,
 Auto width, Enter and Tab cycling) is written once as data, its input and its expected result, and run by
-xUnit and by the Script Core's test runner. A case written only in one suite is a defect while both
-cores ship.
+xUnit against the C# core and by the Script Core's test runner. A case is green on the C# core before
+the Script Core takes it, so the cases are the oracle of the move. When the C# logic is removed
+(section 7), its xUnit runner goes with it and the data stays.
 
 ### 6. The Script Core is not under ADR-0021's allowlist; what the allowlist protects still holds
 
-ADR-0021 governs JavaScript beside a Blazor core, and keeps governing the Blazor packages unchanged.
-The Script Core is JavaScript, so an allowlist of its uses means nothing. What the allowlist protects
+ADR-0021 governs JavaScript beside a Blazor core. ExGrid no longer has one, so ADR-0021 is rewritten
+when Blazor's adapter lands: ExGrid's entries leave it, and it keeps governing the scripts of ExSheet,
+ExPivot, ExChart and the Wrappers, which stay beside Blazor code. The Script Core is JavaScript, so an
+allowlist of its uses means nothing. What the allowlist protects
 holds in it: no layout read on the path to a paint (P4), nothing per cell bound to a listener, every
 listener scoped to the instance root ([ADR-0018](./0018-multiple-instances-must-be-independent.md)),
 and the grid told when the browser knows something has changed, never measuring it. The Input Order's
@@ -117,18 +131,28 @@ made, nothing waits on a clock (its sections 1, 3 and 4), and where a Consumer a
 input, a gesture carries what it was taken against and is refused if that no longer holds (spine rule
 6). The machinery that held and replayed input across a round trip is not ported.
 
-### 7. Blazor's ExGrid moves onto the Script Core only after it holds
+### 7. Blazor's ExGrid moves onto the Script Core in 0.3.0, once React's holds
 
-0.3.0 does not change Blazor's ExGrid. Moving it onto the Script Core is decided by a later ADR, once:
+Blazor's ExGrid becomes a Framework Adapter over the Script Core in the same version. The order inside
+the version is fixed, so that the Script Core is proved where nothing else moves before Blazor's
+products stand on it:
 
-- the ExGrid layer-3 specs pass on the React host, in both browsers;
-- the Definition of Done's ExGrid criteria pass against the Script Core;
-- a spike runs Blazor's ExGrid on the Script Core on both Blazor hosts, measures what crosses the
-  circuit on Server, and shows whether ExSheet and ExPivot, which are ExGrid's Consumers, can be drawn
-  by it.
+1. The Script Core and `@ex-grid/react` pass the ExGrid layer-3 specs on the React host, in both
+   browsers, and the Definition of Done's ExGrid criteria.
+2. Blazor's adapter replaces the C# core. The ExGrid specs pass on both Blazor hosts, and so do
+   ExSheet's, ExPivot's, ExChart's and ExBoard's, which ExGrid draws.
+3. The C# core's component, `ex-grid.js` and its pure logic are removed, and ADR-0021 and the Input
+   Order ([ADR-0240](./0240-input-to-one-product-instance-is-taken-in-one-order.md)) are rewritten for
+   a grid whose decisions are made in the browser on both hosts.
 
-Moving would put the grid's decisions in the browser on Blazor Server too, which rewrites ADR-0021's
-premise and the Input Order's. That is why it waits for its own ADR.
+0.3.0 is not tagged until all three hold. A step that does not hold is left failing and said so; it is
+not narrowed to fit (CLAUDE.md, "Do not weaken a requirement").
+
+On Blazor Server this moves the grid's decisions from the server to the browser. The Window, the
+Consumer's answers and the Chrome's callbacks still cross the circuit; a key, a press and a selection no
+longer do. A Consumer's answer that arrives after the input it answers is judged against what that
+input was taken against (spine rule 6). What crosses the circuit per interaction is measured on the
+Server host before step 2 is called done, and recorded.
 
 ### 8. The engines stay in C#
 
@@ -151,6 +175,11 @@ created on npm by the user before the first publish. The NuGet identifiers stay 
 *(The first draft of this section, the same day, chose `@exgrid` for the NuGet identifiers' one word.)*
 
 The later products, if they follow (section 1), take names under the same scope.
+
+Blazor's adapter keeps the NuGet identifier `ExGrid`, and the component keeps its name. It carries the
+Script Core's built script as a shipped asset of its own, minified and asked for by the version it was
+built with ([ADR-0123](./0123-shipped-scripts-and-stylesheets-are-minified-and-each-package-asks-for-the-files-it-was-built-with.md)),
+so a Blazor Consumer installs nothing from npm. `ExGrid.MudBlazor` stays the Wrapper over it.
 
 ### 10. React and Blazor only
 
@@ -203,8 +232,11 @@ for a Blazor one.
 
 ## Consequences
 
-- ExGrid has two implementations from 0.3.0 until the later ADR of section 7. Section 5 and the shared
-  layer 3 are what keep them from drifting.
+- ExGrid has one implementation from 0.3.0. Until step 3 of section 7 the C# core still ships on
+  `main`; section 5 and the shared layer 3 are what keep the two from drifting meanwhile.
+- 0.3.0 is the largest version the family has had: every product that ExGrid draws is verified again on
+  the Script Core. Breaking changes to Blazor's ExGrid surface are Change Notes
+  ([ADR-0190](./0190-release-notes-are-written-with-each-change-and-published-from-the-repository.md)).
 - The family publishes to npm as well as NuGet. The release workflow
   ([ADR-0042](./0042-prereleases-ship-before-sign-off-and-only-a-stable-version-waits-for-it.md),
   [ADR-0205](./0205-0-1-0-is-grown-on-a-release-branch-rehearsed-by-release-candidates-and-signed-off-before-its-tag.md))

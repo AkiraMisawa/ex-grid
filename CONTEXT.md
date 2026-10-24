@@ -455,16 +455,18 @@ _Avoid_: theme package, skin, integration (ExGrid.Fluxor integrates a store and 
 **Script Core**:
 ExGrid's core written in TypeScript, running in the browser: it holds the instance's state, decides
 what each input means, and creates the elements inside the instance root itself, under the same DOM
-contract and stylesheet as the C# core. It depends on no UI framework. Decided for 0.3.0, ExGrid only
-([ADR-0350](./docs/adr/0350-exgrids-core-moves-to-typescript-react-takes-it-first-and-blazor-follows-if-it-holds.md)).
+contract and stylesheet as the C# core it replaces. It depends on no UI framework. From 0.3.0 it is
+ExGrid's only core, under React and Blazor alike
+([ADR-0350](./docs/adr/0350-exgrids-core-moves-to-typescript-and-react-and-blazor-both-take-it.md)).
 _Avoid_: JS grid, client grid, headless core (it owns its DOM)
 
 **Framework Adapter**:
-A package that puts the Script Core into one UI framework's component model — React's first. It mounts
+A package that puts the Script Core into one UI framework's component model: `@ex-grid/react`, and
+from 0.3.0 Blazor's ExGrid itself. It mounts
 the core, hands it props, hands its events to the framework's callbacks, and fills the core's Chrome and
 Template slots with the framework's components. It holds no state of the grid's, draws nothing inside
 the instance root, and decides nothing
-([ADR-0350](./docs/adr/0350-exgrids-core-moves-to-typescript-react-takes-it-first-and-blazor-follows-if-it-holds.md)).
+([ADR-0350](./docs/adr/0350-exgrids-core-moves-to-typescript-and-react-and-blazor-both-take-it.md)).
 Distinct from a Wrapper, which adapts a design system, not a framework.
 _Avoid_: binding, wrapper, port
 
