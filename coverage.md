@@ -3,7 +3,7 @@
 | Product | Line | Branch |
 |---|---|---|
 | ExGrid | 95% | 88% |
-| ExSheet | 95.4% | 88% |
+| ExSheet | 95.4% | 88.6% |
 | ExPivot | 94.3% | 85.5% |
 | ExChart | 90.3% | 81.2% |
 | ExBoard | 91.7% | 81.8% |
@@ -14,19 +14,19 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/24/2026 - 22:08:50 |
+| Generated on: | 10/24/2026 - 22:47:55 |
 | Parser: | MultiReport (19x Cobertura) |
 | Assemblies: | 16 |
 | Classes: | 1179 |
-| Files: | 603 |
-| **Line coverage:** | 94.4% (81044 of 85829) |
-| Covered lines: | 81044 |
-| Uncovered lines: | 4785 |
-| Coverable lines: | 85829 |
-| Total lines: | 137160 |
-| **Branch coverage:** | 86.8% (48657 of 56033) |
-| Covered branches: | 48657 |
-| Total branches: | 56033 |
+| Files: | 604 |
+| **Line coverage:** | 94.4% (81290 of 86072) |
+| Covered lines: | 81290 |
+| Uncovered lines: | 4782 |
+| Coverable lines: | 86072 |
+| Total lines: | 137643 |
+| **Branch coverage:** | 87% (49011 of 56318) |
+| Covered branches: | 49011 |
+| Total branches: | 56318 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
@@ -513,8 +513,8 @@
 |ExGrid.Summarizing.SelectionSummary|100%||
 |ExGrid.Summarizing.SummaryFigureOrder|100%|50%|
 |ExGrid.Summarizing.SummaryFigureOrder.Entry|100%||
-|ExGrid.Validation.GridRuleset<TRow>|100%|92.1%|
 |ExGrid.Validation.GridRuleset<TRow>|0%||
+|ExGrid.Validation.GridRuleset<TRow>|100%|92.1%|
 |ExGrid.Validation.RuleViolation|100%||
 |ExGrid.ViewportBox|100%|100%|
 |ExGrid.ViewportGeometry|100%|97.9%|
@@ -1111,11 +1111,11 @@
 |ExSheet.UnderlineItem|100%|100%|
 
 </details>
-<details><summary>ExSheet.Engine - 97.7%</summary>
+<details><summary>ExSheet.Engine - 97.8%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExSheet.Engine**|**97.7%**|**91%**|
+|**ExSheet.Engine**|**97.8%**|**91.9%**|
 |ExSheet.Engine.ArgumentHint|100%||
 |ExSheet.Engine.ArgumentValue|100%||
 |ExSheet.Engine.AxisFormat|100%|100%|
@@ -1153,7 +1153,7 @@
 |ExSheet.Engine.Formulas.Dyadic|100%|89.4%|
 |ExSheet.Engine.Formulas.Enclosure|93.8%|79.6%|
 |ExSheet.Engine.Formulas.ErrorNode|100%||
-|ExSheet.Engine.Formulas.Evaluator|93.2%|91%|
+|ExSheet.Engine.Formulas.Evaluator|93.6%|91.9%|
 |ExSheet.Engine.Formulas.Evaluator.BindingSlot|100%||
 |ExSheet.Engine.Formulas.Evaluator.Step|100%||
 |ExSheet.Engine.Formulas.ExactPayment|99.3%|91.3%|
@@ -1162,7 +1162,7 @@
 |ExSheet.Engine.Formulas.FormulaText|100%|98.1%|
 |ExSheet.Engine.Formulas.FunctionCall|100%|100%|
 |ExSheet.Engine.Formulas.FunctionDefinition|100%||
-|ExSheet.Engine.Formulas.FunctionLibrary|97.3%|88.3%|
+|ExSheet.Engine.Formulas.FunctionLibrary|97.5%|90.8%|
 |ExSheet.Engine.Formulas.FunctionLibrary.CriteriaRange|79.1%|43.7%|
 |ExSheet.Engine.Formulas.FunctionLibrary.Criterion|100%|86.3%|
 |ExSheet.Engine.Formulas.FunctionLibrary.DoubleDouble|100%||
@@ -1174,21 +1174,21 @@
 |ExSheet.Engine.Formulas.FunctionLibrary.XnpvOutcome|100%||
 |ExSheet.Engine.Formulas.FunctionNode|100%|100%|
 |ExSheet.Engine.Formulas.IntersectionNode|100%||
-|ExSheet.Engine.Formulas.KnownShape|96.6%|68.8%|
+|ExSheet.Engine.Formulas.KnownShape|96.6%|69.3%|
 |ExSheet.Engine.Formulas.LetBinding|100%||
 |ExSheet.Engine.Formulas.LetNode|100%|100%|
-|ExSheet.Engine.Formulas.Lexer|100%|96.5%|
+|ExSheet.Engine.Formulas.Lexer|100%|96.9%|
 |ExSheet.Engine.Formulas.MissingNode|100%|83.3%|
 |ExSheet.Engine.Formulas.NameNode|100%|100%|
 |ExSheet.Engine.Formulas.Node|100%||
 |ExSheet.Engine.Formulas.NumberNode|100%||
-|ExSheet.Engine.Formulas.Operand|97.3%|90.9%|
+|ExSheet.Engine.Formulas.Operand|97.7%|91.6%|
 |ExSheet.Engine.Formulas.ParenthesesNode|100%||
 |ExSheet.Engine.Formulas.Parser|99.6%|90.7%|
 |ExSheet.Engine.Formulas.Parser.LetScope|100%||
 |ExSheet.Engine.Formulas.PercentNode|100%||
 |ExSheet.Engine.Formulas.PortableRegex|94.6%|90.7%|
-|ExSheet.Engine.Formulas.Reference|100%|97.4%|
+|ExSheet.Engine.Formulas.Reference|100%|97.6%|
 |ExSheet.Engine.Formulas.ReferenceNode|100%||
 |ExSheet.Engine.Formulas.ReferenceRewriter|100%|100%|
 |ExSheet.Engine.Formulas.ReferenceShift|100%|100%|
@@ -1215,7 +1215,7 @@
 |ExSheet.Engine.RangeEdgeLines|100%||
 |ExSheet.Engine.ReferenceCycle|100%||
 |ExSheet.Engine.RepeatedKeyException|100%|88.8%|
-|ExSheet.Engine.Sheet|99.5%|96.4%|
+|ExSheet.Engine.Sheet|99.6%|96.4%|
 |ExSheet.Engine.Sheet.Cell|100%|100%|
 |ExSheet.Engine.Sheet.CellFormatOutcome|100%||
 |ExSheet.Engine.Sheet.CellFormatsOutcome|100%||
@@ -1237,7 +1237,7 @@
 |ExSheet.Engine.SheetDocumentColumnWidth|100%||
 |ExSheet.Engine.SheetDocumentException|100%||
 |ExSheet.Engine.SheetDocumentTable|100%|100%|
-|ExSheet.Engine.SheetEdit|97.6%|84.9%|
+|ExSheet.Engine.SheetEdit|97.7%|84.9%|
 |ExSheet.Engine.SheetEdit.CellFormatEdit|100%||
 |ExSheet.Engine.SheetEdit.CellFormatsEdit|100%||
 |ExSheet.Engine.SheetEdit.CellsEdit|100%|100%|
@@ -1246,7 +1246,7 @@
 |ExSheet.Engine.SheetEdit.DeleteSheetEdit|100%|100%|
 |ExSheet.Engine.SheetEdit.FillEdit|100%|83.3%|
 |ExSheet.Engine.SheetEdit.InsertSheetEdit|100%|100%|
-|ExSheet.Engine.SheetEdit.MoveSheetEdit|88.8%|16.6%|
+|ExSheet.Engine.SheetEdit.MoveSheetEdit|92.8%|16.6%|
 |ExSheet.Engine.SheetEdit.PlacedEdit|100%|100%|
 |ExSheet.Engine.SheetEdit.RefusedEdit|66.6%||
 |ExSheet.Engine.SheetEdit.RenameEdit|100%||
@@ -1257,7 +1257,7 @@
 |ExSheet.Engine.SheetRefusedException|100%|50%|
 |ExSheet.Engine.SheetStep|100%|100%|
 |ExSheet.Engine.Value|94.2%|79.4%|
-|ExSheet.Engine.Workbook|97.7%|94.4%|
+|ExSheet.Engine.Workbook|97.8%|92.9%|
 |ExSheet.Engine.Workbook.SheetRename|100%||
 |ExSheet.Engine.WorkbookChange|100%|100%|
 |ExSheet.Engine.WorkbookDocument|96.6%|86.5%|
@@ -1281,11 +1281,11 @@
 |ExSheet.MudBlazor.MudToolbarItem.ListFrame|100%|75%|
 
 </details>
-<details><summary>ExSheet.Xlsx - 96.1%</summary>
+<details><summary>ExSheet.Xlsx - 96.2%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExSheet.Xlsx**|**96.1%**|**87.5%**|
+|**ExSheet.Xlsx**|**96.2%**|**87.7%**|
 |ExSheet.Xlsx.ColumnWidthUnit|100%|100%|
 |ExSheet.Xlsx.DateFormats|92.4%|90.9%|
 |ExSheet.Xlsx.FormatParts|100%|100%|
@@ -1302,7 +1302,7 @@
 |ExSheet.Xlsx.StyleReading|99%|97%|
 |ExSheet.Xlsx.StyleTable|100%|100%|
 |ExSheet.Xlsx.UnsupportedFunctionCell|100%||
-|ExSheet.Xlsx.WrittenFormula|92.2%|80.8%|
+|ExSheet.Xlsx.WrittenFormula|92.5%|82.1%|
 |ExSheet.Xlsx.WrittenFormula.Frame|100%||
 |ExSheet.Xlsx.WrittenFormula.Token|100%||
 |ExSheet.Xlsx.XlsxNumberFormats|98.6%|90%|
