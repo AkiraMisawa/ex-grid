@@ -17,10 +17,13 @@ Node comes from the flake's `browser` shell, as it does for `tools/assets`:
 ```sh
 nix develop .#browser -c bash -c 'cd src/npm && npm ci'
 nix develop .#browser -c bash -c 'cd src/npm && npm run typecheck'   # the sources and the tests
+nix develop .#browser -c bash -c 'cd src/npm && npm run lint'        # oxlint, held to its fixtures first
 nix develop .#browser -c bash -c 'cd src/npm && npm run build'       # tsc, esbuild, API Extractor
 nix develop .#browser -c bash -c 'cd src/npm && npm test'            # Vitest: layers 1 and 2
 ```
 
+- **How the code is written, and what the lint refuses, is [CONVENTIONS.md](CONVENTIONS.md).** Above
+  all: a missing value or a failure is never replaced by a value nobody chose.
 - **A build compiles the declarations with `tsc`, bundles the JavaScript with esbuild, and holds the
   package's public surface to its report**, `<package>/etc/<name>.api.md`, with API Extractor: the
   counterpart of a NuGet package's `PublicAPI.Unshipped.txt` and its XML doc rule

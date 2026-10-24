@@ -7,6 +7,10 @@ Script Core (`src/npm/core/test/`). A case is green on the C# core before the Sc
 the cases are the oracle of the move; when the C# logic is removed, its runner goes with it and the data
 stays.
 
+A runner never fills in a key a case leaves out: every key a gesture's table row names is written, and
+a missing one fails the case, where a default would let a misspelt key pass on a value nobody chose.
+The one exception is said where it applies (`times`).
+
 A case says what the grid does, not how a language spells it: "no Focus" is `null` here, where C#
 throws and TypeScript answers `undefined`, and a refusal is named by its kind, not by an exception type.
 
@@ -60,7 +64,8 @@ or `expect`, `save` or `restore`.
 | `{"selectRow": row, "focusColumn": column}` | Click on a Row Heading |
 
 `cycle` and `nextCorner` take `"times"`, how often the key is pressed, and `"focuses"`, the Focus
-expected after each press (which also sets how often, when `times` is absent).
+expected after each press (which also sets how often, when `times` is absent). With neither, the key is
+pressed once.
 
 Any gesture takes `"extent": [rows, columns]` for that step alone, and `"throws"`: `"outOfRange"` (an
 argument outside what the grid has) or `"invalidOperation"` (a selection that no longer fits, or an

@@ -1,0 +1,85 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  // The workspace's lint, run type-aware (`npm run lint`). Every rule is an error: a warning is read
+  // past. CONVENTIONS.md says what each group stops and why.
+  "plugins": ["typescript", "oxc", "unicorn", "import", "vitest"],
+  "jsPlugins": ["./lint/ex-grid.mjs"],
+  "categories": {
+    "correctness": "error",
+    "suspicious": "error"
+  },
+  "rules": {
+    // No quiet fallback: an error or a missing value is never turned into a plausible one.
+    "ex-grid/no-catch": "error",
+    "ex-grid/no-stand-in-default": "error",
+    "ex-grid/disable-states-why": "error",
+    "eslint/no-empty": ["error", { "allowEmptyCatch": false }],
+    "eslint/no-empty-function": "error",
+    "eslint/no-useless-catch": "error",
+    "typescript/only-throw-error": "error",
+    "typescript/prefer-promise-reject-errors": "error",
+    "typescript/use-unknown-in-catch-callback-variable": "error",
+    "typescript/no-floating-promises": "error",
+    "typescript/no-misused-promises": "error",
+    "typescript/switch-exhaustiveness-check": ["error", { "considerDefaultExhaustiveForUnions": false, "requireDefaultForNonUnion": true }],
+    "typescript/strict-boolean-expressions": ["error", { "allowString": false, "allowNumber": false, "allowNullableObject": false }],
+    "typescript/no-unnecessary-condition": "error",
+
+    // No escape from the type checker: what it cannot see, it cannot hold.
+    "typescript/no-explicit-any": "error",
+    "typescript/no-non-null-assertion": "error",
+    "typescript/no-unsafe-argument": "error",
+    "typescript/no-unsafe-assignment": "error",
+    "typescript/no-unsafe-call": "error",
+    "typescript/no-unsafe-member-access": "error",
+    "typescript/no-unsafe-return": "error",
+    "typescript/no-unsafe-type-assertion": "error",
+    "typescript/consistent-type-assertions": ["error", { "assertionStyle": "as", "objectLiteralTypeAssertions": "never" }],
+    "typescript/ban-ts-comment": ["error", { "ts-ignore": true, "ts-nocheck": true, "ts-check": false, "ts-expect-error": "allow-with-description" }],
+
+    // Values that print or add wrongly.
+    "eslint/eqeqeq": "error",
+    "typescript/restrict-template-expressions": "error",
+    "typescript/restrict-plus-operands": "error",
+    "typescript/no-base-to-string": "error",
+
+    // A library does not talk to the console.
+    "eslint/no-console": "error",
+
+    "eslint/no-var": "error",
+    "eslint/prefer-const": "error",
+    "typescript/prefer-readonly": "error"
+  },
+  "overrides": [
+    {
+      // The workspace's own tooling is plain JavaScript run by Node at build time: it has no types to
+      // hold, and it talks to the person running it.
+      "files": ["scripts/**", "lint/*.mjs"],
+      "rules": {
+        "typescript/no-unsafe-argument": "off",
+        "typescript/no-unsafe-assignment": "off",
+        "typescript/no-unsafe-call": "off",
+        "typescript/no-unsafe-member-access": "off",
+        "typescript/no-unsafe-return": "off",
+        "typescript/strict-boolean-expressions": "off",
+        "eslint/no-console": "off"
+      }
+    },
+    {
+      // Tests read the shared cases' JSON, whose shape the case format fixes (tests/cases/README.md).
+      "files": ["*/test/**"],
+      "rules": {
+        "typescript/no-unsafe-type-assertion": "off",
+        // Vitest's expect takes a message as its second argument, and a case runner asserts what the
+        // case's keys name, so its expectations sit under a switch.
+        "vitest/valid-expect": ["error", { "maxArgs": 2 }],
+        "vitest/no-conditional-expect": "off",
+        // A case's name is its title, read from the case file; every case asks for an assertion at run
+        // time (`expect.hasAssertions()`), which no static check of a runner can see.
+        "vitest/valid-title": "off",
+        "vitest/expect-expect": "off"
+      }
+    }
+  ],
+  "ignorePatterns": ["**/dist/**", "**/temp/**", "**/node_modules/**"]
+}

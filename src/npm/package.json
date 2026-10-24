@@ -11,6 +11,7 @@
   "scripts": {
     "build": "npm run build --workspaces",
     "api": "npm run api --workspaces",
+    "lint": "node lint/check.mjs",
     "test": "npm run test --workspaces",
     "typecheck": "npm run typecheck --workspaces"
   },
@@ -18,6 +19,8 @@
     "@microsoft/api-extractor": "7.59.4",
     "@types/node": "22.20.5",
     "esbuild": "0.28.2",
+    "oxlint": "1.89.0",
+    "oxlint-tsgolint": "7.0.2005",
     "typescript": "7.0.2",
     "vitest": "5.0.5"
   },

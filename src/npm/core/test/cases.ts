@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { expect } from 'vitest';
 import { cell, type CellPosition } from '../src/selection/cell';
 import { fromCorners, selectionRange, type SelectionRange } from '../src/selection/range';
+import { defined, unreachable } from '../src/must';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../../../tests/cases');
 
@@ -23,8 +24,8 @@ export function caseFiles<T>(area: string, kind: string): CaseFile<T>[] {
     const dir = path.join(root, area);
     return fs.readdirSync(dir)
         .filter(name => name.endsWith('.json'))
-        .sort()
-        .map(name => ({ file: name, ...JSON.parse(fs.readFileSync(path.join(dir, name), 'utf8')) }) as CaseFile<T>)
+        .toSorted()
+        .map(name => ({ ...(JSON.parse(fs.readFileSync(path.join(dir, name), 'utf8')) as Omit<CaseFile<T>, 'file'>), file: name }))
         .filter(file => file.kind === kind);
 }
 
@@ -43,18 +44,22 @@ export function readCell(text: CellText): CellPosition {
         throw new Error(`"${text}" is not a cell in A1 notation.`);
     }
     let column = 0;
-    for (const letter of match[1]!) {
+    const [, letters, digits] = match;
+    for (const letter of defined(letters, 'the column letters')) {
         column = column * 26 + (letter.charCodeAt(0) - 64);
     }
-    return cell(Number(match[2]) - 1, column - 1);
+    return cell(Number(defined(digits, 'the row digits')) - 1, column - 1);
 }
 
 export function readRange(text: RangeText): SelectionRange {
     if (typeof text !== 'string') {
         return selectionRange(text[0], text[1], text[2], text[3]);
     }
-    const [first, last] = text.split(':');
-    return fromCorners(readCell(first!), readCell(last ?? first!));
+    const [first, last, more] = text.split(':');
+    if (first === undefined || more !== undefined) {
+        throw new Error(`"${text}" is not a range in A1 notation.`);
+    }
+    return fromCorners(readCell(first), readCell(last ?? first));
 }
 
 /** A list of ranges, as an array of ranges or as Excel's Selection.Address. */
@@ -70,16 +75,25 @@ export type Refusal = 'outOfRange' | 'invalidOperation';
 
 /** Runs the action and holds it to the refusal named. */
 export function expectRefusal(action: () => unknown, refusal: Refusal): void {
-    let thrown: unknown;
-    try {
-        action();
-    } catch (error) {
-        thrown = error;
+    switch (refusal) {
+        case 'outOfRange':
+            expect(action, 'expected a refusal (outOfRange)').toThrow(RangeError);
+            break;
+        case 'invalidOperation':
+            expect(action, 'expected a refusal (invalidOperation)').toThrow(Error);
+            expect(action, 'expected a refusal (invalidOperation), not outOfRange').not.toThrow(RangeError);
+            break;
+        default:
+            unreachable(refusal);
     }
-    expect(thrown, `expected a refusal (${refusal})`).toBeInstanceOf(Error);
-    if (refusal === 'outOfRange') {
-        expect(thrown).toBeInstanceOf(RangeError);
-    } else {
-        expect(thrown).not.toBeInstanceOf(RangeError);
+}
+
+/** The whole number a step names under `key`. A key that is missing or holds anything else is a defect in
+ * the case, never read as 0. */
+export function wholeNumber(step: Readonly<Record<string, unknown>>, key: string): number {
+    const value = step[key];
+    if (typeof value !== 'number' || !Number.isInteger(value)) {
+        throw new Error(`The step ${JSON.stringify(step)} needs "${key}" as a whole number.`);
     }
+    return value;
 }

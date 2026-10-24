@@ -41,7 +41,9 @@ await build({
     sourcemap: true,
     // A package's dependencies stay imports of their own; only its own sources are bundled.
     external: [
+        // oxlint-disable-next-line ex-grid/no-stand-in-default -- npm: a manifest without the field has none
         ...Object.keys(manifest.dependencies ?? {}),
+        // oxlint-disable-next-line ex-grid/no-stand-in-default -- npm: a manifest without the field has none
         ...Object.keys(manifest.peerDependencies ?? {}),
     ],
     logLevel: 'warning',

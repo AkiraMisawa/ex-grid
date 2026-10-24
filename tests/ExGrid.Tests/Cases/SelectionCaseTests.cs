@@ -95,7 +95,7 @@ public class SelectionCaseTests
 
     private static GridSelection Gesture(GridSelection selection, JsonElement step, GridExtent extent)
     {
-        int Int(string property, int otherwise = 0) => step.TryGetProperty(property, out var value) ? value.GetInt32() : otherwise;
+        int Int(string property) => step.GetProperty(property).GetInt32();
         CellPosition At(string property) => SharedCases.Cell(step.GetProperty(property));
         Func<CellPosition, GridDirection, CellPosition>? answer = step.TryGetProperty("answer", out var answered)
             ? (_, _) => SharedCases.Cell(answered)

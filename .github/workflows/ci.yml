@@ -185,6 +185,9 @@ jobs:
       - name: Type-check the sources and the tests
         run: npm run typecheck
 
+      - name: Lint, held to its own fixtures first
+        run: npm run lint
+
       - name: Build, and hold each package's public surface to its report
         run: npm run build
 

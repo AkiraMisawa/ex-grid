@@ -22,7 +22,7 @@
       "name": "ADR-0050/0052: Shift+click on a Row Heading extends whole rows from the Focus's row, and the Focus stays",
       "steps": [
         { "click": [10, 3] },
-        { "extendToRow": 4 },
+        { "extendToRow": 4, "focusColumnIfEmpty": 0 },
         { "expect": { "ranges": [[4, 0, 7, 26]], "focus": [10, 3] } }
       ]
     },
@@ -30,7 +30,7 @@
       "name": "ADR-0052 (Excel item 4): row 5's heading, then Shift+click on row 2's, gives 2:5 with the Focus still in row 5",
       "steps": [
         { "selectRow": 4, "focusColumn": 0 },
-        { "extendToRow": 1 },
+        { "extendToRow": 1, "focusColumnIfEmpty": 0 },
         { "expect": { "ranges": [[1, 0, 4, 26]], "focus": [4, 0] } }
       ]
     },
@@ -62,7 +62,7 @@
       "steps": [
         { "selectColumn": 26, "focusRow": 0, "throws": "outOfRange" },
         { "selectRow": 100, "focusColumn": 0, "throws": "outOfRange" },
-        { "extendToColumn": -1, "throws": "outOfRange" },
+        { "extendToColumn": -1, "focusRowIfEmpty": 0, "throws": "outOfRange" },
         { "expect": { "empty": true } }
       ]
     },

@@ -3,6 +3,7 @@ import {
     bottomRow, fromCorners, rangeCellCount, rangeContains, rightColumn, sameRange, selectionRange, spansEveryRow,
     subtractArea, type SelectionRange,
 } from './range';
+import { elementAt, unreachable } from '../must';
 
 /**
  * The selection as a Consumer reads it: a list of rectangles in position space, one Focus (Excel's
@@ -131,7 +132,7 @@ export class Selection implements GridSelection {
     }
 
     get #heldRange(): SelectionRange {
-        return this.ranges[this.#focusRangeIndex]!;
+        return elementAt(this.ranges, this.#focusRangeIndex);
     }
 
     /**
@@ -189,7 +190,7 @@ export class Selection implements GridSelection {
         if (this.isEmpty || length <= 0) {
             return false;
         }
-        const spans = this.ranges.filter(crossing).map(span).sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+        const spans = this.ranges.filter(crossing).map(span).toSorted((a, b) => a[0] !== b[0] ? a[0] - b[0] : a[1] - b[1]);
         let covered = 0;
         for (const [first, last] of spans) {
             if (first > covered) {
@@ -213,7 +214,7 @@ export class Selection implements GridSelection {
                 columns.add(c);
             }
         }
-        return [...columns].sort((a, b) => a - b);
+        return [...columns].toSorted((a, b) => a - b);
     }
 
     equals(other: GridSelection): boolean {
@@ -223,7 +224,7 @@ export class Selection implements GridSelection {
         if (!(other instanceof Selection) || this.ranges.length !== other.ranges.length) {
             return false;
         }
-        if (!this.ranges.every((range, i) => sameRange(range, other.ranges[i]!))) {
+        if (!this.ranges.every((range, i) => sameRange(range, elementAt(other.ranges, i)))) {
             return false;
         }
         if (this.isEmpty) {
@@ -425,14 +426,11 @@ export class Selection implements GridSelection {
      * Focus to its new place in its range (ADR-0052).
      */
     cycleFocus(order: CycleOrder, backward: boolean, extent: GridExtent): Selection {
-        if (order !== 'columnMajor' && order !== 'rowMajor') {
-            throw new RangeError(`"${String(order)}" is not an order Enter or Tab walks (ADR-0012).`);
-        }
         if (isDegenerate(extent) || this.isEmpty) {
             return Selection.empty;
         }
         this.#requireFits(extent);
-        const only = this.ranges.length === 1 ? this.ranges[0]! : undefined;
+        const only = this.ranges.length === 1 ? elementAt(this.ranges, 0) : undefined;
         if (only !== undefined && rangeCellCount(only) === 1) {
             const direction: GridDirection = order === 'columnMajor'
                 ? (backward ? 'up' : 'down')
@@ -472,7 +470,7 @@ export class Selection implements GridSelection {
             return new Selection(this.ranges, next, this.#focusRangeIndex, this.#origins);
         }
         for (let offset = 1; offset < corners.length; offset++) {
-            const candidate = corners[(at + offset) % corners.length]!;
+            const candidate = elementAt(corners, (at + offset) % corners.length);
             if (!sameCell(candidate, this.#focus)) {
                 return new Selection(this.ranges, candidate, this.#focusRangeIndex, this.#origins);
             }
@@ -498,7 +496,7 @@ export class Selection implements GridSelection {
      */
     focusOn(position: CellPosition): Selection {
         for (let i = this.ranges.length - 1; i >= 0; i--) {
-            if (rangeContains(this.ranges[i]!, position)) {
+            if (rangeContains(elementAt(this.ranges, i), position)) {
                 return new Selection(this.ranges, position, i, this.#origins);
             }
         }
@@ -590,7 +588,7 @@ export class Selection implements GridSelection {
 
     /** Adds the range as the range made last, holding the Focus (ADR-0012). */
     #add(range: SelectionRange, focus: CellPosition): Selection {
-        const origins = [...this.#origins, this.#origins[this.#origins.length - 1]! + 1];
+        const origins = [...this.#origins, elementAt(this.#origins, this.#origins.length - 1) + 1];
         return new Selection([...this.ranges, range], focus, this.ranges.length, origins);
     }
 
@@ -605,7 +603,7 @@ export class Selection implements GridSelection {
         this.ranges.forEach((range, i) => {
             for (const piece of subtractArea(range, area)) {
                 remaining.push(piece);
-                cameFrom.push(this.#origins[i]!);
+                cameFrom.push(elementAt(this.#origins, i));
             }
         });
         if (remaining.length === 0) {
@@ -614,7 +612,7 @@ export class Selection implements GridSelection {
         // The range made last is the one with the highest origin still holding a cell. When the take-out
         // emptied it (a 1×1 range made last, clicked again), the latest range still standing takes its
         // place (not observed in Excel; the nearest reading).
-        const last = cameFrom[cameFrom.length - 1]!;
+        const last = elementAt(cameFrom, cameFrom.length - 1);
         let focusIndex = -1;
         remaining.forEach((piece, j) => {
             if (cameFrom[j] !== last) {
@@ -625,7 +623,7 @@ export class Selection implements GridSelection {
                 focusIndex = j;
             }
         });
-        const focusRange = remaining[focusIndex]!;
+        const focusRange = elementAt(remaining, focusIndex);
         return new Selection(remaining, cell(focusRange.topRow, focusRange.leftColumn), focusIndex, cameFrom);
     }
 
@@ -679,11 +677,11 @@ export class Selection implements GridSelection {
         const next = ordinalOf(this.#focus, range, order) + (backward ? -1 : 1);
         if (next >= rangeCellCount(range)) {
             const following = (this.#focusRangeIndex + 1) % this.ranges.length;
-            return new Selection(this.ranges, cellAt(this.ranges[following]!, 0, order), following, this.#origins);
+            return new Selection(this.ranges, cellAt(elementAt(this.ranges, following), 0, order), following, this.#origins);
         }
         if (next < 0) {
             const preceding = (this.#focusRangeIndex - 1 + this.ranges.length) % this.ranges.length;
-            const entered = this.ranges[preceding]!;
+            const entered = elementAt(this.ranges, preceding);
             return new Selection(this.ranges, cellAt(entered, rangeCellCount(entered) - 1, order), preceding, this.#origins);
         }
         return new Selection(this.ranges, cellAt(range, next, order), this.#focusRangeIndex, this.#origins);
@@ -778,6 +776,7 @@ function step(origin: CellPosition, direction: GridDirection, extent: GridExtent
         case 'down': return cell(Math.min(extent.rowCount - 1, origin.row + 1), origin.column);
         case 'left': return cell(origin.row, Math.max(0, origin.column - 1));
         case 'right': return cell(origin.row, Math.min(extent.columnCount - 1, origin.column + 1));
+        default: return unreachable(direction);
     }
 }
 
@@ -791,6 +790,7 @@ function edgeOf(origin: CellPosition, direction: GridDirection, extent: GridExte
         case 'down': return cell(extent.rowCount - 1, origin.column);
         case 'left': return cell(origin.row, 0);
         case 'right': return cell(origin.row, extent.columnCount - 1);
+        default: return unreachable(direction);
     }
 }
 

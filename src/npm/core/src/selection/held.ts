@@ -6,11 +6,14 @@ import { Selection } from './selection';
  * and this pairing is where that rule lives, rather than as a convention every holder repeats.
  */
 export class HeldSelection {
-    private constructor(
-        /** The Row Sequence Version the selection was made under. */
-        readonly rowSequenceVersion: number,
-        /** The selection, in positions of that version's order. */
-        readonly selection: Selection) {
+    /** The Row Sequence Version the selection was made under. */
+    readonly rowSequenceVersion: number;
+    /** The selection, in positions of that version's order. */
+    readonly selection: Selection;
+
+    private constructor(rowSequenceVersion: number, selection: Selection) {
+        this.rowSequenceVersion = rowSequenceVersion;
+        this.selection = selection;
     }
 
     /** Nothing selected, held under the version: where a holder starts. */
