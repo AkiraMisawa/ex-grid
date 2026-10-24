@@ -11,6 +11,9 @@ too, rather than in a later version after a later ADR. The first draft's title w
 to TypeScript; React takes it first, and Blazor follows if it holds". Sections 1, 5, 6 and 7 changed;
 the order inside the version, React first, did not.)*
 
+*(Sections 14 and 15 added the same day, decided with the user: Blazor's surface is designed afresh,
+not kept, and what 0.3.0 does to speed is measured.)*
+
 ## Context
 
 ExGrid is usable only from Blazor. A React developer cannot write what a Consumer writes today: an
@@ -229,6 +232,39 @@ for a Blazor one.
 - **The toolchain** stays nix's: the flake's `browser` shell already carries Node, and the Script Core's
   build and tests run there, as `tools/assets` does. CI gains the npm
   build, the two Vitest layers and the React host's layer 3.
+
+### 14. Blazor's surface is designed afresh, from the Script Core's
+
+No Consumer depends on the current surface yet (the user, 2026-10-24), so Blazor's ExGrid does not
+keep it. Its public surface is designed from the Script Core's, so that a concept has one shape in
+TypeScript and C#: a column, a Grid Source, a Chrome seam, an event and its arguments are the same
+things under the same names, spelled as each language spells them. Where the current C# surface has a
+cleaner shape than the first TypeScript one, the TypeScript one takes it; neither side is the
+template by default.
+
+ExSheet, ExPivot, ExChart, ExBoard and the MudBlazor Wrappers are rewritten against the new surface in
+step 2 of section 7. [ADR-0201](./0201-the-public-surface-is-what-consumers-chromes-and-the-sibling-products-use.md)'s
+rule stands: the surface is what Consumers, Chromes and the sibling products use, and nothing more is
+public. Every member that leaves or changes is a breaking Change Note.
+
+### 15. Speed is measured, not assumed
+
+The move is expected to make ExGrid faster, not slower: the browser applies an input to its own DOM
+with no render tree to diff and, on Blazor Server, no round trip. That is a prediction, and two
+predictions about speed were already wrong in this project (ADR-0003, ADR-0008). Three places could
+make it slower and are measured first:
+
+- **The Window crossing into the browser.** On both Blazor hosts each Window the Consumer pushes is now
+  serialised to the Script Core. A large Window, or a live source that pushes often, pays for it.
+- **Template cells on Blazor.** A Blazor component inside DOM the Script Core owns is a component root
+  of its own.
+- **ExSheet and ExPivot on Blazor**, whose engines answer in C# and whose answers cross into the browser
+  after every recalculation or redraw.
+
+`spikes/render-bench` gains modes for the Script Core under React and under both Blazor hosts, beside
+today's C# core, and the numbers are recorded before step 1 and step 2 of section 7 are called done. A
+case that is slower is said in the record and in the Change Notes, and fixed or accepted with the user;
+performance still never gates CI.
 
 ## Consequences
 
