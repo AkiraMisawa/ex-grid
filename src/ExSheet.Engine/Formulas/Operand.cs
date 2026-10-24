@@ -16,6 +16,13 @@ internal enum OperandKind
 
     /// <summary>Values a Formula computed as a rectangle (ADR-0125): read as a range, and spilled where it is the result.</summary>
     Array,
+
+    /// <summary>
+    /// A 3D Reference (ADR-0331 §7): one rectangle on each Sheet of a span, read as one range, Sheet by
+    /// Sheet in tab order, by the functions Excel reads one in (<see cref="ThreeDArgument.Range"/>).
+    /// Read as one Value it is an Error Value (<see cref="Evaluator.ScalarOf"/>).
+    /// </summary>
+    ThreeD,
 }
 
 /// <summary>
@@ -25,9 +32,11 @@ internal enum OperandKind
 /// </summary>
 internal readonly struct Operand
 {
-    private Operand(OperandKind kind, Value? scalar, Area area, IReadOnlyList<Value?>? column = null, ValueArray? array = null, bool isSpillRange = false, bool keptBlank = false, ICellReader? cells = null)
+    private Operand(OperandKind kind, Value? scalar, Area area, IReadOnlyList<Value?>? column = null, ValueArray? array = null, bool isSpillRange = false, bool keptBlank = false, ICellReader? cells = null, IReadOnlyList<ICellReader>? sheets = null, bool handedOn = false)
     {
         Kind = kind;
+        Sheets = sheets;
+        HandedOn = handedOn;
         Cells = cells;
         Scalar = scalar;
         Area = area;
@@ -49,6 +58,16 @@ internal readonly struct Operand
     /// (ADR-0331). A rectangle derived from one (<c>INDEX</c>, <c>OFFSET</c>) is on the same Sheet.
     /// </summary>
     public ICellReader? Cells { get; }
+
+    /// <summary>For <see cref="OperandKind.ThreeD"/>: the Sheets of the span, in tab order, as the recalculation reads them (ADR-0331 §7).</summary>
+    public IReadOnlyList<ICellReader>? Sheets { get; }
+
+    /// <summary>
+    /// For <see cref="OperandKind.ThreeD"/>: whether a function handed it on (<c>IF</c>, <c>CHOOSE</c>, a
+    /// <c>LET</c> name), rather than its Reference standing where it is read. Read as one Value, one written
+    /// there is <c>#REF!</c> and one handed on <c>#VALUE!</c>, as Excel answered (ticket 12).
+    /// </summary>
+    public bool HandedOn { get; }
 
     /// <summary>For <see cref="OperandKind.Column"/>: the column's Values top to bottom, blank as <see langword="null"/>.</summary>
     public IReadOnlyList<Value?>? Column { get; }
@@ -91,7 +110,7 @@ internal readonly struct Operand
     public bool IsReference => Kind == OperandKind.Area || IsSpillRange;
 
     /// <summary>Whether this is a range a function reads cell by cell: a rectangle of cells, or a Linked Table's column.</summary>
-    public bool IsRange => Kind is OperandKind.Area or OperandKind.Column or OperandKind.Array;
+    public bool IsRange => Kind is OperandKind.Area or OperandKind.Column or OperandKind.Array or OperandKind.ThreeD;
 
     public static Operand Missing { get; } = new(OperandKind.Missing, null, default);
 
@@ -103,6 +122,12 @@ internal readonly struct Operand
 
     /// <summary>A rectangle of the Sheet <paramref name="cells"/> reads (ADR-0331).</summary>
     public static Operand Of(Area area, ICellReader cells) => new(OperandKind.Area, null, area, cells: cells);
+
+    /// <summary>A 3D Reference's rectangle on each Sheet of its span, <paramref name="sheets"/> in tab order (ADR-0331 §7).</summary>
+    public static Operand Of(Area area, IReadOnlyList<ICellReader> sheets) => new(OperandKind.ThreeD, null, area, sheets: sheets);
+
+    /// <summary>This operand as a function hands it on (<see cref="HandedOn"/>): a 3D Reference marked so, anything else as it is.</summary>
+    public Operand HandOn() => Kind == OperandKind.ThreeD ? new(OperandKind.ThreeD, null, Area, sheets: Sheets, handedOn: true) : this;
 
     /// <summary>Another rectangle of the same Sheet as this one, which must be a rectangle.</summary>
     public Operand SameSheet(Area area) => Kind == OperandKind.Area ? Of(area, Cells!) : throw new InvalidOperationException("Not a rectangle of cells.");

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- What CI's coverage counts (ADR-0041): the shipped assemblies only — the family's fourteen
+<!-- What CI's coverage counts (ADR-0041): the shipped assemblies only — the family's sixteen
      packages — never the test projects, the demo hosts, the Docs Site or the spikes. Read by the
      Microsoft.Testing.Extensions.CodeCoverage extension through its settings option. -->
 <Configuration>
@@ -11,6 +11,7 @@
         <ModulePath>.*[\\/]ExSheet\.dll$</ModulePath>
         <ModulePath>.*[\\/]ExSheet\.Engine\.dll$</ModulePath>
         <ModulePath>.*[\\/]ExSheet\.MudBlazor\.dll$</ModulePath>
+        <ModulePath>.*[\\/]ExSheet\.Xlsx\.dll$</ModulePath>
         <ModulePath>.*[\\/]ExPivot\.dll$</ModulePath>
         <ModulePath>.*[\\/]ExPivot\.Engine\.dll$</ModulePath>
         <ModulePath>.*[\\/]ExPivot\.MudBlazor\.dll$</ModulePath>
@@ -20,6 +21,7 @@
         <ModulePath>.*[\\/]ExBoard\.dll$</ModulePath>
         <ModulePath>.*[\\/]ExGrid\.Data\.dll$</ModulePath>
         <ModulePath>.*[\\/]ExGrid\.Data\.Arrow\.dll$</ModulePath>
+        <ModulePath>.*[\\/]ExGrid\.Data\.Xlsx\.dll$</ModulePath>
       </Include>
     </ModulePaths>
     <Attributes>

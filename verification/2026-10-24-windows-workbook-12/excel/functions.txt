@@ -1,0 +1,148 @@
+ABS|1|1|number
+ACOSH|1|1|number
+ACOS|1|1|number
+ACOTH|1|1|number
+ACOT|1|1|number
+AGGREGATE|3|Open|function_num, options, ref1, [ref2], ...
+AND|1|Open|logical1, [logical2], ...
+ASINH|1|1|number
+ASIN|1|1|number
+ATAN2|2|2|x_num, y_num
+ATANH|1|1|number
+ATAN|1|1|number
+AVERAGEIFS|3|Open|average_range, criteria_range1, criteria1, ...
+AVERAGEIF|2|3|range, criteria, [average_range]
+AVERAGE|1|Open|number1, [number2], ...
+CEILING.MATH|1|3|number, [significance], [mode]
+CHOOSE|2|Open|index_num, value1, [value2], ...
+COLUMNS|1|1|array
+COLUMN|0|1|[reference]
+CONCATENATE|1|Open|text1, [text2], ...
+CONCAT|1|253|text1, [text2], ...
+COSH|1|1|number
+COS|1|1|number
+COTH|1|1|number
+COT|1|1|number
+COUNTA|1|Open|value1, [value2], ...
+COUNTBLANK|1|1|range
+COUNTIFS|2|254|criteria_range1, criteria1, ...
+COUNTIF|2|2|range, criteria
+COUNT|1|Open|value1, [value2], ...
+CSCH|1|1|number
+CSC|1|1|number
+DATEDIF|3|3|start_date, end_date, unit
+DATE|3|3|year, month, day
+DAYS|2|2|end_date, start_date
+DAY|1|1|serial_number
+DEGREES|1|1|angle
+EDATE|2|2|start_date, months
+EOMONTH|2|2|start_date, months
+ERROR.TYPE|1|1|error_val
+EXACT|2|2|text1, text2
+EXP|1|1|number
+FILTER|2|3|array, include, [if_empty]
+FIND|2|3|find_text, within_text, [start_num]
+FLOOR.MATH|1|3|number, [significance], [mode]
+FV|3|5|rate, nper, pmt, [pv], [type]
+HLOOKUP|3|4|lookup_value, table_array, row_index_num, [range_lookup]
+HOUR|1|1|serial_number
+IFERROR|2|2|value, value_if_error
+IFNA|2|2|value, value_if_na
+IFS|2|254|logical_test1, value_if_true1, ...
+IF|2|3|logical_test, value_if_true, [value_if_false]
+INDEX|2|3|array, row_num, [column_num]
+INDIRECT|1|2|ref_text, [a1]
+INT|1|1|number
+ISBLANK|1|1|value
+ISERROR|1|1|value
+ISNA|1|1|value
+ISNUMBER|1|1|value
+ISTEXT|1|1|value
+LARGE|2|2|array, k
+LEFT|1|2|text, [num_chars]
+LEN|1|1|text
+LET|3|253|name1, name_value1, calculation_or_name2, [name_value2, calculation_or_name3...]
+LN|1|1|number
+LOG10|1|1|number
+LOG|1|2|number, [base]
+LOWER|1|1|text
+MATCH|2|3|lookup_value, lookup_array, [match_type]
+MAXIFS|3|Open|max_range, criteria_range1, criteria1, ...
+MAX|1|Open|number1, [number2], ...
+MEDIAN|1|Open|number1, [number2], ...
+MID|3|3|text, start_num, num_chars
+MINIFS|3|Open|min_range, criteria_range1, criteria1, ...
+MINUTE|1|1|serial_number
+MIN|1|Open|number1, [number2], ...
+MOD|2|2|number, divisor
+MONTH|1|1|serial_number
+MROUND|2|2|number, multiple
+NA|0|0|
+NETWORKDAYS|2|3|start_date, end_date, [holidays]
+NOT|1|1|logical
+NOW|0|0|
+NUMBERVALUE|1|3|text, [decimal_separator], [group_separator]
+OFFSET|3|5|reference, rows, cols, [height], [width]
+OR|1|Open|logical1, [logical2], ...
+PI|0|0|
+PMT|3|5|rate, nper, pv, [fv], [type]
+POWER|2|2|number, power
+PRODUCT|1|Open|number1, [number2], ...
+PROPER|1|1|text
+PV|3|5|rate, nper, pmt, [fv], [type]
+RADIANS|1|1|angle
+RANDBETWEEN|2|2|bottom, top
+RAND|0|0|
+RANK.EQ|2|3|number, ref, [order]
+REPLACE|4|4|old_text, start_num, num_chars, new_text
+REPT|2|2|text, number_times
+RIGHT|1|2|text, [num_chars]
+ROUNDDOWN|2|2|number, num_digits
+ROUNDUP|2|2|number, num_digits
+ROUND|2|2|number, num_digits
+ROWS|1|1|array
+ROW|0|1|[reference]
+SEARCH|2|3|find_text, within_text, [start_num]
+SECH|1|1|number
+SECOND|1|1|serial_number
+SEC|1|1|number
+SEQUENCE|1|4|rows, [columns], [start], [step]
+SIGN|1|1|number
+SINH|1|1|number
+SIN|1|1|number
+SMALL|2|2|array, k
+SORTBY|2|Open|array, by_array1, [sort_order1], ...
+SORT|1|4|array, [sort_index], [sort_order], [by_col]
+SQRT|1|1|number
+STDEV.P|1|Open|number1, [number2], ...
+STDEV.S|1|Open|number1, [number2], ...
+SUBSTITUTE|3|4|text, old_text, new_text, [instance_num]
+SUBTOTAL|2|Open|function_num, ref1, [ref2], ...
+SUMIFS|3|Open|sum_range, criteria_range1, criteria1, ...
+SUMIF|2|3|range, criteria, [sum_range]
+SUMPRODUCT|1|Open|array1, [array2], ...
+SUM|1|Open|number1, [number2], ...
+SWITCH|3|254|expression, value1, result1, [default_or_value2], [result2], ...
+TANH|1|1|number
+TAN|1|1|number
+TEXTJOIN|3|252|delimiter, ignore_empty, text1, [text2], ...
+TEXT|2|2|value, format_text
+TIME|3|3|hour, minute, second
+TODAY|0|0|
+TRANSPOSE|1|1|array
+TRIM|1|1|text
+TRUNC|1|2|number, [num_digits]
+UNIQUE|1|3|array, [by_col], [exactly_once]
+UPPER|1|1|text
+VALUE|1|1|text
+VAR.P|1|Open|number1, [number2], ...
+VAR.S|1|Open|number1, [number2], ...
+VLOOKUP|3|4|lookup_value, table_array, col_index_num, [range_lookup]
+WEEKDAY|1|2|serial_number, [return_type]
+WORKDAY|2|3|start_date, days, [holidays]
+XLOOKUP|3|6|lookup_value, lookup_array, return_array, [if_not_found], [match_mode], [search_mode]
+XMATCH|2|4|lookup_value, lookup_array, [match_mode], [search_mode]
+XNPV|3|3|rate, values, dates
+XOR|1|Open|logical1, [logical2], ...
+YEARFRAC|2|3|start_date, end_date, [basis]
+YEAR|1|1|serial_number

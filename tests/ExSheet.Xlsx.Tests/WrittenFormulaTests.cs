@@ -66,6 +66,7 @@ public class WrittenFormulaTests
     [InlineData("=SUM(Sheet2!A1#)+SORTBY(A1:A3,B1:B3,-1)")]
     [InlineData("=FILTER(A1:B9,(B1:B9>0)*(A1:A9<>\"\"),\"none\")")]
     [InlineData("=IFERROR(1/0,NA())&TEXTJOIN(\",\",TRUE,A1:A3)")]
+    [InlineData("=SUM(Sheet1:Sheet3!B2)+STDEV.S('Q1 Sales:Sheet3'!$B$2:C9)")]
     public void ADR0330_a_written_formula_reads_back_as_itself(string formula)
     {
         var stored = Written(formula);
@@ -74,6 +75,23 @@ public class WrittenFormulaTests
 
         Assert.Equal(StoredFormulaProblem.None, problem);
         Assert.Equal(formula, read);
+    }
+
+    [Theory] // ADR-0331 §7, ADR-0330 §4: a 3D Reference is stored as the engine writes it, and refused when the Workbook lacks a Sheet of either end
+    [InlineData("=SUM(Sheet1:Sheet3!B2)", "SUM(Sheet1:Sheet3!B2)", true)]
+    [InlineData("=AVERAGE('Q1 Sales:Sheet3'!B2:C3)", "AVERAGE('Q1 Sales:Sheet3'!B2:C3)", true)]
+    [InlineData("=SUM(Sheet1:Sheet9!B2)", "SUM(Sheet1:Sheet9!B2)", false)]
+    [InlineData("=SUM(Sheet9:Sheet3!B2)", "SUM(Sheet9:Sheet3!B2)", false)]
+    // Stored as Excel stored it (verification/2026-10-24-windows-workbook-12/records/spill-xml.txt).
+    [InlineData("=SUM(Sheet1:Sheet3!B2#)", "SUM(_xlfn.ANCHORARRAY(Sheet1:Sheet3!B2))", true)]
+    public void ADR0331_a_3d_reference_is_written_as_stored(string formula, string stored, bool written)
+    {
+        var expected = written ? WrittenFormulaProblem.None : WrittenFormulaProblem.MissingSheet;
+        string[] sheets = ["Sheet1", "Q1 Sales", "Sheet3"];
+        var text = WrittenFormula.Write(Entry.Parse(formula, CultureInfo.InvariantCulture)!, n => sheets.Contains(n, StringComparer.OrdinalIgnoreCase), out var problem);
+
+        Assert.Equal(expected, problem);
+        Assert.Equal(stored, text);
     }
 
     [Fact] // ADR-0330 §6: a structured reference to no declared Linked Table has no Excel Table to read in the file written, and is not written

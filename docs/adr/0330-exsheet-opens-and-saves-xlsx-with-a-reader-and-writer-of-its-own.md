@@ -196,6 +196,8 @@ refuses.
 ## Consequences
 
 - Two new shipped packages, packed and smoke-tested as the others are (ADR-0042).
+  *(2026-10-24, decided with the user: they are published from `0.2.0`, on the family's train, ADR-0042's
+  note of that date.)*
 - `CONTEXT.md` gains **Open Report**.
 - Round-tripping a workbook through ExSheet loses what §4 lists as not carried. It is said each time, by
   the Open Report, and never silently.

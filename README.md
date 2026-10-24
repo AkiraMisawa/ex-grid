@@ -302,6 +302,7 @@ dotnet add package ExChart --prerelease             # the charts; ExChart.Engine
 dotnet add package ExChart.MudBlazor --prerelease
 dotnet add package ExBoard --prerelease             # a Board of grids, pivots and charts over typed inputs
 dotnet add package ExGrid.Data.Arrow --prerelease   # a Snapshot as Apache Arrow
+dotnet add package ExSheet.Xlsx --prerelease        # ExSheet opens and saves .xlsx; ExGrid.Data.Xlsx alone reads and writes the format
 ```
 
 Each package's own readme takes it from there:
@@ -309,11 +310,11 @@ Each package's own readme takes it from there:
 | Product | Readmes |
 |---|---|
 | ExGrid | [`ExGrid`](src/ExGrid/README.md), [`ExGrid.MudBlazor`](src/ExGrid.MudBlazor/README.md) |
-| ExSheet | [`ExSheet`](src/ExSheet/README.md), [`ExSheet.Engine`](src/ExSheet.Engine/README.md), [`ExSheet.MudBlazor`](src/ExSheet.MudBlazor/README.md) |
+| ExSheet | [`ExSheet`](src/ExSheet/README.md), [`ExSheet.Engine`](src/ExSheet.Engine/README.md), [`ExSheet.MudBlazor`](src/ExSheet.MudBlazor/README.md), [`ExSheet.Xlsx`](src/ExSheet.Xlsx/README.md) |
 | ExPivot | [`ExPivot`](src/ExPivot/README.md), [`ExPivot.Engine`](src/ExPivot.Engine/README.md), [`ExPivot.MudBlazor`](src/ExPivot.MudBlazor/README.md) |
 | ExChart | [`ExChart`](src/ExChart/README.md), [`ExChart.Engine`](src/ExChart.Engine/README.md), [`ExChart.MudBlazor`](src/ExChart.MudBlazor/README.md) |
 | ExBoard | [`ExBoard`](src/ExBoard/README.md) |
-| Data | [`ExGrid.Data`](src/ExGrid.Data/README.md), [`ExGrid.Data.Arrow`](src/ExGrid.Data.Arrow/README.md) |
+| Data | [`ExGrid.Data`](src/ExGrid.Data/README.md), [`ExGrid.Data.Arrow`](src/ExGrid.Data.Arrow/README.md), [`ExGrid.Data.Xlsx`](src/ExGrid.Data.Xlsx/README.md) |
 
 **Requirements:** .NET 10 or newer, Chrome or Edge, and an interactive render mode. ExGrid is
 verified under WebAssembly; every browser test also runs under Blazor Server.
@@ -356,7 +357,7 @@ Every decision is recorded with its reasons in [`docs/adr/`](docs/adr/), and the
 ## Status
 
 **Beta.** The specification is settled and every test layer passes in CI, but the API may change
-between prereleases. The family's fourteen packages, ExChart's three and ExBoard among them from the next prerelease, ship together as `0.1.0-beta.N`, then as release
+between prereleases. The family's sixteen packages ship together as `0.1.0-beta.N`, then as release
 candidates `0.1.0-rc.N`; a stable version waits
 for the [Definition of Done](docs/definition-of-done.md) to be signed off. What remains is in
 [`docs/implementation-status.md`](docs/implementation-status.md).

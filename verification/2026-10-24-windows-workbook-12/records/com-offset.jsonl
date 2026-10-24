@@ -1,0 +1,5 @@
+﻿{"group":"meta","version":"16.0","build":20430,"culture":"en-GB","started":"2026-10-24T23:06:11.2499733+01:00"}
+{"group":"offset","id":"=OFFSET(Out!A1,Sheet2:Sheet4!B2,1)","what":"=OFFSET(Out!A1,Sheet2:Sheet4!B2,1)","refused":null,"read":{"Out!A9":{"formula":"=OFFSET(Out!A1,Sheet2:Sheet4!B2,1)","text":"#REF!","value":-2146826265,"format":"General"}}}
+{"group":"offset","id":"=OFFSET(Out!A1,1,Sheet2:Sheet4!B2)","what":"=OFFSET(Out!A1,1,Sheet2:Sheet4!B2)","refused":null,"read":{"Out!A9":{"formula":"=OFFSET(Out!A1,1,Sheet2:Sheet4!B2)","text":"#REF!","value":-2146826265,"format":"General"}}}
+{"group":"offset","id":"=OFFSET(Out!A1,1,1,Sheet2:Sheet4!B2)","what":"=OFFSET(Out!A1,1,1,Sheet2:Sheet4!B2)","refused":null,"read":{"Out!A9":{"formula":"=OFFSET(Out!A1,1,1,Sheet2:Sheet4!B2)","text":"#REF!","value":-2146826265,"format":"General"}}}
+{"group":"offset","id":"=OFFSET(Sheet2:Sheet4!B2,1,1)","what":"=OFFSET(Sheet2:Sheet4!B2,1,1)","refused":null,"read":{"Out!A9":{"formula":"=OFFSET(Sheet2:Sheet4!B2,1,1)","text":"#VALUE!","value":-2146826273,"format":"General"}}}

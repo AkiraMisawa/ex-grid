@@ -952,7 +952,7 @@ _Avoid_: page, worksheet tab, a details tab (that is ExPivot's Show Details)
 
 **3D Reference**:
 A Reference that reads one range on every Sheet from one to another in tab order
-(`Sheet1:Sheet3!B2`). Only the functions Excel accepts one in take it ([ADR-0331](./docs/adr/0331-exsheet-holds-a-workbook-of-sheets-behind-sheet-tabs.md)).
+(`Sheet1:Sheet3!B2`): the Sheets between its two end Sheets, whatever moves between them. Only the functions Excel reads one in take it ([ADR-0331](./docs/adr/0331-exsheet-holds-a-workbook-of-sheets-behind-sheet-tabs.md)).
 _Avoid_: cross-sheet range, multi-sheet reference
 
 **Entry**:

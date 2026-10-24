@@ -554,8 +554,13 @@ public abstract class SheetEdit
             var to = CheckIndex(index, workbook.Sheets.Count);
             var from = workbook.IndexOf(sheet);
             if (from == to) return new Done(sheet, SheetChange.None, () => SheetChange.None, () => SheetChange.None);
-            var change = workbook.Move(sheet, to);
-            return new Done(sheet, change, () => workbook.Move(sheet, from), () => workbook.Move(sheet, to));
+            var rewritten = new List<(Sheet, CellAddress, Entry)>();
+            var change = workbook.Move(sheet, to, rewritten);
+            return new Done(sheet, change, () => workbook.MoveBack(sheet, from, rewritten), () =>
+            {
+                rewritten.Clear();
+                return workbook.Move(sheet, to, rewritten);
+            });
         }
     }
 

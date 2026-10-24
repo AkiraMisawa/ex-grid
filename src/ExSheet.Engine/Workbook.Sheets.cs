@@ -12,6 +12,18 @@ public sealed partial class Workbook
     /// <summary>Where <paramref name="sheet"/> stands in the order; -1 for a Sheet the Workbook does not hold.</summary>
     internal int IndexOf(Sheet sheet) => _sheets.IndexOf(sheet);
 
+    /// <summary>
+    /// The Sheets a 3D Reference from <paramref name="first"/> to <paramref name="last"/> spans (ADR-0331
+    /// §7): those from one to the other in tab order, both included, whichever stands first; the names
+    /// are read without regard to case. <see langword="null"/> when no Sheet has one of the names.
+    /// </summary>
+    internal IReadOnlyList<Sheet>? Span(string first, string last)
+    {
+        if (Find(first) is not { } from || Find(last) is not { } to) return null;
+        var (a, b) = (_sheets.IndexOf(from), _sheets.IndexOf(to));
+        return _sheets.GetRange(Math.Min(a, b), Math.Abs(a - b) + 1);
+    }
+
     /// <summary>What a rename did, and the Formulas it rewrote on every Sheet, as they were, for undoing it.</summary>
     internal sealed record SheetRename(SheetChange Change, string OldName, IReadOnlyList<(Sheet Sheet, CellAddress Address, Entry Entry)> Rewritten);
 
@@ -30,7 +42,12 @@ public sealed partial class Workbook
         var change = Reshape(sheet, dirty =>
         {
             string? Requalify(string qualifier) => Sheet.Names(qualifier, oldName) ? name : qualifier;
-            Rewrite(r => r.SheetName is { } qualifier && Sheet.Names(qualifier, oldName) ? r with { SheetName = name } : r, Requalify, rewritten, dirty);
+            // Either end of a 3D Reference's span is renamed as a qualifier is (ADR-0331 §7).
+            Rewrite(r => r with
+            {
+                SheetName = r.SheetName is { } qualifier && Sheet.Names(qualifier, oldName) ? name : r.SheetName,
+                LastSheetName = r.LastSheetName is { } last && Sheet.Names(last, oldName) ? name : r.LastSheetName,
+            }, Requalify, rewritten, dirty);
             sheet.Name = name;
         });
         return new SheetRename(change, oldName, rewritten);
@@ -95,36 +112,58 @@ public sealed partial class Workbook
 
     /// <summary>
     /// Takes <paramref name="sheet"/> out of the Workbook. Deleted, every Reference on another Sheet
-    /// qualified with its name becomes <c>#REF!</c> (ADR-0331); taken out to undo its insertion or copy,
+    /// qualified with its name becomes <c>#REF!</c> (ADR-0331), and a 3D Reference it ends hands that end
+    /// to the Sheet next to it inward (<see cref="Deleted"/>); taken out to undo its insertion or copy,
     /// nothing is rewritten. The Sheet shown, if it was this one, becomes the one that takes its place.
     /// </summary>
     internal SheetChange TakeOut(Sheet sheet, bool delete, List<(Sheet Sheet, CellAddress Address, Entry Entry)> rewritten)
     {
         var index = _sheets.IndexOf(sheet);
+        var before = _sheets.Select(s => s.Name).ToList();
         return Reshape(sheet, dirty =>
         {
             _sheets.RemoveAt(index);
             if (delete)
             {
                 var name = sheet.Name;
-                Rewrite(r => r.SheetName is { } qualifier && Sheet.Names(qualifier, name) ? null : r, q => Sheet.Names(q, name) ? null : q, rewritten, dirty);
+                Rewrite(r => r.IsThreeD ? Deleted(r, before, name) : r.SheetName is { } qualifier && Sheet.Names(qualifier, name) ? null : r,
+                    q => Sheet.Names(q, name) ? null : q, rewritten, dirty);
             }
             if (_shown == sheet) _shown = _sheets[Math.Min(index, _sheets.Count - 1)];
         });
     }
 
-    /// <summary>Moves <paramref name="sheet"/> to <paramref name="index"/> in the order.</summary>
-    internal SheetChange Move(Sheet sheet, int index) =>
+    /// <summary>
+    /// Moves <paramref name="sheet"/> to <paramref name="index"/> in the order. A 3D Reference whose end it is,
+    /// moved past the other end, hands that end to the Sheet next to it inward (<see cref="Moved"/>); each
+    /// Formula so rewritten is added to <paramref name="rewritten"/> as it was, for undoing the move.
+    /// </summary>
+    internal SheetChange Move(Sheet sheet, int index, List<(Sheet Sheet, CellAddress Address, Entry Entry)> rewritten)
+    {
+        var before = _sheets.Select(s => s.Name).ToList();
+        return Reshape(sheet, dirty =>
+        {
+            _sheets.Remove(sheet);
+            _sheets.Insert(index, sheet);
+            var after = _sheets.Select(s => s.Name).ToList();
+            Rewrite(r => r.IsThreeD ? Moved(r, before, after, sheet.Name) : r, q => q, rewritten, dirty);
+        });
+    }
+
+    /// <summary>Undoes a move: <paramref name="sheet"/> back at <paramref name="index"/>, and the Formulas it rewrote exactly as they were.</summary>
+    internal SheetChange MoveBack(Sheet sheet, int index, IReadOnlyList<(Sheet Sheet, CellAddress Address, Entry Entry)> rewritten) =>
         Reshape(sheet, _ =>
         {
             _sheets.Remove(sheet);
             _sheets.Insert(index, sheet);
+            foreach (var (owner, address, entry) in rewritten) owner.ReplaceEntry(address, entry);
         });
 
     /// <summary>
     /// A copy of <paramref name="source"/> named <paramref name="name"/> at <paramref name="index"/>: its
     /// Entries, Cell Formats and column widths. A Reference in it qualified with the
-    /// source's name names the copy, as Excel's copy does (ADR-0331).
+    /// source's name names the copy, as Excel's copy does (ADR-0331); a 3D Reference the source ends is
+    /// <c>#REF!</c> in the copy, as in Excel's, and any other is copied as it is (ADR-0331 §7).
     /// </summary>
     internal Sheet Copy(Sheet source, int index, string name, out SheetChange change)
     {
@@ -139,7 +178,8 @@ public sealed partial class Workbook
             {
                 if (cell.Entry is not { } entry) continue;
                 var requalified = ReferenceRewriter.Rewrite(entry,
-                    r => r.SheetName is { } qualifier && Sheet.Names(qualifier, sourceName) ? r with { SheetName = name } : r,
+                    r => r.IsThreeD ? Sheet.Names(r.SheetName, sourceName) || Sheet.Names(r.LastSheetName, sourceName) ? null : r
+                        : r.SheetName is { } qualifier && Sheet.Names(qualifier, sourceName) ? r with { SheetName = name } : r,
                     q => Sheet.Names(q, sourceName) ? name : q);
                 copy.ReplaceEntry(cell.Address, requalified);
                 dirty.Add(new SheetCell(copy, cell.Address));

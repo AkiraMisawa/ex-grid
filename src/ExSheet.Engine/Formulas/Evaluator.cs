@@ -35,6 +35,14 @@ internal interface ICellReader
     ICellReader? Resolve(string? sheetName);
 
     /// <summary>
+    /// The cells of every Sheet a 3D Reference spans (ADR-0331 §7): the Sheets from the one named
+    /// <paramref name="first"/> to the one named <paramref name="last"/>, both included, in tab order,
+    /// the names read without regard to case; <see langword="null"/> when the Workbook has no Sheet of
+    /// one of the names, which is <c>#NAME?</c>, as Excel's.
+    /// </summary>
+    IReadOnlyList<ICellReader>? ResolveSpan(string first, string last);
+
+    /// <summary>
     /// The draw of the <c>RAND</c> or <c>RANDBETWEEN</c> call at <paramref name="place"/> in the
     /// Formula of <paramref name="cell"/> (ADR-0180), from the Sheet Seed and the count of changes;
     /// <see langword="null"/> while the Sheet has no seed.
@@ -254,7 +262,23 @@ internal sealed class Evaluator(ICellReader cells, CultureInfo culture)
     private Operand Call(FunctionNode f) =>
         !RuntimeHelpers.TryEnsureSufficientExecutionStack() ? Refuse()
         : f.Function is null ? ExcelFunctionNames.Undeclared(f.Name) ? RefuseName() : Formulas.Operand.Of(ErrorValue.Name)
-        : f.Function.Invoke(new FunctionCall(this, f.Arguments) { Place = f.Place });
+        : SpanWhereOneSheetIsAsked(f) ? Formulas.Operand.Of(ErrorValue.Value)
+        : f.Function.Invoke(new FunctionCall(this, f.Arguments) { Place = f.Place, ThreeD = f.Function.ThreeD });
+
+    /// <summary>
+    /// Whether a 3D Reference is written as an argument where the function asks for a range of one Sheet
+    /// (<see cref="ThreeDArgument.OneSheet"/>): the call is <c>#VALUE!</c> before anything of it is read, as
+    /// Excel's <c>SUMIF(Sheet1:Sheet3!B2,"&gt;0")</c> and <c>INDEX(Sheet1:Sheet3!B2,1)</c> are (ADR-0331 §7).
+    /// </summary>
+    private static bool SpanWhereOneSheetIsAsked(FunctionNode f)
+    {
+        if (f.Function!.ThreeD is not { } policy) return false;
+        for (var i = 0; i < f.Arguments.Count; i++)
+        {
+            if (f.Arguments[i] is ReferenceNode { Reference.IsThreeD: true } && policy(i, f.Arguments.Count) == ThreeDArgument.OneSheet) return true;
+        }
+        return false;
+    }
 
     /// <summary>A node that holds no other to compute: a constant, a Reference, a Linked Table's column, or a name nothing binds.</summary>
     private Operand Leaf(Node node) => node switch
@@ -264,6 +288,11 @@ internal sealed class Evaluator(ICellReader cells, CultureInfo culture)
         BooleanNode b => Formulas.Operand.Of(Value.FromBoolean(b.Value)),
         ErrorNode e => Formulas.Operand.Of(e.Error),
         MissingNode => Formulas.Operand.Missing,
+        // A 3D Reference is its rectangle on every Sheet of its span; one that names a Sheet the Workbook
+        // lacks is #NAME?, and its spill #REF!, as Excel answered (ADR-0331 §7, ticket 12).
+        ReferenceNode { Reference: { IsThreeD: true } span } => span.Spilled ? Formulas.Operand.Of(ErrorValue.Ref)
+            : Cells.ResolveSpan(span.SheetName!, span.LastSheetName!) is { } sheets ? Formulas.Operand.Of(span.Area, sheets)
+            : Formulas.Operand.Of(ErrorValue.Name),
         // A Reference reads the Sheet its qualifier names; a name no Sheet of the Workbook has names nothing (ADR-0046, ADR-0331).
         ReferenceNode r => Cells.Resolve(r.Reference.SheetName) is not { } sheet ? Formulas.Operand.Of(ErrorValue.Ref)
             : r.Reference.Spilled ? sheet.Spill(new CellAddress(r.Reference.Row1, r.Reference.Column1))
@@ -286,7 +315,8 @@ internal sealed class Evaluator(ICellReader cells, CultureInfo culture)
     /// An operand used as one Value: a single cell is read; a rectangle of more than one cell refuses
     /// the Formula (<see cref="Refused"/>), because Excel 365 applies what wants one Value to each Value
     /// of it, which ExSheet does not yet (ADR-0125), and ExSheet will not pick one cell of it silently.
-    /// An empty argument is blank.
+    /// An empty argument is blank. A 3D Reference is <c>#REF!</c> where it is written, and <c>#VALUE!</c>
+    /// where a function handed it on (<see cref="Operand.HandedOn"/>), as Excel answered (ADR-0331 §7).
     /// </summary>
     public Value? ScalarOf(Operand operand) => operand.Kind switch
     {
@@ -296,6 +326,7 @@ internal sealed class Evaluator(ICellReader cells, CultureInfo culture)
         OperandKind.Column when operand.Column!.Count == 1 => operand.Column[0],
         OperandKind.Column => Refused(),
         OperandKind.Array => operand.Array!.IsSingle ? operand.Array[0, 0] : Refused(),
+        OperandKind.ThreeD => Value.FromError(operand.HandedOn ? ErrorValue.Value : ErrorValue.Ref),
         _ => null,
     };
 
@@ -305,6 +336,8 @@ internal sealed class Evaluator(ICellReader cells, CultureInfo culture)
         OperandKind.Area => range.Cells!.NonBlankIn(range.Area).Select(a => range.Cells.Read(a)!.Value),
         OperandKind.Column => range.Column!.Where(v => v is not null).Select(v => v!.Value),
         OperandKind.Array => range.Array!.NonBlank(),
+        // Sheet by Sheet in tab order, each row-major (ADR-0331 §7).
+        OperandKind.ThreeD => range.Sheets!.SelectMany(sheet => sheet.NonBlankIn(range.Area).Select(a => sheet.Read(a)!.Value)),
         _ => throw new ArgumentException("Not a range.", nameof(range)),
     };
 
@@ -410,6 +443,10 @@ internal sealed class Evaluator(ICellReader cells, CultureInfo culture)
     {
         switch (node)
         {
+            // A 3D Reference in parentheses is #NAME?, as Excel answered =(Sheet1:Sheet3!B2) (ADR-0331 §7).
+            case ParenthesesNode { Inner: ReferenceNode { Reference.IsThreeD: true } }:
+                done.Push(Formulas.Operand.Of(ErrorValue.Name));
+                return;
             case ParenthesesNode p:
                 work.Push(new Step(p.Inner, false));
                 return;
@@ -473,7 +510,9 @@ internal sealed class Evaluator(ICellReader cells, CultureInfo culture)
                 _bindingsOutOfScope.Remove(binding);
                 computing.Remove(binding);
                 _bindings[binding] = slot;
-                slot.Value = done.Peek();
+                // A name bound to a 3D Reference hands it on, as LET's did in Excel (ADR-0331 §7).
+                slot.Value = done.Pop().HandOn();
+                done.Push(slot.Value.Value);
                 return;
         }
     }
