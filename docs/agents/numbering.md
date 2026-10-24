@@ -47,7 +47,8 @@ block on `main` before it uses the first number.
 | 0320–0329 | `claude/project-thread-2f4kcm` | ExChart's Chart Spec: a declarative entry an AI writes, nodes and edges, and the Chart Source, grilled with the user (2026-10-20) |
 | 0330–0339 | `claude/project-thread-5x47er` | ExSheet's `.xlsx` (ADR-0330) and the Workbook it waits on (ADR-0331), grilled with the user 2026-10-20. Numbered 0320 and 0321 on the branch until 2026-10-20, when the block was found taken |
 | 0340–0349 | `claude/project-thread-2m226m` | ExBoard: the family as an AI's visualisation tool, a Board an AI composes once and a workflow reuses, its typed inputs, and the grid built at run time, grilled with the user (2026-10-20) |
-| 0350– | free | reserve a block of ten |
+| 0350–0359 | `claude/project-thread-6ny54c` | 0.3.0: ExGrid's core in TypeScript, taken by React and by Blazor's ExGrid (decided with the user, 2026-10-24) |
+| 0360– | free | reserve a block of ten |
 
 ## ExSheet tickets (`docs/specs/exsheet/issues/`)
 
