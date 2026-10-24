@@ -1,0 +1,131 @@
+{
+  "about": "The one mapping between the scroll offset the browser holds and the content offset the rows are computed from, above the Layout Ceiling: by default a million rows of 28px in 572px under the 22,369,618px ceiling Chrome lays out at 150%. From tests/ExGrid.Tests/ViewportCompressionTests.cs; its properties over many offsets stay there and in viewport-compression.test.ts.",
+  "kind": "calls",
+  "subject": "ViewportGeometry",
+  "defaults": { "rowHeightPx": 28, "viewportHeightPx": 572, "totalRowCount": 1000000, "scrollRoomPx": 22369618 },
+  "cases": [
+    {
+      "name": "ADR-0053 / VZ-8: the refusal is at the scale-one Layout Ceiling, 4px short of 2^25",
+      "expect": [
+        { "static": "maxScrollHeightPx", "is": 33554428 },
+        { "static": "layoutCeilingMarginPx", "is": 256 },
+        { "static": "endSlackPx", "is": 2 }
+      ]
+    },
+    {
+      "name": "ADR-0053 / VZ-8: a true height exactly at the ceiling is accepted",
+      "create": { "rowHeightPx": 1, "totalRowCount": 33554428, "scrollRoomPx": "Infinity" },
+      "expect": [{ "get": "isCompressed", "is": false }]
+    },
+    {
+      "name": "ADR-0053 / VZ-8: a true height past the ceiling is refused",
+      "create": { "rowHeightPx": 1, "totalRowCount": 33554429, "scrollRoomPx": "Infinity" },
+      "throws": "invalidOperation"
+    },
+    {
+      "name": "ADR-0053 / VZ-8: what is refused does not depend on the room the machine leaves",
+      "create": { "rowHeightPx": 1, "totalRowCount": 33554429, "scrollRoomPx": 100000000 },
+      "throws": "invalidOperation"
+    },
+    {
+      "name": "ADR-0053 / VZ-15: a true height exactly at the room is not compressed",
+      "create": { "rowHeightPx": 20, "viewportHeightPx": 100, "totalRowCount": 1000, "scrollRoomPx": 20000 },
+      "expect": [
+        { "get": "isCompressed", "is": false },
+        { "get": "compression", "is": 1 },
+        { "get": "scrollHeightPx", "is": 20000 },
+        { "get": "maxScrollTopPx", "is": 19900 },
+        { "get": "scrollReachPx", "is": 19900 },
+        { "call": "contentOffsetAt", "args": [-50], "is": -50 },
+        { "call": "scrollTopAt", "args": [1234.5678], "is": 1234.5678 }
+      ]
+    },
+    {
+      "name": "ADR-0053: above the ceiling the spacer is the room less a margin, and k maps both ends exactly",
+      "create": {},
+      "expect": [
+        { "get": "isCompressed", "is": true },
+        { "get": "contentHeightPx", "is": 28000000 },
+        { "get": "scrollHeightPx", "is": 22369362 },
+        { "get": "compression", "is": 1.2517186000421658 },
+        { "get": "maxScrollTopPx", "is": 22368790 },
+        { "get": "scrollReachPx", "is": 22368788 },
+        { "call": "contentOffsetAt", "args": [22368788], "is": 27999428, "near": 1e-6 },
+        { "call": "contentOffsetAt", "args": [22368790], "is": 27999428, "near": 1e-6 },
+        { "call": "contentOffsetAt", "args": [22373790], "is": 27999428, "near": 1e-6 },
+        { "call": "contentOffsetAt", "args": [0], "is": 0 },
+        { "call": "contentOffsetAt", "args": [-40], "is": 0 },
+        { "call": "sliceAt", "args": [0], "is": { "start": 0, "count": 22 } },
+        { "call": "sliceAt", "args": [22368790], "is": { "start": 999978, "count": 22 } },
+        { "call": "viewportTopPxOf", "args": [999999, 22368789], "is": 544, "near": 1e-6 },
+        { "call": "viewportTopPxOf", "args": [999999, 22368790], "is": 544, "near": 1e-6 }
+      ]
+    },
+    {
+      "name": "ADR-0053: the ceiling a browser tells at scale one never compresses a result VZ-8 accepts",
+      "create": { "totalRowCount": 1198372, "scrollRoomPx": 33554428 },
+      "expect": [
+        { "get": "isCompressed", "is": false },
+        { "get": "scrollHeightPx", "is": 33554416 }
+      ]
+    },
+    {
+      "name": "ADR-0053: the ends are the ends: Ctrl+Home at 0 and Ctrl+End at the furthest the browser scrolls",
+      "create": {},
+      "expect": [
+        { "call": "scrollTopToReveal", "args": [0, 11184395], "is": 0 },
+        { "call": "scrollTopToReveal", "args": [999999, 0], "is": 22368790 }
+      ]
+    },
+    {
+      "name": "ADR-0053: a row already visible leaves the offset where the browser put it, unrounded",
+      "create": {},
+      "expect": [
+        { "call": "sliceAt", "args": [1000000.6667], "is": { "start": 44704, "count": 22 } },
+        { "call": "scrollTopToReveal", "args": [44707, 1000000.6667], "is": 1000000.6667 }
+      ]
+    },
+    {
+      "name": "ADR-0053 / ADR-0008: an edge auto-scroll or a PageDown steps the content by rows, not the scrollbar",
+      "create": {},
+      "expect": [
+        {
+          "call": "scrollTopStepped", "args": [5000000, 280], "is": 5000223.692449717, "near": 1e-6
+        },
+        { "call": "contentOffsetAt", "args": [5000223.692449717], "is": 6258873.000210829, "near": 1e-6 },
+        { "call": "contentOffsetAt", "args": [5000000], "is": 6258593.000210829, "near": 1e-6 },
+        { "call": "scrollTopStepped", "args": [22368789, 280], "is": 22368790 },
+        { "call": "scrollTopStepped", "args": [1, -280], "is": 0 }
+      ]
+    },
+    {
+      "name": "ADR-0053: the scroll offset for a content offset is the inverse",
+      "create": {},
+      "expect": [
+        { "call": "scrollTopAt", "args": [9000000], "is": 7190114.455195299, "near": 1e-6 },
+        { "call": "contentOffsetAt", "args": [7190114.455195299], "is": 9000000, "near": 1e-6 }
+      ]
+    },
+    {
+      "name": "ADR-0053: a room that is not a number is refused",
+      "create": { "scrollRoomPx": "NaN" },
+      "throws": "outOfRange"
+    },
+    {
+      "name": "ADR-0053: a room of nothing is refused",
+      "create": { "scrollRoomPx": 0 },
+      "throws": "outOfRange"
+    },
+    {
+      "name": "ADR-0053: a negative room is refused",
+      "create": { "scrollRoomPx": -1 },
+      "throws": "outOfRange"
+    },
+    {
+      "name": "ADR-0053: a room no taller than the readable area leaves nothing to scroll with, and is refused",
+      "create": { "scrollRoomPx": 572 },
+      "throws": "invalidOperation",
+      "saying": "leaves nothing to scroll"
+    }
+  ]
+}

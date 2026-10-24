@@ -12,7 +12,15 @@ a missing one fails the case, where a default would let a misspelt key pass on a
 The one exception is said where it applies (`times`).
 
 A case says what the grid does, not how a language spells it: "no Focus" is `null` here, where C#
-throws and TypeScript answers `undefined`, and a refusal is named by its kind, not by an exception type.
+throws and TypeScript answers `undefined`, and a refusal is named by its kind, not by an exception type:
+
+| Refusal | Meaning | C# | TypeScript |
+|---|---|---|---|
+| `outOfRange` | An argument outside what the grid has | `ArgumentOutOfRangeException` | `RangeError` |
+| `argument` | An argument of a kind the member does not take | `ArgumentException` | `TypeError` |
+| `invalidOperation` | An operation the state does not allow | `InvalidOperationException` | `Error`, neither of the above |
+
+A number JSON cannot hold is written as a string: `"Infinity"`, `"-Infinity"`, `"NaN"`.
 
 ## Files
 
@@ -21,7 +29,7 @@ One directory per area, one file per group of cases. Each file is an object:
 | Key | Meaning |
 |---|---|
 | `about` | What the file covers, and where its cases came from |
-| `kind` | Which runner reads it: `selection`, `range`, `edgeBand`, `held` |
+| `kind` | Which runner reads it: `selection`, `range`, `edgeBand`, `held`, `calls` |
 | `extent` | `[rows, columns]`, the grid every case of the file runs against unless it names its own |
 | `cases` | The cases. Each has a `name`, which starts with the ADR it holds to (CLAUDE.md, "Put the ADR number in the test name") |
 
@@ -108,3 +116,35 @@ Each case is `{"positionPx", "lengthPx", "rowsPerViewport", "expect"}`: the sign
 A case is `steps` over a held selection that starts empty under `"version"`: `{"click": cell}` replaces
 the selection under the same version, `{"under": version}` reconciles with the version now current, and
 `{"expect": {"version": n, "empty": bool, "sameAsBefore": bool}}` holds it.
+
+## `calls`
+
+The general kind, for logic that is a value and its members: geometry, metrics, widths. The file names
+its `subject`, the type a case makes, and may give `defaults`, arguments every case starts from. A case
+makes the subject with `"create": {name: value, …}`, the defaults with its own arguments over them,
+named as the Script Core's options object and the C# constructor's parameters both name them; with
+`"via": "factory"`, through that static factory instead. A case refused at its creation says so with
+`"throws"` (and may add `"saying"`) and checks nothing after it. A case with no `create` checks only
+statics.
+
+`"expect"` is a list of checks, each naming one member, as the Script Core spells it (C# spells it with a
+capital):
+
+| Check | Reads |
+|---|---|
+| `{"get": "member"}` | A property of the subject |
+| `{"call": "member", "args": [ … ]}` | A method of the subject, with the arguments in order |
+| `{"static": "member"}`, with or without `"args"` | A static property or method of the subject's type |
+
+and says what it answers:
+
+| Key | Meaning |
+|---|---|
+| `is` | The answer: a value, or `null` for none. An object is compared by every key, as it serialises in C# (camelCase) and as its own properties in TypeScript |
+| `near` | With `is`, how far a number may be from it, where the arithmetic is not exact in both languages |
+| `throws`, `saying` | The refusal, and text its message holds in both languages |
+| `then` | Checks on the answer, as the subject of each |
+
+The runners find members by name (`tests/ExGrid.Tests/Cases/CallCaseTests.cs` by reflection,
+`src/npm/core/test/calls.test.ts` from its table of subjects), so a misspelt member fails the case, as
+does a check that says neither `is` nor `throws`, and a case that checks nothing.
