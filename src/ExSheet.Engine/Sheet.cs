@@ -336,6 +336,13 @@ public sealed partial class Sheet
             cell.NumberFormat = inferred;
             rows.Add(address.Row);
         }
+        // A 3D Reference is written with its ends in tab order, in their Sheets' own names, and a span of one
+        // Sheet as that Sheet, as Excel writes it back: after the format, which one typed as a span never
+        // gives, as Excel's =SUM(Sheet2:Sheet2!B2) over a percentage stayed General (ADR-0331 §7).
+        for (var i = 0; i < entries.Count; i++)
+        {
+            if (entries[i].Value is { } typed && Workbook.InTabOrder(typed) is var ordered && !ReferenceEquals(ordered, typed)) entries[i] = new(entries[i].Key, ordered);
+        }
         var change = SetEntries(entries);
         if (rows.Count == 0) return change;
         rows.UnionWith(change.Rows);
@@ -432,16 +439,17 @@ public sealed partial class Sheet
 
     /// <summary>
     /// Records a Formula cell's References to other Sheets on the Sheets they name, as this Sheet records
-    /// its own; a name no Sheet has is <c>#REF!</c>, and depends on nothing.
+    /// its own; a name no Sheet has is <c>#REF!</c>, and depends on nothing. A 3D Reference is recorded on
+    /// every Sheet of its span, this one included when the span holds it (ADR-0331 §7).
     /// </summary>
     private void RegisterRemote(CellAddress formulaCell, List<Reference> remote)
     {
         var dependent = new SheetCell(this, formulaCell);
-        foreach (var group in remote.GroupBy(r => Workbook.Find(r.SheetName!)))
+        foreach (var group in remote.SelectMany(r => Targets(r).Select(target => (Target: target, r.Area))).GroupBy(t => t.Target, t => t.Area))
         {
-            if (group.Key is not { } target) continue;
+            var target = group.Key;
             var areas = new List<Area>();
-            foreach (var area in group.Select(r => r.Area))
+            foreach (var area in group)
             {
                 if (!area.IsSingleCell)
                 {
@@ -463,14 +471,21 @@ public sealed partial class Sheet
         var dependent = new SheetCell(this, formulaCell);
         foreach (var reference in remote)
         {
-            if (Workbook.Find(reference.SheetName!) is not { } target) continue;
-            target._remoteAreaDependents.Remove(dependent);
-            var area = reference.Area;
-            if (!area.IsSingleCell) continue;
-            var address = new CellAddress(area.Row1, area.Column1);
-            if (target._remoteCellDependents.TryGetValue(address, out var set) && set.Remove(dependent) && set.Count == 0) target._remoteCellDependents.Remove(address);
+            foreach (var target in Targets(reference))
+            {
+                target._remoteAreaDependents.Remove(dependent);
+                var area = reference.Area;
+                if (!area.IsSingleCell) continue;
+                var address = new CellAddress(area.Row1, area.Column1);
+                if (target._remoteCellDependents.TryGetValue(address, out var set) && set.Remove(dependent) && set.Count == 0) target._remoteCellDependents.Remove(address);
+            }
         }
     }
+
+    /// <summary>The Sheets a Reference to another Sheet, or a 3D Reference, reads, as the Workbook stands: none for a name no Sheet has.</summary>
+    private IEnumerable<Sheet> Targets(Reference reference) =>
+        reference.IsThreeD ? Workbook.Span(reference.SheetName!, reference.LastSheetName!) ?? []
+        : Workbook.Find(reference.SheetName!) is { } target ? [target] : [];
 
     /// <summary>The Formula cells that read <paramref name="address"/> directly.</summary>
     private IEnumerable<CellAddress> Dependents(CellAddress address)

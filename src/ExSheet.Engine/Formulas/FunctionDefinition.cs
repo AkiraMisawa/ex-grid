@@ -44,9 +44,42 @@ internal sealed class FunctionDefinition(string name, int minimum, int maximum, 
     /// </summary>
     public bool ReturnsReference { get; init; }
 
+    /// <summary>
+    /// What a 3D Reference (<c>Sheet1:Sheet3!B2</c>) given as each argument is to it, by the argument's
+    /// index and the count of arguments, as Excel answered each (ADR-0331 §7, exsheet-workbook ticket 12);
+    /// <see langword="null"/> where it is read as one Value at every argument (<see cref="ThreeDArgument.Value"/>).
+    /// </summary>
+    public Func<int, int, ThreeDArgument>? ThreeD { get; init; }
+
     private static readonly IReadOnlyDictionary<int, IReadOnlyList<ArgumentValue>> NoValues = new Dictionary<int, IReadOnlyList<ArgumentValue>>();
 
     public Operand Invoke(FunctionCall call) => invoke(call);
+}
+
+/// <summary>
+/// What a function makes of a 3D Reference given as one of its arguments (ADR-0331 §7), as Excel answered
+/// for each function ExSheet declares (verification/2026-10-24-windows-workbook-12).
+/// </summary>
+internal enum ThreeDArgument
+{
+    /// <summary>Read as one Value: <c>#REF!</c>, or <c>#VALUE!</c> for one a function handed on (<see cref="Operand.HandedOn"/>).</summary>
+    Value,
+
+    /// <summary>Read as one range across its span, Sheet by Sheet in tab order: <c>SUM</c> and its kin.</summary>
+    Range,
+
+    /// <summary>Handed on as it is, to be read by what the call stands in: <c>IF</c>'s and <c>CHOOSE</c>'s values.</summary>
+    HandOn,
+
+    /// <summary><c>#VALUE!</c>, read where the function reads the argument: <c>IFS</c>'s and <c>SWITCH</c>'s values, and the Analysis ToolPak's functions.</summary>
+    ValueError,
+
+    /// <summary>
+    /// <c>#VALUE!</c>, before anything of the call is read, where the function asks for a range of one Sheet:
+    /// the criteria functions' ranges, the lookups' tables, <c>INDEX</c>'s array, <c>ROWS</c>, and their kin.
+    /// Handed on to one, it is <c>#VALUE!</c> there too.
+    /// </summary>
+    OneSheet,
 }
 
 /// <summary>One call of a function: its argument nodes, evaluated only when the function asks (so <c>IF</c> is lazy, as in Excel).</summary>
@@ -76,7 +109,7 @@ internal sealed class FunctionCall(Evaluator evaluator, IReadOnlyList<Node> argu
     /// </summary>
     public Operand Operand(int index)
     {
-        var operand = Evaluator.Operand(arguments[index]);
+        var operand = Admitted(index, Evaluator.Operand(arguments[index]));
         return operand.KeptBlank ? Evaluator.Refuse() : operand;
     }
 
@@ -92,7 +125,28 @@ internal sealed class FunctionCall(Evaluator evaluator, IReadOnlyList<Node> argu
     /// <c>VLOOKUP</c>, <c>HLOOKUP</c> and <c>XLOOKUP</c> answer where they never read it, answers by
     /// agreement that no run read; each refuses the Formula where its readings part.
     /// </summary>
-    public Operand KeepingBlanks(int index) => Evaluator.Operand(arguments[index]);
+    public Operand KeepingBlanks(int index) => Admitted(index, Evaluator.Operand(arguments[index]));
+
+    /// <summary>
+    /// What a 3D Reference given as argument <paramref name="index"/> is to the function called, as Excel
+    /// answered (<see cref="FunctionDefinition.ThreeD"/>, ADR-0331 §7); any other operand as it is. Every
+    /// door an argument comes in by passes through here, so a 3D Reference reaches only a function that
+    /// reads it as a range, or hands it on.
+    /// </summary>
+    private Operand Admitted(int index, Operand operand)
+    {
+        if (operand.Kind != OperandKind.ThreeD) return operand;
+        return (ThreeD?.Invoke(index, arguments.Count) ?? ThreeDArgument.Value) switch
+        {
+            ThreeDArgument.Range => operand,
+            ThreeDArgument.HandOn => operand.HandOn(),
+            ThreeDArgument.ValueError or ThreeDArgument.OneSheet => Formulas.Operand.Of(ErrorValue.Value),
+            _ => Formulas.Operand.Of(Evaluator.ScalarOf(operand)!.Value),
+        };
+    }
+
+    /// <summary>What a 3D Reference is to the function called, by argument (<see cref="FunctionDefinition.ThreeD"/>).</summary>
+    public Func<int, int, ThreeDArgument>? ThreeD { get; init; }
 
     /// <summary>
     /// Argument <paramref name="index"/>, evaluated, for a function that reads one Value of it. A kept
@@ -104,7 +158,7 @@ internal sealed class FunctionCall(Evaluator evaluator, IReadOnlyList<Node> argu
     /// </summary>
     public Operand OneValue(int index)
     {
-        var operand = Evaluator.Operand(arguments[index]);
+        var operand = Admitted(index, Evaluator.Operand(arguments[index]));
         return operand is { KeptBlank: true, Kind: OperandKind.Array } ? Evaluator.Refuse() : operand;
     }
 
@@ -119,7 +173,7 @@ internal sealed class FunctionCall(Evaluator evaluator, IReadOnlyList<Node> argu
     /// it is read, so a kept blank is counted in the extent, as Excel's <c>ROWS</c> counted
     /// <c>UNIQUE</c>'s (UNIQUE-011, 012), never refused.
     /// </summary>
-    public Operand Measured(int index) => Evaluator.Operand(arguments[index]);
+    public Operand Measured(int index) => Admitted(index, Evaluator.Operand(arguments[index]));
 
     /// <summary>Whether argument <paramref name="index"/> was given and not left empty (<see cref="MissingNode.IsEmpty"/>).</summary>
     public bool Has(int index) => index < arguments.Count && !MissingNode.IsEmpty(arguments[index]);

@@ -35,6 +35,16 @@ internal sealed record Reference(
     /// </summary>
     public bool Spilled { get; init; }
 
+    /// <summary>
+    /// For a 3D Reference (<c>Sheet1:Sheet3!B2</c>, ADR-0331 §7): the name of the Sheet that ends the
+    /// span, as written; <see cref="SheetName"/> is the one that begins it. <see langword="null"/> for a
+    /// Reference that names one Sheet or none.
+    /// </summary>
+    public string? LastSheetName { get; init; }
+
+    /// <summary>Whether this is a 3D Reference, reading one range on every Sheet of a span (ADR-0331 §7).</summary>
+    public bool IsThreeD => LastSheetName is not null;
+
     /// <summary>The rectangle the Reference covers.</summary>
     public Area Area => Shape switch
     {
@@ -69,14 +79,18 @@ internal sealed record Reference(
     {
         if (Shape != ReferenceShape.Cell)
         {
-            var shaped = Rectangle(SheetName, Row1, Column1, Row2, Column2, Row1Absolute, Column1Absolute, Row2Absolute, Column2Absolute);
+            var shaped = Rectangle(SheetName, Row1, Column1, Row2, Column2, Row1Absolute, Column1Absolute, Row2Absolute, Column2Absolute) with { LastSheetName = LastSheetName };
             if (shaped.Shape != Shape)
             {
                 shaped.WriteTo(text);
                 return;
             }
         }
-        if (SheetName is not null)
+        if (LastSheetName is not null)
+        {
+            text.Append(QuoteSheetSpan(SheetName!, LastSheetName)).Append('!');
+        }
+        else if (SheetName is not null)
         {
             text.Append(QuoteSheetName(SheetName)).Append('!');
         }
@@ -117,6 +131,17 @@ internal sealed record Reference(
     {
         if (absolute) text.Append('$');
         text.Append(row + 1);
+    }
+
+    /// <summary>
+    /// A 3D Reference's span, <c>Sheet1:Sheet3</c>: bare when both names are written bare, and otherwise
+    /// quoted whole, <c>'Q1 Sales:Sheet3'</c>, as Excel writes one, doubling any <c>'</c>.
+    /// </summary>
+    internal static string QuoteSheetSpan(string first, string last)
+    {
+        var bare = QuoteSheetName(first) == first && QuoteSheetName(last) == last;
+        var span = first + ":" + last;
+        return bare ? span : "'" + span.Replace("'", "''", StringComparison.Ordinal) + "'";
     }
 
     /// <summary>A Sheet name is written bare when it is a plain identifier, and quoted otherwise, doubling any <c>'</c>.</summary>

@@ -177,7 +177,8 @@ public sealed partial class Sheet
         {
             var reader = new StagedReader(
                 sheet, staged[sheet], address => formulas.Contains(new SheetCell(sheet, address)) ? Compute(new SheetCell(sheet, address)) : null,
-                arrays[sheet], reads, name => workbook.Find(name) is { } other ? readers[other].Reader : null);
+                arrays[sheet], reads, name => workbook.Find(name) is { } other ? readers[other].Reader : null,
+                (first, last) => workbook.Span(first, last) is { } span ? [.. span.Select(s => readers[s].Reader)] : null);
             readers[sheet] = (reader, new Evaluator(reader, sheet.Culture));
         }
         var ready = new Queue<SheetCell>(waiting.Where(w => w.Value == 0).Select(w => w.Key));
@@ -344,14 +345,20 @@ public sealed partial class Sheet
         var refused = ReadsRefusingTable(node);
         foreach (var reference in node.References)
         {
-            if (reader.Resolve(reference.SheetName) is not StagedReader target) continue;
-            foreach (var address in target.Sheet.CellsIn(reference.Area))
+            // A 3D Reference reads its rectangle on every Sheet of its span (ADR-0331 §7).
+            IEnumerable<ICellReader> targets = reference.IsThreeD
+                ? reader.ResolveSpan(reference.SheetName!, reference.LastSheetName!) ?? []
+                : reader.Resolve(reference.SheetName) is { } one ? [one] : [];
+            foreach (var target in targets.Cast<StagedReader>())
             {
-                if (target.Read(address) is { IsError: true } value)
+                foreach (var address in target.Sheet.CellsIn(reference.Area))
                 {
-                    if (value.Error == ErrorValue.Circ) return value;
-                    if (value.Error == ErrorValue.GettingData) gettingData = true;
-                    if (value.IsRefused) refused = true;
+                    if (target.Read(address) is { IsError: true } value)
+                    {
+                        if (value.Error == ErrorValue.Circ) return value;
+                        if (value.Error == ErrorValue.GettingData) gettingData = true;
+                        if (value.IsRefused) refused = true;
+                    }
                 }
             }
         }
@@ -386,7 +393,8 @@ public sealed partial class Sheet
         Func<CellAddress, Value?> onDemand,
         Dictionary<CellAddress, ValueArray?> arrays,
         ReadState reads,
-        Func<string, StagedReader?> other) : ICellReader
+        Func<string, StagedReader?> other,
+        Func<string, string, IReadOnlyList<ICellReader>?> span) : ICellReader
     {
         /// <summary>The Sheet this reader reads.</summary>
         public Sheet Sheet => sheet;
@@ -428,6 +436,8 @@ public sealed partial class Sheet
 
         public ICellReader? Resolve(string? sheetName) =>
             sheet.IsThisSheet(sheetName) ? this : other(sheetName!);
+
+        public IReadOnlyList<ICellReader>? ResolveSpan(string first, string last) => span(first, last);
 
         public DateOnly? Today => sheet.Today;
 

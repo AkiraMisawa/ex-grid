@@ -14,29 +14,72 @@ internal static partial class FunctionLibrary
 {
     private const int Open = 255;
 
+    // ThreeD: what a 3D Reference given as each argument is to the function, as Excel answered for every
+    // function ExSheet declares (ADR-0331 §7; verification/2026-10-24-windows-workbook-12). One left out
+    // reads it as one Value at every argument: #REF!.
+    private static ThreeDArgument Across(int index, int count) => ThreeDArgument.Range;
+
+    private static ThreeDArgument AcrossFirst(int index, int count) => index == 0 ? ThreeDArgument.Range : ThreeDArgument.Value;
+
+    private static ThreeDArgument AcrossSecond(int index, int count) => index == 1 ? ThreeDArgument.Range : ThreeDArgument.Value;
+
+    // TEXTJOIN reads its delimiters across a span, and its texts; ignore_empty is one Value.
+    private static ThreeDArgument AcrossTexts(int index, int count) => index == 1 ? ThreeDArgument.Value : ThreeDArgument.Range;
+
+    private static ThreeDArgument HandedOnAfterFirst(int index, int count) => index == 0 ? ThreeDArgument.Value : ThreeDArgument.HandOn;
+
+    private static ThreeDArgument IfsValues(int index, int count) => index % 2 == 1 ? ThreeDArgument.ValueError : ThreeDArgument.Value;
+
+    // SWITCH's results stand after each value, and its default last, after the expression and its pairs.
+    private static ThreeDArgument SwitchResults(int index, int count) =>
+        (index >= 2 && index % 2 == 0) || (count % 2 == 0 && index == count - 1) ? ThreeDArgument.ValueError : ThreeDArgument.Value;
+
+    private static ThreeDArgument OneSheetFirst(int index, int count) => index == 0 ? ThreeDArgument.OneSheet : ThreeDArgument.Value;
+
+    private static ThreeDArgument OneSheetSecond(int index, int count) => index == 1 ? ThreeDArgument.OneSheet : ThreeDArgument.Value;
+
+    private static ThreeDArgument OneSheetFirstTwo(int index, int count) => index <= 1 ? ThreeDArgument.OneSheet : ThreeDArgument.Value;
+
+    // SUMIF's and AVERAGEIF's range and result range; their criterion is one Value.
+    private static ThreeDArgument OneSheetCriteria(int index, int count) => index != 1 ? ThreeDArgument.OneSheet : ThreeDArgument.Value;
+
+    // SUMIFS and its partners: the result range, then each criteria range before its criterion.
+    private static ThreeDArgument OneSheetResultAndCriteria(int index, int count) => index == 0 || index % 2 == 1 ? ThreeDArgument.OneSheet : ThreeDArgument.Value;
+
+    private static ThreeDArgument OneSheetCountCriteria(int index, int count) => index % 2 == 0 ? ThreeDArgument.OneSheet : ThreeDArgument.Value;
+
+    // The lookups' table, and what stands after it: VLOOKUP's and HLOOKUP's index, XLOOKUP's results.
+    private static ThreeDArgument OneSheetTable(int index, int count) => index is 1 or 2 ? ThreeDArgument.OneSheet : ThreeDArgument.Value;
+
+    private static ThreeDArgument OneSheetAfterFirst(int index, int count) => index >= 1 ? ThreeDArgument.OneSheet : ThreeDArgument.Value;
+
+    private static ThreeDArgument OneSheetAfterSecond(int index, int count) => index >= 2 ? ThreeDArgument.OneSheet : ThreeDArgument.Value;
+
+    private static ThreeDArgument ValueErrorEverywhere(int index, int count) => ThreeDArgument.ValueError;
+
     private static partial IEnumerable<FunctionDefinition> Declare() =>
     [
-        new("SUM", 1, Open, "number1, [number2], ...", "Adds its arguments.", Sum),
-        new("AVERAGE", 1, Open, "number1, [number2], ...", "Returns the average (arithmetic mean) of its arguments.", Average),
-        new("MIN", 1, Open, "number1, [number2], ...", "Returns the smallest number in a set of values.", Min),
-        new("MAX", 1, Open, "number1, [number2], ...", "Returns the largest number in a set of values.", Max),
-        new("COUNT", 1, Open, "value1, [value2], ...", "Counts how many numbers are in the list of arguments.", Count),
-        new("COUNTA", 1, Open, "value1, [value2], ...", "Counts how many values are in the list of arguments.", CountA),
-        new("SUMIF", 2, 3, "range, criteria, [sum_range]", "Adds numbers whose corresponding cells meet a condition.", SumIf),
-        new("SUMIFS", 3, Open, "sum_range, criteria_range1, criteria1, ...", "Adds numbers whose corresponding cells meet every condition.", SumIfs) { InPairs = true, PairOffset = 1 },
-        new("COUNTIF", 2, 2, "range, criteria", "Counts cells that meet a condition.", CountIf),
-        new("COUNTIFS", 2, 254, "criteria_range1, criteria1, ...", "Counts cells that meet every condition.", CountIfs) { InPairs = true },
-        new("AVERAGEIF", 2, 3, "range, criteria, [average_range]", "Averages numbers whose corresponding cells meet a condition.", AverageIf),
-        new("AVERAGEIFS", 3, Open, "average_range, criteria_range1, criteria1, ...", "Averages numbers whose corresponding cells meet every condition.", AverageIfs) { InPairs = true, PairOffset = 1 },
-        new("MAXIFS", 3, Open, "max_range, criteria_range1, criteria1, ...", "Returns the greatest number whose corresponding cells meet every condition.", MaxIfs) { InPairs = true, PairOffset = 1 },
-        new("MINIFS", 3, Open, "min_range, criteria_range1, criteria1, ...", "Returns the least number whose corresponding cells meet every condition.", MinIfs) { InPairs = true, PairOffset = 1 },
-        new("COUNTBLANK", 1, 1, "range", "Counts blank cells and cells whose formulas return empty text.", CountBlank),
-        new("IF", 2, 3, "logical_test, value_if_true, [value_if_false]", "Returns one value if a condition is TRUE and another if it is FALSE.", If) { ReturnsReference = true },
+        new("SUM", 1, Open, "number1, [number2], ...", "Adds its arguments.", Sum) { ThreeD = Across },
+        new("AVERAGE", 1, Open, "number1, [number2], ...", "Returns the average (arithmetic mean) of its arguments.", Average) { ThreeD = Across },
+        new("MIN", 1, Open, "number1, [number2], ...", "Returns the smallest number in a set of values.", Min) { ThreeD = Across },
+        new("MAX", 1, Open, "number1, [number2], ...", "Returns the largest number in a set of values.", Max) { ThreeD = Across },
+        new("COUNT", 1, Open, "value1, [value2], ...", "Counts how many numbers are in the list of arguments.", Count) { ThreeD = Across },
+        new("COUNTA", 1, Open, "value1, [value2], ...", "Counts how many values are in the list of arguments.", CountA) { ThreeD = Across },
+        new("SUMIF", 2, 3, "range, criteria, [sum_range]", "Adds numbers whose corresponding cells meet a condition.", SumIf) { ThreeD = OneSheetCriteria },
+        new("SUMIFS", 3, Open, "sum_range, criteria_range1, criteria1, ...", "Adds numbers whose corresponding cells meet every condition.", SumIfs) { InPairs = true, PairOffset = 1, ThreeD = OneSheetResultAndCriteria },
+        new("COUNTIF", 2, 2, "range, criteria", "Counts cells that meet a condition.", CountIf) { ThreeD = OneSheetFirst },
+        new("COUNTIFS", 2, 254, "criteria_range1, criteria1, ...", "Counts cells that meet every condition.", CountIfs) { InPairs = true, ThreeD = OneSheetCountCriteria },
+        new("AVERAGEIF", 2, 3, "range, criteria, [average_range]", "Averages numbers whose corresponding cells meet a condition.", AverageIf) { ThreeD = OneSheetCriteria },
+        new("AVERAGEIFS", 3, Open, "average_range, criteria_range1, criteria1, ...", "Averages numbers whose corresponding cells meet every condition.", AverageIfs) { InPairs = true, PairOffset = 1, ThreeD = OneSheetResultAndCriteria },
+        new("MAXIFS", 3, Open, "max_range, criteria_range1, criteria1, ...", "Returns the greatest number whose corresponding cells meet every condition.", MaxIfs) { InPairs = true, PairOffset = 1, ThreeD = OneSheetResultAndCriteria },
+        new("MINIFS", 3, Open, "min_range, criteria_range1, criteria1, ...", "Returns the least number whose corresponding cells meet every condition.", MinIfs) { InPairs = true, PairOffset = 1, ThreeD = OneSheetResultAndCriteria },
+        new("COUNTBLANK", 1, 1, "range", "Counts blank cells and cells whose formulas return empty text.", CountBlank) { ThreeD = OneSheetFirst },
+        new("IF", 2, 3, "logical_test, value_if_true, [value_if_false]", "Returns one value if a condition is TRUE and another if it is FALSE.", If) { ReturnsReference = true, ThreeD = HandedOnAfterFirst },
         new("ROUND", 2, 2, "number, num_digits", "Rounds a number to a specified number of digits, half away from zero.", Round),
         new("IFERROR", 2, 2, "value, value_if_error", "Returns value_if_error if value is an Error Value, and value otherwise. #GETTING_DATA is not an error to it.", IfError),
         new("ISERROR", 1, 1, "value", "Returns TRUE if value is an Error Value. #GETTING_DATA is not an error to it.", IsError),
-        new("AND", 1, Open, "logical1, [logical2], ...", "Returns TRUE if all of its arguments are TRUE.", And),
-        new("OR", 1, Open, "logical1, [logical2], ...", "Returns TRUE if any argument is TRUE.", Or),
+        new("AND", 1, Open, "logical1, [logical2], ...", "Returns TRUE if all of its arguments are TRUE.", And) { ThreeD = Across },
+        new("OR", 1, Open, "logical1, [logical2], ...", "Returns TRUE if any argument is TRUE.", Or) { ThreeD = Across },
         new("NOT", 1, 1, "logical", "Reverses the logic of its argument.", Not),
         new("IFNA", 2, 2, "value, value_if_na", "Returns value_if_na if value is #N/A, and value otherwise.", IfNa),
         new("ISBLANK", 1, 1, "value", "Returns TRUE if value refers to an empty cell.", IsBlank),
@@ -47,9 +90,10 @@ internal static partial class FunctionLibrary
         new("INT", 1, 1, "number", "Rounds a number down to the nearest integer.", Int),
         new("CEILING.MATH", 1, 3, "number, [significance], [mode]", "Rounds a number up to a multiple of significance.", CeilingMath),
         new("FLOOR.MATH", 1, 3, "number, [significance], [mode]", "Rounds a number down to a multiple of significance.", FloorMath),
-        new("MROUND", 2, 2, "number, multiple", "Rounds a number to a whole-number multiple; fractional multiples are refused.", MRound),
+        new("MROUND", 2, 2, "number, multiple", "Rounds a number to a whole-number multiple; fractional multiples are refused.", MRound) { ThreeD = ValueErrorEverywhere },
         new("YEARFRAC", 2, 3, "start_date, end_date, [basis]", "Returns the year fraction represented by the whole days between two dates.", YearFrac)
         {
+            ThreeD = ValueErrorEverywhere,
             Values = new Dictionary<int, IReadOnlyList<ArgumentValue>>
             {
                 [2] = [new("0", "0 - US (NASD) 30/360"), new("1", "1 - Actual/actual"),
@@ -63,17 +107,18 @@ internal static partial class FunctionLibrary
         new("YEAR", 1, 1, "serial_number", "Converts a serial number to a year.", Year),
         new("MONTH", 1, 1, "serial_number", "Converts a serial number to a month.", Month),
         new("DAY", 1, 1, "serial_number", "Converts a serial number to a day of the month.", Day),
-        new("EOMONTH", 2, 2, "start_date, months", "Returns the serial number of the last day of the month before or after a specified number of months.", EoMonth),
-        new("EDATE", 2, 2, "start_date, months", "Returns the serial number of the date that is the indicated number of months before or after the start date.", EDate),
+        new("EOMONTH", 2, 2, "start_date, months", "Returns the serial number of the last day of the month before or after a specified number of months.", EoMonth) { ThreeD = ValueErrorEverywhere },
+        new("EDATE", 2, 2, "start_date, months", "Returns the serial number of the date that is the indicated number of months before or after the start date.", EDate) { ThreeD = ValueErrorEverywhere },
         new("LEFT", 1, 2, "text, [num_chars]", "Returns the leftmost characters from a text value.", Left),
         new("RIGHT", 1, 2, "text, [num_chars]", "Returns the rightmost characters from a text value.", Right),
         new("MID", 3, 3, "text, start_num, num_chars", "Returns a specific number of characters from a text string, starting at the position you specify.", Mid),
         new("LEN", 1, 1, "text", "Returns the number of characters in a text string.", Len),
         new("TRIM", 1, 1, "text", "Removes spaces from text, leaving single spaces between words.", Trim),
         new("TEXT", 2, 2, "value, format_text", "Formats a number and converts it to text.", FormatAsText),
-        new("CONCAT", 1, 253, "text1, [text2], ...", "Combines the text from multiple ranges and strings.", Concat),
+        new("CONCAT", 1, 253, "text1, [text2], ...", "Combines the text from multiple ranges and strings.", Concat) { ThreeD = Across },
         new("VLOOKUP", 3, 4, "lookup_value, table_array, col_index_num, [range_lookup]", "Searches the first column of a table and returns the value in the specified column of the matching row.", VLookup)
         {
+            ThreeD = OneSheetTable,
             Values = new Dictionary<int, IReadOnlyList<ArgumentValue>>
             {
                 [3] = [new("TRUE", "TRUE - Approximate match"), new("FALSE", "FALSE - Exact match")],
@@ -81,6 +126,7 @@ internal static partial class FunctionLibrary
         },
         new("HLOOKUP", 3, 4, "lookup_value, table_array, row_index_num, [range_lookup]", "Searches the first row of a table and returns the value in the specified row of the matching column.", HLookup)
         {
+            ThreeD = OneSheetTable,
             Values = new Dictionary<int, IReadOnlyList<ArgumentValue>>
             {
                 [3] = [new("TRUE", "TRUE - Approximate match"), new("FALSE", "FALSE - Exact match")],
@@ -88,34 +134,35 @@ internal static partial class FunctionLibrary
         },
         new("MATCH", 2, 3, "lookup_value, lookup_array, [match_type]", "Returns the relative position of an item in an array or range of cells.", Match)
         {
+            ThreeD = OneSheetSecond,
             Values = new Dictionary<int, IReadOnlyList<ArgumentValue>>
             {
                 [2] = [new("1", "1 - Less than"), new("0", "0 - Exact match"), new("-1", "-1 - Greater than")],
             },
         },
-        new("INDEX", 2, 3, "array, row_num, [column_num]", "Returns the value of the cell at the intersection of a row and a column of a range.", Index) { ReturnsReference = true },
-        new("PRODUCT", 1, Open, "number1, [number2], ...", "Multiplies its arguments.", Product),
-        new("MEDIAN", 1, Open, "number1, [number2], ...", "Returns the median of the given numbers.", Median),
-        new("LARGE", 2, 2, "array, k", "Returns the k-th largest value in a data set.", Large),
-        new("SMALL", 2, 2, "array, k", "Returns the k-th smallest value in a data set.", Small),
+        new("INDEX", 2, 3, "array, row_num, [column_num]", "Returns the value of the cell at the intersection of a row and a column of a range.", Index) { ReturnsReference = true, ThreeD = OneSheetFirst },
+        new("PRODUCT", 1, Open, "number1, [number2], ...", "Multiplies its arguments.", Product) { ThreeD = Across },
+        new("MEDIAN", 1, Open, "number1, [number2], ...", "Returns the median of the given numbers.", Median) { ThreeD = Across },
+        new("LARGE", 2, 2, "array, k", "Returns the k-th largest value in a data set.", Large) { ThreeD = AcrossFirst },
+        new("SMALL", 2, 2, "array, k", "Returns the k-th smallest value in a data set.", Small) { ThreeD = AcrossFirst },
         new("ISTEXT", 1, 1, "value", "Returns TRUE if value is text.", IsText),
         new("ISNA", 1, 1, "value", "Returns TRUE if value is the #N/A error value.", IsNa),
-        new("IFS", 2, 254, "logical_test1, value_if_true1, ...", "Checks whether one or more conditions are met, and returns a value that corresponds to the first TRUE condition.", Ifs) { InPairs = true, ReturnsReference = true },
-        new("SWITCH", 3, 254, "expression, value1, result1, [default_or_value2], [result2], ...", "Evaluates an expression against a list of values, and returns the result corresponding to the first matching value.", Switch) { ReturnsReference = true },
+        new("IFS", 2, 254, "logical_test1, value_if_true1, ...", "Checks whether one or more conditions are met, and returns a value that corresponds to the first TRUE condition.", Ifs) { InPairs = true, ReturnsReference = true, ThreeD = IfsValues },
+        new("SWITCH", 3, 254, "expression, value1, result1, [default_or_value2], [result2], ...", "Evaluates an expression against a list of values, and returns the result corresponding to the first matching value.", Switch) { ReturnsReference = true, ThreeD = SwitchResults },
         new("NA", 0, 0, "", "Returns the error value #N/A.", Na),
         new("ERROR.TYPE", 1, 1, "error_val", "Returns a number corresponding to an error type.", ErrorType),
-        new("XMATCH", 2, 4, "lookup_value, lookup_array, [match_mode], [search_mode]", "Returns the relative position of an item in an array or range of cells.", XMatch),
-        new("CHOOSE", 2, Open, "index_num, value1, [value2], ...", "Chooses a value from a list of values.", Choose) { ReturnsReference = true },
-        new("ROW", 0, 1, "[reference]", "Returns the row number of a reference.", Row),
-        new("COLUMN", 0, 1, "[reference]", "Returns the column number of a reference.", Column),
+        new("XMATCH", 2, 4, "lookup_value, lookup_array, [match_mode], [search_mode]", "Returns the relative position of an item in an array or range of cells.", XMatch) { ThreeD = OneSheetSecond },
+        new("CHOOSE", 2, Open, "index_num, value1, [value2], ...", "Chooses a value from a list of values.", Choose) { ReturnsReference = true, ThreeD = HandedOnAfterFirst },
+        new("ROW", 0, 1, "[reference]", "Returns the row number of a reference.", Row) { ThreeD = OneSheetFirst },
+        new("COLUMN", 0, 1, "[reference]", "Returns the column number of a reference.", Column) { ThreeD = OneSheetFirst },
         new("TRUNC", 1, 2, "number, [num_digits]", "Truncates a number to an integer, or to num_digits.", Trunc),
         new("POWER", 2, 2, "number, power", "Returns the result of a number raised to a power.", Power),
         new("SQRT", 1, 1, "number", "Returns a positive square root.", Sqrt),
         new("WEEKDAY", 1, 2, "serial_number, [return_type]", "Converts a serial number to a day of the week.", Weekday),
         new("DAYS", 2, 2, "end_date, start_date", "Returns the number of days between two dates.", Days),
-        new("NETWORKDAYS", 2, 3, "start_date, end_date, [holidays]", "Returns the number of whole workdays between two dates.", NetworkDays),
-        new("WORKDAY", 2, 3, "start_date, days, [holidays]", "Returns the serial number of the date before or after a specified number of workdays.", Workday),
-        new("TEXTJOIN", 3, 252, "delimiter, ignore_empty, text1, [text2], ...", "Combines the text from multiple ranges and strings, with a delimiter between each value.", TextJoin),
+        new("NETWORKDAYS", 2, 3, "start_date, end_date, [holidays]", "Returns the number of whole workdays between two dates.", NetworkDays) { ThreeD = ValueErrorEverywhere },
+        new("WORKDAY", 2, 3, "start_date, days, [holidays]", "Returns the serial number of the date before or after a specified number of workdays.", Workday) { ThreeD = ValueErrorEverywhere },
+        new("TEXTJOIN", 3, 252, "delimiter, ignore_empty, text1, [text2], ...", "Combines the text from multiple ranges and strings, with a delimiter between each value.", TextJoin) { ThreeD = AcrossTexts },
         new("CONCATENATE", 1, Open, "text1, [text2], ...", "Joins several text items into one text item.", Concatenate),
         new("SUBSTITUTE", 3, 4, "text, old_text, new_text, [instance_num]", "Substitutes new text for old text in a text string.", Substitute),
         new("REPLACE", 4, 4, "old_text, start_num, num_chars, new_text", "Replaces characters within text.", Replace),
@@ -127,14 +174,15 @@ internal static partial class FunctionLibrary
         new("PMT", 3, 5, "rate, nper, pv, [fv], [type]", "Returns the periodic payment for an annuity.", Pmt),
         new("PV", 3, 5, "rate, nper, pmt, [fv], [type]", "Returns the present value of an investment.", Pv),
         new("FV", 3, 5, "rate, nper, pmt, [pv], [type]", "Returns the future value of an investment.", Fv),
-        new("RANK.EQ", 2, 3, "number, ref, [order]", "Returns the rank of a number in a list of numbers.", RankEq) { ReferenceOnly = (1, 1) },
-        new("STDEV.S", 1, Open, "number1, [number2], ...", "Estimates standard deviation based on a sample.", StdevS),
-        new("STDEV.P", 1, Open, "number1, [number2], ...", "Calculates standard deviation based on the entire population.", StdevP),
-        new("VAR.S", 1, Open, "number1, [number2], ...", "Estimates variance based on a sample.", VarS),
-        new("VAR.P", 1, Open, "number1, [number2], ...", "Calculates variance based on the entire population.", VarP),
-        new("XOR", 1, Open, "logical1, [logical2], ...", "Returns TRUE if an odd number of its arguments are TRUE.", Xor),
+        new("RANK.EQ", 2, 3, "number, ref, [order]", "Returns the rank of a number in a list of numbers.", RankEq) { ReferenceOnly = (1, 1), ThreeD = AcrossSecond },
+        new("STDEV.S", 1, Open, "number1, [number2], ...", "Estimates standard deviation based on a sample.", StdevS) { ThreeD = Across },
+        new("STDEV.P", 1, Open, "number1, [number2], ...", "Calculates standard deviation based on the entire population.", StdevP) { ThreeD = Across },
+        new("VAR.S", 1, Open, "number1, [number2], ...", "Estimates variance based on a sample.", VarS) { ThreeD = Across },
+        new("VAR.P", 1, Open, "number1, [number2], ...", "Calculates variance based on the entire population.", VarP) { ThreeD = Across },
+        new("XOR", 1, Open, "logical1, [logical2], ...", "Returns TRUE if an odd number of its arguments are TRUE.", Xor) { ThreeD = Across },
         new("SUBTOTAL", 2, Open, "function_num, ref1, [ref2], ...", "Returns a subtotal in a list or database.", Subtotal)
         {
+            ThreeD = OneSheetAfterFirst,
             // Excel's list, character for character, as the seventeenth Windows run read it (Part B's
             // b4): the functions 1 to 11, and 101 to 111 that pass over hidden rows (ADR-0047,
             // 2026-10-10; a Sheet cannot hide a row yet).
@@ -155,6 +203,7 @@ internal static partial class FunctionLibrary
         },
         new("AGGREGATE", 3, Open, "function_num, options, ref1, [ref2], ...", "Returns an aggregate in a list or database.", Aggregate)
         {
+            ThreeD = OneSheetAfterSecond,
             // The functions the engine supports, of Excel's nineteen (13 and 16 to 19 are #VALUE!), and
             // the eight options, with Excel's texts as the seventeenth Windows run read them (Part B's b4;
             // ADR-0047, 2026-10-10). Its third and fourth arguments take a Value (the array form's array
@@ -182,8 +231,8 @@ internal static partial class FunctionLibrary
                 ],
             },
         },
-        new("ROWS", 1, 1, "array", "Returns the number of rows in a reference.", Rows),
-        new("COLUMNS", 1, 1, "array", "Returns the number of columns in a reference.", Columns),
+        new("ROWS", 1, 1, "array", "Returns the number of rows in a reference.", Rows) { ThreeD = OneSheetFirst },
+        new("COLUMNS", 1, 1, "array", "Returns the number of columns in a reference.", Columns) { ThreeD = OneSheetFirst },
         new("SIGN", 1, 1, "number", "Returns the sign of a number: 1, 0 or -1.", Sign),
         new("EXP", 1, 1, "number", "Returns e raised to the power of a given number.", Exp),
         new("LN", 1, 1, "number", "Returns the natural logarithm of a number.", Ln),
@@ -196,14 +245,14 @@ internal static partial class FunctionLibrary
         new("REPT", 2, 2, "text, number_times", "Repeats text a given number of times.", Rept),
         new("EXACT", 2, 2, "text1, text2", "Checks to see if two text values are identical, case-sensitive.", Exact),
         new("NUMBERVALUE", 1, 3, "text, [decimal_separator], [group_separator]", "Converts text to a number with the separators given.", NumberValue),
-        new("XNPV", 3, 3, "rate, values, dates", "Returns the net present value for a schedule of cash flows that is not necessarily periodic.", XNpv),
+        new("XNPV", 3, 3, "rate, values, dates", "Returns the net present value for a schedule of cash flows that is not necessarily periodic.", XNpv) { ThreeD = ValueErrorEverywhere },
         new("VALUE", 1, 1, "text", "Converts a text argument to a number, read under the Sheet's culture.", ValueOf),
         new("NOW", 0, 0, "", "Returns the serial number of the current date and time.", Now),
         new("RAND", 0, 0, "", "Returns a random number from 0 up to 1, drawn from the Sheet Seed.", Rand),
-        new("RANDBETWEEN", 2, 2, "bottom, top", "Returns a random whole number between the numbers you specify, drawn from the Sheet Seed.", RandBetween),
-        new("OFFSET", 3, 5, "reference, rows, cols, [height], [width]", "Returns a reference offset from a given reference.", Offset) { ReturnsReference = true },
+        new("RANDBETWEEN", 2, 2, "bottom, top", "Returns a random whole number between the numbers you specify, drawn from the Sheet Seed.", RandBetween) { ThreeD = ValueErrorEverywhere },
+        new("OFFSET", 3, 5, "reference, rows, cols, [height], [width]", "Returns a reference offset from a given reference.", Offset) { ReturnsReference = true, ThreeD = OneSheetFirst },
         new("INDIRECT", 1, 2, "ref_text, [a1]", "Returns a reference indicated by a text value.", Indirect) { ReturnsReference = true },
-        new("FILTER", 2, 3, "array, include, [if_empty]", "Filters a range of data based on criteria you define.", Filter),
+        new("FILTER", 2, 3, "array, include, [if_empty]", "Filters a range of data based on criteria you define.", Filter) { ThreeD = OneSheetFirstTwo },
         new("UNIQUE", 1, 3, "array, [by_col], [exactly_once]", "Returns a list of unique values in a list or range.", Unique),
         new("SORT", 1, 4, "array, [sort_index], [sort_order], [by_col]", "Sorts the contents of a range or array.", Sort),
         new("SORTBY", 2, Open, "array, by_array1, [sort_order1], ...", "Sorts the contents of a range or array based on the values in a corresponding range or array.", SortBy),
@@ -237,6 +286,7 @@ internal static partial class FunctionLibrary
         new("RADIANS", 1, 1, "angle", "Converts degrees to radians.", Radians),
         new("XLOOKUP", 3, 6, "lookup_value, lookup_array, return_array, [if_not_found], [match_mode], [search_mode]", "Searches a range for a match and returns the corresponding item of a second range.", XLookup)
         {
+            ThreeD = OneSheetTable,
             ReturnsReference = true,
             // Excel's lists, character for character: match_mode's as the Windows runs of
             // 2026-09-27 (item 14) and 2026-09-30 (case 13) saw them, search_mode's as the
@@ -300,7 +350,7 @@ internal static partial class FunctionLibrary
                     else if (value.IsError) return value.Error;
                 }
                 break;
-            case OperandKind.Area or OperandKind.Column or OperandKind.Array:
+            case OperandKind.Area or OperandKind.Column or OperandKind.Array or OperandKind.ThreeD:
                 foreach (var value in evaluator.RangeValues(operand))
                 {
                     if (value.Kind == ValueKind.Number) numbers.Add(value.Number);
@@ -400,7 +450,7 @@ internal static partial class FunctionLibrary
             var operand = call.KeepingBlanks(i);
             switch (operand.Kind)
             {
-                case OperandKind.Area or OperandKind.Column or OperandKind.Array:
+                case OperandKind.Area or OperandKind.Column or OperandKind.Array or OperandKind.ThreeD:
                     count += evaluator.RangeValues(operand).Count(v => v.Kind == ValueKind.Number);
                     break;
                 case OperandKind.Missing:
@@ -441,7 +491,7 @@ internal static partial class FunctionLibrary
                 case OperandKind.Array when operand.KeptBlank:
                     count += operand.Array!.Rows * operand.Array.Columns;
                     break;
-                case OperandKind.Area or OperandKind.Column or OperandKind.Array:
+                case OperandKind.Area or OperandKind.Column or OperandKind.Array or OperandKind.ThreeD:
                     count += evaluator.RangeValues(operand).Count();
                     break;
                 case OperandKind.Missing:
@@ -459,14 +509,15 @@ internal static partial class FunctionLibrary
 
     /// <summary>
     /// Whether an argument where one Value is wanted holds several: a range of several cells, a Linked
-    /// Table's column of several or an array. Excel 365 applies the function to each Value and spills
+    /// Table's column of several, an array, or a 3D Reference that reached a function reading it across its
+    /// span (<c>TEXTJOIN</c>'s delimiter, which Excel cycles through, as through a range's). Excel 365 applies the function to each Value and spills
     /// the results; the engine does not yet (ADR-0125, "Not yet: functions lifted over arrays"), so the
     /// function refuses the Formula (<see cref="Unlifted"/>).
     /// </summary>
     private static bool IsArray(Operand operand) =>
         (operand.Kind == OperandKind.Area && !operand.Area.IsSingleCell)
         || (operand.Kind == OperandKind.Column && operand.Column!.Count != 1)
-        || operand.Kind == OperandKind.Array;
+        || operand.Kind is OperandKind.Array or OperandKind.ThreeD;
 
     /// <summary>
     /// The refusal of an array where a function wants one Value (<see cref="IsArray"/>): <c>#VALUE!</c>,

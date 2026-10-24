@@ -149,7 +149,7 @@ internal static partial class FunctionLibrary
         var b = result.Area;
         if ((long)b.Row1 + a.Rows > Sheet.RowCount || (long)b.Column1 + a.Columns > Sheet.ColumnCount) yield break;
         yield return Reference.Rectangle(result.SheetName, b.Row1, b.Column1,
-            b.Row1 + a.Rows - 1, b.Column1 + a.Columns - 1, true, true, true, true);
+            b.Row1 + a.Rows - 1, b.Column1 + a.Columns - 1, true, true, true, true) with { LastSheetName = result.LastSheetName };
     }
 
     private static Reference? LiteralReference(Node node) => node switch

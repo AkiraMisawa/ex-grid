@@ -53,6 +53,58 @@
         </DocsExample>
     </DocsSection>
 
+    <DocsSection Title="3D References">
+        <p>
+            A <b>3D Reference</b> reads the same range on every Sheet from one to another, in tab order, as Excel's
+            does: <code>=SUM(Jan:Mar!B2)</code> adds B2 of Jan, of Mar and of every Sheet whose tab stands between
+            them. A name with a space is quoted with the whole span, <code>=SUM('Q1 Sales:Q4 Sales'!B2:B9)</code>, and
+            pointing does not write one: type it.
+        </p>
+        <ul>
+            <li>
+                <b>The functions Excel reads one in read it Sheet by Sheet as one range</b>: <code>SUM</code>,
+                <code>AVERAGE</code>, <code>COUNT</code>, <code>COUNTA</code>, <code>MAX</code>, <code>MIN</code>,
+                <code>PRODUCT</code>, <code>MEDIAN</code>, <code>STDEV.S</code>, <code>STDEV.P</code>, <code>VAR.S</code>,
+                <code>VAR.P</code>, <code>AND</code>, <code>OR</code>, <code>XOR</code>, <code>CONCAT</code>,
+                <code>TEXTJOIN</code>, <code>LARGE</code>, <code>SMALL</code> and <code>RANK.EQ</code>. An Error Value on
+                any of them is the result, as in a range on one Sheet, and a change on any Sheet of the span
+                recalculates the Formula. <code>IF</code>, <code>CHOOSE</code> and a <code>LET</code> name hand one on:
+                <code>=SUM(IF(A1,Jan:Mar!B2,0))</code> adds the span.
+            </li>
+            <li>
+                <b>Anywhere else it answers as Excel's does.</b> Where a function asks for a range of one Sheet,
+                <code>SUMIF</code>, <code>VLOOKUP</code>, <code>INDEX</code>, <code>ROWS</code> and their kin, it is
+                <code>#VALUE!</code>; read as one Value, on its own, under an operator or as any other argument, it is
+                <code>#REF!</code>; in parentheses, or naming a Sheet the Workbook does not have, it is
+                <code>#NAME?</code>. Excel was asked each one ExSheet has (exsheet-workbook ticket 12).
+            </li>
+            <li>
+                <b>The span is the Sheets between its two ends.</b> A Sheet inserted, copied or moved between them is
+                read, and one moved out is not, with no word of the Formula changed. An end moved past the other, or
+                deleted, hands its end to the Sheet next to it inward, so <code>Jan:Mar</code> becomes
+                <code>Feb:Mar</code> when Jan is deleted, and a span left with one Sheet is written as that Sheet. A
+                rename rewrites the end it names. Each is undone exactly.
+            </li>
+            <li>
+                <b>Rows and columns inserted or deleted on a Sheet of the span leave it as it is written</b>, as in
+                Excel: <code>Jan:Mar!B2</code> then reads whatever stands in B2 of each Sheet. A copy of a Sheet whose
+                own Formula a span begins or ends on is <code>#REF!</code> in the copy.
+            </li>
+            <li>
+                <b>It is written as Excel writes it back</b>: the ends in tab order and in their Sheets' own names,
+                bare or quoted whole. It gives a Formula entered into a General cell no format. A copy or a fill
+                shifts its relative parts, as any Reference's, and an <code>.xlsx</code> stores it as it is written.
+            </li>
+        </ul>
+        <DocsExample Builtin="typeof(WorkbookSpan)" Mud="typeof(WorkbookSpanMud)" CodeOpen="true"
+                     Files="@(["Examples/Sheet/Quarters.cs"])">
+            Three months and a Year that adds them with <code>=SUM(Jan:Mar!B1)</code>. Change Feb's revenue and select
+            Year: the total, the margin and the best month follow. Drag Notes between Jan and Feb: Year adds it too,
+            and Notes holds no revenue, so the total stays. Right-click Jan and choose Delete: Year reads
+            <code>=SUM(Feb:Mar!B1)</code>, and <kbd>Ctrl</kbd> + <kbd>Z</kbd> puts Jan and the Formula back.
+        </DocsExample>
+    </DocsSection>
+
     <DocsSection Title="Commands name their Sheet">
         <p>
             A command from your code says which Sheet it acts on: <code>DoAsync("Claim", edit)</code> does the edit on

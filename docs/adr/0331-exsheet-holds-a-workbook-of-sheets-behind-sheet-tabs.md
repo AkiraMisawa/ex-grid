@@ -147,6 +147,23 @@ holds unchanged:
 - **What happens to the span** when a Sheet is moved into or out of it, when an end Sheet is deleted
   or moved, and when a Sheet is inserted inside it, is observed in Excel and put in the next Windows
   run before it is built. Nothing is built from reasoning about it.
+- *As built, 2026-10-24, from Excel's answers* (exsheet-workbook ticket 12,
+  `verification/2026-10-24-windows-workbook-12`; no refusal is left that waits on Excel):
+  - `SUM`, `AVERAGE`, `COUNT`, `COUNTA`, `MAX`, `MIN`, `PRODUCT`, `MEDIAN`, `STDEV.S`, `STDEV.P`, `VAR.S`, `VAR.P`,
+    `AND`, `OR`, `XOR`, `CONCAT`, `TEXTJOIN` (its texts and its delimiters), `LARGE` and `SMALL` (their array) and
+    `RANK.EQ` (its ref) read a 3D Reference as one range, Sheet by Sheet in tab order. `IF`, `CHOOSE` and a `LET`
+    name hand one on. Where a function asks for a range of one Sheet it is `#VALUE!`, and in the Analysis
+    ToolPak's functions; read as one Value it is `#REF!`, or `#VALUE!` once handed on; in parentheses, or naming a
+    Sheet the Workbook lacks, `#NAME?`. Each function's answer is declared beside it (`FunctionDefinition.ThreeD`).
+  - The span is the Sheets between its two ends in tab order. An end moved past the other, or deleted, hands its
+    end to the Sheet next to it inward; a span of one Sheet is written as a Reference to it; rows and columns
+    inserted or deleted on a Sheet of the span never rewrite it. In a copy of a Sheet at an end of a span its own
+    Formula holds, that span is `#REF!`. Each Sheet operation is undone exactly, its rewritten Formulas with it.
+  - Typed, the ends are written in tab order and in their Sheets' own names, and a 3D Reference gives a General
+    cell no format, typed as one Sheet's or not.
+  - Two forms ExSheet does not read for any Reference stay refused on entry: the intersection operator, and the
+    range operator between a Reference and anything but its own cells. `TEXTJOIN`'s delimiter of several cells on
+    one Sheet stays refused (ADR-0047), where Excel cycles through it as through a 3D Reference's.
 
 ### 8. Find and Replace search the Sheet or the Workbook (W8)
 

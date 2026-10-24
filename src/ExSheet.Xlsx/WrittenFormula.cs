@@ -123,8 +123,11 @@ internal static partial class WrittenFormula
         /// <summary>A Reference written with <c>#</c> after it: the Spill Range of the Formula in that cell.</summary>
         public bool Spilled { get; init; }
 
-        /// <summary>The Sheet a Reference names, unquoted, or null for one of its own Sheet.</summary>
+        /// <summary>The Sheet a Reference names, unquoted, or null for one of its own Sheet; for a 3D Reference, the Sheet its span begins on.</summary>
         public string? Sheet { get; init; }
+
+        /// <summary>For a 3D Reference (<c>Sheet1:Sheet3!B2</c>), the Sheet its span ends on, unquoted; a file stores one as the engine writes it.</summary>
+        public string? LastSheet { get; init; }
 
         /// <summary>A name that a <c>(</c> follows: a function's.</summary>
         public bool Called { get; init; }
@@ -146,7 +149,7 @@ internal static partial class WrittenFormula
         var formula = entry.Formula!;
         var tokens = Split(formula, columnsOf, out problem);
         if (problem != WrittenFormulaProblem.None) return formula[1..];
-        if (hasSheet is not null && tokens.Any(t => t.Sheet is { } sheet && !hasSheet(sheet)))
+        if (hasSheet is not null && tokens.Any(t => (t.Sheet is { } sheet && !hasSheet(sheet)) || (t.LastSheet is { } last && !hasSheet(last))))
         {
             problem = WrittenFormulaProblem.MissingSheet;
             return formula[1..];
@@ -250,6 +253,17 @@ internal static partial class WrittenFormula
             {
                 tokens.Add(new Token(Kind.Error, qualifiedError.Value) { Sheet = SheetOf(qualifiedError) });
                 i += qualifiedError.Length;
+                continue;
+            }
+            if (SheetSpanPattern().Match(formula, i) is { Success: true } span
+                && ReferencePattern().Match(formula, i + span.Length) is { Success: true } place && !place.Groups["sheet"].Success && IsReference(place))
+            {
+                tokens.Add(new Token(Kind.Reference, span.Value + place.Value)
+                {
+                    Sheet = span.Groups["first"].Value.Replace("''", "'", StringComparison.Ordinal),
+                    LastSheet = span.Groups["last"].Value.Replace("''", "'", StringComparison.Ordinal),
+                });
+                i += span.Length + place.Length;
                 continue;
             }
             if (ReferencePattern().Match(formula, i) is { Success: true } reference && IsReference(reference))
@@ -525,6 +539,12 @@ internal static partial class WrittenFormula
 
     [GeneratedRegex(@"\G(?<sheet>'(?:[^']|'')+'|[A-Za-z_][A-Za-z0-9_.]*)!#REF!", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
     private static partial Regex QualifiedRefError();
+
+    /// <summary>A 3D Reference's span before its <c>!</c>, as the engine's lexer reads one: <c>Sheet1:Sheet3!</c>, <c>'Q1 Sales:Sheet3'!</c>.</summary>
+    [GeneratedRegex(
+        @"\G(?:'(?<first>(?:[^':]|'')+):(?<last>(?:[^':]|'')+)'|(?<first>[A-Za-z_][A-Za-z0-9_.]*):(?<last>[A-Za-z_][A-Za-z0-9_.]*))!",
+        RegexOptions.CultureInvariant)]
+    private static partial Regex SheetSpanPattern();
 
     [GeneratedRegex(@"\G(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+)(?:[eE][+-]?[0-9]+)?", RegexOptions.CultureInvariant)]
     private static partial Regex NumberPattern();

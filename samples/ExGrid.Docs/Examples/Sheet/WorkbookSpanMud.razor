@@ -1,0 +1,20 @@
+@using ExSheet
+@using ExSheet.Components
+@using ExSheet.Engine
+@using ExSheet.MudBlazor
+
+<MudText Typo="Typo.body2" Class="mb-3">@_said</MudText>
+
+<MudExGridPaper Class="docs-stretch-paper" Elevation="0" Outlined="true">
+    <ExSheet @bind-Workbook="_workbook" SheetsChanged="SheetsChanged" Chrome="MudSheetChrome.Default"
+             ViewportHeight="240" ViewportWidth="ViewportSize.Stretch" />
+</MudExGridPaper>
+
+@code {
+    // Year reads Jan to Mar with References such as Jan:Mar!B1.
+    private WorkbookDocument? _workbook = Quarters.Workbook();
+
+    private string _said = "Sheets: Jan, Feb, Mar, Notes, Year.";
+
+    private void SheetsChanged(SheetsChange change) => _said = $"Sheets: {string.Join(", ", change.After)}.";
+}

@@ -17,6 +17,8 @@ built. These are questions, not checks: nothing here is a by-hand row of the Def
 | `excel/xl-server.ps1`, `excel/xs.py` | real keys and the real mouse: the 2026-10-14 readings' server, unchanged, and its client rewritten to run on Windows itself |
 | `records/com-*.jsonl` | one line per COM case, as `ask-com.ps1` wrote it |
 | `records/keys-xs.jsonl` | every exchange with the server, in order, with Excel's answer |
+| `records/com-offset.jsonl` | `OFFSET`'s three cases of the `more` group asked again from Out!A9 at 23:06, since in Out!A1 they named their own cell: the same answers |
+| `to-fixture.py` | writes these records as the engine's layer 1 fixture, `tests/ExSheet.Engine.Tests/ThreeDReadings/excel-readings.json`, which `ThreeDExcelReadingsTests` reads |
 
 The pictures stay on the machine (`%LOCALAPPDATA%\exgrid-layer3\workbook-12\xs\shots`): they show the title bar's account
 corner.

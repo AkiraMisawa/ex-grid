@@ -37,7 +37,7 @@ internal static partial class FunctionLibrary
             var operand = call.Operand(i);
             switch (operand.Kind)
             {
-                case OperandKind.Area or OperandKind.Column or OperandKind.Array:
+                case OperandKind.Area or OperandKind.Column or OperandKind.Array or OperandKind.ThreeD:
                     foreach (var value in evaluator.RangeValues(operand))
                     {
                         if (value.IsError)

@@ -10,7 +10,7 @@
     SheetN holding 10^(N-1) (1, 10, 100, 1000, 10000), C3 holding 2*10^(N-1), so a sum names the Sheets
     it read. Out!A1 holds =SUM(Sheet2:Sheet4!B2) (1110) unless a case says otherwise.
 
-    Groups: functions, forms, span, rows, copy, deleted, names.
+    Groups: functions, forms, more, offset, span, rows, copy, deleted, names.
 #>
 param([string]$Out, [string[]]$Groups)
 $ErrorActionPreference = 'Stop'
@@ -191,6 +191,20 @@ if ($Groups -contains 'more') {
             $refused = Enter $b 'Out!A1' $form
             $r = [ordered]@{ refused = $refused }
             if (-not $refused) { $r.read = Read $b 'Out!A1' }
+            $r
+        }
+    }
+}
+
+# ---------------------------------------------------------------------------------------------------
+# OFFSET's cases of the `more` group stood in Out!A1, the cell their reference names: asked again from Out!A9.
+if ($Groups -contains 'offset') {
+    foreach ($form in @('=OFFSET(Out!A1,Sheet2:Sheet4!B2,1)', '=OFFSET(Out!A1,1,Sheet2:Sheet4!B2)', '=OFFSET(Out!A1,1,1,Sheet2:Sheet4!B2)', '=OFFSET(Sheet2:Sheet4!B2,1,1)')) {
+        Case 'offset' $form $form {
+            param($b)
+            $refused = Enter $b 'Out!A9' $form
+            $r = [ordered]@{ refused = $refused }
+            if (-not $refused) { $r.read = Read $b 'Out!A9' }
             $r
         }
     }
