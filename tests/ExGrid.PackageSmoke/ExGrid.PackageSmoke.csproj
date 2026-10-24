@@ -2,7 +2,7 @@
 
   <!-- An application that takes ExGrid the way a Consumer does: from the packages, never from
        the projects (ADR-0042). It is outside the solution, and check.sh is the only way in:
-       it packs the family's thirteen packages into .feed/ — the files the release publishes — and
+       it packs the family's sixteen packages into .feed/ — the files the release publishes — and
        passes the version it packed. Everything the DemoHost gets from a ProjectReference — the static web
        assets, the dependency ranges, the READMEs' examples compiling at all — is exercised here
        as a package delivers it.

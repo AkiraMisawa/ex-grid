@@ -36,8 +36,8 @@ public static class ReleaseNotes
     public static readonly ImmutableArray<string> Packages =
     [
         "ExGrid", "ExGrid.MudBlazor",
-        "ExSheet.Engine", "ExSheet", "ExSheet.MudBlazor",
-        "ExGrid.Data", "ExGrid.Data.Arrow",
+        "ExSheet.Engine", "ExSheet", "ExSheet.MudBlazor", "ExSheet.Xlsx",
+        "ExGrid.Data", "ExGrid.Data.Arrow", "ExGrid.Data.Xlsx",
         "ExPivot.Engine", "ExPivot", "ExPivot.MudBlazor",
         "ExChart.Engine", "ExChart", "ExChart.MudBlazor",
         "ExBoard",

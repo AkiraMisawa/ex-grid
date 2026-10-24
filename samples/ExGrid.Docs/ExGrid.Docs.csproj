@@ -26,7 +26,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <TrimmerRootAssembly Include="ExGrid;ExGrid.MudBlazor;ExSheet;ExSheet.Engine;ExSheet.MudBlazor;ExPivot;ExPivot.Engine;ExPivot.MudBlazor;ExChart;ExChart.Engine;ExChart.MudBlazor;ExBoard;ExGrid.Data;ExGrid.Data.Arrow" />
+    <TrimmerRootAssembly Include="ExGrid;ExGrid.MudBlazor;ExSheet;ExSheet.Engine;ExSheet.MudBlazor;ExSheet.Xlsx;ExPivot;ExPivot.Engine;ExPivot.MudBlazor;ExChart;ExChart.Engine;ExChart.MudBlazor;ExBoard;ExGrid.Data;ExGrid.Data.Arrow;ExGrid.Data.Xlsx" />
   </ItemGroup>
 
   <ItemGroup>

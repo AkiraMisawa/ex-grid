@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Packs the family's fourteen packages — ExGrid and ExGrid.MudBlazor; ExSheet.Engine, ExSheet and
-# ExSheet.MudBlazor; ExGrid.Data and ExGrid.Data.Arrow; ExPivot.Engine, ExPivot and
+# Packs the family's sixteen packages — ExGrid and ExGrid.MudBlazor; ExSheet.Engine, ExSheet,
+# ExSheet.MudBlazor and ExSheet.Xlsx; ExGrid.Data, ExGrid.Data.Arrow and ExGrid.Data.Xlsx; ExPivot.Engine, ExPivot and
 # ExPivot.MudBlazor; ExChart.Engine, ExChart and ExChart.MudBlazor (ADR-0283); and ExBoard
 # (ADR-0340) — reads back what
 # each declares, and builds and publishes an application that takes them from the packed files
@@ -8,10 +8,9 @@
 # packages, and the check fails if it comes back different (DA-16). A trimmed Consumer also
 # round-trips report Windows, Window Changes and versioned operations with reflection disabled (ADR-0152).
 #
-# ExGrid.Data.Xlsx and ExSheet.Xlsx (ADR-0330) are packed and checked the same way, and a workbook is
-# written and read back through the first, and opened and saved again through the second, but they go to
-# .feed-unreleased, not to .feed: the release publishes the packages ADR-0042 names, and that list does
-# not name them yet.
+# A workbook is written and read back through ExGrid.Data.Xlsx, and opened and saved again through
+# ExSheet.Xlsx (ADR-0330). Until 2026-10-24 those two were packed to a feed of their own and not
+# published; ADR-0042 names them since.
 #
 #   tests/ExGrid.PackageSmoke/check.sh [version]
 #
@@ -24,34 +23,28 @@ here=$(cd "$(dirname "$0")" && pwd)
 root=$(cd "$here/../.." && pwd)
 version=${1:-0.0.0-smoke.$(date +%s)}
 feed="$here/.feed"
-unreleased="$here/.feed-unreleased"
 cache="$here/.nuget-packages"
 out="$here/.publish"
 
 fail() { echo "package check: $*" >&2; exit 1; }
 
-rm -rf "$feed" "$unreleased" "$cache" "$out" "$here/bin" "$here/obj" "$here/RoundTrip/bin" "$here/RoundTrip/obj"
-mkdir -p "$feed" "$unreleased"
+rm -rf "$feed" "$cache" "$out" "$here/bin" "$here/obj" "$here/RoundTrip/bin" "$here/RoundTrip/obj"
+mkdir -p "$feed"
 
 echo "== pack $version"
-packages="ExGrid ExGrid.MudBlazor ExSheet.Engine ExSheet ExSheet.MudBlazor ExGrid.Data ExGrid.Data.Arrow ExPivot.Engine ExPivot ExPivot.MudBlazor ExChart.Engine ExChart ExChart.MudBlazor ExBoard"
+packages="ExGrid ExGrid.MudBlazor ExSheet.Engine ExSheet ExSheet.MudBlazor ExSheet.Xlsx ExGrid.Data ExGrid.Data.Arrow ExGrid.Data.Xlsx ExPivot.Engine ExPivot ExPivot.MudBlazor ExChart.Engine ExChart ExChart.MudBlazor ExBoard"
 for project in $packages; do
   dotnet pack "$root/src/$project" -c Release -o "$feed" -p:Version="$version" --nologo
 done
-held="ExGrid.Data.Xlsx ExSheet.Xlsx"
-for project in $held; do
-  dotnet pack "$root/src/$project" -c Release -o "$unreleased" -p:Version="$version" --nologo
-done
 
 echo "== what the packages declare"
-# A package held back from the release is read from where it was packed.
-nupkg() { if [ -f "$feed/$1.$version.nupkg" ]; then echo "$feed/$1.$version.nupkg"; else echo "$unreleased/$1.$version.nupkg"; fi; }
+nupkg() { echo "$feed/$1.$version.nupkg"; }
 nuspec() { unzip -p "$(nupkg "$1")" "$1.nuspec"; }
 # Read into a string before a grep -q, never piped to one: grep -q exits at its first match, unzip
 # then dies of SIGPIPE, and under pipefail the pipeline fails — a file that is there reported missing,
 # or, inside an if, a forbidden one passed over.
 entries() { unzip -Z1 "$(nupkg "$1")"; }
-for id in $packages $held; do
+for id in $packages; do
   [ -f "$(nupkg "$id" | sed 's/\.nupkg$/.snupkg/')" ] || fail "$id has no symbol package"
   spec=$(nuspec "$id")
   grep -q '<license type="expression">MIT</license>' <<<"$spec" || fail "$id does not declare MIT"
@@ -123,8 +116,6 @@ xlsxdeps=$(grep -o '<dependency id="[^"]*" version="[^"]*"' <<<"$(nuspec ExGrid.
 sheetxlsxdeps=$(grep -o '<dependency id="[^"]*" version="[^"]*"' <<<"$(nuspec ExSheet.Xlsx)" | sort)
 [ "$sheetxlsxdeps" = "$(printf '%s\n' "<dependency id=\"ExGrid.Data.Xlsx\" version=\"[$version]\"" "<dependency id=\"ExSheet.Engine\" version=\"[$version]\"" | sort)" ] \
   || fail "ExSheet.Xlsx's dependencies are not exactly ExGrid.Data.Xlsx $version and ExSheet.Engine $version: $sheetxlsxdeps"
-[ "$(ls "$unreleased" | sort)" = "$(for id in $held; do printf '%s\n' "$id.$version.nupkg" "$id.$version.snupkg"; done | sort)" ] \
-  || fail "$unreleased does not hold exactly the packages held back from the release: $(ls "$unreleased" | tr '\n' ' ')"
 # ExPivot's engine depends on exactly the ExGrid.Data it was built with, and on nothing else: it
 # aggregates a Snapshot (ADR-0064, PV-1).
 enginedeps=$(grep -o '<dependency id="[^"]*" version="[^"]*"' <<<"$(nuspec ExPivot.Engine)" | sort)
@@ -168,10 +159,10 @@ boarddeps=$(grep -o '<dependency id="[^"]*" version="[^"]*"' <<<"$(nuspec ExBoar
   || fail "ExBoard's dependencies are not exactly ExGrid, ExPivot and ExChart $version: $boarddeps"
 if grep -qE '^staticwebassets/' <<<"$(entries ExBoard)"; then fail "ExBoard ships a static asset"; fi
 
-# The release publishes .feed as it is, so it holds the fourteen packages and their symbol packages, and
+# The release publishes .feed as it is, so it holds the sixteen packages and their symbol packages, and
 # nothing else (ADR-0042).
 expected=$(for id in $packages; do printf '%s\n' "$id.$version.nupkg" "$id.$version.snupkg"; done | sort)
-[ "$(ls "$feed" | sort)" = "$expected" ] || fail "the release feed $feed does not hold exactly the fourteen packages: $(ls "$feed" | tr '\n' ' ')"
+[ "$(ls "$feed" | sort)" = "$expected" ] || fail "the release feed $feed does not hold exactly the sixteen packages: $(ls "$feed" | tr '\n' ' ')"
 
 echo "== an application that takes them"
 dotnet publish "$here" -c Release -o "$out" --nologo \
@@ -183,11 +174,6 @@ for id in $packages; do
   meta="$cache/$id/$version/.nupkg.metadata"
   [ -f "$meta" ] || fail "$id $version was not restored"
   grep -qF "$feed" "$meta" || fail "$id $version came from somewhere other than $feed"
-done
-for id in $held; do
-  meta="$cache/${id,,}/$version/.nupkg.metadata"
-  [ -f "$meta" ] || fail "$id $version was not restored"
-  grep -qF "$unreleased" "$meta" || fail "$id $version came from somewhere other than $unreleased"
 done
 
 # Each package asks for the files it was built with (ADR-0123): its stylesheet component, and the
@@ -220,11 +206,8 @@ echo "== trimmed packed Consumer: Arrow, xlsx and report protocol round trips"
 # kind, with Blanks, captions, a Record Key and a version, and reads it back (ADR-0065, DA-16).
 dotnet publish "$here/RoundTrip" -c Release --nologo -o "$out/roundtrip" --self-contained true -p:PublishTrimmed=true \
   -p:ExGridVersion="$version" -p:RestorePackagesPath="$cache"
-for id in exgrid.data exgrid.data.arrow expivot.engine; do
+for id in exgrid.data exgrid.data.arrow exgrid.data.xlsx exsheet.xlsx expivot.engine; do
   grep -qF "$feed" "$cache/$id/$version/.nupkg.metadata" || fail "the round trip took $id $version from somewhere other than $feed"
-done
-for id in exgrid.data.xlsx exsheet.xlsx; do
-  grep -qF "$unreleased" "$cache/$id/$version/.nupkg.metadata" || fail "the round trip took $id $version from somewhere other than $unreleased"
 done
 dotnet "$out/roundtrip/PackageSmoke.RoundTrip.dll" \
   || fail "a packed data, workbook or report protocol round trip changed its result"

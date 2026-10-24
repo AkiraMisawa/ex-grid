@@ -11,8 +11,8 @@
             <code>ExGrid.Data.Xlsx</code>'s. Neither references a component or anything outside .NET, so a server
             converts files with no Blazor in the process, and an application that never touches <code>.xlsx</code>
             carries neither. ExSheet itself references no file format: <b>choosing the file and delivering the
-            written one are your application's</b>, as persisting a Sheet Document is. Both packages are new, and
-            reach nuget.org with a coming version.
+            written one are your application's</b>, as persisting a Sheet Document is. Both are published with the
+            rest of the family, at its one version, from <code>0.2.0</code> and its release candidates.
         </p>
         <ul>
             <li>
@@ -144,5 +144,12 @@
             Sheet, or press <kbd>Escape</kbd> in it.
         </p>
         <DocsExample Builtin="typeof(XlsxOpenSave)" Mud="typeof(XlsxOpenSaveMud)" Files="@(["Examples/Sheet/Expenses.cs"])" />
+    </DocsSection>
+
+    <DocsSection Title="API">
+        <ApiTable Type="typeof(global::ExSheet.Xlsx.XlsxWorkbookReader)" />
+        <ApiTable Type="typeof(global::ExSheet.Xlsx.XlsxWorkbookWriter)" />
+        <ApiTable Type="typeof(global::ExGrid.Data.Xlsx.XlsxReader)" />
+        <ApiTable Type="typeof(global::ExGrid.Data.Xlsx.XlsxWriter)" />
     </DocsSection>
 </DocsPage>
