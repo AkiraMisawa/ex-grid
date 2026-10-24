@@ -68,7 +68,8 @@
                 <code>VAR.P</code>, <code>AND</code>, <code>OR</code>, <code>XOR</code>, <code>CONCAT</code>,
                 <code>TEXTJOIN</code>, <code>LARGE</code>, <code>SMALL</code> and <code>RANK.EQ</code>. An Error Value on
                 any of them is the result, as in a range on one Sheet, and a change on any Sheet of the span
-                recalculates the Formula. <code>IF</code>, <code>CHOOSE</code> and a <code>LET</code> name hand one on:
+                recalculates the Formula. <code>IF</code>, <code>CHOOSE</code>, a <code>LET</code> name and the fallback of <code>IFERROR</code> and
+                <code>IFNA</code> hand one on:
                 <code>=SUM(IF(A1,Jan:Mar!B2,0))</code> adds the span.
             </li>
             <li>

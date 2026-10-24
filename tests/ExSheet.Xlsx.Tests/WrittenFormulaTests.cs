@@ -82,6 +82,8 @@ public class WrittenFormulaTests
     [InlineData("=AVERAGE('Q1 Sales:Sheet3'!B2:C3)", "AVERAGE('Q1 Sales:Sheet3'!B2:C3)", true)]
     [InlineData("=SUM(Sheet1:Sheet9!B2)", "SUM(Sheet1:Sheet9!B2)", false)]
     [InlineData("=SUM(Sheet9:Sheet3!B2)", "SUM(Sheet9:Sheet3!B2)", false)]
+    // Stored as Excel stored it (verification/2026-10-24-windows-workbook-12/records/spill-xml.txt).
+    [InlineData("=SUM(Sheet1:Sheet3!B2#)", "SUM(_xlfn.ANCHORARRAY(Sheet1:Sheet3!B2))", true)]
     public void ADR0331_a_3d_reference_is_written_as_stored(string formula, string stored, bool written)
     {
         var expected = written ? WrittenFormulaProblem.None : WrittenFormulaProblem.MissingSheet;

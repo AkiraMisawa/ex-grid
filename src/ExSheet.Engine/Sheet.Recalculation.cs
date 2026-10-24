@@ -349,7 +349,7 @@ public sealed partial class Sheet
             IEnumerable<ICellReader> targets = reference.IsThreeD
                 ? reader.ResolveSpan(reference.SheetName!, reference.LastSheetName!) ?? []
                 : reader.Resolve(reference.SheetName) is { } one ? [one] : [];
-            foreach (var target in targets.Cast<StagedReader>())
+            foreach (var target in targets.OfType<StagedReader>())
             {
                 foreach (var address in target.Sheet.CellsIn(reference.Area))
                 {

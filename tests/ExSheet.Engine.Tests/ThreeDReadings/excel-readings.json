@@ -2352,6 +2352,349 @@
    "cell": "A9",
    "written": "=OFFSET(Sheet2:Sheet4!B2,1,1)",
    "error": "#VALUE!"
+  },
+  {
+   "formula": "=SWITCH(9,1,1,Sheet2:Sheet4!B2)",
+   "setup": "more",
+   "cell": "A9",
+   "written": "=SWITCH(9,1,1,Sheet2:Sheet4!B2)",
+   "error": "#VALUE!"
+  },
+  {
+   "formula": "=SWITCH(2,1,1,2,Sheet2:Sheet4!B2)",
+   "setup": "more",
+   "cell": "A9",
+   "written": "=SWITCH(2,1,1,2,Sheet2:Sheet4!B2)",
+   "error": "#VALUE!"
+  },
+  {
+   "formula": "=SWITCH(9,1,1,2,2,Sheet2:Sheet4!B2)",
+   "setup": "more",
+   "cell": "A9",
+   "written": "=SWITCH(9,1,1,2,2,Sheet2:Sheet4!B2)",
+   "error": "#VALUE!"
+  },
+  {
+   "formula": "=SUM(SWITCH(9,1,1,Sheet2:Sheet4!B2))",
+   "setup": "more",
+   "cell": "A9",
+   "written": "=SUM(SWITCH(9,1,1,Sheet2:Sheet4!B2))",
+   "error": "#VALUE!"
+  },
+  {
+   "formula": "=SWITCH(2,1,1,Sheet2:Sheet4!B2,5)",
+   "setup": "more",
+   "cell": "A9",
+   "written": "=SWITCH(2,1,1,Sheet2:Sheet4!B2,5)",
+   "error": "#REF!"
+  },
+  {
+   "formula": "=CHOOSE(2,1,Sheet2:Sheet4!B2)",
+   "setup": "more",
+   "cell": "A9",
+   "written": "=CHOOSE(2,1,Sheet2:Sheet4!B2)",
+   "error": "#VALUE!"
+  },
+  {
+   "formula": "=SUM(CHOOSE(3,1,2,Sheet2:Sheet4!B2))",
+   "setup": "more",
+   "cell": "A9",
+   "written": "=SUM(CHOOSE(3,1,2,Sheet2:Sheet4!B2))",
+   "number": 1110.0
+  },
+  {
+   "formula": "=IF(FALSE,1,Sheet2:Sheet4!B2)",
+   "setup": "more",
+   "cell": "A9",
+   "written": "=IF(FALSE,1,Sheet2:Sheet4!B2)",
+   "error": "#VALUE!"
+  },
+  {
+   "formula": "=IFS(FALSE,1,TRUE,Sheet2:Sheet4!B2)",
+   "setup": "more",
+   "cell": "A9",
+   "written": "=IFS(FALSE,1,TRUE,Sheet2:Sheet4!B2)",
+   "error": "#VALUE!"
+  },
+  {
+   "formula": "=IFS(FALSE,1,Sheet2:Sheet4!B2,2)",
+   "setup": "more",
+   "cell": "A9",
+   "written": "=IFS(FALSE,1,Sheet2:Sheet4!B2,2)",
+   "error": "#REF!"
+  },
+  {
+   "formula": "=IFS(TRUE,1,Sheet2:Sheet4!B2,2)",
+   "setup": "more",
+   "cell": "A9",
+   "written": "=IFS(TRUE,1,Sheet2:Sheet4!B2,2)",
+   "number": 1.0
+  },
+  {
+   "formula": "=SUMIFS(Out!C1,Out!C1,\">0\",Sheet2:Sheet4!B2,\">0\")",
+   "setup": "more",
+   "cell": "A9",
+   "written": "=SUMIFS(Out!C1,Out!C1,\">0\",Sheet2:Sheet4!B2,\">0\")",
+   "error": "#VALUE!"
+  },
+  {
+   "formula": "=SUMIFS(Out!C1,Out!C1,\">0\",Out!C1,Sheet2:Sheet4!B2)",
+   "setup": "more",
+   "cell": "A9",
+   "written": "=SUMIFS(Out!C1,Out!C1,\">0\",Out!C1,Sheet2:Sheet4!B2)",
+   "number": 0.0
+  },
+  {
+   "formula": "=COUNTIFS(Out!C1,Sheet2:Sheet4!B2)",
+   "setup": "more",
+   "cell": "A9",
+   "written": "=COUNTIFS(Out!C1,Sheet2:Sheet4!B2)",
+   "number": 0.0
+  },
+  {
+   "formula": "=COUNTIFS(Out!C1,\">0\",Out!C1,Sheet2:Sheet4!B2)",
+   "setup": "more",
+   "cell": "A9",
+   "written": "=COUNTIFS(Out!C1,\">0\",Out!C1,Sheet2:Sheet4!B2)",
+   "number": 0.0
+  },
+  {
+   "formula": "=AVERAGEIFS(Out!C1,Out!C1,\">0\",Sheet2:Sheet4!B2,\">0\")",
+   "setup": "more",
+   "cell": "A9",
+   "written": "=AVERAGEIFS(Out!C1,Out!C1,\">0\",Sheet2:Sheet4!B2,\">0\")",
+   "error": "#VALUE!"
+  },
+  {
+   "formula": "=MAXIFS(Out!C1,Out!C1,\">0\",Sheet2:Sheet4!B2,\">0\")",
+   "setup": "more",
+   "cell": "A9",
+   "written": "=MAXIFS(Out!C1,Out!C1,\">0\",Sheet2:Sheet4!B2,\">0\")",
+   "error": "#VALUE!"
+  },
+  {
+   "formula": "=MINIFS(Out!C1,Out!C1,\">0\",Sheet2:Sheet4!B2,\">0\")",
+   "setup": "more",
+   "cell": "A9",
+   "written": "=MINIFS(Out!C1,Out!C1,\">0\",Sheet2:Sheet4!B2,\">0\")",
+   "error": "#VALUE!"
+  },
+  {
+   "formula": "=SUMIF(Out!C1:C2,Sheet2:Sheet4!B2)",
+   "setup": "more",
+   "cell": "A9",
+   "written": "=SUMIF(Out!C1:C2,Sheet2:Sheet4!B2)",
+   "number": 0.0
+  },
+  {
+   "formula": "=COUNTIF(Out!C1:C2,Sheet2:Sheet4!B2)",
+   "setup": "more",
+   "cell": "A9",
+   "written": "=COUNTIF(Out!C1:C2,Sheet2:Sheet4!B2)",
+   "number": 0.0
+  },
+  {
+   "formula": "=AVERAGEIF(Out!C1:C2,Sheet2:Sheet4!B2)",
+   "setup": "more",
+   "cell": "A9",
+   "written": "=AVERAGEIF(Out!C1:C2,Sheet2:Sheet4!B2)",
+   "error": "#DIV/0!"
+  },
+  {
+   "formula": "=AGGREGATE(9,6,Out!C1:C2,Sheet2:Sheet4!B2)",
+   "setup": "more",
+   "cell": "A9",
+   "written": "=AGGREGATE(9,6,Out!C1:C2,Sheet2:Sheet4!B2)",
+   "error": "#VALUE!"
+  },
+  {
+   "formula": "=SUBTOTAL(9,Out!C1:C2,Sheet2:Sheet4!B2)",
+   "setup": "more",
+   "cell": "A9",
+   "written": "=SUBTOTAL(9,Out!C1:C2,Sheet2:Sheet4!B2)",
+   "error": "#VALUE!"
+  },
+  {
+   "formula": "=TEXTJOIN(\",\",TRUE,\"a\",Sheet2:Sheet4!B2)",
+   "setup": "more",
+   "cell": "A9",
+   "written": "=TEXTJOIN(\",\",TRUE,\"a\",Sheet2:Sheet4!B2)",
+   "text": "a,10,100,1000"
+  },
+  {
+   "formula": "=VLOOKUP(1,Out!C1:C2,1,Sheet2:Sheet4!B2)",
+   "setup": "more",
+   "cell": "A9",
+   "written": "=VLOOKUP(1,Out!C1:C2,1,Sheet2:Sheet4!B2)",
+   "error": "#REF!"
+  },
+  {
+   "formula": "=HLOOKUP(1,Out!C1:C2,1,Sheet2:Sheet4!B2)",
+   "setup": "more",
+   "cell": "A9",
+   "written": "=HLOOKUP(1,Out!C1:C2,1,Sheet2:Sheet4!B2)",
+   "error": "#REF!"
+  },
+  {
+   "formula": "=MATCH(1,Out!C1:C2,Sheet2:Sheet4!B2)",
+   "setup": "more",
+   "cell": "A9",
+   "written": "=MATCH(1,Out!C1:C2,Sheet2:Sheet4!B2)",
+   "error": "#VALUE!"
+  },
+  {
+   "formula": "=XMATCH(1,Out!C1:C2,Sheet2:Sheet4!B2)",
+   "setup": "more",
+   "cell": "A9",
+   "written": "=XMATCH(1,Out!C1:C2,Sheet2:Sheet4!B2)",
+   "error": "#REF!"
+  },
+  {
+   "formula": "=XMATCH(1,Out!C1:C2,0,Sheet2:Sheet4!B2)",
+   "setup": "more",
+   "cell": "A9",
+   "written": "=XMATCH(1,Out!C1:C2,0,Sheet2:Sheet4!B2)",
+   "error": "#REF!"
+  },
+  {
+   "formula": "=XLOOKUP(9,Out!C1:C2,Out!C1:C2,Sheet2:Sheet4!B2)",
+   "setup": "more",
+   "cell": "A9",
+   "written": "=XLOOKUP(9,Out!C1:C2,Out!C1:C2,Sheet2:Sheet4!B2)",
+   "error": "#VALUE!"
+  },
+  {
+   "formula": "=SUM(XLOOKUP(9,Out!C1:C2,Out!C1:C2,Sheet2:Sheet4!B2))",
+   "setup": "more",
+   "cell": "A9",
+   "written": "=SUM(XLOOKUP(9,Out!C1:C2,Out!C1:C2,Sheet2:Sheet4!B2))",
+   "error": "#VALUE!"
+  },
+  {
+   "formula": "=XLOOKUP(1,Out!C1:C2,Out!C1:C2,,Sheet2:Sheet4!B2)",
+   "setup": "more",
+   "cell": "A9",
+   "written": "=XLOOKUP(1,Out!C1:C2,Out!C1:C2,,Sheet2:Sheet4!B2)",
+   "error": "#REF!"
+  },
+  {
+   "formula": "=XLOOKUP(1,Out!C1:C2,Out!C1:C2,,0,Sheet2:Sheet4!B2)",
+   "setup": "more",
+   "cell": "A9",
+   "written": "=XLOOKUP(1,Out!C1:C2,Out!C1:C2,,0,Sheet2:Sheet4!B2)",
+   "error": "#REF!"
+  },
+  {
+   "formula": "=FILTER(Out!C1:C2,Out!C1:C2>5,Sheet2:Sheet4!B2)",
+   "setup": "more",
+   "cell": "A9",
+   "written": "=FILTER(Out!C1:C2,Out!C1:C2>5,Sheet2:Sheet4!B2)",
+   "error": "#REF!"
+  },
+  {
+   "formula": "=SUM(FILTER(Out!C1:C2,Out!C1:C2>5,Sheet2:Sheet4!B2))",
+   "setup": "more",
+   "cell": "A9",
+   "written": "=SUM(FILTER(Out!C1:C2,Out!C1:C2>5,Sheet2:Sheet4!B2))",
+   "error": "#REF!"
+  },
+  {
+   "formula": "=INDEX(Out!C1:C2,1,Sheet2:Sheet4!B2)",
+   "setup": "more",
+   "cell": "A9",
+   "written": "=INDEX(Out!C1:C2,1,Sheet2:Sheet4!B2)",
+   "error": "#REF!"
+  },
+  {
+   "formula": "=OFFSET(Out!A1,1,1,1,Sheet2:Sheet4!B2)",
+   "setup": "more",
+   "cell": "A9",
+   "written": "=OFFSET(Out!A1,1,1,1,Sheet2:Sheet4!B2)",
+   "error": "#REF!"
+  },
+  {
+   "formula": "=RANK.EQ(1,Out!C1:C2,Sheet2:Sheet4!B2)",
+   "setup": "more",
+   "cell": "A9",
+   "written": "=RANK.EQ(1,Out!C1:C2,Sheet2:Sheet4!B2)",
+   "error": "#REF!"
+  },
+  {
+   "formula": "=SUMIF(Out!C1:C2,\">0\",Sheet2:Sheet4!B2:C3)",
+   "setup": "more",
+   "cell": "A9",
+   "written": "=SUMIF(Out!C1:C2,\">0\",Sheet2:Sheet4!B2:C3)",
+   "error": "#VALUE!"
+  },
+  {
+   "formula": "=SUM(1,2,Sheet2:Sheet4!B2)",
+   "setup": "more",
+   "cell": "A9",
+   "written": "=SUM(1,2,Sheet2:Sheet4!B2)",
+   "number": 1113.0
+  },
+  {
+   "formula": "=AND(TRUE,TRUE,Sheet2:Sheet4!B2)",
+   "setup": "more",
+   "cell": "A9",
+   "written": "=AND(TRUE,TRUE,Sheet2:Sheet4!B2)",
+   "boolean": true
+  },
+  {
+   "formula": "=CONCAT(\"a\",\"b\",Sheet2:Sheet4!B2)",
+   "setup": "more",
+   "cell": "A9",
+   "written": "=CONCAT(\"a\",\"b\",Sheet2:Sheet4!B2)",
+   "text": "ab101001000"
+  },
+  {
+   "formula": "=MAX(1,2,3,Sheet2:Sheet4!B2)",
+   "setup": "more",
+   "cell": "A9",
+   "written": "=MAX(1,2,3,Sheet2:Sheet4!B2)",
+   "number": 1000.0
+  },
+  {
+   "formula": "=IFERROR(1/0,Sheet2:Sheet4!B2)",
+   "setup": "more",
+   "cell": "A9",
+   "written": "=IFERROR(1/0,Sheet2:Sheet4!B2)",
+   "error": "#VALUE!"
+  },
+  {
+   "formula": "=SUM(IFERROR(1/0,Sheet2:Sheet4!B2))",
+   "setup": "more",
+   "cell": "A9",
+   "written": "=SUM(IFERROR(1/0,Sheet2:Sheet4!B2))",
+   "number": 1110.0
+  },
+  {
+   "formula": "=IFNA(NA(),Sheet2:Sheet4!B2)",
+   "setup": "more",
+   "cell": "A9",
+   "written": "=IFNA(NA(),Sheet2:Sheet4!B2)",
+   "error": "#VALUE!"
+  },
+  {
+   "formula": "=SUM(IFNA(NA(),Sheet2:Sheet4!B2))",
+   "setup": "more",
+   "cell": "A9",
+   "written": "=SUM(IFNA(NA(),Sheet2:Sheet4!B2))",
+   "number": 1110.0
+  },
+  {
+   "formula": "=SUM(LET(x,1,y,Sheet2:Sheet4!B2,y))",
+   "setup": "more",
+   "cell": "A9",
+   "written": "=SUM(LET(x,1,y,Sheet2:Sheet4!B2,y))",
+   "number": 1110.0
+  },
+  {
+   "formula": "=SUM(IF(TRUE,IF(TRUE,Sheet2:Sheet4!B2)))",
+   "setup": "more",
+   "cell": "A9",
+   "written": "=SUM(IF(TRUE,IF(TRUE,Sheet2:Sheet4!B2)))",
+   "number": 1110.0
   }
  ],
  "sheets": [

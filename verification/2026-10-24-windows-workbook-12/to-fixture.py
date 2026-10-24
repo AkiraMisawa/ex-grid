@@ -49,8 +49,9 @@ def cells(read):
 
 formulas = []
 # OFFSET's cases of `more` named the cell they stood in; com-offset.jsonl asked them again from Out!A9.
+# com-later.jsonl asked the arguments past the third, from Out!A9 with Out!C1:C2 set as in `more`.
 asked_again = {r['what'] for r in records('com-offset.jsonl')}
-for name, setup, at in (('com-functions.jsonl', 'base', 'A1'), ('com-forms.jsonl', 'base', 'A1'), ('com-more.jsonl', 'more', 'A1'), ('com-offset.jsonl', 'base', 'A9')):
+for name, setup, at in (('com-functions.jsonl', 'base', 'A1'), ('com-forms.jsonl', 'base', 'A1'), ('com-more.jsonl', 'more', 'A1'), ('com-offset.jsonl', 'base', 'A9'), ('com-later.jsonl', 'more', 'A9')):
     for r in records(name):
         if r.get('refused') or 'read' not in r or not r['what'].startswith('='):
             continue

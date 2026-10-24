@@ -40,5 +40,6 @@ what does is refused by name rather than built from reasoning (ADR-0331 §7, the
 **Built from Excel's answers (2026-10-24):** ticket 12's run answered every refusal above, and each gave way to
 Excel's behaviour (ADR-0331 §7's note of that date). `ThreeDExcelReadingsTests` asks the engine every case the run
 asked Excel, from `tests/ExSheet.Engine.Tests/ThreeDReadings/excel-readings.json`, which the run's `to-fixture.py`
-writes from its records: 336 Formulas, 34 Sheet operations, 15 row and column changes and 10 copies.
+writes from its records: 385 Formulas, 34 Sheet operations, 15 row and column changes and 10 copies. The code
+review found the arguments past the third unasked; they were asked the same night (`com-later.jsonl`).
 `SheetRefusalReason.ChangesThreeDReference` is gone with the refusals.

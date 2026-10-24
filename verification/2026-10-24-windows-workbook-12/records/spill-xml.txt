@@ -1,0 +1,2 @@
+<c r="A1" t="e"><f>SUM(_xlfn.ANCHORARRAY(Sheet2:Sheet4!B2))</f><v>#REF!</v></c>
+<c r="A2"><f>SUM(Sheet2:Sheet4!B2)</f><v>0</v></c>

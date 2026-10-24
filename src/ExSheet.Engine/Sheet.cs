@@ -341,7 +341,9 @@ public sealed partial class Sheet
         // gives, as Excel's =SUM(Sheet2:Sheet2!B2) over a percentage stayed General (ADR-0331 §7).
         for (var i = 0; i < entries.Count; i++)
         {
-            if (entries[i].Value is { } typed && Workbook.InTabOrder(typed) is var ordered && !ReferenceEquals(ordered, typed)) entries[i] = new(entries[i].Key, ordered);
+            if (entries[i].Value is not { } typed) continue;
+            var ordered = Workbook.InTabOrder(typed);
+            if (!ReferenceEquals(ordered, typed)) entries[i] = new(entries[i].Key, ordered);
         }
         var change = SetEntries(entries);
         if (rows.Count == 0) return change;

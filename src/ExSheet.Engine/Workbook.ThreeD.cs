@@ -15,20 +15,17 @@ public sealed partial class Workbook
     /// <summary>
     /// A 3D Reference as the move of the Sheet named <paramref name="moved"/> leaves it: <paramref name="before"/>
     /// names the Sheets in their order before the move, and <paramref name="after"/> after it. An end that stays
-    /// on its side of the other is kept; one moved past the other hands its end to the Sheet that stood next
-    /// to it inward.
+    /// on its side of the other is kept, and the Reference written as it was, as Excel's; one moved past the
+    /// other hands its end to the Sheet that stood next to it inward.
     /// </summary>
     internal static Reference Moved(Reference reference, IReadOnlyList<string> before, IReadOnlyList<string> after, string moved)
     {
         if (Ends(reference, before) is not var (a, b)) return reference;
         var first = before[a];
         var last = before[b];
-        var (na, nb) = (IndexOfName(after, first), IndexOfName(after, last));
-        if (na > nb)
-        {
-            if (Sheet.Names(first, moved)) first = before[a + 1];
-            else last = before[b - 1];
-        }
+        if (IndexOfName(after, first) < IndexOfName(after, last)) return reference;
+        if (Sheet.Names(first, moved)) first = before[a + 1];
+        else last = before[b - 1];
         return Spanning(reference, first, last);
     }
 
@@ -41,6 +38,7 @@ public sealed partial class Workbook
     {
         if (Ends(reference, before) is not var (a, b)) return reference;
         if (a == b) return Sheet.Names(before[a], deleted) ? null : reference;
+        if (!Sheet.Names(before[a], deleted) && !Sheet.Names(before[b], deleted)) return reference;
         var first = Sheet.Names(before[a], deleted) ? before[a + 1] : before[a];
         var last = Sheet.Names(before[b], deleted) ? before[b - 1] : before[b];
         return Spanning(reference, first, last);

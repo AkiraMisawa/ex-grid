@@ -26,6 +26,7 @@ internal static partial class FunctionLibrary
     // TEXTJOIN reads its delimiters across a span, and its texts; ignore_empty is one Value.
     private static ThreeDArgument AcrossTexts(int index, int count) => index == 1 ? ThreeDArgument.Value : ThreeDArgument.Range;
 
+    // IF's and CHOOSE's values, and IFERROR's and IFNA's fallback.
     private static ThreeDArgument HandedOnAfterFirst(int index, int count) => index == 0 ? ThreeDArgument.Value : ThreeDArgument.HandOn;
 
     private static ThreeDArgument IfsValues(int index, int count) => index % 2 == 1 ? ThreeDArgument.ValueError : ThreeDArgument.Value;
@@ -48,8 +49,24 @@ internal static partial class FunctionLibrary
 
     private static ThreeDArgument OneSheetCountCriteria(int index, int count) => index % 2 == 0 ? ThreeDArgument.OneSheet : ThreeDArgument.Value;
 
-    // The lookups' table, and what stands after it: VLOOKUP's and HLOOKUP's index, XLOOKUP's results.
+    // VLOOKUP's and HLOOKUP's table and the index after it.
     private static ThreeDArgument OneSheetTable(int index, int count) => index is 1 or 2 ? ThreeDArgument.OneSheet : ThreeDArgument.Value;
+
+    // MATCH's array, and its match_type, which is #VALUE! where XMATCH's modes are #REF!.
+    private static ThreeDArgument MatchArguments(int index, int count) => index switch
+    {
+        1 => ThreeDArgument.OneSheet,
+        2 => ThreeDArgument.ValueError,
+        _ => ThreeDArgument.Value,
+    };
+
+    // XLOOKUP's arrays, and its if_not_found, #VALUE! only where it is read.
+    private static ThreeDArgument XLookupArguments(int index, int count) => index switch
+    {
+        1 or 2 => ThreeDArgument.OneSheet,
+        3 => ThreeDArgument.ValueError,
+        _ => ThreeDArgument.Value,
+    };
 
     private static ThreeDArgument OneSheetAfterFirst(int index, int count) => index >= 1 ? ThreeDArgument.OneSheet : ThreeDArgument.Value;
 
@@ -76,12 +93,12 @@ internal static partial class FunctionLibrary
         new("COUNTBLANK", 1, 1, "range", "Counts blank cells and cells whose formulas return empty text.", CountBlank) { ThreeD = OneSheetFirst },
         new("IF", 2, 3, "logical_test, value_if_true, [value_if_false]", "Returns one value if a condition is TRUE and another if it is FALSE.", If) { ReturnsReference = true, ThreeD = HandedOnAfterFirst },
         new("ROUND", 2, 2, "number, num_digits", "Rounds a number to a specified number of digits, half away from zero.", Round),
-        new("IFERROR", 2, 2, "value, value_if_error", "Returns value_if_error if value is an Error Value, and value otherwise. #GETTING_DATA is not an error to it.", IfError),
+        new("IFERROR", 2, 2, "value, value_if_error", "Returns value_if_error if value is an Error Value, and value otherwise. #GETTING_DATA is not an error to it.", IfError) { ThreeD = HandedOnAfterFirst },
         new("ISERROR", 1, 1, "value", "Returns TRUE if value is an Error Value. #GETTING_DATA is not an error to it.", IsError),
         new("AND", 1, Open, "logical1, [logical2], ...", "Returns TRUE if all of its arguments are TRUE.", And) { ThreeD = Across },
         new("OR", 1, Open, "logical1, [logical2], ...", "Returns TRUE if any argument is TRUE.", Or) { ThreeD = Across },
         new("NOT", 1, 1, "logical", "Reverses the logic of its argument.", Not),
-        new("IFNA", 2, 2, "value, value_if_na", "Returns value_if_na if value is #N/A, and value otherwise.", IfNa),
+        new("IFNA", 2, 2, "value, value_if_na", "Returns value_if_na if value is #N/A, and value otherwise.", IfNa) { ThreeD = HandedOnAfterFirst },
         new("ISBLANK", 1, 1, "value", "Returns TRUE if value refers to an empty cell.", IsBlank),
         new("ISNUMBER", 1, 1, "value", "Returns TRUE if value is a number.", IsNumber),
         new("ROUNDUP", 2, 2, "number, num_digits", "Rounds a number up, away from zero.", RoundUp),
@@ -134,7 +151,7 @@ internal static partial class FunctionLibrary
         },
         new("MATCH", 2, 3, "lookup_value, lookup_array, [match_type]", "Returns the relative position of an item in an array or range of cells.", Match)
         {
-            ThreeD = OneSheetSecond,
+            ThreeD = MatchArguments,
             Values = new Dictionary<int, IReadOnlyList<ArgumentValue>>
             {
                 [2] = [new("1", "1 - Less than"), new("0", "0 - Exact match"), new("-1", "-1 - Greater than")],
@@ -286,7 +303,7 @@ internal static partial class FunctionLibrary
         new("RADIANS", 1, 1, "angle", "Converts degrees to radians.", Radians),
         new("XLOOKUP", 3, 6, "lookup_value, lookup_array, return_array, [if_not_found], [match_mode], [search_mode]", "Searches a range for a match and returns the corresponding item of a second range.", XLookup)
         {
-            ThreeD = OneSheetTable,
+            ThreeD = XLookupArguments,
             ReturnsReference = true,
             // Excel's lists, character for character: match_mode's as the Windows runs of
             // 2026-09-27 (item 14) and 2026-09-30 (case 13) saw them, search_mode's as the
@@ -587,6 +604,8 @@ internal static partial class FunctionLibrary
         {
             if (!call.Has(1)) return Operand.Blank;
             var fallback = call.Operand(1);
+            // A 3D Reference is handed on, as Excel's fallback was (ADR-0331 §7).
+            if (fallback.Kind == OperandKind.ThreeD) return fallback;
             if (IsArray(fallback)) return Unlifted(call);
             return call.Evaluator.ScalarOf(fallback) is { } caught ? Operand.Of(caught) : Operand.Blank;
         }

@@ -258,12 +258,15 @@ internal static partial class WrittenFormula
             if (SheetSpanPattern().Match(formula, i) is { Success: true } span
                 && ReferencePattern().Match(formula, i + span.Length) is { Success: true } place && !place.Groups["sheet"].Success && IsReference(place))
             {
+                // Sheet1:Sheet3!B2#, which the engine reads as #REF!, is stored as Excel stored it: SUM(_xlfn.ANCHORARRAY(Sheet2:Sheet4!B2)) (verification/2026-10-24-windows-workbook-12/records/spill-xml.txt).
+                var spannedSpill = place.Groups["c1"].Success && !place.Groups["c2"].Success && i + span.Length + place.Length < formula.Length && formula[i + span.Length + place.Length] == '#';
                 tokens.Add(new Token(Kind.Reference, span.Value + place.Value)
                 {
+                    Spilled = spannedSpill,
                     Sheet = span.Groups["first"].Value.Replace("''", "'", StringComparison.Ordinal),
                     LastSheet = span.Groups["last"].Value.Replace("''", "'", StringComparison.Ordinal),
                 });
-                i += span.Length + place.Length;
+                i += span.Length + place.Length + (spannedSpill ? 1 : 0);
                 continue;
             }
             if (ReferencePattern().Match(formula, i) is { Success: true } reference && IsReference(reference))

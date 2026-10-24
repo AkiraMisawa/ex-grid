@@ -10,7 +10,7 @@
     SheetN holding 10^(N-1) (1, 10, 100, 1000, 10000), C3 holding 2*10^(N-1), so a sum names the Sheets
     it read. Out!A1 holds =SUM(Sheet2:Sheet4!B2) (1110) unless a case says otherwise.
 
-    Groups: functions, forms, more, offset, span, rows, copy, deleted, names.
+    Groups: functions, forms, more, offset, later, span, rows, copy, deleted, names.
 #>
 param([string]$Out, [string[]]$Groups)
 $ErrorActionPreference = 'Stop'
@@ -202,6 +202,40 @@ if ($Groups -contains 'offset') {
     foreach ($form in @('=OFFSET(Out!A1,Sheet2:Sheet4!B2,1)', '=OFFSET(Out!A1,1,Sheet2:Sheet4!B2)', '=OFFSET(Out!A1,1,1,Sheet2:Sheet4!B2)', '=OFFSET(Sheet2:Sheet4!B2,1,1)')) {
         Case 'offset' $form $form {
             param($b)
+            $refused = Enter $b 'Out!A9' $form
+            $r = [ordered]@{ refused = $refused }
+            if (-not $refused) { $r.read = Read $b 'Out!A9' }
+            $r
+        }
+    }
+}
+
+# ---------------------------------------------------------------------------------------------------
+# The arguments past the third that the first pass did not reach, with the others of the right kind;
+# Out!C1:C2 hold 1 and 2, the formula in Out!A9.
+if ($Groups -contains 'later') {
+    $forms = @(
+        '=SWITCH(9,1,1,Sheet2:Sheet4!B2)', '=SWITCH(2,1,1,2,Sheet2:Sheet4!B2)', '=SWITCH(9,1,1,2,2,Sheet2:Sheet4!B2)', '=SUM(SWITCH(9,1,1,Sheet2:Sheet4!B2))',
+        '=SWITCH(2,1,1,Sheet2:Sheet4!B2,5)', '=CHOOSE(2,1,Sheet2:Sheet4!B2)', '=SUM(CHOOSE(3,1,2,Sheet2:Sheet4!B2))', '=IF(FALSE,1,Sheet2:Sheet4!B2)',
+        '=IFS(FALSE,1,TRUE,Sheet2:Sheet4!B2)', '=IFS(FALSE,1,Sheet2:Sheet4!B2,2)', '=IFS(TRUE,1,Sheet2:Sheet4!B2,2)',
+        '=SUMIFS(Out!C1,Out!C1,">0",Sheet2:Sheet4!B2,">0")', '=SUMIFS(Out!C1,Out!C1,">0",Out!C1,Sheet2:Sheet4!B2)',
+        '=COUNTIFS(Out!C1,Sheet2:Sheet4!B2)', '=COUNTIFS(Out!C1,">0",Out!C1,Sheet2:Sheet4!B2)',
+        '=AVERAGEIFS(Out!C1,Out!C1,">0",Sheet2:Sheet4!B2,">0")', '=MAXIFS(Out!C1,Out!C1,">0",Sheet2:Sheet4!B2,">0")', '=MINIFS(Out!C1,Out!C1,">0",Sheet2:Sheet4!B2,">0")',
+        '=SUMIF(Out!C1:C2,Sheet2:Sheet4!B2)', '=COUNTIF(Out!C1:C2,Sheet2:Sheet4!B2)', '=AVERAGEIF(Out!C1:C2,Sheet2:Sheet4!B2)',
+        '=AGGREGATE(9,6,Out!C1:C2,Sheet2:Sheet4!B2)', '=SUBTOTAL(9,Out!C1:C2,Sheet2:Sheet4!B2)', '=TEXTJOIN(",",TRUE,"a",Sheet2:Sheet4!B2)',
+        '=VLOOKUP(1,Out!C1:C2,1,Sheet2:Sheet4!B2)', '=HLOOKUP(1,Out!C1:C2,1,Sheet2:Sheet4!B2)', '=MATCH(1,Out!C1:C2,Sheet2:Sheet4!B2)',
+        '=XMATCH(1,Out!C1:C2,Sheet2:Sheet4!B2)', '=XMATCH(1,Out!C1:C2,0,Sheet2:Sheet4!B2)', '=XLOOKUP(9,Out!C1:C2,Out!C1:C2,Sheet2:Sheet4!B2)',
+        '=SUM(XLOOKUP(9,Out!C1:C2,Out!C1:C2,Sheet2:Sheet4!B2))', '=XLOOKUP(1,Out!C1:C2,Out!C1:C2,,Sheet2:Sheet4!B2)', '=XLOOKUP(1,Out!C1:C2,Out!C1:C2,,0,Sheet2:Sheet4!B2)',
+        '=FILTER(Out!C1:C2,Out!C1:C2>5,Sheet2:Sheet4!B2)', '=SUM(FILTER(Out!C1:C2,Out!C1:C2>5,Sheet2:Sheet4!B2))', '=INDEX(Out!C1:C2,1,Sheet2:Sheet4!B2)',
+        '=OFFSET(Out!A1,1,1,1,Sheet2:Sheet4!B2)', '=RANK.EQ(1,Out!C1:C2,Sheet2:Sheet4!B2)', '=SUMIF(Out!C1:C2,">0",Sheet2:Sheet4!B2:C3)',
+        '=SUM(1,2,Sheet2:Sheet4!B2)', '=AND(TRUE,TRUE,Sheet2:Sheet4!B2)', '=CONCAT("a","b",Sheet2:Sheet4!B2)', '=MAX(1,2,3,Sheet2:Sheet4!B2)',
+        '=IFERROR(1/0,Sheet2:Sheet4!B2)', '=SUM(IFERROR(1/0,Sheet2:Sheet4!B2))', '=IFNA(NA(),Sheet2:Sheet4!B2)', '=SUM(IFNA(NA(),Sheet2:Sheet4!B2))',
+        '=SUM(LET(x,1,y,Sheet2:Sheet4!B2,y))', '=SUM(IF(TRUE,IF(TRUE,Sheet2:Sheet4!B2)))'
+    )
+    foreach ($form in $forms) {
+        Case 'later' $form $form {
+            param($b)
+            $o = (Sh $b 'Out'); $o.Range('C1').Value2 = 1.0; $o.Range('C2').Value2 = 2.0
             $refused = Enter $b 'Out!A9' $form
             $r = [ordered]@{ refused = $refused }
             if (-not $refused) { $r.read = Read $b 'Out!A9' }

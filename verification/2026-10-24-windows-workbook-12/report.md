@@ -18,6 +18,8 @@ built. These are questions, not checks: nothing here is a by-hand row of the Def
 | `records/com-*.jsonl` | one line per COM case, as `ask-com.ps1` wrote it |
 | `records/keys-xs.jsonl` | every exchange with the server, in order, with Excel's answer |
 | `records/com-offset.jsonl` | `OFFSET`'s three cases of the `more` group asked again from Out!A9 at 23:06, since in Out!A1 they named their own cell: the same answers |
+| `records/com-later.jsonl` | the arguments past the third, asked at 23:20 after the code review found them unasked (`later` group, from Out!A9). `SWITCH`'s and `IFS`'s results, `CHOOSE`'s and `IF`'s later values and the criteria functions' later ranges answer as their first ones; `MATCH`'s match_type and `XLOOKUP`'s if_not_found are `#VALUE!`; a criterion is `#REF!` and matches nothing (`SUMIF(…,Sheet2:Sheet4!B2)` 0); and **`IFERROR` and `IFNA` hand their fallback on**: `SUM(IFERROR(1/0,Sheet2:Sheet4!B2))` is 1110 |
+| `excel/ask-spill-xml.ps1`, `records/spill-xml.txt` | how Excel stores `=SUM(Sheet2:Sheet4!B2#)` in an `.xlsx`: `SUM(_xlfn.ANCHORARRAY(Sheet2:Sheet4!B2))` |
 | `to-fixture.py` | writes these records as the engine's layer 1 fixture, `tests/ExSheet.Engine.Tests/ThreeDReadings/excel-readings.json`, which `ThreeDExcelReadingsTests` reads |
 
 The pictures stay on the machine (`%LOCALAPPDATA%\exgrid-layer3\workbook-12\xs\shots`): they show the title bar's account
@@ -60,7 +62,7 @@ asked, and the same function asked with a range answered.
 - **Handed on by `IF`, `CHOOSE` and `LET`**, as a reference: `SUM(IF(TRUE,Sheet2:Sheet4!B2))`,
   `SUM(CHOOSE(1,Sheet2:Sheet4!B2))` and `SUM(LET(x,Sheet2:Sheet4!B2,x))` are 1110, and so are `LARGE`, `CONCAT`, `AND`
   and `COUNT` over one. `IFS` and `SWITCH` do not hand it on (`#VALUE!`), nor `INDEX` (`#VALUE!`), nor `IFERROR` or
-  `IFNA` (`#REF!`, as a value). One handed on is `#VALUE!` where it is read as one value
+  `IFNA` as their value (`#REF!`, as a value); as their fallback they hand it on (`com-later.jsonl`). One handed on is `#VALUE!` where it is read as one value
   (`IF(TRUE,Sheet2:Sheet4!B2)+1`), and so is a Formula whose result it is (`=IF(1,Sheet2:Sheet4!B2)`,
   `=LET(x,Sheet2:Sheet4!B2,x)`).
 - **`#NAME?`** in parentheses: `=(Sheet2:Sheet4!B2)` and `=SUM((Sheet2:Sheet4!B2))`. And when the span names a Sheet

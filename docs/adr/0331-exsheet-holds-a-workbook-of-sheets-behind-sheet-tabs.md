@@ -151,8 +151,8 @@ holds unchanged:
   `verification/2026-10-24-windows-workbook-12`; no refusal is left that waits on Excel):
   - `SUM`, `AVERAGE`, `COUNT`, `COUNTA`, `MAX`, `MIN`, `PRODUCT`, `MEDIAN`, `STDEV.S`, `STDEV.P`, `VAR.S`, `VAR.P`,
     `AND`, `OR`, `XOR`, `CONCAT`, `TEXTJOIN` (its texts and its delimiters), `LARGE` and `SMALL` (their array) and
-    `RANK.EQ` (its ref) read a 3D Reference as one range, Sheet by Sheet in tab order. `IF`, `CHOOSE` and a `LET`
-    name hand one on. Where a function asks for a range of one Sheet it is `#VALUE!`, and in the Analysis
+    `RANK.EQ` (its ref) read a 3D Reference as one range, Sheet by Sheet in tab order. `IF`, `CHOOSE`, a `LET`
+    name and the fallback of `IFERROR` and `IFNA` hand one on. Where a function asks for a range of one Sheet it is `#VALUE!`, and in the Analysis
     ToolPak's functions; read as one Value it is `#REF!`, or `#VALUE!` once handed on; in parentheses, or naming a
     Sheet the Workbook lacks, `#NAME?`. Each function's answer is declared beside it (`FunctionDefinition.ThreeD`).
   - The span is the Sheets between its two ends in tab order. An end moved past the other, or deleted, hands its
