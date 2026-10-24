@@ -139,25 +139,29 @@ or in the browser as .NET WebAssembly. Whether one is later ported to TypeScript
 recorded measurement of the browser case, not before (CLAUDE.md, "Measure before claiming anything about
 performance").
 
-### 9. The npm packages are `@exgrid/core`, `@exgrid/react` and `@exgrid/mui`
+### 9. The npm packages are `@ex-grid/core`, `@ex-grid/react` and `@ex-grid/mui`
 
 npm has no rule for how a scope is spelled; a scope is simply the name of the npm organisation that
-owns it. The convention is the brand as people type it, in lower case: one word stays one word
-(`@tanstack`, `@mui`), a hyphenated brand keeps its hyphen (`ag-grid-community`). The brand and the
-NuGet identifiers are `ExGrid`, so the scope is `@exgrid`. The unscoped name `exgrid` belongs to an
-unrelated grid on npm (checked 2026-10-24), which a scope keeps apart. The organisation `exgrid` is
-created on npm by the user before the first publish.
+owns it, usually the brand in lower case (`@tanstack`, `@mui`, and `ag-grid-community`, which keeps
+ag-Grid's hyphen). The scope is `@ex-grid`, the spelling of the repository and of the grid's CSS
+prefix, chosen by the user after ag-Grid's. The unscoped name `exgrid` belongs to an unrelated grid on
+npm, and nothing is published under `@ex-grid` (both checked 2026-10-24). The organisation `ex-grid` is
+created on npm by the user before the first publish. The NuGet identifiers stay `ExGrid`.
+
+*(The first draft of this section, the same day, chose `@exgrid` for the NuGet identifiers' one word.)*
 
 The later products, if they follow (section 1), take names under the same scope.
 
 ### 10. React and Blazor only
 
 No adapter for Vue, Angular or any other framework is built, and no custom element is published.
-Section 3's custom element is withdrawn: it existed for frameworks the family does not serve.
+Section 3's custom element is withdrawn: it existed for frameworks the family does not serve. Because
+the Script Core is a plain TypeScript object that mounts on an element, a custom element remains a thin
+adapter of its own that can be added when a third framework is served; nothing in the core waits for it.
 
 ### 11. The MUI Wrapper ships in 0.3.0
 
-`@exgrid/mui` is React's counterpart of ExGrid.MudBlazor, under [ADR-0030](./0030-what-a-design-system-wrapper-owns-and-what-it-may-not-touch.md)'s limits as written: it maps
+`@ex-grid/mui` is React's counterpart of ExGrid.MudBlazor, under [ADR-0030](./0030-what-a-design-system-wrapper-owns-and-what-it-may-not-touch.md)'s limits as written: it maps
 MUI's palette to a Theme and its density words onto Density, supplies Cell Metrics for its font and
 fills the Chrome seams with MUI's components. It owns no geometry, no DOM inside the instance root and no
 state (P9).
