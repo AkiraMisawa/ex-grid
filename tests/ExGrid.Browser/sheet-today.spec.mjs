@@ -8,30 +8,51 @@ import { sheet, cell } from './sheet-helpers.mjs';
 // The two browser zones are 25 hours apart, so at any moment at least one of them is on another
 // date than the server's (UTC on CI): a Sheet that took the server's zone fails one of the two
 // tests whatever the hour. A day read across a midnight is either side of it, so the answer is
-// checked against the zone's date just before and just after it is read.
+// checked against the zone's date before the page is opened and the latest date it can show once
+// it is read.
+//
+// A moment is shown rounded to the nearest second, as Excel shows it (NumberFormat's FormatDate), so
+// NOW() read in a minute's last half second already shows the next minute, and the next day at
+// midnight: the latest a NOW() reading can show is the clock half a second on. TODAY() is a day, and
+// is not rounded. The bounds read this machine's clock, which is the one NOW() reads on either host
+// as long as the host runs here, as it does locally and on CI.
+const nowShownAheadMs = 500;
 
-/** The minute in `zone` at this moment, as yyyy-mm-dd hh:mm. */
-function minuteIn(zone) {
+/** The minute in `zone` at `at` (this moment by default), as yyyy-mm-dd hh:mm. */
+function minuteIn(zone, at = Date.now()) {
     const parts = Object.fromEntries(new Intl.DateTimeFormat('en-CA', {
         timeZone: zone, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
-    }).formatToParts(new Date()).map((p) => [p.type, p.value]));
+    }).formatToParts(new Date(at)).map((p) => [p.type, p.value]));
     return `${parts.year}-${parts.month}-${parts.day} ${parts.hour}:${parts.minute}`;
 }
 
-/** The date in `zone` at this moment, as yyyy-mm-dd. */
-function dateIn(zone) {
-    return new Intl.DateTimeFormat('en-CA', { timeZone: zone, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
+/** The date in `zone` at `at` (this moment by default), as yyyy-mm-dd. */
+function dateIn(zone, at = Date.now()) {
+    return new Intl.DateTimeFormat('en-CA', { timeZone: zone, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(at));
 }
 
-/** A1's day once TODAY() has an answer, and the zone's dates either side of reading it. */
-async function shownDay(page, url, zone) {
-    await page.goto(url);
-    const a1 = cell(sheet(page), 'A1');
-    await expect(a1).toHaveText(/^\d{4}-\d{2}-\d{2}$/);
+/** The latest minute a NOW() read by now can show, in `zone`. */
+const latestMinuteShown = (zone) => minuteIn(zone, Date.now() + nowShownAheadMs);
+
+/** The latest date a NOW() read by now can show, in `zone`. */
+const latestDateShown = (zone) => dateIn(zone, Date.now() + nowShownAheadMs);
+
+/** Expects `shown` between `before` and `after`: the strings order as the dates and minutes do. */
+const within = (shown, before, after) => expect(before <= shown && shown <= after, `${shown} between ${before} and ${after}`).toBe(true);
+
+/**
+ * Opens `url` and expects the day `address` shows, once it has one, between the zone's date before
+ * the page was opened and the latest date it can show once read: `dateIn` for TODAY(),
+ * `latestDateShown` for a NOW(). Returns the day shown.
+ */
+async function expectShownDay(page, url, address, zone, latest) {
     const before = dateIn(zone);
-    const shown = (await a1.textContent()).trim();
-    const after = dateIn(zone);
-    return { shown, expected: [before, after] };
+    await page.goto(url);
+    const shownCell = cell(sheet(page), address);
+    await expect(shownCell).toHaveText(/^\d{4}-\d{2}-\d{2}$/);
+    const shown = (await shownCell.textContent()).trim();
+    within(shown, before, latest(zone));
+    return shown;
 }
 
 for (const browserZone of ['Pacific/Kiritimati', 'Pacific/Pago_Pago']) {
@@ -39,18 +60,11 @@ for (const browserZone of ['Pacific/Kiritimati', 'Pacific/Pago_Pago']) {
         test.use({ freshDocument: true, timezoneId: browserZone });
 
         test(`ADR-0121/0122: TODAY() is the day in the browser's zone, ${browserZone}`, async ({ page }) => {
-            const { shown, expected } = await shownDay(page, '/sheet?case=today', browserZone);
-            expect(expected).toContain(shown);
+            await expectShownDay(page, '/sheet?case=today', 'A1', browserZone, dateIn);
         });
 
         test(`ADR-0124: NOW() is the moment in the browser's zone, ${browserZone}`, async ({ page }) => {
-            await page.goto('/sheet?case=today');
-            const a3 = cell(sheet(page), 'A3');
-            await expect(a3).toHaveText(/^\d{4}-\d{2}-\d{2}$/);
-            const before = dateIn(browserZone);
-            const shown = (await a3.textContent()).trim();
-            const after = dateIn(browserZone);
-            expect([before, after]).toContain(shown);
+            await expectShownDay(page, '/sheet?case=today', 'A3', browserZone, latestDateShown);
         });
     });
 }
@@ -60,19 +74,12 @@ test.describe('a zone the Consumer gives', () => {
 
     test('ADR-0121: the Consumer\'s zone goes before the browser\'s', async ({ page }) => {
         // Kiritimati is 25 hours ahead of Pago Pago: always another date than the browser's.
-        const { shown, expected } = await shownDay(page, '/sheet?case=today&zone=Pacific/Kiritimati', 'Pacific/Kiritimati');
-        expect(expected).toContain(shown);
+        const shown = await expectShownDay(page, '/sheet?case=today&zone=Pacific/Kiritimati', 'A1', 'Pacific/Kiritimati', dateIn);
         expect(shown).not.toBe(dateIn('Pacific/Pago_Pago'));
     });
 
     test('SH-60 / ADR-0124: NOW() is the moment in the Consumer\'s zone, not the browser\'s', async ({ page }) => {
-        await page.goto('/sheet?case=today&zone=Pacific/Kiritimati');
-        const a3 = cell(sheet(page), 'A3');
-        await expect(a3).toHaveText(/^\d{4}-\d{2}-\d{2}$/);
-        const before = dateIn('Pacific/Kiritimati');
-        const shown = (await a3.textContent()).trim();
-        const after = dateIn('Pacific/Kiritimati');
-        expect([before, after]).toContain(shown);
+        const shown = await expectShownDay(page, '/sheet?case=today&zone=Pacific/Kiritimati', 'A3', 'Pacific/Kiritimati', latestDateShown);
         expect(shown).not.toBe(dateIn('Pacific/Pago_Pago'));
     });
 
@@ -88,22 +95,21 @@ test.describe('NOW() over time', () => {
     test.use({ freshDocument: true, timezoneId: 'Pacific/Pago_Pago' });
 
     test('SH-60 / ADR-0124: NOW() moves on as the minute turns, in the Consumer\'s zone', async ({ page }) => {
-        // Each reading lies between the zone's minute before the wait for it and after it is read: the
-        // strings order as the minutes do.
+        // Each reading lies between the zone's minute before the wait for it and the latest minute it
+        // can show once it is read: the strings order as the minutes do.
         const zone = 'Pacific/Kiritimati';
-        const within = (shown, before, after) => expect(before <= shown && shown <= after, `${shown} between ${before} and ${after}`).toBe(true);
         const opened = minuteIn(zone);
         await page.goto(`/sheet?case=today&zone=${zone}`);
         const a4 = cell(sheet(page), 'A4');
         await expect(a4).toHaveText(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/);
         const first = (await a4.textContent()).trim();
-        within(first, opened, minuteIn(zone));
+        within(first, opened, latestMinuteShown(zone));
 
         // The next minute, once it has turned. The wait is the clock's, at most a minute and the
         // timer's lag.
         await expect(a4).not.toHaveText(first, { timeout: 75_000 });
         const shown = (await a4.textContent()).trim();
-        within(shown, first, minuteIn(zone));
+        within(shown, first, latestMinuteShown(zone));
         expect(shown > first).toBe(true);
     });
 });
