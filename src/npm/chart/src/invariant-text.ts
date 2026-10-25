@@ -169,3 +169,8 @@ export function grouped(count: number): string {
     }
     return (count < 0 ? '-' : '') + groups.join(',');
 }
+
+/** A number written as a surface writes a tick it has no format for (C#'s `SurfaceMesh.Plain`): `G3` near zero, `0.####` elsewhere. */
+export function tickText(value: number): string {
+    return value !== 0 && Math.abs(value) < 1e-4 ? threeSignificant(value) : upToPlaces(value, 4);
+}

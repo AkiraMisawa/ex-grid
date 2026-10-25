@@ -359,14 +359,14 @@ does a check that says neither `is` nor `throws`, and a case that checks nothing
 ## `chart`
 
 ExChart's layout (ADR-0370 section 3): scales, ticks, Thinning, each Series Kind's steps and gaps, the
-scene and its legend. Every file of `chart/` is of this kind, run by
+scene and its legend, and the 3D surface, its slices and its mesh. Every file of `chart/` is of this kind, run by
 `tests/ExChart.Engine.Tests/Cases/ChartCase.cs` and `src/npm/chart/test/chart-case.ts`. A file may say
 `near`, how far a number may be from what a check expects in every case of the file, and `definitions`,
 named definitions a case refers to by their name.
 
 A case names one operation, or several under `"build": {name: operation}`, each answer then read under
-its name. An operation is one key, beside a `definition` where it reads one; with none, the answer is the
-definition itself:
+its name. An operation is one key, beside a `definition` or a `surface` where it reads one; with none, the
+answer is the definition or the surface itself:
 
 | Operation | Answers |
 |---|---|
@@ -380,6 +380,8 @@ definition itself:
 | `"legendMembers": key` | The series a legend entry stands for |
 | `"appearance": {colourSlots}` | `[looks by series, whether colours repeat]` |
 | `"format": {format, value}` | A number written as the engine writes it with that .NET format (`0.####`, `0.##`, `R`, `G3`, `N0`) |
+| `"mesh": {}` | What the surface's 3D entry draws (`SurfaceMesh.Of`, `surfaceMesh`) |
+| `"slice": {axis, value}`, `"slicePath": {axis, value}` | A slice as a 2D chart (`null` where the surface holds no such slice), and its line on the surface |
 
 A definition, an axis and a series are written as the Script Core's options objects name them, each key
 optional where the options' is; a series that leaves out `kind` declares none. A position is a number or
@@ -392,6 +394,15 @@ are recorded under the series' id. Rows of a Price Range are `[x, open, high, lo
 `{"weekdays": {count, from, volume, withoutOpen, set}}`, a fixed walk from 100 on weekdays from Monday
 2026-01-05. A map from a position to a pixel is `{scale | over, offset}`, and a text width
 `{"perCharacter": n}`.
+
+A surface is one of four forms, each with `zTitle`, `zFormat`, `zScale` and `centre` where it names them:
+a grid, `{x, y, z, method, interpolated, notes}`, whose axes are `{title, values, scale, format}` and
+whose `z` is its rows, one a `y` value; points on a grid, `{points: [[x, y, z]], xTitle, yTitle}`; a
+Consumer's triangles, `{nodes: [[x, y, z]], triangles: [[a, b, c]], xTitle, yTitle, xScale, yScale,
+notes}`; or a sampled function, `{sampled: {method, x: [from, to], y: [from, to], z, samples, xScale,
+yScale}, xTitle, yTitle}`, whose `z` is a number or `{"plane": [a, b, c]}` (a + b·x + c·y). An axis'
+value is a string or a number. A format is `{prefix, suffix, places}`, the value written with `places`
+fixed places or, without them, invariantly.
 
 `expect` is a list of checks. A check reads one thing, transforms it, and asserts:
 

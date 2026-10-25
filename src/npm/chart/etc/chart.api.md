@@ -233,6 +233,9 @@ export interface ColourKey {
 export type DateLabel = 'auto' | 'year' | 'yearMonth' | 'date' | 'monthYear' | 'tenor';
 
 // @public
+export const defaultSurfaceView: SurfaceView;
+
+// @public
 export interface DrawnEdge {
     readonly index: number;
     readonly x1: number;
@@ -503,6 +506,234 @@ export interface SizeKey {
 export type StepSide = 'preceding' | 'following';
 
 // @public
+export class SurfaceAxis {
+    constructor(options: SurfaceAxisOptions);
+    get format(): ((value: SurfaceValue) => string) | undefined;
+    indexOf(value: SurfaceValue): number;
+    // @internal
+    number(index: number): number;
+    get scale(): AxisScale;
+    get title(): string;
+    get values(): readonly SurfaceValue[];
+    write(index: number): string;
+    writeTick(position: number): string;
+    writeValue(value: SurfaceValue): string;
+}
+
+// @public
+export interface SurfaceAxisOptions {
+    readonly format?: (value: SurfaceValue) => string;
+    readonly scale?: AxisScale;
+    readonly title: string;
+    readonly values: readonly SurfaceValue[];
+}
+
+// @public
+export const surfaceBandCount = 9;
+
+// @public
+export interface SurfaceColourBar {
+    readonly bands: number;
+    readonly diverging: boolean;
+    readonly from: number;
+    readonly ticks: readonly SurfaceTick[];
+    readonly to: number;
+}
+
+// @public
+export class SurfaceDefinition {
+    get allNotes(): readonly string[];
+    at(x: number, y: number): ChartValue | null;
+    get centre(): number | undefined;
+    // @internal
+    cut(slice: SurfaceSlice): readonly (readonly {
+        readonly along: number;
+        readonly z: ChartValue;
+    }[])[] | undefined;
+    get effectiveZScale(): AxisScale;
+    static fromPoints(options: SurfacePointsOptions): SurfaceDefinition;
+    static fromTriangles(options: SurfaceTrianglesOptions): SurfaceDefinition;
+    static grid(options: SurfaceGridOptions): SurfaceDefinition;
+    get interpolated(): readonly (readonly boolean[])[] | undefined;
+    isInterpolated(x: number, y: number): boolean;
+    isInterpolatedNode(index: number): boolean;
+    get isMesh(): boolean;
+    get method(): string | undefined;
+    node(index: number): readonly [x: SurfaceValue, y: SurfaceValue, z: ChartValue | null];
+    get nodeCount(): number;
+    get nodes(): readonly SurfaceNode[] | undefined;
+    get notes(): readonly string[];
+    // @internal
+    present(): ChartValue[];
+    static sampled(options: SurfaceSampledOptions): SurfaceDefinition;
+    sliceChart(slice: SurfaceSlice): ChartDefinition | undefined;
+    get triangles(): readonly SurfaceTriangle[] | undefined;
+    writeZ(value: ChartValue): string;
+    get x(): SurfaceAxis;
+    get y(): SurfaceAxis;
+    get z(): readonly (readonly (ChartValue | null)[])[];
+    get zFormat(): ((value: ChartValue) => string) | undefined;
+    get zScale(): AxisScale;
+    get zTitle(): string;
+}
+
+// @public
+export interface SurfaceFace {
+    readonly band: number;
+    readonly corners: readonly number[];
+}
+
+// @public
+export interface SurfaceGridOptions extends SurfaceScaleOptions {
+    readonly interpolated?: readonly (readonly boolean[])[];
+    readonly method?: string;
+    readonly notes?: readonly string[];
+    readonly x: SurfaceAxisOptions;
+    readonly y: SurfaceAxisOptions;
+    readonly z: readonly (readonly (ChartValue | null)[])[];
+    readonly zFormat?: (value: ChartValue) => string;
+    readonly zTitle?: string;
+}
+
+// @public
+export interface SurfaceMesh {
+    readonly bar: SurfaceColourBar;
+    readonly columns: readonly (readonly number[])[];
+    readonly faces: readonly SurfaceFace[];
+    readonly holes: number;
+    readonly nodes: readonly SurfaceMeshNode[];
+    readonly rows: readonly (readonly number[])[];
+    readonly xLines: readonly SurfaceTick[];
+    readonly xTitle: string;
+    readonly yLines: readonly SurfaceTick[];
+    readonly yTitle: string;
+    readonly zMax: number;
+    readonly zMin: number;
+    readonly zTicks: readonly SurfaceTick[];
+    readonly zTitle: string;
+}
+
+// @public
+export function surfaceMesh(definition: SurfaceDefinition): SurfaceMesh;
+
+// @public
+export interface SurfaceMeshNode {
+    readonly interpolated: boolean;
+    readonly x: number;
+    readonly y: number;
+    readonly z: number | null;
+}
+
+// @public
+export interface SurfaceMeshPoint {
+    readonly x: number;
+    readonly y: number;
+    readonly z: number;
+}
+
+// @public
+export interface SurfaceNode {
+    readonly x: number;
+    readonly y: number;
+    readonly z: ChartValue | null;
+}
+
+// @public
+export interface SurfacePoint {
+    readonly x: SurfaceValue;
+    readonly y: SurfaceValue;
+    readonly z: ChartValue;
+}
+
+// @public
+export interface SurfacePointsOptions extends SurfaceScaleOptions {
+    readonly points: readonly SurfacePoint[];
+    readonly xFormat?: (value: SurfaceValue) => string;
+    readonly xTitle: string;
+    readonly yFormat?: (value: SurfaceValue) => string;
+    readonly yTitle: string;
+    readonly zFormat?: (value: ChartValue) => string;
+    readonly zTitle?: string;
+}
+
+// @public
+export interface SurfaceSampledOptions extends SurfaceScaleOptions {
+    readonly method: string;
+    readonly samples?: number;
+    readonly xFormat?: (value: SurfaceValue) => string;
+    readonly xFrom: number;
+    readonly xScale?: AxisScale;
+    readonly xTitle: string;
+    readonly xTo: number;
+    readonly yFormat?: (value: SurfaceValue) => string;
+    readonly yFrom: number;
+    readonly yScale?: AxisScale;
+    readonly yTitle: string;
+    readonly yTo: number;
+    readonly z: (x: number, y: number) => ChartValue | null;
+    readonly zFormat?: (value: ChartValue) => string;
+    readonly zTitle?: string;
+}
+
+// @public
+export interface SurfaceScaleOptions {
+    readonly centre?: number;
+    readonly zScale?: AxisScale;
+}
+
+// @public
+export interface SurfaceSlice {
+    readonly axis: SurfaceSliceAxis;
+    readonly value: SurfaceValue;
+}
+
+// @public
+export type SurfaceSliceAxis = 'x' | 'y';
+
+// @public
+export function surfaceSlicePath(definition: SurfaceDefinition, slice: SurfaceSlice): readonly (readonly SurfaceMeshPoint[])[];
+
+// @public
+export interface SurfaceTick {
+    readonly label: string | null;
+    readonly value: number;
+}
+
+// @public
+export interface SurfaceTriangle {
+    readonly a: number;
+    readonly b: number;
+    readonly c: number;
+}
+
+// @public
+export interface SurfaceTrianglesOptions extends SurfaceScaleOptions {
+    readonly nodes: readonly SurfaceNode[];
+    readonly notes?: readonly string[];
+    readonly triangles: readonly SurfaceTriangle[];
+    readonly xFormat?: (value: SurfaceValue) => string;
+    readonly xScale?: AxisScale;
+    readonly xTitle: string;
+    readonly yFormat?: (value: SurfaceValue) => string;
+    readonly yScale?: AxisScale;
+    readonly yTitle: string;
+    readonly zFormat?: (value: ChartValue) => string;
+    readonly zTitle?: string;
+}
+
+// @public
+export type SurfaceValue = string | number;
+
+// @public
+export interface SurfaceView {
+    readonly panX: number;
+    readonly panY: number;
+    readonly pitch: number;
+    readonly yaw: number;
+    readonly zoom: number;
+}
+
+// @public
 export type TickPlacement =
 /** The default for the axis: calendar boundaries for dates, round numbers for numbers, every category. */
 'auto'
@@ -514,6 +745,9 @@ export type TickPlacement =
 | 'tenors'
 /** At the positions the axis names. */
 | 'named';
+
+// @public
+export const trianglesMethod = "linear on the Consumer's triangles (P1)";
 
 // @public
 export function valueAt(axis: VerticalAxis, y: number, plot: Box): number;

@@ -1,0 +1,1253 @@
+{
+  "about": "What a surface's 3D entry is handed to draw: the nodes placed on each scale, the faces and their colour bands, the floor's lines, the vertical scale and the colour bar (ADR-0255, ADR-0274, ADR-0310, ADR-0311, ADR-0312), from tests/ExChart.Engine.Tests/SurfaceTests.cs and SurfaceColourMeshAndScaleTests.cs.",
+  "kind": "chart",
+  "definitions": {
+    "vol": {
+      "x": {
+        "title": "Delta",
+        "values": [
+          "10P",
+          "25P",
+          "ATM",
+          "25C"
+        ]
+      },
+      "y": {
+        "title": "Tenor",
+        "values": [
+          "1M",
+          "3M",
+          "1Y"
+        ]
+      },
+      "z": [
+        [
+          10.5,
+          9.8,
+          9.2,
+          9.9
+        ],
+        [
+          10.9,
+          10.1,
+          9.6,
+          10.2
+        ],
+        [
+          11.4,
+          10.7,
+          10.3,
+          10.8
+        ]
+      ],
+      "zTitle": "Volatility",
+      "zFormat": {
+        "places": 2,
+        "suffix": "%"
+      }
+    },
+    "volHole": {
+      "x": {
+        "title": "Delta",
+        "values": [
+          "10P",
+          "25P",
+          "ATM",
+          "25C"
+        ]
+      },
+      "y": {
+        "title": "Tenor",
+        "values": [
+          "1M",
+          "3M",
+          "1Y"
+        ]
+      },
+      "z": [
+        [
+          10.5,
+          9.8,
+          9.2,
+          9.9
+        ],
+        [
+          10.9,
+          null,
+          9.6,
+          10.2
+        ],
+        [
+          11.4,
+          10.7,
+          10.3,
+          10.8
+        ]
+      ],
+      "zTitle": "Volatility",
+      "zFormat": {
+        "places": 2,
+        "suffix": "%"
+      }
+    },
+    "square": {
+      "nodes": [
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          1,
+          0,
+          1
+        ],
+        [
+          0,
+          1,
+          1
+        ],
+        [
+          1,
+          1,
+          2
+        ]
+      ],
+      "triangles": [
+        [
+          0,
+          1,
+          3
+        ],
+        [
+          0,
+          3,
+          2
+        ]
+      ],
+      "xTitle": "x",
+      "yTitle": "y",
+      "zTitle": "u"
+    }
+  },
+  "cases": [
+    {
+      "name": "CH-7, ADR-0274: a missing value is a hole, never 0 — the faces round it are not drawn",
+      "surface": "volHole",
+      "mesh": {},
+      "expect": [
+        {
+          "at": "nodes.5.z",
+          "is": null
+        },
+        {
+          "at": "holes",
+          "is": 1
+        },
+        {
+          "at": "faces",
+          "count": true,
+          "is": 2
+        },
+        {
+          "at": "faces",
+          "each": [
+            {
+              "at": "corners",
+              "lacks": 5
+            }
+          ]
+        },
+        {
+          "at": "zMin",
+          "atLeast": 9
+        }
+      ]
+    },
+    {
+      "name": "ADR-0255: the core decides the colour scale; the lowest face takes the first band and the highest the last",
+      "surface": "vol",
+      "mesh": {},
+      "expect": [
+        {
+          "at": "faces",
+          "count": true,
+          "is": 6
+        },
+        {
+          "at": "faces",
+          "each": [
+            {
+              "at": "band",
+              "atLeast": 0,
+              "atMost": 8
+            }
+          ]
+        },
+        {
+          "at": "faces.3.band",
+          "above": {
+            "at": "faces.2.band"
+          }
+        },
+        {
+          "at": "xLines",
+          "map": "label",
+          "is": [
+            "10P",
+            "25P",
+            "ATM",
+            "25C"
+          ]
+        },
+        {
+          "at": "zMin",
+          "atMost": 9.2
+        },
+        {
+          "at": "zMax",
+          "atLeast": 11.4
+        },
+        {
+          "at": "zTicks.0.value",
+          "sameAs": "zMin"
+        },
+        {
+          "at": "zTicks.-1.value",
+          "sameAs": "zMax"
+        },
+        {
+          "at": "rows",
+          "is": [
+            [
+              0,
+              1,
+              2,
+              3
+            ],
+            [
+              4,
+              5,
+              6,
+              7
+            ],
+            [
+              8,
+              9,
+              10,
+              11
+            ]
+          ]
+        },
+        {
+          "at": "columns.0",
+          "is": [
+            0,
+            4,
+            8
+          ]
+        },
+        {
+          "at": "bar.bands",
+          "is": 9
+        },
+        {
+          "at": "xTitle",
+          "is": "Delta"
+        },
+        {
+          "at": "zTitle",
+          "is": "Volatility"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0310: colours run low to high unless they diverge",
+      "surface": {
+        "x": {
+          "title": "Strike",
+          "values": [
+            1,
+            2,
+            3
+          ]
+        },
+        "y": {
+          "title": "Tenor",
+          "values": [
+            "1M",
+            "1Y"
+          ]
+        },
+        "z": [
+          [
+            -1,
+            -1,
+            10
+          ],
+          [
+            -1,
+            -1,
+            10
+          ]
+        ],
+        "zTitle": "P&L"
+      },
+      "mesh": {},
+      "expect": [
+        {
+          "at": "faces.0.band",
+          "is": 0
+        },
+        {
+          "at": "bar.diverging",
+          "is": false
+        }
+      ]
+    },
+    {
+      "name": "ADR-0310: colours diverge from the centre alike on both sides: -1 beside +10 is near neutral, not the deepest band",
+      "surface": {
+        "x": {
+          "title": "Strike",
+          "values": [
+            1,
+            2,
+            3
+          ]
+        },
+        "y": {
+          "title": "Tenor",
+          "values": [
+            "1M",
+            "1Y"
+          ]
+        },
+        "z": [
+          [
+            -1,
+            -1,
+            10
+          ],
+          [
+            -1,
+            -1,
+            10
+          ]
+        ],
+        "zTitle": "P&L",
+        "centre": 0
+      },
+      "mesh": {},
+      "expect": [
+        {
+          "at": "faces.0.band",
+          "is": 4
+        },
+        {
+          "at": "faces.1.band",
+          "is": 6
+        },
+        {
+          "at": "bar.diverging",
+          "is": true
+        },
+        {
+          "at": "bar.from",
+          "is": -10
+        },
+        {
+          "at": "bar.to",
+          "is": 10
+        },
+        {
+          "at": "bar.ticks",
+          "has": {
+            "value": 0,
+            "label": "0"
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0310: values as far below the centre as others are above it take bands as deep",
+      "surface": {
+        "x": {
+          "title": "Strike",
+          "values": [
+            1,
+            2,
+            3
+          ]
+        },
+        "y": {
+          "title": "Tenor",
+          "values": [
+            "1M",
+            "1Y"
+          ]
+        },
+        "z": [
+          [
+            -4,
+            0,
+            4
+          ],
+          [
+            -4,
+            0,
+            4
+          ]
+        ],
+        "zTitle": "P&L",
+        "centre": 0
+      },
+      "mesh": {},
+      "expect": [
+        {
+          "at": "faces.0.band",
+          "below": 4
+        },
+        {
+          "at": "faces",
+          "map": "band",
+          "sum": true,
+          "is": 8
+        }
+      ]
+    },
+    {
+      "name": "ADR-0310: the bar of a surface coloured low to high runs over its values, its ticks within them",
+      "surface": {
+        "x": {
+          "title": "Strike",
+          "values": [
+            1,
+            2,
+            3
+          ]
+        },
+        "y": {
+          "title": "Tenor",
+          "values": [
+            "1M",
+            "1Y"
+          ]
+        },
+        "z": [
+          [
+            9.2,
+            10.4,
+            11.4
+          ],
+          [
+            9.2,
+            10.4,
+            11.4
+          ]
+        ],
+        "zTitle": "P&L"
+      },
+      "mesh": {},
+      "expect": [
+        {
+          "at": "bar.from",
+          "is": 9.2
+        },
+        {
+          "at": "bar.to",
+          "is": 11.4
+        },
+        {
+          "at": "bar.ticks",
+          "empty": false
+        },
+        {
+          "at": "bar.ticks",
+          "each": [
+            {
+              "at": "value",
+              "atLeast": 9.2,
+              "atMost": 11.4
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ADR-0310: a bar whose span holds no round number is labelled at its ends, so it always reads back",
+      "surface": {
+        "x": {
+          "title": "Strike",
+          "values": [
+            1,
+            2,
+            3
+          ]
+        },
+        "y": {
+          "title": "Tenor",
+          "values": [
+            "1M",
+            "1Y"
+          ]
+        },
+        "z": [
+          [
+            3.1,
+            3.5,
+            3.9
+          ],
+          [
+            3.1,
+            3.5,
+            3.9
+          ]
+        ],
+        "zTitle": "P&L",
+        "zScale": "logarithmic"
+      },
+      "mesh": {},
+      "expect": [
+        {
+          "at": "bar.ticks",
+          "map": "label",
+          "is": [
+            "3.1",
+            "3.9"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ADR-0310: a surface of one value has a bar either side of it",
+      "surface": {
+        "x": {
+          "title": "Strike",
+          "values": [
+            1,
+            2,
+            3
+          ]
+        },
+        "y": {
+          "title": "Tenor",
+          "values": [
+            "1M",
+            "1Y"
+          ]
+        },
+        "z": [
+          [
+            5,
+            5,
+            5
+          ],
+          [
+            5,
+            5,
+            5
+          ]
+        ],
+        "zTitle": "P&L"
+      },
+      "mesh": {},
+      "expect": [
+        {
+          "at": "bar.from",
+          "is": 4.5
+        },
+        {
+          "at": "bar.to",
+          "is": 5.5
+        },
+        {
+          "at": "faces",
+          "map": "band",
+          "is": [
+            4,
+            4
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ADR-0312: a logarithmic vertical scale places the values by their logarithm, with decade ticks",
+      "surface": {
+        "x": {
+          "title": "Strike",
+          "values": [
+            1,
+            2,
+            3
+          ]
+        },
+        "y": {
+          "title": "Tenor",
+          "values": [
+            "1M",
+            "1Y"
+          ]
+        },
+        "z": [
+          [
+            1,
+            10,
+            100
+          ],
+          [
+            1,
+            10,
+            100
+          ]
+        ],
+        "zTitle": "P&L",
+        "zScale": "logarithmic"
+      },
+      "mesh": {},
+      "expect": [
+        {
+          "at": "nodes.1.z",
+          "near": 1e-12,
+          "is": 1
+        },
+        {
+          "at": "zMin",
+          "near": 1e-12,
+          "is": 0
+        },
+        {
+          "at": "zMax",
+          "near": 1e-12,
+          "is": 2
+        },
+        {
+          "at": "zTicks",
+          "map": "label",
+          "has": "100"
+        },
+        {
+          "at": "faces.0.band",
+          "below": {
+            "at": "faces.1.band"
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0310, ADR-0312: on a logarithmic scale the colours diverge from the centre's logarithm, as a ratio about 1",
+      "surface": {
+        "x": {
+          "title": "Strike",
+          "values": [
+            1,
+            2,
+            3
+          ]
+        },
+        "y": {
+          "title": "Tenor",
+          "values": [
+            "1M",
+            "1Y"
+          ]
+        },
+        "z": [
+          [
+            0.25,
+            1,
+            4
+          ],
+          [
+            0.25,
+            1,
+            4
+          ]
+        ],
+        "zTitle": "P&L",
+        "zScale": "logarithmic",
+        "centre": 1
+      },
+      "mesh": {},
+      "expect": [
+        {
+          "at": "faces",
+          "map": "band",
+          "sum": true,
+          "is": 8
+        },
+        {
+          "at": "bar.ticks",
+          "map": "label",
+          "has": "1"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0312: an axis placed evenly puts 1, 2 and 4 there",
+      "surface": {
+        "x": {
+          "title": "Strike",
+          "values": [
+            1,
+            2,
+            4
+          ],
+          "scale": "categories"
+        },
+        "y": {
+          "title": "Tenor",
+          "values": [
+            "1M",
+            "1Y"
+          ]
+        },
+        "z": [
+          [
+            1,
+            2,
+            3
+          ],
+          [
+            2,
+            3,
+            4
+          ]
+        ],
+        "zTitle": "P&L"
+      },
+      "mesh": {},
+      "expect": [
+        {
+          "at": "nodes.0.x",
+          "near": 1e-12,
+          "is": 0
+        },
+        {
+          "at": "nodes.1.x",
+          "near": 1e-12,
+          "is": 0.5
+        },
+        {
+          "at": "nodes.2.x",
+          "near": 1e-12,
+          "is": 1
+        },
+        {
+          "at": "xLines",
+          "map": "label",
+          "is": [
+            "1",
+            "2",
+            "4"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ADR-0312: an axis placed in proportion puts 1, 2 and 4 there",
+      "surface": {
+        "x": {
+          "title": "Strike",
+          "values": [
+            1,
+            2,
+            4
+          ],
+          "scale": "proportional"
+        },
+        "y": {
+          "title": "Tenor",
+          "values": [
+            "1M",
+            "1Y"
+          ]
+        },
+        "z": [
+          [
+            1,
+            2,
+            3
+          ],
+          [
+            2,
+            3,
+            4
+          ]
+        ],
+        "zTitle": "P&L"
+      },
+      "mesh": {},
+      "expect": [
+        {
+          "at": "nodes.0.x",
+          "near": 1e-12,
+          "is": 0
+        },
+        {
+          "at": "nodes.1.x",
+          "near": 1e-12,
+          "is": 0.3333333333333333
+        },
+        {
+          "at": "nodes.2.x",
+          "near": 1e-12,
+          "is": 1
+        },
+        {
+          "at": "xLines",
+          "map": "label",
+          "is": [
+            "1",
+            "2",
+            "4"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ADR-0312: an axis placed by the logarithm puts 1, 2 and 4 there",
+      "surface": {
+        "x": {
+          "title": "Strike",
+          "values": [
+            1,
+            2,
+            4
+          ],
+          "scale": "logarithmic"
+        },
+        "y": {
+          "title": "Tenor",
+          "values": [
+            "1M",
+            "1Y"
+          ]
+        },
+        "z": [
+          [
+            1,
+            2,
+            3
+          ],
+          [
+            2,
+            3,
+            4
+          ]
+        ],
+        "zTitle": "P&L"
+      },
+      "mesh": {},
+      "expect": [
+        {
+          "at": "nodes.0.x",
+          "near": 1e-12,
+          "is": 0
+        },
+        {
+          "at": "nodes.1.x",
+          "near": 1e-12,
+          "is": 0.5
+        },
+        {
+          "at": "nodes.2.x",
+          "near": 1e-12,
+          "is": 1
+        },
+        {
+          "at": "xLines",
+          "map": "label",
+          "is": [
+            "1",
+            "2",
+            "4"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ADR-0312: a grid placed by value keeps a line at each value, and labels only those that do not crowd",
+      "surface": {
+        "x": {
+          "title": "Strike",
+          "values": [
+            0.02,
+            0.08,
+            0.25,
+            10.0
+          ],
+          "scale": "proportional"
+        },
+        "y": {
+          "title": "Tenor",
+          "values": [
+            "1M",
+            "1Y"
+          ]
+        },
+        "z": [
+          [
+            1,
+            2,
+            3,
+            4
+          ],
+          [
+            2,
+            3,
+            4,
+            5
+          ]
+        ],
+        "zTitle": "P&L"
+      },
+      "mesh": {},
+      "expect": [
+        {
+          "at": "xLines",
+          "count": true,
+          "is": 4
+        },
+        {
+          "at": "xLines",
+          "map": "label",
+          "is": [
+            "0.02",
+            null,
+            null,
+            "10"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ADR-0312: an evenly spaced axis of many values labels every few, so twelve labels fit",
+      "surface": {
+        "x": {
+          "title": "Strike",
+          "values": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19,
+            20,
+            21,
+            22,
+            23,
+            24,
+            25
+          ]
+        },
+        "y": {
+          "title": "Tenor",
+          "values": [
+            "1M",
+            "1Y"
+          ]
+        },
+        "z": [
+          [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19,
+            20,
+            21,
+            22,
+            23,
+            24
+          ],
+          [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19,
+            20,
+            21,
+            22,
+            23,
+            24,
+            25
+          ]
+        ],
+        "zTitle": "P&L"
+      },
+      "mesh": {},
+      "expect": [
+        {
+          "at": "xLines",
+          "count": true,
+          "is": 25
+        },
+        {
+          "at": "xLines",
+          "where": {
+            "label": null
+          },
+          "count": true,
+          "is": 16
+        },
+        {
+          "at": "xLines.3.label",
+          "is": "4"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0311: a Consumer's mesh is drawn as its own triangles, each flat through its corners, never resampled",
+      "surface": "square",
+      "mesh": {},
+      "expect": [
+        {
+          "at": "faces",
+          "count": true,
+          "is": 2
+        },
+        {
+          "at": "faces",
+          "each": [
+            {
+              "at": "corners",
+              "count": true,
+              "is": 3
+            }
+          ]
+        },
+        {
+          "at": "faces.0.corners",
+          "is": [
+            0,
+            1,
+            3
+          ]
+        },
+        {
+          "at": "nodes.1.x",
+          "is": 1
+        },
+        {
+          "at": "nodes.1.y",
+          "is": 0
+        },
+        {
+          "at": "rows",
+          "is": []
+        },
+        {
+          "at": "columns",
+          "is": []
+        },
+        {
+          "at": "nodes",
+          "map": "interpolated",
+          "is": [
+            false,
+            false,
+            false,
+            false
+          ]
+        },
+        {
+          "at": "xLines",
+          "map": "label",
+          "is": [
+            "0",
+            "0.2",
+            "0.4",
+            "0.6",
+            "0.8",
+            "1"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ADR-0311: a node without a value is a hole: no triangle at it is drawn",
+      "surface": {
+        "nodes": [
+          [
+            0,
+            0,
+            0
+          ],
+          [
+            1,
+            0,
+            1
+          ],
+          [
+            0,
+            1,
+            1
+          ],
+          [
+            1,
+            1,
+            null
+          ]
+        ],
+        "triangles": [
+          [
+            0,
+            1,
+            3
+          ],
+          [
+            0,
+            3,
+            2
+          ]
+        ],
+        "xTitle": "x",
+        "yTitle": "y"
+      },
+      "mesh": {},
+      "expect": [
+        {
+          "at": "faces",
+          "is": []
+        },
+        {
+          "at": "holes",
+          "is": 1
+        }
+      ]
+    },
+    {
+      "name": "ADR-0257: a grid's interpolated values are marked so the 3D entry draws them no dot",
+      "surface": {
+        "x": {
+          "title": "Delta",
+          "values": [
+            "10P",
+            "25P",
+            "ATM",
+            "25C"
+          ]
+        },
+        "y": {
+          "title": "Tenor",
+          "values": [
+            "1M",
+            "3M",
+            "1Y"
+          ]
+        },
+        "z": [
+          [
+            10.5,
+            9.8,
+            9.2,
+            9.9
+          ],
+          [
+            10.9,
+            10.1,
+            9.6,
+            10.2
+          ],
+          [
+            11.4,
+            10.7,
+            10.3,
+            10.8
+          ]
+        ],
+        "zTitle": "Volatility",
+        "zFormat": {
+          "places": 2,
+          "suffix": "%"
+        },
+        "method": "SVI",
+        "interpolated": [
+          [
+            false,
+            false,
+            false,
+            false
+          ],
+          [
+            true,
+            true,
+            true,
+            true
+          ],
+          [
+            false,
+            false,
+            false,
+            false
+          ]
+        ]
+      },
+      "mesh": {},
+      "expect": [
+        {
+          "at": "nodes",
+          "map": "interpolated",
+          "is": [
+            false,
+            false,
+            false,
+            false,
+            true,
+            true,
+            true,
+            true,
+            false,
+            false,
+            false,
+            false
+          ]
+        }
+      ]
+    }
+  ]
+}

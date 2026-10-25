@@ -16,15 +16,15 @@ namespace ExChart.Engine.Tests.Cases;
 internal sealed class ChartCase(JsonElement file, JsonElement entry)
 {
     private static readonly string[] Operations =
-        ["scene", "drawing", "thin", "through", "tenor", "nice", "steps", "decades", "logSteps", "fit", "horizontal", "candles", "legendMembers", "format", "appearance"];
+        ["scene", "drawing", "thin", "through", "tenor", "nice", "steps", "decades", "logSteps", "fit", "horizontal", "candles", "legendMembers", "format", "appearance", "mesh", "slice", "slicePath"];
 
-    private static readonly string[] CaseKeys = ["name", "build", "definition", "throws", "saying", "expect", .. Operations];
+    private static readonly string[] CaseKeys = ["name", "build", "definition", "surface", "throws", "saying", "expect", .. Operations];
 
     // The positions each sampled series was asked at, by its identity.
     private readonly Dictionary<string, List<double>> _asked = [];
 
     // What each operation answered, unserialised, by its name in `build` ("" for a case's own).
-    private readonly Dictionary<string, object> _results = [];
+    private readonly Dictionary<string, object?> _results = [];
 
     private string Name => entry.GetProperty("name").GetString()!;
 
@@ -72,7 +72,7 @@ internal sealed class ChartCase(JsonElement file, JsonElement entry)
         var all = new JsonObject();
         foreach (var named in build.EnumerateObject())
         {
-            Allow(named.Value, $"\"{named.Name}\"", ["definition", .. Operations]);
+            Allow(named.Value, $"\"{named.Name}\"", ["definition", "surface", .. Operations]);
             var result = Operate(named.Value);
             _results[named.Name] = result;
             all[named.Name] = Serialise(result);
@@ -82,13 +82,13 @@ internal sealed class ChartCase(JsonElement file, JsonElement entry)
 
     // ---- What a case builds ----
 
-    private object Operate(JsonElement op)
+    private object? Operate(JsonElement op)
     {
         var present = Operations.Where(k => op.TryGetProperty(k, out _)).ToList();
         if (present.Count > 1)
             throw new InvalidOperationException($"\"{Name}\" names {string.Join(" and ", present)}; an operation is one.");
         if (present.Count == 0)
-            return Definition(op.GetProperty("definition"));
+            return op.TryGetProperty("surface", out var surface) ? Surface(surface) : Definition(op.GetProperty("definition"));
         var key = present[0];
         var args = op.GetProperty(key);
         switch (key)
@@ -153,6 +153,13 @@ internal sealed class ChartCase(JsonElement file, JsonElement entry)
             case "format":
                 Allow(args, "format", "format", "value");
                 return Number(args.GetProperty("value")).ToString(args.GetProperty("format").GetString(), CultureInfo.InvariantCulture);
+            case "mesh":
+                Allow(args, "mesh");
+                return SurfaceMesh.Of(Surface(op.GetProperty("surface")));
+            case "slice":
+                return Surface(op.GetProperty("surface")).SliceChart(Slice(args));
+            case "slicePath":
+                return SurfaceMesh.SlicePath(Surface(op.GetProperty("surface")), Slice(args));
             case "appearance":
                 Allow(args, "appearance", "colourSlots");
                 return Appearance.Of(Definition(op.GetProperty("definition")),
@@ -169,6 +176,115 @@ internal sealed class ChartCase(JsonElement file, JsonElement entry)
         Allow(e, "a definition", "axis", "series", "notes");
         return new ChartDefinition(Axis(e.GetProperty("axis")), e.GetProperty("series").EnumerateArray().Select(Series).ToList(),
             e.TryGetProperty("notes", out var notes) ? notes.EnumerateArray().Select(n => n.GetString()!).ToList() : null);
+    }
+
+    // ---- A surface (ADR-0274, ADR-0311) ----
+
+    // A grid (`z`), points on a grid, a Consumer's triangles (`nodes`) or a sampled function, each with
+    // its vertical scale and centre where the case names them.
+    private SurfaceDefinition Surface(JsonElement e)
+    {
+        if (e.ValueKind == JsonValueKind.String)
+            e = file.GetProperty("definitions").GetProperty(e.GetString()!);
+        Allow(e, "a surface", "x", "y", "z", "zTitle", "zFormat", "method", "interpolated", "notes", "points", "xTitle", "yTitle", "nodes", "triangles",
+            "xScale", "yScale", "sampled", "zScale", "centre");
+        var forms = new[] { "z", "points", "nodes", "sampled" }.Where(k => e.TryGetProperty(k, out _)).ToList();
+        if (forms.Count != 1)
+            throw new InvalidOperationException($"\"{Name}\": a surface is one of a grid, points, nodes and a sampled function, not {forms.Count}.");
+        // A key another form reads would be passed over here, and the case would test nothing by it.
+        Allow(e, $"\"{Name}\"'s {forms[0]} surface", [.. SurfaceCommonKeys, .. SurfaceFormKeys[forms[0]]]);
+        var zTitle = Text(e, "zTitle") ?? "";
+        var zFormat = e.TryGetProperty("zFormat", out var zf) ? ValueFormat(zf) : null;
+        var notes = e.TryGetProperty("notes", out var n) ? n.EnumerateArray().Select(s => s.GetString()!).ToList() : null;
+        var surface = forms[0] switch
+        {
+            "z" => new SurfaceDefinition(SurfaceAxisOf(e.GetProperty("x")), SurfaceAxisOf(e.GetProperty("y")),
+                e.GetProperty("z").EnumerateArray().Select(r => (IReadOnlyList<ChartValue?>)r.EnumerateArray().Select(Value).ToList()).ToList(),
+                zTitle, zFormat, Text(e, "method"),
+                e.TryGetProperty("interpolated", out var marks)
+                    ? marks.EnumerateArray().Select(r => (IReadOnlyList<bool>)r.EnumerateArray().Select(b => b.GetBoolean()).ToList()).ToList()
+                    : null,
+                notes),
+            "points" => SurfaceDefinition.FromPoints(
+                e.GetProperty("points").EnumerateArray().Select(p => (AxisValue(p[0]), AxisValue(p[1]), ChartValue.Of(Number(p[2])))).ToList(),
+                e.GetProperty("xTitle").GetString()!, e.GetProperty("yTitle").GetString()!, zTitle, zFormat: zFormat),
+            "nodes" => SurfaceDefinition.FromTriangles(
+                e.GetProperty("nodes").EnumerateArray().Select(p => new SurfaceNode(Number(p[0]), Number(p[1]), Value(p[2]))).ToList(),
+                e.GetProperty("triangles").EnumerateArray().Select(t => new SurfaceTriangle(t[0].GetInt32(), t[1].GetInt32(), t[2].GetInt32())).ToList(),
+                e.GetProperty("xTitle").GetString()!, e.GetProperty("yTitle").GetString()!, zTitle, zFormat: zFormat,
+                xScale: e.TryGetProperty("xScale", out var xs) ? Enum<AxisScale>(xs) : AxisScale.Proportional,
+                yScale: e.TryGetProperty("yScale", out var ys) ? Enum<AxisScale>(ys) : AxisScale.Proportional, notes: notes),
+            _ => Sampled(e, zTitle, zFormat),
+        };
+        if (e.TryGetProperty("zScale", out var zScale)) surface = surface with { ZScale = Enum<AxisScale>(zScale) };
+        if (e.TryGetProperty("centre", out var centre)) surface = surface with { Centre = Number(centre) };
+        return surface;
+    }
+
+    // What every form of surface may say, and what each form reads besides.
+    private static readonly string[] SurfaceCommonKeys = ["zTitle", "zFormat", "zScale", "centre"];
+
+    private static readonly Dictionary<string, string[]> SurfaceFormKeys = new()
+    {
+        ["z"] = ["x", "y", "z", "method", "interpolated", "notes"],
+        ["points"] = ["points", "xTitle", "yTitle"],
+        ["nodes"] = ["nodes", "triangles", "xTitle", "yTitle", "xScale", "yScale", "notes"],
+        ["sampled"] = ["sampled", "xTitle", "yTitle"],
+    };
+
+    // A function sampled over a rectangle: a constant, or a plane [a, b, c], a + b·x + c·y.
+    private SurfaceDefinition Sampled(JsonElement e, string zTitle, Func<object, string>? zFormat)
+    {
+        var s = e.GetProperty("sampled");
+        Allow(s, "sampled", "method", "x", "y", "z", "samples", "xScale", "yScale");
+        var z = s.GetProperty("z");
+        Func<double, double, ChartValue?> f;
+        if (z.ValueKind == JsonValueKind.Number)
+        {
+            var constant = Number(z);
+            f = (_, _) => ChartValue.Of(constant);
+        }
+        else
+        {
+            var plane = Only(z, "plane");
+            var (a, b, c) = (Number(plane[0]), Number(plane[1]), Number(plane[2]));
+            f = (x, y) => ChartValue.Of(a + b * x + c * y);
+        }
+        var (x, y) = (s.GetProperty("x"), s.GetProperty("y"));
+        return SurfaceDefinition.Sampled(s.GetProperty("method").GetString()!, Number(x[0]), Number(x[1]), Number(y[0]), Number(y[1]), f,
+            e.GetProperty("xTitle").GetString()!, e.GetProperty("yTitle").GetString()!, zTitle,
+            samples: s.TryGetProperty("samples", out var samples) ? samples.GetInt32() : 25, zFormat: zFormat,
+            xScale: s.TryGetProperty("xScale", out var xs) ? Enum<AxisScale>(xs) : AxisScale.Categories,
+            yScale: s.TryGetProperty("yScale", out var ys) ? Enum<AxisScale>(ys) : AxisScale.Categories);
+    }
+
+    private static SurfaceAxis SurfaceAxisOf(JsonElement e)
+    {
+        Allow(e, "a surface axis", "title", "values", "scale", "format");
+        var axis = new SurfaceAxis(e.GetProperty("title").GetString()!, e.GetProperty("values").EnumerateArray().Select(AxisValue).ToList(),
+            e.TryGetProperty("format", out var format) ? ValueFormat(format) : null);
+        return e.TryGetProperty("scale", out var scale) ? axis with { Scale = Enum<AxisScale>(scale) } : axis;
+    }
+
+    // A surface axis' value: a text, or a number as a double.
+    private static object AxisValue(JsonElement e) => e.ValueKind == JsonValueKind.String ? e.GetString()! : Number(e);
+
+    private static SurfaceSlice Slice(JsonElement e)
+    {
+        Allow(e, "a slice", "axis", "value");
+        return new SurfaceSlice(Enum<SurfaceSliceAxis>(e.GetProperty("axis")), AxisValue(e.GetProperty("value")));
+    }
+
+    // A writer of a value: a prefix and a suffix around it, written with a fixed number of places or invariantly.
+    private static Func<object, string> ValueFormat(JsonElement e)
+    {
+        Allow(e, "a format", "prefix", "suffix", "places");
+        var prefix = Text(e, "prefix") ?? "";
+        var suffix = Text(e, "suffix") ?? "";
+        int? places = e.TryGetProperty("places", out var p) ? p.GetInt32() : null;
+        return v => prefix + (places is { } k
+            ? Convert.ToDouble(v, CultureInfo.InvariantCulture).ToString("F" + k.ToString(CultureInfo.InvariantCulture), CultureInfo.InvariantCulture)
+            : Convert.ToString(v, CultureInfo.InvariantCulture)) + suffix;
     }
 
     private static ChartAxis Axis(JsonElement e)
@@ -719,7 +835,7 @@ internal sealed class ChartCase(JsonElement file, JsonElement entry)
 
     private double Computed(JsonNode? root, JsonNode? scope, JsonElement e, string form, string of, string where)
     {
-        var scene = (ChartScene)_results[of];
+        var scene = _results[of] as ChartScene ?? throw new InvalidOperationException($"{where}: {(of == "" ? "the answer" : of)} is not a scene.");
         if (form == "positionAt")
             return scene.PositionAt(Reference(root, scope, e.GetProperty("positionAt"), where));
         var args = e.GetProperty("yOf");

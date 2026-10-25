@@ -17,6 +17,8 @@ import { buildScene, legendMembers, positionAt, yOf, type ChartScene, type Legen
 import { drawSeries, marker, seriesDrawing, type DrawnPoint, type SeriesDrawing } from '../src/series-drawing';
 import { thin, thinnedThrough } from '../src/thinning';
 import { decades, fitLabels, horizontalTicks, logSteps, nice, steps, tenor, type AxisStyle } from '../src/ticks';
+import { SurfaceDefinition, type SurfaceAxisOptions, type SurfaceScaleOptions, type SurfaceSlice, type SurfaceValue } from '../src/surface';
+import { surfaceMesh, surfaceSlicePath } from '../src/surface-mesh';
 import { invariantText } from '../src/values';
 
 /** A value as JSON holds it. */
@@ -38,12 +40,12 @@ export interface ChartFile {
 
 const operations = [
     'scene', 'drawing', 'thin', 'through', 'tenor', 'nice', 'steps', 'decades', 'logSteps', 'fit', 'horizontal', 'candles', 'legendMembers',
-    'format', 'appearance',
+    'format', 'appearance', 'mesh', 'slice', 'slicePath',
 ] as const;
 
 type Operation = (typeof operations)[number];
 
-const caseKeys = ['name', 'build', 'definition', 'throws', 'saying', 'expect', ...operations];
+const caseKeys = ['name', 'build', 'definition', 'surface', 'throws', 'saying', 'expect', ...operations];
 
 const checkKeys = [
     'at', 'yOf', 'positionAt', 'asked', 'of', 'where', 'sortBy', 'map', 'differences', 'sum', 'count',
@@ -213,7 +215,7 @@ export class ChartCase {
             throw new Error(`"${this.#name}"'s build is ${text(build)}, not an object of named operations.`);
         }
         for (const [name, op] of Object.entries(build)) {
-            const result = this.#operate(allow(op, `"${name}"`, ['definition', ...operations]));
+            const result = this.#operate(allow(op, `"${name}"`, ['definition', 'surface', ...operations]));
             this.#results.set(name, result);
             all[name] = plain(result);
         }
@@ -227,7 +229,7 @@ export class ChartCase {
         }
         const [key] = present;
         if (key === undefined) {
-            return this.#definition(op['definition']);
+            return op['surface'] === undefined ? this.#definition(op['definition']) : this.#surface(op['surface']);
         }
         return this.#run(key, op[key], op);
     }
@@ -319,26 +321,102 @@ export class ChartCase {
                     : appearanceOf(this.#definition(op['definition']), slots);
                 return [looks, coloursRepeat];
             }
+            case 'mesh':
+                allow(args, 'mesh', []);
+                return surfaceMesh(this.#surface(op['surface']));
+            case 'slice':
+                return this.#surface(op['surface']).sliceChart(slice(args));
+            case 'slicePath':
+                return surfaceSlicePath(this.#surface(op['surface']), slice(args));
             default:
                 throw new Error(`Internal: ${String(key)} is listed and not run.`);
         }
     }
 
-    #definition(given: Json | undefined): ChartDefinition {
-        let e = given;
-        if (typeof e === 'string') {
-            const named = this.#file.definitions?.[e];
-            if (named === undefined) {
-                throw new Error(`The file has no definition named "${e}".`);
-            }
-            e = named;
+    // What a case names: given in place, or by its name among the file's definitions.
+    #named(given: Json | undefined): Json | undefined {
+        if (typeof given !== 'string') {
+            return given;
         }
-        const d = allow(e, 'a definition', ['axis', 'series', 'notes']);
+        const named = this.#file.definitions?.[given];
+        if (named === undefined) {
+            throw new Error(`The file has no definition named "${given}".`);
+        }
+        return named;
+    }
+
+    #definition(given: Json | undefined): ChartDefinition {
+        const d = allow(this.#named(given), 'a definition', ['axis', 'series', 'notes']);
         return new ChartDefinition({
             axis: axis(d['axis']),
             series: list(d['series'], 'series').map(s => this.#series(s)),
             ...optionalPart('notes', optional(d, 'notes', v => list(v, 'notes').map(n => string(n, 'a note')))),
         });
+    }
+
+    // ---- A surface (ADR-0274, ADR-0311) ----
+
+    // A grid (`z`), points on a grid, a Consumer's triangles (`nodes`) or a sampled function, each with its
+    // vertical scale and centre where the case names them.
+    #surface(given: Json | undefined): SurfaceDefinition {
+        const e = allow(this.#named(given), 'a surface', [
+            'x', 'y', 'z', 'zTitle', 'zFormat', 'method', 'interpolated', 'notes', 'points', 'xTitle', 'yTitle', 'nodes', 'triangles',
+            'xScale', 'yScale', 'sampled', 'zScale', 'centre',
+        ]);
+        const forms = [...surfaceFormKeys.keys()].filter(k => e[k] !== undefined);
+        const [form] = forms;
+        if (form === undefined || forms.length !== 1) {
+            throw new Error(`"${this.#name}": a surface is one of a grid, points, nodes and a sampled function, not ${String(forms.length)}.`);
+        }
+        // A key another form reads would be passed over here, and the case would test nothing by it.
+        const formKeys = surfaceFormKeys.get(form);
+        if (formKeys === undefined) {
+            throw new Error(`Internal: ${form} is found among the forms and has no keys.`);
+        }
+        allow(e, `"${this.#name}"'s ${form} surface`, [...surfaceCommonKeys, ...formKeys]);
+        const common = {
+            ...optionalPart('zTitle', optional(e, 'zTitle', v => string(v, 'zTitle'))),
+            ...optionalPart('zFormat', optional(e, 'zFormat', valueFormat)),
+            ...optionalPart('zScale', optional(e, 'zScale', v => oneOf(v, scales, 'AxisScale'))),
+            ...optionalPart('centre', optional(e, 'centre', number)),
+        };
+        const notes = optionalPart('notes', optional(e, 'notes', v => list(v, 'notes').map(n => string(n, 'a note'))));
+        // A grid's axes carry their titles; the other forms name them.
+        const titles = (): { xTitle: string; yTitle: string } => ({ xTitle: string(e['xTitle'], 'xTitle'), yTitle: string(e['yTitle'], 'yTitle') });
+        switch (form) {
+            case 'z':
+                return SurfaceDefinition.grid({
+                    x: surfaceAxis(e['x']), y: surfaceAxis(e['y']),
+                    z: list(e['z'], 'z').map(row => list(row, 'a row of z').map(chartValue)),
+                    ...common, ...notes,
+                    ...optionalPart('method', optional(e, 'method', v => string(v, 'method'))),
+                    ...optionalPart('interpolated', optional(e, 'interpolated', v => list(v, 'interpolated').map(row => list(row, 'a row of marks').map(b => boolean(b, 'a mark'))))),
+                });
+            case 'points':
+                return SurfaceDefinition.fromPoints({
+                    points: list(e['points'], 'points').map(p => {
+                        const [x, y, z] = list(p, 'a point');
+                        return { x: surfaceValue(x), y: surfaceValue(y), z: number(z) };
+                    }),
+                    ...titles(), ...common,
+                });
+            case 'nodes':
+                return SurfaceDefinition.fromTriangles({
+                    nodes: list(e['nodes'], 'nodes').map(p => {
+                        const [x, y, z] = list(p, 'a node');
+                        return { x: number(x), y: number(y), z: chartValue(z) };
+                    }),
+                    triangles: list(e['triangles'], 'triangles').map(t => {
+                        const [a, b, c] = list(t, 'a triangle');
+                        return { a: whole(a, 'a corner'), b: whole(b, 'a corner'), c: whole(c, 'a corner') };
+                    }),
+                    ...titles(), ...common, ...notes,
+                    ...optionalPart('xScale', optional(e, 'xScale', v => oneOf(v, scales, 'AxisScale'))),
+                    ...optionalPart('yScale', optional(e, 'yScale', v => oneOf(v, scales, 'AxisScale'))),
+                });
+            default:
+                return sampledSurface(e['sampled'], titles(), common);
+        }
     }
 
     #series(given: Json | undefined): ChartSeriesOptions {
@@ -909,6 +987,83 @@ function view(given: Json): ChartView {
         ...optionalPart('yFrom', optional(e, 'yFrom', number)),
         ...optionalPart('yTo', optional(e, 'yTo', number)),
         ...optionalPart('yScale', optional(e, 'yScale', v => oneOf(v, scales, 'AxisScale'))),
+    };
+}
+
+// What every form of surface may say, and what each form reads besides.
+const surfaceCommonKeys = ['zTitle', 'zFormat', 'zScale', 'centre'];
+const surfaceFormKeys: ReadonlyMap<string, readonly string[]> = new Map([
+    ['z', ['x', 'y', 'z', 'method', 'interpolated', 'notes']],
+    ['points', ['points', 'xTitle', 'yTitle']],
+    ['nodes', ['nodes', 'triangles', 'xTitle', 'yTitle', 'xScale', 'yScale', 'notes']],
+    ['sampled', ['sampled', 'xTitle', 'yTitle']],
+]);
+
+function surfaceAxis(given: Json | undefined): SurfaceAxisOptions {
+    const e = allow(given, 'a surface axis', ['title', 'values', 'scale', 'format']);
+    return {
+        title: string(e['title'], 'title'),
+        values: list(e['values'], 'values').map(surfaceValue),
+        ...optionalPart('format', optional(e, 'format', valueFormat)),
+        ...optionalPart('scale', optional(e, 'scale', v => oneOf(v, scales, 'AxisScale'))),
+    };
+}
+
+// A surface axis' value: a text, or a number.
+function surfaceValue(given: Json | undefined): SurfaceValue {
+    return typeof given === 'string' ? given : number(given);
+}
+
+function slice(given: Json | undefined): SurfaceSlice {
+    const e = allow(given, 'a slice', ['axis', 'value']);
+    return { axis: oneOf(e['axis'], ['x', 'y'], 'SurfaceSliceAxis'), value: surfaceValue(e['value']) };
+}
+
+// A function sampled over a rectangle: a constant, or a plane [a, b, c], a + b·x + c·y.
+function sampledSurface(given: Json | undefined, titles: { xTitle: string; yTitle: string }, common: SurfaceScaleOptions & {
+    readonly zTitle?: string;
+    readonly zFormat?: (value: ChartValue) => string;
+}): SurfaceDefinition {
+    const e = allow(given, 'sampled', ['method', 'x', 'y', 'z', 'samples', 'xScale', 'yScale']);
+    const [xFrom, xTo] = list(e['x'], 'x').map(number);
+    const [yFrom, yTo] = list(e['y'], 'y').map(number);
+    if (xFrom === undefined || xTo === undefined || yFrom === undefined || yTo === undefined) {
+        throw new Error('A sampled surface\'s x and y are each [from, to].');
+    }
+    const z = e['z'];
+    let f: (x: number, y: number) => ChartValue;
+    if (typeof z === 'number') {
+        f = () => z;
+    } else {
+        const [a, b, c] = list(allow(z, 'a sampled z', ['plane'])['plane'], 'a plane').map(number);
+        if (a === undefined || b === undefined || c === undefined) {
+            throw new Error('A plane is [a, b, c].');
+        }
+        f = (x, y) => a + b * x + c * y;
+    }
+    return SurfaceDefinition.sampled({
+        method: string(e['method'], 'method'), xFrom, xTo, yFrom, yTo, z: f, ...titles, ...common,
+        ...optionalPart('samples', optional(e, 'samples', v => whole(v, 'samples'))),
+        ...optionalPart('xScale', optional(e, 'xScale', v => oneOf(v, scales, 'AxisScale'))),
+        ...optionalPart('yScale', optional(e, 'yScale', v => oneOf(v, scales, 'AxisScale'))),
+    });
+}
+
+// A writer of a value: a prefix and a suffix around it, written with a fixed number of places or invariantly,
+// as the C# runner writes with "F" and the invariant culture.
+function valueFormat(given: Json): (value: SurfaceValue | ChartValue) => string {
+    const e = allow(given, 'a format', ['prefix', 'suffix', 'places']);
+    const prefix = e['prefix'] === undefined ? '' : string(e['prefix'], 'prefix');
+    const suffix = e['suffix'] === undefined ? '' : string(e['suffix'], 'suffix');
+    const places = optional(e, 'places', v => whole(v, 'places'));
+    return v => {
+        if (places === undefined) {
+            return `${prefix}${typeof v === 'string' ? v : invariantText(v)}${suffix}`;
+        }
+        if (typeof v === 'string') {
+            throw new TypeError(`"${v}" is not a number to write with ${String(places)} places.`);
+        }
+        return `${prefix}${Number(v).toFixed(places)}${suffix}`;
     };
 }
 
