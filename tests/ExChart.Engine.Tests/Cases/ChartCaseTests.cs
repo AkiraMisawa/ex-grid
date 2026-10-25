@@ -3,7 +3,7 @@ using System.Text.Json;
 namespace ExChart.Engine.Tests.Cases;
 
 /// <summary>
-/// Runs the shared cases of <c>tests/cases/chart/</c> against the C# engine (ADR-0370, section 3); Vitest
+/// Runs the shared cases of <c>tests/cases/chart/</c> against the C# engine (ADR-0370, section 2); Vitest
 /// runs the same files against <c>@ex-grid/chart</c>. <c>tests/cases/README.md</c> says what a file holds,
 /// and <see cref="ChartCase"/> reads one case.
 /// </summary>

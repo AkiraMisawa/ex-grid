@@ -1,5 +1,5 @@
 // Numbers written as the C# engine writes them with the invariant culture, so a label, a Note or a
-// refusal reads alike in both cores (ADR-0370, section 3). Each function names the .NET format it stands
+// refusal reads alike in both cores (ADR-0370, section 2). Each function names the .NET format it stands
 // for; JavaScript's own `String(n)` and `toFixed` round and switch to exponents elsewhere.
 
 /** A decimal digit string and the place of its point: `digits` × 10^(`point` − digits.length). */

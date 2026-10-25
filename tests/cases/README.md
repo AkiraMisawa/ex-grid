@@ -5,7 +5,7 @@ The cases of ExGrid's pure logic, written once as data: an input and its expecte
 section 5). xUnit runs them against the C# core (`tests/ExGrid.Tests/Cases/`) and Vitest against the
 Script Core (`src/npm/core/test/`); the `chart` area is ExChart's layout, run against `ExChart.Engine`
 (`tests/ExChart.Engine.Tests/Cases/`) and `@ex-grid/chart` (`src/npm/chart/test/`)
-(ADR-0370, section 3). A case is green on the C# core before the Script Core takes it, so
+([ADR-0370](../../docs/adr/0370-the-whole-family-moves-to-typescript-and-blazor-only-adapts-it.md), section 2). A case is green on the C# core before the Script Core takes it, so
 the cases are the oracle of the move; when the C# logic is removed, its runner goes with it and the data
 stays.
 
@@ -358,7 +358,7 @@ does a check that says neither `is` nor `throws`, and a case that checks nothing
 
 ## `chart`
 
-ExChart's layout (ADR-0370 section 3): scales, ticks, Thinning, each Series Kind's steps and gaps, the
+ExChart's layout (ADR-0370, section 2): scales, ticks, Thinning, each Series Kind's steps and gaps, the
 scene and its legend, and the 3D surface, its slices and its mesh. Every file of `chart/` is of this kind, run by
 `tests/ExChart.Engine.Tests/Cases/ChartCase.cs` and `src/npm/chart/test/chart-case.ts`. A file may say
 `near`, how far a number may be from what a check expects in every case of the file, and `definitions`,

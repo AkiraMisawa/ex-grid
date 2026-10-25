@@ -1,4 +1,4 @@
-// Runs the shared cases of tests/cases/chart/ (ADR-0370, section 3) against @ex-grid/chart; xUnit runs the
+// Runs the shared cases of tests/cases/chart/ (ADR-0370, section 2) against @ex-grid/chart; xUnit runs the
 // same files against the C# engine (tests/ExChart.Engine.Tests/Cases/ChartCaseTests.cs).
 // tests/cases/README.md says what a file holds, and chart-case.ts reads one case.
 import fs from 'node:fs';
