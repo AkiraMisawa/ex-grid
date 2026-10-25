@@ -2556,12 +2556,14 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // a hold stands, and a drain already running takes what it holds.
     // `upTo`, where the answer is that of a key that opens a popover of the grid's own: the number the
     // Settled Stamp answers it by, read by a key typed before the answer's own reply has come
-    // (endHoldAtKey).
-    const startHold = (answer, upTo = 0) => {
+    // (endHoldAtKey). `input`, where the answer is a key's: that key's number, by which the stamp answers
+    // it once the core has handed the keyboard to a Consumer's popover in answer to it (answeredAtKey);
+    // 0 where it is no key's.
+    const startHold = (answer, upTo = 0, input = 0) => {
         answering = true;
         const epoch = holdEpoch;
         if (answer) {
-            holdAnswer = { upTo };
+            holdAnswer = { upTo, input };
             answer.then(() => drain(epoch));
         } else {
             holdAnswer = null;
@@ -2946,17 +2948,33 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // says is owed has come if the keyboard is there, as a look judges it — a substituted Chrome's field
     // takes the keyboard a round trip before the stamp says so on a circuit (ExGrid.MudBlazor's Find on
     // the Server host).
+    //
+    // A key the gate does not know opens a popover is a popover key once the core hands the keyboard to a
+    // Consumer's popover in answer to it — a hand-off numbered after the key: ExSheet's Ctrl+1 opens
+    // Format Cells in the grid's frame. Held to the key's reply, a Shift+Tab typed once Format Cells' tab
+    // had the keyboard was refused (CI on PR #278, WebAssembly). Its answer counts as come once the stamp
+    // answers the key's own number. Not the hand-off's: that is answered once the script has heard the
+    // hand-off and told the core, a round trip on a circuit that runs beside the one the tab's focus
+    // takes, and the tab can take the keyboard first. The popover holding the keyboard is what the
+    // hand-off's number is there to wait for (inputsAnswered), and the hold ends only once it does.
+    const answeredAtKey = () => {
+        if (holdAnswer.upTo > 0) {
+            return inputsAnswered(holdAnswer.upTo);
+        }
+        return handOff === 'popover' && holdAnswer.input > 0 && handOffInput > holdAnswer.input && stamp !== null
+            && Number(stamp.getAttribute('data-ex-answered')) >= Math.max(holdAnswer.input, awaitingMove?.upTo ?? 0);
+    };
     const endHoldAtKey = () => {
         if (!answering || held.length > 0 || pressAnswer !== null || frameInTurn !== null || restlessWaits > 0) {
             return;
         }
         // An answer still to come counts only as the popover key's, answered by the stamp: a hold started
         // behind another, which a key let through by a move's end can start, keeps its keys until then.
-        if (holdAnswer !== null && !(holdAnswer.upTo > 0 && inputsAnswered(holdAnswer.upTo))) {
+        if (holdAnswer !== null && !answeredAtKey()) {
             return;
         }
         if (settledWaits.size === 0) {
-            if (holdAnswer === null || !awaitingPopover || !keyboardArrived()) {
+            if (holdAnswer === null || !(awaitingPopover || handOff === 'popover') || !keyboardArrived()) {
                 return;
             }
             awaitingPopover = false;
@@ -3320,10 +3338,12 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             }
             return;
         }
+        // The number forward gives the key, before anything the core does in answer can number another.
+        const keyInput = inputsSent + 1;
         const answer = forward(k);
         if (verdict === 'mode' || verdict === 'popover') {
             awaitingPopover = verdict === 'popover';
-            startHold(answer, awaitingPopover ? inputsSent : 0);
+            startHold(answer, awaitingPopover ? inputsSent : 0, keyInput);
         } else if (verdict === 'core' && closing !== null) {
             // Escape closing a popover: the keys after it wait until it is gone (escapeCloses), or
             // until its answer has come and the popover still stands.

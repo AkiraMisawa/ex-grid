@@ -671,6 +671,18 @@ this note the Tab was refused under both Chromes, on both hosts.
 A hold started behind another — a key let through by a move's end can start one — ends at a key only
 once its own answer has come, or, for a popover key, once the stamp answers it.
 
+*Widened (2026-10-25, CI on PR #278, WebAssembly, Chrome).* A key the gate does not know opens a popover
+is one when the core answers it by handing the keyboard to a Consumer's popover in the grid's frame — a
+hand-off numbered after the key: ExSheet's Ctrl+1, which opens Format Cells. Its hold kept no number, so
+a Shift+Tab typed once Format Cells' tab held the keyboard, before Ctrl+1's reply, was held until the
+reply and refused. The hold now keeps the key's number, and with such a hand-off standing a key typed
+before the reply ends the hold when the stamp answers that number and the popover holds the keyboard.
+The key's number, not the hand-off's: the hand-off's is answered once the script has heard it and told
+the core, a round trip on a circuit that runs beside the one the tab's focus takes, and the tab can take
+the keyboard first; what that number waits for elsewhere, the popover holding the keyboard, is required
+here in any case. Layer 3 holds Ctrl+1's reply and the frames, and on the Server host adds a 150 ms round
+trip; on the code before this note the Shift+Tab was refused on both hosts.
+
 The same window, looked for on `main` with the page's animation frames held back (layer 3's
 `holdFrames`): a Tab typed once Find's field held the keyboard was refused too, under both Chromes. Keys a
 held replay reproduces — a menu's Tab, a tab's arrows — and the toolbar band after F10, which the wait
