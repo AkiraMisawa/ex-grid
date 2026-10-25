@@ -89,10 +89,8 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - uses: actions/setup-dotnet@v6
-        with:
-          # The SDK's own runtime is the one the gating tests execute on: net10.0 (ADR-0022).
-          global-json-file: global.json
+      # The SDK's own runtime is the one the gating tests execute on: net10.0 (ADR-0022).
+      - uses: ./.github/actions/dotnet
 
       - name: Restore tools
         run: dotnet tool restore
@@ -229,9 +227,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - uses: actions/setup-dotnet@v6
-        with:
-          global-json-file: global.json
+      - uses: ./.github/actions/dotnet
 
       - name: Publish the WebAssembly DemoHost
         run: dotnet publish samples/ExGrid.DemoHost -c Release -o hosts/wasm
@@ -288,9 +284,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - uses: actions/setup-dotnet@v6
-        with:
-          global-json-file: global.json
+      - uses: ./.github/actions/dotnet
 
       - uses: actions/setup-node@v7
         with:
@@ -430,9 +424,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - uses: actions/setup-dotnet@v6
-        with:
-          global-json-file: global.json
+      - uses: ./.github/actions/dotnet
 
       - uses: actions/setup-node@v7
         with:
@@ -557,10 +549,8 @@ jobs:
             echo "Nothing repeated: this push changes no spec file of the pull request's in code." >> "$GITHUB_STEP_SUMMARY"
           fi
 
-      - uses: actions/setup-dotnet@v6
+      - uses: ./.github/actions/dotnet
         if: steps.changed.outputs.specs != ''
-        with:
-          global-json-file: global.json
 
       - uses: actions/setup-node@v7
         if: steps.changed.outputs.specs != ''
@@ -609,9 +599,10 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - uses: actions/setup-dotnet@v6
+      # A release's packages are the ones this job packs: built only with the SDK it installs.
+      - uses: ./.github/actions/dotnet
         with:
-          global-json-file: global.json
+          fallback: ${{ !inputs.version }}
 
       # Packs the family's sixteen, reads back what each .nuspec declares, and publishes a net10.0
       # application that restores them from the packed files alone.
