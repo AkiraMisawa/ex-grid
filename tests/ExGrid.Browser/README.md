@@ -489,7 +489,7 @@ nobody had asked for. What that means when writing a test:
   DPR, with bars that occupy layout. Anywhere other than Windows it is skipped by name.
 - `features.spec.mjs` — the interaction surface on `/features`, with real keys and the
   real clipboard: the editor's two states (ED-2/3/4), both clipboard formats and the
-  refusals (CP-1/3/4/5/6/10/14, PST-1), a refusal announced by the grid's live region in the
+  refusals (CP-1/3/4/5/6/10/14), a refusal announced by the grid's live region in the
   built-in words and again when repeated (A11Y-16, ADR-0203), the keys the grid must not take (KB-15), one
   tab stop, its Keyboard Field's on a grid that edits, with the ring drawn from the root's
   mark and no column's ▾ reached by Tab (A11Y-4, KB-12, ADR-0080), instance independence
@@ -501,9 +501,8 @@ nobody had asked for. What that means when writing a test:
   Shift+Tab from after the grid landing on the root with buttons on the page
   (A11Y-17); the chosen action outlined under forced colors too (UX-14).
 - `excel-keys.spec.mjs` — Excel's editing keys on `/features`: Ctrl+Z / Ctrl+Y /
-  Ctrl+Shift+Z reaching the page's undo stack (KB-39), Delete's Clear Intent and its
-  refusal (ED-24), Backspace's empty editor (ED-23), Ctrl+D / Ctrl+R and a fill refused by
-  name (CP-24/25), the keys staying the input's own inside the editor, and — on `/cells` —
+  Ctrl+Shift+Z reaching the page's undo stack (KB-39), Delete's Clear Intent (ED-24),
+  Backspace's empty editor (ED-23), Ctrl+D / Ctrl+R taken (CP-24), the keys staying the input's own inside the editor, and — on `/cells` —
   a display-only grid leaving Delete, Backspace, Ctrl+Z, Ctrl+D and Ctrl+R to the page (ED-25).
 - `write-lands.spec.mjs` — a write lands as the user entered it (ADR-0142, rewritten 2026-10-07;
   LV-11 to LV-14, LV-17) on `/features?upstream=1`, where F9 moves the first five rows' Notional as
@@ -534,12 +533,13 @@ nobody had asked for. What that means when writing a test:
   its own `clipboardchange` before the next copy, so its event cannot be taken for the grid's.
 - `find.spec.mjs` — Find (ADR-0055), **run once per Chrome** on `/features`: Ctrl+F taken
   from the browser and the keys typed after it landing in the panel's field, Enter and
-  Shift+Enter stepping, a match beyond the painted rows revealed, "no match" in a live
-  region, Escape handing the keyboard back, a range searched and kept, a capital and a
+  Shift+Enter stepping, a match beyond the painted rows revealed,
+  Escape handing the keyboard back, a capital and a
   Shift+Enter typed straight after Ctrl+F keeping their meaning, Ctrl+F in the find field
-  selecting its text and in a column's popover opening Find (FD-1/3/4/5/6); the panel inside the
+  selecting its text and in a column's popover opening Find (FD-1/3); the panel inside the
   grid's box, one per page, and Tab staying inside it (FD-8); Ctrl+F taken and nothing opened
-  on `/cells`, which wires no search (FD-2); and nothing done in the editor (FD-1).
+  on `/cells`, which wires no search (FD-2); and Ctrl+F and Ctrl+H taken from the browser in the
+  editor, doing nothing (FD-1).
 - `popovers.spec.mjs` — the popovers on `/features`, **run once per Chrome**: the
   built-in one and `ExGrid.MudBlazor`'s (`/features?chrome=mud`), which must give
   identical outcomes (WR-5, FN-17). The three dismissals, a pointer-down keeping its own
@@ -549,8 +549,8 @@ nobody had asked for. What that means when writing a test:
   and Enter in its value field applying what OK applies (KB-31 — under the Wrapper that
   is its own panel, a `MudSelect` operator whose list is an Inner Popup and a
   `MudNumericField`); every close handing the
-  keyboard back to the grid (KB-32); the roles and names (A11Y-19); the scroll container
-  not clipping (UX-11); and the Context Menu (CTX-1..4). Under the Wrapper alone, its
+  keyboard back to the grid (KB-32); the scroll container not clipping (UX-11); and the
+  Context Menu (CTX-1, CTX-2, CTX-4). Under the Wrapper alone, its
   panel's Inner Popups (FN-21): drawn outside the root and disturbing neither grid, a
   pointer-down elsewhere closing the list or the calendar and the panel while keeping its
   meaning — and under `ModalOverlay` (`/features?chrome=mud&modal=1`) only the popup —
@@ -584,12 +584,10 @@ nobody had asked for. What that means when writing a test:
   `GridSource.Fetch` with a mark adapter: after "mark all", rows scrolled to far away
   paint ticked (MK-6); a filter keeps the marks and the count names those outside it,
   and widening it back shows them ticked (MK-7); Space in the Mark Column brings a
-  mixed block into line and unmarks an all-marked one (MK-1); a row added after "mark
-  all" turns the header to "some" (MK-8); an action over a mark whose row was deleted
+  mixed block into line and unmarks an all-marked one (MK-1); an action over a mark whose row was deleted
   elsewhere reports it as gone.
 - `presentation.spec.mjs` — the presentation contract, measured: inline Geometry
-  Tokens beat the supported override routes (UX-2), painted geometry equals declared
-  (UX-3/ST-3), and on `/density` equals each preset's Grid Metrics after every density
+  Tokens beat the supported override routes (UX-2), and painted geometry on `/density` equals each preset's Grid Metrics after every density
   change — rows, header band, spacer, Selection and Focus (UX-3/ST-3) — with no
   `ResizeObserver` loop through density changes and window resizes, heard as `error` events
   on `window`, which Chrome does not send to the console (CON-4), Visual Tokens recolour from
@@ -927,7 +925,7 @@ nobody had asked for. What that means when writing a test:
   (`docs/specs/exsheet/run-18/f4-enter-mode.md`), typed into `/sheet` at machine speed: F4 leaving a
   caret where the caret stood at the text's end — after F2 in the bar, after ←, → — and selecting
   where it stood inside the text — a digit typed there, a press in the text — (ADR-0051, answers 1
-  and 2); a Sheet qualifier's selection starting at `$A$1` (answer 4); `=` then Ctrl+↓ and
+  and 2); `=` then Ctrl+↓ and
   Ctrl+Shift+↓ pointing at the column's data edge (answer 5); Shift+Home extending a pointed range
   and pointing from the edited cell (answers 3 and 8); and Shift+↑ and the Primary Modifier's arrows
   committing `abc` and moving or extending the Selection (ADR-0010, ED-2; answer 7).
@@ -1125,8 +1123,7 @@ nobody had asked for. What that means when writing a test:
   docs/specs/exsheet) on `/sheet` and `/sheets`: `=`, a press on a PV cell, `*2` and Enter showing
   that row's PV doubled; `=SUM(`, a press on the PV header, `)` and Enter showing the column's sum;
   the keyboard staying in the Sheet and the positions grid keeping no Selection; a further press
-  on the grid or the Sheet replacing what the last wrote; F4 changing nothing and the Name Box
-  empty after a press; a Shift+press and a drag writing nothing, the drag taking back what its
+  on the grid or the Sheet replacing what the last wrote; a Shift+press and a drag writing nothing, the drag taking back what its
   press wrote, and the page's status line saying why; the keyboard leaving for a page button making
   the positions grid ordinary, with the edit standing and pointing going on once a press brings it
   back; on `/sheets`, a press on the right's grid while the left Sheet points being an ordinary
