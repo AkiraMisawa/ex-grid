@@ -17,6 +17,7 @@ import { parseClipboardBlock, type ClipboardBlock } from '../clipboard/clipboard
 import { GridPasteIntent } from '../clipboard/paste-intent';
 import { ColumnGeometry, type ColumnRange } from '../columns/column-geometry';
 import { HeaderGroup, HeaderGroupLayout, type ResolvedHeaderGroup } from '../columns/header-groups';
+import { reorderColumns } from '../columns/header-reorder';
 import { decideOverflow } from '../columns/overflow-rules';
 import { rawText, textFor } from '../cells/display-text';
 import { checkedVerdict, GridEditIntent, type EditDiscardReason, type EditVerdict, type GridOverwriteNotice } from '../cells/edit-intent';
@@ -43,6 +44,9 @@ import { ViewportGeometry } from '../viewport/viewport-geometry';
 import type { BrowserReports, ViewportReport } from './browser-reports';
 import { ColumnStyles } from './column-styles';
 import { cellBox, editorAway, editorCell, keyFieldBox, opensAnEdit } from './cell-editing';
+import {
+    boundaryLeftPx, columnsResizedWith, dragThresholdPx, dropBoundaries, grabbedAt, guideLeftPx, nearestBoundary, type ColumnGesture, type GridColumnWidthChange,
+} from './column-gestures';
 import { CopiedRange } from './copied-range';
 import { copyValues, gatherRows, windowCovers, windowRowAt } from './grid-copy';
 import { defaultPasteByteCap, exceedsUtf8 } from './grid-paste';
@@ -176,6 +180,22 @@ export interface GridOptions<Row> {
      * (ADR-0063). The grid changes nothing: what the gesture means is the Consumer's. While an edit is open a
      * double click is the editor's, and on an Editable cell it opens one. */
     readonly onCellDoubleClick?: (cell: CellPosition) => void;
+    /**
+     * Hears a column resized by the user (ADR-0016), once per column: a drag on the grip at a header's right
+     * edge, applied on release and never live, or a double click on it, which fits the column to its header and
+     * every value the grid holds. A grip on a column wholly selected acts on every whole column selected, as in
+     * Excel (FN-12c). The grid changes nothing: the width moves when the Consumer hands back the column declared
+     * at it. Without it no column has a grip.
+     */
+    readonly onColumnWidthChanged?: (change: GridColumnWidthChange) => void;
+    /**
+     * Hears the column order after the user dragged a header (ADR-0011): the unit grabbed moves whole, a leaf
+     * within its Header Group or a group's rectangle among its peers, and never across the pinned boundary or a
+     * group's edge (ADR-0032). Every column's `name`, in the new order; the grid changes nothing until the
+     * Consumer hands back the columns in it. While it is given, a press on a header grabs the column to move it,
+     * and no longer selects it as it is dragged (ADR-0050, item 1); a click still sorts.
+     */
+    readonly onColumnOrderChanged?: (order: readonly string[]) => void;
 }
 
 const defaultViewportWidthPx = 800;
@@ -253,6 +273,8 @@ interface Taken<Row> {
     readonly onEditDiscarded: ((reason: EditDiscardReason) => void) | undefined;
     readonly onOverwriteNotice: ((notice: GridOverwriteNotice) => void) | undefined;
     readonly onCellDoubleClick: ((cell: CellPosition) => void) | undefined;
+    readonly onColumnWidthChanged: ((change: GridColumnWidthChange) => void) | undefined;
+    readonly onColumnOrderChanged: ((order: readonly string[]) => void) | undefined;
 }
 
 // A Selection the rows or the source dropped: where the typing aimed at it was going, why it went, and whether
@@ -586,7 +608,7 @@ export class GridView<Row> {
     #painted = new Map<unknown, PaintedRow<Row>>();
     #paintedHeader: {
         readonly styles: ColumnStyles; readonly columns: readonly ResolvedColumn<Row>[]; readonly scrollable: ColumnRange | undefined;
-        readonly sorts: string; readonly layout: HeaderGroupLayout; readonly tierPx: number;
+        readonly sorts: string; readonly layout: HeaderGroupLayout; readonly tierPx: number; readonly grips: boolean;
     } | undefined;
     // The tiers of Header Groups as painted, and the leaf row beneath them: the rectangles stand on the
     // column geometry, the layout and the tier height alone, so a scroll or a Sort that rebuilds the leaves
@@ -616,6 +638,15 @@ export class GridView<Row> {
     #headerPress: { readonly column: number; readonly extends: boolean; readonly toggles: boolean } | undefined;
     #headingPress = { x: 0, y: 0, clientX: 0, clientY: 0 };
     #gestureConsumedClick = false;
+    // A drag on the header's grip or of a header (ADR-0011, ADR-0016): what it holds, and the one element it
+    // paints, the resize guide or the drop indicator, over the band and the rows.
+    #onColumnWidthChanged: ((change: GridColumnWidthChange) => void) | undefined;
+    #onColumnOrderChanged: ((order: readonly string[]) => void) | undefined;
+    #columnGesture: ColumnGesture | undefined;
+    #gestureLine: HTMLElement | undefined;
+    // Each painted grip's column, so a press tells this grid's grips from anything else in its header.
+    #grips = new Map<Element, number>();
+    #reorderDrops: { readonly geometry: ColumnGeometry; readonly layout: HeaderGroupLayout; readonly boundaries: readonly number[] } | undefined;
     // The edge band (ADR-0008): where the pointer stands in the Viewport's readable box and the step each
     // tick takes, and an offset a step moved that the next pass writes.
     #edge: { readonly x: number; readonly y: number; readonly rows: number; readonly stepXPx: number } | undefined;
@@ -730,6 +761,7 @@ export class GridView<Row> {
             root.addEventListener('keyup', this.#onKeyUp, true);
             this.#header.addEventListener('mousedown', this.#onHeaderPress);
             this.#header.addEventListener('click', this.#onHeaderClick);
+            this.#header.addEventListener('dblclick', this.#onHeaderDoubleClick);
             root.addEventListener('focusout', this.#onFocusLeft);
             // The browser's own copy command fires the copy event on the root that holds the keyboard; Ctrl+C is
             // never a key of the grid's, which would prevent the very command that fires it (ADR-0005).
@@ -752,6 +784,8 @@ export class GridView<Row> {
                 () => { this.#viewport.removeEventListener('mousemove', this.#onDrag); },
                 () => { this.#header.removeEventListener('mousedown', this.#onHeaderPress); },
                 () => { this.#header.removeEventListener('click', this.#onHeaderClick); },
+                () => { this.#header.removeEventListener('dblclick', this.#onHeaderDoubleClick); },
+                () => { this.#endColumnGesture(); },
                 () => { this.#header.removeEventListener('mousemove', this.#onDrag); },
                 () => { root.removeEventListener('mouseleave', this.#onLeave); },
                 () => { root.removeEventListener('mousemove', this.#onHover); },
@@ -872,12 +906,13 @@ export class GridView<Row> {
         }
         const {
             onSelectionChanged, onRefused, onPaste, pasteMaySpill, onClear, onUndo, onRedo, onEdit, onEditingChanged, onEditDiscarded,
-            onOverwriteNotice, onCellDoubleClick,
+            onOverwriteNotice, onCellDoubleClick, onColumnWidthChanged, onColumnOrderChanged,
         }: {
             readonly onSelectionChanged?: unknown; readonly onRefused?: unknown; readonly onPaste?: unknown; readonly pasteMaySpill?: unknown;
             readonly onClear?: unknown; readonly onUndo?: unknown; readonly onRedo?: unknown;
             readonly onEdit?: unknown; readonly onEditingChanged?: unknown; readonly onEditDiscarded?: unknown;
             readonly onOverwriteNotice?: unknown; readonly onCellDoubleClick?: unknown;
+            readonly onColumnWidthChanged?: unknown; readonly onColumnOrderChanged?: unknown;
         } = options;
         if (onSelectionChanged !== undefined && typeof onSelectionChanged !== 'function') {
             throw new TypeError('onSelectionChanged is a function of the Selection.');
@@ -922,6 +957,12 @@ export class GridView<Row> {
         if (onCellDoubleClick !== undefined && typeof onCellDoubleClick !== 'function') {
             throw new TypeError('onCellDoubleClick is a function of the cell.');
         }
+        if (onColumnWidthChanged !== undefined && typeof onColumnWidthChanged !== 'function') {
+            throw new TypeError('onColumnWidthChanged is a function of the width change.');
+        }
+        if (onColumnOrderChanged !== undefined && typeof onColumnOrderChanged !== 'function') {
+            throw new TypeError('onColumnOrderChanged is a function of the columns\' new order.');
+        }
         const { copyCellCap = defaultCellCap, pasteByteCap = defaultPasteByteCap } = options;
         if (!Number.isSafeInteger(copyCellCap) || copyCellCap < 1) {
             throw new RangeError(`copyCellCap is a whole number of at least one cell, not ${copyCellCap}: the cap may be raised, `
@@ -948,6 +989,7 @@ export class GridView<Row> {
             onUndo: options.onUndo, onRedo: options.onRedo,
             onEdit: options.onEdit, onEditingChanged: options.onEditingChanged, onEditDiscarded: options.onEditDiscarded,
             onOverwriteNotice: options.onOverwriteNotice, onCellDoubleClick: options.onCellDoubleClick,
+            onColumnWidthChanged: options.onColumnWidthChanged, onColumnOrderChanged: options.onColumnOrderChanged,
         };
     }
 
@@ -1061,6 +1103,8 @@ export class GridView<Row> {
         this.#onEditDiscarded = taken.onEditDiscarded;
         this.#onOverwriteNotice = taken.onOverwriteNotice;
         this.#onCellDoubleClick = taken.onCellDoubleClick;
+        this.#onColumnWidthChanged = taken.onColumnWidthChanged;
+        this.#onColumnOrderChanged = taken.onColumnOrderChanged;
     }
 
     // The Row Sequence Version the grid writes: its source's, carried past every change of source.
@@ -2741,12 +2785,25 @@ export class GridView<Row> {
         // standing would eat the next genuine sort.
         this.#gestureConsumedClick = false;
         this.#tabReleased = false;
-        if (event.button !== 0 || event.target !== this.#header) return;
+        if (event.button !== 0) return;
+        // A press on a grip begins a resize (ADR-0016); its click is the gesture's, never the header's.
+        const grip = event.target instanceof Element ? this.#grips.get(event.target) : undefined;
+        if (grip !== undefined) {
+            this.#beginResize(grip, event);
+            return;
+        }
+        if (event.target !== this.#header) return;
         // A press on a heading commits an open edit first (ED-26); one the edit holds sorts and selects
         // nothing, and the keyboard stays in the editor (ADR-0034).
         if (!this.#commitEdit()) {
             event.preventDefault();
             this.#gestureConsumedClick = true;
+            return;
+        }
+        // Where a reorder is heard, dragging a header moves it (ADR-0011); elsewhere a press on a heading
+        // begins a Heading drag (ADR-0050, item 1).
+        if (this.#onColumnOrderChanged !== undefined) {
+            this.#beginReorder(event);
             return;
         }
         this.#reconcileSelection();
@@ -2802,6 +2859,176 @@ export class GridView<Row> {
         this.#source.setSorts(nextSort(this.#state.sorts, declared.name));
     };
 
+    // A double click on a grip is Size to fit (ADR-0016, FN-12a): each column it acts on is fixed at its
+    // header's need and every value the grid holds, not only the painted rows, or a column fitted a moment ago
+    // shows #### a few rows down; bounded by the declaration.
+    readonly #onHeaderDoubleClick = (event: MouseEvent): void => {
+        const grip = event.target instanceof Element ? this.#grips.get(event.target) : undefined;
+        const heard = this.#onColumnWidthChanged;
+        if (grip === undefined || heard === undefined) return;
+        this.#answered += 1;
+        this.#invalidate();
+        this.#reconcileSelection();
+        const changes = columnsResizedWith(this.#held.selection.wholeColumns(this.#extent), grip)
+            .map(column => ({ column: itemAt(this.#columns, column).column.name, widthPx: this.#fittedPx(column) }));
+        // Decided before the first is heard: a Consumer answering it with new columns does not move the rest.
+        for (const change of changes) heard(change);
+    };
+
+    #fittedPx(index: number): number {
+        const { column, header, spec } = itemAt(this.#columns, index);
+        const metrics = this.#metrics.cellMetrics.for(column.type);
+        let required = this.#metrics.headerRequiredPx({ label: header, menuButton: false, sortable: column.queryable !== false });
+        for (const row of this.#state.window) required = Math.max(required, metrics.estimatePx(textFor(column, column.value(row))));
+        return spec.sizeToFit(required).fixedPx;
+    }
+
+    // ---- The header's drags: a resize from a grip and a reorder (ADR-0011, ADR-0016, ADR-0032) ----------
+
+    // The guide starts at the width the column declares, not the one painted on Device Pixels (ADR-0090): a
+    // resize reports the declared width moved by the drag, never a rounding the Consumer did not ask for.
+    #beginResize(column: number, event: MouseEvent): void {
+        const geometry = this.#styles.geometry;
+        const startWidthPx = geometry.declaredWidthPxOf(column);
+        this.#beginColumnGesture({ kind: 'resize', name: itemAt(this.#columns, column).column.name, startClientX: event.clientX, startWidthPx });
+        this.#showGestureLine('ex-resize-guide', guideLeftPx(geometry, column, startWidthPx, this.#scrollLeftPx));
+    }
+
+    // What a press grabs is the unit that moves (ADR-0032): the leaf under it, or the rectangle standing over it
+    // in a tier above. Nothing moves until the pointer passes the threshold, so a plain click stays a sort.
+    #beginReorder(event: MouseEvent): void {
+        const column = this.#columnUnderHeader(event);
+        if (column === undefined) return;
+        const grabbed = grabbedAt(this.#headerLayout, column, event.offsetY, this.#bandHeightPx, this.#metrics.headerHeightPx);
+        if (grabbed === undefined) return;
+        const leaf = grabbed === 'leaf';
+        this.#beginColumnGesture({
+            kind: 'reorder', names: this.#columns.map(({ column: { name } }) => name),
+            unitFirst: leaf ? column : grabbed.firstColumn, unitCount: leaf ? 1 : grabbed.memberCount,
+            startClientX: event.clientX, startContentX: event.offsetX, reordering: false, boundary: undefined,
+        });
+    }
+
+    // The drag is heard on the root, over the header and the rows alike, and only while it runs.
+    #beginColumnGesture(gesture: ColumnGesture): void {
+        this.#endColumnGesture();
+        this.#columnGesture = gesture;
+        this.#root.addEventListener('mousemove', this.#onColumnGestureMove);
+        this.#root.addEventListener('mouseup', this.#onColumnGestureEnd);
+    }
+
+    #endColumnGesture(): void {
+        this.#columnGesture = undefined;
+        this.#reorderDrops = undefined;
+        this.#gestureLine?.remove();
+        this.#gestureLine = undefined;
+        this.#root.removeEventListener('mousemove', this.#onColumnGestureMove);
+        this.#root.removeEventListener('mouseup', this.#onColumnGestureEnd);
+    }
+
+    // The guide or the indicator: one element over the band and the rows, its left edge on a Device Pixel as a
+    // column's is (ADR-0090), the selection overlay's mechanism for the overlay's reason (ADR-0016).
+    #showGestureLine(className: string, leftPx: number): void {
+        let line = this.#gestureLine;
+        if (line === undefined) {
+            line = this.#root.ownerDocument.createElement('div');
+            line.className = className;
+            line.setAttribute('aria-hidden', 'true');
+            this.#spacer.append(line);
+            this.#gestureLine = line;
+        }
+        line.setAttribute('style', `left: ${ColumnGeometry.onDevicePixel(leftPx, this.#devicePixelRatio)}px`);
+    }
+
+    #columnNamed(name: string): number | undefined {
+        const index = this.#columns.findIndex(({ column }) => column.name === name);
+        return index < 0 ? undefined : index;
+    }
+
+    // Whether the columns still stand in the order a reorder lifted its unit from: a drop against another order
+    // would report a move of other columns, so the drag ends instead (a gesture carries what it was taken
+    // against).
+    #inOrder(names: readonly string[]): boolean {
+        return sameItems(names, this.#columns.map(({ column }) => column.name));
+    }
+
+    readonly #onColumnGestureMove = (event: MouseEvent): void => {
+        const gesture = this.#columnGesture;
+        if (gesture === undefined) return;
+        // Released outside the grid: nothing is applied, and a vanished drag drops nowhere.
+        if ((event.buttons & 1) === 0) {
+            this.#endColumnGesture();
+            return;
+        }
+        const geometry = this.#styles.geometry;
+        if (gesture.kind === 'resize') {
+            // A column handed over meanwhile is followed by its name; one gone takes the drag with it.
+            const column = this.#columnNamed(gesture.name);
+            if (column === undefined) {
+                this.#endColumnGesture();
+                return;
+            }
+            const widthPx = Math.max(itemAt(this.#columns, column).spec.minWidthPx, gesture.startWidthPx + (event.clientX - gesture.startClientX));
+            this.#showGestureLine('ex-resize-guide', guideLeftPx(geometry, column, widthPx, this.#scrollLeftPx));
+            return;
+        }
+        if (!this.#inOrder(gesture.names)) {
+            this.#endColumnGesture();
+            return;
+        }
+        if (!gesture.reordering && Math.abs(event.clientX - gesture.startClientX) <= dragThresholdPx) return;
+        const contentX = gesture.startContentX + (event.clientX - gesture.startClientX);
+        // Worked out once per geometry and layout, not on every move.
+        let drops = this.#reorderDrops;
+        if (drops === undefined || drops.geometry !== geometry || drops.layout !== this.#headerLayout) {
+            drops = { geometry, layout: this.#headerLayout, boundaries: dropBoundaries(geometry, this.#headerLayout, gesture.unitFirst, gesture.unitCount) };
+            this.#reorderDrops = drops;
+        }
+        const boundary = nearestBoundary(geometry, drops.boundaries, gesture.unitFirst, contentX, this.#scrollLeftPx);
+        this.#columnGesture = { ...gesture, reordering: true, boundary };
+        // Where the unit will land: it stops at the pinned boundary and at a group's edge rather than promising a
+        // drop that would be refused (ADR-0011).
+        this.#showGestureLine('ex-drop-indicator', boundaryLeftPx(geometry, boundary, gesture.unitFirst, this.#scrollLeftPx));
+    };
+
+    readonly #onColumnGestureEnd = (event: MouseEvent): void => {
+        const gesture = this.#columnGesture;
+        // Another button let go mid-drag ends nothing: the drag is the left button's.
+        if (gesture === undefined || event.button !== 0) return;
+        this.#endColumnGesture();
+        this.#answered += 1;
+        this.#invalidate();
+        if (gesture.kind === 'resize') {
+            // The click that ends it is the gesture's tail, not a sort.
+            this.#gestureConsumedClick = true;
+            const deltaPx = event.clientX - gesture.startClientX;
+            const grabbed = this.#columnNamed(gesture.name);
+            const heard = this.#onColumnWidthChanged;
+            // A press that barely moved is a click, or half of a double click: it reports nothing, or it would turn
+            // an Auto column Fixed behind the user's back (ADR-0016).
+            if (Math.abs(deltaPx) <= dragThresholdPx || grabbed === undefined || heard === undefined) return;
+            this.#reconcileSelection();
+            // Every whole column takes the grabbed one's new width, the guide's, as in Excel, each bounded below
+            // by its own MinWidth (FN-12c), and decided before the first is heard.
+            const widthPx = Math.max(itemAt(this.#columns, grabbed).spec.minWidthPx, gesture.startWidthPx + deltaPx);
+            const changes = columnsResizedWith(this.#held.selection.wholeColumns(this.#extent), grabbed).map(column => {
+                const { column: { name }, spec } = itemAt(this.#columns, column);
+                return { column: name, widthPx: Math.max(spec.minWidthPx, widthPx) };
+            });
+            for (const change of changes) heard(change);
+            return;
+        }
+        // A candidate that never crossed the threshold: the click that follows stays a sort.
+        if (!gesture.reordering) return;
+        this.#gestureConsumedClick = true;
+        const { boundary, unitFirst, unitCount, names } = gesture;
+        const heard = this.#onColumnOrderChanged;
+        // Dropped on its own edges, the unit stays where it was, and nothing is heard.
+        if (boundary === undefined || heard === undefined || !this.#inOrder(names)
+            || (boundary >= unitFirst && boundary <= unitFirst + unitCount)) return;
+        heard(reorderColumns({ names, unitFirst, unitCount, insertAt: boundary }));
+    };
+
     // Read through a getter: after #moveHeadingDrag, which may clear the press, the narrowing at the call
     // would still hold it set.
     get #pressPending(): boolean {
@@ -2812,17 +3039,23 @@ export class GridView<Row> {
     // none, nor does the dead space past the last column, where columnAt would clamp for a drag, nor a Header
     // Group's rectangle, which is not the leaf under it (ADR-0032).
     #headerColumnAt(event: MouseEvent): number | undefined {
-        const geometry = this.#styles.geometry;
-        const x = event.offsetX;
-        if (!Number.isFinite(x) || !Number.isFinite(event.offsetY) || geometry.isInLead(x, this.#scrollLeftPx)
-            || x < 0 || x >= geometry.totalWidthPx) return undefined;
-        const column = geometry.columnAt(x, this.#scrollLeftPx);
+        const column = this.#columnUnderHeader(event);
         if (column === undefined) return undefined;
         const layout = this.#headerLayout;
         if (layout.tierCount > 0 && event.offsetY < this.#bandHeightPx - (layout.leafTierSpanOf(column) * this.#metrics.headerHeightPx)) {
             return undefined;
         }
         return column;
+    }
+
+    // The column under a press on the header, whatever tier it is in: none in the corner where the Headings
+    // meet, or past the last column, where columnAt would clamp for a drag.
+    #columnUnderHeader(event: MouseEvent): number | undefined {
+        const geometry = this.#styles.geometry;
+        const x = event.offsetX;
+        if (!Number.isFinite(x) || !Number.isFinite(event.offsetY) || geometry.isInLead(x, this.#scrollLeftPx)
+            || x < 0 || x >= geometry.totalWidthPx) return undefined;
+        return geometry.columnAt(x, this.#scrollLeftPx);
     }
 
     // The row the Focus lands on when a Column Heading is pressed: the first on screen, so the Viewport
@@ -3244,13 +3477,16 @@ export class GridView<Row> {
         const tierPx = this.#metrics.headerHeightPx;
         // The Sort in force is painted too, as each header's aria-sort (ADR-0033).
         const sorts = this.#state.sorts.map(({ column, direction }) => `${JSON.stringify(column)}:${direction}`).join(',');
+        // A column has a grip at its header's right edge while a resize is heard (ADR-0016).
+        const grips = this.#onColumnWidthChanged !== undefined;
         if (painted !== undefined && painted.styles === this.#styles && painted.columns === this.#columns
             && sameRange(painted.scrollable, this.#scrollable) && painted.sorts === sorts && painted.layout === layout
-            && painted.tierPx === tierPx) {
+            && painted.tierPx === tierPx && painted.grips === grips) {
             this.#paintHeadingMarks(false);
             return;
         }
-        this.#paintedHeader = { styles: this.#styles, columns: this.#columns, scrollable: this.#scrollable, sorts, layout, tierPx };
+        this.#paintedHeader = { styles: this.#styles, columns: this.#columns, scrollable: this.#scrollable, sorts, layout, tierPx, grips };
+        this.#grips = new Map();
         const doc = this.#root.ownerDocument;
         const tiered = layout.tierCount > 0;
         const header = this.#header;
@@ -3279,6 +3515,14 @@ export class GridView<Row> {
             // Sorted or not, a column that can be sorted says so (ADR-0033).
             if (column.queryable !== false) cell.setAttribute('aria-sort', this.#ariaSort(column.name));
             cell.textContent = label;
+            if (grips) {
+                const grip = doc.createElement('div');
+                grip.className = 'ex-resize-grip';
+                // A press and a double click on it are the grip's own, as the C# core marks them (ADR-0240).
+                grip.setAttribute('data-ex-claims', 'mousedown dblclick');
+                cell.append(grip);
+                this.#grips.set(grip, c);
+            }
             cells.push(cell);
             headerCells.push({ element: cell, column: c, align: column.align, pinned });
         };

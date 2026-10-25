@@ -18,8 +18,19 @@ export interface AutoColumnWidth {
     readonly maxPx?: number;
 }
 
-/** A column's declared width: a Fixed number of pixels, or Auto (ADR-0016). */
-export type GridColumnWidth = number | AutoColumnWidth;
+/** A Fixed width with its bounds (ADR-0016): `px` wide, and dragged no narrower than `minPx`. A MaxWidth
+ * bounds only what the grid computes, Size to fit among it, so a width dragged past it stands as it came. */
+export interface FixedColumnWidth {
+    /** The width in CSS pixels; at least `minPx`. */
+    readonly px: number;
+    /** The narrowest a drag makes the column; 40 unless given. */
+    readonly minPx?: number;
+    /** The widest Size to fit makes it; 400 unless given. */
+    readonly maxPx?: number;
+}
+
+/** A column's declared width: a Fixed number of pixels, a Fixed width with its bounds, or Auto (ADR-0016). */
+export type GridColumnWidth = number | FixedColumnWidth | AutoColumnWidth;
 
 /** A column of a grid: what the query semantics read, and what the grid paints. */
 export interface GridColumn<Row> extends QueryColumn<Row> {
@@ -106,22 +117,21 @@ function specOf<Row>(column: GridColumn<Row>): ColumnWidthSpec {
     if (width === undefined) {
         return new ColumnWidthSpec({ width: ColumnWidth.auto });
     }
-    if (typeof width === 'number') {
-        const spec = new ColumnWidthSpec({ width: ColumnWidth.fixed(width) });
-        if (width < spec.minWidthPx) {
-            // Refused, not clamped (ADR-0016, FN-12): a column narrower than its MinWidth could not be
-            // dragged back to the width it was declared at.
-            throw new RangeError(`Column '${column.name}': a Fixed width of ${width} is below its MinWidth (${spec.minWidthPx}) — refused, not clamped (ADR-0016).`);
-        }
-        return spec;
+    const bounded = typeof width === 'number' ? { px: width } : width;
+    const { auto, px }: { readonly auto?: unknown; readonly px?: unknown } = bounded;
+    const bounds = {
+        ...('minPx' in bounded ? { minWidthPx: bounded.minPx } : {}),
+        ...('maxPx' in bounded ? { maxWidthPx: bounded.maxPx } : {}),
+    };
+    if (auto === true && px === undefined) return new ColumnWidthSpec({ width: ColumnWidth.auto, ...bounds });
+    if (auto !== undefined || typeof px !== 'number') {
+        throw new TypeError(`Column '${column.name}': a width is a number of pixels, { px, minPx, maxPx } or { auto: true, minPx, maxPx }.`);
     }
-    const { auto }: { readonly auto: unknown } = width;
-    if (auto !== true) {
-        throw new TypeError(`Column '${column.name}': a width is a number of pixels or { auto: true, minPx, maxPx }.`);
+    const spec = new ColumnWidthSpec({ width: ColumnWidth.fixed(px), ...bounds });
+    if (px < spec.minWidthPx) {
+        // Refused, not clamped (ADR-0016, FN-12): a column narrower than its MinWidth could not be
+        // dragged back to the width it was declared at.
+        throw new RangeError(`Column '${column.name}': a Fixed width of ${px} is below its MinWidth (${spec.minWidthPx}) — refused, not clamped (ADR-0016).`);
     }
-    return new ColumnWidthSpec({
-        width: ColumnWidth.auto,
-        ...(width.minPx === undefined ? {} : { minWidthPx: width.minPx }),
-        ...(width.maxPx === undefined ? {} : { maxWidthPx: width.maxPx }),
-    });
+    return spec;
 }

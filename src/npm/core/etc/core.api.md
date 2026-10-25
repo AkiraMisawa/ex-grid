@@ -163,6 +163,13 @@ export interface FilterSpec {
 }
 
 // @public
+export interface FixedColumnWidth {
+    readonly maxPx?: number;
+    readonly minPx?: number;
+    readonly px: number;
+}
+
+// @public
 export interface GridChangeBatch<Row> {
     readonly added?: readonly Row[];
     readonly changed?: readonly Row[];
@@ -194,7 +201,13 @@ export interface GridColumn<Row> extends QueryColumn<Row> {
 }
 
 // @public
-export type GridColumnWidth = number | AutoColumnWidth;
+export type GridColumnWidth = number | FixedColumnWidth | AutoColumnWidth;
+
+// @public
+export interface GridColumnWidthChange {
+    readonly column: string;
+    readonly widthPx: number;
+}
 
 // @public
 export type GridDensity = 'compact' | 'comfortable' | 'standard' | 'excel';
@@ -280,6 +293,8 @@ export interface GridOptions<Row> {
     readonly highlightHoverRow?: boolean;
     readonly onCellDoubleClick?: (cell: CellPosition) => void;
     readonly onClear?: (intent: GridClearIntent) => void;
+    readonly onColumnOrderChanged?: (order: readonly string[]) => void;
+    readonly onColumnWidthChanged?: (change: GridColumnWidthChange) => void;
     readonly onEdit?: (intent: GridEditIntent<Row>) => void;
     readonly onEditDiscarded?: (reason: EditDiscardReason) => void;
     readonly onEditingChanged?: (open: boolean) => void;

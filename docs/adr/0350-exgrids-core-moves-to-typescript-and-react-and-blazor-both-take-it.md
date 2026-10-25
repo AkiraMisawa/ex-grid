@@ -358,8 +358,12 @@ than its spelling, Blazor's surface follows it under section 14.
   `OnCopyRefused`, `OnPasteRefused` and the rest become kinds of it.
 - **Every callback receives one frozen event object**, never positional arguments, so a fact added
   later is a new member and not a broken signature.
-- **A column is a plain object.** `{ name, type, value, width, … }`, with a width written `120` or
-  `{ auto: true, minPx, maxPx }`. Only the columns that carry behaviour of their own are made by a
+- **A column is a plain object.** `{ name, type, value, width, … }`, with a width written `120`,
+  `{ px, minPx, maxPx }` or `{ auto: true, minPx, maxPx }`. The bounded Fixed form was added on
+  2026-10-25 with the header's resize, as C#'s `ColumnWidthSpec` bounds a Fixed width too: the width
+  a drag reports is bounded by the column's own MinWidth and handed back Fixed, and written as a bare
+  number it would take the default bounds, so a column whose MinWidth was below them could not be given
+  back the width it reported, and one whose MinWidth was above them would lose it. Only the columns that carry behaviour of their own are made by a
   factory: `markColumn` and `actionColumn` in the core, `templateColumn` in each adapter, because a
   template is the framework's own markup.
 - **A Chrome slot is a mount function in the core**, `(slot, context) => cleanup`, and a render
