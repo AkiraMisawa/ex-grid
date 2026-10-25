@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useRef, useState, type ReactElement } from 'react';
 import {
-    GridSource, type CommitRefusalReason, type EditDiscardReason, type GridColumn, type GridEditIntent, type GridHeaderGroup,
+    GridSource, type CommitRefusalReason, type EditDiscardReason, type GridClearIntent, type GridColumn, type GridEditIntent, type GridHeaderGroup,
     type GridPasteIntent, type GridRefusal,
 } from '@ex-grid/core';
 import { ExGrid } from '@ex-grid/react';
@@ -100,6 +100,20 @@ function editDiscarded(reason: EditDiscardReason): string {
     }
 }
 
+/** The row at a position of the source's current order. This page's source holds every row in memory, so a
+ * position it does not hold is a defect, said rather than skipped. */
+function heldRows(source: GridSource<DemoTrade>): (row: number) => DemoTrade {
+    const { window, windowStart } = source.snapshot();
+    return row => {
+        const held = window[row - windowStart];
+        if (held === undefined) throw new RangeError(`Row ${row} is not held, though this page's source holds every row.`);
+        return held;
+    };
+}
+
+/** One history step: the replacements one intent made, each as the row before and the row after. */
+type Step = [DemoTrade, DemoTrade][];
+
 const groups: readonly GridHeaderGroup[] = Object.freeze([
     { label: 'Who', columns: ['Book', 'Trader'] },
     { label: 'What', columns: ['Notional', 'Narrow', 'TradeDate', 'Confirmed'] },
@@ -121,6 +135,41 @@ export function Features(): ReactElement {
     const source = useMemo(() => GridSource.from(rows), []);
     const second = useMemo(() => GridSource.from(rows.slice(0, 20)), []);
     const [editStatus, setEditStatus] = useState('—');
+    const [clearStatus, setClearStatus] = useState('—');
+    const [historyStatus, setHistoryStatus] = useState('—');
+    // The undo stack ADR-0007 says the Consumer owns: one step per intent, a typed edit, a paste, a fill or a
+    // clear, each a list of the replacements it made. The grid only forwards the keys.
+    const history = useRef<{ undo: Step[]; redo: Step[] }>({ undo: [], redo: [] });
+    // Replaces a row through the source and notes it in the step being made.
+    const replace = useCallback((step: Step, before: DemoTrade, after: DemoTrade) => {
+        source.replaceRow(before, after);
+        step.push([before, after]);
+    }, [source]);
+    // A step made is one Ctrl+Z, and what could be redone is gone.
+    const record = useCallback((step: Step) => {
+        if (step.length === 0) return;
+        history.current.undo.push(step);
+        history.current.redo = [];
+    }, []);
+    // Undoes or redoes one step: its replacements reversed, last first, and the reverse step pushed onto the
+    // other stack, so replaying that one last first puts them back in their original order.
+    const replay = useCallback((from: 'undo' | 'redo', verb: string) => {
+        const stacks = history.current;
+        const step = stacks[from].pop();
+        if (step === undefined) {
+            setHistoryStatus(`nothing to be ${verb}`);
+            return;
+        }
+        const reversed: Step = [];
+        for (const [before, after] of step.toReversed()) {
+            source.replaceRow(after, before);
+            reversed.push([after, before]);
+        }
+        stacks[from === 'undo' ? 'redo' : 'undo'].push(reversed);
+        setHistoryStatus(`${step.length} changes ${verb}`);
+    }, [source]);
+    const onUndo = useCallback(() => { replay('undo', 'undone'); }, [replay]);
+    const onRedo = useCallback(() => { replay('redo', 'redone'); }, [replay]);
     const [editDiscardedStatus, setEditDiscardedStatus] = useState('—');
     const [commitRefusedStatus, setCommitRefusedStatus] = useState('—');
     const [counts, setCounts] = useState({ edits: 0, pastes: 0 });
@@ -164,9 +213,37 @@ export function Features(): ReactElement {
             setEditStatus(`${said} (not applied: unparseable)`);
             return;
         }
-        source.replaceRow(intent.row, replacement);
+        const step: Step = [];
+        replace(step, intent.row, replacement);
+        record(step);
         setEditStatus(said);
-    }, [source]);
+    }, [replace, record]);
+    // Delete's Clear Intent (ADR-0054), mapped onto this Consumer's own Blank: Trader has one, the empty name;
+    // Notional does not, so a clear there applies nothing, and says so, rather than writing a zero.
+    const onClear = useCallback((intent: GridClearIntent) => {
+        const rowAt = heldRows(source);
+        // Ranges may overlap; a cell covered twice is cleared once (ADR-0054).
+        const resolved = new Set<DemoTrade>();
+        const counted = new Set<string>();
+        let skipped = 0;
+        for (const target of intent.targets) {
+            for (let row = target.topRow; row < target.topRow + target.rowCount; row++) {
+                for (let column = target.leftColumn; column < target.leftColumn + target.columnCount; column++) {
+                    if (counted.has(`${row} ${column}`)) continue;
+                    counted.add(`${row} ${column}`);
+                    if (pick(columns, column).name === 'Trader') resolved.add(rowAt(row));
+                    else skipped += 1;
+                }
+            }
+        }
+        const step: Step = [];
+        for (const row of resolved) {
+            const replacement = edited(row, 'Trader', '');
+            if (replacement !== undefined) replace(step, row, replacement);
+        }
+        record(step);
+        setClearStatus(`${intent.cellCount} cells, ${step.length} applied, ${skipped} have no blank`);
+    }, [source, replace, record]);
     const onPaste = useCallback((intent: GridPasteIntent) => {
         setCounts(was => ({ ...was, pastes: was.pastes + 1 }));
         const status = `${intent.cellCount} cells from ${intent.plan.source.rows}x${intent.plan.source.columns}`;
@@ -176,12 +253,11 @@ export function Features(): ReactElement {
         setPasteFields(fields.slice(0, shownFields).join(' | ') + (fields.length > shownFields ? ` | … ${fields.length - shownFields} more` : ''));
         // Positions are the current order's, so every cell is resolved against the Window first: applying as
         // it goes could reorder the rows under a Sort on the edited column (ADR-0011, ADR-0014).
-        const { window, windowStart } = source.snapshot();
+        const rowAt = heldRows(source);
         const resolved: { readonly row: DemoTrade; readonly column: string; readonly value: string }[] = [];
         for (const target of intent.plan.targets) {
             for (let row = target.topRow; row < target.topRow + target.rowCount; row++) {
-                const held = window[row - windowStart];
-                if (held === undefined) continue;
+                const held = rowAt(row);
                 for (let column = target.leftColumn; column < target.leftColumn + target.columnCount && column < columns.length; column++) {
                     resolved.push({ row: held, column: pick(columns, column).name, value: intent.valueFor({ row, column }) });
                 }
@@ -189,18 +265,18 @@ export function Features(): ReactElement {
         }
         // Each change is built on the instance the one before it left, followed through the latest replacement.
         const latest = new Map<DemoTrade, DemoTrade>();
-        let applied = 0;
+        const step: Step = [];
         for (const { row, column, value } of resolved) {
             // A row not yet replaced is its own latest version.
             const current = latest.get(row) ?? row;
             const replacement = edited(current, column, value);
             if (replacement === undefined) continue;
-            source.replaceRow(current, replacement);
+            replace(step, current, replacement);
             latest.set(row, replacement);
-            applied += 1;
         }
-        setPasteStatus(`${status}, ${applied} applied`);
-    }, [source]);
+        record(step);
+        setPasteStatus(`${status}, ${step.length} applied`);
+    }, [source, replace, record]);
     return (
         <>
             <DemoNav route="features" />
@@ -216,6 +292,8 @@ export function Features(): ReactElement {
                 <span id="paste-status">Pasted: {pasteStatus}</span>
                 {/* What the last paste's block held, field by field, with where each field came from (ADR-0050, item 10). */}
                 <span id="paste-fields">Fields: {pasteFields}</span>
+                <span id="clear-status">Cleared: {clearStatus}</span>
+                <span id="history-status">History: {historyStatus}</span>
                 <span id="paste-refused-status">Paste refused: {pasteRefusedStatus}</span>
                 <span id="edit-discarded-status" role="status">Edit discarded: {editDiscardedStatus}</span>
                 {/* A write refused because its row is gone or its order moved (ADR-0142). */}
@@ -232,6 +310,9 @@ export function Features(): ReactElement {
                 onRefused={onRefused}
                 onEdit={onEdit}
                 onEditDiscarded={onEditDiscarded}
+                onClear={onClear}
+                onUndo={onUndo}
+                onRedo={onRedo}
                 onPaste={onPaste} />
             <p className="demo-status"><span id="intent-count">Intents: {counts.edits} edits, {counts.pastes} pastes</span></p>
             {showGroups
