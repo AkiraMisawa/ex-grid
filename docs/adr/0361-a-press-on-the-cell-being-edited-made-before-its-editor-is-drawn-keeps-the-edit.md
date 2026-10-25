@@ -2,7 +2,7 @@
 
 *Found 2026-10-25 by the differential test of
 [ADR-0240](0240-input-to-one-product-instance-is-taken-in-one-order.md) §8, with a seed of its own
-(987654321, the Sheet, Server host, 150 ms round trip). Proposed to the user the same day.*
+(987654321, the Sheet, Server host, 150 ms round trip). Chosen by the user the same day.*
 
 ## Context
 
