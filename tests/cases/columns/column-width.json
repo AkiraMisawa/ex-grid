@@ -1,0 +1,49 @@
+{
+  "about": "A column's declared width, Auto or Fixed (ADR-0016). From tests/ExGrid.Tests/ColumnWidthTests.cs; the zero state and printing are C#'s and stay there.",
+  "kind": "calls",
+  "subject": "ColumnWidth",
+  "cases": [
+    {
+      "name": "ADR-0016: a Fixed width of 0 is refused",
+      "via": "fixed",
+      "create": {"px": 0},
+      "throws": "outOfRange"
+    },
+    {
+      "name": "ADR-0016: a Fixed width of -1 is refused",
+      "via": "fixed",
+      "create": {"px": -1},
+      "throws": "outOfRange"
+    },
+    {
+      "name": "ADR-0016: a Fixed width of NaN is refused",
+      "via": "fixed",
+      "create": {"px": "NaN"},
+      "throws": "outOfRange"
+    },
+    {
+      "name": "ADR-0016: a Fixed width of Infinity is refused",
+      "via": "fixed",
+      "create": {"px": "Infinity"},
+      "throws": "outOfRange"
+    },
+    {
+      "name": "ADR-0016: a Fixed width is its pixels",
+      "via": "fixed",
+      "create": {"px": 120},
+      "expect": [
+        {"get": "isAuto", "is": false},
+        {"get": "fixedPx", "is": 120}
+      ]
+    },
+    {
+      "name": "ADR-0016: Auto has no fixed pixel value to read",
+      "via": "auto",
+      "create": {},
+      "expect": [
+        {"get": "isAuto", "is": true},
+        {"get": "fixedPx", "throws": "invalidOperation"}
+      ]
+    }
+  ]
+}

@@ -19,6 +19,14 @@ export interface CaseFile<T> {
     readonly cases: readonly (T & { readonly name: string })[];
 }
 
+/** Every area of the cases: the directories under tests/cases/, by name. */
+export function areas(): string[] {
+    return fs.readdirSync(root, { withFileTypes: true })
+        .filter(entry => entry.isDirectory())
+        .map(entry => entry.name)
+        .toSorted();
+}
+
 /** Every file of the area's directory whose kind is the one asked for, by name. */
 export function caseFiles<T>(area: string, kind: string): CaseFile<T>[] {
     const dir = path.join(root, area);
@@ -70,21 +78,30 @@ export function readRanges(text: readonly RangeText[] | string): SelectionRange[
     return text.map(readRange);
 }
 
-/** What a refusal is named in the cases: an argument outside what the grid has, or anything else. */
-export type Refusal = 'outOfRange' | 'invalidOperation';
+/** What a refusal is named in the cases: an argument outside what the grid has, an argument of a kind the
+ * member does not take, or anything else refused. */
+export type Refusal = 'outOfRange' | 'argument' | 'invalidOperation';
 
-/** Runs the action and holds it to the refusal named. */
-export function expectRefusal(action: () => unknown, refusal: Refusal): void {
+/** Runs the action and holds it to the refusal named, and, with `saying`, to a message holding that
+ * text, as the C# core's does. */
+export function expectRefusal(action: () => unknown, refusal: Refusal, saying?: string): void {
     switch (refusal) {
         case 'outOfRange':
             expect(action, 'expected a refusal (outOfRange)').toThrow(RangeError);
             break;
+        case 'argument':
+            expect(action, 'expected a refusal (argument)').toThrow(TypeError);
+            break;
         case 'invalidOperation':
             expect(action, 'expected a refusal (invalidOperation)').toThrow(Error);
             expect(action, 'expected a refusal (invalidOperation), not outOfRange').not.toThrow(RangeError);
+            expect(action, 'expected a refusal (invalidOperation), not argument').not.toThrow(TypeError);
             break;
         default:
             unreachable(refusal);
+    }
+    if (saying !== undefined) {
+        expect(action).toThrow(saying);
     }
 }
 

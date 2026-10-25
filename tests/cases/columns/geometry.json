@@ -1,0 +1,508 @@
+{
+  "about": "The horizontal arithmetic every visual layer reads: five 100px columns in a 350px Viewport unless a case says otherwise. From tests/ExGrid.Tests/ColumnGeometryTests.cs and HeadingsSelectionTests.cs; the Device Pixel properties over many widths and ratios stay there and in column-geometry.test.ts.",
+  "kind": "calls",
+  "subject": "ColumnGeometry",
+  "defaults": {"widthsPx": [100, 100, 100, 100, 100]},
+  "cases": [
+    {
+      "name": "ADR-0013: the scrollbar spans every column, painted or not, and the pinned width is the leading ones",
+      "create": {"pinnedCount": 2, "viewportWidthPx": 350},
+      "expect": [
+        {"get": "totalWidthPx", "is": 500},
+        {"get": "pinnedWidthPx", "is": 200},
+        {"get": "maxScrollLeftPx", "is": 150},
+        {"get": "count", "is": 5}
+      ]
+    },
+    {
+      "name": "ADR-0013: a column's place is the prefix sum of the widths before it, and the last one is the right edge",
+      "create": {"widthsPx": [120, 80, 200], "pinnedCount": 0, "viewportWidthPx": 350},
+      "expect": [
+        {"call": "offsetPxOf", "args": [0], "is": 0},
+        {"call": "offsetPxOf", "args": [1], "is": 120},
+        {"call": "offsetPxOf", "args": [2], "is": 200},
+        {"call": "offsetPxOf", "args": [3], "is": 400},
+        {"call": "widthPxOf", "args": [1], "is": 80}
+      ]
+    },
+    {
+      "name": "ADR-0004: only the columns the Viewport reaches are sliced",
+      "create": {"pinnedCount": 0, "viewportWidthPx": 350},
+      "expect": [
+        {"call": "scrollableSliceAt", "args": [0, true], "is": {"start": 0, "count": 4}}
+      ]
+    },
+    {
+      "name": "ADR-0004: a column straddling an edge is included, and one wholly past it is not",
+      "create": {"pinnedCount": 0, "viewportWidthPx": 350},
+      "expect": [
+        {"call": "scrollableSliceAt", "args": [150, true], "is": {"start": 1, "count": 4}},
+        {"call": "scrollableSliceAt", "args": [100, true], "is": {"start": 1, "count": 4}}
+      ]
+    },
+    {
+      "name": "ADR-0004: Pinned Columns are painted regardless, so they are never part of the slice",
+      "create": {"pinnedCount": 2, "viewportWidthPx": 350},
+      "expect": [
+        {"call": "scrollableSliceAt", "args": [0, true], "is": {"start": 2, "count": 2}},
+        {"call": "scrollableSliceAt", "args": [150, true], "is": {"start": 3, "count": 2}}
+      ]
+    },
+    {
+      "name": "ADR-0004: a column lying entirely under the pinned block is left out",
+      "create": {"pinnedCount": 2, "viewportWidthPx": 350},
+      "expect": [
+        {"call": "scrollableSliceAt", "args": [150, true], "is": {"start": 3, "count": 2}}
+      ]
+    },
+    {
+      "name": "ADR-0045: a Pinned block filling the Viewport is suspended, and everything slices",
+      "create": {"pinnedCount": 4, "viewportWidthPx": 350},
+      "expect": [
+        {"call": "scrollableSliceAt", "args": [0, true], "is": {"start": 0, "count": 4}}
+      ]
+    },
+    {
+      "name": "ADR-0004/0045: every column pinned with room to spare leaves no slice at all",
+      "create": {"pinnedCount": 5, "viewportWidthPx": 600},
+      "expect": [
+        {"call": "scrollableSliceAt", "args": [0, true], "is": null},
+        {"call": "scrollableSliceAt", "args": [0, false], "is": null}
+      ]
+    },
+    {
+      "name": "ADR-0004: a Viewport wider than the columns slices all of them",
+      "create": {"pinnedCount": 0, "viewportWidthPx": 900},
+      "expect": [
+        {"call": "scrollableSliceAt", "args": [0, true], "is": {"start": 0, "count": 5}}
+      ]
+    },
+    {
+      "name": "ADR-0004: virtualisation off returns every scrollable column wherever the offset is",
+      "create": {"pinnedCount": 2, "viewportWidthPx": 350},
+      "expect": [
+        {"call": "scrollableSliceAt", "args": [0, false], "is": {"start": 2, "count": 3}},
+        {"call": "scrollableSliceAt", "args": [150, false], "is": {"start": 2, "count": 3}}
+      ]
+    },
+    {
+      "name": "ADR-0001: an offset past the end lands on the last full Viewport",
+      "create": {"pinnedCount": 0, "viewportWidthPx": 350},
+      "expect": [
+        {"call": "scrollableSliceAt", "args": [100000, true], "is": {"start": 1, "count": 4}}
+      ]
+    },
+    {
+      "name": "ADR-0013: a negative offset is a browser artefact, and reads as the left edge",
+      "create": {"pinnedCount": 0, "viewportWidthPx": 350},
+      "expect": [
+        {"call": "scrollableSliceAt", "args": [-80, true], "is": {"start": 0, "count": 4}}
+      ]
+    },
+    {
+      "name": "ADR-0012: revealing a column clears the Pinned Columns rather than hiding under them",
+      "create": {"pinnedCount": 1, "viewportWidthPx": 250},
+      "expect": [
+        {"call": "scrollLeftToReveal", "args": [2, 250], "is": 100}
+      ]
+    },
+    {
+      "name": "ADR-0012: near the left edge there is nothing to scroll away",
+      "create": {"pinnedCount": 2, "viewportWidthPx": 350},
+      "expect": [
+        {"call": "scrollLeftToReveal", "args": [2, 0], "is": 0},
+        {"call": "scrollLeftToReveal", "args": [2, 40], "is": 0}
+      ]
+    },
+    {
+      "name": "ADR-0012: a Pinned Column is always visible, so revealing it moves nothing",
+      "create": {"pinnedCount": 2, "viewportWidthPx": 350},
+      "expect": [
+        {"call": "scrollLeftToReveal", "args": [0, 120], "is": 120}
+      ]
+    },
+    {
+      "name": "ADR-0012: a column already on screen does not move the offset",
+      "create": {"pinnedCount": 0, "viewportWidthPx": 350},
+      "expect": [
+        {"call": "scrollLeftToReveal", "args": [2, 0], "is": 0}
+      ]
+    },
+    {
+      "name": "ADR-0012: reaching right scrolls just far enough to show the whole column",
+      "create": {"pinnedCount": 0, "viewportWidthPx": 350},
+      "expect": [
+        {"call": "scrollLeftToReveal", "args": [4, 0], "is": 150}
+      ]
+    },
+    {
+      "name": "ADR-0004: a move of more than one Viewport is a fling; the pixels decide, not a column count",
+      "create": {"pinnedCount": 0, "viewportWidthPx": 350},
+      "expect": [
+        {"call": "isFling", "args": [0, 350], "is": false},
+        {"call": "isFling", "args": [0, 351], "is": true},
+        {"call": "isFling", "args": [400, 0], "is": true},
+        {"call": "isFling", "args": [100, 100], "is": false},
+        {"call": "isFling", "args": ["NaN", 0], "is": false}
+      ]
+    },
+    {
+      "name": "ADR-0004: uneven widths slice from the running sum",
+      "create": {"widthsPx": [30, 300, 50, 200], "pinnedCount": 0, "viewportWidthPx": 350},
+      "expect": [
+        {"call": "scrollableSliceAt", "args": [0, true], "is": {"start": 0, "count": 3}},
+        {"call": "scrollableSliceAt", "args": [100, true], "is": {"start": 1, "count": 3}}
+      ]
+    },
+    {
+      "name": "ADR-0016: a zero-width column is carried without breaking the slice",
+      "create": {"widthsPx": [100, 0, 100, 100], "pinnedCount": 0, "viewportWidthPx": 350},
+      "expect": [
+        {"get": "totalWidthPx", "is": 300},
+        {"call": "scrollableSliceAt", "args": [0, true], "is": {"start": 0, "count": 4}}
+      ]
+    },
+    {
+      "name": "ADR-0013/0017: the widest content a browser can scroll is accepted",
+      "create": {"widthsPx": [16777214.0, 16777214.0], "pinnedCount": 0, "viewportWidthPx": 800},
+      "expect": [
+        {"get": "totalWidthPx", "is": 33554428},
+        {"static": "maxScrollWidthPx", "is": 33554428}
+      ]
+    },
+    {
+      "name": "ADR-0013/0017: past what a browser can scroll the far columns are unreachable, and refused",
+      "create": {"widthsPx": [16777214.0, 16777214.0, 1], "pinnedCount": 0, "viewportWidthPx": 800},
+      "throws": "invalidOperation",
+      "saying": "could never be reached"
+    },
+    {
+      "name": "ADR-0003: a width comes back exactly as it was given, or \"has this moved?\" is true forever",
+      "create": {"widthsPx": [8.55, 8.55, 8.55, 8.55, 8.55, 8.55, 8.55, 33.3, 8.55, 8.55, 8.55, 8.55, 8.55, 8.55, 8.55, 8.55, 8.55, 8.55, 8.55, 91.7, 8.55, 8.55, 8.55, 8.55, 8.55, 8.55, 8.55, 8.55, 8.55, 8.55, 8.55, 8.55, 8.55, 8.55, 8.55, 8.55, 8.55, 8.55, 8.55, 8.55, 8.55, 8.55, 8.55, 8.55, 8.55, 8.55, 8.55, 8.55, 8.55, 8.55], "pinnedCount": 0, "viewportWidthPx": 350},
+      "expect": [
+        {"call": "widthPxOf", "args": [0], "is": 8.55},
+        {"call": "widthPxOf", "args": [1], "is": 8.55},
+        {"call": "widthPxOf", "args": [2], "is": 8.55},
+        {"call": "widthPxOf", "args": [3], "is": 8.55},
+        {"call": "widthPxOf", "args": [4], "is": 8.55},
+        {"call": "widthPxOf", "args": [5], "is": 8.55},
+        {"call": "widthPxOf", "args": [6], "is": 8.55},
+        {"call": "widthPxOf", "args": [7], "is": 33.3},
+        {"call": "widthPxOf", "args": [8], "is": 8.55},
+        {"call": "widthPxOf", "args": [9], "is": 8.55},
+        {"call": "widthPxOf", "args": [10], "is": 8.55},
+        {"call": "widthPxOf", "args": [11], "is": 8.55},
+        {"call": "widthPxOf", "args": [12], "is": 8.55},
+        {"call": "widthPxOf", "args": [13], "is": 8.55},
+        {"call": "widthPxOf", "args": [14], "is": 8.55},
+        {"call": "widthPxOf", "args": [15], "is": 8.55},
+        {"call": "widthPxOf", "args": [16], "is": 8.55},
+        {"call": "widthPxOf", "args": [17], "is": 8.55},
+        {"call": "widthPxOf", "args": [18], "is": 8.55},
+        {"call": "widthPxOf", "args": [19], "is": 91.7},
+        {"call": "widthPxOf", "args": [20], "is": 8.55},
+        {"call": "widthPxOf", "args": [21], "is": 8.55},
+        {"call": "widthPxOf", "args": [22], "is": 8.55},
+        {"call": "widthPxOf", "args": [23], "is": 8.55},
+        {"call": "widthPxOf", "args": [24], "is": 8.55},
+        {"call": "widthPxOf", "args": [25], "is": 8.55},
+        {"call": "widthPxOf", "args": [26], "is": 8.55},
+        {"call": "widthPxOf", "args": [27], "is": 8.55},
+        {"call": "widthPxOf", "args": [28], "is": 8.55},
+        {"call": "widthPxOf", "args": [29], "is": 8.55},
+        {"call": "widthPxOf", "args": [30], "is": 8.55},
+        {"call": "widthPxOf", "args": [31], "is": 8.55},
+        {"call": "widthPxOf", "args": [32], "is": 8.55},
+        {"call": "widthPxOf", "args": [33], "is": 8.55},
+        {"call": "widthPxOf", "args": [34], "is": 8.55},
+        {"call": "widthPxOf", "args": [35], "is": 8.55},
+        {"call": "widthPxOf", "args": [36], "is": 8.55},
+        {"call": "widthPxOf", "args": [37], "is": 8.55},
+        {"call": "widthPxOf", "args": [38], "is": 8.55},
+        {"call": "widthPxOf", "args": [39], "is": 8.55},
+        {"call": "widthPxOf", "args": [40], "is": 8.55},
+        {"call": "widthPxOf", "args": [41], "is": 8.55},
+        {"call": "widthPxOf", "args": [42], "is": 8.55},
+        {"call": "widthPxOf", "args": [43], "is": 8.55},
+        {"call": "widthPxOf", "args": [44], "is": 8.55},
+        {"call": "widthPxOf", "args": [45], "is": 8.55},
+        {"call": "widthPxOf", "args": [46], "is": 8.55},
+        {"call": "widthPxOf", "args": [47], "is": 8.55},
+        {"call": "widthPxOf", "args": [48], "is": 8.55},
+        {"call": "widthPxOf", "args": [49], "is": 8.55}
+      ]
+    },
+    {
+      "name": "ADR-0008: a pointer position names the column it lands in, a boundary belonging to the column starting there",
+      "create": {"pinnedCount": 0, "viewportWidthPx": 350},
+      "expect": [
+        {"call": "columnAt", "args": [0, 0], "is": 0},
+        {"call": "columnAt", "args": [99.9, 0], "is": 0},
+        {"call": "columnAt", "args": [100, 0], "is": 1},
+        {"call": "columnAt", "args": [499.9, 0], "is": 4}
+      ]
+    },
+    {
+      "name": "ADR-0008: a pointer outside the content clamps to the end column, even past what an int holds",
+      "create": {"pinnedCount": 0, "viewportWidthPx": 350},
+      "expect": [
+        {"call": "columnAt", "args": [10000, 150], "is": 4},
+        {"call": "columnAt", "args": [-50, 0], "is": 0},
+        {"call": "columnAt", "args": [1e+18, 0], "is": 4}
+      ]
+    },
+    {
+      "name": "ADR-0004: a pixel under the pinned block names the pinned column, not what is underneath",
+      "create": {"pinnedCount": 2, "viewportWidthPx": 350},
+      "expect": [
+        {"call": "columnAt", "args": [150, 150], "is": 0},
+        {"call": "columnAt", "args": [250, 150], "is": 1},
+        {"call": "columnAt", "args": [350, 150], "is": 3},
+        {"call": "columnAt", "args": [160, 150], "is": 0}
+      ]
+    },
+    {
+      "name": "ADR-0004: unscrolled, the pinned columns stand where their content is",
+      "create": {"pinnedCount": 2, "viewportWidthPx": 350},
+      "expect": [
+        {"call": "columnAt", "args": [50, 0], "is": 0},
+        {"call": "columnAt", "args": [150, 0], "is": 1},
+        {"call": "columnAt", "args": [250, 0], "is": 2}
+      ]
+    },
+    {
+      "name": "ADR-0004: with everything pinned every pixel is a pinned one, and past them clamps to the last",
+      "create": {"pinnedCount": 5, "viewportWidthPx": 600},
+      "expect": [
+        {"call": "columnAt", "args": [150, 150], "is": 1},
+        {"call": "columnAt", "args": [400, 150], "is": 4},
+        {"call": "columnAt", "args": [700, 0], "is": 4},
+        {"call": "columnAt", "args": [500, 0], "is": 4}
+      ]
+    },
+    {
+      "name": "ADR-0016: a zero-width column occupies no pixel, so no pixel names it",
+      "create": {"widthsPx": [100, 0, 100], "pinnedCount": 0, "viewportWidthPx": 350},
+      "expect": [
+        {"call": "columnAt", "args": [99, 0], "is": 0},
+        {"call": "columnAt", "args": [100, 0], "is": 2}
+      ]
+    },
+    {
+      "name": "ADR-0008: a grid with no columns has nothing to point at",
+      "create": {"widthsPx": [], "pinnedCount": 0, "viewportWidthPx": 350},
+      "expect": [
+        {"call": "columnAt", "args": [0, 0], "is": null}
+      ]
+    },
+    {
+      "name": "ADR-0013: positions, offsets and columns outside what the grid has are refused by name",
+      "create": {"pinnedCount": 0, "viewportWidthPx": 350},
+      "expect": [
+        {"call": "columnAt", "args": ["NaN", 0], "throws": "outOfRange"},
+        {"call": "columnAt", "args": [0, "NaN"], "throws": "outOfRange"},
+        {"call": "scrollableSliceAt", "args": ["NaN", true], "throws": "outOfRange"},
+        {"call": "offsetPxOf", "args": [-1], "throws": "outOfRange"},
+        {"call": "offsetPxOf", "args": [6], "throws": "outOfRange"},
+        {"call": "widthPxOf", "args": [5], "throws": "outOfRange"},
+        {"call": "declaredWidthPxOf", "args": [5], "throws": "outOfRange"},
+        {"call": "scrollLeftToReveal", "args": [5, 0], "throws": "outOfRange"},
+        {"call": "scrollLeftToReveal", "args": [0, "NaN"], "throws": "outOfRange"}
+      ]
+    },
+    {
+      "name": "ADR-0013/0016/0050: a negative width is refused by name",
+      "create": {"widthsPx": [100, -1], "pinnedCount": 0, "viewportWidthPx": 350},
+      "throws": "outOfRange",
+      "saying": "Column 1 has a width of -1px"
+    },
+    {
+      "name": "ADR-0013/0016/0050: a width that is not a number is refused by name",
+      "create": {"widthsPx": [100, "NaN"], "pinnedCount": 0, "viewportWidthPx": 350},
+      "throws": "outOfRange"
+    },
+    {
+      "name": "ADR-0013/0016/0050: more pinned columns than there are is refused by name",
+      "create": {"widthsPx": [100, 100, 100, 100, 100], "pinnedCount": 6, "viewportWidthPx": 350},
+      "throws": "outOfRange",
+      "saying": "PinnedColumnCount is the first N of 5 columns"
+    },
+    {
+      "name": "ADR-0013/0016/0050: a negative pinned count is refused by name",
+      "create": {"widthsPx": [100, 100, 100, 100, 100], "pinnedCount": -1, "viewportWidthPx": 350},
+      "throws": "outOfRange"
+    },
+    {
+      "name": "ADR-0013/0016/0050: a Viewport of no width is refused by name",
+      "create": {"widthsPx": [100, 100, 100, 100, 100], "pinnedCount": 0, "viewportWidthPx": 0},
+      "throws": "outOfRange",
+      "saying": "ViewportWidth is a finite, positive number of pixels"
+    },
+    {
+      "name": "ADR-0013/0016/0050: a Viewport of infinite width is refused by name",
+      "create": {"widthsPx": [100, 100, 100, 100, 100], "pinnedCount": 0, "viewportWidthPx": "Infinity"},
+      "throws": "outOfRange"
+    },
+    {
+      "name": "ADR-0013/0016/0050: a negative lead band is refused by name",
+      "create": {"widthsPx": [100, 100, 100, 100, 100], "pinnedCount": 0, "viewportWidthPx": 350, "leadWidthPx": -1},
+      "throws": "outOfRange",
+      "saying": "The Row Headings' width is a finite, non-negative number of pixels"
+    },
+    {
+      "name": "ADR-0045 / FN-6a: a Pinned block leaving under 40px to scroll in is suspended",
+      "create": {"pinnedCount": 2, "viewportWidthPx": 230},
+      "expect": [
+        {"get": "isPinningSuspended", "is": true},
+        {"get": "pinnedCount", "is": 0},
+        {"get": "requestedPinnedCount", "is": 2},
+        {"get": "pinnedWidthPx", "is": 0},
+        {"static": "minScrollableBandPx", "is": 40}
+      ]
+    },
+    {
+      "name": "ADR-0045 / FN-6a: a band of exactly the minimum width still pins",
+      "create": {"pinnedCount": 2, "viewportWidthPx": 240},
+      "expect": [
+        {"get": "isPinningSuspended", "is": false},
+        {"get": "pinnedCount", "is": 2},
+        {"get": "requestedPinnedCount", "is": 2}
+      ]
+    },
+    {
+      "name": "ADR-0045 / FN-6a: suspended, every column scrolls, and the slice and the reveal agree",
+      "create": {"pinnedCount": 3, "viewportWidthPx": 250},
+      "expect": [
+        {"call": "scrollableSliceAt", "args": [0, true], "is": {"start": 0, "count": 3}},
+        {"call": "scrollableSliceAt", "args": [150, true], "is": {"start": 1, "count": 3}},
+        {"call": "scrollLeftToReveal", "args": [4, 0], "is": 250},
+        {"call": "columnAt", "args": [160, 150], "is": 1}
+      ]
+    },
+    {
+      "name": "ADR-0045: an unpinned grid is never suspended",
+      "create": {"pinnedCount": 0, "viewportWidthPx": 50},
+      "expect": [
+        {"get": "isPinningSuspended", "is": false},
+        {"get": "requestedPinnedCount", "is": 0}
+      ]
+    },
+    {
+      "name": "ADR-0050/0028: the lead band comes first, every column's offset starts after it, and it covers the left edge",
+      "create": {"pinnedCount": 0, "viewportWidthPx": 350, "leadWidthPx": 40},
+      "expect": [
+        {"get": "leadWidthPx", "is": 40},
+        {"call": "offsetPxOf", "args": [0], "is": 40},
+        {"call": "offsetPxOf", "args": [1], "is": 140},
+        {"get": "totalWidthPx", "is": 540},
+        {"get": "pinnedWidthPx", "is": 40}
+      ]
+    },
+    {
+      "name": "ADR-0050: a lead of zero is the geometry without the band",
+      "create": {"pinnedCount": 2, "viewportWidthPx": 350, "leadWidthPx": 0},
+      "expect": [
+        {"call": "offsetPxOf", "args": [0], "is": 0},
+        {"call": "offsetPxOf", "args": [1], "is": 100},
+        {"call": "offsetPxOf", "args": [2], "is": 200},
+        {"call": "offsetPxOf", "args": [3], "is": 300},
+        {"call": "offsetPxOf", "args": [4], "is": 400},
+        {"call": "offsetPxOf", "args": [5], "is": 500},
+        {"get": "pinnedWidthPx", "is": 200},
+        {"call": "isInLead", "args": [10, 0], "is": false}
+      ]
+    },
+    {
+      "name": "ADR-0050: a pixel in the band is in the lead at any scroll offset",
+      "create": {"pinnedCount": 0, "viewportWidthPx": 350, "leadWidthPx": 40},
+      "expect": [
+        {"call": "isInLead", "args": [10, 0], "is": true},
+        {"call": "isInLead", "args": [110, 100], "is": true},
+        {"call": "isInLead", "args": [45, 0], "is": false},
+        {"call": "isInLead", "args": [145, 100], "is": false},
+        {"call": "isInLead", "args": ["NaN", 0], "is": false}
+      ]
+    },
+    {
+      "name": "ADR-0050/0004: a pixel in the band names the first column clear of it, not what has scrolled underneath",
+      "create": {"pinnedCount": 0, "viewportWidthPx": 350, "leadWidthPx": 40},
+      "expect": [
+        {"call": "columnAt", "args": [160, 150], "is": 1},
+        {"call": "columnAt", "args": [10, 0], "is": 0},
+        {"call": "columnAt", "args": [60, 0], "is": 0}
+      ]
+    },
+    {
+      "name": "ADR-0050/0004: a column is revealed clear of the band, as it is clear of a pinned block",
+      "create": {"pinnedCount": 0, "viewportWidthPx": 350, "leadWidthPx": 40},
+      "expect": [
+        {"call": "scrollLeftToReveal", "args": [1, 190], "is": 100},
+        {"call": "scrollableSliceAt", "args": [100, true], "is": {"start": 1, "count": 4}}
+      ]
+    },
+    {
+      "name": "ADR-0090: what a column declares is kept beside what it is painted at",
+      "create": {"widthsPx": [99, 99], "pinnedCount": 0, "viewportWidthPx": 350, "leadWidthPx": 0, "devicePixelRatio": 1.5},
+      "expect": [
+        {"call": "declaredWidthPxOf", "args": [0], "is": 99},
+        {"call": "declaredWidthPxOf", "args": [1], "is": 99},
+        {"call": "widthPxOf", "args": [0], "is": 99.33333333333333},
+        {"call": "widthPxOf", "args": [1], "is": 98.66666666666667},
+        {"get": "devicePixelRatio", "is": 1.5}
+      ]
+    },
+    {
+      "name": "ADR-0090 / VZ-17: 99px is 148.5 Device Pixels at 150%, so the columns alternate 149 and 148, never all one",
+      "create": {"widthsPx": [99, 99, 99, 99], "pinnedCount": 0, "viewportWidthPx": 350, "leadWidthPx": 0, "devicePixelRatio": 1.5},
+      "expect": [
+        {"call": "widthPxOf", "args": [0], "is": 99.33333333333333},
+        {"call": "widthPxOf", "args": [1], "is": 98.66666666666667},
+        {"call": "widthPxOf", "args": [2], "is": 99.33333333333333},
+        {"call": "offsetPxOf", "args": [4], "is": 396.0}
+      ]
+    },
+    {
+      "name": "ADR-0090: untold, the edges are the declared ones, exactly",
+      "create": {"widthsPx": [120.3, 80.25], "pinnedCount": 0, "viewportWidthPx": 350, "leadWidthPx": 10.1},
+      "expect": [
+        {"get": "devicePixelRatio", "is": null},
+        {"call": "offsetPxOf", "args": [0], "is": 10.1},
+        {"call": "offsetPxOf", "args": [1], "is": 130.4},
+        {"call": "offsetPxOf", "args": [2], "is": 210.65},
+        {"call": "widthPxOf", "args": [0], "is": 120.3}
+      ]
+    },
+    {
+      "name": "ADR-0090: a Device Pixel ratio of 0 is refused",
+      "create": {"widthsPx": [100], "pinnedCount": 0, "viewportWidthPx": 350, "leadWidthPx": 0, "devicePixelRatio": 0},
+      "throws": "outOfRange",
+      "saying": "A Device Pixel ratio is a finite, positive number"
+    },
+    {
+      "name": "ADR-0090: a Device Pixel ratio of -1.5 is refused",
+      "create": {"widthsPx": [100], "pinnedCount": 0, "viewportWidthPx": 350, "leadWidthPx": 0, "devicePixelRatio": -1.5},
+      "throws": "outOfRange",
+      "saying": "A Device Pixel ratio is a finite, positive number"
+    },
+    {
+      "name": "ADR-0090: a Device Pixel ratio of NaN is refused",
+      "create": {"widthsPx": [100], "pinnedCount": 0, "viewportWidthPx": 350, "leadWidthPx": 0, "devicePixelRatio": "NaN"},
+      "throws": "outOfRange",
+      "saying": "A Device Pixel ratio is a finite, positive number"
+    },
+    {
+      "name": "ADR-0090: a Device Pixel ratio of Infinity is refused",
+      "create": {"widthsPx": [100], "pinnedCount": 0, "viewportWidthPx": 350, "leadWidthPx": 0, "devicePixelRatio": "Infinity"},
+      "throws": "outOfRange",
+      "saying": "A Device Pixel ratio is a finite, positive number"
+    },
+    {
+      "name": "ADR-0090: a single length is put on the nearest Device Pixel, and untold is left as it is",
+      "expect": [
+        {"static": "onDevicePixel", "args": [37.3, 1.0], "is": 37.0},
+        {"static": "onDevicePixel", "args": [37.3, 1.5], "is": 37.333333333333336, "near": 1e-12},
+        {"static": "onDevicePixel", "args": [37.3, null], "is": 37.3}
+      ]
+    }
+  ]
+}

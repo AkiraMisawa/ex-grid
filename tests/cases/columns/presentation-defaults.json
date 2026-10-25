@@ -1,0 +1,73 @@
+{
+  "about": "What a Wrapper hands down to every grid inside it (ADR-0030), on its own; how a grid resolves with it is in grid-metrics.json. From tests/ExGrid.Tests/GridPresentationDefaultsTests.cs and BoldWidthTests.cs.",
+  "kind": "calls",
+  "subject": "GridPresentationDefaults",
+  "cases": [
+    {
+      "name": "ADR-0016: a bad measurement fails where it was written: a wide width under the digit",
+      "create": {"wideWidthPx": 7.0, "digitWidthPx": 8.0, "narrowWidthPx": 4.0, "fontSizePx": 14},
+      "throws": "outOfRange"
+    },
+    {
+      "name": "ADR-0016: a bad measurement fails where it was written: a narrow width over the digit",
+      "create": {"wideWidthPx": 10.0, "digitWidthPx": 8.0, "narrowWidthPx": 9.0, "fontSizePx": 14},
+      "throws": "outOfRange"
+    },
+    {
+      "name": "ADR-0016: a bad measurement fails where it was written: no digit",
+      "create": {"wideWidthPx": 10.0, "digitWidthPx": 0, "narrowWidthPx": 4.0, "fontSizePx": 14},
+      "throws": "outOfRange"
+    },
+    {
+      "name": "ADR-0016: a bad measurement fails where it was written: no size",
+      "create": {"wideWidthPx": 10.0, "digitWidthPx": 8.0, "narrowWidthPx": 4.0, "fontSizePx": 0},
+      "throws": "outOfRange"
+    },
+    {
+      "name": "ADR-0016: a bad measurement fails where it was written: a size that is not a number",
+      "create": {"wideWidthPx": 10.0, "digitWidthPx": 8.0, "narrowWidthPx": 4.0, "fontSizePx": "NaN"},
+      "throws": "outOfRange"
+    },
+    {
+      "name": "ADR-0016: an other width under its digit fails where it was written",
+      "create": {"wideWidthPx": 10.4, "digitWidthPx": 8.3, "narrowWidthPx": 5.8, "fontSizePx": 14, "boldWideWidthPx": 10.4, "boldDigitWidthPx": 8.34, "boldNarrowWidthPx": 5.25, "otherWidthPx": 8.0, "boldOtherWidthPx": 12.28},
+      "throws": "outOfRange"
+    },
+    {
+      "name": "ADR-0016: a bold other width under its bold digit fails where it was written",
+      "create": {"wideWidthPx": 10.4, "digitWidthPx": 8.3, "narrowWidthPx": 5.8, "fontSizePx": 14, "boldWideWidthPx": 10.4, "boldDigitWidthPx": 8.34, "boldNarrowWidthPx": 5.25, "otherWidthPx": 12.44, "boldOtherWidthPx": 8.0},
+      "throws": "outOfRange"
+    },
+    {
+      "name": "ADR-0016 (2026-09-25): full-width is an em, so a Wrapper's metrics charge it at the resolved font size",
+      "create": {"wideWidthPx": 10.4, "digitWidthPx": 8.0, "narrowWidthPx": 4.95, "fontSizePx": 14},
+      "expect": [
+        {"call": "cellMetricsAt", "args": [14, 8], "then": [{"get": "fullWidthPx", "is": 14}]},
+        {"call": "cellMetricsAt", "args": [12, 4], "then": [{"get": "fullWidthPx", "is": 12}]}
+      ]
+    },
+    {
+      "name": "ADR-0030: a Wrapper that states no bold or other widths gets the allowances over its regular ones",
+      "create": {"wideWidthPx": 10.4, "digitWidthPx": 8.0, "narrowWidthPx": 4.95, "fontSizePx": 14},
+      "expect": [
+        {"get": "boldDigitWidthPx", "is": 8.32, "near": 1e-09},
+        {"get": "otherWidthPx", "is": 16},
+        {"get": "boldOtherWidthPx", "is": 16.64, "near": 1e-09}
+      ]
+    },
+    {
+      "name": "ADR-0030: the Density it carries is optional, and read by the component",
+      "create": {"wideWidthPx": 10.4, "digitWidthPx": 8.0, "narrowWidthPx": 4.95, "fontSizePx": 14},
+      "expect": [
+        {"get": "density", "is": null}
+      ]
+    },
+    {
+      "name": "ADR-0030: the Density it carries is the one given",
+      "create": {"wideWidthPx": 10.4, "digitWidthPx": 8.0, "narrowWidthPx": 4.95, "fontSizePx": 14, "density": "standard"},
+      "expect": [
+        {"get": "density", "is": "standard"}
+      ]
+    }
+  ]
+}

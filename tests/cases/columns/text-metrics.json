@@ -1,0 +1,386 @@
+{
+  "about": "The per-character-class estimate (ADR-0016), its bold widths (ADR-0050 item 15) and the other class and glyph table (ticket 83). From tests/ExGrid.Tests/CellTextMetricsClassTests.cs, BoldWidthTests.cs, OtherClassTests.cs and GlyphWidthTableTests.cs; what needs the resolved Grid Metrics stays there until they are shared.",
+  "kind": "calls",
+  "subject": "CellTextMetrics",
+  "cases": [
+    {
+      "name": "ADR-0016: % and € charge wide, the separators narrow, and the digit class a digit",
+      "create": {"wideWidthPx": 14, "digitWidthPx": 9, "narrowWidthPx": 5, "cellHorizontalPaddingPx": 8},
+      "expect": [
+        {"call": "textWidthPx", "args": ["%"], "is": 14},
+        {"call": "textWidthPx", "args": ["€"], "is": 14},
+        {"call": "textWidthPx", "args": ["."], "is": 5},
+        {"call": "textWidthPx", "args": [","], "is": 5},
+        {"call": "textWidthPx", "args": ["7"], "is": 9},
+        {"call": "textWidthPx", "args": ["$"], "is": 9},
+        {"call": "textWidthPx", "args": ["-"], "is": 9}
+      ]
+    },
+    {
+      "name": "ADR-0016: the estimate is the text charged per class, plus padding both sides",
+      "create": {"wideWidthPx": 14, "digitWidthPx": 9, "narrowWidthPx": 5, "cellHorizontalPaddingPx": 8},
+      "expect": [
+        {"call": "textWidthPx", "args": ["12.5%"], "is": 46},
+        {"call": "estimatePx", "args": ["12.5%"], "is": 62}
+      ]
+    },
+    {
+      "name": "ADR-0016: the two-number form charges everything at the digit, the uniform contract",
+      "create": {"digitWidthPx": 9, "cellHorizontalPaddingPx": 8},
+      "expect": [
+        {"call": "textWidthPx", "args": ["%"], "is": 9},
+        {"call": "textWidthPx", "args": ["."], "is": 9},
+        {"call": "textWidthPx", "args": ["評"], "is": 9},
+        {"call": "estimatePx", "args": ["12.5%"], "is": 61}
+      ]
+    },
+    {
+      "name": "The class widths keep their ordering: a wide width under the digit is refused",
+      "create": {"wideWidthPx": 8, "digitWidthPx": 9, "narrowWidthPx": 5, "cellHorizontalPaddingPx": 8},
+      "throws": "outOfRange"
+    },
+    {
+      "name": "The class widths keep their ordering: a narrow width over the digit is refused",
+      "create": {"wideWidthPx": 14, "digitWidthPx": 9, "narrowWidthPx": 10, "cellHorizontalPaddingPx": 8},
+      "throws": "outOfRange"
+    },
+    {
+      "name": "ADR-0016: a full-width width under the digit is refused",
+      "create": {"wideWidthPx": 14, "digitWidthPx": 9, "narrowWidthPx": 5, "cellHorizontalPaddingPx": 8, "fullWidthPx": 8.5},
+      "throws": "outOfRange"
+    },
+    {
+      "name": "ADR-0016: a full-width width that is not a number is refused",
+      "create": {"wideWidthPx": 14, "digitWidthPx": 9, "narrowWidthPx": 5, "cellHorizontalPaddingPx": 8, "fullWidthPx": "NaN"},
+      "throws": "outOfRange"
+    },
+    {
+      "name": "ADR-0016: a zero digit width is refused by name",
+      "create": {"digitWidthPx": 0, "cellHorizontalPaddingPx": 4},
+      "throws": "outOfRange"
+    },
+    {
+      "name": "ADR-0016: a digit width that is not a number is refused by name",
+      "create": {"digitWidthPx": "NaN", "cellHorizontalPaddingPx": 4},
+      "throws": "outOfRange"
+    },
+    {
+      "name": "ADR-0016: a negative padding is refused by name",
+      "create": {"digitWidthPx": 7, "cellHorizontalPaddingPx": -1},
+      "throws": "outOfRange"
+    },
+    {
+      "name": "ADR-0016 (2026-09-25): − + # measured 11.731px on DejaVu Sans, so they charge wide; the hyphen-minus stays a digit",
+      "create": {"wideWidthPx": 14, "digitWidthPx": 9, "narrowWidthPx": 5, "cellHorizontalPaddingPx": 8},
+      "expect": [
+        {"call": "textWidthPx", "args": ["−"], "is": 14},
+        {"call": "textWidthPx", "args": ["+"], "is": 14},
+        {"call": "textWidthPx", "args": ["#"], "is": 14},
+        {"call": "textWidthPx", "args": ["-"], "is": 9}
+      ]
+    },
+    {
+      "name": "ADR-0016 (2026-09-25): East Asian Width W or F is a fourth class, charged at 1em",
+      "create": {"wideWidthPx": 14, "digitWidthPx": 9, "narrowWidthPx": 5, "cellHorizontalPaddingPx": 8, "fullWidthPx": 16},
+      "expect": [
+        {"call": "textWidthPx", "args": ["評"], "is": 16},
+        {"call": "textWidthPx", "args": ["あ"], "is": 16},
+        {"call": "textWidthPx", "args": ["ア"], "is": 16},
+        {"call": "textWidthPx", "args": ["한"], "is": 16},
+        {"call": "textWidthPx", "args": ["\u3000"], "is": 16},
+        {"call": "textWidthPx", "args": ["１"], "is": 16},
+        {"call": "textWidthPx", "args": ["（"], "is": 16},
+        {"call": "textWidthPx", "args": ["。"], "is": 16}
+      ]
+    },
+    {
+      "name": "ADR-0016 / ticket 83: what is not full-width keeps its class, and a letter or halfwidth katakana is the other class",
+      "create": {"wideWidthPx": 14, "digitWidthPx": 9, "narrowWidthPx": 5, "cellHorizontalPaddingPx": 8, "fullWidthPx": 16},
+      "expect": [
+        {"call": "textWidthPx", "args": ["A"], "is": 18},
+        {"call": "textWidthPx", "args": ["ｱ"], "is": 18},
+        {"call": "textWidthPx", "args": ["7"], "is": 9},
+        {"call": "textWidthPx", "args": ["%"], "is": 14},
+        {"call": "textWidthPx", "args": ["."], "is": 5}
+      ]
+    },
+    {
+      "name": "ADR-0016: a supplementary ideograph is one glyph, charged once, not once per surrogate",
+      "create": {"wideWidthPx": 14, "digitWidthPx": 9, "narrowWidthPx": 5, "cellHorizontalPaddingPx": 8, "fullWidthPx": 16},
+      "expect": [
+        {"call": "textWidthPx", "args": ["𠮷"], "is": 16},
+        {"call": "textWidthPx", "args": ["𠮷1"], "is": 25}
+      ]
+    },
+    {
+      "name": "ADR-0016: \"評価額\" is 42px at 14px in every family measured; charged as digits it was 27",
+      "create": {"wideWidthPx": 14.028, "digitWidthPx": 9.742, "narrowWidthPx": 6.398, "cellHorizontalPaddingPx": 0, "fullWidthPx": 14},
+      "expect": [
+        {"call": "textWidthPx", "args": ["評価額"], "is": 42}
+      ]
+    },
+    {
+      "name": "ADR-0016: the three-class form charges full-width at twice the digit, at least an em",
+      "create": {"wideWidthPx": 14, "digitWidthPx": 9, "narrowWidthPx": 5, "cellHorizontalPaddingPx": 8},
+      "expect": [
+        {"get": "fullWidthPx", "is": 18},
+        {"call": "textWidthPx", "args": ["評"], "is": 18}
+      ]
+    },
+    {
+      "name": "ADR-0050 item 15: the bold metrics put the bold widths in the regular ones' place, and are bold however often asked",
+      "create": {"wideWidthPx": 14, "digitWidthPx": 9, "narrowWidthPx": 5, "fullWidthPx": 14, "cellHorizontalPaddingPx": 4, "boldWideWidthPx": 15, "boldDigitWidthPx": 10, "boldNarrowWidthPx": 6},
+      "expect": [
+        {"get": "bold", "then": [{"call": "textWidthPx", "args": ["%"], "is": 15}, {"call": "textWidthPx", "args": ["7"], "is": 10}, {"call": "textWidthPx", "args": ["."], "is": 6}, {"call": "textWidthPx", "args": ["評"], "is": 14}, {"get": "wideWidthPx", "is": 15}, {"get": "digitWidthPx", "is": 10}, {"get": "narrowWidthPx", "is": 6}, {"get": "fullWidthPx", "is": 14}, {"get": "cellHorizontalPaddingPx", "is": 4}, {"get": "boldWideWidthPx", "is": 15}, {"get": "boldDigitWidthPx", "is": 10}, {"get": "boldNarrowWidthPx", "is": 6}, {"get": "otherWidthPx", "is": 20}, {"get": "boldOtherWidthPx", "is": 20}, {"get": "bold", "then": [{"get": "wideWidthPx", "is": 15}, {"get": "digitWidthPx", "is": 10}, {"get": "narrowWidthPx", "is": 6}, {"get": "fullWidthPx", "is": 14}, {"get": "cellHorizontalPaddingPx", "is": 4}, {"get": "boldWideWidthPx", "is": 15}, {"get": "boldDigitWidthPx", "is": 10}, {"get": "boldNarrowWidthPx", "is": 6}, {"get": "otherWidthPx", "is": 20}, {"get": "boldOtherWidthPx", "is": 20}]}]}
+      ]
+    },
+    {
+      "name": "ADR-0050 item 15: metrics built without bold widths derive them by the allowance, erring early",
+      "create": {"wideWidthPx": 14, "digitWidthPx": 9, "narrowWidthPx": 5, "cellHorizontalPaddingPx": 4, "fullWidthPx": 14},
+      "expect": [
+        {"static": "boldWidthAllowance", "is": 1.04},
+        {"get": "boldWideWidthPx", "is": 14.56, "near": 1e-09},
+        {"get": "boldDigitWidthPx", "is": 9.36, "near": 1e-09},
+        {"get": "boldNarrowWidthPx", "is": 5.2, "near": 1e-09}
+      ]
+    },
+    {
+      "name": "ADR-0050 item 15: the uniform form's bold metrics stay valid although its em is the digit",
+      "create": {"digitWidthPx": 9, "cellHorizontalPaddingPx": 4},
+      "expect": [
+        {"get": "bold", "then": [{"get": "digitWidthPx", "is": 9.36, "near": 1e-09}, {"get": "fullWidthPx", "is": 9.36, "near": 1e-09}]}
+      ]
+    },
+    {
+      "name": "ADR-0050 item 15: a bold wide width under the bold digit is refused",
+      "create": {"wideWidthPx": 14, "digitWidthPx": 9, "narrowWidthPx": 5, "fullWidthPx": 14, "cellHorizontalPaddingPx": 4, "boldWideWidthPx": 9, "boldDigitWidthPx": 10, "boldNarrowWidthPx": 6},
+      "throws": "outOfRange"
+    },
+    {
+      "name": "ADR-0050 item 15: a bold narrow width over the bold digit is refused",
+      "create": {"wideWidthPx": 14, "digitWidthPx": 9, "narrowWidthPx": 5, "fullWidthPx": 14, "cellHorizontalPaddingPx": 4, "boldWideWidthPx": 15, "boldDigitWidthPx": 10, "boldNarrowWidthPx": 11},
+      "throws": "outOfRange"
+    },
+    {
+      "name": "ADR-0050 item 15: a bold digit width that is not positive is refused",
+      "create": {"wideWidthPx": 14, "digitWidthPx": 9, "narrowWidthPx": 5, "fullWidthPx": 14, "cellHorizontalPaddingPx": 4, "boldWideWidthPx": 15, "boldDigitWidthPx": 0, "boldNarrowWidthPx": 0},
+      "throws": "outOfRange"
+    },
+    {
+      "name": "ADR-0050 item 15: a bold digit width that is not a number is refused",
+      "create": {"wideWidthPx": 14, "digitWidthPx": 9, "narrowWidthPx": 5, "fullWidthPx": 14, "cellHorizontalPaddingPx": 4, "boldWideWidthPx": 15, "boldDigitWidthPx": "NaN", "boldNarrowWidthPx": 6},
+      "throws": "outOfRange"
+    },
+    {
+      "name": "ADR-0050 item 15: replacing the bold widths keeps every regular one",
+      "create": {"wideWidthPx": 14, "digitWidthPx": 9, "narrowWidthPx": 5, "fullWidthPx": 14, "cellHorizontalPaddingPx": 4, "boldWideWidthPx": 15, "boldDigitWidthPx": 10, "boldNarrowWidthPx": 6},
+      "expect": [
+        {"call": "withBoldWidths", "args": [16, 11, 7], "then": [{"get": "wideWidthPx", "is": 14}, {"get": "digitWidthPx", "is": 9}, {"get": "boldWideWidthPx", "is": 16}, {"get": "boldDigitWidthPx", "is": 11}, {"get": "boldNarrowWidthPx", "is": 7}]}
+      ]
+    },
+    {
+      "name": "ADR-0016, principle 1: letters and the currency signs wider than a digit charge the other class, at either weight",
+      "create": {"wideWidthPx": 14, "digitWidthPx": 9, "narrowWidthPx": 5, "fullWidthPx": 16, "cellHorizontalPaddingPx": 0, "boldWideWidthPx": 15, "boldDigitWidthPx": 10, "boldNarrowWidthPx": 6, "otherWidthPx": 13, "boldOtherWidthPx": 14},
+      "expect": [
+        {"call": "textWidthPx", "args": ["M"], "is": 13},
+        {"call": "textWidthPx", "args": ["m"], "is": 13},
+        {"call": "textWidthPx", "args": ["W"], "is": 13},
+        {"call": "textWidthPx", "args": ["A"], "is": 13},
+        {"call": "textWidthPx", "args": ["ж"], "is": 13},
+        {"call": "textWidthPx", "args": ["מ"], "is": 13},
+        {"call": "textWidthPx", "args": ["พ"], "is": 13},
+        {"call": "textWidthPx", "args": ["₩"], "is": 13},
+        {"call": "textWidthPx", "args": ["₪"], "is": 13},
+        {"call": "textWidthPx", "args": ["₦"], "is": 13},
+        {"call": "textWidthPx", "args": ["₱"], "is": 13},
+        {"call": "textWidthPx", "args": ["₽"], "is": 13},
+        {"call": "textWidthPx", "args": ["₼"], "is": 13},
+        {"call": "textWidthPx", "args": ["₴"], "is": 13},
+        {"call": "textWidthPx", "args": ["¤"], "is": 13},
+        {"call": "textWidthPx", "args": ["฿"], "is": 13},
+        {"call": "textWidthPx", "args": ["‰"], "is": 13},
+        {"call": "textWidthPx", "args": ["𝐀"], "is": 13},
+        {"get": "bold", "then": [{"call": "textWidthPx", "args": ["M"], "is": 14}, {"call": "textWidthPx", "args": ["m"], "is": 14}, {"call": "textWidthPx", "args": ["W"], "is": 14}, {"call": "textWidthPx", "args": ["A"], "is": 14}, {"call": "textWidthPx", "args": ["ж"], "is": 14}, {"call": "textWidthPx", "args": ["מ"], "is": 14}, {"call": "textWidthPx", "args": ["พ"], "is": 14}, {"call": "textWidthPx", "args": ["₩"], "is": 14}, {"call": "textWidthPx", "args": ["₪"], "is": 14}, {"call": "textWidthPx", "args": ["₦"], "is": 14}, {"call": "textWidthPx", "args": ["₱"], "is": 14}, {"call": "textWidthPx", "args": ["₽"], "is": 14}, {"call": "textWidthPx", "args": ["₼"], "is": 14}, {"call": "textWidthPx", "args": ["₴"], "is": 14}, {"call": "textWidthPx", "args": ["¤"], "is": 14}, {"call": "textWidthPx", "args": ["฿"], "is": 14}, {"call": "textWidthPx", "args": ["‰"], "is": 14}, {"call": "textWidthPx", "args": ["𝐀"], "is": 14}]}
+      ]
+    },
+    {
+      "name": "ADR-0016 / ticket 83: the glyphs measured at a digit's width or under in every face stay in the digit class",
+      "create": {"wideWidthPx": 14, "digitWidthPx": 9, "narrowWidthPx": 5, "fullWidthPx": 16, "cellHorizontalPaddingPx": 0, "boldWideWidthPx": 15, "boldDigitWidthPx": 10, "boldNarrowWidthPx": 6, "otherWidthPx": 13, "boldOtherWidthPx": 14},
+      "expect": [
+        {"call": "textWidthPx", "args": ["7"], "is": 9},
+        {"call": "textWidthPx", "args": ["$"], "is": 9},
+        {"call": "textWidthPx", "args": ["£"], "is": 9},
+        {"call": "textWidthPx", "args": ["¥"], "is": 9},
+        {"call": "textWidthPx", "args": ["₹"], "is": 9},
+        {"call": "textWidthPx", "args": ["₺"], "is": 9},
+        {"call": "textWidthPx", "args": ["₫"], "is": 9},
+        {"call": "textWidthPx", "args": ["E"], "is": 9},
+        {"call": "textWidthPx", "args": ["-"], "is": 9},
+        {"call": "textWidthPx", "args": ["'"], "is": 9},
+        {"call": "textWidthPx", "args": ["’"], "is": 9},
+        {"call": "textWidthPx", "args": ["\u00a0"], "is": 9},
+        {"call": "textWidthPx", "args": ["\u202f"], "is": 9},
+        {"call": "textWidthPx", "args": ["\u200e"], "is": 9},
+        {"get": "bold", "then": [{"call": "textWidthPx", "args": ["7"], "is": 10}, {"call": "textWidthPx", "args": ["$"], "is": 10}, {"call": "textWidthPx", "args": ["£"], "is": 10}, {"call": "textWidthPx", "args": ["¥"], "is": 10}, {"call": "textWidthPx", "args": ["₹"], "is": 10}, {"call": "textWidthPx", "args": ["₺"], "is": 10}, {"call": "textWidthPx", "args": ["₫"], "is": 10}, {"call": "textWidthPx", "args": ["E"], "is": 10}, {"call": "textWidthPx", "args": ["-"], "is": 10}, {"call": "textWidthPx", "args": ["'"], "is": 10}, {"call": "textWidthPx", "args": ["’"], "is": 10}, {"call": "textWidthPx", "args": ["\u00a0"], "is": 10}, {"call": "textWidthPx", "args": ["\u202f"], "is": 10}, {"call": "textWidthPx", "args": ["\u200e"], "is": 10}]}
+      ]
+    },
+    {
+      "name": "ADR-0016 / ticket 83: a supplementary glyph no class names is one character of the other class",
+      "create": {"wideWidthPx": 14, "digitWidthPx": 9, "narrowWidthPx": 5, "fullWidthPx": 16, "cellHorizontalPaddingPx": 0, "boldWideWidthPx": 15, "boldDigitWidthPx": 10, "boldNarrowWidthPx": 6, "otherWidthPx": 13, "boldOtherWidthPx": 14},
+      "expect": [
+        {"call": "textWidthPx", "args": ["𝐀"], "is": 13}
+      ]
+    },
+    {
+      "name": "ADR-0016: a Number value is charged the other class for a letter, and every other class alike",
+      "create": {"wideWidthPx": 14, "digitWidthPx": 9, "narrowWidthPx": 5, "fullWidthPx": 16, "cellHorizontalPaddingPx": 0, "boldWideWidthPx": 15, "boldDigitWidthPx": 10, "boldNarrowWidthPx": 6, "otherWidthPx": 13, "boldOtherWidthPx": 14},
+      "expect": [
+        {"call": "for", "args": ["number"], "then": [{"call": "textWidthPx", "args": ["M"], "is": 13}, {"call": "textWidthPx", "args": ["%"], "is": 14}, {"call": "textWidthPx", "args": ["7"], "is": 9}, {"call": "textWidthPx", "args": ["."], "is": 5}, {"call": "textWidthPx", "args": ["評"], "is": 16}]}
+      ]
+    },
+    {
+      "name": "ADR-0016: a Date value is charged the other class for a letter, and every other class alike",
+      "create": {"wideWidthPx": 14, "digitWidthPx": 9, "narrowWidthPx": 5, "fullWidthPx": 16, "cellHorizontalPaddingPx": 0, "boldWideWidthPx": 15, "boldDigitWidthPx": 10, "boldNarrowWidthPx": 6, "otherWidthPx": 13, "boldOtherWidthPx": 14},
+      "expect": [
+        {"call": "for", "args": ["date"], "then": [{"call": "textWidthPx", "args": ["M"], "is": 13}, {"call": "textWidthPx", "args": ["%"], "is": 14}, {"call": "textWidthPx", "args": ["7"], "is": 9}, {"call": "textWidthPx", "args": ["."], "is": 5}, {"call": "textWidthPx", "args": ["評"], "is": 16}]}
+      ]
+    },
+    {
+      "name": "ADR-0016: a Text value is charged the digit for a letter, and every other class alike",
+      "create": {"wideWidthPx": 14, "digitWidthPx": 9, "narrowWidthPx": 5, "fullWidthPx": 16, "cellHorizontalPaddingPx": 0, "boldWideWidthPx": 15, "boldDigitWidthPx": 10, "boldNarrowWidthPx": 6, "otherWidthPx": 13, "boldOtherWidthPx": 14},
+      "expect": [
+        {"call": "for", "args": ["text"], "then": [{"call": "textWidthPx", "args": ["M"], "is": 9}, {"call": "textWidthPx", "args": ["%"], "is": 14}, {"call": "textWidthPx", "args": ["7"], "is": 9}, {"call": "textWidthPx", "args": ["."], "is": 5}, {"call": "textWidthPx", "args": ["評"], "is": 16}]}
+      ]
+    },
+    {
+      "name": "ADR-0016: a Boolean value is charged the digit for a letter, and every other class alike",
+      "create": {"wideWidthPx": 14, "digitWidthPx": 9, "narrowWidthPx": 5, "fullWidthPx": 16, "cellHorizontalPaddingPx": 0, "boldWideWidthPx": 15, "boldDigitWidthPx": 10, "boldNarrowWidthPx": 6, "otherWidthPx": 13, "boldOtherWidthPx": 14},
+      "expect": [
+        {"call": "for", "args": ["boolean"], "then": [{"call": "textWidthPx", "args": ["M"], "is": 9}, {"call": "textWidthPx", "args": ["%"], "is": 14}, {"call": "textWidthPx", "args": ["7"], "is": 9}, {"call": "textWidthPx", "args": ["."], "is": 5}, {"call": "textWidthPx", "args": ["評"], "is": 16}]}
+      ]
+    },
+    {
+      "name": "ADR-0016 / ADR-0050 item 15: text and bold compose in either order",
+      "create": {"wideWidthPx": 14, "digitWidthPx": 9, "narrowWidthPx": 5, "fullWidthPx": 16, "cellHorizontalPaddingPx": 0, "boldWideWidthPx": 15, "boldDigitWidthPx": 10, "boldNarrowWidthPx": 6, "otherWidthPx": 13, "boldOtherWidthPx": 14},
+      "expect": [
+        {"call": "for", "args": ["text"], "then": [{"get": "bold", "then": [{"call": "textWidthPx", "args": ["M"], "is": 10}, {"get": "wideWidthPx", "is": 15}, {"get": "digitWidthPx", "is": 10}, {"get": "narrowWidthPx", "is": 6}, {"get": "fullWidthPx", "is": 16}, {"get": "cellHorizontalPaddingPx", "is": 0}, {"get": "boldWideWidthPx", "is": 15}, {"get": "boldDigitWidthPx", "is": 10}, {"get": "boldNarrowWidthPx", "is": 6}, {"get": "otherWidthPx", "is": 10}, {"get": "boldOtherWidthPx", "is": 10}]}]},
+        {"get": "bold", "then": [{"call": "for", "args": ["text"], "then": [{"call": "textWidthPx", "args": ["M"], "is": 10}, {"get": "wideWidthPx", "is": 15}, {"get": "digitWidthPx", "is": 10}, {"get": "narrowWidthPx", "is": 6}, {"get": "fullWidthPx", "is": 16}, {"get": "cellHorizontalPaddingPx", "is": 0}, {"get": "boldWideWidthPx", "is": 15}, {"get": "boldDigitWidthPx", "is": 10}, {"get": "boldNarrowWidthPx", "is": 6}, {"get": "otherWidthPx", "is": 10}, {"get": "boldOtherWidthPx", "is": 10}]}]},
+        {"call": "for", "args": ["number"], "then": [{"get": "wideWidthPx", "is": 14}, {"get": "digitWidthPx", "is": 9}, {"get": "narrowWidthPx", "is": 5}, {"get": "fullWidthPx", "is": 16}, {"get": "cellHorizontalPaddingPx", "is": 0}, {"get": "boldWideWidthPx", "is": 15}, {"get": "boldDigitWidthPx", "is": 10}, {"get": "boldNarrowWidthPx", "is": 6}, {"get": "otherWidthPx", "is": 13}, {"get": "boldOtherWidthPx", "is": 14}]}
+      ]
+    },
+    {
+      "name": "ADR-0016 / ticket 83: three-class metrics charge the other class twice the digit, erring early",
+      "create": {"wideWidthPx": 14, "digitWidthPx": 9, "narrowWidthPx": 5, "cellHorizontalPaddingPx": 4},
+      "expect": [
+        {"static": "otherWidthAllowance", "is": 2},
+        {"get": "otherWidthPx", "is": 18}
+      ]
+    },
+    {
+      "name": "ADR-0016 / ticket 83: four-class metrics charge the other class twice the digit",
+      "create": {"wideWidthPx": 14, "digitWidthPx": 9, "narrowWidthPx": 5, "cellHorizontalPaddingPx": 4, "fullWidthPx": 14},
+      "expect": [
+        {"get": "otherWidthPx", "is": 18}
+      ]
+    },
+    {
+      "name": "ADR-0016 / ticket 83: metrics with bold widths charge the other class twice the digit at each weight",
+      "create": {"wideWidthPx": 14, "digitWidthPx": 9, "narrowWidthPx": 5, "fullWidthPx": 14, "cellHorizontalPaddingPx": 4, "boldWideWidthPx": 15, "boldDigitWidthPx": 10, "boldNarrowWidthPx": 6},
+      "expect": [
+        {"get": "otherWidthPx", "is": 18},
+        {"get": "boldOtherWidthPx", "is": 20}
+      ]
+    },
+    {
+      "name": "ADR-0016: the uniform form charges every character, the other class included, at the digit",
+      "create": {"digitWidthPx": 9, "cellHorizontalPaddingPx": 4},
+      "expect": [
+        {"call": "textWidthPx", "args": ["M"], "is": 9},
+        {"get": "bold", "then": [{"call": "textWidthPx", "args": ["M"], "is": 9.36, "near": 1e-09}]}
+      ]
+    },
+    {
+      "name": "ADR-0050 item 15 / ticket 83: replacing the bold widths derives the bold other class again from the new bold digit",
+      "create": {"wideWidthPx": 14, "digitWidthPx": 9, "narrowWidthPx": 5, "fullWidthPx": 16, "cellHorizontalPaddingPx": 0, "boldWideWidthPx": 15, "boldDigitWidthPx": 10, "boldNarrowWidthPx": 6, "otherWidthPx": 13, "boldOtherWidthPx": 14},
+      "expect": [
+        {"call": "withBoldWidths", "args": [16, 11, 7], "then": [{"get": "otherWidthPx", "is": 13}, {"get": "boldOtherWidthPx", "is": 22}]}
+      ]
+    },
+    {
+      "name": "ADR-0016: an other width under its digit is refused",
+      "create": {"wideWidthPx": 14, "digitWidthPx": 9, "narrowWidthPx": 5, "fullWidthPx": 14, "cellHorizontalPaddingPx": 4, "boldWideWidthPx": 15, "boldDigitWidthPx": 10, "boldNarrowWidthPx": 6, "otherWidthPx": 8, "boldOtherWidthPx": 14},
+      "throws": "outOfRange"
+    },
+    {
+      "name": "ADR-0016: a bold other width under its bold digit is refused",
+      "create": {"wideWidthPx": 14, "digitWidthPx": 9, "narrowWidthPx": 5, "fullWidthPx": 14, "cellHorizontalPaddingPx": 4, "boldWideWidthPx": 15, "boldDigitWidthPx": 10, "boldNarrowWidthPx": 6, "otherWidthPx": 13, "boldOtherWidthPx": 9},
+      "throws": "outOfRange"
+    },
+    {
+      "name": "ADR-0016: an other width that is not a number is refused",
+      "create": {"wideWidthPx": 14, "digitWidthPx": 9, "narrowWidthPx": 5, "fullWidthPx": 14, "cellHorizontalPaddingPx": 4, "boldWideWidthPx": 15, "boldDigitWidthPx": 10, "boldNarrowWidthPx": 6, "otherWidthPx": "NaN", "boldOtherWidthPx": 14},
+      "throws": "outOfRange"
+    },
+    {
+      "name": "ADR-0016: a bold other width that is infinite is refused",
+      "create": {"wideWidthPx": 14, "digitWidthPx": 9, "narrowWidthPx": 5, "fullWidthPx": 14, "cellHorizontalPaddingPx": 4, "boldWideWidthPx": 15, "boldDigitWidthPx": 10, "boldNarrowWidthPx": 6, "otherWidthPx": 13, "boldOtherWidthPx": "Infinity"},
+      "throws": "outOfRange"
+    },
+    {
+      "name": "ADR-0016 / ticket 83: a glyph the table holds is charged its own width, at either weight",
+      "create": {"wideWidthPx": 14, "digitWidthPx": 9, "narrowWidthPx": 5, "fullWidthPx": 16, "cellHorizontalPaddingPx": 0, "boldWideWidthPx": 15, "boldDigitWidthPx": 10, "boldNarrowWidthPx": 6, "otherWidthPx": 18, "boldOtherWidthPx": 19},
+      "expect": [
+        {"call": "withGlyphWidths", "args": [{"new": "GlyphWidthTable", "with": {"measuredAtPx": 14, "glyphs": [["M", 13, 14], ["i", 4, 5], ["E", 20, 20], ["₩", 12, 13]]}}, 14], "then": [{"call": "textWidthPx", "args": ["M"], "is": 13}, {"call": "textWidthPx", "args": ["i"], "is": 4}, {"call": "textWidthPx", "args": ["₩"], "is": 12}, {"call": "textWidthPx", "args": ["Mi"], "is": 17}, {"get": "bold", "then": [{"call": "textWidthPx", "args": ["M"], "is": 14}, {"call": "textWidthPx", "args": ["i"], "is": 5}]}]}
+      ]
+    },
+    {
+      "name": "ADR-0016, principle 1: a glyph the table lacks is the other class, the widest measured",
+      "create": {"wideWidthPx": 14, "digitWidthPx": 9, "narrowWidthPx": 5, "fullWidthPx": 16, "cellHorizontalPaddingPx": 0, "boldWideWidthPx": 15, "boldDigitWidthPx": 10, "boldNarrowWidthPx": 6, "otherWidthPx": 18, "boldOtherWidthPx": 19},
+      "expect": [
+        {"call": "withGlyphWidths", "args": [{"new": "GlyphWidthTable", "with": {"measuredAtPx": 14, "glyphs": [["M", 13, 14], ["i", 4, 5], ["E", 20, 20], ["₩", 12, 13]]}}, 14], "then": [{"call": "textWidthPx", "args": ["W"], "is": 18}, {"call": "textWidthPx", "args": ["ก"], "is": 18}, {"get": "bold", "then": [{"call": "textWidthPx", "args": ["W"], "is": 19}]}]}
+      ]
+    },
+    {
+      "name": "ADR-0016: a class outranks the table, so a digit-class glyph keeps its class",
+      "create": {"wideWidthPx": 14, "digitWidthPx": 9, "narrowWidthPx": 5, "fullWidthPx": 16, "cellHorizontalPaddingPx": 0, "boldWideWidthPx": 15, "boldDigitWidthPx": 10, "boldNarrowWidthPx": 6, "otherWidthPx": 18, "boldOtherWidthPx": 19},
+      "expect": [
+        {"call": "withGlyphWidths", "args": [{"new": "GlyphWidthTable", "with": {"measuredAtPx": 14, "glyphs": [["M", 13, 14], ["i", 4, 5], ["E", 20, 20], ["₩", 12, 13]]}}, 14], "then": [{"call": "textWidthPx", "args": ["E"], "is": 9}, {"call": "textWidthPx", "args": ["評"], "is": 16}, {"call": "textWidthPx", "args": ["%"], "is": 14}]}
+      ]
+    },
+    {
+      "name": "ADR-0016 / ADR-0028: the table is scaled from the size it was measured at to the metrics' own",
+      "create": {"wideWidthPx": 14, "digitWidthPx": 9, "narrowWidthPx": 5, "fullWidthPx": 16, "cellHorizontalPaddingPx": 0, "boldWideWidthPx": 15, "boldDigitWidthPx": 10, "boldNarrowWidthPx": 6, "otherWidthPx": 18, "boldOtherWidthPx": 19},
+      "expect": [
+        {"call": "withGlyphWidths", "args": [{"new": "GlyphWidthTable", "with": {"measuredAtPx": 14, "glyphs": [["M", 13, 14], ["i", 4, 5], ["E", 20, 20], ["₩", 12, 13]]}}, 12], "then": [{"call": "textWidthPx", "args": ["M"], "is": 11.142857142857142, "near": 1e-09}, {"get": "bold", "then": [{"call": "textWidthPx", "args": ["M"], "is": 12.0, "near": 1e-09}]}]}
+      ]
+    },
+    {
+      "name": "ADR-0016: text and labels charge letters at the digit with or without bold, with no table",
+      "create": {"wideWidthPx": 14, "digitWidthPx": 9, "narrowWidthPx": 5, "fullWidthPx": 16, "cellHorizontalPaddingPx": 0, "boldWideWidthPx": 15, "boldDigitWidthPx": 10, "boldNarrowWidthPx": 6, "otherWidthPx": 18, "boldOtherWidthPx": 19},
+      "expect": [
+        {"call": "withGlyphWidths", "args": [{"new": "GlyphWidthTable", "with": {"measuredAtPx": 14, "glyphs": [["M", 13, 14], ["i", 4, 5], ["E", 20, 20], ["₩", 12, 13]]}}, 14], "then": [{"call": "for", "args": ["text"], "then": [{"call": "textWidthPx", "args": ["M"], "is": 9}, {"get": "glyphWidths", "is": null}, {"get": "bold", "then": [{"call": "textWidthPx", "args": ["M"], "is": 10}]}]}, {"get": "bold", "then": [{"call": "for", "args": ["text"], "then": [{"call": "textWidthPx", "args": ["M"], "is": 10}, {"get": "glyphWidths", "is": null}]}]}, {"call": "for", "args": ["date"], "then": [{"call": "textWidthPx", "args": ["M"], "is": 13}, {"get": "glyphWidths", "then": [{"get": "measuredAtPx", "is": 14}]}]}, {"call": "for", "args": ["boolean"], "then": [{"get": "glyphWidths", "is": null}]}]}
+      ]
+    },
+    {
+      "name": "ADR-0016: no table takes the table away",
+      "create": {"wideWidthPx": 14, "digitWidthPx": 9, "narrowWidthPx": 5, "fullWidthPx": 16, "cellHorizontalPaddingPx": 0, "boldWideWidthPx": 15, "boldDigitWidthPx": 10, "boldNarrowWidthPx": 6, "otherWidthPx": 18, "boldOtherWidthPx": 19},
+      "expect": [
+        {"call": "withGlyphWidths", "args": [{"new": "GlyphWidthTable", "with": {"measuredAtPx": 14, "glyphs": [["M", 13, 14], ["i", 4, 5], ["E", 20, 20], ["₩", 12, 13]]}}, 14], "then": [{"call": "withGlyphWidths", "args": [null, 14], "then": [{"get": "glyphWidths", "is": null}, {"call": "textWidthPx", "args": ["M"], "is": 18}]}]}
+      ]
+    },
+    {
+      "name": "ADR-0016: a table at a size that is not positive is refused",
+      "create": {"wideWidthPx": 14, "digitWidthPx": 9, "narrowWidthPx": 5, "fullWidthPx": 16, "cellHorizontalPaddingPx": 0, "boldWideWidthPx": 15, "boldDigitWidthPx": 10, "boldNarrowWidthPx": 6, "otherWidthPx": 18, "boldOtherWidthPx": 19},
+      "expect": [
+        {"call": "withGlyphWidths", "args": [{"new": "GlyphWidthTable", "with": {"measuredAtPx": 14, "glyphs": [["M", 13, 14], ["i", 4, 5], ["E", 20, 20], ["₩", 12, 13]]}}, 0], "throws": "outOfRange"}
+      ]
+    },
+    {
+      "name": "ADR-0016: a supplementary glyph is one glyph in a table",
+      "create": {"wideWidthPx": 14, "digitWidthPx": 9, "narrowWidthPx": 5, "fullWidthPx": 16, "cellHorizontalPaddingPx": 0, "boldWideWidthPx": 15, "boldDigitWidthPx": 10, "boldNarrowWidthPx": 6, "otherWidthPx": 18, "boldOtherWidthPx": 19},
+      "expect": [
+        {"call": "withGlyphWidths", "args": [{"new": "GlyphWidthTable", "with": {"measuredAtPx": 14, "glyphs": [["𝐀", 11, 12]]}}, 14], "then": [{"call": "textWidthPx", "args": ["𝐀"], "is": 11}, {"get": "glyphWidths", "then": [{"get": "count", "is": 1}]}]}
+      ]
+    }
+  ]
+}

@@ -1,0 +1,166 @@
+{
+  "about": "What a scrollbar takes out of the Viewport, and what it must not take. From tests/ExGrid.Tests/ViewportBoxTests.cs.",
+  "kind": "calls",
+  "subject": "ViewportBox",
+  "cases": [
+    {
+      "name": "ADR-0013: with overlay scrollbars the geometry is exactly the declared size, bit for bit",
+      "create": {"outerWidthPx": 800, "outerHeightPx": 600, "gutterWidthPx": 0, "gutterHeightPx": 0},
+      "expect": [
+        {"get": "visibleWidthPx", "is": 800},
+        {"get": "visibleHeightPx", "is": 600}
+      ]
+    },
+    {
+      "name": "ADR-0013: a box declared without a gutter is the box with a gutter of 0",
+      "via": "declared",
+      "create": {"outerWidthPx": 800, "outerHeightPx": 600},
+      "expect": [
+        {"get": "gutterWidthPx", "is": 0},
+        {"get": "gutterHeightPx", "is": 0},
+        {"get": "visibleWidthPx", "is": 800},
+        {"get": "visibleHeightPx", "is": 600}
+      ]
+    },
+    {
+      "name": "ADR-0013: a fractional declared size survives a zero gutter unrounded",
+      "via": "declared",
+      "create": {"outerWidthPx": 823.4375, "outerHeightPx": 617.8125},
+      "expect": [
+        {"get": "visibleWidthPx", "is": 823.4375},
+        {"get": "visibleHeightPx", "is": 617.8125}
+      ]
+    },
+    {
+      "name": "ADR-0013: a classic scrollbar takes its strip out of the declared box, and the declared size stays",
+      "create": {"outerWidthPx": 900, "outerHeightPx": 600, "gutterWidthPx": 15, "gutterHeightPx": 15},
+      "expect": [
+        {"get": "visibleWidthPx", "is": 885},
+        {"get": "visibleHeightPx", "is": 585},
+        {"get": "outerWidthPx", "is": 900},
+        {"get": "outerHeightPx", "is": 600}
+      ]
+    },
+    {
+      "name": "ADR-0013: each axis loses only its own bar",
+      "create": {"outerWidthPx": 900, "outerHeightPx": 600, "gutterWidthPx": 15, "gutterHeightPx": 0},
+      "expect": [
+        {"get": "visibleWidthPx", "is": 885},
+        {"get": "visibleHeightPx", "is": 600}
+      ]
+    },
+    {
+      "name": "ADR-0021: an observation replaces the gutter and leaves the declared size; no bar again restores the box exactly",
+      "via": "declared",
+      "create": {"outerWidthPx": 900, "outerHeightPx": 600},
+      "expect": [
+        {"call": "withGutter", "args": [15, 15], "then": [{"get": "outerWidthPx", "is": 900}, {"get": "outerHeightPx", "is": 600}, {"get": "visibleWidthPx", "is": 885}, {"call": "withGutter", "args": [0, 0], "then": [{"get": "outerWidthPx", "is": 900}, {"get": "outerHeightPx", "is": 600}, {"get": "gutterWidthPx", "is": 0}, {"get": "gutterHeightPx", "is": 0}]}]}
+      ]
+    },
+    {
+      "name": "ADR-0013: a Viewport is a finite, positive number of pixels: 0 \u00d7 600 is refused",
+      "create": {"outerWidthPx": 0, "outerHeightPx": 600, "gutterWidthPx": 0, "gutterHeightPx": 0},
+      "throws": "outOfRange",
+      "saying": "The Viewport is a finite, positive number of pixels"
+    },
+    {
+      "name": "ADR-0013: a Viewport is a finite, positive number of pixels: -1 \u00d7 600 is refused",
+      "create": {"outerWidthPx": -1, "outerHeightPx": 600, "gutterWidthPx": 0, "gutterHeightPx": 0},
+      "throws": "outOfRange",
+      "saying": "The Viewport is a finite, positive number of pixels"
+    },
+    {
+      "name": "ADR-0013: a Viewport is a finite, positive number of pixels: NaN \u00d7 600 is refused",
+      "create": {"outerWidthPx": "NaN", "outerHeightPx": 600, "gutterWidthPx": 0, "gutterHeightPx": 0},
+      "throws": "outOfRange",
+      "saying": "The Viewport is a finite, positive number of pixels"
+    },
+    {
+      "name": "ADR-0013: a Viewport is a finite, positive number of pixels: Infinity \u00d7 600 is refused",
+      "create": {"outerWidthPx": "Infinity", "outerHeightPx": 600, "gutterWidthPx": 0, "gutterHeightPx": 0},
+      "throws": "outOfRange",
+      "saying": "The Viewport is a finite, positive number of pixels"
+    },
+    {
+      "name": "ADR-0013: a Viewport is a finite, positive number of pixels: 800 \u00d7 0 is refused",
+      "create": {"outerWidthPx": 800, "outerHeightPx": 0, "gutterWidthPx": 0, "gutterHeightPx": 0},
+      "throws": "outOfRange",
+      "saying": "The Viewport is a finite, positive number of pixels"
+    },
+    {
+      "name": "ADR-0013: a Viewport is a finite, positive number of pixels: 800 \u00d7 -1 is refused",
+      "create": {"outerWidthPx": 800, "outerHeightPx": -1, "gutterWidthPx": 0, "gutterHeightPx": 0},
+      "throws": "outOfRange",
+      "saying": "The Viewport is a finite, positive number of pixels"
+    },
+    {
+      "name": "ADR-0013: a Viewport is a finite, positive number of pixels: 800 \u00d7 NaN is refused",
+      "create": {"outerWidthPx": 800, "outerHeightPx": "NaN", "gutterWidthPx": 0, "gutterHeightPx": 0},
+      "throws": "outOfRange",
+      "saying": "The Viewport is a finite, positive number of pixels"
+    },
+    {
+      "name": "ADR-0013: a Viewport is a finite, positive number of pixels: 800 \u00d7 Infinity is refused",
+      "create": {"outerWidthPx": 800, "outerHeightPx": "Infinity", "gutterWidthPx": 0, "gutterHeightPx": 0},
+      "throws": "outOfRange",
+      "saying": "The Viewport is a finite, positive number of pixels"
+    },
+    {
+      "name": "ADR-0013: a scrollbar takes a strip or nothing: a gutter of -1 \u00d7 0 is refused",
+      "create": {"outerWidthPx": 800, "outerHeightPx": 600, "gutterWidthPx": -1, "gutterHeightPx": 0},
+      "throws": "outOfRange",
+      "saying": "A Scrollbar Gutter is a finite, non-negative number of pixels"
+    },
+    {
+      "name": "ADR-0013: a scrollbar takes a strip or nothing: a gutter of 0 \u00d7 -1 is refused",
+      "create": {"outerWidthPx": 800, "outerHeightPx": 600, "gutterWidthPx": 0, "gutterHeightPx": -1},
+      "throws": "outOfRange",
+      "saying": "A Scrollbar Gutter is a finite, non-negative number of pixels"
+    },
+    {
+      "name": "ADR-0013: a scrollbar takes a strip or nothing: a gutter of NaN \u00d7 0 is refused",
+      "create": {"outerWidthPx": 800, "outerHeightPx": 600, "gutterWidthPx": "NaN", "gutterHeightPx": 0},
+      "throws": "outOfRange",
+      "saying": "A Scrollbar Gutter is a finite, non-negative number of pixels"
+    },
+    {
+      "name": "ADR-0013: a scrollbar takes a strip or nothing: a gutter of 0 \u00d7 NaN is refused",
+      "create": {"outerWidthPx": 800, "outerHeightPx": 600, "gutterWidthPx": 0, "gutterHeightPx": "NaN"},
+      "throws": "outOfRange",
+      "saying": "A Scrollbar Gutter is a finite, non-negative number of pixels"
+    },
+    {
+      "name": "ADR-0013: a scrollbar takes a strip or nothing: a gutter of Infinity \u00d7 0 is refused",
+      "create": {"outerWidthPx": 800, "outerHeightPx": 600, "gutterWidthPx": "Infinity", "gutterHeightPx": 0},
+      "throws": "outOfRange",
+      "saying": "A Scrollbar Gutter is a finite, non-negative number of pixels"
+    },
+    {
+      "name": "ADR-0013: a scrollbar takes a strip or nothing: a gutter of 0 \u00d7 Infinity is refused",
+      "create": {"outerWidthPx": 800, "outerHeightPx": 600, "gutterWidthPx": 0, "gutterHeightPx": "Infinity"},
+      "throws": "outOfRange",
+      "saying": "A Scrollbar Gutter is a finite, non-negative number of pixels"
+    },
+    {
+      "name": "ADR-0013: a vertical scrollbar that swallows the width is refused by name",
+      "create": {"outerWidthPx": 12, "outerHeightPx": 600, "gutterWidthPx": 15, "gutterHeightPx": 0},
+      "throws": "outOfRange",
+      "saying": "The vertical scrollbar takes 15px out of a Viewport only 12px wide"
+    },
+    {
+      "name": "ADR-0013: a horizontal scrollbar that swallows the height is refused by name",
+      "create": {"outerWidthPx": 800, "outerHeightPx": 15, "gutterWidthPx": 0, "gutterHeightPx": 15},
+      "throws": "outOfRange",
+      "saying": "The horizontal scrollbar takes 15px out of a Viewport only 15px tall"
+    },
+    {
+      "name": "ADR-0028: one axis alone is checked and subtracted, for a grid whose other axis stretches",
+      "expect": [
+        {"static": "visibleWidthOf", "args": [900, 15], "is": 885},
+        {"static": "visibleHeightOf", "args": [600, 15], "is": 585},
+        {"static": "visibleWidthOf", "args": [12, 15], "throws": "outOfRange", "saying": "The vertical scrollbar takes 15px"},
+        {"static": "visibleHeightOf", "args": [0, 0], "throws": "outOfRange"}
+      ]
+    }
+  ]
+}

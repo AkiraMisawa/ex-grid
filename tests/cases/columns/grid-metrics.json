@@ -1,0 +1,200 @@
+{
+  "about": "The single resolved geometry of an instance (ADR-0028): the presets, per-value precedence, a Wrapper's defaults (ADR-0030) and the widths they give the estimate (ADR-0016). From tests/ExGrid.Tests/GridMetricsTests.cs, GridPresentationDefaultsTests.cs, BoldWidthTests.cs, GlyphWidthTableTests.cs and OtherClassTests.cs.",
+  "kind": "calls",
+  "subject": "GridMetrics",
+  "cases": [
+    {
+      "name": "ADR-0028: Compact is the default and is bit for bit the numbers an untouched grid always had",
+      "expect": [
+        {"static": "resolve", "args": {"density": "compact"}, "then": [{"get": "rowHeightPx", "is": 28}, {"get": "headerHeightPx", "is": 28}, {"get": "fontSizePx", "is": 14}, {"get": "digitWidthPx", "is": 9.75}, {"get": "cellPaddingXPx", "is": 8}, {"get": "actionButtonChromePx", "is": 18}, {"get": "fillHandleSizePx", "is": 8}]}
+      ]
+    },
+    {
+      "name": "ADR-0028: Comfortable resolves whole: a complete, self-consistent set",
+      "expect": [
+        {"static": "resolve", "args": {"density": "comfortable"}, "then": [{"get": "rowHeightPx", "is": 40}, {"get": "headerHeightPx", "is": 40}, {"get": "fontSizePx", "is": 14}, {"get": "digitWidthPx", "is": 9.75}, {"get": "cellPaddingXPx", "is": 12}]}
+      ]
+    },
+    {
+      "name": "ADR-0028: Standard resolves whole: a complete, self-consistent set",
+      "expect": [
+        {"static": "resolve", "args": {"density": "standard"}, "then": [{"get": "rowHeightPx", "is": 32}, {"get": "headerHeightPx", "is": 32}, {"get": "fontSizePx", "is": 14}, {"get": "digitWidthPx", "is": 9.75}, {"get": "cellPaddingXPx", "is": 8}]}
+      ]
+    },
+    {
+      "name": "ADR-0028: Compact resolves whole: a complete, self-consistent set",
+      "expect": [
+        {"static": "resolve", "args": {"density": "compact"}, "then": [{"get": "rowHeightPx", "is": 28}, {"get": "headerHeightPx", "is": 28}, {"get": "fontSizePx", "is": 14}, {"get": "digitWidthPx", "is": 9.75}, {"get": "cellPaddingXPx", "is": 8}]}
+      ]
+    },
+    {
+      "name": "ADR-0028: Excel resolves whole: a complete, self-consistent set",
+      "expect": [
+        {"static": "resolve", "args": {"density": "excel"}, "then": [{"get": "rowHeightPx", "is": 20}, {"get": "headerHeightPx", "is": 20}, {"get": "fontSizePx", "is": 12}, {"get": "digitWidthPx", "is": 8.36}, {"get": "cellPaddingXPx", "is": 4}]}
+      ]
+    },
+    {
+      "name": "ADR-0028: an explicit value beats the preset per value: a 22px row with Excel's font, padding and digit",
+      "expect": [
+        {"static": "resolve", "args": {"density": "excel", "rowHeightPx": 22}, "then": [{"get": "rowHeightPx", "is": 22}, {"get": "fontSizePx", "is": 12}, {"get": "digitWidthPx", "is": 8.36}, {"get": "cellPaddingXPx", "is": 4}]}
+      ]
+    },
+    {
+      "name": "ADR-0028: an explicit row height carries the header unless the header is set itself",
+      "expect": [
+        {"static": "resolve", "args": {"density": "compact", "rowHeightPx": 22}, "then": [{"get": "headerHeightPx", "is": 22}, {"get": "formulaBarHeightPx", "is": 22}]},
+        {"static": "resolve", "args": {"density": "compact", "rowHeightPx": 22, "headerHeightPx": 36}, "then": [{"get": "headerHeightPx", "is": 36}]},
+        {"static": "resolve", "args": {"density": "compact", "rowHeightPx": 22, "headerHeightPx": 34}, "then": [{"get": "formulaBarHeightPx", "is": 34}]},
+        {"static": "resolve", "args": {"density": "excel", "headerHeightPx": 40}, "then": [{"get": "headerHeightPx", "is": 40}]},
+        {"static": "resolve", "args": {"density": "compact"}, "then": [{"get": "formulaBarHeightPx", "is": 28}]}
+      ]
+    },
+    {
+      "name": "ADR-0028: Cell Metrics stay the explicit override for the widths; the rest stays the preset's",
+      "expect": [
+        {"static": "resolve", "args": {"density": "excel", "cellMetrics": {"new": "CellTextMetrics", "with": {"digitWidthPx": 11, "cellHorizontalPaddingPx": 10}}}, "then": [{"get": "digitWidthPx", "is": 11}, {"get": "cellPaddingXPx", "is": 10}, {"get": "fontSizePx", "is": 12}]}
+      ]
+    },
+    {
+      "name": "ADR-0028: the bound a density menu greys out with: 1,000,000 rows fit at 28px and not at 40px",
+      "expect": [
+        {"static": "largestRowHeightFor", "args": [1000000, 28], "is": 33.5544},
+        {"static": "largestRowHeightFor", "args": [1000000, 28], "atLeast": 28, "atMost": 40}
+      ]
+    },
+    {
+      "name": "A height that is not positive is refused at resolution, naming the value",
+      "expect": [
+        {"static": "resolve", "args": {"density": "compact", "rowHeightPx": 0}, "throws": "outOfRange"},
+        {"static": "resolve", "args": {"density": "compact", "headerHeightPx": -1}, "throws": "outOfRange"},
+        {"static": "resolve", "args": {"density": "compact", "rowHeightPx": "NaN"}, "throws": "outOfRange"}
+      ]
+    },
+    {
+      "name": "ADR-0016 / ADR-0050 item 15 (ticket 83): Compact's widths are the widest measured for each class on any platform, at each weight",
+      "expect": [
+        {"static": "resolve", "args": {"density": "compact"}, "then": [{"get": "cellMetrics", "then": [{"get": "wideWidthPx", "is": 14.04}, {"get": "digitWidthPx", "is": 9.75}, {"get": "narrowWidthPx", "is": 6.41}, {"get": "fullWidthPx", "is": 14}, {"get": "otherWidthPx", "is": 15.46}, {"get": "boldWideWidthPx", "is": 14.36}, {"get": "boldDigitWidthPx", "is": 9.75}, {"get": "boldNarrowWidthPx", "is": 6.41}, {"get": "boldOtherWidthPx", "is": 15.46}, {"get": "glyphWidths", "then": [{"get": "measuredAtPx", "is": 14}]}]}]}
+      ]
+    },
+    {
+      "name": "ADR-0016 / ADR-0050 item 15 (ticket 83): Standard's widths are the widest measured for each class on any platform, at each weight",
+      "expect": [
+        {"static": "resolve", "args": {"density": "standard"}, "then": [{"get": "cellMetrics", "then": [{"get": "wideWidthPx", "is": 14.04}, {"get": "digitWidthPx", "is": 9.75}, {"get": "narrowWidthPx", "is": 6.41}, {"get": "fullWidthPx", "is": 14}, {"get": "otherWidthPx", "is": 15.46}, {"get": "boldWideWidthPx", "is": 14.36}, {"get": "boldDigitWidthPx", "is": 9.75}, {"get": "boldNarrowWidthPx", "is": 6.41}, {"get": "boldOtherWidthPx", "is": 15.46}, {"get": "glyphWidths", "then": [{"get": "measuredAtPx", "is": 14}]}]}]}
+      ]
+    },
+    {
+      "name": "ADR-0016 / ADR-0050 item 15 (ticket 83): Comfortable's widths are the widest measured for each class on any platform, at each weight",
+      "expect": [
+        {"static": "resolve", "args": {"density": "comfortable"}, "then": [{"get": "cellMetrics", "then": [{"get": "wideWidthPx", "is": 14.04}, {"get": "digitWidthPx", "is": 9.75}, {"get": "narrowWidthPx", "is": 6.41}, {"get": "fullWidthPx", "is": 14}, {"get": "otherWidthPx", "is": 15.46}, {"get": "boldWideWidthPx", "is": 14.36}, {"get": "boldDigitWidthPx", "is": 9.75}, {"get": "boldNarrowWidthPx", "is": 6.41}, {"get": "boldOtherWidthPx", "is": 15.46}, {"get": "glyphWidths", "then": [{"get": "measuredAtPx", "is": 14}]}]}]}
+      ]
+    },
+    {
+      "name": "ADR-0016 / ADR-0050 item 15 (ticket 83): Excel's widths are the widest measured for each class on any platform, at each weight",
+      "expect": [
+        {"static": "resolve", "args": {"density": "excel"}, "then": [{"get": "cellMetrics", "then": [{"get": "wideWidthPx", "is": 12.04}, {"get": "digitWidthPx", "is": 8.36}, {"get": "narrowWidthPx", "is": 5.49}, {"get": "fullWidthPx", "is": 12}, {"get": "otherWidthPx", "is": 13.26}, {"get": "boldWideWidthPx", "is": 12.44}, {"get": "boldDigitWidthPx", "is": 8.36}, {"get": "boldNarrowWidthPx", "is": 5.49}, {"get": "boldOtherWidthPx", "is": 13.26}, {"get": "glyphWidths", "then": [{"get": "measuredAtPx", "is": 12}]}]}]}
+      ]
+    },
+    {
+      "name": "§21.7a (ticket 83): the default bold widths cover system-ui on macOS and DejaVu Sans Bold",
+      "expect": [
+        {"static": "resolve", "args": {"density": "compact"}, "then": [{"get": "cellMetrics", "then": [{"get": "boldWideWidthPx", "atLeast": 14.359}, {"get": "boldDigitWidthPx", "atLeast": 9.75}, {"get": "boldNarrowWidthPx", "atLeast": 6.406}, {"get": "boldOtherWidthPx", "atLeast": 15.453}, {"call": "textWidthPx", "args": ["123,456,789,012.50"], "atLeast": 157.66}, {"get": "bold", "then": [{"call": "textWidthPx", "args": ["123,456,789,012.50"], "atLeast": 157.66}]}]}]}
+      ]
+    },
+    {
+      "name": "ADR-0016 (2026-09-25): a header is its label as text, one em of slack, the menu band and the sort room",
+      "expect": [
+        {"static": "resolve", "args": {"density": "compact"}, "then": [{"get": "cellMetrics", "then": [{"call": "for", "args": ["text"], "then": [{"call": "estimatePx", "args": ["Amount"], "is": 74.5, "near": 1e-09}]}]}, {"call": "headerRequiredPx", "args": {"label": "Amount", "menuButton": false, "sortable": false}, "is": 88.5, "near": 1e-09}, {"call": "headerRequiredPx", "args": {"label": "Amount", "menuButton": true, "sortable": false}, "is": 110.5, "near": 1e-09}, {"get": "menuButtonBandPx", "is": 22}, {"get": "sortMarkWidthPx", "is": 20}, {"call": "headerRequiredPx", "args": {"label": "Amount", "menuButton": false, "sortable": true}, "is": 108.5, "near": 1e-09}]}
+      ]
+    },
+    {
+      "name": "ADR-0016: DejaVu Sans Bold paints \"Amount\" at 61.7px, \"MARKET VALUE\" at 120.5px and \"評価額\" at 42px; none is cut",
+      "expect": [
+        {"static": "resolve", "args": {"density": "compact"}, "then": [{"call": "headerRequiredPx", "args": {"label": "Amount", "menuButton": false, "sortable": false}, "atLeast": 77.7}, {"call": "headerRequiredPx", "args": {"label": "MARKET VALUE", "menuButton": false, "sortable": false}, "atLeast": 136.5}, {"call": "headerRequiredPx", "args": {"label": "評価額", "menuButton": false, "sortable": false}, "atLeast": 58}]}
+      ]
+    },
+    {
+      "name": "ADR-0051: the Name Box is XFD1048576 estimated as text, with a cell's padding",
+      "expect": [
+        {"static": "resolve", "args": {"density": "compact"}, "then": [{"get": "nameBoxWidthPx", "is": 113.5, "near": 1e-09}]}
+      ]
+    },
+    {
+      "name": "ADR-0050: the fill handle is a little under a third of a row, a half going to the even pixel as the C# core rounds it",
+      "expect": [
+        {"static": "resolve", "args": {"density": "compact", "rowHeightPx": 35}, "then": [{"get": "fillHandleSizePx", "is": 10}]},
+        {"static": "resolve", "args": {"density": "compact", "rowHeightPx": 45}, "then": [{"get": "fillHandleSizePx", "is": 14}]},
+        {"static": "resolve", "args": {"density": "compact", "rowHeightPx": 55}, "then": [{"get": "fillHandleSizePx", "is": 16}]},
+        {"static": "resolve", "args": {"density": "compact", "rowHeightPx": 10}, "then": [{"get": "fillHandleSizePx", "is": 5}]}
+      ]
+    },
+    {
+      "name": "ADR-0016: a full-width character is an em, so explicit metrics are charged at least the font size for it",
+      "expect": [
+        {"static": "resolve", "args": {"density": "compact", "cellMetrics": {"new": "CellTextMetrics", "with": {"digitWidthPx": 9, "cellHorizontalPaddingPx": 8}}}, "then": [{"get": "cellMetrics", "then": [{"get": "fullWidthPx", "is": 14}, {"get": "digitWidthPx", "is": 9}]}]},
+        {"static": "resolve", "args": {"density": "compact", "cellMetrics": {"new": "CellTextMetrics", "with": {"wideWidthPx": 20, "digitWidthPx": 12, "narrowWidthPx": 6, "fullWidthPx": 30, "cellHorizontalPaddingPx": 8}}}, "then": [{"get": "cellMetrics", "then": [{"get": "fullWidthPx", "is": 30}]}]}
+      ]
+    },
+    {
+      "name": "ADR-0028: a Consumer's explicit metrics are taken as given, with no table of the core's",
+      "expect": [
+        {"static": "resolve", "args": {"density": "compact", "cellMetrics": {"new": "CellTextMetrics", "with": {"wideWidthPx": 14, "digitWidthPx": 9, "narrowWidthPx": 5, "cellHorizontalPaddingPx": 4}}}, "then": [{"get": "cellMetrics", "then": [{"get": "glyphWidths", "is": null}, {"call": "textWidthPx", "args": ["M"], "is": 18}]}]}
+      ]
+    },
+    {
+      "name": "ADR-0016 / ticket 83: Compact charges each of the 438 glyphs its default table holds its own width, regular and bold, as the other core does",
+      "expect": [
+        {"static": "resolve", "args": {"density": "compact"}, "then": [{"get": "cellMetrics", "then": [{"call": "textWidthPx", "args": ["ABCDFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz¢¤ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïðñòóôõöøùúûüýþÿĀāĂăĄąĆćĈĉĊċČčĎďĐđĒēĔĕĖėĘęĚěĜĝĞğĠġĢģĤĥĦħĨĩĪīĬĭĮįİıĲĳĴĵĶķĸĹĺĻļĽľĿŀŁłŃńŅņŇňŉŊŋŌōŎŏŐőŒœŔŕŖŗŘřŚśŜŝŞşŠšŢţŤťŦŧŨũŪūŬŭŮůŰűŲųŴŵŶŷŸŹźŻżŽžſƒΆΈΉΊΌΎΏΐΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩΪΫάέήίΰαβγδεζηθικλμνξοπρςστυφχψωϊϋόύώЀЁЂЃЄЅІЇЈЉЊЋЌЍЎЏАБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯабвгдежзийклмнопрстуфхцчшщъыьэюяѐёђѓєѕіїјљњћќѝўџאבגדוטילמנספץצקר฿₡₦₩₪₭₮₱₲₴₵₸₽"], "is": 4358.790000000001, "near": 1e-09}, {"get": "bold", "then": [{"call": "textWidthPx", "args": ["ABCDFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz¢¤ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïðñòóôõöøùúûüýþÿĀāĂăĄąĆćĈĉĊċČčĎďĐđĒēĔĕĖėĘęĚěĜĝĞğĠġĢģĤĥĦħĨĩĪīĬĭĮįİıĲĳĴĵĶķĸĹĺĻļĽľĿŀŁłŃńŅņŇňŉŊŋŌōŎŏŐőŒœŔŕŖŗŘřŚśŜŝŞşŠšŢţŤťŦŧŨũŪūŬŭŮůŰűŲųŴŵŶŷŸŹźŻżŽžſƒΆΈΉΊΌΎΏΐΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩΪΫάέήίΰαβγδεζηθικλμνξοπρςστυφχψωϊϋόύώЀЁЂЃЄЅІЇЈЉЊЋЌЍЎЏАБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯабвгдежзийклмнопрстуфхцчшщъыьэюяѐёђѓєѕіїјљњћќѝўџאבגדוטילמנספץצקר฿₡₦₩₪₭₮₱₲₴₵₸₽"], "is": 4364.720000000001, "near": 1e-09}]}, {"get": "glyphWidths", "then": [{"get": "count", "is": 438}]}]}]}
+      ]
+    },
+    {
+      "name": "ADR-0016 / ticket 83: Excel charges each of the 438 glyphs its default table holds its own width, regular and bold, as the other core does",
+      "expect": [
+        {"static": "resolve", "args": {"density": "excel"}, "then": [{"get": "cellMetrics", "then": [{"call": "textWidthPx", "args": ["ABCDFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz¢¤ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïðñòóôõöøùúûüýþÿĀāĂăĄąĆćĈĉĊċČčĎďĐđĒēĔĕĖėĘęĚěĜĝĞğĠġĢģĤĥĦħĨĩĪīĬĭĮįİıĲĳĴĵĶķĸĹĺĻļĽľĿŀŁłŃńŅņŇňŉŊŋŌōŎŏŐőŒœŔŕŖŗŘřŚśŜŝŞşŠšŢţŤťŦŧŨũŪūŬŭŮůŰűŲųŴŵŶŷŸŹźŻżŽžſƒΆΈΉΊΌΎΏΐΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩΪΫάέήίΰαβγδεζηθικλμνξοπρςστυφχψωϊϋόύώЀЁЂЃЄЅІЇЈЉЊЋЌЍЎЏАБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯабвгдежзийклмнопрстуфхцчшщъыьэюяѐёђѓєѕіїјљњћќѝўџאבגדוטילמנספץצקר฿₡₦₩₪₭₮₱₲₴₵₸₽"], "is": 3739.510000000003, "near": 1e-09}, {"get": "bold", "then": [{"call": "textWidthPx", "args": ["ABCDFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz¢¤ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïðñòóôõöøùúûüýþÿĀāĂăĄąĆćĈĉĊċČčĎďĐđĒēĔĕĖėĘęĚěĜĝĞğĠġĢģĤĥĦħĨĩĪīĬĭĮįİıĲĳĴĵĶķĸĹĺĻļĽľĿŀŁłŃńŅņŇňŉŊŋŌōŎŏŐőŒœŔŕŖŗŘřŚśŜŝŞşŠšŢţŤťŦŧŨũŪūŬŭŮůŰűŲųŴŵŶŷŸŹźŻżŽžſƒΆΈΉΊΌΎΏΐΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩΪΫάέήίΰαβγδεζηθικλμνξοπρςστυφχψωϊϋόύώЀЁЂЃЄЅІЇЈЉЊЋЌЍЎЏАБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯабвгдежзийклмнопрстуфхцчшщъыьэюяѐёђѓєѕіїјљњћќѝўџאבגדוטילמנספץצקר฿₡₦₩₪₭₮₱₲₴₵₸₽"], "is": 3745.760000000002, "near": 1e-09}]}, {"get": "glyphWidths", "then": [{"get": "count", "is": 438}]}]}]}
+      ]
+    },
+    {
+      "name": "ADR-0030: a Wrapper's defaults supply the widths, and the preset keeps its padding and rows",
+      "expect": [
+        {"static": "resolve", "args": {"density": "compact", "defaults": {"new": "GridPresentationDefaults", "with": {"wideWidthPx": 10.4, "digitWidthPx": 8.0, "narrowWidthPx": 4.95, "fontSizePx": 14}}}, "then": [{"get": "digitWidthPx", "is": 8.0}, {"get": "cellMetrics", "then": [{"get": "wideWidthPx", "is": 10.4}, {"get": "narrowWidthPx", "is": 4.95}]}, {"get": "cellPaddingXPx", "is": 8}, {"get": "rowHeightPx", "is": 28}]}
+      ]
+    },
+    {
+      "name": "ADR-0030 / ADR-0028: a Wrapper's widths follow the preset's font size, as the Excel set does",
+      "expect": [
+        {"static": "resolve", "args": {"density": "excel", "defaults": {"new": "GridPresentationDefaults", "with": {"wideWidthPx": 10.4, "digitWidthPx": 8.0, "narrowWidthPx": 4.95, "fontSizePx": 14}}}, "then": [{"get": "fontSizePx", "is": 12}, {"get": "digitWidthPx", "is": 6.857142857142857, "near": 1e-09}, {"get": "cellMetrics", "then": [{"get": "wideWidthPx", "is": 8.914285714285715, "near": 1e-09}]}, {"get": "cellPaddingXPx", "is": 4}]}
+      ]
+    },
+    {
+      "name": "ADR-0028: explicit Cell Metrics still beat the cascaded defaults",
+      "expect": [
+        {"static": "resolve", "args": {"density": "compact", "defaults": {"new": "GridPresentationDefaults", "with": {"wideWidthPx": 10.4, "digitWidthPx": 8.0, "narrowWidthPx": 4.95, "fontSizePx": 14}}, "cellMetrics": {"new": "CellTextMetrics", "with": {"wideWidthPx": 12, "digitWidthPx": 9, "narrowWidthPx": 5, "cellHorizontalPaddingPx": 6}}}, "then": [{"get": "cellMetrics", "then": [{"get": "wideWidthPx", "is": 12}, {"get": "digitWidthPx", "is": 9}, {"get": "narrowWidthPx", "is": 5}, {"get": "cellHorizontalPaddingPx", "is": 6}, {"get": "fullWidthPx", "is": 18}, {"get": "glyphWidths", "is": null}]}]}
+      ]
+    },
+    {
+      "name": "ADR-0016 / ticket 83: the other class travels with a Wrapper's widths and is scaled as they are",
+      "expect": [
+        {"static": "resolve", "args": {"density": "compact", "defaults": {"new": "GridPresentationDefaults", "with": {"wideWidthPx": 10.4, "digitWidthPx": 8.3, "narrowWidthPx": 5.8, "fontSizePx": 14, "boldWideWidthPx": 10.4, "boldDigitWidthPx": 8.34, "boldNarrowWidthPx": 5.25, "otherWidthPx": 12.44, "boldOtherWidthPx": 12.28}}}, "then": [{"get": "cellMetrics", "then": [{"get": "otherWidthPx", "is": 12.44}, {"get": "boldOtherWidthPx", "is": 12.28}]}]},
+        {"static": "resolve", "args": {"density": "excel", "defaults": {"new": "GridPresentationDefaults", "with": {"wideWidthPx": 10.4, "digitWidthPx": 8.3, "narrowWidthPx": 5.8, "fontSizePx": 14, "boldWideWidthPx": 10.4, "boldDigitWidthPx": 8.34, "boldNarrowWidthPx": 5.25, "otherWidthPx": 12.44, "boldOtherWidthPx": 12.28}}}, "then": [{"get": "cellMetrics", "then": [{"get": "otherWidthPx", "is": 10.662857142857144, "near": 1e-09}, {"get": "boldOtherWidthPx", "is": 10.525714285714285, "near": 1e-09}]}]}
+      ]
+    },
+    {
+      "name": "ADR-0016 / ticket 83: defaults without the other class charge it twice the digit at each weight",
+      "expect": [
+        {"static": "resolve", "args": {"density": "compact", "defaults": {"new": "GridPresentationDefaults", "with": {"wideWidthPx": 10.4, "digitWidthPx": 8.0, "narrowWidthPx": 4.95, "fontSizePx": 14}}}, "then": [{"get": "cellMetrics", "then": [{"get": "otherWidthPx", "is": 16.0, "near": 1e-09}, {"get": "boldOtherWidthPx", "is": 16.64, "near": 1e-09}]}]}
+      ]
+    },
+    {
+      "name": "ADR-0030 / ADR-0050 item 15: a Wrapper's bold widths are scaled to the preset's size as its regular ones are",
+      "expect": [
+        {"static": "resolve", "args": {"density": "excel", "defaults": {"new": "GridPresentationDefaults", "with": {"wideWidthPx": 10.4, "digitWidthPx": 8, "narrowWidthPx": 4.95, "fontSizePx": 14, "boldWideWidthPx": 10.4, "boldDigitWidthPx": 8.33, "boldNarrowWidthPx": 4.95}}}, "then": [{"get": "cellMetrics", "then": [{"get": "boldDigitWidthPx", "is": 7.140000000000001, "near": 1e-09}, {"get": "boldWideWidthPx", "is": 8.914285714285715, "near": 1e-09}, {"get": "boldNarrowWidthPx", "is": 4.242857142857143, "near": 1e-09}]}]}
+      ]
+    },
+    {
+      "name": "ADR-0030 / ticket 83: a Wrapper's glyph table travels in its defaults and is scaled to the preset's size",
+      "expect": [
+        {"static": "resolve", "args": {"density": "compact", "defaults": {"new": "GridPresentationDefaults", "with": {"wideWidthPx": 10.4, "digitWidthPx": 8.3, "narrowWidthPx": 5.8, "fontSizePx": 14, "boldWideWidthPx": 10.4, "boldDigitWidthPx": 8.34, "boldNarrowWidthPx": 5.25, "otherWidthPx": 12.44, "boldOtherWidthPx": 12.28, "glyphWidths": {"new": "GlyphWidthTable", "with": {"measuredAtPx": 14, "glyphs": [["M", 13, 14], ["i", 4, 5], ["E", 20, 20], ["₩", 12, 13]]}}}}}, "then": [{"get": "cellMetrics", "then": [{"call": "textWidthPx", "args": ["M"], "is": 13, "near": 1e-09}, {"call": "textWidthPx", "args": ["W"], "is": 12.44, "near": 1e-09}]}]},
+        {"static": "resolve", "args": {"density": "excel", "defaults": {"new": "GridPresentationDefaults", "with": {"wideWidthPx": 10.4, "digitWidthPx": 8.3, "narrowWidthPx": 5.8, "fontSizePx": 14, "boldWideWidthPx": 10.4, "boldDigitWidthPx": 8.34, "boldNarrowWidthPx": 5.25, "otherWidthPx": 12.44, "boldOtherWidthPx": 12.28, "glyphWidths": {"new": "GlyphWidthTable", "with": {"measuredAtPx": 14, "glyphs": [["M", 13, 14], ["i", 4, 5], ["E", 20, 20], ["₩", 12, 13]]}}}}}, "then": [{"get": "cellMetrics", "then": [{"call": "textWidthPx", "args": ["M"], "is": 11.142857142857142, "near": 1e-09}]}]}
+      ]
+    }
+  ]
+}

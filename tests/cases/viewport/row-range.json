@@ -1,0 +1,25 @@
+{
+  "about": "The run of rows a Range Request names. From tests/ExGrid.Tests/GridSourceFromTests.cs.",
+  "kind": "calls",
+  "subject": "RowRange",
+  "cases": [
+    {
+      "name": "ADR-0001: a range names its first row and how many follow",
+      "create": {"start": 1000000, "count": 20},
+      "expect": [
+        {"get": "start", "is": 1000000},
+        {"get": "count", "is": 20}
+      ]
+    },
+    {
+      "name": "ADR-0001: a negative start is a malformed Range Request, refused",
+      "create": {"start": -1, "count": 5},
+      "throws": "outOfRange"
+    },
+    {
+      "name": "ADR-0001: an empty range is a malformed Range Request, refused",
+      "create": {"start": 0, "count": 0},
+      "throws": "outOfRange"
+    }
+  ]
+}

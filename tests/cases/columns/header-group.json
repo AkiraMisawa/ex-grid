@@ -1,0 +1,56 @@
+{
+  "about": "A Header Group's declaration, refused at construction when it cannot be a rectangle (ADR-0032). Adjacency, overlap and the pinned boundary are refused at resolution, in header-group-layout.json. From tests/ExGrid.Tests/HeaderGroupTests.cs.",
+  "kind": "calls",
+  "subject": "HeaderGroup",
+  "defaults": {"label": "X"},
+  "cases": [
+    {
+      "name": "ADR-0032: a declaration keeps its members as declared, tier 1 and one tier tall unless told",
+      "create": {"label": "CVA", "columns": ["CvaDiff", "CvaBefore", "CvaAfter"]},
+      "expect": [
+        {"get": "label", "is": "CVA"},
+        {"get": "columns", "is": ["CvaDiff", "CvaBefore", "CvaAfter"]},
+        {"get": "tier", "is": 1},
+        {"get": "tierSpan", "is": 1}
+      ]
+    },
+    {
+      "name": "ADR-0032: a group with no member is refused",
+      "create": {"columns": []},
+      "throws": "argument", "saying": "names no member columns"
+    },
+    {
+      "name": "ADR-0032: an empty member name is refused",
+      "create": {"columns": ["A", ""]},
+      "throws": "argument", "saying": "empty member column"
+    },
+    {
+      "name": "ADR-0032: a member named twice is refused",
+      "create": {"columns": ["A", "A"]},
+      "throws": "argument", "saying": "names a member column twice"
+    },
+    {
+      "name": "ADR-0032: tier 0 is refused; tier 1 sits directly above the leaf row",
+      "create": {"columns": ["A"], "tier": 0},
+      "throws": "outOfRange"
+    },
+    {
+      "name": "ADR-0032: a group spans at least one tier",
+      "create": {"columns": ["A"], "tier": 1, "tierSpan": 0},
+      "throws": "outOfRange"
+    },
+    {
+      "name": "ADR-0032: spanning below the leaf row cannot be drawn",
+      "create": {"columns": ["A"], "tier": 1, "tierSpan": 2},
+      "throws": "outOfRange", "saying": "past the leaf row"
+    },
+    {
+      "name": "ADR-0032: a tier-2 group may reach down to the leaf row",
+      "create": {"columns": ["A"], "tier": 2, "tierSpan": 2},
+      "expect": [
+        {"get": "tier", "is": 2},
+        {"get": "tierSpan", "is": 2}
+      ]
+    }
+  ]
+}

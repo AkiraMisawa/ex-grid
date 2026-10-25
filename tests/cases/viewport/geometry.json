@@ -1,0 +1,185 @@
+{
+  "about": "The vertical arithmetic every visual layer reads: rows of 20px in a 100px Viewport unless a case says otherwise. From tests/ExGrid.Tests/ViewportGeometryTests.cs.",
+  "kind": "calls",
+  "subject": "ViewportGeometry",
+  "defaults": {"rowHeightPx": 20, "viewportHeightPx": 100},
+  "cases": [
+    {
+      "name": "ADR-0013: scrollbar length is total rows \u00d7 row height, whether or not they are in the Window",
+      "create": {"totalRowCount": 100000},
+      "expect": [
+        {"get": "scrollHeightPx", "is": 2000000}
+      ]
+    },
+    {
+      "name": "ADR-0004: a Viewport paints what fits plus the row straddling its bottom edge",
+      "create": {"totalRowCount": 1000},
+      "expect": [
+        {"get": "rowsPerViewport", "is": 6}
+      ]
+    },
+    {
+      "name": "ADR-0004: a Viewport a pixel taller paints one row more",
+      "create": {"totalRowCount": 1000, "viewportHeightPx": 101},
+      "expect": [
+        {"get": "rowsPerViewport", "is": 7}
+      ]
+    },
+    {
+      "name": "ADR-0013: an offset on a row boundary starts at that row",
+      "create": {"totalRowCount": 1000},
+      "expect": [
+        {"call": "sliceAt", "args": [100], "is": {"start": 5, "count": 6}},
+        {"call": "sliceAt", "args": [99.9], "is": {"start": 4, "count": 6}}
+      ]
+    },
+    {
+      "name": "ADR-0013: fractional heights are carried, not rounded: the drift they cause is the trap",
+      "create": {"totalRowCount": 1000, "rowHeightPx": 28.125, "viewportHeightPx": 600},
+      "expect": [
+        {"call": "sliceAt", "args": [984.375], "is": {"start": 35, "count": 23}},
+        {"call": "offsetPxOf", "args": [35], "is": 984.375}
+      ]
+    },
+    {
+      "name": "ADR-0001: an offset past the end lands on the last full Viewport, never on nothing",
+      "create": {"totalRowCount": 10},
+      "expect": [
+        {"call": "sliceAt", "args": [100000], "is": {"start": 4, "count": 6}}
+      ]
+    },
+    {
+      "name": "ADR-0013: a negative offset is a browser artefact (rubber-band scrolling), and reads as the top",
+      "create": {"totalRowCount": 1000},
+      "expect": [
+        {"call": "sliceAt", "args": [-50], "is": {"start": 0, "count": 6}}
+      ]
+    },
+    {
+      "name": "ADR-0013: a total shorter than the Viewport paints only what exists",
+      "create": {"totalRowCount": 3},
+      "expect": [
+        {"call": "sliceAt", "args": [0], "is": {"start": 0, "count": 3}}
+      ]
+    },
+    {
+      "name": "ADR-0001: no rows slices to nothing, not to an empty range",
+      "create": {"totalRowCount": 0},
+      "expect": [
+        {"call": "sliceAt", "args": [0], "is": null}
+      ]
+    },
+    {
+      "name": "ADR-0004: a move of more than one Viewport is a fling",
+      "create": {"totalRowCount": 1000},
+      "expect": [
+        {"call": "isFling", "args": [0, 6], "is": false},
+        {"call": "isFling", "args": [0, 7], "is": true},
+        {"call": "isFling", "args": [500, 100], "is": true},
+        {"call": "isFling", "args": [100, 100], "is": false}
+      ]
+    },
+    {
+      "name": "ADR-0012: the header cancels out, so revealing a row above the Viewport puts it at row \u00d7 row height",
+      "create": {"totalRowCount": 1000},
+      "expect": [
+        {"call": "scrollTopToReveal", "args": [0, 500], "is": 0},
+        {"call": "scrollTopToReveal", "args": [10, 900], "is": 200}
+      ]
+    },
+    {
+      "name": "ADR-0012: reaching down scrolls just far enough to show the whole row against the bottom",
+      "create": {"totalRowCount": 1000},
+      "expect": [
+        {"call": "scrollTopToReveal", "args": [10, 0], "is": 120}
+      ]
+    },
+    {
+      "name": "ADR-0012: a row already on screen does not move the offset",
+      "create": {"totalRowCount": 1000},
+      "expect": [
+        {"call": "scrollTopToReveal", "args": [3, 0], "is": 0}
+      ]
+    },
+    {
+      "name": "ADR-0012: the last row is revealed at the furthest the browser scrolls, not past it",
+      "create": {"totalRowCount": 1000},
+      "expect": [
+        {"call": "scrollTopToReveal", "args": [999, 0], "is": 19900}
+      ]
+    },
+    {
+      "name": "ADR-0013/0017: the most rows of 28px a browser can scroll are accepted",
+      "create": {"rowHeightPx": 28, "viewportHeightPx": 600, "totalRowCount": 1198372},
+      "expect": [
+        {"get": "scrollHeightPx", "is": 33554416}
+      ]
+    },
+    {
+      "name": "ADR-0013/0017: one row past what a browser can scroll is refused, and says to page",
+      "create": {"rowHeightPx": 28, "viewportHeightPx": 600, "totalRowCount": 1198373},
+      "throws": "invalidOperation",
+      "saying": "page the result"
+    },
+    {
+      "name": "ADR-0008: a pointer position names the row it lands in",
+      "create": {"totalRowCount": 1000},
+      "expect": [
+        {"call": "rowAt", "args": [0], "is": 0},
+        {"call": "rowAt", "args": [19.9], "is": 0},
+        {"call": "rowAt", "args": [20], "is": 1},
+        {"call": "rowAt", "args": [150], "is": 7}
+      ]
+    },
+    {
+      "name": "ADR-0008: a pointer past the content clamps to the end row, even past what an int holds",
+      "create": {"totalRowCount": 10},
+      "expect": [
+        {"call": "rowAt", "args": [10000], "is": 9},
+        {"call": "rowAt", "args": [-50], "is": 0},
+        {"call": "rowAt", "args": [1e+18], "is": 9}
+      ]
+    },
+    {
+      "name": "ADR-0008: with no rows there is no row to point at",
+      "create": {"totalRowCount": 0},
+      "expect": [
+        {"call": "rowAt", "args": [0], "is": null}
+      ]
+    },
+    {
+      "name": "ADR-0013: a row height that is not a positive number of pixels is refused",
+      "create": {"rowHeightPx": 0, "totalRowCount": 10},
+      "throws": "outOfRange",
+      "saying": "RowHeight is a finite, positive number of pixels"
+    },
+    {
+      "name": "ADR-0013: a row height that is not a number is refused",
+      "create": {"rowHeightPx": "NaN", "totalRowCount": 10},
+      "throws": "outOfRange"
+    },
+    {
+      "name": "ADR-0013: a Viewport height that is not a positive number of pixels is refused",
+      "create": {"viewportHeightPx": 0, "totalRowCount": 10},
+      "throws": "outOfRange",
+      "saying": "ViewportHeight is a finite, positive number of pixels"
+    },
+    {
+      "name": "ADR-0013: a negative row count is refused",
+      "create": {"totalRowCount": -1},
+      "throws": "outOfRange"
+    },
+    {
+      "name": "ADR-0013: offsets and rows outside what a grid has are refused by name",
+      "create": {"totalRowCount": 10},
+      "expect": [
+        {"call": "rowAt", "args": ["NaN"], "throws": "outOfRange"},
+        {"call": "sliceAt", "args": ["NaN"], "throws": "outOfRange"},
+        {"call": "offsetPxOf", "args": [-1], "throws": "outOfRange"},
+        {"call": "scrollTopToReveal", "args": [10, 0], "throws": "outOfRange"},
+        {"call": "scrollTopToReveal", "args": [-1, 0], "throws": "outOfRange"},
+        {"call": "scrollTopToReveal", "args": [0, "NaN"], "throws": "outOfRange"}
+      ]
+    }
+  ]
+}
