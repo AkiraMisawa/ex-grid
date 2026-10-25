@@ -379,21 +379,6 @@ describe('keys that open an edit, and keys that do not', () => {
         expect([editor(root).value, editor(root).getAttribute('data-ex-cell'), listener.discards]).toEqual(['7', '0 0', ['orderMoved']]);
     });
 
-    it('ADR-0080: a composition finished on the Keyboard Field opens Overwrite holding its text, and leaves none in the field', async () => {
-        const listener = heard();
-        const root = await grid(listener);
-        press(root, book, rowY(1));
-        await painted();
-        const field = keyField(root);
-        field.value = '日本';
-        const composed = new CompositionEvent('compositionend', { data: '日本', bubbles: true });
-        // happy-dom keeps no `data` of its own.
-        Object.defineProperty(composed, 'data', { value: '日本' });
-        field.dispatchEvent(composed);
-        await painted();
-        expect([editor(root).value, field.value, document.activeElement === editor(root)]).toEqual(['日本', '', true]);
-    });
-
     it('ADR-0080 ADR-0050: a grid that stops editing hands the keyboard to its root; one destroyed with an edit open says the edit ended', async () => {
         const listener = heard();
         const rows = trades(20);
@@ -412,6 +397,172 @@ describe('keys that open an edit, and keys that do not', () => {
         await painted();
         view.destroy();
         expect(listener.editing).toEqual([true, false]);
+    });
+});
+
+/** An IME's composition on the Keyboard Field: the field holds `text` once it ends, as the IME leaves it. */
+function compose(field: HTMLInputElement, text: string, told = false): void {
+    field.dispatchEvent(new CompositionEvent('compositionstart', { bubbles: true }));
+    // The key the IME takes is told to the page as 229 while it composes.
+    if (told) field.dispatchEvent(new KeyboardEvent('keydown', { key: 'Process', keyCode: 229, bubbles: true, cancelable: true }));
+    field.value = text;
+    field.dispatchEvent(new CompositionEvent('compositionend', { bubbles: true }));
+}
+
+/** The keyup the root hears after the key the IME took has been told whole. */
+function keyUp(target: Element): void {
+    target.dispatchEvent(new KeyboardEvent('keyup', { key: 'Enter', bubbles: true }));
+}
+
+describe('an IME composing on the Keyboard Field', () => {
+    it('ADR-0080 / ED-30: the field is drawn while it composes, and its text opens Overwrite, which takes the keyboard once the IME\'s key is told whole', async () => {
+        const root = await grid(heard());
+        press(root, book, rowY(1));
+        await painted();
+        const field = keyField(root);
+        field.dispatchEvent(new CompositionEvent('compositionstart', { bubbles: true }));
+        field.dispatchEvent(new KeyboardEvent('keydown', { key: 'Process', keyCode: 229, bubbles: true, cancelable: true }));
+        field.value = '日本';
+        await painted();
+        expect([field.classList.contains('ex-key-field-composing'), hasEditor(root)]).toEqual([true, false]);
+        field.dispatchEvent(new CompositionEvent('compositionend', { bubbles: true }));
+        await painted();
+        // The editor is open and holds the text; DOM focus stays in the field until the key's keyup.
+        expect([editor(root).value, editor(root).getAttribute('data-ex-cell'), document.activeElement === field]).toEqual(['日本', '1 0', true]);
+        keyUp(field);
+        expect([document.activeElement === editor(root), field.value, field.classList.contains('ex-key-field-composing')])
+            .toEqual([true, '', false]);
+    });
+
+    it('ADR-0080 / ED-30: a second composition finished before the editor took the keyboard carries only its own text into it', async () => {
+        const root = await grid(heard());
+        press(root, book, rowY(1));
+        await painted();
+        const field = keyField(root);
+        compose(field, 'かな', true);
+        // The key that ended the first started the next: its keyup has not come yet.
+        compose(field, 'かな漢字', true);
+        await painted();
+        expect([editor(root).value, document.activeElement === field]).toEqual(['かな漢字', true]);
+        keyUp(field);
+        expect([document.activeElement === editor(root), editor(root).value]).toEqual([true, 'かな漢字']);
+    });
+
+    it('ADR-0080: a key the IME did not take, typed before the keyup of the one it did, hands the keyboard to the editor and is the editor\'s', async () => {
+        const root = await grid(heard());
+        press(root, book, rowY(1));
+        await painted();
+        compose(keyField(root), '日本', true);
+        const escape = key('Escape');
+        await painted();
+        // Escape is the editor's own key: the edit is cancelled, and the keyboard is back in the field.
+        expect([escape.defaultPrevented, hasEditor(root), document.activeElement === keyField(root)]).toEqual([true, false, true]);
+    });
+
+    it('ADR-0080: a composition no key told — text a script commits — hands the keyboard to the editor as it ends; a cancelled one opens an empty edit', async () => {
+        const root = await grid(heard());
+        press(root, book, rowY(1));
+        await painted();
+        compose(keyField(root), '日本');
+        expect([editor(root).value, document.activeElement === editor(root)]).toEqual(['日本', true]);
+        key('Escape');
+        await painted();
+        compose(keyField(root), '');
+        expect([editor(root).value, document.activeElement === editor(root)]).toEqual(['', true]);
+    });
+
+    it('ADR-0080: text an IME inserts without composing it is carried as a composition\'s is; anything else put there goes', async () => {
+        const root = await grid(heard());
+        press(root, book, rowY(1));
+        await painted();
+        const field = keyField(root);
+        field.value = '　';
+        field.dispatchEvent(new InputEvent('input', { inputType: 'insertText', data: '　', bubbles: true }));
+        expect([editor(root).value, document.activeElement === editor(root)]).toEqual(['　', true]);
+    });
+
+    it('ADR-0080 / ADR-0142: a composition aimed at a Selection the order moved under is thrown away, though a paint came between', async () => {
+        const listener = heard();
+        const source = GridSource.from(trades(20));
+        const { root } = mount({ columns, source, rowHeight: 24, viewportHeight: 480, ...listener.options });
+        await painted();
+        press(root, book, rowY(1));
+        await painted();
+        const field = keyField(root);
+        field.dispatchEvent(new CompositionEvent('compositionstart', { bubbles: true }));
+        source.setSorts([{ column: 'Notional', direction: 'descending' }]);
+        await painted();
+        field.value = '日本';
+        field.dispatchEvent(new CompositionEvent('compositionend', { bubbles: true }));
+        await painted();
+        expect([hasEditor(root), listener.discards, field.value]).toEqual([false, ['orderMoved'], '']);
+    });
+
+    it('ADR-0080: a press while it composes ends the composition first, so its text is committed where it was typed and the press moves on', async () => {
+        const listener = heard();
+        const root = await grid(listener);
+        press(root, book, rowY(1));
+        await painted();
+        const field = keyField(root);
+        // The browser ends a composition its field loses the keyboard in.
+        field.addEventListener('blur', () => {
+            field.value = '日本';
+            field.dispatchEvent(new CompositionEvent('compositionend', { bubbles: true }));
+        }, { once: true });
+        field.dispatchEvent(new CompositionEvent('compositionstart', { bubbles: true }));
+        press(root, book, rowY(3));
+        await painted();
+        expect(listener.edits.map(edit => [edit.row.book, edit.value])).toEqual([['Book-1', '日本']]);
+        expect([hasEditor(root), listener.selections.at(-1)?.focus]).toEqual([false, { row: 3, column: 0 }]);
+        // The keyboard came back by the press, so the root shows no ring (KB-12).
+        expect([document.activeElement === field, root.hasAttribute('data-ex-focus-visible')]).toEqual([true, false]);
+    });
+
+    it('ADR-0080 / ADR-0142: one begun on a Selection the order dropped before any paint showed it is thrown away too', async () => {
+        const listener = heard();
+        const source = GridSource.from(trades(20));
+        const { root } = mount({ columns, source, rowHeight: 24, viewportHeight: 480, ...listener.options });
+        await painted();
+        press(root, book, rowY(1));
+        await painted();
+        source.setSorts([{ column: 'Notional', direction: 'descending' }]);
+        compose(keyField(root), '日本');
+        await painted();
+        expect([hasEditor(root), listener.discards]).toEqual([false, ['orderMoved']]);
+    });
+
+    it('ADR-0080: a composition the field took with it as editing was turned off leaves no request waiting once editing is back', async () => {
+        const listener = heard();
+        const rows = trades(20);
+        const { root, view } = mount({ columns, rows, rowHeight: 24, viewportHeight: 480, ...listener.options });
+        await painted();
+        press(root, book, rowY(1));
+        await painted();
+        keyField(root).dispatchEvent(new CompositionEvent('compositionstart', { bubbles: true }));
+        view.update({ columns, rows, rowHeight: 24, viewportHeight: 480 });
+        await painted();
+        view.update({ columns, rows, rowHeight: 24, viewportHeight: 480, ...listener.options });
+        await painted();
+        keyField(root).focus();
+        key('a');
+        await painted();
+        expect([editor(root).value, document.activeElement === editor(root), keyField(root).classList.contains('ex-key-field-composing')])
+            .toEqual(['a', true, false]);
+    });
+
+    it('ADR-0080: a composition starting with the Focus scrolled away reveals it', async () => {
+        const { root } = mount({ columns, rows: trades(1000), rowHeight: 24, viewportHeight: 480, ...heard().options });
+        await painted();
+        press(root, book, rowY(1));
+        await painted();
+        const scroller = q(root, '.ex-scroller');
+        scroller.scrollTop = 12_000;
+        scroller.dispatchEvent(new Event('scroll'));
+        await painted();
+        keyField(root).dispatchEvent(new CompositionEvent('compositionstart', { bubbles: true }));
+        await painted();
+        // Row 1 stands at the Viewport's top, under the header.
+        expect(scroller.scrollTop).toBe(24);
     });
 });
 
