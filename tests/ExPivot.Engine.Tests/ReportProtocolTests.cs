@@ -105,45 +105,6 @@ public class ReportProtocolTests
     private static PivotLayout EntryLayout() => new() { Rows = [new("Label")], Values = [new("Amount") { NumberFormat = "0" }] };
 
     [Fact]
-    public async Task ADR0152_offscreen_change_advances_metadata_and_versioned_operations_never_rebind()
-    {
-        var fields = EntryFields();
-        var data = PivotSource.From<Entry>([new(1, "A", 10m), new(2, "B", 20m)], fields);
-        await using var source = PivotReportSource.From(data);
-        var client = new PivotReportClient(source);
-        var layout = EntryLayout();
-        var ct = TestContext.Current.CancellationToken;
-        Assert.True(await client.ReadAsync(layout, PivotReportSettings.Invariant, new(0, 1), cancellationToken: ct));
-        var before = client.Current!;
-        data.Apply(fields.Batch(changed: [new(2, "B", 30m)]));
-        Assert.True(await client.ReadAsync(layout, PivotReportSettings.Invariant, new(0, 1), cancellationToken: ct));
-        var after = client.Current!;
-        Assert.Same(before.Rows[0], after.Rows[0]);
-        Assert.NotEqual(before.Metadata.Version, after.Metadata.Version);
-        Assert.NotEqual(before.Metadata.SourceVersion, after.Metadata.SourceVersion);
-        Assert.Equal(before.Metadata.RowSequenceVersion, after.Metadata.RowSequenceVersion);
-        string[] columns = [after.Metadata.ValueColumns[0].Name];
-        PivotReportRange[] ranges = [new(1, 0, 1, 0)];
-        var oldCopy = await source.CopyAsync(new(before.Metadata.Version, columns, ranges), ct);
-        var newCopy = await source.CopyAsync(new(after.Metadata.Version, columns, ranges), ct);
-        Assert.Equal("20", oldCopy.Blocks[0].Rows[0][0].Raw);
-        Assert.Equal("30", newCopy.Blocks[0].Rows[0][0].Raw);
-        var sum = await source.SummaryAsync(new(after.Metadata.Version, columns, [new(0, 0, 1, 0), new(1, 0, 2, 0)]), ct);
-        Assert.Equal(3, sum.Counts.Numbers);
-        Assert.Equal(80m, sum.Sum.Exact);
-        data.Apply(fields.Batch(changed: [new(2, "B", 40m)]));
-        Assert.True(await client.ReadAsync(layout, PivotReportSettings.Invariant, new(0, 1), cancellationToken: ct));
-        var expired = await source.CopyAsync(new(before.Metadata.Version, columns, ranges), ct);
-        Assert.Equal(PivotReportRefusalKind.ReportVersionNotHeld, expired.Refusal!.Kind);
-        // Details names the Source Version, not the Report Version (ADR-0151): the Pivot Source still
-        // holds the data the earlier report was computed from, so its records still add up to it.
-        var details = await source.DetailsAsync(before.Metadata.DetailsQuery(before.Rows[0], 0), ct);
-        Assert.False(details.IsRefused);
-        Assert.Equal(before.Metadata.SourceVersion, details.SourceVersion);
-        Assert.Equal(10m, Assert.Single(details.Records).Values[^1]);
-    }
-
-    [Fact]
     public async Task ADR0152_explicit_words_and_order_policy_survive_serialization_and_unknown_policy_refuses()
     {
         var fields = EntryFields();
@@ -204,25 +165,6 @@ public class ReportProtocolTests
         Assert.Equal(PivotReportRefusalKind.OrderKeyFailed, items.Refusal!.Kind);
         Assert.Equal("Label", items.Refusal.Field);
         Assert.Contains("'BB'", items.Refusal.Message, StringComparison.Ordinal);
-    }
-
-    [Fact]
-    public async Task ADR0153_unchanged_child_label_keeps_the_current_parent_spelling_in_details()
-    {
-        var fields = EntryFields().Text("Child", _ => "child");
-        var data = PivotSource.From<Entry>([new(1, "Parent", 1m)], fields);
-        await using var source = PivotReportSource.From(data);
-        var client = new PivotReportClient(source);
-        var layout = EntryLayout() with { Rows = [new("Label"), new("Child")] };
-        var ct = TestContext.Current.CancellationToken;
-        Assert.True(await client.ReadAsync(layout, PivotReportSettings.Invariant, new(0, 10), cancellationToken: ct));
-        var before = client.Current!.Rows.Single(row => row.RowPath.Count == 2);
-        data.Apply(fields.Batch(changed: [new(1, "PARENT", 1m)]));
-        Assert.True(await client.ReadAsync(layout, PivotReportSettings.Invariant, new(0, 10), cancellationToken: ct));
-        var after = client.Current!.Rows.Single(row => row.RowPath.Count == 2);
-        Assert.Equal("Parent", before.RowPath[0].Item.Value);
-        Assert.Equal("PARENT", after.RowPath[0].Item.Value);
-        Assert.Equal(before.Labels, after.Labels);
     }
 
     [Fact]

@@ -1,0 +1,12 @@
+{
+  "about": "Entries keyed by their Id, a label and an exact amount, which Change Batches are applied to: the C# report source tests' Entry. A case gives its own rows, and a batch's records are rows of the same columns.",
+  "snapshot": {
+    "recordKey": "Id",
+    "columns": [
+      {"name": "Id", "kind": "integer"},
+      {"name": "Label", "kind": "text"},
+      {"name": "Amount", "kind": "decimal"}
+    ]
+  },
+  "rows": []
+}

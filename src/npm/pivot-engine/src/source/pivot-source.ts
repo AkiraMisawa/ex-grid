@@ -15,8 +15,8 @@ import { readRecordValue } from '../items/record-value';
 import { pivotAggregations, type PivotAggregation } from '../layout/pivot-enums';
 import { defined, elementAt, unreachable } from '../must';
 import { foldedText } from '../text/casing';
-import { AggregationPass, chunkRows, itemsOfField, itemsOfFieldSteps, runWhole } from './aggregation-pass';
-import { Slicer, checkedSlicing, type CheckedSlicing, type PivotSlicing } from './slicing';
+import { AggregationPass, chunkRows, itemsOfField, itemsOfFieldSteps } from './aggregation-pass';
+import { Slicer, checkedSlicing, runWhole, type CheckedSlicing, type PivotSlicing } from './slicing';
 import { bindSnapshot, detailAt, itemKeyAt, recordSnapshot, type FieldBinding } from './binding';
 
 // ---- What a source offers -----------------------------------------------------------------------
@@ -322,6 +322,14 @@ interface HeldPass {
     readonly deferred: { readonly change: SnapshotChange; readonly bindings: ReadonlyMap<string, FieldBinding> }[];
 }
 
+let aggregateOn: (source: SnapshotPivotSource, query: PivotQuery, slicer: Slicer) => Promise<PivotAnswer>;
+
+/** A source over a Snapshot asked a question on another's slices: a report source's pass, cube and report
+ * share one Slicer, so the work yields only where a slice is spent, as the C# engine's does. */
+export function aggregateSliced(source: SnapshotPivotSource, query: PivotQuery, slicer: Slicer): Promise<PivotAnswer> {
+    return aggregateOn(source, query, slicer);
+}
+
 /**
  * The bundled source over a Snapshot (ADR-0066): it answers every Aggregation under the version
  * `{identity}:{snapshot version}`, in slices (PV-40).
@@ -441,7 +449,17 @@ export class SnapshotPivotSource implements PivotSource {
         aborted(signal);
         const refusal = queryRefusal(this.fields, this.features, query);
         if (refusal !== undefined) return PivotAnswer.refused(refusal);
-        const slicer = new Slicer(this.#slicing, signal);
+        return this.#aggregate(query, new Slicer(this.#slicing, signal));
+    }
+
+    static {
+        aggregateOn = (source, query, slicer) => {
+            const refusal = queryRefusal(source.fields, source.features, query);
+            return refusal === undefined ? source.#aggregate(query, slicer) : Promise.resolve(PivotAnswer.refused(refusal));
+        };
+    }
+
+    async #aggregate(query: PivotQuery, slicer: Slicer): Promise<PivotAnswer> {
         const snapshot = this.#snapshot;
         const bindings = this.#bindings;
         if (!this.#heldUpToDate()) this.#held = undefined;

@@ -22,6 +22,7 @@
     <Compile Include="..\..\tests\ExPivot.Engine.Tests\Cases\PivotCases.cs" Link="Cases\PivotCases.cs" />
     <Compile Include="..\..\tests\ExPivot.Engine.Tests\Cases\PivotReadings.cs" Link="Cases\PivotReadings.cs" />
     <Compile Include="..\..\tests\ExPivot.Engine.Tests\Cases\PivotSourceCases.cs" Link="Cases\PivotSourceCases.cs" />
+    <Compile Include="..\..\tests\ExPivot.Engine.Tests\Cases\PivotReportSourceCases.cs" Link="Cases\PivotReportSourceCases.cs" />
   </ItemGroup>
 
 </Project>

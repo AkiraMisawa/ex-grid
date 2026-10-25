@@ -204,6 +204,39 @@ const answer = await source.aggregate(query, controller.signal);</code></pre>
             exact numbers, and a sum of doubles may differ in its last bit where the order changed it. The shared cases
             and a differential run over random batches hold both.
         </p>
+        <p>
+            The cube and the report run in slices too. <code>pivotCubeAsync</code> and <code>pivotReportAsync</code> take
+            the same slicing and an <code>AbortSignal</code>, and give what <code>pivotCube</code> and
+            <code>pivotReport</code> give, so an answer of a hundred thousand leaves, or a field with thousands of Items
+            to order, leaves the page painting while its report is made. A report's <code>hasSameRowsAsAsync</code>
+            compares its rows with another's in slices the same way. Each call begins a slice of its own and ends
+            without yielding, so yield between them where the page must paint:
+        </p>
+        <pre class="docs-code"><code>const cube = await pivotCubeAsync(query, answer, source.fields, { sliceBudgetMs: 30 }, controller.signal);
+const report = await pivotReportAsync(cube, layout, { locale: 'en-US' }, { sliceBudgetMs: 30 }, controller.signal);
+const keepState = await report.hasSameRowsAsAsync(shown, { sliceBudgetMs: 30 }, controller.signal);</code></pre>
+        <p>
+            <code>LocalPivotReportSource</code> is the report source over any of them, as <code>PivotReportSource.From</code>
+            is in C#: asked for a Window of the report a layout makes, it answers that Window's rows with the whole report's
+            metadata, under a Report Version that Copy, the Selection Summary, a field's Items and Show Details name back,
+            and it marks each cell a Change Batch moved with the version that moved it. Everything it answers is plain data,
+            so a Window crosses to a Web Worker as it is. Unlike the C# source, it always answers a Window whole: Window
+            Changes and their digest were the server's answer to a round trip, which the browser does not make. A layout
+            gesture (<code>markChanges: false</code>) lays out the data of the Window named as its <code>baseline</code>,
+            so a change you have not shown yet is marked by the next request that marks changes. The settings name their
+            <code>locale</code>; with none, the browser's language is taken. When a highlight starts is yours, on your clock:
+            <code>PivotChangeTimes</code> stamps each change the first time you adopt a Window that lists it.
+        </p>
+        <pre class="docs-code"><code>const reports = new LocalPivotReportSource(source, { orderKeys: { tenor } });
+const shown = await reports.window({
+    requestId: crypto.randomUUID(), layout, window: { start: 0, count: 60 },
+    settings: { locale: 'en-US', orderKeyPolicies: { Tenor: 'tenor' } },
+    baseline: held?.metadata.version,
+});
+if (shown.refusal === undefined) {
+    times.adopt(shown, Date.now(), 1000);            // times = new PivotChangeTimes()
+    const copy = await reports.copy({ version: shown.metadata.version, columns, ranges });
+}</code></pre>
     </DocsSection>
 
     <DocsSection Title="API">

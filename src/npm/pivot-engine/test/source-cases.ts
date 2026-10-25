@@ -20,7 +20,7 @@ import { itemKey, read } from './readings';
 
 // A source, how often its server was asked for Leaf Aggregates, the version of each answer, and the versions
 // the source told of since the last batch; and the shape a batch's records are written in.
-interface Bench {
+export interface Bench {
     source: PivotSource;
     readonly again: () => PivotSource;
     readonly data: DataSet;
@@ -62,7 +62,7 @@ function declared(written: JsonObject): PivotField {
 
 // The source a case asks: over the data set's Snapshot or its records, and behind a fetching source when the
 // case names one.
-function open(file: JsonObject, entry: JsonObject): Bench {
+export function open(file: JsonObject, entry: JsonObject): Bench {
     const snapshot = snapshotOf(file, entry);
     const data: DataSet = snapshot === undefined ? dataSet(file, entry) : { fields: [], records: [], keyCalls: [] };
     const fields = entry['declare'] === undefined ? undefined : array(entry['declare']).map(f => declared(object(f)));
@@ -410,7 +410,7 @@ function doubleJson(number: number): Json {
 
 // A value a record behind a cell carries, as a case writes a value: a date, carried by its ticks (a whole
 // number is carried as a decimal), as its text.
-function detailValue(value: PivotDetailValue): Json {
+export function detailValue(value: PivotDetailValue): Json {
     if (value === null || typeof value === 'string' || typeof value === 'boolean') return value;
     if (typeof value === 'number') return doubleJson(value);
     if (isDecimal(value)) return exactJson(decimalText(value));

@@ -1,8 +1,11 @@
-// How the bundled sources share the thread (PV-40): a question's pass and the answer assembled after it run
-// in slices sized by time, yielding between them so that a browser keeps painting, and a cancelled question
-// stops at the next slice. The C# engine's PivotSlicing and Slicer.
+// How the engine's work shares the thread (PV-40): a question's pass, the answer assembled after it, the cube
+// made from the answer and the report laid out from the cube run in slices sized by time, yielding between
+// them so that a browser keeps painting, and cancelled work stops at the next slice. The C# engine's
+// PivotSlicing and Slicer.
 
-/** How a source's work paces itself (PV-40). */
+import { elementAt } from '../must';
+
+/** How the engine's work paces itself (PV-40). */
 export interface PivotSlicing {
     /** How long one slice works, in milliseconds, before it yields; 30 when left out, within the 50 a page
      * may be blocked for. A slice always does some work, so 0 yields after every step. */
@@ -30,6 +33,11 @@ export class Slicer {
         signal?.throwIfAborted();
     }
 
+    /** The signal the question is cancelled with, which a source asked on these slices hears. */
+    get signal(): AbortSignal | undefined {
+        return this.#signal;
+    }
+
     /** A point between two steps: throws once the question is cancelled, and yields when the slice is spent. */
     async step(): Promise<void> {
         this.#signal?.throwIfAborted();
@@ -49,13 +57,76 @@ export class Slicer {
     }
 }
 
+/** The units of work a piece of the work after a pass is cut to — a leaf copied, a cell merged, a node of a
+ * report entered — so that a step falls about every thousand of them. */
+export const pieceUnits = 1024;
+
+/** Runs `step` over [0, `count`) in pieces of about {@link pieceUnits} units, each element worth `weight` of
+ * them, yielding between two pieces. */
+export function* inPieces(count: number, weight: number, step: (from: number, to: number) => void): Generator<void, void> {
+    const size = Math.max(1, Math.floor(pieceUnits / weight));
+    for (let from = 0; from < count; from += size) {
+        if (from > 0) yield;
+        step(from, Math.min(count, from + size));
+    }
+}
+
+/** Runs a piece of work that yields between its steps through to its result, unsliced. */
+export function runWhole<T>(steps: Generator<void, T>): T {
+    for (;;) {
+        const next = steps.next();
+        if (next.done === true) return next.value;
+    }
+}
+
+/** `list` sorted as `toSorted` sorts it, stably, a piece at a time: a short list at once, a long one merged
+ * bottom up, yielding once a piece's worth of elements is placed. Two runs already in order are copied with one
+ * comparison, so a list that comes sorted — as a source's Items often do — costs a comparison an element. */
+export function* sortedSteps<T extends object | number>(list: readonly T[], compare: (a: T, b: T) => number): Generator<void, readonly T[]> {
+    if (list.length <= pieceUnits / 8) return list.toSorted(compare);
+    let from = [...list];
+    let to = [...list];
+    let compared = 0;
+    for (let width = 1; width < from.length; width *= 2) {
+        for (let start = 0; start < from.length; start += 2 * width) {
+            const middle = Math.min(start + width, from.length);
+            const end = Math.min(start + (2 * width), from.length);
+            if (middle >= end || compare(elementAt(from, middle - 1), elementAt(from, middle)) <= 0) {
+                for (let at = start; at < end; at++) to[at] = elementAt(from, at);
+                compared += end - start;
+                if (compared >= pieceUnits) {
+                    compared = 0;
+                    yield;
+                }
+                continue;
+            }
+            let left = start;
+            let right = middle;
+            for (let at = start; at < end; at++) {
+                if (left < middle && (right >= end || compare(elementAt(from, left), elementAt(from, right)) <= 0)) {
+                    to[at] = elementAt(from, left++);
+                } else {
+                    to[at] = elementAt(from, right++);
+                }
+                if (++compared >= pieceUnits) {
+                    compared = 0;
+                    yield;
+                }
+            }
+        }
+        [from, to] = [to, from];
+    }
+    return from;
+}
+
 /** A Consumer's slicing, checked and resolved: how long a slice works, and what the work awaits between two. */
 export interface CheckedSlicing {
     readonly budget: number;
     readonly yield: () => Promise<void>;
 }
 
-/** Checks a Consumer's slicing when a source is made, so a wrong budget fails there and not at a question. */
+/** Checks a Consumer's slicing where it is given — when a source is made, and when a cube or a report is asked
+ * for in slices — so a wrong budget fails there, before any work. */
 export function checkedSlicing(slicing: PivotSlicing | undefined): CheckedSlicing {
     const chosen = slicing === undefined ? {} : slicing;
     const budget = chosen.sliceBudgetMs === undefined ? 30 : chosen.sliceBudgetMs;
