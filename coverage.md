@@ -4,7 +4,7 @@
 |---|---|---|
 | ExGrid | 95.2% | 88.5% |
 | ExSheet | 95.4% | 88.6% |
-| ExPivot | 94.3% | 86% |
+| ExPivot | 94.4% | 86.3% |
 | ExChart | 90.5% | 81.6% |
 | ExBoard | 91.7% | 81.8% |
 | Data | 94% | 88.8% |
@@ -14,19 +14,19 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/25/2026 - 22:43:13 |
+| Generated on: | 10/25/2026 - 22:57:15 |
 | Parser: | MultiReport (19x Cobertura) |
 | Assemblies: | 16 |
 | Classes: | 1183 |
 | Files: | 606 |
-| **Line coverage:** | 94.5% (81845 of 86573) |
-| Covered lines: | 81845 |
-| Uncovered lines: | 4728 |
-| Coverable lines: | 86573 |
-| Total lines: | 138402 |
-| **Branch coverage:** | 87.3% (49395 of 56576) |
-| Covered branches: | 49395 |
-| Total branches: | 56576 |
+| **Line coverage:** | 94.5% (81923 of 86637) |
+| Covered lines: | 81923 |
+| Uncovered lines: | 4714 |
+| Coverable lines: | 86637 |
+| Total lines: | 138490 |
+| **Branch coverage:** | 87.3% (49459 of 56618) |
+| Covered branches: | 49459 |
+| Total branches: | 56618 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
@@ -834,11 +834,11 @@
 |ExPivot.PivotDetails|100%||
 
 </details>
-<details><summary>ExPivot.Engine - 96.2%</summary>
+<details><summary>ExPivot.Engine - 96.4%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExPivot.Engine**|**96.2%**|**88.5%**|
+|**ExPivot.Engine**|**96.4%**|**89%**|
 |ExPivot.Engine.AggregateValue|100%|100%|
 |ExPivot.Engine.AggregationPass|98.7%|96.1%|
 |ExPivot.Engine.AxisNode|87%|80%|
@@ -894,7 +894,7 @@
 |ExPivot.Engine.PivotDateWords|100%|78.1%|
 |ExPivot.Engine.PivotDetailPage|92.6%|59%|
 |ExPivot.Engine.PivotDetailRecord|77.4%|77.5%|
-|ExPivot.Engine.PivotDetailsQuery|90.9%|59%|
+|ExPivot.Engine.PivotDetailsQuery|93.1%|63.6%|
 |ExPivot.Engine.PivotDisplayColumn|100%||
 |ExPivot.Engine.PivotDisplayRow|100%|100%|
 |ExPivot.Engine.PivotDisplayValue|80%|83.3%|
@@ -914,10 +914,10 @@
 |ExPivot.Engine.PivotItemCounts|100%|100%|
 |ExPivot.Engine.PivotItemInfo|100%||
 |ExPivot.Engine.PivotItemKey|94.1%|93.3%|
-|ExPivot.Engine.PivotItemPage|91.6%|50%|
+|ExPivot.Engine.PivotItemPage|95.8%|60%|
 |ExPivot.Engine.PivotItemPath|100%|100%|
 |ExPivot.Engine.PivotItemsQuery|93.3%|100%|
-|ExPivot.Engine.PivotJson|96%|84.4%|
+|ExPivot.Engine.PivotJson|98%|91.6%|
 |ExPivot.Engine.PivotLabelColumn|100%||
 |ExPivot.Engine.PivotLabelSizing|100%|97.5%|
 |ExPivot.Engine.PivotLayout|96.3%|74.2%|
@@ -1032,12 +1032,12 @@
 |ExSheet.BuiltInToolbarItem|96.4%|97.3%|
 |ExSheet.ColourItem|96%|100%|
 |ExSheet.CommaItem|83.3%||
-|ExSheet.Components.ExSheet|91.3%|81.8%|
+|ExSheet.Components.ExSheet|91.3%|81.7%|
 |ExSheet.Components.ExSheet.KeyboardListener|100%||
 |ExSheet.Components.ExSheet.KeyUpListener|100%||
 |ExSheet.Components.ExSheet.OwnFindOutcome|100%||
 |ExSheet.Components.ExSheet.SheetGridChrome|86.6%|73%|
-|ExSheet.Components.ExSheet<T>|91.3%|81.8%|
+|ExSheet.Components.ExSheet<T>|91.3%|81.7%|
 |ExSheet.Components.ExSheetStylesheet|100%||
 |ExSheet.Components.FormatCellsPanel|97.3%|87.5%|
 |ExSheet.Components.SheetFindPanel|91.7%|76.5%|
