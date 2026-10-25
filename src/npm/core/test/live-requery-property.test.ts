@@ -10,7 +10,7 @@
 // the case and the step.
 import { Temporal } from 'temporal-polyfill';
 import { describe, expect, it } from 'vitest';
-import { defined, elementAt, itemAt } from '../src/must';
+import { defined, elementAt } from '../src/must';
 import type { QueryColumn } from '../src/query/columns';
 import { filterOperatorsFor, type FilterClause, type FilterSpec, type GridFilter } from '../src/query/filter';
 import { applyQuery } from '../src/query/query-engine';
@@ -19,6 +19,7 @@ import type { GridChangeBatch } from '../src/source/change-batch';
 import { GridSource } from '../src/source/grid-source';
 import type { InMemoryGridSource } from '../src/source/in-memory-source';
 import { FakeClock } from './fake-clock';
+import { Random } from './random';
 
 const seed = 20261025;
 const cases = 600;
@@ -59,41 +60,6 @@ const columns: readonly QueryColumn<Row>[] = [
 // The source's own share, restated: the test counts which batches were small enough for the incremental
 // path, so that both paths are known to have been compared (live-requery.ts, wholeRequeryShare).
 const liveRequeryShare = 6;
-
-/** mulberry32, so a failure is reproduced by running the test again. */
-class Random {
-    #state: number;
-
-    constructor(start: number) {
-        this.#state = start;
-    }
-
-    /** A whole number in [low, high). */
-    next(low: number, high: number): number {
-        this.#state = (this.#state + 0x6D2B79F5) | 0;
-        let t = this.#state;
-        t = Math.imul(t ^ (t >>> 15), t | 1);
-        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-        return low + Math.floor((((t ^ (t >>> 14)) >>> 0) / 4294967296) * (high - low));
-    }
-
-    below(high: number): number {
-        return this.next(0, high);
-    }
-
-    pick<T>(values: readonly T[]): T {
-        return itemAt(values, this.below(values.length));
-    }
-
-    shuffled<T>(values: readonly T[]): T[] {
-        const out = [...values];
-        for (let i = out.length - 1; i > 0; i--) {
-            const j = this.below(i + 1);
-            [out[i], out[j]] = [itemAt(out, j), itemAt(out, i)];
-        }
-        return out;
-    }
-}
 
 function rowWith(row: Row, field: number, random: Random): Row {
     switch (field) {

@@ -197,6 +197,9 @@ public class SelectionCaseTests
                 case "wholeColumns":
                     Assert.Equal(value.EnumerateArray().Select(c => c.GetInt32()), selection.WholeColumns(extent));
                     break;
+                case "headingMarks":
+                    HoldsMarks(selection, value, extent);
+                    break;
                 case "topLeftOfRangeMadeLast":
                     Nullable(value, () => selection.TopLeftOfRangeMadeLast, SharedCases.Cell);
                     break;
@@ -212,6 +215,30 @@ public class SelectionCaseTests
                 default:
                     throw new InvalidOperationException($"The expectation \"{property.Name}\" is not one this runner knows.");
             }
+        }
+    }
+
+    /// <summary>The Heading Mark's runs (ADR-0008): <c>columns</c> and <c>rows</c> it marks, and
+    /// <c>wholeColumns</c> and <c>wholeRows</c> it covers whole under the case's extent, or under
+    /// <c>under</c> when the case names another. Each run is <c>[start, count]</c>.</summary>
+    private static void HoldsMarks(GridSelection selection, JsonElement expected, GridExtent extent)
+    {
+        var under = expected.TryGetProperty("under", out var pair) ? SharedCases.Extent(pair) : extent;
+        static (int, int)[] Runs(JsonElement runs)
+            => runs.EnumerateArray().Select(run => (run[0].GetInt32(), run[1].GetInt32())).ToArray();
+        foreach (var property in expected.EnumerateObject())
+        {
+            var actual = property.Name switch
+            {
+                "under" => null,
+                "columns" => HeadingMarks.Columns(selection).Select(run => (run.Start, run.Count)).ToArray(),
+                "rows" => HeadingMarks.Rows(selection).Select(run => (run.Start, run.Count)).ToArray(),
+                "wholeColumns" => HeadingMarks.WholeColumns(selection, under).Select(run => (run.Start, run.Count)).ToArray(),
+                "wholeRows" => HeadingMarks.WholeRows(selection, under).Select(run => (run.Start, run.Count)).ToArray(),
+                var other => throw new InvalidOperationException($"The Heading Mark expectation \"{other}\" is not one this runner knows."),
+            };
+            if (actual is not null)
+                Assert.Equal(Runs(property.Value), actual);
         }
     }
 

@@ -80,6 +80,10 @@ export function readRanges(text: readonly RangeText[] | string): SelectionRange[
 
 /** What a refusal is named in the cases: an argument outside what the grid has, an argument of a kind the
  * member does not take, or anything else refused. */
+/** Runs of Headings, rows or columns, as a case writes them: `[start, count]` each. */
+export const runPairs = (runs: readonly { readonly start: number; readonly count: number }[]): readonly (readonly [number, number])[] =>
+    runs.map(run => [run.start, run.count] as const);
+
 export type Refusal = 'outOfRange' | 'argument' | 'invalidOperation';
 
 /** Runs the action and holds it to the refusal named, and, with `saying`, to a message holding that

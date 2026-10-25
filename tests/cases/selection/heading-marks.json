@@ -1,0 +1,203 @@
+{
+  "about": "Which Headings the Heading Mark marks (ADR-0008, 2026-10-13), and which it covers whole (D1): runs of columns and rows, the union of the ranges' spans with spans that overlap or touch joined, and the runs every row (or column) of the extent fills. Moved from the C# core's HeadingMarksTests; the randomised check against a cell-by-cell union, which a case cannot state, is a property test in each language: tests/ExGrid.Tests/HeadingMarksPropertyTests.cs and src/npm/core/test/heading-marks-property.test.ts. The C# core's HeadingMarks; the Script Core's selection/heading-marks.ts.",
+  "kind": "selection",
+  "extent": [100, 26],
+  "cases": [
+    {
+      "name": "ADR-0008 (2026-10-13): nothing selected marks nothing, and covers no Heading whole",
+      "steps": [
+        {"expect": {"headingMarks": {"columns": [], "rows": [], "wholeColumns": [], "wholeRows": []}}}
+      ]
+    },
+    {
+      "name": "ADR-0008 (2026-10-13): one cell marks its own column and row — every Selection is marked, not only several ranges",
+      "steps": [
+        {"click": [4, 2]},
+        {"expect": {"headingMarks": {"columns": [[2, 1]], "rows": [[4, 1]]}}}
+      ]
+    },
+    {
+      "name": "ADR-0008 (2026-10-13): a range marks every column and row it spans, as one run on each axis",
+      "steps": [
+        {"click": [1, 1]},
+        {"extendTo": [6, 3]},
+        {"expect": {"headingMarks": {"columns": [[1, 3]], "rows": [[1, 6]]}}}
+      ]
+    },
+    {
+      "name": "ADR-0008 (2026-10-13): R4's two areas, A1:B2 and D4:E6, mark A:B and D:E, and rows 1:2 and 4:6 — C and row 3 between them stay unmarked",
+      "steps": [
+        {"click": [0, 0]},
+        {"extendTo": [1, 1]},
+        {"toggleRange": [3, 3]},
+        {"extendTo": [5, 4]},
+        {"expect": {"rangeCount": 2}},
+        {"expect": {"headingMarks": {"columns": [[0, 2], [3, 2]], "rows": [[0, 2], [3, 3]]}}}
+      ]
+    },
+    {
+      "name": "ADR-0008 (2026-10-13): runs that overlap or touch are one, in order whatever order the ranges were made in — the line runs on unbroken across neighbouring Headings, as Excel's did under A:B",
+      "steps": [
+        {"click": [7, 4]},
+        {"toggleRange": [2, 2]},
+        {"extendTo": [4, 3]},
+        {"toggleRange": [4, 1]},
+        {"toggleRange": [0, 5]},
+        {"extendTo": [1, 5]},
+        {"expect": {"rangeCount": 4}},
+        {"expect": {"headingMarks": {"columns": [[1, 5]], "rows": [[0, 5], [7, 1]]}}}
+      ]
+    },
+    {
+      "name": "ADR-0008 (2026-10-13): the Focus marks nothing of its own — Tab walks it through the ranges and the marks stay the ranges'",
+      "steps": [
+        {"click": [0, 0]},
+        {"extendTo": [1, 1]},
+        {"toggleRange": [3, 3]},
+        {"extendTo": [5, 4]},
+        {"cycle": "tab"},
+        {"expect": {"headingMarks": {"columns": [[0, 2], [3, 2]], "rows": [[0, 2], [3, 3]]}}},
+        {"cycle": "tab"},
+        {"expect": {"headingMarks": {"columns": [[0, 2], [3, 2]], "rows": [[0, 2], [3, 3]]}}},
+        {"cycle": "tab"},
+        {"expect": {"headingMarks": {"columns": [[0, 2], [3, 2]], "rows": [[0, 2], [3, 3]]}}},
+        {"cycle": "tab"},
+        {"expect": {"headingMarks": {"columns": [[0, 2], [3, 2]], "rows": [[0, 2], [3, 3]]}}},
+        {"cycle": "tab"},
+        {"expect": {"headingMarks": {"columns": [[0, 2], [3, 2]], "rows": [[0, 2], [3, 3]]}}},
+        {"cycle": "tab"},
+        {"expect": {"headingMarks": {"columns": [[0, 2], [3, 2]], "rows": [[0, 2], [3, 3]]}}}
+      ]
+    },
+    {
+      "name": "ADR-0008 (2026-10-13) / ADR-0050: whole columns mark every row",
+      "steps": [
+        {"selectColumn": 2, "focusRow": 0},
+        {"extendToColumn": 4, "focusRowIfEmpty": 0},
+        {"expect": {"headingMarks": {"columns": [[2, 3]], "rows": [[0, 100]]}}}
+      ]
+    },
+    {
+      "name": "ADR-0008 (2026-10-13) / ADR-0050: a whole row marks every column",
+      "steps": [
+        {"selectRow": 7, "focusColumn": 0},
+        {"expect": {"headingMarks": {"columns": [[0, 26]], "rows": [[7, 1]]}}}
+      ]
+    },
+    {
+      "name": "ADR-0008 (2026-10-13): select-all marks both axes whole",
+      "steps": [
+        {"click": [3, 3]},
+        {"selectAll": true},
+        {"expect": {"headingMarks": {"columns": [[0, 26]], "rows": [[0, 100]]}}}
+      ]
+    },
+    {
+      "name": "ADR-0008, D1: a Selection under an empty extent covers no Heading whole",
+      "steps": [
+        {"click": [0, 0]},
+        {"expect": {"headingMarks": {"under": [0, 4], "wholeColumns": [], "wholeRows": []}}},
+        {"expect": {"headingMarks": {"under": [4, 0], "wholeColumns": [], "wholeRows": []}}},
+        {"expect": {"headingMarks": {"under": [0, 0], "wholeColumns": [], "wholeRows": []}}}
+      ]
+    },
+    {
+      "name": "ADR-0008, D1: adjacent tiles cover the whole grid whole, though no one range spans it",
+      "extent": [4, 4],
+      "steps": [
+        {"click": [0, 0]},
+        {"extendTo": [1, 1]},
+        {"toggleRange": [0, 2]},
+        {"extendTo": [1, 3]},
+        {"toggleRange": [2, 3]},
+        {"extendTo": [3, 0]},
+        {"expect": {"rangeCount": 3, "wholeColumns": []}},
+        {"expect": {"headingMarks": {"wholeColumns": [[0, 4]], "wholeRows": [[0, 4]]}}}
+      ]
+    },
+    {
+      "name": "ADR-0008, D1: overlaps do not make up for a hole, and another range can fill it",
+      "extent": [5, 4],
+      "steps": [
+        {"click": [0, 0]},
+        {"extendTo": [2, 2]},
+        {"toggleRange": [3, 2]},
+        {"extendTo": [1, 0]},
+        {"expect": {"rangeCount": 2, "cellCount": 18}},
+        {"expect": {"headingMarks": {"wholeColumns": [], "wholeRows": []}}},
+        {"toggleRange": [4, 1]},
+        {"extendTo": [2, 2]},
+        {"expect": {"headingMarks": {"wholeColumns": [[1, 2]], "wholeRows": []}}}
+      ]
+    },
+    {
+      "name": "ADR-0008, D1: whole-column runs keep their holes and join where coverage touches",
+      "extent": [4, 6],
+      "steps": [
+        {"selectColumn": 5, "focusRow": 0},
+        {"toggleColumn": 1, "focusRow": 0},
+        {"toggleColumn": 0, "focusRow": 0},
+        {"toggleColumn": 3, "focusRow": 0},
+        {"expect": {"headingMarks": {"wholeColumns": [[0, 2], [3, 1], [5, 1]], "wholeRows": []}}}
+      ]
+    },
+    {
+      "name": "ADR-0008, D1: whole-row runs keep their holes and join where coverage touches",
+      "extent": [4, 6],
+      "steps": [
+        {"selectRow": 3, "focusColumn": 0},
+        {"toggleRow": 0, "focusColumn": 0},
+        {"toggleRow": 1, "focusColumn": 0},
+        {"expect": {"headingMarks": {"wholeColumns": [], "wholeRows": [[0, 2], [3, 1]]}}}
+      ]
+    },
+    {
+      "name": "ADR-0008, D1: a cell taken out interrupts both whole axes",
+      "extent": [5, 6],
+      "steps": [
+        {"click": [0, 0]},
+        {"selectAll": true},
+        {"toggleRange": [2, 3]},
+        {"expect": {"headingMarks": {"wholeColumns": [[0, 3], [4, 2]], "wholeRows": [[0, 2], [3, 2]]}}}
+      ]
+    },
+    {
+      "name": "ADR-0008, D1: the current extent decides whether coverage is whole",
+      "extent": [4, 4],
+      "steps": [
+        {"click": [0, 0]},
+        {"selectAll": true},
+        {"expect": {"headingMarks": {"under": [5, 4], "wholeColumns": [], "wholeRows": [[0, 4]]}}},
+        {"expect": {"headingMarks": {"under": [4, 5], "wholeColumns": [[0, 4]], "wholeRows": []}}}
+      ]
+    },
+    {
+      "name": "ADR-0008, D1: at the largest extent, select-all is whole on both axes, found from boundaries without walking cells",
+      "extent": [2147483647, 2147483647],
+      "steps": [
+        {"click": [0, 0]},
+        {"selectAll": true},
+        {"expect": {"headingMarks": {"wholeColumns": [[0, 2147483647]], "wholeRows": [[0, 2147483647]]}}}
+      ]
+    },
+    {
+      "name": "ADR-0008, D1: at the largest extent, two ranges meeting at the last rows make two columns whole",
+      "extent": [2147483647, 2147483647],
+      "steps": [
+        {"click": [0, 1]},
+        {"extendTo": [2147483645, 2]},
+        {"toggleRange": [2147483646, 1]},
+        {"extendTo": [2147483646, 2]},
+        {"expect": {"headingMarks": {"wholeColumns": [[1, 2]], "wholeRows": []}}}
+      ]
+    },
+    {
+      "name": "ADR-0008, D1: at the largest extent, the last column is whole",
+      "extent": [2147483647, 2147483647],
+      "steps": [
+        {"selectColumn": 2147483646, "focusRow": 0},
+        {"expect": {"headingMarks": {"wholeColumns": [[2147483646, 1]]}}}
+      ]
+    }
+  ]
+}
