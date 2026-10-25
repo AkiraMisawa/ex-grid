@@ -234,6 +234,14 @@ interface Taken<Row> {
     readonly onCellDoubleClick: ((cell: CellPosition) => void) | undefined;
 }
 
+// A Selection the rows or the source dropped: where the typing aimed at it was going, why it went, and whether
+// the Consumer has heard of typing thrown away with it (ADR-0142).
+interface DroppedAim {
+    readonly focus: CellPosition | undefined;
+    readonly reason: EditDiscardReason;
+    told: boolean;
+}
+
 /** A reveal's repaint under way (ADR-0012, 2026-10-08): where the reveal left the scroller, and what stops
  * the frame it waits for. */
 interface Repaint {
@@ -446,6 +454,15 @@ export class GridView<Row> {
     #editorFocusOwed = false;
     readonly #keyFieldLayer: HTMLElement;
     readonly #keyField: HTMLInputElement;
+    // The Keyboard Field's composition (ADR-0080): whether an IME composes there now; how much of the field's
+    // value has been handed on, so a second composition finished before the keyboard left carries only its
+    // own text; and whether a key the IME took there is still being told, from its keydown to the next keyup
+    // the root hears. The editor's request for the keyboard waits while either holds: moving DOM focus would
+    // end a composition half-typed, or carry a key that starts the next one into the editor without its
+    // romaji (the sixteenth Windows run's k6).
+    #composing = false;
+    #carried = 0;
+    #imeKeyTold = false;
     readonly #editorPinned: HTMLElement;
     readonly #message: HTMLElement;
     // Whether the keyboard last came to the grid by a press, which a text field's :focus-visible cannot tell
@@ -455,8 +472,15 @@ export class GridView<Row> {
     // The source the held Selection was last reconciled with, to tell another source from a moved order.
     #heldSource: GridSource<Row> | undefined;
     // A Selection the rows or the source dropped since the last paint: what a key typed meanwhile was aimed at
-    // (ADR-0142); and whether the Consumer has heard of typing thrown away with it.
-    #droppedAim: { readonly focus: CellPosition | undefined; readonly reason: EditDiscardReason; told: boolean } | undefined;
+    // (ADR-0142).
+    #droppedAim: DroppedAim | undefined;
+    // Every Selection the rows or the source dropped, counted, and the last: a composition is aimed at what was
+    // painted when it began, however many paints come before it ends (ADR-0142).
+    #drops = 0;
+    #lastDrop: DroppedAim | undefined;
+    // What a composition in the Keyboard Field was aimed at as it began: the drops counted by then, and the
+    // Selection dropped before it that no paint had shown yet.
+    #composedAim: { readonly drops: number; readonly dropped: DroppedAim | undefined } | undefined;
     #columnNames: readonly string[] = [];
     // The Selection the Consumer last heard.
     #raised: Selection = Selection.empty;
@@ -639,7 +663,9 @@ export class GridView<Row> {
             root.addEventListener('mousedown', this.#onRootPress, true);
             root.addEventListener('focus', this.#onFocused, true);
             keyField.addEventListener('input', this.#onKeyFieldInput);
+            keyField.addEventListener('compositionstart', this.#onKeyFieldComposing);
             keyField.addEventListener('compositionend', this.#onKeyFieldComposed);
+            root.addEventListener('keyup', this.#onKeyUp, true);
             this.#header.addEventListener('mousedown', this.#onHeaderPress);
             this.#header.addEventListener('click', this.#onHeaderClick);
             root.addEventListener('focusout', this.#onFocusLeft);
@@ -656,7 +682,9 @@ export class GridView<Row> {
                 () => { root.removeEventListener('mousedown', this.#onRootPress, true); },
                 () => { root.removeEventListener('focus', this.#onFocused, true); },
                 () => { keyField.removeEventListener('input', this.#onKeyFieldInput); },
+                () => { keyField.removeEventListener('compositionstart', this.#onKeyFieldComposing); },
                 () => { keyField.removeEventListener('compositionend', this.#onKeyFieldComposed); },
+                () => { root.removeEventListener('keyup', this.#onKeyUp, true); },
                 () => { root.removeEventListener('focusout', this.#onFocusLeft); },
                 () => { root.removeEventListener('mouseup', this.#onDragEnd); },
                 () => { this.#viewport.removeEventListener('mousemove', this.#onDrag); },
@@ -1180,6 +1208,8 @@ export class GridView<Row> {
                 reason: this.#source === this.#heldSource ? 'orderMoved' : 'sourceChanged',
                 told: false,
             };
+            this.#drops += 1;
+            this.#lastDrop = this.#droppedAim;
         }
         this.#heldSource = this.#source;
         this.#columnNames = names;
@@ -1261,14 +1291,29 @@ export class GridView<Row> {
     readonly #onKeyDown = (event: KeyboardEvent): void => {
         // The keyboard came by a key, which the root's ring says from here on (KB-12, ADR-0080).
         this.#keyboardByPress = false;
-        // Mid-composition an IME owns Enter, Escape and the arrows; a modifier's own keydown is no key.
-        if (event.isComposing || event.keyCode === 229 || modifierKeys.has(event.key)) return;
+        // Mid-composition an IME owns Enter, Escape and the arrows; one it takes in the Keyboard Field is told
+        // until its keyup (ADR-0080). A modifier's own keydown is no key.
+        if (event.isComposing || event.keyCode === 229) {
+            if (event.target === this.#keyField) this.#imeKeyTold = true;
+            return;
+        }
+        if (modifierKeys.has(event.key)) return;
         const press: KeyPress = {
             key: event.key, ctrl: event.ctrlKey, shift: event.shiftKey, alt: event.altKey, meta: event.metaKey,
             metaIsPrimary: this.#metaIsPrimary,
         };
         const edit = this.#edit;
         if (edit !== undefined && event.target === edit.element) {
+            this.#onEditorKey(event, press, edit);
+            return;
+        }
+        // A key the IME did not take, typed while the editor a composition opened still waits for the keyboard
+        // in the Keyboard Field: the key it took before has been told whole, so the editor takes the keyboard
+        // now, and the key is the editor's, its character typed where DOM focus now is (ADR-0080).
+        if (edit !== undefined && event.target === this.#keyField) {
+            this.#imeKeyTold = false;
+            this.#editorFocusOwed = true;
+            this.#focusEditor();
             this.#onEditorKey(event, press, edit);
             return;
         }
@@ -2200,8 +2245,18 @@ export class GridView<Row> {
     // Keyboard Field left takes the root's ring with it, and the keyboard back in from outside is the
     // keyboard's, whatever pressed last. An edit left for another control stands (ED-26).
     readonly #onFocusLeft = (event: FocusEvent): void => {
-        if (event.target === this.#keyField) this.#markFocusVisible(false);
+        if (event.target === this.#keyField) {
+            this.#settleKeyField();
+            this.#markFocusVisible(false);
+        }
         const next = event.relatedTarget;
+        // A key the IME took that is still being told ends here: its keyup, if it comes, is told wherever the
+        // keyboard went, and none of it can start a composition here (ADR-0080). The editor's request that
+        // waited for it is judged where the keyboard is going, since DOM focus is on nothing meanwhile.
+        if (this.#imeKeyTold) {
+            this.#imeKeyTold = false;
+            this.#focusEditor(next instanceof Element ? next : undefined);
+        }
         if (!(next instanceof Node) || !this.#root.contains(next)) {
             this.#tabReleased = false;
             this.#keyboardByPress = false;
@@ -2226,9 +2281,22 @@ export class GridView<Row> {
         }
     };
 
-    // A press anywhere in the root says the keyboard comes by the pointer now (KB-12).
-    readonly #onRootPress = (): void => {
+    // A press anywhere in the root says the keyboard comes by the pointer now (KB-12). A press while the
+    // Keyboard Field composes ends the composition first, so its text is the grid's ahead of the press: by
+    // its default the press would end it after moving the Focus, and the text would open an edit there
+    // (ADR-0080).
+    readonly #onRootPress = (event: MouseEvent): void => {
+        // Ended before the press is marked: the field left says the keyboard has gone (#onFocusLeft).
+        if (this.#composing && event.button === 0) this.#keyField.blur();
         this.#keyboardByPress = true;
+    };
+
+    // The root's keyup: a key the IME took in the Keyboard Field has been told whole, since everything it owed
+    // the page came before it, so the editor's request that waited for it is granted (ADR-0080).
+    readonly #onKeyUp = (): void => {
+        if (!this.#imeKeyTold) return;
+        this.#imeKeyTold = false;
+        this.#focusEditor();
     };
 
     // The root's ring while its Keyboard Field holds a keyboard that did not come of a press: a text field
@@ -2245,22 +2313,79 @@ export class GridView<Row> {
         else this.#root.focus({ preventScroll: true });
     }
 
-    // Text put into the Keyboard Field that is not a key the grid answered: the browser's own undo, a drop.
-    // Not typing the grid takes, so it is removed (ADR-0080). A composition is the IME's, and left alone.
+    // Text put into the Keyboard Field outside a composition (ADR-0080). What an IME inserts without composing
+    // it — a full-width space, a character some IMEs commit at once — is carried as a composition's text is;
+    // anything else — the browser's own undo, a drop — is not typing the grid takes, and goes.
     readonly #onKeyFieldInput = (event: Event): void => {
-        if (event instanceof InputEvent && event.isComposing) return;
-        this.#keyField.value = '';
+        if (this.#composing || (event instanceof InputEvent && event.isComposing)) return;
+        if (event instanceof InputEvent && (event.inputType === 'insertText' || event.inputType === 'insertReplacementText')) {
+            this.#keyField.classList.add('ex-key-field-composing');
+            this.#carryKeyFieldText();
+        } else {
+            this.#keyField.value = this.#keyField.value.slice(0, this.#carried);
+        }
     };
 
-    // A composition an IME finished on the Keyboard Field, which stands over the Focus so the IME draws there
-    // (ADR-0080): its text opens Overwrite holding it, as a character typed does, and never stays in the field.
-    readonly #onKeyFieldComposed = (event: CompositionEvent): void => {
-        this.#keyField.value = '';
-        if (event.data === '' || this.#edit !== undefined || !this.#canEdit) return;
-        this.#answered += 1;
-        this.#tryOpenEdit('overwrite', event.data);
+    // A composition starts in the Keyboard Field, which the stylesheet then draws over the Focus as the
+    // editor looks (ADR-0080). The Focus is revealed, as Excel scrolls to the active cell when typing begins;
+    // nothing else changes until it ends. DOM focus never moves while it lasts.
+    readonly #onKeyFieldComposing = (): void => {
+        this.#composing = true;
+        this.#keyField.classList.add('ex-key-field-composing');
+        if (this.#edit !== undefined) return;
+        this.#reconcileSelection();
+        this.#composedAim = { drops: this.#drops, dropped: this.#droppedAim };
+        const focus = this.#held.selection.focus;
+        if (focus !== undefined && !this.#cellIsPainted(focus)) {
+            this.#revealOwed = { target: focus, extending: undefined, rowStart: false, stepRows: 0 };
+        }
+        // A Selection the reconcile just dropped is painted gone while the composition lasts.
         this.#invalidate();
     };
+
+    // A composition ends in the Keyboard Field, with its text, or with none when it was cancelled.
+    readonly #onKeyFieldComposed = (): void => {
+        this.#composing = false;
+        this.#carryKeyFieldText();
+    };
+
+    // The field's text past what has already gone (ADR-0080). With no edit open it opens Overwrite holding it,
+    // judged as a typed character is, and aimed at what was painted when the composition began: a Selection
+    // dropped since throws it away (ADR-0142). An empty text opens an empty edit, as Excel's does when Escape
+    // ends a composition. With an edit open — a second composition, finished before the editor took the
+    // keyboard — it is typed at the editor's caret. The field keeps showing it until the keyboard leaves.
+    #carryKeyFieldText(): void {
+        const field = this.#keyField;
+        const text = field.value.slice(this.#carried);
+        this.#carried = field.value.length;
+        const edit = this.#edit;
+        if (edit !== undefined) {
+            const { element } = edit;
+            const start = element.selectionStart ?? element.value.length;
+            if (text !== '') element.setRangeText(text, start, element.selectionEnd ?? start, 'end');
+        } else if (!this.#destroyed && this.#canEdit) {
+            this.#answered += 1;
+            // Aimed at what was painted as it began: a Selection dropped since, or dropped before it and not
+            // yet painted then, throws the text away (ADR-0142).
+            const aim = this.#composedAim;
+            this.#reconcileSelection();
+            if (aim !== undefined) this.#droppedAim = this.#drops !== aim.drops ? this.#lastDrop : aim.dropped;
+            this.#tryOpenEdit('overwrite', text);
+            this.#invalidate();
+        }
+        this.#composedAim = undefined;
+        if (this.#edit === undefined || this.#root.ownerDocument.activeElement !== field) this.#settleKeyField();
+        this.#focusEditor();
+    }
+
+    // The Keyboard Field unseen and empty again: once the keyboard has left it, or when its text opened
+    // nothing. Never while it composes, which would end the composition.
+    #settleKeyField(): void {
+        if (this.#composing) return;
+        this.#keyField.value = '';
+        this.#carried = 0;
+        this.#keyField.classList.remove('ex-key-field-composing');
+    }
 
     // A double click on the rows (ADR-0063): on a cell that edits it opens the edit on its text, in Caret;
     // elsewhere the Consumer hears it, with the Focus its presses placed. While an edit is open it is the
@@ -2693,9 +2818,10 @@ export class GridView<Row> {
         if (scroller.scrollLeft !== left) scroller.scrollLeft = left;
     }
 
-    // DOM focus inside this root and not in a grid nested in it, or on nothing.
-    #keyboardHere(): boolean {
-        const active = this.#root.ownerDocument.activeElement;
+    // DOM focus inside this root and not in a grid nested in it, or on nothing; or, while the keyboard is
+    // moving, where it is going.
+    #keyboardHere(toward?: Element): boolean {
+        const active = toward ?? this.#root.ownerDocument.activeElement;
         const doc = this.#root.ownerDocument;
         return active === null || active === doc.body || active === doc.documentElement
             || (this.#root.contains(active) && active.closest('.ex-grid') === this.#root);
@@ -3100,6 +3226,10 @@ export class GridView<Row> {
             // fall to the page (ADR-0080). Taken once the field is gone, which the root's focus would hand on.
             const held = doc.activeElement === this.#keyField;
             this.#keyFieldLayer.remove();
+            // A composition the field took with it is over, whether or not the browser says so.
+            this.#composing = false;
+            this.#imeKeyTold = false;
+            this.#settleKeyField();
             if (held) this.#root.focus({ preventScroll: true });
         }
         // Moving a focused field blurs it: the editor taken into or out of the pinned anchor keeps the keyboard.
@@ -3185,11 +3315,13 @@ export class GridView<Row> {
 
     // The editor takes the keyboard once it is painted, while the keyboard is this grid's: on opening, with
     // the caret placed at the end of its text by the core, never left where the browser puts it (ADR-0010).
-    #focusEditor(): void {
-        if (!this.#editorFocusOwed) return;
+    // The request waits while the Keyboard Field composes, or a key the IME took there is still being told
+    // (ADR-0080); `toward` is where the keyboard is going when the field is being left.
+    #focusEditor(toward?: Element): void {
+        if (!this.#editorFocusOwed || this.#composing || this.#imeKeyTold) return;
         this.#editorFocusOwed = false;
         const edit = this.#edit;
-        if (edit === undefined || !edit.element.isConnected || !this.#keyboardHere()) return;
+        if (edit === undefined || !edit.element.isConnected || !this.#keyboardHere(toward)) return;
         const { element } = edit;
         if (this.#root.ownerDocument.activeElement === element) return;
         element.focus({ preventScroll: true });
