@@ -1,0 +1,1305 @@
+{
+  "about": "Each user operation is one reversible step (ADR-0048, ticket 12, SH-13): undo is the identity, redo is the same as doing, a stack walks back and forth, and a refused operation is no step. Transcribed from ExSheet.Engine.Tests' UndoStepTests.",
+  "kind": "sheet",
+  "culture": "en-US",
+  "setups": {
+    "populated": [
+      {
+        "enter": {
+          "A1": "1",
+          "A2": "2",
+          "A3": "3",
+          "A5": "5",
+          "B1": "=SUM(A1:A5)",
+          "B2": "=A3*10",
+          "B3": "=$A$5+A2",
+          "C1": "=SUM(A:A)",
+          "C2": "=B2+B3",
+          "D4": "2026-09-27"
+        }
+      },
+      {
+        "setNumberFormat": {
+          "A2": "0.00"
+        }
+      },
+      {
+        "setAlignment": {
+          "B3": "center"
+        }
+      },
+      {
+        "setNumberFormat": {
+          "E1048576": "0%",
+          "XFD9": "0%"
+        }
+      }
+    ]
+  },
+  "cases": [
+    {
+      "name": "ADR-0048 (SH-13): undoing a step restores every Entry, format, Reference and Value exactly (enter)",
+      "setup": "populated",
+      "steps": [
+        {
+          "remember": "before"
+        },
+        {
+          "do": {
+            "enter": {
+              "A3": "30"
+            }
+          },
+          "expect": {
+            "pictureNot": "before"
+          }
+        },
+        {
+          "undo": "last",
+          "expect": {
+            "picture": "before"
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-13): undoing a step restores every Entry, format, Reference and Value exactly (enter formula)",
+      "setup": "populated",
+      "steps": [
+        {
+          "remember": "before"
+        },
+        {
+          "do": {
+            "enter": {
+              "A4": "=B2/2"
+            }
+          },
+          "expect": {
+            "pictureNot": "before"
+          }
+        },
+        {
+          "undo": "last",
+          "expect": {
+            "picture": "before"
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-13): undoing a step restores every Entry, format, Reference and Value exactly (clear)",
+      "setup": "populated",
+      "steps": [
+        {
+          "remember": "before"
+        },
+        {
+          "do": {
+            "enter": {
+              "A1": ""
+            }
+          },
+          "expect": {
+            "pictureNot": "before"
+          }
+        },
+        {
+          "undo": "last",
+          "expect": {
+            "picture": "before"
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-13): undoing a step restores every Entry, format, Reference and Value exactly (batched enter)",
+      "setup": "populated",
+      "steps": [
+        {
+          "remember": "before"
+        },
+        {
+          "do": {
+            "enter": {
+              "A1": "10",
+              "F1": "12%",
+              "A2": "=C1",
+              "G7": "9/28/2026"
+            }
+          },
+          "expect": {
+            "pictureNot": "before"
+          }
+        },
+        {
+          "undo": "last",
+          "expect": {
+            "picture": "before"
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-13): undoing a step restores every Entry, format, Reference and Value exactly (set entries)",
+      "setup": "populated",
+      "steps": [
+        {
+          "remember": "before"
+        },
+        {
+          "do": {
+            "setEntries": {
+              "A5": null,
+              "B9": {
+                "formula": "=B1"
+              }
+            }
+          },
+          "expect": {
+            "pictureNot": "before"
+          }
+        },
+        {
+          "undo": "last",
+          "expect": {
+            "picture": "before"
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-13): undoing a step restores every Entry, format, Reference and Value exactly (format)",
+      "setup": "populated",
+      "steps": [
+        {
+          "remember": "before"
+        },
+        {
+          "do": {
+            "setNumberFormat": {
+              "at": [
+                "A1",
+                "A2",
+                "Z1"
+              ],
+              "format": "#,##0"
+            }
+          },
+          "expect": {
+            "pictureNot": "before"
+          }
+        },
+        {
+          "undo": "last",
+          "expect": {
+            "picture": "before"
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-13): undoing a step restores every Entry, format, Reference and Value exactly (alignment)",
+      "setup": "populated",
+      "steps": [
+        {
+          "remember": "before"
+        },
+        {
+          "do": {
+            "setAlignment": {
+              "at": [
+                "B3",
+                "B4"
+              ],
+              "alignment": "right"
+            }
+          },
+          "expect": {
+            "pictureNot": "before"
+          }
+        },
+        {
+          "undo": "last",
+          "expect": {
+            "picture": "before"
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-13): undoing a step restores every Entry, format, Reference and Value exactly (insert rows)",
+      "setup": "populated",
+      "steps": [
+        {
+          "remember": "before"
+        },
+        {
+          "do": {
+            "insertRows": [
+              0,
+              2
+            ]
+          },
+          "expect": {
+            "pictureNot": "before"
+          }
+        },
+        {
+          "undo": "last",
+          "expect": {
+            "picture": "before"
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-13): undoing a step restores every Entry, format, Reference and Value exactly (insert rows inside)",
+      "setup": "populated",
+      "steps": [
+        {
+          "remember": "before"
+        },
+        {
+          "do": {
+            "insertRows": [
+              2
+            ]
+          },
+          "expect": {
+            "pictureNot": "before"
+          }
+        },
+        {
+          "undo": "last",
+          "expect": {
+            "picture": "before"
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-13): undoing a step restores every Entry, format, Reference and Value exactly (delete rows)",
+      "setup": "populated",
+      "steps": [
+        {
+          "remember": "before"
+        },
+        {
+          "do": {
+            "deleteRows": [
+              1,
+              2
+            ]
+          },
+          "expect": {
+            "pictureNot": "before"
+          }
+        },
+        {
+          "undo": "last",
+          "expect": {
+            "picture": "before"
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-13): undoing a step restores every Entry, format, Reference and Value exactly (delete referenced row)",
+      "setup": "populated",
+      "steps": [
+        {
+          "remember": "before"
+        },
+        {
+          "do": {
+            "deleteRows": [
+              4
+            ]
+          },
+          "expect": {
+            "pictureNot": "before"
+          }
+        },
+        {
+          "undo": "last",
+          "expect": {
+            "picture": "before"
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-13): undoing a step restores every Entry, format, Reference and Value exactly (insert columns)",
+      "setup": "populated",
+      "steps": [
+        {
+          "remember": "before"
+        },
+        {
+          "do": {
+            "insertColumns": [
+              1,
+              3
+            ]
+          },
+          "expect": {
+            "pictureNot": "before"
+          }
+        },
+        {
+          "undo": "last",
+          "expect": {
+            "picture": "before"
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-13): undoing a step restores every Entry, format, Reference and Value exactly (delete columns)",
+      "setup": "populated",
+      "steps": [
+        {
+          "remember": "before"
+        },
+        {
+          "do": {
+            "deleteColumns": [
+              0
+            ]
+          },
+          "expect": {
+            "pictureNot": "before"
+          }
+        },
+        {
+          "undo": "last",
+          "expect": {
+            "picture": "before"
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-13): undoing a step restores every Entry, format, Reference and Value exactly (insert rows below a formatted row)",
+      "setup": "populated",
+      "steps": [
+        {
+          "remember": "before"
+        },
+        {
+          "do": {
+            "insertRows": [
+              2,
+              2
+            ]
+          },
+          "expect": {
+            "pictureNot": "before"
+          }
+        },
+        {
+          "undo": "last",
+          "expect": {
+            "picture": "before"
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-13): undoing a step restores every Entry, format, Reference and Value exactly (insert columns right of a formatted column)",
+      "setup": "populated",
+      "steps": [
+        {
+          "remember": "before"
+        },
+        {
+          "do": {
+            "insertColumns": [
+              2
+            ]
+          },
+          "expect": {
+            "pictureNot": "before"
+          }
+        },
+        {
+          "undo": "last",
+          "expect": {
+            "picture": "before"
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-13): undoing a step restores every Entry, format, Reference and Value exactly (delete rows below a formatted row)",
+      "setup": "populated",
+      "steps": [
+        {
+          "remember": "before"
+        },
+        {
+          "do": {
+            "deleteRows": [
+              2
+            ]
+          },
+          "expect": {
+            "pictureNot": "before"
+          }
+        },
+        {
+          "undo": "last",
+          "expect": {
+            "picture": "before"
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-13): undoing a step restores every Entry, format, Reference and Value exactly (delete columns right of a formatted column)",
+      "setup": "populated",
+      "steps": [
+        {
+          "remember": "before"
+        },
+        {
+          "do": {
+            "deleteColumns": [
+              2
+            ]
+          },
+          "expect": {
+            "pictureNot": "before"
+          }
+        },
+        {
+          "undo": "last",
+          "expect": {
+            "picture": "before"
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-13): redoing a step gives exactly what doing it gave (enter)",
+      "setup": "populated",
+      "steps": [
+        {
+          "do": {
+            "enter": {
+              "A3": "30"
+            }
+          }
+        },
+        {
+          "remember": "done"
+        },
+        {
+          "undo": "last"
+        },
+        {
+          "redo": "last",
+          "expect": {
+            "picture": "done"
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-13): redoing a step gives exactly what doing it gave (enter formula)",
+      "setup": "populated",
+      "steps": [
+        {
+          "do": {
+            "enter": {
+              "A4": "=B2/2"
+            }
+          }
+        },
+        {
+          "remember": "done"
+        },
+        {
+          "undo": "last"
+        },
+        {
+          "redo": "last",
+          "expect": {
+            "picture": "done"
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-13): redoing a step gives exactly what doing it gave (clear)",
+      "setup": "populated",
+      "steps": [
+        {
+          "do": {
+            "enter": {
+              "A1": ""
+            }
+          }
+        },
+        {
+          "remember": "done"
+        },
+        {
+          "undo": "last"
+        },
+        {
+          "redo": "last",
+          "expect": {
+            "picture": "done"
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-13): redoing a step gives exactly what doing it gave (batched enter)",
+      "setup": "populated",
+      "steps": [
+        {
+          "do": {
+            "enter": {
+              "A1": "10",
+              "F1": "12%",
+              "A2": "=C1",
+              "G7": "9/28/2026"
+            }
+          }
+        },
+        {
+          "remember": "done"
+        },
+        {
+          "undo": "last"
+        },
+        {
+          "redo": "last",
+          "expect": {
+            "picture": "done"
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-13): redoing a step gives exactly what doing it gave (set entries)",
+      "setup": "populated",
+      "steps": [
+        {
+          "do": {
+            "setEntries": {
+              "A5": null,
+              "B9": {
+                "formula": "=B1"
+              }
+            }
+          }
+        },
+        {
+          "remember": "done"
+        },
+        {
+          "undo": "last"
+        },
+        {
+          "redo": "last",
+          "expect": {
+            "picture": "done"
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-13): redoing a step gives exactly what doing it gave (format)",
+      "setup": "populated",
+      "steps": [
+        {
+          "do": {
+            "setNumberFormat": {
+              "at": [
+                "A1",
+                "A2",
+                "Z1"
+              ],
+              "format": "#,##0"
+            }
+          }
+        },
+        {
+          "remember": "done"
+        },
+        {
+          "undo": "last"
+        },
+        {
+          "redo": "last",
+          "expect": {
+            "picture": "done"
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-13): redoing a step gives exactly what doing it gave (alignment)",
+      "setup": "populated",
+      "steps": [
+        {
+          "do": {
+            "setAlignment": {
+              "at": [
+                "B3",
+                "B4"
+              ],
+              "alignment": "right"
+            }
+          }
+        },
+        {
+          "remember": "done"
+        },
+        {
+          "undo": "last"
+        },
+        {
+          "redo": "last",
+          "expect": {
+            "picture": "done"
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-13): redoing a step gives exactly what doing it gave (insert rows)",
+      "setup": "populated",
+      "steps": [
+        {
+          "do": {
+            "insertRows": [
+              0,
+              2
+            ]
+          }
+        },
+        {
+          "remember": "done"
+        },
+        {
+          "undo": "last"
+        },
+        {
+          "redo": "last",
+          "expect": {
+            "picture": "done"
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-13): redoing a step gives exactly what doing it gave (insert rows inside)",
+      "setup": "populated",
+      "steps": [
+        {
+          "do": {
+            "insertRows": [
+              2
+            ]
+          }
+        },
+        {
+          "remember": "done"
+        },
+        {
+          "undo": "last"
+        },
+        {
+          "redo": "last",
+          "expect": {
+            "picture": "done"
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-13): redoing a step gives exactly what doing it gave (delete rows)",
+      "setup": "populated",
+      "steps": [
+        {
+          "do": {
+            "deleteRows": [
+              1,
+              2
+            ]
+          }
+        },
+        {
+          "remember": "done"
+        },
+        {
+          "undo": "last"
+        },
+        {
+          "redo": "last",
+          "expect": {
+            "picture": "done"
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-13): redoing a step gives exactly what doing it gave (delete referenced row)",
+      "setup": "populated",
+      "steps": [
+        {
+          "do": {
+            "deleteRows": [
+              4
+            ]
+          }
+        },
+        {
+          "remember": "done"
+        },
+        {
+          "undo": "last"
+        },
+        {
+          "redo": "last",
+          "expect": {
+            "picture": "done"
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-13): redoing a step gives exactly what doing it gave (insert columns)",
+      "setup": "populated",
+      "steps": [
+        {
+          "do": {
+            "insertColumns": [
+              1,
+              3
+            ]
+          }
+        },
+        {
+          "remember": "done"
+        },
+        {
+          "undo": "last"
+        },
+        {
+          "redo": "last",
+          "expect": {
+            "picture": "done"
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-13): redoing a step gives exactly what doing it gave (delete columns)",
+      "setup": "populated",
+      "steps": [
+        {
+          "do": {
+            "deleteColumns": [
+              0
+            ]
+          }
+        },
+        {
+          "remember": "done"
+        },
+        {
+          "undo": "last"
+        },
+        {
+          "redo": "last",
+          "expect": {
+            "picture": "done"
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-13): redoing a step gives exactly what doing it gave (insert rows below a formatted row)",
+      "setup": "populated",
+      "steps": [
+        {
+          "do": {
+            "insertRows": [
+              2,
+              2
+            ]
+          }
+        },
+        {
+          "remember": "done"
+        },
+        {
+          "undo": "last"
+        },
+        {
+          "redo": "last",
+          "expect": {
+            "picture": "done"
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-13): redoing a step gives exactly what doing it gave (insert columns right of a formatted column)",
+      "setup": "populated",
+      "steps": [
+        {
+          "do": {
+            "insertColumns": [
+              2
+            ]
+          }
+        },
+        {
+          "remember": "done"
+        },
+        {
+          "undo": "last"
+        },
+        {
+          "redo": "last",
+          "expect": {
+            "picture": "done"
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-13): redoing a step gives exactly what doing it gave (delete rows below a formatted row)",
+      "setup": "populated",
+      "steps": [
+        {
+          "do": {
+            "deleteRows": [
+              2
+            ]
+          }
+        },
+        {
+          "remember": "done"
+        },
+        {
+          "undo": "last"
+        },
+        {
+          "redo": "last",
+          "expect": {
+            "picture": "done"
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-13): redoing a step gives exactly what doing it gave (delete columns right of a formatted column)",
+      "setup": "populated",
+      "steps": [
+        {
+          "do": {
+            "deleteColumns": [
+              2
+            ]
+          }
+        },
+        {
+          "remember": "done"
+        },
+        {
+          "undo": "last"
+        },
+        {
+          "redo": "last",
+          "expect": {
+            "picture": "done"
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-13): steps undo in reverse order and redo in order, back to each state",
+      "setup": "populated",
+      "steps": [
+        {
+          "remember": "state 0"
+        },
+        {
+          "do": {
+            "deleteRows": [
+              4
+            ]
+          }
+        },
+        {
+          "remember": "state 1"
+        },
+        {
+          "do": {
+            "enter": {
+              "A4": "=B2/2"
+            }
+          }
+        },
+        {
+          "remember": "state 2"
+        },
+        {
+          "do": {
+            "insertColumns": [
+              1,
+              3
+            ]
+          }
+        },
+        {
+          "remember": "state 3"
+        },
+        {
+          "do": {
+            "enter": {
+              "A1": "10",
+              "F1": "12%",
+              "A2": "=C1",
+              "G7": "9/28/2026"
+            }
+          }
+        },
+        {
+          "remember": "state 4"
+        },
+        {
+          "do": {
+            "deleteRows": [
+              1,
+              2
+            ]
+          }
+        },
+        {
+          "remember": "state 5"
+        },
+        {
+          "do": {
+            "setNumberFormat": {
+              "at": [
+                "A1",
+                "A2",
+                "Z1"
+              ],
+              "format": "#,##0"
+            }
+          }
+        },
+        {
+          "remember": "state 6"
+        },
+        {
+          "undo": 5,
+          "expect": {
+            "picture": "state 5"
+          }
+        },
+        {
+          "undo": 4,
+          "expect": {
+            "picture": "state 4"
+          }
+        },
+        {
+          "undo": 3,
+          "expect": {
+            "picture": "state 3"
+          }
+        },
+        {
+          "undo": 2,
+          "expect": {
+            "picture": "state 2"
+          }
+        },
+        {
+          "undo": 1,
+          "expect": {
+            "picture": "state 1"
+          }
+        },
+        {
+          "undo": 0,
+          "expect": {
+            "picture": "state 0"
+          }
+        },
+        {
+          "redo": 0,
+          "expect": {
+            "picture": "state 1"
+          }
+        },
+        {
+          "redo": 1,
+          "expect": {
+            "picture": "state 2"
+          }
+        },
+        {
+          "redo": 2,
+          "expect": {
+            "picture": "state 3"
+          }
+        },
+        {
+          "redo": 3,
+          "expect": {
+            "picture": "state 4"
+          }
+        },
+        {
+          "redo": 4,
+          "expect": {
+            "picture": "state 5"
+          }
+        },
+        {
+          "redo": 5,
+          "expect": {
+            "picture": "state 6"
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0047/0048 (SH-5): one undo restores a Formula a deletion made #REF!, and the range it shrank",
+      "steps": [
+        {
+          "enter": {
+            "A2": "2",
+            "A3": "3",
+            "A4": "4",
+            "C1": "=A3*2",
+            "D1": "=SUM(A2:A4)",
+            "E1": "=SUM(A3:A4)"
+          }
+        },
+        {
+          "do": {
+            "deleteRows": [
+              2
+            ]
+          },
+          "expect": {
+            "formulas": {
+              "C1": "=#REF!*2",
+              "D1": "=SUM(A2:A3)",
+              "E1": "=SUM(A3:A3)"
+            }
+          }
+        },
+        {
+          "undo": "last",
+          "expect": {
+            "formulas": {
+              "C1": "=A3*2",
+              "D1": "=SUM(A2:A4)",
+              "E1": "=SUM(A3:A4)"
+            },
+            "values": {
+              "C1": 6,
+              "D1": 9,
+              "E1": 7
+            },
+            "change": {
+              "rows": [
+                0,
+                2,
+                3
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0048: the change an undo reports names the rows it repainted",
+      "setup": "populated",
+      "steps": [
+        {
+          "do": {
+            "enter": {
+              "A3": "30"
+            }
+          },
+          "expect": {
+            "change": {
+              "valueChanges": [
+                "B1",
+                "C1",
+                "B2",
+                "C2",
+                "A3"
+              ]
+            }
+          }
+        },
+        {
+          "undo": "last",
+          "expect": {
+            "change": {
+              "valueChanges": [
+                "B1",
+                "C1",
+                "B2",
+                "C2",
+                "A3"
+              ],
+              "rows": [
+                0,
+                1,
+                2
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0048: a refused operation is no step, and changes nothing",
+      "steps": [
+        {
+          "enter": {
+            "A1048576": "1"
+          }
+        },
+        {
+          "remember": "before"
+        },
+        {
+          "check": {
+            "insertRows": [
+              0
+            ]
+          },
+          "expect": {
+            "refusal": {
+              "reason": "entriesWouldLeaveSheet"
+            }
+          }
+        },
+        {
+          "do": {
+            "insertRows": [
+              0
+            ]
+          },
+          "expect": {
+            "throws": {
+              "refusal": "refused",
+              "reason": "entriesWouldLeaveSheet"
+            },
+            "picture": "before"
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0047/0048: an unreadable Formula in a batch is no step, and changes nothing",
+      "setup": "populated",
+      "steps": [
+        {
+          "remember": "before"
+        },
+        {
+          "do": {
+            "enter": {
+              "A1": "7",
+              "A2": "=SUM("
+            }
+          },
+          "expect": {
+            "throws": {
+              "refusal": "formulaSyntax"
+            },
+            "picture": "before"
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0048: a step is undone once, and redone only after being undone",
+      "steps": [
+        {
+          "do": {
+            "enter": {
+              "A1": "1"
+            }
+          }
+        },
+        {
+          "redo": "last",
+          "expect": {
+            "throws": {
+              "refusal": "invalidOperation"
+            }
+          }
+        },
+        {
+          "undo": "last",
+          "expect": {
+            "isUndone": true
+          }
+        },
+        {
+          "undo": "last",
+          "expect": {
+            "throws": {
+              "refusal": "invalidOperation"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0048: formatting an insertion pushed off the edge comes back with the undo",
+      "steps": [
+        {
+          "setNumberFormat": {
+            "A1048576": "0.00"
+          }
+        },
+        {
+          "enter": {
+            "A1": "1"
+          }
+        },
+        {
+          "do": {
+            "insertRows": [
+              0
+            ]
+          },
+          "expect": {
+            "numberFormats": {
+              "A1048576": "General"
+            }
+          }
+        },
+        {
+          "undo": "last",
+          "expect": {
+            "numberFormats": {
+              "A1048576": "0.00"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
