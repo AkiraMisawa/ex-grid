@@ -1,5 +1,9 @@
 // The page's side of the Engine Host (ADR-0370 section 2): one Worker for the page, and a promise for
 // each call. A call is posted at once and answered in the order posted; nothing here waits on a clock.
+//
+// Where the page sets window.engineOnPage to a module's URL (serve.mjs's `ts-page`), there is no Worker:
+// that module serves one end of a MessageChannel on the page's own thread (ts-engine-page.ts), and the
+// client holds the other end in the Worker's place. The calls and answers are the same.
 
 import type { EngineCalls, EngineMessage, FetchedFile } from './protocol';
 
@@ -22,16 +26,24 @@ export interface EngineAnswer<T> {
 }
 
 export class EngineClient {
-    readonly #worker: Worker;
+    readonly #worker: Worker | MessagePort;
     readonly #pending = new Map<number, { resolve: (answer: EngineAnswer<unknown>) => void; reject: (error: Error) => void; postedAt: number }>();
     #nextId = 1;
     readonly ready: Promise<EngineBoot>;
 
     constructor(workerUrl: string) {
         const createdAt = performance.now();
-        this.#worker = new Worker(workerUrl, { type: 'module' });
+        const onPage = (globalThis as { engineOnPage?: string }).engineOnPage;
+        if (onPage === undefined) {
+            this.#worker = new Worker(workerUrl, { type: 'module' });
+        } else {
+            const channel = new MessageChannel();
+            this.#worker = channel.port1;
+            channel.port1.start();
+            void (import(/* @vite-ignore */ onPage) as Promise<{ start: (port: MessagePort) => void }>).then((module) => { module.start(channel.port2); });
+        }
         this.ready = new Promise<EngineBoot>((resolve, reject) => {
-            this.#worker.addEventListener('message', (event: MessageEvent<EngineMessage>) => {
+            (this.#worker as Worker).addEventListener('message', (event: MessageEvent<EngineMessage>) => {
                 const message = event.data;
                 switch (message.kind) {
                     case 'ready':
@@ -59,7 +71,7 @@ export class EngineClient {
                     }
                 }
             });
-            this.#worker.addEventListener('error', (event) => { reject(new Error(`The Engine Host failed: ${event.message}`)); });
+            if (this.#worker instanceof Worker) this.#worker.addEventListener('error', (event) => { reject(new Error(`The Engine Host failed: ${event.message}`)); });
         });
     }
 

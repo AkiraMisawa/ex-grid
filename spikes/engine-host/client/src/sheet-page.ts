@@ -1,5 +1,6 @@
 // /core/sheet over the Engine Host (ADR-0370 section 6): render-bench's Sheet (Bench.Live/CoreSheet.razor)
-// computed by ExSheet.Engine in the Worker, its Values drawn by ExGrid's Script Core on the page. ExSheet's
+// computed in the Worker, its Values drawn by ExGrid's Script Core on the page. The Worker is ExSheet.Engine's
+// (engine-worker.ts) or the TypeScript engine's (ts-engine-worker.ts), as serve.mjs serves it. ExSheet's
 // own Script Core does not exist yet, so this page stands in for it as far as core-bench.js needs: digits
 // typed with the Focus on a cell, and Enter, enter them into that cell, as ExSheet's editor would; the grid
 // moves the Focus as it does for Enter. Every other key is the grid's.
@@ -11,9 +12,8 @@ import { createGrid, type GridColumn } from '../../../../src/npm/core/src/index'
 import { EngineClient } from './engine-client';
 import { EngineWindowSource, type WindowAnswer } from './engine-window-source';
 import { recordBoot, waitForPaint } from './boot';
+import { documentJson } from './core-data';
 
-/** The rows that read A1, as CoreSheet. */
-const sheetRows = 2_000;
 /** The columns drawn: A to Z. The Worker answers these of every row asked for. */
 const columnCount = 26;
 /** ExSheet's row height (ExSheet.DefaultRowHeightPx) and, near enough, its default column width. */
@@ -30,17 +30,6 @@ interface WindowJson {
     readonly start: number;
     readonly rows: readonly (readonly (string | null)[])[];
 }
-
-/** CoreSheet's document in the Sheet Document's JSON form (version 9): A1 a number, A2:A2001 read it, B to
- * J each add one to the cell on their left, L1 read by nothing. */
-const documentJson = (): string => {
-    const cells: object[] = [{ at: 'A1', number: 1 }, { at: 'L1', number: 0 }];
-    for (let row = 2; row <= sheetRows + 1; row++) {
-        cells.push({ at: `A${row}`, formula: '=$A$1+ROW()' });
-        for (let c = 1; c < 10; c++) cells.push({ at: `${String.fromCharCode(65 + c)}${row}`, formula: `=${String.fromCharCode(64 + c)}${row}+1` });
-    }
-    return JSON.stringify({ version: 9, culture: 'en-US', name: 'Sheet1', cells });
-};
 
 const letters = (column: number): string => String.fromCharCode(65 + column);
 

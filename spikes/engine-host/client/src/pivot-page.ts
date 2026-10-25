@@ -1,5 +1,6 @@
 // /core/pivot over the Engine Host (ADR-0370 section 6): render-bench's pivot (Bench.Live/CorePivot.razor)
-// computed by ExPivot.Engine in the Worker, its report Window drawn by ExGrid's Script Core on the page.
+// computed in the Worker, its report Window drawn by ExGrid's Script Core on the page. The Worker is
+// ExPivot.Engine's (engine-worker.ts) or the TypeScript engine's (ts-engine-worker.ts), as serve.mjs serves it.
 // ExPivot's own Script Core does not exist yet, so this page stands in for it as far as core-bench.js
 // needs: the report's label column and value columns, and CorePivot's two controls.
 //
@@ -12,47 +13,12 @@
 // are the ones the Blazor page paints. They cross to the Worker once, as columns of JSON.
 
 import { createGrid, type GridColumn, type GridHandle } from '../../../../src/npm/core/src/index';
-import { DotNetRandom } from '../../../../samples/ExGrid.DemoHost.React/src/dotnet-random';
 import { EngineClient } from './engine-client';
 import { EngineWindowSource, type WindowAnswer } from './engine-window-source';
 import { recordBoot, waitForPaint } from './boot';
+import { books, makeTrades } from './core-data';
 
-const tradeCount = 20_000;
-const books = ['BK-A', 'BK-B', 'BK-C', 'BK-D', 'BK-E', 'BK-F', 'BK-G', 'BK-H', 'BK-I', 'BK-J'];
-const currencies = ['USD', 'EUR', 'JPY', 'GBP', 'CHF'];
-const products = ['Swap', 'Bond', 'Option', 'Future', 'Spot'];
 const rowHeightPx = 22;
-
-interface Trades {
-    readonly id: string[];
-    readonly book: string[];
-    readonly product: string[];
-    readonly currency: string[];
-    readonly tradeDate: string[];
-    readonly pnl: number[];
-}
-
-const pick = (random: DotNetRandom, from: readonly string[]): string => {
-    const item = from[random.next(from.length)];
-    if (item === undefined) throw new Error('Internal: a pick outside its list.');
-    return item;
-};
-
-/** CorePivot's trades, in its order and from its seed. */
-const makeTrades = (): Trades => {
-    const random = new DotNetRandom(20261025);
-    const trades: Trades = { id: [], book: [], product: [], currency: [], tradeDate: [], pnl: [] };
-    const start = Date.UTC(2026, 0, 2);
-    for (let i = 0; i < tradeCount; i++) {
-        trades.id.push(`T${i}`);
-        trades.book.push(pick(random, books));
-        trades.product.push(pick(random, products));
-        trades.currency.push(pick(random, currencies));
-        trades.tradeDate.push(new Date(start + random.next(0, 270) * 86_400_000).toISOString().slice(0, 10));
-        trades.pnl.push(random.next(-50_000, 60_000));
-    }
-    return trades;
-};
 
 interface ReportRow {
     readonly key: string;

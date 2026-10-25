@@ -1,0 +1,26 @@
+{
+  "base": "http://127.0.0.1:5493",
+  "at": "2026-10-25T12:52:37.991Z",
+  "compared": {
+    "cells": 834860,
+    "changedRowLists": 14,
+    "reportRows": 27110,
+    "reportValues": 162660
+  },
+  "mismatchCount": 0,
+  "mismatches": [],
+  "sizes": {
+    "SheetEnter, a Window of 140 rows": {
+      "csharp": 21354,
+      "typescript": 21376
+    },
+    "PivotWindow, the whole report": {
+      "csharp": 1911518,
+      "typescript": 1910823
+    },
+    "PivotWindow, a Window of 140 rows": {
+      "csharp": 101155,
+      "typescript": 100456
+    }
+  }
+}

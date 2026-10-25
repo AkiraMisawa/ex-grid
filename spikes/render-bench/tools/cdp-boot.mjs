@@ -111,6 +111,16 @@ const openOnce = async (url) => {
     }
     await sleep(500);
     const files = finished.map(({ key, bytes }) => ({ ...(responses.get(key) ?? { url: key, encoding: null }), bytes }));
+    // A Worker's own script is fetched before its target can be followed: CDP's Network domain reports
+    // its response with the headers' bytes only (about 200), the page's Resource Timing with the whole
+    // transferSize (the compressed body and the headers, as encodedDataLength counts them). Where the page
+    // saw more of a response than CDP did, or saw one CDP missed, its count is taken.
+    const timed = await evaluate(`performance.getEntriesByType('resource').map((e) => ({ url: e.name, bytes: e.transferSize }))`);
+    for (const entry of timed) {
+        const seen = files.find((f) => f.url === entry.url);
+        if (seen === undefined) files.push({ url: entry.url, encoding: null, bytes: entry.bytes, seenBy: 'resource timing' });
+        else if (entry.bytes > seen.bytes) Object.assign(seen, { bytes: entry.bytes, seenBy: 'resource timing' });
+    }
     await fetch(`${CDP}/json/close/${target.id}`).catch(() => {});
     ws.close();
     return {

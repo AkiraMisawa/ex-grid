@@ -5,7 +5,8 @@
 //   node tools/summarize-boot.mjs results/…/*-boot-*.json
 //
 // A page that records its own start (the Engine Host spike's window.engineBoot) adds its phases: the
-// Worker made, .NET started in it, the document open in the engine, its first Window answered, painted.
+// Worker made (or, on the page, the engine's channel), the engine ready in it, the document open in the engine,
+// its first Window answered, painted.
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -30,7 +31,7 @@ const kind = (url) => {
 const rows = [
     ['first cell with text: ms', (s) => median(s.runs.map((r) => r.firstCellAt))],
     ['  Worker made', (s) => median(s.runs.map((r) => r.engineBoot?.boot.createdAt))],
-    ['  .NET started in it', (s) => median(s.runs.map((r) => r.engineBoot?.boot.readyAt))],
+    ['  the engine ready in it (.NET started)', (s) => median(s.runs.map((r) => r.engineBoot?.boot.readyAt))],
     ['  document open (engine ms)', (s) => median(s.runs.map((r) => r.engineBoot?.openEngineMs))],
     ['  document open', (s) => median(s.runs.map((r) => r.engineBoot?.openedAt))],
     ['  first Window answered', (s) => median(s.runs.map((r) => r.engineBoot?.firstWindowAt))],
@@ -41,7 +42,7 @@ const rows = [
     ['complaints', (s) => s.runs.reduce((sum, r) => sum + r.complaints.length, 0)],
 ];
 const scenarios = [...new Set(runs.flatMap((r) => r.scenarios.map((s) => s.scenario)))];
-const width = 34;
+const width = 42;
 for (const scenario of scenarios) {
     console.log(`/core/${scenario}`);
     console.log(' '.repeat(width) + runs.map((r) => r.label.padStart(24)).join(''));

@@ -1,16 +1,20 @@
 # The Engine Host Worker (spike)
 
-ADR-0370 section 2 puts ExSheet's and ExPivot's engines, under React, in a Web Worker running .NET
-WebAssembly; section 6 asks for that Worker to be measured before a product's first step is called done.
-This is that Worker as a spike, and the measurement. It ships nothing. Disposable, like the rest of
-`spikes/`.
+ADR-0370 section 2 put ExSheet's and ExPivot's engines, under React, in a Web Worker running .NET
+WebAssembly; section 6 asked for that Worker to be measured before a product's first step is called done.
+This is that Worker as a spike, the measurement, and a third arm beside it: a TypeScript engine of only
+what render-bench's two scenarios exercise, in the same Worker shape and on the page's own thread. It
+ships nothing, and the .NET Worker is not to become a product (the family's engines move to TypeScript).
+Disposable, like the rest of `spikes/`.
 
 The figures and what they say are in [`results/20261025-engine-host/summary.txt`](results/20261025-engine-host/summary.txt).
-In short: the Worker edits render-bench's Sheet in 0.97 s interpreted and 0.51 s compiled ahead of time,
-against 1.07 s for a published Blazor WebAssembly client; it downloads 2.7 MB (interpreter) or 5.7 MB
-(AOT) against Blazor's 4.0 MB; and **the 3.3 s the morning's baseline recorded for Blazor WebAssembly was
-mostly the baseline's own configuration**: Bench.Host under `dotnet run` serves a build whose runtime is
-set up for debugging.
+In short: an edit that recalculates 20,000 cells shows in 1.0 s on published Blazor WebAssembly, 1.0 s
+from the .NET Worker interpreted, 0.56 s compiled ahead of time, and 10 ms from the TypeScript Worker
+(17 ms with the TypeScript engine on the page), whose answers equal the C# engine's cell for cell. The
+TypeScript page downloads 58 KB and paints in 0.17 s, against 2.7 to 5.7 MB and 2 to 5 s. The TypeScript
+engine calculates Values only, so its times are a floor, not a port's. And **the 3.3 s the morning's
+baseline recorded for Blazor WebAssembly was mostly the baseline's own configuration**: Bench.Host under
+`dotnet run` serves a build whose runtime is set up for debugging.
 
 ## What is here
 
@@ -18,20 +22,23 @@ set up for debugging.
 |---|---|
 | `EngineHost/` | One .NET WebAssembly build (`Microsoft.NET.Sdk.WebAssembly`) of ExSheet.Engine, ExSheet.Xlsx, ExPivot.Engine, ExGrid.Data and ExGrid.Data.Xlsx. `Program.cs` holds the `[JSExport]` methods a Worker calls: open a Sheet Document, enter a cell and answer the Window, read a Window; take trades, answer a report Window as `PivotReportJson` writes it, apply a Change Batch; read and write an `.xlsx`, so both readers are in the download |
 | `EngineProbe/` | `Probe.cs`, the engine calls of each gesture timed alone, run on the JIT by this console and in the Worker by `/probe` |
-| `client/` | The TypeScript: `engine-worker.ts` starts .NET in a module Worker and answers requests in the order posted; `engine-client.ts` is the page's side, a promise per call; `engine-window-source.ts` is a Grid Source over the Window the Worker answers; `sheet-page.ts` and `pivot-page.ts` draw it with ExGrid's Script Core |
-| `serve.mjs` | Serves the pages at render-bench's paths (`/core/sheet`, `/core/pivot`), the bundles, and one published `_framework`, Brotli-compressed |
-| `tools/` | `cdp-probe.mjs` runs the probe in the Worker; `summarize-probe.mjs` prints it beside the JIT's |
+| `client/` | The TypeScript: `engine-worker.ts` starts .NET in a module Worker and answers requests in the order posted; `engine-client.ts` is the page's side, a promise per call; `engine-window-source.ts` is a Grid Source over the Window the engine answers; `sheet-page.ts` and `pivot-page.ts` draw it with ExGrid's Script Core; `core-data.ts` is render-bench's Sheet and trades |
+| `client/src/ts-engine/` | The TypeScript engine: `sheet.ts` (Formulas of the scenario, the cells each cell is read by, recalculation in dependency order), `pivot.ts` (CorePivot's one layout, a Change Batch applied to the sums it reaches), `host.ts` (the same protocol the .NET Worker answers). `ts-engine-worker.ts` serves it in a Worker, `ts-engine-page.ts` on the page; `check-page.ts` compares its answers with the C# engine's |
+| `serve.mjs` | Serves the pages at render-bench's paths (`/core/sheet`, `/core/pivot`), `/probe` and `/check`, the bundles, and one published `_framework`, Brotli-compressed; `ts` serves the TypeScript Worker in the .NET Worker's place, `ts-page` the TypeScript engine on the page |
+| `tools/` | `cdp-probe.mjs` runs the probe in the Worker; `summarize-probe.mjs` prints it beside the JIT's; `cdp-check.mjs` runs `/check` |
 | `results/` | The record |
 
 render-bench gained three tools for this, usable on any host: `tools/cdp-boot.mjs` (the time to the first
-painted cell and every byte downloaded, a Worker's included), `tools/summarize-boot.mjs`, and
+painted cell and every byte downloaded, a Worker's included, its own script read from Resource Timing), `tools/summarize-boot.mjs`, and
 `tools/serve-published.mjs` (a published Bench.Client served as a static host serves it).
 `tools/cdp-core.mjs` now also keeps what a page records of its own side of each operation.
 
 ## How the Worker answers
 
 - **One Worker for the page**, holding every engine in one runtime. `[JSExport]` methods take and give
-  strings: a request crosses as `postMessage`, the Worker calls the export, and the answer is JSON.
+  strings: a request crosses as `postMessage`, the Worker calls the export, and the answer is JSON. The
+  TypeScript engine answers the same requests with the same JSON, from a Worker or from the other end of
+  a MessageChannel on the page: the pages cannot tell which, and nothing in them changes.
 - **An answer carries what it was asked against.** A Sheet's answers carry its version; the pivot's carry
   its Report Version. On the page, every write moves the source's epoch as it is posted, and a read
   answered for an older epoch is asked again, never drawn (spine rule 6). Nothing waits on a clock.
@@ -66,12 +73,13 @@ DOTNET_ROOT=~/dotnet-wasm PATH=~/dotnet-wasm:$PATH \
   dotnet publish -c Release spikes/engine-host/EngineHost -p:RunAOTCompilation=true -o /tmp/eh-aot
 nix develop .#browser -c bash -c 'cd spikes/engine-host/client && npm ci && npm run typecheck && npm run build'
 
-node spikes/engine-host/serve.mjs /tmp/eh-interp/wwwroot 5493      # or /tmp/eh-aot/wwwroot
+node spikes/engine-host/serve.mjs /tmp/eh-interp/wwwroot 5493      # or /tmp/eh-aot/wwwroot, or ts, or ts-page
 /opt/pw-browsers/chromium --headless=new --remote-debugging-port=9333 --window-size=1400,1000 about:blank &
 cd spikes/render-bench
 CDP_PORT=9333 node tools/cdp-core.mjs http://127.0.0.1:5493 worker-interp sheet,pivot
 CDP_PORT=9333 node tools/cdp-boot.mjs http://127.0.0.1:5493 worker-interp sheet,pivot
 CDP_PORT=9333 node ../engine-host/tools/cdp-probe.mjs http://127.0.0.1:5493 interp
+CDP_PORT=9333 node ../engine-host/tools/cdp-check.mjs http://127.0.0.1:5493       # needs a .NET build served
 nix develop -c dotnet run -c Release --project ../engine-host/EngineProbe      # the JIT's probe
 ```
 
@@ -80,9 +88,13 @@ Run one host at a time, on a quiet machine: a build that has just finished moved
 
 ## What it does not settle
 
+- **What a TypeScript port costs at run time.** The TypeScript engine keeps none of what ExSheet.Engine
+  keeps beside the Values (Steps, Spills, formats carried by Formulas, volatile functions); a port's
+  recalculation will cost more than its 5 ms. What the port costs to write is estimated in the record.
 - **ExSheet's and ExPivot's own Script Cores** are not written; the pages draw what render-bench's driver
   reads and nothing more. Their figures include ExGrid's Script Core and the crossing, not a product UI.
-- **The page's frame during a recalculation** is the Worker's purpose and was not measured: the driver
-  scrolls only when nothing recalculates.
+- **The page's frame during a recalculation** was not measured as frames: the driver scrolls only when
+  nothing recalculates. With the TypeScript engine on the page, how long each call holds the page's
+  thread is recorded instead (its `workerMs`).
 - **A real user's machine.** This is headless software rendering in a 4-core container.
 - **Blazor Server** was not run again; its column is the morning's, from another container.

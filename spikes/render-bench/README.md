@@ -347,7 +347,7 @@ A host of the Script Core serves the same pages, and nothing in the driver chang
 
 The C# core's numbers of 2026-10-25 are in `results/20261025-core/`, with `summary.txt`. Its
 `csharp-wasm` column is the build output's (see above); a published client's, with the Engine Host
-Worker's beside it, are in `spikes/engine-host/results/20261025-engine-host/`.
+Worker's and a TypeScript engine's beside it, are in `spikes/engine-host/results/20261025-engine-host/`.
 
 ## Running it
 
