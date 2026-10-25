@@ -28,6 +28,8 @@ public class CallCaseTests
         ["GlyphWidthTable"] = typeof(GlyphWidthTable),
         ["GridMetrics"] = typeof(GridMetrics),
         ["GridPresentationDefaults"] = typeof(GridPresentationDefaults),
+        ["HeaderGroup"] = typeof(HeaderGroup),
+        ["HeaderGroupLayout"] = typeof(HeaderGroupLayout),
         ["OverflowRules"] = typeof(OverflowRules),
         ["RowRange"] = typeof(RowRange),
         ["ViewportBox"] = typeof(ViewportBox),

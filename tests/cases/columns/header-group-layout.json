@@ -1,0 +1,130 @@
+{
+  "about": "Header Groups resolved against the flat column order (ADR-0032): membership is a set, and every impossible declaration is refused by name at resolution. From tests/ExGrid.Tests/HeaderGroupTests.cs; the declaration's own refusals are in header-group.json.",
+  "kind": "calls",
+  "subject": "HeaderGroupLayout",
+  "cases": [
+    {
+      "name": "ADR-0032 / HG-1: membership is a set, so the members resolve in the flat order, not the declaration's",
+      "via": "resolve",
+      "create": {"groups": [{"new": "HeaderGroup", "with": {"label": "CVA", "columns": ["CvaDiff", "CvaBefore", "CvaAfter"]}}], "columnNames": ["TradeId", "CvaBefore", "CvaAfter", "CvaDiff", "FvaBefore", "FvaAfter"], "pinnedCount": 0},
+      "expect": [
+        {"get": "groups", "is": [{"group": {"label": "CVA", "columns": ["CvaDiff", "CvaBefore", "CvaAfter"], "tier": 1, "tierSpan": 1}, "label": "CVA", "firstColumn": 1, "memberCount": 3, "topTier": 1, "tierSpan": 1, "bottomTier": 1, "pinned": false}]},
+        {"get": "tierCount", "is": 1}
+      ]
+    },
+    {
+      "name": "ADR-0032 / HG-4: a member name no column carries is refused, naming the group and the member",
+      "via": "resolve",
+      "create": {"groups": [{"new": "HeaderGroup", "with": {"label": "CVA", "columns": ["CvaBefore", "Nonsense"]}}], "columnNames": ["TradeId", "CvaBefore", "CvaAfter", "CvaDiff", "FvaBefore", "FvaAfter"], "pinnedCount": 0},
+      "throws": "invalidOperation", "saying": "Header Group 'CVA' names the member column 'Nonsense'"
+    },
+    {
+      "name": "ADR-0032 / HG-5: members not adjacent in the current order are refused",
+      "via": "resolve",
+      "create": {"groups": [{"new": "HeaderGroup", "with": {"label": "CVA", "columns": ["CvaBefore", "CvaDiff"]}}], "columnNames": ["TradeId", "CvaBefore", "CvaAfter", "CvaDiff", "FvaBefore", "FvaAfter"], "pinnedCount": 0},
+      "throws": "invalidOperation", "saying": "not adjacent"
+    },
+    {
+      "name": "ADR-0032 / HG-6: overlapping rectangles are refused",
+      "via": "resolve",
+      "create": {"groups": [{"new": "HeaderGroup", "with": {"label": "CVA", "columns": ["CvaBefore", "CvaAfter", "CvaDiff"]}}, {"new": "HeaderGroup", "with": {"label": "Also", "columns": ["CvaAfter", "CvaDiff"]}}], "columnNames": ["TradeId", "CvaBefore", "CvaAfter", "CvaDiff", "FvaBefore", "FvaAfter"], "pinnedCount": 0},
+      "throws": "invalidOperation", "saying": "Header Groups 'CVA' and 'Also' overlap"
+    },
+    {
+      "name": "ADR-0032 / HG-6: a rectangle on another tier over the same columns does not overlap",
+      "via": "resolve",
+      "create": {"groups": [{"new": "HeaderGroup", "with": {"label": "CVA", "columns": ["CvaBefore", "CvaAfter", "CvaDiff"]}}, {"new": "HeaderGroup", "with": {"label": "Adjustments", "columns": ["CvaBefore", "CvaAfter", "CvaDiff", "FvaBefore", "FvaAfter"], "tier": 2}}], "columnNames": ["TradeId", "CvaBefore", "CvaAfter", "CvaDiff", "FvaBefore", "FvaAfter"], "pinnedCount": 0},
+      "expect": [
+        {"get": "tierCount", "is": 2},
+        {"get": "groups", "is": [{"group": {"label": "CVA", "columns": ["CvaBefore", "CvaAfter", "CvaDiff"], "tier": 1, "tierSpan": 1}, "label": "CVA", "firstColumn": 1, "memberCount": 3, "topTier": 1, "tierSpan": 1, "bottomTier": 1, "pinned": false}, {"group": {"label": "Adjustments", "columns": ["CvaBefore", "CvaAfter", "CvaDiff", "FvaBefore", "FvaAfter"], "tier": 2, "tierSpan": 1}, "label": "Adjustments", "firstColumn": 1, "memberCount": 5, "topTier": 2, "tierSpan": 1, "bottomTier": 2, "pinned": false}]}
+      ]
+    },
+    {
+      "name": "ADR-0032: a rectangle spanning down into a tier another one occupies over the same columns overlaps it",
+      "via": "resolve",
+      "create": {"groups": [{"new": "HeaderGroup", "with": {"label": "CVA", "columns": ["CvaBefore", "CvaAfter", "CvaDiff"]}}, {"new": "HeaderGroup", "with": {"label": "Adjustments", "columns": ["CvaBefore", "CvaAfter", "CvaDiff", "FvaBefore", "FvaAfter"], "tier": 2, "tierSpan": 2}}], "columnNames": ["TradeId", "CvaBefore", "CvaAfter", "CvaDiff", "FvaBefore", "FvaAfter"], "pinnedCount": 0},
+      "throws": "invalidOperation", "saying": "overlap"
+    },
+    {
+      "name": "ADR-0032 / HG-7: a rectangle straddling the pinned boundary is refused, naming the boundary",
+      "via": "resolve",
+      "create": {"groups": [{"new": "HeaderGroup", "with": {"label": "CVA", "columns": ["CvaBefore", "CvaAfter"]}}], "columnNames": ["TradeId", "CvaBefore", "CvaAfter", "CvaDiff", "FvaBefore", "FvaAfter"], "pinnedCount": 2},
+      "throws": "invalidOperation", "saying": "pinned boundary"
+    },
+    {
+      "name": "ADR-0032 / HG-7: a rectangle wholly inside the pinned block stands, and says so",
+      "via": "resolve",
+      "create": {"groups": [{"new": "HeaderGroup", "with": {"label": "Keys", "columns": ["TradeId", "CvaBefore"]}}], "columnNames": ["TradeId", "CvaBefore", "CvaAfter", "CvaDiff", "FvaBefore", "FvaAfter"], "pinnedCount": 2},
+      "expect": [
+        {"get": "groups", "is": [{"group": {"label": "Keys", "columns": ["TradeId", "CvaBefore"], "tier": 1, "tierSpan": 1}, "label": "Keys", "firstColumn": 0, "memberCount": 2, "topTier": 1, "tierSpan": 1, "bottomTier": 1, "pinned": true}]}
+      ]
+    },
+    {
+      "name": "ADR-0032 / HG-7: a rectangle wholly past the pinned block stands, scrolling",
+      "via": "resolve",
+      "create": {"groups": [{"new": "HeaderGroup", "with": {"label": "CVA", "columns": ["CvaBefore", "CvaAfter", "CvaDiff"]}}], "columnNames": ["TradeId", "CvaBefore", "CvaAfter", "CvaDiff", "FvaBefore", "FvaAfter"], "pinnedCount": 1},
+      "expect": [
+        {"get": "groups", "is": [{"group": {"label": "CVA", "columns": ["CvaBefore", "CvaAfter", "CvaDiff"], "tier": 1, "tierSpan": 1}, "label": "CVA", "firstColumn": 1, "memberCount": 3, "topTier": 1, "tierSpan": 1, "bottomTier": 1, "pinned": false}]}
+      ]
+    },
+    {
+      "name": "ADR-0032: a negative pinned count is refused",
+      "via": "resolve",
+      "create": {"groups": [], "columnNames": ["TradeId", "CvaBefore", "CvaAfter", "CvaDiff", "FvaBefore", "FvaAfter"], "pinnedCount": -1},
+      "throws": "outOfRange"
+    },
+    {
+      "name": "ADR-0032 / ADR-0010: only a pinned count whose boundary runs through a group is not allowed",
+      "via": "resolve",
+      "create": {"groups": [{"new": "HeaderGroup", "with": {"label": "Who", "columns": ["Book", "Trader"]}}, {"new": "HeaderGroup", "with": {"label": "What", "columns": ["Notional", "Narrow"]}}], "columnNames": ["Id", "Book", "Trader", "Notional", "Narrow", "Date"], "pinnedCount": 0},
+      "expect": [
+        {"call": "allowsPinnedCount", "args": [0], "is": true},
+        {"call": "allowsPinnedCount", "args": [1], "is": true},
+        {"call": "allowsPinnedCount", "args": [2], "is": false},
+        {"call": "allowsPinnedCount", "args": [3], "is": true},
+        {"call": "allowsPinnedCount", "args": [4], "is": false},
+        {"call": "allowsPinnedCount", "args": [6], "is": true}
+      ]
+    },
+    {
+      "name": "ADR-0032 / HG-3: a column no tier covers stretches its leaf the full band, and a covered one stops under the lowest rectangle",
+      "via": "resolve",
+      "create": {"groups": [{"new": "HeaderGroup", "with": {"label": "CVA", "columns": ["CvaBefore", "CvaAfter", "CvaDiff"]}}, {"new": "HeaderGroup", "with": {"label": "Adjustments", "columns": ["CvaBefore", "CvaAfter", "CvaDiff", "FvaBefore", "FvaAfter"], "tier": 2}}], "columnNames": ["TradeId", "CvaBefore", "CvaAfter", "CvaDiff", "FvaBefore", "FvaAfter"], "pinnedCount": 0},
+      "expect": [
+        {"call": "leafTierSpanOf", "args": [0], "is": 3},
+        {"call": "leafTierSpanOf", "args": [1], "is": 1},
+        {"call": "leafTierSpanOf", "args": [4], "is": 2}
+      ]
+    },
+    {
+      "name": "ADR-0032: under a two-tier rectangle the leaf is one tier tall",
+      "via": "resolve",
+      "create": {"groups": [{"new": "HeaderGroup", "with": {"label": "Adjustments", "columns": ["CvaBefore", "CvaAfter", "CvaDiff", "FvaBefore", "FvaAfter"], "tier": 2, "tierSpan": 2}}], "columnNames": ["TradeId", "CvaBefore", "CvaAfter", "CvaDiff", "FvaBefore", "FvaAfter"], "pinnedCount": 0},
+      "expect": [
+        {"get": "tierCount", "is": 2},
+        {"call": "leafTierSpanOf", "args": [0], "is": 3},
+        {"call": "leafTierSpanOf", "args": [1], "is": 1}
+      ]
+    },
+    {
+      "name": "ADR-0032: no declarations resolve to the one header row",
+      "via": "resolve",
+      "create": {"groups": [], "columnNames": ["TradeId", "CvaBefore", "CvaAfter", "CvaDiff", "FvaBefore", "FvaAfter"], "pinnedCount": 0},
+      "expect": [
+        {"get": "tierCount", "is": 0},
+        {"get": "groups", "is": []},
+        {"call": "leafTierSpanOf", "args": [0], "is": 1}
+      ]
+    },
+    {
+      "name": "ADR-0032: with nothing declared every pinned count is allowed, and every leaf is one tier",
+      "via": "empty",
+      "create": {},
+      "expect": [
+        {"get": "tierCount", "is": 0},
+        {"call": "allowsPinnedCount", "args": [2], "is": true},
+        {"call": "leafTierSpanOf", "args": [3], "is": 1}
+      ]
+    }
+  ]
+}

@@ -7,6 +7,7 @@ import { CellTextMetrics } from '../src/columns/cell-text-metrics';
 import { ColumnWidth, ColumnWidthSpec } from '../src/columns/column-width';
 import { ColumnGeometry } from '../src/columns/column-geometry';
 import { GlyphWidthTable } from '../src/columns/glyph-width-table';
+import { HeaderGroup, HeaderGroupLayout } from '../src/columns/header-groups';
 import { decideOverflow, hashesWhenOverflowing } from '../src/columns/overflow-rules';
 import { GridMetrics } from '../src/grid-metrics';
 import { GridPresentationDefaults } from '../src/grid-presentation-defaults';
@@ -70,6 +71,21 @@ const subjects: Readonly<Record<string, Subject>> = {
         statics: {},
     },
     // C#'s OverflowRules is a static class: its members are functions of the module here.
+    HeaderGroup: {
+        create: (args, via) => via === undefined ? new HeaderGroup(args as never) : noFactory('HeaderGroup', via),
+        statics: {},
+    },
+    HeaderGroupLayout: {
+        create: (args, via) => {
+            switch (via) {
+                case 'empty': return HeaderGroupLayout.empty;
+                case 'resolve': return HeaderGroupLayout.resolve(args as never);
+                case undefined:
+                default: return noFactory('HeaderGroupLayout', via);
+            }
+        },
+        statics: HeaderGroupLayout,
+    },
     OverflowRules: {
         create: (_, via) => noFactory('OverflowRules', via),
         statics: { decide: decideOverflow, hashesWhenOverflowing },
