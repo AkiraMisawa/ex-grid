@@ -1,0 +1,453 @@
+{
+  "about": "GridSource.from (ADR-0001, ADR-0007, ADR-0009, ADR-0011, ADR-0023): every row in hand, the Window the whole result, a Sort and a Filter applied by the source, an Edit Intent's replacement, and a column's value list. From tests/ExGrid.Tests/GridSourceFromTests.cs, GridSourceContractTests.cs, ReplaceRowTests.cs and DistinctValueTests.cs.",
+  "kind": "source",
+  "columns": [{"name": "Book", "type": "text"}, {"name": "Amount", "type": "number"}],
+  "cases": [
+    {
+      "name": "ADR-0001: every row is in hand, so the Window is the whole result from its start and nothing loads",
+      "rows": [
+        ["Rates", 2],
+        ["Credit", 3],
+        ["Rates", 1]
+      ],
+      "steps": [
+        {"setColumns": true},
+        {"needRange": {"start": 0, "count": 2}},
+        {"expect": {"window": [0, 1, 2], "windowStart": 0, "totalCount": 3, "loading": false, "version": 0, "heard": 0}}
+      ]
+    },
+    {
+      "name": "ADR-0023: before the columns arrive the Window is the input order",
+      "rows": [
+        ["Rates", 2],
+        ["Credit", 3],
+        ["Rates", 1]
+      ],
+      "steps": [
+        {"expect": {"window": [0, 1, 2], "version": 0, "sorts": [], "filter": null}}
+      ]
+    },
+    {
+      "name": "ADR-0023: a Sort before the columns arrive is refused, since it cannot come through the grid",
+      "rows": [
+        ["Rates", 2],
+        ["Credit", 3],
+        ["Rates", 1]
+      ],
+      "steps": [
+        {"setSorts": [{"column": "Book", "direction": "ascending"}], "throws": "invalidOperation", "saying": "Columns have not been received yet"}
+      ]
+    },
+    {
+      "name": "ADR-0023: a Filter before the columns arrive is refused too",
+      "rows": [
+        ["Rates", 2],
+        ["Credit", 3],
+        ["Rates", 1]
+      ],
+      "steps": [
+        {"setFilter": {"columns": {"Book": {"clauses": [{"operator": "isNotBlank"}]}}}, "throws": "invalidOperation", "saying": "Columns have not been received yet"}
+      ]
+    },
+    {
+      "name": "ADR-0001: the source sorts, and the Window is the sorted result",
+      "rows": [
+        ["Rates", 2],
+        ["Credit", 3],
+        ["Rates", 1]
+      ],
+      "steps": [
+        {"setColumns": true},
+        {"setSorts": [{"column": "Book", "direction": "ascending"}, {"column": "Amount", "direction": "ascending"}]},
+        {"expect": {"window": [1, 2, 0], "sorts": [{"column": "Book", "direction": "ascending"}, {"column": "Amount", "direction": "ascending"}], "heard": 1}}
+      ]
+    },
+    {
+      "name": "ADR-0015: the total count is the count after the Filter",
+      "rows": [
+        ["Rates", 2],
+        ["Credit", 3],
+        ["Rates", 1]
+      ],
+      "steps": [
+        {"setColumns": true},
+        {"expect": {"totalCount": 3}},
+        {"setFilter": {"columns": {"Book": {"clauses": [{"operator": "equals", "value": "Rates"}]}}}},
+        {"expect": {"window": [0, 2], "totalCount": 2, "filter": {"columns": {"Book": {"clauses": [{"operator": "equals", "value": "Rates"}]}}}}}
+      ]
+    },
+    {
+      "name": "ADR-0011: the Row Sequence Version moves when a Sort moves the order",
+      "rows": [
+        ["Rates", 2],
+        ["Credit", 3],
+        ["Rates", 1]
+      ],
+      "steps": [
+        {"setColumns": true},
+        {"setSorts": [{"column": "Amount", "direction": "ascending"}]},
+        {"expect": {"window": [2, 0, 1], "version": 1}}
+      ]
+    },
+    {
+      "name": "ADR-0011: the Row Sequence Version moves when a Filter changes the rows",
+      "rows": [
+        ["Rates", 2],
+        ["Credit", 3],
+        ["Rates", 1]
+      ],
+      "steps": [
+        {"setColumns": true},
+        {"setFilter": {"columns": {"Book": {"clauses": [{"operator": "equals", "value": "Credit"}]}}}},
+        {"expect": {"window": [1], "version": 1}}
+      ]
+    },
+    {
+      "name": "ADR-0011: the same Query again moves nothing and is not heard",
+      "rows": [
+        ["Rates", 2],
+        ["Credit", 3],
+        ["Rates", 1]
+      ],
+      "steps": [
+        {"setColumns": true},
+        {"expect": {"version": 0, "heard": 0}},
+        {"setSorts": [{"column": "Amount", "direction": "ascending"}]},
+        {"expect": {"version": 1, "heard": 1}},
+        {"setSorts": [{"column": "Amount", "direction": "ascending"}]},
+        {"setFilter": null},
+        {"expect": {"version": 1, "heard": 0}}
+      ]
+    },
+    {
+      "name": "ADR-0011: a Filter that keeps every row is heard, and moves no version",
+      "rows": [
+        ["Rates", 2],
+        ["Credit", 3],
+        ["Rates", 1]
+      ],
+      "steps": [
+        {"setColumns": true},
+        {"setSorts": [{"column": "Amount", "direction": "ascending"}]},
+        {"expect": {"version": 1}},
+        {"setFilter": {"columns": {"Book": {"clauses": [{"operator": "isNotBlank"}]}}}},
+        {"expect": {"window": [2, 0, 1], "version": 1, "heard": 1}}
+      ]
+    },
+    {
+      "name": "ADR-0023: a refused Sort leaves the source as it was, and usable",
+      "rows": [
+        ["Rates", 2],
+        ["Credit", 3],
+        ["Rates", 1]
+      ],
+      "steps": [
+        {"setColumns": true},
+        {"setSorts": [{"column": "Notional", "direction": "ascending"}], "throws": "invalidOperation", "saying": "Notional"},
+        {"expect": {"window": [0, 1, 2], "sorts": [], "version": 0, "heard": 0}},
+        {"setFilter": null},
+        {"setSorts": [{"column": "Amount", "direction": "ascending"}]},
+        {"expect": {"window": [2, 0, 1]}}
+      ]
+    },
+    {
+      "name": "ADR-0023: columns that break the Query in force are refused, and the columns before them still serve it",
+      "rows": [
+        ["Rates", 2],
+        ["Credit", 3],
+        ["Rates", 1]
+      ],
+      "steps": [
+        {"setColumns": true},
+        {"setSorts": [{"column": "Book", "direction": "ascending"}]},
+        {"expect": {"window": [1, 0, 2]}},
+        {"setColumns": ["Amount"], "throws": "invalidOperation", "saying": "Book"},
+        {"setFilter": null},
+        {"expect": {"window": [1, 0, 2], "version": 1}}
+      ]
+    },
+    {
+      "name": "ADR-0011: new columns that leave the order as it was move no version and are not heard",
+      "rows": [
+        ["Rates", 2],
+        ["Credit", 3],
+        ["Rates", 1]
+      ],
+      "steps": [
+        {"setColumns": true},
+        {"setSorts": [{"column": "Book", "direction": "ascending"}]},
+        {"expect": {"version": 1, "heard": 1}},
+        {"setColumns": ["Book"]},
+        {"expect": {"window": [1, 0, 2], "version": 1, "heard": 0}}
+      ]
+    },
+    {
+      "name": "ADR-0023: the same columns again, or columns rebuilt from the same declaration, are no change",
+      "rows": [
+        ["Rates", 2],
+        ["Credit", 3],
+        ["Rates", 1]
+      ],
+      "steps": [
+        {"setColumns": true},
+        {"setSorts": [{"column": "Book", "direction": "ascending"}]},
+        {"expect": {"version": 1, "heard": 1}},
+        {"setColumns": true},
+        {"setColumns": "rebuilt"},
+        {"expect": {"window": [1, 0, 2], "version": 1, "heard": 0}}
+      ]
+    },
+    {
+      "name": "ADR-0001: a range past the rows needs no answer and changes nothing",
+      "rows": [
+        ["Rates", 2],
+        ["Credit", 3],
+        ["Rates", 1]
+      ],
+      "steps": [
+        {"setColumns": true},
+        {"needRange": {"start": 1000000, "count": 20}},
+        {"expect": {"window": [0, 1, 2], "heard": 0}}
+      ]
+    },
+    {
+      "name": "ADR-0001: a range that starts before the first row is refused",
+      "rows": [
+        ["Rates", 2],
+        ["Credit", 3],
+        ["Rates", 1]
+      ],
+      "steps": [
+        {"setColumns": true},
+        {"needRange": {"start": -1, "count": 5}, "throws": "outOfRange"}
+      ]
+    },
+    {
+      "name": "ADR-0001: a range of no rows is refused",
+      "rows": [
+        ["Rates", 2],
+        ["Credit", 3],
+        ["Rates", 1]
+      ],
+      "steps": [
+        {"setColumns": true},
+        {"needRange": {"start": 0, "count": 0}, "throws": "outOfRange"}
+      ]
+    },
+    {
+      "name": "ADR-0005: the rows of a range are the result's, as many as there are",
+      "rows": [
+        ["Rates", 2],
+        ["Credit", 3],
+        ["Rates", 1]
+      ],
+      "steps": [
+        {"setColumns": true},
+        {"setSorts": [{"column": "Amount", "direction": "ascending"}]},
+        {"rows": {"start": 1, "count": 5}, "is": [0, 1]}
+      ]
+    },
+    {
+      "name": "ADR-0007, ADR-0011: an edit that moves nothing keeps the version, and is heard",
+      "rows": [
+        ["Alpha", 3],
+        ["Beta", 1],
+        ["Gamma", 2]
+      ],
+      "steps": [
+        {"setColumns": true},
+        {"expect": {"heard": 0}},
+        {"replaceRow": 1, "with": ["Beta", 99]},
+        {"expect": {"window": [0, 1, 2], "values": [["Alpha", 3], ["Beta", 99], ["Gamma", 2]], "version": 0, "heard": 1}}
+      ]
+    },
+    {
+      "name": "ADR-0011: an edit that moves its row under the Sort moves the version",
+      "rows": [
+        ["Alpha", 3],
+        ["Beta", 1],
+        ["Gamma", 2]
+      ],
+      "steps": [
+        {"setColumns": true},
+        {"setSorts": [{"column": "Amount", "direction": "ascending"}]},
+        {"expect": {"window": [1, 2, 0], "version": 1}},
+        {"replaceRow": 1, "with": ["Beta", 50]},
+        {"expect": {"window": [2, 0, 1], "version": 2}}
+      ]
+    },
+    {
+      "name": "ADR-0011: an edit the Filter no longer keeps takes its row out, and moves the version",
+      "rows": [
+        ["Alpha", 3],
+        ["Beta", 1],
+        ["Gamma", 2]
+      ],
+      "steps": [
+        {"setColumns": true},
+        {"setFilter": {"columns": {"Amount": {"clauses": [{"operator": "lessThan", "value": 10}]}}}},
+        {"expect": {"version": 0}},
+        {"replaceRow": 0, "with": ["Alpha", 100]},
+        {"expect": {"window": [1, 2], "version": 1}}
+      ]
+    },
+    {
+      "name": "ADR-0003, ADR-0007: the row itself as its replacement is refused, naming identity",
+      "rows": [
+        ["Alpha", 3]
+      ],
+      "steps": [
+        {"setColumns": true},
+        {"replaceRow": 0, "with": "itself", "throws": "argument", "saying": "identity"}
+      ]
+    },
+    {
+      "name": "ADR-0007: a row the source does not hold is refused, though its values equal one it does",
+      "rows": [
+        ["Alpha", 3]
+      ],
+      "steps": [
+        {"setColumns": true},
+        {"replaceRow": {"stranger": ["Alpha", 3]}, "with": ["Alpha", 4], "throws": "argument"}
+      ]
+    },
+    {
+      "name": "ADR-0003, ADR-0007: an edit lands on the row edited, not on another of equal values",
+      "rows": [
+        ["Dup", 1],
+        ["Dup", 1],
+        ["Tail", 2]
+      ],
+      "steps": [
+        {"setColumns": true},
+        {"replaceRow": 1, "with": ["Dup", 9]},
+        {"expect": {"window": [0, 1, 2], "values": [["Dup", 1], ["Dup", 9], ["Tail", 2]], "version": 0}}
+      ]
+    },
+    {
+      "name": "ADR-0009: another column's Filter narrows a column's value list",
+      "rows": [
+        ["Alpha", "USD"],
+        ["Alpha", "EUR"],
+        ["Beta", "JPY"],
+        ["Beta", "USD"]
+      ],
+      "columns": [{"name": "Book", "type": "text"}, {"name": "Currency", "type": "text"}],
+      "steps": [
+        {"setColumns": true},
+        {"setFilter": {"columns": {"Book": {"clauses": [{"operator": "equals", "value": "Alpha"}]}}}},
+        {"distinctValues": "Currency", "is": ["USD", "EUR"]}
+      ]
+    },
+    {
+      "name": "ADR-0009: a column's own Filter is left out of its value list, so the list is never a dead end",
+      "rows": [
+        ["Alpha", "USD"],
+        ["Alpha", "EUR"],
+        ["Beta", "JPY"],
+        ["Beta", "USD"]
+      ],
+      "columns": [{"name": "Book", "type": "text"}, {"name": "Currency", "type": "text"}],
+      "steps": [
+        {"setColumns": true},
+        {"setFilter": {"columns": {"Book": {"clauses": [{"operator": "equals", "value": "Alpha"}]}}}},
+        {"distinctValues": "Book", "is": ["Alpha", "Beta"]}
+      ]
+    },
+    {
+      "name": "ADR-0023: a Blank is in the value list as null, so the panel can offer it",
+      "rows": [
+        ["Alpha", 1],
+        [null, 2],
+        ["Alpha", 3],
+        [null, 4]
+      ],
+      "steps": [
+        {"setColumns": true},
+        {"distinctValues": "Book", "is": ["Alpha", null]}
+      ]
+    },
+    {
+      "name": "ADR-0009: a value list keeps the order values first appear in, not the Sort's",
+      "rows": [
+        ["Beta", 1],
+        ["Alpha", 2],
+        ["Beta", 3]
+      ],
+      "steps": [
+        {"setColumns": true},
+        {"setSorts": [{"column": "Book", "direction": "ascending"}]},
+        {"distinctValues": "Book", "is": ["Beta", "Alpha"]}
+      ]
+    },
+    {
+      "name": "ADR-0009: a value list names a column the source was given",
+      "rows": [
+        ["Alpha", 1]
+      ],
+      "steps": [
+        {"setColumns": true},
+        {"distinctValues": "Notional", "throws": "invalidOperation", "saying": "Notional"}
+      ]
+    },
+    {
+      "name": "ADR-0009: a date is one value in the list however many cells hold it",
+      "rows": [
+        [{"dateOnly": "2026-08-30"}],
+        [{"dateOnly": "2026-08-30"}],
+        [{"dateOnly": "2026-08-31"}]
+      ],
+      "columns": [{"name": "Settles", "type": "date", "dateType": "dateOnly"}],
+      "steps": [
+        {"setColumns": true},
+        {"distinctValues": "Settles", "is": [{"dateOnly": "2026-08-30"}, {"dateOnly": "2026-08-31"}]}
+      ]
+    },
+    {
+      "name": "ADR-0009, ADR-0023: an instant is one value in the list in whatever offset, and however it is held",
+      "rows": [
+        [{"dateTimeOffset": "2026-08-30T09:00:00+09:00"}],
+        [{"dateTimeOffset": "2026-08-30T00:00:00+00:00"}],
+        [{"jsDate": "2026-08-30T00:00:00Z"}],
+        [{"dateTimeOffset": "2026-08-30T09:00:00+00:00"}]
+      ],
+      "columns": [{"name": "Stamped", "type": "date", "dateType": "dateTimeOffset"}],
+      "steps": [
+        {"setColumns": true},
+        {"distinctValues": "Stamped", "is": [{"dateTimeOffset": "2026-08-30T09:00:00+09:00"}, {"dateTimeOffset": "2026-08-30T09:00:00+00:00"}]}
+      ]
+    },
+    {
+      "name": "ADR-0023: a Filter whose operand names the same instant in another offset is the same Filter, and is not heard",
+      "rows": [
+        [{"dateTimeOffset": "2026-08-30T09:00:00+09:00"}],
+        [{"dateTimeOffset": "2026-08-30T09:00:00+00:00"}]
+      ],
+      "columns": [{"name": "Stamped", "type": "date", "dateType": "dateTimeOffset"}],
+      "steps": [
+        {"setColumns": true},
+        {"setFilter": {"columns": {"Stamped": {"clauses": [{"operator": "equals", "value": {"dateTimeOffset": "2026-08-30T09:00:00+09:00"}}]}}}},
+        {"expect": {"window": [0], "version": 1, "heard": 1}},
+        {"setFilter": {"columns": {"Stamped": {"clauses": [{"operator": "equals", "value": {"dateTimeOffset": "2026-08-30T00:00:00+00:00"}}]}}}},
+        {"expect": {"window": [0], "version": 1, "heard": 0}}
+      ]
+    },
+    {
+      "name": "ADR-0023: members written as null are absent, as a Query that came through JSON writes them",
+      "rows": [
+        ["Rates", 2],
+        ["Credit", 3],
+        ["Rates", 1]
+      ],
+      "steps": [
+        {"setColumns": true},
+        {"setFilter": {"columns": {"Book": {"combinator": null, "clauses": [{"operator": "equals", "value": "Rates", "values": null}]}}}},
+        {"expect": {"window": [0, 2], "version": 1, "heard": 1}},
+        {"setFilter": {"columns": {"Book": {"clauses": [{"operator": "equals", "value": "Rates"}]}}}},
+        {"expect": {"window": [0, 2], "version": 1, "heard": 0, "filter": {"columns": {"Book": {"clauses": [{"operator": "equals", "value": "Rates"}]}}}}},
+        {"setFilter": {"columns": {"Book": {"clauses": null}}}, "throws": "invalidOperation", "saying": "Book"},
+        {"expect": {"window": [0, 2], "version": 1, "heard": 0}}
+      ]
+    }
+  ]
+}

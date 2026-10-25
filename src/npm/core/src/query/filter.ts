@@ -29,7 +29,9 @@ export interface FilterSpec {
 }
 
 /** The whole Filter: a spec per column, by name, and the Opaque Filter, whose meaning only the Consumer
- * knows and which the reference implementation ignores (ADR-0023). */
+ * knows and which the reference implementation ignores (ADR-0023). Two Opaque Filters are the same when
+ * they hold the same data, arrays and plain objects compared member by member, so one built afresh on
+ * every render is no change; any other object is the same only as itself. */
 export interface GridFilter {
     readonly columns: Readonly<Record<string, FilterSpec>>;
     readonly opaque?: unknown;

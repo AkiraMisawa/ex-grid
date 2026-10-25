@@ -85,23 +85,35 @@ export type Refusal = 'outOfRange' | 'argument' | 'invalidOperation';
 /** Runs the action and holds it to the refusal named, and, with `saying`, to a message holding that
  * text, as the C# core's does. */
 export function expectRefusal(action: () => unknown, refusal: Refusal, saying?: string): void {
+    // Run once: an action may change what a second run would meet.
+    let thrown: unknown;
+    try {
+        action();
+    } catch (error) { // oxlint-disable-line ex-grid/no-catch -- the refusal the case expects is held to it below
+        thrown = error;
+    }
+    expectRefused(thrown, refusal, saying);
+}
+
+/** Holds what an action threw, or `undefined` when it threw nothing, to the refusal named. */
+export function expectRefused(thrown: unknown, refusal: Refusal, saying?: string): void {
+    expect(thrown, `expected a refusal (${refusal})`).toBeInstanceOf(Error);
     switch (refusal) {
         case 'outOfRange':
-            expect(action, 'expected a refusal (outOfRange)').toThrow(RangeError);
+            expect(thrown, 'expected a refusal (outOfRange)').toBeInstanceOf(RangeError);
             break;
         case 'argument':
-            expect(action, 'expected a refusal (argument)').toThrow(TypeError);
+            expect(thrown, 'expected a refusal (argument)').toBeInstanceOf(TypeError);
             break;
         case 'invalidOperation':
-            expect(action, 'expected a refusal (invalidOperation)').toThrow(Error);
-            expect(action, 'expected a refusal (invalidOperation), not outOfRange').not.toThrow(RangeError);
-            expect(action, 'expected a refusal (invalidOperation), not argument').not.toThrow(TypeError);
+            expect(thrown, 'expected a refusal (invalidOperation), not outOfRange').not.toBeInstanceOf(RangeError);
+            expect(thrown, 'expected a refusal (invalidOperation), not argument').not.toBeInstanceOf(TypeError);
             break;
         default:
             unreachable(refusal);
     }
     if (saying !== undefined) {
-        expect(action).toThrow(saying);
+        expect(thrown instanceof Error ? thrown.message : '', 'the refusal says').toContain(saying);
     }
 }
 

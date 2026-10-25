@@ -23,7 +23,8 @@ public class QueryCaseTests
             .Select((column, index) => new ColumnInfo<JsonElement>(
                 column.GetProperty("name").GetString()!,
                 Member<ColumnType>(column.GetProperty("type")),
-                row => Value(row[index])))
+                row => Value(row[index]),
+                DateType: column.TryGetProperty("dateType", out var dateType) ? Member<DateType>(dateType) : DateType.DateTime))
             .ToArray();
         var rows = entry.GetProperty("rows").EnumerateArray().ToArray();
         var filter = entry.TryGetProperty("filter", out var f) ? FilterOf(f) : null;
@@ -42,9 +43,55 @@ public class QueryCaseTests
         Assert.Equal(keeps.EnumerateArray().Select(k => k.GetInt32()).ToArray(), run());
     }
 
+    [Fact] // FL-6, ADR-0023/0009: every operator on every column type is either offered, with its cases, or refused naming the column
+    public void FL6_every_operator_on_every_column_type_is_either_tested_or_refused()
+    {
+        var document = SharedCases.Read(Area, "operators.json");
+        var columns = document.GetProperty("columns").EnumerateArray()
+            .Select(column => (Name: column.GetProperty("name").GetString()!, Type: Member<ColumnType>(column.GetProperty("type"))))
+            .ToArray();
+        var cases = document.GetProperty("cases").EnumerateArray().Select(entry =>
+        {
+            var filtered = entry.GetProperty("filter").GetProperty("columns").EnumerateObject().Single();
+            var index = Array.FindIndex(columns, column => column.Name == filtered.Name);
+            var clause = filtered.Value.GetProperty("clauses").EnumerateArray().Single();
+            return (
+                columns[index].Type,
+                Operator: Member<FilterOperator>(clause.GetProperty("operator")),
+                Column: filtered.Name,
+                Blank: entry.GetProperty("rows").EnumerateArray().Any(row => row[index].ValueKind == JsonValueKind.Null),
+                Kept: entry.TryGetProperty("keeps", out var keeps) ? keeps.GetArrayLength() > 0 : (bool?)null,
+                Throws: entry.TryGetProperty("throws", out var throws) ? throws.GetString() : null,
+                Saying: entry.TryGetProperty("saying", out var saying) ? saying.GetString() : null);
+        }).ToArray();
+
+        foreach (var type in Enum.GetValues<ColumnType>())
+        {
+            Assert.Contains(columns, column => column.Type == type);
+            foreach (var op in Enum.GetValues<FilterOperator>())
+            {
+                var pair = cases.Where(c => c.Type == type && c.Operator == op).ToArray();
+                if (FilterOperators.AllowedFor(type).Contains(op))
+                {
+                    // Offered: at least one case that keeps, one that drops, and a Blank.
+                    Assert.True(pair.Any(c => c.Kept == true) && pair.Any(c => c.Kept == false),
+                        $"{op} on {type} needs a matching and a non-matching case");
+                    Assert.True(pair.Any(c => c.Blank), $"{op} on {type} needs a Blank case");
+                }
+                else
+                {
+                    Assert.True(pair.Length > 0 && pair.All(c => c.Throws == "invalidOperation" && c.Saying == c.Column),
+                        $"{op} on {type} is not offered, so it needs a case refused naming the column");
+                }
+            }
+        }
+    }
+
     /// <summary>A value as a case writes it: JSON's own, a JSON number a double (the Script Core's number),
-    /// <c>{"bigint": text}</c> a long, <c>{"double": text}</c> a double JSON cannot hold.</summary>
-    private static object? Value(JsonElement written) => written.ValueKind switch
+    /// <c>{"bigint": text}</c> a long, <c>{"double": text}</c> a double JSON cannot hold, <c>{"dateTime": text}</c>
+    /// a DateTime, <c>{"dateOnly": text}</c> a DateOnly, and <c>{"dateTimeOffset": text}</c> and
+    /// <c>{"jsDate": text}</c> a DateTimeOffset.</summary>
+    internal static object? Value(JsonElement written) => written.ValueKind switch
     {
         JsonValueKind.Null => null,
         JsonValueKind.String => written.GetString(),
@@ -55,16 +102,24 @@ public class QueryCaseTests
             => long.Parse(text.GetString()!, CultureInfo.InvariantCulture),
         JsonValueKind.Object when written.TryGetProperty("double", out var text)
             => double.Parse(text.GetString()!, CultureInfo.InvariantCulture),
+        JsonValueKind.Object when written.TryGetProperty("dateTime", out var text)
+            => DateTime.Parse(text.GetString()!, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind),
+        JsonValueKind.Object when written.TryGetProperty("dateOnly", out var text)
+            => DateOnly.Parse(text.GetString()!, CultureInfo.InvariantCulture),
+        JsonValueKind.Object when written.TryGetProperty("dateTimeOffset", out var text)
+            => DateTimeOffset.Parse(text.GetString()!, CultureInfo.InvariantCulture),
+        JsonValueKind.Object when written.TryGetProperty("jsDate", out var text)
+            => DateTimeOffset.Parse(text.GetString()!, CultureInfo.InvariantCulture),
         _ => throw new InvalidOperationException($"{written} is not a value a query case writes."),
     };
 
     /// <summary>An enum's member as a case names it, or a number cast in from outside the vocabulary.</summary>
-    private static T Member<T>(JsonElement written) where T : struct, Enum
+    internal static T Member<T>(JsonElement written) where T : struct, Enum
         => written.ValueKind == JsonValueKind.Number
             ? (T)Enum.ToObject(typeof(T), written.GetInt32())
             : Enum.Parse<T>(written.GetString()!, ignoreCase: true);
 
-    private static GridFilter FilterOf(JsonElement filter)
+    internal static GridFilter FilterOf(JsonElement filter)
     {
         var columns = new Dictionary<string, FilterSpec>(StringComparer.Ordinal);
         foreach (var column in filter.GetProperty("columns").EnumerateObject())

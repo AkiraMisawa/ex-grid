@@ -156,6 +156,8 @@ public static class GridQueryEngine
         // rows hold, not by the first comparison that happens to meet it.
         if (!Enum.IsDefined(column.Type))
             throw new ArgumentOutOfRangeException(nameof(ColumnInfo<TRow>.Type), column.Type, $"Column '{name}' has an unknown type.");
+        if (column.Type == ColumnType.Date && !Enum.IsDefined(column.DateType))
+            throw new ArgumentOutOfRangeException(nameof(ColumnInfo<TRow>.DateType), column.DateType, $"Column '{name}' has an unknown date type.");
         // An Action Column carries no value, so every row would compare equal and a sort
         // would shuffle the result into an order nobody could account for. Refused here,
         // where every other ambiguity is (ADR-0020).

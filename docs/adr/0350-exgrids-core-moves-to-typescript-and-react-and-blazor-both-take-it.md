@@ -292,8 +292,9 @@ than its spelling, Blazor's surface follows it under section 14.
   alike. A Summary's Sum is computed exactly, by counting decimal places, as C#'s decimal sums: never
   by adding doubles, which would show a total a money grid cannot stand behind.
 - **A date is a Temporal value.** `Temporal.PlainDate` is C#'s `DateOnly`, `Temporal.PlainDateTime`
-  its `DateTime`, and `Temporal.ZonedDateTime` or `Date` its `DateTimeOffset`, which compares as the
-  instant it names. JavaScript's `Date` alone cannot say a day without a time or a time without a zone,
+  its `DateTime`, and `Temporal.ZonedDateTime`, `Temporal.Instant` or `Date` its `DateTimeOffset`, which
+  compares as the instant it names. A day in a calendar other than ISO's compares as the day it names,
+  as Temporal's own `compare` does. JavaScript's `Date` alone cannot say a day without a time or a time without a zone,
   and a grid that guessed would move a value across midnight. Chrome and Edge ship Temporal from 144
   (January 2026); a browser without it (Safari, when this was decided) takes a polyfill the Consumer
   loads. The core does not bundle one, and recognises a Temporal value by its own tag, so a polyfill's
