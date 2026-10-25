@@ -29,7 +29,7 @@ One directory per area, one file per group of cases. Each file is an object:
 | Key | Meaning |
 |---|---|
 | `about` | What the file covers, and where its cases came from |
-| `kind` | Which runner reads it: `selection`, `range`, `edgeBand`, `held`, `calls`, `clipboard`, `query`, `source`, `displayText`, `find`, `replace`, `summary` |
+| `kind` | Which runner reads it: `selection`, `range`, `edgeBand`, `held`, `calls`, `clipboard`, `query`, `source`, `fetch`, `displayText`, `find`, `replace`, `summary` |
 | `extent` | `[rows, columns]`, the grid every case of the file runs against unless it names its own |
 | `cases` | The cases. Each has a `name`, which starts with the ADR it holds to (CLAUDE.md, "Put the ADR number in the test name") |
 
@@ -220,6 +220,36 @@ A step that is refused says so with `throws` and `saying`, as a `query` case doe
 A column a `source` file declares may name a `format`, which both runners know by name: `whole` shows a
 number rounded to a whole one, as C#'s custom format `0` writes it (the cases hold no negative half, where
 JavaScript's `Math.round` and C# part).
+
+## `fetch`
+
+`GridSource.fetch` (ADR-0025), the source over a result a server holds, run by
+`tests/ExGrid.Tests/Cases/FetchCaseTests.cs` against `GridSource.Fetch` and `src/npm/core/test/fetch.test.ts`
+against the Script Core's `GridSource.fetch`. The file names its `columns`, by name alone: the server, not
+the source, reads them. A row is a text, `Row n` for the row at position n of the result. A case gives the
+`readAhead` the source is made with, whether a listener `hears` failed fetches, and may give `rowKey: true`,
+each row its own Row Key, and `distinct`, the values the Consumer's value list answers with. The server
+answers by hand: a fetch the source asks waits until a step answers it, by its place among the fetches asked
+so far, from 0. Each step is read once the promises it set going have run.
+
+| Step | Does |
+|---|---|
+| `{"bind": true}` | Binds the columns |
+| `{"setSorts": [{"column", "direction"}]}` | Applies a Sort |
+| `{"setFilter": filter}` | Applies a Filter, `null` for none |
+| `{"requery": true}` | Says the Query's meaning changed outside its Sort and Filter (ADR-0343) |
+| `{"dispose": true}` | Disposes the source |
+| `{"needRange": [start, count], "as": name}` | Says the grid needs those rows, and names the promise it is answered with; `"throws"` in place of `as` for a range refused as it is asked |
+| `{"rows": [start, count], "as": name}` | Reads rows for a copy (ADR-0005), and names the promise |
+| `{"answer": i, "page": {"start", "count", "total", "orderToken"}}` | Answers fetch `i` with a page of `count` rows from `start`, or the `rows` it lists, of a result `total` rows long, with the server's order token if any |
+| `{"fail": i, "error": text}` | Fails fetch `i` with that message |
+| `{"settled": name}` | The named promise has settled, and was fulfilled; with `throws` and `saying` it was refused as a `query` case says, and with `"rejects": text` it rejected with the failure of that message |
+| `{"pending": name}` | The named promise has not settled |
+| `{"same": [name, name]}` | Two ranges asked for were answered with one promise |
+| `{"read": name, "is": [rows]}` | The rows the named read answered with |
+| `{"asked": i, "range": [start, count], "sorts": [...], "filtered": [columns]}` | What fetch `i` asked: its range, its Sort, and the columns its Filter names |
+| `{"distinctValues": column, "is": [values], "handed": [columns]}` | A column's value list, and the columns the Filter handed to the Consumer's value list names; `"tooMany": true` in place of `is` |
+| `{"expect": {…}}` | Reads the source: `calls`, the range of every fetch asked so far; `cancelled`, whether each was called off; `windowStart`, `windowCount`, `first` (the Window's first row), `totalCount`, `loading`, `version`, `sorts`, `filter`; `lastError`, `null` or a text its message holds; `reported`, texts the messages of the failures heard since the last `expect` hold, in order; `vouches`; and `heard`, the changes heard since the last `expect` |
 
 ## `displayText`
 

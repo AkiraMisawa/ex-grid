@@ -7,6 +7,7 @@ import type { QueryColumn } from '../query/columns';
 import type { GridFilter } from '../query/filter';
 import type { SortSpec } from '../query/sort';
 import { InMemoryGridSource, type InMemorySourceOptions } from './in-memory-source';
+import { FetchingGridSource, type FetchingSourceOptions, type GridPage, type GridQuery } from './fetching-source';
 import type { GridFindRequest, GridFindResult } from '../finding/find';
 import type { GridSummaryRequest, GridSummaryResult } from '../summary/grid-summary';
 import type { RowMarks } from '../rows/row-marks';
@@ -84,5 +85,10 @@ export const GridSource = Object.freeze({
      * given a Row Key, one that takes live data (ADR-0141). */
     from<Row>(rows: readonly Row[], options?: InMemorySourceOptions<Row>): InMemoryGridSource<Row> {
         return InMemoryGridSource.from(rows, options);
+    },
+    /** A source over a result a server holds (ADR-0025): `fetch` answers each Query with a page, and the
+     * source reads ahead, coalesces while scrolling, and discards an answer to a question that changed. */
+    fetch<Row>(fetch: (query: GridQuery, signal: AbortSignal) => Promise<GridPage<Row>>, options?: FetchingSourceOptions<Row>): FetchingGridSource<Row> {
+        return FetchingGridSource.fetch(fetch, options);
     },
 });

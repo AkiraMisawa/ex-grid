@@ -19,7 +19,7 @@ import type { QueryColumn } from '../query/columns';
 import { dateIdentity } from '../query/dates';
 import type { GridFilter } from '../query/filter';
 import { applyQuery, queryPositions } from '../query/query-engine';
-import type { SortSpec } from '../query/sort';
+import { sortsEqual, type SortSpec } from '../query/sort';
 import { rowRange, type RowRange } from '../viewport/row-range';
 import type { GridChangeBatch } from './change-batch';
 import { ChangeGatherer } from './change-gatherer';
@@ -891,13 +891,6 @@ function checked(range: RowRange): RowRange {
 
 function sameRows<Row>(a: readonly Row[], b: readonly Row[]): boolean {
     return a.length === b.length && a.every((row, at) => row === b[at]);
-}
-
-function sortsEqual(a: readonly SortSpec[], b: readonly SortSpec[]): boolean {
-    return a.length === b.length && a.every((sort, at) => {
-        const other = b[at];
-        return other !== undefined && sort.column === other.column && sort.direction === other.direction;
-    });
 }
 
 /** Two column lists are the same columns when each says the same: a grid that keeps its column objects

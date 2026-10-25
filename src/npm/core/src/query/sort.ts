@@ -24,3 +24,11 @@ export function nextSort(current: readonly SortSpec[], column: string): readonly
     }
     return Object.freeze([Object.freeze({ column, direction: 'ascending' as const })]);
 }
+
+/** Whether two sorts say the same: the same columns in the same order, each the same way. */
+export function sortsEqual(a: readonly SortSpec[], b: readonly SortSpec[]): boolean {
+    return a.length === b.length && a.every((sort, at) => {
+        const other = b[at];
+        return other !== undefined && sort.column === other.column && sort.direction === other.direction;
+    });
+}
