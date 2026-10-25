@@ -59,7 +59,10 @@ export interface TemporalLike {
     readonly PlainDate: { from(fields: { year: number; month: number; day: number }): unknown };
     /** Makes a date and time, a dateTime column's value. */
     readonly PlainDateTime: {
-        from(fields: { year: number; month: number; day: number; hour: number; minute: number; second: number; nanosecond: number }): unknown;
+        from(fields: {
+            year: number; month: number; day: number; hour: number; minute: number; second: number;
+            millisecond: number; microsecond: number; nanosecond: number;
+        }): unknown;
     };
     /** Makes an instant in the offset it was typed with, a dateTimeOffset column's value. */
     readonly ZonedDateTime: { from(text: string): unknown };
@@ -110,8 +113,8 @@ export function operandText(operand: unknown, culture: GridCulture): string {
 /**
  * A date that holds a fraction of a second, in ISO's T form with the fraction written: the spaced form a cell
  * shows stops at the second, and a condition reopened in it would be applied again a fraction off, a filter
- * nobody chose. With an offset, the form reads back as the same moment; a date and time with none is refused
- * when read back, said rather than rounded. `undefined` for anything else.
+ * nobody chose. The form reads back as the same value, with its offset where it has one. `undefined` for
+ * anything else.
  */
 function fractionalDateText(operand: object): string | undefined {
     const nanosecond = subSecond(operand);
@@ -297,7 +300,9 @@ function plainNumber(value: number | bigint): string {
 
 // Ticket 94's forms and ISO 8601's extended form with an offset or Z, read exactly in every culture.
 const isoOffset = /^(\d{4})-(\d{2})-(\d{2})(?: (\d{2}):(\d{2}):(\d{2}) ([+-]\d{2}:\d{2})|T(\d{2}):(\d{2})(?::(\d{2})(?:\.(\d{1,7}))?)?(Z|[+-]\d{2}:\d{2}))$/u;
-const isoDate = /^(\d{4})-(\d{2})-(\d{2})(?: (\d{2}):(\d{2}):(\d{2}))?$/u;
+// The T form without an offset, its fraction optional, is the one a date and time holding a fraction of a
+// second reopens in (operandText).
+const isoDate = /^(\d{4})-(\d{2})-(\d{2})(?: (\d{2}):(\d{2}):(\d{2})|T(\d{2}):(\d{2}):(\d{2})(?:\.(\d{1,7}))?)?$/u;
 // Three runs of digits, day, month and year in some order, with a 24-hour time or nothing after it.
 const numericDate = /^(\d{1,4})[./-](\d{1,2})[./-](\d{1,4})(?:[\sT]+(\d{1,2}):(\d{2})(?::(\d{2}))?)?$/u;
 
@@ -326,9 +331,12 @@ function readDate(text: string, culture: GridCulture, dateType: DateType, tempor
     }
     const iso = isoDate.exec(trimmed);
     if (iso !== null) {
-        const [, y, mo, d, h, mi, s] = iso;
-        const read = dateOf(Number(y), Number(mo), Number(d), field(h), field(mi), field(s), 0);
-        return read === undefined ? notReadable : asDeclared(read, h !== undefined, dateType, temporal);
+        const [, y, mo, d, h1, mi1, s1, h2, mi2, s2, fraction] = iso;
+        const spaced = h1 !== undefined;
+        const read = spaced
+            ? dateOf(Number(y), Number(mo), Number(d), Number(h1), Number(mi1), Number(s1), 0)
+            : dateOf(Number(y), Number(mo), Number(d), field(h2), field(mi2), field(s2), nanoseconds(fraction));
+        return read === undefined ? notReadable : asDeclared(read, spaced || h2 !== undefined, dateType, temporal);
     }
     const numeric = numericDate.exec(trimmed);
     if (numeric === null) return notReadable;
@@ -365,7 +373,11 @@ function asDeclared(read: ReadDate, hasTime: boolean, dateType: DateType, tempor
     switch (dateType) {
         case 'dateTime':
             if (offset !== undefined) return declared();
-            return made(madeWith(temporal).PlainDateTime.from({ year, month, day, hour, minute, second, nanosecond }));
+            // Temporal holds the fraction in three fields of three digits each.
+            return made(madeWith(temporal).PlainDateTime.from({
+                year, month, day, hour, minute, second,
+                millisecond: Math.trunc(nanosecond / 1_000_000), microsecond: Math.trunc(nanosecond / 1_000) % 1_000, nanosecond: nanosecond % 1_000,
+            }));
         case 'dateOnly':
             if (offset !== undefined || hasTime) return declared();
             return made(madeWith(temporal).PlainDate.from({ year, month, day }));

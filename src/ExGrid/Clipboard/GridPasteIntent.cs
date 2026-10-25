@@ -22,23 +22,31 @@ public sealed class GridPasteIntent
 {
     internal GridPasteIntent(
         PastePlan plan, IReadOnlyList<IReadOnlyList<string>> values, int rowSequenceVersion,
-        IReadOnlyList<IReadOnlyList<PasteFieldOrigin>>? origins = null, SelectionRange? fillSource = null,
+        IReadOnlyList<IReadOnlyList<PasteFieldOrigin>> origins, SelectionRange? fillSource = null,
         CellPosition? enteredAt = null, IReadOnlyList<IReadOnlyList<string?>>? marks = null)
     {
         Plan = plan;
         _marks = marks;
         Values = values;
         RowSequenceVersion = rowSequenceVersion;
-        Origins = origins ?? AllShown(values);
+        Origins = origins;
         FillSource = fillSource;
         EnteredAt = enteredAt;
     }
 
-    private static IReadOnlyList<IReadOnlyList<PasteFieldOrigin>> AllShown(IReadOnlyList<IReadOnlyList<string>> values)
+    // Every route names where its fields came from: a default would mark a new route's fields as
+    // whatever the default is, as it once marked a fill key's raw values shown text.
+
+    /// <summary>Every field of <paramref name="values"/> marked <paramref name="origin"/>.</summary>
+    internal static IReadOnlyList<IReadOnlyList<PasteFieldOrigin>> All(PasteFieldOrigin origin, IReadOnlyList<IReadOnlyList<string>> values)
     {
         var origins = new IReadOnlyList<PasteFieldOrigin>[values.Count];
         for (var r = 0; r < values.Count; r++)
-            origins[r] = new PasteFieldOrigin[values[r].Count];
+        {
+            var row = new PasteFieldOrigin[values[r].Count];
+            Array.Fill(row, origin);
+            origins[r] = row;
+        }
         return origins;
     }
 
@@ -55,7 +63,8 @@ public sealed class GridPasteIntent
     /// (ADR-0050, item 10): <see cref="PasteFieldOrigin.Invariant"/> for Excel's <c>x:num</c>
     /// and ExGrid's own unformatted HTML, read under the invariant culture;
     /// <see cref="PasteFieldOrigin.ShownText"/> for everything else, read as typed. A block
-    /// typed in the grid (Ctrl+Enter) is shown text throughout.</summary>
+    /// typed in the grid (Ctrl+Enter) is shown text throughout; a fill key's block, the raw
+    /// values of the range it read, is invariant throughout.</summary>
     public IReadOnlyList<IReadOnlyList<PasteFieldOrigin>> Origins { get; }
 
     /// <summary>

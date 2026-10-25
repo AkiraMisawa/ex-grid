@@ -117,7 +117,10 @@ function isReadDate(actual: unknown): actual is ReadDate {
 /** A date as read, in the text the Temporal value of its fields writes: a ZonedDateTime in its offset's zone
  * where an offset was written. */
 function readDateText({ year, month, day, hour, minute, second, nanosecond, offset }: ReadDate): string {
-    const local = Temporal.PlainDateTime.from({ year, month, day, hour, minute, second, nanosecond }).toString();
+    const local = Temporal.PlainDateTime.from({
+        year, month, day, hour, minute, second,
+        millisecond: Math.trunc(nanosecond / 1_000_000), microsecond: Math.trunc(nanosecond / 1_000) % 1_000, nanosecond: nanosecond % 1_000,
+    }).toString();
     if (offset === undefined) return local;
     const zone = offset === 'Z' ? '+00:00' : offset;
     return Temporal.ZonedDateTime.from(`${local}${zone}[${zone}]`).toString();

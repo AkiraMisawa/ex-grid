@@ -286,7 +286,8 @@
     /// </summary>
     private sealed class OperandDateConverter(OperandState state, Func<OperandState, OperandReading> read) : IReversibleConverter<DateTime?, string>
     {
-        // The day alone at midnight, the day and time otherwise: both ISO forms read back exactly.
+        // The day alone at midnight, the day and time otherwise, in ISO's T form with its fraction
+        // where it holds one: each ISO form reads back exactly.
         public string Convert(DateTime? value) => value switch
         {
             null => "",
