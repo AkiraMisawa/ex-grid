@@ -14,18 +14,18 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/25/2026 - 14:54:39 |
+| Generated on: | 10/25/2026 - 15:18:43 |
 | Parser: | MultiReport (19x Cobertura) |
 | Assemblies: | 16 |
 | Classes: | 1181 |
 | Files: | 605 |
-| **Line coverage:** | 94.5% (81661 of 86397) |
-| Covered lines: | 81661 |
-| Uncovered lines: | 4736 |
+| **Line coverage:** | 94.5% (81662 of 86397) |
+| Covered lines: | 81662 |
+| Uncovered lines: | 4735 |
 | Coverable lines: | 86397 |
 | Total lines: | 138104 |
-| **Branch coverage:** | 87.2% (49280 of 56508) |
-| Covered branches: | 49280 |
+| **Branch coverage:** | 87.2% (49282 of 56508) |
+| Covered branches: | 49282 |
 | Total branches: | 56508 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
@@ -524,11 +524,11 @@
 |ExGrid.ViewStateDocument|100%||
 
 </details>
-<details><summary>ExGrid.Data - 94.8%</summary>
+<details><summary>ExGrid.Data - 94.9%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExGrid.Data**|**94.8%**|**90.4%**|
+|**ExGrid.Data**|**94.9%**|**90.4%**|
 |ExGrid.Data.AggregateAccumulator|93%|92.4%|
 |ExGrid.Data.AggregateArithmetic|97.8%|95.7%|
 |ExGrid.Data.AggregateResult|86.2%|55.5%|
@@ -621,7 +621,7 @@
 |ExGrid.Data.Storage.DoubleColumnWriter|100%||
 |ExGrid.Data.Storage.DoubleData|100%||
 |ExGrid.Data.Storage.DoubleObjectColumn<T>|100%|100%|
-|ExGrid.Data.Storage.FixedCodes|93.5%|75%|
+|ExGrid.Data.Storage.FixedCodes|96.7%|87.5%|
 |ExGrid.Data.Storage.Gather|98.8%|96.1%|
 |ExGrid.Data.Storage.Int32ObjectColumn<T>|82.3%|100%|
 |ExGrid.Data.Storage.IntegerColumnWriter|100%||
@@ -1117,7 +1117,7 @@
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExSheet.Engine**|**97.8%**|**91.8%**|
+|**ExSheet.Engine**|**97.8%**|**91.9%**|
 |ExSheet.Engine.ArgumentHint|100%||
 |ExSheet.Engine.ArgumentValue|100%||
 |ExSheet.Engine.AxisFormat|100%|100%|
