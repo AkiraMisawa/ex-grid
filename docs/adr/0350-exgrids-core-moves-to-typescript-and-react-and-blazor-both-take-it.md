@@ -124,6 +124,11 @@ Layer 3 runs the ExGrid specs against a React host as it runs them against the S
 hosts today. A spec that needs to know which host it is on says why. The React host is a third DemoHost,
 and the same page catalogue is served by all three.
 
+*(Narrowed 2026-10-25, decided with the user,
+[ADR-0370](./0370-the-whole-family-moves-to-typescript-and-blazor-only-adapts-it.md) section 11: from
+a product's step 3, its behaviour specs run on the React host and the two Blazor hosts run the specs
+that judge anything passing through Blazor.)*
+
 ### 5. The C# core's cases become the Script Core's, as data
 
 A layer-1 case of the C# core's pure logic (selection arithmetic, paste shape, copy refusal, overflow,

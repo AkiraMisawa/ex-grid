@@ -1437,6 +1437,11 @@ holding nothing of any real Consumer's domain.
 
 ## 24. Blazor Server (SRV)
 
+*(2026-10-25, decided with the user: [ADR-0370](adr/0370-the-whole-family-moves-to-typescript-and-blazor-only-adapts-it.md)
+section 11 splits layer 3 from each product's step 3, behaviour on the React host and what passes
+through Blazor on both Blazor hosts. SRV-2, and every criterion checked "on the Server host", stands as
+written until that step, and is rewritten then to name the host each is checked on, dropping none.)*
+
 *(Added 2026-09-25, when the grid was first run under Blazor Server — ADR-0005, ADR-0010,
 ADR-0018, ADR-0019, ADR-0021.)* The criteria above are the grid's on any host. This section says
 how they are run on the second host, which of them are WebAssembly's by definition, and adds what
