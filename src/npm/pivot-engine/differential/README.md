@@ -12,6 +12,7 @@ difference it lists, so a failing seed is a failing case to write.
 | `general.differential.ts` | General, a number with no format of its own as a PivotTable shows it (ADR-0060), from `PivotGeneral` |
 | `text.differential.ts` | Comparing and casing text as .NET's cultures do |
 | `report.differential.ts` | Whole reports: random data, a Snapshot of every kind of column or records of any kind, and random layouts over it, each asked as a `pivotSource` case — its Leaf Aggregates, the report with every reading, a field's Items — and answered on the C# side by the shared cases' own runner, which the oracle compiles |
+| `live.differential.ts` | Live data: a random keyed Snapshot, a random question, and a run of random Change Batches, each followed by the question again and a field's Items under the current version, read in any order, since after a batch the two engines meet the records in different orders; the parts are those no order changes (counts, sums and extremes over numbers every order sums exactly) |
 
 ## Running one
 

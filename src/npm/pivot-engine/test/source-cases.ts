@@ -3,7 +3,7 @@
 // for its fields, Leaf Aggregates, Items, the records behind a cell, or a report. The C# side is
 // tests/ExPivot.Engine.Tests/Cases/PivotSourceCases.cs, which writes the answers and which tools/pivot-oracle
 // runs for a differential run's random cases.
-import { decimalText, ticksText } from '@ex-grid/data';
+import { createChangeBatch, decimalText, SnapshotError, ticksText } from '@ex-grid/data';
 import {
     datePartField, FetchingPivotSource, pivotAggregations, pivotCube, pivotDetailsQuery, pivotField, pivotItemsQuery, pivotParts, pivotQuery,
     pivotReport, PivotSourceFeatures, queryForLayout, RecordPivotSource, SnapshotPivotSource, type PivotAggregation, type PivotAnswer,
@@ -11,16 +11,24 @@ import {
     type PivotNumber, type PivotOptions, type PivotPart, type PivotQuery, type PivotQueryField, type PivotSource, type PivotSourceRefusal,
 } from '../src/index';
 import { isDecimal } from '../src/items/record-value';
-import { array, dataSet, itemKeyOf, layoutOf, must, object, optionsOf, refusalOf, snapshotOf, text, type DataSet, type Json, type JsonObject } from './cases';
+import { elementAt } from '../src/must';
+import {
+    array, caseValue, dataSet, itemKeyOf, layoutOf, must, object, optionsOf, refusalOf, rowsSnapshot, snapshotOf, snapshotShapeOf, text, type DataSet,
+    type Json, type JsonObject,
+} from './cases';
 import { itemKey, read } from './readings';
 
-// A source and how often its server was asked for Leaf Aggregates.
+// A source, how often its server was asked for Leaf Aggregates, the version of each answer, and the versions
+// the source told of since the last batch; and the shape a batch's records are written in.
 interface Bench {
     source: PivotSource;
     readonly again: () => PivotSource;
     readonly data: DataSet;
+    readonly shape: JsonObject | undefined;
     asked: number;
     version: string | undefined;
+    readonly versions: string[];
+    readonly told: string[];
 }
 
 function member<T extends string>(members: readonly T[], name: Json, what: string): T {
@@ -58,7 +66,12 @@ function open(file: JsonObject, entry: JsonObject): Bench {
     const snapshot = snapshotOf(file, entry);
     const data: DataSet = snapshot === undefined ? dataSet(file, entry) : { fields: [], records: [], keyCalls: [] };
     const fields = entry['declare'] === undefined ? undefined : array(entry['declare']).map(f => declared(object(f)));
-    const bundled = (): PivotSource => (snapshot === undefined ? new RecordPivotSource(data.records, data.fields) : new SnapshotPivotSource(snapshot, fields));
+    const bundled = (): PivotSource => {
+        if (snapshot === undefined) return new RecordPivotSource(data.records, data.fields);
+        const live = new SnapshotPivotSource(snapshot, fields);
+        live.subscribe(changed => bench.told.push(changed.sourceVersion));
+        return live;
+    };
     const fetch = entry['fetch'] === undefined ? undefined : object(entry['fetch']);
     const make = (): PivotSource => {
         const inner = bundled();
@@ -76,7 +89,8 @@ function open(file: JsonObject, entry: JsonObject): Bench {
             details: (query, signal) => inner.details(query, signal),
         });
     };
-    const bench: Bench = { source: make(), again: make, data, asked: 0, version: undefined };
+    const shape = snapshot === undefined ? undefined : snapshotShapeOf(file, entry);
+    const bench: Bench = { source: make(), again: make, data, shape, asked: 0, version: undefined, versions: [], told: [] };
     return bench;
 }
 
@@ -108,8 +122,12 @@ async function ask(bench: Bench, step: JsonObject, options: PivotOptions): Promi
         const answered = await source.aggregate(queryOf(object(asked)));
         if (answered.refusal !== undefined) return refused(answered.refusal, undefined);
         bench.version = answered.sourceVersion;
-        return answerJson(answered);
+        bench.versions.push(answered.sourceVersion);
+        const json = answerJson(answered);
+        return step['order'] === 'any' ? inAnyOrder(json) : json;
     }
+    const batch = step['apply'];
+    if (batch !== undefined) return apply(bench, object(batch));
     const field = step['items'];
     if (field !== undefined) {
         const under = underOf(bench, step);
@@ -158,11 +176,57 @@ async function ask(bench: Bench, step: JsonObject, options: PivotOptions): Promi
     throw new Error(`${JSON.stringify(step)} asks nothing the cases ask.`);
 }
 
-// The version a page is asked under: the last answer's, or "stale", one no source held.
+// The version a page is asked under: the last answer's, an earlier answer's by its number, the one a source
+// over a Snapshot answers under now, or "stale", one no source held.
 function underOf(bench: Bench, step: JsonObject): string {
-    if (step['under'] === 'stale') return 'stale';
+    const under = step['under'];
+    if (under === 'stale') return 'stale';
+    if (under === 'current') {
+        if (!(bench.source instanceof SnapshotPivotSource)) throw new Error('Only a source over a Snapshot is asked under its current version.');
+        return bench.source.sourceVersion;
+    }
+    if (under !== undefined) {
+        const earlier = bench.versions[whole(must(object(under), 'answer'))];
+        if (earlier === undefined) throw new Error(`${JSON.stringify(under)} names no answer the source gave.`);
+        return earlier;
+    }
     if (bench.version === undefined) throw new Error('A page is asked for under an answer\'s version, and no question was answered yet.');
     return bench.version;
+}
+
+// A Change Batch applied to the source over a Snapshot (ADR-0067): the Snapshot version it made and the Source
+// Versions the source told of, each written {version} where it is the one the source answers under now; or the
+// Snapshot's refusal, and what was told.
+function apply(bench: Bench, written: JsonObject): Json {
+    const source = bench.source;
+    const shape = bench.shape;
+    if (!(source instanceof SnapshotPivotSource) || shape === undefined) throw new Error('A batch is applied to a source over a Snapshot.');
+    const records = (role: string): { readonly [role]?: ReturnType<typeof rowsSnapshot> } => {
+        const rows = written[role];
+        return rows === undefined ? {} : { [role]: rowsSnapshot(shape, array(rows), undefined) };
+    };
+    const removed = written['removedKeys'];
+    const batch = createChangeBatch({
+        ...records('added'),
+        ...records('changed'),
+        ...(removed === undefined ? {} : { removedKeys: array(removed).map(removedKey) }),
+    });
+    bench.told.length = 0;
+    let answer: JsonObject;
+    try {
+        answer = { applied: Number(source.apply(batch).after.version) };
+    } catch (error) { // oxlint-disable-line ex-grid/no-catch -- a refused batch is the step's answer; anything else is rethrown
+        if (!(error instanceof SnapshotError)) throw error;
+        answer = refusalOf(error);
+    }
+    return { ...answer, told: bench.told.map(version => (version === source.sourceVersion ? '{version}' : version)) };
+}
+
+// A removed key as a case writes it: a string a Text key, a number or {"integer": "…"} an Integer key.
+function removedKey(written: Json): string | bigint | number {
+    const value = caseValue(written);
+    if (typeof value === 'string' || typeof value === 'bigint' || typeof value === 'number') return value;
+    throw new TypeError(`${JSON.stringify(written)} is no Record Key.`);
 }
 
 function whole(written: Json): number {
@@ -248,7 +312,7 @@ function axes(list: readonly PivotAnswerAxis[]): Json {
 // The Leaf Aggregates as a case writes them: the leaves, each axis's field and Items, each leaf's Item at
 // every level (rows, then columns) and its records, and each value's parts and what it carries at every
 // leaf, its numbers to the last bit.
-function answerJson(answered: PivotAnswer): Json {
+export function answerJson(answered: PivotAnswer): Json {
     const levels = [...answered.rows, ...answered.columns];
     const leaves: number[] = Array.from({ length: answered.leafCount }, (_, leaf) => leaf);
     return {
@@ -275,6 +339,57 @@ function answerJson(answered: PivotAnswer): Json {
                 return carried;
             }),
         })),
+    };
+}
+
+// An Item's key as the order of an answer in any order sorts it.
+function spelled(key: Json): string {
+    const item = object(key);
+    const value = item['value'];
+    return `${text(must(item, 'kind'))}\u0001${value === undefined ? '' : text(value)}`;
+}
+
+function ordinal(a: string, b: string): number {
+    return a < b ? -1 : a > b ? 1 : 0;
+}
+
+// Two leaves by their Items, level by level.
+function byPath(a: readonly number[], b: readonly number[]): number {
+    for (let i = 0; i < a.length; i++) if (elementAt(a, i) !== elementAt(b, i)) return elementAt(a, i) - elementAt(b, i);
+    return 0;
+}
+
+// An axis with its Items sorted, and where each Item now stands.
+function reorder(axis: Json): { readonly axis: Json; readonly at: readonly number[] } {
+    const items = array(must(object(axis), 'items'));
+    const order = items.map((_, i) => i).toSorted((a, b) => ordinal(spelled(elementAt(items, a)), spelled(elementAt(items, b))));
+    const at = items.map(() => 0);
+    order.forEach((item, place) => {
+        at[item] = place;
+    });
+    return { axis: { ...object(axis), items: order.map(i => elementAt(items, i)) }, at };
+}
+
+/** An answer whatever order an engine met its records in: each axis's Items in the ordinal order of their kinds
+ * and values, and the leaves in the order of their Items. After a Change Batch ExGrid.Data reads its rows in its
+ * storage's order and the Script Core in the Snapshot's, and the cases hold what both say. */
+function inAnyOrder(answer: Json): Json {
+    const written = object(answer);
+    const rows = array(must(written, 'rows')).map(reorder);
+    const columns = array(must(written, 'columns')).map(reorder);
+    const renumbered = [...rows, ...columns].map(axis => axis.at);
+    const leaves = array(must(written, 'leaf')).map(object);
+    const paths = leaves.map(leaf => array(must(leaf, 'at')).map((item, level) => elementAt(elementAt(renumbered, level), whole(item))));
+    const leafOrder = leaves.map((_, l) => l).toSorted((a, b) => byPath(elementAt(paths, a), elementAt(paths, b)));
+    return {
+        ...written,
+        rows: rows.map(axis => axis.axis),
+        columns: columns.map(axis => axis.axis),
+        leaf: leafOrder.map(l => ({ at: elementAt(paths, l), records: must(elementAt(leaves, l), 'records') })),
+        values: array(must(written, 'values')).map(value => {
+            const at = array(must(object(value), 'leaves'));
+            return { ...object(value), leaves: leafOrder.map(l => elementAt(at, l)) };
+        }),
     };
 }
 

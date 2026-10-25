@@ -11,7 +11,9 @@ namespace ExPivot.Engine.Tests;
 /// the answer the source holds is brought up to date from what the batch removed and added — the
 /// exact parts by subtraction and addition, every other part recomputed for the leaves it touched
 /// — so that after any sequence of batches every leaf equals a fresh aggregation of the Snapshot
-/// they made, to the last bit.
+/// they made, to the last bit. What both engines answer to a batch — Items that come and leave,
+/// spellings, notices, refusals, the versions still answered, the cap, exact sums — is the shared
+/// cases' (<c>tests/cases/pivot/source-live.json</c>); these hold how this engine folds.
 /// </summary>
 public class LiveDataTests
 {
@@ -89,124 +91,17 @@ public class LiveDataTests
         Assert.True(world.Removed > 100 && world.Changed > 100 && world.Added > 100);
     }
 
-    [Fact] // ADR-0067: an Item that first appears in a batch brings its leaves; one whose last record leaves takes them away
-    public async Task An_item_that_appears_or_leaves_in_a_batch()
+    [Fact] // ADR-0067: a Source Version names the source as well as the Snapshot's version: two sources over one Snapshot answer under two, so a new source is a refresh
+    public async Task Two_sources_over_one_snapshot_answer_under_two_versions()
     {
         var fields = Declarations();
-        var source = PivotSource.From([Row(1, "East", 10m), Row(2, "West", 20m), Row(3, "West", 5m)], fields);
-        var query = new PivotQuery(rows: [F("Desk")], values: [V("Amount", PivotParts.Sum)]);
-        await source.AggregateAsync(query, Ct);
+        var snapshot = fields.Build([Row(1, "East", 1m)]);
 
-        source.Apply(fields.Batch(added: [Row(4, "North", 7m)]));
-        var appeared = await source.AggregateAsync(query, Ct);
-        source.Apply(fields.Batch(removedKeys: [2L, 3L]));
-        var left = await source.AggregateAsync(query, Ct);
+        var one = await PivotSource.From(snapshot, fields.Fields).AggregateAsync(new PivotQuery(), Ct);
+        var other = await PivotSource.From(snapshot, fields.Fields).AggregateAsync(new PivotQuery(), Ct);
 
-        Assert.Equal(["East", "West", "North"], Sums(appeared).Keys);
-        Assert.Equal(7m, Sums(appeared)["North"]);
-        Assert.Equal(["East", "North"], Sums(left).Keys);
-        Assert.Equal(2, left.LeafCount);
-        SameKeys([PivotItemKey.Text("East"), PivotItemKey.Text("North")], left.Rows[0].Items);
-    }
-
-    [Fact] // ADR-0060/0067: a text Item is labelled by the first spelling among the records still present; when they leave, the next spelling labels it
-    public async Task A_spelling_leaves_with_its_last_record()
-    {
-        var fields = Declarations();
-        var source = PivotSource.From([Row(1, "East", 1m), Row(2, "EAST", 2m), Row(3, "east", 4m)], fields);
-        var query = new PivotQuery(rows: [F("Desk")], values: [V("Amount", PivotParts.Sum)]);
-
-        var first = await source.AggregateAsync(query, Ct);
-        source.Apply(fields.Batch(removedKeys: [1L]));
-        var second = await source.AggregateAsync(query, Ct);
-        source.Apply(fields.Batch(changed: [Row(2, "west", 2m)]));
-        var third = await source.AggregateAsync(query, Ct);
-        source.Apply(fields.Batch(added: [Row(5, "East", 8m)]));
-        var fourth = await source.AggregateAsync(query, Ct);
-
-        Assert.Equal(["East"], Sums(first).Keys);
-        Assert.Equal(7m, Sums(first)["East"]);
-        Assert.Equal(["EAST"], Sums(second).Keys);
-        Assert.Equal(["east", "west"], Sums(third).Keys);
-        // "East" came first among the spellings, and is present again: it labels the Item.
-        Assert.Equal(["East", "west"], Sums(fourth).Keys);
-        Assert.Equal(12m, Sums(fourth)["East"]);
-    }
-
-    [Fact] // ADR-0067: Changed is raised after the source moved on, with the new Source Version, which names the source and the Snapshot's version
-    public async Task A_batch_raises_changed_with_the_new_version()
-    {
-        var fields = Declarations();
-        var source = PivotSource.From([Row(1, "East", 1m)], fields);
-        var other = PivotSource.From([Row(1, "East", 1m)], fields);
-        var notices = new List<(PivotSourceChanged Notice, string Current)>();
-        source.Changed += notice => notices.Add((notice, source.SourceVersion));
-        var before = (await source.AggregateAsync(new PivotQuery(), Ct)).SourceVersion;
-
-        var change = source.Apply(fields.Batch(added: [Row(2, "West", 2m)]));
-
-        var (notice, current) = Assert.Single(notices);
-        Assert.Equal(current, notice.SourceVersion);
-        Assert.NotEqual(before, notice.SourceVersion);
-        Assert.Same(change.After, source.Snapshot);
-        Assert.Equal(1, change.After.Version);
-        Assert.EndsWith(":1", notice.SourceVersion);
-        Assert.Equal(notice.SourceVersion, (await source.AggregateAsync(new PivotQuery(), Ct)).SourceVersion);
-        // Two sources over one Snapshot answer under two versions: a new source is a refresh.
-        Assert.NotEqual(before, (await other.AggregateAsync(new PivotQuery(), Ct)).SourceVersion);
-    }
-
-    [Fact] // ADR-0064/0067: a refused batch changes nothing — not the Snapshot, not the held answer, and no notice
-    public async Task A_refused_batch_changes_nothing()
-    {
-        var fields = Declarations();
-        var source = PivotSource.From([Row(1, "East", 1m)], fields);
-        var query = new PivotQuery(rows: [F("Desk")], values: [V("Amount", PivotParts.Sum)]);
-        var answer = await source.AggregateAsync(query, Ct);
-        var raised = 0;
-        source.Changed += _ => raised++;
-        var snapshot = source.Snapshot;
-
-        var refusal = Assert.Throws<SnapshotException>(() => source.Apply(fields.Batch(removedKeys: [42L])));
-
-        Assert.Contains("42", refusal.Message);
-        Assert.Same(snapshot, source.Snapshot);
-        Assert.Equal(0, raised);
-        SameAnswer(answer, await source.AggregateAsync(query, Ct));
-    }
-
-    [Fact] // ADR-0066/0067 (PV-23): Items and records are answered under the versions of the last answers, and an older one is refused
-    public async Task Items_and_details_answer_under_the_versions_of_the_last_answers()
-    {
-        var fields = Declarations();
-        var source = PivotSource.From([Row(1, "East", 1m), Row(2, "West", 2m)], fields);
-        var query = new PivotQuery(rows: [F("Desk")], values: [V("Amount", PivotParts.Sum)]);
-        var versions = new List<string> { (await source.AggregateAsync(query, Ct)).SourceVersion };
-        for (var id = 3; id < 3 + SnapshotPivotSource.AnswersHeld + 1; id++)
-        {
-            source.Apply(fields.Batch(added: [Row(id, "North" + id, id)], removedKeys: [id == 3 ? 1L : id - 1L]));
-            versions.Add((await source.AggregateAsync(query, Ct)).SourceVersion);
-        }
-
-        // Six answers: the last four's versions are held, the first two's are not.
-        Assert.Equal(6, versions.Count);
-        var oldest = versions[2];
-        var page = await source.ItemsAsync(new PivotItemsQuery("Desk", oldest), Ct);
-        var details = await source.DetailsAsync(new PivotDetailsQuery(oldest), Ct);
-        foreach (var gone in versions[..2])
-        {
-            Assert.Equal(PivotSourceRefusalKind.SourceVersionNotHeld, (await source.ItemsAsync(new PivotItemsQuery("Desk", gone), Ct)).Refusal!.Kind);
-            Assert.Equal(PivotSourceRefusalKind.SourceVersionNotHeld, (await source.DetailsAsync(new PivotDetailsQuery(gone), Ct)).Refusal!.Kind);
-        }
-
-        // The oldest held version's records, as they were then, though North4 has left since.
-        Assert.Equal(oldest, page.SourceVersion);
-        SameKeys([PivotItemKey.Text("North4"), PivotItemKey.Text("West")], page.Items);
-        Assert.Equal(oldest, details.SourceVersion);
-        Assert.Equal([2L, 4L], details.Records.Select(r => ((Trade)r.Record!).Id));
-        // The current version is always held, whether or not it has been answered.
-        source.Apply(fields.Batch(added: [Row(99, "South", 1m)]));
-        Assert.False((await source.ItemsAsync(new PivotItemsQuery("Desk", source.SourceVersion), Ct)).IsRefused);
+        Assert.EndsWith(":0", one.SourceVersion);
+        Assert.NotEqual(one.SourceVersion, other.SourceVersion);
     }
 
     [Fact] // ADR-0067: a batch that compacts the Snapshot moves its rows; the source then answers afresh, as a fresh aggregation does
@@ -239,7 +134,7 @@ public class LiveDataTests
         }
     }
 
-    [Fact] // ADR-0067: a source over a Snapshot without a Record Key takes batches that add, and folds them
+    [Fact] // ADR-0067: a source over a Snapshot without a Record Key folds a batch that adds, rather than reading its rows again
     public async Task A_snapshot_without_a_key_folds_batches_that_add()
     {
         var columns = new SnapshotBuilder<Trade>().Text("Desk", t => t.Desk).Decimal("Amount", t => t.Amount).Double("Risk", t => t.Risk);
@@ -254,8 +149,6 @@ public class LiveDataTests
 
         Assert.Equal(0, read);
         SameLeaves(await PivotSource.From(source.Snapshot).AggregateAsync(query, Ct), answer, "added");
-        Assert.Equal(5.5m, Sums(answer)["East"]);
-        Assert.Throws<SnapshotException>(() => source.Apply(columns.Batch(removedKeys: ["East"])));
     }
 
     [Fact] // ADR-0067: a part that cannot be subtracted is recomputed from the records of the leaves the batch touched, and no others
@@ -281,59 +174,10 @@ public class LiveDataTests
         Assert.Equal(60 * 9, many);
     }
 
-    [Fact] // ADR-0067: a batch that would pass MaxLeaves drops the held answer, and the question is refused as a fresh one would be
-    public async Task A_batch_that_passes_the_cap_is_asked_afresh()
-    {
-        var fields = Declarations();
-        var source = PivotSource.From([Row(1, "East", 1m), Row(2, "West", 2m)], fields);
-        var query = new PivotQuery(rows: [F("Desk")], values: [V("Amount", PivotParts.Sum)], maxLeaves: 2);
-        Assert.False((await source.AggregateAsync(query, Ct)).IsRefused);
-
-        source.Apply(fields.Batch(added: [Row(3, "North", 1m)]));
-        var refused = await source.AggregateAsync(query, Ct);
-        source.Apply(fields.Batch(removedKeys: [3L]));
-        var answered = await source.AggregateAsync(query, Ct);
-
-        Assert.Equal(PivotSourceRefusalKind.TooManyLeaves, refused.Refusal!.Kind);
-        Assert.Equal(["East", "West"], Sums(answered).Keys);
-    }
-
-    [Fact] // ADR-0060/0067: an exact sum is an integer, the same in any order; one no decimal holds is Excel's double, never a decimal rounded quietly
-    public async Task An_exact_sum_is_the_same_in_any_order_and_never_rounded_quietly()
-    {
-        var fields = Declarations();
-        var source = PivotSource.From([Row(1, "East", 1_000_000_000_000_000_000m), Row(2, "East", 7_000_000_000_000_000_000m)], fields);
-        var query = new PivotQuery(rows: [F("Desk")], values: [V("Amount", PivotParts.Sum)]);
-        var exact = await source.AggregateAsync(query, Ct);
-
-        // 8,000,000,000,000,000,000.555555555555555555 is 37 digits: a decimal holds 28 or 29 of
-        // them, so the sum is the double Excel would hold, and says so.
-        source.Apply(fields.Batch(added: [Row(3, "East", 0.555555555555555555m)]));
-        var wide = await source.AggregateAsync(query, Ct);
-        SameLeaves(await PivotSource.From(source.Snapshot, fields.Fields).AggregateAsync(query, Ct), wide, "added");
-        // Taken back out, the sum is exact again: integer arithmetic lost nothing on the way.
-        source.Apply(fields.Batch(removedKeys: [3L]));
-        var back = await source.AggregateAsync(query, Ct);
-        SameLeaves(await PivotSource.From(source.Snapshot, fields.Fields).AggregateAsync(query, Ct), back, "removed");
-
-        Assert.Equal(PivotNumber.Exact(8_000_000_000_000_000_000m), exact.Values[0].SumAt(0));
-        Assert.Equal(PivotNumber.Double(8e18), wide.Values[0].SumAt(0));
-        Assert.Equal(PivotNumber.Exact(8_000_000_000_000_000_000m), back.Values[0].SumAt(0));
-    }
-
     // ---- The data -------------------------------------------------------------------------------
 
     internal static Trade Row(long id, string? desk, decimal? amount)
         => new(id, desk, "LDN-1", amount, 1.0, 1, new DateTime(2026, 1, 2), true);
-
-    private static Dictionary<string, decimal> Sums(PivotAnswer answer)
-    {
-        var sums = new Dictionary<string, decimal>();
-        for (var leaf = 0; leaf < answer.LeafCount; leaf++)
-            sums[answer.Rows[0].Items[answer.Rows[0].ItemAt(leaf)].Value!] = answer.Values[0].SumAt(leaf).ExactValue;
-        return sums.OrderBy(pair => Array.IndexOf(answer.Rows[0].Items.Select(i => i.Value).ToArray(), pair.Key))
-            .ToDictionary(pair => pair.Key, pair => pair.Value);
-    }
 
     /// <summary>
     /// Two answers hold the same leaves: the same refusal, or the same Items with the same

@@ -1,7 +1,7 @@
 // The Snapshot (ADR-0064) as TypeScript holds it: the family's immutable data at one version, column by
 // column, each of one kind, a Blank kept apart from every value. It holds what ExGrid.Data's Snapshot
-// holds and travels between them as Arrow (ADR-0065, ADR-0370 section 3); it is data, not a query engine,
-// and it takes no Change Batch here, so a version made in TypeScript is made whole.
+// holds and travels between them as Arrow (ADR-0065, ADR-0370 section 3); it is data, not a query engine.
+// A Change Batch makes the next version (change-batch.ts), copying the rows it keeps in runs.
 
 import { canonicalDecimal, isSnapshotDecimal, type SnapshotDecimal } from './decimal';
 import { maxTicks, ticksOfTemporal } from './dates';
@@ -140,6 +140,59 @@ abstract class HeldColumn {
         checkRow(row, this.rowCount);
         return this.#blanks !== undefined && this.#blanks[row] === 1;
     }
+
+    /** The Blanks as they are held, for a next version to copy. */
+    get heldBlanks(): Blanks {
+        return this.#blanks;
+    }
+}
+
+/** Rows [`from`, `to`) of a column, which a next version takes as they are. */
+export interface ColumnRun {
+    readonly column: SnapshotColumn;
+    readonly from: number;
+    readonly to: number;
+}
+
+function runLength(runs: readonly ColumnRun[]): number {
+    return runs.reduce((total, run) => total + run.to - run.from, 0);
+}
+
+function heldOf<T>(column: SnapshotColumn, held: abstract new (...args: never[]) => T): T {
+    if (!(column instanceof held)) throw new TypeError(`The column '${column.name}' was not made by @ex-grid/data, so a next version cannot take its rows.`);
+    return column;
+}
+
+function assembledBlanks(runs: readonly ColumnRun[], total: number): Blanks {
+    const held = runs.map(run => heldOf(run.column, HeldColumn).heldBlanks);
+    if (held.every(blanks => blanks === undefined)) return undefined;
+    const blanks = new Uint8Array(total);
+    let at = 0;
+    runs.forEach((run, i) => {
+        const source = held[i];
+        if (source !== undefined) blanks.set(source.subarray(run.from, run.to), at);
+        at += run.to - run.from;
+    });
+    return blanks;
+}
+
+/** What {@link assembledArray} needs of a typed array. */
+interface Assemblable<T> {
+    subarray(from: number, to: number): T;
+    set(source: T, offset: number): void;
+}
+
+/** A typed array holding each run's part of `part(run)`, in order. */
+function assembledArray<T extends Assemblable<T>>(
+    runs: readonly ColumnRun[], total: number, make: (length: number) => T, part: (run: ColumnRun) => T,
+): T {
+    const assembled = make(total);
+    let at = 0;
+    for (const run of runs) {
+        assembled.set(part(run).subarray(run.from, run.to), at);
+        at += run.to - run.from;
+    }
+    return assembled;
 }
 
 class HeldText extends HeldColumn implements TextColumn {
@@ -149,7 +202,8 @@ class HeldText extends HeldColumn implements TextColumn {
 
     constructor(name: string, caption: string, rowCount: number, dictionary: readonly string[], codes: Int32Array) {
         super(name, caption, rowCount, undefined);
-        this.dictionary = Object.freeze(dictionary.slice());
+        // A frozen dictionary is one a version before this one holds, or one made for this one: it is shared, not copied.
+        this.dictionary = Object.isFrozen(dictionary) ? dictionary : Object.freeze(dictionary.slice());
         this.#codes = codes;
     }
 
@@ -166,6 +220,29 @@ class HeldText extends HeldColumn implements TextColumn {
         const code = this.codeAt(row);
         return code < 0 ? null : elementAt(this.dictionary, code);
     }
+
+    /** The runs' rows as one column over `dictionary`, a run's codes taken through its column's entry in
+     * `remaps` where it has one, and as they are where it has none. */
+    static assembled(name: string, caption: string, runs: readonly ColumnRun[], dictionary: readonly string[],
+        remaps: ReadonlyMap<SnapshotColumn, Int32Array>): HeldText {
+        const total = runLength(runs);
+        const codes = new Int32Array(total);
+        let at = 0;
+        for (const run of runs) {
+            const source = heldOf(run.column, HeldText).#codes;
+            const remap = remaps.get(run.column);
+            if (remap === undefined) {
+                codes.set(source.subarray(run.from, run.to), at);
+            } else {
+                for (let row = run.from; row < run.to; row++) {
+                    const code = elementAt(source, row);
+                    codes[at + row - run.from] = code < 0 ? -1 : elementAt(remap, code);
+                }
+            }
+            at += run.to - run.from;
+        }
+        return new HeldText(name, caption, total, dictionary, codes);
+    }
 }
 
 class HeldDecimal extends HeldColumn implements DecimalColumn {
@@ -181,6 +258,18 @@ class HeldDecimal extends HeldColumn implements DecimalColumn {
 
     valueAt(row: number): SnapshotDecimal | null {
         return this.isBlank(row) ? null : Object.freeze({ mantissa: elementAt(this.#mantissas, row), scale: elementAt(this.#scales, row) });
+    }
+
+    /** The runs' rows as one column. */
+    static assembled(name: string, caption: string, runs: readonly ColumnRun[]): HeldDecimal {
+        const total = runLength(runs);
+        const mantissas: bigint[] = [];
+        for (const run of runs) {
+            const source = heldOf(run.column, HeldDecimal).#mantissas;
+            for (let row = run.from; row < run.to; row++) mantissas.push(elementAt(source, row));
+        }
+        const scales = assembledArray(runs, total, length => new Uint8Array(length), run => heldOf(run.column, HeldDecimal).#scales);
+        return new HeldDecimal(name, caption, total, assembledBlanks(runs, total), mantissas, scales);
     }
 }
 
@@ -202,6 +291,13 @@ class HeldDouble extends HeldColumn implements DoubleColumn {
     bitsAt(row: number): bigint {
         return this.isBlank(row) ? 0n : BigInt.asUintN(64, elementAt(this.#bits, row));
     }
+
+    /** The runs' rows as one column, each double's bits as they are held. */
+    static assembled(name: string, caption: string, runs: readonly ColumnRun[]): HeldDouble {
+        const total = runLength(runs);
+        const bits = assembledArray(runs, total, length => new BigInt64Array(length), run => heldOf(run.column, HeldDouble).#bits);
+        return new HeldDouble(name, caption, total, assembledBlanks(runs, total), new Float64Array(bits.buffer, bits.byteOffset, total));
+    }
 }
 
 class HeldWhole<K extends 'integer' | 'date'> extends HeldColumn implements SnapshotColumnBase<K, bigint> {
@@ -217,6 +313,13 @@ class HeldWhole<K extends 'integer' | 'date'> extends HeldColumn implements Snap
     valueAt(row: number): bigint | null {
         return this.isBlank(row) ? null : elementAt(this.#values, row);
     }
+
+    /** The runs' rows as one column of `kind`. */
+    static assembled<K extends 'integer' | 'date'>(kind: K, name: string, caption: string, runs: readonly ColumnRun[]): HeldWhole<K> {
+        const total = runLength(runs);
+        const values = assembledArray(runs, total, length => new BigInt64Array(length), run => heldOf(run.column, HeldWhole).#values);
+        return new HeldWhole(kind, name, caption, total, assembledBlanks(runs, total), values);
+    }
 }
 
 class HeldBoolean extends HeldColumn implements BooleanColumn {
@@ -231,6 +334,40 @@ class HeldBoolean extends HeldColumn implements BooleanColumn {
     valueAt(row: number): boolean | null {
         return this.isBlank(row) ? null : elementAt(this.#values, row) === 1;
     }
+
+    /** The runs' rows as one column. */
+    static assembled(name: string, caption: string, runs: readonly ColumnRun[]): HeldBoolean {
+        const total = runLength(runs);
+        const values = assembledArray(runs, total, length => new Uint8Array(length), run => heldOf(run.column, HeldBoolean).#values);
+        return new HeldBoolean(name, caption, total, assembledBlanks(runs, total), values);
+    }
+}
+
+/**
+ * The runs' rows as one column like `like`, of its name, caption and kind: the rows a next version keeps,
+ * copied as they are held. A Text column's codes are taken through `remaps` into `dictionary`.
+ */
+export function assembledColumn(like: SnapshotColumn, runs: readonly ColumnRun[], dictionary: readonly string[],
+    remaps: ReadonlyMap<SnapshotColumn, Int32Array>): SnapshotColumn {
+    switch (like.kind) {
+        case 'text': return HeldText.assembled(like.name, like.caption, runs, dictionary, remaps);
+        case 'decimal': return HeldDecimal.assembled(like.name, like.caption, runs);
+        case 'double': return HeldDouble.assembled(like.name, like.caption, runs);
+        case 'integer': return HeldWhole.assembled('integer', like.name, like.caption, runs);
+        case 'date': return HeldWhole.assembled('date', like.name, like.caption, runs);
+        case 'boolean': return HeldBoolean.assembled(like.name, like.caption, runs);
+        default: return unreachable(like);
+    }
+}
+
+/**
+ * Where a version's rows stand in the order of its lineage, which a Change Batch keeps (ADR-0064): each row's
+ * position, ascending, `undefined` where the rows stand at 0, 1, 2 and so on; and the position the next
+ * added record takes.
+ */
+export interface Lineage {
+    readonly positions: Float64Array | undefined;
+    readonly nextPosition: number;
 }
 
 class HeldSnapshot implements Snapshot {
@@ -239,14 +376,21 @@ class HeldSnapshot implements Snapshot {
     readonly rowCount: number;
     readonly columns: readonly SnapshotColumn[];
     readonly #byName: ReadonlyMap<string, SnapshotColumn>;
+    readonly #lineage: Lineage;
 
-    constructor(columns: readonly SnapshotColumn[], rowCount: number, recordKey: string | undefined, version: bigint) {
+    constructor(columns: readonly SnapshotColumn[], rowCount: number, recordKey: string | undefined, version: bigint, lineage?: Lineage) {
         this.columns = Object.freeze(columns.slice());
         this.rowCount = rowCount;
         this.recordKey = recordKey;
         this.version = version;
         this.#byName = new Map(columns.map(column => [column.name, column]));
+        this.#lineage = lineage ?? { positions: undefined, nextPosition: rowCount };
         Object.freeze(this);
+    }
+
+    /** Where its rows stand in its lineage's order. */
+    get lineage(): Lineage {
+        return this.#lineage;
     }
 
     column(name: string): SnapshotColumn {
@@ -260,6 +404,18 @@ class HeldSnapshot implements Snapshot {
  * value was checked against its kind, which a structural look-alike's need not be. */
 export function isHeldSnapshot(value: unknown): value is Snapshot {
     return value instanceof HeldSnapshot;
+}
+
+/** The lineage of a Snapshot this package made; a look-alike is refused, naming what it is for. */
+export function lineageOf(snapshot: Snapshot, what: string): Lineage {
+    if (!(snapshot instanceof HeldSnapshot)) throw new TypeError(`${what} is a Snapshot @ex-grid/data made, by a read or createSnapshot.`);
+    return snapshot.lineage;
+}
+
+/** A next version, of columns already made. */
+export function nextSnapshot(columns: readonly SnapshotColumn[], rowCount: number, recordKey: string | undefined, version: bigint,
+    lineage: Lineage): Snapshot {
+    return new HeldSnapshot(columns, rowCount, recordKey, version, lineage);
 }
 
 // ---- building ------------------------------------------------------------------------------------

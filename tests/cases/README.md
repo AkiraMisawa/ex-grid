@@ -32,7 +32,7 @@ One directory per area, one file per group of cases. Each file is an object:
 | Key | Meaning |
 |---|---|
 | `about` | What the file covers, and where its cases came from |
-| `kind` | Which runner reads it: `selection`, `range`, `edgeBand`, `held`, `calls`, `clipboard`, `query`, `source`, `fetch`, `displayText`, `find`, `replace`, `summary`, `arrowRead`, `arrowShape`, `arrowWrite`, `chart`, and ExPivot's (`pivot/`) |
+| `kind` | Which runner reads it: `selection`, `range`, `edgeBand`, `held`, `calls`, `clipboard`, `query`, `source`, `fetch`, `displayText`, `find`, `replace`, `summary`, `arrowRead`, `arrowShape`, `arrowWrite`, `changeBatch`, `chart`, and ExPivot's (`pivot/`) |
 | `extent` | `[rows, columns]`, the grid every case of the file runs against unless it names its own |
 | `cases` | The cases. Each has a `name`, which starts with the ADR it holds to (CLAUDE.md, "Put the ADR number in the test name") |
 
@@ -460,6 +460,31 @@ written), and the schema's `metadata` whole — and `written`, the path of what 
 Each runner writes the Snapshot, holds the schema to `expect`, reads it back as the Snapshot it was, and
 reads `written` the same way.
 
+## `changeBatch`
+
+A Change Batch applied to a Snapshot ([ADR-0064](../../docs/adr/0064-the-snapshot-is-the-familys-immutable-data-held-in-columns.md),
+[ADR-0067](../../docs/adr/0067-live-data-a-change-batch-makes-the-next-snapshot-and-expivot-folds-it-in.md), ADR-0370 section 5), under `data/`: xUnit runs them
+against ExGrid.Data (`tests/ExGrid.Data.Tests/Cases/ChangeBatchCaseTests.cs`) and Vitest against `@ex-grid/data`
+(`src/npm/data/test/change-batch-cases.test.ts`). These are not the Script Core's either, and both stay. The C# runner
+writes the answers: with `EXGRID_WRITE_DATA_CASES=1`, `dotnet test tests/ExGrid.Data.Tests` writes what ExGrid.Data
+answers into each batch's `expect`. It runs every case under three storages (one segment; segments of four rows; segments
+of four that compact after every batch), and they must answer alike, because how a version is stored is ExGrid.Data's own.
+
+A case gives a `snapshot`, in the form of an `arrowWrite` case's, and its `batches`, each applied to the case's Snapshot,
+or with `"on": "previous"` to the version the step before made, or with `"on": n` to the version step `n` made. A batch
+names `added` and `changed` records, each `columns` with a `name`, `kind` and `values` and no Record Key (a batch's records
+carry no captions: the next version keeps the Snapshot's), and `removedKeys`: a string is a Text key, a number an Integer
+key, `{"integer": "…"}` an Integer key past a double's exact integers; a number that is no integer, or `null`, is there to
+be refused. A key a batch leaves out is a part it does not have.
+
+Its `expect` is what the batch made: the next version's `version`; `removed`, the rows of the version before it no longer
+holds, and `added`, the rows of the next it did not hold, each by its place in its version's order, ascending; and `after`,
+each column's `name`, `caption`, `values` and, for Text, its `dictionary`, which keeps the version before's codes and only
+grows. A refused batch is `{"refused": {message, row, column, key}}` as an `arrowRead` refusal is, or `{"refused":
+"argument"}` where the batch itself cannot be made (`ArgumentException`, `TypeError`). Each runner also holds, at every step,
+that the version a batch was applied to still reads as it did, and ADR-0067's fold: the rows the next version holds that
+the batch did not bring are the rows of the version before less those it removed, in their order.
+
 ## ExPivot's engine, under `pivot/`
 
 The cases of ExPivot's engine (ADR-0370, sections 2 and 5): xUnit runs them against `ExPivot.Engine`
@@ -487,8 +512,9 @@ A layout is the layout's JSON without its `version`, and an Item's key is writte
 record's values; `fields`, each with its `name` and `type`, and its `caption`, `format`, `itemOrder`,
 `datePart` or `orderKey` where it has one, and `of` where it reads another column than its name; and
 `records`, a record's values in column order. A case's own `fields` or `records` stand in for the set's. A
-set may instead be a Snapshot's: `snapshot`, each column's `name`, `kind` and `caption`, and `rows`, which a
-case's own `rows` stand in for. A differential run writes the set itself in `data`. The Order Keys a field
+set may instead be a Snapshot's: `snapshot`, each column's `name`, `kind` and `caption`, and the column that is
+its `recordKey` where it has one; and `rows`, which a case's own `rows` stand in for. A case, or a differential
+run, may write the set itself in `data`. The Order Keys a field
 names (`tenor`, `tenorButOnIsText`, `tenorThrowsOn7Y`, `absolute`) are the Consumer's functions the C# tests
 declared, and note each value they are called with.
 
@@ -533,9 +559,10 @@ place of the one asked. Each of `asks` is answered in turn:
 | Ask | Answer |
 |---|---|
 | `{"fields": true}` | Each field's `name`, `caption`, `type`, and its `format`, `column` and `datePart` where it has one |
-| `{"aggregate": question}` | The Leaf Aggregates: `leaves`, each axis's `field` and `items`, each `leaf`'s Item at every level (`at`, rows then columns) and `records`, and each value's `parts` and what it carries at every leaf — `values`, `numbers`, `nonFinite`, and `sum`, `min`, `max`, `product`, `mean`, `m2` as asked for, to the last bit. A question is `rows`, `columns`, `filters` (a field by name, or with its `hiddenItems`), `values` (a field, its counts, or with the `parts` it asks for: `sum`, `extremes`, `product`, `variance`) and `maxLeaves` |
-| `{"items": field}` | A page of the field's Items, with `search` and `max`: `total` and `items`, under the last answer's Source Version, or `"under": "stale"` |
-| `{"details": cell}` | A page of the records behind a cell: its `rows` and `columns` path (each a `field` and its `item`), the `hiddenItems` of placed fields, `start` and `count`; answered by `start`, `total`, `fields` and `records` |
+| `{"aggregate": question}` | The Leaf Aggregates: `leaves`, each axis's `field` and `items`, each `leaf`'s Item at every level (`at`, rows then columns) and `records`, and each value's `parts` and what it carries at every leaf — `values`, `numbers`, `nonFinite`, and `sum`, `min`, `max`, `product`, `mean`, `m2` as asked for, to the last bit. A question is `rows`, `columns`, `filters` (a field by name, or with its `hiddenItems`), `values` (a field, its counts, or with the `parts` it asks for: `sum`, `extremes`, `product`, `variance`) and `maxLeaves`. With `"order": "any"`, each axis's Items are listed in the ordinal order of their kind and value and the leaves in the order of their Items: after a batch that changes records, ExGrid.Data reads rows in its storage's order and the Script Core in the Snapshot's (ADR-0067), and such a step holds what both say |
+| `{"apply": batch}` | A Change Batch applied to a source over a Snapshot (keyed by the column its `snapshot` names as `recordKey`, or with no key): its `added` and `changed` records, rows in the data set's columns, and its `removedKeys`. Answered by the Snapshot version it made (`applied`) and the Source Versions the source `told` its listeners of, each written `{version}` where it is the one the source answers under now; or by the Snapshot's refusal (`"refusal": "snapshot"`) and what was told |
+| `{"items": field}` | A page of the field's Items, with `search` and `max`: `total` and `items`, under the last answer's Source Version, or `"under"` an earlier answer's (`{"answer": n}`, from 0), the version a source over a Snapshot answers under now (`"current"`), or one no source held (`"stale"`) |
+| `{"details": cell}` | A page of the records behind a cell: its `rows` and `columns` path (each a `field` and its `item`), the `hiddenItems` of placed fields, `start` and `count`, under a version as a page of Items is; answered by `start`, `total`, `fields` and `records` |
 | `{"report": layout}` | The report the layout makes from the source's answer, read as a `pivotReport` case reads one, `also` included |
 | `{"cube": question, "from": question}` | Whether a cube is made of one question from the answer to another |
 | `{"asked": true}` | How often the fetching source asked its server for Leaf Aggregates |

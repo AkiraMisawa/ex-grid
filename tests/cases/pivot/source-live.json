@@ -1,0 +1,694 @@
+{
+  "about": "Live data in the bundled source over a Snapshot (ADR-0067): Change Batches applied to it, the answers it brings up to date, what it tells its listeners, and the versions it still answers Items and records under. Transcribed from ExPivot.Engine.Tests' LiveDataTests; what both engines answer after every batch of a random run is the differential run's.",
+  "kind": "pivotSource",
+  "data": "live",
+  "locale": "en-US",
+  "words": "english",
+  "cases": [
+    {
+      "name": "ADR-0067: an Item that first appears in a batch brings its leaves; one whose last record leaves takes them away",
+      "rows": [
+        [1, "East", "LDN-1", {"decimal": "10"}, 1.0, true],
+        [2, "West", "LDN-1", {"decimal": "20"}, 1.0, true],
+        [3, "West", "LDN-1", {"decimal": "5"}, 1.0, true]
+      ],
+      "asks": [
+        {"aggregate": {"rows": ["Desk"], "values": [{"field": "Amount", "parts": ["sum"]}]}},
+        {"apply": {"added": [[4, "North", "LDN-1", {"decimal": "7"}, 1.0, true]]}},
+        {"aggregate": {"rows": ["Desk"], "values": [{"field": "Amount", "parts": ["sum"]}]}},
+        {"apply": {"removedKeys": [2, 3]}},
+        {"aggregate": {"rows": ["Desk"], "values": [{"field": "Amount", "parts": ["sum"]}]}}
+      ],
+      "expect": [
+        {
+          "leaves": 2,
+          "rows": [{"field": "Desk", "items": [{"kind": "text", "value": "East"}, {"kind": "text", "value": "West"}]}],
+          "columns": [],
+          "leaf": [{"at": [0], "records": 1}, {"at": [1], "records": 2}],
+          "values": [
+            {
+              "field": "Amount",
+              "parts": ["sum"],
+              "leaves": [
+                {"values": 1, "numbers": 1, "sum": {"decimal": "10"}},
+                {"values": 2, "numbers": 2, "sum": {"decimal": "25"}}
+              ]
+            }
+          ]
+        },
+        {"applied": 1, "told": ["{version}"]},
+        {
+          "leaves": 3,
+          "rows": [
+            {
+              "field": "Desk",
+              "items": [
+                {"kind": "text", "value": "East"},
+                {"kind": "text", "value": "West"},
+                {"kind": "text", "value": "North"}
+              ]
+            }
+          ],
+          "columns": [],
+          "leaf": [{"at": [0], "records": 1}, {"at": [1], "records": 2}, {"at": [2], "records": 1}],
+          "values": [
+            {
+              "field": "Amount",
+              "parts": ["sum"],
+              "leaves": [
+                {"values": 1, "numbers": 1, "sum": {"decimal": "10"}},
+                {"values": 2, "numbers": 2, "sum": {"decimal": "25"}},
+                {"values": 1, "numbers": 1, "sum": {"decimal": "7"}}
+              ]
+            }
+          ]
+        },
+        {"applied": 2, "told": ["{version}"]},
+        {
+          "leaves": 2,
+          "rows": [
+            {
+              "field": "Desk",
+              "items": [{"kind": "text", "value": "East"}, {"kind": "text", "value": "North"}]
+            }
+          ],
+          "columns": [],
+          "leaf": [{"at": [0], "records": 1}, {"at": [1], "records": 1}],
+          "values": [
+            {
+              "field": "Amount",
+              "parts": ["sum"],
+              "leaves": [
+                {"values": 1, "numbers": 1, "sum": {"decimal": "10"}},
+                {"values": 1, "numbers": 1, "sum": {"decimal": "7"}}
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ADR-0060, ADR-0067: a text Item is labelled by the first spelling among the records still present; when they leave, the next spelling labels it",
+      "rows": [
+        [1, "East", "LDN-1", {"decimal": "1"}, 1.0, true],
+        [2, "EAST", "LDN-1", {"decimal": "2"}, 1.0, true],
+        [3, "east", "LDN-1", {"decimal": "4"}, 1.0, true]
+      ],
+      "asks": [
+        {"aggregate": {"rows": ["Desk"], "values": [{"field": "Amount", "parts": ["sum"]}]}},
+        {"apply": {"removedKeys": [1]}},
+        {"aggregate": {"rows": ["Desk"], "values": [{"field": "Amount", "parts": ["sum"]}]}},
+        {"apply": {"changed": [[2, "west", "LDN-1", {"decimal": "2"}, 1.0, true]]}},
+        {"aggregate": {"rows": ["Desk"], "values": [{"field": "Amount", "parts": ["sum"]}]}, "order": "any"},
+        {"apply": {"added": [[5, "East", "LDN-1", {"decimal": "8"}, 1.0, true]]}},
+        {"aggregate": {"rows": ["Desk"], "values": [{"field": "Amount", "parts": ["sum"]}]}, "order": "any"}
+      ],
+      "expect": [
+        {
+          "leaves": 1,
+          "rows": [{"field": "Desk", "items": [{"kind": "text", "value": "East"}]}],
+          "columns": [],
+          "leaf": [{"at": [0], "records": 3}],
+          "values": [
+            {
+              "field": "Amount",
+              "parts": ["sum"],
+              "leaves": [{"values": 3, "numbers": 3, "sum": {"decimal": "7"}}]
+            }
+          ]
+        },
+        {"applied": 1, "told": ["{version}"]},
+        {
+          "leaves": 1,
+          "rows": [{"field": "Desk", "items": [{"kind": "text", "value": "EAST"}]}],
+          "columns": [],
+          "leaf": [{"at": [0], "records": 2}],
+          "values": [
+            {
+              "field": "Amount",
+              "parts": ["sum"],
+              "leaves": [{"values": 2, "numbers": 2, "sum": {"decimal": "6"}}]
+            }
+          ]
+        },
+        {"applied": 2, "told": ["{version}"]},
+        {
+          "leaves": 2,
+          "rows": [{"field": "Desk", "items": [{"kind": "text", "value": "east"}, {"kind": "text", "value": "west"}]}],
+          "columns": [],
+          "leaf": [{"at": [0], "records": 1}, {"at": [1], "records": 1}],
+          "values": [
+            {
+              "field": "Amount",
+              "parts": ["sum"],
+              "leaves": [
+                {"values": 1, "numbers": 1, "sum": {"decimal": "4"}},
+                {"values": 1, "numbers": 1, "sum": {"decimal": "2"}}
+              ]
+            }
+          ]
+        },
+        {"applied": 3, "told": ["{version}"]},
+        {
+          "leaves": 2,
+          "rows": [{"field": "Desk", "items": [{"kind": "text", "value": "East"}, {"kind": "text", "value": "west"}]}],
+          "columns": [],
+          "leaf": [{"at": [0], "records": 2}, {"at": [1], "records": 1}],
+          "values": [
+            {
+              "field": "Amount",
+              "parts": ["sum"],
+              "leaves": [
+                {"values": 2, "numbers": 2, "sum": {"decimal": "12"}},
+                {"values": 1, "numbers": 1, "sum": {"decimal": "2"}}
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ADR-0067: a batch tells each listener the new Source Version after the source has moved on, and the Snapshot's version goes up by one",
+      "rows": [[1, "East", "LDN-1", {"decimal": "1"}, 1.0, true]],
+      "asks": [
+        {"aggregate": {}},
+        {"apply": {"added": [[2, "West", "LDN-1", {"decimal": "2"}, 1.0, true]]}},
+        {"aggregate": {"rows": ["Desk"], "values": [{"field": "Amount", "parts": ["sum"]}]}},
+        {"apply": {"added": [[3, "West", "LDN-1", {"decimal": "3"}, 1.0, true]], "removedKeys": [1]}}
+      ],
+      "expect": [
+        {"leaves": 1, "rows": [], "columns": [], "leaf": [{"at": [], "records": 1}], "values": []},
+        {"applied": 1, "told": ["{version}"]},
+        {
+          "leaves": 2,
+          "rows": [{"field": "Desk", "items": [{"kind": "text", "value": "East"}, {"kind": "text", "value": "West"}]}],
+          "columns": [],
+          "leaf": [{"at": [0], "records": 1}, {"at": [1], "records": 1}],
+          "values": [
+            {
+              "field": "Amount",
+              "parts": ["sum"],
+              "leaves": [
+                {"values": 1, "numbers": 1, "sum": {"decimal": "1"}},
+                {"values": 1, "numbers": 1, "sum": {"decimal": "2"}}
+              ]
+            }
+          ]
+        },
+        {"applied": 2, "told": ["{version}"]}
+      ]
+    },
+    {
+      "name": "ADR-0064, ADR-0067: a refused batch changes nothing: not the Snapshot, not the answer held, and no listener is told",
+      "rows": [[1, "East", "LDN-1", {"decimal": "1"}, 1.0, true], [2, "West", "LDN-1", {"decimal": "2"}, 1.0, true]],
+      "asks": [
+        {"aggregate": {"rows": ["Desk"], "values": [{"field": "Amount", "parts": ["sum"]}]}},
+        {"apply": {"removedKeys": [42]}},
+        {"aggregate": {"rows": ["Desk"], "values": [{"field": "Amount", "parts": ["sum"]}]}},
+        {"apply": {"changed": [[1, "East", "LDN-1", {"decimal": "5"}, 1.0, true]], "removedKeys": [1]}},
+        {"aggregate": {"rows": ["Desk"], "values": [{"field": "Amount", "parts": ["sum"]}]}}
+      ],
+      "expect": [
+        {
+          "leaves": 2,
+          "rows": [{"field": "Desk", "items": [{"kind": "text", "value": "East"}, {"kind": "text", "value": "West"}]}],
+          "columns": [],
+          "leaf": [{"at": [0], "records": 1}, {"at": [1], "records": 1}],
+          "values": [
+            {
+              "field": "Amount",
+              "parts": ["sum"],
+              "leaves": [
+                {"values": 1, "numbers": 1, "sum": {"decimal": "1"}},
+                {"values": 1, "numbers": 1, "sum": {"decimal": "2"}}
+              ]
+            }
+          ]
+        },
+        {
+          "refusal": "snapshot",
+          "saying": "Column 'Id': the batch removes the key 42, which the Snapshot does not hold.",
+          "told": []
+        },
+        {
+          "leaves": 2,
+          "rows": [{"field": "Desk", "items": [{"kind": "text", "value": "East"}, {"kind": "text", "value": "West"}]}],
+          "columns": [],
+          "leaf": [{"at": [0], "records": 1}, {"at": [1], "records": 1}],
+          "values": [
+            {
+              "field": "Amount",
+              "parts": ["sum"],
+              "leaves": [
+                {"values": 1, "numbers": 1, "sum": {"decimal": "1"}},
+                {"values": 1, "numbers": 1, "sum": {"decimal": "2"}}
+              ]
+            }
+          ]
+        },
+        {
+          "refusal": "snapshot",
+          "saying": "Column 'Id': the batch both changes and removes the key 1.",
+          "told": []
+        },
+        {
+          "leaves": 2,
+          "rows": [{"field": "Desk", "items": [{"kind": "text", "value": "East"}, {"kind": "text", "value": "West"}]}],
+          "columns": [],
+          "leaf": [{"at": [0], "records": 1}, {"at": [1], "records": 1}],
+          "values": [
+            {
+              "field": "Amount",
+              "parts": ["sum"],
+              "leaves": [
+                {"values": 1, "numbers": 1, "sum": {"decimal": "1"}},
+                {"values": 1, "numbers": 1, "sum": {"decimal": "2"}}
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ADR-0066, ADR-0067 (PV-23): Items and records are answered under the versions of the last four answers as they were then, and under the current one; an older one is refused",
+      "rows": [[1, "East", "LDN-1", {"decimal": "1"}, 1.0, true], [2, "West", "LDN-1", {"decimal": "2"}, 1.0, true]],
+      "asks": [
+        {"aggregate": {"rows": ["Desk"], "values": [{"field": "Amount", "parts": ["sum"]}]}},
+        {"apply": {"added": [[3, "North3", "LDN-1", {"decimal": "3"}, 1.0, true]], "removedKeys": [1]}},
+        {"aggregate": {"rows": ["Desk"], "values": [{"field": "Amount", "parts": ["sum"]}]}},
+        {"apply": {"added": [[4, "North4", "LDN-1", {"decimal": "4"}, 1.0, true]], "removedKeys": [3]}},
+        {"aggregate": {"rows": ["Desk"], "values": [{"field": "Amount", "parts": ["sum"]}]}},
+        {"apply": {"added": [[5, "North5", "LDN-1", {"decimal": "5"}, 1.0, true]], "removedKeys": [4]}},
+        {"aggregate": {"rows": ["Desk"], "values": [{"field": "Amount", "parts": ["sum"]}]}},
+        {"apply": {"added": [[6, "North6", "LDN-1", {"decimal": "6"}, 1.0, true]], "removedKeys": [5]}},
+        {"aggregate": {"rows": ["Desk"], "values": [{"field": "Amount", "parts": ["sum"]}]}},
+        {"apply": {"added": [[7, "North7", "LDN-1", {"decimal": "7"}, 1.0, true]], "removedKeys": [6]}},
+        {"aggregate": {"rows": ["Desk"], "values": [{"field": "Amount", "parts": ["sum"]}]}},
+        {"items": "Desk", "under": {"answer": 2}},
+        {"details": {}, "under": {"answer": 2}},
+        {"items": "Desk", "under": {"answer": 1}},
+        {"details": {}, "under": {"answer": 0}},
+        {"apply": {"added": [[99, "South", "LDN-1", {"decimal": "1"}, 1.0, true]]}},
+        {"items": "Desk", "under": "current"}
+      ],
+      "expect": [
+        {
+          "leaves": 2,
+          "rows": [{"field": "Desk", "items": [{"kind": "text", "value": "East"}, {"kind": "text", "value": "West"}]}],
+          "columns": [],
+          "leaf": [{"at": [0], "records": 1}, {"at": [1], "records": 1}],
+          "values": [
+            {
+              "field": "Amount",
+              "parts": ["sum"],
+              "leaves": [
+                {"values": 1, "numbers": 1, "sum": {"decimal": "1"}},
+                {"values": 1, "numbers": 1, "sum": {"decimal": "2"}}
+              ]
+            }
+          ]
+        },
+        {"applied": 1, "told": ["{version}"]},
+        {
+          "leaves": 2,
+          "rows": [
+            {
+              "field": "Desk",
+              "items": [{"kind": "text", "value": "West"}, {"kind": "text", "value": "North3"}]
+            }
+          ],
+          "columns": [],
+          "leaf": [{"at": [0], "records": 1}, {"at": [1], "records": 1}],
+          "values": [
+            {
+              "field": "Amount",
+              "parts": ["sum"],
+              "leaves": [
+                {"values": 1, "numbers": 1, "sum": {"decimal": "2"}},
+                {"values": 1, "numbers": 1, "sum": {"decimal": "3"}}
+              ]
+            }
+          ]
+        },
+        {"applied": 2, "told": ["{version}"]},
+        {
+          "leaves": 2,
+          "rows": [
+            {
+              "field": "Desk",
+              "items": [{"kind": "text", "value": "West"}, {"kind": "text", "value": "North4"}]
+            }
+          ],
+          "columns": [],
+          "leaf": [{"at": [0], "records": 1}, {"at": [1], "records": 1}],
+          "values": [
+            {
+              "field": "Amount",
+              "parts": ["sum"],
+              "leaves": [
+                {"values": 1, "numbers": 1, "sum": {"decimal": "2"}},
+                {"values": 1, "numbers": 1, "sum": {"decimal": "4"}}
+              ]
+            }
+          ]
+        },
+        {"applied": 3, "told": ["{version}"]},
+        {
+          "leaves": 2,
+          "rows": [
+            {
+              "field": "Desk",
+              "items": [{"kind": "text", "value": "West"}, {"kind": "text", "value": "North5"}]
+            }
+          ],
+          "columns": [],
+          "leaf": [{"at": [0], "records": 1}, {"at": [1], "records": 1}],
+          "values": [
+            {
+              "field": "Amount",
+              "parts": ["sum"],
+              "leaves": [
+                {"values": 1, "numbers": 1, "sum": {"decimal": "2"}},
+                {"values": 1, "numbers": 1, "sum": {"decimal": "5"}}
+              ]
+            }
+          ]
+        },
+        {"applied": 4, "told": ["{version}"]},
+        {
+          "leaves": 2,
+          "rows": [
+            {
+              "field": "Desk",
+              "items": [{"kind": "text", "value": "West"}, {"kind": "text", "value": "North6"}]
+            }
+          ],
+          "columns": [],
+          "leaf": [{"at": [0], "records": 1}, {"at": [1], "records": 1}],
+          "values": [
+            {
+              "field": "Amount",
+              "parts": ["sum"],
+              "leaves": [
+                {"values": 1, "numbers": 1, "sum": {"decimal": "2"}},
+                {"values": 1, "numbers": 1, "sum": {"decimal": "6"}}
+              ]
+            }
+          ]
+        },
+        {"applied": 5, "told": ["{version}"]},
+        {
+          "leaves": 2,
+          "rows": [
+            {
+              "field": "Desk",
+              "items": [{"kind": "text", "value": "West"}, {"kind": "text", "value": "North7"}]
+            }
+          ],
+          "columns": [],
+          "leaf": [{"at": [0], "records": 1}, {"at": [1], "records": 1}],
+          "values": [
+            {
+              "field": "Amount",
+              "parts": ["sum"],
+              "leaves": [
+                {"values": 1, "numbers": 1, "sum": {"decimal": "2"}},
+                {"values": 1, "numbers": 1, "sum": {"decimal": "7"}}
+              ]
+            }
+          ]
+        },
+        {
+          "version": "asked",
+          "total": 2,
+          "items": [{"kind": "text", "value": "North4"}, {"kind": "text", "value": "West"}]
+        },
+        {
+          "version": "asked",
+          "start": 0,
+          "total": 2,
+          "fields": ["Id", "Desk", "Book", "Amount", "Risk", "Live"],
+          "records": [
+            [{"decimal": "2"}, "West", "LDN-1", {"decimal": "2"}, 1, true],
+            [{"decimal": "4"}, "North4", "LDN-1", {"decimal": "4"}, 1, true]
+          ]
+        },
+        {
+          "refused": "sourceVersionNotHeld",
+          "saying": "The data has changed since version '{version}'; refresh the report."
+        },
+        {
+          "refused": "sourceVersionNotHeld",
+          "saying": "The data has changed since version '{version}'; refresh the report."
+        },
+        {"applied": 6, "told": ["{version}"]},
+        {
+          "version": "asked",
+          "total": 3,
+          "items": [
+            {"kind": "text", "value": "North7"},
+            {"kind": "text", "value": "South"},
+            {"kind": "text", "value": "West"}
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ADR-0067: a source over a Snapshot without a Record Key takes batches that only add, and refuses one that removes",
+      "data": {
+        "snapshot": {
+          "columns": [
+            {"name": "Desk", "kind": "text"},
+            {"name": "Amount", "kind": "decimal"},
+            {"name": "Risk", "kind": "double"}
+          ]
+        },
+        "rows": [["East", {"decimal": "1"}, 0.5], ["West", {"decimal": "2"}, 0.25]]
+      },
+      "asks": [
+        {
+          "aggregate": {
+            "rows": ["Desk"],
+            "values": [
+              {"field": "Amount", "parts": ["sum"]},
+              {"field": "Risk", "parts": ["sum", "extremes", "product", "variance"]}
+            ]
+          }
+        },
+        {"apply": {"added": [["east", {"decimal": "4.5"}, 0.125], ["South", {"decimal": "1"}, 1]]}},
+        {
+          "aggregate": {
+            "rows": ["Desk"],
+            "values": [
+              {"field": "Amount", "parts": ["sum"]},
+              {"field": "Risk", "parts": ["sum", "extremes", "product", "variance"]}
+            ]
+          }
+        },
+        {"apply": {"removedKeys": ["East"]}}
+      ],
+      "expect": [
+        {
+          "leaves": 2,
+          "rows": [{"field": "Desk", "items": [{"kind": "text", "value": "East"}, {"kind": "text", "value": "West"}]}],
+          "columns": [],
+          "leaf": [{"at": [0], "records": 1}, {"at": [1], "records": 1}],
+          "values": [
+            {
+              "field": "Amount",
+              "parts": ["sum"],
+              "leaves": [
+                {"values": 1, "numbers": 1, "sum": {"decimal": "1"}},
+                {"values": 1, "numbers": 1, "sum": {"decimal": "2"}}
+              ]
+            },
+            {
+              "field": "Risk",
+              "parts": ["sum", "extremes", "product", "variance"],
+              "leaves": [
+                {
+                  "values": 1,
+                  "numbers": 1,
+                  "sum": 0.5,
+                  "min": 0.5,
+                  "max": 0.5,
+                  "product": 0.5,
+                  "mean": 0.5,
+                  "m2": 0
+                },
+                {
+                  "values": 1,
+                  "numbers": 1,
+                  "sum": 0.25,
+                  "min": 0.25,
+                  "max": 0.25,
+                  "product": 0.25,
+                  "mean": 0.25,
+                  "m2": 0
+                }
+              ]
+            }
+          ]
+        },
+        {"applied": 1, "told": ["{version}"]},
+        {
+          "leaves": 3,
+          "rows": [
+            {
+              "field": "Desk",
+              "items": [
+                {"kind": "text", "value": "East"},
+                {"kind": "text", "value": "West"},
+                {"kind": "text", "value": "South"}
+              ]
+            }
+          ],
+          "columns": [],
+          "leaf": [{"at": [0], "records": 2}, {"at": [1], "records": 1}, {"at": [2], "records": 1}],
+          "values": [
+            {
+              "field": "Amount",
+              "parts": ["sum"],
+              "leaves": [
+                {"values": 2, "numbers": 2, "sum": {"decimal": "5.5"}},
+                {"values": 1, "numbers": 1, "sum": {"decimal": "2"}},
+                {"values": 1, "numbers": 1, "sum": {"decimal": "1"}}
+              ]
+            },
+            {
+              "field": "Risk",
+              "parts": ["sum", "extremes", "product", "variance"],
+              "leaves": [
+                {
+                  "values": 2,
+                  "numbers": 2,
+                  "sum": 0.625,
+                  "min": 0.125,
+                  "max": 0.5,
+                  "product": 0.0625,
+                  "mean": 0.3125,
+                  "m2": 0.0703125
+                },
+                {
+                  "values": 1,
+                  "numbers": 1,
+                  "sum": 0.25,
+                  "min": 0.25,
+                  "max": 0.25,
+                  "product": 0.25,
+                  "mean": 0.25,
+                  "m2": 0
+                },
+                {"values": 1, "numbers": 1, "sum": 1, "min": 1, "max": 1, "product": 1, "mean": 1, "m2": 0}
+              ]
+            }
+          ]
+        },
+        {
+          "refusal": "snapshot",
+          "saying": "The Snapshot has no Record Key, so it takes only a batch that adds, and this batch changes or removes records.",
+          "told": []
+        }
+      ]
+    },
+    {
+      "name": "ADR-0067: a batch that would pass the most leaves is refused as a fresh question would be, and answered again once it no longer passes",
+      "rows": [[1, "East", "LDN-1", {"decimal": "1"}, 1.0, true], [2, "West", "LDN-1", {"decimal": "2"}, 1.0, true]],
+      "asks": [
+        {"aggregate": {"rows": ["Desk"], "values": [{"field": "Amount", "parts": ["sum"]}], "maxLeaves": 2}},
+        {"apply": {"added": [[3, "North", "LDN-1", {"decimal": "1"}, 1.0, true]]}},
+        {"aggregate": {"rows": ["Desk"], "values": [{"field": "Amount", "parts": ["sum"]}], "maxLeaves": 2}},
+        {"apply": {"removedKeys": [3]}},
+        {"aggregate": {"rows": ["Desk"], "values": [{"field": "Amount", "parts": ["sum"]}], "maxLeaves": 2}}
+      ],
+      "expect": [
+        {
+          "leaves": 2,
+          "rows": [{"field": "Desk", "items": [{"kind": "text", "value": "East"}, {"kind": "text", "value": "West"}]}],
+          "columns": [],
+          "leaf": [{"at": [0], "records": 1}, {"at": [1], "records": 1}],
+          "values": [
+            {
+              "field": "Amount",
+              "parts": ["sum"],
+              "leaves": [
+                {"values": 1, "numbers": 1, "sum": {"decimal": "1"}},
+                {"values": 1, "numbers": 1, "sum": {"decimal": "2"}}
+              ]
+            }
+          ]
+        },
+        {"applied": 1, "told": ["{version}"]},
+        {"refused": "tooManyLeaves", "limit": 2, "saying": "This layout needs more than 2 cells."},
+        {"applied": 2, "told": ["{version}"]},
+        {
+          "leaves": 2,
+          "rows": [{"field": "Desk", "items": [{"kind": "text", "value": "East"}, {"kind": "text", "value": "West"}]}],
+          "columns": [],
+          "leaf": [{"at": [0], "records": 1}, {"at": [1], "records": 1}],
+          "values": [
+            {
+              "field": "Amount",
+              "parts": ["sum"],
+              "leaves": [
+                {"values": 1, "numbers": 1, "sum": {"decimal": "1"}},
+                {"values": 1, "numbers": 1, "sum": {"decimal": "2"}}
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ADR-0060, ADR-0067: an exact sum is the same however batches reach it; one no Decimal holds is Excel's double, never a Decimal rounded quietly, and exact again once the digits leave",
+      "rows": [
+        [1, "East", "LDN-1", {"decimal": "1000000000000000000"}, 1.0, true],
+        [2, "East", "LDN-1", {"decimal": "7000000000000000000"}, 1.0, true]
+      ],
+      "asks": [
+        {"aggregate": {"rows": ["Desk"], "values": [{"field": "Amount", "parts": ["sum"]}]}},
+        {"apply": {"added": [[3, "East", "LDN-1", {"decimal": "0.555555555555555555"}, 1.0, true]]}},
+        {"aggregate": {"rows": ["Desk"], "values": [{"field": "Amount", "parts": ["sum"]}]}},
+        {"apply": {"removedKeys": [3]}},
+        {"aggregate": {"rows": ["Desk"], "values": [{"field": "Amount", "parts": ["sum"]}]}}
+      ],
+      "expect": [
+        {
+          "leaves": 1,
+          "rows": [{"field": "Desk", "items": [{"kind": "text", "value": "East"}]}],
+          "columns": [],
+          "leaf": [{"at": [0], "records": 2}],
+          "values": [
+            {
+              "field": "Amount",
+              "parts": ["sum"],
+              "leaves": [{"values": 2, "numbers": 2, "sum": {"decimal": "8000000000000000000"}}]
+            }
+          ]
+        },
+        {"applied": 1, "told": ["{version}"]},
+        {
+          "leaves": 1,
+          "rows": [{"field": "Desk", "items": [{"kind": "text", "value": "East"}]}],
+          "columns": [],
+          "leaf": [{"at": [0], "records": 3}],
+          "values": [{"field": "Amount", "parts": ["sum"], "leaves": [{"values": 3, "numbers": 3, "sum": 8e+18}]}]
+        },
+        {"applied": 2, "told": ["{version}"]},
+        {
+          "leaves": 1,
+          "rows": [{"field": "Desk", "items": [{"kind": "text", "value": "East"}]}],
+          "columns": [],
+          "leaf": [{"at": [0], "records": 2}],
+          "values": [
+            {
+              "field": "Amount",
+              "parts": ["sum"],
+              "leaves": [{"values": 2, "numbers": 2, "sum": {"decimal": "8000000000000000000"}}]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

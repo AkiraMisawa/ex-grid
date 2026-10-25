@@ -5,17 +5,18 @@
 // does not have, and a part only Aggregations it does not offer read. The C# engine's PivotSource,
 // SnapshotPivotSource, RecordPivotSource, FetchingPivotSource and their pages.
 
-import type { Snapshot, SnapshotDecimal } from '@ex-grid/data';
+import { applyChangeBatch, type ChangeBatch, type Snapshot, type SnapshotChange, type SnapshotDecimal } from '@ex-grid/data';
 import { partsOf } from '../aggregates/parts';
 import { PivotAnswer, PivotRefusals, type PivotSourceRefusal } from '../cube/answer';
-import { partBits, placedFields, type PivotDetailsQuery, type PivotItemsQuery, type PivotQuery } from '../cube/query';
+import { partBits, placedFields, queriesEqual, type PivotDetailsQuery, type PivotItemsQuery, type PivotQuery } from '../cube/query';
 import { declaredFields, type PivotField, type PivotRecordField } from '../fields/pivot-field';
 import { compareInvariant, fromPublicKey, keyIdOf, toPublicKey, type ItemKey, type PivotItemKey } from '../items/item-key';
 import { readRecordValue } from '../items/record-value';
 import { pivotAggregations, type PivotAggregation } from '../layout/pivot-enums';
 import { defined, elementAt, unreachable } from '../must';
 import { foldedText } from '../text/casing';
-import { AggregationPass, itemsOfField } from './aggregation-pass';
+import { AggregationPass, chunkRows, itemsOfField, itemsOfFieldSteps, runWhole } from './aggregation-pass';
+import { Slicer, checkedSlicing, type CheckedSlicing, type PivotSlicing } from './slicing';
 import { bindSnapshot, detailAt, itemKeyAt, recordSnapshot, type FieldBinding } from './binding';
 
 // ---- What a source offers -----------------------------------------------------------------------
@@ -279,8 +280,8 @@ function itemPage(keys: readonly ItemKey[], query: PivotItemsQuery, sourceVersio
 }
 
 // The rows behind a cell, in the Snapshot's order: those carrying every Item of the paths and no Hidden
-// Item; the page's positions, and how many there are in all.
-function rowsBehind(snapshot: Snapshot, bindings: ReadonlyMap<string, FieldBinding>, query: PivotDetailsQuery): { readonly rows: readonly number[]; readonly total: number } {
+// Item; the page's positions, and how many there are in all. It yields after each chunk of rows.
+function* rowsBehindSteps(snapshot: Snapshot, bindings: ReadonlyMap<string, FieldBinding>, query: PivotDetailsQuery): Generator<void, { readonly rows: readonly number[]; readonly total: number }> {
     const bound = (field: string): FieldBinding => defined(bindings.get(field), `the field '${field}' is bound`);
     const conditions = [...query.rowItems, ...query.columnItems].map(step => ({ binding: bound(step.field), id: keyIdOf(fromPublicKey(step.item)) }));
     const hidden = query.hiddenItems.filter(h => h.hiddenItems.length > 0)
@@ -288,6 +289,7 @@ function rowsBehind(snapshot: Snapshot, bindings: ReadonlyMap<string, FieldBindi
     const rows: number[] = [];
     let total = 0;
     for (let row = 0; row < snapshot.rowCount; row++) {
+        if (row % chunkRows === chunkRows - 1) yield;
         if (!conditions.every(c => keyIdOf(itemKeyAt(c.binding, row)) === c.id)) continue;
         if (hidden.some(h => h.ids.has(keyIdOf(itemKeyAt(h.binding, row))))) continue;
         if (total >= query.start && total - query.start < query.count) rows.push(row);
@@ -296,67 +298,250 @@ function rowsBehind(snapshot: Snapshot, bindings: ReadonlyMap<string, FieldBindi
     return { rows, total };
 }
 
-/** The bundled source over a Snapshot (ADR-0066): it answers every Aggregation under the version
- * `{identity}:{snapshot version}`. */
+function rowsBehind(snapshot: Snapshot, bindings: ReadonlyMap<string, FieldBinding>, query: PivotDetailsQuery): { readonly rows: readonly number[]; readonly total: number } {
+    return runWhole(rowsBehindSteps(snapshot, bindings, query));
+}
+
+/** What a source says when its data moved on (ADR-0067): the Source Version it answers under now. */
+export interface PivotSourceChanged {
+    /** The Source Version the source answers under from now. */
+    readonly sourceVersion: string;
+}
+
+// A version a source answers under, and its fields' bindings to that version's columns.
+interface Bound {
+    readonly snapshot: Snapshot;
+    readonly bindings: ReadonlyMap<string, FieldBinding>;
+}
+
+// The pass a source holds for the question it answered last, which batches are folded into; and the
+// batches applied while an answer was being assembled from it, to fold in once none is.
+interface HeldPass {
+    readonly pass: AggregationPass;
+    assembling: number;
+    readonly deferred: { readonly change: SnapshotChange; readonly bindings: ReadonlyMap<string, FieldBinding> }[];
+}
+
+/**
+ * The bundled source over a Snapshot (ADR-0066): it answers every Aggregation under the version
+ * `{identity}:{snapshot version}`, in slices (PV-40).
+ *
+ * **Live data** (ADR-0067): {@link SnapshotPivotSource.apply} takes a Change Batch. The Snapshot makes the next one, the answer the
+ * source holds for its last question is brought up to date from what the batch removed and added rather than
+ * read again — the exact parts by subtraction and addition, every other part recomputed for the leaves the
+ * batch touched — and each listener {@link SnapshotPivotSource.subscribe}d is told the new Source Version. Asked the same question
+ * again, the source answers from what it holds: after any sequence of batches, what a fresh source over the
+ * Snapshot they made answers, read in that Snapshot's order, to the last bit. A batch applied while an answer
+ * is assembled from what it holds waits until the answer is made, so that no answer is half a batch.
+ *
+ * It answers a field's Items and a cell's records under its current version and under the versions of its
+ * last {@link SnapshotPivotSource.answersHeld} answers — a Snapshot is immutable, so their records still add
+ * up — and refuses an older one.
+ */
 export class SnapshotPivotSource implements PivotSource {
+    /** How many of its latest answers' versions the source keeps answering Items and records under, besides
+     * its current one. */
+    static readonly answersHeld = 4;
+
     /** The fields bound to the Snapshot's columns. */
     readonly fields: readonly PivotField[];
     /** Every Aggregation. */
     readonly features: PivotSourceFeatures = PivotSourceFeatures.all;
-    /** The Snapshot it answers over. */
-    readonly snapshot: Snapshot;
-    readonly #bindings: ReadonlyMap<string, FieldBinding>;
+    readonly #declared: readonly PivotField[] | undefined;
+    readonly #slicing: CheckedSlicing;
     readonly #id = newIdentity();
+    readonly #answered: Bound[] = [];
+    readonly #listeners = new Set<(changed: PivotSourceChanged) => void>();
+    #snapshot: Snapshot;
+    #bindings: ReadonlyMap<string, FieldBinding>;
+    #held: HeldPass | undefined;
+    #heldAnswer: PivotAnswer | undefined;
 
-    /** A source over a Snapshot: `fields` bound to its columns, or one field per column. */
-    constructor(snapshot: Snapshot, fields?: readonly PivotField[]) {
+    /** A source over a Snapshot: `fields` bound to its columns, or one field per column; its work paced by
+     * `slicing`. */
+    constructor(snapshot: Snapshot, fields?: readonly PivotField[], slicing?: PivotSlicing) {
         const bound = bindSnapshot(snapshot, fields);
         this.fields = Object.freeze([...bound.fields]);
+        this.#declared = fields;
         this.#bindings = bound.bindings;
-        this.snapshot = snapshot;
+        this.#snapshot = snapshot;
+        this.#slicing = checkedSlicing(slicing);
+    }
+
+    /** The Snapshot the source answers from now: the one it was made with, or the one the last Change Batch
+     * made. */
+    get snapshot(): Snapshot {
+        return this.#snapshot;
     }
 
     /** The version the source answers under now. */
     get sourceVersion(): string {
-        return `${this.#id}:${this.snapshot.version}`;
+        return this.#versionOf(this.#snapshot);
     }
 
-    /** The Leaf Aggregates of a question, or a refusal. */
-    aggregate(query: PivotQuery, signal?: AbortSignal): Promise<PivotAnswer> {
+    #versionOf(snapshot: Snapshot): string {
+        return `${this.#id}:${snapshot.version}`;
+    }
+
+    /** Tells `listener` each new Source Version, after the source has moved on to it; the function returned
+     * stops telling it. */
+    subscribe(listener: (changed: PivotSourceChanged) => void): () => void {
+        if (typeof listener !== 'function') throw new TypeError('A listener is a function.');
+        const held = (changed: PivotSourceChanged): void => {
+            listener(changed);
+        };
+        this.#listeners.add(held);
+        return () => {
+            this.#listeners.delete(held);
+        };
+    }
+
+    /**
+     * Applies a Change Batch (ADR-0067): the Snapshot makes the next one, whole or not at all; the answer held
+     * for the last question is brought up to date from what the batch removed and added; and each listener is
+     * told the new Source Version, after the source has moved on. A batch the Snapshot refuses throws its
+     * `SnapshotError`, and nothing of it is applied. An error a listener throws does not stop the others being
+     * told, nor make the batch look refused: it is thrown again from a microtask, as an event listener's is.
+     */
+    apply(batch: ChangeBatch): SnapshotChange {
+        const change = applyChangeBatch(this.#snapshot, batch);
+        const bindings = bindSnapshot(change.after, this.#declared).bindings;
+        this.#snapshot = change.after;
+        this.#bindings = bindings;
+        const held = this.#held;
+        if (held !== undefined) {
+            // An answer being assembled from the pass reads it between slices: the batch waits until it is
+            // made, so that the answer is the version before the batch, whole.
+            if (held.assembling > 0) held.deferred.push({ change, bindings });
+            else if (!foldDeferred(held) || !held.pass.fold(change, bindings)) this.#held = undefined;
+        }
+        this.#heldAnswer = undefined;
+        const changed = Object.freeze({ sourceVersion: this.#versionOf(change.after) });
+        // A copy, so that a listener subscribed while the others are told is told from the next batch.
+        for (const listener of Array.from(this.#listeners)) {
+            // A listener that applied a batch itself has told every listener of the newer version.
+            if (this.#snapshot !== change.after) break;
+            try {
+                listener(changed);
+            } catch (error) { // oxlint-disable-line ex-grid/no-catch -- the batch is applied whatever a listener does; its error is reported, as an event listener's is, not swallowed
+                queueMicrotask(() => {
+                    throw error;
+                });
+            }
+        }
+        return change;
+    }
+
+    /**
+     * The Leaf Aggregates of a question, or a refusal, read in slices — or, for the question it answered last,
+     * from the pass it holds and has folded every batch into since. The answer is assembled in slices too,
+     * and a cancelled question rejects with the signal's reason at the next slice.
+     */
+    async aggregate(query: PivotQuery, signal?: AbortSignal): Promise<PivotAnswer> {
         aborted(signal);
-        return Promise.resolve(this.aggregateNow(query));
-    }
-
-    /** The Leaf Aggregates of a question, on the calling thread. */
-    aggregateNow(query: PivotQuery): PivotAnswer {
         const refusal = queryRefusal(this.fields, this.features, query);
         if (refusal !== undefined) return PivotAnswer.refused(refusal);
-        const pass = new AggregationPass(this.snapshot, this.#bindings, query);
-        pass.step(pass.rowCount);
-        return pass.answer(this.sourceVersion);
+        const slicer = new Slicer(this.#slicing, signal);
+        const snapshot = this.#snapshot;
+        const bindings = this.#bindings;
+        if (!this.#heldUpToDate()) this.#held = undefined;
+        const held = this.#held;
+        if (held !== undefined && queriesEqual(held.pass.query, query) && held.pass.snapshot === snapshot) {
+            this.#remember(snapshot, bindings);
+            if (this.#heldAnswer !== undefined) return this.#heldAnswer;
+            return this.#assembleHeld(held, snapshot, slicer);
+        }
+        const pass = new AggregationPass(snapshot, bindings, query, snapshot.recordKey !== undefined);
+        for (let at = 0; at < pass.rowCount;) {
+            const to = Math.min(pass.rowCount, at + chunkRows);
+            if (!pass.step(to)) break;
+            at = to;
+            await slicer.step();
+        }
+        const answer = await slicer.run(pass.answerSteps(this.#versionOf(snapshot)));
+        if (pass.refusal === undefined) {
+            if (this.#snapshot === snapshot) {
+                this.#held = { pass, assembling: 0, deferred: [] };
+                this.#heldAnswer = answer;
+            }
+            this.#remember(snapshot, bindings);
+        }
+        return answer;
     }
 
-    /** A page of a field's Items. */
-    items(query: PivotItemsQuery, signal?: AbortSignal): Promise<PivotItemPage> {
+    // An answer assembled from the pass held, in slices: a batch applied meanwhile waits, and is folded in
+    // once no assembly reads the pass.
+    async #assembleHeld(held: HeldPass, snapshot: Snapshot, slicer: Slicer): Promise<PivotAnswer> {
+        held.assembling++;
+        let answer: PivotAnswer;
+        try {
+            answer = await slicer.run(held.pass.answerSteps(this.#versionOf(snapshot)));
+        } finally {
+            held.assembling--;
+        }
+        if (this.#held === held && this.#snapshot === snapshot) this.#heldAnswer = answer;
+        // The batches applied meanwhile are folded in by the next batch or question (#heldUpToDate).
+        return answer;
+    }
+
+    // Folds in the batches the held pass deferred, once no answer is being assembled from it; false when one
+    // could not be folded, and the pass is to be dropped.
+    #heldUpToDate(): boolean {
+        const held = this.#held;
+        return held === undefined || held.assembling > 0 || foldDeferred(held);
+    }
+
+    // The Snapshot of a version the source still answers under, with its fields' bindings: the current one, or
+    // one of its last answers'.
+    #heldVersion(version: string): Bound | undefined {
+        if (this.#versionOf(this.#snapshot) === version) return { snapshot: this.#snapshot, bindings: this.#bindings };
+        return this.#answered.find(bound => this.#versionOf(bound.snapshot) === version);
+    }
+
+    #remember(snapshot: Snapshot, bindings: ReadonlyMap<string, FieldBinding>): void {
+        const at = this.#answered.findIndex(bound => bound.snapshot === snapshot);
+        if (at >= 0) this.#answered.splice(at, 1);
+        this.#answered.push({ snapshot, bindings });
+        if (this.#answered.length > SnapshotPivotSource.answersHeld) this.#answered.shift();
+    }
+
+    /** A page of a field's Items over all the data of the version asked, read in slices; refused under a
+     * version the source no longer holds. */
+    async items(query: PivotItemsQuery, signal?: AbortSignal): Promise<PivotItemPage> {
         aborted(signal);
         const refusal = itemsRefusal(this.fields, query);
-        if (refusal !== undefined) return Promise.resolve(PivotItemPage.refused(refusal));
-        if (query.sourceVersion !== this.sourceVersion) return Promise.resolve(PivotItemPage.refused(PivotRefusals.sourceVersionNotHeld(query.sourceVersion)));
-        const binding = defined(this.#bindings.get(query.field), `the field '${query.field}' is bound`);
-        return Promise.resolve(itemPage(itemsOfField(this.snapshot, binding), query, query.sourceVersion));
+        if (refusal !== undefined) return PivotItemPage.refused(refusal);
+        const bound = this.#heldVersion(query.sourceVersion);
+        if (bound === undefined) return PivotItemPage.refused(PivotRefusals.sourceVersionNotHeld(query.sourceVersion));
+        const { snapshot, bindings } = bound;
+        const binding = defined(bindings.get(query.field), `the field '${query.field}' is bound`);
+        const keys = await new Slicer(this.#slicing, signal).run(itemsOfFieldSteps(snapshot, binding));
+        return itemPage(keys, query, query.sourceVersion);
     }
 
-    /** A page of the records behind a cell. */
-    details(query: PivotDetailsQuery, signal?: AbortSignal): Promise<PivotDetailPage> {
+    /** A page of the records behind a cell in the version asked, in the Snapshot's order, read in slices;
+     * refused under a version the source no longer holds. */
+    async details(query: PivotDetailsQuery, signal?: AbortSignal): Promise<PivotDetailPage> {
         aborted(signal);
         const refusal = detailsRefusal(this.fields, query);
-        if (refusal !== undefined) return Promise.resolve(PivotDetailPage.refused(refusal));
-        if (query.sourceVersion !== this.sourceVersion) return Promise.resolve(PivotDetailPage.refused(PivotRefusals.sourceVersionNotHeld(query.sourceVersion)));
-        const { rows, total } = rowsBehind(this.snapshot, this.#bindings, query);
-        const bindings = this.fields.map(field => defined(this.#bindings.get(field.name), `the field '${field.name}' is bound`));
-        const records = rows.map(row => ({ values: bindings.map(binding => detailAt(binding, row)) }));
-        return Promise.resolve(PivotDetailPage.of(query.sourceVersion, this.fields, query.start, total, records));
+        if (refusal !== undefined) return PivotDetailPage.refused(refusal);
+        const held = this.#heldVersion(query.sourceVersion);
+        if (held === undefined) return PivotDetailPage.refused(PivotRefusals.sourceVersionNotHeld(query.sourceVersion));
+        const { snapshot, bindings } = held;
+        const { rows, total } = await new Slicer(this.#slicing, signal).run(rowsBehindSteps(snapshot, bindings, query));
+        const bound = this.fields.map(field => defined(bindings.get(field.name), `the field '${field.name}' is bound`));
+        const records = rows.map(row => ({ values: bound.map(binding => detailAt(binding, row)) }));
+        return PivotDetailPage.of(query.sourceVersion, this.fields, query.start, total, records);
     }
+}
+
+// Folds in the batches a held pass deferred, in order; false when one could not be folded.
+function foldDeferred(held: HeldPass): boolean {
+    while (held.deferred.length > 0) {
+        const next = defined(held.deferred.shift(), 'a deferred batch');
+        if (!held.pass.fold(next.change, next.bindings)) return false;
+    }
+    return true;
 }
 
 // A value as a record behind a cell carries it.

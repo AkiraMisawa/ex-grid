@@ -11,6 +11,8 @@ export type {
     SnapshotColumnInput, SnapshotColumnInputBase, SnapshotInput, SnapshotKind, TemporalPlainDateLike, TextColumn,
 } from './snapshot';
 export { createSnapshot } from './snapshot';
+export type { ChangeBatch, ChangeBatchInput, SnapshotChange } from './change-batch';
+export { applyChangeBatch, createChangeBatch } from './change-batch';
 export type { SnapshotDecimal } from './decimal';
 export { decimalFromText, decimalText } from './decimal';
 export { ticksFromText, ticksOf, ticksOfTemporal, ticksText } from './dates';

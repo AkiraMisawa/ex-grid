@@ -1,0 +1,15 @@
+{
+  "about": "Trades keyed by their Id, which Change Batches are applied to (ADR-0067): a case gives its own rows, and a batch's records are rows of the same columns.",
+  "snapshot": {
+    "recordKey": "Id",
+    "columns": [
+      {"name": "Id", "kind": "integer"},
+      {"name": "Desk", "kind": "text"},
+      {"name": "Book", "kind": "text"},
+      {"name": "Amount", "kind": "decimal"},
+      {"name": "Risk", "kind": "double"},
+      {"name": "Live", "kind": "boolean"}
+    ]
+  },
+  "rows": []
+}

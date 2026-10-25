@@ -9,7 +9,7 @@ import { afterAll, expect, test } from 'vitest';
 import { pivotAggregations, type PivotAggregation } from '../src/index';
 import { array, must, object, type Json, type JsonObject } from '../test/cases';
 import { sourceAnswer } from '../test/source-cases';
-import { random, seedOfRun, startOracle } from './oracle';
+import { firstDifference, normal, random, seedOfRun, startOracle } from './oracle';
 
 const oracle = startOracle();
 afterAll(() => { oracle.close(); });
@@ -202,23 +202,3 @@ test(`Whole reports, seed ${seed}`, async () => {
     if (out !== undefined) fs.writeFileSync(out, answers.flatMap((answer, i) => (JSON.stringify(normal(answer)) === JSON.stringify(normal(mine[i])) ? [] : [JSON.stringify(requests[i])])).join('\n'));
     expect({ differences: differences.length, first: differences.slice(0, 5) }).toEqual({ differences: 0, first: [] });
 });
-
-// Where two answers first part, and what each holds there.
-function firstDifference(theirs: unknown, ours: unknown, at: string): string {
-    if (JSON.stringify(theirs) === JSON.stringify(ours)) return '';
-    if (typeof theirs === 'object' && theirs !== null && typeof ours === 'object' && ours !== null && Array.isArray(theirs) === Array.isArray(ours)) {
-        const keys = new Set([...Object.keys(theirs), ...Object.keys(ours)]);
-        for (const key of keys) {
-            const found = firstDifference(Reflect.get(theirs, key), Reflect.get(ours, key), `${at}/${key}`);
-            if (found !== '') return found;
-        }
-    }
-    return `${at}: C# ${JSON.stringify(theirs)}, ours ${JSON.stringify(ours)}`;
-}
-
-// A JSON value with its objects' keys in order, so two answers compare by what they hold.
-function normal(value: unknown): unknown {
-    if (Array.isArray(value)) return value.map(normal);
-    if (typeof value !== 'object' || value === null) return value;
-    return Object.fromEntries(Object.entries(value).toSorted(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)).map(([k, v]) => [k, normal(v)]));
-}

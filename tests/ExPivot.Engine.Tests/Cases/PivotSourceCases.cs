@@ -12,14 +12,18 @@ namespace ExPivot.Engine.Tests.Cases;
 /// </summary>
 internal static class PivotSourceCases
 {
-    // A source and how often its server was asked for Leaf Aggregates.
+    // A source, how often its server was asked for Leaf Aggregates, the version of each answer, and the
+    // versions the source told of since the last batch; and the shape a batch's records are written in.
     private sealed class Bench
     {
         public required PivotSource Source { get; set; }
         public required Func<PivotSource> Again { get; init; }
         public required PivotCases.DataSet Data { get; init; }
+        public JsonObject? Shape { get; init; }
         public int Asked { get; set; }
         public string? Version { get; set; }
+        public List<string> Versions { get; } = [];
+        public List<string?> Told { get; } = [];
     }
 
     /// <summary>The C# engine's answer to a source case: each step's answer, or the refusal that made the
@@ -58,6 +62,7 @@ internal static class PivotSourceCases
         var snapshot = PivotCases.SnapshotOf(document, entry);
         var data = snapshot is null ? PivotCases.Data(document, entry) : new PivotCases.DataSet([], [], []);
         PivotField[]? declared = entry["declare"] is { } fields ? [.. fields.AsArray().Select(f => Declared(f!.AsObject()))] : null;
+        var shape = snapshot is null ? null : PivotCases.SnapshotShapeOf(document, entry);
         Func<PivotSource> bundled = snapshot is null
             ? () => PivotSource.From(data.Records, data.Fields)
             : () => PivotSource.From(snapshot, declared);
@@ -66,6 +71,7 @@ internal static class PivotSourceCases
         PivotSource Make()
         {
             var inner = bundled();
+            inner.Changed += changed => bench!.Told.Add(changed.SourceVersion);
             if (fetch is null)
                 return inner;
             var features = fetch["offers"] is { } offers
@@ -81,7 +87,7 @@ internal static class PivotSourceCases
                 (query, ct) => inner.ItemsAsync(query, ct),
                 (query, ct) => inner.DetailsAsync(query, ct));
         }
-        bench = new Bench { Source = Make(), Again = Make, Data = data };
+        bench = new Bench { Source = Make(), Again = Make, Data = data, Shape = shape };
         return bench;
     }
 
@@ -96,8 +102,12 @@ internal static class PivotSourceCases
             if (answer.IsRefused)
                 return Refused(answer.Refusal!, null);
             bench.Version = answer.SourceVersion;
-            return AnswerJson(answer);
+            bench.Versions.Add(answer.SourceVersion);
+            var json = AnswerJson(answer);
+            return (string?)step["order"] == "any" ? InAnyOrder(json) : json;
         }
+        if (step["apply"] is { } batch)
+            return Apply(bench, batch.AsObject());
         if (step["items"] is { } field)
         {
             var under = Under(bench, step);
@@ -153,10 +163,41 @@ internal static class PivotSourceCases
         throw new InvalidOperationException($"{step.ToJsonString()} asks nothing the cases ask.");
     }
 
-    // The version a page is asked under: the last answer's, or "stale", one no source held.
-    private static string Under(Bench bench, JsonObject step)
-        => (string?)step["under"] == "stale" ? "stale"
-            : bench.Version ?? throw new InvalidOperationException("A page is asked for under an answer's version, and no question was answered yet.");
+    // The version a page is asked under: the last answer's, an earlier answer's by its number, the one a source
+    // over a Snapshot answers under now, or "stale", one no source held.
+    private static string Under(Bench bench, JsonObject step) => step["under"] switch
+    {
+        JsonObject earlier => bench.Versions[(int)earlier["answer"]!],
+        { } stale when (string?)stale == "stale" => "stale",
+        { } current when (string?)current == "current" => bench.Source is SnapshotPivotSource live
+            ? live.SourceVersion
+            : throw new InvalidOperationException("Only a source over a Snapshot is asked under its current version."),
+        null => bench.Version ?? throw new InvalidOperationException("A page is asked for under an answer's version, and no question was answered yet."),
+        var other => throw new InvalidOperationException($"{other.ToJsonString()} is no version a page is asked under."),
+    };
+
+    // A Change Batch applied to the source over a Snapshot (ADR-0067): the Snapshot version it made and the
+    // Source Versions the source told of, each written {version} where it is the one the source answers
+    // under now, and null where a notice named none; or the Snapshot's refusal, and what was told.
+    private static JsonObject Apply(Bench bench, JsonObject written)
+    {
+        if (bench.Source is not SnapshotPivotSource source || bench.Shape is not { } shape)
+            throw new InvalidOperationException("A batch is applied to a source over a Snapshot.");
+        Snapshot? Records(string role) => written[role] is JsonArray rows ? PivotCases.Rows(shape, rows, null) : null;
+        var removed = written["removedKeys"]?.AsArray().Select(k => PivotCases.Value(k) is double d ? (object)checked((long)d) : PivotCases.Value(k)!).ToArray();
+        bench.Told.Clear();
+        JsonObject answer;
+        try
+        {
+            answer = new JsonObject { ["applied"] = source.Apply(ChangeBatch.Of(Records("added"), Records("changed"), removed)).After.Version };
+        }
+        catch (SnapshotException refused)
+        {
+            answer = PivotCases.Refusal(refused);
+        }
+        answer["told"] = new JsonArray([.. bench.Told.Select(v => JsonValue.Create(v == source.SourceVersion ? "{version}" : v))]);
+        return answer;
+    }
 
     // ---- What a case writes ----------------------------------------------------------------------
 
@@ -292,6 +333,46 @@ internal static class PivotSourceCases
             ["leaf"] = leaves,
             ["values"] = values,
         };
+    }
+
+    /// <summary>An answer whatever order an engine met its records in: each axis's Items in the ordinal order of
+    /// their kinds and values, and the leaves in the order of their Items. After a Change Batch ExGrid.Data
+    /// reads its rows in its storage's order and the Script Core in the Snapshot's, and the cases hold what
+    /// both say.</summary>
+    internal static JsonObject InAnyOrder(JsonObject answer)
+    {
+        static string Spelled(JsonNode? key) => (string)key!["kind"]! + "\u0001" + ((string?)key["value"] ?? "");
+        var axes = answer["rows"]!.AsArray().Concat(answer["columns"]!.AsArray()).Select(a => a!.AsObject()).ToArray();
+        var renumbered = axes.Select(axis =>
+        {
+            var items = axis["items"]!.AsArray();
+            var order = Enumerable.Range(0, items.Count).OrderBy(i => Spelled(items[i]), StringComparer.Ordinal).ToArray();
+            axis["items"] = new JsonArray([.. order.Select(i => items[i]!.DeepClone())]);
+            var at = new int[items.Count];
+            for (var place = 0; place < order.Length; place++)
+                at[order[place]] = place;
+            return at;
+        }).ToArray();
+        var leaves = answer["leaf"]!.AsArray();
+        var paths = leaves.Select(l => l!["at"]!.AsArray().Select((item, level) => renumbered[level][(int)item!]).ToArray()).ToArray();
+        var leafOrder = Enumerable.Range(0, leaves.Count).OrderBy(l => paths[l], Comparer<int[]>.Create((a, b) =>
+        {
+            for (var i = 0; i < a.Length; i++)
+                if (a[i] != b[i])
+                    return a[i].CompareTo(b[i]);
+            return 0;
+        })).ToArray();
+        answer["leaf"] = new JsonArray([.. leafOrder.Select(l => (JsonNode)new JsonObject
+        {
+            ["at"] = new JsonArray([.. paths[l].Select(i => JsonValue.Create(i))]),
+            ["records"] = leaves[l]!["records"]!.DeepClone(),
+        })]);
+        foreach (var value in answer["values"]!.AsArray())
+        {
+            var at = value!["leaves"]!.AsArray();
+            value["leaves"] = new JsonArray([.. leafOrder.Select(l => at[l]!.DeepClone())]);
+        }
+        return answer;
     }
 
     // An exact number as {"decimal": its value, trailing zeros dropped}, a double as a number, or as

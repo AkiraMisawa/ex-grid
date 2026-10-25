@@ -5,10 +5,30 @@
 ```ts
 
 // @public
+export function applyChangeBatch(snapshot: Snapshot, batch: ChangeBatch): SnapshotChange;
+
+// @public
 export const arrowStreamMediaType = "application/vnd.apache.arrow.stream";
 
 // @public
 export type BooleanColumn = SnapshotColumnBase<'boolean', boolean>;
+
+// @public
+export interface ChangeBatch {
+    readonly added: Snapshot | undefined;
+    readonly changed: Snapshot | undefined;
+    readonly removedKeys: readonly (string | bigint)[];
+}
+
+// @public
+export interface ChangeBatchInput {
+    readonly added?: Snapshot;
+    readonly changed?: Snapshot;
+    readonly removedKeys?: readonly (string | bigint | number)[];
+}
+
+// @public
+export function createChangeBatch(input?: ChangeBatchInput): ChangeBatch;
 
 // @public
 export function createSnapshot(input: SnapshotInput): Snapshot;
@@ -65,6 +85,14 @@ export const snapshotArrowMetadata: Readonly<{
     readonly recordKey: 'exgrid.recordKey';
     readonly version: 'exgrid.version';
 }>;
+
+// @public
+export interface SnapshotChange {
+    readonly added: readonly number[];
+    readonly after: Snapshot;
+    readonly before: Snapshot;
+    readonly removed: readonly number[];
+}
 
 // @public
 export type SnapshotColumn = TextColumn | DecimalColumn | DoubleColumn | IntegerColumn | DateColumn | BooleanColumn;

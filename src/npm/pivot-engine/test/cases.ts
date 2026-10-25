@@ -140,19 +140,32 @@ export function dataSet(file: JsonObject, entry: JsonObject): DataSet {
 }
 
 /** The Snapshot a data set's columns make, when the set is a Snapshot's: `snapshot` names each column's name,
- * kind and caption, and `rows` holds a row's values in column order, written as {@link value} reads them; the
+ * kind and caption, and the column that is its Record Key, where it has one; and `rows` holds a row's values in column order, written as {@link value} reads them; the
  * case's own `rows`, when it has them, stand in for the set's. `undefined` for a set of records. */
 export function snapshotOf(file: JsonObject, entry: JsonObject): Snapshot | undefined {
-    const set = setOf(file, entry);
-    const shape = set['snapshot'];
+    const shape = snapshotShapeOf(file, entry);
     if (shape === undefined) return undefined;
-    const columns = array(must(object(shape), 'columns')).map(object);
-    const rows = array(entry['rows'] ?? must(set, 'rows')).map(row => {
+    const key = shape['recordKey'];
+    return rowsSnapshot(shape, array(entry['rows'] ?? must(setOf(file, entry), 'rows')), key === undefined ? undefined : text(key));
+}
+
+/** The shape of a data set's Snapshot, when the set is a Snapshot's: what a Change Batch's records are written in. */
+export function snapshotShapeOf(file: JsonObject, entry: JsonObject): JsonObject | undefined {
+    const shape = setOf(file, entry)['snapshot'];
+    return shape === undefined ? undefined : object(shape);
+}
+
+/** Rows written in a Snapshot's shape, as a Snapshot of their own: keyed by `recordKey` where it names a
+ * column, and with no key otherwise, as a Change Batch's records are. */
+export function rowsSnapshot(shape: JsonObject, written: readonly Json[], recordKey: string | undefined): Snapshot {
+    const columns = array(must(shape, 'columns')).map(object);
+    const rows = written.map(row => {
         const values = array(row);
         if (values.length !== columns.length) throw new Error(`A row holds ${values.length} values, and the Snapshot has ${columns.length} columns.`);
         return values.map(caseValue);
     });
     return createSnapshot({
+        ...(recordKey === undefined ? {} : { recordKey }),
         columns: columns.map((column, c) => {
             const caption = column['caption'];
             return columnInput(text(must(column, 'name')), text(must(column, 'kind')), rows.map(row => row[c]), caption === undefined ? undefined : text(caption));
