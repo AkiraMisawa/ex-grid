@@ -1,0 +1,28 @@
+{
+  "name": "exgrid-demohost-react",
+  "private": true,
+  "version": "0.0.0",
+  "description": "The React DemoHost: the Script Core under React, at the Blazor hosts' paths, for layer 3 (ADR-0350, section 13).",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "build": "vite build",
+    "preview": "vite preview --strictPort",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "temporal-polyfill": "1.0.5"
+  },
+  "devDependencies": {
+    "@types/node": "22.20.5",
+    "@types/react": "19.2.18",
+    "@types/react-dom": "19.2.3",
+    "typescript": "7.0.2",
+    "vite": "8.3.5"
+  },
+  "engines": {
+    "node": ">=22.12"
+  }
+}

@@ -116,7 +116,7 @@ export function rowMarkHeaderPress(state: RowMarkHeaderState): boolean {
  *   unmarking clears the current result's marks and leaves the marks outside it alone.
  * - `positions`: Space over a selection in the Mark Column, or the header under a pager: rows named by
  *   position in the whole result, since past the Window the grid has no identity to name them by. They are
- *   brought into line ({@link lineUpMarks}), and refused under any other `rowSequenceVersion`, where the
+ *   brought into line (`lineUpMarks`), and refused under any other `rowSequenceVersion`, where the
  *   positions would name other rows.
  */
 export type RowMarkIntent<Row> =

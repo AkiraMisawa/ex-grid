@@ -5,10 +5,145 @@
 ```ts
 
 // @public
+export type AggregateErrorKind = 'divideByZero' | 'notANumber' | 'errorAmongValues';
+
+// @public
+export type AggregateResult = {
+    readonly kind: 'empty';
+} | {
+    readonly kind: 'error';
+    readonly error: AggregateErrorKind;
+} | {
+    readonly kind: 'number';
+    readonly number: number;
+    readonly exact: ExactDecimal | undefined;
+};
+
+// @public
+export interface AutoColumnWidth {
+    readonly auto: true;
+    readonly maxPx?: number;
+    readonly minPx?: number;
+}
+
+// @public
+export type CellAlign = 'auto' | 'left' | 'center' | 'right';
+
+// @public
+export type CellChangedAt<Row> = (row: Row, column: string) => number | undefined;
+
+// @public
 export interface CellPosition {
     readonly column: number;
     readonly row: number;
 }
+
+// @public
+export type ColumnType = 'text' | 'number' | 'date' | 'boolean';
+
+// @public
+export function createGrid<Row>(element: HTMLElement, options: GridOptions<Row>): GridHandle<Row>;
+
+// @public
+export type DateType = 'dateTime' | 'dateOnly' | 'dateTimeOffset';
+
+// @public
+export type DistinctValues = {
+    readonly kind: 'values';
+    readonly values: readonly unknown[];
+} | {
+    readonly kind: 'tooMany';
+};
+
+// @public
+export interface ExactDecimal {
+    readonly mantissa: bigint;
+    readonly scale: number;
+}
+
+// @public
+export interface FetchFailedEvent {
+    readonly error: unknown;
+}
+
+// @public
+export class FetchingGridSource<Row> implements GridSource<Row> {
+    dispose(): void;
+    distinctValues(column: string, signal: AbortSignal): Promise<DistinctValues>;
+    static fetch<Row>(fetch: (query: GridQuery, signal: AbortSignal) => Promise<GridPage<Row>>, options?: FetchingSourceOptions<Row>): FetchingGridSource<Row>;
+    readonly find?: (request: GridFindRequest, signal: AbortSignal) => Promise<GridFindResult>;
+    needRange(range: RowRange): Promise<void>;
+    requery(): void;
+    get rowKey(): RowKeyOf<Row> | undefined;
+    rows(range: RowRange, signal: AbortSignal): Promise<readonly Row[]>;
+    setColumns(columns: readonly QueryColumn<Row>[]): void;
+    setFilter(filter: GridFilter | undefined): void;
+    setSorts(sorts: readonly SortSpec[]): void;
+    snapshot(): FetchingSourceState<Row>;
+    subscribe(listener: () => void): () => void;
+    readonly summarize?: (request: GridSummaryRequest, signal: AbortSignal) => Promise<GridSummaryResult>;
+    get vouchesDistinctRows(): boolean;
+}
+
+// @public
+export interface FetchingSourceOptions<Row> {
+    readonly distinctValues?: (column: string, filter: GridFilter | undefined, signal: AbortSignal) => Promise<DistinctValues>;
+    readonly find?: (request: GridFindRequest, query: QueryInForce, signal: AbortSignal) => Promise<GridFindResult>;
+    readonly onFetchFailed?: (event: FetchFailedEvent) => void;
+    readonly readAheadRows?: number;
+    readonly rowKey?: RowKeyOf<Row>;
+    readonly summarize?: (request: GridSummaryRequest, query: QueryInForce, signal: AbortSignal) => Promise<GridSummaryResult>;
+}
+
+// @public
+export interface FetchingSourceState<Row> extends GridSourceState<Row> {
+    readonly lastError: unknown;
+}
+
+// @public
+export interface FilterClause {
+    readonly operator: FilterOperator;
+    readonly value?: unknown;
+    readonly values?: readonly unknown[];
+}
+
+// @public
+export type FilterCombinator = 'and' | 'or';
+
+// @public
+export type FilterOperator = 'equals' | 'notEquals' | 'greaterThan' | 'greaterThanOrEqual' | 'lessThan' | 'lessThanOrEqual' | 'contains' | 'doesNotContain' | 'startsWith' | 'endsWith' | 'in' | 'isBlank' | 'isNotBlank';
+
+// @public
+export interface FilterSpec {
+    readonly clauses: readonly FilterClause[];
+    readonly combinator?: FilterCombinator;
+}
+
+// @public
+export interface GridChangeBatch<Row> {
+    readonly added?: readonly Row[];
+    readonly changed?: readonly Row[];
+    readonly removedKeys?: readonly RowKey[];
+}
+
+// @public
+export interface GridClock {
+    now(): number;
+    setTimer(callback: () => void, milliseconds: number): () => void;
+}
+
+// @public
+export interface GridColumn<Row> extends QueryColumn<Row> {
+    readonly align?: CellAlign;
+    readonly header?: string;
+    readonly width?: GridColumnWidth;
+}
+
+// @public
+export type GridColumnWidth = number | AutoColumnWidth;
+
+// @public
+export type GridDensity = 'compact' | 'comfortable' | 'standard' | 'excel';
 
 // @public
 export type GridDirection = 'up' | 'down' | 'left' | 'right';
@@ -18,6 +153,118 @@ export interface GridExtent {
     readonly columnCount: number;
     readonly rowCount: number;
 }
+
+// @public
+export interface GridFilter {
+    readonly columns: Readonly<Record<string, FilterSpec>>;
+    readonly opaque?: unknown;
+}
+
+// @public
+export interface GridFindPattern {
+    readonly matchCase: boolean;
+    readonly text: string;
+    readonly wholeCell: boolean;
+}
+
+// @public
+export interface GridFindRequest extends GridFindPattern {
+    readonly backward: boolean;
+    readonly columns: readonly string[];
+    readonly from?: CellPosition | undefined;
+    readonly rowSequenceVersion: number;
+    readonly scope?: readonly SelectionRange[] | undefined;
+}
+
+// @public
+export type GridFindResult = {
+    readonly found: true;
+    readonly row: number;
+    readonly column: string;
+} | {
+    readonly found: false;
+};
+
+// @public
+export interface GridHandle<Row> {
+    destroy(): void;
+    update(options: GridOptions<Row>): void;
+}
+
+// @public
+export interface GridOptions<Row> {
+    readonly columns: readonly GridColumn<Row>[];
+    readonly density?: GridDensity;
+    readonly headerHeight?: number;
+    readonly pinnedColumnCount?: number;
+    readonly rowHeight?: number;
+    readonly rows?: readonly Row[];
+    readonly source?: GridSource<Row>;
+    readonly viewportHeight?: ViewportSize;
+    readonly viewportWidth?: ViewportSize;
+    readonly virtualiseColumns?: boolean;
+}
+
+// @public
+export interface GridPage<Row> {
+    readonly orderToken?: string | undefined;
+    readonly rows: readonly Row[];
+    readonly start: number;
+    readonly totalCount: number;
+}
+
+// @public
+export interface GridQuery {
+    readonly filter: GridFilter | undefined;
+    readonly range: RowRange;
+    readonly sorts: readonly SortSpec[];
+}
+
+// @public
+export interface GridReplaceAnswer<Row> {
+    readonly changes: readonly GridReplacedRow<Row>[];
+    readonly result: GridReplaceResult;
+}
+
+// @public
+export interface GridReplacedRow<Row> {
+    readonly after: Row;
+    readonly before: Row;
+}
+
+// @public
+export interface GridReplaceRefusedCell {
+    readonly column: string;
+    readonly message: string | undefined;
+    readonly row: number;
+}
+
+// @public
+export interface GridReplaceRequest extends GridFindPattern {
+    readonly columns: readonly string[];
+    readonly editableColumns: readonly string[];
+    readonly replacement: string;
+    readonly rowSequenceVersion: number;
+    readonly scope?: readonly SelectionRange[] | undefined;
+}
+
+// @public
+export type GridReplaceResult = {
+    readonly kind: 'replaced';
+    readonly count: number;
+    readonly rowSequenceVersion: number;
+} | {
+    readonly kind: 'refused';
+    readonly cells: readonly GridReplaceRefusedCell[];
+    readonly rowSequenceVersion: number;
+};
+
+// @public
+export type GridReplaceWrite<Row> = {
+    readonly row: Row;
+} | {
+    readonly refusal: string;
+};
 
 // @public
 export interface GridSelection {
@@ -35,11 +282,206 @@ export interface GridSelection {
 }
 
 // @public
+export interface GridSource<Row> {
+    distinctValues(column: string, signal: AbortSignal): Promise<DistinctValues>;
+    find?(request: GridFindRequest, signal: AbortSignal): Promise<GridFindResult>;
+    readonly marks?: RowMarks<Row> | undefined;
+    needRange(range: RowRange): Promise<void>;
+    publishGathered?(): void;
+    readonly rowKey?: RowKeyOf<Row> | undefined;
+    rows(range: RowRange, signal: AbortSignal): Promise<readonly Row[]>;
+    setColumns(columns: readonly QueryColumn<Row>[]): void;
+    setFilter(filter: GridFilter | undefined): void;
+    setSorts(sorts: readonly SortSpec[]): void;
+    snapshot(): GridSourceState<Row>;
+    subscribe(listener: () => void): () => void;
+    summarize?(request: GridSummaryRequest, signal: AbortSignal): Promise<GridSummaryResult>;
+    readonly vouchesDistinctRows?: boolean;
+}
+
+// @public
+export const GridSource: Readonly<{
+    from<Row>(rows: readonly Row[], options?: InMemorySourceOptions<Row>): InMemoryGridSource<Row>;
+    fetch<Row>(fetch: (query: GridQuery, signal: AbortSignal) => Promise<GridPage<Row>>, options?: FetchingSourceOptions<Row>): FetchingGridSource<Row>;
+}>;
+
+// @public
+export interface GridSourceState<Row> {
+    readonly filter: GridFilter | undefined;
+    readonly loading: boolean;
+    readonly rowSequenceVersion: number;
+    readonly sorts: readonly SortSpec[];
+    readonly totalCount: number | undefined;
+    readonly window: readonly Row[];
+    readonly windowStart: number;
+}
+
+// @public
+export interface GridSummaryRequest {
+    readonly columns: readonly string[];
+    readonly figures: readonly SummaryFigure[];
+    readonly focus?: CellPosition | undefined;
+    readonly ranges: readonly SelectionRange[];
+    readonly rowSequenceVersion: number;
+}
+
+// @public
+export type GridSummaryResult = {
+    readonly kind: 'answered';
+    readonly figures: Readonly<Partial<Record<SummaryFigure, AggregateResult>>>;
+    readonly texts: Readonly<Partial<Record<SummaryFigure, string>>>;
+} | {
+    readonly kind: 'declined';
+    readonly reason: string;
+};
+
+// @public
+export class InMemoryGridSource<Row> implements GridSource<Row> {
+    apply(batch: GridChangeBatch<Row>): void;
+    get cellChangedAt(): CellChangedAt<Row> | undefined;
+    get changeTimesKeptFor(): number;
+    set changeTimesKeptFor(milliseconds: number);
+    distinctValues(column: string, signal: AbortSignal): Promise<DistinctValues>;
+    find(request: GridFindRequest, signal: AbortSignal): Promise<GridFindResult>;
+    static from<Row>(rows: readonly Row[], options?: InMemorySourceOptions<Row>): InMemoryGridSource<Row>;
+    get gatherInterval(): number;
+    set gatherInterval(milliseconds: number);
+    get marks(): InMemoryRowMarks<Row>;
+    needRange(range: RowRange): Promise<void>;
+    publishGathered(): void;
+    replace(request: GridReplaceRequest, write: (row: Row, column: string, text: string) => GridReplaceWrite<Row>, entryOf?: (row: Row, column: string) => string | undefined): GridReplaceAnswer<Row>;
+    replaceAll(rows: readonly Row[]): void;
+    replaceRow(row: Row, replacement: Row): void;
+    get rowKey(): RowKeyOf<Row> | undefined;
+    rows(range: RowRange, signal: AbortSignal): Promise<readonly Row[]>;
+    setColumns(columns: readonly QueryColumn<Row>[]): void;
+    setFilter(filter: GridFilter | undefined): void;
+    setSorts(sorts: readonly SortSpec[]): void;
+    snapshot(): GridSourceState<Row>;
+    subscribe(listener: () => void): () => void;
+    summarize(request: GridSummaryRequest, signal: AbortSignal): Promise<GridSummaryResult>;
+    get vouchesDistinctRows(): boolean;
+}
+
+// @public
+export class InMemoryRowMarks<Row> implements RowMarks<Row> {
+    // @internal
+    constructor(host: MarksHost<Row>, rows: readonly Row[], rowKey: RowKeyOf<Row> | undefined);
+    get counts(): RowMarkCounts;
+    isMarked(row: Row): boolean;
+    get markedRows(): readonly Row[];
+    onMarkIntent(intent: RowMarkIntent<Row>): Promise<void>;
+    // @internal
+    published(removed: readonly RowKey[]): void;
+    // @internal
+    replaced(index: number, row: Row, replacement: Row): void;
+    setRowKind(rowKind: ((row: Row) => RowKind) | undefined): void;
+    subscribe(listener: () => void): () => void;
+}
+
+// @public
+export interface InMemorySourceOptions<Row> {
+    readonly clock?: GridClock;
+    readonly rowKey?: RowKeyOf<Row>;
+}
+
+// @public
+export interface MarksHost<Row> {
+    current(): {
+        readonly window: readonly Row[];
+        readonly rowSequenceVersion: number;
+    };
+    heldRows(): readonly Row[];
+    shown(key: RowKey): Row | undefined;
+}
+
+// @public
+export interface QueryColumn<Row> {
+    readonly dateType?: DateType;
+    readonly format?: (value: unknown) => string;
+    readonly name: string;
+    readonly queryable?: boolean;
+    readonly type: ColumnType;
+    readonly value: (row: Row) => unknown;
+}
+
+// @public
+export type QueryInForce = Omit<GridQuery, 'range'>;
+
+// @public
+export type RowKey = string | number | bigint;
+
+// @public
+export type RowKeyOf<Row> = (row: Row) => RowKey;
+
+// @public
+export type RowKind = 'detail' | 'group' | 'total';
+
+// @public
+export class RowMarkCounts {
+    constructor(counts: {
+        readonly markedInResult: number;
+        readonly rowsInResult: number;
+        readonly markedOutsideResult: number;
+    });
+    equals(other: RowMarkCounts): boolean;
+    get marked(): number;
+    get markedInResult(): number;
+    get markedOutsideResult(): number;
+    get rowsInResult(): number;
+}
+
+// @public
+export type RowMarkIntent<Row> = {
+    readonly kind: 'oneRow';
+    readonly row: Row;
+    readonly marked: boolean;
+} | {
+    readonly kind: 'allRows';
+    readonly marked: boolean;
+    readonly rowSequenceVersion: number;
+} | {
+    readonly kind: 'positions';
+    readonly ranges: readonly RowRange[];
+    readonly rowSequenceVersion: number;
+};
+
+// @public
+export interface RowMarks<Row> {
+    readonly counts: RowMarkCounts | undefined;
+    isMarked(row: Row): boolean;
+    onMarkIntent(intent: RowMarkIntent<Row>): Promise<void>;
+    setRowKind(rowKind: ((row: Row) => RowKind) | undefined): void;
+    subscribe(listener: () => void): () => void;
+}
+
+// @public
+export interface RowRange {
+    readonly count: number;
+    readonly start: number;
+}
+
+// @public
 export interface SelectionRange {
     readonly columnCount: number;
     readonly leftColumn: number;
     readonly rowCount: number;
     readonly topRow: number;
 }
+
+// @public
+export type SortDirection = 'ascending' | 'descending';
+
+// @public
+export interface SortSpec {
+    readonly column: string;
+    readonly direction: SortDirection;
+}
+
+// @public
+export type SummaryFigure = 'average' | 'count' | 'numericalCount' | 'min' | 'max' | 'sum';
+
+// @public
+export type ViewportSize = number | 'stretch';
 
 ```

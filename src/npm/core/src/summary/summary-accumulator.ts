@@ -12,7 +12,7 @@ import { unreachable } from '../must';
 import { decimalAdd, decimalCanonical, decimalCompare, decimalDivide, decimalOf, decimalOfCount, decimalToNumber, type ExactDecimal } from './exact-decimal';
 
 /** Why a figure is not a number, as Excel shows it: #DIV/0!, #NUM!, or an error among the cells. */
-export type AggregateError = 'divideByZero' | 'notANumber' | 'errorAmongValues';
+export type AggregateErrorKind = 'divideByZero' | 'notANumber' | 'errorAmongValues';
 
 /**
  * One figure's answer: nothing to show, an error, or a number. A number summed exactly carries its
@@ -21,7 +21,7 @@ export type AggregateError = 'divideByZero' | 'notANumber' | 'errorAmongValues';
  */
 export type AggregateResult =
     | { readonly kind: 'empty' }
-    | { readonly kind: 'error'; readonly error: AggregateError }
+    | { readonly kind: 'error'; readonly error: AggregateErrorKind }
     | { readonly kind: 'number'; readonly number: number; readonly exact: ExactDecimal | undefined };
 
 /** The figures a Selection Summary can show, as Excel's status bar names them. */
@@ -45,7 +45,7 @@ export function isCountFigure(figure: SummaryFigure): boolean {
 
 const empty: AggregateResult = Object.freeze({ kind: 'empty' });
 
-function errorResult(error: AggregateError): AggregateResult {
+function errorResult(error: AggregateErrorKind): AggregateResult {
     return Object.freeze({ kind: 'error', error });
 }
 

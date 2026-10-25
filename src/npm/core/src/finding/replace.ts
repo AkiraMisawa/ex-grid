@@ -34,8 +34,11 @@ export interface GridReplaceRequest extends GridFindPattern {
 /** One match a Replace could not write, by its place: a row in the order the request was read in and a
  * column name, and why in the Consumer's words, or `undefined` where the column is not Editable. */
 export interface GridReplaceRefusedCell {
+    /** The row's position in the order the request was read in. */
     readonly row: number;
+    /** The column's name. */
     readonly column: string;
+    /** Why, in the Consumer's words, or `undefined` where the column is not Editable. */
     readonly message: string | undefined;
 }
 
@@ -70,14 +73,18 @@ export type GridReplaceWrite<Row> =
 
 /** One row a Replace All rewrote: the object it read, and the new one holding every replaced cell. */
 export interface GridReplacedRow<Row> {
+    /** The row as it stood. */
     readonly before: Row;
+    /** The row that replaces it. */
     readonly after: Row;
 }
 
 /** The reference Replace All's answer: the result the grid is handed, and the rows it rewrote, empty
  * when refused, which the Consumer keeps as one step of its undo stack. */
 export interface GridReplaceAnswer<Row> {
+    /** What the grid is told: how many cells were replaced, or which could not be written. */
     readonly result: GridReplaceResult;
+    /** The rows the replacement made, each with the row it replaces. */
     readonly changes: readonly GridReplacedRow<Row>[];
 }
 

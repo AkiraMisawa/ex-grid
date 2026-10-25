@@ -28,6 +28,7 @@ export interface MarksHost<Row> {
     heldRows(): readonly Row[];
 }
 
+/** The Row Marks a `GridSource.from` source keeps (ADR-0043): by identity without a Row Key, by key with one. */
 export class InMemoryRowMarks<Row> implements RowMarks<Row> {
     readonly #host: MarksHost<Row>;
     readonly #listeners = new Set<() => void>();
@@ -51,7 +52,8 @@ export class InMemoryRowMarks<Row> implements RowMarks<Row> {
     #countedWindow: readonly Row[] | undefined;
     #counts: RowMarkCounts | undefined;
 
-    /** The marks of a source over `rows` without a key, kept by identity; or, given a key, kept by key. */
+    /** The marks of a source over `rows` without a key, kept by identity; or, given a key, kept by key.
+     * @internal */
     constructor(host: MarksHost<Row>, rows: readonly Row[], rowKey: RowKeyOf<Row> | undefined) {
         this.#host = host;
         this.#rowKey = rowKey;
@@ -61,6 +63,7 @@ export class InMemoryRowMarks<Row> implements RowMarks<Row> {
         for (let i = this.#rows.length - 1; i >= 0; i--) this.#link(itemAt(this.#rows, i), i);
     }
 
+    /** Whether a row is marked; a Group or Total row never is (ADR-0024). */
     isMarked(row: Row): boolean {
         if (!this.#isDetail(row)) return false;
         if (this.#rowKey !== undefined) return this.#markedKeys.has(this.#rowKey(row));
@@ -68,6 +71,7 @@ export class InMemoryRowMarks<Row> implements RowMarks<Row> {
         return slot !== undefined && itemAt(this.#marked, slot);
     }
 
+    /** How many Detail rows of the result are marked, and of how many. */
     get counts(): RowMarkCounts {
         const { window } = this.#host.current();
         if (this.#counts === undefined || this.#countedWindow !== window) {
@@ -94,12 +98,14 @@ export class InMemoryRowMarks<Row> implements RowMarks<Row> {
         }));
     }
 
+    /** The grid's Row Kind, so Group and Total rows stay out of "all" and out of the counts (ADR-0024). */
     setRowKind(rowKind: ((row: Row) => RowKind) | undefined): void {
         if (rowKind === this.#rowKind) return;
         this.#rowKind = rowKind;
         this.#counts = undefined;
     }
 
+    /** One marking gesture, applied at once. */
     onMarkIntent(intent: RowMarkIntent<Row>): Promise<void> {
         let changed: boolean;
         switch (intent.kind) {
@@ -115,6 +121,7 @@ export class InMemoryRowMarks<Row> implements RowMarks<Row> {
         return Promise.resolve();
     }
 
+    /** Hears that the marks or their counts changed; the answer stops hearing. */
     subscribe(listener: () => void): () => void {
         this.#listeners.add(listener);
         return () => this.#listeners.delete(listener);
@@ -122,7 +129,8 @@ export class InMemoryRowMarks<Row> implements RowMarks<Row> {
 
     /** Under a Row Key, the source published new versions of its rows and showed the removal of the rows under
      * `removed`: their marks go with them, and a row added later under one of those keys starts unmarked. The
-     * counts read the rows' roles, so they are counted again; a mark that went is a change, and is heard. */
+     * counts read the rows' roles, so they are counted again; a mark that went is a change, and is heard.
+     * @internal */
     published(removed: readonly RowKey[]): void {
         if (this.#rowKey === undefined) return;
         this.#counts = undefined;
@@ -133,7 +141,8 @@ export class InMemoryRowMarks<Row> implements RowMarks<Row> {
 
     /** Without a key, the source replaced the row at position `index` by a new object: the mark belongs to the
      * row, so the replacement carries it. A copy of the old object at another position keeps its own. Should
-     * the replacement already stand elsewhere, it is one row by identity, and takes the mark that moved. */
+     * the replacement already stand elsewhere, it is one row by identity, and takes the mark that moved.
+     * @internal */
     replaced(index: number, row: Row, replacement: Row): void {
         if (this.#rowKey !== undefined) return;
         const marked = itemAt(this.#marked, index);

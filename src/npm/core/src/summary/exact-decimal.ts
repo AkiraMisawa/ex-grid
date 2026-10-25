@@ -10,7 +10,9 @@ import { decimalPartsOf, tenTo } from '../query/numbers';
  * and all, as C#'s does, since the double C# converts it to depends on the scale; everything else this
  * module makes is canonical: no trailing zero after the point, and 0 is `0n` at scale 0. */
 export interface ExactDecimal {
+    /** The digits, as a whole number. */
     readonly mantissa: bigint;
+    /** How many of them stand after the point. */
     readonly scale: number;
 }
 
