@@ -2,6 +2,8 @@
 // the verdict a column may give first, and the reasons an edit ends without one. The grid writes nothing: a
 // commit leaves as an intent, and the screen changes when the source hands over a new row instance.
 
+import type { CellPosition } from '../selection/cell';
+
 /**
  * The Consumer's judgement on one commit, asked at the moment of committing (ADR-0034). The grid enforces the
  * verb and never learns the reason.
@@ -128,4 +130,24 @@ export function checkedVerdict(verdict: unknown, column: string): EditVerdict {
     }
     throw new TypeError(`Column '${column}': validate answers { kind: 'accept' }, or { kind: 'flag' | 'reject', message } with a `
         + `sentence that says why, not ${JSON.stringify(verdict)} (ADR-0034).`);
+}
+
+/**
+ * The Overwrite Notice (ADR-0142, CONTEXT.md): a Cell Editor commit landed over text that changed while the
+ * editor was open, the one change the user cannot see, because the editor covers the cell. Nothing was
+ * refused: the commit landed with what the user typed, and the Consumer accepted its intent. A Consumer may
+ * offer to put the replaced value back. The grid holds no string for it: Chrome words it into the root's live
+ * region, as it words a refusal (A11Y-16, LV-21), and nothing is added to the row (ADR-0013).
+ */
+export interface GridOverwriteNotice {
+    /** The edited cell's position, in the order in force when the commit landed. */
+    readonly cell: CellPosition;
+    /** The edited column's name. */
+    readonly column: string;
+    /** The text the user saw: what the cell painted when the editor opened, or, where one of the user's own
+     * earlier writes to it had not settled then, what it painted once that write settled (D1). The Edit
+     * Intent's `seenText`. */
+    readonly seenText: string;
+    /** The text the cell painted as the commit landed: what it replaced. The Edit Intent's `replacedText`. */
+    readonly replacedText: string;
 }

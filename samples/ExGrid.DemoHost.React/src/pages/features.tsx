@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useRef, useState, type ReactElement } from 'react';
 import {
     GridSource, type CommitRefusalReason, type EditDiscardReason, type GridClearIntent, type GridColumn, type GridEditIntent, type GridHeaderGroup,
-    type GridPasteIntent, type GridRefusal,
+    type GridOverwriteNotice, type GridPasteIntent, type GridRefusal,
 } from '@ex-grid/core';
 import { ExGrid } from '@ex-grid/react';
 import type { Temporal } from 'temporal-polyfill';
@@ -172,6 +172,7 @@ export function Features(): ReactElement {
     const onRedo = useCallback(() => { replay('redo', 'redone'); }, [replay]);
     const [editDiscardedStatus, setEditDiscardedStatus] = useState('—');
     const [commitRefusedStatus, setCommitRefusedStatus] = useState('—');
+    const [overwriteStatus, setOverwriteStatus] = useState('—');
     const [counts, setCounts] = useState({ edits: 0, pastes: 0 });
     const [copyStatus, setCopyStatus] = useState('—');
     const [pasteStatus, setPasteStatus] = useState('—');
@@ -202,6 +203,13 @@ export function Features(): ReactElement {
     }, [status]);
     const onEditDiscarded = useCallback((reason: EditDiscardReason) => {
         status(`discard:${reason}`, editDiscarded(reason), setEditDiscardedStatus);
+    }, [status]);
+    // A commit that landed over a cell whose value moved while the user typed (ADR-0142, LV-11, LV-21): the
+    // editor covered the cell, so the sentence says what it showed and what was written over.
+    const onOverwriteNotice = useCallback((notice: GridOverwriteNotice) => {
+        status('overwrite',
+            `${notice.column} written over ${notice.replacedText}; it showed ${notice.seenText} when you started typing`,
+            setOverwriteStatus);
     }, [status]);
     // The Consumer's half of ADR-0007: a new instance carrying the change goes back through the source, and the
     // screen follows the identity change. An unparseable value applies nothing: validation is the Consumer's.
@@ -298,6 +306,9 @@ export function Features(): ReactElement {
                 <span id="edit-discarded-status" role="status">Edit discarded: {editDiscardedStatus}</span>
                 {/* A write refused because its row is gone or its order moved (ADR-0142). */}
                 <span id="commit-refused-status" role="status">Commit refused: {commitRefusedStatus}</span>
+                {/* The Overwrite Notice (ADR-0142, LV-21), announced as a refusal is, with both texts, because the
+                    user never saw the change. Nothing was refused. */}
+                <span id="overwrite-notice-status" role="status">Overwritten: {overwriteStatus}</span>
             </p>
             <ExGrid
                 columns={columns}
@@ -310,6 +321,7 @@ export function Features(): ReactElement {
                 onRefused={onRefused}
                 onEdit={onEdit}
                 onEditDiscarded={onEditDiscarded}
+                onOverwriteNotice={onOverwriteNotice}
                 onClear={onClear}
                 onUndo={onUndo}
                 onRedo={onRedo}
