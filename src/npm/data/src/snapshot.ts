@@ -202,7 +202,8 @@ class HeldText extends HeldColumn implements TextColumn {
 
     constructor(name: string, caption: string, rowCount: number, dictionary: readonly string[], codes: Int32Array) {
         super(name, caption, rowCount, undefined);
-        this.dictionary = Object.freeze(dictionary.slice());
+        // A frozen dictionary is one a version before this one holds, or one made for this one: it is shared, not copied.
+        this.dictionary = Object.isFrozen(dictionary) ? dictionary : Object.freeze(dictionary.slice());
         this.#codes = codes;
     }
 

@@ -113,7 +113,7 @@
         </p>
         <pre class="docs-code"><code>import { applyChangeBatch, createChangeBatch } from '@@ex-grid/data';
 
-const batch = createChangeBatch({ added, changed, removedKeys: [17n, 'ACC-4'] });   // added and changed are Snapshots of records
+const batch = createChangeBatch({ added, changed, removedKeys: [17n] });   // added and changed are Snapshots of records
 const { before, after, removed, added: brought } = applyChangeBatch(snapshot, batch);</code></pre>
         <p>
             <code>removed</code> and <code>added</code> are row numbers, ascending, in <code>before</code> and <code>after</code>; a

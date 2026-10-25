@@ -68,8 +68,13 @@ export function createChangeBatch(input: ChangeBatchInput = {}): ChangeBatch {
         if (typeof key === 'number' && Number.isSafeInteger(key)) return BigInt(key);
         throw new TypeError(`A removed key is a string or a 64-bit integer; ${describe(key)} (${typeof key}) is neither.`);
     });
-    return Object.freeze({ added, changed, removedKeys: Object.freeze(removedKeys) });
+    const batch: ChangeBatch = Object.freeze({ added, changed, removedKeys: Object.freeze(removedKeys) });
+    made.add(batch);
+    return batch;
 }
+
+// The batches createChangeBatch made, whose keys and records it checked: applyChangeBatch takes no other.
+const made = new WeakSet<ChangeBatch>();
 
 /** A value as a refusal shows it. */
 function describe(value: unknown): string {
@@ -104,6 +109,7 @@ function kindName(kind: SnapshotKind): string {
  */
 export function applyChangeBatch(snapshot: Snapshot, batch: ChangeBatch): SnapshotChange {
     const lineage = lineageOf(snapshot, 'The Snapshot a batch is applied to');
+    if (!made.has(batch)) throw new TypeError('Only a batch that createChangeBatch made is applied.');
     const changed = batch.changed === undefined ? undefined : matched(snapshot, batch.changed, 'changed');
     const added = batch.added === undefined ? undefined : matched(snapshot, batch.added, 'added');
     if (snapshot.recordKey === undefined) {
@@ -114,7 +120,7 @@ export function applyChangeBatch(snapshot: Snapshot, batch: ChangeBatch): Snapsh
     }
     const key = snapshot.column(snapshot.recordKey);
     const index = keyIndexOf(snapshot, key, lineage);
-    const checked = checkedKeys(snapshot, key, index, batch, changed, added);
+    const checked = checkedKeys(snapshot, lineage, key, index, batch, changed, added);
     return executed(snapshot, lineage, checked.moves, checked.removedKeys, added, changed, { key, index });
 }
 
@@ -207,7 +213,8 @@ function show(key: Key): string {
 }
 
 function refused(column: SnapshotColumn, key: Key, reason: string): SnapshotError {
-    return new SnapshotError(reason.replace('{0}', show(key)), { column: column.name, key });
+    // A function, so that a `$` in a Text key is not read as a replacement pattern.
+    return new SnapshotError(reason.replace('{0}', () => show(key)), { column: column.name, key });
 }
 
 /** A batch record's key, or `undefined` for a Blank. */
@@ -233,9 +240,8 @@ interface Checked {
  * held, an added key is not unless the batch removes it, no key comes twice in one role or in two roles that
  * contradict, and no key is Blank.
  */
-function checkedKeys(before: Snapshot, key: SnapshotColumn, index: KeyIndex, batch: ChangeBatch, changed: Source | undefined,
+function checkedKeys(before: Snapshot, lineage: Lineage, key: SnapshotColumn, index: KeyIndex, batch: ChangeBatch, changed: Source | undefined,
     added: Source | undefined): Checked {
-    const lineage = lineageOf(before, 'The Snapshot a batch is applied to');
     const keyOrdinal = before.columns.indexOf(key);
     const removed = new Set<Key>();
     const removedKeys: { key: Key; row: number }[] = [];
@@ -344,16 +350,18 @@ function executed(before: Snapshot, lineage: Lineage, moves: ReadonlyMap<number,
 /**
  * The next version's dictionary and the codes a batch's text takes in it: the dictionary before, with the
  * text it does not hold yet appended in the order the new rows bring it, so a code keeps its meaning in
- * every version.
+ * every version. A batch that brings no new text keeps the dictionary before, shared.
  */
 function remappedText(column: TextColumn, runs: readonly ColumnRun[]): { dictionary: readonly string[]; remaps: Map<SnapshotColumn, Int32Array> } {
-    const dictionary = [...column.dictionary];
-    const codes = new Map(dictionary.map((text, code) => [text, code]));
+    const before = column.dictionary;
+    let codes: Map<string, number> | undefined;
+    const appended: string[] = [];
     const remaps = new Map<SnapshotColumn, Int32Array>();
     for (const run of runs) {
         if (run.column === column) continue;
         const source = run.column;
         if (source.kind !== 'text') throw new Error(`Internal: the batch's column '${source.name}' is ${source.kind}.`);
+        codes ??= codesOf(before);
         let remap = remaps.get(source);
         if (remap === undefined) {
             remap = new Int32Array(source.dictionary.length).fill(-2);
@@ -365,14 +373,28 @@ function remappedText(column: TextColumn, runs: readonly ColumnRun[]): { diction
             const text = elementAt(source.dictionary, code);
             let target = codes.get(text);
             if (target === undefined) {
-                target = dictionary.length;
-                dictionary.push(text);
+                target = before.length + appended.length;
+                appended.push(text);
                 codes.set(text, target);
             }
             remap[code] = target;
         }
     }
+    const dictionary = appended.length === 0 ? before : Object.freeze([...before, ...appended]);
+    if (codes !== undefined) textCodes.set(dictionary, codes);
     return { dictionary, remaps };
+}
+
+// The code of each text in a dictionary, kept for the version a batch made last from it, so that a run of
+// batches does not index the whole dictionary again for each one. A batch takes the entry, and leaves it for
+// the dictionary it made; a second batch applied to the same version builds its own.
+const textCodes = new WeakMap<readonly string[], Map<string, number>>();
+
+function codesOf(dictionary: readonly string[]): Map<string, number> {
+    const held = textCodes.get(dictionary);
+    if (held === undefined) return new Map(dictionary.map((text, code) => [text, code]));
+    textCodes.delete(dictionary);
+    return held;
 }
 
 /** Where the next version's rows stand: the rows kept and changed where they stood, the records added past

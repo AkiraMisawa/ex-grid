@@ -20,18 +20,12 @@ function macrotask(): Promise<void> {
 
 /** Paces one question's work: at each step it looks at the signal, and yields once the slice is spent. */
 export class Slicer {
-    readonly #budget: number;
-    readonly #yield: () => Promise<void>;
+    readonly #slicing: CheckedSlicing;
     readonly #signal: AbortSignal | undefined;
     #sliceStart = performance.now();
 
-    constructor(slicing: PivotSlicing, signal: AbortSignal | undefined) {
-        const budget = slicing.sliceBudgetMs === undefined ? 30 : slicing.sliceBudgetMs;
-        if (typeof budget !== 'number' || Number.isNaN(budget) || budget < 0) {
-            throw new RangeError(`A slice budget is a number of milliseconds, not negative; ${String(budget)} is not.`);
-        }
-        this.#budget = budget;
-        this.#yield = slicing.yield === undefined ? macrotask : slicing.yield;
+    constructor(slicing: CheckedSlicing, signal: AbortSignal | undefined) {
+        this.#slicing = slicing;
         this.#signal = signal;
         signal?.throwIfAborted();
     }
@@ -39,8 +33,8 @@ export class Slicer {
     /** A point between two steps: throws once the question is cancelled, and yields when the slice is spent. */
     async step(): Promise<void> {
         this.#signal?.throwIfAborted();
-        if (performance.now() < this.#sliceStart + this.#budget) return;
-        await this.#yield();
+        if (performance.now() < this.#sliceStart + this.#slicing.budget) return;
+        await this.#slicing.yield();
         this.#signal?.throwIfAborted();
         this.#sliceStart = performance.now();
     }
@@ -55,13 +49,20 @@ export class Slicer {
     }
 }
 
+/** A Consumer's slicing, checked and resolved: how long a slice works, and what the work awaits between two. */
+export interface CheckedSlicing {
+    readonly budget: number;
+    readonly yield: () => Promise<void>;
+}
+
 /** Checks a Consumer's slicing when a source is made, so a wrong budget fails there and not at a question. */
-export function checkedSlicing(slicing: PivotSlicing | undefined): PivotSlicing {
+export function checkedSlicing(slicing: PivotSlicing | undefined): CheckedSlicing {
     const chosen = slicing === undefined ? {} : slicing;
-    const budget = chosen.sliceBudgetMs;
-    if (budget !== undefined && (typeof budget !== 'number' || Number.isNaN(budget) || budget < 0)) {
+    const budget = chosen.sliceBudgetMs === undefined ? 30 : chosen.sliceBudgetMs;
+    if (typeof budget !== 'number' || Number.isNaN(budget) || budget < 0) {
         throw new RangeError(`A slice budget is a number of milliseconds, not negative; ${String(budget)} is not.`);
     }
-    if (chosen.yield !== undefined && typeof chosen.yield !== 'function') throw new TypeError('A slicing\'s yield is a function that returns a promise.');
-    return Object.freeze({ ...chosen });
+    const given = chosen.yield;
+    if (given !== undefined && typeof given !== 'function') throw new TypeError('A slicing\'s yield is a function that returns a promise.');
+    return Object.freeze({ budget, yield: given === undefined ? macrotask : () => given() });
 }

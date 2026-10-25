@@ -16,7 +16,7 @@ import { pivotAggregations, type PivotAggregation } from '../layout/pivot-enums'
 import { defined, elementAt, unreachable } from '../must';
 import { foldedText } from '../text/casing';
 import { AggregationPass, chunkRows, itemsOfField, itemsOfFieldSteps, runWhole } from './aggregation-pass';
-import { Slicer, checkedSlicing, type PivotSlicing } from './slicing';
+import { Slicer, checkedSlicing, type CheckedSlicing, type PivotSlicing } from './slicing';
 import { bindSnapshot, detailAt, itemKeyAt, recordSnapshot, type FieldBinding } from './binding';
 
 // ---- What a source offers -----------------------------------------------------------------------
@@ -308,6 +308,12 @@ export interface PivotSourceChanged {
     readonly sourceVersion: string;
 }
 
+// A version a source answers under, and its fields' bindings to that version's columns.
+interface Bound {
+    readonly snapshot: Snapshot;
+    readonly bindings: ReadonlyMap<string, FieldBinding>;
+}
+
 // The pass a source holds for the question it answered last, which batches are folded into; and the
 // batches applied while an answer was being assembled from it, to fold in once none is.
 interface HeldPass {
@@ -342,9 +348,9 @@ export class SnapshotPivotSource implements PivotSource {
     /** Every Aggregation. */
     readonly features: PivotSourceFeatures = PivotSourceFeatures.all;
     readonly #declared: readonly PivotField[] | undefined;
-    readonly #slicing: PivotSlicing;
+    readonly #slicing: CheckedSlicing;
     readonly #id = newIdentity();
-    readonly #answered: Snapshot[] = [];
+    readonly #answered: Bound[] = [];
     readonly #listeners = new Set<(changed: PivotSourceChanged) => void>();
     #snapshot: Snapshot;
     #bindings: ReadonlyMap<string, FieldBinding>;
@@ -394,7 +400,8 @@ export class SnapshotPivotSource implements PivotSource {
      * Applies a Change Batch (ADR-0067): the Snapshot makes the next one, whole or not at all; the answer held
      * for the last question is brought up to date from what the batch removed and added; and each listener is
      * told the new Source Version, after the source has moved on. A batch the Snapshot refuses throws its
-     * `SnapshotError`, and nothing of it is applied.
+     * `SnapshotError`, and nothing of it is applied. An error a listener throws does not stop the others being
+     * told, nor make the batch look refused: it is thrown again from a microtask, as an event listener's is.
      */
     apply(batch: ChangeBatch): SnapshotChange {
         const change = applyChangeBatch(this.#snapshot, batch);
@@ -411,7 +418,17 @@ export class SnapshotPivotSource implements PivotSource {
         this.#heldAnswer = undefined;
         const changed = Object.freeze({ sourceVersion: this.#versionOf(change.after) });
         // A copy, so that a listener subscribed while the others are told is told from the next batch.
-        for (const listener of Array.from(this.#listeners)) listener(changed);
+        for (const listener of Array.from(this.#listeners)) {
+            // A listener that applied a batch itself has told every listener of the newer version.
+            if (this.#snapshot !== change.after) break;
+            try {
+                listener(changed);
+            } catch (error) { // oxlint-disable-line ex-grid/no-catch -- the batch is applied whatever a listener does; its error is reported, as an event listener's is, not swallowed
+                queueMicrotask(() => {
+                    throw error;
+                });
+            }
+        }
         return change;
     }
 
@@ -426,14 +443,15 @@ export class SnapshotPivotSource implements PivotSource {
         if (refusal !== undefined) return PivotAnswer.refused(refusal);
         const slicer = new Slicer(this.#slicing, signal);
         const snapshot = this.#snapshot;
+        const bindings = this.#bindings;
         if (!this.#heldUpToDate()) this.#held = undefined;
         const held = this.#held;
         if (held !== undefined && queriesEqual(held.pass.query, query) && held.pass.snapshot === snapshot) {
-            this.#remember(snapshot);
+            this.#remember(snapshot, bindings);
             if (this.#heldAnswer !== undefined) return this.#heldAnswer;
             return this.#assembleHeld(held, snapshot, slicer);
         }
-        const pass = new AggregationPass(snapshot, this.#bindings, query, snapshot.recordKey !== undefined);
+        const pass = new AggregationPass(snapshot, bindings, query, snapshot.recordKey !== undefined);
         for (let at = 0; at < pass.rowCount;) {
             const to = Math.min(pass.rowCount, at + chunkRows);
             if (!pass.step(to)) break;
@@ -446,7 +464,7 @@ export class SnapshotPivotSource implements PivotSource {
                 this.#held = { pass, assembling: 0, deferred: [] };
                 this.#heldAnswer = answer;
             }
-            this.#remember(snapshot);
+            this.#remember(snapshot, bindings);
         }
         return answer;
     }
@@ -455,15 +473,15 @@ export class SnapshotPivotSource implements PivotSource {
     // once no assembly reads the pass.
     async #assembleHeld(held: HeldPass, snapshot: Snapshot, slicer: Slicer): Promise<PivotAnswer> {
         held.assembling++;
-        let answer: PivotAnswer | undefined;
+        let answer: PivotAnswer;
         try {
             answer = await slicer.run(held.pass.answerSteps(this.#versionOf(snapshot)));
-            return answer;
         } finally {
             held.assembling--;
-            if (answer !== undefined && this.#held === held && this.#snapshot === snapshot) this.#heldAnswer = answer;
-            if (this.#held === held && !this.#heldUpToDate()) this.#held = undefined;
         }
+        if (this.#held === held && this.#snapshot === snapshot) this.#heldAnswer = answer;
+        // The batches applied meanwhile are folded in by the next batch or question (#heldUpToDate).
+        return answer;
     }
 
     // Folds in the batches the held pass deferred, once no answer is being assembled from it; false when one
@@ -473,16 +491,17 @@ export class SnapshotPivotSource implements PivotSource {
         return held === undefined || held.assembling > 0 || foldDeferred(held);
     }
 
-    // The Snapshot of a version the source still answers under: the current one, or one of its last answers'.
-    #heldVersion(version: string): Snapshot | undefined {
-        if (this.#versionOf(this.#snapshot) === version) return this.#snapshot;
-        return this.#answered.find(snapshot => this.#versionOf(snapshot) === version);
+    // The Snapshot of a version the source still answers under, with its fields' bindings: the current one, or
+    // one of its last answers'.
+    #heldVersion(version: string): Bound | undefined {
+        if (this.#versionOf(this.#snapshot) === version) return { snapshot: this.#snapshot, bindings: this.#bindings };
+        return this.#answered.find(bound => this.#versionOf(bound.snapshot) === version);
     }
 
-    #remember(snapshot: Snapshot): void {
-        const at = this.#answered.indexOf(snapshot);
+    #remember(snapshot: Snapshot, bindings: ReadonlyMap<string, FieldBinding>): void {
+        const at = this.#answered.findIndex(bound => bound.snapshot === snapshot);
         if (at >= 0) this.#answered.splice(at, 1);
-        this.#answered.push(snapshot);
+        this.#answered.push({ snapshot, bindings });
         if (this.#answered.length > SnapshotPivotSource.answersHeld) this.#answered.shift();
     }
 
@@ -492,9 +511,9 @@ export class SnapshotPivotSource implements PivotSource {
         aborted(signal);
         const refusal = itemsRefusal(this.fields, query);
         if (refusal !== undefined) return PivotItemPage.refused(refusal);
-        const snapshot = this.#heldVersion(query.sourceVersion);
-        if (snapshot === undefined) return PivotItemPage.refused(PivotRefusals.sourceVersionNotHeld(query.sourceVersion));
-        const bindings = bindSnapshot(snapshot, this.#declared).bindings;
+        const bound = this.#heldVersion(query.sourceVersion);
+        if (bound === undefined) return PivotItemPage.refused(PivotRefusals.sourceVersionNotHeld(query.sourceVersion));
+        const { snapshot, bindings } = bound;
         const binding = defined(bindings.get(query.field), `the field '${query.field}' is bound`);
         const keys = await new Slicer(this.#slicing, signal).run(itemsOfFieldSteps(snapshot, binding));
         return itemPage(keys, query, query.sourceVersion);
@@ -506,9 +525,9 @@ export class SnapshotPivotSource implements PivotSource {
         aborted(signal);
         const refusal = detailsRefusal(this.fields, query);
         if (refusal !== undefined) return PivotDetailPage.refused(refusal);
-        const snapshot = this.#heldVersion(query.sourceVersion);
-        if (snapshot === undefined) return PivotDetailPage.refused(PivotRefusals.sourceVersionNotHeld(query.sourceVersion));
-        const bindings = bindSnapshot(snapshot, this.#declared).bindings;
+        const held = this.#heldVersion(query.sourceVersion);
+        if (held === undefined) return PivotDetailPage.refused(PivotRefusals.sourceVersionNotHeld(query.sourceVersion));
+        const { snapshot, bindings } = held;
         const { rows, total } = await new Slicer(this.#slicing, signal).run(rowsBehindSteps(snapshot, bindings, query));
         const bound = this.fields.map(field => defined(bindings.get(field.name), `the field '${field.name}' is bound`));
         const records = rows.map(row => ({ values: bound.map(binding => detailAt(binding, row)) }));

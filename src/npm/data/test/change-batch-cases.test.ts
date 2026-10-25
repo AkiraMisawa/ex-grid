@@ -128,6 +128,16 @@ function refusal(error: unknown): Json {
     throw error;
 }
 
+/** A step's batch made and applied, or its refusal as the case writes it; only the making and the applying
+ * are caught. */
+function attempt(target: Snapshot, step: JsonObject): { readonly change: SnapshotChange; readonly refusal?: undefined } | { readonly change?: undefined; readonly refusal: Json } {
+    try {
+        return { change: applyChangeBatch(target, batchOf(step)) };
+    } catch (error) { // oxlint-disable-line ex-grid/no-catch -- a refusal is the answer the case holds; refusal() rethrows anything else
+        return { refusal: refusal(error) };
+    }
+}
+
 /** ADR-0067's fold: the rows the next version holds that the batch did not bring are the rows the version
  * before held less those it removed, in their order. */
 function folds(change: SnapshotChange): void {
@@ -144,6 +154,7 @@ describe('changeBatch', () => {
         describe(file, () => {
             for (const entry of list(key(json, 'cases')).filter(isObject)) {
                 it(text(key(entry, 'name')), () => {
+                    expect.hasAssertions();
                     const snapshot = build(key(entry, 'snapshot'));
                     const made: (Snapshot | undefined)[] = [];
                     list(key(entry, 'batches')).filter(isObject).forEach((step, i) => {
@@ -151,16 +162,10 @@ describe('changeBatch', () => {
                         const target = on === undefined ? snapshot : on === 'previous' ? made.at(-1) : made[Number(on)];
                         if (target === undefined) throw new Error(`Batch ${i} is applied to a step that was refused.`);
                         const before = picture(target);
-                        let answered: Json;
-                        try {
-                            const change = applyChangeBatch(target, batchOf(step));
-                            made.push(change.after);
-                            folds(change);
-                            answered = answer(change);
-                        } catch (error) { // oxlint-disable-line ex-grid/no-catch -- a refusal is the answer the case holds; refusal() rethrows anything else
-                            made.push(undefined);
-                            answered = refusal(error);
-                        }
+                        const applied = attempt(target, step);
+                        made.push(applied.change?.after);
+                        if (applied.change !== undefined) folds(applied.change);
+                        const answered = applied.change === undefined ? applied.refusal : answer(applied.change);
                         expect(answered, `batch ${i}`).toEqual(key(step, 'expect'));
                         expect(picture(target), `batch ${i} left the version it was applied to as it was`).toBe(before);
                     });

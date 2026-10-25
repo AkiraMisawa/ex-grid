@@ -880,34 +880,37 @@ export class AggregationPass {
         if (marked.every(leaves => leaves.size === 0)) return true;
         // A pass that kept no rows' leaves cannot find a leaf's rows: it is asked afresh.
         if (this.#leafOf === undefined) return false;
-        this.#values.forEach((values, v) => {
-            const leaves = elementAt(marked, v);
-            if (leaves.size > 0) this.#recompute(values, leaves);
-        });
+        this.#recompute(marked);
         return true;
     }
 
-    // A field's marked leaves, from nothing, over the rows each holds, in the Snapshot's order: the
+    // Each field's marked leaves, from nothing, over the rows each holds, in the Snapshot's order: the
     // operations a fresh pass performs on that leaf, in the same order, so the parts come out the same to
-    // the last bit.
-    #recompute(values: ValueAccumulator, leaves: ReadonlySet<number>): void {
+    // the last bit. One sweep over the rows serves every field.
+    #recompute(marked: readonly ReadonlySet<number>[]): void {
         const leafOf = defined(this.#leafOf);
-        const marked = new Uint8Array(this.#leaves.count);
-        for (const leaf of leaves) {
-            values.reset(leaf);
-            marked[leaf] = 1;
-        }
-        const masked = new Int32Array(chunkRows);
+        const fields = this.#values.flatMap((values, v) => {
+            const leaves = elementAt(marked, v);
+            if (leaves.size === 0) return [];
+            const of = new Uint8Array(this.#leaves.count);
+            for (const leaf of leaves) {
+                values.reset(leaf);
+                of[leaf] = 1;
+            }
+            return [{ values, of, masked: new Int32Array(chunkRows) }];
+        });
         for (let at = 0; at < leafOf.length; at += chunkRows) {
             const n = Math.min(chunkRows, leafOf.length - at);
-            let any = false;
-            for (let i = 0; i < n; i++) {
-                const leaf = elementAt(leafOf, at + i);
-                const take = leaf >= 0 && elementAt(marked, leaf) === 1;
-                masked[i] = take ? leaf : -1;
-                any ||= take;
+            for (const { values, of, masked } of fields) {
+                let any = false;
+                for (let i = 0; i < n; i++) {
+                    const leaf = elementAt(leafOf, at + i);
+                    const take = leaf >= 0 && elementAt(of, leaf) === 1;
+                    masked[i] = take ? leaf : -1;
+                    any ||= take;
+                }
+                if (any) values.accumulate(at, masked.subarray(0, n));
             }
-            if (any) values.accumulate(at, masked.subarray(0, n));
         }
     }
 

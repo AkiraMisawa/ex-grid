@@ -100,6 +100,13 @@ function step(next: () => number, model: readonly Trade[], fresh: () => bigint):
     };
 }
 
+/** A batch that changes the desk of the record `id`. */
+function deskChange(id: bigint, desk: string): ReturnType<typeof createChangeBatch> {
+    return createChangeBatch({
+        changed: createSnapshot({ columns: [{ name: 'Id', kind: 'integer', values: [id] }, { name: 'Desk', kind: 'text', values: [desk] }] }),
+    });
+}
+
 describe('applyChangeBatch', () => {
     it('ADR-0064: a long run of batches holds what a plain model of the records holds, past the point where the key index is built anew, and a version made from an older one keeps its own keys', () => {
         const next = random(20261025);
@@ -138,5 +145,27 @@ describe('applyChangeBatch', () => {
         expect(() => applyChangeBatch({ ...snapshot }, createChangeBatch())).toThrow(TypeError);
         expect(() => createChangeBatch({ added: { ...snapshot } })).toThrow(TypeError);
         expect(createChangeBatch({ removedKeys: [-(2n ** 63n), 7] }).removedKeys).toEqual([-(2n ** 63n), 7n]);
+        // A batch is one createChangeBatch made and checked, not an object of the same shape.
+        expect(() => applyChangeBatch(snapshot, { added: undefined, changed: undefined, removedKeys: [1n] })).toThrow(TypeError);
+    });
+
+    it('ADR-0064: a refusal names a Text key as it is, a `$` in it included', () => {
+        const snapshot = createSnapshot({ recordKey: 'Code', columns: [{ name: 'Code', kind: 'text', values: ['US$'] }] });
+        expect(() => applyChangeBatch(snapshot, createChangeBatch({ removedKeys: ["A$'B$&$$"] })))
+            .toThrow("Column 'Code': the batch removes the key 'A$'B$&$$', which the Snapshot does not hold.");
+    });
+
+    it('ADR-0064: a batch that brings no new text keeps the dictionary before, and one that does appends to it', () => {
+        const snapshot = createSnapshot({ recordKey: 'Id', columns: [{ name: 'Id', kind: 'integer', values: [1n, 2n] }, { name: 'Desk', kind: 'text', values: ['A', 'B'] }] });
+        const same = applyChangeBatch(snapshot, deskChange(1n, 'B')).after;
+        const grown = applyChangeBatch(same, deskChange(2n, 'C')).after;
+        // A second batch on the same version brings other text, under codes of its own.
+        const other = applyChangeBatch(same, deskChange(2n, 'D')).after;
+        expect(dictionaryOf(same)).toBe(dictionaryOf(snapshot));
+        expect(dictionaryOf(grown)).toEqual(['A', 'B', 'C']);
+        expect(dictionaryOf(other)).toEqual(['A', 'B', 'D']);
+        const last = applyChangeBatch(grown, deskChange(1n, 'D')).after.column('Desk');
+        expect([last.valueAt(0), last.valueAt(1)]).toEqual(['D', 'C']);
+        expect(dictionaryOf(other)).toEqual(['A', 'B', 'D']);
     });
 });

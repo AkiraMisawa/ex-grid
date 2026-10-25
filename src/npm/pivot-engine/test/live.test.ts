@@ -231,6 +231,41 @@ describe('SnapshotPivotSource, live', () => {
         expect(page.isRefused).toBe(false);
     });
 
+    it('ADR-0067: a listener that throws neither stops the others being told nor makes the batch look refused; its error is thrown again from a microtask', () => {
+        const next = random(19);
+        const source = new SnapshotPivotSource(records(Array.from({ length: 5 }, (_, i) => tradeOf(next, BigInt(i + 1))), 'Id'), fields);
+        const reported: (() => void)[] = [];
+        vi.spyOn(globalThis, 'queueMicrotask').mockImplementation(callback => {
+            reported.push(callback);
+        });
+        const heard: string[] = [];
+        source.subscribe(() => {
+            throw new Error('a listener failed');
+        });
+        source.subscribe(changed => heard.push(changed.sourceVersion));
+        const change = source.apply(createChangeBatch({ removedKeys: [1n] }));
+        expect(change.after).toBe(source.snapshot);
+        expect(heard).toEqual([source.sourceVersion]);
+        expect(reported).toHaveLength(1);
+        expect(() => reported[0]?.()).toThrow('a listener failed');
+    });
+
+    it('ADR-0067: a listener that applies a batch itself leaves the others told of the newest version only', () => {
+        const next = random(23);
+        const source = new SnapshotPivotSource(records(Array.from({ length: 5 }, (_, i) => tradeOf(next, BigInt(i + 1))), 'Id'), fields);
+        const heard: string[] = [];
+        let again = true;
+        source.subscribe(() => {
+            if (!again) return;
+            again = false;
+            source.apply(createChangeBatch({ removedKeys: [2n] }));
+        });
+        source.subscribe(changed => heard.push(changed.sourceVersion));
+        source.apply(createChangeBatch({ removedKeys: [1n] }));
+        expect(heard).toEqual([source.sourceVersion]);
+        expect(source.snapshot.version).toBe(2n);
+    });
+
     it('ADR-0067: a batch applied while an answer is assembled from the held pass waits, so the answer is the version before it, whole', async () => {
         const next = random(13);
         let id = 0n;
