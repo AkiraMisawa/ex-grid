@@ -64,7 +64,7 @@ const reactHost = REACT
 // slice until it is the whole suite and this goes. Named by the tests' ids, so a test it holds that fails
 // again fails the run, and one outside it is not yet claimed. PF-1 counts calls into ex-grid.js, a Blazor
 // host's interop, and is not a React test as written.
-const REACT_SUITE = /\(BIG-1\)|VZ-18, ADR-0012|VZ-1, BIG-2, DOM-1|\(BIG-5\)|\(BIG-5, ADR-0053\)|ADR-0004 P1, across a scroll|DOM-3, ADR-0004|FN-6, ADR-0004/;
+const REACT_SUITE = /\(BIG-1\)|\(BIG-3, SL-6, DOM-2\)|VZ-18, ADR-0012|VZ-1, BIG-2, DOM-1|\(BIG-5\)|\(BIG-5, ADR-0053\)|ADR-0004 P1, across a scroll|DOM-3, ADR-0004|FN-6, ADR-0004/;
 
 const hostServers = reactHost !== null
     ? [reactHost]

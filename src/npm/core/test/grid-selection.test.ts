@@ -206,6 +206,48 @@ describe('the Selection in the grid', () => {
         expect(q(root, '.ex-viewport').getAttribute('data-ex-paint')).toBe(paint);
     });
 
+    it('ADR-0008 (2026-10-13): the Heading Mark marks the header of every column the Selection reaches, the Pinned Columns\' part in a layer first in the band', async () => {
+        const { root } = mount({ columns, rows: trades(1000), rowHeight: 24, viewportHeight: 480, pinnedColumnCount: 1 });
+        await painted();
+        const headerCells = (): HTMLElement[] => [...root.querySelectorAll<HTMLElement>('.ex-header > .ex-header-cell')];
+        const marks = (): string[] => [...q(root, '.ex-header').children]
+            .filter(child => !child.classList.contains('ex-header-cell'))
+            .map(child => (child.classList.contains('ex-heading-marks-pinned')
+                ? `pinned: ${[...child.children].map(mark => defined(mark.getAttribute('style'), 'a mark\'s style')).join(', ')}`
+                : `${child.className} | ${defined(child.getAttribute('style'), 'a mark\'s style')}`));
+        const [book, notional] = headerCells();
+        expect(marks()).toEqual([]);
+
+        press(root, 130, rowY(2));
+        await painted();
+        expect(headerCells().map(cell => cell.className)).toEqual(['ex-header-cell ex-pinned', 'ex-header-cell ex-heading-marked']);
+        expect(marks()).toEqual(['ex-heading-mark ex-heading-mark-column | left: 120px; top: 0px; width: 100px; height: 24px']);
+
+        key(root, 'ArrowLeft', { shiftKey: true });
+        await painted();
+        // The pinned layer is first in the band, so its place in the flow is the band's left edge (ADR-0004).
+        expect(q(root, '.ex-header').firstElementChild?.className).toBe('ex-heading-marks-pinned');
+        expect(marks()).toEqual([
+            'pinned: left: 0px; top: 0px; width: 120px; height: 24px',
+            'ex-heading-mark ex-heading-mark-column | left: 120px; top: 0px; width: 100px; height: 24px',
+        ]);
+
+        key(root, 'a', { ctrlKey: true });
+        await painted();
+        // Every row is selected: both columns are covered whole (D1), on the same header cells (ADR-0003).
+        expect(headerCells()).toEqual([book, notional]);
+        expect(headerCells().map(cell => cell.className)).toEqual([
+            'ex-header-cell ex-pinned ex-heading-marked ex-heading-whole', 'ex-header-cell ex-heading-marked ex-heading-whole',
+        ]);
+
+        // The Focus stayed on Notional: a key that collapses leaves its column alone marked, and the pinned
+        // layer goes with the last pinned mark.
+        key(root, 'ArrowDown');
+        await painted();
+        expect(marks()).toEqual(['ex-heading-mark ex-heading-mark-column | left: 120px; top: 0px; width: 100px; height: 24px']);
+        expect(headerCells().map(cell => cell.className)).toEqual(['ex-header-cell ex-pinned', 'ex-header-cell ex-heading-marked']);
+    });
+
     it('ADR-0012: a drag extends to the cell under the pointer while the button is down, and ends when it is up', async () => {
         const listener = heard();
         const { root } = mount({ columns, rows: trades(1000), rowHeight: 24, viewportHeight: 480, ...listener });

@@ -16,8 +16,10 @@ import { GridMetrics, type GridDensity } from '../grid-metrics';
 import { defined, itemAt } from '../must';
 import { canonicalKey, resolveKey, type GridKeyAction } from '../keys/grid-keys';
 import { cellClasses } from '../paint/cell-classes';
+import { columnMark } from '../paint/heading-mark-styles';
 import { rowClasses } from '../paint/row-classes';
 import { cell as cellPosition, sameCell, type CellPosition, type GridExtent } from '../selection/cell';
+import { markedColumns, wholeColumnRuns } from '../selection/heading-marks';
 import { HeldSelection } from '../selection/held';
 import { rangeCellCount, sameRange as sameSelectionRange, spansEveryColumn, spansEveryRow, type SelectionRange } from '../selection/range';
 import { Selection, type GridSelection } from '../selection/selection';
@@ -137,6 +139,34 @@ function sameItems<T>(a: readonly T[], b: readonly T[]): boolean {
     return a === b || (a.length === b.length && a.every((item, i) => item === b[i]));
 }
 
+/** A header cell as painted, with what its classes are composed from. */
+interface HeaderCell {
+    readonly element: HTMLElement;
+    readonly column: number;
+    readonly align: GridColumn<unknown>['align'];
+    readonly pinned: boolean;
+}
+
+/** The Heading Mark's runs, made once per Selection and extent (ADR-0008, 2026-10-13). */
+interface HeadingMarkRuns {
+    readonly selection: Selection;
+    readonly extent: GridExtent;
+    readonly columns: readonly ColumnRange[];
+    readonly whole: readonly ColumnRange[];
+}
+
+/** The Heading Mark as painted over the header: the runs and the geometry it was painted from, its
+ * rectangles' styles and their elements, so a pass that changes none of them touches nothing (PF-3). */
+interface PaintedHeadingMarks {
+    readonly marks: HeadingMarkRuns;
+    readonly styles: ColumnStyles;
+    readonly topPx: number;
+    readonly heightPx: number;
+    readonly pinnedStyles: readonly string[];
+    readonly scrollableStyles: readonly string[];
+    readonly elements: { readonly pinned: HTMLElement | undefined; readonly scrollable: readonly HTMLElement[] };
+}
+
 /** Whether two runs of columns are the same run. */
 function sameRange(a: ColumnRange | undefined, b: ColumnRange | undefined): boolean {
     return a === b || (a !== undefined && b !== undefined && a.start === b.start && a.count === b.count);
@@ -245,6 +275,12 @@ export class GridView<Row> {
     #paintedHeader: {
         readonly styles: ColumnStyles; readonly columns: readonly ResolvedColumn<Row>[]; readonly scrollable: ColumnRange | undefined; readonly sorts: string;
     } | undefined;
+    // The header cells as painted, each with its class before the Heading Mark's, and the mark's runs and
+    // rectangles (ADR-0008, 2026-10-13): made once per Selection and extent, and the rectangles once per
+    // Selection, column geometry and band, since a pass runs on every scroll frame (PF-3).
+    #headerCells: readonly HeaderCell[] = [];
+    #marks: HeadingMarkRuns | undefined;
+    #paintedMarks: PaintedHeadingMarks | undefined;
     // The placeholder rows on screen, by position: a position still waiting keeps its element (ADR-0003).
     #placeholders = new Map<number, HTMLElement>();
     readonly #written = new Map<string, string>();
@@ -1198,15 +1234,17 @@ export class GridView<Row> {
         const sorts = this.#state.sorts.map(({ column, direction }) => `${JSON.stringify(column)}:${direction}`).join(',');
         if (painted !== undefined && painted.styles === this.#styles && painted.columns === this.#columns
             && sameRange(painted.scrollable, this.#scrollable) && painted.sorts === sorts) {
+            this.#paintHeadingMarks(false);
             return;
         }
         this.#paintedHeader = { styles: this.#styles, columns: this.#columns, scrollable: this.#scrollable, sorts };
         const doc = this.#root.ownerDocument;
         const cells: HTMLElement[] = [];
+        const headerCells: HeaderCell[] = [];
         const headerCell = (c: number, pinned: boolean): void => {
             const { column, header } = itemAt(this.#columns, c);
             const cell = doc.createElement('div');
-            cell.className = headerClass(column.align, pinned);
+            cell.className = headerClass(column.align, pinned, 'none');
             cell.setAttribute('style', pinned ? this.#styles.pinnedCell(c) : this.#styles.cell(c));
             cell.setAttribute('role', 'columnheader');
             cell.setAttribute('aria-colindex', String(c + 1));
@@ -1214,6 +1252,7 @@ export class GridView<Row> {
             if (column.queryable !== false) cell.setAttribute('aria-sort', this.#ariaSort(column.name));
             cell.textContent = header;
             cells.push(cell);
+            headerCells.push({ element: cell, column: c, align: column.align, pinned });
         };
         for (let c = 0; c < this.#styles.geometry.pinnedCount; c++) headerCell(c, true);
         const scrollable = this.#scrollable;
@@ -1222,6 +1261,86 @@ export class GridView<Row> {
             for (let c = scrollable.start; c < scrollable.start + scrollable.count; c++) headerCell(c, false);
         }
         this.#header.replaceChildren(...cells);
+        this.#headerCells = headerCells;
+        this.#paintHeadingMarks(true);
+    }
+
+    // The Heading Mark over the header (ADR-0008, 2026-10-13): every column holding part of the Selection
+    // is marked, and one covered whole is marked so (D1), on the header cell's class; and a rectangle per
+    // run of marked columns, over the band's last tier, on whose bottom edge the stylesheet draws the line.
+    // Its Pinned Columns' part rides a layer first in the band, emitted only while it holds a mark; the rest
+    // follows the header cells and passes beneath the pinned ones, as the columns do (ADR-0004). It is
+    // painted over the header, so no row learns the Selection (ADR-0003).
+    #paintHeadingMarks(rebuilt: boolean): void {
+        const selection = this.#held.selection;
+        const extent = this.#extent;
+        let marks = this.#marks;
+        if (marks === undefined || marks.selection !== selection
+            || marks.extent.rowCount !== extent.rowCount || marks.extent.columnCount !== extent.columnCount) {
+            marks = { selection, extent, columns: markedColumns(selection), whole: wholeColumnRuns(selection, extent) };
+            this.#marks = marks;
+        }
+        const heightPx = this.#metrics.headerHeightPx;
+        const topPx = this.#bandHeightPx - heightPx;
+        const painted = this.#paintedMarks;
+        if (!rebuilt && painted !== undefined && painted.marks === marks && painted.styles === this.#styles
+            && painted.topPx === topPx && painted.heightPx === heightPx) {
+            return;
+        }
+
+        for (const { element, column, align, pinned } of this.#headerCells) {
+            const mark = runsHold(marks.whole, column) ? 'whole' : runsHold(marks.columns, column) ? 'marked' : 'none';
+            const className = headerClass(align, pinned, mark);
+            if (element.className !== className) element.className = className;
+        }
+
+        const geometry = this.#styles.geometry;
+        const stylesIn = (pinnedLayer: boolean): readonly string[] =>
+            marks.columns.flatMap(run => present(columnMark(run, geometry, pinnedLayer, topPx, heightPx)));
+        const pinnedStyles = stylesIn(true);
+        const scrollableStyles = stylesIn(false);
+        let elements: { readonly pinned: HTMLElement | undefined; readonly scrollable: readonly HTMLElement[] };
+        if (painted !== undefined && sameItems(painted.pinnedStyles, pinnedStyles) && sameItems(painted.scrollableStyles, scrollableStyles)) {
+            // The same rectangles: a header rebuilt by a scroll or a Sort takes the marks it had back,
+            // rather than making them again (PF-3).
+            if (!rebuilt) {
+                this.#paintedMarks = { ...painted, marks, styles: this.#styles, topPx, heightPx };
+                return;
+            }
+            elements = painted.elements;
+        } else {
+            if (painted !== undefined) {
+                painted.elements.pinned?.remove();
+                for (const element of painted.elements.scrollable) element.remove();
+            }
+            elements = this.#headingMarkElements(pinnedStyles, scrollableStyles);
+        }
+        if (elements.pinned !== undefined) this.#header.prepend(elements.pinned);
+        this.#header.append(...elements.scrollable);
+        this.#paintedMarks = { marks, styles: this.#styles, topPx, heightPx, pinnedStyles, scrollableStyles, elements };
+    }
+
+    #headingMarkElements(pinnedStyles: readonly string[], scrollableStyles: readonly string[]): PaintedHeadingMarks['elements'] {
+        const doc = this.#root.ownerDocument;
+        const mark = (style: string): HTMLElement => {
+            const element = doc.createElement('div');
+            element.className = 'ex-heading-mark ex-heading-mark-column';
+            element.setAttribute('style', style);
+            return element;
+        };
+        let pinned: HTMLElement | undefined;
+        if (pinnedStyles.length > 0) {
+            pinned = doc.createElement('div');
+            pinned.className = 'ex-heading-marks-pinned';
+            pinned.setAttribute('aria-hidden', 'true');
+            pinned.append(...pinnedStyles.map(mark));
+        }
+        const scrollable = scrollableStyles.map(style => {
+            const element = mark(style);
+            element.setAttribute('aria-hidden', 'true');
+            return element;
+        });
+        return { pinned, scrollable };
     }
 
     #ariaSort(name: string): string {
@@ -1373,8 +1492,33 @@ export class GridView<Row> {
     }
 }
 
-/** A header cell's classes: pinned or not, and its alignment, as the C# core composes them. */
-function headerClass(align: GridColumn<unknown>['align'], pinned: boolean): string {
+/** Whether one of `runs`, disjoint and in order, holds `index`: a binary search, so a header cell's mark
+ * costs nothing per heading in the runs (ADR-0008's economy). */
+function runsHold(runs: readonly ColumnRange[], index: number): boolean {
+    let low = 0;
+    let high = runs.length - 1;
+    while (low <= high) {
+        const middle = low + Math.floor((high - low) / 2);
+        const run = itemAt(runs, middle);
+        if (index < run.start) high = middle - 1;
+        else if (index >= run.start + run.count) low = middle + 1;
+        else return true;
+    }
+    return false;
+}
+
+const present = (style: string | undefined): readonly string[] => (style === undefined ? [] : [style]);
+
+/** How the Heading Mark marks a column's header (ADR-0008): not, as holding part of the Selection, or as
+ * covered whole by it (D1). */
+type HeadingMark = 'none' | 'marked' | 'whole';
+
+const headingMarkClasses: Readonly<Record<HeadingMark, string>> = {
+    none: '', marked: ' ex-heading-marked', whole: ' ex-heading-marked ex-heading-whole',
+};
+
+/** A header cell's classes: pinned or not, its alignment and its Heading Mark, as the C# core composes them. */
+function headerClass(align: GridColumn<unknown>['align'], pinned: boolean, mark: HeadingMark): string {
     const base = pinned ? 'ex-header-cell ex-pinned' : 'ex-header-cell';
-    return align === undefined || align === 'auto' ? base : `${base} ex-align-${align}`;
+    return (align === undefined || align === 'auto' ? base : `${base} ex-align-${align}`) + headingMarkClasses[mark];
 }

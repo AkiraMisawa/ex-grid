@@ -3,11 +3,12 @@ import { describe, expect, it } from 'vitest';
 import type { GridExtent } from '../src/selection/cell';
 import { edgeBandRowsPerTick } from '../src/selection/edge-band';
 import { HeldSelection } from '../src/selection/held';
+import { markedColumns, markedRows, wholeColumnRuns, wholeRowRuns } from '../src/selection/heading-marks';
 import { fromCorners, rangeCellCount, rangeContains, selectionRange, subtractArea, subtractCell } from '../src/selection/range';
 import { Selection } from '../src/selection/selection';
 import { defined } from '../src/must';
 import {
-    caseFiles, expectRefusal, readCell, readRange, readRanges, type CellText, type RangeText, type Refusal,
+    caseFiles, expectRefusal, readCell, readRange, readRanges, runPairs, type CellText, type RangeText, type Refusal,
 } from './cases';
 import { apply, type Step } from './gestures';
 
@@ -56,6 +57,7 @@ function holds(selection: Selection, expected: Record<string, unknown>, before: 
                 }
                 break;
             case 'wholeColumns': expect(selection.wholeColumns(extent), key).toEqual(value); break;
+            case 'headingMarks': holdsMarks(selection, value as Record<string, unknown>, extent); break;
             case 'topLeftOfRangeMadeLast': expect(selection.topLeftOfRangeMadeLast, key).toEqual(nullable(value, readCell)); break;
             case 'sameAs': expect(selection.equals(savedAs(saved, value)), `equal to ${String(value)}`).toBe(true); break;
             case 'differsFrom': expect(selection.equals(savedAs(saved, value)), `equal to ${String(value)}`).toBe(false); break;
@@ -66,6 +68,23 @@ function holds(selection: Selection, expected: Record<string, unknown>, before: 
 }
 
 const extentOf = (pair: readonly [number, number]): GridExtent => ({ rowCount: pair[0], columnCount: pair[1] });
+
+
+/** The Heading Mark's runs (ADR-0008): `columns` and `rows` it marks, and `wholeColumns` and `wholeRows` it
+ * covers whole under the case's extent, or under `under` when the case names another. */
+function holdsMarks(selection: Selection, expected: Record<string, unknown>, extent: GridExtent): void {
+    const under = expected['under'] === undefined ? extent : extentOf(expected['under'] as [number, number]);
+    for (const [key, value] of Object.entries(expected)) {
+        switch (key) {
+            case 'under': break;
+            case 'columns': expect(runPairs(markedColumns(selection)), key).toEqual(value); break;
+            case 'rows': expect(runPairs(markedRows(selection)), key).toEqual(value); break;
+            case 'wholeColumns': expect(runPairs(wholeColumnRuns(selection, under)), key).toEqual(value); break;
+            case 'wholeRows': expect(runPairs(wholeRowRuns(selection, under)), key).toEqual(value); break;
+            default: throw new Error(`The Heading Mark expectation "${key}" is not one this runner knows.`);
+        }
+    }
+}
 
 for (const file of caseFiles<SelectionCase>('selection', 'selection')) {
     describe(`selection/${file.file}`, () => {

@@ -95,6 +95,7 @@ answer that cannot be followed). A step that throws leaves the selection as it w
 | `contains`, `notContains` | Cells inside and outside the selection |
 | `coversColumn`, `coversRow` | `[[index, covered], …]` |
 | `wholeColumns` | The whole columns, ascending |
+| `headingMarks` | The Heading Mark's runs, each `[start, count]`: `columns` and `rows` it marks, and `wholeColumns` and `wholeRows` it covers whole under the case's extent, or under `under`, `[rows, columns]`, when it names another (ADR-0008) |
 | `topLeftOfRangeMadeLast` | That cell, or `null` |
 | `sameAs`, `differsFrom` | The name of a saved selection it equals, or does not |
 | `unchanged` | Equal to the selection before the step that came before this one |
