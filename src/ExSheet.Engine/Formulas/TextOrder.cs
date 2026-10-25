@@ -90,6 +90,9 @@ internal static class TextOrder
     private static (int Class, char Base, string Accents) Weigh(char c)
     {
         if (c < 128) return (ClassOf(c), char.ToUpperInvariant(c), "");
+        // Half of a character outside the Basic Multilingual Plane (an emoji) has no decomposition of its
+        // own, and normalising it alone throws: it is weighed as itself, among the symbols.
+        if (char.IsSurrogate(c)) return (0, c, "");
         var decomposed = c.ToString().Normalize(NormalizationForm.FormD);
         var baseCharacter = decomposed[0];
         var accents = decomposed.Length > 1 ? decomposed[1..] : "";

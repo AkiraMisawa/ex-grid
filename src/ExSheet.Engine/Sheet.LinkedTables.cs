@@ -294,10 +294,10 @@ public sealed partial class Sheet
         }
     }
 
-    [GeneratedRegex(@"^[A-Za-z_\\][A-Za-z0-9_.]{0,254}$", RegexOptions.CultureInvariant)]
+    [GeneratedRegex(@"^[A-Za-z_\\][A-Za-z0-9_.]{0,254}\z", RegexOptions.CultureInvariant)]
     private static partial Regex TableNamePattern();
 
-    [GeneratedRegex(@"^[Rr][0-9]*[Cc][0-9]*$|^[RrCc]$", RegexOptions.CultureInvariant)]
+    [GeneratedRegex(@"^[Rr][0-9]*[Cc][0-9]*\z|^[RrCc]\z", RegexOptions.CultureInvariant)]
     private static partial Regex RowColumnPattern();
 
     private static bool IsTableName(string name) =>

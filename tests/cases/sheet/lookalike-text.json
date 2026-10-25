@@ -1,0 +1,41 @@
+{
+  "about": "Text that only looks like something the engine reads stays text (ADR-0047): a trailing line break, or digits other than ASCII's, make no date, time, Reference or table name. Found while porting the engine to TypeScript, whose patterns end at the end and read ASCII digits only.",
+  "kind": "sheet",
+  "culture": "en-US",
+  "cases": [
+    {
+      "name": "ADR-0047: a date typed with a line break after it stays text",
+      "steps": [{ "enter": { "A1": "1/2\n", "A2": "2026-09-27\n" }, "expect": { "values": { "A1": "1/2\n", "A2": "2026-09-27\n" } } }]
+    },
+    {
+      "name": "ADR-0047: a time typed with a line break after it stays text",
+      "steps": [{ "enter": { "A1": "12:30\n" }, "expect": { "values": { "A1": "12:30\n" } } }]
+    },
+    {
+      "name": "ADR-0047: a month name date typed with a line break after it stays text",
+      "steps": [{ "enter": { "A1": "3-Mar\n" }, "expect": { "values": { "A1": "3-Mar\n" } } }]
+    },
+    {
+      "name": "ADR-0047: a date or a time in Arabic-Indic digits stays text",
+      "steps": [{ "enter": { "A1": "١/٢", "A2": "١٢:٣٠", "A3": "٣-Mar" }, "expect": { "values": { "A1": "١/٢", "A2": "١٢:٣٠", "A3": "٣-Mar" } } }]
+    },
+    {
+      "name": "ADR-0047: INDIRECT's R1C1 text with a line break after it is no Reference",
+      "steps": [
+        { "enter": { "A1": "5", "A2": "R1C1\n", "A3": "R1C1", "B1": "=INDIRECT(A2,FALSE)", "B2": "=INDIRECT(A3,FALSE)" } },
+        { "read": true, "expect": { "values": { "B1": { "error": "#REF!" }, "B2": 5 } } }
+      ]
+    },
+    {
+      "name": "ADR-0047: a table name with a line break after it is refused",
+      "steps": [{ "declareTable": { "name": "Prices\n", "columns": ["Item"] }, "expect": { "throws": { "refusal": "argument" } } }]
+    },
+    {
+      "name": "ADR-0047: text holding a character outside the Basic Multilingual Plane sorts as a symbol",
+      "steps": [
+        { "enter": { "A1": "b", "A2": "😀", "A3": "a", "B1": "=SORT(A1:A3)" } },
+        { "read": true, "expect": { "values": { "B1": "😀", "B2": "a", "B3": "b" } } }
+      ]
+    }
+  ]
+}
