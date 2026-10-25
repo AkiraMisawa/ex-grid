@@ -29,7 +29,7 @@ One directory per area, one file per group of cases. Each file is an object:
 | Key | Meaning |
 |---|---|
 | `about` | What the file covers, and where its cases came from |
-| `kind` | Which runner reads it: `selection`, `range`, `edgeBand`, `held`, `calls` |
+| `kind` | Which runner reads it: `selection`, `range`, `edgeBand`, `held`, `calls`, `clipboard` |
 | `extent` | `[rows, columns]`, the grid every case of the file runs against unless it names its own |
 | `cases` | The cases. Each has a `name`, which starts with the ADR it holds to (CLAUDE.md, "Put the ADR number in the test name") |
 
@@ -116,6 +116,27 @@ Each case is `{"positionPx", "lengthPx", "rowsPerViewport", "expect"}`: the sign
 A case is `steps` over a held selection that starts empty under `"version"`: `{"click": cell}` replaces
 the selection under the same version, `{"under": version}` reconciles with the version now current, and
 `{"expect": {"version": n, "empty": bool, "sameAsBefore": bool}}` holds it.
+
+## `clipboard`
+
+The copy, paste and fill rules (ADR-0005, ADR-0011, ADR-0014, ADR-0035, ADR-0050 item 3), run by
+`tests/ExGrid.Tests/Cases/ClipboardCaseTests.cs` and `src/npm/core/test/clipboard.test.ts`. A case's
+`steps` make a selection with the gestures of `selection` (on the case's `extent`, or the file's), and
+plan on the selection as it stands:
+
+| Step | Plans |
+|---|---|
+| `{"planCopy": {"cellCap": n, "withHeaders": true}}` | A copy; both keys optional |
+| `{"planPaste": {"source": [rows, columns], "notEditable": [columns] or "every", "spill": true, "plainTextOnly": true}}` | A paste of a block that shape; every key but `source` optional. `spill` declares that a paste may spill, within the extent |
+| `{"planFill": {"direction": "down" or "right", "notEditable": …, "cellCap": n}}` | Ctrl+D or Ctrl+R |
+
+and says what it answers, with one of:
+
+| Key | Meaning |
+|---|---|
+| `refused` | The reason, as the C# enum's member in camelCase (`tooLarge`, `targetNotEditable`); with `column`, the column a `targetNotEditable` refusal names |
+| `plan` | Approved, and the plan holds every key given: a copy's `segments`, `orientation`, `totalRows`, `totalColumns`; a paste's `targets`, `source` (`[rows, columns]`), `collapses`, `sourceCells` (`[[cell, [row, column]], …]`, the block cell landing on each) and `outside` (cells no target holds, whose block cell is refused); a fill's `source` (a range) and `shape`, and a paste's keys for its write. `{}` says only that it is approved |
+| `throws` | The refusal of a call that is not a decision: a cap below one cell, a shape with no rows, a fill up or left |
 
 ## `calls`
 

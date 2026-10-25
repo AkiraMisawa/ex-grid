@@ -59,7 +59,8 @@ public class SelectionCaseTests
         }
     }
 
-    private static GridSelection Apply(GridSelection selection, JsonElement step, GridExtent extent)
+    /// <summary>The gesture or key a step names, applied: read by every kind whose cases begin with a selection.</summary>
+    internal static GridSelection Apply(GridSelection selection, JsonElement step, GridExtent extent)
     {
         if (step.TryGetProperty("cycle", out var key))
         {

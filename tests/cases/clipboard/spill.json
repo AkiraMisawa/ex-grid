@@ -1,0 +1,85 @@
+{
+  "about": "The paste that spills (ADR-0050, item 3): a Consumer's declaration that range to one cell writes the block from that cell. The shape half; the Selection that follows is the grid's. From tests/ExGrid.Tests/SpillPasteTests.cs.",
+  "kind": "clipboard",
+  "extent": [100, 10],
+  "cases": [
+    {
+      "name": "ADR-0050 item 3 / DC-8: a block onto one cell, declared to spill, plans the block from that cell",
+      "steps": [
+        {"click": [4, 2]},
+        {"planPaste": {"source": [3, 2], "spill": true}, "plan": {"targets": [[4, 2, 3, 2]], "sourceCells": [[[4, 2], [0, 0]], [[6, 3], [2, 1]]]}}
+      ]
+    },
+    {
+      "name": "ADR-0050 item 3 / DC-8: one plan, one range covering exactly the block, so the intent is one notification",
+      "steps": [
+        {"click": [0, 0]},
+        {"planPaste": {"source": [3, 3], "spill": true}, "plan": {"targets": [[0, 0, 3, 3]], "outside": [[3, 0]]}}
+      ]
+    },
+    {
+      "name": "ADR-0014 / DC-9: without the declaration, range to one cell keeps its refusal",
+      "steps": [
+        {"click": [4, 2]},
+        {"planPaste": {"source": [3, 2]}, "refused": "singleCellTarget"}
+      ]
+    },
+    {
+      "name": "ADR-0050 item 3 / DC-10: a block reaching past the last row is refused by name",
+      "steps": [
+        {"click": [98, 0]},
+        {"planPaste": {"source": [3, 1], "spill": true}, "refused": "spillPastExtent"}
+      ]
+    },
+    {
+      "name": "ADR-0050 item 3 / DC-10: a block reaching past the last column is refused by name",
+      "steps": [
+        {"click": [0, 9]},
+        {"planPaste": {"source": [1, 2], "spill": true}, "refused": "spillPastExtent"}
+      ]
+    },
+    {
+      "name": "ADR-0050 item 3: a block ending exactly on the last row and column fits",
+      "steps": [
+        {"click": [97, 8]},
+        {"planPaste": {"source": [3, 2], "spill": true}, "plan": {"targets": [[97, 8, 3, 2]]}}
+      ]
+    },
+    {
+      "name": "ADR-0050 item 3 / ADR-0035 / DC-10: Editable is judged on the spilled block, not only the cell pasted on",
+      "steps": [
+        {"click": [0, 2]},
+        {"planPaste": {"source": [2, 3], "notEditable": [4], "spill": true}, "refused": "targetNotEditable", "column": 4}
+      ]
+    },
+    {
+      "name": "ADR-0035's order: \"may not\" before \"cannot\": a locked column in the block outranks the edge",
+      "steps": [
+        {"click": [99, 8]},
+        {"planPaste": {"source": [3, 3], "notEditable": [9], "spill": true}, "refused": "targetNotEditable", "column": 9}
+      ]
+    },
+    {
+      "name": "ADR-0050 item 3: every other shape rule of ADR-0014 stands under the declaration",
+      "steps": [
+        {"planPaste": {"source": [2, 2], "spill": true}, "refused": "emptySelection"},
+        {"click": [0, 0]},
+        {"extendTo": [4, 0]},
+        {"planPaste": {"source": [3, 1], "spill": true}, "refused": "shapeMismatch"},
+        {"click": [0, 0]},
+        {"toggleRange": [5, 5]},
+        {"planPaste": {"source": [2, 2], "spill": true}, "refused": "disjointTarget"},
+        {"click": [0, 0]},
+        {"extendTo": [5, 1]},
+        {"planPaste": {"source": [2, 1], "spill": true}, "plan": {"targets": [[0, 0, 6, 2]]}}
+      ]
+    },
+    {
+      "name": "ADR-0014 / ADR-0050: one value onto one cell is not a spill: it writes that cell",
+      "steps": [
+        {"click": [3, 3]},
+        {"planPaste": {"source": [1, 1], "spill": true}, "plan": {"targets": [[3, 3, 1, 1]]}}
+      ]
+    }
+  ]
+}

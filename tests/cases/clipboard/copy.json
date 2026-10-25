@@ -1,0 +1,139 @@
+{
+  "about": "The copy rules (ADR-0005, ADR-0011): an empty selection, then a misaligned one, then one past the cap is refused; otherwise the plan names the rectangles and how they combine. From tests/ExGrid.Tests/CopyRuleTests.cs.",
+  "kind": "clipboard",
+  "extent": [1000000, 50],
+  "cases": [
+    {
+      "name": "ADR-0005: a single range under the cap copies, one segment, canonically vertical",
+      "steps": [
+        {"click": [1, 1]},
+        {"extendTo": [3, 4]},
+        {"planCopy": {}, "plan": {"segments": [[1, 1, 3, 4]], "orientation": "vertical", "totalRows": 3, "totalColumns": 4}}
+      ]
+    },
+    {
+      "name": "ADR-0005: past the cap it does not copy at all: Ctrl+A over a million rows is refused as too large",
+      "steps": [
+        {"selectAll": true},
+        {"planCopy": {}, "refused": "tooLarge"}
+      ]
+    },
+    {
+      "name": "ADR-0005: refusal is strictly past the cap: a whole column of a million cells copies",
+      "steps": [
+        {"click": [0, 0]},
+        {"selectWholeColumns": true},
+        {"planCopy": {}, "plan": {}}
+      ]
+    },
+    {
+      "name": "ADR-0005: refusal is strictly past the cap: two whole columns are one cell too many many times over",
+      "steps": [
+        {"click": [0, 0]},
+        {"extendTo": [0, 1]},
+        {"selectWholeColumns": true},
+        {"planCopy": {}, "refused": "tooLarge"}
+      ]
+    },
+    {
+      "name": "ADR-0005: the cap is the Consumer's to raise or lower",
+      "steps": [
+        {"click": [0, 0]},
+        {"extendTo": [2, 3]},
+        {"planCopy": {"cellCap": 10}, "refused": "tooLarge"},
+        {"click": [0, 0]},
+        {"extendTo": [1, 4]},
+        {"planCopy": {"cellCap": 10}, "plan": {}}
+      ]
+    },
+    {
+      "name": "ADR-0005: a cap below one cell is a misconfiguration, not a refusal",
+      "steps": [
+        {"click": [0, 0]},
+        {"extendTo": [1, 4]},
+        {"planCopy": {"cellCap": 0}, "throws": "outOfRange"}
+      ]
+    },
+    {
+      "name": "ADR-0011: ranges sharing a column span with disjoint row spans stack vertically, and the gap closes up",
+      "steps": [
+        {"click": [1, 2]},
+        {"extendTo": [2, 3]},
+        {"toggleRange": [6, 2]},
+        {"extendTo": [8, 3]},
+        {"planCopy": {}, "plan": {"segments": [[1, 2, 2, 2], [6, 2, 3, 2]], "orientation": "vertical", "totalRows": 5, "totalColumns": 2}}
+      ]
+    },
+    {
+      "name": "ADR-0011: the transpose: a shared row span with disjoint column spans sits side by side",
+      "steps": [
+        {"click": [2, 1]},
+        {"extendTo": [3, 2]},
+        {"toggleRange": [2, 5]},
+        {"extendTo": [3, 6]},
+        {"planCopy": {}, "plan": {"segments": [[2, 1, 2, 2], [2, 5, 2, 2]], "orientation": "horizontal", "totalRows": 2, "totalColumns": 4}}
+      ]
+    },
+    {
+      "name": "ADR-0011: ranges lining up on neither axis are refused, and the reason says so",
+      "steps": [
+        {"click": [0, 0]},
+        {"extendTo": [1, 1]},
+        {"toggleRange": [5, 5]},
+        {"extendTo": [7, 7]},
+        {"planCopy": {}, "refused": "misalignedShape"}
+      ]
+    },
+    {
+      "name": "ADR-0011: overlapping row spans would emit the same cells twice, and are refused as misaligned",
+      "steps": [
+        {"click": [0, 0]},
+        {"extendTo": [4, 1]},
+        {"toggleRange": [6, 0]},
+        {"extendTo": [3, 1]},
+        {"planCopy": {}, "refused": "misalignedShape"}
+      ]
+    },
+    {
+      "name": "ADR-0011: segments come back in position order, not the order they were made in",
+      "steps": [
+        {"click": [5, 2]},
+        {"extendTo": [6, 3]},
+        {"toggleRange": [1, 2]},
+        {"extendTo": [2, 3]},
+        {"planCopy": {}, "plan": {"segments": [[1, 2, 2, 2], [5, 2, 2, 2]]}}
+      ]
+    },
+    {
+      "name": "ADR-0005: nothing selected, nothing copied, with its own reason",
+      "steps": [
+        {"planCopy": {}, "refused": "emptySelection"}
+      ]
+    },
+    {
+      "name": "ADR-0005: a misaligned selection over the cap reports the misalignment: the cap has no well-formed block to judge",
+      "steps": [
+        {"selectAll": true},
+        {"toggleRange": [0, 0]},
+        {"planCopy": {}, "refused": "misalignedShape"}
+      ]
+    },
+    {
+      "name": "ADR-0005 / CP-18: the header row counts against the cap: a selection exactly on it copies plainly and refuses with headers",
+      "steps": [
+        {"click": [0, 0]},
+        {"extendTo": [3, 1]},
+        {"planCopy": {"cellCap": 8}, "plan": {}},
+        {"planCopy": {"cellCap": 8, "withHeaders": true}, "refused": "tooLarge"}
+      ]
+    },
+    {
+      "name": "ADR-0005 / CP-18: with room for the extra row it copies with headers, as the plain copy does",
+      "steps": [
+        {"click": [0, 0]},
+        {"extendTo": [3, 1]},
+        {"planCopy": {"cellCap": 10, "withHeaders": true}, "plan": {}}
+      ]
+    }
+  ]
+}

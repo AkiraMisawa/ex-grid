@@ -1,0 +1,258 @@
+{
+  "about": "The paste rules (ADR-0014) and the Editable declaration ahead of them (ADR-0035). From tests/ExGrid.Tests/PasteRuleTests.cs.",
+  "kind": "clipboard",
+  "extent": [1000000, 50],
+  "cases": [
+    {
+      "name": "ADR-0014: one value fills the whole target range",
+      "steps": [
+        {"click": [2, 2]},
+        {"extendTo": [4, 5]},
+        {"planPaste": {"source": [1, 1]}, "plan": {"targets": [[2, 2, 3, 4]], "sourceCells": [[[2, 2], [0, 0]], [[4, 5], [0, 0]], [[2, 5], [0, 0]], [[4, 2], [0, 0]]]}}
+      ]
+    },
+    {
+      "name": "ADR-0011: bulk entry into disjoint ranges is the main use of a disjoint selection",
+      "steps": [
+        {"click": [1, 1]},
+        {"toggleRange": [5, 5]},
+        {"planPaste": {"source": [1, 1]}, "plan": {"targets": [[1, 1, 1, 1], [5, 5, 1, 1]], "sourceCells": [[[5, 5], [0, 0]]]}}
+      ]
+    },
+    {
+      "name": "ADR-0014 (amended 2026-09-29): one value of plain text over a range goes into its top-left alone, and the Selection collapses to it",
+      "steps": [
+        {"click": [4, 5]},
+        {"extendTo": [2, 2]},
+        {"planPaste": {"source": [1, 1], "plainTextOnly": true}, "plan": {"targets": [[2, 2, 1, 1]], "source": [1, 1], "collapses": true}}
+      ]
+    },
+    {
+      "name": "ADR-0014 (amended 2026-09-29): one value copied as a table still fills the whole range",
+      "steps": [
+        {"click": [2, 2]},
+        {"extendTo": [4, 5]},
+        {"planPaste": {"source": [1, 1]}, "plan": {"targets": [[2, 2, 3, 4]], "collapses": false}}
+      ]
+    },
+    {
+      "name": "ADR-0014 (amended 2026-09-29): over several ranges, the top-left of the range made last, not of the Focus range",
+      "steps": [
+        {"click": [1, 1]},
+        {"extendTo": [3, 3]},
+        {"toggleRange": [6, 6]},
+        {"extendTo": [8, 7]},
+        {"toggleRange": [0, 9]},
+        {"extendTo": [1, 9]},
+        {"cycle": "enter", "times": 2},
+        {"planPaste": {"source": [1, 1], "plainTextOnly": true}, "plan": {"targets": [[0, 9, 1, 1]]}}
+      ]
+    },
+    {
+      "name": "ADR-0014 (amended 2026-09-29) / ADR-0052: the range made last cut by a take-out anchors on its first cell by rows",
+      "steps": [
+        {"click": [10, 0]},
+        {"toggleRange": [1, 1]},
+        {"extendTo": [3, 3]},
+        {"toggleRange": [1, 1]},
+        {"planPaste": {"source": [1, 1], "plainTextOnly": true}, "plan": {"targets": [[1, 2, 1, 1]]}}
+      ]
+    },
+    {
+      "name": "ADR-0014 (amended 2026-09-29): one cell selected is the same paste either way",
+      "steps": [
+        {"click": [7, 3]},
+        {"planPaste": {"source": [1, 1], "plainTextOnly": true}, "plan": {"targets": [[7, 3, 1, 1]], "collapses": false}}
+      ]
+    },
+    {
+      "name": "ADR-0014 (amended 2026-09-29): plain text of more than one cell keeps its shape rules",
+      "steps": [
+        {"click": [0, 0]},
+        {"extendTo": [5, 2]},
+        {"planPaste": {"source": [2, 3], "plainTextOnly": true}, "plan": {"targets": [[0, 0, 6, 3]]}},
+        {"planPaste": {"source": [4, 3], "plainTextOnly": true}, "refused": "shapeMismatch"}
+      ]
+    },
+    {
+      "name": "ADR-0014 (amended 2026-09-29) / ADR-0035: the Editable gate still judges the whole Selection first",
+      "steps": [
+        {"click": [0, 0]},
+        {"extendTo": [2, 2]},
+        {"planPaste": {"source": [1, 1], "notEditable": [2], "plainTextOnly": true}, "refused": "targetNotEditable", "column": 2}
+      ]
+    },
+    {
+      "name": "ADR-0014: two rows copied into six repeat three times",
+      "steps": [
+        {"click": [0, 0]},
+        {"extendTo": [5, 2]},
+        {"planPaste": {"source": [2, 3]}, "plan": {"sourceCells": [[[0, 0], [0, 0]], [[1, 0], [1, 0]], [[2, 0], [0, 0]], [[4, 1], [0, 1]]]}}
+      ]
+    },
+    {
+      "name": "ADR-0014: an exact shape match is the tiling once",
+      "steps": [
+        {"click": [3, 3]},
+        {"extendTo": [8, 5]},
+        {"planPaste": {"source": [6, 3]}, "plan": {}}
+      ]
+    },
+    {
+      "name": "ADR-0014: tiling repeats on both axes at once",
+      "steps": [
+        {"click": [0, 0]},
+        {"extendTo": [5, 3]},
+        {"planPaste": {"source": [2, 2]}, "plan": {"sourceCells": [[[5, 3], [1, 1]], [[2, 3], [0, 1]]]}}
+      ]
+    },
+    {
+      "name": "ADR-0014: range to one cell is refused with its own reason: paste never spills outside the selection",
+      "steps": [
+        {"click": [0, 0]},
+        {"planPaste": {"source": [3, 2]}, "refused": "singleCellTarget"}
+      ]
+    },
+    {
+      "name": "ADR-0014: a ragged shape is refused, on either axis",
+      "steps": [
+        {"click": [0, 0]},
+        {"extendTo": [4, 0]},
+        {"planPaste": {"source": [3, 1]}, "refused": "shapeMismatch"},
+        {"click": [0, 0]},
+        {"extendTo": [0, 4]},
+        {"planPaste": {"source": [1, 3]}, "refused": "shapeMismatch"}
+      ]
+    },
+    {
+      "name": "ADR-0014 / PST-4: a payload far larger than the target is refused by shape, with no plan to raise an intent from",
+      "steps": [
+        {"click": [2, 2]},
+        {"extendTo": [4, 3]},
+        {"planPaste": {"source": [100000, 50]}, "refused": "shapeMismatch"},
+        {"planPaste": {"source": [1000000, 2]}, "refused": "shapeMismatch"},
+        {"planPaste": {"source": [3, 16384]}, "refused": "shapeMismatch"}
+      ]
+    },
+    {
+      "name": "ADR-0014: a block into disjoint ranges is refused even when each range would tile",
+      "steps": [
+        {"click": [0, 0]},
+        {"extendTo": [1, 1]},
+        {"toggleRange": [5, 0]},
+        {"extendTo": [6, 1]},
+        {"planPaste": {"source": [2, 2]}, "refused": "disjointTarget"}
+      ]
+    },
+    {
+      "name": "ADR-0014: a disjoint target holding a single cell still gets the multi-selection refusal",
+      "steps": [
+        {"click": [0, 0]},
+        {"toggleRange": [5, 5]},
+        {"planPaste": {"source": [2, 2]}, "refused": "disjointTarget"}
+      ]
+    },
+    {
+      "name": "ADR-0014: one value into a whole column of a million rows is one range, rows not fetched included",
+      "steps": [
+        {"click": [0, 0]},
+        {"selectWholeColumns": true},
+        {"planPaste": {"source": [1, 1]}, "plan": {"targets": [[0, 0, 1000000, 1]], "sourceCells": [[[999999, 0], [0, 0]]]}}
+      ]
+    },
+    {
+      "name": "ADR-0014: two rows tile a whole column of a million rows",
+      "steps": [
+        {"click": [0, 0]},
+        {"selectWholeColumns": true},
+        {"planPaste": {"source": [2, 1]}, "plan": {"sourceCells": [[[999999, 0], [1, 0]]]}}
+      ]
+    },
+    {
+      "name": "ADR-0014: nowhere to paste is refused with its own reason, and nothing happens",
+      "steps": [
+        {"planPaste": {"source": [1, 1]}, "refused": "emptySelection"}
+      ]
+    },
+    {
+      "name": "ADR-0014: a cell outside every target range is a caller's defect, refused rather than answered",
+      "steps": [
+        {"click": [2, 2]},
+        {"extendTo": [4, 5]},
+        {"planPaste": {"source": [1, 1]}, "plan": {"outside": [[0, 0]]}}
+      ]
+    },
+    {
+      "name": "ADR-0014: one value into one selected cell is an ordinary paste, not range to one cell",
+      "steps": [
+        {"click": [3, 3]},
+        {"planPaste": {"source": [1, 1]}, "plan": {}}
+      ]
+    },
+    {
+      "name": "ADR-0014: a shape with no rows or no columns is a parser defect, not a refusal",
+      "steps": [
+        {"click": [0, 0]},
+        {"extendTo": [1, 1]},
+        {"planPaste": {"source": [0, 1]}, "throws": "outOfRange"},
+        {"planPaste": {"source": [1, 0]}, "throws": "outOfRange"}
+      ]
+    },
+    {
+      "name": "ADR-0035 / CP-16: one column that is not Editable inside the target refuses the whole paste, and is named",
+      "steps": [
+        {"click": [0, 0]},
+        {"extendTo": [3, 3]},
+        {"planPaste": {"source": [4, 4], "notEditable": [2]}, "refused": "targetNotEditable", "column": 2},
+        {"planPaste": {"source": [4, 4]}, "plan": {}}
+      ]
+    },
+    {
+      "name": "ADR-0035: the bulk-entry shape is no exemption: one value is refused by the declaration too",
+      "steps": [
+        {"click": [0, 2]},
+        {"extendTo": [9, 2]},
+        {"planPaste": {"source": [1, 1], "notEditable": [2]}, "refused": "targetNotEditable", "column": 2}
+      ]
+    },
+    {
+      "name": "ADR-0035: with no column Editable every paste is refused, naming the first",
+      "steps": [
+        {"click": [0, 0]},
+        {"extendTo": [1, 1]},
+        {"planPaste": {"source": [2, 2], "notEditable": "every"}, "refused": "targetNotEditable", "column": 0}
+      ]
+    },
+    {
+      "name": "ADR-0035: one offending range of a disjoint target refuses the whole paste",
+      "steps": [
+        {"click": [0, 0]},
+        {"toggleRange": [5, 7]},
+        {"planPaste": {"source": [1, 1], "notEditable": [7]}, "refused": "targetNotEditable", "column": 7}
+      ]
+    },
+    {
+      "name": "ADR-0035: the declaration outranks every shape rule, since \"reselect the same shape\" would be a lie",
+      "steps": [
+        {"click": [0, 2]},
+        {"planPaste": {"source": [3, 2]}, "refused": "singleCellTarget"},
+        {"planPaste": {"source": [3, 2], "notEditable": [2]}, "refused": "targetNotEditable"},
+        {"extendTo": [4, 2]},
+        {"planPaste": {"source": [3, 1]}, "refused": "shapeMismatch"},
+        {"planPaste": {"source": [3, 1], "notEditable": [2]}, "refused": "targetNotEditable"},
+        {"click": [0, 2]},
+        {"extendTo": [1, 3]},
+        {"toggleRange": [5, 2]},
+        {"extendTo": [6, 3]},
+        {"planPaste": {"source": [2, 2]}, "refused": "disjointTarget"},
+        {"planPaste": {"source": [2, 2], "notEditable": [2]}, "refused": "targetNotEditable"}
+      ]
+    },
+    {
+      "name": "ADR-0035: with nothing selected there is no column to judge, so empty still wins",
+      "steps": [
+        {"planPaste": {"source": [1, 1], "notEditable": "every"}, "refused": "emptySelection"}
+      ]
+    }
+  ]
+}
