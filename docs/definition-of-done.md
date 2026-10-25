@@ -1843,7 +1843,11 @@ does: it lands as the user entered it, on the row it was aimed at. **They are Ex
 gate the release** (§2), as §26 does. *(Narrowed 2026-10-11, decided with the user ([ADR-0200](adr/0200-the-first-stable-version-is-0-1-0-and-carries-the-whole-family.md)): the rows on
 ExPivot's report Windows, LV-24 to LV-31 and LV-34, are ExPivot's code, in `ExPivot.Engine` and
 `ExPivot`. They judge ExPivot with §29, not ExGrid; `0.1.0` carries ExPivot, so they still gate the
-tag.)* Without a Row Key declared, the Row Key's criteria change nothing
+tag.)* *(2026-10-25, decided with the user: [ADR-0370](adr/0370-the-whole-family-moves-to-typescript-and-blazor-only-adapts-it.md)
+section 3 ends the server report Windows when ExPivot.Engine is removed, and a server answers Leaf
+Aggregates again. LV-24, LV-25 and LV-28, and PV-2's server clause, judge the C# path as written until
+then. They are rewritten for the Leaf Aggregate boundary, with live server data's form, before
+ExPivot's step 1 is called done, not relaxed to fit it.)* Without a Row Key declared, the Row Key's criteria change nothing
 (DC-1); the rules for a write over live data hold for every grid.
 
 | ID | Level | Statement | Verification | Pass |

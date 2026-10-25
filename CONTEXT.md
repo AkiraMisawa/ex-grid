@@ -475,8 +475,9 @@ _Avoid_: binding, wrapper, port
 
 **Engine Host**:
 Where a Script Core's engine runs, asked by asynchronous messages whose answers are data: the page's
-own thread, a Web Worker, or a server for server data. The engine and the messages are the same in
-each, and an answer names the version it was asked against
+own thread or a Web Worker. The engine and the messages are the same in both, and an answer names the
+version it was asked against. A server is not one: it answers an engine's questions about server data
+and lays out nothing
 ([ADR-0370](./docs/adr/0370-the-whole-family-moves-to-typescript-and-blazor-only-adapts-it.md)).
 _Avoid_: backend, engine service, bridge
 

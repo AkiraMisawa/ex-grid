@@ -118,7 +118,8 @@ and the Snapshot's Arrow form move to TypeScript; ExGrid.Data and its Arrow form
 recorded measurement" is now the check of section 7, not a gate on the port. ADR-0047 and ADR-0060 hold
 as written: the TypeScript engine answers as Excel or not at all, and where it cannot answer exactly it
 refuses rather than approximates. Until a C# engine is removed it is the oracle its TypeScript engine is proved
-against; from then the TypeScript engine is the reference ADR-0060 and ADR-0047 name.
+against; from then the TypeScript pivot engine is the reference ADR-0060 names, and the TypeScript
+formula engine is the engine ADR-0047 describes.
 
 A TypeScript engine is proved in three ways, and none of them runs Excel again:
 
@@ -161,8 +162,9 @@ Nothing the family draws stays in C#. What stays is what a .NET server uses to f
   server takes without Blazor, `ExBoard.Spec`. Each TypeScript reader runs the same cases, refusals and
   their paths included.
 - **The Leaf Aggregate contract**, with which a .NET server answers a server pivot (below). The
-  contract's types and the pass that answers it over records stay in a small C# package, held to the
-  TypeScript engine's local pass by shared cases; Excel's rules for the report do not.
+  contract's types and the pass that answers it over records stay in a small C# package,
+  `ExPivot.Server`, held to the TypeScript engine's local pass by shared cases; Excel's rules for the
+  report do not.
 
 #### The server pivot answers Leaf Aggregates, and the TypeScript engine lays out the report
 
@@ -192,22 +194,42 @@ ADR-0066's cap stands (`MaxLeaves`, 200,000 by default, the Consumer's to change
 TypeScript engine before it is settled again). The leaves grow with the product of the placed fields'
 Items, not with the records, so the refusal names the fields that make it:
 
-- **Before a field is placed.** When a server's source is opened, it answers each field's count of
-  Items once, and the Field List shows it beside the field's name.
-- **While a field is dragged.** The product of the counts is an upper bound known in the browser at
-  once. A drop target where the bound passes the cap is marked while the field is over it.
-- **When the drop is made.** Only where the bound passes the cap is the source asked for the actual
-  number of leaves, which is often far smaller. If it passes the cap, the move is refused in the Field
-  List, the report stays on the layout it had, and the refusal names the field and the numbers, for
-  example "Customer (1,020,000 items) in Rows makes about 34,000,000 combinations; server data allows
-  200,000", and the ways that remain: Customer in Filters, or Customer filtered first.
+- **Before a field is placed.** A server's source may declare that it answers each field's count of
+  Items, under the Source Version it counted; one that does is asked once when it is opened, and again
+  under a new Source Version, and the Field List shows the count beside the field's name. Counting is
+  a cost a source chooses: one that does not declare it gets no mark and no count, only the refusal
+  at the drop.
+- **While a field is dragged.** The product of the counts, less the Items the layout hides, is an
+  upper bound the browser knows at once. A drop target where it passes the cap is marked while the
+  field is over it. The bound is a hint for the mark only, never a refusal, so a count that has gone
+  stale moves the mark, not the answer.
+- **When the drop is made.** Where the bound is under the cap, the question is asked as it is today.
+  Where it passes the cap, or no bound is known, the question is asked with `MaxLeaves`, and the
+  source answers it or stops at the leaf that passes the cap, as ADR-0066 has it: no second query and
+  no second round trip. A source that stops refuses, the move is refused in the Field List, and the
+  report stays on the layout it had. The refusal says only what is known: the field, its count of
+  Items where the source gave one, and the cap, for example "Customer (1,020,000 items) in Rows makes
+  more than 200,000 combinations, the most server data allows", and the ways that remain: Customer in
+  Filters, or Customer filtered first.
+- **A move made while a question is out** is taken against the layout that question asks for. If that
+  question is refused, every move taken against it is refused with it, named, and the Field List
+  returns to the last layout answered (spine rule 6). Under Defer Layout Update the question is asked
+  at Update, and the refusal is said there.
+
+**Live server data under this boundary is open.** ADR-0066 refused answers that name the leaves that
+changed, because a source naming too few painted totals that did not add up with nothing to say so,
+and ADR-0151's Window Changes end with its report Windows. Until a form that can be checked is
+decided, a server's live source answers the whole question again under each new Source Version
+(ADR-0066's `Changed`: ask again), which near the cap is a full answer per change. The form is decided
+with the user before ExPivot's step 1 is called done, measured against ADR-0151's record.
 
 ### 4. Where an engine runs
 
-A Script Core asks its engine through an **Engine Host**: the page's own thread, a Web Worker, or a
-server for server data. The protocol is asynchronous messages whose answers are data (a Window of
-Values, a report Window, a Snapshot as Arrow), so the engine and its caller do not change with the
-host.
+A Script Core asks its engine through an **Engine Host**: the page's own thread or a Web Worker. The
+protocol is asynchronous messages whose answers are data (a Window of Values, a report Window, a
+Snapshot as Arrow), so the engine and its caller do not change with the host. A server is not an
+Engine Host: it answers an engine's questions about server data (a pivot's Leaf Aggregates, section
+3) and lays out nothing.
 
 - **The page's thread or a Worker, by measurement.** An engine runs on the page's thread where the
   measured scenarios of section 7 fit within a frame there; otherwise it runs in a Worker, so the grid
@@ -344,7 +366,9 @@ typed into a sheet, and ExSheet's formats. C# reads `CultureInfo`; TypeScript ha
   WebAssembly's 1.1 s published edit is replaced by the TypeScript engine's.
 - On Blazor Server the engines leave the server for the browser, so a large workbook or Snapshot now
   crosses the circuit once instead of its edits crossing it each time (section 2).
-- A .NET server keeps the packages of section 3 in C#, held to their TypeScript counterparts by shared
-  cases.
+- A .NET server keeps the packages of section 3 in C#: ExGrid.Data, ExGrid.Data.Arrow, ExPivot.Server,
+  ExBoard.Spec and the reduced ExChart.Engine, each held to its TypeScript counterpart by shared cases.
+- ExPivot over live server data answers the whole question per change until section 3's open form is
+  decided.
 - The family publishes nineteen npm packages, and the release workflow publishes them from the same
   tag as NuGet's.
