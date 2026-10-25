@@ -1,0 +1,24 @@
+@* The core comparison (ADR-0350 section 15): one scenario per page, named by the route's last
+   segment, so the driver opens each in a page of its own. *@
+@switch (Scenario)
+{
+    case "grid":
+        <CoreGrid />
+        break;
+    case "template":
+        <CoreGrid Templates="true" />
+        break;
+    case "sheet":
+        <CoreSheet />
+        break;
+    case "pivot":
+        <CorePivot />
+        break;
+    default:
+        <p id="core-unknown">No scenario named "@Scenario": grid, template, sheet or pivot.</p>
+        break;
+}
+
+@code {
+    [Parameter] public string Scenario { get; set; } = "";
+}

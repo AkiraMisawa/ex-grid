@@ -1,0 +1,9 @@
+/* The core comparison's own markup (ADR-0350 section 15), the same on every host: the controls, and
+   the Template cells of /core/template. Disposable, like the rest of render-bench, so unprefixed
+   only where nothing else on these pages could collide. */
+.core-controls { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 8px 0; }
+.core-bar { position: relative; height: 100%; display: flex; align-items: center; justify-content: flex-end; }
+.core-bar-fill { position: absolute; left: 0; top: 4px; bottom: 4px; background: #cfe3f7; }
+.core-bar > span { position: relative; }
+.core-neg { color: #a33; }
+.core-pos { color: inherit; }

@@ -266,6 +266,68 @@ an AOT publish of the same tree, started a runtime that failed Mono's assertion 
 on every page, `/settled` included. Why was not run down. The results of 2026-10-19 are in `results/20261019-chart/`, with
 `summary.txt`.
 
+## The core comparison (`/core`, ADR-0350 section 15)
+
+What ExGrid's move to the Script Core does to speed, measured on the same pages before and after:
+ADR-0350 asks for the Script Core's numbers under React and under both Blazor hosts beside today's C#
+core, before steps 1 and 2 of its section 7 are called done. The C# core's are taken first, as the
+baseline; the Script Core's hosts are added beside them as they come.
+
+Four pages, each a scenario, on WebAssembly (`Bench.Host`) and on the circuit (`Bench.Server`) at
+`/core/<scenario>`, components in `Bench.Live`:
+
+| Scenario | What it is | What it asks of a core (ADR-0350's three risks in bold) |
+|---|---|---|
+| `grid` | the real ExGrid, a Book column and twenty measures (`N2`), read-only, rows 22 px, Viewport 1200×600, over a Window of up to 100,000 rows the page pushes (`CoreGrid.razor`) | **a large Window and a live source crossing into the browser**: a new Window of 1,000, 10,000 and 100,000 rows, all new or one row new; ticks replacing 1, 5 and 25 painted rows, once and once per frame; mount; keys; scroll |
+| `template` | the same grid with the last four measures Template Columns, two of markup and two of a component (`CoreTemplateCell.razor`) | **template cells**: the same phases; the cost is the difference from `grid` |
+| `sheet` | the real ExSheet, A1 read by 2,000 rows × 10 columns of formulas (`CoreSheet.razor`) | **ExSheet's recalculation crossing over**: A1 typed and entered, until every painted B cell reads it; L1, which nothing reads; scroll |
+| `pivot` | the real ExPivot over 20,000 trades, P&L by book and date (about 2,700 rows) across currencies (`CorePivot.razor`) | **ExPivot's redraw crossing over**: one trade amended in a Change Batch, until the first book's P&L reads it; the columns swapped; scroll |
+
+`Bench.Live/wwwroot/core-bench.js` drives them in the page. It reads only what every core writes, the
+DOM contract (`role`, `aria-rowindex`, `aria-colindex`, the Focus named by `aria-activedescendant`, the
+scroller, `--ex-row-height`), and presses only the page's own controls, so the same script measures any
+core. Each input is made at machine speed and timed to what the user sees: a MutationObserver sees
+the change land (*dom*) and the animation frame after it is when it is on screen (*frame*). Sustained
+phases record the frames' lengths and the lag from the last input until it is painted. On the Server
+host each operation's bytes on the circuit's connection are read too (`/api/wire`).
+`tools/cdp-core.mjs` opens each page in a browser already listening for CDP and writes one JSON per
+label; `tools/summarize-core.mjs` puts labels side by side:
+
+```sh
+nix develop -c dotnet run -c Release --project Bench.Server            # BENCH_PORT=5491
+nix develop -c dotnet run -c Release --project Bench.Host --urls http://127.0.0.1:5492
+CDP_PORT=9333 node tools/cdp-core.mjs http://127.0.0.1:5491 csharp-server    # [scenarios] [rounds]
+CDP_PORT=9333 node tools/cdp-core.mjs http://127.0.0.1:5492 csharp-wasm
+node tools/summarize-core.mjs results/20261025-core/*.json
+```
+
+`CORE_OPTS` takes JSON for the run's options (`frames`, `tickRepeats`, `edits`, `burst`, `sizes`,
+`ticks`). Measure on one machine: the Script Core's numbers are read against a baseline taken where
+they are taken, so the baseline is run again there.
+
+### Where the Script Core plugs in
+
+A host of the Script Core serves the same pages, and nothing in the driver changes:
+
+- **The routes.** `/core/grid` and `/core/template` on the React host; all four on Blazor's adapter
+  over the Script Core, on both Blazor hosts. A host without a scenario leaves it out of the driver's
+  list (`node tools/cdp-core.mjs <url> script-react grid,template`).
+- **The data.** `CoreData` in `Bench.Live/CoreModel.cs` is the formula: row `id` at generation `gen`
+  reads `G{gen}-{id}` in its Book column, and measure `c` is
+  `((id × 7919 + c × 104729 + gen × 15485863) mod 2,000,000 − 1,000,000) ÷ 100`, painted as `N2` in the
+  invariant culture. A TypeScript host writes the formula again; the driver reads the Book column only,
+  so a host whose numbers differ still runs, and is wrong.
+- **The geometry.** The columns (Book and twenty measures, each 120 px; in `template`, the last four as
+  CoreGrid makes them), rows 22 px, a Viewport of 1200×600, the first Window 100,000 rows at generation
+  0, inside `<div id="core-bench" style="width: 1200px">`.
+- **The controls.** The buttons and `#core-state` that `CoreGrid.razor` and `CorePivot.razor` list in
+  their header comments, with the same ids and the same meaning; the sheet has none. On the React host
+  a template cell is a React component in the slot the core gives it (ADR-0350 section 3).
+- **The label.** `script-react`, `script-blazor-wasm`, `script-blazor-server`, beside `csharp-wasm` and
+  `csharp-server`, each run on the same machine and browser as the baseline it is read against.
+
+The C# core's numbers of 2026-10-25 are in `results/20261025-core/`, with `summary.txt`.
+
 ## Running it
 
 ```sh

@@ -1,0 +1,9 @@
+@page "/core/{Scenario}"
+@* The core comparison on WebAssembly (ADR-0350 section 15): CoreBench, driven by core-bench.js. *@
+@using Bench.Live
+<PageTitle>core bench</PageTitle>
+<CoreBench Scenario="@Scenario" />
+
+@code {
+    [Parameter] public string Scenario { get; set; } = "";
+}

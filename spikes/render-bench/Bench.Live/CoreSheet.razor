@@ -1,0 +1,38 @@
+@using System.Globalization
+@using global::ExSheet.Components
+@using global::ExSheet.Engine
+@* The core comparison's sheet (/core/sheet, ADR-0350 section 15): the real ExSheet, whose engine
+   answers in C# after every edit. A1 holds a number; A2:A2001 read it (=$A$1+ROW()), and each of
+   B to J adds one to the cell on its left, so an edit of A1 recalculates 20,000 cells and changes
+   every one on screen. L1 holds a number nothing reads. Under the Script Core the recalculation
+   stays in C# and its Values cross into the browser; driven by wwwroot/core-bench.js, which types
+   into the Sheet as a user does. *@
+<div id="core-bench" style="width: 1200px">
+    <ExSheet @bind-Document="_document" Culture="Culture" ViewportHeight="600" ViewportWidth="1200" />
+</div>
+
+@code {
+    /// <summary>The rows that read A1.</summary>
+    public const int Rows = 2_000;
+
+    private static readonly CultureInfo Culture = CultureInfo.GetCultureInfo("en-US");
+
+    private SheetDocument? _document = Build();
+
+    private static SheetDocument Build()
+    {
+        var cells = new List<SheetDocumentCell>(Rows * 10 + 2);
+        void Add(string address, string typed)
+            => cells.Add(new SheetDocumentCell(CellAddress.Parse(address), Entry.Parse(typed, Culture), null, null, null, null, null));
+        Add("A1", "1");
+        Add("L1", "0");
+        for (var row = 2; row <= Rows + 1; row++)
+        {
+            var r = row.ToString(CultureInfo.InvariantCulture);
+            Add("A" + r, "=$A$1+ROW()");
+            for (var c = 'B'; c <= 'J'; c++)
+                Add(c + r, $"={(char)(c - 1)}{r}+1");
+        }
+        return new SheetDocument(Culture, "Sheet1", cells);
+    }
+}

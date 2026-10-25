@@ -1,0 +1,8 @@
+@* A Template cell whose fragment is a component (CoreGrid, Templates="true"): the case ADR-0350
+   section 15 names, a Blazor component inside the grid's DOM. Its value is a decimal, which Blazor
+   compares itself, so it renders only when its row hands it another value. *@
+<span class="@(Value < 0 ? "core-neg" : "core-pos")">@CoreData.Format(Value)</span>
+
+@code {
+    [Parameter] public decimal Value { get; set; }
+}

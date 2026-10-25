@@ -1,0 +1,131 @@
+@using global::ExGrid
+@using global::ExGrid.Cells
+@using global::ExGrid.Columns
+@using ExGrid.Components
+@* The core comparison's grid (/core/grid and /core/template, ADR-0350 section 15): the real ExGrid,
+   a Book column and twenty measures, read-only, over a Window the page pushes. The same component
+   on WebAssembly (Bench.Client) and on the circuit (Bench.Server), driven by wwwroot/core-bench.js,
+   which reads only the DOM contract and the controls below. A Script Core host serves the same page:
+   the same ids, the same rows from CoreData's formula, the same columns and geometry.
+
+   Templates="true" makes the last four measures Template Columns: two whose fragment is markup, two
+   whose fragment is a component (CoreTemplateCell), so that what a template cell costs is the
+   difference between the two pages. The values are the same.
+
+   The controls are the Consumer's side of the measurement, and none of them is timed but Push and
+   the ticks:
+     #core-prepare-all-N  builds a Window of N rows, every row new at the next generation
+     #core-prepare-one    builds a new instance of the current Window with row 0 new, the rest as they were
+     #core-push           hands the prepared Window to the grid (timed by the driver)
+     #core-tick-K         builds and hands over a Window with rows 0..K-1 new, as a live source ticks
+     #core-unmount, #core-mount  take the grid away and put it back over the current Window
+   #core-state says what the page holds: data-size, data-gen (the generation handed to the grid) and
+   data-prepared (the generation built and not yet handed over, or empty). *@
+<div id="core-bench" style="width: 1200px">
+    <div class="core-controls">
+        @foreach (var size in Sizes)
+        {
+            <button type="button" id="core-prepare-all-@size" @onclick="_prepareAll[size]">Prepare @size.ToString("N0") rows</button>
+        }
+        <button type="button" id="core-prepare-one" @onclick="PrepareOne">Prepare one row</button>
+        <button type="button" id="core-push" @onclick="Push">Push</button>
+        @foreach (var k in Ticks)
+        {
+            <button type="button" id="core-tick-@k" @onclick="_tick[k]">Tick @k</button>
+        }
+        <button type="button" id="core-unmount" @onclick="Unmount">Unmount</button>
+        <button type="button" id="core-mount" @onclick="Mount">Mount</button>
+        <span id="core-state" data-size="@_window.Length" data-gen="@_gen" data-prepared="@(_prepared is null ? "" : _preparedGen.ToString())">
+            @_window.Length.ToString("N0") rows at generation @_gen
+        </span>
+    </div>
+    @if (_mounted)
+    {
+        <ExGrid TRow="CoreRow" Window="_window" TotalCount="_window.Length" Columns="Templates ? TemplateColumns : PlainColumns"
+                RowHeight="22" ViewportHeight="600" ViewportWidth="1200" />
+    }
+</div>
+
+@code {
+    /// <summary>The Window sizes the driver pushes; the first Window is the largest.</summary>
+    public static readonly int[] Sizes = [1_000, 10_000, 100_000];
+
+    /// <summary>How many rows a tick replaces: one, a few, and every row on screen.</summary>
+    public static readonly int[] Ticks = [1, 5, 25];
+
+    /// <summary>Whether the last four measures are Template Columns.</summary>
+    [Parameter] public bool Templates { get; set; }
+
+    private CoreRow[] _window = CoreData.Window(Sizes[^1], 0);
+    private int _gen;
+    private CoreRow[]? _prepared;
+    private int _preparedGen;
+    private bool _mounted = true;
+    // Held in fields, never rebuilt per render (CLAUDE.md, the Blazor traps).
+    private readonly Dictionary<int, Action> _prepareAll = [];
+    private readonly Dictionary<int, Action> _tick = [];
+
+    protected override void OnInitialized()
+    {
+        foreach (var size in Sizes)
+            _prepareAll[size] = () => Prepare(CoreData.Window(size, _gen + 1));
+        foreach (var k in Ticks)
+            _tick[k] = () =>
+            {
+                _gen++;
+                _window = CoreData.Replace(_window, k, _gen);
+            };
+    }
+
+    private void Prepare(CoreRow[] window)
+    {
+        _prepared = window;
+        _preparedGen = _gen + 1;
+    }
+
+    private void PrepareOne() => Prepare(CoreData.Replace(_window, 1, _gen + 1));
+
+    private void Push()
+    {
+        if (_prepared is null)
+            throw new InvalidOperationException("Push before Prepare: the driver pushes only a Window it prepared.");
+        _window = _prepared;
+        _gen = _preparedGen;
+        _prepared = null;
+    }
+
+    private void Unmount() => _mounted = false;
+
+    private void Mount() => _mounted = true;
+
+    private static GridColumn<CoreRow> Book()
+        => new("Book", ColumnType.Text, r => r.Book, width: new ColumnWidthSpec(ColumnWidth.Fixed(120)));
+
+    private static GridColumn<CoreRow> Measure(int index)
+        => new($"M{index}", ColumnType.Number, r => r.Values[index],
+            width: new ColumnWidthSpec(ColumnWidth.Fixed(120)), format: CoreData.Format);
+
+    private static readonly GridColumn<CoreRow>[] PlainColumns =
+        [Book(), .. Enumerable.Range(0, CoreData.Measures).Select(Measure)];
+
+    // A bar as wide as the value's share of its range, with the value beside it: markup only.
+    private static readonly RenderFragment<TemplateCellContext<CoreRow>>[] Fragments =
+    [
+        .. Enumerable.Range(CoreData.Measures - 4, 2).Select(index => (RenderFragment<TemplateCellContext<CoreRow>>)(cell =>
+            @<div class="core-bar"><div class="core-bar-fill" style="width: @(((int)((cell.Row.Values[index] + 10_000m) / 200m)).ToString())%"></div><span>@CoreData.Format(cell.Row.Values[index])</span></div>)),
+        .. Enumerable.Range(CoreData.Measures - 2, 2).Select(index => (RenderFragment<TemplateCellContext<CoreRow>>)(cell =>
+            @<CoreTemplateCell Value="cell.Row.Values[index]" />)),
+    ];
+
+    private static readonly GridColumn<CoreRow>[] TemplateColumns =
+    [
+        Book(),
+        .. Enumerable.Range(0, CoreData.Measures - 4).Select(Measure),
+        .. Enumerable.Range(0, 4).Select(t =>
+        {
+            var index = CoreData.Measures - 4 + t;
+            return GridColumn<CoreRow>.TemplateColumn($"M{index}", ColumnType.Number, r => r.Values[index], Fragments[t],
+                width: new ColumnWidthSpec(ColumnWidth.Fixed(120)), format: CoreData.Format);
+        }),
+    ];
+}
