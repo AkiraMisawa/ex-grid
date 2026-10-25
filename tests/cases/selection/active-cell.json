@@ -1,0 +1,141 @@
+{
+  "about": "ADR-0052's rules as Excel showed them (verification/2026-09-27-windows-excel-2/active-cell.md): the Focus is Excel's active cell and stays while a range is extended; the Extent is the end that moves. From tests/ExGrid.Tests/ActiveCellTests.cs; its key cases move with the keys.",
+  "kind": "selection",
+  "extent": [1000, 60],
+  "cases": [
+    {
+      "name": "ADR-0052 case 1: Shift+Down twice and Shift+Right from B2 give B2:C4, with B2 still the Focus",
+      "steps": [
+        { "click": "B2" },
+        { "extend": "down" },
+        { "extend": "down" },
+        { "extend": "right" },
+        { "expect": { "ranges": "B2:C4", "focus": "B2", "extent": "C4" } }
+      ]
+    },
+    {
+      "name": "ADR-0052 case 5: with D5 selected, Ctrl+drag A1:B2 adds a range holding the Focus at A1, and Shift+Down grows it to A1:B3",
+      "steps": [
+        { "click": "D5" },
+        { "toggleRange": "A1" },
+        { "extendTo": "B2" },
+        { "expect": { "ranges": "D5,A1:B2", "focus": "A1" } },
+        { "extend": "down" },
+        { "expect": { "ranges": "D5,A1:B3", "focus": "A1" } }
+      ]
+    },
+    {
+      "name": "ADR-0052 case 5 (the ADR's reading): after Enter cycles the Focus into an earlier range, that range extends",
+      "steps": [
+        { "click": "A1" },
+        { "extendTo": "B2" },
+        { "toggleRange": "D5" },
+        { "cycle": "enter" },
+        { "extend": "right" },
+        { "expect": { "ranges": "A1:C2,D5", "focus": "A1" } }
+      ]
+    },
+    {
+      "name": "ADR-0052 case 7: Shift+Backspace collapses the selection to the Focus: B2 from B2:D4",
+      "steps": [
+        { "click": "B2" },
+        { "extendTo": "D4" },
+        { "collapseToFocus": true },
+        { "expect": { "ranges": "B2", "focus": "B2" } }
+      ]
+    },
+    {
+      "name": "ADR-0052 case 7: Shift+Backspace collapses the selection to the Focus: D4 from D4:B2",
+      "steps": [
+        { "click": "D4" },
+        { "extendTo": "B2" },
+        { "collapseToFocus": true },
+        { "expect": { "ranges": "D4" } }
+      ]
+    },
+    {
+      "name": "ADR-0052 case 7: Shift+Backspace after Enter collapses to where Enter put the Focus",
+      "steps": [
+        { "click": "B2" },
+        { "extendTo": "D4" },
+        { "cycle": "enter", "times": 2 },
+        { "collapseToFocus": true },
+        { "expect": { "ranges": "B4" } }
+      ]
+    },
+    {
+      "name": "ADR-0052 case 8: Ctrl+. walks A1:C3's corners clockwise from A1 (C1, C3, A3, A1, C1) and the selection stays",
+      "steps": [
+        { "click": "A1" },
+        { "extendTo": "C3" },
+        { "nextCorner": true, "focuses": ["C1", "C3", "A3", "A1", "C1"] },
+        { "expect": { "ranges": "A1:C3" } }
+      ]
+    },
+    {
+      "name": "ADR-0052 case 8: with A1:C3,E5:F6 and E5 active, Ctrl+. walks only E5:F6's corners",
+      "steps": [
+        { "click": "A1" },
+        { "extendTo": "C3" },
+        { "toggleRange": "E5" },
+        { "extendTo": "F6" },
+        { "nextCorner": true, "focuses": ["F5", "F6", "E6", "E5", "F5"] },
+        { "expect": { "rangeCount": 2 } }
+      ]
+    },
+    {
+      "name": "ADR-0052: Ctrl+. on a range one row deep passes over the corner it shares",
+      "steps": [
+        { "click": "A1" },
+        { "extendTo": "C1" },
+        { "nextCorner": true, "focuses": ["C1", "A1"] }
+      ]
+    },
+    {
+      "name": "ADR-0052: Ctrl+. on one cell does nothing",
+      "steps": [
+        { "click": "D4" },
+        { "nextCorner": true },
+        { "expect": { "unchanged": true } }
+      ]
+    },
+    {
+      "name": "ADR-0052 (not observed in Excel): from a cell on an edge, Ctrl+. goes to the corner ending that edge clockwise; from inside, to the top-left",
+      "steps": [
+        { "click": "A1" },
+        { "extendTo": "C3" },
+        { "cycle": "tab" },
+        { "save": "b1" },
+        { "nextCorner": true },
+        { "expect": { "focus": "C1" } },
+        { "restore": "b1" },
+        { "cycle": "enter" },
+        { "expect": { "focus": "B2" } },
+        { "nextCorner": true },
+        { "expect": { "focus": "A1" } }
+      ]
+    },
+    {
+      "name": "ADR-0052 case 11: from B2, Ctrl+Shift+End then Ctrl+Shift+Home keep B2 the Focus",
+      "steps": [
+        { "click": "B2" },
+        { "extendToEdge": "down" },
+        { "extendToEdge": "right" },
+        { "expect": { "focus": "B2", "extent": [999, 59] } },
+        { "extendToEdge": "up" },
+        { "extendToEdge": "left" },
+        { "expect": { "ranges": "A1:B2", "focus": "B2" } }
+      ]
+    },
+    {
+      "name": "ADR-0052 case 11: from B2, Shift+PageDown moves only the Extent",
+      "steps": [
+        { "click": "B2" },
+        { "extendByViewport": 57 },
+        { "extendByViewport": 57 },
+        { "extendByViewport": -57 },
+        { "expect": { "ranges": "B2:B59", "focus": "B2", "extent": "B59" } }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,110 @@
+# Shared cases
+
+The cases of ExGrid's pure logic, written once as data: an input and its expected result
+([ADR-0350](../../docs/adr/0350-exgrids-core-moves-to-typescript-and-react-and-blazor-both-take-it.md),
+section 5). xUnit runs them against the C# core (`tests/ExGrid.Tests/Cases/`) and Vitest against the
+Script Core (`src/npm/core/test/`). A case is green on the C# core before the Script Core takes it, so
+the cases are the oracle of the move; when the C# logic is removed, its runner goes with it and the data
+stays.
+
+A runner never fills in a key a case leaves out: every key a gesture's table row names is written, and
+a missing one fails the case, where a default would let a misspelt key pass on a value nobody chose.
+The one exception is said where it applies (`times`).
+
+A case says what the grid does, not how a language spells it: "no Focus" is `null` here, where C#
+throws and TypeScript answers `undefined`, and a refusal is named by its kind, not by an exception type.
+
+## Files
+
+One directory per area, one file per group of cases. Each file is an object:
+
+| Key | Meaning |
+|---|---|
+| `about` | What the file covers, and where its cases came from |
+| `kind` | Which runner reads it: `selection`, `range`, `edgeBand`, `held` |
+| `extent` | `[rows, columns]`, the grid every case of the file runs against unless it names its own |
+| `cases` | The cases. Each has a `name`, which starts with the ADR it holds to (CLAUDE.md, "Put the ADR number in the test name") |
+
+## Positions
+
+A cell is `[row, column]`, both from 0, or Excel's A1 notation (`"B2"` is `[1, 1]`). A range is
+`[topRow, leftColumn, rowCount, columnCount]`, or A1 (`"A1:C3"`, `"C2"`). A list of ranges is an array
+of them, or Excel's `Selection.Address` (`"A3:C3,C2,A2,A1:C1"`), the ranges in their order.
+
+## `selection`
+
+A case is a list of `steps`, applied in order to a selection that starts empty. A step is one gesture,
+or `expect`, `save` or `restore`.
+
+| Step | Gesture |
+|---|---|
+| `{"click": cell}` | Click |
+| `{"extendTo": cell}` | Shift+click, and each move of a drag |
+| `{"toggleRange": cell}` | Ctrl+click |
+| `{"toggleColumn": column, "focusRow": row}` | Ctrl+click on a Column Heading |
+| `{"toggleRow": row, "focusColumn": column}` | Ctrl+click on a Row Heading |
+| `{"move": direction}` | Arrow (`"up"`, `"down"`, `"left"`, `"right"`) |
+| `{"extend": direction}` | Shift+arrow |
+| `{"moveToEdge": direction, "answer": cell}` | Ctrl+arrow; `answer`, when given, is the Consumer's edge answer for any cell |
+| `{"extendToEdge": direction, "answer": cell}` | Ctrl+Shift+arrow, likewise |
+| `{"moveByViewport": rows}` | PageDown (positive) or PageUp |
+| `{"extendByViewport": rows}` | Shift+PageDown or Shift+PageUp |
+| `{"selectAll": true}` | Ctrl+A |
+| `{"selectAll": {"firstRow": row, "rowCount": rows}}` | Ctrl+A under a pager |
+| `{"selectWholeColumns": true}` | Ctrl+Space |
+| `{"selectWholeRows": true}` | Shift+Space |
+| `{"cycle": key}` | `"enter"`, `"shift+enter"`, `"tab"` or `"shift+tab"` |
+| `{"nextCorner": true}` | Ctrl+. |
+| `{"collapseToFocus": true}` | Shift+Backspace |
+| `{"focusOn": cell}` | A Find step inside the selection |
+| `{"extendToColumn": column, "focusRowIfEmpty": row}` | Shift+click on a column header |
+| `{"extendToRow": row, "focusColumnIfEmpty": column}` | Shift+click on a Row Heading |
+| `{"place": range, "focus": cell}` | A Consumer's placement |
+| `{"selectColumn": column, "focusRow": row}` | Click on a column header that selects |
+| `{"selectRow": row, "focusColumn": column}` | Click on a Row Heading |
+
+`cycle` and `nextCorner` take `"times"`, how often the key is pressed, and `"focuses"`, the Focus
+expected after each press (which also sets how often, when `times` is absent). With neither, the key is
+pressed once.
+
+Any gesture takes `"extent": [rows, columns]` for that step alone, and `"throws"`: `"outOfRange"` (an
+argument outside what the grid has) or `"invalidOperation"` (a selection that no longer fits, or an
+answer that cannot be followed). A step that throws leaves the selection as it was.
+
+`{"save": "name"}` keeps the selection under a name; `{"restore": "name"}` goes back to it.
+
+`{"expect": {...}}` holds the selection to any of:
+
+| Key | Holds |
+|---|---|
+| `empty` | Whether nothing is selected |
+| `ranges` | The ranges, in their order |
+| `rangeCount` | How many ranges |
+| `rangeAt` | `[index, range]`: the range at that index |
+| `includesRange` | A range that is among them |
+| `focus`, `extent`, `focusRange` | The Focus, the Extent and the Focus range; `null` for none |
+| `cellCount` | The selected-cell count |
+| `contains`, `notContains` | Cells inside and outside the selection |
+| `coversColumn`, `coversRow` | `[[index, covered], …]` |
+| `wholeColumns` | The whole columns, ascending |
+| `topLeftOfRangeMadeLast` | That cell, or `null` |
+| `sameAs`, `differsFrom` | The name of a saved selection it equals, or does not |
+| `unchanged` | Equal to the selection before the step that came before this one |
+
+## `range`
+
+Each case is one of: `{"fromCorners": [cell, cell], "expect": range}`; `{"subtract": {"range": range,
+"cell": cell}, "expect": ranges}`; `{"subtractArea": {"range": range, "area": range}, "expect":
+ranges}`; `{"create": [top, left, rows, columns], "throws": "outOfRange"}` or with `"expect"` the
+range itself; `{"contains": {"range": range, "cells": [[cell, inside], …]}}`; `{"cellCount": range,
+"expect": count}`.
+
+## `edgeBand`
+
+Each case is `{"positionPx", "lengthPx", "rowsPerViewport", "expect"}`: the signed rows a tick.
+
+## `held`
+
+A case is `steps` over a held selection that starts empty under `"version"`: `{"click": cell}` replaces
+the selection under the same version, `{"under": version}` reconciles with the version now current, and
+`{"expect": {"version": n, "empty": bool, "sameAsBefore": bool}}` holds it.

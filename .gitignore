@@ -27,3 +27,10 @@ docs/agent-runs/
 
 # The asset minifier's own dependencies (ADR-0123)
 tools/assets/node_modules/
+
+# The npm workspace (ADR-0350): its dependencies, and what a build writes. A package's report of its
+# public surface, etc/<name>.api.md, is kept; dist/ is built when the package is published.
+src/npm/node_modules/
+src/npm/*/node_modules/
+src/npm/*/dist/
+src/npm/*/temp/

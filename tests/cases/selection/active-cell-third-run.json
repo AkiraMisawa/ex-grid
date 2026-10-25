@@ -1,0 +1,208 @@
+{
+  "about": "ADR-0052's 'What the third run settled', key for key from Excel's sequences in verification/2026-09-28-windows-excel-3/active-cell.md, items 1 to 4 (SL-5, KB-43). A selection is compared with Excel's Selection.Address, range by range, in its order. From tests/ExGrid.Tests/ActiveCellThirdRunTests.cs.",
+  "kind": "selection",
+  "extent": [1000, 60],
+  "cases": [
+    {
+      "name": "ADR-0052 third run, item 1: Enter four times from D4 reaches A1; Shift+Down gives A1:B3, Shift+Right A1:C3; D4:E5 stands",
+      "steps": [
+        { "click": "A1" }, { "extendTo": "B2" }, { "toggleRange": "D4" }, { "extendTo": "E5" },
+        { "expect": { "ranges": "A1:B2,D4:E5", "focus": "D4" } },
+        { "cycle": "enter", "times": 4 },
+        { "expect": { "focus": "A1" } },
+        { "extend": "down" },
+        { "expect": { "ranges": "A1:B3,D4:E5", "focus": "A1" } },
+        { "extend": "right" },
+        { "expect": { "ranges": "A1:C3,D4:E5", "focus": "A1" } }
+      ]
+    },
+    {
+      "name": "ADR-0052 third run, item 1: from A2 (Enter five times), Shift+Down gives A2:B2: the corner opposite A2 moves down",
+      "steps": [
+        { "click": "A1" }, { "extendTo": "B2" }, { "toggleRange": "D4" }, { "extendTo": "E5" },
+        { "cycle": "enter", "times": 5 },
+        { "expect": { "focus": "A2" } },
+        { "extend": "down" },
+        { "expect": { "ranges": "A2:B2,D4:E5", "focus": "A2" } }
+      ]
+    },
+    {
+      "name": "ADR-0052 third run, item 2 (KB-43): Enter ten times, Tab ten times and Shift+Enter three times through A1:B2 then D4:E5",
+      "steps": [
+        { "click": "A1" }, { "extendTo": "B2" }, { "toggleRange": "D4" }, { "extendTo": "E5" },
+        { "expect": { "ranges": "A1:B2,D4:E5", "focus": "D4" } },
+        { "cycle": "enter", "focuses": ["D5", "E4", "E5", "A1", "A2", "B1", "B2", "D4", "D5", "E4"] },
+        { "cycle": "tab", "focuses": ["D5", "E5", "A1", "B1", "A2", "B2", "D4", "E4", "D5", "E5"] },
+        { "cycle": "shift+enter", "focuses": ["E4", "D5", "D4"] },
+        { "expect": { "ranges": "A1:B2,D4:E5" } }
+      ]
+    },
+    {
+      "name": "ADR-0052 third run, item 2 (KB-43): Enter ten times, Tab ten times and Shift+Enter three times through D4:E5 then A1:B2",
+      "steps": [
+        { "click": "D4" }, { "extendTo": "E5" }, { "toggleRange": "A1" }, { "extendTo": "B2" },
+        { "expect": { "ranges": "D4:E5,A1:B2", "focus": "A1" } },
+        { "cycle": "enter", "focuses": ["A2", "B1", "B2", "D4", "D5", "E4", "E5", "A1", "A2", "B1"] },
+        { "cycle": "tab", "focuses": ["A2", "B2", "D4", "E4", "D5", "E5", "A1", "B1", "A2", "B2"] },
+        { "cycle": "shift+enter", "focuses": ["B1", "A2", "A1"] },
+        { "expect": { "ranges": "D4:E5,A1:B2" } }
+      ]
+    },
+    {
+      "name": "ADR-0052 third run, item 2: Tab after Enter goes on from the cell Enter reached: E4, Tab, is D5",
+      "steps": [
+        { "click": "A1" }, { "extendTo": "B2" }, { "toggleRange": "D4" }, { "extendTo": "E5" },
+        { "cycle": "enter", "times": 2 },
+        { "expect": { "focus": "E4" } },
+        { "cycle": "tab" },
+        { "expect": { "focus": "D5" } }
+      ]
+    },
+    {
+      "name": "ADR-0052 third run, item 3 (SL-5): B2 (Enter four times) taken out of A1:C3 leaves A1 active, and Shift+Down extends A1's fragment",
+      "steps": [
+        { "click": "A1" }, { "extendTo": "C3" },
+        { "cycle": "enter", "times": 4 },
+        { "expect": { "focus": "B2" } },
+        { "toggleRange": "B2" },
+        { "expect": { "ranges": "A3:C3,C2,A2,A1:C1", "focus": "A1" } },
+        { "extend": "down" },
+        { "expect": { "ranges": "A3:C3,C2,A2,A1:C2", "focus": "A1" } }
+      ]
+    },
+    {
+      "name": "ADR-0052 third run, item 3 (SL-5): C3 (Shift+Enter once) taken out of A1:C3 leaves A1 active, and Shift+Down extends A1's fragment",
+      "steps": [
+        { "click": "A1" }, { "extendTo": "C3" },
+        { "cycle": "shift+enter" },
+        { "expect": { "focus": "C3" } },
+        { "toggleRange": "C3" },
+        { "expect": { "ranges": "A3:B3,A1:C2", "focus": "A1" } },
+        { "extend": "down" },
+        { "expect": { "ranges": "A3:B3,A1:C3", "focus": "A1" } }
+      ]
+    },
+    {
+      "name": "ADR-0052 third run, item 3 (SL-5): C1 (Enter six times) taken out of A1:C3 leaves A1 active, and Shift+Down extends A1's fragment",
+      "steps": [
+        { "click": "A1" }, { "extendTo": "C3" },
+        { "cycle": "enter", "times": 6 },
+        { "expect": { "focus": "C1" } },
+        { "toggleRange": "C1" },
+        { "expect": { "ranges": "A2:C3,A1:B1", "focus": "A1" } },
+        { "extend": "down" },
+        { "expect": { "ranges": "A2:C3,A1:B2", "focus": "A1" } }
+      ]
+    },
+    {
+      "name": "ADR-0052 third run, item 3 (SL-5): A3 (Enter twice) taken out of A1:C3 leaves A1 active, and Shift+Down extends A1's fragment",
+      "steps": [
+        { "click": "A1" }, { "extendTo": "C3" },
+        { "cycle": "enter", "times": 2 },
+        { "expect": { "focus": "A3" } },
+        { "toggleRange": "A3" },
+        { "expect": { "ranges": "B3:C3,A1:C2", "focus": "A1" } },
+        { "extend": "down" },
+        { "expect": { "ranges": "B3:C3,A1:C3", "focus": "A1" } }
+      ]
+    },
+    {
+      "name": "ADR-0052 third run, item 3 (SL-5): A1 taken out of the earlier range leaves the Focus on D4, and Shift+Down extends D4:E5",
+      "steps": [
+        { "click": "A1" }, { "extendTo": "B2" }, { "toggleRange": "D4" }, { "extendTo": "E5" },
+        { "toggleRange": "A1" },
+        { "expect": { "ranges": "A2:B2,B1,D4:E5", "focus": "D4" } },
+        { "extend": "down" },
+        { "expect": { "ranges": "A2:B2,B1,D4:E6", "focus": "D4" } }
+      ]
+    },
+    {
+      "name": "ADR-0052 third run, item 3 (SL-5): B2 taken out of the earlier range leaves the Focus on D4, and Shift+Down extends D4:E5",
+      "steps": [
+        { "click": "A1" }, { "extendTo": "B2" }, { "toggleRange": "D4" }, { "extendTo": "E5" },
+        { "toggleRange": "B2" },
+        { "expect": { "ranges": "A2,A1:B1,D4:E5", "focus": "D4" } },
+        { "extend": "down" },
+        { "expect": { "ranges": "A2,A1:B1,D4:E6", "focus": "D4" } }
+      ]
+    },
+    {
+      "name": "ADR-0052 third run, item 3 (SL-5): Enter cycles the Focus to A1, then Ctrl+click on E5 leaves D4 active, not A1",
+      "steps": [
+        { "click": "A1" }, { "extendTo": "B2" }, { "toggleRange": "D4" }, { "extendTo": "E5" },
+        { "cycle": "enter", "times": 4 },
+        { "expect": { "focus": "A1" } },
+        { "toggleRange": "E5" },
+        { "expect": { "ranges": "A1:B2,D5,D4:E4", "focus": "D4" } },
+        { "extend": "down" },
+        { "expect": { "ranges": "A1:B2,D5,D4:E5", "focus": "D4" } }
+      ]
+    },
+    {
+      "name": "ADR-0052 third run, item 4 (SL-5, KB-43): B2 out of A1:C3 lists the fragments bottom to top, and Enter visits the Focus's fragment, then the others in that order",
+      "steps": [
+        { "click": "A1" }, { "extendTo": "C3" },
+        { "toggleRange": "B2" },
+        { "expect": { "ranges": "A3:C3,C2,A2,A1:C1", "focus": "A1" } },
+        { "cycle": "enter", "focuses": ["B1", "C1", "A3", "B3", "C3", "C2", "A2", "A1", "B1", "C1"] },
+        { "expect": { "ranges": "A3:C3,C2,A2,A1:C1" } }
+      ]
+    },
+    {
+      "name": "ADR-0052 third run, item 4 (SL-5, KB-43): C3 out of A1:C3 lists the fragments bottom to top, and Enter visits the Focus's fragment, then the others in that order",
+      "steps": [
+        { "click": "A1" }, { "extendTo": "C3" },
+        { "toggleRange": "C3" },
+        { "expect": { "ranges": "A3:B3,A1:C2", "focus": "A1" } },
+        { "cycle": "enter", "focuses": ["A2", "B1", "B2", "C1", "C2", "A3", "B3", "A1", "A2", "B1"] },
+        { "expect": { "ranges": "A3:B3,A1:C2" } }
+      ]
+    },
+    {
+      "name": "ADR-0052 third run, item 4 (SL-5, KB-43): A1 out of A1:C3 lists the fragments bottom to top, and Enter visits the Focus's fragment, then the others in that order",
+      "steps": [
+        { "click": "A1" }, { "extendTo": "C3" },
+        { "toggleRange": "A1" },
+        { "expect": { "ranges": "A2:C3,B1:C1", "focus": "B1" } },
+        { "cycle": "enter", "focuses": ["C1", "A2", "A3", "B2", "B3", "C2", "C3", "B1", "C1", "A2"] },
+        { "expect": { "ranges": "A2:C3,B1:C1" } }
+      ]
+    },
+    {
+      "name": "ADR-0052 third run, item 4: Ctrl+. from A2 (Enter once) in A1:C3 goes to A1 first, then clockwise",
+      "steps": [
+        { "click": "A1" }, { "extendTo": "C3" },
+        { "cycle": "enter" },
+        { "expect": { "focus": "A2" } },
+        { "nextCorner": true, "focuses": ["A1", "C1", "C3", "A3", "A1"] },
+        { "expect": { "ranges": "A1:C3" } }
+      ]
+    },
+    {
+      "name": "ADR-0052 third run, item 4: Ctrl+. from B2 (Enter four times) in A1:C3 goes to A1 first, then clockwise",
+      "steps": [
+        { "click": "A1" }, { "extendTo": "C3" },
+        { "cycle": "enter", "times": 4 },
+        { "expect": { "focus": "B2" } },
+        { "nextCorner": true, "focuses": ["A1", "C1", "C3", "A3", "A1"] },
+        { "expect": { "ranges": "A1:C3" } }
+      ]
+    },
+    {
+      "name": "ADR-0052 third run, item 4: C3, Ctrl+Space selects C:C; Shift+Down changes nothing; Shift+Right gives C:D with C3 active",
+      "steps": [
+        { "click": "C3" },
+        { "selectWholeColumns": true },
+        { "expect": { "ranges": [[0, 2, 1000, 1]] } },
+        { "save": "column" },
+        { "extend": "down" },
+        { "expect": { "ranges": [[0, 2, 1000, 1]], "focus": "C3" } },
+        { "extend": "right" },
+        { "expect": { "ranges": [[0, 2, 1000, 2]], "focus": "C3" } },
+        { "restore": "column" },
+        { "extend": "right" },
+        { "expect": { "ranges": [[0, 2, 1000, 2]] } }
+      ]
+    }
+  ]
+}

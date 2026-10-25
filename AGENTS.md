@@ -117,6 +117,12 @@ nix develop .#browser -c npx playwright test   # layer 3, from tests/ExGrid.Brow
   `wwwroot` holds its minified build (ADR-0123): after an edit run
   `nix develop .#browser -c bash -c 'cd tools/assets && npm ci && npm run minify'` and commit what
   it writes. A minified file older than its source fails `ShippedAssetTests`
+- **The Script Core is the npm workspace at `src/npm/`** (ADR-0350):
+  `nix develop .#browser -c bash -c 'cd src/npm && npm ci && npm run typecheck && npm run lint && npm run build && npm test'`.
+  How its TypeScript is written, and what the lint refuses, is `src/npm/CONVENTIONS.md`. A package's public surface is its `etc/<name>.api.md`, which API Extractor holds the build to, as
+  RS0016 holds a NuGet package to `PublicAPI.Unshipped.txt`: `npm run api` writes it, and you read
+  the diff. Layer 1's cases are JSON under `tests/cases/`, run by Vitest there and by xUnit against
+  the C# core; a case goes in green on the C# core first (`src/npm/README.md`)
 - **Only `src/` packs, and only a tag writes a version.** The projects say `0.0.0-dev`; pushing
   a `v*` tag runs `release.yml`, which publishes a prerelease, and refuses a version without a
   suffix unless its Release Notes name a sign-off, made against a release candidate, that the
@@ -434,6 +440,12 @@ rules that make this safe:
   nothing else.
 - **Do not quietly rewrite an ADR.** When a decision changes, leave what changed and why in the
   text (ADR-0005's "the rationale was replaced once" is the model).
+- **Do not make an error or a missing value go away with one you made up.** `?? 0`, `|| ''`, a `!`
+  that silences the compiler, a `catch` that returns a default, a handler that does nothing: each turns
+  a defect into a plausible figure, which is the spine's first rule broken in one line. Throw, or make
+  the absence part of the contract where the signature shows it. In TypeScript `npm run lint` refuses
+  these forms, and an exception is one line with its reason after ` -- ` (`src/npm/CONVENTIONS.md`); in
+  C# nothing refuses them yet, so review does.
 - **Do not weaken a requirement to make an implementation easier.** If a criterion cannot be met,
   leave it failing and say so. A criterion quietly relaxed to fit the code is how a specification
   stops meaning anything — and changing what is required is an ADR change, made deliberately and

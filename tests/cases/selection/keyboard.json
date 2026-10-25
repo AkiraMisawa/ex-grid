@@ -1,0 +1,278 @@
+{
+  "about": "The keys that move and extend the selection: arrows, Shift+arrows, Ctrl+arrows, PageUp and PageDown, Ctrl+Space and Shift+Space, Ctrl+A under a pager, and the refusals. From tests/ExGrid.Tests/SelectionKeyboardTests.cs.",
+  "kind": "selection",
+  "extent": [100, 26],
+  "cases": [
+    {
+      "name": "ADR-0012/0052: an arrow collapses the selection to one cell and moves from the Focus, not the Extent",
+      "steps": [
+        { "click": [2, 2] },
+        { "extendTo": [4, 4] },
+        { "move": "down" },
+        { "expect": { "ranges": [[3, 2, 1, 1]], "focus": [3, 2], "extent": [3, 2] } }
+      ]
+    },
+    {
+      "name": "ADR-0012: an arrow at the top-left edges clamps, and the Focus stays",
+      "extent": [3, 3],
+      "steps": [
+        { "click": [0, 0] },
+        { "save": "topLeft" },
+        { "move": "up" },
+        { "expect": { "focus": [0, 0] } },
+        { "restore": "topLeft" },
+        { "move": "left" },
+        { "expect": { "focus": [0, 0] } }
+      ]
+    },
+    {
+      "name": "ADR-0012: an arrow at the bottom-right edges clamps, and the Focus stays",
+      "extent": [3, 3],
+      "steps": [
+        { "click": [2, 2] },
+        { "save": "bottomRight" },
+        { "move": "down" },
+        { "expect": { "focus": [2, 2] } },
+        { "restore": "bottomRight" },
+        { "move": "right" },
+        { "expect": { "focus": [2, 2] } }
+      ]
+    },
+    {
+      "name": "ADR-0052: Shift+arrow moves the Extent with the Focus fixed, and shrinking back through the Focus flips",
+      "steps": [
+        { "click": [2, 2] },
+        { "extend": "down" },
+        { "expect": { "ranges": [[2, 2, 2, 1]] } },
+        { "extend": "up" },
+        { "expect": { "ranges": [[2, 2, 1, 1]] } },
+        { "extend": "up" },
+        { "expect": { "ranges": [[1, 2, 2, 1]], "focus": [2, 2], "extent": [1, 2] } }
+      ]
+    },
+    {
+      "name": "ADR-0011: Ctrl+arrow jumps to the grid's edge, not a block edge, which needs data the grid does not have",
+      "steps": [
+        { "click": [5, 3] },
+        { "save": "start" },
+        { "moveToEdge": "down" },
+        { "expect": { "focus": [99, 3], "ranges": [[99, 3, 1, 1]] } },
+        { "restore": "start" },
+        { "moveToEdge": "up" },
+        { "expect": { "focus": [0, 3] } },
+        { "restore": "start" },
+        { "moveToEdge": "right" },
+        { "expect": { "focus": [5, 25] } },
+        { "restore": "start" },
+        { "moveToEdge": "left" },
+        { "expect": { "focus": [5, 0] } }
+      ]
+    },
+    {
+      "name": "ADR-0012/0052: Shift+Ctrl+arrow runs the Extent to the edge, and the Focus stays",
+      "steps": [
+        { "click": [5, 3] },
+        { "extendToEdge": "down" },
+        { "expect": { "ranges": [[5, 3, 95, 1]], "focus": [5, 3], "extent": [99, 3] } }
+      ]
+    },
+    {
+      "name": "ADR-0012: Ctrl+Shift+Down from the first row is in effect a whole-column selection",
+      "steps": [
+        { "click": [0, 3] },
+        { "extendToEdge": "down" },
+        { "expect": { "ranges": [[0, 3, 100, 1]] } }
+      ]
+    },
+    {
+      "name": "ADR-0012/0052: Ctrl+Space grows the range holding the Focus to every row, keeping its columns, and the Focus stays",
+      "steps": [
+        { "click": [5, 3] },
+        { "extendTo": [7, 4] },
+        { "selectWholeColumns": true },
+        { "expect": { "ranges": [[0, 3, 100, 2]], "focus": [5, 3] } }
+      ]
+    },
+    {
+      "name": "ADR-0012: Shift+Space grows the range holding the Focus to every visible column, keeping its rows",
+      "steps": [
+        { "click": [5, 3] },
+        { "extendTo": [7, 4] },
+        { "selectWholeRows": true },
+        { "expect": { "ranges": [[5, 0, 3, 26]] } }
+      ]
+    },
+    {
+      "name": "ADR-0052: after a cell is taken out, Ctrl+Space grows the fragment holding the Focus; there is no detached state",
+      "steps": [
+        { "click": [2, 2] },
+        { "extendTo": [4, 4] },
+        { "toggleRange": [3, 3] },
+        { "selectWholeColumns": true },
+        { "expect": { "rangeCount": 4, "rangeAt": [3, [0, 2, 100, 3]], "focus": [2, 2] } }
+      ]
+    },
+    {
+      "name": "ADR-0052 case 9: Ctrl+Space and Shift+Space act on the range holding the Focus, which Enter moved: B3 in B2:D4 gives B:D and 2:4",
+      "steps": [
+        { "click": [1, 1] },
+        { "extendTo": [3, 3] },
+        { "cycle": "enter" },
+        { "save": "b3" },
+        { "selectWholeColumns": true },
+        { "expect": { "ranges": [[0, 1, 100, 3]], "focus": [2, 1] } },
+        { "restore": "b3" },
+        { "selectWholeRows": true },
+        { "expect": { "ranges": [[1, 0, 3, 26]], "focus": [2, 1] } }
+      ]
+    },
+    {
+      "name": "ADR-0012: the keyboard needs a Focus to start from; with nothing selected each key leaves nothing selected",
+      "steps": [
+        { "move": "down" },
+        { "expect": { "empty": true } },
+        { "extend": "down" },
+        { "expect": { "empty": true } },
+        { "moveToEdge": "down" },
+        { "expect": { "empty": true } },
+        { "extendToEdge": "down" },
+        { "expect": { "empty": true } },
+        { "selectWholeColumns": true },
+        { "expect": { "empty": true } },
+        { "selectWholeRows": true },
+        { "expect": { "empty": true } },
+        { "cycle": "enter" },
+        { "expect": { "empty": true } }
+      ]
+    },
+    {
+      "name": "ADR-0012/0052: PageDown collapses and moves the Focus, not the Extent, by the rows the caller passes",
+      "steps": [
+        { "click": [2, 2] },
+        { "extendTo": [4, 4] },
+        { "moveByViewport": 20 },
+        { "expect": { "ranges": [[22, 2, 1, 1]], "focus": [22, 2] } },
+        { "moveByViewport": -20 },
+        { "expect": { "focus": [2, 2] } }
+      ]
+    },
+    {
+      "name": "ADR-0012: PageUp at the first rows clamps, and the Focus stays inside",
+      "steps": [
+        { "click": [3, 5] },
+        { "moveByViewport": -20 },
+        { "expect": { "focus": [0, 5] } }
+      ]
+    },
+    {
+      "name": "ADR-0012: PageDown at the last rows clamps, and the Focus stays inside",
+      "steps": [
+        { "click": [95, 5] },
+        { "moveByViewport": 20 },
+        { "expect": { "focus": [99, 5] } }
+      ]
+    },
+    {
+      "name": "ADR-0052 case 11: Shift+PageDown moves the Extent a Viewport of rows and the Focus stays",
+      "steps": [
+        { "click": [10, 3] },
+        { "extendByViewport": 20 },
+        { "expect": { "ranges": [[10, 3, 21, 1]], "focus": [10, 3], "extent": [30, 3] } },
+        { "extendByViewport": -20 },
+        { "expect": { "ranges": [[10, 3, 1, 1]] } }
+      ]
+    },
+    {
+      "name": "ADR-0011: a grid with no rows or no columns has nothing to select",
+      "steps": [
+        { "click": [0, 0], "extent": [0, 5] },
+        { "expect": { "empty": true } },
+        { "click": [5, 3] },
+        { "save": "selected" },
+        { "move": "down", "extent": [0, 5] },
+        { "expect": { "empty": true } },
+        { "restore": "selected" },
+        { "selectAll": true, "extent": [0, 5] },
+        { "expect": { "empty": true } }
+      ]
+    },
+    {
+      "name": "ADR-0011: a selection that no longer fits the grid is a missed drop, refused rather than mapped onto other cells",
+      "steps": [
+        { "click": [50, 3] },
+        { "move": "down", "extent": [10, 26], "throws": "invalidOperation" },
+        { "extend": "down", "extent": [10, 26], "throws": "invalidOperation" },
+        { "cycle": "enter", "extent": [10, 26], "throws": "invalidOperation" },
+        { "expect": { "focus": [50, 3] } }
+      ]
+    },
+    {
+      "name": "ADR-0011: a cell outside the grid is refused",
+      "steps": [
+        { "click": [100, 0], "throws": "outOfRange" },
+        { "click": [0, 26], "throws": "outOfRange" },
+        { "click": [-1, 0], "throws": "outOfRange" },
+        { "expect": { "empty": true } }
+      ]
+    },
+    {
+      "name": "ADR-0012/0015/0052: Ctrl+A under a pager names the page, and the Focus stays",
+      "steps": [
+        { "click": [52, 3] },
+        { "selectAll": { "firstRow": 50, "rowCount": 25 } },
+        { "expect": { "ranges": [[50, 0, 25, 26]], "focus": [52, 3] } }
+      ]
+    },
+    {
+      "name": "ADR-0015: Ctrl+A under a pager from nothing selected puts the Focus on the page's first cell",
+      "steps": [
+        { "selectAll": { "firstRow": 50, "rowCount": 25 } },
+        { "expect": { "focus": [50, 0] } }
+      ]
+    },
+    {
+      "name": "ADR-0015: Ctrl+A under a pager from a Focus on another page puts the Focus on the page's first cell",
+      "steps": [
+        { "click": [10, 3] },
+        { "selectAll": { "firstRow": 50, "rowCount": 25 } },
+        { "expect": { "ranges": [[50, 0, 25, 26]], "focus": [50, 0] } }
+      ]
+    },
+    {
+      "name": "ADR-0011 / SL-1: Ctrl+A over a million rows and fifty columns is one rectangle",
+      "extent": [1000000, 50],
+      "steps": [
+        { "click": [10, 3] },
+        { "selectAll": true },
+        { "expect": { "ranges": [[0, 0, 1000000, 50]], "cellCount": 50000000 } }
+      ]
+    },
+    {
+      "name": "ADR-0011 / SL-2: there is no cap; selecting the whole result succeeds at 10^6 × 50",
+      "extent": [1000000, 50],
+      "steps": [
+        { "click": [999999, 49] },
+        { "selectAll": true },
+        { "expect": { "ranges": [[0, 0, 1000000, 50]], "cellCount": 50000000, "focus": [999999, 49] } }
+      ]
+    },
+    {
+      "name": "ADR-0011 / SL-2: there is no cap; selecting the whole result succeeds at 10^8 × 1,000",
+      "extent": [100000000, 1000],
+      "steps": [
+        { "click": [99999999, 999] },
+        { "selectAll": true },
+        { "expect": { "ranges": [[0, 0, 100000000, 1000]], "cellCount": 100000000000, "focus": [99999999, 999] } }
+      ]
+    },
+    {
+      "name": "ADR-0011 / SL-2: there is no cap; selecting the whole result succeeds at the largest row count × Excel's 16,384 columns",
+      "extent": [2147483647, 16384],
+      "steps": [
+        { "click": [2147483646, 16383] },
+        { "selectAll": true },
+        { "expect": { "ranges": [[0, 0, 2147483647, 16384]], "cellCount": 35184372072448, "focus": [2147483646, 16383] } }
+      ]
+    }
+  ]
+}

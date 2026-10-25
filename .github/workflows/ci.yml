@@ -159,6 +159,41 @@ jobs:
           path: coverage/
           retention-days: 30
 
+  # The Script Core's npm workspace (ADR-0350, section 13): its sources and tests type-checked, each
+  # package built with its public surface held to its report (API Extractor, the counterpart of
+  # PublicAPI.Unshipped.txt), and Vitest's layers 1 and 2, whose layer-1 cases are the JSON under
+  # tests/cases/ that the tests job runs against the C# core.
+  script-core:
+    name: Script Core, layers 1 and 2 (npm)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: src/npm
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: src/npm/package-lock.json
+
+      - name: Install the workspace
+        run: npm ci
+
+      - name: Type-check the sources and the tests
+        run: npm run typecheck
+
+      - name: Lint, held to its own fixtures first
+        run: npm run lint
+
+      - name: Build, and hold each package's public surface to its report
+        run: npm run build
+
+      - name: Layers 1 and 2
+        run: npm test
+
   # The hosts layer 3 drives, published once in Release and handed to every runner that drives
   # them: the WebAssembly DemoHost, the Server host and the demo API server (ADR-0069), as
   # `dotnet publish -c Release` writes them, which is how a Consumer deploys. The suite starts

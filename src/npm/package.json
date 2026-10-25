@@ -1,0 +1,30 @@
+{
+  "name": "ex-grid-npm",
+  "private": true,
+  "version": "0.0.0",
+  "description": "The npm workspace of ExGrid's Script Core and its Framework Adapters (ADR-0350, section 13).",
+  "license": "MIT",
+  "type": "module",
+  "workspaces": [
+    "core"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces",
+    "api": "npm run api --workspaces",
+    "lint": "node lint/check.mjs",
+    "test": "npm run test --workspaces",
+    "typecheck": "npm run typecheck --workspaces"
+  },
+  "devDependencies": {
+    "@microsoft/api-extractor": "7.59.4",
+    "@types/node": "22.20.5",
+    "esbuild": "0.28.2",
+    "oxlint": "1.89.0",
+    "oxlint-tsgolint": "7.0.2005",
+    "typescript": "7.0.2",
+    "vitest": "5.0.5"
+  },
+  "engines": {
+    "node": ">=22.12"
+  }
+}
