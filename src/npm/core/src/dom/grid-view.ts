@@ -20,9 +20,11 @@ import { columnMark } from '../paint/heading-mark-styles';
 import { rowClasses } from '../paint/row-classes';
 import { cell as cellPosition, sameCell, type CellPosition, type GridExtent } from '../selection/cell';
 import { markedColumns, wholeColumnRuns } from '../selection/heading-marks';
+import { edgeBandRowsPerTick } from '../selection/edge-band';
 import { HeldSelection } from '../selection/held';
 import { rangeCellCount, sameRange as sameSelectionRange, spansEveryColumn, spansEveryRow, type SelectionRange } from '../selection/range';
 import { Selection, type GridSelection } from '../selection/selection';
+import { nextSort } from '../query/sort';
 import type { GridSource, GridSourceState } from '../source/grid-source';
 import { InMemoryGridSource } from '../source/in-memory-source';
 import { rowRange, type RowRange } from '../viewport/row-range';
@@ -72,6 +74,9 @@ const defaultViewportHeightPx = 600;
 /** How long scrolling must have stood still before a fling's Placeholders are painted over (ADR-0004), and
  * a Selection before it is announced (ADR-0033). */
 const settleDelayMs = 150;
+
+/** How often a drag held in an edge band scrolls a step (ADR-0008). */
+const edgeScrollTickMs = 50;
 
 /** The keys whose own keydown is no key of the grid's: they neither take nor end a release of Tab. */
 const modifierKeys: ReadonlySet<string> = new Set(['Control', 'Shift', 'Alt', 'Meta', 'AltGraph', 'CapsLock']);
@@ -233,8 +238,6 @@ export class GridView<Row> {
     // The Selection the Consumer last heard.
     #raised: Selection = Selection.empty;
     #dragging = false;
-    // A press the grid answered, whose release is answered too.
-    #pressed = false;
     // Escape with nothing to dismiss releases Tab: the next Tab is the browser's (ADR-0012).
     #tabReleased = false;
     // The inputs answered, written on the stamp by the pass that paints the answer (ADR-0220).
@@ -288,6 +291,19 @@ export class GridView<Row> {
     #paintId = 0;
     #layoutStyles: ColumnStyles | undefined;
     #paintedLayers: string | undefined;
+    #visibleWidthPx = 0;
+
+    // A Heading drag (ADR-0050 item 1, ADR-0012, 2026-09-29), a press on the header that is not yet a click
+    // or a drag, where the press was, and a click a gesture has already answered.
+    #headingDrag = false;
+    #headerPress: { readonly column: number; readonly extends: boolean; readonly toggles: boolean } | undefined;
+    #headingPress = { x: 0, y: 0, clientX: 0, clientY: 0 };
+    #gestureConsumedClick = false;
+    // The edge band (ADR-0008): where the pointer stands in the Viewport's readable box and the step each
+    // tick takes, and an offset a step moved that the next pass writes.
+    #edge: { readonly x: number; readonly y: number; readonly rows: number; readonly stepXPx: number } | undefined;
+    #cancelEdgeTick: (() => void) | undefined;
+    #scrollOwed = false;
     #layerInputs: Readonly<Record<string, unknown>> | undefined;
     #shadeHolds = false;
 
@@ -373,6 +389,8 @@ export class GridView<Row> {
             root.addEventListener('keydown', this.#onKeyDown, true);
             this.#viewport.addEventListener('mousedown', this.#onPress);
             this.#viewport.addEventListener('mouseup', this.#onRelease);
+            this.#header.addEventListener('mousedown', this.#onHeaderPress);
+            this.#header.addEventListener('click', this.#onHeaderClick);
             root.addEventListener('focusout', this.#onFocusLeft);
             this.#scroller.addEventListener('focus', this.#onScrollerFocus);
             this.#stops.push(
@@ -383,6 +401,10 @@ export class GridView<Row> {
                 () => { root.removeEventListener('focusout', this.#onFocusLeft); },
                 () => { root.removeEventListener('mouseup', this.#onDragEnd); },
                 () => { this.#viewport.removeEventListener('mousemove', this.#onDrag); },
+                () => { this.#header.removeEventListener('mousedown', this.#onHeaderPress); },
+                () => { this.#header.removeEventListener('click', this.#onHeaderClick); },
+                () => { this.#header.removeEventListener('mousemove', this.#onDrag); },
+                () => { root.removeEventListener('mouseleave', this.#onLeave); },
                 () => { this.#scroller.removeEventListener('focus', this.#onScrollerFocus); },
                 reports.observeViewport(this.#scroller, report => {
                     this.#viewportReport = report;
@@ -422,6 +444,7 @@ export class GridView<Row> {
         this.#cancelAnnounce?.();
         this.#cancelFollow?.();
         this.#repaint?.cancel();
+        this.#stopEdgeTimer();
         for (const stop of this.#stops) stop();
         this.#unsubscribe?.();
         this.#root.replaceChildren();
@@ -613,13 +636,16 @@ export class GridView<Row> {
         const revealed = this.#stageReveal();
         this.#stageFollow();
         this.#paint();
-        if (revealed) {
+        const stepped = this.#scrollOwed;
+        this.#scrollOwed = false;
+        if (revealed || stepped) {
             // Written in the task that painted the slice, so the offset and the rows reach the screen
-            // together (ADR-0012, 2026-09-29); its scroll event then finds nothing moved.
+            // together (ADR-0012, 2026-09-29); its scroll event then finds nothing moved. An edge band's
+            // step is written so too (ADR-0008).
             this.#scroller.scrollTop = this.#scrollTopPx;
             this.#scroller.scrollLeft = this.#scrollLeftPx;
-            this.#repaintAfterReveal(this.#scrollTopPx, this.#scrollLeftPx);
         }
+        if (revealed) this.#repaintAfterReveal(this.#scrollTopPx, this.#scrollLeftPx);
         this.#raiseRangeIfUncovered();
         this.#raiseSelection();
         this.#lookSettled();
@@ -650,6 +676,7 @@ export class GridView<Row> {
         const visibleWidthPx = this.#width === 'stretch'
             ? Math.max(0, report?.contentWidthPx ?? 0) // oxlint-disable-line ex-grid/no-stand-in-default -- ADR-0028: a stretched axis is 0 until the browser reports it, and paints nothing
             : ViewportBox.visibleWidthOf(this.#width, report?.gutterWidthPx ?? 0); // oxlint-disable-line ex-grid/no-stand-in-default -- ADR-0013: the gutter is 0 until the browser reports otherwise
+        this.#visibleWidthPx = visibleWidthPx;
         const visibleHeightPx = this.#height === 'stretch'
             ? Math.max(0, report?.contentHeightPx ?? 0) // oxlint-disable-line ex-grid/no-stand-in-default -- ADR-0028: as the width
             : ViewportBox.visibleHeightOf(this.#height, report?.gutterHeightPx ?? 0); // oxlint-disable-line ex-grid/no-stand-in-default -- ADR-0013: as the width
@@ -894,12 +921,13 @@ export class GridView<Row> {
         const at = this.#cellUnder(event);
         if (at === undefined) return;
         this.#answered += 1;
-        this.#pressed = true;
+        // A press is a new gesture: a Heading gesture whose release was not heard is over.
+        this.#forgetHeadingDrag();
         // A press on the grid ends a release of Tab: the user has come back to it (ADR-0012).
         this.#tabReleased = false;
         const extent = this.#extent;
         const current = this.#held.selection;
-        const toggling = !event.shiftKey && (event.ctrlKey || (event.metaKey && this.#metaIsPrimary));
+        const toggling = this.#toggles(event);
         const next = event.shiftKey ? current.extendTo(at, extent)
             : toggling ? current.toggleRange(at, extent)
                 : current.click(at, extent);
@@ -914,16 +942,23 @@ export class GridView<Row> {
             this.#setDragging(false);
             return;
         }
+        // A Heading drag over the header or the cells: only the pointer's column counts (ADR-0050).
+        if (this.#headingDrag) {
+            this.#moveHeadingDrag(event);
+            return;
+        }
         if (event.target !== this.#viewport) return;
         const at = this.#cellUnder(event);
-        if (at !== undefined && this.#apply(this.#held.selection.extendTo(at, this.#extent))) this.#invalidate();
+        if (at === undefined) return;
+        if (this.#apply(this.#held.selection.extendTo(at, this.#extent))) this.#invalidate();
+        const y = this.#viewportYOf(event);
+        if (y !== undefined) this.#updateEdgeBand(event.offsetX - this.#scrollLeftPx, y);
     };
 
-    // The release of a press the grid answered is an input answered too, as the C# core counts it
-    // (ADR-0220).
-    readonly #onRelease = (): void => {
-        if (!this.#pressed) return;
-        this.#pressed = false;
+    // A release on the rows is an input answered too, wherever its press was, as the C# core counts it
+    // (ADR-0220): it ends a drag begun there or on the header.
+    readonly #onRelease = (event: MouseEvent): void => {
+        if (event.button !== 0) return;
         this.#answered += 1;
         this.#invalidate();
     };
@@ -931,8 +966,17 @@ export class GridView<Row> {
     // A drag ends at its release anywhere on the grid, over the header too; released outside it, the next
     // move without the button ends it (#onDrag). Nothing is heard on the document: every grid on the page
     // would hear every drag (ADR-0018).
-    readonly #onDragEnd = (): void => {
+    readonly #onDragEnd = (event: MouseEvent): void => {
+        // Where a Heading drag is released counts as a move: a fast release reaches another column without
+        // a move between (ADR-0050, item 1; ADR-0012).
+        if (this.#headingDrag) this.#moveHeadingDrag(event);
         this.#setDragging(false);
+    };
+
+    // The pointer left the grid: the edge band stops, since outside it no event would contradict a running
+    // timer. The drag stands, and the next move without the button ends it (ADR-0008).
+    readonly #onLeave = (): void => {
+        this.#stopEdgeTimer();
     };
 
     // DOM focus leaving the grid ends a release of Tab, as the C# core's key gate does (ADR-0080).
@@ -941,18 +985,237 @@ export class GridView<Row> {
         if (!(next instanceof Node) || !this.#root.contains(next)) this.#tabReleased = false;
     };
 
-    // The move listener stands only while a drag runs, so a pointer passing over costs nothing.
+    // The move listeners stand only while a drag runs, so a pointer passing over costs nothing. Whatever
+    // ends a drag ends a Heading drag, a press on the header and the edge band with it.
     #setDragging(dragging: boolean): void {
+        if (!dragging) this.#forgetHeadingDrag();
         if (dragging === this.#dragging) return;
         this.#dragging = dragging;
         if (dragging) {
             this.#viewport.addEventListener('mousemove', this.#onDrag);
+            this.#header.addEventListener('mousemove', this.#onDrag);
             this.#root.addEventListener('mouseup', this.#onDragEnd);
+            this.#root.addEventListener('mouseleave', this.#onLeave);
         } else {
             this.#viewport.removeEventListener('mousemove', this.#onDrag);
+            this.#header.removeEventListener('mousemove', this.#onDrag);
             this.#root.removeEventListener('mouseup', this.#onDragEnd);
+            this.#root.removeEventListener('mouseleave', this.#onLeave);
         }
     }
+
+    #forgetHeadingDrag(): void {
+        this.#headingDrag = false;
+        this.#headerPress = undefined;
+        this.#stopEdgeTimer();
+    }
+
+    // Whether a press adds or takes out (ADR-0012): Ctrl, or Meta where Meta is Command; Shift outranks it.
+    #toggles(event: MouseEvent): boolean {
+        return !event.shiftKey && (event.ctrlKey || (event.metaKey && this.#metaIsPrimary));
+    }
+
+    // ---- The header: its press, its click and the Heading drag (ADR-0012, ADR-0050 item 1) -------------
+
+    // A press on the header. The click sorts on a plain grid, so the press selects nothing until the
+    // pointer reaches another column; released where it was pressed, it is a click (ADR-0012, 2026-09-29).
+    readonly #onHeaderPress = (event: MouseEvent): void => {
+        this.#answered += 1;
+        this.#invalidate();
+        // A new press is a new story: a release outside the header raises no click, and a flag left
+        // standing would eat the next genuine sort.
+        this.#gestureConsumedClick = false;
+        this.#tabReleased = false;
+        if (event.button !== 0 || event.target !== this.#header) return;
+        this.#reconcileSelection();
+        const column = this.#headerColumnAt(event);
+        if (column === undefined) return;
+        this.#headingPress = {
+            x: event.offsetX - this.#scrollLeftPx, y: event.offsetY - this.#bandHeightPx, clientX: event.clientX, clientY: event.clientY,
+        };
+        this.#setDragging(true);
+        this.#headerPress = { column, extends: event.shiftKey, toggles: this.#toggles(event) };
+        this.#headingDrag = true;
+    };
+
+    // Clicking a column header sorts, and never selects the column; Shift+click selects whole columns and
+    // Ctrl+click adds or takes one out, and neither sorts (ADR-0012). What the Sort does to the rows is the
+    // source's (ADR-0001, ADR-0011).
+    readonly #onHeaderClick = (event: MouseEvent): void => {
+        this.#answered += 1;
+        this.#invalidate();
+        // A Heading drag's click is the gesture's tail, not a sort.
+        if (this.#gestureConsumedClick) {
+            this.#gestureConsumedClick = false;
+            if (this.#headingDrag) this.#setDragging(false);
+            return;
+        }
+        // A press whose release was not heard ends with its click, and a click on another column than
+        // the one pressed is a drag's tail (ADR-0012, 2026-09-29).
+        if (this.#headerPress !== undefined) {
+            this.#moveHeadingDrag(event);
+            // The move made it a drag when it reached another column, and the press is gone.
+            const dragged = !this.#pressPending;
+            this.#gestureConsumedClick = false;
+            this.#setDragging(false);
+            if (dragged) return;
+        }
+        if (event.button !== 0 || event.target !== this.#header) return;
+        this.#reconcileSelection();
+        const column = this.#headerColumnAt(event);
+        if (column === undefined) return;
+        const extent = this.#extent;
+        const current = this.#held.selection;
+        if (event.shiftKey || this.#toggles(event)) {
+            // Selection is positional: a column that cannot be sorted is selected like any other. From
+            // nothing selected, the Focus is on the first row on screen (KB-9).
+            if (extent.rowCount <= 0) return;
+            this.#apply(event.shiftKey
+                ? current.extendToColumn(column, extent, this.#firstVisibleRow)
+                : current.toggleColumn(column, extent, this.#firstVisibleRow));
+            return;
+        }
+        const { column: declared } = itemAt(this.#columns, column);
+        if (declared.queryable === false) return;
+        this.#source.setSorts(nextSort(this.#state.sorts, declared.name));
+    };
+
+    // Read through a getter: after #moveHeadingDrag, which may clear the press, the narrowing at the call
+    // would still hold it set.
+    get #pressPending(): boolean {
+        return this.#headerPress !== undefined;
+    }
+
+    // The column a press or a click on the header names, or none: the corner where the Headings meet names
+    // none, nor does the dead space past the last column, where columnAt would clamp for a drag.
+    #headerColumnAt(event: MouseEvent): number | undefined {
+        const geometry = this.#styles.geometry;
+        const x = event.offsetX;
+        if (!Number.isFinite(x) || !Number.isFinite(event.offsetY) || geometry.isInLead(x, this.#scrollLeftPx)
+            || x < 0 || x >= geometry.totalWidthPx) return undefined;
+        return geometry.columnAt(x, this.#scrollLeftPx);
+    }
+
+    // The row the Focus lands on when a Column Heading is pressed: the first on screen, so the Viewport
+    // does not move for a press on the header (KB-9).
+    get #firstVisibleRow(): number {
+        return this.#visible?.start ?? 0; // oxlint-disable-line ex-grid/no-stand-in-default -- KB-9: with no row painted the Focus goes on the first row, as the C# core puts it
+    }
+
+    // What a press on a Column Heading selects (ADR-0050, item 1; ADR-0052): the whole column, or with
+    // Shift whole columns from the Focus's to this one, and then the drag. With Ctrl the column is added as
+    // a new range; or, wholly selected, taken out, and no drag begins.
+    #beginHeadingDrag(column: number, extendsSelection: boolean, toggles: boolean): void {
+        const extent = this.#extent;
+        if (extent.rowCount <= 0 || extent.columnCount <= 0) {
+            this.#setDragging(false);
+            return;
+        }
+        const current = this.#held.selection;
+        const first = this.#firstVisibleRow;
+        if (toggles && current.coversColumn(column, extent)) {
+            this.#apply(current.toggleColumn(column, extent, first));
+            this.#setDragging(false);
+            return;
+        }
+        this.#apply(extendsSelection ? current.extendToColumn(column, extent, first)
+            : toggles ? current.toggleColumn(column, extent, first)
+                : current.selectColumn(column, extent, first));
+        this.#headerPress = undefined;
+        this.#headingDrag = true;
+    }
+
+    // The pointer moved during a Heading gesture, over the header or the cells: the Extent goes to its
+    // column, whatever row it is over. A press becomes a drag when the pointer reaches another column, and
+    // from then on never sorts, even released back over the column it started on (ADR-0012). Every event is
+    // placed by its client delta from the press, whatever element it fired on: nothing is measured
+    // (ADR-0021).
+    #moveHeadingDrag(event: MouseEvent): void {
+        const press = this.#headingPress;
+        const x = press.x + (event.clientX - press.clientX);
+        const y = press.y + (event.clientY - press.clientY);
+        if (!Number.isFinite(x) || !Number.isFinite(y)) return;
+        const column = this.#styles.geometry.columnAt(x + this.#scrollLeftPx, this.#scrollLeftPx);
+        if (column === undefined) return;
+        const pending = this.#headerPress;
+        if (pending !== undefined) {
+            if (column === pending.column) return;
+            this.#gestureConsumedClick = true;
+            this.#beginHeadingDrag(pending.column, pending.extends, pending.toggles);
+            this.#invalidate();
+            if (!this.#headingDrag) return;
+        }
+        if (this.#apply(this.#held.selection.extendToColumn(column, this.#extent, this.#firstVisibleRow))) this.#invalidate();
+        this.#updateEdgeBand(x, y);
+    }
+
+    // ---- The edge band (ADR-0008) -------------------------------------------------------------------------
+
+    // Where a pointer on the Viewport stands in its readable box, down from the top of the rows, or none
+    // with no rows painted to read it against.
+    #viewportYOf(event: MouseEvent): number | undefined {
+        const geometry = this.#geometry;
+        const visible = this.#visible;
+        return geometry === undefined || visible === undefined
+            ? undefined
+            : event.offsetY + geometry.offsetPxOf(visible.start) - geometry.contentOffsetAt(this.#scrollTopPx);
+    }
+
+    // The edge bands for a pointer at (x, y) in the Viewport's readable box. Sideways the unit is a row
+    // height a rate step: columns are of unequal width, and the band has no column unit. A Heading drag
+    // scrolls along its Heading's axis only (ADR-0050, item 1).
+    #updateEdgeBand(viewportX: number, viewportY: number): void {
+        const geometry = this.#geometry;
+        if (geometry === undefined || this.#visible === undefined) return;
+        const rows = this.#headingDrag ? 0 : edgeBandRowsPerTick(viewportY, geometry.viewportHeightPx, geometry.rowsPerViewport);
+        const stepXPx = edgeBandRowsPerTick(viewportX, this.#visibleWidthPx, Number.MAX_SAFE_INTEGER) * this.#metrics.rowHeightPx;
+        if (rows === 0 && stepXPx === 0) {
+            this.#stopEdgeTimer();
+            return;
+        }
+        this.#edge = { x: viewportX, y: viewportY, rows, stepXPx };
+        this.#cancelEdgeTick ??= this.#reports.clock.setTimer(this.#onEdgeTick, edgeScrollTickMs);
+    }
+
+    #stopEdgeTimer(): void {
+        this.#cancelEdgeTick?.();
+        this.#cancelEdgeTick = undefined;
+        this.#edge = undefined;
+    }
+
+    // A tick: the model moves a step first, so the ticks compound deterministically, and the pass writes
+    // the offset with the rows it paints there. The pointer has not moved; the cell under it has, and the
+    // Extent follows it. The rate stays under the fling threshold, so the rows never turn to Placeholders.
+    readonly #onEdgeTick = (): void => {
+        this.#cancelEdgeTick = undefined;
+        const edge = this.#edge;
+        if (this.#destroyed || !this.#dragging || edge === undefined || this.#geometry === undefined) return;
+        this.#cancelEdgeTick = this.#reports.clock.setTimer(this.#onEdgeTick, edgeScrollTickMs);
+        // No rows to step is no vertical move at all: through a compressed mapping a step of nothing could
+        // come back an ulp away, and the rows would drift under a Heading drag (ADR-0053).
+        const top = edge.rows === 0 ? this.#scrollTopPx
+            : this.#geometry.scrollTopStepped(this.#scrollTopPx, edge.rows * this.#metrics.rowHeightPx);
+        const left = Math.min(Math.max(this.#scrollLeftPx + edge.stepXPx, 0), this.#styles.geometry.maxScrollLeftPx);
+        const moved = top !== this.#scrollTopPx || left !== this.#scrollLeftPx;
+        if (moved) {
+            this.#scrollTopPx = top;
+            this.#scrollLeftPx = left;
+            this.#scrollOwed = true;
+            this.#resolve();
+        }
+        const geometry = this.#geometry;
+        const row = geometry.rowAt(geometry.contentOffsetAt(top) + edge.y);
+        const column = this.#styles.geometry.columnAt(edge.x + left, left);
+        let changed = false;
+        if (row !== undefined && column !== undefined) {
+            const extent = this.#extent;
+            const current = this.#held.selection;
+            changed = this.#apply(this.#headingDrag
+                ? current.extendToColumn(column, extent, this.#firstVisibleRow)
+                : current.extendTo(cellPosition(row, column), extent));
+        }
+        if (moved || changed) this.#invalidate();
+    };
 
     // The cell under a pointer on the Viewport, by arithmetic on its offsets (ADR-0012): rows counted from
     // the row painted first, columns from the content's left edge.
