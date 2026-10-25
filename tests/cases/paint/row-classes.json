@@ -1,0 +1,49 @@
+{
+  "about": "The class attribute a row is painted with (ADR-0024, ADR-0038), the row's half of the DOM contract (ADR-0350). From tests/ExGrid.Tests/RowKindTests.cs. The C# core's RowClasses is a static class; the Script Core's paint/row-classes.ts is rowClasses under the name for. That each is one held string is checked by each language's own tests.",
+  "kind": "calls",
+  "subject": "RowClasses",
+  "cases": [
+    {
+      "name": "ADR-0024: a detail row adds nothing",
+      "expect": [
+        {"static": "for", "args": {"kind": "detail", "placeholder": false}, "is": "ex-row"}
+      ]
+    },
+    {
+      "name": "ADR-0024: the role is painted alongside what the row already was",
+      "expect": [
+        {"static": "for", "args": {"kind": "group", "placeholder": false}, "is": "ex-row ex-row-group"},
+        {"static": "for", "args": {"kind": "total", "placeholder": true}, "is": "ex-row ex-placeholder ex-row-total"}
+      ]
+    },
+    {
+      "name": "ADR-0024 / ADR-0038: all twelve combinations of kind, Placeholder and Row Stripe, each its own",
+      "expect": [
+        {"static": "for", "args": {"kind": "detail", "placeholder": false, "stripe": false}, "is": "ex-row"},
+        {"static": "for", "args": {"kind": "detail", "placeholder": false, "stripe": true}, "is": "ex-row ex-row-stripe"},
+        {"static": "for", "args": {"kind": "detail", "placeholder": true, "stripe": false}, "is": "ex-row ex-placeholder"},
+        {"static": "for", "args": {"kind": "detail", "placeholder": true, "stripe": true}, "is": "ex-row ex-placeholder ex-row-stripe"},
+        {"static": "for", "args": {"kind": "group", "placeholder": false, "stripe": false}, "is": "ex-row ex-row-group"},
+        {"static": "for", "args": {"kind": "group", "placeholder": false, "stripe": true}, "is": "ex-row ex-row-group ex-row-stripe"},
+        {"static": "for", "args": {"kind": "group", "placeholder": true, "stripe": false}, "is": "ex-row ex-placeholder ex-row-group"},
+        {"static": "for", "args": {"kind": "group", "placeholder": true, "stripe": true}, "is": "ex-row ex-placeholder ex-row-group ex-row-stripe"},
+        {"static": "for", "args": {"kind": "total", "placeholder": false, "stripe": false}, "is": "ex-row ex-row-total"},
+        {"static": "for", "args": {"kind": "total", "placeholder": false, "stripe": true}, "is": "ex-row ex-row-total ex-row-stripe"},
+        {"static": "for", "args": {"kind": "total", "placeholder": true, "stripe": false}, "is": "ex-row ex-placeholder ex-row-total"},
+        {"static": "for", "args": {"kind": "total", "placeholder": true, "stripe": true}, "is": "ex-row ex-placeholder ex-row-total ex-row-stripe"}
+      ]
+    },
+    {
+      "name": "ADR-0038: no stripe is the row as it was",
+      "expect": [
+        {"static": "for", "args": {"kind": "total", "placeholder": false, "stripe": false}, "is": "ex-row ex-row-total"}
+      ]
+    },
+    {
+      "name": "ADR-0024: a kind cast in from a number is refused, not painted as a detail row",
+      "expect": [
+        {"static": "for", "args": {"kind": 7, "placeholder": false}, "throws": "outOfRange"}
+      ]
+    }
+  ]
+}

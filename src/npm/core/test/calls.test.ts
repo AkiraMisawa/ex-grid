@@ -17,6 +17,9 @@ import { editingKeysByMode } from '../src/keys/editing-keys';
 import { canonicalKey, clipboardKeys, declareKeys, keysTakenFor, resolveKey, takenOnEveryGrid } from '../src/keys/grid-keys';
 import { decideOverflow, hashesWhenOverflowing } from '../src/columns/overflow-rules';
 import { GridMetrics } from '../src/grid-metrics';
+import { cellClasses } from '../src/paint/cell-classes';
+import { rowClasses } from '../src/paint/row-classes';
+import { lineUpMarks, rowMarkHeaderPress, rowMarkHeaderState, RowMarkCounts } from '../src/rows/row-marks';
 import { GridPresentationDefaults } from '../src/grid-presentation-defaults';
 import { rowRange } from '../src/viewport/row-range';
 import { ViewportBox } from '../src/viewport/viewport-box';
@@ -39,6 +42,11 @@ const subjects: Readonly<Record<string, Subject>> = {
     AutoWidth: {
         create: (args, via) => via === undefined ? AutoWidth.of(args['spec'] as ColumnWidthSpec) : noFactory('AutoWidth', via),
         statics: {},
+    },
+    // C#'s CellClasses and RowClasses are static classes: each is one function of its module here.
+    CellClasses: {
+        create: (_, via) => noFactory('CellClasses', via),
+        statics: { for: cellClasses },
     },
     CellTextMetrics: {
         create: (args, via) => via === undefined ? new CellTextMetrics(args as never) : noFactory('CellTextMetrics', via),
@@ -158,6 +166,19 @@ const subjects: Readonly<Record<string, Subject>> = {
     ReferenceColouring: {
         create: (_, via) => noFactory('ReferenceColouring', via),
         statics: ReferenceColouring,
+    },
+    RowClasses: {
+        create: (_, via) => noFactory('RowClasses', via),
+        statics: { for: rowClasses },
+    },
+    RowMarkCounts: {
+        create: (args, via) => via === undefined ? new RowMarkCounts(args as never) : noFactory('RowMarkCounts', via),
+        statics: {},
+    },
+    // C#'s RowMarkRules is a static class: its members are the module's functions here, under the C# names.
+    RowMarkRules: {
+        create: (_, via) => noFactory('RowMarkRules', via),
+        statics: { lineUp: lineUpMarks, headerState: rowMarkHeaderState, headerPress: rowMarkHeaderPress },
     },
     RowRange: {
         create: (args, via) => via === undefined ? rowRange(args['start'] as number, args['count'] as number) : noFactory('RowRange', via),

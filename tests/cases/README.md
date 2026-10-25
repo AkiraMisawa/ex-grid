@@ -191,6 +191,9 @@ in turn, each on the answer before it: an `AutoWidth` that has observed a width,
 the array of its elements, as the Script Core answers one. A menu's command is written `{"id", "enabled"}`,
 what a menu's keys read of it; a case never runs one. A range, given or answered, is its four numbers, `{"topRow", "leftColumn",
 "rowCount", "columnCount"}`, and a Reference colour its place in the palette, a number.
+A member of a closed vocabulary, a C# enum and a union of strings in the Script Core, is written as its name in camelCase
+(`"stale"`). A case passes a number in its place only to show a value cast in from outside the vocabulary refused, and
+then one that names no member: C# would read a small one as the member at that place.
 A case reads what the core's own code reads: in C#, public and internal members, never private ones;
 in the Script Core, a module's exports.
 

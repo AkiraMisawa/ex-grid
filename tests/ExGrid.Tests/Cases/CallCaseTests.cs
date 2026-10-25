@@ -20,6 +20,7 @@ public class CallCaseTests
     /// <summary>The subjects a case may name, by the name it uses.</summary>
     private static readonly Dictionary<string, Type> Subjects = new()
     {
+        ["CellClasses"] = typeof(ExGrid.Components.CellClasses),
         ["CellTextMetrics"] = typeof(CellTextMetrics),
         ["CompletionCandidate"] = typeof(ExGrid.Cells.CompletionCandidate),
         ["EditorCompletion"] = typeof(ExGrid.Cells.EditorCompletion),
@@ -43,6 +44,9 @@ public class CallCaseTests
         ["OverflowRules"] = typeof(OverflowRules),
         ["ReferenceColour"] = typeof(ExGrid.Cells.ReferenceColour),
         ["ReferenceColouring"] = typeof(ExGrid.Cells.ReferenceColouring),
+        ["RowClasses"] = typeof(ExGrid.Components.RowClasses),
+        ["RowMarkCounts"] = typeof(ExGrid.Rows.RowMarkCounts),
+        ["RowMarkRules"] = typeof(ExGrid.Rows.RowMarkRules),
         ["RowRange"] = typeof(RowRange),
         ["ViewportBox"] = typeof(ViewportBox),
         ["ViewportGeometry"] = typeof(ViewportGeometry),
