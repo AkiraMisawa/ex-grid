@@ -26,6 +26,7 @@ builder.RootComponents.Add<MudExPivotStylesheet>("head::after");
 builder.RootComponents.Add<ExChartStylesheet>("head::after");
 builder.RootComponents.Add<MudExChartStylesheet>("head::after");
 builder.Services.AddMudServices();
+builder.Services.AddScoped<FrameworkMemory>();
 builder.Services.AddScoped<DocsState>();
 
 await builder.Build().RunAsync();

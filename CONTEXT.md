@@ -1393,6 +1393,13 @@ MudBlazor's
 ([ADR-0110](./docs/adr/0110-the-docs-site-is-a-webassembly-app-on-github-pages-and-its-examples-show-the-code-they-run.md)).
 _Avoid_: sample, snippet (a snippet is code that does not run)
 
+**Framework switch**:
+The Docs Site's choice of Blazor or React, made once for the whole site and remembered. Every Example
+and every page follows it; where the site has nothing for the framework chosen, it says so where that
+would be
+([ADR-0350](./docs/adr/0350-exgrids-core-moves-to-typescript-and-react-and-blazor-both-take-it.md)).
+_Avoid_: framework selector, language switch
+
 **Showcase**:
 A Docs Site page for one use case — a trade blotter, a budget sheet, a sales analysis — that fills
 the window and carries no prose. The README's recordings are made from it

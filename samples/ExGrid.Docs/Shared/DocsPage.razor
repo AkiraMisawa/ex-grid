@@ -1,10 +1,14 @@
+@implements IDisposable
 @inject NavigationManager Navigation
+@inject DocsState State
 
 @* A documentation page: its title, a lead paragraph, the body, and the way to the pages either
    side of it in the navigation. Beside it at wide widths, the rail (ADR-0110): the page's sections,
    read from the site map the build made, so it is whole on the first render, and the page's own
    source at the commit the site was built from. A static list, with no scroll spy. Under the title,
-   the chips the Release Notes give the whole page (ADR-0190). *@
+   the chips the Release Notes give the whole page (ADR-0190). Read for React, a product's page, or a
+   page that describes the Blazor packages, says under its lead that it has nothing for React yet
+   (ADR-0350 §12). *@
 <PageTitle>@Title — ExGrid</PageTitle>
 
 <div class="docs-page">
@@ -19,6 +23,10 @@
             @if (Lead is not null)
             {
                 <MudText Typo="Typo.subtitle1" Class="docs-lead">@Lead</MudText>
+            }
+            @if (State.Framework == DocsFramework.React && (Product is not null || ForBlazor))
+            {
+                <NotInReact Product="@Product" />
             }
         </header>
 
@@ -79,6 +87,12 @@
     /// <summary>The page's body.</summary>
     [Parameter] public RenderFragment? ChildContent { get; set; }
 
+    /// <summary>
+    /// Whether a page that belongs to no one product still describes the Blazor packages, as the
+    /// installation does, and so says so when the site is read for React. A product's page always does.
+    /// </summary>
+    [Parameter] public bool ForBlazor { get; set; }
+
     private SitePage? _page;
     private IReadOnlyList<DocsChip> _chips = [];
     private string _here = "";
@@ -96,6 +110,26 @@
         if (firstRender && new Uri(Navigation.Uri).Fragment.Length > 1)
             Navigation.NavigateTo(Navigation.Uri, replace: true);
     }
+
+    private DocsFramework _framework;
+
+    protected override void OnInitialized()
+    {
+        _framework = State.Framework;
+        State.Changed += OnChanged;
+    }
+
+    // Only the framework changes what the page itself draws. The scheme and the Chrome reach the
+    // Examples on their own, and drawing the page again would draw every section with it.
+    private void OnChanged()
+    {
+        if (State.Framework == _framework)
+            return;
+        _framework = State.Framework;
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose() => State.Changed -= OnChanged;
 
     protected override void OnParametersSet()
     {

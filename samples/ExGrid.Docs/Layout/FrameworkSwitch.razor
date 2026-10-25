@@ -1,0 +1,27 @@
+@implements IDisposable
+@inject DocsState State
+
+@* The site's one framework choice (ADR-0350 §12), as ag-grid.com's: Blazor or React, for every page,
+   and kept for the next visit where the browser allows it. *@
+<MudTooltip Text="@Tip">
+    <MudToggleGroup T="DocsFramework" Value="State.Framework" ValueChanged="State.SetFramework" Size="Size.Small"
+                    Outlined="true" Delimiters="true" Color="Color.Primary" Class="@Class" aria-label="Framework">
+        <MudToggleItem Value="DocsFramework.Blazor" Text="Blazor" />
+        <MudToggleItem Value="DocsFramework.React" Text="React" />
+    </MudToggleGroup>
+</MudTooltip>
+
+@code {
+    /// <summary>Classes for the group.</summary>
+    [Parameter] public string? Class { get; set; }
+
+    private string Tip => State.FrameworkKept
+        ? "The framework this site is read for, remembered in this browser"
+        : "The framework this site is read for. This browser keeps nothing for the site, so the choice lasts until you leave";
+
+    protected override void OnInitialized() => State.Changed += OnChanged;
+
+    private void OnChanged() => InvokeAsync(StateHasChanged);
+
+    public void Dispose() => State.Changed -= OnChanged;
+}

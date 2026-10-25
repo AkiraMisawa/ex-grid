@@ -3,7 +3,8 @@
 
 @* An Example (ADR-0110): a live component, and beneath it the code it runs, read from its own
    source. Where the Example has a MudBlazor counterpart, the site's Chrome choice picks which one
-   runs, and the code follows. *@
+   runs, and the code follows. Read for React, the Example has no React counterpart yet, so it says
+   so where it would run, and neither the Blazor component nor its code is shown (ADR-0350 §12). *@
 <div class="docs-example">
     @if (Title is not null)
     {
@@ -13,31 +14,40 @@
     {
         <div class="docs-example-text">@ChildContent</div>
     }
-    <MudPaper Outlined="true" Class="docs-example-frame">
-        <div class="@($"docs-example-live {(_mud ? "docs-example-mud" : "docs-example-builtin")}")">
-            @* Keyed by the type, so switching the Chrome mounts the other Example fresh. *@
-            <DynamicComponent @key="Current" Type="Current" />
-        </div>
-        <MudToolBar Dense="true" Class="docs-example-toolbar">
-            @if (Mud is not null)
+    @if (State.Framework == DocsFramework.React)
+    {
+        <MudPaper Outlined="true" Class="docs-example-frame">
+            <NotInReact Product="@DocsProducts.OfExample(Builtin)" Example="true" />
+        </MudPaper>
+    }
+    else
+    {
+        <MudPaper Outlined="true" Class="docs-example-frame">
+            <div class="@($"docs-example-live {(_mud ? "docs-example-mud" : "docs-example-builtin")}")">
+                @* Keyed by the type, so switching the Chrome mounts the other Example fresh. *@
+                <DynamicComponent @key="Current" Type="Current" />
+            </div>
+            <MudToolBar Dense="true" Class="docs-example-toolbar">
+                @if (Mud is not null)
+                {
+                    <ChromeSwitch />
+                }
+                else
+                {
+                    <MudText Typo="Typo.caption" Class="docs-muted">Built-in Chrome only</MudText>
+                }
+                <MudSpacer />
+                <MudButton Size="Size.Small" Variant="Variant.Text" StartIcon="@Icons.Material.Filled.Code"
+                           OnClick="@(() => _showCode = !_showCode)" aria-expanded="@(_showCode ? "true" : "false")">
+                    @(_showCode ? "Hide code" : "Show code")
+                </MudButton>
+            </MudToolBar>
+            @if (_showCode)
             {
-                <ChromeSwitch />
+                <CodeView Sources="Sources" />
             }
-            else
-            {
-                <MudText Typo="Typo.caption" Class="docs-muted">Built-in Chrome only</MudText>
-            }
-            <MudSpacer />
-            <MudButton Size="Size.Small" Variant="Variant.Text" StartIcon="@Icons.Material.Filled.Code"
-                       OnClick="@(() => _showCode = !_showCode)" aria-expanded="@(_showCode ? "true" : "false")">
-                @(_showCode ? "Hide code" : "Show code")
-            </MudButton>
-        </MudToolBar>
-        @if (_showCode)
-        {
-            <CodeView Sources="Sources" />
-        }
-    </MudPaper>
+        </MudPaper>
+    }
 </div>
 
 @code {
