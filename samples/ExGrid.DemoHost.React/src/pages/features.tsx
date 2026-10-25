@@ -2,7 +2,7 @@ import { useCallback, useMemo, useRef, useState, type ReactElement } from 'react
 import {
     GridSource, type CommitRefusalReason, type EditDiscardReason, type GridClearIntent, type GridColumn, type GridColumnWidthChange,
     type GridCommand, type GridContextMenuContext, type GridEditIntent, type GridHeaderGroup, type GridOverwriteNotice, type GridPasteIntent,
-    type GridRefusal,
+    type GridRefusal, type GridReplaceRequest, type GridReplaceResult,
 } from '@ex-grid/core';
 import { ExGrid } from '@ex-grid/react';
 import { Temporal } from 'temporal-polyfill';
@@ -219,6 +219,8 @@ export function Features(): ReactElement {
     const [pasteStatus, setPasteStatus] = useState('—');
     const [pasteFields, setPasteFields] = useState('—');
     const [pasteRefusedStatus, setPasteRefusedStatus] = useState('—');
+    const [findStatus, setFindStatus] = useState('—');
+    const [replaceStatus, setReplaceStatus] = useState('—');
     // How often each reason has been heard, so a refusal repeated shows that it was, as the Blazor page's do.
     const repeats = useRef(new Map<string, number>());
     const status = useCallback((key: string, text: string, set: (text: string) => void) => {
@@ -239,6 +241,11 @@ export function Features(): ReactElement {
                 return;
             case 'paste':
                 status(key, pascal(refusal.reason), setPasteRefusedStatus);
+                return;
+            // Find's refusals (ADR-0055). This page's source is GridSource.from's, which finds, so Unavailable
+            // never arrives here; the panel words NotFound itself too.
+            case 'find':
+                status(key, pascal(refusal.reason), setFindStatus);
                 return;
         }
     }, [status]);
@@ -267,6 +274,19 @@ export function Features(): ReactElement {
         record(step);
         setEditStatus(said);
     }, [replace, record]);
+    // Replace All (ADR-0332 §3): GridSource.from plans every match through this page's own write of one cell, the
+    // one its edits use, and applies them all, or none; the rows it rewrote are one history step, so one Ctrl+Z
+    // undoes the whole Replace All.
+    const onReplace = useCallback((request: GridReplaceRequest): GridReplaceResult => {
+        const answer = source.replace(request, (row, column, text) => {
+            const replacement = edited(row, column, text);
+            return replacement === undefined ? { refusal: `'${text}' is not a number` } : { row: replacement };
+        });
+        record(answer.changes.map(({ before, after }): [DemoTrade, DemoTrade] => [before, after]));
+        const { result } = answer;
+        setReplaceStatus(result.kind === 'replaced' ? `${result.count} cells in ${answer.changes.length} rows` : `refused, ${result.cells.length} cells`);
+        return result;
+    }, [source, record]);
     // Delete's Clear Intent (ADR-0054), mapped onto this Consumer's own Blank: Trader has one, the empty name;
     // Notional does not, so a clear there applies nothing, and says so, rather than writing a zero.
     const onClear = useCallback((intent: GridClearIntent) => {
@@ -332,8 +352,9 @@ export function Features(): ReactElement {
             <h1>Features — editing, clipboard, sorting, filtering, Header Groups</h1>
             <p>
                 The interaction surface on one page, for the browser layer to drive: an editable source-bound grid with
-                tiered headers. Sorting, the Selection, editing, copying and pasting work here now; filtering, and the
-                status lines that report it, join as the Script Core comes to it.
+                tiered headers. Sorting, filtering, the Selection, editing, copying and pasting, and Find and Replace
+                (Ctrl+F, Ctrl+H) work here now; the rest of the Blazor page's status lines join as the Script Core comes
+                to them.
             </p>
             <p className="demo-status">
                 <span id="edit-status">Edited: {editStatus}</span>
@@ -353,6 +374,8 @@ export function Features(): ReactElement {
                 <span id="order-status">Order: {shownColumns.map(c => c.name).join(',')}</span>
                 <span id="width-status">Width: {widthStatus}</span>
                 <span id="context-status">Context: {contextStatus}</span>
+                <span id="find-refused-status" role="status">Find: {findStatus}</span>
+                <span id="replace-status">Replace All: {replaceStatus}</span>
             </p>
             <ExGrid
                 columns={shownColumns}
@@ -377,6 +400,7 @@ export function Features(): ReactElement {
                 onColumnOrderChanged={onColumnOrderChanged}
                 onColumnHidden={onColumnHidden}
                 onPinnedCountChanged={setPinned}
+                onReplace={onReplace}
                 contextCommands={contextCommands} />
             <p className="demo-status"><span id="intent-count">Intents: {counts.edits} edits, {counts.pastes} pastes</span></p>
             {showGroups

@@ -166,6 +166,9 @@ export interface FilterSpec {
 export type FilterUi = 'condition' | 'valueList' | 'both';
 
 // @public
+export type FindRefusalReason = 'unavailable' | 'notFound' | 'orderChanged' | 'sourceChanged' | 'replaceUnavailable' | 'replaceRefused';
+
+// @public
 export interface FixedColumnWidth {
     readonly maxPx?: number;
     readonly minPx?: number;
@@ -323,6 +326,8 @@ export interface GridOptions<Row> {
     readonly contextCommands?: (context: GridContextMenuContext<Row>) => readonly GridCommand[];
     readonly copyCellCap?: number;
     readonly density?: GridDensity;
+    readonly findMatch?: (row: Row, column: GridColumn<Row>, pattern: GridFindPattern) => boolean;
+    readonly findsHeaders?: boolean;
     readonly headerGroups?: readonly GridHeaderGroup[];
     readonly headerHeight?: number;
     readonly hideColumnMenu?: boolean;
@@ -343,6 +348,7 @@ export interface GridOptions<Row> {
     readonly onPinnedCountChanged?: (count: number) => void;
     readonly onRedo?: () => void;
     readonly onRefused?: (refusal: GridRefusal) => void;
+    readonly onReplace?: (request: GridReplaceRequest) => GridReplaceResult | Promise<GridReplaceResult>;
     readonly onSelectionChanged?: (selection: GridSelection) => void;
     readonly onUndo?: () => void;
     readonly pasteByteCap?: number;
@@ -420,6 +426,12 @@ export type GridRefusal =
     readonly reason: CommitRefusalReason;
     readonly cell: CellPosition;
     readonly column: string;
+}
+/** A Find step or a Replace that moved or wrote nothing, or a Ctrl+F or Ctrl+H that opened nothing (ADR-0055,
+* ADR-0332): the find panel says why where it stands. */
+| {
+    readonly kind: 'find';
+    readonly reason: FindRefusalReason;
 };
 
 // @public

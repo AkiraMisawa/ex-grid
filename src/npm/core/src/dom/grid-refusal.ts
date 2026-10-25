@@ -3,6 +3,14 @@ import type { CopyRefusalReason, PasteRefusalReason } from '../clipboard/clipboa
 import type { CellPosition } from '../selection/cell';
 
 /**
+ * Why a Find, or a Replace, moved or wrote nothing (ADR-0055, ADR-0332): nothing can search, so Ctrl+F opened
+ * nothing; nothing matched; the order or the source moved while the step was out, so its answer was set
+ * aside; no Replace can land here, so Ctrl+H opened nothing; or a Replace could not write the cells the panel
+ * names, and wrote none.
+ */
+export type FindRefusalReason = 'unavailable' | 'notFound' | 'orderChanged' | 'sourceChanged' | 'replaceUnavailable' | 'replaceRefused';
+
+/**
  * A gesture the grid refused, said by what was refused and why (ADR-0005, ADR-0350 section 16): one callback
  * hears every refusal, and the `kind` tells them apart. Nothing a refused gesture would have done has been
  * done: a refused copy leaves the clipboard as it was, and a refused paste writes no cell.
@@ -15,4 +23,7 @@ export type GridRefusal =
     | { readonly kind: 'paste'; readonly reason: PasteRefusalReason }
     /** A Cell Editor commit that raised no intent, because the row the editor was opened on is not where the
      * grid can find it (ADR-0142): the editor stands with the typing, at `cell`, in the column named. */
-    | { readonly kind: 'commit'; readonly reason: CommitRefusalReason; readonly cell: CellPosition; readonly column: string };
+    | { readonly kind: 'commit'; readonly reason: CommitRefusalReason; readonly cell: CellPosition; readonly column: string }
+    /** A Find step or a Replace that moved or wrote nothing, or a Ctrl+F or Ctrl+H that opened nothing (ADR-0055,
+     * ADR-0332): the find panel says why where it stands. */
+    | { readonly kind: 'find'; readonly reason: FindRefusalReason };

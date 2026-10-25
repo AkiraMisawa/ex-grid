@@ -10,7 +10,7 @@ export type { GridSelection } from './selection/selection';
 export { createGrid } from './dom/create-grid';
 export type { GridHandle } from './dom/create-grid';
 export type { GridHeaderGroup, GridOptions, ViewportSize } from './dom/grid-view';
-export type { GridRefusal } from './dom/grid-refusal';
+export type { FindRefusalReason, GridRefusal } from './dom/grid-refusal';
 export type { GridColumnWidthChange } from './dom/column-gestures';
 export type { GridCommand, GridContextMenuContext } from './dom/grid-command';
 export { gridCommandIds } from './chrome/command-ids';
