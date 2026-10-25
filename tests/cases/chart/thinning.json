@@ -1,0 +1,286 @@
+{
+  "about": "Thinning past the plot's device pixels (ADR-0254) and the pixels a Chart Source thinned before them (ADR-0344), from tests/ExChart.Engine.Tests/ThinningTests.cs.",
+  "kind": "chart",
+  "cases": [
+    {
+      "name": "ADR-0254: past the pixels, each pixel keeps its first, last, lowest and highest point, so every peak stays",
+      "thin": {
+        "drawing": {
+          "lines": [
+            [
+              {
+                "generate": {
+                  "count": 1000,
+                  "x": {
+                    "from": 0,
+                    "step": 1
+                  },
+                  "y": {
+                    "sin": 1
+                  },
+                  "at": {
+                    "437": 99,
+                    "612": -99
+                  }
+                }
+              }
+            ]
+          ],
+          "markers": []
+        },
+        "toPixel": {
+          "over": 10
+        },
+        "pixels": 100
+      },
+      "expect": [
+        {
+          "at": "drawing.lines",
+          "count": true,
+          "is": 1
+        },
+        {
+          "at": "drawing.lines.0",
+          "count": true,
+          "atLeast": 100,
+          "atMost": 400
+        },
+        {
+          "at": "drawing.lines.0",
+          "has": {
+            "x": 437,
+            "y": 99
+          }
+        },
+        {
+          "at": "drawing.lines.0",
+          "has": {
+            "x": 612,
+            "y": -99
+          }
+        },
+        {
+          "at": "drawing.lines.0.0",
+          "is": {
+            "x": 0,
+            "y": 0
+          }
+        },
+        {
+          "at": "drawing.lines.0.-1.x",
+          "is": 999
+        },
+        {
+          "at": "thinned",
+          "count": true,
+          "is": 100
+        },
+        {
+          "at": "thinned.43.count",
+          "is": 10
+        },
+        {
+          "at": "thinned.43.max",
+          "is": 99
+        }
+      ]
+    },
+    {
+      "name": "ADR-0254: a drawing within the pixels is left as it is",
+      "thin": {
+        "drawing": {
+          "lines": [
+            [
+              [
+                0,
+                1
+              ],
+              [
+                1,
+                2
+              ]
+            ]
+          ],
+          "markers": [
+            [
+              0,
+              1,
+              true
+            ]
+          ]
+        },
+        "toPixel": {
+          "scale": 1
+        },
+        "pixels": 100
+      },
+      "expect": [
+        {
+          "at": "drawing",
+          "is": {
+            "lines": [
+              [
+                {
+                  "x": 0,
+                  "y": 1
+                },
+                {
+                  "x": 1,
+                  "y": 2
+                }
+              ]
+            ],
+            "markers": [
+              {
+                "x": 0,
+                "y": 1,
+                "filled": true,
+                "point": -1,
+                "count": 1
+              }
+            ],
+            "candles": [],
+            "whiskers": [],
+            "bands": []
+          }
+        },
+        {
+          "at": "thinned",
+          "is": []
+        }
+      ]
+    },
+    {
+      "name": "ADR-0254: a step is thinned by its levels, with no end at a level it does not take there",
+      "thin": {
+        "drawing": {
+          "lines": [
+            {
+              "levels": {
+                "count": 100,
+                "y": {
+                  "mod": 3
+                }
+              }
+            }
+          ],
+          "markers": []
+        },
+        "toPixel": {
+          "over": 10
+        },
+        "pixels": 10
+      },
+      "expect": [
+        {
+          "at": "drawing.markers",
+          "empty": true
+        },
+        {
+          "at": "drawing.lines",
+          "each": [
+            {
+              "at": "0.y",
+              "sameAs": "1.y"
+            }
+          ]
+        },
+        {
+          "at": "thinned",
+          "empty": false
+        },
+        {
+          "at": "thinned",
+          "each": [
+            {
+              "at": "min",
+              "is": 0
+            },
+            {
+              "at": "max",
+              "is": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ADR-0344: a pixel thinned again counts the rows its source's pixels held, and a point kept outside them counts once",
+      "through": {
+        "source": [
+          {
+            "from": 0,
+            "to": 1,
+            "min": 0,
+            "max": 5,
+            "count": 7
+          }
+        ],
+        "drawn": [
+          {
+            "from": 0,
+            "to": 3,
+            "min": -1,
+            "max": 5,
+            "count": 4
+          }
+        ],
+        "kept": [
+          0,
+          1,
+          2,
+          3
+        ]
+      },
+      "expect": [
+        {
+          "at": "",
+          "is": [
+            {
+              "from": 0,
+              "to": 3,
+              "min": -1,
+              "max": 5,
+              "count": 9
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ADR-0344: with no thinned source, what the drawing thinned is what each pixel holds",
+      "through": {
+        "source": [],
+        "drawn": [
+          {
+            "from": 0,
+            "to": 3,
+            "min": -1,
+            "max": 5,
+            "count": 4
+          }
+        ],
+        "kept": [
+          0,
+          1,
+          2,
+          3
+        ]
+      },
+      "expect": [
+        {
+          "at": "",
+          "is": [
+            {
+              "from": 0,
+              "to": 3,
+              "min": -1,
+              "max": 5,
+              "count": 4
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

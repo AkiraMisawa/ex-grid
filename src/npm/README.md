@@ -7,6 +7,7 @@ One directory per package:
 | Directory | Package | What it is |
 |---|---|---|
 | `core/` | `@ex-grid/core` | The Script Core: the grid's state and what each input means, free of any UI framework |
+| `chart/` | `@ex-grid/chart` | ExChart's layout: scales, ticks, Thinning, each Series Kind's steps and gaps, and the scene a chart is drawn from, held to the C# engine by the shared cases of `tests/cases/chart/` (ADR-0370, section 3) |
 
 `@ex-grid/react` and `@ex-grid/mui` join it as they are built (ADR-0350, sections 3 and 11).
 

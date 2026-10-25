@@ -1,0 +1,559 @@
+{
+  "about": "A Level's Interval: what it must say, its whiskers and bands, and where its meaning is said (ADR-0303), from tests/ExChart.Engine.Tests/IntervalTests.cs.",
+  "kind": "chart",
+  "cases": [
+    {
+      "name": "ADR-0303: an interval says what it means, or it is refused",
+      "definition": {
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "2y",
+            "name": "2Y",
+            "kind": "level",
+            "points": [
+              {
+                "generate": {
+                  "count": 5,
+                  "x": {
+                    "from": 0,
+                    "step": 1
+                  },
+                  "y": {
+                    "line": [
+                      3,
+                      0.01
+                    ]
+                  }
+                }
+              }
+            ],
+            "fromZero": false,
+            "interval": {
+              "meaning": " ",
+              "bounds": {
+                "generate": {
+                  "count": 5,
+                  "x": {
+                    "from": 0,
+                    "step": 1
+                  },
+                  "lower": {
+                    "line": [
+                      2.9,
+                      0.01
+                    ]
+                  },
+                  "upper": {
+                    "line": [
+                      3.1,
+                      0.01
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      "throws": "chartRefused"
+    },
+    {
+      "name": "ADR-0303: a lower bound above its upper is refused, naming what the interval is",
+      "definition": {
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "2y",
+            "name": "2Y",
+            "kind": "level",
+            "points": [
+              {
+                "generate": {
+                  "count": 5,
+                  "x": {
+                    "from": 0,
+                    "step": 1
+                  },
+                  "y": {
+                    "line": [
+                      3,
+                      0.01
+                    ]
+                  }
+                }
+              }
+            ],
+            "fromZero": false,
+            "interval": {
+              "meaning": "95% CI",
+              "bounds": [
+                [
+                  2,
+                  3.2,
+                  3.1
+                ]
+              ]
+            }
+          }
+        ]
+      },
+      "throws": "chartRefused",
+      "saying": "95% CI"
+    },
+    {
+      "name": "ADR-0303: a value outside its own interval is drawn, as a trade outside the bid-ask is",
+      "definition": {
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "2y",
+            "name": "2Y",
+            "kind": "level",
+            "points": [
+              {
+                "generate": {
+                  "count": 5,
+                  "x": {
+                    "from": 0,
+                    "step": 1
+                  },
+                  "y": {
+                    "line": [
+                      3,
+                      0.01
+                    ]
+                  }
+                }
+              }
+            ],
+            "fromZero": false,
+            "interval": {
+              "meaning": "Bid–Ask",
+              "bounds": [
+                [
+                  1,
+                  3.5,
+                  3.6
+                ]
+              ]
+            }
+          }
+        ]
+      },
+      "expect": [
+        {
+          "at": "series.0.interval.meaning",
+          "is": "Bid–Ask"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0303: an interval belongs to its series' points",
+      "definition": {
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "2y",
+            "name": "2Y",
+            "kind": "level",
+            "points": [
+              {
+                "generate": {
+                  "count": 5,
+                  "x": {
+                    "from": 0,
+                    "step": 1
+                  },
+                  "y": {
+                    "line": [
+                      3,
+                      0.01
+                    ]
+                  }
+                }
+              }
+            ],
+            "fromZero": false,
+            "interval": {
+              "meaning": "±1σ",
+              "bounds": [
+                [
+                  9,
+                  1,
+                  2
+                ]
+              ]
+            }
+          }
+        ]
+      },
+      "throws": "chartRefused"
+    },
+    {
+      "name": "ADR-0303: an interval belongs to a Level, not a step",
+      "definition": {
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "h",
+            "name": "Hazard",
+            "kind": "rateOverInterval",
+            "points": [
+              [
+                0,
+                1
+              ],
+              [
+                1,
+                1
+              ]
+            ],
+            "interval": {
+              "meaning": "±1σ",
+              "bounds": [
+                [
+                  1,
+                  0.5,
+                  1.5
+                ]
+              ]
+            }
+          }
+        ]
+      },
+      "throws": "chartRefused"
+    },
+    {
+      "name": "ADR-0303: whiskers are drawn at each point, and the axis takes the bounds",
+      "definition": {
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "2y",
+            "name": "2Y",
+            "kind": "level",
+            "points": [
+              {
+                "generate": {
+                  "count": 5,
+                  "x": {
+                    "from": 0,
+                    "step": 1
+                  },
+                  "y": {
+                    "line": [
+                      3,
+                      0.01
+                    ]
+                  }
+                }
+              }
+            ],
+            "fromZero": false,
+            "interval": {
+              "meaning": "95% CI",
+              "bounds": {
+                "generate": {
+                  "count": 5,
+                  "x": {
+                    "from": 0,
+                    "step": 1
+                  },
+                  "lower": {
+                    "line": [
+                      2.9,
+                      0.01
+                    ]
+                  },
+                  "upper": {
+                    "line": [
+                      3.1,
+                      0.01
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      "scene": {
+        "metrics": {
+          "width": 1200,
+          "height": 400
+        }
+      },
+      "expect": [
+        {
+          "at": "panels.0.series.0.whiskers",
+          "count": true,
+          "is": 5
+        },
+        {
+          "at": "panels.0.series.0.intervalMeaning",
+          "is": "95% CI"
+        },
+        {
+          "at": "panels.0.left.min",
+          "atMost": 2.900000001
+        },
+        {
+          "at": "panels.0.series.0.whiskers",
+          "each": [
+            {
+              "at": "lower",
+              "above": {
+                "at": "upper"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ADR-0303: a band joins only neighbours, and breaks where a point has no interval",
+      "definition": {
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "2y",
+            "name": "2Y",
+            "kind": "level",
+            "points": [
+              {
+                "generate": {
+                  "count": 5,
+                  "x": {
+                    "from": 0,
+                    "step": 1
+                  },
+                  "y": {
+                    "line": [
+                      3,
+                      0.01
+                    ]
+                  }
+                }
+              }
+            ],
+            "fromZero": false,
+            "interval": {
+              "meaning": "Bid–Ask",
+              "bounds": {
+                "generate": {
+                  "count": 5,
+                  "x": {
+                    "from": 0,
+                    "step": 1
+                  },
+                  "lower": {
+                    "line": [
+                      2.9,
+                      0.01
+                    ]
+                  },
+                  "upper": {
+                    "line": [
+                      3.1,
+                      0.01
+                    ]
+                  },
+                  "missing": [
+                    2
+                  ]
+                }
+              },
+              "style": "band"
+            }
+          }
+        ]
+      },
+      "scene": {
+        "metrics": {
+          "width": 1200,
+          "height": 400
+        }
+      },
+      "expect": [
+        {
+          "at": "panels.0.series.0.bands",
+          "map": "length",
+          "is": [
+            2,
+            2
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ADR-0303: past one point a pixel, whiskers become the band, thinned to the extremes of each pixel",
+      "definition": {
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "2y",
+            "name": "2Y",
+            "kind": "level",
+            "points": [
+              {
+                "generate": {
+                  "count": 5000,
+                  "x": {
+                    "from": 0,
+                    "step": 1
+                  },
+                  "y": {
+                    "line": [
+                      3,
+                      0.01
+                    ]
+                  }
+                }
+              }
+            ],
+            "fromZero": false,
+            "interval": {
+              "meaning": "±1σ",
+              "bounds": {
+                "generate": {
+                  "count": 5000,
+                  "x": {
+                    "from": 0,
+                    "step": 1
+                  },
+                  "lower": {
+                    "line": [
+                      2.9,
+                      0.01
+                    ]
+                  },
+                  "upper": {
+                    "line": [
+                      3.1,
+                      0.01
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      "scene": {
+        "metrics": {
+          "width": 300,
+          "height": 200
+        }
+      },
+      "expect": [
+        {
+          "at": "panels.0.series.0.whiskers",
+          "empty": true
+        },
+        {
+          "at": "panels.0.series.0.bands",
+          "count": true,
+          "is": 1
+        },
+        {
+          "at": "panels.0.series.0.bands.0",
+          "count": true,
+          "below": 5000
+        }
+      ]
+    },
+    {
+      "name": "ADR-0303: the legend and the Notes carry the interval's meaning",
+      "definition": {
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "2y",
+            "name": "2Y",
+            "kind": "level",
+            "points": [
+              {
+                "generate": {
+                  "count": 5,
+                  "x": {
+                    "from": 0,
+                    "step": 1
+                  },
+                  "y": {
+                    "line": [
+                      3,
+                      0.01
+                    ]
+                  }
+                }
+              }
+            ],
+            "fromZero": false,
+            "interval": {
+              "meaning": "95% CI",
+              "bounds": {
+                "generate": {
+                  "count": 5,
+                  "x": {
+                    "from": 0,
+                    "step": 1
+                  },
+                  "lower": {
+                    "line": [
+                      2.9,
+                      0.01
+                    ]
+                  },
+                  "upper": {
+                    "line": [
+                      3.1,
+                      0.01
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      "scene": {
+        "metrics": {
+          "width": 1200,
+          "height": 400
+        }
+      },
+      "expect": [
+        {
+          "at": "panels.0.legend",
+          "map": "name",
+          "is": [
+            "2Y (95% CI)"
+          ]
+        },
+        {
+          "at": "notes",
+          "has": "2Y: the interval is 95% CI."
+        }
+      ]
+    }
+  ]
+}

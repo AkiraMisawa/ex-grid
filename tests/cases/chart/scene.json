@@ -1,0 +1,918 @@
+{
+  "about": "A chart laid out as immutable pieces: panels, axes, zero, positions, Notes and Thinning (ADR-0251 to ADR-0257, ADR-0272), from tests/ExChart.Engine.Tests/SceneTests.cs and ComponentSupportTests.cs.",
+  "kind": "chart",
+  "definitions": {
+    "exposure": {
+      "axis": {
+        "values": "numbers",
+        "title": "Years"
+      },
+      "series": [
+        {
+          "id": "epe-before",
+          "name": "EPE · Before",
+          "kind": "level",
+          "points": [
+            [
+              0,
+              1
+            ],
+            [
+              1,
+              5
+            ],
+            [
+              2,
+              9
+            ]
+          ],
+          "panel": "EPE",
+          "keys": {
+            "colour": "Before"
+          }
+        },
+        {
+          "id": "epe-after",
+          "name": "EPE · After",
+          "kind": "level",
+          "points": [
+            [
+              0,
+              2
+            ],
+            [
+              1,
+              4
+            ],
+            [
+              2,
+              8
+            ]
+          ],
+          "panel": "EPE",
+          "keys": {
+            "colour": "After"
+          }
+        },
+        {
+          "id": "ene-after",
+          "name": "ENE · After",
+          "kind": "level",
+          "points": [
+            [
+              0,
+              -1
+            ],
+            [
+              1,
+              -3
+            ],
+            [
+              2,
+              -2
+            ]
+          ],
+          "panel": "ENE",
+          "keys": {
+            "colour": "After"
+          }
+        }
+      ]
+    },
+    "exposureChanged": {
+      "axis": {
+        "values": "numbers",
+        "title": "Years"
+      },
+      "series": [
+        {
+          "id": "epe-before",
+          "name": "EPE · Before",
+          "kind": "level",
+          "points": [
+            [
+              0,
+              1
+            ],
+            [
+              1,
+              5
+            ],
+            [
+              2,
+              8.5
+            ]
+          ],
+          "panel": "EPE",
+          "keys": {
+            "colour": "Before"
+          }
+        },
+        {
+          "id": "epe-after",
+          "name": "EPE · After",
+          "kind": "level",
+          "points": [
+            [
+              0,
+              2
+            ],
+            [
+              1,
+              4
+            ],
+            [
+              2,
+              8
+            ]
+          ],
+          "panel": "EPE",
+          "keys": {
+            "colour": "After"
+          }
+        },
+        {
+          "id": "ene-after",
+          "name": "ENE · After",
+          "kind": "level",
+          "points": [
+            [
+              0,
+              -1
+            ],
+            [
+              1,
+              -3
+            ],
+            [
+              2,
+              -2
+            ]
+          ],
+          "panel": "ENE",
+          "keys": {
+            "colour": "After"
+          }
+        }
+      ]
+    }
+  },
+  "cases": [
+    {
+      "name": "ADR-0252: a change to one series changes only that series' piece",
+      "build": {
+        "a": {
+          "definition": "exposure",
+          "scene": {
+            "metrics": {
+              "width": 800,
+              "height": 400
+            }
+          }
+        },
+        "b": {
+          "definition": "exposure",
+          "scene": {
+            "metrics": {
+              "width": 800,
+              "height": 400
+            }
+          }
+        },
+        "c": {
+          "definition": "exposureChanged",
+          "scene": {
+            "metrics": {
+              "width": 800,
+              "height": 400
+            }
+          }
+        }
+      },
+      "expect": [
+        {
+          "at": "b",
+          "sameAs": "a"
+        },
+        {
+          "at": "c.panels.0.series.0",
+          "differsFrom": "a.panels.0.series.0"
+        },
+        {
+          "at": "c.panels.0.series.1",
+          "sameAs": "a.panels.0.series.1"
+        },
+        {
+          "at": "c.panels.1",
+          "sameAs": "a.panels.1"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0256: hiding a series keeps every other series' keys",
+      "build": {
+        "all": {
+          "definition": "exposure",
+          "scene": {
+            "metrics": {
+              "width": 800,
+              "height": 400
+            }
+          }
+        },
+        "hidden": {
+          "definition": "exposure",
+          "scene": {
+            "metrics": {
+              "width": 800,
+              "height": 400
+            },
+            "view": {
+              "hidden": [
+                "epe-before"
+              ]
+            }
+          }
+        }
+      },
+      "expect": [
+        {
+          "at": "hidden.panels.0.series",
+          "count": true,
+          "is": 1
+        },
+        {
+          "at": "hidden.panels.0.series.0.keys",
+          "sameAs": "all.panels.0.series.1.keys"
+        },
+        {
+          "at": "hidden.panels.1.series.0.keys",
+          "sameAs": "all.panels.1.series.0.keys"
+        },
+        {
+          "at": "hidden.panels.0.series.0.look",
+          "sameAs": "all.panels.0.series.1.look"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0251: panels stack in the definition's order, and a Level's axis reaches zero",
+      "definition": "exposure",
+      "scene": {
+        "metrics": {
+          "width": 800,
+          "height": 400
+        }
+      },
+      "expect": [
+        {
+          "at": "panels",
+          "map": "name",
+          "is": [
+            "EPE",
+            "ENE"
+          ]
+        },
+        {
+          "at": "panels.0.plot.y",
+          "below": {
+            "at": "panels.1.plot.y"
+          }
+        },
+        {
+          "at": "panels.0.left.min",
+          "is": 0
+        },
+        {
+          "at": "panels.0.left.broken",
+          "is": false
+        }
+      ]
+    },
+    {
+      "name": "ADR-0253: a series read away from zero leaves it, and the axis shows a break mark",
+      "definition": {
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "z",
+            "name": "Zero",
+            "kind": "level",
+            "points": [
+              [
+                1,
+                3.0
+              ],
+              [
+                2,
+                3.6
+              ]
+            ],
+            "fromZero": false
+          }
+        ]
+      },
+      "scene": {
+        "metrics": {
+          "width": 800,
+          "height": 400
+        }
+      },
+      "expect": [
+        {
+          "at": "panels.0.left.min",
+          "above": 0
+        },
+        {
+          "at": "panels.0.left.broken",
+          "is": true
+        }
+      ]
+    },
+    {
+      "name": "ADR-0251: the left and right axes put zero at the same height",
+      "definition": {
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "s",
+            "name": "Spread",
+            "kind": "level",
+            "points": [
+              [
+                0,
+                10
+              ],
+              [
+                1,
+                200
+              ]
+            ]
+          },
+          {
+            "id": "h",
+            "name": "Diff",
+            "kind": "level",
+            "points": [
+              [
+                0,
+                -2
+              ],
+              [
+                1,
+                3
+              ]
+            ],
+            "axis": "right"
+          }
+        ]
+      },
+      "scene": {
+        "metrics": {
+          "width": 800,
+          "height": 400
+        }
+      },
+      "expect": [
+        {
+          "at": "panels.0.left.ticks.[0=0].1",
+          "near": 1e-06,
+          "sameAs": "panels.0.zeroY"
+        },
+        {
+          "yOf": [
+            0,
+            "right",
+            0
+          ],
+          "near": 1e-06,
+          "sameAs": "panels.0.zeroY"
+        },
+        {
+          "at": "notes",
+          "is": []
+        }
+      ]
+    },
+    {
+      "name": "ADR-0251: declared independent, the scales differ and the chart says so",
+      "definition": {
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "s",
+            "name": "Spread",
+            "kind": "level",
+            "points": [
+              [
+                0,
+                10
+              ],
+              [
+                1,
+                200
+              ]
+            ]
+          },
+          {
+            "id": "h",
+            "name": "Diff",
+            "kind": "level",
+            "points": [
+              [
+                0,
+                -2
+              ],
+              [
+                1,
+                3
+              ]
+            ],
+            "axis": "right"
+          }
+        ]
+      },
+      "scene": {
+        "metrics": {
+          "width": 800,
+          "height": 400
+        },
+        "independentScales": [
+          ""
+        ]
+      },
+      "expect": [
+        {
+          "at": "notes",
+          "mentions": "zero at different heights"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0257: the Consumer's Notes come first, then each Segment's method",
+      "definition": {
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "c",
+            "name": "USD SOFR",
+            "kind": "level",
+            "sampler": {
+              "from": 0,
+              "to": 40,
+              "value": {
+                "line": [
+                  3,
+                  0.01
+                ]
+              }
+            },
+            "interpolated": true,
+            "segments": [
+              {
+                "from": 0,
+                "to": 30,
+                "method": "Log-linear on discount factors"
+              },
+              {
+                "from": 30,
+                "to": 40,
+                "method": "Flat",
+                "extrapolated": true
+              }
+            ]
+          }
+        ],
+        "notes": [
+          "Zero rates, continuously compounded"
+        ]
+      },
+      "scene": {
+        "metrics": {
+          "width": 800,
+          "height": 400
+        }
+      },
+      "expect": [
+        {
+          "at": "notes.0",
+          "is": "Zero rates, continuously compounded"
+        },
+        {
+          "at": "notes",
+          "has": "USD SOFR: 30Y–40Y Flat (extrapolated)"
+        },
+        {
+          "at": "panels.0.series.0.extrapolated",
+          "count": true,
+          "is": 1
+        }
+      ]
+    },
+    {
+      "name": "ADR-0254: daily data over decades is thinned to the plot's device pixels",
+      "definition": {
+        "axis": {
+          "values": "dates"
+        },
+        "series": [
+          {
+            "id": "d",
+            "name": "EPE",
+            "kind": "level",
+            "points": [
+              {
+                "generate": {
+                  "count": 10959,
+                  "x": {
+                    "from": {
+                      "date": "2026-01-01"
+                    },
+                    "step": 1
+                  },
+                  "y": {
+                    "sin": 50
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "scene": {
+        "metrics": {
+          "width": 800,
+          "height": 400,
+          "devicePixelRatio": 2
+        }
+      },
+      "expect": [
+        {
+          "at": "panels.0.series.0.lines",
+          "map": "length",
+          "sum": true,
+          "atLeast": 1,
+          "atMost": 6400
+        },
+        {
+          "at": "panels.0.series.0.thinned",
+          "empty": false
+        },
+        {
+          "at": "panels.0.series.0.markers",
+          "empty": true
+        }
+      ]
+    },
+    {
+      "name": "ADR-0251: on categories, positions are evenly spaced whatever their values",
+      "definition": {
+        "axis": {
+          "values": "numbers",
+          "scale": "categories",
+          "named": [
+            [
+              0.25,
+              "3M"
+            ],
+            [
+              1,
+              "1Y"
+            ],
+            [
+              10,
+              "10Y"
+            ]
+          ]
+        },
+        "series": [
+          {
+            "id": "v",
+            "name": "ATM",
+            "kind": "level",
+            "points": [
+              [
+                0.25,
+                9
+              ],
+              [
+                1,
+                10
+              ],
+              [
+                10,
+                12
+              ]
+            ],
+            "fromZero": false
+          }
+        ]
+      },
+      "scene": {
+        "metrics": {
+          "width": 800,
+          "height": 400
+        }
+      },
+      "expect": [
+        {
+          "at": "panels.0.series.0.lines.0",
+          "map": "x",
+          "evenlySpaced": true
+        }
+      ]
+    },
+    {
+      "name": "ADR-0255: the positions are every point a visible series has in range, left to right",
+      "definition": "exposure",
+      "scene": {
+        "metrics": {
+          "width": 800,
+          "height": 400
+        },
+        "view": {
+          "from": 1
+        }
+      },
+      "expect": [
+        {
+          "at": "positions",
+          "map": "0",
+          "is": [
+            1,
+            2
+          ]
+        },
+        {
+          "at": "positions.0.1",
+          "below": {
+            "at": "positions.1.1"
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0272, CH-5: a hidden key naming no series is said",
+      "definition": "exposure",
+      "scene": {
+        "metrics": {
+          "width": 800,
+          "height": 400
+        },
+        "view": {
+          "hidden": [
+            "pfe-99"
+          ]
+        }
+      },
+      "expect": [
+        {
+          "at": "notes",
+          "has": "\"pfe-99\" is hidden, but no series has that key."
+        }
+      ]
+    },
+    {
+      "name": "ADR-0272, CH-5: a range with no point is said, and a range with points says nothing",
+      "build": {
+        "empty": {
+          "definition": "exposure",
+          "scene": {
+            "metrics": {
+              "width": 800,
+              "height": 400
+            },
+            "view": {
+              "from": 0.2,
+              "to": 0.8
+            }
+          }
+        },
+        "full": {
+          "definition": "exposure",
+          "scene": {
+            "metrics": {
+              "width": 800,
+              "height": 400
+            }
+          }
+        }
+      },
+      "expect": [
+        {
+          "at": "empty.notes",
+          "mentions": "No series has a point between"
+        },
+        {
+          "at": "full.notes",
+          "is": []
+        }
+      ]
+    },
+    {
+      "name": "ADR-0251: the viewer switches a number axis to categories, spaced evenly and named as the axis writes them",
+      "definition": {
+        "axis": {
+          "values": "numbers",
+          "title": "Tenor"
+        },
+        "series": [
+          {
+            "id": "r",
+            "name": "Rate",
+            "kind": "level",
+            "points": [
+              [
+                0.5,
+                1
+              ],
+              [
+                1,
+                2
+              ],
+              [
+                10,
+                3
+              ]
+            ]
+          }
+        ]
+      },
+      "scene": {
+        "metrics": {
+          "width": 800,
+          "height": 400
+        },
+        "view": {
+          "scale": "categories"
+        }
+      },
+      "expect": [
+        {
+          "at": "positions",
+          "map": "1",
+          "evenlySpaced": true
+        },
+        {
+          "at": "xTicks",
+          "map": "2",
+          "has": "6M"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0256, ADR-0257: a level is marked only when its marker key asks, or when it is an Interpolated series' quotes",
+      "definition": {
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "plain",
+            "name": "Plain",
+            "kind": "level",
+            "points": [
+              [
+                0,
+                1
+              ],
+              [
+                1,
+                2
+              ]
+            ]
+          },
+          {
+            "id": "asked",
+            "name": "Asked",
+            "kind": "level",
+            "points": [
+              [
+                0,
+                1
+              ],
+              [
+                1,
+                2
+              ]
+            ],
+            "keys": {
+              "colour": "asked",
+              "marker": "dot"
+            }
+          },
+          {
+            "id": "quotes",
+            "name": "Quotes",
+            "kind": "level",
+            "points": [
+              [
+                0,
+                1
+              ],
+              [
+                1,
+                2
+              ]
+            ],
+            "keys": {
+              "colour": "curve"
+            }
+          },
+          {
+            "id": "curve",
+            "name": "Curve",
+            "kind": "level",
+            "sampler": {
+              "from": 0,
+              "to": 1,
+              "value": {
+                "line": [
+                  0,
+                  1
+                ]
+              }
+            },
+            "interpolated": true,
+            "keys": {
+              "colour": "curve"
+            }
+          }
+        ]
+      },
+      "scene": {
+        "metrics": {
+          "width": 800,
+          "height": 400
+        }
+      },
+      "expect": [
+        {
+          "at": "panels.0.series.[id=plain].markers",
+          "empty": true
+        },
+        {
+          "at": "panels.0.series.[id=asked].markers",
+          "count": true,
+          "is": 2
+        },
+        {
+          "at": "panels.0.series.[id=quotes].markers",
+          "count": true,
+          "is": 2
+        }
+      ]
+    },
+    {
+      "name": "ADR-0251: a vertical axis never labels zero \"-0\"",
+      "definition": {
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "n",
+            "name": "N",
+            "kind": "level",
+            "points": [
+              [
+                0,
+                -9.7
+              ],
+              [
+                1,
+                -0.3
+              ]
+            ]
+          }
+        ]
+      },
+      "scene": {
+        "metrics": {
+          "width": 800,
+          "height": 400
+        }
+      },
+      "expect": [
+        {
+          "at": "panels.0.left.ticks",
+          "map": "2",
+          "has": "0"
+        },
+        {
+          "at": "panels.0.left.ticks",
+          "map": "2",
+          "lacks": "-0"
+        }
+      ]
+    }
+  ]
+}

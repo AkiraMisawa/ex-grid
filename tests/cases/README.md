@@ -3,7 +3,9 @@
 The cases of ExGrid's pure logic, written once as data: an input and its expected result
 ([ADR-0350](../../docs/adr/0350-exgrids-core-moves-to-typescript-and-react-and-blazor-both-take-it.md),
 section 5). xUnit runs them against the C# core (`tests/ExGrid.Tests/Cases/`) and Vitest against the
-Script Core (`src/npm/core/test/`). A case is green on the C# core before the Script Core takes it, so
+Script Core (`src/npm/core/test/`); the `chart` area is ExChart's layout, run against `ExChart.Engine`
+(`tests/ExChart.Engine.Tests/Cases/`) and `@ex-grid/chart` (`src/npm/chart/test/`)
+(ADR-0370, section 3). A case is green on the C# core before the Script Core takes it, so
 the cases are the oracle of the move; when the C# logic is removed, its runner goes with it and the data
 stays.
 
@@ -19,6 +21,7 @@ throws and TypeScript answers `undefined`, and a refusal is named by its kind, n
 | `outOfRange` | An argument outside what the grid has | `ArgumentOutOfRangeException` | `RangeError` |
 | `argument` | An argument of a kind the member does not take | `ArgumentException` | `TypeError` |
 | `invalidOperation` | An operation the state does not allow | `InvalidOperationException` | `Error`, neither of the above |
+| `chartRefused` | A chart that cannot be drawn honestly (`chart` only) | `ChartRefusedException` | `ChartRefusedError` |
 
 A number JSON cannot hold is written as a string: `"Infinity"`, `"-Infinity"`, `"NaN"`.
 
@@ -29,7 +32,7 @@ One directory per area, one file per group of cases. Each file is an object:
 | Key | Meaning |
 |---|---|
 | `about` | What the file covers, and where its cases came from |
-| `kind` | Which runner reads it: `selection`, `range`, `edgeBand`, `held`, `calls`, `clipboard`, `query`, `source`, `fetch`, `displayText`, `find`, `replace`, `summary` |
+| `kind` | Which runner reads it: `selection`, `range`, `edgeBand`, `held`, `calls`, `clipboard`, `query`, `source`, `fetch`, `displayText`, `find`, `replace`, `summary`, `chart` |
 | `extent` | `[rows, columns]`, the grid every case of the file runs against unless it names its own |
 | `cases` | The cases. Each has a `name`, which starts with the ADR it holds to (CLAUDE.md, "Put the ADR number in the test name") |
 
@@ -352,3 +355,61 @@ in the Script Core, a module's exports.
 The runners find members by name (`tests/ExGrid.Tests/Cases/CallCaseTests.cs` by reflection,
 `src/npm/core/test/calls.test.ts` from its table of subjects), so a misspelt member fails the case, as
 does a check that says neither `is` nor `throws`, and a case that checks nothing.
+
+## `chart`
+
+ExChart's layout (ADR-0370 section 3): scales, ticks, Thinning, each Series Kind's steps and gaps, the
+scene and its legend. Every file of `chart/` is of this kind, run by
+`tests/ExChart.Engine.Tests/Cases/ChartCase.cs` and `src/npm/chart/test/chart-case.ts`. A file may say
+`near`, how far a number may be from what a check expects in every case of the file, and `definitions`,
+named definitions a case refers to by their name.
+
+A case names one operation, or several under `"build": {name: operation}`, each answer then read under
+its name. An operation is one key, beside a `definition` where it reads one; with none, the answer is the
+definition itself:
+
+| Operation | Answers |
+|---|---|
+| `"scene": {metrics, view, style, independentScales, legend}` | The laid-out chart (`ChartScene.Build`, `buildScene`) |
+| `"drawing": {axis, series, from, to, pixels, quotes}` | What one series draws, in the axes' units |
+| `"thin": {drawing, toPixel, pixels}` | The drawing thinned to the pixels, and what each thinned pixel held |
+| `"through": {source, drawn, kept}` | A Chart Source's thinned pixels carried through a drawing's own (ADR-0344) |
+| `"tenor": years`, `"nice": [min, max(, target)]`, `"steps": [min, max, step]`, `"decades": [min, max]`, `"logSteps": [min, max]` | The tick arithmetic; `nice` answers `[min, max, step]` |
+| `"fit": {ticks, angle, map, textWidth, lineHeight, gap}`, `"horizontal": {axis, style, from, to, points, map, textWidth, lineHeight}` | The horizontal ticks, a label left out where it would touch its neighbour |
+| `"candles": {series, from, to, period}` | A Price Range's candles merged into a period |
+| `"legendMembers": key` | The series a legend entry stands for |
+| `"appearance": {colourSlots}` | `[looks by series, whether colours repeat]` |
+| `"format": {format, value}` | A number written as the engine writes it with that .NET format (`0.####`, `0.##`, `R`, `G3`, `N0`) |
+
+A definition, an axis and a series are written as the Script Core's options objects name them, each key
+optional where the options' is; a series that leaves out `kind` declares none. A position is a number or
+`{"date": "yyyy-MM-dd"}`, read as its day number from 0001-01-01. A value is a number or `null`, a gap. A
+point is `[x, y]`, `[x, y, name]`, `{x, y, name, row}`, or a generated run, `{"generate": {count, x:
+{from, step}, y, name, at}}`, whose `y` is a number, `{"line": [a, b]}` (a + b·i), `{"sin": d}` (sin(i/d))
+or `{"mod": m}`, and whose `at` sets the values of single points by index. A `sampler` is `{from, to,
+value}`, `value` `{"line": [a, b]}` or `{"split": [at, below, from]}`, and the positions it was asked at
+are recorded under the series' id. Rows of a Price Range are `[x, open, high, low, close(, volume)]`, or
+`{"weekdays": {count, from, volume, withoutOpen, set}}`, a fixed walk from 100 on weekdays from Monday
+2026-01-05. A map from a position to a pixel is `{scale | over, offset}`, and a text width
+`{"perCharacter": n}`.
+
+`expect` is a list of checks. A check reads one thing, transforms it, and asserts:
+
+| Key | Meaning |
+|---|---|
+| `at` | A path: dot-separated, from the check's scope, or from the whole answer when it starts `$.`. A segment is a property, an index (negative from the end), `length`, or `[key=value]`, the one element of a list whose key holds that value |
+| `yOf: [panel, side, value]`, `positionAt: pixel` | The height of a value on a panel's vertical axis, or the position under a pixel across, of the scene `of` names (the case's own by default) |
+| `asked` | The positions a sampled series was asked at |
+| `where`, `sortBy`, `map`, `differences`, `sum`, `count` | Applied in that order: the elements matching an object, sorted by a path, each element's path, the gaps between neighbours, their sum, how many there are |
+| `is`, `isNot` | The value, compared deeply, numbers within `near` |
+| `above`, `below`, `atLeast`, `atMost` | Bounds, against a number or a reference `{at \| yOf \| positionAt, of, times, plus}`, worth v × times + plus |
+| `sameAs`, `differsFrom` | Another path's value |
+| `has`, `lacks`, `mentions` | An element matching an object, or text a string holds; a string element holding the text |
+| `empty`, `evenlySpaced`, `startsWith` | A list with nothing in it; numbers with equal gaps; a string's start |
+| `each`, `then` | Checks on each element, or on the value, as their scope |
+
+An answer is compared as the JSON it serialises to: in C#, its public properties in camelCase, an enum by
+its camelCase name and a tuple as an array; in TypeScript, its own properties and a class's getters, a map
+as an object and a bigint as its number. A property the Script Core leaves out where it is absent reads as
+`null`, as C#'s does.
+

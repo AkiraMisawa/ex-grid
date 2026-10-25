@@ -21,4 +21,10 @@
     <Using Include="Xunit" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- The shared chart cases (ADR-0370, section 3): written once as data, run here against the C# engine
+         and by Vitest against @ex-grid/chart. tests/cases/README.md says what a file holds. -->
+    <None Include="..\cases\chart\*.json" Link="cases\chart\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>
