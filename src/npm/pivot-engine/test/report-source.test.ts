@@ -10,6 +10,7 @@ import {
     queryForLayout, SnapshotPivotSource, textItemKey, type PivotLayout, type PivotReportAnswer, type PivotReportRequest, type PivotReportSettings,
     type PivotReportState, type PivotReportUpdate, type PivotSlicing,
 } from '../src/index';
+import { versionOf } from './source-cases';
 
 /** Entries keyed by their Id, a label and an exact amount. */
 function entries(rows: readonly (readonly [number, string, string])[]): Snapshot {
@@ -247,7 +248,7 @@ describe('LocalPivotReportSource.subscribe', () => {
         source.subscribe(() => {
             throw new Error('a view failed');
         });
-        source.subscribe(notice => heard.push(notice.sourceVersion));
+        source.subscribe(notice => heard.push(versionOf(notice)));
         data.apply(changed(1, 'A', '2'));
         expect(heard).toEqual([data.sourceVersion]);
         expect(reported).toHaveLength(1);

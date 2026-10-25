@@ -4,6 +4,7 @@
 // unknown name; a member left out takes its default.
 
 import { PivotFormatError, PivotVersionError } from '../errors';
+import { isObject, JsonNumber, member, readJson, type Json, type JsonObject } from '../json/json-text';
 import { pivotItemKey, type PivotItemKey } from '../items/item-key';
 import { pivotAggregations, pivotItemKinds, type PivotAggregation, type PivotItemKind, type PivotShowValuesAs } from './pivot-enums';
 import {
@@ -55,102 +56,6 @@ function valueJson(value: PivotValueField): Record<string, unknown> {
     if (value.showValuesAs !== 'noCalculation') json['showValuesAs'] = value.showValuesAs;
     if (value.numberFormat !== undefined) json['numberFormat'] = value.numberFormat;
     return json;
-}
-
-/** A number as the document spells it: C# reads an integer from its spelling, so 1.0 is not one. */
-class JsonNumber {
-    readonly raw: string;
-
-    constructor(raw: string) {
-        this.raw = raw;
-    }
-
-    /** The spelling's value as a 32-bit integer, or `undefined` where it has a fraction, an exponent or
-     * a value outside 32 bits, as `JsonElement.TryGetInt32` refuses it. */
-    get int32(): number | undefined {
-        if (!/^-?(?:0|[1-9]\d*)$/u.test(this.raw)) return undefined;
-        const value = Number(this.raw);
-        return value >= -(2 ** 31) && value < 2 ** 31 ? value + 0 : undefined;
-    }
-}
-
-type Json = null | boolean | JsonNumber | string | readonly Json[] | { readonly [key: string]: Json };
-type JsonObject = { readonly [key: string]: Json };
-
-// The values of a text JSON.parse has read without complaint, each number kept as it is spelled; a name
-// written twice is the last one written, as JSON.parse and JsonElement both take it.
-function readJson(text: string): Json {
-    let at = 0;
-    const skip = (): void => {
-        while (at < text.length && ' \t\n\r'.includes(text.charAt(at))) at++;
-    };
-    const stringAt = (): string => {
-        const start = at;
-        at++;
-        while (text.charAt(at) !== '"') at += text.charAt(at) === '\\' ? 2 : 1;
-        at++;
-        const decoded: unknown = JSON.parse(text.slice(start, at));
-        if (typeof decoded !== 'string') throw new Error('Internal: a JSON string read as another value.');
-        return decoded;
-    };
-    const valueAt = (): Json => {
-        skip();
-        const ch = text.charAt(at);
-        if (ch === '{') {
-            at++;
-            const object: { [key: string]: Json } = {};
-            skip();
-            if (text.charAt(at) === '}') {
-                at++;
-                return object;
-            }
-            for (;;) {
-                skip();
-                const name = stringAt();
-                skip();
-                at++; // the colon
-                Object.defineProperty(object, name, { value: valueAt(), enumerable: true, writable: true, configurable: true });
-                skip();
-                if (text.charAt(at++) === '}') return object;
-            }
-        }
-        if (ch === '[') {
-            at++;
-            const entries: Json[] = [];
-            skip();
-            if (text.charAt(at) === ']') {
-                at++;
-                return entries;
-            }
-            for (;;) {
-                entries.push(valueAt());
-                skip();
-                if (text.charAt(at++) === ']') return entries;
-            }
-        }
-        if (ch === '"') return stringAt();
-        for (const [word, value] of [['true', true], ['false', false], ['null', null]] as const) {
-            if (text.startsWith(word, at)) {
-                at += word.length;
-                return value;
-            }
-        }
-        const number = /-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?/uy;
-        number.lastIndex = at;
-        const spelled = number.exec(text);
-        if (spelled === null) throw new Error('Internal: JSON.parse read a value this reader does not.');
-        at += spelled[0].length;
-        return new JsonNumber(spelled[0]);
-    };
-    return valueAt();
-}
-
-function isObject(value: Json | undefined): value is JsonObject {
-    return typeof value === 'object' && value !== null && !Array.isArray(value) && !(value instanceof JsonNumber);
-}
-
-function member(element: JsonObject, name: string): Json | undefined {
-    return Object.hasOwn(element, name) ? element[name] : undefined;
 }
 
 /**

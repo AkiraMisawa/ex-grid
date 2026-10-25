@@ -11,7 +11,7 @@ import {
     type PivotQuery,
 } from '../src/index';
 import { AggregationPass } from '../src/source/aggregation-pass';
-import { answerJson } from './source-cases';
+import { answerJson, versionOf } from './source-cases';
 
 /** A reproducible stream of numbers in [0, 1). */
 function random(seed: number): () => number {
@@ -215,7 +215,7 @@ describe('SnapshotPivotSource, live', () => {
         const before = await source.aggregate(query);
         const heard: string[] = [];
         const stop = source.subscribe(changed => {
-            heard.push(changed.sourceVersion);
+            heard.push(versionOf(changed));
             expect(source.sourceVersion).toBe(changed.sourceVersion);
         });
         source.apply(createChangeBatch({ removedKeys: [1n] }));
@@ -242,7 +242,7 @@ describe('SnapshotPivotSource, live', () => {
         source.subscribe(() => {
             throw new Error('a listener failed');
         });
-        source.subscribe(changed => heard.push(changed.sourceVersion));
+        source.subscribe(changed => heard.push(versionOf(changed)));
         const change = source.apply(createChangeBatch({ removedKeys: [1n] }));
         expect(change.after).toBe(source.snapshot);
         expect(heard).toEqual([source.sourceVersion]);
@@ -260,7 +260,7 @@ describe('SnapshotPivotSource, live', () => {
             again = false;
             source.apply(createChangeBatch({ removedKeys: [2n] }));
         });
-        source.subscribe(changed => heard.push(changed.sourceVersion));
+        source.subscribe(changed => heard.push(versionOf(changed)));
         source.apply(createChangeBatch({ removedKeys: [1n] }));
         expect(heard).toEqual([source.sourceVersion]);
         expect(source.snapshot.version).toBe(2n);

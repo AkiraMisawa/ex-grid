@@ -40,7 +40,7 @@ describe('item counts', () => {
 
     it('ADR-0370: a count is a whole number of at least 0, of a field counted once', () => {
         expect(() => new PivotItemCounts('1', [['Desk', -1]])).toThrow(RangeError);
-        expect(() => new PivotItemCounts('1', [['Desk', 1.5]])).toThrow(RangeError);
+        expect(() => new PivotItemCounts('1', [['Desk', 1.5]])).toThrow(TypeError);
         expect(() => new PivotItemCounts('1', [['Desk', 1], ['Desk', 2]])).toThrow(TypeError);
         expect(new PivotItemCounts('1', [['Desk', 0]]).countOf('Desk')).toBe(0);
         expect(new PivotItemCounts('1', []).countOf('Desk')).toBeUndefined();
