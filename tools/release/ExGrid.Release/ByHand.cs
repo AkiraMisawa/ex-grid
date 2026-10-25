@@ -258,7 +258,7 @@ public static partial class ByHand
                 continue;
             }
             var commit = record.Commit;
-            var changed = git.ChangedPaths(commit, target, row.Paths);
+            var changed = CodeChanged(git, commit, target, row.Paths);
             if (changed.Count > 0)
             {
                 var shown = string.Join(", ", changed.Take(12)) + (changed.Count > 12 ? $", and {changed.Count - 12} more" : "");
@@ -374,11 +374,62 @@ public static partial class ByHand
     // hand is held (ADR-0208); refused, naming the files, when they are not.
     private static bool LaterHolds(Git git, ByHandRow row, ByHandRecord later, string target, Report report)
     {
-        var changed = git.ChangedPaths(later.Commit, target, row.Paths);
+        var changed = CodeChanged(git, later.Commit, target, row.Paths);
         if (changed.Count == 0) return true;
         var shown = string.Join(", ", changed.Take(12)) + (changed.Count > 12 ? $", and {changed.Count - 12} more" : "");
         report.Refuse($"{row.Name}: the code it covers changed between its later record ({later.Path}, made at {later.Commit[..12]}) and {target[..12]}: {shown}. A later record is held as every record checked by hand is, while its paths are unchanged (ADR-0208, 2026-10-12).", IndexPath);
         return false;
+    }
+
+    /// <summary>
+    /// The files of <paramref name="paths"/> that changed between <paramref name="from"/> and <paramref name="to"/>, but
+    /// a project's <c>PublicAPI.Shipped.txt</c> and <c>PublicAPI.Unshipped.txt</c> where the two together declare the
+    /// same surface at both: the cut before a tag moves the one into the other (ADR-0201), which changes no code, so a
+    /// record made before the cut still holds after it (ADR-0208, 2026-10-25).
+    /// </summary>
+    internal static IReadOnlyList<string> CodeChanged(Git git, string from, string to, IReadOnlyCollection<string> paths)
+    {
+        var changed = git.ChangedPaths(from, to, paths);
+        var moved = changed.Select(DeclarationDirectory).OfType<string>().Distinct(StringComparer.Ordinal)
+            .Where(directory => DeclaredSurface(git, from, directory) is { } before
+                && DeclaredSurface(git, to, directory) is { } after && before.SetEquals(after))
+            .ToHashSet(StringComparer.Ordinal);
+        return changed.Where(path => DeclarationDirectory(path) is not { } directory || !moved.Contains(directory)).ToList();
+    }
+
+    private const string ShippedFile = "PublicAPI.Shipped.txt";
+    private const string UnshippedFile = "PublicAPI.Unshipped.txt";
+    private const string RemovedMark = "*REMOVED*";
+    private const string NullableHeader = "#nullable enable";
+
+    // The directory of a public-API declaration, with its slash, or null for any other file.
+    private static string? DeclarationDirectory(string path)
+    {
+        var slash = path.LastIndexOf('/');
+        return path[(slash + 1)..] is ShippedFile or UnshippedFile ? path[..(slash + 1)] : null;
+    }
+
+    // What a project's two declarations declare at a commit: the shipped lines, less those the unshipped file marks
+    // removed, with its other lines, each under the nullable context of the file it is in; a file the commit does not
+    // hold declares nothing. Null where the two cannot be read as one surface, a line declared twice or a removal of a
+    // line not shipped, which the cut never makes, so such a change is not excused.
+    private static HashSet<string>? DeclaredSurface(Git git, string commit, string directory)
+    {
+        static List<string> Lines(string? text) =>
+            text is null ? [] : text.Split('\n').Select(line => line.TrimEnd('\r')).Where(line => line.Length > 0).ToList();
+        var shipped = Lines(git.FileAt(commit, directory + ShippedFile));
+        var unshipped = Lines(git.FileAt(commit, directory + UnshippedFile));
+        var shippedContext = shipped.Remove(NullableHeader) ? "nullable " : "oblivious ";
+        var unshippedContext = unshipped.Remove(NullableHeader) ? "nullable " : "oblivious ";
+        var removed = unshipped.Where(line => line.StartsWith(RemovedMark, StringComparison.Ordinal)).Select(line => line[RemovedMark.Length..]).ToList();
+        var added = unshipped.Where(line => !line.StartsWith(RemovedMark, StringComparison.Ordinal)).ToList();
+        var surface = new HashSet<string>(shipped.Select(line => shippedContext + line), StringComparer.Ordinal);
+        if (surface.Count != shipped.Count) return null;
+        foreach (var line in removed)
+            if (!surface.Remove(shippedContext + line)) return null;
+        foreach (var line in added)
+            if (!surface.Add(unshippedContext + line)) return null;
+        return surface;
     }
 
     /// <summary>The key of a row that marks it a Known limitation of a version by decision.</summary>

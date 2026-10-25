@@ -165,6 +165,16 @@ public sealed class Git
         return TagCommit(tag);
     }
 
+    /// <summary>
+    /// The text of the file at <paramref name="path"/> in <paramref name="commit"/>'s tree, its bytes as committed
+    /// (<c>git cat-file blob</c>, which no attribute converts), or null when the tree holds no file there.
+    /// </summary>
+    public string? FileAt(string commit, string path)
+    {
+        if (TypeAt(commit, path) != "blob") return null;
+        return Out("cat-file", "blob", $"{commit}:{path}");
+    }
+
     /// <summary>The object type at <paramref name="path"/> in <paramref name="commit"/>'s tree: blob, tree, or null.</summary>
     public string? TypeAt(string commit, string path)
     {

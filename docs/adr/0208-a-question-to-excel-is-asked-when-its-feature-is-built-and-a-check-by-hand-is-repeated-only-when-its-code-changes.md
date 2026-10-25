@@ -65,6 +65,13 @@ What the run does by hand is two kinds of work, and they age differently:
 - **The release workflow checks it.** For each row it reads the last record's commit from
   `verification/` and compares the paths with the signed-off commit (`git diff --quiet`). It refuses
   the tag if any row's paths changed and no newer record exists.
+  *(2026-10-25, decided with the user: **a project's public-API declaration moved by the cut is not a
+  change.** The cut before a tag moves `PublicAPI.Unshipped.txt` into `PublicAPI.Shipped.txt`
+  (ADR-0201), and the check counted the two files as code, so `0.2.0-rc.1`'s cut made ED-30, SH-52 and
+  WR-10, recorded at `5e3eecb4` the same day, run again for nothing. The two files of a project are now
+  left out of a row's changed paths where together they declare the same surface at both commits: the
+  shipped lines, less those the unshipped file marks `*REMOVED*`, with its other lines. A move that also
+  adds, removes or rewrites a member is a change, and both files are named.)*
   *(2026-10-12, decided with the user, with the check, ADR-0042:
   - **Each row's last record is indexed** in `verification/by-hand.json` with the row's paths, which
     the Definition of Done's Step 4 table names too; a tag where the two differ is refused. A record

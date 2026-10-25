@@ -114,6 +114,56 @@ public class ByHandTests
         Assert.Contains(report.Notices, n => n.Contains("To run by hand at") && n.Contains("VZ-14 on Windows"));
     }
 
+    [Fact] // ADR-0208, ADR-0201: the cut's move of the public API into PublicAPI.Shipped.txt changes no code a row covers
+    public void A_row_holds_across_the_move_of_its_public_api_into_shipped()
+    {
+        using var repo = new Repo();
+        repo.Write("src/Code/PublicAPI.Shipped.txt", "#nullable enable\nA.A() -> void\nA.C() -> void\n")
+            .Write("src/Code/PublicAPI.Unshipped.txt", "#nullable enable\nA.B() -> void\n*REMOVED*A.C() -> void\n");
+        Fixture.ReadyToSignOff(repo);
+        var cut = repo.Write("src/Code/PublicAPI.Shipped.txt", "#nullable enable\nA.A() -> void\nA.B() -> void\n")
+            .Write("src/Code/PublicAPI.Unshipped.txt", "#nullable enable\n").Commit("The cut");
+
+        var report = Check(repo, cut, cut);
+
+        Assert.Empty(report.Refusals);
+        Assert.Contains(report.Notices, n => n.Contains("Holding on their records, their code unchanged since: VZ-14 on Windows"));
+    }
+
+    [Fact] // ADR-0208: the cut excuses only the two declarations, never code changed beside them
+    public void A_row_whose_code_changed_beside_the_cut_is_refused_naming_only_the_code()
+    {
+        using var repo = new Repo();
+        repo.Write("src/Code/PublicAPI.Shipped.txt", "#nullable enable\nA.A() -> void\n")
+            .Write("src/Code/PublicAPI.Unshipped.txt", "#nullable enable\nA.B() -> void\n");
+        Fixture.ReadyToSignOff(repo);
+        var cut = repo.Write("src/Code/PublicAPI.Shipped.txt", "#nullable enable\nA.A() -> void\nA.B() -> void\n")
+            .Write("src/Code/PublicAPI.Unshipped.txt", "#nullable enable\n")
+            .Write("src/Code/a.cs", "class A { int changed; }").Commit("The cut and a change");
+
+        var report = Check(repo, cut, cut);
+
+        var refusal = Assert.Single(report.Refusals);
+        Assert.Contains("src/Code/a.cs", refusal.Message);
+        Assert.DoesNotContain("PublicAPI", refusal.Message);
+    }
+
+    [Fact] // ADR-0208: a public API that declares another surface is a change, both of its files named
+    public void A_row_whose_public_api_changed_with_the_move_is_refused()
+    {
+        using var repo = new Repo();
+        repo.Write("src/Code/PublicAPI.Shipped.txt", "#nullable enable\nA.A() -> void\n")
+            .Write("src/Code/PublicAPI.Unshipped.txt", "#nullable enable\nA.B() -> void\n");
+        Fixture.ReadyToSignOff(repo);
+        var cut = repo.Write("src/Code/PublicAPI.Shipped.txt", "#nullable enable\nA.A() -> void\nA.B() -> void\n")
+            .Write("src/Code/PublicAPI.Unshipped.txt", "#nullable enable\nA.D() -> void\n").Commit("The cut and a member");
+
+        var report = Check(repo, cut, cut);
+
+        var refusal = Assert.Single(report.Refusals);
+        Assert.Contains("src/Code/PublicAPI.Shipped.txt, src/Code/PublicAPI.Unshipped.txt", refusal.Message);
+    }
+
     [Fact] // ADR-0208: given a directory inside the working tree, the check still reads the row's paths from the root
     public void A_git_given_a_subdirectory_reads_the_paths_from_the_root()
     {
