@@ -1,4 +1,4 @@
-import { test, expect, alterPage, circuitQuiet, setRoundTrip, dataRowCount, settled, stylesheetsLoaded } from './fixtures.mjs';
+import { test, expect, alterPage, circuitQuiet, setRoundTrip, dataRowCount, settled, setTicked, stylesheetsLoaded } from './fixtures.mjs';
 import { codeRegion } from './demo-code.mjs';
 import { API_URL, SERVER } from './hosting.mjs';
 
@@ -218,7 +218,7 @@ for (const chrome of ['builtin', 'mud']) {
         test(`PV-10 / ADR-0061: Σ Values dropped on the report stays where it is, and so does every other field (${chrome})`, async ({ page }) => {
             await open(page, chrome);
             // A second Value Field brings Σ Values into Columns, after Product.
-            await field(page, 'Notional').getByRole('checkbox').check();
+            await setTicked(field(page, 'Notional').getByRole('checkbox'));
             await expect.poll(() => entriesOf(page, 'Columns')).toEqual(['Product', 'Σ Values']);
             const values = await entriesOf(page, 'Values');
             expect(values).toHaveLength(2);
@@ -1114,7 +1114,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(update).toBeDisabled();
 
             await pane(page).getByRole('checkbox', { name: 'Defer Layout Update' }).check();
-            await page.getByRole('checkbox', { name: 'Month', exact: true }).check();
+            await setTicked(page.getByRole('checkbox', { name: 'Month', exact: true }));
 
             await expect.poll(() => entriesOf(page, 'Rows')).toEqual(['Region', 'Desk', 'Month']);
             await expect(update).toBeEnabled();
@@ -1155,7 +1155,7 @@ for (const chrome of ['builtin', 'mud']) {
             await page.getByRole('menuitem', { name: 'Remove Field' }).click();
             await expect.poll(() => entriesOf(page, 'Columns')).toEqual([]);
             // A date part is declared Date, so a ticked one goes to Rows; from there, to Columns.
-            await page.getByRole('checkbox', { name: 'Month', exact: true }).check();
+            await setTicked(page.getByRole('checkbox', { name: 'Month', exact: true }));
             await expect.poll(() => entriesOf(page, 'Rows')).toEqual(['Region', 'Desk', 'Month']);
             await entry(page, 'Month').click();
 
@@ -1432,6 +1432,19 @@ const subtotalsShown = async (page) => {
 };
 
 /**
+ * Waits, on WebAssembly only, for Layout ▾'s menu to be gone. With no circuit nothing holds the menu
+ * back: it stands painted until the Enter's command has run, and a press made on it then dismisses it
+ * and does nothing else (ADR-0061), an outcome that depends on what was painted, which ADR-0240 §8
+ * leaves out (seen in CI under the Wrapper, 2026-10-25). On the Server host the menu is a round trip
+ * away, and a press made at machine speed lands on what stands beneath it.
+ */
+const pastMenuWithoutCircuit = async (page) => {
+    if (!SERVER) {
+        await expect(page.getByRole('menu')).toHaveCount(0);
+    }
+};
+
+/**
  * What `steps` leave in the pivot sent at machine speed, and sent one at a time with each answered first
  * (ADR-0240 §8): the Field List's ticks, where the keyboard is, how many menus stand, and Layout ▾'s
  * choices. The pivot raises a layout only once its report has come (ADR-0061), so how many it raised is
@@ -1493,7 +1506,10 @@ for (const chrome of ['builtin', 'mud']) {
             const slow = await slowAndFast(page, chrome, ['Book'], [
                 (at) => page.mouse.click(at.layout.x, at.layout.y),
                 () => page.keyboard.press('Enter'),
-                (at) => page.mouse.click(at.Book.x, at.Book.y),
+                async (at) => {
+                    await pastMenuWithoutCircuit(page);
+                    await page.mouse.click(at.Book.x, at.Book.y);
+                },
             ]);
             expect(slow.menus).toBe(0);
         });
@@ -1504,7 +1520,10 @@ for (const chrome of ['builtin', 'mud']) {
             const slow = await slowAndFast(page, chrome, ['Book'], [
                 (at) => page.mouse.click(at.layout.x, at.layout.y),
                 () => page.keyboard.press('Enter'),
-                (at) => page.mouse.click(at.BookCaption.x, at.BookCaption.y),
+                async (at) => {
+                    await pastMenuWithoutCircuit(page);
+                    await page.mouse.click(at.BookCaption.x, at.BookCaption.y);
+                },
             ], { BookCaption: (p) => field(p, 'Book').getByText('Book', { exact: true }) });
             expect(slow.menus).toBe(0);
         });
@@ -1535,7 +1554,10 @@ test(`ADR-0362: Space typed on a field ticked straight after Layout ▾ and Ente
     await slowAndFast(page, 'builtin', ['Book', 'Currency'], [
         (at) => page.mouse.click(at.layout.x, at.layout.y),
         () => page.keyboard.press('Enter'),
-        (at) => page.mouse.click(at.Book.x, at.Book.y),
+        async (at) => {
+            await pastMenuWithoutCircuit(page);
+            await page.mouse.click(at.Book.x, at.Book.y);
+        },
         () => page.keyboard.press('Space'),
         (at) => page.mouse.click(at.Currency.x, at.Currency.y),
     ]);

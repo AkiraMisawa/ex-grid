@@ -113,6 +113,11 @@ test, and the tests written for this decision, found five orders that ended diff
 - ADR-0240's note on ticket 05 gains a note: the click of a press let through for its drag is numbered in
   its turn, not as it comes.
 - `ShippedStylesheetTests` counts eleven places that move focus. ADR-0021 gains a note.
+- A Field List tick pressed behind an input still being answered turns only in its turn. The layer-3
+  tests tick fields with `setTicked`, which reads the box once it shows the state: Playwright's `check()`
+  reads it straight after its click. On WebAssembly, where no round trip holds Layout ▾'s menu back,
+  `pivot.spec.mjs` presses a tick after the Enter only once the menu is gone: a press on the menu still
+  standing dismisses it (ADR-0061), which depends on what was painted.
 - ExPivot joins the differential test (ASY-8).
   - A Layout ▾ episode ends with the pivot settled in both runs. A press outside a painted menu
     dismisses that menu and does nothing else (ADR-0061), and at machine speed a menu stands painted

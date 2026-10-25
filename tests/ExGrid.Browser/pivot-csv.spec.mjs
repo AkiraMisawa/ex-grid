@@ -1,4 +1,4 @@
-import { test, expect, circuitQuiet, dataRowCount } from './fixtures.mjs';
+import { test, expect, circuitQuiet, dataRowCount, setTicked } from './fixtures.mjs';
 import { codeRegion } from './demo-code.mjs';
 import { readClipboard } from './sheet-helpers.mjs';
 import fs from 'node:fs';
@@ -209,8 +209,8 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(page.locator('#csv-shown')).toHaveText('The report shows desk-export.csv: 6 rows, read under the confirmed Schema.');
             // One field per column, and no layout yet: the user builds the report.
             await expect(pivot(page).locator('.ex-pivot-empty')).toBeVisible();
-            await pane(page).getByRole('checkbox', { name: 'Desk', exact: true }).check();
-            await pane(page).getByRole('checkbox', { name: 'Notional', exact: true }).check();
+            await setTicked(pane(page).getByRole('checkbox', { name: 'Desk', exact: true }));
+            await setTicked(pane(page).getByRole('checkbox', { name: 'Notional', exact: true }));
             // The decimal comma read as the decimal point, the full stops as thousands: exact sums.
             await expect.poll(() => paintedRows(page)).toEqual([
                 ['Credit', '2003.35'],
@@ -219,7 +219,7 @@ for (const chrome of ['builtin', 'mud']) {
                 ['Grand Total', '1012737.1'],
             ]);
             // The account numbers were read as text, so they keep their zeros.
-            await pane(page).getByRole('checkbox', { name: 'Account', exact: true }).check();
+            await setTicked(pane(page).getByRole('checkbox', { name: 'Account', exact: true }));
             await expect(rows(page).filter({ hasText: '00123' })).toHaveCount(1);
         });
 
@@ -241,8 +241,8 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(page.locator('#csv-suggestion').getByRole('heading')).toHaveText('The Schema suggested for e16.csv');
             await page.locator('#csv-confirm').click();
             await expect(status(page)).toHaveText(/^e16\.csv: 5 rows read in [\d.]+ s\.$/);
-            await pane(page).getByRole('checkbox', { name: 'Group', exact: true }).check();
-            await pane(page).getByRole('checkbox', { name: 'Amount', exact: true }).check();
+            await setTicked(pane(page).getByRole('checkbox', { name: 'Group', exact: true }));
+            await setTicked(pane(page).getByRole('checkbox', { name: 'Amount', exact: true }));
 
             // Excel's cells, the same at the PivotTable's width and at forty characters: each painted
             // whole in its column, never ####.
@@ -276,10 +276,10 @@ for (const chrome of ['builtin', 'mud']) {
             await page.locator('#csv-confirm').click();
             await expect(status(page)).toHaveText(/^e16b\.csv: 2 rows read in [\d.]+ s\.$/);
             // A number field ticked goes to Values (ADR-0061); its menu moves it to Rows.
-            await pane(page).getByRole('checkbox', { name: 'Key', exact: true }).check();
+            await setTicked(pane(page).getByRole('checkbox', { name: 'Key', exact: true }));
             await pane(page).getByRole('button', { name: 'Options for Sum of Key', exact: true }).click();
             await page.getByRole('menuitem', { name: 'Move to Row Labels', exact: true }).click();
-            await pane(page).getByRole('checkbox', { name: 'Amount', exact: true }).check();
+            await setTicked(pane(page).getByRole('checkbox', { name: 'Amount', exact: true }));
 
             await expect.poll(() => paintedRows(page)).toEqual([
                 ['1.23456789', '1'],
@@ -305,8 +305,8 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(suggestion.locator('tr[data-column="When"]').getByRole('combobox')).toHaveValue('Date');
             await page.locator('#csv-confirm').click();
             await expect(status(page)).toHaveText(/^pv3\.csv: 5 rows read in [\d.]+ s\.$/);
-            await pane(page).getByRole('checkbox', { name: 'Name', exact: true }).check();
-            await pane(page).getByRole('checkbox', { name: 'Amount', exact: true }).check();
+            await setTicked(pane(page).getByRole('checkbox', { name: 'Name', exact: true }));
+            await setTicked(pane(page).getByRole('checkbox', { name: 'Amount', exact: true }));
 
             // One Item for Alpha, ALPHA and alpha, labelled as the first record spelled it; the Blank last.
             await expect.poll(() => paintedRows(page)).toEqual([
@@ -327,8 +327,8 @@ for (const chrome of ['builtin', 'mud']) {
 
             // Dates, in their clock order: 2026/10/1 after 2026/3/1, which text would put first, and
             // 2026/3/1 and 2026/03/01 one Item, which text would keep apart.
-            await pane(page).getByRole('checkbox', { name: 'Name', exact: true }).uncheck();
-            await pane(page).getByRole('checkbox', { name: 'When', exact: true }).check();
+            await setTicked(pane(page).getByRole('checkbox', { name: 'Name', exact: true }), false);
+            await setTicked(pane(page).getByRole('checkbox', { name: 'When', exact: true }));
             const dates = async () => (await paintedRows(page)).map((r) => r[1]);
             await expect.poll(dates).toEqual(['16', '5', '2', '8', '31']);
             expect((await paintedRows(page))[3][0]).toBe('(blank)');
@@ -346,8 +346,8 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(suggestion.locator('tr[data-column="Amount"]').getByRole('combobox')).toHaveValue('Decimal');
             await page.locator('#csv-confirm').click();
             await expect(status(page)).toHaveText(/^pv7\.csv: 2 rows read in [\d.]+ s\.$/);
-            await pane(page).getByRole('checkbox', { name: 'Group', exact: true }).check();
-            await pane(page).getByRole('checkbox', { name: 'Amount', exact: true }).check();
+            await setTicked(pane(page).getByRole('checkbox', { name: 'Group', exact: true }));
+            await setTicked(pane(page).getByRole('checkbox', { name: 'Amount', exact: true }));
             await expect.poll(() => paintedRows(page)).toEqual([
                 ['B', '1.23457E+11'],
                 ['C', '1.23456789'],
@@ -378,10 +378,10 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(page.locator('#csv-suggestion').getByRole('heading')).toHaveText('The Schema suggested for e16b.csv');
             await page.locator('#csv-confirm').click();
             await expect(status(page)).toHaveText(/^e16b\.csv: 2 rows read in [\d.]+ s\.$/);
-            await pane(page).getByRole('checkbox', { name: 'Key', exact: true }).check();
+            await setTicked(pane(page).getByRole('checkbox', { name: 'Key', exact: true }));
             await pane(page).getByRole('button', { name: 'Options for Sum of Key', exact: true }).click();
             await page.getByRole('menuitem', { name: 'Move to Column Labels', exact: true }).click();
-            await pane(page).getByRole('checkbox', { name: 'Amount', exact: true }).check();
+            await setTicked(pane(page).getByRole('checkbox', { name: 'Amount', exact: true }));
             // One row of values under the Items' headers: 1, 2 and the Grand Total, 3.
             await expect.poll(async () => (await paintedRows(page)).at(-1)?.slice(-3)).toEqual(['1', '2', '3']);
 
@@ -415,8 +415,8 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(suggestion.locator('tr[data-column="Account"]')).toContainText('leading zeros');
             await page.locator('#csv-confirm').click();
             await expect(status(page)).toHaveText(/^trades-de\.csv: 2,000 rows read/);
-            await pane(page).getByRole('checkbox', { name: 'Desk', exact: true }).check();
-            await pane(page).getByRole('checkbox', { name: 'P&L', exact: true }).check();
+            await setTicked(pane(page).getByRole('checkbox', { name: 'Desk', exact: true }));
+            await setTicked(pane(page).getByRole('checkbox', { name: 'P&L', exact: true }));
 
             // Sum of P&L by desk, in the default General format, which keeps the cents: the report
             // is asked again for each tick, so it is read once its total row carries the sum.
