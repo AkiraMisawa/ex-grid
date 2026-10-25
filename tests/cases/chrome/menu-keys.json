@@ -1,0 +1,200 @@
+{
+  "about": "The keys inside a menu, the column menu or the Context Menu, and what each one means (ADR-0039, ADR-0044). The menu's commands are written {id, enabled}, what the keys read of a command. From tests/ExGrid.Tests/MenuKeysTests.cs. The C# core's MenuKeys is a static class; the Script Core's chrome/menu-keys.ts is its functions under these names. A key that means nothing is checked by its kind alone: its item means nothing, and C#'s MenuKey.Nothing, the default value, holds 0 there.",
+  "kind": "calls",
+  "subject": "MenuKeys",
+  "cases": [
+    {
+      "name": "ADR-0039 / KB-30: ↓ moves to the next enabled item, stepping over a disabled one",
+      "expect": [
+        {"static": "resolve", "args": ["ArrowDown", false, false, [{"id": "copy", "enabled": true}, {"id": "paste", "enabled": false}, {"id": "sort", "enabled": true}, {"id": "filter", "enabled": false}, {"id": "clear", "enabled": true}], 0], "is": {"kind": "move", "item": 2}},
+        {"static": "resolve", "args": ["ArrowDown", false, false, [{"id": "copy", "enabled": true}, {"id": "paste", "enabled": false}, {"id": "sort", "enabled": true}, {"id": "filter", "enabled": false}, {"id": "clear", "enabled": true}], 2], "is": {"kind": "move", "item": 4}}
+      ]
+    },
+    {
+      "name": "ADR-0039 / KB-30: ↓ on the last enabled item wraps to the first",
+      "expect": [
+        {"static": "resolve", "args": ["ArrowDown", false, false, [{"id": "copy", "enabled": true}, {"id": "paste", "enabled": false}, {"id": "sort", "enabled": true}, {"id": "filter", "enabled": false}, {"id": "clear", "enabled": true}], 4], "is": {"kind": "move", "item": 0}}
+      ]
+    },
+    {
+      "name": "ADR-0039 / KB-30: ↑ moves back over disabled items and wraps at the top",
+      "expect": [
+        {"static": "resolve", "args": ["ArrowUp", false, false, [{"id": "copy", "enabled": true}, {"id": "paste", "enabled": false}, {"id": "sort", "enabled": true}, {"id": "filter", "enabled": false}, {"id": "clear", "enabled": true}], 4], "is": {"kind": "move", "item": 2}},
+        {"static": "resolve", "args": ["ArrowUp", false, false, [{"id": "copy", "enabled": true}, {"id": "paste", "enabled": false}, {"id": "sort", "enabled": true}, {"id": "filter", "enabled": false}, {"id": "clear", "enabled": true}], 0], "is": {"kind": "move", "item": 4}}
+      ]
+    },
+    {
+      "name": "ADR-0039 / KB-30: Home and End go to the first and last enabled items",
+      "expect": [
+        {"static": "resolve", "args": ["Home", false, false, [{"id": "a", "enabled": false}, {"id": "b", "enabled": true}, {"id": "c", "enabled": true}, {"id": "d", "enabled": false}], 2], "is": {"kind": "move", "item": 1}},
+        {"static": "resolve", "args": ["End", false, false, [{"id": "a", "enabled": false}, {"id": "b", "enabled": true}, {"id": "c", "enabled": true}, {"id": "d", "enabled": false}], 1], "is": {"kind": "move", "item": 2}},
+        {"static": "first", "args": [[{"id": "a", "enabled": false}, {"id": "b", "enabled": true}, {"id": "c", "enabled": true}, {"id": "d", "enabled": false}]], "is": 1},
+        {"static": "last", "args": [[{"id": "a", "enabled": false}, {"id": "b", "enabled": true}, {"id": "c", "enabled": true}, {"id": "d", "enabled": false}]], "is": 2}
+      ]
+    },
+    {
+      "name": "ADR-0039 / KB-30: Enter and Space run the item they are pressed on",
+      "expect": [
+        {"static": "resolve", "args": ["Enter", false, false, [{"id": "copy", "enabled": true}, {"id": "paste", "enabled": false}, {"id": "sort", "enabled": true}, {"id": "filter", "enabled": false}, {"id": "clear", "enabled": true}], 2], "is": {"kind": "run", "item": 2}},
+        {"static": "resolve", "args": [" ", false, false, [{"id": "copy", "enabled": true}, {"id": "paste", "enabled": false}, {"id": "sort", "enabled": true}, {"id": "filter", "enabled": false}, {"id": "clear", "enabled": true}], 4], "is": {"kind": "run", "item": 4}}
+      ]
+    },
+    {
+      "name": "ADR-0039 / ADR-0010: a disabled item never runs, however the key reached it",
+      "expect": [
+        {"static": "resolve", "args": ["Enter", false, false, [{"id": "copy", "enabled": true}, {"id": "paste", "enabled": false}, {"id": "sort", "enabled": true}, {"id": "filter", "enabled": false}, {"id": "clear", "enabled": true}], 1], "then": [{"get": "kind", "is": "none"}]}
+      ]
+    },
+    {
+      "name": "ADR-0039: an item outside the menu never runs, and a move from it starts at the end the direction starts at",
+      "expect": [
+        {"static": "resolve", "args": ["Enter", false, false, [{"id": "copy", "enabled": true}, {"id": "paste", "enabled": false}, {"id": "sort", "enabled": true}, {"id": "filter", "enabled": false}, {"id": "clear", "enabled": true}], 9], "then": [{"get": "kind", "is": "none"}]},
+        {"static": "resolve", "args": ["ArrowDown", false, false, [{"id": "copy", "enabled": true}, {"id": "paste", "enabled": false}, {"id": "sort", "enabled": true}, {"id": "filter", "enabled": false}, {"id": "clear", "enabled": true}], 9], "is": {"kind": "move", "item": 0}},
+        {"static": "resolve", "args": ["ArrowUp", false, false, [{"id": "copy", "enabled": true}, {"id": "paste", "enabled": false}, {"id": "sort", "enabled": true}, {"id": "filter", "enabled": false}, {"id": "clear", "enabled": true}], -1], "is": {"kind": "move", "item": 4}}
+      ]
+    },
+    {
+      "name": "ADR-0039 / KB-30: Tab and Shift+Tab close the menu as a Cancel",
+      "expect": [
+        {"static": "resolve", "args": ["Tab", false, false, [{"id": "copy", "enabled": true}, {"id": "paste", "enabled": false}, {"id": "sort", "enabled": true}, {"id": "filter", "enabled": false}, {"id": "clear", "enabled": true}], 2], "is": {"kind": "close", "item": -1}},
+        {"static": "resolve", "args": ["Tab", true, false, [{"id": "copy", "enabled": true}, {"id": "paste", "enabled": false}, {"id": "sort", "enabled": true}, {"id": "filter", "enabled": false}, {"id": "clear", "enabled": true}], 2], "is": {"kind": "close", "item": -1}}
+      ]
+    },
+    {
+      "name": "ADR-0039: a chord means nothing, since the menu has no shortcuts and the browser's are not moves",
+      "expect": [
+        {"static": "resolve", "args": ["ArrowDown", false, true, [{"id": "copy", "enabled": true}, {"id": "paste", "enabled": false}, {"id": "sort", "enabled": true}, {"id": "filter", "enabled": false}, {"id": "clear", "enabled": true}], 0], "then": [{"get": "kind", "is": "none"}]},
+        {"static": "resolve", "args": ["Enter", false, true, [{"id": "copy", "enabled": true}, {"id": "paste", "enabled": false}, {"id": "sort", "enabled": true}, {"id": "filter", "enabled": false}, {"id": "clear", "enabled": true}], 0], "then": [{"get": "kind", "is": "none"}]},
+        {"static": "resolve", "args": ["Tab", false, true, [{"id": "copy", "enabled": true}, {"id": "paste", "enabled": false}, {"id": "sort", "enabled": true}, {"id": "filter", "enabled": false}, {"id": "clear", "enabled": true}], 0], "then": [{"get": "kind", "is": "none"}]},
+        {"static": "resolve", "args": ["ArrowDown", true, false, [{"id": "copy", "enabled": true}, {"id": "paste", "enabled": false}, {"id": "sort", "enabled": true}, {"id": "filter", "enabled": false}, {"id": "clear", "enabled": true}], 0], "then": [{"get": "kind", "is": "none"}]}
+      ]
+    },
+    {
+      "name": "ADR-0039 / ADR-0012: Escape is the grid's, and a letter is nobody's",
+      "expect": [
+        {"static": "resolve", "args": ["Escape", false, false, [{"id": "copy", "enabled": true}, {"id": "paste", "enabled": false}, {"id": "sort", "enabled": true}, {"id": "filter", "enabled": false}, {"id": "clear", "enabled": true}], 0], "then": [{"get": "kind", "is": "none"}]},
+        {"static": "resolve", "args": ["c", false, false, [{"id": "copy", "enabled": true}, {"id": "paste", "enabled": false}, {"id": "sort", "enabled": true}, {"id": "filter", "enabled": false}, {"id": "clear", "enabled": true}], 0], "then": [{"get": "kind", "is": "none"}]},
+        {"static": "resolve", "args": ["F2", false, false, [{"id": "copy", "enabled": true}, {"id": "paste", "enabled": false}, {"id": "sort", "enabled": true}, {"id": "filter", "enabled": false}, {"id": "clear", "enabled": true}], 0], "then": [{"get": "kind", "is": "none"}]}
+      ]
+    },
+    {
+      "name": "ADR-0039: a menu with nothing enabled has nowhere to move",
+      "expect": [
+        {"static": "resolve", "args": ["ArrowDown", false, false, [{"id": "a", "enabled": false}, {"id": "b", "enabled": false}], 0], "then": [{"get": "kind", "is": "none"}]},
+        {"static": "resolve", "args": ["Home", false, false, [{"id": "a", "enabled": false}, {"id": "b", "enabled": false}], 0], "then": [{"get": "kind", "is": "none"}]},
+        {"static": "first", "args": [[{"id": "a", "enabled": false}, {"id": "b", "enabled": false}]], "is": -1},
+        {"static": "last", "args": [[{"id": "a", "enabled": false}, {"id": "b", "enabled": false}]], "is": -1},
+        {"static": "resolve", "args": ["ArrowDown", false, false, [], 0], "then": [{"get": "kind", "is": "none"}]},
+        {"static": "first", "args": [[]], "is": -1}
+      ]
+    },
+    {
+      "name": "ADR-0039: a single enabled item is its own next and previous",
+      "expect": [
+        {"static": "resolve", "args": ["ArrowDown", false, false, [{"id": "a", "enabled": false}, {"id": "b", "enabled": true}], 1], "is": {"kind": "move", "item": 1}},
+        {"static": "resolve", "args": ["ArrowUp", false, false, [{"id": "a", "enabled": false}, {"id": "b", "enabled": true}], 1], "is": {"kind": "move", "item": 1}}
+      ]
+    },
+    {
+      "name": "ADR-0044 / FL-15: S and O run the sorts from any command, in either case",
+      "expect": [
+        {"static": "resolveInColumnMenu", "args": ["s", false, false, [{"id": "sort-ascending", "enabled": true}, {"id": "sort-descending", "enabled": true}, {"id": "clear-filter", "enabled": false}, {"id": "hide", "enabled": true}, {"id": "pin", "enabled": true}, {"id": "unpin", "enabled": false}, {"id": "size-to-fit", "enabled": true}], 4, true], "is": {"kind": "run", "item": 0}},
+        {"static": "resolveInColumnMenu", "args": ["S", false, false, [{"id": "sort-ascending", "enabled": true}, {"id": "sort-descending", "enabled": true}, {"id": "clear-filter", "enabled": false}, {"id": "hide", "enabled": true}, {"id": "pin", "enabled": true}, {"id": "unpin", "enabled": false}, {"id": "size-to-fit", "enabled": true}], 6, true], "is": {"kind": "run", "item": 0}},
+        {"static": "resolveInColumnMenu", "args": ["o", false, false, [{"id": "sort-ascending", "enabled": true}, {"id": "sort-descending", "enabled": true}, {"id": "clear-filter", "enabled": false}, {"id": "hide", "enabled": true}, {"id": "pin", "enabled": true}, {"id": "unpin", "enabled": false}, {"id": "size-to-fit", "enabled": true}], 0, true], "is": {"kind": "run", "item": 1}},
+        {"static": "resolveInColumnMenu", "args": ["O", true, false, [{"id": "sort-ascending", "enabled": true}, {"id": "sort-descending", "enabled": true}, {"id": "clear-filter", "enabled": false}, {"id": "hide", "enabled": true}, {"id": "pin", "enabled": true}, {"id": "unpin", "enabled": false}, {"id": "size-to-fit", "enabled": true}], 0, true], "is": {"kind": "run", "item": 1}}
+      ]
+    },
+    {
+      "name": "ADR-0044 / FL-15 / FL-16: C clears the filter, and only while there is one to clear",
+      "expect": [
+        {"static": "resolveInColumnMenu", "args": ["c", false, false, [{"id": "sort-ascending", "enabled": true}, {"id": "sort-descending", "enabled": true}, {"id": "clear-filter", "enabled": false}, {"id": "hide", "enabled": true}, {"id": "pin", "enabled": true}, {"id": "unpin", "enabled": false}, {"id": "size-to-fit", "enabled": true}], 0, true], "then": [{"get": "kind", "is": "none"}]},
+        {"static": "resolveInColumnMenu", "args": ["c", false, false, [{"id": "sort-ascending", "enabled": true}, {"id": "sort-descending", "enabled": true}, {"id": "clear-filter", "enabled": true}, {"id": "hide", "enabled": true}, {"id": "pin", "enabled": true}, {"id": "unpin", "enabled": false}, {"id": "size-to-fit", "enabled": true}], 0, true], "is": {"kind": "run", "item": 2}}
+      ]
+    },
+    {
+      "name": "ADR-0044 / FL-15: a letter whose command is disabled does nothing",
+      "expect": [
+        {"static": "resolveInColumnMenu", "args": ["s", false, false, [{"id": "sort-ascending", "enabled": false}, {"id": "sort-descending", "enabled": true}, {"id": "clear-filter", "enabled": false}, {"id": "hide", "enabled": true}, {"id": "pin", "enabled": true}, {"id": "unpin", "enabled": false}, {"id": "size-to-fit", "enabled": true}], 0, true], "then": [{"get": "kind", "is": "none"}]}
+      ]
+    },
+    {
+      "name": "ADR-0044 / FL-15: E moves to the field a search is typed into, when a filter stands below",
+      "expect": [
+        {"static": "resolveInColumnMenu", "args": ["e", false, false, [{"id": "sort-ascending", "enabled": true}, {"id": "sort-descending", "enabled": true}, {"id": "clear-filter", "enabled": false}, {"id": "hide", "enabled": true}, {"id": "pin", "enabled": true}, {"id": "unpin", "enabled": false}, {"id": "size-to-fit", "enabled": true}], 0, true], "is": {"kind": "filterSearch", "item": -1}},
+        {"static": "resolveInColumnMenu", "args": ["E", false, false, [{"id": "sort-ascending", "enabled": true}, {"id": "sort-descending", "enabled": true}, {"id": "clear-filter", "enabled": false}, {"id": "hide", "enabled": true}, {"id": "pin", "enabled": true}, {"id": "unpin", "enabled": false}, {"id": "size-to-fit", "enabled": true}], 0, true], "is": {"kind": "filterSearch", "item": -1}},
+        {"static": "resolveInColumnMenu", "args": ["e", false, false, [{"id": "sort-ascending", "enabled": true}, {"id": "sort-descending", "enabled": true}, {"id": "clear-filter", "enabled": false}, {"id": "hide", "enabled": true}, {"id": "pin", "enabled": true}, {"id": "unpin", "enabled": false}, {"id": "size-to-fit", "enabled": true}], 0, false], "then": [{"get": "kind", "is": "none"}]}
+      ]
+    },
+    {
+      "name": "ADR-0044 / FL-12: over a filter, Tab moves to its first control and Shift+Tab to its last",
+      "expect": [
+        {"static": "resolveInColumnMenu", "args": ["Tab", false, false, [{"id": "sort-ascending", "enabled": true}, {"id": "sort-descending", "enabled": true}, {"id": "clear-filter", "enabled": false}, {"id": "hide", "enabled": true}, {"id": "pin", "enabled": true}, {"id": "unpin", "enabled": false}, {"id": "size-to-fit", "enabled": true}], 3, true], "is": {"kind": "filterFirst", "item": -1}},
+        {"static": "resolveInColumnMenu", "args": ["Tab", true, false, [{"id": "sort-ascending", "enabled": true}, {"id": "sort-descending", "enabled": true}, {"id": "clear-filter", "enabled": false}, {"id": "hide", "enabled": true}, {"id": "pin", "enabled": true}, {"id": "unpin", "enabled": false}, {"id": "size-to-fit", "enabled": true}], 3, true], "is": {"kind": "filterLast", "item": -1}}
+      ]
+    },
+    {
+      "name": "ADR-0044 / KB-30: a column that cannot be filtered shows the commands alone, and Tab closes them",
+      "expect": [
+        {"static": "resolveInColumnMenu", "args": ["Tab", false, false, [{"id": "sort-ascending", "enabled": true}, {"id": "sort-descending", "enabled": true}, {"id": "clear-filter", "enabled": false}, {"id": "hide", "enabled": true}, {"id": "pin", "enabled": true}, {"id": "unpin", "enabled": false}, {"id": "size-to-fit", "enabled": true}], 0, false], "is": {"kind": "close", "item": -1}},
+        {"static": "resolveInColumnMenu", "args": ["Tab", true, false, [{"id": "sort-ascending", "enabled": true}, {"id": "sort-descending", "enabled": true}, {"id": "clear-filter", "enabled": false}, {"id": "hide", "enabled": true}, {"id": "pin", "enabled": true}, {"id": "unpin", "enabled": false}, {"id": "size-to-fit", "enabled": true}], 0, false], "is": {"kind": "close", "item": -1}}
+      ]
+    },
+    {
+      "name": "ADR-0044: hide, pin, unpin and Size to fit borrow no letter, and a chorded letter is nobody's",
+      "expect": [
+        {"static": "resolveInColumnMenu", "args": ["h", false, false, [{"id": "sort-ascending", "enabled": true}, {"id": "sort-descending", "enabled": true}, {"id": "clear-filter", "enabled": false}, {"id": "hide", "enabled": true}, {"id": "pin", "enabled": true}, {"id": "unpin", "enabled": false}, {"id": "size-to-fit", "enabled": true}], 0, true], "then": [{"get": "kind", "is": "none"}]},
+        {"static": "resolveInColumnMenu", "args": ["p", false, false, [{"id": "sort-ascending", "enabled": true}, {"id": "sort-descending", "enabled": true}, {"id": "clear-filter", "enabled": false}, {"id": "hide", "enabled": true}, {"id": "pin", "enabled": true}, {"id": "unpin", "enabled": false}, {"id": "size-to-fit", "enabled": true}], 0, true], "then": [{"get": "kind", "is": "none"}]},
+        {"static": "resolveInColumnMenu", "args": ["s", false, true, [{"id": "sort-ascending", "enabled": true}, {"id": "sort-descending", "enabled": true}, {"id": "clear-filter", "enabled": false}, {"id": "hide", "enabled": true}, {"id": "pin", "enabled": true}, {"id": "unpin", "enabled": false}, {"id": "size-to-fit", "enabled": true}], 0, true], "then": [{"get": "kind", "is": "none"}]},
+        {"static": "resolveInColumnMenu", "args": ["e", false, true, [{"id": "sort-ascending", "enabled": true}, {"id": "sort-descending", "enabled": true}, {"id": "clear-filter", "enabled": false}, {"id": "hide", "enabled": true}, {"id": "pin", "enabled": true}, {"id": "unpin", "enabled": false}, {"id": "size-to-fit", "enabled": true}], 0, true], "then": [{"get": "kind", "is": "none"}]},
+        {"static": "resolveInColumnMenu", "args": ["Tab", false, true, [{"id": "sort-ascending", "enabled": true}, {"id": "sort-descending", "enabled": true}, {"id": "clear-filter", "enabled": false}, {"id": "hide", "enabled": true}, {"id": "pin", "enabled": true}, {"id": "unpin", "enabled": false}, {"id": "size-to-fit", "enabled": true}], 0, true], "then": [{"get": "kind", "is": "none"}]}
+      ]
+    },
+    {
+      "name": "ADR-0044 / KB-30: the arrows, Home, End, Enter and Space are the column menu's as any menu's",
+      "expect": [
+        {"static": "resolveInColumnMenu", "args": ["ArrowDown", false, false, [{"id": "sort-ascending", "enabled": true}, {"id": "sort-descending", "enabled": true}, {"id": "clear-filter", "enabled": false}, {"id": "hide", "enabled": true}, {"id": "pin", "enabled": true}, {"id": "unpin", "enabled": false}, {"id": "size-to-fit", "enabled": true}], 1, true], "is": {"kind": "move", "item": 3}},
+        {"static": "resolveInColumnMenu", "args": ["End", false, false, [{"id": "sort-ascending", "enabled": true}, {"id": "sort-descending", "enabled": true}, {"id": "clear-filter", "enabled": false}, {"id": "hide", "enabled": true}, {"id": "pin", "enabled": true}, {"id": "unpin", "enabled": false}, {"id": "size-to-fit", "enabled": true}], 0, true], "is": {"kind": "move", "item": 6}},
+        {"static": "resolveInColumnMenu", "args": ["Enter", false, false, [{"id": "sort-ascending", "enabled": true}, {"id": "sort-descending", "enabled": true}, {"id": "clear-filter", "enabled": false}, {"id": "hide", "enabled": true}, {"id": "pin", "enabled": true}, {"id": "unpin", "enabled": false}, {"id": "size-to-fit", "enabled": true}], 4, true], "is": {"kind": "run", "item": 4}},
+        {"static": "resolveInColumnMenu", "args": ["ArrowDown", true, false, [{"id": "sort-ascending", "enabled": true}, {"id": "sort-descending", "enabled": true}, {"id": "clear-filter", "enabled": false}, {"id": "hide", "enabled": true}, {"id": "pin", "enabled": true}, {"id": "unpin", "enabled": false}, {"id": "size-to-fit", "enabled": true}], 0, true], "then": [{"get": "kind", "is": "none"}]}
+      ]
+    },
+    {
+      "name": "ADR-0044 / FL-15: on the value list the letters act, and nothing else is the grid's",
+      "expect": [
+        {"static": "letter", "args": ["s", false, [{"id": "sort-ascending", "enabled": true}, {"id": "sort-descending", "enabled": true}, {"id": "clear-filter", "enabled": false}, {"id": "hide", "enabled": true}, {"id": "pin", "enabled": true}, {"id": "unpin", "enabled": false}, {"id": "size-to-fit", "enabled": true}], true], "is": {"kind": "run", "item": 0}},
+        {"static": "letter", "args": ["e", false, [{"id": "sort-ascending", "enabled": true}, {"id": "sort-descending", "enabled": true}, {"id": "clear-filter", "enabled": false}, {"id": "hide", "enabled": true}, {"id": "pin", "enabled": true}, {"id": "unpin", "enabled": false}, {"id": "size-to-fit", "enabled": true}], true], "is": {"kind": "filterSearch", "item": -1}},
+        {"static": "letter", "args": ["ArrowDown", false, [{"id": "sort-ascending", "enabled": true}, {"id": "sort-descending", "enabled": true}, {"id": "clear-filter", "enabled": false}, {"id": "hide", "enabled": true}, {"id": "pin", "enabled": true}, {"id": "unpin", "enabled": false}, {"id": "size-to-fit", "enabled": true}], true], "then": [{"get": "kind", "is": "none"}]},
+        {"static": "letter", "args": [" ", false, [{"id": "sort-ascending", "enabled": true}, {"id": "sort-descending", "enabled": true}, {"id": "clear-filter", "enabled": false}, {"id": "hide", "enabled": true}, {"id": "pin", "enabled": true}, {"id": "unpin", "enabled": false}, {"id": "size-to-fit", "enabled": true}], true], "then": [{"get": "kind", "is": "none"}]},
+        {"static": "letter", "args": ["Tab", false, [{"id": "sort-ascending", "enabled": true}, {"id": "sort-descending", "enabled": true}, {"id": "clear-filter", "enabled": false}, {"id": "hide", "enabled": true}, {"id": "pin", "enabled": true}, {"id": "unpin", "enabled": false}, {"id": "size-to-fit", "enabled": true}], true], "then": [{"get": "kind", "is": "none"}]},
+        {"static": "letter", "args": ["s", true, [{"id": "sort-ascending", "enabled": true}, {"id": "sort-descending", "enabled": true}, {"id": "clear-filter", "enabled": false}, {"id": "hide", "enabled": true}, {"id": "pin", "enabled": true}, {"id": "unpin", "enabled": false}, {"id": "size-to-fit", "enabled": true}], true], "then": [{"get": "kind", "is": "none"}]}
+      ]
+    },
+    {
+      "name": "ADR-0036 / ADR-0044: the Context Menu is not Excel's drop-down, and has no letters",
+      "expect": [
+        {"static": "resolve", "args": ["s", false, false, [{"id": "copy", "enabled": true}, {"id": "copy-with-headers", "enabled": true}, {"id": "sort-ascending", "enabled": true}], 0], "then": [{"get": "kind", "is": "none"}]},
+        {"static": "resolve", "args": ["c", false, false, [{"id": "copy", "enabled": true}, {"id": "copy-with-headers", "enabled": true}, {"id": "sort-ascending", "enabled": true}], 0], "then": [{"get": "kind", "is": "none"}]}
+      ]
+    },
+    {
+      "name": "ADR-0044 / FL-15: only the sorts and clear filter answer to a letter",
+      "expect": [
+        {"static": "letterOf", "args": ["sort-ascending"], "is": "S"},
+        {"static": "letterOf", "args": ["sort-descending"], "is": "O"},
+        {"static": "letterOf", "args": ["clear-filter"], "is": "C"},
+        {"static": "letterOf", "args": ["hide"], "is": null},
+        {"static": "letterOf", "args": ["size-to-fit"], "is": null},
+        {"static": "letterOf", "args": ["copy"], "is": null}
+      ]
+    },
+    {
+      "name": "ADR-0044 / FL-15: a label shows its letter where it has it, as English Excel does, and is given it where it does not, as Japanese Excel is",
+      "expect": [
+        {"static": "splitAtLetter", "args": ["Sort ascending", "S"], "is": ["", "S", "ort ascending"]},
+        {"static": "splitAtLetter", "args": ["Sort descending", "O"], "is": ["S", "o", "rt descending"]},
+        {"static": "splitAtLetter", "args": ["Clear filter", "C"], "is": ["", "C", "lear filter"]},
+        {"static": "splitAtLetter", "args": ["昇順", "S"], "is": ["昇順(", "S", ")"]}
+      ]
+    }
+  ]
+}

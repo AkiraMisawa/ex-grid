@@ -28,11 +28,13 @@ public class CallCaseTests
         ["ColumnWidthSpec"] = typeof(ColumnWidthSpec),
         ["GlyphWidthTable"] = typeof(GlyphWidthTable),
         ["GridEditingKeys"] = typeof(ExGrid.Keys.GridEditingKeys),
+        ["HeaderReorder"] = typeof(HeaderReorder),
         ["GridKeys"] = typeof(ExGrid.Keys.GridKeys),
         ["GridMetrics"] = typeof(GridMetrics),
         ["GridPresentationDefaults"] = typeof(GridPresentationDefaults),
         ["HeaderGroup"] = typeof(HeaderGroup),
         ["HeaderGroupLayout"] = typeof(HeaderGroupLayout),
+        ["MenuKeys"] = typeof(ExGrid.Chrome.MenuKeys),
         ["OverflowRules"] = typeof(OverflowRules),
         ["RowRange"] = typeof(RowRange),
         ["ViewportBox"] = typeof(ViewportBox),
@@ -47,8 +49,48 @@ public class CallCaseTests
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         NumberHandling = JsonNumberHandling.AllowNamedFloatingPointLiterals,
-        Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) },
+        Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase), new CommandFromCase(), new TupleAsArray() },
     };
+
+    /// <summary>A menu's command as a case writes it, <c>{"id": …, "enabled": …}</c>: what the menu's keys
+    /// read of it. A case never runs one.</summary>
+    private sealed class CommandFromCase : JsonConverter<ExGrid.Chrome.GridCommand>
+    {
+        public override ExGrid.Chrome.GridCommand Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        {
+            var given = JsonElement.ParseValue(ref reader);
+            return new(given.GetProperty("id").GetString()!, given.GetProperty("enabled").GetBoolean(),
+                () => throw new InvalidOperationException("A case's command is never run."));
+        }
+
+        public override void Write(Utf8JsonWriter writer, ExGrid.Chrome.GridCommand value, JsonSerializerOptions options)
+            => throw new NotSupportedException("A command is an argument, never an answer.");
+    }
+
+    /// <summary>A tuple answered as the array of its elements, as the Script Core answers one: System.Text.Json
+    /// would write it as an empty object, since its elements are fields.</summary>
+    private sealed class TupleAsArray : JsonConverterFactory
+    {
+        public override bool CanConvert(Type typeToConvert)
+            => typeToConvert.IsGenericType && typeToConvert.FullName!.StartsWith("System.ValueTuple`", StringComparison.Ordinal);
+
+        public override JsonConverter CreateConverter(Type typeToConvert, JsonSerializerOptions options)
+            => (JsonConverter)Activator.CreateInstance(typeof(Elements<>).MakeGenericType(typeToConvert))!;
+
+        private sealed class Elements<T> : JsonConverter<T>
+        {
+            public override T Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+                => throw new NotSupportedException("A tuple argument is read element by element.");
+
+            public override void Write(Utf8JsonWriter writer, T value, JsonSerializerOptions options)
+            {
+                writer.WriteStartArray();
+                foreach (var field in typeof(T).GetFields())
+                    JsonSerializer.Serialize(writer, field.GetValue(value), field.FieldType, options);
+                writer.WriteEndArray();
+            }
+        }
+    }
 
     public static TheoryData<string, string, string> Cases()
     {

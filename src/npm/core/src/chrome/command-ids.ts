@@ -1,0 +1,25 @@
+/**
+ * The ids of the commands the core defines (ADR-0010, ADR-0036, ADR-0044), in one place: the core builds
+ * its menus with them, and a Chrome (the built-in one's labels, a Wrapper's words and icons) resolves its
+ * rendering from them. A Consumer's own command carries an id of its own choosing, which none of these is.
+ */
+export const gridCommandIds = Object.freeze({
+    /** Sorts the column ascending. Excel's S. */
+    sortAscending: 'sort-ascending',
+    /** Sorts the column descending. Excel's O. */
+    sortDescending: 'sort-descending',
+    /** Removes the column's filter; enabled only while it has one. Excel's C. */
+    clearFilter: 'clear-filter',
+    /** Hides the column. */
+    hide: 'hide',
+    /** Pins the columns up to this one. */
+    pin: 'pin',
+    /** Unpins all columns. */
+    unpin: 'unpin',
+    /** Sizes the column to fit what the Window holds (ADR-0016). */
+    sizeToFit: 'size-to-fit',
+    /** The Context Menu's copy of the selection (ADR-0036). */
+    copy: 'copy',
+    /** The Context Menu's copy of the selection with its headers (ADR-0005, ADR-0036). */
+    copyWithHeaders: 'copy-with-headers',
+} as const);

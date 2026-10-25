@@ -1,0 +1,65 @@
+{
+  "about": "The reorder gesture's arithmetic (ADR-0011, ADR-0032): a drag never crosses an edge that carries meaning, the pinned boundary or a Header Group's edge, and the order it hands over moves the grabbed unit whole. From tests/ExGrid.Tests/HeaderReorderTests.cs. The C# core's HeaderReorder is a static class; the Script Core's columns/header-reorder.ts is its functions, allowedBoundaries and reorderColumns.",
+  "kind": "calls",
+  "subject": "HeaderReorder",
+  "cases": [
+    {
+      "name": "ADR-0011: without groups or pinning, every boundary of the block is allowed",
+      "expect": [
+        {"static": "allowedBoundaries", "args": {"layout": {"new": "HeaderGroupLayout", "via": "empty"}, "columnCount": 4, "pinnedCount": 0, "unitFirst": 1, "unitCount": 1}, "is": [0, 1, 2, 3, 4]}
+      ]
+    },
+    {
+      "name": "ADR-0011: a drag never crosses the pinned boundary, from either side",
+      "expect": [
+        {"static": "allowedBoundaries", "args": {"layout": {"new": "HeaderGroupLayout", "via": "empty"}, "columnCount": 6, "pinnedCount": 2, "unitFirst": 0, "unitCount": 1}, "is": [0, 1, 2]},
+        {"static": "allowedBoundaries", "args": {"layout": {"new": "HeaderGroupLayout", "via": "empty"}, "columnCount": 6, "pinnedCount": 2, "unitFirst": 4, "unitCount": 1}, "is": [2, 3, 4, 5, 6]}
+      ]
+    },
+    {
+      "name": "ADR-0032 / HG-14: a leaf inside a group clamps at the group's edge",
+      "expect": [
+        {"static": "allowedBoundaries", "args": {"layout": {"new": "HeaderGroupLayout", "via": "resolve", "with": {"groups": [{"new": "HeaderGroup", "with": {"label": "CVA", "columns": ["CvaBefore", "CvaAfter", "CvaDiff"]}}], "columnNames": ["TradeId", "CvaBefore", "CvaAfter", "CvaDiff", "FvaBefore", "FvaAfter"], "pinnedCount": 0}}, "columnCount": 6, "pinnedCount": 0, "unitFirst": 2, "unitCount": 1}, "is": [1, 2, 3, 4]}
+      ]
+    },
+    {
+      "name": "ADR-0032: an uncovered leaf moves among top-level units, never into a group",
+      "expect": [
+        {"static": "allowedBoundaries", "args": {"layout": {"new": "HeaderGroupLayout", "via": "resolve", "with": {"groups": [{"new": "HeaderGroup", "with": {"label": "CVA", "columns": ["CvaBefore", "CvaAfter", "CvaDiff"]}}], "columnNames": ["TradeId", "CvaBefore", "CvaAfter", "CvaDiff", "FvaBefore", "FvaAfter"], "pinnedCount": 0}}, "columnCount": 6, "pinnedCount": 0, "unitFirst": 0, "unitCount": 1}, "is": [0, 1, 4, 5, 6]}
+      ]
+    },
+    {
+      "name": "ADR-0032: a grabbed group moves among peer units, members as one",
+      "expect": [
+        {"static": "allowedBoundaries", "args": {"layout": {"new": "HeaderGroupLayout", "via": "resolve", "with": {"groups": [{"new": "HeaderGroup", "with": {"label": "CVA", "columns": ["CvaBefore", "CvaAfter", "CvaDiff"]}}], "columnNames": ["TradeId", "CvaBefore", "CvaAfter", "CvaDiff", "FvaBefore", "FvaAfter"], "pinnedCount": 0}}, "columnCount": 6, "pinnedCount": 0, "unitFirst": 1, "unitCount": 3}, "is": [0, 1, 4, 5, 6]},
+        {"static": "reorder", "args": {"names": ["TradeId", "CvaBefore", "CvaAfter", "CvaDiff", "FvaBefore", "FvaAfter"], "unitFirst": 1, "unitCount": 3, "insertAt": 6}, "is": ["TradeId", "FvaBefore", "FvaAfter", "CvaBefore", "CvaAfter", "CvaDiff"]}
+      ]
+    },
+    {
+      "name": "ADR-0032 / HG-15: the moved unit keeps its members in their current order",
+      "expect": [
+        {"static": "reorder", "args": {"names": ["TradeId", "CvaBefore", "CvaAfter", "CvaDiff", "FvaBefore", "FvaAfter"], "unitFirst": 1, "unitCount": 1, "insertAt": 0}, "is": ["CvaBefore", "TradeId", "CvaAfter", "CvaDiff", "FvaBefore", "FvaAfter"]},
+        {"static": "reorder", "args": {"names": ["TradeId", "CvaBefore", "CvaAfter", "CvaDiff", "FvaBefore", "FvaAfter"], "unitFirst": 2, "unitCount": 1, "insertAt": 1}, "is": ["TradeId", "CvaAfter", "CvaBefore", "CvaDiff", "FvaBefore", "FvaAfter"]}
+      ]
+    },
+    {
+      "name": "ADR-0032: a drop at the unit's own edges, or inside it, leaves the order as it is",
+      "expect": [
+        {"static": "reorder", "args": {"names": ["TradeId", "CvaBefore", "CvaAfter", "CvaDiff", "FvaBefore", "FvaAfter"], "unitFirst": 1, "unitCount": 3, "insertAt": 1}, "is": ["TradeId", "CvaBefore", "CvaAfter", "CvaDiff", "FvaBefore", "FvaAfter"]},
+        {"static": "reorder", "args": {"names": ["TradeId", "CvaBefore", "CvaAfter", "CvaDiff", "FvaBefore", "FvaAfter"], "unitFirst": 1, "unitCount": 3, "insertAt": 4}, "is": ["TradeId", "CvaBefore", "CvaAfter", "CvaDiff", "FvaBefore", "FvaAfter"]},
+        {"static": "reorder", "args": {"names": ["TradeId", "CvaBefore", "CvaAfter", "CvaDiff", "FvaBefore", "FvaAfter"], "unitFirst": 1, "unitCount": 3, "insertAt": 2}, "is": ["TradeId", "CvaBefore", "CvaAfter", "CvaDiff", "FvaBefore", "FvaAfter"]}
+      ]
+    },
+    {
+      "name": "ADR-0011: a unit outside the columns, or a drop past them, is refused",
+      "expect": [
+        {"static": "allowedBoundaries", "args": {"layout": {"new": "HeaderGroupLayout", "via": "empty"}, "columnCount": 4, "pinnedCount": 0, "unitFirst": -1, "unitCount": 1}, "throws": "outOfRange"},
+        {"static": "allowedBoundaries", "args": {"layout": {"new": "HeaderGroupLayout", "via": "empty"}, "columnCount": 4, "pinnedCount": 0, "unitFirst": 0, "unitCount": 0}, "throws": "outOfRange"},
+        {"static": "allowedBoundaries", "args": {"layout": {"new": "HeaderGroupLayout", "via": "empty"}, "columnCount": 4, "pinnedCount": 0, "unitFirst": 3, "unitCount": 2}, "throws": "outOfRange"},
+        {"static": "reorder", "args": {"names": ["TradeId", "CvaBefore", "CvaAfter", "CvaDiff", "FvaBefore", "FvaAfter"], "unitFirst": 5, "unitCount": 2, "insertAt": 0}, "throws": "outOfRange"},
+        {"static": "reorder", "args": {"names": ["TradeId", "CvaBefore", "CvaAfter", "CvaDiff", "FvaBefore", "FvaAfter"], "unitFirst": 0, "unitCount": 1, "insertAt": 7}, "throws": "outOfRange"},
+        {"static": "reorder", "args": {"names": ["TradeId", "CvaBefore", "CvaAfter", "CvaDiff", "FvaBefore", "FvaAfter"], "unitFirst": 0, "unitCount": 1, "insertAt": -1}, "throws": "outOfRange"}
+      ]
+    }
+  ]
+}

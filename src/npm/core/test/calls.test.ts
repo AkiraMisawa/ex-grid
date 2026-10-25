@@ -9,6 +9,8 @@ import { ColumnWidth, ColumnWidthSpec } from '../src/columns/column-width';
 import { ColumnGeometry } from '../src/columns/column-geometry';
 import { GlyphWidthTable } from '../src/columns/glyph-width-table';
 import { HeaderGroup, HeaderGroupLayout } from '../src/columns/header-groups';
+import { allowedBoundaries, reorderColumns } from '../src/columns/header-reorder';
+import { firstEnabled, lastEnabled, letterOf, menuLetter, resolveColumnMenuKey, resolveMenuKey, splitAtLetter } from '../src/chrome/menu-keys';
 import { editingKeysByMode } from '../src/keys/editing-keys';
 import { canonicalKey, clipboardKeys, declareKeys, keysTakenFor, resolveKey, takenOnEveryGrid } from '../src/keys/grid-keys';
 import { decideOverflow, hashesWhenOverflowing } from '../src/columns/overflow-rules';
@@ -106,6 +108,19 @@ const subjects: Readonly<Record<string, Subject>> = {
             }
         },
         statics: HeaderGroupLayout,
+    },
+    // C#'s HeaderReorder and MenuKeys are static classes: their members are the modules' functions here, under
+    // the C# names.
+    HeaderReorder: {
+        create: (_, via) => noFactory('HeaderReorder', via),
+        statics: { allowedBoundaries, reorder: reorderColumns },
+    },
+    MenuKeys: {
+        create: (_, via) => noFactory('MenuKeys', via),
+        statics: {
+            resolve: resolveMenuKey, resolveInColumnMenu: resolveColumnMenuKey, letter: menuLetter, letterOf, splitAtLetter,
+            first: firstEnabled, last: lastEnabled,
+        },
     },
     OverflowRules: {
         create: (_, via) => noFactory('OverflowRules', via),

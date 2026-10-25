@@ -187,7 +187,9 @@ An argument may be another subject, `{"new": "Subject", "with": {name: value, �
 case makes one: a `CellTextMetrics` passed to `OverflowRules.decide`, a `GlyphWidthTable` to
 `withGlyphWidths`. With `"after": [{"call": name, "args": […]}, …]` the subject is what those calls answer
 in turn, each on the answer before it: an `AutoWidth` that has observed a width, passed to
-`resolveWidthPx`. An array passed where C# takes a tuple, or a list of them, is read element by element.
+`resolveWidthPx`. An array passed where C# takes a tuple, or a list of them, is read element by element. A tuple answered is
+the array of its elements, as the Script Core answers one. A menu's command is written `{"id", "enabled"}`,
+what a menu's keys read of it; a case never runs one.
 A case reads what the core's own code reads: in C#, public and internal members, never private ones;
 in the Script Core, a module's exports.
 
