@@ -4,7 +4,7 @@
 |---|---|---|
 | ExGrid | 95.2% | 88.5% |
 | ExSheet | 95.4% | 88.6% |
-| ExPivot | 94.3% | 85.9% |
+| ExPivot | 94.3% | 86% |
 | ExChart | 90.5% | 81.6% |
 | ExBoard | 91.7% | 81.8% |
 | Data | 94% | 88.8% |
@@ -14,19 +14,19 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/25/2026 - 21:18:25 |
+| Generated on: | 10/25/2026 - 21:47:10 |
 | Parser: | MultiReport (19x Cobertura) |
 | Assemblies: | 16 |
 | Classes: | 1181 |
 | Files: | 605 |
-| **Line coverage:** | 94.5% (81683 of 86406) |
-| Covered lines: | 81683 |
+| **Line coverage:** | 94.5% (81711 of 86434) |
+| Covered lines: | 81711 |
 | Uncovered lines: | 4723 |
-| Coverable lines: | 86406 |
-| Total lines: | 138118 |
-| **Branch coverage:** | 87.2% (49324 of 56504) |
-| Covered branches: | 49324 |
-| Total branches: | 56504 |
+| Coverable lines: | 86434 |
+| Total lines: | 138141 |
+| **Branch coverage:** | 87.2% (49336 of 56516) |
+| Covered branches: | 49336 |
+| Total branches: | 56516 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
@@ -846,15 +846,15 @@
 |ExPivot.Engine.CellKey|100%||
 |ExPivot.Engine.CellKey.MixingComparer|100%||
 |ExPivot.Engine.CellReader|100%|94.4%|
-|ExPivot.Engine.ComputationAxis|94.3%|92.6%|
+|ExPivot.Engine.ComputationAxis|94.7%|93%|
 |ExPivot.Engine.ComputationAxis.ChildRows|40%|100%|
 |ExPivot.Engine.ComputationAxis.InitialRows|40%|100%|
-|ExPivot.Engine.ComputationAxis.Working|98.5%|92.8%|
+|ExPivot.Engine.ComputationAxis.Working|98.6%|93.2%|
 |ExPivot.Engine.ComputationCells|100%|95.4%|
 |ExPivot.Engine.ComputationCells.Writer|100%|97.2%|
 |ExPivot.Engine.ComputationCube|96.8%|95.4%|
 |ExPivot.Engine.ComputationCube.Members|91.4%|90%|
-|ExPivot.Engine.ComputationReport|97.6%|95.3%|
+|ExPivot.Engine.ComputationReport|97.6%|96.2%|
 |ExPivot.Engine.ComputationReport.Branch|100%|90%|
 |ExPivot.Engine.ComputationReport.Children|100%|100%|
 |ExPivot.Engine.ComputationReport.FirstLayout|100%||
@@ -1030,12 +1030,12 @@
 |ExSheet.BuiltInToolbarItem|96.4%|97.3%|
 |ExSheet.ColourItem|96%|100%|
 |ExSheet.CommaItem|83.3%||
-|ExSheet.Components.ExSheet|91.3%|81.8%|
+|ExSheet.Components.ExSheet|91.3%|81.7%|
 |ExSheet.Components.ExSheet.KeyboardListener|100%||
 |ExSheet.Components.ExSheet.KeyUpListener|100%||
 |ExSheet.Components.ExSheet.OwnFindOutcome|100%||
 |ExSheet.Components.ExSheet.SheetGridChrome|86.6%|73%|
-|ExSheet.Components.ExSheet<T>|91.3%|81.8%|
+|ExSheet.Components.ExSheet<T>|91.3%|81.7%|
 |ExSheet.Components.ExSheetStylesheet|100%||
 |ExSheet.Components.FormatCellsPanel|97.3%|87.5%|
 |ExSheet.Components.SheetFindPanel|91.7%|76.5%|
