@@ -5,7 +5,7 @@
 | ExGrid | 95% | 88.2% |
 | ExSheet | 95.4% | 88.6% |
 | ExPivot | 94.2% | 85.5% |
-| ExChart | 90.3% | 81.2% |
+| ExChart | 90.4% | 81.3% |
 | ExBoard | 91.7% | 81.8% |
 | Data | 93.9% | 88.6% |
 
@@ -14,19 +14,19 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/25/2026 - 02:27:31 |
+| Generated on: | 10/25/2026 - 02:51:42 |
 | Parser: | MultiReport (19x Cobertura) |
 | Assemblies: | 16 |
 | Classes: | 1181 |
 | Files: | 605 |
-| **Line coverage:** | 94.4% (81497 of 86289) |
-| Covered lines: | 81497 |
-| Uncovered lines: | 4792 |
-| Coverable lines: | 86289 |
-| Total lines: | 137963 |
-| **Branch coverage:** | 87% (49110 of 56396) |
-| Covered branches: | 49110 |
-| Total branches: | 56396 |
+| **Line coverage:** | 94.4% (81537 of 86320) |
+| Covered lines: | 81537 |
+| Uncovered lines: | 4783 |
+| Coverable lines: | 86320 |
+| Total lines: | 137999 |
+| **Branch coverage:** | 87% (49152 of 56432) |
+| Covered branches: | 49152 |
+| Total branches: | 56432 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
@@ -76,11 +76,11 @@
 |ExBoard.Narrowing|76.7%|59.5%|
 
 </details>
-<details><summary>ExChart - 85.4%</summary>
+<details><summary>ExChart - 85.9%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExChart**|**85.4%**|**74.9%**|
+|**ExChart**|**85.9%**|**75.3%**|
 |ExChart.ChartPointClick|100%||
 |ExChart.ChartRange|100%|50%|
 |ExChart.ChartTarget|100%||
@@ -112,13 +112,13 @@
 |ExChart.GridChartBridge<TRow>|46.3%|17.5%|
 |ExChart.GridChartBridge<TRow>|70.3%|42.3%|
 |ExChart.GridChartCommands|62.5%|62.5%|
-|ExChart.GridChartDeclarations<TRow>|90%||
+|ExChart.GridChartDeclarations<TRow>|100%||
 |ExChart.GridChartSeries|100%||
 |ExChart.GridState<TRow>|85.7%||
 |ExChart.KeyedPosition|100%||
 |ExChart.RowSeries|100%||
-|ExChart.SelectionReader|90.6%|72.8%|
-|ExChart.SelectionReader<TRow>|90.6%|72.8%|
+|ExChart.SelectionReader|92.1%|73.9%|
+|ExChart.SelectionReader<TRow>|92.1%|73.9%|
 |ExChart.SeriesVisibility|100%||
 |ExChart.SnapshotChartData|100%|100%|
 
@@ -235,11 +235,11 @@
 |ExChart.MudBlazor.MudExChartStylesheet|0%||
 
 </details>
-<details><summary>ExGrid - 94.7%</summary>
+<details><summary>ExGrid - 94.8%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExGrid**|**94.7%**|**88.3%**|
+|**ExGrid**|**94.8%**|**88.4%**|
 |ExGrid.CellChangeTimes.KeyTimes<TRow>|76.6%|66.6%|
 |ExGrid.CellChangeTimes<TRow>|90.2%|78.5%|
 |ExGrid.Cells.Border|100%|75%|
@@ -289,7 +289,7 @@
 |ExGrid.Chrome.IGridChrome|66.6%||
 |ExGrid.Chrome.LoadingContext|100%||
 |ExGrid.Chrome.MenuKey|100%||
-|ExGrid.Chrome.MenuKeys|98.3%|87.5%|
+|ExGrid.Chrome.MenuKeys|99.1%|96.5%|
 |ExGrid.Chrome.NameBoxContext|100%||
 |ExGrid.Chrome.OperandReading|100%||
 |ExGrid.Chrome.RefusalLabelIds|93.1%|92.3%|
@@ -328,7 +328,7 @@
 |ExGrid.Columns.GridAction|91.6%||
 |ExGrid.Columns.HeaderGroup|96.5%|100%|
 |ExGrid.Columns.HeaderGroupLayout|100%|95.6%|
-|ExGrid.Columns.HeaderReorder|100%|98%|
+|ExGrid.Columns.HeaderReorder|100%|100%|
 |ExGrid.Columns.OverflowDecision|100%||
 |ExGrid.Columns.OverflowRules|100%|100%|
 |ExGrid.Columns.ResolvedHeaderGroup|100%||
@@ -342,7 +342,7 @@
 |ExGrid.Components.AppearanceStyles.PartKey|0%||
 |ExGrid.Components.CellAppearances<TRow>|0%||
 |ExGrid.Components.CellAppearances<TRow>|90.4%|87.1%|
-|ExGrid.Components.CellClasses|95.3%|91.9%|
+|ExGrid.Components.CellClasses|96.2%|93.5%|
 |ExGrid.Components.CellEngagement|100%||
 |ExGrid.Components.CellIds|100%||
 |ExGrid.Components.ChangeHighlightEnds|95.2%|92.8%|
@@ -1030,12 +1030,12 @@
 |ExSheet.BuiltInToolbarItem|96.4%|97.3%|
 |ExSheet.ColourItem|96%|100%|
 |ExSheet.CommaItem|83.3%||
-|ExSheet.Components.ExSheet|91.3%|81.8%|
+|ExSheet.Components.ExSheet|91.3%|81.7%|
 |ExSheet.Components.ExSheet.KeyboardListener|100%||
 |ExSheet.Components.ExSheet.KeyUpListener|100%||
 |ExSheet.Components.ExSheet.OwnFindOutcome|100%||
 |ExSheet.Components.ExSheet.SheetGridChrome|86.6%|73%|
-|ExSheet.Components.ExSheet<T>|91.3%|81.8%|
+|ExSheet.Components.ExSheet<T>|91.3%|81.7%|
 |ExSheet.Components.ExSheetStylesheet|100%||
 |ExSheet.Components.FormatCellsPanel|97.3%|87.5%|
 |ExSheet.Components.SheetFindPanel|91.7%|76.5%|
