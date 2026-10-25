@@ -3,7 +3,8 @@ namespace ExPivot.Engine;
 /// <summary>
 /// What ExPivot asks a Pivot Source to aggregate (ADR-0066): the row fields and the column
 /// fields, in order; the report filter's fields; the Hidden Items of every placed field; for
-/// each field in Values, the parts asked for; and the most leaves the answer may have. A
+/// each field in Values, the parts asked for; the most leaves the answer may have; and, of a source
+/// that answers Level Aggregates, which groups the report shows (<see cref="Levels"/>). A
 /// serialisable value (<see cref="PivotJson"/>), so it crosses to a server unchanged
 /// (ADR-0002), and immutable. Two questions are equal when they ask the same thing.
 /// </summary>
@@ -68,6 +69,30 @@ public sealed class PivotQuery : IEquatable<PivotQuery>
     /// <summary>The most leaves the answer may have.</summary>
     public int MaxLeaves { get; }
 
+    /// <summary>
+    /// Which groups the report shows, for a source that answers Level Aggregates (ADR-0370 section
+    /// 3): one rule a row field and one a column field. A source may then answer, when the leaves
+    /// would pass <see cref="MaxLeaves"/>, with the cells of the groups shown instead
+    /// (<see cref="PivotAnswer.IsLevels"/>). Null, the default, asks for the leaves alone. Refuses
+    /// rules that are not one a field.
+    /// </summary>
+    public PivotLevels? Levels
+    {
+        get => _levels;
+        init
+        {
+            if (value is not null && (value.Rows.Count != Rows.Count || value.Columns.Count != Columns.Count))
+            {
+                throw new ArgumentException(
+                    $"The question's levels give {value.Rows.Count} row and {value.Columns.Count} column rules, and it places {Rows.Count} row and {Columns.Count} column fields; a field has one rule (ADR-0370 section 3).",
+                    nameof(Levels));
+            }
+            _levels = value;
+        }
+    }
+
+    private readonly PivotLevels? _levels;
+
     /// <summary>Every placed field — the rows, the columns, then the report filter's.</summary>
     public IEnumerable<PivotQueryField> Placed => Rows.Concat(Columns).Concat(Filters);
 
@@ -103,6 +128,19 @@ public sealed class PivotQuery : IEquatable<PivotQuery>
     }
 
     /// <summary>
+    /// The question <see cref="For"/> asks, with the groups the layout shows (<see cref="Levels"/>,
+    /// ADR-0370 section 3): what ExPivot asks a source that answers Level Aggregates.
+    /// </summary>
+    public static PivotQuery ForLevels(PivotLayout layout, int maxLeaves = DefaultMaxLeaves)
+    {
+        var query = For(layout, maxLeaves);
+        return new PivotQuery(query.Rows, query.Columns, query.Filters, query.Values, query.MaxLeaves)
+        {
+            Levels = PivotLevels.Of(layout),
+        };
+    }
+
+    /// <summary>
     /// The parts an Aggregation reads besides the counts (ADR-0066): Sum and Average the sum;
     /// Max and Min the extremes; Product the product; StdDev, StdDevp, Var and Varp the running
     /// variance; Count and Count Numbers nothing more.
@@ -126,6 +164,7 @@ public sealed class PivotQuery : IEquatable<PivotQuery>
         => other is not null
             && (ReferenceEquals(this, other)
                 || (MaxLeaves == other.MaxLeaves
+                    && Equals(Levels, other.Levels)
                     && Rows.SequenceEqual(other.Rows)
                     && Columns.SequenceEqual(other.Columns)
                     && Filters.SequenceEqual(other.Filters)
@@ -139,6 +178,7 @@ public sealed class PivotQuery : IEquatable<PivotQuery>
     {
         var hash = new HashCode();
         hash.Add(MaxLeaves);
+        hash.Add(Levels);
         foreach (var field in Placed)
             hash.Add(field);
         foreach (var value in Values)
@@ -149,7 +189,8 @@ public sealed class PivotQuery : IEquatable<PivotQuery>
     /// <summary>The fields and parts, for messages and logs.</summary>
     public override string ToString()
         => $"Rows [{string.Join(", ", Rows)}] Columns [{string.Join(", ", Columns)}] Filters [{string.Join(", ", Filters)}] "
-            + $"Values [{string.Join(", ", Values)}] MaxLeaves {MaxLeaves}";
+            + $"Values [{string.Join(", ", Values)}] MaxLeaves {MaxLeaves}"
+            + (Levels is null ? "" : $" Levels {Levels}");
 
     private static PivotQueryField[] Placements(IReadOnlyList<PivotFieldPlacement> placements)
         => placements.Select(p => new PivotQueryField(p.Field, p.HiddenItems)).ToArray();
@@ -212,6 +253,118 @@ public sealed class PivotQueryField : IEquatable<PivotQueryField>
         => ReferenceEquals(one, other)
             || (one.Count == 0 && other.Count == 0)
             || one.ToHashSet().SetEquals(other);
+}
+
+/// <summary>
+/// Which groups a report shows, as a question for Level Aggregates carries them (ADR-0370 section
+/// 3): for each row field and each column field, whether its Items are collapsed and the Items
+/// toggled from that, as the layout says them (<see cref="PivotFieldPlacement.Collapsed"/>). A group
+/// is shown when every Item above it is expanded, and the grand total always is; a cell is a shown
+/// row group crossed with a shown column group. A server can turn them into <c>GROUPING SETS</c>
+/// without knowing the report. Immutable; equal when every rule is.
+/// </summary>
+public sealed class PivotLevels : IEquatable<PivotLevels>
+{
+    /// <summary>Carries one rule a row field and one a column field.</summary>
+    /// <param name="rows">The row fields' rules, outermost first.</param>
+    /// <param name="columns">The column fields' rules, outermost first.</param>
+    public PivotLevels(IReadOnlyList<PivotLevelRule>? rows = null, IReadOnlyList<PivotLevelRule>? columns = null)
+    {
+        Rows = PivotQuery.Copy(rows, nameof(rows));
+        Columns = PivotQuery.Copy(columns, nameof(columns));
+    }
+
+    /// <summary>The groups a layout shows: each row and column field's collapse state.</summary>
+    public static PivotLevels Of(PivotLayout layout)
+    {
+        ArgumentNullException.ThrowIfNull(layout);
+        return new PivotLevels(
+            layout.Rows.Select(PivotLevelRule.Of).ToArray(),
+            layout.Columns.Select(PivotLevelRule.Of).ToArray());
+    }
+
+    /// <summary>The row fields' rules, outermost first.</summary>
+    public IReadOnlyList<PivotLevelRule> Rows { get; }
+
+    /// <summary>The column fields' rules, outermost first.</summary>
+    public IReadOnlyList<PivotLevelRule> Columns { get; }
+
+    /// <inheritdoc />
+    public bool Equals(PivotLevels? other)
+        => other is not null
+            && (ReferenceEquals(this, other) || (Rows.SequenceEqual(other.Rows) && Columns.SequenceEqual(other.Columns)));
+
+    /// <inheritdoc />
+    public override bool Equals(object? obj) => Equals(obj as PivotLevels);
+
+    /// <inheritdoc />
+    public override int GetHashCode()
+    {
+        var hash = new HashCode();
+        foreach (var rule in Rows.Concat(Columns))
+            hash.Add(rule);
+        return hash.ToHashCode();
+    }
+
+    /// <summary><c>[expanded, collapsed] × [expanded]</c>.</summary>
+    public override string ToString() => $"[{string.Join(", ", Rows)}] × [{string.Join(", ", Columns)}]";
+}
+
+/// <summary>
+/// One field's rule of <see cref="PivotLevels"/> (ADR-0370 section 3): whether its Items are
+/// collapsed, and the Items whose state is the other. Item <c>x</c> is expanded when
+/// <see cref="Collapsed"/> is not <c>x ∈ </c><see cref="ToggledItems"/>; the Items of the innermost
+/// field have nothing below them, and their rule changes nothing. Equal when the state is and the
+/// toggled Items are the same set.
+/// </summary>
+public sealed class PivotLevelRule : IEquatable<PivotLevelRule>
+{
+    private readonly HashSet<PivotItemKey> _toggled;
+
+    /// <summary>Carries one field's rule.</summary>
+    /// <param name="collapsed">Whether its Items are collapsed, but for the toggled ones.</param>
+    /// <param name="toggledItems">The Items whose state is the other; none when left out.</param>
+    public PivotLevelRule(bool collapsed = false, IReadOnlyList<PivotItemKey>? toggledItems = null)
+    {
+        Collapsed = collapsed;
+        ToggledItems = PivotQuery.Copy(toggledItems, nameof(toggledItems));
+        _toggled = [.. ToggledItems];
+    }
+
+    /// <summary>Every Item expanded: the rule of a field nothing is collapsed in.</summary>
+    public static PivotLevelRule Expanded { get; } = new();
+
+    /// <summary>A placed field's rule, as the layout says it.</summary>
+    public static PivotLevelRule Of(PivotFieldPlacement placement)
+    {
+        ArgumentNullException.ThrowIfNull(placement);
+        return !placement.Collapsed && placement.ToggledItems.Count == 0
+            ? Expanded
+            : new PivotLevelRule(placement.Collapsed, placement.ToggledItems);
+    }
+
+    /// <summary>Whether its Items are collapsed, but for the toggled ones.</summary>
+    public bool Collapsed { get; }
+
+    /// <summary>The Items whose state is the other of <see cref="Collapsed"/>.</summary>
+    public IReadOnlyList<PivotItemKey> ToggledItems { get; }
+
+    /// <summary>Whether the groups below <paramref name="item"/> are shown.</summary>
+    public bool IsExpanded(PivotItemKey item) => Collapsed == _toggled.Contains(item);
+
+    /// <inheritdoc />
+    public bool Equals(PivotLevelRule? other)
+        => other is not null && Collapsed == other.Collapsed && _toggled.SetEquals(other._toggled);
+
+    /// <inheritdoc />
+    public override bool Equals(object? obj) => Equals(obj as PivotLevelRule);
+
+    /// <inheritdoc />
+    public override int GetHashCode() => HashCode.Combine(Collapsed, _toggled.Count);
+
+    /// <summary><c>expanded</c>, or <c>collapsed (but Text:East)</c>.</summary>
+    public override string ToString()
+        => (Collapsed ? "collapsed" : "expanded") + (ToggledItems.Count == 0 ? "" : $" (but {string.Join(", ", ToggledItems)})");
 }
 
 /// <summary>A field in Values as a question carries it (ADR-0066): its name and the parts asked

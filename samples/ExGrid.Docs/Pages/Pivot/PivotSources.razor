@@ -178,6 +178,42 @@
             (<em>Customer (1,020,000 items) in Rows makes more than 200,000 combinations, the most server data allows</em>)
             comes with the TypeScript engine's UI in 0.3.0; ExPivot today does not ask for the counts.
         </p>
+        <p id="level-aggregates">
+            A collapsed report shows far fewer cells than it has leaves, so a server's source may answer <strong>Level
+            Aggregates</strong> in place of a refusal. <code>PivotQuery.ForLevels(layout, maxLeaves)</code> asks the
+            question <code>PivotQuery.For</code> asks with the groups the layout shows: <code>Levels</code>, one
+            <code>PivotLevelRule</code> a row and a column field, saying whether its Items are collapsed and which are
+            toggled. A source that declares it (<code>new PivotSourceFeatures(aggregations, canRefresh, countsItems,
+            answersLevels: true)</code>) may answer such a question, when its leaves pass <code>MaxLeaves</code>, with the
+            cells of the groups shown instead: each a shown row group crossed with a shown column group, named by its Items
+            down to its depth, which a SQL server makes with <code>GROUPING SETS</code>. A cell the levels do not show,
+            two cells for one group, and a cell whose parent is missing are each refused by name, as another question's
+            answer. A sum that is a double carries the sum of its numbers' magnitudes beside it, so that the report made
+            from the cells can check each set of children against its parent within the rounding their order allows,
+            and refuse a figure that rounding cannot explain (ADR-0370).
+        </p>
+        <pre class="docs-code"><code>// Region collapsed over Product: the grand total and each Region.
+// SELECT GROUPING(Region) AS IsTotal, Region, COUNT(*), SUM(Amount) … GROUP BY GROUPING SETS ((), (Region))
+var query = PivotQuery.ForLevels(layout, maxLeaves);
+var answer = new PivotAnswerBuilder(query, sourceVersion);
+foreach (var row in rows)
+{
+    // A Blank Region is a group of its own, so the total is told by GROUPING(), not by a null.
+    var cell = answer.AddCell(row.IsTotal ? [] : [PivotItemKey.For(row.Region)], [], row.Count);
+    answer.SetCounts(cell, 0, row.Count, row.Count);
+    answer.SetSum(cell, 0, PivotNumber.Exact(row.Amount));   // a double: SetSum(cell, 0, sum, absoluteSum)
+}
+return answer.Build();</code></pre>
+        <p>
+            The bundled sources answer Level Aggregates too, without declaring them, and the TypeScript engine's answer
+            is theirs cell for cell, so a server built on one has nothing to write. ExPivot does not lay a report out
+            from them yet: either engine's cube refuses an answer of cells by name, and the report made from them, with
+            that check, comes with the TypeScript engine in 0.3.0, which is why there is no Example here. In
+            <code>@@ex-grid/pivot-engine</code> they are <code>levelQueryForLayout</code>, the fourth argument of
+            <code>PivotSourceFeatures</code>, the builder's <code>addCell</code> and <code>setLevelSum</code>, and an
+            answer's <code>isLevels</code>; <code>PivotJson</code> carries a question's <code>levels</code> and a level
+            answer's cells, each double sum with its <code>absoluteSum</code>.
+        </p>
     </DocsSection>
 
     <DocsSection Title="From TypeScript">

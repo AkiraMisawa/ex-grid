@@ -59,6 +59,13 @@ public static class PivotJson
             }
             json.WriteEndArray();
             json.WriteNumber("maxLeaves", query.MaxLeaves);
+            if (query.Levels is { } levels)
+            {
+                json.WriteStartObject("levels");
+                WriteRules(json, "rows", levels.Rows);
+                WriteRules(json, "columns", levels.Columns);
+                json.WriteEndObject();
+            }
         });
     }
 
@@ -75,6 +82,8 @@ public static class PivotJson
             }
             var leaves = answer.LeafCount;
             json.WriteString("sourceVersion", answer.SourceVersion);
+            if (answer.IsLevels)
+                json.WriteBoolean("levels", true);
             WriteAxes(json, "rows", answer.RowAxes, leaves);
             WriteAxes(json, "columns", answer.ColumnAxes, leaves);
             json.WriteStartArray("records");
@@ -83,7 +92,7 @@ public static class PivotJson
             json.WriteEndArray();
             json.WriteStartArray("values");
             foreach (var values in answer.ValueColumns)
-                WriteValues(json, values, leaves);
+                WriteValues(json, values, leaves, answer.IsLevels);
             json.WriteEndArray();
         });
     }
@@ -240,6 +249,22 @@ public static class PivotJson
         json.WriteEndArray();
     }
 
+    // A field's rule of a question's levels: written only where it is not every Item expanded.
+    private static void WriteRules(Utf8JsonWriter json, string name, IReadOnlyList<PivotLevelRule> rules)
+    {
+        json.WriteStartArray(name);
+        foreach (var rule in rules)
+        {
+            json.WriteStartObject();
+            if (rule.Collapsed)
+                json.WriteBoolean("collapsed", true);
+            if (rule.ToggledItems.Count > 0)
+                WriteKeys(json, "toggledItems", rule.ToggledItems);
+            json.WriteEndObject();
+        }
+        json.WriteEndArray();
+    }
+
     private static void WritePath(Utf8JsonWriter json, string name, IReadOnlyList<PivotFieldItem> path)
     {
         json.WriteStartArray(name);
@@ -300,7 +325,7 @@ public static class PivotJson
         json.WriteEndArray();
     }
 
-    private static void WriteValues(Utf8JsonWriter json, PivotAnswerValues values, int leaves)
+    private static void WriteValues(Utf8JsonWriter json, PivotAnswerValues values, int leaves, bool levels)
     {
         var columns = values.Columns;
         json.WriteStartObject();
@@ -334,6 +359,21 @@ public static class PivotJson
                     json.WriteNumberValue(AggregateArithmetic.Canonical(sum.Exact));
             }
             json.WriteEndArray();
+            // A level answer's double sum is carried with its magnitudes (ADR-0370 section 3); an
+            // exact one with none.
+            if (levels)
+            {
+                json.WriteStartArray("absoluteSum");
+                for (var leaf = 0; leaf < leaves; leaf++)
+                {
+                    // A cell of #NUM! may carry none: its parts are not read.
+                    if (sums[leaf].Inexact && !double.IsNaN(columns.Absolutes![leaf]))
+                        WriteDouble(json, columns.Absolutes[leaf]);
+                    else
+                        json.WriteNullValue();
+                }
+                json.WriteEndArray();
+            }
         }
         if (columns.Extremes is { } extremes)
         {
@@ -444,7 +484,10 @@ public static class PivotJson
         ReadFields(root, "columns"),
         ReadFields(root, "filters"),
         Objects(root, "values").Select(value => new PivotQueryValue(String(value, "field"), ReadParts(value))).ToArray(),
-        Int(root, "maxLeaves")));
+        Int(root, "maxLeaves"))
+    {
+        Levels = ReadLevels(root),
+    });
 
     /// <summary>
     /// An answer read back from <see cref="Write(PivotAnswer)"/>'s JSON. Refuses by name a leaf
@@ -457,17 +500,18 @@ public static class PivotJson
         if (ReadRefusal(root) is { } refusal)
             return PivotAnswer.Refused(refusal);
         var sourceVersion = String(root, "sourceVersion");
+        var levels = OptionalBool(root, "levels");
         var records = Array(root, "records").Select(element => LongValue(element, "records")).ToArray();
         var leaves = records.Length;
         for (var leaf = 0; leaf < leaves; leaf++)
         {
             if (records[leaf] < 1)
-                throw new FormatException($"Leaf {leaf} holds {records[leaf]} records; a leaf has records.");
+                throw new FormatException($"{(levels ? "Cell" : "Leaf")} {leaf} holds {records[leaf]} records; a {(levels ? "cell" : "leaf")} has records.");
         }
-        var rows = ReadAxes(root, "rows", leaves);
-        var columns = ReadAxes(root, "columns", leaves);
-        var values = Objects(root, "values").Select(element => ReadValues(element, records)).ToArray();
-        return new PivotAnswer(sourceVersion, rows, columns, leaves, records, values);
+        var rows = ReadAxes(root, "rows", leaves, levels);
+        var columns = ReadAxes(root, "columns", leaves, levels);
+        var values = Objects(root, "values").Select(element => ReadValues(element, records, levels)).ToArray();
+        return new PivotAnswer(sourceVersion, rows, columns, leaves, records, values, levels);
     });
 
     /// <summary>A question for a field's Items read back from <see cref="Write(PivotItemsQuery)"/>'s JSON.</summary>
@@ -609,6 +653,24 @@ public static class PivotJson
         };
     }
 
+    private static PivotLevels? ReadLevels(JsonElement root)
+    {
+        if (!root.TryGetProperty("levels", out var levels))
+            return null;
+        if (levels.ValueKind != JsonValueKind.Object)
+            throw new FormatException("'levels' is an object.");
+        return new PivotLevels(ReadRules(levels, "rows"), ReadRules(levels, "columns"));
+    }
+
+    private static PivotLevelRule[] ReadRules(JsonElement element, string name)
+        => Objects(element, name).Select(rule => new PivotLevelRule(OptionalBool(rule, "collapsed"), ReadKeys(rule, "toggledItems"))).ToArray();
+
+    // A flag, written only when it is true; false when it is left out.
+    private static bool OptionalBool(JsonElement element, string name)
+        => !element.TryGetProperty(name, out var value) ? false
+            : value.ValueKind is JsonValueKind.True or JsonValueKind.False ? value.GetBoolean()
+            : throw new FormatException($"'{name}' is true or false.");
+
     private static PivotQueryField[] ReadFields(JsonElement element, string name)
         => Objects(element, name).Select(field => new PivotQueryField(String(field, "field"), ReadKeys(field, "hiddenItems"))).ToArray();
 
@@ -642,7 +704,7 @@ public static class PivotJson
         return parts;
     }
 
-    private static PivotAnswerAxis[] ReadAxes(JsonElement root, string name, int leaves)
+    private static PivotAnswerAxis[] ReadAxes(JsonElement root, string name, int leaves, bool levels)
         => Objects(root, name).Select(axis =>
         {
             var field = String(axis, "field");
@@ -654,10 +716,10 @@ public static class PivotJson
                     throw new FormatException($"'{field}' lists the Item {item} twice; text Items are told apart ignoring case (ADR-0060).");
             }
             var itemOfLeaf = Column(axis, "leaves", leaves, element => IntValue(element, "leaves"));
-            return new PivotAnswerAxis(field, items, itemOfLeaf, leaves);
+            return new PivotAnswerAxis(field, items, itemOfLeaf, leaves, levels);
         }).ToArray();
 
-    private static PivotAnswerValues ReadValues(JsonElement element, long[] records)
+    private static PivotAnswerValues ReadValues(JsonElement element, long[] records, bool levels)
     {
         var field = String(element, "field");
         var leaves = records.Length;
@@ -685,6 +747,25 @@ public static class PivotJson
                 sums[leaf] = read[leaf].IsExact
                     ? new SumPart { Exact = read[leaf].ExactValue }
                     : new SumPart { Double = read[leaf].Value, Inexact = true };
+            }
+            if (levels)
+            {
+                columns.TrackAbsolutes();
+                var absolutes = Column(element, "absoluteSum", leaves, value =>
+                {
+                    if (value.ValueKind == JsonValueKind.Null)
+                        return (double?)null;
+                    var absolute = ReadDouble(value);
+                    return double.IsNaN(absolute) || absolute < 0
+                        ? throw new FormatException($"A sum of magnitudes of '{field}' is {value.GetRawText()}; it is a number not below 0, or null for none (ADR-0370 section 3).")
+                        : absolute;
+                });
+                for (var leaf = 0; leaf < leaves; leaf++)
+                {
+                    if (read[leaf].IsExact && absolutes[leaf] is not null)
+                        throw new FormatException($"Cell {leaf}'s sum of '{field}' is exact, and carries a sum of magnitudes; only a double's does (ADR-0370 section 3).");
+                    columns.Absolutes![leaf] = absolutes[leaf] ?? double.NaN;
+                }
             }
         }
         if (columns.Extremes is { } extremes)

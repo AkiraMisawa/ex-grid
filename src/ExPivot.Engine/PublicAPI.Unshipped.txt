@@ -2,6 +2,10 @@
 const ExPivot.Engine.PivotLeafBound.Most = 9007199254740991 -> long
 ExPivot.Engine.FetchingPivotReportSource.Shape.get -> System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<ExGrid.Data.DataShape!>>?
 ExPivot.Engine.FetchingPivotReportSource.Shape.set -> void
+ExPivot.Engine.PivotAnswer.IsLevels.get -> bool
+ExPivot.Engine.PivotAnswerBuilder.AddCell(System.Collections.Generic.IReadOnlyList<ExPivot.Engine.PivotItemKey!>! rowItems, System.Collections.Generic.IReadOnlyList<ExPivot.Engine.PivotItemKey!>! columnItems, long records) -> int
+ExPivot.Engine.PivotAnswerBuilder.SetSum(int leaf, int value, ExPivot.Engine.PivotNumber sum, double absoluteSum) -> void
+ExPivot.Engine.PivotAnswerValues.AbsoluteSumAt(int leaf) -> double?
 ExPivot.Engine.PivotCellItems
 ExPivot.Engine.PivotCellItems.<Clone>$() -> ExPivot.Engine.PivotCellItems!
 ExPivot.Engine.PivotCellItems.Column.get -> System.Collections.Generic.IReadOnlyList<ExPivot.Engine.PivotFieldItem!>!
@@ -16,20 +20,45 @@ ExPivot.Engine.PivotItemCounts.Counts.get -> System.Collections.Generic.IReadOnl
 ExPivot.Engine.PivotItemCounts.PivotItemCounts(string! sourceVersion, System.Collections.Generic.IReadOnlyDictionary<string!, int>! counts) -> void
 ExPivot.Engine.PivotItemCounts.SourceVersion.get -> string!
 ExPivot.Engine.PivotLeafBound
+ExPivot.Engine.PivotLevelRule
+ExPivot.Engine.PivotLevelRule.Collapsed.get -> bool
+ExPivot.Engine.PivotLevelRule.Equals(ExPivot.Engine.PivotLevelRule? other) -> bool
+ExPivot.Engine.PivotLevelRule.IsExpanded(ExPivot.Engine.PivotItemKey! item) -> bool
+ExPivot.Engine.PivotLevelRule.PivotLevelRule(bool collapsed = false, System.Collections.Generic.IReadOnlyList<ExPivot.Engine.PivotItemKey!>? toggledItems = null) -> void
+ExPivot.Engine.PivotLevelRule.ToggledItems.get -> System.Collections.Generic.IReadOnlyList<ExPivot.Engine.PivotItemKey!>!
+ExPivot.Engine.PivotLevels
+ExPivot.Engine.PivotLevels.Columns.get -> System.Collections.Generic.IReadOnlyList<ExPivot.Engine.PivotLevelRule!>!
+ExPivot.Engine.PivotLevels.Equals(ExPivot.Engine.PivotLevels? other) -> bool
+ExPivot.Engine.PivotLevels.PivotLevels(System.Collections.Generic.IReadOnlyList<ExPivot.Engine.PivotLevelRule!>? rows = null, System.Collections.Generic.IReadOnlyList<ExPivot.Engine.PivotLevelRule!>? columns = null) -> void
+ExPivot.Engine.PivotLevels.Rows.get -> System.Collections.Generic.IReadOnlyList<ExPivot.Engine.PivotLevelRule!>!
+ExPivot.Engine.PivotQuery.Levels.get -> ExPivot.Engine.PivotLevels?
+ExPivot.Engine.PivotQuery.Levels.init -> void
+ExPivot.Engine.PivotSourceFeatures.AnswersLevels.get -> bool
 ExPivot.Engine.PivotSourceFeatures.CountsItems.get -> bool
 ExPivot.Engine.PivotSourceFeatures.PivotSourceFeatures(System.Collections.Generic.IEnumerable<ExPivot.Engine.PivotAggregation>! aggregations, bool canRefresh, bool countsItems) -> void
+ExPivot.Engine.PivotSourceFeatures.PivotSourceFeatures(System.Collections.Generic.IEnumerable<ExPivot.Engine.PivotAggregation>! aggregations, bool canRefresh, bool countsItems, bool answersLevels) -> void
 override ExPivot.Engine.FetchingPivotReportSource.ShapeAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<ExGrid.Data.DataShape?>
 override ExPivot.Engine.FetchingPivotSource.ItemCountsAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<ExPivot.Engine.PivotItemCounts!>
 override ExPivot.Engine.LocalPivotReportSource.ShapeAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<ExGrid.Data.DataShape?>
 override ExPivot.Engine.PivotCellItems.Equals(object? obj) -> bool
 override ExPivot.Engine.PivotCellItems.GetHashCode() -> int
 override ExPivot.Engine.PivotCellItems.ToString() -> string!
+override ExPivot.Engine.PivotLevelRule.Equals(object? obj) -> bool
+override ExPivot.Engine.PivotLevelRule.GetHashCode() -> int
+override ExPivot.Engine.PivotLevelRule.ToString() -> string!
+override ExPivot.Engine.PivotLevels.Equals(object? obj) -> bool
+override ExPivot.Engine.PivotLevels.GetHashCode() -> int
+override ExPivot.Engine.PivotLevels.ToString() -> string!
 override ExPivot.Engine.SnapshotPivotSource.ItemCountsAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<ExPivot.Engine.PivotItemCounts!>
 static ExPivot.Engine.PivotCellItems.operator !=(ExPivot.Engine.PivotCellItems? left, ExPivot.Engine.PivotCellItems? right) -> bool
 static ExPivot.Engine.PivotCellItems.operator ==(ExPivot.Engine.PivotCellItems? left, ExPivot.Engine.PivotCellItems? right) -> bool
 static ExPivot.Engine.PivotJson.ReadItemCounts(string! json) -> ExPivot.Engine.PivotItemCounts!
 static ExPivot.Engine.PivotJson.Write(ExPivot.Engine.PivotItemCounts! counts) -> string!
 static ExPivot.Engine.PivotLeafBound.Of(ExPivot.Engine.PivotLayout! layout, ExPivot.Engine.PivotItemCounts! counts) -> long?
+static ExPivot.Engine.PivotLevelRule.Expanded.get -> ExPivot.Engine.PivotLevelRule!
+static ExPivot.Engine.PivotLevelRule.Of(ExPivot.Engine.PivotFieldPlacement! placement) -> ExPivot.Engine.PivotLevelRule!
+static ExPivot.Engine.PivotLevels.Of(ExPivot.Engine.PivotLayout! layout) -> ExPivot.Engine.PivotLevels!
+static ExPivot.Engine.PivotQuery.ForLevels(ExPivot.Engine.PivotLayout! layout, int maxLeaves = 200000) -> ExPivot.Engine.PivotQuery!
 static ExPivot.Engine.PivotSource.Fetch(System.Collections.Generic.IReadOnlyList<ExPivot.Engine.PivotField!>! fields, ExPivot.Engine.PivotSourceFeatures! features, System.Func<ExPivot.Engine.PivotQuery!, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<ExPivot.Engine.PivotAnswer!>>! aggregate, System.Func<ExPivot.Engine.PivotItemsQuery!, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<ExPivot.Engine.PivotItemPage!>>! items, System.Func<ExPivot.Engine.PivotDetailsQuery!, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<ExPivot.Engine.PivotDetailPage!>>! details, System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<ExPivot.Engine.PivotItemCounts!>>! itemCounts) -> ExPivot.Engine.FetchingPivotSource!
 virtual ExPivot.Engine.PivotReportSource.ShapeAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<ExGrid.Data.DataShape?>
 virtual ExPivot.Engine.PivotSource.ItemCountsAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<ExPivot.Engine.PivotItemCounts!>

@@ -28,6 +28,22 @@ public sealed class PivotSourceFeatures
     /// (<see cref="PivotSource.ItemCountsAsync"/>, ADR-0370 section 3); ExPivot then asks it once when
     /// the source is opened and again under a new Source Version.</param>
     public PivotSourceFeatures(IEnumerable<PivotAggregation> aggregations, bool canRefresh, bool countsItems)
+        : this(aggregations, canRefresh, countsItems, answersLevels: false)
+    {
+    }
+
+    /// <summary>Declares a source's features, whether it counts its fields' Items, and whether it
+    /// answers Level Aggregates.</summary>
+    /// <param name="aggregations">The Aggregations it answers.</param>
+    /// <param name="canRefresh">Whether it can be refreshed; the Pivot Toolbar then
+    /// offers Refresh.</param>
+    /// <param name="countsItems">Whether it answers each field's count of Items
+    /// (<see cref="PivotSource.ItemCountsAsync"/>, ADR-0370 section 3).</param>
+    /// <param name="answersLevels">Whether it answers a question carrying <see cref="PivotQuery.Levels"/>
+    /// whose leaves pass <see cref="PivotQuery.MaxLeaves"/> with the cells of the groups shown
+    /// (<see cref="PivotAnswer.IsLevels"/>, ADR-0370 section 3). ExPivot does not ask with levels yet: the
+    /// report made from Level Aggregates comes with the TypeScript engine.</param>
+    public PivotSourceFeatures(IEnumerable<PivotAggregation> aggregations, bool canRefresh, bool countsItems, bool answersLevels)
     {
         ArgumentNullException.ThrowIfNull(aggregations);
         _offered = [];
@@ -40,6 +56,7 @@ public sealed class PivotSourceFeatures
         Aggregations = Enum.GetValues<PivotAggregation>().Where(_offered.Contains).ToArray();
         CanRefresh = canRefresh;
         CountsItems = countsItems;
+        AnswersLevels = answersLevels;
     }
 
     /// <summary>Every Aggregation, and no Refresh — the bundled source's features: it is refreshed
@@ -54,6 +71,9 @@ public sealed class PivotSourceFeatures
 
     /// <summary>Whether the source answers each field's count of Items (ADR-0370 section 3).</summary>
     public bool CountsItems { get; }
+
+    /// <summary>Whether the source answers Level Aggregates (ADR-0370 section 3).</summary>
+    public bool AnswersLevels { get; }
 
     /// <summary>Whether the source answers <paramref name="aggregation"/>.</summary>
     public bool Offers(PivotAggregation aggregation) => _offered.Contains(aggregation);

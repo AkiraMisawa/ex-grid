@@ -58,11 +58,18 @@ internal sealed class ValueAccumulator
 
     private byte[] _kindOf = [];
 
-    public ValueAccumulator(FieldBinding binding, PivotParts parts, int capacity)
+    /// <param name="binding">The field's columns.</param>
+    /// <param name="parts">The parts asked for.</param>
+    /// <param name="capacity">The leaves there is room for at first.</param>
+    /// <param name="absolutes">Whether the sum of each leaf's magnitudes is kept beside its sum, for
+    /// a level answer (ADR-0370 section 3).</param>
+    public ValueAccumulator(FieldBinding binding, PivotParts parts, int capacity, bool absolutes = false)
     {
         _binding = binding;
         Parts = parts;
         Columns = new PartColumns(parts, Math.Max(16, capacity));
+        if (absolutes && (parts & PivotParts.Sum) != 0)
+            Columns.TrackAbsolutes();
         _single = binding.Single;
         _exact = _single is { Role: ValueRole.Exact or ValueRole.Integer } && binding.Part is null;
         _sum = (parts & PivotParts.Sum) != 0;
@@ -288,6 +295,8 @@ internal sealed class ValueAccumulator
     public async ValueTask<PartColumns> FinishedAsync(int[] order, int count, Slicer slicer)
     {
         var finished = new PartColumns(Parts, Math.Max(16, count));
+        if (Columns.Absolutes is not null)
+            finished.TrackAbsolutes();
         await slicer.ForAsync(count, (from, to) =>
         {
             for (var n = from; n < to; n++)
@@ -386,6 +395,7 @@ internal sealed class ValueAccumulator
             {
                 var (wide, scale) = Exactly.Wide(value);
                 AddToSum(leaf, wide, scale);
+                Columns.AddAbsolute(leaf, (double)value);
             }
             if (_extremes)
                 Columns.FoldExtremes(leaf, value, value, first);
@@ -408,6 +418,7 @@ internal sealed class ValueAccumulator
             }
             return;
         }
+        var absolutes = Columns.Absolutes;
         if (_sum && !_extremes && !_perRow)
         {
             for (var i = 0; i < leaves.Length; i++)
@@ -428,6 +439,8 @@ internal sealed class ValueAccumulator
                     next = value;
                 }
                 run.Sum = next;
+                if (absolutes is not null)
+                    absolutes[leaf] += Math.Abs(Exactly.ToDouble(value, _runScale));
             }
             return;
         }
@@ -449,6 +462,8 @@ internal sealed class ValueAccumulator
                     next = value;
                 }
                 run.Sum = next;
+                if (absolutes is not null)
+                    absolutes[leaf] += Math.Abs(Exactly.ToDouble(value, _runScale));
             }
             if (_extremes)
             {

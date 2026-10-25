@@ -78,6 +78,9 @@ export function isItemCollapsed(placement: PivotFieldPlacement, item: PivotItemK
 export function isLayoutChosen(layout: PivotLayout, choice: PivotLayoutChoice): boolean;
 
 // @public
+export function isLevelExpanded(rule: PivotLevelRule, item: PivotItemKey): boolean;
+
+// @public
 export function isValuesPseudoField(entry: PivotEntry): boolean;
 
 // @public
@@ -94,6 +97,12 @@ export const japanesePivotWords: PivotLabel;
 
 // @public
 export function layoutChoiceChanges(layout: PivotLayout, choice: PivotLayoutChoice): boolean;
+
+// @public
+export function levelQueryForLayout(layout: PivotLayout, maxLeaves?: number): PivotQuery;
+
+// @public
+export function levelsOfLayout(layout: PivotLayout): PivotLevels;
 
 // @public
 export class LocalPivotReportSource implements PivotReportSource {
@@ -134,6 +143,7 @@ export const pivotAggregations: readonly PivotAggregation[];
 // @public
 export class PivotAnswer {
     get columns(): readonly PivotAnswerAxis[];
+    readonly isLevels: boolean;
     get isRefused(): boolean;
     readonly leafCount: number;
     mismatch(query: PivotQuery): string | undefined;
@@ -157,11 +167,13 @@ export class PivotAnswerAxis {
 // @public
 export class PivotAnswerBuilder {
     constructor(query: PivotQuery, sourceVersion: string);
+    addCell(rowItems: readonly PivotItemKey[], columnItems: readonly PivotItemKey[], records: number): number;
     addLeaf(items: readonly PivotItemKey[], records: number): number;
     build(): PivotAnswer;
     get leafCount(): number;
     setCounts(leaf: number, value: number, values: number, numbers: number, nonFinite?: boolean): void;
     setExtremes(leaf: number, value: number, min: PivotNumber, max: PivotNumber): void;
+    setLevelSum(leaf: number, value: number, sum: PivotNumber, absoluteSum: number): void;
     setProduct(leaf: number, value: number, product: number): void;
     setSum(leaf: number, value: number, sum: PivotNumber): void;
     setVariance(leaf: number, value: number, mean: number, m2: number): void;
@@ -169,6 +181,7 @@ export class PivotAnswerBuilder {
 
 // @public
 export class PivotAnswerValues {
+    absoluteSumAt(leaf: number): number | undefined;
     readonly field: string;
     m2At(leaf: number): number;
     maxAt(leaf: number): PivotNumber;
@@ -517,6 +530,27 @@ export function pivotLeafBound(layout: PivotLayout, counts: PivotItemCounts): nu
 export const pivotLeafBoundMost: number;
 
 // @public
+export interface PivotLevelRule {
+    readonly collapsed: boolean;
+    readonly toggledItems: readonly PivotItemKey[];
+}
+
+// @public
+export function pivotLevelRule(input?: PivotLevelRuleInput): PivotLevelRule;
+
+// @public
+export interface PivotLevelRuleInput {
+    readonly collapsed?: boolean;
+    readonly toggledItems?: readonly PivotItemKey[];
+}
+
+// @public
+export interface PivotLevels {
+    readonly columns: readonly PivotLevelRule[];
+    readonly rows: readonly PivotLevelRule[];
+}
+
+// @public
 export function pivotLocales(): readonly string[];
 
 // @public
@@ -556,6 +590,7 @@ export const pivotParts: readonly PivotPart[];
 export interface PivotQuery {
     readonly columns: readonly PivotQueryField[];
     readonly filters: readonly PivotQueryField[];
+    readonly levels?: PivotLevels;
     readonly maxLeaves: number;
     readonly rows: readonly PivotQueryField[];
     readonly values: readonly PivotQueryValue[];
@@ -580,6 +615,10 @@ export interface PivotQueryInput {
         readonly field: string;
         readonly hiddenItems?: readonly PivotItemKey[];
     })[];
+    readonly levels?: {
+        readonly rows?: readonly PivotLevelRuleInput[];
+        readonly columns?: readonly PivotLevelRuleInput[];
+    };
     readonly maxLeaves?: number;
     readonly rows?: readonly (string | {
         readonly field: string;
@@ -904,9 +943,10 @@ export interface PivotSourceChanged {
 
 // @public
 export class PivotSourceFeatures {
-    constructor(aggregations: Iterable<PivotAggregation>, canRefresh?: boolean, countsItems?: boolean);
+    constructor(aggregations: Iterable<PivotAggregation>, canRefresh?: boolean, countsItems?: boolean, answersLevels?: boolean);
     readonly aggregations: readonly PivotAggregation[];
     static readonly all: PivotSourceFeatures;
+    readonly answersLevels: boolean;
     readonly canRefresh: boolean;
     readonly countsItems: boolean;
     missingFor(part: number): readonly PivotAggregation[];

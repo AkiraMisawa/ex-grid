@@ -63,19 +63,29 @@ internal sealed class AggregationPass
     // While a batch is folded in, the leaves its rows went to.
     private HashSet<int>? _added;
 
-    public AggregationPass(Snapshot snapshot, IReadOnlyDictionary<string, FieldBinding> bindings, PivotQuery query, bool keepRows, Action<long>? rowsRead)
+    /// <param name="snapshot">The data.</param>
+    /// <param name="bindings">Every field's columns, by name.</param>
+    /// <param name="query">The question.</param>
+    /// <param name="keepRows">Whether each stored row's leaf is remembered, to fold a Change Batch in.</param>
+    /// <param name="rowsRead">Told how many rows each step read.</param>
+    /// <param name="levels">Whether the pass makes the leaves a level answer is merged from (ADR-0370
+    /// section 3): as many as there are, past the question's cap, each sum with the sum of its
+    /// magnitudes beside it. Such a pass is never kept.</param>
+    public AggregationPass(Snapshot snapshot, IReadOnlyDictionary<string, FieldBinding> bindings, PivotQuery query, bool keepRows, Action<long>? rowsRead, bool levels = false)
     {
+        if (levels && keepRows)
+            throw new InvalidOperationException("Internal: the pass a level answer is merged from is not kept.");
         _snapshot = snapshot;
         _query = query;
         _keepRows = keepRows;
         _rowsRead = rowsRead;
         _axis = [.. query.Rows.Concat(query.Columns).Select(f => new ItemSpace(bindings[f.Field], snapshot, f.HiddenItems))];
         _filters = [.. query.Filters.Where(f => f.HiddenItems.Count > 0).Select(f => new ItemSpace(bindings[f.Field], snapshot, f.HiddenItems))];
-        _values = [.. query.Values.Select(v => new ValueAccumulator(bindings[v.Field], v.Parts, 16))];
+        _values = [.. query.Values.Select(v => new ValueAccumulator(bindings[v.Field], v.Parts, 16, absolutes: levels))];
         _items = new int[_axis.Length][];
         for (var level = 0; level < _items.Length; level++)
             _items[level] = new int[Chunk];
-        _leaves = new LeafIndex(_axis, query.MaxLeaves);
+        _leaves = new LeafIndex(_axis, levels ? int.MaxValue : query.MaxLeaves);
         RowCount = StoredRows(snapshot);
     }
 

@@ -395,6 +395,10 @@ export class PartColumns {
     readonly extremes: ExtremesPart[] | undefined;
     readonly products: number[] | undefined;
     readonly variances: VariancePart[] | undefined;
+    /** The sum of the magnitudes of each cell's numbers, as doubles added in the records' order: what bounds
+     * the rounding of a sum that is a double, which a level answer carries with it (ADR-0370 section 3).
+     * Kept only where {@link trackAbsolutes} asked for it, beside a sum. */
+    absolutes: number[] | undefined;
 
     constructor(parts: number) {
         this.parts = parts;
@@ -409,6 +413,17 @@ export class PartColumns {
         return this.counts.length;
     }
 
+    /** Keeps {@link absolutes} beside the sum from now on; the cells hold none yet. */
+    trackAbsolutes(): void {
+        if (this.sums === undefined) throw new Error('Internal: magnitudes are kept beside a sum.');
+        this.absolutes ??= this.counts.map(() => 0);
+    }
+
+    /** Adds a number's magnitude to a cell's, where they are kept. */
+    addAbsolute(cell: number, value: number): void {
+        if (this.absolutes !== undefined) this.absolutes[cell] = elementAt(this.absolutes, cell) + Math.abs(value);
+    }
+
     /** A new cell, holding no value; its index. */
     addCell(): number {
         const cell = this.counts.length;
@@ -417,6 +432,7 @@ export class PartColumns {
         this.extremes?.push(noExtremes());
         this.products?.push(0);
         this.variances?.push(noVariance());
+        this.absolutes?.push(0);
         return cell;
     }
 
@@ -428,6 +444,7 @@ export class PartColumns {
         if (this.extremes !== undefined) this.extremes[cell] = noExtremes();
         if (this.products !== undefined) this.products[cell] = 0;
         if (this.variances !== undefined) this.variances[cell] = noVariance();
+        if (this.absolutes !== undefined) this.absolutes[cell] = 0;
     }
 
     /** Cells until there are `count`. */
@@ -443,6 +460,7 @@ export class PartColumns {
         if (this.extremes !== undefined) this.extremes.push({ ...elementAt(must(other.extremes), from) });
         if (this.products !== undefined) this.products.push(elementAt(must(other.products), from));
         if (this.variances !== undefined) this.variances.push({ ...elementAt(must(other.variances), from) });
+        if (this.absolutes !== undefined) this.absolutes.push(elementAt(must(other.absolutes), from));
         return cell;
     }
 
@@ -454,6 +472,7 @@ export class PartColumns {
         if (this.extremes !== undefined) this.extremes[cell] = { ...elementAt(must(other.extremes), from) };
         if (this.products !== undefined) this.products[cell] = elementAt(must(other.products), from);
         if (this.variances !== undefined) this.variances[cell] = { ...elementAt(must(other.variances), from) };
+        if (this.absolutes !== undefined) this.absolutes[cell] = elementAt(must(other.absolutes), from);
     }
 
     /** Folds in a value that is neither Blank nor a number: counted, never a number. */
@@ -469,6 +488,7 @@ export class PartColumns {
         if (!counts.nonFinite) {
             const first = counts.numbers === 0;
             if (this.sums !== undefined) addExactToSum(elementAt(this.sums, cell), value, first);
+            this.addAbsolute(cell, decimalToNumber(value));
             if (this.extremes !== undefined) addExactToExtremes(elementAt(this.extremes, cell), value, first);
             if (this.products !== undefined || this.variances !== undefined) {
                 this.addInexactParts(cell, decimalToNumber(value), counts.numbers + 1);
@@ -489,6 +509,7 @@ export class PartColumns {
         if (!counts.nonFinite) {
             const first = counts.numbers === 0;
             if (this.sums !== undefined) addDoubleToSum(elementAt(this.sums, cell), value, first);
+            this.addAbsolute(cell, value);
             if (this.extremes !== undefined) addDoubleToExtremes(elementAt(this.extremes, cell), value, first);
             this.addInexactParts(cell, value, counts.numbers + 1);
         }
@@ -532,6 +553,7 @@ export class PartColumns {
         if (theirs.numbers === 0) return;
         const first = counts.numbers === 0;
         if (this.sums !== undefined) mergeSum(elementAt(this.sums, cell), elementAt(must(other.sums), from), first);
+        if (this.absolutes !== undefined) this.absolutes[cell] = elementAt(this.absolutes, cell) + elementAt(must(other.absolutes), from);
         if (this.extremes !== undefined) mergeExtremes(elementAt(this.extremes, cell), elementAt(must(other.extremes), from), first);
         if (this.products !== undefined) {
             const product = elementAt(must(other.products), from);

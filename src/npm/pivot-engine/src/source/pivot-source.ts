@@ -17,6 +17,7 @@ import { defined, elementAt, unreachable } from '../must';
 import { foldedText } from '../text/casing';
 import { AggregationPass, chunkRows, itemsOfField, itemsOfFieldSteps } from './aggregation-pass';
 import { Slicer, checkedSlicing, runWhole, type CheckedSlicing, type PivotSlicing } from './slicing';
+import { levelAnswerSteps } from '../levels/level-answers';
 import { bindSnapshot, detailAt, itemKeyAt, recordSnapshot, type FieldBinding } from './binding';
 
 // ---- What a source offers -----------------------------------------------------------------------
@@ -34,9 +35,13 @@ export class PivotSourceFeatures {
      * section 3): the report then asks it once when the source is opened and again under a new Source
      * Version. */
     readonly countsItems: boolean;
+    /** Whether the source answers a question carrying levels whose leaves pass its cap with the cells of the
+     * groups shown ({@link PivotAnswer.isLevels}, ADR-0370 section 3). No report is asked with levels yet: the
+     * report made from Level Aggregates is still to come. */
+    readonly answersLevels: boolean;
 
     /** The features of the Aggregations given, refusing one the engine does not know. */
-    constructor(aggregations: Iterable<PivotAggregation>, canRefresh = false, countsItems = false) {
+    constructor(aggregations: Iterable<PivotAggregation>, canRefresh = false, countsItems = false, answersLevels = false) {
         const offered = new Set<PivotAggregation>();
         for (const aggregation of aggregations) {
             if (!pivotAggregations.includes(aggregation)) throw new RangeError(`Unknown PivotAggregation (${aggregation}).`);
@@ -45,6 +50,7 @@ export class PivotSourceFeatures {
         this.aggregations = Object.freeze(pivotAggregations.filter(a => offered.has(a)));
         this.canRefresh = canRefresh;
         this.countsItems = countsItems;
+        this.answersLevels = answersLevels;
         Object.freeze(this);
     }
 
@@ -516,8 +522,10 @@ export class SnapshotPivotSource implements PivotSource {
 
     /**
      * The Leaf Aggregates of a question, or a refusal, read in slices — or, for the question it answered last,
-     * from the pass it holds and has folded every batch into since. The answer is assembled in slices too,
-     * and a cancelled question rejects with the signal's reason at the next slice.
+     * from the pass it holds and has folded every batch into since. Past the cap, a question carrying levels
+     * is answered with the cells of the groups shown, at most that many (ADR-0370 section 3), though the source
+     * does not declare it, for a server that answers from it. The answer is assembled in slices too, and a
+     * cancelled question rejects with the signal's reason at the next slice.
      */
     async aggregate(query: PivotQuery, signal?: AbortSignal): Promise<PivotAnswer> {
         aborted(signal);
@@ -566,14 +574,16 @@ export class SnapshotPivotSource implements PivotSource {
             at = to;
             await slicer.step();
         }
-        const answer = await slicer.run(pass.answerSteps(this.#versionOf(snapshot)));
-        if (pass.refusal === undefined) {
-            if (this.#snapshot === snapshot) {
-                this.#held = { pass, assembling: 0, deferred: [] };
-                this.#heldAnswer = answer;
-            }
-            this.#remember(snapshot, bindings);
+        let answer = await slicer.run(pass.answerSteps(this.#versionOf(snapshot)));
+        // Past the cap, a question with levels is answered with the cells it shows (ADR-0370 section 3).
+        if (pass.refusal?.kind === 'tooManyLeaves' && query.levels !== undefined) {
+            answer = await slicer.run(levelAnswerSteps(snapshot, bindings, query, this.#versionOf(snapshot)));
         }
+        if (pass.refusal === undefined && this.#snapshot === snapshot) {
+            this.#held = { pass, assembling: 0, deferred: [] };
+            this.#heldAnswer = answer;
+        }
+        if (!answer.isRefused) this.#remember(snapshot, bindings);
         return answer;
     }
 
@@ -728,14 +738,20 @@ export class RecordPivotSource<TRecord> implements PivotSource {
         return Promise.resolve(this.aggregateNow(query));
     }
 
-    /** The Leaf Aggregates of a question, on the calling thread. */
+    /** The Leaf Aggregates of a question, on the calling thread; past the cap, for a question carrying levels,
+     * the cells of the groups shown (ADR-0370 section 3). */
     aggregateNow(query: PivotQuery): PivotAnswer {
         const refusal = queryRefusal(this.fields, this.features, query);
         if (refusal !== undefined) return PivotAnswer.refused(refusal);
         const { snapshot, bindings } = this.#read();
         const pass = new AggregationPass(snapshot, bindings, query);
         pass.step(pass.rowCount);
-        return pass.answer(this.sourceVersion);
+        const answer = pass.answer(this.sourceVersion);
+        // Past the cap, a question with levels is answered with the cells it shows (ADR-0370 section 3).
+        if (pass.refusal?.kind === 'tooManyLeaves' && query.levels !== undefined) {
+            return runWhole(levelAnswerSteps(snapshot, bindings, query, this.sourceVersion));
+        }
+        return answer;
     }
 
     // Every Item of a field over all the records, in the order they were met.

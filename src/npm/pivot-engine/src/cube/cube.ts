@@ -258,6 +258,8 @@ export function* buildCubeSteps(query: PivotQuery, answer: PivotAnswer, meta: Re
     allItems?: (field: string) => readonly ItemKey[], made?: (build: CubeBuild) => void): Generator<void, PivotCube> {
     const mismatch = answer.mismatch(query);
     if (mismatch !== undefined) throw new Error(`The answer does not answer the question: ${mismatch} (ADR-0066).`);
+    // The report from Level Aggregates, each sibling set checked against its parent, is not built yet.
+    if (answer.isLevels) throw new Error('The answer holds Level Aggregates, which a cube is not made from yet (ADR-0370 section 3).');
     for (const field of [...placedFields(query).map(f => f.field), ...query.values.map(v => v.field)]) {
         if (!meta.has(field)) throw new Error(`The question names '${field}', and no Pivot Field of that name is declared (ADR-0060).`);
     }

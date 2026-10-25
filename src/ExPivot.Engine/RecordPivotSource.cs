@@ -50,7 +50,11 @@ internal sealed class RecordPivotSource<TRecord> : PivotSource
         var slicer = Slicer.Of(_slicing, cancellationToken);
         await slicer.PassAsync(pass.RowCount, pass.Step).ConfigureAwait(false);
         await pass.CompleteAsync(slicer).ConfigureAwait(false);
-        return await pass.AnswerAsync(SourceVersion, slicer).ConfigureAwait(false);
+        var answer = await pass.AnswerAsync(SourceVersion, slicer).ConfigureAwait(false);
+        // Past the cap, a question with levels is answered with the cells it shows (ADR-0370 section 3).
+        if (pass.Refusal is { Kind: PivotSourceRefusalKind.TooManyLeaves } && query.Levels is not null)
+            answer = await PivotLevelAnswers.AnswerAsync(snapshot, bindings, query, _slicing.RowsRead, SourceVersion, slicer).ConfigureAwait(false);
+        return answer;
     }
 
     /// <summary>The same answer, in one pass on the calling thread — for the engine's own
@@ -63,7 +67,10 @@ internal sealed class RecordPivotSource<TRecord> : PivotSource
         var pass = new AggregationPass(snapshot, bindings, query, keepRows: false, null);
         pass.Step(0, pass.RowCount);
         pass.Complete();
-        return pass.Answer(SourceVersion);
+        var answer = pass.Answer(SourceVersion);
+        if (pass.Refusal is { Kind: PivotSourceRefusalKind.TooManyLeaves } && query.Levels is not null)
+            answer = Slicer.Run(PivotLevelAnswers.AnswerAsync(snapshot, bindings, query, null, SourceVersion, Slicer.Unsliced));
+        return answer;
     }
 
     public override async ValueTask<PivotItemPage> ItemsAsync(PivotItemsQuery query, CancellationToken cancellationToken = default)

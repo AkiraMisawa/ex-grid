@@ -8,7 +8,7 @@ import {
     datePartField, FetchingPivotSource, PivotJson, pivotAggregations, pivotCube, pivotDetailsQuery, pivotField, pivotItemsQuery, pivotParts, pivotQuery,
     pivotLeafBound, pivotReport, PivotItemCounts, PivotSourceFeatures, queryForLayout, RecordPivotSource, SnapshotPivotSource, type PivotAggregation, type PivotAnswer,
     type PivotAnswerAxis, type PivotDatePart, type PivotDetailValue, type PivotField, type PivotFieldItem, type PivotFieldType,
-    type PivotNumber, type PivotOptions, type PivotPart, type PivotQuery, type PivotQueryField, type PivotSource, type PivotSourceChanged, type PivotSourceRefusal,
+    type PivotNumber, type PivotOptions, type PivotPart, type PivotLevelRuleInput, type PivotQuery, type PivotQueryField, type PivotSource, type PivotSourceChanged, type PivotSourceRefusal,
 } from '../src/index';
 import { isDecimal } from '../src/items/record-value';
 import { defined, elementAt } from '../src/must';
@@ -85,14 +85,17 @@ export function open(file: JsonObject, entry: JsonObject): Bench {
         const offers = fetch['offers'];
         const offered = offers === undefined ? inner.features.aggregations : array(offers).map(a => member<PivotAggregation>(pivotAggregations, a, 'an Aggregation'));
         const counts = fetch['counts'];
-        const features = new PivotSourceFeatures(offered, inner.features.canRefresh, counts !== undefined);
+        const features = new PivotSourceFeatures(offered, inner.features.canRefresh, counts !== undefined, fetch['levels'] !== undefined);
         const answers = fetch['answers'];
         const instead = answers === undefined ? undefined : queryOf(object(answers));
+        // "replies": the answer document the server sends, whatever it is asked.
+        const replies = fetch['replies'] === undefined ? undefined : JSON.stringify(fetch['replies']);
         // Every question and answer crosses PivotJson, written and read back, as a server's would.
         return new FetchingPivotSource(inner.fields, features, {
             aggregate: async (query, signal) => {
                 bench.asked++;
                 const asked = PivotJson.readQuery(PivotJson.writeQuery(instead ?? query));
+                if (replies !== undefined) return PivotJson.readAnswer(replies);
                 return PivotJson.readAnswer(PivotJson.writeAnswer(await inner.aggregate(asked, signal)));
             },
             items: async (query, signal) =>
@@ -294,9 +297,19 @@ function queryOf(written: JsonObject): PivotQuery {
         return { field: text(must(value, 'field')), parts: parts === undefined ? [] : array(parts).map(p => member<PivotPart>(pivotParts, p, 'a part')) };
     });
     const maxLeaves = written['maxLeaves'];
+    const levels = written['levels'] === undefined ? undefined : object(written['levels']);
+    const rules = (axis: string): PivotLevelRuleInput[] => {
+        const list = levels?.[axis];
+        return list === undefined ? [] : array(list).map(r => {
+            const rule = object(r);
+            const toggled = rule['toggledItems'];
+            return { collapsed: rule['collapsed'] === true, toggledItems: toggled === undefined ? [] : array(toggled).map(itemKeyOf) };
+        });
+    };
     return pivotQuery({
         rows: placed('rows'), columns: placed('columns'), filters: placed('filters'), values,
         ...(maxLeaves === undefined ? {} : { maxLeaves: whole(maxLeaves) }),
+        ...(levels === undefined ? {} : { levels: { rows: rules('rows'), columns: rules('columns') } }),
     });
 }
 
@@ -352,7 +365,7 @@ function axes(list: readonly PivotAnswerAxis[]): Json {
 export function answerJson(answered: PivotAnswer): Json {
     const levels = [...answered.rows, ...answered.columns];
     const leaves: number[] = Array.from({ length: answered.leafCount }, (_, leaf) => leaf);
-    return {
+    const json: Record<string, Json> = {
         leaves: answered.leafCount,
         rows: axes(answered.rows),
         columns: axes(answered.columns),
@@ -363,7 +376,11 @@ export function answerJson(answered: PivotAnswer): Json {
             leaves: leaves.map(leaf => {
                 const carried: Record<string, Json> = { values: value.valuesAt(leaf), numbers: value.numbersAt(leaf) };
                 if (value.nonFiniteAt(leaf)) carried['nonFinite'] = true;
-                if (value.parts.includes('sum')) carried['sum'] = numberJson(value.sumAt(leaf));
+                if (value.parts.includes('sum')) {
+                    carried['sum'] = numberJson(value.sumAt(leaf));
+                    const absolute = value.absoluteSumAt(leaf);
+                    if (absolute !== undefined) carried['absoluteSum'] = doubleJson(absolute);
+                }
                 if (value.parts.includes('extremes')) {
                     carried['min'] = numberJson(value.minAt(leaf));
                     carried['max'] = numberJson(value.maxAt(leaf));
@@ -377,6 +394,9 @@ export function answerJson(answered: PivotAnswer): Json {
             }),
         })),
     };
+    // A level answer's cells (ADR-0370 section 3): an Item of −1 below a cell's depth.
+    if (answered.isLevels) json['levels'] = true;
+    return json;
 }
 
 // An Item's key as the order of an answer in any order sorts it.

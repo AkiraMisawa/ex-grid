@@ -79,13 +79,17 @@ internal static class PivotSourceCases
                 ? offers.AsArray().Select(a => PivotCases.Member<PivotAggregation>((string)a!)).ToArray()
                 : inner.Features.Aggregations;
             var counts = fetch["counts"];
-            var features = new PivotSourceFeatures(offered, inner.Features.CanRefresh, countsItems: counts is not null);
+            var features = new PivotSourceFeatures(offered, inner.Features.CanRefresh, countsItems: counts is not null, answersLevels: fetch["levels"] is not null);
             var instead = fetch["answers"] is { } other ? Query(other.AsObject()) : null;
+            // "replies": the answer document the server sends, whatever it is asked.
+            var replies = fetch["replies"]?.ToJsonString();
             // Every question and answer crosses PivotJson, written and read back, as a server's would.
             Func<PivotQuery, CancellationToken, ValueTask<PivotAnswer>> aggregate = async (query, ct) =>
             {
                 bench!.Asked++;
                 var asked = PivotJson.ReadQuery(PivotJson.Write(instead ?? query));
+                if (replies is not null)
+                    return PivotJson.ReadAnswer(replies);
                 return PivotJson.ReadAnswer(PivotJson.Write(await inner.AggregateAsync(asked, ct)));
             };
             Func<PivotItemsQuery, CancellationToken, ValueTask<PivotItemPage>> items = async (query, ct)
@@ -257,7 +261,15 @@ internal static class PivotSourceCases
                 ? new PivotQueryValue((string)v!)
                 : new PivotQueryValue((string)v!["field"]!, (v["parts"]?.AsArray() ?? []).Aggregate(PivotParts.Counts, (parts, p) => parts | PivotCases.Member<PivotParts>((string)p!))))]
             : [];
-        return new PivotQuery(Placed("rows"), Placed("columns"), Placed("filters"), values, written["maxLeaves"] is { } max ? (int)max : PivotQuery.DefaultMaxLeaves);
+        IReadOnlyList<PivotLevelRule> Rules(JsonNode levels, string axis) => levels[axis] is { } rules
+            ? [.. rules.AsArray().Select(r => new PivotLevelRule(
+                (bool?)r!["collapsed"] ?? false,
+                [.. (r["toggledItems"]?.AsArray() ?? []).Select(k => PivotCases.ItemKeyOf(k!))]))]
+            : [];
+        return new PivotQuery(Placed("rows"), Placed("columns"), Placed("filters"), values, written["maxLeaves"] is { } max ? (int)max : PivotQuery.DefaultMaxLeaves)
+        {
+            Levels = written["levels"] is { } levels ? new PivotLevels(Rules(levels, "rows"), Rules(levels, "columns")) : null,
+        };
     }
 
     // The records behind a cell as a case writes them: the row's and the column's Items, each a field and
@@ -331,7 +343,11 @@ internal static class PivotSourceCases
                 if (value.NonFiniteAt(leaf))
                     carried["nonFinite"] = true;
                 if ((value.Parts & PivotParts.Sum) != 0)
+                {
                     carried["sum"] = Number(value.SumAt(leaf));
+                    if (value.AbsoluteSumAt(leaf) is { } absolute)
+                        carried["absoluteSum"] = Double(absolute);
+                }
                 if ((value.Parts & PivotParts.Extremes) != 0)
                 {
                     carried["min"] = Number(value.MinAt(leaf));
@@ -354,7 +370,7 @@ internal static class PivotSourceCases
                 ["leaves"] = at,
             });
         }
-        return new JsonObject
+        var json = new JsonObject
         {
             ["leaves"] = answer.LeafCount,
             ["rows"] = Axes(answer.Rows),
@@ -362,6 +378,10 @@ internal static class PivotSourceCases
             ["leaf"] = leaves,
             ["values"] = values,
         };
+        // A level answer's cells (ADR-0370 section 3): an Item of −1 below a cell's depth.
+        if (answer.IsLevels)
+            json["levels"] = true;
+        return json;
     }
 
     /// <summary>An answer whatever order an engine met its records in: each axis's Items in the ordinal order of

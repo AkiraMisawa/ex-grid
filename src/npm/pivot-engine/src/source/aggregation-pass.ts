@@ -430,10 +430,13 @@ class ValueAccumulator {
     #leastScale = Number.POSITIVE_INFINITY;
     #mostScale = 0;
 
-    constructor(binding: FieldBinding, parts: number) {
+    /** `absolutes`: the sum of each leaf's magnitudes is kept beside its sum, for a level answer (ADR-0370
+     * section 3). */
+    constructor(binding: FieldBinding, parts: number, absolutes = false) {
         this.field = binding.field.name;
         this.#binding = binding;
         this.columns = new PartColumns(parts);
+        if (absolutes && (parts & partSum) !== 0) this.columns.trackAbsolutes();
         this.#exact = exactColumnOf(binding);
         this.#sum = (parts & partSum) !== 0;
         this.#extremes = (parts & partExtremes) !== 0;
@@ -467,6 +470,7 @@ class ValueAccumulator {
      */
     trySubtract(leaf: number, row: number): boolean {
         const single = this.#binding.single;
+        // A magnitude subtracted is not the sum the records' order adds: the leaf is recomputed.
         if (single === undefined || !this.subtracts) return false;
         const counts = elementAt(this.columns.counts, leaf);
         if (this.#binding.part !== undefined) {
@@ -587,6 +591,7 @@ class ValueAccumulator {
             if (value.scale < this.#leastScale) this.#leastScale = value.scale;
             if (value.scale > this.#mostScale) this.#mostScale = value.scale;
             this.#addToSum(leaf, value);
+            this.columns.addAbsolute(leaf, decimalToNumber(value));
         }
         if (this.#extremes) {
             const extremes = elementAt(defined(this.columns.extremes), leaf);
@@ -656,6 +661,7 @@ class ValueAccumulator {
     /** The finished parts of the leaves `order` names, in that order. */
     finished(order: readonly number[]): PartColumns {
         const finished = new PartColumns(this.columns.parts);
+        if (this.columns.absolutes !== undefined) finished.trackAbsolutes();
         for (const leaf of order) {
             const cell = finished.copyCell(this.columns, leaf);
             const sum: SumPart | undefined = this.#exact !== undefined && this.#sum ? elementAt(defined(finished.sums), cell) : undefined;
@@ -714,13 +720,17 @@ export class AggregationPass {
     // The leaves the batches folded in since the last clearChanges took records from or brought them to.
     readonly #changedLeaves = new Set<number>();
 
-    constructor(snapshot: Snapshot, bindings: ReadonlyMap<string, FieldBinding>, query: PivotQuery, keepRows = false) {
+    /** `levels`: the pass makes the leaves a level answer is merged from (ADR-0370 section 3) — as many as
+     * there are, past the question's cap, each sum with the sum of its magnitudes beside it — and is never
+     * kept. */
+    constructor(snapshot: Snapshot, bindings: ReadonlyMap<string, FieldBinding>, query: PivotQuery, keepRows = false, levels = false) {
+        if (levels && keepRows) throw new Error('Internal: the pass a level answer is merged from is not kept.');
         this.query = query;
         this.#snapshot = snapshot;
         this.#axis = [...query.rows, ...query.columns].map(f => new ItemSpace(boundIn(bindings, f.field), f.hiddenItems));
         this.#filters = query.filters.filter(f => f.hiddenItems.length > 0).map(f => new ItemSpace(boundIn(bindings, f.field), f.hiddenItems));
-        this.#values = query.values.map(v => new ValueAccumulator(boundIn(bindings, v.field), partBits(v.parts)));
-        this.#leaves = new LeafIndex(this.#axis.length, query.maxLeaves);
+        this.#values = query.values.map(v => new ValueAccumulator(boundIn(bindings, v.field), partBits(v.parts), levels));
+        this.#leaves = new LeafIndex(this.#axis.length, levels ? Number.POSITIVE_INFINITY : query.maxLeaves);
         if (keepRows) {
             if ([...this.#axis, ...this.#filters].some(space => space.binding.single === undefined)) {
                 throw new Error('Internal: a pass keeps the rows of a Snapshot whose fields each read one column.');

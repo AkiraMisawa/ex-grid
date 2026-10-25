@@ -9,7 +9,8 @@ import { noExtremes, noSum, PartColumns } from '../aggregates/parts';
 import { PivotAnswer, PivotAnswerAxis, answerValues, madeAnswer, type PivotAnswerValues, type PivotNumber, type PivotSourceRefusal, type PivotSourceRefusalKind } from '../cube/answer';
 import {
     partBits, pivotDetailsQuery, pivotItemsQuery, pivotParts, pivotQuery,
-    type PivotDetailsQuery, type PivotFieldItem, type PivotItemsQuery, type PivotPart, type PivotQuery, type PivotQueryField,
+    type PivotDetailsQuery, type PivotFieldItem, type PivotItemsQuery, type PivotLevelRule, type PivotLevelRuleInput, type PivotPart, type PivotQuery,
+    type PivotQueryField, type PivotQueryInput,
 } from '../cube/query';
 import { PivotFormatError, PivotVersionError } from '../errors';
 import { pivotField, type PivotField } from '../fields/pivot-field';
@@ -90,7 +91,17 @@ function leavesOf(leafCount: number, write: (leaf: number) => string): string {
     return jsonArray(Array.from({ length: leafCount }, (_, leaf) => write(leaf)));
 }
 
-function valuesJson(values: PivotAnswerValues, leafCount: number): string {
+// A field's rule of a question's levels: written only where it is not every Item expanded.
+function rulesJson(rules: readonly PivotLevelRule[]): string {
+    return jsonArray(rules.map(rule => {
+        const members: Members = [];
+        if (rule.collapsed) members.push(['collapsed', 'true']);
+        if (rule.toggledItems.length > 0) members.push(['toggledItems', keysJson(rule.toggledItems)]);
+        return jsonObject(members);
+    }));
+}
+
+function valuesJson(values: PivotAnswerValues, leafCount: number, levels: boolean): string {
     const parts = values.parts;
     const members: Members = [
         ['field', jsonString(values.field)],
@@ -100,7 +111,17 @@ function valuesJson(values: PivotAnswerValues, leafCount: number): string {
         // Rare, so written as the leaves that have one.
         ['nonFinite', jsonArray(Array.from({ length: leafCount }, (_, leaf) => leaf).filter(leaf => values.nonFiniteAt(leaf)).map(String))],
     ];
-    if (parts.includes('sum')) members.push(['sum', leavesOf(leafCount, leaf => exactOrDoubleJson(values.sumAt(leaf)))]);
+    if (parts.includes('sum')) {
+        members.push(['sum', leavesOf(leafCount, leaf => exactOrDoubleJson(values.sumAt(leaf)))]);
+        // A level answer's double sum is carried with its magnitudes (ADR-0370 section 3); an exact one, and a
+        // cell of #NUM!, whose parts are not read, with none.
+        if (levels) {
+            members.push(['absoluteSum', leavesOf(leafCount, leaf => {
+                const absolute = values.absoluteSumAt(leaf);
+                return absolute === undefined || Number.isNaN(absolute) ? 'null' : doubleJson(absolute);
+            })]);
+        }
+    }
     if (parts.includes('extremes')) {
         members.push(['min', leavesOf(leafCount, leaf => exactOrDoubleJson(values.minAt(leaf)))]);
         members.push(['max', leavesOf(leafCount, leaf => exactOrDoubleJson(values.maxAt(leaf)))]);
@@ -215,7 +236,7 @@ function partsOf(element: JsonObject): PivotPart[] {
     });
 }
 
-function axesOf(root: JsonObject, name: string, leafCount: number): PivotAnswerAxis[] {
+function axesOf(root: JsonObject, name: string, leafCount: number, levels: boolean): PivotAnswerAxis[] {
     return objects(root, name).map(axis => {
         const field = string(axis, 'field');
         const items = keysOf(axis, 'items');
@@ -227,13 +248,15 @@ function axesOf(root: JsonObject, name: string, leafCount: number): PivotAnswerA
         }
         const itemOfLeaf = column(axis, 'leaves', leafCount, entry => int32Value(entry, 'leaves'));
         itemOfLeaf.forEach((item, leaf) => {
-            if (item < 0 || item >= items.length) throw new PivotFormatError(`Leaf ${leaf} names Item ${item} of '${field}', which has ${items.length}.`);
+            if ((item < 0 || item >= items.length) && !(levels && item === -1)) {
+                throw new PivotFormatError(`${levels ? 'Cell' : 'Leaf'} ${leaf} names Item ${item} of '${field}', which has ${items.length}.`);
+            }
         });
         return new PivotAnswerAxis(field, items, Object.freeze(itemOfLeaf));
     });
 }
 
-function valuesOf(element: JsonObject, records: readonly number[]): PivotAnswerValues {
+function valuesOf(element: JsonObject, records: readonly number[], levels: boolean): PivotAnswerValues {
     const field = string(element, 'field');
     const leafCount = records.length;
     const columns = new PartColumns(partBits(partsOf(element)));
@@ -258,9 +281,28 @@ function valuesOf(element: JsonObject, records: readonly number[]): PivotAnswerV
     }
     if (columns.sums !== undefined) {
         const sums = columns.sums;
-        column(element, 'sum', leafCount, exactOrDoubleOf).forEach((sum, leaf) => {
+        const written = column(element, 'sum', leafCount, exactOrDoubleOf);
+        written.forEach((sum, leaf) => {
             sums[leaf] = sum.kind === 'exact' ? { ...noSum(), exact: sum.value } : { ...noSum(), double: sum.value, inexact: true };
         });
+        if (levels) {
+            columns.trackAbsolutes();
+            const absolutes = defined(columns.absolutes, 'the magnitudes tracked');
+            const magnitudes = (entry: Json): number | undefined => {
+                if (entry === null) return undefined;
+                const absolute = doubleOf(entry);
+                if (Number.isNaN(absolute) || absolute < 0) {
+                    throw new PivotFormatError(`A sum of magnitudes of '${field}' is ${rawOf(entry)}; it is a number not below 0, or null for none (ADR-0370 section 3).`);
+                }
+                return absolute;
+            };
+            column(element, 'absoluteSum', leafCount, magnitudes).forEach((absolute, leaf) => {
+                if (elementAt(written, leaf).kind === 'exact' && absolute !== undefined) {
+                    throw new PivotFormatError(`Cell ${leaf}'s sum of '${field}' is exact, and carries a sum of magnitudes; only a double's does (ADR-0370 section 3).`);
+                }
+                absolutes[leaf] = absolute === undefined ? Number.NaN : absolute;
+            });
+        }
     }
     if (columns.extremes !== undefined) {
         const extremes = columns.extremes;
@@ -318,6 +360,25 @@ function namedDouble(text: string): number | undefined {
         case '-Infinity': return Number.NEGATIVE_INFINITY;
         default: return undefined;
     }
+}
+
+// A flag, written only when it is true; false when it is left out.
+function optionalBool(element: JsonObject, name: string): boolean {
+    const value = member(element, name);
+    if (value === undefined) return false;
+    if (typeof value !== 'boolean') throw new PivotFormatError(`'${name}' is true or false.`);
+    return value;
+}
+
+// A question's levels, as the members of its settings: none where it carries none.
+function levelsOf(root: JsonObject): Pick<PivotQueryInput, 'levels'> {
+    const levels = member(root, 'levels');
+    if (levels === undefined) return {};
+    if (!isObject(levels)) throw new PivotFormatError("'levels' is an object.");
+    const rules = (name: string): PivotLevelRuleInput[] => objects(levels, name).map(rule => ({
+        collapsed: optionalBool(rule, 'collapsed'), toggledItems: keysOf(rule, 'toggledItems'),
+    }));
+    return { levels: { rows: rules('rows'), columns: rules('columns') } };
 }
 
 // A double: a JSON number, or a named literal.
@@ -477,6 +538,7 @@ export const PivotJson = Object.freeze({
             ['filters', fieldsJson(query.filters)],
             ['values', jsonArray(query.values.map(value => jsonObject([['field', jsonString(value.field)], ['parts', partsJson(value.parts)]])))],
             ['maxLeaves', int32Json(query.maxLeaves, 'maxLeaves')],
+            ...(query.levels === undefined ? [] : [['levels', jsonObject([['rows', rulesJson(query.levels.rows)], ['columns', rulesJson(query.levels.columns)]])] as [string, string]]),
         ]);
     },
 
@@ -484,12 +546,14 @@ export const PivotJson = Object.freeze({
     writeAnswer(answer: PivotAnswer): string {
         if (answer.refusal !== undefined) return document('answer', refusalMembers(answer.refusal));
         const leafCount = answer.leafCount;
+        const levels = answer.isLevels;
         return document('answer', [
             ['sourceVersion', jsonString(answer.sourceVersion)],
+            ...(levels ? [['levels', 'true'] as [string, string]] : []),
             ['rows', axesJson(answer.rows, leafCount)],
             ['columns', axesJson(answer.columns, leafCount)],
             ['records', leavesOf(leafCount, leaf => String(answer.recordsAt(leaf)))],
-            ['values', jsonArray(answer.values.map(values => valuesJson(values, leafCount)))],
+            ['values', jsonArray(answer.values.map(values => valuesJson(values, leafCount, levels)))],
         ]);
     },
 
@@ -560,6 +624,7 @@ export const PivotJson = Object.freeze({
             filters: fieldsOf(root, 'filters'),
             values: objects(root, 'values').map(value => ({ field: string(value, 'field'), parts: partsOf(value) })),
             maxLeaves: int32(root, 'maxLeaves'),
+            ...levelsOf(root),
         }));
     },
 
@@ -574,14 +639,15 @@ export const PivotJson = Object.freeze({
             const refusal = refusalOf(root);
             if (refusal !== undefined) return PivotAnswer.refused(refusal);
             const sourceVersion = string(root, 'sourceVersion');
+            const levels = optionalBool(root, 'levels');
             const records = entries(root, 'records').map(entry => integerValue(entry, 'records'));
             records.forEach((count, leaf) => {
-                if (count < 1) throw new PivotFormatError(`Leaf ${leaf} holds ${count} records; a leaf has records.`);
+                if (count < 1) throw new PivotFormatError(levels ? `Cell ${leaf} holds ${count} records; a cell has records.` : `Leaf ${leaf} holds ${count} records; a leaf has records.`);
             });
-            const rows = axesOf(root, 'rows', records.length);
-            const columns = axesOf(root, 'columns', records.length);
-            const values = objects(root, 'values').map(element => valuesOf(element, records));
-            return madeAnswer(sourceVersion, rows, columns, records.length, Object.freeze(records), values);
+            const rows = axesOf(root, 'rows', records.length, levels);
+            const columns = axesOf(root, 'columns', records.length, levels);
+            const values = objects(root, 'values').map(element => valuesOf(element, records, levels));
+            return madeAnswer(sourceVersion, rows, columns, records.length, Object.freeze(records), values, levels);
         });
     },
 
