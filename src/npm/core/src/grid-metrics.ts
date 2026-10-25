@@ -6,7 +6,7 @@ import { roundHalfToEven } from './rounding';
 import { ViewportGeometry } from './viewport/viewport-geometry';
 
 /**
- * A named preset resolving into a complete {@link GridMetrics}, so its numbers are consistent with each
+ * A named preset resolving into a complete Grid Metrics, so its numbers are consistent with each
  * other (ADR-0028). `compact` is the default, the numbers an untouched grid always had; `excel` names what
  * it reproduces, Excel's default row. No design system's density word is the grid's; a Wrapper maps its
  * own onto these (ADR-0030).

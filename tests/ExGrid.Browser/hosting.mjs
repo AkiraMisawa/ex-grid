@@ -2,19 +2,22 @@ import os from 'node:os';
 import path from 'node:path';
 
 // Which host layer 3 drives (ADR-0019): the standalone WebAssembly DemoHost by default,
-// the Blazor Server host with EXGRID_HOSTING=server (Definition of Done §24). Shared by
+// the Blazor Server host with EXGRID_HOSTING=server (Definition of Done §24), and the React
+// DemoHost, the Script Core under React, with EXGRID_HOSTING=react (ADR-0350 section 13). Shared by
 // playwright.config.mjs and the fixture, both of which are loaded in every process of a
 // run, so everything here is computed the same way wherever it is read.
 export const HOSTING = process.env.EXGRID_HOSTING ?? 'wasm';
-if (HOSTING !== 'wasm' && HOSTING !== 'server') {
-    throw new Error(`EXGRID_HOSTING is "${HOSTING}"; it is "wasm" (the default) or "server".`);
+if (HOSTING !== 'wasm' && HOSTING !== 'server' && HOSTING !== 'react') {
+    throw new Error(`EXGRID_HOSTING is "${HOSTING}"; it is "wasm" (the default), "server" or "react".`);
 }
 export const SERVER = HOSTING === 'server';
+// The React host is no Blazor app: it has no Blazor.navigateTo and no HeadOutlet (fixtures.mjs).
+export const REACT = HOSTING === 'react';
 
 // The URL the browser is pointed at. On Server that is the latency proxy, which the
 // host sits behind; the host itself listens a thousand ports up.
 export const BASE_URL = process.env.EXGRID_BASE_URL
-    ?? (SERVER ? 'http://localhost:5298' : 'http://localhost:5299');
+    ?? (SERVER ? 'http://localhost:5298' : REACT ? 'http://localhost:5297' : 'http://localhost:5299');
 const port = Number(new URL(BASE_URL).port);
 export const HOST_PORT = SERVER ? port + 1000 : port;
 // Where the tests set the proxy's round trip (latency-proxy.mjs).

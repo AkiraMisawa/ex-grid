@@ -35,5 +35,9 @@ src/npm/*/node_modules/
 src/npm/*/dist/
 src/npm/*/temp/
 
+# The React DemoHost (ADR-0350 section 13): its dependencies, and what `vite build` writes for layer 3
+samples/ExGrid.DemoHost.React/node_modules/
+samples/ExGrid.DemoHost.React/dist/
+
 # A test runner started from the repository root writes its cache here; the workspace is src/npm
 /node_modules/

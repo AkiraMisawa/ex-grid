@@ -16,7 +16,7 @@ import { rangeContains, type SelectionRange } from '../selection/range';
 /**
  * What the find panel holds (ADR-0055, ADR-0332 §4): the text to look for and the two options, without
  * anything that belongs to one step. A Match Mark judges each painted cell against it by
- * {@link findMatches}.
+ * `findMatches`.
  */
 export interface GridFindPattern {
     /** What to look for. The grid never judges a cell against an empty one: an empty field marks nothing. */

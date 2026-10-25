@@ -1,6 +1,6 @@
 import { test as base, expect } from '@playwright/test';
 import fs from 'node:fs';
-import { BASE_URL, HOST_LOG, LATENCY_CONTROL_URL, SERVER } from './hosting.mjs';
+import { BASE_URL, HOST_LOG, LATENCY_CONTROL_URL, REACT, SERVER } from './hosting.mjs';
 
 // What every spec shares: the console capture that CON-1/2/3/6 are read from, the two
 // records a run writes — console.json and metrics.json — under one directory, and the app a
@@ -245,7 +245,9 @@ async function ready(page) {
     // its own, behind its comment (Blazor's getAndRemoveExistingTitle), on both hosts — on the
     // Server host a round trip after the page is interactive. Until it has, the head is not the
     // one the app keeps: read then at boot, the document differed from the same document read
-    // after the file's first test (UX-2, CI on the Server host, 2026-10-02; ADR-0056).
+    // after the file's first test (UX-2, CI on the Server host, 2026-10-02; ADR-0056). The React host
+    // has no HeadOutlet: its head is index.html's, the same at boot and after every test.
+    if (REACT) return;
     await page.waitForFunction(() => [...document.head.getElementsByTagName('title')]
         .every((title) => title.previousSibling instanceof Comment));
 }
@@ -562,7 +564,8 @@ class FileApp {
 // signal that the new page is in.
 async function navigateInApp(page, path) {
     const href = new URL(path, BASE_URL).href;
-    await page.evaluate((to) => window.Blazor.navigateTo(to), href);
+    // The React host's router is its own, with the same entry (ADR-0350 section 13).
+    await page.evaluate(([to, react]) => (react ? window.exDemo : window.Blazor).navigateTo(to), [href, REACT]);
     await page.waitForURL(href);
     await page.locator('#demo-index').waitFor({ state: new URL(href).pathname === '/' ? 'attached' : 'detached' });
 }

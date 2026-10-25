@@ -167,3 +167,23 @@ for (const [pkg, kinds] of shipped) {
     fs.writeFileSync(file, lines.join('\n'));
     console.log(`-> ${path.relative(repo, file)}`);
 }
+
+// The Script Core's own record of the stylesheet it draws against (ADR-0350 section 4): ExGrid's
+// stylesheet is shared, so the core renders the same notice with the same stamp the C# core does.
+// src/npm/core/test/shipped-stylesheet.test.ts checks it against the source.
+{
+    const grid = shipped.get('ExGrid').Stylesheet;
+    const file = path.join(repo, 'src/npm/core/src/dom/shipped-stylesheet.ts');
+    fs.writeFileSync(file, [
+        '// Written by tools/assets/minify.mjs (ADR-0123): do not edit. Edit src/ExGrid/Assets/ and run it',
+        '// again, and commit what it writes. test/shipped-stylesheet.test.ts checks it against the source.',
+        '',
+        '/** The name of the stylesheet the grid draws against, by which its notice rules find the notice. */',
+        `export const stylesheetName = '${grid.name}';`,
+        '',
+        '/** The SHA-256 of that stylesheet\'s source: the stamp its own notice rule hides the notice for. */',
+        `export const stylesheetStamp = '${grid.stamp}';`,
+        '',
+    ].join('\n'));
+    console.log(`-> ${path.relative(repo, file)}`);
+}

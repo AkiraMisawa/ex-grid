@@ -1,0 +1,16 @@
+{
+  // The workspace's settings, so the Script Core's sources it builds from type as they do there.
+  "extends": "../../src/npm/tsconfig.base.json",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "declaration": false,
+    "emitDeclarationOnly": false,
+    "noEmit": true,
+    "types": ["vite/client", "node"],
+    "paths": {
+      "@ex-grid/core": ["../../src/npm/core/src/index.ts"],
+      "@ex-grid/react": ["../../src/npm/react/src/index.ts"]
+    }
+  },
+  "include": ["src", "vite.config.ts"]
+}

@@ -221,6 +221,22 @@ jobs:
       - name: Publish the demo API server
         run: dotnet publish samples/ExGrid.DemoApi -c Release -o hosts/api
 
+      # The React DemoHost (ADR-0350 section 13): the Script Core and its React adapter built from
+      # source by Vite, as a Consumer's bundler builds them, into static files.
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: samples/ExGrid.DemoHost.React/package-lock.json
+
+      - name: Build the React DemoHost
+        working-directory: samples/ExGrid.DemoHost.React
+        run: |
+          npm ci
+          npm run typecheck
+          npm run build
+          cp -r dist ../../hosts/react
+
       - uses: actions/upload-artifact@v7
         with:
           name: layer3-hosts
@@ -316,6 +332,62 @@ jobs:
         run: >
           test "${{ needs.browser.result }}" = success ||
           { test "${{ needs.changes.outputs.layer3 }}" = false && test "${{ needs.browser.result }}" = skipped; }
+
+  # The suite against the React DemoHost (ADR-0350 section 13): the Script Core under React, which
+  # step 1 carries until the whole suite passes there. Until then the run is the part of the suite
+  # the Script Core already does, which REACT_SUITE in playwright.config.mjs names, so a test it
+  # passed never quietly fails again. Not sharded: the part is small.
+  browser-react:
+    name: Layer 3 against the React host on ${{ matrix.project }} (Linux, headed)
+    needs: hosts
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        project: [chrome, msedge]
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: tests/ExGrid.Browser/package-lock.json
+
+      - name: The installed browsers the suite resolves by channel
+        run: |
+          google-chrome --version
+          microsoft-edge --version
+
+      - name: Install the suite
+        working-directory: tests/ExGrid.Browser
+        run: npm ci
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: layer3-hosts
+          path: hosts
+
+      - name: Layer 3 against the React host, headed under xvfb
+        working-directory: tests/ExGrid.Browser
+        env:
+          EXGRID_HOSTS: ${{ github.workspace }}/hosts
+          EXGRID_HOSTING: react
+        run: >
+          xvfb-run --auto-servernum --server-args="-screen 0 2560x1600x24"
+          npx playwright test --project=${{ matrix.project }}
+
+      - name: Keep the run's records
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: layer3-records-react-${{ matrix.project }}
+          path: |
+            verification/
+            tests/ExGrid.Browser/test-results/
+          if-no-files-found: ignore
+          retention-days: 30
 
   # The same suite against the Blazor Server host (ADR-0019, Definition of Done SRV-2):
   # every page served over a circuit, prerendered, behind latency-proxy.mjs, with the host's

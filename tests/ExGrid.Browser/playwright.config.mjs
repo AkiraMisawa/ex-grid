@@ -1,7 +1,7 @@
 import { defineConfig } from '@playwright/test';
 import fs from 'node:fs';
 import path from 'node:path';
-import { API_URL, BASE_URL, HOST_LOG, HOST_PORT, LATENCY_CONTROL_URL, SERVER } from './hosting.mjs';
+import { API_URL, BASE_URL, HOST_LOG, HOST_PORT, LATENCY_CONTROL_URL, REACT, SERVER } from './hosting.mjs';
 
 // The host is started on whatever port BASE_URL names, so two checkouts — one per
 // parallel agent — do not share a port: with reuseExistingServer a second runner on
@@ -43,7 +43,32 @@ const development = { ASPNETCORE_ENVIRONMENT: 'Development' };
 // the dev server's side. On Server the circuit's log is this process's, and the host
 // also appends it to HOST_LOG so the fixture can read it per test (CON-6). A reused
 // host was started elsewhere and its output is wherever that was.
-const hostServers = SERVER
+// The React DemoHost is static files as `vite build` writes them (ADR-0350 section 13), served by
+// static-host.mjs as the published WebAssembly host is: installed and built here unless EXGRID_HOSTS holds
+// a `react` build, which is what CI drives.
+const REACT_HOST = '../../samples/ExGrid.DemoHost.React';
+const reactHost = REACT
+    ? {
+        command: PUBLISHED
+            ? `node static-host.mjs ${JSON.stringify(published('react'))} ${HOST_PORT}`
+            : `npm --prefix ${REACT_HOST} ci && npm --prefix ${REACT_HOST} run build && node static-host.mjs ${REACT_HOST}/dist ${HOST_PORT}`,
+        url: `${BASE_URL}/wide`,
+        reuseExistingServer: true,
+        timeout: 180_000,
+        stdout: 'pipe',
+        stderr: 'pipe',
+    }
+    : null;
+
+// The part of the suite the Script Core passes on the React host (ADR-0350 step 1), which grows with each
+// slice until it is the whole suite and this goes. Named by the tests' ids, so a test it holds that fails
+// again fails the run, and one outside it is not yet claimed. PF-1 counts calls into ex-grid.js, a Blazor
+// host's interop, and is not a React test as written.
+const REACT_SUITE = /VZ-1, BIG-2, DOM-1|\(BIG-5\)|\(BIG-5, ADR-0053\)|ADR-0004 P1, across a scroll|DOM-3, ADR-0004|FN-6, ADR-0004/;
+
+const hostServers = reactHost !== null
+    ? [reactHost]
+    : SERVER
     ? [
         {
             ...(PUBLISHED
@@ -112,10 +137,12 @@ const apiServer = {
     stderr: 'pipe',
 };
 
-const webServer = [...hostServers, apiServer];
+// The React host's pages call no demo API yet, so it starts none.
+const webServer = REACT ? hostServers : [...hostServers, apiServer];
 
 export default defineConfig({
     testDir: '.',
+    ...(REACT ? { grep: REACT_SUITE } : {}),
     // A wait's bound tells a hang, never a speed (ADR-0056, rule 5): performance never gates, so a
     // test fails on what the app did, never on how long it took. Playwright's defaults, 5 s for a
     // wait and 30 s for a test, failed a correct pivot laid out again on a Debug build of the hosts.

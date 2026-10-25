@@ -6,7 +6,9 @@ export type SortDirection = 'ascending' | 'descending';
 
 /** One level of a sort: a column, by name, and its direction. The first level of a list is the primary. */
 export interface SortSpec {
+    /** The column's name. */
     readonly column: string;
+    /** Which way it sorts. */
     readonly direction: SortDirection;
 }
 
