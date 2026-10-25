@@ -129,6 +129,10 @@ keeps its own meaning: the click still selects, the header press still sorts. Th
 own elements never let a press through to the delegated viewport (its input stops
 propagation, like every interactive element standing over that arithmetic), so "not on the
 editor" is exactly what reaches the grid's handlers. Escape remains the one way to discard.
+*(One exception since 2026-10-25,
+[ADR-0361](./0361-a-press-on-the-cell-being-edited-made-before-its-editor-is-drawn-keeps-the-edit.md):
+a press that reaches the rows on the cell whose Cell Editor stands was made before that editor was
+drawn. Made slowly it would have landed in the editor, so it keeps the edit.)*
 
 **A Reject holds the commit** *(added with validation,
 [ADR-0034](./0034-validation-is-a-consumer-verdict-enforced-only-at-the-editor.md))*: when the

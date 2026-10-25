@@ -1,5 +1,11 @@
 # Server pivots send report Windows and share the local engine
 
+*(Replaced 2026-10-25 by [ADR-0370](./0370-the-whole-family-moves-to-typescript-and-blazor-only-adapts-it.md) section 3, decided with the user: when the whole family moves to
+TypeScript, a server answers Leaf Aggregates again, ADR-0066's boundary, and the TypeScript engine lays
+out the report in the browser. Server report Windows end when ExPivot.Engine is removed at that ADR's
+step 3. This decision's reasons, WebAssembly's first transfer and retained memory, are measured again
+with the TypeScript engine before then. What it says below stands until that step.)*
+
 *(Decided with the user, 2026-10-06, continuation Q3 on `claude/live-data-next`, after the
 incremental A/B experiment and the WebAssembly memory diagnosis. The user accepted server-side
 report computation (B), with the same incremental engine running in the browser for local CSV

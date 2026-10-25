@@ -192,9 +192,18 @@ export interface GridHandle<Row> {
 }
 
 // @public
+export interface GridHeaderGroup {
+    readonly columns: readonly string[];
+    readonly label: string;
+    readonly tier?: number;
+    readonly tierSpan?: number;
+}
+
+// @public
 export interface GridOptions<Row> {
     readonly columns: readonly GridColumn<Row>[];
     readonly density?: GridDensity;
+    readonly headerGroups?: readonly GridHeaderGroup[];
     readonly headerHeight?: number;
     readonly onSelectionChanged?: (selection: GridSelection) => void;
     readonly pinnedColumnCount?: number;

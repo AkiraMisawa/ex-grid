@@ -201,3 +201,11 @@ Reading, for the Script Core to be measured against:
   pivot on WebAssembly excepted (p95 56 and 67 ms while scrolling). A fling of 50 rows per frame
   paints Placeholder rows and fills them about 160 ms after it stops (ADR-0004), which is the grid's
   design, not its lag; the Sheet and the pivot on WebAssembly take 330 and 200 ms.
+
+Correction, 2026-10-25 (later the same day): the csharp-wasm column above is Bench.Host under
+`dotnet run -c Release`, which serves the build output, whose .NET runtime is configured for
+debugging (debugLevel -1). It is not what a user downloads, and it runs C# about two to five times
+slower than a publish. So "3.3 s until the screen shows it" is mostly that configuration: a published
+Bench.Client edits A1 in 1.07 s and L1 in 172 ms in the container where the build output took 4.07 s
+and 430 ms. The published figures, and where the time goes, are in
+spikes/engine-host/results/20261025-engine-host/summary.txt. The text above is left as it was taken.

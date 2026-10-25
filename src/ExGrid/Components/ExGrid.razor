@@ -4319,6 +4319,22 @@
         return row is int r && column is int c ? new CellPosition(_pageStartRow + r, c) : null;
     }
 
+    /// <summary>The cell a press landed on itself, or null for one that landed on none: a Row Heading,
+    /// or the empty space past the last column or below the last row, which <see cref="CellUnder"/>
+    /// clamps onto a cell for a drag (ADR-0361).</summary>
+    private CellPosition? CellPressedOn(MouseEventArgs e)
+    {
+        var columns = ColumnsOf(e);
+        if (e.OffsetX < 0 || e.OffsetX >= columns.TotalWidthPx
+            || (ShowsRowHeadings && columns.IsInLead(e.OffsetX, ScrollLeftOf(e)))
+            || _visible is not { } visible || FirstRowOf(e, visible) is not { } first)
+        {
+            return null;
+        }
+        var contentY = e.OffsetY / RowHeightOf(e) * _geometry.RowHeightPx + _geometry.OffsetPxOf(first - _pageStartRow);
+        return contentY < 0 || contentY >= _geometry.TotalRowCount * _geometry.RowHeightPx ? null : CellUnder(e);
+    }
+
     /// <summary>
     /// Mouse down is one of the three gestures ADR-0012 names, chosen by the modifiers.
     /// The transitions themselves are the pure model's; nothing about what a click means
@@ -4359,6 +4375,18 @@
         // committing (ADR-0051).
         if (OnPointPress(e))
             return;
+
+        // A press on the cell whose Cell Editor stands, landing on the rows, was made before the
+        // editor was drawn over it: at once after the key that opened the edit. Made slowly it lands
+        // in the editor, which keeps the edit, so this one does too: the edit stays in its mode and
+        // its caret where typing left it, which no text the user could see placed (ADR-0361). One
+        // that closed a popover is not: the keyboard goes back to the rows after it.
+        if (e.Button == 0 && !dismissed && _editMode != EditMode.None && _editSurface == EditSurface.Cell
+            && CellPressedOn(e) is { } pressed && pressed == _editingCell)
+        {
+            _suppressRender = !leftInteractive;
+            return;
+        }
 
         // Excel's click-away semantics (ADR-0010): a press that is not on the editor
         // — the editor's own elements never let a press through — commits the

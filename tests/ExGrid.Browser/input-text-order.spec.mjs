@@ -1,5 +1,6 @@
 import { test, expect, setRoundTrip, settled, alterPage } from './fixtures.mjs';
 import { expectTabStopTaken } from './keyboard.mjs';
+import { SERVER } from './hosting.mjs';
 import { openSheet, sheet, pressCell, editor, bar, nameBox, cell } from './sheet-helpers.mjs';
 
 test('ADR-0240: a row press commits all text typed immediately before it', async ({ page }) => {
@@ -22,6 +23,32 @@ test('ADR-0240: a row press commits all text typed immediately before it', async
     expect(await grid.locator("[id$='r0c1']").textContent()).toBe('all the text 123456789');
 });
 
+test('ADR-0361: a press on the cell being typed into, made before its editor is drawn, keeps the edit', async ({ page }) => {
+    // Only a round trip leaves the cell without its editor at the press; on WebAssembly the editor is
+    // drawn within the key's own handling, and the press lands in it.
+    test.skip(!SERVER, 'the editor is drawn before the press without a round trip');
+    await openSheet(page);
+    const grid = sheet(page);
+    await pressCell(grid, 'E2');
+    await settled(grid);
+    await setRoundTrip(150);
+    const box = await cell(grid, 'E2').boundingBox();
+    expect(box).not.toBeNull();
+
+    // The press follows the typing at once, while the Cell Editor is still a round trip away: it lands
+    // on the rows, where made slowly it lands in the editor, and the edit goes on.
+    await page.keyboard.type('12');
+    // spec-lint: early-read: the case itself is the state before the answer, a press landing where no
+    // editor has been drawn yet
+    expect(await editor(grid).count(), 'the Cell Editor is not drawn yet as the press is made').toBe(0);
+    await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+    await page.keyboard.type('3');
+    await page.keyboard.press('Enter');
+
+    await settled(grid);
+    expect(await cell(grid, 'E2').textContent()).toBe('123');
+    expect(await nameBox(grid).inputValue()).toBe('E3');
+});
 
 test('ADR-0240: typing alone is settled only when the editor render has heard its text', async ({ page }) => {
     await page.goto('/features');

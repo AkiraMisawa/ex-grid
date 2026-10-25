@@ -307,6 +307,23 @@ node tools/summarize-core.mjs results/core-run/*-csharp-server.json results/core
 `ticks`). Measure on one machine: the Script Core's numbers are read against a baseline taken where
 they are taken, so the baseline is run again there.
 
+**Bench.Host under `dotnet run` serves the build output, whose .NET runtime is configured for
+debugging** (`debugLevel: -1` in `_framework/dotnet.*.js`), and the interpreter runs C# about two to
+five times slower there than in a publish (`debugLevel: 0`; 2.1 times for `/core/grid`'s push of 1,000
+rows, 4.5 times for ExSheet's `Workbook.Do` of A1). It is not what a user downloads. The
+WebAssembly figure a decision is read from is a published client's, served as a static host serves
+it (found 2026-10-25, `spikes/engine-host/README.md`):
+
+```sh
+nix develop -c dotnet publish -c Release Bench.Client -o /tmp/bench-client
+node tools/serve-published.mjs /tmp/bench-client/wwwroot 5495     # Brotli, and index.html for the routes
+RESULTS_DIR=results/core-run CDP_PORT=9333 node tools/cdp-core.mjs http://127.0.0.1:5495 csharp-wasm-published
+```
+
+`tools/cdp-boot.mjs` records the start of a page beside its speed: when it first painted a cell with
+text, and every byte the network carried to paint it, a Worker's included, with the cache off
+(`node tools/cdp-boot.mjs <base> <label> [scenarios] [rounds]`).
+
 ### Where the Script Core plugs in
 
 A host of the Script Core serves the same pages, and nothing in the driver changes:
@@ -328,7 +345,9 @@ A host of the Script Core serves the same pages, and nothing in the driver chang
 - **The label.** `script-react`, `script-blazor-wasm`, `script-blazor-server`, beside `csharp-wasm` and
   `csharp-server`, each run on the same machine and browser as the baseline it is read against.
 
-The C# core's numbers of 2026-10-25 are in `results/20261025-core/`, with `summary.txt`.
+The C# core's numbers of 2026-10-25 are in `results/20261025-core/`, with `summary.txt`. Its
+`csharp-wasm` column is the build output's (see above); a published client's, with the Engine Host
+Worker's and a TypeScript engine's beside it, are in `spikes/engine-host/results/20261025-engine-host/`.
 
 ## Running it
 

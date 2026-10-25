@@ -1,0 +1,4459 @@
+{
+  "label": "csharp-wasm-published",
+  "base": "http://127.0.0.1:5495",
+  "at": "2026-10-25T12:59:52.541Z",
+  "scenarios": [
+    {
+      "scenario": "sheet",
+      "url": "http://127.0.0.1:5495/core/sheet",
+      "runs": [
+        {
+          "firstCellAt": 4993.700000000186,
+          "bytes": 4010648,
+          "files": [
+            {
+              "url": "http://127.0.0.1:5495/_content/ExGrid/ex-grid.min.css",
+              "encoding": "br",
+              "bytes": 5163,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/css/app.css",
+              "encoding": "br",
+              "bytes": 2178,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/core/sheet",
+              "encoding": "br",
+              "bytes": 2185
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/dotnet.px0kvhl204.js",
+              "encoding": "br",
+              "bytes": 14677,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_content/ExSheet/ex-sheet.min.css",
+              "encoding": "br",
+              "bytes": 2894,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_content/ExChart/ex-chart.min.css",
+              "encoding": "br",
+              "bytes": 2453,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_content/ExPivot/ex-pivot.min.css",
+              "encoding": "br",
+              "bytes": 2530,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_content/Bench.Live/core-bench.css",
+              "encoding": "br",
+              "bytes": 605,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/Bench.Client.styles.css",
+              "encoding": "br",
+              "bytes": 346,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_content/Bench.Live/input-bench.js",
+              "encoding": "br",
+              "bytes": 2873,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_content/Bench.Live/settled-bench.js",
+              "encoding": "br",
+              "bytes": 1998,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_content/Bench.Live/chart-bench.js",
+              "encoding": "br",
+              "bytes": 3282,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_content/Bench.Live/core-bench.js",
+              "encoding": "br",
+              "bytes": 5325,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/blazor.webassembly.zxhwjtv6sc.js",
+              "encoding": "br",
+              "bytes": 17058,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/dotnet.runtime.r2kbxkuujc.js",
+              "encoding": "br",
+              "bytes": 48114,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/dotnet.native.dsck945vur.js",
+              "encoding": "br",
+              "bytes": 43054,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.AspNetCore.Components.Web.1z5ae4drco.wasm",
+              "encoding": "br",
+              "bytes": 24423,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Runtime.InteropServices.JavaScript.2j7dj8dwvr.wasm",
+              "encoding": "br",
+              "bytes": 17202,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.AspNetCore.Components.29emh9w6ez.wasm",
+              "encoding": "br",
+              "bytes": 102295,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.AspNetCore.Components.WebAssembly.8yobyq2k46.wasm",
+              "encoding": "br",
+              "bytes": 43033,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.Extensions.Configuration.byt2r8jpbf.wasm",
+              "encoding": "br",
+              "bytes": 3926,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.Extensions.Configuration.Abstractions.rvgls4fdhk.wasm",
+              "encoding": "br",
+              "bytes": 2705,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/dotnet.native.14bblth7x1.wasm",
+              "encoding": "br",
+              "bytes": 940513
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Private.CoreLib.2a3vzkq1ev.wasm",
+              "encoding": "br",
+              "bytes": 570527,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.Extensions.Configuration.Json.q0m0kr40cg.wasm",
+              "encoding": "br",
+              "bytes": 4507,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.Extensions.DependencyInjection.7kgrfhq7r7.wasm",
+              "encoding": "br",
+              "bytes": 19754,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.Extensions.Logging.q74thzykfo.wasm",
+              "encoding": "br",
+              "bytes": 7941,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.Extensions.DependencyInjection.Abstractions.wpck2lcvot.wasm",
+              "encoding": "br",
+              "bytes": 10365,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.Extensions.Logging.Abstractions.szpx75v9oh.wasm",
+              "encoding": "br",
+              "bytes": 12386,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.Extensions.Options.z3amy2nl13.wasm",
+              "encoding": "br",
+              "bytes": 7512,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.Extensions.Primitives.84gjz0mo6d.wasm",
+              "encoding": "br",
+              "bytes": 4872,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.JSInterop.ehmls359qh.wasm",
+              "encoding": "br",
+              "bytes": 19122,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.JSInterop.WebAssembly.kivdlry06d.wasm",
+              "encoding": "br",
+              "bytes": 5193,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Collections.Concurrent.vts5oox1p2.wasm",
+              "encoding": "br",
+              "bytes": 10262,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Collections.Immutable.2wy31n9baq.wasm",
+              "encoding": "br",
+              "bytes": 36285,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Collections.NonGeneric.8xeubyw9p0.wasm",
+              "encoding": "br",
+              "bytes": 2280,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Collections.Specialized.hkm622xgcr.wasm",
+              "encoding": "br",
+              "bytes": 4227,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Collections.gj88gsapjn.wasm",
+              "encoding": "br",
+              "bytes": 22199,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.ComponentModel.Primitives.pcketdycpr.wasm",
+              "encoding": "br",
+              "bytes": 3194,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.ComponentModel.TypeConverter.1r3rhzscgz.wasm",
+              "encoding": "br",
+              "bytes": 29472,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.ComponentModel.uvkvbxirl9.wasm",
+              "encoding": "br",
+              "bytes": 2008,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Console.qwonechlm4.wasm",
+              "encoding": "br",
+              "bytes": 6495,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Diagnostics.DiagnosticSource.37m70ay4ih.wasm",
+              "encoding": "br",
+              "bytes": 16954,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.IO.Compression.x68h1r9t62.wasm",
+              "encoding": "br",
+              "bytes": 11814,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.IO.Pipelines.unqpbva9an.wasm",
+              "encoding": "br",
+              "bytes": 2935,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Linq.kjdge7sgr1.wasm",
+              "encoding": "br",
+              "bytes": 34353,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Memory.au2ueq0wmx.wasm",
+              "encoding": "br",
+              "bytes": 7232,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Net.Http.Json.6sy5rmu0eg.wasm",
+              "encoding": "br",
+              "bytes": 5285,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Net.Http.rcb0sdnto5.wasm",
+              "encoding": "br",
+              "bytes": 50197,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Net.Primitives.vd71qffl5p.wasm",
+              "encoding": "br",
+              "bytes": 3138,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.ObjectModel.bfrfx59lpg.wasm",
+              "encoding": "br",
+              "bytes": 2558,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Private.Uri.95k6vhz1og.wasm",
+              "encoding": "br",
+              "bytes": 27525,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Runtime.InteropServices.sqnltnlnqh.wasm",
+              "encoding": "br",
+              "bytes": 3196,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Runtime.Numerics.26mdwcgccx.wasm",
+              "encoding": "br",
+              "bytes": 25696,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Runtime.e17xld5qy4.wasm",
+              "encoding": "br",
+              "bytes": 3850,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Security.Cryptography.lgu1xsxxgm.wasm",
+              "encoding": "br",
+              "bytes": 8459,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Text.Encodings.Web.ymt8nlgojw.wasm",
+              "encoding": "br",
+              "bytes": 11490,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Text.Json.sejbp2rj6a.wasm",
+              "encoding": "br",
+              "bytes": 133127,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Text.RegularExpressions.3ems2ub7p8.wasm",
+              "encoding": "br",
+              "bytes": 101422,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Threading.37awd203o3.wasm",
+              "encoding": "br",
+              "bytes": 4080,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.x4983syfn1.wasm",
+              "encoding": "br",
+              "bytes": 1756,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Bench.Live.16xuvxe94i.wasm",
+              "encoding": "br",
+              "bytes": 19246,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/ExChart.srhr32gjis.wasm",
+              "encoding": "br",
+              "bytes": 72253,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/ExChart.Engine.m81pa0whnk.wasm",
+              "encoding": "br",
+              "bytes": 128379,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/ExGrid.Data.fagf4hnaga.wasm",
+              "encoding": "br",
+              "bytes": 39403,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/ExGrid.1lac2ux4z1.wasm",
+              "encoding": "br",
+              "bytes": 368666,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/ExPivot.Engine.alsqyv5zm7.wasm",
+              "encoding": "br",
+              "bytes": 208716,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/ExSheet.n4f5avk2xg.wasm",
+              "encoding": "br",
+              "bytes": 143618,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/ExPivot.z96a7dtafv.wasm",
+              "encoding": "br",
+              "bytes": 92596,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/ExSheet.Engine.sforygc2ek.wasm",
+              "encoding": "br",
+              "bytes": 209821,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Bench.Client.1g1uj56pts.wasm",
+              "encoding": "br",
+              "bytes": 42787,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/icudt_EFIGS.tptq2av103.dat",
+              "encoding": "br",
+              "bytes": 144283,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_content/ExGrid/ex-grid.min.js?v=e9ef775f0cc9",
+              "encoding": "br",
+              "bytes": 18380,
+              "seenBy": "resource timing"
+            }
+          ],
+          "engineBoot": null,
+          "complaints": []
+        },
+        {
+          "firstCellAt": 5034.0999999996275,
+          "bytes": 4010648,
+          "files": [
+            {
+              "url": "http://127.0.0.1:5495/core/sheet",
+              "encoding": "br",
+              "bytes": 2185
+            },
+            {
+              "url": "http://127.0.0.1:5495/css/app.css",
+              "encoding": "br",
+              "bytes": 2178,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_content/ExChart/ex-chart.min.css",
+              "encoding": "br",
+              "bytes": 2453,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_content/ExSheet/ex-sheet.min.css",
+              "encoding": "br",
+              "bytes": 2894,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_content/ExGrid/ex-grid.min.css",
+              "encoding": "br",
+              "bytes": 5163,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_content/ExPivot/ex-pivot.min.css",
+              "encoding": "br",
+              "bytes": 2530,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_content/Bench.Live/core-bench.css",
+              "encoding": "br",
+              "bytes": 605,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/Bench.Client.styles.css",
+              "encoding": "br",
+              "bytes": 346,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/dotnet.px0kvhl204.js",
+              "encoding": "br",
+              "bytes": 14677,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_content/Bench.Live/settled-bench.js",
+              "encoding": "br",
+              "bytes": 1998,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_content/Bench.Live/input-bench.js",
+              "encoding": "br",
+              "bytes": 2873,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_content/Bench.Live/chart-bench.js",
+              "encoding": "br",
+              "bytes": 3282,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_content/Bench.Live/core-bench.js",
+              "encoding": "br",
+              "bytes": 5325,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/blazor.webassembly.zxhwjtv6sc.js",
+              "encoding": "br",
+              "bytes": 17058,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/dotnet.native.dsck945vur.js",
+              "encoding": "br",
+              "bytes": 43054,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/dotnet.runtime.r2kbxkuujc.js",
+              "encoding": "br",
+              "bytes": 48114,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Runtime.InteropServices.JavaScript.2j7dj8dwvr.wasm",
+              "encoding": "br",
+              "bytes": 17202,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.AspNetCore.Components.29emh9w6ez.wasm",
+              "encoding": "br",
+              "bytes": 102295,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.AspNetCore.Components.WebAssembly.8yobyq2k46.wasm",
+              "encoding": "br",
+              "bytes": 43033,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.Extensions.Configuration.byt2r8jpbf.wasm",
+              "encoding": "br",
+              "bytes": 3926,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.AspNetCore.Components.Web.1z5ae4drco.wasm",
+              "encoding": "br",
+              "bytes": 24423,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.Extensions.Configuration.Abstractions.rvgls4fdhk.wasm",
+              "encoding": "br",
+              "bytes": 2705,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.Extensions.Configuration.Json.q0m0kr40cg.wasm",
+              "encoding": "br",
+              "bytes": 4507,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.Extensions.DependencyInjection.7kgrfhq7r7.wasm",
+              "encoding": "br",
+              "bytes": 19754,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.Extensions.DependencyInjection.Abstractions.wpck2lcvot.wasm",
+              "encoding": "br",
+              "bytes": 10365,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.Extensions.Logging.q74thzykfo.wasm",
+              "encoding": "br",
+              "bytes": 7941,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.Extensions.Logging.Abstractions.szpx75v9oh.wasm",
+              "encoding": "br",
+              "bytes": 12386,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.Extensions.Options.z3amy2nl13.wasm",
+              "encoding": "br",
+              "bytes": 7512,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/dotnet.native.14bblth7x1.wasm",
+              "encoding": "br",
+              "bytes": 940513
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.JSInterop.ehmls359qh.wasm",
+              "encoding": "br",
+              "bytes": 19122,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.JSInterop.WebAssembly.kivdlry06d.wasm",
+              "encoding": "br",
+              "bytes": 5193,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Private.CoreLib.2a3vzkq1ev.wasm",
+              "encoding": "br",
+              "bytes": 570527,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Collections.Immutable.2wy31n9baq.wasm",
+              "encoding": "br",
+              "bytes": 36285,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Collections.NonGeneric.8xeubyw9p0.wasm",
+              "encoding": "br",
+              "bytes": 2280,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Collections.Specialized.hkm622xgcr.wasm",
+              "encoding": "br",
+              "bytes": 4227,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Collections.gj88gsapjn.wasm",
+              "encoding": "br",
+              "bytes": 22199,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.ComponentModel.Primitives.pcketdycpr.wasm",
+              "encoding": "br",
+              "bytes": 3194,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.ComponentModel.uvkvbxirl9.wasm",
+              "encoding": "br",
+              "bytes": 2008,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.ComponentModel.TypeConverter.1r3rhzscgz.wasm",
+              "encoding": "br",
+              "bytes": 29472,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Console.qwonechlm4.wasm",
+              "encoding": "br",
+              "bytes": 6495,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.IO.Compression.x68h1r9t62.wasm",
+              "encoding": "br",
+              "bytes": 11814,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Diagnostics.DiagnosticSource.37m70ay4ih.wasm",
+              "encoding": "br",
+              "bytes": 16954,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Collections.Concurrent.vts5oox1p2.wasm",
+              "encoding": "br",
+              "bytes": 10262,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.Extensions.Primitives.84gjz0mo6d.wasm",
+              "encoding": "br",
+              "bytes": 4872,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.IO.Pipelines.unqpbva9an.wasm",
+              "encoding": "br",
+              "bytes": 2935,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Memory.au2ueq0wmx.wasm",
+              "encoding": "br",
+              "bytes": 7232,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Linq.kjdge7sgr1.wasm",
+              "encoding": "br",
+              "bytes": 34353,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Net.Http.Json.6sy5rmu0eg.wasm",
+              "encoding": "br",
+              "bytes": 5285,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Net.Primitives.vd71qffl5p.wasm",
+              "encoding": "br",
+              "bytes": 3138,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Net.Http.rcb0sdnto5.wasm",
+              "encoding": "br",
+              "bytes": 50197,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.ObjectModel.bfrfx59lpg.wasm",
+              "encoding": "br",
+              "bytes": 2558,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Private.Uri.95k6vhz1og.wasm",
+              "encoding": "br",
+              "bytes": 27525,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Runtime.InteropServices.sqnltnlnqh.wasm",
+              "encoding": "br",
+              "bytes": 3196,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Runtime.Numerics.26mdwcgccx.wasm",
+              "encoding": "br",
+              "bytes": 25696,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Runtime.e17xld5qy4.wasm",
+              "encoding": "br",
+              "bytes": 3850,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Security.Cryptography.lgu1xsxxgm.wasm",
+              "encoding": "br",
+              "bytes": 8459,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Text.Encodings.Web.ymt8nlgojw.wasm",
+              "encoding": "br",
+              "bytes": 11490,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Text.Json.sejbp2rj6a.wasm",
+              "encoding": "br",
+              "bytes": 133127,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Text.RegularExpressions.3ems2ub7p8.wasm",
+              "encoding": "br",
+              "bytes": 101422,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Threading.37awd203o3.wasm",
+              "encoding": "br",
+              "bytes": 4080,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.x4983syfn1.wasm",
+              "encoding": "br",
+              "bytes": 1756,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Bench.Live.16xuvxe94i.wasm",
+              "encoding": "br",
+              "bytes": 19246,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/ExChart.srhr32gjis.wasm",
+              "encoding": "br",
+              "bytes": 72253,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/ExChart.Engine.m81pa0whnk.wasm",
+              "encoding": "br",
+              "bytes": 128379,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/ExGrid.Data.fagf4hnaga.wasm",
+              "encoding": "br",
+              "bytes": 39403,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/ExGrid.1lac2ux4z1.wasm",
+              "encoding": "br",
+              "bytes": 368666,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/ExPivot.z96a7dtafv.wasm",
+              "encoding": "br",
+              "bytes": 92596,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/ExPivot.Engine.alsqyv5zm7.wasm",
+              "encoding": "br",
+              "bytes": 208716,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/ExSheet.n4f5avk2xg.wasm",
+              "encoding": "br",
+              "bytes": 143618,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/ExSheet.Engine.sforygc2ek.wasm",
+              "encoding": "br",
+              "bytes": 209821,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Bench.Client.1g1uj56pts.wasm",
+              "encoding": "br",
+              "bytes": 42787,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/icudt_EFIGS.tptq2av103.dat",
+              "encoding": "br",
+              "bytes": 144283,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_content/ExGrid/ex-grid.min.js?v=e9ef775f0cc9",
+              "encoding": "br",
+              "bytes": 18380,
+              "seenBy": "resource timing"
+            }
+          ],
+          "engineBoot": null,
+          "complaints": []
+        },
+        {
+          "firstCellAt": 5794,
+          "bytes": 4010648,
+          "files": [
+            {
+              "url": "http://127.0.0.1:5495/css/app.css",
+              "encoding": "br",
+              "bytes": 2178,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_content/ExGrid/ex-grid.min.css",
+              "encoding": "br",
+              "bytes": 5163,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_content/ExChart/ex-chart.min.css",
+              "encoding": "br",
+              "bytes": 2453,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_content/ExSheet/ex-sheet.min.css",
+              "encoding": "br",
+              "bytes": 2894,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_content/ExPivot/ex-pivot.min.css",
+              "encoding": "br",
+              "bytes": 2530,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_content/Bench.Live/core-bench.css",
+              "encoding": "br",
+              "bytes": 605,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/dotnet.px0kvhl204.js",
+              "encoding": "br",
+              "bytes": 14677,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/core/sheet",
+              "encoding": "br",
+              "bytes": 2185
+            },
+            {
+              "url": "http://127.0.0.1:5495/Bench.Client.styles.css",
+              "encoding": "br",
+              "bytes": 346,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_content/Bench.Live/settled-bench.js",
+              "encoding": "br",
+              "bytes": 1998,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_content/Bench.Live/input-bench.js",
+              "encoding": "br",
+              "bytes": 2873,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_content/Bench.Live/chart-bench.js",
+              "encoding": "br",
+              "bytes": 3282,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_content/Bench.Live/core-bench.js",
+              "encoding": "br",
+              "bytes": 5325,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/blazor.webassembly.zxhwjtv6sc.js",
+              "encoding": "br",
+              "bytes": 17058,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/dotnet.runtime.r2kbxkuujc.js",
+              "encoding": "br",
+              "bytes": 48114,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/dotnet.native.dsck945vur.js",
+              "encoding": "br",
+              "bytes": 43054,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Runtime.InteropServices.JavaScript.2j7dj8dwvr.wasm",
+              "encoding": "br",
+              "bytes": 17202,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.AspNetCore.Components.Web.1z5ae4drco.wasm",
+              "encoding": "br",
+              "bytes": 24423,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.AspNetCore.Components.WebAssembly.8yobyq2k46.wasm",
+              "encoding": "br",
+              "bytes": 43033,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.Extensions.Configuration.byt2r8jpbf.wasm",
+              "encoding": "br",
+              "bytes": 3926,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.Extensions.Configuration.Abstractions.rvgls4fdhk.wasm",
+              "encoding": "br",
+              "bytes": 2705,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.AspNetCore.Components.29emh9w6ez.wasm",
+              "encoding": "br",
+              "bytes": 102295,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.Extensions.Configuration.Json.q0m0kr40cg.wasm",
+              "encoding": "br",
+              "bytes": 4507,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/dotnet.native.14bblth7x1.wasm",
+              "encoding": "br",
+              "bytes": 940513
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.Extensions.DependencyInjection.Abstractions.wpck2lcvot.wasm",
+              "encoding": "br",
+              "bytes": 10365,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.Extensions.Logging.q74thzykfo.wasm",
+              "encoding": "br",
+              "bytes": 7941,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.Extensions.DependencyInjection.7kgrfhq7r7.wasm",
+              "encoding": "br",
+              "bytes": 19754,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.Extensions.Logging.Abstractions.szpx75v9oh.wasm",
+              "encoding": "br",
+              "bytes": 12386,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.Extensions.Options.z3amy2nl13.wasm",
+              "encoding": "br",
+              "bytes": 7512,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.Extensions.Primitives.84gjz0mo6d.wasm",
+              "encoding": "br",
+              "bytes": 4872,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.JSInterop.ehmls359qh.wasm",
+              "encoding": "br",
+              "bytes": 19122,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.JSInterop.WebAssembly.kivdlry06d.wasm",
+              "encoding": "br",
+              "bytes": 5193,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Collections.Concurrent.vts5oox1p2.wasm",
+              "encoding": "br",
+              "bytes": 10262,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Collections.Immutable.2wy31n9baq.wasm",
+              "encoding": "br",
+              "bytes": 36285,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Collections.NonGeneric.8xeubyw9p0.wasm",
+              "encoding": "br",
+              "bytes": 2280,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Private.CoreLib.2a3vzkq1ev.wasm",
+              "encoding": "br",
+              "bytes": 570527,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Collections.gj88gsapjn.wasm",
+              "encoding": "br",
+              "bytes": 22199,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Collections.Specialized.hkm622xgcr.wasm",
+              "encoding": "br",
+              "bytes": 4227,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.ComponentModel.Primitives.pcketdycpr.wasm",
+              "encoding": "br",
+              "bytes": 3194,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.ComponentModel.TypeConverter.1r3rhzscgz.wasm",
+              "encoding": "br",
+              "bytes": 29472,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.ComponentModel.uvkvbxirl9.wasm",
+              "encoding": "br",
+              "bytes": 2008,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Console.qwonechlm4.wasm",
+              "encoding": "br",
+              "bytes": 6495,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Diagnostics.DiagnosticSource.37m70ay4ih.wasm",
+              "encoding": "br",
+              "bytes": 16954,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.IO.Compression.x68h1r9t62.wasm",
+              "encoding": "br",
+              "bytes": 11814,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.IO.Pipelines.unqpbva9an.wasm",
+              "encoding": "br",
+              "bytes": 2935,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Linq.kjdge7sgr1.wasm",
+              "encoding": "br",
+              "bytes": 34353,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Memory.au2ueq0wmx.wasm",
+              "encoding": "br",
+              "bytes": 7232,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Net.Http.Json.6sy5rmu0eg.wasm",
+              "encoding": "br",
+              "bytes": 5285,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Net.Http.rcb0sdnto5.wasm",
+              "encoding": "br",
+              "bytes": 50197,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Net.Primitives.vd71qffl5p.wasm",
+              "encoding": "br",
+              "bytes": 3138,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.ObjectModel.bfrfx59lpg.wasm",
+              "encoding": "br",
+              "bytes": 2558,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Private.Uri.95k6vhz1og.wasm",
+              "encoding": "br",
+              "bytes": 27525,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Runtime.InteropServices.sqnltnlnqh.wasm",
+              "encoding": "br",
+              "bytes": 3196,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Runtime.Numerics.26mdwcgccx.wasm",
+              "encoding": "br",
+              "bytes": 25696,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Runtime.e17xld5qy4.wasm",
+              "encoding": "br",
+              "bytes": 3850,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Security.Cryptography.lgu1xsxxgm.wasm",
+              "encoding": "br",
+              "bytes": 8459,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Text.Encodings.Web.ymt8nlgojw.wasm",
+              "encoding": "br",
+              "bytes": 11490,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Text.Json.sejbp2rj6a.wasm",
+              "encoding": "br",
+              "bytes": 133127,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Text.RegularExpressions.3ems2ub7p8.wasm",
+              "encoding": "br",
+              "bytes": 101422,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Threading.37awd203o3.wasm",
+              "encoding": "br",
+              "bytes": 4080,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.x4983syfn1.wasm",
+              "encoding": "br",
+              "bytes": 1756,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Bench.Live.16xuvxe94i.wasm",
+              "encoding": "br",
+              "bytes": 19246,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/ExChart.Engine.m81pa0whnk.wasm",
+              "encoding": "br",
+              "bytes": 128379,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/ExGrid.Data.fagf4hnaga.wasm",
+              "encoding": "br",
+              "bytes": 39403,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/ExGrid.1lac2ux4z1.wasm",
+              "encoding": "br",
+              "bytes": 368666,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/ExChart.srhr32gjis.wasm",
+              "encoding": "br",
+              "bytes": 72253,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/ExPivot.z96a7dtafv.wasm",
+              "encoding": "br",
+              "bytes": 92596,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/ExPivot.Engine.alsqyv5zm7.wasm",
+              "encoding": "br",
+              "bytes": 208716,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/ExSheet.n4f5avk2xg.wasm",
+              "encoding": "br",
+              "bytes": 143618,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/ExSheet.Engine.sforygc2ek.wasm",
+              "encoding": "br",
+              "bytes": 209821,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Bench.Client.1g1uj56pts.wasm",
+              "encoding": "br",
+              "bytes": 42787,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/icudt_EFIGS.tptq2av103.dat",
+              "encoding": "br",
+              "bytes": 144283,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_content/ExGrid/ex-grid.min.js?v=e9ef775f0cc9",
+              "encoding": "br",
+              "bytes": 18380,
+              "seenBy": "resource timing"
+            }
+          ],
+          "engineBoot": null,
+          "complaints": []
+        },
+        {
+          "firstCellAt": 5796.100000000559,
+          "bytes": 4010648,
+          "files": [
+            {
+              "url": "http://127.0.0.1:5495/core/sheet",
+              "encoding": "br",
+              "bytes": 2185
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/dotnet.px0kvhl204.js",
+              "encoding": "br",
+              "bytes": 14677,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/css/app.css",
+              "encoding": "br",
+              "bytes": 2178,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_content/ExSheet/ex-sheet.min.css",
+              "encoding": "br",
+              "bytes": 2894,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_content/ExChart/ex-chart.min.css",
+              "encoding": "br",
+              "bytes": 2453,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_content/ExPivot/ex-pivot.min.css",
+              "encoding": "br",
+              "bytes": 2530,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_content/ExGrid/ex-grid.min.css",
+              "encoding": "br",
+              "bytes": 5163,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_content/Bench.Live/core-bench.css",
+              "encoding": "br",
+              "bytes": 605,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_content/Bench.Live/settled-bench.js",
+              "encoding": "br",
+              "bytes": 1998,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_content/Bench.Live/input-bench.js",
+              "encoding": "br",
+              "bytes": 2873,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/Bench.Client.styles.css",
+              "encoding": "br",
+              "bytes": 346,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_content/Bench.Live/chart-bench.js",
+              "encoding": "br",
+              "bytes": 3282,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_content/Bench.Live/core-bench.js",
+              "encoding": "br",
+              "bytes": 5325,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/blazor.webassembly.zxhwjtv6sc.js",
+              "encoding": "br",
+              "bytes": 17058,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/dotnet.native.dsck945vur.js",
+              "encoding": "br",
+              "bytes": 43054,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/dotnet.runtime.r2kbxkuujc.js",
+              "encoding": "br",
+              "bytes": 48114,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Runtime.InteropServices.JavaScript.2j7dj8dwvr.wasm",
+              "encoding": "br",
+              "bytes": 17202,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/dotnet.native.14bblth7x1.wasm",
+              "encoding": "br",
+              "bytes": 940513
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.AspNetCore.Components.Web.1z5ae4drco.wasm",
+              "encoding": "br",
+              "bytes": 24423,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.AspNetCore.Components.WebAssembly.8yobyq2k46.wasm",
+              "encoding": "br",
+              "bytes": 43033,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.AspNetCore.Components.29emh9w6ez.wasm",
+              "encoding": "br",
+              "bytes": 102295,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Private.CoreLib.2a3vzkq1ev.wasm",
+              "encoding": "br",
+              "bytes": 570527,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.Extensions.Configuration.Abstractions.rvgls4fdhk.wasm",
+              "encoding": "br",
+              "bytes": 2705,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.Extensions.Configuration.Json.q0m0kr40cg.wasm",
+              "encoding": "br",
+              "bytes": 4507,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.Extensions.DependencyInjection.7kgrfhq7r7.wasm",
+              "encoding": "br",
+              "bytes": 19754,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.Extensions.Configuration.byt2r8jpbf.wasm",
+              "encoding": "br",
+              "bytes": 3926,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.Extensions.DependencyInjection.Abstractions.wpck2lcvot.wasm",
+              "encoding": "br",
+              "bytes": 10365,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.Extensions.Logging.q74thzykfo.wasm",
+              "encoding": "br",
+              "bytes": 7941,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.Extensions.Options.z3amy2nl13.wasm",
+              "encoding": "br",
+              "bytes": 7512,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.Extensions.Logging.Abstractions.szpx75v9oh.wasm",
+              "encoding": "br",
+              "bytes": 12386,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.Extensions.Primitives.84gjz0mo6d.wasm",
+              "encoding": "br",
+              "bytes": 4872,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.JSInterop.ehmls359qh.wasm",
+              "encoding": "br",
+              "bytes": 19122,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.JSInterop.WebAssembly.kivdlry06d.wasm",
+              "encoding": "br",
+              "bytes": 5193,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Collections.Concurrent.vts5oox1p2.wasm",
+              "encoding": "br",
+              "bytes": 10262,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Collections.Immutable.2wy31n9baq.wasm",
+              "encoding": "br",
+              "bytes": 36285,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Collections.NonGeneric.8xeubyw9p0.wasm",
+              "encoding": "br",
+              "bytes": 2280,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Collections.Specialized.hkm622xgcr.wasm",
+              "encoding": "br",
+              "bytes": 4227,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Collections.gj88gsapjn.wasm",
+              "encoding": "br",
+              "bytes": 22199,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.ComponentModel.Primitives.pcketdycpr.wasm",
+              "encoding": "br",
+              "bytes": 3194,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.ComponentModel.TypeConverter.1r3rhzscgz.wasm",
+              "encoding": "br",
+              "bytes": 29472,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.ComponentModel.uvkvbxirl9.wasm",
+              "encoding": "br",
+              "bytes": 2008,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Console.qwonechlm4.wasm",
+              "encoding": "br",
+              "bytes": 6495,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Diagnostics.DiagnosticSource.37m70ay4ih.wasm",
+              "encoding": "br",
+              "bytes": 16954,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.IO.Compression.x68h1r9t62.wasm",
+              "encoding": "br",
+              "bytes": 11814,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.IO.Pipelines.unqpbva9an.wasm",
+              "encoding": "br",
+              "bytes": 2935,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Linq.kjdge7sgr1.wasm",
+              "encoding": "br",
+              "bytes": 34353,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Memory.au2ueq0wmx.wasm",
+              "encoding": "br",
+              "bytes": 7232,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Net.Http.Json.6sy5rmu0eg.wasm",
+              "encoding": "br",
+              "bytes": 5285,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Net.Http.rcb0sdnto5.wasm",
+              "encoding": "br",
+              "bytes": 50197,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Net.Primitives.vd71qffl5p.wasm",
+              "encoding": "br",
+              "bytes": 3138,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Private.Uri.95k6vhz1og.wasm",
+              "encoding": "br",
+              "bytes": 27525,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.ObjectModel.bfrfx59lpg.wasm",
+              "encoding": "br",
+              "bytes": 2558,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Runtime.InteropServices.sqnltnlnqh.wasm",
+              "encoding": "br",
+              "bytes": 3196,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Runtime.Numerics.26mdwcgccx.wasm",
+              "encoding": "br",
+              "bytes": 25696,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Runtime.e17xld5qy4.wasm",
+              "encoding": "br",
+              "bytes": 3850,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Security.Cryptography.lgu1xsxxgm.wasm",
+              "encoding": "br",
+              "bytes": 8459,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Text.Encodings.Web.ymt8nlgojw.wasm",
+              "encoding": "br",
+              "bytes": 11490,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Text.Json.sejbp2rj6a.wasm",
+              "encoding": "br",
+              "bytes": 133127,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Threading.37awd203o3.wasm",
+              "encoding": "br",
+              "bytes": 4080,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Text.RegularExpressions.3ems2ub7p8.wasm",
+              "encoding": "br",
+              "bytes": 101422,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.x4983syfn1.wasm",
+              "encoding": "br",
+              "bytes": 1756,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Bench.Live.16xuvxe94i.wasm",
+              "encoding": "br",
+              "bytes": 19246,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/ExChart.srhr32gjis.wasm",
+              "encoding": "br",
+              "bytes": 72253,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/ExChart.Engine.m81pa0whnk.wasm",
+              "encoding": "br",
+              "bytes": 128379,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/ExGrid.Data.fagf4hnaga.wasm",
+              "encoding": "br",
+              "bytes": 39403,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/ExGrid.1lac2ux4z1.wasm",
+              "encoding": "br",
+              "bytes": 368666,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/ExPivot.Engine.alsqyv5zm7.wasm",
+              "encoding": "br",
+              "bytes": 208716,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/ExSheet.n4f5avk2xg.wasm",
+              "encoding": "br",
+              "bytes": 143618,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/ExSheet.Engine.sforygc2ek.wasm",
+              "encoding": "br",
+              "bytes": 209821,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/ExPivot.z96a7dtafv.wasm",
+              "encoding": "br",
+              "bytes": 92596,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Bench.Client.1g1uj56pts.wasm",
+              "encoding": "br",
+              "bytes": 42787,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/icudt_EFIGS.tptq2av103.dat",
+              "encoding": "br",
+              "bytes": 144283,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_content/ExGrid/ex-grid.min.js?v=e9ef775f0cc9",
+              "encoding": "br",
+              "bytes": 18380,
+              "seenBy": "resource timing"
+            }
+          ],
+          "engineBoot": null,
+          "complaints": []
+        },
+        {
+          "firstCellAt": 5029.4000000003725,
+          "bytes": 4010648,
+          "files": [
+            {
+              "url": "http://127.0.0.1:5495/css/app.css",
+              "encoding": "br",
+              "bytes": 2178,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_content/ExGrid/ex-grid.min.css",
+              "encoding": "br",
+              "bytes": 5163,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_content/ExChart/ex-chart.min.css",
+              "encoding": "br",
+              "bytes": 2453,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_content/ExSheet/ex-sheet.min.css",
+              "encoding": "br",
+              "bytes": 2894,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_content/ExPivot/ex-pivot.min.css",
+              "encoding": "br",
+              "bytes": 2530,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_content/Bench.Live/core-bench.css",
+              "encoding": "br",
+              "bytes": 605,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/Bench.Client.styles.css",
+              "encoding": "br",
+              "bytes": 346,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/core/sheet",
+              "encoding": "br",
+              "bytes": 2185
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/dotnet.px0kvhl204.js",
+              "encoding": "br",
+              "bytes": 14677,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_content/Bench.Live/settled-bench.js",
+              "encoding": "br",
+              "bytes": 1998,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_content/Bench.Live/input-bench.js",
+              "encoding": "br",
+              "bytes": 2873,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_content/Bench.Live/core-bench.js",
+              "encoding": "br",
+              "bytes": 5325,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_content/Bench.Live/chart-bench.js",
+              "encoding": "br",
+              "bytes": 3282,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/blazor.webassembly.zxhwjtv6sc.js",
+              "encoding": "br",
+              "bytes": 17058,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/dotnet.runtime.r2kbxkuujc.js",
+              "encoding": "br",
+              "bytes": 48114,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/dotnet.native.dsck945vur.js",
+              "encoding": "br",
+              "bytes": 43054,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Runtime.InteropServices.JavaScript.2j7dj8dwvr.wasm",
+              "encoding": "br",
+              "bytes": 17202,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.AspNetCore.Components.Web.1z5ae4drco.wasm",
+              "encoding": "br",
+              "bytes": 24423,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.AspNetCore.Components.29emh9w6ez.wasm",
+              "encoding": "br",
+              "bytes": 102295,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.Extensions.Configuration.Json.q0m0kr40cg.wasm",
+              "encoding": "br",
+              "bytes": 4507,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.Extensions.DependencyInjection.7kgrfhq7r7.wasm",
+              "encoding": "br",
+              "bytes": 19754,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.Extensions.DependencyInjection.Abstractions.wpck2lcvot.wasm",
+              "encoding": "br",
+              "bytes": 10365,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.Extensions.Logging.q74thzykfo.wasm",
+              "encoding": "br",
+              "bytes": 7941,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.Extensions.Logging.Abstractions.szpx75v9oh.wasm",
+              "encoding": "br",
+              "bytes": 12386,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.Extensions.Options.z3amy2nl13.wasm",
+              "encoding": "br",
+              "bytes": 7512,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Private.CoreLib.2a3vzkq1ev.wasm",
+              "encoding": "br",
+              "bytes": 570527,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.Extensions.Primitives.84gjz0mo6d.wasm",
+              "encoding": "br",
+              "bytes": 4872,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.JSInterop.ehmls359qh.wasm",
+              "encoding": "br",
+              "bytes": 19122,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.Extensions.Configuration.byt2r8jpbf.wasm",
+              "encoding": "br",
+              "bytes": 3926,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.AspNetCore.Components.WebAssembly.8yobyq2k46.wasm",
+              "encoding": "br",
+              "bytes": 43033,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/dotnet.native.14bblth7x1.wasm",
+              "encoding": "br",
+              "bytes": 940513
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Collections.Concurrent.vts5oox1p2.wasm",
+              "encoding": "br",
+              "bytes": 10262,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.JSInterop.WebAssembly.kivdlry06d.wasm",
+              "encoding": "br",
+              "bytes": 5193,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Collections.NonGeneric.8xeubyw9p0.wasm",
+              "encoding": "br",
+              "bytes": 2280,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.Extensions.Configuration.Abstractions.rvgls4fdhk.wasm",
+              "encoding": "br",
+              "bytes": 2705,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Collections.Immutable.2wy31n9baq.wasm",
+              "encoding": "br",
+              "bytes": 36285,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Collections.Specialized.hkm622xgcr.wasm",
+              "encoding": "br",
+              "bytes": 4227,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Collections.gj88gsapjn.wasm",
+              "encoding": "br",
+              "bytes": 22199,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.ComponentModel.Primitives.pcketdycpr.wasm",
+              "encoding": "br",
+              "bytes": 3194,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.ComponentModel.TypeConverter.1r3rhzscgz.wasm",
+              "encoding": "br",
+              "bytes": 29472,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.ComponentModel.uvkvbxirl9.wasm",
+              "encoding": "br",
+              "bytes": 2008,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Console.qwonechlm4.wasm",
+              "encoding": "br",
+              "bytes": 6495,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Diagnostics.DiagnosticSource.37m70ay4ih.wasm",
+              "encoding": "br",
+              "bytes": 16954,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.IO.Compression.x68h1r9t62.wasm",
+              "encoding": "br",
+              "bytes": 11814,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.IO.Pipelines.unqpbva9an.wasm",
+              "encoding": "br",
+              "bytes": 2935,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Linq.kjdge7sgr1.wasm",
+              "encoding": "br",
+              "bytes": 34353,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Memory.au2ueq0wmx.wasm",
+              "encoding": "br",
+              "bytes": 7232,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Net.Http.Json.6sy5rmu0eg.wasm",
+              "encoding": "br",
+              "bytes": 5285,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Net.Http.rcb0sdnto5.wasm",
+              "encoding": "br",
+              "bytes": 50197,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Net.Primitives.vd71qffl5p.wasm",
+              "encoding": "br",
+              "bytes": 3138,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.ObjectModel.bfrfx59lpg.wasm",
+              "encoding": "br",
+              "bytes": 2558,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Private.Uri.95k6vhz1og.wasm",
+              "encoding": "br",
+              "bytes": 27525,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Runtime.InteropServices.sqnltnlnqh.wasm",
+              "encoding": "br",
+              "bytes": 3196,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Runtime.Numerics.26mdwcgccx.wasm",
+              "encoding": "br",
+              "bytes": 25696,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Runtime.e17xld5qy4.wasm",
+              "encoding": "br",
+              "bytes": 3850,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Security.Cryptography.lgu1xsxxgm.wasm",
+              "encoding": "br",
+              "bytes": 8459,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Text.Encodings.Web.ymt8nlgojw.wasm",
+              "encoding": "br",
+              "bytes": 11490,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Text.Json.sejbp2rj6a.wasm",
+              "encoding": "br",
+              "bytes": 133127,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Text.RegularExpressions.3ems2ub7p8.wasm",
+              "encoding": "br",
+              "bytes": 101422,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Threading.37awd203o3.wasm",
+              "encoding": "br",
+              "bytes": 4080,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.x4983syfn1.wasm",
+              "encoding": "br",
+              "bytes": 1756,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/ExChart.srhr32gjis.wasm",
+              "encoding": "br",
+              "bytes": 72253,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Bench.Live.16xuvxe94i.wasm",
+              "encoding": "br",
+              "bytes": 19246,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/ExChart.Engine.m81pa0whnk.wasm",
+              "encoding": "br",
+              "bytes": 128379,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/ExGrid.Data.fagf4hnaga.wasm",
+              "encoding": "br",
+              "bytes": 39403,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/ExGrid.1lac2ux4z1.wasm",
+              "encoding": "br",
+              "bytes": 368666,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/ExPivot.z96a7dtafv.wasm",
+              "encoding": "br",
+              "bytes": 92596,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/ExPivot.Engine.alsqyv5zm7.wasm",
+              "encoding": "br",
+              "bytes": 208716,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/ExSheet.n4f5avk2xg.wasm",
+              "encoding": "br",
+              "bytes": 143618,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/ExSheet.Engine.sforygc2ek.wasm",
+              "encoding": "br",
+              "bytes": 209821,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Bench.Client.1g1uj56pts.wasm",
+              "encoding": "br",
+              "bytes": 42787,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/icudt_EFIGS.tptq2av103.dat",
+              "encoding": "br",
+              "bytes": 144283,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_content/ExGrid/ex-grid.min.js?v=e9ef775f0cc9",
+              "encoding": "br",
+              "bytes": 18380,
+              "seenBy": "resource timing"
+            }
+          ],
+          "engineBoot": null,
+          "complaints": []
+        }
+      ]
+    },
+    {
+      "scenario": "pivot",
+      "url": "http://127.0.0.1:5495/core/pivot",
+      "runs": [
+        {
+          "firstCellAt": 2141.2000000001863,
+          "bytes": 4010648,
+          "files": [
+            {
+              "url": "http://127.0.0.1:5495/core/pivot",
+              "encoding": "br",
+              "bytes": 2185
+            },
+            {
+              "url": "http://127.0.0.1:5495/css/app.css",
+              "encoding": "br",
+              "bytes": 2178,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_content/ExChart/ex-chart.min.css",
+              "encoding": "br",
+              "bytes": 2453,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_content/ExSheet/ex-sheet.min.css",
+              "encoding": "br",
+              "bytes": 2894,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_content/ExPivot/ex-pivot.min.css",
+              "encoding": "br",
+              "bytes": 2530,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_content/ExGrid/ex-grid.min.css",
+              "encoding": "br",
+              "bytes": 5163,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/dotnet.px0kvhl204.js",
+              "encoding": "br",
+              "bytes": 14677,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_content/Bench.Live/core-bench.css",
+              "encoding": "br",
+              "bytes": 605,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/Bench.Client.styles.css",
+              "encoding": "br",
+              "bytes": 346,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_content/Bench.Live/settled-bench.js",
+              "encoding": "br",
+              "bytes": 1998,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_content/Bench.Live/input-bench.js",
+              "encoding": "br",
+              "bytes": 2873,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_content/Bench.Live/chart-bench.js",
+              "encoding": "br",
+              "bytes": 3282,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_content/Bench.Live/core-bench.js",
+              "encoding": "br",
+              "bytes": 5325,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/blazor.webassembly.zxhwjtv6sc.js",
+              "encoding": "br",
+              "bytes": 17058,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/dotnet.native.dsck945vur.js",
+              "encoding": "br",
+              "bytes": 43054,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/dotnet.runtime.r2kbxkuujc.js",
+              "encoding": "br",
+              "bytes": 48114,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/dotnet.native.14bblth7x1.wasm",
+              "encoding": "br",
+              "bytes": 940513
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.AspNetCore.Components.29emh9w6ez.wasm",
+              "encoding": "br",
+              "bytes": 102295,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Runtime.InteropServices.JavaScript.2j7dj8dwvr.wasm",
+              "encoding": "br",
+              "bytes": 17202,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.AspNetCore.Components.Web.1z5ae4drco.wasm",
+              "encoding": "br",
+              "bytes": 24423,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.AspNetCore.Components.WebAssembly.8yobyq2k46.wasm",
+              "encoding": "br",
+              "bytes": 43033,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.Extensions.Configuration.Abstractions.rvgls4fdhk.wasm",
+              "encoding": "br",
+              "bytes": 2705,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.Extensions.Configuration.byt2r8jpbf.wasm",
+              "encoding": "br",
+              "bytes": 3926,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.Extensions.DependencyInjection.7kgrfhq7r7.wasm",
+              "encoding": "br",
+              "bytes": 19754,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.Extensions.Configuration.Json.q0m0kr40cg.wasm",
+              "encoding": "br",
+              "bytes": 4507,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.Extensions.Logging.q74thzykfo.wasm",
+              "encoding": "br",
+              "bytes": 7941,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.Extensions.DependencyInjection.Abstractions.wpck2lcvot.wasm",
+              "encoding": "br",
+              "bytes": 10365,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Private.CoreLib.2a3vzkq1ev.wasm",
+              "encoding": "br",
+              "bytes": 570527,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.Extensions.Logging.Abstractions.szpx75v9oh.wasm",
+              "encoding": "br",
+              "bytes": 12386,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.Extensions.Options.z3amy2nl13.wasm",
+              "encoding": "br",
+              "bytes": 7512,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.Extensions.Primitives.84gjz0mo6d.wasm",
+              "encoding": "br",
+              "bytes": 4872,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.JSInterop.ehmls359qh.wasm",
+              "encoding": "br",
+              "bytes": 19122,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.JSInterop.WebAssembly.kivdlry06d.wasm",
+              "encoding": "br",
+              "bytes": 5193,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Collections.Concurrent.vts5oox1p2.wasm",
+              "encoding": "br",
+              "bytes": 10262,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Collections.Immutable.2wy31n9baq.wasm",
+              "encoding": "br",
+              "bytes": 36285,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Collections.NonGeneric.8xeubyw9p0.wasm",
+              "encoding": "br",
+              "bytes": 2280,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Collections.Specialized.hkm622xgcr.wasm",
+              "encoding": "br",
+              "bytes": 4227,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Collections.gj88gsapjn.wasm",
+              "encoding": "br",
+              "bytes": 22199,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.ComponentModel.Primitives.pcketdycpr.wasm",
+              "encoding": "br",
+              "bytes": 3194,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.ComponentModel.TypeConverter.1r3rhzscgz.wasm",
+              "encoding": "br",
+              "bytes": 29472,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.ComponentModel.uvkvbxirl9.wasm",
+              "encoding": "br",
+              "bytes": 2008,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Console.qwonechlm4.wasm",
+              "encoding": "br",
+              "bytes": 6495,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Diagnostics.DiagnosticSource.37m70ay4ih.wasm",
+              "encoding": "br",
+              "bytes": 16954,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.IO.Compression.x68h1r9t62.wasm",
+              "encoding": "br",
+              "bytes": 11814,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.IO.Pipelines.unqpbva9an.wasm",
+              "encoding": "br",
+              "bytes": 2935,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Linq.kjdge7sgr1.wasm",
+              "encoding": "br",
+              "bytes": 34353,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Memory.au2ueq0wmx.wasm",
+              "encoding": "br",
+              "bytes": 7232,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Net.Http.Json.6sy5rmu0eg.wasm",
+              "encoding": "br",
+              "bytes": 5285,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Net.Http.rcb0sdnto5.wasm",
+              "encoding": "br",
+              "bytes": 50197,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Net.Primitives.vd71qffl5p.wasm",
+              "encoding": "br",
+              "bytes": 3138,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.ObjectModel.bfrfx59lpg.wasm",
+              "encoding": "br",
+              "bytes": 2558,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Private.Uri.95k6vhz1og.wasm",
+              "encoding": "br",
+              "bytes": 27525,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Runtime.InteropServices.sqnltnlnqh.wasm",
+              "encoding": "br",
+              "bytes": 3196,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Runtime.Numerics.26mdwcgccx.wasm",
+              "encoding": "br",
+              "bytes": 25696,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Runtime.e17xld5qy4.wasm",
+              "encoding": "br",
+              "bytes": 3850,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Security.Cryptography.lgu1xsxxgm.wasm",
+              "encoding": "br",
+              "bytes": 8459,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Text.Encodings.Web.ymt8nlgojw.wasm",
+              "encoding": "br",
+              "bytes": 11490,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Text.Json.sejbp2rj6a.wasm",
+              "encoding": "br",
+              "bytes": 133127,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Text.RegularExpressions.3ems2ub7p8.wasm",
+              "encoding": "br",
+              "bytes": 101422,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Threading.37awd203o3.wasm",
+              "encoding": "br",
+              "bytes": 4080,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.x4983syfn1.wasm",
+              "encoding": "br",
+              "bytes": 1756,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Bench.Live.16xuvxe94i.wasm",
+              "encoding": "br",
+              "bytes": 19246,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/ExChart.srhr32gjis.wasm",
+              "encoding": "br",
+              "bytes": 72253,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/ExChart.Engine.m81pa0whnk.wasm",
+              "encoding": "br",
+              "bytes": 128379,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/ExGrid.Data.fagf4hnaga.wasm",
+              "encoding": "br",
+              "bytes": 39403,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/ExGrid.1lac2ux4z1.wasm",
+              "encoding": "br",
+              "bytes": 368666,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/ExPivot.z96a7dtafv.wasm",
+              "encoding": "br",
+              "bytes": 92596,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/ExPivot.Engine.alsqyv5zm7.wasm",
+              "encoding": "br",
+              "bytes": 208716,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/ExSheet.n4f5avk2xg.wasm",
+              "encoding": "br",
+              "bytes": 143618,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/ExSheet.Engine.sforygc2ek.wasm",
+              "encoding": "br",
+              "bytes": 209821,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Bench.Client.1g1uj56pts.wasm",
+              "encoding": "br",
+              "bytes": 42787,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/icudt_EFIGS.tptq2av103.dat",
+              "encoding": "br",
+              "bytes": 144283,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_content/ExGrid/ex-grid.min.js?v=e9ef775f0cc9",
+              "encoding": "br",
+              "bytes": 18380,
+              "seenBy": "resource timing"
+            }
+          ],
+          "engineBoot": null,
+          "complaints": []
+        },
+        {
+          "firstCellAt": 2676.399999999441,
+          "bytes": 4010648,
+          "files": [
+            {
+              "url": "http://127.0.0.1:5495/core/pivot",
+              "encoding": "br",
+              "bytes": 2185
+            },
+            {
+              "url": "http://127.0.0.1:5495/css/app.css",
+              "encoding": "br",
+              "bytes": 2178,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_content/ExChart/ex-chart.min.css",
+              "encoding": "br",
+              "bytes": 2453,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_content/ExGrid/ex-grid.min.css",
+              "encoding": "br",
+              "bytes": 5163,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_content/ExSheet/ex-sheet.min.css",
+              "encoding": "br",
+              "bytes": 2894,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_content/ExPivot/ex-pivot.min.css",
+              "encoding": "br",
+              "bytes": 2530,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/Bench.Client.styles.css",
+              "encoding": "br",
+              "bytes": 346,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_content/Bench.Live/core-bench.css",
+              "encoding": "br",
+              "bytes": 605,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/dotnet.px0kvhl204.js",
+              "encoding": "br",
+              "bytes": 14677,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_content/Bench.Live/settled-bench.js",
+              "encoding": "br",
+              "bytes": 1998,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_content/Bench.Live/input-bench.js",
+              "encoding": "br",
+              "bytes": 2873,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_content/Bench.Live/chart-bench.js",
+              "encoding": "br",
+              "bytes": 3282,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_content/Bench.Live/core-bench.js",
+              "encoding": "br",
+              "bytes": 5325,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/blazor.webassembly.zxhwjtv6sc.js",
+              "encoding": "br",
+              "bytes": 17058,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/dotnet.native.dsck945vur.js",
+              "encoding": "br",
+              "bytes": 43054,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/dotnet.runtime.r2kbxkuujc.js",
+              "encoding": "br",
+              "bytes": 48114,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/dotnet.native.14bblth7x1.wasm",
+              "encoding": "br",
+              "bytes": 940513
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Runtime.InteropServices.JavaScript.2j7dj8dwvr.wasm",
+              "encoding": "br",
+              "bytes": 17202,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.AspNetCore.Components.Web.1z5ae4drco.wasm",
+              "encoding": "br",
+              "bytes": 24423,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.AspNetCore.Components.WebAssembly.8yobyq2k46.wasm",
+              "encoding": "br",
+              "bytes": 43033,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.Extensions.Configuration.byt2r8jpbf.wasm",
+              "encoding": "br",
+              "bytes": 3926,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.Extensions.Configuration.Abstractions.rvgls4fdhk.wasm",
+              "encoding": "br",
+              "bytes": 2705,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.Extensions.Configuration.Json.q0m0kr40cg.wasm",
+              "encoding": "br",
+              "bytes": 4507,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.AspNetCore.Components.29emh9w6ez.wasm",
+              "encoding": "br",
+              "bytes": 102295,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Private.CoreLib.2a3vzkq1ev.wasm",
+              "encoding": "br",
+              "bytes": 570527,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.Extensions.DependencyInjection.7kgrfhq7r7.wasm",
+              "encoding": "br",
+              "bytes": 19754,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.Extensions.Logging.q74thzykfo.wasm",
+              "encoding": "br",
+              "bytes": 7941,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.Extensions.DependencyInjection.Abstractions.wpck2lcvot.wasm",
+              "encoding": "br",
+              "bytes": 10365,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.Extensions.Options.z3amy2nl13.wasm",
+              "encoding": "br",
+              "bytes": 7512,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.Extensions.Logging.Abstractions.szpx75v9oh.wasm",
+              "encoding": "br",
+              "bytes": 12386,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.Extensions.Primitives.84gjz0mo6d.wasm",
+              "encoding": "br",
+              "bytes": 4872,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.JSInterop.WebAssembly.kivdlry06d.wasm",
+              "encoding": "br",
+              "bytes": 5193,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Collections.Concurrent.vts5oox1p2.wasm",
+              "encoding": "br",
+              "bytes": 10262,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.JSInterop.ehmls359qh.wasm",
+              "encoding": "br",
+              "bytes": 19122,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Collections.Immutable.2wy31n9baq.wasm",
+              "encoding": "br",
+              "bytes": 36285,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Collections.NonGeneric.8xeubyw9p0.wasm",
+              "encoding": "br",
+              "bytes": 2280,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Collections.gj88gsapjn.wasm",
+              "encoding": "br",
+              "bytes": 22199,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Collections.Specialized.hkm622xgcr.wasm",
+              "encoding": "br",
+              "bytes": 4227,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.ComponentModel.Primitives.pcketdycpr.wasm",
+              "encoding": "br",
+              "bytes": 3194,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.ComponentModel.uvkvbxirl9.wasm",
+              "encoding": "br",
+              "bytes": 2008,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.ComponentModel.TypeConverter.1r3rhzscgz.wasm",
+              "encoding": "br",
+              "bytes": 29472,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Console.qwonechlm4.wasm",
+              "encoding": "br",
+              "bytes": 6495,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Diagnostics.DiagnosticSource.37m70ay4ih.wasm",
+              "encoding": "br",
+              "bytes": 16954,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.IO.Compression.x68h1r9t62.wasm",
+              "encoding": "br",
+              "bytes": 11814,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.IO.Pipelines.unqpbva9an.wasm",
+              "encoding": "br",
+              "bytes": 2935,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Linq.kjdge7sgr1.wasm",
+              "encoding": "br",
+              "bytes": 34353,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Memory.au2ueq0wmx.wasm",
+              "encoding": "br",
+              "bytes": 7232,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Net.Http.Json.6sy5rmu0eg.wasm",
+              "encoding": "br",
+              "bytes": 5285,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Net.Http.rcb0sdnto5.wasm",
+              "encoding": "br",
+              "bytes": 50197,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Net.Primitives.vd71qffl5p.wasm",
+              "encoding": "br",
+              "bytes": 3138,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.ObjectModel.bfrfx59lpg.wasm",
+              "encoding": "br",
+              "bytes": 2558,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Private.Uri.95k6vhz1og.wasm",
+              "encoding": "br",
+              "bytes": 27525,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Runtime.InteropServices.sqnltnlnqh.wasm",
+              "encoding": "br",
+              "bytes": 3196,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Runtime.Numerics.26mdwcgccx.wasm",
+              "encoding": "br",
+              "bytes": 25696,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Runtime.e17xld5qy4.wasm",
+              "encoding": "br",
+              "bytes": 3850,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Security.Cryptography.lgu1xsxxgm.wasm",
+              "encoding": "br",
+              "bytes": 8459,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Text.Encodings.Web.ymt8nlgojw.wasm",
+              "encoding": "br",
+              "bytes": 11490,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Text.Json.sejbp2rj6a.wasm",
+              "encoding": "br",
+              "bytes": 133127,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Text.RegularExpressions.3ems2ub7p8.wasm",
+              "encoding": "br",
+              "bytes": 101422,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Threading.37awd203o3.wasm",
+              "encoding": "br",
+              "bytes": 4080,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.x4983syfn1.wasm",
+              "encoding": "br",
+              "bytes": 1756,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Bench.Live.16xuvxe94i.wasm",
+              "encoding": "br",
+              "bytes": 19246,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/ExChart.srhr32gjis.wasm",
+              "encoding": "br",
+              "bytes": 72253,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/ExChart.Engine.m81pa0whnk.wasm",
+              "encoding": "br",
+              "bytes": 128379,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/ExGrid.Data.fagf4hnaga.wasm",
+              "encoding": "br",
+              "bytes": 39403,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/ExGrid.1lac2ux4z1.wasm",
+              "encoding": "br",
+              "bytes": 368666,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/ExPivot.z96a7dtafv.wasm",
+              "encoding": "br",
+              "bytes": 92596,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/ExPivot.Engine.alsqyv5zm7.wasm",
+              "encoding": "br",
+              "bytes": 208716,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/ExSheet.n4f5avk2xg.wasm",
+              "encoding": "br",
+              "bytes": 143618,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/ExSheet.Engine.sforygc2ek.wasm",
+              "encoding": "br",
+              "bytes": 209821,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Bench.Client.1g1uj56pts.wasm",
+              "encoding": "br",
+              "bytes": 42787,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/icudt_EFIGS.tptq2av103.dat",
+              "encoding": "br",
+              "bytes": 144283,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_content/ExGrid/ex-grid.min.js?v=e9ef775f0cc9",
+              "encoding": "br",
+              "bytes": 18380,
+              "seenBy": "resource timing"
+            }
+          ],
+          "engineBoot": null,
+          "complaints": []
+        },
+        {
+          "firstCellAt": 2437.9000000003725,
+          "bytes": 4010648,
+          "files": [
+            {
+              "url": "http://127.0.0.1:5495/core/pivot",
+              "encoding": "br",
+              "bytes": 2185
+            },
+            {
+              "url": "http://127.0.0.1:5495/css/app.css",
+              "encoding": "br",
+              "bytes": 2178,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_content/ExGrid/ex-grid.min.css",
+              "encoding": "br",
+              "bytes": 5163,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_content/ExChart/ex-chart.min.css",
+              "encoding": "br",
+              "bytes": 2453,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_content/ExSheet/ex-sheet.min.css",
+              "encoding": "br",
+              "bytes": 2894,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_content/ExPivot/ex-pivot.min.css",
+              "encoding": "br",
+              "bytes": 2530,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_content/Bench.Live/core-bench.css",
+              "encoding": "br",
+              "bytes": 605,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/Bench.Client.styles.css",
+              "encoding": "br",
+              "bytes": 346,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/dotnet.px0kvhl204.js",
+              "encoding": "br",
+              "bytes": 14677,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_content/Bench.Live/settled-bench.js",
+              "encoding": "br",
+              "bytes": 1998,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_content/Bench.Live/chart-bench.js",
+              "encoding": "br",
+              "bytes": 3282,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_content/Bench.Live/input-bench.js",
+              "encoding": "br",
+              "bytes": 2873,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_content/Bench.Live/core-bench.js",
+              "encoding": "br",
+              "bytes": 5325,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/blazor.webassembly.zxhwjtv6sc.js",
+              "encoding": "br",
+              "bytes": 17058,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/dotnet.runtime.r2kbxkuujc.js",
+              "encoding": "br",
+              "bytes": 48114,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/dotnet.native.dsck945vur.js",
+              "encoding": "br",
+              "bytes": 43054,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Runtime.InteropServices.JavaScript.2j7dj8dwvr.wasm",
+              "encoding": "br",
+              "bytes": 17202,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.AspNetCore.Components.Web.1z5ae4drco.wasm",
+              "encoding": "br",
+              "bytes": 24423,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.AspNetCore.Components.WebAssembly.8yobyq2k46.wasm",
+              "encoding": "br",
+              "bytes": 43033,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.Extensions.Configuration.byt2r8jpbf.wasm",
+              "encoding": "br",
+              "bytes": 3926,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.AspNetCore.Components.29emh9w6ez.wasm",
+              "encoding": "br",
+              "bytes": 102295,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.Extensions.Configuration.Abstractions.rvgls4fdhk.wasm",
+              "encoding": "br",
+              "bytes": 2705,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/dotnet.native.14bblth7x1.wasm",
+              "encoding": "br",
+              "bytes": 940513
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.Extensions.Configuration.Json.q0m0kr40cg.wasm",
+              "encoding": "br",
+              "bytes": 4507,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.Extensions.DependencyInjection.7kgrfhq7r7.wasm",
+              "encoding": "br",
+              "bytes": 19754,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.Extensions.DependencyInjection.Abstractions.wpck2lcvot.wasm",
+              "encoding": "br",
+              "bytes": 10365,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Private.CoreLib.2a3vzkq1ev.wasm",
+              "encoding": "br",
+              "bytes": 570527,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.Extensions.Logging.q74thzykfo.wasm",
+              "encoding": "br",
+              "bytes": 7941,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.Extensions.Logging.Abstractions.szpx75v9oh.wasm",
+              "encoding": "br",
+              "bytes": 12386,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.Extensions.Options.z3amy2nl13.wasm",
+              "encoding": "br",
+              "bytes": 7512,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.Extensions.Primitives.84gjz0mo6d.wasm",
+              "encoding": "br",
+              "bytes": 4872,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.JSInterop.ehmls359qh.wasm",
+              "encoding": "br",
+              "bytes": 19122,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.JSInterop.WebAssembly.kivdlry06d.wasm",
+              "encoding": "br",
+              "bytes": 5193,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Collections.Concurrent.vts5oox1p2.wasm",
+              "encoding": "br",
+              "bytes": 10262,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Collections.Immutable.2wy31n9baq.wasm",
+              "encoding": "br",
+              "bytes": 36285,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Collections.NonGeneric.8xeubyw9p0.wasm",
+              "encoding": "br",
+              "bytes": 2280,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Collections.Specialized.hkm622xgcr.wasm",
+              "encoding": "br",
+              "bytes": 4227,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Collections.gj88gsapjn.wasm",
+              "encoding": "br",
+              "bytes": 22199,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.ComponentModel.Primitives.pcketdycpr.wasm",
+              "encoding": "br",
+              "bytes": 3194,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.ComponentModel.TypeConverter.1r3rhzscgz.wasm",
+              "encoding": "br",
+              "bytes": 29472,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.ComponentModel.uvkvbxirl9.wasm",
+              "encoding": "br",
+              "bytes": 2008,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Console.qwonechlm4.wasm",
+              "encoding": "br",
+              "bytes": 6495,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Diagnostics.DiagnosticSource.37m70ay4ih.wasm",
+              "encoding": "br",
+              "bytes": 16954,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.IO.Compression.x68h1r9t62.wasm",
+              "encoding": "br",
+              "bytes": 11814,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.IO.Pipelines.unqpbva9an.wasm",
+              "encoding": "br",
+              "bytes": 2935,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Linq.kjdge7sgr1.wasm",
+              "encoding": "br",
+              "bytes": 34353,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Memory.au2ueq0wmx.wasm",
+              "encoding": "br",
+              "bytes": 7232,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Net.Http.rcb0sdnto5.wasm",
+              "encoding": "br",
+              "bytes": 50197,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Net.Primitives.vd71qffl5p.wasm",
+              "encoding": "br",
+              "bytes": 3138,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Net.Http.Json.6sy5rmu0eg.wasm",
+              "encoding": "br",
+              "bytes": 5285,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.ObjectModel.bfrfx59lpg.wasm",
+              "encoding": "br",
+              "bytes": 2558,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Private.Uri.95k6vhz1og.wasm",
+              "encoding": "br",
+              "bytes": 27525,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Runtime.InteropServices.sqnltnlnqh.wasm",
+              "encoding": "br",
+              "bytes": 3196,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Runtime.Numerics.26mdwcgccx.wasm",
+              "encoding": "br",
+              "bytes": 25696,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Runtime.e17xld5qy4.wasm",
+              "encoding": "br",
+              "bytes": 3850,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Security.Cryptography.lgu1xsxxgm.wasm",
+              "encoding": "br",
+              "bytes": 8459,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Text.Encodings.Web.ymt8nlgojw.wasm",
+              "encoding": "br",
+              "bytes": 11490,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Text.Json.sejbp2rj6a.wasm",
+              "encoding": "br",
+              "bytes": 133127,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Text.RegularExpressions.3ems2ub7p8.wasm",
+              "encoding": "br",
+              "bytes": 101422,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Threading.37awd203o3.wasm",
+              "encoding": "br",
+              "bytes": 4080,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.x4983syfn1.wasm",
+              "encoding": "br",
+              "bytes": 1756,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Bench.Live.16xuvxe94i.wasm",
+              "encoding": "br",
+              "bytes": 19246,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/ExChart.srhr32gjis.wasm",
+              "encoding": "br",
+              "bytes": 72253,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/ExChart.Engine.m81pa0whnk.wasm",
+              "encoding": "br",
+              "bytes": 128379,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/ExGrid.Data.fagf4hnaga.wasm",
+              "encoding": "br",
+              "bytes": 39403,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/ExGrid.1lac2ux4z1.wasm",
+              "encoding": "br",
+              "bytes": 368666,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/ExPivot.z96a7dtafv.wasm",
+              "encoding": "br",
+              "bytes": 92596,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/ExPivot.Engine.alsqyv5zm7.wasm",
+              "encoding": "br",
+              "bytes": 208716,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/ExSheet.n4f5avk2xg.wasm",
+              "encoding": "br",
+              "bytes": 143618,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/ExSheet.Engine.sforygc2ek.wasm",
+              "encoding": "br",
+              "bytes": 209821,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Bench.Client.1g1uj56pts.wasm",
+              "encoding": "br",
+              "bytes": 42787,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/icudt_EFIGS.tptq2av103.dat",
+              "encoding": "br",
+              "bytes": 144283,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_content/ExGrid/ex-grid.min.js?v=e9ef775f0cc9",
+              "encoding": "br",
+              "bytes": 18380,
+              "seenBy": "resource timing"
+            }
+          ],
+          "engineBoot": null,
+          "complaints": []
+        },
+        {
+          "firstCellAt": 1944.9000000003725,
+          "bytes": 4010648,
+          "files": [
+            {
+              "url": "http://127.0.0.1:5495/core/pivot",
+              "encoding": "br",
+              "bytes": 2185
+            },
+            {
+              "url": "http://127.0.0.1:5495/css/app.css",
+              "encoding": "br",
+              "bytes": 2178,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_content/ExSheet/ex-sheet.min.css",
+              "encoding": "br",
+              "bytes": 2894,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_content/ExGrid/ex-grid.min.css",
+              "encoding": "br",
+              "bytes": 5163,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_content/ExPivot/ex-pivot.min.css",
+              "encoding": "br",
+              "bytes": 2530,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_content/ExChart/ex-chart.min.css",
+              "encoding": "br",
+              "bytes": 2453,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/dotnet.px0kvhl204.js",
+              "encoding": "br",
+              "bytes": 14677,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_content/Bench.Live/core-bench.css",
+              "encoding": "br",
+              "bytes": 605,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/Bench.Client.styles.css",
+              "encoding": "br",
+              "bytes": 346,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_content/Bench.Live/settled-bench.js",
+              "encoding": "br",
+              "bytes": 1998,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_content/Bench.Live/input-bench.js",
+              "encoding": "br",
+              "bytes": 2873,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_content/Bench.Live/chart-bench.js",
+              "encoding": "br",
+              "bytes": 3282,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_content/Bench.Live/core-bench.js",
+              "encoding": "br",
+              "bytes": 5325,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/blazor.webassembly.zxhwjtv6sc.js",
+              "encoding": "br",
+              "bytes": 17058,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/dotnet.runtime.r2kbxkuujc.js",
+              "encoding": "br",
+              "bytes": 48114,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/dotnet.native.dsck945vur.js",
+              "encoding": "br",
+              "bytes": 43054,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Runtime.InteropServices.JavaScript.2j7dj8dwvr.wasm",
+              "encoding": "br",
+              "bytes": 17202,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.AspNetCore.Components.Web.1z5ae4drco.wasm",
+              "encoding": "br",
+              "bytes": 24423,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.AspNetCore.Components.WebAssembly.8yobyq2k46.wasm",
+              "encoding": "br",
+              "bytes": 43033,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.Extensions.Configuration.byt2r8jpbf.wasm",
+              "encoding": "br",
+              "bytes": 3926,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.AspNetCore.Components.29emh9w6ez.wasm",
+              "encoding": "br",
+              "bytes": 102295,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.Extensions.Configuration.Abstractions.rvgls4fdhk.wasm",
+              "encoding": "br",
+              "bytes": 2705,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/dotnet.native.14bblth7x1.wasm",
+              "encoding": "br",
+              "bytes": 940513
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Private.CoreLib.2a3vzkq1ev.wasm",
+              "encoding": "br",
+              "bytes": 570527,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.Extensions.DependencyInjection.7kgrfhq7r7.wasm",
+              "encoding": "br",
+              "bytes": 19754,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.Extensions.Configuration.Json.q0m0kr40cg.wasm",
+              "encoding": "br",
+              "bytes": 4507,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.Extensions.DependencyInjection.Abstractions.wpck2lcvot.wasm",
+              "encoding": "br",
+              "bytes": 10365,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.Extensions.Logging.q74thzykfo.wasm",
+              "encoding": "br",
+              "bytes": 7941,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.Extensions.Logging.Abstractions.szpx75v9oh.wasm",
+              "encoding": "br",
+              "bytes": 12386,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.Extensions.Options.z3amy2nl13.wasm",
+              "encoding": "br",
+              "bytes": 7512,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.Extensions.Primitives.84gjz0mo6d.wasm",
+              "encoding": "br",
+              "bytes": 4872,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.JSInterop.ehmls359qh.wasm",
+              "encoding": "br",
+              "bytes": 19122,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.JSInterop.WebAssembly.kivdlry06d.wasm",
+              "encoding": "br",
+              "bytes": 5193,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Collections.Concurrent.vts5oox1p2.wasm",
+              "encoding": "br",
+              "bytes": 10262,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Collections.Immutable.2wy31n9baq.wasm",
+              "encoding": "br",
+              "bytes": 36285,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Collections.NonGeneric.8xeubyw9p0.wasm",
+              "encoding": "br",
+              "bytes": 2280,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Collections.Specialized.hkm622xgcr.wasm",
+              "encoding": "br",
+              "bytes": 4227,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Collections.gj88gsapjn.wasm",
+              "encoding": "br",
+              "bytes": 22199,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.ComponentModel.Primitives.pcketdycpr.wasm",
+              "encoding": "br",
+              "bytes": 3194,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.ComponentModel.TypeConverter.1r3rhzscgz.wasm",
+              "encoding": "br",
+              "bytes": 29472,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.ComponentModel.uvkvbxirl9.wasm",
+              "encoding": "br",
+              "bytes": 2008,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Console.qwonechlm4.wasm",
+              "encoding": "br",
+              "bytes": 6495,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Diagnostics.DiagnosticSource.37m70ay4ih.wasm",
+              "encoding": "br",
+              "bytes": 16954,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.IO.Compression.x68h1r9t62.wasm",
+              "encoding": "br",
+              "bytes": 11814,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.IO.Pipelines.unqpbva9an.wasm",
+              "encoding": "br",
+              "bytes": 2935,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Linq.kjdge7sgr1.wasm",
+              "encoding": "br",
+              "bytes": 34353,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Memory.au2ueq0wmx.wasm",
+              "encoding": "br",
+              "bytes": 7232,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Net.Http.Json.6sy5rmu0eg.wasm",
+              "encoding": "br",
+              "bytes": 5285,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Net.Http.rcb0sdnto5.wasm",
+              "encoding": "br",
+              "bytes": 50197,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Net.Primitives.vd71qffl5p.wasm",
+              "encoding": "br",
+              "bytes": 3138,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.ObjectModel.bfrfx59lpg.wasm",
+              "encoding": "br",
+              "bytes": 2558,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Private.Uri.95k6vhz1og.wasm",
+              "encoding": "br",
+              "bytes": 27525,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Runtime.InteropServices.sqnltnlnqh.wasm",
+              "encoding": "br",
+              "bytes": 3196,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Runtime.Numerics.26mdwcgccx.wasm",
+              "encoding": "br",
+              "bytes": 25696,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Runtime.e17xld5qy4.wasm",
+              "encoding": "br",
+              "bytes": 3850,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Security.Cryptography.lgu1xsxxgm.wasm",
+              "encoding": "br",
+              "bytes": 8459,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Text.Encodings.Web.ymt8nlgojw.wasm",
+              "encoding": "br",
+              "bytes": 11490,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Text.Json.sejbp2rj6a.wasm",
+              "encoding": "br",
+              "bytes": 133127,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Text.RegularExpressions.3ems2ub7p8.wasm",
+              "encoding": "br",
+              "bytes": 101422,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Threading.37awd203o3.wasm",
+              "encoding": "br",
+              "bytes": 4080,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.x4983syfn1.wasm",
+              "encoding": "br",
+              "bytes": 1756,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Bench.Live.16xuvxe94i.wasm",
+              "encoding": "br",
+              "bytes": 19246,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/ExChart.srhr32gjis.wasm",
+              "encoding": "br",
+              "bytes": 72253,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/ExChart.Engine.m81pa0whnk.wasm",
+              "encoding": "br",
+              "bytes": 128379,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/ExGrid.Data.fagf4hnaga.wasm",
+              "encoding": "br",
+              "bytes": 39403,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/ExPivot.z96a7dtafv.wasm",
+              "encoding": "br",
+              "bytes": 92596,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/ExGrid.1lac2ux4z1.wasm",
+              "encoding": "br",
+              "bytes": 368666,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/ExPivot.Engine.alsqyv5zm7.wasm",
+              "encoding": "br",
+              "bytes": 208716,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/ExSheet.n4f5avk2xg.wasm",
+              "encoding": "br",
+              "bytes": 143618,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/ExSheet.Engine.sforygc2ek.wasm",
+              "encoding": "br",
+              "bytes": 209821,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Bench.Client.1g1uj56pts.wasm",
+              "encoding": "br",
+              "bytes": 42787,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/icudt_EFIGS.tptq2av103.dat",
+              "encoding": "br",
+              "bytes": 144283,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_content/ExGrid/ex-grid.min.js?v=e9ef775f0cc9",
+              "encoding": "br",
+              "bytes": 18380,
+              "seenBy": "resource timing"
+            }
+          ],
+          "engineBoot": null,
+          "complaints": []
+        },
+        {
+          "firstCellAt": 1825.5999999996275,
+          "bytes": 4010648,
+          "files": [
+            {
+              "url": "http://127.0.0.1:5495/css/app.css",
+              "encoding": "br",
+              "bytes": 2178,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_content/ExGrid/ex-grid.min.css",
+              "encoding": "br",
+              "bytes": 5163,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/dotnet.px0kvhl204.js",
+              "encoding": "br",
+              "bytes": 14677,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/core/pivot",
+              "encoding": "br",
+              "bytes": 2185
+            },
+            {
+              "url": "http://127.0.0.1:5495/_content/ExChart/ex-chart.min.css",
+              "encoding": "br",
+              "bytes": 2453,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_content/ExPivot/ex-pivot.min.css",
+              "encoding": "br",
+              "bytes": 2530,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_content/ExSheet/ex-sheet.min.css",
+              "encoding": "br",
+              "bytes": 2894,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_content/Bench.Live/core-bench.css",
+              "encoding": "br",
+              "bytes": 605,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/Bench.Client.styles.css",
+              "encoding": "br",
+              "bytes": 346,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_content/Bench.Live/settled-bench.js",
+              "encoding": "br",
+              "bytes": 1998,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_content/Bench.Live/input-bench.js",
+              "encoding": "br",
+              "bytes": 2873,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_content/Bench.Live/chart-bench.js",
+              "encoding": "br",
+              "bytes": 3282,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_content/Bench.Live/core-bench.js",
+              "encoding": "br",
+              "bytes": 5325,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/blazor.webassembly.zxhwjtv6sc.js",
+              "encoding": "br",
+              "bytes": 17058,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/dotnet.runtime.r2kbxkuujc.js",
+              "encoding": "br",
+              "bytes": 48114,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/dotnet.native.dsck945vur.js",
+              "encoding": "br",
+              "bytes": 43054,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Runtime.InteropServices.JavaScript.2j7dj8dwvr.wasm",
+              "encoding": "br",
+              "bytes": 17202,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.AspNetCore.Components.29emh9w6ez.wasm",
+              "encoding": "br",
+              "bytes": 102295,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.AspNetCore.Components.Web.1z5ae4drco.wasm",
+              "encoding": "br",
+              "bytes": 24423,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.Extensions.Configuration.byt2r8jpbf.wasm",
+              "encoding": "br",
+              "bytes": 3926,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.AspNetCore.Components.WebAssembly.8yobyq2k46.wasm",
+              "encoding": "br",
+              "bytes": 43033,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.Extensions.Configuration.Abstractions.rvgls4fdhk.wasm",
+              "encoding": "br",
+              "bytes": 2705,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.Extensions.Configuration.Json.q0m0kr40cg.wasm",
+              "encoding": "br",
+              "bytes": 4507,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.Extensions.DependencyInjection.7kgrfhq7r7.wasm",
+              "encoding": "br",
+              "bytes": 19754,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.Extensions.DependencyInjection.Abstractions.wpck2lcvot.wasm",
+              "encoding": "br",
+              "bytes": 10365,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/dotnet.native.14bblth7x1.wasm",
+              "encoding": "br",
+              "bytes": 940513
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.Extensions.Logging.q74thzykfo.wasm",
+              "encoding": "br",
+              "bytes": 7941,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.Extensions.Logging.Abstractions.szpx75v9oh.wasm",
+              "encoding": "br",
+              "bytes": 12386,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.Extensions.Primitives.84gjz0mo6d.wasm",
+              "encoding": "br",
+              "bytes": 4872,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.Extensions.Options.z3amy2nl13.wasm",
+              "encoding": "br",
+              "bytes": 7512,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Private.CoreLib.2a3vzkq1ev.wasm",
+              "encoding": "br",
+              "bytes": 570527,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.JSInterop.WebAssembly.kivdlry06d.wasm",
+              "encoding": "br",
+              "bytes": 5193,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Microsoft.JSInterop.ehmls359qh.wasm",
+              "encoding": "br",
+              "bytes": 19122,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Collections.Concurrent.vts5oox1p2.wasm",
+              "encoding": "br",
+              "bytes": 10262,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Collections.Immutable.2wy31n9baq.wasm",
+              "encoding": "br",
+              "bytes": 36285,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Collections.NonGeneric.8xeubyw9p0.wasm",
+              "encoding": "br",
+              "bytes": 2280,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Collections.Specialized.hkm622xgcr.wasm",
+              "encoding": "br",
+              "bytes": 4227,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Collections.gj88gsapjn.wasm",
+              "encoding": "br",
+              "bytes": 22199,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.ComponentModel.Primitives.pcketdycpr.wasm",
+              "encoding": "br",
+              "bytes": 3194,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.ComponentModel.TypeConverter.1r3rhzscgz.wasm",
+              "encoding": "br",
+              "bytes": 29472,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.ComponentModel.uvkvbxirl9.wasm",
+              "encoding": "br",
+              "bytes": 2008,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Console.qwonechlm4.wasm",
+              "encoding": "br",
+              "bytes": 6495,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Diagnostics.DiagnosticSource.37m70ay4ih.wasm",
+              "encoding": "br",
+              "bytes": 16954,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.IO.Compression.x68h1r9t62.wasm",
+              "encoding": "br",
+              "bytes": 11814,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.IO.Pipelines.unqpbva9an.wasm",
+              "encoding": "br",
+              "bytes": 2935,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Memory.au2ueq0wmx.wasm",
+              "encoding": "br",
+              "bytes": 7232,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Linq.kjdge7sgr1.wasm",
+              "encoding": "br",
+              "bytes": 34353,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Net.Http.Json.6sy5rmu0eg.wasm",
+              "encoding": "br",
+              "bytes": 5285,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Net.Http.rcb0sdnto5.wasm",
+              "encoding": "br",
+              "bytes": 50197,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Net.Primitives.vd71qffl5p.wasm",
+              "encoding": "br",
+              "bytes": 3138,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.ObjectModel.bfrfx59lpg.wasm",
+              "encoding": "br",
+              "bytes": 2558,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Private.Uri.95k6vhz1og.wasm",
+              "encoding": "br",
+              "bytes": 27525,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Runtime.InteropServices.sqnltnlnqh.wasm",
+              "encoding": "br",
+              "bytes": 3196,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Runtime.e17xld5qy4.wasm",
+              "encoding": "br",
+              "bytes": 3850,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Runtime.Numerics.26mdwcgccx.wasm",
+              "encoding": "br",
+              "bytes": 25696,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Security.Cryptography.lgu1xsxxgm.wasm",
+              "encoding": "br",
+              "bytes": 8459,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Text.Encodings.Web.ymt8nlgojw.wasm",
+              "encoding": "br",
+              "bytes": 11490,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Text.Json.sejbp2rj6a.wasm",
+              "encoding": "br",
+              "bytes": 133127,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Text.RegularExpressions.3ems2ub7p8.wasm",
+              "encoding": "br",
+              "bytes": 101422,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.Threading.37awd203o3.wasm",
+              "encoding": "br",
+              "bytes": 4080,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/System.x4983syfn1.wasm",
+              "encoding": "br",
+              "bytes": 1756,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Bench.Live.16xuvxe94i.wasm",
+              "encoding": "br",
+              "bytes": 19246,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/ExChart.srhr32gjis.wasm",
+              "encoding": "br",
+              "bytes": 72253,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/ExChart.Engine.m81pa0whnk.wasm",
+              "encoding": "br",
+              "bytes": 128379,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/ExGrid.Data.fagf4hnaga.wasm",
+              "encoding": "br",
+              "bytes": 39403,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/ExGrid.1lac2ux4z1.wasm",
+              "encoding": "br",
+              "bytes": 368666,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/ExPivot.z96a7dtafv.wasm",
+              "encoding": "br",
+              "bytes": 92596,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/ExPivot.Engine.alsqyv5zm7.wasm",
+              "encoding": "br",
+              "bytes": 208716,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/ExSheet.n4f5avk2xg.wasm",
+              "encoding": "br",
+              "bytes": 143618,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/ExSheet.Engine.sforygc2ek.wasm",
+              "encoding": "br",
+              "bytes": 209821,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/Bench.Client.1g1uj56pts.wasm",
+              "encoding": "br",
+              "bytes": 42787,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_framework/icudt_EFIGS.tptq2av103.dat",
+              "encoding": "br",
+              "bytes": 144283,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5495/_content/ExGrid/ex-grid.min.js?v=e9ef775f0cc9",
+              "encoding": "br",
+              "bytes": 18380,
+              "seenBy": "resource timing"
+            }
+          ],
+          "engineBoot": null,
+          "complaints": []
+        }
+      ]
+    }
+  ]
+}

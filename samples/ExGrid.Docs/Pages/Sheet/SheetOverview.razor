@@ -113,7 +113,8 @@
         <p>
             Typing a Formula and immediately pressing a referenced cell keeps the inserted Reference,
             including over a Server round trip. Releasing that press does not restore the earlier text;
-            typing again replaces it normally.
+            typing again replaces it normally. Pressing the cell being typed into, just as immediately, keeps
+            the edit open: the press is taken as one into the editor, which a Server round trip may not have drawn yet.
         </p>
         <DocsFigure Name="sheet-anatomy">
             An expenses claim beside last quarter's, with the total's Formula opened by F2. A script draws the figure

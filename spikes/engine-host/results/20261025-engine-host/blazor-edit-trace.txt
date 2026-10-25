@@ -1,0 +1,82 @@
+Where a Blazor WebAssembly edit of /core/sheet spends its time, from the second edit of one round of
+render-bench's driver (edits: 3). Each line is ms since ExSheet heard the grid's commit, written by
+Stopwatch marks put by hand into ExSheet.razor and ExGrid.razor for this reading only and never
+committed (`TempTrace`): Do is Workbook.Do, the engine's recalculation; edges is SheetEdges.Update;
+rows the new SheetRow instances; then ExGrid's parameters, PrepareRender and render; StateHasChanged
+returns; the Selection Summary and the toolbar; ToDocument is the Sheet Document handed to
+DocumentChanged (the page binds Document both ways); then the page's own render of it. The renders
+after "DocumentChanged handled" are left out. The two builds are the same source: Bench.Host's build
+output under `dotnet run` (debugLevel -1) and Bench.Client published (debugLevel 0).
+
+--- build output (dotnet run, debugLevel -1): edit A1 = 1001
+TT 3506.6 Do
+TT 3507.7 Widen
+TT 3653.8 edges
+TT 3656.8 rows
+TT 3696.2 ExGrid.OnParametersSet start
+TT 3708.2 ExGrid.PrepareRender start
+TT 3859.7 ExGrid.PrepareRender end
+TT 3860.3 ExGrid.OnParametersSet end
+TT 3860.7 ExGrid.ShouldRender
+TT 3936.8 ExGrid.OnAfterRender
+TT 3937.4 StateHasChanged
+TT 3937.8 summary
+TT 3938.1 toolbar
+TT 3938.4 documents
+TT 4061.9 ToDocument
+TT 4062.9 ExSheet.OnParametersSet
+TT 4097.9 DocumentChanged handled
+--- build output (dotnet run, debugLevel -1): edit L1 = 5001
+TT 11.3 Do
+TT 12.2 Widen
+TT 12.6 edges
+TT 12.9 rows
+TT 47.0 ExGrid.OnParametersSet start
+TT 57.4 ExGrid.PrepareRender start
+TT 163.5 ExGrid.PrepareRender end
+TT 164.2 ExGrid.OnParametersSet end
+TT 164.4 ExGrid.ShouldRender
+TT 174.6 ExGrid.OnAfterRender
+TT 175.3 StateHasChanged
+TT 175.5 summary
+TT 175.8 toolbar
+TT 176.1 documents
+TT 293.1 ToDocument
+TT 294.0 ExSheet.OnParametersSet
+TT 330.9 DocumentChanged handled
+--- published (debugLevel 0): edit A1 = 1001
+TT 784.3 Do
+TT 785.4 Widen
+TT 811.6 edges
+TT 813.0 rows
+TT 828.5 ExGrid.OnParametersSet start
+TT 832.6 ExGrid.PrepareRender start
+TT 862.4 ExGrid.PrepareRender end
+TT 862.9 ExGrid.OnParametersSet end
+TT 863.2 ExGrid.ShouldRender
+TT 910.9 ExGrid.OnAfterRender
+TT 911.6 StateHasChanged
+TT 911.9 summary
+TT 912.4 toolbar
+TT 912.7 documents
+TT 965.4 ToDocument
+TT 966.4 ExSheet.OnParametersSet
+TT 982.7 DocumentChanged handled
+--- published (debugLevel 0): edit L1 = 5001
+TT 5.6 Do
+TT 6.1 Widen
+TT 6.4 edges
+TT 6.7 rows
+TT 32.2 ExGrid.OnParametersSet start
+TT 37.2 ExGrid.PrepareRender start
+TT 67.4 ExGrid.PrepareRender end
+TT 68.1 ExGrid.OnParametersSet end
+TT 68.4 ExGrid.ShouldRender
+TT 74.2 ExGrid.OnAfterRender
+TT 74.7 StateHasChanged
+TT 75.0 summary
+TT 75.2 toolbar
+TT 75.4 documents
+TT 111.1 ToDocument
+TT 111.7 ExSheet.OnParametersSet
+TT 126.3 DocumentChanged handled
