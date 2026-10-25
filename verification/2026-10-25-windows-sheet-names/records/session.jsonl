@@ -1,0 +1,7 @@
+﻿{"group":"meta","version":"16.0","build":20430,"started":"2026-10-25T01:50:33.5529682+00:00"}
+{"id":"nothing","before":"Sheet1","after":"Sheet1,Sheet2,Sheet3"}
+{"id":"copy","before":"Sheet1,Sheet1 (2)","after":"Sheet1,Sheet1 (2),Sheet3,Sheet4"}
+{"id":"copy-twice","before":"Sheet1,Sheet1 (3),Sheet1 (2)","after":"Sheet1,Sheet1 (3),Sheet1 (2),Sheet4,Sheet5"}
+{"id":"add-delete","before":"Sheet1","after":"Sheet1,Sheet3,Sheet4"}
+{"id":"add-rename","before":"Sheet1,Feb","after":"Sheet1,Feb,Sheet3,Sheet4"}
+{"id":"move","before":"Sheet2,Sheet1","after":"Sheet2,Sheet1,Sheet3,Sheet4"}

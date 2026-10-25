@@ -70,16 +70,49 @@ public sealed partial class Workbook
             ? new SheetRefusal(SheetRefusalReason.SheetNameTaken, $"A Sheet of the Workbook is already named '{other.Name}'.")
             : null;
 
-    /// <summary>The name a new Sheet takes: <c>Sheet</c> and one more than the highest number any <c>SheetN</c> has.</summary>
-    internal string NextSheetName()
+    /// <summary>
+    /// The name a new Sheet takes, as Excel names one (exsheet-workbook ticket 12, answer 13;
+    /// verification/2026-10-25-windows-sheet-names): <c>Sheet</c> and the next number of the Workbook's count
+    /// of the Sheets it has made, passing over a name a Sheet has. So with Sheet1 renamed Sheet5 the next is
+    /// Sheet2, and after Sheet2 is inserted and deleted Sheet3; in a Workbook opened from a document, which
+    /// keeps no count, the first number no Sheet has.
+    /// </summary>
+    internal string NextSheetName() => SheetName(NextSheetNumber());
+
+    /// <summary>The number <see cref="NextSheetName"/> gives the next new Sheet.</summary>
+    internal int NextSheetNumber()
     {
-        var highest = 0;
-        foreach (var sheet in _sheets)
+        for (var n = _sheetsMade + 1; ; n++)
         {
-            if (NumberedSheet().Match(sheet.Name) is { Success: true } match && int.TryParse(match.Groups[1].ValueSpan, out var n)) highest = Math.Max(highest, n);
+            if (Find(SheetName(n)) is null) return n;
         }
-        return "Sheet" + (highest + 1).ToString(System.Globalization.CultureInfo.InvariantCulture);
     }
+
+    /// <summary><c>Sheet</c> and <paramref name="number"/>: the name a new Sheet numbered so takes.</summary>
+    internal static string SheetName(int number) => "Sheet" + number.ToString(System.Globalization.CultureInfo.InvariantCulture);
+
+    /// <summary>A Workbook just opened from a document: it has made no Sheet yet, as Excel's opened workbook has not (<see cref="NextSheetName"/>).</summary>
+    internal void Opened() => _sheetsMade = 0;
+
+    /// <summary>
+    /// Counts a new Sheet as made, as Excel counts it: one numbered by the count (<paramref name="numbered"/>,
+    /// from <see cref="NextSheetNumber"/>) takes the count to its number, past the names it passed over; any
+    /// other — a copy, as Excel's copy uses a number, or one the Consumer named, as Excel's added and renamed
+    /// Sheet does — counts one. The count before is returned, for <see cref="UncountSheetMade"/>.
+    /// </summary>
+    internal int CountSheetMade(int? numbered)
+    {
+        var before = _sheetsMade;
+        _sheetsMade = numbered ?? _sheetsMade + 1;
+        return before;
+    }
+
+    /// <summary>
+    /// Puts back the count of Sheets made as it stood before an insertion or a copy (<see cref="CountSheetMade"/>),
+    /// when the step is undone: Excel's undo of an insertion gives its number back. Excel cannot undo a copy;
+    /// ExSheet's undo of one gives its number back in the same way, its own choice.
+    /// </summary>
+    internal void UncountSheetMade(int before) => _sheetsMade = before;
 
     /// <summary>The name a copy of the Sheet named <paramref name="name"/> takes, as Excel names one: <c>Name (2)</c>, or the next number free, the name cut to fit 31 characters.</summary>
     internal string CopyName(string name)
@@ -242,9 +275,6 @@ public sealed partial class Workbook
             }
         }
     }
-
-    [GeneratedRegex(@"^Sheet([0-9]{1,9})$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
-    private static partial Regex NumberedSheet();
 
     [GeneratedRegex(@" \([0-9]+\)$", RegexOptions.CultureInvariant)]
     private static partial Regex CopyNumber();

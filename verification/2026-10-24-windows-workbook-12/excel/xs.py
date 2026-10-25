@@ -11,7 +11,7 @@ import sys
 import time
 
 D = r'C:\Users\amisa\AppData\Local\exgrid-layer3\workbook-12\xs'
-LOG = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'records', 'keys-xs.jsonl')
+LOG = os.path.join(os.path.dirname(os.path.abspath(__file__)), os.environ.get('XS_LOG', os.path.join('..', 'records', 'keys-xs.jsonl')))
 
 
 def _lines():
