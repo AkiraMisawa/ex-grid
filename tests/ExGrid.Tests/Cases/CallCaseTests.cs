@@ -21,7 +21,10 @@ public class CallCaseTests
     private static readonly Dictionary<string, Type> Subjects = new()
     {
         ["CellTextMetrics"] = typeof(CellTextMetrics),
+        ["AutoWidth"] = typeof(AutoWidth),
         ["ColumnGeometry"] = typeof(ColumnGeometry),
+        ["ColumnWidth"] = typeof(ColumnWidth),
+        ["ColumnWidthSpec"] = typeof(ColumnWidthSpec),
         ["GlyphWidthTable"] = typeof(GlyphWidthTable),
         ["OverflowRules"] = typeof(OverflowRules),
         ["RowRange"] = typeof(RowRange),
@@ -100,6 +103,10 @@ public class CallCaseTests
     /// </summary>
     private static object Create(Type type, string? via, Dictionary<string, JsonElement> arguments)
     {
+        // A value the type holds, such as ColumnWidth.Auto, is made through no arguments at all.
+        if (via is not null && arguments.Count == 0
+            && type.GetProperty(Pascal(via), Visible | BindingFlags.Static) is { GetMethod: { } held } && Reachable(held))
+            return held.Invoke(null, BindingFlags.DoNotWrapExceptions, null, null, CultureInfo.InvariantCulture)!;
         IEnumerable<MethodBase> candidates = via is null
             ? type.GetConstructors(Visible | BindingFlags.Instance).Where(Reachable)
             : type.GetMethods(Visible | BindingFlags.Static).Where(m => m.Name == Pascal(via) && Reachable(m));
@@ -179,8 +186,9 @@ public class CallCaseTests
         var kind = subject is null ? "static " : "";
         if (args is not { } given)
         {
-            if (type.GetProperty(name, flags) is { GetMethod: { } getter } property && Reachable(getter))
-                return property.GetValue(subject);
+            // Invoked rather than read with GetValue, which would wrap what a getter throws.
+            if (type.GetProperty(name, flags) is { GetMethod: { } getter } && Reachable(getter))
+                return getter.Invoke(subject, BindingFlags.DoNotWrapExceptions, null, null, CultureInfo.InvariantCulture);
             if (type.GetField(name, flags) is { } field && (field.IsPublic || field.IsAssembly || field.IsFamilyOrAssembly))
                 return field.GetValue(subject);
             throw new InvalidOperationException($"{type.Name} has no {kind}property {name}.");

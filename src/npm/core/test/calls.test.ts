@@ -2,7 +2,9 @@
 // what its members answer. The C# runner (tests/ExGrid.Tests/Cases/CallCaseTests.cs) finds the same
 // members by name.
 import { describe, expect, it } from 'vitest';
+import { AutoWidth } from '../src/columns/auto-width';
 import { CellTextMetrics } from '../src/columns/cell-text-metrics';
+import { ColumnWidth, ColumnWidthSpec } from '../src/columns/column-width';
 import { ColumnGeometry } from '../src/columns/column-geometry';
 import { GlyphWidthTable } from '../src/columns/glyph-width-table';
 import { decideOverflow, hashesWhenOverflowing } from '../src/columns/overflow-rules';
@@ -24,6 +26,10 @@ function noFactory(subject: string, via: string | undefined): never {
 }
 
 const subjects: Readonly<Record<string, Subject>> = {
+    AutoWidth: {
+        create: (args, via) => via === undefined ? AutoWidth.of(args['spec'] as ColumnWidthSpec) : noFactory('AutoWidth', via),
+        statics: {},
+    },
     CellTextMetrics: {
         create: (args, via) => via === undefined ? new CellTextMetrics(args as never) : noFactory('CellTextMetrics', via),
         statics: CellTextMetrics,
@@ -31,6 +37,21 @@ const subjects: Readonly<Record<string, Subject>> = {
     ColumnGeometry: {
         create: (args, via) => via === undefined ? new ColumnGeometry(args as never) : noFactory('ColumnGeometry', via),
         statics: ColumnGeometry,
+    },
+    ColumnWidth: {
+        create: (args, via) => {
+            switch (via) {
+                case 'auto': return ColumnWidth.auto;
+                case 'fixed': return ColumnWidth.fixed(args['px'] as number);
+                case undefined:
+                default: return noFactory('ColumnWidth', via);
+            }
+        },
+        statics: ColumnWidth,
+    },
+    ColumnWidthSpec: {
+        create: (args, via) => via === undefined ? new ColumnWidthSpec(args as never) : noFactory('ColumnWidthSpec', via),
+        statics: ColumnWidthSpec,
     },
     GlyphWidthTable: {
         create: (args, via) => via === undefined

@@ -1,0 +1,53 @@
+{
+  "about": "The grow-only width of an Auto column, ADR-0016's diagram. From tests/ExGrid.Tests/AutoWidthTests.cs; the narrowing by Size to fit is in column-width-spec.json.",
+  "kind": "calls",
+  "subject": "AutoWidth",
+  "cases": [
+    {
+      "name": "ADR-0016: before any Window the column stands at MinWidth",
+      "create": {"spec": {"new": "ColumnWidthSpec", "with": {"width": {"new": "ColumnWidth", "via": "auto"}, "minWidthPx": 40, "maxWidthPx": 400}}},
+      "expect": [
+        {"get": "currentPx", "is": 40}
+      ]
+    },
+    {
+      "name": "ADR-0016: \"initially: computed from the first Window\", observations grow the floor",
+      "create": {"spec": {"new": "ColumnWidthSpec", "with": {"width": {"new": "ColumnWidth", "via": "auto"}, "minWidthPx": 40, "maxWidthPx": 400}}},
+      "expect": [
+        {"call": "observe", "args": [70], "then": [{"call": "observe", "args": [120], "then": [{"get": "currentPx", "is": 120}]}]}
+      ]
+    },
+    {
+      "name": "ADR-0016: \"a longer value appears: widen, up to MaxWidth\"",
+      "create": {"spec": {"new": "ColumnWidthSpec", "with": {"width": {"new": "ColumnWidth", "via": "auto"}, "minWidthPx": 40, "maxWidthPx": 400}}},
+      "expect": [
+        {"call": "observe", "args": [900], "then": [{"get": "currentPx", "is": 400}]}
+      ]
+    },
+    {
+      "name": "ADR-0016: \"a screen with only short values: do not narrow\", so no judder",
+      "create": {"spec": {"new": "ColumnWidthSpec", "with": {"width": {"new": "ColumnWidth", "via": "auto"}, "minWidthPx": 40, "maxWidthPx": 400}}},
+      "expect": [
+        {"call": "observe", "args": [200], "then": [{"call": "observe", "args": [50], "then": [{"call": "observe", "args": [120], "then": [{"call": "observe", "args": [0], "then": [{"get": "currentPx", "is": 200}]}]}]}]}
+      ]
+    },
+    {
+      "name": "ADR-0016: grow-only means the same observations settle at the same width in any order",
+      "create": {"spec": {"new": "ColumnWidthSpec", "with": {"width": {"new": "ColumnWidth", "via": "auto"}, "minWidthPx": 40, "maxWidthPx": 400}}},
+      "expect": [
+        {"call": "observe", "args": [50], "then": [{"call": "observe", "args": [120], "then": [{"call": "observe", "args": [80], "then": [{"get": "currentPx", "is": 120}]}]}]},
+        {"call": "observe", "args": [80], "then": [{"call": "observe", "args": [120], "then": [{"call": "observe", "args": [50], "then": [{"get": "currentPx", "is": 120}]}]}]},
+        {"call": "observe", "args": [120], "then": [{"call": "observe", "args": [80], "then": [{"call": "observe", "args": [50], "then": [{"get": "currentPx", "is": 120}]}]}]}
+      ]
+    },
+    {
+      "name": "ADR-0016: a nonsense observation is a caller bug, not a clamp",
+      "create": {"spec": {"new": "ColumnWidthSpec", "with": {"width": {"new": "ColumnWidth", "via": "auto"}, "minWidthPx": 40, "maxWidthPx": 400}}},
+      "expect": [
+        {"call": "observe", "args": ["NaN"], "throws": "outOfRange"},
+        {"call": "observe", "args": ["Infinity"], "throws": "outOfRange"},
+        {"call": "observe", "args": [-1], "throws": "outOfRange"}
+      ]
+    }
+  ]
+}

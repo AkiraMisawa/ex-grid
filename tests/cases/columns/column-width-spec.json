@@ -1,0 +1,78 @@
+{
+  "about": "The width declaration a column carries, with its bounds (ADR-0016). From tests/ExGrid.Tests/ColumnWidthTests.cs; printing is C#'s and stays there.",
+  "kind": "calls",
+  "subject": "ColumnWidthSpec",
+  "cases": [
+    {
+      "name": "ADR-0016: the spec's bounds are coherent, so a MinWidth of 0 is refused",
+      "create": {"width": {"new": "ColumnWidth", "via": "auto"}, "minWidthPx": 0},
+      "throws": "outOfRange"
+    },
+    {
+      "name": "ADR-0016: the spec's bounds are coherent, so a MaxWidth under the MinWidth is refused",
+      "create": {"width": {"new": "ColumnWidth", "via": "auto"}, "minWidthPx": 100, "maxWidthPx": 50},
+      "throws": "outOfRange"
+    },
+    {
+      "name": "ADR-0016: the spec's bounds are coherent, so a MinWidth that is not a number is refused",
+      "create": {"width": {"new": "ColumnWidth", "via": "auto"}, "minWidthPx": "NaN"},
+      "throws": "outOfRange"
+    },
+    {
+      "name": "ADR-0016: the spec's bounds are coherent, so an infinite MaxWidth is refused",
+      "create": {"width": {"new": "ColumnWidth", "via": "auto"}, "maxWidthPx": "Infinity"},
+      "throws": "outOfRange"
+    },
+    {
+      "name": "ADR-0016 / FN-12: the spec leaves the MinWidth refusal to its column, which can name itself",
+      "create": {"width": {"new": "ColumnWidth", "via": "fixed", "with": {"px": 10}}, "minWidthPx": 40, "maxWidthPx": 400},
+      "expect": [
+        {"get": "width", "then": [{"get": "isAuto", "is": false}, {"get": "fixedPx", "is": 10}]}
+      ]
+    },
+    {
+      "name": "ADR-0016 / FN-12: MaxWidth bounds what the grid computes, not what the user asked for",
+      "create": {"width": {"new": "ColumnWidth", "via": "fixed", "with": {"px": 500}}, "minWidthPx": 40, "maxWidthPx": 400},
+      "expect": [
+        {"get": "width", "then": [{"get": "isAuto", "is": false}, {"get": "fixedPx", "is": 500}]},
+        {"call": "resolveWidthPx", "args": [{"new": "AutoWidth", "with": {"spec": {"new": "ColumnWidthSpec", "with": {"width": {"new": "ColumnWidth", "via": "fixed", "with": {"px": 500}}, "minWidthPx": 40, "maxWidthPx": 400}}}}], "is": 500},
+        {"get": "maxWidthPx", "is": 400},
+        {"call": "sizeToFit", "args": [900], "then": [{"get": "isAuto", "is": false}, {"get": "fixedPx", "is": 400}]}
+      ]
+    },
+    {
+      "name": "ADR-0016: the default bounds are forty and four hundred, and MaxWidth exists for #### to be possible",
+      "create": {"width": {"new": "ColumnWidth", "via": "auto"}},
+      "expect": [
+        {"get": "minWidthPx", "is": 40},
+        {"get": "maxWidthPx", "is": 400},
+        {"static": "defaultMinWidthPx", "is": 40},
+        {"static": "defaultMaxWidthPx", "is": 400}
+      ]
+    },
+    {
+      "name": "ADR-0016: Size to fit fixes the width at the content of that moment, clamped, and always Fixed",
+      "create": {"width": {"new": "ColumnWidth", "via": "auto"}, "minWidthPx": 40, "maxWidthPx": 400},
+      "expect": [
+        {"call": "sizeToFit", "args": [10], "then": [{"get": "isAuto", "is": false}, {"get": "fixedPx", "is": 40}]},
+        {"call": "sizeToFit", "args": [900], "then": [{"get": "isAuto", "is": false}, {"get": "fixedPx", "is": 400}]},
+        {"call": "sizeToFit", "args": [150], "then": [{"get": "isAuto", "is": false}, {"get": "fixedPx", "is": 150}]},
+        {"call": "sizeToFit", "args": ["NaN"], "throws": "outOfRange"}
+      ]
+    },
+    {
+      "name": "ADR-0016: the Auto-or-Fixed branch lives in one place: an Auto spec reads the tracker",
+      "create": {"width": {"new": "ColumnWidth", "via": "auto"}},
+      "expect": [
+        {"call": "resolveWidthPx", "args": [{"new": "AutoWidth", "with": {"spec": {"new": "ColumnWidthSpec", "with": {"width": {"new": "ColumnWidth", "via": "auto"}}}}}], "is": 40}
+      ]
+    },
+    {
+      "name": "ADR-0016: the Auto-or-Fixed branch lives in one place: a Fixed spec ignores the tracker",
+      "create": {"width": {"new": "ColumnWidth", "via": "fixed", "with": {"px": 100}}},
+      "expect": [
+        {"call": "resolveWidthPx", "args": [{"new": "AutoWidth", "with": {"spec": {"new": "ColumnWidthSpec", "with": {"width": {"new": "ColumnWidth", "via": "auto"}}}}}], "is": 100}
+      ]
+    }
+  ]
+}
