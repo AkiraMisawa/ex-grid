@@ -28,6 +28,11 @@ export interface GridColumn<Row> extends QueryColumn<Row> {
     readonly width?: GridColumnWidth;
     /** How the column's cells align; by their type unless given (ADR-0006). */
     readonly align?: CellAlign;
+    /** Whether a paste may write this column's cells (ADR-0007, ADR-0035). Off unless given: this is a
+     * display-first grid, and a cell written where nobody hears the intent would be written into nothing, so
+     * a grid with no `onPaste` takes a paste on no column. The grid never holds the value either way: a
+     * write leaves as an intent. */
+    readonly editable?: boolean;
 }
 
 /** A column with what its declaration resolves to, checked once, where the Consumer handed it over. */
@@ -40,6 +45,8 @@ export interface ResolvedColumn<Row> {
     readonly spec: ColumnWidthSpec;
     /** Whether its cells are a numeric presentation, `####` when too narrow (ADR-0016). */
     readonly numeric: boolean;
+    /** Whether a paste may write its cells (ADR-0035). */
+    readonly editable: boolean;
 }
 
 const aligns: ReadonlySet<string> = new Set<CellAlign>(['auto', 'left', 'center', 'right']);
@@ -51,8 +58,9 @@ export function resolveColumns<Row>(columns: readonly GridColumn<Row>[]): readon
     const names = new Set<string>();
     return Object.freeze(columns.map((column, index) => {
         // Checked as an untyped caller may hand it, where it arrives (CONVENTIONS.md).
-        const { name, value, align, header, type }: {
+        const { name, value, align, header, type, editable }: {
             readonly name: unknown; readonly value: unknown; readonly align?: unknown; readonly header?: unknown; readonly type: unknown;
+            readonly editable?: unknown;
         } = column;
         if (typeof name !== 'string' || name === '') {
             throw new TypeError(`The column at ${index} has no name: a column is named by a non-empty string.`);
@@ -73,11 +81,15 @@ export function resolveColumns<Row>(columns: readonly GridColumn<Row>[]): readon
         if (header !== undefined && typeof header !== 'string') {
             throw new TypeError(`Column '${name}': a header is a string.`);
         }
+        if (editable !== undefined && typeof editable !== 'boolean') {
+            throw new TypeError(`Column '${name}': editable is true or false.`);
+        }
         return Object.freeze({
             column,
             header: header ?? name,
             spec: specOf(column),
             numeric: hashesWhenOverflowing(type),
+            editable: editable === true,
         });
     }));
 }
