@@ -1,0 +1,20 @@
+{
+  "about": "Trade dates and amounts, the C# DatePartTests' Trades: the year, quarter and month of the trade date declared as fields of their own.",
+  "columns": ["TradeDate", "Amount"],
+  "fields": [
+    {"name": "TradeDate", "type": "date", "caption": "Trade date"},
+    {"name": "Year", "type": "date", "of": "TradeDate", "datePart": "year"},
+    {"name": "Quarter", "type": "date", "of": "TradeDate", "datePart": "quarter"},
+    {"name": "Month", "type": "date", "of": "TradeDate", "datePart": "month", "caption": "Month of trade"},
+    {"name": "Amount", "type": "number"}
+  ],
+  "records": [
+    [{"date": "2026-09-30"}, {"decimal": "1"}],
+    [{"date": "2026-01-15"}, {"decimal": "2"}],
+    [{"date": "2025-04-01"}, {"decimal": "4"}],
+    [{"date": "2026-12-31T23:59:00"}, {"decimal": "8"}],
+    [null, {"decimal": "16"}],
+    [{"date": "2026-08-02"}, {"decimal": "32"}],
+    [{"date": "2025-09-01"}, {"decimal": "64"}]
+  ]
+}

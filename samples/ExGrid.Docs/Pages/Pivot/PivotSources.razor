@@ -162,6 +162,32 @@
         </p>
     </DocsSection>
 
+    <DocsSection Title="From TypeScript">
+        <p>
+            <code>@@ex-grid/pivot-engine</code>, an npm package that depends only on <code>@@ex-grid/data</code>, is
+            ExPivot's engine in TypeScript: the same sources (<code>SnapshotPivotSource</code> over a Snapshot,
+            <code>RecordPivotSource</code> over your objects, <code>FetchingPivotSource</code> asking a server), the same
+            Leaf Aggregates with decimals summed exactly, and the same report in each form, locale and set of words. It is
+            the engine ExPivot's React and Blazor packages move onto (ADR-0370), built in this repository and published
+            with 0.3.0; until then ExPivot computes with <code>ExPivot.Engine</code>.
+        </p>
+        <pre class="docs-code"><code>import { createPivotLayout, pivotCube, pivotReport, queryForLayout, SnapshotPivotSource } from '@@ex-grid/pivot-engine';
+
+const source = new SnapshotPivotSource(snapshot);   // a Snapshot from @@ex-grid/data
+const layout = createPivotLayout({ rows: ['Region'], values: [{ field: 'Amount', aggregation: 'sum' }] });
+const query = queryForLayout(layout);
+const answer = await source.aggregate(query);        // the Leaf Aggregates, or a refusal (answer.refusal)
+const report = pivotReport(pivotCube(query, answer, source.fields), layout, { locale: 'en-US' });</code></pre>
+        <p>
+            Both engines run the same cases, under <code>tests/cases/pivot/</code>, and a differential run holds whole
+            reports over random data to the C# engine, to the last bit of every number. A refusal says the same words,
+            except where it names its own platform's call (<code>aggregatePivot</code> for
+            <code>PivotEngine.Aggregate</code>). A record behind a cell carries a date as its ticks, as a Snapshot from
+            <code>@@ex-grid/data</code> holds one. There is no Example here, because this site is a Blazor app and runs no
+            package script of its own.
+        </p>
+    </DocsSection>
+
     <DocsSection Title="API">
         <ApiTable Type="typeof(global::ExPivot.Engine.PivotSource)" />
         <ApiTable Type="typeof(global::ExPivot.Engine.SnapshotPivotSource)" />

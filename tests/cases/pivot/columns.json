@@ -1,0 +1,351 @@
+{
+  "about": "The value columns and the rectangles over them (ADR-0060/0032): one column per Item, subtotals and the grand total, Σ Values in Columns, and the names that keep a width. Transcribed from the C# engine's ColumnTests.",
+  "kind": "pivotReport",
+  "data": "sales",
+  "locale": "en-US",
+  "words": "english",
+  "cases": [
+    {
+      "name": "ADR-0060: one column per Item of the column field, and the grand total column",
+      "layout": {
+        "rows": [{"field": "Region"}],
+        "columns": [{"field": "Product"}],
+        "values": [{"field": "Amount", "aggregation": "sum"}]
+      },
+      "also": ["columns", "tiers"],
+      "expect": {
+        "headers": ["Row Labels", "Apples", "Pears", "Plums", "Grand Total"],
+        "lines": [
+          "i East || 130 | 50 |  | 180",
+          "i North ||  | 10 |  | 10",
+          "i West || 70 |  | 20 | 90",
+          "i (blank) ||  |  | 5 | 5",
+          "t Grand Total || 200 | 60 | 25 | 285"
+        ],
+        "spans": [],
+        "columns": [
+          {"role": "item", "valueField": -1},
+          {"role": "item", "valueField": -1},
+          {"role": "item", "valueField": -1},
+          {"role": "grandTotal", "valueField": -1}
+        ],
+        "tiers": 0
+      }
+    },
+    {
+      "name": "ADR-0060/0032: an outer column Item is a rectangle over its Items; its subtotal follows outside it",
+      "layout": {
+        "rows": [{"field": "Region"}],
+        "columns": [{"field": "Online"}, {"field": "Product"}],
+        "values": [{"field": "Amount", "aggregation": "sum"}]
+      },
+      "also": ["tiers"],
+      "expect": {
+        "headers": ["Row Labels", "Apples", "Pears", "FALSE Total", "Apples", "Plums", "TRUE Total", "Grand Total"],
+        "lines": [
+          "i East ||  | 50 | 50 | 130 |  | 130 | 180",
+          "i North ||  | 10 | 10 |  |  |  | 10",
+          "i West || 70 |  | 70 |  | 20 | 20 | 90",
+          "i (blank) ||  |  |  |  | 5 | 5 | 5",
+          "t Grand Total || 70 | 60 | 130 | 130 | 25 | 155 | 285"
+        ],
+        "spans": ["FALSE@0+2 t1x1", "TRUE@3+2 t1x1"],
+        "tiers": 1
+      }
+    },
+    {
+      "name": "ADR-0060: a column field's subtotals switched off, and the grand total column off",
+      "layout": {
+        "grandTotalColumn": false,
+        "columns": [{"field": "Online", "subtotals": false}, {"field": "Product"}],
+        "values": [{"field": "Amount", "aggregation": "sum"}]
+      },
+      "expect": {
+        "headers": ["Apples", "Pears", "Apples", "Plums"],
+        "lines": ["t  || 70 | 60 | 130 | 25"],
+        "spans": ["FALSE@0+2 t1x1", "TRUE@2+2 t1x1"]
+      }
+    },
+    {
+      "name": "ADR-0060: a collapsed column Item is one column, its header standing tall under its parent",
+      "layout": {
+        "columns": [{"field": "Online", "toggledItems": [{"kind": "boolean", "value": "FALSE"}]}, {"field": "Product"}],
+        "values": [{"field": "Amount", "aggregation": "sum"}]
+      },
+      "expect": {
+        "headers": ["FALSE", "Apples", "Plums", "TRUE Total", "Grand Total"],
+        "lines": ["t  || 130 | 130 | 25 | 155 | 285"],
+        "spans": ["TRUE@1+2 t1x1"]
+      }
+    },
+    {
+      "name": "ADR-0060: Σ Values in Columns, each column splits per Value Field under its Item's rectangle",
+      "layout": {
+        "rows": [{"field": "Region"}],
+        "columns": [{"field": "Online"}],
+        "values": [{"field": "Amount", "aggregation": "sum"}, {"field": "Quantity", "aggregation": "sum"}]
+      },
+      "also": ["columns", "tiers"],
+      "expect": {
+        "headers": [
+          "Row Labels",
+          "Sum of Amount",
+          "Sum of Quantity",
+          "Sum of Amount",
+          "Sum of Quantity",
+          "Sum of Amount",
+          "Sum of Quantity"
+        ],
+        "lines": [
+          "i East || 50 | 5 | 130 | 13 | 180 | 18",
+          "i North || 10 | 1 |  |  | 10 | 1",
+          "i West || 70 | 7 | 20 | 2 | 90 | 9",
+          "i (blank) ||  |  | 5 | 1 | 5 | 1",
+          "t Grand Total || 130 | 13 | 155 | 16 | 285 | 29"
+        ],
+        "spans": ["FALSE@0+2 t1x1", "TRUE@2+2 t1x1", "Grand Total@4+2 t1x1"],
+        "columns": [
+          {"role": "item", "valueField": 0},
+          {"role": "item", "valueField": 1},
+          {"role": "item", "valueField": 0},
+          {"role": "item", "valueField": 1},
+          {"role": "grandTotal", "valueField": 0},
+          {"role": "grandTotal", "valueField": 1}
+        ],
+        "tiers": 1
+      }
+    },
+    {
+      "name": "ADR-0060: Σ Values in Columns under two fields, subtotals as \"<item> Total\" over the captions",
+      "layout": {
+        "columns": [{"field": "Online"}, {"field": "Product"}],
+        "values": [{"field": "Amount", "aggregation": "sum"}, {"field": "Quantity", "aggregation": "sum"}]
+      },
+      "also": ["tiers", "names"],
+      "expect": {
+        "headers": [
+          "Sum of Amount",
+          "Sum of Quantity",
+          "Sum of Amount",
+          "Sum of Quantity",
+          "Sum of Amount",
+          "Sum of Quantity",
+          "Sum of Amount",
+          "Sum of Quantity",
+          "Sum of Amount",
+          "Sum of Quantity",
+          "Sum of Amount",
+          "Sum of Quantity",
+          "Sum of Amount",
+          "Sum of Quantity"
+        ],
+        "lines": ["t  || 70 | 7 | 60 | 6 | 130 | 13 | 130 | 13 | 25 | 3 | 155 | 16 | 285 | 29"],
+        "spans": [
+          "FALSE@0+4 t2x1",
+          "FALSE Total@4+2 t2x2",
+          "TRUE@6+4 t2x1",
+          "TRUE Total@10+2 t2x2",
+          "Grand Total@12+2 t2x2",
+          "Apples@0+2 t1x1",
+          "Pears@2+2 t1x1",
+          "Apples@6+2 t1x1",
+          "Plums@8+2 t1x1"
+        ],
+        "tiers": 2,
+        "names": [
+          "v:i/3:FALSE/2:APPLES#Sum%20of%20Amount",
+          "v:i/3:FALSE/2:APPLES#Sum%20of%20Quantity",
+          "v:i/3:FALSE/2:PEARS#Sum%20of%20Amount",
+          "v:i/3:FALSE/2:PEARS#Sum%20of%20Quantity",
+          "v:s/3:FALSE#Sum%20of%20Amount",
+          "v:s/3:FALSE#Sum%20of%20Quantity",
+          "v:i/3:TRUE/2:APPLES#Sum%20of%20Amount",
+          "v:i/3:TRUE/2:APPLES#Sum%20of%20Quantity",
+          "v:i/3:TRUE/2:PLUMS#Sum%20of%20Amount",
+          "v:i/3:TRUE/2:PLUMS#Sum%20of%20Quantity",
+          "v:s/3:TRUE#Sum%20of%20Amount",
+          "v:s/3:TRUE#Sum%20of%20Quantity",
+          "v:g#Sum%20of%20Amount",
+          "v:g#Sum%20of%20Quantity"
+        ]
+      }
+    },
+    {
+      "name": "ADR-0060: no column field is one column per Value Field, headed by its caption",
+      "layout": {
+        "rows": [{"field": "Region"}],
+        "values": [{"field": "Amount", "aggregation": "sum"}, {"field": "Amount", "aggregation": "count"}]
+      },
+      "expect": {
+        "headers": ["Row Labels", "Sum of Amount", "Count of Amount"],
+        "lines": [
+          "i East || 180 | 3",
+          "i North || 10 | 1",
+          "i West || 90 | 2",
+          "i (blank) || 5 | 1",
+          "t Grand Total || 285 | 7"
+        ],
+        "spans": []
+      }
+    },
+    {
+      "name": "ADR-0060: column names are unique, and stable for the same column across reports",
+      "layout": {
+        "columns": [{"field": "Online"}, {"field": "Product"}],
+        "values": [{"field": "Amount", "aggregation": "sum"}, {"field": "Quantity", "aggregation": "sum"}]
+      },
+      "also": ["names"],
+      "sameRowsAs": [
+        {
+          "records": [
+            ["East", "Apples", {"date": "2026-01-10"}, {"decimal": "101"}, {"integer": "10"}, true],
+            ["East", "Pears", {"date": "2026-01-12"}, {"decimal": "51"}, {"integer": "5"}, false],
+            ["East", "Apples", {"date": "2026-02-03"}, {"decimal": "31"}, {"integer": "3"}, true],
+            ["West", "Apples", {"date": "2026-01-20"}, {"decimal": "71"}, {"integer": "7"}, false],
+            ["West", "Plums", {"date": "2026-02-15"}, {"decimal": "21"}, {"integer": "2"}, true],
+            ["North", "Pears", {"date": "2026-02-18"}, {"decimal": "11"}, {"integer": "1"}, false],
+            [null, "Plums", {"date": "2026-03-01"}, {"decimal": "6"}, {"integer": "1"}, true]
+          ]
+        }
+      ],
+      "expect": {
+        "headers": [
+          "Sum of Amount",
+          "Sum of Quantity",
+          "Sum of Amount",
+          "Sum of Quantity",
+          "Sum of Amount",
+          "Sum of Quantity",
+          "Sum of Amount",
+          "Sum of Quantity",
+          "Sum of Amount",
+          "Sum of Quantity",
+          "Sum of Amount",
+          "Sum of Quantity",
+          "Sum of Amount",
+          "Sum of Quantity"
+        ],
+        "lines": ["t  || 70 | 7 | 60 | 6 | 130 | 13 | 130 | 13 | 25 | 3 | 155 | 16 | 285 | 29"],
+        "spans": [
+          "FALSE@0+4 t2x1",
+          "FALSE Total@4+2 t2x2",
+          "TRUE@6+4 t2x1",
+          "TRUE Total@10+2 t2x2",
+          "Grand Total@12+2 t2x2",
+          "Apples@0+2 t1x1",
+          "Pears@2+2 t1x1",
+          "Apples@6+2 t1x1",
+          "Plums@8+2 t1x1"
+        ],
+        "names": [
+          "v:i/3:FALSE/2:APPLES#Sum%20of%20Amount",
+          "v:i/3:FALSE/2:APPLES#Sum%20of%20Quantity",
+          "v:i/3:FALSE/2:PEARS#Sum%20of%20Amount",
+          "v:i/3:FALSE/2:PEARS#Sum%20of%20Quantity",
+          "v:s/3:FALSE#Sum%20of%20Amount",
+          "v:s/3:FALSE#Sum%20of%20Quantity",
+          "v:i/3:TRUE/2:APPLES#Sum%20of%20Amount",
+          "v:i/3:TRUE/2:APPLES#Sum%20of%20Quantity",
+          "v:i/3:TRUE/2:PLUMS#Sum%20of%20Amount",
+          "v:i/3:TRUE/2:PLUMS#Sum%20of%20Quantity",
+          "v:s/3:TRUE#Sum%20of%20Amount",
+          "v:s/3:TRUE#Sum%20of%20Quantity",
+          "v:g#Sum%20of%20Amount",
+          "v:g#Sum%20of%20Quantity"
+        ],
+        "sameRows": [true]
+      }
+    },
+    {
+      "name": "ADR-0060: column names are stable for the same column across reports, read over other amounts",
+      "layout": {
+        "columns": [{"field": "Online"}, {"field": "Product"}],
+        "values": [{"field": "Amount", "aggregation": "sum"}, {"field": "Quantity", "aggregation": "sum"}]
+      },
+      "records": [
+        ["East", "Apples", {"date": "2026-01-10"}, {"decimal": "101"}, {"integer": "10"}, true],
+        ["East", "Pears", {"date": "2026-01-12"}, {"decimal": "51"}, {"integer": "5"}, false],
+        ["East", "Apples", {"date": "2026-02-03"}, {"decimal": "31"}, {"integer": "3"}, true],
+        ["West", "Apples", {"date": "2026-01-20"}, {"decimal": "71"}, {"integer": "7"}, false],
+        ["West", "Plums", {"date": "2026-02-15"}, {"decimal": "21"}, {"integer": "2"}, true],
+        ["North", "Pears", {"date": "2026-02-18"}, {"decimal": "11"}, {"integer": "1"}, false],
+        [null, "Plums", {"date": "2026-03-01"}, {"decimal": "6"}, {"integer": "1"}, true]
+      ],
+      "also": ["names"],
+      "expect": {
+        "headers": [
+          "Sum of Amount",
+          "Sum of Quantity",
+          "Sum of Amount",
+          "Sum of Quantity",
+          "Sum of Amount",
+          "Sum of Quantity",
+          "Sum of Amount",
+          "Sum of Quantity",
+          "Sum of Amount",
+          "Sum of Quantity",
+          "Sum of Amount",
+          "Sum of Quantity",
+          "Sum of Amount",
+          "Sum of Quantity"
+        ],
+        "lines": ["t  || 71 | 7 | 62 | 6 | 133 | 13 | 132 | 13 | 27 | 3 | 159 | 16 | 292 | 29"],
+        "spans": [
+          "FALSE@0+4 t2x1",
+          "FALSE Total@4+2 t2x2",
+          "TRUE@6+4 t2x1",
+          "TRUE Total@10+2 t2x2",
+          "Grand Total@12+2 t2x2",
+          "Apples@0+2 t1x1",
+          "Pears@2+2 t1x1",
+          "Apples@6+2 t1x1",
+          "Plums@8+2 t1x1"
+        ],
+        "names": [
+          "v:i/3:FALSE/2:APPLES#Sum%20of%20Amount",
+          "v:i/3:FALSE/2:APPLES#Sum%20of%20Quantity",
+          "v:i/3:FALSE/2:PEARS#Sum%20of%20Amount",
+          "v:i/3:FALSE/2:PEARS#Sum%20of%20Quantity",
+          "v:s/3:FALSE#Sum%20of%20Amount",
+          "v:s/3:FALSE#Sum%20of%20Quantity",
+          "v:i/3:TRUE/2:APPLES#Sum%20of%20Amount",
+          "v:i/3:TRUE/2:APPLES#Sum%20of%20Quantity",
+          "v:i/3:TRUE/2:PLUMS#Sum%20of%20Amount",
+          "v:i/3:TRUE/2:PLUMS#Sum%20of%20Quantity",
+          "v:s/3:TRUE#Sum%20of%20Amount",
+          "v:s/3:TRUE#Sum%20of%20Quantity",
+          "v:g#Sum%20of%20Amount",
+          "v:g#Sum%20of%20Quantity"
+        ]
+      }
+    },
+    {
+      "name": "ADR-0060: the label columns and the value columns never share a name",
+      "layout": {
+        "form": "tabular",
+        "rows": [{"field": "Region"}, {"field": "Product"}],
+        "columns": [{"field": "Online"}],
+        "values": [{"field": "Amount", "aggregation": "sum"}]
+      },
+      "also": ["names"],
+      "expect": {
+        "headers": ["Region", "Product", "FALSE", "TRUE", "Grand Total"],
+        "lines": [
+          "i [-]East | Apples ||  | 130 | 130",
+          "i  | Pears || 50 |  | 50",
+          "s East Total |  || 50 | 130 | 180",
+          "i [-]North | Pears || 10 |  | 10",
+          "s North Total |  || 10 |  | 10",
+          "i [-]West | Apples || 70 |  | 70",
+          "i  | Plums ||  | 20 | 20",
+          "s West Total |  || 70 | 20 | 90",
+          "i [-](blank) | Plums ||  | 5 | 5",
+          "s (blank) Total |  ||  | 5 | 5",
+          "t Grand Total |  || 130 | 155 | 285"
+        ],
+        "spans": [],
+        "names": ["row:Region", "row:Product", "v:i/3:FALSE", "v:i/3:TRUE", "v:g"]
+      }
+    }
+  ]
+}

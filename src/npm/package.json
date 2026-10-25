@@ -9,6 +9,7 @@
     "core",
     "chart",
     "data",
+    "pivot-engine",
     "react"
   ],
   "scripts": {

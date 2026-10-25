@@ -1,0 +1,21 @@
+{
+  "about": "The sales every report case pivots unless it names another set: the C# engine tests' Pivot.Sales, an amount an exact decimal and a quantity a whole number.",
+  "columns": ["Region", "Product", "Date", "Amount", "Quantity", "Online"],
+  "fields": [
+    {"name": "Region", "type": "text"},
+    {"name": "Product", "type": "text"},
+    {"name": "Date", "type": "date"},
+    {"name": "Amount", "type": "number"},
+    {"name": "Quantity", "type": "number"},
+    {"name": "Online", "type": "boolean"}
+  ],
+  "records": [
+    ["East", "Apples", {"date": "2026-01-10"}, {"decimal": "100"}, {"integer": "10"}, true],
+    ["East", "Pears", {"date": "2026-01-12"}, {"decimal": "50"}, {"integer": "5"}, false],
+    ["East", "Apples", {"date": "2026-02-03"}, {"decimal": "30"}, {"integer": "3"}, true],
+    ["West", "Apples", {"date": "2026-01-20"}, {"decimal": "70"}, {"integer": "7"}, false],
+    ["West", "Plums", {"date": "2026-02-15"}, {"decimal": "20"}, {"integer": "2"}, true],
+    ["North", "Pears", {"date": "2026-02-18"}, {"decimal": "10"}, {"integer": "1"}, false],
+    [null, "Plums", {"date": "2026-03-01"}, {"decimal": "5"}, {"integer": "1"}, true]
+  ]
+}

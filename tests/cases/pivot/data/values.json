@@ -1,0 +1,10 @@
+{
+  "about": "One value a record in a group, the C# engine tests' Obs: a case gives its own records. Value is read as a number and Note, the same column, as text.",
+  "columns": ["Group", "Value"],
+  "fields": [
+    {"name": "Group", "type": "text"},
+    {"name": "Value", "type": "number"},
+    {"name": "Note", "type": "text", "of": "Value"}
+  ],
+  "records": [["A", 1]]
+}

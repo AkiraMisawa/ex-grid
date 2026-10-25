@@ -6,8 +6,11 @@ using static ExPivot.Engine.Tests.Sources;
 namespace ExPivot.Engine.Tests;
 
 /// <summary>The Pivot Source (ADR-0066): the bundled source is the reference, a server answering
-/// through <c>Fetch</c> is held to it question for question, answers carry their Source Version,
-/// the bundled source works in slices, and a layout too large to read is refused by name.</summary>
+/// through <c>Fetch</c> over JSON is held to it question for question, the bundled source works in
+/// slices, and a layout too large to read stops reading at once. What every source answers and refuses
+/// — Leaf Aggregates, Items and records under the answer's Source Version, unknown fields, parts not
+/// offered, answers to another question — is held on both engines by the shared cases
+/// (<c>tests/cases/pivot/source-questions.json</c>).</summary>
 public class PivotSourceTests
 {
     private static PivotLayout[] Layouts =>
@@ -115,72 +118,6 @@ public class PivotSourceTests
         }
     }
 
-    [Fact] // ADR-0066 (PV-23): Items and records are asked for under the answer's Source Version, and add up to it
-    public async Task Items_and_records_are_asked_for_under_the_answers_version()
-    {
-        var source = PivotSource.From(Deals, DealFields);
-        var query = new PivotQuery(rows: [F("Desk")], values: [V("Amount", PivotParts.Counts)]);
-        var answer = await source.AggregateAsync(query, Ct);
-
-        var items = await source.ItemsAsync(new PivotItemsQuery("Desk", answer.SourceVersion), Ct);
-        Assert.Equal(answer.SourceVersion, items.SourceVersion);
-        var report = PivotEngine.Report(PivotEngine.Cube(query, answer, DealFields), new PivotLayout { Rows = [P("Desk")], Values = [Value("Amount", PivotAggregation.Count)] });
-        foreach (var row in report.Rows)
-        {
-            var details = await source.DetailsAsync(report.DetailsQuery(row, 0), Ct);
-            Assert.Equal(answer.SourceVersion, details.SourceVersion);
-            // The records behind a cell are the ones it counts: its Amounts that are not Blank.
-            var amounts = details.Records.Count(record => record.Values[3] is not null);
-            Assert.Equal(report.ValueAt(row, 0)?.Text, amounts == 0 ? null : amounts.ToString(System.Globalization.CultureInfo.InvariantCulture));
-            Assert.Equal(details.Records.Count, details.Total);
-        }
-    }
-
-    [Fact] // ADR-0066 (PV-23): a source that can no longer answer under a version refuses, rather than answer from newer data
-    public async Task A_version_the_source_no_longer_holds_is_refused()
-    {
-        var answer = await PivotSource.From(Deals, DealFields).AggregateAsync(new PivotQuery(rows: [F("Desk")]), Ct);
-        // A new source over the same records is a refresh: another version.
-        var refreshed = PivotSource.From(Deals, DealFields);
-
-        var items = await refreshed.ItemsAsync(new PivotItemsQuery("Desk", answer.SourceVersion), Ct);
-        var details = await refreshed.DetailsAsync(new PivotDetailsQuery(answer.SourceVersion), Ct);
-
-        Assert.Equal(PivotSourceRefusalKind.SourceVersionNotHeld, items.Refusal!.Kind);
-        Assert.Equal(PivotSourceRefusalKind.SourceVersionNotHeld, details.Refusal!.Kind);
-        Assert.Contains(answer.SourceVersion, details.Refusal.Message);
-        // A refusal is not an empty page.
-        Assert.Throws<InvalidOperationException>(() => items.Items);
-        Assert.Throws<InvalidOperationException>(() => items.Total);
-        Assert.Throws<InvalidOperationException>(() => details.Records);
-        Assert.Throws<InvalidOperationException>(() => details.Total);
-        Assert.NotEqual(answer.SourceVersion, (await refreshed.AggregateAsync(new PivotQuery(), Ct)).SourceVersion);
-    }
-
-    [Fact] // ADR-0060/0066: a field's Items over all the data — not narrowed by Hidden Items — first spelling, invariant order, search and cap
-    public async Task A_fields_items_are_over_all_the_data()
-    {
-        var source = PivotSource.From(Deals, DealFields);
-        var version = (await source.AggregateAsync(new PivotQuery(rows: [F("Desk", PivotItemKey.Text("FX"))]), Ct)).SourceVersion;
-
-        var desks = await source.ItemsAsync(new PivotItemsQuery("Desk", version), Ct);
-        var searched = await source.ItemsAsync(new PivotItemsQuery("Desk", version, search: "R"), Ct);
-        var capped = await source.ItemsAsync(new PivotItemsQuery("Desk", version, max: 2), Ct);
-        var tags = await source.ItemsAsync(new PivotItemsQuery("Tag", version), Ct);
-
-        SameKeys([PivotItemKey.Text(""), PivotItemKey.Text("Credit"), PivotItemKey.Text("FX"), PivotItemKey.Text("Rates"), PivotItemKey.Blank], desks.Items);
-        Assert.Equal(5, desks.Total);
-        SameKeys([PivotItemKey.Text("Credit"), PivotItemKey.Text("Rates")], searched.Items);
-        Assert.Equal(2, searched.Total);
-        SameKeys([PivotItemKey.Text(""), PivotItemKey.Text("Credit")], capped.Items);
-        Assert.Equal(5, capped.Total);
-        SameKeys(
-        [
-            PivotItemKey.Number(12), PivotItemKey.Date(new DateTime(2026, 1, 1)), PivotItemKey.Text("7d3f7a52-1b49-4a3e-9d57-2b8c3c0e6f11"),
-            PivotItemKey.Text("High"), PivotItemKey.Text("Low"), PivotItemKey.Boolean(true), PivotItemKey.Blank,
-        ], tags.Items);
-    }
-
     [Fact] // ADR-0066 (PV-27): the bundled source works in slices and yields between them — for every question
     public async Task The_bundled_source_yields_between_slices()
     {
@@ -273,102 +210,20 @@ public class PivotSourceTests
         Assert.Equal(0, read);
     }
 
-    [Fact] // ADR-0066 (PV-29): an answer that would pass MaxLeaves is refused with the bound, as soon as it is passed
+    [Fact] // ADR-0066 (PV-29): an answer that would pass MaxLeaves is refused as soon as the bound is passed, reading no record after it
     public async Task Too_many_leaves_are_refused_as_soon_as_the_bound_is_passed()
     {
         // The rows the question reads from the Snapshot are counted (rewritten with ADR-0064, as above).
+        // The refusal itself, its bound and its words, is held on both engines by the shared cases
+        // (tests/cases/pivot/source-questions.json).
         long read = 0;
         var source = PivotSource.From(Deals, DealFields, new PivotSlicing { RowsRead = rows => read += rows });
-        var query = new PivotQuery(rows: [F("Desk"), F("Book")], maxLeaves: 3);
 
-        var answer = await source.AggregateAsync(query, Ct);
+        var answer = await source.AggregateAsync(new PivotQuery(rows: [F("Desk"), F("Book")], maxLeaves: 3), Ct);
 
-        var refusal = answer.Refusal!;
-        Assert.Equal(PivotSourceRefusalKind.TooManyLeaves, refusal.Kind);
-        Assert.Equal(3, refusal.Limit);
-        Assert.Equal("This layout needs more than 3 cells.", refusal.Message);
+        Assert.Equal(PivotSourceRefusalKind.TooManyLeaves, answer.Refusal!.Kind);
         // The fourth leaf, (blank) × NY-2, is the fifth record: nothing after it is read.
         Assert.Equal(5, read);
-        Assert.Throws<InvalidOperationException>(() => answer.Rows);
-        Assert.Equal("This layout needs more than 200,000 cells.", PivotSourceRefusal.TooManyLeaves(200_000).Message);
-
-        // Eight leaves in all: answered at eight, refused at seven.
-        Assert.Equal(8, (await source.AggregateAsync(new PivotQuery(rows: [F("Desk"), F("Book")], maxLeaves: 8), Ct)).LeafCount);
-        Assert.True((await source.AggregateAsync(new PivotQuery(rows: [F("Desk"), F("Book")], maxLeaves: 7), Ct)).IsRefused);
-        Assert.Equal(PivotQuery.DefaultMaxLeaves, new PivotQuery().MaxLeaves);
-        Assert.Equal(200_000, PivotQuery.DefaultMaxLeaves);
-    }
-
-    [Fact] // ADR-0066: a field the source does not have is refused by name, in any Area and in any question
-    public async Task An_unknown_field_is_refused_by_name()
-    {
-        var source = PivotSource.From(Deals, DealFields);
-        var version = (await source.AggregateAsync(new PivotQuery(), Ct)).SourceVersion;
-
-        foreach (var query in new[]
-                 {
-                     new PivotQuery(rows: [F("Region")]), new PivotQuery(columns: [F("Region")]),
-                     new PivotQuery(filters: [F("Region", PivotItemKey.Blank)]), new PivotQuery(values: [V("Region")]),
-                 })
-        {
-            var refusal = (await source.AggregateAsync(query, Ct)).Refusal!;
-            Assert.Equal(PivotSourceRefusalKind.UnknownField, refusal.Kind);
-            Assert.Equal("Region", refusal.Field);
-            Assert.Contains("'Region'", refusal.Message);
-        }
-        Assert.Equal(PivotSourceRefusalKind.UnknownField, (await source.ItemsAsync(new PivotItemsQuery("Region", version), Ct)).Refusal!.Kind);
-        Assert.Equal(PivotSourceRefusalKind.UnknownField, (await source.DetailsAsync(
-            new PivotDetailsQuery(version, hiddenItems: [F("Region", PivotItemKey.Blank)]), Ct)).Refusal!.Kind);
-    }
-
-    [Fact] // ADR-0066 (PV-24's engine side): a source declares what it answers, and a part no offered Aggregation reads is refused without asking
-    public async Task A_part_no_offered_aggregation_reads_is_refused_without_asking()
-    {
-        var reference = PivotSource.From(Deals, DealFields);
-        var asked = 0;
-        var features = new PivotSourceFeatures(
-            [PivotAggregation.Sum, PivotAggregation.Count, PivotAggregation.Average, PivotAggregation.Max, PivotAggregation.Min, PivotAggregation.CountNumbers],
-            canRefresh: true);
-        var sql = PivotSource.Fetch(DealFields, features,
-            (query, ct) => { asked++; return reference.AggregateAsync(query, ct); },
-            (query, ct) => reference.ItemsAsync(query, ct),
-            (query, ct) => reference.DetailsAsync(query, ct));
-
-        var product = await sql.AggregateAsync(new PivotQuery(values: [V("Amount", PivotParts.Sum | PivotParts.Product)]), Ct);
-        var variance = await sql.AggregateAsync(new PivotQuery(values: [V("Risk", PivotParts.Variance)]), Ct);
-        var unknown = await sql.AggregateAsync(new PivotQuery(rows: [F("Region")]), Ct);
-        Assert.Equal(0, asked);
-        Assert.Equal(PivotSourceRefusalKind.AggregationNotOffered, product.Refusal!.Kind);
-        Assert.Equal("Amount", product.Refusal.Field);
-        Assert.Contains("Product", product.Refusal.Message);
-        Assert.Contains("StdDev or StdDevp or Var or Varp", variance.Refusal!.Message);
-        Assert.Equal(PivotSourceRefusalKind.UnknownField, unknown.Refusal!.Kind);
-
-        var answered = await sql.AggregateAsync(new PivotQuery(values: [V("Amount", PivotParts.Sum | PivotParts.Extremes)]), Ct);
-        Assert.Equal(1, asked);
-        Assert.False(answered.IsRefused);
-        Assert.True(features.Offers(PivotAggregation.Max));
-        Assert.False(features.Offers(PivotAggregation.Product));
-        Assert.Equal(Enum.GetValues<PivotAggregation>(), reference.Features.Aggregations);
-        Assert.False(reference.Features.CanRefresh);
-        Assert.True(sql.Features.CanRefresh);
-    }
-
-    [Fact] // ADR-0066: an answer to another question than the one asked is refused by name, never laid out
-    public async Task An_answer_to_another_question_is_refused()
-    {
-        var reference = PivotSource.From(Deals, DealFields);
-        var confused = PivotSource.Fetch(DealFields, reference.Features,
-            (query, ct) => reference.AggregateAsync(new PivotQuery(rows: [F("Book")], values: query.Values), ct),
-            (query, ct) => reference.ItemsAsync(query, ct),
-            (query, ct) => reference.DetailsAsync(query, ct));
-        var query = new PivotQuery(rows: [F("Desk")], values: [V("Amount", PivotParts.Sum)]);
-
-        var refused = await Assert.ThrowsAsync<InvalidOperationException>(() => confused.AggregateAsync(query, Ct).AsTask());
-        Assert.Contains("[Book]", refused.Message);
-        var other = await reference.AggregateAsync(new PivotQuery(rows: [F("Book")], values: query.Values), Ct);
-        Assert.Throws<InvalidOperationException>(() => PivotEngine.Cube(query, other, DealFields));
-        Assert.Throws<InvalidOperationException>(() => PivotEngine.Cube(query, PivotAnswer.Refused(PivotSourceRefusal.TooManyLeaves(1)), DealFields));
     }
 
     [Fact] // ADR-0066/0067: a server's source says its data moved on, and Refresh asks again; the bundled source is refreshed by a new one

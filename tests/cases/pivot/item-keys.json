@@ -1,0 +1,92 @@
+{
+  "about": "An Item's key (ADR-0060): its kind and its invariant text, so a Hidden Item reads back as the same Item in any culture; a key that could name no Item is refused; two text keys that differ only in case name one Item. Transcribed from the C# engine's ItemTests.",
+  "kind": "pivotItemKey",
+  "cases": [
+    {
+      "name": "ADR-0060: a value is the Item of its kind and invariant text",
+      "of": [
+        {"decimal": "1234.5"},
+        {"date": "2026-09-30"},
+        {"date": "2026-09-30T13:45:00.5"},
+        true,
+        null,
+        {"double": "NaN"},
+        "east",
+        {"double": "-0"},
+        1.0,
+        {"integer": "7"}
+      ],
+      "expect": [
+        {"kind": "number", "value": "1234.5"},
+        {"kind": "date", "value": "2026-09-30T00:00:00"},
+        {"kind": "date", "value": "2026-09-30T13:45:00.5"},
+        {"kind": "boolean", "value": "TRUE"},
+        {"kind": "blank"},
+        {"kind": "error", "value": "#NUM!"},
+        {"kind": "text", "value": "east"},
+        {"kind": "number", "value": "0"},
+        {"kind": "number", "value": "1"},
+        {"kind": "number", "value": "7"}
+      ]
+    },
+    {
+      "name": "ADR-0060: a key that names an Item is kept as given",
+      "named": [
+        {"kind": "number", "value": "1234.5"},
+        {"kind": "number", "value": " 1e3 "},
+        {"kind": "date", "value": "2026-09-30T00:00:00"},
+        {"kind": "date", "value": "2026-09-30T13:45:00.5"},
+        {"kind": "boolean", "value": "TRUE"},
+        {"kind": "blank"},
+        {"kind": "error", "value": "#NUM!"},
+        {"kind": "text", "value": "East"}
+      ],
+      "expect": [
+        {"kind": "number", "value": "1234.5"},
+        {"kind": "number", "value": " 1e3 "},
+        {"kind": "date", "value": "2026-09-30T00:00:00"},
+        {"kind": "date", "value": "2026-09-30T13:45:00.5"},
+        {"kind": "boolean", "value": "TRUE"},
+        {"kind": "blank"},
+        {"kind": "error", "value": "#NUM!"},
+        {"kind": "text", "value": "East"}
+      ]
+    },
+    {
+      "name": "ADR-0060: a key that could name no Item is refused, never kept",
+      "named": [
+        {"kind": "number", "value": "12,5"},
+        {"kind": "number", "value": "NaN"},
+        {"kind": "date", "value": "30/09/2026"},
+        {"kind": "boolean", "value": "true"},
+        {"kind": "blank", "value": ""},
+        {"kind": "error", "value": "#DIV/0!"}
+      ],
+      "expect": [
+        {"refusal": "argument", "saying": "'12,5' is not the invariant text of a finite number."},
+        {"refusal": "argument", "saying": "'NaN' is not the invariant text of a finite number."},
+        {"refusal": "argument", "saying": "'30/09/2026' is not an ISO date (yyyy-MM-dd'T'HH:mm:ss.FFFFFFF)."},
+        {"refusal": "argument", "saying": "'true' is not TRUE or FALSE."},
+        {"refusal": "argument", "saying": "A Blank Item has no value."},
+        {"refusal": "argument", "saying": "The error Item is #NUM!."}
+      ]
+    },
+    {
+      "name": "ADR-0060: a text key with no text is refused",
+      "named": [{"kind": "text"}],
+      "scriptExpect": [{"refusal": "argument", "saying": "A text Item has a value."}],
+      "expect": [{"refusal": "argument", "saying": "Value cannot be null."}]
+    },
+    {
+      "name": "ADR-0060: two text keys that differ only in case name one Item, and other kinds are told apart by their text",
+      "pairs": [
+        [{"kind": "text", "value": "EAST"}, {"kind": "text", "value": "east"}],
+        [{"kind": "text", "value": "East"}, {"kind": "text", "value": "East "}],
+        [{"kind": "number", "value": "1"}, {"kind": "number", "value": "1.0"}],
+        [{"kind": "number", "value": "1"}, {"kind": "text", "value": "1"}],
+        [{"kind": "blank"}, {"kind": "blank"}]
+      ],
+      "expect": [true, false, false, false, true]
+    }
+  ]
+}

@@ -1,0 +1,736 @@
+{
+  "about": "The Layout menu on the report's toolbar (ADR-0061): Excel's Design tab choices, what each sets, which is current, and which would change nothing. Transcribed from the C# engine's LayoutMenuTests.",
+  "kind": "pivotLayoutEdits",
+  "data": "sales",
+  "locale": "en-US",
+  "words": "english",
+  "cases": [
+    {
+      "name": "ADR-0061/0060: Do Not Show Subtotals turns every row and column field's subtotal off, and nothing else",
+      "layout": {
+        "filters": [{"field": "Date"}],
+        "rows": [{"field": "Region"}, {"field": "Product"}],
+        "columns": [{"field": "Online"}],
+        "values": [{"field": "Amount", "aggregation": "sum"}]
+      },
+      "edits": [{"choose": "doNotShowSubtotals", "menu": true, "report": true}],
+      "expect": [
+        {
+          "layout": {
+            "form": "compact",
+            "valuesAxis": "columns",
+            "subtotalsAtTop": true,
+            "grandTotalRow": true,
+            "grandTotalColumn": true,
+            "repeatItemLabels": false,
+            "filters": [{"field": "Date"}],
+            "rows": [{"field": "Region", "subtotals": false}, {"field": "Product", "subtotals": false}],
+            "columns": [{"field": "Online", "subtotals": false}],
+            "values": [{"field": "Amount", "aggregation": "sum"}]
+          },
+          "chosen": ["doNotShowSubtotals", "grandTotalsOn", "compactForm"],
+          "enabled": [
+            "showSubtotalsAtBottom",
+            "showSubtotalsAtTop",
+            "grandTotalsOff",
+            "grandTotalsOnRowsOnly",
+            "grandTotalsOnColumnsOnly",
+            "outlineForm",
+            "tabularForm"
+          ],
+          "report": {
+            "headers": ["Row Labels", "FALSE", "TRUE", "Grand Total"],
+            "lines": [
+              "g [-]East ||  |  |",
+              "i   Apples ||  | 130 | 130",
+              "i   Pears || 50 |  | 50",
+              "g [-]North ||  |  |",
+              "i   Pears || 10 |  | 10",
+              "g [-]West ||  |  |",
+              "i   Apples || 70 |  | 70",
+              "i   Plums ||  | 20 | 20",
+              "g [-](blank) ||  |  |",
+              "i   Plums ||  | 5 | 5",
+              "t Grand Total || 130 | 155 | 285"
+            ],
+            "spans": [],
+            "captions": ["Sum of Amount"]
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0061/0060: Show all Subtotals at Bottom of Group turns every subtotal on, at the bottom",
+      "layout": {
+        "rows": [{"field": "Region", "subtotals": false}, {"field": "Product"}],
+        "columns": [{"field": "Online"}],
+        "values": [{"field": "Amount", "aggregation": "sum"}]
+      },
+      "edits": [{"choose": "showSubtotalsAtBottom", "menu": true, "report": true}],
+      "expect": [
+        {
+          "layout": {
+            "form": "compact",
+            "valuesAxis": "columns",
+            "subtotalsAtTop": false,
+            "grandTotalRow": true,
+            "grandTotalColumn": true,
+            "repeatItemLabels": false,
+            "filters": [],
+            "rows": [{"field": "Region"}, {"field": "Product"}],
+            "columns": [{"field": "Online"}],
+            "values": [{"field": "Amount", "aggregation": "sum"}]
+          },
+          "chosen": ["showSubtotalsAtBottom", "grandTotalsOn", "compactForm"],
+          "enabled": [
+            "doNotShowSubtotals",
+            "showSubtotalsAtTop",
+            "grandTotalsOff",
+            "grandTotalsOnRowsOnly",
+            "grandTotalsOnColumnsOnly",
+            "outlineForm",
+            "tabularForm"
+          ],
+          "report": {
+            "headers": ["Row Labels", "FALSE", "TRUE", "Grand Total"],
+            "lines": [
+              "g [-]East ||  |  |",
+              "i   Apples ||  | 130 | 130",
+              "i   Pears || 50 |  | 50",
+              "s East Total || 50 | 130 | 180",
+              "g [-]North ||  |  |",
+              "i   Pears || 10 |  | 10",
+              "s North Total || 10 |  | 10",
+              "g [-]West ||  |  |",
+              "i   Apples || 70 |  | 70",
+              "i   Plums ||  | 20 | 20",
+              "s West Total || 70 | 20 | 90",
+              "g [-](blank) ||  |  |",
+              "i   Plums ||  | 5 | 5",
+              "s (blank) Total ||  | 5 | 5",
+              "t Grand Total || 130 | 155 | 285"
+            ],
+            "spans": [],
+            "captions": ["Sum of Amount"]
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0061/0060: Show all Subtotals at Top of Group turns every subtotal on, on the group row",
+      "layout": {
+        "subtotalsAtTop": false,
+        "rows": [{"field": "Region", "subtotals": false}, {"field": "Product", "subtotals": false}],
+        "columns": [{"field": "Online", "subtotals": false}],
+        "values": [{"field": "Amount", "aggregation": "sum"}]
+      },
+      "edits": [{"choose": "showSubtotalsAtTop", "menu": true, "report": true}],
+      "expect": [
+        {
+          "layout": {
+            "form": "compact",
+            "valuesAxis": "columns",
+            "subtotalsAtTop": true,
+            "grandTotalRow": true,
+            "grandTotalColumn": true,
+            "repeatItemLabels": false,
+            "filters": [],
+            "rows": [{"field": "Region"}, {"field": "Product"}],
+            "columns": [{"field": "Online"}],
+            "values": [{"field": "Amount", "aggregation": "sum"}]
+          },
+          "chosen": ["showSubtotalsAtTop", "grandTotalsOn", "compactForm"],
+          "enabled": [
+            "doNotShowSubtotals",
+            "showSubtotalsAtBottom",
+            "grandTotalsOff",
+            "grandTotalsOnRowsOnly",
+            "grandTotalsOnColumnsOnly",
+            "outlineForm",
+            "tabularForm"
+          ],
+          "report": {
+            "headers": ["Row Labels", "FALSE", "TRUE", "Grand Total"],
+            "lines": [
+              "g [-]East || 50 | 130 | 180",
+              "i   Apples ||  | 130 | 130",
+              "i   Pears || 50 |  | 50",
+              "g [-]North || 10 |  | 10",
+              "i   Pears || 10 |  | 10",
+              "g [-]West || 70 | 20 | 90",
+              "i   Apples || 70 |  | 70",
+              "i   Plums ||  | 20 | 20",
+              "g [-](blank) ||  | 5 | 5",
+              "i   Plums ||  | 5 | 5",
+              "t Grand Total || 130 | 155 | 285"
+            ],
+            "spans": [],
+            "captions": ["Sum of Amount"]
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0061/0060: the Grand Totals choice grandTotalsOff is one of the two switches' four settings, Excel's \"rows\" being the column at the right",
+      "layout": {
+        "grandTotalRow": true,
+        "grandTotalColumn": true,
+        "rows": [{"field": "Region"}, {"field": "Product"}],
+        "columns": [{"field": "Online"}],
+        "values": [{"field": "Amount", "aggregation": "sum"}]
+      },
+      "edits": [{"choose": "grandTotalsOff", "menu": true, "report": true}],
+      "expect": [
+        {
+          "layout": {
+            "form": "compact",
+            "valuesAxis": "columns",
+            "subtotalsAtTop": true,
+            "grandTotalRow": false,
+            "grandTotalColumn": false,
+            "repeatItemLabels": false,
+            "filters": [],
+            "rows": [{"field": "Region"}, {"field": "Product"}],
+            "columns": [{"field": "Online"}],
+            "values": [{"field": "Amount", "aggregation": "sum"}]
+          },
+          "chosen": ["showSubtotalsAtTop", "grandTotalsOff", "compactForm"],
+          "enabled": [
+            "doNotShowSubtotals",
+            "showSubtotalsAtBottom",
+            "grandTotalsOn",
+            "grandTotalsOnRowsOnly",
+            "grandTotalsOnColumnsOnly",
+            "outlineForm",
+            "tabularForm"
+          ],
+          "report": {
+            "headers": ["Row Labels", "FALSE", "TRUE"],
+            "lines": [
+              "g [-]East || 50 | 130",
+              "i   Apples ||  | 130",
+              "i   Pears || 50 |",
+              "g [-]North || 10 |",
+              "i   Pears || 10 |",
+              "g [-]West || 70 | 20",
+              "i   Apples || 70 |",
+              "i   Plums ||  | 20",
+              "g [-](blank) ||  | 5",
+              "i   Plums ||  | 5"
+            ],
+            "spans": [],
+            "captions": ["Sum of Amount"]
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0061/0060: the Grand Totals choice grandTotalsOn is one of the two switches' four settings, Excel's \"rows\" being the column at the right",
+      "layout": {
+        "grandTotalRow": false,
+        "grandTotalColumn": false,
+        "rows": [{"field": "Region"}, {"field": "Product"}],
+        "columns": [{"field": "Online"}],
+        "values": [{"field": "Amount", "aggregation": "sum"}]
+      },
+      "edits": [{"choose": "grandTotalsOn", "menu": true, "report": true}],
+      "expect": [
+        {
+          "layout": {
+            "form": "compact",
+            "valuesAxis": "columns",
+            "subtotalsAtTop": true,
+            "grandTotalRow": true,
+            "grandTotalColumn": true,
+            "repeatItemLabels": false,
+            "filters": [],
+            "rows": [{"field": "Region"}, {"field": "Product"}],
+            "columns": [{"field": "Online"}],
+            "values": [{"field": "Amount", "aggregation": "sum"}]
+          },
+          "chosen": ["showSubtotalsAtTop", "grandTotalsOn", "compactForm"],
+          "enabled": [
+            "doNotShowSubtotals",
+            "showSubtotalsAtBottom",
+            "grandTotalsOff",
+            "grandTotalsOnRowsOnly",
+            "grandTotalsOnColumnsOnly",
+            "outlineForm",
+            "tabularForm"
+          ],
+          "report": {
+            "headers": ["Row Labels", "FALSE", "TRUE", "Grand Total"],
+            "lines": [
+              "g [-]East || 50 | 130 | 180",
+              "i   Apples ||  | 130 | 130",
+              "i   Pears || 50 |  | 50",
+              "g [-]North || 10 |  | 10",
+              "i   Pears || 10 |  | 10",
+              "g [-]West || 70 | 20 | 90",
+              "i   Apples || 70 |  | 70",
+              "i   Plums ||  | 20 | 20",
+              "g [-](blank) ||  | 5 | 5",
+              "i   Plums ||  | 5 | 5",
+              "t Grand Total || 130 | 155 | 285"
+            ],
+            "spans": [],
+            "captions": ["Sum of Amount"]
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0061/0060: the Grand Totals choice grandTotalsOnRowsOnly is one of the two switches' four settings, Excel's \"rows\" being the column at the right",
+      "layout": {
+        "grandTotalRow": true,
+        "grandTotalColumn": false,
+        "rows": [{"field": "Region"}, {"field": "Product"}],
+        "columns": [{"field": "Online"}],
+        "values": [{"field": "Amount", "aggregation": "sum"}]
+      },
+      "edits": [{"choose": "grandTotalsOnRowsOnly", "menu": true, "report": true}],
+      "expect": [
+        {
+          "layout": {
+            "form": "compact",
+            "valuesAxis": "columns",
+            "subtotalsAtTop": true,
+            "grandTotalRow": false,
+            "grandTotalColumn": true,
+            "repeatItemLabels": false,
+            "filters": [],
+            "rows": [{"field": "Region"}, {"field": "Product"}],
+            "columns": [{"field": "Online"}],
+            "values": [{"field": "Amount", "aggregation": "sum"}]
+          },
+          "chosen": ["showSubtotalsAtTop", "grandTotalsOnRowsOnly", "compactForm"],
+          "enabled": [
+            "doNotShowSubtotals",
+            "showSubtotalsAtBottom",
+            "grandTotalsOff",
+            "grandTotalsOn",
+            "grandTotalsOnColumnsOnly",
+            "outlineForm",
+            "tabularForm"
+          ],
+          "report": {
+            "headers": ["Row Labels", "FALSE", "TRUE", "Grand Total"],
+            "lines": [
+              "g [-]East || 50 | 130 | 180",
+              "i   Apples ||  | 130 | 130",
+              "i   Pears || 50 |  | 50",
+              "g [-]North || 10 |  | 10",
+              "i   Pears || 10 |  | 10",
+              "g [-]West || 70 | 20 | 90",
+              "i   Apples || 70 |  | 70",
+              "i   Plums ||  | 20 | 20",
+              "g [-](blank) ||  | 5 | 5",
+              "i   Plums ||  | 5 | 5"
+            ],
+            "spans": [],
+            "captions": ["Sum of Amount"]
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0061/0060: the Grand Totals choice grandTotalsOnColumnsOnly is one of the two switches' four settings, Excel's \"rows\" being the column at the right",
+      "layout": {
+        "grandTotalRow": false,
+        "grandTotalColumn": true,
+        "rows": [{"field": "Region"}, {"field": "Product"}],
+        "columns": [{"field": "Online"}],
+        "values": [{"field": "Amount", "aggregation": "sum"}]
+      },
+      "edits": [{"choose": "grandTotalsOnColumnsOnly", "menu": true, "report": true}],
+      "expect": [
+        {
+          "layout": {
+            "form": "compact",
+            "valuesAxis": "columns",
+            "subtotalsAtTop": true,
+            "grandTotalRow": true,
+            "grandTotalColumn": false,
+            "repeatItemLabels": false,
+            "filters": [],
+            "rows": [{"field": "Region"}, {"field": "Product"}],
+            "columns": [{"field": "Online"}],
+            "values": [{"field": "Amount", "aggregation": "sum"}]
+          },
+          "chosen": ["showSubtotalsAtTop", "grandTotalsOnColumnsOnly", "compactForm"],
+          "enabled": [
+            "doNotShowSubtotals",
+            "showSubtotalsAtBottom",
+            "grandTotalsOff",
+            "grandTotalsOn",
+            "grandTotalsOnRowsOnly",
+            "outlineForm",
+            "tabularForm"
+          ],
+          "report": {
+            "headers": ["Row Labels", "FALSE", "TRUE"],
+            "lines": [
+              "g [-]East || 50 | 130",
+              "i   Apples ||  | 130",
+              "i   Pears || 50 |",
+              "g [-]North || 10 |",
+              "i   Pears || 10 |",
+              "g [-]West || 70 | 20",
+              "i   Apples || 70 |",
+              "i   Plums ||  | 20",
+              "g [-](blank) ||  | 5",
+              "i   Plums ||  | 5",
+              "t Grand Total || 130 | 155"
+            ],
+            "spans": [],
+            "captions": ["Sum of Amount"]
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0061/0060: the Report Layout choice compactForm sets the form",
+      "layout": {
+        "form": "tabular",
+        "rows": [{"field": "Region"}, {"field": "Product"}],
+        "columns": [{"field": "Online"}],
+        "values": [{"field": "Amount", "aggregation": "sum"}]
+      },
+      "edits": [{"choose": "compactForm", "menu": true}],
+      "expect": [
+        {
+          "layout": {
+            "form": "compact",
+            "valuesAxis": "columns",
+            "subtotalsAtTop": true,
+            "grandTotalRow": true,
+            "grandTotalColumn": true,
+            "repeatItemLabels": false,
+            "filters": [],
+            "rows": [{"field": "Region"}, {"field": "Product"}],
+            "columns": [{"field": "Online"}],
+            "values": [{"field": "Amount", "aggregation": "sum"}]
+          },
+          "chosen": ["showSubtotalsAtTop", "grandTotalsOn", "compactForm"],
+          "enabled": [
+            "doNotShowSubtotals",
+            "showSubtotalsAtBottom",
+            "grandTotalsOff",
+            "grandTotalsOnRowsOnly",
+            "grandTotalsOnColumnsOnly",
+            "outlineForm",
+            "tabularForm"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ADR-0061/0060: the Report Layout choice outlineForm sets the form",
+      "layout": {
+        "form": "compact",
+        "rows": [{"field": "Region"}, {"field": "Product"}],
+        "columns": [{"field": "Online"}],
+        "values": [{"field": "Amount", "aggregation": "sum"}]
+      },
+      "edits": [{"choose": "outlineForm", "menu": true}],
+      "expect": [
+        {
+          "layout": {
+            "form": "outline",
+            "valuesAxis": "columns",
+            "subtotalsAtTop": true,
+            "grandTotalRow": true,
+            "grandTotalColumn": true,
+            "repeatItemLabels": false,
+            "filters": [],
+            "rows": [{"field": "Region"}, {"field": "Product"}],
+            "columns": [{"field": "Online"}],
+            "values": [{"field": "Amount", "aggregation": "sum"}]
+          },
+          "chosen": ["showSubtotalsAtTop", "grandTotalsOn", "outlineForm", "doNotRepeatItemLabels"],
+          "enabled": [
+            "doNotShowSubtotals",
+            "showSubtotalsAtBottom",
+            "grandTotalsOff",
+            "grandTotalsOnRowsOnly",
+            "grandTotalsOnColumnsOnly",
+            "compactForm",
+            "tabularForm",
+            "repeatItemLabels"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ADR-0061/0060: the Report Layout choice tabularForm sets the form",
+      "layout": {
+        "form": "compact",
+        "rows": [{"field": "Region"}, {"field": "Product"}],
+        "columns": [{"field": "Online"}],
+        "values": [{"field": "Amount", "aggregation": "sum"}]
+      },
+      "edits": [{"choose": "tabularForm", "menu": true}],
+      "expect": [
+        {
+          "layout": {
+            "form": "tabular",
+            "valuesAxis": "columns",
+            "subtotalsAtTop": true,
+            "grandTotalRow": true,
+            "grandTotalColumn": true,
+            "repeatItemLabels": false,
+            "filters": [],
+            "rows": [{"field": "Region"}, {"field": "Product"}],
+            "columns": [{"field": "Online"}],
+            "values": [{"field": "Amount", "aggregation": "sum"}]
+          },
+          "chosen": ["showSubtotalsAtBottom", "grandTotalsOn", "tabularForm", "doNotRepeatItemLabels"],
+          "enabled": [
+            "doNotShowSubtotals",
+            "grandTotalsOff",
+            "grandTotalsOnRowsOnly",
+            "grandTotalsOnColumnsOnly",
+            "compactForm",
+            "outlineForm",
+            "repeatItemLabels"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ADR-0061/0060: Repeat All Item Labels fills in the outer labels of the Outline and Tabular forms; Do Not Repeat clears them",
+      "layout": {
+        "form": "tabular",
+        "rows": [{"field": "Region"}, {"field": "Product"}],
+        "columns": [{"field": "Online"}],
+        "values": [{"field": "Amount", "aggregation": "sum"}]
+      },
+      "edits": [
+        {"choose": "repeatItemLabels", "menu": true, "report": true},
+        {"choose": "doNotRepeatItemLabels", "menu": true, "report": true, "on": "previous"}
+      ],
+      "expect": [
+        {
+          "layout": {
+            "form": "tabular",
+            "valuesAxis": "columns",
+            "subtotalsAtTop": true,
+            "grandTotalRow": true,
+            "grandTotalColumn": true,
+            "repeatItemLabels": true,
+            "filters": [],
+            "rows": [{"field": "Region"}, {"field": "Product"}],
+            "columns": [{"field": "Online"}],
+            "values": [{"field": "Amount", "aggregation": "sum"}]
+          },
+          "chosen": ["showSubtotalsAtBottom", "grandTotalsOn", "tabularForm", "repeatItemLabels"],
+          "enabled": [
+            "doNotShowSubtotals",
+            "grandTotalsOff",
+            "grandTotalsOnRowsOnly",
+            "grandTotalsOnColumnsOnly",
+            "compactForm",
+            "outlineForm",
+            "doNotRepeatItemLabels"
+          ],
+          "report": {
+            "headers": ["Region", "Product", "FALSE", "TRUE", "Grand Total"],
+            "lines": [
+              "i [-]East | Apples ||  | 130 | 130",
+              "i East | Pears || 50 |  | 50",
+              "s East Total |  || 50 | 130 | 180",
+              "i [-]North | Pears || 10 |  | 10",
+              "s North Total |  || 10 |  | 10",
+              "i [-]West | Apples || 70 |  | 70",
+              "i West | Plums ||  | 20 | 20",
+              "s West Total |  || 70 | 20 | 90",
+              "i [-](blank) | Plums ||  | 5 | 5",
+              "s (blank) Total |  ||  | 5 | 5",
+              "t Grand Total |  || 130 | 155 | 285"
+            ],
+            "spans": [],
+            "captions": ["Sum of Amount"]
+          }
+        },
+        {
+          "layout": {
+            "form": "tabular",
+            "valuesAxis": "columns",
+            "subtotalsAtTop": true,
+            "grandTotalRow": true,
+            "grandTotalColumn": true,
+            "repeatItemLabels": false,
+            "filters": [],
+            "rows": [{"field": "Region"}, {"field": "Product"}],
+            "columns": [{"field": "Online"}],
+            "values": [{"field": "Amount", "aggregation": "sum"}]
+          },
+          "chosen": ["showSubtotalsAtBottom", "grandTotalsOn", "tabularForm", "doNotRepeatItemLabels"],
+          "enabled": [
+            "doNotShowSubtotals",
+            "grandTotalsOff",
+            "grandTotalsOnRowsOnly",
+            "grandTotalsOnColumnsOnly",
+            "compactForm",
+            "outlineForm",
+            "repeatItemLabels"
+          ],
+          "report": {
+            "headers": ["Region", "Product", "FALSE", "TRUE", "Grand Total"],
+            "lines": [
+              "i [-]East | Apples ||  | 130 | 130",
+              "i  | Pears || 50 |  | 50",
+              "s East Total |  || 50 | 130 | 180",
+              "i [-]North | Pears || 10 |  | 10",
+              "s North Total |  || 10 |  | 10",
+              "i [-]West | Apples || 70 |  | 70",
+              "i  | Plums ||  | 20 | 20",
+              "s West Total |  || 70 | 20 | 90",
+              "i [-](blank) | Plums ||  | 5 | 5",
+              "s (blank) Total |  ||  | 5 | 5",
+              "t Grand Total |  || 130 | 155 | 285"
+            ],
+            "spans": [],
+            "captions": ["Sum of Amount"]
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0061: the current choice of each group is marked, the default layout being Compact, subtotals at the top, both grand totals; a choice that would change nothing is disabled, and applied anyway hands the layout back",
+      "layout": {
+        "rows": [{"field": "Region"}, {"field": "Product"}],
+        "columns": [{"field": "Online"}],
+        "values": [{"field": "Amount", "aggregation": "sum"}]
+      },
+      "edits": [{"choose": "showSubtotalsAtTop", "menu": true}, {"choose": "grandTotalsOn"}, {"choose": "compactForm"}],
+      "expect": [
+        {
+          "same": true,
+          "chosen": ["showSubtotalsAtTop", "grandTotalsOn", "compactForm"],
+          "enabled": [
+            "doNotShowSubtotals",
+            "showSubtotalsAtBottom",
+            "grandTotalsOff",
+            "grandTotalsOnRowsOnly",
+            "grandTotalsOnColumnsOnly",
+            "outlineForm",
+            "tabularForm"
+          ]
+        },
+        {"same": true},
+        {"same": true}
+      ]
+    },
+    {
+      "name": "ADR-0061/0060: the Tabular form puts every subtotal at the bottom, so Show at Bottom is current there and Show at Top changes nothing",
+      "layout": {
+        "form": "tabular",
+        "subtotalsAtTop": true,
+        "rows": [{"field": "Region"}, {"field": "Product"}],
+        "columns": [{"field": "Online"}],
+        "values": [{"field": "Amount", "aggregation": "sum"}]
+      },
+      "edits": [{"choose": "tabularForm", "menu": true}],
+      "expect": [
+        {
+          "same": true,
+          "chosen": ["showSubtotalsAtBottom", "grandTotalsOn", "tabularForm", "doNotRepeatItemLabels"],
+          "enabled": [
+            "doNotShowSubtotals",
+            "grandTotalsOff",
+            "grandTotalsOnRowsOnly",
+            "grandTotalsOnColumnsOnly",
+            "compactForm",
+            "outlineForm",
+            "repeatItemLabels"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ADR-0061: with no field in Rows or Columns there is nothing to subtotal, so no Subtotals choice is current or enabled",
+      "layout": {"filters": [{"field": "Region"}], "values": [{"field": "Amount", "aggregation": "sum"}]},
+      "edits": [{"choose": "compactForm", "menu": true}],
+      "expect": [
+        {
+          "same": true,
+          "chosen": ["grandTotalsOn", "compactForm"],
+          "enabled": [
+            "grandTotalsOff",
+            "grandTotalsOnRowsOnly",
+            "grandTotalsOnColumnsOnly",
+            "outlineForm",
+            "tabularForm"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ADR-0061: fields that disagree about their subtotals mark no Subtotals choice, and each choice that would set them all is enabled",
+      "layout": {
+        "rows": [{"field": "Region", "subtotals": false}, {"field": "Product"}],
+        "columns": [{"field": "Online"}],
+        "values": [{"field": "Amount", "aggregation": "sum"}]
+      },
+      "edits": [{"choose": "compactForm", "menu": true}],
+      "expect": [
+        {
+          "same": true,
+          "chosen": ["grandTotalsOn", "compactForm"],
+          "enabled": [
+            "doNotShowSubtotals",
+            "showSubtotalsAtBottom",
+            "showSubtotalsAtTop",
+            "grandTotalsOff",
+            "grandTotalsOnRowsOnly",
+            "grandTotalsOnColumnsOnly",
+            "outlineForm",
+            "tabularForm"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ADR-0061: a choice keeps everything else in the layout: the fields, their Hidden Items, collapse and order",
+      "layout": {
+        "rows": [
+          {
+            "field": "Region",
+            "hiddenItems": [{"kind": "text", "value": "West"}],
+            "collapsed": true,
+            "sort": {"direction": "descending"}
+          },
+          {"field": "Product"}
+        ],
+        "columns": [{"field": "Online"}],
+        "values": [{"field": "Amount", "aggregation": "sum"}]
+      },
+      "edits": [{"choose": "outlineForm"}],
+      "expect": [
+        {
+          "layout": {
+            "form": "outline",
+            "valuesAxis": "columns",
+            "subtotalsAtTop": true,
+            "grandTotalRow": true,
+            "grandTotalColumn": true,
+            "repeatItemLabels": false,
+            "filters": [],
+            "rows": [
+              {
+                "field": "Region",
+                "sort": {"direction": "descending"},
+                "collapsed": true,
+                "hiddenItems": [{"kind": "text", "value": "West"}]
+              },
+              {"field": "Product"}
+            ],
+            "columns": [{"field": "Online"}],
+            "values": [{"field": "Amount", "aggregation": "sum"}]
+          }
+        }
+      ]
+    }
+  ]
+}

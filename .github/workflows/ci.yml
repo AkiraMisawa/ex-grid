@@ -194,6 +194,24 @@ jobs:
       - name: Layers 1 and 2
         run: npm test
 
+      # ExPivot's engine held to the C# engine on random inputs (ADR-0370, section 2): tools/pivot-oracle
+      # answers what .NET and ExPivot.Engine give. The seed is fixed, so the gate answers alike on every
+      # run; another seed is drawn by hand with EXGRID_PIVOT_SEED (src/npm/pivot-engine/differential/README.md).
+      - uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+
+      - name: Build the pivot oracle
+        working-directory: .
+        run: dotnet build tools/pivot-oracle -c Release
+
+      - name: ExPivot's engine against the C# engine (differential)
+        working-directory: src/npm/pivot-engine
+        env:
+          EXGRID_PIVOT_ORACLE: dotnet ${{ github.workspace }}/tools/pivot-oracle/bin/Release/net10.0/ExPivot.Oracle.dll serve
+          EXGRID_PIVOT_SEED: 20261025
+        run: npm run differential
+
   # The hosts layer 3 drives, published once in Release and handed to every runner that drives
   # them: the WebAssembly DemoHost, the Server host and the demo API server (ADR-0069), as
   # `dotnet publish -c Release` writes them, which is how a Consumer deploys. The suite starts

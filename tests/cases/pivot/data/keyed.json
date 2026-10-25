@@ -1,0 +1,6 @@
+{
+  "about": "A number key and an integer amount: the readings of 2026-10-12's e16b.csv (R3 (c)), Key read as Decimal and Amount as Integer, as the Schema ExPivot suggested for it.",
+  "columns": ["Key", "Amount"],
+  "fields": [{"name": "Key", "type": "number"}, {"name": "Amount", "type": "number"}],
+  "records": [[{"decimal": "1.23456789012345"}, {"integer": "1"}], [{"decimal": "123456789012.345"}, {"integer": "2"}]]
+}

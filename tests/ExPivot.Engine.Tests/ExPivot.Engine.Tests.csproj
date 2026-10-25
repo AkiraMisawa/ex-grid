@@ -19,6 +19,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- The engine's shared cases (ADR-0370 sections 2 and 5): written once as data, run here against the
+         C# engine and by Vitest against @ex-grid/pivot-engine. tests/cases/README.md says what a file holds. -->
+    <None Include="..\cases\pivot\**\*.json" Link="cases\pivot\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\src\ExPivot.Engine\ExPivot.Engine.csproj" />
   </ItemGroup>
 

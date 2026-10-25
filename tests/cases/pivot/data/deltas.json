@@ -1,0 +1,20 @@
+{
+  "about": "Rate deltas by tenor, the C# OrderKeyTests' Deltas: the tenor ordered by its length in days (the Order Key `tenor`), each delta's amount its place in the list.",
+  "columns": ["Tenor", "Amount"],
+  "fields": [{"name": "Tenor", "type": "text", "orderKey": "tenor"}, {"name": "Amount", "type": "number"}],
+  "records": [
+    ["30Y", {"decimal": "1"}],
+    ["1Y6M", {"decimal": "2"}],
+    ["ON", {"decimal": "3"}],
+    ["Other", {"decimal": "4"}],
+    ["18M", {"decimal": "5"}],
+    ["1W", {"decimal": "6"}],
+    [null, {"decimal": "7"}],
+    ["TN", {"decimal": "8"}],
+    ["3M", {"decimal": "9"}],
+    ["2Y", {"decimal": "10"}],
+    ["Bucket", {"decimal": "11"}],
+    ["1M", {"decimal": "12"}],
+    ["1Y", {"decimal": "13"}]
+  ]
+}

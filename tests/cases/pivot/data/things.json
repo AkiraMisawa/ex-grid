@@ -1,0 +1,6 @@
+{
+  "about": "A key of any kind and an amount of one, the C# engine tests' Thing: a case gives its own keys. Key is read as text.",
+  "columns": ["Key", "Amount"],
+  "fields": [{"name": "Key", "type": "text"}, {"name": "Amount", "type": "number"}],
+  "records": [["A", {"decimal": "1"}]]
+}

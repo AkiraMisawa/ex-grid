@@ -1,0 +1,14 @@
+{
+  "about": "A Snapshot of one column of each kind, the C# engine tests' Row: a case gives its own rows.",
+  "snapshot": {
+    "columns": [
+      {"name": "Text", "kind": "text", "caption": "Label"},
+      {"name": "Money", "kind": "decimal"},
+      {"name": "Measure", "kind": "double"},
+      {"name": "Count", "kind": "integer"},
+      {"name": "When", "kind": "date"},
+      {"name": "Flag", "kind": "boolean"}
+    ]
+  },
+  "rows": []
+}

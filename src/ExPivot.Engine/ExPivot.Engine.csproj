@@ -21,6 +21,8 @@
     <!-- Layer 2 follows the engine reports a live ExPivot keeps alive, which its report source
          holds out of reach of any public surface (ADR-0160, LV-22). -->
     <InternalsVisibleTo Include="ExPivot.Components.Tests" />
+    <!-- The differential runs hold @ex-grid/pivot-engine to the whole-report path (ADR-0370, section 2). -->
+    <InternalsVisibleTo Include="ExPivot.Oracle" />
   </ItemGroup>
 
   <!-- The engine depends on exactly the ExGrid.Data it was built with (PV-1), as ExPivot depends

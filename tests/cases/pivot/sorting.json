@@ -1,0 +1,251 @@
+{
+  "about": "Ordering by a Value Field, Show Values As, and the Value Fields' captions (ADR-0060). Transcribed from the C# engine's SortAndShowTests.",
+  "kind": "pivotReport",
+  "data": "sales",
+  "locale": "en-US",
+  "words": "english",
+  "cases": [
+    {
+      "name": "ADR-0060: by a Value Field, descending, largest first",
+      "layout": {
+        "rows": [{"field": "Region", "sort": {"direction": "descending", "byValue": 0}}],
+        "values": [{"field": "Amount", "aggregation": "sum"}]
+      },
+      "expect": {
+        "headers": ["Row Labels", "Sum of Amount"],
+        "lines": ["i East || 180", "i West || 90", "i North || 10", "i (blank) || 5", "t Grand Total || 285"],
+        "spans": []
+      }
+    },
+    {
+      "name": "ADR-0060: by a Value Field, ascending, smallest first; the (blank) Item is an Item like any other",
+      "layout": {
+        "rows": [{"field": "Region", "sort": {"direction": "ascending", "byValue": 0}}],
+        "values": [{"field": "Amount", "aggregation": "sum"}]
+      },
+      "expect": {
+        "headers": ["Row Labels", "Sum of Amount"],
+        "lines": ["i (blank) || 5", "i North || 10", "i West || 90", "i East || 180", "t Grand Total || 285"],
+        "spans": []
+      }
+    },
+    {
+      "name": "ADR-0060: by a Value Field, an Item with more of it first; Count of Region does not count the Blank region",
+      "layout": {
+        "rows": [{"field": "Product", "sort": {"direction": "descending", "byValue": 0}}],
+        "values": [{"field": "Region", "aggregation": "count"}]
+      },
+      "expect": {
+        "headers": ["Row Labels", "Count of Region"],
+        "lines": ["i Apples || 3", "i Pears || 2", "i Plums || 1", "t Grand Total || 6"],
+        "spans": []
+      }
+    },
+    {
+      "name": "ADR-0060: by a Value Field, ties fall back to the label",
+      "layout": {
+        "rows": [{"field": "Region", "sort": {"direction": "descending", "byValue": 0}}],
+        "values": [{"field": "Amount", "aggregation": "sum"}]
+      },
+      "records": [
+        ["East", "Apples", {"date": "2026-01-10"}, {"decimal": "1"}, {"integer": "10"}, true],
+        ["East", "Pears", {"date": "2026-01-12"}, {"decimal": "1"}, {"integer": "5"}, false],
+        ["East", "Apples", {"date": "2026-02-03"}, {"decimal": "1"}, {"integer": "3"}, true],
+        ["West", "Apples", {"date": "2026-01-20"}, {"decimal": "1"}, {"integer": "7"}, false],
+        ["West", "Plums", {"date": "2026-02-15"}, {"decimal": "1"}, {"integer": "2"}, true],
+        ["North", "Pears", {"date": "2026-02-18"}, {"decimal": "1"}, {"integer": "1"}, false],
+        [null, "Plums", {"date": "2026-03-01"}, {"decimal": "1"}, {"integer": "1"}, true]
+      ],
+      "expect": {
+        "headers": ["Row Labels", "Sum of Amount"],
+        "lines": ["i East || 3", "i West || 2", "i North || 1", "i (blank) || 1", "t Grand Total || 7"],
+        "spans": []
+      }
+    },
+    {
+      "name": "ADR-0060: by a Value Field, an Item with no value sorts last, ascending as descending",
+      "layout": {
+        "rows": [{"field": "Region", "sort": {"direction": "ascending", "byValue": 0}}],
+        "values": [{"field": "Region", "aggregation": "count"}]
+      },
+      "expect": {
+        "headers": ["Row Labels", "Count of Region"],
+        "lines": ["i North || 1", "i West || 2", "i East || 3", "i (blank) ||", "t Grand Total || 6"],
+        "spans": []
+      }
+    },
+    {
+      "name": "ADR-0060: a column field ordered by a Value Field at its column totals",
+      "layout": {
+        "columns": [{"field": "Product", "sort": {"direction": "descending", "byValue": 0}}],
+        "values": [{"field": "Amount", "aggregation": "sum"}]
+      },
+      "expect": {
+        "headers": ["Apples", "Pears", "Plums", "Grand Total"],
+        "lines": ["t  || 200 | 60 | 25 | 285"],
+        "spans": []
+      }
+    },
+    {
+      "name": "ADR-0060: % of Grand Total, formatted 0.00% by default",
+      "layout": {
+        "rows": [{"field": "Region"}],
+        "values": [{"field": "Amount", "aggregation": "sum", "showValuesAs": "percentOfGrandTotal"}]
+      },
+      "expect": {
+        "headers": ["Row Labels", "Sum of Amount"],
+        "lines": [
+          "i East || 63.16%",
+          "i North || 3.51%",
+          "i West || 31.58%",
+          "i (blank) || 1.75%",
+          "t Grand Total || 100.00%"
+        ],
+        "spans": []
+      }
+    },
+    {
+      "name": "ADR-0060: % of Column Total",
+      "layout": {
+        "rows": [{"field": "Region"}],
+        "columns": [{"field": "Online"}],
+        "values": [
+          {
+            "field": "Amount",
+            "aggregation": "sum",
+            "showValuesAs": "percentOfColumnTotal",
+            "numberFormat": "0%"
+          }
+        ]
+      },
+      "expect": {
+        "headers": ["Row Labels", "FALSE", "TRUE", "Grand Total"],
+        "lines": [
+          "i East || 38% | 84% | 63%",
+          "i North || 8% |  | 4%",
+          "i West || 54% | 13% | 32%",
+          "i (blank) ||  | 3% | 2%",
+          "t Grand Total || 100% | 100% | 100%"
+        ],
+        "spans": []
+      }
+    },
+    {
+      "name": "ADR-0060: % of Row Total",
+      "layout": {
+        "rows": [{"field": "Region"}],
+        "columns": [{"field": "Online"}],
+        "values": [{"field": "Amount", "aggregation": "sum", "showValuesAs": "percentOfRowTotal", "numberFormat": "0%"}]
+      },
+      "expect": {
+        "headers": ["Row Labels", "FALSE", "TRUE", "Grand Total"],
+        "lines": [
+          "i East || 28% | 72% | 100%",
+          "i North || 100% |  | 100%",
+          "i West || 78% | 22% | 100%",
+          "i (blank) ||  | 100% | 100%",
+          "t Grand Total || 46% | 54% | 100%"
+        ],
+        "spans": []
+      }
+    },
+    {
+      "name": "ADR-0060: a zero divisor is #DIV/0!; an empty cell stays empty",
+      "layout": {
+        "rows": [{"field": "Region"}],
+        "columns": [{"field": "Online"}],
+        "values": [{"field": "Amount", "aggregation": "sum", "showValuesAs": "percentOfGrandTotal"}]
+      },
+      "records": [
+        ["East", "Apples", {"date": "2026-01-10"}, {"decimal": "0"}, {"integer": "10"}, true],
+        ["East", "Pears", {"date": "2026-01-12"}, {"decimal": "0"}, {"integer": "5"}, false],
+        ["East", "Apples", {"date": "2026-02-03"}, {"decimal": "0"}, {"integer": "3"}, true],
+        ["West", "Apples", {"date": "2026-01-20"}, {"decimal": "0"}, {"integer": "7"}, false],
+        ["West", "Plums", {"date": "2026-02-15"}, {"decimal": "0"}, {"integer": "2"}, true],
+        ["North", "Pears", {"date": "2026-02-18"}, {"decimal": "0"}, {"integer": "1"}, false],
+        [null, "Plums", {"date": "2026-03-01"}, {"decimal": "0"}, {"integer": "1"}, true]
+      ],
+      "expect": {
+        "headers": ["Row Labels", "FALSE", "TRUE", "Grand Total"],
+        "lines": [
+          "i East || #DIV/0! | #DIV/0! | #DIV/0!",
+          "i North || #DIV/0! |  | #DIV/0!",
+          "i West || #DIV/0! | #DIV/0! | #DIV/0!",
+          "i (blank) ||  | #DIV/0! | #DIV/0!",
+          "t Grand Total || #DIV/0! | #DIV/0! | #DIV/0!"
+        ],
+        "spans": []
+      }
+    },
+    {
+      "name": "ADR-0060: Excel's default captions, and a number where one would repeat; Count Numbers is captioned as Count is (the seventeenth Windows run)",
+      "layout": {
+        "values": [
+          {"field": "Amount", "aggregation": "sum"},
+          {"field": "Amount", "aggregation": "sum"},
+          {"field": "Amount", "aggregation": "countNumbers"},
+          {"field": "Region", "aggregation": "count"}
+        ]
+      },
+      "also": ["captions"],
+      "expect": {
+        "headers": ["Sum of Amount", "Sum of Amount2", "Count of Amount", "Count of Region"],
+        "lines": ["t  || 285 | 285 | 7 | 6"],
+        "spans": [],
+        "captions": ["Sum of Amount", "Sum of Amount2", "Count of Amount", "Count of Region"]
+      }
+    },
+    {
+      "name": "ADR-0060: a caption of its own; one a default would repeat pushes the default to a number",
+      "layout": {
+        "values": [
+          {"field": "Amount", "aggregation": "sum"},
+          {"field": "Quantity", "aggregation": "sum", "caption": "Sum of Amount"}
+        ]
+      },
+      "also": ["captions"],
+      "expect": {
+        "headers": ["Sum of Amount2", "Sum of Amount"],
+        "lines": ["t  || 285 | 29"],
+        "spans": [],
+        "captions": ["Sum of Amount2", "Sum of Amount"]
+      }
+    },
+    {
+      "name": "ADR-0060: a caption of its own that a Pivot Field has is refused",
+      "layout": {"values": [{"field": "Amount", "aggregation": "sum", "caption": "Region"}]},
+      "throws": {
+        "refusal": "invalidOperation",
+        "saying": "The Value Field of 'Amount' is captioned 'Region', which is a Pivot Field's caption (ADR-0060)."
+      }
+    },
+    {
+      "name": "ADR-0060: a caption of its own that a Pivot Field has is refused, ignoring case",
+      "layout": {"values": [{"field": "Amount", "aggregation": "sum", "caption": "amount"}]},
+      "throws": {
+        "refusal": "invalidOperation",
+        "saying": "The Value Field of 'Amount' is captioned 'amount', which is a Pivot Field's caption (ADR-0060)."
+      }
+    },
+    {
+      "name": "ADR-0060: a caption of its own that another Value Field has is refused, ignoring case",
+      "layout": {
+        "values": [
+          {"field": "Amount", "aggregation": "sum", "caption": "Total"},
+          {"field": "Quantity", "aggregation": "sum", "caption": "TOTAL"}
+        ]
+      },
+      "throws": {"refusal": "invalidOperation", "saying": "Two Value Fields are captioned 'TOTAL' (ADR-0060)."}
+    },
+    {
+      "name": "ADR-0060: the words are the Consumer's to replace",
+      "layout": {"rows": [{"field": "Region"}], "values": [{"field": "Amount", "aggregation": "sum"}]},
+      "words": {"grand-total": "総計", "caption-sum": "合計 / {0}", "blank": "(空白)"},
+      "expect": {
+        "headers": ["Row Labels", "合計 / Amount"],
+        "lines": ["i East || 180", "i North || 10", "i West || 90", "i (空白) || 5", "t 総計 || 285"],
+        "spans": []
+      }
+    }
+  ]
+}

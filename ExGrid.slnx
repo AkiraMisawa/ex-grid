@@ -41,5 +41,6 @@
   <Project Path="tests/ExSheet.Engine.Tests/ExSheet.Engine.Tests.csproj" />
   <Project Path="tests/ExSheet.MudBlazor.Tests/ExSheet.MudBlazor.Tests.csproj" />
   <Project Path="tests/ExSheet.Xlsx.Tests/ExSheet.Xlsx.Tests.csproj" />
+  <Project Path="tools/pivot-oracle/ExPivot.Oracle.csproj" />
   <Project Path="tools/release/ExGrid.Release/ExGrid.Release.csproj" />
 </Solution>

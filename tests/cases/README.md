@@ -32,7 +32,7 @@ One directory per area, one file per group of cases. Each file is an object:
 | Key | Meaning |
 |---|---|
 | `about` | What the file covers, and where its cases came from |
-| `kind` | Which runner reads it: `selection`, `range`, `edgeBand`, `held`, `calls`, `clipboard`, `query`, `source`, `fetch`, `displayText`, `find`, `replace`, `summary`, `arrowRead`, `arrowShape`, `arrowWrite`, `chart` |
+| `kind` | Which runner reads it: `selection`, `range`, `edgeBand`, `held`, `calls`, `clipboard`, `query`, `source`, `fetch`, `displayText`, `find`, `replace`, `summary`, `arrowRead`, `arrowShape`, `arrowWrite`, `chart`, and ExPivot's (`pivot/`) |
 | `extent` | `[rows, columns]`, the grid every case of the file runs against unless it names its own |
 | `cases` | The cases. Each has a `name`, which starts with the ADR it holds to (CLAUDE.md, "Put the ADR number in the test name") |
 
@@ -459,3 +459,88 @@ An `arrowShape` case names a stream and gives its `shape`, each column's `name` 
 written), and the schema's `metadata` whole — and `written`, the path of what `@ex-grid/data` wrote.
 Each runner writes the Snapshot, holds the schema to `expect`, reads it back as the Snapshot it was, and
 reads `written` the same way.
+
+## ExPivot's engine, under `pivot/`
+
+The cases of ExPivot's engine (ADR-0370, sections 2 and 5): xUnit runs them against `ExPivot.Engine`
+(`tests/ExPivot.Engine.Tests/Cases/`) and Vitest against `@ex-grid/pivot-engine`
+(`src/npm/pivot-engine/test/`). The C# runner writes the answers: with `EXGRID_WRITE_PIVOT_CASES=1`, `dotnet
+test tests/ExPivot.Engine.Tests` writes what the C# engine answers into each case instead of holding the
+engine to it, so a case is written as its input, transcribed from the fact it holds, and the Script Core is
+held to the C# engine's answer. Where the two engines word a refusal apart because each names its own
+platform's API (`PivotEngine.Aggregate` beside `aggregatePivot`, `Int32` beside `number`), the case says the
+Script Core's words in `scriptSaying`, and an answer that differs whole for the same reason is
+`scriptExpect`. A key a case leaves out is a parameter not given, which the engine's own default answers on
+both sides; nothing else is filled in.
+
+A refusal is `{"refusal": kind, "saying": message}`, the message whole, without .NET's parameter suffix. Besides
+the three kinds above, `version` is a document of a version the engine does not read (`NotSupportedException`,
+`PivotVersionError`), `format` one that does not read (`FormatException`, `PivotFormatError`), and `snapshot`
+a value its column cannot hold (`SnapshotException`, `SnapshotError`). A value is written as it is held: a
+string is text, a number a double, `true`/`false` a Boolean, `null` a Blank, and `{"decimal": "100.50"}`,
+`{"integer": "7"}`, `{"double": "NaN"}` (or `"-0"`, `"Infinity"`), `{"date": "2026-01-10T13:45:00"}` the rest.
+A layout is the layout's JSON without its `version`, and an Item's key is written as that JSON writes one.
+
+### Data sets
+
+`pivot/data/` holds the data a file names in `data` (a case may name its own): `columns`, the names of a
+record's values; `fields`, each with its `name` and `type`, and its `caption`, `format`, `itemOrder`,
+`datePart` or `orderKey` where it has one, and `of` where it reads another column than its name; and
+`records`, a record's values in column order. A case's own `fields` or `records` stand in for the set's. A
+set may instead be a Snapshot's: `snapshot`, each column's `name`, `kind` and `caption`, and `rows`, which a
+case's own `rows` stand in for. A differential run writes the set itself in `data`. The Order Keys a field
+names (`tenor`, `tenorButOnIsText`, `tenorThrowsOn7Y`, `absolute`) are the Consumer's functions the C# tests
+declared, and note each value they are called with.
+
+### `pivotReport`
+
+A `layout` over the data, laid out under the file's or the case's `locale` (a .NET culture name, or
+`invariant`) and `words` (`english`, `japanese`, `unitedKingdom`, or an object of a word by its id), and read
+back as `expect`: `headers`, the leaf headers; `lines`, a line a row (its role's letter, its labels indented
+two spaces a level with `[-]` or `[+]` before an Item with a button, then `||` and each value as painted);
+`spans`, the Header Group spans. `also` asks for more: `names`, `keys`, `numbers` (a double `d…`, an exact
+decimal `m…`), `captions`, `empty`, `toggles`, `columns`, `tiers`, `keyCalls`. A case may aggregate another
+layout (`cubeOf`) and ask whether its cube `holds` other layouts, what Filter… lists for fields (`itemsOf`),
+which records stand `behind` a cell (`[row, valueColumn]`, answered by record index), and whether other
+records or another layout make the same rows (`sameRowsAs`). What refuses the case is `throws`.
+
+### `pivotWords`, `pivotGeneral` and `pivotItemKey`
+
+`pivotWords`: every word id, with its English, Japanese and English (United Kingdom) word, `null` where an
+edition has none. `pivotGeneral`: the texts of `numbers` under the `locale`, a number with no format of its
+own as a PivotTable shows it (ADR-0060). `pivotItemKey`: the key each value of `of` is the Item of, each key
+`named` accepted or refused, or whether each of `pairs` names one Item.
+
+### `pivotLayoutEdits` and `pivotLayoutJson`
+
+`pivotLayoutEdits`: a `layout` and its `edits`, each made on the case's layout or, with `"on": "previous"`,
+on the step before's. An edit is a Field List gesture or a Layout menu choice: `tick`, `untick`, `place`
+(with `area` and `index`), `move` (an entry `{area, index}` or `"values"`, the Σ Values field, with `to`,
+`index` and the `field` it is), `remove`, `setHiddenItems` (with `hidden` and `items`), `setSort` (`sort`),
+`setSubtotals` (`subtotals`), `setCollapsed` (`item`, `collapsed`), `setFieldCollapsed` (`collapsed`),
+`setValueField` (an index, with `value`) and `choose`. Each is answered by the `layout` it makes, `same` where
+it hands back the layout it was given, `refused` and the refusal's English `word` where it may be refused,
+or a refusal; `menu` also reads the Layout menu's `chosen` and `enabled` choices, and `report` the report
+the layout makes. `pivotLayoutJson`: a saved layout `read` and written again, or what refuses it.
+
+### `pivotSource`
+
+A Pivot Source over the data set: over its records, or over the Snapshot its columns make with the fields
+in `declare` (each column a field when there is none). `fetch` puts a fetching source in front of it, as a
+server's would be: `offers`, the Aggregations it answers, and `answers`, another question it answers in
+place of the one asked. Each of `asks` is answered in turn:
+
+| Ask | Answer |
+|---|---|
+| `{"fields": true}` | Each field's `name`, `caption`, `type`, and its `format`, `column` and `datePart` where it has one |
+| `{"aggregate": question}` | The Leaf Aggregates: `leaves`, each axis's `field` and `items`, each `leaf`'s Item at every level (`at`, rows then columns) and `records`, and each value's `parts` and what it carries at every leaf — `values`, `numbers`, `nonFinite`, and `sum`, `min`, `max`, `product`, `mean`, `m2` as asked for, to the last bit. A question is `rows`, `columns`, `filters` (a field by name, or with its `hiddenItems`), `values` (a field, its counts, or with the `parts` it asks for: `sum`, `extremes`, `product`, `variance`) and `maxLeaves` |
+| `{"items": field}` | A page of the field's Items, with `search` and `max`: `total` and `items`, under the last answer's Source Version, or `"under": "stale"` |
+| `{"details": cell}` | A page of the records behind a cell: its `rows` and `columns` path (each a `field` and its `item`), the `hiddenItems` of placed fields, `start` and `count`; answered by `start`, `total`, `fields` and `records` |
+| `{"report": layout}` | The report the layout makes from the source's answer, read as a `pivotReport` case reads one, `also` included |
+| `{"cube": question, "from": question}` | Whether a cube is made of one question from the answer to another |
+| `{"asked": true}` | How often the fetching source asked its server for Leaf Aggregates |
+| `{"refresh": true}` | The source made again over the same data, which is Excel's Refresh |
+
+A page says `"version": "asked"` when it was answered under the version it was asked under. A source's
+refusal is `{"refused": kind, "field", "limit", "saying"}`, the version asked under written `{version}`.
+
