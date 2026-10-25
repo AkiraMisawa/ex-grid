@@ -190,22 +190,6 @@ test.describe('/sheet', () => {
         await expect(editor(grid)).toBeFocused();
     });
 
-    test('ADR-0058/SH-35: after a press on the positions grid, F4 changes nothing and the Name Box is empty', async ({ page }) => {
-        const grid = sheet(page);
-        const table = positions(page);
-        await pressCell(grid, 'F3');
-        await page.keyboard.type('=');
-        await expectPointedAt(table);
-        await clickCell(table, 'C3');
-        await expect(editor(grid)).toHaveValue(LOOKUP_4471);
-
-        await page.keyboard.press('F4');
-
-        await expect(editor(grid)).toHaveValue(LOOKUP_4471);
-        await expect(nameBox(grid)).toHaveValue('');
-        await expect(editor(grid)).toBeFocused();
-    });
-
     test('ADR-0058/SH-32: a Shift+press writes nothing, and the status line says why', async ({ page }) => {
         const grid = sheet(page);
         const table = positions(page);

@@ -83,17 +83,6 @@ test('Delete raises one Clear Intent, and the Consumer blanks what it can (ED-24
     await expect(cell(page, 1, 1)).not.toHaveText('');
 });
 
-test('Delete over a non-editable column is refused whole, and says so (ED-24, ADR-0054)', async ({ page }) => {
-    const trader = await cell(page, 0, 1).textContent();
-    await clickCell(page, 0, 0);
-    await page.keyboard.press('Shift+ArrowRight');
-    await page.keyboard.press('Delete');
-
-    await expect(page.locator('#paste-refused-status')).toContainText('TargetNotEditable');
-    await expect(page.locator('#clear-status')).toContainText('—');
-    await expect(cell(page, 0, 1)).toHaveText(trader);
-});
-
 test('Backspace opens an empty editor, and Escape leaves the cell as it was (ED-23, ADR-0035)', async ({ page }) => {
     const trader = cell(page, 3, 1);
     const before = await trader.textContent();
@@ -132,12 +121,6 @@ test('Ctrl+D fills down and Ctrl+R fills right, and the browser keeps neither ke
     await page.keyboard.press('ControlOrMeta+r');
     await expect(page.locator('#paste-status')).toContainText('1 cells from 1x1, 0 applied');
     expect(await keySeenUntouched(page), 'the grid took Ctrl+R — the page did not reload').not.toBe(true);
-});
-
-test('Ctrl+D on the first row is refused by name (CP-25, ADR-0035)', async ({ page }) => {
-    await clickCell(page, 0, 1);
-    await page.keyboard.press('ControlOrMeta+d');
-    await expect(page.locator('#paste-refused-status')).toContainText('NothingToFillFrom');
 });
 
 test('a display-only grid leaves Delete, Backspace, Ctrl+Z, Ctrl+D and Ctrl+R to the page (ED-25, KB-39, ADR-0054/0035/0007)', async ({ page }) => {

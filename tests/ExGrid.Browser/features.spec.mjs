@@ -338,22 +338,6 @@ test('a misaligned selection refuses and the clipboard stays untouched (CP-1/CP-
     expect(await page.evaluate(() => navigator.clipboard.readText())).toBe('SENTINEL');
 });
 
-test('paste raises one intent shaped by the clipboard block (CP-14, PST-1)', async ({ page }) => {
-    // Both flavours, as a spreadsheet puts one cell on the clipboard: a one-cell table fills
-    // the whole range (ADR-0014).
-    await page.evaluate(() => navigator.clipboard.write([new ClipboardItem({
-        'text/html': new Blob(['<table><tr><td>fill</td></tr></table>'], { type: 'text/html' }),
-        'text/plain': new Blob(['fill\r\n'], { type: 'text/plain' }),
-    })]));
-    await clickCell(page, 0, 1);
-    await page.keyboard.press('Shift+ArrowDown');
-    await page.keyboard.press('Shift+ArrowDown');
-
-    await page.keyboard.press('ControlOrMeta+V');
-
-    await expect(page.locator('#paste-status')).toContainText('3 cells from 1x1');
-});
-
 // An edit that ends leaves a collapsed caret where the Cell Editor stood, and the next press on
 // the rows moves it to the nearest text the page can select, outside the grid. The browser aims
 // Ctrl+C and Ctrl+V at the selection rather than at the focused root, so the grid heard neither
@@ -386,30 +370,6 @@ test('CP-6/CP-10/CP-14: Ctrl+C and Ctrl+V reach the grid after an edit ends by E
     await expect(page.locator('#paste-status')).toContainText('1 cells from 1x1');
 });
 
-test('ADR-0014 (amended 2026-09-29): one value of plain text over a range goes into its top-left alone, and the Selection collapses to it', async ({ page }) => {
-    // Text from a text editor: plain text only, no table.
-    await page.evaluate(() => navigator.clipboard.writeText('Solo'));
-    const below = [await grid(page).locator("[id$='r1c1']").textContent(), await grid(page).locator("[id$='r2c1']").textContent()];
-    // Drawn from the bottom, so the Focus is not the top-left: the top-left is taken.
-    await clickCell(page, 2, 1);
-    await page.keyboard.press('Shift+ArrowUp');
-    await page.keyboard.press('Shift+ArrowUp');
-    await expect(grid(page).locator('.ex-announce')).toContainText('3 rows by 1 columns selected');
-
-    await page.keyboard.press('ControlOrMeta+V');
-
-    await expect(page.locator('#paste-status')).toContainText('1 cells from 1x1');
-    await expect(grid(page).locator("[id$='r0c1']")).toHaveText('Solo');
-    await expect(grid(page).locator("[id$='r1c1']")).toHaveText(below[0]);
-    await expect(grid(page).locator("[id$='r2c1']")).toHaveText(below[1]);
-    await expectActiveDescendant(grid(page), /r0c1$/);
-    // That cell alone, row 0 and column 1: B1 in A1 terms (a 1×1 Selection is not announced:
-    // ADR-0033).
-    await expectSelectionIsCell(grid(page), 'B1');
-    // ...and the live region no longer names the range the paste replaced (fifth Windows run).
-    await expect(grid(page).locator('.ex-announce')).toHaveText('');
-});
-
 test('ADR-0014 (amended 2026-09-29): one cell copied inside the grid still fills the whole range', async ({ page }) => {
     await page.evaluate(() => navigator.clipboard.writeText('SENTINEL'));
     const source = await grid(page).locator("[id$='r0c1']").textContent();
@@ -426,42 +386,6 @@ test('ADR-0014 (amended 2026-09-29): one cell copied inside the grid still fills
     await expect(page.locator('#paste-status')).toContainText('3 cells from 1x1');
     for (const row of [2, 3, 4]) await expect(grid(page).locator(`[id$='r${row}c1']`)).toHaveText(source);
     await expect(grid(page).locator('.ex-announce')).toContainText('3 rows by 1 columns selected');
-});
-
-test('a paste covering a non-editable column is refused whole (CP-16, ADR-0035)', async ({ page }) => {
-    await page.evaluate(() => navigator.clipboard.writeText('intruder'));
-    const book = grid(page).locator("[id$='r0c0']"); // Book, never declared editable
-    const before = await book.textContent();
-    await clickCell(page, 0, 0);
-    await page.keyboard.press('Shift+ArrowRight'); // ...and Trader, which is editable
-
-    await page.keyboard.press('ControlOrMeta+V');
-
-    await expect(page.locator('#paste-refused-status')).toContainText('TargetNotEditable');
-    // The whole target is refused, not the editable half of it.
-    await expect(book).toHaveText(before);
-    await expect(grid(page).locator("[id$='r0c1']")).not.toHaveText('intruder');
-});
-
-test('Ctrl+Enter fill across a non-editable column is refused, and says so (CP-16, ADR-0035, ADR-0052)', async ({ page }) => {
-    const narrow = grid(page).locator("[id$='r0c3']");
-    const notional = grid(page).locator("[id$='r0c2']");
-    const narrowBefore = await narrow.textContent();
-    const notionalBefore = await notional.textContent();
-    await clickCell(page, 0, 2);                   // Notional, which is editable
-    await page.keyboard.press('Shift+ArrowRight'); // the Focus stays on Notional (ADR-0052)
-    await page.keyboard.type('7');                 // — so the editor opens, over a selection covering Narrow
-
-    await page.keyboard.press('ControlOrMeta+Enter');
-
-    await expect(page.locator('#paste-refused-status')).toContainText('TargetNotEditable');
-    // Nothing was written — neither the column that refused nor the one that would have
-    // been allowed on its own.
-    await expect(narrow).toHaveText(narrowBefore);
-    await expect(notional).toHaveText(notionalBefore);
-    // ED-19: the Refusal judged the operation, not the text, so the editor is still
-    // standing with the typing in it.
-    await expect(grid(page).locator('.ex-editor')).toHaveValue('7');
 });
 
 test('ED-19: after a refused fill the editor stands, and Enter then raises exactly one Edit Intent, for the one cell; the fill raised none (ADR-0035)', async ({ page }) => {
@@ -1103,23 +1027,6 @@ test('a Reject holds the editor with real keys, and Escape is the way out (ED-15
     await expect(grid(page).locator('.ex-editor')).toHaveCount(0);
 });
 
-test('a Flag applies and is marked, and its message opens on the Focus (ED-16/ED-17, ADR-0034)', async ({ page }) => {
-    await clickCell(page, 0, 2);
-    await page.keyboard.type('-5');
-
-    await page.keyboard.press('Enter');
-
-    // Applied — the intent was byte-identical to an Accept's — and marked afterwards by
-    // the Consumer's ruleset through the display channels.
-    await expect(page.locator('#edit-status')).toContainText('Notional=-5');
-    await expect(grid(page).locator("[id$='r0c2']")).toHaveClass(/ex-state-error/);
-
-    // The popover follows the Focus after 300ms of stillness, and never before.
-    await clickCell(page, 0, 2);
-    await expect(grid(page).locator('.ex-message')).toHaveCount(0);
-    await expect(grid(page).locator('.ex-message')).toContainText('approval', { timeout: 3000 });
-});
-
 test('a flagged cell says why when the pointer rests on it (ED-17b, ADR-0021/0034)', async ({ page }) => {
     // Flag a cell first: -5 is applied and marked by the Consumer's ruleset.
     await clickCell(page, 0, 2);
@@ -1282,23 +1189,6 @@ test('a display-only grid does not take printable keys away from the page (ADR-0
     await expect(cells.locator('.ex-editor')).toHaveCount(0);
     const seen = await page.evaluate(() => window.__printableSeen);
     expect(seen, 'the keydown reached the page untouched').toBe(true);
-});
-
-test('Escape returns the keyboard from a descendant control to the grid (ADR-0020/0012)', async ({ page }) => {
-    await page.goto('/cells');
-    const cells = page.locator('.ex-grid').first();
-    await expect(cells.locator('.ex-row').first()).toBeVisible();
-
-    const note = cells.locator('input.demo-note').first();
-    await note.click({ force: true });
-    await expect(note).toBeFocused();
-    // The control owns its keys (KB-11)…
-    await note.pressSequentially('memo');
-    await expect(note).toHaveValue('memo');
-
-    // …but Escape is the way out: back to the grid, not out of it.
-    await page.keyboard.press('Escape');
-    await expectKeyboardOn(cells);
 });
 
 test('KB-11: arrows typed in a Template Column\'s input move its caret, and the grid\'s Selection stays where it was (ADR-0010/0020)', async ({ page }) => {

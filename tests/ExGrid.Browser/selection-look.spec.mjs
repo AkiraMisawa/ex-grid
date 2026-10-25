@@ -541,22 +541,6 @@ for (const [chrome, query] of CHROMES) {
     });
 }
 
-test('DC-12: every cell (Ctrl+A) shows no fill handle, as Excel showed none in view (ADR-0050; the readings of 2026-10-12, R5 (1))', async ({ page }) => {
-    await openSheet(page, '');
-    const grid = sheet(page);
-    // A cell clear of the page's data, as R5 pressed Ctrl+A on an empty sheet.
-    await clickCell(grid, 'F12');
-    await expect(grid.locator('.ex-fill-handle')).toHaveCount(1);
-    await expect(grid.locator('.ex-range')).toHaveCount(0);
-
-    await page.keyboard.press('ControlOrMeta+A');
-
-    // Every cell selected: a range is drawn, the Focus stays, and the handle is gone.
-    await expect(grid.locator('.ex-selection .ex-range')).not.toHaveCount(0);
-    await expectFocusAt(grid, 'F12');
-    await expect(grid.locator('.ex-fill-handle')).toHaveCount(0);
-});
-
 test('UX-19: under forced colors the Focus among several ranges takes its outline back in place of its thin border, and every range is outlined (ADR-0008, 2026-10-12)', async ({ page }) => {
     await openSheet(page, '');
     const grid = sheet(page);

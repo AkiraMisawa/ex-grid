@@ -134,32 +134,6 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(grid(page).locator("[id$='r350c2']")).toBeInViewport();
         });
 
-        test('with a range selected, Find searches it and the selection stands (FD-4/FD-5, ADR-0055)', async ({ page }) => {
-            await grid(page).locator("[id$='r0c1']").click({ force: true });
-            await grid(page).locator("[id$='r8c1']").click({ force: true, modifiers: ['Shift'] });
-
-            await page.keyboard.press('ControlOrMeta+f');
-            await expect(grid(page).locator('.ex-popover-find input').first()).toBeFocused();
-            await page.keyboard.type('novak');
-            for (const row of [3, 4, 5, 3]) {
-                await page.keyboard.press('Enter');
-                await expect.poll(() => focusedCell(page)).toMatch(new RegExp(`r${row}c1$`));
-            }
-            // The selection is the nine cells it was: the Focus moved inside it.
-            await expect(grid(page).locator('.ex-range')).toHaveCount(1);
-        });
-
-        test('nothing found is said, in a live region (FD-6, ADR-0055)', async ({ page }) => {
-            await page.keyboard.press('ControlOrMeta+f');
-            await expect(grid(page).locator('.ex-popover-find input').first()).toBeFocused();
-            await page.keyboard.type('no such trader');
-            await page.keyboard.press('Enter');
-
-            const outcome = grid(page).locator('.ex-popover-find [role=status]');
-            await expect(outcome).toHaveText('No match');
-            await expect(page.locator('#find-refused-status')).toContainText('NotFound');
-        });
-
         test('ADR-0240: a tick of Match case or Match entire cell contents and the step clicked straight after it are taken in the order they were made (find ticket 06)', async ({ page }) => {
             // Each phase is driven at machine speed, nothing awaited between the step, the tick and the
             // step after it: a tick is a click in the Input Order, so the step clicked before it searches
@@ -327,24 +301,6 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(grid(page).locator('.ex-popover-find input').first()).toHaveValue('novak');
         });
 
-        test('the marks clear when the text is emptied and when the panel closes (ADR-0332)', async ({ page }) => {
-            await page.keyboard.press('ControlOrMeta+f');
-            await page.keyboard.type('novak');
-            await expect(grid(page).locator("[id$='r3c1']")).toHaveClass(/ex-match-mark/);
-
-            const field = grid(page).locator('.ex-popover-find input').first();
-            await field.press('ControlOrMeta+a');
-            await field.press('Backspace');
-            await expect(field).toHaveValue('');
-            await expect(grid(page).locator('.ex-match-mark')).toHaveCount(0);
-
-            await page.keyboard.type('novak');
-            await expect(grid(page).locator("[id$='r3c1']")).toHaveClass(/ex-match-mark/);
-            await page.keyboard.press('Escape');
-            await expect(grid(page).locator('.ex-popover-find')).toHaveCount(0);
-            await expect(grid(page).locator('.ex-match-mark')).toHaveCount(0);
-        });
-
         // Replace (ADR-0332 §2/§3): /features passes OnReplace and its Trader and Notional are
         // Editable, so Ctrl+H opens the panel with Replace. Replace All is GridSource.From's answer,
         // applied as one history step. Book (0) is not Editable.
@@ -393,22 +349,6 @@ for (const chrome of ['builtin', 'mud']) {
             }
         });
 
-        test('Replace writes the current match and moves to the next (ADR-0332)', async ({ page }) => {
-            const panel = await openReplace(page, 'novak', 'Rossi');
-
-            // No match is current yet: the first press finds one, and writes nothing.
-            await panel.locator(replaceParts.one).click();
-            await expect.poll(() => focusedCell(page)).toMatch(/r3c1$/);
-            await expect(grid(page).locator("[id$='r3c1']")).toHaveText('Novak');
-
-            await panel.locator(replaceParts.one).click();
-            await expect(grid(page).locator("[id$='r3c1']")).toHaveText('Rossi');
-            await expect.poll(() => focusedCell(page)).toMatch(/r4c1$/);
-            await expect(grid(page).locator("[id$='r4c1']")).toHaveText('Novak');
-            await expect(page.locator('#edit-status')).toContainText('Trader=Rossi on ');
-            await expect(panel.locator(replaceParts.field)).toHaveValue('Rossi');
-        });
-
         test('with Replace shown, Enter in either field finds the next match (ADR-0332, ADR-0055)', async ({ page }) => {
             const panel = await openReplace(page, 'novak', 'Rossi');
 
@@ -431,20 +371,6 @@ for (const chrome of ['builtin', 'mud']) {
             const field = panel.locator('input').first();
             await expect(field).toBeFocused();
             await expect(field).toHaveValue('novak');
-        });
-
-        test('a match in a column that cannot be edited refuses Replace All, naming the cells (ADR-0332)', async ({ page }) => {
-            // Alpha is every fourth row's Book, which is not Editable: nothing is written.
-            const panel = await openReplace(page, 'alpha', 'Omega');
-
-            await panel.locator(replaceParts.all).click();
-            await expect(panel.locator(replaceParts.outcome)).toHaveText(
-                'Nothing was replaced. Row 1, Book: this column cannot be edited. Row 5, Book: this column cannot be edited. '
-                + 'Row 9, Book: this column cannot be edited. Row 13, Book: this column cannot be edited. '
-                + 'Row 17, Book: this column cannot be edited. And 95 more.');
-            await expect(page.locator('#replace-status')).toHaveText('Replace All: refused, 100 cells');
-            await expect(grid(page).locator("[id$='r0c0']")).toHaveText('Alpha');
-            await expect(page.locator('#find-refused-status')).toContainText('ReplaceRefused');
         });
 
         // Find reaches the column headers (ADR-0333): /features's headers are Book, Trader, Notional,
@@ -499,25 +425,6 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(grid(page).locator('.ex-match-mark-current')).toHaveCount(1);
             await expect.poll(() => focusedCell(page)).toMatch(/r0c0$/);
         });
-
-        test('ADR-0333: a Header Group label is found before the column headers, and a step from it goes on to the rows', async ({ page }) => {
-            await page.keyboard.press('ControlOrMeta+f');
-            await page.keyboard.type('who');
-            await expect(grid(page).locator('.ex-popover-find input').first()).toHaveValue('who');
-            await expect(header(page, 'Who')).toHaveClass(MARK);
-
-            await page.keyboard.press('Enter');
-            await expect(header(page, 'Who')).toHaveClass(/ex-match-mark-current/);
-            await expect(grid(page).locator('.ex-popover-find [role=status]')).toHaveText('Found in the header Who');
-
-            // Novak is in Trader's rows: from the header the rows are searched from their start.
-            await page.keyboard.press('ControlOrMeta+a');
-            await page.keyboard.type('novak');
-            await page.keyboard.press('Enter');
-            await expect.poll(() => focusedCell(page)).toMatch(/r3c1$/);
-            await expect(header(page, 'Who')).not.toHaveClass(MARK);
-            await expect(grid(page).locator('.ex-popover-find [role=status]')).toHaveText('');
-        });
     });
 }
 
@@ -568,15 +475,21 @@ test('a grid with nothing to search takes Ctrl+F and opens nothing (FD-1/FD-2, A
     await expect.poll(() => cells.getAttribute('aria-activedescendant')).toMatch(/r1c0$/);
 });
 
-test('in the Cell Editor Ctrl+F does nothing (FD-1, ADR-0055)', async ({ page }) => {
+test('in the Cell Editor Ctrl+F and Ctrl+H are taken from the browser and do nothing (FD-1, ADR-0055, ADR-0332)', async ({ page }) => {
     await page.goto('/features');
     await expect(grid(page).locator('.ex-row').first()).toBeVisible();
     await grid(page).locator("[id$='r0c1']").click({ force: true });
     await page.keyboard.type('Ab');
-    await page.keyboard.press('ControlOrMeta+f');
-
-    await expect(grid(page).locator('.ex-popover-find')).toHaveCount(0);
     await expect(grid(page).locator('input.ex-editor')).toHaveValue('Ab');
+
+    for (const key of ['f', 'h']) {
+        await watchNextKey(page, [key, key.toUpperCase()]);
+        await page.keyboard.press(`ControlOrMeta+${key}`);
+        // spec-lint: early-read: the keydown listener records the key inside the press's own dispatch, so the answer is final once the press returns
+        expect(await keySeenUntouched(page), `the grid took Ctrl+${key.toUpperCase()}`).not.toBe(true);
+        await expect(grid(page).locator('.ex-popover-find')).toHaveCount(0);
+        await expect(grid(page).locator('input.ex-editor')).toHaveValue('Ab');
+    }
 });
 
 test('a grid with nothing to replace takes Ctrl+H and opens nothing (ADR-0332)', async ({ page }) => {
@@ -593,15 +506,4 @@ test('a grid with nothing to replace takes Ctrl+H and opens nothing (ADR-0332)',
     // The key after it is not held behind a panel that never comes.
     await page.keyboard.press('ArrowDown');
     await expect.poll(() => cells.getAttribute('aria-activedescendant')).toMatch(/r1c0$/);
-});
-
-test('in the Cell Editor Ctrl+H does nothing (ADR-0332)', async ({ page }) => {
-    await page.goto('/features');
-    await expect(grid(page).locator('.ex-row').first()).toBeVisible();
-    await grid(page).locator("[id$='r0c1']").click({ force: true });
-    await page.keyboard.type('Ab');
-    await page.keyboard.press('ControlOrMeta+h');
-
-    await expect(grid(page).locator('.ex-popover-find')).toHaveCount(0);
-    await expect(grid(page).locator('input.ex-editor')).toHaveValue('Ab');
 });

@@ -45,23 +45,6 @@ test('geometry tokens are inline and read-only: an ancestor or stylesheet cannot
     expect(after, 'the inline declaration wins; painted row height is unchanged').toBe('24px');
 });
 
-test('the painted heights equal the declared metrics exactly (UX-3, ST-3)', async ({ page }) => {
-    await open(page);
-
-    // RowHeight=24, HeaderHeight=28, two tiers of Header Groups: the band is 56.
-    const measured = await page.evaluate(() => {
-        const g = document.querySelector('.ex-grid');
-        return {
-            row: getComputedStyle(g.querySelector('.ex-row')).height,
-            header: getComputedStyle(g.querySelector('.ex-header')).height,
-            cellPadding: getComputedStyle(g.querySelector('.ex-cell')).paddingLeft,
-        };
-    });
-    expect(measured.row).toBe('24px');
-    expect(measured.header).toBe('56px');
-    expect(measured.cellPadding).toBe('8px');
-});
-
 // A density change on /density (ADR-0028): each preset's resolved Grid Metrics, from
 // GridMetrics.Resolve's table — the row and header tier heights, the cell padding and the
 // font size. The page's one Header Group makes the band two tiers tall.

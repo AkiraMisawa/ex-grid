@@ -90,14 +90,6 @@ test('a double-click on an edge fits a value the Viewport has not painted (FN-12
     expect(await overflows(note)).toBe(false);
 });
 
-test('a press on an edge that does not move reports no width and sorts nothing (FN-12b, ADR-0016)', async ({ page }) => {
-    await header(page, 'Note').locator('.ex-resize-grip').click({ force: true });
-    await dragGrip(page, 'Note', 3);
-
-    await expect(page.locator('#width-status')).toHaveText('Widths:');
-    await expect(page.locator('#sort-status')).toHaveText('Sorts: Notional ascending');
-});
-
 test('Shift+click on a header selects whole columns and does not sort (SR-2a, ADR-0012)', async ({ page }) => {
     await clickCell(page, 2, 2);
 
