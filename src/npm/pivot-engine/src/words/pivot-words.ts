@@ -45,6 +45,15 @@ export const pivotWordIds = Object.freeze({
     dateYear: 'date-year',
     /** A quarter's Item: `Qtr{0}`, the quarter from 1 to 4. */
     dateQuarter: 'date-quarter',
+    /** A server's layout over the leaf cap, refused at the drop (ADR-0370 section 3), `{0}` the field moved,
+     * `{1}` its Area's word and `{2}` the cap:
+     * `{0} in {1} makes more than {2} combinations, the most server data allows.` */
+    tooManyCombinations: 'refused-too-many-combinations',
+    /** The same refusal where the source counted the field, `{1}` the field's count of Items:
+     * `{0} ({1} items) in {2} makes more than {3} combinations, the most server data allows.` */
+    tooManyCombinationsCounted: 'refused-too-many-combinations-counted',
+    /** The ways that remain after that refusal, `{0}` the field: `Put {0} in Filters, or filter {0} first.` */
+    tooManyCombinationsRemedy: 'refused-too-many-combinations-remedy',
 });
 
 function slug(aggregation: PivotAggregation): string {

@@ -137,6 +137,20 @@ public class PivotJsonTests
         }
     }
 
+    [Fact] // ADR-0370 section 3: each field's count of Items round-trips, and counts that cannot be are refused
+    public async Task Item_counts_round_trip()
+    {
+        var counts = await Server.ItemCountsAsync(Ct);
+        var read = PivotJson.ReadItemCounts(PivotJson.Write(counts));
+        Assert.Equal(counts.SourceVersion, read.SourceVersion);
+        Assert.Equal(counts.Counts, read.Counts);
+
+        Assert.Throws<FormatException>(() => PivotJson.ReadItemCounts("""{"version":1,"type":"itemCounts","sourceVersion":"1","counts":{"Desk":-1}}"""));
+        Assert.Throws<FormatException>(() => PivotJson.ReadItemCounts("""{"version":1,"type":"itemCounts","sourceVersion":"1","counts":{"Desk":1,"Desk":2}}"""));
+        Assert.Throws<FormatException>(() => PivotJson.ReadItemCounts("""{"version":1,"type":"itemCounts","sourceVersion":"1","counts":{"Desk":1.5}}"""));
+        Assert.Throws<FormatException>(() => PivotJson.ReadItemCounts("""{"version":1,"type":"itemCounts","sourceVersion":"1"}"""));
+    }
+
     [Fact] // ADR-0066: a question for the records behind a cell and its page round-trip, each value by its field's type
     public async Task Details_round_trip()
     {
@@ -186,6 +200,7 @@ public class PivotJsonTests
             (PivotJson.Write(new PivotDetailsQuery("1")), json => PivotJson.ReadDetailsQuery(json)),
             (PivotJson.Write(PivotDetailPage.Refused(PivotSourceRefusal.UnknownField("X"))), json => PivotJson.ReadDetailPage(json)),
             (PivotJson.Write(new PivotSourceChanged("1")), json => PivotJson.ReadSourceChanged(json)),
+            (PivotJson.Write(new PivotItemCounts("1", new Dictionary<string, int> { ["Desk"] = 5 })), json => PivotJson.ReadItemCounts(json)),
         };
         foreach (var (json, read) in documents)
         {

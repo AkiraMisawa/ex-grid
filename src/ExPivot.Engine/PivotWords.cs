@@ -302,6 +302,12 @@ public static class PivotWords
         ["refused-too-many-rows"] = "This layout needs more than {0} rows.",
         ["refused-too-many-columns"] = "This layout needs more than {0} columns.",
         ["refused-out-of-memory"] = "Memory ran out while this layout was laid out.",
+        // A server's layout over the leaf cap, refused at the drop (ADR-0370 section 3): {0} the field
+        // moved, {1} its Area's word, {2} the cap; counted, {1} is the field's count of Items, {2} the
+        // Area and {3} the cap. The remedy names the field twice.
+        ["refused-too-many-combinations"] = "{0} in {1} makes more than {2} combinations, the most server data allows.",
+        ["refused-too-many-combinations-counted"] = "{0} ({1} items) in {2} makes more than {3} combinations, the most server data allows.",
+        ["refused-too-many-combinations-remedy"] = "Put {0} in Filters, or filter {0} first.",
         ["aggregation-not-offered"] = "The source does not answer {0}.",
         ["source-failed"] = "The source could not answer: {0}",
         ["source-refused"] = "The source refused to answer: {0}",
@@ -507,6 +513,9 @@ public static class PivotWords
         ["refused-too-many-rows"] = "このレイアウトには {0} を超える行が必要です。",
         ["refused-too-many-columns"] = "このレイアウトには {0} を超える列が必要です。",
         ["refused-out-of-memory"] = "このレイアウトを配置する途中でメモリが不足しました。",
+        ["refused-too-many-combinations"] = "{1}に {0} を置くと、組み合わせがサーバーのデータで扱える上限の {2} を超えます。",
+        ["refused-too-many-combinations-counted"] = "{2}に {0} ({1} 個のアイテム) を置くと、組み合わせがサーバーのデータで扱える上限の {3} を超えます。",
+        ["refused-too-many-combinations-remedy"] = "{0} をフィルターに置くか、先に {0} を絞り込んでください。",
         ["aggregation-not-offered"] = "ソースは {0} に対応していません。",
         ["source-failed"] = "ソースから応答を得られませんでした: {0}",
         ["source-refused"] = "ソースが応答を拒否しました: {0}",

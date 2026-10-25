@@ -185,6 +185,26 @@ public sealed class SnapshotPivotSource : PivotSource
         return pass.Page(query, query.SourceVersion);
     }
 
+    /// <summary>Each field's count of Items in the current Snapshot, read in slices, field after field
+    /// (ADR-0370 section 3): what a server answering from this source answers its Field List with. A
+    /// count is the length of the field's whole page of Items.</summary>
+    public override async ValueTask<PivotItemCounts> ItemCountsAsync(CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        Snapshot snapshot;
+        lock (_gate)
+            snapshot = _snapshot;
+        var slicer = Slicer.Of(_slicing, cancellationToken);
+        var counts = new Dictionary<string, int>(_fields.Length, StringComparer.Ordinal);
+        foreach (var field in _fields)
+        {
+            var pass = new ItemsPass(snapshot, _bindings[field.Name], _slicing.RowsRead);
+            await slicer.PassAsync(pass.RowCount, pass.Step).ConfigureAwait(false);
+            counts.Add(field.Name, pass.Count());
+        }
+        return new PivotItemCounts(VersionOf(snapshot), counts);
+    }
+
     /// <summary>A page of the records behind a cell in the version asked, in the Snapshot's order,
     /// read in slices; refused under a version the source no longer holds. A record carries the
     /// Consumer's object when the Snapshot keeps them.</summary>

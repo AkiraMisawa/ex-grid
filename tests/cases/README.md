@@ -570,8 +570,10 @@ the layout makes. `pivotLayoutJson`: a saved layout `read` and written again, or
 
 A Pivot Source over the data set: over its records, or over the Snapshot its columns make with the fields
 in `declare` (each column a field when there is none). `fetch` puts a fetching source in front of it, as a
-server's would be: `offers`, the Aggregations it answers, and `answers`, another question it answers in
-place of the one asked. Each of `asks` is answered in turn:
+server's would be: `offers`, the Aggregations it answers, `answers`, another question it answers in
+place of the one asked, and `counts`, which declares that it counts each field's Items: `true` counts
+through the source behind it, and an object of counts by field is what its server answers instead, under
+the Source Version `server`. Each of `asks` is answered in turn:
 
 | Ask | Answer |
 |---|---|
@@ -582,6 +584,8 @@ place of the one asked. Each of `asks` is answered in turn:
 | `{"details": cell}` | A page of the records behind a cell: its `rows` and `columns` path (each a `field` and its `item`), the `hiddenItems` of placed fields, `start` and `count`, under a version as a page of Items is; answered by `start`, `total`, `fields` and `records` |
 | `{"report": layout}` | The report the layout makes from the source's answer, read as a `pivotReport` case reads one, `also` included |
 | `{"cube": question, "from": question}` | Whether a cube is made of one question from the answer to another |
+| `{"itemCounts": true}` | Each field's count of Items (ADR-0370 section 3): `counts`, by field, and the `version` counted, `"answered"` where it is the last answer's |
+| `{"leafBound": layout}` | The most leaves the layout can make by the counts last answered (`bound`), or `null` where a field it places in Rows or Columns was not counted |
 | `{"asked": true}` | How often the fetching source asked its server for Leaf Aggregates |
 | `{"refresh": true}` | The source made again over the same data, which is Excel's Refresh |
 

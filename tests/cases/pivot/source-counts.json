@@ -1,0 +1,226 @@
+{
+  "about": "Each field's count of Items, which a server's source may declare it answers, and the bound on a layout's leaves the counts give (ADR-0370 section 3): the Field List's counts and the drop target's mark before a field is placed over the leaf cap.",
+  "kind": "pivotSource",
+  "data": "deals",
+  "locale": "en-US",
+  "words": "english",
+  "cases": [
+    {
+      "name": "ADR-0370 (section 3): a source counts each field's Items, the Items it lists, under the version it answers",
+      "asks": [
+        {"aggregate": {"rows": ["Desk"]}},
+        {"itemCounts": true},
+        {"items": "Desk", "max": 0},
+        {"items": "Book", "max": 0}
+      ],
+      "expect": [
+        {
+          "leaves": 5,
+          "rows": [
+            {
+              "field": "Desk",
+              "items": [
+                {"kind": "text", "value": "Rates"},
+                {"kind": "text", "value": "Credit"},
+                {"kind": "text", "value": ""},
+                {"kind": "text", "value": "FX"},
+                {"kind": "blank"}
+              ]
+            }
+          ],
+          "columns": [],
+          "leaf": [
+            {"at": [0], "records": 3},
+            {"at": [1], "records": 2},
+            {"at": [4], "records": 1},
+            {"at": [2], "records": 1},
+            {"at": [3], "records": 2}
+          ],
+          "values": []
+        },
+        {
+          "version": "answered",
+          "counts": {"Desk": 5, "Book": 4, "Date": 5, "Amount": 8, "Risk": 8, "Live": 3, "Tag": 7}
+        },
+        {"version": "asked", "total": 5, "items": []},
+        {"version": "asked", "total": 4, "items": []}
+      ]
+    },
+    {
+      "name": "ADR-0370 (section 3): over a Snapshot, text is counted as its Items fold, a Blank is an Item, and a date part counts its parts",
+      "data": "rows",
+      "declare": [
+        {"name": "Text", "type": "text"},
+        {"name": "Flag", "type": "boolean"},
+        {"name": "When", "type": "date"},
+        {"name": "Month", "type": "date", "column": "When", "datePart": "month"}
+      ],
+      "rows": [
+        ["East", null, null, null, {"date": "2026-01-02"}, true],
+        ["EAST", null, null, null, {"date": "2026-01-20"}, false],
+        ["west", null, null, null, {"date": "2026-02-03"}, null],
+        [null, null, null, null, null, true]
+      ],
+      "asks": [{"aggregate": {"rows": ["Text"]}}, {"itemCounts": true}],
+      "expect": [
+        {
+          "leaves": 3,
+          "rows": [
+            {
+              "field": "Text",
+              "items": [{"kind": "text", "value": "East"}, {"kind": "text", "value": "west"}, {"kind": "blank"}]
+            }
+          ],
+          "columns": [],
+          "leaf": [{"at": [0], "records": 2}, {"at": [1], "records": 1}, {"at": [2], "records": 1}],
+          "values": []
+        },
+        {"version": "answered", "counts": {"Text": 3, "Flag": 3, "When": 4, "Month": 3}}
+      ]
+    },
+    {
+      "name": "ADR-0370 (section 3): a fetching source that declares counting asks its server, and passes its counts on",
+      "fetch": {"counts": true},
+      "asks": [{"aggregate": {"rows": ["Desk"]}}, {"itemCounts": true}],
+      "expect": [
+        {
+          "leaves": 5,
+          "rows": [
+            {
+              "field": "Desk",
+              "items": [
+                {"kind": "text", "value": "Rates"},
+                {"kind": "text", "value": "Credit"},
+                {"kind": "text", "value": ""},
+                {"kind": "text", "value": "FX"},
+                {"kind": "blank"}
+              ]
+            }
+          ],
+          "columns": [],
+          "leaf": [
+            {"at": [0], "records": 3},
+            {"at": [1], "records": 2},
+            {"at": [4], "records": 1},
+            {"at": [2], "records": 1},
+            {"at": [3], "records": 2}
+          ],
+          "values": []
+        },
+        {
+          "version": "answered",
+          "counts": {"Desk": 5, "Book": 4, "Date": 5, "Amount": 8, "Risk": 8, "Live": 3, "Tag": 7}
+        }
+      ]
+    },
+    {
+      "name": "ADR-0370 (section 3): counts naming a field the source does not declare are refused by name",
+      "fetch": {"counts": {"Desk": 5, "Customer": 1020000}},
+      "asks": [{"itemCounts": true}],
+      "expect": [
+        {
+          "refusal": "invalidOperation",
+          "saying": "The server counted the Items of 'Customer', a field the source does not declare (ADR-0370 section 3)."
+        }
+      ]
+    },
+    {
+      "name": "ADR-0370 (section 3): a source that does not declare counting is not asked to count",
+      "fetch": {},
+      "asks": [{"itemCounts": true}],
+      "expect": [
+        {
+          "refusal": "invalidOperation",
+          "saying": "This Pivot Source does not count its fields' Items (ADR-0370 section 3)."
+        }
+      ]
+    },
+    {
+      "name": "ADR-0370 (section 3): a layout's leaves are bounded by the product of its Rows' and Columns' counts, less the Items it hides",
+      "fetch": {
+        "counts": {
+          "Desk": 5,
+          "Book": 4,
+          "Date": 3,
+          "Live": 2,
+          "Tag": 2147483647,
+          "Amount": 2147483647,
+          "Risk": 2147483647
+        }
+      },
+      "asks": [
+        {"itemCounts": true},
+        {"leafBound": {}},
+        {"leafBound": {"rows": [{"field": "Desk"}], "columns": [{"field": "Book"}]}},
+        {
+          "leafBound": {
+            "rows": [{"field": "Desk"}, {"field": "Date"}],
+            "columns": [{"field": "Live"}],
+            "values": [{"field": "Amount", "aggregation": "sum"}]
+          }
+        },
+        {
+          "leafBound": {
+            "filters": [{"field": "Tag"}],
+            "rows": [{"field": "Desk"}],
+            "values": [{"field": "Risk", "aggregation": "sum"}]
+          }
+        },
+        {
+          "leafBound": {
+            "rows": [
+              {
+                "field": "Desk",
+                "hiddenItems": [
+                  {"kind": "text", "value": "FX"},
+                  {"kind": "text", "value": "Rates"},
+                  {"kind": "text", "value": "RATES"},
+                  {"kind": "blank"}
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "leafBound": {
+            "rows": [
+              {
+                "field": "Live",
+                "hiddenItems": [
+                  {"kind": "boolean", "value": "TRUE"},
+                  {"kind": "boolean", "value": "FALSE"},
+                  {"kind": "blank"}
+                ]
+              }
+            ],
+            "columns": [{"field": "Tag"}]
+          }
+        },
+        {"leafBound": {"rows": [{"field": "Tag"}, {"field": "Amount"}], "columns": [{"field": "Risk"}]}},
+        {"leafBound": {"rows": [{"field": "Desk"}], "columns": [{"field": "Trading book"}]}}
+      ],
+      "expect": [
+        {
+          "version": "server",
+          "counts": {
+            "Desk": 5,
+            "Book": 4,
+            "Date": 3,
+            "Live": 2,
+            "Tag": 2147483647,
+            "Amount": 2147483647,
+            "Risk": 2147483647
+          }
+        },
+        {"bound": 1},
+        {"bound": 20},
+        {"bound": 30},
+        {"bound": 5},
+        {"bound": 2},
+        {"bound": 0},
+        {"bound": 9007199254740991},
+        {"bound": null}
+      ]
+    }
+  ]
+}

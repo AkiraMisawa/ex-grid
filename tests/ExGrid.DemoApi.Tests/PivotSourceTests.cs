@@ -247,6 +247,21 @@ public sealed class PivotSourceTests(PivotApiServer server) : IClassFixture<Pivo
         Assert.Equal(server.TradeCount, trades.Total);
     }
 
+    [Fact] // ADR-0370 section 3: the server counts each field's Items as the reference does, under the version it answers
+    public async Task ADR0370_the_server_counts_each_fields_Items_as_the_reference_does()
+    {
+        using var client = server.Factory.CreateClient();
+        var sources = await PivotSources.Over(server, client);
+
+        var counts = await sources.Sql.ItemCountsAsync(Token);
+        var reference = await sources.Reference.ItemCountsAsync(Token);
+
+        Assert.Equal(sources.Version, counts.SourceVersion);
+        Assert.Equal(reference.Counts, counts.Counts);
+        Assert.Equal(6, counts.CountOf("Currency"));
+        Assert.Equal(server.TradeCount, counts.CountOf("TradeId"));
+    }
+
     [Fact] // ADR-0066, PV-22: more leaves than the question allows are refused, as the reference refuses them
     public async Task ADR0066_PV22_more_leaves_than_MaxLeaves_are_refused_by_name()
     {
@@ -330,6 +345,7 @@ public sealed class PivotSourceTests(PivotApiServer server) : IClassFixture<Pivo
             [PivotAggregation.Sum, PivotAggregation.Count, PivotAggregation.Average, PivotAggregation.Max, PivotAggregation.Min, PivotAggregation.CountNumbers],
             features.Aggregations);
         Assert.True(features.CanRefresh);
+        Assert.True(features.CountsItems);
         var pnl = fields.Single(f => f.Name == "Pnl");
         Assert.Equal(("P&L", PivotFieldType.Number, "#,##0.00"), (pnl.Caption, pnl.Type, pnl.Format));
         var date = fields.Single(f => f.Name == "TradeDate");

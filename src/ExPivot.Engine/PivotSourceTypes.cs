@@ -16,6 +16,18 @@ public sealed class PivotSourceFeatures
     /// <param name="canRefresh">Whether it can be refreshed; the Pivot Toolbar then
     /// offers Refresh.</param>
     public PivotSourceFeatures(IEnumerable<PivotAggregation> aggregations, bool canRefresh = false)
+        : this(aggregations, canRefresh, countsItems: false)
+    {
+    }
+
+    /// <summary>Declares a source's features, and whether it counts its fields' Items.</summary>
+    /// <param name="aggregations">The Aggregations it answers.</param>
+    /// <param name="canRefresh">Whether it can be refreshed; the Pivot Toolbar then
+    /// offers Refresh.</param>
+    /// <param name="countsItems">Whether it answers each field's count of Items
+    /// (<see cref="PivotSource.ItemCountsAsync"/>, ADR-0370 section 3); ExPivot then asks it once when
+    /// the source is opened and again under a new Source Version.</param>
+    public PivotSourceFeatures(IEnumerable<PivotAggregation> aggregations, bool canRefresh, bool countsItems)
     {
         ArgumentNullException.ThrowIfNull(aggregations);
         _offered = [];
@@ -27,6 +39,7 @@ public sealed class PivotSourceFeatures
         }
         Aggregations = Enum.GetValues<PivotAggregation>().Where(_offered.Contains).ToArray();
         CanRefresh = canRefresh;
+        CountsItems = countsItems;
     }
 
     /// <summary>Every Aggregation, and no Refresh — the bundled source's features: it is refreshed
@@ -38,6 +51,9 @@ public sealed class PivotSourceFeatures
 
     /// <summary>Whether the source can be refreshed.</summary>
     public bool CanRefresh { get; }
+
+    /// <summary>Whether the source answers each field's count of Items (ADR-0370 section 3).</summary>
+    public bool CountsItems { get; }
 
     /// <summary>Whether the source answers <paramref name="aggregation"/>.</summary>
     public bool Offers(PivotAggregation aggregation) => _offered.Contains(aggregation);

@@ -211,3 +211,46 @@ public sealed class PivotDetailRecord
         _ => Convert.ToString(value, CultureInfo.InvariantCulture) ?? "",
     };
 }
+
+/// <summary>
+/// Each field's count of Items, under the Source Version it was counted at (ADR-0370 section 3): what a
+/// server's source answers when its <see cref="PivotSourceFeatures.CountsItems"/> declares it, so that the
+/// Field List shows the count beside a field and a layout's leaves are bounded before it is asked
+/// (<see cref="PivotLeafBound"/>). A field the source did not count is absent, never zero. Immutable and
+/// serialisable (<see cref="PivotJson"/>).
+/// </summary>
+public sealed class PivotItemCounts
+{
+    private readonly Dictionary<string, int> _counts;
+
+    /// <summary>The counts of a Source Version.</summary>
+    /// <param name="sourceVersion">The Source Version the Items were counted at.</param>
+    /// <param name="counts">Each counted field's count of Items, by the field's name.</param>
+    public PivotItemCounts(string sourceVersion, IReadOnlyDictionary<string, int> counts)
+    {
+        ArgumentNullException.ThrowIfNull(sourceVersion);
+        ArgumentNullException.ThrowIfNull(counts);
+        _counts = new Dictionary<string, int>(counts.Count, StringComparer.Ordinal);
+        foreach (var (field, count) in counts)
+        {
+            ArgumentException.ThrowIfNullOrEmpty(field, nameof(counts));
+            if (count < 0)
+                throw new ArgumentOutOfRangeException(nameof(counts), count, $"A field has no fewer than 0 Items; '{field}' was counted {count}.");
+            _counts.Add(field, count);
+        }
+        SourceVersion = sourceVersion;
+    }
+
+    /// <summary>The Source Version the Items were counted at.</summary>
+    public string SourceVersion { get; }
+
+    /// <summary>Each counted field's count of Items, by the field's name.</summary>
+    public IReadOnlyDictionary<string, int> Counts => _counts;
+
+    /// <summary>The field's count of Items, or null when the source did not count it.</summary>
+    public int? CountOf(string field)
+    {
+        ArgumentNullException.ThrowIfNull(field);
+        return _counts.TryGetValue(field, out var count) ? count : null;
+    }
+}

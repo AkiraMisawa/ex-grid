@@ -8,7 +8,7 @@ namespace ExGrid.DemoApi;
 internal sealed record PivotFieldResponse(string Name, PivotFieldType Type, string Caption, string? Format);
 
 /// <summary>The source's features as <c>GET /api/pivot/fields</c> answers them.</summary>
-internal sealed record PivotFeaturesResponse(IReadOnlyList<PivotAggregation> Aggregations, bool CanRefresh);
+internal sealed record PivotFeaturesResponse(IReadOnlyList<PivotAggregation> Aggregations, bool CanRefresh, bool CountsItems);
 
 /// <summary>What <c>GET /api/pivot/fields</c> answers: everything <c>PivotSource.Fetch</c> takes
 /// besides the transport.</summary>
@@ -17,12 +17,14 @@ internal sealed record PivotFieldsResponse(IReadOnlyList<PivotFieldResponse> Fie
 /// <summary>
 /// The server as a Pivot Source (ADR-0066, ADR-0069): <see cref="TradePivotSource"/>'s three
 /// questions over HTTP, each a <c>PivotJson</c> document both ways, so a page's
-/// <c>PivotSource.Fetch</c> delegates are a <c>POST</c> each:
+/// <c>PivotSource.Fetch</c> delegates are a <c>POST</c> each, and its count of each field's Items
+/// (ADR-0370 section 3) a <c>GET</c>:
 /// <code>
 /// var source = PivotSource.Fetch(fields, features,
 ///     async (query, ct) => PivotJson.ReadAnswer(await Post("api/pivot/aggregate", PivotJson.Write(query), ct)),
 ///     async (query, ct) => PivotJson.ReadItemPage(await Post("api/pivot/items", PivotJson.Write(query), ct)),
-///     async (query, ct) => PivotJson.ReadDetailPage(await Post("api/pivot/details", PivotJson.Write(query), ct)));
+///     async (query, ct) => PivotJson.ReadDetailPage(await Post("api/pivot/details", PivotJson.Write(query), ct)),
+///     async ct => PivotJson.ReadItemCounts(await Get("api/pivot/item-counts", ct)));
 /// </code>
 /// A refusal is an answer, not a failure: it comes back <c>200</c>, as the document it is. A
 /// document that cannot be read — not JSON, of a <c>PivotJson</c> version this server does not
@@ -33,7 +35,7 @@ internal static class PivotEndpoints
     /// <summary>The media type every <c>PivotJson</c> document is sent as.</summary>
     public const string JsonMediaType = "application/json";
 
-    /// <summary>Maps <c>GET /api/pivot/fields</c>, and <c>POST /api/pivot/aggregate</c>,
+    /// <summary>Maps <c>GET /api/pivot/fields</c> and <c>/api/pivot/item-counts</c>, and <c>POST /api/pivot/aggregate</c>,
     /// <c>/api/pivot/items</c> and <c>/api/pivot/details</c>; a report's operations under
     /// <c>/api/pivot/reports/{id}</c>; and <c>GET</c> and <c>POST /api/pivot/window-gate</c>, the
     /// gate a test holds a report's Window question at (<see cref="PivotWindowGate"/>).</summary>
@@ -41,7 +43,11 @@ internal static class PivotEndpoints
     {
         app.MapGet("/api/pivot/fields", () => new PivotFieldsResponse(
             TradePivotFields.Fields.Select(field => new PivotFieldResponse(field.Name, field.Type, field.Caption, field.Format)).ToArray(),
-            new PivotFeaturesResponse(TradePivotFields.Features.Aggregations, TradePivotFields.Features.CanRefresh)));
+            new PivotFeaturesResponse(TradePivotFields.Features.Aggregations, TradePivotFields.Features.CanRefresh, TradePivotFields.Features.CountsItems)));
+        app.MapGet("/api/pivot/item-counts", async (HttpResponse response, TradePivotSource source, TradeStore store, CancellationToken cancellationToken) =>
+            store.State != TradeStoreState.Ready
+                ? ApiResults.NotReady(store, response)
+                : Results.Text(PivotJson.Write(await source.ItemCountsAsync(cancellationToken)), JsonMediaType, Encoding.UTF8));
 
         app.MapPost("/api/pivot/aggregate", (HttpRequest request, TradePivotSource source, TradeStore store, CancellationToken cancellationToken) =>
             Answer(request, store, PivotJson.ReadQuery,

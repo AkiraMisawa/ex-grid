@@ -22,6 +22,7 @@ internal static class PivotSourceCases
         public JsonObject? Shape { get; init; }
         public int Asked { get; set; }
         public string? Version { get; set; }
+        public PivotItemCounts? Counts { get; set; }
         public List<string> Versions { get; } = [];
         public List<string?> Told { get; } = [];
     }
@@ -74,18 +75,24 @@ internal static class PivotSourceCases
             inner.Changed += changed => bench!.Told.Add(changed.SourceVersion);
             if (fetch is null)
                 return inner;
-            var features = fetch["offers"] is { } offers
-                ? new PivotSourceFeatures(offers.AsArray().Select(a => PivotCases.Member<PivotAggregation>((string)a!)))
-                : inner.Features;
+            var offered = fetch["offers"] is { } offers
+                ? offers.AsArray().Select(a => PivotCases.Member<PivotAggregation>((string)a!)).ToArray()
+                : inner.Features.Aggregations;
+            var counts = fetch["counts"];
+            var features = new PivotSourceFeatures(offered, inner.Features.CanRefresh, countsItems: counts is not null);
             var instead = fetch["answers"] is { } other ? Query(other.AsObject()) : null;
-            return PivotSource.Fetch(inner.Fields, features,
-                (query, ct) =>
-                {
-                    bench!.Asked++;
-                    return inner.AggregateAsync(instead ?? query, ct);
-                },
-                (query, ct) => inner.ItemsAsync(query, ct),
-                (query, ct) => inner.DetailsAsync(query, ct));
+            Func<PivotQuery, CancellationToken, ValueTask<PivotAnswer>> aggregate = (query, ct) =>
+            {
+                bench!.Asked++;
+                return inner.AggregateAsync(instead ?? query, ct);
+            };
+            if (counts is null)
+                return PivotSource.Fetch(inner.Fields, features, aggregate, (query, ct) => inner.ItemsAsync(query, ct), (query, ct) => inner.DetailsAsync(query, ct));
+            // "counts": true counts through the source behind; an object is what the server answers instead.
+            Func<CancellationToken, ValueTask<PivotItemCounts>> itemCounts = counts is JsonObject answered
+                ? _ => ValueTask.FromResult(new PivotItemCounts("server", answered.ToDictionary(c => c.Key, c => (int)c.Value!)))
+                : ct => inner.ItemCountsAsync(ct);
+            return PivotSource.Fetch(inner.Fields, features, aggregate, (query, ct) => inner.ItemsAsync(query, ct), (query, ct) => inner.DetailsAsync(query, ct), itemCounts);
         }
         bench = new Bench { Source = Make(), Again = Make, Data = data, Shape = shape };
         return bench;
@@ -120,6 +127,21 @@ internal static class PivotSourceCases
                 ["total"] = page.Total,
                 ["items"] = new JsonArray([.. page.Items.Select(PivotCases.ItemKey)]),
             };
+        }
+        if (step["itemCounts"] is not null)
+        {
+            var counted = await source.ItemCountsAsync(ct);
+            bench.Counts = counted;
+            return new JsonObject
+            {
+                ["version"] = counted.SourceVersion == bench.Version ? "answered" : counted.SourceVersion,
+                ["counts"] = new JsonObject(counted.Counts.Select(c => KeyValuePair.Create(c.Key, (JsonNode?)c.Value))),
+            };
+        }
+        if (step["leafBound"] is { } bounded)
+        {
+            var counts = bench.Counts ?? throw new InvalidOperationException("A layout is bounded by the counts last answered, and none were asked for.");
+            return new JsonObject { ["bound"] = PivotLeafBound.Of(PivotCases.Layout(bounded), counts) };
         }
         if (step["details"] is { } cell)
         {

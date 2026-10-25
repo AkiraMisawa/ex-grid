@@ -71,7 +71,12 @@ internal sealed class PivotSources
             features,
             async (query, ct) => PivotJson.ReadAnswer(await Post(client, "/api/pivot/aggregate", PivotJson.Write(query), asked, ct)),
             async (query, ct) => PivotJson.ReadItemPage(await Post(client, "/api/pivot/items", PivotJson.Write(query), asked, ct)),
-            async (query, ct) => PivotJson.ReadDetailPage(await Post(client, "/api/pivot/details", PivotJson.Write(query), asked, ct)));
+            async (query, ct) => PivotJson.ReadDetailPage(await Post(client, "/api/pivot/details", PivotJson.Write(query), asked, ct)),
+            async ct =>
+            {
+                asked.Increment();
+                return PivotJson.ReadItemCounts(await client.GetStringAsync("/api/pivot/item-counts", ct));
+            });
 
         var (version, byId) = await TestData.AllTrades(server.Store);
         var trades = byId.Values.OrderBy(trade => trade.TradeId, StringComparer.Ordinal).ToArray();
@@ -96,7 +101,8 @@ internal sealed class PivotSources
         var features = json.GetProperty("features");
         return (fields, new PivotSourceFeatures(
             features.GetProperty("aggregations").EnumerateArray().Select(a => Enum.Parse<PivotAggregation>(a.GetString()!, ignoreCase: true)),
-            features.GetProperty("canRefresh").GetBoolean()));
+            features.GetProperty("canRefresh").GetBoolean(),
+            features.GetProperty("countsItems").GetBoolean()));
     }
 
     /// <summary>The server's answer to a document, as it is sent: a <c>POST</c>.</summary>
