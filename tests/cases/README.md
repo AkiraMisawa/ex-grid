@@ -512,8 +512,9 @@ A layout is the layout's JSON without its `version`, and an Item's key is writte
 record's values; `fields`, each with its `name` and `type`, and its `caption`, `format`, `itemOrder`,
 `datePart` or `orderKey` where it has one, and `of` where it reads another column than its name; and
 `records`, a record's values in column order. A case's own `fields` or `records` stand in for the set's. A
-set may instead be a Snapshot's: `snapshot`, each column's `name`, `kind` and `caption`, and `rows`, which a
-case's own `rows` stand in for. A differential run writes the set itself in `data`. The Order Keys a field
+set may instead be a Snapshot's: `snapshot`, each column's `name`, `kind` and `caption`, and the column that is
+its `recordKey` where it has one; and `rows`, which a case's own `rows` stand in for. A case, or a differential
+run, may write the set itself in `data`. The Order Keys a field
 names (`tenor`, `tenorButOnIsText`, `tenorThrowsOn7Y`, `absolute`) are the Consumer's functions the C# tests
 declared, and note each value they are called with.
 
@@ -558,9 +559,10 @@ place of the one asked. Each of `asks` is answered in turn:
 | Ask | Answer |
 |---|---|
 | `{"fields": true}` | Each field's `name`, `caption`, `type`, and its `format`, `column` and `datePart` where it has one |
-| `{"aggregate": question}` | The Leaf Aggregates: `leaves`, each axis's `field` and `items`, each `leaf`'s Item at every level (`at`, rows then columns) and `records`, and each value's `parts` and what it carries at every leaf — `values`, `numbers`, `nonFinite`, and `sum`, `min`, `max`, `product`, `mean`, `m2` as asked for, to the last bit. A question is `rows`, `columns`, `filters` (a field by name, or with its `hiddenItems`), `values` (a field, its counts, or with the `parts` it asks for: `sum`, `extremes`, `product`, `variance`) and `maxLeaves` |
-| `{"items": field}` | A page of the field's Items, with `search` and `max`: `total` and `items`, under the last answer's Source Version, or `"under": "stale"` |
-| `{"details": cell}` | A page of the records behind a cell: its `rows` and `columns` path (each a `field` and its `item`), the `hiddenItems` of placed fields, `start` and `count`; answered by `start`, `total`, `fields` and `records` |
+| `{"aggregate": question}` | The Leaf Aggregates: `leaves`, each axis's `field` and `items`, each `leaf`'s Item at every level (`at`, rows then columns) and `records`, and each value's `parts` and what it carries at every leaf — `values`, `numbers`, `nonFinite`, and `sum`, `min`, `max`, `product`, `mean`, `m2` as asked for, to the last bit. A question is `rows`, `columns`, `filters` (a field by name, or with its `hiddenItems`), `values` (a field, its counts, or with the `parts` it asks for: `sum`, `extremes`, `product`, `variance`) and `maxLeaves`. With `"order": "any"`, each axis's Items are listed in the ordinal order of their kind and value and the leaves in the order of their Items: after a batch that changes records, ExGrid.Data reads rows in its storage's order and the Script Core in the Snapshot's (ADR-0067), and such a step holds what both say |
+| `{"apply": batch}` | A Change Batch applied to a source over a Snapshot (keyed by the column its `snapshot` names as `recordKey`, or with no key): its `added` and `changed` records, rows in the data set's columns, and its `removedKeys`. Answered by the Snapshot version it made (`applied`) and the Source Versions the source `told` its listeners of, each written `{version}` where it is the one the source answers under now; or by the Snapshot's refusal (`"refusal": "snapshot"`) and what was told |
+| `{"items": field}` | A page of the field's Items, with `search` and `max`: `total` and `items`, under the last answer's Source Version, or `"under"` an earlier answer's (`{"answer": n}`, from 0), the version a source over a Snapshot answers under now (`"current"`), or one no source held (`"stale"`) |
+| `{"details": cell}` | A page of the records behind a cell: its `rows` and `columns` path (each a `field` and its `item`), the `hiddenItems` of placed fields, `start` and `count`, under a version as a page of Items is; answered by `start`, `total`, `fields` and `records` |
 | `{"report": layout}` | The report the layout makes from the source's answer, read as a `pivotReport` case reads one, `also` included |
 | `{"cube": question, "from": question}` | Whether a cube is made of one question from the answer to another |
 | `{"asked": true}` | How often the fetching source asked its server for Leaf Aggregates |

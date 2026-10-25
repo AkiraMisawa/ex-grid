@@ -110,16 +110,27 @@ internal static class PivotCases
         => Inherited(file, entry, "data") is JsonObject set ? set : Read(Path.Combine(Root, "data", (string)Inherited(file, entry, "data")! + ".json"));
 
     /// <summary>The Snapshot a data set's columns make, when the set is a Snapshot's: <c>snapshot</c> names
-    /// each column's name, kind and caption, and <c>rows</c> holds a row's values in column order, written
-    /// as <see cref="Value"/> reads them; the case's own <c>rows</c>, when it has them, stand in for the
-    /// set's. Null for a set of records.</summary>
+    /// each column's name, kind and caption, and the column that is its Record Key, where it has one; and
+    /// <c>rows</c> holds a row's values in column order, written as <see cref="Value"/> reads them; the case's
+    /// own <c>rows</c>, when it has them, stand in for the set's. Null for a set of records.</summary>
     public static Snapshot? SnapshotOf(JsonObject file, JsonObject entry)
     {
         var set = SetOf(file, entry);
         if (set["snapshot"] is not { } shape)
             return null;
+        return Rows(shape.AsObject(), (entry["rows"] ?? set["rows"]!).AsArray(), (string?)shape["recordKey"]);
+    }
+
+    /// <summary>The shape of a data set's Snapshot, when the set is a Snapshot's: what a Change Batch's records
+    /// are written in.</summary>
+    public static JsonObject? SnapshotShapeOf(JsonObject file, JsonObject entry) => SetOf(file, entry)["snapshot"]?.AsObject();
+
+    /// <summary>Rows written in a Snapshot's shape, as a Snapshot of their own: keyed by <paramref name="key"/>
+    /// where it names a column, and with no key otherwise, as a Change Batch's records are.</summary>
+    public static Snapshot Rows(JsonObject shape, JsonArray written, string? key)
+    {
         var columns = shape["columns"]!.AsArray().Select(c => c!.AsObject()).ToArray();
-        var rows = (entry["rows"] ?? set["rows"]!).AsArray().Select(r => r!.AsArray()).ToArray();
+        var rows = written.Select(r => r!.AsArray()).ToArray();
         var builder = new SnapshotColumnsBuilder();
         for (var c = 0; c < columns.Length; c++)
         {
@@ -169,6 +180,8 @@ internal static class PivotCases
                     throw new InvalidOperationException($"'{kind}' is not a kind of column the cases name.");
             }
         }
+        if (key is not null)
+            builder.Key(key);
         return builder.Build();
     }
 

@@ -416,6 +416,16 @@ export class PartColumns {
         return cell;
     }
 
+    /** Empties a cell, as {@link addCell} makes it. */
+    resetCell(cell: number): void {
+        if (cell < 0 || cell >= this.counts.length) throw new RangeError(`There is no cell ${cell} of ${this.counts.length}.`);
+        this.counts[cell] = noCounts();
+        if (this.sums !== undefined) this.sums[cell] = noSum();
+        if (this.extremes !== undefined) this.extremes[cell] = noExtremes();
+        if (this.products !== undefined) this.products[cell] = 0;
+        if (this.variances !== undefined) this.variances[cell] = noVariance();
+    }
+
     /** Cells until there are `count`. */
     ensureCells(count: number): void {
         while (this.counts.length < count) this.addCell();
