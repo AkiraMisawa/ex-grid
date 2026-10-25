@@ -1,0 +1,177 @@
+{
+  "about": "Types a Snapshot does not read (ADR-0065), each refused naming its column and the type as Arrow's own tools print it: lists, structs, maps, binary, durations, intervals, float16, null, a dictionary of anything but text, and a timestamp in a zone other than UTC. Transcribed from ExGrid.Data.Arrow.Tests' RefusalTests.",
+  "kind": "arrowRead",
+  "cases": [
+    {
+      "name": "ADR-0065: list<int64> is outside the table, and is refused naming the column and the type",
+      "stream": "streams/outside-list.arrows",
+      "refused": {
+        "message": "Column 'Value': the Arrow type list<int64> is not one a Snapshot reads.",
+        "row": null,
+        "column": "Value"
+      }
+    },
+    {
+      "name": "ADR-0065: large_list<int64> is outside the table, and is refused naming the column and the type",
+      "stream": "streams/outside-large-list.arrows",
+      "refused": {
+        "message": "Column 'Value': the Arrow type large_list<int64> is not one a Snapshot reads.",
+        "row": null,
+        "column": "Value"
+      }
+    },
+    {
+      "name": "ADR-0065: struct<a: int64> is outside the table, and is refused naming the column and the type",
+      "stream": "streams/outside-struct.arrows",
+      "refused": {
+        "message": "Column 'Value': the Arrow type struct<a: int64> is not one a Snapshot reads.",
+        "row": null,
+        "column": "Value"
+      }
+    },
+    {
+      "name": "ADR-0065: map<utf8, int64> is outside the table, and is refused naming the column and the type",
+      "stream": "streams/outside-map.arrows",
+      "refused": {
+        "message": "Column 'Value': the Arrow type map<utf8, int64> is not one a Snapshot reads.",
+        "row": null,
+        "column": "Value"
+      }
+    },
+    {
+      "name": "ADR-0065: binary is outside the table, and is refused naming the column and the type",
+      "stream": "streams/outside-binary.arrows",
+      "refused": {
+        "message": "Column 'Value': the Arrow type binary is not one a Snapshot reads.",
+        "row": null,
+        "column": "Value"
+      }
+    },
+    {
+      "name": "ADR-0065: large_binary is outside the table, and is refused naming the column and the type",
+      "stream": "streams/outside-large-binary.arrows",
+      "refused": {
+        "message": "Column 'Value': the Arrow type large_binary is not one a Snapshot reads.",
+        "row": null,
+        "column": "Value"
+      }
+    },
+    {
+      "name": "ADR-0065: binary_view is outside the table, and is refused naming the column and the type",
+      "stream": "streams/outside-binary-view.arrows",
+      "refused": {
+        "message": "Column 'Value': the Arrow type binary_view is not one a Snapshot reads.",
+        "row": null,
+        "column": "Value"
+      }
+    },
+    {
+      "name": "ADR-0065: fixed_size_binary[16] is outside the table, and is refused naming the column and the type",
+      "stream": "streams/outside-fixed-size-binary.arrows",
+      "refused": {
+        "message": "Column 'Value': the Arrow type fixed_size_binary[16] is not one a Snapshot reads.",
+        "row": null,
+        "column": "Value"
+      }
+    },
+    {
+      "name": "ADR-0065: duration[ms] is outside the table, and is refused naming the column and the type",
+      "stream": "streams/outside-duration.arrows",
+      "refused": {
+        "message": "Column 'Value': the Arrow type duration[ms] is not one a Snapshot reads.",
+        "row": null,
+        "column": "Value"
+      }
+    },
+    {
+      "name": "ADR-0065: month_day_nano_interval is outside the table, and is refused naming the column and the type",
+      "stream": "streams/outside-interval.arrows",
+      "refused": {
+        "message": "Column 'Value': the Arrow type month_day_nano_interval is not one a Snapshot reads.",
+        "row": null,
+        "column": "Value"
+      }
+    },
+    {
+      "name": "ADR-0065: float16 is outside the table, and is refused naming the column and the type",
+      "stream": "streams/outside-float16.arrows",
+      "refused": {
+        "message": "Column 'Value': the Arrow type float16 is not one a Snapshot reads.",
+        "row": null,
+        "column": "Value"
+      }
+    },
+    {
+      "name": "ADR-0065: null is outside the table, and is refused naming the column and the type",
+      "stream": "streams/outside-null.arrows",
+      "refused": {
+        "message": "Column 'Value': the Arrow type null is not one a Snapshot reads.",
+        "row": null,
+        "column": "Value"
+      }
+    },
+    {
+      "name": "ADR-0065: dictionary<values=int64, indices=int32> is outside the table, and is refused naming the column and the type",
+      "stream": "streams/outside-dictionary-int64.arrows",
+      "refused": {
+        "message": "Column 'Value': the Arrow type dictionary<values=int64, indices=int32> is not one a Snapshot reads.",
+        "row": null,
+        "column": "Value"
+      }
+    },
+    {
+      "name": "ADR-0065: a timestamp in Asia/Tokyo, a zone other than UTC, is refused naming the column and the zone",
+      "stream": "streams/zone-1.arrows",
+      "refused": {
+        "message": "Column 'When': the Arrow type timestamp[us, tz=Asia/Tokyo] is a timestamp in the time zone 'Asia/Tokyo', which a Snapshot does not read: converting it would need a time zone database. Write it in UTC, or as clock values without a time zone.",
+        "row": null,
+        "column": "When"
+      }
+    },
+    {
+      "name": "ADR-0065: a timestamp in +09:00, a zone other than UTC, is refused naming the column and the zone",
+      "stream": "streams/zone-2.arrows",
+      "refused": {
+        "message": "Column 'When': the Arrow type timestamp[us, tz=+09:00] is a timestamp in the time zone '+09:00', which a Snapshot does not read: converting it would need a time zone database. Write it in UTC, or as clock values without a time zone.",
+        "row": null,
+        "column": "When"
+      }
+    },
+    {
+      "name": "ADR-0065: a timestamp in Europe/London, a zone other than UTC, is refused naming the column and the zone",
+      "stream": "streams/zone-3.arrows",
+      "refused": {
+        "message": "Column 'When': the Arrow type timestamp[us, tz=Europe/London] is a timestamp in the time zone 'Europe/London', which a Snapshot does not read: converting it would need a time zone database. Write it in UTC, or as clock values without a time zone.",
+        "row": null,
+        "column": "When"
+      }
+    },
+    {
+      "name": "ADR-0065: a timestamp in America/New_York, a zone other than UTC, is refused naming the column and the zone",
+      "stream": "streams/zone-4.arrows",
+      "refused": {
+        "message": "Column 'When': the Arrow type timestamp[us, tz=America/New_York] is a timestamp in the time zone 'America/New_York', which a Snapshot does not read: converting it would need a time zone database. Write it in UTC, or as clock values without a time zone.",
+        "row": null,
+        "column": "When"
+      }
+    },
+    {
+      "name": "ADR-0065: a timestamp in -05:00, a zone other than UTC, is refused naming the column and the zone",
+      "stream": "streams/zone-5.arrows",
+      "refused": {
+        "message": "Column 'When': the Arrow type timestamp[us, tz=-05:00] is a timestamp in the time zone '-05:00', which a Snapshot does not read: converting it would need a time zone database. Write it in UTC, or as clock values without a time zone.",
+        "row": null,
+        "column": "When"
+      }
+    },
+    {
+      "name": "ADR-0065: a timestamp in Etc/GMT+5, a zone other than UTC, is refused naming the column and the zone",
+      "stream": "streams/zone-6.arrows",
+      "refused": {
+        "message": "Column 'When': the Arrow type timestamp[us, tz=Etc/GMT+5] is a timestamp in the time zone 'Etc/GMT+5', which a Snapshot does not read: converting it would need a time zone database. Write it in UTC, or as clock values without a time zone.",
+        "row": null,
+        "column": "When"
+      }
+    }
+  ]
+}

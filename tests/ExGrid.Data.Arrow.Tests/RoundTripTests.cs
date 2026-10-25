@@ -7,30 +7,6 @@ namespace ExGrid.Data.Arrow.Tests;
 /// <summary>A Snapshot written and read back through ExGrid.Data.Arrow is the Snapshot it was (DA-13).</summary>
 public class RoundTripTests
 {
-    [Fact] // ADR-0065: a Snapshot round-trips whole, column by column and Blank by Blank, with its captions, Record Key and version
-    public async Task Every_kind_round_trips_with_its_blanks_captions_key_and_version()
-    {
-        var deals = Make(500);
-        var builder = Deals();
-        var snapshot = builder.Build(deals);
-        // Two batches that change nothing move the version on, so the version that travels is not 0.
-        snapshot = snapshot.Apply(builder.Batch(changed: [deals[0]])).After;
-        snapshot = snapshot.Apply(builder.Batch(changed: [deals[1]])).After;
-
-        var read = await ReadEveryWayAsync(await WriteAsync(snapshot));
-
-        Assert.Equal(2, read.Version);
-        Assert.Equal("Id", read.RecordKey?.Name);
-        Assert.Equal(["Id", "Trading desk", "Notional", "Price (USD)", "Quantity", "Trade date", "When", "Live"], read.Columns.Select(c => c.Caption));
-        AssertSame(snapshot, read);
-        // Every kind holds a Blank, and the Blank is not "" or 0.
-        foreach (var column in snapshot.Columns.Where(c => c.Name != "Id"))
-            Assert.Contains(true, Blanks(read, column.Name));
-        Assert.Contains("''", Values(read, "Desk"));
-        Assert.Equal("0", Values(read, "Quantity")[499]);
-        Assert.False(Blanks(read, "Quantity")[499]);
-    }
-
     [Fact] // ADR-0065: a fresh Snapshot round-trips with its dictionary in the same order, codes and all
     public async Task A_fresh_snapshot_keeps_its_dictionary_and_codes()
     {
@@ -80,21 +56,6 @@ public class RoundTripTests
             AssertSame(snapshot, await ReadAsync(await WriteAsync(snapshot, batchRows)), sameDictionaries: false);
     }
 
-    [Fact] // ADR-0065: a Snapshot of no rows round-trips its columns, captions, key and version
-    public async Task An_empty_snapshot_round_trips()
-    {
-        var builder = Deals();
-        var snapshot = builder.Build(Make(3));
-        snapshot = snapshot.Apply(builder.Batch(removedKeys: [1L, 2L, 3L])).After;
-
-        var read = await ReadEveryWayAsync(await WriteAsync(snapshot));
-
-        Assert.Equal(0, read.RowCount);
-        Assert.Equal(1, read.Version);
-        AssertSame(snapshot, read, sameDictionaries: false);
-        Assert.Empty(Dictionary(read, "Desk"));
-    }
-
     [Fact] // ADR-0065: Decimal slices held at different scales, and as decimals, are written at the largest scale and read back exact
     public async Task Decimals_held_at_different_scales_round_trip_exactly()
     {
@@ -139,23 +100,4 @@ public class RoundTripTests
         Assert.Equal([false, false, false, true, false, false, false, false, false, false, false, false], Blanks(read, "Value"));
     }
 
-    [Fact] // ADR-0065: the extreme integers and dates round-trip
-    public async Task Extreme_integers_and_dates_round_trip()
-    {
-        (long? Number, DateTime? When)[] values =
-        [
-            (long.MinValue, DateTime.MinValue),
-            (long.MaxValue, new DateTime(9999, 12, 31, 23, 59, 59, 999)),
-            (0, null),
-            (null, new DateTime(1969, 12, 31, 23, 59, 59, 1)),
-        ];
-        var snapshot = new SnapshotBuilder<(long? Number, DateTime? When)>()
-            .Integer("Number", v => v.Number)
-            .Date("When", v => v.When)
-            .Build(values);
-
-        var read = await ReadAsync(await WriteAsync(snapshot));
-
-        AssertSame(snapshot, read);
-    }
 }

@@ -29,7 +29,7 @@ One directory per area, one file per group of cases. Each file is an object:
 | Key | Meaning |
 |---|---|
 | `about` | What the file covers, and where its cases came from |
-| `kind` | Which runner reads it: `selection`, `range`, `edgeBand`, `held`, `calls`, `clipboard`, `query`, `source`, `fetch`, `displayText`, `find`, `replace`, `summary` |
+| `kind` | Which runner reads it: `selection`, `range`, `edgeBand`, `held`, `calls`, `clipboard`, `query`, `source`, `fetch`, `displayText`, `find`, `replace`, `summary`, `arrowRead`, `arrowShape`, `arrowWrite` |
 | `extent` | `[rows, columns]`, the grid every case of the file runs against unless it names its own |
 | `cases` | The cases. Each has a `name`, which starts with the ADR it holds to (CLAUDE.md, "Put the ADR number in the test name") |
 
@@ -352,3 +352,39 @@ in the Script Core, a module's exports.
 The runners find members by name (`tests/ExGrid.Tests/Cases/CallCaseTests.cs` by reflection,
 `src/npm/core/test/calls.test.ts` from its table of subjects), so a misspelt member fails the case, as
 does a check that says neither `is` nor `throws`, and a case that checks nothing.
+
+## `arrowRead`, `arrowShape` and `arrowWrite`
+
+The Snapshot as Apache Arrow ([ADR-0065](../../docs/adr/0065-a-snapshot-travels-as-apache-arrow.md), ADR-0370
+section 3), under `arrow/`: xUnit runs them against ExGrid.Data.Arrow
+(`tests/ExGrid.Data.Arrow.Tests/Cases/ArrowCaseTests.cs`) and Vitest against `@ex-grid/data`
+(`src/npm/data/test/arrow-cases.test.ts`). These cases are not the Script Core's: they hold the two
+Snapshot packages to one reading of the same bytes, and both stay.
+
+| Directory | Holds |
+|---|---|
+| `streams/` | Arrow streams and files written by pyarrow, a third reader and writer, from `make_streams.py`: each type of ADR-0065's table, each type outside it, each refused value, and bytes cut short or not Arrow at all |
+| `producers/` | Streams other producers wrote (pyarrow, Polars, DuckDB), from `producers/make_streams.py` |
+| `written/` | What `@ex-grid/data` writes for each `arrowWrite` case, which the C# runner reads back. `EXGRID_WRITE_ARROW_CASES=1 npx vitest run` in `src/npm/data` writes them; otherwise the Vitest runner holds the writer to them byte for byte |
+
+An `arrowRead` case names its bytes, `"stream": "streams/…"`, and says either what they read as or how
+they are refused:
+
+| Key | Meaning |
+|---|---|
+| `expect` | The Snapshot: `version`, `recordKey` (`null` for none), and `columns`, each with its `name`, `caption`, `kind` and `values` (one a row, `null` for a Blank), and a Text column's `dictionary` in the order values first appear |
+| `refused` | The refusal: `message`, whole, or `saying`, text it holds where the two packages word the rest apart (a hint naming a .NET or a browser API); and the `row` (1-based) and `column` it names, `null` when it names none, and the Record Key as `key` when it names one |
+
+A value is written by its kind: Text a string, or `{"utf16": "…\\uXXXX…"}` for text no JSON reader takes
+(a lone surrogate); Decimal its canonical text (`"-0.0001"`); Double a number, `"Infinity"`, `"-Infinity"`,
+or `{"bits": "7ff8000000000000"}`, its IEEE 754 bits, which a double is compared by; Integer a number, or
+a string past 2^53; Date `"2026-09-30"`, or `"2026-09-30T12:00:00"` with up to seven places after the
+second and none of them trailing zeros; Boolean `true` or `false`.
+
+An `arrowShape` case names a stream and gives its `shape`, each column's `name` and `kind`, or the
+`refused` a read of the shape meets. An `arrowWrite` case gives a `snapshot` in the same form as
+`expect`, without the dictionary, and either `refused`, or `expect` — each of the written schema's
+`fields` with its `name`, Arrow `type` as Arrow's tools print it and `caption` (`null` when none is
+written), and the schema's `metadata` whole — and `written`, the path of what `@ex-grid/data` wrote.
+Each runner writes the Snapshot, holds the schema to `expect`, reads it back as the Snapshot it was, and
+reads `written` the same way.
