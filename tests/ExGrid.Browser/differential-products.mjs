@@ -1,12 +1,12 @@
-import { expect, alterPage, circuitQuiet, settled } from './fixtures.mjs';
+import { expect, alterPage, circuitQuiet, settled, stylesheetsLoaded } from './fixtures.mjs';
 import { expectTabStopTaken } from './keyboard.mjs';
 import { openSheet, sheet, bar, nameBox } from './sheet-helpers.mjs';
 import { pick } from './differential.mjs';
 
 // The products the differential test drives (ADR-0240 §8, differential.spec.mjs): for each, how its
 // page is opened, the places its presses aim at, how a step is sent, when it has settled, what of it is
-// compared, and the steps a seed draws. ExPivot is not among them yet: its first runs found races of its
-// own, and it joins once they are fixed (ticket 07, ASY-8).
+// compared, and the steps a seed draws. ExPivot joined once the races its first runs found were fixed
+// (ADR-0362).
 
 // ---- Grids: ExGrid's editable grid on /features, and the Sheet on /sheet -----------------------------
 
@@ -217,6 +217,127 @@ async function statuses(page, selectors) {
     return read;
 }
 
+// ---- ExPivot on /pivot -----------------------------------------------------------------------------
+
+const pivot = (page) => page.locator('.ex-pivot');
+const pivotReport = (page) => pivot(page).locator('.ex-pivot-sheet > .ex-grid');
+const pivotPane = (page) => page.getByRole('region', { name: 'PivotTable Fields' });
+const PIVOT_FIELDS = 6;
+
+/**
+ * The steps for the pivot: presses only on what stands where it stood — the Field List's fields, whose
+ * order no command changes, and the Pivot Toolbar's Layout — and the keys that work what they open. An
+ * Area's entries move as fields come and go, so they are reached by keys. The steps come in episodes: a
+ * field pressed and keys typed on it, or Layout ▾ pressed, keys typed in its menu, and an Escape, which
+ * closes the menu if it still stands. A press outside a menu that is painted dismisses that menu and does
+ * nothing else, and one made before the menu is painted does what it presses (ADR-0061: a gesture names
+ * the menu it was painted against), so a field is never pressed while a menu may be open: its outcome
+ * would depend on what the user saw, as ADR-0240 §8 leaves out. At machine speed a menu stands painted
+ * until its Escape has been answered, so a Layout episode ends with the pivot settled in both runs
+ * (`settle`), and only the inputs inside an episode, and those of the field episodes between, are sent
+ * at machine speed.
+ */
+function pivotSteps(next, count = 24) {
+    const steps = [];
+    const keys = (choices, most) => {
+        const many = Math.floor(next() * (most + 1));
+        for (let i = 0; i < many; i++) {
+            steps.push({ kind: 'key', key: pick(next, choices) });
+        }
+    };
+    while (steps.length < count) {
+        if (next() < 0.6) {
+            steps.push({ kind: 'press', target: `field${Math.floor(next() * PIVOT_FIELDS)}` });
+            keys(['Space', 'ArrowDown', 'ArrowUp', 'Home', 'End', 'Escape'], 2);
+        } else {
+            steps.push({ kind: 'press', target: 'layout' });
+            keys(['ArrowDown', 'ArrowUp', 'Home', 'End', 'Enter', 'Space'], 3);
+            steps.push({ kind: 'key', key: 'Escape' });
+            steps.push({ kind: 'settle' });
+        }
+    }
+    return steps;
+}
+
+const pivotScenario = {
+    async open(page) {
+        await page.goto('/pivot');
+        await expect(pivotReport(page).locator('.ex-viewport .ex-row').first()).toBeVisible({ timeout: 30_000 });
+        await stylesheetsLoaded(page);
+        await expect.poll(() => pivot(page).evaluate((p) => getComputedStyle(p).display)).toBe('flex');
+        // End, Home and the arrows typed on a Field List tick or on the body are the browser's: they
+        // scroll the list of fields, or /pivot itself, smoothly, and a press made while that scroll is
+        // under way would land on another field in one run than in the other. The list is let grow to
+        // its full height, so it has nothing to scroll, and the page is held where it stands, at its top.
+        await alterPage(page, () => {
+            const root = document.documentElement;
+            const before = root.style.overflow;
+            root.style.overflow = 'hidden';
+            window.scrollTo(0, 0);
+            const style = document.createElement('style');
+            style.textContent = '.ex-pivot-fields { max-height: none !important; overflow: visible !important; }';
+            document.head.append(style);
+            return () => {
+                style.remove();
+                root.style.overflow = before;
+            };
+        });
+        await settleGrid(pivotReport(page));
+    },
+    async places(page) {
+        // Nothing in the pivot scrolls, so no key moves what a press aims at (open).
+        expect(await pivot(page).evaluate((box) => [...box.querySelectorAll('.ex-pivot-pane *')]
+            .filter((e) => /(auto|scroll)/.test(getComputedStyle(e).overflowY) && e.scrollHeight > e.clientHeight)
+            .map((e) => e.className)), 'nothing in the pane scrolls').toEqual([]);
+        const places = {};
+        const boxes = pivotPane(page).getByRole('list', { name: 'PivotTable Fields' }).getByRole('checkbox');
+        expect(await boxes.count(), 'the Field List has the fields the steps press').toBeGreaterThanOrEqual(PIVOT_FIELDS);
+        for (let index = 0; index < PIVOT_FIELDS; index++) {
+            const box = await boxes.nth(index).boundingBox();
+            expect(box, `field ${index} is on screen`).not.toBeNull();
+            places[`field${index}`] = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+        }
+        const layout = await pivot(page).locator('.ex-pivot-report').getByRole('button', { name: 'Layout', exact: true }).boundingBox();
+        expect(layout, 'Layout ▾ is on screen').not.toBeNull();
+        places.layout = { x: layout.x + layout.width / 2, y: layout.y + layout.height / 2 };
+        return places;
+    },
+    async act(page, step, places) {
+        if (step.kind === 'settle') {
+            await settleGrid(pivotReport(page));
+            return;
+        }
+        await actOnPage(page, step, places);
+    },
+    async settle(page) {
+        await settleGrid(pivotReport(page));
+    },
+    async read(page) {
+        const areas = {};
+        for (const title of ['Filters', 'Columns', 'Rows', 'Values']) {
+            areas[title] = await pivotPane(page).getByRole('list', { name: title, exact: true }).getByRole('button').evaluateAll((buttons) =>
+                buttons.map((b) => b.getAttribute('aria-label')).filter((n) => n?.startsWith('Options for ')));
+        }
+        return {
+            fields: await pivotPane(page).getByRole('list', { name: 'PivotTable Fields' }).getByRole('checkbox')
+                .evaluateAll((boxes) => boxes.map((b) => `${b.getAttribute('aria-label') ?? b.closest('li')?.textContent?.trim()}=${b.checked}`)),
+            areas,
+            report: await pivotReport(page).evaluate((root) => ({
+                rows: root.getAttribute('aria-rowcount'),
+                text: [...root.querySelectorAll('.ex-viewport .ex-row')].slice(0, 12).map((row) => row.textContent),
+            })),
+            open: await page.locator('[role=menu], [role=dialog]').evaluateAll((surfaces) =>
+                surfaces.map((s) => `${s.getAttribute('role')} ${s.getAttribute('aria-label') ?? ''}`)),
+            keyboard: await keyboardAt(page),
+            // The page counts the layouts the pivot raised, and LayoutChanged is raised only for a layout the
+            // report shows (ADR-0061): one a quicker change replaced before its report came is never raised,
+            // so the count is the speed's. The layout itself is read above, and the rest of the line here.
+            status: Object.fromEntries(Object.entries(await statuses(page, ['#pivot-status']))
+                .map(([at, text]) => [at, text === null ? null : text.replace(/^\d+ changes made in the pane; /, '')])),
+        };
+    },
+};
+
 /** Each product's scenario and the steps a seed draws for it, by the product's name. */
 export const scenarios = {
     ExGrid: {
@@ -231,4 +352,5 @@ export const scenarios = {
             rows: SHEET_ROWS, columns: SHEET_COLUMNS, first: 'r3c3', texts: ['=1+', '=A2*2', '12', 'note', '7.5', '=SUM('],
         }),
     },
+    ExPivot: { scenario: pivotScenario, steps: (next) => pivotSteps(next) },
 };

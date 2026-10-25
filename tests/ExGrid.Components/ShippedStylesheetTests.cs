@@ -534,8 +534,10 @@ public class ShippedStylesheetTests
         // ticket 06, a frame's waiting element taking the keyboard as the hand-off to it is told
         // (waitForFrameAt), granted from the Consumer's control the hand-off started on; and, tenth since
         // ADR-0360, a box's first control focused where no grid stands to hand the keyboard on
-        // (focusBox, ExPivot's empty report), outside any instance.
-        Assert.Equal(10, Regex.Matches(script.Text, @"\.(focus|blur)\(").Count);
+        // (focusBox, ExPivot's empty report), outside any instance; and, eleventh since ADR-0362, a
+        // press let through for its drag giving the keyboard back to what it pressed at its turn
+        // (answerDraggablePress).
+        Assert.Equal(11, Regex.Matches(script.Text, @"\.(focus|blur)\(").Count);
         Assert.DoesNotMatch(new Regex(@"getBoundingClientRect|offsetWidth|offsetHeight|getComputedStyle"), body);
         // The surface is forgotten with the instance.
         Assert.Matches(new Regex(@"dispose: \(\) => \{.*lastSurface = null;", RegexOptions.Singleline), script.Text);
@@ -727,9 +729,10 @@ public class ShippedStylesheetTests
         // Selected in those two places alone, by no listener of its own, and no focus is moved: the
         // press's default gives the field the keyboard (ADR-0021's decisions about focus are not
         // added to: six since 2026-10-02, seven since ADR-0204, eight since ADR-0240's note on
-        // ticket 05, nine since its note on ticket 06 and ten since ADR-0360, none of them this one's).
+        // ticket 05, nine since its note on ticket 06, ten since ADR-0360 and eleven since ADR-0362, none
+        // of them this one's).
         Assert.Equal(2, Regex.Matches(script, @"nameBox(Selected)?\.select\(\);").Count);
-        Assert.Equal(10, Regex.Matches(script, @"\.(focus|blur)\(").Count);
+        Assert.Equal(11, Regex.Matches(script, @"\.(focus|blur)\(").Count);
         Assert.DoesNotMatch(new Regex(@"getBoundingClientRect|offsetWidth|offsetHeight|offsetTop|offsetLeft|clientWidth|clientHeight|scrollWidth|scrollHeight|getComputedStyle|getClientRects"), script);
     }
 

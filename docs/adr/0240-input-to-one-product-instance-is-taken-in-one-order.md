@@ -302,6 +302,11 @@ Five questions were put to the user on 2026-10-20; the user took the recommendat
   numbered as it comes and handled in its turn. A drop takes what is dragged as it arrives, before the
   dragend after it clears the drag, and makes its change in the order, behind every input received before
   it, under any Chrome; it is refused when an input answered meanwhile replaced the layout it was made on.
+  *(Corrected 2026-10-25 by [ADR-0362](0362-a-press-let-through-for-its-drag-takes-its-place-among-the-held-inputs.md),
+  found by the differential test: numbered as it came, the click went ahead of the keys held from before
+  it. Behind an input the gate holds, the press still goes as it comes, but its click is held and numbered
+  in its turn, the press takes a place of its own among the held inputs to give the keyboard back to what
+  it pressed, and the keys typed after it are held behind it.)*
 - **The seam reaches a Chrome of the Consumer's** (ticket 06's part for ExPivot): every Pivot Chrome context
   carries `InOrder` and `TakeKeyboard`, and the MudBlazor Wrapper's pivot parts use them as the built-in
   parts do: its buttons claim `click keydown` and press at Enter's keydown, its boxes claim `click`, its

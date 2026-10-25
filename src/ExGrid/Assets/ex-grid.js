@@ -2508,8 +2508,33 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             }
             return;
         }
+        // Space on a button, a checkbox or a radio button, and Enter on a button, outside this root, that
+        // claims no key — a Field List tick, a frame's control — act by the click the browser makes, which a
+        // dispatched keydown does not (ADR-0362): held behind a press, Space on a tick ticked nothing. Done
+        // here as the key would have done it typed, unless a handler took the key; a click the control
+        // claims is told as it goes on, as a held click is (replayClaimed). A control that claims the key
+        // answers it with its own handler, which a click would answer a second time.
+        if (activatesByKey(target, k)) {
+            if (replayInto(target, k) && target.isConnected && !target.disabled) {
+                if (claimOf(target, 'click') !== null) {
+                    tellClaim('click');
+                }
+                replaying = true;
+                try {
+                    target.click();
+                } finally {
+                    replaying = false;
+                }
+            }
+            return;
+        }
         replayInto(target, k);
     };
+    const activatesByKey = (target, k) => !root.contains(target) && keyClaimOf(target, k.key) === null && plain(k) && !k.shiftKey && k.repeat !== true
+        && ((k.key === ' ' && (target instanceof HTMLButtonElement
+            || (target instanceof HTMLInputElement && ['checkbox', 'radio', 'button', 'submit', 'reset'].includes(target.type))))
+        || (k.key === 'Enter' && (target instanceof HTMLButtonElement
+            || (target instanceof HTMLInputElement && ['button', 'submit', 'reset'].includes(target.type)))));
     const submitsByEnter = (target, k) => k.key === 'Enter' && plain(k) && !k.shiftKey
         && target instanceof HTMLInputElement && enterMaySubmitTypes.has(target.type)
         && target.form !== null && submitsOnEnter(target.form);
@@ -2646,6 +2671,10 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             }
             if (k.nameBoxPress) {
                 await answerNameBoxPress(k);
+                continue;
+            }
+            if (k.draggablePress) {
+                await answerDraggablePress(k);
                 continue;
             }
             if (k.press) {
@@ -3037,12 +3066,20 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         // The keys typed on a frame's waiting element (waitForFrameAt) are held for the frame's control, as
         // those typed on the root are: the element claims nothing, and is where the keyboard waits.
         const waiting = answering && handOff === 'frame' && event.target === frameWaitingAt;
-        if (keyClaimOf(event.target, event.key) === null && !waiting) {
+        // A key typed while a press is held is that press's, whatever holds DOM focus now (ADR-0362): a
+        // press held with its default leaves the keyboard where it was, and one let through for its drag
+        // has moved it ahead of its turn. Typed slowly, the key goes where the press's answer leaves the
+        // keyboard, and so it is held and handed on there. Space typed on a Field List tick straight after
+        // a press on Layout ▾ toggled the tick at its release. Handed on from the hold, it is not held again.
+        // Tab goes as it comes, as before: its move is the browser's, which a held Tab cannot make (reproducible).
+        const behindPress = !replaying && answering && event.key !== 'Tab' && pressHeld();
+        if (keyClaimOf(event.target, event.key) === null && !waiting && !behindPress) {
             return;
         }
         if (replaying) {
             if (!waiting) {
                 tellClaim('keydown');
+                noteKeyPress(event);
             }
             return;
         }
@@ -3061,6 +3098,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         // A press of Alt here starts no KeyTips of the root's: its release is this surface's.
         altPending = null;
         startHold(answeredUpTo(tellClaim('keydown')));
+        noteKeyPress(event);
     };
     // A key typed on a joined surface (joinSurface; ADR-0240 section 6, ticket 06). While the gate holds
     // input — behind a close or a commit still being answered — it is held, whatever it is, and handed on
@@ -3121,10 +3159,12 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         }
         if (replaying) {
             tellClaim('keydown');
+            noteKeyPress(event);
             return;
         }
         altPending = null;
         startHold(answeredUpTo(tellClaim('keydown')));
+        noteKeyPress(event);
     };
     const onKeyDown = (event) => {
         lookSettled();
@@ -3901,6 +3941,50 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         answeredWaits.push({ upTo, resolve });
         lookSettled();
     });
+    // At its turn, a press let through for its drag (onOuterPress; ADR-0362) has every input sent before
+    // it answered, the keyboard any of them handed on with it, and gives the keyboard back to the control
+    // it pressed, as its own default did when it was made: while DOM focus is still the instance's or on
+    // nothing, the condition a hand-off reads, and no press made since has put it elsewhere (superseded).
+    // Reads document.activeElement and no layout.
+    // The entry whose turn has come, while it waits for the inputs before it: still a press held, which a
+    // press made meanwhile supersedes and the keys typed meanwhile wait behind (pressHeld).
+    let draggableInTurn = null;
+    const answerDraggablePress = async (k) => {
+        draggableInTurn = k;
+        try {
+            await answeredUpTo(k.upTo);
+            await editorSettled();
+        } finally {
+            draggableInTurn = null;
+        }
+        // The control the press gave DOM focus: the one pressed, or the one its label names — a Field List
+        // entry's caption is its tick's label.
+        const control = k.target.closest('input, button, select, textarea, a[href], [tabindex]')
+            ?? k.target.closest('label')?.control ?? null;
+        const active = document.activeElement;
+        if (!k.superseded && control instanceof HTMLElement && control.isConnected && active !== control
+            && active instanceof Element && instanceHolds(active)) {
+            control.focus({ preventScroll: true });
+        }
+    };
+    // A press that goes on as it comes while a press let through for its drag waits for its turn has put
+    // the keyboard where it pressed already: the earlier one no longer gives it back (answerDraggablePress).
+    // A press that takes its own place among the held inputs does not: each gives the keyboard in its turn.
+    const supersedeDraggablePresses = () => {
+        for (const k of held) {
+            if (k.draggablePress === true) {
+                k.superseded = true;
+            }
+        }
+        if (draggableInTurn !== null) {
+            draggableInTurn.superseded = true;
+        }
+    };
+    // Whether a press waits for its turn: one held with its default, a drag's held move, or one let through
+    // for its drag, in the hold or in its turn. The keys typed meanwhile (onOuterKey) and the clicks made
+    // meanwhile (onClaimedEvent) take their places behind it.
+    const pressHeld = () => draggableInTurn !== null
+        || held.some((k) => k.press === 'mousedown' || k.dragMove === true || k.draggablePress === true);
     // At its turn: the Name Box's whole text selected, if it holds the keyboard still.
     const answerNameBoxPress = async (k) => {
         await answeredUpTo(k.upTo);
@@ -4115,10 +4199,27 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     };
     // A keydown going on to the Blazor handler of a control that claims it — a menu's items, a value
     // list — told, and its number answered (tellClaim); 0 for one no control claims.
-    const tellKeyClaim = (event) => (core && keyClaimOf(event.target, event.key) !== null ? tellClaim('keydown') : 0);
+    const tellKeyClaim = (event) => {
+        const input = core && keyClaimOf(event.target, event.key) !== null ? tellClaim('keydown') : 0;
+        if (input > 0) {
+            noteKeyPress(event);
+        }
+        return input;
+    };
     // The keyboard crossing the root's edge (focusin, focusout) adds no layer an Escape peels, so it is
     // numbered neutral (layerInputAt): an Escape typed straight after a Tab into the grid still releases
     // Tab at its keydown, and the Tab after it leaves (ADR-0230 section 1).
+    // The buttons pressed at a key's keydown (data-ex-key-presses) that are owed the click the browser makes
+    // of that key, as the button's own handler counts them: an Enter, or a Space but for its repeats, with
+    // no modifier. The next click on the button pays it (onClaimedEvent).
+    const keyClicksOwed = new WeakSet();
+    const noteKeyPress = (event) => {
+        const pressed = event.target instanceof Element ? event.target.closest('[data-ex-key-presses]') : null;
+        if (pressed !== null && (event.key === 'Enter' || (event.key === ' ' && !event.repeat))
+            && !event.ctrlKey && !event.altKey && !event.metaKey && !event.shiftKey) {
+            keyClicksOwed.add(pressed);
+        }
+    };
     const tellClaim = (kind, taken = null) => {
         const input = taken !== null ? tellTaken(kind, taken) : nextInput(kind === 'focusin' || kind === 'focusout');
         // A right-click opens the same popover as Shift+F10. Its held keys wait for that
@@ -4286,6 +4387,11 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // starts from it. Its click is numbered as it comes and handled in its turn, and a drop is put in
     // the order by the product's handler (ADR-0240's note on ticket 05).
     const startsDrag = (target) => target instanceof Element && target.closest('[draggable="true"]') !== null;
+    // A press on such an element that ends in a click a control claims: on the control, or on the label that
+    // passes its click on to the control (a Field List entry's caption).
+    const pressesClaimant = (target) => holdsClaimedPress(target)
+        || (target instanceof Element && target.closest('label')?.control instanceof Element
+            && holdsClaimedPress(target.closest('label').control));
     const onOuterPress = (event) => {
         lookSettled();
         if (!core || replaying) {
@@ -4298,6 +4404,21 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             heldPress = { press: 'mousedown', claim: true, target: event.target, init: mouseInit(event) };
             held.push(heldPress);
             return;
+        }
+        // A press that may start a drag is let through, and its default puts DOM focus on what it pressed
+        // at once. Behind an input the gate holds, or one still being answered, that focus takes its place
+        // among the held inputs (ADR-0362): the keyboard the earlier inputs hand on goes where it would have
+        // gone made slowly, and at the press's turn it goes back to what was pressed. The keys typed after
+        // it are held behind it (onOuterKey). Only the primary button presses what it lands on; with nothing
+        // held and no hold standing, nothing waits that it could overtake.
+        if (event.button === 0 && startsDrag(event.target) && pressesClaimant(event.target)
+            && (answering || held.length > 0)) {
+            held.push({ draggablePress: true, target: event.target, upTo: inputsSent });
+            if (!answering) {
+                startHold();
+            }
+        } else {
+            supersedeDraggablePresses();
         }
         if (claimOf(event.target, 'mousedown') !== null) {
             tellClaim('mousedown');
@@ -4493,6 +4614,9 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         if (!core || replaying || (event.button !== 0 && event.button !== 2) || !isOwnRows(event.target)) {
             handOn(event);
             tellTaken('mousedown', taken);
+            if (core && !replaying) {
+                supersedeDraggablePresses();
+            }
             // A press a control of this grid's own claims (claimOf), told as it goes on to Blazor; a
             // replayed one was told by its replay (replayClaimed).
             if (core && !replaying && claimOf(event.target, 'mousedown') !== null) {
@@ -4804,6 +4928,22 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         if (!core || (replaying && event.type !== 'submit')) {
             return;
         }
+        // The click the browser makes of an Enter or a Space on a button that is pressed at the key's keydown
+        // (data-ex-key-presses: ExPivot's buttons) is that key's, already numbered, and its handler does
+        // nothing with it. It is not numbered again: told, it waited for a handler that never came when the
+        // key's press removed the button — a menu's choice closing its menu — and held every input behind it
+        // (ADR-0362). Only the click such a key is owed (noteKeyPress), as the button's handler counts it: a
+        // pointer's click, or one with nothing owed — Shift+Space's, a screen reader's — is numbered as before.
+        if (event.type === 'click' && event.target instanceof Element) {
+            const pressed = event.target.closest('[data-ex-key-presses]');
+            const owed = pressed !== null && keyClicksOwed.has(pressed);
+            if (pressed !== null) {
+                keyClicksOwed.delete(pressed);
+            }
+            if (owed && event.detail === 0) {
+                return;
+            }
+        }
         const taken = event.type === 'contextmenu' && isOwnRows(event.target)
             ? secondaryPress ?? takenAt(event) : null;
         if (event.type === 'contextmenu') secondaryPress = null;
@@ -4824,9 +4964,11 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         // Behind a held press. On the product's own markup around this root, only an event on a control
         // that claims its press or its click is held (holdsClaimedPress), as its press is (onOuterPress):
         // a click on a Consumer's control on the toolbar band, or a design system's, whose press went as
-        // it came, goes on to its handler as it comes too.
+        // it came, goes on to its handler as it comes too. Behind a press let through for its drag too
+        // (ADR-0362): the press went as it came, so that the drag could start, but its click is numbered in
+        // its turn, behind the keys typed before it, and not as it comes, ahead of them.
         if (event.type !== 'submit' && !ownRowCommand(event.target)
-            && held.some((k) => k.press === 'mousedown' || k.dragMove === true)
+            && pressHeld()
             && (root.contains(event.target) || holdsClaimedPress(event.target))) {
             event.preventDefault();
             event.stopPropagation();

@@ -51,7 +51,8 @@ export function seedsOf(fixed) {
  * Sends `steps` to a product twice and answers the two readings: `slow`, each input sent once the one
  * before has settled, and `fast`, every input sent at machine speed and read once. Each run opens the
  * product afresh, takes the places its presses aim at from that page before the first input (a press is
- * aimed where it was made), and reads what the scenario reads.
+ * aimed where it was made), and reads what the scenario reads. A step a scenario acts on by settling
+ * (the pivot's `settle`) settles the fast run there too.
  */
 export async function bothWays(page, scenario, steps) {
     const run = async (eachSettled) => {
@@ -77,4 +78,5 @@ export async function bothWays(page, scenario, steps) {
 /** A step as the test prints it: one line a reader can replay by hand. */
 export const describeStep = (step) => (step.kind === 'type' ? `type ${JSON.stringify(step.text)}`
     : step.kind === 'key' ? step.key
+        : step.kind === 'settle' ? '(settled)'
         : `${step.kind} ${step.target}${step.shift ? ' (Shift)' : ''}`);
