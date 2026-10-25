@@ -361,6 +361,11 @@ public class SourceCaseTests
                 else
                     Assert.Equal((expected[0].GetInt32(), expected[1].GetString()), (found.Row, found.Column));
             }
+            else if (step.TryGetProperty("summarize", out var ask))
+            {
+                var result = await source.SummarizeAsync(SummaryCaseTests.Request(ask, ColumnNames(), source.RowSequenceVersion), CancellationToken.None);
+                SummaryCaseTests.Expect(result, step.GetProperty("summary"), step.TryGetProperty("texts", out var texts) ? texts : null);
+            }
             else if (step.TryGetProperty("replace", out var replace))
             {
                 Replace(replace, step);

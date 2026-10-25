@@ -31,6 +31,7 @@ import { InMemoryRowMarks } from './in-memory-row-marks';
 import { findStep, type GridFindRequest, type GridFindResult } from '../finding/find';
 import { planReplace, replacedCells, type GridReplaceAnswer, type GridReplacedRow, type GridReplaceRequest, type GridReplaceWrite } from '../finding/replace';
 import { KeyedRows } from './keyed-rows';
+import { summaryOf, type GridSummaryRequest, type GridSummaryResult } from '../summary/grid-summary';
 import { liveRequery, type LiveRequeryOutcome, type RowChange } from './live-requery';
 import { checkedKey, quoted, type RowKey, type RowKeyOf } from './row-key';
 
@@ -373,6 +374,21 @@ export class InMemoryGridSource<Row> implements GridSource<Row> {
         signal.throwIfAborted();
         const columns = this.#queryColumns();
         return findStep(this.#state.window, request, name => displayedTextOf(columns, name));
+    }
+
+    /**
+     * The reference Selection Summary (ADR-0130): `summaryOf` over the current result, reading each column's
+     * value. A column this source was not told about, or one with no value of its own, is blank. It never
+     * declines, at any size. A request read under another version is answered anyway: the grid discards it
+     * by the version.
+     */
+    async summarize(request: GridSummaryRequest, signal: AbortSignal): Promise<GridSummaryResult> {
+        signal.throwIfAborted();
+        const columns = this.#queryColumns();
+        return summaryOf(this.#state.window, request, name => {
+            const column = columns.find(each => each.name === name);
+            return column === undefined || column.queryable === false ? undefined : column.value;
+        });
     }
 
     /**

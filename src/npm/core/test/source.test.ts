@@ -19,6 +19,7 @@ import type { CellChangedAt } from '../src/source/cell-change-times';
 import { FakeClock } from './fake-clock';
 import { filterOf, formatOf, value } from './query-values';
 import type { GridReplaceWrite } from '../src/finding/replace';
+import { expectAnswers, summaryRequestOf, type WrittenAnswer, type WrittenAsk } from './summary-answers';
 import { findRequestOf, numberText, replaceRequestOf, type WrittenFind, type WrittenReplace } from './find-requests';
 
 /** A row of a case: its values, and the place in the case's rows it stands for, which every version of
@@ -57,6 +58,9 @@ interface Step {
     readonly entryPrefix?: Readonly<Record<string, string>>;
     readonly applyDuringWrite?: Batch;
     readonly answers?: Answer;
+    readonly summarize?: WrittenAsk;
+    readonly summary?: Readonly<Record<string, WrittenAnswer>>;
+    readonly texts?: Readonly<Record<string, string>>;
     readonly expect?: Expectation;
     readonly throws?: Refusal;
     readonly saying?: string;
@@ -372,6 +376,9 @@ for (const file of caseFiles<SourceCase>('source', 'source')) {
                         const request = { ...findRequestOf(step.find, columnNames), rowSequenceVersion: source.snapshot().rowSequenceVersion };
                         const found = await source.find(request, new AbortController().signal);
                         expect(found.found ? [found.row, found.column] : null, JSON.stringify(step.find)).toEqual(step.is);
+                    } else if (step.summarize !== undefined) {
+                        const result = await source.summarize(summaryRequestOf(step.summarize, columnNames, source.snapshot().rowSequenceVersion), new AbortController().signal);
+                        expectAnswers(result, defined(step.summary, `what the summary of "${c.name}" shows`), step.texts);
                     } else if (step.replace !== undefined) {
                         replace(step.replace, step);
                     } else {

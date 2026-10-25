@@ -8,6 +8,7 @@ import type { GridFilter } from '../query/filter';
 import type { SortSpec } from '../query/sort';
 import { InMemoryGridSource, type InMemorySourceOptions } from './in-memory-source';
 import type { GridFindRequest, GridFindResult } from '../finding/find';
+import type { GridSummaryRequest, GridSummaryResult } from '../summary/grid-summary';
 import type { RowMarks } from '../rows/row-marks';
 import type { RowKeyOf } from './row-key';
 import type { RowRange } from '../viewport/row-range';
@@ -69,6 +70,10 @@ export interface GridSource<Row> {
      * this member, and otherwise refuses Find as unavailable. `findStep` is the reference for what a match
      * is. */
     find?(request: GridFindRequest, signal: AbortSignal): Promise<GridFindResult>;
+    /** Answers a Selection Summary (ADR-0130), where this source summarises: the grid asks only a source
+     * that has this member, and otherwise shows no figure. `summaryOf` is the reference for what each
+     * figure is. */
+    summarize?(request: GridSummaryRequest, signal: AbortSignal): Promise<GridSummaryResult>;
     /** The Consumer's half of Row Marks, where this source keeps them (ADR-0043). */
     readonly marks?: RowMarks<Row> | undefined;
 }

@@ -29,7 +29,7 @@ One directory per area, one file per group of cases. Each file is an object:
 | Key | Meaning |
 |---|---|
 | `about` | What the file covers, and where its cases came from |
-| `kind` | Which runner reads it: `selection`, `range`, `edgeBand`, `held`, `calls`, `clipboard`, `query`, `source`, `displayText`, `find`, `replace` |
+| `kind` | Which runner reads it: `selection`, `range`, `edgeBand`, `held`, `calls`, `clipboard`, `query`, `source`, `displayText`, `find`, `replace`, `summary` |
 | `extent` | `[rows, columns]`, the grid every case of the file runs against unless it names its own |
 | `cases` | The cases. Each has a `name`, which starts with the ADR it holds to (CLAUDE.md, "Put the ADR number in the test name") |
 
@@ -209,6 +209,7 @@ A row of `rows` written `{"sameAs": place}` is the object at that earlier place 
 | `{"rowKind": {"column", "kinds": {text: kind}}}` | Hands the marks a Row Kind: a row whose value in that column reads as one of the texts is of its kind (`"group"`, `"total"`), every other row `"detail"` |
 | `{"find": request, "is": [row, column]}` | A Find step through the source (ADR-0055), the request written as a `find` case writes it and read under the version in force; `"is": null` for nothing found |
 | `{"replace": request, "answers": {…}}` | A Replace All through the source (ADR-0332 §3), the request written as a `replace` case writes it, under the version in force unless it names its own. The write sets a text column's text, and a number column's number where the text reads as one (an optional `-`, digits, and an optional `.` and digits), refusing it as `not a number` otherwise. With `"entryPrefix": {column: prefix}`, a cell of that column is matched by an entry the editor would open with, the prefix and the value's invariant text, and the write takes the prefix off again; with `"applyDuringWrite": batch`, the first write hands over that Change Batch first, as a feed would while the Consumer plans. `answers` holds any of `count`, `version`, `refused` and `changes` as a `replace` case's `is` does, `changes` a count here, and `applied: true`, that every rewritten row is in the Window by identity. The rows a Replace All rewrites keep their places |
+| `{"summarize": request, "summary": {…}}` | A Selection Summary through the source (ADR-0130), the request written as a `summary` case writes it and read under the version in force, and what it shows as a `summary` case's `is` writes it, with `texts` as there. Numbers in a source are written as bigints here, which both cores hold exactly: the C# source holds a JSON number as a double, which it sums in Excel's arithmetic |
 | `{"needRange": {"start", "count"}}` | Says the grid is about to show those rows |
 | `{"rows": {"start", "count"}, "is": [places]}` | Reads rows of the result |
 | `{"distinctValues": column, "is": [values]}` | Reads a column's value list; `"tooMany": true` in place of `is` |
@@ -249,6 +250,24 @@ text. A case may give its own `rows`, repeat them `repeat` times, and read them 
 `changes` (`[row, values]`, each rewritten row by its place and its new texts) and `changeCount`; or how it
 is refused, with `throws` and `saying`. `"writeInPlace": true` makes a write that hands back the row it was
 given.
+
+## `summary`
+
+The reference Selection Summary (ADR-0130) and the exact arithmetic it sums in (ADR-0350 section 16), run by
+`tests/ExGrid.Tests/Cases/SummaryCaseTests.cs` against `GridSummary.Of` and by
+`src/npm/core/test/summary.test.ts` against `summaryOf`. The file names its `columns`, and its `rows`, each
+the values of its cells in that order, written as a `query` case writes them; a case may give its own of
+either, and repeat its rows `repeat` times. A number is read as the Script Core reads one: a JSON number as C#
+converts a double to a decimal, a double only where no decimal holds it, and `{"bigint": text}` exactly, as
+an integer of any width.
+
+`ask` is the request, `{"ranges", "columns", "figures"}`: the ranges as a list of ranges, the file's columns
+unless it names its own (a name the file does not have is a column with no value, an Action Column), and the
+figures by name (`average`, `count`, `numericalCount`, `min`, `max`, `sum`). `is` names every figure the
+answer holds, and no other, each `"empty"`, `{"exact": text}` (the decimal, written without trailing zeros),
+`{"double": number}` (a figure in Excel's arithmetic, a string where JSON cannot hold the number) or
+`{"error": name}` (`divideByZero`, `notANumber`, `errorAmongValues`). `texts` gives the text a figure is shown
+with where no format applies.
 
 ## `calls`
 

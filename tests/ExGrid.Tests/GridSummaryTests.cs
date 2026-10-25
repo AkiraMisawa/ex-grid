@@ -6,8 +6,11 @@ using Xunit;
 namespace ExGrid.Tests;
 
 /// <summary>
-/// The reference Selection Summary (ADR-0130, SM-4/SM-5/SM-6): what each figure is over which
-/// cells. Pinned because a remote Source is held to it, as to ADR-0023 and ADR-0055.
+/// The Selection Summary (ADR-0130, SM-4/SM-5/SM-6/SM-7) where only C# reaches: a <c>double</c> summed in
+/// Excel's arithmetic, a Template Column, the fetching Source's delegate, a Source written before the
+/// Summary, an error among a Sheet's cells, and the answer's own refusals. What each figure is over which
+/// cells is a shared case (<c>tests/cases/summary</c>, and <c>tests/cases/source/summary.json</c> through
+/// <c>GridSource.From</c>), which the Script Core runs too.
 /// </summary>
 public class GridSummaryTests
 {
@@ -43,42 +46,6 @@ public class GridSummaryTests
 
     private static GridSummaryResult Summarize(GridSummaryRequest request) => GridSummary.Of(Rows, request, ValueOf);
 
-    [Fact] // ADR-0130 / SM-6: money is summed exactly; a blank is in no figure
-    public void ADR0130_a_number_column_is_summed_exactly_and_a_blank_is_not_counted()
-    {
-        var result = Summarize(Ask(SummaryFigures.All, new SelectionRange(0, 1, 4, 1)));
-
-        Assert.Equal(3_530.25m, result[SummaryFigures.Sum]!.Value.Exact);
-        Assert.Equal(3m, result[SummaryFigures.Count]!.Value.Exact);
-        Assert.Equal(3m, result[SummaryFigures.NumericalCount]!.Value.Exact);
-        Assert.Equal(1_176.75m, result[SummaryFigures.Average]!.Value.Exact);
-        Assert.Equal(30m, result[SummaryFigures.Min]!.Value.Exact);
-        Assert.Equal(2_500.25m, result[SummaryFigures.Max]!.Value.Exact);
-    }
-
-    [Fact] // ADR-0130 / SM-6: text, Booleans and dates are counted and never a number
-    public void ADR0130_text_booleans_and_dates_are_counted_only()
-    {
-        var result = Summarize(Ask(SummaryFigures.All, new SelectionRange(0, 0, 2, 1), new SelectionRange(0, 3, 2, 2)));
-
-        Assert.Equal(6m, result[SummaryFigures.Count]!.Value.Exact);
-        Assert.Equal(0m, result[SummaryFigures.NumericalCount]!.Value.Exact);
-        // No number among the cells: only Count is shown, as in Excel's status bar.
-        Assert.True(result[SummaryFigures.Sum]!.Value.IsEmpty);
-        Assert.True(result[SummaryFigures.Average]!.Value.IsEmpty);
-        Assert.True(result[SummaryFigures.Min]!.Value.IsEmpty);
-    }
-
-    [Fact] // ADR-0130 / SM-6: a cell covered by two ranges counts once
-    public void ADR0130_a_cell_under_two_ranges_counts_once()
-    {
-        var result = Summarize(Ask(SummaryFigures.Sum | SummaryFigures.Count,
-            new SelectionRange(0, 1, 2, 1), new SelectionRange(1, 1, 3, 1)));
-
-        Assert.Equal(3_530.25m, result[SummaryFigures.Sum]!.Value.Exact);
-        Assert.Equal(3m, result[SummaryFigures.Count]!.Value.Exact);
-    }
-
     [Fact] // ADR-0130 / SM-6: a double leaves exactness for Excel's arithmetic
     public void ADR0130_doubles_are_summed_in_double()
     {
@@ -87,39 +54,6 @@ public class GridSummaryTests
         Assert.Null(result[SummaryFigures.Sum]!.Value.Exact);
         Assert.Equal(8d, result[SummaryFigures.Sum]!.Value.Number);
         Assert.Equal(2d, result[SummaryFigures.Average]!.Value.Number);
-    }
-
-    [Fact] // ADR-0130 / SM-6: a column with no value — an Action Column — is blank
-    public void ADR0130_a_column_with_no_value_is_blank()
-    {
-        var request = Ask(SummaryFigures.Count, new SelectionRange(0, 0, 4, 2)) with { Columns = ["Actions", "Notional"] };
-
-        var result = GridSummary.Of(Rows, request, ValueOf);
-
-        Assert.Equal(3m, result[SummaryFigures.Count]!.Value.Exact);
-    }
-
-    [Fact] // ADR-0130 / SM-1: only the figures asked are answered
-    public void ADR0130_only_the_figures_asked_are_answered()
-    {
-        var result = Summarize(Ask(SummaryFigures.Sum, new SelectionRange(0, 1, 4, 1)));
-
-        Assert.Equal(SummaryFigures.Sum, result.Figures);
-        Assert.Null(result[SummaryFigures.Count]);
-    }
-
-    [Fact] // ADR-0130 / SM-4: a whole column of a million rows is summed, never declined
-    public void ADR0130_a_million_rows_are_summed()
-    {
-        var rows = new decimal[1_000_000];
-        Array.Fill(rows, 0.01m);
-
-        var result = GridSummary.Of(rows,
-            new GridSummaryRequest { Ranges = [new SelectionRange(0, 0, rows.Length, 1)], Columns = ["V"], RowSequenceVersion = 0, Figures = SummaryFigures.Sum },
-            _ => v => v);
-
-        Assert.False(result.IsDeclined);
-        Assert.Equal(10_000m, result[SummaryFigures.Sum]!.Value.Exact);
     }
 
     [Fact] // ADR-0130 / SM-4: the in-memory Source summarises a whole column of a million rows, never declining
@@ -151,55 +85,6 @@ public class GridSummaryTests
             CancellationToken.None);
 
         Assert.Equal(3_530.25m, result[SummaryFigures.Sum]!.Value.Exact);
-    }
-
-    [Fact] // SM-6, ADR-0130: a hidden column is never summarised — the request's Columns are the visible ones
-    public async Task SM6_a_hidden_column_is_never_summarised()
-    {
-        // The Source knows all three; the Consumer has hidden Notional, so the grid asks
-        // about Book and Rate only, and the range spans both visible columns.
-        var source = GridSource.From(Rows);
-        source.OnColumnsChanged(
-        [
-            new GridColumn<Trade>("Book", ColumnType.Text, t => t.Book).Info,
-            new GridColumn<Trade>("Notional", ColumnType.Number, t => t.Notional).Info,
-            new GridColumn<Trade>("Rate", ColumnType.Number, t => t.Rate).Info,
-        ]);
-
-        var result = await source.SummarizeAsync(
-            new GridSummaryRequest
-            {
-                Ranges = [new SelectionRange(0, 0, 4, 2)],
-                Columns = ["Book", "Rate"],
-                RowSequenceVersion = 0,
-                Figures = SummaryFigures.Count | SummaryFigures.NumericalCount | SummaryFigures.Max,
-            },
-            CancellationToken.None);
-
-        // Four Books and four Rates; Notional's three numbers and its 2,500.25 maximum are absent.
-        Assert.Equal(8m, result[SummaryFigures.Count]!.Value.Exact);
-        Assert.Equal(4m, result[SummaryFigures.NumericalCount]!.Value.Exact);
-        Assert.Equal(4d, result[SummaryFigures.Max]!.Value.Number);
-    }
-
-    [Fact] // ADR-0130 / SM-6: the in-memory Source summarises the result in its order
-    public async Task ADR0130_the_in_memory_source_summarises_the_result_in_its_order()
-    {
-        var source = GridSource.From(Rows);
-        source.OnColumnsChanged(
-        [
-            new GridColumn<Trade>("Book", ColumnType.Text, t => t.Book).Info,
-            new GridColumn<Trade>("Notional", ColumnType.Number, t => t.Notional).Info,
-        ]);
-        source.OnSortChanged([new SortSpec("Book", SortDirection.Ascending)]);
-
-        Assert.True(source.CanSummarize);
-        // Sorted: Alpha, Beta, Delta, Gamma — the first two rows' Notional.
-        var result = await source.SummarizeAsync(
-            new GridSummaryRequest { Ranges = [new SelectionRange(0, 1, 2, 1)], Columns = ["Book", "Notional"], RowSequenceVersion = 0, Figures = SummaryFigures.Sum },
-            CancellationToken.None);
-
-        Assert.Equal(3_500.25m, result[SummaryFigures.Sum]!.Value.Exact);
     }
 
     [Fact] // ADR-0130 / SM-5: a fetching Source summarises only with a summarize delegate

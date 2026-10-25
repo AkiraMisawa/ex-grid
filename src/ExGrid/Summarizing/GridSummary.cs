@@ -1,3 +1,4 @@
+using System.Globalization;
 using ExGrid.Data;
 using ExGrid.Selection;
 
@@ -70,6 +71,20 @@ public static class GridSummary
             }
         }
         return GridSummaryResult.Answered(answers, texts);
+    }
+
+    /// <summary>
+    /// A figure's own text, where no format applies (ADR-0130): a count as a whole number; a number summed
+    /// exactly as it is, to ten decimal places; a <c>double</c> to ten significant digits, as Excel's
+    /// status bar shows one. The Script Core's <c>summaryFigureText</c> writes the same.
+    /// </summary>
+    internal static string FigureText(SummaryFigures figure, AggregateResult value)
+    {
+        if (SummaryFigureOrder.IsCount(figure))
+            return (value.Exact ?? (decimal)value.Number).ToString("0", CultureInfo.InvariantCulture);
+        return value.Exact is { } exact
+            ? AggregateArithmetic.Canonical(Math.Round(exact, 10)).ToString(CultureInfo.InvariantCulture)
+            : value.Number.ToString("G10", CultureInfo.InvariantCulture);
     }
 
     /// <summary>

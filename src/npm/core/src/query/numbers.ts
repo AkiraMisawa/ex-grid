@@ -16,12 +16,25 @@ export type NumberKey = number | bigint;
 /** The value as it is compared, or `undefined` when it cannot be a Number; `numberRefusal` says why. */
 export function numberKey(value: number | bigint): NumberKey | undefined {
     if (typeof value === 'bigint') return value > decimalMax || value < -decimalMax ? undefined : value;
+    const parts = decimalPartsOf(value);
+    if (parts === undefined) return undefined;
+    if (parts.digits === 0) return 0;
+    const key = decimalOf(parts.digits, parts.power);
+    return parts.negative ? negated(key) : key;
+}
+
+/**
+ * The decimal C# reads a `number` as, `digits` × 10^-`power` with the sign apart: .NET's VarDecFromR8,
+ * fifteen significant digits at most and at most 28 decimal places. `undefined` where no decimal holds the
+ * value: not finite, beyond a decimal's range, or so small in magnitude that it would read as 0 (a non-zero
+ * value that read as 0 would pass equals 0 and tie with true zeros: quietly flattened, on a grid that
+ * displays risk numbers).
+ */
+export function decimalPartsOf(value: number): { readonly digits: number; readonly power: number; readonly negative: boolean } | undefined {
     if (!Number.isFinite(value)) return undefined;
     const exponent = binaryExponent(value);
     if (exponent > 96) return undefined;
-    if (value === 0) return 0;
-    // A non-zero value that reads as 0 would pass equals 0 and tie with true zeros: quietly flattened, on a
-    // grid that displays risk numbers.
+    if (value === 0) return { digits: 0, power: 0, negative: false };
     if (exponent < -94) return undefined;
     // The steps of .NET's VarDecFromR8. The power of ten that brings the value to fifteen digits is
     // estimated from the binary exponent (19728 / 2^16 is log10 2), and corrected by one if it fell short.
@@ -41,7 +54,7 @@ export function numberKey(value: number | bigint): NumberKey | undefined {
     }
     const digits = roundHalfToEven(scaled);
     if (digits === 0) return undefined;
-    return Math.sign(value) === -1 ? negated(decimalOf(digits, power)) : decimalOf(digits, power);
+    return { digits, power, negative: Math.sign(value) === -1 };
 }
 
 /** Why a value cannot be a Number, or `undefined` when it can; the caller names the column. */
@@ -89,7 +102,7 @@ function binaryExponent(value: number): number {
 let powersOfTen: readonly number[] | undefined;
 
 /** 10^n as the double the literal 1En is, for n to 28, which `10 ** n` does not promise beyond 10^22. */
-function tenTo(power: number): number {
+export function tenTo(power: number): number {
     powersOfTen ??= Object.freeze(Array.from({ length: 29 }, (_, n) => Number(`1e${n.toString()}`)));
     const ten = powersOfTen[power];
     if (ten === undefined) throw new Error(`Internal: 10^${power.toString()} is outside the table.`);
