@@ -1,4 +1,5 @@
 using System.Text.Json;
+using ExGrid.Cells;
 using Microsoft.Extensions.Time.Testing;
 using Xunit;
 
@@ -42,10 +43,13 @@ public class SourceCaseTests
                 column.GetProperty("name").GetString()!,
                 QueryCaseTests.Member<ColumnType>(column.GetProperty("type")),
                 row => row.Values[index],
+                Format: column.TryGetProperty("format", out var format) ? DisplayTextCaseTests.FormatOf(format.GetString()!) : null,
                 DateType: column.TryGetProperty("dateType", out var dateType) ? QueryCaseTests.Member<DateType>(dateType) : DateType.DateTime))
             .ToArray();
         var held = entry.GetProperty("rows").EnumerateArray().Select((written, position) => RowOf(position, written)).ToArray();
         var clock = new FakeTimeProvider();
+        var start = clock.GetUtcNow();
+        CellChangeOf<Row>? changedAt = null;
         var keyAt = entry.TryGetProperty("rowKey", out var keyName)
             ? declared.EnumerateArray().Select(c => c.GetProperty("name").GetString()).ToList().IndexOf(keyName.GetString())
             : -1;
@@ -90,6 +94,25 @@ public class SourceCaseTests
                 }
                 if (expected.TryGetProperty("handed", out _))
                     Assert.All(source.Window, row => Assert.Same(handed[rowKey!(row)], row));
+                if (expected.TryGetProperty("changeTimes", out var changeTimes))
+                    Assert.Equal(changeTimes.GetBoolean(), source.CellChangedAt is not null);
+                if (expected.TryGetProperty("changeTimesKeptFor", out var keptFor))
+                    Assert.Equal(TimeSpan.FromMilliseconds(keptFor.GetDouble()), source.ChangeTimesKeptFor);
+                if (expected.TryGetProperty("changedAt", out var times))
+                {
+                    foreach (var byKey in times.EnumerateObject())
+                    {
+                        var row = source.Window.Single(r => Equals(rowKey!(r), byKey.Name));
+                        foreach (var byColumn in byKey.Value.EnumerateObject())
+                        {
+                            var at = changedAt!(row, new GridColumn<Row>(byColumn.Name, ColumnType.Text, _ => null));
+                            Assert.True(byColumn.Value.ValueKind == JsonValueKind.Null
+                                ? at is null
+                                : at is { } time && (time - start).TotalMilliseconds == byColumn.Value.GetDouble(),
+                                $"changedAt of {byKey.Name}, {byColumn.Name}: {(at is { } t ? (t - start).TotalMilliseconds : "null")}");
+                        }
+                    }
+                }
                 lastWindow = source.Window;
                 heard = 0;
                 continue;
@@ -168,6 +191,14 @@ public class SourceCaseTests
             else if (step.TryGetProperty("publishGathered", out _))
             {
                 source.PublishGathered();
+            }
+            else if (step.TryGetProperty("cellChangedAt", out _))
+            {
+                changedAt = source.CellChangedAt;
+            }
+            else if (step.TryGetProperty("changeTimesKeptFor", out var keptFor))
+            {
+                source.ChangeTimesKeptFor = TimeSpan.FromMilliseconds(keptFor.GetDouble());
             }
             else if (step.TryGetProperty("needRange", out var range))
             {

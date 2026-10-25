@@ -1,0 +1,248 @@
+{
+  "about": "The Change Highlight of GridSource.from with a Row Key, the source's half (ADR-0141 LV-9, on ADR-0067's rules and ADR-0068's declaration): when each cell's displayed text last changed, in milliseconds from the case's start. From tests/ExGrid.Tests/LiveSourceTests.cs. The Amount column is shown as a whole number, so a change below one is one the format hides.",
+  "kind": "source",
+  "columns": [{"name": "Id", "type": "text"}, {"name": "Book", "type": "text"}, {"name": "Amount", "type": "number", "format": "whole"}],
+  "cases": [
+    {
+      "name": "ADR-0141 / LV-9: a cell is marked when a changed row's displayed text differs, and the others are not",
+      "rows": [
+        ["A", "Rates", 3],
+        ["B", "Credit", 1],
+        ["C", "Rates", 2],
+        ["D", "FX", 5]
+      ],
+      "rowKey": "Id",
+      "steps": [
+        {"setColumns": true},
+        {"gatherInterval": 0},
+        {"cellChangedAt": true},
+        {"advance": 3000},
+        {"apply": {"changed": [["B", "Credit", 9]]}},
+        {"expect": {"changedAt": {"B": {"Amount": 3000, "Book": null, "Id": null}, "A": {"Amount": null}}}}
+      ]
+    },
+    {
+      "name": "ADR-0141 / LV-9, ADR-0067: a change the format hides is not marked",
+      "rows": [
+        ["A", "Rates", 3],
+        ["B", "Credit", 1],
+        ["C", "Rates", 2],
+        ["D", "FX", 5]
+      ],
+      "rowKey": "Id",
+      "steps": [
+        {"setColumns": true},
+        {"gatherInterval": 0},
+        {"cellChangedAt": true},
+        {"apply": {"changed": [["A", "Rates", 3.2]]}},
+        {"expect": {"values": [["A", "Rates", 3.2], ["B", "Credit", 1], ["C", "Rates", 2], ["D", "FX", 5]], "changedAt": {"A": {"Amount": null}}}}
+      ]
+    },
+    {
+      "name": "ADR-0141 / LV-9: every cell of an added row is marked",
+      "rows": [
+        ["A", "Rates", 3],
+        ["B", "Credit", 1],
+        ["C", "Rates", 2],
+        ["D", "FX", 5]
+      ],
+      "rowKey": "Id",
+      "steps": [
+        {"setColumns": true},
+        {"gatherInterval": 0},
+        {"cellChangedAt": true},
+        {"advance": 500},
+        {"apply": {"added": [["E", "Rates", 4]]}},
+        {"expect": {"keys": ["A", "B", "C", "D", "E"], "changedAt": {"E": {"Id": 500, "Book": 500, "Amount": 500}}}}
+      ]
+    },
+    {
+      "name": "ADR-0141 / LV-9: a Sort, a Filter or new columns mark nothing",
+      "rows": [
+        ["A", "Rates", 3],
+        ["B", "Credit", 1],
+        ["C", "Rates", 2],
+        ["D", "FX", 5]
+      ],
+      "rowKey": "Id",
+      "steps": [
+        {"setColumns": true},
+        {"gatherInterval": 0},
+        {"cellChangedAt": true},
+        {"setSorts": [{"column": "Amount", "direction": "ascending"}]},
+        {"setFilter": {"columns": {"Amount": {"clauses": [{"operator": "greaterThanOrEqual", "value": 2}]}}}},
+        {"setColumns": ["Id", "Amount"]},
+        {"expect": {"keys": ["C", "A", "D"], "changedAt": {"C": {"Id": null, "Book": null, "Amount": null}, "A": {"Id": null, "Book": null, "Amount": null}, "D": {"Id": null, "Book": null, "Amount": null}}}}
+      ]
+    },
+    {
+      "name": "ADR-0141 / LV-9: the gathered changes a Sort brings with it are marked; the Sort itself marks nothing",
+      "rows": [
+        ["A", "Rates", 3],
+        ["B", "Credit", 1],
+        ["C", "Rates", 2],
+        ["D", "FX", 5]
+      ],
+      "rowKey": "Id",
+      "steps": [
+        {"setColumns": true},
+        {"cellChangedAt": true},
+        {"apply": {"changed": [["D", "Rates", 5]]}},
+        {"advance": 10},
+        {"apply": {"changed": [["A", "Rates", 9]]}},
+        {"expect": {"keys": ["A", "B", "C", "D"]}},
+        {"setSorts": [{"column": "Amount", "direction": "ascending"}]},
+        {"expect": {"keys": ["B", "C", "D", "A"], "changedAt": {"A": {"Amount": 10, "Book": null}, "B": {"Amount": null}, "D": {"Book": 0, "Amount": null}}}}
+      ]
+    },
+    {
+      "name": "ADR-0141 / LV-9: the user's own edit marks nothing",
+      "rows": [
+        ["A", "Rates", 3],
+        ["B", "Credit", 1],
+        ["C", "Rates", 2],
+        ["D", "FX", 5]
+      ],
+      "rowKey": "Id",
+      "steps": [
+        {"setColumns": true},
+        {"gatherInterval": 0},
+        {"cellChangedAt": true},
+        {"replaceRow": {"same": "A"}, "with": ["A", "Rates", 30]},
+        {"expect": {"values": [["A", "Rates", 30], ["B", "Credit", 1], ["C", "Rates", 2], ["D", "FX", 5]], "changedAt": {"A": {"Id": null, "Book": null, "Amount": null}}}}
+      ]
+    },
+    {
+      "name": "ADR-0141 / LV-9: the user's own edit brings the live changes gathered before it, and they are marked",
+      "rows": [
+        ["A", "Rates", 3],
+        ["B", "Credit", 1],
+        ["C", "Rates", 2],
+        ["D", "FX", 5]
+      ],
+      "rowKey": "Id",
+      "steps": [
+        {"setColumns": true},
+        {"cellChangedAt": true},
+        {"apply": {"changed": [["D", "Rates", 5]]}},
+        {"advance": 10},
+        {"apply": {"changed": [["B", "Credit", 7]]}},
+        {"replaceRow": {"same": "A"}, "with": ["A", "Rates", 30]},
+        {"expect": {"values": [["A", "Rates", 30], ["B", "Credit", 7], ["C", "Rates", 2], ["D", "Rates", 5]], "changedAt": {"A": {"Id": null, "Book": null, "Amount": null}, "B": {"Amount": 10, "Book": null}}}}
+      ]
+    },
+    {
+      "name": "ADR-0141 / LV-9: a removed key takes its times with it; added again, it is a row that comes in",
+      "rows": [
+        ["A", "Rates", 3],
+        ["B", "Credit", 1],
+        ["C", "Rates", 2],
+        ["D", "FX", 5]
+      ],
+      "rowKey": "Id",
+      "steps": [
+        {"setColumns": true},
+        {"gatherInterval": 0},
+        {"cellChangedAt": true},
+        {"apply": {"changed": [["A", "Rates", 9]]}},
+        {"apply": {"removedKeys": ["A"]}},
+        {"advance": 2000},
+        {"apply": {"added": [["A", "Rates", 3]]}},
+        {"expect": {"keys": ["B", "C", "D", "A"], "changedAt": {"A": {"Id": 2000, "Book": 2000, "Amount": 2000}}}}
+      ]
+    },
+    {
+      "name": "ADR-0141 / LV-9: a time older than changeTimesKeptFor answers nothing, and one kept for no time is refused",
+      "rows": [
+        ["A", "Rates", 3],
+        ["B", "Credit", 1],
+        ["C", "Rates", 2],
+        ["D", "FX", 5]
+      ],
+      "rowKey": "Id",
+      "steps": [
+        {"setColumns": true},
+        {"gatherInterval": 0},
+        {"cellChangedAt": true},
+        {"expect": {"changeTimesKeptFor": 60000}},
+        {"changeTimesKeptFor": 10000},
+        {"apply": {"changed": [["A", "Rates", 9]]}},
+        {"advance": 10000},
+        {"expect": {"changedAt": {"A": {"Amount": 0}}}},
+        {"advance": 0.001},
+        {"expect": {"changedAt": {"A": {"Amount": null}}}},
+        {"changeTimesKeptFor": 0, "throws": "outOfRange"},
+        {"expect": {"changeTimesKeptFor": 10000}}
+      ]
+    },
+    {
+      "name": "ADR-0141 / LV-9, ADR-0068: nothing is compared until the Change Highlight is asked for",
+      "rows": [
+        ["A", "Rates", 3],
+        ["B", "Credit", 1],
+        ["C", "Rates", 2],
+        ["D", "FX", 5]
+      ],
+      "rowKey": "Id",
+      "steps": [
+        {"setColumns": true},
+        {"gatherInterval": 0},
+        {"apply": {"changed": [["A", "Rates", 9]]}},
+        {"cellChangedAt": true},
+        {"expect": {"changedAt": {"A": {"Amount": null}}}}
+      ]
+    },
+    {
+      "name": "ADR-0141 / LV-4 (D7), LV-9: a row added inside a whole new list is marked whole, and the rows it moved are not",
+      "rows": [
+        ["A", "Rates", 3],
+        ["B", "Credit", 1],
+        ["C", "Rates", 2],
+        ["D", "FX", 5]
+      ],
+      "rowKey": "Id",
+      "steps": [
+        {"setColumns": true},
+        {"gatherInterval": 0},
+        {"cellChangedAt": true},
+        {"replaceAll": [{"same": "A"}, ["E", "FX", 6], {"same": "B"}, {"same": "C"}, {"same": "D"}]},
+        {"expect": {"keys": ["A", "E", "B", "C", "D"], "version": 1, "changedAt": {"E": {"Id": 0, "Book": 0, "Amount": 0}, "A": {"Id": null, "Book": null, "Amount": null}, "B": {"Id": null, "Book": null, "Amount": null}, "C": {"Id": null, "Book": null, "Amount": null}, "D": {"Id": null, "Book": null, "Amount": null}}}}
+      ]
+    },
+    {
+      "name": "ADR-0141 / LV-4 (D7), LV-6, LV-9: a new order is gathered like any change, and a change gathered after it marks only its own cells",
+      "rows": [
+        ["A", "Rates", 3],
+        ["B", "Credit", 1],
+        ["C", "Rates", 2],
+        ["D", "FX", 5]
+      ],
+      "rowKey": "Id",
+      "steps": [
+        {"setColumns": true},
+        {"cellChangedAt": true},
+        {"apply": {"changed": [["D", "Rates", 5]]}},
+        {"replaceAll": [{"same": "D"}, {"same": "C"}, {"same": "B"}, {"same": "A"}]},
+        {"advance": 100},
+        {"apply": {"changed": [["B", "Credit", 9]]}},
+        {"expect": {"keys": ["A", "B", "C", "D"]}},
+        {"advance": 150},
+        {"expect": {"keys": ["D", "C", "B", "A"], "handed": true, "changedAt": {"B": {"Amount": 250, "Book": null}, "A": {"Amount": null}, "C": {"Amount": null}, "D": {"Amount": null, "Book": 0}}}}
+      ]
+    },
+    {
+      "name": "ADR-0141: without a key there is no Change Highlight, and how long its times are kept cannot be set",
+      "rows": [
+        ["A", "Rates", 3],
+        ["B", "Credit", 1],
+        ["C", "Rates", 2],
+        ["D", "FX", 5]
+      ],
+      "steps": [
+        {"setColumns": true},
+        {"expect": {"changeTimes": false, "changeTimesKeptFor": 60000}},
+        {"changeTimesKeptFor": 1000, "throws": "invalidOperation", "saying": "Row Key"}
+      ]
+    }
+  ]
+}

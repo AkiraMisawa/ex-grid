@@ -299,6 +299,13 @@ than its spelling, Blazor's surface follows it under section 14.
   (January 2026); a browser without it (Safari, when this was decided) takes a polyfill the Consumer
   loads. The core does not bundle one, and recognises a Temporal value by its own tag, so a polyfill's
   values are read like the browser's.
+- **A value without a format shows C#'s text where the two can agree** (ADR-0006). A boolean reads `True`
+  or `False` and a date one ISO form by its type, `yyyy-MM-dd HH:mm:ss ±hh:mm` for an instant in the offset
+  it holds, so a column reads alike on either core; a `Date`, which holds no offset, reads in UTC's. A
+  number is JavaScript's own shortest text for it: a `number` keeps no trailing zeros, as C#'s decimal does,
+  and a column that wants a fixed number of places declares a `format`. An object of the Consumer's own
+  shows its own `toString`. The cell paints by this text and a source compares by it, so a change the format
+  hides is not marked (ADR-0067).
 - **A Row Key is a `string`, a `number` or a `bigint`**, given as `GridSource.from(rows, { rowKey })`.
   Two keys are the same key when they are the same value, as a `Map` holds them, so `1` and `1n` are two
   keys, as C#'s `1` and `1L` are. An object is refused, with `NaN` and a null key: it would be the same key

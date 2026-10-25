@@ -1,0 +1,74 @@
+{
+  "about": "The text a value cell displays (ADR-0006, note of 2026-10-01; ADR-0350 section 16): empty for a Blank, the column's format where it has one, and otherwise the value's own text, a date in one ISO form by its type. From DisplayText and ColumnInfo.TextFor; the Script Core's cells/display-text.ts. A number without a format is left out on purpose: C#'s decimal keeps its trailing zeros and JavaScript's number cannot, so the two cores write it each in its own way.",
+  "kind": "displayText",
+  "cases": [
+    {
+      "name": "ADR-0006: a Blank shows nothing, with a format or without",
+      "texts": [
+        {"value": null, "is": ""},
+        {"value": null, "format": "whole", "is": ""}
+      ]
+    },
+    {
+      "name": "ADR-0006: text shows itself, the empty string included",
+      "texts": [
+        {"value": "Rates", "is": "Rates"},
+        {"value": "", "is": ""},
+        {"value": " ß ", "is": " ß "}
+      ]
+    },
+    {
+      "name": "ADR-0350: a boolean reads True or False, as C#'s does, so a column reads alike on either core",
+      "texts": [
+        {"value": true, "is": "True"},
+        {"value": false, "is": "False"}
+      ]
+    },
+    {
+      "name": "ADR-0006: a whole number shows its digits",
+      "texts": [
+        {"value": 0, "is": "0"},
+        {"value": 42, "is": "42"},
+        {"value": -7, "is": "-7"},
+        {"value": {"bigint": "9007199254740993"}, "is": "9007199254740993"}
+      ]
+    },
+    {
+      "name": "ADR-0006: a day reads yyyy-MM-dd, whatever the reader's culture",
+      "texts": [
+        {"value": {"dateOnly": "2026-01-02"}, "is": "2026-01-02"},
+        {"value": {"dateOnly": "0099-12-31"}, "is": "0099-12-31"}
+      ]
+    },
+    {
+      "name": "ADR-0006: a date and time reads yyyy-MM-dd HH:mm:ss, its fraction of a second not shown",
+      "texts": [
+        {"value": {"dateTime": "2026-01-02T03:04:05"}, "is": "2026-01-02 03:04:05"},
+        {"value": {"dateTime": "2026-01-02T23:59:59.999"}, "is": "2026-01-02 23:59:59"},
+        {"value": {"dateTime": "2026-01-02T00:00:00"}, "is": "2026-01-02 00:00:00"}
+      ]
+    },
+    {
+      "name": "ADR-0006: an instant reads yyyy-MM-dd HH:mm:ss with the offset it was written in",
+      "texts": [
+        {"value": {"dateTimeOffset": "2026-01-02T03:04:05+09:00"}, "is": "2026-01-02 03:04:05 +09:00"},
+        {"value": {"dateTimeOffset": "2026-01-02T03:04:05-05:30"}, "is": "2026-01-02 03:04:05 -05:30"},
+        {"value": {"dateTimeOffset": "2026-01-02T03:04:05+00:00"}, "is": "2026-01-02 03:04:05 +00:00"}
+      ]
+    },
+    {
+      "name": "ADR-0350: a JavaScript Date holds no offset, and reads in UTC's",
+      "texts": [
+        {"value": {"jsDate": "2026-01-02T03:04:05Z"}, "is": "2026-01-02 03:04:05 +00:00"}
+      ]
+    },
+    {
+      "name": "ADR-0006: a format decides the text of every value but a Blank",
+      "texts": [
+        {"value": 3.2, "format": "whole", "is": "3"},
+        {"value": 3.7, "format": "whole", "is": "4"},
+        {"value": 0, "format": "whole", "is": "0"}
+      ]
+    }
+  ]
+}

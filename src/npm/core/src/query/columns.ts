@@ -25,4 +25,9 @@ export interface QueryColumn<Row> {
     readonly queryable?: boolean;
     /** A Date column's kind of date; `dateTime` unless given, and given only on a Date column. */
     readonly dateType?: DateType;
+    /** The column's display format: the text a value cell shows for a value that is not a Blank, which is
+     * asked only of one. Without it a value shows its own text (`displayText`). A source compares what a
+     * cell shows by it, so a change the format hides is not marked (ADR-0067), and a column rebuilt with
+     * another format is another column. */
+    readonly format?: (value: unknown) => string;
 }

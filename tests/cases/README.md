@@ -29,7 +29,7 @@ One directory per area, one file per group of cases. Each file is an object:
 | Key | Meaning |
 |---|---|
 | `about` | What the file covers, and where its cases came from |
-| `kind` | Which runner reads it: `selection`, `range`, `edgeBand`, `held`, `calls`, `clipboard`, `query`, `source` |
+| `kind` | Which runner reads it: `selection`, `range`, `edgeBand`, `held`, `calls`, `clipboard`, `query`, `source`, `displayText` |
 | `extent` | `[rows, columns]`, the grid every case of the file runs against unless it names its own |
 | `cases` | The cases. Each has a `name`, which starts with the ADR it holds to (CLAUDE.md, "Put the ADR number in the test name") |
 
@@ -198,12 +198,26 @@ key, the rows' own to begin with.
 | `{"gatherInterval": ms}` | Sets how long changes are gathered |
 | `{"advance": ms}` | Moves the fake clock on, running what falls due |
 | `{"publishGathered": true}` | Publishes what was gathered at once |
+| `{"cellChangedAt": true}` | Reads the source's Change Highlight, which starts its recording; `changedAt` reads through what was read |
+| `{"changeTimesKeptFor": ms}` | Sets how long a change time is kept |
 | `{"needRange": {"start", "count"}}` | Says the grid is about to show those rows |
 | `{"rows": {"start", "count"}, "is": [places]}` | Reads rows of the result |
 | `{"distinctValues": column, "is": [values]}` | Reads a column's value list; `"tooMany": true` in place of `is` |
-| `{"expect": {…}}` | Reads the source: `window` (places), `values` (the Window's rows as values), `windowStart`, `totalCount`, `loading`, `version` (the Row Sequence Version), `sorts`, `filter`, and `heard`, the changes heard since the last `expect`; and of a live source `keys` (the Window's Row Keys), `windowKept` (whether the Window is the same object as at the last `expect`), `vouches` (that no Window holds a row twice), `handed: true` (every row of the Window is the object last handed under its key) and `gatherInterval` |
+| `{"expect": {…}}` | Reads the source: `window` (places), `values` (the Window's rows as values), `windowStart`, `totalCount`, `loading`, `version` (the Row Sequence Version), `sorts`, `filter`, and `heard`, the changes heard since the last `expect`; and of a live source `keys` (the Window's Row Keys), `windowKept` (whether the Window is the same object as at the last `expect`), `vouches` (that no Window holds a row twice), `handed: true` (every row of the Window is the object last handed under its key), `gatherInterval`, `changeTimes` (whether the source has a Change Highlight), `changeTimesKeptFor`, and `changedAt`, `{key: {column: ms}}`: when the cell of the Window's row under that key last changed, in milliseconds from the case's start, `null` for none |
 
 A step that is refused says so with `throws` and `saying`, as a `query` case does.
+
+A column a `source` file declares may name a `format`, which both runners know by name: `whole` shows a
+number rounded to a whole one, as C#'s custom format `0` writes it (the cases hold no negative half, where
+JavaScript's `Math.round` and C# part).
+
+## `displayText`
+
+The text a value cell displays (ADR-0006, ADR-0350 section 16), run by
+`tests/ExGrid.Tests/Cases/DisplayTextCaseTests.cs` against `ColumnInfo.TextFor` and
+`src/npm/core/test/display-text.test.ts` against the Script Core's `textFor`. A case lists `texts`, each a
+`value` written as a `query` case writes it, an optional `format` as a `source` column names one, and the
+text it `is`.
 
 ## `calls`
 

@@ -13,8 +13,9 @@ import type { InMemoryGridSource } from '../src/source/in-memory-source';
 import type { RowKey } from '../src/source/row-key';
 import type { RowRange } from '../src/viewport/row-range';
 import { caseFiles, expectRefused, type Refusal } from './cases';
+import type { CellChangedAt } from '../src/source/cell-change-times';
 import { FakeClock } from './fake-clock';
-import { filterOf, value } from './query-values';
+import { filterOf, formatOf, value } from './query-values';
 
 /** A row of a case: its values, and the place in the case's rows it stands for, which every version of
  * it keeps. A new object for every version, since identity is what says a row changed. */
@@ -34,6 +35,8 @@ interface Step {
     readonly gatherInterval?: number;
     readonly advance?: number;
     readonly publishGathered?: true;
+    readonly cellChangedAt?: true;
+    readonly changeTimesKeptFor?: number;
     readonly needRange?: RowRange;
     readonly rows?: RowRange;
     readonly distinctValues?: string;
@@ -59,6 +62,9 @@ interface Expectation {
     readonly vouches?: boolean;
     readonly handed?: true;
     readonly gatherInterval?: number;
+    readonly changeTimes?: boolean;
+    readonly changeTimesKeptFor?: number;
+    readonly changedAt?: Readonly<Record<string, Readonly<Record<string, number | null>>>>;
 }
 
 /** The object last handed to the source under a key. */
@@ -78,7 +84,7 @@ interface SourceCase {
     readonly steps: readonly Step[];
 }
 
-type Declared = Pick<QueryColumn<Row>, 'name' | 'type' | 'dateType'>;
+type Declared = Pick<QueryColumn<Row>, 'name' | 'type' | 'dateType'> & { readonly format?: string };
 
 /** A value as the case compares it: a date by the date it names, anything else itself. */
 function compared(read: unknown): unknown {
@@ -100,9 +106,15 @@ for (const file of caseFiles<SourceCase>('source', 'source')) {
             it(c.name, async () => {
                 expect.hasAssertions();
                 const declared = c.columns ?? fileColumns;
-                const columns: QueryColumn<Row>[] = declared.map((column, index) => ({ ...column, value: row => row.values[index] }));
+                const columns: QueryColumn<Row>[] = declared.map(({ format, ...column }, index) => ({
+                    ...column,
+                    value: row => row.values[index],
+                    ...(format === undefined ? {} : { format: formatOf(format) }),
+                }));
                 const held: Row[] = c.rows.map((written, position) => rowOf(position, written));
                 const clock = new FakeClock();
+                const start = clock.now();
+                let changedAt: CellChangedAt<Row> | undefined;
                 const keyAt = c.rowKey === undefined ? undefined : declared.findIndex(column => column.name === c.rowKey);
                 const rowKey = keyAt === undefined ? undefined : (row: Row): RowKey => row.values[keyAt] as RowKey;
                 const make = (): InMemoryGridSource<Row> => GridSource.from(held, rowKey === undefined ? {} : { rowKey, clock });
@@ -138,6 +150,19 @@ for (const file of caseFiles<SourceCase>('source', 'source')) {
                         if (step.expect.keys !== undefined) {
                             const keyOf = defined(rowKey, `the Row Key of "${c.name}"`);
                             expect(state.window.map(keyOf), 'keys').toEqual(step.expect.keys);
+                        }
+                        if (step.expect.changeTimes !== undefined) expect(source.cellChangedAt !== undefined, 'changeTimes').toBe(step.expect.changeTimes);
+                        if (step.expect.changeTimesKeptFor !== undefined) expect(source.changeTimesKeptFor, 'changeTimesKeptFor').toBe(step.expect.changeTimesKeptFor);
+                        if (step.expect.changedAt !== undefined) {
+                            const keyOf = defined(rowKey, `the Row Key of "${c.name}"`);
+                            const lookup = defined(changedAt, `the cellChangedAt "${c.name}" read`);
+                            for (const [key, byColumn] of Object.entries(step.expect.changedAt)) {
+                                const row = defined(state.window.find(each => String(keyOf(each)) === key), `the row under ${key}`);
+                                for (const [column, at] of Object.entries(byColumn)) {
+                                    const read = lookup(row, column);
+                                    expect(read === undefined ? null : read - start, `changedAt of ${key}, ${column}`).toBe(at);
+                                }
+                            }
                         }
                         if (step.expect.handed === true) {
                             const keyOf = defined(rowKey, `the Row Key of "${c.name}"`);
@@ -196,6 +221,10 @@ for (const file of caseFiles<SourceCase>('source', 'source')) {
                         clock.advance(step.advance);
                     } else if (step.publishGathered === true) {
                         source.publishGathered();
+                    } else if (step.cellChangedAt === true) {
+                        changedAt = source.cellChangedAt;
+                    } else if (step.changeTimesKeptFor !== undefined) {
+                        source.changeTimesKeptFor = step.changeTimesKeptFor;
                     } else if (step.needRange !== undefined) {
                         await source.needRange(step.needRange);
                     } else if (step.rows !== undefined) {

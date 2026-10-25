@@ -229,6 +229,34 @@ describe('GridSource.from with a Row Key', () => {
         expect(source.snapshot().window.map(row => row.id)).toEqual(['A', 'C', 'B']);
     });
 
+    it('ADR-0141 / LV-9: one Change Highlight function for the source\'s life, so only a row with a new object asks again', () => {
+        const source = GridSource.from<Keyed>([{ id: 'A', amount: 1 }], { rowKey: row => row.id as never });
+        source.setColumns(keyedColumns);
+        source.gatherInterval = 0;
+        const first = source.cellChangedAt;
+        source.apply({ changed: [{ id: 'A', amount: 2 }] });
+        expect(source.cellChangedAt).toBe(first);
+        expect(first === undefined ? undefined : Object.isFrozen(first)).toBe(true);
+    });
+
+    it('ADR-0141 / LV-9: a format that throws while a change is compared leaves the times as they were', () => {
+        let throwing = false;
+        const formatted: readonly QueryColumn<Keyed>[] = [{
+            name: 'Amount', type: 'number', value: row => row.amount,
+            format: value => { if (throwing) throw new Error('format'); return String(value); },
+        }];
+        const source = GridSource.from<Keyed>([{ id: 'A', amount: 1 }], { rowKey: row => row.id as never });
+        source.setColumns(formatted);
+        source.gatherInterval = 0;
+        const changedAt = source.cellChangedAt;
+        throwing = true;
+        expect(() => { source.apply({ changed: [{ id: 'A', amount: 2 }] }); }).toThrow('format');
+        throwing = false;
+        source.publishGathered();
+        const [row] = source.snapshot().window;
+        expect(row === undefined || changedAt === undefined ? 'missing' : changedAt(row, 'Amount')).toBeTypeOf('number');
+    });
+
     it('ADR-0141 / LV-5: most of the rows removed a few at a time, and the rest reordered, still match applyQuery', () => {
         const rows: Keyed[] = Array.from({ length: 300 }, (_, i) => ({ id: i, amount: (i * 7919) % 101 }));
         const source = GridSource.from(rows, { rowKey: row => row.id as never });
