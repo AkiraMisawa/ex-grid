@@ -14,18 +14,18 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/25/2026 - 06:44:01 |
+| Generated on: | 10/25/2026 - 08:16:52 |
 | Parser: | MultiReport (19x Cobertura) |
 | Assemblies: | 16 |
 | Classes: | 1181 |
 | Files: | 605 |
-| **Line coverage:** | 94.5% (81630 of 86375) |
-| Covered lines: | 81630 |
-| Uncovered lines: | 4745 |
+| **Line coverage:** | 94.5% (81631 of 86375) |
+| Covered lines: | 81631 |
+| Uncovered lines: | 4744 |
 | Coverable lines: | 86375 |
 | Total lines: | 138074 |
-| **Branch coverage:** | 87.1% (49218 of 56462) |
-| Covered branches: | 49218 |
+| **Branch coverage:** | 87.1% (49219 of 56462) |
+| Covered branches: | 49219 |
 | Total branches: | 56462 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
@@ -109,8 +109,8 @@
 |ExChart.Components.Svg|50%|25%|
 |ExChart.GridCell|100%||
 |ExChart.GridChart|25%|0%|
-|ExChart.GridChartBridge<TRow>|70.3%|42.3%|
 |ExChart.GridChartBridge<TRow>|46.3%|17.5%|
+|ExChart.GridChartBridge<TRow>|70.3%|42.3%|
 |ExChart.GridChartCommands|62.5%|62.5%|
 |ExChart.GridChartDeclarations<TRow>|100%||
 |ExChart.GridChartSeries|100%||
@@ -621,7 +621,7 @@
 |ExGrid.Data.Storage.DoubleColumnWriter|100%||
 |ExGrid.Data.Storage.DoubleData|100%||
 |ExGrid.Data.Storage.DoubleObjectColumn<T>|100%|100%|
-|ExGrid.Data.Storage.FixedCodes|93.5%|75%|
+|ExGrid.Data.Storage.FixedCodes|96.7%|87.5%|
 |ExGrid.Data.Storage.Gather|98.8%|96.1%|
 |ExGrid.Data.Storage.Int32ObjectColumn<T>|82.3%|100%|
 |ExGrid.Data.Storage.IntegerColumnWriter|100%||
