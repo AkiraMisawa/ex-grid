@@ -3,7 +3,7 @@ import { test, expect, circuitQuiet } from './fixtures.mjs';
 // The Chart Spec on /chart-spec (tickets 70 to 75, ADR-0320, ADR-0321). An American put's 4-step lattice,
 // as a node table and a branch table, drawn from the spec in the field: coloured by value in the heat
 // bands, sized by the chance of reaching each node, its twenty branches as edges. The tool's answer is
-// written under the field; a second button loads a spec with numbers in it.
+// written under the field. A spec with numbers in it is refused by ChartSpecTests.
 
 const chart = (page) => page.locator('.ex-chart');
 const answer = (page) => page.locator('#answer');

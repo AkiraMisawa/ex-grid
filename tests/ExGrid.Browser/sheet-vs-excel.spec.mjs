@@ -708,6 +708,18 @@ test('item 21: with several ranges selected there is no fill handle (ADR-0050, t
 
 // ---- Structure (ADR-0046) -----------------------------------------------------------------------
 
+test('item 22: inserting rows above a selected range keeps the Selection where it was, and the Focus (ADR-0046, ADR-0052, ticket 13)', async ({ page }) => {
+    await click(page, 'B3');
+    await click(page, 'C4', { modifiers: ['Shift'] });
+    await click(page, 'B3', { button: 'right' });
+    await page.getByRole('menuitem', { name: /insert rows above/i }).click();
+    // Excel: two rows inserted above row 3, the Selection still B3:C4 (now the new rows), the
+    // Focus B3, and the new rows formatted as the row above.
+    await expectSelection(page, 'B3', 'C4');
+    await expectActive(page, 'B3');
+    await expect(cell(page, 'A5')).toHaveText('Pears');
+});
+
 // Nothing to drive yet: /sheet offers the user no rename.
 test.fixme('item 24: a rename is undone by Ctrl+Z, as Excel undoes it (ADR-0048, ticket 12)', async () => {
     // Excel: renamed to Data through Home > Format > Rename Sheet, then Ctrl+Z: Sheet1 again.

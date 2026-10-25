@@ -1,12 +1,10 @@
 import { test, expect, circuitQuiet } from './fixtures.mjs';
 
 // ExChart on /chart (ticket 14): the exposure profile is two panels of levels on monthly dates,
-// 2026-10-30 to 2036-10-30 (121 positions); EPE holds three series, ENE two. The hazard curve is a
-// rate over each tenor interval, drawn as steps. The page keeps what the user changed and writes the
+// 2026-10-30 to 2036-10-30 (121 positions); EPE holds three series, ENE two. The page keeps what the user changed and writes the
 // last event raised under the exposure chart (ADR-0272).
 
 const exposure = (page) => page.locator('#exposure .ex-chart');
-const hazard = (page) => page.locator('#hazard .ex-chart');
 const layer = (chart, panel) => chart.locator(`.ex-chart-hit[data-ex-panel="${panel}"]`);
 
 test.beforeEach(async ({ page }) => {

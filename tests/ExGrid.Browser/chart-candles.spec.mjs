@@ -1,8 +1,9 @@
 import { test, expect } from './fixtures.mjs';
 
 // Candles and intervals on /chart-candles (tickets 60 to 66): ten years of a synthetic daily index,
-// 2016-01-04 to 2025-12-31, with volume in a panel below and a 25-day average; a yield curve with a
-// Bid–Ask band; rate forecasts with 95% CI whiskers. The page writes the last event under the index.
+// 2016-01-04 to 2025-12-31, with volume in a panel below and a 25-day average, and a scatter of
+// strategies with intervals both ways. The tooltip's readings, a merged candle's click, packed sessions
+// and the band and whiskers are held by the engine's tests and by chart-showcases.spec.mjs.
 
 const index = (page) => page.locator('#index .ex-chart');
 const layer = (chart, panel) => chart.locator(`.ex-chart-hit[data-ex-panel="${panel}"]`);
