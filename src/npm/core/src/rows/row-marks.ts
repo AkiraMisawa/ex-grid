@@ -1,4 +1,6 @@
+import type { RowKind } from '../paint/row-classes';
 import { wholeAtLeast } from '../viewport/checks';
+import type { RowRange } from '../viewport/row-range';
 
 // What the gestures on a Mark Column mean (ADR-0043). The core owns the meaning; the marks themselves are
 // the Consumer's, which is why these rules take counts rather than rows: a Consumer resolving a gesture
@@ -102,4 +104,45 @@ export function rowMarkHeaderPress(state: RowMarkHeaderState): boolean {
         throw new RangeError(`A header's state is none, some or all, not ${JSON.stringify(state)}.`);
     }
     return pressMarks[state];
+}
+
+/**
+ * One marking gesture, as the grid reports it (ADR-0043): one shape per gesture, never one notification per
+ * row.
+ * - `oneRow`: one row's checkbox was pressed; `row` is the object the grid painted, its identity, as an Edit
+ *   Intent carries it (ADR-0007).
+ * - `allRows`: every Detail row of the current result, after filtering, marked or unmarked together. Marking
+ *   takes the result as it stands at `rowSequenceVersion`, so a row joining it later is not marked;
+ *   unmarking clears the current result's marks and leaves the marks outside it alone.
+ * - `positions`: Space over a selection in the Mark Column, or the header under a pager: rows named by
+ *   position in the whole result, since past the Window the grid has no identity to name them by. They are
+ *   brought into line ({@link lineUpMarks}), and refused under any other `rowSequenceVersion`, where the
+ *   positions would name other rows.
+ */
+export type RowMarkIntent<Row> =
+    | { readonly kind: 'oneRow'; readonly row: Row; readonly marked: boolean }
+    | { readonly kind: 'allRows'; readonly marked: boolean; readonly rowSequenceVersion: number }
+    | { readonly kind: 'positions'; readonly ranges: readonly RowRange[]; readonly rowSequenceVersion: number };
+
+/**
+ * The Consumer's half of Row Marks (ADR-0043). The grid does not hold the marks: it cannot name a row outside
+ * its Window, so it could not hold a set of them. It reports every marking gesture as one intent, and asks,
+ * row by row for the rows it paints, whether each is marked. The contract is on the answers: once "mark all"
+ * has arrived, every Detail row of that result answers marked until it is unmarked, which is what makes a row
+ * scrolled into view afterwards paint as marked.
+ */
+export interface RowMarks<Row> {
+    /** Whether a row is marked. Asked for every Detail row the grid paints, so it is cheap, and a row it has
+     * never seen is unmarked rather than refused. */
+    isMarked(row: Row): boolean;
+    /** The counts the header and the count display are painted from, or `undefined` while they are not
+     * known: the grid then claims nothing rather than guess from its Window. */
+    readonly counts: RowMarkCounts | undefined;
+    /** One marking gesture. */
+    onMarkIntent(intent: RowMarkIntent<Row>): Promise<void>;
+    /** The grid's Row Kind, pushed when it binds and whenever it changes, so the marks leave Group and Total
+     * rows out of "all" and out of the counts (ADR-0024). `undefined` makes every row a Detail row. */
+    setRowKind(rowKind: ((row: Row) => RowKind) | undefined): void;
+    /** Hears that the marks or their counts changed, so the grid repaints; the answer stops hearing. */
+    subscribe(listener: () => void): () => void;
 }

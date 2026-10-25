@@ -1,0 +1,426 @@
+{
+  "about": "GridSource.fetch (ADR-0025): the cold start, read-ahead, coalescing, discarding a superseded answer, a restart on a new Query, an answer that does not reach the rows the grid needs, and failures. Transcribed from tests/ExGrid.Tests/GridSourceFetchTests.cs.",
+  "kind": "fetch",
+  "columns": ["Book", "Desk"],
+  "cases": [
+    {
+      "name": "ADR-0025: the grid cannot ask for rows in an empty result, so the source fetches the first page when it binds",
+      "readAhead": 0,
+      "hears": false,
+      "steps": [
+        {"expect": {"calls": [], "loading": false, "totalCount": 0, "windowCount": 0, "heard": 0}},
+        {"bind": true},
+        {"expect": {"calls": [[0, 100]], "loading": true, "heard": 1}},
+        {"answer": 0, "page": {"start": 0, "count": 100, "total": 5000}},
+        {"expect": {"loading": false, "windowStart": 0, "windowCount": 100, "first": "Row 0", "totalCount": 5000, "version": 0, "lastError": null, "heard": 1}},
+        {"bind": true},
+        {"expect": {"calls": [[0, 100]], "heard": 0}}
+      ]
+    },
+    {
+      "name": "ADR-0023: the grid hears the loading flag flip and an answer land, and nothing else",
+      "readAhead": 0,
+      "hears": false,
+      "steps": [
+        {"bind": true},
+        {"expect": {"heard": 1}},
+        {"needRange": [500, 20], "as": "scrolled"},
+        {"expect": {"calls": [[0, 100], [500, 20]], "cancelled": [true, false], "loading": true, "heard": 0}},
+        {"answer": 1, "page": {"start": 500, "count": 20, "total": 5000}},
+        {"settled": "scrolled"},
+        {"expect": {"windowStart": 500, "first": "Row 500", "loading": false, "heard": 1}},
+        {"answer": 0, "page": {"start": 0, "count": 100, "total": 5000}},
+        {"expect": {"windowStart": 500, "first": "Row 500", "heard": 0}},
+        {"needRange": [2000, 20], "as": "further"},
+        {"expect": {"loading": true, "heard": 1}}
+      ]
+    },
+    {
+      "name": "ADR-0025: a range the Window already holds is not fetched again",
+      "readAhead": 0,
+      "hears": false,
+      "steps": [
+        {"bind": true},
+        {"answer": 0, "page": {"start": 0, "count": 100, "total": 5000}},
+        {"needRange": [10, 20], "as": "held"},
+        {"settled": "held"},
+        {"needRange": [80, 20], "as": "edge"},
+        {"settled": "edge"},
+        {"expect": {"calls": [[0, 100]], "loading": false}},
+        {"needRange": [90, 20], "as": "past"},
+        {"expect": {"calls": [[0, 100], [90, 20]], "loading": true}}
+      ]
+    },
+    {
+      "name": "ADR-0001: read-ahead belongs to the source, and is the number the Consumer gave, held inside the result",
+      "readAhead": 25,
+      "hears": false,
+      "steps": [
+        {"bind": true},
+        {"answer": 0, "page": {"start": 0, "count": 100, "total": 5000}},
+        {"needRange": [500, 20], "as": "middle"},
+        {"needRange": [4990, 10], "as": "end"},
+        {"needRange": [10, 100], "as": "top"},
+        {"expect": {"calls": [[0, 100], [475, 70], [4965, 35], [0, 135]]}}
+      ]
+    },
+    {
+      "name": "ADR-0025: the same range asked again while it is in flight is one fetch, and one promise",
+      "readAhead": 0,
+      "hears": false,
+      "steps": [
+        {"bind": true},
+        {"answer": 0, "page": {"start": 0, "count": 100, "total": 5000}},
+        {"needRange": [500, 20], "as": "first"},
+        {"needRange": [500, 20], "as": "second"},
+        {"same": ["first", "second"]},
+        {"expect": {"calls": [[0, 100], [500, 20]], "cancelled": [false, false]}},
+        {"pending": "first"},
+        {"answer": 1, "page": {"start": 500, "count": 20, "total": 5000}},
+        {"settled": "first"}
+      ]
+    },
+    {
+      "name": "ADR-0025: a range that widens to the one in flight joins it, and the answer is held to the newer need",
+      "readAhead": 60,
+      "hears": false,
+      "steps": [
+        {"bind": true},
+        {"needRange": [0, 20], "as": "top"},
+        {"needRange": [10, 10], "as": "lower"},
+        {"same": ["top", "lower"]},
+        {"expect": {"calls": [[0, 100], [0, 80]]}},
+        {"answer": 1, "page": {"start": 0, "count": 5, "total": 5000}},
+        {"settled": "lower", "throws": "invalidOperation", "saying": "10 rows at 10"},
+        {"expect": {"windowCount": 0, "loading": false, "lastError": "10 rows at 10"}}
+      ]
+    },
+    {
+      "name": "ADR-0025: a superseded question is called off, and its answer never reaches the screen",
+      "readAhead": 0,
+      "hears": false,
+      "steps": [
+        {"bind": true},
+        {"answer": 0, "page": {"start": 0, "count": 100, "total": 5000}},
+        {"needRange": [500, 20], "as": "stale"},
+        {"needRange": [900, 20], "as": "fresh"},
+        {"expect": {"calls": [[0, 100], [500, 20], [900, 20]], "cancelled": [false, true, false]}},
+        {"answer": 2, "page": {"start": 900, "count": 20, "total": 5000}},
+        {"settled": "fresh"},
+        {"answer": 1, "page": {"start": 500, "count": 20, "total": 5000}},
+        {"settled": "stale"},
+        {"expect": {"windowStart": 900, "first": "Row 900", "loading": false}}
+      ]
+    },
+    {
+      "name": "ADR-0025: a superseded question's failure is nobody's",
+      "readAhead": 0,
+      "hears": false,
+      "steps": [
+        {"bind": true},
+        {"answer": 0, "page": {"start": 0, "count": 100, "total": 5000}},
+        {"needRange": [500, 20], "as": "stale"},
+        {"needRange": [900, 20], "as": "fresh"},
+        {"fail": 1, "error": "the server did not answer"},
+        {"settled": "stale"},
+        {"expect": {"loading": true, "lastError": null, "heard": 3}},
+        {"answer": 2, "page": {"start": 900, "count": 20, "total": 5000}},
+        {"settled": "fresh"}
+      ]
+    },
+    {
+      "name": "ADR-0025: a source may answer short, but not with another part of the result",
+      "readAhead": 0,
+      "hears": false,
+      "steps": [
+        {"bind": true},
+        {"answer": 0, "page": {"start": 0, "count": 100, "total": 5000}},
+        {"needRange": [500, 20], "as": "wanted"},
+        {"answer": 1, "page": {"start": 0, "count": 20, "total": 5000}},
+        {"settled": "wanted", "throws": "invalidOperation", "saying": "20 rows at 500"},
+        {"expect": {"windowStart": 0, "windowCount": 100, "loading": false, "lastError": "20 rows at 500"}}
+      ]
+    },
+    {
+      "name": "ADR-0025: an answer short of the read-ahead is taken while it reaches the rows the grid needs",
+      "readAhead": 30,
+      "hears": false,
+      "steps": [
+        {"bind": true},
+        {"answer": 0, "page": {"start": 0, "count": 100, "total": 5000}},
+        {"needRange": [500, 20], "as": "wanted"},
+        {"expect": {"calls": [[0, 100], [470, 80]]}},
+        {"answer": 1, "page": {"start": 470, "count": 31, "total": 5000}},
+        {"settled": "wanted"},
+        {"expect": {"windowStart": 470, "windowCount": 31, "lastError": null}}
+      ]
+    },
+    {
+      "name": "ADR-0025: the answer has to reach the rows the grid needs, not only the widened start",
+      "readAhead": 60,
+      "hears": false,
+      "steps": [
+        {"bind": true},
+        {"answer": 0, "page": {"start": 0, "count": 100, "total": 5000}},
+        {"needRange": [100, 20], "as": "wanted"},
+        {"expect": {"calls": [[0, 100], [40, 140]]}},
+        {"answer": 1, "page": {"start": 40, "count": 50, "total": 5000}},
+        {"settled": "wanted", "throws": "invalidOperation", "saying": "20 rows at 100"}
+      ]
+    },
+    {
+      "name": "ADR-0025: an answer with no rows because the result shrank past the position is taken, and the order moves",
+      "readAhead": 0,
+      "hears": false,
+      "steps": [
+        {"bind": true},
+        {"answer": 0, "page": {"start": 0, "count": 100, "total": 5000}},
+        {"needRange": [500, 20], "as": "wanted"},
+        {"answer": 1, "page": {"start": 0, "count": 0, "total": 10}},
+        {"settled": "wanted"},
+        {"expect": {"totalCount": 10, "windowCount": 0, "version": 1, "lastError": null}}
+      ]
+    },
+    {
+      "name": "ADR-0011: scrolling to another slice of the same Query is not a reorder, and a smaller total is",
+      "readAhead": 0,
+      "hears": false,
+      "steps": [
+        {"bind": true},
+        {"answer": 0, "page": {"start": 0, "count": 100, "total": 5000}},
+        {"needRange": [500, 20], "as": "scrolled"},
+        {"answer": 1, "page": {"start": 500, "count": 20, "total": 5000}},
+        {"expect": {"version": 0}},
+        {"needRange": [700, 20], "as": "grown"},
+        {"answer": 2, "page": {"start": 700, "count": 20, "total": 6000}},
+        {"expect": {"version": 0, "totalCount": 6000}},
+        {"needRange": [200, 20], "as": "shrunk"},
+        {"answer": 3, "page": {"start": 200, "count": 20, "total": 4000}},
+        {"expect": {"version": 1, "totalCount": 4000}}
+      ]
+    },
+    {
+      "name": "ADR-0011 / ADR-0025: a new Sort drops the Window and fetches the first page under it, heard once",
+      "readAhead": 0,
+      "hears": false,
+      "steps": [
+        {"bind": true},
+        {"answer": 0, "page": {"start": 0, "count": 100, "total": 5000}},
+        {"needRange": [500, 20], "as": "scrolled"},
+        {"answer": 1, "page": {"start": 500, "count": 20, "total": 5000}},
+        {"expect": {"version": 0, "heard": 4}},
+        {"setSorts": [{"column": "Book", "direction": "ascending"}]},
+        {"expect": {"version": 1, "windowCount": 0, "windowStart": 0, "totalCount": 0, "loading": true, "heard": 1, "sorts": [{"column": "Book", "direction": "ascending"}]}},
+        {"asked": 2, "range": [0, 100], "sorts": [{"column": "Book", "direction": "ascending"}], "filtered": []},
+        {"setSorts": [{"column": "Book", "direction": "ascending"}]},
+        {"expect": {"calls": [[0, 100], [500, 20], [0, 100]], "version": 1, "heard": 0}},
+        {"answer": 2, "page": {"start": 0, "count": 100, "total": 5000}},
+        {"expect": {"version": 1, "first": "Row 0", "loading": false}}
+      ]
+    },
+    {
+      "name": "ADR-0011 / ADR-0025: a new Sort is heard while a fetch is in flight, and calls that fetch off",
+      "readAhead": 0,
+      "hears": false,
+      "steps": [
+        {"bind": true},
+        {"answer": 0, "page": {"start": 0, "count": 100, "total": 5000}},
+        {"needRange": [500, 20], "as": "scrolled"},
+        {"expect": {"heard": 3, "loading": true}},
+        {"setSorts": [{"column": "Desk", "direction": "descending"}]},
+        {"expect": {"heard": 1, "windowCount": 0, "version": 1, "cancelled": [false, true, false]}},
+        {"answer": 1, "page": {"start": 500, "count": 20, "total": 5000}},
+        {"settled": "scrolled"},
+        {"expect": {"windowCount": 0, "loading": true, "heard": 0}}
+      ]
+    },
+    {
+      "name": "ADR-0025: a Sort set before the grid binds is fetched once, and binding fetches nothing more",
+      "readAhead": 0,
+      "hears": false,
+      "steps": [
+        {"setSorts": [{"column": "Book", "direction": "ascending"}]},
+        {"bind": true},
+        {"expect": {"calls": [[0, 100]], "cancelled": [false], "version": 1}},
+        {"asked": 0, "range": [0, 100], "sorts": [{"column": "Book", "direction": "ascending"}], "filtered": []}
+      ]
+    },
+    {
+      "name": "ADR-0023 / ADR-0025: a Filter is compared by what it says, and a new one restarts",
+      "readAhead": 0,
+      "hears": false,
+      "steps": [
+        {"bind": true},
+        {"answer": 0, "page": {"start": 0, "count": 100, "total": 5000}},
+        {"setFilter": {"columns": {"Book": {"clauses": [{"operator": "isBlank"}]}}}},
+        {"expect": {"calls": [[0, 100], [0, 100]], "version": 1, "filter": {"columns": {"Book": {"clauses": [{"operator": "isBlank"}]}}}}},
+        {"asked": 1, "range": [0, 100], "sorts": [], "filtered": ["Book"]},
+        {"setFilter": {"columns": {"Book": {"clauses": [{"operator": "isBlank"}]}}}},
+        {"expect": {"calls": [[0, 100], [0, 100]], "version": 1, "heard": 0}},
+        {"setFilter": null},
+        {"expect": {"calls": [[0, 100], [0, 100], [0, 100]], "version": 2, "filter": null, "heard": 1}},
+        {"asked": 2, "range": [0, 100], "sorts": [], "filtered": []}
+      ]
+    },
+    {
+      "name": "ADR-0343: a requery drops the Window and fetches the first page again, as tall as the Viewport asked",
+      "readAhead": 0,
+      "hears": false,
+      "steps": [
+        {"bind": true},
+        {"answer": 0, "page": {"start": 0, "count": 100, "total": 5000}},
+        {"needRange": [0, 150], "as": "tall"},
+        {"answer": 1, "page": {"start": 0, "count": 150, "total": 5000}},
+        {"settled": "tall"},
+        {"requery": true},
+        {"expect": {"calls": [[0, 100], [0, 150], [0, 150]], "version": 1, "windowCount": 0, "loading": true}}
+      ]
+    },
+    {
+      "name": "ADR-0001: a range that names no rows is refused as it is asked",
+      "readAhead": 0,
+      "hears": false,
+      "steps": [
+        {"bind": true},
+        {"needRange": [-1, 20], "throws": "outOfRange"},
+        {"needRange": [0, 0], "throws": "outOfRange"},
+        {"expect": {"calls": [[0, 100]]}}
+      ]
+    },
+    {
+      "name": "ADR-0141: an answer's order token moves the Row Sequence Version when it differs from the last answer's",
+      "readAhead": 0,
+      "hears": false,
+      "steps": [
+        {"bind": true},
+        {"answer": 0, "page": {"start": 0, "count": 100, "total": 5000, "orderToken": "a"}},
+        {"expect": {"version": 0}},
+        {"needRange": [500, 20], "as": "same"},
+        {"answer": 1, "page": {"start": 500, "count": 20, "total": 5000, "orderToken": "a"}},
+        {"expect": {"version": 0}},
+        {"needRange": [900, 20], "as": "moved"},
+        {"answer": 2, "page": {"start": 900, "count": 20, "total": 5000, "orderToken": "b"}},
+        {"expect": {"version": 1}},
+        {"needRange": [1500, 20], "as": "none"},
+        {"answer": 3, "page": {"start": 1500, "count": 20, "total": 5000}},
+        {"expect": {"version": 2}},
+        {"setSorts": [{"column": "Book", "direction": "ascending"}]},
+        {"answer": 4, "page": {"start": 0, "count": 100, "total": 5000, "orderToken": "c"}},
+        {"expect": {"version": 3}}
+      ]
+    },
+    {
+      "name": "ADR-0025: a failure is heard, kept, and leaves the rows on screen standing",
+      "readAhead": 0,
+      "hears": true,
+      "steps": [
+        {"bind": true},
+        {"answer": 0, "page": {"start": 0, "count": 100, "total": 5000}},
+        {"needRange": [500, 20], "as": "wanted"},
+        {"fail": 1, "error": "the server did not answer"},
+        {"settled": "wanted"},
+        {"expect": {"reported": ["the server did not answer"], "lastError": "the server did not answer", "loading": false, "windowCount": 100, "windowStart": 0, "heard": 4}},
+        {"needRange": [500, 20], "as": "again"},
+        {"expect": {"calls": [[0, 100], [500, 20], [500, 20]], "lastError": "the server did not answer"}},
+        {"answer": 2, "page": {"start": 500, "count": 20, "total": 5000}},
+        {"expect": {"lastError": null, "windowStart": 500, "reported": []}}
+      ]
+    },
+    {
+      "name": "ADR-0025: a failure nobody hears rejects the grid's promise, never vanishes",
+      "readAhead": 0,
+      "hears": false,
+      "steps": [
+        {"bind": true},
+        {"answer": 0, "page": {"start": 0, "count": 100, "total": 5000}},
+        {"needRange": [500, 20], "as": "wanted"},
+        {"fail": 1, "error": "the server did not answer"},
+        {"settled": "wanted", "rejects": "the server did not answer"},
+        {"expect": {"lastError": "the server did not answer", "loading": false, "windowCount": 100}}
+      ]
+    },
+    {
+      "name": "ADR-0025: a cold start that fails is heard, and the source stays empty",
+      "readAhead": 0,
+      "hears": true,
+      "steps": [
+        {"bind": true},
+        {"fail": 0, "error": "the server is down"},
+        {"expect": {"reported": ["the server is down"], "lastError": "the server is down", "loading": false, "windowCount": 0, "totalCount": 0}}
+      ]
+    },
+    {
+      "name": "ADR-0025: a disposed source calls off what is in flight, and an answer that lands reaches nobody",
+      "readAhead": 0,
+      "hears": false,
+      "steps": [
+        {"bind": true},
+        {"expect": {"heard": 1}},
+        {"dispose": true},
+        {"expect": {"cancelled": [true], "heard": 0}},
+        {"answer": 0, "page": {"start": 0, "count": 100, "total": 5000}},
+        {"needRange": [500, 20], "as": "late"},
+        {"settled": "late"},
+        {"setSorts": [{"column": "Book", "direction": "ascending"}]},
+        {"setFilter": {"columns": {"Book": {"clauses": [{"operator": "isBlank"}]}}}},
+        {"requery": true},
+        {"bind": true},
+        {"expect": {"calls": [[0, 100]], "windowCount": 0, "loading": true, "version": 0, "sorts": [], "filter": null, "heard": 0}}
+      ]
+    },
+    {
+      "name": "ADR-0140 / ADR-0141: under a Row Key an answer that repeats a key is refused by name",
+      "readAhead": 0,
+      "hears": true,
+      "rowKey": true,
+      "steps": [
+        {"bind": true},
+        {"expect": {"vouches": true}},
+        {"answer": 0, "page": {"start": 0, "rows": ["Row 1", "Row 2", "Row 1"], "total": 3}},
+        {"expect": {"windowCount": 0, "lastError": "'Row 1'", "reported": ["'Row 1'"]}}
+      ]
+    },
+    {
+      "name": "ADR-0005: rows for a copy are one fetch under the Query in force, trimmed to the range, and kept nowhere",
+      "readAhead": 0,
+      "hears": false,
+      "steps": [
+        {"bind": true},
+        {"answer": 0, "page": {"start": 0, "count": 100, "total": 5000}},
+        {"setSorts": [{"column": "Desk", "direction": "ascending"}]},
+        {"answer": 1, "page": {"start": 0, "count": 100, "total": 5000}},
+        {"rows": [3, 2], "as": "copy"},
+        {"rows": [8000, 2], "as": "past"},
+        {"expect": {"calls": [[0, 100], [0, 100], [3, 2], [8000, 2]], "heard": 4}},
+        {"asked": 2, "range": [3, 2], "sorts": [{"column": "Desk", "direction": "ascending"}], "filtered": []},
+        {"answer": 2, "page": {"start": 0, "count": 10, "total": 5000}},
+        {"read": "copy", "is": ["Row 3", "Row 4"]},
+        {"answer": 3, "page": {"start": 0, "count": 0, "total": 5000}},
+        {"read": "past", "is": []},
+        {"expect": {"windowStart": 0, "first": "Row 0", "windowCount": 100, "loading": false, "heard": 0}}
+      ]
+    },
+    {
+      "name": "ADR-0009: a value list is the Consumer's, asked under every Filter but the column's own, and too many without one",
+      "readAhead": 0,
+      "hears": false,
+      "distinct": ["Rates", "Credit"],
+      "steps": [
+        {"bind": true},
+        {"answer": 0, "page": {"start": 0, "count": 100, "total": 5000}},
+        {"setFilter": {"columns": {"Book": {"clauses": [{"operator": "isBlank"}]}, "Desk": {"clauses": [{"operator": "isNotBlank"}]}}}},
+        {"distinctValues": "Book", "is": ["Rates", "Credit"], "handed": ["Desk"]},
+        {"distinctValues": "Desk", "is": ["Rates", "Credit"], "handed": ["Book"]}
+      ]
+    },
+    {
+      "name": "ADR-0009: without a value list of the Consumer's, a column's values are too many to list",
+      "readAhead": 0,
+      "hears": false,
+      "steps": [
+        {"bind": true},
+        {"distinctValues": "Book", "tooMany": true}
+      ]
+    }
+  ]
+}

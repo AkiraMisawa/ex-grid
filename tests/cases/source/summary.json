@@ -1,0 +1,63 @@
+{
+  "about": "The Selection Summary on GridSource.from (ADR-0130): the reference figures over the source's current result, each column read by its value. Numbers are written as bigints, which both cores hold exactly. From tests/ExGrid.Tests/GridSummaryTests.cs.",
+  "kind": "source",
+  "columns": [{"name": "Book", "type": "text"}, {"name": "Notional", "type": "number"}, {"name": "Rate", "type": "number"}],
+  "cases": [
+    {
+      "name": "ADR-0130 / SM-6: GridSource.from summarises the result in its order",
+      "rows": [
+        ["Alpha", {"bigint": "1000"}, {"bigint": "1"}],
+        ["Beta", {"bigint": "2500"}, {"bigint": "2"}],
+        ["Gamma", null, {"bigint": "3"}],
+        ["Delta", {"bigint": "30"}, {"bigint": "4"}]
+      ],
+      "steps": [
+        {"setColumns": true},
+        {"setSorts": [{"column": "Book", "direction": "ascending"}]},
+        {"summarize": {"ranges": [[0, 1, 2, 1]], "figures": ["count", "sum"]}, "summary": {"count": {"exact": "2"}, "sum": {"exact": "3500"}}}
+      ]
+    },
+    {
+      "name": "ADR-0130: GridSummary over the filtered result, its rows counted in it",
+      "rows": [
+        ["Alpha", {"bigint": "1000"}, {"bigint": "1"}],
+        ["Beta", {"bigint": "2500"}, {"bigint": "2"}],
+        ["Gamma", null, {"bigint": "3"}],
+        ["Delta", {"bigint": "30"}, {"bigint": "4"}]
+      ],
+      "steps": [
+        {"setColumns": true},
+        {"setFilter": {"columns": {"Book": {"clauses": [{"operator": "contains", "value": "a"}]}}}},
+        {"expect": {"window": [0, 1, 2, 3]}},
+        {"setFilter": {"columns": {"Book": {"clauses": [{"operator": "equals", "value": "Delta"}]}}}},
+        {"summarize": {"ranges": [[0, 0, 4, 2]], "figures": ["count", "numericalCount", "sum"]}, "summary": {"count": {"exact": "2"}, "numericalCount": {"exact": "1"}, "sum": {"exact": "30"}}}
+      ]
+    },
+    {
+      "name": "SM-6 / ADR-0130: a hidden column is never summarised: the request's columns are the visible ones",
+      "rows": [
+        ["Alpha", {"bigint": "1000"}, {"bigint": "1"}],
+        ["Beta", {"bigint": "2500"}, {"bigint": "2"}],
+        ["Gamma", null, {"bigint": "3"}],
+        ["Delta", {"bigint": "30"}, {"bigint": "4"}]
+      ],
+      "steps": [
+        {"setColumns": true},
+        {"summarize": {"ranges": [[0, 0, 4, 2]], "columns": ["Book", "Rate"], "figures": ["count", "numericalCount", "max"]}, "summary": {"count": {"exact": "8"}, "numericalCount": {"exact": "4"}, "max": {"exact": "4"}}}
+      ]
+    },
+    {
+      "name": "ADR-0130: a column the source was not told about is blank",
+      "rows": [
+        ["Alpha", {"bigint": "1000"}, {"bigint": "1"}],
+        ["Beta", {"bigint": "2500"}, {"bigint": "2"}],
+        ["Gamma", null, {"bigint": "3"}],
+        ["Delta", {"bigint": "30"}, {"bigint": "4"}]
+      ],
+      "steps": [
+        {"setColumns": ["Book"]},
+        {"summarize": {"ranges": [[0, 0, 4, 2]], "figures": ["count", "sum"]}, "summary": {"count": {"exact": "4"}, "sum": "empty"}}
+      ]
+    }
+  ]
+}

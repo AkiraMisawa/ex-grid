@@ -1,0 +1,90 @@
+{
+  "about": "The reference Find step (ADR-0055, FD-7): what a match is and the order a step walks, over rows written as the texts their cells display. From tests/ExGrid.Tests/GridFindTests.cs.",
+  "kind": "find",
+  "columns": ["Book", "Trader", "Notional"],
+  "rows": [["Alpha", "Ishikawa", "1,000.00"], ["Beta", "Novak", "2,500.50"], ["Gamma", "novak", "30.00"], ["Alpha", "Osei", "1,000.00"]],
+  "cases": [
+    {
+      "name": "ADR-0055 / FD-7: by rows, across a row in column order, then down, from the cell after the Focus",
+      "steps": [
+        {"find": {"text": "nova", "from": [0, 2]}, "is": [1, "Trader"]},
+        {"find": {"text": "nova", "from": [1, 1]}, "is": [2, "Trader"]}
+      ]
+    },
+    {
+      "name": "ADR-0055 / FD-7: with no Focus, the walk starts at the first cell",
+      "steps": [
+        {"find": {"text": "alpha"}, "is": [0, "Book"]}
+      ]
+    },
+    {
+      "name": "ADR-0055 / FD-7: past the last cell the walk wraps to the first",
+      "steps": [
+        {"find": {"text": "alpha", "from": [3, 0]}, "is": [0, "Book"]}
+      ]
+    },
+    {
+      "name": "ADR-0055 / FD-7: the cell the step starts from is considered last, so a lone match finds itself",
+      "steps": [
+        {"find": {"text": "beta", "from": [1, 0]}, "is": [1, "Book"]}
+      ]
+    },
+    {
+      "name": "ADR-0055 / FD-7: backward walks the other way and wraps too",
+      "steps": [
+        {"find": {"text": "alpha", "from": [3, 0], "backward": true}, "is": [0, "Book"]},
+        {"find": {"text": "alpha", "from": [0, 0], "backward": true}, "is": [3, "Book"]},
+        {"find": {"text": "alpha", "backward": true}, "is": [3, "Book"]}
+      ]
+    },
+    {
+      "name": "ADR-0055 / ADR-0023: case is ignored as OrdinalIgnoreCase ignores it, unless Match case",
+      "steps": [
+        {"find": {"text": "NOVAK"}, "is": [1, "Trader"]},
+        {"find": {"text": "novak", "matchCase": true}, "is": [2, "Trader"]},
+        {"find": {"text": "NOVAK", "matchCase": true}, "is": null}
+      ]
+    },
+    {
+      "name": "ADR-0055 / FD-7: containment unless Whole cell",
+      "steps": [
+        {"find": {"text": "et"}, "is": [1, "Book"]},
+        {"find": {"text": "et", "wholeCell": true}, "is": null},
+        {"find": {"text": "BETA", "wholeCell": true}, "is": [1, "Book"]}
+      ]
+    },
+    {
+      "name": "ADR-0055: what is matched is the displayed text, never the raw value",
+      "steps": [
+        {"find": {"text": "2,500.50"}, "is": [1, "Notional"]},
+        {"find": {"text": "2500.5"}, "is": null}
+      ]
+    },
+    {
+      "name": "ADR-0055 / FD-7: a scope confines the walk, and a cell covered twice counts once",
+      "steps": [
+        {"find": {"text": "alpha", "scope": [[2, 0, 2, 2], [3, 0, 1, 1]]}, "is": [3, "Book"]},
+        {"find": {"text": "ishikawa", "scope": [[2, 0, 2, 2], [3, 0, 1, 1]]}, "is": null}
+      ]
+    },
+    {
+      "name": "ADR-0055: a column with no text, or one the source does not know, is skipped",
+      "steps": [
+        {"find": {"text": "beta", "columns": ["Actions", "Book"]}, "is": [1, "Book"]}
+      ]
+    },
+    {
+      "name": "ADR-0055: an empty text asks nothing",
+      "steps": [
+        {"find": {"text": ""}, "is": null}
+      ]
+    },
+    {
+      "name": "ADR-0055 / FD-7: a Focus outside the rows or the columns starts the walk at the first cell, or the last backward",
+      "steps": [
+        {"find": {"text": "alpha", "from": [9, 0]}, "is": [0, "Book"]},
+        {"find": {"text": "alpha", "from": [0, 5], "backward": true}, "is": [3, "Book"]}
+      ]
+    }
+  ]
+}

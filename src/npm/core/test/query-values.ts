@@ -47,3 +47,10 @@ export function filterOf(filter: GridFilter): GridFilter {
     }]));
     return { ...filter, columns };
 }
+
+/** A format as a case names it (tests/cases/README.md): `whole` shows a number rounded to a whole one, as
+ * C#'s custom format `0` writes it for the values the cases use, which hold no negative half. */
+export function formatOf(name: string): (value: unknown) => string {
+    if (name === 'whole') return written => Math.round(Number(written)).toString();
+    throw new Error(`"${name}" is not a format a case names.`);
+}

@@ -1,0 +1,65 @@
+{
+  "about": "The reference rule for one cell's replacement (ADR-0332 §2): every occurrence of the text in the entry, compared as Find compares; with Whole cell, the entry whole; nothing where the entry does not match. From tests/ExGrid.Tests/GridReplaceTests.cs.",
+  "kind": "calls",
+  "subject": "GridReplace",
+  "cases": [
+    {
+      "name": "ADR-0332 §2: every occurrence in the entry is replaced, compared OrdinalIgnoreCase",
+      "expect": [
+        {"static": "replaced", "args": ["a-A-c", {"text": "a", "matchCase": false, "wholeCell": false}, "x"], "is": "x-x-c"}
+      ]
+    },
+    {
+      "name": "ADR-0332 §2 / ADR-0023: with Match case, only the occurrences of that case",
+      "expect": [
+        {"static": "replaced", "args": ["a-A-c", {"text": "a", "matchCase": true, "wholeCell": false}, "x"], "is": "x-A-c"}
+      ]
+    },
+    {
+      "name": "ADR-0332 §2: with Whole cell, an equal entry is replaced whole and any other is no match",
+      "expect": [
+        {"static": "replaced", "args": ["NOVAK", {"text": "novak", "matchCase": false, "wholeCell": true}, "Rossi"], "is": "Rossi"},
+        {"static": "replaced", "args": ["Novak & co", {"text": "novak", "matchCase": false, "wholeCell": true}, "Rossi"], "is": null},
+        {"static": "replaced", "args": ["NOVAK", {"text": "novak", "matchCase": true, "wholeCell": true}, "Rossi"], "is": null}
+      ]
+    },
+    {
+      "name": "ADR-0332 §2: an entry that does not match has no replacement",
+      "expect": [
+        {"static": "replaced", "args": ["Osei", {"text": "novak", "matchCase": false, "wholeCell": false}, "x"], "is": null}
+      ]
+    },
+    {
+      "name": "ADR-0332 §2 / ADR-0055: an empty pattern matches nothing",
+      "expect": [
+        {"static": "replaced", "args": ["Osei", {"text": "", "matchCase": false, "wholeCell": false}, "x"], "is": null}
+      ]
+    },
+    {
+      "name": "ADR-0332 §2: an empty replacement removes the text",
+      "expect": [
+        {"static": "replaced", "args": ["Osei", {"text": "e", "matchCase": false, "wholeCell": false}, ""], "is": "Osi"}
+      ]
+    },
+    {
+      "name": "ADR-0332 §2: the rest of the entry keeps its case",
+      "expect": [
+        {"static": "replaced", "args": ["NOVAK", {"text": "o", "matchCase": false, "wholeCell": false}, "o"], "is": "NoVAK"}
+      ]
+    },
+    {
+      "name": "ADR-0332 §2: occurrences are taken left to right and never overlap, and a replacement is never searched again",
+      "expect": [
+        {"static": "replaced", "args": ["aaa", {"text": "aa", "matchCase": false, "wholeCell": false}, "b"], "is": "ba"},
+        {"static": "replaced", "args": ["abab", {"text": "ab", "matchCase": false, "wholeCell": false}, "abab"], "is": "abababab"}
+      ]
+    },
+    {
+      "name": "ADR-0332 §2: a replacement is written as it is, a dollar sign included",
+      "expect": [
+        {"static": "replaced", "args": ["price", {"text": "price", "matchCase": false, "wholeCell": false}, "$&$1"], "is": "$&$1"},
+        {"static": "replaced", "args": ["a-a", {"text": "a", "matchCase": true, "wholeCell": false}, "$$"], "is": "$$-$$"}
+      ]
+    }
+  ]
+}

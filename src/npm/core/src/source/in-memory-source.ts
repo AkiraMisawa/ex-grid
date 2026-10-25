@@ -13,20 +13,26 @@
 // sequence moved; and the source names its rows by the key and vouches that no Window holds a row twice.
 // Without a key it is the source it always was.
 
-import { itemAt } from '../must';
+import { textOf } from '../cells/display-text';
+import { defined, itemAt } from '../must';
 import type { QueryColumn } from '../query/columns';
 import { dateIdentity } from '../query/dates';
 import type { GridFilter } from '../query/filter';
 import { applyQuery, queryPositions } from '../query/query-engine';
-import type { SortSpec } from '../query/sort';
+import { sortsEqual, type SortSpec } from '../query/sort';
 import { rowRange, type RowRange } from '../viewport/row-range';
 import type { GridChangeBatch } from './change-batch';
 import { ChangeGatherer } from './change-gatherer';
 import { filtersEqual, filterWithout, snapshotFilter } from './filters';
 import { systemClock, type GridClock } from './grid-clock';
 import type { DistinctValues, GridSource, GridSourceState } from './grid-source';
+import { CellChangeTimes, defaultChangeTimesKeptFor, type CellChangedAt, type ChangedPair } from './cell-change-times';
+import { InMemoryRowMarks } from './in-memory-row-marks';
+import { findStep, type GridFindRequest, type GridFindResult } from '../finding/find';
+import { planReplace, replacedCells, type GridReplaceAnswer, type GridReplacedRow, type GridReplaceRequest, type GridReplaceWrite } from '../finding/replace';
 import { KeyedRows } from './keyed-rows';
-import { liveRequery, type RowChange } from './live-requery';
+import { summaryOf, type GridSummaryRequest, type GridSummaryResult } from '../summary/grid-summary';
+import { liveRequery, type LiveRequeryOutcome, type RowChange } from './live-requery';
 import { checkedKey, quoted, type RowKey, type RowKeyOf } from './row-key';
 
 /** Past this many distinct values the answer is too many (ADR-0009), and the panel offers a condition,
@@ -45,6 +51,14 @@ export interface InMemorySourceOptions<Row> {
 
 /** The version of a row the result was last computed from, if one was held then. */
 type Before<Row> = { readonly row: Row; readonly ordinal: number } | undefined;
+
+/** A row changed since the Window was last computed: the version it was computed from, and, after the
+ * Consumer's own edit (`replaceRow`), the version just before it, which the Change Highlight compares up
+ * to, so the edit marks nothing of its own. */
+interface Pending<Row> {
+    readonly before: Before<Row>;
+    userEdit: { readonly before: Row } | undefined;
+}
 
 /** What a batch or a list does, checked whole before any of it is taken in. A list that puts the rows in
  * another order than a batch would also carries its keys in its order (D7). */
@@ -66,9 +80,10 @@ interface Query<Row> {
 interface Live<Row> {
     readonly keyed: KeyedRows<Row>;
     readonly gatherer: ChangeGatherer;
-    /** The rows changed since the Window was last computed, by key: the version it was computed from,
-     * recorded at the first change. What the next publication pairs with what is held then. */
-    readonly pending: Map<RowKey, Before<Row>>;
+    readonly times: CellChangeTimes<Row>;
+    /** The rows changed since the Window was last computed, by key, recorded at the first change. What the
+     * next publication pairs with what is held then. */
+    readonly pending: Map<RowKey, Pending<Row>>;
     /** Each Window row's ordinal, beside it: what the incremental requery merges into. */
     ordinals: readonly number[];
     /** A whole new list put the rows in another order since the Window was last computed (D7): the next
@@ -82,6 +97,7 @@ export class InMemoryGridSource<Row> implements GridSource<Row> {
     readonly #listeners = new Set<() => void>();
     readonly #rowKey: RowKeyOf<Row> | undefined;
     readonly #live: Live<Row> | undefined;
+    readonly #marks: InMemoryRowMarks<Row>;
     #columns: readonly QueryColumn<Row>[] | undefined;
     #state: GridSourceState<Row>;
 
@@ -102,12 +118,18 @@ export class InMemoryGridSource<Row> implements GridSource<Row> {
             this.#live = {
                 keyed,
                 gatherer: new ChangeGatherer(clock, () => { this.#gatherDue(); }),
+                times: new CellChangeTimes(rowKey, clock),
                 pending: new Map(),
                 ordinals: Object.freeze(held.ordinals),
                 reordered: false,
             };
             window = Object.freeze(held.rows);
         }
+        this.#marks = new InMemoryRowMarks({
+            current: () => this.#state,
+            shown: key => this.#shownUnder(key),
+            heldRows: () => this.#baseRows(),
+        }, rows, rowKey);
         this.#state = Object.freeze({
             window,
             windowStart: 0,
@@ -149,6 +171,44 @@ export class InMemoryGridSource<Row> implements GridSource<Row> {
     set gatherInterval(milliseconds: number) {
         this.#requireLive('gatherInterval').gatherer.interval = milliseconds;
         if (this.#shouldPublish() && this.#publishPending()) this.#notify();
+    }
+
+    /** The Row Marks of this source (ADR-0043): kept per row it holds, by identity, or under a Row Key by
+     * key. A changed row keeps its mark, and a removed row takes its mark with it when its removal is shown. */
+    get marks(): InMemoryRowMarks<Row> {
+        return this.#marks;
+    }
+
+    /**
+     * The Change Highlight of this source (ADR-0141, on ADR-0067's rules), to hand to the grid's
+     * `cellChangedAt`; `undefined` without a Row Key, which pairs nothing. One function for the source's life,
+     * so only a row with a new object asks again (LV-9).
+     * - A cell is marked when a changed row's displayed text differs from its previous version's; a change
+     *   the format hides is not marked.
+     * - Every cell of a row that comes into the result is marked.
+     * - A Sort, a Filter or new columns mark nothing; neither does the Consumer's own edit through
+     *   `replaceRow`.
+     *
+     * The displayed text is the column's `format`, or the value's own text (`textOf`). Nothing is compared
+     * until this is first read. A change time answers for `changeTimesKeptFor`.
+     */
+    get cellChangedAt(): CellChangedAt<Row> | undefined {
+        return this.#live?.times.lookup;
+    }
+
+    /**
+     * How long, in milliseconds, the source keeps a cell's change time for `cellChangedAt`: a minute unless
+     * set. A time older than this answers nothing, so set it to at least the grid's mark duration. Bounding it
+     * is what keeps the memory of a source whose rows all change in the end to the rows that changed lately.
+     * One not above zero is refused, and so is setting it without a Row Key: nothing is paired, so nothing is
+     * kept.
+     */
+    get changeTimesKeptFor(): number {
+        return this.#live === undefined ? defaultChangeTimesKeptFor : this.#live.times.keptFor;
+    }
+
+    set changeTimesKeptFor(milliseconds: number) {
+        this.#requireLive('changeTimesKeptFor').times.keptFor = milliseconds;
     }
 
     /** Hears every change to the snapshot; the answer stops hearing. */
@@ -212,6 +272,7 @@ export class InMemoryGridSource<Row> implements GridSource<Row> {
         const moved = next.length !== window.length
             || next.some((each, at) => each !== window[at] && !(each === replacement && window[at] === row));
         this.#rows = Object.freeze(rows);
+        this.#marks.replaced(index, row, replacement);
         this.#show(next, this.#state.rowSequenceVersion + (moved ? 1 : 0));
         this.#notify();
     }
@@ -303,6 +364,127 @@ export class InMemoryGridSource<Row> implements GridSource<Row> {
         return Object.freeze({ kind: 'values', values: Object.freeze(values) });
     }
 
+    /**
+     * The reference Find (ADR-0055): `findStep` over the current result, matching each column's displayed
+     * text as the grid handed it over (`textOf`). A column this source was not told about, or one with no
+     * value of its own, is skipped. A request read under another version is answered anyway: the grid
+     * discards it by the version, which is the one place that knows.
+     */
+    async find(request: GridFindRequest, signal: AbortSignal): Promise<GridFindResult> {
+        signal.throwIfAborted();
+        const columns = this.#queryColumns();
+        return findStep(this.#state.window, request, name => displayedTextOf(columns, name));
+    }
+
+    /**
+     * The reference Selection Summary (ADR-0130): `summaryOf` over the current result, reading each column's
+     * value. A column this source was not told about, or one with no value of its own, is blank. It never
+     * declines, at any size. A request read under another version is answered anyway: the grid discards it
+     * by the version.
+     */
+    async summarize(request: GridSummaryRequest, signal: AbortSignal): Promise<GridSummaryResult> {
+        signal.throwIfAborted();
+        const columns = this.#queryColumns();
+        return summaryOf(this.#state.window, request, name => {
+            const column = columns.find(each => each.name === name);
+            return column === undefined || column.queryable === false ? undefined : column.value;
+        });
+    }
+
+    /**
+     * The reference Replace All (ADR-0332 §3), for the grid's `onReplace`: `planReplace` over the current
+     * result and, when every match can be written, the rewritten rows applied as one change: one requery,
+     * one move of the Row Sequence Version at most, and under a Row Key the user's own write, as
+     * `replaceRow` is. When any match cannot be written, nothing is applied and the answer names every such
+     * cell. A request read under another version than this source's plans nothing, and the grid refuses
+     * the answer as the order having moved. Keep the answer's `changes` as one step of your undo stack, and
+     * hand the grid its `result`.
+     *
+     * `write` is your write of one cell: the row as written so far, the column's name and the replaced
+     * entry, answered with a new row holding it or a refusal in your words. It must only plan; this source
+     * applies. `entryOf` answers the entry a cell's editor opens with, where you give the grid one: the row
+     * and the column's name, answered with the entry, or `undefined` for the displayed text. Without it,
+     * every entry is the column's displayed text, which is what the editor opens with by default.
+     */
+    replace(
+        request: GridReplaceRequest,
+        write: (row: Row, column: string, text: string) => GridReplaceWrite<Row>,
+        entryOf?: (row: Row, column: string) => string | undefined,
+    ): GridReplaceAnswer<Row> {
+        const columns = this.#queryColumns();
+        const { window, rowSequenceVersion } = this.#state;
+        const answer = planReplace(window, rowSequenceVersion, request, name => {
+            const shown = displayedTextOf(columns, name);
+            if (shown === undefined || entryOf === undefined) return shown;
+            return (row: Row) => {
+                const entry = entryOf(row, name);
+                return entry === undefined ? shown(row) : entry;
+            };
+        }, write);
+        // A row changed under the plan, by a change taken in while the Consumer's write planned: nothing is
+        // applied, and the answer is under no version the request was read in, which the grid refuses as the
+        // order having moved rather than write over the newer row.
+        if (answer.changes.length > 0 && !this.#replaceRows(answer.changes)) {
+            return Object.freeze({ result: replacedCells(0, -1 - request.rowSequenceVersion), changes: Object.freeze([]) });
+        }
+        return answer;
+    }
+
+    /** Applies a Replace All's rewritten rows as one change (ADR-0332 §3): each by identity, as
+     * `replaceRow` places one, every one checked before any is taken in, and the result requeried once.
+     * False, with nothing applied, when a row under a Row Key is no longer the version planned on. */
+    #replaceRows(changes: readonly GridReplacedRow<Row>[]): boolean {
+        const columns = this.#requireColumns();
+        const live = this.#live;
+        if (live !== undefined) {
+            const { keyed } = live;
+            const changed: (readonly [RowKey, Row])[] = [];
+            for (const { before, after } of changes) {
+                const key = keyed.keyOf(before, 'The row');
+                if (keyed.get(key)?.row !== before) return false;
+                const afterKey = keyed.keyOf(after, 'The replacement');
+                if (afterKey !== key) {
+                    throw new TypeError(`A replacement changes the Row Key ${quoted(key)} to ${quoted(afterKey)}. A Row Key stays the same `
+                        + 'when a row\'s data changes (ADR-0140).');
+                }
+                changed.push([key, after]);
+            }
+            this.#checkValues(changes.map(change => change.after));
+            this.#fold(live, { added: [], changed, removed: [], order: undefined }, true);
+            if (this.#publishPending()) this.#notify();
+            return true;
+        }
+        const at = new Map<Row, number>();
+        this.#rows.forEach((row, index) => { if (!at.has(row)) at.set(row, index); });
+        const places = changes.map(({ before }) => {
+            const index = at.get(before);
+            if (index === undefined) {
+                throw new TypeError('A rewritten row is not in this source: a Replace All is planned on the rows this source holds (ADR-0332).');
+            }
+            return index;
+        });
+        const rows = [...this.#rows];
+        // What each new object stands for, so the sequence compares as one edit per row.
+        const stoodFor = new Map<Row, Row>();
+        changes.forEach(({ before, after }, i) => {
+            rows[itemAt(places, i)] = after;
+            stoodFor.set(after, before);
+        });
+        // Requeried before anything is taken in, as replaceRow is: a value the Query in force refuses
+        // leaves the rows and their marks as they were.
+        const next = applyQuery(rows, columns, this.#state.filter, this.#state.sorts);
+        changes.forEach(({ before, after }, i) => this.#marks.replaced(itemAt(places, i), before, after));
+        const { window } = this.#state;
+        const moved = next.length !== window.length || next.some((row, i) => {
+            const was = stoodFor.get(row);
+            return (was === undefined ? row : was) !== window[i];
+        });
+        this.#rows = Object.freeze(rows);
+        this.#show(next, this.#state.rowSequenceVersion + (moved ? 1 : 0));
+        this.#notify();
+        return true;
+    }
+
     /** The rows held, in the source's order. */
     #baseRows(): readonly Row[] {
         return this.#live === undefined ? this.#rows : this.#live.keyed.snapshot().rows;
@@ -369,8 +551,13 @@ export class InMemoryGridSource<Row> implements GridSource<Row> {
         const { rows, ordinals } = live.keyed.snapshot();
         const positions = queryPositions(rows, pushed.columns, pushed.filter, pushed.sorts);
         const query = kept();
-        // What was gathered is in the rows requeried here, so it is published by this commit.
-        this.#dropPending(live);
+        // What was gathered is in the rows requeried here, so it reaches the grid with this commit. Under the
+        // Change Highlight it is published first, under the Query it was gathered under, which is what its
+        // marks are compared against; otherwise it is let go, and the marks of the rows it removed go with this
+        // commit.
+        const removed = live.times.wanted ? [] : this.#removedUnshown(live);
+        if (live.times.wanted) this.#publishPending();
+        else this.#dropPending(live);
         const next = positions.map(at => itemAt(rows, at));
         live.ordinals = Object.freeze(positions.map(at => itemAt(ordinals, at)));
         this.#columns = query.columns;
@@ -379,10 +566,12 @@ export class InMemoryGridSource<Row> implements GridSource<Row> {
         if (!sequenceMoved && !windowChanged && query.filter === before.filter && query.sorts === before.sorts) {
             // Nothing the grid reads changed: the snapshot is the one it had, whatever was published meanwhile.
             this.#state = before;
+            this.#marks.published(removed);
             return false;
         }
         // An unchanged result keeps its object, so the grid has nothing new to take.
         this.#show(windowChanged ? next : before.window, before.rowSequenceVersion + (sequenceMoved ? 1 : 0), query);
+        this.#marks.published(removed);
         return sequenceMoved || windowChanged;
     }
 
@@ -478,24 +667,34 @@ export class InMemoryGridSource<Row> implements GridSource<Row> {
      * contradicts its column's declaration is refused now, by name, rather than when the change reaches the
      * grid (ADR-0023). */
     #checkValues(rows: readonly Row[]): void {
-        if (this.#columns !== undefined && rows.length > 0) {
-            queryPositions(rows, this.#columns, this.#state.filter, this.#state.sorts);
+        if (this.#columns === undefined || rows.length === 0) return;
+        queryPositions(rows, this.#columns, this.#state.filter, this.#state.sorts);
+        // Under the Change Highlight each new row's text is compared at publication: a format that throws on
+        // one refuses it now, before anything is taken in, rather than leaving a change held and unpublished.
+        if (this.#live?.times.wanted === true) {
+            for (const row of rows) for (const column of this.#columns) if (column.queryable !== false) textOf(column, row);
         }
     }
 
     /** Takes a checked plan in: the rows move to the newest version, and each key it touches remembers the
      * version the Window was computed from. */
-    #fold(live: Live<Row>, plan: ChangePlan<Row>): void {
+    #fold(live: Live<Row>, plan: ChangePlan<Row>, byUser = false): void {
         const { keyed, pending } = live;
-        const remember = (key: RowKey): void => {
-            if (!pending.has(key)) pending.set(key, keyed.get(key));
+        const remember = (key: RowKey): Pending<Row> => {
+            let gathered = pending.get(key);
+            if (gathered === undefined) {
+                gathered = { before: keyed.get(key), userEdit: undefined };
+                pending.set(key, gathered);
+            }
+            return gathered;
         };
         for (const key of plan.removed) {
             remember(key);
             keyed.remove(key);
         }
         for (const [key, row] of plan.changed) {
-            remember(key);
+            const gathered = remember(key);
+            if (byUser) gathered.userEdit = { before: defined(keyed.get(key), `the row held under ${quoted(key)}`).row };
             keyed.change(key, row);
         }
         for (const [key, row] of plan.added) {
@@ -533,24 +732,70 @@ export class InMemoryGridSource<Row> implements GridSource<Row> {
         if (live === undefined || (live.pending.size === 0 && !live.reordered)) return false;
         const { keyed, pending, reordered } = live;
         const changes: RowChange<Row>[] = [];
-        for (const [key, old] of pending) {
+        const gathered: Pending<Row>[] = [];
+        for (const [key, each] of pending) {
+            const old = each.before;
             const now = keyed.get(key);
             // Changed and changed back, or added and removed again, within one gathering: nothing to show.
             const unchanged = old === undefined ? now === undefined
                 : now !== undefined && now.row === old.row && now.ordinal === old.ordinal;
-            if (!unchanged) changes.push({ key, old, new: now });
+            if (unchanged) continue;
+            changes.push({ key, old, new: now });
+            gathered.push(each);
         }
         // Requeried before anything gathered is let go: a requery that throws leaves the changes waiting.
         const { window, filter, sorts } = this.#state;
         const outcome = changes.length === 0 && !reordered ? undefined
             : liveRequery(window, live.ordinals, changes, { columns: this.#queryColumns(), filter, sorts }, keyed.count, () => keyed.snapshot(), reordered);
+        if (outcome !== undefined) this.#recordChanges(live.times, changes, gathered, outcome);
         this.#dropPending(live);
         if (outcome === undefined) return false;
-        const windowChanged = outcome.result !== window;
         live.ordinals = Object.freeze(outcome.ordinals);
-        if (!windowChanged && !outcome.moved) return false;
-        this.#show(outcome.result, this.#state.rowSequenceVersion + (outcome.moved ? 1 : 0));
-        return true;
+        const shown = outcome.result !== window || outcome.moved;
+        if (shown) this.#show(outcome.result, this.#state.rowSequenceVersion + (outcome.moved ? 1 : 0));
+        // A removed row's mark goes when its removal is shown, here, once the Window is the new one. A key
+        // removed and added again within one gathering is a changed row, and keeps its mark.
+        this.#marks.published(changes.flatMap(change => change.new === undefined ? [change.key] : []));
+        return shown;
+    }
+
+    /** The Change Highlight of one publication (ADR-0141, ADR-0067, LV-9): a row that stood in the result and
+     * still does is compared cell by cell; one that was not in it and now is has come in, and every cell is
+     * marked; a key removed is forgotten. The Consumer's own edit is compared only up to the version before
+     * it, and a row it brings in is not marked. */
+    #recordChanges(times: CellChangeTimes<Row>, changes: readonly RowChange<Row>[], gathered: readonly Pending<Row>[], outcome: LiveRequeryOutcome<Row>): void {
+        if (!times.wanted) return;
+        const pairs: ChangedPair<Row>[] = [];
+        const appeared: RowKey[] = [];
+        const removed: RowKey[] = [];
+        changes.forEach((change, j) => {
+            if (change.new === undefined) {
+                removed.push(change.key);
+                return;
+            }
+            if (itemAt(outcome.newIndex, j) < 0) return;
+            const { userEdit } = itemAt(gathered, j);
+            if (itemAt(outcome.oldIndex, j) >= 0 && change.old !== undefined) {
+                pairs.push({ key: change.key, old: change.old.row, new: userEdit === undefined ? change.new.row : userEdit.before });
+            } else if (userEdit === undefined) {
+                appeared.push(change.key);
+            }
+        });
+        times.record(this.#queryColumns(), pairs, appeared, removed);
+    }
+
+    /** The version of the row under `key` that the grid shows: until a gathered change is published, the one
+     * before it. */
+    #shownUnder(key: RowKey): Row | undefined {
+        const live = this.#live;
+        if (live === undefined) return undefined;
+        const gathered = live.pending.get(key);
+        return gathered === undefined ? live.keyed.get(key)?.row : gathered.before?.row;
+    }
+
+    /** The keys whose removal was gathered and not yet shown. */
+    #removedUnshown(live: Live<Row>): RowKey[] {
+        return [...live.pending].flatMap(([key, each]) => each.before !== undefined && live.keyed.get(key) === undefined ? [key] : []);
     }
 
     /** Lets go of what was gathered, which reached the grid, and the wait for it. */
@@ -592,7 +837,7 @@ export class InMemoryGridSource<Row> implements GridSource<Row> {
         }
         this.#requireColumns();
         this.#checkValues([replacement]);
-        this.#fold(live, { added: [], changed: [[key, replacement]], removed: [], order: undefined });
+        this.#fold(live, { added: [], changed: [[key, replacement]], removed: [], order: undefined }, true);
         if (this.#publishPending()) this.#notify();
     }
 
@@ -628,6 +873,13 @@ export class InMemoryGridSource<Row> implements GridSource<Row> {
 /** No columns: the Query of a source the grid has not bound yet. */
 const noColumns: readonly never[] = Object.freeze([]);
 
+/** A column's displayed text by name, as Find and Replace All read it (ADR-0055, ADR-0332), or `undefined`
+ * for a column this source was not told about or one with no value of its own, which is skipped. */
+function displayedTextOf<Row>(columns: readonly QueryColumn<Row>[], name: string): ((row: Row) => string) | undefined {
+    const column = columns.find(each => each.name === name);
+    return column === undefined || column.queryable === false ? undefined : (row: Row) => textOf(column, row);
+}
+
 function isEmpty<Row>(plan: ChangePlan<Row>): boolean {
     return plan.added.length === 0 && plan.changed.length === 0 && plan.removed.length === 0 && plan.order === undefined;
 }
@@ -641,19 +893,13 @@ function sameRows<Row>(a: readonly Row[], b: readonly Row[]): boolean {
     return a.length === b.length && a.every((row, at) => row === b[at]);
 }
 
-function sortsEqual(a: readonly SortSpec[], b: readonly SortSpec[]): boolean {
-    return a.length === b.length && a.every((sort, at) => {
-        const other = b[at];
-        return other !== undefined && sort.column === other.column && sort.direction === other.direction;
-    });
-}
-
 /** Two column lists are the same columns when each says the same: a grid that keeps its column objects
  * pushes the same ones, and one that rebuilds them from the same declaration pushes equal ones. */
 function columnsEqual<Row>(a: readonly QueryColumn<Row>[], b: readonly QueryColumn<Row>[]): boolean {
     return a.length === b.length && a.every((column, at) => {
         const other = b[at];
         return other !== undefined && (column === other || (column.name === other.name && column.type === other.type
-            && column.value === other.value && column.queryable === other.queryable && column.dateType === other.dateType));
+            && column.value === other.value && column.queryable === other.queryable && column.dateType === other.dateType
+            && column.format === other.format));
     });
 }

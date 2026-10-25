@@ -1,0 +1,117 @@
+{
+  "about": "The reference Replace All (ADR-0332 §2 and §3): what is replaced, written or refused, all or nothing and uncapped, under the version it was read in, over rows written as the entries their cells' editors open with. A write to a column the file names in numberColumns takes only a number, and otherwise refuses with \"not a number\". From tests/ExGrid.Tests/GridReplaceTests.cs.",
+  "kind": "replace",
+  "columns": ["Book", "Trader", "Notional"],
+  "numberColumns": ["Notional"],
+  "rows": [["Alpha", "Ishikawa", "1000"], ["Beta", "Novak", "2500.5"], ["Gamma", "novak", "30"], ["Alpha", "Osei", "1000"]],
+  "cases": [
+    {
+      "name": "ADR-0332 §3: every match in every row and column is replaced, counted by cells, each row rewritten once",
+      "replaceAll": {"text": "a", "replacement": "4"},
+      "is": {"count": 7, "version": 0, "changes": [[0, ["4lph4", "Ishik4w4", "1000"]], [1, ["Bet4", "Nov4k", "2500.5"]], [2, ["G4mm4", "nov4k", "30"]], [3, ["4lph4", "Osei", "1000"]]]}
+    },
+    {
+      "name": "ADR-0332 §3: the answer carries the version the rows were read in",
+      "replaceAll": {"text": "a", "replacement": "b", "version": 5},
+      "readIn": 5,
+      "is": {"count": 7, "version": 5}
+    },
+    {
+      "name": "ADR-0332 §3 / ADR-0011: read under another version, nothing is planned, and the answer carries the version read in",
+      "replaceAll": {"text": "a", "replacement": "b", "version": 3},
+      "readIn": 4,
+      "is": {"count": 0, "version": 4, "changes": []}
+    },
+    {
+      "name": "ADR-0332 §2: Match case is Find's own option, carried over",
+      "replaceAll": {"text": "novak", "replacement": "Rossi", "matchCase": true},
+      "is": {"count": 1, "changes": [[2, ["Gamma", "Rossi", "30"]]]}
+    },
+    {
+      "name": "ADR-0332 §2: Whole cell is Find's own option, carried over",
+      "replaceAll": {"text": "Alpha", "replacement": "Omega", "wholeCell": true},
+      "is": {"count": 2, "changes": [[0, ["Omega", "Ishikawa", "1000"]], [3, ["Omega", "Osei", "1000"]]]}
+    },
+    {
+      "name": "ADR-0332 §2: with Whole cell, an entry that only contains the text is no match",
+      "replaceAll": {"text": "Alph", "replacement": "Omega", "wholeCell": true},
+      "is": {"count": 0, "changes": []}
+    },
+    {
+      "name": "ADR-0332 §2: the selection is the scope, and a cell covered by two ranges counts once",
+      "replaceAll": {"text": "novak", "replacement": "Rossi", "scope": [[1, 1, 2, 1], [2, 1, 1, 1]]},
+      "is": {"count": 2, "changes": [[1, ["Beta", "Rossi", "2500.5"]], [2, ["Gamma", "Rossi", "30"]]]}
+    },
+    {
+      "name": "ADR-0332 §2: a scope with no match replaces nothing",
+      "replaceAll": {"text": "novak", "replacement": "Rossi", "scope": [[0, 0, 1, 3]]},
+      "is": {"count": 0, "changes": []}
+    },
+    {
+      "name": "ADR-0332 §2: what is matched is the entry, not the displayed text",
+      "replaceAll": {"text": "2,500.50", "replacement": "1"},
+      "is": {"count": 0}
+    },
+    {
+      "name": "ADR-0332 §2: the entry of a number is its plain text, and the write takes the replaced one",
+      "replaceAll": {"text": "2500.5", "replacement": "2600"},
+      "is": {"count": 1, "changes": [[1, ["Beta", "Novak", "2600"]]]}
+    },
+    {
+      "name": "ADR-0332 §2: a match in a column that is not Editable refuses the whole Replace All, naming every such cell",
+      "replaceAll": {"text": "a", "replacement": "4", "editable": ["Trader", "Notional"]},
+      "is": {"refused": [[0, "Book", null], [1, "Book", null], [2, "Book", null], [3, "Book", null]], "version": 0}
+    },
+    {
+      "name": "ADR-0332 §2: a value the write refuses refuses everything, and every such cell is named with why",
+      "replaceAll": {"text": "0", "replacement": "x"},
+      "is": {"refused": [[0, "Notional", "not a number"], [1, "Notional", "not a number"], [2, "Notional", "not a number"], [3, "Notional", "not a number"]]}
+    },
+    {
+      "name": "ADR-0332 §3: two matches on one row are written in column order on one new row",
+      "rows": [["Novak books", "Novak", "1"]],
+      "replaceAll": {"text": "novak", "replacement": "Rossi"},
+      "is": {"count": 2, "changes": [[0, ["Rossi books", "Rossi", "1"]]]}
+    },
+    {
+      "name": "ADR-0332 §3: a column the Consumer does not know, or one with no entry, is skipped",
+      "replaceAll": {"text": "alpha", "replacement": "x", "columns": ["Actions", "Book"], "editable": ["Book"]},
+      "is": {"count": 2}
+    },
+    {
+      "name": "ADR-0332 §3: nothing matched is a count of 0, nothing rewritten",
+      "replaceAll": {"text": "zzz", "replacement": "x"},
+      "is": {"count": 0, "changes": []}
+    },
+    {
+      "name": "ADR-0332 §2 / ADR-0055: an empty text asks nothing",
+      "replaceAll": {"text": "", "replacement": "x"},
+      "is": {"count": 0, "changes": []}
+    },
+    {
+      "name": "ADR-0332 §2: every occurrence is replaced ignoring case, and the rest of the entry keeps its own",
+      "rows": [["a-A-c", "NOVAK", "1"]],
+      "replaceAll": {"text": "a", "replacement": "x", "columns": ["Book"], "editable": ["Book"]},
+      "is": {"count": 1, "changes": [[0, ["x-x-c", "NOVAK", "1"]]]}
+    },
+    {
+      "name": "ADR-0332 §2: an empty replacement removes the text",
+      "replaceAll": {"text": "e", "replacement": "", "columns": ["Trader"], "editable": ["Trader"]},
+      "is": {"count": 1, "changes": [[3, ["Alpha", "Osi", "1000"]]]}
+    },
+    {
+      "name": "ADR-0332 §2 / ADR-0003: a write that returns the row it was handed is refused by name",
+      "replaceAll": {"text": "alpha", "replacement": "x"},
+      "writeInPlace": true,
+      "throws": "invalidOperation",
+      "saying": "ADR-0003"
+    },
+    {
+      "name": "ADR-0332 §2 / spine 5: there is no cap, and every match is replaced however many",
+      "rows": [["Alpha", "Novak", "0"]],
+      "repeat": 200000,
+      "replaceAll": {"text": "novak", "replacement": "Rossi"},
+      "is": {"count": 200000, "changeCount": 200000}
+    }
+  ]
+}

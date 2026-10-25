@@ -527,8 +527,7 @@ public sealed class InMemoryGridSource<TRow> : IGridSource<TRow>, IBindsToOneCir
                 Fold(keyed, new ChangePlan([], changed, [], []), byUser: true);
                 raise = PublishPending();
             }
-            if (raise)
-                StateChanged?.Invoke();
+            Published(raise);
             return true;
         }
 
@@ -928,8 +927,7 @@ public sealed class InMemoryGridSource<TRow> : IGridSource<TRow>, IBindsToOneCir
                 return;
             raise = PublishPending();
         }
-        if (raise)
-            StateChanged?.Invoke();
+        Published(raise);
     }
 
     /// <summary>
@@ -964,8 +962,7 @@ public sealed class InMemoryGridSource<TRow> : IGridSource<TRow>, IBindsToOneCir
         bool raise;
         lock (_gate)
             raise = PublishPending();
-        if (raise)
-            StateChanged?.Invoke();
+        Published(raise);
     }
 
     /// <summary>
@@ -1088,8 +1085,7 @@ public sealed class InMemoryGridSource<TRow> : IGridSource<TRow>, IBindsToOneCir
             Fold(keyed, new ChangePlan([], [(key, replacement)], [], []), byUser: true);
             raise = PublishPending();
         }
-        if (raise)
-            StateChanged?.Invoke();
+        Published(raise);
     }
 
     /// <summary>
@@ -1139,8 +1135,7 @@ public sealed class InMemoryGridSource<TRow> : IGridSource<TRow>, IBindsToOneCir
             // pushed them, so it already knows.
             raise = sequenceChanged || queryChanged || windowChanged;
         }
-        if (raise)
-            StateChanged?.Invoke();
+        Published(raise);
     }
 
     private bool SameKeys(TRow[] a, TRow[] b)
@@ -1172,8 +1167,9 @@ public sealed class InMemoryGridSource<TRow> : IGridSource<TRow>, IBindsToOneCir
     /// <summary>A row's Row Key, or null where it has none.</summary>
     internal object? KeyOrNull(TRow row) => row is null ? null : _key?.Invoke(row);
 
-    /// <summary>The row held under <paramref name="key"/> now.</summary>
-    internal bool TryGetHeld(object key, out TRow row)
+    /// <summary>The version of the row under <paramref name="key"/> that the grid shows: until a
+    /// gathered change is published, the one before it, so the marks read what the Window holds.</summary>
+    internal bool TryGetShown(object key, out TRow row)
     {
         if (_keyed is null)
         {
@@ -1181,7 +1177,23 @@ public sealed class InMemoryGridSource<TRow> : IGridSource<TRow>, IBindsToOneCir
             return false;
         }
         lock (_gate)
+        {
+            if (_pending.TryGetValue(key, out var pending))
+            {
+                row = pending.Old;
+                return pending.HadOld;
+            }
             return _keyed.TryGet(key, out row, out _);
+        }
+    }
+
+    /// <summary>Outside the lock, after a publication: the grid hears the new state when there is
+    /// one, and the marks' own listeners hear a mark that went with its row.</summary>
+    private void Published(bool raise)
+    {
+        if (raise)
+            StateChanged?.Invoke();
+        Marks.AnnounceRemovals();
     }
 
     /// <summary>The rows held now, in base order.</summary>

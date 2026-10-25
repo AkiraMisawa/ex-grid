@@ -1,0 +1,13 @@
+{
+  "about": "The Consumer's answer to a Replace All (ADR-0332 §3). From tests/ExGrid.Tests/GridReplaceTests.cs.",
+  "kind": "calls",
+  "subject": "GridReplaceResult",
+  "cases": [
+    {
+      "name": "ADR-0332 §3: a refusal names cells, and one that names none is refused by name",
+      "expect": [
+        {"static": "refused", "args": [[], 0], "throws": "argument", "saying": "names the cells"}
+      ]
+    }
+  ]
+}

@@ -1,5 +1,5 @@
 {
-  "about": "GridSource.from with a Row Key (ADR-0140, ADR-0141): a Change Batch applied whole (LV-3), a whole new list paired by key (LV-4), changes gathered on the source's clock (LV-6), the Row Sequence Version moving exactly when the sequence did (LV-7), the source's half of vouching (LV-10), and what is gathered put out before a write is judged (LV-16). From tests/ExGrid.Tests/LiveSourceTests.cs.",
+  "about": "GridSource.from with a Row Key (ADR-0140, ADR-0141): a Change Batch applied whole (LV-3), a whole new list paired by key (LV-4), changes gathered on the source's clock (LV-6), the Row Sequence Version moving exactly when the sequence did (LV-7), the source's half of vouching (LV-10), what is gathered put out before a write is judged (LV-16), and its Row Marks kept by key (ADR-0043). From tests/ExGrid.Tests/LiveSourceTests.cs.",
   "kind": "source",
   "columns": [{"name": "Id", "type": "text"}, {"name": "Book", "type": "text"}, {"name": "Amount", "type": "number"}],
   "cases": [
@@ -748,6 +748,101 @@
         {"apply": {"added": [["C", "FX", 2]]}},
         {"advance": 250},
         {"expect": {"keys": ["B", "C", "A", "D"], "values": [["B", "Credit", 1], ["C", "FX", 2], ["A", "Rates", 3], ["D", "Rates", 5]], "version": 1, "heard": 1}}
+      ]
+    },
+    {
+      "name": "ADR-0141, ADR-0043: under a key, a mark follows the row through its versions and leaves with it",
+      "rows": [
+        ["A", "Rates", 3],
+        ["B", "Credit", 1],
+        ["C", "Rates", 2],
+        ["D", "FX", 5]
+      ],
+      "rowKey": "Id",
+      "steps": [
+        {"setColumns": true},
+        {"gatherInterval": 0},
+        {"markRow": {"same": "B"}, "marked": true},
+        {"apply": {"changed": [["B", "Credit", 9]]}},
+        {"expect": {"windowMarks": [false, true, false, false], "markCounts": [1, 4, 0]}},
+        {"apply": {"removedKeys": ["B"]}},
+        {"apply": {"added": [["B", "Credit", 1]]}},
+        {"expect": {"keys": ["A", "C", "D", "B"], "windowMarks": [false, false, false, false], "markedRows": []}}
+      ]
+    },
+    {
+      "name": "ADR-0141, ADR-0043: a removed row's mark goes when the removal is shown, not when it is applied",
+      "rows": [
+        ["A", "Rates", 3],
+        ["B", "Credit", 1],
+        ["C", "Rates", 2],
+        ["D", "FX", 5]
+      ],
+      "rowKey": "Id",
+      "steps": [
+        {"setColumns": true},
+        {"markRow": {"same": "B"}, "marked": true},
+        {"apply": {"changed": [["A", "Rates", 9]]}},
+        {"apply": {"removedKeys": ["B"]}},
+        {"expect": {"keys": ["A", "B", "C", "D"], "windowMarks": [false, true, false, false], "markCounts": [1, 4, 0]}},
+        {"advance": 250},
+        {"expect": {"keys": ["A", "C", "D"], "markedRows": [], "markCounts": [0, 3, 0], "marksHeard": 1}}
+      ]
+    },
+    {
+      "name": "ADR-0141, ADR-0043: a key removed and added again within one gathering is a changed row, and keeps its mark",
+      "rows": [
+        ["A", "Rates", 3],
+        ["B", "Credit", 1],
+        ["C", "Rates", 2],
+        ["D", "FX", 5]
+      ],
+      "rowKey": "Id",
+      "steps": [
+        {"setColumns": true},
+        {"markRow": {"same": "B"}, "marked": true},
+        {"apply": {"changed": [["A", "Rates", 9]]}},
+        {"apply": {"removedKeys": ["B"]}},
+        {"apply": {"added": [["B", "Credit", 7]]}},
+        {"advance": 250},
+        {"expect": {"markedRows": ["B"], "markCounts": [1, 4, 0]}}
+      ]
+    },
+    {
+      "name": "ADR-0141, ADR-0043: a row still shown while its removal is gathered can be unmarked, and is counted as shown",
+      "rows": [
+        ["A", "Rates", 3],
+        ["B", "Credit", 1],
+        ["C", "Rates", 2],
+        ["D", "FX", 5]
+      ],
+      "rowKey": "Id",
+      "steps": [
+        {"setColumns": true},
+        {"markRow": {"same": "B"}, "marked": true},
+        {"apply": {"changed": [["A", "Rates", 9]]}},
+        {"apply": {"removedKeys": ["B"]}},
+        {"expect": {"markCounts": [1, 4, 0], "marksHeard": 1}},
+        {"markRow": {"window": 1}, "marked": false},
+        {"expect": {"keys": ["A", "B", "C", "D"], "windowMarks": [false, false, false, false], "markCounts": [0, 4, 0], "marksHeard": 1}}
+      ]
+    },
+    {
+      "name": "ADR-0141, ADR-0043: a Query change shows a gathered removal, and the mark goes with it",
+      "rows": [
+        ["A", "Rates", 3],
+        ["B", "Credit", 1],
+        ["C", "Rates", 2],
+        ["D", "FX", 5]
+      ],
+      "rowKey": "Id",
+      "steps": [
+        {"setColumns": true},
+        {"markRow": {"same": "B"}, "marked": true},
+        {"apply": {"changed": [["A", "Rates", 9]]}},
+        {"apply": {"removedKeys": ["B"]}},
+        {"setSorts": [{"column": "Amount", "direction": "ascending"}]},
+        {"expect": {"keys": ["C", "D", "A"], "markedRows": [], "markCounts": [0, 3, 0], "marksHeard": 2}}
       ]
     }
   ]

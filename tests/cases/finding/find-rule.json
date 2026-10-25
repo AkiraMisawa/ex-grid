@@ -1,0 +1,49 @@
+{
+  "about": "The reference rule for one cell (ADR-0055, ADR-0332 §4), which a Find step finds by and a Match Mark marks by: ordinal, case ignored as OrdinalIgnoreCase ignores it unless Match case, containment unless Whole cell. A pattern is written {text, matchCase, wholeCell}. From tests/ExGrid.Tests/GridFindTests.cs.",
+  "kind": "calls",
+  "subject": "GridFind",
+  "cases": [
+    {
+      "name": "ADR-0332 §4: case is ignored unless asked for, and the text is contained unless Whole cell",
+      "expect": [
+        {"static": "matches", "args": ["Novak", {"text": "nova", "matchCase": false, "wholeCell": false}], "is": true},
+        {"static": "matches", "args": ["Novak", {"text": "NOVA", "matchCase": false, "wholeCell": false}], "is": true},
+        {"static": "matches", "args": ["Novak", {"text": "NOVA", "matchCase": true, "wholeCell": false}], "is": false},
+        {"static": "matches", "args": ["Novak", {"text": "Nova", "matchCase": true, "wholeCell": false}], "is": true},
+        {"static": "matches", "args": ["Novak", {"text": "nova", "matchCase": false, "wholeCell": true}], "is": false},
+        {"static": "matches", "args": ["Novak", {"text": "novak", "matchCase": false, "wholeCell": true}], "is": true},
+        {"static": "matches", "args": ["Novak", {"text": "novak", "matchCase": true, "wholeCell": true}], "is": false}
+      ]
+    },
+    {
+      "name": "ADR-0332 §4: the displayed text is what is matched, as it is written",
+      "expect": [
+        {"static": "matches", "args": ["2,500.50", {"text": "2,500", "matchCase": false, "wholeCell": false}], "is": true},
+        {"static": "matches", "args": ["2,500.50", {"text": "2500", "matchCase": false, "wholeCell": false}], "is": false},
+        {"static": "matches", "args": ["", {"text": "a", "matchCase": false, "wholeCell": false}], "is": false}
+      ]
+    },
+    {
+      "name": "ADR-0332 §4 / ADR-0023: ordinal, so no culture folds ß into SS or reads a Turkish dotted I",
+      "expect": [
+        {"static": "matches", "args": ["Straße", {"text": "STRASSE", "matchCase": false, "wholeCell": false}], "is": false},
+        {"static": "matches", "args": ["İstanbul", {"text": "istanbul", "matchCase": false, "wholeCell": false}], "is": false}
+      ]
+    },
+    {
+      "name": "ADR-0332 §4 / ADR-0023: case is folded as OrdinalIgnoreCase folds it, the Greek letters with ypogegrammeni to their prosgegrammeni forms",
+      "expect": [
+        {"static": "matches", "args": ["ᾳ", {"text": "ᾼ", "matchCase": false, "wholeCell": false}], "is": true},
+        {"static": "matches", "args": ["ß", {"text": "SS", "matchCase": false, "wholeCell": false}], "is": false},
+        {"static": "matches", "args": ["ı", {"text": "I", "matchCase": false, "wholeCell": false}], "is": false}
+      ]
+    },
+    {
+      "name": "ADR-0332 §4: an empty pattern matches nothing, as an empty field asks nothing",
+      "expect": [
+        {"static": "matches", "args": ["Alpha", {"text": "", "matchCase": false, "wholeCell": false}], "is": false},
+        {"static": "matches", "args": ["", {"text": "", "matchCase": false, "wholeCell": true}], "is": false}
+      ]
+    }
+  ]
+}

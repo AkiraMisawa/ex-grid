@@ -36,6 +36,7 @@ public sealed class InMemoryRowMarks<TRow> : IRowMarks<TRow>
     private IReadOnlyList<TRow>? _countedWindow;
     private RowMarkCounts _counts;
     private bool _countsStale = true;
+    private bool _removalsUnheard;
 
     internal InMemoryRowMarks(InMemoryGridSource<TRow> source, IReadOnlyList<TRow> rows)
     {
@@ -182,7 +183,20 @@ public sealed class InMemoryRowMarks<TRow> : IRowMarks<TRow>
     internal void Removed(object key)
     {
         if (_markedKeys is not null && _markedKeys.Remove(key))
+        {
             _countsStale = true;
+            _removalsUnheard = true;
+        }
+    }
+
+    /// <summary>Outside the source's lock, after a publication: a mark that went with its row is a
+    /// change of the marks, heard as any other.</summary>
+    internal void AnnounceRemovals()
+    {
+        if (!_removalsUnheard)
+            return;
+        _removalsUnheard = false;
+        Changed?.Invoke();
     }
 
     /// <summary>A source with a Row Key published new versions of its rows: the counts read their
@@ -214,8 +228,8 @@ public sealed class InMemoryRowMarks<TRow> : IRowMarks<TRow>
         ArgumentNullException.ThrowIfNull(row);
         if (_markedKeys is not null)
         {
-            // A row this source holds no row under the key of is not one of its rows.
-            if (_source.KeyOrNull(row) is not { } key || !_source.TryGetHeld(key, out _) || !IsDetail(row))
+            // A row the grid shows nothing under the key of is not one it can have painted.
+            if (_source.KeyOrNull(row) is not { } key || !_source.TryGetShown(key, out _) || !IsDetail(row))
                 return false;
             return marked ? _markedKeys.Add(key) : _markedKeys.Remove(key);
         }
@@ -382,7 +396,7 @@ public sealed class InMemoryRowMarks<TRow> : IRowMarks<TRow>
         var total = 0;
         foreach (var key in _markedKeys!)
         {
-            if (_source.TryGetHeld(key, out var row) && IsDetail(row))
+            if (_source.TryGetShown(key, out var row) && IsDetail(row))
                 total++;
         }
         return new RowMarkCounts(inResult, rowsInResult, total - inResult);

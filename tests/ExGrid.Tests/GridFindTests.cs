@@ -5,8 +5,11 @@ using Xunit;
 namespace ExGrid.Tests;
 
 /// <summary>
-/// The reference Find (ADR-0055, FD-7/FD-9): what a match is, and the order a step walks.
-/// Pinned exhaustively because a remote Source is held to it, as to ADR-0023.
+/// Find (ADR-0055, FD-7/FD-9) where only C# reaches: the fetching Source's delegate, a Source written
+/// before Find, the Focus a step moves, the column info a Source matches by, and the property that the
+/// step and the mark judge by one rule. What a match is and the order a step walks, the reference
+/// Replace All and the header walk are shared cases (<c>tests/cases/finding</c>, and
+/// <c>tests/cases/source/finding.json</c> through <c>GridSource.From</c>), which the Script Core runs too.
 /// </summary>
 public class GridFindTests
 {
@@ -44,98 +47,6 @@ public class GridFindTests
             Columns = columns ?? Columns,
             RowSequenceVersion = 0,
         };
-
-    private static (int Row, string? Column) Find(GridFindRequest request)
-    {
-        var result = GridFind.Step(Rows, request, TextOf);
-        return (result.Row, result.Column);
-    }
-
-    [Fact] // ADR-0055 / FD-7: by rows — across a row in column order, then down
-    public void A_step_walks_by_rows_from_the_cell_after_from()
-    {
-        Assert.Equal((1, "Trader"), Find(Ask("nova", from: new(0, 2))));
-        Assert.Equal((2, "Trader"), Find(Ask("nova", from: new(1, 1))));
-    }
-
-    [Fact] // ADR-0055 / FD-7: with no Focus, from the first cell
-    public void With_no_from_the_walk_starts_at_the_first_cell()
-        => Assert.Equal((0, "Book"), Find(Ask("alpha")));
-
-    [Fact] // ADR-0055 / FD-7: past the last cell the walk wraps to the first
-    public void The_walk_wraps()
-        => Assert.Equal((0, "Book"), Find(Ask("alpha", from: new(3, 0))));
-
-    [Fact] // ADR-0055 / FD-7: the cell From names is considered last, so a lone match finds itself
-    public void A_lone_match_finds_itself()
-        => Assert.Equal((1, "Book"), Find(Ask("beta", from: new(1, 0))));
-
-    [Fact] // ADR-0055 / FD-7: backward walks the other way and wraps too
-    public void Backward_walks_the_other_way()
-    {
-        Assert.Equal((0, "Book"), Find(Ask("alpha", from: new(3, 0), backward: true)));
-        Assert.Equal((3, "Book"), Find(Ask("alpha", from: new(0, 0), backward: true)));
-        Assert.Equal((3, "Book"), Find(Ask("alpha", backward: true)));
-    }
-
-    [Fact] // ADR-0055 / ADR-0023: OrdinalIgnoreCase unless MatchCase
-    public void Case_is_ignored_unless_asked_for()
-    {
-        Assert.Equal((1, "Trader"), Find(Ask("NOVAK")));
-        Assert.Equal((2, "Trader"), Find(Ask("novak", matchCase: true)));
-        Assert.Equal((-1, null), Find(Ask("NOVAK", matchCase: true)));
-    }
-
-    [Fact] // ADR-0055 / FD-7: containment unless WholeCell
-    public void Containment_unless_whole_cell()
-    {
-        Assert.Equal((1, "Book"), Find(Ask("et")));
-        Assert.Equal((-1, null), Find(Ask("et", wholeCell: true)));
-        Assert.Equal((1, "Book"), Find(Ask("BETA", wholeCell: true)));
-    }
-
-    [Fact] // ADR-0055: what is matched is the displayed text, never the raw value
-    public void The_displayed_text_is_what_matches()
-    {
-        Assert.Equal((1, "Notional"), Find(Ask("2,500.50")));
-        Assert.Equal((-1, null), Find(Ask("2500.5")));
-    }
-
-    [Fact] // ADR-0055 / FD-7: within the scope when there is one; a cell covered twice counts once
-    public void A_scope_confines_the_walk()
-    {
-        SelectionRange[] scope = [new(2, 0, 2, 2), new(3, 0, 1, 1)];
-        Assert.Equal((3, "Book"), Find(Ask("alpha", scope: scope)));
-        Assert.Equal((-1, null), Find(Ask("ishikawa", scope: scope)));
-    }
-
-    [Fact] // ADR-0055: a column with no text, or one the Source does not know, is skipped
-    public void Unknown_columns_are_skipped()
-        => Assert.Equal((1, "Book"), Find(Ask("beta", columns: ["Actions", "Book"])));
-
-    [Fact] // ADR-0055: an empty text asks nothing
-    public void An_empty_text_finds_nothing()
-        => Assert.False(GridFind.Step(Rows, Ask(""), TextOf).IsFound);
-
-    [Fact] // ADR-0055 / FD-7: the in-memory Source matches the columns' displayed text as the grid handed it over
-    public async Task The_in_memory_source_searches_the_result_in_its_order()
-    {
-        var source = GridSource.From(Rows);
-        source.OnColumnsChanged(
-        [
-            new GridColumn<Trade>("Book", ColumnType.Text, t => t.Book).Info,
-            new GridColumn<Trade>("Notional", ColumnType.Number, t => t.Notional,
-                format: v => ((decimal)v).ToString("N0", System.Globalization.CultureInfo.InvariantCulture)).Info,
-        ]);
-        source.OnSortChanged([new SortSpec("Book", SortDirection.Descending)]);
-
-        Assert.True(source.CanFind);
-        var result = await source.FindAsync(Ask("1,000", columns: ["Book", "Notional"]), CancellationToken.None);
-
-        // Sorted descending: Gamma, Beta, Alpha, Alpha — the first 1,000 is row 2.
-        Assert.Equal(2, result.Row);
-        Assert.Equal("Notional", result.Column);
-    }
 
     [Fact] // ADR-0055 / FD-9: a fetching Source searches only with a find delegate
     public async Task The_fetching_source_finds_through_its_delegate()
@@ -225,69 +136,6 @@ public class GridFindTests
         Assert.Equal("1,000", formatted.TextOf(Rows[0]));
         Assert.Equal("Beta", plain.TextOf(Rows[1]));
         Assert.Equal("", blank.TextOf(Rows[1]));
-    }
-
-    [Fact] // ADR-0055 / FD-7: GridSource.From answers every clause exactly as the reference step does
-    public async Task The_in_memory_source_agrees_with_the_reference_on_every_clause()
-    {
-        var source = GridSource.From(Rows);
-        source.OnColumnsChanged(
-        [
-            new GridColumn<Trade>("Book", ColumnType.Text, t => t.Book).Info,
-            new GridColumn<Trade>("Trader", ColumnType.Text, t => t.Trader).Info,
-            new GridColumn<Trade>("Notional", ColumnType.Number, t => t.Notional,
-                format: v => ((decimal)v).ToString("N2", System.Globalization.CultureInfo.InvariantCulture)).Info,
-        ]);
-        // Each clause with its own answer written out, so neither side can agree with the other
-        // by both finding nothing.
-        (GridFindRequest Request, int Row, string? Column)[] clauses =
-        [
-            (Ask("nova", from: new(0, 2)), 1, "Trader"),                    // by rows, from the cell after
-            (Ask("alpha"), 0, "Book"),                                      // no From: the first cell
-            (Ask("alpha", from: new(3, 0)), 0, "Book"),                     // wrapping
-            (Ask("beta", from: new(1, 0)), 1, "Book"),                      // a lone match finds itself
-            (Ask("alpha", from: new(0, 0), backward: true), 3, "Book"),     // backward, wrapping
-            (Ask("NOVAK", matchCase: true), -1, null),                      // case
-            (Ask("novak", matchCase: true), 2, "Trader"),
-            (Ask("et", wholeCell: true), -1, null),                         // whole cell
-            (Ask("beta", wholeCell: true), 1, "Book"),
-            (Ask("2,500.50"), 1, "Notional"),                               // displayed text
-            (Ask("2500.5"), -1, null),
-            (Ask("alpha", scope: [new(2, 0, 2, 2), new(3, 0, 1, 1)]), 3, "Book"), // scope
-        ];
-
-        foreach (var (request, row, column) in clauses)
-        {
-            var actual = await source.FindAsync(request, CancellationToken.None);
-            Assert.Equal((row, column), (actual.Row, actual.Column));
-            var reference = GridFind.Step(Rows, request, TextOf);
-            Assert.Equal((row, column), (reference.Row, reference.Column));
-        }
-    }
-
-    [Theory] // ADR-0332 §4: the reference rule for one cell is ADR-0055's — ordinal, case ignored unless asked, containment unless whole cell
-    [InlineData("Novak", "nova", false, false, true)]
-    [InlineData("Novak", "NOVA", false, false, true)]
-    [InlineData("Novak", "NOVA", true, false, false)]
-    [InlineData("Novak", "Nova", true, false, true)]
-    [InlineData("Novak", "nova", false, true, false)]
-    [InlineData("Novak", "novak", false, true, true)]
-    [InlineData("Novak", "novak", true, true, false)]
-    [InlineData("2,500.50", "2,500", false, false, true)]
-    [InlineData("2,500.50", "2500", false, false, false)]
-    [InlineData("", "a", false, false, false)]
-    [InlineData("Straße", "STRASSE", false, false, false)] // ordinal: no culture folds ß
-    [InlineData("İstanbul", "istanbul", false, false, false)] // ordinal: no Turkish dotted I
-    public void The_reference_rule_matches_one_cell_as_a_step_does(string shown, string text, bool matchCase, bool wholeCell, bool expected)
-    {
-        Assert.Equal(expected, GridFind.Matches(shown, new GridFindPattern(text, matchCase, wholeCell)));
-    }
-
-    [Fact] // ADR-0332 §4: an empty pattern matches nothing, as an empty field asks nothing
-    public void An_empty_pattern_matches_nothing()
-    {
-        Assert.False(GridFind.Matches("Alpha", new GridFindPattern("", false, false)));
-        Assert.False(GridFind.Matches("", new GridFindPattern("", false, true)));
     }
 
     [Fact] // ADR-0332 §4: the step and the mark judge by one rule — the cells a step can land on are exactly the ones the rule marks

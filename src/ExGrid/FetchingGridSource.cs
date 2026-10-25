@@ -53,6 +53,9 @@ public sealed class FetchingGridSource<TRow> : IGridSource<TRow>, IDisposable, I
 
     private CancellationTokenSource? _cancellation;
     private RowRange? _inFlight;
+    // The rows the grid last said it needs of the question in flight: what its answer has to reach. A range
+    // asked again that widens to the one in flight joins it, and its need is the one the answer is held to.
+    private RowRange? _inFlightNeeded;
     private bool _disposed;
     private Task _current = Task.CompletedTask;
     private int _generation;
@@ -466,7 +469,9 @@ public sealed class FetchingGridSource<TRow> : IGridSource<TRow>, IDisposable, I
     public void OnSortChanged(IReadOnlyList<SortSpec> sorts)
     {
         ArgumentNullException.ThrowIfNull(sorts);
-        if (sorts.SequenceEqual(Sorts))
+        // A disposed source fetches nothing more (ADR-0025): a grid tearing down that resets its Sort after
+        // the Consumer disposed the source would otherwise send a question nobody can call off.
+        if (_disposed || sorts.SequenceEqual(Sorts))
             return;
         Sorts = sorts.ToArray();
         Restart();
@@ -481,7 +486,7 @@ public sealed class FetchingGridSource<TRow> : IGridSource<TRow>, IDisposable, I
         // by its own live Dictionary and List, so comparing or keeping it by reference
         // makes a mutation look like nothing and a re-hand look like a change — both
         // wrong, and both silent (ADR-0023).
-        if (GridFilters.Equal(filter, Filter))
+        if (_disposed || GridFilters.Equal(filter, Filter))
             return;
         Filter = GridFilters.Snapshot(filter);
         Restart();
@@ -524,7 +529,10 @@ public sealed class FetchingGridSource<TRow> : IGridSource<TRow>, IDisposable, I
         // running rather than cancelling it and asking for exactly the same thing.
         // Awaiting it is also what carries a failure to the grid.
         if (_inFlight == wanted)
+        {
+            _inFlightNeeded = range;
             return _current;
+        }
 
         // Both ranges travel together: the widened one is what the server is asked for,
         // and the unwidened one is what the answer has to cover. Judging the answer by
@@ -618,14 +626,19 @@ public sealed class FetchingGridSource<TRow> : IGridSource<TRow>, IDisposable, I
         var wasLoading = IsLoading;
         if (!quiet)
             IsLoading = true;
+        _inFlightNeeded = needed;
+        // Set going before anyone hears of it: a handler that asks for another range meanwhile — a render
+        // StateHasChanged completes at once — supersedes this question, and must find its own in flight
+        // once it returns, not this one.
+        var run = RunAsync(wanted, generation, cancellation, carries);
+        _current = run;
         if (notify || (!quiet && !wasLoading))
             StateChanged?.Invoke();
-        _current = RunAsync(wanted, needed, generation, cancellation, carries);
-        return _current;
+        return run;
     }
 
     private async Task RunAsync(
-        RowRange wanted, RowRange needed, int generation, CancellationTokenSource cancellation, bool carries)
+        RowRange wanted, int generation, CancellationTokenSource cancellation, bool carries)
     {
         try
         {
@@ -638,7 +651,7 @@ public sealed class FetchingGridSource<TRow> : IGridSource<TRow>, IDisposable, I
             if (generation != _generation || _disposed)
                 return;
             ArgumentNullException.ThrowIfNull(page);
-            Apply(needed, page, carries);
+            Apply(_inFlightNeeded ?? throw new InvalidOperationException("Internal: an answer landed with no rows needed of it."), page, carries);
             _windowAsked = wanted;
             Landed(carries);
         }
@@ -651,6 +664,7 @@ public sealed class FetchingGridSource<TRow> : IGridSource<TRow>, IDisposable, I
             if (generation != _generation || _disposed)
                 return;
             _inFlight = null;
+            _inFlightNeeded = null;
             IsLoading = false;
             LastError = ex;
             StateChanged?.Invoke();
@@ -732,6 +746,7 @@ public sealed class FetchingGridSource<TRow> : IGridSource<TRow>, IDisposable, I
 
         var totalMoved = TotalCount != page.TotalCount;
         _inFlight = null;
+        _inFlightNeeded = null;
         IsLoading = false;
         LastError = null;
         Window = page.Rows;

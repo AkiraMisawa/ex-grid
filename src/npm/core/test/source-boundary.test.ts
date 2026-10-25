@@ -229,6 +229,36 @@ describe('GridSource.from with a Row Key', () => {
         expect(source.snapshot().window.map(row => row.id)).toEqual(['A', 'C', 'B']);
     });
 
+    it('ADR-0141 / LV-9: one Change Highlight function for the source\'s life, so only a row with a new object asks again', () => {
+        const source = GridSource.from<Keyed>([{ id: 'A', amount: 1 }], { rowKey: row => row.id as never });
+        source.setColumns(keyedColumns);
+        source.gatherInterval = 0;
+        const first = source.cellChangedAt;
+        source.apply({ changed: [{ id: 'A', amount: 2 }] });
+        expect(source.cellChangedAt).toBe(first);
+        expect(first === undefined ? undefined : Object.isFrozen(first)).toBe(true);
+    });
+
+    it('ADR-0141 / LV-9: under the Change Highlight, a row its format throws on refuses the batch whole, and nothing is taken in', () => {
+        let throwing = false;
+        const formatted: readonly QueryColumn<Keyed>[] = [{
+            name: 'Amount', type: 'number', value: row => row.amount,
+            format: value => { if (throwing) throw new Error('format'); return String(value); },
+        }];
+        const source = GridSource.from<Keyed>([{ id: 'A', amount: 1 }], { rowKey: row => row.id as never });
+        source.setColumns(formatted);
+        source.gatherInterval = 0;
+        const changedAt = source.cellChangedAt;
+        const changed = { id: 'A', amount: 2 };
+        throwing = true;
+        expect(() => { source.apply({ changed: [changed] }); }).toThrow('format');
+        throwing = false;
+        expect(source.snapshot().window.map(row => row.amount)).toEqual([1]);
+        source.apply({ changed: [changed] });
+        const [row] = source.snapshot().window;
+        expect(row === undefined || changedAt === undefined ? 'missing' : changedAt(row, 'Amount')).toBeTypeOf('number');
+    });
+
     it('ADR-0141 / LV-5: most of the rows removed a few at a time, and the rest reordered, still match applyQuery', () => {
         const rows: Keyed[] = Array.from({ length: 300 }, (_, i) => ({ id: i, amount: (i * 7919) % 101 }));
         const source = GridSource.from(rows, { rowKey: row => row.id as never });

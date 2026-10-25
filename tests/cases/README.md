@@ -29,7 +29,7 @@ One directory per area, one file per group of cases. Each file is an object:
 | Key | Meaning |
 |---|---|
 | `about` | What the file covers, and where its cases came from |
-| `kind` | Which runner reads it: `selection`, `range`, `edgeBand`, `held`, `calls`, `clipboard`, `query`, `source` |
+| `kind` | Which runner reads it: `selection`, `range`, `edgeBand`, `held`, `calls`, `clipboard`, `query`, `source`, `fetch`, `displayText`, `find`, `replace`, `summary` |
 | `extent` | `[rows, columns]`, the grid every case of the file runs against unless it names its own |
 | `cases` | The cases. Each has a `name`, which starts with the ADR it holds to (CLAUDE.md, "Put the ADR number in the test name") |
 
@@ -187,6 +187,9 @@ case reads its Window by key (`keys`), since a row it hands over is new and stan
 step hands over is an entry: its values, a new object, or `{"same": key}`, the object last handed under that
 key, the rows' own to begin with.
 
+A row of `rows` written `{"sameAs": place}` is the object at that earlier place again, one row by identity
+(ADR-0003), and reads as that place.
+
 | Step | Does |
 |---|---|
 | `{"setColumns": true}` | Binds the columns; `"rebuilt"` binds new objects, each equal to the one it was built after; a list of names binds those alone |
@@ -198,12 +201,103 @@ key, the rows' own to begin with.
 | `{"gatherInterval": ms}` | Sets how long changes are gathered |
 | `{"advance": ms}` | Moves the fake clock on, running what falls due |
 | `{"publishGathered": true}` | Publishes what was gathered at once |
+| `{"cellChangedAt": true}` | Reads the source's Change Highlight, which starts its recording; `changedAt` reads through what was read |
+| `{"changeTimesKeptFor": ms}` | Sets how long a change time is kept |
+| `{"markRow": place, "marked": true}` | Marks or unmarks one row (ADR-0043), the row named as `replaceRow` names it |
+| `{"markAll": true}` | Presses the Mark Column's header to mark (`true`) or unmark the result, under the Row Sequence Version in force, or under `"version": n` |
+| `{"markPositions": [{"start", "count"}]}` | A positional gesture over those rows of the result, under the version in force or `"version": n` |
+| `{"rowKind": {"column", "kinds": {text: kind}}}` | Hands the marks a Row Kind: a row whose value in that column reads as one of the texts is of its kind (`"group"`, `"total"`), every other row `"detail"` |
+| `{"find": request, "is": [row, column]}` | A Find step through the source (ADR-0055), the request written as a `find` case writes it and read under the version in force; `"is": null` for nothing found |
+| `{"replace": request, "answers": {…}}` | A Replace All through the source (ADR-0332 §3), the request written as a `replace` case writes it, under the version in force unless it names its own. The write sets a text column's text, and a number column's number where the text reads as one (an optional `-`, digits, and an optional `.` and digits), refusing it as `not a number` otherwise. With `"entryPrefix": {column: prefix}`, a cell of that column is matched by an entry the editor would open with, the prefix and the value's invariant text, and the write takes the prefix off again; with `"applyDuringWrite": batch`, the first write hands over that Change Batch first, as a feed would while the Consumer plans. `answers` holds any of `count`, `version`, `refused` and `changes` as a `replace` case's `is` does, `changes` a count here, and `applied: true`, that every rewritten row is in the Window by identity. The rows a Replace All rewrites keep their places |
+| `{"summarize": request, "summary": {…}}` | A Selection Summary through the source (ADR-0130), the request written as a `summary` case writes it and read under the version in force, and what it shows as a `summary` case's `is` writes it, with `texts` as there. Numbers in a source are written as bigints here, which both cores hold exactly: the C# source holds a JSON number as a double, which it sums in Excel's arithmetic |
 | `{"needRange": {"start", "count"}}` | Says the grid is about to show those rows |
 | `{"rows": {"start", "count"}, "is": [places]}` | Reads rows of the result |
 | `{"distinctValues": column, "is": [values]}` | Reads a column's value list; `"tooMany": true` in place of `is` |
-| `{"expect": {…}}` | Reads the source: `window` (places), `values` (the Window's rows as values), `windowStart`, `totalCount`, `loading`, `version` (the Row Sequence Version), `sorts`, `filter`, and `heard`, the changes heard since the last `expect`; and of a live source `keys` (the Window's Row Keys), `windowKept` (whether the Window is the same object as at the last `expect`), `vouches` (that no Window holds a row twice), `handed: true` (every row of the Window is the object last handed under its key) and `gatherInterval` |
+| `{"expect": {…}}` | Reads the source: `window` (places), `values` (the Window's rows as values), `windowStart`, `totalCount`, `loading`, `version` (the Row Sequence Version), `sorts`, `filter`, and `heard`, the changes heard since the last `expect`; and of a live source `keys` (the Window's Row Keys), `windowKept` (whether the Window is the same object as at the last `expect`), `vouches` (that no Window holds a row twice), `handed: true` (every row of the Window is the object last handed under its key), `gatherInterval`, `changeTimes` (whether the source has a Change Highlight), `changeTimesKeptFor`, and `changedAt`, `{key: {column: ms}}`: when the cell of the Window's row under that key last changed, in milliseconds from the case's start, `null` for none. Of its Row Marks: `marked`, the places whose row is marked, ascending; `windowMarks`, whether each row of the Window is marked; `markCounts`, `[markedInResult, rowsInResult, markedOutsideResult]`; `markHeader`, the header's state (`"none"`, `"some"`, `"all"`); `markedRows`, the rows an action runs over, in the source's order, as values, or under a Row Key as keys; and `marksHeard`, the changes the marks reported since the last `expect` |
 
 A step that is refused says so with `throws` and `saying`, as a `query` case does.
+
+A column a `source` file declares may name a `format`, which both runners know by name: `whole` shows a
+number rounded to a whole one, as C#'s custom format `0` writes it (the cases hold no negative half, where
+JavaScript's `Math.round` and C# part).
+
+## `fetch`
+
+`GridSource.fetch` (ADR-0025), the source over a result a server holds, run by
+`tests/ExGrid.Tests/Cases/FetchCaseTests.cs` against `GridSource.Fetch` and `src/npm/core/test/fetch.test.ts`
+against the Script Core's `GridSource.fetch`. The file names its `columns`, by name alone: the server, not
+the source, reads them. A row is a text, `Row n` for the row at position n of the result. A case gives the
+`readAhead` the source is made with, whether a listener `hears` failed fetches, and may give `rowKey: true`,
+each row its own Row Key, and `distinct`, the values the Consumer's value list answers with. The server
+answers by hand: a fetch the source asks waits until a step answers it, by its place among the fetches asked
+so far, from 0. Each step is read once the promises it set going have run.
+
+| Step | Does |
+|---|---|
+| `{"bind": true}` | Binds the columns |
+| `{"setSorts": [{"column", "direction"}]}` | Applies a Sort |
+| `{"setFilter": filter}` | Applies a Filter, `null` for none |
+| `{"requery": true}` | Says the Query's meaning changed outside its Sort and Filter (ADR-0343) |
+| `{"dispose": true}` | Disposes the source |
+| `{"needRange": [start, count], "as": name}` | Says the grid needs those rows, and names the promise it is answered with; `"throws"` in place of `as` for a range refused as it is asked |
+| `{"rows": [start, count], "as": name}` | Reads rows for a copy (ADR-0005), and names the promise |
+| `{"answer": i, "page": {"start", "count", "total", "orderToken"}}` | Answers fetch `i` with a page of `count` rows from `start`, or the `rows` it lists, of a result `total` rows long, with the server's order token if any |
+| `{"fail": i, "error": text}` | Fails fetch `i` with that message |
+| `{"settled": name}` | The named promise has settled, and was fulfilled; with `throws` and `saying` it was refused as a `query` case says, and with `"rejects": text` it rejected with the failure of that message |
+| `{"pending": name}` | The named promise has not settled |
+| `{"same": [name, name]}` | Two ranges asked for were answered with one promise |
+| `{"read": name, "is": [rows]}` | The rows the named read answered with |
+| `{"asked": i, "range": [start, count], "sorts": [...], "filtered": [columns]}` | What fetch `i` asked: its range, its Sort, and the columns its Filter names |
+| `{"distinctValues": column, "is": [values], "handed": [columns]}` | A column's value list, and the columns the Filter handed to the Consumer's value list names; `"tooMany": true` in place of `is` |
+| `{"expect": {…}}` | Reads the source: `calls`, the range of every fetch asked so far; `cancelled`, whether each was called off; `windowStart`, `windowCount`, `first` (the Window's first row), `totalCount`, `loading`, `version`, `sorts`, `filter`; `lastError`, `null` or a text its message holds; `reported`, texts the messages of the failures heard since the last `expect` hold, in order; `vouches`; and `heard`, the changes heard since the last `expect` |
+
+## `displayText`
+
+The text a value cell displays (ADR-0006, ADR-0350 section 16), run by
+`tests/ExGrid.Tests/Cases/DisplayTextCaseTests.cs` against `ColumnInfo.TextFor` and
+`src/npm/core/test/display-text.test.ts` against the Script Core's `textFor`. A case lists `texts`, each a
+`value` written as a `query` case writes it, an optional `format` as a `source` column names one, and the
+text it `is`.
+
+## `find` and `replace`
+
+The reference Find step (ADR-0055) and the reference Replace All (ADR-0332), the rules `GridSource.from`
+answers with and a remote source is held to, run by `tests/ExGrid.Tests/Cases/FindCaseTests.cs` against
+`GridFind.Step` and `GridReplace.Plan` and by `src/npm/core/test/find.test.ts` against `findStep` and
+`planReplace`. The file names its `columns` and its `rows`, each row the texts of its cells in that order:
+what a Find matches, the displayed text, or what a Replace matches, the entry. A request is written
+`{"text", "from", "backward", "matchCase", "wholeCell", "scope", "columns"}`, and a Replace All's adds
+`"replacement"` and `"editable"`; a flag left out is off, `columns` and `editable` are the file's columns,
+`from` and `scope` none.
+
+A `find` case lists `steps`, each `{"find": request, "is": [row, column]}`, `null` for nothing found.
+
+A `replace` file also names its `numberColumns`, whose write refuses a text that does not read as a number
+(an optional `-`, digits, and an optional `.` and digits) as `not a number`; every other write sets the
+text. A case may give its own `rows`, repeat them `repeat` times, and read them under the version `readIn`
+(0 unless given; the request's `version` is 0 unless it names one). It says what the plan `is`: any of
+`count`, `version`, `refused` (`[row, column, message]`, `null` where the column is not Editable),
+`changes` (`[row, values]`, each rewritten row by its place and its new texts) and `changeCount`; or how it
+is refused, with `throws` and `saying`. `"writeInPlace": true` makes a write that hands back the row it was
+given.
+
+## `summary`
+
+The reference Selection Summary (ADR-0130) and the exact arithmetic it sums in (ADR-0350 section 16), run by
+`tests/ExGrid.Tests/Cases/SummaryCaseTests.cs` against `GridSummary.Of` and by
+`src/npm/core/test/summary.test.ts` against `summaryOf`. The file names its `columns`, and its `rows`, each
+the values of its cells in that order, written as a `query` case writes them; a case may give its own of
+either, and repeat its rows `repeat` times. A number is read as the Script Core reads one: a JSON number as C#
+converts a double to a decimal, a double only where no decimal holds it, and `{"bigint": text}` exactly, as
+an integer of any width.
+
+`ask` is the request, `{"ranges", "columns", "figures"}`: the ranges as a list of ranges, the file's columns
+unless it names its own (a name the file does not have is a column with no value, an Action Column), and the
+figures by name (`average`, `count`, `numericalCount`, `min`, `max`, `sum`). `is` names every figure the
+answer holds, and no other, each `"empty"`, `{"exact": text}` (the decimal, written without trailing zeros),
+`{"double": number}` (a figure in Excel's arithmetic, a string where JSON cannot hold the number) or
+`{"error": name}` (`divideByZero`, `notANumber`, `errorAmongValues`). `texts` gives the text a figure is shown
+with where no format applies.
 
 ## `calls`
 

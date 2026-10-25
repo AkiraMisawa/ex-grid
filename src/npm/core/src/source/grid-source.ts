@@ -7,6 +7,10 @@ import type { QueryColumn } from '../query/columns';
 import type { GridFilter } from '../query/filter';
 import type { SortSpec } from '../query/sort';
 import { InMemoryGridSource, type InMemorySourceOptions } from './in-memory-source';
+import { FetchingGridSource, type FetchingSourceOptions, type GridPage, type GridQuery } from './fetching-source';
+import type { GridFindRequest, GridFindResult } from '../finding/find';
+import type { GridSummaryRequest, GridSummaryResult } from '../summary/grid-summary';
+import type { RowMarks } from '../rows/row-marks';
 import type { RowKeyOf } from './row-key';
 import type { RowRange } from '../viewport/row-range';
 
@@ -63,6 +67,16 @@ export interface GridSource<Row> {
     /** Puts out at once the live changes the source gathered and has not yet published, so the Window is the
      * newest version it holds; the grid calls it just before it judges a write (ADR-0141, ADR-0142). */
     publishGathered?(): void;
+    /** Answers a Find step (ADR-0055), where this source searches: the grid asks only a source that has
+     * this member, and otherwise refuses Find as unavailable. `findStep` is the reference for what a match
+     * is. */
+    find?(request: GridFindRequest, signal: AbortSignal): Promise<GridFindResult>;
+    /** Answers a Selection Summary (ADR-0130), where this source summarises: the grid asks only a source
+     * that has this member, and otherwise shows no figure. `summaryOf` is the reference for what each
+     * figure is. */
+    summarize?(request: GridSummaryRequest, signal: AbortSignal): Promise<GridSummaryResult>;
+    /** The Consumer's half of Row Marks, where this source keeps them (ADR-0043). */
+    readonly marks?: RowMarks<Row> | undefined;
 }
 
 /** Makes Grid Sources. */
@@ -71,5 +85,10 @@ export const GridSource = Object.freeze({
      * given a Row Key, one that takes live data (ADR-0141). */
     from<Row>(rows: readonly Row[], options?: InMemorySourceOptions<Row>): InMemoryGridSource<Row> {
         return InMemoryGridSource.from(rows, options);
+    },
+    /** A source over a result a server holds (ADR-0025): `fetch` answers each Query with a page, and the
+     * source reads ahead, coalesces while scrolling, and discards an answer to a question that changed. */
+    fetch<Row>(fetch: (query: GridQuery, signal: AbortSignal) => Promise<GridPage<Row>>, options?: FetchingSourceOptions<Row>): FetchingGridSource<Row> {
+        return FetchingGridSource.fetch(fetch, options);
     },
 });
