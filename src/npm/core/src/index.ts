@@ -12,6 +12,8 @@ export type { GridHandle } from './dom/create-grid';
 export type { GridHeaderGroup, GridOptions, ViewportSize } from './dom/grid-view';
 export type { GridRefusal } from './dom/grid-refusal';
 export type { GridColumnWidthChange } from './dom/column-gestures';
+export type { GridCommand, GridContextMenuContext } from './dom/grid-command';
+export { gridCommandIds } from './chrome/command-ids';
 export type { CopyRefusalReason, PastePlan, PasteRefusalReason, PasteShape, SourceCell } from './clipboard/clipboard-rules';
 export type { PasteFieldOrigin } from './clipboard/clipboard-parse';
 export type { GridPasteIntent } from './clipboard/paste-intent';

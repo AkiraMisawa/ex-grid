@@ -210,6 +210,36 @@ export interface GridColumnWidthChange {
 }
 
 // @public
+export interface GridCommand {
+    readonly enabled: boolean;
+    readonly id: string;
+    readonly invoke: () => void;
+}
+
+// @public
+export const gridCommandIds: Readonly<{
+    readonly sortAscending: 'sort-ascending';
+    readonly sortDescending: 'sort-descending';
+    readonly clearFilter: 'clear-filter';
+    readonly hide: 'hide';
+    readonly pin: 'pin';
+    readonly unpin: 'unpin';
+    readonly sizeToFit: 'size-to-fit';
+    readonly copy: 'copy';
+    readonly copyWithHeaders: 'copy-with-headers';
+}>;
+
+// @public
+export interface GridContextMenuContext<Row> {
+    readonly column: string;
+    readonly columnType: ColumnType;
+    readonly commands: readonly GridCommand[];
+    readonly row: Row;
+    readonly rowSequenceVersion: number;
+    readonly selection: readonly SelectionRange[];
+}
+
+// @public
 export type GridDensity = 'compact' | 'comfortable' | 'standard' | 'excel';
 
 // @public
@@ -285,10 +315,13 @@ export interface GridHeaderGroup {
 // @public
 export interface GridOptions<Row> {
     readonly columns: readonly GridColumn<Row>[];
+    readonly commandLabel?: (id: string) => string | undefined;
+    readonly contextCommands?: (context: GridContextMenuContext<Row>) => readonly GridCommand[];
     readonly copyCellCap?: number;
     readonly density?: GridDensity;
     readonly headerGroups?: readonly GridHeaderGroup[];
     readonly headerHeight?: number;
+    readonly hideCopyWithHeaders?: boolean;
     readonly highlightFocusRow?: boolean;
     readonly highlightHoverRow?: boolean;
     readonly onCellDoubleClick?: (cell: CellPosition) => void;

@@ -1,7 +1,8 @@
 import { useCallback, useMemo, useRef, useState, type ReactElement } from 'react';
 import {
     GridSource, type CommitRefusalReason, type EditDiscardReason, type GridClearIntent, type GridColumn, type GridColumnWidthChange,
-    type GridEditIntent, type GridHeaderGroup, type GridOverwriteNotice, type GridPasteIntent, type GridRefusal,
+    type GridCommand, type GridContextMenuContext, type GridEditIntent, type GridHeaderGroup, type GridOverwriteNotice, type GridPasteIntent,
+    type GridRefusal,
 } from '@ex-grid/core';
 import { ExGrid } from '@ex-grid/react';
 import type { Temporal } from 'temporal-polyfill';
@@ -195,6 +196,18 @@ export function Features(): ReactElement {
     const onColumnOrderChanged = useCallback((order: readonly string[]) => {
         setShownColumns(held => inOrder(held, order));
     }, []);
+    // What the Consumer adds to the Context Menu (ADR-0036): handed the row clicked and the Selection as rectangles
+    // in their version. Resolving the rest of the Selection into rows is this side's question, since this side
+    // owns the data; the demo does the one-row case, opening what the row is about.
+    const [contextStatus, setContextStatus] = useState('—');
+    const contextCommands = useCallback((context: GridContextMenuContext<DemoTrade>): readonly GridCommand[] => {
+        const { row } = context;
+        const cells = context.selection.reduce((sum, range) => sum + (range.rowCount * range.columnCount), 0);
+        return [{
+            id: 'open-trade', enabled: true,
+            invoke: () => { setContextStatus(`open ${row.book}/${row.trader} (${cells} cells selected, v${context.rowSequenceVersion})`); },
+        }];
+    }, []);
     const [counts, setCounts] = useState({ edits: 0, pastes: 0 });
     const [copyStatus, setCopyStatus] = useState('—');
     const [pasteStatus, setPasteStatus] = useState('—');
@@ -333,6 +346,7 @@ export function Features(): ReactElement {
                 <span id="overwrite-notice-status" role="status">Overwritten: {overwriteStatus}</span>
                 <span id="order-status">Order: {shownColumns.map(c => c.name).join(',')}</span>
                 <span id="width-status">Width: {widthStatus}</span>
+                <span id="context-status">Context: {contextStatus}</span>
             </p>
             <ExGrid
                 columns={shownColumns}
@@ -351,7 +365,8 @@ export function Features(): ReactElement {
                 onRedo={onRedo}
                 onPaste={onPaste}
                 onColumnWidthChanged={onColumnWidthChanged}
-                onColumnOrderChanged={onColumnOrderChanged} />
+                onColumnOrderChanged={onColumnOrderChanged}
+                contextCommands={contextCommands} />
             <p className="demo-status"><span id="intent-count">Intents: {counts.edits} edits, {counts.pastes} pastes</span></p>
             {showGroups
                 ? (

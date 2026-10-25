@@ -13,6 +13,9 @@ import { assembleCopy, type CopyFlavours } from '../clipboard/clipboard-data';
 import { defaultCellCap, pasteShape, planCopy, planFill, planPaste, type CopyPlan, type FillPlan } from '../clipboard/clipboard-rules';
 import { GridClearIntent } from '../clipboard/clear-intent';
 import { columnPlaceholder, copyRefusalWords, pasteRefusalWords, shapeMismatchMaySpillWords } from '../chrome/refusal-words';
+import { builtInCommandLabel } from '../chrome/command-labels';
+import { gridCommandIds } from '../chrome/command-ids';
+import { resolveMenuKey } from '../chrome/menu-keys';
 import { parseClipboardBlock, type ClipboardBlock } from '../clipboard/clipboard-parse';
 import { GridPasteIntent } from '../clipboard/paste-intent';
 import { ColumnGeometry, type ColumnRange } from '../columns/column-geometry';
@@ -48,6 +51,8 @@ import {
     boundaryLeftPx, columnsResizedWith, dragThresholdPx, dropBoundaries, grabbedAt, guideLeftPx, nearestBoundary, type ColumnGesture, type GridColumnWidthChange,
 } from './column-gestures';
 import { CopiedRange } from './copied-range';
+import type { GridCommand, GridContextMenuContext } from './grid-command';
+import { contextMenuRoomPx, contextMenuStyle, MenuItems } from './menu-popover';
 import { copyValues, gatherRows, windowCovers, windowRowAt } from './grid-copy';
 import { defaultPasteByteCap, exceedsUtf8 } from './grid-paste';
 import type { GridRefusal } from './grid-refusal';
@@ -196,12 +201,43 @@ export interface GridOptions<Row> {
      * and no longer selects it as it is dragged (ADR-0050, item 1); a click still sorts.
      */
     readonly onColumnOrderChanged?: (order: readonly string[]) => void;
+    /**
+     * The Consumer's commands on the Context Menu (ADR-0036), which a secondary click on a cell opens, as do the
+     * ContextMenu key and Shift+F10 on the Focus. They stand after the core's own, Copy and Copy with headers,
+     * and are asked for each time the menu opens, with the cell it opened on and the Selection its commands act
+     * on. A secondary click outside the Selection first collapses it onto the cell it lands on, so what a
+     * command acts on is what the user can see.
+     */
+    readonly contextCommands?: (context: GridContextMenuContext<Row>) => readonly GridCommand[];
+    /** What the built-in menu calls a command, by its id (ADR-0036): the Consumer's words, in any language, or
+     * `undefined` for the built-in English. A command the table does not know either is shown as its id. */
+    readonly commandLabel?: (id: string) => string | undefined;
+    /** Leaves Copy with headers off the Context Menu (ADR-0050, item 13). Shown unless given. */
+    readonly hideCopyWithHeaders?: boolean;
 }
 
 const defaultViewportWidthPx = 800;
 
 /** The widest a cell's message lays out: emitted inline, never a stylesheet literal beside it (ADR-0027). */
 const messageMaxWidthPx = 320;
+
+/** The commands a Consumer's `contextCommands` answered, checked: a command the menu cannot show or run is the
+ * Consumer's defect, refused by name rather than shown as a blank or a button that does nothing. */
+function checkedCommands(commands: unknown): readonly GridCommand[] {
+    if (!Array.isArray(commands)) throw new TypeError('contextCommands answers an array of commands.');
+    return (commands as readonly unknown[]).map(command => {
+        if (!isCommand(command)) {
+            throw new TypeError('A command contextCommands answers is { id: string, enabled: boolean, invoke: function }.');
+        }
+        return command;
+    });
+}
+
+function isCommand(value: unknown): value is GridCommand {
+    if (typeof value !== 'object' || value === null) return false;
+    const { id, enabled, invoke } = value as { readonly id?: unknown; readonly enabled?: unknown; readonly invoke?: unknown };
+    return typeof id === 'string' && typeof enabled === 'boolean' && typeof invoke === 'function';
+}
 
 /** Sets an attribute on an element the grid made, or takes it away, only when it changed. */
 function setAttribute(element: Element, name: string, value: string | undefined): void {
@@ -275,6 +311,21 @@ interface Taken<Row> {
     readonly onCellDoubleClick: ((cell: CellPosition) => void) | undefined;
     readonly onColumnWidthChanged: ((change: GridColumnWidthChange) => void) | undefined;
     readonly onColumnOrderChanged: ((order: readonly string[]) => void) | undefined;
+    readonly contextCommands: ((context: GridContextMenuContext<Row>) => readonly GridCommand[]) | undefined;
+    readonly commandLabel: ((id: string) => string | undefined) | undefined;
+    readonly hideCopyWithHeaders: boolean;
+}
+
+// The popover standing, the Context Menu (ADR-0036, ADR-0039, ADR-0040): its element, the commands it shows,
+// where it was opened in the Viewport's readable box, and what it was opened against: an order, columns or a
+// source that moved take the Selection its commands act on, and the menu with it (ADR-0011).
+interface OpenPopover {
+    readonly element: HTMLElement;
+    readonly commands: readonly GridCommand[];
+    readonly leftPx: number;
+    readonly topPx: number;
+    readonly version: number;
+    readonly source: unknown;
 }
 
 // A Selection the rows or the source dropped: where the typing aimed at it was going, why it went, and whether
@@ -631,6 +682,7 @@ export class GridView<Row> {
     #layoutStyles: ColumnStyles | undefined;
     #paintedLayers: string | undefined;
     #visibleWidthPx = 0;
+    #visibleHeightPx = 0;
 
     // A Heading drag (ADR-0050 item 1, ADR-0012, 2026-09-29), a press on the header that is not yet a click
     // or a drag, where the press was, and a click a gesture has already answered.
@@ -647,6 +699,11 @@ export class GridView<Row> {
     // Each painted grip's column, so a press tells this grid's grips from anything else in its header.
     #grips = new Map<Element, number>();
     #reorderDrops: { readonly geometry: ColumnGeometry; readonly layout: HeaderGroupLayout; readonly boundaries: readonly number[] } | undefined;
+    // The Context Menu (ADR-0036): what the Consumer adds to it and calls its commands, and the menu standing.
+    #contextCommands: ((context: GridContextMenuContext<Row>) => readonly GridCommand[]) | undefined;
+    #commandLabel: ((id: string) => string | undefined) | undefined;
+    #hideCopyWithHeaders = false;
+    #popover: OpenPopover | undefined;
     // The edge band (ADR-0008): where the pointer stands in the Viewport's readable box and the step each
     // tick takes, and an offset a step moved that the next pass writes.
     #edge: { readonly x: number; readonly y: number; readonly rows: number; readonly stepXPx: number } | undefined;
@@ -753,6 +810,7 @@ export class GridView<Row> {
             this.#viewport.addEventListener('mousedown', this.#onPress);
             this.#viewport.addEventListener('mouseup', this.#onRelease);
             this.#viewport.addEventListener('dblclick', this.#onDoubleClick);
+            this.#viewport.addEventListener('contextmenu', this.#onContextMenu);
             root.addEventListener('mousedown', this.#onRootPress, true);
             root.addEventListener('focus', this.#onFocused, true);
             keyField.addEventListener('input', this.#onKeyFieldInput);
@@ -773,6 +831,7 @@ export class GridView<Row> {
                 () => { this.#viewport.removeEventListener('mousedown', this.#onPress); },
                 () => { this.#viewport.removeEventListener('mouseup', this.#onRelease); },
                 () => { this.#viewport.removeEventListener('dblclick', this.#onDoubleClick); },
+                () => { this.#viewport.removeEventListener('contextmenu', this.#onContextMenu); },
                 () => { root.removeEventListener('mousedown', this.#onRootPress, true); },
                 () => { root.removeEventListener('focus', this.#onFocused, true); },
                 () => { keyField.removeEventListener('input', this.#onKeyFieldInput); },
@@ -840,6 +899,7 @@ export class GridView<Row> {
         // section 6). The typing goes with the grid, which is the Consumer's own doing.
         this.#edit = undefined;
         this.#tellEditing();
+        this.#popover = undefined;
         for (const stop of this.#stops) stop();
         this.#unsubscribe?.();
         this.#root.replaceChildren();
@@ -906,13 +966,14 @@ export class GridView<Row> {
         }
         const {
             onSelectionChanged, onRefused, onPaste, pasteMaySpill, onClear, onUndo, onRedo, onEdit, onEditingChanged, onEditDiscarded,
-            onOverwriteNotice, onCellDoubleClick, onColumnWidthChanged, onColumnOrderChanged,
+            onOverwriteNotice, onCellDoubleClick, onColumnWidthChanged, onColumnOrderChanged, contextCommands, commandLabel, hideCopyWithHeaders,
         }: {
             readonly onSelectionChanged?: unknown; readonly onRefused?: unknown; readonly onPaste?: unknown; readonly pasteMaySpill?: unknown;
             readonly onClear?: unknown; readonly onUndo?: unknown; readonly onRedo?: unknown;
             readonly onEdit?: unknown; readonly onEditingChanged?: unknown; readonly onEditDiscarded?: unknown;
             readonly onOverwriteNotice?: unknown; readonly onCellDoubleClick?: unknown;
             readonly onColumnWidthChanged?: unknown; readonly onColumnOrderChanged?: unknown;
+            readonly contextCommands?: unknown; readonly commandLabel?: unknown; readonly hideCopyWithHeaders?: unknown;
         } = options;
         if (onSelectionChanged !== undefined && typeof onSelectionChanged !== 'function') {
             throw new TypeError('onSelectionChanged is a function of the Selection.');
@@ -963,6 +1024,15 @@ export class GridView<Row> {
         if (onColumnOrderChanged !== undefined && typeof onColumnOrderChanged !== 'function') {
             throw new TypeError('onColumnOrderChanged is a function of the columns\' new order.');
         }
+        if (contextCommands !== undefined && typeof contextCommands !== 'function') {
+            throw new TypeError('contextCommands is a function of the Context Menu\'s context, answering the commands to add.');
+        }
+        if (commandLabel !== undefined && typeof commandLabel !== 'function') {
+            throw new TypeError('commandLabel is a function of a command\'s id, answering its words or undefined.');
+        }
+        if (hideCopyWithHeaders !== undefined && typeof hideCopyWithHeaders !== 'boolean') {
+            throw new TypeError('hideCopyWithHeaders is true or false.');
+        }
         const { copyCellCap = defaultCellCap, pasteByteCap = defaultPasteByteCap } = options;
         if (!Number.isSafeInteger(copyCellCap) || copyCellCap < 1) {
             throw new RangeError(`copyCellCap is a whole number of at least one cell, not ${copyCellCap}: the cap may be raised, `
@@ -990,6 +1060,7 @@ export class GridView<Row> {
             onEdit: options.onEdit, onEditingChanged: options.onEditingChanged, onEditDiscarded: options.onEditDiscarded,
             onOverwriteNotice: options.onOverwriteNotice, onCellDoubleClick: options.onCellDoubleClick,
             onColumnWidthChanged: options.onColumnWidthChanged, onColumnOrderChanged: options.onColumnOrderChanged,
+            contextCommands: options.contextCommands, commandLabel: options.commandLabel, hideCopyWithHeaders: options.hideCopyWithHeaders === true,
         };
     }
 
@@ -1105,6 +1176,9 @@ export class GridView<Row> {
         this.#onCellDoubleClick = taken.onCellDoubleClick;
         this.#onColumnWidthChanged = taken.onColumnWidthChanged;
         this.#onColumnOrderChanged = taken.onColumnOrderChanged;
+        this.#contextCommands = taken.contextCommands;
+        this.#commandLabel = taken.commandLabel;
+        this.#hideCopyWithHeaders = taken.hideCopyWithHeaders;
     }
 
     // The Row Sequence Version the grid writes: its source's, carried past every change of source.
@@ -1226,6 +1300,15 @@ export class GridView<Row> {
         const visibleHeightPx = this.#height === 'stretch'
             ? Math.max(0, report?.contentHeightPx ?? 0) // oxlint-disable-line ex-grid/no-stand-in-default -- ADR-0028: as the width
             : ViewportBox.visibleHeightOf(this.#height, report?.gutterHeightPx ?? 0); // oxlint-disable-line ex-grid/no-stand-in-default -- ADR-0013: as the width
+        // A box that shrinks until the popover has less than a row of room would leave it showing no item,
+        // and still holding the keyboard: it closes as a Cancel. Only a shrink does: one opened in a box that
+        // small is the Consumer's box, not a change (ADR-0040).
+        const popover = this.#popover;
+        if (popover !== undefined && visibleHeightPx < this.#visibleHeightPx
+            && contextMenuRoomPx(this.#bandHeightPx + popover.topPx, visibleHeightPx) < this.#metrics.rowHeightPx) {
+            this.#closePopover(true);
+        }
+        this.#visibleHeightPx = visibleHeightPx;
         const band = this.#bandHeightPx;
         const total = this.#totalRows;
         if (visibleHeightPx <= band || visibleWidthPx <= 0) {
@@ -1356,6 +1439,12 @@ export class GridView<Row> {
         }
         this.#heldSource = this.#source;
         this.#columnNames = names;
+        // The Context Menu's commands act on the Selection it was opened over; an order, columns or a source
+        // that moved took that Selection, and the menu goes with it, as a Cancel (ADR-0011, ADR-0036).
+        const popover = this.#popover;
+        if (popover !== undefined && (columnsMoved || popover.version !== version || popover.source !== this.#source)) {
+            this.#closePopover(true);
+        }
         this.#reconcileEdit();
         // The Copied Range is written in the same coordinates and dropped on the same triggers; it also goes
         // when a copied cell the Window holds comes to read otherwise (ADR-0170).
@@ -1445,6 +1534,16 @@ export class GridView<Row> {
             key: event.key, ctrl: event.ctrlKey, shift: event.shiftKey, alt: event.altKey, meta: event.metaKey,
             metaIsPrimary: this.#metaIsPrimary,
         };
+        // Escape peels a popover before anything else, from inside it or from the grid (ADR-0012's layering,
+        // ADR-0039); the keyboard comes back to the grid.
+        const popover = this.#popover;
+        if (popover !== undefined && event.key === 'Escape' && !event.ctrlKey && !event.altKey && !event.metaKey
+            && (event.target === this.#root || event.target === this.#keyField
+                || (event.target instanceof Node && popover.element.contains(event.target)))) {
+            this.#taken(event);
+            this.#closePopover(true);
+            return;
+        }
         const edit = this.#edit;
         if (edit !== undefined && event.target === edit.element) {
             this.#onEditorKey(event, press, edit);
@@ -1505,6 +1604,13 @@ export class GridView<Row> {
             this.#taken(event);
             if (action.kind === 'clear') this.#clear();
             else this.#fillFromKey(action.kind === 'fillDown' ? 'down' : 'right');
+            return;
+        }
+        // The ContextMenu key and Shift+F10 open the Context Menu on the Focus, and the browser's own never
+        // appears (ADR-0036, CTX-4).
+        if (action.kind === 'openContextMenu') {
+            this.#taken(event);
+            this.#openContextMenuAtFocus();
             return;
         }
         if (action.kind !== 'leave' && !movingKinds.has(action.kind)) return;
@@ -2305,6 +2411,139 @@ export class GridView<Row> {
         this.#invalidate();
     }
 
+    // ---- The Context Menu (ADR-0036, ADR-0039, ADR-0040) -------------------------------------------------
+
+    // A secondary click on the rows. Outside the Selection it collapses it onto the cell it lands on, so what a
+    // command will act on is what the user can see; inside it, the Selection stands. The browser's own menu
+    // never appears over the rows. A press past an open editor commits it first; a Reject or a refusal holds
+    // it, and the click opens nothing (ADR-0010, ADR-0034).
+    readonly #onContextMenu = (event: MouseEvent): void => {
+        if (event.target !== this.#viewport) return;
+        event.preventDefault();
+        this.#answered += 1;
+        this.#invalidate();
+        if (!this.#commitEdit()) return;
+        this.#reconcileSelection();
+        const at = this.#cellUnder(event);
+        const topPx = this.#viewportYOf(event);
+        if (at === undefined || topPx === undefined) {
+            this.#closePopover(true);
+            return;
+        }
+        this.#tabReleased = false;
+        const selection = this.#held.selection;
+        if (!selection.contains(at)) this.#apply(selection.click(at, this.#extent));
+        this.#openContextMenu(at, event.offsetX - this.#scrollLeftPx, topPx);
+    };
+
+    // The Context Menu from the keyboard, on the Focus, which is inside the Selection by construction, so
+    // nothing about the Selection changes. It opens at the Focus cell's corner, where the user's attention
+    // already is (ADR-0036).
+    #openContextMenuAtFocus(): void {
+        this.#reconcileSelection();
+        const focus = this.#held.selection.focus;
+        const geometry = this.#geometry;
+        if (focus === undefined || geometry === undefined) return;
+        this.#openContextMenu(focus, this.#cellLeftPx(focus.column), geometry.viewportTopPxOf(focus.row, this.#scrollTopPx));
+    }
+
+    // A cell's left edge in the Viewport's readable box, as the C# core's CellCorner reads it: a Pinned
+    // Column's stands still, any other's moves with the scroll.
+    #cellLeftPx(column: number): number {
+        const columns = this.#styles.geometry;
+        return columns.offsetPxOf(column) - (column < columns.pinnedCount ? 0 : this.#scrollLeftPx);
+    }
+
+    // Opens the Context Menu on `cell`, at (leftPx, topPx) in the Viewport's readable box: the core's commands,
+    // then the Consumer's, asked for now. Its first enabled item takes the keyboard (ADR-0039). A cell whose
+    // row the Window does not hold opens nothing: there is no row to hand the commands.
+    #openContextMenu(cell: CellPosition, leftPx: number, topPx: number): void {
+        const { window, windowStart } = this.#state;
+        const slice = cell.row - windowStart;
+        if (slice < 0 || slice >= window.length || cell.column >= this.#columns.length) return;
+        const canCopy = !this.#held.selection.isEmpty;
+        const core: GridCommand[] = [
+            Object.freeze({ id: gridCommandIds.copy, enabled: canCopy, invoke: () => { this.#menuCopy(false); } }),
+        ];
+        if (!this.#hideCopyWithHeaders) {
+            core.push(Object.freeze({ id: gridCommandIds.copyWithHeaders, enabled: canCopy, invoke: () => { this.#menuCopy(true); } }));
+        }
+        const { column } = itemAt(this.#columns, cell.column);
+        const version = this.#sequence();
+        const context: GridContextMenuContext<Row> = Object.freeze({
+            row: itemAt(window, slice), column: column.name, columnType: column.type,
+            selection: this.#held.selection.ranges, rowSequenceVersion: version, commands: Object.freeze(core),
+        });
+        const commands = this.#contextCommands === undefined ? core : [...core, ...checkedCommands(this.#contextCommands(context))];
+        this.#closePopover(false);
+        const element = this.#root.ownerDocument.createElement('div');
+        element.className = 'ex-popover';
+        element.setAttribute('role', 'menu');
+        const items = new MenuItems(element, commands, id => this.#labelOf(id), resolveMenuKey, {
+            run: index => { this.#runCommand(index); },
+            cancel: () => { this.#closePopover(true); },
+            answered: () => {
+                this.#answered += 1;
+                this.#invalidate();
+            },
+        });
+        this.#popover = { element, commands, leftPx, topPx, version, source: this.#source };
+        this.#placePopover();
+        this.#scroller.after(element);
+        items.focus();
+        this.#invalidate();
+    }
+
+    // What the built-in menu calls a command: the Consumer's words where it has some, the built-in English
+    // otherwise, and the id for a command neither knows (ADR-0036).
+    #labelOf(id: string): string {
+        const words = this.#commandLabel?.(id);
+        if (words !== undefined && typeof words !== 'string') {
+            throw new TypeError(`commandLabel answered ${typeof words} for '${id}': it answers a command's words, or undefined for the built-in ones.`);
+        }
+        return words ?? builtInCommandLabel(id);
+    }
+
+    // A command chosen: the menu closes and the keyboard is back on the grid before it runs, so a command may
+    // move the keyboard on itself, and the keys typed after it are the grid's (ADR-0039, ADR-0044's note of
+    // 2026-10-12).
+    #runCommand(index: number): void {
+        const popover = this.#popover;
+        if (popover === undefined) return;
+        const command = itemAt(popover.commands, index);
+        if (!command.enabled) return;
+        this.#closePopover(true);
+        command.invoke();
+        this.#invalidate();
+    }
+
+    // Closes the popover standing. However the core closes it, the keyboard comes back to the grid
+    // (`giveBack`, ADR-0039); a press that dismisses it keeps its own meaning, and where it lands decides.
+    // Taken back only while it is still this grid's, or on nothing, as the C# core's reclaimFocus takes it:
+    // a menu an order or a shrink closes after the user has put the keyboard on another grid or a field of
+    // the page's must not take it from there mid-typing (ADR-0018).
+    #closePopover(giveBack: boolean): void {
+        const popover = this.#popover;
+        if (popover === undefined) return;
+        this.#popover = undefined;
+        const doc = this.#root.ownerDocument;
+        const active = doc.activeElement;
+        const held = popover.element.contains(active);
+        const ours = active === null || active === doc.body || active === doc.documentElement || this.#root.contains(active);
+        popover.element.remove();
+        if (held || (giveBack && ours)) this.#takeKeyboard();
+        this.#invalidate();
+    }
+
+    // The popover's place and bounds, from the geometry the grid already holds (ADR-0040): written again as the
+    // box changes, never measured.
+    #placePopover(): void {
+        const popover = this.#popover;
+        if (popover === undefined) return;
+        setAttribute(popover.element, 'style',
+            contextMenuStyle(popover.leftPx, this.#bandHeightPx + popover.topPx, this.#visibleWidthPx, this.#visibleHeightPx));
+    }
+
     // ---- The clipboard (ADR-0005) ------------------------------------------------------------------------
 
     // A copy the browser's command asked for. Refused, the clipboard stays as it was: the default copy of a
@@ -2343,11 +2582,35 @@ export class GridView<Row> {
             }
             return;
         }
+        // Started before the event is taken from the browser: a write that cannot start leaves the clipboard
+        // as the default copy leaves it, untouched.
+        this.#writeCopy(plan, false);
+        event.preventDefault();
+    };
+
+    // The Context Menu's copy (ADR-0005, ADR-0036): a menu item's click fires no copy event, so it always takes
+    // the asynchronous route, whatever the Selection's size, started inside the gesture that chose it. With
+    // headers, the header row counts against the cap and goes into both flavours.
+    #menuCopy(withHeaders: boolean): void {
+        this.#copy?.abort();
+        this.#copy = undefined;
+        this.#reconcileSelection();
+        const decision = planCopy(this.#held.selection, { cellCap: this.#copyCellCap, withHeaders });
+        if (decision.refused) {
+            this.#refuse({ kind: 'copy', reason: decision.reason });
+            return;
+        }
+        this.#writeCopy(decision.plan, withHeaders);
+    }
+
+    // The asynchronous write of a copy (ADR-0005): the rows gathered while the browser waits, and the copy held
+    // as the one a newer copy supersedes.
+    #writeCopy(plan: CopyPlan, withHeaders: boolean): void {
         const copy = new AbortController();
         // Counted as the grid's own write the moment it is in hand, before the browser writes it, so the change
         // it causes finds it counted (ADR-0170).
         const own: OwnWrite<Row> = { gathered: undefined, counted: false, ended: false };
-        const flavours = this.#gatherCopy(plan, state, columns, this.#sequence(), copy.signal).then(gathered => {
+        const flavours = this.#gatherCopy(plan, this.#state, this.#columns, this.#sequence(), withHeaders, copy.signal).then(gathered => {
             if (gathered === undefined) return undefined;
             own.gathered = gathered;
             if (this.#clipboardWatched && !own.ended) {
@@ -2356,8 +2619,6 @@ export class GridView<Row> {
             }
             return gathered.flavours;
         });
-        // Started before the event is taken from the browser: a write that cannot start leaves the clipboard
-        // as the default copy leaves it, untouched.
         let written: Promise<boolean>;
         try {
             written = this.#reports.writeClipboard(this.#root, flavours);
@@ -2365,10 +2626,9 @@ export class GridView<Row> {
             copy.abort();
             throw error;
         }
-        event.preventDefault();
         this.#copy = copy;
         this.#holdWhileWriting(written, copy, own);
-    };
+    }
 
     // A copy's write landed (ADR-0170): its outline replaces the one before, or none does. The pass checks it
     // as it checks every outline: the order or the columns moved since it was made drop it, as does a copied
@@ -2396,7 +2656,7 @@ export class GridView<Row> {
     // hand nor rows of two orders is ever written (ADR-0005, ADR-0011). A copy superseded or a grid
     // destroyed writes nothing and says nothing.
     async #gatherCopy(plan: CopyPlan, state: GridSourceState<Row>, columns: readonly ResolvedColumn<Row>[], version: number,
-        signal: AbortSignal): Promise<GatheredCopy<Row> | undefined> {
+        withHeaders: boolean, signal: AbortSignal): Promise<GatheredCopy<Row> | undefined> {
         const moved = (): boolean => this.#sequence() !== version || this.#columns !== columns;
         let rows: ReadonlyMap<number, Row> | undefined;
         try {
@@ -2414,7 +2674,9 @@ export class GridView<Row> {
             return undefined;
         }
         const rowAt = (row: number): Row => defined(rows.get(row), 'a gathered row');
-        return { flavours: assembleCopy(plan, copyValues(columns, rowAt)), outline: () => CopiedRange.of(plan, version, columns, rowAt) };
+        const values = copyValues(columns, rowAt);
+        const flavours = assembleCopy(plan, withHeaders ? { ...values, headerAt: column => itemAt(columns, column).header } : values);
+        return { flavours, outline: () => CopiedRange.of(plan, version, columns, rowAt) };
     }
 
     // The asynchronous write (ADR-0005) holds the Settled Mark until it has written or refused (ADR-0220). A
@@ -2628,6 +2890,12 @@ export class GridView<Row> {
         // Ended before the press is marked: the field left says the keyboard has gone (#onFocusLeft).
         if (this.#composing && event.button === 0) this.#keyField.blur();
         this.#keyboardByPress = true;
+        // A press anywhere else in the instance dismisses a popover, and keeps its own meaning: where it lands
+        // decides where the keyboard goes (ADR-0010, ADR-0039).
+        const popover = this.#popover;
+        if (popover !== undefined && !(event.target instanceof Node && popover.element.contains(event.target))) {
+            this.#closePopover(false);
+        }
     };
 
     // The root's keyup: a key the IME took in the Keyboard Field has been told whole, since everything it owed
@@ -3453,13 +3721,14 @@ export class GridView<Row> {
         this.#write(this.#stamp, 'stamp', 'data-ex-answered', String(this.#answered));
         // Whether an Escape on the root would leave the grid now: not while it would peel the Copied Range
         // (ADR-0230 section 1, ADR-0170).
-        this.#write(this.#stamp, 'stamp', 'data-ex-escape-leaves', this.#copied === undefined && this.#edit === undefined ? '' : undefined);
+        this.#write(this.#stamp, 'stamp', 'data-ex-escape-leaves', this.#copied === undefined && this.#edit === undefined && this.#popover === undefined ? '' : undefined);
         this.#write(this.#scroller, 'scroller', 'style', this.#scrollerStyle());
         const scrollHeightPx = this.#geometry?.scrollHeightPx ?? 0; // oxlint-disable-line ex-grid/no-stand-in-default -- ADR-0013: a Viewport with no room for a row scrolls nothing
         this.#write(this.#spacer, 'spacer', 'style', `width: ${geometry.totalWidthPx}px; height: ${this.#bandHeightPx + scrollHeightPx}px`);
         this.#paintHeader();
         this.#paintViewport();
         this.#paintMessage();
+        this.#placePopover();
     }
 
     #scrollerStyle(): string {
@@ -3847,11 +4116,8 @@ export class GridView<Row> {
             this.#message.remove();
             return;
         }
-        const columns = this.#styles.geometry;
-        const column = edit.cell.column;
         const width = Math.min(messageMaxWidthPx, this.#visibleWidthPx);
-        const left = Math.min(Math.max(0, columns.offsetPxOf(column) - (column < columns.pinnedCount ? 0 : this.#scrollLeftPx)),
-            Math.max(0, this.#visibleWidthPx - width));
+        const left = Math.min(Math.max(0, this.#cellLeftPx(edit.cell.column)), Math.max(0, this.#visibleWidthPx - width));
         const top = this.#bandHeightPx + geometry.viewportTopPxOf(edit.cell.row, this.#scrollTopPx) + this.#metrics.rowHeightPx;
         setAttribute(this.#message, 'style', `left: ${left}px; top: ${top}px; max-width: ${width}px`);
         if (this.#message.textContent !== error) this.#message.textContent = error;
