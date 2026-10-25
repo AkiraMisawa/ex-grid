@@ -161,14 +161,16 @@ site a framework switch, Blazor or React, before any React package exists. What 
 
 - **It sits in the app bar beside the Chrome switch**, for the whole site, and is remembered between
   visits (below, under JavaScript). A first visit reads the site for Blazor. Under React the Chrome
-  switch reads Built-in / MUI.
+  switch reads Built-in / MUI, and cannot be changed while no Example runs under React: a choice made
+  there would change nothing on the page.
 - **Read for React, an Example with no React counterpart says so in its frame**, where it would run,
   and neither the Blazor component nor its code is shown. An ExGrid Example says that it is not in
   `@ex-grid/react` yet; any other product's says that the product has no React package. The product is
   the Example's folder under `Examples/`, and an Example in no product's folder fails the page rather
   than be called something it is not.
 - **A product's page, and a page that describes the Blazor packages** (Installation, Packages,
-  Showcases), says the same under its lead, because its prose is Blazor's. A page about the whole family
+  Showcases, the Feature matrix and the API reference), says the same under its lead, because its prose
+  is Blazor's. A page about the whole family
   that holds no Blazor code (Release notes, Roadmap, Keyboard) says nothing.
 - **Each such note offers to read the site for Blazor**, which changes the one switch, not the Example
   alone.
@@ -186,10 +188,10 @@ and records each use here:
 - **The copy button writes the code to the clipboard** with `navigator.clipboard.writeText`. C#
   has no clipboard.
 - *(Added 2026-10-25, for [ADR-0350](./0350-exgrids-core-moves-to-typescript-and-react-and-blazor-both-take-it.md)
-  §12.)* **The framework switch is kept in `localStorage`** and read from it as the site starts, with
-  `localStorage.getItem` and `setItem` called synchronously, so the first page drawn is already the
-  framework chosen last time. C# has no storage in the browser. A browser that keeps nothing for the
-  site is not an error: the switch says the choice lasts for the visit.
+  §12.)* **The framework switch is kept in `localStorage`**, read before the site first renders, so the
+  first page drawn is already the framework chosen last time. C# has no storage in the browser. A
+  browser that refuses the site storage (a `SecurityError`, or a `QuotaExceededError` on a write) is
+  not an error: the switch says the choice lasts for the visit. Any other failure is thrown.
 
 That is the whole list. Highlighting, navigation and theme switching are C#. There are no
 analytics.

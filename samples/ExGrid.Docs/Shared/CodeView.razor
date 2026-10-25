@@ -47,7 +47,7 @@
             _selected = 0;
     }
 
-    // The site's one JavaScript use (ADR-0110): C# has no clipboard.
+    // One of the site's uses of JavaScript (ADR-0110): C# has no clipboard.
     private async Task CopyAsync()
     {
         _module ??= await JS.InvokeAsync<IJSObjectReference>("import", "./js/docs.js");

@@ -14,15 +14,13 @@
     {
         <div class="docs-example-text">@ChildContent</div>
     }
-    @if (State.Framework == DocsFramework.React)
-    {
-        <MudPaper Outlined="true" Class="docs-example-frame">
-            <NotInReact Product="@DocsProducts.OfExample(Builtin)" Example="true" />
-        </MudPaper>
-    }
-    else
-    {
-        <MudPaper Outlined="true" Class="docs-example-frame">
+    <MudPaper Outlined="true" Class="docs-example-frame">
+        @if (State.Framework == DocsFramework.React)
+        {
+            <NotInReact Product="@_product" Example="true" />
+        }
+        else
+        {
             <div class="@($"docs-example-live {(_mud ? "docs-example-mud" : "docs-example-builtin")}")">
                 @* Keyed by the type, so switching the Chrome mounts the other Example fresh. *@
                 <DynamicComponent @key="Current" Type="Current" />
@@ -46,8 +44,8 @@
             {
                 <CodeView Sources="Sources" />
             }
-        </MudPaper>
-    }
+        }
+    </MudPaper>
 </div>
 
 @code {
@@ -72,6 +70,7 @@
 
     private bool _showCode;
     private bool _mud;
+    private string _product = "";
 
     private Type Current => _mud ? Mud! : Builtin;
 
@@ -90,6 +89,10 @@
         _mud = State.Mud && Mud is not null;
         InvokeAsync(StateHasChanged);
     }
+
+    // Read whatever the framework, so that an Example in no product's folder fails the page under
+    // Blazor too, where the site is built and read first, not only for a reader on React.
+    protected override void OnParametersSet() => _product = DocsProducts.OfExample(Builtin);
 
     public void Dispose() => State.Changed -= OnChanged;
 }

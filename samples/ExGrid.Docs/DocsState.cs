@@ -24,7 +24,7 @@ public sealed class DocsState
     public DocsState(FrameworkMemory memory)
     {
         _memory = memory;
-        Framework = memory.Recall() ?? DocsFramework.Blazor;
+        Framework = memory.Recalled ?? DocsFramework.Blazor;
     }
 
     /// <summary>The framework the site is read for.</summary>

@@ -27,6 +27,8 @@
         ("ExGrid", true) => "This Example is not in ExGrid for React yet. Its React package, @ex-grid/react, is being built for 0.3.0; until then it runs under Blazor only.",
         ("ExGrid", false) => "ExGrid for React, @ex-grid/react, is not published yet. This page describes ExGrid for Blazor, and each Example says so where it would run.",
         (null, _) => "The React packages are not published yet, so everything on this page is for Blazor.",
+        (_, false) when Product!.StartsWith("ExGrid.Data", StringComparison.Ordinal) =>
+            $"{Product} is a .NET package with no React counterpart. This page describes it from .NET, and each Example says so where it would run.",
         (_, true) => $"{Product} has no React package, so this Example runs under Blazor only.",
         (_, false) => $"{Product} has no React package. This page describes it for Blazor, and each Example says so where it would run.",
     };
