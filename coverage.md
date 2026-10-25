@@ -5,7 +5,7 @@
 | ExGrid | 95.2% | 88.5% |
 | ExSheet | 95.4% | 88.6% |
 | ExPivot | 94.2% | 85.5% |
-| ExChart | 90.4% | 81.3% |
+| ExChart | 90.5% | 81.6% |
 | ExBoard | 91.7% | 81.8% |
 | Data | 94% | 88.7% |
 
@@ -14,18 +14,18 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/25/2026 - 14:34:28 |
+| Generated on: | 10/25/2026 - 14:54:39 |
 | Parser: | MultiReport (19x Cobertura) |
 | Assemblies: | 16 |
 | Classes: | 1181 |
 | Files: | 605 |
-| **Line coverage:** | 94.5% (81655 of 86397) |
-| Covered lines: | 81655 |
-| Uncovered lines: | 4742 |
+| **Line coverage:** | 94.5% (81661 of 86397) |
+| Covered lines: | 81661 |
+| Uncovered lines: | 4736 |
 | Coverable lines: | 86397 |
 | Total lines: | 138104 |
-| **Branch coverage:** | 87.1% (49266 of 56508) |
-| Covered branches: | 49266 |
+| **Branch coverage:** | 87.2% (49280 of 56508) |
+| Covered branches: | 49280 |
 | Total branches: | 56508 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
@@ -109,8 +109,8 @@
 |ExChart.Components.Svg|50%|25%|
 |ExChart.GridCell|100%||
 |ExChart.GridChart|25%|0%|
-|ExChart.GridChartBridge<TRow>|70.3%|42.3%|
 |ExChart.GridChartBridge<TRow>|46.3%|17.5%|
+|ExChart.GridChartBridge<TRow>|70.3%|42.3%|
 |ExChart.GridChartCommands|62.5%|62.5%|
 |ExChart.GridChartDeclarations<TRow>|100%||
 |ExChart.GridChartSeries|100%||
@@ -123,11 +123,11 @@
 |ExChart.SnapshotChartData|100%|100%|
 
 </details>
-<details><summary>ExChart.Engine - 95.3%</summary>
+<details><summary>ExChart.Engine - 95.5%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExChart.Engine**|**95.3%**|**84.5%**|
+|**ExChart.Engine**|**95.5%**|**84.9%**|
 |ExChart.Engine.Appearance|100%|100%|
 |ExChart.Engine.AppearanceKeys|100%||
 |ExChart.Engine.AxisStyle|100%||
@@ -137,7 +137,7 @@
 |ExChart.Engine.ChartAxis|96%|81.8%|
 |ExChart.Engine.ChartCsv|97.7%|79.5%|
 |ExChart.Engine.ChartData|95.4%|80%|
-|ExChart.Engine.ChartDefinition|85.9%|84.2%|
+|ExChart.Engine.ChartDefinition|85.9%|85.3%|
 |ExChart.Engine.ChartEdge|100%||
 |ExChart.Engine.ChartEdgeMark|100%||
 |ExChart.Engine.ChartMark|100%||
@@ -163,7 +163,7 @@
 |ExChart.Engine.ChartTable|100%||
 |ExChart.Engine.ChartValue|92.8%|100%|
 |ExChart.Engine.ChartView|100%||
-|ExChart.Engine.ColourKey|50%||
+|ExChart.Engine.ColourKey|100%||
 |ExChart.Engine.DrawnCandle|100%|100%|
 |ExChart.Engine.DrawnEdge|100%||
 |ExChart.Engine.DrawnMarker|100%||
@@ -202,12 +202,12 @@
 |ExChart.Engine.SizeKey|100%||
 |ExChart.Engine.SurfaceAxis|85.2%|95.2%|
 |ExChart.Engine.SurfaceAxis<T>|85.2%|95.2%|
-|ExChart.Engine.SurfaceColourBar|50%||
-|ExChart.Engine.SurfaceDefinition|97.5%|90.6%|
-|ExChart.Engine.SurfaceDefinition<TX, TY>|97.5%|90.6%|
+|ExChart.Engine.SurfaceColourBar|100%||
+|ExChart.Engine.SurfaceDefinition|98.2%|91.7%|
+|ExChart.Engine.SurfaceDefinition<TX, TY>|98.2%|91.7%|
 |ExChart.Engine.SurfaceFace|100%||
-|ExChart.Engine.SurfaceMesh|99.4%|81.5%|
-|ExChart.Engine.SurfaceMesh.Frame|98.4%|91.3%|
+|ExChart.Engine.SurfaceMesh|99.4%|86.3%|
+|ExChart.Engine.SurfaceMesh.Frame|98.4%|93.4%|
 |ExChart.Engine.SurfaceMeshNode|100%||
 |ExChart.Engine.SurfaceMeshPoint|100%||
 |ExChart.Engine.SurfaceNode|100%||
@@ -1030,12 +1030,12 @@
 |ExSheet.BuiltInToolbarItem|96.4%|97.3%|
 |ExSheet.ColourItem|96%|100%|
 |ExSheet.CommaItem|83.3%||
-|ExSheet.Components.ExSheet|91.3%|81.8%|
+|ExSheet.Components.ExSheet|91.3%|81.7%|
 |ExSheet.Components.ExSheet.KeyboardListener|100%||
 |ExSheet.Components.ExSheet.KeyUpListener|100%||
 |ExSheet.Components.ExSheet.OwnFindOutcome|100%||
 |ExSheet.Components.ExSheet.SheetGridChrome|86.6%|73%|
-|ExSheet.Components.ExSheet<T>|91.3%|81.8%|
+|ExSheet.Components.ExSheet<T>|91.3%|81.7%|
 |ExSheet.Components.ExSheetStylesheet|100%||
 |ExSheet.Components.FormatCellsPanel|97.3%|87.5%|
 |ExSheet.Components.SheetFindPanel|91.7%|76.5%|
@@ -1117,7 +1117,7 @@
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExSheet.Engine**|**97.8%**|**91.9%**|
+|**ExSheet.Engine**|**97.8%**|**91.8%**|
 |ExSheet.Engine.ArgumentHint|100%||
 |ExSheet.Engine.ArgumentValue|100%||
 |ExSheet.Engine.AxisFormat|100%|100%|
