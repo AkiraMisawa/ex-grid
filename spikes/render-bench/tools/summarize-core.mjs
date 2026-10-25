@@ -97,7 +97,8 @@ const tables = {
 };
 
 const width = 44;
-const col = 14;
+// Wide enough for the longest label, with two spaces before it.
+const col = Math.max(14, ...runs.map((r) => r.label.length + 2));
 for (const [scenario, rows] of Object.entries(tables)) {
     const present = runs.filter((r) => r.scenarios.some((s) => s.scenario === scenario));
     if (present.length === 0) continue;

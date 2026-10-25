@@ -1,0 +1,235 @@
+The Engine Host Worker measured (ADR-0370 section 6): ExSheet.Engine, ExSheet.Xlsx, ExPivot.Engine,
+ExGrid.Data and ExGrid.Data.Xlsx as one .NET WebAssembly build in a Web Worker, its Values drawn by
+ExGrid's Script Core, beside Blazor WebAssembly running the same engines on the page. Every figure is a
+median over 5 rounds unless it says otherwise. Taken 2026-10-25 between 11:28 and 12:18 UTC, in one
+4-core Linux container, headless Chromium 153 (Playwright's build, no GPU) at 1400x1000, one host at a
+time, on loopback with no added latency; `main` at eaea3b2. Read the figures against each other, not as
+what a user's machine shows.
+
+The labels:
+  csharp-server          Blazor Server, from results/20261025-core of the morning: another container,
+                         for reference only (this container is about a fifth slower: csharp-wasm's
+                         A1 edit took 3,334 ms there and 4,069 ms here)
+  csharp-wasm            Bench.Host under `dotnet run -c Release`, as the morning's baseline: the
+                         build output, whose runtime is configured for debugging (debugLevel -1)
+  csharp-wasm-published  Bench.Client published (-c Release), served by tools/serve-published.mjs:
+                         what a user downloads (debugLevel 0, trimmed, Brotli)
+  worker-interp          the Engine Host spike (spikes/engine-host), published, on the interpreter
+  worker-aot             the same, compiled ahead of time (-p:RunAOTCompilation=true)
+The Worker's pages stand in for ExSheet's and ExPivot's Script Cores, which do not exist yet: ExGrid's
+Script Core draws the Window the Worker answers, digits and Enter on the Focus enter the Sheet's cell,
+and the pivot has CorePivot's controls. Its Sheet and its trades are CoreSheet's and CorePivot's.
+
+== Speed: tools/cdp-core.mjs, render-bench's driver, unchanged ==
+
+/core/sheet
+                                                      csharp-server            csharp-wasm  csharp-wasm-published          worker-interp             worker-aot
+edit A1 (20,000 recalculated): dom ms p50                     129.2                 4068.6                 1071.9                  966.7                  512.8
+edit A1 (20,000 recalculated): dom ms p95                     145.6                 4218.7                 1383.5                 1133.6                  572.4
+edit A1 (20,000 recalculated): frame ms p50                   140.9                 4070.2                 1073.2                  966.8                  516.7
+edit A1 (20,000 recalculated): bytes                         15,755                      -                      -                      -                      -
+edit L1 (nothing reads it): dom ms p50                         15.0                  430.4                  172.2                   17.2                   10.1
+edit L1 (nothing reads it): dom ms p95                         17.1                  488.0                  195.6                   17.9                   13.2
+edit L1 (nothing reads it): frame ms p50                       17.3                  431.9                  173.3                   17.3                   16.7
+edit L1 (nothing reads it): bytes                             4,997                      -                      -                      -                      -
+scroll 37 px per frame: frame p95                              17.7                   70.5                   33.0                   17.6                   17.6
+scroll 37 px per frame: lag ms                                  0.1                    1.7                    1.5                    1.8                    2.2
+fling 50 rows per frame: frame p95                             17.8                   39.2                   27.0                   17.7                   17.0
+fling 50 rows per frame: lag ms                               167.3                  360.4                  232.3                  154.1                  152.8
+
+/core/pivot
+                                                      csharp-server            csharp-wasm  csharp-wasm-published          worker-interp             worker-aot
+one trade amended: dom ms p50                                   3.8                   88.1                   23.7                   32.2                   15.1
+one trade amended: dom ms p95                                   8.7                  118.4                   40.8                   45.7                   16.8
+one trade amended: frame ms p50                                16.6                   90.7                   26.4                   33.4                   17.1
+one trade amended: bytes                                      2,644                      -                      -                      -                      -
+columns swapped: dom ms p50                                    17.0                  508.6                  139.5                  115.0                   36.6
+columns swapped: dom ms p95                                    23.7                  558.7                  190.9                  148.5                   46.9
+columns swapped: frame ms p50                                  17.0                  508.7                  139.6                  116.8                   49.6
+columns swapped: bytes                                        2,323                      -                      -                      -                      -
+scroll 37 px per frame: frame p95                              16.9                   76.5                   30.4                   17.2                   17.3
+scroll 37 px per frame: lag ms                                  0.5                    0.8                    0.7                    1.4                    1.4
+fling 50 rows per frame: frame p95                             16.9                   18.7                   19.9                   17.1                   17.1
+fling 50 rows per frame: lag ms                               158.7                  201.9                  168.0                  172.0                  159.1
+
+csharp-server: 20261025T022927-core-csharp-server.json, http://127.0.0.1:5491, 2026-10-25T02:29:27.169Z, rounds 5, Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.0.0 Safari/537.36, 4 cores, dpr 1
+csharp-wasm: 20261025T121130-core-csharp-wasm.json, http://127.0.0.1:5492, 2026-10-25T12:11:30.309Z, rounds 5, Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.0.0 Safari/537.36, 4 cores, dpr 1
+csharp-wasm-published: 20261025T120317-core-csharp-wasm-published.json, http://127.0.0.1:5495, 2026-10-25T12:03:17.852Z, rounds 5, Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.0.0 Safari/537.36, 4 cores, dpr 1
+worker-interp: 20261025T113423-core-worker-interp.json, http://127.0.0.1:5493, 2026-10-25T11:34:23.658Z, rounds 5, Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.0.0 Safari/537.36, 4 cores, dpr 1
+worker-aot: 20261025T113734-core-worker-aot.json, http://127.0.0.1:5494, 2026-10-25T11:37:34.094Z, rounds 5, Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.0.0 Safari/537.36, 4 cores, dpr 1
+
+The grid without an engine, Blazor WebAssembly's build output against its publish (the morning's
+csharp-wasm column, this container's published one): the debugging configuration costs every
+scenario, not only the engines.
+
+/core/grid
+                                                        csharp-wasm  csharp-wasm-published
+push all 1,000 rows: dom ms                                    25.3                   12.2
+push all 1,000 rows: frame ms                                  25.5                   12.9
+push all 1,000 rows: bytes                                        -                      -
+push one of 1,000: dom ms                                       6.2                    4.9
+push one of 1,000: bytes                                          -                      -
+tick 1 of 1,000: dom ms p50                                     6.1                    5.0
+tick 1 of 1,000 per frame: frame p95                           16.9                   16.9
+tick 1 of 1,000 per frame: lag ms                               0.1                    0.1
+tick 1 of 1,000 per frame: bytes/tick                             -                      -
+tick 5 of 1,000: dom ms p50                                     9.0                    5.2
+tick 5 of 1,000 per frame: frame p95                           16.9                   18.0
+tick 5 of 1,000 per frame: lag ms                               0.1                    0.1
+tick 5 of 1,000 per frame: bytes/tick                             -                      -
+tick 25 of 1,000: dom ms p50                                   24.5                   12.0
+tick 25 of 1,000 per frame: frame p95                          40.0                   23.5
+tick 25 of 1,000 per frame: lag ms                              0.1                    0.1
+tick 25 of 1,000 per frame: bytes/tick                            -                      -
+push all 10,000 rows: dom ms                                   29.4                   17.0
+push all 10,000 rows: frame ms                                 29.5                   17.1
+push all 10,000 rows: bytes                                       -                      -
+push one of 10,000: dom ms                                     11.7                    8.7
+push one of 10,000: bytes                                         -                      -
+tick 1 of 10,000: dom ms p50                                   12.9                    7.0
+tick 1 of 10,000 per frame: frame p95                          18.5                   17.5
+tick 1 of 10,000 per frame: lag ms                              0.1                    0.1
+tick 1 of 10,000 per frame: bytes/tick                            -                      -
+tick 5 of 10,000: dom ms p50                                   14.1                    6.9
+tick 5 of 10,000 per frame: frame p95                          22.4                   17.6
+tick 5 of 10,000 per frame: lag ms                              0.1                    0.2
+tick 5 of 10,000 per frame: bytes/tick                            -                      -
+tick 25 of 10,000: dom ms p50                                  28.5                   12.6
+tick 25 of 10,000 per frame: frame p95                         50.4                   26.5
+tick 25 of 10,000 per frame: lag ms                             0.1                    0.2
+tick 25 of 10,000 per frame: bytes/tick                           -                      -
+push all 100,000 rows: dom ms                                  79.0                   44.4
+push all 100,000 rows: frame ms                                79.2                   46.2
+push all 100,000 rows: bytes                                      -                      -
+push one of 100,000: dom ms                                    72.9                   27.1
+push one of 100,000: bytes                                        -                      -
+tick 1 of 100,000: dom ms p50                                  63.8                   27.4
+tick 1 of 100,000 per frame: frame p95                         79.9                   50.5
+tick 1 of 100,000 per frame: lag ms                             0.1                    0.2
+tick 1 of 100,000 per frame: bytes/tick                           -                      -
+tick 5 of 100,000: dom ms p50                                  65.8                   28.4
+tick 5 of 100,000 per frame: frame p95                        102.3                   47.8
+tick 5 of 100,000 per frame: lag ms                             0.1                    0.1
+tick 5 of 100,000 per frame: bytes/tick                           -                      -
+tick 25 of 100,000: dom ms p50                                 83.6                   33.6
+tick 25 of 100,000 per frame: frame p95                       114.2                   59.7
+tick 25 of 100,000 per frame: lag ms                            0.1                    0.1
+tick 25 of 100,000 per frame: bytes/tick                          -                      -
+mount over the largest: dom ms                                 80.7                   39.5
+mount over the largest: bytes                                     -                      -
+40 arrows in one task: dom ms                                 157.1                  101.5
+40 arrows in one task: bytes                                      -                      -
+an arrow per frame: frame p95                                  21.4                   19.2
+an arrow per frame: lag ms                                      0.0                    0.0
+scroll 37 px per frame: frame p95                              19.9                   20.7
+scroll 37 px per frame: lag ms                                  0.4                    0.5
+fling 50 rows per frame: frame p95                             19.6                   20.2
+fling 50 rows per frame: lag ms                               165.3                  154.5
+
+== Start: tools/cdp-boot.mjs, a fresh tab with the cache off ==
+
+Time is ms from navigation until the first cell with text is painted; bytes are what the network
+carried (compressed, headers included), split by what they carry. The Worker's pages say where their
+time went (window.engineBoot).
+
+/core/sheet
+                                               csharp-wasm   csharp-wasm-published           worker-interp              worker-aot
+first cell with text: ms                            11,860                   5,415                   5,084                   1,932
+  Worker made                                            -                       -                      40                      34
+  .NET started in it                                     -                       -                     408                     541
+  document open (engine ms)                              -                       -                   4,471                   1,332
+  document open                                          -                       -                   5,013                   1,902
+  first Window answered                                  -                       -                   5,066                   1,919
+bytes downloaded                                13,008,898               4,005,370               2,743,870               5,664,981
+  runtime                                        1,567,102               1,207,336               1,185,675               4,518,635
+  framework assemblies                           8,442,011               1,423,958               1,052,911                 773,211
+  product and app assemblies                     2,800,186               1,324,859                 453,348                 321,199
+  page                                             199,599                  49,217                  51,936                  51,936
+requests                                               237                      73                      35                      35
+complaints                                               0                       0                       0                       0
+
+/core/pivot
+                                               csharp-wasm   csharp-wasm-published           worker-interp              worker-aot
+first cell with text: ms                             2,519                   1,965                   2,056                   1,222
+  Worker made                                            -                       -                      98                      77
+  .NET started in it                                     -                       -                     438                     581
+  document open (engine ms)                              -                       -                     724                     172
+  document open                                          -                       -                   1,209                     808
+  first Window answered                                  -                       -                   2,043                   1,206
+bytes downloaded                                13,008,898               4,005,370               2,744,713               5,665,824
+  runtime                                        1,567,102               1,207,336               1,185,675               4,518,635
+  framework assemblies                           8,442,011               1,423,958               1,052,911                 773,211
+  product and app assemblies                     2,800,186               1,324,859                 453,348                 321,199
+  page                                             199,599                  49,217                  52,779                  52,779
+requests                                               237                      73                      35                      35
+complaints                                               0                       0                       0                       0
+
+csharp-wasm: 20261025T121804-boot-csharp-wasm.json, http://127.0.0.1:5492, 2026-10-25T12:18:04.222Z
+csharp-wasm-published: 20261025T121654-boot-csharp-wasm-published.json, http://127.0.0.1:5495, 2026-10-25T12:16:54.780Z
+worker-interp: 20261025T121543-boot-worker-interp.json, http://127.0.0.1:5493, 2026-10-25T12:15:43.608Z
+worker-aot: 20261025T121629-boot-worker-aot.json, http://127.0.0.1:5494, 2026-10-25T12:16:29.132Z
+
+== The engine alone: Probe.cs, each engine call of a gesture timed by itself ==
+
+EngineProbe on the .NET JIT (a console), and tools/cdp-probe.mjs in the Worker on the interpreter and
+AOT; ms, the median of the runs after the first fifth.
+
+                                                             jit    interp       aot
+sheet: build the document                                  109.6    1160.7     194.3
+sheet: document to JSON                                     15.1      77.5      20.4
+sheet: document from JSON                                  199.6    1430.5     208.3
+sheet: open (first recalculation)                          269.9    1317.8     606.8
+sheet: edit A1 (20,000 recalculated)                       161.5     951.0     553.5
+sheet: edit A1, rows named                                2001.0    2001.0    2001.0
+sheet: read the painted cells                                0.1       1.7       0.6
+sheet: document handed back (ToDocument)                     3.4      38.4      49.2
+sheet: edit L1 (nothing reads it)                            2.0       5.2       4.8
+sheet: document handed back after L1 (ToDocument)            3.3      40.6      46.8
+pivot: make the trades                                       2.6      30.8       8.8
+pivot: source over the trades                               11.2      48.6      10.2
+pivot: first report Window                                  20.7     110.8      20.8
+pivot: report rows                                        2711.0    2711.0    2711.0
+pivot: report Window to JSON                                 1.0      26.4       6.3
+pivot: Change Batch applied                                  0.1       0.3       0.2
+pivot: Window after one trade                                3.6      16.4       4.3
+pivot: Window after the columns swapped                     20.6     116.3      24.3
+
+== Reading ==
+
+- Where Blazor WebAssembly's 3.3 s goes. About three quarters of it is the baseline's configuration,
+  not the engine: Bench.Host under `dotnet run` serves the build output, whose .NET runtime is set up
+  for debugging (debugLevel -1), and the interpreter runs C# several times slower there. Published, the
+  same page edits A1 in 1,072 ms, not 4,069 ms (this container), and L1 in 172 ms, not 430. The marks
+  in blazor-edit-trace.txt show it step by step: Workbook.Do takes 3,507 ms in the build output and
+  784 ms published; ExGrid's PrepareRender 152 and 30; ToDocument 124 and 53.
+- Of the published 1.07 s, the engine is most: Workbook.Do 784 ms (the probe's 951 ms on the
+  interpreter in the Worker is the same order, on a cold page). Around it ExSheet's Blazor side costs
+  about 200 ms an edit whatever the edit reaches: SheetEdges.Update 26 ms over the 20,000 Values
+  changed, ExGrid's parameters and render about 100 ms (PrepareRender 30 ms over the Sheet's 16,384
+  columns), ToDocument 53 ms for the two-way binding, the page's render of it 17 ms. That is why L1,
+  which recalculates nothing, still takes 172 ms on Blazor WebAssembly against 17 ms in the Worker.
+- The Worker is the Blazor page's equal on the interpreter and twice as fast compiled ahead of time.
+  Edit A1: 967 ms interpreted, 513 ms AOT, against 1,072 ms published Blazor. L1: 17 ms and 10 ms.
+  Scrolling the Sheet holds 17.6 ms frames (p95) against 33 ms on published Blazor: the Script Core's
+  paint against ExSheet's Razor UI, since nothing recalculates while the driver scrolls. That the page
+  keeps its frame while the Worker recalculates is the Worker's purpose and was not measured here. The
+  crossing is small: the edit is answered with the Window the grid holds (the rows it needs and 60
+  either side, 26 columns of display text), in one message each way.
+- AOT against the interpreter: the recalculation 1.7 times faster (probe: 554 against 951 ms; the
+  page: 513 against 967), the Sheet's open 2.2 times (607 against 1,318 ms) and the pivot about five
+  times (a Window after the columns swapped 24 against 116 ms, the first report Window 21 against 111). On the JIT the recalculation is 162 ms:
+  AOT is 3.4 times the JIT, the interpreter 5.9 times.
+- ExPivot. A Change Batch of one trade redraws in 15 ms (AOT), 32 ms (interpreter) and 24 ms
+  (published Blazor); swapping the columns 37, 115 and 140 ms. The Worker answers a whole report
+  Window as PivotReportJson (no Window Changes against a Baseline), so the crossing is the protocol's,
+  not a stand-in.
+- Download, Brotli, the whole page: 2.74 MB for the Worker interpreted (1.19 MB runtime, 1.05 MB
+  framework assemblies, 0.45 MB the five engine packages, 52 KB the page with ExGrid's Script Core);
+  5.66 MB compiled ahead of time (4.52 MB of it dotnet.native.wasm, which holds the compiled code);
+  4.01 MB for the published Blazor page, which also carries Blazor, ExGrid's, ExSheet's, ExPivot's and
+  ExChart's C# UI. The build output Bench.Host serves is 13.0 MB, uncompressed.
+- Time to the first answer, from navigation to the first painted cell with text: the Sheet 5.1 s
+  interpreted and 1.9 s AOT, against 5.4 s for published Blazor; the pivot 2.1 s and 1.2 s against
+  2.0 s. .NET starts in the Worker in 0.4 to 0.6 s; the rest is the first pass over the data on a cold
+  runtime: opening the Sheet's 20,000 Formulas (FromJson and the first recalculation) takes 4.5 s of
+  engine time interpreted and 1.3 s AOT.

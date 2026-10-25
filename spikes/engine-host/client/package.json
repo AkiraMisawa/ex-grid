@@ -1,0 +1,19 @@
+{
+  "name": "engine-host-client",
+  "private": true,
+  "version": "0.0.0",
+  "description": "The Engine Host spike's Worker, its client and the /core/sheet and /core/pivot pages over ExGrid's Script Core (ADR-0370 sections 2 and 6). Disposable.",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2",
+    "typescript": "7.0.2"
+  },
+  "engines": {
+    "node": ">=22.12"
+  }
+}
