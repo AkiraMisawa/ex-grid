@@ -238,6 +238,8 @@ internal static class SelectionReader
                 var kinds = inGroup.Select(c => d.KindOf?.Invoke(c.Name) ?? SeriesKind.Undeclared).Distinct().ToList();
                 if (kinds.Count > 1)
                     return (null, $"{(group.Length == 0 ? "The positioned columns" : group)} mix Series Kinds ({Headers(inGroup)}), so they are not one curve.");
+                if (inGroup.Select(c => d.FromZeroOf?.Invoke(c.Name)).Distinct().Count() > 1)
+                    return (null, $"{(group.Length == 0 ? "The positioned columns" : group)} are declared both from zero and away from it ({Headers(inGroup)}), so they are not one curve.");
                 var ordered = inGroup.OrderBy(c => PositionOf(c, d)).Select(c => c.Name).ToEquatableList();
                 var id = group.Length == 0 ? $"{key}" : $"{key} · {group}";
                 series.Add(new RowSeries(id, "", key, name, group, ordered));
@@ -319,6 +321,7 @@ internal static class SelectionReader
                     Id = s.Id,
                     Name = string.Join(" · ", path.Append(header)),
                     Kind = d.KindOf?.Invoke(s.Column) ?? SeriesKind.Undeclared,
+                    FromZero = d.FromZeroOf?.Invoke(s.Column),
                     Panel = s.Panel,
                     Keys = new AppearanceKeys(header, group.Length == 0 ? null : group),
                     Points = points,
@@ -348,6 +351,7 @@ internal static class SelectionReader
                     Id = s.Id,
                     Name = Label(name, s.Group),
                     Kind = first is null ? SeriesKind.Undeclared : d.KindOf?.Invoke(first.Name) ?? SeriesKind.Undeclared,
+                    FromZero = first is null ? null : d.FromZeroOf?.Invoke(first.Name),
                     Panel = s.Panel,
                     Keys = new AppearanceKeys(name, s.Group.Length == 0 ? null : s.Group),
                     Points = points,

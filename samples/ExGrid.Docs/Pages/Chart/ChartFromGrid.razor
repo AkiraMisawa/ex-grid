@@ -14,6 +14,12 @@
             already open, and a selection the chart cannot read is refused with the reason.
         </p>
         <p>
+            A level is drawn from zero unless it says otherwise. Rates between 3.0% and 3.6% drawn from zero are
+            nearly flat lines, so the declarations say <code>FromZeroOf</code> for each column: <code>false</code>
+            reads it away from zero, as a chart built by hand does with <code>FromZero = false</code>. A curve's
+            columns share their declaration; a selection that mixes them is refused by name.
+        </p>
+        <p>
             Under MudBlazor, <code>MudChartDock</code> places each chart in a tab beside the grid or below it,
             never over it, and takes the bridge's events itself. <code>MudChartChrome.GridChrome</code> words the
             bridge's commands in the grid's menu.
