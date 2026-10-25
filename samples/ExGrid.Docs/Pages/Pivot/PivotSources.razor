@@ -186,6 +186,24 @@ const report = pivotReport(pivotCube(query, answer, source.fields), layout, { lo
             <code>@@ex-grid/data</code> holds one. There is no Example here, because this site is a Blazor app and runs no
             package script of its own.
         </p>
+        <p>
+            A <code>SnapshotPivotSource</code> is live as the C# one is (<a href="expivot/live">Live data</a>):
+            <code>apply(batch)</code> takes a Change Batch, folds it into the answer held for the last question, and tells
+            each listener given to <code>subscribe</code> the new Source Version. Its work runs in slices of 30 ms by
+            default, yielding to the browser between them, and a question whose <code>AbortSignal</code> is cancelled
+            rejects with the signal's reason at the next slice:
+        </p>
+        <pre class="docs-code"><code>const source = new SnapshotPivotSource(snapshot, undefined, { sliceBudgetMs: 30 });
+const stop = source.subscribe(({ sourceVersion }) => refresh(sourceVersion));
+source.apply(createChangeBatch({ changed, removedKeys: [42n] }));    // from @@ex-grid/data
+const answer = await source.aggregate(query, controller.signal);</code></pre>
+        <p>
+            After a batch it reads the records in the Snapshot's order, so its answer is the one a new source over the
+            next Snapshot gives, leaves and Items in the same order. The C# source reads them in the order its storage
+            keeps, which a changed record moves until the Snapshot is compacted: the two hold the same leaves, Items and
+            exact numbers, and a sum of doubles may differ in its last bit where the order changed it. The shared cases
+            and a differential run over random batches hold both.
+        </p>
     </DocsSection>
 
     <DocsSection Title="API">

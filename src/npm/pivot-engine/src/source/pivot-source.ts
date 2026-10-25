@@ -320,10 +320,10 @@ interface HeldPass {
  * The bundled source over a Snapshot (ADR-0066): it answers every Aggregation under the version
  * `{identity}:{snapshot version}`, in slices (PV-40).
  *
- * **Live data** (ADR-0067): {@link apply} takes a Change Batch. The Snapshot makes the next one, the answer the
+ * **Live data** (ADR-0067): {@link SnapshotPivotSource.apply} takes a Change Batch. The Snapshot makes the next one, the answer the
  * source holds for its last question is brought up to date from what the batch removed and added rather than
  * read again — the exact parts by subtraction and addition, every other part recomputed for the leaves the
- * batch touched — and each listener {@link subscribe}d is told the new Source Version. Asked the same question
+ * batch touched — and each listener {@link SnapshotPivotSource.subscribe}d is told the new Source Version. Asked the same question
  * again, the source answers from what it holds: after any sequence of batches, what a fresh source over the
  * Snapshot they made answers, read in that Snapshot's order, to the last bit. A batch applied while an answer
  * is assembled from what it holds waits until the answer is made, so that no answer is half a batch.

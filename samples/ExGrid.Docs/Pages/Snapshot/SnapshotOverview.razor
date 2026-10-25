@@ -108,6 +108,19 @@
                      Files="@(["Examples/Snapshot/Accounts.cs", "Examples/Snapshot/SnapshotGrid.cs"])">
             "Open account 1 again" adds a key the Snapshot already holds.
         </DocsExample>
+        <p>
+            In TypeScript, <code>@@ex-grid/data</code> (published with 0.3.0) applies the same batches:
+        </p>
+        <pre class="docs-code"><code>import { applyChangeBatch, createChangeBatch } from '@@ex-grid/data';
+
+const batch = createChangeBatch({ added, changed, removedKeys: [17n, 'ACC-4'] });   // added and changed are Snapshots of records
+const { before, after, removed, added: brought } = applyChangeBatch(snapshot, batch);</code></pre>
+        <p>
+            <code>removed</code> and <code>added</code> are row numbers, ascending, in <code>before</code> and <code>after</code>; a
+            changed record keeps its row, and an added one comes at the end. A refusal is a <code>SnapshotError</code> naming the
+            row, column and key in the same words as <code>SnapshotException</code>: both packages run the same cases, under
+            <code>tests/cases/data/</code>.
+        </p>
     </DocsSection>
 
     <DocsSection Title="From JSON, under a Board Input">

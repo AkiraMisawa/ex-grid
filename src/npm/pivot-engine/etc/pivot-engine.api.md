@@ -4,8 +4,10 @@
 
 ```ts
 
-import type { Snapshot } from '@ex-grid/data';
-import type { SnapshotDecimal } from '@ex-grid/data';
+import { ChangeBatch } from '@ex-grid/data';
+import { Snapshot } from '@ex-grid/data';
+import { SnapshotChange } from '@ex-grid/data';
+import { SnapshotDecimal } from '@ex-grid/data';
 
 // @public
 export function aggregatePivot<TRecord>(records: readonly TRecord[], fields: readonly PivotRecordField<TRecord>[], layout: PivotLayout): PivotCube;
@@ -582,6 +584,12 @@ export type PivotRowRole = 'item' | 'group' | 'subtotal' | 'grandTotal';
 export type PivotShowValuesAs = 'noCalculation' | 'percentOfGrandTotal' | 'percentOfColumnTotal' | 'percentOfRowTotal';
 
 // @public
+export interface PivotSlicing {
+    readonly sliceBudgetMs?: number;
+    readonly yield?: () => Promise<void>;
+}
+
+// @public
 export interface PivotSort {
     readonly byValue?: number;
     readonly direction: PivotSortDirection;
@@ -600,6 +608,11 @@ export interface PivotSource {
     readonly features: PivotSourceFeatures;
     readonly fields: readonly PivotField[];
     items(query: PivotItemsQuery, signal?: AbortSignal): Promise<PivotItemPage>;
+}
+
+// @public
+export interface PivotSourceChanged {
+    readonly sourceVersion: string;
 }
 
 // @public
@@ -745,15 +758,17 @@ export function setValueField(layout: PivotLayout, index: number, value: PivotVa
 
 // @public
 export class SnapshotPivotSource implements PivotSource {
-    constructor(snapshot: Snapshot, fields?: readonly PivotField[]);
+    constructor(snapshot: Snapshot, fields?: readonly PivotField[], slicing?: PivotSlicing);
     aggregate(query: PivotQuery, signal?: AbortSignal): Promise<PivotAnswer>;
-    aggregateNow(query: PivotQuery): PivotAnswer;
+    static readonly answersHeld = 4;
+    apply(batch: ChangeBatch): SnapshotChange;
     details(query: PivotDetailsQuery, signal?: AbortSignal): Promise<PivotDetailPage>;
     readonly features: PivotSourceFeatures;
     readonly fields: readonly PivotField[];
     items(query: PivotItemsQuery, signal?: AbortSignal): Promise<PivotItemPage>;
-    readonly snapshot: Snapshot;
+    get snapshot(): Snapshot;
     get sourceVersion(): string;
+    subscribe(listener: (changed: PivotSourceChanged) => void): () => void;
 }
 
 // @public
