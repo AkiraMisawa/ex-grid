@@ -14,7 +14,7 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/25/2026 - 17:12:12 |
+| Generated on: | 10/25/2026 - 17:38:40 |
 | Parser: | MultiReport (19x Cobertura) |
 | Assemblies: | 16 |
 | Classes: | 1181 |
@@ -24,8 +24,8 @@
 | Uncovered lines: | 4737 |
 | Coverable lines: | 86399 |
 | Total lines: | 138109 |
-| **Branch coverage:** | 87.2% (49283 of 56504) |
-| Covered branches: | 49283 |
+| **Branch coverage:** | 87.2% (49284 of 56504) |
+| Covered branches: | 49284 |
 | Total branches: | 56504 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
@@ -1117,7 +1117,7 @@
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExSheet.Engine**|**97.8%**|**91.8%**|
+|**ExSheet.Engine**|**97.8%**|**91.9%**|
 |ExSheet.Engine.ArgumentHint|100%||
 |ExSheet.Engine.ArgumentValue|100%||
 |ExSheet.Engine.AxisFormat|100%|100%|
