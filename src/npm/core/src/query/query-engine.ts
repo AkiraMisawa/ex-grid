@@ -78,6 +78,36 @@ export function filterPredicate<Row>(columns: readonly QueryColumn<Row>[], filte
     return row => matches(row, prepared);
 }
 
+/** A row's sort keys, one per level of a Sort, read and held to their columns' types once. */
+export type SortKeys = readonly Key[];
+
+/** The order a Sort puts rows in, as one comparison of a row with another's keys: the sort's own, level
+ * by level, without the tie-break by position that makes the sort stable, so rows it calls equal tie and
+ * the caller breaks the tie. What a live source merges its changed rows into the previous result with
+ * (ADR-0141), so the merge and `applyQuery` order rows alike. */
+export interface RowOrder<Row> {
+    /** A row's keys, one per level. */
+    keysOf(row: Row): SortKeys;
+    /** Negative when `row` goes before the row whose keys these are, zero when they tie. The row's keys are
+     * read level by level, only as far as the first that differs. */
+    compare(row: Row, keys: SortKeys): number;
+}
+
+/** The order of `sorts`, checked whole before any row is read; no Sort puts every row level. */
+export function rowOrder<Row>(columns: readonly QueryColumn<Row>[], sorts: readonly SortSpec[]): RowOrder<Row> {
+    const levels = sorts.length === 0 ? [] : levelsOf(indexColumns(columns), sorts);
+    return Object.freeze({
+        keysOf: (row: Row) => Object.freeze(levels.map(({ column }) => keyOf(column, column.value(row), false))),
+        compare: (row: Row, keys: SortKeys) => {
+            for (const [level, { column, direction }] of levels.entries()) {
+                const result = compareKeys(column.type, keyOf(column, column.value(row), false), elementAt(keys, level), direction);
+                if (result !== 0) return result;
+            }
+            return 0;
+        },
+    });
+}
+
 function indexColumns<Row>(columns: readonly QueryColumn<Row>[]): ReadonlyMap<string, QueryColumn<Row>> {
     const byName = new Map<string, QueryColumn<Row>>();
     for (const column of columns) {

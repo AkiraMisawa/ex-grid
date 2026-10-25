@@ -6,7 +6,8 @@
 import type { QueryColumn } from '../query/columns';
 import type { GridFilter } from '../query/filter';
 import type { SortSpec } from '../query/sort';
-import { InMemoryGridSource } from './in-memory-source';
+import { InMemoryGridSource, type InMemorySourceOptions } from './in-memory-source';
+import type { RowKeyOf } from './row-key';
 import type { RowRange } from '../viewport/row-range';
 
 /** What a Grid Source holds at one moment, frozen. A new object whenever any of it changes, and the same
@@ -53,12 +54,22 @@ export interface GridSource<Row> {
     rows(range: RowRange, signal: AbortSignal): Promise<readonly Row[]>;
     /** A column's distinct values, for the filter's value list (ADR-0009). */
     distinctValues(column: string, signal: AbortSignal): Promise<DistinctValues>;
+    /** The Row Key the source names its rows by (ADR-0140), where it has one: the grid pairs a row's next
+     * version with the one it painted by it. */
+    readonly rowKey?: RowKeyOf<Row> | undefined;
+    /** True when the source refuses a repeated key, so no Window it hands over holds a row twice, and the
+     * grid need not check (ADR-0141). */
+    readonly vouchesDistinctRows?: boolean;
+    /** Puts out at once the live changes the source gathered and has not yet published, so the Window is the
+     * newest version it holds; the grid calls it just before it judges a write (ADR-0141, ADR-0142). */
+    publishGathered?(): void;
 }
 
 /** Makes Grid Sources. */
 export const GridSource = Object.freeze({
-    /** A source over rows held in memory, the reference implementation of a Sort and a Filter (ADR-0001). */
-    from<Row>(rows: readonly Row[]): InMemoryGridSource<Row> {
-        return InMemoryGridSource.from(rows);
+    /** A source over rows held in memory, the reference implementation of a Sort and a Filter (ADR-0001);
+     * given a Row Key, one that takes live data (ADR-0141). */
+    from<Row>(rows: readonly Row[], options?: InMemorySourceOptions<Row>): InMemoryGridSource<Row> {
+        return InMemoryGridSource.from(rows, options);
     },
 });

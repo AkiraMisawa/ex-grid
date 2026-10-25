@@ -1,0 +1,754 @@
+{
+  "about": "GridSource.from with a Row Key (ADR-0140, ADR-0141): a Change Batch applied whole (LV-3), a whole new list paired by key (LV-4), changes gathered on the source's clock (LV-6), the Row Sequence Version moving exactly when the sequence did (LV-7), the source's half of vouching (LV-10), and what is gathered put out before a write is judged (LV-16). From tests/ExGrid.Tests/LiveSourceTests.cs.",
+  "kind": "source",
+  "columns": [{"name": "Id", "type": "text"}, {"name": "Book", "type": "text"}, {"name": "Amount", "type": "number"}],
+  "cases": [
+    {
+      "name": "ADR-0141 / LV-3: a changed row keeps its place, and an added row goes at the end",
+      "rows": [
+        ["A", "Rates", 3],
+        ["B", "Credit", 1],
+        ["C", "Rates", 2],
+        ["D", "FX", 5]
+      ],
+      "rowKey": "Id",
+      "steps": [
+        {"setColumns": true},
+        {"gatherInterval": 0},
+        {"apply": {"added": [["E", "Rates", 0]], "changed": [["B", "Credit", 9]]}},
+        {"expect": {"keys": ["A", "B", "C", "D", "E"], "values": [["A", "Rates", 3], ["B", "Credit", 9], ["C", "Rates", 2], ["D", "FX", 5], ["E", "Rates", 0]], "version": 1, "heard": 1, "handed": true}}
+      ]
+    },
+    {
+      "name": "ADR-0141 / LV-3: the keys removed leave the result",
+      "rows": [
+        ["A", "Rates", 3],
+        ["B", "Credit", 1],
+        ["C", "Rates", 2],
+        ["D", "FX", 5]
+      ],
+      "rowKey": "Id",
+      "steps": [
+        {"setColumns": true},
+        {"gatherInterval": 0},
+        {"apply": {"removedKeys": ["B", "D"]}},
+        {"expect": {"keys": ["A", "C"], "totalCount": 2, "version": 1}}
+      ]
+    },
+    {
+      "name": "ADR-0141 / LV-3: a key named twice in one batch refuses the whole batch by name, and nothing is applied",
+      "rows": [
+        ["A", "Rates", 3],
+        ["B", "Credit", 1],
+        ["C", "Rates", 2],
+        ["D", "FX", 5]
+      ],
+      "rowKey": "Id",
+      "steps": [
+        {"setColumns": true},
+        {"gatherInterval": 0},
+        {"apply": {"added": [["E", "Rates", 0]], "changed": [["A", "Rates", 7], ["A", "Rates", 8]]}, "throws": "argument", "saying": "'A'"},
+        {"expect": {"values": [["A", "Rates", 3], ["B", "Credit", 1], ["C", "Rates", 2], ["D", "FX", 5]], "version": 0, "heard": 0, "handed": true}}
+      ]
+    },
+    {
+      "name": "ADR-0141 / LV-3: a key both changed and removed repeats, and is refused",
+      "rows": [
+        ["A", "Rates", 3],
+        ["B", "Credit", 1],
+        ["C", "Rates", 2],
+        ["D", "FX", 5]
+      ],
+      "rowKey": "Id",
+      "steps": [
+        {"setColumns": true},
+        {"gatherInterval": 0},
+        {"apply": {"changed": [["C", "Rates", 7]], "removedKeys": ["C"]}, "throws": "argument", "saying": "'C'"},
+        {"expect": {"values": [["A", "Rates", 3], ["B", "Credit", 1], ["C", "Rates", 2], ["D", "FX", 5]], "heard": 0}}
+      ]
+    },
+    {
+      "name": "ADR-0141 / LV-3: an added key the source already holds repeats, and is refused",
+      "rows": [
+        ["A", "Rates", 3],
+        ["B", "Credit", 1],
+        ["C", "Rates", 2],
+        ["D", "FX", 5]
+      ],
+      "rowKey": "Id",
+      "steps": [
+        {"setColumns": true},
+        {"gatherInterval": 0},
+        {"apply": {"added": [["B", "Rates", 0]]}, "throws": "argument", "saying": "'B'"},
+        {"expect": {"values": [["A", "Rates", 3], ["B", "Credit", 1], ["C", "Rates", 2], ["D", "FX", 5]], "heard": 0}}
+      ]
+    },
+    {
+      "name": "ADR-0141 / LV-3: a changed key the source does not hold refuses the whole batch by name",
+      "rows": [
+        ["A", "Rates", 3],
+        ["B", "Credit", 1],
+        ["C", "Rates", 2],
+        ["D", "FX", 5]
+      ],
+      "rowKey": "Id",
+      "steps": [
+        {"setColumns": true},
+        {"gatherInterval": 0},
+        {"apply": {"added": [["E", "Rates", 0]], "changed": [["A", "Rates", 7], ["Z", "Rates", 1]]}, "throws": "argument", "saying": "'Z'"},
+        {"expect": {"values": [["A", "Rates", 3], ["B", "Credit", 1], ["C", "Rates", 2], ["D", "FX", 5]], "heard": 0}}
+      ]
+    },
+    {
+      "name": "ADR-0141 / LV-3: a removed key the source does not hold refuses the whole batch by name",
+      "rows": [
+        ["A", "Rates", 3],
+        ["B", "Credit", 1],
+        ["C", "Rates", 2],
+        ["D", "FX", 5]
+      ],
+      "rowKey": "Id",
+      "steps": [
+        {"setColumns": true},
+        {"gatherInterval": 0},
+        {"apply": {"removedKeys": ["A", "Z"]}, "throws": "argument", "saying": "'Z'"},
+        {"expect": {"values": [["A", "Rates", 3], ["B", "Credit", 1], ["C", "Rates", 2], ["D", "FX", 5]], "heard": 0}}
+      ]
+    },
+    {
+      "name": "ADR-0141 / LV-3, ADR-0140: a null key in a batch is refused by name",
+      "rows": [
+        ["A", "Rates", 3],
+        ["B", "Credit", 1],
+        ["C", "Rates", 2],
+        ["D", "FX", 5]
+      ],
+      "rowKey": "Id",
+      "steps": [
+        {"setColumns": true},
+        {"gatherInterval": 0},
+        {"apply": {"added": [[null, "Rates", 0]]}, "throws": "argument", "saying": "null Row Key"},
+        {"apply": {"removedKeys": [null]}, "throws": "argument", "saying": "Removed key 0"},
+        {"expect": {"values": [["A", "Rates", 3], ["B", "Credit", 1], ["C", "Rates", 2], ["D", "FX", 5]], "heard": 0}}
+      ]
+    },
+    {
+      "name": "ADR-0141 / LV-3, ADR-0003: a changed row that is the object already held was changed in place, and is refused",
+      "rows": [
+        ["A", "Rates", 3],
+        ["B", "Credit", 1],
+        ["C", "Rates", 2],
+        ["D", "FX", 5]
+      ],
+      "rowKey": "Id",
+      "steps": [
+        {"setColumns": true},
+        {"gatherInterval": 0},
+        {"apply": {"changed": [{"same": "B"}]}, "throws": "argument", "saying": "'B'"},
+        {"expect": {"values": [["A", "Rates", 3], ["B", "Credit", 1], ["C", "Rates", 2], ["D", "FX", 5]], "heard": 0}}
+      ]
+    },
+    {
+      "name": "ADR-0141 / LV-3, ADR-0023: a value the Query's columns refuse refuses the whole batch, naming the column",
+      "rows": [
+        ["A", 1]
+      ],
+      "rowKey": "Id",
+      "columns": [{"name": "Id", "type": "text"}, {"name": "Value", "type": "number"}],
+      "steps": [
+        {"setColumns": true},
+        {"setSorts": [{"column": "Value", "direction": "ascending"}]},
+        {"gatherInterval": 0},
+        {"expect": {"keys": ["A"]}},
+        {"apply": {"added": [["B", 2], ["C", "not a number"]]}, "throws": "invalidOperation", "saying": "'Value'"},
+        {"expect": {"keys": ["A"], "heard": 0}}
+      ]
+    },
+    {
+      "name": "ADR-0141 / LV-3: a refused batch leaves the source usable, and the next batch applies",
+      "rows": [
+        ["A", "Rates", 3],
+        ["B", "Credit", 1],
+        ["C", "Rates", 2],
+        ["D", "FX", 5]
+      ],
+      "rowKey": "Id",
+      "steps": [
+        {"setColumns": true},
+        {"gatherInterval": 0},
+        {"apply": {"removedKeys": ["Z"]}, "throws": "argument", "saying": "'Z'"},
+        {"apply": {"changed": [["D", "Rates", 5]]}},
+        {"expect": {"values": [["A", "Rates", 3], ["B", "Credit", 1], ["C", "Rates", 2], ["D", "Rates", 5]], "heard": 1}}
+      ]
+    },
+    {
+      "name": "ADR-0141, ADR-0140: rows given with a repeated key are refused by name when the source is made",
+      "rows": [
+        ["A", "Rates", 1],
+        ["B", "Rates", 2],
+        ["A", "FX", 3]
+      ],
+      "rowKey": "Id",
+      "fromThrows": "argument",
+      "fromSaying": "Rows 0 and 2 both have the Row Key 'A'",
+      "steps": []
+    },
+    {
+      "name": "ADR-0141, ADR-0140: a row given with a null key is refused by name when the source is made",
+      "rows": [
+        [null, "Rates", 1]
+      ],
+      "rowKey": "Id",
+      "fromThrows": "argument",
+      "fromSaying": "null Row Key",
+      "steps": []
+    },
+    {
+      "name": "ADR-0141: without a key the source takes no live data, says so by name, gathers nothing, and vouches for nothing",
+      "rows": [
+        ["A", "Rates", 3],
+        ["B", "Credit", 1],
+        ["C", "Rates", 2],
+        ["D", "FX", 5]
+      ],
+      "steps": [
+        {"setColumns": true},
+        {"apply": {"removedKeys": ["A"]}, "throws": "invalidOperation", "saying": "Row Key"},
+        {"replaceAll": [["A", "Rates", 3], ["B", "Credit", 1], ["C", "Rates", 2], ["D", "FX", 5]], "throws": "invalidOperation", "saying": "Row Key"},
+        {"gatherInterval": 0, "throws": "invalidOperation", "saying": "Row Key"},
+        {"expect": {"vouches": false}},
+        {"publishGathered": true},
+        {"expect": {"windowKept": true, "heard": 0, "version": 0}}
+      ]
+    },
+    {
+      "name": "ADR-0141 / LV-10: a keyed source vouches that no Window holds a row twice",
+      "rows": [
+        ["A", "Rates", 3],
+        ["B", "Credit", 1],
+        ["C", "Rates", 2],
+        ["D", "FX", 5]
+      ],
+      "rowKey": "Id",
+      "steps": [
+        {"setColumns": true},
+        {"expect": {"vouches": true}}
+      ]
+    },
+    {
+      "name": "ADR-0141 / LV-4 (D7): a new key is added, a missing one removed, another object changed, the same object unchanged; the order is the list's",
+      "rows": [
+        ["A", "Rates", 3],
+        ["B", "Credit", 1],
+        ["C", "Rates", 2],
+        ["D", "FX", 5]
+      ],
+      "rowKey": "Id",
+      "steps": [
+        {"setColumns": true},
+        {"gatherInterval": 0},
+        {"replaceAll": [["F", "FX", 0], {"same": "D"}, ["B", "Credit", 9], {"same": "A"}, ["E", "Rates", 4]]},
+        {"expect": {"keys": ["F", "D", "B", "A", "E"], "values": [["F", "FX", 0], ["D", "FX", 5], ["B", "Credit", 9], ["A", "Rates", 3], ["E", "Rates", 4]], "version": 1, "heard": 1, "handed": true}}
+      ]
+    },
+    {
+      "name": "ADR-0141 / LV-4 (D7): a list in the order held, with the rows added at its end, is the batch that says the same: its result and its version",
+      "rows": [
+        ["A", "Rates", 3],
+        ["B", "Credit", 1],
+        ["C", "Rates", 2],
+        ["D", "FX", 5]
+      ],
+      "rowKey": "Id",
+      "steps": [
+        {"setColumns": true},
+        {"gatherInterval": 0},
+        {"replaceAll": [["A", "Rates", 0], {"same": "B"}, {"same": "D"}, ["E", "Rates", 4]]},
+        {"expect": {"keys": ["A", "B", "D", "E"], "values": [["A", "Rates", 0], ["B", "Credit", 1], ["D", "FX", 5], ["E", "Rates", 4]], "version": 1, "heard": 1, "handed": true}}
+      ]
+    },
+    {
+      "name": "ADR-0141 / LV-4: the batch a list in the order held says the same as",
+      "rows": [
+        ["A", "Rates", 3],
+        ["B", "Credit", 1],
+        ["C", "Rates", 2],
+        ["D", "FX", 5]
+      ],
+      "rowKey": "Id",
+      "steps": [
+        {"setColumns": true},
+        {"gatherInterval": 0},
+        {"apply": {"added": [["E", "Rates", 4]], "changed": [["A", "Rates", 0]], "removedKeys": ["C"]}},
+        {"expect": {"keys": ["A", "B", "D", "E"], "values": [["A", "Rates", 0], ["B", "Credit", 1], ["D", "FX", 5], ["E", "Rates", 4]], "version": 1, "heard": 1, "handed": true}}
+      ]
+    },
+    {
+      "name": "ADR-0141 / LV-4 (D7): a list in another order holds the batch's rows, in its own order",
+      "rows": [
+        ["A", "Rates", 3],
+        ["B", "Credit", 1],
+        ["C", "Rates", 2],
+        ["D", "FX", 5]
+      ],
+      "rowKey": "Id",
+      "steps": [
+        {"setColumns": true},
+        {"gatherInterval": 0},
+        {"replaceAll": [["E", "Rates", 4], {"same": "D"}, ["A", "Rates", 0], {"same": "B"}]},
+        {"expect": {"keys": ["E", "D", "A", "B"], "version": 1, "heard": 1, "handed": true}}
+      ]
+    },
+    {
+      "name": "ADR-0141 / LV-4 (D7): under a Filter and a Sort, a list in the order held is the batch that says the same",
+      "rows": [
+        ["A", "Rates", 3],
+        ["B", "Credit", 1],
+        ["C", "Rates", 2],
+        ["D", "FX", 5]
+      ],
+      "rowKey": "Id",
+      "steps": [
+        {"setColumns": true},
+        {"setFilter": {"columns": {"Amount": {"clauses": [{"operator": "greaterThanOrEqual", "value": 2}]}}}},
+        {"setSorts": [{"column": "Amount", "direction": "ascending"}]},
+        {"gatherInterval": 0},
+        {"expect": {"keys": ["C", "A", "D"], "version": 2}},
+        {"replaceAll": [["A", "Rates", 0], {"same": "B"}, {"same": "D"}, ["E", "Rates", 4]]},
+        {"expect": {"keys": ["E", "D"], "version": 3, "heard": 1, "handed": true}}
+      ]
+    },
+    {
+      "name": "ADR-0141 / LV-4: under a Filter and a Sort, the batch a list says the same as",
+      "rows": [
+        ["A", "Rates", 3],
+        ["B", "Credit", 1],
+        ["C", "Rates", 2],
+        ["D", "FX", 5]
+      ],
+      "rowKey": "Id",
+      "steps": [
+        {"setColumns": true},
+        {"setFilter": {"columns": {"Amount": {"clauses": [{"operator": "greaterThanOrEqual", "value": 2}]}}}},
+        {"setSorts": [{"column": "Amount", "direction": "ascending"}]},
+        {"gatherInterval": 0},
+        {"expect": {"keys": ["C", "A", "D"], "version": 2}},
+        {"apply": {"added": [["E", "Rates", 4]], "changed": [["A", "Rates", 0]], "removedKeys": ["C"]}},
+        {"expect": {"keys": ["E", "D"], "version": 3, "heard": 1, "handed": true}}
+      ]
+    },
+    {
+      "name": "ADR-0141 / LV-4 (D7): under a Filter and a Sort, a list in another order holds the batch's result",
+      "rows": [
+        ["A", "Rates", 3],
+        ["B", "Credit", 1],
+        ["C", "Rates", 2],
+        ["D", "FX", 5]
+      ],
+      "rowKey": "Id",
+      "steps": [
+        {"setColumns": true},
+        {"setFilter": {"columns": {"Amount": {"clauses": [{"operator": "greaterThanOrEqual", "value": 2}]}}}},
+        {"setSorts": [{"column": "Amount", "direction": "ascending"}]},
+        {"gatherInterval": 0},
+        {"expect": {"keys": ["C", "A", "D"], "version": 2}},
+        {"replaceAll": [["E", "Rates", 4], {"same": "D"}, ["A", "Rates", 0], {"same": "B"}]},
+        {"expect": {"keys": ["E", "D"], "version": 3, "heard": 1, "handed": true}}
+      ]
+    },
+    {
+      "name": "ADR-0141 / LV-4 (D7): a list in a new order is shown in that order, moves the version, and is the order a later batch adds after",
+      "rows": [
+        ["A", "Rates", 3],
+        ["B", "Credit", 1],
+        ["C", "Rates", 2],
+        ["D", "FX", 5]
+      ],
+      "rowKey": "Id",
+      "steps": [
+        {"setColumns": true},
+        {"gatherInterval": 0},
+        {"replaceAll": [{"same": "D"}, {"same": "C"}, {"same": "B"}, {"same": "A"}]},
+        {"expect": {"keys": ["D", "C", "B", "A"], "version": 1, "heard": 1, "handed": true}},
+        {"apply": {"added": [["E", "FX", 0]]}},
+        {"expect": {"keys": ["D", "C", "B", "A", "E"], "version": 2, "heard": 1}}
+      ]
+    },
+    {
+      "name": "ADR-0141 / LV-4 (D7), ADR-0023: under a Sort, ties fall in the list's order",
+      "rows": [
+        ["A", "Rates", 3],
+        ["B", "Credit", 1],
+        ["C", "Rates", 2],
+        ["D", "FX", 5]
+      ],
+      "rowKey": "Id",
+      "steps": [
+        {"setColumns": true},
+        {"gatherInterval": 0},
+        {"setSorts": [{"column": "Book", "direction": "ascending"}]},
+        {"expect": {"keys": ["B", "D", "A", "C"], "version": 1}},
+        {"replaceAll": [{"same": "C"}, {"same": "B"}, {"same": "A"}, {"same": "D"}]},
+        {"expect": {"keys": ["B", "D", "C", "A"], "version": 2, "heard": 1}}
+      ]
+    },
+    {
+      "name": "ADR-0141 / LV-4 (D7), LV-7: a new order the Sort does not show keeps the result and the version, and is not heard",
+      "rows": [
+        ["A", "Rates", 3],
+        ["B", "Credit", 1],
+        ["C", "Rates", 2],
+        ["D", "FX", 5]
+      ],
+      "rowKey": "Id",
+      "steps": [
+        {"setColumns": true},
+        {"gatherInterval": 0},
+        {"setSorts": [{"column": "Amount", "direction": "ascending"}]},
+        {"expect": {"keys": ["B", "C", "A", "D"], "version": 1}},
+        {"replaceAll": [{"same": "D"}, {"same": "C"}, {"same": "B"}, {"same": "A"}]},
+        {"expect": {"windowKept": true, "version": 1, "heard": 0}},
+        {"setSorts": []},
+        {"expect": {"keys": ["D", "C", "B", "A"], "version": 2, "heard": 1}}
+      ]
+    },
+    {
+      "name": "ADR-0141 / LV-4 (D7): a row added inside the list stands where the list puts it",
+      "rows": [
+        ["A", "Rates", 3],
+        ["B", "Credit", 1],
+        ["C", "Rates", 2],
+        ["D", "FX", 5]
+      ],
+      "rowKey": "Id",
+      "steps": [
+        {"setColumns": true},
+        {"gatherInterval": 0},
+        {"replaceAll": [{"same": "A"}, ["E", "FX", 6], {"same": "B"}, {"same": "C"}, {"same": "D"}]},
+        {"expect": {"keys": ["A", "E", "B", "C", "D"], "version": 1, "heard": 1, "handed": true}}
+      ]
+    },
+    {
+      "name": "ADR-0141 / LV-4 (D7), LV-6: a new order is gathered like any change, and published with the changes gathered after it",
+      "rows": [
+        ["A", "Rates", 3],
+        ["B", "Credit", 1],
+        ["C", "Rates", 2],
+        ["D", "FX", 5]
+      ],
+      "rowKey": "Id",
+      "steps": [
+        {"setColumns": true},
+        {"apply": {"changed": [["D", "Rates", 5]]}},
+        {"expect": {"heard": 1, "handed": true}},
+        {"replaceAll": [{"same": "D"}, {"same": "C"}, {"same": "B"}, {"same": "A"}]},
+        {"advance": 100},
+        {"apply": {"changed": [["B", "Credit", 9]]}},
+        {"expect": {"keys": ["A", "B", "C", "D"], "heard": 0}},
+        {"advance": 150},
+        {"expect": {"keys": ["D", "C", "B", "A"], "values": [["D", "Rates", 5], ["C", "Rates", 2], ["B", "Credit", 9], ["A", "Rates", 3]], "version": 1, "heard": 1, "handed": true}}
+      ]
+    },
+    {
+      "name": "ADR-0141 / LV-4: the same list again is no change: nothing heard, the same Window",
+      "rows": [
+        ["A", "Rates", 3],
+        ["B", "Credit", 1],
+        ["C", "Rates", 2],
+        ["D", "FX", 5]
+      ],
+      "rowKey": "Id",
+      "steps": [
+        {"setColumns": true},
+        {"gatherInterval": 0},
+        {"expect": {"version": 0}},
+        {"replaceAll": [{"same": "A"}, {"same": "B"}, {"same": "C"}, {"same": "D"}]},
+        {"expect": {"windowKept": true, "version": 0, "heard": 0}}
+      ]
+    },
+    {
+      "name": "ADR-0141 / LV-4: a key that repeats in the list refuses it by name",
+      "rows": [
+        ["A", "Rates", 3],
+        ["B", "Credit", 1],
+        ["C", "Rates", 2],
+        ["D", "FX", 5]
+      ],
+      "rowKey": "Id",
+      "steps": [
+        {"setColumns": true},
+        {"gatherInterval": 0},
+        {"replaceAll": [{"same": "A"}, {"same": "B"}, ["A", "Rates", 1]], "throws": "argument", "saying": "'A'"},
+        {"expect": {"values": [["A", "Rates", 3], ["B", "Credit", 1], ["C", "Rates", 2], ["D", "FX", 5]], "heard": 0}}
+      ]
+    },
+    {
+      "name": "ADR-0141 / LV-6: a change after a quiet interval reaches the grid at once",
+      "rows": [
+        ["A", "Rates", 3],
+        ["B", "Credit", 1],
+        ["C", "Rates", 2],
+        ["D", "FX", 5]
+      ],
+      "rowKey": "Id",
+      "steps": [
+        {"setColumns": true},
+        {"apply": {"changed": [["A", "Rates", 7]]}},
+        {"expect": {"values": [["A", "Rates", 7], ["B", "Credit", 1], ["C", "Rates", 2], ["D", "FX", 5]], "heard": 1}},
+        {"advance": 1000},
+        {"apply": {"changed": [["B", "Credit", 8]]}},
+        {"expect": {"values": [["A", "Rates", 7], ["B", "Credit", 8], ["C", "Rates", 2], ["D", "FX", 5]], "heard": 1}}
+      ]
+    },
+    {
+      "name": "ADR-0141 / LV-6: the changes within an interval reach the grid as one, at its end, as the newest version",
+      "rows": [
+        ["A", "Rates", 3],
+        ["B", "Credit", 1],
+        ["C", "Rates", 2],
+        ["D", "FX", 5]
+      ],
+      "rowKey": "Id",
+      "steps": [
+        {"setColumns": true},
+        {"apply": {"changed": [["A", "Rates", 7]]}},
+        {"expect": {"heard": 1}},
+        {"advance": 100},
+        {"apply": {"changed": [["B", "Credit", 8]]}},
+        {"advance": 100},
+        {"apply": {"added": [["E", "FX", 1]], "changed": [["B", "Credit", 9]]}},
+        {"expect": {"values": [["A", "Rates", 7], ["B", "Credit", 1], ["C", "Rates", 2], ["D", "FX", 5]], "totalCount": 4, "heard": 0}},
+        {"advance": 49},
+        {"expect": {"heard": 0}},
+        {"advance": 1},
+        {"expect": {"values": [["A", "Rates", 7], ["B", "Credit", 9], ["C", "Rates", 2], ["D", "FX", 5], ["E", "FX", 1]], "heard": 1, "handed": true}}
+      ]
+    },
+    {
+      "name": "ADR-0141 / LV-6: the interval is the Consumer's to set, 250 milliseconds unless set, and never negative",
+      "rows": [
+        ["A", "Rates", 3],
+        ["B", "Credit", 1],
+        ["C", "Rates", 2],
+        ["D", "FX", 5]
+      ],
+      "rowKey": "Id",
+      "steps": [
+        {"setColumns": true},
+        {"expect": {"gatherInterval": 250}},
+        {"gatherInterval": 1000},
+        {"apply": {"changed": [["A", "Rates", 7]]}},
+        {"apply": {"changed": [["A", "Rates", 8]]}},
+        {"advance": 999},
+        {"expect": {"values": [["A", "Rates", 7], ["B", "Credit", 1], ["C", "Rates", 2], ["D", "FX", 5]]}},
+        {"advance": 1},
+        {"expect": {"values": [["A", "Rates", 8], ["B", "Credit", 1], ["C", "Rates", 2], ["D", "FX", 5]], "gatherInterval": 1000}},
+        {"gatherInterval": -1, "throws": "outOfRange"}
+      ]
+    },
+    {
+      "name": "ADR-0141 / LV-6: an interval of 0 passes every change as it comes",
+      "rows": [
+        ["A", "Rates", 3],
+        ["B", "Credit", 1],
+        ["C", "Rates", 2],
+        ["D", "FX", 5]
+      ],
+      "rowKey": "Id",
+      "steps": [
+        {"setColumns": true},
+        {"gatherInterval": 0},
+        {"apply": {"changed": [["A", "Rates", 7]]}},
+        {"apply": {"changed": [["A", "Rates", 8]]}},
+        {"apply": {"changed": [["B", "Credit", 9]]}},
+        {"expect": {"values": [["A", "Rates", 8], ["B", "Credit", 9], ["C", "Rates", 2], ["D", "FX", 5]], "heard": 3}}
+      ]
+    },
+    {
+      "name": "ADR-0141 / LV-6: a user's own edit is not gathered, and brings what was gathered with it",
+      "rows": [
+        ["A", "Rates", 3],
+        ["B", "Credit", 1],
+        ["C", "Rates", 2],
+        ["D", "FX", 5]
+      ],
+      "rowKey": "Id",
+      "steps": [
+        {"setColumns": true},
+        {"apply": {"changed": [["A", "Rates", 7]]}},
+        {"apply": {"changed": [["B", "Credit", 8]]}},
+        {"expect": {"values": [["A", "Rates", 7], ["B", "Credit", 1], ["C", "Rates", 2], ["D", "FX", 5]], "heard": 1}},
+        {"replaceRow": {"window": 2}, "with": ["C", "Edited", 2]},
+        {"expect": {"values": [["A", "Rates", 7], ["B", "Credit", 8], ["C", "Edited", 2], ["D", "FX", 5]], "heard": 1, "handed": true}},
+        {"advance": 250},
+        {"expect": {"heard": 0}}
+      ]
+    },
+    {
+      "name": "ADR-0141, ADR-0142: under a key, an edit of a version a live change has replaced is refused, not written over",
+      "rows": [
+        ["A", "Rates", 3],
+        ["B", "Credit", 1],
+        ["C", "Rates", 2],
+        ["D", "FX", 5]
+      ],
+      "rowKey": "Id",
+      "steps": [
+        {"setColumns": true},
+        {"apply": {"changed": [["D", "FX", 7]]}},
+        {"apply": {"changed": [["A", "Rates", 8]]}},
+        {"replaceRow": {"window": 0}, "with": ["A", "Edited", 3], "throws": "argument", "saying": "'A'"},
+        {"replaceRow": {"window": 1}, "with": ["Q", "Credit", 1], "throws": "argument", "saying": "'Q'"},
+        {"expect": {"values": [["A", "Rates", 3], ["B", "Credit", 1], ["C", "Rates", 2], ["D", "FX", 7]]}}
+      ]
+    },
+    {
+      "name": "ADR-0141, ADR-0142 / LV-16: inside an interval, an edit of the row painted is refused before publishGathered, and taken on the newest row after it",
+      "rows": [
+        ["A", "Rates", 3],
+        ["B", "Credit", 1],
+        ["C", "Rates", 2],
+        ["D", "FX", 5]
+      ],
+      "rowKey": "Id",
+      "steps": [
+        {"setColumns": true},
+        {"apply": {"changed": [["D", "FX", 7]]}},
+        {"apply": {"changed": [["A", "Rates", 8]]}},
+        {"expect": {"values": [["A", "Rates", 3], ["B", "Credit", 1], ["C", "Rates", 2], ["D", "FX", 7]]}},
+        {"replaceRow": {"window": 0}, "with": ["A", "Edited", 3], "throws": "argument", "saying": "'A'"},
+        {"publishGathered": true},
+        {"expect": {"values": [["A", "Rates", 8], ["B", "Credit", 1], ["C", "Rates", 2], ["D", "FX", 7]], "handed": true}},
+        {"replaceRow": {"window": 0}, "with": ["A", "Edited", 8]},
+        {"expect": {"values": [["A", "Edited", 8], ["B", "Credit", 1], ["C", "Rates", 2], ["D", "FX", 7]], "handed": true}}
+      ]
+    },
+    {
+      "name": "ADR-0141 / LV-16: publishGathered is heard when it put something out, and not when nothing was gathered",
+      "rows": [
+        ["A", "Rates", 3],
+        ["B", "Credit", 1],
+        ["C", "Rates", 2],
+        ["D", "FX", 5]
+      ],
+      "rowKey": "Id",
+      "steps": [
+        {"setColumns": true},
+        {"apply": {"changed": [["D", "FX", 7]]}},
+        {"expect": {"heard": 1}},
+        {"publishGathered": true},
+        {"expect": {"heard": 0}},
+        {"apply": {"changed": [["A", "Rates", 8]]}},
+        {"publishGathered": true},
+        {"expect": {"heard": 1, "values": [["A", "Rates", 8], ["B", "Credit", 1], ["C", "Rates", 2], ["D", "FX", 7]]}},
+        {"publishGathered": true},
+        {"expect": {"heard": 0}}
+      ]
+    },
+    {
+      "name": "ADR-0141 / LV-16, LV-6: publishGathered is a publication: the next change waits the interval from it, and the interval's end then publishes nothing more",
+      "rows": [
+        ["A", "Rates", 3],
+        ["B", "Credit", 1],
+        ["C", "Rates", 2],
+        ["D", "FX", 5]
+      ],
+      "rowKey": "Id",
+      "steps": [
+        {"setColumns": true},
+        {"apply": {"changed": [["D", "FX", 7]]}},
+        {"advance": 100},
+        {"apply": {"changed": [["A", "Rates", 8]]}},
+        {"publishGathered": true},
+        {"expect": {"heard": 2}},
+        {"advance": 150},
+        {"expect": {"heard": 0}},
+        {"apply": {"changed": [["B", "Credit", 9]]}},
+        {"advance": 99},
+        {"expect": {"heard": 0, "values": [["A", "Rates", 8], ["B", "Credit", 1], ["C", "Rates", 2], ["D", "FX", 7]]}},
+        {"advance": 1},
+        {"expect": {"heard": 1, "values": [["A", "Rates", 8], ["B", "Credit", 9], ["C", "Rates", 2], ["D", "FX", 7]]}}
+      ]
+    },
+    {
+      "name": "ADR-0141 / LV-7: a batch that moves no row keeps the version",
+      "rows": [
+        ["A", "Rates", 3],
+        ["B", "Credit", 1],
+        ["C", "Rates", 2],
+        ["D", "FX", 5]
+      ],
+      "rowKey": "Id",
+      "steps": [
+        {"setColumns": true},
+        {"gatherInterval": 0},
+        {"setSorts": [{"column": "Amount", "direction": "ascending"}]},
+        {"expect": {"keys": ["B", "C", "A", "D"], "version": 1}},
+        {"apply": {"changed": [["B", "Credit", 1.5], ["D", "Rates", 5]]}},
+        {"expect": {"keys": ["B", "C", "A", "D"], "version": 1, "heard": 1}}
+      ]
+    },
+    {
+      "name": "ADR-0141 / LV-7: a batch that moves one row anywhere moves the version",
+      "rows": [
+        ["A", "Rates", 3],
+        ["B", "Credit", 1],
+        ["C", "Rates", 2],
+        ["D", "FX", 5]
+      ],
+      "rowKey": "Id",
+      "steps": [
+        {"setColumns": true},
+        {"gatherInterval": 0},
+        {"setSorts": [{"column": "Amount", "direction": "ascending"}]},
+        {"expect": {"version": 1}},
+        {"apply": {"changed": [["A", "Rates", 1.1]]}},
+        {"expect": {"keys": ["B", "A", "C", "D"], "version": 2, "heard": 1}}
+      ]
+    },
+    {
+      "name": "ADR-0141 / LV-7: rows that enter or leave the result move its version; rows outside it do not",
+      "rows": [
+        ["A", "Rates", 3],
+        ["B", "Credit", 1],
+        ["C", "Rates", 2],
+        ["D", "FX", 5]
+      ],
+      "rowKey": "Id",
+      "steps": [
+        {"setColumns": true},
+        {"gatherInterval": 0},
+        {"setFilter": {"columns": {"Amount": {"clauses": [{"operator": "greaterThanOrEqual", "value": 2}]}}}},
+        {"expect": {"keys": ["A", "C", "D"], "version": 1}},
+        {"apply": {"added": [["E", "Rates", 1]], "changed": [["B", "Credit", 0]]}},
+        {"expect": {"version": 1}},
+        {"apply": {"removedKeys": ["B"]}},
+        {"expect": {"version": 1}},
+        {"apply": {"added": [["F", "Rates", 9]]}},
+        {"expect": {"keys": ["A", "C", "D", "F"], "version": 2}},
+        {"apply": {"removedKeys": ["A"]}},
+        {"expect": {"keys": ["C", "D", "F"], "version": 3}}
+      ]
+    },
+    {
+      "name": "ADR-0141 / LV-7: a key removed and added again within one gathering, at the same position, has not moved the sequence",
+      "rows": [
+        ["A", "Rates", 3],
+        ["B", "Credit", 1],
+        ["C", "Rates", 2],
+        ["D", "FX", 5]
+      ],
+      "rowKey": "Id",
+      "steps": [
+        {"setColumns": true},
+        {"setSorts": [{"column": "Amount", "direction": "ascending"}]},
+        {"apply": {"changed": [["D", "Rates", 5]]}},
+        {"expect": {"keys": ["B", "C", "A", "D"], "version": 1}},
+        {"apply": {"removedKeys": ["C"]}},
+        {"apply": {"added": [["C", "FX", 2]]}},
+        {"advance": 250},
+        {"expect": {"keys": ["B", "C", "A", "D"], "values": [["B", "Credit", 1], ["C", "FX", 2], ["A", "Rates", 3], ["D", "Rates", 5]], "version": 1, "heard": 1}}
+      ]
+    }
+  ]
+}

@@ -96,6 +96,7 @@ internal static class LiveRequery
 
         // 1. Where each old version stood in the previous result, if it stood there at all.
         var oldIndex = new int[changes.Count];
+        List<int>? missed = null;
         var touchesResult = false;
         var whole = (long)changes.Count * WholeRequeryShare > baseCount;
         for (var j = 0; j < changes.Count; j++)
@@ -118,6 +119,7 @@ internal static class LiveRequery
                 // as well, so the base is requeried whole, which reads the rows as they are.
                 whole = true;
                 touchesResult = true;
+                (missed ??= []).Add(j);
             }
         }
 
@@ -149,6 +151,16 @@ internal static class LiveRequery
         long[] ordinals;
         if (whole)
         {
+            // An old version the search missed stood in the previous result all the same: found
+            // there by reference, so that its leaving, or its moving, is seen below.
+            if (missed is not null)
+            {
+                var previousAt = new Dictionary<object, int>(previous.Length, ReferenceEqualityComparer.Instance);
+                for (var i = previous.Length - 1; i >= 0; i--)
+                    previousAt[previous[i]!] = i;
+                foreach (var j in missed)
+                    oldIndex[j] = previousAt.GetValueOrDefault(changes[j].Old!, -1);
+            }
             var (rows, rowOrdinals) = wholeBase();
             var positions = GridQueryEngine.ApplyPositions(rows, columns, filter, sorts);
             result = new TRow[positions.Length];

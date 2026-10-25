@@ -181,16 +181,27 @@ may name its own. A case gives its `rows`, values written as a `query` case writ
 turn. A row is an object of its own, and stands for its place in `rows`: a Window is read as those places,
 and a row replaced keeps its place.
 
+A case that names a `rowKey`, a column whose value is each row's Row Key, makes a live source (ADR-0141), whose
+clock is a fake one only `advance` moves; `fromThrows` and `fromSaying` say that making it is refused. A live
+case reads its Window by key (`keys`), since a row it hands over is new and stands for no place. A row a live
+step hands over is an entry: its values, a new object, or `{"same": key}`, the object last handed under that
+key, the rows' own to begin with.
+
 | Step | Does |
 |---|---|
 | `{"setColumns": true}` | Binds the columns; `"rebuilt"` binds new objects, each equal to the one it was built after; a list of names binds those alone |
 | `{"setSorts": [{"column", "direction"}]}` | Applies a Sort |
 | `{"setFilter": filter}` | Applies a Filter, `null` for none |
-| `{"replaceRow": place, "with": [values]}` | Replaces the row at that place with a new one; `"with": "itself"` hands it back as its own replacement, and `{"stranger": [values]}` in place of a place names a row the source does not hold |
+| `{"replaceRow": place, "with": [values]}` | Replaces the row at that place with a new one; `"with": "itself"` hands it back as its own replacement, and `{"stranger": [values]}` in place of a place names a row the source does not hold. In a live case, `{"window": i}` names the row at position `i` of the Window, and `{"same": key}` the object last handed under that key |
+| `{"apply": {"added", "changed", "removedKeys"}}` | Hands over a Change Batch: entries added and changed, keys removed; every member optional |
+| `{"replaceAll": [entries]}` | Hands over a whole new list |
+| `{"gatherInterval": ms}` | Sets how long changes are gathered |
+| `{"advance": ms}` | Moves the fake clock on, running what falls due |
+| `{"publishGathered": true}` | Publishes what was gathered at once |
 | `{"needRange": {"start", "count"}}` | Says the grid is about to show those rows |
 | `{"rows": {"start", "count"}, "is": [places]}` | Reads rows of the result |
 | `{"distinctValues": column, "is": [values]}` | Reads a column's value list; `"tooMany": true` in place of `is` |
-| `{"expect": {…}}` | Reads the source: `window` (places), `values` (the Window's rows as values), `windowStart`, `totalCount`, `loading`, `version` (the Row Sequence Version), `sorts`, `filter`, and `heard`, the changes heard since the last `expect` |
+| `{"expect": {…}}` | Reads the source: `window` (places), `values` (the Window's rows as values), `windowStart`, `totalCount`, `loading`, `version` (the Row Sequence Version), `sorts`, `filter`, and `heard`, the changes heard since the last `expect`; and of a live source `keys` (the Window's Row Keys), `windowKept` (whether the Window is the same object as at the last `expect`), `vouches` (that no Window holds a row twice), `handed: true` (every row of the Window is the object last handed under its key) and `gatherInterval` |
 
 A step that is refused says so with `throws` and `saying`, as a `query` case does.
 

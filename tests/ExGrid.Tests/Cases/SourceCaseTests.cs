@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Microsoft.Extensions.Time.Testing;
 using Xunit;
 
 namespace ExGrid.Tests.Cases;
@@ -44,8 +45,32 @@ public class SourceCaseTests
                 DateType: column.TryGetProperty("dateType", out var dateType) ? QueryCaseTests.Member<DateType>(dateType) : DateType.DateTime))
             .ToArray();
         var held = entry.GetProperty("rows").EnumerateArray().Select((written, position) => RowOf(position, written)).ToArray();
-        var source = GridSource.From<Row>(held);
+        var clock = new FakeTimeProvider();
+        var keyAt = entry.TryGetProperty("rowKey", out var keyName)
+            ? declared.EnumerateArray().Select(c => c.GetProperty("name").GetString()).ToList().IndexOf(keyName.GetString())
+            : -1;
+        Func<Row, object>? rowKey = keyAt < 0 ? null : row => row.Values[keyAt]!;
+        InMemoryGridSource<Row> Make() => rowKey is null ? GridSource.From<Row>(held) : GridSource.From<Row>(held, rowKey, clock);
+        if (entry.TryGetProperty("fromThrows", out var fromThrows))
+        {
+            SharedCases.Refused(() => Make(), fromThrows.GetString()!,
+                entry.TryGetProperty("fromSaying", out var fromSaying) ? fromSaying.GetString() : null);
+            return;
+        }
+        var source = Make();
+        // The object last handed to the source under each key.
+        var handed = rowKey is null ? new Dictionary<object, Row>() : held.ToDictionary(rowKey);
+        Row Hand(Row row)
+        {
+            if (rowKey is not null)
+                handed[rowKey(row)] = row;
+            return row;
+        }
+        Row EntryOf(JsonElement written) => written.ValueKind == JsonValueKind.Array
+            ? RowOf(-1, written)
+            : handed[QueryCaseTests.Value(written.GetProperty("same"))!];
         var heard = 0;
+        var lastWindow = source.Window;
         source.StateChanged += () => heard++;
 
         foreach (var step in entry.GetProperty("steps").EnumerateArray())
@@ -53,6 +78,19 @@ public class SourceCaseTests
             if (step.TryGetProperty("expect", out var expected))
             {
                 Check(expected, source, heard);
+                if (expected.TryGetProperty("windowKept", out var kept))
+                    Assert.Equal(kept.GetBoolean(), ReferenceEquals(source.Window, lastWindow));
+                if (expected.TryGetProperty("vouches", out var vouches))
+                    Assert.Equal(vouches.GetBoolean(), ((IGridSource<Row>)source).VouchesDistinctRows);
+                if (expected.TryGetProperty("gatherInterval", out var interval))
+                    Assert.Equal(TimeSpan.FromMilliseconds(interval.GetDouble()), source.GatherInterval);
+                if (expected.TryGetProperty("keys", out var keys))
+                {
+                    Assert.Equal(keys.EnumerateArray().Select(QueryCaseTests.Value), source.Window.Select(row => rowKey!(row)));
+                }
+                if (expected.TryGetProperty("handed", out _))
+                    Assert.All(source.Window, row => Assert.Same(handed[rowKey!(row)], row));
+                lastWindow = source.Window;
                 heard = 0;
                 continue;
             }
@@ -89,9 +127,10 @@ public class SourceCaseTests
             }
             else if (step.TryGetProperty("replaceRow", out var target))
             {
-                var row = target.ValueKind == JsonValueKind.Number
-                    ? held[target.GetInt32()]
-                    : RowOf(-1, target.GetProperty("stranger"));
+                var row = target.ValueKind == JsonValueKind.Number ? held[target.GetInt32()]
+                    : target.TryGetProperty("stranger", out var stranger) ? RowOf(-1, stranger)
+                    : target.TryGetProperty("window", out var at) ? source.Window[at.GetInt32()]
+                    : EntryOf(target);
                 var written = step.GetProperty("with");
                 var replacement = written.ValueKind == JsonValueKind.String && written.GetString() == "itself"
                     ? row
@@ -99,6 +138,36 @@ public class SourceCaseTests
                 source.ReplaceRow(row, replacement);
                 if (row.Position >= 0)
                     held[row.Position] = replacement;
+                Hand(replacement);
+            }
+            else if (step.TryGetProperty("apply", out var batch))
+            {
+                IReadOnlyList<Row> Rows(string name) => batch.TryGetProperty(name, out var rows) ? rows.EnumerateArray().Select(EntryOf).ToArray() : [];
+                var added = Rows("added");
+                var changed = Rows("changed");
+                var removed = batch.TryGetProperty("removedKeys", out var keys) ? keys.EnumerateArray().Select(QueryCaseTests.Value).ToArray() : [];
+                source.Apply(new GridChangeBatch<Row>(added, changed, removed!));
+                foreach (var row in added.Concat(changed))
+                    Hand(row);
+            }
+            else if (step.TryGetProperty("replaceAll", out var list))
+            {
+                var rows = list.EnumerateArray().Select(EntryOf).ToArray();
+                source.ReplaceAll(rows);
+                foreach (var row in rows)
+                    Hand(row);
+            }
+            else if (step.TryGetProperty("gatherInterval", out var interval))
+            {
+                source.GatherInterval = TimeSpan.FromMilliseconds(interval.GetDouble());
+            }
+            else if (step.TryGetProperty("advance", out var advance))
+            {
+                clock.Advance(TimeSpan.FromMilliseconds(advance.GetDouble()));
+            }
+            else if (step.TryGetProperty("publishGathered", out _))
+            {
+                source.PublishGathered();
             }
             else if (step.TryGetProperty("needRange", out var range))
             {
