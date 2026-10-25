@@ -1,0 +1,3787 @@
+{
+ "channel": "msedge",
+ "base": "http://localhost:5317",
+ "page": {
+  "dpr": 1.5,
+  "inner": [
+   1578,
+   959
+  ],
+  "forcedColors": false,
+  "dark": false,
+  "ua": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36 Edg/156.0.0.0"
+ },
+ "label": "server-150",
+ "rtt": 150,
+ "keyboardAsked": "japanese",
+ "ax": false,
+ "started": "2026-10-25T18:20:34.016Z",
+ "cases": [
+  {
+   "case": "k8",
+   "what": "D10: the IME on; kana composed; a press on D12. Expected: the composition ends where it was composed: D10 かな, committed by the press as Excel's click-away commits; the Focus D12; no edit open; the keyboard in the field",
+   "started": "2026-10-25T18:20:38.924Z",
+   "states": [
+    {
+     "state": "ime-on",
+     "did": [
+      "the IME on (VK_IME_ON)"
+     ],
+     "readAtMs": 900,
+     "settled": true,
+     "ime": "ok imestate open=True mode=0x9 (hiragana, full-width) layout=0x04110411",
+     "front": "ok foreground title=\"ime17-mud-server-150-msedge - Personal -\" process=msedge",
+     "read": {
+      "active": "key-field",
+      "editing": false,
+      "focus": "D10",
+      "keyField": {
+       "value": "",
+       "selection": [
+        0,
+        0
+       ],
+       "composing": false,
+       "cls": "ex-key-field",
+       "readOnly": false,
+       "tabIndex": "0",
+       "opacity": "0",
+       "caretColor": "#000000/0",
+       "outline": "none 2.66667px #000000",
+       "background": "#ffffff",
+       "color": "#000000",
+       "box": {
+        "l": 407.33,
+        "t": 628.79,
+        "w": 98.67,
+        "h": 28
+       },
+       "layer": "ex-key-field-layer",
+       "ariaActiveDescendant": "ex275-r9c3"
+      },
+      "focusCellBox": {
+       "l": 407.33,
+       "t": 628.79,
+       "w": 98.67,
+       "h": 28
+      },
+      "root": {
+       "tabIndex": "-1",
+       "cls": "ex-grid",
+       "ariaActiveDescendant": null,
+       "focusVisibleMark": false,
+       "matchesFocusVisible": false,
+       "outline": "none 2.66667px #424242"
+      },
+      "nameBox": "D10",
+      "nameBoxField": {
+       "value": "D10",
+       "selection": [
+        3,
+        3
+       ],
+       "box": {
+        "l": 44,
+        "t": 320.79,
+        "w": 83,
+        "h": 28
+       },
+       "scrollLeft": 0,
+       "scrollWidth": 83,
+       "clientWidth": 83,
+       "shown": false,
+       "fill": "#424242",
+       "color": "#424242",
+       "layer": null
+      },
+      "cell": null,
+      "bar": {
+       "value": "",
+       "selection": [
+        0,
+        0
+       ],
+       "box": {
+        "l": 143,
+        "t": 320.79,
+        "w": 605,
+        "h": 28
+       },
+       "scrollLeft": 0,
+       "scrollWidth": 605,
+       "clientWidth": 605,
+       "shown": false,
+       "fill": "#424242",
+       "color": "#424242",
+       "layer": {
+        "text": "",
+        "visibility": "hidden",
+        "box": {
+         "l": 143,
+         "t": 320.79,
+         "w": 605,
+         "h": 28
+        },
+        "scrollLeft": 0,
+        "colours": "",
+        "highlights": [],
+        "spans": []
+       }
+      },
+      "completion": null,
+      "hints": [],
+      "outlines": [],
+      "points": [],
+      "selected": [],
+      "sorted": [],
+      "find": null,
+      "message": [],
+      "cells": {
+       "D10": "",
+       "D11": "",
+       "D12": "",
+       "D13": "",
+       "E10": "",
+       "E11": "",
+       "E12": "",
+       "F11": ""
+      },
+      "grids": [
+       {
+        "i": 0,
+        "in": null,
+        "hasKeyboard": true,
+        "keyField": {
+         "value": "",
+         "composing": false,
+         "readOnly": false
+        },
+        "editing": false,
+        "editorValue": null,
+        "focus": "D10",
+        "rootTabIndex": "-1",
+        "focusVisibleMark": false,
+        "rootFocusVisible": false
+       },
+       {
+        "i": 1,
+        "in": "sheet-positions",
+        "hasKeyboard": false,
+        "keyField": null,
+        "editing": false,
+        "editorValue": null,
+        "focus": null,
+        "rootTabIndex": "0",
+        "focusVisibleMark": false,
+        "rootFocusVisible": false
+       }
+      ],
+      "events": [],
+      "focusLog": []
+     },
+     "clip": {
+      "x": 32,
+      "y": 316,
+      "width": 728,
+      "height": 457
+     },
+     "pixels": {
+      "scale": 1.5,
+      "boxes": [
+       {
+        "text": "(the Focus cell)",
+        "ground": "#ffffff:6013",
+        "colours": 2,
+        "saturated": [
+         "#594ae2:203"
+        ],
+        "darkest": "#594ae2"
+       }
+      ]
+     },
+     "shot": "mud-k8-ime-on-server-150-msedge.png",
+     "tookMs": 1011
+    },
+    {
+     "state": "k",
+     "did": [
+      "keys k"
+     ],
+     "readAtMs": 900,
+     "settled": true,
+     "ime": "ok imestate open=True mode=0x9 (hiragana, full-width) layout=0x04110411",
+     "front": "ok foreground title=\"ime17-mud-server-150-msedge - Personal -\" process=msedge",
+     "read": {
+      "active": "key-field",
+      "editing": false,
+      "focus": "D10",
+      "keyField": {
+       "value": "ｋ",
+       "selection": [
+        1,
+        1
+       ],
+       "composing": true,
+       "cls": "ex-key-field ex-key-field-composing",
+       "readOnly": false,
+       "tabIndex": "0",
+       "opacity": "1",
+       "caretColor": "#000000",
+       "outline": "solid 2px #594ae2",
+       "background": "#ffffff",
+       "color": "#000000",
+       "box": {
+        "l": 407.33,
+        "t": 628.79,
+        "w": 98.67,
+        "h": 28
+       },
+       "layer": "ex-key-field-layer",
+       "ariaActiveDescendant": "ex275-r9c3"
+      },
+      "focusCellBox": {
+       "l": 407.33,
+       "t": 628.79,
+       "w": 98.67,
+       "h": 28
+      },
+      "root": {
+       "tabIndex": "-1",
+       "cls": "ex-grid",
+       "ariaActiveDescendant": null,
+       "focusVisibleMark": false,
+       "matchesFocusVisible": false,
+       "outline": "none 2.66667px #424242"
+      },
+      "nameBox": "D10",
+      "nameBoxField": {
+       "value": "D10",
+       "selection": [
+        3,
+        3
+       ],
+       "box": {
+        "l": 44,
+        "t": 320.79,
+        "w": 83,
+        "h": 28
+       },
+       "scrollLeft": 0,
+       "scrollWidth": 83,
+       "clientWidth": 83,
+       "shown": false,
+       "fill": "#424242",
+       "color": "#424242",
+       "layer": null
+      },
+      "cell": null,
+      "bar": {
+       "value": "",
+       "selection": [
+        0,
+        0
+       ],
+       "box": {
+        "l": 143,
+        "t": 320.79,
+        "w": 605,
+        "h": 28
+       },
+       "scrollLeft": 0,
+       "scrollWidth": 605,
+       "clientWidth": 605,
+       "shown": false,
+       "fill": "#424242",
+       "color": "#424242",
+       "layer": {
+        "text": "",
+        "visibility": "hidden",
+        "box": {
+         "l": 143,
+         "t": 320.79,
+         "w": 605,
+         "h": 28
+        },
+        "scrollLeft": 0,
+        "colours": "",
+        "highlights": [],
+        "spans": []
+       }
+      },
+      "completion": null,
+      "hints": [],
+      "outlines": [],
+      "points": [],
+      "selected": [],
+      "sorted": [],
+      "find": null,
+      "message": [],
+      "cells": {
+       "D10": "",
+       "D11": "",
+       "D12": "",
+       "D13": "",
+       "E10": "",
+       "E11": "",
+       "E12": "",
+       "F11": ""
+      },
+      "grids": [
+       {
+        "i": 0,
+        "in": null,
+        "hasKeyboard": true,
+        "keyField": {
+         "value": "ｋ",
+         "composing": true,
+         "readOnly": false
+        },
+        "editing": false,
+        "editorValue": null,
+        "focus": "D10",
+        "rootTabIndex": "-1",
+        "focusVisibleMark": false,
+        "rootFocusVisible": false
+       },
+       {
+        "i": 1,
+        "in": "sheet-positions",
+        "hasKeyboard": false,
+        "keyField": null,
+        "editing": false,
+        "editorValue": null,
+        "focus": null,
+        "rootTabIndex": "0",
+        "focusVisibleMark": false,
+        "rootFocusVisible": false
+       }
+      ],
+      "events": [
+       {
+        "t": 4884,
+        "type": "keydown",
+        "target": "key-field",
+        "key": "Process",
+        "code": "KeyK",
+        "keyCode": 229,
+        "isComposing": false,
+        "value": ""
+       },
+       {
+        "t": 4884,
+        "type": "compositionstart",
+        "target": "key-field",
+        "data": "",
+        "value": ""
+       },
+       {
+        "t": 4885,
+        "type": "compositionupdate",
+        "target": "key-field",
+        "data": "ｋ",
+        "value": ""
+       },
+       {
+        "t": 4885,
+        "type": "beforeinput",
+        "target": "key-field",
+        "inputType": "insertCompositionText",
+        "data": "ｋ",
+        "isComposing": true,
+        "value": ""
+       },
+       {
+        "t": 4893,
+        "type": "input",
+        "target": "key-field",
+        "inputType": "insertCompositionText",
+        "data": "ｋ",
+        "isComposing": true,
+        "value": "ｋ"
+       },
+       {
+        "t": 4893,
+        "type": "keyup",
+        "target": "key-field",
+        "key": "Process",
+        "code": "KeyK",
+        "keyCode": 229,
+        "isComposing": true,
+        "value": "ｋ"
+       }
+      ],
+      "focusLog": []
+     },
+     "clip": {
+      "x": 32,
+      "y": 316,
+      "width": 728,
+      "height": 457
+     },
+     "pixels": {
+      "scale": 1.5,
+      "boxes": [
+       {
+        "text": "(the Keyboard Field)",
+        "ground": "#ffffff:5696",
+        "colours": 47,
+        "saturated": [
+         "#594ae2:376",
+         "#ffffb5:16",
+         "#5a0000:16"
+        ],
+        "darkest": "#000000"
+       },
+       {
+        "text": "(the Focus cell)",
+        "ground": "#ffffff:5696",
+        "colours": 47,
+        "saturated": [
+         "#594ae2:376",
+         "#ffffb5:16",
+         "#5a0000:16"
+        ],
+        "darkest": "#000000"
+       }
+      ]
+     },
+     "shot": "mud-k8-k-server-150-msedge.png",
+     "tookMs": 969
+    },
+    {
+     "state": "a",
+     "did": [
+      "keys a"
+     ],
+     "readAtMs": 900,
+     "settled": true,
+     "ime": "ok imestate open=True mode=0x9 (hiragana, full-width) layout=0x04110411",
+     "front": "ok foreground title=\"ime17-mud-server-150-msedge - Personal -\" process=msedge",
+     "read": {
+      "active": "key-field",
+      "editing": false,
+      "focus": "D10",
+      "keyField": {
+       "value": "か",
+       "selection": [
+        1,
+        1
+       ],
+       "composing": true,
+       "cls": "ex-key-field ex-key-field-composing",
+       "readOnly": false,
+       "tabIndex": "0",
+       "opacity": "1",
+       "caretColor": "#000000",
+       "outline": "solid 2px #594ae2",
+       "background": "#ffffff",
+       "color": "#000000",
+       "box": {
+        "l": 407.33,
+        "t": 628.79,
+        "w": 98.67,
+        "h": 28
+       },
+       "layer": "ex-key-field-layer",
+       "ariaActiveDescendant": "ex275-r9c3"
+      },
+      "focusCellBox": {
+       "l": 407.33,
+       "t": 628.79,
+       "w": 98.67,
+       "h": 28
+      },
+      "root": {
+       "tabIndex": "-1",
+       "cls": "ex-grid",
+       "ariaActiveDescendant": null,
+       "focusVisibleMark": false,
+       "matchesFocusVisible": false,
+       "outline": "none 2.66667px #424242"
+      },
+      "nameBox": "D10",
+      "nameBoxField": {
+       "value": "D10",
+       "selection": [
+        3,
+        3
+       ],
+       "box": {
+        "l": 44,
+        "t": 320.79,
+        "w": 83,
+        "h": 28
+       },
+       "scrollLeft": 0,
+       "scrollWidth": 83,
+       "clientWidth": 83,
+       "shown": false,
+       "fill": "#424242",
+       "color": "#424242",
+       "layer": null
+      },
+      "cell": null,
+      "bar": {
+       "value": "",
+       "selection": [
+        0,
+        0
+       ],
+       "box": {
+        "l": 143,
+        "t": 320.79,
+        "w": 605,
+        "h": 28
+       },
+       "scrollLeft": 0,
+       "scrollWidth": 605,
+       "clientWidth": 605,
+       "shown": false,
+       "fill": "#424242",
+       "color": "#424242",
+       "layer": {
+        "text": "",
+        "visibility": "hidden",
+        "box": {
+         "l": 143,
+         "t": 320.79,
+         "w": 605,
+         "h": 28
+        },
+        "scrollLeft": 0,
+        "colours": "",
+        "highlights": [],
+        "spans": []
+       }
+      },
+      "completion": null,
+      "hints": [],
+      "outlines": [],
+      "points": [],
+      "selected": [],
+      "sorted": [],
+      "find": null,
+      "message": [],
+      "cells": {
+       "D10": "",
+       "D11": "",
+       "D12": "",
+       "D13": "",
+       "E10": "",
+       "E11": "",
+       "E12": "",
+       "F11": ""
+      },
+      "grids": [
+       {
+        "i": 0,
+        "in": null,
+        "hasKeyboard": true,
+        "keyField": {
+         "value": "か",
+         "composing": true,
+         "readOnly": false
+        },
+        "editing": false,
+        "editorValue": null,
+        "focus": "D10",
+        "rootTabIndex": "-1",
+        "focusVisibleMark": false,
+        "rootFocusVisible": false
+       },
+       {
+        "i": 1,
+        "in": "sheet-positions",
+        "hasKeyboard": false,
+        "keyField": null,
+        "editing": false,
+        "editorValue": null,
+        "focus": null,
+        "rootTabIndex": "0",
+        "focusVisibleMark": false,
+        "rootFocusVisible": false
+       }
+      ],
+      "events": [
+       {
+        "t": 5884,
+        "type": "keydown",
+        "target": "key-field",
+        "key": "Process",
+        "code": "KeyA",
+        "keyCode": 229,
+        "isComposing": true,
+        "value": "ｋ"
+       },
+       {
+        "t": 5886,
+        "type": "compositionupdate",
+        "target": "key-field",
+        "data": "か",
+        "value": "ｋ"
+       },
+       {
+        "t": 5886,
+        "type": "beforeinput",
+        "target": "key-field",
+        "inputType": "insertCompositionText",
+        "data": "か",
+        "isComposing": true,
+        "value": "ｋ"
+       },
+       {
+        "t": 5886,
+        "type": "input",
+        "target": "key-field",
+        "inputType": "insertCompositionText",
+        "data": "か",
+        "isComposing": true,
+        "value": "か"
+       },
+       {
+        "t": 5887,
+        "type": "keyup",
+        "target": "key-field",
+        "key": "Process",
+        "code": "KeyA",
+        "keyCode": 229,
+        "isComposing": true,
+        "value": "か"
+       }
+      ],
+      "focusLog": []
+     },
+     "clip": {
+      "x": 32,
+      "y": 316,
+      "width": 728,
+      "height": 457
+     },
+     "pixels": {
+      "scale": 1.5,
+      "boxes": [
+       {
+        "text": "(the Keyboard Field)",
+        "ground": "#ffffff:5651",
+        "colours": 113,
+        "saturated": [
+         "#594ae2:376",
+         "#002c8c:3",
+         "#298ade:3"
+        ],
+        "darkest": "#000000"
+       },
+       {
+        "text": "(the Focus cell)",
+        "ground": "#ffffff:5651",
+        "colours": 113,
+        "saturated": [
+         "#594ae2:376",
+         "#002c8c:3",
+         "#298ade:3"
+        ],
+        "darkest": "#000000"
+       }
+      ]
+     },
+     "shot": "mud-k8-a-server-150-msedge.png",
+     "tookMs": 971
+    },
+    {
+     "state": "n",
+     "did": [
+      "keys n"
+     ],
+     "readAtMs": 900,
+     "settled": true,
+     "ime": "ok imestate open=True mode=0x9 (hiragana, full-width) layout=0x04110411",
+     "front": "ok foreground title=\"ime17-mud-server-150-msedge - Personal -\" process=msedge",
+     "read": {
+      "active": "key-field",
+      "editing": false,
+      "focus": "D10",
+      "keyField": {
+       "value": "かｎ",
+       "selection": [
+        2,
+        2
+       ],
+       "composing": true,
+       "cls": "ex-key-field ex-key-field-composing",
+       "readOnly": false,
+       "tabIndex": "0",
+       "opacity": "1",
+       "caretColor": "#000000",
+       "outline": "solid 2px #594ae2",
+       "background": "#ffffff",
+       "color": "#000000",
+       "box": {
+        "l": 407.33,
+        "t": 628.79,
+        "w": 98.67,
+        "h": 28
+       },
+       "layer": "ex-key-field-layer",
+       "ariaActiveDescendant": "ex275-r9c3"
+      },
+      "focusCellBox": {
+       "l": 407.33,
+       "t": 628.79,
+       "w": 98.67,
+       "h": 28
+      },
+      "root": {
+       "tabIndex": "-1",
+       "cls": "ex-grid",
+       "ariaActiveDescendant": null,
+       "focusVisibleMark": false,
+       "matchesFocusVisible": false,
+       "outline": "none 2.66667px #424242"
+      },
+      "nameBox": "D10",
+      "nameBoxField": {
+       "value": "D10",
+       "selection": [
+        3,
+        3
+       ],
+       "box": {
+        "l": 44,
+        "t": 320.79,
+        "w": 83,
+        "h": 28
+       },
+       "scrollLeft": 0,
+       "scrollWidth": 83,
+       "clientWidth": 83,
+       "shown": false,
+       "fill": "#424242",
+       "color": "#424242",
+       "layer": null
+      },
+      "cell": null,
+      "bar": {
+       "value": "",
+       "selection": [
+        0,
+        0
+       ],
+       "box": {
+        "l": 143,
+        "t": 320.79,
+        "w": 605,
+        "h": 28
+       },
+       "scrollLeft": 0,
+       "scrollWidth": 605,
+       "clientWidth": 605,
+       "shown": false,
+       "fill": "#424242",
+       "color": "#424242",
+       "layer": {
+        "text": "",
+        "visibility": "hidden",
+        "box": {
+         "l": 143,
+         "t": 320.79,
+         "w": 605,
+         "h": 28
+        },
+        "scrollLeft": 0,
+        "colours": "",
+        "highlights": [],
+        "spans": []
+       }
+      },
+      "completion": null,
+      "hints": [],
+      "outlines": [],
+      "points": [],
+      "selected": [],
+      "sorted": [],
+      "find": null,
+      "message": [],
+      "cells": {
+       "D10": "",
+       "D11": "",
+       "D12": "",
+       "D13": "",
+       "E10": "",
+       "E11": "",
+       "E12": "",
+       "F11": ""
+      },
+      "grids": [
+       {
+        "i": 0,
+        "in": null,
+        "hasKeyboard": true,
+        "keyField": {
+         "value": "かｎ",
+         "composing": true,
+         "readOnly": false
+        },
+        "editing": false,
+        "editorValue": null,
+        "focus": "D10",
+        "rootTabIndex": "-1",
+        "focusVisibleMark": false,
+        "rootFocusVisible": false
+       },
+       {
+        "i": 1,
+        "in": "sheet-positions",
+        "hasKeyboard": false,
+        "keyField": null,
+        "editing": false,
+        "editorValue": null,
+        "focus": null,
+        "rootTabIndex": "0",
+        "focusVisibleMark": false,
+        "rootFocusVisible": false
+       }
+      ],
+      "events": [
+       {
+        "t": 6889,
+        "type": "keydown",
+        "target": "key-field",
+        "key": "Process",
+        "code": "KeyN",
+        "keyCode": 229,
+        "isComposing": true,
+        "value": "か"
+       },
+       {
+        "t": 6890,
+        "type": "compositionupdate",
+        "target": "key-field",
+        "data": "かｎ",
+        "value": "か"
+       },
+       {
+        "t": 6890,
+        "type": "beforeinput",
+        "target": "key-field",
+        "inputType": "insertCompositionText",
+        "data": "かｎ",
+        "isComposing": true,
+        "value": "か"
+       },
+       {
+        "t": 6890,
+        "type": "input",
+        "target": "key-field",
+        "inputType": "insertCompositionText",
+        "data": "かｎ",
+        "isComposing": true,
+        "value": "かｎ"
+       },
+       {
+        "t": 6891,
+        "type": "keyup",
+        "target": "key-field",
+        "key": "Process",
+        "code": "KeyN",
+        "keyCode": 229,
+        "isComposing": true,
+        "value": "かｎ"
+       }
+      ],
+      "focusLog": []
+     },
+     "clip": {
+      "x": 32,
+      "y": 316,
+      "width": 728,
+      "height": 457
+     },
+     "pixels": {
+      "scale": 1.5,
+      "boxes": [
+       {
+        "text": "(the Keyboard Field)",
+        "ground": "#ffffff:5526",
+        "colours": 132,
+        "saturated": [
+         "#594ae2:376",
+         "#de8a29:14",
+         "#002c8c:10"
+        ],
+        "darkest": "#000000"
+       },
+       {
+        "text": "(the Focus cell)",
+        "ground": "#ffffff:5526",
+        "colours": 132,
+        "saturated": [
+         "#594ae2:376",
+         "#de8a29:14",
+         "#002c8c:10"
+        ],
+        "darkest": "#000000"
+       }
+      ]
+     },
+     "shot": "mud-k8-n-server-150-msedge.png",
+     "tookMs": 972
+    },
+    {
+     "state": "a2",
+     "did": [
+      "keys a"
+     ],
+     "readAtMs": 900,
+     "settled": true,
+     "ime": "ok imestate open=True mode=0x9 (hiragana, full-width) layout=0x04110411",
+     "front": "ok foreground title=\"ime17-mud-server-150-msedge - Personal -\" process=msedge",
+     "read": {
+      "active": "key-field",
+      "editing": false,
+      "focus": "D10",
+      "keyField": {
+       "value": "かな",
+       "selection": [
+        2,
+        2
+       ],
+       "composing": true,
+       "cls": "ex-key-field ex-key-field-composing",
+       "readOnly": false,
+       "tabIndex": "0",
+       "opacity": "1",
+       "caretColor": "#000000",
+       "outline": "solid 2px #594ae2",
+       "background": "#ffffff",
+       "color": "#000000",
+       "box": {
+        "l": 407.33,
+        "t": 628.79,
+        "w": 98.67,
+        "h": 28
+       },
+       "layer": "ex-key-field-layer",
+       "ariaActiveDescendant": "ex275-r9c3"
+      },
+      "focusCellBox": {
+       "l": 407.33,
+       "t": 628.79,
+       "w": 98.67,
+       "h": 28
+      },
+      "root": {
+       "tabIndex": "-1",
+       "cls": "ex-grid",
+       "ariaActiveDescendant": null,
+       "focusVisibleMark": false,
+       "matchesFocusVisible": false,
+       "outline": "none 2.66667px #424242"
+      },
+      "nameBox": "D10",
+      "nameBoxField": {
+       "value": "D10",
+       "selection": [
+        3,
+        3
+       ],
+       "box": {
+        "l": 44,
+        "t": 320.79,
+        "w": 83,
+        "h": 28
+       },
+       "scrollLeft": 0,
+       "scrollWidth": 83,
+       "clientWidth": 83,
+       "shown": false,
+       "fill": "#424242",
+       "color": "#424242",
+       "layer": null
+      },
+      "cell": null,
+      "bar": {
+       "value": "",
+       "selection": [
+        0,
+        0
+       ],
+       "box": {
+        "l": 143,
+        "t": 320.79,
+        "w": 605,
+        "h": 28
+       },
+       "scrollLeft": 0,
+       "scrollWidth": 605,
+       "clientWidth": 605,
+       "shown": false,
+       "fill": "#424242",
+       "color": "#424242",
+       "layer": {
+        "text": "",
+        "visibility": "hidden",
+        "box": {
+         "l": 143,
+         "t": 320.79,
+         "w": 605,
+         "h": 28
+        },
+        "scrollLeft": 0,
+        "colours": "",
+        "highlights": [],
+        "spans": []
+       }
+      },
+      "completion": null,
+      "hints": [],
+      "outlines": [],
+      "points": [],
+      "selected": [],
+      "sorted": [],
+      "find": null,
+      "message": [],
+      "cells": {
+       "D10": "",
+       "D11": "",
+       "D12": "",
+       "D13": "",
+       "E10": "",
+       "E11": "",
+       "E12": "",
+       "F11": ""
+      },
+      "grids": [
+       {
+        "i": 0,
+        "in": null,
+        "hasKeyboard": true,
+        "keyField": {
+         "value": "かな",
+         "composing": true,
+         "readOnly": false
+        },
+        "editing": false,
+        "editorValue": null,
+        "focus": "D10",
+        "rootTabIndex": "-1",
+        "focusVisibleMark": false,
+        "rootFocusVisible": false
+       },
+       {
+        "i": 1,
+        "in": "sheet-positions",
+        "hasKeyboard": false,
+        "keyField": null,
+        "editing": false,
+        "editorValue": null,
+        "focus": null,
+        "rootTabIndex": "0",
+        "focusVisibleMark": false,
+        "rootFocusVisible": false
+       }
+      ],
+      "events": [
+       {
+        "t": 7892,
+        "type": "keydown",
+        "target": "key-field",
+        "key": "Process",
+        "code": "KeyA",
+        "keyCode": 229,
+        "isComposing": true,
+        "value": "かｎ"
+       },
+       {
+        "t": 7893,
+        "type": "compositionupdate",
+        "target": "key-field",
+        "data": "かな",
+        "value": "かｎ"
+       },
+       {
+        "t": 7893,
+        "type": "beforeinput",
+        "target": "key-field",
+        "inputType": "insertCompositionText",
+        "data": "かな",
+        "isComposing": true,
+        "value": "かｎ"
+       },
+       {
+        "t": 7894,
+        "type": "input",
+        "target": "key-field",
+        "inputType": "insertCompositionText",
+        "data": "かな",
+        "isComposing": true,
+        "value": "かな"
+       },
+       {
+        "t": 7894,
+        "type": "keyup",
+        "target": "key-field",
+        "key": "Process",
+        "code": "KeyA",
+        "keyCode": 229,
+        "isComposing": true,
+        "value": "かな"
+       }
+      ],
+      "focusLog": []
+     },
+     "clip": {
+      "x": 32,
+      "y": 316,
+      "width": 728,
+      "height": 457
+     },
+     "pixels": {
+      "scale": 1.5,
+      "boxes": [
+       {
+        "text": "(the Keyboard Field)",
+        "ground": "#ffffff:5449",
+        "colours": 203,
+        "saturated": [
+         "#594ae2:376",
+         "#298ade:5",
+         "#de8a29:5"
+        ],
+        "darkest": "#000000"
+       },
+       {
+        "text": "(the Focus cell)",
+        "ground": "#ffffff:5449",
+        "colours": 203,
+        "saturated": [
+         "#594ae2:376",
+         "#298ade:5",
+         "#de8a29:5"
+        ],
+        "darkest": "#000000"
+       }
+      ]
+     },
+     "shot": "mud-k8-a2-server-150-msedge.png",
+     "tookMs": 968
+    },
+    {
+     "state": "pressed-d12",
+     "did": [
+      "a press at (762, 1228), the middle of sheet's D12"
+     ],
+     "readAtMs": 900,
+     "settled": true,
+     "ime": "ok imestate open=True mode=0x9 (hiragana, full-width) layout=0x04110411",
+     "front": "ok foreground title=\"ime17-mud-server-150-msedge - Personal -\" process=msedge",
+     "read": {
+      "active": "key-field",
+      "editing": false,
+      "focus": "D12",
+      "keyField": {
+       "value": "",
+       "selection": [
+        0,
+        0
+       ],
+       "composing": false,
+       "cls": "ex-key-field",
+       "readOnly": false,
+       "tabIndex": "0",
+       "opacity": "0",
+       "caretColor": "#000000/0",
+       "outline": "none 2.66667px #000000",
+       "background": "#ffffff",
+       "color": "#000000",
+       "box": {
+        "l": 407.33,
+        "t": 684.79,
+        "w": 98.67,
+        "h": 28
+       },
+       "layer": "ex-key-field-layer",
+       "ariaActiveDescendant": "ex275-r11c3"
+      },
+      "focusCellBox": {
+       "l": 407.33,
+       "t": 684.79,
+       "w": 98.67,
+       "h": 28
+      },
+      "root": {
+       "tabIndex": "-1",
+       "cls": "ex-grid",
+       "ariaActiveDescendant": null,
+       "focusVisibleMark": false,
+       "matchesFocusVisible": false,
+       "outline": "none 2.66667px #424242"
+      },
+      "nameBox": "D12",
+      "nameBoxField": {
+       "value": "D12",
+       "selection": [
+        3,
+        3
+       ],
+       "box": {
+        "l": 44,
+        "t": 320.79,
+        "w": 83,
+        "h": 28
+       },
+       "scrollLeft": 0,
+       "scrollWidth": 83,
+       "clientWidth": 83,
+       "shown": false,
+       "fill": "#424242",
+       "color": "#424242",
+       "layer": null
+      },
+      "cell": null,
+      "bar": {
+       "value": "",
+       "selection": [
+        0,
+        0
+       ],
+       "box": {
+        "l": 143,
+        "t": 320.79,
+        "w": 605,
+        "h": 28
+       },
+       "scrollLeft": 0,
+       "scrollWidth": 605,
+       "clientWidth": 605,
+       "shown": false,
+       "fill": "#424242",
+       "color": "#424242",
+       "layer": {
+        "text": "",
+        "visibility": "hidden",
+        "box": {
+         "l": 143,
+         "t": 320.79,
+         "w": 605,
+         "h": 28
+        },
+        "scrollLeft": 0,
+        "colours": "",
+        "highlights": [],
+        "spans": []
+       }
+      },
+      "completion": null,
+      "hints": [],
+      "outlines": [],
+      "points": [],
+      "selected": [],
+      "sorted": [],
+      "find": null,
+      "message": [],
+      "cells": {
+       "D10": "かな",
+       "D11": "",
+       "D12": "",
+       "D13": "",
+       "E10": "",
+       "E11": "",
+       "E12": "",
+       "F11": ""
+      },
+      "grids": [
+       {
+        "i": 0,
+        "in": null,
+        "hasKeyboard": true,
+        "keyField": {
+         "value": "",
+         "composing": false,
+         "readOnly": false
+        },
+        "editing": false,
+        "editorValue": null,
+        "focus": "D12",
+        "rootTabIndex": "-1",
+        "focusVisibleMark": false,
+        "rootFocusVisible": false
+       },
+       {
+        "i": 1,
+        "in": "sheet-positions",
+        "hasKeyboard": false,
+        "keyField": null,
+        "editing": false,
+        "editorValue": null,
+        "focus": null,
+        "rootTabIndex": "0",
+        "focusVisibleMark": false,
+        "rootFocusVisible": false
+       }
+      ],
+      "events": [
+       {
+        "t": 8922,
+        "type": "compositionend",
+        "target": "key-field",
+        "data": "かな",
+        "value": "かな"
+       },
+       {
+        "t": 8923,
+        "type": "mousedown",
+        "target": "div.ex-viewport",
+        "x": 456,
+        "y": 698,
+        "button": 0,
+        "detail": 1
+       },
+       {
+        "t": 8983,
+        "type": "mouseup",
+        "target": "div.ex-viewport",
+        "x": 456,
+        "y": 698,
+        "button": 0,
+        "detail": 1
+       },
+       {
+        "t": 8983,
+        "type": "click",
+        "target": "div.ex-viewport",
+        "x": 456,
+        "y": 698,
+        "button": 0,
+        "detail": 1
+       },
+       {
+        "t": 9233,
+        "type": "mousedown",
+        "target": "div.ex-viewport",
+        "x": 456,
+        "y": 698,
+        "button": 0,
+        "detail": 1
+       },
+       {
+        "t": 9394,
+        "type": "mouseup",
+        "target": "div.ex-viewport",
+        "x": 456,
+        "y": 698,
+        "button": 0,
+        "detail": 1
+       },
+       {
+        "t": 9575,
+        "type": "click",
+        "target": "div.ex-viewport",
+        "x": 456,
+        "y": 698,
+        "button": 0,
+        "detail": 1
+       }
+      ],
+      "focusLog": [
+       {
+        "t": 9232,
+        "out": "key-field",
+        "to": "cell"
+       },
+       {
+        "t": 9233,
+        "el": "cell"
+       },
+       {
+        "t": 9388,
+        "out": "cell",
+        "to": "key-field"
+       },
+       {
+        "t": 9388,
+        "el": "key-field"
+       }
+      ]
+     },
+     "clip": {
+      "x": 32,
+      "y": 316,
+      "width": 728,
+      "height": 457
+     },
+     "pixels": {
+      "scale": 1.5,
+      "boxes": [
+       {
+        "text": "(the Focus cell)",
+        "ground": "#ffffff:6013",
+        "colours": 2,
+        "saturated": [
+         "#594ae2:203"
+        ],
+        "darkest": "#594ae2"
+       }
+      ]
+     },
+     "shot": "mud-k8-pressed-d12-server-150-msedge.png",
+     "tookMs": 973
+    }
+   ],
+   "before": {
+    "escapes": 0,
+    "offByKey": false,
+    "offInAnEdit": false,
+    "ime": "ok imestate open=False mode=0x19 (hiragana, full-width, romaji) layout=0x04110411"
+   },
+   "focusMs": 107,
+   "targetsBefore": [],
+   "beforeRead": {
+    "active": "key-field",
+    "editing": false,
+    "focus": "D10",
+    "keyField": {
+     "value": "",
+     "selection": [
+      0,
+      0
+     ],
+     "composing": false,
+     "cls": "ex-key-field",
+     "readOnly": false,
+     "tabIndex": "0",
+     "opacity": "0",
+     "caretColor": "#000000/0",
+     "outline": "none 2.66667px #000000",
+     "background": "#ffffff",
+     "color": "#000000",
+     "box": {
+      "l": 407.33,
+      "t": 628.79,
+      "w": 98.67,
+      "h": 28
+     },
+     "layer": "ex-key-field-layer",
+     "ariaActiveDescendant": "ex275-r9c3"
+    },
+    "focusCellBox": {
+     "l": 407.33,
+     "t": 628.79,
+     "w": 98.67,
+     "h": 28
+    },
+    "root": {
+     "tabIndex": "-1",
+     "cls": "ex-grid",
+     "ariaActiveDescendant": null,
+     "focusVisibleMark": false,
+     "matchesFocusVisible": false,
+     "outline": "none 2.66667px #424242"
+    },
+    "nameBox": "D10",
+    "nameBoxField": {
+     "value": "D10",
+     "selection": [
+      3,
+      3
+     ],
+     "box": {
+      "l": 44,
+      "t": 320.79,
+      "w": 83,
+      "h": 28
+     },
+     "scrollLeft": 0,
+     "scrollWidth": 83,
+     "clientWidth": 83,
+     "shown": false,
+     "fill": "#424242",
+     "color": "#424242",
+     "layer": null
+    },
+    "cell": null,
+    "bar": {
+     "value": "",
+     "selection": [
+      0,
+      0
+     ],
+     "box": {
+      "l": 143,
+      "t": 320.79,
+      "w": 605,
+      "h": 28
+     },
+     "scrollLeft": 0,
+     "scrollWidth": 605,
+     "clientWidth": 605,
+     "shown": false,
+     "fill": "#424242",
+     "color": "#424242",
+     "layer": {
+      "text": "",
+      "visibility": "hidden",
+      "box": {
+       "l": 143,
+       "t": 320.79,
+       "w": 605,
+       "h": 28
+      },
+      "scrollLeft": 0,
+      "colours": "",
+      "highlights": [],
+      "spans": []
+     }
+    },
+    "completion": null,
+    "hints": [],
+    "outlines": [],
+    "points": [],
+    "selected": [],
+    "sorted": [],
+    "find": null,
+    "message": [],
+    "cells": {
+     "D10": "",
+     "D11": "",
+     "D12": "",
+     "D13": "",
+     "E10": "",
+     "E11": "",
+     "E12": "",
+     "F11": ""
+    },
+    "grids": [
+     {
+      "i": 0,
+      "in": null,
+      "hasKeyboard": true,
+      "keyField": {
+       "value": "",
+       "composing": false,
+       "readOnly": false
+      },
+      "editing": false,
+      "editorValue": null,
+      "focus": "D10",
+      "rootTabIndex": "-1",
+      "focusVisibleMark": false,
+      "rootFocusVisible": false
+     },
+     {
+      "i": 1,
+      "in": "sheet-positions",
+      "hasKeyboard": false,
+      "keyField": null,
+      "editing": false,
+      "editorValue": null,
+      "focus": null,
+      "rootTabIndex": "0",
+      "focusVisibleMark": false,
+      "rootFocusVisible": false
+     }
+    ],
+    "events": [
+     {
+      "t": 2783,
+      "type": "keydown",
+      "target": "body",
+      "key": "Unidentified",
+      "code": "",
+      "keyCode": 26,
+      "isComposing": false
+     },
+     {
+      "t": 3255,
+      "type": "mousedown",
+      "target": "div.ex-viewport",
+      "x": 456,
+      "y": 642,
+      "button": 0,
+      "detail": 1
+     },
+     {
+      "t": 3319,
+      "type": "mouseup",
+      "target": "div.ex-viewport",
+      "x": 456,
+      "y": 642,
+      "button": 0,
+      "detail": 1
+     },
+     {
+      "t": 3319,
+      "type": "click",
+      "target": "div.ex-viewport",
+      "x": 456,
+      "y": 642,
+      "button": 0,
+      "detail": 1
+     }
+    ],
+    "focusLog": [
+     {
+      "t": 3256,
+      "out": "div.ex-scroller",
+      "to": "key-field"
+     },
+     {
+      "t": 3256,
+      "el": "key-field"
+     }
+    ]
+   },
+   "imeBefore": "ok imestate open=False mode=0x19 (hiragana, full-width, romaji) layout=0x04110411",
+   "after": {
+    "escapes": 0,
+    "offByKey": true,
+    "offInAnEdit": false,
+    "ime": "ok imestate open=False mode=0x9 (hiragana, full-width) layout=0x04110411"
+   },
+   "afterRead": {
+    "active": "key-field",
+    "editing": false,
+    "focus": "D12",
+    "keyField": {
+     "value": "",
+     "selection": [
+      0,
+      0
+     ],
+     "composing": false,
+     "cls": "ex-key-field",
+     "readOnly": false,
+     "tabIndex": "0",
+     "opacity": "0",
+     "caretColor": "#000000/0",
+     "outline": "none 2.66667px #000000",
+     "background": "#ffffff",
+     "color": "#000000",
+     "box": {
+      "l": 407.33,
+      "t": 684.79,
+      "w": 98.67,
+      "h": 28
+     },
+     "layer": "ex-key-field-layer",
+     "ariaActiveDescendant": "ex275-r11c3"
+    },
+    "focusCellBox": {
+     "l": 407.33,
+     "t": 684.79,
+     "w": 98.67,
+     "h": 28
+    },
+    "root": {
+     "tabIndex": "-1",
+     "cls": "ex-grid",
+     "ariaActiveDescendant": null,
+     "focusVisibleMark": false,
+     "matchesFocusVisible": false,
+     "outline": "none 2.66667px #424242"
+    },
+    "nameBox": "D12",
+    "nameBoxField": {
+     "value": "D12",
+     "selection": [
+      3,
+      3
+     ],
+     "box": {
+      "l": 44,
+      "t": 320.79,
+      "w": 83,
+      "h": 28
+     },
+     "scrollLeft": 0,
+     "scrollWidth": 83,
+     "clientWidth": 83,
+     "shown": false,
+     "fill": "#424242",
+     "color": "#424242",
+     "layer": null
+    },
+    "cell": null,
+    "bar": {
+     "value": "",
+     "selection": [
+      0,
+      0
+     ],
+     "box": {
+      "l": 143,
+      "t": 320.79,
+      "w": 605,
+      "h": 28
+     },
+     "scrollLeft": 0,
+     "scrollWidth": 605,
+     "clientWidth": 605,
+     "shown": false,
+     "fill": "#424242",
+     "color": "#424242",
+     "layer": {
+      "text": "",
+      "visibility": "hidden",
+      "box": {
+       "l": 143,
+       "t": 320.79,
+       "w": 605,
+       "h": 28
+      },
+      "scrollLeft": 0,
+      "colours": "",
+      "highlights": [],
+      "spans": []
+     }
+    },
+    "completion": null,
+    "hints": [],
+    "outlines": [],
+    "points": [],
+    "selected": [],
+    "sorted": [],
+    "find": null,
+    "message": [],
+    "cells": {
+     "D10": "かな",
+     "D11": "",
+     "D12": "",
+     "D13": "",
+     "E10": "",
+     "E11": "",
+     "E12": "",
+     "F11": ""
+    },
+    "grids": [
+     {
+      "i": 0,
+      "in": null,
+      "hasKeyboard": true,
+      "keyField": {
+       "value": "",
+       "composing": false,
+       "readOnly": false
+      },
+      "editing": false,
+      "editorValue": null,
+      "focus": "D12",
+      "rootTabIndex": "-1",
+      "focusVisibleMark": false,
+      "rootFocusVisible": false
+     },
+     {
+      "i": 1,
+      "in": "sheet-positions",
+      "hasKeyboard": false,
+      "keyField": null,
+      "editing": false,
+      "editorValue": null,
+      "focus": null,
+      "rootTabIndex": "0",
+      "focusVisibleMark": false,
+      "rootFocusVisible": false
+     }
+    ],
+    "events": [],
+    "focusLog": []
+   },
+   "d10Entry": "かな"
+  },
+  {
+   "case": "k8x",
+   "what": "An addition: k8 with the press clear of the IME's own window (in the trial before the recorded runs, the press on D12 landed on the IME's prediction list, which stands under the composition, and never reached the page): the IME on; kana composed; a press on D8, above D10",
+   "started": "2026-10-25T18:20:47.136Z",
+   "states": [
+    {
+     "state": "ime-on",
+     "did": [
+      "the IME on (VK_IME_ON)"
+     ],
+     "readAtMs": 900,
+     "settled": true,
+     "ime": "ok imestate open=True mode=0x9 (hiragana, full-width) layout=0x04110411",
+     "front": "ok foreground title=\"ime17-mud-server-150-msedge - Personal -\" process=msedge",
+     "read": {
+      "active": "key-field",
+      "editing": false,
+      "focus": "D10",
+      "keyField": {
+       "value": "",
+       "selection": [
+        0,
+        0
+       ],
+       "composing": false,
+       "cls": "ex-key-field",
+       "readOnly": false,
+       "tabIndex": "0",
+       "opacity": "0",
+       "caretColor": "#000000/0",
+       "outline": "none 2.66667px #000000",
+       "background": "#ffffff",
+       "color": "#000000",
+       "box": {
+        "l": 407.33,
+        "t": 628.79,
+        "w": 98.67,
+        "h": 28
+       },
+       "layer": "ex-key-field-layer",
+       "ariaActiveDescendant": "ex275-r9c3"
+      },
+      "focusCellBox": {
+       "l": 407.33,
+       "t": 628.79,
+       "w": 98.67,
+       "h": 28
+      },
+      "root": {
+       "tabIndex": "-1",
+       "cls": "ex-grid",
+       "ariaActiveDescendant": null,
+       "focusVisibleMark": false,
+       "matchesFocusVisible": false,
+       "outline": "none 2.66667px #424242"
+      },
+      "nameBox": "D10",
+      "nameBoxField": {
+       "value": "D10",
+       "selection": [
+        3,
+        3
+       ],
+       "box": {
+        "l": 44,
+        "t": 320.79,
+        "w": 83,
+        "h": 28
+       },
+       "scrollLeft": 0,
+       "scrollWidth": 83,
+       "clientWidth": 83,
+       "shown": false,
+       "fill": "#424242",
+       "color": "#424242",
+       "layer": null
+      },
+      "cell": null,
+      "bar": {
+       "value": "",
+       "selection": [
+        0,
+        0
+       ],
+       "box": {
+        "l": 143,
+        "t": 320.79,
+        "w": 605,
+        "h": 28
+       },
+       "scrollLeft": 0,
+       "scrollWidth": 605,
+       "clientWidth": 605,
+       "shown": false,
+       "fill": "#424242",
+       "color": "#424242",
+       "layer": {
+        "text": "",
+        "visibility": "hidden",
+        "box": {
+         "l": 143,
+         "t": 320.79,
+         "w": 605,
+         "h": 28
+        },
+        "scrollLeft": 0,
+        "colours": "",
+        "highlights": [],
+        "spans": []
+       }
+      },
+      "completion": null,
+      "hints": [],
+      "outlines": [],
+      "points": [],
+      "selected": [],
+      "sorted": [],
+      "find": null,
+      "message": [],
+      "cells": {
+       "D10": "",
+       "D11": "",
+       "D12": "",
+       "D13": "",
+       "E10": "",
+       "E11": "",
+       "E12": "",
+       "F11": ""
+      },
+      "grids": [
+       {
+        "i": 0,
+        "in": null,
+        "hasKeyboard": true,
+        "keyField": {
+         "value": "",
+         "composing": false,
+         "readOnly": false
+        },
+        "editing": false,
+        "editorValue": null,
+        "focus": "D10",
+        "rootTabIndex": "-1",
+        "focusVisibleMark": false,
+        "rootFocusVisible": false
+       },
+       {
+        "i": 1,
+        "in": "sheet-positions",
+        "hasKeyboard": false,
+        "keyField": null,
+        "editing": false,
+        "editorValue": null,
+        "focus": null,
+        "rootTabIndex": "0",
+        "focusVisibleMark": false,
+        "rootFocusVisible": false
+       }
+      ],
+      "events": [],
+      "focusLog": []
+     },
+     "clip": {
+      "x": 32,
+      "y": 316,
+      "width": 728,
+      "height": 457
+     },
+     "pixels": {
+      "scale": 1.5,
+      "boxes": [
+       {
+        "text": "(the Focus cell)",
+        "ground": "#ffffff:6013",
+        "colours": 2,
+        "saturated": [
+         "#594ae2:203"
+        ],
+        "darkest": "#594ae2"
+       }
+      ]
+     },
+     "shot": "mud-k8x-ime-on-server-150-msedge.png",
+     "tookMs": 975
+    },
+    {
+     "state": "k",
+     "did": [
+      "keys k"
+     ],
+     "readAtMs": 900,
+     "settled": true,
+     "ime": "ok imestate open=True mode=0x9 (hiragana, full-width) layout=0x04110411",
+     "front": "ok foreground title=\"ime17-mud-server-150-msedge - Personal -\" process=msedge",
+     "read": {
+      "active": "key-field",
+      "editing": false,
+      "focus": "D10",
+      "keyField": {
+       "value": "ｋ",
+       "selection": [
+        1,
+        1
+       ],
+       "composing": true,
+       "cls": "ex-key-field ex-key-field-composing",
+       "readOnly": false,
+       "tabIndex": "0",
+       "opacity": "1",
+       "caretColor": "#000000",
+       "outline": "solid 2px #594ae2",
+       "background": "#ffffff",
+       "color": "#000000",
+       "box": {
+        "l": 407.33,
+        "t": 628.79,
+        "w": 98.67,
+        "h": 28
+       },
+       "layer": "ex-key-field-layer",
+       "ariaActiveDescendant": "ex275-r9c3"
+      },
+      "focusCellBox": {
+       "l": 407.33,
+       "t": 628.79,
+       "w": 98.67,
+       "h": 28
+      },
+      "root": {
+       "tabIndex": "-1",
+       "cls": "ex-grid",
+       "ariaActiveDescendant": null,
+       "focusVisibleMark": false,
+       "matchesFocusVisible": false,
+       "outline": "none 2.66667px #424242"
+      },
+      "nameBox": "D10",
+      "nameBoxField": {
+       "value": "D10",
+       "selection": [
+        3,
+        3
+       ],
+       "box": {
+        "l": 44,
+        "t": 320.79,
+        "w": 83,
+        "h": 28
+       },
+       "scrollLeft": 0,
+       "scrollWidth": 83,
+       "clientWidth": 83,
+       "shown": false,
+       "fill": "#424242",
+       "color": "#424242",
+       "layer": null
+      },
+      "cell": null,
+      "bar": {
+       "value": "",
+       "selection": [
+        0,
+        0
+       ],
+       "box": {
+        "l": 143,
+        "t": 320.79,
+        "w": 605,
+        "h": 28
+       },
+       "scrollLeft": 0,
+       "scrollWidth": 605,
+       "clientWidth": 605,
+       "shown": false,
+       "fill": "#424242",
+       "color": "#424242",
+       "layer": {
+        "text": "",
+        "visibility": "hidden",
+        "box": {
+         "l": 143,
+         "t": 320.79,
+         "w": 605,
+         "h": 28
+        },
+        "scrollLeft": 0,
+        "colours": "",
+        "highlights": [],
+        "spans": []
+       }
+      },
+      "completion": null,
+      "hints": [],
+      "outlines": [],
+      "points": [],
+      "selected": [],
+      "sorted": [],
+      "find": null,
+      "message": [],
+      "cells": {
+       "D10": "",
+       "D11": "",
+       "D12": "",
+       "D13": "",
+       "E10": "",
+       "E11": "",
+       "E12": "",
+       "F11": ""
+      },
+      "grids": [
+       {
+        "i": 0,
+        "in": null,
+        "hasKeyboard": true,
+        "keyField": {
+         "value": "ｋ",
+         "composing": true,
+         "readOnly": false
+        },
+        "editing": false,
+        "editorValue": null,
+        "focus": "D10",
+        "rootTabIndex": "-1",
+        "focusVisibleMark": false,
+        "rootFocusVisible": false
+       },
+       {
+        "i": 1,
+        "in": "sheet-positions",
+        "hasKeyboard": false,
+        "keyField": null,
+        "editing": false,
+        "editorValue": null,
+        "focus": null,
+        "rootTabIndex": "0",
+        "focusVisibleMark": false,
+        "rootFocusVisible": false
+       }
+      ],
+      "events": [
+       {
+        "t": 16222,
+        "type": "keydown",
+        "target": "key-field",
+        "key": "Process",
+        "code": "KeyK",
+        "keyCode": 229,
+        "isComposing": false,
+        "value": ""
+       },
+       {
+        "t": 16222,
+        "type": "compositionstart",
+        "target": "key-field",
+        "data": "",
+        "value": ""
+       },
+       {
+        "t": 16222,
+        "type": "compositionupdate",
+        "target": "key-field",
+        "data": "ｋ",
+        "value": ""
+       },
+       {
+        "t": 16223,
+        "type": "beforeinput",
+        "target": "key-field",
+        "inputType": "insertCompositionText",
+        "data": "ｋ",
+        "isComposing": true,
+        "value": ""
+       },
+       {
+        "t": 16223,
+        "type": "input",
+        "target": "key-field",
+        "inputType": "insertCompositionText",
+        "data": "ｋ",
+        "isComposing": true,
+        "value": "ｋ"
+       },
+       {
+        "t": 16223,
+        "type": "keyup",
+        "target": "key-field",
+        "key": "Process",
+        "code": "KeyK",
+        "keyCode": 229,
+        "isComposing": true,
+        "value": "ｋ"
+       }
+      ],
+      "focusLog": []
+     },
+     "clip": {
+      "x": 32,
+      "y": 316,
+      "width": 728,
+      "height": 457
+     },
+     "pixels": {
+      "scale": 1.5,
+      "boxes": [
+       {
+        "text": "(the Keyboard Field)",
+        "ground": "#ffffff:5696",
+        "colours": 47,
+        "saturated": [
+         "#594ae2:376",
+         "#ffffb5:16",
+         "#5a0000:16"
+        ],
+        "darkest": "#000000"
+       },
+       {
+        "text": "(the Focus cell)",
+        "ground": "#ffffff:5696",
+        "colours": 47,
+        "saturated": [
+         "#594ae2:376",
+         "#ffffb5:16",
+         "#5a0000:16"
+        ],
+        "darkest": "#000000"
+       }
+      ]
+     },
+     "shot": "mud-k8x-k-server-150-msedge.png",
+     "tookMs": 973
+    },
+    {
+     "state": "a",
+     "did": [
+      "keys a"
+     ],
+     "readAtMs": 900,
+     "settled": true,
+     "ime": "ok imestate open=True mode=0x9 (hiragana, full-width) layout=0x04110411",
+     "front": "ok foreground title=\"ime17-mud-server-150-msedge - Personal -\" process=msedge",
+     "read": {
+      "active": "key-field",
+      "editing": false,
+      "focus": "D10",
+      "keyField": {
+       "value": "か",
+       "selection": [
+        1,
+        1
+       ],
+       "composing": true,
+       "cls": "ex-key-field ex-key-field-composing",
+       "readOnly": false,
+       "tabIndex": "0",
+       "opacity": "1",
+       "caretColor": "#000000",
+       "outline": "solid 2px #594ae2",
+       "background": "#ffffff",
+       "color": "#000000",
+       "box": {
+        "l": 407.33,
+        "t": 628.79,
+        "w": 98.67,
+        "h": 28
+       },
+       "layer": "ex-key-field-layer",
+       "ariaActiveDescendant": "ex275-r9c3"
+      },
+      "focusCellBox": {
+       "l": 407.33,
+       "t": 628.79,
+       "w": 98.67,
+       "h": 28
+      },
+      "root": {
+       "tabIndex": "-1",
+       "cls": "ex-grid",
+       "ariaActiveDescendant": null,
+       "focusVisibleMark": false,
+       "matchesFocusVisible": false,
+       "outline": "none 2.66667px #424242"
+      },
+      "nameBox": "D10",
+      "nameBoxField": {
+       "value": "D10",
+       "selection": [
+        3,
+        3
+       ],
+       "box": {
+        "l": 44,
+        "t": 320.79,
+        "w": 83,
+        "h": 28
+       },
+       "scrollLeft": 0,
+       "scrollWidth": 83,
+       "clientWidth": 83,
+       "shown": false,
+       "fill": "#424242",
+       "color": "#424242",
+       "layer": null
+      },
+      "cell": null,
+      "bar": {
+       "value": "",
+       "selection": [
+        0,
+        0
+       ],
+       "box": {
+        "l": 143,
+        "t": 320.79,
+        "w": 605,
+        "h": 28
+       },
+       "scrollLeft": 0,
+       "scrollWidth": 605,
+       "clientWidth": 605,
+       "shown": false,
+       "fill": "#424242",
+       "color": "#424242",
+       "layer": {
+        "text": "",
+        "visibility": "hidden",
+        "box": {
+         "l": 143,
+         "t": 320.79,
+         "w": 605,
+         "h": 28
+        },
+        "scrollLeft": 0,
+        "colours": "",
+        "highlights": [],
+        "spans": []
+       }
+      },
+      "completion": null,
+      "hints": [],
+      "outlines": [],
+      "points": [],
+      "selected": [],
+      "sorted": [],
+      "find": null,
+      "message": [],
+      "cells": {
+       "D10": "",
+       "D11": "",
+       "D12": "",
+       "D13": "",
+       "E10": "",
+       "E11": "",
+       "E12": "",
+       "F11": ""
+      },
+      "grids": [
+       {
+        "i": 0,
+        "in": null,
+        "hasKeyboard": true,
+        "keyField": {
+         "value": "か",
+         "composing": true,
+         "readOnly": false
+        },
+        "editing": false,
+        "editorValue": null,
+        "focus": "D10",
+        "rootTabIndex": "-1",
+        "focusVisibleMark": false,
+        "rootFocusVisible": false
+       },
+       {
+        "i": 1,
+        "in": "sheet-positions",
+        "hasKeyboard": false,
+        "keyField": null,
+        "editing": false,
+        "editorValue": null,
+        "focus": null,
+        "rootTabIndex": "0",
+        "focusVisibleMark": false,
+        "rootFocusVisible": false
+       }
+      ],
+      "events": [
+       {
+        "t": 17225,
+        "type": "keydown",
+        "target": "key-field",
+        "key": "Process",
+        "code": "KeyA",
+        "keyCode": 229,
+        "isComposing": true,
+        "value": "ｋ"
+       },
+       {
+        "t": 17227,
+        "type": "compositionupdate",
+        "target": "key-field",
+        "data": "か",
+        "value": "ｋ"
+       },
+       {
+        "t": 17227,
+        "type": "beforeinput",
+        "target": "key-field",
+        "inputType": "insertCompositionText",
+        "data": "か",
+        "isComposing": true,
+        "value": "ｋ"
+       },
+       {
+        "t": 17227,
+        "type": "input",
+        "target": "key-field",
+        "inputType": "insertCompositionText",
+        "data": "か",
+        "isComposing": true,
+        "value": "か"
+       },
+       {
+        "t": 17227,
+        "type": "keyup",
+        "target": "key-field",
+        "key": "Process",
+        "code": "KeyA",
+        "keyCode": 229,
+        "isComposing": true,
+        "value": "か"
+       }
+      ],
+      "focusLog": []
+     },
+     "clip": {
+      "x": 32,
+      "y": 316,
+      "width": 728,
+      "height": 457
+     },
+     "pixels": {
+      "scale": 1.5,
+      "boxes": [
+       {
+        "text": "(the Keyboard Field)",
+        "ground": "#ffffff:5651",
+        "colours": 113,
+        "saturated": [
+         "#594ae2:376",
+         "#002c8c:3",
+         "#298ade:3"
+        ],
+        "darkest": "#000000"
+       },
+       {
+        "text": "(the Focus cell)",
+        "ground": "#ffffff:5651",
+        "colours": 113,
+        "saturated": [
+         "#594ae2:376",
+         "#002c8c:3",
+         "#298ade:3"
+        ],
+        "darkest": "#000000"
+       }
+      ]
+     },
+     "shot": "mud-k8x-a-server-150-msedge.png",
+     "tookMs": 969
+    },
+    {
+     "state": "n",
+     "did": [
+      "keys n"
+     ],
+     "readAtMs": 900,
+     "settled": true,
+     "ime": "ok imestate open=True mode=0x9 (hiragana, full-width) layout=0x04110411",
+     "front": "ok foreground title=\"ime17-mud-server-150-msedge - Personal -\" process=msedge",
+     "read": {
+      "active": "key-field",
+      "editing": false,
+      "focus": "D10",
+      "keyField": {
+       "value": "かｎ",
+       "selection": [
+        2,
+        2
+       ],
+       "composing": true,
+       "cls": "ex-key-field ex-key-field-composing",
+       "readOnly": false,
+       "tabIndex": "0",
+       "opacity": "1",
+       "caretColor": "#000000",
+       "outline": "solid 2px #594ae2",
+       "background": "#ffffff",
+       "color": "#000000",
+       "box": {
+        "l": 407.33,
+        "t": 628.79,
+        "w": 98.67,
+        "h": 28
+       },
+       "layer": "ex-key-field-layer",
+       "ariaActiveDescendant": "ex275-r9c3"
+      },
+      "focusCellBox": {
+       "l": 407.33,
+       "t": 628.79,
+       "w": 98.67,
+       "h": 28
+      },
+      "root": {
+       "tabIndex": "-1",
+       "cls": "ex-grid",
+       "ariaActiveDescendant": null,
+       "focusVisibleMark": false,
+       "matchesFocusVisible": false,
+       "outline": "none 2.66667px #424242"
+      },
+      "nameBox": "D10",
+      "nameBoxField": {
+       "value": "D10",
+       "selection": [
+        3,
+        3
+       ],
+       "box": {
+        "l": 44,
+        "t": 320.79,
+        "w": 83,
+        "h": 28
+       },
+       "scrollLeft": 0,
+       "scrollWidth": 83,
+       "clientWidth": 83,
+       "shown": false,
+       "fill": "#424242",
+       "color": "#424242",
+       "layer": null
+      },
+      "cell": null,
+      "bar": {
+       "value": "",
+       "selection": [
+        0,
+        0
+       ],
+       "box": {
+        "l": 143,
+        "t": 320.79,
+        "w": 605,
+        "h": 28
+       },
+       "scrollLeft": 0,
+       "scrollWidth": 605,
+       "clientWidth": 605,
+       "shown": false,
+       "fill": "#424242",
+       "color": "#424242",
+       "layer": {
+        "text": "",
+        "visibility": "hidden",
+        "box": {
+         "l": 143,
+         "t": 320.79,
+         "w": 605,
+         "h": 28
+        },
+        "scrollLeft": 0,
+        "colours": "",
+        "highlights": [],
+        "spans": []
+       }
+      },
+      "completion": null,
+      "hints": [],
+      "outlines": [],
+      "points": [],
+      "selected": [],
+      "sorted": [],
+      "find": null,
+      "message": [],
+      "cells": {
+       "D10": "",
+       "D11": "",
+       "D12": "",
+       "D13": "",
+       "E10": "",
+       "E11": "",
+       "E12": "",
+       "F11": ""
+      },
+      "grids": [
+       {
+        "i": 0,
+        "in": null,
+        "hasKeyboard": true,
+        "keyField": {
+         "value": "かｎ",
+         "composing": true,
+         "readOnly": false
+        },
+        "editing": false,
+        "editorValue": null,
+        "focus": "D10",
+        "rootTabIndex": "-1",
+        "focusVisibleMark": false,
+        "rootFocusVisible": false
+       },
+       {
+        "i": 1,
+        "in": "sheet-positions",
+        "hasKeyboard": false,
+        "keyField": null,
+        "editing": false,
+        "editorValue": null,
+        "focus": null,
+        "rootTabIndex": "0",
+        "focusVisibleMark": false,
+        "rootFocusVisible": false
+       }
+      ],
+      "events": [
+       {
+        "t": 18227,
+        "type": "keydown",
+        "target": "key-field",
+        "key": "Process",
+        "code": "KeyN",
+        "keyCode": 229,
+        "isComposing": true,
+        "value": "か"
+       },
+       {
+        "t": 18228,
+        "type": "compositionupdate",
+        "target": "key-field",
+        "data": "かｎ",
+        "value": "か"
+       },
+       {
+        "t": 18228,
+        "type": "beforeinput",
+        "target": "key-field",
+        "inputType": "insertCompositionText",
+        "data": "かｎ",
+        "isComposing": true,
+        "value": "か"
+       },
+       {
+        "t": 18229,
+        "type": "input",
+        "target": "key-field",
+        "inputType": "insertCompositionText",
+        "data": "かｎ",
+        "isComposing": true,
+        "value": "かｎ"
+       },
+       {
+        "t": 18229,
+        "type": "keyup",
+        "target": "key-field",
+        "key": "Process",
+        "code": "KeyN",
+        "keyCode": 229,
+        "isComposing": true,
+        "value": "かｎ"
+       }
+      ],
+      "focusLog": []
+     },
+     "clip": {
+      "x": 32,
+      "y": 316,
+      "width": 728,
+      "height": 457
+     },
+     "pixels": {
+      "scale": 1.5,
+      "boxes": [
+       {
+        "text": "(the Keyboard Field)",
+        "ground": "#ffffff:5526",
+        "colours": 132,
+        "saturated": [
+         "#594ae2:376",
+         "#de8a29:14",
+         "#002c8c:10"
+        ],
+        "darkest": "#000000"
+       },
+       {
+        "text": "(the Focus cell)",
+        "ground": "#ffffff:5526",
+        "colours": 132,
+        "saturated": [
+         "#594ae2:376",
+         "#de8a29:14",
+         "#002c8c:10"
+        ],
+        "darkest": "#000000"
+       }
+      ]
+     },
+     "shot": "mud-k8x-n-server-150-msedge.png",
+     "tookMs": 969
+    },
+    {
+     "state": "a2",
+     "did": [
+      "keys a"
+     ],
+     "readAtMs": 900,
+     "settled": true,
+     "ime": "ok imestate open=True mode=0x9 (hiragana, full-width) layout=0x04110411",
+     "front": "ok foreground title=\"ime17-mud-server-150-msedge - Personal -\" process=msedge",
+     "read": {
+      "active": "key-field",
+      "editing": false,
+      "focus": "D10",
+      "keyField": {
+       "value": "かな",
+       "selection": [
+        2,
+        2
+       ],
+       "composing": true,
+       "cls": "ex-key-field ex-key-field-composing",
+       "readOnly": false,
+       "tabIndex": "0",
+       "opacity": "1",
+       "caretColor": "#000000",
+       "outline": "solid 2px #594ae2",
+       "background": "#ffffff",
+       "color": "#000000",
+       "box": {
+        "l": 407.33,
+        "t": 628.79,
+        "w": 98.67,
+        "h": 28
+       },
+       "layer": "ex-key-field-layer",
+       "ariaActiveDescendant": "ex275-r9c3"
+      },
+      "focusCellBox": {
+       "l": 407.33,
+       "t": 628.79,
+       "w": 98.67,
+       "h": 28
+      },
+      "root": {
+       "tabIndex": "-1",
+       "cls": "ex-grid",
+       "ariaActiveDescendant": null,
+       "focusVisibleMark": false,
+       "matchesFocusVisible": false,
+       "outline": "none 2.66667px #424242"
+      },
+      "nameBox": "D10",
+      "nameBoxField": {
+       "value": "D10",
+       "selection": [
+        3,
+        3
+       ],
+       "box": {
+        "l": 44,
+        "t": 320.79,
+        "w": 83,
+        "h": 28
+       },
+       "scrollLeft": 0,
+       "scrollWidth": 83,
+       "clientWidth": 83,
+       "shown": false,
+       "fill": "#424242",
+       "color": "#424242",
+       "layer": null
+      },
+      "cell": null,
+      "bar": {
+       "value": "",
+       "selection": [
+        0,
+        0
+       ],
+       "box": {
+        "l": 143,
+        "t": 320.79,
+        "w": 605,
+        "h": 28
+       },
+       "scrollLeft": 0,
+       "scrollWidth": 605,
+       "clientWidth": 605,
+       "shown": false,
+       "fill": "#424242",
+       "color": "#424242",
+       "layer": {
+        "text": "",
+        "visibility": "hidden",
+        "box": {
+         "l": 143,
+         "t": 320.79,
+         "w": 605,
+         "h": 28
+        },
+        "scrollLeft": 0,
+        "colours": "",
+        "highlights": [],
+        "spans": []
+       }
+      },
+      "completion": null,
+      "hints": [],
+      "outlines": [],
+      "points": [],
+      "selected": [],
+      "sorted": [],
+      "find": null,
+      "message": [],
+      "cells": {
+       "D10": "",
+       "D11": "",
+       "D12": "",
+       "D13": "",
+       "E10": "",
+       "E11": "",
+       "E12": "",
+       "F11": ""
+      },
+      "grids": [
+       {
+        "i": 0,
+        "in": null,
+        "hasKeyboard": true,
+        "keyField": {
+         "value": "かな",
+         "composing": true,
+         "readOnly": false
+        },
+        "editing": false,
+        "editorValue": null,
+        "focus": "D10",
+        "rootTabIndex": "-1",
+        "focusVisibleMark": false,
+        "rootFocusVisible": false
+       },
+       {
+        "i": 1,
+        "in": "sheet-positions",
+        "hasKeyboard": false,
+        "keyField": null,
+        "editing": false,
+        "editorValue": null,
+        "focus": null,
+        "rootTabIndex": "0",
+        "focusVisibleMark": false,
+        "rootFocusVisible": false
+       }
+      ],
+      "events": [
+       {
+        "t": 19243,
+        "type": "keydown",
+        "target": "key-field",
+        "key": "Process",
+        "code": "KeyA",
+        "keyCode": 229,
+        "isComposing": true,
+        "value": "かｎ"
+       },
+       {
+        "t": 19244,
+        "type": "compositionupdate",
+        "target": "key-field",
+        "data": "かな",
+        "value": "かｎ"
+       },
+       {
+        "t": 19244,
+        "type": "beforeinput",
+        "target": "key-field",
+        "inputType": "insertCompositionText",
+        "data": "かな",
+        "isComposing": true,
+        "value": "かｎ"
+       },
+       {
+        "t": 19245,
+        "type": "input",
+        "target": "key-field",
+        "inputType": "insertCompositionText",
+        "data": "かな",
+        "isComposing": true,
+        "value": "かな"
+       },
+       {
+        "t": 19245,
+        "type": "keyup",
+        "target": "key-field",
+        "key": "Process",
+        "code": "KeyA",
+        "keyCode": 229,
+        "isComposing": true,
+        "value": "かな"
+       }
+      ],
+      "focusLog": []
+     },
+     "clip": {
+      "x": 32,
+      "y": 316,
+      "width": 728,
+      "height": 457
+     },
+     "pixels": {
+      "scale": 1.5,
+      "boxes": [
+       {
+        "text": "(the Keyboard Field)",
+        "ground": "#ffffff:5449",
+        "colours": 203,
+        "saturated": [
+         "#594ae2:376",
+         "#298ade:5",
+         "#de8a29:5"
+        ],
+        "darkest": "#000000"
+       },
+       {
+        "text": "(the Focus cell)",
+        "ground": "#ffffff:5449",
+        "colours": 203,
+        "saturated": [
+         "#594ae2:376",
+         "#298ade:5",
+         "#de8a29:5"
+        ],
+        "darkest": "#000000"
+       }
+      ]
+     },
+     "shot": "mud-k8x-a2-server-150-msedge.png",
+     "tookMs": 968
+    },
+    {
+     "state": "pressed-d8",
+     "did": [
+      "a press at (762, 1060), the middle of sheet's D8"
+     ],
+     "readAtMs": 900,
+     "settled": true,
+     "ime": "ok imestate open=True mode=0x9 (hiragana, full-width) layout=0x04110411",
+     "front": "ok foreground title=\"ime17-mud-server-150-msedge - Personal -\" process=msedge",
+     "read": {
+      "active": "key-field",
+      "editing": false,
+      "focus": "D8",
+      "keyField": {
+       "value": "",
+       "selection": [
+        0,
+        0
+       ],
+       "composing": false,
+       "cls": "ex-key-field",
+       "readOnly": false,
+       "tabIndex": "0",
+       "opacity": "0",
+       "caretColor": "#000000/0",
+       "outline": "none 2.66667px #000000",
+       "background": "#ffffff",
+       "color": "#000000",
+       "box": {
+        "l": 407.33,
+        "t": 572.79,
+        "w": 98.67,
+        "h": 28
+       },
+       "layer": "ex-key-field-layer",
+       "ariaActiveDescendant": "ex275-r7c3"
+      },
+      "focusCellBox": {
+       "l": 407.33,
+       "t": 572.79,
+       "w": 98.67,
+       "h": 28
+      },
+      "root": {
+       "tabIndex": "-1",
+       "cls": "ex-grid",
+       "ariaActiveDescendant": null,
+       "focusVisibleMark": false,
+       "matchesFocusVisible": false,
+       "outline": "none 2.66667px #424242"
+      },
+      "nameBox": "D8",
+      "nameBoxField": {
+       "value": "D8",
+       "selection": [
+        2,
+        2
+       ],
+       "box": {
+        "l": 44,
+        "t": 320.79,
+        "w": 83,
+        "h": 28
+       },
+       "scrollLeft": 0,
+       "scrollWidth": 83,
+       "clientWidth": 83,
+       "shown": false,
+       "fill": "#424242",
+       "color": "#424242",
+       "layer": null
+      },
+      "cell": null,
+      "bar": {
+       "value": "",
+       "selection": [
+        0,
+        0
+       ],
+       "box": {
+        "l": 143,
+        "t": 320.79,
+        "w": 605,
+        "h": 28
+       },
+       "scrollLeft": 0,
+       "scrollWidth": 605,
+       "clientWidth": 605,
+       "shown": false,
+       "fill": "#424242",
+       "color": "#424242",
+       "layer": {
+        "text": "",
+        "visibility": "hidden",
+        "box": {
+         "l": 143,
+         "t": 320.79,
+         "w": 605,
+         "h": 28
+        },
+        "scrollLeft": 0,
+        "colours": "",
+        "highlights": [],
+        "spans": []
+       }
+      },
+      "completion": null,
+      "hints": [],
+      "outlines": [],
+      "points": [],
+      "selected": [],
+      "sorted": [],
+      "find": null,
+      "message": [],
+      "cells": {
+       "D10": "かな",
+       "D11": "",
+       "D12": "",
+       "D13": "",
+       "E10": "",
+       "E11": "",
+       "E12": "",
+       "F11": ""
+      },
+      "grids": [
+       {
+        "i": 0,
+        "in": null,
+        "hasKeyboard": true,
+        "keyField": {
+         "value": "",
+         "composing": false,
+         "readOnly": false
+        },
+        "editing": false,
+        "editorValue": null,
+        "focus": "D8",
+        "rootTabIndex": "-1",
+        "focusVisibleMark": false,
+        "rootFocusVisible": false
+       },
+       {
+        "i": 1,
+        "in": "sheet-positions",
+        "hasKeyboard": false,
+        "keyField": null,
+        "editing": false,
+        "editorValue": null,
+        "focus": null,
+        "rootTabIndex": "0",
+        "focusVisibleMark": false,
+        "rootFocusVisible": false
+       }
+      ],
+      "events": [
+       {
+        "t": 20280,
+        "type": "compositionend",
+        "target": "key-field",
+        "data": "かな",
+        "value": "かな"
+       },
+       {
+        "t": 20281,
+        "type": "mousedown",
+        "target": "div.ex-viewport",
+        "x": 456,
+        "y": 586,
+        "button": 0,
+        "detail": 1
+       },
+       {
+        "t": 20341,
+        "type": "mouseup",
+        "target": "div.ex-viewport",
+        "x": 456,
+        "y": 586,
+        "button": 0,
+        "detail": 1
+       },
+       {
+        "t": 20341,
+        "type": "click",
+        "target": "div.ex-viewport",
+        "x": 456,
+        "y": 586,
+        "button": 0,
+        "detail": 1
+       },
+       {
+        "t": 20594,
+        "type": "mousedown",
+        "target": "div.ex-viewport",
+        "x": 456,
+        "y": 586,
+        "button": 0,
+        "detail": 1
+       },
+       {
+        "t": 20758,
+        "type": "mouseup",
+        "target": "div.ex-viewport",
+        "x": 456,
+        "y": 586,
+        "button": 0,
+        "detail": 1
+       },
+       {
+        "t": 20934,
+        "type": "click",
+        "target": "div.ex-viewport",
+        "x": 456,
+        "y": 586,
+        "button": 0,
+        "detail": 1
+       }
+      ],
+      "focusLog": [
+       {
+        "t": 20594,
+        "out": "key-field",
+        "to": "cell"
+       },
+       {
+        "t": 20594,
+        "el": "cell"
+       },
+       {
+        "t": 20749,
+        "out": "cell",
+        "to": "key-field"
+       },
+       {
+        "t": 20750,
+        "el": "key-field"
+       }
+      ]
+     },
+     "clip": {
+      "x": 32,
+      "y": 316,
+      "width": 728,
+      "height": 457
+     },
+     "pixels": {
+      "scale": 1.5,
+      "boxes": [
+       {
+        "text": "(the Focus cell)",
+        "ground": "#ffffff:6013",
+        "colours": 2,
+        "saturated": [
+         "#594ae2:203"
+        ],
+        "darkest": "#594ae2"
+       }
+      ]
+     },
+     "shot": "mud-k8x-pressed-d8-server-150-msedge.png",
+     "tookMs": 964
+    }
+   ],
+   "before": {
+    "escapes": 0,
+    "offByKey": false,
+    "offInAnEdit": false,
+    "ime": "ok imestate open=False mode=0x9 (hiragana, full-width) layout=0x04110411"
+   },
+   "focusMs": 0,
+   "targetsBefore": [
+    "D10 held \"かな\": D10:F13 cleared with Delete"
+   ],
+   "focusMs2": 103,
+   "beforeRead": {
+    "active": "key-field",
+    "editing": false,
+    "focus": "D10",
+    "keyField": {
+     "value": "",
+     "selection": [
+      0,
+      0
+     ],
+     "composing": false,
+     "cls": "ex-key-field",
+     "readOnly": false,
+     "tabIndex": "0",
+     "opacity": "0",
+     "caretColor": "#000000/0",
+     "outline": "none 2.66667px #000000",
+     "background": "#ffffff",
+     "color": "#000000",
+     "box": {
+      "l": 407.33,
+      "t": 628.79,
+      "w": 98.67,
+      "h": 28
+     },
+     "layer": "ex-key-field-layer",
+     "ariaActiveDescendant": "ex275-r9c3"
+    },
+    "focusCellBox": {
+     "l": 407.33,
+     "t": 628.79,
+     "w": 98.67,
+     "h": 28
+    },
+    "root": {
+     "tabIndex": "-1",
+     "cls": "ex-grid",
+     "ariaActiveDescendant": null,
+     "focusVisibleMark": false,
+     "matchesFocusVisible": false,
+     "outline": "none 2.66667px #424242"
+    },
+    "nameBox": "D10",
+    "nameBoxField": {
+     "value": "D10",
+     "selection": [
+      3,
+      3
+     ],
+     "box": {
+      "l": 44,
+      "t": 320.79,
+      "w": 83,
+      "h": 28
+     },
+     "scrollLeft": 0,
+     "scrollWidth": 83,
+     "clientWidth": 83,
+     "shown": false,
+     "fill": "#424242",
+     "color": "#424242",
+     "layer": null
+    },
+    "cell": null,
+    "bar": {
+     "value": "",
+     "selection": [
+      0,
+      0
+     ],
+     "box": {
+      "l": 143,
+      "t": 320.79,
+      "w": 605,
+      "h": 28
+     },
+     "scrollLeft": 0,
+     "scrollWidth": 605,
+     "clientWidth": 605,
+     "shown": false,
+     "fill": "#424242",
+     "color": "#424242",
+     "layer": {
+      "text": "",
+      "visibility": "hidden",
+      "box": {
+       "l": 143,
+       "t": 320.79,
+       "w": 605,
+       "h": 28
+      },
+      "scrollLeft": 0,
+      "colours": "",
+      "highlights": [],
+      "spans": []
+     }
+    },
+    "completion": null,
+    "hints": [],
+    "outlines": [],
+    "points": [],
+    "selected": [],
+    "sorted": [],
+    "find": null,
+    "message": [],
+    "cells": {
+     "D10": "",
+     "D11": "",
+     "D12": "",
+     "D13": "",
+     "E10": "",
+     "E11": "",
+     "E12": "",
+     "F11": ""
+    },
+    "grids": [
+     {
+      "i": 0,
+      "in": null,
+      "hasKeyboard": true,
+      "keyField": {
+       "value": "",
+       "composing": false,
+       "readOnly": false
+      },
+      "editing": false,
+      "editorValue": null,
+      "focus": "D10",
+      "rootTabIndex": "-1",
+      "focusVisibleMark": false,
+      "rootFocusVisible": false
+     },
+     {
+      "i": 1,
+      "in": "sheet-positions",
+      "hasKeyboard": false,
+      "keyField": null,
+      "editing": false,
+      "editorValue": null,
+      "focus": null,
+      "rootTabIndex": "0",
+      "focusVisibleMark": false,
+      "rootFocusVisible": false
+     }
+    ],
+    "events": [
+     {
+      "t": 10631,
+      "type": "mousedown",
+      "target": "div.ex-viewport",
+      "x": 456,
+      "y": 642,
+      "button": 0,
+      "detail": 1
+     },
+     {
+      "t": 10691,
+      "type": "mouseup",
+      "target": "div.ex-viewport",
+      "x": 456,
+      "y": 642,
+      "button": 0,
+      "detail": 1
+     },
+     {
+      "t": 10692,
+      "type": "click",
+      "target": "div.ex-viewport",
+      "x": 456,
+      "y": 642,
+      "button": 0,
+      "detail": 1
+     },
+     {
+      "t": 11446,
+      "type": "mousedown",
+      "target": "div.ex-viewport",
+      "x": 456,
+      "y": 642,
+      "button": 0,
+      "detail": 1
+     },
+     {
+      "t": 11519,
+      "type": "mouseup",
+      "target": "div.ex-viewport",
+      "x": 456,
+      "y": 642,
+      "button": 0,
+      "detail": 1
+     },
+     {
+      "t": 11520,
+      "type": "click",
+      "target": "div.ex-viewport",
+      "x": 456,
+      "y": 642,
+      "button": 0,
+      "detail": 1
+     },
+     {
+      "t": 12228,
+      "type": "keydown",
+      "target": "key-field",
+      "key": "Shift",
+      "code": "ShiftLeft",
+      "keyCode": 16,
+      "isComposing": false,
+      "shift": true,
+      "value": ""
+     },
+     {
+      "t": 12309,
+      "type": "mousedown",
+      "target": "div.ex-viewport",
+      "x": 654,
+      "y": 726,
+      "button": 0,
+      "detail": 1
+     },
+     {
+      "t": 12369,
+      "type": "mouseup",
+      "target": "div.ex-viewport",
+      "x": 654,
+      "y": 726,
+      "button": 0,
+      "detail": 1
+     },
+     {
+      "t": 12370,
+      "type": "click",
+      "target": "div.ex-viewport",
+      "x": 654,
+      "y": 726,
+      "button": 0,
+      "detail": 1
+     },
+     {
+      "t": 13134,
+      "type": "keydown",
+      "target": "key-field",
+      "key": "Delete",
+      "code": "Delete",
+      "keyCode": 46,
+      "isComposing": false,
+      "value": ""
+     },
+     {
+      "t": 13856,
+      "type": "mousedown",
+      "target": "div.ex-viewport",
+      "x": 456,
+      "y": 698,
+      "button": 0,
+      "detail": 1
+     },
+     {
+      "t": 13916,
+      "type": "mouseup",
+      "target": "div.ex-viewport",
+      "x": 456,
+      "y": 698,
+      "button": 0,
+      "detail": 1
+     },
+     {
+      "t": 13916,
+      "type": "click",
+      "target": "div.ex-viewport",
+      "x": 456,
+      "y": 698,
+      "button": 0,
+      "detail": 1
+     },
+     {
+      "t": 14652,
+      "type": "mousedown",
+      "target": "div.ex-viewport",
+      "x": 456,
+      "y": 642,
+      "button": 0,
+      "detail": 1
+     },
+     {
+      "t": 14713,
+      "type": "mouseup",
+      "target": "div.ex-viewport",
+      "x": 456,
+      "y": 642,
+      "button": 0,
+      "detail": 1
+     },
+     {
+      "t": 14713,
+      "type": "click",
+      "target": "div.ex-viewport",
+      "x": 456,
+      "y": 642,
+      "button": 0,
+      "detail": 1
+     }
+    ],
+    "focusLog": [
+     {
+      "t": 10631,
+      "out": "key-field",
+      "to": "div.ex-scroller"
+     },
+     {
+      "t": 10631,
+      "out": "div.ex-scroller",
+      "to": "key-field"
+     },
+     {
+      "t": 10632,
+      "el": "key-field"
+     },
+     {
+      "t": 11447,
+      "out": "key-field",
+      "to": "div.ex-scroller"
+     },
+     {
+      "t": 11447,
+      "out": "div.ex-scroller",
+      "to": "key-field"
+     },
+     {
+      "t": 11447,
+      "el": "key-field"
+     },
+     {
+      "t": 12309,
+      "out": "key-field",
+      "to": "div.ex-scroller"
+     },
+     {
+      "t": 12309,
+      "out": "div.ex-scroller",
+      "to": "key-field"
+     },
+     {
+      "t": 12310,
+      "el": "key-field"
+     },
+     {
+      "t": 13856,
+      "out": "key-field",
+      "to": "div.ex-scroller"
+     },
+     {
+      "t": 13856,
+      "out": "div.ex-scroller",
+      "to": "key-field"
+     },
+     {
+      "t": 13857,
+      "el": "key-field"
+     },
+     {
+      "t": 14652,
+      "out": "key-field",
+      "to": "div.ex-scroller"
+     },
+     {
+      "t": 14653,
+      "out": "div.ex-scroller",
+      "to": "key-field"
+     },
+     {
+      "t": 14653,
+      "el": "key-field"
+     }
+    ]
+   },
+   "imeBefore": "ok imestate open=False mode=0x9 (hiragana, full-width) layout=0x04110411",
+   "after": {
+    "escapes": 0,
+    "offByKey": true,
+    "offInAnEdit": false,
+    "ime": "ok imestate open=False mode=0x9 (hiragana, full-width) layout=0x04110411"
+   },
+   "afterRead": {
+    "active": "key-field",
+    "editing": false,
+    "focus": "D8",
+    "keyField": {
+     "value": "",
+     "selection": [
+      0,
+      0
+     ],
+     "composing": false,
+     "cls": "ex-key-field",
+     "readOnly": false,
+     "tabIndex": "0",
+     "opacity": "0",
+     "caretColor": "#000000/0",
+     "outline": "none 2.66667px #000000",
+     "background": "#ffffff",
+     "color": "#000000",
+     "box": {
+      "l": 407.33,
+      "t": 572.79,
+      "w": 98.67,
+      "h": 28
+     },
+     "layer": "ex-key-field-layer",
+     "ariaActiveDescendant": "ex275-r7c3"
+    },
+    "focusCellBox": {
+     "l": 407.33,
+     "t": 572.79,
+     "w": 98.67,
+     "h": 28
+    },
+    "root": {
+     "tabIndex": "-1",
+     "cls": "ex-grid",
+     "ariaActiveDescendant": null,
+     "focusVisibleMark": false,
+     "matchesFocusVisible": false,
+     "outline": "none 2.66667px #424242"
+    },
+    "nameBox": "D8",
+    "nameBoxField": {
+     "value": "D8",
+     "selection": [
+      2,
+      2
+     ],
+     "box": {
+      "l": 44,
+      "t": 320.79,
+      "w": 83,
+      "h": 28
+     },
+     "scrollLeft": 0,
+     "scrollWidth": 83,
+     "clientWidth": 83,
+     "shown": false,
+     "fill": "#424242",
+     "color": "#424242",
+     "layer": null
+    },
+    "cell": null,
+    "bar": {
+     "value": "",
+     "selection": [
+      0,
+      0
+     ],
+     "box": {
+      "l": 143,
+      "t": 320.79,
+      "w": 605,
+      "h": 28
+     },
+     "scrollLeft": 0,
+     "scrollWidth": 605,
+     "clientWidth": 605,
+     "shown": false,
+     "fill": "#424242",
+     "color": "#424242",
+     "layer": {
+      "text": "",
+      "visibility": "hidden",
+      "box": {
+       "l": 143,
+       "t": 320.79,
+       "w": 605,
+       "h": 28
+      },
+      "scrollLeft": 0,
+      "colours": "",
+      "highlights": [],
+      "spans": []
+     }
+    },
+    "completion": null,
+    "hints": [],
+    "outlines": [],
+    "points": [],
+    "selected": [],
+    "sorted": [],
+    "find": null,
+    "message": [],
+    "cells": {
+     "D10": "かな",
+     "D11": "",
+     "D12": "",
+     "D13": "",
+     "E10": "",
+     "E11": "",
+     "E12": "",
+     "F11": ""
+    },
+    "grids": [
+     {
+      "i": 0,
+      "in": null,
+      "hasKeyboard": true,
+      "keyField": {
+       "value": "",
+       "composing": false,
+       "readOnly": false
+      },
+      "editing": false,
+      "editorValue": null,
+      "focus": "D8",
+      "rootTabIndex": "-1",
+      "focusVisibleMark": false,
+      "rootFocusVisible": false
+     },
+     {
+      "i": 1,
+      "in": "sheet-positions",
+      "hasKeyboard": false,
+      "keyField": null,
+      "editing": false,
+      "editorValue": null,
+      "focus": null,
+      "rootTabIndex": "0",
+      "focusVisibleMark": false,
+      "rootFocusVisible": false
+     }
+    ],
+    "events": [],
+    "focusLog": []
+   },
+   "d10Entry": "かな"
+  }
+ ],
+ "messages": [
+  {
+   "t": "2026-10-25T18:20:35.848Z",
+   "type": "info",
+   "text": "[2026-10-25T18:20:35.848Z] Information: Normalizing '_blazor' to 'http://localhost:5317/_blazor'."
+  },
+  {
+   "t": "2026-10-25T18:20:35.855Z",
+   "type": "info",
+   "text": "[2026-10-25T18:20:35.855Z] Information: WebSocket connected to ws://localhost:5317/_blazor?id=9-SURT8xtntXuRPGFqZxOQ."
+  }
+ ],
+ "altTarget": {
+  "open": "ok alttarget open front: title=\"exgrid-alttab-16\" process=powershell",
+  "closed": "ok alttarget closed"
+ },
+ "browserVersion": "156.0.4314.42",
+ "keyboard": {
+  "before": "ok layout 0x08090809",
+  "set": "ok japanese was=0x08090809 now=0x04110411",
+  "ime": "ok imestate open=False mode=0x19 (hiragana, full-width, romaji) layout=0x04110411",
+  "after": "ok english was=0x04110411 now=0x08090809",
+  "imeAfter": "ok imestate open=False mode=0x1 (hiragana, half-width) layout=0x08090809"
+ },
+ "calibration": {
+  "dpr": 1.5,
+  "tries": [
+   {
+    "px": 677,
+    "py": 360,
+    "client": {
+     "x": 400,
+     "y": 120
+    }
+   }
+  ]
+ },
+ "roundTripSet": {
+  "status": 200,
+  "now": "rtt=150\n"
+ },
+ "finished": "2026-10-25T18:20:59.120Z"
+}

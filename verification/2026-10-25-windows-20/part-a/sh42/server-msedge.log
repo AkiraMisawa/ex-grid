@@ -1,0 +1,7 @@
+ctrl-1: page key=1 code=Digit1 ctrl=true target=ex-key-field | sheet dialog: Format Cells | browser tab opened: Number; tab opened: Alignment; tab opened: Font; tab opened: Border; tab opened: Fill
+ctrl-2: page key=2 code=Digit2 ctrl=true target=ex-key-field | sheet D10 {"weight":"400","style":"normal","lines":"none"} -> {"weight":"700","style":"normal","lines":"none"}; focus font regular -> bold | browser (nothing)
+ctrl-3: page key=3 code=Digit3 ctrl=true target=ex-key-field | sheet D10 {"weight":"400","style":"normal","lines":"none"} -> {"weight":"400","style":"italic","lines":"none"}; focus font regular -> italic | browser (nothing)
+ctrl-4: page key=4 code=Digit4 ctrl=true target=ex-key-field | sheet D10 {"weight":"400","style":"normal","lines":"none"} -> {"weight":"400","style":"normal","lines":"underline"}; focus font regular -> underline | browser (nothing)
+ctrl-5: page key=5 code=Digit5 ctrl=true target=ex-key-field | sheet D10 {"weight":"400","style":"normal","lines":"none"} -> {"weight":"400","style":"normal","lines":"line-through"}; focus font regular -> strikethrough | browser (nothing)
+{"channel":"msedge","label":"server","browser":"Edg/156.0.4314.42","keys":5,"messages":0}
+exit=0 

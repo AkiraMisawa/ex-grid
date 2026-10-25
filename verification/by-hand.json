@@ -20,12 +20,12 @@
         "tests/ExGrid.Browser/scrollbar.spec.mjs"
       ],
       "record": {
-        "commit": "5e3eecb44fb9dcfec074cfa8eefe03a91809fbc3",
-        "tag": "verified/2026-10-25-windows-19",
-        "path": "verification/2026-10-25-windows-19/report.md",
+        "commit": "1e85052e3449dca2541b96a8a33712e7c8d98b8f",
+        "tag": "verified/2026-10-25-windows-20",
+        "path": "verification/2026-10-25-windows-20/report.md",
         "verdict": "pass"
       },
-      "note": "The nineteenth Windows run, at main's head before 0.2.0-rc.1 (#258): scrollbar.spec.mjs's VZ-14 block at 150%, headed, on Chrome and Edge, on both hosts."
+      "note": "The twentieth Windows run, at release/0.2 before 0.2.0-rc.1 (#286), as the nineteenth ran it: scrollbar.spec.mjs's VZ-14 block at 150%, headed, on Chrome and Edge, on both hosts."
     },
     {
       "row": "VZ-16",
@@ -46,12 +46,12 @@
         "samples/ExGrid.DemoPages/SheetCases.cs"
       ],
       "record": {
-        "commit": "5e3eecb44fb9dcfec074cfa8eefe03a91809fbc3",
-        "tag": "verified/2026-10-25-windows-19",
-        "path": "verification/2026-10-25-windows-19/report.md",
+        "commit": "1e85052e3449dca2541b96a8a33712e7c8d98b8f",
+        "tag": "verified/2026-10-25-windows-20",
+        "path": "verification/2026-10-25-windows-20/report.md",
         "verdict": "pass"
       },
-      "note": "The nineteenth Windows run, at main's head before 0.2.0-rc.1 (#258): a real browser zoom told as it changes on /wide, and a thin line and a gridline at a real 2.25 on /sheet?case=11, Chrome and Edge, WebAssembly."
+      "note": "The twentieth Windows run, at release/0.2 before 0.2.0-rc.1 (#286), as the nineteenth ran it: a real browser zoom told as it changes on /wide, and a thin line and a gridline at a real 2.25 on /sheet?case=11, Chrome and Edge, WebAssembly."
     },
     {
       "row": "FN-12e",
@@ -85,12 +85,12 @@
         "tests/GlyphWidths/measure.mjs"
       ],
       "record": {
-        "commit": "5e3eecb44fb9dcfec074cfa8eefe03a91809fbc3",
-        "tag": "verified/2026-10-25-windows-19",
-        "path": "verification/2026-10-25-windows-19/report.md",
+        "commit": "1e85052e3449dca2541b96a8a33712e7c8d98b8f",
+        "tag": "verified/2026-10-25-windows-20",
+        "path": "verification/2026-10-25-windows-20/report.md",
         "verdict": "pass"
       },
-      "note": "The nineteenth Windows run, at main's head before 0.2.0-rc.1 (#258): the two paintings, headed, Chrome and Edge, on both hosts."
+      "note": "The twentieth Windows run, at release/0.2 before 0.2.0-rc.1 (#286), as the nineteenth ran it: the two paintings, headed, Chrome and Edge, on both hosts."
     },
     {
       "row": "FN-12e",
@@ -153,12 +153,12 @@
         "samples/ExGrid.DemoPages/SheetCases.cs"
       ],
       "record": {
-        "commit": "5e3eecb44fb9dcfec074cfa8eefe03a91809fbc3",
-        "tag": "verified/2026-10-25-windows-19",
-        "path": "verification/2026-10-25-windows-19/report.md",
+        "commit": "1e85052e3449dca2541b96a8a33712e7c8d98b8f",
+        "tag": "verified/2026-10-25-windows-20",
+        "path": "verification/2026-10-25-windows-20/report.md",
         "verdict": "pass"
       },
-      "note": "The nineteenth Windows run, at main's head before 0.2.0-rc.1 (#258): k1 to k16 with run 17's additions and DC-47, on /sheet and /sheet?chrome=mud, Chrome and Edge, both hosts and behind 150 ms, k8 and k8x with Predictive input off; t3a and t3b."
+      "note": "The twentieth Windows run, at release/0.2 before 0.2.0-rc.1 (#286), as the nineteenth ran it: k1 to k16 with run 17's additions and DC-47, on /sheet and /sheet?chrome=mud, Chrome and Edge, both hosts and behind 150 ms, k8 and k8x with Predictive input off; t3a and t3b."
     },
     {
       "row": "SH-42",
@@ -174,12 +174,12 @@
         "samples/ExGrid.DemoPages/SheetCases.cs"
       ],
       "record": {
-        "commit": "5e3eecb44fb9dcfec074cfa8eefe03a91809fbc3",
-        "tag": "verified/2026-10-25-windows-19",
-        "path": "verification/2026-10-25-windows-19/report.md",
+        "commit": "1e85052e3449dca2541b96a8a33712e7c8d98b8f",
+        "tag": "verified/2026-10-25-windows-20",
+        "path": "verification/2026-10-25-windows-20/report.md",
         "verdict": "pass"
       },
-      "note": "The nineteenth Windows run, at main's head before 0.2.0-rc.1 (#258): Ctrl+1 to Ctrl+5 on D10, Chrome and Edge, both hosts."
+      "note": "The twentieth Windows run, at release/0.2 before 0.2.0-rc.1 (#286), as the nineteenth ran it: Ctrl+1 to Ctrl+5 on D10, Chrome and Edge, both hosts."
     },
     {
       "row": "SH-51",
@@ -195,12 +195,12 @@
         "samples/ExGrid.DemoPages/SheetCases.cs"
       ],
       "record": {
-        "commit": "5e3eecb44fb9dcfec074cfa8eefe03a91809fbc3",
-        "tag": "verified/2026-10-25-windows-19",
-        "path": "verification/2026-10-25-windows-19/report.md",
+        "commit": "1e85052e3449dca2541b96a8a33712e7c8d98b8f",
+        "tag": "verified/2026-10-25-windows-20",
+        "path": "verification/2026-10-25-windows-20/report.md",
         "verdict": "pass"
       },
-      "note": "The nineteenth Windows run, at main's head before 0.2.0-rc.1 (#258): Ctrl+F1 twice on D10, Chrome and Edge, both hosts."
+      "note": "The twentieth Windows run, at release/0.2 before 0.2.0-rc.1 (#286), as the nineteenth ran it: Ctrl+F1 twice on D10, Chrome and Edge, both hosts."
     },
     {
       "row": "SH-52",
@@ -221,12 +221,12 @@
         "samples/ExGrid.DemoPages/SheetCases.cs"
       ],
       "record": {
-        "commit": "5e3eecb44fb9dcfec074cfa8eefe03a91809fbc3",
-        "tag": "verified/2026-10-25-windows-19",
-        "path": "verification/2026-10-25-windows-19/report.md",
+        "commit": "1e85052e3449dca2541b96a8a33712e7c8d98b8f",
+        "tag": "verified/2026-10-25-windows-20",
+        "path": "verification/2026-10-25-windows-20/report.md",
         "verdict": "pass"
       },
-      "note": "The nineteenth Windows run, at main's head before 0.2.0-rc.1 (#258): run 17's d3, d4 and d6 on /sheet and /sheet?chrome=mud, and the keys at machine speed on WebAssembly and behind 80 ms, Chrome and Edge."
+      "note": "The twentieth Windows run, at release/0.2 before 0.2.0-rc.1 (#286), as the nineteenth ran it: run 17's d3, d4 and d6 on /sheet and /sheet?chrome=mud, and the keys at machine speed on WebAssembly and behind 80 ms, Chrome and Edge."
     },
     {
       "row": "KB-3",
