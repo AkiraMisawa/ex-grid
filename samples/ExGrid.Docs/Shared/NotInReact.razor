@@ -1,0 +1,35 @@
+@inject DocsState State
+
+@* What the site shows under React where it has nothing for React yet (ADR-0350 §12): it says so where
+   the Example or the page would be, rather than showing Blazor's in its place, and offers to switch the
+   whole site back. ExGrid's React package is coming in 0.3.0; the other products have none. *@
+<div class="@($"docs-not-in-react docs-not-in-react-{(Example ? "example" : "page")}")" role="note">
+    <MudIcon Icon="@Icons.Material.Outlined.Info" Class="docs-not-in-react-icon" />
+    <div class="docs-not-in-react-text">
+        <p>@Sentence</p>
+        <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Primary"
+                   OnClick="@(() => State.SetFramework(DocsFramework.Blazor))">Read the site for Blazor</MudButton>
+    </div>
+</div>
+
+@code {
+    /// <summary>
+    /// The product the Example or the page belongs to: <c>ExGrid</c>, or one with no React package;
+    /// <see langword="null"/> for a page about the whole family.
+    /// </summary>
+    [Parameter] public string? Product { get; set; }
+
+    /// <summary>Whether it stands where an Example would run, rather than under a page's title.</summary>
+    [Parameter] public bool Example { get; set; }
+
+    private string Sentence => (Product, Example) switch
+    {
+        ("ExGrid", true) => "This Example is not in ExGrid for React yet. Its React package, @ex-grid/react, is being built for 0.3.0; until then it runs under Blazor only.",
+        ("ExGrid", false) => "ExGrid for React, @ex-grid/react, is not published yet. This page describes ExGrid for Blazor, and each Example says so where it would run.",
+        (null, _) => "The React packages are not published yet, so everything on this page is for Blazor.",
+        (_, false) when Product!.StartsWith("ExGrid.Data", StringComparison.Ordinal) =>
+            $"{Product} is a .NET package with no React counterpart. This page describes it from .NET, and each Example says so where it would run.",
+        (_, true) => $"{Product} has no React package, so this Example runs under Blazor only.",
+        (_, false) => $"{Product} has no React package. This page describes it for Blazor, and each Example says so where it would run.",
+    };
+}

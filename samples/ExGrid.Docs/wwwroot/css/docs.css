@@ -172,6 +172,19 @@ html { scroll-padding-top: calc(var(--mud-appbar-height) - var(--mud-appbar-heig
 }
 .docs-muted { color: var(--docs-muted); }
 
+/* Where the site has nothing for React yet (ADR-0350 §12): in an Example's frame, where it would run,
+   and under a page's lead. */
+.docs-not-in-react { display: flex; gap: 12px; align-items: flex-start; max-width: 820px; line-height: 1.7; }
+.docs-not-in-react-example { padding: 24px; }
+.docs-not-in-react-page {
+    margin-top: 16px;
+    padding: 12px 16px;
+    border: 1px solid var(--mud-palette-lines-default);
+    border-radius: var(--mud-default-borderradius);
+}
+.docs-not-in-react-icon { flex: none; margin-top: 3px; color: var(--mud-palette-info); }
+.docs-not-in-react-text p { margin: 0 0 8px; }
+
 /* A figure drawn from the product by tools/readme-media/figures.mjs: a light picture in either
    scheme, scaled down where the column is narrower than it. */
 .docs-figure { margin: 8px 0 0; }

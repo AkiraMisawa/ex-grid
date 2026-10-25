@@ -154,6 +154,31 @@ changed in each version, what is coming, the whole API, and a search. The frame 
 - **The code view has MudBlazor's affordances**: show and hide, a tab per file when an Example
   has more than one (the `.razor` and the `.cs` that makes its data), and a copy button.
 
+### The framework switch *(added 2026-10-25)*
+
+[ADR-0350](./0350-exgrids-core-moves-to-typescript-and-react-and-blazor-both-take-it.md) §12 gives the
+site a framework switch, Blazor or React, before any React package exists. What it does until then:
+
+- **It sits in the app bar beside the Chrome switch**, for the whole site, and is remembered between
+  visits (below, under JavaScript). A first visit reads the site for Blazor. Under React the Chrome
+  switch reads Built-in / MUI, and cannot be changed while no Example runs under React: a choice made
+  there would change nothing on the page.
+- **Read for React, an Example with no React counterpart says so in its frame**, where it would run,
+  and neither the Blazor component nor its code is shown. An ExGrid Example says that it is not in
+  `@ex-grid/react` yet; any other product's says that the product has no React package. The product is
+  the Example's folder under `Examples/`, and an Example in no product's folder fails the page rather
+  than be called something it is not.
+- **A product's page, and a page that describes the Blazor packages** (Installation, Packages,
+  Showcases, the Feature matrix and the API reference), says the same under its lead, because its prose
+  is Blazor's. A page about the whole family
+  that holds no Blazor code (Release notes, Roadmap, Keyboard) says nothing.
+- **Each such note offers to read the site for Blazor**, which changes the one switch, not the Example
+  alone.
+- **The Showcases stay Blazor's**, opened as before with the Chrome and the scheme in the address.
+- **The React Example's frame is not built yet.** It comes with the first React Example, once
+  `@ex-grid/react` draws one: a page prebuilt into the site's static files and shown in a frame, as §12
+  says, with its code beneath it.
+
 ### JavaScript
 
 ADR-0021's allowlist governs the shipped packages: the grid and what it executes in a Consumer's
@@ -162,6 +187,11 @@ and records each use here:
 
 - **The copy button writes the code to the clipboard** with `navigator.clipboard.writeText`. C#
   has no clipboard.
+- *(Added 2026-10-25, for [ADR-0350](./0350-exgrids-core-moves-to-typescript-and-react-and-blazor-both-take-it.md)
+  §12.)* **The framework switch is kept in `localStorage`**, read before the site first renders, so the
+  first page drawn is already the framework chosen last time. C# has no storage in the browser. A
+  browser that refuses the site storage (a `SecurityError`, or a `QuotaExceededError` on a write) is
+  not an error: the switch says the choice lasts for the visit. Any other failure is thrown.
 
 That is the whole list. Highlighting, navigation and theme switching are C#. There are no
 analytics.
@@ -169,7 +199,8 @@ analytics.
 *(Added 2026-10-11.)* MudBlazor's own script, which its popovers, menus and autocomplete run, belongs
 to the frame, as DoD WR-8 says of the Wrapper: it is MudBlazor's, not the site's. The site adds none:
 no keyboard shortcut for search, nothing kept in `localStorage` (the theme and the Chrome are chosen
-again on each visit), and no scroll spy on the rail.
+again on each visit), and no scroll spy on the rail. *(2026-10-25: the framework is kept there, as
+above; the theme and the Chrome still are not.)*
 
 ### Publishing
 

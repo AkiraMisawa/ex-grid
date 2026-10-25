@@ -213,6 +213,10 @@ the way ag-grid.com shows each Example, so React never runs inside the Blazor ap
 JavaScript does not grow. The site's build fails when a React Example does not build, as it fails today
 for a Blazor one.
 
+*(2026-10-25: the switch is built ahead of the React packages, and what a page shows meanwhile is
+[ADR-0110](./0110-the-docs-site-is-a-webassembly-app-on-github-pages-and-its-examples-show-the-code-they-run.md)'s
+"The framework switch". It is remembered in `localStorage`, the site's second use of JavaScript there.)*
+
 ### 13. Where the Script Core lives, and how it is tested
 
 - **Source.** An npm workspace at `src/npm/`, with a package per directory: `src/npm/core`,

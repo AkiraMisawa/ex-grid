@@ -9,6 +9,7 @@ using ExSheet.Components;
 using ExSheet.MudBlazor;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
+using Microsoft.Extensions.DependencyInjection;
 using MudBlazor.Services;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
@@ -26,6 +27,10 @@ builder.RootComponents.Add<MudExPivotStylesheet>("head::after");
 builder.RootComponents.Add<ExChartStylesheet>("head::after");
 builder.RootComponents.Add<MudExChartStylesheet>("head::after");
 builder.Services.AddMudServices();
+builder.Services.AddSingleton<FrameworkMemory>();
 builder.Services.AddScoped<DocsState>();
 
-await builder.Build().RunAsync();
+var host = builder.Build();
+// The framework the reader chose last time (ADR-0350 §12), read before the first render draws a page.
+await host.Services.GetRequiredService<FrameworkMemory>().LoadAsync();
+await host.RunAsync();
