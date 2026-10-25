@@ -1,0 +1,168 @@
+{
+  "about": "Where a selected rectangle is painted, as an inline style (ADR-0008, ADR-0053, ADR-0206, ADR-0170): the selection layers' contract, the same under every Framework Adapter (ADR-0350). The C# core's SelectionStyles is a static class; the Script Core's paint/selection-styles.ts has its functions, Focus under the name focusStyle. Every case runs on four columns 100, 80, 120 and 90 px wide, the first pinned, in a 400 px Viewport: column edges at 0, 100, 180, 300 and 390. Rows are 24 px, and the painted slice is rows 10 to 29. The fill handle's place comes with editing.",
+  "kind": "calls",
+  "subject": "SelectionStyles",
+  "cases": [
+    {
+      "name": "ADR-0008: a range is painted at its place in the painted slice, and a side under the pinned block keeps its outline inside",
+      "expect": [
+        {"static": "box", "args": [
+          {"topRow": 12, "leftColumn": 1, "rowCount": 3, "columnCount": 2}, {"row": 12, "column": 1},
+          {"new": "ColumnGeometry", "with": {"widthsPx": [100, 80, 120, 90], "pinnedCount": 1, "viewportWidthPx": 400}},
+          24, {"start": 10, "count": 20}, false, {"firstOpenRow": 10, "scrollLeftPx": 0, "hasHeader": true}],
+          "is": "left: 100px; top: 48px; width: 200px; height: 72px; --ex-outline-in-l: 1"},
+        {"static": "box", "args": [
+          {"topRow": 12, "leftColumn": 1, "rowCount": 3, "columnCount": 2}, {"row": 12, "column": 1},
+          {"new": "ColumnGeometry", "with": {"widthsPx": [100, 80, 120, 90], "pinnedCount": 1, "viewportWidthPx": 400}},
+          24, {"start": 10, "count": 20}, true, {"firstOpenRow": 10, "scrollLeftPx": 0, "hasHeader": true}],
+          "is": null}
+      ]
+    },
+    {
+      "name": "ADR-0206: a range across the pinned boundary has its box whole in both layers, each clipped to its own side and a row past the others",
+      "expect": [
+        {"static": "box", "args": [
+          {"topRow": 12, "leftColumn": 0, "rowCount": 2, "columnCount": 3}, {"row": 12, "column": 0},
+          {"new": "ColumnGeometry", "with": {"widthsPx": [100, 80, 120, 90], "pinnedCount": 1, "viewportWidthPx": 400}},
+          24, {"start": 10, "count": 20}, true, {"firstOpenRow": 10, "scrollLeftPx": 0, "hasHeader": true}],
+          "is": "left: 0px; top: 48px; width: 300px; height: 48px; clip-path: inset(-24px 200px -24px -24px); --ex-outline-in-l: 1"},
+        {"static": "box", "args": [
+          {"topRow": 12, "leftColumn": 0, "rowCount": 2, "columnCount": 3}, {"row": 12, "column": 0},
+          {"new": "ColumnGeometry", "with": {"widthsPx": [100, 80, 120, 90], "pinnedCount": 1, "viewportWidthPx": 400}},
+          24, {"start": 10, "count": 20}, false, {"firstOpenRow": 10, "scrollLeftPx": 0, "hasHeader": true}],
+          "is": "left: 0px; top: 48px; width: 300px; height: 48px; clip-path: inset(-24px -24px -24px 100px); --ex-outline-in-l: 1"}
+      ]
+    },
+    {
+      "name": "ADR-0008: a range that is the Focus's cell alone has no box: the Focus outline marks it",
+      "expect": [
+        {"static": "box", "args": [
+          {"topRow": 12, "leftColumn": 2, "rowCount": 1, "columnCount": 1}, {"row": 12, "column": 2},
+          {"new": "ColumnGeometry", "with": {"widthsPx": [100, 80, 120, 90], "pinnedCount": 1, "viewportWidthPx": 400}},
+          24, {"start": 10, "count": 20}, false, {"firstOpenRow": 10, "scrollLeftPx": 0, "hasHeader": true}],
+          "is": null}
+      ]
+    },
+    {
+      "name": "ADR-0008: a scrollable column's left edge under the pinned block keeps its outline inside, wherever the scroll took it",
+      "expect": [
+        {"static": "box", "args": [
+          {"topRow": 12, "leftColumn": 2, "rowCount": 1, "columnCount": 1}, {"row": 12, "column": 1},
+          {"new": "ColumnGeometry", "with": {"widthsPx": [100, 80, 120, 90], "pinnedCount": 1, "viewportWidthPx": 400}},
+          24, {"start": 10, "count": 20}, false, {"firstOpenRow": 10, "scrollLeftPx": 0, "hasHeader": true}],
+          "is": "left: 180px; top: 48px; width: 120px; height: 24px"},
+        {"static": "box", "args": [
+          {"topRow": 12, "leftColumn": 2, "rowCount": 1, "columnCount": 1}, {"row": 12, "column": 1},
+          {"new": "ColumnGeometry", "with": {"widthsPx": [100, 80, 120, 90], "pinnedCount": 1, "viewportWidthPx": 400}},
+          24, {"start": 10, "count": 20}, false, {"firstOpenRow": 10, "scrollLeftPx": 80, "hasHeader": true}],
+          "is": "left: 180px; top: 48px; width: 120px; height: 24px; --ex-outline-in-l: 1"}
+      ]
+    },
+    {
+      "name": "ADR-0206: a range's tint has a hole where the Focus is, as Excel's never covers the active cell",
+      "expect": [
+        {"static": "tint", "args": [
+          {"topRow": 12, "leftColumn": 1, "rowCount": 3, "columnCount": 2}, {"row": 13, "column": 2},
+          {"new": "ColumnGeometry", "with": {"widthsPx": [100, 80, 120, 90], "pinnedCount": 1, "viewportWidthPx": 400}},
+          24, {"start": 10, "count": 20}, false],
+          "is": "left: 100px; top: 48px; width: 200px; height: 72px; --ex-range-hole: polygon(evenodd, 0 0, 100% 0, 100% 100%, 0 100%, 0 0, 80px 24px, 200px 24px, 200px 48px, 80px 48px, 80px 24px)"}
+      ]
+    },
+    {
+      "name": "ADR-0206: a tint cut at the boundary, whose pinned part is the Focus's cell alone, is not painted there, and carries no hole on the other side",
+      "expect": [
+        {"static": "tint", "args": [
+          {"topRow": 12, "leftColumn": 0, "rowCount": 1, "columnCount": 3}, {"row": 12, "column": 0},
+          {"new": "ColumnGeometry", "with": {"widthsPx": [100, 80, 120, 90], "pinnedCount": 1, "viewportWidthPx": 400}},
+          24, {"start": 10, "count": 20}, true],
+          "is": null},
+        {"static": "tinted", "args": [
+          {"topRow": 12, "leftColumn": 0, "rowCount": 1, "columnCount": 3}, {"row": 12, "column": 0},
+          {"new": "ColumnGeometry", "with": {"widthsPx": [100, 80, 120, 90], "pinnedCount": 1, "viewportWidthPx": 400}},
+          {"start": 10, "count": 20}, true],
+          "is": false},
+        {"static": "tint", "args": [
+          {"topRow": 12, "leftColumn": 0, "rowCount": 1, "columnCount": 3}, {"row": 12, "column": 0},
+          {"new": "ColumnGeometry", "with": {"widthsPx": [100, 80, 120, 90], "pinnedCount": 1, "viewportWidthPx": 400}},
+          24, {"start": 10, "count": 20}, false],
+          "is": "left: 100px; top: 48px; width: 200px; height: 24px"},
+        {"static": "tinted", "args": [
+          {"topRow": 12, "leftColumn": 0, "rowCount": 1, "columnCount": 3}, {"row": 12, "column": 0},
+          {"new": "ColumnGeometry", "with": {"widthsPx": [100, 80, 120, 90], "pinnedCount": 1, "viewportWidthPx": 400}},
+          {"start": 10, "count": 20}, false],
+          "is": true}
+      ]
+    },
+    {
+      "name": "ADR-0053: a whole column is painted as the painted rows and one past each end, never a million rows tall",
+      "expect": [
+        {"static": "scrollable", "args": [
+          {"topRow": 0, "leftColumn": 2, "rowCount": 1000000, "columnCount": 1},
+          {"new": "ColumnGeometry", "with": {"widthsPx": [100, 80, 120, 90], "pinnedCount": 1, "viewportWidthPx": 400}},
+          24, {"start": 10, "count": 20}],
+          "is": "left: 180px; top: -24px; width: 120px; height: 528px"},
+        {"static": "pinned", "args": [
+          {"topRow": 0, "leftColumn": 2, "rowCount": 1000000, "columnCount": 1},
+          {"new": "ColumnGeometry", "with": {"widthsPx": [100, 80, 120, 90], "pinnedCount": 1, "viewportWidthPx": 400}},
+          24, {"start": 10, "count": 20}],
+          "is": null}
+      ]
+    },
+    {
+      "name": "ADR-0053: a range none of whose rows is painted, or one past, is not painted",
+      "expect": [
+        {"static": "scrollable", "args": [
+          {"topRow": 100, "leftColumn": 1, "rowCount": 1, "columnCount": 1},
+          {"new": "ColumnGeometry", "with": {"widthsPx": [100, 80, 120, 90], "pinnedCount": 1, "viewportWidthPx": 400}},
+          24, {"start": 10, "count": 20}],
+          "is": null},
+        {"static": "reaches", "args": [
+          {"topRow": 100, "leftColumn": 1, "rowCount": 1, "columnCount": 1},
+          {"new": "ColumnGeometry", "with": {"widthsPx": [100, 80, 120, 90], "pinnedCount": 1, "viewportWidthPx": 400}},
+          {"start": 10, "count": 20}, false],
+          "is": false},
+        {"static": "reaches", "args": [
+          {"topRow": 30, "leftColumn": 1, "rowCount": 1, "columnCount": 1},
+          {"new": "ColumnGeometry", "with": {"widthsPx": [100, 80, 120, 90], "pinnedCount": 1, "viewportWidthPx": 400}},
+          {"start": 10, "count": 20}, false],
+          "is": true}
+      ]
+    },
+    {
+      "name": "ADR-0008 D2: the Focus under the header takes the Heading Mark's side, and inside the outline where there is no header",
+      "expect": [
+        {"static": "focus", "args": [
+          {"row": 11, "column": 0},
+          {"new": "ColumnGeometry", "with": {"widthsPx": [100, 80, 120, 90], "pinnedCount": 1, "viewportWidthPx": 400}},
+          24, {"start": 10, "count": 20}, true, {"firstOpenRow": 12, "scrollLeftPx": 0, "hasHeader": true}],
+          "is": "left: 0px; top: 24px; width: 100px; height: 24px; --ex-outline-in-l: 1; --ex-outline-heading-t: 1"},
+        {"static": "focus", "args": [
+          {"row": 11, "column": 0},
+          {"new": "ColumnGeometry", "with": {"widthsPx": [100, 80, 120, 90], "pinnedCount": 1, "viewportWidthPx": 400}},
+          24, {"start": 10, "count": 20}, true, {"firstOpenRow": 12, "scrollLeftPx": 0, "hasHeader": false}],
+          "is": "left: 0px; top: 24px; width: 100px; height: 24px; --ex-outline-in-t: 1; --ex-outline-in-l: 1"},
+        {"static": "focus", "args": [
+          {"row": 11, "column": 0},
+          {"new": "ColumnGeometry", "with": {"widthsPx": [100, 80, 120, 90], "pinnedCount": 1, "viewportWidthPx": 400}},
+          24, {"start": 10, "count": 20}, false, {"firstOpenRow": 12, "scrollLeftPx": 0, "hasHeader": true}],
+          "is": null}
+      ]
+    },
+    {
+      "name": "ADR-0170: the Copied Range's dashes keep a covered side inside, where no Heading Mark stands for them",
+      "expect": [
+        {"static": "copied", "args": [
+          {"topRow": 12, "leftColumn": 1, "rowCount": 3, "columnCount": 2},
+          {"new": "ColumnGeometry", "with": {"widthsPx": [100, 80, 120, 90], "pinnedCount": 1, "viewportWidthPx": 400}},
+          24, {"start": 10, "count": 20}, false, {"firstOpenRow": 13, "scrollLeftPx": 0, "hasHeader": true}],
+          "is": "left: 100px; top: 48px; width: 200px; height: 72px; --ex-outline-in-t: 1; --ex-outline-in-l: 1"}
+      ]
+    },
+    {
+      "name": "ADR-0008: the Focus is a one-cell range",
+      "expect": [
+        {"static": "cellRange", "args": [{"row": 3, "column": 4}], "is": {"topRow": 3, "leftColumn": 4, "rowCount": 1, "columnCount": 1}}
+      ]
+    }
+  ]
+}

@@ -14,8 +14,13 @@ import { decideOverflow } from '../columns/overflow-rules';
 import { textFor } from '../cells/display-text';
 import { GridMetrics, type GridDensity } from '../grid-metrics';
 import { defined, itemAt } from '../must';
+import { canonicalKey, resolveKey, type GridKeyAction } from '../keys/grid-keys';
 import { cellClasses } from '../paint/cell-classes';
 import { rowClasses } from '../paint/row-classes';
+import { cell as cellPosition, sameCell, type CellPosition, type GridExtent } from '../selection/cell';
+import { HeldSelection } from '../selection/held';
+import { rangeCellCount, sameRange as sameSelectionRange, spansEveryColumn, spansEveryRow, type SelectionRange } from '../selection/range';
+import { Selection, type GridSelection } from '../selection/selection';
 import type { GridSource, GridSourceState } from '../source/grid-source';
 import { InMemoryGridSource } from '../source/in-memory-source';
 import { rowRange, type RowRange } from '../viewport/row-range';
@@ -24,6 +29,8 @@ import { ViewportGeometry } from '../viewport/viewport-geometry';
 import type { BrowserReports, ViewportReport } from './browser-reports';
 import { ColumnStyles } from './column-styles';
 import { resolveColumns, type GridColumn, type ResolvedColumn } from './grid-column';
+import { moveByKey, movingKinds, type KeyReveal } from './key-moves';
+import { selectionLayers, type LayerPiece } from './selection-layers';
 import { stylesheetName, stylesheetStamp } from './shipped-stylesheet';
 
 /** A Viewport axis: a number of pixels the Consumer declares, or `'stretch'`, the parent's (ADR-0028). */
@@ -51,13 +58,21 @@ export interface GridOptions<Row> {
     readonly pinnedColumnCount?: number;
     /** Whether the columns off screen are left out of the DOM (ADR-0004); true unless given. */
     readonly virtualiseColumns?: boolean;
+    /** Hears the Selection each time it changes (ADR-0011): after the grid has painted it, once however
+     * many gestures changed it in between. A Selection is dropped, and heard empty, when the Row Sequence
+     * Version or the columns change. */
+    readonly onSelectionChanged?: (selection: GridSelection) => void;
 }
 
 const defaultViewportWidthPx = 800;
 const defaultViewportHeightPx = 600;
 
-/** How long scrolling must have stood still before a fling's Placeholders are painted over (ADR-0004). */
+/** How long scrolling must have stood still before a fling's Placeholders are painted over (ADR-0004), and
+ * a Selection before it is announced (ADR-0033). */
 const settleDelayMs = 150;
+
+/** The keys whose own keydown is no key of the grid's: they neither take nor end a release of Tab. */
+const modifierKeys: ReadonlySet<string> = new Set(['Control', 'Shift', 'Alt', 'Meta', 'AltGraph', 'CapsLock']);
 
 /** The built-in Chrome's words for a stylesheet of another version (ADR-0123, ADR-0203). */
 const stylesheetNoticeWords = 'This page holds another version\'s stylesheet. Reload the page.';
@@ -94,6 +109,27 @@ interface Taken<Row> {
     readonly height: ViewportSize;
     readonly pinnedCount: number;
     readonly virtualiseColumns: boolean;
+    readonly onSelectionChanged: ((selection: GridSelection) => void) | undefined;
+}
+
+/** A reveal's repaint under way (ADR-0012, 2026-10-08): where the reveal left the scroller, and what stops
+ * the frame it waits for. */
+interface Repaint {
+    readonly top: number;
+    readonly left: number;
+    cancel: () => void;
+}
+
+/** A page follow (ADR-0204): armed by a move for the Focus it moved to and the cell its reveal brought into
+ * the Viewport, and asked once that cell is painted. */
+interface Follow {
+    readonly focus: CellPosition;
+    readonly target: CellPosition;
+}
+
+/** Whether two lists hold the same ranges, in order. */
+function sameRanges(a: readonly SelectionRange[], b: readonly SelectionRange[]): boolean {
+    return a.length === b.length && a.every((range, i) => sameSelectionRange(range, itemAt(b, i)));
 }
 
 /** Whether two arrays hold the same items, in the same order. */
@@ -135,6 +171,12 @@ export class GridView<Row> {
     readonly #spacer: HTMLElement;
     readonly #header: HTMLElement;
     readonly #viewport: HTMLElement;
+    readonly #stamp: HTMLElement;
+    readonly #announce: HTMLElement;
+    readonly #shadeLayer: HTMLElement;
+    readonly #pinnedLayer: HTMLElement;
+    readonly #selectionLayer: HTMLElement;
+    readonly #metaIsPrimary: boolean;
     readonly #stops: (() => void)[] = [];
 
     // What the Consumer handed over.
@@ -152,6 +194,31 @@ export class GridView<Row> {
     #height: ViewportSize = defaultViewportHeightPx;
     #pinnedCount = 0;
     #virtualiseColumns = true;
+    #onSelectionChanged: ((selection: GridSelection) => void) | undefined;
+
+    // The Selection (ADR-0011, ADR-0012), held under the Row Sequence Version it was made under, and the
+    // columns it was made over, by name: either changing drops it.
+    #held = HeldSelection.empty(0);
+    #columnNames: readonly string[] = [];
+    // The Selection the Consumer last heard.
+    #raised: Selection = Selection.empty;
+    #dragging = false;
+    // A press the grid answered, whose release is answered too.
+    #pressed = false;
+    // Escape with nothing to dismiss releases Tab: the next Tab is the browser's (ADR-0012).
+    #tabReleased = false;
+    // The inputs answered, written on the stamp by the pass that paints the answer (ADR-0220).
+    #answered = 0;
+    #revealOwed: KeyReveal | undefined;
+    #revealToken = 0;
+    #repaint: Repaint | undefined;
+    #followArmed: Follow | undefined;
+    #followToken = 0;
+    #cancelFollow: (() => void) | undefined;
+    // The live region (ADR-0033): what it says, and the ranges it last described.
+    #announcedRanges: readonly SelectionRange[] = [];
+    #describesSelection = false;
+    #cancelAnnounce: (() => void) | undefined;
 
     // What the browser told (ADR-0013, ADR-0028, ADR-0053, ADR-0090).
     #viewportReport: ViewportReport | undefined;
@@ -184,6 +251,9 @@ export class GridView<Row> {
     #layoutId = 0;
     #paintId = 0;
     #layoutStyles: ColumnStyles | undefined;
+    #paintedLayers: string | undefined;
+    #layerInputs: Readonly<Record<string, unknown>> | undefined;
+    #shadeHolds = false;
 
     // The Settled Mark (ADR-0220).
     #passOwed = false;
@@ -222,6 +292,7 @@ export class GridView<Row> {
         // The core's half of the Settled Mark, as the C# core writes it on the root's first child: every
         // input answered as it is taken, and no layer an Escape would peel (ADR-0220, ADR-0230).
         const stamp = element('span', { hidden: '', 'data-ex-answered': '0', 'data-ex-escape-leaves': '' });
+        this.#stamp = stamp;
         // The stylesheet's notice (ADR-0123): shown by a stylesheet of another version, hidden by its own.
         const notice = element('div', {
             'data-ex-notice': 'stylesheet', 'data-ex-stylesheet': stylesheetName, 'data-ex-stamp': stylesheetStamp, style: 'display: none',
@@ -235,9 +306,16 @@ export class GridView<Row> {
             class: 'ex-header', role: 'row', 'aria-rowindex': '1', 'data-ex-claims': 'mousedown click',
         });
         this.#viewport = element('div', { class: 'ex-viewport', role: 'presentation', 'data-ex-claims': 'contextmenu' });
+        // The selection layers (ADR-0008, ADR-0206): paint, not content, so hidden from the accessibility
+        // tree, and the Viewport's first children, so they ride its translation and pass under the pinned
+        // cells. The pinned shade layer stands only while it holds a tint.
+        this.#shadeLayer = element('div', { class: 'ex-shade-pinned', 'aria-hidden': 'true' });
+        this.#pinnedLayer = element('div', { class: 'ex-selection-pinned', 'aria-hidden': 'true' });
+        this.#selectionLayer = element('div', { class: 'ex-selection', 'aria-hidden': 'true' });
         this.#spacer.append(this.#header, this.#viewport);
         this.#scroller.append(this.#spacer);
         const announce = element('div', { class: 'ex-announce', role: 'status' });
+        this.#announce = announce;
         // The Layout Ceiling's probe (ADR-0053): an element declared 2^25 px tall, laid out at the tallest
         // the browser can.
         const probe = element('div', { class: 'ex-ceiling-probe', 'aria-hidden': 'true' });
@@ -245,6 +323,7 @@ export class GridView<Row> {
         probe.append(tallest);
         root.replaceChildren(stamp, notice, this.#scroller, announce, probe);
         this.#styles = new ColumnStyles(new ColumnGeometry({ widthsPx: [], pinnedCount: 0, viewportWidthPx: 1 }));
+        this.#metaIsPrimary = reports.metaIsPrimary();
 
         // A first pass that throws leaves nothing listening either: there is no handle to stop it with.
         let drawn = false;
@@ -254,8 +333,21 @@ export class GridView<Row> {
                 this.#onScroll();
             };
             this.#scroller.addEventListener('scroll', onScroll, { passive: true });
+            // The keys, heard on the root in the capture phase, ahead of anything inside it (ADR-0018).
+            root.addEventListener('keydown', this.#onKeyDown, true);
+            this.#viewport.addEventListener('mousedown', this.#onPress);
+            this.#viewport.addEventListener('mouseup', this.#onRelease);
+            root.addEventListener('focusout', this.#onFocusLeft);
+            this.#scroller.addEventListener('focus', this.#onScrollerFocus);
             this.#stops.push(
                 () => { this.#scroller.removeEventListener('scroll', onScroll); },
+                () => { root.removeEventListener('keydown', this.#onKeyDown, true); },
+                () => { this.#viewport.removeEventListener('mousedown', this.#onPress); },
+                () => { this.#viewport.removeEventListener('mouseup', this.#onRelease); },
+                () => { root.removeEventListener('focusout', this.#onFocusLeft); },
+                () => { root.removeEventListener('mouseup', this.#onDragEnd); },
+                () => { this.#viewport.removeEventListener('mousemove', this.#onDrag); },
+                () => { this.#scroller.removeEventListener('focus', this.#onScrollerFocus); },
                 reports.observeViewport(this.#scroller, report => {
                     this.#viewportReport = report;
                     this.#invalidate();
@@ -291,11 +383,14 @@ export class GridView<Row> {
         if (this.#destroyed) return;
         this.#destroyed = true;
         this.#cancelSettle?.();
+        this.#cancelAnnounce?.();
+        this.#cancelFollow?.();
+        this.#repaint?.cancel();
         for (const stop of this.#stops) stop();
         this.#unsubscribe?.();
         this.#root.replaceChildren();
         for (const name of ['tabindex', 'dir', 'id', 'role', 'aria-multiselectable', 'data-ex-reveal', 'data-ex-follow',
-            'data-ex-settled', 'class', 'style', 'aria-rowcount', 'aria-colcount']) {
+            'data-ex-follow-focus', 'aria-activedescendant', 'data-ex-settled', 'class', 'style', 'aria-rowcount', 'aria-colcount']) {
             this.#root.removeAttribute(name);
         }
     }
@@ -354,9 +449,13 @@ export class GridView<Row> {
         if (!Number.isSafeInteger(pinnedColumnCount) || pinnedColumnCount < 0) {
             throw new RangeError(`pinnedColumnCount is a whole number of at least 0, not ${pinnedColumnCount}.`);
         }
+        const { onSelectionChanged }: { readonly onSelectionChanged?: unknown } = options;
+        if (onSelectionChanged !== undefined && typeof onSelectionChanged !== 'function') {
+            throw new TypeError('onSelectionChanged is a function of the Selection.');
+        }
         return {
             source, own, rows: options.rows, metrics, declared: options.columns, columns, autoWidths, columnsChanged,
-            width, height, pinnedCount: pinnedColumnCount, virtualiseColumns,
+            width, height, pinnedCount: pinnedColumnCount, virtualiseColumns, onSelectionChanged: options.onSelectionChanged,
         };
     }
 
@@ -406,6 +505,7 @@ export class GridView<Row> {
         this.#height = taken.height;
         this.#pinnedCount = taken.pinnedCount;
         this.#virtualiseColumns = taken.virtualiseColumns;
+        this.#onSelectionChanged = taken.onSelectionChanged;
     }
 
     // The Row Sequence Version the grid writes: its source's, carried past every change of source.
@@ -419,10 +519,16 @@ export class GridView<Row> {
     };
 
     #onScroll(): void {
+        // A reveal's repaint is the browser's business: meanwhile the grid stands where the reveal left the
+        // scroller, and a scroll the user makes is read when the repaint yields to it (ADR-0012).
+        if (this.#repaint !== undefined) return;
         // The offsets the browser holds, read on the scroll it reports: the one read this grid makes.
         const top = this.#scroller.scrollTop;
         const left = this.#scroller.scrollLeft;
         if (top === this.#scrollTopPx && left === this.#scrollLeftPx) return;
+        // The user scrolled away from a move whose cell is not painted yet: the page no longer follows it
+        // (ADR-0204).
+        this.#followArmed = undefined;
         const painted = this.#visible;
         const previousLeftPx = this.#scrollLeftPx;
         this.#scrollTopPx = top;
@@ -448,6 +554,12 @@ export class GridView<Row> {
         this.#invalidate();
     };
 
+    readonly #onScrollerFocus = (): void => {
+        // The scroller takes DOM focus from a press on the rows; the keys and aria-activedescendant are the
+        // root's (ADR-0033), so it is handed straight on.
+        this.#root.focus({ preventScroll: true });
+    };
+
     #invalidate(): void {
         if (this.#destroyed) return;
         this.#showSettled(false);
@@ -460,10 +572,28 @@ export class GridView<Row> {
     }
 
     #pass(): void {
+        this.#reconcileSelection();
         this.#resolve();
+        const revealed = this.#stageReveal();
+        this.#stageFollow();
         this.#paint();
+        if (revealed) {
+            // Written in the task that painted the slice, so the offset and the rows reach the screen
+            // together (ADR-0012, 2026-09-29); its scroll event then finds nothing moved.
+            this.#scroller.scrollTop = this.#scrollTopPx;
+            this.#scroller.scrollLeft = this.#scrollLeftPx;
+            this.#repaintAfterReveal(this.#scrollTopPx, this.#scrollLeftPx);
+        }
         this.#raiseRangeIfUncovered();
-        this.#showSettled(!this.#passOwed && this.#cancelSettle === undefined
+        this.#raiseSelection();
+        this.#lookSettled();
+    }
+
+    // Settled while nothing is owed: no pass, no fling's settle, no announcement, no reveal's repaint and
+    // no page follow, and the browser has told the box and the ceiling (ADR-0220).
+    #lookSettled(): void {
+        this.#showSettled(!this.#passOwed && this.#cancelSettle === undefined && this.#cancelAnnounce === undefined
+            && this.#repaint === undefined && this.#followArmed === undefined && this.#cancelFollow === undefined
             && this.#viewportReport !== undefined && this.#ceilingPx !== undefined);
     }
 
@@ -591,6 +721,419 @@ export class GridView<Row> {
         void this.#source.needRange(rowRange(range.start, range.count));
     }
 
+    // ---- The Selection, the keys and the press (ADR-0011, ADR-0012, ADR-0052) ----------------------------
+
+    get #extent(): GridExtent {
+        return { rowCount: this.#totalRows, columnCount: this.#columns.length };
+    }
+
+    // Drops the Selection when the positions it is written in stop meaning what they meant (ADR-0011): the
+    // Row Sequence Version for the rows, which moves on with another source too, and the columns by name,
+    // in order, never the array's identity, which a Framework Adapter hands afresh on every render.
+    #reconcileSelection(): void {
+        const version = this.#sequence();
+        const names = this.#columns.map(({ column }) => column.name);
+        this.#held = sameItems(names, this.#columnNames) ? this.#held.under(version) : HeldSelection.empty(version);
+        this.#columnNames = names;
+    }
+
+    // Takes a gesture's Selection; whether it changed anything.
+    #apply(next: Selection): boolean {
+        if (next.equals(this.#held.selection)) return false;
+        this.#held = this.#held.with(next);
+        return true;
+    }
+
+    // The Consumer hears the Selection the pass painted, once however many gestures made it, and the live
+    // region is armed for it (ADR-0033).
+    #raiseSelection(): void {
+        const selection = this.#held.selection;
+        if (selection === this.#raised) return;
+        this.#raised = selection;
+        this.#scheduleAnnouncement(selection);
+        this.#onSelectionChanged?.(selection);
+    }
+
+    // Only when the ranges moved: a Focus move announces nothing, aria-activedescendant moved with it. A
+    // 1×1 or empty Selection is not announced, and a sentence describing the one it replaced is emptied,
+    // silently (A11Y-10). The rest is said once the Selection has stood still for the settle delay.
+    #scheduleAnnouncement(selection: Selection): void {
+        const { ranges } = selection;
+        if (sameRanges(ranges, this.#announcedRanges)) return;
+        if (ranges.length === 0 || (ranges.length === 1 && rangeCellCount(itemAt(ranges, 0)) === 1)) {
+            this.#announcedRanges = ranges;
+            this.#cancelAnnounce?.();
+            this.#cancelAnnounce = undefined;
+            if (this.#describesSelection) this.#say('');
+            return;
+        }
+        this.#cancelAnnounce?.();
+        this.#cancelAnnounce = this.#reports.clock.setTimer(this.#onAnnounceSettled, settleDelayMs);
+    }
+
+    readonly #onAnnounceSettled = (): void => {
+        this.#cancelAnnounce = undefined;
+        if (this.#destroyed) return;
+        const selection = this.#held.selection;
+        if (!sameRanges(selection.ranges, this.#announcedRanges)) {
+            this.#announcedRanges = selection.ranges;
+            this.#say(this.#describe(selection));
+            this.#describesSelection = true;
+        }
+        this.#lookSettled();
+    };
+
+    #say(sentence: string): void {
+        this.#describesSelection = false;
+        this.#announce.textContent = sentence;
+    }
+
+    // The extent in one sentence, naming the corners by index (ADR-0033), as the C# core words it.
+    #describe(selection: Selection): string {
+        const { ranges } = selection;
+        if (ranges.length === 0) return '';
+        if (ranges.length > 1) return `${selection.cellCount} cells in ${ranges.length} ranges selected`;
+        const range = itemAt(ranges, 0);
+        const left = itemAt(this.#columns, range.leftColumn).header;
+        const right = itemAt(this.#columns, range.leftColumn + range.columnCount - 1).header;
+        return `${range.rowCount} rows by ${range.columnCount} columns selected, `
+            + `${left} ${range.topRow + 1} to ${right} ${range.topRow + range.rowCount}`;
+    }
+
+    readonly #onKeyDown = (event: KeyboardEvent): void => {
+        // Mid-composition an IME owns Enter, Escape and the arrows; and a key typed in a control inside the
+        // root is that control's.
+        if (event.isComposing || event.keyCode === 229 || event.target !== this.#root || modifierKeys.has(event.key)) return;
+        const press = {
+            key: event.key, ctrl: event.ctrlKey, shift: event.shiftKey, alt: event.altKey, meta: event.metaKey,
+            metaIsPrimary: this.#metaIsPrimary,
+        };
+        // A released Tab is the browser's, and any other key ends the release (ADR-0012).
+        if (this.#tabReleased) {
+            this.#tabReleased = false;
+            const canonical = canonicalKey(press);
+            if (canonical === 'Tab' || canonical === 'Shift+Tab') return;
+        }
+        const action = resolveKey(press);
+        if (action.kind !== 'leave' && !movingKinds.has(action.kind)) return;
+        event.preventDefault();
+        event.stopPropagation();
+        this.#answered += 1;
+        if (action.kind === 'leave') {
+            // Escape with nothing left to dismiss is the way out of Enter and Tab cycling: the root keeps DOM
+            // focus and the next Tab leaves the grid.
+            this.#tabReleased = true;
+        } else {
+            this.#moveByKey(action);
+        }
+        this.#invalidate();
+    };
+
+    #moveByKey(action: GridKeyAction): void {
+        this.#reconcileSelection();
+        const geometry = this.#geometry;
+        const visible = this.#visible;
+        // Nothing painted is nothing the keys can be aimed at.
+        if (geometry === undefined || visible === undefined) return;
+        // A key pressed with nothing selected starts at the first cell on screen (ADR-0012): the first
+        // Pinned Column, or the first scrollable column painted; with neither, there is no column at all.
+        const scrollable = this.#scrollable;
+        const start = cellPosition(visible.start, this.#styles.geometry.pinnedCount > 0 || scrollable === undefined ? 0 : scrollable.start);
+        // PageUp and PageDown move by the rows fully visible, at least one (ADR-0012).
+        const viewportRows = Math.max(1, Math.floor(geometry.viewportHeightPx / this.#metrics.rowHeightPx));
+        const move = moveByKey(action, this.#held.selection, this.#extent, start, viewportRows);
+        if (move === undefined) return;
+        this.#apply(move.selection);
+        this.#revealOwed = move.reveal;
+        const focus = move.selection.focus;
+        // And the page follows what the reveal brings into view (ADR-0204).
+        if (focus !== undefined) this.#followArmed = { focus, target: move.reveal.target };
+    }
+
+    readonly #onPress = (event: MouseEvent): void => {
+        // Only a press on the rows' own box, whose cells take no pointer events: its offsets are the
+        // Viewport's, which the arithmetic reads (ADR-0012).
+        if (event.button !== 0 || event.target !== this.#viewport) return;
+        this.#reconcileSelection();
+        const at = this.#cellUnder(event);
+        if (at === undefined) return;
+        this.#answered += 1;
+        this.#pressed = true;
+        // A press on the grid ends a release of Tab: the user has come back to it (ADR-0012).
+        this.#tabReleased = false;
+        const extent = this.#extent;
+        const current = this.#held.selection;
+        const toggling = !event.shiftKey && (event.ctrlKey || (event.metaKey && this.#metaIsPrimary));
+        const next = event.shiftKey ? current.extendTo(at, extent)
+            : toggling ? current.toggleRange(at, extent)
+                : current.click(at, extent);
+        this.#apply(next);
+        // A Ctrl+press that took a cell out of the Selection starts no drag.
+        this.#setDragging(!(toggling && current.contains(at)));
+        this.#invalidate();
+    };
+
+    readonly #onDrag = (event: MouseEvent): void => {
+        if ((event.buttons & 1) === 0) {
+            this.#setDragging(false);
+            return;
+        }
+        if (event.target !== this.#viewport) return;
+        const at = this.#cellUnder(event);
+        if (at !== undefined && this.#apply(this.#held.selection.extendTo(at, this.#extent))) this.#invalidate();
+    };
+
+    // The release of a press the grid answered is an input answered too, as the C# core counts it
+    // (ADR-0220).
+    readonly #onRelease = (): void => {
+        if (!this.#pressed) return;
+        this.#pressed = false;
+        this.#answered += 1;
+        this.#invalidate();
+    };
+
+    // A drag ends at its release anywhere on the grid, over the header too; released outside it, the next
+    // move without the button ends it (#onDrag). Nothing is heard on the document: every grid on the page
+    // would hear every drag (ADR-0018).
+    readonly #onDragEnd = (): void => {
+        this.#setDragging(false);
+    };
+
+    // DOM focus leaving the grid ends a release of Tab, as the C# core's key gate does (ADR-0080).
+    readonly #onFocusLeft = (event: FocusEvent): void => {
+        const next = event.relatedTarget;
+        if (!(next instanceof Node) || !this.#root.contains(next)) this.#tabReleased = false;
+    };
+
+    // The move listener stands only while a drag runs, so a pointer passing over costs nothing.
+    #setDragging(dragging: boolean): void {
+        if (dragging === this.#dragging) return;
+        this.#dragging = dragging;
+        if (dragging) {
+            this.#viewport.addEventListener('mousemove', this.#onDrag);
+            this.#root.addEventListener('mouseup', this.#onDragEnd);
+        } else {
+            this.#viewport.removeEventListener('mousemove', this.#onDrag);
+            this.#root.removeEventListener('mouseup', this.#onDragEnd);
+        }
+    }
+
+    // The cell under a pointer on the Viewport, by arithmetic on its offsets (ADR-0012): rows counted from
+    // the row painted first, columns from the content's left edge.
+    #cellUnder(event: MouseEvent): CellPosition | undefined {
+        const geometry = this.#geometry;
+        const visible = this.#visible;
+        if (geometry === undefined || visible === undefined) return undefined;
+        const row = geometry.rowAt(event.offsetY + geometry.offsetPxOf(visible.start));
+        const column = this.#styles.geometry.columnAt(event.offsetX, this.#scrollLeftPx);
+        return row === undefined || column === undefined ? undefined : cellPosition(row, column);
+    }
+
+    #cellId(position: CellPosition): string {
+        return `${this.#ids}r${position.row}c${position.column}`;
+    }
+
+    // Whether a cell is in the DOM now: its row painted with its data, and its column pinned or in the
+    // horizontal slice, never mid-fling, when the scrollable cells are skipped (ADR-0004, ADR-0033).
+    #cellIsPainted(position: CellPosition): boolean {
+        const visible = this.#visible;
+        if (visible === undefined || position.row < visible.start || position.row >= visible.start + visible.count) return false;
+        const slice = position.row - this.#state.windowStart;
+        if (slice < 0 || slice >= this.#state.window.length) return false;
+        if (position.column < this.#styles.geometry.pinnedCount) return true;
+        const columns = this.#scrollable;
+        return !this.#placeholderMode && columns !== undefined
+            && position.column >= columns.start && position.column < columns.start + columns.count;
+    }
+
+    // Moves the model to where a key's reveal is going, and resolves the slice there, so the pass paints
+    // the rows at the offset it then writes (ADR-0012, 2026-09-29). Whether there is an offset to write.
+    #stageReveal(): boolean {
+        const reveal = this.#revealOwed;
+        this.#revealOwed = undefined;
+        const geometry = this.#geometry;
+        if (reveal === undefined || geometry === undefined) return false;
+        const { target } = reveal;
+        const columns = this.#styles.geometry;
+        if (target.row >= this.#totalRows || target.column >= columns.count) return false;
+        // PageUp and PageDown scroll by the rows the Focus moved, through the mapping, so a compressed grid
+        // moves by rows (ADR-0053); the reveal still runs over the stepped offset.
+        const stepped = reveal.stepRows === 0
+            ? this.#scrollTopPx
+            : geometry.scrollTopStepped(this.#scrollTopPx, reveal.stepRows * this.#metrics.rowHeightPx);
+        let top = geometry.scrollTopToReveal(target.row, stepped);
+        // "Go to the beginning" is not "make this cell visible": with Pinned Columns the two come apart.
+        let left = reveal.rowStart ? 0 : columns.scrollLeftToReveal(target.column, this.#scrollLeftPx);
+        // While extending, an axis the range spans end to end is not scrolled for (ADR-0052, 2026-09-29).
+        const range = reveal.extending;
+        if (range !== undefined) {
+            const extent = this.#extent;
+            if (spansEveryRow(range, extent)) top = this.#scrollTopPx;
+            if (spansEveryColumn(range, extent) && !reveal.rowStart) left = this.#scrollLeftPx;
+        }
+        if (top === this.#scrollTopPx && left === this.#scrollLeftPx) return false;
+        this.#scrollTopPx = top;
+        this.#scrollLeftPx = left;
+        this.#revealToken += 1;
+        this.#repaint?.cancel();
+        this.#repaint = undefined;
+        this.#resolve();
+        return true;
+    }
+
+    // A reveal's repaint (ADR-0012, 2026-10-08): under Citrix with hardware acceleration off, a far reveal
+    // left the Viewport white until the offset moved once more. So the offset moves a pixel in the frame
+    // after the reveal's and back in the frame after that. The grid hears nothing of it (#onScroll), and a
+    // scroll the user makes in between stands: the move back is not made, and the offset is read again. The
+    // move back writes the value the reveal wrote, on the moved axis only.
+    #repaintAfterReveal(writtenTop: number, writtenLeft: number): void {
+        const scroller = this.#scroller;
+        const current: Repaint = { top: scroller.scrollTop, left: scroller.scrollLeft, cancel: () => { /* no frame asked yet */ } };
+        this.#repaint = current;
+        current.cancel = this.#reports.nextFrame(this.#root, () => {
+            if (this.#repaint !== current) return;
+            if (scroller.scrollTop !== current.top || scroller.scrollLeft !== current.left) {
+                this.#yieldRepaint();
+                return;
+            }
+            // Away from the edge the offset stands at, so the move is never clamped to nothing; across, where
+            // the rows cannot scroll at all.
+            scroller.scrollTop = current.top + (current.top > 0 ? -1 : 1);
+            const across = scroller.scrollTop === current.top;
+            if (across) scroller.scrollLeft = current.left + (current.left > 0 ? -1 : 1);
+            const moved = { top: scroller.scrollTop, left: scroller.scrollLeft };
+            if (moved.top === current.top && moved.left === current.left) {
+                this.#endRepaint();
+                return;
+            }
+            current.cancel = this.#reports.nextFrame(this.#root, () => {
+                if (this.#repaint !== current) return;
+                if (scroller.scrollTop !== moved.top || scroller.scrollLeft !== moved.left) {
+                    this.#yieldRepaint();
+                    return;
+                }
+                if (across) scroller.scrollLeft = writtenLeft;
+                else scroller.scrollTop = writtenTop;
+                this.#endRepaint();
+            });
+        });
+    }
+
+    // The offset is read once more: a write the browser clamped stands where it landed, not where it was
+    // asked to.
+    #endRepaint(): void {
+        this.#repaint = undefined;
+        this.#onScroll();
+        this.#lookSettled();
+    }
+
+    // The user scrolled during the repaint: their offset stands, and is read.
+    #yieldRepaint(): void {
+        this.#repaint = undefined;
+        this.#onScroll();
+        this.#lookSettled();
+    }
+
+    // Numbers a page follow once the cell it brings in is painted (ADR-0204), and asks the browser after
+    // the frame that paints it, and after a reveal's repaint. One whose Focus has moved on is dropped.
+    #stageFollow(): void {
+        const follow = this.#followArmed;
+        if (follow === undefined) return;
+        const focus = this.#held.selection.focus;
+        if (focus === undefined || !sameCell(focus, follow.focus)) {
+            this.#followArmed = undefined;
+            return;
+        }
+        if (!this.#cellIsPainted(follow.target)) return;
+        this.#followArmed = undefined;
+        this.#followToken += 1;
+        this.#cancelFollow?.();
+        const afterPaint = (): void => {
+            let cancelTimer: (() => void) | undefined;
+            const cancelFrame = this.#reports.nextFrame(this.#root, () => {
+                cancelTimer = this.#reports.clock.setTimer(() => {
+                    if (this.#repaint !== undefined) {
+                        afterPaint();
+                        return;
+                    }
+                    this.#cancelFollow = undefined;
+                    this.#follow(follow);
+                    this.#lookSettled();
+                }, 0);
+            });
+            this.#cancelFollow = () => {
+                cancelFrame();
+                cancelTimer?.();
+            };
+        };
+        afterPaint();
+    }
+
+    // The browser places, the grid does not measure (ADR-0204): the page moves the cell into the window at
+    // the nearest edge, only while the keyboard is still this grid's and the Focus is the one the follow
+    // was taken for. The grid's own scroller is the grid's, and is put back if the browser moved it.
+    #follow(follow: Follow): void {
+        const focus = this.#held.selection.focus;
+        if (this.#destroyed || focus === undefined || !sameCell(focus, follow.focus) || !this.#keyboardHere()) return;
+        const element = this.#root.querySelector(`#${CSS.escape(this.#cellId(follow.target))}`);
+        if (element === null) return;
+        const scroller = this.#scroller;
+        const top = scroller.scrollTop;
+        const left = scroller.scrollLeft;
+        element.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+        if (scroller.scrollTop !== top) scroller.scrollTop = top;
+        if (scroller.scrollLeft !== left) scroller.scrollLeft = left;
+    }
+
+    // DOM focus inside this root and not in a grid nested in it, or on nothing.
+    #keyboardHere(): boolean {
+        const active = this.#root.ownerDocument.activeElement;
+        const doc = this.#root.ownerDocument;
+        return active === null || active === doc.body || active === doc.documentElement
+            || (this.#root.contains(active) && active.closest('.ex-grid') === this.#root);
+    }
+
+    // The selection layers' rectangles over the painted rows, written only when they changed. The layers
+    // the Viewport holds first, in order.
+    #paintLayers(): readonly HTMLElement[] {
+        const visible = this.#visible;
+        const geometry = this.#geometry;
+        // What lies above the layer at its edges (ADR-0008, 2026-10-01): the first row whose top edge is below
+        // the readable area's top, and the offset that takes a column under the pinned block.
+        const firstOpenRow = visible === undefined || geometry === undefined ? -1
+            : geometry.viewportTopPxOf(visible.start, this.#scrollTopPx) > 0.01 ? visible.start : visible.start + 1;
+        const inputs = {
+            selection: this.#held.selection, start: visible?.start, count: visible?.count, styles: this.#styles,
+            rowHeightPx: this.#metrics.rowHeightPx, scrollLeftPx: this.#scrollLeftPx, firstOpenRow,
+        };
+        const was = this.#layerInputs;
+        // A pass that moved none of them, every scroll frame along an axis the layers ignore, writes nothing.
+        if (was === undefined || Object.entries(inputs).some(([name, value]) => was[name] !== value)) {
+            this.#layerInputs = inputs;
+            const pieces = visible === undefined || geometry === undefined
+                ? { shade: undefined, pinned: [], scrollable: [] }
+                : selectionLayers(inputs.selection, this.#styles.geometry, inputs.rowHeightPx, visible,
+                    { firstOpenRow, scrollLeftPx: this.#scrollLeftPx, hasHeader: true });
+            const signature = JSON.stringify(pieces);
+            if (signature !== this.#paintedLayers) {
+                this.#paintedLayers = signature;
+                const fill = (layer: HTMLElement, held: readonly LayerPiece[]): void => {
+                    layer.replaceChildren(...held.map(({ className, style }) => {
+                        const made = this.#root.ownerDocument.createElement('div');
+                        made.className = className;
+                        made.setAttribute('style', style);
+                        return made;
+                    }));
+                };
+                if (pieces.shade !== undefined) fill(this.#shadeLayer, pieces.shade);
+                fill(this.#pinnedLayer, pieces.pinned);
+                fill(this.#selectionLayer, pieces.scrollable);
+                this.#shadeHolds = pieces.shade !== undefined;
+            }
+        }
+        return this.#shadeHolds ? [this.#shadeLayer, this.#pinnedLayer, this.#selectionLayer] : [this.#pinnedLayer, this.#selectionLayer];
+    }
+
     // ---- Painting -------------------------------------------------------------------------------------
 
     /** Writes an attribute only when it changed, so an unchanged pass touches nothing. */
@@ -623,6 +1166,16 @@ export class GridView<Row> {
             + (this.#devicePixelRatio === undefined ? '' : `; --ex-dp: ${1 / this.#devicePixelRatio}px`));
         this.#write(root, 'root', 'aria-rowcount', String(this.#totalRows + headerRowCount));
         this.#write(root, 'root', 'aria-colcount', String(this.#columns.length));
+        // The numbers a reveal and a page follow are known by (ADR-0012, ADR-0204), the Focus a follow
+        // was taken for, painted or not, and the Focus cell for assistive technology only while it is in
+        // the DOM, so the attribute never names a missing id (ADR-0033).
+        this.#write(root, 'root', 'data-ex-reveal', String(this.#revealToken));
+        this.#write(root, 'root', 'data-ex-follow', String(this.#followToken));
+        const focus = this.#held.selection.focus;
+        this.#write(root, 'root', 'data-ex-follow-focus', focus === undefined ? undefined : this.#cellId(focus));
+        this.#write(root, 'root', 'aria-activedescendant',
+            focus !== undefined && this.#cellIsPainted(focus) ? this.#cellId(focus) : undefined);
+        this.#write(this.#stamp, 'stamp', 'data-ex-answered', String(this.#answered));
         this.#write(this.#scroller, 'scroller', 'style', this.#scrollerStyle());
         const scrollHeightPx = this.#geometry?.scrollHeightPx ?? 0; // oxlint-disable-line ex-grid/no-stand-in-default -- ADR-0013: a Viewport with no room for a row scrolls nothing
         this.#write(this.#spacer, 'spacer', 'style', `width: ${geometry.totalWidthPx}px; height: ${this.#bandHeightPx + scrollHeightPx}px`);
@@ -700,7 +1253,8 @@ export class GridView<Row> {
         this.#write(viewport, 'viewport', 'data-ex-sequence', String(this.#sequence()));
         this.#write(viewport, 'viewport', 'data-ex-layout', String(this.#layoutId));
 
-        const rows: HTMLElement[] = [];
+        const layers = this.#paintLayers();
+        const rows: HTMLElement[] = [...layers];
         const next = new Map<unknown, PaintedRow<Row>>();
         const nextPlaceholders = new Map<number, HTMLElement>();
         let repainted = false;
@@ -741,20 +1295,25 @@ export class GridView<Row> {
         }
         this.#painted = next;
         this.#placeholders = nextPlaceholders;
-        // In order, moving only what is out of place, so a row that stays is not touched (ADR-0003).
+        // In order, moving only what is out of place, so a row that stays is not touched (ADR-0003). A
+        // selection layer coming or going paints no cell.
+        const isLayer = (node: ChildNode): boolean =>
+            node === this.#shadeLayer || node === this.#pinnedLayer || node === this.#selectionLayer;
+        // The shade layer gone is taken out first, or every row after it would be moved past it.
+        if (!layers.includes(this.#shadeLayer)) this.#shadeLayer.remove();
         let at: ChildNode | null = viewport.firstChild;
         for (const row of rows) {
             if (at === row) {
                 at = at.nextSibling;
             } else {
                 viewport.insertBefore(row, at);
-                repainted = true;
+                if (!isLayer(row)) repainted = true;
             }
         }
         while (at !== null) {
             const after: ChildNode | null = at.nextSibling;
             at.remove();
-            repainted = true;
+            if (!isLayer(at)) repainted = true;
             at = after;
         }
         if (repainted) this.#paintId += 1;

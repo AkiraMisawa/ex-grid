@@ -24,6 +24,7 @@ import { filterOperatorsFor } from '../src/query/filter';
 import { nextSort } from '../src/query/sort';
 import { cellClasses } from '../src/paint/cell-classes';
 import { rowClasses } from '../src/paint/row-classes';
+import { box, cellRange, copied, focusStyle, pinned, reaches, scrollable, tint, tinted, whole } from '../src/paint/selection-styles';
 import { lineUpMarks, rowMarkHeaderPress, rowMarkHeaderState, RowMarkCounts } from '../src/rows/row-marks';
 import { GridPresentationDefaults } from '../src/grid-presentation-defaults';
 import { rowRange } from '../src/viewport/row-range';
@@ -198,6 +199,12 @@ const subjects: Readonly<Record<string, Subject>> = {
     RowClasses: {
         create: (_, via) => noFactory('RowClasses', via),
         statics: { for: rowClasses },
+    },
+    // C#'s SelectionStyles is a static class: its members are the module's functions here, Focus's as
+    // focusStyle.
+    SelectionStyles: {
+        create: (_, via) => noFactory('SelectionStyles', via),
+        statics: { box, tint, tinted, reaches, whole, copied, focus: focusStyle, scrollable, pinned, cellRange },
     },
     RowMarkCounts: {
         create: (args, via) => via === undefined ? new RowMarkCounts(args as never) : noFactory('RowMarkCounts', via),

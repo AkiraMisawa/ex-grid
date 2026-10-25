@@ -27,8 +27,14 @@ export interface BrowserReports {
     observeCeiling(probe: HTMLElement, tell: (ceilingPx: number) => void): () => void;
     /** Hears the Device Pixel's size: at once, then whenever the scale or the zoom moves it. */
     observeDevicePixel(tell: (devicePixelRatio: number) => void): () => void;
-    /** The clock the settle delay after a fling runs on (ADR-0004). */
+    /** The clock the settle delay after a fling runs on (ADR-0004), and the announcement's (ADR-0033). */
     readonly clock: GridClock;
+    /** Calls `callback` before the next frame of `element`'s window is painted; the answer cancels the call
+     * if it has not run. A reveal's repaint moves the offset in the frames after the reveal's (ADR-0012). */
+    nextFrame(element: HTMLElement, callback: () => void): () => void;
+    /** Whether Meta is this platform's primary modifier, as Command is on an Apple platform: only the
+     * browser can answer it (ADR-0012). */
+    metaIsPrimary(): boolean;
 }
 
 /**
@@ -108,4 +114,15 @@ export const browserReports: BrowserReports = Object.freeze({
         return () => { query?.removeEventListener('change', arm); };
     },
     clock: systemClock,
+    nextFrame(element: HTMLElement, callback: () => void): () => void {
+        const view = element.ownerDocument.defaultView;
+        if (view === null) throw new Error('The grid\'s element is in a document with no window: nothing paints it.');
+        const frame = view.requestAnimationFrame(callback);
+        return () => { view.cancelAnimationFrame(frame); };
+    },
+    metaIsPrimary(): boolean {
+        // `userAgentData` is Chromium's; the others still answer `platform`.
+        const { userAgentData } = navigator as Navigator & { readonly userAgentData?: { readonly platform: string } };
+        return /mac|iphone|ipad|ipod/i.test(userAgentData === undefined ? navigator.platform : userAgentData.platform);
+    },
 });
