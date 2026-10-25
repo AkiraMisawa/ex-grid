@@ -54,6 +54,7 @@ export function Wide(): ReactElement {
                 viewportWidth={900}
                 pinnedColumnCount={pinnedColumnCount}
                 virtualiseColumns={virtualiseColumns}
+                hideColumnMenu
                 onSelectionChanged={setSelection} />
         </>
     );

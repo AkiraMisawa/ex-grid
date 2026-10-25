@@ -163,6 +163,13 @@ export interface FilterSpec {
 }
 
 // @public
+export interface FixedColumnWidth {
+    readonly maxPx?: number;
+    readonly minPx?: number;
+    readonly px: number;
+}
+
+// @public
 export interface GridChangeBatch<Row> {
     readonly added?: readonly Row[];
     readonly changed?: readonly Row[];
@@ -194,7 +201,43 @@ export interface GridColumn<Row> extends QueryColumn<Row> {
 }
 
 // @public
-export type GridColumnWidth = number | AutoColumnWidth;
+export type GridColumnWidth = number | FixedColumnWidth | AutoColumnWidth;
+
+// @public
+export interface GridColumnWidthChange {
+    readonly column: string;
+    readonly widthPx: number;
+}
+
+// @public
+export interface GridCommand {
+    readonly enabled: boolean;
+    readonly id: string;
+    readonly invoke: () => void;
+}
+
+// @public
+export const gridCommandIds: Readonly<{
+    readonly sortAscending: 'sort-ascending';
+    readonly sortDescending: 'sort-descending';
+    readonly clearFilter: 'clear-filter';
+    readonly hide: 'hide';
+    readonly pin: 'pin';
+    readonly unpin: 'unpin';
+    readonly sizeToFit: 'size-to-fit';
+    readonly copy: 'copy';
+    readonly copyWithHeaders: 'copy-with-headers';
+}>;
+
+// @public
+export interface GridContextMenuContext<Row> {
+    readonly column: string;
+    readonly columnType: ColumnType;
+    readonly commands: readonly GridCommand[];
+    readonly row: Row;
+    readonly rowSequenceVersion: number;
+    readonly selection: readonly SelectionRange[];
+}
 
 // @public
 export type GridDensity = 'compact' | 'comfortable' | 'standard' | 'excel';
@@ -272,19 +315,27 @@ export interface GridHeaderGroup {
 // @public
 export interface GridOptions<Row> {
     readonly columns: readonly GridColumn<Row>[];
+    readonly commandLabel?: (id: string) => string | undefined;
+    readonly contextCommands?: (context: GridContextMenuContext<Row>) => readonly GridCommand[];
     readonly copyCellCap?: number;
     readonly density?: GridDensity;
     readonly headerGroups?: readonly GridHeaderGroup[];
     readonly headerHeight?: number;
+    readonly hideColumnMenu?: boolean;
+    readonly hideCopyWithHeaders?: boolean;
     readonly highlightFocusRow?: boolean;
     readonly highlightHoverRow?: boolean;
     readonly onCellDoubleClick?: (cell: CellPosition) => void;
     readonly onClear?: (intent: GridClearIntent) => void;
+    readonly onColumnHidden?: (column: string) => void;
+    readonly onColumnOrderChanged?: (order: readonly string[]) => void;
+    readonly onColumnWidthChanged?: (change: GridColumnWidthChange) => void;
     readonly onEdit?: (intent: GridEditIntent<Row>) => void;
     readonly onEditDiscarded?: (reason: EditDiscardReason) => void;
     readonly onEditingChanged?: (open: boolean) => void;
     readonly onOverwriteNotice?: (notice: GridOverwriteNotice) => void;
     readonly onPaste?: (intent: GridPasteIntent) => void;
+    readonly onPinnedCountChanged?: (count: number) => void;
     readonly onRedo?: () => void;
     readonly onRefused?: (refusal: GridRefusal) => void;
     readonly onSelectionChanged?: (selection: GridSelection) => void;

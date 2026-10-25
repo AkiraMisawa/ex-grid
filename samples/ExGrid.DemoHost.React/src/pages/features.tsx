@@ -1,7 +1,8 @@
 import { useCallback, useMemo, useRef, useState, type ReactElement } from 'react';
 import {
-    GridSource, type CommitRefusalReason, type EditDiscardReason, type GridClearIntent, type GridColumn, type GridEditIntent, type GridHeaderGroup,
-    type GridOverwriteNotice, type GridPasteIntent, type GridRefusal,
+    GridSource, type CommitRefusalReason, type EditDiscardReason, type GridClearIntent, type GridColumn, type GridColumnWidthChange,
+    type GridCommand, type GridContextMenuContext, type GridEditIntent, type GridHeaderGroup, type GridOverwriteNotice, type GridPasteIntent,
+    type GridRefusal,
 } from '@ex-grid/core';
 import { ExGrid } from '@ex-grid/react';
 import type { Temporal } from 'temporal-polyfill';
@@ -111,6 +112,16 @@ function heldRows(source: GridSource<DemoTrade>): (row: number) => DemoTrade {
     };
 }
 
+/** The columns in the order the grid reported, each the one held by that name: the grid names only columns it
+ * was handed, so a name not held is a defect, said rather than skipped. */
+function inOrder(held: readonly GridColumn<DemoTrade>[], order: readonly string[]): readonly GridColumn<DemoTrade>[] {
+    return order.map(name => {
+        const column = held.find(c => c.name === name);
+        if (column === undefined) throw new RangeError(`The grid reported a column this page does not hold: ${name}.`);
+        return column;
+    });
+}
+
 /** One history step: the replacements one intent made, each as the row before and the row after. */
 type Step = [DemoTrade, DemoTrade][];
 
@@ -173,6 +184,35 @@ export function Features(): ReactElement {
     const [editDiscardedStatus, setEditDiscardedStatus] = useState('—');
     const [commitRefusedStatus, setCommitRefusedStatus] = useState('—');
     const [overwriteStatus, setOverwriteStatus] = useState('—');
+    // The columns as the user last left them: a resize or a reorder reaches the screen when they are handed
+    // back (ADR-0011, ADR-0016).
+    const [shownColumns, setShownColumns] = useState(columns);
+    const [widthStatus, setWidthStatus] = useState('—');
+    // As it came: a MaxWidth bounds only what the grid computes, so a drag past it is recorded as it is.
+    const onColumnWidthChanged = useCallback((change: GridColumnWidthChange) => {
+        setWidthStatus(`${change.column}=${Math.round(change.widthPx)}`);
+        setShownColumns(held => held.map(c => (c.name === change.column ? { ...c, width: change.widthPx } : c)));
+    }, []);
+    const onColumnOrderChanged = useCallback((order: readonly string[]) => {
+        setShownColumns(held => inOrder(held, order));
+    }, []);
+    // The column menu's Hide and Pin are the page's to apply (ADR-0010): the grid only says what was asked.
+    const onColumnHidden = useCallback((column: string) => {
+        setShownColumns(held => held.filter(c => c.name !== column));
+    }, []);
+    const [pinned, setPinned] = useState(0);
+    // What the Consumer adds to the Context Menu (ADR-0036): handed the row clicked and the Selection as rectangles
+    // in their version. Resolving the rest of the Selection into rows is this side's question, since this side
+    // owns the data; the demo does the one-row case, opening what the row is about.
+    const [contextStatus, setContextStatus] = useState('—');
+    const contextCommands = useCallback((context: GridContextMenuContext<DemoTrade>): readonly GridCommand[] => {
+        const { row } = context;
+        const cells = context.selection.reduce((sum, range) => sum + (range.rowCount * range.columnCount), 0);
+        return [{
+            id: 'open-trade', enabled: true,
+            invoke: () => { setContextStatus(`open ${row.book}/${row.trader} (${cells} cells selected, v${context.rowSequenceVersion})`); },
+        }];
+    }, []);
     const [counts, setCounts] = useState({ edits: 0, pastes: 0 });
     const [copyStatus, setCopyStatus] = useState('—');
     const [pasteStatus, setPasteStatus] = useState('—');
@@ -239,7 +279,7 @@ export function Features(): ReactElement {
                 for (let column = target.leftColumn; column < target.leftColumn + target.columnCount; column++) {
                     if (counted.has(`${row} ${column}`)) continue;
                     counted.add(`${row} ${column}`);
-                    if (pick(columns, column).name === 'Trader') resolved.add(rowAt(row));
+                    if (pick(shownColumns, column).name === 'Trader') resolved.add(rowAt(row));
                     else skipped += 1;
                 }
             }
@@ -251,7 +291,7 @@ export function Features(): ReactElement {
         }
         record(step);
         setClearStatus(`${intent.cellCount} cells, ${step.length} applied, ${skipped} have no blank`);
-    }, [source, replace, record]);
+    }, [source, replace, record, shownColumns]);
     const onPaste = useCallback((intent: GridPasteIntent) => {
         setCounts(was => ({ ...was, pastes: was.pastes + 1 }));
         const status = `${intent.cellCount} cells from ${intent.plan.source.rows}x${intent.plan.source.columns}`;
@@ -266,8 +306,8 @@ export function Features(): ReactElement {
         for (const target of intent.plan.targets) {
             for (let row = target.topRow; row < target.topRow + target.rowCount; row++) {
                 const held = rowAt(row);
-                for (let column = target.leftColumn; column < target.leftColumn + target.columnCount && column < columns.length; column++) {
-                    resolved.push({ row: held, column: pick(columns, column).name, value: intent.valueFor({ row, column }) });
+                for (let column = target.leftColumn; column < target.leftColumn + target.columnCount && column < shownColumns.length; column++) {
+                    resolved.push({ row: held, column: pick(shownColumns, column).name, value: intent.valueFor({ row, column }) });
                 }
             }
         }
@@ -284,7 +324,7 @@ export function Features(): ReactElement {
         }
         record(step);
         setPasteStatus(`${status}, ${step.length} applied`);
-    }, [source, replace, record]);
+    }, [source, replace, record, shownColumns]);
     return (
         <>
             <DemoNav route="features" />
@@ -309,15 +349,19 @@ export function Features(): ReactElement {
                 {/* The Overwrite Notice (ADR-0142, LV-21), announced as a refusal is, with both texts, because the
                     user never saw the change. Nothing was refused. */}
                 <span id="overwrite-notice-status" role="status">Overwritten: {overwriteStatus}</span>
+                <span id="order-status">Order: {shownColumns.map(c => c.name).join(',')}</span>
+                <span id="width-status">Width: {widthStatus}</span>
+                <span id="context-status">Context: {contextStatus}</span>
             </p>
             <ExGrid
-                columns={columns}
+                columns={shownColumns}
                 source={source}
                 rowHeight={24}
                 headerHeight={28}
                 viewportHeight={320}
                 viewportWidth={720}
                 headerGroups={groups}
+                pinnedColumnCount={pinned}
                 onRefused={onRefused}
                 onEdit={onEdit}
                 onEditDiscarded={onEditDiscarded}
@@ -325,7 +369,12 @@ export function Features(): ReactElement {
                 onClear={onClear}
                 onUndo={onUndo}
                 onRedo={onRedo}
-                onPaste={onPaste} />
+                onPaste={onPaste}
+                onColumnWidthChanged={onColumnWidthChanged}
+                onColumnOrderChanged={onColumnOrderChanged}
+                onColumnHidden={onColumnHidden}
+                onPinnedCountChanged={setPinned}
+                contextCommands={contextCommands} />
             <p className="demo-status"><span id="intent-count">Intents: {counts.edits} edits, {counts.pastes} pastes</span></p>
             {showGroups
                 ? (
