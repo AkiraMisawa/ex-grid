@@ -80,6 +80,21 @@ internal sealed class RecordPivotSource<TRecord> : PivotSource
         return pass.Page(query, SourceVersion);
     }
 
+    public override async ValueTask<PivotItemCounts> ItemCountsAsync(CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        var (snapshot, bindings) = await DataAsync(cancellationToken).ConfigureAwait(false);
+        var slicer = Slicer.Of(_slicing, cancellationToken);
+        var counts = new Dictionary<string, int>(_fields.Length, StringComparer.Ordinal);
+        foreach (var field in _fields)
+        {
+            var pass = new ItemsPass(snapshot, bindings[field.Name], _slicing.RowsRead);
+            await slicer.PassAsync(pass.RowCount, pass.Step).ConfigureAwait(false);
+            counts.Add(field.Name, pass.Count());
+        }
+        return new PivotItemCounts(SourceVersion, counts);
+    }
+
     /// <summary>Every Item of a field over all the records, first spellings kept — for the
     /// engine's own synchronous entry points.</summary>
     public IReadOnlyList<ItemKey> AllItems(string field)

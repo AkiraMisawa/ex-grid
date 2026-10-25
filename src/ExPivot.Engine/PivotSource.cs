@@ -12,7 +12,7 @@ namespace ExPivot.Engine;
 /// Blazor Server — and is the reference implementation: its answers are the engine's rules
 /// (ADR-0060). Records in memory come to it through typed field declarations
 /// (<see cref="PivotFields.Of{T}"/>), or through untyped accessors;</item>
-/// <item><see cref="Fetch"/> carries the Consumer's transport to a server, which answers with the
+/// <item><see cref="Fetch(IReadOnlyList{PivotField}, PivotSourceFeatures, Func{PivotQuery, CancellationToken, ValueTask{PivotAnswer}}, Func{PivotItemsQuery, CancellationToken, ValueTask{PivotItemPage}}, Func{PivotDetailsQuery, CancellationToken, ValueTask{PivotDetailPage}})"/> carries the Consumer's transport to a server, which answers with the
 /// Leaf Aggregates and is held to the reference's answers, question for question.</item>
 /// </list>
 /// Every question and every answer is a serialisable value (<see cref="PivotJson"/>). Every
@@ -44,6 +44,18 @@ public abstract class PivotSource
 
     /// <summary>One page of the records behind a cell, under the Source Version asked; or a refusal.</summary>
     public abstract ValueTask<PivotDetailPage> DetailsAsync(PivotDetailsQuery query, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Each field's count of Items now, under the Source Version counted (ADR-0370 section 3). A
+    /// source whose <see cref="PivotSourceFeatures.CountsItems"/> declares it is asked once when it is
+    /// opened and again under a new Source Version; the counts bound a layout's leaves before it is
+    /// asked (<see cref="PivotLeafBound"/>), and are never a refusal. The bundled sources answer it, for
+    /// a server that answers from one, and do not declare it: in the process, a layout past the cap is
+    /// refused as soon as a count would be known. A source that does not count throws
+    /// <see cref="InvalidOperationException"/>.
+    /// </summary>
+    public virtual ValueTask<PivotItemCounts> ItemCountsAsync(CancellationToken cancellationToken = default)
+        => throw new InvalidOperationException("This Pivot Source does not count its fields' Items (ADR-0370 section 3).");
 
     /// <summary>Excel's Refresh: a source that can be refreshed (<see cref="PivotSourceFeatures.CanRefresh"/>)
     /// raises <see cref="Changed"/>, and ExPivot asks again. One that cannot does nothing.</summary>
@@ -177,7 +189,29 @@ public abstract class PivotSource
         Func<PivotQuery, CancellationToken, ValueTask<PivotAnswer>> aggregate,
         Func<PivotItemsQuery, CancellationToken, ValueTask<PivotItemPage>> items,
         Func<PivotDetailsQuery, CancellationToken, ValueTask<PivotDetailPage>> details)
-        => new(fields, features, aggregate, items, details);
+        => new(fields, features, aggregate, items, details, null);
+
+    /// <summary>
+    /// A source a server answers, as <see cref="Fetch(IReadOnlyList{PivotField}, PivotSourceFeatures, Func{PivotQuery, CancellationToken, ValueTask{PivotAnswer}}, Func{PivotItemsQuery, CancellationToken, ValueTask{PivotItemPage}}, Func{PivotDetailsQuery, CancellationToken, ValueTask{PivotDetailPage}})"/>
+    /// is, that also counts its fields' Items (ADR-0370 section 3): <paramref name="features"/> declares
+    /// <see cref="PivotSourceFeatures.CountsItems"/>. Counts naming a field the source does not declare
+    /// are refused by name.
+    /// </summary>
+    /// <param name="fields">The fields the server offers.</param>
+    /// <param name="features">The Aggregations it answers, whether it can be refreshed, and that it
+    /// counts Items.</param>
+    /// <param name="aggregate">Answers a <see cref="PivotQuery"/>.</param>
+    /// <param name="items">Answers a <see cref="PivotItemsQuery"/>.</param>
+    /// <param name="details">Answers a <see cref="PivotDetailsQuery"/>.</param>
+    /// <param name="itemCounts">Answers each field's count of Items.</param>
+    public static FetchingPivotSource Fetch(
+        IReadOnlyList<PivotField> fields,
+        PivotSourceFeatures features,
+        Func<PivotQuery, CancellationToken, ValueTask<PivotAnswer>> aggregate,
+        Func<PivotItemsQuery, CancellationToken, ValueTask<PivotItemPage>> items,
+        Func<PivotDetailsQuery, CancellationToken, ValueTask<PivotDetailPage>> details,
+        Func<CancellationToken, ValueTask<PivotItemCounts>> itemCounts)
+        => new(fields, features, aggregate, items, details, itemCounts ?? throw new ArgumentNullException(nameof(itemCounts)));
 
     // ---- What every source refuses the same way ------------------------------------------------
 

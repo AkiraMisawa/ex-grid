@@ -48,8 +48,9 @@ export { PivotCube } from './cube/cube';
 export type { PivotDetailRecord, PivotDetailValue, PivotFetchers, PivotSource, PivotSourceChanged } from './source/pivot-source';
 export type { PivotSlicing } from './source/slicing';
 export {
-    FetchingPivotSource, PivotDetailPage, PivotItemPage, PivotSourceFeatures, RecordPivotSource, SnapshotPivotSource,
+    FetchingPivotSource, PivotDetailPage, PivotItemCounts, PivotItemPage, PivotSourceFeatures, RecordPivotSource, SnapshotPivotSource,
 } from './source/pivot-source';
+export { pivotLeafBound, pivotLeafBoundMost } from './source/leaf-bound';
 export type { PivotOptions } from './report/labels';
 export type { PivotValue } from './report/value';
 export type { PivotHeaderSpan, PivotLabelColumn, PivotRowLabel, PivotToggle } from './report/report';

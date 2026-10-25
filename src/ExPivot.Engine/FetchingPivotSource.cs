@@ -15,13 +15,15 @@ public sealed class FetchingPivotSource : PivotSource
     private readonly Func<PivotQuery, CancellationToken, ValueTask<PivotAnswer>> _aggregate;
     private readonly Func<PivotItemsQuery, CancellationToken, ValueTask<PivotItemPage>> _items;
     private readonly Func<PivotDetailsQuery, CancellationToken, ValueTask<PivotDetailPage>> _details;
+    private readonly Func<CancellationToken, ValueTask<PivotItemCounts>>? _itemCounts;
 
     internal FetchingPivotSource(
         IReadOnlyList<PivotField> fields,
         PivotSourceFeatures features,
         Func<PivotQuery, CancellationToken, ValueTask<PivotAnswer>> aggregate,
         Func<PivotItemsQuery, CancellationToken, ValueTask<PivotItemPage>> items,
-        Func<PivotDetailsQuery, CancellationToken, ValueTask<PivotDetailPage>> details)
+        Func<PivotDetailsQuery, CancellationToken, ValueTask<PivotDetailPage>> details,
+        Func<CancellationToken, ValueTask<PivotItemCounts>>? itemCounts)
     {
         Declared(fields);
         _fields = [.. fields];
@@ -29,6 +31,13 @@ public sealed class FetchingPivotSource : PivotSource
         _aggregate = aggregate ?? throw new ArgumentNullException(nameof(aggregate));
         _items = items ?? throw new ArgumentNullException(nameof(items));
         _details = details ?? throw new ArgumentNullException(nameof(details));
+        if (features.CountsItems != itemCounts is not null)
+        {
+            throw new ArgumentException(features.CountsItems
+                ? "The source declares that it counts its fields' Items, and no delegate counts them (ADR-0370 section 3)."
+                : "A delegate counts the fields' Items, and the source's features do not declare it (ADR-0370 section 3).", nameof(features));
+        }
+        _itemCounts = itemCounts;
     }
 
     /// <inheritdoc />
@@ -78,6 +87,21 @@ public sealed class FetchingPivotSource : PivotSource
         if (page.Records.Count > query.Count || page.Start != query.Start)
             throw new InvalidOperationException($"The server answered {page.Records.Count} records from {page.Start}, and {query.Count} from {query.Start} were asked for (ADR-0066).");
         return page;
+    }
+
+    /// <summary>Asks the server for each field's count of Items (ADR-0370 section 3). Counts naming a
+    /// field the source does not declare are refused by name.</summary>
+    public override async ValueTask<PivotItemCounts> ItemCountsAsync(CancellationToken cancellationToken = default)
+    {
+        if (_itemCounts is null)
+            return await base.ItemCountsAsync(cancellationToken);
+        var counts = await _itemCounts(cancellationToken) ?? throw new InvalidOperationException("The source's itemCounts delegate answered null.");
+        foreach (var field in counts.Counts.Keys)
+        {
+            if (!_fields.Any(declared => declared.Name == field))
+                throw new InvalidOperationException($"The server counted the Items of '{field}', a field the source does not declare (ADR-0370 section 3).");
+        }
+        return counts;
     }
 
     /// <summary>Excel's Refresh: raises <see cref="PivotSource.Changed"/>, and ExPivot asks again

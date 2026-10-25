@@ -74,6 +74,18 @@ internal sealed class ItemsPass
         return keys;
     }
 
+    /// <summary>How many Items some held row carries: the field's count of Items (ADR-0370 section 3).</summary>
+    public int Count()
+    {
+        var count = 0;
+        for (var item = 0; item < _space.Count && item < _rows.Length; item++)
+        {
+            if (_rows[item] > 0)
+                count++;
+        }
+        return count;
+    }
+
     /// <summary>A page of the Items (ADR-0066): those whose invariant text holds the search, ignoring
     /// case, in the source's invariant order, at most as many as asked, with how many there are.</summary>
     public PivotItemPage Page(PivotItemsQuery query, string sourceVersion)

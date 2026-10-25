@@ -8,7 +8,7 @@ namespace ExPivot.Engine;
 /// Every Pivot Source question and answer as JSON (ADR-0066), so it crosses to a server unchanged:
 /// <see cref="PivotQuery"/> and <see cref="PivotAnswer"/>, <see cref="PivotItemsQuery"/> and
 /// <see cref="PivotItemPage"/>, <see cref="PivotDetailsQuery"/> and <see cref="PivotDetailPage"/>,
-/// and <see cref="PivotSourceChanged"/>. Each document names its format's <c>version</c> and its
+/// <see cref="PivotSourceChanged"/>, and <see cref="PivotItemCounts"/>. Each document names its format's <c>version</c> and its
 /// <c>type</c>, and a reader refuses a version it does not know rather than half-read it.
 ///
 /// <para>Written and read by hand, member by member, as <see cref="PivotLayoutJson"/> is, so that
@@ -32,6 +32,7 @@ public static class PivotJson
     private const string DetailsQueryType = "detailsQuery";
     private const string DetailPageType = "detailPage";
     private const string SourceChangedType = "sourceChanged";
+    private const string ItemCountsType = "itemCounts";
 
     // ---- Writing -------------------------------------------------------------------------------
 
@@ -177,6 +178,21 @@ public static class PivotJson
         {
             if (change.SourceVersion is not null)
                 json.WriteString("sourceVersion", change.SourceVersion);
+        });
+    }
+
+    /// <summary>Each field's count of Items (ADR-0370 section 3), as JSON: <c>counts</c> holds a member
+    /// per counted field.</summary>
+    public static string Write(PivotItemCounts counts)
+    {
+        ArgumentNullException.ThrowIfNull(counts);
+        return Document(ItemCountsType, json =>
+        {
+            json.WriteString("sourceVersion", counts.SourceVersion);
+            json.WriteStartObject("counts");
+            foreach (var (field, count) in counts.Counts)
+                json.WriteNumber(field, count);
+            json.WriteEndObject();
         });
     }
 
@@ -500,6 +516,20 @@ public static class PivotJson
     /// <summary>A source's notice read back from <see cref="Write(PivotSourceChanged)"/>'s JSON.</summary>
     public static PivotSourceChanged ReadSourceChanged(string json)
         => Read(json, SourceChangedType, root => new PivotSourceChanged(OptionalString(root, "sourceVersion")));
+
+    /// <summary>Each field's count of Items read back from <see cref="Write(PivotItemCounts)"/>'s JSON.</summary>
+    public static PivotItemCounts ReadItemCounts(string json) => Read(json, ItemCountsType, root =>
+    {
+        if (!root.TryGetProperty("counts", out var counts) || counts.ValueKind != JsonValueKind.Object)
+            throw new FormatException("'counts' is an object, and is required.");
+        var read = new Dictionary<string, int>(StringComparer.Ordinal);
+        foreach (var member in counts.EnumerateObject())
+        {
+            if (!read.TryAdd(member.Name, IntValue(member.Value, "counts")))
+                throw new FormatException($"'counts' names '{member.Name}' twice.");
+        }
+        return new PivotItemCounts(String(root, "sourceVersion"), read);
+    });
 
     /// <summary>
     /// Opens a document: a JSON object naming its version — refused with

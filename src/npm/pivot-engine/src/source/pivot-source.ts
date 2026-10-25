@@ -21,7 +21,7 @@ import { bindSnapshot, detailAt, itemKeyAt, recordSnapshot, type FieldBinding } 
 
 // ---- What a source offers -----------------------------------------------------------------------
 
-/** The Aggregations a source answers, and whether it can be refreshed. */
+/** The Aggregations a source answers, whether it can be refreshed, and whether it counts its fields' Items. */
 export class PivotSourceFeatures {
     /** Every Aggregation, in the declared order. */
     static readonly all: PivotSourceFeatures = new PivotSourceFeatures(pivotAggregations);
@@ -30,9 +30,13 @@ export class PivotSourceFeatures {
     readonly aggregations: readonly PivotAggregation[];
     /** Whether Refresh asks the source again. */
     readonly canRefresh: boolean;
+    /** Whether the source answers each field's count of Items ({@link PivotSource.itemCounts}, ADR-0370
+     * section 3): the report then asks it once when the source is opened and again under a new Source
+     * Version. */
+    readonly countsItems: boolean;
 
     /** The features of the Aggregations given, refusing one the engine does not know. */
-    constructor(aggregations: Iterable<PivotAggregation>, canRefresh = false) {
+    constructor(aggregations: Iterable<PivotAggregation>, canRefresh = false, countsItems = false) {
         const offered = new Set<PivotAggregation>();
         for (const aggregation of aggregations) {
             if (!pivotAggregations.includes(aggregation)) throw new RangeError(`Unknown PivotAggregation (${aggregation}).`);
@@ -40,6 +44,7 @@ export class PivotSourceFeatures {
         }
         this.aggregations = Object.freeze(pivotAggregations.filter(a => offered.has(a)));
         this.canRefresh = canRefresh;
+        this.countsItems = countsItems;
         Object.freeze(this);
     }
 
@@ -208,6 +213,39 @@ export class PivotDetailPage {
     }
 }
 
+/**
+ * Each field's count of Items, under the Source Version it was counted at (ADR-0370 section 3): what a
+ * server's source answers when its features declare {@link PivotSourceFeatures.countsItems}, so that the
+ * Field List shows the count beside a field and a layout's leaves are bounded before it is asked
+ * ({@link pivotLeafBound}). A field the source did not count is absent, never zero.
+ */
+export class PivotItemCounts {
+    /** The Source Version the Items were counted at. */
+    readonly sourceVersion: string;
+    /** Each counted field's count of Items, by the field's name. */
+    readonly counts: ReadonlyMap<string, number>;
+
+    /** The counts of a Source Version, refusing a count that is not a whole number of at least 0. */
+    constructor(sourceVersion: string, counts: Iterable<readonly [string, number]>) {
+        if (typeof sourceVersion !== 'string') throw new TypeError('A Source Version is text.');
+        const read = new Map<string, number>();
+        for (const [field, count] of counts) {
+            if (typeof field !== 'string' || field.length === 0) throw new TypeError('A counted field is named.');
+            if (!Number.isSafeInteger(count) || count < 0) throw new RangeError(`A field has a whole number of Items, at least 0; '${field}' was counted ${count}.`);
+            if (read.has(field)) throw new TypeError(`The field '${field}' is counted twice.`);
+            read.set(field, count);
+        }
+        this.sourceVersion = sourceVersion;
+        this.counts = read;
+        Object.freeze(this);
+    }
+
+    /** The field's count of Items, or `undefined` when the source did not count it. */
+    countOf(field: string): number | undefined {
+        return this.counts.get(field);
+    }
+}
+
 // ---- The source ---------------------------------------------------------------------------------
 
 /** What a report asks its data (ADR-0066). Each question is answered under a Source Version, or refused. */
@@ -222,6 +260,11 @@ export interface PivotSource {
     items(query: PivotItemsQuery, signal?: AbortSignal): Promise<PivotItemPage>;
     /** A page of the records behind a cell. */
     details(query: PivotDetailsQuery, signal?: AbortSignal): Promise<PivotDetailPage>;
+    /** Each field's count of Items now (ADR-0370 section 3), asked of a source whose features declare
+     * {@link PivotSourceFeatures.countsItems}. The bundled sources answer it, for a server that answers from
+     * one, and do not declare it: in the page, a layout past the cap is refused as soon as a count would be
+     * known. */
+    itemCounts?(signal?: AbortSignal): Promise<PivotItemCounts>;
 }
 
 function knows(fields: readonly PivotField[], name: string): boolean {
@@ -583,6 +626,22 @@ export class SnapshotPivotSource implements PivotSource {
         return itemPage(keys, query, query.sourceVersion);
     }
 
+    /** Each field's count of Items in the current Snapshot, read in slices, field after field (ADR-0370
+     * section 3): what a server answering from this source answers its Field List with. A count is the
+     * length of the field's whole page of Items. */
+    async itemCounts(signal?: AbortSignal): Promise<PivotItemCounts> {
+        aborted(signal);
+        const snapshot = this.#snapshot;
+        const bindings = this.#bindings;
+        const slicer = new Slicer(this.#slicing, signal);
+        const counts: [string, number][] = [];
+        for (const field of this.fields) {
+            const keys = await slicer.run(itemsOfFieldSteps(snapshot, defined(bindings.get(field.name), `the field '${field.name}' is bound`)));
+            counts.push([field.name, keys.length]);
+        }
+        return new PivotItemCounts(this.#versionOf(snapshot), counts);
+    }
+
     /** A page of the records behind a cell in the version asked, in the Snapshot's order, read in slices;
      * refused under a version the source no longer holds. */
     async details(query: PivotDetailsQuery, signal?: AbortSignal): Promise<PivotDetailPage> {
@@ -697,6 +756,12 @@ export class RecordPivotSource<TRecord> implements PivotSource {
         return Promise.resolve(itemPage(this.#allItems(query.field), query, this.sourceVersion));
     }
 
+    /** Each field's count of Items over the records (ADR-0370 section 3). */
+    itemCounts(signal?: AbortSignal): Promise<PivotItemCounts> {
+        aborted(signal);
+        return Promise.resolve(new PivotItemCounts(this.sourceVersion, this.fields.map(field => [field.name, this.#allItems(field.name).length] as const)));
+    }
+
     /** A page of the records behind a cell, each carrying its record. */
     details(query: PivotDetailsQuery, signal?: AbortSignal): Promise<PivotDetailPage> {
         aborted(signal);
@@ -732,6 +797,8 @@ export interface PivotFetchers {
     readonly items: (query: PivotItemsQuery, signal?: AbortSignal) => Promise<PivotItemPage>;
     /** Asks the server for a page of the records behind a cell. */
     readonly details: (query: PivotDetailsQuery, signal?: AbortSignal) => Promise<PivotDetailPage>;
+    /** Asks the server for each field's count of Items, when the features declare that it counts them. */
+    readonly itemCounts?: (signal?: AbortSignal) => Promise<PivotItemCounts>;
 }
 
 /** A source whose answers a Consumer fetches from a server (ADR-0066). The engine refuses what every source
@@ -744,9 +811,15 @@ export class FetchingPivotSource implements PivotSource {
     readonly features: PivotSourceFeatures;
     readonly #fetch: PivotFetchers;
 
-    /** A source of the server's fields and Aggregations, asked through the fetchers. */
+    /** A source of the server's fields and Aggregations, asked through the fetchers; the features declare
+     * that it counts Items exactly when a fetcher counts them. */
     constructor(fields: readonly PivotField[], features: PivotSourceFeatures, fetch: PivotFetchers) {
         declaredFields(fields);
+        if (features.countsItems !== (fetch.itemCounts !== undefined)) {
+            throw new TypeError(features.countsItems
+                ? 'The source declares that it counts its fields\' Items, and no fetcher counts them (ADR-0370 section 3).'
+                : 'A fetcher counts the fields\' Items, and the source\'s features do not declare it (ADR-0370 section 3).');
+        }
         this.fields = Object.freeze([...fields]);
         this.features = features;
         this.#fetch = fetch;
@@ -773,6 +846,18 @@ export class FetchingPivotSource implements PivotSource {
             throw new Error(`The server answered ${page.items.length} Items, and ${query.max} were asked for (ADR-0066).`);
         }
         return page;
+    }
+
+    /** The server's count of each field's Items (ADR-0370 section 3). Counts naming a field the source does
+     * not declare are refused by name. */
+    async itemCounts(signal?: AbortSignal): Promise<PivotItemCounts> {
+        const fetch = this.#fetch.itemCounts;
+        if (fetch === undefined) throw new Error('This Pivot Source does not count its fields\' Items (ADR-0370 section 3).');
+        const counts = await fetch(signal);
+        for (const field of counts.counts.keys()) {
+            if (!knows(this.fields, field)) throw new Error(`The server counted the Items of '${field}', a field the source does not declare (ADR-0370 section 3).`);
+        }
+        return counts;
     }
 
     /** The server's page of records, held to the fields and the page asked for. */

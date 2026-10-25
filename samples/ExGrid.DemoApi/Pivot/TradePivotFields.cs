@@ -158,14 +158,16 @@ internal static class TradePivotFields
     /// variances are not: SQLite has no aggregate for either, and the engine's are doubles
     /// accumulated record by record, whose last bits depend on an order a <c>GROUP BY</c> does not
     /// keep. A source is never obliged to approximate, so Value Field Settings… offers them
-    /// disabled, with the reason. It can be refreshed: the data moves on while live updates run.
+    /// disabled, with the reason. It can be refreshed: the data moves on while live updates run. It
+    /// counts each field's Items (ADR-0370 section 3): a <c>SELECT DISTINCT</c> a field, once a version.
     /// </summary>
     public static readonly PivotSourceFeatures Features = new(
         [
             PivotAggregation.Sum, PivotAggregation.Count, PivotAggregation.Average,
             PivotAggregation.Max, PivotAggregation.Min, PivotAggregation.CountNumbers,
         ],
-        canRefresh: true);
+        canRefresh: true,
+        countsItems: true);
 
     private static readonly Dictionary<string, TradePivotField> ByName = All.ToDictionary(f => f.Name, StringComparer.Ordinal);
 

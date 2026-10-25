@@ -71,21 +71,46 @@ internal sealed class TradePivotSource(TradeStore store) : PivotSource
         {
             if (query.SourceVersion != read.Version)
                 return PivotItemPage.Refused(PivotSourceRefusal.SourceVersionNotHeld(query.SourceVersion));
-            await using var command = read.Command(TradePivotSql.Items(field));
-            await using var reader = await command.ExecuteReaderAsync(token);
-            var seen = new HashSet<PivotItemKey>();
             var matches = new List<ItemOrder.Entry>();
-            while (await reader.ReadAsync(token))
+            foreach (var item in await ItemsOf(read, field, token))
             {
-                var item = field.ItemAt(reader, 0);
-                if (!seen.Add(item))
-                    continue;
                 if (query.Search is { } search && item.Value?.Contains(search, StringComparison.OrdinalIgnoreCase) != true)
                     continue;
                 matches.Add(ItemOrder.Entry.Of(item));
             }
             return new PivotItemPage(read.Version, ItemOrder.First(matches, query.Max), matches.Count);
         }, cancellationToken);
+    }
+
+    /// <summary>
+    /// Each field's count of Items (ADR-0370 section 3), all read at one version: the length of the
+    /// field's whole page of Items, read as <see cref="ItemsAsync"/> reads them. It costs a
+    /// <c>SELECT DISTINCT</c> a field each time it is asked, and ExPivot asks once a version, so the
+    /// Field List can show the counts and mark a drop past the leaf cap before it is asked.
+    /// </summary>
+    public override async ValueTask<PivotItemCounts> ItemCountsAsync(CancellationToken cancellationToken = default)
+        => await store.ReadAsync(async (read, token) =>
+        {
+            var counts = new Dictionary<string, int>(StringComparer.Ordinal);
+            foreach (var field in TradePivotFields.All)
+                counts.Add(field.Name, (await ItemsOf(read, field, token)).Count);
+            return new PivotItemCounts(read.Version, counts);
+        }, cancellationToken);
+
+    // A field's distinct stored values, folded into its Items in the order SQL lists them.
+    private static async Task<List<PivotItemKey>> ItemsOf(TradeRead read, TradePivotField field, CancellationToken token)
+    {
+        await using var command = read.Command(TradePivotSql.Items(field));
+        await using var reader = await command.ExecuteReaderAsync(token);
+        var seen = new HashSet<PivotItemKey>();
+        var items = new List<PivotItemKey>();
+        while (await reader.ReadAsync(token))
+        {
+            var item = field.ItemAt(reader, 0);
+            if (seen.Add(item))
+                items.Add(item);
+        }
+        return items;
     }
 
     /// <summary>

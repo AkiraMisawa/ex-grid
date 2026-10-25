@@ -6,7 +6,7 @@
 import { createChangeBatch, decimalText, SnapshotError, ticksText } from '@ex-grid/data';
 import {
     datePartField, FetchingPivotSource, pivotAggregations, pivotCube, pivotDetailsQuery, pivotField, pivotItemsQuery, pivotParts, pivotQuery,
-    pivotReport, PivotSourceFeatures, queryForLayout, RecordPivotSource, SnapshotPivotSource, type PivotAggregation, type PivotAnswer,
+    pivotLeafBound, pivotReport, PivotItemCounts, PivotSourceFeatures, queryForLayout, RecordPivotSource, SnapshotPivotSource, type PivotAggregation, type PivotAnswer,
     type PivotAnswerAxis, type PivotDatePart, type PivotDetailValue, type PivotField, type PivotFieldItem, type PivotFieldType,
     type PivotNumber, type PivotOptions, type PivotPart, type PivotQuery, type PivotQueryField, type PivotSource, type PivotSourceRefusal,
 } from '../src/index';
@@ -27,6 +27,7 @@ export interface Bench {
     readonly shape: JsonObject | undefined;
     asked: number;
     version: string | undefined;
+    counts: PivotItemCounts | undefined;
     readonly versions: string[];
     readonly told: string[];
 }
@@ -77,7 +78,9 @@ export function open(file: JsonObject, entry: JsonObject): Bench {
         const inner = bundled();
         if (fetch === undefined) return inner;
         const offers = fetch['offers'];
-        const features = offers === undefined ? inner.features : new PivotSourceFeatures(array(offers).map(a => member<PivotAggregation>(pivotAggregations, a, 'an Aggregation')));
+        const offered = offers === undefined ? inner.features.aggregations : array(offers).map(a => member<PivotAggregation>(pivotAggregations, a, 'an Aggregation'));
+        const counts = fetch['counts'];
+        const features = new PivotSourceFeatures(offered, inner.features.canRefresh, counts !== undefined);
         const answers = fetch['answers'];
         const instead = answers === undefined ? undefined : queryOf(object(answers));
         return new FetchingPivotSource(inner.fields, features, {
@@ -87,10 +90,12 @@ export function open(file: JsonObject, entry: JsonObject): Bench {
             },
             items: (query, signal) => inner.items(query, signal),
             details: (query, signal) => inner.details(query, signal),
+            // "counts": true counts through the source behind; an object is what the server answers instead.
+            ...(counts === undefined ? {} : { itemCounts: (signal?: AbortSignal) => countedBy(inner, counts, signal) }),
         });
     };
     const shape = snapshot === undefined ? undefined : snapshotShapeOf(file, entry);
-    const bench: Bench = { source: make(), again: make, data, shape, asked: 0, version: undefined, versions: [], told: [] };
+    const bench: Bench = { source: make(), again: make, data, shape, asked: 0, version: undefined, counts: undefined, versions: [], told: [] };
     return bench;
 }
 
@@ -139,6 +144,18 @@ async function ask(bench: Bench, step: JsonObject, options: PivotOptions): Promi
         if (page.refusal !== undefined) return refused(page.refusal, under);
         return { version: page.sourceVersion === under ? 'asked' : page.sourceVersion, total: page.total, items: page.items.map(itemKey) };
     }
+    if (step['itemCounts'] !== undefined) {
+        if (source.itemCounts === undefined) throw new Error('The source asked to count its Items has no way to.');
+        const counted = await source.itemCounts();
+        bench.counts = counted;
+        return { version: counted.sourceVersion === bench.version ? 'answered' : counted.sourceVersion, counts: Object.fromEntries(counted.counts) };
+    }
+    const bounded = step['leafBound'];
+    if (bounded !== undefined) {
+        if (bench.counts === undefined) throw new Error('A layout is bounded by the counts last answered, and none were asked for.');
+        const bound = pivotLeafBound(layoutOf(bounded), bench.counts);
+        return { bound: bound === undefined ? null : bound };
+    }
     const cell = step['details'];
     if (cell !== undefined) {
         const under = underOf(bench, step);
@@ -174,6 +191,15 @@ async function ask(bench: Bench, step: JsonObject, options: PivotOptions): Promi
         return { refreshed: true };
     }
     throw new Error(`${JSON.stringify(step)} asks nothing the cases ask.`);
+}
+
+// What a fetching source's server counts: through the source behind it, or the counts the case writes.
+function countedBy(inner: PivotSource, counts: Json, signal?: AbortSignal): Promise<PivotItemCounts> {
+    if (counts === true) {
+        if (inner.itemCounts === undefined) throw new Error('The source behind a fetching source counts its Items.');
+        return inner.itemCounts(signal);
+    }
+    return Promise.resolve(new PivotItemCounts('server', Object.entries(object(counts)).map(([field, count]) => [field, whole(count)] as const)));
 }
 
 // The version a page is asked under: the last answer's, an earlier answer's by its number, the one a source

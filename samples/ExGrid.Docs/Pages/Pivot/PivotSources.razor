@@ -160,6 +160,24 @@
             more than 200,000 leaves, or more rows or columns than Excel's 1,048,576 and 16,384. The report on screen
             stays, and the Pivot Toolbar says why.
         </p>
+        <p>
+            Over server data the leaves grow with the product of the placed fields' Items, not with the records, so a
+            server's source may say how many Items each field has. Declare it in the features
+            (<code>new PivotSourceFeatures(aggregations, canRefresh, countsItems: true)</code>) and pass
+            <code>PivotSource.Fetch</code> a fourth delegate, after the other three, that asks for the counts; your server answers it with its own
+            source's <code>ItemCountsAsync</code>, a <code>PivotItemCounts</code> under the Source Version it counted,
+            written with <code>PivotJson.Write</code>. The bundled sources answer <code>ItemCountsAsync</code> too, so a
+            server built on one has nothing to write. <code>PivotLeafBound.Of(layout, counts)</code> is then the most
+            leaves a layout can make: the product of its Rows' and Columns' counts, less the Items it hides, or null where
+            a field it places was not counted. It is a hint, known before anything is asked, and never a refusal: the
+            question is still asked with <code>MaxLeaves</code>, and the server refuses past it as before (ADR-0370).
+            In <code>@@ex-grid/pivot-engine</code> they are the third argument of <code>PivotSourceFeatures</code>, an
+            <code>itemCounts</code> fetcher beside the other three, each source's <code>itemCounts()</code>, and
+            <code>pivotLeafBound</code>.
+            The Field List that shows the counts, marks a drop target past the cap and words the refusal by the field
+            (<em>Customer (1,020,000 items) in Rows makes more than 200,000 combinations, the most server data allows</em>)
+            comes with the TypeScript engine's UI in 0.3.0; ExPivot today does not ask for the counts.
+        </p>
     </DocsSection>
 
     <DocsSection Title="From TypeScript">

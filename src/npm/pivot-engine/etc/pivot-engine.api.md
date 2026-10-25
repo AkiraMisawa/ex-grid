@@ -64,6 +64,7 @@ export class FetchingPivotSource implements PivotSource {
     details(query: PivotDetailsQuery, signal?: AbortSignal): Promise<PivotDetailPage>;
     readonly features: PivotSourceFeatures;
     readonly fields: readonly PivotField[];
+    itemCounts(signal?: AbortSignal): Promise<PivotItemCounts>;
     items(query: PivotItemsQuery, signal?: AbortSignal): Promise<PivotItemPage>;
 }
 
@@ -296,6 +297,7 @@ export const pivotErrorText = "#NUM!";
 export interface PivotFetchers {
     readonly aggregate: (query: PivotQuery, signal?: AbortSignal) => Promise<PivotAnswer>;
     readonly details: (query: PivotDetailsQuery, signal?: AbortSignal) => Promise<PivotDetailPage>;
+    readonly itemCounts?: (signal?: AbortSignal) => Promise<PivotItemCounts>;
     readonly items: (query: PivotItemsQuery, signal?: AbortSignal) => Promise<PivotItemPage>;
 }
 
@@ -370,6 +372,14 @@ export interface PivotHeaderSpan {
     readonly label: string;
     readonly tier: number;
     readonly tierSpan: number;
+}
+
+// @public
+export class PivotItemCounts {
+    constructor(sourceVersion: string, counts: Iterable<readonly [string, number]>);
+    countOf(field: string): number | undefined;
+    readonly counts: ReadonlyMap<string, number>;
+    readonly sourceVersion: string;
 }
 
 // @public
@@ -478,6 +488,12 @@ export interface PivotLayoutInput {
 
 // @public
 export const pivotLayoutJsonVersion = 1;
+
+// @public
+export function pivotLeafBound(layout: PivotLayout, counts: PivotItemCounts): number | undefined;
+
+// @public
+export const pivotLeafBoundMost: number;
 
 // @public
 export function pivotLocales(): readonly string[];
@@ -856,6 +872,7 @@ export interface PivotSource {
     details(query: PivotDetailsQuery, signal?: AbortSignal): Promise<PivotDetailPage>;
     readonly features: PivotSourceFeatures;
     readonly fields: readonly PivotField[];
+    itemCounts?(signal?: AbortSignal): Promise<PivotItemCounts>;
     items(query: PivotItemsQuery, signal?: AbortSignal): Promise<PivotItemPage>;
 }
 
@@ -866,10 +883,11 @@ export interface PivotSourceChanged {
 
 // @public
 export class PivotSourceFeatures {
-    constructor(aggregations: Iterable<PivotAggregation>, canRefresh?: boolean);
+    constructor(aggregations: Iterable<PivotAggregation>, canRefresh?: boolean, countsItems?: boolean);
     readonly aggregations: readonly PivotAggregation[];
     static readonly all: PivotSourceFeatures;
     readonly canRefresh: boolean;
+    readonly countsItems: boolean;
     missingFor(part: number): readonly PivotAggregation[];
     offers(aggregation: PivotAggregation): boolean;
 }
@@ -941,6 +959,9 @@ export const pivotWordIds: Readonly<{
     valuesPseudoField: "values-pseudo-field";
     dateYear: "date-year";
     dateQuarter: "date-quarter";
+    tooManyCombinations: "refused-too-many-combinations";
+    tooManyCombinationsCounted: "refused-too-many-combinations-counted";
+    tooManyCombinationsRemedy: "refused-too-many-combinations-remedy";
 }>;
 
 // @public
@@ -972,6 +993,7 @@ export class RecordPivotSource<TRecord> implements PivotSource {
     details(query: PivotDetailsQuery, signal?: AbortSignal): Promise<PivotDetailPage>;
     readonly features: PivotSourceFeatures;
     readonly fields: readonly PivotRecordField<TRecord>[];
+    itemCounts(signal?: AbortSignal): Promise<PivotItemCounts>;
     items(query: PivotItemsQuery, signal?: AbortSignal): Promise<PivotItemPage>;
     readonly records: readonly TRecord[];
     recordsBehind(query: PivotDetailsQuery): readonly TRecord[];
@@ -1014,6 +1036,7 @@ export class SnapshotPivotSource implements PivotSource {
     details(query: PivotDetailsQuery, signal?: AbortSignal): Promise<PivotDetailPage>;
     readonly features: PivotSourceFeatures;
     readonly fields: readonly PivotField[];
+    itemCounts(signal?: AbortSignal): Promise<PivotItemCounts>;
     items(query: PivotItemsQuery, signal?: AbortSignal): Promise<PivotItemPage>;
     get snapshot(): Snapshot;
     get sourceVersion(): string;
