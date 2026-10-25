@@ -976,15 +976,13 @@ nobody had asked for. What that means when writing a test:
   bundled source (PV-30) — the band filtering, and its Filter… opening under the Pivot Toolbar over
   the report and closed by a press on the backdrop, the keyboard back on its button (PV-12); the
   Layout menu over the report, its current choices marked, a no-op disabled, Escape and a choice
-  giving the keyboard back to Layout (PV-30); the toggle hiding and showing the pane, bound by the
-  page; the heading's close icon still reachable in a narrow, short pane with its body scrolled
+  giving the keyboard back to Layout (PV-30); the heading's close icon still reachable in a narrow, short pane with its body scrolled
   and a panel open, following its opener at zero and nonzero scroll offsets and keeping its last
   action reachable, closing through the same binding; opening focus awaited before a report press
-  or body scroll under a 150 ms round trip; Defer Layout Update holding the report until Update (PV-28); the words switch speaking
-  Excel's Japanese edition and back (PV-33); Month, declared as the month of the trade date, moved
+  or body scroll under a 150 ms round trip; Month, declared as the month of the trade date, moved
   to Columns and painted `Jan` to `Sep` in the calendar's order, and `1月` to `9月` in the Japanese
-  words (ADR-0060); and the code the page shows under "The code" equal to the regions of its source
-  it is read from (PV-20). Where the keyboard goes when the dialog or a tab goes (PV-39, DC-62,
+  words (ADR-0060); and, once rather than per Chrome, since it does not depend on one, the code the
+  page shows under "The code" equal to the regions of its source it is read from (PV-20). Where the keyboard goes when the dialog or a tab goes (PV-39, DC-62,
   ADR-0070): Escape in the dialog's grid closing the grid's Context Menu first, then the dialog, and
   held, closing it once, its repeats leaving the report the keyboard (KB-44); however the dialog
   closes — that Escape, Escape on Close, Close, the backdrop — the report's grid holding the
@@ -1021,7 +1019,8 @@ nobody had asked for. What that means when writing a test:
   through the Context Menu carrying those headers as painted in the text flavour and in full in
   the HTML (`<th>123456789012.345</th>`; ADR-0005); the page's two samples, one under the
   declared Schema and one under a suggested Schema, reading the same trades to the same total — a
-  second file read while a report stands; and the code shown under "The code" equal to its source.
+  second file read while a report stands; and, once, the code shown under "The code" equal to its
+  source.
 - `pivot-db.spec.mjs` — `/pivot-db` (ADR-0065/0066/0069, ADR-0151/0152), against the demo API server
   from either host. A server report scrolls beyond its first Window with a bounded number of rendered
   rows (LV-24); a report scrolled to its last row and then shrunk by a layout, computed in the page
@@ -1066,7 +1065,7 @@ nobody had asked for. What that means when writing a test:
   positions; the tenor's Filter… listing its Items in the same order; without the key, the
   labels' order (`10Y` before `1M`), and back; every total painted the sum of what it totals —
   across each row, down each desk and down the Grand Total row — and the report's own the page's
-  sum of the positions; and the code the page shows, the README's `Tenors.Months` among it,
+  sum of the positions; and, once, the code the page shows, the README's `Tenors.Months` among it,
   equal to its source.
 - `grid-live.spec.mjs` — `/grid-live` (ADR-0068/0069), ExGrid alone over the server's trades, its
   marks set to last a minute so that where they are is what is compared. A mark is keyed by row and

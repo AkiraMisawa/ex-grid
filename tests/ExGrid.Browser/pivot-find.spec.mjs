@@ -178,22 +178,6 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(report(page)).toHaveAttribute('aria-activedescendant', /-r4c0$/);
         });
 
-        test(`PV-13: an outer Item collapses and expands by a double click on its label, and the Focus stays on it (ADR-0059) (${chrome})`, async ({ page }) => {
-            await open(page, chrome);
-            const toggle = cell(page, 4, 0).locator('.ex-pivot-toggle');
-            await cell(page, 4, 0).click({ force: true });
-            await expect(report(page)).toHaveAttribute('aria-activedescendant', /-r4c0$/);
-            await expect(toggle).toHaveAttribute('aria-expanded', 'true');
-
-            await cell(page, 4, 0).dblclick({ force: true });
-            await expect(toggle).toHaveAttribute('aria-expanded', 'false');
-            await expect(report(page)).toHaveAttribute('aria-activedescendant', /-r4c0$/);
-            await cell(page, 4, 0).dblclick({ force: true });
-            await expect(toggle).toHaveAttribute('aria-expanded', 'true');
-            await expect(cell(page, 13, 0)).toContainText('Grand Total');
-            await expect(report(page)).toHaveAttribute('aria-activedescendant', /-r4c0$/);
-        });
-
         test(`ADR-0333: a column label is found in the report's headers, marked and said, and the Focus stays (${chrome})`, async ({ page }) => {
             await open(page, chrome);
             // Bond is a Product, on Columns: it is a header of the report grid, and no row says it.

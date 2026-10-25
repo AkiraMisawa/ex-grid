@@ -1,5 +1,5 @@
 import { test, expect, circuitQuiet, dataRowCount, setTicked } from './fixtures.mjs';
-import { codeRegion } from './demo-code.mjs';
+import { expectCodeIsSource } from './demo-code.mjs';
 import { readClipboard } from './sheet-helpers.mjs';
 import fs from 'node:fs';
 
@@ -426,26 +426,16 @@ for (const chrome of ['builtin', 'mud']) {
             };
             await expect.poll(suggested).toBe(declared);
         });
-
-        test(`ADR-0069: the code the page shows is the code it runs (${chrome})`, async ({ page }) => {
-            await open(page, chrome);
-            const shown = (file, region) => page.locator(`.demo-code code[data-file="${file}"][data-region="${region}"]`).textContent();
-
-            const schema = await shown('DemoCsv.cs', 'schema');
-            expect(schema).toBe(codeRegion('DemoCsv.cs', 'schema'));
-            expect(schema).toContain('public static readonly CsvSchema TradeExport = new(');
-            const input = await shown('PivotCsvPage.razor', 'input');
-            expect(input).toBe(codeRegion('PivotCsvPage.razor', 'input'));
-            expect(input).toContain('<AttachedInputFile');
-            const choose = await shown('PivotCsvPage.razor', 'choose');
-            expect(choose).toBe(codeRegion('PivotCsvPage.razor', 'choose'));
-            expect(choose).toContain('OpenReadStream(MaxFileSize, token)');
-            const read = await shown('PivotCsvPage.razor', 'read');
-            expect(read).toBe(codeRegion('PivotCsvPage.razor', 'read'));
-            expect(read).toContain('catch (SnapshotException refused)');
-            const suggest = await shown('PivotCsvPage.razor', 'suggest');
-            expect(suggest).toBe(codeRegion('PivotCsvPage.razor', 'suggest'));
-            expect(suggest).toContain('CsvSchema.SuggestAsync(');
-        });
     });
 }
+
+// The code blocks a page shows do not depend on the Chrome, so they are read once (ADR-0370 §11).
+test(`ADR-0069: the code the page shows is the code it runs`, async ({ page }) => {
+    await open(page, 'builtin');
+    const code = await expectCodeIsSource(page);
+    expect(code['DemoCsv.cs#schema']).toContain('public static readonly CsvSchema TradeExport = new(');
+    expect(code['PivotCsvPage.razor#input']).toContain('<AttachedInputFile');
+    expect(code['PivotCsvPage.razor#choose']).toContain('OpenReadStream(MaxFileSize, token)');
+    expect(code['PivotCsvPage.razor#read']).toContain('catch (SnapshotException refused)');
+    expect(code['PivotCsvPage.razor#suggest']).toContain('CsvSchema.SuggestAsync(');
+});

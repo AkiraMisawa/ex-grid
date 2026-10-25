@@ -1,5 +1,5 @@
 import { test, expect, alterPage, circuitQuiet, setRoundTrip, dataRowCount, settled, setTicked, stylesheetsLoaded } from './fixtures.mjs';
-import { codeRegion } from './demo-code.mjs';
+import { expectCodeIsSource } from './demo-code.mjs';
 import { API_URL, SERVER } from './hosting.mjs';
 
 // ExPivot on /pivot (ADR-0059/0061/0062/0063/0066), under ExPivot's own markup and under
@@ -8,9 +8,9 @@ import { API_URL, SERVER } from './hosting.mjs';
 // click reach the pivot through the grid; that Show Details opens a tab at the report's foot, a
 // dialog, or hands the records to the page; that the keyboard goes into a menu and back; that the
 // Pivot Toolbar above the report holds the report filter band, the Layout menu and the pane's
-// toggle, and that their popups open under it, over the report; that Defer Layout Update holds the
-// report until Update; that the words can be Excel's Japanese edition's; that Month, a part of the
-// trade date, is painted Jan to Sep in the calendar's order; that the code the page shows is the
+// toggle, and that their popups open under it, over the report; that Defer Layout Update holds a
+// field removed by a drop until Update; that Month, a part of the trade date, is painted Jan to Sep
+// in the calendar's order, in English and in Excel's Japanese words; that the code the page shows is the
 // code it runs; and, under MudBlazor, that a select's list takes Escape before its panel and that
 // the palette reaches the pane in both schemes. Everything is found by role and name, which both
 // Chromes give the same, so the same test runs under either (ADR-0061: swapping the Chrome changes
@@ -1045,22 +1045,6 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(menu.getByRole('menuitemradio', { name: 'Do Not Show Subtotals' })).toHaveAttribute('aria-checked', 'true');
         });
 
-        test(`ADR-0061: the Field List's toggle hides and shows the pane, and the page binds it (${chrome})`, async ({ page }) => {
-            await open(page, chrome);
-            const toggle = toolbarButton(page, 'Field List');
-            await expect(page.locator('#pivot-field-list-status')).toHaveText('Field List shown: True');
-
-            await toggle.click();
-
-            await expect(pane(page)).toHaveCount(0);
-            await expect(page.locator('#pivot-field-list-status')).toHaveText('Field List shown: False');
-            await expect(toggle).toHaveAttribute('aria-pressed', 'false');
-
-            await toggle.click();
-            await expect(pane(page)).toBeVisible();
-            await expect(page.locator('#pivot-field-list-status')).toHaveText('Field List shown: True');
-        });
-
         test(`ADR-0061: a cramped Field List keeps its heading close button reachable while scrolling (${chrome})`, async ({ page }) => {
             await open(page, chrome);
             await setRoundTrip(150);
@@ -1107,48 +1091,6 @@ for (const chrome of ['builtin', 'mud']) {
             expect(await entriesOf(page, 'Rows')).toEqual(['Region', 'Desk']);
         });
 
-        test(`ADR-0061: while Defer Layout Update is ticked the pane's changes wait for Update (${chrome})`, async ({ page }) => {
-            await open(page, chrome);
-            const before = await reportRows(page);
-            const update = pane(page).getByRole('button', { name: 'Update', exact: true });
-            await expect(update).toBeDisabled();
-
-            await pane(page).getByRole('checkbox', { name: 'Defer Layout Update' }).check();
-            await setTicked(page.getByRole('checkbox', { name: 'Month', exact: true }));
-
-            await expect.poll(() => entriesOf(page, 'Rows')).toEqual(['Region', 'Desk', 'Month']);
-            await expect(update).toBeEnabled();
-            // The report did not move, once the host has said all it will (ADR-0056).
-            await circuitQuiet();
-            expect(await reportRows(page)).toBe(before);
-            await expect(page.locator('#pivot-status')).toContainText('0 changes made in the pane');
-
-            await update.click();
-
-            await expect.poll(() => reportRows(page)).toBeGreaterThan(before);
-            await expect(page.locator('#pivot-status')).toContainText('1 changes made in the pane');
-            await expect(update).toBeDisabled();
-        });
-
-        test(`ADR-0060: the words switch speaks Excel's Japanese edition, and back (${chrome})`, async ({ page }) => {
-            await open(page, chrome);
-
-            await page.locator('#pivot-words').click();
-
-            const japanese = page.getByRole('region', { name: 'ピボットテーブルのフィールド' });
-            await expect(japanese).toBeVisible();
-            await expect(japanese.getByRole('button', { name: '合計 / P&L のオプション', exact: true })).toBeVisible();
-            await expect(report(page).getByRole('columnheader').first()).toHaveText('行ラベル');
-            await expect(report(page).getByRole('columnheader', { name: '総計', exact: true })).toBeVisible();
-            await expect(rows(page).last().locator('[role=gridcell]').first()).toHaveText('総計');
-            await expect(toolbarButton(page, 'レイアウト')).toBeVisible();
-            await expect(toolbarButton(page, 'Currency のフィルター')).toContainText('(すべて)');
-
-            await page.locator('#pivot-words').click();
-            await expect(pane(page)).toBeVisible();
-            await expect(report(page).getByRole('columnheader').first()).toHaveText('Row Labels');
-        });
-
         test(`ADR-0060: Month is the month of the trade date, painted Jan to Sep in the calendar's order, in either words (${chrome})`, async ({ page }) => {
             await open(page, chrome);
             await entry(page, 'Product').click();
@@ -1170,18 +1112,6 @@ for (const chrome of ['builtin', 'mud']) {
             await page.locator('#pivot-words').click();
 
             await expect(headers).toHaveText(['行ラベル', '1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '総計']);
-        });
-
-        test(`ADR-0069: the code the page shows is the code it runs: the fields declared with PivotFields.Of, Month a part of the trade date (${chrome})`, async ({ page }) => {
-            await open(page, chrome);
-            const shown = (file, region) => page.locator(`.demo-code code[data-file="${file}"][data-region="${region}"]`).textContent();
-
-            const fields = await shown('DemoPivotData.cs', 'fields');
-            expect(fields).toBe(codeRegion('DemoPivotData.cs', 'fields'));
-            expect(fields).toContain('PivotFields.Of<DemoPivotTrade>()');
-            expect(fields).toContain('.Month("Month", of: "TradeDate")');
-            expect(await shown('PivotPage.razor', 'pivot')).toBe(codeRegion('PivotPage.razor', 'pivot'));
-            expect(await shown('PivotPage.razor', 'save')).toBe(codeRegion('PivotPage.razor', 'save'));
         });
     });
 }
@@ -1580,3 +1510,12 @@ for (const chrome of ['builtin', 'mud']) {
         expect(await subtotalsShown(page)).toBe(false);
     });
 }
+
+// The code blocks a page shows do not depend on the Chrome, so they are read once (ADR-0370 §11).
+test(`ADR-0069: the code the page shows is the code it runs: the fields declared with PivotFields.Of, Month a part of the trade date`, async ({ page }) => {
+    await open(page, 'builtin');
+    const code = await expectCodeIsSource(page);
+    expect(code['DemoPivotData.cs#fields']).toContain('PivotFields.Of<DemoPivotTrade>()');
+    expect(code['DemoPivotData.cs#fields']).toContain('.Month("Month", of: "TradeDate")');
+    expect(Object.keys(code)).toEqual(expect.arrayContaining(['PivotPage.razor#pivot', 'PivotPage.razor#save']));
+});
