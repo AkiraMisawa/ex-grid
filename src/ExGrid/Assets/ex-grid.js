@@ -2994,7 +2994,8 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             && Number(stamp.getAttribute('data-ex-answered')) >= Math.max(holdAnswer.input, awaitingMove?.upTo ?? 0);
     };
     const endHoldAtKey = () => {
-        if (!answering || held.length > 0 || pressAnswer !== null || frameInTurn !== null || restlessWaits > 0) {
+        if (!answering || held.length > 0 || pressAnswer !== null || frameInTurn !== null || draggableInTurn !== null
+            || restlessWaits > 0) {
             return;
         }
         // An answer still to come counts only as the popover key's, answered by the stamp: a hold started
@@ -3977,13 +3978,14 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         } finally {
             draggableInTurn = null;
         }
-        // The control the press gave DOM focus: the one pressed, or the one its label names — a Field List
-        // entry's caption is its tick's label.
-        const control = k.target.closest('input, button, select, textarea, a[href], [tabindex]')
-            ?? k.target.closest('label')?.control ?? null;
+        // The control the press gave DOM focus: the one its label names — a Field List entry's caption is its
+        // tick's label — or the one pressed. The label first: a focusable box around it is not what was pressed.
+        const control = k.target.closest('label')?.control
+            ?? k.target.closest('input, button, select, textarea, a[href], [tabindex]') ?? null;
         const active = document.activeElement;
         if (!k.superseded && control instanceof HTMLElement && control.isConnected && active !== control
-            && active instanceof Element && instanceHolds(active)) {
+            && (!active || active === document.body || active === document.documentElement
+                || (active instanceof Element && instanceHolds(active)))) {
             control.focus({ preventScroll: true });
         }
     };
@@ -4409,9 +4411,13 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     const startsDrag = (target) => target instanceof Element && target.closest('[draggable="true"]') !== null;
     // A press on such an element that ends in a click a control claims: on the control, or on the label that
     // passes its click on to the control (a Field List entry's caption).
-    const pressesClaimant = (target) => holdsClaimedPress(target)
-        || (target instanceof Element && target.closest('label')?.control instanceof Element
-            && holdsClaimedPress(target.closest('label').control));
+    const pressesClaimant = (target) => {
+        if (holdsClaimedPress(target)) {
+            return true;
+        }
+        const control = target instanceof Element ? target.closest('label')?.control : null;
+        return control instanceof Element && holdsClaimedPress(control);
+    };
     const onOuterPress = (event) => {
         lookSettled();
         if (!core || replaying) {
