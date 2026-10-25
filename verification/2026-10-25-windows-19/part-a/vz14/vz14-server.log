@@ -1,0 +1,8 @@
+
+Running 2 tests using 1 worker
+
+  ok 1 [chrome] › scrollbar.spec.mjs:345:5 › on a Windows desktop at fractional display scaling (VZ-14) › the Focus stays readable with the OS doing the scaling (627ms)
+  ok 2 [msedge] › scrollbar.spec.mjs:345:5 › on a Windows desktop at fractional display scaling (VZ-14) › the Focus stays readable with the OS doing the scaling (569ms)
+
+  2 passed (3.9s)
+exit=0 
