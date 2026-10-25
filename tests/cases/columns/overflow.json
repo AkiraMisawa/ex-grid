@@ -1,0 +1,107 @@
+{
+  "about": "The Overflow decision (ADR-0016): Text and Boolean show their value, a Number or Date that does not fit becomes a run of #. From tests/ExGrid.Tests/OverflowRuleTests.cs, CellTextMetricsClassTests.cs and BoldWidthTests.cs; what C# alone can say (an interned run, its allocation, a null text, default metrics, an undefined type) stays there.",
+  "kind": "calls",
+  "subject": "OverflowRules",
+  "cases": [
+    {
+      "name": "ADR-0016: a Number that fits shows the formatted value",
+      "expect": [
+        {"static": "decide", "args": ["number", "1,234.56", 120, {"new": "CellTextMetrics", "with": {"digitWidthPx": 7, "cellHorizontalPaddingPx": 4}}], "is": {"isHashed": false, "displayText": "1,234.56"}}
+      ]
+    },
+    {
+      "name": "ADR-0016: a Number that does not fit becomes #### and nothing number-shaped is painted",
+      "expect": [
+        {"static": "decide", "args": ["number", "1,234.56", 40, {"new": "CellTextMetrics", "with": {"digitWidthPx": 7, "cellHorizontalPaddingPx": 4}}], "is": {"isHashed": true, "displayText": "##########"}}
+      ]
+    },
+    {
+      "name": "ADR-0016 / ADR-0005: exactly fitting still shows; hashing is strictly past the bound",
+      "expect": [
+        {"static": "decide", "args": ["number", "1,234.56", 64, {"new": "CellTextMetrics", "with": {"digitWidthPx": 7, "cellHorizontalPaddingPx": 4}}], "is": {"isHashed": false, "displayText": "1,234.56"}},
+        {"static": "decide", "args": ["number", "1,234.56", 63.9, {"new": "CellTextMetrics", "with": {"digitWidthPx": 7, "cellHorizontalPaddingPx": 4}}], "is": {"isHashed": true, "displayText": "################"}}
+      ]
+    },
+    {
+      "name": "ADR-0016: numbers and dates hash; a truncated date is a different-looking valid date",
+      "expect": [
+        {"static": "decide", "args": ["date", "2026-08-30", 40, {"new": "CellTextMetrics", "with": {"digitWidthPx": 7, "cellHorizontalPaddingPx": 4}}], "is": {"isHashed": true, "displayText": "##########"}}
+      ]
+    },
+    {
+      "name": "ADR-0016: Text is cut with an ellipsis, never hashed, at any width",
+      "expect": [
+        {"static": "decide", "args": ["text", "Very Long Description", 0, {"new": "CellTextMetrics", "with": {"digitWidthPx": 7, "cellHorizontalPaddingPx": 4}}], "is": {"isHashed": false, "displayText": "Very Long Description"}}
+      ]
+    },
+    {
+      "name": "ADR-0016: Boolean is classified with Text, visibly truncated and not quietly wrong",
+      "expect": [
+        {"static": "decide", "args": ["boolean", "false", 0, {"new": "CellTextMetrics", "with": {"digitWidthPx": 7, "cellHorizontalPaddingPx": 4}}], "is": {"isHashed": false, "displayText": "false"}}
+      ]
+    },
+    {
+      "name": "ADR-0016 / ADR-0021: in the uniform form every character counts one tabular digit",
+      "expect": [
+        {"static": "decide", "args": ["number", "1,234", 43, {"new": "CellTextMetrics", "with": {"digitWidthPx": 7, "cellHorizontalPaddingPx": 4}}], "is": {"isHashed": false, "displayText": "1,234"}},
+        {"static": "decide", "args": ["number", "1,234", 42.9, {"new": "CellTextMetrics", "with": {"digitWidthPx": 7, "cellHorizontalPaddingPx": 4}}], "is": {"isHashed": true, "displayText": "##########"}},
+        {"static": "decide", "args": ["number", "12345", 42.9, {"new": "CellTextMetrics", "with": {"digitWidthPx": 7, "cellHorizontalPaddingPx": 4}}], "is": {"isHashed": true, "displayText": "##########"}}
+      ]
+    },
+    {
+      "name": "ADR-0016 (2026-10-02): the #### run is longer than the content, so the cell cuts it at the last whole # in its own face",
+      "expect": [
+        {"static": "decide", "args": ["number", "12,345,678,901", 32, {"new": "CellTextMetrics", "with": {"digitWidthPx": 7, "cellHorizontalPaddingPx": 4}}], "is": {"isHashed": true, "displayText": "#######"}}
+      ]
+    },
+    {
+      "name": "ADR-0016 (2026-10-02): the run is counted at half a digit, not at #'s wide-class charge, which left the cell part empty",
+      "expect": [
+        {"static": "decide", "args": ["number", "12,345,678,901", 60, {"new": "CellTextMetrics", "with": {"wideWidthPx": 14, "digitWidthPx": 9, "narrowWidthPx": 5, "cellHorizontalPaddingPx": 8}}], "is": {"isHashed": true, "displayText": "##########"}}
+      ]
+    },
+    {
+      "name": "ADR-0016: at least one # survives when padding eats the whole width",
+      "expect": [
+        {"static": "decide", "args": ["number", "1,234.56", 30, {"new": "CellTextMetrics", "with": {"digitWidthPx": 7, "cellHorizontalPaddingPx": 20}}], "is": {"isHashed": true, "displayText": "#"}}
+      ]
+    },
+    {
+      "name": "ADR-0016: a resolved width that is not a number is refused by name",
+      "expect": [
+        {"static": "decide", "args": ["number", "1", "NaN", {"new": "CellTextMetrics", "with": {"digitWidthPx": 7, "cellHorizontalPaddingPx": 4}}], "throws": "outOfRange"}
+      ]
+    },
+    {
+      "name": "ADR-0016: the Number/Date-versus-Text/Boolean split has one home",
+      "expect": [
+        {"static": "hashesWhenOverflowing", "args": ["number"], "is": true},
+        {"static": "hashesWhenOverflowing", "args": ["date"], "is": true},
+        {"static": "hashesWhenOverflowing", "args": ["text"], "is": false},
+        {"static": "hashesWhenOverflowing", "args": ["boolean"], "is": false}
+      ]
+    },
+    {
+      "name": "ADR-0016: a percent value hashes when charged honestly where the flat charge said it fit",
+      "expect": [
+        {"static": "decide", "args": ["number", "1.5%", 36.5, {"new": "CellTextMetrics", "with": {"digitWidthPx": 9, "cellHorizontalPaddingPx": 0}}], "is": {"isHashed": false, "displayText": "1.5%"}},
+        {"static": "decide", "args": ["number", "1.5%", 36.5, {"new": "CellTextMetrics", "with": {"wideWidthPx": 14, "digitWidthPx": 9, "narrowWidthPx": 5, "cellHorizontalPaddingPx": 0}}], "is": {"isHashed": true, "displayText": "#########"}}
+      ]
+    },
+    {
+      "name": "ADR-0016: a Japanese date hashes where charging it as digits said it fit",
+      "expect": [
+        {"static": "decide", "args": ["date", "2026年9月25日", 100, {"new": "CellTextMetrics", "with": {"wideWidthPx": 14, "digitWidthPx": 9, "narrowWidthPx": 5, "fullWidthPx": 16, "cellHorizontalPaddingPx": 0}}], "is": {"isHashed": true, "displayText": "#######################"}},
+        {"static": "decide", "args": ["date", "2026年9月25日", 111, {"new": "CellTextMetrics", "with": {"wideWidthPx": 14, "digitWidthPx": 9, "narrowWidthPx": 5, "fullWidthPx": 16, "cellHorizontalPaddingPx": 0}}], "is": {"isHashed": false, "displayText": "2026年9月25日"}}
+      ]
+    },
+    {
+      "name": "DC-58 / ADR-0016: a bold number that fits at the regular widths and not at the bold ones is ####",
+      "expect": [
+        {"static": "decide", "args": ["number", "12345", 55, {"new": "CellTextMetrics", "with": {"wideWidthPx": 14, "digitWidthPx": 9, "narrowWidthPx": 5, "fullWidthPx": 14, "cellHorizontalPaddingPx": 4, "boldWideWidthPx": 15, "boldDigitWidthPx": 10, "boldNarrowWidthPx": 6}}], "is": {"isHashed": false, "displayText": "12345"}},
+        {"static": "decide", "args": ["number", "12345", 55, {"new": "CellTextMetrics", "with": {"wideWidthPx": 15, "digitWidthPx": 10, "narrowWidthPx": 6, "fullWidthPx": 14, "cellHorizontalPaddingPx": 4, "boldWideWidthPx": 15, "boldDigitWidthPx": 10, "boldNarrowWidthPx": 6, "otherWidthPx": 20, "boldOtherWidthPx": 20}}], "is": {"isHashed": true, "displayText": "##########"}},
+        {"static": "decide", "args": ["number", "12345", 58, {"new": "CellTextMetrics", "with": {"wideWidthPx": 15, "digitWidthPx": 10, "narrowWidthPx": 6, "fullWidthPx": 14, "cellHorizontalPaddingPx": 4, "boldWideWidthPx": 15, "boldDigitWidthPx": 10, "boldNarrowWidthPx": 6, "otherWidthPx": 20, "boldOtherWidthPx": 20}}], "is": {"isHashed": false, "displayText": "12345"}}
+      ]
+    }
+  ]
+}

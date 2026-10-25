@@ -134,7 +134,8 @@ capital):
 |---|---|
 | `{"get": "member"}` | A property of the subject |
 | `{"call": "member", "args": [ … ]}` | A method of the subject, with the arguments in order |
-| `{"static": "member"}`, with or without `"args"` | A static property or method of the subject's type |
+| `{"call": "member", "args": {name: value, …}}` | A method taking named arguments: the Script Core's options object, and the C# parameters of those names |
+| `{"static": "member"}`, with or without `"args"` | A static property or method of the subject's type; where C# has a static class (`OverflowRules`), the Script Core's functions of that module |
 
 and says what it answers:
 
@@ -144,6 +145,12 @@ and says what it answers:
 | `near` | With `is`, how far a number may be from it, where the arithmetic is not exact in both languages |
 | `throws`, `saying` | The refusal, and text its message holds in both languages |
 | `then` | Checks on the answer, as the subject of each |
+
+An argument may be another subject, `{"new": "Subject", "with": {name: value, …}}` (and `"via"`), made as a
+case makes one: a `CellTextMetrics` passed to `OverflowRules.decide`, a `GlyphWidthTable` to
+`withGlyphWidths`. An array passed where C# takes a tuple, or a list of them, is read element by element.
+A case reads what the core's own code reads: in C#, public and internal members, never private ones;
+in the Script Core, a module's exports.
 
 The runners find members by name (`tests/ExGrid.Tests/Cases/CallCaseTests.cs` by reflection,
 `src/npm/core/test/calls.test.ts` from its table of subjects), so a misspelt member fails the case, as

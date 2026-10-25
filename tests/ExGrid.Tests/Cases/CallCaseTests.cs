@@ -3,6 +3,7 @@ using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
+using ExGrid.Columns;
 using Xunit;
 
 namespace ExGrid.Tests.Cases;
@@ -11,18 +12,26 @@ namespace ExGrid.Tests.Cases;
 /// The shared cases of kind <c>calls</c> (ADR-0350, section 5), run against the C# core: a subject made
 /// from named arguments, and what its members answer. <c>tests/cases/README.md</c> says what a file
 /// holds. Members are found by name, so a case names a member as the Script Core spells it (camelCase)
-/// and the C# member is its PascalCase; a result is compared as the JSON it serialises to.
+/// and the C# member is its PascalCase; a result is compared as the JSON it serialises to. A case reads
+/// what the core's own code can, public and internal members, and never a private one.
 /// </summary>
 public class CallCaseTests
 {
     /// <summary>The subjects a case may name, by the name it uses.</summary>
     private static readonly Dictionary<string, Type> Subjects = new()
     {
+        ["CellTextMetrics"] = typeof(CellTextMetrics),
         ["ColumnGeometry"] = typeof(ColumnGeometry),
+        ["GlyphWidthTable"] = typeof(GlyphWidthTable),
+        ["OverflowRules"] = typeof(OverflowRules),
         ["RowRange"] = typeof(RowRange),
         ["ViewportBox"] = typeof(ViewportBox),
         ["ViewportGeometry"] = typeof(ViewportGeometry),
     };
+
+    private const BindingFlags Visible = BindingFlags.Public | BindingFlags.NonPublic;
+
+    private static bool Reachable(MethodBase member) => member.IsPublic || member.IsAssembly || member.IsFamilyOrAssembly;
 
     private static readonly JsonSerializerOptions Json = new()
     {
@@ -92,24 +101,36 @@ public class CallCaseTests
     private static object Create(Type type, string? via, Dictionary<string, JsonElement> arguments)
     {
         IEnumerable<MethodBase> candidates = via is null
-            ? type.GetConstructors(BindingFlags.Public | BindingFlags.Instance)
-            : type.GetMethods(BindingFlags.Public | BindingFlags.Static).Where(m => m.Name == Pascal(via));
-        foreach (var candidate in candidates)
-        {
-            var parameters = candidate.GetParameters();
-            if (arguments.Keys.Any(key => parameters.All(p => p.Name != key)))
-                continue;
-            if (parameters.Any(p => !arguments.ContainsKey(p.Name!) && !p.HasDefaultValue))
-                continue;
-            var values = parameters
-                .Select(p => arguments.TryGetValue(p.Name!, out var value) ? Convert(value, p.ParameterType) : p.DefaultValue)
-                .ToArray();
-            return candidate is ConstructorInfo constructor
-                ? constructor.Invoke(BindingFlags.DoNotWrapExceptions, null, values, CultureInfo.InvariantCulture)
-                : candidate.Invoke(null, BindingFlags.DoNotWrapExceptions, null, values, CultureInfo.InvariantCulture)!;
-        }
-        throw new InvalidOperationException(
-            $"{type.Name} has no {(via is null ? "constructor" : $"factory {via}")} taking exactly {string.Join(", ", arguments.Keys)}.");
+            ? type.GetConstructors(Visible | BindingFlags.Instance).Where(Reachable)
+            : type.GetMethods(Visible | BindingFlags.Static).Where(m => m.Name == Pascal(via) && Reachable(m));
+        var (method, values) = Bind(candidates, arguments)
+            ?? throw new InvalidOperationException(
+                $"{type.Name} has no {(via is null ? "constructor" : $"factory {via}")} taking exactly {string.Join(", ", arguments.Keys)}.");
+        return method is ConstructorInfo constructor
+            ? constructor.Invoke(BindingFlags.DoNotWrapExceptions, null, values, CultureInfo.InvariantCulture)
+            : method.Invoke(null, BindingFlags.DoNotWrapExceptions, null, values, CultureInfo.InvariantCulture)!;
+    }
+
+    /// <summary>The one candidate the named arguments bind to, and the values they bind as: every argument
+    /// names a parameter, and every parameter is named or has a default.</summary>
+    private static (MethodBase Method, object?[] Values)? Bind(IEnumerable<MethodBase> candidates, Dictionary<string, JsonElement> arguments)
+    {
+        var bound = candidates
+            .Where(candidate =>
+            {
+                var parameters = candidate.GetParameters();
+                return arguments.Keys.All(key => parameters.Any(p => p.Name == key))
+                    && parameters.All(p => arguments.ContainsKey(p.Name!) || p.HasDefaultValue);
+            })
+            .ToArray();
+        if (bound.Length > 1)
+            throw new InvalidOperationException($"{string.Join(", ", arguments.Keys)} bind to {bound.Length} overloads; name the arguments of one.");
+        if (bound.Length == 0)
+            return null;
+        var values = bound[0].GetParameters()
+            .Select(p => arguments.TryGetValue(p.Name!, out var value) ? Convert(value, p.ParameterType) : p.DefaultValue)
+            .ToArray();
+        return (bound[0], values);
     }
 
     /// <summary>One check: a member read or called, and what it answers or how it is refused.</summary>
@@ -120,8 +141,8 @@ public class CallCaseTests
             throw new InvalidOperationException($"The check {check} names no member: get, call or static.");
         if (!isStatic && subject is null)
             throw new InvalidOperationException($"The check {check} reads an instance, and the case creates none.");
-        var args = check.TryGetProperty("args", out var given) ? [.. given.EnumerateArray()] : (JsonElement[]?)null;
-        var label = $"{member.GetString()}({(args is null ? "" : string.Join(", ", args.Select(a => a.ToString())))})";
+        JsonElement? args = check.TryGetProperty("args", out var given) ? given : null;
+        var label = args is { } shown ? $"{member.GetString()}({shown})" : member.GetString()!;
 
         object? read() => Invoke(type, isStatic ? null : subject, Pascal(member.GetString()!), args);
         if (check.TryGetProperty("throws", out var refusal))
@@ -152,26 +173,98 @@ public class CallCaseTests
             $"{label}: expected {expected.GetRawText()}, got {actual?.ToJsonString() ?? "null"}.");
     }
 
-    private static object? Invoke(Type type, object? subject, string name, JsonElement[]? args)
+    private static object? Invoke(Type type, object? subject, string name, JsonElement? args)
     {
-        var flags = BindingFlags.Public | (subject is null ? BindingFlags.Static : BindingFlags.Instance);
-        if (args is null)
+        var flags = Visible | (subject is null ? BindingFlags.Static : BindingFlags.Instance);
+        var kind = subject is null ? "static " : "";
+        if (args is not { } given)
         {
-            if (type.GetProperty(name, flags) is { } property)
+            if (type.GetProperty(name, flags) is { GetMethod: { } getter } property && Reachable(getter))
                 return property.GetValue(subject);
-            if (type.GetField(name, flags) is { } field)
+            if (type.GetField(name, flags) is { } field && (field.IsPublic || field.IsAssembly || field.IsFamilyOrAssembly))
                 return field.GetValue(subject);
-            throw new InvalidOperationException($"{type.Name} has no {(subject is null ? "static " : "")}property {name}.");
+            throw new InvalidOperationException($"{type.Name} has no {kind}property {name}.");
         }
-        var method = type.GetMethods(flags).SingleOrDefault(m => m.Name == name && m.GetParameters().Length == args.Length)
-            ?? throw new InvalidOperationException($"{type.Name} has no {(subject is null ? "static " : "")}method {name} of {args.Length} argument(s).");
-        var values = method.GetParameters().Select((p, i) => Convert(args[i], p.ParameterType)).ToArray();
-        return method.Invoke(subject, BindingFlags.DoNotWrapExceptions, null, values, CultureInfo.InvariantCulture);
+        var methods = type.GetMethods(flags).Where(m => m.Name == name && Reachable(m));
+        if (given.ValueKind == JsonValueKind.Object)
+        {
+            var named = given.EnumerateObject().ToDictionary(p => p.Name, p => p.Value, StringComparer.Ordinal);
+            var (method, values) = Bind(methods, named)
+                ?? throw new InvalidOperationException($"{type.Name} has no {kind}method {name} taking exactly {string.Join(", ", named.Keys)}.");
+            return method.Invoke(subject, BindingFlags.DoNotWrapExceptions, null, values, CultureInfo.InvariantCulture);
+        }
+        // Positional: the overload of that many parameters whose types take the arguments, where one name
+        // has several (EstimatePx of a text or of a count).
+        var positional = given.EnumerateArray().ToArray();
+        var fits = methods
+            .Where(m => m.GetParameters().Length == positional.Length)
+            .Select(m => (Method: m, Values: TryConvert(positional, m.GetParameters())))
+            .Where(fit => fit.Values is not null)
+            .ToArray();
+        if (fits.Length != 1)
+            throw new InvalidOperationException($"{type.Name} has {fits.Length} {kind}methods {name} taking {given}; a check names one.");
+        return fits[0].Method.Invoke(subject, BindingFlags.DoNotWrapExceptions, null, fits[0].Values, CultureInfo.InvariantCulture);
+    }
+
+    private static object?[]? TryConvert(JsonElement[] args, ParameterInfo[] parameters)
+    {
+        try
+        {
+            return [.. parameters.Select((p, i) => Convert(args[i], p.ParameterType))];
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
     }
 
     /// <summary>A JSON value as the parameter's type. A non-finite number is written as the string
     /// <c>"Infinity"</c>, <c>"-Infinity"</c> or <c>"NaN"</c>.</summary>
-    private static object? Convert(JsonElement value, Type type) => JsonSerializer.Deserialize(value.GetRawText(), type, Json);
+    /// <remarks>An object <c>{"new": subject, "with": {…}}</c> is that subject, made as a case makes one;
+    /// a tuple is read from an array, and a collection of tuples or subjects element by element.</remarks>
+    private static object? Convert(JsonElement value, Type type)
+    {
+        if (value.ValueKind == JsonValueKind.Object && value.TryGetProperty("new", out var subjectName))
+        {
+            var subject = Subjects[subjectName.GetString()!];
+            var with = value.TryGetProperty("with", out var given) ? Merged(default, given) : [];
+            var made = Create(subject, value.TryGetProperty("via", out var via) ? via.GetString() : null, with);
+            return type.IsInstanceOfType(made) || Nullable.GetUnderlyingType(type)?.IsInstanceOfType(made) == true
+                ? made
+                : throw new JsonException($"A {subject.Name} is not a {type.Name}.");
+        }
+        if (type.IsGenericType && type.FullName!.StartsWith("System.ValueTuple`", StringComparison.Ordinal))
+        {
+            var items = value.EnumerateArray().ToArray();
+            var parts = type.GetGenericArguments();
+            if (items.Length != parts.Length)
+                throw new JsonException($"{value} is not a tuple of {parts.Length}.");
+            return Activator.CreateInstance(type, [.. items.Select((item, i) => Convert(item, parts[i]))]);
+        }
+        var element = ElementOf(type);
+        if (element is not null && value.ValueKind == JsonValueKind.Array && NeedsReading(element))
+        {
+            var list = (System.Collections.IList)Activator.CreateInstance(typeof(List<>).MakeGenericType(element))!;
+            foreach (var item in value.EnumerateArray())
+                list.Add(Convert(item, element));
+            if (!type.IsArray)
+                return list;
+            var array = Array.CreateInstance(element, list.Count);
+            list.CopyTo(array, 0);
+            return array;
+        }
+        return JsonSerializer.Deserialize(value.GetRawText(), type, Json);
+    }
+
+    private static Type? ElementOf(Type type) => type.IsArray
+        ? type.GetElementType()
+        : type.IsGenericType && type.GetGenericArguments().Length == 1 && typeof(System.Collections.IEnumerable).IsAssignableFrom(type)
+            ? type.GetGenericArguments()[0]
+            : null;
+
+    private static bool NeedsReading(Type element) =>
+        (element.IsGenericType && element.FullName!.StartsWith("System.ValueTuple`", StringComparison.Ordinal))
+        || Subjects.ContainsValue(element);
 
     /// <summary>Whether two JSON values are the same: numbers by value (so 2000000 is 2000000.0, and
     /// <c>"Infinity"</c> is infinity), objects by every key, arrays in order.</summary>

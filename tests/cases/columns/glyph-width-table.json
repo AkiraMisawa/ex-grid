@@ -1,0 +1,45 @@
+{
+  "about": "A table of single glyphs measured at one size (ADR-0016; ticket 83). From tests/ExGrid.Tests/GlyphWidthTableTests.cs.",
+  "kind": "calls",
+  "subject": "GlyphWidthTable",
+  "cases": [
+    {
+      "name": "ADR-0016: a glyph given twice is refused where the table is written",
+      "create": {"measuredAtPx": 14, "glyphs": [["M", 13, 14], ["M", 12, 13]]},
+      "throws": "argument"
+    },
+    {
+      "name": "ADR-0016: a glyph of two characters is refused",
+      "create": {"measuredAtPx": 14, "glyphs": [["Mi", 13, 14]]},
+      "throws": "argument"
+    },
+    {
+      "name": "ADR-0016: an empty glyph is refused",
+      "create": {"measuredAtPx": 14, "glyphs": [["", 13, 14]]},
+      "throws": "argument"
+    },
+    {
+      "name": "ADR-0016: a width that is not positive is refused",
+      "create": {"measuredAtPx": 14, "glyphs": [["M", 0, 14]]},
+      "throws": "outOfRange"
+    },
+    {
+      "name": "ADR-0016: a bold width that is not a number is refused",
+      "create": {"measuredAtPx": 14, "glyphs": [["M", 13, "NaN"]]},
+      "throws": "outOfRange"
+    },
+    {
+      "name": "ADR-0016: a table measured at no size is refused",
+      "create": {"measuredAtPx": 0, "glyphs": [["M", 13, 14]]},
+      "throws": "outOfRange"
+    },
+    {
+      "name": "ADR-0016: a table says the size it was measured at and how many glyphs it holds",
+      "create": {"measuredAtPx": 14, "glyphs": [["M", 13, 14], ["i", 4, 5], ["𝐀", 11, 12]]},
+      "expect": [
+        {"get": "measuredAtPx", "is": 14},
+        {"get": "count", "is": 3}
+      ]
+    }
+  ]
+}

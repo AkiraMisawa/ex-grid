@@ -9,24 +9,14 @@ namespace ExGrid.Tests;
 /// <c>CellTextMetrics</c> carries each character class at the bold weight, the core's defaults are
 /// measured as §21.7a measured the regular ones, and a bold number that fits at the regular widths
 /// and not at the bold ones is <c>####</c>.
+///
+/// <para>Its answers are shared cases (<c>tests/cases/columns/text-metrics.json</c> and
+/// <c>overflow.json</c>); what stays here is C#'s printing, and what reads the resolved Grid Metrics.</para>
 /// </summary>
 public class BoldWidthTests
 {
     // Regular 9 / bold 10 per digit, padding 4: "12345" needs 45 + 8 = 53 regular, 50 + 8 = 58 bold.
     private static readonly CellTextMetrics Metrics = new(14, 9, 5, 14, 4, 15, 10, 6);
-
-    [Fact] // ADR-0050 item 15: the bold metrics put the bold widths in the regular ones' place
-    public void Bold_metrics_charge_the_bold_widths()
-    {
-        var bold = Metrics.Bold;
-
-        Assert.Equal(15, bold.WidthOf('%'));
-        Assert.Equal(10, bold.WidthOf('7'));
-        Assert.Equal(6, bold.WidthOf('.'));
-        Assert.Equal(14, bold.WidthOf('評'));
-        Assert.Equal(Metrics.CellHorizontalPaddingPx, bold.CellHorizontalPaddingPx);
-        Assert.Equal(bold, bold.Bold);
-    }
 
     [Fact] // ADR-0050 item 15: Bold is metrics of the same type, so the generated ToString recursed through it forever
     public void Metrics_print_their_widths_without_following_Bold()
@@ -37,58 +27,6 @@ public class BoldWidthTests
         Assert.Contains("DigitWidthPx = 9", text);
         Assert.Contains("BoldDigitWidthPx = 10", text);
         Assert.DoesNotContain("Bold = ", text);
-    }
-
-    [Fact] // DC-58 / ADR-0016: a bold number that fits at the regular widths and not at the bold ones is ####
-    public void A_bold_number_that_fits_only_at_the_regular_widths_is_hashed()
-    {
-        Assert.False(OverflowRules.Decide(ColumnType.Number, "12345", 55, Metrics).IsHashed);
-        Assert.True(OverflowRules.Decide(ColumnType.Number, "12345", 55, Metrics.Bold).IsHashed);
-        Assert.False(OverflowRules.Decide(ColumnType.Number, "12345", 58, Metrics.Bold).IsHashed);
-    }
-
-    [Fact] // ADR-0050 item 15: metrics built without bold widths derive them, erring early
-    public void Metrics_without_bold_widths_derive_them_by_the_allowance()
-    {
-        var regular = new CellTextMetrics(14, 9, 5, 14, 4);
-
-        Assert.Equal(14 * CellTextMetrics.BoldWidthAllowance, regular.BoldWideWidthPx, 9);
-        Assert.Equal(9 * CellTextMetrics.BoldWidthAllowance, regular.BoldDigitWidthPx, 9);
-        Assert.Equal(5 * CellTextMetrics.BoldWidthAllowance, regular.BoldNarrowWidthPx, 9);
-        // The widest growth measured from weight 600 to bold, `(` in system-ui on macOS.
-        Assert.True(5.633 * CellTextMetrics.BoldWidthAllowance >= 5.852);
-    }
-
-    [Fact] // ADR-0050 item 15: the uniform form's bold metrics stay valid although its em is the digit
-    public void The_uniform_forms_bold_metrics_are_valid()
-    {
-        var uniform = new CellTextMetrics(digitWidthPx: 9, cellHorizontalPaddingPx: 4);
-
-        var bold = uniform.Bold;
-
-        Assert.Equal(9 * CellTextMetrics.BoldWidthAllowance, bold.DigitWidthPx, 9);
-        Assert.True(bold.FullWidthPx >= bold.DigitWidthPx);
-    }
-
-    [Fact] // ADR-0050 item 15: bold widths are refused by the rules the regular ones are
-    public void Bold_widths_keep_the_class_ordering()
-    {
-        Assert.Throws<ArgumentOutOfRangeException>(() => new CellTextMetrics(14, 9, 5, 14, 4, 9, 10, 6));   // wide < digit
-        Assert.Throws<ArgumentOutOfRangeException>(() => new CellTextMetrics(14, 9, 5, 14, 4, 15, 10, 11));  // narrow > digit
-        Assert.Throws<ArgumentOutOfRangeException>(() => new CellTextMetrics(14, 9, 5, 14, 4, 15, 0, 0));    // non-positive
-        Assert.Throws<ArgumentOutOfRangeException>(() => new CellTextMetrics(14, 9, 5, 14, 4, 15, double.NaN, 6));
-    }
-
-    [Fact] // ADR-0050 item 15: replacing the bold widths keeps every regular one
-    public void With_bold_widths_replaces_only_the_bold_ones()
-    {
-        var replaced = Metrics.WithBoldWidths(16, 11, 7);
-
-        Assert.Equal(Metrics.WideWidthPx, replaced.WideWidthPx);
-        Assert.Equal(Metrics.DigitWidthPx, replaced.DigitWidthPx);
-        Assert.Equal(16, replaced.BoldWideWidthPx);
-        Assert.Equal(11, replaced.BoldDigitWidthPx);
-        Assert.Equal(7, replaced.BoldNarrowWidthPx);
     }
 
     [Theory] // ADR-0050 item 15 / §21.7a; ticket 83: the defaults are the widest measured at weight 700 on any platform

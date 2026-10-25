@@ -2,7 +2,10 @@
 // what its members answer. The C# runner (tests/ExGrid.Tests/Cases/CallCaseTests.cs) finds the same
 // members by name.
 import { describe, expect, it } from 'vitest';
+import { CellTextMetrics } from '../src/columns/cell-text-metrics';
 import { ColumnGeometry } from '../src/columns/column-geometry';
+import { GlyphWidthTable } from '../src/columns/glyph-width-table';
+import { decideOverflow, hashesWhenOverflowing } from '../src/columns/overflow-rules';
 import { rowRange } from '../src/viewport/row-range';
 import { ViewportBox } from '../src/viewport/viewport-box';
 import { ViewportGeometry } from '../src/viewport/viewport-geometry';
@@ -21,9 +24,24 @@ function noFactory(subject: string, via: string | undefined): never {
 }
 
 const subjects: Readonly<Record<string, Subject>> = {
+    CellTextMetrics: {
+        create: (args, via) => via === undefined ? new CellTextMetrics(args as never) : noFactory('CellTextMetrics', via),
+        statics: CellTextMetrics,
+    },
     ColumnGeometry: {
         create: (args, via) => via === undefined ? new ColumnGeometry(args as never) : noFactory('ColumnGeometry', via),
         statics: ColumnGeometry,
+    },
+    GlyphWidthTable: {
+        create: (args, via) => via === undefined
+            ? new GlyphWidthTable(args['measuredAtPx'] as number, args['glyphs'] as never)
+            : noFactory('GlyphWidthTable', via),
+        statics: {},
+    },
+    // C#'s OverflowRules is a static class: its members are functions of the module here.
+    OverflowRules: {
+        create: (_, via) => noFactory('OverflowRules', via),
+        statics: { decide: decideOverflow, hashesWhenOverflowing },
     },
     RowRange: {
         create: (args, via) => via === undefined ? rowRange(args['start'] as number, args['count'] as number) : noFactory('RowRange', via),
@@ -57,11 +75,19 @@ function revive(value: unknown): unknown {
     return value;
 }
 
-/** An argument as the Script Core takes it: revived, and "no value", `null` in the cases, `undefined`. */
+/** An argument as the Script Core takes it: revived, "no value" (`null` in the cases) `undefined`, and
+ * `{"new": subject, "with": {…}}` that subject, made as a case makes one. */
 function argument(value: unknown): unknown {
     if (value === null) return undefined;
     if (Array.isArray(value)) return value.map(argument);
     if (typeof value === 'object') {
+        if ('new' in value) {
+            const made = value as { readonly new: string; readonly with?: Arguments; readonly via?: string };
+            const subject = subjects[made.new];
+            if (subject === undefined) throw new Error(`"${made.new}" is not a subject this runner knows.`);
+            // oxlint-disable-next-line ex-grid/no-stand-in-default -- tests/cases/README.md: a subject made with no "with" takes no arguments
+            return subject.create(argument(made.with ?? {}) as Arguments, made.via);
+        }
         return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, argument(item)]));
     }
     return revive(value);
@@ -104,7 +130,7 @@ interface Check {
     readonly get?: string;
     readonly call?: string;
     readonly static?: string;
-    readonly args?: readonly unknown[];
+    readonly args?: readonly unknown[] | Arguments;
     readonly is?: unknown;
     readonly near?: number;
     readonly throws?: Refusal;
@@ -118,8 +144,10 @@ function holds(subject: Subject, instance: object | undefined, check: Check): vo
     if (name === undefined) throw new Error(`The check ${JSON.stringify(check)} names no member: get, call or static.`);
     const target = isStatic ? subject.statics : instance;
     if (target === undefined) throw new Error(`The check ${JSON.stringify(check)} reads an instance, and the case creates none.`);
-    const args = check.args === undefined ? undefined : (argument(check.args) as unknown[]);
-    const label = check.args === undefined ? name : `${name}(${check.args.map(arg => JSON.stringify(arg)).join(', ')})`;
+    // Named arguments are the Script Core's options object; positional ones are its parameters.
+    const args = check.args === undefined ? undefined
+        : Array.isArray(check.args) ? (argument(check.args) as unknown[]) : [argument(check.args)];
+    const label = check.args === undefined ? name : `${name}(${JSON.stringify(check.args)})`;
     const answer = () => read(target, name, args);
     if (check.throws !== undefined) {
         expectRefusal(answer, check.throws, check.saying);
