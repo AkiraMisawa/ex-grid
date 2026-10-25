@@ -1,0 +1,203 @@
+The core comparison (ADR-0350 section 15): the C# core's baseline, before the Script Core.
+Each figure is the median over 5 rounds; "dom" is ms from the input until the change landed in the
+DOM, "frame" until the animation frame after it; a frame p95 is over the 60 frames of a sustained phase (a fling
+stops short of the end, so fewer on the pivot),
+and its lag is from the last input until that input is painted. Bytes are the circuit's connection,
+after per-message compression. No phase failed, and no page logged an error, a warning or an
+exception (both JSON files, "complaints").
+
+/core/grid
+                                             csharp-server   csharp-wasm
+push all 1,000 rows: dom ms                            7.8          25.3
+push all 1,000 rows: frame ms                         13.3          25.5
+push all 1,000 rows: bytes                          13,606             -
+push one of 1,000: dom ms                              2.3           6.2
+push one of 1,000: bytes                               883             -
+tick 1 of 1,000: dom ms p50                            2.2           6.1
+tick 1 of 1,000 per frame: frame p95                  16.8          16.9
+tick 1 of 1,000 per frame: lag ms                      0.1           0.1
+tick 1 of 1,000 per frame: bytes/tick                  206             -
+tick 5 of 1,000: dom ms p50                            2.9           9.0
+tick 5 of 1,000 per frame: frame p95                  16.8          16.9
+tick 5 of 1,000 per frame: lag ms                      0.1           0.1
+tick 5 of 1,000 per frame: bytes/tick                1,368             -
+tick 25 of 1,000: dom ms p50                           6.8          24.5
+tick 25 of 1,000 per frame: frame p95                 16.9          40.0
+tick 25 of 1,000 per frame: lag ms                     0.1           0.1
+tick 25 of 1,000 per frame: bytes/tick              12,437             -
+push all 10,000 rows: dom ms                           7.9          29.4
+push all 10,000 rows: frame ms                        13.2          29.5
+push all 10,000 rows: bytes                         13,640             -
+push one of 10,000: dom ms                             2.8          11.7
+push one of 10,000: bytes                              882             -
+tick 1 of 10,000: dom ms p50                           2.7          12.9
+tick 1 of 10,000 per frame: frame p95                 16.8          18.5
+tick 1 of 10,000 per frame: lag ms                     0.1           0.1
+tick 1 of 10,000 per frame: bytes/tick                 207             -
+tick 5 of 10,000: dom ms p50                           3.6          14.1
+tick 5 of 10,000 per frame: frame p95                 16.8          22.4
+tick 5 of 10,000 per frame: lag ms                     0.1           0.1
+tick 5 of 10,000 per frame: bytes/tick               1,363             -
+tick 25 of 10,000: dom ms p50                          7.2          28.5
+tick 25 of 10,000 per frame: frame p95                17.0          50.4
+tick 25 of 10,000 per frame: lag ms                    0.1           0.1
+tick 25 of 10,000 per frame: bytes/tick             12,439             -
+push all 100,000 rows: dom ms                         14.6          79.0
+push all 100,000 rows: frame ms                       14.8          79.2
+push all 100,000 rows: bytes                        13,635             -
+push one of 100,000: dom ms                            9.0          72.9
+push one of 100,000: bytes                             881             -
+tick 1 of 100,000: dom ms p50                          8.3          63.8
+tick 1 of 100,000 per frame: frame p95                16.9          79.9
+tick 1 of 100,000 per frame: lag ms                    0.1           0.1
+tick 1 of 100,000 per frame: bytes/tick                206             -
+tick 5 of 100,000: dom ms p50                          8.9          65.8
+tick 5 of 100,000 per frame: frame p95                17.0         102.3
+tick 5 of 100,000 per frame: lag ms                    0.2           0.1
+tick 5 of 100,000 per frame: bytes/tick              1,367             -
+tick 25 of 100,000: dom ms p50                        12.3          83.6
+tick 25 of 100,000 per frame: frame p95               18.4         114.2
+tick 25 of 100,000 per frame: lag ms                   0.1           0.1
+tick 25 of 100,000 per frame: bytes/tick            12,437             -
+mount over the largest: dom ms                        14.1          80.7
+mount over the largest: bytes                       16,894             -
+40 arrows in one task: dom ms                         11.4         157.1
+40 arrows in one task: bytes                         9,118             -
+an arrow per frame: frame p95                         16.8          21.4
+an arrow per frame: lag ms                             0.0           0.0
+scroll 37 px per frame: frame p95                     16.9          19.9
+scroll 37 px per frame: lag ms                         0.3           0.4
+fling 50 rows per frame: frame p95                    16.9          19.6
+fling 50 rows per frame: lag ms                      160.7         165.3
+
+/core/template
+                                             csharp-server   csharp-wasm
+push all 1,000 rows: dom ms                            7.0          23.5
+push all 1,000 rows: frame ms                         13.4          23.6
+push all 1,000 rows: bytes                          13,605             -
+push one of 1,000: dom ms                              2.2           6.0
+push one of 1,000: bytes                               884             -
+tick 1 of 1,000: dom ms p50                            2.0           6.1
+tick 1 of 1,000 per frame: frame p95                  16.9          16.9
+tick 1 of 1,000 per frame: lag ms                      0.1           0.2
+tick 1 of 1,000 per frame: bytes/tick                  207             -
+tick 5 of 1,000: dom ms p50                            2.6           8.8
+tick 5 of 1,000 per frame: frame p95                  16.8          16.9
+tick 5 of 1,000 per frame: lag ms                      0.1           0.2
+tick 5 of 1,000 per frame: bytes/tick                1,404             -
+tick 25 of 1,000: dom ms p50                           6.8          23.8
+tick 25 of 1,000 per frame: frame p95                 16.9          40.0
+tick 25 of 1,000 per frame: lag ms                     0.1           0.1
+tick 25 of 1,000 per frame: bytes/tick              12,458             -
+push all 10,000 rows: dom ms                           7.9          31.9
+push all 10,000 rows: frame ms                        13.5          32.0
+push all 10,000 rows: bytes                         13,640             -
+push one of 10,000: dom ms                             2.7          10.8
+push one of 10,000: bytes                              880             -
+tick 1 of 10,000: dom ms p50                           2.4          11.1
+tick 1 of 10,000 per frame: frame p95                 16.9          17.5
+tick 1 of 10,000 per frame: lag ms                     0.1           0.1
+tick 1 of 10,000 per frame: bytes/tick                 208             -
+tick 5 of 10,000: dom ms p50                           3.2          13.8
+tick 5 of 10,000 per frame: frame p95                 16.9          23.2
+tick 5 of 10,000 per frame: lag ms                     0.1           0.1
+tick 5 of 10,000 per frame: bytes/tick               1,401             -
+tick 25 of 10,000: dom ms p50                          6.8          28.3
+tick 25 of 10,000 per frame: frame p95                17.0          41.2
+tick 25 of 10,000 per frame: lag ms                    0.1           0.1
+tick 25 of 10,000 per frame: bytes/tick             12,456             -
+push all 100,000 rows: dom ms                         14.0          85.2
+push all 100,000 rows: frame ms                       14.1          85.3
+push all 100,000 rows: bytes                        13,629             -
+push one of 100,000: dom ms                            8.6          62.7
+push one of 100,000: bytes                             881             -
+tick 1 of 100,000: dom ms p50                          8.2          65.3
+tick 1 of 100,000 per frame: frame p95                16.8          79.3
+tick 1 of 100,000 per frame: lag ms                    0.1           0.2
+tick 1 of 100,000 per frame: bytes/tick                209             -
+tick 5 of 100,000: dom ms p50                          8.5          72.2
+tick 5 of 100,000 per frame: frame p95                16.9          85.8
+tick 5 of 100,000 per frame: lag ms                    0.1           0.1
+tick 5 of 100,000 per frame: bytes/tick              1,400             -
+tick 25 of 100,000: dom ms p50                        11.7          81.6
+tick 25 of 100,000 per frame: frame p95               18.5         104.9
+tick 25 of 100,000 per frame: lag ms                   0.1           0.1
+tick 25 of 100,000 per frame: bytes/tick            12,458             -
+mount over the largest: dom ms                        14.2          86.8
+mount over the largest: bytes                       16,906             -
+40 arrows in one task: dom ms                         11.2         158.5
+40 arrows in one task: bytes                         9,178             -
+an arrow per frame: frame p95                         16.9          19.1
+an arrow per frame: lag ms                             0.0           0.0
+scroll 37 px per frame: frame p95                     16.9          19.2
+scroll 37 px per frame: lag ms                         0.4           0.4
+fling 50 rows per frame: frame p95                    16.9          20.2
+fling 50 rows per frame: lag ms                      158.7         164.0
+
+/core/sheet
+                                             csharp-server   csharp-wasm
+edit A1 (20,000 recalculated): dom ms p50            129.2        3334.0
+edit A1 (20,000 recalculated): dom ms p95            145.6        3468.9
+edit A1 (20,000 recalculated): frame ms p50          140.9        3335.1
+edit A1 (20,000 recalculated): bytes                15,755             -
+edit L1 (nothing reads it): dom ms p50                15.0         370.9
+edit L1 (nothing reads it): dom ms p95                17.1         405.8
+edit L1 (nothing reads it): frame ms p50              17.3         372.2
+edit L1 (nothing reads it): bytes                    4,997             -
+scroll 37 px per frame: frame p95                     17.7          55.8
+scroll 37 px per frame: lag ms                         0.1           1.2
+fling 50 rows per frame: frame p95                    17.8          31.5
+fling 50 rows per frame: lag ms                      167.3         328.1
+
+/core/pivot
+                                             csharp-server   csharp-wasm
+one trade amended: dom ms p50                          3.8          78.9
+one trade amended: dom ms p95                          8.7         123.2
+one trade amended: frame ms p50                       16.6          80.6
+one trade amended: bytes                             2,644             -
+columns swapped: dom ms p50                           17.0         401.9
+columns swapped: dom ms p95                           23.7         422.8
+columns swapped: frame ms p50                         17.0         402.0
+columns swapped: bytes                               2,323             -
+scroll 37 px per frame: frame p95                     16.9          66.5
+scroll 37 px per frame: lag ms                         0.5           0.7
+fling 50 rows per frame: frame p95                    16.9          18.2
+fling 50 rows per frame: lag ms                      158.7         196.4
+
+csharp-server: 20261025T022927-core-csharp-server.json, http://127.0.0.1:5491, 2026-10-25T02:29:27.169Z, rounds 5, Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.0.0 Safari/537.36, 4 cores, dpr 1
+csharp-wasm: 20261025T023513-core-csharp-wasm.json, http://127.0.0.1:5492, 2026-10-25T02:35:13.487Z, rounds 5, Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.0.0 Safari/537.36, 4 cores, dpr 1
+
+Where and how: 2026-10-25, a 4-core Linux container, headless Chromium 153 (Playwright's build, no
+GPU) at 1400x1000; the 1-minute load average was 2.5 as the Server run began (the build had just
+ended) and under 0.8 from then on. Bench.Server (5491) and Bench.Host serving Bench.Client
+without AOT (5492), both built in Release and run with `dotnet run -c Release --no-build`, on loopback
+with no added latency; the hosts measured one after the other, never at once. `main` at 5e3eecb.
+Headless software rendering: read the figures against each other, and against the Script Core's taken
+on the same machine, not as what a user's machine shows.
+
+Reading, for the Script Core to be measured against:
+
+- A Window on Blazor Server costs what its painted rows cost, whatever its size. Pushing a new
+  Window of 1,000, 10,000 or 100,000 rows puts the same ~13.6 KB on the wire (every painted row
+  new) and takes 7 to 15 ms; one row new is ~0.9 KB. The grid's pass over the Window runs on the
+  server and never crosses. Under the Script Core the Window crosses into the browser (ADR-0350
+  section 15, the first risk): this is the line it is compared with, at 100,000 rows above all.
+- On WebAssembly the same pass is paid in the browser, in proportion to the Window: a new instance
+  of 100,000 rows takes 60 to 85 ms however few rows changed (push one, tick 1), against 6 ms at
+  1,000. A live source handing over a 100,000-row Window every frame runs at 80 to 115 ms a frame
+  (p95). The Script Core on WebAssembly pays a crossing instead of this pass.
+- Template cells cost nothing measurable here on the C# core: /core/template is within noise of
+  /core/grid on both hosts, a component cell included. Under the Script Core a component in a
+  template cell is a component root of its own (the second risk); this is its baseline.
+- ExSheet on WebAssembly: an edit that recalculates 20,000 cells takes 3.3 s until the screen shows
+  it, against 130 ms on the circuit, and an edit of a cell nothing reads still takes 370 ms against
+  15 ms. Where that time goes on WebAssembly (the engine on the interpreter, the grid, or the Sheet
+  Document handed back after each edit) was not run down. On the circuit an edit sends 5 to 16 KB. The Script Core leaves
+  the engine where it is and adds the crossing of its Values (the third risk).
+- ExPivot: a Change Batch of one trade redraws in 4 ms on the circuit (2.6 KB) and 79 ms on
+  WebAssembly; swapping the columns, 17 ms and 400 ms.
+- Keys and scroll: 40 arrows in one task land in 11 ms on the circuit (9 KB) and 157 ms on
+  WebAssembly; an arrow or a 37 px scroll per frame keeps every host at its frame, the Sheet and the
+  pivot on WebAssembly excepted (p95 56 and 67 ms while scrolling). A fling of 50 rows per frame
+  paints Placeholder rows and fills them about 160 ms after it stops (ADR-0004), which is the grid's
+  design, not its lag; the Sheet and the pivot on WebAssembly take 330 and 200 ms.

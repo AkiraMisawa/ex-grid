@@ -1,0 +1,96 @@
+@using System.Globalization
+@using global::ExPivot.Components
+@using global::ExPivot.Engine
+@* The core comparison's pivot (/core/pivot, ADR-0350 section 15): the real ExPivot over 20,000
+   trades held in this process, P&L by book and trade date (about 2,700 rows) across currencies or
+   products. Its engine answers in C#, and under the Script Core its report crosses into the browser
+   after every redraw. The redraw interval and the Change Highlight are ExPivot's defaults.
+
+     #core-amend   one trade of the first book on its first date gains 1,000,003 in a Change Batch
+     #core-layout  swaps the columns between Currency and Product
+   #core-state's data-expected is the first book's new P&L, as the report paints it ("#,##0"), and
+   data-columns names the field across the columns. *@
+<div id="core-bench" style="width: 1200px">
+    <div class="core-controls">
+        <button type="button" id="core-amend" @onclick="Amend">Amend</button>
+        <button type="button" id="core-layout" @onclick="SwapColumns">Swap columns</button>
+        <span id="core-state" data-expected="@_expected" data-columns="@_columns">@_amendments amendments</span>
+    </div>
+    <ExPivot Source="_source" @bind-Layout="_layout" Culture="Culture" ViewportHeight="600" />
+</div>
+
+@code {
+    public const int Trades = 20_000;
+
+    private static readonly CultureInfo Culture = CultureInfo.GetCultureInfo("en-US");
+    private static readonly string[] Books = ["BK-A", "BK-B", "BK-C", "BK-D", "BK-E", "BK-F", "BK-G", "BK-H", "BK-I", "BK-J"];
+    private static readonly string[] Currencies = ["USD", "EUR", "JPY", "GBP", "CHF"];
+    private static readonly string[] Products = ["Swap", "Bond", "Option", "Future", "Spot"];
+
+    public sealed record CoreTrade(string Id, string Book, string Product, string Currency, DateTime TradeDate, decimal Pnl);
+
+    private static readonly PivotFields<CoreTrade> Fields = PivotFields.Of<CoreTrade>()
+        .Key("Id", t => t.Id)
+        .Text("Book", t => t.Book)
+        .Text("Product", t => t.Product)
+        .Text("Currency", t => t.Currency)
+        .Date("TradeDate", t => t.TradeDate, caption: "Trade date", format: "yyyy-MM-dd")
+        .Number("Pnl", t => t.Pnl, caption: "P&L", format: "#,##0");
+
+    private readonly CoreTrade[] _trades;
+    private readonly SnapshotPivotSource _source;
+    // The trade amended, and the first book's P&L kept up to date with it: the Consumer's side of an
+    // amendment does no pass over the trades, so what is timed is ExPivot's.
+    private readonly int _amendedAt;
+    private decimal _firstBookPnl;
+    private PivotLayout _layout = Layout("Currency");
+    private string _columns = "Currency";
+    private string _expected;
+    private int _amendments;
+
+    private static PivotLayout Layout(string across) => new()
+    {
+        Rows = [new PivotFieldPlacement("Book"), new PivotFieldPlacement("TradeDate")],
+        Columns = [new PivotFieldPlacement(across)],
+        Values = [new PivotValueField("Pnl", PivotAggregation.Sum) { NumberFormat = "#,##0" }],
+    };
+
+    public CorePivot()
+    {
+        // Whole numbers, so that "#,##0" rounds nothing and the expected text is exact.
+        var random = new Random(20261025);
+        var start = new DateTime(2026, 1, 2, 0, 0, 0, DateTimeKind.Unspecified);
+        _trades = new CoreTrade[Trades];
+        for (var i = 0; i < Trades; i++)
+        {
+            _trades[i] = new CoreTrade(
+                "T" + i.ToString(CultureInfo.InvariantCulture),
+                Books[random.Next(Books.Length)],
+                Products[random.Next(Products.Length)],
+                Currencies[random.Next(Currencies.Length)],
+                start.AddDays(random.Next(0, 270)),
+                random.Next(-50_000, 60_000));
+        }
+        _source = PivotSource.From(_trades, Fields);
+        // The first trade of the first book's earliest date, so its rows are the first painted.
+        var first = _trades.Where(t => t.Book == Books[0]).Min(t => t.TradeDate);
+        _amendedAt = Array.FindIndex(_trades, t => t.Book == Books[0] && t.TradeDate == first);
+        _firstBookPnl = _trades.Where(t => t.Book == Books[0]).Sum(t => t.Pnl);
+        _expected = _firstBookPnl.ToString("#,##0", Culture);
+    }
+
+    private void Amend()
+    {
+        var amended = _trades[_amendedAt] = _trades[_amendedAt] with { Pnl = _trades[_amendedAt].Pnl + 1_000_003m };
+        _source.Apply(Fields.Batch(changed: [amended]));
+        _amendments++;
+        _firstBookPnl += 1_000_003m;
+        _expected = _firstBookPnl.ToString("#,##0", Culture);
+    }
+
+    private void SwapColumns()
+    {
+        _columns = _columns == "Currency" ? "Product" : "Currency";
+        _layout = Layout(_columns);
+    }
+}

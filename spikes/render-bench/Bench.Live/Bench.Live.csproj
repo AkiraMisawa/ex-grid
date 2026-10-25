@@ -24,6 +24,12 @@
     <ProjectReference Include="..\..\..\src\ExGrid\ExGrid.csproj" />
   </ItemGroup>
 
+  <!-- The core comparison (ADR-0350 section 15): ExSheet and ExPivot, which ExGrid draws. -->
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\src\ExSheet\ExSheet.csproj" />
+    <ProjectReference Include="..\..\..\src\ExPivot\ExPivot.csproj" />
+  </ItemGroup>
+
   <!-- ExChart's measurement (ADR-0283): the real chart, driven by chart-bench.js. -->
   <ItemGroup>
     <ProjectReference Include="..\..\..\src\ExChart\ExChart.csproj" />

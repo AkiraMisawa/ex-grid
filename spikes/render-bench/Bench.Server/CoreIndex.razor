@@ -1,0 +1,7 @@
+@page "/core/{Scenario}"
+@* The core comparison on the circuit (ADR-0350 section 15): CoreBench, interactive on the circuit. *@
+<CoreBench Scenario="@Scenario" @rendermode="new InteractiveServerRenderMode(prerender: false)" />
+
+@code {
+    [Parameter] public string Scenario { get; set; } = "";
+}
