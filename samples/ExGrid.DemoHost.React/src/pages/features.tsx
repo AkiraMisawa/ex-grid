@@ -196,6 +196,11 @@ export function Features(): ReactElement {
     const onColumnOrderChanged = useCallback((order: readonly string[]) => {
         setShownColumns(held => inOrder(held, order));
     }, []);
+    // The column menu's Hide and Pin are the page's to apply (ADR-0010): the grid only says what was asked.
+    const onColumnHidden = useCallback((column: string) => {
+        setShownColumns(held => held.filter(c => c.name !== column));
+    }, []);
+    const [pinned, setPinned] = useState(0);
     // What the Consumer adds to the Context Menu (ADR-0036): handed the row clicked and the Selection as rectangles
     // in their version. Resolving the rest of the Selection into rows is this side's question, since this side
     // owns the data; the demo does the one-row case, opening what the row is about.
@@ -356,6 +361,7 @@ export function Features(): ReactElement {
                 viewportHeight={320}
                 viewportWidth={720}
                 headerGroups={groups}
+                pinnedColumnCount={pinned}
                 onRefused={onRefused}
                 onEdit={onEdit}
                 onEditDiscarded={onEditDiscarded}
@@ -366,6 +372,8 @@ export function Features(): ReactElement {
                 onPaste={onPaste}
                 onColumnWidthChanged={onColumnWidthChanged}
                 onColumnOrderChanged={onColumnOrderChanged}
+                onColumnHidden={onColumnHidden}
+                onPinnedCountChanged={setPinned}
                 contextCommands={contextCommands} />
             <p className="demo-status"><span id="intent-count">Intents: {counts.edits} edits, {counts.pastes} pastes</span></p>
             {showGroups

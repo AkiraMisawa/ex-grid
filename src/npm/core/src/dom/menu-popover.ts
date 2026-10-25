@@ -3,7 +3,7 @@
 // inside a popover (ADR-0012); every other key is the item's, and what it means is the table's, so another
 // Chrome answers it the same way. Where the menu stands, and what closing it does, are the grid's.
 
-import { firstEnabled, type MenuItem, type MenuKey } from '../chrome/menu-keys';
+import { firstEnabled, letterOf, splitAtLetter, type MenuItem, type MenuKey } from '../chrome/menu-keys';
 import { itemAt } from '../must';
 import type { GridCommand } from './grid-command';
 
@@ -70,8 +70,10 @@ export class MenuItems {
     readonly #answers: MenuAnswers;
     #place: number;
 
+    /** `lettered` marks each command's letter the way Excel shows it (ADR-0044): the column menu's, whose sort
+     * and clear-filter commands answer S, O and C; the Context Menu answers no letter and marks none. */
     constructor(container: HTMLElement, commands: readonly GridCommand[], labelOf: (id: string) => string, table: MenuKeyTable,
-        answers: MenuAnswers) {
+        answers: MenuAnswers, lettered = false) {
         const doc = container.ownerDocument;
         this.#commands = commands;
         this.#table = table;
@@ -83,7 +85,18 @@ export class MenuItems {
             item.setAttribute('role', 'menuitem');
             if (command.enabled) item.setAttribute('data-ex-claims', 'click keydown');
             else item.disabled = true;
-            item.textContent = labelOf(command.id);
+            const label = labelOf(command.id);
+            const letter = lettered ? letterOf(command.id) : undefined;
+            if (letter === undefined) {
+                item.textContent = label;
+            } else {
+                // Underlined where the label has the letter, appended as "(S)" where it does not; the underline
+                // is the markup's own, so a theme that restyles u restyles it.
+                const [before, key, after] = splitAtLetter(label, letter);
+                const mark = doc.createElement('u');
+                mark.textContent = key;
+                item.append(before, mark, after);
+            }
             return item;
         });
         container.append(...this.#items);

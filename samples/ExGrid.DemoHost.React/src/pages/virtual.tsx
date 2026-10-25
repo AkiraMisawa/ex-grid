@@ -54,7 +54,7 @@ function VirtualPage({ source }: { readonly source: FetchingGridSource<DemoTrade
                     : `Window: rows ${state.windowStart}–${state.windowStart + state.window.length - 1} of ${total}.`}
                 {state.loading ? <strong>Loading…</strong> : null}
             </p>
-            <ExGrid columns={tradeColumns} source={source} rowHeight={24} viewportHeight={480} />
+            <ExGrid columns={tradeColumns} source={source} rowHeight={24} viewportHeight={480} hideColumnMenu />
         </>
     );
 }

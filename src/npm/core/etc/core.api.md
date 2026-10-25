@@ -321,11 +321,13 @@ export interface GridOptions<Row> {
     readonly density?: GridDensity;
     readonly headerGroups?: readonly GridHeaderGroup[];
     readonly headerHeight?: number;
+    readonly hideColumnMenu?: boolean;
     readonly hideCopyWithHeaders?: boolean;
     readonly highlightFocusRow?: boolean;
     readonly highlightHoverRow?: boolean;
     readonly onCellDoubleClick?: (cell: CellPosition) => void;
     readonly onClear?: (intent: GridClearIntent) => void;
+    readonly onColumnHidden?: (column: string) => void;
     readonly onColumnOrderChanged?: (order: readonly string[]) => void;
     readonly onColumnWidthChanged?: (change: GridColumnWidthChange) => void;
     readonly onEdit?: (intent: GridEditIntent<Row>) => void;
@@ -333,6 +335,7 @@ export interface GridOptions<Row> {
     readonly onEditingChanged?: (open: boolean) => void;
     readonly onOverwriteNotice?: (notice: GridOverwriteNotice) => void;
     readonly onPaste?: (intent: GridPasteIntent) => void;
+    readonly onPinnedCountChanged?: (count: number) => void;
     readonly onRedo?: () => void;
     readonly onRefused?: (refusal: GridRefusal) => void;
     readonly onSelectionChanged?: (selection: GridSelection) => void;

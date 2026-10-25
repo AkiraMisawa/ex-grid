@@ -15,7 +15,7 @@ import { GridClearIntent } from '../clipboard/clear-intent';
 import { columnPlaceholder, copyRefusalWords, pasteRefusalWords, shapeMismatchMaySpillWords } from '../chrome/refusal-words';
 import { builtInCommandLabel } from '../chrome/command-labels';
 import { gridCommandIds } from '../chrome/command-ids';
-import { resolveMenuKey } from '../chrome/menu-keys';
+import { resolveColumnMenuKey, resolveMenuKey } from '../chrome/menu-keys';
 import { parseClipboardBlock, type ClipboardBlock } from '../clipboard/clipboard-parse';
 import { GridPasteIntent } from '../clipboard/paste-intent';
 import { ColumnGeometry, type ColumnRange } from '../columns/column-geometry';
@@ -52,7 +52,7 @@ import {
 } from './column-gestures';
 import { CopiedRange } from './copied-range';
 import type { GridCommand, GridContextMenuContext } from './grid-command';
-import { contextMenuRoomPx, contextMenuStyle, MenuItems } from './menu-popover';
+import { contextMenuRoomPx, contextMenuStyle, MenuItems, popoverAcross, type MenuKeyTable } from './menu-popover';
 import { copyValues, gatherRows, windowCovers, windowRowAt } from './grid-copy';
 import { defaultPasteByteCap, exceedsUtf8 } from './grid-paste';
 import type { GridRefusal } from './grid-refusal';
@@ -214,12 +214,26 @@ export interface GridOptions<Row> {
     readonly commandLabel?: (id: string) => string | undefined;
     /** Leaves Copy with headers off the Context Menu (ADR-0050, item 13). Shown unless given. */
     readonly hideCopyWithHeaders?: boolean;
+    /** Leaves the ▾ off every header, and Alt+↓ with it (ADR-0050, item 12): the column menu, the column's
+     * commands, is shown unless given. */
+    readonly hideColumnMenu?: boolean;
+    /** Hears "Hide this column" from the column menu, with the column's `name` (ADR-0010). The grid changes
+     * nothing: the column goes when the Consumer hands back the columns without it. Without it the command is
+     * shown disabled. */
+    readonly onColumnHidden?: (column: string) => void;
+    /** Hears the Pinned Columns' count the column menu asks for (ADR-0004, ADR-0010): "Pin up to this column"
+     * and "Unpin all columns". The grid changes nothing until the Consumer hands back `pinnedColumnCount`.
+     * Without it both commands are shown disabled. */
+    readonly onPinnedCountChanged?: (count: number) => void;
 }
 
 const defaultViewportWidthPx = 800;
 
 /** The widest a cell's message lays out: emitted inline, never a stylesheet literal beside it (ADR-0027). */
 const messageMaxWidthPx = 320;
+
+/** One of the core's own commands, frozen as a Consumer's would be handed it. */
+const coreCommand = (id: string, enabled: boolean, invoke: () => void): GridCommand => Object.freeze({ id, enabled, invoke });
 
 /** The commands a Consumer's `contextCommands` answered, checked: a command the menu cannot show or run is the
  * Consumer's defect, refused by name rather than shown as a blank or a button that does nothing. */
@@ -314,19 +328,28 @@ interface Taken<Row> {
     readonly contextCommands: ((context: GridContextMenuContext<Row>) => readonly GridCommand[]) | undefined;
     readonly commandLabel: ((id: string) => string | undefined) | undefined;
     readonly hideCopyWithHeaders: boolean;
+    readonly hideColumnMenu: boolean;
+    readonly onColumnHidden: ((column: string) => void) | undefined;
+    readonly onPinnedCountChanged: ((count: number) => void) | undefined;
 }
 
-// The popover standing, the Context Menu (ADR-0036, ADR-0039, ADR-0040): its element, the commands it shows,
-// where it was opened in the Viewport's readable box, and what it was opened against: an order, columns or a
-// source that moved take the Selection its commands act on, and the menu with it (ADR-0011).
-interface OpenPopover {
+// The popover standing (ADR-0039, ADR-0040): its element and the commands it shows, and where it stands. The
+// Context Menu is held where it was opened in the Viewport's readable box and against what: an order, columns
+// or a source that moved take the Selection its commands act on, and the menu with it (ADR-0011, ADR-0036).
+// A column's menu stands under its column's header, followed by the column's name (ADR-0010).
+type OpenPopover = {
     readonly element: HTMLElement;
     readonly commands: readonly GridCommand[];
+} & ({
+    readonly kind: 'context';
     readonly leftPx: number;
     readonly topPx: number;
     readonly version: number;
     readonly source: unknown;
-}
+} | {
+    readonly kind: 'column';
+    readonly column: string;
+});
 
 // A Selection the rows or the source dropped: where the typing aimed at it was going, why it went, and whether
 // the Consumer has heard of typing thrown away with it (ADR-0142).
@@ -660,6 +683,7 @@ export class GridView<Row> {
     #paintedHeader: {
         readonly styles: ColumnStyles; readonly columns: readonly ResolvedColumn<Row>[]; readonly scrollable: ColumnRange | undefined;
         readonly sorts: string; readonly layout: HeaderGroupLayout; readonly tierPx: number; readonly grips: boolean;
+        readonly menus: boolean;
     } | undefined;
     // The tiers of Header Groups as painted, and the leaf row beneath them: the rectangles stand on the
     // column geometry, the layout and the tier height alone, so a scroll or a Sort that rebuilds the leaves
@@ -704,6 +728,12 @@ export class GridView<Row> {
     #commandLabel: ((id: string) => string | undefined) | undefined;
     #hideCopyWithHeaders = false;
     #popover: OpenPopover | undefined;
+    // The column menu (ADR-0010): whether the headers carry a ▾, each painted ▾'s column, and the commands'
+    // sinks the Consumer gave.
+    #hideColumnMenu = false;
+    #menuButtons = new Map<Element, string>();
+    #onColumnHidden: ((column: string) => void) | undefined;
+    #onPinnedCountChanged: ((count: number) => void) | undefined;
     // The edge band (ADR-0008): where the pointer stands in the Viewport's readable box and the step each
     // tick takes, and an offset a step moved that the next pass writes.
     #edge: { readonly x: number; readonly y: number; readonly rows: number; readonly stepXPx: number } | undefined;
@@ -938,7 +968,9 @@ export class GridView<Row> {
         let autoWidths = this.#autoWidths;
         // A new array holding the same column objects is the same columns: a Framework Adapter hands a new
         // array on every render, and nothing about them changed (ADR-0003).
-        const columnsChanged = metricsChanged || !sameItems(options.columns, this.#declared);
+        // A ▾ that comes or goes changes what a header needs, so every Auto width is measured afresh (ADR-0016).
+        const menusChanged = (options.hideColumnMenu === true) !== this.#hideColumnMenu;
+        const columnsChanged = metricsChanged || menusChanged || !sameItems(options.columns, this.#declared);
         if (columnsChanged) {
             const previous = this.#columns;
             const previousWidths = this.#autoWidths;
@@ -949,13 +981,13 @@ export class GridView<Row> {
             const at = new Map(previous.map(({ column }, i) => [column.name, i]));
             autoWidths = columns.map(({ column, spec, header }) => {
                 const was = at.get(column.name);
-                if (!metricsChanged && was !== undefined && itemAt(previous, was).column === column) {
+                if (!metricsChanged && !menusChanged && was !== undefined && itemAt(previous, was).column === column) {
                     return itemAt(previousWidths, was);
                 }
                 // The header is content the column paints too: unobserved, a short Auto column would
                 // stand with its label chopped (ADR-0016).
                 return spec.width.isAuto
-                    ? AutoWidth.of(spec).observe(metrics.headerRequiredPx({ label: header, menuButton: false, sortable: column.queryable !== false }))
+                    ? AutoWidth.of(spec).observe(metrics.headerRequiredPx({ label: header, menuButton: options.hideColumnMenu !== true, sortable: column.queryable !== false }))
                     : AutoWidth.of(spec);
             });
         }
@@ -967,6 +999,7 @@ export class GridView<Row> {
         const {
             onSelectionChanged, onRefused, onPaste, pasteMaySpill, onClear, onUndo, onRedo, onEdit, onEditingChanged, onEditDiscarded,
             onOverwriteNotice, onCellDoubleClick, onColumnWidthChanged, onColumnOrderChanged, contextCommands, commandLabel, hideCopyWithHeaders,
+            hideColumnMenu, onColumnHidden, onPinnedCountChanged,
         }: {
             readonly onSelectionChanged?: unknown; readonly onRefused?: unknown; readonly onPaste?: unknown; readonly pasteMaySpill?: unknown;
             readonly onClear?: unknown; readonly onUndo?: unknown; readonly onRedo?: unknown;
@@ -974,6 +1007,7 @@ export class GridView<Row> {
             readonly onOverwriteNotice?: unknown; readonly onCellDoubleClick?: unknown;
             readonly onColumnWidthChanged?: unknown; readonly onColumnOrderChanged?: unknown;
             readonly contextCommands?: unknown; readonly commandLabel?: unknown; readonly hideCopyWithHeaders?: unknown;
+            readonly hideColumnMenu?: unknown; readonly onColumnHidden?: unknown; readonly onPinnedCountChanged?: unknown;
         } = options;
         if (onSelectionChanged !== undefined && typeof onSelectionChanged !== 'function') {
             throw new TypeError('onSelectionChanged is a function of the Selection.');
@@ -1033,6 +1067,15 @@ export class GridView<Row> {
         if (hideCopyWithHeaders !== undefined && typeof hideCopyWithHeaders !== 'boolean') {
             throw new TypeError('hideCopyWithHeaders is true or false.');
         }
+        if (hideColumnMenu !== undefined && typeof hideColumnMenu !== 'boolean') {
+            throw new TypeError('hideColumnMenu is true or false.');
+        }
+        if (onColumnHidden !== undefined && typeof onColumnHidden !== 'function') {
+            throw new TypeError('onColumnHidden is a function of the column\'s name.');
+        }
+        if (onPinnedCountChanged !== undefined && typeof onPinnedCountChanged !== 'function') {
+            throw new TypeError('onPinnedCountChanged is a function of the Pinned Columns\' count.');
+        }
         const { copyCellCap = defaultCellCap, pasteByteCap = defaultPasteByteCap } = options;
         if (!Number.isSafeInteger(copyCellCap) || copyCellCap < 1) {
             throw new RangeError(`copyCellCap is a whole number of at least one cell, not ${copyCellCap}: the cap may be raised, `
@@ -1061,6 +1104,8 @@ export class GridView<Row> {
             onOverwriteNotice: options.onOverwriteNotice, onCellDoubleClick: options.onCellDoubleClick,
             onColumnWidthChanged: options.onColumnWidthChanged, onColumnOrderChanged: options.onColumnOrderChanged,
             contextCommands: options.contextCommands, commandLabel: options.commandLabel, hideCopyWithHeaders: options.hideCopyWithHeaders === true,
+            hideColumnMenu: options.hideColumnMenu === true, onColumnHidden: options.onColumnHidden,
+            onPinnedCountChanged: options.onPinnedCountChanged,
         };
     }
 
@@ -1179,6 +1224,9 @@ export class GridView<Row> {
         this.#contextCommands = taken.contextCommands;
         this.#commandLabel = taken.commandLabel;
         this.#hideCopyWithHeaders = taken.hideCopyWithHeaders;
+        this.#hideColumnMenu = taken.hideColumnMenu;
+        this.#onColumnHidden = taken.onColumnHidden;
+        this.#onPinnedCountChanged = taken.onPinnedCountChanged;
     }
 
     // The Row Sequence Version the grid writes: its source's, carried past every change of source.
@@ -1305,7 +1353,7 @@ export class GridView<Row> {
         // small is the Consumer's box, not a change (ADR-0040).
         const popover = this.#popover;
         if (popover !== undefined && visibleHeightPx < this.#visibleHeightPx
-            && contextMenuRoomPx(this.#bandHeightPx + popover.topPx, visibleHeightPx) < this.#metrics.rowHeightPx) {
+            && this.#popoverRoomPx(popover, visibleHeightPx) < this.#metrics.rowHeightPx) {
             this.#closePopover(true);
         }
         this.#visibleHeightPx = visibleHeightPx;
@@ -1440,9 +1488,13 @@ export class GridView<Row> {
         this.#heldSource = this.#source;
         this.#columnNames = names;
         // The Context Menu's commands act on the Selection it was opened over; an order, columns or a source
-        // that moved took that Selection, and the menu goes with it, as a Cancel (ADR-0011, ADR-0036).
+        // that moved took that Selection, and the menu goes with it, as a Cancel (ADR-0011, ADR-0036). A
+        // column's menu follows its column wherever it moved, and goes with it, or with the ▾ when the column
+        // menu is hidden.
         const popover = this.#popover;
-        if (popover !== undefined && (columnsMoved || popover.version !== version || popover.source !== this.#source)) {
+        if (popover !== undefined && (popover.kind === 'context'
+            ? columnsMoved || popover.version !== version || popover.source !== this.#source
+            : !names.includes(popover.column) || this.#hideColumnMenu)) {
             this.#closePopover(true);
         }
         this.#reconcileEdit();
@@ -1611,6 +1663,12 @@ export class GridView<Row> {
         if (action.kind === 'openContextMenu') {
             this.#taken(event);
             this.#openContextMenuAtFocus();
+            return;
+        }
+        // Alt+↓ opens the Focus's column menu, on a grid whose headers carry one (ADR-0039).
+        if (action.kind === 'openColumnMenu' && !this.#hideColumnMenu) {
+            this.#taken(event);
+            this.#openColumnMenuAtFocus();
             return;
         }
         if (action.kind !== 'leave' && !movingKinds.has(action.kind)) return;
@@ -2463,10 +2521,10 @@ export class GridView<Row> {
         if (slice < 0 || slice >= window.length || cell.column >= this.#columns.length) return;
         const canCopy = !this.#held.selection.isEmpty;
         const core: GridCommand[] = [
-            Object.freeze({ id: gridCommandIds.copy, enabled: canCopy, invoke: () => { this.#menuCopy(false); } }),
+            coreCommand(gridCommandIds.copy, canCopy, () => { this.#menuCopy(false); }),
         ];
         if (!this.#hideCopyWithHeaders) {
-            core.push(Object.freeze({ id: gridCommandIds.copyWithHeaders, enabled: canCopy, invoke: () => { this.#menuCopy(true); } }));
+            core.push(coreCommand(gridCommandIds.copyWithHeaders, canCopy, () => { this.#menuCopy(true); }));
         }
         const { column } = itemAt(this.#columns, cell.column);
         const version = this.#sequence();
@@ -2479,17 +2537,24 @@ export class GridView<Row> {
         const element = this.#root.ownerDocument.createElement('div');
         element.className = 'ex-popover';
         element.setAttribute('role', 'menu');
-        const items = new MenuItems(element, commands, id => this.#labelOf(id), resolveMenuKey, {
+        this.#standMenu({ kind: 'context', element, commands, leftPx, topPx, version, source: this.#source }, element, resolveMenuKey, false);
+    }
+
+    // Stands a menu's popover: its items in `container`, inside the popover's element, placed under the root
+    // after the scroller, and its first enabled item taking the keyboard (ADR-0039). `lettered` marks Excel's
+    // letters, the column menu's (ADR-0044).
+    #standMenu(popover: OpenPopover, container: HTMLElement, table: MenuKeyTable, lettered: boolean): void {
+        const items = new MenuItems(container, popover.commands, id => this.#labelOf(id), table, {
             run: index => { this.#runCommand(index); },
             cancel: () => { this.#closePopover(true); },
             answered: () => {
                 this.#answered += 1;
                 this.#invalidate();
             },
-        });
-        this.#popover = { element, commands, leftPx, topPx, version, source: this.#source };
+        }, lettered);
+        this.#popover = popover;
         this.#placePopover();
-        this.#scroller.after(element);
+        this.#scroller.after(popover.element);
         items.focus();
         this.#invalidate();
     }
@@ -2510,8 +2575,23 @@ export class GridView<Row> {
     #runCommand(index: number): void {
         const popover = this.#popover;
         if (popover === undefined) return;
-        const command = itemAt(popover.commands, index);
-        if (!command.enabled) return;
+        const shown = itemAt(popover.commands, index);
+        if (!shown.enabled) return;
+        // A column's commands are asked again as the grid stands now: the column may have moved, or the pinned
+        // count changed, since the menu opened, and a command runs against what is, never what was (principle
+        // 6). One no longer enabled runs nothing, and the menu is drawn again as the commands now stand, so the
+        // user sees why.
+        let command = shown;
+        if (popover.kind === 'column') {
+            const column = this.#columns.findIndex(({ column: declared }) => declared.name === popover.column);
+            const now = column < 0 ? undefined : this.#columnCommands(column).find(found => found.id === shown.id);
+            if (now?.enabled !== true) {
+                if (column < 0) this.#closePopover(true);
+                else this.#openColumnMenu(column);
+                return;
+            }
+            command = now;
+        }
         this.#closePopover(true);
         command.invoke();
         this.#invalidate();
@@ -2540,8 +2620,113 @@ export class GridView<Row> {
     #placePopover(): void {
         const popover = this.#popover;
         if (popover === undefined) return;
+        if (popover.kind === 'context') {
+            setAttribute(popover.element, 'style',
+                contextMenuStyle(popover.leftPx, this.#bandHeightPx + popover.topPx, this.#visibleWidthPx, this.#visibleHeightPx));
+            return;
+        }
+        // Under its column's header, from the band's foot to the box's (ADR-0040).
+        const column = this.#columns.findIndex(({ column: { name } }) => name === popover.column);
+        if (column < 0) return;
+        const { leftPx, widths } = popoverAcross(this.#cellLeftPx(column), this.#visibleWidthPx);
         setAttribute(popover.element, 'style',
-            contextMenuStyle(popover.leftPx, this.#bandHeightPx + popover.topPx, this.#visibleWidthPx, this.#visibleHeightPx));
+            `left: ${leftPx}px; top: ${this.#bandHeightPx}px; ${widths}; max-height: ${this.#popoverRoomPx(popover, this.#visibleHeightPx)}px`);
+    }
+
+    // How tall the popover may be in a box `visibleHeightPx` tall: the Context Menu's side of the pointer, a
+    // column menu's room below the header band (ADR-0040).
+    #popoverRoomPx(popover: OpenPopover, visibleHeightPx: number): number {
+        return popover.kind === 'context'
+            ? contextMenuRoomPx(this.#bandHeightPx + popover.topPx, visibleHeightPx)
+            : Math.max(0, visibleHeightPx - this.#bandHeightPx);
+    }
+
+    // ---- The column menu (ADR-0010, ADR-0039, ADR-0044) ---------------------------------------------------
+
+    // The ▾ is a toggle: pressed on the column whose menu stands, it closes it, as a Cancel; on another column,
+    // that column's menu takes the place of whatever popover stood. A press past an open editor commits it
+    // first, and one the edit holds opens nothing (ADR-0010, ADR-0034).
+    #toggleColumnMenu(name: string): void {
+        this.#answered += 1;
+        this.#invalidate();
+        if (!this.#commitEdit()) return;
+        const popover = this.#popover;
+        if (popover?.kind === 'column' && popover.column === name) {
+            this.#closePopover(true);
+            return;
+        }
+        const column = this.#columns.findIndex(({ column: declared }) => declared.name === name);
+        if (column >= 0) this.#openColumnMenu(column);
+    }
+
+    // Alt+↓ (ADR-0039): the Focus's column's menu, opened, never toggled shut. With no Focus it does nothing.
+    #openColumnMenuAtFocus(): void {
+        this.#reconcileSelection();
+        const focus = this.#held.selection.focus;
+        if (focus === undefined || focus.column >= this.#columns.length) return;
+        const popover = this.#popover;
+        if (popover?.kind === 'column' && popover.column === itemAt(this.#columns, focus.column).column.name) return;
+        this.#openColumnMenu(focus.column);
+    }
+
+    // The column's popover (ADR-0044): its commands, which the core decides (ADR-0010), named by the column's
+    // own header, the Consumer's words, so the core holds no sentence (ADR-0039). Its first enabled command
+    // takes the keyboard. The column's filter does not stand under them yet, so the popover is the menu alone.
+    #openColumnMenu(column: number): void {
+        const { column: declared, header } = itemAt(this.#columns, column);
+        const commands = this.#columnCommands(column);
+        this.#closePopover(false);
+        const doc = this.#root.ownerDocument;
+        const element = doc.createElement('div');
+        element.className = 'ex-popover';
+        element.setAttribute('role', 'none');
+        const menu = doc.createElement('div');
+        menu.className = 'ex-popover-commands';
+        menu.setAttribute('role', 'menu');
+        menu.setAttribute('aria-label', header);
+        element.append(menu);
+        this.#standMenu({ kind: 'column', element, commands, column: declared.name }, menu,
+            (pressed, shift, chord, held, current) => resolveColumnMenuKey(pressed, shift, chord, held, current, false), true);
+    }
+
+    // The column's commands (ADR-0010, ADR-0044): every one moves View State, so each ends in the source or in
+    // a Consumer's callback. A command nobody hears is shown disabled rather than left out, so every Chrome lays
+    // out the same list. The Sort and the Filter are the source's to apply.
+    #columnCommands(column: number): readonly GridCommand[] {
+        const { column: declared } = itemAt(this.#columns, column);
+        const name = declared.name;
+        const queryable = declared.queryable !== false;
+        const geometry = this.#styles.geometry;
+        const hidden = this.#onColumnHidden;
+        const pinned = this.#onPinnedCountChanged;
+        const widths = this.#onColumnWidthChanged;
+        const filter = this.#state.filter;
+        const filtered = filter !== undefined && Object.hasOwn(filter.columns, name);
+        return Object.freeze([
+            coreCommand(gridCommandIds.sortAscending, queryable, () => { this.#source.setSorts([{ column: name, direction: 'ascending' }]); }),
+            coreCommand(gridCommandIds.sortDescending, queryable, () => { this.#source.setSorts([{ column: name, direction: 'descending' }]); }),
+            coreCommand(gridCommandIds.clearFilter, queryable && filtered, () => { this.#clearFilterOf(name); }),
+            coreCommand(gridCommandIds.hide, hidden !== undefined, () => { hidden?.(name); }),
+            // Never a pin the grid would refuse: a boundary through a Header Group cannot be drawn honestly
+            // (ADR-0032).
+            coreCommand(gridCommandIds.pin, pinned !== undefined && geometry.requestedPinnedCount !== column + 1
+                && this.#headerLayout.allowsPinnedCount(column + 1), () => { pinned?.(column + 1); }),
+            coreCommand(gridCommandIds.unpin, pinned !== undefined && geometry.requestedPinnedCount > 0, () => { pinned?.(0); }),
+            coreCommand(gridCommandIds.sizeToFit, widths !== undefined, () => {
+                widths?.({ column: name, widthPx: this.#fittedPx(column) });
+            }),
+        ]);
+    }
+
+    // Clear filter (ADR-0044): the column's own spec goes, every other column's and the Opaque Filter stay.
+    #clearFilterOf(name: string): void {
+        const filter = this.#state.filter;
+        if (filter === undefined) return;
+        const columns = Object.fromEntries(Object.entries(filter.columns).filter(([column]) => column !== name));
+        const next = Object.keys(columns).length === 0 && filter.opaque === undefined
+            ? undefined
+            : Object.freeze({ columns: Object.freeze(columns), ...(filter.opaque === undefined ? {} : { opaque: filter.opaque }) });
+        this.#source.setFilter(next);
     }
 
     // ---- The clipboard (ADR-0005) ------------------------------------------------------------------------
@@ -2892,8 +3077,10 @@ export class GridView<Row> {
         this.#keyboardByPress = true;
         // A press anywhere else in the instance dismisses a popover, and keeps its own meaning: where it lands
         // decides where the keyboard goes (ADR-0010, ADR-0039).
+        // The ▾ of the column menu standing is not elsewhere: its click closes that menu, as a toggle.
         const popover = this.#popover;
-        if (popover !== undefined && !(event.target instanceof Node && popover.element.contains(event.target))) {
+        const toggle = popover?.kind === 'column' && event.target instanceof Element && this.#menuButtons.get(event.target) === popover.column;
+        if (popover !== undefined && !toggle && !(event.target instanceof Node && popover.element.contains(event.target))) {
             this.#closePopover(false);
         }
     };
@@ -3054,6 +3241,13 @@ export class GridView<Row> {
         this.#gestureConsumedClick = false;
         this.#tabReleased = false;
         if (event.button !== 0) return;
+        // A press on a ▾ is the button's: its click opens the menu, and it neither sorts nor drags. It never takes
+        // the keyboard itself: an edit the click cannot commit keeps it in the editor (ADR-0034), and a menu the
+        // click opens takes it from where it is.
+        if (event.target instanceof Element && this.#menuButtons.has(event.target)) {
+            event.preventDefault();
+            return;
+        }
         // A press on a grip begins a resize (ADR-0016); its click is the gesture's, never the header's.
         const grip = event.target instanceof Element ? this.#grips.get(event.target) : undefined;
         if (grip !== undefined) {
@@ -3107,6 +3301,13 @@ export class GridView<Row> {
             this.#setDragging(false);
             if (dragged) return;
         }
+        // A ▾ carries its column's name, so a click that lands after the columns moved and before the header is
+        // painted again acts on the column it showed, or on nothing once that column has gone (principle 6).
+        const menu = event.target instanceof Element ? this.#menuButtons.get(event.target) : undefined;
+        if (menu !== undefined && event.button === 0) {
+            this.#toggleColumnMenu(menu);
+            return;
+        }
         if (event.button !== 0 || event.target !== this.#header) return;
         this.#reconcileSelection();
         const column = this.#headerColumnAt(event);
@@ -3146,7 +3347,7 @@ export class GridView<Row> {
     #fittedPx(index: number): number {
         const { column, header, spec } = itemAt(this.#columns, index);
         const metrics = this.#metrics.cellMetrics.for(column.type);
-        let required = this.#metrics.headerRequiredPx({ label: header, menuButton: false, sortable: column.queryable !== false });
+        let required = this.#metrics.headerRequiredPx({ label: header, menuButton: !this.#hideColumnMenu, sortable: column.queryable !== false });
         for (const row of this.#state.window) required = Math.max(required, metrics.estimatePx(textFor(column, column.value(row))));
         return spec.sizeToFit(required).fixedPx;
     }
@@ -3748,14 +3949,17 @@ export class GridView<Row> {
         const sorts = this.#state.sorts.map(({ column, direction }) => `${JSON.stringify(column)}:${direction}`).join(',');
         // A column has a grip at its header's right edge while a resize is heard (ADR-0016).
         const grips = this.#onColumnWidthChanged !== undefined;
+        // And a ▾ at its right, unless the Consumer hides the column menu (ADR-0044).
+        const menus = !this.#hideColumnMenu;
         if (painted !== undefined && painted.styles === this.#styles && painted.columns === this.#columns
             && sameRange(painted.scrollable, this.#scrollable) && painted.sorts === sorts && painted.layout === layout
-            && painted.tierPx === tierPx && painted.grips === grips) {
+            && painted.tierPx === tierPx && painted.grips === grips && painted.menus === menus) {
             this.#paintHeadingMarks(false);
             return;
         }
-        this.#paintedHeader = { styles: this.#styles, columns: this.#columns, scrollable: this.#scrollable, sorts, layout, tierPx, grips };
+        this.#paintedHeader = { styles: this.#styles, columns: this.#columns, scrollable: this.#scrollable, sorts, layout, tierPx, grips, menus };
         this.#grips = new Map();
+        this.#menuButtons = new Map();
         const doc = this.#root.ownerDocument;
         const tiered = layout.tierCount > 0;
         const header = this.#header;
@@ -3784,6 +3988,18 @@ export class GridView<Row> {
             // Sorted or not, a column that can be sorted says so (ADR-0033).
             if (column.queryable !== false) cell.setAttribute('aria-sort', this.#ariaSort(column.name));
             cell.textContent = label;
+            if (menus) {
+                // Pressed, never reached by Tab (ADR-0080): a Tab into the grid would otherwise go through every
+                // column's ▾ before the first cell. Alt+↓ opens it by key (ADR-0044).
+                const button = doc.createElement('button');
+                button.type = 'button';
+                button.className = 'ex-menu-button';
+                button.tabIndex = -1;
+                button.setAttribute('aria-label', 'Column menu');
+                button.setAttribute('data-ex-claims', 'click');
+                cell.append(button);
+                this.#menuButtons.set(button, column.name);
+            }
             if (grips) {
                 const grip = doc.createElement('div');
                 grip.className = 'ex-resize-grip';
