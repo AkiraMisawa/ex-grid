@@ -15,7 +15,11 @@ import { GridClearIntent } from '../clipboard/clear-intent';
 import { columnPlaceholder, copyRefusalWords, pasteRefusalWords, shapeMismatchMaySpillWords } from '../chrome/refusal-words';
 import { builtInCommandLabel } from '../chrome/command-labels';
 import { gridCommandIds } from '../chrome/command-ids';
-import { resolveColumnMenuKey, resolveMenuKey } from '../chrome/menu-keys';
+import { letterOf, menuLetter, resolveColumnMenuKey, resolveMenuKey } from '../chrome/menu-keys';
+import { canApply } from '../chrome/filter-panel-choices';
+import { gridCulture, invariantLocale, type GridCulture } from '../chrome/grid-culture';
+import type { TemporalLike } from '../chrome/operand-reading';
+import { filterOperatorsFor, type FilterSpec } from '../query/filter';
 import { parseClipboardBlock, type ClipboardBlock } from '../clipboard/clipboard-parse';
 import { GridPasteIntent } from '../clipboard/paste-intent';
 import { ColumnGeometry, type ColumnRange } from '../columns/column-geometry';
@@ -53,6 +57,7 @@ import {
 import { CopiedRange } from './copied-range';
 import type { GridCommand, GridContextMenuContext } from './grid-command';
 import { contextMenuRoomPx, contextMenuStyle, MenuItems, popoverAcross, type MenuKeyTable } from './menu-popover';
+import { FilterPanel } from './filter-panel';
 import { copyValues, gatherRows, windowCovers, windowRowAt } from './grid-copy';
 import { defaultPasteByteCap, exceedsUtf8 } from './grid-paste';
 import type { GridRefusal } from './grid-refusal';
@@ -225,6 +230,20 @@ export interface GridOptions<Row> {
      * and "Unpin all columns". The grid changes nothing until the Consumer hands back `pinnedColumnCount`.
      * Without it both commands are shown disabled. */
     readonly onPinnedCountChanged?: (count: number) => void;
+    /**
+     * The culture the grid reads typed text in (ADR-0370 section 10): a BCP 47 tag, or `'invariant'`, which
+     * reads as .NET's InvariantCulture. A value typed into a filter's condition is read in it, and refused
+     * where it is not the column's type as the culture writes it (ADR-0023). `'invariant'` unless given; the
+     * core never reads the browser's language on its own, so one instance never reads two cultures. The React
+     * adapter passes the browser's language when given none.
+     */
+    readonly locale?: string;
+    /**
+     * The Temporal namespace a date typed into a filter is made with (ADR-0350 section 16): the browser's own,
+     * or the polyfill the page loads. Neither the core nor the React adapter reads the global one. A grid with a
+     * Date column whose filter is offered is refused without it, naming the column, on every browser alike.
+     */
+    readonly temporal?: TemporalLike;
 }
 
 const defaultViewportWidthPx = 800;
@@ -251,6 +270,13 @@ function isCommand(value: unknown): value is GridCommand {
     if (typeof value !== 'object' || value === null) return false;
     const { id, enabled, invoke } = value as { readonly id?: unknown; readonly enabled?: unknown; readonly invoke?: unknown };
     return typeof id === 'string' && typeof enabled === 'boolean' && typeof invoke === 'function';
+}
+
+function isTemporal(value: unknown): value is TemporalLike {
+    if (typeof value !== 'object' || value === null) return false;
+    const { PlainDate, PlainDateTime, ZonedDateTime } = value as { readonly PlainDate?: unknown; readonly PlainDateTime?: unknown; readonly ZonedDateTime?: unknown };
+    return [PlainDate, PlainDateTime, ZonedDateTime].every(member => typeof member === 'function' && 'from' in member
+        && typeof member.from === 'function');
 }
 
 /** Sets an attribute on an element the grid made, or takes it away, only when it changed. */
@@ -331,6 +357,8 @@ interface Taken<Row> {
     readonly hideColumnMenu: boolean;
     readonly onColumnHidden: ((column: string) => void) | undefined;
     readonly onPinnedCountChanged: ((count: number) => void) | undefined;
+    readonly culture: GridCulture;
+    readonly temporal: TemporalLike | undefined;
 }
 
 // The popover standing (ADR-0039, ADR-0040): its element and the commands it shows, and where it stands. The
@@ -340,6 +368,7 @@ interface Taken<Row> {
 type OpenPopover = {
     readonly element: HTMLElement;
     readonly commands: readonly GridCommand[];
+    readonly items: MenuItems;
 } & ({
     readonly kind: 'context';
     readonly leftPx: number;
@@ -349,7 +378,12 @@ type OpenPopover = {
 } | {
     readonly kind: 'column';
     readonly column: string;
+    /** The column's filter, below its commands, where the column can be filtered (ADR-0044). */
+    readonly panel: FilterPanel | undefined;
 });
+
+/** A popover about to stand: everything but the items #standMenu makes. */
+type StandingPopover = OpenPopover extends infer P ? (P extends unknown ? Omit<P, 'items'> : never) : never;
 
 // A Selection the rows or the source dropped: where the typing aimed at it was going, why it went, and whether
 // the Consumer has heard of typing thrown away with it (ADR-0142).
@@ -734,6 +768,9 @@ export class GridView<Row> {
     #menuButtons = new Map<Element, string>();
     #onColumnHidden: ((column: string) => void) | undefined;
     #onPinnedCountChanged: ((count: number) => void) | undefined;
+    // The culture typed text is read in, and the Temporal a typed date is made with (ADR-0370 section 10).
+    #culture: GridCulture = gridCulture(invariantLocale);
+    #temporal: TemporalLike | undefined;
     // The edge band (ADR-0008): where the pointer stands in the Viewport's readable box and the step each
     // tick takes, and an offset a step moved that the next pass writes.
     #edge: { readonly x: number; readonly y: number; readonly rows: number; readonly stepXPx: number } | undefined;
@@ -1076,6 +1113,23 @@ export class GridView<Row> {
         if (onPinnedCountChanged !== undefined && typeof onPinnedCountChanged !== 'function') {
             throw new TypeError('onPinnedCountChanged is a function of the Pinned Columns\' count.');
         }
+        const { locale = invariantLocale, temporal }: { readonly locale?: unknown; readonly temporal?: unknown } = options;
+        if (typeof locale !== 'string') {
+            throw new TypeError(`locale is a BCP 47 tag or '${invariantLocale}', not ${String(locale)} (ADR-0370 section 10).`);
+        }
+        const culture = gridCulture(locale);
+        if (temporal !== undefined && !isTemporal(temporal)) {
+            throw new TypeError('temporal is a Temporal namespace, with PlainDate, PlainDateTime and ZonedDateTime (ADR-0350 section 16).');
+        }
+        // A date typed into a filter is made with Temporal: a grid that offers one without it is refused as it is
+        // given, not on the click that opens the filter.
+        const dated = hideColumnMenu === true || temporal !== undefined
+            ? undefined
+            : columns.find(({ column }) => column.type === 'date' && column.queryable !== false);
+        if (dated !== undefined) {
+            throw new TypeError(`Column '${dated.column.name}' holds dates, and a date typed into its filter is made with Temporal, `
+                + 'which the grid was not given: pass `temporal`, the browser\'s Temporal or a polyfill\'s (ADR-0350 section 16).');
+        }
         const { copyCellCap = defaultCellCap, pasteByteCap = defaultPasteByteCap } = options;
         if (!Number.isSafeInteger(copyCellCap) || copyCellCap < 1) {
             throw new RangeError(`copyCellCap is a whole number of at least one cell, not ${copyCellCap}: the cap may be raised, `
@@ -1105,7 +1159,7 @@ export class GridView<Row> {
             onColumnWidthChanged: options.onColumnWidthChanged, onColumnOrderChanged: options.onColumnOrderChanged,
             contextCommands: options.contextCommands, commandLabel: options.commandLabel, hideCopyWithHeaders: options.hideCopyWithHeaders === true,
             hideColumnMenu: options.hideColumnMenu === true, onColumnHidden: options.onColumnHidden,
-            onPinnedCountChanged: options.onPinnedCountChanged,
+            onPinnedCountChanged: options.onPinnedCountChanged, culture, temporal,
         };
     }
 
@@ -1227,6 +1281,8 @@ export class GridView<Row> {
         this.#hideColumnMenu = taken.hideColumnMenu;
         this.#onColumnHidden = taken.onColumnHidden;
         this.#onPinnedCountChanged = taken.onPinnedCountChanged;
+        this.#culture = taken.culture;
+        this.#temporal = taken.temporal;
     }
 
     // The Row Sequence Version the grid writes: its source's, carried past every change of source.
@@ -1318,7 +1374,8 @@ export class GridView<Row> {
     #lookSettled(): void {
         this.#showSettled(!this.#passOwed && this.#cancelSettle === undefined && this.#cancelAnnounce === undefined
             && this.#repaint === undefined && this.#followArmed === undefined && this.#cancelFollow === undefined
-            && this.#clipboardWrites === 0 && this.#viewportReport !== undefined && this.#ceilingPx !== undefined);
+            && this.#clipboardWrites === 0 && this.#viewportReport !== undefined && this.#ceilingPx !== undefined
+            && !(this.#popover?.kind === 'column' && this.#popover.panel?.fetching === true));
     }
 
     #showSettled(settled: boolean): void {
@@ -2543,21 +2600,25 @@ export class GridView<Row> {
     // Stands a menu's popover: its items in `container`, inside the popover's element, placed under the root
     // after the scroller, and its first enabled item taking the keyboard (ADR-0039). `lettered` marks Excel's
     // letters, the column menu's (ADR-0044).
-    #standMenu(popover: OpenPopover, container: HTMLElement, table: MenuKeyTable, lettered: boolean): void {
+    #standMenu(popover: StandingPopover, container: HTMLElement, table: MenuKeyTable, lettered: boolean): void {
         const items = new MenuItems(container, popover.commands, id => this.#labelOf(id), table, {
             run: index => { this.#runCommand(index); },
             cancel: () => { this.#closePopover(true); },
-            answered: () => {
-                this.#answered += 1;
-                this.#invalidate();
-            },
+            answered: this.#answer,
+            toFilter: where => { this.#toFilter(where); },
         }, lettered);
-        this.#popover = popover;
+        this.#popover = { ...popover, items };
         this.#placePopover();
         this.#scroller.after(popover.element);
         items.focus();
         this.#invalidate();
     }
+
+    // An input reached a popover and was answered (ADR-0220).
+    readonly #answer = (): void => {
+        this.#answered += 1;
+        this.#invalidate();
+    };
 
     // What the built-in menu calls a command: the Consumer's words where it has some, the built-in English
     // otherwise, and the id for a command neither knows (ADR-0036).
@@ -2606,6 +2667,7 @@ export class GridView<Row> {
         const popover = this.#popover;
         if (popover === undefined) return;
         this.#popover = undefined;
+        if (popover.kind === 'column') popover.panel?.close();
         const doc = this.#root.ownerDocument;
         const active = doc.activeElement;
         const held = popover.element.contains(active);
@@ -2669,24 +2731,100 @@ export class GridView<Row> {
         this.#openColumnMenu(focus.column);
     }
 
-    // The column's popover (ADR-0044): its commands, which the core decides (ADR-0010), named by the column's
-    // own header, the Consumer's words, so the core holds no sentence (ADR-0039). Its first enabled command
-    // takes the keyboard. The column's filter does not stand under them yet, so the popover is the menu alone.
+    // The column's popover (ADR-0044), as Excel's drop-down: its commands, which the core decides (ADR-0010),
+    // and below them, where the column can be filtered, its filter (ADR-0009), Tab wrapping through both by a
+    // sentinel either side of the filter. Named by the column's own header, the Consumer's words, so the core
+    // holds no sentence (ADR-0039): a dialog holding the menu and the filter, the menu alone where there is no
+    // filter. Its first enabled command takes the keyboard.
     #openColumnMenu(column: number): void {
-        const { column: declared, header } = itemAt(this.#columns, column);
+        const { column: declared, header, filterUi } = itemAt(this.#columns, column);
         const commands = this.#columnCommands(column);
         this.#closePopover(false);
         const doc = this.#root.ownerDocument;
+        const filterable = declared.queryable !== false;
         const element = doc.createElement('div');
         element.className = 'ex-popover';
-        element.setAttribute('role', 'none');
+        element.setAttribute('role', filterable ? 'dialog' : 'none');
+        if (filterable) element.setAttribute('aria-label', header);
         const menu = doc.createElement('div');
         menu.className = 'ex-popover-commands';
         menu.setAttribute('role', 'menu');
         menu.setAttribute('aria-label', header);
+        // The letters that run a command here, enabled ones only, as the C# core writes them for its key
+        // listener (ADR-0010, ADR-0044).
+        menu.setAttribute('data-ex-letters', commands.filter(command => command.enabled).map(command => letterOf(command.id) ?? '').join('')); // oxlint-disable-line ex-grid/no-stand-in-default -- a command Excel gives no letter adds none
         element.append(menu);
-        this.#standMenu({ kind: 'column', element, commands, column: declared.name }, menu,
-            (pressed, shift, chord, held, current) => resolveColumnMenuKey(pressed, shift, chord, held, current, false), true);
+        const name = declared.name;
+        const panel = filterable ? new FilterPanel(doc, {
+            name, type: declared.type, dateType: declared.dateType ?? 'dateTime', filterUi, // oxlint-disable-line ex-grid/no-stand-in-default -- a Date column's dates are dateTime unless declared
+            textOf: value => textFor(declared, value),
+        }, this.#filterOf(name), this.#culture, this.#temporal, signal => this.#source.distinctValues(name, signal), {
+            apply: spec => { this.#applyFilter(name, spec); },
+            cancel: () => { this.#closePopover(true); },
+            letter: key => this.#valueListLetter(key),
+            returnToCommands: () => { this.#popover?.items.focusFirst(); },
+            answered: this.#answer,
+            fetched: () => { this.#invalidate(); },
+        }) : undefined;
+        if (panel !== undefined) element.append(panel.lead, panel.body, panel.trail);
+        this.#standMenu({ kind: 'column', element, commands, column: name, panel }, menu,
+            (pressed, shift, chord, held, current) => resolveColumnMenuKey(pressed, shift, chord, held, current, filterable), true);
+    }
+
+    // Tab, Shift+Tab and E on a command (ADR-0044): the keyboard goes into the filter below.
+    #toFilter(where: 'filterFirst' | 'filterLast' | 'filterSearch'): void {
+        const popover = this.#popover;
+        const panel = popover?.kind === 'column' ? popover.panel : undefined;
+        if (panel === undefined) return;
+        if (where === 'filterFirst') panel.focusFirst();
+        else if (where === 'filterLast') panel.focusLast();
+        else panel.focusSearch();
+    }
+
+    // A key on the value list (ADR-0044): Excel's letters act there as on the commands, S, O and C running their
+    // command and E going back to the search box. Whether it was one.
+    #valueListLetter(key: string): boolean {
+        const popover = this.#popover;
+        if (popover?.kind !== 'column') return false;
+        const meaning = menuLetter(key, false, popover.commands, true);
+        if (meaning.kind === 'run') {
+            this.#runCommand(meaning.item);
+            return true;
+        }
+        if (meaning.kind === 'filterSearch') {
+            popover.panel?.focusSearch();
+            return true;
+        }
+        return false;
+    }
+
+    // The column's spec in force, which its filter panel opens on.
+    #filterOf(name: string): FilterSpec | undefined {
+        const filter = this.#state.filter;
+        return filter !== undefined && Object.hasOwn(filter.columns, name) ? filter.columns[name] : undefined;
+    }
+
+    // The one way a panel's answer reaches the Filter (ADR-0009): the column's spec replaced, or removed, in the
+    // whole Filter, every other column's and the Opaque Filter kept; the popover closes and the keyboard comes
+    // back to the grid, and the source applies it. An in with no values is refused, and the panel stands: the
+    // engine would refuse it (ADR-0023, ticket 76). So is a clause whose operator the column was not offered: a
+    // Chrome lays out the operators, it cannot add one (ADR-0010, FN-18).
+    #applyFilter(name: string, spec: FilterSpec | undefined): void {
+        const column = this.#columns.find(({ column: declared }) => declared.name === name);
+        if (column === undefined || !canApply(spec)) return;
+        const allowed = filterOperatorsFor(column.column.type);
+        if (spec !== undefined && !spec.clauses.every(clause => allowed.includes(clause.operator))) return;
+        const filter = this.#state.filter;
+        // Built from entries, never by assigning a key: a column named `__proto__` is a column like any other.
+        const others = filter === undefined ? [] : Object.entries(filter.columns).filter(([named]) => named !== name);
+        const columns: Record<string, FilterSpec> = Object.fromEntries(spec === undefined ? others : [...others, [name, spec]]);
+        const opaque = filter?.opaque;
+        const next = Object.keys(columns).length === 0 && opaque === undefined
+            ? undefined
+            : Object.freeze({ columns: Object.freeze(columns), ...(opaque === undefined ? {} : { opaque }) });
+        this.#closePopover(true);
+        this.#source.setFilter(next);
+        this.#invalidate();
     }
 
     // The column's commands (ADR-0010, ADR-0044): every one moves View State, so each ends in the source or in

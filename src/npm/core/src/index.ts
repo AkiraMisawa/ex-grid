@@ -20,6 +20,8 @@ export type { GridPasteIntent } from './clipboard/paste-intent';
 export type { GridClearIntent } from './clipboard/clear-intent';
 export type { CommitRefusalReason, EditDiscardReason, EditVerdict, GridEditIntent, GridOverwriteNotice } from './cells/edit-intent';
 export type { AutoColumnWidth, FixedColumnWidth, GridColumn, GridColumnWidth } from './dom/grid-column';
+export type { FilterUi } from './dom/filter-panel';
+export type { TemporalLike } from './chrome/operand-reading';
 export { GridSource } from './source/grid-source';
 export type { ColumnType, DateType, QueryColumn } from './query/columns';
 export type { CellAlign } from './paint/cell-classes';

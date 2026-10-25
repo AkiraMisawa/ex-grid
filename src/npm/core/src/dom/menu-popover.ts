@@ -56,6 +56,9 @@ export interface MenuAnswers {
     readonly cancel: () => void;
     /** An input reached the menu and was answered (ADR-0220). */
     readonly answered: () => void;
+    /** Tab, Shift+Tab or E on a command of a column menu with its filter below (ADR-0044): the keyboard goes
+     * to that filter's first control, its last, or the field a search is typed into. */
+    readonly toFilter?: (where: 'filterFirst' | 'filterLast' | 'filterSearch') => void;
 }
 
 /**
@@ -111,6 +114,13 @@ export class MenuItems {
         if (this.#place >= 0) itemAt(this.#items, this.#place).focus({ preventScroll: true });
     }
 
+    /** Puts the menu's place back on its first enabled item, and DOM focus with it: Tab off either end of a
+     * filter below the commands comes back here (ADR-0044). */
+    focusFirst(): void {
+        this.#place = firstEnabled(this.#commands);
+        this.focus();
+    }
+
     // Every key on an item is the menu's, and its default is prevented: an arrow, Home or End would otherwise
     // scroll the page under the menu, and Enter and Space run the item here rather than through the button's
     // own click.
@@ -131,10 +141,12 @@ export class MenuItems {
             case 'close':
                 this.#answers.cancel();
                 return;
-            case 'none':
             case 'filterFirst':
             case 'filterLast':
             case 'filterSearch':
+                this.#answers.toFilter?.(meaning.kind);
+                return;
+            case 'none':
                 return;
         }
     };

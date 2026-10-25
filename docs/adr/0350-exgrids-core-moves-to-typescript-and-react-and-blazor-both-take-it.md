@@ -339,6 +339,22 @@ than its spelling, Blazor's surface follows it under section 14.
   (January 2026); a browser without it (Safari, when this was decided) takes a polyfill the Consumer
   loads. The core does not bundle one, and recognises a Temporal value by its own tag, so a polyfill's
   values are read like the browser's.
+  - *(Added 2026-10-25, with the filter panel.)* A date the core makes, one typed into a filter's
+    condition, is made with the `temporal` option, the Temporal namespace the Consumer hands over: the
+    core still never reads the global one. A grid with a Date column whose filter is offered (the
+    column queryable, the column menu shown) is refused without it as its options are taken, naming the
+    column, not on the click that opens the filter. The React adapter does not pass the browser's own
+    Temporal in its place, as it passes the browser's language (ADR-0370 section 10): where one browser
+    has Temporal and another does not, the same page would mount on the first and be refused on the
+    second, a failure the Consumer never sees in development. Given or not, every browser answers alike.
+  - *(Added 2026-10-25.)* A typed date is read in ADR-0023's ISO forms and in the culture's numeric
+    order, with a 24-hour time. C#'s `DateTime.TryParse` also reads a month's name, a 12-hour clock
+    and a two-digit year by .NET's own culture data; the Script Core refuses those as not readable
+    rather than read them by ICU's, which would make the two cores read one text two ways (the
+    spine's first rule). Ticket 97's rule is applied whole: under a culture that writes its year first,
+    a year-last date with only one order that is a date reads as that one, `13/01/2026` as 13 January,
+    where .NET's parser refuses it before the rule is reached. The shared cases in
+    `tests/cases/chrome/operand-reading.json` hold what both cores read alike.
 - **A value without a format shows C#'s text where the two can agree** (ADR-0006). A boolean reads `True`
   or `False` and a date one ISO form by its type, `yyyy-MM-dd HH:mm:ss ±hh:mm` for an instant in the offset
   it holds, so a column reads alike on either core; a `Date`, which holds no offset, reads in UTC's, and a

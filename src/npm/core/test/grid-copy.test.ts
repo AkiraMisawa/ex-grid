@@ -65,7 +65,7 @@ const settle = (): Promise<void> => new Promise(resolve => { setTimeout(resolve,
 describe('a copy from the grid', () => {
     it('ADR-0005 CP-4/CP-5: a Selection the Window holds is written on the copy event, the shown text and the raw value, never ####', async () => {
         const listener = heard();
-        const { root, told } = mount({ columns, rows: dated(100), rowHeight: 24, viewportHeight: 480, ...listener });
+        const { root, told } = mount({ columns, rows: dated(100), rowHeight: 24, viewportHeight: 480, temporal: Temporal, ...listener });
         await painted();
         press(root, 130, rowY(0));
         key(root, 'ArrowDown', { shiftKey: true });
@@ -86,7 +86,7 @@ describe('a copy from the grid', () => {
 
     it('ADR-0005 CP-1/CP-3: a misaligned Selection writes nothing, says why in the live region and is heard by name', async () => {
         const listener = heard();
-        const { root, told } = mount({ columns, rows: dated(100), rowHeight: 24, viewportHeight: 480, ...listener });
+        const { root, told } = mount({ columns, rows: dated(100), rowHeight: 24, viewportHeight: 480, temporal: Temporal, ...listener });
         await painted();
         press(root, 130, rowY(0));
         press(root, 210, rowY(1), { ctrlKey: true });
@@ -102,7 +102,7 @@ describe('a copy from the grid', () => {
 
     it('ADR-0005: no Selection, and one past the cap, are refused; a Selection exactly on the cap copies', async () => {
         const listener = heard();
-        const options = { columns, rows: dated(100), rowHeight: 24, viewportHeight: 480, copyCellCap: 2, ...listener } as const;
+        const options = { columns, rows: dated(100), rowHeight: 24, viewportHeight: 480, temporal: Temporal, copyCellCap: 2, ...listener } as const;
         const { root, view } = mount(options);
         await painted();
         expect(copy(root).data.size).toBe(0);
@@ -123,7 +123,7 @@ describe('a copy from the grid', () => {
         const answers: ((page: GridPage<Dated>) => void)[] = [];
         const all = dated(5000);
         const source = GridSource.fetch<Dated>(() => new Promise(resolve => { answers.push(resolve); }), { readAheadRows: 0 });
-        const { root, told } = mount({ columns, source, rowHeight: 24, viewportHeight: 480 });
+        const { root, told } = mount({ columns, source, rowHeight: 24, viewportHeight: 480, temporal: Temporal });
         await painted();
         defined(answers.shift(), 'the first question')({ rows: all.slice(0, 40), start: 0, totalCount: 5000 });
         await settle();
@@ -151,7 +151,7 @@ describe('a copy from the grid', () => {
         const answers: ((page: GridPage<Dated>) => void)[] = [];
         const all = dated(5000);
         const source = GridSource.fetch<Dated>(() => new Promise(resolve => { answers.push(resolve); }), { readAheadRows: 0 });
-        const { root, told } = mount({ columns, source, rowHeight: 24, viewportHeight: 480, ...listener });
+        const { root, told } = mount({ columns, source, rowHeight: 24, viewportHeight: 480, temporal: Temporal, ...listener });
         await painted();
         defined(answers.shift(), 'the first question')({ rows: all.slice(0, 40), start: 0, totalCount: 5000 });
         await settle();
@@ -188,7 +188,7 @@ describe('a copy from the grid', () => {
         const answers: ((page: GridPage<Dated>) => void)[] = [];
         const all = dated(5000);
         const source = GridSource.fetch<Dated>(() => new Promise(resolve => { answers.push(resolve); }), { readAheadRows: 0 });
-        const { root, told } = mount({ columns, source, rowHeight: 24, viewportHeight: 480, ...listener });
+        const { root, told } = mount({ columns, source, rowHeight: 24, viewportHeight: 480, temporal: Temporal, ...listener });
         await painted();
         defined(answers.shift(), 'the first question')({ rows: all.slice(0, 40), start: 0, totalCount: 5000 });
         await settle();
@@ -223,7 +223,7 @@ describe('a copy from the grid', () => {
 
     it('A11Y-16: a refusal said again is emptied and said in the next frame, and stands down the Selection\'s description', async () => {
         const listener = heard();
-        const { root, told } = mount({ columns, rows: dated(100), rowHeight: 24, viewportHeight: 480, ...listener });
+        const { root, told } = mount({ columns, rows: dated(100), rowHeight: 24, viewportHeight: 480, temporal: Temporal, ...listener });
         await painted();
         press(root, 130, rowY(0));
         press(root, 210, rowY(1), { ctrlKey: true });
@@ -242,7 +242,7 @@ describe('a copy from the grid', () => {
 
     it('ADR-0005/0020: a copy aimed at something inside the root is not the grid\'s', async () => {
         const listener = heard();
-        const { root } = mount({ columns, rows: dated(10), rowHeight: 24, viewportHeight: 480, ...listener });
+        const { root } = mount({ columns, rows: dated(10), rowHeight: 24, viewportHeight: 480, temporal: Temporal, ...listener });
         await painted();
         press(root, 10, rowY(0));
         const { event, data } = copy(q(root, '.ex-header'));
@@ -255,7 +255,7 @@ const escapeLeaves = (root: HTMLElement): boolean => q(root, '[data-ex-answered]
 
 describe('the Copied Range', () => {
     it('ADR-0170 CP-26/CP-28: a copy that lands is outlined over the Focus; Escape takes the outline away, and only the next Escape leaves', async () => {
-        const { root } = mount({ columns, rows: dated(100), rowHeight: 24, viewportHeight: 480 });
+        const { root } = mount({ columns, rows: dated(100), rowHeight: 24, viewportHeight: 480, temporal: Temporal });
         await painted();
         press(root, 130, rowY(0));
         key(root, 'ArrowDown', { shiftKey: true });
@@ -280,7 +280,7 @@ describe('the Copied Range', () => {
     });
 
     it('ADR-0170 CP-27: the grid\'s own write is counted and keeps the outline, any other change drops it; a refused copy leaves it', async () => {
-        const { root, told } = mount({ columns, rows: dated(100), rowHeight: 24, viewportHeight: 480 });
+        const { root, told } = mount({ columns, rows: dated(100), rowHeight: 24, viewportHeight: 480, temporal: Temporal });
         await painted();
         press(root, 10, rowY(0));
         copy(root);
@@ -305,7 +305,7 @@ describe('the Copied Range', () => {
     it('ADR-0170 CP-29/CP-30: a copied cell that comes to read otherwise drops the outline; a row replaced with the same copied text keeps it', async () => {
         const rows = dated(100);
         const source = GridSource.from(rows);
-        const { root } = mount({ columns, source, rowHeight: 24, viewportHeight: 480 });
+        const { root } = mount({ columns, source, rowHeight: 24, viewportHeight: 480, temporal: Temporal });
         await painted();
         press(root, 10, rowY(0));
         copy(root);
@@ -325,7 +325,7 @@ describe('the Copied Range', () => {
 
     it('ADR-0170 / ADR-0011: the order moving or the columns changing drops the outline, as it drops the Selection', async () => {
         const source = GridSource.from(dated(100));
-        const options = { columns, source, rowHeight: 24, viewportHeight: 480 } as const;
+        const options = { columns, source, rowHeight: 24, viewportHeight: 480, temporal: Temporal } as const;
         const { root, view } = mount(options);
         await painted();
         press(root, 10, rowY(0));
@@ -344,7 +344,7 @@ describe('the Copied Range', () => {
     });
 
     it('ADR-0170: each rectangle of a copy of several ranges is outlined', async () => {
-        const { root } = mount({ columns, rows: dated(100), rowHeight: 24, viewportHeight: 480 });
+        const { root } = mount({ columns, rows: dated(100), rowHeight: 24, viewportHeight: 480, temporal: Temporal });
         await painted();
         press(root, 10, rowY(0));
         press(root, 10, rowY(2), { ctrlKey: true });
@@ -357,7 +357,7 @@ describe('the Copied Range', () => {
         const answers: ((page: GridPage<Dated>) => void)[] = [];
         const all = dated(5000);
         const source = GridSource.fetch<Dated>(() => new Promise(resolve => { answers.push(resolve); }), { readAheadRows: 0 });
-        const { root, told } = mount({ columns, source, rowHeight: 24, viewportHeight: 480 });
+        const { root, told } = mount({ columns, source, rowHeight: 24, viewportHeight: 480, temporal: Temporal });
         await painted();
         defined(answers.shift(), 'the first question')({ rows: all.slice(0, 40), start: 0, totalCount: 5000 });
         await settle();
@@ -378,7 +378,7 @@ describe('the Copied Range', () => {
         const answers: ((page: GridPage<Dated>) => void)[] = [];
         const all = dated(5000);
         const source = GridSource.fetch<Dated>(() => new Promise(resolve => { answers.push(resolve); }), { readAheadRows: 0 });
-        const { root, told } = mount({ columns, source, rowHeight: 24, viewportHeight: 480 });
+        const { root, told } = mount({ columns, source, rowHeight: 24, viewportHeight: 480, temporal: Temporal });
         await painted();
         defined(answers.shift(), 'the first question')({ rows: all.slice(0, 40), start: 0, totalCount: 5000 });
         await settle();
@@ -406,7 +406,7 @@ describe('the Copied Range', () => {
     });
 
     it('ADR-0170 CP-32: a browser that cannot say the clipboard changed outlines nothing, and the copy still lands', async () => {
-        const { root } = mount({ columns, rows: dated(100), rowHeight: 24, viewportHeight: 480 }, { clipboardWatched: false });
+        const { root } = mount({ columns, rows: dated(100), rowHeight: 24, viewportHeight: 480, temporal: Temporal }, { clipboardWatched: false });
         await painted();
         press(root, 10, rowY(0));
         const { data } = copy(root);
