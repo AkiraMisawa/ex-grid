@@ -16,7 +16,7 @@ moving everything was the fastest, and why a port would need Excel again when th
 already hold Excel's answers. It does not, which section 2 records. The user then chose B. Sections 1, 2,
 3, 4, 6 and 7 changed; the products' UIs moving to Script Cores of their own, the packages' names and
 the Docs Site did not. Section 3's server pivot was settled with the user last, the same day.
-Section 11 was added with the user after this ADR merged.)*
+Section 11, and section 10's words, were added with the user after this ADR merged.)*
 
 ## Context
 
@@ -451,6 +451,20 @@ typed into a sheet, and ExSheet's formats. C# reads `CultureInfo`; TypeScript ha
   `ExcelOracle`'s locales, and run on C#, Node and Chrome alike, because each carries its own ICU
   version and a figure that changes with the runtime is the quiet error the spine's first rule
   refuses.
+- **The words a product shows are English by default and Japanese by choice.** *(Decided with the
+  user, 2026-10-25, over English alone with every other language the Consumer's, AG Grid's way, and
+  over words that follow `locale` on their own.)* Every word the family shows, commands, panels,
+  refusals, notices and ExSheet's sentences, has an id and built-in English, and a Consumer replaces any
+  of them through the product's label function, as ADR-0036 and ADR-0203 have it for ExGrid. Each
+  product also ships its Japanese, chosen in one line as `PivotWords.Japanese` is today (ADR-0060): the
+  words of Excel's Japanese edition where Excel shows the same thing, and the family's own Japanese
+  elsewhere. The choice never follows `locale` or the browser's language, because a screen whose
+  language changed unasked is the surprise ADR-0060 refuses, and a Consumer's label function still wins
+  over it. The tables live in the TypeScript packages, so a Blazor adapter takes the same words. The MUI
+  Wrappers take MUI's own localised text where MUI has a key, as the MudBlazor Wrappers take MudBlazor's
+  (WR-3), and the label function otherwise. ExSheet's sentences, fixed in English today with no seam,
+  move behind its label function with its port. Other languages are a Consumer's, through the same
+  function.
 
 ### 11. Layer 3 judges a behaviour once, and a Blazor host what Blazor touches
 
