@@ -127,10 +127,15 @@ const readGrid = (grid, rows, columns) => grid.evaluate((root, size) => {
     };
 }, { rows, columns });
 
+// A run sent at machine speed is answered one input at a time behind the first one unanswered: on the
+// Server host each held key takes a round trip, and a sequence that types a few words holds a hundred
+// inputs, which take longer to answer than settled's usual bound.
+const RUN_ANSWERED_MS = 60_000;
+
 async function settleGrid(grid) {
-    await settled(grid);
+    await settled(grid, { timeout: RUN_ANSWERED_MS });
     await circuitQuiet();
-    await settled(grid);
+    await settled(grid, { timeout: RUN_ANSWERED_MS });
 }
 
 const FEATURE_ROWS = 7;      // rows 0–6, in view in the 320 px Viewport with room to spare

@@ -34,5 +34,5 @@ function differential(product, scenario, makeSteps, fixedSeeds) {
 }
 
 for (const [product, { scenario, steps }] of Object.entries(scenarios)) {
-    differential(product, scenario, steps, [1, 2, 3]);
+    differential(product, scenario, steps, [1, 2, 3, 987654321]);
 }
