@@ -5,6 +5,7 @@
 import { describe, expect, it } from 'vitest';
 import { defined } from '../src/must';
 import type { GridColumn } from '../src/dom/grid-column';
+import type { GridHeaderGroup } from '../src/dom/grid-view';
 import { GridSource } from '../src/source/grid-source';
 import { mount, painted, q, rowsOf, trades, type Trade } from './grid-harness';
 
@@ -24,6 +25,9 @@ function onHeader(root: HTMLElement, type: string, x: number, y: number): void {
     Object.defineProperty(event, 'offsetY', { value: y });
     q(root, '.ex-header').dispatchEvent(event);
 }
+
+/** The same groups, as a Consumer writing them inline hands them over: new objects on every render. */
+const moneyGroups = (): GridHeaderGroup[] => [{ label: 'Money', columns: ['Notional', 'Quantity'] }];
 
 const attributes = (element: Element, names: readonly string[]): Record<string, string | null> =>
     Object.fromEntries(names.map(name => [name, element.getAttribute(name)]));
@@ -99,6 +103,32 @@ describe('Header Groups', () => {
             .toThrow(/'Across' straddles the pinned boundary/);
         expect(() => mount({ ...options, rows, viewportHeight: 80, headerGroups: [{ label: 'Who', columns: ['Book'] }] }))
             .toThrow('viewportHeight (80px) must exceed the header band — 2 tiers × 28px = 56px — plus one row of 24px (ADR-0032).');
+        // A plain-JS Consumer's null, for the list or for one of its items, is refused as well, by name.
+        expect(() => mount({ ...options, rows, headerGroups: null as unknown as [] }))
+            .toThrow('headerGroups is a list of Header Groups, not null (ADR-0032).');
+        expect(() => mount({ ...options, rows, headerGroups: [null as unknown as { label: string; columns: string[] }] }))
+            .toThrow('headerGroups[0] is a Header Group, not null (ADR-0032).');
+    });
+
+    it('ADR-0032/PF-3: the same groups written anew, a Sort and a scroll keep the rectangles painted', async () => {
+        const source = GridSource.from(trades(1000));
+        const { root, view } = mount({ ...options, source, headerGroups: moneyGroups() });
+        await painted();
+        const rectangle = q(root, '.ex-header-group');
+        // A Consumer writing the groups inline hands over new objects saying the same thing on every render.
+        view.update({ ...options, source, headerGroups: moneyGroups() });
+        await painted();
+        expect(q(root, '.ex-header-group')).toBe(rectangle);
+        // A Sort rebuilds the leaves, with their aria-sort, and leaves the tiers as they stand.
+        for (const type of ['mousedown', 'mouseup', 'click']) onHeader(root, type, 150, 40);
+        await painted();
+        expect(source.snapshot().sorts).toEqual([{ column: 'Notional', direction: 'ascending' }]);
+        expect(q(root, '.ex-header-group')).toBe(rectangle);
+        // Groups that say something else are painted again.
+        view.update({ ...options, source, headerGroups: [{ label: 'Cash', columns: ['Notional', 'Quantity'] }] });
+        await painted();
+        expect(q(root, '.ex-header-group')).not.toBe(rectangle);
+        expect(q(root, '.ex-header-group').textContent).toBe('Cash');
     });
 
     it('ADR-0032/0012: a click on a rectangle sorts nothing; a click on the leaf beneath it sorts its column', async () => {

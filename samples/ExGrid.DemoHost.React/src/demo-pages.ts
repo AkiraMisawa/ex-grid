@@ -20,6 +20,6 @@ export const demoPages: readonly DemoPage[] = Object.freeze([
     },
     {
         route: 'features', title: 'Features', group: 'Interaction',
-        description: 'Sorting and Header Groups on one page, with every notification written out; editing, the clipboard and filtering join as the Script Core comes to them.',
+        description: 'Sorting, the Selection and Header Groups on one page; editing, the clipboard and filtering, with the status lines that report them, join as the Script Core comes to them.',
     },
 ]);

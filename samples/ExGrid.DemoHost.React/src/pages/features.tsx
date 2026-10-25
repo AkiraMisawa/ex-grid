@@ -1,27 +1,20 @@
 import { useMemo, type ReactElement } from 'react';
 import { GridSource, type GridColumn, type GridHeaderGroup } from '@ex-grid/core';
 import { ExGrid } from '@ex-grid/react';
-import { Temporal } from 'temporal-polyfill';
+import type { Temporal } from 'temporal-polyfill';
 import { DemoNav } from '../demo-nav';
-import type { DemoTrade } from '../demo-data';
+import { firstDay, pick, type DemoTrade } from '../demo-data';
 import { useQuery } from '../router';
 
 const books = ['Alpha', 'Beta', 'Gamma', 'Delta'] as const;
 // The last name is Arabic on purpose: RTL content renders correctly inside the LTR island (ADR-0031).
 const traders = ['Ishikawa', 'Novak', 'Osei', 'عمر'] as const;
-const firstDay = Temporal.PlainDateTime.from('2026-01-01T00:00:00');
-
-function pick<T>(list: readonly T[], at: number): T {
-    const value = list[at % list.length];
-    if (value === undefined) throw new Error(`Internal: no item at ${at}.`);
-    return value;
-}
 
 /** The Features page's 400 trades, as Features.razor makes them; the Notional is the decimal's nearest number. */
 const rows: readonly DemoTrade[] = Object.freeze(Array.from({ length: 400 }, (_, i) => Object.freeze({
     id: i,
-    book: pick(books, i),
-    trader: pick(traders, Math.floor(i / 3)),
+    book: pick(books, i % books.length),
+    trader: pick(traders, Math.floor(i / 3) % traders.length),
     notional: (100_000_000 + (i * 1_234_567)) / 100,
     tradeDate: firstDay.add({ days: i % 200 }),
     confirmed: i % 3 !== 0,
@@ -56,10 +49,10 @@ const secondColumns: readonly GridColumn<DemoTrade>[] = Object.freeze([
 ]);
 
 /**
- * The page /features of the Blazor hosts: an interaction surface on one page, every notification written to
- * the status lines below the heading. The Script Core does not yet edit, copy, paste, filter or open a
- * menu, so the lines for those stand at their first value; they are here so the page reads as the Blazor
- * one does, and each fills in as the core comes to raise what it reports.
+ * The page /features of the Blazor hosts: an interaction surface on one page. The Blazor page writes every
+ * notification to status lines below the heading; the Script Core raises none of those yet (it does not
+ * edit, copy, paste, filter, reorder or open a menu), so a line comes here with the notification it shows,
+ * and a test that reads one fails by name until then rather than reading a value nothing could change.
  */
 export function Features(): ReactElement {
     const showGroups = useQuery('groups') === '1';
@@ -71,26 +64,8 @@ export function Features(): ReactElement {
             <h1>Features — editing, clipboard, sorting, filtering, Header Groups</h1>
             <p>
                 The interaction surface on one page, for the browser layer to drive: a source-bound grid with tiered
-                headers, the pager-free selection status, and every gesture notification written to the status lines
-                below.
-            </p>
-            <p className="demo-status">
-                <span id="edit-status">Edited: —</span>
-                <span id="paste-status">Pasted: —</span>
-                <span id="paste-fields">Fields: —</span>
-                <span id="clear-status">Cleared: —</span>
-                <span id="history-status">History: —</span>
-                <span id="copy-status">Copy refused: —</span>
-                <span id="paste-refused-status">Paste refused: —</span>
-                <span id="edit-discarded-status" role="status">Edit discarded: —</span>
-                <span id="commit-refused-status" role="status">Commit refused: —</span>
-                <span id="overwrite-notice-status" role="status">Overwritten: —</span>
-                <span id="action-refused-status" role="status">Action refused: —</span>
-                <span id="find-refused-status" role="status">Find: —</span>
-                <span id="replace-status">Replace All: —</span>
-                <span id="context-status">Context: —</span>
-                <span id="order-status">Order: {columns.map(column => column.name).join(',')}</span>
-                <span id="width-status">Width: —</span>
+                headers. Sorting and the Selection work here now; editing, the clipboard and filtering, and the status
+                lines that report them, join as the Script Core comes to them.
             </p>
             <ExGrid
                 columns={columns}
@@ -100,7 +75,6 @@ export function Features(): ReactElement {
                 viewportHeight={320}
                 viewportWidth={720}
                 headerGroups={groups} />
-            <p className="demo-status"><span id="intent-count">Intents: 0 edits, 0 pastes</span></p>
             {showGroups
                 ? (
                     <p className="demo-status">
