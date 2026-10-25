@@ -2,7 +2,7 @@
 
 | Product | Line | Branch |
 |---|---|---|
-| ExGrid | 95.2% | 88.4% |
+| ExGrid | 95.2% | 88.5% |
 | ExSheet | 95.4% | 88.6% |
 | ExPivot | 94.2% | 85.5% |
 | ExChart | 90.4% | 81.3% |
@@ -14,7 +14,7 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/25/2026 - 08:53:57 |
+| Generated on: | 10/25/2026 - 09:26:05 |
 | Parser: | MultiReport (19x Cobertura) |
 | Assemblies: | 16 |
 | Classes: | 1181 |
@@ -24,8 +24,8 @@
 | Uncovered lines: | 4744 |
 | Coverable lines: | 86375 |
 | Total lines: | 138074 |
-| **Branch coverage:** | 87.1% (49219 of 56462) |
-| Covered branches: | 49219 |
+| **Branch coverage:** | 87.1% (49216 of 56462) |
+| Covered branches: | 49216 |
 | Total branches: | 56462 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
@@ -386,7 +386,7 @@
 |ExGrid.Components.GridScriptFocus|79.1%|62.5%|
 |ExGrid.Components.GridScriptStamp|57.1%||
 |ExGrid.Components.GridView|100%|50%|
-|ExGrid.Components.HeadingMarkStyles|95%|90%|
+|ExGrid.Components.HeadingMarkStyles|100%|100%|
 |ExGrid.Components.InstanceIds|100%||
 |ExGrid.Components.MatchMarks<TRow>|100%|100%|
 |ExGrid.Components.PackageStylesheet|100%|100%|
@@ -621,7 +621,7 @@
 |ExGrid.Data.Storage.DoubleColumnWriter|100%||
 |ExGrid.Data.Storage.DoubleData|100%||
 |ExGrid.Data.Storage.DoubleObjectColumn<T>|100%|100%|
-|ExGrid.Data.Storage.FixedCodes|96.7%|87.5%|
+|ExGrid.Data.Storage.FixedCodes|93.5%|75%|
 |ExGrid.Data.Storage.Gather|98.8%|96.1%|
 |ExGrid.Data.Storage.Int32ObjectColumn<T>|82.3%|100%|
 |ExGrid.Data.Storage.IntegerColumnWriter|100%||
@@ -1030,12 +1030,12 @@
 |ExSheet.BuiltInToolbarItem|96.4%|97.3%|
 |ExSheet.ColourItem|96%|100%|
 |ExSheet.CommaItem|83.3%||
-|ExSheet.Components.ExSheet|91.3%|81.8%|
+|ExSheet.Components.ExSheet|91.3%|81.7%|
 |ExSheet.Components.ExSheet.KeyboardListener|100%||
 |ExSheet.Components.ExSheet.KeyUpListener|100%||
 |ExSheet.Components.ExSheet.OwnFindOutcome|100%||
 |ExSheet.Components.ExSheet.SheetGridChrome|86.6%|73%|
-|ExSheet.Components.ExSheet<T>|91.3%|81.8%|
+|ExSheet.Components.ExSheet<T>|91.3%|81.7%|
 |ExSheet.Components.ExSheetStylesheet|100%||
 |ExSheet.Components.FormatCellsPanel|97.3%|87.5%|
 |ExSheet.Components.SheetFindPanel|91.7%|76.5%|
@@ -1117,7 +1117,7 @@
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExSheet.Engine**|**97.8%**|**91.9%**|
+|**ExSheet.Engine**|**97.8%**|**91.8%**|
 |ExSheet.Engine.ArgumentHint|100%||
 |ExSheet.Engine.ArgumentValue|100%||
 |ExSheet.Engine.AxisFormat|100%|100%|
