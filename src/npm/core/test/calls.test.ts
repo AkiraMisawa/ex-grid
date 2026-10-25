@@ -2,6 +2,7 @@
 // what its members answer. The C# runner (tests/ExGrid.Tests/Cases/CallCaseTests.cs) finds the same
 // members by name.
 import { describe, expect, it } from 'vitest';
+import { ColumnGeometry } from '../src/columns/column-geometry';
 import { rowRange } from '../src/viewport/row-range';
 import { ViewportBox } from '../src/viewport/viewport-box';
 import { ViewportGeometry } from '../src/viewport/viewport-geometry';
@@ -20,6 +21,10 @@ function noFactory(subject: string, via: string | undefined): never {
 }
 
 const subjects: Readonly<Record<string, Subject>> = {
+    ColumnGeometry: {
+        create: (args, via) => via === undefined ? new ColumnGeometry(args as never) : noFactory('ColumnGeometry', via),
+        statics: ColumnGeometry,
+    },
     RowRange: {
         create: (args, via) => via === undefined ? rowRange(args['start'] as number, args['count'] as number) : noFactory('RowRange', via),
         statics: {},
@@ -50,6 +55,16 @@ function revive(value: unknown): unknown {
         return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, revive(item)]));
     }
     return value;
+}
+
+/** An argument as the Script Core takes it: revived, and "no value", `null` in the cases, `undefined`. */
+function argument(value: unknown): unknown {
+    if (value === null) return undefined;
+    if (Array.isArray(value)) return value.map(argument);
+    if (typeof value === 'object') {
+        return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, argument(item)]));
+    }
+    return revive(value);
 }
 
 /** Whether the answer is the value the case expects: numbers by value, `undefined` as `null`, objects
@@ -103,7 +118,7 @@ function holds(subject: Subject, instance: object | undefined, check: Check): vo
     if (name === undefined) throw new Error(`The check ${JSON.stringify(check)} names no member: get, call or static.`);
     const target = isStatic ? subject.statics : instance;
     if (target === undefined) throw new Error(`The check ${JSON.stringify(check)} reads an instance, and the case creates none.`);
-    const args = check.args === undefined ? undefined : (revive(check.args) as unknown[]);
+    const args = check.args === undefined ? undefined : (argument(check.args) as unknown[]);
     const label = check.args === undefined ? name : `${name}(${check.args.map(arg => JSON.stringify(arg)).join(', ')})`;
     const answer = () => read(target, name, args);
     if (check.throws !== undefined) {
@@ -150,7 +165,7 @@ for (const area of areas()) {
                     expect.hasAssertions();
                     let instance: object | undefined;
                     if (c.create !== undefined) {
-                        const args = revive({ ...defaults, ...c.create }) as Arguments;
+                        const args = argument({ ...defaults, ...c.create }) as Arguments;
                         if (c.throws !== undefined) {
                             expectRefusal(() => subject.create(args, c.via), c.throws, c.saying);
                             expect(c.expect, 'a case refused at its creation expects nothing after it').toBeUndefined();

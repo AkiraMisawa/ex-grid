@@ -18,6 +18,7 @@ public class CallCaseTests
     /// <summary>The subjects a case may name, by the name it uses.</summary>
     private static readonly Dictionary<string, Type> Subjects = new()
     {
+        ["ColumnGeometry"] = typeof(ColumnGeometry),
         ["RowRange"] = typeof(RowRange),
         ["ViewportBox"] = typeof(ViewportBox),
         ["ViewportGeometry"] = typeof(ViewportGeometry),
