@@ -170,6 +170,15 @@ export interface GridChangeBatch<Row> {
 }
 
 // @public
+export class GridClearIntent {
+    // @internal
+    constructor(targets: readonly SelectionRange[], rowSequenceVersion: number);
+    get cellCount(): number;
+    readonly rowSequenceVersion: number;
+    readonly targets: readonly SelectionRange[];
+}
+
+// @public
 export interface GridClock {
     now(): number;
     setTimer(callback: () => void, milliseconds: number): () => void;
@@ -268,12 +277,15 @@ export interface GridOptions<Row> {
     readonly headerGroups?: readonly GridHeaderGroup[];
     readonly headerHeight?: number;
     readonly onCellDoubleClick?: (cell: CellPosition) => void;
+    readonly onClear?: (intent: GridClearIntent) => void;
     readonly onEdit?: (intent: GridEditIntent<Row>) => void;
     readonly onEditDiscarded?: (reason: EditDiscardReason) => void;
     readonly onEditingChanged?: (open: boolean) => void;
     readonly onPaste?: (intent: GridPasteIntent) => void;
+    readonly onRedo?: () => void;
     readonly onRefused?: (refusal: GridRefusal) => void;
     readonly onSelectionChanged?: (selection: GridSelection) => void;
+    readonly onUndo?: () => void;
     readonly pasteByteCap?: number;
     readonly pasteMaySpill?: boolean;
     readonly pinnedColumnCount?: number;
@@ -296,9 +308,10 @@ export interface GridPage<Row> {
 // @public
 export class GridPasteIntent {
     // @internal
-    constructor(plan: PastePlan, values: readonly (readonly string[])[], origins: readonly (readonly PasteFieldOrigin[])[], rowSequenceVersion: number, marks: readonly (readonly (string | undefined)[])[] | undefined, enteredAt?: CellPosition);
+    constructor(plan: PastePlan, values: readonly (readonly string[])[], origins: readonly (readonly PasteFieldOrigin[])[], rowSequenceVersion: number, marks: readonly (readonly (string | undefined)[])[] | undefined, enteredAt?: CellPosition, fillSource?: SelectionRange);
     get cellCount(): number;
     readonly enteredAt: CellPosition | undefined;
+    readonly fillSource: SelectionRange | undefined;
     markFor(target: CellPosition): string | undefined;
     originFor(target: CellPosition): PasteFieldOrigin;
     readonly origins: readonly (readonly PasteFieldOrigin[])[];

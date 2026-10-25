@@ -10,14 +10,15 @@
 
 import { AutoWidth } from '../columns/auto-width';
 import { assembleCopy, type CopyFlavours } from '../clipboard/clipboard-data';
-import { defaultCellCap, pasteShape, planCopy, planPaste, type CopyPlan } from '../clipboard/clipboard-rules';
+import { defaultCellCap, pasteShape, planCopy, planFill, planPaste, type CopyPlan, type FillPlan } from '../clipboard/clipboard-rules';
+import { GridClearIntent } from '../clipboard/clear-intent';
 import { columnPlaceholder, copyRefusalWords, pasteRefusalWords, shapeMismatchMaySpillWords } from '../chrome/refusal-words';
 import { parseClipboardBlock, type ClipboardBlock } from '../clipboard/clipboard-parse';
 import { GridPasteIntent } from '../clipboard/paste-intent';
 import { ColumnGeometry, type ColumnRange } from '../columns/column-geometry';
 import { HeaderGroup, HeaderGroupLayout, type ResolvedHeaderGroup } from '../columns/header-groups';
 import { decideOverflow } from '../columns/overflow-rules';
-import { textFor } from '../cells/display-text';
+import { rawText, textFor } from '../cells/display-text';
 import { checkedVerdict, GridEditIntent, type EditDiscardReason, type EditVerdict } from '../cells/edit-intent';
 import { GridMetrics, type GridDensity } from '../grid-metrics';
 import { defined, itemAt } from '../must';
@@ -122,6 +123,23 @@ export interface GridOptions<Row> {
      * whole, never pasted from the plain-text flavour alone, which is already rounded. 16 MB unless given. */
     readonly pasteByteCap?: number;
     /**
+     * Hears the one Clear Intent Delete raises over the Selection (ADR-0054): the positions should hold no
+     * value, which the Consumer maps onto its own Blank per column. Judged by the paste's gate first: only
+     * columns declared `editable` take it, and one that covers another is refused whole. Without it Delete is
+     * the browser's.
+     */
+    readonly onClear?: (intent: GridClearIntent) => void;
+    /**
+     * Ctrl+Z, forwarded (ADR-0007): the Consumer owns the history, because only it sees every change, an edit
+     * in the grid and a row added elsewhere alike. The grid has nothing to put in the notification and changes
+     * nothing on it. The key is taken from the page only while this is given, and never while the Cell Editor
+     * is open, where Ctrl+Z undoes the typing.
+     */
+    readonly onUndo?: () => void;
+    /** Ctrl+Y and Ctrl+Shift+Z, forwarded like `onUndo` (ADR-0007), both of Excel's spellings, on every
+     * platform. */
+    readonly onRedo?: () => void;
+    /**
      * Hears the Edit Intent each Cell Editor commit raises (ADR-0007): the row, the column and the text as the
      * user entered it. The grid writes nothing; the screen changes when the source hands over a new row
      * instance. A Consumer that will not write it calls `intent.refuse(message)` before this returns, and the
@@ -207,6 +225,9 @@ interface Taken<Row> {
     readonly onPaste: ((intent: GridPasteIntent) => void) | undefined;
     readonly pasteMaySpill: boolean;
     readonly pasteByteCap: number;
+    readonly onClear: ((intent: GridClearIntent) => void) | undefined;
+    readonly onUndo: (() => void) | undefined;
+    readonly onRedo: (() => void) | undefined;
     readonly onEdit: ((intent: GridEditIntent<Row>) => void) | undefined;
     readonly onEditingChanged: ((open: boolean) => void) | undefined;
     readonly onEditDiscarded: ((reason: EditDiscardReason) => void) | undefined;
@@ -404,6 +425,11 @@ export class GridView<Row> {
     // stops the latest one's reads of the source when another copy supersedes it or the grid is destroyed.
     #clipboardWrites = 0;
     #copy: AbortController | undefined;
+    #clearHeard: ((intent: GridClearIntent) => void) | undefined;
+    #onUndo: (() => void) | undefined;
+    #onRedo: (() => void) | undefined;
+    // A fill key's rows asked of the source, while they are: a newer fill, or the grid destroyed, stops it.
+    #fill: AbortController | undefined;
     // The Copied Range (ADR-0170): the copy outlined, and the writes of this grid's own copies the browser has
     // yet to report as a change of the clipboard. A browser that cannot report a change outlines nothing.
     #copied: CopiedRange<Row> | undefined;
@@ -683,6 +709,7 @@ export class GridView<Row> {
         this.#repaint?.cancel();
         this.#stopEdgeTimer();
         this.#copy?.abort();
+        this.#fill?.abort();
         // An edit open as the grid goes ends with it: the Consumer hears the end of every open (ADR-0050
         // section 6). The typing goes with the grid, which is the Consumer's own doing.
         this.#edit = undefined;
@@ -751,8 +778,11 @@ export class GridView<Row> {
         if (!Number.isSafeInteger(pinnedColumnCount) || pinnedColumnCount < 0) {
             throw new RangeError(`pinnedColumnCount is a whole number of at least 0, not ${pinnedColumnCount}.`);
         }
-        const { onSelectionChanged, onRefused, onPaste, pasteMaySpill, onEdit, onEditingChanged, onEditDiscarded, onCellDoubleClick }: {
+        const {
+            onSelectionChanged, onRefused, onPaste, pasteMaySpill, onClear, onUndo, onRedo, onEdit, onEditingChanged, onEditDiscarded, onCellDoubleClick,
+        }: {
             readonly onSelectionChanged?: unknown; readonly onRefused?: unknown; readonly onPaste?: unknown; readonly pasteMaySpill?: unknown;
+            readonly onClear?: unknown; readonly onUndo?: unknown; readonly onRedo?: unknown;
             readonly onEdit?: unknown; readonly onEditingChanged?: unknown; readonly onEditDiscarded?: unknown; readonly onCellDoubleClick?: unknown;
         } = options;
         if (onSelectionChanged !== undefined && typeof onSelectionChanged !== 'function') {
@@ -766,6 +796,15 @@ export class GridView<Row> {
         }
         if (pasteMaySpill !== undefined && typeof pasteMaySpill !== 'boolean') {
             throw new TypeError('pasteMaySpill is true or false.');
+        }
+        if (onClear !== undefined && typeof onClear !== 'function') {
+            throw new TypeError('onClear is a function of the clear\'s intent.');
+        }
+        if (onUndo !== undefined && typeof onUndo !== 'function') {
+            throw new TypeError('onUndo is a function of nothing: the history is the Consumer\'s.');
+        }
+        if (onRedo !== undefined && typeof onRedo !== 'function') {
+            throw new TypeError('onRedo is a function of nothing: the history is the Consumer\'s.');
         }
         if (onEdit !== undefined && typeof onEdit !== 'function') {
             throw new TypeError('onEdit is a function of the edit\'s intent.');
@@ -800,7 +839,8 @@ export class GridView<Row> {
             source, own, rows: options.rows, metrics, declared: options.columns, columns, autoWidths, columnsChanged,
             width, height, pinnedCount: pinnedColumnCount, virtualiseColumns, headerGroups, headerLayout,
             onSelectionChanged: options.onSelectionChanged, copyCellCap, onRefused: options.onRefused,
-            onPaste: options.onPaste, pasteMaySpill: options.pasteMaySpill === true, pasteByteCap,
+            onPaste: options.onPaste, pasteMaySpill: options.pasteMaySpill === true, pasteByteCap, onClear: options.onClear,
+            onUndo: options.onUndo, onRedo: options.onRedo,
             onEdit: options.onEdit, onEditingChanged: options.onEditingChanged, onEditDiscarded: options.onEditDiscarded,
             onCellDoubleClick: options.onCellDoubleClick,
         };
@@ -892,6 +932,9 @@ export class GridView<Row> {
         this.#pasteHeard = taken.onPaste;
         this.#pasteMaySpill = taken.pasteMaySpill;
         this.#pasteByteCap = taken.pasteByteCap;
+        this.#clearHeard = taken.onClear;
+        this.#onUndo = taken.onUndo;
+        this.#onRedo = taken.onRedo;
         this.#editHeard = taken.onEdit;
         this.#onEditingChanged = taken.onEditingChanged;
         this.#onEditDiscarded = taken.onEditDiscarded;
@@ -1257,6 +1300,25 @@ export class GridView<Row> {
             this.#tryOpenEdit('overwrite', '');
             return;
         }
+        // Ctrl+Z and Ctrl+Y are forwarded and nothing else, while the Consumer listens (ADR-0007): the history,
+        // and what the screen shows afterwards, are the Consumer's, and arrive as new row instances.
+        // An edit left open while the keyboard went elsewhere (ED-26) is answered first: none of these keys
+        // writes past it, or undoes under it.
+        const history = this.#edit !== undefined ? undefined : action.kind === 'undo' ? this.#onUndo : action.kind === 'redo' ? this.#onRedo : undefined;
+        if (history !== undefined) {
+            this.#taken(event);
+            history();
+            return;
+        }
+        // Delete clears, and Ctrl+D and Ctrl+R fill, on a grid that hears the write (ADR-0054, ADR-0035).
+        const fills = action.kind === 'fillDown' || action.kind === 'fillRight';
+        if (this.#edit === undefined
+            && ((action.kind === 'clear' && this.#writes(this.#clearHeard)) || (fills && this.#writes(this.#pasteHeard)))) {
+            this.#taken(event);
+            if (action.kind === 'clear') this.#clear();
+            else this.#fillFromKey(action.kind === 'fillDown' ? 'down' : 'right');
+            return;
+        }
         if (action.kind !== 'leave' && !movingKinds.has(action.kind)) return;
         this.#taken(event);
         if (action.kind === 'leave') {
@@ -1553,6 +1615,7 @@ export class GridView<Row> {
         }
         // The commit lands over whatever the cell paints now, and the intent says what the user saw of it
         // (ADR-0142). A flag raises the intent unchanged: the mark comes back through what the cell shows.
+        this.#supersedeFill();
         const intent = new GridEditIntent(row, name, text, edit.seenText, this.#paintedTextAt(landing.cell));
         try {
             heard(intent);
@@ -1681,6 +1744,7 @@ export class GridView<Row> {
             this.#holdEdit(edit, verdict.message);
             return;
         }
+        this.#supersedeFill();
         const intent = new GridPasteIntent(decision.plan, [[text]], [['shownText']], edit.sequence, undefined, edit.cell);
         // The editor is down before the Consumer hears the fill, so whatever it hands over meanwhile discards
         // nothing: it is the fill's own doing (ADR-0142).
@@ -1721,6 +1785,144 @@ export class GridView<Row> {
         if (open === this.#heardOpen) return;
         this.#heardOpen = open;
         this.#onEditingChanged?.(open);
+    }
+
+    // ---- Delete and the fill keys (ADR-0054, ADR-0035) -------------------------------------------------------
+
+    // A write raised while a fill's rows are still asked for comes after the fill in the user's order, so the
+    // fill, which would land later over it, is given up and said to be (the spine's sixth rule): the newer
+    // write stands whatever the source's round trip took.
+    #supersedeFill(): void {
+        const fill = this.#fill;
+        if (fill === undefined) return;
+        fill.abort();
+        this.#fill = undefined;
+        this.#refuse({ kind: 'paste', reason: 'cancelled' });
+    }
+
+    // Whether a write key is the grid's: someone hears the write, and some column takes one.
+    #writes(heard: ((intent: never) => void) | undefined): boolean {
+        return heard !== undefined && this.#columns.some(({ editable }) => editable);
+    }
+
+    // Whether a write heard by `heard` may land in a column: declared Editable, and heard (ADR-0035).
+    #columnTakes(column: number, heard: unknown): boolean {
+        const columns = this.#columns;
+        return heard !== undefined && column >= 0 && column < columns.length && itemAt(columns, column).editable;
+    }
+
+    // The Selection a write key is aimed at, judged on the newest rows the source holds (ADR-0142 D5). One the
+    // rows or the source took away since it was painted refuses the write aloud, never writing over rows the
+    // user did not select (ADR-0011); with nothing selected the key only places the Focus, as any first key
+    // does (ADR-0012). `undefined` once answered.
+    #writeTarget(): Selection | undefined {
+        this.#source.publishGathered?.();
+        this.#reconcileSelection();
+        const dropped = this.#droppedAim;
+        if (dropped !== undefined) {
+            this.#refuse({ kind: 'paste', reason: dropped.reason === 'sourceChanged' ? 'sourceChanged' : 'orderMoved' });
+            return undefined;
+        }
+        const selection = this.#held.selection;
+        if (!selection.isEmpty) return selection;
+        const start = this.#firstVisibleCell();
+        if (start !== undefined) this.#apply(selection.click(start, this.#extent));
+        return undefined;
+    }
+
+    // Delete (ADR-0054): one Clear Intent over the whole Selection, judged by the paste's gate as a 1×1 block,
+    // so only the empty Selection and the Editable declaration can refuse it, in ADR-0035's order. No verdict
+    // runs: there is no value to judge.
+    #clear(): void {
+        const target = this.#writeTarget();
+        const heard = this.#clearHeard;
+        if (target === undefined || heard === undefined) return;
+        const decision = planPaste(target, pasteShape(1, 1), column => this.#columnTakes(column, heard));
+        if (decision.refused) {
+            this.#refuse({ kind: 'paste', reason: decision.reason }, decision.reason === 'targetNotEditable' ? decision.column : undefined);
+            return;
+        }
+        this.#supersedeFill();
+        try {
+            heard(new GridClearIntent(decision.plan.targets, this.#sequence()));
+        } finally {
+            // What the source gathered while the Consumer wrote is put out as its handler returns (D5).
+            this.#source.publishGathered?.();
+        }
+    }
+
+    // Ctrl+D and Ctrl+R (ADR-0035): the source row or column read in its raw, locale-free form, never the
+    // displayed text, which may be rounded or ####, and raised as one paste intent. Rows the Window holds are
+    // read from it at once; the rest are asked of the source, and anything short of the whole source refuses
+    // the fill rather than filling from a guess.
+    #fillFromKey(direction: 'down' | 'right'): void {
+        const target = this.#writeTarget();
+        const heard = this.#pasteHeard;
+        if (target === undefined || heard === undefined) return;
+        const decision = planFill(target, direction, column => this.#columnTakes(column, heard), { cellCap: this.#copyCellCap });
+        if (decision.refused) {
+            this.#refuse({ kind: 'paste', reason: decision.reason }, decision.reason === 'targetNotEditable' ? decision.column : undefined);
+            return;
+        }
+        const { plan } = decision;
+        const { topRow, rowCount } = plan.source;
+        const { window, windowStart } = this.#state;
+        this.#supersedeFill();
+        if (topRow >= windowStart && topRow + rowCount <= windowStart + window.length) {
+            this.#raiseFill(plan, window.slice(topRow - windowStart, topRow - windowStart + rowCount), heard);
+            return;
+        }
+        const fill = new AbortController();
+        this.#fill = fill;
+        const source = this.#source;
+        const columns = this.#columns;
+        const version = this.#sequence();
+        // oxlint-disable-next-line ex-grid/no-catch -- an aborted fill's own rejection is expected and refuses nothing; any other failure is said and rethrown
+        void source.rows({ start: topRow, count: rowCount }, fill.signal).then(rows => {
+            if (fill.signal.aborted) return;
+            this.#fill = undefined;
+            // A source replaced while the rows were asked for: they were read from the source the key was aimed
+            // at, and its positions are another source's rows now (ADR-0142).
+            if (source !== this.#source) {
+                this.#refuse({ kind: 'paste', reason: 'sourceChanged' });
+                return;
+            }
+            // An order or columns that moved while the rows were asked for make both the rows and the positions
+            // someone else's (ADR-0011); a run that came back short is not the whole source.
+            if (rows.length < rowCount || version !== this.#sequence() || columns !== this.#columns) {
+                this.#refuse({ kind: 'paste', reason: 'sourceUnavailable' });
+                return;
+            }
+            // Nobody hears a paste any more: the fill has nowhere to go, and says so.
+            const now = this.#pasteHeard;
+            if (now === undefined) this.#refuse({ kind: 'paste', reason: 'cancelled' });
+            else this.#raiseFill(plan, rows, now);
+        }, (error: unknown) => {
+            if (fill.signal.aborted) return;
+            this.#fill = undefined;
+            // Said, and the failure itself left to surface: the refusal is the user's, the error the Consumer's.
+            this.#refuse({ kind: 'paste', reason: 'sourceUnavailable' });
+            throw error;
+        });
+    }
+
+    // The fill's one paste intent, its block read from the source's rows as each cell's raw value.
+    #raiseFill(plan: FillPlan, rows: readonly Row[], heard: (intent: GridPasteIntent) => void): void {
+        const { source } = plan;
+        const columns = this.#columns;
+        const values = rows.map(row => Array.from({ length: source.columnCount },
+            (_, offset) => rawText(itemAt(columns, source.leftColumn + offset).column.value(row))));
+        // Raw values are written in the invariant notation, and read so (ADR-0050, item 10): never shown text,
+        // which a Consumer reads under its own culture, `1234.5` becoming 12345 under de-DE.
+        const intent = new GridPasteIntent(plan.paste, values, values.map(row => row.map(() => 'invariant' as const)),
+            this.#sequence(), undefined, undefined, source);
+        try {
+            heard(intent);
+        } finally {
+            intent.seal();
+            this.#source.publishGathered?.();
+        }
+        this.#invalidate();
     }
 
     // ---- The clipboard (ADR-0005) ------------------------------------------------------------------------
@@ -1964,6 +2166,7 @@ export class GridView<Row> {
         }
         const { plan } = decision;
         const version = this.#sequence();
+        this.#supersedeFill();
         const intent = new GridPasteIntent(plan, block.values, block.origins, version, block.marks);
         try {
             defined(this.#pasteHeard, 'the paste\'s listener')(intent);

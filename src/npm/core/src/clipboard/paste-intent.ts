@@ -5,6 +5,7 @@
 import { itemAt } from '../must';
 import { rangeCellCount } from '../selection/range';
 import type { CellPosition } from '../selection/cell';
+import type { SelectionRange } from '../selection/range';
 import type { PasteFieldOrigin } from './clipboard-parse';
 import type { PastePlan } from './clipboard-rules';
 
@@ -36,6 +37,12 @@ export class GridPasteIntent {
     /** The cell the text was typed in, for a Ctrl+Enter fill from the Cell Editor (ADR-0007, ADR-0050 item 5);
      * `undefined` for a paste from the clipboard, whose text was typed nowhere in this grid. */
     readonly enteredAt: CellPosition | undefined;
+    /** The range a fill key read `values` from (ADR-0035): Ctrl+D's top row, Ctrl+R's left column, or the row
+     * above (column to the left) of a range one cell deep, in positions of the same order as `plan`.
+     * `undefined` for a paste from the clipboard and for Ctrl+Enter's typed text. A Consumer that holds more
+     * than values, such as a Sheet's formulas, copies from this range rather than parse `values`, as Excel's
+     * fill keys do (ADR-0050, item 5). */
+    readonly fillSource: SelectionRange | undefined;
     readonly #marks: readonly (readonly (string | undefined)[])[] | undefined;
     #refused = false;
     #sealed = false;
@@ -44,6 +51,7 @@ export class GridPasteIntent {
     constructor(
         plan: PastePlan, values: readonly (readonly string[])[], origins: readonly (readonly PasteFieldOrigin[])[],
         rowSequenceVersion: number, marks: readonly (readonly (string | undefined)[])[] | undefined, enteredAt?: CellPosition,
+        fillSource?: SelectionRange,
     ) {
         this.plan = plan;
         this.values = values;
@@ -51,6 +59,7 @@ export class GridPasteIntent {
         this.rowSequenceVersion = rowSequenceVersion;
         this.#marks = marks;
         this.enteredAt = enteredAt;
+        this.fillSource = fillSource;
     }
 
     /** Whether the Consumer refused the paste. */

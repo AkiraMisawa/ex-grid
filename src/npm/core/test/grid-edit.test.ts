@@ -6,12 +6,14 @@
 import { describe, expect, it } from 'vitest';
 import { defined } from '../src/must';
 import type { EditDiscardReason, GridEditIntent } from '../src/cells/edit-intent';
+import type { GridClearIntent } from '../src/clipboard/clear-intent';
 import type { GridPasteIntent } from '../src/clipboard/paste-intent';
 import type { GridColumn } from '../src/dom/grid-column';
 import type { GridOptions } from '../src/dom/grid-view';
 import type { GridRefusal } from '../src/dom/grid-refusal';
 import type { CellPosition } from '../src/selection/cell';
 import type { GridSelection } from '../src/selection/selection';
+import type { GridPage } from '../src/source/fetching-source';
 import { GridSource } from '../src/source/grid-source';
 import { mount, painted, q, trades, type Trade } from './grid-harness';
 
@@ -96,6 +98,8 @@ function heard(refuse?: string): {
         },
     };
 }
+
+const settle = (): Promise<void> => new Promise(resolve => { setTimeout(resolve, 0); });
 
 const focusOf = (selections: readonly GridSelection[]): CellPosition | undefined => defined(selections.at(-1), 'a Selection heard').focus;
 
@@ -484,5 +488,152 @@ describe('an edit under rows and columns that move', () => {
         key('Enter');
         await painted();
         expect([hasEditor(root), listener.discards, listener.edits.length]).toEqual([false, ['columnNoLongerEditable'], 0]);
+    });
+});
+
+describe('Delete and the fill keys', () => {
+    it('ADR-0054: Delete raises one Clear Intent over the Selection; over a column that does not edit it is refused whole; with nothing selected it places the Focus', async () => {
+        const clears: GridClearIntent[] = [];
+        const listener = heard();
+        const root = await grid(listener, { onClear: intent => { clears.push(intent); } });
+        root.focus();
+        key('Delete');
+        await painted();
+        expect([clears.length, focusOf(listener.selections)]).toEqual([0, { row: 0, column: 0 }]);
+
+        press(root, book, rowY(1));
+        key('ArrowDown', { shiftKey: true });
+        key('ArrowRight', { shiftKey: true });
+        expect(key('Delete').defaultPrevented).toBe(true);
+        const clear = defined(clears[0], 'the Clear Intent');
+        expect([clear.targets, clear.cellCount]).toEqual([[{ topRow: 1, leftColumn: 0, rowCount: 2, columnCount: 2 }], 4]);
+
+        key('ArrowRight', { shiftKey: true });
+        key('Delete');
+        await painted();
+        expect([clears.length, listener.refusals]).toEqual([1, [{ kind: 'paste', reason: 'targetNotEditable' }]]);
+    });
+
+    it('ADR-0007 KB-39: Ctrl+Z and Ctrl+Y are forwarded while the Consumer listens, and never while an edit is open; unheard they are the browser\'s', async () => {
+        const history: string[] = [];
+        const listener = heard();
+        const root = await grid(listener, { onUndo: () => { history.push('undo'); }, onRedo: () => { history.push('redo'); } });
+        press(root, book, rowY(1));
+        await painted();
+        expect([key('z', { ctrlKey: true }).defaultPrevented, key('y', { ctrlKey: true }).defaultPrevented]).toEqual([true, true]);
+        key('Z', { ctrlKey: true, shiftKey: true });
+        key('Q');
+        await painted();
+        expect(key('z', { ctrlKey: true }).defaultPrevented).toBe(false);
+        expect(history).toEqual(['undo', 'redo', 'redo']);
+
+        const quiet = await grid(heard());
+        press(quiet, book, rowY(1));
+        await painted();
+        expect(key('z', { ctrlKey: true }).defaultPrevented).toBe(false);
+    });
+
+    it('ADR-0054: without onClear, Delete is the browser\'s', async () => {
+        const root = await grid(heard());
+        press(root, book, rowY(1));
+        await painted();
+        expect(key('Delete').defaultPrevented).toBe(false);
+    });
+
+    it('ADR-0035: Ctrl+D and Ctrl+R fill from the range\'s top row and left column, as raw values, naming the source; a range one deep fills from beyond it, and the first row has nothing to fill from', async () => {
+        const pastes: GridPasteIntent[] = [];
+        const listener = heard();
+        const root = await grid(listener, { onPaste: intent => { pastes.push(intent); } });
+        press(root, notional, rowY(3));
+        key('ArrowDown', { shiftKey: true });
+        key('ArrowDown', { shiftKey: true });
+        key('d', { ctrlKey: true });
+        const down = defined(pastes[0], 'Ctrl+D\'s intent');
+        expect([down.values, down.fillSource, down.plan.targets, down.enteredAt])
+            .toEqual([[['3000']], { topRow: 3, leftColumn: 1, rowCount: 1, columnCount: 1 }, [{ topRow: 4, leftColumn: 1, rowCount: 2, columnCount: 1 }], undefined]);
+
+        // One cell deep, Ctrl+R fills from the column to its left.
+        press(root, notional, rowY(6));
+        key('r', { ctrlKey: true });
+        const right = defined(pastes[1], 'Ctrl+R\'s intent');
+        expect([right.values, right.fillSource, right.plan.targets])
+            .toEqual([[['Book-6']], { topRow: 6, leftColumn: 0, rowCount: 1, columnCount: 1 }, [{ topRow: 6, leftColumn: 1, rowCount: 1, columnCount: 1 }]]);
+
+        press(root, book, rowY(0));
+        key('d', { ctrlKey: true });
+        await painted();
+        expect([pastes.length, listener.refusals]).toEqual([2, [{ kind: 'paste', reason: 'nothingToFillFrom' }]]);
+    });
+
+    it('ADR-0035: a fill whose source runs past the Window asks the source for it, and fills only from the whole of it', async () => {
+        const answers: ((page: GridPage<Trade>) => void)[] = [];
+        const all = trades(500);
+        const source = GridSource.fetch<Trade>(() => new Promise(resolve => { answers.push(resolve); }), { readAheadRows: 0 });
+        const pastes: GridPasteIntent[] = [];
+        const listener = heard();
+        const { root } = mount({ columns, source, rowHeight: 24, viewportHeight: 480, ...listener.options, onPaste: intent => { pastes.push(intent); } });
+        await painted();
+        defined(answers.shift(), 'the first question')({ rows: all.slice(0, 40), start: 0, totalCount: 500 });
+        await settle();
+        press(root, book, rowY(0));
+        key('ArrowRight', { shiftKey: true });
+        key('ArrowDown', { ctrlKey: true, shiftKey: true });
+        await painted();
+        answers.length = 0;
+
+        key('r', { ctrlKey: true });
+        expect(pastes).toEqual([]);
+        defined(answers.shift(), 'the fill\'s question')({ rows: all, start: 0, totalCount: 500 });
+        await settle();
+        const fill = defined(pastes[0], 'the fill');
+        expect([fill.values.length, fill.values[499], fill.fillSource]).toEqual([500, ['Book-499'], { topRow: 0, leftColumn: 0, rowCount: 500, columnCount: 1 }]);
+        // Raw values, read as written: never under the Consumer's culture (ADR-0050, item 10).
+        expect(fill.originFor({ row: 3, column: 1 })).toBe('invariant');
+
+        key('r', { ctrlKey: true });
+        defined(answers.shift(), 'the second fill\'s question')({ rows: all.slice(0, 300), start: 0, totalCount: 500 });
+        await settle();
+        expect([pastes.length, listener.refusals]).toEqual([1, [{ kind: 'paste', reason: 'sourceUnavailable' }]]);
+    });
+
+    it('spine 6: a write raised while a fill\'s rows are asked for gives the fill up aloud, so the newer write stands', async () => {
+        const answers: ((page: GridPage<Trade>) => void)[] = [];
+        const all = trades(500);
+        const source = GridSource.fetch<Trade>(() => new Promise(resolve => { answers.push(resolve); }), { readAheadRows: 0 });
+        const pastes: GridPasteIntent[] = [];
+        const clears: GridClearIntent[] = [];
+        const listener = heard();
+        const { root } = mount({
+            columns, source, rowHeight: 24, viewportHeight: 480, ...listener.options,
+            onPaste: intent => { pastes.push(intent); }, onClear: intent => { clears.push(intent); },
+        });
+        await painted();
+        defined(answers.shift(), 'the first question')({ rows: all.slice(0, 40), start: 0, totalCount: 500 });
+        await settle();
+        press(root, book, rowY(0));
+        key('ArrowRight', { shiftKey: true });
+        key('ArrowDown', { ctrlKey: true, shiftKey: true });
+        await painted();
+        answers.length = 0;
+
+        key('r', { ctrlKey: true });
+        key('Delete');
+        defined(answers.shift(), 'the fill\'s question')({ rows: all, start: 0, totalCount: 500 });
+        await settle();
+        expect([pastes.length, clears.length, listener.refusals]).toEqual([0, 1, [{ kind: 'paste', reason: 'cancelled' }]]);
+    });
+
+    it('ADR-0142: a write key aimed at a Selection the order took away before it was painted is refused aloud and writes nothing', async () => {
+        const clears: GridClearIntent[] = [];
+        const listener = heard();
+        const source = GridSource.from(trades(20));
+        const { root } = mount({ columns, source, rowHeight: 24, viewportHeight: 480, ...listener.options, onClear: intent => { clears.push(intent); } });
+        await painted();
+        press(root, book, rowY(4));
+        await painted();
+        source.setSorts([{ column: 'Notional', direction: 'descending' }]);
+        key('Delete');
+        await painted();
+        expect([clears.length, listener.refusals]).toEqual([0, [{ kind: 'paste', reason: 'orderMoved' }]]);
     });
 });
