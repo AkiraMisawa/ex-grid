@@ -138,6 +138,7 @@ export interface GridClock {
 // @public
 export interface GridColumn<Row> extends QueryColumn<Row> {
     readonly align?: CellAlign;
+    readonly editable?: boolean;
     readonly header?: string;
     readonly width?: GridColumnWidth;
 }
@@ -209,8 +210,11 @@ export interface GridOptions<Row> {
     readonly density?: GridDensity;
     readonly headerGroups?: readonly GridHeaderGroup[];
     readonly headerHeight?: number;
+    readonly onPaste?: (intent: GridPasteIntent) => void;
     readonly onRefused?: (refusal: GridRefusal) => void;
     readonly onSelectionChanged?: (selection: GridSelection) => void;
+    readonly pasteByteCap?: number;
+    readonly pasteMaySpill?: boolean;
     readonly pinnedColumnCount?: number;
     readonly rowHeight?: number;
     readonly rows?: readonly Row[];
@@ -229,6 +233,24 @@ export interface GridPage<Row> {
 }
 
 // @public
+export class GridPasteIntent {
+    // @internal
+    constructor(plan: PastePlan, values: readonly (readonly string[])[], origins: readonly (readonly PasteFieldOrigin[])[], rowSequenceVersion: number, marks: readonly (readonly (string | undefined)[])[] | undefined);
+    get cellCount(): number;
+    markFor(target: CellPosition): string | undefined;
+    originFor(target: CellPosition): PasteFieldOrigin;
+    readonly origins: readonly (readonly PasteFieldOrigin[])[];
+    readonly plan: PastePlan;
+    refuse(): void;
+    get refused(): boolean;
+    readonly rowSequenceVersion: number;
+    // @internal
+    seal(): void;
+    valueFor(target: CellPosition): string;
+    readonly values: readonly (readonly string[])[];
+}
+
+// @public
 export interface GridQuery {
     readonly filter: GridFilter | undefined;
     readonly range: RowRange;
@@ -241,6 +263,12 @@ export type GridRefusal =
     {
     readonly kind: 'copy';
     readonly reason: CopyRefusalReason;
+}
+/** A paste that raised no intent, and so wrote nothing: the reason names the rule it hit (ADR-0014,
+* ADR-0035, ADR-0050 item 3). */
+| {
+    readonly kind: 'paste';
+    readonly reason: PasteRefusalReason;
 };
 
 // @public
@@ -419,6 +447,28 @@ export interface MarksHost<Row> {
 }
 
 // @public
+export type PasteFieldOrigin = 'shownText' | 'invariant';
+
+// @public
+export class PastePlan {
+    // @internal
+    constructor(targets: readonly SelectionRange[], source: PasteShape, collapsesSelection?: boolean);
+    readonly collapsesSelection: boolean;
+    readonly source: PasteShape;
+    sourceCellFor(target: CellPosition): SourceCell;
+    readonly targets: readonly SelectionRange[];
+}
+
+// @public
+export type PasteRefusalReason = 'emptySelection' | 'singleCellTarget' | 'shapeMismatch' | 'disjointTarget' | 'targetNotEditable' | 'tooLarge' | 'spillPastExtent' | 'nothingToFillFrom' | 'multipleRanges' | 'sourceUnavailable' | 'orderMoved' | 'sourceChanged' | 'unreadable' | 'cancelled';
+
+// @public
+export interface PasteShape {
+    readonly columns: number;
+    readonly rows: number;
+}
+
+// @public
 export interface QueryColumn<Row> {
     readonly dateType?: DateType;
     readonly format?: (value: unknown) => string;
@@ -499,6 +549,12 @@ export type SortDirection = 'ascending' | 'descending';
 export interface SortSpec {
     readonly column: string;
     readonly direction: SortDirection;
+}
+
+// @public
+export interface SourceCell {
+    readonly column: number;
+    readonly row: number;
 }
 
 // @public

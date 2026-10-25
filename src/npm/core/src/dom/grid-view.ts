@@ -10,8 +10,10 @@
 
 import { AutoWidth } from '../columns/auto-width';
 import { assembleCopy, type CopyFlavours } from '../clipboard/clipboard-data';
-import { defaultCellCap, planCopy, type CopyPlan } from '../clipboard/clipboard-rules';
-import { copyRefusalWords } from '../chrome/refusal-words';
+import { defaultCellCap, pasteShape, planCopy, planPaste, type CopyPlan } from '../clipboard/clipboard-rules';
+import { columnPlaceholder, copyRefusalWords, pasteRefusalWords, shapeMismatchMaySpillWords } from '../chrome/refusal-words';
+import { parseClipboardBlock, type ClipboardBlock } from '../clipboard/clipboard-parse';
+import { GridPasteIntent } from '../clipboard/paste-intent';
 import { ColumnGeometry, type ColumnRange } from '../columns/column-geometry';
 import { HeaderGroup, HeaderGroupLayout, type ResolvedHeaderGroup } from '../columns/header-groups';
 import { decideOverflow } from '../columns/overflow-rules';
@@ -26,7 +28,7 @@ import { cell as cellPosition, sameCell, type CellPosition, type GridExtent } fr
 import { markedColumns, wholeColumnRuns } from '../selection/heading-marks';
 import { edgeBandRowsPerTick } from '../selection/edge-band';
 import { HeldSelection } from '../selection/held';
-import { rangeCellCount, sameRange as sameSelectionRange, spansEveryColumn, spansEveryRow, type SelectionRange } from '../selection/range';
+import { bottomRow, rangeCellCount, sameRange as sameSelectionRange, spansEveryColumn, spansEveryRow, type SelectionRange } from '../selection/range';
 import { Selection, type GridSelection } from '../selection/selection';
 import { nextSort } from '../query/sort';
 import type { GridSource, GridSourceState } from '../source/grid-source';
@@ -38,6 +40,7 @@ import type { BrowserReports, ViewportReport } from './browser-reports';
 import { ColumnStyles } from './column-styles';
 import { CopiedRange } from './copied-range';
 import { copyValues, gatherRows, windowCovers, windowRowAt } from './grid-copy';
+import { defaultPasteByteCap, exceedsUtf8 } from './grid-paste';
 import type { GridRefusal } from './grid-refusal';
 import { resolveColumns, type GridColumn, type ResolvedColumn } from './grid-column';
 import { moveByKey, movingKinds, type KeyReveal } from './key-moves';
@@ -99,6 +102,21 @@ export interface GridOptions<Row> {
     /** Hears every gesture the grid refused, by kind and reason (ADR-0005): nothing it would have done was
      * done, and the grid has said why through its live region. */
     readonly onRefused?: (refusal: GridRefusal) => void;
+    /**
+     * Hears the one intent each approved paste raises (ADR-0007, ADR-0014): every cell in one notification.
+     * The grid writes nothing; the screen changes when the source hands over new row instances. A Consumer
+     * that will not write it calls `intent.refuse()` before this returns, and the Selection stays where it
+     * was (ADR-0050, item 3). Only columns declared `editable` take a paste; one that covers another is
+     * refused whole (ADR-0035).
+     */
+    readonly onPaste?: (intent: GridPasteIntent) => void;
+    /** Whether a block pasted onto one cell spills from it (ADR-0050, item 3): written with that cell at its
+     * top-left, and once accepted the block becomes the Selection. Off unless given, and a block onto one
+     * cell is then refused (ADR-0014). Declared by a Consumer that holds every cell, such as a Sheet. */
+    readonly pasteMaySpill?: boolean;
+    /** The most a paste reads, in UTF-8 bytes across both flavours (ADR-0005): past it the paste is refused
+     * whole, never pasted from the plain-text flavour alone, which is already rounded. 16 MB unless given. */
+    readonly pasteByteCap?: number;
 }
 
 const defaultViewportWidthPx = 800;
@@ -151,6 +169,9 @@ interface Taken<Row> {
     readonly onSelectionChanged: ((selection: GridSelection) => void) | undefined;
     readonly copyCellCap: number;
     readonly onRefused: ((refusal: GridRefusal) => void) | undefined;
+    readonly onPaste: ((intent: GridPasteIntent) => void) | undefined;
+    readonly pasteMaySpill: boolean;
+    readonly pasteByteCap: number;
 }
 
 /** A reveal's repaint under way (ADR-0012, 2026-10-08): where the reveal left the scroller, and what stops
@@ -307,6 +328,9 @@ export class GridView<Row> {
     #onSelectionChanged: ((selection: GridSelection) => void) | undefined;
     #copyCellCap = defaultCellCap;
     #onRefused: ((refusal: GridRefusal) => void) | undefined;
+    #pasteHeard: ((intent: GridPasteIntent) => void) | undefined;
+    #pasteMaySpill = false;
+    #pasteByteCap = defaultPasteByteCap;
     // The copies the asynchronous route is still writing, each holding the Settled Mark (ADR-0220), and what
     // stops the latest one's reads of the source when another copy supersedes it or the grid is destroyed.
     #clipboardWrites = 0;
@@ -489,6 +513,7 @@ export class GridView<Row> {
             // The browser's own copy command fires the copy event on the root that holds the keyboard; Ctrl+C is
             // never a key of the grid's, which would prevent the very command that fires it (ADR-0005).
             root.addEventListener('copy', this.#onCopy);
+            root.addEventListener('paste', this.#onPaste);
             this.#stops.push(
                 () => { this.#scroller.removeEventListener('scroll', onScroll); },
                 () => { root.removeEventListener('keydown', this.#onKeyDown, true); },
@@ -503,6 +528,7 @@ export class GridView<Row> {
                 () => { root.removeEventListener('mouseleave', this.#onLeave); },
                 () => { this.#scroller.removeEventListener('focus', this.#onScrollerFocus); },
                 () => { root.removeEventListener('copy', this.#onCopy); },
+                () => { root.removeEventListener('paste', this.#onPaste); },
                 reports.observeViewport(this.#scroller, report => {
                     this.#viewportReport = report;
                     this.#invalidate();
@@ -609,17 +635,29 @@ export class GridView<Row> {
         if (!Number.isSafeInteger(pinnedColumnCount) || pinnedColumnCount < 0) {
             throw new RangeError(`pinnedColumnCount is a whole number of at least 0, not ${pinnedColumnCount}.`);
         }
-        const { onSelectionChanged, onRefused }: { readonly onSelectionChanged?: unknown; readonly onRefused?: unknown } = options;
+        const { onSelectionChanged, onRefused, onPaste, pasteMaySpill }: {
+            readonly onSelectionChanged?: unknown; readonly onRefused?: unknown; readonly onPaste?: unknown; readonly pasteMaySpill?: unknown;
+        } = options;
         if (onSelectionChanged !== undefined && typeof onSelectionChanged !== 'function') {
             throw new TypeError('onSelectionChanged is a function of the Selection.');
         }
         if (onRefused !== undefined && typeof onRefused !== 'function') {
             throw new TypeError('onRefused is a function of the refusal.');
         }
-        const { copyCellCap = defaultCellCap } = options;
+        if (onPaste !== undefined && typeof onPaste !== 'function') {
+            throw new TypeError('onPaste is a function of the paste\'s intent.');
+        }
+        if (pasteMaySpill !== undefined && typeof pasteMaySpill !== 'boolean') {
+            throw new TypeError('pasteMaySpill is true or false.');
+        }
+        const { copyCellCap = defaultCellCap, pasteByteCap = defaultPasteByteCap } = options;
         if (!Number.isSafeInteger(copyCellCap) || copyCellCap < 1) {
             throw new RangeError(`copyCellCap is a whole number of at least one cell, not ${copyCellCap}: the cap may be raised, `
                 + 'not used to switch copying off (ADR-0005).');
+        }
+        if (!Number.isSafeInteger(pasteByteCap) || pasteByteCap < 1) {
+            throw new RangeError(`pasteByteCap is a whole number of at least one byte, not ${pasteByteCap}: the cap may be raised, `
+                + 'not used to switch pasting off (ADR-0005).');
         }
         const { headerGroups, headerLayout } = this.#layoutOf(options.headerGroups, columns, pinnedColumnCount, columnsChanged);
         // The band comes off the scroll budget, and the refusal names the band (ADR-0032): a Viewport that
@@ -633,6 +671,7 @@ export class GridView<Row> {
             source, own, rows: options.rows, metrics, declared: options.columns, columns, autoWidths, columnsChanged,
             width, height, pinnedCount: pinnedColumnCount, virtualiseColumns, headerGroups, headerLayout,
             onSelectionChanged: options.onSelectionChanged, copyCellCap, onRefused: options.onRefused,
+            onPaste: options.onPaste, pasteMaySpill: options.pasteMaySpill === true, pasteByteCap,
         };
     }
 
@@ -719,6 +758,9 @@ export class GridView<Row> {
         this.#onSelectionChanged = taken.onSelectionChanged;
         this.#copyCellCap = taken.copyCellCap;
         this.#onRefused = taken.onRefused;
+        this.#pasteHeard = taken.onPaste;
+        this.#pasteMaySpill = taken.pasteMaySpill;
+        this.#pasteByteCap = taken.pasteByteCap;
     }
 
     // The Row Sequence Version the grid writes: its source's, carried past every change of source.
@@ -1304,8 +1346,9 @@ export class GridView<Row> {
     // a description of the Selection still owed, which would otherwise say over it, and a refusal said
     // again is emptied first and said in the next frame: the same text written again is no change, and the
     // second refusal is the one the user needs (A11Y-16).
-    #refuse(refusal: GridRefusal): void {
-        const words = copyRefusalWords[refusal.reason];
+    // `column`, for a paste refused over a column that is not Editable, is the column its words name.
+    #refuse(refusal: GridRefusal, column?: number): void {
+        const words = this.#wordsFor(refusal, column);
         this.#announcedRanges = this.#held.selection.ranges;
         this.#cancelAnnounce?.();
         this.#cancelAnnounce = undefined;
@@ -1322,6 +1365,95 @@ export class GridView<Row> {
             this.#say(words);
         }
         this.#onRefused?.(refusal);
+    }
+
+    // The built-in words for a refusal (ADR-0203): a shape mismatch where a paste may spill offers a single
+    // cell too, and a column that is not Editable is named by its header.
+    #wordsFor(refusal: GridRefusal, column: number | undefined): string {
+        if (refusal.kind === 'copy') return copyRefusalWords[refusal.reason];
+        if (refusal.reason === 'shapeMismatch' && this.#pasteMaySpill) return shapeMismatchMaySpillWords;
+        const words = pasteRefusalWords[refusal.reason];
+        // As text, never as a replacement pattern: a header may hold `$&`.
+        return column === undefined ? words : words.replace(columnPlaceholder, () => itemAt(this.#columns, column).header);
+    }
+
+    // A paste the browser's command fired on the root (ADR-0014). The flavours are readable only inside the
+    // event, so both are read here; past the byte cap the paste is refused whole, and a clipboard holding
+    // nothing tabular is no paste at all. The default is prevented either way: pasting into an element that
+    // is not editable does nothing, and must not start doing something later.
+    readonly #onPaste = (event: ClipboardEvent): void => {
+        // Only when the root itself holds the keyboard: a control inside the grid keeps its own clipboard.
+        if (event.target !== this.#root) return;
+        event.preventDefault();
+        const data = event.clipboardData;
+        if (data === null) {
+            this.#refuse({ kind: 'paste', reason: 'unreadable' });
+            return;
+        }
+        const text = data.getData('text/plain');
+        const html = data.getData('text/html');
+        if (exceedsUtf8([text, html], this.#pasteByteCap)) {
+            this.#refuse({ kind: 'paste', reason: 'tooLarge' });
+            return;
+        }
+        const block = parseClipboardBlock(html, text);
+        if (block !== undefined) this.#paste(block);
+    };
+
+    // Plans a parsed block onto the Selection and raises its one intent (ADR-0014, ADR-0035, ADR-0050 item 3).
+    #paste(block: ClipboardBlock): void {
+        // The Selection the user aimed with, as last painted. Judged on the newest rows the source holds: one
+        // that gathers live changes puts them out now (ADR-0142 D5, LV-16). An order that moved since takes
+        // that Selection, and the paste is refused aloud rather than written over other rows (ADR-0011).
+        const aimed = this.#held;
+        this.#source.publishGathered?.();
+        this.#reconcileSelection();
+        if (!aimed.selection.isEmpty && aimed.rowSequenceVersion !== this.#sequence()) {
+            this.#refuse({ kind: 'paste', reason: 'orderMoved' });
+            return;
+        }
+        const target = this.#held.selection;
+        const columns = this.#columns;
+        // A grid nobody hears a paste from writes no cell: every column is then one that cannot be edited.
+        const heard = this.#pasteHeard !== undefined;
+        const decision = planPaste(
+            target, pasteShape(block.values.length, itemAt(block.values, 0).length),
+            column => heard && column >= 0 && column < columns.length && itemAt(columns, column).editable,
+            { ...(this.#pasteMaySpill ? { spillWithin: this.#extent } : {}), plainTextOnly: !block.isFromTable },
+        );
+        if (decision.refused) {
+            this.#refuse({ kind: 'paste', reason: decision.reason }, decision.reason === 'targetNotEditable' ? decision.column : undefined);
+            return;
+        }
+        const { plan } = decision;
+        const version = this.#sequence();
+        const intent = new GridPasteIntent(plan, block.values, block.origins, version, block.marks);
+        try {
+            defined(this.#pasteHeard, 'the paste\'s listener')(intent);
+        } finally {
+            // Answered once it returns: a refusal after that would be one the grid can no longer honour.
+            intent.seal();
+            // What the source gathered while the Consumer wrote is put out as its handler returns, or throws
+            // (ADR-0142 D5).
+            this.#source.publishGathered?.();
+        }
+        // A refused paste wrote nothing: the Selection stays where it was (ADR-0050, item 3).
+        if (intent.refused) return;
+        this.#reconcileSelection();
+        // Positions mean something only under the order they were written in: a handler that moved it, or
+        // took the cells away, places nothing (ADR-0011).
+        const extent = this.#extent;
+        const written = itemAt(plan.targets, 0);
+        if (this.#sequence() !== version || bottomRow(written) >= extent.rowCount
+            || written.leftColumn + written.columnCount > extent.columnCount) {
+            return;
+        }
+        // One value of plain text went into one cell of a larger Selection, which collapses to it (ADR-0014,
+        // amended 2026-09-29); a spilled block becomes the Selection, with nothing scrolled (ADR-0050, item 3).
+        const spilled = this.#pasteMaySpill && plan.targets.length === 1 && target.ranges.length === 1
+            && !sameSelectionRange(written, itemAt(target.ranges, 0));
+        if (!plan.collapsesSelection && !spilled) return;
+        if (this.#apply(this.#held.selection.place(written, cellPosition(written.topRow, written.leftColumn), extent))) this.#invalidate();
     }
 
     // DOM focus leaving the grid ends a release of Tab, as the C# core's key gate does (ADR-0080).
