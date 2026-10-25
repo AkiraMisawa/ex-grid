@@ -34,5 +34,6 @@ A random value is written as JSON keeps it: a `-0` the generator makes is `{"dou
 `JSON.stringify` writes it as `0` and the oracle would be asked about another number.
 
 The oracle also writes the tables the engine reads .NET's conventions from: `cultures`
-(`src/culture/culture-table.ts`), `kana` (`src/text/tailored-ranks.ts`) and `words`
+(`src/culture/culture-table.ts`), `kana` (`src/text/tailored-ranks.ts`), `casing` (`src/text/upper-table.ts`,
+.NET's simple upper case, which no JavaScript engine's own matches in every version) and `words`
 (`src/words/word-tables.ts`), each with `dotnet run --project tools/pivot-oracle -- <command> <file>`.

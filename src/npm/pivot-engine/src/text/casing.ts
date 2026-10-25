@@ -3,47 +3,37 @@
 // escapes it as Uri.EscapeDataString does, and a label orders by the culture's collation, ignoring case,
 // ties broken ordinally. tools/pivot-oracle holds each to .NET.
 
-/** A way .NET upper-cases text: the code points it leaves as they are, beyond those whose upper case is not
- * one code point. */
+import { elementAt } from '../must';
+import { upperRuns } from './upper-table';
+
+/** A way .NET upper-cases text: the code points it leaves as they are, beyond those .NET's table leaves. */
 interface Casing {
     readonly kept: ReadonlySet<number>;
-    readonly cache: Map<number, number>;
 }
 
-// ToUpperInvariant keeps the dotless i, which only Turkish upper-cases to I; OrdinalIgnoreCase keeps the
-// long s as well.
-const invariantCasing: Casing = { kept: new Set([0x131]), cache: new Map() };
-const ordinalCasing: Casing = { kept: new Set([0x131, 0x17F]), cache: new Map() };
+// ToUpperInvariant is the table itself; OrdinalIgnoreCase keeps the long s as it is.
+const invariantCasing: Casing = { kept: new Set() };
+const ordinalCasing: Casing = { kept: new Set([0x17F]) };
 
-/** Of the code points whose full upper case is several code points, those whose simple upper case — the
- * one .NET takes — is another code point: the small Greek letters with a iota subscript, each to its capital
- * with the iota beside it (ᾳ to ᾼ, where JavaScript writes ΑΙ). The rest keep themselves (ß stays ß). */
-function simpleUpperOfSeveral(codePoint: number): number | undefined {
-    if ((codePoint >= 0x1F80 && codePoint <= 0x1F87) || (codePoint >= 0x1F90 && codePoint <= 0x1F97) || (codePoint >= 0x1FA0 && codePoint <= 0x1FA7)) {
-        return codePoint + 8;
-    }
-    if (codePoint === 0x1FB3 || codePoint === 0x1FC3 || codePoint === 0x1FF3) return codePoint + 9;
-    return undefined;
-}
-
-/** A code point's simple upper case: the one code point .NET maps it to, or itself where it has none. */
+/** A code point's simple upper case, as .NET's table holds it (upper-table.ts), never the JavaScript
+ * engine's: its full mapping writes ᾳ as two code points, and its Unicode is its own version. */
 function upperOf(codePoint: number, casing: Casing): number {
     if (codePoint < 0x80) return codePoint >= 0x61 && codePoint <= 0x7A ? codePoint - 0x20 : codePoint;
-    const cached = casing.cache.get(codePoint);
-    if (cached !== undefined) return cached;
-    let result = codePoint;
-    if (!casing.kept.has(codePoint)) {
-        const upper = String.fromCodePoint(codePoint).toUpperCase();
-        const mapped = upper.codePointAt(0);
-        if (mapped !== undefined && String.fromCodePoint(mapped) === upper) {
-            result = mapped;
+    if (casing.kept.has(codePoint)) return codePoint;
+    let low = 0;
+    let high = upperRuns.length - 1;
+    while (low <= high) {
+        const middle = (low + high) >> 1;
+        const [first, last, delta, step] = elementAt(upperRuns, middle);
+        if (codePoint < first) {
+            high = middle - 1;
+        } else if (codePoint > last) {
+            low = middle + 1;
         } else {
-            const simple = simpleUpperOfSeveral(codePoint);
-            if (simple !== undefined) result = simple;
+            return (codePoint - first) % step === 0 ? codePoint + delta : codePoint;
         }
     }
-    casing.cache.set(codePoint, result);
-    return result;
+    return codePoint;
 }
 
 function upperCased(text: string, casing: Casing): string {
