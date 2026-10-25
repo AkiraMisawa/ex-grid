@@ -166,7 +166,7 @@ jobs:
   script-core:
     name: Script Core, layers 1 and 2 (npm)
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 25
     defaults:
       run:
         working-directory: src/npm
@@ -197,20 +197,23 @@ jobs:
       # ExPivot's engine held to the C# engine on random inputs (ADR-0370, section 2): tools/pivot-oracle
       # answers what .NET and ExPivot.Engine give. The seed is fixed, so the gate answers alike on every
       # run; another seed is drawn by hand with EXGRID_PIVOT_SEED (src/npm/pivot-engine/differential/README.md).
-      - uses: actions/setup-dotnet@v6
+      # The oracle runs on the flake's .NET, whose ICU is the one the Script Core's culture table was written
+      # from: the runner's own ICU is another version, and formats en-ZA otherwise (1.5 against 1,5).
+      - uses: cachix/install-nix-action@v31
         with:
-          global-json-file: global.json
+          github_access_token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build the pivot oracle
+      - name: Build the pivot oracle on the flake's .NET
         working-directory: .
-        run: dotnet build tools/pivot-oracle -c Release
+        run: |
+          nix develop -c dotnet build tools/pivot-oracle -c Release
+          echo "PIVOT_DOTNET=$(nix develop -c bash -c 'command -v dotnet' | tail -n 1)" >> "$GITHUB_ENV"
 
       - name: ExPivot's engine against the C# engine (differential)
         working-directory: src/npm/pivot-engine
         env:
-          EXGRID_PIVOT_ORACLE: dotnet ${{ github.workspace }}/tools/pivot-oracle/bin/Release/net10.0/ExPivot.Oracle.dll serve
           EXGRID_PIVOT_SEED: 20261025
-        run: npm run differential
+        run: EXGRID_PIVOT_ORACLE="$PIVOT_DOTNET ${{ github.workspace }}/tools/pivot-oracle/bin/Release/net10.0/ExPivot.Oracle.dll serve" npm run differential
 
   # The hosts layer 3 drives, published once in Release and handed to every runner that drives
   # them: the WebAssembly DemoHost, the Server host and the demo API server (ADR-0069), as

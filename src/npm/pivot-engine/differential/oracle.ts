@@ -24,30 +24,46 @@ export function startOracle(): Oracle {
     const [program, ...args] = command.trim().split(/\s+/);
     if (program === undefined) throw new Error('EXGRID_PIVOT_ORACLE names no program.');
     const child: ChildProcessWithoutNullStreams = spawn(program, args, { stdio: ['pipe', 'pipe', 'pipe'] });
-    const pending: ((line: string) => void)[] = [];
+    // Each request owed an answer, in the order sent. Whatever goes wrong — the oracle failing to start,
+    // exiting early, or answering what was not asked — fails every request owed and every one asked later,
+    // so a run reports it at once instead of waiting out its timeout.
+    const pending: { readonly resolve: (answer: OracleAnswer) => void; readonly reject: (error: Error) => void }[] = [];
+    let failure: Error | undefined;
     let stderr = '';
+    const fail = (error: Error): void => {
+        failure ??= error;
+        for (const owed of pending.splice(0)) owed.reject(failure);
+    };
     child.stderr.on('data', (chunk: Buffer) => { stderr += chunk.toString('utf8'); });
+    child.on('error', (error) => { fail(new Error(`The oracle '${command}' did not start.`, { cause: error })); });
+    child.on('exit', (code) => { fail(new Error(`The oracle exited (${String(code)}). ${stderr}`)); });
     const lines = createInterface({ input: child.stdout });
     lines.on('line', (line) => {
-        const next = pending.shift();
-        if (next === undefined) throw new Error(`The oracle answered a request nobody asked: ${line}`);
-        next(line);
-    });
-    child.on('exit', (code) => {
-        if (pending.length > 0) {
-            throw new Error(`The oracle exited (${String(code)}) with ${pending.length} answers owed. ${stderr}`);
+        const owed = pending.shift();
+        if (owed === undefined) {
+            fail(new Error(`The oracle answered a request nobody asked: ${line}`));
+            return;
         }
+        let parsed: unknown;
+        try {
+            parsed = JSON.parse(line);
+        } catch (error) { // oxlint-disable-line ex-grid/no-catch -- an answer that is not JSON fails the run, by the line it was
+            fail(new Error(`The oracle answered ${line}, which is not JSON.`, { cause: error }));
+            return;
+        }
+        if (typeof parsed !== 'object' || parsed === null) {
+            fail(new Error(`The oracle answered ${line}.`));
+            return;
+        }
+        owed.resolve(parsed as OracleAnswer); // oxlint-disable-line typescript/no-unsafe-type-assertion -- the oracle answers a JSON object, checked above
     });
     return {
         askAll(requests) {
-            const answers = requests.map(() => new Promise<OracleAnswer>((resolve) => {
-                pending.push((line) => {
-                    const parsed: unknown = JSON.parse(line);
-                    if (typeof parsed !== 'object' || parsed === null) throw new Error(`The oracle answered ${line}.`);
-                    resolve(parsed as OracleAnswer); // oxlint-disable-line typescript/no-unsafe-type-assertion -- the oracle answers a JSON object, checked above
-                });
+            const answers = requests.map(() => new Promise<OracleAnswer>((resolve, reject) => {
+                if (failure === undefined) pending.push({ resolve, reject });
+                else reject(failure);
             }));
-            child.stdin.write(requests.map((request) => JSON.stringify(request)).join('\n') + '\n');
+            if (failure === undefined) child.stdin.write(requests.map((request) => JSON.stringify(request)).join('\n') + '\n');
             return Promise.all(answers);
         },
         close() {
@@ -68,9 +84,10 @@ export function random(seed: number): () => number {
     };
 }
 
-/** The seed of this run: EXGRID_PIVOT_SEED, or one taken from the clock and printed. */
+/** The seed of this run: EXGRID_PIVOT_SEED, a whole number, or one taken from the clock. */
 export function seedOfRun(): number {
     const given = process.env['EXGRID_PIVOT_SEED'];
-    if (given !== undefined) return Number(given);
-    return Date.now() % 1_000_000_007;
+    if (given === undefined) return Date.now() % 1_000_000_007;
+    if (!/^\d+$/u.test(given.trim())) throw new Error(`EXGRID_PIVOT_SEED is '${given}', which is not a whole number.`);
+    return Number(given.trim());
 }

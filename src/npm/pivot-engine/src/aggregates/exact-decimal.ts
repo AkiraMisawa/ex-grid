@@ -124,6 +124,38 @@ function canonicalWide(value: bigint, scale: number): { mantissa: bigint; scale:
     return { mantissa: digits, scale: places };
 }
 
+const wideMost = (1n << 127n) - 1n;
+const wideLeast = -(1n << 127n);
+
+/**
+ * `a` × 10^-`aScale` plus `b` × 10^-`bScale` at the larger scale, as C#'s `Exactly.TryAdd` adds two exact sums
+ * held in 128 bits, or `undefined` where either, at that scale, or their sum leaves 128 bits: the sum is
+ * Excel's double from then on (ADR-0060).
+ */
+export function wideAdd(a: bigint, aScale: number, b: bigint, bScale: number): { sum: bigint; scale: number } | undefined {
+    const scale = Math.max(aScale, bScale);
+    const x = wideRescaled(a, aScale, scale);
+    const y = wideRescaled(b, bScale, scale);
+    if (x === undefined || y === undefined) return undefined;
+    const sum = x + y;
+    return sum > wideMost || sum < wideLeast ? undefined : { sum, scale };
+}
+
+// A whole number of 128 bits moved to a larger scale, or `undefined` where it would leave them: C#'s
+// TryRescale, which refuses a magnitude above Int128.MaxValue / 10^k.
+function wideRescaled(value: bigint, from: number, to: number): bigint | undefined {
+    if (from === to || value === 0n) return value;
+    const most = wideMost / tenToThe(to - from);
+    return value > most || value < -most ? undefined : value * tenToThe(to - from);
+}
+
+/** The double of an exact sum as C#'s `Exactly.ToDouble` takes it: the decimal's, where a decimal holds the
+ * sum, otherwise the quotient of its one form. */
+export function doubleOfWide(value: bigint, scale: number): number {
+    const exact = decimalOfSum(value, scale);
+    return exact === undefined ? doubleOfSum(value, scale) : decimalToNumber(exact);
+}
+
 /** `value`'s whole number at `scale`, which is at least its own. */
 export function scaledTo(value: SnapshotDecimal, scale: number): bigint {
     return scale === value.scale ? value.mantissa : value.mantissa * tenToThe(scale - value.scale);

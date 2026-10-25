@@ -298,7 +298,12 @@ internal static class PivotSourceCases
     // {"double": …} where JSON cannot hold it or would drop its sign (-0).
     private static JsonNode Number(PivotNumber number) => number.IsExact ? Exact(number.ExactValue) : Double(number.Value);
 
-    private static JsonNode Exact(decimal exact) => new JsonObject { ["decimal"] = exact.ToString("G29", CultureInfo.InvariantCulture) };
+    // Its digits, without trailing zeros: never "G29", which writes 0.0000000001 as 1E-10.
+    private static JsonNode Exact(decimal exact)
+    {
+        var written = exact.ToString(CultureInfo.InvariantCulture);
+        return new JsonObject { ["decimal"] = written.Contains('.') ? written.TrimEnd('0').TrimEnd('.') : written };
+    }
 
     private static JsonNode Double(double number)
     {

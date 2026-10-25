@@ -23,7 +23,9 @@ EXGRID_PIVOT_ORACLE="dotnet ../../../tools/pivot-oracle/bin/Debug/net10.0/ExPivo
 ```
 
 `EXGRID_PIVOT_ORACLE` is the command that starts the oracle's `serve`, which answers one JSON request a
-line. A run prints its seed in the test's name; `EXGRID_PIVOT_SEED` repeats it. `EXGRID_PIVOT_DIFF_OUT`
+line. It runs on the flake's .NET, in CI too: the cultures' conventions are ICU's, and the culture table was
+written from the flake's ICU, so a .NET on another ICU — a runner's own — differs where CLDR changed between
+the two (en-ZA's decimal separator) and fails the run on data, not on the engine. A run prints its seed in the test's name; `EXGRID_PIVOT_SEED` repeats it. `EXGRID_PIVOT_DIFF_OUT`
 names a file `report.differential.ts` writes each differing request to, a line each, as the oracle took it:
 the `case` in it is a `pivotSource` case, which goes into `tests/cases/pivot/` once its data is cut down to
 what makes the difference.

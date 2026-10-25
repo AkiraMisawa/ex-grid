@@ -6,8 +6,8 @@
 // order C# meets them.
 
 import type { DecimalColumn, IntegerColumn, Snapshot, SnapshotColumn, SnapshotDecimal, TextColumn } from '@ex-grid/data';
-import { decimalCompare, decimalOfSum, decimalOfWhole, decimalToNumber, doubleOfSum, scaledTo } from '../aggregates/exact-decimal';
-import { PartColumns, partExtremes, partProduct, partSum, partVariance, sumToInexact, type SumPart } from '../aggregates/parts';
+import { decimalCompare, decimalOfSum, decimalOfWhole, decimalToNumber, doubleOfSum, doubleOfWide, wideAdd } from '../aggregates/exact-decimal';
+import { PartColumns, neumaier, partExtremes, partProduct, partSum, partVariance, sumToInexact, type SumPart } from '../aggregates/parts';
 import { PivotAnswer, PivotAnswerAxis, PivotRefusals, answerValues, madeAnswer, type PivotSourceRefusal } from '../cube/answer';
 import { partBits, type PivotQuery } from '../cube/query';
 import { ItemKeys, fromPublicKey, keyIdOf, textItemKey, toPublicKey, type ItemKey, type PivotItemKey } from '../items/item-key';
@@ -326,9 +326,10 @@ class LeafIndex {
  * are counted and are never a number. A field read through an accessor whose values are of several kinds is
  * folded per row in the data's order, each value by its own kind.
  *
- * C# keeps the whole number in 128 bits and leaves for a double past them; here it is a bigint and never
- * leaves, so a sum past 10^38 at its scale can differ from C#'s in its last digits — a sum no decimal holds
- * is a double either way.
+ * The whole number is kept in 128 bits, as C# keeps it, and past them the sum is a double from then on. C#
+ * adds a run of a segment's 64-bit numbers before folding it into the sum, where this adds them one by one:
+ * the two leave for double at the same number save where a sum within a run's reach of 2^127 is brought
+ * back by the run's later numbers, and after leaving, C#'s double adds a run's total where this adds each.
  */
 class ValueAccumulator {
     readonly field: string;
@@ -405,11 +406,7 @@ class ValueAccumulator {
     #addExact(leaf: number, value: SnapshotDecimal): void {
         const counts = elementAt(this.columns.counts, leaf);
         const first = counts.numbers === 0;
-        if (this.#sum) {
-            const scale = Math.max(elementAt(this.#wideScale, leaf), value.scale);
-            this.#wide[leaf] = rescaled(elementAt(this.#wide, leaf), elementAt(this.#wideScale, leaf), scale) + scaledTo(value, scale);
-            this.#wideScale[leaf] = scale;
-        }
+        if (this.#sum) this.#addToSum(leaf, value);
         if (this.#extremes) {
             const extremes = elementAt(defined(this.columns.extremes), leaf);
             if (first) {
@@ -423,6 +420,28 @@ class ValueAccumulator {
         if (this.#perRow) this.columns.addInexactParts(leaf, decimalToNumber(value), counts.numbers + 1);
         counts.values++;
         counts.numbers++;
+    }
+
+    // Adds a number to a leaf's exact sum; past 128 bits, the sum is a double from then on — money stays
+    // exact until it cannot, then takes Excel's own arithmetic (ADR-0060).
+    #addToSum(leaf: number, value: SnapshotDecimal): void {
+        const sum = elementAt(defined(this.columns.sums), leaf);
+        if (sum.inexact) {
+            neumaier(sum, decimalToNumber(value));
+            return;
+        }
+        const wide = elementAt(this.#wide, leaf);
+        const wideScale = elementAt(this.#wideScale, leaf);
+        const added = wideAdd(wide, wideScale, value.mantissa, value.scale);
+        if (added !== undefined) {
+            this.#wide[leaf] = added.sum;
+            this.#wideScale[leaf] = added.scale;
+            return;
+        }
+        sum.inexact = true;
+        sum.double = doubleOfWide(wide, wideScale);
+        sum.compensation = 0;
+        neumaier(sum, decimalToNumber(value));
     }
 
     #accumulateVariant(from: number, leaves: Int32Array): void {
@@ -458,8 +477,8 @@ class ValueAccumulator {
         const finished = new PartColumns(this.columns.parts);
         for (const leaf of order) {
             const cell = finished.copyCell(this.columns, leaf);
-            if (this.#exact !== undefined && this.#sum) {
-                const sum: SumPart = elementAt(defined(finished.sums), cell);
+            const sum: SumPart | undefined = this.#exact !== undefined && this.#sum ? elementAt(defined(finished.sums), cell) : undefined;
+            if (sum !== undefined && !sum.inexact) {
                 const wide = elementAt(this.#wide, leaf);
                 const scale = elementAt(this.#wideScale, leaf);
                 const exact = decimalOfSum(wide, scale);
@@ -475,10 +494,6 @@ class ValueAccumulator {
         finished.canonicalize();
         return finished;
     }
-}
-
-function rescaled(value: bigint, from: number, to: number): bigint {
-    return from === to || value === 0n ? value : value * 10n ** BigInt(to - from);
 }
 
 // ---- The pass -----------------------------------------------------------------------------------

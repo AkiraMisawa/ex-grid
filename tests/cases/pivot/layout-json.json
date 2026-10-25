@@ -26,6 +26,66 @@
       "expect": {"refusal": "format", "saying": "A Pivot Layout names its version."}
     },
     {
+      "name": "ADR-0059: a number is read from its spelling, as an integer or not at all: {\"version\":1.0}",
+      "read": "{\"version\":1.0}",
+      "expect": {
+        "refusal": "version",
+        "saying": "A Pivot Layout of version 1.0 cannot be read; this reader reads version 1."
+      }
+    },
+    {
+      "name": "ADR-0059: a number is read from its spelling, as an integer or not at all: {\"version\":1e0}",
+      "read": "{\"version\":1e0}",
+      "expect": {
+        "refusal": "version",
+        "saying": "A Pivot Layout of version 1e0 cannot be read; this reader reads version 1."
+      }
+    },
+    {
+      "name": "ADR-0059: a number is read from its spelling, as an integer or not at all: {\"version\":-0}",
+      "read": "{\"version\":-0}",
+      "expect": {
+        "refusal": "version",
+        "saying": "A Pivot Layout of version -0 cannot be read; this reader reads version 1."
+      }
+    },
+    {
+      "name": "ADR-0059: a number is read from its spelling, as an integer or not at all: {\"version\":12345678901234567890}",
+      "read": "{\"version\":12345678901234567890}",
+      "expect": {
+        "refusal": "version",
+        "saying": "A Pivot Layout of version 12345678901234567890 cannot be read; this reader reads version 1."
+      }
+    },
+    {
+      "name": "ADR-0059: a number is read from its spelling, as an integer or not at all: {\"version\":1,\"version\":2}",
+      "read": "{\"version\":1,\"version\":2}",
+      "expect": {
+        "refusal": "version",
+        "saying": "A Pivot Layout of version 2 cannot be read; this reader reads version 1."
+      }
+    },
+    {
+      "name": "ADR-0059: a number is read from its spelling, as an integer or not at all: {\"version\":1,\"rows\":[{\"field\":\"Region\",\"sort\":{\"direction\":\"descending\",\"byValue\":0.0}}]}",
+      "read": "{\"version\":1,\"rows\":[{\"field\":\"Region\",\"sort\":{\"direction\":\"descending\",\"byValue\":0.0}}]}",
+      "expect": {"refusal": "format", "saying": "'byValue' is an integer."}
+    },
+    {
+      "name": "ADR-0059: a number is read from its spelling, as an integer or not at all: {\"version\":1,\"rows\":[{\"field\":\"Region\",\"sort\":{\"direction\":\"descending\",\"byValue\":2147483648}}]}",
+      "read": "{\"version\":1,\"rows\":[{\"field\":\"Region\",\"sort\":{\"direction\":\"descending\",\"byValue\":2147483648}}]}",
+      "expect": {"refusal": "format", "saying": "'byValue' is an integer."}
+    },
+    {
+      "name": "ADR-0059: a number is read from its spelling, as an integer or not at all: {\"version\":1,\"rows\":[{\"field\":\"Region\",\"sort\":{\"direction\":\"descending\",\"byValue\":-0}}],\"values\":[{\"field\":\"Amount\"}]}",
+      "read": "{\"version\":1,\"rows\":[{\"field\":\"Region\",\"sort\":{\"direction\":\"descending\",\"byValue\":-0}}],\"values\":[{\"field\":\"Amount\"}]}",
+      "expect": "{\"version\":1,\"form\":\"compact\",\"valuesAxis\":\"columns\",\"subtotalsAtTop\":true,\"grandTotalRow\":true,\"grandTotalColumn\":true,\"repeatItemLabels\":false,\"filters\":[],\"rows\":[{\"field\":\"Region\",\"sort\":{\"direction\":\"descending\",\"byValue\":0}}],\"columns\":[],\"values\":[{\"field\":\"Amount\",\"aggregation\":\"sum\"}]}"
+    },
+    {
+      "name": "ADR-0059: a member the reader does not know is passed over, __proto__ among them, and an escaped letter is the letter: {\"version\":1,\"__proto__\":{\"form\":\"tabular\"},\"rows\":[{\"field\":\"\\u0052egion\"}]}",
+      "read": "{\"version\":1,\"__proto__\":{\"form\":\"tabular\"},\"rows\":[{\"field\":\"\\u0052egion\"}]}",
+      "expect": "{\"version\":1,\"form\":\"compact\",\"valuesAxis\":\"columns\",\"subtotalsAtTop\":true,\"grandTotalRow\":true,\"grandTotalColumn\":true,\"repeatItemLabels\":false,\"filters\":[],\"rows\":[{\"field\":\"Region\"}],\"columns\":[],\"values\":[]}"
+    },
+    {
       "name": "ADR-0059: a name the reader does not know, or a shape, is refused by name: {\"version\":1,\"form\":\"pivot\"}",
       "read": "{\"version\":1,\"form\":\"pivot\"}",
       "expect": {"refusal": "format", "saying": "'pivot' is not a form this reader knows."}

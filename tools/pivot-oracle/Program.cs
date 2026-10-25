@@ -38,15 +38,15 @@ namespace ExPivot.Oracle
             while (input.ReadLine() is { } line)
             {
                 if (line.Length == 0) continue;
-                var request = JsonNode.Parse(line)!.AsObject();
                 JsonNode answer;
                 try
                 {
-                    answer = Answer(request);
+                    answer = Answer(JsonNode.Parse(line)!.AsObject());
                 }
-                catch (Exception e) when (e is FormatException or ArgumentException or InvalidOperationException
-                                              or NotSupportedException or OverflowException or KeyNotFoundException)
+                catch (Exception e)
                 {
+                    // Every exception is an answer, so the answers stay in step with the requests: one the
+                    // Script Core does not throw is a difference the run reports by name, not a stalled run.
                     answer = new JsonObject { ["error"] = e.GetType().Name, ["message"] = e.Message };
                 }
                 output.WriteLine(answer.ToJsonString());
@@ -139,7 +139,12 @@ namespace ExPivot.Oracle
                 text.Append("/** ").Append(doc).Append(" */\n");
                 text.Append("export const ").Append(name).Append(": Readonly<Record<string, string>> = {\n");
                 foreach (var (id, word) in table)
+                {
+                    // An id is written between single quotes as it is: one that would need escaping is refused.
+                    if (id.Any(c => c is '\'' or '\\' || char.IsControl(c)))
+                        throw new InvalidOperationException($"The word id {JsonSerializer.Serialize(id)} cannot be written between single quotes.");
                     text.Append("    '").Append(id).Append("': ").Append(JsonSerializer.Serialize(word, Json)).Append(",\n");
+                }
                 text.Append("};\n\n");
             }
             Emit("englishWords", "The English of Excel's English (United States) edition, for every id.", Table(typeof(ExPivot.Engine.PivotWords), "English"));

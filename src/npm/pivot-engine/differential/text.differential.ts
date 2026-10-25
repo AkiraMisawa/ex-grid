@@ -19,7 +19,7 @@ const pick = <T>(list: readonly T[]): T => {
 };
 const int = (below: number): number => Math.floor(next() * below);
 
-const alphabet = [...Array.from('aAbBzZ09 -_.~!*()\'%éÉèeEàÀçÇñÑüÜößẞæÆøØåÅıIiİſsSŉǅǆǄΣσςЖжあアｱかがカガー漢字한글'), 'ﬀ', '\u0301', '\uD801\uDC00', '\uD801\uDC28', '\uD83D\uDE00', '\u00A0', '\u2212'];
+const alphabet = [...Array.from('aAbBzZ09 -_.~!*()\'%éÉèeEàÀçÇñÑüÜößẞæÆøØåÅıIiİſsSŉǅǆǄΣσςЖжあアｱかがカガー漢字한글'), 'ﬀ', 'ᾳ', 'ᾼ', 'ᾀ', 'ῳ', '\u0301', '\uD801\uDC00', '\uD801\uDC28', '\uD83D\uDE00', '\u00A0', '\u2212'];
 
 // What a culture orders is held on text a report holds: Latin with its accents and cases, Greek and Cyrillic,
 // and Japanese, whose katakana and width .NET tailors (collation.ts), with full-width Latin. A combining mark
@@ -79,6 +79,19 @@ test(`casing, escaping and collation, seed ${seed}`, async () => {
                 break;
             }
         }
+    }
+    // Every code point below U+30000, sixty-four to a text: .NET's simple upper case is one code point
+    // where JavaScript's full one is several (ᾳ, ᾀ), and its tables are a version of Unicode of their own.
+    for (let first = 0; first < 0x30000; first += 64) {
+        const text = Array.from({ length: 64 }, (_, n) => first + n)
+            .filter((codePoint) => codePoint < 0xD800 || codePoint > 0xDFFF)
+            .map((codePoint) => String.fromCodePoint(codePoint)).join('');
+        if (text === '') continue;
+        requests.push({ op: 'upper', text });
+        mine.push({ text: upperInvariant(text) });
+        const upper = upperInvariant(text);
+        requests.push({ op: 'fold', a: text, b: upper });
+        mine.push({ equal: foldedText(text) === foldedText(upper) });
     }
     void compareOrdinal;
     const answers = await oracle.askAll(requests);

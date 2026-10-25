@@ -14,7 +14,7 @@ import { compareInvariant, fromPublicKey, keyIdOf, toPublicKey, type ItemKey, ty
 import { readRecordValue } from '../items/record-value';
 import { pivotAggregations, type PivotAggregation } from '../layout/pivot-enums';
 import { defined, elementAt, unreachable } from '../must';
-import { upperInvariant } from '../text/casing';
+import { foldedText } from '../text/casing';
 import { AggregationPass, itemsOfField } from './aggregation-pass';
 import { bindSnapshot, detailAt, itemKeyAt, recordSnapshot, type FieldBinding } from './binding';
 
@@ -266,13 +266,13 @@ function newIdentity(): string {
     return globalThis.crypto.randomUUID().replaceAll('-', '');
 }
 
-// A page of a field's Items: those whose text holds the search ignoring case, in the invariant order, the
-// first `max` of them.
+// A page of a field's Items: those whose text holds the search under OrdinalIgnoreCase, as C#'s Contains
+// finds it (the long s is not an s), in the invariant order, the first `max` of them.
 function itemPage(keys: readonly ItemKey[], query: PivotItemsQuery, sourceVersion: string): PivotItemPage {
-    const search = query.search === undefined ? undefined : upperInvariant(query.search);
+    const search = query.search === undefined ? undefined : foldedText(query.search);
     const matches = search === undefined ? keys : keys.filter(key => {
         const value = toPublicKey(key).value;
-        return value !== undefined && upperInvariant(value).includes(search);
+        return value !== undefined && foldedText(value).includes(search);
     });
     const sorted = matches.toSorted(compareInvariant);
     return PivotItemPage.of(sourceVersion, sorted.slice(0, query.max).map(toPublicKey), sorted.length);

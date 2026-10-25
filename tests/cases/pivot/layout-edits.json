@@ -738,6 +738,36 @@
       ]
     },
     {
+      "name": "ADR-0060/0061: a caption is empty as .NET's Trim leaves it — NEL and the ideographic space are white space, the byte order mark is not",
+      "layout": {"values": [{"field": "Amount", "aggregation": "sum"}, {"field": "Quantity", "aggregation": "sum"}]},
+      "edits": [
+        {"setValueField": 1, "value": {"field": "Quantity", "aggregation": "sum", "caption": ""}},
+        {"setValueField": 1, "value": {"field": "Quantity", "aggregation": "sum", "caption": "　\t"}},
+        {"setValueField": 1, "value": {"field": "Quantity", "aggregation": "sum", "caption": "﻿"}}
+      ],
+      "expect": [
+        {"refused": "captionEmpty", "word": "Enter a name."},
+        {"refused": "captionEmpty", "word": "Enter a name."},
+        {
+          "layout": {
+            "form": "compact",
+            "valuesAxis": "columns",
+            "subtotalsAtTop": true,
+            "grandTotalRow": true,
+            "grandTotalColumn": true,
+            "repeatItemLabels": false,
+            "filters": [],
+            "rows": [],
+            "columns": [],
+            "values": [
+              {"field": "Amount", "aggregation": "sum"},
+              {"field": "Quantity", "aggregation": "sum", "caption": "﻿"}
+            ]
+          }
+        }
+      ]
+    },
+    {
       "name": "ADR-0061: sorting and subtotals on a placed field; an unplaced one is refused",
       "layout": {"rows": [{"field": "Region"}], "values": [{"field": "Amount", "aggregation": "sum"}]},
       "edits": [

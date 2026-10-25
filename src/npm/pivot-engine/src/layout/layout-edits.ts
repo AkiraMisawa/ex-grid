@@ -9,7 +9,7 @@ import { itemKeysEqual, publicKeyId, type PivotItemKey } from '../items/item-key
 import { elementAt } from '../must';
 import { resolveOptions, type PivotOptions } from '../report/labels';
 import { valueCaptions } from '../report/report';
-import { compareOrdinalIgnoringCase } from '../text/casing';
+import { compareOrdinalIgnoringCase, isWhiteSpaceOnly } from '../text/casing';
 import type { PivotAggregation, PivotArea, PivotAxis, PivotReportForm } from './pivot-enums';
 import {
     createPivotFieldPlacement, createPivotValueField, isItemCollapsed, placementOf, placementsIn, pivotSort, sortsEqual, withLayout,
@@ -252,7 +252,7 @@ export function setValueField(layout: PivotLayout, index: number, value: PivotVa
     checkIndex(layout.values.length, index);
     const caption = value.caption;
     if (caption !== undefined) {
-        if (caption.trim().length === 0) return refused(layout, 'captionEmpty');
+        if (isWhiteSpaceOnly(caption)) return refused(layout, 'captionEmpty');
         const others = layout.values.filter((_, i) => i !== index);
         const otherCaptions = valueCaptions(others, fieldMetas(fields), resolveOptions(options));
         if (otherCaptions.some(c => compareOrdinalIgnoringCase(c, caption) === 0)

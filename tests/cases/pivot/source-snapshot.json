@@ -134,6 +134,71 @@
       ]
     },
     {
+      "name": "ADR-0060 (PV-3): text is one Item as OrdinalIgnoreCase folds it — ᾳ is ᾼ, the long s is not s — and a search finds what it folds to",
+      "rows": [
+        ["ᾳ", {"decimal": "1"}, null, null, null, null],
+        ["ᾼ", {"decimal": "2"}, null, null, null, null],
+        ["ſ", {"decimal": "4"}, null, null, null, null],
+        ["S", {"decimal": "8"}, null, null, null, null],
+        ["s", {"decimal": "16"}, null, null, null, null],
+        ["ß", {"decimal": "32"}, null, null, null, null],
+        ["ẞ", {"decimal": "64"}, null, null, null, null]
+      ],
+      "asks": [
+        {"report": {"rows": [{"field": "Text"}], "values": [{"field": "Money", "aggregation": "sum"}]}},
+        {"aggregate": {"rows": ["Text"], "values": [{"field": "Money", "parts": ["sum"]}]}},
+        {"items": "Text", "search": "s"},
+        {"items": "Text", "search": "ſ"},
+        {"items": "Text", "search": "ᾼ"}
+      ],
+      "expect": [
+        {
+          "headers": ["Row Labels", "Sum of Money"],
+          "lines": ["i S || 24", "i ſ || 4", "i ß || 32", "i ẞ || 64", "i ᾳ || 3", "t Grand Total || 127"],
+          "spans": []
+        },
+        {
+          "leaves": 5,
+          "rows": [
+            {
+              "field": "Text",
+              "items": [
+                {"kind": "text", "value": "ᾳ"},
+                {"kind": "text", "value": "ſ"},
+                {"kind": "text", "value": "S"},
+                {"kind": "text", "value": "ß"},
+                {"kind": "text", "value": "ẞ"}
+              ]
+            }
+          ],
+          "columns": [],
+          "leaf": [
+            {"at": [0], "records": 2},
+            {"at": [1], "records": 1},
+            {"at": [2], "records": 2},
+            {"at": [3], "records": 1},
+            {"at": [4], "records": 1}
+          ],
+          "values": [
+            {
+              "field": "Money",
+              "parts": ["sum"],
+              "leaves": [
+                {"values": 2, "numbers": 2, "sum": {"decimal": "3"}},
+                {"values": 1, "numbers": 1, "sum": {"decimal": "4"}},
+                {"values": 2, "numbers": 2, "sum": {"decimal": "24"}},
+                {"values": 1, "numbers": 1, "sum": {"decimal": "32"}},
+                {"values": 1, "numbers": 1, "sum": {"decimal": "64"}}
+              ]
+            }
+          ]
+        },
+        {"version": "asked", "total": 1, "items": [{"kind": "text", "value": "S"}]},
+        {"version": "asked", "total": 1, "items": [{"kind": "text", "value": "ſ"}]},
+        {"version": "asked", "total": 1, "items": [{"kind": "text", "value": "ᾳ"}]}
+      ]
+    },
+    {
       "name": "ADR-0060/0064 (PV-3): a non-finite Double is #NUM!, after the Booleans and before (blank)",
       "rows": [
         ["a", {"decimal": "1"}, {"double": "NaN"}, null, null, null],
@@ -231,6 +296,36 @@
               "field": "Money",
               "parts": ["sum"],
               "leaves": [{"values": 2, "numbers": 2, "sum": 1.5845632502852868e+29}]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ADR-0060 (PV-4): an exact sum is held in 128 bits, and one that would leave them is a double from then on, though a later number brings it back",
+      "rows": [
+        ["a", {"decimal": "79228162514264337593543950335"}, null, null, null, null],
+        ["a", {"decimal": "0.0000000001"}, null, null, null, null],
+        ["a", {"decimal": "-79228162514264337593543950335"}, null, null, null, null],
+        ["b", {"decimal": "0.0000000001"}, null, null, null, null],
+        ["b", {"decimal": "1"}, null, null, null, null],
+        ["b", {"decimal": "-1"}, null, null, null, null]
+      ],
+      "asks": [{"aggregate": {"rows": ["Text"], "values": [{"field": "Money", "parts": ["sum"]}]}}],
+      "expect": [
+        {
+          "leaves": 2,
+          "rows": [{"field": "Text", "items": [{"kind": "text", "value": "a"}, {"kind": "text", "value": "b"}]}],
+          "columns": [],
+          "leaf": [{"at": [0], "records": 3}, {"at": [1], "records": 3}],
+          "values": [
+            {
+              "field": "Money",
+              "parts": ["sum"],
+              "leaves": [
+                {"values": 3, "numbers": 3, "sum": 1e-10},
+                {"values": 3, "numbers": 3, "sum": {"decimal": "0.0000000001"}}
+              ]
             }
           ]
         }
