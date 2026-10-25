@@ -10,11 +10,11 @@ import { sheet, cell } from './sheet-helpers.mjs';
 // tests whatever the hour. A day read across a midnight is either side of it, so the answer is
 // checked against the zone's date just before and just after it is read.
 
-/** The minute in `zone` at this moment, as yyyy-mm-dd hh:mm. */
-function minuteIn(zone) {
+/** The minute in `zone` `ahead` milliseconds from this moment, as yyyy-mm-dd hh:mm. */
+function minuteIn(zone, ahead = 0) {
     const parts = Object.fromEntries(new Intl.DateTimeFormat('en-CA', {
         timeZone: zone, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
-    }).formatToParts(new Date()).map((p) => [p.type, p.value]));
+    }).formatToParts(new Date(Date.now() + ahead)).map((p) => [p.type, p.value]));
     return `${parts.year}-${parts.month}-${parts.day} ${parts.hour}:${parts.minute}`;
 }
 
@@ -89,21 +89,25 @@ test.describe('NOW() over time', () => {
 
     test('SH-60 / ADR-0124: NOW() moves on as the minute turns, in the Consumer\'s zone', async ({ page }) => {
         // Each reading lies between the zone's minute before the wait for it and after it is read: the
-        // strings order as the minutes do.
+        // strings order as the minutes do. A time is shown rounded to the nearest second, as Excel shows
+        // it, so a moment read in the last half second of a minute shows the next one: the minute after is
+        // the minute half a second on. The timer due at the turn reads such a moment when it fires a few
+        // milliseconds early, as one run by a clock coarser than the one NOW() reads may.
         const zone = 'Pacific/Kiritimati';
+        const roundsUpTo = 500;
         const within = (shown, before, after) => expect(before <= shown && shown <= after, `${shown} between ${before} and ${after}`).toBe(true);
         const opened = minuteIn(zone);
         await page.goto(`/sheet?case=today&zone=${zone}`);
         const a4 = cell(sheet(page), 'A4');
         await expect(a4).toHaveText(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/);
         const first = (await a4.textContent()).trim();
-        within(first, opened, minuteIn(zone));
+        within(first, opened, minuteIn(zone, roundsUpTo));
 
         // The next minute, once it has turned. The wait is the clock's, at most a minute and the
         // timer's lag.
         await expect(a4).not.toHaveText(first, { timeout: 75_000 });
         const shown = (await a4.textContent()).trim();
-        within(shown, first, minuteIn(zone));
+        within(shown, first, minuteIn(zone, roundsUpTo));
         expect(shown > first).toBe(true);
     });
 });
