@@ -1,6 +1,6 @@
 # Windows, 2026-10-25: the name Excel gives a new Sheet
 
-**Asked at:** `5e3eecb4` (origin/main), on 2026-10-25 from 02:50 to 03:05 BST, on the Windows desktop of the earlier
+**Asked at:** `5e3eecb4` (origin/main), on 2026-10-25 from 01:49 to 01:52 GMT, on the Windows desktop of the earlier
 runs, Excel for Microsoft 365 16.0 build 20430, regional format en-GB. It carries on the 2026-10-24 run's answer 13
 (`../2026-10-24-windows-workbook-12/report.md`), which the user chose to build for 0.2.0. These are questions, not
 checks: the run tags nothing.
