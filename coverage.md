@@ -2,7 +2,7 @@
 
 | Product | Line | Branch |
 |---|---|---|
-| ExGrid | 95% | 88% |
+| ExGrid | 95% | 88.2% |
 | ExSheet | 95.4% | 88.6% |
 | ExPivot | 94.2% | 85.5% |
 | ExChart | 90.3% | 81.2% |
@@ -14,19 +14,19 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/25/2026 - 01:23:21 |
+| Generated on: | 10/25/2026 - 02:09:07 |
 | Parser: | MultiReport (19x Cobertura) |
 | Assemblies: | 16 |
 | Classes: | 1181 |
 | Files: | 605 |
-| **Line coverage:** | 94.4% (81431 of 86235) |
-| Covered lines: | 81431 |
-| Uncovered lines: | 4804 |
-| Coverable lines: | 86235 |
-| Total lines: | 137863 |
-| **Branch coverage:** | 87% (49067 of 56378) |
-| Covered branches: | 49067 |
-| Total branches: | 56378 |
+| **Line coverage:** | 94.4% (81463 of 86254) |
+| Covered lines: | 81463 |
+| Uncovered lines: | 4791 |
+| Coverable lines: | 86254 |
+| Total lines: | 137901 |
+| **Branch coverage:** | 87% (49109 of 56396) |
+| Covered branches: | 49109 |
+| Total branches: | 56396 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
@@ -239,7 +239,7 @@
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExGrid**|**94.7%**|**88.1%**|
+|**ExGrid**|**94.7%**|**88.3%**|
 |ExGrid.CellChangeTimes.KeyTimes<TRow>|76.6%|66.6%|
 |ExGrid.CellChangeTimes<TRow>|90.2%|78.5%|
 |ExGrid.Cells.Border|100%|75%|
@@ -299,8 +299,8 @@
 |ExGrid.CircuitBinding|100%|100%|
 |ExGrid.ClauseDocument|100%||
 |ExGrid.Clipboard.ClipboardBlock|100%||
-|ExGrid.Clipboard.ClipboardData|91.6%|81.5%|
-|ExGrid.Clipboard.ClipboardParse|94.1%|72.1%|
+|ExGrid.Clipboard.ClipboardData|100%|97.3%|
+|ExGrid.Clipboard.ClipboardParse|96.9%|84%|
 |ExGrid.Clipboard.ClipboardPayload|100%||
 |ExGrid.Clipboard.ClipboardRules|99.3%|99.1%|
 |ExGrid.Clipboard.CopyDecision|100%|100%|
@@ -460,7 +460,7 @@
 |ExGrid.Keys.GridEditingKeys|100%||
 |ExGrid.Keys.GridKeyAction|100%||
 |ExGrid.Keys.GridKeyClaims|100%||
-|ExGrid.Keys.GridKeys|100%|99%|
+|ExGrid.Keys.GridKeys|100%|99.1%|
 |ExGrid.LiveRequery|97.2%|95.8%|
 |ExGrid.LiveRequery<TRow>|97.2%|95.8%|
 |ExGrid.LiveRequeryOutcome<TRow>|100%||
@@ -1117,7 +1117,7 @@
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExSheet.Engine**|**97.8%**|**91.9%**|
+|**ExSheet.Engine**|**97.8%**|**91.8%**|
 |ExSheet.Engine.ArgumentHint|100%||
 |ExSheet.Engine.ArgumentValue|100%||
 |ExSheet.Engine.AxisFormat|100%|100%|
