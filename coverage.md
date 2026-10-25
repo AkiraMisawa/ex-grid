@@ -14,19 +14,19 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/25/2026 - 22:02:02 |
+| Generated on: | 10/25/2026 - 22:20:14 |
 | Parser: | MultiReport (19x Cobertura) |
 | Assemblies: | 16 |
-| Classes: | 1181 |
-| Files: | 605 |
-| **Line coverage:** | 94.5% (81710 of 86434) |
-| Covered lines: | 81710 |
-| Uncovered lines: | 4724 |
-| Coverable lines: | 86434 |
-| Total lines: | 138141 |
-| **Branch coverage:** | 87.2% (49338 of 56516) |
-| Covered branches: | 49338 |
-| Total branches: | 56516 |
+| Classes: | 1183 |
+| Files: | 606 |
+| **Line coverage:** | 94.5% (81834 of 86562) |
+| Covered lines: | 81834 |
+| Uncovered lines: | 4728 |
+| Coverable lines: | 86562 |
+| Total lines: | 138379 |
+| **Branch coverage:** | 87.3% (49387 of 56570) |
+| Covered branches: | 49387 |
+| Total branches: | 56570 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
@@ -838,7 +838,7 @@
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExPivot.Engine**|**96.2%**|**88.4%**|
+|**ExPivot.Engine**|**96.2%**|**88.5%**|
 |ExPivot.Engine.AggregateValue|100%|100%|
 |ExPivot.Engine.AggregationPass|98.7%|96.1%|
 |ExPivot.Engine.AxisNode|87%|80%|
@@ -862,7 +862,7 @@
 |ExPivot.Engine.DetailsPass|100%|100%|
 |ExPivot.Engine.Exactly|98.8%|92.3%|
 |ExPivot.Engine.FetchingPivotReportSource|80.3%|48.9%|
-|ExPivot.Engine.FetchingPivotSource|94.3%|68.4%|
+|ExPivot.Engine.FetchingPivotSource|90.1%|68.7%|
 |ExPivot.Engine.FieldBinding|96.4%|94.4%|
 |ExPivot.Engine.FieldMeta|100%|100%|
 |ExPivot.Engine.ItemKey|83.9%|70.1%|
@@ -870,7 +870,7 @@
 |ExPivot.Engine.ItemOrder|97.4%|90.7%|
 |ExPivot.Engine.ItemRef|96.1%|100%|
 |ExPivot.Engine.ItemSpace|98.4%|98.7%|
-|ExPivot.Engine.ItemsPass|100%|97%|
+|ExPivot.Engine.ItemsPass|100%|97.5%|
 |ExPivot.Engine.LeafIndex|84%|85.8%|
 |ExPivot.Engine.LocalPivotReportSource|100%|96.3%|
 |ExPivot.Engine.LocalPivotReportSource.HeldReport|100%||
@@ -911,17 +911,19 @@
 |ExPivot.Engine.PivotFields<T>|100%|91.6%|
 |ExPivot.Engine.PivotGeneral|98.6%|95%|
 |ExPivot.Engine.PivotHeaderSpan|100%||
+|ExPivot.Engine.PivotItemCounts|100%|100%|
 |ExPivot.Engine.PivotItemInfo|100%||
 |ExPivot.Engine.PivotItemKey|94.1%|93.3%|
 |ExPivot.Engine.PivotItemPage|91.6%|50%|
 |ExPivot.Engine.PivotItemPath|100%|100%|
 |ExPivot.Engine.PivotItemsQuery|93.3%|100%|
-|ExPivot.Engine.PivotJson|95.8%|83.3%|
+|ExPivot.Engine.PivotJson|96%|84.4%|
 |ExPivot.Engine.PivotLabelColumn|100%||
 |ExPivot.Engine.PivotLabelSizing|100%|97.5%|
 |ExPivot.Engine.PivotLayout|96.3%|74.2%|
 |ExPivot.Engine.PivotLayoutEdits|94.5%|81.3%|
 |ExPivot.Engine.PivotLayoutJson|97.3%|93.1%|
+|ExPivot.Engine.PivotLeafBound|100%|100%|
 |ExPivot.Engine.PivotNumber|82.6%|50%|
 |ExPivot.Engine.PivotNumberFormat|85.1%|92.8%|
 |ExPivot.Engine.PivotOptions|80%||
@@ -963,10 +965,10 @@
 |ExPivot.Engine.PivotRowLabel|100%||
 |ExPivot.Engine.PivotSlicing|100%|60%|
 |ExPivot.Engine.PivotSort|100%||
-|ExPivot.Engine.PivotSource|100%|95.8%|
-|ExPivot.Engine.PivotSource<TRecord>|100%|95.8%|
+|ExPivot.Engine.PivotSource|100%|94%|
+|ExPivot.Engine.PivotSource<TRecord>|100%|94%|
 |ExPivot.Engine.PivotSourceChanged|100%||
-|ExPivot.Engine.PivotSourceFeatures|95.2%|83.3%|
+|ExPivot.Engine.PivotSourceFeatures|96.1%|83.3%|
 |ExPivot.Engine.PivotSourceRefusal|100%|50%|
 |ExPivot.Engine.PivotToggle|100%||
 |ExPivot.Engine.PivotValue|96.7%|100%|
@@ -984,7 +986,7 @@
 |ExPivot.Engine.ReportBuilder.Walk|100%|100%|
 |ExPivot.Engine.RowValues|87.9%|82.6%|
 |ExPivot.Engine.Slicer|92.6%|82.3%|
-|ExPivot.Engine.SnapshotPivotSource|94%|84.8%|
+|ExPivot.Engine.SnapshotPivotSource|94.5%|85.2%|
 |ExPivot.Engine.SpanDigits|87.5%|75%|
 |ExPivot.Engine.ValueAccumulator|98%|98.5%|
 |ExPivot.Engine.ValueCaptions|96.9%|87.5%|
@@ -1030,12 +1032,12 @@
 |ExSheet.BuiltInToolbarItem|96.4%|97.3%|
 |ExSheet.ColourItem|96%|100%|
 |ExSheet.CommaItem|83.3%||
-|ExSheet.Components.ExSheet|91.3%|81.8%|
+|ExSheet.Components.ExSheet|91.3%|81.7%|
 |ExSheet.Components.ExSheet.KeyboardListener|100%||
 |ExSheet.Components.ExSheet.KeyUpListener|100%||
 |ExSheet.Components.ExSheet.OwnFindOutcome|100%||
 |ExSheet.Components.ExSheet.SheetGridChrome|86.6%|73%|
-|ExSheet.Components.ExSheet<T>|91.3%|81.8%|
+|ExSheet.Components.ExSheet<T>|91.3%|81.7%|
 |ExSheet.Components.ExSheetStylesheet|100%||
 |ExSheet.Components.FormatCellsPanel|97.3%|87.5%|
 |ExSheet.Components.SheetFindPanel|91.7%|76.5%|
