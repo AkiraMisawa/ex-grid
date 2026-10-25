@@ -196,6 +196,7 @@ export interface GridOptions<Row> {
     readonly columns: readonly GridColumn<Row>[];
     readonly density?: GridDensity;
     readonly headerHeight?: number;
+    readonly onSelectionChanged?: (selection: GridSelection) => void;
     readonly pinnedColumnCount?: number;
     readonly rowHeight?: number;
     readonly rows?: readonly Row[];

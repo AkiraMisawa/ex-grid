@@ -50,6 +50,7 @@ public class CallCaseTests
         ["ReferenceColour"] = typeof(ExGrid.Cells.ReferenceColour),
         ["ReferenceColouring"] = typeof(ExGrid.Cells.ReferenceColouring),
         ["RowClasses"] = typeof(ExGrid.Components.RowClasses),
+        ["SelectionStyles"] = typeof(ExGrid.Components.SelectionStyles),
         ["RowMarkCounts"] = typeof(ExGrid.Rows.RowMarkCounts),
         ["RowMarkRules"] = typeof(ExGrid.Rows.RowMarkRules),
         ["RowRange"] = typeof(RowRange),

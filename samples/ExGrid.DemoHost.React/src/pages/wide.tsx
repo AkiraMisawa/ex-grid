@@ -1,4 +1,5 @@
 import { useMemo, useState, type ReactElement } from 'react';
+import type { GridSelection } from '@ex-grid/core';
 import { ExGrid } from '@ex-grid/react';
 import { DemoNav } from '../demo-nav';
 import { wideColumns, type DemoWideRow } from '../demo-data';
@@ -16,6 +17,7 @@ export function Wide(): ReactElement {
     const total = asked === undefined ? defaultTotal : Number(asked);
     const [virtualiseColumns, setVirtualise] = useState(true);
     const [pinnedColumnCount, setPinned] = useState(2);
+    const [selection, setSelection] = useState<GridSelection | undefined>(undefined);
     const rows = useMemo(() => Array.from({ length: total }, (_, index): DemoWideRow => ({ index })), [total]);
     return (
         <>
@@ -36,7 +38,13 @@ export function Wide(): ReactElement {
             </div>
             <p className="demo-status">
                 {/* The grid's source holds every row, so its Window is all of them. */}
-                Window: rows 0–{total - 1} of {total}, {wideColumns.length} columns.
+                Window: rows 0–{total - 1} of {total}, {wideColumns.length} columns.{' '}
+                <span id="selection-status">
+                    {/* The count is the sum of the rectangles' areas, so it costs nothing to show for a selection
+                        of any size: no data is needed to compute it (ADR-0014). */}
+                    Selected: {selection === undefined ? 0 : selection.cellCount}{' '}
+                    {selection !== undefined && selection.ranges.length > 1 ? `in ${selection.ranges.length} ranges` : ''}
+                </span>
             </p>
             <ExGrid
                 columns={wideColumns}
@@ -45,7 +53,8 @@ export function Wide(): ReactElement {
                 viewportHeight={600}
                 viewportWidth={900}
                 pinnedColumnCount={pinnedColumnCount}
-                virtualiseColumns={virtualiseColumns} />
+                virtualiseColumns={virtualiseColumns}
+                onSelectionChanged={setSelection} />
         </>
     );
 }
