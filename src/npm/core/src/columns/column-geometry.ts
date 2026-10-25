@@ -107,22 +107,25 @@ export class ColumnGeometry {
         let paintedEdge = devicePixelRatio === undefined ? 0 : devicePixelsAt(declaredEdge, devicePixelRatio);
         let offset = devicePixelRatio === undefined ? leadWidthPx : paintedEdge / devicePixelRatio;
         offsets.push(offset);
-        widthsPx.forEach((width, i) => {
-            if (!Number.isFinite(width) || width < 0) {
+        // An indexed loop, not forEach: forEach skips the holes of a sparse array, which an untyped caller
+        // can pass, and each must be refused by its column like any other width that is not one.
+        for (let i = 0; i < widthsPx.length; i++) {
+            const width = widthsPx[i];
+            if (width === undefined || !Number.isFinite(width) || width < 0) {
                 throw new RangeError(`Column ${i} has a width of ${width}px; a resolved width is finite and non-negative (ADR-0016).`);
             }
             if (devicePixelRatio === undefined) {
                 widths.push(width);
                 offset += width;
                 offsets.push(offset);
-                return;
+                continue;
             }
             declaredEdge += width;
             const next = devicePixelsAt(declaredEdge, devicePixelRatio);
             widths.push((next - paintedEdge) / devicePixelRatio);
             offsets.push(next / devicePixelRatio);
             paintedEdge = next;
-        });
+        }
 
         const total = elementAt(offsets, widthsPx.length);
         if (total > ColumnGeometry.maxScrollWidthPx) {

@@ -45,3 +45,23 @@ describe('GlyphWidthTable', () => {
         expect(() => new GlyphWidthTable(14, [['\uD835', 13, 14]])).toThrow(TypeError);
     });
 });
+
+describe('CellTextMetrics as the paint path reads it', () => {
+    const metrics = new CellTextMetrics({
+        wideWidthPx: 14, digitWidthPx: 9, narrowWidthPx: 5, fullWidthPx: 16, cellHorizontalPaddingPx: 0,
+        boldWideWidthPx: 15, boldDigitWidthPx: 10, boldNarrowWidthPx: 6, otherWidthPx: 13, boldOtherWidthPx: 14,
+    });
+
+    it('ADR-0027 P5: the bold and Text metrics are made once, not per cell', () => {
+        expect(metrics.bold).toBe(metrics.bold);
+        expect(metrics.for('text')).toBe(metrics.for('text'));
+        expect(metrics.for('number')).toBe(metrics);
+    });
+
+    it('ADR-0016: a lone surrogate is charged as U+FFFD, as C# reads it', () => {
+        const table = new GlyphWidthTable(14, [['�', 6, 7]]);
+
+        expect(metrics.withGlyphWidths(table, 14).textWidthPx('1\uD835')).toBe(9 + 6);
+        expect(metrics.textWidthPx('1\uD835')).toBe(9 + 13);
+    });
+});

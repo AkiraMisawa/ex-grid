@@ -146,6 +146,10 @@ and says what it answers:
 | `throws`, `saying` | The refusal, and text its message holds in both languages |
 | `then` | Checks on the answer, as the subject of each |
 
+The strings `"Infinity"`, `"-Infinity"` and `"NaN"` are numbers wherever they stand in a `calls` case,
+argument or answer: the Script Core's runner has no parameter types to tell text from a number by, so a
+case cannot pass or expect them as text, and the C# runner refuses one that passes them to a string.
+
 An argument may be another subject, `{"new": "Subject", "with": {name: value, …}}` (and `"via"`), made as a
 case makes one: a `CellTextMetrics` passed to `OverflowRules.decide`, a `GlyphWidthTable` to
 `withGlyphWidths`. An array passed where C# takes a tuple, or a list of them, is read element by element.

@@ -60,15 +60,22 @@ export function decideOverflow(
 }
 
 // Runs of hashes by length, made once (ADR-0027 P5). The run is the width's string, not the value's, so
-// the same few lengths are every hashed cell any grid paints.
-const hashRuns = new Map<number, string>();
+// the same few lengths are every hashed cell any grid paints. Bounded, because the key is a pixel width a
+// dragged column passes through: runs up to `keptRunLength` are kept, at most about half a million
+// characters in all, and a longer one, which only a column thousands of pixels wide asks for, is made
+// each time.
+const keptRunLength = 1024;
+const hashRuns: (string | undefined)[] = [];
 
 function hashRun(count: number): string {
-    const known = hashRuns.get(count);
+    if (count > keptRunLength) {
+        return '#'.repeat(count);
+    }
+    const known = hashRuns[count];
     if (known !== undefined) {
         return known;
     }
     const run = '#'.repeat(count);
-    hashRuns.set(count, run);
+    hashRuns[count] = run;
     return run;
 }

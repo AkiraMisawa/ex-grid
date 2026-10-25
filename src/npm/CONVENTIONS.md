@@ -58,8 +58,11 @@ longer suppresses anything. A reviewer reads every one.
 - **Immutable base plus a thin diff** (spine 2): fields are `readonly`, data handed out is frozen, and an
   operation returns a new value rather than changing one. `Array#sort` and the other mutating methods
   are refused **(lint)** in favour of `toSorted` and its kin.
-- **A value with an invariant is a class** with a private constructor, `#private` fields, and static
-  factories that check what they are given. Stateless helpers are functions.
+- **A value with an invariant is a class** with `#private` readonly fields, made only through what checks
+  what it is given: a public constructor taking an options object (`new ViewportGeometry({ … })`) where
+  any caller may make one, or a private constructor behind static factories and transitions where only
+  the class may make its states (`Selection`). A derived value made on first asking may be kept in a
+  private field, the one field written after construction. Stateless helpers are functions.
 - **Only syntax TypeScript erases** **(tsc, `erasableSyntaxOnly`)**: no `enum`, `namespace` or parameter
   properties. A closed set of names is a union of string literals (`'up' | 'down' | 'left' | 'right'`).
 - **Names are the glossary's** (`CONTEXT.md`): Focus, Extent, Overlay, Window. Types and classes are

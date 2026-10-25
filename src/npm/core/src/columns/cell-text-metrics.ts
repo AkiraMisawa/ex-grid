@@ -166,12 +166,16 @@ export class CellTextMetrics {
     static readonly otherWidthAllowance = otherWidthAllowance;
 
     readonly #widths: Widths;
-    // Set once, by the copy that carries them, before the metrics are handed out: the table, what its
-    // widths are multiplied by (the metrics' font size over the size it was measured at), and whether its
-    // bold widths are read.
-    #glyphs: GlyphWidthTable | undefined;
-    #glyphScale = 1;
-    #glyphBold = false;
+    // The table, what its widths are multiplied by (the metrics' font size over the size it was measured
+    // at), and whether its bold widths are read.
+    readonly #glyphs: GlyphWidthTable | undefined;
+    readonly #glyphScale: number;
+    readonly #glyphBold: boolean;
+    // The bold metrics and the Text metrics, made on first asking and kept: the paint path asks for them
+    // per bold cell and per label (ADR-0027 P5). A memo of a value derived from readonly state, so the
+    // metrics stay immutable as anyone can observe them.
+    #bold: CellTextMetrics | undefined;
+    #asText: CellTextMetrics | undefined;
 
     /** Metrics in one of the forms {@link CellTextMetricsOptions} names. Refuses a narrow width wider than
      * its digit, a wide, full-width or other width narrower than it, and a width that is not finite. */
@@ -179,15 +183,17 @@ export class CellTextMetrics {
         const widths = widthsOf(options);
         check(widths);
         this.#widths = Object.freeze(widths);
+        const glyphs = carried.get(options);
+        this.#glyphs = glyphs?.table;
+        this.#glyphScale = glyphs === undefined ? 1 : glyphs.scale;
+        this.#glyphBold = glyphs !== undefined && glyphs.bold;
     }
 
     // A copy with every width given and the glyph table carried: how each derived metrics is made.
-    static #copy(widths: Widths, glyphs: GlyphWidthTable | undefined, glyphScale: number, glyphBold: boolean): CellTextMetrics {
-        const copy = new CellTextMetrics(widths);
-        copy.#glyphs = glyphs;
-        copy.#glyphScale = glyphScale;
-        copy.#glyphBold = glyphBold;
-        return copy;
+    static #copy(widths: Widths, table: GlyphWidthTable | undefined, scale: number, bold: boolean): CellTextMetrics {
+        const options = { ...widths };
+        carried.set(options, { table, scale, bold });
+        return new CellTextMetrics(options);
     }
 
     /** What `%` costs, and `€ − + #`, each measured past the digit on some platform. One `#` of an
@@ -225,6 +231,11 @@ export class CellTextMetrics {
      * often it is asked.
      */
     get bold(): CellTextMetrics {
+        this.#bold ??= this.#makeBold();
+        return this.#bold;
+    }
+
+    #makeBold(): CellTextMetrics {
         const w = this.#widths;
         return CellTextMetrics.#copy({
             wideWidthPx: w.boldWideWidthPx, digitWidthPx: w.boldDigitWidthPx, narrowWidthPx: w.boldNarrowWidthPx,
@@ -271,13 +282,16 @@ export class CellTextMetrics {
             return this;
         }
         const w = this.#widths;
-        return CellTextMetrics.#copy({ ...w, otherWidthPx: w.digitWidthPx, boldOtherWidthPx: w.boldDigitWidthPx },
+        this.#asText ??= CellTextMetrics.#copy({ ...w, otherWidthPx: w.digitWidthPx, boldOtherWidthPx: w.boldDigitWidthPx },
             undefined, 1, this.#glyphBold);
+        return this.#asText;
     }
 
     // One character's charge (ADR-0016): its class's, or its own width where the table holds it. Anything
-    // no class names and no table holds is the other class. A lone surrogate is the other class.
-    #widthOf(codePoint: number): number {
+    // no class names and no table holds is the other class. A lone surrogate is charged as U+FFFD, the
+    // character C#'s rune enumeration reads it as, so both cores charge the same text alike.
+    #widthOf(character: number): number {
+        const codePoint = character >= 0xD800 && character <= 0xDFFF ? 0xFFFD : character;
         const w = this.#widths;
         if (wide.has(codePoint)) return w.wideWidthPx;
         if (narrow.has(codePoint)) return w.narrowWidthPx;
@@ -320,6 +334,11 @@ export class CellTextMetrics {
         return columnWidthPx - 2 * this.#widths.cellHorizontalPaddingPx;
     }
 }
+
+// The glyph table a copy carries, keyed by the options object #copy makes and hands straight to the
+// constructor. Module-private, so a caller cannot pass a table that way: a table is added with
+// withGlyphWidths, which checks the size it is scaled to.
+const carried = new WeakMap<object, { readonly table: GlyphWidthTable | undefined; readonly scale: number; readonly bold: boolean }>();
 
 const codePoints = (glyphs: string): ReadonlySet<number> =>
     new Set(Array.from(glyphs, glyph => defined(glyph.codePointAt(0), 'the code point of a glyph')));

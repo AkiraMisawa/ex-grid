@@ -224,6 +224,10 @@ public class CallCaseTests
     /// a tuple is read from an array, and a collection of tuples or subjects element by element.</remarks>
     private static object? Convert(JsonElement value, Type type)
     {
+        // The Script Core's runner has no parameter types to go by, so it reads these strings as numbers
+        // wherever they stand; a case passing one as text would hold in one core and not the other.
+        if (type == typeof(string) && value.ValueKind == JsonValueKind.String && value.GetString() is "Infinity" or "-Infinity" or "NaN")
+            throw new InvalidOperationException($"{value} stands for a number in a case, and cannot be passed as text (tests/cases/README.md).");
         if (value.ValueKind == JsonValueKind.Object && value.TryGetProperty("new", out var subjectName))
         {
             var subject = Subjects[subjectName.GetString()!];

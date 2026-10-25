@@ -156,7 +156,9 @@ function holds(subject: Subject, instance: object | undefined, check: Check): vo
     const result = answer();
     if (check.then !== undefined) {
         if (typeof result !== 'object' || result === null) throw new Error(`${label} answered no object for "then" to read.`);
-        for (const next of check.then) holds(subject, result, next);
+        // The answer is the subject of each check, its own statics included, as C# reads them off its type.
+        const answered: Subject = { create: (_, via) => noFactory(result.constructor.name, via), statics: result.constructor };
+        for (const next of check.then) holds(answered, result, next);
         return;
     }
     if (!('is' in check)) throw new Error(`The check ${JSON.stringify(check)} says neither what it is nor how it is refused.`);

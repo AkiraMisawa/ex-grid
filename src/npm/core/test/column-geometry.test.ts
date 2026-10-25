@@ -3,6 +3,8 @@
 // single answers are shared cases (tests/cases/columns/geometry.json).
 import { describe, expect, it } from 'vitest';
 import { ColumnGeometry } from '../src/columns/column-geometry';
+import { ViewportBox } from '../src/viewport/viewport-box';
+import { ViewportGeometry } from '../src/viewport/viewport-geometry';
 
 /** Whether a CSS length lies on a whole Device Pixel at a ratio, within a float's noise. */
 const onADevicePixel = (px: number, ratio: number) => Math.abs((px * ratio) - Math.round(px * ratio)) < 1e-9;
@@ -48,4 +50,23 @@ describe('ColumnGeometry on Device Pixels', () => {
             // And some are painted narrower, which is why a number is given the pixel at all.
             expect(narrower).toBeGreaterThan(0);
         });
+});
+
+describe('ColumnGeometry at the boundary', () => {
+    it('ADR-0016: a hole in a sparse widths array is refused by its column, not as a defect of the core', () => {
+        // eslint-disable-next-line no-sparse-arrays -- the hole is the case
+        const sparse = [100, , 100] as number[];
+
+        expect(() => new ColumnGeometry({ widthsPx: sparse, pinnedCount: 0, viewportWidthPx: 350 })).toThrow(/^Column 1 /);
+    });
+
+    it('ADR-0013: the geometry is built from what the scrollbars leave of the box', () => {
+        const box = new ViewportBox({ outerWidthPx: 900, outerHeightPx: 600, gutterWidthPx: 15, gutterHeightPx: 15 });
+        const rows = new ViewportGeometry({ rowHeightPx: 28, viewportHeightPx: box.visibleHeightPx - 28, totalRowCount: 1000 });
+        const columns = new ColumnGeometry({ widthsPx: [100, 100, 100], pinnedCount: 0, viewportWidthPx: box.visibleWidthPx });
+
+        // 557px of rows rather than 572: the row half behind the horizontal scrollbar is not promised.
+        expect(rows.viewportHeightPx).toBe(557);
+        expect(columns.viewportWidthPx).toBe(885);
+    });
 });

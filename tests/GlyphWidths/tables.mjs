@@ -1,8 +1,7 @@
 // Writes the per-glyph tables the estimate charges letters and currency signs by (ADR-0016; ticket
 // 83), from the records beside this file:
 //   src/ExGrid/Columns/DefaultGlyphWidths.cs  the core's, at 14px and at 12px;
-//   src/ExGrid.MudBlazor/RobotoGlyphTable.cs  ExGrid.MudBlazor's, at 14px, which the core scales;
-//   src/npm/core/src/columns/default-glyph-widths.ts  the Script Core's, the same as the C# core's.
+//   src/ExGrid.MudBlazor/RobotoGlyphTable.cs  ExGrid.MudBlazor's, at 14px, which the core scales.
 // Run it after measure.mjs: node tests/GlyphWidths/tables.mjs
 //
 // A glyph joins a table only where every record shows the face drawing it itself. A glyph the face
@@ -113,26 +112,5 @@ internal static class RobotoGlyphTable
 {
 ${table('At14', 14, robotoAt14, 'At 14px, which the core scales to the resolved size.')}
 }
-`);
-const tsEntries = (rows) => rows.map(([g, r, b]) => `        [${JSON.stringify(g).replaceAll('"', "'")}, ${r.toFixed(2)}, ${b.toFixed(2)}],`).join('\n');
-fs.writeFileSync(path.join(repo, 'src/npm/core/src/columns/default-glyph-widths.ts'), `${header(core)}
-import { GlyphWidthTable } from './glyph-width-table';
-
-/**
- * The core's per-glyph widths (ADR-0016; ticket 83), the same as the C# core's DefaultGlyphWidths: each
- * letter and currency sign DejaVu Sans draws, at the widest of macOS's \`system-ui\`, Windows'
- * \`system-ui\` (Segoe UI under an English display, Yu Gothic UI under a Japanese one) and DejaVu Sans.
- * Regular is the widest at 400, 500 and 600, bold at 700, a shade over.
- */
-export const defaultGlyphWidths = Object.freeze({
-    /** At 14px: Compact, Standard and Comfortable. */
-    at14: new GlyphWidthTable(14, [
-${tsEntries(coreAt('14'))}
-    ]),
-    /** At 12px, measured there rather than scaled: Excel. */
-    at12: new GlyphWidthTable(12, [
-${tsEntries(coreAt('12'))}
-    ]),
-});
 `);
 console.log(`core: ${coreGlyphs.length} glyphs; Roboto: ${robotoGlyphs.length} glyphs`);
