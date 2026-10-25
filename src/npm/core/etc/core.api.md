@@ -42,6 +42,15 @@ export interface CellPosition {
 export type ColumnType = 'text' | 'number' | 'date' | 'boolean';
 
 // @public
+export type CommitRefusalReason =
+/** A Row Key is in force and no row in the Window answers the key of the row the editor was opened on. A
+* commit made once the row is back in the Window lands. */
+'rowLeftTheWindow'
+/** No Row Key is in force and the Row Sequence Version moved while the editor was open: its position
+* names another row now. */
+| 'orderMoved';
+
+// @public
 export type CopyRefusalReason = 'emptySelection' | 'misalignedShape' | 'tooLarge' | 'rowsUnavailable' | 'clipboardUnavailable' | 'refusedByConsumer';
 
 // @public
@@ -56,6 +65,37 @@ export type DistinctValues = {
     readonly values: readonly unknown[];
 } | {
     readonly kind: 'tooMany';
+};
+
+// @public
+export type EditDiscardReason =
+/** The columns changed under the open editor, so its position stopped naming the column it was opened on
+* (ADR-0011). */
+'columnsChanged'
+/** No Row Key is in force, and the row left the Window under the order the editor was opened under before
+* the commit landed: there is no row left to carry the intent, and a guess by position would land the
+* value on another row (ADR-0011). With a Row Key the commit is refused instead (ADR-0142). */
+| 'rowLeftTheWindow'
+/** The column stopped being Editable while its editor was open: `editable` is asked again at the commit,
+* not only when the editor opened (ADR-0035). A grid no longer given `onEdit` edits no column. */
+| 'columnNoLongerEditable'
+/** Typing reached the grid aimed at a Selection the rows' order took away since it was painted: it opens
+* nothing, since the cell it would open on is one the user has not seen focused (ADR-0142, 2026-10-08). Said
+* once for the keys typed at it. */
+| 'orderMoved'
+/** The grid's source was replaced by another, so the row the editor was opened on, or the Selection typing
+* was aimed at, belongs to rows the grid no longer shows (ADR-0011, ADR-0142). */
+| 'sourceChanged';
+
+// @public
+export type EditVerdict = {
+    readonly kind: 'accept';
+} | {
+    readonly kind: 'flag';
+    readonly message: string;
+} | {
+    readonly kind: 'reject';
+    readonly message: string;
 };
 
 // @public
@@ -140,6 +180,7 @@ export interface GridColumn<Row> extends QueryColumn<Row> {
     readonly align?: CellAlign;
     readonly editable?: boolean;
     readonly header?: string;
+    readonly validate?: (row: Row, text: string) => EditVerdict;
     readonly width?: GridColumnWidth;
 }
 
@@ -151,6 +192,22 @@ export type GridDensity = 'compact' | 'comfortable' | 'standard' | 'excel';
 
 // @public
 export type GridDirection = 'up' | 'down' | 'left' | 'right';
+
+// @public
+export class GridEditIntent<Row> {
+    // @internal
+    constructor(row: Row, column: string, value: string, seenText: string, replacedText: string);
+    readonly column: string;
+    get refusalMessage(): string | undefined;
+    refuse(message: string): void;
+    get refused(): boolean;
+    readonly replacedText: string;
+    readonly row: Row;
+    // @internal
+    seal(): void;
+    readonly seenText: string;
+    readonly value: string;
+}
 
 // @public
 export interface GridExtent {
@@ -210,6 +267,10 @@ export interface GridOptions<Row> {
     readonly density?: GridDensity;
     readonly headerGroups?: readonly GridHeaderGroup[];
     readonly headerHeight?: number;
+    readonly onCellDoubleClick?: (cell: CellPosition) => void;
+    readonly onEdit?: (intent: GridEditIntent<Row>) => void;
+    readonly onEditDiscarded?: (reason: EditDiscardReason) => void;
+    readonly onEditingChanged?: (open: boolean) => void;
     readonly onPaste?: (intent: GridPasteIntent) => void;
     readonly onRefused?: (refusal: GridRefusal) => void;
     readonly onSelectionChanged?: (selection: GridSelection) => void;
@@ -235,8 +296,9 @@ export interface GridPage<Row> {
 // @public
 export class GridPasteIntent {
     // @internal
-    constructor(plan: PastePlan, values: readonly (readonly string[])[], origins: readonly (readonly PasteFieldOrigin[])[], rowSequenceVersion: number, marks: readonly (readonly (string | undefined)[])[] | undefined);
+    constructor(plan: PastePlan, values: readonly (readonly string[])[], origins: readonly (readonly PasteFieldOrigin[])[], rowSequenceVersion: number, marks: readonly (readonly (string | undefined)[])[] | undefined, enteredAt?: CellPosition);
     get cellCount(): number;
+    readonly enteredAt: CellPosition | undefined;
     markFor(target: CellPosition): string | undefined;
     originFor(target: CellPosition): PasteFieldOrigin;
     readonly origins: readonly (readonly PasteFieldOrigin[])[];
@@ -269,6 +331,14 @@ export type GridRefusal =
 | {
     readonly kind: 'paste';
     readonly reason: PasteRefusalReason;
+}
+/** A Cell Editor commit that raised no intent, because the row the editor was opened on is not where the
+* grid can find it (ADR-0142): the editor stands with the typing, at `cell`, in the column named. */
+| {
+    readonly kind: 'commit';
+    readonly reason: CommitRefusalReason;
+    readonly cell: CellPosition;
+    readonly column: string;
 };
 
 // @public

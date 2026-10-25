@@ -33,6 +33,9 @@ export class GridPasteIntent {
     readonly origins: readonly (readonly PasteFieldOrigin[])[];
     /** The order these positions are written in (ADR-0011). */
     readonly rowSequenceVersion: number;
+    /** The cell the text was typed in, for a Ctrl+Enter fill from the Cell Editor (ADR-0007, ADR-0050 item 5);
+     * `undefined` for a paste from the clipboard, whose text was typed nowhere in this grid. */
+    readonly enteredAt: CellPosition | undefined;
     readonly #marks: readonly (readonly (string | undefined)[])[] | undefined;
     #refused = false;
     #sealed = false;
@@ -40,13 +43,14 @@ export class GridPasteIntent {
     /** @internal */
     constructor(
         plan: PastePlan, values: readonly (readonly string[])[], origins: readonly (readonly PasteFieldOrigin[])[],
-        rowSequenceVersion: number, marks: readonly (readonly (string | undefined)[])[] | undefined,
+        rowSequenceVersion: number, marks: readonly (readonly (string | undefined)[])[] | undefined, enteredAt?: CellPosition,
     ) {
         this.plan = plan;
         this.values = values;
         this.origins = origins;
         this.rowSequenceVersion = rowSequenceVersion;
         this.#marks = marks;
+        this.enteredAt = enteredAt;
     }
 
     /** Whether the Consumer refused the paste. */

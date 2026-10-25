@@ -2,6 +2,7 @@
 // `update`, and resolved here into what the paint reads. The query semantics read the same object, so
 // a column has one shape for sorting, filtering and painting.
 
+import type { EditVerdict } from '../cells/edit-intent';
 import type { CellAlign } from '../paint/cell-classes';
 import { ColumnWidth, ColumnWidthSpec } from '../columns/column-width';
 import { hashesWhenOverflowing } from '../columns/overflow-rules';
@@ -28,11 +29,14 @@ export interface GridColumn<Row> extends QueryColumn<Row> {
     readonly width?: GridColumnWidth;
     /** How the column's cells align; by their type unless given (ADR-0006). */
     readonly align?: CellAlign;
-    /** Whether a paste may write this column's cells (ADR-0007, ADR-0035). Off unless given: this is a
-     * display-first grid, and a cell written where nobody hears the intent would be written into nothing, so
-     * a grid with no `onPaste` takes a paste on no column. The grid never holds the value either way: a
-     * write leaves as an intent. */
+    /** Whether typing and a paste may write this column's cells (ADR-0007, ADR-0035). Off unless given: this
+     * is a display-first grid, and a cell written where nobody hears the intent would be written into
+     * nothing, so a grid with no `onEdit` opens no Cell Editor, and one with no `onPaste` takes a paste on no
+     * column. The grid never holds the value either way: a write leaves as an intent. */
     readonly editable?: boolean;
+    /** The Consumer's verdict on a commit to this column, asked as it commits (ADR-0034): accept, flag or
+     * reject. None means every commit is accepted. It runs on the commit's path, so it is cheap. */
+    readonly validate?: (row: Row, text: string) => EditVerdict;
 }
 
 /** A column with what its declaration resolves to, checked once, where the Consumer handed it over. */
@@ -58,9 +62,9 @@ export function resolveColumns<Row>(columns: readonly GridColumn<Row>[]): readon
     const names = new Set<string>();
     return Object.freeze(columns.map((column, index) => {
         // Checked as an untyped caller may hand it, where it arrives (CONVENTIONS.md).
-        const { name, value, align, header, type, editable }: {
+        const { name, value, align, header, type, editable, validate }: {
             readonly name: unknown; readonly value: unknown; readonly align?: unknown; readonly header?: unknown; readonly type: unknown;
-            readonly editable?: unknown;
+            readonly editable?: unknown; readonly validate?: unknown;
         } = column;
         if (typeof name !== 'string' || name === '') {
             throw new TypeError(`The column at ${index} has no name: a column is named by a non-empty string.`);
@@ -83,6 +87,9 @@ export function resolveColumns<Row>(columns: readonly GridColumn<Row>[]): readon
         }
         if (editable !== undefined && typeof editable !== 'boolean') {
             throw new TypeError(`Column '${name}': editable is true or false.`);
+        }
+        if (validate !== undefined && typeof validate !== 'function') {
+            throw new TypeError(`Column '${name}': validate is a function of the row and the text (ADR-0034).`);
         }
         return Object.freeze({
             column,
