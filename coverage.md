@@ -14,18 +14,18 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/25/2026 - 00:59:07 |
+| Generated on: | 10/25/2026 - 01:23:21 |
 | Parser: | MultiReport (19x Cobertura) |
 | Assemblies: | 16 |
 | Classes: | 1181 |
 | Files: | 605 |
-| **Line coverage:** | 94.4% (81428 of 86235) |
-| Covered lines: | 81428 |
-| Uncovered lines: | 4807 |
+| **Line coverage:** | 94.4% (81431 of 86235) |
+| Covered lines: | 81431 |
+| Uncovered lines: | 4804 |
 | Coverable lines: | 86235 |
 | Total lines: | 137863 |
-| **Branch coverage:** | 87% (49061 of 56378) |
-| Covered branches: | 49061 |
+| **Branch coverage:** | 87% (49067 of 56378) |
+| Covered branches: | 49067 |
 | Total branches: | 56378 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
@@ -317,7 +317,7 @@
 |ExGrid.Clipboard.PasteShape|100%|100%|
 |ExGrid.Clipboard.SourceCell|100%||
 |ExGrid.ColumnDocument|100%||
-|ExGrid.ColumnGeometry|98.9%|93.1%|
+|ExGrid.ColumnGeometry|99.4%|95.4%|
 |ExGrid.ColumnInfo<TRow>|100%|100%|
 |ExGrid.Columns.AutoWidth|100%|100%|
 |ExGrid.Columns.CellTextMetrics|100%|81.6%|
@@ -326,8 +326,8 @@
 |ExGrid.Columns.DefaultGlyphWidths|100%||
 |ExGrid.Columns.GlyphWidthTable|100%|95.8%|
 |ExGrid.Columns.GridAction|91.6%||
-|ExGrid.Columns.HeaderGroup|93.1%|90%|
-|ExGrid.Columns.HeaderGroupLayout|98.8%|89.1%|
+|ExGrid.Columns.HeaderGroup|96.5%|100%|
+|ExGrid.Columns.HeaderGroupLayout|100%|95.6%|
 |ExGrid.Columns.HeaderReorder|100%|98%|
 |ExGrid.Columns.OverflowDecision|100%||
 |ExGrid.Columns.OverflowRules|100%|100%|
