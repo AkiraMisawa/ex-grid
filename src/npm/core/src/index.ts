@@ -10,6 +10,8 @@ export type { GridSelection } from './selection/selection';
 export { createGrid } from './dom/create-grid';
 export type { GridHandle } from './dom/create-grid';
 export type { GridHeaderGroup, GridOptions, ViewportSize } from './dom/grid-view';
+export type { GridRefusal } from './dom/grid-refusal';
+export type { CopyRefusalReason } from './clipboard/clipboard-rules';
 export type { AutoColumnWidth, GridColumn, GridColumnWidth } from './dom/grid-column';
 export { GridSource } from './source/grid-source';
 export type { ColumnType, DateType, QueryColumn } from './query/columns';

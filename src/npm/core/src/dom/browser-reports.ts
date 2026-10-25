@@ -4,6 +4,7 @@
 // own size (ADR-0013, ADR-0028), one for the Layout Ceiling (ADR-0053), and a media query on the current
 // resolution for the Device Pixel (ADR-0090). A layer-2 test hands in its own, and tells by hand.
 
+import type { CopyFlavours } from '../clipboard/clipboard-data';
 import type { GridClock } from '../source/grid-clock';
 import { systemClock } from '../source/grid-clock';
 
@@ -35,6 +36,13 @@ export interface BrowserReports {
     /** Whether Meta is this platform's primary modifier, as Command is on an Apple platform: only the
      * browser can answer it (ADR-0012). */
     metaIsPrimary(): boolean;
+    /**
+     * Writes a copy to the clipboard by the asynchronous route (ADR-0005), started now, inside the gesture,
+     * while its flavours are still being gathered: Chrome takes a promise as a clipboard item's value. Answers
+     * whether anything was written, `false` when the flavours came to nothing, and the clipboard holds what
+     * it held; a write the browser refuses rejects with the browser's error.
+     */
+    writeClipboard(element: HTMLElement, flavours: Promise<CopyFlavours | undefined>): Promise<boolean>;
 }
 
 /**
@@ -114,6 +122,26 @@ export const browserReports: BrowserReports = Object.freeze({
         return () => { query?.removeEventListener('change', arm); };
     },
     clock: systemClock,
+    writeClipboard(element: HTMLElement, flavours: Promise<CopyFlavours | undefined>): Promise<boolean> {
+        const view = element.ownerDocument.defaultView;
+        if (view === null) throw new Error('The grid\'s element is in a document with no window: it has no clipboard.');
+        const flavour = (type: string, pick: (copy: CopyFlavours) => string): Promise<Blob> => flavours.then(copy => {
+            // Nothing to write rejects the item, and with it the whole write: never a part of the copy.
+            if (copy === undefined) throw new Error('The copy was refused.');
+            return new view.Blob([pick(copy)], { type });
+        });
+        const item = new view.ClipboardItem({
+            'text/plain': flavour('text/plain', copy => copy.text),
+            'text/html': flavour('text/html', copy => copy.html),
+        });
+        // A copy refused while it was gathered wrote nothing, which the grid has already said; any other
+        // rejection is the browser's, and is the caller's to say.
+        // oxlint-disable-next-line ex-grid/no-catch -- a copy refused while it was gathered answers false; anything else is rethrown
+        return view.navigator.clipboard.write([item]).then(() => true, async (error: unknown) => {
+            if (await flavours === undefined) return false;
+            throw error;
+        });
+    },
     nextFrame(element: HTMLElement, callback: () => void): () => void {
         const view = element.ownerDocument.defaultView;
         if (view === null) throw new Error('The grid\'s element is in a document with no window: nothing paints it.');

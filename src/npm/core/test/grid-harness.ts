@@ -1,6 +1,7 @@
 // The grid in a DOM emulation (ADR-0350 section 13), as the layer-2 tests mount it: what the browser tells
 // — the gutter, the ceiling, the Device Pixel, the frames — is told here by hand.
 import { defined } from '../src/must';
+import type { CopyFlavours } from '../src/clipboard/clipboard-data';
 import type { BrowserReports, ViewportReport } from '../src/dom/browser-reports';
 import type { GridColumn } from '../src/dom/grid-column';
 import { GridView, type GridOptions } from '../src/dom/grid-view';
@@ -73,6 +74,26 @@ export class Told implements BrowserReports {
 
     get framesAsked(): number {
         return this.#frames.length;
+    }
+
+    /** What the asynchronous copy route wrote, in order: a copy that came to nothing writes nothing. */
+    readonly clipboard: CopyFlavours[] = [];
+    /** Whether the browser refuses the next writes, as it does without permission. */
+    clipboardRefused = false;
+    /** The writes started and not yet finished. */
+    writing = 0;
+
+    async writeClipboard(_element: HTMLElement, flavours: Promise<CopyFlavours | undefined>): Promise<boolean> {
+        this.writing += 1;
+        try {
+            const copy = await flavours;
+            if (copy === undefined) return false;
+            if (this.clipboardRefused) throw new DOMException('Write permission denied.', 'NotAllowedError');
+            this.clipboard.push(copy);
+            return true;
+        } finally {
+            this.writing -= 1;
+        }
     }
 
     get listening(): boolean {

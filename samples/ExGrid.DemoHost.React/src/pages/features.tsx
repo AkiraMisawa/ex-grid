@@ -1,5 +1,5 @@
-import { useMemo, type ReactElement } from 'react';
-import { GridSource, type GridColumn, type GridHeaderGroup } from '@ex-grid/core';
+import { useCallback, useMemo, useRef, useState, type ReactElement } from 'react';
+import { GridSource, type GridColumn, type GridHeaderGroup, type GridRefusal } from '@ex-grid/core';
 import { ExGrid } from '@ex-grid/react';
 import type { Temporal } from 'temporal-polyfill';
 import { DemoNav } from '../demo-nav';
@@ -50,22 +50,37 @@ const secondColumns: readonly GridColumn<DemoTrade>[] = Object.freeze([
 
 /**
  * The page /features of the Blazor hosts: an interaction surface on one page. The Blazor page writes every
- * notification to status lines below the heading; the Script Core raises none of those yet (it does not
- * edit, copy, paste, filter, reorder or open a menu), so a line comes here with the notification it shows,
- * and a test that reads one fails by name until then rather than reading a value nothing could change.
+ * notification to status lines below the heading; a line comes here with the notification it shows, so a
+ * test that reads one the Script Core does not raise yet (an edit, a paste, a filter, a reorder, a menu)
+ * fails by name rather than reading a value nothing could change.
  */
 export function Features(): ReactElement {
     const showGroups = useQuery('groups') === '1';
     const source = useMemo(() => GridSource.from(rows), []);
     const second = useMemo(() => GridSource.from(rows.slice(0, 20)), []);
+    const [copyStatus, setCopyStatus] = useState('—');
+    // How often each reason has been heard, so a refusal repeated shows that it was, as the Blazor page's do.
+    const repeats = useRef(new Map<string, number>());
+    const onRefused = useCallback((refusal: GridRefusal) => {
+        const key = `${refusal.kind}:${refusal.reason}`;
+        const before = repeats.current.get(key);
+        const seen = before === undefined ? 1 : before + 1;
+        repeats.current.set(key, seen);
+        // The reason written as the Blazor page writes C#'s enum member, so one spec reads both.
+        const text = refusal.reason.charAt(0).toUpperCase() + refusal.reason.slice(1);
+        setCopyStatus(seen > 1 ? `${text} (×${seen})` : text);
+    }, []);
     return (
         <>
             <DemoNav route="features" />
             <h1>Features — editing, clipboard, sorting, filtering, Header Groups</h1>
             <p>
                 The interaction surface on one page, for the browser layer to drive: a source-bound grid with tiered
-                headers. Sorting and the Selection work here now; editing, the clipboard and filtering, and the status
+                headers. Sorting, the Selection and copying work here now; editing, paste and filtering, and the status
                 lines that report them, join as the Script Core comes to them.
+            </p>
+            <p className="demo-status">
+                <span id="copy-status">Copy refused: {copyStatus}</span>
             </p>
             <ExGrid
                 columns={columns}
@@ -74,7 +89,8 @@ export function Features(): ReactElement {
                 headerHeight={28}
                 viewportHeight={320}
                 viewportWidth={720}
-                headerGroups={groups} />
+                headerGroups={groups}
+                onRefused={onRefused} />
             {showGroups
                 ? (
                     <p className="demo-status">
