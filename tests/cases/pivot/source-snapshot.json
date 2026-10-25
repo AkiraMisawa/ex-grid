@@ -1,0 +1,925 @@
+{
+  "about": "The bundled source over a Snapshot (ADR-0064/0066): its fields from the columns or declared by column name, Items from each column's kind (ADR-0060, PV-3), and every Aggregation read from typed columns (PV-4). Transcribed from ExPivot.Engine.Tests' SnapshotSourceTests.",
+  "kind": "pivotSource",
+  "data": "rows",
+  "locale": "en-US",
+  "words": "english",
+  "cases": [
+    {
+      "name": "ADR-0066: with no fields declared, one field per column, captioned as the column is and typed by its kind",
+      "asks": [{"fields": true}],
+      "expect": [
+        [
+          {"name": "Text", "caption": "Label", "type": "text"},
+          {"name": "Money", "caption": "Money", "type": "number"},
+          {"name": "Measure", "caption": "Measure", "type": "number"},
+          {"name": "Count", "caption": "Count", "type": "number"},
+          {"name": "When", "caption": "When", "type": "date"},
+          {"name": "Flag", "caption": "Flag", "type": "boolean"}
+        ]
+      ]
+    },
+    {
+      "name": "ADR-0066: declared fields name their columns, by their own name or another's, and keep settings of their own",
+      "declare": [
+        {"name": "Desk", "type": "text", "caption": "Trading desk", "column": "Text"},
+        {"name": "Money", "type": "number", "format": "#,##0.00"}
+      ],
+      "rows": [["A", {"decimal": "1.5"}, null, null, null, null], ["a", {"decimal": "2"}, null, null, null, null]],
+      "asks": [
+        {"fields": true},
+        {"report": {"rows": [{"field": "Desk"}], "values": [{"field": "Money", "aggregation": "sum"}]}}
+      ],
+      "expect": [
+        [
+          {"name": "Desk", "caption": "Trading desk", "type": "text", "column": "Text"},
+          {"name": "Money", "caption": "Money", "type": "number", "format": "#,##0.00"}
+        ],
+        {
+          "headers": ["Row Labels", "Sum of Money"],
+          "lines": ["i A || 3.5", "t Grand Total || 3.5"],
+          "spans": []
+        }
+      ]
+    },
+    {
+      "name": "ADR-0066: a field naming a column the Snapshot does not have is refused by name",
+      "declare": [{"name": "Region", "type": "text"}],
+      "asks": [{"fields": true}],
+      "expect": {
+        "refusal": "argument",
+        "saying": "The Snapshot has no column named 'Region' for the Pivot Field 'Region'."
+      }
+    },
+    {
+      "name": "ADR-0066: a field reading another column the Snapshot does not have is refused by both names",
+      "declare": [{"name": "Desk", "type": "text", "column": "Desks"}],
+      "asks": [{"fields": true}],
+      "expect": {
+        "refusal": "argument",
+        "saying": "The Pivot Field 'Desk' reads the column 'Desks', and the Snapshot has no column of that name."
+      }
+    },
+    {
+      "name": "ADR-0066: a date part of a column that is not a Date column is refused by name",
+      "declare": [{"name": "Month", "type": "date", "column": "Money", "datePart": "month"}],
+      "asks": [{"fields": true}],
+      "expect": {
+        "refusal": "argument",
+        "saying": "The Pivot Field 'Month' is the Month of 'Money', which is a Decimal column, not a Date column."
+      }
+    },
+    {
+      "name": "ADR-0066: a field declared twice is refused by name",
+      "declare": [{"name": "Money", "type": "number"}, {"name": "Money", "type": "number"}],
+      "asks": [{"fields": true}],
+      "expect": {
+        "refusal": "argument",
+        "saying": "Two Pivot Fields are named 'Money'; a layout could not say which it means."
+      }
+    },
+    {
+      "name": "ADR-0060/0064 (PV-3): text Items ignore case and are labelled by the first spelling; a Blank in every kind is (blank)",
+      "rows": [
+        ["east", {"decimal": "1"}, 1, 1, {"date": "2026-01-01"}, true],
+        ["East", {"decimal": "2"}, 2, 2, {"date": "2026-01-01"}, true],
+        [null, null, null, null, null, null],
+        ["", {"decimal": "4"}, 4, 4, {"date": "2026-01-02"}, false]
+      ],
+      "asks": [
+        {"report": {"rows": [{"field": "Text"}], "values": [{"field": "Text", "aggregation": "count"}]}},
+        {"report": {"rows": [{"field": "Money"}], "values": [{"field": "Text", "aggregation": "count"}]}},
+        {"report": {"rows": [{"field": "Measure"}], "values": [{"field": "Text", "aggregation": "count"}]}},
+        {"report": {"rows": [{"field": "Count"}], "values": [{"field": "Text", "aggregation": "count"}]}},
+        {"report": {"rows": [{"field": "When"}], "values": [{"field": "Text", "aggregation": "count"}]}},
+        {"report": {"rows": [{"field": "Flag"}], "values": [{"field": "Text", "aggregation": "count"}]}},
+        {"report": {"rows": [{"field": "Text"}], "values": [{"field": "Money", "aggregation": "sum"}]}}
+      ],
+      "expect": [
+        {
+          "headers": ["Row Labels", "Count of Label"],
+          "lines": ["i  || 1", "i east || 2", "i (blank) ||", "t Grand Total || 3"],
+          "spans": []
+        },
+        {
+          "headers": ["Row Labels", "Count of Label"],
+          "lines": ["i 1 || 1", "i 2 || 1", "i 4 || 1", "i (blank) ||", "t Grand Total || 3"],
+          "spans": []
+        },
+        {
+          "headers": ["Row Labels", "Count of Label"],
+          "lines": ["i 1 || 1", "i 2 || 1", "i 4 || 1", "i (blank) ||", "t Grand Total || 3"],
+          "spans": []
+        },
+        {
+          "headers": ["Row Labels", "Count of Label"],
+          "lines": ["i 1 || 1", "i 2 || 1", "i 4 || 1", "i (blank) ||", "t Grand Total || 3"],
+          "spans": []
+        },
+        {
+          "headers": ["Row Labels", "Count of Label"],
+          "lines": ["i 1/1/2026 || 2", "i 1/2/2026 || 1", "i (blank) ||", "t Grand Total || 3"],
+          "spans": []
+        },
+        {
+          "headers": ["Row Labels", "Count of Label"],
+          "lines": ["i FALSE || 1", "i TRUE || 2", "i (blank) ||", "t Grand Total || 3"],
+          "spans": []
+        },
+        {
+          "headers": ["Row Labels", "Sum of Money"],
+          "lines": ["i  || 4", "i east || 3", "i (blank) ||", "t Grand Total || 7"],
+          "spans": []
+        }
+      ]
+    },
+    {
+      "name": "ADR-0060 (PV-3): text is one Item as OrdinalIgnoreCase folds it — ᾳ is ᾼ, the long s is not s — and a search finds what it folds to",
+      "rows": [
+        ["ᾳ", {"decimal": "1"}, null, null, null, null],
+        ["ᾼ", {"decimal": "2"}, null, null, null, null],
+        ["ſ", {"decimal": "4"}, null, null, null, null],
+        ["S", {"decimal": "8"}, null, null, null, null],
+        ["s", {"decimal": "16"}, null, null, null, null],
+        ["ß", {"decimal": "32"}, null, null, null, null],
+        ["ẞ", {"decimal": "64"}, null, null, null, null]
+      ],
+      "asks": [
+        {"report": {"rows": [{"field": "Text"}], "values": [{"field": "Money", "aggregation": "sum"}]}},
+        {"aggregate": {"rows": ["Text"], "values": [{"field": "Money", "parts": ["sum"]}]}},
+        {"items": "Text", "search": "s"},
+        {"items": "Text", "search": "ſ"},
+        {"items": "Text", "search": "ᾼ"}
+      ],
+      "expect": [
+        {
+          "headers": ["Row Labels", "Sum of Money"],
+          "lines": ["i S || 24", "i ſ || 4", "i ß || 32", "i ẞ || 64", "i ᾳ || 3", "t Grand Total || 127"],
+          "spans": []
+        },
+        {
+          "leaves": 5,
+          "rows": [
+            {
+              "field": "Text",
+              "items": [
+                {"kind": "text", "value": "ᾳ"},
+                {"kind": "text", "value": "ſ"},
+                {"kind": "text", "value": "S"},
+                {"kind": "text", "value": "ß"},
+                {"kind": "text", "value": "ẞ"}
+              ]
+            }
+          ],
+          "columns": [],
+          "leaf": [
+            {"at": [0], "records": 2},
+            {"at": [1], "records": 1},
+            {"at": [2], "records": 2},
+            {"at": [3], "records": 1},
+            {"at": [4], "records": 1}
+          ],
+          "values": [
+            {
+              "field": "Money",
+              "parts": ["sum"],
+              "leaves": [
+                {"values": 2, "numbers": 2, "sum": {"decimal": "3"}},
+                {"values": 1, "numbers": 1, "sum": {"decimal": "4"}},
+                {"values": 2, "numbers": 2, "sum": {"decimal": "24"}},
+                {"values": 1, "numbers": 1, "sum": {"decimal": "32"}},
+                {"values": 1, "numbers": 1, "sum": {"decimal": "64"}}
+              ]
+            }
+          ]
+        },
+        {"version": "asked", "total": 1, "items": [{"kind": "text", "value": "S"}]},
+        {"version": "asked", "total": 1, "items": [{"kind": "text", "value": "ſ"}]},
+        {"version": "asked", "total": 1, "items": [{"kind": "text", "value": "ᾳ"}]}
+      ]
+    },
+    {
+      "name": "ADR-0060/0064 (PV-3): a non-finite Double is #NUM!, after the Booleans and before (blank)",
+      "rows": [
+        ["a", {"decimal": "1"}, {"double": "NaN"}, null, null, null],
+        ["b", {"decimal": "1"}, {"double": "Infinity"}, null, null, null],
+        ["c", {"decimal": "1"}, {"double": "-Infinity"}, null, null, null],
+        ["d", {"decimal": "1"}, {"double": "-0"}, null, null, null],
+        ["e", {"decimal": "1"}, null, null, null, null]
+      ],
+      "asks": [
+        {"report": {"rows": [{"field": "Measure"}], "values": [{"field": "Money", "aggregation": "sum"}]}},
+        {"report": {"values": [{"field": "Measure", "aggregation": "sum"}]}}
+      ],
+      "expect": [
+        {
+          "headers": ["Row Labels", "Sum of Money"],
+          "lines": ["i 0 || 1", "i #NUM! || 3", "i (blank) || 1", "t Grand Total || 5"],
+          "spans": []
+        },
+        {"headers": ["Sum of Measure"], "lines": ["t  || #NUM!"], "spans": []}
+      ]
+    },
+    {
+      "name": "ADR-0060/0064 (PV-3): a date is its clock value, and a time of day is another Item",
+      "rows": [
+        ["a", {"decimal": "1"}, null, null, {"date": "2026-01-02"}, null],
+        ["b", {"decimal": "2"}, null, null, {"date": "2026-01-02"}, null],
+        ["c", {"decimal": "4"}, null, null, {"date": "2026-01-02T13:45:00"}, null]
+      ],
+      "asks": [{"report": {"rows": [{"field": "When"}], "values": [{"field": "Money", "aggregation": "sum"}]}}],
+      "expect": [
+        {
+          "headers": ["Row Labels", "Sum of Money"],
+          "lines": ["i 1/2/2026 || 3", "i 1/2/2026 1:45:00 PM || 4", "t Grand Total || 7"],
+          "spans": []
+        }
+      ]
+    },
+    {
+      "name": "ADR-0060/0064 (PV-3): an Integer 1, a Decimal 1.0 and a Double 1 are one Item, the same key in every kind",
+      "rows": [["a", {"decimal": "1.0"}, 1, 1, null, null], ["b", {"decimal": "1.50"}, 1.5, 2, null, null]],
+      "asks": [
+        {"aggregate": {"rows": ["Count"]}},
+        {"aggregate": {"rows": ["Money"]}},
+        {"aggregate": {"rows": ["Measure"]}}
+      ],
+      "expect": [
+        {
+          "leaves": 2,
+          "rows": [{"field": "Count", "items": [{"kind": "number", "value": "1"}, {"kind": "number", "value": "2"}]}],
+          "columns": [],
+          "leaf": [{"at": [0], "records": 1}, {"at": [1], "records": 1}],
+          "values": []
+        },
+        {
+          "leaves": 2,
+          "rows": [
+            {
+              "field": "Money",
+              "items": [{"kind": "number", "value": "1"}, {"kind": "number", "value": "1.5"}]
+            }
+          ],
+          "columns": [],
+          "leaf": [{"at": [0], "records": 1}, {"at": [1], "records": 1}],
+          "values": []
+        },
+        {
+          "leaves": 2,
+          "rows": [
+            {
+              "field": "Measure",
+              "items": [{"kind": "number", "value": "1"}, {"kind": "number", "value": "1.5"}]
+            }
+          ],
+          "columns": [],
+          "leaf": [{"at": [0], "records": 1}, {"at": [1], "records": 1}],
+          "values": []
+        }
+      ]
+    },
+    {
+      "name": "ADR-0060 (PV-4): an exact sum that leaves decimal's range falls back to double, Excel's arithmetic, rather than failing",
+      "rows": [
+        ["a", {"decimal": "79228162514264337593543950335"}, null, null, null, null],
+        ["b", {"decimal": "79228162514264337593543950335"}, null, null, null, null]
+      ],
+      "asks": [{"aggregate": {"values": [{"field": "Money", "parts": ["sum"]}]}}],
+      "expect": [
+        {
+          "leaves": 1,
+          "rows": [],
+          "columns": [],
+          "leaf": [{"at": [], "records": 2}],
+          "values": [
+            {
+              "field": "Money",
+              "parts": ["sum"],
+              "leaves": [{"values": 2, "numbers": 2, "sum": 1.5845632502852868e+29}]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ADR-0060 (PV-4): an exact sum is held in 128 bits, and one that would leave them is a double from then on, though a later number brings it back",
+      "rows": [
+        ["a", {"decimal": "79228162514264337593543950335"}, null, null, null, null],
+        ["a", {"decimal": "0.0000000001"}, null, null, null, null],
+        ["a", {"decimal": "-79228162514264337593543950335"}, null, null, null, null],
+        ["b", {"decimal": "0.0000000001"}, null, null, null, null],
+        ["b", {"decimal": "1"}, null, null, null, null],
+        ["b", {"decimal": "-1"}, null, null, null, null]
+      ],
+      "asks": [{"aggregate": {"rows": ["Text"], "values": [{"field": "Money", "parts": ["sum"]}]}}],
+      "expect": [
+        {
+          "leaves": 2,
+          "rows": [{"field": "Text", "items": [{"kind": "text", "value": "a"}, {"kind": "text", "value": "b"}]}],
+          "columns": [],
+          "leaf": [{"at": [0], "records": 3}, {"at": [1], "records": 3}],
+          "values": [
+            {
+              "field": "Money",
+              "parts": ["sum"],
+              "leaves": [
+                {"values": 3, "numbers": 3, "sum": 1e-10},
+                {"values": 3, "numbers": 3, "sum": {"decimal": "0.0000000001"}}
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ADR-0060 (PV-4): decimals and 64-bit integers are summed exactly, 0.10 + 0.20 - 0.3 to 0 and not to a double",
+      "rows": [
+        ["a", {"decimal": "0.10"}, null, {"integer": "9223372036854775807"}, null, null],
+        ["b", {"decimal": "0.20"}, null, {"integer": "9223372036854775807"}, null, null],
+        ["c", {"decimal": "-0.3"}, null, {"integer": "-9223372036854775808"}, null, null]
+      ],
+      "asks": [
+        {
+          "aggregate": {
+            "values": [
+              {"field": "Money", "parts": ["sum", "extremes"]},
+              {"field": "Count", "parts": ["sum", "extremes"]}
+            ]
+          }
+        }
+      ],
+      "expect": [
+        {
+          "leaves": 1,
+          "rows": [],
+          "columns": [],
+          "leaf": [{"at": [], "records": 3}],
+          "values": [
+            {
+              "field": "Money",
+              "parts": ["sum", "extremes"],
+              "leaves": [
+                {
+                  "values": 3,
+                  "numbers": 3,
+                  "sum": {"decimal": "0"},
+                  "min": {"decimal": "-0.3"},
+                  "max": {"decimal": "0.2"}
+                }
+              ]
+            },
+            {
+              "field": "Count",
+              "parts": ["sum", "extremes"],
+              "leaves": [
+                {
+                  "values": 3,
+                  "numbers": 3,
+                  "sum": {"decimal": "9223372036854775806"},
+                  "min": {"decimal": "-9223372036854775808"},
+                  "max": {"decimal": "9223372036854775807"}
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ADR-0060 (PV-4): Text in Values is counted and never summed: Sum is 0, as the table says",
+      "rows": [
+        ["a", {"decimal": "1"}, 1, 1, {"date": "2026-01-01"}, true],
+        ["b", {"decimal": "1"}, 1, 1, {"date": "2026-01-02"}, false],
+        [null, {"decimal": "1"}, 1, 1, null, null]
+      ],
+      "asks": [
+        {
+          "report": {
+            "values": [
+              {"field": "Text", "aggregation": "sum"},
+              {"field": "Text", "aggregation": "count"},
+              {"field": "Text", "aggregation": "average"},
+              {"field": "Text", "aggregation": "max"},
+              {"field": "Text", "aggregation": "min"},
+              {"field": "Text", "aggregation": "product"},
+              {"field": "Text", "aggregation": "countNumbers"},
+              {"field": "Text", "aggregation": "stdDev"},
+              {"field": "Text", "aggregation": "stdDevp"},
+              {"field": "Text", "aggregation": "var"},
+              {"field": "Text", "aggregation": "varp"}
+            ]
+          }
+        }
+      ],
+      "expect": [
+        {
+          "headers": [
+            "Sum of Label",
+            "Count of Label",
+            "Average of Label",
+            "Max of Label",
+            "Min of Label",
+            "Product of Label",
+            "Count of Label2",
+            "StdDev of Label",
+            "StdDevp of Label",
+            "Var of Label",
+            "Varp of Label"
+          ],
+          "lines": ["t  || 0 | 2 | #DIV/0! | 0 | 0 | 0 | 0 | #DIV/0! | #DIV/0! | #DIV/0! | #DIV/0!"],
+          "spans": []
+        }
+      ]
+    },
+    {
+      "name": "ADR-0060 (PV-4): A date in Values is counted and never summed: Sum is 0, as the table says",
+      "rows": [
+        ["a", {"decimal": "1"}, 1, 1, {"date": "2026-01-01"}, true],
+        ["b", {"decimal": "1"}, 1, 1, {"date": "2026-01-02"}, false],
+        [null, {"decimal": "1"}, 1, 1, null, null]
+      ],
+      "asks": [
+        {
+          "report": {
+            "values": [
+              {"field": "When", "aggregation": "sum"},
+              {"field": "When", "aggregation": "count"},
+              {"field": "When", "aggregation": "average"},
+              {"field": "When", "aggregation": "max"},
+              {"field": "When", "aggregation": "min"},
+              {"field": "When", "aggregation": "product"},
+              {"field": "When", "aggregation": "countNumbers"},
+              {"field": "When", "aggregation": "stdDev"},
+              {"field": "When", "aggregation": "stdDevp"},
+              {"field": "When", "aggregation": "var"},
+              {"field": "When", "aggregation": "varp"}
+            ]
+          }
+        }
+      ],
+      "expect": [
+        {
+          "headers": [
+            "Sum of When",
+            "Count of When",
+            "Average of When",
+            "Max of When",
+            "Min of When",
+            "Product of When",
+            "Count of When2",
+            "StdDev of When",
+            "StdDevp of When",
+            "Var of When",
+            "Varp of When"
+          ],
+          "lines": ["t  || 0 | 2 | #DIV/0! | 0 | 0 | 0 | 0 | #DIV/0! | #DIV/0! | #DIV/0! | #DIV/0!"],
+          "spans": []
+        }
+      ]
+    },
+    {
+      "name": "ADR-0060 (PV-4): A Boolean in Values is counted and never summed: Sum is 0, as the table says",
+      "rows": [
+        ["a", {"decimal": "1"}, 1, 1, {"date": "2026-01-01"}, true],
+        ["b", {"decimal": "1"}, 1, 1, {"date": "2026-01-02"}, false],
+        [null, {"decimal": "1"}, 1, 1, null, null]
+      ],
+      "asks": [
+        {
+          "report": {
+            "values": [
+              {"field": "Flag", "aggregation": "sum"},
+              {"field": "Flag", "aggregation": "count"},
+              {"field": "Flag", "aggregation": "average"},
+              {"field": "Flag", "aggregation": "max"},
+              {"field": "Flag", "aggregation": "min"},
+              {"field": "Flag", "aggregation": "product"},
+              {"field": "Flag", "aggregation": "countNumbers"},
+              {"field": "Flag", "aggregation": "stdDev"},
+              {"field": "Flag", "aggregation": "stdDevp"},
+              {"field": "Flag", "aggregation": "var"},
+              {"field": "Flag", "aggregation": "varp"}
+            ]
+          }
+        }
+      ],
+      "expect": [
+        {
+          "headers": [
+            "Sum of Flag",
+            "Count of Flag",
+            "Average of Flag",
+            "Max of Flag",
+            "Min of Flag",
+            "Product of Flag",
+            "Count of Flag2",
+            "StdDev of Flag",
+            "StdDevp of Flag",
+            "Var of Flag",
+            "Varp of Flag"
+          ],
+          "lines": ["t  || 0 | 2 | #DIV/0! | 0 | 0 | 0 | 0 | #DIV/0! | #DIV/0! | #DIV/0! | #DIV/0!"],
+          "spans": []
+        }
+      ]
+    },
+    {
+      "name": "ADR-0060/0066 (PV-4): only the parts asked for are accumulated, from typed columns",
+      "rows": [["a", {"decimal": "1"}, 2, 3, null, null]],
+      "asks": [
+        {
+          "aggregate": {
+            "values": [{"field": "Money", "parts": ["sum"]}, {"field": "Measure", "parts": ["extremes"]}, "Count"]
+          }
+        }
+      ],
+      "expect": [
+        {
+          "leaves": 1,
+          "rows": [],
+          "columns": [],
+          "leaf": [{"at": [], "records": 1}],
+          "values": [
+            {
+              "field": "Money",
+              "parts": ["sum"],
+              "leaves": [{"values": 1, "numbers": 1, "sum": {"decimal": "1"}}]
+            },
+            {
+              "field": "Measure",
+              "parts": ["extremes"],
+              "leaves": [{"values": 1, "numbers": 1, "min": 2, "max": 2}]
+            },
+            {"field": "Count", "parts": [], "leaves": [{"values": 1, "numbers": 1}]}
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ADR-0060/0066 (PV-4): every part of every typed column at every leaf, rows by columns",
+      "rows": [
+        ["a", {"decimal": "1.25"}, 0.5, 3, {"date": "2026-01-02"}, true],
+        ["A", {"decimal": "-2"}, 1.5, -4, null, true],
+        ["b", {"decimal": "0.0001"}, {"double": "NaN"}, null, {"date": "2026-01-03"}, false],
+        ["b", null, 2.0, 7, {"date": "2026-01-03"}, null],
+        [null, {"decimal": "3"}, null, 1, null, false],
+        ["c", {"decimal": "5"}, 4.0, 2, {"date": "2026-01-04"}, true]
+      ],
+      "asks": [
+        {
+          "aggregate": {
+            "rows": ["Text"],
+            "columns": ["Flag"],
+            "values": [
+              {"field": "Money", "parts": ["sum", "extremes", "product", "variance"]},
+              {"field": "Measure", "parts": ["sum", "extremes", "product", "variance"]},
+              {"field": "Count", "parts": ["sum", "extremes", "product", "variance"]},
+              {"field": "When", "parts": ["sum", "extremes", "product", "variance"]},
+              {"field": "Text", "parts": ["sum", "extremes", "product", "variance"]}
+            ]
+          }
+        }
+      ],
+      "expect": [
+        {
+          "leaves": 5,
+          "rows": [
+            {
+              "field": "Text",
+              "items": [
+                {"kind": "text", "value": "a"},
+                {"kind": "text", "value": "b"},
+                {"kind": "text", "value": "c"},
+                {"kind": "blank"}
+              ]
+            }
+          ],
+          "columns": [
+            {
+              "field": "Flag",
+              "items": [{"kind": "boolean", "value": "TRUE"}, {"kind": "boolean", "value": "FALSE"}, {"kind": "blank"}]
+            }
+          ],
+          "leaf": [
+            {"at": [0, 0], "records": 2},
+            {"at": [1, 1], "records": 1},
+            {"at": [1, 2], "records": 1},
+            {"at": [3, 1], "records": 1},
+            {"at": [2, 0], "records": 1}
+          ],
+          "values": [
+            {
+              "field": "Money",
+              "parts": ["sum", "extremes", "product", "variance"],
+              "leaves": [
+                {
+                  "values": 2,
+                  "numbers": 2,
+                  "sum": {"decimal": "-0.75"},
+                  "min": {"decimal": "-2"},
+                  "max": {"decimal": "1.25"},
+                  "product": -2.5,
+                  "mean": -0.375,
+                  "m2": 5.28125
+                },
+                {
+                  "values": 1,
+                  "numbers": 1,
+                  "sum": {"decimal": "0.0001"},
+                  "min": {"decimal": "0.0001"},
+                  "max": {"decimal": "0.0001"},
+                  "product": 0.0001,
+                  "mean": 0.0001,
+                  "m2": 0
+                },
+                {
+                  "values": 0,
+                  "numbers": 0,
+                  "sum": {"decimal": "0"},
+                  "min": {"decimal": "0"},
+                  "max": {"decimal": "0"},
+                  "product": 0,
+                  "mean": 0,
+                  "m2": 0
+                },
+                {
+                  "values": 1,
+                  "numbers": 1,
+                  "sum": {"decimal": "3"},
+                  "min": {"decimal": "3"},
+                  "max": {"decimal": "3"},
+                  "product": 3,
+                  "mean": 3,
+                  "m2": 0
+                },
+                {
+                  "values": 1,
+                  "numbers": 1,
+                  "sum": {"decimal": "5"},
+                  "min": {"decimal": "5"},
+                  "max": {"decimal": "5"},
+                  "product": 5,
+                  "mean": 5,
+                  "m2": 0
+                }
+              ]
+            },
+            {
+              "field": "Measure",
+              "parts": ["sum", "extremes", "product", "variance"],
+              "leaves": [
+                {
+                  "values": 2,
+                  "numbers": 2,
+                  "sum": 2,
+                  "min": 0.5,
+                  "max": 1.5,
+                  "product": 0.75,
+                  "mean": 1,
+                  "m2": 0.5
+                },
+                {
+                  "values": 1,
+                  "numbers": 1,
+                  "nonFinite": true,
+                  "sum": {"decimal": "0"},
+                  "min": {"decimal": "0"},
+                  "max": {"decimal": "0"},
+                  "product": 0,
+                  "mean": 0,
+                  "m2": 0
+                },
+                {"values": 1, "numbers": 1, "sum": 2, "min": 2, "max": 2, "product": 2, "mean": 2, "m2": 0},
+                {
+                  "values": 0,
+                  "numbers": 0,
+                  "sum": {"decimal": "0"},
+                  "min": {"decimal": "0"},
+                  "max": {"decimal": "0"},
+                  "product": 0,
+                  "mean": 0,
+                  "m2": 0
+                },
+                {"values": 1, "numbers": 1, "sum": 4, "min": 4, "max": 4, "product": 4, "mean": 4, "m2": 0}
+              ]
+            },
+            {
+              "field": "Count",
+              "parts": ["sum", "extremes", "product", "variance"],
+              "leaves": [
+                {
+                  "values": 2,
+                  "numbers": 2,
+                  "sum": {"decimal": "-1"},
+                  "min": {"decimal": "-4"},
+                  "max": {"decimal": "3"},
+                  "product": -12,
+                  "mean": -0.5,
+                  "m2": 24.5
+                },
+                {
+                  "values": 0,
+                  "numbers": 0,
+                  "sum": {"decimal": "0"},
+                  "min": {"decimal": "0"},
+                  "max": {"decimal": "0"},
+                  "product": 0,
+                  "mean": 0,
+                  "m2": 0
+                },
+                {
+                  "values": 1,
+                  "numbers": 1,
+                  "sum": {"decimal": "7"},
+                  "min": {"decimal": "7"},
+                  "max": {"decimal": "7"},
+                  "product": 7,
+                  "mean": 7,
+                  "m2": 0
+                },
+                {
+                  "values": 1,
+                  "numbers": 1,
+                  "sum": {"decimal": "1"},
+                  "min": {"decimal": "1"},
+                  "max": {"decimal": "1"},
+                  "product": 1,
+                  "mean": 1,
+                  "m2": 0
+                },
+                {
+                  "values": 1,
+                  "numbers": 1,
+                  "sum": {"decimal": "2"},
+                  "min": {"decimal": "2"},
+                  "max": {"decimal": "2"},
+                  "product": 2,
+                  "mean": 2,
+                  "m2": 0
+                }
+              ]
+            },
+            {
+              "field": "When",
+              "parts": ["sum", "extremes", "product", "variance"],
+              "leaves": [
+                {
+                  "values": 1,
+                  "numbers": 0,
+                  "sum": {"decimal": "0"},
+                  "min": {"decimal": "0"},
+                  "max": {"decimal": "0"},
+                  "product": 0,
+                  "mean": 0,
+                  "m2": 0
+                },
+                {
+                  "values": 1,
+                  "numbers": 0,
+                  "sum": {"decimal": "0"},
+                  "min": {"decimal": "0"},
+                  "max": {"decimal": "0"},
+                  "product": 0,
+                  "mean": 0,
+                  "m2": 0
+                },
+                {
+                  "values": 1,
+                  "numbers": 0,
+                  "sum": {"decimal": "0"},
+                  "min": {"decimal": "0"},
+                  "max": {"decimal": "0"},
+                  "product": 0,
+                  "mean": 0,
+                  "m2": 0
+                },
+                {
+                  "values": 0,
+                  "numbers": 0,
+                  "sum": {"decimal": "0"},
+                  "min": {"decimal": "0"},
+                  "max": {"decimal": "0"},
+                  "product": 0,
+                  "mean": 0,
+                  "m2": 0
+                },
+                {
+                  "values": 1,
+                  "numbers": 0,
+                  "sum": {"decimal": "0"},
+                  "min": {"decimal": "0"},
+                  "max": {"decimal": "0"},
+                  "product": 0,
+                  "mean": 0,
+                  "m2": 0
+                }
+              ]
+            },
+            {
+              "field": "Text",
+              "parts": ["sum", "extremes", "product", "variance"],
+              "leaves": [
+                {
+                  "values": 2,
+                  "numbers": 0,
+                  "sum": {"decimal": "0"},
+                  "min": {"decimal": "0"},
+                  "max": {"decimal": "0"},
+                  "product": 0,
+                  "mean": 0,
+                  "m2": 0
+                },
+                {
+                  "values": 1,
+                  "numbers": 0,
+                  "sum": {"decimal": "0"},
+                  "min": {"decimal": "0"},
+                  "max": {"decimal": "0"},
+                  "product": 0,
+                  "mean": 0,
+                  "m2": 0
+                },
+                {
+                  "values": 1,
+                  "numbers": 0,
+                  "sum": {"decimal": "0"},
+                  "min": {"decimal": "0"},
+                  "max": {"decimal": "0"},
+                  "product": 0,
+                  "mean": 0,
+                  "m2": 0
+                },
+                {
+                  "values": 0,
+                  "numbers": 0,
+                  "sum": {"decimal": "0"},
+                  "min": {"decimal": "0"},
+                  "max": {"decimal": "0"},
+                  "product": 0,
+                  "mean": 0,
+                  "m2": 0
+                },
+                {
+                  "values": 1,
+                  "numbers": 0,
+                  "sum": {"decimal": "0"},
+                  "min": {"decimal": "0"},
+                  "max": {"decimal": "0"},
+                  "product": 0,
+                  "mean": 0,
+                  "m2": 0
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ADR-0063/0066: the records behind a cell carry each field's value by its kind",
+      "rows": [
+        ["a", {"decimal": "1.50"}, 0.5, 3, {"date": "2026-01-02"}, true],
+        ["b", null, null, null, null, null],
+        [
+          null,
+          {"decimal": "2"},
+          {"double": "-0"},
+          {"integer": "-9223372036854775808"},
+          {"date": "2026-01-02T13:45:00.5"},
+          false
+        ]
+      ],
+      "asks": [
+        {"aggregate": {}},
+        {"details": {"rows": [{"field": "Text", "item": {"kind": "text", "value": "A"}}]}},
+        {"details": {"rows": [{"field": "Text", "item": {"kind": "blank"}}]}}
+      ],
+      "expect": [
+        {"leaves": 1, "rows": [], "columns": [], "leaf": [{"at": [], "records": 3}], "values": []},
+        {
+          "version": "asked",
+          "start": 0,
+          "total": 1,
+          "fields": ["Text", "Money", "Measure", "Count", "When", "Flag"],
+          "records": [["a", {"decimal": "1.5"}, 0.5, {"decimal": "3"}, {"date": "2026-01-02"}, true]]
+        },
+        {
+          "version": "asked",
+          "start": 0,
+          "total": 1,
+          "fields": ["Text", "Money", "Measure", "Count", "When", "Flag"],
+          "records": [
+            [
+              null,
+              {"decimal": "2"},
+              {"double": "-0"},
+              {"decimal": "-9223372036854775808"},
+              {"date": "2026-01-02T13:45:00.5"},
+              false
+            ]
+          ]
+        }
+      ]
+    }
+  ]
+}

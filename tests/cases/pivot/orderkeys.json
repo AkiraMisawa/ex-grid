@@ -1,0 +1,232 @@
+{
+  "about": "The Order Key (ADR-0060, Q19/Q20/Q27; PV-31): a function from an Item's value to a key, called once per Item, ordering Items by key, ties by label, the unkeyed after. Rate deltas by tenor are the case it was decided for. Transcribed from the C# engine's OrderKeyTests.",
+  "kind": "pivotReport",
+  "data": "deltas",
+  "locale": "en-US",
+  "words": "english",
+  "cases": [
+    {
+      "name": "ADR-0060 (PV-31): Items are ordered by their key, ascending, ties by label; an Item with no key comes after the keyed ones, in label order",
+      "layout": {"rows": [{"field": "Tenor"}], "values": [{"field": "Amount", "aggregation": "sum"}]},
+      "expect": {
+        "headers": ["Row Labels", "Sum of Amount"],
+        "lines": [
+          "i ON || 3",
+          "i TN || 8",
+          "i 1W || 6",
+          "i 1M || 12",
+          "i 3M || 9",
+          "i 1Y || 13",
+          "i 18M || 5",
+          "i 1Y6M || 2",
+          "i 2Y || 10",
+          "i 30Y || 1",
+          "i Bucket || 11",
+          "i Other || 4",
+          "i (blank) || 7",
+          "t Grand Total || 91"
+        ],
+        "spans": []
+      }
+    },
+    {
+      "name": "ADR-0060 (PV-31): descending reverses the whole order, and (blank) stays last",
+      "layout": {
+        "rows": [{"field": "Tenor", "sort": {"direction": "descending"}}],
+        "values": [{"field": "Amount", "aggregation": "sum"}]
+      },
+      "expect": {
+        "headers": ["Row Labels", "Sum of Amount"],
+        "lines": [
+          "i Other || 4",
+          "i Bucket || 11",
+          "i 30Y || 1",
+          "i 2Y || 10",
+          "i 1Y6M || 2",
+          "i 18M || 5",
+          "i 1Y || 13",
+          "i 3M || 9",
+          "i 1M || 12",
+          "i 1W || 6",
+          "i TN || 8",
+          "i ON || 3",
+          "i (blank) || 7",
+          "t Grand Total || 91"
+        ],
+        "spans": []
+      }
+    },
+    {
+      "name": "ADR-0060 (PV-31): two values with one key stay two Items, side by side, each with its own records",
+      "layout": {"rows": [{"field": "Tenor"}], "values": [{"field": "Amount", "aggregation": "sum"}]},
+      "records": [["18M", {"decimal": "1"}], ["1Y6M", {"decimal": "2"}], ["18m", {"decimal": "4"}]],
+      "expect": {
+        "headers": ["Row Labels", "Sum of Amount"],
+        "lines": ["i 18M || 5", "i 1Y6M || 2", "t Grand Total || 7"],
+        "spans": []
+      }
+    },
+    {
+      "name": "ADR-0060 (PV-31): a key function that throws is refused, naming the field and the value, never a quiet fall-back to the labels",
+      "layout": {"rows": [{"field": "Tenor"}], "values": [{"field": "Amount", "aggregation": "sum"}]},
+      "fields": [{"name": "Tenor", "type": "text", "orderKey": "tenorThrowsOn7Y"}, {"name": "Amount", "type": "number"}],
+      "records": [["1Y", {"decimal": "1"}], ["7Y", {"decimal": "2"}]],
+      "throws": {"refusal": "invalidOperation", "saying": "The Order Key of Tenor failed on '7Y'."}
+    },
+    {
+      "name": "ADR-0060 (PV-31): the key is called once per Item, however many records and branches the Item has, and (blank) is never keyed",
+      "layout": {
+        "rows": [{"field": "Book"}, {"field": "Tenor", "sort": {"direction": "descending"}}],
+        "values": [{"field": "Amount", "aggregation": "sum"}]
+      },
+      "cubeOf": {"rows": [{"field": "Book"}, {"field": "Tenor"}], "values": [{"field": "Amount", "aggregation": "sum"}]},
+      "data": "booked",
+      "also": ["keyCalls"],
+      "expect": {
+        "headers": ["Row Labels", "Sum of Amount"],
+        "lines": [
+          "g [-]A || 91",
+          "i   Other || 4",
+          "i   Bucket || 11",
+          "i   30Y || 1",
+          "i   2Y || 10",
+          "i   1Y6M || 2",
+          "i   18M || 5",
+          "i   1Y || 13",
+          "i   3M || 9",
+          "i   1M || 12",
+          "i   1W || 6",
+          "i   TN || 8",
+          "i   ON || 3",
+          "i   (blank) || 7",
+          "g [-]B || 4082",
+          "i   Other || 308",
+          "i   Bucket || 322",
+          "i   30Y || 302",
+          "i   2Y || 320",
+          "i   1Y6M || 304",
+          "i   18M || 310",
+          "i   1Y || 326",
+          "i   3M || 318",
+          "i   1M || 324",
+          "i   1W || 312",
+          "i   TN || 316",
+          "i   ON || 306",
+          "i   (blank) || 314",
+          "t Grand Total || 4173"
+        ],
+        "spans": [],
+        "keyCalls": ["18M", "1M", "1W", "1Y", "1Y6M", "2Y", "30Y", "3M", "Bucket", "ON", "Other", "TN"]
+      }
+    },
+    {
+      "name": "ADR-0060/0061 (PV-31): the key orders the Item lists of Filter… and of the report filter band",
+      "layout": {
+        "filters": [{"field": "Tenor", "hiddenItems": [{"kind": "text", "value": "TN"}]}],
+        "values": [{"field": "Amount", "aggregation": "sum"}]
+      },
+      "itemsOf": ["Tenor"],
+      "expect": {
+        "headers": ["Sum of Amount"],
+        "lines": ["t  || 83"],
+        "spans": [],
+        "items": {
+          "Tenor": [
+            {"key": {"kind": "text", "value": "ON"}, "label": "ON", "isHidden": false},
+            {"key": {"kind": "text", "value": "TN"}, "label": "TN", "isHidden": true},
+            {"key": {"kind": "text", "value": "1W"}, "label": "1W", "isHidden": false},
+            {"key": {"kind": "text", "value": "1M"}, "label": "1M", "isHidden": false},
+            {"key": {"kind": "text", "value": "3M"}, "label": "3M", "isHidden": false},
+            {"key": {"kind": "text", "value": "1Y"}, "label": "1Y", "isHidden": false},
+            {"key": {"kind": "text", "value": "18M"}, "label": "18M", "isHidden": false},
+            {"key": {"kind": "text", "value": "1Y6M"}, "label": "1Y6M", "isHidden": false},
+            {"key": {"kind": "text", "value": "2Y"}, "label": "2Y", "isHidden": false},
+            {"key": {"kind": "text", "value": "30Y"}, "label": "30Y", "isHidden": false},
+            {"key": {"kind": "text", "value": "Bucket"}, "label": "Bucket", "isHidden": false},
+            {"key": {"kind": "text", "value": "Other"}, "label": "Other", "isHidden": false},
+            {"key": {"kind": "blank"}, "label": "(blank)", "isHidden": false}
+          ]
+        }
+      }
+    },
+    {
+      "name": "ADR-0060 (PV-31): a sort by a Value Field does not read the key; ties fall back to the label",
+      "layout": {
+        "rows": [{"field": "Tenor", "sort": {"direction": "ascending", "byValue": 0}}],
+        "values": [{"field": "Amount", "aggregation": "sum"}]
+      },
+      "records": [
+        ["ON", {"decimal": "5"}],
+        ["30Y", {"decimal": "5"}],
+        ["1W", {"decimal": "1"}],
+        ["TN", {"decimal": "9"}]
+      ],
+      "also": ["keyCalls"],
+      "expect": {
+        "headers": ["Row Labels", "Sum of Amount"],
+        "lines": ["i 1W || 1", "i 30Y || 5", "i ON || 5", "i TN || 9", "t Grand Total || 20"],
+        "spans": [],
+        "keyCalls": []
+      }
+    },
+    {
+      "name": "ADR-0060 (PV-31): a declared Item order still comes first, and the key orders the rest",
+      "layout": {"rows": [{"field": "Tenor"}], "values": [{"field": "Amount", "aggregation": "sum"}]},
+      "fields": [
+        {"name": "Tenor", "type": "text", "orderKey": "tenor", "itemOrder": ["2Y", "1w"]},
+        {"name": "Amount", "type": "number"}
+      ],
+      "expect": {
+        "headers": ["Row Labels", "Sum of Amount"],
+        "lines": [
+          "i 2Y || 10",
+          "i 1W || 6",
+          "i ON || 3",
+          "i TN || 8",
+          "i 1M || 12",
+          "i 3M || 9",
+          "i 1Y || 13",
+          "i 18M || 5",
+          "i 1Y6M || 2",
+          "i 30Y || 1",
+          "i Bucket || 11",
+          "i Other || 4",
+          "i (blank) || 7",
+          "t Grand Total || 91"
+        ],
+        "spans": []
+      }
+    },
+    {
+      "name": "ADR-0060 (PV-31): a number's key is given the number",
+      "layout": {"rows": [{"field": "Tenor"}], "values": [{"field": "Amount", "aggregation": "sum"}]},
+      "fields": [{"name": "Tenor", "type": "number", "orderKey": "absolute"}, {"name": "Amount", "type": "number"}],
+      "records": [
+        [{"decimal": "-3"}, {"decimal": "1"}],
+        [{"decimal": "2"}, {"decimal": "1"}],
+        [{"decimal": "-1"}, {"decimal": "1"}],
+        [{"decimal": "4"}, {"decimal": "1"}]
+      ],
+      "also": ["keyCalls"],
+      "expect": {
+        "headers": ["Row Labels", "Sum of Amount"],
+        "lines": ["i -1 || 1", "i 2 || 1", "i -3 || 1", "i 4 || 1", "t Grand Total || 4"],
+        "spans": [],
+        "keyCalls": ["-1", "-3", "2", "4"]
+      }
+    },
+    {
+      "name": "ADR-0060 (PV-31): a field's keys are of one type, or the field is refused by name",
+      "layout": {"rows": [{"field": "Tenor"}], "values": [{"field": "Amount", "aggregation": "sum"}]},
+      "fields": [
+        {"name": "Tenor", "type": "text", "orderKey": "tenorButOnIsText"},
+        {"name": "Amount", "type": "number"}
+      ],
+      "scriptSaying": "The Order Key of Tenor gave '30Y' a key of type number and 'ON' one of type string; a field's keys are of one type.",
+      "throws": {
+        "refusal": "invalidOperation",
+        "saying": "The Order Key of Tenor gave '30Y' a key of type Int32 and 'ON' one of type String; a field's keys are of one type."
+      }
+    }
+  ]
+}

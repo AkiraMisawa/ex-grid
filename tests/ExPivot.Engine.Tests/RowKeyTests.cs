@@ -6,8 +6,9 @@ namespace ExPivot.Engine.Tests;
 
 /// <summary>
 /// A report row's key (ADR-0140; PV-42, PV-43): what the row stands for — its role, its Value Field
-/// and its Items — as a value equal across the reports of one layout and distinct within one report,
-/// made with the row so that reading it costs nothing on the grid's check of every redraw.
+/// and its Items — made with the row so that reading it costs nothing on the grid's check of every
+/// redraw. That keys are equal across the reports of one layout and distinct within one report is held
+/// on both engines by the shared cases (<c>tests/cases/pivot/row-keys.json</c>).
 /// </summary>
 public class RowKeyTests
 {
@@ -24,29 +25,6 @@ public class RowKeyTests
         items[0] = PivotItemKey.Text("different");
         Assert.Equal(row.Key, copy);
         Assert.Equal(row.Key.Items, copy.Items);
-    }
-
-    [Fact] // ADR-0140 / PV-42: no two rows of one report stand for the same thing
-    public void A_reports_row_keys_are_distinct()
-    {
-        var report = Report(RegionAndProduct);
-
-        Assert.Equal(report.Rows.Count, report.Rows.Select(row => row.Key).Distinct().Count());
-    }
-
-    [Fact] // ADR-0140 / PV-42: the row standing for the same thing in another report of the layout has an equal key and hash
-    public void A_rows_key_equals_the_key_of_the_same_row_in_another_report()
-    {
-        var first = Report(RegionAndProduct);
-        var second = Report(RegionAndProduct, [.. Sales.Select(sale => sale with { Amount = sale.Amount + 1 })]);
-
-        Assert.Equal(first.Rows.Count, second.Rows.Count);
-        for (var i = 0; i < first.Rows.Count; i++)
-        {
-            Assert.NotSame(first.Rows[i].Key, second.Rows[i].Key);
-            Assert.Equal(first.Rows[i].Key, second.Rows[i].Key);
-            Assert.Equal(first.Rows[i].Key.GetHashCode(), second.Rows[i].Key.GetHashCode());
-        }
     }
 
     [Fact] // ADR-0140 / PV-42: a key names the Items, outermost first, as a refusal shows it

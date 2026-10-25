@@ -1,0 +1,179 @@
+{
+  "about": "A report row's key (ADR-0140; PV-42, PV-43): its role, its Value Field and its Items, distinct within a report and equal across the reports of one layout. Transcribed from the C# engine's RowKeyTests.",
+  "kind": "pivotReport",
+  "data": "sales",
+  "locale": "en-US",
+  "words": "english",
+  "cases": [
+    {
+      "name": "ADR-0140 / PV-42: no two rows of one report stand for the same thing, and a key names the Items outermost first",
+      "layout": {
+        "rows": [{"field": "Region"}, {"field": "Product"}],
+        "values": [{"field": "Amount", "aggregation": "sum"}]
+      },
+      "also": ["keys"],
+      "expect": {
+        "headers": ["Row Labels", "Sum of Amount"],
+        "lines": [
+          "g [-]East || 180",
+          "i   Apples || 130",
+          "i   Pears || 50",
+          "g [-]North || 10",
+          "i   Pears || 10",
+          "g [-]West || 90",
+          "i   Apples || 70",
+          "i   Plums || 20",
+          "g [-](blank) || 5",
+          "i   Plums || 5",
+          "t Grand Total || 285"
+        ],
+        "spans": [],
+        "keys": [
+          {"role": "group", "valueField": -1, "items": [{"kind": "text", "value": "East"}]},
+          {
+            "role": "item",
+            "valueField": -1,
+            "items": [{"kind": "text", "value": "East"}, {"kind": "text", "value": "Apples"}]
+          },
+          {
+            "role": "item",
+            "valueField": -1,
+            "items": [{"kind": "text", "value": "East"}, {"kind": "text", "value": "Pears"}]
+          },
+          {"role": "group", "valueField": -1, "items": [{"kind": "text", "value": "North"}]},
+          {
+            "role": "item",
+            "valueField": -1,
+            "items": [{"kind": "text", "value": "North"}, {"kind": "text", "value": "Pears"}]
+          },
+          {"role": "group", "valueField": -1, "items": [{"kind": "text", "value": "West"}]},
+          {
+            "role": "item",
+            "valueField": -1,
+            "items": [{"kind": "text", "value": "West"}, {"kind": "text", "value": "Apples"}]
+          },
+          {
+            "role": "item",
+            "valueField": -1,
+            "items": [{"kind": "text", "value": "West"}, {"kind": "text", "value": "Plums"}]
+          },
+          {"role": "group", "valueField": -1, "items": [{"kind": "blank"}]},
+          {"role": "item", "valueField": -1, "items": [{"kind": "blank"}, {"kind": "text", "value": "Plums"}]},
+          {"role": "grandTotal", "valueField": -1, "items": []}
+        ]
+      }
+    },
+    {
+      "name": "ADR-0140 / PV-42: the row standing for the same thing in another report of the layout has an equal key",
+      "layout": {
+        "rows": [{"field": "Region"}, {"field": "Product"}],
+        "values": [{"field": "Amount", "aggregation": "sum"}]
+      },
+      "records": [
+        ["East", "Apples", {"date": "2026-01-10"}, {"decimal": "101"}, {"integer": "10"}, true],
+        ["East", "Pears", {"date": "2026-01-12"}, {"decimal": "51"}, {"integer": "5"}, false],
+        ["East", "Apples", {"date": "2026-02-03"}, {"decimal": "31"}, {"integer": "3"}, true],
+        ["West", "Apples", {"date": "2026-01-20"}, {"decimal": "71"}, {"integer": "7"}, false],
+        ["West", "Plums", {"date": "2026-02-15"}, {"decimal": "21"}, {"integer": "2"}, true],
+        ["North", "Pears", {"date": "2026-02-18"}, {"decimal": "11"}, {"integer": "1"}, false],
+        [null, "Plums", {"date": "2026-03-01"}, {"decimal": "6"}, {"integer": "1"}, true]
+      ],
+      "also": ["keys"],
+      "expect": {
+        "headers": ["Row Labels", "Sum of Amount"],
+        "lines": [
+          "g [-]East || 183",
+          "i   Apples || 132",
+          "i   Pears || 51",
+          "g [-]North || 11",
+          "i   Pears || 11",
+          "g [-]West || 92",
+          "i   Apples || 71",
+          "i   Plums || 21",
+          "g [-](blank) || 6",
+          "i   Plums || 6",
+          "t Grand Total || 292"
+        ],
+        "spans": [],
+        "keys": [
+          {"role": "group", "valueField": -1, "items": [{"kind": "text", "value": "East"}]},
+          {
+            "role": "item",
+            "valueField": -1,
+            "items": [{"kind": "text", "value": "East"}, {"kind": "text", "value": "Apples"}]
+          },
+          {
+            "role": "item",
+            "valueField": -1,
+            "items": [{"kind": "text", "value": "East"}, {"kind": "text", "value": "Pears"}]
+          },
+          {"role": "group", "valueField": -1, "items": [{"kind": "text", "value": "North"}]},
+          {
+            "role": "item",
+            "valueField": -1,
+            "items": [{"kind": "text", "value": "North"}, {"kind": "text", "value": "Pears"}]
+          },
+          {"role": "group", "valueField": -1, "items": [{"kind": "text", "value": "West"}]},
+          {
+            "role": "item",
+            "valueField": -1,
+            "items": [{"kind": "text", "value": "West"}, {"kind": "text", "value": "Apples"}]
+          },
+          {
+            "role": "item",
+            "valueField": -1,
+            "items": [{"kind": "text", "value": "West"}, {"kind": "text", "value": "Plums"}]
+          },
+          {"role": "group", "valueField": -1, "items": [{"kind": "blank"}]},
+          {"role": "item", "valueField": -1, "items": [{"kind": "blank"}, {"kind": "text", "value": "Plums"}]},
+          {"role": "grandTotal", "valueField": -1, "items": []}
+        ]
+      }
+    },
+    {
+      "name": "ADR-0140: a key under Σ Values in Rows names the Value Field",
+      "layout": {
+        "valuesAxis": "rows",
+        "rows": [{"field": "Region"}],
+        "values": [{"field": "Amount", "aggregation": "sum"}, {"field": "Quantity", "aggregation": "sum"}]
+      },
+      "also": ["keys"],
+      "expect": {
+        "headers": ["Row Labels", "Values"],
+        "lines": [
+          "g East ||",
+          "i   Sum of Amount || 180",
+          "i   Sum of Quantity || 18",
+          "g North ||",
+          "i   Sum of Amount || 10",
+          "i   Sum of Quantity || 1",
+          "g West ||",
+          "i   Sum of Amount || 90",
+          "i   Sum of Quantity || 9",
+          "g (blank) ||",
+          "i   Sum of Amount || 5",
+          "i   Sum of Quantity || 1",
+          "t Total Sum of Amount || 285",
+          "t Total Sum of Quantity || 29"
+        ],
+        "spans": [],
+        "keys": [
+          {"role": "group", "valueField": -1, "items": [{"kind": "text", "value": "East"}]},
+          {"role": "item", "valueField": 0, "items": [{"kind": "text", "value": "East"}]},
+          {"role": "item", "valueField": 1, "items": [{"kind": "text", "value": "East"}]},
+          {"role": "group", "valueField": -1, "items": [{"kind": "text", "value": "North"}]},
+          {"role": "item", "valueField": 0, "items": [{"kind": "text", "value": "North"}]},
+          {"role": "item", "valueField": 1, "items": [{"kind": "text", "value": "North"}]},
+          {"role": "group", "valueField": -1, "items": [{"kind": "text", "value": "West"}]},
+          {"role": "item", "valueField": 0, "items": [{"kind": "text", "value": "West"}]},
+          {"role": "item", "valueField": 1, "items": [{"kind": "text", "value": "West"}]},
+          {"role": "group", "valueField": -1, "items": [{"kind": "blank"}]},
+          {"role": "item", "valueField": 0, "items": [{"kind": "blank"}]},
+          {"role": "item", "valueField": 1, "items": [{"kind": "blank"}]},
+          {"role": "grandTotal", "valueField": 0, "items": []},
+          {"role": "grandTotal", "valueField": 1, "items": []}
+        ]
+      }
+    }
+  ]
+}

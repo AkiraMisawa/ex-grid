@@ -1,0 +1,442 @@
+{
+  "about": "What an Item is and in what order Items stand (ADR-0060, \"Items\" and \"Order\"). Transcribed from the C# engine's ItemTests.",
+  "kind": "pivotReport",
+  "data": "things",
+  "locale": "en-US",
+  "words": "english",
+  "cases": [
+    {
+      "name": "ADR-0060: a field's Items, ascending, (blank) last, each with its records' total",
+      "layout": {"rows": [{"field": "Region"}], "values": [{"field": "Amount", "aggregation": "sum"}]},
+      "data": "sales",
+      "expect": {
+        "headers": ["Row Labels", "Sum of Amount"],
+        "lines": ["i East || 180", "i North || 10", "i West || 90", "i (blank) || 5", "t Grand Total || 285"],
+        "spans": []
+      }
+    },
+    {
+      "name": "ADR-0060 (a reading): text Items are told apart ignoring case, labelled as first seen",
+      "layout": {"rows": [{"field": "Key"}], "values": [{"field": "Amount", "aggregation": "sum"}]},
+      "records": [
+        ["East", {"decimal": "1"}],
+        ["EAST", {"decimal": "1"}],
+        ["east", {"decimal": "1"}],
+        ["West", {"decimal": "1"}]
+      ],
+      "expect": {
+        "headers": ["Row Labels", "Sum of Amount"],
+        "lines": ["i East || 3", "i West || 1", "t Grand Total || 4"],
+        "spans": []
+      }
+    },
+    {
+      "name": "ADR-0060: spaces are significant",
+      "layout": {"rows": [{"field": "Key"}], "values": [{"field": "Amount", "aggregation": "sum"}]},
+      "records": [["East", {"decimal": "1"}], ["East ", {"decimal": "1"}]],
+      "expect": {
+        "headers": ["Row Labels", "Sum of Amount"],
+        "lines": ["i East || 1", "i East  || 1", "t Grand Total || 2"],
+        "spans": []
+      }
+    },
+    {
+      "name": "ADR-0060/0023: an empty string is a value, a Blank is (blank), and they are two Items",
+      "layout": {"rows": [{"field": "Key"}], "values": [{"field": "Amount", "aggregation": "sum"}]},
+      "records": [["", {"decimal": "1"}], [null, {"decimal": "1"}], ["A", {"decimal": "1"}]],
+      "expect": {
+        "headers": ["Row Labels", "Sum of Amount"],
+        "lines": ["i  || 1", "i A || 1", "i (blank) || 1", "t Grand Total || 3"],
+        "spans": []
+      }
+    },
+    {
+      "name": "ADR-0060: a number is its value, exact or not",
+      "layout": {"rows": [{"field": "Key"}], "values": [{"field": "Amount", "aggregation": "sum"}]},
+      "records": [
+        [{"integer": "1"}, {"decimal": "1"}],
+        [{"decimal": "1.0"}, {"decimal": "1"}],
+        [1.0, {"decimal": "1"}],
+        [{"integer": "1"}, {"decimal": "1"}],
+        [2.5, {"decimal": "1"}]
+      ],
+      "expect": {
+        "headers": ["Row Labels", "Sum of Amount"],
+        "lines": ["i 1 || 4", "i 2.5 || 1", "t Grand Total || 5"],
+        "spans": []
+      }
+    },
+    {
+      "name": "ADR-0060: numbers order by value, not by their text",
+      "layout": {"rows": [{"field": "Key"}], "values": [{"field": "Amount", "aggregation": "sum"}]},
+      "records": [
+        [{"integer": "10"}, {"decimal": "1"}],
+        [{"integer": "100"}, {"decimal": "1"}],
+        [{"integer": "9"}, {"decimal": "1"}]
+      ],
+      "expect": {
+        "headers": ["Row Labels", "Sum of Amount"],
+        "lines": ["i 9 || 1", "i 10 || 1", "i 100 || 1", "t Grand Total || 3"],
+        "spans": []
+      }
+    },
+    {
+      "name": "ADR-0060: a non-finite number is the Item #NUM!, after the Booleans and before (blank)",
+      "layout": {"rows": [{"field": "Key"}], "values": [{"field": "Amount", "aggregation": "sum"}]},
+      "records": [
+        [{"double": "NaN"}, {"decimal": "1"}],
+        [{"double": "Infinity"}, {"decimal": "1"}],
+        [true, {"decimal": "1"}],
+        [null, {"decimal": "1"}],
+        ["x", {"decimal": "1"}],
+        [{"integer": "1"}, {"decimal": "1"}]
+      ],
+      "expect": {
+        "headers": ["Row Labels", "Sum of Amount"],
+        "lines": ["i 1 || 1", "i x || 1", "i TRUE || 1", "i #NUM! || 2", "i (blank) || 1", "t Grand Total || 6"],
+        "spans": []
+      }
+    },
+    {
+      "name": "ADR-0060: a date is its clock value, its time of day part of it",
+      "layout": {"rows": [{"field": "Key"}], "values": [{"field": "Amount", "aggregation": "sum"}]},
+      "records": [
+        [{"date": "2026-01-01"}, {"decimal": "1"}],
+        [{"date": "2026-01-01T00:00:00"}, {"decimal": "1"}],
+        [{"date": "2026-01-01T13:45:00"}, {"decimal": "1"}],
+        [{"date": "2026-01-02"}, {"decimal": "1"}]
+      ],
+      "expect": {
+        "headers": ["Row Labels", "Sum of Amount"],
+        "lines": ["i 1/1/2026 || 2", "i 1/1/2026 1:45:00 PM || 1", "i 1/2/2026 || 1", "t Grand Total || 4"],
+        "spans": []
+      }
+    },
+    {
+      "name": "ADR-0060: a field's format labels its Items, under the report's culture",
+      "layout": {"rows": [{"field": "Date"}], "values": [{"field": "Amount", "aggregation": "sum"}]},
+      "data": "sales",
+      "fields": [
+        {"name": "Region", "type": "text"},
+        {"name": "Product", "type": "text"},
+        {"name": "Date", "type": "date", "format": "yyyy-MM"},
+        {"name": "Amount", "type": "number"},
+        {"name": "Quantity", "type": "number"},
+        {"name": "Online", "type": "boolean"}
+      ],
+      "records": [
+        ["East", "Apples", {"date": "2026-01-10"}, {"decimal": "100"}, {"integer": "10"}, true],
+        ["East", "Pears", {"date": "2026-01-12"}, {"decimal": "50"}, {"integer": "5"}, false]
+      ],
+      "expect": {
+        "headers": ["Row Labels", "Sum of Amount"],
+        "lines": ["i 2026-01 || 100", "i 2026-01 || 50", "t Grand Total || 150"],
+        "spans": []
+      }
+    },
+    {
+      "name": "ADR-0060: a Boolean is labelled TRUE or FALSE, FALSE first",
+      "layout": {"rows": [{"field": "Online"}], "values": [{"field": "Amount", "aggregation": "sum"}]},
+      "data": "sales",
+      "expect": {
+        "headers": ["Row Labels", "Sum of Amount"],
+        "lines": ["i FALSE || 130", "i TRUE || 155", "t Grand Total || 285"],
+        "spans": []
+      }
+    },
+    {
+      "name": "ADR-0060: across kinds, numbers, dates, text, Booleans, #NUM!, then (blank)",
+      "layout": {"rows": [{"field": "Key"}], "values": [{"field": "Amount", "aggregation": "sum"}]},
+      "records": [
+        ["b", {"decimal": "1"}],
+        [null, {"decimal": "1"}],
+        [true, {"decimal": "1"}],
+        [{"date": "2026-01-01"}, {"decimal": "1"}],
+        [{"integer": "2"}, {"decimal": "1"}]
+      ],
+      "expect": {
+        "headers": ["Row Labels", "Sum of Amount"],
+        "lines": ["i 2 || 1", "i 1/1/2026 || 1", "i b || 1", "i TRUE || 1", "i (blank) || 1", "t Grand Total || 5"],
+        "spans": []
+      }
+    },
+    {
+      "name": "ADR-0060: text orders by the culture ignoring case",
+      "layout": {"rows": [{"field": "Key"}], "values": [{"field": "Amount", "aggregation": "sum"}]},
+      "records": [["banana", {"decimal": "1"}], ["Cherry", {"decimal": "1"}], ["Apple", {"decimal": "1"}]],
+      "expect": {
+        "headers": ["Row Labels", "Sum of Amount"],
+        "lines": ["i Apple || 1", "i banana || 1", "i Cherry || 1", "t Grand Total || 3"],
+        "spans": []
+      }
+    },
+    {
+      "name": "ADR-0060: descending reverses the order, and (blank) stays last",
+      "layout": {
+        "rows": [{"field": "Region", "sort": {"direction": "descending"}}],
+        "values": [{"field": "Amount", "aggregation": "sum"}]
+      },
+      "data": "sales",
+      "expect": {
+        "headers": ["Row Labels", "Sum of Amount"],
+        "lines": ["i West || 90", "i North || 10", "i East || 180", "i (blank) || 5", "t Grand Total || 285"],
+        "spans": []
+      }
+    },
+    {
+      "name": "ADR-0060: a field's declared Items come first, in their order, Excel's custom lists",
+      "layout": {"rows": [{"field": "Product"}], "values": [{"field": "Amount", "aggregation": "sum"}]},
+      "data": "sales",
+      "fields": [
+        {"name": "Region", "type": "text"},
+        {"name": "Product", "type": "text", "itemOrder": ["Plums", "apples"]},
+        {"name": "Date", "type": "date"},
+        {"name": "Amount", "type": "number"},
+        {"name": "Quantity", "type": "number"},
+        {"name": "Online", "type": "boolean"}
+      ],
+      "expect": {
+        "headers": ["Row Labels", "Sum of Amount"],
+        "lines": ["i Plums || 25", "i Apples || 200", "i Pears || 60", "t Grand Total || 285"],
+        "spans": []
+      }
+    },
+    {
+      "name": "ADR-0060: descending reverses a field's declared Items with the rest",
+      "layout": {
+        "rows": [{"field": "Product", "sort": {"direction": "descending"}}],
+        "values": [{"field": "Amount", "aggregation": "sum"}]
+      },
+      "data": "sales",
+      "fields": [
+        {"name": "Region", "type": "text"},
+        {"name": "Product", "type": "text", "itemOrder": ["Plums", "apples"]},
+        {"name": "Date", "type": "date"},
+        {"name": "Amount", "type": "number"},
+        {"name": "Quantity", "type": "number"},
+        {"name": "Online", "type": "boolean"}
+      ],
+      "expect": {
+        "headers": ["Row Labels", "Sum of Amount"],
+        "lines": ["i Pears || 60", "i Apples || 200", "i Plums || 25", "t Grand Total || 285"],
+        "spans": []
+      }
+    },
+    {
+      "name": "ADR-0060, observed (the readings of 2026-10-12, R3 (c), e16b; the same in the English (US) edition): a number Item with no format is labelled in General, at most eleven characters",
+      "layout": {"rows": [{"field": "Key"}], "values": [{"field": "Amount", "aggregation": "sum"}]},
+      "data": "keyed",
+      "also": ["numbers"],
+      "expect": {
+        "headers": ["Row Labels", "Sum of Amount"],
+        "lines": ["i 1.23456789 || 1", "i 1.23457E+11 || 2", "t Grand Total || 3"],
+        "spans": [],
+        "numbers": {
+          "rows": [
+            {"labels": ["d1.23456789012345"], "values": ["m1"]},
+            {"labels": ["d123456789012.345"], "values": ["m2"]},
+            {"labels": [null], "values": ["m3"]}
+          ],
+          "headers": [null]
+        }
+      }
+    },
+    {
+      "name": "ADR-0060 (R3 (c)): Filter… lists a number Item by the same General label the report paints",
+      "layout": {"rows": [{"field": "Key"}], "values": [{"field": "Amount", "aggregation": "sum"}]},
+      "data": "keyed",
+      "itemsOf": ["Key"],
+      "expect": {
+        "headers": ["Row Labels", "Sum of Amount"],
+        "lines": ["i 1.23456789 || 1", "i 1.23457E+11 || 2", "t Grand Total || 3"],
+        "spans": [],
+        "items": {
+          "Key": [
+            {"key": {"kind": "number", "value": "1.23456789012345"}, "label": "1.23456789", "isHidden": false},
+            {
+              "key": {"kind": "number", "value": "123456789012.345"},
+              "label": "1.23457E+11",
+              "isHidden": false
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "ADR-0060 (R3 (c), by generalisation from the two Items observed): a number Item's label is General as a value cell shows it: 0.1",
+      "layout": {"rows": [{"field": "Key"}], "values": [{"field": "Amount", "aggregation": "sum"}]},
+      "fields": [{"name": "Key", "type": "number"}, {"name": "Amount", "type": "number"}],
+      "records": [[0.1, {"decimal": "1"}]],
+      "also": ["numbers"],
+      "expect": {
+        "headers": ["Row Labels", "Sum of Amount"],
+        "lines": ["i 0.1 || 1", "t Grand Total || 1"],
+        "spans": [],
+        "numbers": {
+          "rows": [{"labels": ["d0.1"], "values": ["m1"]}, {"labels": [null], "values": ["m1"]}],
+          "headers": [null]
+        }
+      }
+    },
+    {
+      "name": "ADR-0060 (R3 (c), by generalisation from the two Items observed): a number Item's label is General as a value cell shows it: 1234.5",
+      "layout": {"rows": [{"field": "Key"}], "values": [{"field": "Amount", "aggregation": "sum"}]},
+      "fields": [{"name": "Key", "type": "number"}, {"name": "Amount", "type": "number"}],
+      "records": [[1234.5, {"decimal": "1"}]],
+      "also": ["numbers"],
+      "expect": {
+        "headers": ["Row Labels", "Sum of Amount"],
+        "lines": ["i 1234.5 || 1", "t Grand Total || 1"],
+        "spans": [],
+        "numbers": {
+          "rows": [{"labels": ["d1234.5"], "values": ["m1"]}, {"labels": [null], "values": ["m1"]}],
+          "headers": [null]
+        }
+      }
+    },
+    {
+      "name": "ADR-0060 (R3 (c), by generalisation from the two Items observed): a number Item's label is General as a value cell shows it: 1.4142135623730951",
+      "layout": {"rows": [{"field": "Key"}], "values": [{"field": "Amount", "aggregation": "sum"}]},
+      "fields": [{"name": "Key", "type": "number"}, {"name": "Amount", "type": "number"}],
+      "records": [[1.4142135623730951, {"decimal": "1"}]],
+      "also": ["numbers"],
+      "expect": {
+        "headers": ["Row Labels", "Sum of Amount"],
+        "lines": ["i 1.414213562 || 1", "t Grand Total || 1"],
+        "spans": [],
+        "numbers": {
+          "rows": [{"labels": ["d1.4142135623730951"], "values": ["m1"]}, {"labels": [null], "values": ["m1"]}],
+          "headers": [null]
+        }
+      }
+    },
+    {
+      "name": "ADR-0060 (R3 (c), by generalisation from the two Items observed): a number Item's label is General as a value cell shows it: -2.6666666666666665",
+      "layout": {"rows": [{"field": "Key"}], "values": [{"field": "Amount", "aggregation": "sum"}]},
+      "fields": [{"name": "Key", "type": "number"}, {"name": "Amount", "type": "number"}],
+      "records": [[-2.6666666666666665, {"decimal": "1"}]],
+      "also": ["numbers"],
+      "expect": {
+        "headers": ["Row Labels", "Sum of Amount"],
+        "lines": ["i -2.666666667 || 1", "t Grand Total || 1"],
+        "spans": [],
+        "numbers": {
+          "rows": [{"labels": ["d-2.6666666666666665"], "values": ["m1"]}, {"labels": [null], "values": ["m1"]}],
+          "headers": [null]
+        }
+      }
+    },
+    {
+      "name": "ADR-0060 (R3 (c), by generalisation from the two Items observed): a number Item's label is General as a value cell shows it: 123456789012345.0",
+      "layout": {"rows": [{"field": "Key"}], "values": [{"field": "Amount", "aggregation": "sum"}]},
+      "fields": [{"name": "Key", "type": "number"}, {"name": "Amount", "type": "number"}],
+      "records": [[123456789012345.0, {"decimal": "1"}]],
+      "also": ["numbers"],
+      "expect": {
+        "headers": ["Row Labels", "Sum of Amount"],
+        "lines": ["i 1.23457E+14 || 1", "t Grand Total || 1"],
+        "spans": [],
+        "numbers": {
+          "rows": [{"labels": ["d123456789012345"], "values": ["m1"]}, {"labels": [null], "values": ["m1"]}],
+          "headers": [null]
+        }
+      }
+    },
+    {
+      "name": "ADR-0060 (R3 (c), by generalisation from the two Items observed): a number Item's label is General as a value cell shows it: -1.2345678901234568e-05",
+      "layout": {"rows": [{"field": "Key"}], "values": [{"field": "Amount", "aggregation": "sum"}]},
+      "fields": [{"name": "Key", "type": "number"}, {"name": "Amount", "type": "number"}],
+      "records": [[-1.2345678901234568e-05, {"decimal": "1"}]],
+      "also": ["numbers"],
+      "expect": {
+        "headers": ["Row Labels", "Sum of Amount"],
+        "lines": ["i -1.23457E-05 || 1", "t Grand Total || 1"],
+        "spans": [],
+        "numbers": {
+          "rows": [{"labels": ["d-1.2345678901234568E-05"], "values": ["m1"]}, {"labels": [null], "values": ["m1"]}],
+          "headers": [null]
+        }
+      }
+    },
+    {
+      "name": "ADR-0060 (R3 (c), by generalisation from the two Items observed): a number Item's label is General as a value cell shows it: 1e+300",
+      "layout": {"rows": [{"field": "Key"}], "values": [{"field": "Amount", "aggregation": "sum"}]},
+      "fields": [{"name": "Key", "type": "number"}, {"name": "Amount", "type": "number"}],
+      "records": [[1e+300, {"decimal": "1"}]],
+      "also": ["numbers"],
+      "expect": {
+        "headers": ["Row Labels", "Sum of Amount"],
+        "lines": ["i 1E+300 || 1", "t Grand Total || 1"],
+        "spans": [],
+        "numbers": {
+          "rows": [{"labels": ["d1E+300"], "values": ["m1"]}, {"labels": [null], "values": ["m1"]}],
+          "headers": [null]
+        }
+      }
+    },
+    {
+      "name": "ADR-0060 (by generalisation, as the values' General): a number Item's minus sign is '-' in sv-SE, where G15 wrote the culture's own U+2212",
+      "layout": {"rows": [{"field": "Key"}], "values": [{"field": "Amount", "aggregation": "sum"}]},
+      "data": "keyed",
+      "locale": "sv-SE",
+      "records": [[{"decimal": "-1.4142135623731"}, {"integer": "1"}]],
+      "expect": {
+        "headers": ["Row Labels", "Sum of Amount"],
+        "lines": ["i -1,414213562 || 1", "t Grand Total || 1"],
+        "spans": []
+      }
+    },
+    {
+      "name": "ADR-0060 (by generalisation, as the values' General): a number Item's minus sign is '-' in fi-FI, where G15 wrote the culture's own U+2212",
+      "layout": {"rows": [{"field": "Key"}], "values": [{"field": "Amount", "aggregation": "sum"}]},
+      "data": "keyed",
+      "locale": "fi-FI",
+      "records": [[{"decimal": "-1.4142135623731"}, {"integer": "1"}]],
+      "expect": {
+        "headers": ["Row Labels", "Sum of Amount"],
+        "lines": ["i -1,414213562 || 1", "t Grand Total || 1"],
+        "spans": []
+      }
+    },
+    {
+      "name": "ADR-0060 (by generalisation, as the values' General): a number Item's minus sign is '-' in nb-NO, where G15 wrote the culture's own U+2212",
+      "layout": {"rows": [{"field": "Key"}], "values": [{"field": "Amount", "aggregation": "sum"}]},
+      "data": "keyed",
+      "locale": "nb-NO",
+      "records": [[{"decimal": "-1.4142135623731"}, {"integer": "1"}]],
+      "expect": {
+        "headers": ["Row Labels", "Sum of Amount"],
+        "lines": ["i -1,414213562 || 1", "t Grand Total || 1"],
+        "spans": []
+      }
+    },
+    {
+      "name": "ADR-0060: a number format of the field's own still labels its Items as written, not General",
+      "layout": {"rows": [{"field": "Key"}], "values": [{"field": "Amount", "aggregation": "sum"}]},
+      "data": "keyed",
+      "fields": [{"name": "Key", "type": "number", "format": "0.000"}, {"name": "Amount", "type": "number"}],
+      "expect": {
+        "headers": ["Row Labels", "Sum of Amount"],
+        "lines": ["i 1.235 || 1", "i 123456789012.345 || 2", "t Grand Total || 3"],
+        "spans": []
+      }
+    },
+    {
+      "name": "ADR-0060: labels follow the culture; the keys do not",
+      "layout": {"rows": [{"field": "Key"}], "values": [{"field": "Amount", "aggregation": "sum"}]},
+      "locale": "de-DE",
+      "records": [[{"decimal": "1234.5"}, {"decimal": "1"}], [{"date": "2026-09-30"}, {"decimal": "1"}]],
+      "also": ["keys"],
+      "expect": {
+        "headers": ["Row Labels", "Sum of Amount"],
+        "lines": ["i 1234,5 || 1", "i 30.09.2026 || 1", "t Grand Total || 2"],
+        "spans": [],
+        "keys": [
+          {"role": "item", "valueField": -1, "items": [{"kind": "number", "value": "1234.5"}]},
+          {"role": "item", "valueField": -1, "items": [{"kind": "date", "value": "2026-09-30T00:00:00"}]},
+          {"role": "grandTotal", "valueField": -1, "items": []}
+        ]
+      }
+    }
+  ]
+}

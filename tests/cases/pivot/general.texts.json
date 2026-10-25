@@ -1,0 +1,132 @@
+{
+  "about": "General as a value cell with no number format of its own shows it (ADR-0060; the seventeenth Windows run, item 16): at most eleven characters besides a minus sign, which is '-' in every culture, as ExSheet's General at twelve characters or wider (ADR-0047, SH-20). Transcribed from the C# engine's PivotGeneralTests.",
+  "kind": "pivotGeneral",
+  "locale": "invariant",
+  "cases": [
+    {
+      "name": "ADR-0060, item 16: the values Excel's PivotTable showed in General (expivot-cells.md e05a, e05b, e08, e16)",
+      "numbers": [
+        1.4142135623730951,
+        1.632993161855452,
+        2.6666666666666665,
+        0.30000000000000004,
+        123456789012.345,
+        1.23456789012345,
+        1.23456789012345e-05,
+        123456789013.8796,
+        23.2
+      ],
+      "expect": [
+        "1.414213562",
+        "1.632993162",
+        "2.666666667",
+        "0.3",
+        "1.23457E+11",
+        "1.23456789",
+        "1.23457E-05",
+        "1.23457E+11",
+        "23.2"
+      ]
+    },
+    {
+      "name": "ADR-0060 (SH-20's rule): rounding that carries an integer part into a twelfth digit goes scientific",
+      "numbers": [99999999999.4, 99999999999.5, 9999999999.5, 999999999.94, 999999999.96, 0.99999999996],
+      "expect": ["99999999999", "1E+11", "10000000000", "999999999.9", "1000000000", "1"]
+    },
+    {
+      "name": "ADR-0060 (SH-20's rule): a minus sign is not one of the eleven characters, a reading, as ExSheet's: the run asked no negative number",
+      "numbers": [-1.4142135623730951, -123456789012.0, -12345678901.0, -1.2345678901234568e-05],
+      "expect": ["-1.414213562", "-1.23457E+11", "-12345678901", "-1.23457E-05"]
+    },
+    {
+      "name": "ADR-0060: General writes the culture's decimal separator: en-US",
+      "locale": "en-US",
+      "numbers": [1.4142135623730951],
+      "expect": ["1.414213562"]
+    },
+    {
+      "name": "ADR-0060: General writes the culture's decimal separator: de-DE",
+      "locale": "de-DE",
+      "numbers": [1.4142135623730951],
+      "expect": ["1,414213562"]
+    },
+    {
+      "name": "ADR-0060: General writes the culture's decimal separator: ja-JP",
+      "locale": "ja-JP",
+      "numbers": [1.4142135623730951],
+      "expect": ["1.414213562"]
+    },
+    {
+      "name": "ADR-0060: General writes the culture's decimal separator: fr-FR",
+      "locale": "fr-FR",
+      "numbers": [1.4142135623730951],
+      "expect": ["1,414213562"]
+    },
+    {
+      "name": "ADR-0060 (by generalisation: no run read Excel under these cultures): the minus sign is '-' in sv-SE, as ExSheet's General writes it, never the culture's U+2212",
+      "locale": "sv-SE",
+      "numbers": [-1.4142135623730951, -123456789012.345, -1.2345678901234568e-05, {"decimal": "-1234.5678"}],
+      "expect": ["-1,414213562", "-1,23457E+11", "-1,23457E-05", "-1234,5678"]
+    },
+    {
+      "name": "ADR-0060 (by generalisation: no run read Excel under these cultures): the minus sign is '-' in fi-FI, as ExSheet's General writes it, never the culture's U+2212",
+      "locale": "fi-FI",
+      "numbers": [-1.4142135623730951, -123456789012.345, -1.2345678901234568e-05, {"decimal": "-1234.5678"}],
+      "expect": ["-1,414213562", "-1,23457E+11", "-1,23457E-05", "-1234,5678"]
+    },
+    {
+      "name": "ADR-0060 (by generalisation: no run read Excel under these cultures): the minus sign is '-' in nb-NO, as ExSheet's General writes it, never the culture's U+2212",
+      "locale": "nb-NO",
+      "numbers": [-1.4142135623730951, -123456789012.345, -1.2345678901234568e-05, {"decimal": "-1234.5678"}],
+      "expect": ["-1,414213562", "-1,23457E+11", "-1,23457E-05", "-1234,5678"]
+    },
+    {
+      "name": "ADR-0060: zero, and a negative zero, are 0",
+      "numbers": [0.0, {"double": "-0"}, {"decimal": "0"}],
+      "expect": ["0", "0", "0"]
+    },
+    {
+      "name": "ADR-0060 (\"Money stays exact\"): an exact decimal is shown from its own digits, under the same rule",
+      "numbers": [
+        {"decimal": "0.3"},
+        {"decimal": "123456789012.345678"},
+        {"decimal": "1.23456789012345678"},
+        {"decimal": "0.000012345678901234567"},
+        {"decimal": "12345678901"},
+        {"decimal": "0.00001"},
+        {"decimal": "-1234.5678"},
+        {"decimal": "0.0000000000000000000000000001"},
+        {"decimal": "79228162514264337593543950335"},
+        {"decimal": "3.3333333333333333333333333333"},
+        {"decimal": "40.714285714285714285714285714"}
+      ],
+      "expect": [
+        "0.3",
+        "1.23457E+11",
+        "1.23456789",
+        "1.23457E-05",
+        "12345678901",
+        "0.00001",
+        "-1234.5678",
+        "1E-28",
+        "7.92282E+28",
+        "3.333333333",
+        "40.71428571"
+      ]
+    },
+    {
+      "name": "ADR-0060: the closer form is judged from the fifteen digits both forms are built from, never from a decimal's further ones; these showed 1E-01 and 1E+00",
+      "numbers": [
+        {"decimal": "0.10000000049999999"},
+        {"decimal": "1.00000000049999999"},
+        {"decimal": "-0.10000000049999999"}
+      ],
+      "expect": ["0.100000001", "1.000000001", "-0.100000001"]
+    },
+    {
+      "name": "ADR-0060 (the edge, as stated): a double is judged against its own value, so where a decimal's fifteen digits tie between the two forms, its double can choose the other",
+      "numbers": [{"decimal": "0.1000000004999999"}, 0.1000000004999999],
+      "expect": ["0.100000001", "1E-01"]
+    }
+  ]
+}

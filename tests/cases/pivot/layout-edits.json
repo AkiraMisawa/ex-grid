@@ -1,0 +1,819 @@
+{
+  "about": "What each Field List gesture means (ADR-0061), as the engine's pure rules: the layout each makes, the one it hands back unchanged, and what it refuses. Transcribed from the C# engine's LayoutEditTests.",
+  "kind": "pivotLayoutEdits",
+  "data": "sales",
+  "locale": "en-US",
+  "words": "english",
+  "cases": [
+    {
+      "name": "ADR-0061: ticking places a Number field in Values with Sum, any other at the end of Rows; ticking a placed field changes nothing",
+      "layout": {},
+      "edits": [
+        {"tick": "Region"},
+        {"tick": "Amount", "on": "previous"},
+        {"tick": "Date", "on": "previous"},
+        {"tick": "Online", "on": "previous"},
+        {"tick": "Region", "on": "previous"}
+      ],
+      "expect": [
+        {
+          "layout": {
+            "form": "compact",
+            "valuesAxis": "columns",
+            "subtotalsAtTop": true,
+            "grandTotalRow": true,
+            "grandTotalColumn": true,
+            "repeatItemLabels": false,
+            "filters": [],
+            "rows": [{"field": "Region"}],
+            "columns": [],
+            "values": []
+          }
+        },
+        {
+          "layout": {
+            "form": "compact",
+            "valuesAxis": "columns",
+            "subtotalsAtTop": true,
+            "grandTotalRow": true,
+            "grandTotalColumn": true,
+            "repeatItemLabels": false,
+            "filters": [],
+            "rows": [{"field": "Region"}],
+            "columns": [],
+            "values": [{"field": "Amount", "aggregation": "sum"}]
+          }
+        },
+        {
+          "layout": {
+            "form": "compact",
+            "valuesAxis": "columns",
+            "subtotalsAtTop": true,
+            "grandTotalRow": true,
+            "grandTotalColumn": true,
+            "repeatItemLabels": false,
+            "filters": [],
+            "rows": [{"field": "Region"}, {"field": "Date"}],
+            "columns": [],
+            "values": [{"field": "Amount", "aggregation": "sum"}]
+          }
+        },
+        {
+          "layout": {
+            "form": "compact",
+            "valuesAxis": "columns",
+            "subtotalsAtTop": true,
+            "grandTotalRow": true,
+            "grandTotalColumn": true,
+            "repeatItemLabels": false,
+            "filters": [],
+            "rows": [{"field": "Region"}, {"field": "Date"}, {"field": "Online"}],
+            "columns": [],
+            "values": [{"field": "Amount", "aggregation": "sum"}]
+          }
+        },
+        {"same": true}
+      ]
+    },
+    {
+      "name": "ADR-0061: unticking removes the field from every Area, each Value Field of it too, and an order by a later Value Field follows it",
+      "layout": {
+        "rows": [{"field": "Region"}],
+        "columns": [{"field": "Product", "sort": {"direction": "descending", "byValue": 2}}],
+        "values": [
+          {"field": "Amount", "aggregation": "sum"},
+          {"field": "Region", "aggregation": "count"},
+          {"field": "Quantity", "aggregation": "sum"}
+        ]
+      },
+      "edits": [{"untick": "Region"}, {"untick": "Region", "on": "previous"}],
+      "expect": [
+        {
+          "layout": {
+            "form": "compact",
+            "valuesAxis": "columns",
+            "subtotalsAtTop": true,
+            "grandTotalRow": true,
+            "grandTotalColumn": true,
+            "repeatItemLabels": false,
+            "filters": [],
+            "rows": [],
+            "columns": [{"field": "Product", "sort": {"direction": "descending", "byValue": 1}}],
+            "values": [{"field": "Amount", "aggregation": "sum"}, {"field": "Quantity", "aggregation": "sum"}]
+          }
+        },
+        {"same": true}
+      ]
+    },
+    {
+      "name": "ADR-0060/0061: removing the Value Field an order is by falls back to the label, same direction",
+      "layout": {
+        "rows": [{"field": "Region", "sort": {"direction": "descending", "byValue": 0}}],
+        "values": [{"field": "Amount", "aggregation": "sum"}]
+      },
+      "edits": [{"remove": {"area": "values", "index": 0}}],
+      "expect": [
+        {
+          "layout": {
+            "form": "compact",
+            "valuesAxis": "columns",
+            "subtotalsAtTop": true,
+            "grandTotalRow": true,
+            "grandTotalColumn": true,
+            "repeatItemLabels": false,
+            "filters": [],
+            "rows": [{"field": "Region", "sort": {"direction": "descending"}}],
+            "columns": [],
+            "values": []
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0061: a field dropped from the list on an Area, at a position",
+      "layout": {"rows": [{"field": "Region"}, {"field": "Product"}]},
+      "edits": [
+        {"place": "Date", "area": "rows", "index": 1},
+        {"place": "Date", "area": "columns", "index": 0},
+        {"place": "Date", "area": "rows", "index": 99}
+      ],
+      "expect": [
+        {
+          "layout": {
+            "form": "compact",
+            "valuesAxis": "columns",
+            "subtotalsAtTop": true,
+            "grandTotalRow": true,
+            "grandTotalColumn": true,
+            "repeatItemLabels": false,
+            "filters": [],
+            "rows": [{"field": "Region"}, {"field": "Date"}, {"field": "Product"}],
+            "columns": [],
+            "values": []
+          }
+        },
+        {
+          "layout": {
+            "form": "compact",
+            "valuesAxis": "columns",
+            "subtotalsAtTop": true,
+            "grandTotalRow": true,
+            "grandTotalColumn": true,
+            "repeatItemLabels": false,
+            "filters": [],
+            "rows": [{"field": "Region"}, {"field": "Product"}],
+            "columns": [{"field": "Date"}],
+            "values": []
+          }
+        },
+        {
+          "layout": {
+            "form": "compact",
+            "valuesAxis": "columns",
+            "subtotalsAtTop": true,
+            "grandTotalRow": true,
+            "grandTotalColumn": true,
+            "repeatItemLabels": false,
+            "filters": [],
+            "rows": [{"field": "Region"}, {"field": "Product"}, {"field": "Date"}],
+            "columns": [],
+            "values": []
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0061: a field standing in Rows dropped from the list on Columns moves there, with its settings",
+      "layout": {
+        "rows": [
+          {
+            "field": "Region",
+            "hiddenItems": [{"kind": "text", "value": "West"}],
+            "sort": {"direction": "descending"},
+            "subtotals": false
+          },
+          {"field": "Product"}
+        ]
+      },
+      "edits": [{"place": "Region", "area": "columns", "index": 0}],
+      "expect": [
+        {
+          "layout": {
+            "form": "compact",
+            "valuesAxis": "columns",
+            "subtotalsAtTop": true,
+            "grandTotalRow": true,
+            "grandTotalColumn": true,
+            "repeatItemLabels": false,
+            "filters": [],
+            "rows": [{"field": "Product"}],
+            "columns": [
+              {
+                "field": "Region",
+                "sort": {"direction": "descending"},
+                "subtotals": false,
+                "hiddenItems": [{"kind": "text", "value": "West"}]
+              }
+            ],
+            "values": []
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0061: a field dropped on Values from the list is a new Value Field, even a second one",
+      "layout": {"rows": [{"field": "Region"}], "values": [{"field": "Amount", "aggregation": "sum"}]},
+      "edits": [
+        {"place": "Amount", "area": "values", "index": 1},
+        {"place": "Region", "area": "values", "index": 0, "on": "previous"}
+      ],
+      "expect": [
+        {
+          "layout": {
+            "form": "compact",
+            "valuesAxis": "columns",
+            "subtotalsAtTop": true,
+            "grandTotalRow": true,
+            "grandTotalColumn": true,
+            "repeatItemLabels": false,
+            "filters": [],
+            "rows": [{"field": "Region"}],
+            "columns": [],
+            "values": [{"field": "Amount", "aggregation": "sum"}, {"field": "Amount", "aggregation": "sum"}]
+          }
+        },
+        {
+          "layout": {
+            "form": "compact",
+            "valuesAxis": "columns",
+            "subtotalsAtTop": true,
+            "grandTotalRow": true,
+            "grandTotalColumn": true,
+            "repeatItemLabels": false,
+            "filters": [],
+            "rows": [{"field": "Region"}],
+            "columns": [],
+            "values": [
+              {"field": "Region", "aggregation": "count"},
+              {"field": "Amount", "aggregation": "sum"},
+              {"field": "Amount", "aggregation": "sum"}
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0061: an entry reordered within its Area, by its menu's Move Up, Down, Beginning and End",
+      "layout": {"rows": [{"field": "Region"}, {"field": "Product"}, {"field": "Date"}]},
+      "edits": [
+        {"move": {"area": "rows", "index": 1}, "to": "rows", "index": 0, "field": "Product"},
+        {"move": {"area": "rows", "index": 1}, "to": "rows", "index": 3, "field": "Product"},
+        {"move": {"area": "rows", "index": 2}, "to": "rows", "index": 0, "field": "Date"},
+        {"move": {"area": "rows", "index": 0}, "to": "rows", "index": 3, "field": "Region"},
+        {"move": {"area": "rows", "index": 1}, "to": "rows", "index": 1, "field": "Product"},
+        {"move": {"area": "rows", "index": 1}, "to": "rows", "index": 2, "field": "Product"}
+      ],
+      "expect": [
+        {
+          "layout": {
+            "form": "compact",
+            "valuesAxis": "columns",
+            "subtotalsAtTop": true,
+            "grandTotalRow": true,
+            "grandTotalColumn": true,
+            "repeatItemLabels": false,
+            "filters": [],
+            "rows": [{"field": "Product"}, {"field": "Region"}, {"field": "Date"}],
+            "columns": [],
+            "values": []
+          }
+        },
+        {
+          "layout": {
+            "form": "compact",
+            "valuesAxis": "columns",
+            "subtotalsAtTop": true,
+            "grandTotalRow": true,
+            "grandTotalColumn": true,
+            "repeatItemLabels": false,
+            "filters": [],
+            "rows": [{"field": "Region"}, {"field": "Date"}, {"field": "Product"}],
+            "columns": [],
+            "values": []
+          }
+        },
+        {
+          "layout": {
+            "form": "compact",
+            "valuesAxis": "columns",
+            "subtotalsAtTop": true,
+            "grandTotalRow": true,
+            "grandTotalColumn": true,
+            "repeatItemLabels": false,
+            "filters": [],
+            "rows": [{"field": "Date"}, {"field": "Region"}, {"field": "Product"}],
+            "columns": [],
+            "values": []
+          }
+        },
+        {
+          "layout": {
+            "form": "compact",
+            "valuesAxis": "columns",
+            "subtotalsAtTop": true,
+            "grandTotalRow": true,
+            "grandTotalColumn": true,
+            "repeatItemLabels": false,
+            "filters": [],
+            "rows": [{"field": "Product"}, {"field": "Date"}, {"field": "Region"}],
+            "columns": [],
+            "values": []
+          }
+        },
+        {"same": true},
+        {"same": true}
+      ]
+    },
+    {
+      "name": "ADR-0061: an entry moved to Values leaves its Area and becomes a Value Field",
+      "layout": {
+        "rows": [{"field": "Region"}, {"field": "Amount"}],
+        "values": [{"field": "Quantity", "aggregation": "sum"}]
+      },
+      "edits": [{"move": {"area": "rows", "index": 1}, "to": "values", "index": 0, "field": "Amount"}],
+      "expect": [
+        {
+          "layout": {
+            "form": "compact",
+            "valuesAxis": "columns",
+            "subtotalsAtTop": true,
+            "grandTotalRow": true,
+            "grandTotalColumn": true,
+            "repeatItemLabels": false,
+            "filters": [],
+            "rows": [{"field": "Region"}],
+            "columns": [],
+            "values": [{"field": "Amount", "aggregation": "sum"}, {"field": "Quantity", "aggregation": "sum"}]
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0061: a Value Field moved to another Area leaves Values, and its field is placed there",
+      "layout": {
+        "rows": [{"field": "Region"}],
+        "values": [{"field": "Amount", "aggregation": "sum"}, {"field": "Product", "aggregation": "count"}]
+      },
+      "edits": [{"move": {"area": "values", "index": 1}, "to": "rows", "index": 0, "field": "Product"}],
+      "expect": [
+        {
+          "layout": {
+            "form": "compact",
+            "valuesAxis": "columns",
+            "subtotalsAtTop": true,
+            "grandTotalRow": true,
+            "grandTotalColumn": true,
+            "repeatItemLabels": false,
+            "filters": [],
+            "rows": [{"field": "Product"}, {"field": "Region"}],
+            "columns": [],
+            "values": [{"field": "Amount", "aggregation": "sum"}]
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0060/0061: Value Fields reordered, and an order by one follows it",
+      "layout": {
+        "rows": [{"field": "Region", "sort": {"direction": "descending", "byValue": 0}}],
+        "values": [
+          {"field": "Amount", "aggregation": "sum"},
+          {"field": "Quantity", "aggregation": "sum"},
+          {"field": "Amount", "aggregation": "max"}
+        ]
+      },
+      "edits": [{"move": {"area": "values", "index": 0}, "to": "values", "index": 3, "field": "Amount"}],
+      "expect": [
+        {
+          "layout": {
+            "form": "compact",
+            "valuesAxis": "columns",
+            "subtotalsAtTop": true,
+            "grandTotalRow": true,
+            "grandTotalColumn": true,
+            "repeatItemLabels": false,
+            "filters": [],
+            "rows": [{"field": "Region", "sort": {"direction": "descending", "byValue": 2}}],
+            "columns": [],
+            "values": [
+              {"field": "Quantity", "aggregation": "sum"},
+              {"field": "Amount", "aggregation": "max"},
+              {"field": "Amount", "aggregation": "sum"}
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0061: Σ Values moves between Rows and Columns only, and cannot be removed",
+      "layout": {
+        "rows": [{"field": "Region"}],
+        "values": [{"field": "Amount", "aggregation": "sum"}, {"field": "Quantity", "aggregation": "sum"}]
+      },
+      "edits": [
+        {"move": "values", "to": "rows", "index": 0},
+        {"move": "values", "to": "filters", "index": 0},
+        {"move": "values", "to": "values", "index": 0},
+        {"remove": "values"}
+      ],
+      "expect": [
+        {
+          "layout": {
+            "form": "compact",
+            "valuesAxis": "rows",
+            "subtotalsAtTop": true,
+            "grandTotalRow": true,
+            "grandTotalColumn": true,
+            "repeatItemLabels": false,
+            "filters": [],
+            "rows": [{"field": "Region"}],
+            "columns": [],
+            "values": [{"field": "Amount", "aggregation": "sum"}, {"field": "Quantity", "aggregation": "sum"}]
+          }
+        },
+        {"same": true},
+        {"same": true},
+        {"same": true}
+      ]
+    },
+    {
+      "name": "ADR-0061: Remove Field",
+      "layout": {
+        "filters": [{"field": "Online"}],
+        "rows": [{"field": "Region"}, {"field": "Product"}],
+        "values": [{"field": "Amount", "aggregation": "sum"}]
+      },
+      "edits": [
+        {"remove": {"area": "filters", "index": 0}},
+        {"remove": {"area": "rows", "index": 0}},
+        {
+          "remove": {"area": "rows", "index": 2},
+          "scriptSaying": "The Area holds 2 entries, and 2 is none of them."
+        }
+      ],
+      "expect": [
+        {
+          "layout": {
+            "form": "compact",
+            "valuesAxis": "columns",
+            "subtotalsAtTop": true,
+            "grandTotalRow": true,
+            "grandTotalColumn": true,
+            "repeatItemLabels": false,
+            "filters": [],
+            "rows": [{"field": "Region"}, {"field": "Product"}],
+            "columns": [],
+            "values": [{"field": "Amount", "aggregation": "sum"}]
+          }
+        },
+        {
+          "layout": {
+            "form": "compact",
+            "valuesAxis": "columns",
+            "subtotalsAtTop": true,
+            "grandTotalRow": true,
+            "grandTotalColumn": true,
+            "repeatItemLabels": false,
+            "filters": [{"field": "Online"}],
+            "rows": [{"field": "Product"}],
+            "columns": [],
+            "values": [{"field": "Amount", "aggregation": "sum"}]
+          }
+        },
+        {"refusal": "outOfRange", "saying": "The Area holds 2 entries."}
+      ]
+    },
+    {
+      "name": "ADR-0060/0061: Filter… may hide every Item but one, never every one",
+      "layout": {"rows": [{"field": "Region"}]},
+      "edits": [
+        {
+          "setHiddenItems": "Region",
+          "hidden": [{"kind": "text", "value": "East"}, {"kind": "blank"}],
+          "items": [{"kind": "text", "value": "East"}, {"kind": "text", "value": "West"}, {"kind": "blank"}]
+        },
+        {
+          "setHiddenItems": "Region",
+          "hidden": [{"kind": "text", "value": "East"}, {"kind": "text", "value": "West"}, {"kind": "blank"}],
+          "items": [{"kind": "text", "value": "East"}, {"kind": "text", "value": "West"}, {"kind": "blank"}]
+        },
+        {
+          "setHiddenItems": "Region",
+          "hidden": [{"kind": "text", "value": "East"}, {"kind": "text", "value": "east"}],
+          "items": [{"kind": "text", "value": "East"}, {"kind": "text", "value": "West"}, {"kind": "blank"}]
+        }
+      ],
+      "expect": [
+        {
+          "layout": {
+            "form": "compact",
+            "valuesAxis": "columns",
+            "subtotalsAtTop": true,
+            "grandTotalRow": true,
+            "grandTotalColumn": true,
+            "repeatItemLabels": false,
+            "filters": [],
+            "rows": [{"field": "Region", "hiddenItems": [{"kind": "text", "value": "East"}, {"kind": "blank"}]}],
+            "columns": [],
+            "values": []
+          }
+        },
+        {"refused": "hidesEveryItem", "word": "Select at least one item."},
+        {
+          "layout": {
+            "form": "compact",
+            "valuesAxis": "columns",
+            "subtotalsAtTop": true,
+            "grandTotalRow": true,
+            "grandTotalColumn": true,
+            "repeatItemLabels": false,
+            "filters": [],
+            "rows": [{"field": "Region", "hiddenItems": [{"kind": "text", "value": "East"}]}],
+            "columns": [],
+            "values": []
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0060: collapsing one Item, and Expand / Collapse Entire Field",
+      "layout": {"rows": [{"field": "Region"}, {"field": "Product"}]},
+      "edits": [
+        {"setCollapsed": "Region", "item": {"kind": "text", "value": "East"}, "collapsed": true},
+        {
+          "setCollapsed": "Region",
+          "item": {"kind": "text", "value": "EAST"},
+          "collapsed": true,
+          "on": "previous"
+        },
+        {"setFieldCollapsed": "Region", "collapsed": true, "on": "previous"},
+        {
+          "setCollapsed": "Region",
+          "item": {"kind": "text", "value": "East"},
+          "collapsed": false,
+          "on": "previous"
+        },
+        {"setCollapsed": "Region", "item": {"kind": "text", "value": "East"}, "collapsed": false}
+      ],
+      "expect": [
+        {
+          "layout": {
+            "form": "compact",
+            "valuesAxis": "columns",
+            "subtotalsAtTop": true,
+            "grandTotalRow": true,
+            "grandTotalColumn": true,
+            "repeatItemLabels": false,
+            "filters": [],
+            "rows": [{"field": "Region", "toggledItems": [{"kind": "text", "value": "East"}]}, {"field": "Product"}],
+            "columns": [],
+            "values": []
+          }
+        },
+        {"same": true},
+        {
+          "layout": {
+            "form": "compact",
+            "valuesAxis": "columns",
+            "subtotalsAtTop": true,
+            "grandTotalRow": true,
+            "grandTotalColumn": true,
+            "repeatItemLabels": false,
+            "filters": [],
+            "rows": [{"field": "Region", "collapsed": true}, {"field": "Product"}],
+            "columns": [],
+            "values": []
+          }
+        },
+        {
+          "layout": {
+            "form": "compact",
+            "valuesAxis": "columns",
+            "subtotalsAtTop": true,
+            "grandTotalRow": true,
+            "grandTotalColumn": true,
+            "repeatItemLabels": false,
+            "filters": [],
+            "rows": [
+              {"field": "Region", "collapsed": true, "toggledItems": [{"kind": "text", "value": "East"}]},
+              {"field": "Product"}
+            ],
+            "columns": [],
+            "values": []
+          }
+        },
+        {"same": true}
+      ]
+    },
+    {
+      "name": "ADR-0060/0061 (decided with the user, 2026-10-13): under the Japanese words, 合計 / Amount typed for a Count beside a Sum of Amount, which shows 合計 / Amount, is taken",
+      "layout": {"values": [{"field": "Amount", "aggregation": "sum"}, {"field": "Amount", "aggregation": "count"}]},
+      "words": "japanese",
+      "edits": [{"setValueField": 1, "value": {"field": "Amount", "aggregation": "count", "caption": "合計 / Amount"}}],
+      "expect": [{"refused": "captionTaken", "word": "PivotTable field name already exists."}]
+    },
+    {
+      "name": "ADR-0060/0061 (decided with the user, 2026-10-13): under the Japanese words, Sum of Amount is not taken beside a Sum shown as 合計 / Amount",
+      "layout": {"values": [{"field": "Amount", "aggregation": "sum"}, {"field": "Amount", "aggregation": "count"}]},
+      "words": "japanese",
+      "edits": [
+        {
+          "setValueField": 1,
+          "value": {"field": "Amount", "aggregation": "count", "caption": "Sum of Amount"},
+          "report": true
+        }
+      ],
+      "expect": [
+        {
+          "layout": {
+            "form": "compact",
+            "valuesAxis": "columns",
+            "subtotalsAtTop": true,
+            "grandTotalRow": true,
+            "grandTotalColumn": true,
+            "repeatItemLabels": false,
+            "filters": [],
+            "rows": [],
+            "columns": [],
+            "values": [
+              {"field": "Amount", "aggregation": "sum"},
+              {"field": "Amount", "aggregation": "count", "caption": "Sum of Amount"}
+            ]
+          },
+          "report": {
+            "headers": ["合計 / Amount", "Sum of Amount"],
+            "lines": ["t  || 285 | 7"],
+            "spans": [],
+            "captions": ["合計 / Amount", "Sum of Amount"]
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0060/0061: under the English words, Sum of Amount is taken beside a Sum of Amount",
+      "layout": {"values": [{"field": "Amount", "aggregation": "sum"}, {"field": "Amount", "aggregation": "count"}]},
+      "edits": [{"setValueField": 1, "value": {"field": "Amount", "aggregation": "count", "caption": "Sum of Amount"}}],
+      "expect": [{"refused": "captionTaken", "word": "PivotTable field name already exists."}]
+    },
+    {
+      "name": "ADR-0060/0061: Value Field Settings… refuses a taken or empty caption and an unusable format, and keeps a Value Field's own caption set again",
+      "layout": {"values": [{"field": "Amount", "aggregation": "sum"}, {"field": "Quantity", "aggregation": "sum"}]},
+      "edits": [
+        {"setValueField": 1, "value": {"field": "Quantity", "aggregation": "sum", "caption": "sum of amount"}},
+        {"setValueField": 1, "value": {"field": "Quantity", "aggregation": "sum", "caption": "Region"}},
+        {"setValueField": 1, "value": {"field": "Quantity", "aggregation": "sum", "caption": " "}},
+        {
+          "setValueField": 1,
+          "value": {"field": "Quantity", "aggregation": "sum", "numberFormat": "N999999999"}
+        },
+        {
+          "setValueField": 1,
+          "value": {"field": "Quantity", "aggregation": "average", "caption": "Mean quantity", "numberFormat": "N1"}
+        },
+        {
+          "setValueField": 1,
+          "value": {"field": "Quantity", "aggregation": "average", "caption": "Mean quantity", "numberFormat": "N1"},
+          "on": "previous"
+        }
+      ],
+      "expect": [
+        {"refused": "captionTaken", "word": "PivotTable field name already exists."},
+        {"refused": "captionTaken", "word": "PivotTable field name already exists."},
+        {"refused": "captionEmpty", "word": "Enter a name."},
+        {"refused": "numberFormatInvalid", "word": "This number format cannot be used."},
+        {
+          "layout": {
+            "form": "compact",
+            "valuesAxis": "columns",
+            "subtotalsAtTop": true,
+            "grandTotalRow": true,
+            "grandTotalColumn": true,
+            "repeatItemLabels": false,
+            "filters": [],
+            "rows": [],
+            "columns": [],
+            "values": [
+              {"field": "Amount", "aggregation": "sum"},
+              {
+                "field": "Quantity",
+                "aggregation": "average",
+                "caption": "Mean quantity",
+                "numberFormat": "N1"
+              }
+            ]
+          }
+        },
+        {
+          "layout": {
+            "form": "compact",
+            "valuesAxis": "columns",
+            "subtotalsAtTop": true,
+            "grandTotalRow": true,
+            "grandTotalColumn": true,
+            "repeatItemLabels": false,
+            "filters": [],
+            "rows": [],
+            "columns": [],
+            "values": [
+              {"field": "Amount", "aggregation": "sum"},
+              {
+                "field": "Quantity",
+                "aggregation": "average",
+                "caption": "Mean quantity",
+                "numberFormat": "N1"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0060/0061: a caption is empty as .NET's Trim leaves it — NEL and the ideographic space are white space, the byte order mark is not",
+      "layout": {"values": [{"field": "Amount", "aggregation": "sum"}, {"field": "Quantity", "aggregation": "sum"}]},
+      "edits": [
+        {"setValueField": 1, "value": {"field": "Quantity", "aggregation": "sum", "caption": ""}},
+        {"setValueField": 1, "value": {"field": "Quantity", "aggregation": "sum", "caption": "　\t"}},
+        {"setValueField": 1, "value": {"field": "Quantity", "aggregation": "sum", "caption": "﻿"}}
+      ],
+      "expect": [
+        {"refused": "captionEmpty", "word": "Enter a name."},
+        {"refused": "captionEmpty", "word": "Enter a name."},
+        {
+          "layout": {
+            "form": "compact",
+            "valuesAxis": "columns",
+            "subtotalsAtTop": true,
+            "grandTotalRow": true,
+            "grandTotalColumn": true,
+            "repeatItemLabels": false,
+            "filters": [],
+            "rows": [],
+            "columns": [],
+            "values": [
+              {"field": "Amount", "aggregation": "sum"},
+              {"field": "Quantity", "aggregation": "sum", "caption": "﻿"}
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0061: sorting and subtotals on a placed field; an unplaced one is refused",
+      "layout": {"rows": [{"field": "Region"}], "values": [{"field": "Amount", "aggregation": "sum"}]},
+      "edits": [
+        {"setSort": "Region", "sort": {"direction": "descending"}},
+        {"setSubtotals": "Region", "subtotals": false},
+        {"setSubtotals": "Region", "subtotals": true},
+        {"setSort": "Product", "sort": {"direction": "descending"}},
+        {
+          "setSort": "Region",
+          "sort": {"direction": "ascending", "byValue": 1},
+          "scriptSaying": "The layout has 1 Value Fields, and the sort names 1."
+        }
+      ],
+      "expect": [
+        {
+          "layout": {
+            "form": "compact",
+            "valuesAxis": "columns",
+            "subtotalsAtTop": true,
+            "grandTotalRow": true,
+            "grandTotalColumn": true,
+            "repeatItemLabels": false,
+            "filters": [],
+            "rows": [{"field": "Region", "sort": {"direction": "descending"}}],
+            "columns": [],
+            "values": [{"field": "Amount", "aggregation": "sum"}]
+          }
+        },
+        {
+          "layout": {
+            "form": "compact",
+            "valuesAxis": "columns",
+            "subtotalsAtTop": true,
+            "grandTotalRow": true,
+            "grandTotalColumn": true,
+            "repeatItemLabels": false,
+            "filters": [],
+            "rows": [{"field": "Region", "subtotals": false}],
+            "columns": [],
+            "values": [{"field": "Amount", "aggregation": "sum"}]
+          }
+        },
+        {"same": true},
+        {"refusal": "argument", "saying": "'Product' stands in none of Filters, Rows and Columns."},
+        {"refusal": "outOfRange", "saying": "The layout has 1 Value Fields."}
+      ]
+    }
+  ]
+}

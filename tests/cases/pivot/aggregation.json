@@ -1,0 +1,485 @@
+{
+  "about": "What each Aggregation answers (ADR-0060, \"Aggregation\"): the table, exact money, errors, totals from records, and number formats. Transcribed from the C# engine's AggregationTests.",
+  "kind": "pivotReport",
+  "data": "values",
+  "locale": "en-US",
+  "words": "english",
+  "cases": [
+    {
+      "name": "ADR-0060: the table over numbers, in General at most eleven characters as Excel shows it",
+      "layout": {
+        "values": [
+          {"field": "Value", "aggregation": "sum"},
+          {"field": "Value", "aggregation": "count"},
+          {"field": "Value", "aggregation": "average"},
+          {"field": "Value", "aggregation": "max"},
+          {"field": "Value", "aggregation": "min"},
+          {"field": "Value", "aggregation": "product"},
+          {"field": "Value", "aggregation": "countNumbers"},
+          {"field": "Value", "aggregation": "stdDev"},
+          {"field": "Value", "aggregation": "stdDevp"},
+          {"field": "Value", "aggregation": "var"},
+          {"field": "Value", "aggregation": "varp"}
+        ]
+      },
+      "records": [["g", {"integer": "2"}], ["g", {"integer": "4"}], ["g", {"integer": "6"}], ["g", {"integer": "8"}]],
+      "also": ["numbers"],
+      "expect": {
+        "headers": [
+          "Sum of Value",
+          "Count of Value",
+          "Average of Value",
+          "Max of Value",
+          "Min of Value",
+          "Product of Value",
+          "Count of Value2",
+          "StdDev of Value",
+          "StdDevp of Value",
+          "Var of Value",
+          "Varp of Value"
+        ],
+        "lines": ["t  || 20 | 4 | 5 | 8 | 2 | 384 | 4 | 2.581988897 | 2.236067977 | 6.666666667 | 5"],
+        "spans": [],
+        "numbers": {
+          "rows": [
+            {
+              "labels": [],
+              "values": [
+                "m20",
+                "m4",
+                "m5",
+                "m8",
+                "m2",
+                "d384",
+                "m4",
+                "d2.581988897471611",
+                "d2.23606797749979",
+                "d6.666666666666667",
+                "d5"
+              ]
+            }
+          ],
+          "headers": [null, null, null, null, null, null, null, null, null, null, null]
+        }
+      }
+    },
+    {
+      "name": "ADR-0060, \"Some value, none numeric\", observed over text (the readings of 2026-10-12, R3 (a), e05c); a Boolean among them by generalisation",
+      "layout": {
+        "values": [
+          {"field": "Value", "aggregation": "sum"},
+          {"field": "Value", "aggregation": "count"},
+          {"field": "Value", "aggregation": "average"},
+          {"field": "Value", "aggregation": "max"},
+          {"field": "Value", "aggregation": "min"},
+          {"field": "Value", "aggregation": "product"},
+          {"field": "Value", "aggregation": "countNumbers"},
+          {"field": "Value", "aggregation": "stdDev"},
+          {"field": "Value", "aggregation": "stdDevp"},
+          {"field": "Value", "aggregation": "var"},
+          {"field": "Value", "aggregation": "varp"}
+        ]
+      },
+      "records": [["g", "a"], ["g", true]],
+      "expect": {
+        "headers": [
+          "Sum of Value",
+          "Count of Value",
+          "Average of Value",
+          "Max of Value",
+          "Min of Value",
+          "Product of Value",
+          "Count of Value2",
+          "StdDev of Value",
+          "StdDevp of Value",
+          "Var of Value",
+          "Varp of Value"
+        ],
+        "lines": ["t  || 0 | 2 | #DIV/0! | 0 | 0 | 0 | 0 | #DIV/0! | #DIV/0! | #DIV/0! | #DIV/0!"],
+        "spans": []
+      }
+    },
+    {
+      "name": "ADR-0060, \"Records, but no number\", observed: records whose every value is Blank are an empty cell, Count included (R3 (a), e05c's C, every Aggregation; run 17, item 5 (a), Average, StdDev and Var)",
+      "layout": {
+        "values": [
+          {"field": "Value", "aggregation": "sum"},
+          {"field": "Value", "aggregation": "count"},
+          {"field": "Value", "aggregation": "average"},
+          {"field": "Value", "aggregation": "max"},
+          {"field": "Value", "aggregation": "min"},
+          {"field": "Value", "aggregation": "product"},
+          {"field": "Value", "aggregation": "countNumbers"},
+          {"field": "Value", "aggregation": "stdDev"},
+          {"field": "Value", "aggregation": "stdDevp"},
+          {"field": "Value", "aggregation": "var"},
+          {"field": "Value", "aggregation": "varp"}
+        ]
+      },
+      "records": [["g", null], ["g", null]],
+      "also": ["numbers"],
+      "expect": {
+        "headers": [
+          "Sum of Value",
+          "Count of Value",
+          "Average of Value",
+          "Max of Value",
+          "Min of Value",
+          "Product of Value",
+          "Count of Value2",
+          "StdDev of Value",
+          "StdDevp of Value",
+          "Var of Value",
+          "Varp of Value"
+        ],
+        "lines": ["t  ||  |  |  |  |  |  |  |  |  |  |"],
+        "spans": [],
+        "numbers": {
+          "rows": [{"labels": [], "values": [null, null, null, null, null, null, null, null, null, null, null]}],
+          "headers": [null, null, null, null, null, null, null, null, null, null, null]
+        }
+      }
+    },
+    {
+      "name": "ADR-0060, observed: e05c, every Aggregation over a text-only field, cell for cell as Excel showed it (the readings of 2026-10-12, R3 (a); the same in the English (US) edition)",
+      "layout": {
+        "rows": [{"field": "Group"}],
+        "values": [
+          {"field": "Note", "aggregation": "average"},
+          {"field": "Note", "aggregation": "stdDev"},
+          {"field": "Note", "aggregation": "var"},
+          {"field": "Note", "aggregation": "stdDevp"},
+          {"field": "Note", "aggregation": "varp"},
+          {"field": "Note", "aggregation": "sum"},
+          {"field": "Note", "aggregation": "max"},
+          {"field": "Note", "aggregation": "min"},
+          {"field": "Note", "aggregation": "product"},
+          {"field": "Note", "aggregation": "count"},
+          {"field": "Note", "aggregation": "countNumbers"}
+        ]
+      },
+      "records": [["A", "x"], ["A", "y"], ["B", "z"], ["C", null], ["C", null]],
+      "expect": {
+        "headers": [
+          "Row Labels",
+          "Average of Note",
+          "StdDev of Note",
+          "Var of Note",
+          "StdDevp of Note",
+          "Varp of Note",
+          "Sum of Note",
+          "Max of Note",
+          "Min of Note",
+          "Product of Note",
+          "Count of Note",
+          "Count of Note2"
+        ],
+        "lines": [
+          "i A || #DIV/0! | #DIV/0! | #DIV/0! | #DIV/0! | #DIV/0! | 0 | 0 | 0 | 0 | 2 | 0",
+          "i B || #DIV/0! | #DIV/0! | #DIV/0! | #DIV/0! | #DIV/0! | 0 | 0 | 0 | 0 | 1 | 0",
+          "i C ||  |  |  |  |  |  |  |  |  |  |",
+          "t Grand Total || #DIV/0! | #DIV/0! | #DIV/0! | #DIV/0! | #DIV/0! | 0 | 0 | 0 | 0 | 3 | 0"
+        ],
+        "spans": []
+      }
+    },
+    {
+      "name": "ADR-0060: text, a Boolean and a date are counted, and are never a number",
+      "layout": {
+        "values": [
+          {"field": "Value", "aggregation": "sum"},
+          {"field": "Value", "aggregation": "count"},
+          {"field": "Value", "aggregation": "countNumbers"},
+          {"field": "Value", "aggregation": "average"}
+        ]
+      },
+      "records": [["g", {"integer": "5"}], ["g", "7"], ["g", true], ["g", {"date": "2026-01-01"}], ["g", null]],
+      "expect": {
+        "headers": ["Sum of Value", "Count of Value", "Count of Value2", "Average of Value"],
+        "lines": ["t  || 5 | 4 | 1 | 5"],
+        "spans": []
+      }
+    },
+    {
+      "name": "ADR-0060: StdDev and Var take two numbers; the population forms take one",
+      "layout": {
+        "values": [
+          {"field": "Value", "aggregation": "stdDev"},
+          {"field": "Value", "aggregation": "var"},
+          {"field": "Value", "aggregation": "stdDevp"},
+          {"field": "Value", "aggregation": "varp"}
+        ]
+      },
+      "records": [["g", {"integer": "4"}]],
+      "expect": {
+        "headers": ["StdDev of Value", "Var of Value", "StdDevp of Value", "Varp of Value"],
+        "lines": ["t  || #DIV/0! | #DIV/0! | 0 | 0"],
+        "spans": []
+      }
+    },
+    {
+      "name": "ADR-0060: money stays exact, decimals sum in decimal",
+      "layout": {"values": [{"field": "Value", "aggregation": "sum"}]},
+      "records": [["g", {"decimal": "0.1"}], ["g", {"decimal": "0.2"}]],
+      "also": ["numbers"],
+      "expect": {
+        "headers": ["Sum of Value"],
+        "lines": ["t  || 0.3"],
+        "spans": [],
+        "numbers": {"rows": [{"labels": [], "values": ["m0.3"]}], "headers": [null]}
+      }
+    },
+    {
+      "name": "ADR-0060: a double among the numbers makes the whole Aggregation double, Excel's arithmetic, shown in General",
+      "layout": {"values": [{"field": "Value", "aggregation": "sum"}]},
+      "records": [["g", 0.1], ["g", 0.2]],
+      "also": ["numbers"],
+      "expect": {
+        "headers": ["Sum of Value"],
+        "lines": ["t  || 0.3"],
+        "spans": [],
+        "numbers": {"rows": [{"labels": [], "values": ["d0.30000000000000004"]}], "headers": [null]}
+      }
+    },
+    {
+      "name": "ADR-0060: a decimal and a double together are a double",
+      "layout": {"values": [{"field": "Value", "aggregation": "sum"}]},
+      "records": [["g", {"decimal": "1"}], ["g", 2.5]],
+      "also": ["numbers"],
+      "expect": {
+        "headers": ["Sum of Value"],
+        "lines": ["t  || 3.5"],
+        "spans": [],
+        "numbers": {"rows": [{"labels": [], "values": ["d3.5"]}], "headers": [null]}
+      }
+    },
+    {
+      "name": "ADR-0060: integral values are exact too",
+      "layout": {"values": [{"field": "Value", "aggregation": "sum"}]},
+      "records": [["g", {"integer": "1"}], ["g", {"integer": "2"}], ["g", {"integer": "3"}]],
+      "also": ["numbers"],
+      "expect": {
+        "headers": ["Sum of Value"],
+        "lines": ["t  || 6"],
+        "spans": [],
+        "numbers": {"rows": [{"labels": [], "values": ["m6"]}], "headers": [null]}
+      }
+    },
+    {
+      "name": "ADR-0060: an average of integral values is a decimal division",
+      "layout": {"values": [{"field": "Value", "aggregation": "average"}]},
+      "records": [["g", {"integer": "3"}], ["g", {"integer": "3"}], ["g", {"integer": "4"}]],
+      "also": ["numbers"],
+      "expect": {
+        "headers": ["Average of Value"],
+        "lines": ["t  || 3.333333333"],
+        "spans": [],
+        "numbers": {"rows": [{"labels": [], "values": ["m3.3333333333333333333333333333"]}], "headers": [null]}
+      }
+    },
+    {
+      "name": "ADR-0060: the Max of integers and a decimal is exact",
+      "layout": {"values": [{"field": "Value", "aggregation": "max"}]},
+      "records": [["g", {"integer": "1"}], ["g", {"decimal": "3"}], ["g", {"integer": "2"}]],
+      "also": ["numbers"],
+      "expect": {
+        "headers": ["Max of Value"],
+        "lines": ["t  || 3"],
+        "spans": [],
+        "numbers": {"rows": [{"labels": [], "values": ["m3"]}], "headers": [null]}
+      }
+    },
+    {
+      "name": "ADR-0060: a decimal sum that overflows falls back to double rather than failing",
+      "layout": {"values": [{"field": "Value", "aggregation": "sum"}]},
+      "records": [
+        ["g", {"decimal": "79228162514264337593543950335"}],
+        ["g", {"decimal": "79228162514264337593543950335"}]
+      ],
+      "also": ["numbers"],
+      "expect": {
+        "headers": ["Sum of Value"],
+        "lines": ["t  || 1.58456E+29"],
+        "spans": [],
+        "numbers": {"rows": [{"labels": [], "values": ["d1.5845632502852868E+29"]}], "headers": [null]}
+      }
+    },
+    {
+      "name": "ADR-0060: a non-finite number in the data is #NUM!, never a number, and is still counted",
+      "layout": {"values": [{"field": "Value", "aggregation": "sum"}, {"field": "Value", "aggregation": "count"}]},
+      "records": [["g", {"integer": "1"}], ["g", {"double": "NaN"}]],
+      "also": ["numbers"],
+      "expect": {
+        "headers": ["Sum of Value", "Count of Value"],
+        "lines": ["t  || #NUM! | 2"],
+        "spans": [],
+        "numbers": {"rows": [{"labels": [], "values": ["#NUM!", "m2"]}], "headers": [null, null]}
+      }
+    },
+    {
+      "name": "ADR-0060: an infinite number in the data is #NUM!",
+      "layout": {"values": [{"field": "Value", "aggregation": "max"}]},
+      "records": [["g", {"double": "Infinity"}]],
+      "also": ["numbers"],
+      "expect": {
+        "headers": ["Max of Value"],
+        "lines": ["t  || #NUM!"],
+        "spans": [],
+        "numbers": {"rows": [{"labels": [], "values": ["#NUM!"]}], "headers": [null]}
+      }
+    },
+    {
+      "name": "ADR-0060: an overflow in double is #NUM!",
+      "layout": {"values": [{"field": "Value", "aggregation": "product"}]},
+      "records": [["g", 1.7976931348623157e+308], ["g", 10.0]],
+      "also": ["numbers"],
+      "expect": {
+        "headers": ["Product of Value"],
+        "lines": ["t  || #NUM!"],
+        "spans": [],
+        "numbers": {"rows": [{"labels": [], "values": ["#NUM!"]}], "headers": [null]}
+      }
+    },
+    {
+      "name": "ADR-0060: a total is aggregated from its records, never from the totals below it",
+      "layout": {"rows": [{"field": "Group"}], "values": [{"field": "Value", "aggregation": "average"}]},
+      "records": [["A", {"integer": "1"}], ["A", {"integer": "2"}], ["A", {"integer": "3"}], ["B", {"integer": "10"}]],
+      "expect": {
+        "headers": ["Row Labels", "Average of Value"],
+        "lines": ["i A || 2", "i B || 10", "t Grand Total || 4"],
+        "spans": []
+      }
+    },
+    {
+      "name": "ADR-0060: where no record carries both a row and a column, the cell is empty, Count too",
+      "layout": {
+        "rows": [{"field": "Region"}],
+        "columns": [{"field": "Product"}],
+        "values": [{"field": "Amount", "aggregation": "count"}]
+      },
+      "data": "sales",
+      "expect": {
+        "headers": ["Row Labels", "Apples", "Pears", "Plums", "Grand Total"],
+        "lines": [
+          "i East || 2 | 1 |  | 3",
+          "i North ||  | 1 |  | 1",
+          "i West || 1 |  | 1 | 2",
+          "i (blank) ||  |  | 1 | 1",
+          "t Grand Total || 3 | 2 | 2 | 7"
+        ],
+        "spans": []
+      }
+    },
+    {
+      "name": "ADR-0060: a Value Field's number format, under the report's culture",
+      "layout": {
+        "rows": [{"field": "Region"}],
+        "values": [{"field": "Amount", "aggregation": "sum", "numberFormat": "#,##0.00"}]
+      },
+      "data": "sales",
+      "records": [["East", "Apples", {"date": "2026-01-10"}, {"decimal": "1234.5"}, {"integer": "10"}, true]],
+      "expect": {
+        "headers": ["Row Labels", "Sum of Amount"],
+        "lines": ["i East || 1,234.50", "t Grand Total || 1,234.50"],
+        "spans": []
+      }
+    },
+    {
+      "name": "ADR-0060: a Value Field's number format, under another culture",
+      "layout": {
+        "rows": [{"field": "Region"}],
+        "values": [{"field": "Amount", "aggregation": "sum", "numberFormat": "#,##0.00"}]
+      },
+      "data": "sales",
+      "locale": "de-DE",
+      "records": [["East", "Apples", {"date": "2026-01-10"}, {"decimal": "1234.5"}, {"integer": "10"}, true]],
+      "expect": {
+        "headers": ["Row Labels", "Sum of Amount"],
+        "lines": ["i East || 1.234,50", "t Grand Total || 1.234,50"],
+        "spans": []
+      }
+    },
+    {
+      "name": "ADR-0060/0061: a number format that cannot be used, or would run away, is refused: \"N999999999\"",
+      "layout": {"values": [{"field": "Amount", "aggregation": "sum", "numberFormat": "N999999999"}]},
+      "data": "sales",
+      "throws": {
+        "refusal": "invalidOperation",
+        "saying": "The Value Field of 'Amount' has the number format 'N999999999', which asks for 999999999 digits, more than 30 (ADR-0060)."
+      }
+    },
+    {
+      "name": "ADR-0060/0061: a number format that cannot be used, or would run away, is refused: \"N31\"",
+      "layout": {"values": [{"field": "Amount", "aggregation": "sum", "numberFormat": "N31"}]},
+      "data": "sales",
+      "throws": {
+        "refusal": "invalidOperation",
+        "saying": "The Value Field of 'Amount' has the number format 'N31', which asks for 31 digits, more than 30 (ADR-0060)."
+      }
+    },
+    {
+      "name": "ADR-0060/0061: a number format that cannot be used, or would run away, is refused: \"Q\"",
+      "layout": {"values": [{"field": "Amount", "aggregation": "sum", "numberFormat": "Q"}]},
+      "data": "sales",
+      "throws": {
+        "refusal": "invalidOperation",
+        "saying": "The Value Field of 'Amount' has the number format 'Q', which cannot format a number (ADR-0060)."
+      }
+    },
+    {
+      "name": "ADR-0060/0061: a number format that cannot be used, or would run away, is refused: \"\"",
+      "layout": {"values": [{"field": "Amount", "aggregation": "sum", "numberFormat": ""}]},
+      "data": "sales",
+      "throws": {
+        "refusal": "invalidOperation",
+        "saying": "The Value Field of 'Amount' has the number format '', which is empty (ADR-0060)."
+      }
+    },
+    {
+      "name": "ADR-0060: a number format that can be used: \"N2\"",
+      "layout": {"values": [{"field": "Amount", "aggregation": "sum", "numberFormat": "N2"}]},
+      "data": "sales",
+      "expect": {"headers": ["Sum of Amount"], "lines": ["t  || 285.00"], "spans": []}
+    },
+    {
+      "name": "ADR-0060: a number format that can be used: \"N30\"",
+      "layout": {"values": [{"field": "Amount", "aggregation": "sum", "numberFormat": "N30"}]},
+      "data": "sales",
+      "expect": {"headers": ["Sum of Amount"], "lines": ["t  || 285.000000000000000000000000000000"], "spans": []}
+    },
+    {
+      "name": "ADR-0060: a number format that can be used: \"#,##0.00\"",
+      "layout": {"values": [{"field": "Amount", "aggregation": "sum", "numberFormat": "#,##0.00"}]},
+      "data": "sales",
+      "expect": {"headers": ["Sum of Amount"], "lines": ["t  || 285.00"], "spans": []}
+    },
+    {
+      "name": "ADR-0060: a number format that can be used: \"0.0%\"",
+      "layout": {"values": [{"field": "Amount", "aggregation": "sum", "numberFormat": "0.0%"}]},
+      "data": "sales",
+      "expect": {"headers": ["Sum of Amount"], "lines": ["t  || 28500.0%"], "spans": []}
+    },
+    {
+      "name": "ADR-0060: a number format that can be used: \"C\"",
+      "layout": {"values": [{"field": "Amount", "aggregation": "sum", "numberFormat": "C"}]},
+      "data": "sales",
+      "expect": {"headers": ["Sum of Amount"], "lines": ["t  || $285.00"], "spans": []}
+    },
+    {
+      "name": "ADR-0060: several Value Fields of one field are each read from one accumulation",
+      "layout": {
+        "values": [
+          {"field": "Amount", "aggregation": "sum"},
+          {"field": "Amount", "aggregation": "average"},
+          {"field": "Amount", "aggregation": "max"}
+        ]
+      },
+      "data": "sales",
+      "expect": {
+        "headers": ["Sum of Amount", "Average of Amount", "Max of Amount"],
+        "lines": ["t  || 285 | 40.71428571 | 100"],
+        "spans": []
+      }
+    }
+  ]
+}

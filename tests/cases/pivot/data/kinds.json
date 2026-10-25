@@ -1,0 +1,6 @@
+{
+  "about": "A text field over six records, two of them spelt and four blank.",
+  "columns": ["Kind"],
+  "fields": [{"name": "Kind", "type": "text"}],
+  "records": [["b"], ["A"], [null], [null], [null], [null]]
+}

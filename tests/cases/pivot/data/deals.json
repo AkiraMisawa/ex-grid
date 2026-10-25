@@ -1,0 +1,24 @@
+{
+  "about": "A deal, the C# engine tests' Deal: every kind of value the engine reads, blanks, a value of another kind than its field's, non-finite doubles, and a decimal sum that overflows. Tag's values are of every kind.",
+  "columns": ["Desk", "Book", "Date", "Amount", "Risk", "Live", "Tag"],
+  "fields": [
+    {"name": "Desk", "type": "text"},
+    {"name": "Book", "type": "text", "caption": "Trading book"},
+    {"name": "Date", "type": "date", "format": "yyyy-MM-dd"},
+    {"name": "Amount", "type": "number", "format": "#,##0.00"},
+    {"name": "Risk", "type": "number"},
+    {"name": "Live", "type": "boolean"},
+    {"name": "Tag", "type": "text"}
+  ],
+  "records": [
+    ["Rates", "LDN-1", {"date": "2026-01-02"}, {"decimal": "100.50"}, 1.5, true, "High"],
+    ["RATES", "LDN-1", {"date": "2026-01-02T13:45:00"}, {"decimal": "200"}, 0.1, false, "Low"],
+    ["Credit", "NY-2", {"date": "2026-02-03"}, {"integer": "7"}, {"double": "NaN"}, true, null],
+    ["Credit", null, null, "7", {"double": "-0"}, null, "7d3f7a52-1b49-4a3e-9d57-2b8c3c0e6f11"],
+    [null, "NY-2", {"date": "2026-02-03"}, null, {"double": "Infinity"}, true, 12],
+    ["", "TKY-3", {"date": "2026-03-04"}, {"decimal": "79228162514264337593543950335"}, 5e-324, false, "High"],
+    ["FX", "TKY-3", {"date": "2026-03-04"}, {"decimal": "79228162514264337593543950335"}, 2.5, true, "Low"],
+    ["FX", "LDN-1", {"date": "2026-01-02"}, {"decimal": "12345678901234567890"}, 1e+300, false, true],
+    ["Rates", "NY-2", {"date": "2026-02-03"}, 0.1, 3.0, true, {"date": "2026-01-01"}]
+  ]
+}

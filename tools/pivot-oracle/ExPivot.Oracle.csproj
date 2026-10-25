@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- The C# side of @ex-grid/pivot-engine's differential runs (ADR-0370, section 2): it writes the
+       culture table the TypeScript formats read, and answers, line by line, what .NET and the C#
+       engine give for what the TypeScript side asks. Real cultures, so no InvariantGlobalization. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+    <RootNamespace>ExPivot.Oracle</RootNamespace>
+    <UseAppHost>false</UseAppHost>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\ExPivot.Engine\ExPivot.Engine.csproj" />
+  </ItemGroup>
+
+  <!-- The shared cases' own C# runner, so a random case is answered exactly as a written one is: the
+       readers of a case and of a report, which reference no xUnit. -->
+  <ItemGroup>
+    <Compile Include="..\..\tests\ExPivot.Engine.Tests\Pivot.cs" Link="Cases\Pivot.cs" />
+    <Compile Include="..\..\tests\ExPivot.Engine.Tests\Cases\PivotCases.cs" Link="Cases\PivotCases.cs" />
+    <Compile Include="..\..\tests\ExPivot.Engine.Tests\Cases\PivotReadings.cs" Link="Cases\PivotReadings.cs" />
+    <Compile Include="..\..\tests\ExPivot.Engine.Tests\Cases\PivotSourceCases.cs" Link="Cases\PivotSourceCases.cs" />
+  </ItemGroup>
+
+</Project>

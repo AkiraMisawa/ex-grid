@@ -1,0 +1,139 @@
+{
+  "about": "The Pivot Layout's saved form (ADR-0059: View State is serialisable): a layout read and written again, the defaults written sparingly, and a document the reader cannot read refused. Transcribed from the C# engine's LayoutJsonTests.",
+  "kind": "pivotLayoutJson",
+  "cases": [
+    {
+      "name": "ADR-0059: a layout written and read back is the same layout",
+      "read": "{\"version\":1,\"form\":\"tabular\",\"valuesAxis\":\"rows\",\"subtotalsAtTop\":false,\"grandTotalRow\":false,\"grandTotalColumn\":false,\"repeatItemLabels\":true,\"filters\":[{\"field\":\"Online\",\"hiddenItems\":[{\"kind\":\"boolean\",\"value\":\"FALSE\"}]}],\"rows\":[{\"field\":\"Region\",\"sort\":{\"direction\":\"descending\",\"byValue\":1},\"hiddenItems\":[{\"kind\":\"text\",\"value\":\"West\"},{\"kind\":\"blank\"}],\"subtotals\":false,\"collapsed\":true,\"toggledItems\":[{\"kind\":\"text\",\"value\":\"East\"}]},{\"field\":\"Date\",\"hiddenItems\":[{\"kind\":\"date\",\"value\":\"2026-01-10T13:45:00.25\"}]}],\"columns\":[{\"field\":\"Quantity\",\"hiddenItems\":[{\"kind\":\"number\",\"value\":\"10\"},{\"kind\":\"error\",\"value\":\"#NUM!\"}]}],\"values\":[{\"field\":\"Amount\",\"aggregation\":\"sum\",\"caption\":\"Sales\",\"numberFormat\":\"#,##0.00\"},{\"field\":\"Amount\",\"aggregation\":\"stdDevp\",\"showValuesAs\":\"percentOfRowTotal\"}]}",
+      "expect": "{\"version\":1,\"form\":\"tabular\",\"valuesAxis\":\"rows\",\"subtotalsAtTop\":false,\"grandTotalRow\":false,\"grandTotalColumn\":false,\"repeatItemLabels\":true,\"filters\":[{\"field\":\"Online\",\"hiddenItems\":[{\"kind\":\"boolean\",\"value\":\"FALSE\"}]}],\"rows\":[{\"field\":\"Region\",\"sort\":{\"direction\":\"descending\",\"byValue\":1},\"subtotals\":false,\"collapsed\":true,\"hiddenItems\":[{\"kind\":\"text\",\"value\":\"West\"},{\"kind\":\"blank\"}],\"toggledItems\":[{\"kind\":\"text\",\"value\":\"East\"}]},{\"field\":\"Date\",\"hiddenItems\":[{\"kind\":\"date\",\"value\":\"2026-01-10T13:45:00.25\"}]}],\"columns\":[{\"field\":\"Quantity\",\"hiddenItems\":[{\"kind\":\"number\",\"value\":\"10\"},{\"kind\":\"error\",\"value\":\"#NUM!\"}]}],\"values\":[{\"field\":\"Amount\",\"aggregation\":\"sum\",\"caption\":\"Sales\",\"numberFormat\":\"#,##0.00\"},{\"field\":\"Amount\",\"aggregation\":\"stdDevp\",\"showValuesAs\":\"percentOfRowTotal\"}]}"
+    },
+    {
+      "name": "ADR-0059: the defaults are written sparingly and read back as defaults",
+      "read": "{\"version\":1,\"rows\":[{\"field\":\"Region\"}],\"values\":[{\"field\":\"Amount\",\"aggregation\":\"sum\"}]}",
+      "expect": "{\"version\":1,\"form\":\"compact\",\"valuesAxis\":\"columns\",\"subtotalsAtTop\":true,\"grandTotalRow\":true,\"grandTotalColumn\":true,\"repeatItemLabels\":false,\"filters\":[],\"rows\":[{\"field\":\"Region\"}],\"columns\":[],\"values\":[{\"field\":\"Amount\",\"aggregation\":\"sum\"}]}"
+    },
+    {
+      "name": "ADR-0059: a document of another version is refused, never half-read",
+      "read": "{\"version\":2}",
+      "expect": {
+        "refusal": "version",
+        "saying": "A Pivot Layout of version 2 cannot be read; this reader reads version 1."
+      }
+    },
+    {
+      "name": "ADR-0059: a document without a version is refused",
+      "read": "{\"form\":\"compact\"}",
+      "expect": {"refusal": "format", "saying": "A Pivot Layout names its version."}
+    },
+    {
+      "name": "ADR-0059: a number is read from its spelling, as an integer or not at all: {\"version\":1.0}",
+      "read": "{\"version\":1.0}",
+      "expect": {
+        "refusal": "version",
+        "saying": "A Pivot Layout of version 1.0 cannot be read; this reader reads version 1."
+      }
+    },
+    {
+      "name": "ADR-0059: a number is read from its spelling, as an integer or not at all: {\"version\":1e0}",
+      "read": "{\"version\":1e0}",
+      "expect": {
+        "refusal": "version",
+        "saying": "A Pivot Layout of version 1e0 cannot be read; this reader reads version 1."
+      }
+    },
+    {
+      "name": "ADR-0059: a number is read from its spelling, as an integer or not at all: {\"version\":-0}",
+      "read": "{\"version\":-0}",
+      "expect": {
+        "refusal": "version",
+        "saying": "A Pivot Layout of version -0 cannot be read; this reader reads version 1."
+      }
+    },
+    {
+      "name": "ADR-0059: a number is read from its spelling, as an integer or not at all: {\"version\":12345678901234567890}",
+      "read": "{\"version\":12345678901234567890}",
+      "expect": {
+        "refusal": "version",
+        "saying": "A Pivot Layout of version 12345678901234567890 cannot be read; this reader reads version 1."
+      }
+    },
+    {
+      "name": "ADR-0059: a number is read from its spelling, as an integer or not at all: {\"version\":1,\"version\":2}",
+      "read": "{\"version\":1,\"version\":2}",
+      "expect": {
+        "refusal": "version",
+        "saying": "A Pivot Layout of version 2 cannot be read; this reader reads version 1."
+      }
+    },
+    {
+      "name": "ADR-0059: a number is read from its spelling, as an integer or not at all: {\"version\":1,\"rows\":[{\"field\":\"Region\",\"sort\":{\"direction\":\"descending\",\"byValue\":0.0}}]}",
+      "read": "{\"version\":1,\"rows\":[{\"field\":\"Region\",\"sort\":{\"direction\":\"descending\",\"byValue\":0.0}}]}",
+      "expect": {"refusal": "format", "saying": "'byValue' is an integer."}
+    },
+    {
+      "name": "ADR-0059: a number is read from its spelling, as an integer or not at all: {\"version\":1,\"rows\":[{\"field\":\"Region\",\"sort\":{\"direction\":\"descending\",\"byValue\":2147483648}}]}",
+      "read": "{\"version\":1,\"rows\":[{\"field\":\"Region\",\"sort\":{\"direction\":\"descending\",\"byValue\":2147483648}}]}",
+      "expect": {"refusal": "format", "saying": "'byValue' is an integer."}
+    },
+    {
+      "name": "ADR-0059: a number is read from its spelling, as an integer or not at all: {\"version\":1,\"rows\":[{\"field\":\"Region\",\"sort\":{\"direction\":\"descending\",\"byValue\":-0}}],\"values\":[{\"field\":\"Amount\"}]}",
+      "read": "{\"version\":1,\"rows\":[{\"field\":\"Region\",\"sort\":{\"direction\":\"descending\",\"byValue\":-0}}],\"values\":[{\"field\":\"Amount\"}]}",
+      "expect": "{\"version\":1,\"form\":\"compact\",\"valuesAxis\":\"columns\",\"subtotalsAtTop\":true,\"grandTotalRow\":true,\"grandTotalColumn\":true,\"repeatItemLabels\":false,\"filters\":[],\"rows\":[{\"field\":\"Region\",\"sort\":{\"direction\":\"descending\",\"byValue\":0}}],\"columns\":[],\"values\":[{\"field\":\"Amount\",\"aggregation\":\"sum\"}]}"
+    },
+    {
+      "name": "ADR-0059: a member the reader does not know is passed over, __proto__ among them, and an escaped letter is the letter: {\"version\":1,\"__proto__\":{\"form\":\"tabular\"},\"rows\":[{\"field\":\"\\u0052egion\"}]}",
+      "read": "{\"version\":1,\"__proto__\":{\"form\":\"tabular\"},\"rows\":[{\"field\":\"\\u0052egion\"}]}",
+      "expect": "{\"version\":1,\"form\":\"compact\",\"valuesAxis\":\"columns\",\"subtotalsAtTop\":true,\"grandTotalRow\":true,\"grandTotalColumn\":true,\"repeatItemLabels\":false,\"filters\":[],\"rows\":[{\"field\":\"Region\"}],\"columns\":[],\"values\":[]}"
+    },
+    {
+      "name": "ADR-0059: a name the reader does not know, or a shape, is refused by name: {\"version\":1,\"form\":\"pivot\"}",
+      "read": "{\"version\":1,\"form\":\"pivot\"}",
+      "expect": {"refusal": "format", "saying": "'pivot' is not a form this reader knows."}
+    },
+    {
+      "name": "ADR-0059: a name the reader does not know, or a shape, is refused by name: {\"version\":1,\"valuesAxis\":\"filters\"}",
+      "read": "{\"version\":1,\"valuesAxis\":\"filters\"}",
+      "expect": {"refusal": "format", "saying": "'filters' is not a valuesAxis this reader knows."}
+    },
+    {
+      "name": "ADR-0059: a name the reader does not know, or a shape, is refused by name: {\"version\":1,\"values\":[{\"field\":\"Amount\",\"aggregation\":\"median\"}]}",
+      "read": "{\"version\":1,\"values\":[{\"field\":\"Amount\",\"aggregation\":\"median\"}]}",
+      "expect": {"refusal": "format", "saying": "'median' is not a aggregation this reader knows."}
+    },
+    {
+      "name": "ADR-0059: a name the reader does not know, or a shape, is refused by name: {\"version\":1,\"rows\":[{\"field\":\"Region\",\"sort\":{\"direction\":\"sideways\"}}]}",
+      "read": "{\"version\":1,\"rows\":[{\"field\":\"Region\",\"sort\":{\"direction\":\"sideways\"}}]}",
+      "expect": {"refusal": "format", "saying": "'sideways' is not a direction this reader knows."}
+    },
+    {
+      "name": "ADR-0059: a name the reader does not know, or a shape, is refused by name: {\"version\":1,\"rows\":[{\"field\":\"Region\",\"hiddenItems\":[{\"kind\":\"colour\",\"value\":\"red\"}]}]}",
+      "read": "{\"version\":1,\"rows\":[{\"field\":\"Region\",\"hiddenItems\":[{\"kind\":\"colour\",\"value\":\"red\"}]}]}",
+      "expect": {"refusal": "format", "saying": "'colour' is not a kind this reader knows."}
+    },
+    {
+      "name": "ADR-0059: a name the reader does not know, or a shape, is refused by name: {\"version\":1,\"rows\":[{\"field\":\"Region\",\"hiddenItems\":[{\"kind\":\"number\",\"value\":\"12,5\"}]}]}",
+      "read": "{\"version\":1,\"rows\":[{\"field\":\"Region\",\"hiddenItems\":[{\"kind\":\"number\",\"value\":\"12,5\"}]}]}",
+      "expect": {"refusal": "argument", "saying": "'12,5' is not the invariant text of a finite number."}
+    },
+    {
+      "name": "ADR-0059: a name the reader does not know, or a shape, is refused by name: {\"version\":1,\"rows\":[{\"nofield\":\"Region\"}]}",
+      "read": "{\"version\":1,\"rows\":[{\"nofield\":\"Region\"}]}",
+      "expect": {"refusal": "format", "saying": "'field' is a string, and is required."}
+    },
+    {
+      "name": "ADR-0059: a name the reader does not know, or a shape, is refused by name: {\"version\":1,\"rows\":{}}",
+      "read": "{\"version\":1,\"rows\":{}}",
+      "expect": {"refusal": "format", "saying": "'rows' is an array."}
+    },
+    {
+      "name": "ADR-0059: a name the reader does not know, or a shape, is refused by name: {\"version\":1,\"grandTotalRow\":\"yes\"}",
+      "read": "{\"version\":1,\"grandTotalRow\":\"yes\"}",
+      "expect": {"refusal": "format", "saying": "'grandTotalRow' is true or false."}
+    },
+    {
+      "name": "ADR-0059: a name the reader does not know, or a shape, is refused by name: [1]",
+      "read": "[1]",
+      "expect": {"refusal": "format", "saying": "A Pivot Layout is a JSON object."}
+    }
+  ]
+}

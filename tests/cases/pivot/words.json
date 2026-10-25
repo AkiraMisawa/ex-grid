@@ -1,0 +1,237 @@
+{
+  "about": "Captions and words (ADR-0060): a Value Field is captioned as Excel captions it, a caption a second Value Field would repeat takes a number, and the bundled editions' words. Transcribed from the C# engine's PivotWordsTests and JapaneseWordsTests.",
+  "kind": "pivotReport",
+  "data": "values",
+  "locale": "en-US",
+  "words": "english",
+  "cases": [
+    {
+      "name": "ADR-0060, observed (run 17, item 4; R3 (a); the English (US) record, (a)): beside a Count of the same field, Count Numbers is \"Count of Value2\"",
+      "layout": {
+        "rows": [{"field": "Group"}],
+        "values": [{"field": "Value", "aggregation": "count"}, {"field": "Value", "aggregation": "countNumbers"}]
+      },
+      "records": [
+        ["A", {"integer": "10"}],
+        ["A", {"integer": "1"}],
+        ["A", null],
+        ["B", {"integer": "20"}],
+        ["B", {"integer": "30"}]
+      ],
+      "also": ["captions"],
+      "expect": {
+        "headers": ["Row Labels", "Count of Value", "Count of Value2"],
+        "lines": ["i A || 2 | 2", "i B || 2 | 2", "t Grand Total || 4 | 4"],
+        "spans": [],
+        "captions": ["Count of Value", "Count of Value2"]
+      }
+    },
+    {
+      "name": "ADR-0060, observed (R3 (d); the English (US) record, (d)): Count Numbers alone is \"Count of Value\", as Value Field Settings captions it",
+      "layout": {"values": [{"field": "Value", "aggregation": "countNumbers"}]},
+      "also": ["captions"],
+      "expect": {"headers": ["Count of Value"], "lines": ["t  || 1"], "spans": [], "captions": ["Count of Value"]}
+    },
+    {
+      "name": "ADR-0060, by generalisation (Excel numbered the second of Count, then Count Numbers): the numbering follows the order of Values, whichever comes first",
+      "layout": {
+        "values": [{"field": "Value", "aggregation": "countNumbers"}, {"field": "Value", "aggregation": "count"}]
+      },
+      "also": ["captions"],
+      "expect": {
+        "headers": ["Count of Value", "Count of Value2"],
+        "lines": ["t  || 1 | 1"],
+        "spans": [],
+        "captions": ["Count of Value", "Count of Value2"]
+      }
+    },
+    {
+      "name": "ADR-0060, observed (R3 (d), the Japanese edition, chosen in Value Field Settings and added through COM): Count Numbers is captioned データの個数 / Value, as Count is",
+      "layout": {"values": [{"field": "Value", "aggregation": "countNumbers"}]},
+      "locale": "ja-JP",
+      "words": "japanese",
+      "also": ["captions"],
+      "expect": {"headers": ["データの個数 / Value"], "lines": ["t  || 1"], "spans": [], "captions": ["データの個数 / Value"]}
+    },
+    {
+      "name": "ADR-0060, by generalisation (the number observed in English only): in Japanese, a Count and a Count Numbers of one field are データの個数 / Value and データの個数 / Value2",
+      "layout": {
+        "values": [{"field": "Value", "aggregation": "count"}, {"field": "Value", "aggregation": "countNumbers"}]
+      },
+      "locale": "ja-JP",
+      "words": "japanese",
+      "also": ["captions"],
+      "expect": {
+        "headers": ["データの個数 / Value", "データの個数 / Value2"],
+        "lines": ["t  || 1 | 1"],
+        "spans": [],
+        "captions": ["データの個数 / Value", "データの個数 / Value2"]
+      }
+    },
+    {
+      "name": "ADR-0060: a repeated caption takes the next free number, the second observed (run 17, item 14: Sum of Amount2), the third by generalisation",
+      "layout": {
+        "values": [
+          {"field": "Value", "aggregation": "count"},
+          {"field": "Value", "aggregation": "countNumbers"},
+          {"field": "Value", "aggregation": "count"}
+        ]
+      },
+      "also": ["captions"],
+      "expect": {
+        "headers": ["Count of Value", "Count of Value2", "Count of Value3"],
+        "lines": ["t  || 1 | 1 | 1"],
+        "spans": [],
+        "captions": ["Count of Value", "Count of Value2", "Count of Value3"]
+      }
+    },
+    {
+      "name": "ADR-0060: three Sums of one field are numbered",
+      "layout": {
+        "values": [
+          {"field": "Value", "aggregation": "sum"},
+          {"field": "Value", "aggregation": "sum"},
+          {"field": "Value", "aggregation": "sum"}
+        ]
+      },
+      "also": ["captions"],
+      "expect": {
+        "headers": ["Sum of Value", "Sum of Value2", "Sum of Value3"],
+        "lines": ["t  || 1 | 1 | 1"],
+        "spans": [],
+        "captions": ["Sum of Value", "Sum of Value2", "Sum of Value3"]
+      }
+    },
+    {
+      "name": "ADR-0060 (ExPivot's rule, not observed): the number also goes past a Pivot Field's caption, which a Value Field's caption may not repeat",
+      "layout": {"values": [{"field": "Value", "aggregation": "count"}]},
+      "fields": [
+        {"name": "Group", "type": "text"},
+        {"name": "Value", "type": "number"},
+        {"name": "Tally", "type": "number", "of": "Value", "caption": "Count of Value"}
+      ],
+      "also": ["captions"],
+      "expect": {"headers": ["Count of Value2"], "lines": ["t  || 1"], "spans": [], "captions": ["Count of Value2"]}
+    },
+    {
+      "name": "ADR-0060 (ExPivot's rule, not observed): a caption the user set is kept as typed, and a generated one it would repeat takes the next number free of it",
+      "layout": {
+        "values": [
+          {"field": "Value", "aggregation": "count"},
+          {"field": "Value", "aggregation": "count", "caption": "Count of Value2"},
+          {"field": "Value", "aggregation": "countNumbers"}
+        ]
+      },
+      "also": ["captions"],
+      "expect": {
+        "headers": ["Count of Value", "Count of Value2", "Count of Value3"],
+        "lines": ["t  || 1 | 1 | 1"],
+        "spans": [],
+        "captions": ["Count of Value", "Count of Value2", "Count of Value3"]
+      }
+    },
+    {
+      "name": "ADR-0060 (ExPivot's rule, not observed): a caption the user set, standing after the Count it repeats, is kept, and that Count is numbered",
+      "layout": {
+        "values": [
+          {"field": "Value", "aggregation": "countNumbers"},
+          {"field": "Value", "aggregation": "count", "caption": "Count of Value"}
+        ]
+      },
+      "also": ["captions"],
+      "expect": {
+        "headers": ["Count of Value2", "Count of Value"],
+        "lines": ["t  || 1 | 1"],
+        "spans": [],
+        "captions": ["Count of Value2", "Count of Value"]
+      }
+    },
+    {
+      "name": "ADR-0060 (ExPivot's rule, not observed): a caption the user set is kept in Japanese too",
+      "layout": {
+        "values": [
+          {"field": "Value", "aggregation": "countNumbers"},
+          {"field": "Value", "aggregation": "count", "caption": "データの個数 / Value"}
+        ]
+      },
+      "locale": "ja-JP",
+      "words": "japanese",
+      "also": ["captions"],
+      "expect": {
+        "headers": ["データの個数 / Value2", "データの個数 / Value"],
+        "lines": ["t  || 1 | 1"],
+        "spans": [],
+        "captions": ["データの個数 / Value2", "データの個数 / Value"]
+      }
+    },
+    {
+      "name": "ADR-0060's note of 2026-10-12, observed (the English (US) record, (a) and (d)): ExPivot's English is Excel's English (US) edition's, Max of and Min of",
+      "layout": {"values": [{"field": "Value", "aggregation": "max"}, {"field": "Value", "aggregation": "min"}]},
+      "also": ["captions"],
+      "expect": {
+        "headers": ["Max of Value", "Min of Value"],
+        "lines": ["t  || 1 | 1"],
+        "spans": [],
+        "captions": ["Max of Value", "Min of Value"]
+      }
+    },
+    {
+      "name": "ADR-0060's note of 2026-10-14, observed (R3 (a) and (d)): the English (UK) edition's words are bundled where they differ, Max. of and Min. of, and every other caption keeps the English",
+      "layout": {
+        "values": [
+          {"field": "Value", "aggregation": "max"},
+          {"field": "Value", "aggregation": "min"},
+          {"field": "Value", "aggregation": "sum"},
+          {"field": "Value", "aggregation": "count"},
+          {"field": "Value", "aggregation": "stdDev"}
+        ]
+      },
+      "locale": "en-GB",
+      "words": "unitedKingdom",
+      "also": ["captions"],
+      "expect": {
+        "headers": ["Max. of Value", "Min. of Value", "Sum of Value", "Count of Value", "StdDev of Value"],
+        "lines": ["t  || 1 | 1 | 1 | 1 | #DIV/0!"],
+        "spans": [],
+        "captions": ["Max. of Value", "Min. of Value", "Sum of Value", "Count of Value", "StdDev of Value"]
+      }
+    },
+    {
+      "name": "ADR-0060's note of 2026-10-14, ADR-0152: the engine reads no culture for its words: under an en-GB culture without the words, it keeps the English (US) ones",
+      "layout": {"values": [{"field": "Value", "aggregation": "max"}, {"field": "Value", "aggregation": "min"}]},
+      "locale": "en-GB",
+      "also": ["captions"],
+      "expect": {
+        "headers": ["Max of Value", "Min of Value"],
+        "lines": ["t  || 1 | 1"],
+        "spans": [],
+        "captions": ["Max of Value", "Min of Value"]
+      }
+    },
+    {
+      "name": "ADR-0060: a report laid out with the Japanese words, as a server would lay it out",
+      "layout": {
+        "rows": [{"field": "Region"}],
+        "values": [{"field": "Amount", "aggregation": "sum"}, {"field": "Region", "aggregation": "count"}]
+      },
+      "data": "sales",
+      "words": "japanese",
+      "expect": {
+        "headers": ["行ラベル", "合計 / Amount", "データの個数 / Region"],
+        "lines": ["i East || 180 | 3", "i North || 10 | 1", "i West || 90 | 2", "i (空白) || 5 |", "t 総計 || 285 | 6"],
+        "spans": []
+      }
+    },
+    {
+      "name": "ADR-0060: the words never follow the culture on their own; a Japanese culture without the words stays English",
+      "layout": {"rows": [{"field": "Region"}], "values": [{"field": "Amount", "aggregation": "sum"}]},
+      "data": "sales",
+      "locale": "ja-JP",
+      "expect": {
+        "headers": ["Row Labels", "Sum of Amount"],
+        "lines": ["i East || 180", "i North || 10", "i West || 90", "i (blank) || 5", "t Grand Total || 285"],
+        "spans": []
+      }
+    }
+  ]
+}

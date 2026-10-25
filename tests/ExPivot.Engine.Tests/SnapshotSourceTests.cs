@@ -8,10 +8,11 @@ using static ExPivot.Engine.Tests.Sources;
 namespace ExPivot.Engine.Tests;
 
 /// <summary>
-/// The bundled source over a Snapshot (ADR-0064/0066): its fields from the columns or declared by
-/// column name, Items from each column's kind (ADR-0060, PV-3), every Aggregation read from typed
-/// columns with money summed exactly across slices of different scales (PV-4), and the same
-/// answers as the records' source over the same data (PV-22).
+/// The bundled source over a Snapshot (ADR-0064/0066): numbers and money across slices of different
+/// scales (PV-3, PV-4), a DateTime's Kind, what a question allocates, and the same answers as the
+/// records' source over the same data (PV-22). Its fields, the Items of each column's kind and every
+/// Aggregation read from typed columns are held on both engines by the shared cases
+/// (<c>tests/cases/pivot/source-snapshot.json</c>).
 /// </summary>
 public class SnapshotSourceTests
 {
@@ -39,72 +40,6 @@ public class SnapshotSourceTests
     private static string[] Labels(PivotReport report)
         => report.Rows.Where(r => r.Role != PivotRowRole.GrandTotal).Select(r => r.Labels[0].Text!).ToArray();
 
-    [Fact] // ADR-0066: with no fields declared, one field per column, captioned as the column is and typed by its kind
-    public void Fields_default_from_the_columns()
-    {
-        var source = PivotSource.From(Rows());
-
-        Assert.Equal(
-        [
-            ("Text", "Label", PivotFieldType.Text), ("Money", "Money", PivotFieldType.Number), ("Measure", "Measure", PivotFieldType.Number),
-            ("Count", "Count", PivotFieldType.Number), ("When", "When", PivotFieldType.Date), ("Flag", "Flag", PivotFieldType.Boolean),
-        ], source.Fields.Select(f => (f.Name, f.Caption, f.Type)));
-        Assert.All(source.Fields, f => Assert.Null(f.Column));
-    }
-
-    [Fact] // ADR-0066: declared fields name their columns, by their own name or another's; settings of their own are kept
-    public async Task Declared_fields_name_their_columns()
-    {
-        PivotField[] fields =
-        [
-            new("Desk", PivotFieldType.Text, caption: "Trading desk") { Column = "Text" },
-            new("Money", PivotFieldType.Number, format: "#,##0.00"),
-        ];
-        var source = PivotSource.From(Rows(new("A", 1.5m, null, null, null, null), new("a", 2m, null, null, null, null)), fields);
-
-        var report = await ReportOf(source, new PivotLayout { Rows = [P("Desk")], Values = [Sum("Money")] });
-
-        Assert.Same(fields[0], source.Fields[0]);
-        Assert.Equal(["i A || 3.5", "t Grand Total || 3.5"], Lines(report));
-        Assert.Equal("Sum of Money", Headers(report)[1]);
-    }
-
-    [Fact] // ADR-0066: a field naming a column the Snapshot does not have is refused by name, and so is a date part of another kind
-    public void An_unknown_column_is_refused_by_name()
-    {
-        var snapshot = Rows();
-
-        var unknown = Assert.Throws<ArgumentException>(() => PivotSource.From(snapshot, [new PivotField("Region", PivotFieldType.Text)]));
-        var other = Assert.Throws<ArgumentException>(() => PivotSource.From(snapshot, [new PivotField("Desk", PivotFieldType.Text) { Column = "Desks" }]));
-        var part = Assert.Throws<ArgumentException>(() => PivotSource.From(snapshot, [PivotField.DatePartOf("Month", "Money", PivotDatePart.Month)]));
-        var twice = Assert.Throws<ArgumentException>(() => PivotSource.From(snapshot, [new PivotField("Money", PivotFieldType.Number), new PivotField("Money", PivotFieldType.Number)]));
-
-        Assert.Contains("'Region'", unknown.Message);
-        Assert.Contains("'Desks'", other.Message);
-        Assert.Contains("'Desk'", other.Message);
-        Assert.Contains("'Money'", part.Message);
-        Assert.Contains("not a Date column", part.Message);
-        Assert.Contains("'Money'", twice.Message);
-    }
-
-    [Fact] // ADR-0060/0064 (PV-3): text Items ignore case and are labelled by the first spelling; a Blank in every kind is (blank)
-    public async Task Text_items_ignore_case_and_blanks_are_blank_in_every_kind()
-    {
-        var source = PivotSource.From(Rows(
-            new("east", 1m, 1, 1, new DateTime(2026, 1, 1), true),
-            new("East", 2m, 2, 2, new DateTime(2026, 1, 1), true),
-            new(null, null, null, null, null, null),
-            new("", 4m, 4, 4, new DateTime(2026, 1, 2), false)));
-
-        foreach (var field in new[] { "Text", "Money", "Measure", "Count", "When", "Flag" })
-        {
-            var report = await ReportOf(source, new PivotLayout { Rows = [P(field)], Values = [Value("Text", PivotAggregation.Count)] });
-            Assert.Equal("(blank)", Labels(report)[^1]);
-        }
-        var text = await ReportOf(source, new PivotLayout { Rows = [P("Text")], Values = [Sum("Money")] });
-        Assert.Equal(["i  || 4", "i east || 3", "i (blank) ||", "t Grand Total || 7"], Lines(text));
-    }
-
     [Fact] // ADR-0060/0064 (PV-3): a number is its value — in every slice, whatever scale it holds it at, and as a Hidden Item's key
     public async Task A_number_is_its_value_in_every_slice()
     {
@@ -126,23 +61,7 @@ public class SnapshotSourceTests
         Assert.Contains(PivotItemKey.For(1.0), answer.Rows[0].Items);
     }
 
-    [Fact] // ADR-0060/0064 (PV-3): a non-finite Double is #NUM!, after the Booleans and before (blank)
-    public async Task A_non_finite_double_is_the_error_item()
-    {
-        var source = PivotSource.From(Rows(
-            new("a", 1m, double.NaN, null, null, null),
-            new("b", 1m, double.PositiveInfinity, null, null, null),
-            new("c", 1m, double.NegativeInfinity, null, null, null),
-            new("d", 1m, -0.0, null, null, null),
-            new("e", 1m, null, null, null, null)));
-
-        var report = await ReportOf(source, new PivotLayout { Rows = [P("Measure")], Values = [Sum("Money")] });
-
-        Assert.Equal(["i 0 || 1", "i #NUM! || 3", "i (blank) || 1", "t Grand Total || 5"], Lines(report));
-        Assert.Equal("#NUM!", Cell(await ReportOf(source, new PivotLayout { Values = [Sum("Measure")] }), 0, 0));
-    }
-
-    [Fact] // ADR-0060/0064 (PV-3): a date is its clock value: the Kind of a DateTime is ignored, and a time of day is another Item
+    [Fact] // ADR-0060/0064 (PV-3): a date is its clock value: the Kind of a DateTime is ignored
     public async Task A_date_is_its_clock_value()
     {
         var source = PivotSource.From(Rows(
@@ -154,22 +73,6 @@ public class SnapshotSourceTests
 
         Assert.Equal(["1/2/2026", new DateTime(2026, 1, 2, 13, 45, 0).ToString("G", EnUs.Culture)], Labels(report));
         Assert.Equal("3", Cell(report, 0, 0));
-    }
-
-    [Fact] // ADR-0060/0066 (PV-3): a source lists Items in its own order; the report puts (blank) last in either direction
-    public async Task A_text_field_keeps_blank_last_either_way()
-    {
-        var source = PivotSource.From([1, 2, 3, 4, 5, 6], PivotFields.Of<int>().Text("Kind", i => i switch
-        {
-            1 => "b",
-            2 => "A",
-            _ => null,
-        }));
-        var answer = await source.AggregateAsync(new PivotQuery(rows: [F("Kind")]), Ct);
-
-        SameKeys([PivotItemKey.Text("b"), PivotItemKey.Text("A"), PivotItemKey.Blank], answer.Rows[0].Items);
-        var report = await ReportOf(source, new PivotLayout { Rows = [P("Kind") with { Sort = PivotSort.Descending }], Values = [Value("Kind", PivotAggregation.Count)] });
-        Assert.Equal(["b", "A", "(blank)"], Labels(report));
     }
 
     [Fact] // ADR-0060/0064 (PV-4): Integer and Decimal are summed exactly across slices held at different scales, and as decimals where 64 bits cannot hold them
@@ -310,49 +213,6 @@ public class SnapshotSourceTests
         return result is double d && !double.IsFinite(d) ? "#NUM!" : result;
     }
 
-    [Fact] // ADR-0060 (PV-4): an exact sum that leaves decimal's range falls back to double, Excel's arithmetic, rather than failing
-    public async Task An_exact_sum_past_decimals_range_is_a_double()
-    {
-        var source = PivotSource.From(Rows(new("a", decimal.MaxValue, null, null, null, null), new("b", decimal.MaxValue, null, null, null, null)));
-
-        var answer = await source.AggregateAsync(new PivotQuery(values: [V("Money", PivotParts.Sum)]), Ct);
-
-        Assert.Equal(PivotNumber.Double(2 * (double)decimal.MaxValue), answer.Values[0].SumAt(0));
-    }
-
-    [Theory] // ADR-0060 (PV-4): Text, Date and Boolean in Values are counted and never summed — Sum is 0, as the table says
-    [InlineData("Text")]
-    [InlineData("When")]
-    [InlineData("Flag")]
-    public async Task Text_dates_and_booleans_in_values_are_counted_and_not_summed(string field)
-    {
-        var source = PivotSource.From(Rows(
-            new("a", 1m, 1, 1, new DateTime(2026, 1, 1), true),
-            new("b", 1m, 1, 1, new DateTime(2026, 1, 2), false),
-            new(null, 1m, 1, 1, null, null)));
-        var layout = new PivotLayout
-        {
-            Values = [.. Enum.GetValues<PivotAggregation>().Select(a => Value(field, a))],
-        };
-
-        var report = await ReportOf(source, layout);
-
-        Assert.Equal(["t  || 0 | 2 | #DIV/0! | 0 | 0 | 0 | 0 | #DIV/0! | #DIV/0! | #DIV/0! | #DIV/0!"], Lines(report));
-    }
-
-    [Fact] // ADR-0060/0066 (PV-4): only the parts asked for are accumulated, from typed columns
-    public async Task Only_the_parts_asked_for_are_accumulated()
-    {
-        var source = PivotSource.From(Rows(new Row("a", 1m, 2, 3, null, null)));
-
-        var answer = await source.AggregateAsync(new PivotQuery(values: [V("Money", PivotParts.Sum), V("Measure", PivotParts.Extremes), V("Count", PivotParts.Counts)]), Ct);
-
-        Assert.Equal([PivotParts.Sum, PivotParts.Extremes, PivotParts.Counts], answer.Values.Select(v => v.Parts));
-        Assert.Throws<InvalidOperationException>(() => answer.Values[0].MinAt(0));
-        Assert.Throws<InvalidOperationException>(() => answer.Values[1].SumAt(0));
-        Assert.Throws<InvalidOperationException>(() => answer.Values[2].SumAt(0));
-    }
-
     [Fact] // ADR-0064/0066 (PV-4): a question over typed columns boxes no value — what it allocates does not grow with the rows
     public async Task A_question_over_columns_boxes_nothing()
     {
@@ -452,21 +312,6 @@ public class SnapshotSourceTests
                 }
             }
         }
-    }
-
-    [Fact] // ADR-0063/0066: the records behind a cell carry each field's value by its kind, and the Consumer's own object
-    public async Task The_records_behind_a_cell_carry_their_values_and_objects()
-    {
-        Row[] rows = [new("a", 1.50m, 0.5, 3, new DateTime(2026, 1, 2), true), new("b", null, null, null, null, null)];
-        var source = PivotSource.From(Columns().Build(rows));
-        var version = (await source.AggregateAsync(new PivotQuery(), Ct)).SourceVersion;
-
-        var page = await source.DetailsAsync(new PivotDetailsQuery(version, rowItems: [new("Text", PivotItemKey.Text("A"))]), Ct);
-
-        var record = Assert.Single(page.Records);
-        Assert.Same(rows[0], record.Record);
-        Assert.Equal<object?>(["a", 1.5m, 0.5, 3m, new DateTime(2026, 1, 2), true], record.Values);
-        Assert.Equal(["Text", "Money", "Measure", "Count", "When", "Flag"], page.Fields.Select(f => f.Name));
     }
 
     [Fact] // ADR-0066 (PV-27): over a Snapshot, a question works in slices and stops at the next slice when cancelled

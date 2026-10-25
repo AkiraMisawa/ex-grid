@@ -1,0 +1,258 @@
+{
+  "about": "Date parts (ADR-0060, Q3; PV-32): a field declared as the year, quarter or month of a Date column, labelled as Excel labels each, in the report's words, and ordered by the calendar. Transcribed from the C# engine's DatePartTests.",
+  "kind": "pivotReport",
+  "data": "trades",
+  "locale": "en-US",
+  "words": "english",
+  "cases": [
+    {
+      "name": "ADR-0060 (PV-32): a year is labelled by its number, ordered by the calendar; the part of a Blank is a Blank",
+      "layout": {"rows": [{"field": "Year"}], "values": [{"field": "Amount", "aggregation": "sum"}]},
+      "expect": {
+        "headers": ["Row Labels", "Sum of Amount"],
+        "lines": ["i 2025 || 68", "i 2026 || 43", "i (blank) || 16", "t Grand Total || 127"],
+        "spans": []
+      }
+    },
+    {
+      "name": "ADR-0060 (PV-32): a quarter is Qtr1 to Qtr4, by the calendar",
+      "layout": {"rows": [{"field": "Quarter"}], "values": [{"field": "Amount", "aggregation": "sum"}]},
+      "expect": {
+        "headers": ["Row Labels", "Sum of Amount"],
+        "lines": [
+          "i Qtr1 || 2",
+          "i Qtr2 || 4",
+          "i Qtr3 || 97",
+          "i Qtr4 || 8",
+          "i (blank) || 16",
+          "t Grand Total || 127"
+        ],
+        "spans": []
+      }
+    },
+    {
+      "name": "ADR-0060 (PV-32): a month is Jan to Dec, by the calendar and never alphabetically",
+      "layout": {"rows": [{"field": "Month"}], "values": [{"field": "Amount", "aggregation": "sum"}]},
+      "expect": {
+        "headers": ["Row Labels", "Sum of Amount"],
+        "lines": [
+          "i Jan || 2",
+          "i Apr || 4",
+          "i Aug || 32",
+          "i Sep || 65",
+          "i Dec || 8",
+          "i (blank) || 16",
+          "t Grand Total || 127"
+        ],
+        "spans": []
+      }
+    },
+    {
+      "name": "ADR-0060 (PV-32): descending reverses the months, with (blank) last",
+      "layout": {
+        "rows": [{"field": "Month", "sort": {"direction": "descending"}}],
+        "values": [{"field": "Amount", "aggregation": "sum"}]
+      },
+      "expect": {
+        "headers": ["Row Labels", "Sum of Amount"],
+        "lines": [
+          "i Dec || 8",
+          "i Sep || 65",
+          "i Aug || 32",
+          "i Apr || 4",
+          "i Jan || 2",
+          "i (blank) || 16",
+          "t Grand Total || 127"
+        ],
+        "spans": []
+      }
+    },
+    {
+      "name": "ADR-0060 (PV-32): the parts nest as Excel's grouping does, and a part reads the date's clock, ignoring its time of day",
+      "layout": {
+        "rows": [{"field": "Year"}, {"field": "Quarter"}, {"field": "Month"}],
+        "values": [{"field": "Amount", "aggregation": "sum"}]
+      },
+      "expect": {
+        "headers": ["Row Labels", "Sum of Amount"],
+        "lines": [
+          "g [-]2025 || 68",
+          "g   [-]Qtr2 || 4",
+          "i     Apr || 4",
+          "g   [-]Qtr3 || 64",
+          "i     Sep || 64",
+          "g [-]2026 || 43",
+          "g   [-]Qtr1 || 2",
+          "i     Jan || 2",
+          "g   [-]Qtr3 || 33",
+          "i     Aug || 32",
+          "i     Sep || 1",
+          "g   [-]Qtr4 || 8",
+          "i     Dec || 8",
+          "g [-](blank) || 16",
+          "g   [-](blank) || 16",
+          "i     (blank) || 16",
+          "t Grand Total || 127"
+        ],
+        "spans": []
+      }
+    },
+    {
+      "name": "ADR-0060 (PV-32): a year is painted in the report's words, which the Consumer replaces by id",
+      "layout": {"rows": [{"field": "Year"}], "values": [{"field": "Amount", "aggregation": "sum"}]},
+      "words": {"date-year": "{0}年", "date-quarter": "第{0}四半期", "date-month-9": "9月"},
+      "expect": {
+        "headers": ["Row Labels", "Sum of Amount"],
+        "lines": ["i 2025年 || 68", "i 2026年 || 43", "i (blank) || 16", "t Grand Total || 127"],
+        "spans": []
+      }
+    },
+    {
+      "name": "ADR-0060 (PV-32): a quarter is painted in the report's words, which the Consumer replaces by id",
+      "layout": {"rows": [{"field": "Quarter"}], "values": [{"field": "Amount", "aggregation": "sum"}]},
+      "words": {"date-year": "{0}年", "date-quarter": "第{0}四半期", "date-month-9": "9月"},
+      "expect": {
+        "headers": ["Row Labels", "Sum of Amount"],
+        "lines": [
+          "i 第1四半期 || 2",
+          "i 第2四半期 || 4",
+          "i 第3四半期 || 97",
+          "i 第4四半期 || 8",
+          "i (blank) || 16",
+          "t Grand Total || 127"
+        ],
+        "spans": []
+      }
+    },
+    {
+      "name": "ADR-0060 (PV-32): a month is painted in the report's words, which the Consumer replaces by id",
+      "layout": {"rows": [{"field": "Month"}], "values": [{"field": "Amount", "aggregation": "sum"}]},
+      "words": {"date-year": "{0}年", "date-quarter": "第{0}四半期", "date-month-9": "9月"},
+      "expect": {
+        "headers": ["Row Labels", "Sum of Amount"],
+        "lines": [
+          "i Jan || 2",
+          "i Apr || 4",
+          "i Aug || 32",
+          "i 9月 || 65",
+          "i Dec || 8",
+          "i (blank) || 16",
+          "t Grand Total || 127"
+        ],
+        "spans": []
+      }
+    },
+    {
+      "name": "ADR-0060 (PV-32, PV-33): the bundled Japanese words a year as the Japanese edition's date grouping does",
+      "layout": {"rows": [{"field": "Year"}], "values": [{"field": "Amount", "aggregation": "sum"}]},
+      "words": "japanese",
+      "expect": {
+        "headers": ["行ラベル", "合計 / Amount"],
+        "lines": ["i 2025年 || 68", "i 2026年 || 43", "i (空白) || 16", "t 総計 || 127"],
+        "spans": []
+      }
+    },
+    {
+      "name": "ADR-0060 (PV-32, PV-33): the bundled Japanese words a quarter as the Japanese edition's date grouping does",
+      "layout": {"rows": [{"field": "Quarter"}], "values": [{"field": "Amount", "aggregation": "sum"}]},
+      "words": "japanese",
+      "expect": {
+        "headers": ["行ラベル", "合計 / Amount"],
+        "lines": ["i 第1四半期 || 2", "i 第2四半期 || 4", "i 第3四半期 || 97", "i 第4四半期 || 8", "i (空白) || 16", "t 総計 || 127"],
+        "spans": []
+      }
+    },
+    {
+      "name": "ADR-0060 (PV-32, PV-33): the bundled Japanese words a month as the Japanese edition's date grouping does",
+      "layout": {"rows": [{"field": "Month"}], "values": [{"field": "Amount", "aggregation": "sum"}]},
+      "words": "japanese",
+      "expect": {
+        "headers": ["行ラベル", "合計 / Amount"],
+        "lines": ["i 1月 || 2", "i 4月 || 4", "i 8月 || 32", "i 9月 || 65", "i 12月 || 8", "i (空白) || 16", "t 総計 || 127"],
+        "spans": []
+      }
+    },
+    {
+      "name": "ADR-0060 (PV-32): a part's Item is its number, so a Hidden Item reads the same in any culture",
+      "layout": {
+        "rows": [
+          {"field": "Month", "hiddenItems": [{"kind": "number", "value": "9"}, {"kind": "blank"}]},
+          {"field": "Quarter"}
+        ],
+        "values": [{"field": "Amount", "aggregation": "sum"}]
+      },
+      "itemsOf": ["Month", "Quarter"],
+      "expect": {
+        "headers": ["Row Labels", "Sum of Amount"],
+        "lines": [
+          "g [-]Jan || 2",
+          "i   Qtr1 || 2",
+          "g [-]Apr || 4",
+          "i   Qtr2 || 4",
+          "g [-]Aug || 32",
+          "i   Qtr3 || 32",
+          "g [-]Dec || 8",
+          "i   Qtr4 || 8",
+          "t Grand Total || 46"
+        ],
+        "spans": [],
+        "items": {
+          "Month": [
+            {"key": {"kind": "number", "value": "1"}, "label": "Jan", "isHidden": false},
+            {"key": {"kind": "number", "value": "4"}, "label": "Apr", "isHidden": false},
+            {"key": {"kind": "number", "value": "8"}, "label": "Aug", "isHidden": false},
+            {"key": {"kind": "number", "value": "9"}, "label": "Sep", "isHidden": true},
+            {"key": {"kind": "number", "value": "12"}, "label": "Dec", "isHidden": false},
+            {"key": {"kind": "blank"}, "label": "(blank)", "isHidden": true}
+          ],
+          "Quarter": [
+            {"key": {"kind": "number", "value": "1"}, "label": "Qtr1", "isHidden": false},
+            {"key": {"kind": "number", "value": "2"}, "label": "Qtr2", "isHidden": false},
+            {"key": {"kind": "number", "value": "3"}, "label": "Qtr3", "isHidden": false},
+            {"key": {"kind": "number", "value": "4"}, "label": "Qtr4", "isHidden": false},
+            {"key": {"kind": "blank"}, "label": "(blank)", "isHidden": false}
+          ]
+        }
+      }
+    },
+    {
+      "name": "ADR-0060/0066 (PV-32): a part is a field like any other: its own caption, counted in Values, and the records behind it",
+      "layout": {"rows": [{"field": "Month"}], "values": [{"field": "Month", "aggregation": "count"}]},
+      "behind": [[3, 0]],
+      "expect": {
+        "headers": ["Row Labels", "Count of Month of trade"],
+        "lines": [
+          "i Jan || 1",
+          "i Apr || 1",
+          "i Aug || 1",
+          "i Sep || 2",
+          "i Dec || 1",
+          "i (blank) ||",
+          "t Grand Total || 6"
+        ],
+        "spans": [],
+        "behind": [[0, 6]]
+      }
+    },
+    {
+      "name": "ADR-0060 (PV-32): a part over a value that is not a date is refused, naming the field",
+      "layout": {"rows": [{"field": "Month"}]},
+      "fields": [{"name": "Month", "type": "date", "of": "TradeDate", "datePart": "month"}],
+      "records": [["September", {"decimal": "1"}]],
+      "scriptSaying": "Row 1, column 'Month': the value 'September' (text) is not a date, and the field is the Month of a date.",
+      "throws": {
+        "refusal": "snapshot",
+        "saying": "Row 1, column 'Month': the value September (String) is not a date, and the field is the Month of a date."
+      }
+    },
+    {
+      "name": "ADR-0060 (PV-32): a part is declared from a Date field, and only a Date field",
+      "layout": {"rows": [{"field": "Month"}]},
+      "fields": [{"name": "Month", "type": "text", "of": "TradeDate", "datePart": "month"}],
+      "throws": {
+        "refusal": "argument",
+        "saying": "Pivot Field 'Month' is a date part, and is declared Text; a date part is declared Date."
+      }
+    }
+  ]
+}

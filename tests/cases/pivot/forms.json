@@ -1,0 +1,594 @@
+{
+  "about": "The report's rows (ADR-0060, \"The report's shape\"): the three forms, subtotals, grand totals, collapse, and Σ Values in rows. Transcribed from the C# engine's RowFormTests.",
+  "kind": "pivotReport",
+  "data": "sales",
+  "locale": "en-US",
+  "words": "english",
+  "cases": [
+    {
+      "name": "ADR-0060: the Compact form is one indented column, a group row carrying its subtotal at the top",
+      "layout": {
+        "rows": [{"field": "Region"}, {"field": "Product"}],
+        "values": [{"field": "Amount", "aggregation": "sum"}]
+      },
+      "expect": {
+        "headers": ["Row Labels", "Sum of Amount"],
+        "lines": [
+          "g [-]East || 180",
+          "i   Apples || 130",
+          "i   Pears || 50",
+          "g [-]North || 10",
+          "i   Pears || 10",
+          "g [-]West || 90",
+          "i   Apples || 70",
+          "i   Plums || 20",
+          "g [-](blank) || 5",
+          "i   Plums || 5",
+          "t Grand Total || 285"
+        ],
+        "spans": []
+      }
+    },
+    {
+      "name": "ADR-0060: subtotals at the bottom are rows of their own, \"<item> Total\"",
+      "layout": {
+        "subtotalsAtTop": false,
+        "rows": [{"field": "Region"}, {"field": "Product"}],
+        "values": [{"field": "Amount", "aggregation": "sum"}]
+      },
+      "expect": {
+        "headers": ["Row Labels", "Sum of Amount"],
+        "lines": [
+          "g [-]East ||",
+          "i   Apples || 130",
+          "i   Pears || 50",
+          "s East Total || 180",
+          "g [-]North ||",
+          "i   Pears || 10",
+          "s North Total || 10",
+          "g [-]West ||",
+          "i   Apples || 70",
+          "i   Plums || 20",
+          "s West Total || 90",
+          "g [-](blank) ||",
+          "i   Plums || 5",
+          "s (blank) Total || 5",
+          "t Grand Total || 285"
+        ],
+        "spans": []
+      }
+    },
+    {
+      "name": "ADR-0060: a field's subtotals switched off leave its group rows empty",
+      "layout": {
+        "rows": [{"field": "Region", "subtotals": false}, {"field": "Product"}],
+        "values": [{"field": "Amount", "aggregation": "sum"}]
+      },
+      "expect": {
+        "headers": ["Row Labels", "Sum of Amount"],
+        "lines": [
+          "g [-]East ||",
+          "i   Apples || 130",
+          "i   Pears || 50",
+          "g [-]North ||",
+          "i   Pears || 10",
+          "g [-]West ||",
+          "i   Apples || 70",
+          "i   Plums || 20",
+          "g [-](blank) ||",
+          "i   Plums || 5",
+          "t Grand Total || 285"
+        ],
+        "spans": []
+      }
+    },
+    {
+      "name": "ADR-0060: the grand total row can be switched off",
+      "layout": {
+        "grandTotalRow": false,
+        "rows": [{"field": "Region"}, {"field": "Product"}],
+        "values": [{"field": "Amount", "aggregation": "sum"}]
+      },
+      "expect": {
+        "headers": ["Row Labels", "Sum of Amount"],
+        "lines": [
+          "g [-]East || 180",
+          "i   Apples || 130",
+          "i   Pears || 50",
+          "g [-]North || 10",
+          "i   Pears || 10",
+          "g [-]West || 90",
+          "i   Apples || 70",
+          "i   Plums || 20",
+          "g [-](blank) || 5",
+          "i   Plums || 5"
+        ],
+        "spans": []
+      }
+    },
+    {
+      "name": "ADR-0060: the Outline form has a column per field, group rows, and labels in their own field's column",
+      "layout": {
+        "form": "outline",
+        "rows": [{"field": "Region"}, {"field": "Product"}],
+        "values": [{"field": "Amount", "aggregation": "sum"}]
+      },
+      "expect": {
+        "headers": ["Region", "Product", "Sum of Amount"],
+        "lines": [
+          "g [-]East |  || 180",
+          "i  | Apples || 130",
+          "i  | Pears || 50",
+          "g [-]North |  || 10",
+          "i  | Pears || 10",
+          "g [-]West |  || 90",
+          "i  | Apples || 70",
+          "i  | Plums || 20",
+          "g [-](blank) |  || 5",
+          "i  | Plums || 5",
+          "t Grand Total |  || 285"
+        ],
+        "spans": []
+      }
+    },
+    {
+      "name": "ADR-0060: the Tabular form has no group rows, the outer label on its block's first row, and subtotals at the bottom",
+      "layout": {
+        "form": "tabular",
+        "rows": [{"field": "Region"}, {"field": "Product"}],
+        "values": [{"field": "Amount", "aggregation": "sum"}]
+      },
+      "expect": {
+        "headers": ["Region", "Product", "Sum of Amount"],
+        "lines": [
+          "i [-]East | Apples || 130",
+          "i  | Pears || 50",
+          "s East Total |  || 180",
+          "i [-]North | Pears || 10",
+          "s North Total |  || 10",
+          "i [-]West | Apples || 70",
+          "i  | Plums || 20",
+          "s West Total |  || 90",
+          "i [-](blank) | Plums || 5",
+          "s (blank) Total |  || 5",
+          "t Grand Total |  || 285"
+        ],
+        "spans": []
+      }
+    },
+    {
+      "name": "ADR-0060: the Tabular form puts subtotals at the bottom whatever the setting",
+      "layout": {
+        "form": "tabular",
+        "subtotalsAtTop": true,
+        "rows": [{"field": "Region"}, {"field": "Product"}],
+        "values": [{"field": "Amount", "aggregation": "sum"}]
+      },
+      "expect": {
+        "headers": ["Region", "Product", "Sum of Amount"],
+        "lines": [
+          "i [-]East | Apples || 130",
+          "i  | Pears || 50",
+          "s East Total |  || 180",
+          "i [-]North | Pears || 10",
+          "s North Total |  || 10",
+          "i [-]West | Apples || 70",
+          "i  | Plums || 20",
+          "s West Total |  || 90",
+          "i [-](blank) | Plums || 5",
+          "s (blank) Total |  || 5",
+          "t Grand Total |  || 285"
+        ],
+        "spans": []
+      }
+    },
+    {
+      "name": "ADR-0060: Repeat Item Labels fills the outer columns of every Tabular row",
+      "layout": {
+        "form": "tabular",
+        "repeatItemLabels": true,
+        "rows": [{"field": "Region"}, {"field": "Product"}],
+        "values": [{"field": "Amount", "aggregation": "sum"}]
+      },
+      "expect": {
+        "headers": ["Region", "Product", "Sum of Amount"],
+        "lines": [
+          "i [-]East | Apples || 130",
+          "i East | Pears || 50",
+          "s East Total |  || 180",
+          "i [-]North | Pears || 10",
+          "s North Total |  || 10",
+          "i [-]West | Apples || 70",
+          "i West | Plums || 20",
+          "s West Total |  || 90",
+          "i [-](blank) | Plums || 5",
+          "s (blank) Total |  || 5",
+          "t Grand Total |  || 285"
+        ],
+        "spans": []
+      }
+    },
+    {
+      "name": "ADR-0060: Repeat Item Labels fills the outer columns of every Outline row",
+      "layout": {
+        "form": "outline",
+        "repeatItemLabels": true,
+        "rows": [{"field": "Region"}, {"field": "Product"}],
+        "values": [{"field": "Amount", "aggregation": "sum"}]
+      },
+      "expect": {
+        "headers": ["Region", "Product", "Sum of Amount"],
+        "lines": [
+          "g [-]East |  || 180",
+          "i East | Apples || 130",
+          "i East | Pears || 50",
+          "g [-]North |  || 10",
+          "i North | Pears || 10",
+          "g [-]West |  || 90",
+          "i West | Apples || 70",
+          "i West | Plums || 20",
+          "g [-](blank) |  || 5",
+          "i (blank) | Plums || 5",
+          "t Grand Total |  || 285"
+        ],
+        "spans": []
+      }
+    },
+    {
+      "name": "ADR-0060: a collapsed Item's row carries its totals, and the Items under it are gone",
+      "layout": {
+        "rows": [{"field": "Region", "toggledItems": [{"kind": "text", "value": "East"}]}, {"field": "Product"}],
+        "values": [{"field": "Amount", "aggregation": "sum"}]
+      },
+      "expect": {
+        "headers": ["Row Labels", "Sum of Amount"],
+        "lines": [
+          "g [+]East || 180",
+          "g [-]North || 10",
+          "i   Pears || 10",
+          "g [-]West || 90",
+          "i   Apples || 70",
+          "i   Plums || 20",
+          "g [-](blank) || 5",
+          "i   Plums || 5",
+          "t Grand Total || 285"
+        ],
+        "spans": []
+      }
+    },
+    {
+      "name": "ADR-0060: a collapsed Item carries its totals with subtotals off and at the bottom, in the Compact form",
+      "layout": {
+        "subtotalsAtTop": false,
+        "rows": [{"field": "Region", "collapsed": true, "subtotals": false}, {"field": "Product"}],
+        "values": [{"field": "Amount", "aggregation": "sum"}]
+      },
+      "expect": {
+        "headers": ["Row Labels", "Sum of Amount"],
+        "lines": [
+          "g [+]East || 180",
+          "g [+]North || 10",
+          "g [+]West || 90",
+          "g [+](blank) || 5",
+          "t Grand Total || 285"
+        ],
+        "spans": []
+      }
+    },
+    {
+      "name": "ADR-0060: a collapsed Item carries its totals with subtotals off, in the Outline form",
+      "layout": {
+        "form": "outline",
+        "rows": [{"field": "Region", "collapsed": true, "subtotals": false}, {"field": "Product"}],
+        "values": [{"field": "Amount", "aggregation": "sum"}]
+      },
+      "expect": {
+        "headers": ["Region", "Product", "Sum of Amount"],
+        "lines": [
+          "g [+]East |  || 180",
+          "g [+]North |  || 10",
+          "g [+]West |  || 90",
+          "g [+](blank) |  || 5",
+          "t Grand Total |  || 285"
+        ],
+        "spans": []
+      }
+    },
+    {
+      "name": "ADR-0060: a collapsed Item carries its totals with subtotals off, in the Tabular form",
+      "layout": {
+        "form": "tabular",
+        "rows": [{"field": "Region", "collapsed": true, "subtotals": false}, {"field": "Product"}],
+        "values": [{"field": "Amount", "aggregation": "sum"}]
+      },
+      "expect": {
+        "headers": ["Region", "Product", "Sum of Amount"],
+        "lines": [
+          "g [+]East |  || 180",
+          "g [+]North |  || 10",
+          "g [+]West |  || 90",
+          "g [+](blank) |  || 5",
+          "t Grand Total |  || 285"
+        ],
+        "spans": []
+      }
+    },
+    {
+      "name": "ADR-0060: Collapse Entire Field, with one Item expanded again, its key matched ignoring case",
+      "layout": {
+        "rows": [
+          {"field": "Region", "collapsed": true, "toggledItems": [{"kind": "text", "value": "west"}]},
+          {"field": "Product"}
+        ],
+        "values": [{"field": "Amount", "aggregation": "sum"}]
+      },
+      "expect": {
+        "headers": ["Row Labels", "Sum of Amount"],
+        "lines": [
+          "g [+]East || 180",
+          "g [+]North || 10",
+          "g [-]West || 90",
+          "i   Apples || 70",
+          "i   Plums || 20",
+          "g [+](blank) || 5",
+          "t Grand Total || 285"
+        ],
+        "spans": []
+      }
+    },
+    {
+      "name": "ADR-0060: the innermost field cannot be collapsed and has no button",
+      "layout": {
+        "rows": [{"field": "Region"}, {"field": "Product", "collapsed": true}],
+        "values": [{"field": "Amount", "aggregation": "sum"}]
+      },
+      "also": ["toggles"],
+      "expect": {
+        "headers": ["Row Labels", "Sum of Amount"],
+        "lines": [
+          "g [-]East || 180",
+          "i   Apples || 130",
+          "i   Pears || 50",
+          "g [-]North || 10",
+          "i   Pears || 10",
+          "g [-]West || 90",
+          "i   Apples || 70",
+          "i   Plums || 20",
+          "g [-](blank) || 5",
+          "i   Plums || 5",
+          "t Grand Total || 285"
+        ],
+        "spans": [],
+        "toggles": [
+          [
+            {
+              "field": "Region",
+              "item": {"kind": "text", "value": "East"},
+              "itemLabel": "East",
+              "isCollapsed": false
+            }
+          ],
+          [null],
+          [null],
+          [
+            {
+              "field": "Region",
+              "item": {"kind": "text", "value": "North"},
+              "itemLabel": "North",
+              "isCollapsed": false
+            }
+          ],
+          [null],
+          [
+            {
+              "field": "Region",
+              "item": {"kind": "text", "value": "West"},
+              "itemLabel": "West",
+              "isCollapsed": false
+            }
+          ],
+          [null],
+          [null],
+          [{"field": "Region", "item": {"kind": "blank"}, "itemLabel": "(blank)", "isCollapsed": false}],
+          [null],
+          [null]
+        ]
+      }
+    },
+    {
+      "name": "ADR-0060: a button names its field and Item, for the edit it makes",
+      "layout": {
+        "rows": [{"field": "Region"}, {"field": "Product"}],
+        "values": [{"field": "Amount", "aggregation": "sum"}]
+      },
+      "also": ["toggles"],
+      "expect": {
+        "headers": ["Row Labels", "Sum of Amount"],
+        "lines": [
+          "g [-]East || 180",
+          "i   Apples || 130",
+          "i   Pears || 50",
+          "g [-]North || 10",
+          "i   Pears || 10",
+          "g [-]West || 90",
+          "i   Apples || 70",
+          "i   Plums || 20",
+          "g [-](blank) || 5",
+          "i   Plums || 5",
+          "t Grand Total || 285"
+        ],
+        "spans": [],
+        "toggles": [
+          [
+            {
+              "field": "Region",
+              "item": {"kind": "text", "value": "East"},
+              "itemLabel": "East",
+              "isCollapsed": false
+            }
+          ],
+          [null],
+          [null],
+          [
+            {
+              "field": "Region",
+              "item": {"kind": "text", "value": "North"},
+              "itemLabel": "North",
+              "isCollapsed": false
+            }
+          ],
+          [null],
+          [
+            {
+              "field": "Region",
+              "item": {"kind": "text", "value": "West"},
+              "itemLabel": "West",
+              "isCollapsed": false
+            }
+          ],
+          [null],
+          [null],
+          [{"field": "Region", "item": {"kind": "blank"}, "itemLabel": "(blank)", "isCollapsed": false}],
+          [null],
+          [null]
+        ]
+      }
+    },
+    {
+      "name": "ADR-0060: Σ Values in Rows is one row per Value Field under each Item, and totals per Value Field",
+      "layout": {
+        "valuesAxis": "rows",
+        "rows": [{"field": "Region"}],
+        "values": [{"field": "Amount", "aggregation": "sum"}, {"field": "Quantity", "aggregation": "sum"}]
+      },
+      "expect": {
+        "headers": ["Row Labels", "Values"],
+        "lines": [
+          "g East ||",
+          "i   Sum of Amount || 180",
+          "i   Sum of Quantity || 18",
+          "g North ||",
+          "i   Sum of Amount || 10",
+          "i   Sum of Quantity || 1",
+          "g West ||",
+          "i   Sum of Amount || 90",
+          "i   Sum of Quantity || 9",
+          "g (blank) ||",
+          "i   Sum of Amount || 5",
+          "i   Sum of Quantity || 1",
+          "t Total Sum of Amount || 285",
+          "t Total Sum of Quantity || 29"
+        ],
+        "spans": []
+      }
+    },
+    {
+      "name": "ADR-0060: Σ Values in Rows under an outer field puts subtotals at the bottom, per Value Field",
+      "layout": {
+        "valuesAxis": "rows",
+        "rows": [{"field": "Region"}, {"field": "Product"}],
+        "values": [{"field": "Amount", "aggregation": "sum"}, {"field": "Quantity", "aggregation": "sum"}]
+      },
+      "expect": {
+        "headers": ["Row Labels", "Values"],
+        "lines": [
+          "g [-]East ||",
+          "g   Apples ||",
+          "i     Sum of Amount || 130",
+          "i     Sum of Quantity || 13",
+          "g   Pears ||",
+          "i     Sum of Amount || 50",
+          "i     Sum of Quantity || 5",
+          "s East Sum of Amount || 180",
+          "s East Sum of Quantity || 18",
+          "g [-]North ||",
+          "g   Pears ||",
+          "i     Sum of Amount || 10",
+          "i     Sum of Quantity || 1",
+          "s North Sum of Amount || 10",
+          "s North Sum of Quantity || 1",
+          "g [-]West ||",
+          "g   Apples ||",
+          "i     Sum of Amount || 70",
+          "i     Sum of Quantity || 7",
+          "g   Plums ||",
+          "i     Sum of Amount || 20",
+          "i     Sum of Quantity || 2",
+          "s West Sum of Amount || 90",
+          "s West Sum of Quantity || 9",
+          "g [-](blank) ||",
+          "g   Plums ||",
+          "i     Sum of Amount || 5",
+          "i     Sum of Quantity || 1",
+          "s (blank) Sum of Amount || 5",
+          "s (blank) Sum of Quantity || 1",
+          "t Total Sum of Amount || 285",
+          "t Total Sum of Quantity || 29"
+        ],
+        "spans": []
+      }
+    },
+    {
+      "name": "ADR-0060: Σ Values in Rows in the Tabular form is a Values column",
+      "layout": {
+        "form": "tabular",
+        "valuesAxis": "rows",
+        "rows": [{"field": "Region"}],
+        "values": [{"field": "Amount", "aggregation": "sum"}, {"field": "Quantity", "aggregation": "sum"}]
+      },
+      "expect": {
+        "headers": ["Region", "Values", "Values"],
+        "lines": [
+          "i East | Sum of Amount || 180",
+          "i  | Sum of Quantity || 18",
+          "i North | Sum of Amount || 10",
+          "i  | Sum of Quantity || 1",
+          "i West | Sum of Amount || 90",
+          "i  | Sum of Quantity || 9",
+          "i (blank) | Sum of Amount || 5",
+          "i  | Sum of Quantity || 1",
+          "t Grand Total | Sum of Amount || 285",
+          "t Grand Total | Sum of Quantity || 29"
+        ],
+        "spans": []
+      }
+    },
+    {
+      "name": "ADR-0060: no row field is no label column and one row of totals",
+      "layout": {"columns": [{"field": "Online"}], "values": [{"field": "Amount", "aggregation": "sum"}]},
+      "expect": {"headers": ["FALSE", "TRUE", "Grand Total"], "lines": ["t  || 130 | 155 | 285"], "spans": []}
+    },
+    {
+      "name": "ADR-0060: no Value Field is the Items, and no totals",
+      "layout": {"rows": [{"field": "Region"}, {"field": "Product"}]},
+      "expect": {
+        "headers": ["Row Labels"],
+        "lines": [
+          "g [-]East ||",
+          "i   Apples ||",
+          "i   Pears ||",
+          "g [-]North ||",
+          "i   Pears ||",
+          "g [-]West ||",
+          "i   Apples ||",
+          "i   Plums ||",
+          "g [-](blank) ||",
+          "i   Plums ||"
+        ],
+        "spans": []
+      }
+    },
+    {
+      "name": "ADR-0060: no field at all is the empty report, which asks for fields",
+      "layout": {},
+      "also": ["empty"],
+      "expect": {"headers": [], "lines": [], "spans": [], "empty": true}
+    },
+    {
+      "name": "ADR-0060: a report filter field alone is still the empty report",
+      "layout": {"filters": [{"field": "Region"}]},
+      "also": ["empty"],
+      "expect": {"headers": [], "lines": [], "spans": [], "empty": true}
+    }
+  ]
+}

@@ -1,0 +1,106 @@
+{
+  "about": "ADR-0060: a value cell with no number format of its own shows Excel's General as a PivotTable shows it, at most eleven characters besides a minus sign (the seventeenth Windows run, item 16). Transcribed from the C# engine's PivotGeneralTests; the rule itself is held to C# by the differential fuzz.",
+  "kind": "pivotReport",
+  "data": "values",
+  "locale": "en-US",
+  "words": "english",
+  "cases": [
+    {
+      "name": "ADR-0060, item 16: a report over e16's records shows each value as Excel's PivotTable did, at most eleven characters",
+      "layout": {"rows": [{"field": "Group"}], "values": [{"field": "Value", "aggregation": "sum"}]},
+      "records": [
+        ["A", 0.1],
+        ["A", 0.2],
+        ["B", 123456789012.34567],
+        ["C", 1.2345678901234567],
+        ["D", 1.2345678901234568e-05]
+      ],
+      "also": ["numbers"],
+      "expect": {
+        "headers": ["Row Labels", "Sum of Value"],
+        "lines": [
+          "i A || 0.3",
+          "i B || 1.23457E+11",
+          "i C || 1.23456789",
+          "i D || 1.23457E-05",
+          "t Grand Total || 1.23457E+11"
+        ],
+        "spans": [],
+        "numbers": {
+          "rows": [
+            {"labels": [null], "values": ["d0.30000000000000004"]},
+            {"labels": [null], "values": ["d123456789012.34567"]},
+            {"labels": [null], "values": ["d1.2345678901234567"]},
+            {"labels": [null], "values": ["d1.2345678901234568E-05"]},
+            {"labels": [null], "values": ["d123456789013.88025"]}
+          ],
+          "headers": [null]
+        }
+      }
+    },
+    {
+      "name": "ADR-0060, PV-7: the text is General's; the number behind it is the whole of it",
+      "layout": {"rows": [{"field": "Group"}], "values": [{"field": "Value", "aggregation": "stdDev"}]},
+      "records": [["C", 1.0], ["C", 3.0]],
+      "also": ["numbers"],
+      "expect": {
+        "headers": ["Row Labels", "StdDev of Value"],
+        "lines": ["i C || 1.414213562", "t Grand Total || 1.414213562"],
+        "spans": [],
+        "numbers": {
+          "rows": [
+            {"labels": [null], "values": ["d1.4142135623730951"]},
+            {"labels": [null], "values": ["d1.4142135623730951"]}
+          ],
+          "headers": [null]
+        }
+      }
+    },
+    {
+      "name": "ADR-0060: a number format of the Value Field's own is applied as written, never fitted to eleven characters",
+      "layout": {
+        "rows": [{"field": "Group"}],
+        "values": [{"field": "Value", "aggregation": "sum", "numberFormat": "#,##0.00"}]
+      },
+      "records": [["B", 123456789012.34567]],
+      "expect": {
+        "headers": ["Row Labels", "Sum of Value"],
+        "lines": ["i B || 123,456,789,012.35", "t Grand Total || 123,456,789,012.35"],
+        "spans": []
+      }
+    },
+    {
+      "name": "ADR-0060 (by generalisation: no run read Excel under sv-SE): the minus sign is '-', never the culture's U+2212",
+      "layout": {"rows": [{"field": "Group"}], "values": [{"field": "Value", "aggregation": "sum"}]},
+      "locale": "sv-SE",
+      "records": [["A", -1.4142135623730951]],
+      "expect": {
+        "headers": ["Row Labels", "Sum of Value"],
+        "lines": ["i A || -1,414213562", "t Grand Total || -1,414213562"],
+        "spans": []
+      }
+    },
+    {
+      "name": "ADR-0060 (by generalisation: no run read Excel under fi-FI): the minus sign is '-', never the culture's U+2212",
+      "layout": {"rows": [{"field": "Group"}], "values": [{"field": "Value", "aggregation": "sum"}]},
+      "locale": "fi-FI",
+      "records": [["A", -1.4142135623730951]],
+      "expect": {
+        "headers": ["Row Labels", "Sum of Value"],
+        "lines": ["i A || -1,414213562", "t Grand Total || -1,414213562"],
+        "spans": []
+      }
+    },
+    {
+      "name": "ADR-0060 (by generalisation: no run read Excel under nb-NO): the minus sign is '-', never the culture's U+2212",
+      "layout": {"rows": [{"field": "Group"}], "values": [{"field": "Value", "aggregation": "sum"}]},
+      "locale": "nb-NO",
+      "records": [["A", -1.4142135623730951]],
+      "expect": {
+        "headers": ["Row Labels", "Sum of Value"],
+        "lines": ["i A || -1,414213562", "t Grand Total || -1,414213562"],
+        "spans": []
+      }
+    }
+  ]
+}

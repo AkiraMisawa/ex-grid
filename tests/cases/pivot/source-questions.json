@@ -1,0 +1,1093 @@
+{
+  "about": "The questions every Pivot Source answers the same way (ADR-0066): the Leaf Aggregates over every kind of value, Items and records under the answer's Source Version, and what a source refuses. Transcribed from ExPivot.Engine.Tests' PivotSourceTests.",
+  "kind": "pivotSource",
+  "data": "deals",
+  "locale": "en-US",
+  "words": "english",
+  "cases": [
+    {
+      "name": "ADR-0066: every kind of Item, every part, Hidden Items in each Area and the empty question",
+      "asks": [
+        {
+          "aggregate": {
+            "rows": ["Desk"],
+            "values": [
+              {"field": "Amount", "parts": ["sum", "extremes", "product", "variance"]},
+              {"field": "Risk", "parts": ["sum", "extremes", "product", "variance"]}
+            ]
+          }
+        },
+        {
+          "aggregate": {
+            "rows": ["Desk", "Book"],
+            "columns": ["Live"],
+            "values": [{"field": "Amount", "parts": ["sum"]}, "Tag"]
+          }
+        },
+        {
+          "aggregate": {
+            "rows": ["Book"],
+            "columns": ["Date"],
+            "filters": [{"field": "Live", "hiddenItems": [{"kind": "boolean", "value": "FALSE"}]}],
+            "values": [{"field": "Risk", "parts": ["sum", "extremes"]}]
+          }
+        },
+        {
+          "aggregate": {
+            "columns": ["Tag"],
+            "values": [{"field": "Amount", "parts": ["sum", "extremes", "product", "variance"]}]
+          }
+        },
+        {"aggregate": {"values": [{"field": "Amount", "parts": ["sum"]}]}},
+        {
+          "aggregate": {
+            "rows": [{"field": "Desk", "hiddenItems": [{"kind": "text", "value": "rates"}, {"kind": "blank"}]}],
+            "values": [{"field": "Amount", "parts": ["sum"]}, {"field": "Risk", "parts": ["variance"]}]
+          }
+        },
+        {
+          "aggregate": {
+            "rows": ["Tag"],
+            "columns": [{"field": "Desk", "hiddenItems": [{"kind": "text", "value": ""}]}],
+            "values": [{"field": "Risk", "parts": ["product"]}]
+          }
+        },
+        {"aggregate": {}},
+        {
+          "aggregate": {
+            "rows": ["Date"],
+            "filters": [{"field": "Book", "hiddenItems": [{"kind": "text", "value": "NY-2"}]}]
+          }
+        }
+      ],
+      "expect": [
+        {
+          "leaves": 5,
+          "rows": [
+            {
+              "field": "Desk",
+              "items": [
+                {"kind": "text", "value": "Rates"},
+                {"kind": "text", "value": "Credit"},
+                {"kind": "text", "value": ""},
+                {"kind": "text", "value": "FX"},
+                {"kind": "blank"}
+              ]
+            }
+          ],
+          "columns": [],
+          "leaf": [
+            {"at": [0], "records": 3},
+            {"at": [1], "records": 2},
+            {"at": [4], "records": 1},
+            {"at": [2], "records": 1},
+            {"at": [3], "records": 2}
+          ],
+          "values": [
+            {
+              "field": "Amount",
+              "parts": ["sum", "extremes", "product", "variance"],
+              "leaves": [
+                {
+                  "values": 3,
+                  "numbers": 3,
+                  "sum": 300.6,
+                  "min": 0.1,
+                  "max": 200,
+                  "product": 2010,
+                  "mean": 100.19999999999999,
+                  "m2": 19980.14
+                },
+                {
+                  "values": 2,
+                  "numbers": 1,
+                  "sum": {"decimal": "7"},
+                  "min": {"decimal": "7"},
+                  "max": {"decimal": "7"},
+                  "product": 7,
+                  "mean": 7,
+                  "m2": 0
+                },
+                {
+                  "values": 0,
+                  "numbers": 0,
+                  "sum": {"decimal": "0"},
+                  "min": {"decimal": "0"},
+                  "max": {"decimal": "0"},
+                  "product": 0,
+                  "mean": 0,
+                  "m2": 0
+                },
+                {
+                  "values": 1,
+                  "numbers": 1,
+                  "sum": {"decimal": "79228162514264337593543950335"},
+                  "min": {"decimal": "79228162514264337593543950335"},
+                  "max": {"decimal": "79228162514264337593543950335"},
+                  "product": 7.922816251426434e+28,
+                  "mean": 7.922816251426434e+28,
+                  "m2": 0
+                },
+                {
+                  "values": 2,
+                  "numbers": 2,
+                  "sum": 7.922816252661002e+28,
+                  "min": {"decimal": "12345678901234567890"},
+                  "max": {"decimal": "79228162514264337593543950335"},
+                  "product": 9.781254543359367e+47,
+                  "mean": 3.9614081263305e+28,
+                  "m2": 3.1385508667152147e+57
+                }
+              ]
+            },
+            {
+              "field": "Risk",
+              "parts": ["sum", "extremes", "product", "variance"],
+              "leaves": [
+                {
+                  "values": 3,
+                  "numbers": 3,
+                  "sum": 4.6,
+                  "min": 0.1,
+                  "max": 3,
+                  "product": 0.45000000000000007,
+                  "mean": 1.5333333333333334,
+                  "m2": 4.206666666666667
+                },
+                {
+                  "values": 2,
+                  "numbers": 2,
+                  "nonFinite": true,
+                  "sum": {"decimal": "0"},
+                  "min": {"decimal": "0"},
+                  "max": {"decimal": "0"},
+                  "product": 0,
+                  "mean": 0,
+                  "m2": 0
+                },
+                {
+                  "values": 1,
+                  "numbers": 1,
+                  "nonFinite": true,
+                  "sum": {"decimal": "0"},
+                  "min": {"decimal": "0"},
+                  "max": {"decimal": "0"},
+                  "product": 0,
+                  "mean": 0,
+                  "m2": 0
+                },
+                {
+                  "values": 1,
+                  "numbers": 1,
+                  "sum": 5e-324,
+                  "min": 5e-324,
+                  "max": 5e-324,
+                  "product": 5e-324,
+                  "mean": 5e-324,
+                  "m2": 0
+                },
+                {
+                  "values": 2,
+                  "numbers": 2,
+                  "sum": 1e+300,
+                  "min": 2.5,
+                  "max": 1e+300,
+                  "product": 2.5e+300,
+                  "mean": 5e+299,
+                  "m2": {"double": "Infinity"}
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "leaves": 9,
+          "rows": [
+            {
+              "field": "Desk",
+              "items": [
+                {"kind": "text", "value": "Rates"},
+                {"kind": "text", "value": "Credit"},
+                {"kind": "text", "value": ""},
+                {"kind": "text", "value": "FX"},
+                {"kind": "blank"}
+              ]
+            },
+            {
+              "field": "Book",
+              "items": [
+                {"kind": "text", "value": "LDN-1"},
+                {"kind": "text", "value": "NY-2"},
+                {"kind": "text", "value": "TKY-3"},
+                {"kind": "blank"}
+              ]
+            }
+          ],
+          "columns": [
+            {
+              "field": "Live",
+              "items": [{"kind": "boolean", "value": "TRUE"}, {"kind": "boolean", "value": "FALSE"}, {"kind": "blank"}]
+            }
+          ],
+          "leaf": [
+            {"at": [0, 0, 0], "records": 1},
+            {"at": [0, 0, 1], "records": 1},
+            {"at": [1, 1, 0], "records": 1},
+            {"at": [1, 3, 2], "records": 1},
+            {"at": [4, 1, 0], "records": 1},
+            {"at": [2, 2, 1], "records": 1},
+            {"at": [3, 2, 0], "records": 1},
+            {"at": [3, 0, 1], "records": 1},
+            {"at": [0, 1, 0], "records": 1}
+          ],
+          "values": [
+            {
+              "field": "Amount",
+              "parts": ["sum"],
+              "leaves": [
+                {"values": 1, "numbers": 1, "sum": {"decimal": "100.5"}},
+                {"values": 1, "numbers": 1, "sum": {"decimal": "200"}},
+                {"values": 1, "numbers": 1, "sum": {"decimal": "7"}},
+                {"values": 1, "numbers": 0, "sum": {"decimal": "0"}},
+                {"values": 0, "numbers": 0, "sum": {"decimal": "0"}},
+                {"values": 1, "numbers": 1, "sum": {"decimal": "79228162514264337593543950335"}},
+                {"values": 1, "numbers": 1, "sum": {"decimal": "79228162514264337593543950335"}},
+                {"values": 1, "numbers": 1, "sum": {"decimal": "12345678901234567890"}},
+                {"values": 1, "numbers": 1, "sum": 0.1}
+              ]
+            },
+            {
+              "field": "Tag",
+              "parts": [],
+              "leaves": [
+                {"values": 1, "numbers": 0},
+                {"values": 1, "numbers": 0},
+                {"values": 0, "numbers": 0},
+                {"values": 1, "numbers": 0},
+                {"values": 1, "numbers": 1},
+                {"values": 1, "numbers": 0},
+                {"values": 1, "numbers": 0},
+                {"values": 1, "numbers": 0},
+                {"values": 1, "numbers": 0}
+              ]
+            }
+          ]
+        },
+        {
+          "leaves": 4,
+          "rows": [
+            {
+              "field": "Book",
+              "items": [
+                {"kind": "text", "value": "LDN-1"},
+                {"kind": "text", "value": "NY-2"},
+                {"kind": "text", "value": "TKY-3"},
+                {"kind": "blank"}
+              ]
+            }
+          ],
+          "columns": [
+            {
+              "field": "Date",
+              "items": [
+                {"kind": "date", "value": "2026-01-02T00:00:00"},
+                {"kind": "date", "value": "2026-02-03T00:00:00"},
+                {"kind": "blank"},
+                {"kind": "date", "value": "2026-03-04T00:00:00"}
+              ]
+            }
+          ],
+          "leaf": [
+            {"at": [0, 0], "records": 1},
+            {"at": [1, 1], "records": 3},
+            {"at": [3, 2], "records": 1},
+            {"at": [2, 3], "records": 1}
+          ],
+          "values": [
+            {
+              "field": "Risk",
+              "parts": ["sum", "extremes"],
+              "leaves": [
+                {"values": 1, "numbers": 1, "sum": 1.5, "min": 1.5, "max": 1.5},
+                {
+                  "values": 3,
+                  "numbers": 3,
+                  "nonFinite": true,
+                  "sum": {"decimal": "0"},
+                  "min": {"decimal": "0"},
+                  "max": {"decimal": "0"}
+                },
+                {"values": 1, "numbers": 1, "sum": 0, "min": {"double": "-0"}, "max": {"double": "-0"}},
+                {"values": 1, "numbers": 1, "sum": 2.5, "min": 2.5, "max": 2.5}
+              ]
+            }
+          ]
+        },
+        {
+          "leaves": 7,
+          "rows": [],
+          "columns": [
+            {
+              "field": "Tag",
+              "items": [
+                {"kind": "text", "value": "High"},
+                {"kind": "text", "value": "Low"},
+                {"kind": "text", "value": "7d3f7a52-1b49-4a3e-9d57-2b8c3c0e6f11"},
+                {"kind": "number", "value": "12"},
+                {"kind": "boolean", "value": "TRUE"},
+                {"kind": "date", "value": "2026-01-01T00:00:00"},
+                {"kind": "blank"}
+              ]
+            }
+          ],
+          "leaf": [
+            {"at": [0], "records": 2},
+            {"at": [1], "records": 2},
+            {"at": [6], "records": 1},
+            {"at": [2], "records": 1},
+            {"at": [3], "records": 1},
+            {"at": [4], "records": 1},
+            {"at": [5], "records": 1}
+          ],
+          "values": [
+            {
+              "field": "Amount",
+              "parts": ["sum", "extremes", "product", "variance"],
+              "leaves": [
+                {
+                  "values": 2,
+                  "numbers": 2,
+                  "sum": 7.922816251426434e+28,
+                  "min": {"decimal": "100.5"},
+                  "max": {"decimal": "79228162514264337593543950335"},
+                  "product": 7.962430332683566e+30,
+                  "mean": 3.961408125713217e+28,
+                  "m2": 3.1385508676933404e+57
+                },
+                {
+                  "values": 2,
+                  "numbers": 2,
+                  "sum": 7.922816251426434e+28,
+                  "min": {"decimal": "200"},
+                  "max": {"decimal": "79228162514264337593543950335"},
+                  "product": 1.5845632502852868e+31,
+                  "mean": 3.961408125713217e+28,
+                  "m2": 3.1385508676933404e+57
+                },
+                {
+                  "values": 1,
+                  "numbers": 1,
+                  "sum": {"decimal": "7"},
+                  "min": {"decimal": "7"},
+                  "max": {"decimal": "7"},
+                  "product": 7,
+                  "mean": 7,
+                  "m2": 0
+                },
+                {
+                  "values": 1,
+                  "numbers": 0,
+                  "sum": {"decimal": "0"},
+                  "min": {"decimal": "0"},
+                  "max": {"decimal": "0"},
+                  "product": 0,
+                  "mean": 0,
+                  "m2": 0
+                },
+                {
+                  "values": 0,
+                  "numbers": 0,
+                  "sum": {"decimal": "0"},
+                  "min": {"decimal": "0"},
+                  "max": {"decimal": "0"},
+                  "product": 0,
+                  "mean": 0,
+                  "m2": 0
+                },
+                {
+                  "values": 1,
+                  "numbers": 1,
+                  "sum": {"decimal": "12345678901234567890"},
+                  "min": {"decimal": "12345678901234567890"},
+                  "max": {"decimal": "12345678901234567890"},
+                  "product": 1.2345678901234567e+19,
+                  "mean": 1.2345678901234567e+19,
+                  "m2": 0
+                },
+                {
+                  "values": 1,
+                  "numbers": 1,
+                  "sum": 0.1,
+                  "min": 0.1,
+                  "max": 0.1,
+                  "product": 0.1,
+                  "mean": 0.1,
+                  "m2": 0
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "leaves": 1,
+          "rows": [],
+          "columns": [],
+          "leaf": [{"at": [], "records": 9}],
+          "values": [
+            {
+              "field": "Amount",
+              "parts": ["sum"],
+              "leaves": [{"values": 8, "numbers": 7, "sum": 1.5845632504087434e+29}]
+            }
+          ]
+        },
+        {
+          "leaves": 3,
+          "rows": [
+            {
+              "field": "Desk",
+              "items": [
+                {"kind": "text", "value": "Credit"},
+                {"kind": "text", "value": ""},
+                {"kind": "text", "value": "FX"}
+              ]
+            }
+          ],
+          "columns": [],
+          "leaf": [{"at": [0], "records": 2}, {"at": [1], "records": 1}, {"at": [2], "records": 2}],
+          "values": [
+            {
+              "field": "Amount",
+              "parts": ["sum"],
+              "leaves": [
+                {"values": 2, "numbers": 1, "sum": {"decimal": "7"}},
+                {"values": 1, "numbers": 1, "sum": {"decimal": "79228162514264337593543950335"}},
+                {"values": 2, "numbers": 2, "sum": 7.922816252661002e+28}
+              ]
+            },
+            {
+              "field": "Risk",
+              "parts": ["variance"],
+              "leaves": [
+                {"values": 2, "numbers": 2, "nonFinite": true, "mean": 0, "m2": 0},
+                {"values": 1, "numbers": 1, "mean": 5e-324, "m2": 0},
+                {"values": 2, "numbers": 2, "mean": 5e+299, "m2": {"double": "Infinity"}}
+              ]
+            }
+          ]
+        },
+        {
+          "leaves": 8,
+          "rows": [
+            {
+              "field": "Tag",
+              "items": [
+                {"kind": "text", "value": "High"},
+                {"kind": "text", "value": "Low"},
+                {"kind": "text", "value": "7d3f7a52-1b49-4a3e-9d57-2b8c3c0e6f11"},
+                {"kind": "number", "value": "12"},
+                {"kind": "boolean", "value": "TRUE"},
+                {"kind": "date", "value": "2026-01-01T00:00:00"},
+                {"kind": "blank"}
+              ]
+            }
+          ],
+          "columns": [
+            {
+              "field": "Desk",
+              "items": [
+                {"kind": "text", "value": "Rates"},
+                {"kind": "text", "value": "Credit"},
+                {"kind": "text", "value": "FX"},
+                {"kind": "blank"}
+              ]
+            }
+          ],
+          "leaf": [
+            {"at": [0, 0], "records": 1},
+            {"at": [1, 0], "records": 1},
+            {"at": [6, 1], "records": 1},
+            {"at": [2, 1], "records": 1},
+            {"at": [3, 3], "records": 1},
+            {"at": [1, 2], "records": 1},
+            {"at": [4, 2], "records": 1},
+            {"at": [5, 0], "records": 1}
+          ],
+          "values": [
+            {
+              "field": "Risk",
+              "parts": ["product"],
+              "leaves": [
+                {"values": 1, "numbers": 1, "product": 1.5},
+                {"values": 1, "numbers": 1, "product": 0.1},
+                {"values": 1, "numbers": 1, "nonFinite": true, "product": 0},
+                {"values": 1, "numbers": 1, "product": {"double": "-0"}},
+                {"values": 1, "numbers": 1, "nonFinite": true, "product": 0},
+                {"values": 1, "numbers": 1, "product": 2.5},
+                {"values": 1, "numbers": 1, "product": 1e+300},
+                {"values": 1, "numbers": 1, "product": 3}
+              ]
+            }
+          ]
+        },
+        {"leaves": 1, "rows": [], "columns": [], "leaf": [{"at": [], "records": 9}], "values": []},
+        {
+          "leaves": 4,
+          "rows": [
+            {
+              "field": "Date",
+              "items": [
+                {"kind": "date", "value": "2026-01-02T00:00:00"},
+                {"kind": "date", "value": "2026-01-02T13:45:00"},
+                {"kind": "blank"},
+                {"kind": "date", "value": "2026-03-04T00:00:00"}
+              ]
+            }
+          ],
+          "columns": [],
+          "leaf": [
+            {"at": [0], "records": 2},
+            {"at": [1], "records": 1},
+            {"at": [2], "records": 1},
+            {"at": [3], "records": 2}
+          ],
+          "values": []
+        }
+      ]
+    },
+    {
+      "name": "ADR-0066 (PV-23): Items and records are asked for under the answer's Source Version, and the records behind a cell are the ones it counts",
+      "asks": [
+        {"aggregate": {"rows": ["Desk"], "values": ["Amount"]}},
+        {"items": "Desk"},
+        {"details": {"rows": [{"field": "Desk", "item": {"kind": "text", "value": "Credit"}}]}},
+        {"details": {"rows": [{"field": "Desk", "item": {"kind": "blank"}}]}},
+        {
+          "details": {"rows": [{"field": "Desk", "item": {"kind": "text", "value": "Rates"}}], "start": 1, "count": 1}
+        },
+        {"details": {}}
+      ],
+      "expect": [
+        {
+          "leaves": 5,
+          "rows": [
+            {
+              "field": "Desk",
+              "items": [
+                {"kind": "text", "value": "Rates"},
+                {"kind": "text", "value": "Credit"},
+                {"kind": "text", "value": ""},
+                {"kind": "text", "value": "FX"},
+                {"kind": "blank"}
+              ]
+            }
+          ],
+          "columns": [],
+          "leaf": [
+            {"at": [0], "records": 3},
+            {"at": [1], "records": 2},
+            {"at": [4], "records": 1},
+            {"at": [2], "records": 1},
+            {"at": [3], "records": 2}
+          ],
+          "values": [
+            {
+              "field": "Amount",
+              "parts": [],
+              "leaves": [
+                {"values": 3, "numbers": 3},
+                {"values": 2, "numbers": 1},
+                {"values": 0, "numbers": 0},
+                {"values": 1, "numbers": 1},
+                {"values": 2, "numbers": 2}
+              ]
+            }
+          ]
+        },
+        {
+          "version": "asked",
+          "total": 5,
+          "items": [
+            {"kind": "text", "value": ""},
+            {"kind": "text", "value": "Credit"},
+            {"kind": "text", "value": "FX"},
+            {"kind": "text", "value": "Rates"},
+            {"kind": "blank"}
+          ]
+        },
+        {
+          "version": "asked",
+          "start": 0,
+          "total": 2,
+          "fields": ["Desk", "Book", "Date", "Amount", "Risk", "Live", "Tag"],
+          "records": [
+            ["Credit", "NY-2", {"date": "2026-02-03"}, {"decimal": "7"}, {"double": "NaN"}, true, null],
+            ["Credit", null, null, "7", {"double": "-0"}, null, "7d3f7a52-1b49-4a3e-9d57-2b8c3c0e6f11"]
+          ]
+        },
+        {
+          "version": "asked",
+          "start": 0,
+          "total": 1,
+          "fields": ["Desk", "Book", "Date", "Amount", "Risk", "Live", "Tag"],
+          "records": [[null, "NY-2", {"date": "2026-02-03"}, null, {"double": "Infinity"}, true, 12]]
+        },
+        {
+          "version": "asked",
+          "start": 1,
+          "total": 3,
+          "fields": ["Desk", "Book", "Date", "Amount", "Risk", "Live", "Tag"],
+          "records": [["RATES", "LDN-1", {"date": "2026-01-02T13:45:00"}, {"decimal": "200"}, 0.1, false, "Low"]]
+        },
+        {
+          "version": "asked",
+          "start": 0,
+          "total": 9,
+          "fields": ["Desk", "Book", "Date", "Amount", "Risk", "Live", "Tag"],
+          "records": [
+            ["Rates", "LDN-1", {"date": "2026-01-02"}, {"decimal": "100.5"}, 1.5, true, "High"],
+            ["RATES", "LDN-1", {"date": "2026-01-02T13:45:00"}, {"decimal": "200"}, 0.1, false, "Low"],
+            ["Credit", "NY-2", {"date": "2026-02-03"}, {"decimal": "7"}, {"double": "NaN"}, true, null],
+            ["Credit", null, null, "7", {"double": "-0"}, null, "7d3f7a52-1b49-4a3e-9d57-2b8c3c0e6f11"],
+            [null, "NY-2", {"date": "2026-02-03"}, null, {"double": "Infinity"}, true, 12],
+            [
+              "",
+              "TKY-3",
+              {"date": "2026-03-04"},
+              {"decimal": "79228162514264337593543950335"},
+              5e-324,
+              false,
+              "High"
+            ],
+            [
+              "FX",
+              "TKY-3",
+              {"date": "2026-03-04"},
+              {"decimal": "79228162514264337593543950335"},
+              2.5,
+              true,
+              "Low"
+            ],
+            ["FX", "LDN-1", {"date": "2026-01-02"}, {"decimal": "12345678901234567890"}, 1e+300, false, true],
+            ["Rates", "NY-2", {"date": "2026-02-03"}, 0.1, 3, true, {"date": "2026-01-01"}]
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ADR-0066 (PV-23): a source that can no longer answer under a version refuses, rather than answer from newer data",
+      "asks": [
+        {"aggregate": {"rows": ["Desk"]}},
+        {"refresh": true},
+        {"items": "Desk"},
+        {"details": {}},
+        {"items": "Desk", "under": "stale"}
+      ],
+      "expect": [
+        {
+          "leaves": 5,
+          "rows": [
+            {
+              "field": "Desk",
+              "items": [
+                {"kind": "text", "value": "Rates"},
+                {"kind": "text", "value": "Credit"},
+                {"kind": "text", "value": ""},
+                {"kind": "text", "value": "FX"},
+                {"kind": "blank"}
+              ]
+            }
+          ],
+          "columns": [],
+          "leaf": [
+            {"at": [0], "records": 3},
+            {"at": [1], "records": 2},
+            {"at": [4], "records": 1},
+            {"at": [2], "records": 1},
+            {"at": [3], "records": 2}
+          ],
+          "values": []
+        },
+        {"refreshed": true},
+        {
+          "refused": "sourceVersionNotHeld",
+          "saying": "The data has changed since version '{version}'; refresh the report."
+        },
+        {
+          "refused": "sourceVersionNotHeld",
+          "saying": "The data has changed since version '{version}'; refresh the report."
+        },
+        {
+          "refused": "sourceVersionNotHeld",
+          "saying": "The data has changed since version '{version}'; refresh the report."
+        }
+      ]
+    },
+    {
+      "name": "ADR-0060/0066: a field's Items over all the data — not narrowed by Hidden Items — first spelling, invariant order, search and cap",
+      "asks": [
+        {"aggregate": {"rows": [{"field": "Desk", "hiddenItems": [{"kind": "text", "value": "FX"}]}]}},
+        {"items": "Desk"},
+        {"items": "Desk", "search": "R"},
+        {"items": "Desk", "max": 2},
+        {"items": "Tag"},
+        {"items": "Amount"},
+        {"items": "Risk"},
+        {"items": "Date", "search": "2026-01"}
+      ],
+      "expect": [
+        {
+          "leaves": 4,
+          "rows": [
+            {
+              "field": "Desk",
+              "items": [
+                {"kind": "text", "value": "Rates"},
+                {"kind": "text", "value": "Credit"},
+                {"kind": "text", "value": ""},
+                {"kind": "blank"}
+              ]
+            }
+          ],
+          "columns": [],
+          "leaf": [
+            {"at": [0], "records": 3},
+            {"at": [1], "records": 2},
+            {"at": [3], "records": 1},
+            {"at": [2], "records": 1}
+          ],
+          "values": []
+        },
+        {
+          "version": "asked",
+          "total": 5,
+          "items": [
+            {"kind": "text", "value": ""},
+            {"kind": "text", "value": "Credit"},
+            {"kind": "text", "value": "FX"},
+            {"kind": "text", "value": "Rates"},
+            {"kind": "blank"}
+          ]
+        },
+        {
+          "version": "asked",
+          "total": 2,
+          "items": [{"kind": "text", "value": "Credit"}, {"kind": "text", "value": "Rates"}]
+        },
+        {
+          "version": "asked",
+          "total": 5,
+          "items": [{"kind": "text", "value": ""}, {"kind": "text", "value": "Credit"}]
+        },
+        {
+          "version": "asked",
+          "total": 7,
+          "items": [
+            {"kind": "number", "value": "12"},
+            {"kind": "date", "value": "2026-01-01T00:00:00"},
+            {"kind": "text", "value": "7d3f7a52-1b49-4a3e-9d57-2b8c3c0e6f11"},
+            {"kind": "text", "value": "High"},
+            {"kind": "text", "value": "Low"},
+            {"kind": "boolean", "value": "TRUE"},
+            {"kind": "blank"}
+          ]
+        },
+        {
+          "version": "asked",
+          "total": 8,
+          "items": [
+            {"kind": "number", "value": "0.1"},
+            {"kind": "number", "value": "7"},
+            {"kind": "number", "value": "100.5"},
+            {"kind": "number", "value": "200"},
+            {"kind": "number", "value": "1.2345678901234567E+19"},
+            {"kind": "number", "value": "7.922816251426434E+28"},
+            {"kind": "text", "value": "7"},
+            {"kind": "blank"}
+          ]
+        },
+        {
+          "version": "asked",
+          "total": 8,
+          "items": [
+            {"kind": "number", "value": "0"},
+            {"kind": "number", "value": "5E-324"},
+            {"kind": "number", "value": "0.1"},
+            {"kind": "number", "value": "1.5"},
+            {"kind": "number", "value": "2.5"},
+            {"kind": "number", "value": "3"},
+            {"kind": "number", "value": "1E+300"},
+            {"kind": "error", "value": "#NUM!"}
+          ]
+        },
+        {
+          "version": "asked",
+          "total": 2,
+          "items": [{"kind": "date", "value": "2026-01-02T00:00:00"}, {"kind": "date", "value": "2026-01-02T13:45:00"}]
+        }
+      ]
+    },
+    {
+      "name": "ADR-0066 (PV-29): an answer that would pass MaxLeaves is refused with the bound; eight leaves are answered at eight and refused at seven",
+      "asks": [
+        {"aggregate": {"rows": ["Desk", "Book"], "maxLeaves": 3}},
+        {"aggregate": {"rows": ["Desk", "Book"], "maxLeaves": 8}},
+        {"aggregate": {"rows": ["Desk", "Book"], "maxLeaves": 7}},
+        {"aggregate": {"rows": ["Desk", "Book"], "maxLeaves": 200000}}
+      ],
+      "expect": [
+        {"refused": "tooManyLeaves", "limit": 3, "saying": "This layout needs more than 3 cells."},
+        {
+          "leaves": 8,
+          "rows": [
+            {
+              "field": "Desk",
+              "items": [
+                {"kind": "text", "value": "Rates"},
+                {"kind": "text", "value": "Credit"},
+                {"kind": "text", "value": ""},
+                {"kind": "text", "value": "FX"},
+                {"kind": "blank"}
+              ]
+            },
+            {
+              "field": "Book",
+              "items": [
+                {"kind": "text", "value": "LDN-1"},
+                {"kind": "text", "value": "NY-2"},
+                {"kind": "text", "value": "TKY-3"},
+                {"kind": "blank"}
+              ]
+            }
+          ],
+          "columns": [],
+          "leaf": [
+            {"at": [0, 0], "records": 2},
+            {"at": [1, 1], "records": 1},
+            {"at": [1, 3], "records": 1},
+            {"at": [4, 1], "records": 1},
+            {"at": [2, 2], "records": 1},
+            {"at": [3, 2], "records": 1},
+            {"at": [3, 0], "records": 1},
+            {"at": [0, 1], "records": 1}
+          ],
+          "values": []
+        },
+        {"refused": "tooManyLeaves", "limit": 7, "saying": "This layout needs more than 7 cells."},
+        {
+          "leaves": 8,
+          "rows": [
+            {
+              "field": "Desk",
+              "items": [
+                {"kind": "text", "value": "Rates"},
+                {"kind": "text", "value": "Credit"},
+                {"kind": "text", "value": ""},
+                {"kind": "text", "value": "FX"},
+                {"kind": "blank"}
+              ]
+            },
+            {
+              "field": "Book",
+              "items": [
+                {"kind": "text", "value": "LDN-1"},
+                {"kind": "text", "value": "NY-2"},
+                {"kind": "text", "value": "TKY-3"},
+                {"kind": "blank"}
+              ]
+            }
+          ],
+          "columns": [],
+          "leaf": [
+            {"at": [0, 0], "records": 2},
+            {"at": [1, 1], "records": 1},
+            {"at": [1, 3], "records": 1},
+            {"at": [4, 1], "records": 1},
+            {"at": [2, 2], "records": 1},
+            {"at": [3, 2], "records": 1},
+            {"at": [3, 0], "records": 1},
+            {"at": [0, 1], "records": 1}
+          ],
+          "values": []
+        }
+      ]
+    },
+    {
+      "name": "ADR-0066: a field the source does not have is refused by name, in any Area and in any question",
+      "asks": [
+        {"aggregate": {}},
+        {"aggregate": {"rows": ["Region"]}},
+        {"aggregate": {"columns": ["Region"]}},
+        {"aggregate": {"filters": [{"field": "Region", "hiddenItems": [{"kind": "blank"}]}]}},
+        {"aggregate": {"values": ["Region"]}},
+        {"items": "Region"},
+        {"details": {"hiddenItems": [{"field": "Region", "hiddenItems": [{"kind": "blank"}]}]}},
+        {"details": {"rows": [{"field": "Region", "item": {"kind": "blank"}}]}}
+      ],
+      "expect": [
+        {"leaves": 1, "rows": [], "columns": [], "leaf": [{"at": [], "records": 9}], "values": []},
+        {"refused": "unknownField", "field": "Region", "saying": "The source has no field named 'Region'."},
+        {"refused": "unknownField", "field": "Region", "saying": "The source has no field named 'Region'."},
+        {"refused": "unknownField", "field": "Region", "saying": "The source has no field named 'Region'."},
+        {"refused": "unknownField", "field": "Region", "saying": "The source has no field named 'Region'."},
+        {"refused": "unknownField", "field": "Region", "saying": "The source has no field named 'Region'."},
+        {"refused": "unknownField", "field": "Region", "saying": "The source has no field named 'Region'."},
+        {"refused": "unknownField", "field": "Region", "saying": "The source has no field named 'Region'."}
+      ]
+    },
+    {
+      "name": "ADR-0066 (PV-24): a part no offered Aggregation reads is refused without asking the server",
+      "fetch": {"offers": ["sum", "count", "average", "max", "min", "countNumbers"]},
+      "asks": [
+        {"aggregate": {"values": [{"field": "Amount", "parts": ["sum", "product"]}]}},
+        {"aggregate": {"values": [{"field": "Risk", "parts": ["variance"]}]}},
+        {"aggregate": {"rows": ["Region"]}},
+        {"asked": true},
+        {"aggregate": {"values": [{"field": "Amount", "parts": ["sum", "extremes"]}]}},
+        {"asked": true}
+      ],
+      "expect": [
+        {
+          "refused": "aggregationNotOffered",
+          "field": "Amount",
+          "saying": "The source does not offer Product, which the question asks of 'Amount'."
+        },
+        {
+          "refused": "aggregationNotOffered",
+          "field": "Risk",
+          "saying": "The source does not offer StdDev or StdDevp or Var or Varp, which the question asks of 'Risk'."
+        },
+        {"refused": "unknownField", "field": "Region", "saying": "The source has no field named 'Region'."},
+        0,
+        {
+          "leaves": 1,
+          "rows": [],
+          "columns": [],
+          "leaf": [{"at": [], "records": 9}],
+          "values": [
+            {
+              "field": "Amount",
+              "parts": ["sum", "extremes"],
+              "leaves": [
+                {
+                  "values": 8,
+                  "numbers": 7,
+                  "sum": 1.5845632504087434e+29,
+                  "min": 0.1,
+                  "max": 7.922816251426434e+28
+                }
+              ]
+            }
+          ]
+        },
+        1
+      ]
+    },
+    {
+      "name": "ADR-0066: an answer to another question than the one asked is refused by name, never laid out",
+      "fetch": {"answers": {"rows": ["Book"], "values": [{"field": "Amount", "parts": ["sum"]}]}},
+      "asks": [{"aggregate": {"rows": ["Desk"], "values": [{"field": "Amount", "parts": ["sum"]}]}}],
+      "expect": [
+        {
+          "refusal": "invalidOperation",
+          "saying": "The server answered another question than the one asked: its row fields are [Book], and the question's [Desk] (ADR-0066)."
+        }
+      ]
+    },
+    {
+      "name": "ADR-0066: a cube is made only from an answer to its own question",
+      "asks": [
+        {
+          "cube": {"rows": ["Desk"], "values": [{"field": "Amount", "parts": ["sum"]}]},
+          "from": {"rows": ["Book"], "values": [{"field": "Amount", "parts": ["sum"]}]}
+        },
+        {"cube": {"rows": ["Desk", "Book"]}, "from": {"rows": ["Desk", "Book"], "maxLeaves": 1}},
+        {"cube": {"rows": ["Desk"]}, "from": {"rows": ["Desk"]}}
+      ],
+      "expect": [
+        {
+          "refusal": "invalidOperation",
+          "saying": "The answer does not answer the question: its row fields are [Book], and the question's [Desk] (ADR-0066)."
+        },
+        {
+          "refusal": "invalidOperation",
+          "saying": "The answer does not answer the question: the source refused: This layout needs more than 1 cells. (ADR-0066)."
+        },
+        {"built": true}
+      ]
+    },
+    {
+      "name": "ADR-0060/0066: a source lists Items in the order it meets them, and the report puts (blank) last in either direction",
+      "data": "kinds",
+      "asks": [
+        {"aggregate": {"rows": ["Kind"]}},
+        {
+          "report": {
+            "rows": [{"field": "Kind", "sort": {"direction": "descending"}}],
+            "values": [{"field": "Kind", "aggregation": "count"}]
+          }
+        }
+      ],
+      "expect": [
+        {
+          "leaves": 3,
+          "rows": [
+            {
+              "field": "Kind",
+              "items": [{"kind": "text", "value": "b"}, {"kind": "text", "value": "A"}, {"kind": "blank"}]
+            }
+          ],
+          "columns": [],
+          "leaf": [{"at": [0], "records": 1}, {"at": [1], "records": 1}, {"at": [2], "records": 4}],
+          "values": []
+        },
+        {
+          "headers": ["Row Labels", "Count of Kind"],
+          "lines": ["i b || 1", "i A || 1", "i (blank) ||", "t Grand Total || 2"],
+          "spans": []
+        }
+      ]
+    },
+    {
+      "name": "ADR-0066: the answer a report is laid out from is the records' own, through a fetching source",
+      "fetch": {},
+      "asks": [
+        {
+          "report": {
+            "rows": [{"field": "Desk"}],
+            "columns": [{"field": "Live"}],
+            "values": [{"field": "Amount", "aggregation": "sum"}, {"field": "Risk", "aggregation": "max"}]
+          },
+          "also": ["captions"]
+        },
+        {"asked": true}
+      ],
+      "expect": [
+        {
+          "headers": [
+            "Row Labels",
+            "Sum of Amount",
+            "Max of Risk",
+            "Sum of Amount",
+            "Max of Risk",
+            "Sum of Amount",
+            "Max of Risk",
+            "Sum of Amount",
+            "Max of Risk"
+          ],
+          "lines": [
+            "i  || 7.92282E+28 | 4.9407E-324 |  |  |  |  | 7.92282E+28 | 4.9407E-324",
+            "i Credit ||  |  | 7 | #NUM! | 0 | 0 | 7 | #NUM!",
+            "i FX || 1.23457E+19 | 1E+300 | 7.92282E+28 | 2.5 |  |  | 7.92282E+28 | 1E+300",
+            "i Rates || 200 | 0.1 | 100.6 | 3 |  |  | 300.6 | 3",
+            "i (blank) ||  |  |  | #NUM! |  |  |  | #NUM!",
+            "t Grand Total || 7.92282E+28 | 1E+300 | 7.92282E+28 | #NUM! | 0 | 0 | 1.58456E+29 | #NUM!"
+          ],
+          "spans": ["FALSE@0+2 t1x1", "TRUE@2+2 t1x1", "(blank)@4+2 t1x1", "Grand Total@6+2 t1x1"],
+          "captions": ["Sum of Amount", "Max of Risk"]
+        },
+        1
+      ]
+    }
+  ]
+}

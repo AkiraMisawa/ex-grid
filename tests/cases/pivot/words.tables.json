@@ -1,0 +1,318 @@
+{
+  "about": "The words of a report (ADR-0060, \"Captions and words\"; PV-33): every id the engine paints, a date part's (PV-32) after the rest, with its word in the English (United States) edition, which is ExPivot's English, in the Japanese edition, and in the English (United Kingdom) edition where it differs. Transcribed from the C# engine's PivotWordsTests, JapaneseWordsTests and DatePartTests; the table is the C# engine's, which the Script Core's is held to.",
+  "kind": "pivotWords",
+  "cases": [
+    {
+      "name": "ADR-0060: the word tables, each id with its word in each bundled edition",
+      "expect": {
+        "words": {
+          "row-labels": {"english": "Row Labels", "japanese": "行ラベル", "unitedKingdom": null},
+          "values": {"english": "Values", "japanese": "値", "unitedKingdom": null},
+          "grand-total": {"english": "Grand Total", "japanese": "総計", "unitedKingdom": null},
+          "item-total": {"english": "{0} Total", "japanese": "{0} 集計", "unitedKingdom": null},
+          "total-of": {"english": "Total {0}", "japanese": "全体の {0}", "unitedKingdom": null},
+          "item-value": {"english": "{0} {1}", "japanese": "{0} {1}", "unitedKingdom": null},
+          "blank": {"english": "(blank)", "japanese": "(空白)", "unitedKingdom": null},
+          "all": {"english": "(All)", "japanese": "(すべて)", "unitedKingdom": null},
+          "multiple-items": {"english": "(Multiple Items)", "japanese": "(複数のアイテム)", "unitedKingdom": null},
+          "values-pseudo-field": {"english": "Σ Values", "japanese": "Σ 値", "unitedKingdom": null},
+          "aggregation-sum": {"english": "Sum", "japanese": "合計", "unitedKingdom": null},
+          "aggregation-count": {"english": "Count", "japanese": "個数", "unitedKingdom": null},
+          "aggregation-average": {"english": "Average", "japanese": "平均", "unitedKingdom": null},
+          "aggregation-max": {"english": "Max", "japanese": "最大", "unitedKingdom": "Max."},
+          "aggregation-min": {"english": "Min", "japanese": "最小", "unitedKingdom": "Min."},
+          "aggregation-product": {"english": "Product", "japanese": "積", "unitedKingdom": null},
+          "aggregation-count-numbers": {"english": "Count Numbers", "japanese": "数値の個数", "unitedKingdom": null},
+          "aggregation-stddev": {"english": "StdDev", "japanese": "標本標準偏差", "unitedKingdom": null},
+          "aggregation-stddevp": {"english": "StdDevp", "japanese": "標準偏差", "unitedKingdom": null},
+          "aggregation-var": {"english": "Var", "japanese": "標本分散", "unitedKingdom": null},
+          "aggregation-varp": {"english": "Varp", "japanese": "分散", "unitedKingdom": null},
+          "caption-sum": {"english": "Sum of {0}", "japanese": "合計 / {0}", "unitedKingdom": null},
+          "caption-count": {"english": "Count of {0}", "japanese": "データの個数 / {0}", "unitedKingdom": null},
+          "caption-average": {"english": "Average of {0}", "japanese": "平均 / {0}", "unitedKingdom": null},
+          "caption-max": {"english": "Max of {0}", "japanese": "最大 / {0}", "unitedKingdom": "Max. of {0}"},
+          "caption-min": {"english": "Min of {0}", "japanese": "最小 / {0}", "unitedKingdom": "Min. of {0}"},
+          "caption-product": {"english": "Product of {0}", "japanese": "積 / {0}", "unitedKingdom": null},
+          "caption-count-numbers": {"english": "Count of {0}", "japanese": "データの個数 / {0}", "unitedKingdom": null},
+          "caption-stddev": {"english": "StdDev of {0}", "japanese": "標本標準偏差 / {0}", "unitedKingdom": null},
+          "caption-stddevp": {"english": "StdDevp of {0}", "japanese": "標準偏差 / {0}", "unitedKingdom": null},
+          "caption-var": {"english": "Var of {0}", "japanese": "標本分散 / {0}", "unitedKingdom": null},
+          "caption-varp": {"english": "Varp of {0}", "japanese": "分散 / {0}", "unitedKingdom": null},
+          "show-no-calculation": {"english": "No Calculation", "japanese": "計算なし", "unitedKingdom": null},
+          "show-percent-of-grand-total": {"english": "% of Grand Total", "japanese": "総計に対する比率", "unitedKingdom": null},
+          "show-percent-of-column-total": {"english": "% of Column Total", "japanese": "列集計に対する比率", "unitedKingdom": null},
+          "show-percent-of-row-total": {"english": "% of Row Total", "japanese": "行集計に対する比率", "unitedKingdom": null},
+          "field-list": {"english": "PivotTable Fields", "japanese": "ピボットテーブルのフィールド", "unitedKingdom": null},
+          "choose-fields": {
+            "english": "Choose fields to add to report:",
+            "japanese": "レポートに追加するフィールドを選択してください:",
+            "unitedKingdom": null
+          },
+          "drag-fields": {
+            "english": "Drag fields between areas below:",
+            "japanese": "次のボックス間でフィールドをドラッグしてください:",
+            "unitedKingdom": null
+          },
+          "search-fields": {"english": "Search", "japanese": "検索", "unitedKingdom": null},
+          "area-filters": {"english": "Filters", "japanese": "フィルター", "unitedKingdom": null},
+          "area-columns": {"english": "Columns", "japanese": "列", "unitedKingdom": null},
+          "area-rows": {"english": "Rows", "japanese": "行", "unitedKingdom": null},
+          "area-values": {"english": "Values", "japanese": "値", "unitedKingdom": null},
+          "field-menu": {"english": "Options for {0}", "japanese": "{0} のオプション", "unitedKingdom": null},
+          "filtered": {"english": "Filtered", "japanese": "フィルター適用", "unitedKingdom": null},
+          "drop-here": {"english": "Drop here", "japanese": "ここにドロップ", "unitedKingdom": null},
+          "move-up": {"english": "Move Up", "japanese": "上へ移動", "unitedKingdom": null},
+          "move-down": {"english": "Move Down", "japanese": "下へ移動", "unitedKingdom": null},
+          "move-to-beginning": {"english": "Move to Beginning", "japanese": "先頭へ移動", "unitedKingdom": null},
+          "move-to-end": {"english": "Move to End", "japanese": "末尾へ移動", "unitedKingdom": null},
+          "move-to-filters": {"english": "Move to Report Filter", "japanese": "レポート フィルターに移動", "unitedKingdom": null},
+          "move-to-rows": {"english": "Move to Row Labels", "japanese": "行ラベルに移動", "unitedKingdom": null},
+          "move-to-columns": {"english": "Move to Column Labels", "japanese": "列ラベルに移動", "unitedKingdom": null},
+          "move-to-values": {"english": "Move to Values", "japanese": "値に移動", "unitedKingdom": null},
+          "remove-field": {"english": "Remove Field", "japanese": "フィールドの削除", "unitedKingdom": null},
+          "field-settings": {"english": "Field Settings…", "japanese": "フィールドの設定...", "unitedKingdom": null},
+          "value-field-settings": {"english": "Value Field Settings…", "japanese": "値フィールドの設定...", "unitedKingdom": null},
+          "sort-ascending": {"english": "Sort A to Z", "japanese": "昇順", "unitedKingdom": null},
+          "sort-descending": {"english": "Sort Z to A", "japanese": "降順", "unitedKingdom": null},
+          "filter-items": {"english": "Filter…", "japanese": "フィルター...", "unitedKingdom": null},
+          "expand-field": {"english": "Expand Entire Field", "japanese": "フィールド全体の展開", "unitedKingdom": null},
+          "collapse-field": {"english": "Collapse Entire Field", "japanese": "フィールド全体の折りたたみ", "unitedKingdom": null},
+          "ok": {"english": "OK", "japanese": "OK", "unitedKingdom": null},
+          "cancel": {"english": "Cancel", "japanese": "キャンセル", "unitedKingdom": null},
+          "select-all": {"english": "(Select All)", "japanese": "(すべて選択)", "unitedKingdom": null},
+          "search-items": {"english": "Search", "japanese": "検索", "unitedKingdom": null},
+          "too-many-items": {
+            "english": "More than {0} items. Search to narrow the list.",
+            "japanese": "{0} 個を超えるアイテムがあります。検索して一覧を絞り込んでください。",
+            "unitedKingdom": null
+          },
+          "no-items-match": {"english": "No items match.", "japanese": "一致するアイテムはありません。", "unitedKingdom": null},
+          "custom-name": {"english": "Custom Name", "japanese": "名前の指定", "unitedKingdom": null},
+          "summarize-by": {
+            "english": "Summarize value field by",
+            "japanese": "値フィールドの集計",
+            "unitedKingdom": "Summarise value field by"
+          },
+          "show-values-as": {"english": "Show values as", "japanese": "計算の種類", "unitedKingdom": null},
+          "number-format": {"english": "Number format", "japanese": "表示形式", "unitedKingdom": null},
+          "number-format-general": {"english": "General", "japanese": "標準", "unitedKingdom": null},
+          "sample": {"english": "Sample: {0}", "japanese": "サンプル: {0}", "unitedKingdom": null},
+          "subtotals": {"english": "Subtotals", "japanese": "小計", "unitedKingdom": null},
+          "subtotals-automatic": {"english": "Automatic", "japanese": "自動", "unitedKingdom": null},
+          "subtotals-none": {"english": "None", "japanese": "なし", "unitedKingdom": null},
+          "sort-order": {"english": "Sort", "japanese": "並べ替え", "unitedKingdom": null},
+          "sort-label-ascending": {"english": "Ascending (A to Z) by label", "japanese": "ラベルの昇順", "unitedKingdom": null},
+          "sort-label-descending": {"english": "Descending (Z to A) by label", "japanese": "ラベルの降順", "unitedKingdom": null},
+          "sort-value-ascending": {"english": "Ascending by {0}", "japanese": "{0} の昇順", "unitedKingdom": null},
+          "sort-value-descending": {"english": "Descending by {0}", "japanese": "{0} の降順", "unitedKingdom": null},
+          "refused-hides-every-item": {
+            "english": "Select at least one item.",
+            "japanese": "少なくとも 1 つのアイテムを選択してください。",
+            "unitedKingdom": null
+          },
+          "refused-caption-taken": {
+            "english": "PivotTable field name already exists.",
+            "japanese": "そのピボットテーブルのフィールド名は既に存在します。",
+            "unitedKingdom": null
+          },
+          "refused-caption-empty": {"english": "Enter a name.", "japanese": "名前を入力してください。", "unitedKingdom": null},
+          "refused-number-format": {
+            "english": "This number format cannot be used.",
+            "japanese": "この表示形式は使用できません。",
+            "unitedKingdom": null
+          },
+          "empty-report": {
+            "english": "To build a report, choose fields from the PivotTable Fields list.",
+            "japanese": "レポートを作成するには、[ピボットテーブルのフィールド] リストからフィールドを選択してください。",
+            "unitedKingdom": null
+          },
+          "report-filters": {"english": "Report filters", "japanese": "レポート フィルター", "unitedKingdom": null},
+          "filter-of": {"english": "Filter {0}", "japanese": "{0} のフィルター", "unitedKingdom": null},
+          "expand": {"english": "Expand", "japanese": "展開", "unitedKingdom": null},
+          "collapse": {"english": "Collapse", "japanese": "折りたたみ", "unitedKingdom": null},
+          "expand-item": {"english": "Expand {0}", "japanese": "{0} を展開", "unitedKingdom": null},
+          "collapse-item": {"english": "Collapse {0}", "japanese": "{0} を折りたたむ", "unitedKingdom": null},
+          "show-details": {"english": "Show Details", "japanese": "詳細の表示", "unitedKingdom": null},
+          "sort-smallest-to-largest": {"english": "Sort Smallest to Largest", "japanese": "昇順", "unitedKingdom": null},
+          "sort-largest-to-smallest": {"english": "Sort Largest to Smallest", "japanese": "降順", "unitedKingdom": null},
+          "remove-named-field": {"english": "Remove \"{0}\"", "japanese": "\"{0}\" の削除", "unitedKingdom": null},
+          "show-field-list": {"english": "Show Field List", "japanese": "フィールド リストを表示する", "unitedKingdom": null},
+          "hide-field-list": {"english": "Hide Field List", "japanese": "フィールド リストを表示しない", "unitedKingdom": null},
+          "layout-menu": {"english": "Layout", "japanese": "レイアウト", "unitedKingdom": null},
+          "grand-totals": {"english": "Grand Totals", "japanese": "総計", "unitedKingdom": null},
+          "report-layout": {"english": "Report Layout", "japanese": "レポートのレイアウト", "unitedKingdom": null},
+          "subtotals-do-not-show": {"english": "Do Not Show Subtotals", "japanese": "小計を表示しない", "unitedKingdom": null},
+          "subtotals-at-bottom": {
+            "english": "Show all Subtotals at Bottom of Group",
+            "japanese": "すべての小計をグループの末尾に表示する",
+            "unitedKingdom": null
+          },
+          "subtotals-at-top": {
+            "english": "Show all Subtotals at Top of Group",
+            "japanese": "すべての小計をグループの先頭に表示する",
+            "unitedKingdom": null
+          },
+          "grand-totals-off": {"english": "Off for Rows and Columns", "japanese": "行と列の集計を行わない", "unitedKingdom": null},
+          "grand-totals-on": {"english": "On for Rows and Columns", "japanese": "行と列の集計を行う", "unitedKingdom": null},
+          "grand-totals-rows-only": {"english": "On for Rows Only", "japanese": "行のみ集計を行う", "unitedKingdom": null},
+          "grand-totals-columns-only": {"english": "On for Columns Only", "japanese": "列のみ集計を行う", "unitedKingdom": null},
+          "form-compact": {"english": "Show in Compact Form", "japanese": "コンパクト形式で表示", "unitedKingdom": null},
+          "form-outline": {"english": "Show in Outline Form", "japanese": "アウトライン形式で表示", "unitedKingdom": null},
+          "form-tabular": {"english": "Show in Tabular Form", "japanese": "表形式で表示", "unitedKingdom": null},
+          "repeat-item-labels": {"english": "Repeat All Item Labels", "japanese": "アイテムのラベルをすべて繰り返す", "unitedKingdom": null},
+          "do-not-repeat-item-labels": {"english": "Do Not Repeat Item Labels", "japanese": "アイテムのラベルを繰り返さない", "unitedKingdom": null},
+          "refresh": {"english": "Refresh", "japanese": "更新", "unitedKingdom": null},
+          "field-list-toggle": {"english": "Field List", "japanese": "フィールド リスト", "unitedKingdom": null},
+          "loading": {"english": "Loading…", "japanese": "読み込み中...", "unitedKingdom": null},
+          "defer-layout-update": {"english": "Defer Layout Update", "japanese": "レイアウトの更新を保留する", "unitedKingdom": null},
+          "update": {"english": "Update", "japanese": "更新", "unitedKingdom": null},
+          "refused-too-many-cells": {
+            "english": "This layout needs more than {0} cells.",
+            "japanese": "このレイアウトには {0} 個を超えるセルが必要です。",
+            "unitedKingdom": null
+          },
+          "refused-too-many-rows": {
+            "english": "This layout needs more than {0} rows.",
+            "japanese": "このレイアウトには {0} を超える行が必要です。",
+            "unitedKingdom": null
+          },
+          "refused-too-many-columns": {
+            "english": "This layout needs more than {0} columns.",
+            "japanese": "このレイアウトには {0} を超える列が必要です。",
+            "unitedKingdom": null
+          },
+          "refused-out-of-memory": {
+            "english": "Memory ran out while this layout was laid out.",
+            "japanese": "このレイアウトを配置する途中でメモリが不足しました。",
+            "unitedKingdom": null
+          },
+          "aggregation-not-offered": {
+            "english": "The source does not answer {0}.",
+            "japanese": "ソースは {0} に対応していません。",
+            "unitedKingdom": null
+          },
+          "source-failed": {
+            "english": "The source could not answer: {0}",
+            "japanese": "ソースから応答を得られませんでした: {0}",
+            "unitedKingdom": null
+          },
+          "source-refused": {
+            "english": "The source refused to answer: {0}",
+            "japanese": "ソースが応答を拒否しました: {0}",
+            "unitedKingdom": null
+          },
+          "data-changed": {
+            "english": "The data has changed — refresh.",
+            "japanese": "データが変更されました。更新してください。",
+            "unitedKingdom": null
+          },
+          "copy-another-version": {
+            "english": "The copy answered another Report Version.",
+            "japanese": "コピーへの応答が、別のバージョンのレポートのものでした。",
+            "unitedKingdom": null
+          },
+          "copy-missing-range": {
+            "english": "The copy did not answer every selected range.",
+            "japanese": "コピーへの応答に、選択したすべての範囲が含まれていませんでした。",
+            "unitedKingdom": null
+          },
+          "copy-incomplete-range": {
+            "english": "The copy returned an incomplete selected range.",
+            "japanese": "コピーへの応答に、欠けのある選択範囲が含まれていました。",
+            "unitedKingdom": null
+          },
+          "summary-another-version": {
+            "english": "The summary answered another Report Version.",
+            "japanese": "集計への応答が、別のバージョンのレポートのものでした。",
+            "unitedKingdom": null
+          },
+          "summary-inconsistent-errors": {
+            "english": "The summary returned inconsistent error counts.",
+            "japanese": "集計への応答で、エラーの数が食い違っていました。",
+            "unitedKingdom": null
+          },
+          "copy-stale-report": {
+            "english": "The report shows the data as of {0}: Retry before copying.",
+            "japanese": "レポートは {0} 時点のデータを表示しています。コピーする前に再試行してください。",
+            "unitedKingdom": null
+          },
+          "find-report-not-held": {
+            "english": "The source no longer holds the report shown: refresh, then find again.",
+            "japanese": "ソースは表示中のレポートを保持していません。更新してから、もう一度検索してください。",
+            "unitedKingdom": null
+          },
+          "find-invalid-answer": {
+            "english": "The source answered the search with another version or range than it was asked.",
+            "japanese": "ソースが検索に対して、要求と異なるバージョンまたは範囲で応答しました。",
+            "unitedKingdom": null
+          },
+          "find-report-changing": {
+            "english": "The report kept changing while it was searched: find again.",
+            "japanese": "検索中にレポートが変更され続けました。もう一度検索してください。",
+            "unitedKingdom": null
+          },
+          "replace-unavailable": {
+            "english": "Cannot change this part of a PivotTable report.",
+            "japanese": "ピボットテーブル レポートのこの部分は変更できません。",
+            "unitedKingdom": null
+          },
+          "details-title": {"english": "Details: {0}", "japanese": "詳細: {0}", "unitedKingdom": null},
+          "report-tab": {"english": "PivotTable", "japanese": "ピボットテーブル", "unitedKingdom": null},
+          "sheets": {"english": "Sheets", "japanese": "シート", "unitedKingdom": null},
+          "close-tab": {"english": "Close {0}", "japanese": "{0} を閉じる", "unitedKingdom": null},
+          "close": {"english": "Close", "japanese": "閉じる", "unitedKingdom": null},
+          "stale-report": {
+            "english": "Showing the data as of {0}: {1}",
+            "japanese": "{0} 時点のデータを表示しています: {1}",
+            "unitedKingdom": null
+          },
+          "stale-too-many-cells": {
+            "english": "the newest data needs more than {0} cells.",
+            "japanese": "最新のデータには {0} 個を超えるセルが必要です。",
+            "unitedKingdom": null
+          },
+          "stale-too-many-rows": {
+            "english": "the newest data needs more than {0} rows.",
+            "japanese": "最新のデータには {0} を超える行が必要です。",
+            "unitedKingdom": null
+          },
+          "stale-too-many-columns": {
+            "english": "the newest data needs more than {0} columns.",
+            "japanese": "最新のデータには {0} を超える列が必要です。",
+            "unitedKingdom": null
+          },
+          "stale-source-failed": {
+            "english": "the source could not answer: {0}",
+            "japanese": "ソースから応答を得られませんでした: {0}",
+            "unitedKingdom": null
+          },
+          "stale-source-refused": {
+            "english": "the source refused to answer: {0}",
+            "japanese": "ソースが応答を拒否しました: {0}",
+            "unitedKingdom": null
+          },
+          "stale-out-of-memory": {
+            "english": "memory ran out while the newest data was laid out.",
+            "japanese": "最新のデータを配置する途中でメモリが不足しました。",
+            "unitedKingdom": null
+          },
+          "retry": {"english": "Retry", "japanese": "再試行", "unitedKingdom": null},
+          "date-year": {"english": "{0}", "japanese": "{0}年", "unitedKingdom": null},
+          "date-quarter": {"english": "Qtr{0}", "japanese": "第{0}四半期", "unitedKingdom": null},
+          "date-month-1": {"english": "Jan", "japanese": "1月", "unitedKingdom": null},
+          "date-month-2": {"english": "Feb", "japanese": "2月", "unitedKingdom": null},
+          "date-month-3": {"english": "Mar", "japanese": "3月", "unitedKingdom": null},
+          "date-month-4": {"english": "Apr", "japanese": "4月", "unitedKingdom": null},
+          "date-month-5": {"english": "May", "japanese": "5月", "unitedKingdom": null},
+          "date-month-6": {"english": "Jun", "japanese": "6月", "unitedKingdom": null},
+          "date-month-7": {"english": "Jul", "japanese": "7月", "unitedKingdom": null},
+          "date-month-8": {"english": "Aug", "japanese": "8月", "unitedKingdom": null},
+          "date-month-9": {"english": "Sep", "japanese": "9月", "unitedKingdom": null},
+          "date-month-10": {"english": "Oct", "japanese": "10月", "unitedKingdom": null},
+          "date-month-11": {"english": "Nov", "japanese": "11月", "unitedKingdom": null},
+          "date-month-12": {"english": "Dec", "japanese": "12月", "unitedKingdom": null}
+        }
+      }
+    }
+  ]
+}

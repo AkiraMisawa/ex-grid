@@ -1,0 +1,568 @@
+{
+  "about": "Hidden Items, the records behind a cell, the cube kept across layouts, the row sequence, and what the engine refuses (ADR-0060/0063/0066). Transcribed from the C# engine's HiddenItemAndCubeTests.",
+  "kind": "pivotReport",
+  "data": "sales",
+  "locale": "en-US",
+  "words": "english",
+  "cases": [
+    {
+      "name": "ADR-0060: a hidden row Item leaves every cell and every total",
+      "layout": {
+        "rows": [{"field": "Region", "hiddenItems": [{"kind": "text", "value": "West"}]}],
+        "values": [{"field": "Amount", "aggregation": "sum"}]
+      },
+      "expect": {
+        "headers": ["Row Labels", "Sum of Amount"],
+        "lines": ["i East || 180", "i North || 10", "i (blank) || 5", "t Grand Total || 195"],
+        "spans": []
+      }
+    },
+    {
+      "name": "ADR-0060: a report filter's Hidden Items filter the report, a key matched ignoring case",
+      "layout": {
+        "filters": [{"field": "Product", "hiddenItems": [{"kind": "text", "value": "apples"}]}],
+        "rows": [{"field": "Region"}],
+        "values": [{"field": "Amount", "aggregation": "sum"}]
+      },
+      "expect": {
+        "headers": ["Row Labels", "Sum of Amount"],
+        "lines": ["i East || 50", "i North || 10", "i West || 20", "i (blank) || 5", "t Grand Total || 85"],
+        "spans": []
+      }
+    },
+    {
+      "name": "ADR-0060: a column Item hidden leaves the column and the row totals",
+      "layout": {
+        "rows": [{"field": "Region"}],
+        "columns": [{"field": "Online", "hiddenItems": [{"kind": "boolean", "value": "TRUE"}]}],
+        "values": [{"field": "Amount", "aggregation": "sum"}]
+      },
+      "expect": {
+        "headers": ["Row Labels", "FALSE", "Grand Total"],
+        "lines": ["i East || 50 | 50", "i North || 10 | 10", "i West || 70 | 70", "t Grand Total || 130 | 130"],
+        "spans": []
+      }
+    },
+    {
+      "name": "ADR-0060: the layout holds what is hidden, so an Item a later snapshot brings is shown",
+      "layout": {
+        "rows": [{"field": "Region", "hiddenItems": [{"kind": "text", "value": "West"}]}],
+        "values": [{"field": "Amount", "aggregation": "sum"}]
+      },
+      "records": [
+        ["East", "Apples", {"date": "2026-01-10"}, {"decimal": "100"}, {"integer": "10"}, true],
+        ["East", "Pears", {"date": "2026-01-12"}, {"decimal": "50"}, {"integer": "5"}, false],
+        ["East", "Apples", {"date": "2026-02-03"}, {"decimal": "30"}, {"integer": "3"}, true],
+        ["West", "Apples", {"date": "2026-01-20"}, {"decimal": "70"}, {"integer": "7"}, false],
+        ["West", "Plums", {"date": "2026-02-15"}, {"decimal": "20"}, {"integer": "2"}, true],
+        ["North", "Pears", {"date": "2026-02-18"}, {"decimal": "10"}, {"integer": "1"}, false],
+        [null, "Plums", {"date": "2026-03-01"}, {"decimal": "5"}, {"integer": "1"}, true],
+        ["South", "Apples", {"date": "2026-01-10"}, {"decimal": "1"}, {"integer": "10"}, true]
+      ],
+      "expect": {
+        "headers": ["Row Labels", "Sum of Amount"],
+        "lines": ["i East || 180", "i North || 10", "i South || 1", "i (blank) || 5", "t Grand Total || 196"],
+        "spans": []
+      }
+    },
+    {
+      "name": "ADR-0060/0061: Filter… lists every Item of the field in its order, hidden or not, over the whole snapshot",
+      "layout": {
+        "filters": [{"field": "Product", "hiddenItems": [{"kind": "text", "value": "Pears"}]}],
+        "rows": [
+          {
+            "field": "Region",
+            "hiddenItems": [{"kind": "text", "value": "West"}],
+            "sort": {"direction": "descending"}
+          }
+        ],
+        "values": [{"field": "Amount", "aggregation": "sum"}]
+      },
+      "itemsOf": ["Region", "Product", "Amount"],
+      "expect": {
+        "headers": ["Row Labels", "Sum of Amount"],
+        "lines": ["i East || 130", "i (blank) || 5", "t Grand Total || 135"],
+        "spans": [],
+        "items": {
+          "Region": [
+            {"key": {"kind": "text", "value": "West"}, "label": "West", "isHidden": true},
+            {"key": {"kind": "text", "value": "North"}, "label": "North", "isHidden": false},
+            {"key": {"kind": "text", "value": "East"}, "label": "East", "isHidden": false},
+            {"key": {"kind": "blank"}, "label": "(blank)", "isHidden": false}
+          ],
+          "Product": [
+            {"key": {"kind": "text", "value": "Apples"}, "label": "Apples", "isHidden": false},
+            {"key": {"kind": "text", "value": "Pears"}, "label": "Pears", "isHidden": true},
+            {"key": {"kind": "text", "value": "Plums"}, "label": "Plums", "isHidden": false}
+          ],
+          "Amount": {
+            "refusal": "argument",
+            "saying": "'Amount' stands in none of Filters, Rows and Columns of the layout."
+          }
+        }
+      }
+    },
+    {
+      "name": "ADR-0063: Show Details is a value cell's records, in their order in the snapshot; a label cell is its row's",
+      "layout": {
+        "rows": [{"field": "Region"}],
+        "columns": [{"field": "Product"}],
+        "values": [{"field": "Amount", "aggregation": "sum"}]
+      },
+      "behind": [[0, 0], [0, -1], [0, 3], [4, 3]],
+      "expect": {
+        "headers": ["Row Labels", "Apples", "Pears", "Plums", "Grand Total"],
+        "lines": [
+          "i East || 130 | 50 |  | 180",
+          "i North ||  | 10 |  | 10",
+          "i West || 70 |  | 20 | 90",
+          "i (blank) ||  |  | 5 | 5",
+          "t Grand Total || 200 | 60 | 25 | 285"
+        ],
+        "spans": [],
+        "behind": [[0, 2], [0, 1, 2], [0, 1, 2], [0, 1, 2, 3, 4, 5, 6]]
+      }
+    },
+    {
+      "name": "ADR-0063/0060: a Hidden Item's records are never behind a cell",
+      "layout": {
+        "filters": [{"field": "Online", "hiddenItems": [{"kind": "boolean", "value": "FALSE"}]}],
+        "rows": [{"field": "Region"}],
+        "values": [{"field": "Amount", "aggregation": "sum"}]
+      },
+      "behind": [[0, 0], [3, 0]],
+      "expect": {
+        "headers": ["Row Labels", "Sum of Amount"],
+        "lines": ["i East || 130", "i West || 20", "i (blank) || 5", "t Grand Total || 155"],
+        "spans": [],
+        "behind": [[0, 2], [0, 2, 4, 6]]
+      }
+    },
+    {
+      "name": "ADR-0060: laying out again (collapse, order, form, totals, Aggregation, format) needs no new cube",
+      "layout": {
+        "rows": [{"field": "Region"}, {"field": "Product"}],
+        "columns": [{"field": "Online"}],
+        "values": [{"field": "Amount", "aggregation": "sum"}]
+      },
+      "holds": [
+        {
+          "rows": [{"field": "Region", "collapsed": true, "sort": {"direction": "descending"}}, {"field": "Product"}],
+          "columns": [{"field": "Online"}],
+          "values": [{"field": "Amount", "aggregation": "sum"}]
+        },
+        {
+          "form": "tabular",
+          "subtotalsAtTop": false,
+          "grandTotalRow": false,
+          "rows": [{"field": "Region"}, {"field": "Product"}],
+          "columns": [{"field": "Online"}],
+          "values": [{"field": "Amount", "aggregation": "sum"}]
+        },
+        {
+          "rows": [{"field": "Region"}, {"field": "Product"}],
+          "columns": [{"field": "Online"}],
+          "values": [{"field": "Amount", "aggregation": "average", "numberFormat": "N2"}]
+        },
+        {"rows": [{"field": "Region"}, {"field": "Product"}], "columns": [{"field": "Online"}]},
+        {
+          "valuesAxis": "rows",
+          "rows": [{"field": "Region"}, {"field": "Product"}],
+          "columns": [{"field": "Online"}],
+          "values": [{"field": "Amount", "aggregation": "sum"}]
+        },
+        {
+          "rows": [{"field": "Product"}, {"field": "Region"}],
+          "columns": [{"field": "Online"}],
+          "values": [{"field": "Amount", "aggregation": "sum"}]
+        },
+        {
+          "rows": [{"field": "Region", "hiddenItems": [{"kind": "blank"}]}, {"field": "Product"}],
+          "columns": [{"field": "Online"}],
+          "values": [{"field": "Amount", "aggregation": "sum"}]
+        },
+        {
+          "rows": [{"field": "Region"}, {"field": "Product"}],
+          "columns": [{"field": "Online"}],
+          "values": [{"field": "Quantity", "aggregation": "sum"}]
+        },
+        {
+          "filters": [{"field": "Date", "hiddenItems": [{"kind": "blank"}]}],
+          "rows": [{"field": "Region"}, {"field": "Product"}],
+          "columns": [{"field": "Online"}],
+          "values": [{"field": "Amount", "aggregation": "sum"}]
+        }
+      ],
+      "expect": {
+        "headers": ["Row Labels", "FALSE", "TRUE", "Grand Total"],
+        "lines": [
+          "g [-]East || 50 | 130 | 180",
+          "i   Apples ||  | 130 | 130",
+          "i   Pears || 50 |  | 50",
+          "g [-]North || 10 |  | 10",
+          "i   Pears || 10 |  | 10",
+          "g [-]West || 70 | 20 | 90",
+          "i   Apples || 70 |  | 70",
+          "i   Plums ||  | 20 | 20",
+          "g [-](blank) ||  | 5 | 5",
+          "i   Plums ||  | 5 | 5",
+          "t Grand Total || 130 | 155 | 285"
+        ],
+        "spans": [],
+        "holds": [true, true, true, true, true, false, false, false, false]
+      }
+    },
+    {
+      "name": "ADR-0060: a layout the cube does not hold is refused",
+      "layout": {
+        "rows": [{"field": "Region"}, {"field": "Product"}],
+        "columns": [{"field": "Online"}],
+        "values": [{"field": "Quantity", "aggregation": "sum"}]
+      },
+      "cubeOf": {
+        "rows": [{"field": "Region"}, {"field": "Product"}],
+        "columns": [{"field": "Online"}],
+        "values": [{"field": "Amount", "aggregation": "sum"}]
+      },
+      "scriptSaying": "The cube was aggregated under other placed fields, Hidden Items or Value Fields than this layout has, or without the parts one of its Aggregations reads; ask again (aggregatePivot, or the source with queryForLayout) before laying it out (ADR-0060/0066).",
+      "throws": {
+        "refusal": "invalidOperation",
+        "saying": "The cube was aggregated under other placed fields, Hidden Items or Value Fields than this layout has, or without the parts one of its Aggregations reads; ask again (PivotEngine.Aggregate, or the source with PivotQuery.For) before laying it out (ADR-0060/0066)."
+      }
+    },
+    {
+      "name": "ADR-0066 (refined): placing a field in Filters, or moving it there, while it hides nothing asks nothing new",
+      "layout": {
+        "rows": [{"field": "Region"}],
+        "columns": [{"field": "Online"}],
+        "values": [{"field": "Amount", "aggregation": "sum"}]
+      },
+      "holds": [
+        {
+          "filters": [{"field": "Date"}],
+          "rows": [{"field": "Region"}],
+          "columns": [{"field": "Online"}],
+          "values": [{"field": "Amount", "aggregation": "sum"}]
+        },
+        {
+          "filters": [{"field": "Date"}, {"field": "Product"}],
+          "rows": [{"field": "Region"}],
+          "columns": [{"field": "Online"}],
+          "values": [{"field": "Amount", "aggregation": "sum"}]
+        },
+        {
+          "filters": [{"field": "Product", "hiddenItems": [{"kind": "text", "value": "Pears"}]}],
+          "rows": [{"field": "Region"}],
+          "columns": [{"field": "Online"}],
+          "values": [{"field": "Amount", "aggregation": "sum"}]
+        }
+      ],
+      "expect": {
+        "headers": ["Row Labels", "FALSE", "TRUE", "Grand Total"],
+        "lines": [
+          "i East || 50 | 130 | 180",
+          "i North || 10 |  | 10",
+          "i West || 70 | 20 | 90",
+          "i (blank) ||  | 5 | 5",
+          "t Grand Total || 130 | 155 | 285"
+        ],
+        "spans": [],
+        "holds": [true, true, false]
+      }
+    },
+    {
+      "name": "ADR-0066 (refined): a report laid out from a cube without a Filters field that hides nothing reads as one computed with it",
+      "layout": {
+        "filters": [{"field": "Date"}],
+        "rows": [{"field": "Region"}],
+        "columns": [{"field": "Online"}],
+        "values": [{"field": "Amount", "aggregation": "sum"}]
+      },
+      "cubeOf": {
+        "rows": [{"field": "Region"}],
+        "columns": [{"field": "Online"}],
+        "values": [{"field": "Amount", "aggregation": "sum"}]
+      },
+      "expect": {
+        "headers": ["Row Labels", "FALSE", "TRUE", "Grand Total"],
+        "lines": [
+          "i East || 50 | 130 | 180",
+          "i North || 10 |  | 10",
+          "i West || 70 | 20 | 90",
+          "i (blank) ||  | 5 | 5",
+          "t Grand Total || 130 | 155 | 285"
+        ],
+        "spans": []
+      }
+    },
+    {
+      "name": "ADR-0066 (refined): the report computed with a Filters field that hides nothing in place",
+      "layout": {
+        "filters": [{"field": "Date"}],
+        "rows": [{"field": "Region"}],
+        "columns": [{"field": "Online"}],
+        "values": [{"field": "Amount", "aggregation": "sum"}]
+      },
+      "expect": {
+        "headers": ["Row Labels", "FALSE", "TRUE", "Grand Total"],
+        "lines": [
+          "i East || 50 | 130 | 180",
+          "i North || 10 |  | 10",
+          "i West || 70 | 20 | 90",
+          "i (blank) ||  | 5 | 5",
+          "t Grand Total || 130 | 155 | 285"
+        ],
+        "spans": []
+      }
+    },
+    {
+      "name": "ADR-0066 (refined): a cube asked with a hiding filter holds the layout once the filter stops hiding, and not before",
+      "layout": {
+        "filters": [{"field": "Product", "hiddenItems": [{"kind": "text", "value": "Pears"}]}],
+        "rows": [{"field": "Region"}],
+        "values": [{"field": "Amount", "aggregation": "sum"}]
+      },
+      "holds": [
+        {
+          "filters": [{"field": "Product", "hiddenItems": [{"kind": "text", "value": "Pears"}]}],
+          "rows": [{"field": "Region"}],
+          "values": [{"field": "Amount", "aggregation": "sum"}]
+        },
+        {
+          "filters": [{"field": "Product"}],
+          "rows": [{"field": "Region"}],
+          "values": [{"field": "Amount", "aggregation": "sum"}]
+        },
+        {"rows": [{"field": "Region"}], "values": [{"field": "Amount", "aggregation": "sum"}]}
+      ],
+      "expect": {
+        "headers": ["Row Labels", "Sum of Amount"],
+        "lines": ["i East || 130", "i West || 90", "i (blank) || 5", "t Grand Total || 225"],
+        "spans": [],
+        "holds": [true, false, false]
+      }
+    },
+    {
+      "name": "ADR-0061/0066: Filter… lists the Items of a field in Filters that hides nothing, though it is not in the question",
+      "layout": {
+        "filters": [{"field": "Product"}],
+        "rows": [{"field": "Region"}],
+        "values": [{"field": "Amount", "aggregation": "sum"}]
+      },
+      "itemsOf": ["Product"],
+      "expect": {
+        "headers": ["Row Labels", "Sum of Amount"],
+        "lines": ["i East || 180", "i North || 10", "i West || 90", "i (blank) || 5", "t Grand Total || 285"],
+        "spans": [],
+        "items": {
+          "Product": [
+            {"key": {"kind": "text", "value": "Apples"}, "label": "Apples", "isHidden": false},
+            {"key": {"kind": "text", "value": "Pears"}, "label": "Pears", "isHidden": false},
+            {"key": {"kind": "text", "value": "Plums"}, "label": "Plums", "isHidden": false}
+          ]
+        }
+      }
+    },
+    {
+      "name": "ADR-0060: a report laid out from a kept cube is the report computed from scratch",
+      "layout": {
+        "form": "outline",
+        "rows": [{"field": "Region", "collapsed": true}, {"field": "Product"}],
+        "columns": [{"field": "Online"}],
+        "values": [{"field": "Amount", "aggregation": "sum"}]
+      },
+      "cubeOf": {
+        "rows": [{"field": "Region"}, {"field": "Product"}],
+        "columns": [{"field": "Online"}],
+        "values": [{"field": "Amount", "aggregation": "sum"}]
+      },
+      "expect": {
+        "headers": ["Region", "Product", "FALSE", "TRUE", "Grand Total"],
+        "lines": [
+          "g [+]East |  || 50 | 130 | 180",
+          "g [+]North |  || 10 |  | 10",
+          "g [+]West |  || 70 | 20 | 90",
+          "g [+](blank) |  ||  | 5 | 5",
+          "t Grand Total |  || 130 | 155 | 285"
+        ],
+        "spans": []
+      }
+    },
+    {
+      "name": "ADR-0060: the report computed from scratch, which a kept cube lays out the same",
+      "layout": {
+        "form": "outline",
+        "rows": [{"field": "Region", "collapsed": true}, {"field": "Product"}],
+        "columns": [{"field": "Online"}],
+        "values": [{"field": "Amount", "aggregation": "sum"}]
+      },
+      "expect": {
+        "headers": ["Region", "Product", "FALSE", "TRUE", "Grand Total"],
+        "lines": [
+          "g [+]East |  || 50 | 130 | 180",
+          "g [+]North |  || 10 |  | 10",
+          "g [+]West |  || 70 | 20 | 90",
+          "g [+](blank) |  ||  | 5 | 5",
+          "t Grand Total |  || 130 | 155 | 285"
+        ],
+        "spans": []
+      }
+    },
+    {
+      "name": "ADR-0059/0011: new values on the same rows keep the row sequence; a structural change does not",
+      "layout": {
+        "rows": [{"field": "Region"}, {"field": "Product"}],
+        "values": [{"field": "Amount", "aggregation": "sum"}]
+      },
+      "sameRowsAs": [
+        {
+          "records": [
+            ["EAST", "Apples", {"date": "2026-01-10"}, {"decimal": "200"}, {"integer": "10"}, true],
+            ["EAST", "Pears", {"date": "2026-01-12"}, {"decimal": "100"}, {"integer": "5"}, false],
+            ["EAST", "Apples", {"date": "2026-02-03"}, {"decimal": "60"}, {"integer": "3"}, true],
+            ["WEST", "Apples", {"date": "2026-01-20"}, {"decimal": "140"}, {"integer": "7"}, false],
+            ["WEST", "Plums", {"date": "2026-02-15"}, {"decimal": "40"}, {"integer": "2"}, true],
+            ["NORTH", "Pears", {"date": "2026-02-18"}, {"decimal": "20"}, {"integer": "1"}, false],
+            [null, "Plums", {"date": "2026-03-01"}, {"decimal": "10"}, {"integer": "1"}, true]
+          ]
+        },
+        {
+          "layout": {
+            "rows": [{"field": "Region", "collapsed": true}, {"field": "Product"}],
+            "values": [{"field": "Amount", "aggregation": "sum"}]
+          }
+        },
+        {
+          "records": [
+            ["East", "Apples", {"date": "2026-01-10"}, {"decimal": "100"}, {"integer": "10"}, true],
+            ["East", "Pears", {"date": "2026-01-12"}, {"decimal": "50"}, {"integer": "5"}, false],
+            ["East", "Apples", {"date": "2026-02-03"}, {"decimal": "30"}, {"integer": "3"}, true],
+            ["West", "Apples", {"date": "2026-01-20"}, {"decimal": "70"}, {"integer": "7"}, false],
+            ["West", "Plums", {"date": "2026-02-15"}, {"decimal": "20"}, {"integer": "2"}, true],
+            ["North", "Pears", {"date": "2026-02-18"}, {"decimal": "10"}, {"integer": "1"}, false]
+          ]
+        }
+      ],
+      "expect": {
+        "headers": ["Row Labels", "Sum of Amount"],
+        "lines": [
+          "g [-]East || 180",
+          "i   Apples || 130",
+          "i   Pears || 50",
+          "g [-]North || 10",
+          "i   Pears || 10",
+          "g [-]West || 90",
+          "i   Apples || 70",
+          "i   Plums || 20",
+          "g [-](blank) || 5",
+          "i   Plums || 5",
+          "t Grand Total || 285"
+        ],
+        "spans": [],
+        "sameRows": [true, false, false]
+      }
+    },
+    {
+      "name": "ADR-0060: a layout naming an undeclared field is refused by name",
+      "layout": {"rows": [{"field": "Desk"}]},
+      "throws": {
+        "refusal": "invalidOperation",
+        "saying": "The layout places 'Desk' in Rows, and no Pivot Field of that name is declared (ADR-0060)."
+      }
+    },
+    {
+      "name": "ADR-0060: a field in two Areas is refused by name",
+      "layout": {"filters": [{"field": "Region"}], "rows": [{"field": "Region"}]},
+      "throws": {
+        "refusal": "invalidOperation",
+        "saying": "The layout places 'Region' twice among Filters, Rows and Columns; a field stands in one of them at most (ADR-0061)."
+      }
+    },
+    {
+      "name": "ADR-0060: an order by a Value Field the layout does not have is refused",
+      "layout": {
+        "rows": [{"field": "Region", "sort": {"direction": "ascending", "byValue": 1}}],
+        "values": [{"field": "Amount", "aggregation": "sum"}]
+      },
+      "throws": {
+        "refusal": "invalidOperation",
+        "saying": "'Region' is ordered by Value Field 1, and the layout has 1 (ADR-0060)."
+      }
+    },
+    {
+      "name": "ADR-0060: two fields of one name are refused, as a layout could not say which it means",
+      "layout": {"rows": [{"field": "Region"}], "values": [{"field": "Amount", "aggregation": "sum"}]},
+      "fields": [
+        {"name": "Region", "type": "text"},
+        {"name": "Product", "type": "text"},
+        {"name": "Date", "type": "date"},
+        {"name": "Amount", "type": "number"},
+        {"name": "Quantity", "type": "number"},
+        {"name": "Online", "type": "boolean"},
+        {"name": "Region", "type": "text", "of": "Product"}
+      ],
+      "throws": {
+        "refusal": "argument",
+        "saying": "Two Pivot Fields are named 'Region'; a layout could not say which it means."
+      }
+    },
+    {
+      "name": "ADR-0060: a field's own runaway number format is refused at declaration",
+      "layout": {"rows": [{"field": "Region"}], "values": [{"field": "Amount", "aggregation": "sum"}]},
+      "fields": [
+        {"name": "Region", "type": "text"},
+        {"name": "Product", "type": "text"},
+        {"name": "Date", "type": "date"},
+        {"name": "Amount", "type": "number", "format": "N999999999"},
+        {"name": "Quantity", "type": "number"},
+        {"name": "Online", "type": "boolean"}
+      ],
+      "throws": {
+        "refusal": "argument",
+        "saying": "Pivot Field 'Amount' declares the format 'N999999999', which asks for 999999999 digits, more than 30."
+      }
+    },
+    {
+      "name": "ADR-0060: a field's own broken date format is refused at declaration",
+      "layout": {"rows": [{"field": "Region"}], "values": [{"field": "Amount", "aggregation": "sum"}]},
+      "fields": [
+        {"name": "Region", "type": "text"},
+        {"name": "Product", "type": "text"},
+        {"name": "Date", "type": "date", "format": "%"},
+        {"name": "Amount", "type": "number"},
+        {"name": "Quantity", "type": "number"},
+        {"name": "Online", "type": "boolean"}
+      ],
+      "throws": {
+        "refusal": "argument",
+        "saying": "Pivot Field 'Date' declares the format '%', which cannot format a date."
+      }
+    },
+    {
+      "name": "ADR-0060: a field's own usable date format is declared",
+      "layout": {"rows": [{"field": "Date"}], "values": [{"field": "Amount", "aggregation": "sum"}]},
+      "fields": [
+        {"name": "Region", "type": "text"},
+        {"name": "Product", "type": "text"},
+        {"name": "Date", "type": "date", "format": "yyyy-MM-dd"},
+        {"name": "Amount", "type": "number"},
+        {"name": "Quantity", "type": "number"},
+        {"name": "Online", "type": "boolean"}
+      ],
+      "expect": {
+        "headers": ["Row Labels", "Sum of Amount"],
+        "lines": [
+          "i 2026-01-10 || 100",
+          "i 2026-01-12 || 50",
+          "i 2026-01-20 || 70",
+          "i 2026-02-03 || 30",
+          "i 2026-02-15 || 20",
+          "i 2026-02-18 || 10",
+          "i 2026-03-01 || 5",
+          "t Grand Total || 285"
+        ],
+        "spans": []
+      }
+    }
+  ]
+}
