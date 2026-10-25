@@ -1,0 +1,269 @@
+{
+  "about": "Streams refused whole (ADR-0064, ADR-0065): a schema whose names or metadata a Snapshot cannot take, a Record Key Blank or carried twice, and bytes that are not a whole Arrow stream or file. Transcribed from ExGrid.Data.Arrow.Tests' RefusalTests and ProducerTests.",
+  "kind": "arrowRead",
+  "cases": [
+    {
+      "name": "ADR-0064: two columns of one name are refused, naming it, as a Snapshot's names are unique",
+      "stream": "streams/duplicate-name.arrows",
+      "refused": {
+        "message": "Column 'A': the Arrow stream has two columns of this name, and a column's name is unique within a Snapshot.",
+        "row": null,
+        "column": "A"
+      }
+    },
+    {
+      "name": "ADR-0064: a column without a name is refused, as every column of a Snapshot is named",
+      "stream": "streams/no-name.arrows",
+      "refused": {
+        "message": "The Arrow stream's column 2 has no name; every column of a Snapshot is named.",
+        "row": null,
+        "column": null
+      }
+    },
+    {
+      "name": "ADR-0065: a version in the metadata that is not a whole number, 0 or more, 'abc', is refused",
+      "stream": "streams/version-text.arrows",
+      "refused": {
+        "message": "The Arrow stream's exgrid.version metadata 'abc' is not a version: a version is a whole number, 0 or more.",
+        "row": null,
+        "column": null
+      }
+    },
+    {
+      "name": "ADR-0065: a version in the metadata that is not a whole number, 0 or more, '-1', is refused",
+      "stream": "streams/version-negative.arrows",
+      "refused": {
+        "message": "The Arrow stream's exgrid.version metadata '-1' is not a version: a version is a whole number, 0 or more.",
+        "row": null,
+        "column": null
+      }
+    },
+    {
+      "name": "ADR-0065: a version in the metadata that is not a whole number, 0 or more, '1.5', is refused",
+      "stream": "streams/version-fraction.arrows",
+      "refused": {
+        "message": "The Arrow stream's exgrid.version metadata '1.5' is not a version: a version is a whole number, 0 or more.",
+        "row": null,
+        "column": null
+      }
+    },
+    {
+      "name": "ADR-0065: a Record Key the metadata names and the stream does not hold is refused, naming it",
+      "stream": "streams/key-missing.arrows",
+      "refused": {
+        "message": "The Arrow stream names 'Id' its Record Key (exgrid.recordKey), and holds no column of that name.",
+        "row": null,
+        "column": null
+      }
+    },
+    {
+      "name": "ADR-0064: a Record Key that is neither Text nor Integer is refused, naming its column",
+      "stream": "streams/key-double.arrows",
+      "refused": {
+        "message": "Column 'Price': the Arrow stream names it the Record Key, and a Record Key is a Text or an Integer column; this one is Double.",
+        "row": null,
+        "column": "Price"
+      }
+    },
+    {
+      "name": "ADR-0064: a Blank Record Key is refused, naming its row and the key's column",
+      "stream": "streams/key-blank.arrows",
+      "refused": {
+        "message": "Row 2, column 'Id': the Record Key is Blank.",
+        "row": 2,
+        "column": "Id"
+      }
+    },
+    {
+      "name": "ADR-0064: a Text Record Key carried twice is refused, naming the key",
+      "stream": "streams/key-twice.arrows",
+      "refused": {
+        "message": "Row 4, column 'Id': the Record Key 'T1' is already carried by row 1.",
+        "row": 4,
+        "column": "Id",
+        "key": "T1"
+      }
+    },
+    {
+      "name": "ADR-0064: an Integer Record Key carried twice is refused, naming the key",
+      "stream": "streams/key-twice-integer.arrows",
+      "refused": {
+        "message": "Row 3, column 'Id': the Record Key 5 is already carried by row 1.",
+        "row": 3,
+        "column": "Id",
+        "key": 5
+      }
+    },
+    {
+      "name": "ADR-0064: rows with no column are refused, as a Snapshot holds rows only in its columns and would read them as none",
+      "stream": "streams/rows-without-columns.arrows",
+      "refused": {
+        "message": "The Arrow stream holds 3 rows and no column, and a Snapshot holds rows only in its columns.",
+        "row": null,
+        "column": null
+      }
+    },
+    {
+      "name": "ADR-0065: bytes that are not Arrow, a CSV, are refused as not Arrow",
+      "stream": "streams/not-arrow-1.bin",
+      "refused": {
+        "message": "The bytes are not an Arrow IPC stream or file: they begin with neither an IPC message nor ARROW1.",
+        "row": null,
+        "column": null
+      }
+    },
+    {
+      "name": "ADR-0065: bytes that are not Arrow, JSON, are refused as not Arrow",
+      "stream": "streams/not-arrow-2.bin",
+      "refused": {
+        "message": "The bytes are not an Arrow IPC stream or file: they begin with neither an IPC message nor ARROW1.",
+        "row": null,
+        "column": null
+      }
+    },
+    {
+      "name": "ADR-0065: bytes that are not Arrow, an error page, are refused as not Arrow",
+      "stream": "streams/not-arrow-3.bin",
+      "refused": {
+        "message": "The bytes are not an Arrow IPC stream or file: they begin with neither an IPC message nor ARROW1.",
+        "row": null,
+        "column": null
+      }
+    },
+    {
+      "name": "ADR-0065: bytes that are not Arrow, Parquet, are refused as not Arrow",
+      "stream": "streams/not-arrow-4.bin",
+      "refused": {
+        "message": "The bytes are not an Arrow IPC stream or file: they begin with neither an IPC message nor ARROW1.",
+        "row": null,
+        "column": null
+      }
+    },
+    {
+      "name": "ADR-0065: bytes that are not Arrow, zeros, are refused as not Arrow",
+      "stream": "streams/not-arrow-5.bin",
+      "refused": {
+        "message": "The bytes are not an Arrow IPC stream or file: they begin with neither an IPC message nor ARROW1.",
+        "row": null,
+        "column": null
+      }
+    },
+    {
+      "name": "ADR-0065: a stream that begins with a record batch rather than its schema is refused as not Arrow",
+      "stream": "streams/no-schema.arrows",
+      "refused": {
+        "message": "The bytes are not an Arrow IPC stream or file: they begin with neither an IPC message nor ARROW1.",
+        "row": null,
+        "column": null
+      }
+    },
+    {
+      "name": "ADR-0065: an Arrow stream compressed with gzip, as an HTTP response is before it is undone, is refused, saying so",
+      "stream": "streams/gzipped.bin",
+      "refused": {
+        "saying": "The bytes are compressed with gzip, not an Arrow IPC stream or file: undo the compression first.",
+        "row": null,
+        "column": null
+      }
+    },
+    {
+      "name": "ADR-0065: no bytes at all are an empty stream, refused",
+      "stream": "streams/empty.bin",
+      "refused": {
+        "message": "The Arrow stream is empty: it holds no schema.",
+        "row": null,
+        "column": null
+      }
+    },
+    {
+      "name": "ADR-0065: an end-of-stream marker alone is an empty stream, refused",
+      "stream": "streams/marker-alone.bin",
+      "refused": {
+        "message": "The Arrow stream is empty: it holds no schema.",
+        "row": null,
+        "column": null
+      }
+    },
+    {
+      "name": "ADR-0065: bytes that end inside their first message are refused as not Arrow or cut short",
+      "stream": "streams/inside-first-message.bin",
+      "refused": {
+        "message": "The bytes end inside their first message: they are not an Arrow IPC stream, or they are one cut short; a stream is read only whole.",
+        "row": null,
+        "column": null
+      }
+    },
+    {
+      "name": "ADR-0064: a stream cut short before the end-of-stream marker is refused, never read as fewer rows",
+      "stream": "streams/cut-before-marker.arrows",
+      "refused": {
+        "message": "The Arrow stream ends before its end-of-stream marker, so it may have been cut short; a stream is read only whole.",
+        "row": null,
+        "column": null
+      }
+    },
+    {
+      "name": "ADR-0064: a stream cut short inside the end-of-stream marker is refused, never read as fewer rows",
+      "stream": "streams/cut-inside-marker.arrows",
+      "refused": {
+        "message": "The Arrow stream ends before its end-of-stream marker, so it may have been cut short; a stream is read only whole.",
+        "row": null,
+        "column": null
+      }
+    },
+    {
+      "name": "ADR-0064: a stream cut short inside a record batch's body is refused, never read as fewer rows",
+      "stream": "streams/cut-inside-body.arrows",
+      "refused": {
+        "message": "The Arrow stream ends before its end-of-stream marker, so it may have been cut short; a stream is read only whole.",
+        "row": null,
+        "column": null
+      }
+    },
+    {
+      "name": "ADR-0064: a stream cut short inside a record batch's metadata is refused, never read as fewer rows",
+      "stream": "streams/cut-inside-metadata.arrows",
+      "refused": {
+        "message": "The Arrow stream ends before its end-of-stream marker, so it may have been cut short; a stream is read only whole.",
+        "row": null,
+        "column": null
+      }
+    },
+    {
+      "name": "ADR-0064: a stream cut short between two record batches is refused, never read as fewer rows",
+      "stream": "streams/cut-between-batches.arrows",
+      "refused": {
+        "message": "The Arrow stream ends before its end-of-stream marker, so it may have been cut short; a stream is read only whole.",
+        "row": null,
+        "column": null
+      }
+    },
+    {
+      "name": "ADR-0064: an Arrow file cut short, its footer gone, is refused",
+      "stream": "streams/file-cut-footer.arrow",
+      "refused": {
+        "message": "The Arrow file ends without its footer, so it may have been cut short; a file is read only whole.",
+        "row": null,
+        "column": null
+      }
+    },
+    {
+      "name": "ADR-0064: an Arrow file cut short, to its first eight bytes, is refused",
+      "stream": "streams/file-cut-head.arrow",
+      "refused": {
+        "message": "The Arrow file ends without its footer, so it may have been cut short; a file is read only whole.",
+        "row": null,
+        "column": null
+      }
+    },
+    {
+      "name": "ADR-0065: an Arrow file whose buffers are compressed with ZSTD is refused without a codec, naming ZSTD",
+      "stream": "producers/pyarrow-zstd.arrow",
+      "refused": {
+        "saying": "The Arrow stream's buffers are compressed with ZSTD, and",
+        "row": null,
+        "column": null
+      }
+    }
+  ]
+}

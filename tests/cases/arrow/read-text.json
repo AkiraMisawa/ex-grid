@@ -1,0 +1,185 @@
+{
+  "about": "Text read from Arrow (ADR-0065): utf8, large_utf8 and utf8_view, and dictionaries of them with indices of any integer type, taken under the Snapshot's rules whatever order, case or nulls the producer's dictionary has. Transcribed from ExGrid.Data.Arrow.Tests' ReadTests and ProducerTests.",
+  "kind": "arrowRead",
+  "cases": [
+    {
+      "name": "ADR-0065: utf8 is Text, exactly as written; a null is a Blank and the empty string a value",
+      "stream": "streams/utf8.arrows",
+      "expect": {
+        "version": 0,
+        "recordKey": null,
+        "columns": [
+          { "name": "Region", "caption": "Region", "kind": "text", "values": ["amer", "AMER", null, "", "amer", "Zürich"], "dictionary": ["amer", "AMER", "", "Zürich"] }
+        ]
+      }
+    },
+    {
+      "name": "ADR-0065: large_utf8 is Text",
+      "stream": "streams/large-utf8.arrows",
+      "expect": {
+        "version": 0,
+        "recordKey": null,
+        "columns": [
+          { "name": "Region", "caption": "Region", "kind": "text", "values": ["b", null, "a", "b"], "dictionary": ["b", "a"] }
+        ]
+      }
+    },
+    {
+      "name": "ADR-0065: utf8_view is Text exactly as written, twelve bytes or fewer held in the view and longer text in a data buffer; a null is a Blank and the empty string a value",
+      "stream": "streams/utf8-view.arrows",
+      "expect": {
+        "version": 0,
+        "recordKey": null,
+        "columns": [
+          {
+            "name": "Region", "caption": "Region", "kind": "text",
+            "values": ["amer", "AMER", null, "", "twelve bytes", "thirteen byte", "Zürich 東京 🚀, at length", "amer", "thirteen byte"],
+            "dictionary": ["amer", "AMER", "", "twelve bytes", "thirteen byte", "Zürich 東京 🚀, at length"]
+          }
+        ]
+      }
+    },
+    {
+      "name": "ADR-0065: utf8_view's longer text is read from the data buffer its view names, wherever in it the text starts, as Polars spreads its text over several buffers",
+      "stream": "streams/utf8-view-buffers.arrows",
+      "expect": {
+        "version": 0,
+        "recordKey": null,
+        "columns": [
+          {
+            "name": "Desk", "caption": "Desk", "kind": "text",
+            "values": ["Global Credit Trading", "FX", null, "Emerging Markets Rates", "Markets Rates", "Global Credit Trading"],
+            "dictionary": ["Global Credit Trading", "FX", "Emerging Markets Rates", "Markets Rates"]
+          }
+        ]
+      }
+    },
+    {
+      "name": "ADR-0065: a dictionary of utf8_view, as Polars writes a Categorical by default, is Text under the Snapshot's rules: out of order, amer beside AMER, a null entry, null indices, an entry longer than its view",
+      "stream": "streams/dictionary-utf8-view.arrows",
+      "expect": {
+        "version": 0,
+        "recordKey": null,
+        "columns": [
+          {
+            "name": "Region", "caption": "Region", "kind": "text",
+            "values": ["amer", "AMER", null, "emea", null, "Asia Pacific, excluding Japan", "AMER", "Asia Pacific, excluding Japan"],
+            "dictionary": ["amer", "AMER", "emea", "Asia Pacific, excluding Japan"]
+          }
+        ]
+      }
+    },
+    {
+      "name": "ADR-0065: another producer's dictionary, out of order, amer beside AMER, a null entry, null indices and an entry no row uses, is taken in the order values first appear in the rows, one entry per exact text",
+      "stream": "streams/dictionary-out-of-order.arrows",
+      "expect": {
+        "version": 0,
+        "recordKey": null,
+        "columns": [
+          {
+            "name": "Region", "caption": "Region", "kind": "text",
+            "values": ["amer", "AMER", null, "emea", null, "APAC", "AMER", "amer"],
+            "dictionary": ["amer", "AMER", "emea", "APAC"]
+          }
+        ]
+      }
+    },
+    {
+      "name": "ADR-0065: a dictionary of large_utf8 is Text",
+      "stream": "streams/dictionary-large-utf8.arrows",
+      "expect": {
+        "version": 0,
+        "recordKey": null,
+        "columns": [
+          { "name": "Region", "caption": "Region", "kind": "text", "values": ["y", null, "x"], "dictionary": ["y", "x"] }
+        ]
+      }
+    },
+    {
+      "name": "ADR-0065: a dictionary's indices may be any integer type, int8 to uint64",
+      "stream": "streams/dictionary-indices.arrows",
+      "expect": {
+        "version": 0,
+        "recordKey": null,
+        "columns": [
+          { "name": "int8", "caption": "int8", "kind": "text", "values": ["x", "z", null, "y", "x"], "dictionary": ["x", "z", "y"] },
+          { "name": "int16", "caption": "int16", "kind": "text", "values": ["x", "z", null, "y", "x"], "dictionary": ["x", "z", "y"] },
+          { "name": "int32", "caption": "int32", "kind": "text", "values": ["x", "z", null, "y", "x"], "dictionary": ["x", "z", "y"] },
+          { "name": "int64", "caption": "int64", "kind": "text", "values": ["x", "z", null, "y", "x"], "dictionary": ["x", "z", "y"] },
+          { "name": "uint8", "caption": "uint8", "kind": "text", "values": ["x", "z", null, "y", "x"], "dictionary": ["x", "z", "y"] },
+          { "name": "uint16", "caption": "uint16", "kind": "text", "values": ["x", "z", null, "y", "x"], "dictionary": ["x", "z", "y"] },
+          { "name": "uint32", "caption": "uint32", "kind": "text", "values": ["x", "z", null, "y", "x"], "dictionary": ["x", "z", "y"] },
+          { "name": "uint64", "caption": "uint64", "kind": "text", "values": ["x", "z", null, "y", "x"], "dictionary": ["x", "z", "y"] }
+        ]
+      }
+    },
+    {
+      "name": "ADR-0065: several record batches are read in order, an empty one among them, a dictionary they share taken once",
+      "stream": "streams/several-batches.arrows",
+      "expect": {
+        "version": 0,
+        "recordKey": null,
+        "columns": [
+          { "name": "Region", "caption": "Region", "kind": "text", "values": ["c", "b", "a", null, "c", "b"], "dictionary": ["c", "b", "a"] },
+          { "name": "N", "caption": "N", "kind": "integer", "values": [1, 2, 3, null, 5, 6] }
+        ]
+      }
+    },
+    {
+      "name": "ADR-0065: pyarrow's delta dictionaries, each batch's dictionary extending the one before, out of order, amer beside AMER, a null entry and a null index, are read under the Snapshot's rules",
+      "stream": "producers/pyarrow-deltas.arrows",
+      "expect": {
+        "version": 0,
+        "recordKey": null,
+        "columns": [
+          {
+            "name": "region", "caption": "region", "kind": "text",
+            "values": ["AMER", "emea", null, null, "AMER", "amer", "APAC", "AMER", "emea", "Amer", "amer"],
+            "dictionary": ["AMER", "emea", "amer", "APAC", "Amer"]
+          },
+          { "name": "n", "caption": "n", "kind": "integer", "values": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11] }
+        ]
+      }
+    },
+    {
+      "name": "ADR-0065: a dictionary pyarrow replaced between record batches is read by the batches after it",
+      "stream": "producers/pyarrow-replaced.arrows",
+      "expect": {
+        "version": 0,
+        "recordKey": null,
+        "columns": [
+          { "name": "region", "caption": "region", "kind": "text", "values": ["b", "a", "a", "c", "a", "b", null], "dictionary": ["b", "a", "c"] },
+          { "name": "n", "caption": "n", "kind": "integer", "values": [1, 2, 3, 4, 5, 6, 7] }
+        ]
+      }
+    },
+    {
+      "name": "ADR-0065: pyarrow's dictionaries with indices of every integer width, over utf8 and large_utf8, are Text",
+      "stream": "producers/pyarrow-indices.arrows",
+      "expect": {
+        "version": 0,
+        "recordKey": null,
+        "columns": [
+          { "name": "i8", "caption": "i8", "kind": "text", "values": ["x", "z", null, "y"], "dictionary": ["x", "z", "y"] },
+          { "name": "i16", "caption": "i16", "kind": "text", "values": ["x", "z", null, "y"], "dictionary": ["x", "z", "y"] },
+          { "name": "u8", "caption": "u8", "kind": "text", "values": ["x", "z", null, "y"], "dictionary": ["x", "z", "y"] },
+          { "name": "u16", "caption": "u16", "kind": "text", "values": ["x", "z", null, "y"], "dictionary": ["x", "z", "y"] },
+          { "name": "u32", "caption": "u32", "kind": "text", "values": ["x", "z", null, "y"], "dictionary": ["x", "z", "y"] },
+          { "name": "i64", "caption": "i64", "kind": "text", "values": ["x", "z", null, "y"], "dictionary": ["x", "z", "y"] },
+          { "name": "u64", "caption": "u64", "kind": "text", "values": ["x", "z", null, "y"], "dictionary": ["x", "z", "y"] }
+        ]
+      }
+    },
+    {
+      "name": "ADR-0065: Polars' default stream, its text as utf8_view, is read as Text",
+      "stream": "producers/polars-default.arrows",
+      "expect": {
+        "version": 0,
+        "recordKey": null,
+        "columns": [
+          { "name": "region", "caption": "region", "kind": "text", "values": ["amer", "AMER", null, "emea"], "dictionary": ["amer", "AMER", "emea"] }
+        ]
+      }
+    }
+  ]
+}

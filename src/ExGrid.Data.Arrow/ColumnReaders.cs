@@ -408,6 +408,8 @@ internal sealed class DictionaryReader(TextColumnBuilder text, ArrowTypeId index
         var at = dictionary.Offset + k;
         string? value = null;
         var validity = dictionary.Buffers.Length > 0 ? dictionary.Buffers[0] : ArrowBuffer.Empty;
+        if (dictionary.NullCount > 0 && validity.IsEmpty)
+            throw Malformed("its dictionary's nulls have no validity bitmap");
         if (dictionary.NullCount != 0 && !validity.IsEmpty && validity.Length * 8L <= at)
             throw Malformed("its dictionary's validity bitmap is shorter than its entries");
         var isNull = dictionary.NullCount != 0 && !validity.IsEmpty && !Bitmaps.GetByte(validity.Span, at);

@@ -1,6 +1,5 @@
 using System.Buffers.Binary;
 using System.Globalization;
-using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Apache.Arrow;
@@ -365,15 +364,9 @@ internal static class Fixtures
 
     // ---- what other producers wrote ----------------------------------------------------------
 
-    /// <summary>A stream <c>Producers/make_streams.py</c> wrote, by its file name.</summary>
+    /// <summary>A stream <c>tests/cases/arrow/producers/make_streams.py</c> wrote, by its file name.</summary>
     public static byte[] Produced(string name)
-    {
-        using var resource = Assembly.GetExecutingAssembly().GetManifestResourceStream(name)
-            ?? throw new InvalidOperationException($"No stream named {name} is embedded.");
-        using var copy = new MemoryStream();
-        resource.CopyTo(copy);
-        return copy.ToArray();
-    }
+        => System.IO.File.ReadAllBytes(Path.Combine(AppContext.BaseDirectory, "cases", "arrow", "producers", name));
 }
 
 /// <summary>A stream as a network gives one: it cannot seek, and each read gives a few bytes.</summary>

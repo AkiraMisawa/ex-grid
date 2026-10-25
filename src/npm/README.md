@@ -7,6 +7,7 @@ One directory per package:
 | Directory | Package | What it is |
 |---|---|---|
 | `core/` | `@ex-grid/core` | The Script Core: the grid's state and what each input means, free of any UI framework |
+| `data/` | `@ex-grid/data` | The Snapshot in TypeScript, read from and written to Apache Arrow as `ExGrid.Data.Arrow` does, on the same cases (ADR-0370, section 3) |
 
 `@ex-grid/react` and `@ex-grid/mui` join it as they are built (ADR-0350, sections 3 and 11).
 

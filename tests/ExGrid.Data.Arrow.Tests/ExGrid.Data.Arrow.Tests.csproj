@@ -26,8 +26,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- Streams other producers wrote, made by Producers/make_streams.py and kept as they came. -->
-    <EmbeddedResource Include="Producers\*.arrows;Producers\*.arrow" LogicalName="%(Filename)%(Extension)" />
+    <!-- The shared Arrow cases (ADR-0370 section 3): written once as data with the streams they read,
+         run here against ExGrid.Data.Arrow and by Vitest against @ex-grid/data. tests/cases/README.md
+         says what a file holds. -->
+    <None Include="..\cases\arrow\**\*" Link="cases\arrow\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>
