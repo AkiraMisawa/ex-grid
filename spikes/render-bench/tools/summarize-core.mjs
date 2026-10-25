@@ -47,7 +47,7 @@ const failures = (run, scenario) => {
 const ms = (v) => (v === null ? '-' : v.toFixed(1));
 const bytes = (v) => (v === null ? '-' : Math.round(v).toLocaleString('en-US'));
 
-const gridRows = (sizes, ticks) => {
+const gridRows = (sizes, ticks, burst) => {
     const rows = [];
     for (const n of sizes) {
         const s = ['sizes', String(n)];
@@ -66,8 +66,8 @@ const gridRows = (sizes, ticks) => {
     }
     rows.push(['mount over the largest: dom ms', ['mount', 'value', 'dom'], ms]);
     rows.push(['mount over the largest: bytes', ['mount', 'bytes'], bytes]);
-    rows.push(['40 arrows in one task: dom ms', ['keys', 'burst', 'dom'], ms]);
-    rows.push(['40 arrows in one task: bytes', ['keys', 'burst', 'bytes'], bytes]);
+    rows.push([`${burst} arrows in one task: dom ms`, ['keys', 'burst', 'dom'], ms]);
+    rows.push([`${burst} arrows in one task: bytes`, ['keys', 'burst', 'bytes'], bytes]);
     rows.push(['an arrow per frame: frame p95', ['keys', 'perFrame', 'frames', 'p95'], ms]);
     rows.push(['an arrow per frame: lag ms', ['keys', 'perFrame', 'lagDom'], ms]);
     return [...rows, ...scrollRows];
@@ -85,12 +85,13 @@ const opRows = (name, label, bytesKey) => [
     [`${label}: bytes`, [name, bytesKey], bytes],
 ];
 
-const first = runs[0].options ?? {};
-const sizes = first.sizes ?? [1000, 10000, 100000];
-const ticks = first.ticks ?? [1, 5, 25];
+// The options each run used, as core-bench.js reports them; every size and tick any run measured gets a row.
+const used = runs.flatMap((r) => r.scenarios.map((s) => s.opts).filter((o) => o));
+const union = (key) => [...new Set(used.flatMap((o) => o[key]))].sort((a, b) => a - b);
+const bursts = [...new Set(used.map((o) => o.burst))];
 const tables = {
-    grid: gridRows(sizes, ticks),
-    template: gridRows(sizes, ticks),
+    grid: gridRows(union('sizes'), union('ticks'), bursts.join(' or ')),
+    template: gridRows(union('sizes'), union('ticks'), bursts.join(' or ')),
     sheet: [...opRows('editAll', 'edit A1 (20,000 recalculated)', 'bytesPerEdit'), ...opRows('editOne', 'edit L1 (nothing reads it)', 'bytesPerEdit'), ...scrollRows],
     pivot: [...opRows('amend', 'one trade amended', 'bytesPerOp'), ...opRows('layout', 'columns swapped', 'bytesPerOp'), ...scrollRows],
 };

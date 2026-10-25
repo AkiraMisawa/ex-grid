@@ -36,6 +36,13 @@ const runScenario = async (scenario) => {
         ws.onopen = resolve;
         ws.onerror = reject;
     });
+    // A page that crashes or closes mid-run fails whatever was asked of it, rather than leaving it unanswered.
+    const gone = (why) => {
+        for (const { reject } of pending.values()) reject(new Error(why));
+        pending.clear();
+    };
+    ws.onclose = () => gone(`the page's debugging connection closed (${url})`);
+    ws.onerror = () => gone(`the page's debugging connection failed (${url})`);
     const rpc = (method, params = {}) => {
         const id = nextId++;
         ws.send(JSON.stringify({ id, method, params }));
@@ -93,4 +100,6 @@ const name = `${at.replace(/[-:]/g, '').replace(/\..*/, '')}-core-${label}.json`
 const file = path.join(process.env.RESULTS_DIR ?? path.join(path.dirname(new URL(import.meta.url).pathname), '..', 'results'), name);
 fs.writeFileSync(file, JSON.stringify({ label, base, at, options, scenarios }, null, 2));
 console.log(`wrote ${file}`);
-process.exit(0);
+// A scenario that failed, or a phase in one, is a failed run, whatever was written.
+const failed = scenarios.some((s) => s.failed || JSON.stringify(s.rounds ?? []).includes('Failed"'));
+process.exit(failed ? 1 : 0);

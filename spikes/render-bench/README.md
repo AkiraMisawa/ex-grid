@@ -288,7 +288,8 @@ DOM contract (`role`, `aria-rowindex`, `aria-colindex`, the Focus named by `aria
 scroller, `--ex-row-height`), and presses only the page's own controls, so the same script measures any
 core. Each input is made at machine speed and timed to what the user sees: a MutationObserver sees
 the change land (*dom*) and the animation frame after it is when it is on screen (*frame*). Sustained
-phases record the frames' lengths and the lag from the last input until it is painted. On the Server
+phases record the frames' lengths and the lag from the last input until it is painted; a scroll stops
+short of the end, so every frame it times moved. The driver exits non-zero when any phase failed. On the Server
 host each operation's bytes on the circuit's connection are read too (`/api/wire`).
 `tools/cdp-core.mjs` opens each page in a browser already listening for CDP and writes one JSON per
 label; `tools/summarize-core.mjs` puts labels side by side:
@@ -296,9 +297,10 @@ label; `tools/summarize-core.mjs` puts labels side by side:
 ```sh
 nix develop -c dotnet run -c Release --project Bench.Server            # BENCH_PORT=5491
 nix develop -c dotnet run -c Release --project Bench.Host --urls http://127.0.0.1:5492
-CDP_PORT=9333 node tools/cdp-core.mjs http://127.0.0.1:5491 csharp-server    # [scenarios] [rounds]
-CDP_PORT=9333 node tools/cdp-core.mjs http://127.0.0.1:5492 csharp-wasm
-node tools/summarize-core.mjs results/20261025-core/*.json
+mkdir -p results/core-run
+RESULTS_DIR=results/core-run CDP_PORT=9333 node tools/cdp-core.mjs http://127.0.0.1:5491 csharp-server    # [scenarios] [rounds]
+RESULTS_DIR=results/core-run CDP_PORT=9333 node tools/cdp-core.mjs http://127.0.0.1:5492 csharp-wasm
+node tools/summarize-core.mjs results/core-run/*-csharp-server.json results/core-run/*-csharp-wasm.json
 ```
 
 `CORE_OPTS` takes JSON for the run's options (`frames`, `tickRepeats`, `edits`, `burst`, `sizes`,

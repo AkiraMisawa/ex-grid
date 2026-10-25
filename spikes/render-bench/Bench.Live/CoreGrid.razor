@@ -72,6 +72,8 @@
         foreach (var k in Ticks)
             _tick[k] = () =>
             {
+                // A Window prepared before the tick is at a generation the tick now takes.
+                _prepared = null;
                 _gen++;
                 _window = CoreData.Replace(_window, k, _gen);
             };

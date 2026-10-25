@@ -37,11 +37,15 @@
         .Date("TradeDate", t => t.TradeDate, caption: "Trade date", format: "yyyy-MM-dd")
         .Number("Pnl", t => t.Pnl, caption: "P&L", format: "#,##0");
 
-    private CoreTrade[] _trades = [];
-    private SnapshotPivotSource _source = default!;
+    private readonly CoreTrade[] _trades;
+    private readonly SnapshotPivotSource _source;
+    // The trade amended, and the first book's P&L kept up to date with it: the Consumer's side of an
+    // amendment does no pass over the trades, so what is timed is ExPivot's.
+    private readonly int _amendedAt;
+    private decimal _firstBookPnl;
     private PivotLayout _layout = Layout("Currency");
     private string _columns = "Currency";
-    private string _expected = "";
+    private string _expected;
     private int _amendments;
 
     private static PivotLayout Layout(string across) => new()
@@ -51,7 +55,7 @@
         Values = [new PivotValueField("Pnl", PivotAggregation.Sum) { NumberFormat = "#,##0" }],
     };
 
-    protected override void OnInitialized()
+    public CorePivot()
     {
         // Whole numbers, so that "#,##0" rounds nothing and the expected text is exact.
         var random = new Random(20261025);
@@ -68,25 +72,20 @@
                 random.Next(-50_000, 60_000));
         }
         _source = PivotSource.From(_trades, Fields);
-        _expected = FirstBookPnl();
-    }
-
-    // The trade amended: the first of the first book's earliest date, so its rows are the first painted.
-    private int AmendedAt()
-    {
+        // The first trade of the first book's earliest date, so its rows are the first painted.
         var first = _trades.Where(t => t.Book == Books[0]).Min(t => t.TradeDate);
-        return Array.FindIndex(_trades, t => t.Book == Books[0] && t.TradeDate == first);
+        _amendedAt = Array.FindIndex(_trades, t => t.Book == Books[0] && t.TradeDate == first);
+        _firstBookPnl = _trades.Where(t => t.Book == Books[0]).Sum(t => t.Pnl);
+        _expected = _firstBookPnl.ToString("#,##0", Culture);
     }
-
-    private string FirstBookPnl() => _trades.Where(t => t.Book == Books[0]).Sum(t => t.Pnl).ToString("#,##0", Culture);
 
     private void Amend()
     {
-        var at = AmendedAt();
-        var amended = _trades[at] = _trades[at] with { Pnl = _trades[at].Pnl + 1_000_003m };
+        var amended = _trades[_amendedAt] = _trades[_amendedAt] with { Pnl = _trades[_amendedAt].Pnl + 1_000_003m };
         _source.Apply(Fields.Batch(changed: [amended]));
         _amendments++;
-        _expected = FirstBookPnl();
+        _firstBookPnl += 1_000_003m;
+        _expected = _firstBookPnl.ToString("#,##0", Culture);
     }
 
     private void SwapColumns()

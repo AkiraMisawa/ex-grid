@@ -106,14 +106,12 @@
     };
 
     // Bytes on the circuit, per connection; null where the host has no /api/wire (WebAssembly, React).
+    // A host without one answers 404 or its fallback page; any other failure is the run's and throws.
     const wire = async () => {
-        try {
-            const answer = await fetch('/api/wire');
-            if (!answer.ok || !(answer.headers.get('content-type') ?? '').includes('json')) return null;
-            return new Map((await answer.json()).map((c) => [c.id, c.written]));
-        } catch {
-            return null;
-        }
+        const answer = await fetch('/api/wire');
+        if (answer.status === 404 || !(answer.headers.get('content-type') ?? '').includes('json')) return null;
+        if (!answer.ok) throw new Error(`GET /api/wire answered ${answer.status}`);
+        return new Map((await answer.json()).map((c) => [c.id, c.written]));
     };
     const moved = (before, after) => {
         if (before === null || after === null) return null;
@@ -164,10 +162,15 @@
         const run = async (step) => {
             scroller().scrollTop = 0;
             await frames(10);
-            const out = await lengths(count, () => { scroller().scrollTop += step; });
+            // Never past the end: a frame that moved nothing would be timed as one that did, and the
+            // lag would start after the rows had begun to fill.
+            const room = Math.floor((scroller().scrollHeight - scroller().clientHeight) / step);
+            const steps = Math.min(count, room);
+            if (steps < 10) throw new Error(`the scroller has room for ${room} steps of ${step} px`);
+            const out = await lengths(steps, () => { scroller().scrollTop += step; });
             const t0 = performance.now();
             const s = await seen(topPainted(), 'the top row painted after the scroll');
-            const result = { frames: stats(out), lagDom: s.dom - t0 };
+            const result = { steps, frames: stats(out), lagDom: s.dom - t0 };
             scroller().scrollTop = 0;
             await frames(10);
             return result;
@@ -323,8 +326,12 @@
 
     // --- pivot -----------------------------------------------------------------------------------
     // ExPivot redraws at once when its last redraw was more than its interval (250 ms) ago: each
-    // operation waits that long first, untimed, so what is timed is the redraw and not the wait.
-    const settle = () => frames(24);
+    // operation waits longer than that first, untimed, so what is timed is the redraw and not the
+    // wait. Counted in ms, not frames, so that a display's refresh rate does not move it.
+    const settle = async () => {
+        const start = performance.now();
+        while (performance.now() - start < 300) await frame();
+    };
     const painted = (text) => [...root().querySelectorAll('[role=gridcell]')].some((c) => c.textContent === text);
     const runPivot = async (opts, round) => {
         const entry = {};
