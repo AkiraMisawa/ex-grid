@@ -1,12 +1,12 @@
-"""Writes the Arrow streams other producers write, which ProducerTests reads (ADR-0065).
+"""Writes the Arrow streams other producers write, which the shared Arrow cases read (ADR-0065).
 
 The streams are kept in the repository as they came, so the tests need no Python. This script is
 only for making them again:
 
     python -m venv .venv && .venv/bin/pip install pyarrow==25.0.1 polars==1.44.2 duckdb==1.5.6
-    .venv/bin/python tests/ExGrid.Data.Arrow.Tests/Producers/make_streams.py
+    .venv/bin/python tests/cases/arrow/producers/make_streams.py
 
-Each stream is small and holds what its test asserts; the test names what each one is for.
+Each stream is small and holds what its case asserts; the case names what each one is for.
 """
 
 import datetime

@@ -1,0 +1,258 @@
+{
+  "about": "Values a kind cannot hold (ADR-0065), each refused naming its row, counted from 1 across record batches, and its column: a decimal no decimal holds, a uint64 past a 64-bit integer, a date outside 0001 to 9999, a time outside a day, a nanosecond finer than 100, a dictionary index outside its dictionary, text that is not UTF-8 and a view that points outside its data. Transcribed from ExGrid.Data.Arrow.Tests' RefusalTests.",
+  "kind": "arrowRead",
+  "cases": [
+    {
+      "name": "ADR-0065: a decimal128 beyond a decimal's range is refused, naming its row and column, the row counted across record batches",
+      "stream": "streams/decimal128-beyond.arrows",
+      "refused": {
+        "message": "Row 5, column 'Notional': the decimal128(38, 0) value -79228162514264337593543950336 lies beyond the range of a decimal.",
+        "row": 5,
+        "column": "Notional"
+      }
+    },
+    {
+      "name": "ADR-0065: a decimal with more significant places than a decimal's 28 is refused, not rounded",
+      "stream": "streams/decimal128-places.arrows",
+      "refused": {
+        "message": "Row 2, column 'Rate': the decimal128(38, 30) value 0.000000000000000000000000000001 has more decimal places than the 28 a decimal holds.",
+        "row": 2,
+        "column": "Rate"
+      }
+    },
+    {
+      "name": "ADR-0065: a decimal256 beyond a decimal's range is refused by row and column",
+      "stream": "streams/decimal256-beyond.arrows",
+      "refused": {
+        "message": "Row 2, column 'Wide': the decimal256(76, 2) value 100000000000000000000000000000000000000.00 lies beyond the range of a decimal.",
+        "row": 2,
+        "column": "Wide"
+      }
+    },
+    {
+      "name": "ADR-0065: a decimal32(9, -25) no decimal holds is refused by row and column, not rounded",
+      "stream": "streams/decimal32-beyond.arrows",
+      "refused": {
+        "message": "Row 3, column 'Notional': the decimal32(9, -25) value 9999999990000000000000000000000000 lies beyond the range of a decimal.",
+        "row": 3,
+        "column": "Notional"
+      }
+    },
+    {
+      "name": "ADR-0065: a decimal64(18, -15) no decimal holds is refused by row and column, not rounded",
+      "stream": "streams/decimal64-beyond.arrows",
+      "refused": {
+        "message": "Row 3, column 'Notional': the decimal64(18, -15) value -100000000000000000000000000000000 lies beyond the range of a decimal.",
+        "row": 3,
+        "column": "Notional"
+      }
+    },
+    {
+      "name": "ADR-0065: a decimal32(9, 30) no decimal holds is refused by row and column, not rounded",
+      "stream": "streams/decimal32-places.arrows",
+      "refused": {
+        "message": "Row 3, column 'Notional': the decimal32(9, 30) value 0.000000000000000000000000000015 has more decimal places than the 28 a decimal holds.",
+        "row": 3,
+        "column": "Notional"
+      }
+    },
+    {
+      "name": "ADR-0065: a decimal64(18, 29) no decimal holds is refused by row and column, not rounded",
+      "stream": "streams/decimal64-places.arrows",
+      "refused": {
+        "message": "Row 3, column 'Notional': the decimal64(18, 29) value -0.00000000000000000000000000123 has more decimal places than the 28 a decimal holds.",
+        "row": 3,
+        "column": "Notional"
+      }
+    },
+    {
+      "name": "ADR-0065: a uint64 above a 64-bit integer's range is refused by row and column",
+      "stream": "streams/uint64-beyond.arrows",
+      "refused": {
+        "message": "Row 3, column 'Count': the uint64 value 9223372036854775808 lies beyond the range of a 64-bit integer.",
+        "row": 3,
+        "column": "Count"
+      }
+    },
+    {
+      "name": "ADR-0065: a date32 outside a date's range is refused by row and column, not moved",
+      "stream": "streams/date32-outside.arrows",
+      "refused": {
+        "message": "Row 2, column 'When': the date32 value -719163 (days since 1970-01-01) lies outside the range of a date, 0001-01-01 to 9999-12-31.",
+        "row": 2,
+        "column": "When"
+      }
+    },
+    {
+      "name": "ADR-0065: a date64 outside a date's range is refused by row and column, not moved",
+      "stream": "streams/date64-outside.arrows",
+      "refused": {
+        "message": "Row 2, column 'When': the date64 value 253402300800000 (milliseconds since 1970-01-01) lies outside the range of a date, 0001-01-01 to 9999-12-31.",
+        "row": 2,
+        "column": "When"
+      }
+    },
+    {
+      "name": "ADR-0065: a timestamp[s] outside a date's range is refused by row and column, not moved",
+      "stream": "streams/timestamp-s-outside.arrows",
+      "refused": {
+        "message": "Row 2, column 'When': the timestamp[s] value -62135596801 (seconds since 1970-01-01) lies outside the range of a date, 0001-01-01 to 9999-12-31.",
+        "row": 2,
+        "column": "When"
+      }
+    },
+    {
+      "name": "ADR-0065: a timestamp[us, tz=UTC] outside a date's range is refused by row and column, not moved",
+      "stream": "streams/timestamp-us-utc-outside.arrows",
+      "refused": {
+        "message": "Row 2, column 'When': the timestamp[us, tz=UTC] value 253402300800000000 (microseconds since 1970-01-01) lies outside the range of a date, 0001-01-01 to 9999-12-31.",
+        "row": 2,
+        "column": "When"
+      }
+    },
+    {
+      "name": "ADR-0065: a nanosecond timestamp finer than a date's 100 nanoseconds is refused, not truncated",
+      "stream": "streams/timestamp-ns-finer.arrows",
+      "refused": {
+        "message": "Row 2, column 'When': the timestamp[ns] value 150 is finer than the 100 nanoseconds a date holds.",
+        "row": 2,
+        "column": "When"
+      }
+    },
+    {
+      "name": "ADR-0065: a time32[s] outside a day is refused by row and column, not moved to another day",
+      "stream": "streams/time32-s-outside.arrows",
+      "refused": {
+        "message": "Row 3, column 'At': the time32[s] value 86400 (seconds since midnight) lies outside a day, 00:00:00 to 23:59:59.9999999.",
+        "row": 3,
+        "column": "At"
+      }
+    },
+    {
+      "name": "ADR-0065: a time32[ms] outside a day is refused by row and column, not moved to another day",
+      "stream": "streams/time32-ms-outside.arrows",
+      "refused": {
+        "message": "Row 3, column 'At': the time32[ms] value -1 (milliseconds since midnight) lies outside a day, 00:00:00 to 23:59:59.9999999.",
+        "row": 3,
+        "column": "At"
+      }
+    },
+    {
+      "name": "ADR-0065: a time64[us] outside a day is refused by row and column, not moved to another day",
+      "stream": "streams/time64-us-outside.arrows",
+      "refused": {
+        "message": "Row 3, column 'At': the time64[us] value 86400000000 (microseconds since midnight) lies outside a day, 00:00:00 to 23:59:59.9999999.",
+        "row": 3,
+        "column": "At"
+      }
+    },
+    {
+      "name": "ADR-0065: a time64[ns] outside a day is refused by row and column, not moved to another day",
+      "stream": "streams/time64-ns-outside.arrows",
+      "refused": {
+        "message": "Row 3, column 'At': the time64[ns] value -100 (nanoseconds since midnight) lies outside a day, 00:00:00 to 23:59:59.9999999.",
+        "row": 3,
+        "column": "At"
+      }
+    },
+    {
+      "name": "ADR-0065: a time64[ns] finer than a date's 100 nanoseconds is refused, not truncated",
+      "stream": "streams/time64-ns-finer.arrows",
+      "refused": {
+        "message": "Row 2, column 'At': the time64[ns] value 45015000000150 is finer than the 100 nanoseconds a date holds.",
+        "row": 2,
+        "column": "At"
+      }
+    },
+    {
+      "name": "ADR-0065: a dictionary index outside its dictionary, 3, is refused by row and column",
+      "stream": "streams/dictionary-index-past.arrows",
+      "refused": {
+        "message": "Row 3, column 'Region': the dictionary index 3 lies outside the dictionary's 3 entries.",
+        "row": 3,
+        "column": "Region"
+      }
+    },
+    {
+      "name": "ADR-0065: a dictionary index outside its dictionary, -1, is refused by row and column",
+      "stream": "streams/dictionary-index-negative.arrows",
+      "refused": {
+        "message": "Row 3, column 'Region': the dictionary index -1 lies outside the dictionary's 3 entries.",
+        "row": 3,
+        "column": "Region"
+      }
+    },
+    {
+      "name": "ADR-0065: utf8 that is not valid UTF-8 is refused by row and column",
+      "stream": "streams/utf8-invalid.arrows",
+      "refused": {
+        "message": "Row 2, column 'Name': the text is not valid UTF-8.",
+        "row": 2,
+        "column": "Name"
+      }
+    },
+    {
+      "name": "ADR-0065: a dictionary entry that is not valid UTF-8 is refused by the first row that uses it",
+      "stream": "streams/dictionary-entry-invalid.arrows",
+      "refused": {
+        "message": "Row 3, column 'Region': the dictionary's entry 1 is not valid UTF-8.",
+        "row": 3,
+        "column": "Region"
+      }
+    },
+    {
+      "name": "ADR-0065: a utf8_view value not UTF-8, in its view is refused by row and column",
+      "stream": "streams/utf8-view-inline-invalid.arrows",
+      "refused": {
+        "message": "Row 3, column 'Name': the text is not valid UTF-8.",
+        "row": 3,
+        "column": "Name"
+      }
+    },
+    {
+      "name": "ADR-0065: a utf8_view value not UTF-8, in a data buffer is refused by row and column",
+      "stream": "streams/utf8-view-buffer-invalid.arrows",
+      "refused": {
+        "message": "Row 3, column 'Name': the text is not valid UTF-8.",
+        "row": 3,
+        "column": "Name"
+      }
+    },
+    {
+      "name": "ADR-0065: a utf8_view value pointing past its data buffer's end is refused by row and column",
+      "stream": "streams/utf8-view-past-end.arrows",
+      "refused": {
+        "message": "Row 3, column 'Name': the Arrow stream is malformed: the value's view points outside its data.",
+        "row": 3,
+        "column": "Name"
+      }
+    },
+    {
+      "name": "ADR-0065: a utf8_view value naming a data buffer the array does not have is refused by row and column",
+      "stream": "streams/utf8-view-no-buffer.arrows",
+      "refused": {
+        "message": "Row 3, column 'Name': the Arrow stream is malformed: the value's view points outside its data.",
+        "row": 3,
+        "column": "Name"
+      }
+    },
+    {
+      "name": "ADR-0065: a utf8_view value of a negative length is refused by row and column",
+      "stream": "streams/utf8-view-negative-length.arrows",
+      "refused": {
+        "message": "Row 3, column 'Name': the Arrow stream is malformed: the value's view points outside its data.",
+        "row": 3,
+        "column": "Name"
+      }
+    },
+    {
+      "name": "ADR-0065: a dictionary of utf8_view whose entry's view points outside its data is refused by the first row that uses the entry",
+      "stream": "streams/dictionary-view-outside.arrows",
+      "refused": {
+        "message": "Row 3, column 'Region': the Arrow stream is malformed: the dictionary's entry 1's view points outside its data.",
+        "row": 3,
+        "column": "Region"
+      }
+    }
+  ]
+}

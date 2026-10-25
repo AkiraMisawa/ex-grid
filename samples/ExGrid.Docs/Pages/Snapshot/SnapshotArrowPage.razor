@@ -85,6 +85,29 @@
         <DocsExample Builtin="typeof(ArrowRefusals)" Files="@(["Examples/Pivot/Sales.cs"])" />
     </DocsSection>
 
+    <DocsSection Title="From TypeScript">
+        <p>
+            <code>@@ex-grid/data</code>, an npm package with no dependencies, holds a Snapshot in TypeScript and reads and
+            writes the same Arrow, so a browser that is not running .NET takes a Snapshot from the same server endpoint
+            (ADR-0370). It is built in this repository and published with 0.3.0.
+        </p>
+        <pre class="docs-code"><code>import { readArrowSnapshot, writeArrowSnapshot } from '@@ex-grid/data';
+
+const response = await fetch('/deals', { headers: { accept: 'application/vnd.apache.arrow.stream' } });
+const snapshot = await readArrowSnapshot(new Uint8Array(await response.arrayBuffer()), { signal, onProgress });
+const notional = snapshot.column('Notional');   // a Decimal column: { mantissa: bigint, scale: number }
+const bytes = writeArrowSnapshot(snapshot);     // an uncompressed Arrow IPC stream, as WriteAsync writes one</code></pre>
+        <p>
+            A value is held exactly as .NET holds it: an Integer is a <code>bigint</code>, a Decimal its digits and places,
+            a Date its ticks (100 ns since 0001-01-01, as <code>DateTime</code> counts them; <code>ticksText</code> writes
+            one as text), and a Double keeps its bits. The reader takes the table above and refuses what it refuses, with
+            the same row, column and words: both packages run the same cases, under <code>tests/cases/arrow/</code>, and
+            each reads what the other writes. Its one difference is compression: it carries no codec, so a stream whose
+            buffers are compressed is refused, naming the codec. There is no Example here, because this site is a Blazor
+            app and runs no package script of its own.
+        </p>
+    </DocsSection>
+
     <DocsSection Title="API">
         <ApiTable Type="typeof(global::ExGrid.Data.Arrow.SnapshotArrow)" />
     </DocsSection>
