@@ -16,7 +16,7 @@ SH-51, SH-52, KB-3 and WR-10 because their paths changed since their records, an
 unchanged up to it.
 
 **The user's authorisation.** The user asked, through the project, for the Windows by-hand rows to be run on this
-machine, driven automatically ("Windowsで手動確認のやつやっていいよ。手動といっても自動で動かして欲しい"). The IME's
+machine, driven automatically rather than by hand (2026-10-25). The IME's
 Predictive input need not be asked about each time (the user, 2026-10-18). It was turned off for k8 and k8x only, and
 put back (ED-30, below).
 
@@ -132,4 +132,6 @@ verified commit `5e3eecb44fb9dcfec074cfa8eefe03a91809fbc3` and its tag `verified
 verdict pass. The run read a paste landing later behind 150 ms (k13x), recorded under "Differences". WR-10 is filed by its own record, `verification/2026-10-25-linux-mudblazor-floor/`.
 
 Still without a record that holds at the verified commit: FN-12e and KB-3 on macOS (the user's Mac), and VZ-18 (the
-remote-isolation PC; its Known limitation reaches `0.1.0` only).
+remote-isolation PC; its Known limitation reached `0.1.0` only). After this run, on 2026-10-25, the user decided that
+none of the three is run for `0.2.0`: each is a Known limitation of `0.2.0` in the Definition of Done's table and in
+`verification/by-hand.json`. That decision is not this run's.

@@ -205,7 +205,7 @@ public partial class RepositoryTests
     }
 
     [Fact] // ADR-0208 (decided with the user 2026-10-25): VZ-18, and FN-12e and KB-3 on macOS, are Known limitations of 0.2.0 in the index and the table, with no record
-    public void VZ_18_and_the_macOS_rows_are_known_limitations_of_0_2_0()
+    public void VZ_18_and_FN_12e_and_KB_3_on_macOS_are_known_limitations_of_0_2_0()
     {
         var report = new Report();
         var index = ByHand.ReadIndex(Tree, report)!;
@@ -225,7 +225,7 @@ public partial class RepositoryTests
             Assert.Equal("0.2.0", Assert.Single(table.Rows, r => r.Row == row && r.Where == "macOS").KnownLimitation);
         }
         Assert.Equal("0.2.0", Assert.Single(table.Rows, r => r.Row == "VZ-18").KnownLimitation);
-        Assert.All(index.Where(r => r.Row != "VZ-18" && r.Where != "macOS"), r => Assert.Null(r.Limitation));
+        Assert.All(index.Where(r => r.Row != "VZ-18" && !(r.Where == "macOS" && r.Row is "FN-12e" or "KB-3")), r => Assert.Null(r.Limitation));
     }
 
     // Every .cs file of every test project but this one, whose own tests write the patterns as text.
