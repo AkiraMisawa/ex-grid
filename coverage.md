@@ -14,18 +14,18 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/25/2026 - 15:57:04 |
+| Generated on: | 10/25/2026 - 16:31:58 |
 | Parser: | MultiReport (19x Cobertura) |
 | Assemblies: | 16 |
 | Classes: | 1181 |
 | Files: | 605 |
-| **Line coverage:** | 94.5% (81663 of 86399) |
-| Covered lines: | 81663 |
-| Uncovered lines: | 4736 |
+| **Line coverage:** | 94.5% (81662 of 86399) |
+| Covered lines: | 81662 |
+| Uncovered lines: | 4737 |
 | Coverable lines: | 86399 |
 | Total lines: | 138109 |
-| **Branch coverage:** | 87.2% (49278 of 56504) |
-| Covered branches: | 49278 |
+| **Branch coverage:** | 87.2% (49279 of 56504) |
+| Covered branches: | 49279 |
 | Total branches: | 56504 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
@@ -838,7 +838,7 @@
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExPivot.Engine**|**96.1%**|**87.7%**|
+|**ExPivot.Engine**|**96.1%**|**87.6%**|
 |ExPivot.Engine.AggregateValue|100%|100%|
 |ExPivot.Engine.AggregationPass|98.7%|96.1%|
 |ExPivot.Engine.AxisNode|87%|80%|
@@ -959,7 +959,7 @@
 |ExPivot.Engine.PivotReportUpdate|100%||
 |ExPivot.Engine.PivotReportVersion|100%||
 |ExPivot.Engine.PivotReportWindow|100%||
-|ExPivot.Engine.PivotRowKey|100%|85.2%|
+|ExPivot.Engine.PivotRowKey|98%|82.3%|
 |ExPivot.Engine.PivotRowLabel|100%||
 |ExPivot.Engine.PivotSlicing|100%|60%|
 |ExPivot.Engine.PivotSort|100%||
@@ -1030,12 +1030,12 @@
 |ExSheet.BuiltInToolbarItem|96.4%|97.3%|
 |ExSheet.ColourItem|96%|100%|
 |ExSheet.CommaItem|83.3%||
-|ExSheet.Components.ExSheet|91.3%|81.7%|
+|ExSheet.Components.ExSheet|91.3%|81.8%|
 |ExSheet.Components.ExSheet.KeyboardListener|100%||
 |ExSheet.Components.ExSheet.KeyUpListener|100%||
 |ExSheet.Components.ExSheet.OwnFindOutcome|100%||
 |ExSheet.Components.ExSheet.SheetGridChrome|86.6%|73%|
-|ExSheet.Components.ExSheet<T>|91.3%|81.7%|
+|ExSheet.Components.ExSheet<T>|91.3%|81.8%|
 |ExSheet.Components.ExSheetStylesheet|100%||
 |ExSheet.Components.FormatCellsPanel|97.3%|87.5%|
 |ExSheet.Components.SheetFindPanel|91.7%|76.5%|
