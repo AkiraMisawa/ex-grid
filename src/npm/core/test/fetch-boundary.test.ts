@@ -4,6 +4,7 @@
 import { describe, expect, it } from 'vitest';
 import { elementAt } from '../src/must';
 import type { FilterSpec, GridFilter } from '../src/query/filter';
+import type { SortSpec } from '../src/query/sort';
 import { notFound, type GridFindRequest } from '../src/finding/find';
 import { declinedSummary, type GridSummaryRequest } from '../src/summary/grid-summary';
 import { GridSource } from '../src/source/grid-source';
@@ -93,8 +94,49 @@ describe('GridSource.fetch', () => {
 
     it('ADR-0055 / ADR-0130: a source finds and summarises only when the Consumer gave it a server that does', () => {
         const { source } = server();
-        expect(source.find).toBeUndefined();
-        expect(source.summarize).toBeUndefined();
+        expect('find' in source).toBe(false);
+        expect('summarize' in source).toBe(false);
+    });
+
+    it('ADR-0025: a range asked for while the grid hears a fetch start supersedes it, and is the one in flight', async () => {
+        const { source, calls } = server();
+        elementAt(calls, 0).resolve({ rows: ['Row 0'], start: 0, totalCount: 5000 });
+        await settle();
+        let inner: Promise<void> | undefined;
+        const stop = source.subscribe(() => {
+            if (inner === undefined && source.snapshot().loading) inner = source.needRange({ start: 900, count: 20 });
+        });
+        void source.needRange({ start: 500, count: 20 });
+        stop();
+        expect(calls.map(({ query }) => query.range.start)).toEqual([0, 500, 900]);
+        // The same range again is the inner question, not the superseded one.
+        expect(source.needRange({ start: 900, count: 20 })).toBe(inner);
+        elementAt(calls, 1).resolve({ rows: ['Row 500'], start: 500, totalCount: 5000 });
+        await settle();
+        expect(source.snapshot()).toMatchObject({ loading: true, windowStart: 0 });
+        elementAt(calls, 2).resolve({ rows: ['Row 900'], start: 900, totalCount: 5000 });
+        await settle();
+        expect(source.snapshot()).toMatchObject({ loading: false, windowStart: 900 });
+    });
+
+    it('ADR-0005: rows for a copy answered from another part of the result are refused, never copied', async () => {
+        const { source, calls } = server();
+        const copy = source.rows({ start: 3, count: 2 }, new AbortController().signal);
+        elementAt(calls, 1).resolve({ rows: ['Row 5', 'Row 6'], start: 5, totalCount: 5000 });
+        await expect(copy).rejects.toThrow('2 rows at 3');
+    });
+
+    it('ADR-0023: a Sort or a Filter that is not one is refused by name, as an untyped caller may hand it', () => {
+        const { source, calls } = server();
+        const untyped = JSON.parse('{"sorts": [{"column": "Book", "direction": "up"}], "noColumn": [{"direction": "ascending"}], "filter": {"Book": []}}') as {
+            readonly sorts: readonly SortSpec[];
+            readonly noColumn: readonly SortSpec[];
+            readonly filter: GridFilter;
+        };
+        expect(() => { source.setSorts(untyped.sorts); }).toThrow(TypeError);
+        expect(() => { source.setSorts(untyped.noColumn); }).toThrow(TypeError);
+        expect(() => { source.setFilter(untyped.filter); }).toThrow(TypeError);
+        expect(calls).toHaveLength(1);
     });
 
     it('ADR-0055 / ADR-0130: Find and a Summary are asked under the Sort and the Filter in force', async () => {

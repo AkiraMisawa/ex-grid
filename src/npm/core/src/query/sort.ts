@@ -32,3 +32,18 @@ export function sortsEqual(a: readonly SortSpec[], b: readonly SortSpec[]): bool
         return other !== undefined && sort.column === other.column && sort.direction === other.direction;
     });
 }
+
+/** A Sort as an untyped caller may hand it, refused by name unless it is a list of levels, each naming a
+ * column and one of the two directions. */
+export function checkedSorts(sorts: readonly SortSpec[]): readonly SortSpec[] {
+    const given: unknown = sorts;
+    if (!Array.isArray(given)) throw new TypeError('A Sort is a list of levels, outermost first; empty for none.');
+    for (const level of sorts) {
+        const { column, direction }: { readonly column: unknown; readonly direction: unknown } = level;
+        if (typeof column !== 'string' || column === '') throw new TypeError('A level of a Sort names its column.');
+        if (direction !== 'ascending' && direction !== 'descending') {
+            throw new TypeError(`A level of a Sort is ascending or descending, not ${String(direction)}.`);
+        }
+    }
+    return sorts;
+}

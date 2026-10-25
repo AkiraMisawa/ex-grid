@@ -6,7 +6,7 @@ namespace ExGrid.Tests;
 /// What the bundled fetching source promises (ADR-0025) beyond its shared cases
 /// (<c>tests/cases/source/fetch.json</c>, run by <see cref="Cases.FetchCaseTests"/>): what JSON
 /// cannot write — a Filter the Consumer changes after handing it over, the token sources
-/// .NET disposes, and a page refused where it is built. Timing is driven by hand — no
+/// .NET disposes, a range asked for from inside a handler, and a page refused where it is built. Timing is driven by hand — no
 /// delays, no clock.
 /// </summary>
 public class GridSourceFetchTests
@@ -105,6 +105,42 @@ public class GridSourceFetchTests
         Assert.Equal(4, server.Calls.Count);
         Assert.All(server.Calls, call =>
             Assert.Throws<ObjectDisposedException>(() => call.Cancellation.WaitHandle));
+    }
+
+    [Fact] // ADR-0025: a range asked for while the grid hears a fetch start supersedes it, and is the one in flight
+    public void A_range_asked_while_a_fetch_is_heard_starting_is_the_one_in_flight()
+    {
+        // A render that StateHasChanged completes at once can ask for a range from inside StateChanged.
+        var context = SynchronizationContext.Current;
+        SynchronizationContext.SetSynchronizationContext(null);
+        try
+        {
+            var server = new Server();
+            var source = server.Source();
+            server.Last.Completion.SetResult(Page(0, 100, 5_000));
+            Task? inner = null;
+            void Ask()
+            {
+                if (inner is null && source.IsLoading)
+                    inner = source.OnRangeNeededAsync(new RowRange(900, 20));
+            }
+            source.StateChanged += Ask;
+            _ = source.OnRangeNeededAsync(new RowRange(500, 20));
+            source.StateChanged -= Ask;
+
+            Assert.Equal([0, 500, 900], server.Calls.Select(call => call.Query.Range.Start));
+            Assert.Same(inner, source.OnRangeNeededAsync(new RowRange(900, 20)));
+            server.Calls[1].Completion.SetResult(Page(500, 20, 5_000));
+            Assert.True(source.IsLoading);
+            Assert.Equal(0, source.WindowStart);
+            server.Calls[2].Completion.SetResult(Page(900, 20, 5_000));
+            Assert.False(source.IsLoading);
+            Assert.Equal(900, source.WindowStart);
+        }
+        finally
+        {
+            SynchronizationContext.SetSynchronizationContext(context);
+        }
     }
 
     [Fact] // ADR-0001: a page that contradicts itself is refused where it is built

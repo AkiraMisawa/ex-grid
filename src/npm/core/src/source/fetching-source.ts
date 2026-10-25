@@ -13,7 +13,8 @@
 
 import type { QueryColumn } from '../query/columns';
 import type { GridFilter } from '../query/filter';
-import { sortsEqual, type SortSpec } from '../query/sort';
+import { checkedSorts, sortsEqual, type SortSpec } from '../query/sort';
+import { defined } from '../must';
 import { rowRange, type RowRange } from '../viewport/row-range';
 import type { GridFindRequest, GridFindResult } from '../finding/find';
 import type { GridSummaryRequest, GridSummaryResult } from '../summary/grid-summary';
@@ -112,6 +113,9 @@ export class FetchingGridSource<Row> implements GridSource<Row> {
     // off. A superseded answer is told by its generation, not by its abort: aborting is a courtesy to the
     // server, and the generation is what makes it correct.
     #inFlight: RowRange | undefined;
+    // The rows the grid last said it needs of the question in flight: what its answer has to reach. A range
+    // asked again that widens to the one in flight joins it, and its need is the one the answer is held to.
+    #inFlightNeeded: RowRange | undefined;
     #current: Promise<void> = Promise.resolve();
     #generation = 0;
     #controller: AbortController | undefined;
@@ -122,11 +126,13 @@ export class FetchingGridSource<Row> implements GridSource<Row> {
     #orderToken: string | undefined;
     #answered = false;
 
+    // Declared, never defined as fields: a source given no `find` has no such member at all, which is how a
+    // Grid Source says what it cannot do (ADR-0350 §16).
     /** A Find step through the Consumer's server (ADR-0055); absent when it was given no `find`. */
-    readonly find?: (request: GridFindRequest, signal: AbortSignal) => Promise<GridFindResult>;
+    declare readonly find?: (request: GridFindRequest, signal: AbortSignal) => Promise<GridFindResult>;
     /** A Selection Summary through the Consumer's server (ADR-0130); absent when it was given no
      * `summarize`. */
-    readonly summarize?: (request: GridSummaryRequest, signal: AbortSignal) => Promise<GridSummaryResult>;
+    declare readonly summarize?: (request: GridSummaryRequest, signal: AbortSignal) => Promise<GridSummaryResult>;
 
     private constructor(fetch: (query: GridQuery, signal: AbortSignal) => Promise<GridPage<Row>>, options: FetchingSourceOptions<Row>) {
         if (typeof fetch !== 'function') throw new TypeError('GridSource.fetch takes a function that answers a Query with a page.');
@@ -206,7 +212,8 @@ export class FetchingGridSource<Row> implements GridSource<Row> {
     /** Takes a new Sort. One equal to the Sort in force is no change; any other drops the Window, moves the
      * Row Sequence Version and fetches the first page under the new Query (ADR-0025). */
     setSorts(sorts: readonly SortSpec[]): void {
-        if (sortsEqual(sorts, this.#state.sorts)) return;
+        checkedSorts(sorts);
+        if (this.#disposed || sortsEqual(sorts, this.#state.sorts)) return;
         const kept = Object.freeze(sorts.map(sort => Object.freeze({ ...sort })));
         this.#restart({ sorts: kept });
     }
@@ -215,7 +222,11 @@ export class FetchingGridSource<Row> implements GridSource<Row> {
      * it can change without reaching the source (ADR-0023). An equal one is no change; any other restarts,
      * as a new Sort does. */
     setFilter(filter: GridFilter | undefined): void {
-        if (filtersEqual(filter, this.#state.filter)) return;
+        const given: unknown = filter;
+        if (given !== undefined && (typeof given !== 'object' || given === null || typeof (given as { columns?: unknown }).columns !== 'object')) {
+            throw new TypeError('A Filter is an object of columns, or undefined for none.');
+        }
+        if (this.#disposed || filtersEqual(filter, this.#state.filter)) return;
         this.#restart({ filter: snapshotFilter(filter) });
     }
 
@@ -243,6 +254,7 @@ export class FetchingGridSource<Row> implements GridSource<Row> {
         if (this.#disposed || this.#covers(needed)) return Promise.resolve();
         const wanted = this.#expand(needed);
         if (this.#inFlight !== undefined && this.#inFlight.start === wanted.start && this.#inFlight.count === wanted.count) {
+            this.#inFlightNeeded = needed;
             return this.#current;
         }
         // Both ranges travel together: the widened one is what the server is asked for, and the grid's own
@@ -257,9 +269,12 @@ export class FetchingGridSource<Row> implements GridSource<Row> {
         const asked = rowRange(range.start, range.count);
         this.#requireUndisposed();
         const page = checkedPage(await this.#fetch(Object.freeze({ range: asked, ...this.#inForce() }), signal));
-        // A server free to widen its page is not free to make the caller guess which rows were asked for.
+        // A server free to widen its page is not free to make the caller guess which rows were asked for, nor
+        // to answer from elsewhere: a copy of the wrong rows would look like the right ones. An answer with no
+        // rows because the result ended before the range is the truth, and a short one is the caller's to
+        // judge, which a copy refuses (ADR-0005).
+        if (!reaches(page, asked)) throw new Error(missed(asked, page));
         const skip = asked.start - page.start;
-        if (skip < 0 || skip > page.rows.length) return Object.freeze([]);
         return Object.freeze(page.rows.slice(skip, skip + asked.count));
     }
 
@@ -342,22 +357,27 @@ export class FetchingGridSource<Row> implements GridSource<Row> {
         // moves nothing the grid paints (ADR-0023).
         const wasLoading = this.#state.loading;
         if (!wasLoading) this.#state = Object.freeze({ ...this.#state, loading: true });
+        this.#inFlightNeeded = needed;
+        // Set going before anyone hears of it: a listener that asks for another range meanwhile supersedes
+        // this question, and must find its own in flight once it returns, not this one.
+        const run = this.#run(wanted, generation, controller);
+        this.#current = run;
         if (notify || !wasLoading) this.#notify();
-        this.#current = this.#run(wanted, needed, generation, controller);
-        return this.#current;
+        return run;
     }
 
-    async #run(wanted: RowRange, needed: RowRange, generation: number, controller: AbortController): Promise<void> {
+    async #run(wanted: RowRange, generation: number, controller: AbortController): Promise<void> {
         try {
             const query: GridQuery = Object.freeze({ range: wanted, ...this.#inForce() });
             const page = await this.#fetch(query, controller.signal);
             // Late and superseded: a newer question was asked, and this answers the old one. Taken, it would
             // put rows on screen that nothing asked for (ADR-0001).
             if (generation !== this.#generation || this.#disposed) return;
-            this.#apply(needed, checkedPage(page));
+            this.#apply(defined(this.#inFlightNeeded, 'the rows the question in flight needs'), checkedPage(page));
         } catch (error) { // oxlint-disable-line ex-grid/no-catch -- ADR-0025: a superseded failure is nobody's, and a heard one is reported and held in lastError
             if (generation !== this.#generation || this.#disposed) return;
             this.#inFlight = undefined;
+            this.#inFlightNeeded = undefined;
             this.#state = Object.freeze({ ...this.#state, loading: false, lastError: error });
             this.#notify();
             if (this.#onFetchFailed !== undefined) {
@@ -376,13 +396,7 @@ export class FetchingGridSource<Row> implements GridSource<Row> {
         // asked for leaves the Viewport on Placeholders, and the grid asks again for the same range and gets
         // the same answer. Refused by name rather than spun on. Answering short because the result shrank
         // past the asked position is legitimate, and says so by its own total.
-        if (page.start > asked.start || (asked.start < page.totalCount && page.start + page.rows.length <= asked.start)) {
-            throw new Error(`The grid needs ${asked.count} rows at ${asked.start} and the answer is ${page.rows.length} rows at `
-                + `${page.start} of ${page.totalCount}, which does not reach it. A source may answer with fewer rows than the `
-                + 'read-ahead asked for, or with none when the result has shrunk past that position, but the rows the grid is '
-                + 'about to paint have to be in it (ADR-0025). A server that caps its pages below the read-ahead window will '
-                + 'trip this.');
-        }
+        if (!reaches(page, asked)) throw new Error(missed(asked, page));
         if (this.#rowKey !== undefined) checkKeys(page, this.#rowKey);
         // A result that shrank means the positions name other rows, so the selection goes, as for a reorder
         // (ADR-0011); growing is safe. Only the server knows whether the order of the whole result moved,
@@ -392,6 +406,7 @@ export class FetchingGridSource<Row> implements GridSource<Row> {
         this.#orderToken = page.orderToken;
         this.#answered = true;
         this.#inFlight = undefined;
+        this.#inFlightNeeded = undefined;
         this.#state = Object.freeze({
             ...this.#state,
             window: Object.freeze([...page.rows]),
@@ -425,6 +440,18 @@ function checkedPage<Row>(page: GridPage<Row>): GridPage<Row> {
     const token: unknown = orderToken;
     if (token !== undefined && typeof token !== 'string') throw new TypeError('A page\'s order token is a string.');
     return page;
+}
+
+/** Whether an answer reaches the first row asked for, or has none because the result ended before it. */
+function reaches<Row>(page: GridPage<Row>, asked: RowRange): boolean {
+    return page.start <= asked.start && (asked.start >= page.totalCount || page.start + page.rows.length > asked.start);
+}
+
+function missed<Row>(asked: RowRange, page: GridPage<Row>): string {
+    return `The grid needs ${asked.count} rows at ${asked.start} and the answer is ${page.rows.length} rows at ${page.start} of `
+        + `${page.totalCount}, which does not reach it. A source may answer with fewer rows than the read-ahead asked for, or `
+        + 'with none when the result has shrunk past that position, but the rows the grid is about to paint have to be in it '
+        + '(ADR-0025). A server that caps its pages below the read-ahead window will trip this.';
 }
 
 /** Refuses an answer in which a key repeats, or a row has none (ADR-0140, ADR-0141). */

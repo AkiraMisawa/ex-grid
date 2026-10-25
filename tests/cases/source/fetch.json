@@ -81,6 +81,21 @@
       ]
     },
     {
+      "name": "ADR-0025: a range that widens to the one in flight joins it, and the answer is held to the newer need",
+      "readAhead": 60,
+      "hears": false,
+      "steps": [
+        {"bind": true},
+        {"needRange": [0, 20], "as": "top"},
+        {"needRange": [10, 10], "as": "lower"},
+        {"same": ["top", "lower"]},
+        {"expect": {"calls": [[0, 100], [0, 80]]}},
+        {"answer": 1, "page": {"start": 0, "count": 5, "total": 5000}},
+        {"settled": "lower", "throws": "invalidOperation", "saying": "10 rows at 10"},
+        {"expect": {"windowCount": 0, "loading": false, "lastError": "10 rows at 10"}}
+      ]
+    },
+    {
       "name": "ADR-0025: a superseded question is called off, and its answer never reaches the screen",
       "readAhead": 0,
       "hears": false,
@@ -346,7 +361,11 @@
         {"answer": 0, "page": {"start": 0, "count": 100, "total": 5000}},
         {"needRange": [500, 20], "as": "late"},
         {"settled": "late"},
-        {"expect": {"calls": [[0, 100]], "windowCount": 0, "loading": true, "heard": 0}}
+        {"setSorts": [{"column": "Book", "direction": "ascending"}]},
+        {"setFilter": {"columns": {"Book": {"clauses": [{"operator": "isBlank"}]}}}},
+        {"requery": true},
+        {"bind": true},
+        {"expect": {"calls": [[0, 100]], "windowCount": 0, "loading": true, "version": 0, "sorts": [], "filter": null, "heard": 0}}
       ]
     },
     {
