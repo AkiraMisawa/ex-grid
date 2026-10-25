@@ -3,16 +3,18 @@ import type { ColumnType, QueryColumn } from './columns';
 import { filterOperatorsFor, type FilterClause, type FilterCombinator, type FilterOperator, type GridFilter } from './filter';
 import { compareNumbers, numberIdentity, numberKey, numberRefusal, type NumberKey } from './numbers';
 import type { SortDirection, SortSpec } from './sort';
-import { compareIgnoringCase, foldCase } from './text-casing';
+import { foldCase } from './text-casing';
 
 // The reference implementation of a Query's semantics (ADR-0001, ADR-0023): what GridSource.from does
 // with a Filter and a Sort, and what a server-side Source is held to. The whole Query is checked before any
 // row is read, so a malformed one is refused whatever the rows hold; every cell is then held to its
 // column's declared type as it is read, whichever operator reads it.
 
-/** A cell as it is compared: a string, a Number key or a boolean, or `null` for a Blank. */
+/** A cell as it is compared: a text folded as OrdinalIgnoreCase folds it, a Number key or a boolean, or
+ * `null` for a Blank. Text is folded once as it is read, never again per comparison. */
 type Key = string | NumberKey | boolean | null;
 
+const columnTypes: readonly ColumnType[] = Object.freeze(['text', 'number', 'date', 'boolean'] as const);
 const combinators: readonly FilterCombinator[] = Object.freeze(['and', 'or'] as const);
 const directions: readonly SortDirection[] = Object.freeze(['ascending', 'descending'] as const);
 
@@ -22,13 +24,11 @@ interface Kept<Row> {
     readonly position: number;
 }
 
-interface PreparedClause {
-    readonly operator: FilterOperator;
-    readonly operand: Key;
-    /** For `in`: the identities of the listed values, and whether a Blank is among them. */
-    readonly set?: ReadonlySet<string>;
-    readonly blankListed?: boolean;
-}
+/** A clause checked once: `in` holds the identities of the listed values and whether a Blank is among
+ * them, every other operator its operand. */
+type PreparedClause =
+    | { readonly operator: 'in'; readonly set: ReadonlySet<string>; readonly blankListed: boolean }
+    | { readonly operator: Exclude<FilterOperator, 'in'>; readonly operand: Key };
 
 interface PreparedColumn<Row> {
     readonly column: QueryColumn<Row>;
@@ -69,9 +69,11 @@ function keptInOrder<Row>(
     return levels === undefined ? kept : sortKept(kept, levels);
 }
 
-/** Whether one row passes a Filter. */
-export function matchesFilter<Row>(row: Row, columns: readonly QueryColumn<Row>[], filter: GridFilter): boolean {
-    return matches(row, prepare(indexColumns(columns), filter));
+/** Whether a row passes a Filter, as a predicate: the Filter is checked and prepared once, here, so a
+ * Source that tests rows one at a time (a row added, a row changed) does not prepare it per row. */
+export function filterPredicate<Row>(columns: readonly QueryColumn<Row>[], filter: GridFilter): (row: Row) => boolean {
+    const prepared = prepare(indexColumns(columns), filter);
+    return row => matches(row, prepared);
 }
 
 function indexColumns<Row>(columns: readonly QueryColumn<Row>[]): ReadonlyMap<string, QueryColumn<Row>> {
@@ -89,6 +91,10 @@ function indexColumns<Row>(columns: readonly QueryColumn<Row>[]): ReadonlyMap<st
 function resolve<Row>(columns: ReadonlyMap<string, QueryColumn<Row>>, name: string): QueryColumn<Row> {
     const column = columns.get(name);
     if (column === undefined) throw new Error(`Unknown column '${name}'.`);
+    // Checked here, before any row is read, so a type outside the vocabulary is refused whatever the rows.
+    if (!columnTypes.includes(column.type)) {
+        throw new RangeError(`Column '${name}' has an unknown type (${JSON.stringify(column.type)}).`);
+    }
     // An Action Column carries no value, so every row would compare equal and a sort would shuffle the
     // result into an order nobody could account for (ADR-0020).
     if (column.queryable === false) {
@@ -108,14 +114,16 @@ function prepare<Row>(columns: ReadonlyMap<string, QueryColumn<Row>>, filter: Gr
     // Columns combine with And (ADR-0009). The Opaque Filter is ignored (ADR-0023).
     return Object.entries(filter.columns).map(([name, spec]) => {
         const column = resolve(columns, name);
-        if (spec.clauses.length === 0) {
+        // A Query that came through JSON writes an absent member as null.
+        const { clauses: written } = spec;
+        if (isBlank(written) || written.length === 0) {
             throw new Error(`The filter on column '${name}' has no clauses. Remove the column from the Filter instead.`);
         }
-        const { combinator = 'and' } = spec;
+        const combinator = isBlank(spec.combinator) ? 'and' : spec.combinator;
         if (!combinators.includes(combinator)) {
             throw new Error(`The filter on column '${name}' has an unknown combinator (${JSON.stringify(combinator)}).`);
         }
-        const clauses = spec.clauses.map(clause => prepareClause(column, clause));
+        const clauses = written.map(clause => prepareClause(column, clause));
         return { column, combinator, clauses };
     });
 }
@@ -125,32 +133,33 @@ function prepareClause<Row>(column: QueryColumn<Row>, clause: FilterClause): Pre
     if (!filterOperatorsFor(column.type).includes(operator)) {
         throw new Error(`Operator ${JSON.stringify(operator)} is not allowed on column '${column.name}' (${column.type}).`);
     }
-    const wantsValues = operator === 'in';
-    const wantsValue = !wantsValues && operator !== 'isBlank' && operator !== 'isNotBlank';
-    if (wantsValues && (clause.values === undefined || clause.values.length === 0)) {
-        throw new Error(`Operator in on column '${column.name}' requires a non-empty values list.`);
-    }
-    if (!wantsValues && clause.values !== undefined) {
-        throw new Error(`Operator ${operator} on column '${column.name}' does not take a values list.`);
-    }
-    if (wantsValue && isBlank(clause.value)) {
-        throw new Error(`Operator ${operator} on column '${column.name}' requires a value. To select Blanks, use isBlank.`);
-    }
-    if (!wantsValue && !isBlank(clause.value)) {
-        throw new Error(`Operator ${operator} on column '${column.name}' does not take a value.`);
-    }
-
-    if (wantsValues) {
-        const keys = defined(clause.values, 'the checked values list').map(value => keyOf(column, value, true));
+    // A Query that came through JSON writes an absent member as null.
+    const { values, value } = clause;
+    if (operator === 'in') {
+        if (isBlank(values) || values.length === 0) {
+            throw new Error(`Operator in on column '${column.name}' requires a non-empty values list.`);
+        }
+        if (!isBlank(value)) throw new Error(`Operator in on column '${column.name}' does not take a value.`);
+        const keys = values.map(listed => keyOf(column, listed, true));
         // A value list can hold tens of thousands of entries (ADR-0009): membership is a set built once.
         const set = new Set<string>();
         for (const key of keys) if (key !== null) set.add(identity(column.type, key));
-        return { operator, operand: null, set, blankListed: keys.includes(null) };
+        return { operator, set, blankListed: keys.includes(null) };
     }
-    return { operator, operand: wantsValue ? keyOf(column, clause.value, true) : null };
+    if (!isBlank(values)) {
+        throw new Error(`Operator ${operator} on column '${column.name}' does not take a values list.`);
+    }
+    const wantsValue = operator !== 'isBlank' && operator !== 'isNotBlank';
+    if (wantsValue && isBlank(value)) {
+        throw new Error(`Operator ${operator} on column '${column.name}' requires a value. To select Blanks, use isBlank.`);
+    }
+    if (!wantsValue && !isBlank(value)) {
+        throw new Error(`Operator ${operator} on column '${column.name}' does not take a value.`);
+    }
+    return { operator, operand: wantsValue ? keyOf(column, value, true) : null };
 }
 
-function isBlank(value: unknown): boolean {
+function isBlank(value: unknown): value is null | undefined {
     return value === undefined || value === null;
 }
 
@@ -166,23 +175,23 @@ function matches<Row>(row: Row, prepared: readonly PreparedColumn<Row>[]): boole
 }
 
 function matchesClause(type: ColumnType, cell: Key, clause: PreparedClause): boolean {
-    const { operator, operand } = clause;
     // A Blank matches only isBlank, and an in list that names a Blank (ADR-0023).
-    if (cell === null) return operator === 'isBlank' || (operator === 'in' && clause.blankListed === true);
+    if (clause.operator === 'in') return cell === null ? clause.blankListed : clause.set.has(identity(type, cell));
+    const { operator, operand } = clause;
+    if (cell === null) return operator === 'isBlank';
     switch (operator) {
         case 'isBlank': return false;
         case 'isNotBlank': return true;
-        case 'in': return clause.set?.has(identity(type, cell)) === true;
         case 'equals': return compare(type, cell, operand) === 0;
         case 'notEquals': return compare(type, cell, operand) !== 0;
         case 'greaterThan': return compare(type, cell, operand) > 0;
         case 'greaterThanOrEqual': return compare(type, cell, operand) >= 0;
         case 'lessThan': return compare(type, cell, operand) < 0;
         case 'lessThanOrEqual': return compare(type, cell, operand) <= 0;
-        case 'contains': return foldCase(text(cell)).includes(foldCase(text(operand)));
-        case 'doesNotContain': return !foldCase(text(cell)).includes(foldCase(text(operand)));
-        case 'startsWith': return foldCase(text(cell)).startsWith(foldCase(text(operand)));
-        case 'endsWith': return foldCase(text(cell)).endsWith(foldCase(text(operand)));
+        case 'contains': return text(cell).includes(text(operand));
+        case 'doesNotContain': return !text(cell).includes(text(operand));
+        case 'startsWith': return text(cell).startsWith(text(operand));
+        case 'endsWith': return text(cell).endsWith(text(operand));
         default: return unreachable(operator);
     }
 }
@@ -224,7 +233,7 @@ function compareKeys(type: ColumnType, x: Key, y: Key, direction: SortDirection)
 
 function compare(type: ColumnType, x: Key, y: Key): number {
     switch (type) {
-        case 'text': return compareIgnoringCase(text(x), text(y));
+        case 'text': return compareFolded(text(x), text(y));
         case 'number': return compareNumbers(number(x), number(y));
         case 'boolean': return Number(bool(x)) - Number(bool(y));
         case 'date': throw new Error('Internal: a Date column reached a comparison.');
@@ -235,7 +244,7 @@ function compare(type: ColumnType, x: Key, y: Key): number {
 /** A key that is the same for two values exactly when they compare equal, for an `in` set. */
 function identity(type: ColumnType, key: NonNullable<Key>): string {
     switch (type) {
-        case 'text': return foldCase(text(key));
+        case 'text': return text(key);
         case 'number': return numberIdentity(number(key));
         case 'boolean': return String(bool(key));
         case 'date': throw new Error('Internal: a Date column reached a value list.');
@@ -251,12 +260,12 @@ function keyOf<Row>(column: QueryColumn<Row>, value: unknown, isOperand: boolean
         throw new Error(`Column '${column.name}' (${column.type}): ${role} ${shown(value)} ${reason}.`);
     };
     switch (column.type) {
-        case 'text': return typeof value === 'string' ? value : refuse('contradicts the declared type');
+        case 'text': return typeof value === 'string' ? foldCase(value) : refuse('contradicts the declared type');
         case 'boolean': return typeof value === 'boolean' ? value : refuse('contradicts the declared type');
         case 'number': {
             if (typeof value !== 'number' && typeof value !== 'bigint') return refuse('contradicts the declared type');
-            const refusal = numberRefusal(value);
-            return refusal === undefined ? numberKey(value) : refuse(refusal);
+            const key = numberKey(value);
+            return key === undefined ? refuse(defined(numberRefusal(value), 'the reason a Number was refused')) : key;
         }
         case 'date': throw new Error('Internal: a Date column reached a value.');
         default: return unreachable(column.type);
@@ -276,6 +285,12 @@ function shown(value: unknown): string {
         case 'undefined': return `(${kind})`;
         default: return unreachable(kind);
     }
+}
+
+/** Orders two folded texts as OrdinalIgnoreCase orders them: by their UTF-16 code units. */
+function compareFolded(x: string, y: string): number {
+    if (x === y) return 0;
+    return x < y ? -1 : 1;
 }
 
 function text(key: Key): string {

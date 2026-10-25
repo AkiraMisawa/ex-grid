@@ -22,7 +22,7 @@ public class QueryCaseTests
         var columns = document.GetProperty("columns").EnumerateArray()
             .Select((column, index) => new ColumnInfo<JsonElement>(
                 column.GetProperty("name").GetString()!,
-                Enum.Parse<ColumnType>(column.GetProperty("type").GetString()!, ignoreCase: true),
+                Member<ColumnType>(column.GetProperty("type")),
                 row => Value(row[index])))
             .ToArray();
         var rows = entry.GetProperty("rows").EnumerateArray().ToArray();
@@ -69,11 +69,16 @@ public class QueryCaseTests
         var columns = new Dictionary<string, FilterSpec>(StringComparer.Ordinal);
         foreach (var column in filter.GetProperty("columns").EnumerateObject())
         {
-            var clauses = column.Value.GetProperty("clauses").EnumerateArray().Select(clause => new FilterClause(
+            var written = column.Value.GetProperty("clauses");
+            // Clauses written as null are absent, as a Query that came through JSON writes them.
+            var clauses = written.ValueKind == JsonValueKind.Null ? null! : written.EnumerateArray().Select(clause => new FilterClause(
                 Member<FilterOperator>(clause.GetProperty("operator")),
                 clause.TryGetProperty("value", out var value) ? Value(value) : null,
-                clause.TryGetProperty("values", out var values) ? values.EnumerateArray().Select(Value).ToArray() : null)).ToArray();
-            columns[column.Name] = column.Value.TryGetProperty("combinator", out var combinator)
+                clause.TryGetProperty("values", out var values) && values.ValueKind != JsonValueKind.Null
+                    ? values.EnumerateArray().Select(Value).ToArray()
+                    : null)).ToArray();
+            // A combinator written as null is absent, as a Query that came through JSON writes it.
+            columns[column.Name] = column.Value.TryGetProperty("combinator", out var combinator) && combinator.ValueKind != JsonValueKind.Null
                 ? new FilterSpec(clauses, Member<FilterCombinator>(combinator))
                 : new FilterSpec(clauses);
         }

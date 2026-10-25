@@ -100,7 +100,7 @@ internal static class SharedCases
     /// Runs the action and holds it to the refusal named: <c>outOfRange</c> is an argument outside what
     /// the grid has, and <c>invalidOperation</c> anything else refused.
     /// </summary>
-    public static void Refused(Action action, string refusal)
+    public static Exception Refused(Action action, string refusal)
     {
         var thrown = Assert.ThrowsAny<Exception>(action);
         switch (refusal)
@@ -114,6 +114,7 @@ internal static class SharedCases
             default:
                 throw new InvalidOperationException($"\"{refusal}\" is not a refusal the cases name.");
         }
+        return thrown;
     }
 
     /// <summary>
@@ -130,11 +131,8 @@ internal static class SharedCases
                 Assert.Contains(saying, thrown.Message, StringComparison.Ordinal);
             return;
         }
-        Refused(action, refusal);
+        var refused = Refused(action, refusal);
         if (saying is not null)
-        {
-            var thrown = Assert.ThrowsAny<Exception>(action);
-            Assert.Contains(saying, thrown.Message, StringComparison.Ordinal);
-        }
+            Assert.Contains(saying, refused.Message, StringComparison.Ordinal);
     }
 }

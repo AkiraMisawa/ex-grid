@@ -3,7 +3,7 @@
 import { describe, expect, it } from 'vitest';
 import type { QueryColumn } from '../src/query/columns';
 import { filterOperatorsFor } from '../src/query/filter';
-import { applyQuery } from '../src/query/query-engine';
+import { applyQuery, filterPredicate } from '../src/query/query-engine';
 
 type Row = Readonly<Record<string, unknown>>;
 const book: QueryColumn<Row> = { name: 'Book', type: 'text', value: row => row['book'] };
@@ -32,6 +32,17 @@ describe('the columns a Query runs over', () => {
         const sorted = applyQuery(rows, [book], undefined, [{ column: 'Book', direction: 'ascending' }]);
         expect(sorted[0]).toBe(rows[1]);
         expect(sorted[1]).toBe(rows[0]);
+    });
+});
+
+describe('a Filter as a predicate', () => {
+    it('ADR-0023: the Filter is checked when the predicate is made, before any row is tested', () => {
+        expect(() => filterPredicate([book], { columns: { Book: { clauses: [] } } })).toThrow('Book');
+    });
+
+    it('ADR-0023: the predicate tests one row at a time as the whole Query would', () => {
+        const passes = filterPredicate([book], { columns: { Book: { clauses: [{ operator: 'startsWith', value: 'RA' }] } } });
+        expect([{ book: 'Rates' }, { book: 'FX' }, {}].map(passes)).toEqual([true, false, false]);
     });
 });
 

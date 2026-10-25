@@ -38,15 +38,20 @@ function value(written: unknown): unknown {
     throw new Error(`${JSON.stringify(written)} is not a value a query case writes.`);
 }
 
+/** Whether a list is there, where a case may write it as null as a Query that came through JSON does. */
+function isWritten<T>(list: readonly T[] | null | undefined): list is readonly T[] {
+    return Array.isArray(list);
+}
+
 /** The Filter as the Script Core takes it, its operands read as values. */
 function filterOf(filter: GridFilter): GridFilter {
     const columns = Object.fromEntries(Object.entries(filter.columns).map(([name, spec]) => [name, {
         ...spec,
-        clauses: spec.clauses.map(clause => ({
+        clauses: isWritten(spec.clauses) ? spec.clauses.map(clause => ({
             ...clause,
             ...('value' in clause ? { value: value(clause.value) } : {}),
-            ...(clause.values === undefined ? {} : { values: clause.values.map(value) }),
-        })),
+            ...(isWritten(clause.values) ? { values: clause.values.map(value) } : {}),
+        })) : spec.clauses,
     }]));
     return { ...filter, columns };
 }

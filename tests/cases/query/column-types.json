@@ -1,0 +1,30 @@
+{
+  "about": "A column's declared type is checked before any row is read (ADR-0023): a type outside the vocabulary, cast in from outside it, is refused by the Query that names the column, whatever the rows hold.",
+  "kind": "query",
+  "columns": [{"name": "Book", "type": "text"}, {"name": "Odd", "type": 9}],
+  "cases": [
+    {
+      "name": "ADR-0023: a sort on a column of an undeclared type is refused, even over no rows",
+      "rows": [],
+      "sorts": [{"column": "Odd", "direction": "ascending"}],
+      "throws": "outOfRange",
+      "saying": "Odd"
+    },
+    {
+      "name": "ADR-0023: a filter on a column of an undeclared type is refused, even over no rows",
+      "rows": [],
+      "filter": {"columns": {"Odd": {"clauses": [{"operator": "isBlank"}]}}},
+      "throws": "outOfRange",
+      "saying": "Odd"
+    },
+    {
+      "name": "ADR-0023: a column of an undeclared type no Query names is not read",
+      "rows": [
+        ["b", 1],
+        ["a", 2]
+      ],
+      "sorts": [{"column": "Book", "direction": "ascending"}],
+      "keeps": [1, 0]
+    }
+  ]
+}

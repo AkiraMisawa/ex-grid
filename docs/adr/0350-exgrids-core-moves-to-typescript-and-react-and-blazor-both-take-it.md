@@ -14,6 +14,9 @@ the order inside the version, React first, did not.)*
 *(Sections 14 and 15 added the same day, decided with the user: Blazor's surface is designed afresh,
 not kept, and what 0.3.0 does to speed is measured.)*
 
+*(Section 16 added 2026-10-25, decided with the user: the Script Core's public shape, from a design
+memo that put five questions with a recommendation each; the user took every recommendation.)*
+
 ## Context
 
 ExGrid is usable only from Blazor. A React developer cannot write what a Consumer writes today: an
@@ -269,6 +272,44 @@ make it slower and are measured first:
 today's C# core, and the numbers are recorded before step 1 and step 2 of section 7 are called done. A
 case that is slower is said in the record and in the Change Notes, and fixed or accepted with the user;
 performance still never gates CI.
+
+### 16. The Script Core's public shape
+
+Section 14 left the shape to be designed; these are its decisions. Where one changes a concept rather
+than its spelling, Blazor's surface follows it under section 14.
+
+- **A grid is made by a function and handed back as a handle.** `createGrid(element, options)` draws
+  into the element, which becomes the instance root, and returns a handle with `update(options)` and
+  `destroy()`. The adapters wrap it; nothing in the core assumes React's or Blazor's lifecycle.
+- **Rows reach the grid only through a Grid Source.** A Source is `subscribe` and `snapshot`, the
+  shape React's `useSyncExternalStore` reads, and declares what it can do by having the member: an
+  optional `find` and `summarize` stand where C# has `CanFind` flags. Work the grid gives up on is
+  cancelled with an `AbortSignal`. A `rows` option is sugar for `GridSource.from(rows)`. C#'s second
+  route, a Window, its start and a total count passed straight to the grid, is not carried over: two
+  routes to one thing are two sets of rules to keep in step.
+- **A Number is `number | bigint`.** A `bigint` is held exactly, as C# holds a long, and a `number` is
+  read as C# reads a double into a decimal (ADR-0023), so the two cores order and match the same values
+  alike. A Summary's Sum is computed exactly, by counting decimal places, as C#'s decimal sums: never
+  by adding doubles, which would show a total a money grid cannot stand behind.
+- **A date is a Temporal value.** `Temporal.PlainDate` is C#'s `DateOnly`, `Temporal.PlainDateTime`
+  its `DateTime`, and `Temporal.ZonedDateTime` or `Date` its `DateTimeOffset`, which compares as the
+  instant it names. JavaScript's `Date` alone cannot say a day without a time or a time without a zone,
+  and a grid that guessed would move a value across midnight. Chrome and Edge ship Temporal from 144
+  (January 2026); a browser without it (Safari, when this was decided) takes a polyfill the Consumer
+  loads. The core does not bundle one, and recognises a Temporal value by its own tag, so a polyfill's
+  values are read like the browser's.
+- **One callback hears every refusal.** `onRefused` receives one event whose `kind` says what was
+  refused (a copy, a paste, a Find, …) and carries that kind's own facts. C#'s separate
+  `OnCopyRefused`, `OnPasteRefused` and the rest become kinds of it.
+- **Every callback receives one frozen event object**, never positional arguments, so a fact added
+  later is a new member and not a broken signature.
+- **A column is a plain object.** `{ name, type, value, width, … }`, with a width written `120` or
+  `{ auto: true, minPx, maxPx }`. Only the columns that carry behaviour of their own are made by a
+  factory: `markColumn` and `actionColumn` in the core, `templateColumn` in each adapter, because a
+  template is the framework's own markup.
+- **A Chrome slot is a mount function in the core**, `(slot, context) => cleanup`, and a render
+  function in React, drawn through a portal into the slot the core made. Either way the core decides
+  what the slot means (the spine's fourth rule).
 
 ## Consequences
 

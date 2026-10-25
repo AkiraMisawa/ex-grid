@@ -180,6 +180,39 @@
       "saying": "Cleared"
     },
     {
+      "name": "ADR-0023: clauses written as null are refused as no clauses, naming the column",
+      "rows": [],
+      "filter": {"columns": {"Book": {"clauses": null}}},
+      "throws": "invalidOperation",
+      "saying": "Book"
+    },
+    {
+      "name": "ADR-0023: a values list written as null is absent, as a Query that came through JSON writes it",
+      "rows": [
+        ["a", null, null],
+        ["b", null, null]
+      ],
+      "filter": {"columns": {"Book": {"clauses": [{"operator": "equals", "value": "A", "values": null}]}}},
+      "keeps": [0]
+    },
+    {
+      "name": "ADR-0023: in with a list written as null is refused as in without a list",
+      "rows": [],
+      "filter": {"columns": {"Book": {"clauses": [{"operator": "in", "values": null}]}}},
+      "throws": "invalidOperation",
+      "saying": "Book"
+    },
+    {
+      "name": "ADR-0009: a combinator written as null is absent, so the clauses combine with And",
+      "rows": [
+        ["ab", null, null],
+        ["a", null, null],
+        ["b", null, null]
+      ],
+      "filter": {"columns": {"Book": {"combinator": null, "clauses": [{"operator": "contains", "value": "A"}, {"operator": "contains", "value": "b"}]}}},
+      "keeps": [0]
+    },
+    {
       "name": "ADR-0023: no Query keeps every row in its order",
       "rows": [
         ["b", null, null],

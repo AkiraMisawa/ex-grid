@@ -105,6 +105,51 @@
       "keeps": [0]
     },
     {
+      "name": "ADR-0023: a double is read as .NET reads it into a decimal: scaled in double arithmetic, the fifteenth digit rounded half to even",
+      "rows": [
+        [null, 6217.274962094275, null],
+        [null, 6217.27496209427, null]
+      ],
+      "filter": {"columns": {"Amount": {"clauses": [{"operator": "equals", "value": 6217.27496209428}]}}},
+      "keeps": [0]
+    },
+    {
+      "name": "ADR-0023: a small double is scaled the same way before it is rounded",
+      "rows": [
+        [null, 9.792040903024395e-13, null],
+        [null, 9.79204090302439e-13, null]
+      ],
+      "filter": {"columns": {"Amount": {"clauses": [{"operator": "equals", "value": 9.7920409030244e-13}]}}},
+      "keeps": [0]
+    },
+    {
+      "name": "ADR-0023: a large double is its fifteen digits, which a whole number written exactly equals",
+      "rows": [
+        [null, 68554523619150056, null],
+        [null, {"bigint": "68554523619150056"}, null]
+      ],
+      "filter": {"columns": {"Amount": {"clauses": [{"operator": "equals", "value": {"bigint": "68554523619150000"}}]}}},
+      "keeps": [0]
+    },
+    {
+      "name": "ADR-0023: a value list holds a large double as its fifteen digits too",
+      "rows": [
+        [null, 68554523619150056, null],
+        [null, {"bigint": "68554523619150056"}, null]
+      ],
+      "filter": {"columns": {"Amount": {"clauses": [{"operator": "in", "values": [{"bigint": "68554523619150000"}]}]}}},
+      "keeps": [0]
+    },
+    {
+      "name": "ADR-0023: 2^96, the first double past a decimal's range, is refused",
+      "rows": [
+        [null, 7.922816251426434e+28, null]
+      ],
+      "filter": {"columns": {"Amount": {"clauses": [{"operator": "isNotBlank"}]}}},
+      "throws": "invalidOperation",
+      "saying": "outside the range"
+    },
+    {
       "name": "ADR-0023: digits past the 28th decimal place do not order two numbers",
       "rows": [
         [null, 1.2345678901234e-20, null],

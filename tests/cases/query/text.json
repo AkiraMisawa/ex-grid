@@ -50,6 +50,18 @@
       "keeps": [0, 1]
     },
     {
+      "name": "ADR-0023: a Greek letter with ypogegrammeni folds to its simple capital, not to two letters",
+      "rows": [
+        ["ᾳ", null, null],
+        ["ᾼ", null, null],
+        ["ΑΙ", null, null],
+        ["ᾀ", null, null],
+        ["ᾈ", null, null]
+      ],
+      "filter": {"columns": {"Book": {"clauses": [{"operator": "in", "values": ["ᾼ", "ᾈ"]}]}}},
+      "keeps": [0, 1, 3, 4]
+    },
+    {
       "name": "ADR-0023: the Kelvin sign is not K",
       "rows": [
         ["K", null, null],
@@ -86,7 +98,7 @@
       "keeps": [0]
     },
     {
-      "name": "ADR-0023: text orders by its folded code units, so Z sorts before a and é after z",
+      "name": "ADR-0023: text orders by its folded code units, so z ties with Z and é sorts after both",
       "rows": [
         ["é", null, null],
         ["z", null, null],
