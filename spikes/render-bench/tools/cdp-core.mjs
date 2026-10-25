@@ -82,6 +82,9 @@ const runScenario = async (scenario) => {
     try {
         if (!ready) throw new Error(`${url} never painted a cell`);
         result = await evaluate(`window.coreBench.run(${JSON.stringify(scenario)}, ${JSON.stringify(options)})`);
+        // A page that times its own side of each operation (the Engine Host spike's: the Worker's ms, the
+        // round trip) hands that over too; a page that does not has nothing here.
+        result.engine = await evaluate('typeof window.engineEdits === "function" ? window.engineEdits() : typeof window.engineOperations === "function" ? window.engineOperations() : null');
     } catch (error) {
         result = { scenario, failed: String(error.message ?? error) };
     }

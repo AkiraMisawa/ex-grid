@@ -1,5 +1,10 @@
 # Report APIs may change, and remote reports recover their baseline
 
+*(2026-10-25: [ADR-0370](./0370-the-whole-family-moves-to-typescript-and-blazor-only-adapts-it.md) section 3 ends ADR-0151's server report Windows at its step 3, when a server
+answers Leaf Aggregates again. What this ADR says of a remote report, its Window Changes, recovery and
+server-registered Order Keys, ends with them; what it says of a report in the browser holds for the
+TypeScript engine.)*
+
 *(Decided with the user, 2026-10-06, continuation Q5 to Q7 on `claude/live-data-next`.
 This settles the API-compatibility, remote Order Key and recovery questions left by
 [ADR-0151](./0151-server-pivots-send-report-windows-and-share-the-local-engine.md).

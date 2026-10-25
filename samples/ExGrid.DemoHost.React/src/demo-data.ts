@@ -22,13 +22,15 @@ export interface DemoWideRow {
 const books = ['Rates', 'Credit', 'FX', 'Equity', 'Commodity'] as const;
 const traders = ['Ito', 'Marsh', 'Okafor', 'Petrov', 'Silva'] as const;
 
-function pick<T>(list: readonly T[], at: number): T {
+/** The item at a position the arithmetic has already brought inside the list. */
+export function pick<T>(list: readonly T[], at: number): T {
     const value = list[at];
     if (value === undefined) throw new Error(`Internal: no item at ${at}.`);
     return value;
 }
 
-const firstDay = Temporal.PlainDateTime.from('2026-01-01T00:00:00');
+/** The first trade date every dataset counts its days from. */
+export const firstDay = Temporal.PlainDateTime.from('2026-01-01T00:00:00');
 
 /** One shared, reference-stable columns array: rebuilt per render it would repaint every row (ADR-0003). */
 export const tradeColumns: readonly GridColumn<DemoTrade>[] = Object.freeze([

@@ -48,6 +48,11 @@ before, so nothing reaches `main` or a tag without layer 3 having run on it.)*
   and it was the wall clock of every push. A shard boundary is a file boundary, so nothing the
   suite shares within a run — the OS clipboard, the records, a spec file's booted app
   ([ADR-0056](./0056-layer-three-boots-once-per-spec-file.md)) — is split between runners.)*
+  *(2026-10-25, decided with the user,
+  [ADR-0370](./0370-the-whole-family-moves-to-typescript-and-blazor-only-adapts-it.md) section 11:
+  from a product's step 3, its behaviour specs run on the React host, and the two Blazor hosts' jobs
+  run its specs that judge anything passing through Blazor. Until then every host runs every spec, as
+  here.)*
   *(Since 2026-10-04, decided with the user, Chrome and Edge each take four shards and chrome-150
   two. At two each, those four shards were the wall clock: on run 37153502205 the WebAssembly
   ones took 20.4 to 22.0 minutes and the Server ones 12.7 to 17.0, while chrome-150's took 0.7

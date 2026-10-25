@@ -1,0 +1,1034 @@
+{
+  "about": "Each series' look from its Appearance Keys, and when colours repeat (ADR-0256), from tests/ExChart.Engine.Tests/ComponentSupportTests.cs.",
+  "kind": "chart",
+  "definitions": {
+    "exposure": {
+      "axis": {
+        "values": "numbers",
+        "title": "Years"
+      },
+      "series": [
+        {
+          "id": "epe-before",
+          "name": "EPE · Before",
+          "kind": "level",
+          "points": [
+            [
+              0,
+              1
+            ],
+            [
+              1,
+              5
+            ],
+            [
+              2,
+              9
+            ]
+          ],
+          "panel": "EPE",
+          "keys": {
+            "colour": "Before"
+          }
+        },
+        {
+          "id": "epe-after",
+          "name": "EPE · After",
+          "kind": "level",
+          "points": [
+            [
+              0,
+              2
+            ],
+            [
+              1,
+              4
+            ],
+            [
+              2,
+              8
+            ]
+          ],
+          "panel": "EPE",
+          "keys": {
+            "colour": "After"
+          }
+        },
+        {
+          "id": "ene-after",
+          "name": "ENE · After",
+          "kind": "level",
+          "points": [
+            [
+              0,
+              -1
+            ],
+            [
+              1,
+              -3
+            ],
+            [
+              2,
+              -2
+            ]
+          ],
+          "panel": "ENE",
+          "keys": {
+            "colour": "After"
+          }
+        }
+      ]
+    }
+  },
+  "cases": [
+    {
+      "name": "ADR-0256: the same colour key takes the same slot in every panel",
+      "definition": "exposure",
+      "appearance": {},
+      "expect": [
+        {
+          "at": "1",
+          "is": false
+        },
+        {
+          "at": "0.epe-before.colour",
+          "is": 0
+        },
+        {
+          "at": "0.epe-after.colour",
+          "is": 1
+        },
+        {
+          "at": "0.ene-after",
+          "sameAs": "0.epe-after"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0256: hiding a series keeps every other series' look",
+      "definition": "exposure",
+      "scene": {
+        "metrics": {
+          "width": 800,
+          "height": 400
+        },
+        "view": {
+          "hidden": [
+            "epe-before"
+          ]
+        }
+      },
+      "expect": [
+        {
+          "at": "panels.0.series.0.look.colour",
+          "is": 1
+        }
+      ]
+    },
+    {
+      "name": "ADR-0256, CH-6: past the last colour slot colours repeat",
+      "definition": {
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "c0",
+            "name": "Counterparty 0",
+            "kind": "level",
+            "points": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                0
+              ]
+            ]
+          },
+          {
+            "id": "c1",
+            "name": "Counterparty 1",
+            "kind": "level",
+            "points": [
+              [
+                0,
+                1
+              ],
+              [
+                1,
+                1
+              ]
+            ]
+          },
+          {
+            "id": "c2",
+            "name": "Counterparty 2",
+            "kind": "level",
+            "points": [
+              [
+                0,
+                2
+              ],
+              [
+                1,
+                2
+              ]
+            ]
+          },
+          {
+            "id": "c3",
+            "name": "Counterparty 3",
+            "kind": "level",
+            "points": [
+              [
+                0,
+                3
+              ],
+              [
+                1,
+                3
+              ]
+            ]
+          },
+          {
+            "id": "c4",
+            "name": "Counterparty 4",
+            "kind": "level",
+            "points": [
+              [
+                0,
+                4
+              ],
+              [
+                1,
+                4
+              ]
+            ]
+          },
+          {
+            "id": "c5",
+            "name": "Counterparty 5",
+            "kind": "level",
+            "points": [
+              [
+                0,
+                5
+              ],
+              [
+                1,
+                5
+              ]
+            ]
+          },
+          {
+            "id": "c6",
+            "name": "Counterparty 6",
+            "kind": "level",
+            "points": [
+              [
+                0,
+                6
+              ],
+              [
+                1,
+                6
+              ]
+            ]
+          },
+          {
+            "id": "c7",
+            "name": "Counterparty 7",
+            "kind": "level",
+            "points": [
+              [
+                0,
+                7
+              ],
+              [
+                1,
+                7
+              ]
+            ]
+          },
+          {
+            "id": "c8",
+            "name": "Counterparty 8",
+            "kind": "level",
+            "points": [
+              [
+                0,
+                8
+              ],
+              [
+                1,
+                8
+              ]
+            ]
+          },
+          {
+            "id": "c9",
+            "name": "Counterparty 9",
+            "kind": "level",
+            "points": [
+              [
+                0,
+                9
+              ],
+              [
+                1,
+                9
+              ]
+            ]
+          },
+          {
+            "id": "c10",
+            "name": "Counterparty 10",
+            "kind": "level",
+            "points": [
+              [
+                0,
+                10
+              ],
+              [
+                1,
+                10
+              ]
+            ]
+          },
+          {
+            "id": "c11",
+            "name": "Counterparty 11",
+            "kind": "level",
+            "points": [
+              [
+                0,
+                11
+              ],
+              [
+                1,
+                11
+              ]
+            ]
+          }
+        ]
+      },
+      "appearance": {},
+      "expect": [
+        {
+          "at": "1",
+          "is": true
+        },
+        {
+          "at": "0.c10.colour",
+          "is": 0
+        },
+        {
+          "at": "0.c11.colour",
+          "is": 1
+        }
+      ]
+    },
+    {
+      "name": "ADR-0256, CH-6: a theme with slots enough repeats no colour",
+      "definition": {
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "c0",
+            "name": "Counterparty 0",
+            "kind": "level",
+            "points": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                0
+              ]
+            ]
+          },
+          {
+            "id": "c1",
+            "name": "Counterparty 1",
+            "kind": "level",
+            "points": [
+              [
+                0,
+                1
+              ],
+              [
+                1,
+                1
+              ]
+            ]
+          },
+          {
+            "id": "c2",
+            "name": "Counterparty 2",
+            "kind": "level",
+            "points": [
+              [
+                0,
+                2
+              ],
+              [
+                1,
+                2
+              ]
+            ]
+          },
+          {
+            "id": "c3",
+            "name": "Counterparty 3",
+            "kind": "level",
+            "points": [
+              [
+                0,
+                3
+              ],
+              [
+                1,
+                3
+              ]
+            ]
+          },
+          {
+            "id": "c4",
+            "name": "Counterparty 4",
+            "kind": "level",
+            "points": [
+              [
+                0,
+                4
+              ],
+              [
+                1,
+                4
+              ]
+            ]
+          },
+          {
+            "id": "c5",
+            "name": "Counterparty 5",
+            "kind": "level",
+            "points": [
+              [
+                0,
+                5
+              ],
+              [
+                1,
+                5
+              ]
+            ]
+          },
+          {
+            "id": "c6",
+            "name": "Counterparty 6",
+            "kind": "level",
+            "points": [
+              [
+                0,
+                6
+              ],
+              [
+                1,
+                6
+              ]
+            ]
+          },
+          {
+            "id": "c7",
+            "name": "Counterparty 7",
+            "kind": "level",
+            "points": [
+              [
+                0,
+                7
+              ],
+              [
+                1,
+                7
+              ]
+            ]
+          },
+          {
+            "id": "c8",
+            "name": "Counterparty 8",
+            "kind": "level",
+            "points": [
+              [
+                0,
+                8
+              ],
+              [
+                1,
+                8
+              ]
+            ]
+          },
+          {
+            "id": "c9",
+            "name": "Counterparty 9",
+            "kind": "level",
+            "points": [
+              [
+                0,
+                9
+              ],
+              [
+                1,
+                9
+              ]
+            ]
+          },
+          {
+            "id": "c10",
+            "name": "Counterparty 10",
+            "kind": "level",
+            "points": [
+              [
+                0,
+                10
+              ],
+              [
+                1,
+                10
+              ]
+            ]
+          },
+          {
+            "id": "c11",
+            "name": "Counterparty 11",
+            "kind": "level",
+            "points": [
+              [
+                0,
+                11
+              ],
+              [
+                1,
+                11
+              ]
+            ]
+          }
+        ]
+      },
+      "appearance": {
+        "colourSlots": 12
+      },
+      "expect": [
+        {
+          "at": "1",
+          "is": false
+        },
+        {
+          "at": "0.c11.colour",
+          "is": 11
+        }
+      ]
+    },
+    {
+      "name": "ADR-0256, CH-6: when colours repeat, the chart says so",
+      "build": {
+        "ten": {
+          "definition": {
+            "axis": {
+              "values": "numbers"
+            },
+            "series": [
+              {
+                "id": "c0",
+                "name": "Counterparty 0",
+                "kind": "level",
+                "points": [
+                  [
+                    0,
+                    0
+                  ],
+                  [
+                    1,
+                    0
+                  ]
+                ]
+              },
+              {
+                "id": "c1",
+                "name": "Counterparty 1",
+                "kind": "level",
+                "points": [
+                  [
+                    0,
+                    1
+                  ],
+                  [
+                    1,
+                    1
+                  ]
+                ]
+              },
+              {
+                "id": "c2",
+                "name": "Counterparty 2",
+                "kind": "level",
+                "points": [
+                  [
+                    0,
+                    2
+                  ],
+                  [
+                    1,
+                    2
+                  ]
+                ]
+              },
+              {
+                "id": "c3",
+                "name": "Counterparty 3",
+                "kind": "level",
+                "points": [
+                  [
+                    0,
+                    3
+                  ],
+                  [
+                    1,
+                    3
+                  ]
+                ]
+              },
+              {
+                "id": "c4",
+                "name": "Counterparty 4",
+                "kind": "level",
+                "points": [
+                  [
+                    0,
+                    4
+                  ],
+                  [
+                    1,
+                    4
+                  ]
+                ]
+              },
+              {
+                "id": "c5",
+                "name": "Counterparty 5",
+                "kind": "level",
+                "points": [
+                  [
+                    0,
+                    5
+                  ],
+                  [
+                    1,
+                    5
+                  ]
+                ]
+              },
+              {
+                "id": "c6",
+                "name": "Counterparty 6",
+                "kind": "level",
+                "points": [
+                  [
+                    0,
+                    6
+                  ],
+                  [
+                    1,
+                    6
+                  ]
+                ]
+              },
+              {
+                "id": "c7",
+                "name": "Counterparty 7",
+                "kind": "level",
+                "points": [
+                  [
+                    0,
+                    7
+                  ],
+                  [
+                    1,
+                    7
+                  ]
+                ]
+              },
+              {
+                "id": "c8",
+                "name": "Counterparty 8",
+                "kind": "level",
+                "points": [
+                  [
+                    0,
+                    8
+                  ],
+                  [
+                    1,
+                    8
+                  ]
+                ]
+              },
+              {
+                "id": "c9",
+                "name": "Counterparty 9",
+                "kind": "level",
+                "points": [
+                  [
+                    0,
+                    9
+                  ],
+                  [
+                    1,
+                    9
+                  ]
+                ]
+              },
+              {
+                "id": "c10",
+                "name": "Counterparty 10",
+                "kind": "level",
+                "points": [
+                  [
+                    0,
+                    10
+                  ],
+                  [
+                    1,
+                    10
+                  ]
+                ]
+              },
+              {
+                "id": "c11",
+                "name": "Counterparty 11",
+                "kind": "level",
+                "points": [
+                  [
+                    0,
+                    11
+                  ],
+                  [
+                    1,
+                    11
+                  ]
+                ]
+              }
+            ]
+          },
+          "scene": {
+            "metrics": {
+              "width": 800,
+              "height": 400
+            }
+          }
+        },
+        "twelve": {
+          "definition": {
+            "axis": {
+              "values": "numbers"
+            },
+            "series": [
+              {
+                "id": "c0",
+                "name": "Counterparty 0",
+                "kind": "level",
+                "points": [
+                  [
+                    0,
+                    0
+                  ],
+                  [
+                    1,
+                    0
+                  ]
+                ]
+              },
+              {
+                "id": "c1",
+                "name": "Counterparty 1",
+                "kind": "level",
+                "points": [
+                  [
+                    0,
+                    1
+                  ],
+                  [
+                    1,
+                    1
+                  ]
+                ]
+              },
+              {
+                "id": "c2",
+                "name": "Counterparty 2",
+                "kind": "level",
+                "points": [
+                  [
+                    0,
+                    2
+                  ],
+                  [
+                    1,
+                    2
+                  ]
+                ]
+              },
+              {
+                "id": "c3",
+                "name": "Counterparty 3",
+                "kind": "level",
+                "points": [
+                  [
+                    0,
+                    3
+                  ],
+                  [
+                    1,
+                    3
+                  ]
+                ]
+              },
+              {
+                "id": "c4",
+                "name": "Counterparty 4",
+                "kind": "level",
+                "points": [
+                  [
+                    0,
+                    4
+                  ],
+                  [
+                    1,
+                    4
+                  ]
+                ]
+              },
+              {
+                "id": "c5",
+                "name": "Counterparty 5",
+                "kind": "level",
+                "points": [
+                  [
+                    0,
+                    5
+                  ],
+                  [
+                    1,
+                    5
+                  ]
+                ]
+              },
+              {
+                "id": "c6",
+                "name": "Counterparty 6",
+                "kind": "level",
+                "points": [
+                  [
+                    0,
+                    6
+                  ],
+                  [
+                    1,
+                    6
+                  ]
+                ]
+              },
+              {
+                "id": "c7",
+                "name": "Counterparty 7",
+                "kind": "level",
+                "points": [
+                  [
+                    0,
+                    7
+                  ],
+                  [
+                    1,
+                    7
+                  ]
+                ]
+              },
+              {
+                "id": "c8",
+                "name": "Counterparty 8",
+                "kind": "level",
+                "points": [
+                  [
+                    0,
+                    8
+                  ],
+                  [
+                    1,
+                    8
+                  ]
+                ]
+              },
+              {
+                "id": "c9",
+                "name": "Counterparty 9",
+                "kind": "level",
+                "points": [
+                  [
+                    0,
+                    9
+                  ],
+                  [
+                    1,
+                    9
+                  ]
+                ]
+              },
+              {
+                "id": "c10",
+                "name": "Counterparty 10",
+                "kind": "level",
+                "points": [
+                  [
+                    0,
+                    10
+                  ],
+                  [
+                    1,
+                    10
+                  ]
+                ]
+              },
+              {
+                "id": "c11",
+                "name": "Counterparty 11",
+                "kind": "level",
+                "points": [
+                  [
+                    0,
+                    11
+                  ],
+                  [
+                    1,
+                    11
+                  ]
+                ]
+              }
+            ]
+          },
+          "scene": {
+            "metrics": {
+              "width": 800,
+              "height": 400,
+              "colourSlots": 12
+            }
+          }
+        }
+      },
+      "expect": [
+        {
+          "at": "ten.notes",
+          "mentions": "Colours repeat"
+        },
+        {
+          "at": "twelve.notes",
+          "is": []
+        }
+      ]
+    },
+    {
+      "name": "ADR-0256: line-style and marker keys take slots in order; none set is solid and a circle",
+      "definition": {
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "a",
+            "name": "A",
+            "kind": "level",
+            "points": [
+              [
+                0,
+                1
+              ]
+            ],
+            "keys": {
+              "colour": "x",
+              "lineStyle": "Before",
+              "marker": "m1"
+            }
+          },
+          {
+            "id": "b",
+            "name": "B",
+            "kind": "level",
+            "points": [
+              [
+                0,
+                1
+              ]
+            ],
+            "keys": {
+              "colour": "x",
+              "lineStyle": "After",
+              "marker": "m2"
+            }
+          },
+          {
+            "id": "c",
+            "name": "C",
+            "kind": "level",
+            "points": [
+              [
+                0,
+                1
+              ]
+            ]
+          }
+        ]
+      },
+      "appearance": {},
+      "expect": [
+        {
+          "at": "0.a",
+          "is": {
+            "colour": 0,
+            "lineStyle": 0,
+            "marker": 0,
+            "shape": "circle"
+          }
+        },
+        {
+          "at": "0.b",
+          "is": {
+            "colour": 0,
+            "lineStyle": 1,
+            "marker": 1,
+            "shape": "square"
+          }
+        },
+        {
+          "at": "0.c",
+          "is": {
+            "colour": 1,
+            "lineStyle": 0,
+            "marker": 0,
+            "shape": "circle"
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0256: no colour slot at all is refused",
+      "definition": "exposure",
+      "appearance": {
+        "colourSlots": 0
+      },
+      "throws": "outOfRange"
+    }
+  ]
+}

@@ -9,7 +9,11 @@
 // microtask, so a burst of changes in one task paints once.
 
 import { AutoWidth } from '../columns/auto-width';
+import { assembleCopy, type CopyFlavours } from '../clipboard/clipboard-data';
+import { defaultCellCap, planCopy, type CopyPlan } from '../clipboard/clipboard-rules';
+import { copyRefusalWords } from '../chrome/refusal-words';
 import { ColumnGeometry, type ColumnRange } from '../columns/column-geometry';
+import { HeaderGroup, HeaderGroupLayout, type ResolvedHeaderGroup } from '../columns/header-groups';
 import { decideOverflow } from '../columns/overflow-rules';
 import { textFor } from '../cells/display-text';
 import { GridMetrics, type GridDensity } from '../grid-metrics';
@@ -32,6 +36,8 @@ import { ViewportBox } from '../viewport/viewport-box';
 import { ViewportGeometry } from '../viewport/viewport-geometry';
 import type { BrowserReports, ViewportReport } from './browser-reports';
 import { ColumnStyles } from './column-styles';
+import { copyValues, gatherRows, windowCovers, windowRowAt } from './grid-copy';
+import type { GridRefusal } from './grid-refusal';
 import { resolveColumns, type GridColumn, type ResolvedColumn } from './grid-column';
 import { moveByKey, movingKinds, type KeyReveal } from './key-moves';
 import { selectionLayers, type LayerPiece } from './selection-layers';
@@ -39,6 +45,21 @@ import { stylesheetName, stylesheetStamp } from './shipped-stylesheet';
 
 /** A Viewport axis: a number of pixels the Consumer declares, or `'stretch'`, the parent's (ADR-0028). */
 export type ViewportSize = number | 'stretch';
+
+/**
+ * A labelled rectangle over adjacent columns, in a tier above the header row (ADR-0032): colspan and rowspan
+ * without a column tree. Its members are named, as a set: the painted order is the columns' own.
+ */
+export interface GridHeaderGroup {
+    /** The caption; empty for a spacer rectangle. */
+    readonly label: string;
+    /** The member columns' names. They stand side by side in the column order, or the grid refuses the group. */
+    readonly columns: readonly string[];
+    /** The rectangle's top tier, 1 directly above the header row; 1 unless given. */
+    readonly tier?: number;
+    /** How many tiers the rectangle spans downward from its top tier; 1 unless given. */
+    readonly tierSpan?: number;
+}
 
 /** What a grid is drawn from. Rows reach it only through a Grid Source; `rows` is `GridSource.from(rows)`. */
 export interface GridOptions<Row> {
@@ -62,10 +83,21 @@ export interface GridOptions<Row> {
     readonly pinnedColumnCount?: number;
     /** Whether the columns off screen are left out of the DOM (ADR-0004); true unless given. */
     readonly virtualiseColumns?: boolean;
+    /** The Header Groups over the columns, in tiers above the header row (ADR-0032); none unless given. A
+     * group whose members are not side by side, that straddles the Pinned Columns' edge or that overlaps
+     * another is refused by name, as is a Viewport too short for the band and one row. */
+    readonly headerGroups?: readonly GridHeaderGroup[];
     /** Hears the Selection each time it changes (ADR-0011): after the grid has painted it, once however
      * many gestures changed it in between. A Selection is dropped, and heard empty, when the Row Sequence
      * Version or the columns change. */
     readonly onSelectionChanged?: (selection: GridSelection) => void;
+    /** The most cells one copy carries (ADR-0005): past it the grid copies nothing at all and says so,
+     * rather than copy a part. A million unless given; at least one, since the cap may be raised but not
+     * used to switch copying off. */
+    readonly copyCellCap?: number;
+    /** Hears every gesture the grid refused, by kind and reason (ADR-0005): nothing it would have done was
+     * done, and the grid has said why through its live region. */
+    readonly onRefused?: (refusal: GridRefusal) => void;
 }
 
 const defaultViewportWidthPx = 800;
@@ -83,9 +115,6 @@ const modifierKeys: ReadonlySet<string> = new Set(['Control', 'Shift', 'Alt', 'M
 
 /** The built-in Chrome's words for a stylesheet of another version (ADR-0123, ADR-0203). */
 const stylesheetNoticeWords = 'This page holds another version\'s stylesheet. Reload the page.';
-
-/** The rows the header stands for in the accessibility tree, ahead of the data rows (ADR-0033). */
-const headerRowCount = 1;
 
 /** What each instance's ids begin with, so two grids on a page never share one (ADR-0018). */
 let instances = 0;
@@ -116,7 +145,11 @@ interface Taken<Row> {
     readonly height: ViewportSize;
     readonly pinnedCount: number;
     readonly virtualiseColumns: boolean;
+    readonly headerGroups: readonly HeaderGroup[];
+    readonly headerLayout: HeaderGroupLayout;
     readonly onSelectionChanged: ((selection: GridSelection) => void) | undefined;
+    readonly copyCellCap: number;
+    readonly onRefused: ((refusal: GridRefusal) => void) | undefined;
 }
 
 /** A reveal's repaint under way (ADR-0012, 2026-10-08): where the reveal left the scroller, and what stops
@@ -142,6 +175,27 @@ function sameRanges(a: readonly SelectionRange[], b: readonly SelectionRange[]):
 /** Whether two arrays hold the same items, in the same order. */
 function sameItems<T>(a: readonly T[], b: readonly T[]): boolean {
     return a === b || (a.length === b.length && a.every((item, i) => item === b[i]));
+}
+
+/** Whether two declarations of Header Groups say the same. They are plain data, compared by value, so a
+ * Consumer that writes them inline does not build the header band again on every update (ADR-0032). */
+function sameGroups(a: readonly HeaderGroup[], b: readonly HeaderGroup[]): boolean {
+    return a === b || (a.length === b.length && a.every((group, i) => {
+        const other = itemAt(b, i);
+        return group.label === other.label && group.tier === other.tier && group.tierSpan === other.tierSpan
+            && sameItems(group.columns, other.columns);
+    }));
+}
+
+/** The rows the header stands for in the accessibility tree, ahead of the data rows: the header row and a
+ * tier per level of Header Groups above it (ADR-0032/0033). */
+function headerRowsOf(layout: HeaderGroupLayout): number {
+    return 1 + layout.tierCount;
+}
+
+/** The header band's height, the one figure the refusal, the band and the rows' room all read (ADR-0032). */
+function bandHeightPxOf(layout: HeaderGroupLayout, metrics: GridMetrics): number {
+    return headerRowsOf(layout) * metrics.headerHeightPx;
 }
 
 /** A header cell as painted, with what its classes are composed from. */
@@ -229,7 +283,16 @@ export class GridView<Row> {
     #height: ViewportSize = defaultViewportHeightPx;
     #pinnedCount = 0;
     #virtualiseColumns = true;
+    // The Header Groups as taken, and resolved against the columns and the pinned count (ADR-0032).
+    #headerGroups: readonly HeaderGroup[] = [];
+    #headerLayout = HeaderGroupLayout.empty;
     #onSelectionChanged: ((selection: GridSelection) => void) | undefined;
+    #copyCellCap = defaultCellCap;
+    #onRefused: ((refusal: GridRefusal) => void) | undefined;
+    // The copies the asynchronous route is still writing, each holding the Settled Mark (ADR-0220), and what
+    // stops the latest one's reads of the source when another copy supersedes it or the grid is destroyed.
+    #clipboardWrites = 0;
+    #copy: AbortController | undefined;
 
     // The Selection (ADR-0011, ADR-0012), held under the Row Sequence Version it was made under, and the
     // columns it was made over, by name: either changing drops it.
@@ -276,7 +339,15 @@ export class GridView<Row> {
     // What is painted.
     #painted = new Map<unknown, PaintedRow<Row>>();
     #paintedHeader: {
-        readonly styles: ColumnStyles; readonly columns: readonly ResolvedColumn<Row>[]; readonly scrollable: ColumnRange | undefined; readonly sorts: string;
+        readonly styles: ColumnStyles; readonly columns: readonly ResolvedColumn<Row>[]; readonly scrollable: ColumnRange | undefined;
+        readonly sorts: string; readonly layout: HeaderGroupLayout; readonly tierPx: number;
+    } | undefined;
+    // The tiers of Header Groups as painted, and the leaf row beneath them: the rectangles stand on the
+    // column geometry, the layout and the tier height alone, so a scroll or a Sort that rebuilds the leaves
+    // keeps them (PF-3).
+    #paintedTiers: {
+        readonly styles: ColumnStyles; readonly columns: readonly ResolvedColumn<Row>[]; readonly layout: HeaderGroupLayout;
+        readonly tierPx: number; readonly rows: readonly HTMLElement[]; readonly leaves: HTMLElement;
     } | undefined;
     // The header cells as painted, each with its class before the Heading Mark's, and the mark's runs and
     // rectangles (ADR-0008, 2026-10-13): made once per Selection and extent, and the rectangles once per
@@ -354,9 +425,8 @@ export class GridView<Row> {
         // inside it; tabindex -1 keeps it out of the tab sequence (A11Y-4).
         this.#scroller = element('div', { class: 'ex-scroller', tabindex: '-1', role: 'presentation' });
         this.#spacer = element('div', { class: 'ex-spacer', role: 'presentation' });
-        this.#header = element('div', {
-            class: 'ex-header', role: 'row', 'aria-rowindex': '1', 'data-ex-claims': 'mousedown click',
-        });
+        // Its role and place in the tree are the header pass's: a row, or a group of tiers (ADR-0032/0033).
+        this.#header = element('div', { class: 'ex-header', 'data-ex-claims': 'mousedown click' });
         this.#viewport = element('div', { class: 'ex-viewport', role: 'presentation', 'data-ex-claims': 'contextmenu' });
         // The selection layers (ADR-0008, ADR-0206): paint, not content, so hidden from the accessibility
         // tree, and the Viewport's first children, so they ride its translation and pass under the pinned
@@ -393,6 +463,9 @@ export class GridView<Row> {
             this.#header.addEventListener('click', this.#onHeaderClick);
             root.addEventListener('focusout', this.#onFocusLeft);
             this.#scroller.addEventListener('focus', this.#onScrollerFocus);
+            // The browser's own copy command fires the copy event on the root that holds the keyboard; Ctrl+C is
+            // never a key of the grid's, which would prevent the very command that fires it (ADR-0005).
+            root.addEventListener('copy', this.#onCopy);
             this.#stops.push(
                 () => { this.#scroller.removeEventListener('scroll', onScroll); },
                 () => { root.removeEventListener('keydown', this.#onKeyDown, true); },
@@ -406,6 +479,7 @@ export class GridView<Row> {
                 () => { this.#header.removeEventListener('mousemove', this.#onDrag); },
                 () => { root.removeEventListener('mouseleave', this.#onLeave); },
                 () => { this.#scroller.removeEventListener('focus', this.#onScrollerFocus); },
+                () => { root.removeEventListener('copy', this.#onCopy); },
                 reports.observeViewport(this.#scroller, report => {
                     this.#viewportReport = report;
                     this.#invalidate();
@@ -445,6 +519,7 @@ export class GridView<Row> {
         this.#cancelFollow?.();
         this.#repaint?.cancel();
         this.#stopEdgeTimer();
+        this.#copy?.abort();
         for (const stop of this.#stops) stop();
         this.#unsubscribe?.();
         this.#root.replaceChildren();
@@ -508,14 +583,57 @@ export class GridView<Row> {
         if (!Number.isSafeInteger(pinnedColumnCount) || pinnedColumnCount < 0) {
             throw new RangeError(`pinnedColumnCount is a whole number of at least 0, not ${pinnedColumnCount}.`);
         }
-        const { onSelectionChanged }: { readonly onSelectionChanged?: unknown } = options;
+        const { onSelectionChanged, onRefused }: { readonly onSelectionChanged?: unknown; readonly onRefused?: unknown } = options;
         if (onSelectionChanged !== undefined && typeof onSelectionChanged !== 'function') {
             throw new TypeError('onSelectionChanged is a function of the Selection.');
         }
+        if (onRefused !== undefined && typeof onRefused !== 'function') {
+            throw new TypeError('onRefused is a function of the refusal.');
+        }
+        const { copyCellCap = defaultCellCap } = options;
+        if (!Number.isSafeInteger(copyCellCap) || copyCellCap < 1) {
+            throw new RangeError(`copyCellCap is a whole number of at least one cell, not ${copyCellCap}: the cap may be raised, `
+                + 'not used to switch copying off (ADR-0005).');
+        }
+        const { headerGroups, headerLayout } = this.#layoutOf(options.headerGroups, columns, pinnedColumnCount, columnsChanged);
+        // The band comes off the scroll budget, and the refusal names the band (ADR-0032): a Viewport that
+        // cannot hold it and one row shows headers and no data, which reads as an empty result.
+        const bandPx = bandHeightPxOf(headerLayout, metrics);
+        if (headerLayout.tierCount > 0 && height !== 'stretch' && height <= bandPx + metrics.rowHeightPx) {
+            throw new RangeError(`viewportHeight (${height}px) must exceed the header band — ${headerRowsOf(headerLayout)} tiers × `
+                + `${metrics.headerHeightPx}px = ${bandPx}px — plus one row of ${metrics.rowHeightPx}px (ADR-0032).`);
+        }
         return {
             source, own, rows: options.rows, metrics, declared: options.columns, columns, autoWidths, columnsChanged,
-            width, height, pinnedCount: pinnedColumnCount, virtualiseColumns, onSelectionChanged: options.onSelectionChanged,
+            width, height, pinnedCount: pinnedColumnCount, virtualiseColumns, headerGroups, headerLayout,
+            onSelectionChanged: options.onSelectionChanged, copyCellCap, onRefused: options.onRefused,
         };
+    }
+
+    // The Header Groups taken and resolved against the columns' order and the pinned count (ADR-0032): the
+    // layout in force kept while none of the three changed, so the header is not built again.
+    #layoutOf(groups: readonly GridHeaderGroup[] | undefined, columns: readonly ResolvedColumn<Row>[], pinnedCount: number,
+        columnsChanged: boolean): { readonly headerGroups: readonly HeaderGroup[]; readonly headerLayout: HeaderGroupLayout } {
+        if (groups === undefined) return { headerGroups: [], headerLayout: HeaderGroupLayout.empty };
+        const given: unknown = groups;
+        if (!Array.isArray(given)) throw new TypeError(`headerGroups is a list of Header Groups, not ${String(given)} (ADR-0032).`);
+        const headerGroups = groups.map((group, i) => {
+            const item: unknown = group;
+            if (typeof item !== 'object' || item === null) {
+                throw new TypeError(`headerGroups[${i}] is a Header Group, not ${String(item)} (ADR-0032).`);
+            }
+            return new HeaderGroup(group);
+        });
+        if (headerGroups.length === 0) return { headerGroups, headerLayout: HeaderGroupLayout.empty };
+        if (!columnsChanged && pinnedCount === this.#pinnedCount && sameGroups(headerGroups, this.#headerGroups)) {
+            return { headerGroups: this.#headerGroups, headerLayout: this.#headerLayout };
+        }
+        const headerLayout = HeaderGroupLayout.resolve({
+            groups: headerGroups,
+            columnNames: columns.map(({ column }) => column.name),
+            pinnedCount,
+        });
+        return { headerGroups, headerLayout };
     }
 
     // What the taken options ask of the sources, the last step that may refuse them: the source told its
@@ -564,7 +682,17 @@ export class GridView<Row> {
         this.#height = taken.height;
         this.#pinnedCount = taken.pinnedCount;
         this.#virtualiseColumns = taken.virtualiseColumns;
+        this.#headerGroups = taken.headerGroups;
+        // Every row's place in the accessibility tree counts the header's rows, so a change in the tiers
+        // paints every row again (ADR-0033).
+        if (taken.headerLayout.tierCount !== this.#headerLayout.tierCount) {
+            this.#painted = new Map();
+            this.#placeholders = new Map();
+        }
+        this.#headerLayout = taken.headerLayout;
         this.#onSelectionChanged = taken.onSelectionChanged;
+        this.#copyCellCap = taken.copyCellCap;
+        this.#onRefused = taken.onRefused;
     }
 
     // The Row Sequence Version the grid writes: its source's, carried past every change of source.
@@ -656,7 +784,7 @@ export class GridView<Row> {
     #lookSettled(): void {
         this.#showSettled(!this.#passOwed && this.#cancelSettle === undefined && this.#cancelAnnounce === undefined
             && this.#repaint === undefined && this.#followArmed === undefined && this.#cancelFollow === undefined
-            && this.#viewportReport !== undefined && this.#ceilingPx !== undefined);
+            && this.#clipboardWrites === 0 && this.#viewportReport !== undefined && this.#ceilingPx !== undefined);
     }
 
     #showSettled(settled: boolean): void {
@@ -667,8 +795,14 @@ export class GridView<Row> {
 
     // ---- Resolving (the C# core's PrepareRender) ------------------------------------------------------
 
+    // The header band: the header row and a tier per level of Header Groups above it (ADR-0032).
     get #bandHeightPx(): number {
-        return this.#metrics.headerHeightPx;
+        return bandHeightPxOf(this.#headerLayout, this.#metrics);
+    }
+
+    // The rows the header stands for in the accessibility tree, ahead of the data rows (ADR-0033).
+    get #headerRowCount(): number {
+        return headerRowsOf(this.#headerLayout);
     }
 
     #resolve(): void {
@@ -979,6 +1113,127 @@ export class GridView<Row> {
         this.#stopEdgeTimer();
     };
 
+    // ---- The clipboard (ADR-0005) ------------------------------------------------------------------------
+
+    // A copy the browser's command asked for. Refused, the clipboard stays as it was: the default copy of a
+    // user-select: none root carries nothing, so the event is left alone. Approved, a Selection the Window
+    // holds is written on the event itself, which needs no permission; one that runs past it starts the
+    // asynchronous write now, inside the gesture, and gathers the rows while the browser waits. Each copy
+    // supersedes the one before it, so a slow copy still gathering never lands over a newer one.
+    readonly #onCopy = (event: ClipboardEvent): void => {
+        // Only when the root itself holds the keyboard: a control inside the grid keeps its own clipboard.
+        if (event.target !== this.#root) return;
+        this.#copy?.abort();
+        this.#copy = undefined;
+        // The Selection as the source and the columns stand now, not as the last pass left it (ADR-0011).
+        this.#reconcileSelection();
+        const decision = planCopy(this.#held.selection, { cellCap: this.#copyCellCap });
+        if (decision.refused) {
+            this.#refuse({ kind: 'copy', reason: decision.reason });
+            return;
+        }
+        const { plan } = decision;
+        const state = this.#state;
+        const columns = this.#columns;
+        const data = event.clipboardData;
+        if (data !== null && windowCovers(plan, state)) {
+            // Both flavours in one operation: what was on screen in text/plain, and the raw value in
+            // text/html, which Excel prefers and reads with its precision and type (ADR-0005).
+            const { text, html } = assembleCopy(plan, copyValues(columns, windowRowAt(state)));
+            event.preventDefault();
+            data.setData('text/plain', text);
+            data.setData('text/html', html);
+            return;
+        }
+        const copy = new AbortController();
+        const flavours = this.#gatherCopy(plan, state, columns, this.#sequence(), copy.signal);
+        // Started before the event is taken from the browser: a write that cannot start leaves the clipboard
+        // as the default copy leaves it, untouched.
+        let written: Promise<boolean>;
+        try {
+            written = this.#reports.writeClipboard(this.#root, flavours);
+        } catch (error) {
+            copy.abort();
+            throw error;
+        }
+        event.preventDefault();
+        this.#copy = copy;
+        this.#holdWhileWriting(written, copy);
+    };
+
+    // The flavours of a copy past the Window, or nothing. Rows that could not all be had, or that the order
+    // or the columns moved under while they were gathered, refuse the copy by name: neither the fraction in
+    // hand nor rows of two orders is ever written (ADR-0005, ADR-0011). A copy superseded or a grid
+    // destroyed writes nothing and says nothing.
+    async #gatherCopy(plan: CopyPlan, state: GridSourceState<Row>, columns: readonly ResolvedColumn<Row>[], version: number,
+        signal: AbortSignal): Promise<CopyFlavours | undefined> {
+        const moved = (): boolean => this.#sequence() !== version || this.#columns !== columns;
+        let rows: ReadonlyMap<number, Row> | undefined;
+        try {
+            rows = await gatherRows(plan, state, this.#source, signal, moved);
+        // oxlint-disable-next-line ex-grid/no-catch -- a superseded copy's own abort is expected and writes nothing; any other failure is rethrown
+        } catch (error) {
+            if (signal.aborted) return undefined;
+            // Said, and the failure itself left to surface: the refusal is the user's, the error the Consumer's.
+            this.#refuse({ kind: 'copy', reason: 'rowsUnavailable' });
+            throw error;
+        }
+        if (signal.aborted) return undefined;
+        if (rows === undefined || moved()) {
+            this.#refuse({ kind: 'copy', reason: 'rowsUnavailable' });
+            return undefined;
+        }
+        return assembleCopy(plan, copyValues(columns, row => defined(rows.get(row), 'a gathered row')));
+    }
+
+    // The asynchronous write (ADR-0005) holds the Settled Mark until it has written or refused (ADR-0220). A
+    // write the browser would not make is a refusal of its own: a user told nothing would paste the old
+    // clipboard believing it the copy.
+    #holdWhileWriting(written: Promise<boolean>, copy: AbortController): void {
+        this.#clipboardWrites += 1;
+        this.#showSettled(false);
+        const done = (): void => {
+            this.#clipboardWrites -= 1;
+            if (this.#copy === copy) this.#copy = undefined;
+            if (!this.#destroyed) this.#lookSettled();
+        };
+        // oxlint-disable-next-line ex-grid/no-catch -- every rejection is said: a refused write as a refusal, anything else rethrown
+        written.then(done, (error: unknown) => {
+            done();
+            if (this.#destroyed || copy.signal.aborted) return;
+            // By name, not by class: the error is the grid's window's, which need not be this realm's.
+            if (typeof error === 'object' && error !== null && Reflect.get(error, 'name') === 'NotAllowedError') {
+                this.#refuse({ kind: 'copy', reason: 'clipboardUnavailable' });
+                return;
+            }
+            throw error;
+        });
+    }
+
+    // A refused gesture is said in the live region and raised by name (ADR-0005, ADR-0203). It stands down
+    // a description of the Selection still owed, which would otherwise say over it, and a refusal said
+    // again is emptied first and said in the next frame: the same text written again is no change, and the
+    // second refusal is the one the user needs (A11Y-16).
+    #refuse(refusal: GridRefusal): void {
+        const words = copyRefusalWords[refusal.reason];
+        this.#announcedRanges = this.#held.selection.ranges;
+        this.#cancelAnnounce?.();
+        this.#cancelAnnounce = undefined;
+        if (this.#announce.textContent === words) {
+            this.#say('');
+            this.#showSettled(false);
+            this.#cancelAnnounce = this.#reports.nextFrame(this.#root, () => {
+                this.#cancelAnnounce = undefined;
+                if (this.#destroyed) return;
+                this.#say(words);
+                this.#lookSettled();
+            });
+        } else {
+            this.#say(words);
+        }
+        this.#onRefused?.(refusal);
+    }
+
     // DOM focus leaving the grid ends a release of Tab, as the C# core's key gate does (ADR-0080).
     readonly #onFocusLeft = (event: FocusEvent): void => {
         const next = event.relatedTarget;
@@ -1087,13 +1342,20 @@ export class GridView<Row> {
     }
 
     // The column a press or a click on the header names, or none: the corner where the Headings meet names
-    // none, nor does the dead space past the last column, where columnAt would clamp for a drag.
+    // none, nor does the dead space past the last column, where columnAt would clamp for a drag, nor a Header
+    // Group's rectangle, which is not the leaf under it (ADR-0032).
     #headerColumnAt(event: MouseEvent): number | undefined {
         const geometry = this.#styles.geometry;
         const x = event.offsetX;
         if (!Number.isFinite(x) || !Number.isFinite(event.offsetY) || geometry.isInLead(x, this.#scrollLeftPx)
             || x < 0 || x >= geometry.totalWidthPx) return undefined;
-        return geometry.columnAt(x, this.#scrollLeftPx);
+        const column = geometry.columnAt(x, this.#scrollLeftPx);
+        if (column === undefined) return undefined;
+        const layout = this.#headerLayout;
+        if (layout.tierCount > 0 && event.offsetY < this.#bandHeightPx - (layout.leafTierSpanOf(column) * this.#metrics.headerHeightPx)) {
+            return undefined;
+        }
+        return column;
     }
 
     // The row the Focus lands on when a Column Heading is pressed: the first on screen, so the Viewport
@@ -1463,7 +1725,7 @@ export class GridView<Row> {
             + `--ex-resize-grip-width: ${metrics.resizeGripWidthPx}px; --ex-column-guide-width: ${metrics.columnGuideWidthPx}px`
             + stretchRootStyle(this.#width, this.#height)
             + (this.#devicePixelRatio === undefined ? '' : `; --ex-dp: ${1 / this.#devicePixelRatio}px`));
-        this.#write(root, 'root', 'aria-rowcount', String(this.#totalRows + headerRowCount));
+        this.#write(root, 'root', 'aria-rowcount', String(this.#totalRows + this.#headerRowCount));
         this.#write(root, 'root', 'aria-colcount', String(this.#columns.length));
         // The numbers a reveal and a page follow are known by (ADR-0012, ADR-0204), the Focus a follow
         // was taken for, painted or not, and the Focus cell for assistive technology only while it is in
@@ -1493,27 +1755,45 @@ export class GridView<Row> {
 
     #paintHeader(): void {
         const painted = this.#paintedHeader;
+        const layout = this.#headerLayout;
+        const tierPx = this.#metrics.headerHeightPx;
         // The Sort in force is painted too, as each header's aria-sort (ADR-0033).
         const sorts = this.#state.sorts.map(({ column, direction }) => `${JSON.stringify(column)}:${direction}`).join(',');
         if (painted !== undefined && painted.styles === this.#styles && painted.columns === this.#columns
-            && sameRange(painted.scrollable, this.#scrollable) && painted.sorts === sorts) {
+            && sameRange(painted.scrollable, this.#scrollable) && painted.sorts === sorts && painted.layout === layout
+            && painted.tierPx === tierPx) {
             this.#paintHeadingMarks(false);
             return;
         }
-        this.#paintedHeader = { styles: this.#styles, columns: this.#columns, scrollable: this.#scrollable, sorts };
+        this.#paintedHeader = { styles: this.#styles, columns: this.#columns, scrollable: this.#scrollable, sorts, layout, tierPx };
         const doc = this.#root.ownerDocument;
+        const tiered = layout.tierCount > 0;
+        const header = this.#header;
+        // Untiered, the header is the one row it always was. Tiered, it holds a row per tier of Header Groups,
+        // top first, and the leaf row below them; each is display: contents, so the band lays out, paints and
+        // stacks as one element of cells and rectangles would, and only the tree says rows (ADR-0032/0033).
+        this.#write(header, 'header', 'role', tiered ? 'rowgroup' : 'row');
+        this.#write(header, 'header', 'aria-rowindex', tiered ? undefined : '1');
+        this.#write(header, 'header', 'style', tiered ? `height: ${this.#bandHeightPx}px; line-height: ${tierPx}px` : undefined);
         const cells: HTMLElement[] = [];
         const headerCells: HeaderCell[] = [];
+        // While tiers stand, a leaf is anchored to the band's bottom edge, as tall as the tiers no
+        // rectangle covers above it (ADR-0032).
+        const tieredStyle = (c: number, style: string): string => {
+            if (!tiered) return style;
+            const heightPx = layout.leafTierSpanOf(c) * tierPx;
+            return `${style}; align-self: flex-end; height: ${heightPx}px; line-height: ${heightPx}px`;
+        };
         const headerCell = (c: number, pinned: boolean): void => {
-            const { column, header } = itemAt(this.#columns, c);
+            const { column, header: label } = itemAt(this.#columns, c);
             const cell = doc.createElement('div');
             cell.className = headerClass(column.align, pinned, 'none');
-            cell.setAttribute('style', pinned ? this.#styles.pinnedCell(c) : this.#styles.cell(c));
+            cell.setAttribute('style', tieredStyle(c, pinned ? this.#styles.pinnedCell(c) : this.#styles.cell(c)));
             cell.setAttribute('role', 'columnheader');
             cell.setAttribute('aria-colindex', String(c + 1));
             // Sorted or not, a column that can be sorted says so (ADR-0033).
             if (column.queryable !== false) cell.setAttribute('aria-sort', this.#ariaSort(column.name));
-            cell.textContent = header;
+            cell.textContent = label;
             cells.push(cell);
             headerCells.push({ element: cell, column: c, align: column.align, pinned });
         };
@@ -1523,9 +1803,74 @@ export class GridView<Row> {
             if (this.#styles.hasGap(scrollable.start)) cells.push(this.#gap(scrollable.start));
             for (let c = scrollable.start; c < scrollable.start + scrollable.count; c++) headerCell(c, false);
         }
-        this.#header.replaceChildren(...cells);
+        if (tiered) {
+            let tiers = this.#paintedTiers;
+            if (tiers === undefined || tiers.styles !== this.#styles || tiers.columns !== this.#columns || tiers.layout !== layout
+                || tiers.tierPx !== tierPx) {
+                const rows = Array.from({ length: layout.tierCount }, (_, headerRow) => this.#tierRow(headerRow));
+                const leaves = doc.createElement('div');
+                leaves.setAttribute('role', 'row');
+                leaves.setAttribute('aria-rowindex', String(layout.tierCount + 1));
+                leaves.setAttribute('style', 'display: contents');
+                tiers = { styles: this.#styles, columns: this.#columns, layout, tierPx, rows, leaves };
+                this.#paintedTiers = tiers;
+                header.replaceChildren(...rows, leaves);
+            }
+            tiers.leaves.replaceChildren(...cells);
+        } else {
+            this.#paintedTiers = undefined;
+            header.replaceChildren(...cells);
+        }
         this.#headerCells = headerCells;
         this.#paintHeadingMarks(true);
+    }
+
+    // One tier's row of Header Groups, the top tier first (ADR-0032). A rectangle stands from the geometry,
+    // absolutely, so it is correct whether or not its leaves are in the DOM; one inside the pinned block
+    // rides a zero-size sticky anchor held at the band's left edge, as the pinned header cells are.
+    #tierRow(headerRow: number): HTMLElement {
+        const doc = this.#root.ownerDocument;
+        const layout = this.#headerLayout;
+        const tier = layout.tierCount - headerRow;
+        const row = doc.createElement('div');
+        row.setAttribute('role', 'row');
+        row.setAttribute('aria-rowindex', String(headerRow + 1));
+        row.setAttribute('style', 'display: contents');
+        const geometry = this.#styles.geometry;
+        // Until the column geometry stands for these columns, as under a stretched axis not yet reported,
+        // the band paints no rectangles, as the rows paint nothing (ADR-0028).
+        if (geometry.count !== this.#columns.length) return row;
+        const held = (group: ResolvedHeaderGroup): boolean => group.pinned && !geometry.isPinningSuspended;
+        const inTier = layout.groups.filter(group => group.topTier === tier);
+        const pinned = inTier.filter(held);
+        if (pinned.length > 0) {
+            const anchor = doc.createElement('div');
+            anchor.className = 'ex-header-groups-pinned';
+            anchor.append(...pinned.map(group => this.#groupElement(group)));
+            row.append(anchor);
+        }
+        row.append(...inTier.filter(group => !held(group)).map(group => this.#groupElement(group)));
+        return row;
+    }
+
+    #groupElement(group: ResolvedHeaderGroup): HTMLElement {
+        const geometry = this.#styles.geometry;
+        const tierPx = this.#metrics.headerHeightPx;
+        const last = group.firstColumn + group.memberCount - 1;
+        const leftPx = geometry.offsetPxOf(group.firstColumn);
+        const widthPx = geometry.offsetPxOf(last) + geometry.widthPxOf(last) - leftPx;
+        const topPx = (this.#headerLayout.tierCount - group.topTier) * tierPx;
+        const heightPx = group.tierSpan * tierPx;
+        const element = this.#root.ownerDocument.createElement('div');
+        element.className = 'ex-header-group';
+        element.setAttribute('style', `left: ${leftPx}px; top: ${topPx}px; width: ${widthPx}px; height: ${heightPx}px; line-height: ${heightPx}px`);
+        element.setAttribute('role', 'columnheader');
+        element.setAttribute('aria-colindex', String(group.firstColumn + 1));
+        element.setAttribute('aria-colspan', String(group.memberCount));
+        // A cell spans one row unless it says otherwise (ADR-0033).
+        if (group.tierSpan > 1) element.setAttribute('aria-rowspan', String(group.tierSpan));
+        element.textContent = group.label;
+        return element;
     }
 
     // The Heading Mark over the header (ADR-0008, 2026-10-13): every column holding part of the Selection
@@ -1630,7 +1975,10 @@ export class GridView<Row> {
         }
         // Placed from the offset the slice is painted at, on the nearest Device Pixel (ADR-0053, DC-59).
         const topPx = geometry === undefined || visible === undefined ? 0 : geometry.paintedTopPxOf(visible.start, this.#scrollTopPx);
-        this.#write(viewport, 'viewport', 'style', `transform: translateY(round(nearest, ${topPx}px, var(--ex-dp, 1px)))`);
+        // The stylesheet's default is one header tier; tiers move where the rows begin, so the band's height
+        // travels inline (ADR-0032).
+        const transform = `transform: translateY(round(nearest, ${topPx}px, var(--ex-dp, 1px)))`;
+        this.#write(viewport, 'viewport', 'style', this.#headerLayout.tierCount === 0 ? transform : `top: ${this.#bandHeightPx}px; ${transform}`);
         this.#write(viewport, 'viewport', 'data-ex-first-row', visible === undefined ? undefined : String(visible.start));
         this.#write(viewport, 'viewport', 'data-ex-sequence', String(this.#sequence()));
         this.#write(viewport, 'viewport', 'data-ex-layout', String(this.#layoutId));
@@ -1708,7 +2056,7 @@ export class GridView<Row> {
         const element = this.#root.ownerDocument.createElement('div');
         element.className = rowClasses({ kind: 'detail', placeholder: true });
         element.setAttribute('role', 'row');
-        element.setAttribute('aria-rowindex', String(headerRowCount + index + 1));
+        element.setAttribute('aria-rowindex', String(this.#headerRowCount + index + 1));
         element.setAttribute('aria-busy', 'true');
         return element;
     }
@@ -1719,7 +2067,7 @@ export class GridView<Row> {
         const element = this.#root.ownerDocument.createElement('div');
         element.className = rowClasses({ kind: 'detail', placeholder: this.#placeholderMode });
         element.setAttribute('role', 'row');
-        element.setAttribute('aria-rowindex', String(headerRowCount + index + 1));
+        element.setAttribute('aria-rowindex', String(this.#headerRowCount + index + 1));
         if (this.#placeholderMode) element.setAttribute('aria-busy', 'true');
         for (let c = 0; c < this.#styles.geometry.pinnedCount; c++) element.append(this.#cell(row, index, c, true));
         if (scrollable !== undefined) {

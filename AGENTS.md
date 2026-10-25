@@ -339,6 +339,12 @@ under xvfb. Performance never gates, and neither does coverage — it is reporte
   application that restores them from the packed files alone. CI runs it as its `package` job.
   The DemoHost's project references skip exactly what it checks (ADR-0042).
 
+- **A layer-3 test earns its run** (ADR-0370 section 11, decided with the user 2026-10-25). It judges
+  what only a browser shows and what a user or a Consumer would meet, and names the criterion or defect
+  it holds. Do not add one that repeats a judgement layer 1 or 2 makes, or that another layer-3 test
+  makes on the same path; remove such a test when you find one, naming the test that still checks its
+  criterion. Porting a test to another host moves it, never copies it.
+
 - **Put the ADR number in the test name.** A failure then says which decision was violated.
   ```csharp
   [Fact]  // ADR-0011: selection is dropped when the sort order changes

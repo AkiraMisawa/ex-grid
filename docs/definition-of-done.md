@@ -1437,6 +1437,11 @@ holding nothing of any real Consumer's domain.
 
 ## 24. Blazor Server (SRV)
 
+*(2026-10-25, decided with the user: [ADR-0370](adr/0370-the-whole-family-moves-to-typescript-and-blazor-only-adapts-it.md)
+section 11 splits layer 3 from each product's step 3, behaviour on the React host and what passes
+through Blazor on both Blazor hosts. SRV-2, and every criterion checked "on the Server host", stands as
+written until that step, and is rewritten then to name the host each is checked on, dropping none.)*
+
 *(Added 2026-09-25, when the grid was first run under Blazor Server — ADR-0005, ADR-0010,
 ADR-0018, ADR-0019, ADR-0021.)* The criteria above are the grid's on any host. This section says
 how they are run on the second host, which of them are WebAssembly's by definition, and adds what
@@ -1844,7 +1849,11 @@ does: it lands as the user entered it, on the row it was aimed at. **They are Ex
 gate the release** (§2), as §26 does. *(Narrowed 2026-10-11, decided with the user ([ADR-0200](adr/0200-the-first-stable-version-is-0-1-0-and-carries-the-whole-family.md)): the rows on
 ExPivot's report Windows, LV-24 to LV-31 and LV-34, are ExPivot's code, in `ExPivot.Engine` and
 `ExPivot`. They judge ExPivot with §29, not ExGrid; `0.1.0` carries ExPivot, so they still gate the
-tag.)* Without a Row Key declared, the Row Key's criteria change nothing
+tag.)* *(2026-10-25, decided with the user: [ADR-0370](adr/0370-the-whole-family-moves-to-typescript-and-blazor-only-adapts-it.md)
+section 3 ends the server report Windows when ExPivot.Engine is removed, and a server answers Leaf
+Aggregates again. LV-24, LV-25 and LV-28, and PV-2's server clause, judge the C# path as written until
+then. They are rewritten for the Leaf Aggregate boundary, with live server data's form, before
+ExPivot's step 1 is called done, not relaxed to fit it.)* Without a Row Key declared, the Row Key's criteria change nothing
 (DC-1); the rules for a write over live data hold for every grid.
 
 | ID | Level | Statement | Verification | Pass |

@@ -1,0 +1,413 @@
+{
+  "about": "What a definition refuses when it is made, and the defaults it applies (ADR-0251, ADR-0253, ADR-0256, ADR-0257), from tests/ExChart.Engine.Tests/ChartDefinitionTests.cs.",
+  "kind": "chart",
+  "cases": [
+    {
+      "name": "ADR-0253: a missing value is handed in as null, never as NaN",
+      "definition": {
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "a",
+            "name": "EPE",
+            "kind": "level",
+            "points": [
+              [
+                0,
+                "NaN"
+              ]
+            ]
+          }
+        ]
+      },
+      "throws": "outOfRange"
+    },
+    {
+      "name": "ADR-0253: a series that declares no Series Kind is refused by name",
+      "definition": {
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "a",
+            "name": "EPE",
+            "points": [
+              [
+                0,
+                1
+              ]
+            ]
+          }
+        ]
+      },
+      "throws": "chartRefused",
+      "saying": [
+        "EPE",
+        "Series Kind"
+      ]
+    },
+    {
+      "name": "ADR-0251: a line joins neighbours in the data, so points out of order are refused",
+      "definition": {
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "a",
+            "name": "A",
+            "kind": "level",
+            "points": [
+              [
+                1,
+                1
+              ],
+              [
+                0,
+                2
+              ]
+            ]
+          }
+        ]
+      },
+      "throws": "chartRefused"
+    },
+    {
+      "name": "ADR-0251: a position that is no number breaks the order, and the refusal names it",
+      "definition": {
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "a",
+            "name": "A",
+            "kind": "level",
+            "points": [
+              [
+                0,
+                1
+              ],
+              [
+                "NaN",
+                2
+              ]
+            ]
+          }
+        ]
+      },
+      "throws": "chartRefused",
+      "saying": "out of order at position NaN"
+    },
+    {
+      "name": "ADR-0253: an Amount per period is always drawn from zero",
+      "definition": {
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "a",
+            "name": "CVA",
+            "kind": "amountPerPeriod",
+            "points": [
+              [
+                0,
+                null
+              ],
+              [
+                1,
+                5
+              ]
+            ],
+            "fromZero": false
+          }
+        ]
+      },
+      "throws": "chartRefused"
+    },
+    {
+      "name": "ADR-0253: an amount on categories is refused, having no interval to be drawn per year over",
+      "definition": {
+        "axis": {
+          "values": "labels",
+          "labels": [
+            "a",
+            "b"
+          ]
+        },
+        "series": [
+          {
+            "id": "a",
+            "name": "CVA",
+            "kind": "amountPerPeriod",
+            "points": [
+              [
+                0,
+                null
+              ],
+              [
+                1,
+                5
+              ]
+            ]
+          }
+        ]
+      },
+      "throws": "chartRefused"
+    },
+    {
+      "name": "ADR-0253: an amount with a value at its open edge is refused, having no interval for it",
+      "definition": {
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "a",
+            "name": "CVA",
+            "kind": "amountPerPeriod",
+            "points": [
+              [
+                0,
+                3
+              ],
+              [
+                1,
+                5
+              ]
+            ]
+          }
+        ]
+      },
+      "throws": "chartRefused"
+    },
+    {
+      "name": "ADR-0253: a Level reaches zero unless it says otherwise, and an amount always does",
+      "definition": {
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "a",
+            "name": "EPE",
+            "kind": "level",
+            "points": [
+              [
+                0,
+                1
+              ]
+            ]
+          },
+          {
+            "id": "b",
+            "name": "Zero",
+            "kind": "level",
+            "points": [
+              [
+                0,
+                1
+              ]
+            ],
+            "fromZero": false
+          },
+          {
+            "id": "c",
+            "name": "CVA",
+            "kind": "amountPerPeriod",
+            "points": [
+              [
+                0,
+                null
+              ],
+              [
+                1,
+                5
+              ]
+            ]
+          }
+        ]
+      },
+      "expect": [
+        {
+          "at": "series",
+          "map": "reachesZero",
+          "is": [
+            true,
+            false,
+            true
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ADR-0256: a series that sets no colour key is coloured by its identity",
+      "definition": {
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "epe-before",
+            "name": "EPE",
+            "kind": "level",
+            "points": [
+              [
+                0,
+                1
+              ]
+            ]
+          }
+        ]
+      },
+      "expect": [
+        {
+          "at": "series.0.effectiveKeys.colour",
+          "is": "epe-before"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0251: the axis' scale is declared, with a default by its values",
+      "build": {
+        "dates": {
+          "definition": {
+            "axis": {
+              "values": "dates"
+            },
+            "series": [
+              {
+                "id": "a",
+                "name": "A",
+                "kind": "level",
+                "points": [
+                  [
+                    0,
+                    1
+                  ]
+                ]
+              }
+            ]
+          }
+        },
+        "labels": {
+          "definition": {
+            "axis": {
+              "values": "labels",
+              "labels": [
+                "1M"
+              ]
+            },
+            "series": [
+              {
+                "id": "a",
+                "name": "A",
+                "kind": "level",
+                "points": [
+                  [
+                    0,
+                    1
+                  ]
+                ]
+              }
+            ]
+          }
+        },
+        "declared": {
+          "definition": {
+            "axis": {
+              "values": "numbers",
+              "scale": "categories"
+            },
+            "series": [
+              {
+                "id": "a",
+                "name": "A",
+                "kind": "level",
+                "points": [
+                  [
+                    0,
+                    1
+                  ]
+                ]
+              }
+            ]
+          }
+        }
+      },
+      "expect": [
+        {
+          "at": "dates.axis.effectiveScale",
+          "is": "proportional"
+        },
+        {
+          "at": "labels.axis.effectiveScale",
+          "is": "categories"
+        },
+        {
+          "at": "declared.axis.effectiveScale",
+          "is": "categories"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0257: a function is sampled between positions, which categories do not have",
+      "definition": {
+        "axis": {
+          "values": "labels",
+          "labels": [
+            "a"
+          ]
+        },
+        "series": [
+          {
+            "id": "c",
+            "name": "Curve",
+            "kind": "level",
+            "sampler": {
+              "from": 0,
+              "to": 1,
+              "value": {
+                "line": [
+                  1,
+                  0
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "throws": "chartRefused"
+    },
+    {
+      "name": "ADR-0257: a function is not drawn as a step",
+      "definition": {
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "c",
+            "name": "Fwd",
+            "kind": "rateOverInterval",
+            "sampler": {
+              "from": 0,
+              "to": 1,
+              "value": {
+                "line": [
+                  1,
+                  0
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "throws": "chartRefused"
+    }
+  ]
+}

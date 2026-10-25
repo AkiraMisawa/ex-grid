@@ -1,0 +1,797 @@
+{
+  "about": "An Observation's intervals, one a row on both axes (ADR-0304), from tests/ExChart.Engine.Tests/ObservationIntervalTests.cs.",
+  "kind": "chart",
+  "cases": [
+    {
+      "name": "ADR-0304: an Observation's bounds are one a row, so two points at one position keep their own",
+      "definition": {
+        "axis": {
+          "values": "numbers",
+          "title": "Leverage"
+        },
+        "series": [
+          {
+            "id": "names",
+            "name": "Names",
+            "kind": "observation",
+            "points": [
+              [
+                1,
+                150,
+                "A"
+              ],
+              [
+                3,
+                200,
+                "C"
+              ],
+              [
+                3,
+                260,
+                "D"
+              ]
+            ],
+            "interval": {
+              "meaning": "95% CI",
+              "bounds": [
+                [
+                  1,
+                  140,
+                  160
+                ],
+                [
+                  3,
+                  190,
+                  215
+                ],
+                [
+                  3,
+                  240,
+                  290
+                ]
+              ]
+            }
+          }
+        ]
+      },
+      "scene": {
+        "metrics": {
+          "width": 800,
+          "height": 400
+        }
+      },
+      "expect": [
+        {
+          "at": "panels.0.series.0.markers",
+          "count": true,
+          "is": 3
+        },
+        {
+          "at": "panels.0.series.0.markers.[point=1].yBounds",
+          "isNot": null
+        },
+        {
+          "at": "panels.0.series.0.markers.[point=1].yBounds",
+          "differsFrom": "panels.0.series.0.markers.[point=2].yBounds"
+        },
+        {
+          "at": "panels.0.series.0.markers.[point=2].yBounds.0",
+          "below": {
+            "at": "panels.0.series.0.markers.[point=2].y"
+          }
+        },
+        {
+          "at": "panels.0.series.0.markers.[point=2].yBounds.1",
+          "above": {
+            "at": "panels.0.series.0.markers.[point=2].y"
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0304: bounds that do not number the points are refused by name",
+      "definition": {
+        "axis": {
+          "values": "numbers",
+          "title": "Leverage"
+        },
+        "series": [
+          {
+            "id": "names",
+            "name": "Names",
+            "kind": "observation",
+            "points": [
+              [
+                1,
+                150,
+                "A"
+              ],
+              [
+                3,
+                200,
+                "C"
+              ],
+              [
+                3,
+                260,
+                "D"
+              ]
+            ],
+            "interval": {
+              "meaning": "95% CI",
+              "bounds": [
+                [
+                  1,
+                  140,
+                  160
+                ]
+              ]
+            }
+          }
+        ]
+      },
+      "throws": "chartRefused",
+      "saying": "3 points and 1 bounds"
+    },
+    {
+      "name": "ADR-0304: a bound at another position than its point is refused, naming the point",
+      "definition": {
+        "axis": {
+          "values": "numbers",
+          "title": "Leverage"
+        },
+        "series": [
+          {
+            "id": "names",
+            "name": "Names",
+            "kind": "observation",
+            "points": [
+              [
+                1,
+                150,
+                "A"
+              ],
+              [
+                3,
+                200,
+                "C"
+              ],
+              [
+                3,
+                260,
+                "D"
+              ]
+            ],
+            "interval": {
+              "meaning": "95% CI",
+              "bounds": [
+                [
+                  3,
+                  140,
+                  160
+                ],
+                [
+                  3,
+                  190,
+                  215
+                ],
+                [
+                  3,
+                  240,
+                  290
+                ]
+              ]
+            }
+          }
+        ]
+      },
+      "throws": "chartRefused",
+      "saying": "at A"
+    },
+    {
+      "name": "ADR-0304: an Observation's interval takes whiskers, since a band has no neighbours to join",
+      "definition": {
+        "axis": {
+          "values": "numbers",
+          "title": "Leverage"
+        },
+        "series": [
+          {
+            "id": "names",
+            "name": "Names",
+            "kind": "observation",
+            "points": [
+              [
+                1,
+                150,
+                "A"
+              ],
+              [
+                3,
+                200,
+                "C"
+              ],
+              [
+                3,
+                260,
+                "D"
+              ]
+            ],
+            "interval": {
+              "meaning": "95% CI",
+              "bounds": [
+                [
+                  1,
+                  140,
+                  160
+                ],
+                [
+                  3,
+                  190,
+                  215
+                ],
+                [
+                  3,
+                  240,
+                  290
+                ]
+              ],
+              "style": "band"
+            }
+          }
+        ]
+      },
+      "throws": "chartRefused"
+    },
+    {
+      "name": "ADR-0303: a horizontal interval belongs to an Observation only",
+      "definition": {
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "l",
+            "name": "Level",
+            "kind": "level",
+            "points": [
+              [
+                1,
+                1
+              ]
+            ],
+            "xInterval": {
+              "meaning": "±1σ",
+              "bounds": [
+                [
+                  1,
+                  0.5,
+                  1.5
+                ]
+              ]
+            }
+          }
+        ]
+      },
+      "throws": "chartRefused"
+    },
+    {
+      "name": "ADR-0304: both axes take the bounds, so no whisker is cut at the plot's edge",
+      "definition": {
+        "axis": {
+          "values": "numbers",
+          "title": "Leverage"
+        },
+        "series": [
+          {
+            "id": "names",
+            "name": "Names",
+            "kind": "observation",
+            "points": [
+              [
+                1,
+                150,
+                "A"
+              ],
+              [
+                3,
+                200,
+                "C"
+              ],
+              [
+                3,
+                260,
+                "D"
+              ]
+            ],
+            "interval": {
+              "meaning": "95% CI",
+              "bounds": [
+                [
+                  1,
+                  140,
+                  160
+                ],
+                [
+                  3,
+                  190,
+                  215
+                ],
+                [
+                  3,
+                  240,
+                  290
+                ]
+              ]
+            },
+            "xInterval": {
+              "meaning": "±1σ",
+              "bounds": [
+                [
+                  1,
+                  0.5,
+                  1.5
+                ],
+                [
+                  3,
+                  2.8,
+                  3.4
+                ],
+                [
+                  3,
+                  2.5,
+                  3.1
+                ]
+              ]
+            }
+          }
+        ]
+      },
+      "scene": {
+        "metrics": {
+          "width": 800,
+          "height": 400
+        }
+      },
+      "expect": [
+        {
+          "at": "panels.0.left.max",
+          "atLeast": 290
+        },
+        {
+          "at": "xFrom",
+          "atMost": 0.5
+        }
+      ]
+    },
+    {
+      "name": "ADR-0304: a merged mark carries the union of its points' intervals",
+      "definition": {
+        "axis": {
+          "values": "numbers",
+          "title": "Leverage"
+        },
+        "series": [
+          {
+            "id": "names",
+            "name": "Names",
+            "kind": "observation",
+            "points": [
+              [
+                3,
+                200,
+                "C"
+              ],
+              [
+                3,
+                200,
+                "D"
+              ]
+            ],
+            "interval": {
+              "meaning": "95% CI",
+              "bounds": [
+                [
+                  3,
+                  190,
+                  205
+                ],
+                [
+                  3,
+                  195,
+                  230
+                ]
+              ]
+            }
+          }
+        ]
+      },
+      "scene": {
+        "metrics": {
+          "width": 800,
+          "height": 400
+        }
+      },
+      "expect": [
+        {
+          "at": "panels.0.series.0.markers",
+          "count": true,
+          "is": 1
+        },
+        {
+          "at": "panels.0.series.0.markers.0.count",
+          "is": 2
+        },
+        {
+          "yOf": [
+            0,
+            "left",
+            230
+          ],
+          "near": 1e-06,
+          "sameAs": "panels.0.series.0.markers.0.yBounds.0"
+        },
+        {
+          "yOf": [
+            0,
+            "left",
+            190
+          ],
+          "near": 1e-06,
+          "sameAs": "panels.0.series.0.markers.0.yBounds.1"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0304: the legend and the Notes say what each interval means",
+      "definition": {
+        "axis": {
+          "values": "numbers",
+          "title": "Leverage"
+        },
+        "series": [
+          {
+            "id": "names",
+            "name": "Names",
+            "kind": "observation",
+            "points": [
+              [
+                1,
+                150,
+                "A"
+              ],
+              [
+                3,
+                200,
+                "C"
+              ],
+              [
+                3,
+                260,
+                "D"
+              ]
+            ],
+            "interval": {
+              "meaning": "95% CI",
+              "bounds": [
+                [
+                  1,
+                  140,
+                  160
+                ],
+                [
+                  3,
+                  190,
+                  215
+                ],
+                [
+                  3,
+                  240,
+                  290
+                ]
+              ]
+            },
+            "xInterval": {
+              "meaning": "±1σ",
+              "bounds": [
+                [
+                  1,
+                  0.5,
+                  1.5
+                ],
+                [
+                  3,
+                  2.8,
+                  3.4
+                ],
+                [
+                  3,
+                  2.5,
+                  3.1
+                ]
+              ]
+            }
+          }
+        ]
+      },
+      "scene": {
+        "metrics": {
+          "width": 800,
+          "height": 400
+        }
+      },
+      "expect": [
+        {
+          "at": "panels.0.legend",
+          "map": "name",
+          "is": [
+            "Names (y: 95% CI; x: ±1σ)"
+          ]
+        },
+        {
+          "at": "notes",
+          "has": "Names: the vertical interval is 95% CI."
+        },
+        {
+          "at": "notes",
+          "has": "Names: the horizontal interval is ±1σ."
+        }
+      ]
+    },
+    {
+      "name": "ADR-0304: a vertical bound at or below zero keeps a logarithmic axis proportional, by name",
+      "definition": {
+        "axis": {
+          "values": "numbers",
+          "title": "Leverage"
+        },
+        "series": [
+          {
+            "id": "names",
+            "name": "Names",
+            "kind": "observation",
+            "points": [
+              [
+                1,
+                150,
+                "A"
+              ],
+              [
+                3,
+                200,
+                "C"
+              ],
+              [
+                3,
+                260,
+                "D"
+              ]
+            ],
+            "interval": {
+              "meaning": "95% CI",
+              "bounds": [
+                [
+                  1,
+                  -5,
+                  160
+                ],
+                [
+                  3,
+                  190,
+                  215
+                ],
+                [
+                  3,
+                  240,
+                  290
+                ]
+              ]
+            }
+          }
+        ]
+      },
+      "scene": {
+        "metrics": {
+          "width": 800,
+          "height": 400
+        },
+        "view": {
+          "yScale": "logarithmic"
+        }
+      },
+      "expect": [
+        {
+          "at": "panels.0.left.logarithmic",
+          "is": false
+        },
+        {
+          "at": "notes",
+          "mentions": "'Names' has a bound of -5 in its 95% CI"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0304: a horizontal bound at or below zero keeps a logarithmic axis proportional, by name",
+      "definition": {
+        "axis": {
+          "values": "numbers",
+          "title": "Leverage"
+        },
+        "series": [
+          {
+            "id": "names",
+            "name": "Names",
+            "kind": "observation",
+            "points": [
+              [
+                1,
+                150,
+                "A"
+              ],
+              [
+                3,
+                200,
+                "C"
+              ],
+              [
+                3,
+                260,
+                "D"
+              ]
+            ],
+            "xInterval": {
+              "meaning": "±1σ",
+              "bounds": [
+                [
+                  1,
+                  0,
+                  1.5
+                ],
+                [
+                  3,
+                  2.8,
+                  3.4
+                ],
+                [
+                  3,
+                  2.5,
+                  3.1
+                ]
+              ]
+            }
+          }
+        ]
+      },
+      "scene": {
+        "metrics": {
+          "width": 800,
+          "height": 400
+        },
+        "view": {
+          "scale": "logarithmic"
+        }
+      },
+      "expect": [
+        {
+          "at": "logarithmicX",
+          "is": false
+        },
+        {
+          "at": "notes",
+          "mentions": "'Names' has a bound of 0 in its ±1σ at 1"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0304: a narrowed range cuts a whisker at the plot's edge, never past it",
+      "definition": {
+        "axis": {
+          "values": "numbers",
+          "title": "Leverage"
+        },
+        "series": [
+          {
+            "id": "names",
+            "name": "Names",
+            "kind": "observation",
+            "points": [
+              [
+                1,
+                150,
+                "A"
+              ],
+              [
+                3,
+                200,
+                "C"
+              ],
+              [
+                3,
+                260,
+                "D"
+              ]
+            ],
+            "interval": {
+              "meaning": "95% CI",
+              "bounds": [
+                [
+                  1,
+                  140,
+                  160
+                ],
+                [
+                  3,
+                  190,
+                  215
+                ],
+                [
+                  3,
+                  240,
+                  290
+                ]
+              ]
+            },
+            "xInterval": {
+              "meaning": "±1σ",
+              "bounds": [
+                [
+                  1,
+                  0.5,
+                  1.5
+                ],
+                [
+                  3,
+                  2.8,
+                  3.4
+                ],
+                [
+                  3,
+                  2.5,
+                  3.1
+                ]
+              ]
+            }
+          }
+        ]
+      },
+      "scene": {
+        "metrics": {
+          "width": 800,
+          "height": 400
+        },
+        "view": {
+          "from": 2.9,
+          "to": 3.3,
+          "yFrom": 230,
+          "yTo": 280
+        }
+      },
+      "expect": [
+        {
+          "at": "panels.0.series.0.markers.[point=2].yBounds.0",
+          "atLeast": {
+            "at": "panels.0.plot.y",
+            "plus": -1e-06
+          }
+        },
+        {
+          "at": "panels.0.series.0.markers.[point=2].yBounds.1",
+          "atMost": {
+            "at": "panels.0.plot.y",
+            "plus": {
+              "at": "panels.0.plot.height",
+              "plus": 1e-06
+            }
+          }
+        },
+        {
+          "at": "panels.0.series.0.markers.[point=2].xBounds.0",
+          "atLeast": {
+            "at": "panels.0.plot.x",
+            "plus": -1e-06
+          }
+        }
+      ]
+    }
+  ]
+}

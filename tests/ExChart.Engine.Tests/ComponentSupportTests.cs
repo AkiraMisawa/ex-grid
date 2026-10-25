@@ -3,8 +3,9 @@ using ExChart.Engine;
 
 namespace ExChart.Engine.Tests;
 
-// What the Engine hands the M2 components: looks, the legend's layout, positions, readings, the
-// summary and the table.
+// What the Engine hands the M2 components: the pieces' equality, readings, the summary and the table.
+// Looks, the legend's layout and positions are shared cases (tests/cases/chart/appearance.json,
+// legend.json, scene.json).
 public class ComponentSupportTests
 {
     private static ChartPoint P(double x, double? y) => new(x, y is { } v ? ChartValue.Of(v) : null);
@@ -19,147 +20,28 @@ public class ComponentSupportTests
         ChartSeries.Of("ene-after", "ENE · After", SeriesKind.Level, [P(0, -1), P(1, -3), P(2, -2)]) with { Panel = "ENE", Keys = new("After") },
     ]);
 
-    [Fact] // ADR-0256: the same colour key takes the same slot in every panel, and hiding keeps every look
-    public void The_same_key_takes_the_same_look_and_hiding_keeps_it()
+    // The shared cases compare scenes as the JSON they serialise to; the components skip a render by the
+    // records' own Equals (ChartParts.ShouldRender), which only these facts hold.
+    [Fact] // ADR-0252: a change to one series changes only that series' piece, by the records' equality
+    public void A_change_to_one_series_changes_only_its_piece_by_equality()
     {
-        var (looks, repeat) = Appearance.Of(Exposure());
-        Assert.False(repeat);
-        Assert.Equal(0, looks["epe-before"].Colour);
-        Assert.Equal(1, looks["epe-after"].Colour);
-        Assert.Equal(looks["epe-after"], looks["ene-after"]);
-
-        var hidden = ChartScene.Build(Exposure(), Metrics, Hide("epe-before"));
-        Assert.Equal(1, hidden.Panels[0].Series[0].Look.Colour);
+        var a = ChartScene.Build(Exposure(), Metrics);
+        Assert.Equal(a, ChartScene.Build(Exposure(), Metrics));
+        var changed = Exposure();
+        var first = changed.Series[0];
+        var c = ChartScene.Build(new ChartDefinition(changed.Axis,
+            [first with { Points = [.. first.Points.Take(2), P(2, 8.5)] }, .. changed.Series.Skip(1)]), Metrics);
+        Assert.NotEqual(a.Panels[0].Series[0], c.Panels[0].Series[0]);
+        Assert.Equal(a.Panels[0].Series[1], c.Panels[0].Series[1]);
+        Assert.Equal(a.Panels[1], c.Panels[1]);
     }
 
-    [Fact] // ADR-0256, CH-6: past the last colour slot colours repeat, and the chart says so
-    public void Past_the_last_slot_colours_repeat_and_a_note_says_so()
+    [Fact] // ADR-0252, ADR-0290: an unchanged Observation series builds an equal piece, so its component skips its render
+    public void An_unchanged_observation_builds_an_equal_piece()
     {
-        var series = Enumerable.Range(0, 12).Select(i => ChartSeries.Of($"c{i}", $"Counterparty {i}", SeriesKind.Level, [P(0, i), P(1, i)])).ToList();
-        var definition = new ChartDefinition(ChartAxis.Numbers(), series);
-        var (looks, repeat) = Appearance.Of(definition);
-        Assert.True(repeat);
-        Assert.Equal(0, looks["c10"].Colour);
-        Assert.Contains(ChartScene.Build(definition, Metrics).Notes, n => n.StartsWith("Colours repeat", StringComparison.Ordinal));
-        Assert.DoesNotContain(ChartScene.Build(definition, Metrics with { ColourSlots = 12 }).Notes, n => n.StartsWith("Colours repeat", StringComparison.Ordinal));
-    }
-
-    [Fact] // ADR-0256: line-style and marker keys take their slots in order; none set is solid and a circle
-    public void Line_style_and_marker_keys_take_slots_in_order()
-    {
-        var definition = new ChartDefinition(ChartAxis.Numbers(),
-        [
-            ChartSeries.Of("a", "A", SeriesKind.Level, [P(0, 1)]) with { Keys = new("x", "Before", "m1") },
-            ChartSeries.Of("b", "B", SeriesKind.Level, [P(0, 1)]) with { Keys = new("x", "After", "m2") },
-            ChartSeries.Of("c", "C", SeriesKind.Level, [P(0, 1)]),
-        ]);
-        var (looks, _) = Appearance.Of(definition);
-        Assert.Equal(new SeriesLook(0, 0, 0), looks["a"]);
-        Assert.Equal(new SeriesLook(0, 1, 1), looks["b"]);
-        Assert.Equal(MarkerShape.Square, looks["b"].Shape);
-        Assert.Equal(new SeriesLook(1, 0, 0), looks["c"]);
-    }
-
-    [Fact] // ADR-0271: each panel has its own legend, hidden entries stay, and none sits over a plot
-    public void Each_panel_has_its_own_legend_off_the_plot()
-    {
-        var scene = ChartScene.Build(Exposure(), Metrics, Hide("epe-before"));
-        Assert.Equal(["epe-before", "epe-after"], scene.Panels[0].Legend.Select(e => e.Id));
-        Assert.True(scene.Panels[0].Legend[0].Hidden);
-        Assert.Equal(["ene-after"], scene.Panels[1].Legend.Select(e => e.Id));
-        foreach (var p in scene.Panels)
-            foreach (var e in p.Legend)
-                Assert.True(e.Box.Y + e.Box.Height <= p.Plot.Y, "a top legend sits above its plot");
-    }
-
-    [Fact] // ADR-0271: a panel whose series are all hidden keeps its legend, so they can be shown again
-    public void A_panel_with_every_series_hidden_keeps_its_legend()
-    {
-        var scene = ChartScene.Build(Exposure(), Metrics, Hide("ene-after"));
-        Assert.Equal(2, scene.Panels.Count);
-        Assert.Empty(scene.Panels[1].Series);
-        Assert.Single(scene.Panels[1].Legend);
-    }
-
-    [Theory] // ADR-0271: left and right legends take a column beside the plots; none takes nothing
-    [InlineData(LegendPosition.Left)]
-    [InlineData(LegendPosition.Right)]
-    [InlineData(LegendPosition.Bottom)]
-    [InlineData(LegendPosition.None)]
-    public void A_legend_takes_its_own_space(LegendPosition position)
-    {
-        var top = ChartScene.Build(Exposure(), Metrics);
-        var scene = ChartScene.Build(Exposure(), Metrics, legend: new LegendPlacement(position));
-        var plot = scene.Panels[0].Plot;
-        foreach (var p in scene.Panels)
-            foreach (var e in p.Legend)
-                Assert.False(e.Box.X < p.Plot.X + p.Plot.Width && e.Box.X + e.Box.Width > p.Plot.X
-                    && e.Box.Y < p.Plot.Y + p.Plot.Height && e.Box.Y + e.Box.Height > p.Plot.Y, "an entry over the plot");
-        switch (position)
-        {
-            case LegendPosition.Left:
-                Assert.True(plot.X > top.Panels[0].Plot.X);
-                Assert.All(scene.Panels[0].Legend, e => Assert.True(e.Box.X + e.Box.Width <= plot.X));
-                break;
-            case LegendPosition.Right:
-                Assert.True(plot.Width < top.Panels[0].Plot.Width);
-                Assert.All(scene.Panels[0].Legend, e => Assert.True(e.Box.X >= plot.X + plot.Width));
-                break;
-            case LegendPosition.Bottom:
-                Assert.All(scene.Panels[^1].Legend, e => Assert.True(e.Box.Y >= scene.Panels[^1].Plot.Y + scene.Panels[^1].Plot.Height));
-                break;
-            case LegendPosition.None:
-                Assert.All(scene.Panels, p => Assert.Empty(p.Legend));
-                Assert.True(plot.Height > top.Panels[0].Plot.Height);
-                break;
-        }
-    }
-
-    [Theory] // ADR-0271: the alignment moves a row of entries along its side
-    [InlineData(LegendAlign.Start)]
-    [InlineData(LegendAlign.Centre)]
-    [InlineData(LegendAlign.End)]
-    public void The_alignment_moves_the_entries(LegendAlign align)
-    {
-        var scene = ChartScene.Build(Exposure(), Metrics, legend: new LegendPlacement(LegendPosition.Top, align));
-        var p = scene.Panels[0];
-        var left = p.Legend[0].Box.X - p.Plot.X;
-        var right = p.Plot.X + p.Plot.Width - (p.Legend[^1].Box.X + p.Legend[^1].Box.Width);
-        switch (align)
-        {
-            case LegendAlign.Start: Assert.Equal(0, left, 6); break;
-            case LegendAlign.Centre: Assert.Equal(left, right, 6); break;
-            case LegendAlign.End: Assert.Equal(0, right, 6); break;
-        }
-    }
-
-    [Fact] // ADR-0255: the positions are every point a visible series has in range, left to right
-    public void The_positions_are_the_points_in_range()
-    {
-        var scene = ChartScene.Build(Exposure(), Metrics, new ChartView(new HashSet<string>(), From: 1));
-        Assert.Equal([1d, 2d], scene.Positions.Select(p => p.Position));
-        Assert.True(scene.Positions[0].X < scene.Positions[1].X);
-    }
-
-    [Fact] // ADR-0272, CH-5: a hidden key naming no series, and a range with no point, are said
-    public void A_stale_hidden_key_and_an_empty_range_are_said()
-    {
-        var stale = ChartScene.Build(Exposure(), Metrics, Hide("pfe-99"));
-        Assert.Contains("\"pfe-99\" is hidden, but no series has that key.", stale.Notes);
-        var empty = ChartScene.Build(Exposure(), Metrics, new ChartView(new HashSet<string>(), From: 0.2, To: 0.8));
-        Assert.Contains(empty.Notes, n => n.StartsWith("No series has a point between", StringComparison.Ordinal));
-        Assert.DoesNotContain(ChartScene.Build(Exposure(), Metrics).Notes, n => n.StartsWith("No series", StringComparison.Ordinal));
-    }
-
-    [Fact] // ADR-0251: the viewer switches a number axis to categories, spaced evenly and named as the axis writes them
-    public void A_number_axis_switched_to_categories_is_spaced_evenly()
-    {
-        var definition = new ChartDefinition(ChartAxis.Numbers("Tenor"),
-            [ChartSeries.Of("r", "Rate", SeriesKind.Level, [P(0.5, 1), P(1, 2), P(10, 3)])]);
-        var scene = ChartScene.Build(definition, Metrics, new ChartView(new HashSet<string>(), Scale: AxisScale.Categories));
-        var xs = scene.Positions.Select(p => p.X).ToList();
-        Assert.Equal(xs[1] - xs[0], xs[2] - xs[1], 6);
-        Assert.Contains(scene.XTicks, t => t.Label == "6M");
+        ChartDefinition Names() => new(ChartAxis.Numbers("Leverage"),
+            [ChartSeries.Of("names", "Names", SeriesKind.Observation, [P(1, 100) with { Name = "A" }, P(2, 200) with { Name = "B" }])]);
+        Assert.Equal(ChartScene.Build(Names(), Metrics).Panels[0].Series[0], ChartScene.Build(Names(), Metrics).Panels[0].Series[0]);
     }
 
     [Fact] // ADR-0270, ADR-0251: a level's value is the one handed in, through its format; between points there is none
@@ -238,30 +120,5 @@ public class ComponentSupportTests
         var csv = ChartCsv.Wide(Exposure(), Metrics, Hide("ene-after")).TrimStart('﻿').Split("\r\n", StringSplitOptions.RemoveEmptyEntries);
         Assert.Equal(csv[0], string.Join(',', table.Header));
         Assert.Equal(csv.Skip(1), table.Rows.Select(r => string.Join(',', r)));
-    }
-
-    [Fact] // ADR-0256, ADR-0257: a level is marked only when its marker key asks, or when it is an Interpolated series' quotes
-    public void A_level_is_marked_only_when_asked()
-    {
-        var definition = new ChartDefinition(ChartAxis.Numbers(),
-        [
-            ChartSeries.Of("plain", "Plain", SeriesKind.Level, [P(0, 1), P(1, 2)]),
-            ChartSeries.Of("asked", "Asked", SeriesKind.Level, [P(0, 1), P(1, 2)]) with { Keys = new("asked", null, "dot") },
-            ChartSeries.Of("quotes", "Quotes", SeriesKind.Level, [P(0, 1), P(1, 2)]) with { Keys = new("curve") },
-            ChartSeries.Sampled("curve", "Curve", SeriesKind.Level, 0, 1, x => x) with { Interpolated = true, Keys = new("curve") },
-        ]);
-        var pieces = ChartScene.Build(definition, Metrics).Panels[0].Series.ToDictionary(p => p.Id);
-        Assert.Empty(pieces["plain"].Markers);
-        Assert.Equal(2, pieces["asked"].Markers.Count);
-        Assert.Equal(2, pieces["quotes"].Markers.Count);
-    }
-
-    [Fact] // ADR-0251: a vertical axis never labels zero "-0"
-    public void Zero_is_never_labelled_negative()
-    {
-        var definition = new ChartDefinition(ChartAxis.Numbers(), [ChartSeries.Of("n", "N", SeriesKind.Level, [P(0, -9.7), P(1, -0.3)])]);
-        var ticks = ChartScene.Build(definition, Metrics).Panels[0].Left!.Ticks;
-        Assert.Contains(ticks, t => t.Label == "0");
-        Assert.DoesNotContain(ticks, t => t.Label == "-0");
     }
 }

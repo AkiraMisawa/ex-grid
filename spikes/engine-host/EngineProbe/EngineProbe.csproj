@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Probe.cs on the .NET JIT: the engine steps of /core/sheet and /core/pivot timed alone, for the
+       Worker's interpreter and AOT figures to be read against. `dotnet run -c Release`. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\src\ExSheet.Engine\ExSheet.Engine.csproj" />
+    <ProjectReference Include="..\..\..\src\ExPivot.Engine\ExPivot.Engine.csproj" />
+  </ItemGroup>
+
+</Project>

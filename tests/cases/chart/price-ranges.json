@@ -1,0 +1,918 @@
+{
+  "about": "Price Ranges: the rows they refuse, their candles and volume, candles merged into the market's periods, and packed sessions (ADR-0300 to ADR-0302), from tests/ExChart.Engine.Tests/PriceRangeTests.cs.",
+  "kind": "chart",
+  "cases": [
+    {
+      "name": "ADR-0300: a row whose high is below its open is refused, naming the row and the values",
+      "definition": {
+        "axis": {
+          "values": "dates"
+        },
+        "series": [
+          {
+            "id": "idx",
+            "name": "Index",
+            "kind": "priceRange",
+            "bars": [
+              [
+                {
+                  "date": "2026-10-14"
+                },
+                101,
+                99,
+                98,
+                100
+              ]
+            ]
+          }
+        ]
+      },
+      "throws": "chartRefused",
+      "saying": [
+        "2026-10-14",
+        "high 99 is below open 101"
+      ]
+    },
+    {
+      "name": "ADR-0300: a row with its low above the open is refused, never repaired",
+      "definition": {
+        "axis": {
+          "values": "dates"
+        },
+        "series": [
+          {
+            "id": "idx",
+            "name": "Index",
+            "kind": "priceRange",
+            "bars": [
+              [
+                1,
+                100,
+                105,
+                101,
+                103
+              ]
+            ]
+          }
+        ]
+      },
+      "throws": "chartRefused"
+    },
+    {
+      "name": "ADR-0300: a row with its close above the high is refused, never repaired",
+      "definition": {
+        "axis": {
+          "values": "dates"
+        },
+        "series": [
+          {
+            "id": "idx",
+            "name": "Index",
+            "kind": "priceRange",
+            "bars": [
+              [
+                1,
+                100,
+                105,
+                95,
+                106
+              ]
+            ]
+          }
+        ]
+      },
+      "throws": "chartRefused"
+    },
+    {
+      "name": "ADR-0300: a row with its close below the low is refused, never repaired",
+      "definition": {
+        "axis": {
+          "values": "dates"
+        },
+        "series": [
+          {
+            "id": "idx",
+            "name": "Index",
+            "kind": "priceRange",
+            "bars": [
+              [
+                1,
+                100,
+                105,
+                95,
+                94
+              ]
+            ]
+          }
+        ]
+      },
+      "throws": "chartRefused"
+    },
+    {
+      "name": "ADR-0300: a row missing any of its four values is a gap, never a partial candle",
+      "build": {
+        "definition": {
+          "definition": {
+            "axis": {
+              "values": "dates"
+            },
+            "series": [
+              {
+                "id": "idx",
+                "name": "Index",
+                "kind": "priceRange",
+                "bars": {
+                  "weekdays": {
+                    "count": 3,
+                    "set": {
+                      "1": {
+                        "close": null
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "scene": {
+          "definition": {
+            "axis": {
+              "values": "dates"
+            },
+            "series": [
+              {
+                "id": "idx",
+                "name": "Index",
+                "kind": "priceRange",
+                "bars": {
+                  "weekdays": {
+                    "count": 3,
+                    "set": {
+                      "1": {
+                        "close": null
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          },
+          "scene": {
+            "metrics": {
+              "width": 1200,
+              "height": 400
+            }
+          }
+        }
+      },
+      "expect": [
+        {
+          "at": "scene.panels.0.series.0.candles",
+          "count": true,
+          "is": 2
+        },
+        {
+          "at": "definition.series.0.points.1.y",
+          "is": null
+        }
+      ]
+    },
+    {
+      "name": "ADR-0300: a series with no open at all is High-Low-Close, without a body",
+      "definition": {
+        "axis": {
+          "values": "dates"
+        },
+        "series": [
+          {
+            "id": "idx",
+            "name": "Index",
+            "kind": "priceRange",
+            "bars": {
+              "weekdays": {
+                "count": 3,
+                "withoutOpen": true
+              }
+            }
+          }
+        ]
+      },
+      "scene": {
+        "metrics": {
+          "width": 1200,
+          "height": 400
+        }
+      },
+      "expect": [
+        {
+          "at": "panels.0.series.0.candles",
+          "map": "openY",
+          "is": [
+            null,
+            null,
+            null
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ADR-0300: negative prices are drawn, not refused (WTI, April 2020)",
+      "definition": {
+        "axis": {
+          "values": "dates"
+        },
+        "series": [
+          {
+            "id": "idx",
+            "name": "Index",
+            "kind": "priceRange",
+            "bars": [
+              [
+                {
+                  "date": "2020-04-20"
+                },
+                17.73,
+                17.85,
+                -40.32,
+                -37.63
+              ]
+            ]
+          }
+        ]
+      },
+      "scene": {
+        "metrics": {
+          "width": 1200,
+          "height": 400
+        }
+      },
+      "expect": [
+        {
+          "at": "panels.0.series.0.candles",
+          "count": true,
+          "is": 1
+        }
+      ]
+    },
+    {
+      "name": "ADR-0300: rising is the close above its own open, never against the previous close",
+      "definition": {
+        "axis": {
+          "values": "dates"
+        },
+        "series": [
+          {
+            "id": "idx",
+            "name": "Index",
+            "kind": "priceRange",
+            "bars": [
+              [
+                {
+                  "date": "2026-01-05"
+                },
+                100,
+                106,
+                99,
+                105
+              ],
+              [
+                {
+                  "date": "2026-01-06"
+                },
+                110,
+                111,
+                106,
+                107
+              ],
+              [
+                {
+                  "date": "2026-01-07"
+                },
+                107,
+                108,
+                106,
+                107
+              ]
+            ]
+          }
+        ]
+      },
+      "scene": {
+        "metrics": {
+          "width": 1200,
+          "height": 400
+        }
+      },
+      "expect": [
+        {
+          "at": "panels.0.series.0.candles",
+          "map": "rising",
+          "is": [
+            true,
+            false,
+            false
+          ]
+        },
+        {
+          "at": "panels.0.series.0.candles",
+          "map": "unchanged",
+          "is": [
+            false,
+            false,
+            true
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ADR-0300: a price axis does not reach zero, and says so with the break mark",
+      "definition": {
+        "axis": {
+          "values": "dates"
+        },
+        "series": [
+          {
+            "id": "idx",
+            "name": "Index",
+            "kind": "priceRange",
+            "bars": [
+              [
+                1,
+                39120,
+                39480,
+                38950,
+                39310
+              ],
+              [
+                2,
+                39310,
+                40000,
+                39000,
+                39900
+              ]
+            ]
+          }
+        ]
+      },
+      "scene": {
+        "metrics": {
+          "width": 1200,
+          "height": 400
+        }
+      },
+      "expect": [
+        {
+          "at": "panels.0.left.min",
+          "above": 30000
+        },
+        {
+          "at": "panels.0.left.broken",
+          "is": true
+        }
+      ]
+    },
+    {
+      "name": "ADR-0300: a Price Range stands on a Dates axis",
+      "definition": {
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "idx",
+            "name": "Index",
+            "kind": "priceRange",
+            "bars": {
+              "weekdays": {
+                "count": 2
+              }
+            }
+          }
+        ]
+      },
+      "throws": "chartRefused"
+    },
+    {
+      "name": "ADR-0300: volume gets a panel of its own below, undivided and from zero",
+      "definition": {
+        "axis": {
+          "values": "dates"
+        },
+        "series": [
+          {
+            "id": "idx",
+            "name": "Index",
+            "kind": "priceRange",
+            "bars": {
+              "weekdays": {
+                "count": 10,
+                "volume": true
+              }
+            }
+          }
+        ]
+      },
+      "scene": {
+        "metrics": {
+          "width": 1200,
+          "height": 400
+        }
+      },
+      "expect": [
+        {
+          "at": "panels",
+          "count": true,
+          "is": 2
+        },
+        {
+          "at": "panels.1.name",
+          "is": "Index volume"
+        },
+        {
+          "at": "panels.1.volumeOf",
+          "is": "idx"
+        },
+        {
+          "at": "panels.1.left.min",
+          "is": 0
+        },
+        {
+          "at": "panels.1.plot.height",
+          "below": {
+            "at": "panels.0.plot.height"
+          }
+        },
+        {
+          "at": "panels.1.series.0.volumes",
+          "count": true,
+          "is": 10
+        },
+        {
+          "at": "panels.1.series.0.volumes",
+          "sortBy": "topY",
+          "then": [
+            {
+              "at": "0",
+              "sameAs": "$.panels.1.series.0.volumes.-1"
+            }
+          ]
+        },
+        {
+          "at": "panels.0.series.0.candles",
+          "map": "rising",
+          "is": [
+            false,
+            false,
+            false,
+            false,
+            true,
+            true,
+            true,
+            false,
+            false,
+            false
+          ]
+        },
+        {
+          "at": "panels.1.series.0.volumes",
+          "map": "rising",
+          "is": [
+            false,
+            false,
+            false,
+            false,
+            true,
+            true,
+            true,
+            false,
+            false,
+            false
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ADR-0302: past three device pixels a candle, candles merge into the market's periods",
+      "definition": {
+        "axis": {
+          "values": "dates"
+        },
+        "series": [
+          {
+            "id": "idx",
+            "name": "Index",
+            "kind": "priceRange",
+            "bars": {
+              "weekdays": {
+                "count": 2450,
+                "volume": true
+              }
+            }
+          }
+        ]
+      },
+      "scene": {
+        "metrics": {
+          "width": 600,
+          "height": 400
+        }
+      },
+      "expect": [
+        {
+          "at": "panels.0.series.0.period",
+          "isNot": "row"
+        },
+        {
+          "at": "panels.0.series.0.candles",
+          "count": true,
+          "atMost": 200
+        },
+        {
+          "at": "xTitle",
+          "has": "merged from rows to fit"
+        },
+        {
+          "at": "panels.0.series.0.candles.0.rows",
+          "is": 20
+        }
+      ]
+    },
+    {
+      "name": "ADR-0302: a merged candle is the period's first open, highest high, lowest low, last close and summed volume",
+      "candles": {
+        "series": {
+          "id": "p",
+          "name": "P",
+          "kind": "priceRange",
+          "bars": {
+            "weekdays": {
+              "count": 5,
+              "volume": true
+            }
+          }
+        },
+        "period": "week"
+      },
+      "expect": [
+        {
+          "at": "",
+          "is": [
+            {
+              "from": {
+                "date": "2026-01-05"
+              },
+              "to": {
+                "date": "2026-01-09"
+              },
+              "x": 739622.0,
+              "open": 100,
+              "high": 102,
+              "low": 92,
+              "close": 95,
+              "volume": 5010,
+              "rows": 5,
+              "rising": false,
+              "unchanged": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ADR-0302: narrowing the range brings the rows back",
+      "definition": {
+        "axis": {
+          "values": "dates"
+        },
+        "series": [
+          {
+            "id": "idx",
+            "name": "Index",
+            "kind": "priceRange",
+            "bars": {
+              "weekdays": {
+                "count": 2450
+              }
+            }
+          }
+        ]
+      },
+      "scene": {
+        "metrics": {
+          "width": 600,
+          "height": 400
+        },
+        "view": {
+          "from": {
+            "date": "2026-01-05"
+          },
+          "to": {
+            "date": "2026-03-31"
+          }
+        }
+      },
+      "expect": [
+        {
+          "at": "panels.0.series.0.period",
+          "is": "row"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0302: a fixed period that does not fit draws nothing and says so",
+      "definition": {
+        "axis": {
+          "values": "dates"
+        },
+        "series": [
+          {
+            "id": "idx",
+            "name": "Index",
+            "kind": "priceRange",
+            "bars": {
+              "weekdays": {
+                "count": 2450
+              }
+            },
+            "mergeTo": "row"
+          }
+        ]
+      },
+      "scene": {
+        "metrics": {
+          "width": 600,
+          "height": 400
+        }
+      },
+      "expect": [
+        {
+          "at": "panels.0.series.0.candles",
+          "empty": true
+        },
+        {
+          "at": "notes",
+          "mentions": "2,450 rows do not fit; narrow the range"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0301: a packed axis gives each candle an even slot and says so in its title",
+      "definition": {
+        "axis": {
+          "values": "dates",
+          "title": "Date",
+          "packed": true
+        },
+        "series": [
+          {
+            "id": "idx",
+            "name": "Index",
+            "kind": "priceRange",
+            "bars": {
+              "weekdays": {
+                "count": 10
+              }
+            }
+          }
+        ]
+      },
+      "scene": {
+        "metrics": {
+          "width": 1200,
+          "height": 400
+        }
+      },
+      "expect": [
+        {
+          "at": "panels.0.series.0.candles",
+          "map": "x",
+          "evenlySpaced": true
+        },
+        {
+          "at": "xTitle",
+          "has": "closed days packed"
+        },
+        {
+          "at": "xTicks",
+          "empty": false
+        },
+        {
+          "at": "xTicks",
+          "each": [
+            {
+              "at": "1",
+              "atLeast": -1e+300
+            }
+          ]
+        },
+        {
+          "at": "notes",
+          "has": "Dates are packed: the days nobody traded are left out, so the spacing is sessions, not calendar time."
+        }
+      ]
+    },
+    {
+      "name": "ADR-0302: a period the Consumer fixed is not said to be merged to fit",
+      "definition": {
+        "axis": {
+          "values": "dates"
+        },
+        "series": [
+          {
+            "id": "idx",
+            "name": "Index",
+            "kind": "priceRange",
+            "bars": {
+              "weekdays": {
+                "count": 30
+              }
+            },
+            "mergeTo": "week"
+          }
+        ]
+      },
+      "scene": {
+        "metrics": {
+          "width": 1200,
+          "height": 400
+        }
+      },
+      "expect": [
+        {
+          "at": "xTitle",
+          "has": "Weekly (merged from rows)"
+        },
+        {
+          "at": "notes",
+          "has": "Index: weekly candles, merged from rows."
+        }
+      ]
+    },
+    {
+      "name": "ADR-0302: when not even years fit, nothing is drawn in slivers",
+      "definition": {
+        "axis": {
+          "values": "dates"
+        },
+        "series": [
+          {
+            "id": "idx",
+            "name": "Index",
+            "kind": "priceRange",
+            "bars": {
+              "weekdays": {
+                "count": 2450
+              }
+            }
+          }
+        ]
+      },
+      "scene": {
+        "metrics": {
+          "width": 80,
+          "height": 400
+        }
+      },
+      "expect": [
+        {
+          "at": "panels.0.series.0.candles",
+          "empty": true
+        },
+        {
+          "at": "notes",
+          "mentions": "yearly candles do not fit"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0301: a packed axis gives a slot only to a row with a value",
+      "definition": {
+        "axis": {
+          "values": "dates",
+          "packed": true
+        },
+        "series": [
+          {
+            "id": "idx",
+            "name": "Index",
+            "kind": "priceRange",
+            "bars": {
+              "weekdays": {
+                "count": 5,
+                "set": {
+                  "2": {
+                    "open": null,
+                    "high": null,
+                    "low": null,
+                    "close": null
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      "scene": {
+        "metrics": {
+          "width": 1200,
+          "height": 400
+        }
+      },
+      "expect": [
+        {
+          "at": "panels.0.series.0.candles",
+          "count": true,
+          "is": 4
+        },
+        {
+          "at": "panels.0.series.0.candles",
+          "map": "x",
+          "evenlySpaced": true
+        },
+        {
+          "at": "xTitle",
+          "has": "Trading days (closed days packed)"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0301: by default candles stand on calendar time, so a weekend is a gap",
+      "definition": {
+        "axis": {
+          "values": "dates"
+        },
+        "series": [
+          {
+            "id": "idx",
+            "name": "Index",
+            "kind": "priceRange",
+            "bars": {
+              "weekdays": {
+                "count": 10
+              }
+            }
+          }
+        ]
+      },
+      "scene": {
+        "metrics": {
+          "width": 1200,
+          "height": 400
+        }
+      },
+      "expect": [
+        {
+          "at": "panels.0.series.0.candles",
+          "map": "x",
+          "differences": true,
+          "then": [
+            {
+              "at": "4",
+              "above": {
+                "at": "0",
+                "times": 2.5
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ADR-0301: on a packed axis a point where no candle stands is refused by name",
+      "definition": {
+        "axis": {
+          "values": "dates",
+          "packed": true
+        },
+        "series": [
+          {
+            "id": "idx",
+            "name": "Index",
+            "kind": "priceRange",
+            "bars": {
+              "weekdays": {
+                "count": 10
+              }
+            }
+          },
+          {
+            "id": "ma",
+            "name": "MA",
+            "kind": "level",
+            "points": [
+              [
+                {
+                  "date": "2026-01-10"
+                },
+                100
+              ]
+            ]
+          }
+        ]
+      },
+      "throws": "chartRefused",
+      "saying": "2026-01-10"
+    }
+  ]
+}

@@ -1,0 +1,576 @@
+{
+  "about": "What one series draws in the axes' units: gaps, steps with filled and open ends, amounts per year, and sampled functions (ADR-0253, ADR-0257), from tests/ExChart.Engine.Tests/SeriesDrawingTests.cs.",
+  "kind": "chart",
+  "cases": [
+    {
+      "name": "ADR-0253: a missing value is a gap, never a zero, and a lone point is a marker with no line",
+      "drawing": {
+        "axis": {
+          "values": "numbers"
+        },
+        "series": {
+          "id": "a",
+          "name": "EPE",
+          "kind": "level",
+          "points": [
+            [
+              0,
+              1
+            ],
+            [
+              1,
+              2
+            ],
+            [
+              2,
+              null
+            ],
+            [
+              3,
+              4
+            ],
+            [
+              4,
+              null
+            ],
+            [
+              5,
+              6
+            ],
+            [
+              6,
+              7
+            ]
+          ]
+        }
+      },
+      "expect": [
+        {
+          "at": "lines",
+          "count": true,
+          "is": 2
+        },
+        {
+          "at": "lines.0",
+          "is": [
+            {
+              "x": 0,
+              "y": 1
+            },
+            {
+              "x": 1,
+              "y": 2
+            }
+          ]
+        },
+        {
+          "at": "lines.1",
+          "is": [
+            {
+              "x": 5,
+              "y": 6
+            },
+            {
+              "x": 6,
+              "y": 7
+            }
+          ]
+        },
+        {
+          "at": "markers",
+          "count": true,
+          "is": 5
+        },
+        {
+          "at": "markers",
+          "lacks": {
+            "y": 0
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0253: a preceding step, (t-1, t], is filled where the rate holds and open where it does not, with no riser",
+      "drawing": {
+        "axis": {
+          "values": "numbers"
+        },
+        "series": {
+          "id": "h",
+          "name": "Hazard",
+          "kind": "rateOverInterval",
+          "points": [
+            [
+              0,
+              null
+            ],
+            [
+              1,
+              0.7
+            ],
+            [
+              3,
+              0.9
+            ],
+            [
+              5,
+              0.9
+            ]
+          ]
+        }
+      },
+      "expect": [
+        {
+          "at": "lines",
+          "is": [
+            [
+              {
+                "x": 0,
+                "y": 0.7
+              },
+              {
+                "x": 1,
+                "y": 0.7
+              }
+            ],
+            [
+              {
+                "x": 1,
+                "y": 0.9
+              },
+              {
+                "x": 3,
+                "y": 0.9
+              }
+            ],
+            [
+              {
+                "x": 3,
+                "y": 0.9
+              },
+              {
+                "x": 5,
+                "y": 0.9
+              }
+            ]
+          ]
+        },
+        {
+          "at": "markers",
+          "has": {
+            "x": 1,
+            "y": 0.7,
+            "filled": true
+          }
+        },
+        {
+          "at": "markers",
+          "has": {
+            "x": 0,
+            "y": 0.7,
+            "filled": false
+          }
+        },
+        {
+          "at": "markers",
+          "has": {
+            "x": 1,
+            "y": 0.9,
+            "filled": false
+          }
+        },
+        {
+          "at": "markers",
+          "lacks": {
+            "x": 3,
+            "y": 0.9,
+            "filled": false
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0253: a following step, [t, t+1), is filled on the left and open on the right",
+      "drawing": {
+        "axis": {
+          "values": "numbers"
+        },
+        "series": {
+          "id": "f",
+          "name": "Fwd",
+          "kind": "rateOverInterval",
+          "points": [
+            [
+              0,
+              1
+            ],
+            [
+              1,
+              2
+            ],
+            [
+              2,
+              null
+            ]
+          ],
+          "step": "following"
+        }
+      },
+      "expect": [
+        {
+          "at": "markers",
+          "has": {
+            "x": 0,
+            "y": 1,
+            "filled": true
+          }
+        },
+        {
+          "at": "markers",
+          "has": {
+            "x": 1,
+            "y": 1,
+            "filled": false
+          }
+        },
+        {
+          "at": "markers",
+          "has": {
+            "x": 1,
+            "y": 2,
+            "filled": true
+          }
+        },
+        {
+          "at": "markers",
+          "has": {
+            "x": 2,
+            "y": 2,
+            "filled": false
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0253: an amount per period is drawn per year, so widening buckets do not jump",
+      "drawing": {
+        "axis": {
+          "values": "numbers"
+        },
+        "series": {
+          "id": "cva",
+          "name": "CVA",
+          "kind": "amountPerPeriod",
+          "points": [
+            [
+              0,
+              null
+            ],
+            [
+              0.08333333333333333,
+              100
+            ],
+            [
+              0.3333333333333333,
+              300
+            ],
+            [
+              1.3333333333333333,
+              1200
+            ]
+          ]
+        }
+      },
+      "expect": [
+        {
+          "at": "lines",
+          "each": [
+            {
+              "at": "0.y",
+              "near": 1e-06,
+              "is": 1200
+            }
+          ]
+        },
+        {
+          "at": "markers",
+          "where": {
+            "filled": false
+          },
+          "map": "x",
+          "is": [
+            0
+          ]
+        },
+        {
+          "at": "markers",
+          "where": {
+            "filled": false
+          },
+          "map": "y",
+          "is": [
+            1200
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ADR-0253: on a Dates axis an amount is divided by its days over 365.25",
+      "drawing": {
+        "axis": {
+          "values": "dates"
+        },
+        "series": {
+          "id": "cva",
+          "name": "CVA",
+          "kind": "amountPerPeriod",
+          "points": [
+            [
+              {
+                "date": "2026-01-01"
+              },
+              null
+            ],
+            [
+              739981.25,
+              50
+            ]
+          ]
+        }
+      },
+      "expect": [
+        {
+          "at": "lines.0.0.y",
+          "near": 1e-09,
+          "is": 50
+        }
+      ]
+    },
+    {
+      "name": "ADR-0257: a function is asked about once a pixel and at every quote, and draws no markers",
+      "drawing": {
+        "axis": {
+          "values": "numbers"
+        },
+        "series": {
+          "id": "z",
+          "name": "Zero",
+          "kind": "level",
+          "sampler": {
+            "from": 0,
+            "to": 10,
+            "value": {
+              "line": [
+                0,
+                0.1
+              ]
+            }
+          }
+        },
+        "from": 0,
+        "to": 10,
+        "pixels": 100,
+        "quotes": [
+          0.5,
+          3.3
+        ]
+      },
+      "expect": [
+        {
+          "asked": "z",
+          "has": 3.3
+        },
+        {
+          "asked": "z",
+          "has": 0.5
+        },
+        {
+          "asked": "z",
+          "count": true,
+          "atLeast": 101,
+          "atMost": 104
+        },
+        {
+          "at": "markers",
+          "empty": true
+        },
+        {
+          "at": "lines",
+          "count": true,
+          "is": 1
+        }
+      ]
+    },
+    {
+      "name": "ADR-0257: a function's value that is no number is refused where it is asked, never drawn",
+      "drawing": {
+        "axis": {
+          "values": "numbers"
+        },
+        "series": {
+          "id": "z",
+          "name": "Zero",
+          "kind": "level",
+          "sampler": {
+            "from": 0,
+            "to": 1,
+            "value": {
+              "split": [
+                0.5,
+                1,
+                "NaN"
+              ]
+            }
+          }
+        },
+        "from": 0,
+        "to": 1,
+        "pixels": 4
+      },
+      "throws": "outOfRange"
+    },
+    {
+      "name": "ADR-0257: no line is joined across a Segment's boundary, where a forward may jump",
+      "drawing": {
+        "axis": {
+          "values": "numbers"
+        },
+        "series": {
+          "id": "f",
+          "name": "Fwd",
+          "kind": "level",
+          "sampler": {
+            "from": 0,
+            "to": 4,
+            "value": {
+              "split": [
+                2,
+                1,
+                3
+              ]
+            }
+          },
+          "interpolated": true,
+          "segments": [
+            {
+              "from": 0,
+              "to": 2,
+              "method": "Linear on zero rates"
+            },
+            {
+              "from": 2,
+              "to": 4,
+              "method": "Log-linear on discount factors"
+            }
+          ]
+        },
+        "from": 0,
+        "to": 4,
+        "pixels": 8
+      },
+      "expect": [
+        {
+          "at": "lines",
+          "count": true,
+          "is": 2
+        },
+        {
+          "at": "lines.0",
+          "each": [
+            {
+              "at": "y",
+              "is": 1
+            }
+          ]
+        },
+        {
+          "at": "lines.1",
+          "each": [
+            {
+              "at": "y",
+              "is": 3
+            }
+          ]
+        },
+        {
+          "at": "lines.1.0.x",
+          "is": 2
+        }
+      ]
+    },
+    {
+      "name": "ADR-0257: handed in as points, a point on a boundary ends one line and starts the next",
+      "drawing": {
+        "axis": {
+          "values": "numbers"
+        },
+        "series": {
+          "id": "c",
+          "name": "Curve",
+          "kind": "level",
+          "points": [
+            [
+              0,
+              1
+            ],
+            [
+              1,
+              2
+            ],
+            [
+              2,
+              3
+            ],
+            [
+              3,
+              4
+            ]
+          ],
+          "segments": [
+            {
+              "from": 0,
+              "to": 1,
+              "method": "a"
+            },
+            {
+              "from": 1,
+              "to": 3,
+              "method": "b"
+            }
+          ]
+        }
+      },
+      "expect": [
+        {
+          "at": "lines",
+          "is": [
+            [
+              {
+                "x": 0,
+                "y": 1
+              },
+              {
+                "x": 1,
+                "y": 2
+              }
+            ],
+            [
+              {
+                "x": 1,
+                "y": 2
+              },
+              {
+                "x": 2,
+                "y": 3
+              },
+              {
+                "x": 3,
+                "y": 4
+              }
+            ]
+          ]
+        }
+      ]
+    }
+  ]
+}

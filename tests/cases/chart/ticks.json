@@ -1,0 +1,456 @@
+{
+  "about": "The horizontal axis' ticks and labels, and the round numbers both axes step by (ticket 04, ADR-0251, ADR-0290), from tests/ExChart.Engine.Tests/TickTests.cs.",
+  "kind": "chart",
+  "cases": [
+    {
+      "name": "ticket 04: a tenor of 0.5 years is written 6M",
+      "tenor": 0.5,
+      "expect": [
+        {
+          "at": "",
+          "is": "6M"
+        }
+      ]
+    },
+    {
+      "name": "ticket 04: a tenor of 1 years is written 1Y",
+      "tenor": 1,
+      "expect": [
+        {
+          "at": "",
+          "is": "1Y"
+        }
+      ]
+    },
+    {
+      "name": "ticket 04: a tenor of 1.5 years is written 18M",
+      "tenor": 1.5,
+      "expect": [
+        {
+          "at": "",
+          "is": "18M"
+        }
+      ]
+    },
+    {
+      "name": "ticket 04: a tenor of 10 years is written 10Y",
+      "tenor": 10,
+      "expect": [
+        {
+          "at": "",
+          "is": "10Y"
+        }
+      ]
+    },
+    {
+      "name": "ticket 04: a tenor of 0.019230769230769232 years is written 1W",
+      "tenor": 0.019230769230769232,
+      "expect": [
+        {
+          "at": "",
+          "is": "1W"
+        }
+      ]
+    },
+    {
+      "name": "ticket 04: round-number steps cover the range",
+      "build": {
+        "nice": {
+          "nice": [
+            0.3,
+            9.7
+          ]
+        },
+        "steps": {
+          "steps": [
+            0,
+            10,
+            2
+          ]
+        }
+      },
+      "expect": [
+        {
+          "at": "nice",
+          "is": [
+            0,
+            10,
+            2
+          ]
+        },
+        {
+          "at": "steps",
+          "is": [
+            0,
+            2,
+            4,
+            6,
+            8,
+            10
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ticket 04: a label that would touch its neighbour is left out, never overprinted, and every tick stays",
+      "fit": {
+        "ticks": [
+          [
+            0,
+            "2026-01-01"
+          ],
+          [
+            1,
+            "2026-01-02"
+          ],
+          [
+            2,
+            "2026-01-03"
+          ],
+          [
+            3,
+            "2026-01-04"
+          ]
+        ],
+        "angle": 0,
+        "map": {
+          "scale": 40
+        },
+        "textWidth": {
+          "perCharacter": 7
+        },
+        "lineHeight": 14,
+        "gap": 4
+      },
+      "expect": [
+        {
+          "at": "ticks",
+          "count": true,
+          "is": 4
+        },
+        {
+          "at": "labelled",
+          "is": 2
+        },
+        {
+          "at": "ticks.1.label",
+          "is": null
+        }
+      ]
+    },
+    {
+      "name": "ticket 04: at 90 degrees a label takes its height along the axis, and the room under it grows",
+      "build": {
+        "flat": {
+          "fit": {
+            "ticks": [
+              [
+                0,
+                "2026-01-01"
+              ],
+              [
+                1,
+                "2026-01-02"
+              ]
+            ],
+            "angle": 0,
+            "map": {
+              "scale": 20
+            },
+            "textWidth": {
+              "perCharacter": 7
+            },
+            "lineHeight": 14,
+            "gap": 4
+          }
+        },
+        "up": {
+          "fit": {
+            "ticks": [
+              [
+                0,
+                "2026-01-01"
+              ],
+              [
+                1,
+                "2026-01-02"
+              ]
+            ],
+            "angle": 90,
+            "map": {
+              "scale": 20
+            },
+            "textWidth": {
+              "perCharacter": 7
+            },
+            "lineHeight": 14,
+            "gap": 4
+          }
+        }
+      },
+      "expect": [
+        {
+          "at": "flat.labelled",
+          "is": 1
+        },
+        {
+          "at": "up.labelled",
+          "is": 2
+        },
+        {
+          "at": "up.depth",
+          "above": {
+            "at": "flat.depth"
+          }
+        }
+      ]
+    },
+    {
+      "name": "ticket 04: tenor ticks are counted from the first date",
+      "horizontal": {
+        "axis": {
+          "values": "dates"
+        },
+        "style": {
+          "placement": "tenors"
+        },
+        "from": {
+          "date": "2026-01-15"
+        },
+        "to": {
+          "date": "2028-01-15"
+        },
+        "points": [],
+        "map": {
+          "scale": 1
+        },
+        "textWidth": {
+          "perCharacter": 7
+        },
+        "lineHeight": 14
+      },
+      "expect": [
+        {
+          "at": "ticks.0.position",
+          "is": {
+            "date": "2026-02-15"
+          }
+        },
+        {
+          "at": "ticks",
+          "has": {
+            "position": {
+              "date": "2027-01-15"
+            },
+            "label": "1Y"
+          }
+        },
+        {
+          "at": "ticks",
+          "has": {
+            "position": {
+              "date": "2028-01-15"
+            },
+            "label": "2Y"
+          }
+        }
+      ]
+    },
+    {
+      "name": "ticket 04: over decades, calendar ticks fall on year boundaries, the finest that fit",
+      "horizontal": {
+        "axis": {
+          "values": "dates"
+        },
+        "style": {},
+        "from": {
+          "date": "2026-03-01"
+        },
+        "to": {
+          "date": "2046-03-01"
+        },
+        "points": [],
+        "map": {
+          "over": 10,
+          "offset": -73967.5
+        },
+        "textWidth": {
+          "perCharacter": 7
+        },
+        "lineHeight": 14
+      },
+      "expect": [
+        {
+          "at": "ticks",
+          "map": "position",
+          "is": [
+            {
+              "date": "2027-01-01"
+            },
+            {
+              "date": "2028-01-01"
+            },
+            {
+              "date": "2029-01-01"
+            },
+            {
+              "date": "2030-01-01"
+            },
+            {
+              "date": "2031-01-01"
+            },
+            {
+              "date": "2032-01-01"
+            },
+            {
+              "date": "2033-01-01"
+            },
+            {
+              "date": "2034-01-01"
+            },
+            {
+              "date": "2035-01-01"
+            },
+            {
+              "date": "2036-01-01"
+            },
+            {
+              "date": "2037-01-01"
+            },
+            {
+              "date": "2038-01-01"
+            },
+            {
+              "date": "2039-01-01"
+            },
+            {
+              "date": "2040-01-01"
+            },
+            {
+              "date": "2041-01-01"
+            },
+            {
+              "date": "2042-01-01"
+            },
+            {
+              "date": "2043-01-01"
+            },
+            {
+              "date": "2044-01-01"
+            },
+            {
+              "date": "2045-01-01"
+            },
+            {
+              "date": "2046-01-01"
+            }
+          ]
+        },
+        {
+          "at": "ticks",
+          "map": "label",
+          "is": [
+            "2027",
+            "2028",
+            "2029",
+            "2030",
+            "2031",
+            "2032",
+            "2033",
+            "2034",
+            "2035",
+            "2036",
+            "2037",
+            "2038",
+            "2039",
+            "2040",
+            "2041",
+            "2042",
+            "2043",
+            "2044",
+            "2045",
+            "2046"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ADR-0251: a number axis with declared positions is ticked and labelled by them",
+      "horizontal": {
+        "axis": {
+          "values": "numbers",
+          "named": [
+            [
+              0.5,
+              "6m"
+            ],
+            [
+              1,
+              "1y"
+            ],
+            [
+              5,
+              "5y"
+            ]
+          ]
+        },
+        "style": {},
+        "from": 0.5,
+        "to": 5,
+        "points": [],
+        "map": {
+          "scale": 100
+        },
+        "textWidth": {
+          "perCharacter": 7
+        },
+        "lineHeight": 14
+      },
+      "expect": [
+        {
+          "at": "ticks",
+          "map": "label",
+          "is": [
+            "6m",
+            "1y",
+            "5y"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ADR-0290: a logarithmic axis is ticked at its decades",
+      "build": {
+        "decades": {
+          "decades": [
+            20,
+            4000
+          ]
+        },
+        "steps": {
+          "logSteps": [
+            10,
+            10000
+          ]
+        }
+      },
+      "expect": [
+        {
+          "at": "decades",
+          "is": [
+            10,
+            10000
+          ]
+        },
+        {
+          "at": "steps",
+          "has": 100
+        },
+        {
+          "at": "steps",
+          "has": 1000
+        }
+      ]
+    }
+  ]
+}

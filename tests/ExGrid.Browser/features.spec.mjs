@@ -1,5 +1,5 @@
 import { test, expect, alterPage, setRoundTrip, circuitQuiet, settled } from './fixtures.mjs';
-import { SERVER } from './hosting.mjs';
+import { REACT, SERVER } from './hosting.mjs';
 import {
     expectKeyboardOn, keyboardIsOn, keyField, activeDescendant, expectActiveDescendant,
 } from './keyboard.mjs';
@@ -317,8 +317,11 @@ test('the clipboard carries both formats, and #### never reaches it (CP-4/CP-5/C
     expect(clipboard['text/html']).toContain('1000000');
     // CP-4: the html flavour is the raw, locale-free value; the plain is the display.
     // Chrome normalises the fragment on read (a meta charset, a tbody); the cells are
-    // what the contract is about.
-    expect(clipboard['text/html']).toContain('<td>1000000.00</td><td>1000000.00</td>');
+    // what the contract is about. The raw value is the value's own invariant text: C#'s
+    // decimal keeps the two places it was made with, and the Script Core's number keeps
+    // none, so it is the shortest text of the same number (ADR-0350's values).
+    const raw = REACT ? '1000000' : '1000000.00';
+    expect(clipboard['text/html']).toContain(`<td>${raw}</td><td>${raw}</td>`);
 });
 
 test('a misaligned selection refuses and the clipboard stays untouched (CP-1/CP-3)', async ({ page }) => {

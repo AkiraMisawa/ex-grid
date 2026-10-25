@@ -1,0 +1,429 @@
+{
+  "about": "Edges between an Observation's nodes, drawn and cut to the plot (ADR-0321), from tests/ExChart.Engine.Tests/EdgeTests.cs.",
+  "kind": "chart",
+  "cases": [
+    {
+      "name": "ADR-0321: an edge is a line between its nodes' positions",
+      "definition": {
+        "axis": {
+          "values": "numbers",
+          "title": "Step"
+        },
+        "series": [
+          {
+            "id": "tree",
+            "name": "Tree",
+            "kind": "observation",
+            "points": [
+              {
+                "x": 0,
+                "y": 100.0,
+                "row": "0,0"
+              },
+              {
+                "x": 1,
+                "y": 90.0,
+                "row": "1,0"
+              },
+              {
+                "x": 1,
+                "y": 110.00000000000001,
+                "row": "1,1"
+              },
+              {
+                "x": 2,
+                "y": 81.0,
+                "row": "2,0"
+              },
+              {
+                "x": 2,
+                "y": 99.00000000000001,
+                "row": "2,1"
+              },
+              {
+                "x": 2,
+                "y": 121.00000000000001,
+                "row": "2,2"
+              }
+            ],
+            "edges": [
+              [
+                "0,0",
+                "1,0"
+              ],
+              [
+                "0,0",
+                "1,1"
+              ],
+              [
+                "1,0",
+                "2,0"
+              ],
+              [
+                "1,0",
+                "2,1"
+              ],
+              [
+                "1,1",
+                "2,1"
+              ],
+              [
+                "1,1",
+                "2,2"
+              ]
+            ]
+          }
+        ]
+      },
+      "scene": {
+        "metrics": {
+          "width": 600,
+          "height": 400
+        }
+      },
+      "expect": [
+        {
+          "at": "panels.0.series.0.edges",
+          "count": true,
+          "is": 6
+        },
+        {
+          "at": "panels.0.series.0.edges.0.x1",
+          "near": 1e-06,
+          "sameAs": "panels.0.series.0.markers.[point=0].x"
+        },
+        {
+          "at": "panels.0.series.0.edges.0.y1",
+          "near": 1e-06,
+          "sameAs": "panels.0.series.0.markers.[point=0].y"
+        },
+        {
+          "at": "panels.0.series.0.edges.1.x1",
+          "near": 1e-06,
+          "sameAs": "panels.0.series.0.markers.[point=0].x"
+        },
+        {
+          "at": "panels.0.series.0.edges.1.y1",
+          "near": 1e-06,
+          "sameAs": "panels.0.series.0.markers.[point=0].y"
+        },
+        {
+          "at": "edgeMarks",
+          "count": true,
+          "is": 6
+        }
+      ]
+    },
+    {
+      "name": "ADR-0321: an edge to a node that is not there is refused by name",
+      "definition": {
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "tree",
+            "name": "Tree",
+            "kind": "observation",
+            "points": [
+              {
+                "x": 0,
+                "y": 100.0,
+                "row": "0,0"
+              },
+              {
+                "x": 1,
+                "y": 90.0,
+                "row": "1,0"
+              },
+              {
+                "x": 1,
+                "y": 110.00000000000001,
+                "row": "1,1"
+              },
+              {
+                "x": 2,
+                "y": 81.0,
+                "row": "2,0"
+              },
+              {
+                "x": 2,
+                "y": 99.00000000000001,
+                "row": "2,1"
+              },
+              {
+                "x": 2,
+                "y": 121.00000000000001,
+                "row": "2,2"
+              }
+            ],
+            "edges": [
+              [
+                "0,0",
+                "3,0"
+              ]
+            ]
+          }
+        ]
+      },
+      "throws": "chartRefused",
+      "saying": "no node is keyed 3,0"
+    },
+    {
+      "name": "ADR-0321: two nodes with one key are refused",
+      "definition": {
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "t",
+            "name": "T",
+            "kind": "observation",
+            "points": [
+              {
+                "x": 0,
+                "y": 1,
+                "row": "a"
+              },
+              {
+                "x": 1,
+                "y": 1,
+                "row": "a"
+              }
+            ],
+            "edges": [
+              [
+                "a",
+                "a"
+              ]
+            ]
+          }
+        ]
+      },
+      "throws": "chartRefused",
+      "saying": "two nodes keyed a"
+    },
+    {
+      "name": "ADR-0321: a node without a position is refused",
+      "definition": {
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "t",
+            "name": "T",
+            "kind": "observation",
+            "points": [
+              {
+                "x": 0,
+                "y": 1,
+                "row": "a"
+              },
+              {
+                "x": 1,
+                "y": null,
+                "row": "b"
+              }
+            ],
+            "edges": [
+              [
+                "a",
+                "b"
+              ]
+            ]
+          }
+        ]
+      },
+      "throws": "chartRefused",
+      "saying": "node b has no position"
+    },
+    {
+      "name": "ADR-0321: a node at a position that is no number is refused by name",
+      "definition": {
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "t",
+            "name": "T",
+            "kind": "observation",
+            "points": [
+              {
+                "x": 0,
+                "y": 1,
+                "row": "a"
+              },
+              {
+                "x": "NaN",
+                "y": 2,
+                "row": "b"
+              }
+            ],
+            "edges": [
+              [
+                "a",
+                "b"
+              ]
+            ]
+          }
+        ]
+      },
+      "throws": "chartRefused",
+      "saying": "node b has no position"
+    },
+    {
+      "name": "ADR-0321: only an observation's nodes take edges",
+      "definition": {
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "l",
+            "name": "L",
+            "kind": "level",
+            "points": [
+              {
+                "x": 0,
+                "y": 1,
+                "row": "a"
+              }
+            ],
+            "edges": [
+              [
+                "a",
+                "a"
+              ]
+            ]
+          }
+        ]
+      },
+      "throws": "chartRefused"
+    },
+    {
+      "name": "ADR-0321: narrowed, an edge is cut at the plot's edge, and one wholly outside is left out and keeps no mark",
+      "definition": {
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "tree",
+            "name": "Tree",
+            "kind": "observation",
+            "points": [
+              {
+                "x": 0,
+                "y": 100.0,
+                "row": "0,0"
+              },
+              {
+                "x": 1,
+                "y": 90.0,
+                "row": "1,0"
+              },
+              {
+                "x": 1,
+                "y": 110.00000000000001,
+                "row": "1,1"
+              },
+              {
+                "x": 2,
+                "y": 81.0,
+                "row": "2,0"
+              },
+              {
+                "x": 2,
+                "y": 99.00000000000001,
+                "row": "2,1"
+              },
+              {
+                "x": 2,
+                "y": 121.00000000000001,
+                "row": "2,2"
+              }
+            ],
+            "edges": [
+              [
+                "0,0",
+                "1,0"
+              ],
+              [
+                "0,0",
+                "1,1"
+              ],
+              [
+                "1,0",
+                "2,0"
+              ],
+              [
+                "1,0",
+                "2,1"
+              ],
+              [
+                "1,1",
+                "2,1"
+              ],
+              [
+                "1,1",
+                "2,2"
+              ]
+            ]
+          }
+        ]
+      },
+      "scene": {
+        "metrics": {
+          "width": 600,
+          "height": 400
+        },
+        "view": {
+          "from": 1.5,
+          "to": 2
+        }
+      },
+      "expect": [
+        {
+          "at": "panels.0.series.0.edges",
+          "count": true,
+          "is": 4
+        },
+        {
+          "at": "panels.0.series.0.edges",
+          "each": [
+            {
+              "at": "x1",
+              "atLeast": {
+                "at": "$.panels.0.plot.x",
+                "plus": -1e-06
+              }
+            },
+            {
+              "at": "x2",
+              "atMost": {
+                "at": "$.panels.0.plot.x",
+                "plus": {
+                  "at": "$.panels.0.plot.width",
+                  "plus": 1e-06
+                }
+              }
+            }
+          ]
+        },
+        {
+          "at": "edgeMarks",
+          "map": "edge.index",
+          "is": [
+            2,
+            3,
+            4,
+            5
+          ]
+        }
+      ]
+    }
+  ]
+}

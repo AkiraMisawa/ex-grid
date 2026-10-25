@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk.WebAssembly">
+
+  <!-- The Engine Host Worker of ADR-0370 section 2, as a spike: ExSheet.Engine, ExSheet.Xlsx,
+       ExPivot.Engine, ExGrid.Data and ExGrid.Data.Xlsx as one .NET WebAssembly build, whose
+       [JSExport] methods a Web Worker calls (client/src/engine-worker.ts). Built on the interpreter
+       by default; -p:RunAOTCompilation=true compiles it ahead of time, which needs the wasm-tools
+       workload (README.md). Disposable, like the rest of spikes/. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\src\ExSheet.Engine\ExSheet.Engine.csproj" />
+    <ProjectReference Include="..\..\..\src\ExSheet.Xlsx\ExSheet.Xlsx.csproj" />
+    <ProjectReference Include="..\..\..\src\ExPivot.Engine\ExPivot.Engine.csproj" />
+    <ProjectReference Include="..\..\..\src\ExGrid.Data\ExGrid.Data.csproj" />
+    <ProjectReference Include="..\..\..\src\ExGrid.Data.Xlsx\ExGrid.Data.Xlsx.csproj" />
+  </ItemGroup>
+
+  <!-- The probe's timings run in this build too, on the same runtime as the Worker's answers. -->
+  <ItemGroup>
+    <Compile Include="..\EngineProbe\Probe.cs" Link="Probe.cs" />
+  </ItemGroup>
+
+</Project>

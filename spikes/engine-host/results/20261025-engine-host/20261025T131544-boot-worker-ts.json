@@ -1,0 +1,539 @@
+{
+  "label": "worker-ts",
+  "base": "http://127.0.0.1:5496",
+  "at": "2026-10-25T13:15:44.511Z",
+  "scenarios": [
+    {
+      "scenario": "sheet",
+      "url": "http://127.0.0.1:5496/core/sheet",
+      "runs": [
+        {
+          "firstCellAt": 168.29999999981374,
+          "bytes": 57888,
+          "files": [
+            {
+              "url": "http://127.0.0.1:5496/ex-grid.min.css",
+              "encoding": "br",
+              "bytes": 5163,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5496/core/sheet",
+              "encoding": null,
+              "bytes": 640
+            },
+            {
+              "url": "http://127.0.0.1:5496/core-bench.js",
+              "encoding": "br",
+              "bytes": 5325,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5496/dist/sheet-page.js",
+              "encoding": "br",
+              "bytes": 41010,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5496/dist/engine-worker.js",
+              "encoding": "br",
+              "bytes": 5750,
+              "seenBy": "resource timing"
+            }
+          ],
+          "engineBoot": {
+            "boot": {
+              "createdAt": 37.799999999813735,
+              "readyAt": 60,
+              "worker": {
+                "scriptMs": 16.5,
+                "createdMs": 16.600000000558794,
+                "exportsMs": 16.600000000558794
+              },
+              "files": []
+            },
+            "openedAt": 147.59999999962747,
+            "firstWindowAt": 150.29999999981374,
+            "firstPaintAt": 169.09999999962747,
+            "openEngineMs": 74.1000000005588
+          },
+          "complaints": []
+        },
+        {
+          "firstCellAt": 216.09999999962747,
+          "bytes": 57888,
+          "files": [
+            {
+              "url": "http://127.0.0.1:5496/core/sheet",
+              "encoding": null,
+              "bytes": 640
+            },
+            {
+              "url": "http://127.0.0.1:5496/ex-grid.min.css",
+              "encoding": "br",
+              "bytes": 5163,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5496/core-bench.js",
+              "encoding": "br",
+              "bytes": 5325,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5496/dist/sheet-page.js",
+              "encoding": "br",
+              "bytes": 41010,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5496/dist/engine-worker.js",
+              "encoding": "br",
+              "bytes": 5750,
+              "seenBy": "resource timing"
+            }
+          ],
+          "engineBoot": {
+            "boot": {
+              "createdAt": 51.299999999813735,
+              "readyAt": 84.69999999925494,
+              "worker": {
+                "scriptMs": 26.59999999962747,
+                "createdMs": 26.699999999254942,
+                "exportsMs": 26.699999999254942
+              },
+              "files": []
+            },
+            "openedAt": 191.09999999962747,
+            "firstWindowAt": 196.79999999981374,
+            "firstPaintAt": 217,
+            "openEngineMs": 90.6000000005588
+          },
+          "complaints": []
+        },
+        {
+          "firstCellAt": 201.5,
+          "bytes": 57888,
+          "files": [
+            {
+              "url": "http://127.0.0.1:5496/ex-grid.min.css",
+              "encoding": "br",
+              "bytes": 5163,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5496/core/sheet",
+              "encoding": null,
+              "bytes": 640
+            },
+            {
+              "url": "http://127.0.0.1:5496/core-bench.js",
+              "encoding": "br",
+              "bytes": 5325,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5496/dist/sheet-page.js",
+              "encoding": "br",
+              "bytes": 41010,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5496/dist/engine-worker.js",
+              "encoding": "br",
+              "bytes": 5750,
+              "seenBy": "resource timing"
+            }
+          ],
+          "engineBoot": {
+            "boot": {
+              "createdAt": 29,
+              "readyAt": 57.89999999944121,
+              "worker": {
+                "scriptMs": 18.100000000558794,
+                "createdMs": 18.200000000186265,
+                "exportsMs": 18.200000000186265
+              },
+              "files": []
+            },
+            "openedAt": 157.3999999994412,
+            "firstWindowAt": 186.70000000018626,
+            "firstPaintAt": 202.09999999962747,
+            "openEngineMs": 85.80000000074506
+          },
+          "complaints": []
+        },
+        {
+          "firstCellAt": 187.1000000005588,
+          "bytes": 57888,
+          "files": [
+            {
+              "url": "http://127.0.0.1:5496/core/sheet",
+              "encoding": null,
+              "bytes": 640
+            },
+            {
+              "url": "http://127.0.0.1:5496/ex-grid.min.css",
+              "encoding": "br",
+              "bytes": 5163,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5496/core-bench.js",
+              "encoding": "br",
+              "bytes": 5325,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5496/dist/sheet-page.js",
+              "encoding": "br",
+              "bytes": 41010,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5496/dist/engine-worker.js",
+              "encoding": "br",
+              "bytes": 5750,
+              "seenBy": "resource timing"
+            }
+          ],
+          "engineBoot": {
+            "boot": {
+              "createdAt": 44.60000000055879,
+              "readyAt": 64.20000000018626,
+              "worker": {
+                "scriptMs": 13.799999999813735,
+                "createdMs": 13.900000000372529,
+                "exportsMs": 13.900000000372529
+              },
+              "files": []
+            },
+            "openedAt": 146.29999999981374,
+            "firstWindowAt": 159.29999999981374,
+            "firstPaintAt": 187.90000000037253,
+            "openEngineMs": 69.1000000005588
+          },
+          "complaints": []
+        },
+        {
+          "firstCellAt": 179,
+          "bytes": 57888,
+          "files": [
+            {
+              "url": "http://127.0.0.1:5496/ex-grid.min.css",
+              "encoding": "br",
+              "bytes": 5163,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5496/core/sheet",
+              "encoding": null,
+              "bytes": 640
+            },
+            {
+              "url": "http://127.0.0.1:5496/core-bench.js",
+              "encoding": "br",
+              "bytes": 5325,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5496/dist/sheet-page.js",
+              "encoding": "br",
+              "bytes": 41010,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5496/dist/engine-worker.js",
+              "encoding": "br",
+              "bytes": 5750,
+              "seenBy": "resource timing"
+            }
+          ],
+          "engineBoot": {
+            "boot": {
+              "createdAt": 37.200000000186265,
+              "readyAt": 60.40000000037253,
+              "worker": {
+                "scriptMs": 16.90000000037253,
+                "createdMs": 17.100000000558794,
+                "exportsMs": 17.100000000558794
+              },
+              "files": []
+            },
+            "openedAt": 147.90000000037253,
+            "firstWindowAt": 153.40000000037253,
+            "firstPaintAt": 179.59999999962747,
+            "openEngineMs": 74.69999999925494
+          },
+          "complaints": []
+        }
+      ]
+    },
+    {
+      "scenario": "pivot",
+      "url": "http://127.0.0.1:5496/core/pivot",
+      "runs": [
+        {
+          "firstCellAt": 184.5,
+          "bytes": 58708,
+          "files": [
+            {
+              "url": "http://127.0.0.1:5496/core/pivot",
+              "encoding": null,
+              "bytes": 871
+            },
+            {
+              "url": "http://127.0.0.1:5496/ex-grid.min.css",
+              "encoding": "br",
+              "bytes": 5163,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5496/core-bench.js",
+              "encoding": "br",
+              "bytes": 5325,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5496/dist/pivot-page.js",
+              "encoding": "br",
+              "bytes": 41599,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5496/dist/engine-worker.js",
+              "encoding": "br",
+              "bytes": 5750,
+              "seenBy": "resource timing"
+            }
+          ],
+          "engineBoot": {
+            "boot": {
+              "createdAt": 76.3999999994412,
+              "readyAt": 94.59999999962747,
+              "worker": {
+                "scriptMs": 10,
+                "createdMs": 10.099999999627471,
+                "exportsMs": 10.099999999627471
+              },
+              "files": []
+            },
+            "openedAt": 146.5,
+            "firstWindowAt": 169.09999999962747,
+            "firstPaintAt": 185.29999999981374,
+            "openEngineMs": 46.40000000037253
+          },
+          "complaints": []
+        },
+        {
+          "firstCellAt": 210.59999999962747,
+          "bytes": 58708,
+          "files": [
+            {
+              "url": "http://127.0.0.1:5496/ex-grid.min.css",
+              "encoding": "br",
+              "bytes": 5163,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5496/core/pivot",
+              "encoding": null,
+              "bytes": 871
+            },
+            {
+              "url": "http://127.0.0.1:5496/core-bench.js",
+              "encoding": "br",
+              "bytes": 5325,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5496/dist/pivot-page.js",
+              "encoding": "br",
+              "bytes": 41599,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5496/dist/engine-worker.js",
+              "encoding": "br",
+              "bytes": 5750,
+              "seenBy": "resource timing"
+            }
+          ],
+          "engineBoot": {
+            "boot": {
+              "createdAt": 104.59999999962747,
+              "readyAt": 120.59999999962747,
+              "worker": {
+                "scriptMs": 10,
+                "createdMs": 10.100000000558794,
+                "exportsMs": 10.100000000558794
+              },
+              "files": []
+            },
+            "openedAt": 175.29999999981374,
+            "firstWindowAt": 199.90000000037253,
+            "firstPaintAt": 211.09999999962747,
+            "openEngineMs": 50
+          },
+          "complaints": []
+        },
+        {
+          "firstCellAt": 156.79999999981374,
+          "bytes": 58708,
+          "files": [
+            {
+              "url": "http://127.0.0.1:5496/ex-grid.min.css",
+              "encoding": "br",
+              "bytes": 5163,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5496/core/pivot",
+              "encoding": null,
+              "bytes": 871
+            },
+            {
+              "url": "http://127.0.0.1:5496/core-bench.js",
+              "encoding": "br",
+              "bytes": 5325,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5496/dist/pivot-page.js",
+              "encoding": "br",
+              "bytes": 41599,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5496/dist/engine-worker.js",
+              "encoding": "br",
+              "bytes": 5750,
+              "seenBy": "resource timing"
+            }
+          ],
+          "engineBoot": {
+            "boot": {
+              "createdAt": 75.8999999994412,
+              "readyAt": 90.3999999994412,
+              "worker": {
+                "scriptMs": 8.5,
+                "createdMs": 8.700000000186265,
+                "exportsMs": 8.700000000186265
+              },
+              "files": []
+            },
+            "openedAt": 128.5,
+            "firstWindowAt": 146.19999999925494,
+            "firstPaintAt": 157.29999999981374,
+            "openEngineMs": 33.40000000037253
+          },
+          "complaints": []
+        },
+        {
+          "firstCellAt": 168.8999999994412,
+          "bytes": 58708,
+          "files": [
+            {
+              "url": "http://127.0.0.1:5496/core/pivot",
+              "encoding": null,
+              "bytes": 871
+            },
+            {
+              "url": "http://127.0.0.1:5496/ex-grid.min.css",
+              "encoding": "br",
+              "bytes": 5163,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5496/core-bench.js",
+              "encoding": "br",
+              "bytes": 5325,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5496/dist/pivot-page.js",
+              "encoding": "br",
+              "bytes": 41599,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5496/dist/engine-worker.js",
+              "encoding": "br",
+              "bytes": 5750,
+              "seenBy": "resource timing"
+            }
+          ],
+          "engineBoot": {
+            "boot": {
+              "createdAt": 74.8999999994412,
+              "readyAt": 99.20000000018626,
+              "worker": {
+                "scriptMs": 15.599999999627471,
+                "createdMs": 15.699999999254942,
+                "exportsMs": 15.699999999254942
+              },
+              "files": []
+            },
+            "openedAt": 139.09999999962747,
+            "firstWindowAt": 158.20000000018626,
+            "firstPaintAt": 169.3999999994412,
+            "openEngineMs": 35.69999999925494
+          },
+          "complaints": []
+        },
+        {
+          "firstCellAt": 200.29999999981374,
+          "bytes": 58708,
+          "files": [
+            {
+              "url": "http://127.0.0.1:5496/ex-grid.min.css",
+              "encoding": "br",
+              "bytes": 5163,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5496/core/pivot",
+              "encoding": null,
+              "bytes": 871
+            },
+            {
+              "url": "http://127.0.0.1:5496/core-bench.js",
+              "encoding": "br",
+              "bytes": 5325,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5496/dist/pivot-page.js",
+              "encoding": "br",
+              "bytes": 41599,
+              "seenBy": "resource timing"
+            },
+            {
+              "url": "http://127.0.0.1:5496/dist/engine-worker.js",
+              "encoding": "br",
+              "bytes": 5750,
+              "seenBy": "resource timing"
+            }
+          ],
+          "engineBoot": {
+            "boot": {
+              "createdAt": 106.3999999994412,
+              "readyAt": 124,
+              "worker": {
+                "scriptMs": 11.799999999813735,
+                "createdMs": 11.899999999441206,
+                "exportsMs": 11.899999999441206
+              },
+              "files": []
+            },
+            "openedAt": 164.3999999994412,
+            "firstWindowAt": 183,
+            "firstPaintAt": 201.29999999981374,
+            "openEngineMs": 35.09999999962747
+          },
+          "complaints": []
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,2083 @@
+{
+  "about": "A 3D surface in the data's terms: a grid, points on a grid, a sampled function or a Consumer's triangles, refused by name where it cannot be drawn, and its slices as 2D charts (ADR-0257, ADR-0272, ADR-0274, ADR-0311, ADR-0312), from tests/ExChart.Engine.Tests/SurfaceTests.cs and SurfaceColourMeshAndScaleTests.cs.",
+  "kind": "chart",
+  "definitions": {
+    "vol": {
+      "x": {
+        "title": "Delta",
+        "values": [
+          "10P",
+          "25P",
+          "ATM",
+          "25C"
+        ]
+      },
+      "y": {
+        "title": "Tenor",
+        "values": [
+          "1M",
+          "3M",
+          "1Y"
+        ]
+      },
+      "z": [
+        [
+          10.5,
+          9.8,
+          9.2,
+          9.9
+        ],
+        [
+          10.9,
+          10.1,
+          9.6,
+          10.2
+        ],
+        [
+          11.4,
+          10.7,
+          10.3,
+          10.8
+        ]
+      ],
+      "zTitle": "Volatility",
+      "zFormat": {
+        "places": 2,
+        "suffix": "%"
+      }
+    },
+    "volHole": {
+      "x": {
+        "title": "Delta",
+        "values": [
+          "10P",
+          "25P",
+          "ATM",
+          "25C"
+        ]
+      },
+      "y": {
+        "title": "Tenor",
+        "values": [
+          "1M",
+          "3M",
+          "1Y"
+        ]
+      },
+      "z": [
+        [
+          10.5,
+          9.8,
+          9.2,
+          9.9
+        ],
+        [
+          10.9,
+          null,
+          9.6,
+          10.2
+        ],
+        [
+          11.4,
+          10.7,
+          10.3,
+          10.8
+        ]
+      ],
+      "zTitle": "Volatility",
+      "zFormat": {
+        "places": 2,
+        "suffix": "%"
+      }
+    },
+    "square": {
+      "nodes": [
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          1,
+          0,
+          1
+        ],
+        [
+          0,
+          1,
+          1
+        ],
+        [
+          1,
+          1,
+          2
+        ]
+      ],
+      "triangles": [
+        [
+          0,
+          1,
+          3
+        ],
+        [
+          0,
+          3,
+          2
+        ]
+      ],
+      "xTitle": "x",
+      "yTitle": "y",
+      "zTitle": "u"
+    }
+  },
+  "cases": [
+    {
+      "name": "CH-7, ADR-0274: scattered points are refused by name",
+      "surface": {
+        "points": [
+          [
+            1.1,
+            0.1,
+            9.1
+          ],
+          [
+            1.12,
+            0.4,
+            9.4
+          ],
+          [
+            1.15,
+            0.9,
+            9.9
+          ],
+          [
+            1.21,
+            1.6,
+            10.3
+          ]
+        ],
+        "xTitle": "Strike",
+        "yTitle": "Tenor",
+        "zTitle": "Volatility"
+      },
+      "throws": "chartRefused",
+      "saying": [
+        "scattered points",
+        "Strike 1.1",
+        "interpolation"
+      ]
+    },
+    {
+      "name": "CH-7, ADR-0274: points on a grid make a surface, and where the grid has no point it has a hole, never 0",
+      "surface": {
+        "points": [
+          [
+            1,
+            1,
+            9.0
+          ],
+          [
+            2,
+            1,
+            9.5
+          ],
+          [
+            1,
+            2,
+            10.0
+          ],
+          [
+            2,
+            2,
+            10.5
+          ],
+          [
+            3,
+            2,
+            11.0
+          ],
+          [
+            3,
+            1,
+            9.8
+          ],
+          [
+            1,
+            3,
+            12.0
+          ],
+          [
+            2,
+            3,
+            12.5
+          ]
+        ],
+        "xTitle": "Strike",
+        "yTitle": "Tenor"
+      },
+      "expect": [
+        {
+          "at": "x.values",
+          "is": [
+            1,
+            2,
+            3
+          ]
+        },
+        {
+          "at": "y.values",
+          "is": [
+            1,
+            2,
+            3
+          ]
+        },
+        {
+          "at": "z.2.2",
+          "is": null
+        },
+        {
+          "at": "z.1.1",
+          "is": 10.5
+        }
+      ]
+    },
+    {
+      "name": "ADR-0274: two points at one grid point are refused, not averaged",
+      "surface": {
+        "points": [
+          [
+            1,
+            1,
+            9.0
+          ],
+          [
+            1,
+            1,
+            9.1
+          ],
+          [
+            2,
+            1,
+            9.5
+          ],
+          [
+            1,
+            2,
+            10.0
+          ],
+          [
+            2,
+            2,
+            10.5
+          ]
+        ],
+        "xTitle": "Strike",
+        "yTitle": "Tenor"
+      },
+      "throws": "chartRefused",
+      "saying": "a grid point holds one value"
+    },
+    {
+      "name": "ADR-0274: a row of the wrong length is refused — a hole is handed in as null, never left out",
+      "surface": {
+        "x": {
+          "title": "Delta",
+          "values": [
+            "10P",
+            "25P",
+            "ATM",
+            "25C"
+          ]
+        },
+        "y": {
+          "title": "Tenor",
+          "values": [
+            "1M",
+            "3M",
+            "1Y"
+          ]
+        },
+        "z": [
+          [
+            10.5,
+            9.8,
+            9.2,
+            9.9
+          ],
+          [
+            10.9,
+            10.1,
+            9.6
+          ],
+          [
+            11.4,
+            10.7,
+            10.3,
+            10.8
+          ]
+        ],
+        "zTitle": "Volatility",
+        "zFormat": {
+          "places": 2,
+          "suffix": "%"
+        }
+      },
+      "throws": "chartRefused",
+      "saying": [
+        "Tenor 3M",
+        "null"
+      ]
+    },
+    {
+      "name": "ADR-0274: a table with a row too few is refused",
+      "surface": {
+        "x": {
+          "title": "Delta",
+          "values": [
+            "10P",
+            "25P",
+            "ATM",
+            "25C"
+          ]
+        },
+        "y": {
+          "title": "Tenor",
+          "values": [
+            "1M",
+            "3M",
+            "1Y"
+          ]
+        },
+        "z": [
+          [
+            10.5,
+            9.8,
+            9.2,
+            9.9
+          ],
+          [
+            10.9,
+            10.1,
+            9.6,
+            10.2
+          ]
+        ],
+        "zTitle": "Volatility",
+        "zFormat": {
+          "places": 2,
+          "suffix": "%"
+        }
+      },
+      "throws": "chartRefused",
+      "saying": "one row per value"
+    },
+    {
+      "name": "ADR-0274: a grid line named twice is refused",
+      "surface": {
+        "x": {
+          "title": "Delta",
+          "values": [
+            "ATM",
+            "ATM"
+          ]
+        },
+        "y": {
+          "title": "Tenor",
+          "values": [
+            "1M",
+            "3M"
+          ]
+        },
+        "z": [
+          [
+            9.0,
+            9.1
+          ],
+          [
+            9.2,
+            9.3
+          ]
+        ]
+      },
+      "throws": "chartRefused",
+      "saying": "ATM appears twice"
+    },
+    {
+      "name": "ADR-0274: a surface of holes only is refused",
+      "surface": {
+        "x": {
+          "title": "Delta",
+          "values": [
+            "10P",
+            "25P",
+            "ATM",
+            "25C"
+          ]
+        },
+        "y": {
+          "title": "Tenor",
+          "values": [
+            "1M",
+            "3M",
+            "1Y"
+          ]
+        },
+        "z": [
+          [
+            null,
+            null,
+            null,
+            null
+          ],
+          [
+            null,
+            null,
+            null,
+            null
+          ],
+          [
+            null,
+            null,
+            null,
+            null
+          ]
+        ],
+        "zTitle": "Volatility",
+        "zFormat": {
+          "places": 2,
+          "suffix": "%"
+        }
+      },
+      "throws": "chartRefused",
+      "saying": "holds no value"
+    },
+    {
+      "name": "ADR-0274: a slice along x is a 2D chart of the categories, read exactly; a hole is a gap",
+      "surface": "volHole",
+      "slice": {
+        "axis": "y",
+        "value": "3M"
+      },
+      "expect": [
+        {
+          "at": "axis.labels",
+          "is": [
+            "10P",
+            "25P",
+            "ATM",
+            "25C"
+          ]
+        },
+        {
+          "at": "series.0.name",
+          "is": "Volatility at 3M"
+        },
+        {
+          "at": "series.0.points.1.y",
+          "is": null
+        },
+        {
+          "at": "series.0.points.0.y",
+          "is": 10.9
+        },
+        {
+          "at": "series.0.fromZero",
+          "is": false
+        }
+      ]
+    },
+    {
+      "name": "ADR-0274: a slice along y is the term structure at one x value",
+      "surface": "volHole",
+      "slice": {
+        "axis": "x",
+        "value": "ATM"
+      },
+      "expect": [
+        {
+          "at": "axis.labels",
+          "is": [
+            "1M",
+            "3M",
+            "1Y"
+          ]
+        },
+        {
+          "at": "series.0.points",
+          "map": "y",
+          "is": [
+            9.2,
+            9.6,
+            10.3
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ADR-0272: a slice the new data does not hold is no slice",
+      "surface": "vol",
+      "slice": {
+        "axis": "y",
+        "value": "5Y"
+      },
+      "expect": [
+        {
+          "at": "",
+          "is": null
+        }
+      ]
+    },
+    {
+      "name": "ADR-0257: a grid's interpolated values name their method, and a slice through them says it",
+      "surface": {
+        "x": {
+          "title": "Delta",
+          "values": [
+            "10P",
+            "25P",
+            "ATM",
+            "25C"
+          ]
+        },
+        "y": {
+          "title": "Tenor",
+          "values": [
+            "1M",
+            "3M",
+            "1Y"
+          ]
+        },
+        "z": [
+          [
+            10.5,
+            9.8,
+            9.2,
+            9.9
+          ],
+          [
+            10.9,
+            10.1,
+            9.6,
+            10.2
+          ],
+          [
+            11.4,
+            10.7,
+            10.3,
+            10.8
+          ]
+        ],
+        "zTitle": "Volatility",
+        "zFormat": {
+          "places": 2,
+          "suffix": "%"
+        },
+        "method": "SVI per tenor",
+        "interpolated": [
+          [
+            false,
+            false,
+            false,
+            false
+          ],
+          [
+            true,
+            true,
+            true,
+            true
+          ],
+          [
+            false,
+            false,
+            false,
+            false
+          ]
+        ]
+      },
+      "build": {
+        "surface": {
+          "surface": {
+            "x": {
+              "title": "Delta",
+              "values": [
+                "10P",
+                "25P",
+                "ATM",
+                "25C"
+              ]
+            },
+            "y": {
+              "title": "Tenor",
+              "values": [
+                "1M",
+                "3M",
+                "1Y"
+              ]
+            },
+            "z": [
+              [
+                10.5,
+                9.8,
+                9.2,
+                9.9
+              ],
+              [
+                10.9,
+                10.1,
+                9.6,
+                10.2
+              ],
+              [
+                11.4,
+                10.7,
+                10.3,
+                10.8
+              ]
+            ],
+            "zTitle": "Volatility",
+            "zFormat": {
+              "places": 2,
+              "suffix": "%"
+            },
+            "method": "SVI per tenor",
+            "interpolated": [
+              [
+                false,
+                false,
+                false,
+                false
+              ],
+              [
+                true,
+                true,
+                true,
+                true
+              ],
+              [
+                false,
+                false,
+                false,
+                false
+              ]
+            ]
+          }
+        },
+        "quoted": {
+          "surface": {
+            "x": {
+              "title": "Delta",
+              "values": [
+                "10P",
+                "25P",
+                "ATM",
+                "25C"
+              ]
+            },
+            "y": {
+              "title": "Tenor",
+              "values": [
+                "1M",
+                "3M",
+                "1Y"
+              ]
+            },
+            "z": [
+              [
+                10.5,
+                9.8,
+                9.2,
+                9.9
+              ],
+              [
+                10.9,
+                10.1,
+                9.6,
+                10.2
+              ],
+              [
+                11.4,
+                10.7,
+                10.3,
+                10.8
+              ]
+            ],
+            "zTitle": "Volatility",
+            "zFormat": {
+              "places": 2,
+              "suffix": "%"
+            },
+            "method": "SVI per tenor",
+            "interpolated": [
+              [
+                false,
+                false,
+                false,
+                false
+              ],
+              [
+                true,
+                true,
+                true,
+                true
+              ],
+              [
+                false,
+                false,
+                false,
+                false
+              ]
+            ]
+          },
+          "slice": {
+            "axis": "y",
+            "value": "1M"
+          }
+        },
+        "made": {
+          "surface": {
+            "x": {
+              "title": "Delta",
+              "values": [
+                "10P",
+                "25P",
+                "ATM",
+                "25C"
+              ]
+            },
+            "y": {
+              "title": "Tenor",
+              "values": [
+                "1M",
+                "3M",
+                "1Y"
+              ]
+            },
+            "z": [
+              [
+                10.5,
+                9.8,
+                9.2,
+                9.9
+              ],
+              [
+                10.9,
+                10.1,
+                9.6,
+                10.2
+              ],
+              [
+                11.4,
+                10.7,
+                10.3,
+                10.8
+              ]
+            ],
+            "zTitle": "Volatility",
+            "zFormat": {
+              "places": 2,
+              "suffix": "%"
+            },
+            "method": "SVI per tenor",
+            "interpolated": [
+              [
+                false,
+                false,
+                false,
+                false
+              ],
+              [
+                true,
+                true,
+                true,
+                true
+              ],
+              [
+                false,
+                false,
+                false,
+                false
+              ]
+            ]
+          },
+          "slice": {
+            "axis": "y",
+            "value": "3M"
+          }
+        }
+      },
+      "expect": [
+        {
+          "at": "surface.allNotes",
+          "is": [
+            "Interpolated by the Consumer: SVI per tenor."
+          ]
+        },
+        {
+          "at": "quoted.series.0.interpolated",
+          "is": false
+        },
+        {
+          "at": "made.series.0.interpolated",
+          "is": true
+        },
+        {
+          "at": "made.series.0.segments.0.method",
+          "is": "SVI per tenor"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0257: marks of interpolated values without a method are refused",
+      "surface": {
+        "x": {
+          "title": "Delta",
+          "values": [
+            "10P",
+            "25P",
+            "ATM",
+            "25C"
+          ]
+        },
+        "y": {
+          "title": "Tenor",
+          "values": [
+            "1M",
+            "3M",
+            "1Y"
+          ]
+        },
+        "z": [
+          [
+            10.5,
+            9.8,
+            9.2,
+            9.9
+          ],
+          [
+            10.9,
+            10.1,
+            9.6,
+            10.2
+          ],
+          [
+            11.4,
+            10.7,
+            10.3,
+            10.8
+          ]
+        ],
+        "zTitle": "Volatility",
+        "zFormat": {
+          "places": 2,
+          "suffix": "%"
+        },
+        "interpolated": [
+          [
+            true,
+            true,
+            true,
+            true
+          ],
+          [
+            true,
+            true,
+            true,
+            true
+          ],
+          [
+            true,
+            true,
+            true,
+            true
+          ]
+        ]
+      },
+      "throws": "chartRefused",
+      "saying": "names no method"
+    },
+    {
+      "name": "ADR-0312: a logarithmic vertical scale is drawn where every value is above zero",
+      "surface": {
+        "x": {
+          "title": "Strike",
+          "values": [
+            1,
+            2,
+            3
+          ]
+        },
+        "y": {
+          "title": "Tenor",
+          "values": [
+            "1M",
+            "1Y"
+          ]
+        },
+        "z": [
+          [
+            1,
+            10,
+            100
+          ],
+          [
+            1,
+            10,
+            100
+          ]
+        ],
+        "zTitle": "P&L",
+        "zScale": "logarithmic"
+      },
+      "expect": [
+        {
+          "at": "effectiveZScale",
+          "is": "logarithmic"
+        },
+        {
+          "at": "allNotes",
+          "is": []
+        }
+      ]
+    },
+    {
+      "name": "ADR-0312, ADR-0290: a value at or below zero keeps the vertical scale proportional, and a Note names it",
+      "surface": {
+        "x": {
+          "title": "Strike",
+          "values": [
+            1,
+            2,
+            3
+          ]
+        },
+        "y": {
+          "title": "Tenor",
+          "values": [
+            "1M",
+            "1Y"
+          ]
+        },
+        "z": [
+          [
+            -1,
+            10,
+            100
+          ],
+          [
+            -1,
+            10,
+            100
+          ]
+        ],
+        "zTitle": "P&L",
+        "zScale": "logarithmic"
+      },
+      "expect": [
+        {
+          "at": "effectiveZScale",
+          "is": "proportional"
+        },
+        {
+          "at": "allNotes",
+          "mentions": "The vertical scale stays proportional: P&L reach -1"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0312, ADR-0310: a centre at or below zero keeps the vertical scale proportional, and a Note names it",
+      "surface": {
+        "x": {
+          "title": "Strike",
+          "values": [
+            1,
+            2,
+            3
+          ]
+        },
+        "y": {
+          "title": "Tenor",
+          "values": [
+            "1M",
+            "1Y"
+          ]
+        },
+        "z": [
+          [
+            1,
+            10,
+            100
+          ],
+          [
+            1,
+            10,
+            100
+          ]
+        ],
+        "zTitle": "P&L",
+        "zScale": "logarithmic",
+        "centre": 0
+      },
+      "expect": [
+        {
+          "at": "effectiveZScale",
+          "is": "proportional"
+        },
+        {
+          "at": "allNotes",
+          "mentions": "the colours diverge from 0"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0310: a centre that is not a number is refused",
+      "surface": {
+        "x": {
+          "title": "Strike",
+          "values": [
+            1,
+            2,
+            3
+          ]
+        },
+        "y": {
+          "title": "Tenor",
+          "values": [
+            "1M",
+            "1Y"
+          ]
+        },
+        "z": [
+          [
+            1,
+            2,
+            3
+          ],
+          [
+            1,
+            2,
+            3
+          ]
+        ],
+        "zTitle": "P&L",
+        "centre": "NaN"
+      },
+      "throws": "chartRefused"
+    },
+    {
+      "name": "ADR-0312: values are never spaced as categories",
+      "surface": {
+        "x": {
+          "title": "Strike",
+          "values": [
+            1,
+            2,
+            3
+          ]
+        },
+        "y": {
+          "title": "Tenor",
+          "values": [
+            "1M",
+            "1Y"
+          ]
+        },
+        "z": [
+          [
+            1,
+            2,
+            3
+          ],
+          [
+            1,
+            2,
+            3
+          ]
+        ],
+        "zTitle": "P&L",
+        "zScale": "categories"
+      },
+      "throws": "chartRefused"
+    },
+    {
+      "name": "ADR-0312: an axis placed by value refuses a value that is not a number",
+      "surface": {
+        "x": {
+          "title": "Strike",
+          "values": [
+            1,
+            2
+          ]
+        },
+        "y": {
+          "title": "Tenor",
+          "values": [
+            "1M",
+            "1Y"
+          ],
+          "scale": "proportional"
+        },
+        "z": [
+          [
+            1.0,
+            2.0
+          ],
+          [
+            3.0,
+            4.0
+          ]
+        ]
+      },
+      "throws": "chartRefused",
+      "saying": "1M is not a number"
+    },
+    {
+      "name": "ADR-0312: an axis placed by value refuses values that do not rise",
+      "surface": {
+        "x": {
+          "title": "Strike",
+          "values": [
+            1,
+            3,
+            2
+          ],
+          "scale": "proportional"
+        },
+        "y": {
+          "title": "Tenor",
+          "values": [
+            "1M",
+            "1Y"
+          ]
+        },
+        "z": [
+          [
+            1,
+            2,
+            3
+          ],
+          [
+            1,
+            2,
+            3
+          ]
+        ],
+        "zTitle": "P&L"
+      },
+      "throws": "chartRefused",
+      "saying": "Strike 2 comes after 3"
+    },
+    {
+      "name": "ADR-0312: a logarithmic axis refuses a value at or below zero",
+      "surface": {
+        "x": {
+          "title": "Strike",
+          "values": [
+            0,
+            1,
+            2
+          ],
+          "scale": "logarithmic"
+        },
+        "y": {
+          "title": "Tenor",
+          "values": [
+            "1M",
+            "1Y"
+          ]
+        },
+        "z": [
+          [
+            1,
+            2,
+            3
+          ],
+          [
+            1,
+            2,
+            3
+          ]
+        ],
+        "zTitle": "P&L"
+      },
+      "throws": "chartRefused",
+      "saying": "Strike 0 is at or below zero"
+    },
+    {
+      "name": "ADR-0312: a function sampled on a logarithmic axis is sampled evenly in its logarithm",
+      "surface": {
+        "sampled": {
+          "method": "flat",
+          "x": [
+            1,
+            100
+          ],
+          "y": [
+            0,
+            1
+          ],
+          "z": 1,
+          "samples": 3,
+          "xScale": "logarithmic"
+        },
+        "xTitle": "Tenor",
+        "yTitle": "Delta"
+      },
+      "expect": [
+        {
+          "at": "x.values",
+          "near": 1e-09,
+          "is": [
+            1,
+            10,
+            100
+          ]
+        },
+        {
+          "at": "x.scale",
+          "is": "logarithmic"
+        },
+        {
+          "at": "y.values",
+          "is": [
+            0,
+            0.5,
+            1
+          ]
+        },
+        {
+          "at": "method",
+          "is": "flat"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0312: a function on a logarithmic axis is sampled from above zero",
+      "surface": {
+        "sampled": {
+          "method": "flat",
+          "x": [
+            0,
+            100
+          ],
+          "y": [
+            0,
+            1
+          ],
+          "z": 1,
+          "samples": 3,
+          "xScale": "logarithmic"
+        },
+        "xTitle": "Tenor",
+        "yTitle": "Delta"
+      },
+      "throws": "chartRefused",
+      "saying": "from above zero"
+    },
+    {
+      "name": "ADR-0257: a function names its method",
+      "surface": {
+        "sampled": {
+          "method": " ",
+          "x": [
+            1,
+            100
+          ],
+          "y": [
+            0,
+            1
+          ],
+          "z": 1,
+          "samples": 3,
+          "xScale": "logarithmic"
+        },
+        "xTitle": "Tenor",
+        "yTitle": "Delta"
+      },
+      "throws": "chartRefused",
+      "saying": "names its method"
+    },
+    {
+      "name": "ADR-0274: a function is sampled at two values an axis at least",
+      "surface": {
+        "sampled": {
+          "method": "flat",
+          "x": [
+            1,
+            100
+          ],
+          "y": [
+            0,
+            1
+          ],
+          "z": 1,
+          "samples": 1,
+          "xScale": "logarithmic"
+        },
+        "xTitle": "Tenor",
+        "yTitle": "Delta"
+      },
+      "throws": "outOfRange"
+    },
+    {
+      "name": "ADR-0257: a function's values are every one interpolated, by its plane",
+      "surface": {
+        "sampled": {
+          "method": "plane",
+          "x": [
+            0,
+            2
+          ],
+          "y": [
+            0,
+            1
+          ],
+          "z": {
+            "plane": [
+              1,
+              2,
+              10
+            ]
+          },
+          "samples": 3
+        },
+        "xTitle": "x",
+        "yTitle": "y"
+      },
+      "slice": {
+        "axis": "y",
+        "value": 1
+      },
+      "expect": [
+        {
+          "at": "series.0.points",
+          "map": "y",
+          "is": [
+            11,
+            13,
+            15
+          ]
+        },
+        {
+          "at": "series.0.interpolated",
+          "is": true
+        },
+        {
+          "at": "series.0.segments.0.method",
+          "is": "plane"
+        },
+        {
+          "at": "series.0.name",
+          "is": "Value at 1"
+        },
+        {
+          "at": "axis.labels",
+          "is": [
+            "0",
+            "1",
+            "2"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ADR-0312: a slice along an axis placed by value is a chart of numbers on that axis' scale",
+      "surface": {
+        "x": {
+          "title": "Strike",
+          "values": [
+            1,
+            2,
+            4
+          ],
+          "scale": "logarithmic"
+        },
+        "y": {
+          "title": "Tenor",
+          "values": [
+            "1M",
+            "1Y"
+          ]
+        },
+        "z": [
+          [
+            1,
+            2,
+            3
+          ],
+          [
+            2,
+            3,
+            4
+          ]
+        ],
+        "zTitle": "P&L"
+      },
+      "slice": {
+        "axis": "y",
+        "value": "1M"
+      },
+      "expect": [
+        {
+          "at": "axis.values",
+          "is": "numbers"
+        },
+        {
+          "at": "axis.scale",
+          "is": "logarithmic"
+        },
+        {
+          "at": "series.0.points",
+          "map": "x",
+          "is": [
+            1,
+            2,
+            4
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ADR-0311: a Consumer's mesh is its own nodes and triangles",
+      "surface": "square",
+      "expect": [
+        {
+          "at": "isMesh",
+          "is": true
+        },
+        {
+          "at": "nodeCount",
+          "is": 4
+        },
+        {
+          "at": "triangles",
+          "count": true,
+          "is": 2
+        },
+        {
+          "at": "x.values",
+          "is": [
+            0,
+            1
+          ]
+        },
+        {
+          "at": "x.scale",
+          "is": "proportional"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0311: a triangle naming a node the mesh does not hold is refused",
+      "surface": {
+        "nodes": [
+          [
+            0,
+            0,
+            0
+          ],
+          [
+            1,
+            0,
+            1
+          ],
+          [
+            0,
+            1,
+            1
+          ],
+          [
+            1,
+            1,
+            2
+          ]
+        ],
+        "triangles": [
+          [
+            0,
+            1,
+            4
+          ]
+        ],
+        "xTitle": "x",
+        "yTitle": "y"
+      },
+      "throws": "chartRefused",
+      "saying": "names a node the mesh does not hold"
+    },
+    {
+      "name": "ADR-0311: a triangle with no area is refused",
+      "surface": {
+        "nodes": [
+          [
+            0,
+            0,
+            1
+          ],
+          [
+            1,
+            1,
+            1
+          ],
+          [
+            2,
+            2,
+            1
+          ]
+        ],
+        "triangles": [
+          [
+            0,
+            1,
+            2
+          ]
+        ],
+        "xTitle": "x",
+        "yTitle": "y"
+      },
+      "throws": "chartRefused",
+      "saying": "has no area"
+    },
+    {
+      "name": "ADR-0311: two nodes at one place are refused",
+      "surface": {
+        "nodes": [
+          [
+            0,
+            0,
+            0
+          ],
+          [
+            1,
+            0,
+            1
+          ],
+          [
+            0,
+            1,
+            1
+          ],
+          [
+            1,
+            1,
+            2
+          ],
+          [
+            1,
+            1,
+            3
+          ]
+        ],
+        "triangles": [
+          [
+            0,
+            1,
+            3
+          ],
+          [
+            0,
+            3,
+            2
+          ]
+        ],
+        "xTitle": "x",
+        "yTitle": "y"
+      },
+      "throws": "chartRefused",
+      "saying": [
+        "Nodes 3 and 4",
+        "a place in the plane holds one value"
+      ]
+    },
+    {
+      "name": "ADR-0311: a mesh needs a triangle",
+      "surface": {
+        "nodes": [
+          [
+            0,
+            0,
+            0
+          ],
+          [
+            1,
+            0,
+            1
+          ],
+          [
+            0,
+            1,
+            1
+          ],
+          [
+            1,
+            1,
+            2
+          ]
+        ],
+        "triangles": [],
+        "xTitle": "x",
+        "yTitle": "y"
+      },
+      "throws": "chartRefused",
+      "saying": "needs a triangle"
+    },
+    {
+      "name": "ADR-0311: a mesh's axes are never categories",
+      "surface": {
+        "nodes": [
+          [
+            0,
+            0,
+            0
+          ],
+          [
+            1,
+            0,
+            1
+          ],
+          [
+            0,
+            1,
+            1
+          ],
+          [
+            1,
+            1,
+            2
+          ]
+        ],
+        "triangles": [
+          [
+            0,
+            1,
+            3
+          ],
+          [
+            0,
+            3,
+            2
+          ]
+        ],
+        "xTitle": "x",
+        "yTitle": "y",
+        "xScale": "categories"
+      },
+      "throws": "chartRefused",
+      "saying": "never categories"
+    },
+    {
+      "name": "ADR-0311: a mesh on a logarithmic axis refuses a node at or below zero",
+      "surface": {
+        "nodes": [
+          [
+            0,
+            0,
+            0
+          ],
+          [
+            1,
+            0,
+            1
+          ],
+          [
+            0,
+            1,
+            1
+          ],
+          [
+            1,
+            1,
+            2
+          ]
+        ],
+        "triangles": [
+          [
+            0,
+            1,
+            3
+          ],
+          [
+            0,
+            3,
+            2
+          ]
+        ],
+        "xTitle": "x",
+        "yTitle": "y",
+        "xScale": "logarithmic"
+      },
+      "throws": "chartRefused",
+      "saying": "at or below zero"
+    },
+    {
+      "name": "ADR-0311: a node at no place in the plane is refused",
+      "surface": {
+        "nodes": [
+          [
+            0,
+            0,
+            0
+          ],
+          [
+            "NaN",
+            0,
+            1
+          ],
+          [
+            0,
+            1,
+            1
+          ]
+        ],
+        "triangles": [
+          [
+            0,
+            1,
+            2
+          ]
+        ],
+        "xTitle": "x",
+        "yTitle": "y"
+      },
+      "throws": "chartRefused",
+      "saying": "(NaN, 0)"
+    },
+    {
+      "name": "ADR-0311, ADR-0257: a slice cuts the triangles exactly, linear on each, and says it reads between nodes on them",
+      "surface": "square",
+      "slice": {
+        "axis": "x",
+        "value": 0.25
+      },
+      "expect": [
+        {
+          "at": "series.0.points",
+          "map": "x",
+          "is": [
+            0,
+            0.25,
+            1
+          ]
+        },
+        {
+          "at": "series.0.points",
+          "each": [
+            {
+              "at": "y",
+              "near": 1e-12,
+              "atLeast": {
+                "at": "x",
+                "plus": 0.25
+              },
+              "atMost": {
+                "at": "x",
+                "plus": 0.25
+              }
+            }
+          ]
+        },
+        {
+          "at": "series.0.interpolated",
+          "is": true
+        },
+        {
+          "at": "series.0.segments.0.method",
+          "is": "linear on the Consumer's triangles (P1)"
+        },
+        {
+          "at": "series.0.name",
+          "is": "u at 0.25"
+        },
+        {
+          "at": "axis.values",
+          "is": "numbers"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0311: a slice's line on the surface lies at the slice's value",
+      "surface": "square",
+      "slicePath": {
+        "axis": "x",
+        "value": 0.25
+      },
+      "expect": [
+        {
+          "at": "",
+          "count": true,
+          "is": 1
+        },
+        {
+          "at": "0",
+          "each": [
+            {
+              "at": "x",
+              "near": 1e-12,
+              "is": 0.25
+            }
+          ]
+        },
+        {
+          "at": "0",
+          "map": "y",
+          "is": [
+            0,
+            0.25,
+            1
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ADR-0311: a slice past the mesh's nodes, or not a number, is no slice",
+      "build": {
+        "past": {
+          "surface": "square",
+          "slice": {
+            "axis": "x",
+            "value": 1.5
+          }
+        },
+        "text": {
+          "surface": "square",
+          "slice": {
+            "axis": "x",
+            "value": "a"
+          }
+        },
+        "path": {
+          "surface": "square",
+          "slicePath": {
+            "axis": "x",
+            "value": 1.5
+          }
+        }
+      },
+      "expect": [
+        {
+          "at": "past",
+          "is": null
+        },
+        {
+          "at": "text",
+          "is": null
+        },
+        {
+          "at": "path",
+          "is": []
+        }
+      ]
+    },
+    {
+      "name": "ADR-0311: where the cut passes no triangle the slice has a gap, and its line on the surface breaks",
+      "build": {
+        "chart": {
+          "surface": {
+            "nodes": [
+              [
+                0,
+                0,
+                0
+              ],
+              [
+                1,
+                0,
+                0
+              ],
+              [
+                0,
+                1,
+                1
+              ],
+              [
+                1,
+                1,
+                1
+              ],
+              [
+                0,
+                2,
+                2
+              ],
+              [
+                1,
+                2,
+                2
+              ],
+              [
+                0,
+                3,
+                3
+              ],
+              [
+                1,
+                3,
+                3
+              ]
+            ],
+            "triangles": [
+              [
+                0,
+                1,
+                3
+              ],
+              [
+                0,
+                3,
+                2
+              ],
+              [
+                4,
+                5,
+                7
+              ],
+              [
+                4,
+                7,
+                6
+              ]
+            ],
+            "xTitle": "x",
+            "yTitle": "y"
+          },
+          "slice": {
+            "axis": "x",
+            "value": 0.5
+          }
+        },
+        "path": {
+          "surface": {
+            "nodes": [
+              [
+                0,
+                0,
+                0
+              ],
+              [
+                1,
+                0,
+                0
+              ],
+              [
+                0,
+                1,
+                1
+              ],
+              [
+                1,
+                1,
+                1
+              ],
+              [
+                0,
+                2,
+                2
+              ],
+              [
+                1,
+                2,
+                2
+              ],
+              [
+                0,
+                3,
+                3
+              ],
+              [
+                1,
+                3,
+                3
+              ]
+            ],
+            "triangles": [
+              [
+                0,
+                1,
+                3
+              ],
+              [
+                0,
+                3,
+                2
+              ],
+              [
+                4,
+                5,
+                7
+              ],
+              [
+                4,
+                7,
+                6
+              ]
+            ],
+            "xTitle": "x",
+            "yTitle": "y"
+          },
+          "slicePath": {
+            "axis": "x",
+            "value": 0.5
+          }
+        }
+      },
+      "expect": [
+        {
+          "at": "chart.series.0.points",
+          "where": {
+            "y": null
+          },
+          "count": true,
+          "is": 1
+        },
+        {
+          "at": "chart.series.0.points",
+          "map": "x",
+          "is": [
+            0,
+            0.5,
+            1,
+            1.5,
+            2,
+            2.5,
+            3
+          ]
+        },
+        {
+          "at": "chart.series.0.points.3.y",
+          "is": null
+        },
+        {
+          "at": "path",
+          "count": true,
+          "is": 2
+        }
+      ]
+    },
+    {
+      "name": "ADR-0311: a slice along a grid's line breaks at a hole",
+      "surface": "volHole",
+      "slicePath": {
+        "axis": "y",
+        "value": "3M"
+      },
+      "expect": [
+        {
+          "at": "",
+          "map": "length",
+          "is": [
+            1,
+            2
+          ]
+        },
+        {
+          "at": "0.0",
+          "is": {
+            "x": 0,
+            "y": 0.5,
+            "z": 10.9
+          }
+        }
+      ]
+    }
+  ]
+}

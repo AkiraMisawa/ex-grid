@@ -1,0 +1,214 @@
+{
+  "about": "The invariant number formats the layout writes its labels and Notes in, as .NET writes them (ADR-0370): 0.#### for a tick, R for a value, G3 and N0. Each case formats a number in C# and through the Script Core's writer of that format.",
+  "kind": "chart",
+  "cases": [
+    {
+      "name": "ADR-0370: a number with fewer places keeps its own (0.####)",
+      "format": {
+        "format": "0.####",
+        "value": 0.5
+      },
+      "expect": [
+        {
+          "at": "",
+          "is": "0.5"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0370: a number with more places is rounded (0.####)",
+      "format": {
+        "format": "0.####",
+        "value": 1.23456789
+      },
+      "expect": [
+        {
+          "at": "",
+          "is": "1.2346"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0370: a number below the last place is zero (0.####)",
+      "format": {
+        "format": "0.####",
+        "value": 2e-05
+      },
+      "expect": [
+        {
+          "at": "",
+          "is": "0"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0370: a negative number below the last place is written -0, as .NET writes it (0.####)",
+      "format": {
+        "format": "0.####",
+        "value": -2e-05
+      },
+      "expect": [
+        {
+          "at": "",
+          "is": "-0"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0370: the sum 0.1 + 0.2 is 0.3 (0.####)",
+      "format": {
+        "format": "0.####",
+        "value": 0.30000000000000004
+      },
+      "expect": [
+        {
+          "at": "",
+          "is": "0.3"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0370: the fifteen digits are rounded before the places, so 1.005 is 1.01 (0.##)",
+      "format": {
+        "format": "0.##",
+        "value": 1.005
+      },
+      "expect": [
+        {
+          "at": "",
+          "is": "1.01"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0370: a tie at the places goes away from zero (0.##)",
+      "format": {
+        "format": "0.##",
+        "value": 0.125
+      },
+      "expect": [
+        {
+          "at": "",
+          "is": "0.13"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0370: a large number is written in scientific notation (R)",
+      "format": {
+        "format": "R",
+        "value": 1e+21
+      },
+      "expect": [
+        {
+          "at": "",
+          "is": "1E+21"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0370: a small number is written in scientific notation, with two exponent digits (R)",
+      "format": {
+        "format": "R",
+        "value": 1e-05
+      },
+      "expect": [
+        {
+          "at": "",
+          "is": "1E-05"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0370: a number of four places is written out (R)",
+      "format": {
+        "format": "R",
+        "value": 0.0001
+      },
+      "expect": [
+        {
+          "at": "",
+          "is": "0.0001"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0370: the shortest digits that read back (R)",
+      "format": {
+        "format": "R",
+        "value": 123456789012345680
+      },
+      "expect": [
+        {
+          "at": "",
+          "is": "1.2345678901234568E+17"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0370: a number that is no number is written by its invariant name (R)",
+      "format": {
+        "format": "R",
+        "value": "NaN"
+      },
+      "expect": [
+        {
+          "at": "",
+          "is": "NaN"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0370: an infinity is written by its invariant name (R)",
+      "format": {
+        "format": "R",
+        "value": "-Infinity"
+      },
+      "expect": [
+        {
+          "at": "",
+          "is": "-Infinity"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0370: three significant digits, in scientific notation past them (G3)",
+      "format": {
+        "format": "G3",
+        "value": 1234.5
+      },
+      "expect": [
+        {
+          "at": "",
+          "is": "1.23E+03"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0370: three significant digits of a small number (G3)",
+      "format": {
+        "format": "G3",
+        "value": 0.00012345
+      },
+      "expect": [
+        {
+          "at": "",
+          "is": "0.000123"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0370: a count is grouped in thousands (N0)",
+      "format": {
+        "format": "N0",
+        "value": 2450
+      },
+      "expect": [
+        {
+          "at": "",
+          "is": "2,450"
+        }
+      ]
+    }
+  ]
+}

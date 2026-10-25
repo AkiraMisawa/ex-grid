@@ -1,5 +1,10 @@
 # Reports share unchanged computation, and display rows own no Report
 
+*(2026-10-25: [ADR-0370](./0370-the-whole-family-moves-to-typescript-and-blazor-only-adapts-it.md) section 3 ends ADR-0151's server report Windows at its step 3, when a server
+answers Leaf Aggregates again. What this ADR says of a remote report, its Window Changes, recovery and
+server-registered Order Keys, ends with them; what it says of a report in the browser holds for the
+TypeScript engine.)*
+
 *(Decided with the user, 2026-10-06, continuation Q8 and Q9: both recommendations accepted.
 This completed the Codex track's design with ADR-0151 and ADR-0152, and ExPivot's vouch for its
 report — that track's ADR-0150, which is ADR-0141's section of 2026-10-07 on `claude/live-data-best`.

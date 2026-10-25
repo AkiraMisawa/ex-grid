@@ -42,6 +42,9 @@ export interface CellPosition {
 export type ColumnType = 'text' | 'number' | 'date' | 'boolean';
 
 // @public
+export type CopyRefusalReason = 'emptySelection' | 'misalignedShape' | 'tooLarge' | 'rowsUnavailable' | 'clipboardUnavailable' | 'refusedByConsumer';
+
+// @public
 export function createGrid<Row>(element: HTMLElement, options: GridOptions<Row>): GridHandle<Row>;
 
 // @public
@@ -192,10 +195,21 @@ export interface GridHandle<Row> {
 }
 
 // @public
+export interface GridHeaderGroup {
+    readonly columns: readonly string[];
+    readonly label: string;
+    readonly tier?: number;
+    readonly tierSpan?: number;
+}
+
+// @public
 export interface GridOptions<Row> {
     readonly columns: readonly GridColumn<Row>[];
+    readonly copyCellCap?: number;
     readonly density?: GridDensity;
+    readonly headerGroups?: readonly GridHeaderGroup[];
     readonly headerHeight?: number;
+    readonly onRefused?: (refusal: GridRefusal) => void;
     readonly onSelectionChanged?: (selection: GridSelection) => void;
     readonly pinnedColumnCount?: number;
     readonly rowHeight?: number;
@@ -220,6 +234,14 @@ export interface GridQuery {
     readonly range: RowRange;
     readonly sorts: readonly SortSpec[];
 }
+
+// @public
+export type GridRefusal =
+/** A copy that wrote nothing: the reason names the rule it hit (ADR-0005, ADR-0011). */
+    {
+    readonly kind: 'copy';
+    readonly reason: CopyRefusalReason;
+};
 
 // @public
 export interface GridReplaceAnswer<Row> {

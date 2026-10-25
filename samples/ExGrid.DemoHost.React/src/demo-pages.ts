@@ -15,7 +15,15 @@ export const demoPages: readonly DemoPage[] = Object.freeze([
         description: '100,000 rows the grid never holds: Range Requests, Placeholders and a Consumer that answers late (ADR-0001, ADR-0004).',
     },
     {
+        route: 'fetch', title: 'Fetching source', group: 'Rows and data',
+        description: 'GridSource.fetch over a slow server: only the range you land on is painted, stale answers are discarded (ADR-0025).',
+    },
+    {
         route: 'wide', title: 'Wide', group: 'Rows and data',
         description: 'Rows and 100 columns virtualised on both axes, with pinned columns; compare with horizontal virtualisation off (ADR-0004).',
+    },
+    {
+        route: 'features', title: 'Features', group: 'Interaction',
+        description: 'Sorting, the Selection, copying and Header Groups on one page; editing, paste and filtering, with the status lines that report them, join as the Script Core comes to them.',
     },
 ]);

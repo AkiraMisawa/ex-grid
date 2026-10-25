@@ -1,0 +1,606 @@
+{
+  "about": "An Observation's colour and size read from a column, and their keys beside the plot (ADR-0320), from tests/ExChart.Engine.Tests/PointScaleTests.cs.",
+  "kind": "chart",
+  "cases": [
+    {
+      "name": "ADR-0320: a point's colour is read from a column, in nine bands from its lowest value to its highest",
+      "definition": {
+        "axis": {
+          "values": "numbers",
+          "title": "Leverage"
+        },
+        "series": [
+          {
+            "id": "n",
+            "name": "Names",
+            "kind": "observation",
+            "points": [
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                2
+              ],
+              [
+                3,
+                3
+              ]
+            ],
+            "colourBy": {
+              "title": "Value",
+              "values": [
+                0,
+                50,
+                100
+              ]
+            }
+          }
+        ]
+      },
+      "scene": {
+        "metrics": {
+          "width": 600,
+          "height": 400
+        }
+      },
+      "expect": [
+        {
+          "at": "panels.0.series.0.markers",
+          "sortBy": "point",
+          "map": "band",
+          "is": [
+            0,
+            4,
+            8
+          ]
+        },
+        {
+          "at": "colourKeys",
+          "count": true,
+          "is": 1
+        },
+        {
+          "at": "colourKeys.0.title",
+          "is": "Value"
+        },
+        {
+          "at": "colourKeys.0.diverging",
+          "is": false
+        },
+        {
+          "at": "colourKeys.0.from",
+          "is": 0
+        },
+        {
+          "at": "colourKeys.0.to",
+          "is": 100
+        },
+        {
+          "at": "colourKeys.0.bands",
+          "is": 9
+        },
+        {
+          "at": "colourKeys.0.ticks",
+          "empty": false
+        }
+      ]
+    },
+    {
+      "name": "ADR-0310 carried to points: diverging bands are alike on both sides of the centre, which is neutral",
+      "definition": {
+        "axis": {
+          "values": "numbers",
+          "title": "Leverage"
+        },
+        "series": [
+          {
+            "id": "n",
+            "name": "Names",
+            "kind": "observation",
+            "points": [
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                2
+              ],
+              [
+                3,
+                3
+              ],
+              [
+                4,
+                4
+              ]
+            ],
+            "colourBy": {
+              "title": "P&L",
+              "values": [
+                -1,
+                0,
+                1,
+                10
+              ],
+              "centre": 0
+            }
+          }
+        ]
+      },
+      "scene": {
+        "metrics": {
+          "width": 600,
+          "height": 400
+        }
+      },
+      "expect": [
+        {
+          "at": "panels.0.series.0.markers",
+          "sortBy": "point",
+          "map": "band",
+          "is": [
+            4,
+            4,
+            4,
+            8
+          ]
+        },
+        {
+          "at": "colourKeys.0.diverging",
+          "is": true
+        },
+        {
+          "at": "colourKeys.0.from",
+          "is": -10
+        },
+        {
+          "at": "colourKeys.0.to",
+          "is": 10
+        },
+        {
+          "at": "colourKeys.0.ticks",
+          "has": {
+            "value": 0
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0320: a size is read from a column, and the marker's area is in proportion to the value",
+      "definition": {
+        "axis": {
+          "values": "numbers",
+          "title": "Leverage"
+        },
+        "series": [
+          {
+            "id": "n",
+            "name": "Names",
+            "kind": "observation",
+            "points": [
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                2
+              ]
+            ],
+            "sizeBy": {
+              "title": "Notional",
+              "values": [
+                1,
+                4
+              ]
+            }
+          }
+        ]
+      },
+      "scene": {
+        "metrics": {
+          "width": 600,
+          "height": 400
+        }
+      },
+      "expect": [
+        {
+          "at": "panels.0.series.0.markers",
+          "sortBy": "point",
+          "map": "radius",
+          "near": 1e-09,
+          "is": [
+            4.2,
+            8.4
+          ]
+        },
+        {
+          "at": "sizeKeys",
+          "count": true,
+          "is": 1
+        },
+        {
+          "at": "sizeKeys.0.title",
+          "is": "Notional"
+        },
+        {
+          "at": "sizeKeys.0.entries",
+          "each": [
+            {
+              "at": "radius",
+              "above": 0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ADR-0320: a size's key is always drawn, even when no value is above zero",
+      "definition": {
+        "axis": {
+          "values": "numbers",
+          "title": "Leverage"
+        },
+        "series": [
+          {
+            "id": "n",
+            "name": "Names",
+            "kind": "observation",
+            "points": [
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                2
+              ]
+            ],
+            "sizeBy": {
+              "title": "Notional",
+              "values": [
+                0,
+                0
+              ]
+            }
+          }
+        ]
+      },
+      "scene": {
+        "metrics": {
+          "width": 600,
+          "height": 400
+        }
+      },
+      "expect": [
+        {
+          "at": "sizeKeys",
+          "count": true,
+          "is": 1
+        },
+        {
+          "at": "sizeKeys.0.entries",
+          "map": "label",
+          "is": [
+            "0"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ADR-0320: the keys take a column at the plot's right, clear of the largest marker at the plot's edge",
+      "build": {
+        "plain": {
+          "definition": {
+            "axis": {
+              "values": "numbers",
+              "title": "Leverage"
+            },
+            "series": [
+              {
+                "id": "n",
+                "name": "Names",
+                "kind": "observation",
+                "points": [
+                  [
+                    1,
+                    1
+                  ],
+                  [
+                    2,
+                    2
+                  ]
+                ]
+              }
+            ]
+          },
+          "scene": {
+            "metrics": {
+              "width": 600,
+              "height": 400
+            }
+          }
+        },
+        "keyed": {
+          "definition": {
+            "axis": {
+              "values": "numbers",
+              "title": "Leverage"
+            },
+            "series": [
+              {
+                "id": "n",
+                "name": "Names",
+                "kind": "observation",
+                "points": [
+                  [
+                    1,
+                    1
+                  ],
+                  [
+                    2,
+                    2
+                  ]
+                ],
+                "colourBy": {
+                  "title": "Value",
+                  "values": [
+                    1,
+                    2
+                  ]
+                },
+                "sizeBy": {
+                  "title": "N",
+                  "values": [
+                    1,
+                    2
+                  ]
+                }
+              }
+            ]
+          },
+          "scene": {
+            "metrics": {
+              "width": 600,
+              "height": 400
+            }
+          }
+        }
+      },
+      "expect": [
+        {
+          "at": "keyed.panels.0.plot.width",
+          "below": {
+            "at": "plain.panels.0.plot.width"
+          }
+        },
+        {
+          "at": "keyed.panels.0.series.0.markers",
+          "sortBy": "x",
+          "then": [
+            {
+              "at": "-1.x",
+              "below": {
+                "at": "$.keyed.colourKeys.0.box.x",
+                "plus": {
+                  "at": "-1.radius",
+                  "times": -1
+                }
+              }
+            },
+            {
+              "at": "-1.x",
+              "below": {
+                "at": "$.keyed.sizeKeys.0.box.x",
+                "plus": {
+                  "at": "-1.radius",
+                  "times": -1
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "spine rule 1: a point with no colour value is drawn as an outline, and the Notes say how many",
+      "definition": {
+        "axis": {
+          "values": "numbers",
+          "title": "Leverage"
+        },
+        "series": [
+          {
+            "id": "n",
+            "name": "Names",
+            "kind": "observation",
+            "points": [
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                2
+              ]
+            ],
+            "colourBy": {
+              "title": "Value",
+              "values": [
+                1,
+                null
+              ]
+            }
+          }
+        ]
+      },
+      "scene": {
+        "metrics": {
+          "width": 600,
+          "height": 400
+        }
+      },
+      "expect": [
+        {
+          "at": "panels.0.series.0.markers.[point=1].band",
+          "is": null
+        },
+        {
+          "at": "panels.0.series.0.markers.[point=1].filled",
+          "is": false
+        },
+        {
+          "at": "notes",
+          "has": "Names: 1 point has no Value, drawn as an outline."
+        }
+      ]
+    },
+    {
+      "name": "ADR-0290: marks merge only where they look alike, so no colour is lost to a merge",
+      "definition": {
+        "axis": {
+          "values": "numbers",
+          "title": "Leverage"
+        },
+        "series": [
+          {
+            "id": "n",
+            "name": "Names",
+            "kind": "observation",
+            "points": [
+              [
+                1,
+                1
+              ],
+              [
+                1,
+                1
+              ]
+            ],
+            "colourBy": {
+              "title": "Value",
+              "values": [
+                0,
+                100
+              ]
+            }
+          }
+        ]
+      },
+      "scene": {
+        "metrics": {
+          "width": 600,
+          "height": 400
+        }
+      },
+      "expect": [
+        {
+          "at": "panels.0.series.0.markers",
+          "count": true,
+          "is": 2
+        }
+      ]
+    },
+    {
+      "name": "ADR-0320: only marks drawn one a row take a colour or a size",
+      "definition": {
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "l",
+            "name": "Line",
+            "kind": "level",
+            "points": [
+              [
+                1,
+                1
+              ]
+            ],
+            "colourBy": {
+              "title": "V",
+              "values": [
+                1
+              ]
+            }
+          }
+        ]
+      },
+      "throws": "chartRefused",
+      "saying": [
+        "'Line'",
+        "observation"
+      ]
+    },
+    {
+      "name": "ADR-0320: a colour column has one value a point",
+      "definition": {
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "n",
+            "name": "Names",
+            "kind": "observation",
+            "points": [
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                2
+              ]
+            ],
+            "colourBy": {
+              "title": "V",
+              "values": [
+                1
+              ]
+            }
+          }
+        ]
+      },
+      "throws": "chartRefused"
+    },
+    {
+      "name": "ADR-0320: a size is never negative",
+      "definition": {
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "n",
+            "name": "Names",
+            "kind": "observation",
+            "points": [
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                2
+              ]
+            ],
+            "sizeBy": {
+              "title": "N",
+              "values": [
+                1,
+                -2
+              ]
+            }
+          }
+        ]
+      },
+      "throws": "chartRefused",
+      "saying": "negative"
+    }
+  ]
+}
