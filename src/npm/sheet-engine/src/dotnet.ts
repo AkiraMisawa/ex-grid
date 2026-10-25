@@ -298,12 +298,12 @@ export function formatExponential(x: number, digits: number): string {
     return `${sign}${d.charAt(0)}${digits > 0 ? `.${d.slice(1)}` : ''}${exponentText(exponent, 3)}`;
 }
 
-/** .NET's general form of a number's digits: plain where the exponent is −5 to `precision` − 1, scientific otherwise, trailing zeros dropped. */
+/** .NET's general form of a number's digits: plain where the exponent is −4 to `precision` − 1, scientific otherwise, trailing zeros dropped. */
 function general(negative: boolean, digits: string, exponent: number, precision: number, decimalSeparator: string, negativeSign: string): string {
     const trimmed = digits.replace(/0+$/, '');
     const kept = trimmed === '' ? '0' : trimmed;
     const sign = negative ? negativeSign : '';
-    if (exponent >= precision || exponent < -5) {
+    if (exponent >= precision || exponent < -4) {
         const mantissa = kept.length > 1 ? `${kept.charAt(0)}${decimalSeparator}${kept.slice(1)}` : kept;
         return `${sign}${mantissa}${exponentText(exponent, 2)}`;
     }
