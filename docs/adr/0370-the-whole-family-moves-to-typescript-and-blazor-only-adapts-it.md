@@ -357,7 +357,11 @@ report values, decimal cents included):
 | Downloaded | 4.01 MB | 2.74 MB | 5.67 MB | 58 KB | 58 KB |
 | First Sheet cell | 5.0 s | 5.0 s | 2.0 s | 0.19 s | 0.19 s |
 
-The spike computes Values only, so its time is a floor, not the cost of a port. That record is the line
+The spike computes Values only, so its time is a floor, not the cost of a port. A port carries the full engine's
+bookkeeping, so the better guide to its time is the C# engine under the .NET JIT (162 ms for the same
+edit, PR #283's record): from it a port is estimated at three to six times faster than .NET WebAssembly
+on recalculation and one to four times on the pivot, with the start time and the download the gains
+that are sure. That is an estimate, not a measurement, and the user chose the move on it (2026-10-25). That record is the line
 the TypeScript engines are held to. Before a product's step 1 is called done, render-bench runs its
 engine in the same scenarios, on the same machine as a fresh C# run: the time to the screen, the bytes
 downloaded, the time to the first answer, and the time on the page's thread, which settles section 4's
