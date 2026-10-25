@@ -559,7 +559,7 @@
       ]
     },
     {
-      "name": "ADR-0153: a parent Item's new spelling reaches its child's path, and the child's labels stay as they were",
+      "name": "ADR-0153: a parent Item's new spelling reaches its child's path and key, and the child's labels stay as they were",
       "data": {
         "snapshot": {
           "recordKey": "Id",
@@ -582,7 +582,7 @@
           "also": ["paths"]
         },
         {"apply": {"changed": [[1, "PARENT", "child", {"decimal": "1"}]]}},
-        {"window": [0, 10], "also": ["paths"]}
+        {"window": [0, 10], "also": ["paths", "keys"]}
       ],
       "expect": [
         {
@@ -612,6 +612,11 @@
             ["Label={\"kind\":\"text\",\"value\":\"PARENT\"}"],
             ["Label={\"kind\":\"text\",\"value\":\"PARENT\"}", "Child={\"kind\":\"text\",\"value\":\"child\"}"],
             []
+          ],
+          "keys": [
+            {"role": "group", "valueField": -1, "items": [{"kind": "text", "value": "PARENT"}]},
+            {"role": "item", "valueField": -1, "items": [{"kind": "text", "value": "PARENT"}, {"kind": "text", "value": "child"}]},
+            {"role": "grandTotal", "valueField": -1, "items": []}
           ]
         }
       ]
