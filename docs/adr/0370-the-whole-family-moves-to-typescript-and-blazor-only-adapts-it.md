@@ -55,8 +55,7 @@ which has no Excel JSON of its own, are xUnit code.
 The render-bench baseline of 2026-10-25 (`spikes/render-bench/results/20261025-core/`) put an ExSheet
 edit that recalculates 20,000 cells at 130 ms on Blazor Server and 3.3 s on Blazor WebAssembly. About
 three quarters of the 3.3 s was the baseline serving a build configured for debugging; a published
-client takes about 1.1 s, as the engine measurement begun the same day reports (section 7); its
-record lands under `spikes/render-bench/results/` with that measurement's pull request.
+client takes about 1.0 s (section 7's record).
 
 ## Options considered
 
@@ -231,9 +230,11 @@ Snapshot as Arrow), so the engine and its caller do not change with the host. A 
 Engine Host: it answers an engine's questions about server data (a pivot's Leaf Aggregates, section
 3) and lays out nothing.
 
-- **The page's thread or a Worker, by measurement.** An engine runs on the page's thread where the
-  measured scenarios of section 7 fit within a frame there; otherwise it runs in a Worker, so the grid
-  keeps its frame while the engine works. Section 7's record says which, for each engine.
+- **The page's thread or a Worker, by measurement.** The protocol is asynchronous and versioned on
+  both, so moving an engine between them changes no caller (the record's pages did not change when
+  its engine moved). An engine runs on the page's thread unless its port's record measures an
+  operation past a frame there; then it runs in a Worker, so the grid keeps its frame while the engine
+  works.
 - **An answer carries what it was asked against.** Each request names the version of the document or
   the Snapshot it was taken on, and the answer names it back. Nothing waits on a clock.
 - **Writes are never refused for being late, and reads coalesce.** An edit, a Change Batch or a field
@@ -291,16 +292,26 @@ product reaches React developers as a prerelease when its step 1 holds.
 
 ### 7. Each engine is measured beside the C# record
 
-The engine measurement begun on 2026-10-25, whose record lands under `spikes/render-bench/results/`
-before any product's step 1 is called done, records the C# engines on Blazor Server, on a published Blazor
-WebAssembly client, and as .NET WebAssembly in a Worker on the interpreter and compiled ahead of time,
-with a TypeScript spike of the same `/core/sheet` and `/core/pivot` scenarios beside them. That record is
-the line the TypeScript engines are held to. Before a product's step 1 is called done, render-bench runs
-its engine in the same scenarios, on the same machine as a fresh C# run: the time to the screen, the
-bytes downloaded, the time to the first answer, and the time on the page's thread, which settles
-section 4's Worker rule. A scenario where TypeScript is slower than the C# record is said in the record
-and the Change Notes, and fixed or accepted with the user (ADR-0350 section 15). Performance still never
-gates CI.
+The Engine Host record of 2026-10-25 (`spikes/engine-host/results/20261025-engine-host/`, one container,
+one run) measured the C# engines and a TypeScript spike of only what `/core/sheet` and `/core/pivot`
+exercise, answering the same Values as the C# engine (no mismatch over 1.0 million cells and 260,000
+report values, decimal cents included):
+
+| | Published Blazor WebAssembly | .NET in a Worker, interpreted | .NET in a Worker, AOT | TypeScript in a Worker | TypeScript on the page |
+|---|---:|---:|---:|---:|---:|
+| Edit A1, 20,000 recalculated | 1,018 ms | 1,045 ms | 556 ms | 11 ms | 15 ms |
+| Pivot columns swapped | 140 ms | 120 ms | 37 ms | 16 ms | 18 ms |
+| Downloaded | 4.01 MB | 2.74 MB | 5.67 MB | 58 KB | 58 KB |
+| First Sheet cell | 5.0 s | 5.0 s | 2.0 s | 0.19 s | 0.19 s |
+
+The spike computes Values only, so its time is a floor, not the cost of a port. That record is the line
+the TypeScript engines are held to. Before a product's step 1 is called done, render-bench runs its
+engine in the same scenarios, on the same machine as a fresh C# run: the time to the screen, the bytes
+downloaded, the time to the first answer, and the time on the page's thread, which settles section 4's
+Worker rule. On the page's thread the spike blocked for 8 ms on the edit and 14 ms on the swap, inside a
+frame; a port at ten times that cost would not be, so the rule is the record's per engine, not assumed.
+A scenario where TypeScript is slower than the C# record is said in the record and the Change Notes, and
+fixed or accepted with the user (ADR-0350 section 15). Performance still never gates CI.
 
 ### 8. The Docs Site shows every product under both frameworks
 
@@ -363,7 +374,7 @@ typed into a sheet, and ExSheet's formats. C# reads `CultureInfo`; TypeScript ha
 - 0.3.0 grows by ~26,500 lines of UI, ~5,900 of chart layout and ~53,800 of engine and data to move, three MUI Wrappers written
   new, and the transcription of ~27,000 lines of C# engine tests into shared cases.
 - A React or Blazor application downloads no .NET runtime for the family's engines, and Blazor
-  WebAssembly's 1.1 s published edit is replaced by the TypeScript engine's.
+  WebAssembly's 1.0 s published edit is replaced by the TypeScript engine's.
 - On Blazor Server the engines leave the server for the browser, so a large workbook or Snapshot now
   crosses the circuit once instead of its edits crossing it each time (section 2).
 - A .NET server keeps the packages of section 3 in C#: ExGrid.Data, ExGrid.Data.Arrow, ExPivot.Server,
