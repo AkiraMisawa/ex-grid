@@ -74,6 +74,11 @@ ExSheet, ExPivot, ExChart, ExBoard and the MudBlazor Wrappers stay Blazor produc
 ported, but from 0.3.0 the ExGrid that draws them is Blazor's adapter over the Script Core, so each is
 verified again on it. Whether any of them reaches React is a later decision.
 
+*(2026-10-25: the user decided that every product reaches React.
+[ADR-0351](./0351-every-product-reaches-react-as-exgrid-does-and-asks-its-engine-across-one-boundary.md)
+says how, and replaces this paragraph: each product's UI moves to TypeScript as ExGrid's does, and
+React and Blazor both adapt it.)*
+
 ### 2. The Script Core owns the DOM inside the instance root
 
 The Script Core creates and updates the instance's elements itself. A row is plain markup and the row
@@ -168,6 +173,11 @@ server pivot's API ([ADR-0151](./0151-server-pivots-send-report-windows-and-shar
 or in the browser as .NET WebAssembly. Whether one is later ported to TypeScript or Rust is decided on a
 recorded measurement of the browser case, not before (CLAUDE.md, "Measure before claiming anything about
 performance").
+
+*(2026-10-25: [ADR-0351](./0351-every-product-reaches-react-as-exgrid-does-and-asks-its-engine-across-one-boundary.md)
+section 2 says how a React application reaches these engines, through an Engine Host, and section 6
+what is measured. ExChart.Engine, which this section did not name, moves its layout to TypeScript with
+ExChart's UI, section 3.)*
 
 ### 9. The npm packages are `@ex-grid/core`, `@ex-grid/react` and `@ex-grid/mui`
 

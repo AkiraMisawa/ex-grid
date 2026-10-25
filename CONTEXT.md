@@ -453,22 +453,33 @@ A Consumer's own CSS file doing the same is a minimal Wrapper.
 _Avoid_: theme package, skin, integration (ExGrid.Fluxor integrates a store and wraps nothing)
 
 **Script Core**:
-ExGrid's core written in TypeScript, running in the browser: it holds the instance's state, decides
+A product's core written in TypeScript, running in the browser: it holds the instance's state, decides
 what each input means, and creates the elements inside the instance root itself, under the same DOM
-contract and stylesheet as the C# core it replaces. It depends on no UI framework. From 0.3.0 it is
-ExGrid's only core, under React and Blazor alike
-([ADR-0350](./docs/adr/0350-exgrids-core-moves-to-typescript-and-react-and-blazor-both-take-it.md)).
+contract and stylesheet as the C# code it replaces. It depends on no UI framework. ExGrid's is the one
+every other product's Script Core draws through, as that grid's Consumer. From 0.3.0 each product's is
+its only core, under React and Blazor alike
+([ADR-0350](./docs/adr/0350-exgrids-core-moves-to-typescript-and-react-and-blazor-both-take-it.md),
+[ADR-0351](./docs/adr/0351-every-product-reaches-react-as-exgrid-does-and-asks-its-engine-across-one-boundary.md)).
 _Avoid_: JS grid, client grid, headless core (it owns its DOM)
 
 **Framework Adapter**:
-A package that puts the Script Core into one UI framework's component model: `@ex-grid/react`, and
-from 0.3.0 Blazor's ExGrid itself. It mounts
+A package that puts a Script Core into one UI framework's component model: `@ex-grid/react` and each
+product's React package, and from 0.3.0 Blazor's ExGrid, ExSheet, ExPivot, ExChart and ExBoard
+themselves. It mounts
 the core, hands it props, hands its events to the framework's callbacks, and fills the core's Chrome and
 Template slots with the framework's components. It holds no state of the grid's, draws nothing inside
 the instance root, and decides nothing
 ([ADR-0350](./docs/adr/0350-exgrids-core-moves-to-typescript-and-react-and-blazor-both-take-it.md)).
 Distinct from a Wrapper, which adapts a design system, not a framework.
 _Avoid_: binding, wrapper, port
+
+**Engine Host**:
+Where an engine runs for a Script Core, which asks it by asynchronous messages whose answers are data:
+the Blazor adapter's own .NET side, a Web Worker running the engine as .NET WebAssembly, or a server.
+The engine and the messages are the same in all three, and an answer names the version it was asked
+against
+([ADR-0351](./docs/adr/0351-every-product-reaches-react-as-exgrid-does-and-asks-its-engine-across-one-boundary.md)).
+_Avoid_: backend, engine service, bridge
 
 **Density**:
 A named preset — Comfortable / Standard / Compact / Excel — resolving into a complete Grid
