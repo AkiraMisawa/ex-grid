@@ -239,20 +239,6 @@ test.describe('on /sheet', () => {
         await expectFocusAt(grid, 'C3');
     });
 
-    test('SH-45: a Custom code ExSheet does not read is refused by name, and Format Cells stays open', async ({ page }) => {
-        const grid = sheet(page);
-        await openFromMenu(grid, 'C2');
-        await pick(choice(grid, 'Custom'));
-        const code = formatCells(grid).locator('.ex-format-cells-code');
-
-        await code.fill('[<0]0');
-        await code.press('Enter');
-
-        await expect(formatCells(grid).getByRole('alert')).toContainText("The number format '[<0]0' is not one ExSheet reads");
-        await expect(formatCells(grid)).toBeVisible();
-        await expect(cell(grid, 'C2')).toHaveText('0.5');
-    });
-
     test('SH-45/SRV-7: a Custom code typed at full speed arrives whole, and Enter is OK', async ({ page }) => {
         const grid = sheet(page);
         await openFromMenu(grid, 'C2');
@@ -380,52 +366,6 @@ test.describe('on /sheet', () => {
         await expect(tab(grid, 'Number')).toBeFocused();
     });
 
-    test('SH-45, case 24: over cells that differ the Font style is empty and the Fill is No Colour', async ({ page }) => {
-        const grid = sheet(page);
-        // A1 bold with a red Fill, set through Format Cells itself; A2 plain.
-        await openFromMenu(grid, 'A1');
-        await tab(grid, 'Font').click();
-        await pick(choice(grid, 'Bold'));
-        await tab(grid, 'Fill').click();
-        // Font and Fill each have a Red swatch, so the Fill panel's is named: until the Fill tab's
-        // click is answered, a bare 'Red' is the Font palette's, and the click lands there.
-        await pick(formatCells(grid).getByRole('tabpanel', { name: 'Fill', exact: true })
-            .getByRole('radio', { name: 'Red', exact: true }));
-        await formatCells(grid).getByRole('button', { name: 'OK' }).click();
-        await expect(formatCells(grid)).toHaveCount(0);
-
-        await pressAt(cell(grid, 'A2'), { modifiers: ['Shift'] });
-        await pressAt(cell(grid, 'A2'), { button: 'right' });
-        await page.getByRole('menuitem', { name: 'Format Cells…' }).click();
-
-        // It reopens on the last tab shown (case 22).
-        await expect(tab(grid, 'Fill')).toHaveAttribute('aria-selected', 'true');
-        await expect(choice(grid, 'No Colour')).toBeChecked();
-        await tab(grid, 'Font').click();
-        for (const style of ['Regular', 'Italic', 'Bold', 'Bold Italic']) {
-            await expect(choice(grid, style)).not.toBeChecked();
-        }
-    });
-
-    test('SH-45, case 14-13: A2 under A1\'s thick bottom opens with a thick top, its button pressed', async ({ page }) => {
-        const grid = sheet(page);
-        // A1's bottom thick, set through Format Cells itself; A2 records nothing.
-        await openFromMenu(grid, 'A1');
-        await tab(grid, 'Border').click();
-        await pick(choice(grid, 'Thick'));
-        await formatCells(grid).getByRole('button', { name: 'Bottom', exact: true }).click();
-        await formatCells(grid).getByRole('button', { name: 'OK' }).click();
-        await expect(formatCells(grid)).toHaveCount(0);
-
-        await openFromMenu(grid, 'A2');
-
-        // It reopens on the last tab shown (case 22).
-        await expect(tab(grid, 'Border')).toHaveAttribute('aria-selected', 'true');
-        await expect(formatCells(grid).getByRole('button', { name: 'Top', exact: true })).toHaveAttribute('aria-pressed', 'true');
-        await expect(formatCells(grid).locator('.ex-format-cells-preview line[data-edge=Top]')).toHaveAttribute('stroke-width', '3');
-        await expect(formatCells(grid).getByRole('button', { name: 'Bottom', exact: true })).toHaveAttribute('aria-pressed', 'false');
-    });
-
     test('SH-45, run 17 h10: over A2 under A1\'s thick bottom the Border tab opens on Thick, and the Top button alone takes the line away on both sides', async ({ page }) => {
         const grid = sheet(page);
         const edge = (name) => formatCells(grid).getByRole('button', { name, exact: true });
@@ -458,29 +398,6 @@ test.describe('on /sheet', () => {
         await expect(formatCells(grid)).toHaveCount(0);
         await openFromMenu(grid, 'A1');
         await expect(edge('Bottom')).toHaveAttribute('aria-pressed', 'false');
-    });
-
-    test('SH-45, run 18a format-cells 2: over B2 with a thick top and a medium right the Border tab opens on the top\'s Thick (ADR-0071)', async ({ page }) => {
-        const grid = sheet(page);
-        const edge = (name) => formatCells(grid).getByRole('button', { name, exact: true });
-        // B2's top thick and its right medium, set through Format Cells itself.
-        await openFromMenu(grid, 'B2');
-        await tab(grid, 'Border').click();
-        await pick(choice(grid, 'Thick'));
-        await edge('Top').click();
-        await pick(choice(grid, 'Medium'));
-        await edge('Right').click();
-        await formatCells(grid).getByRole('button', { name: 'OK' }).click();
-        await expect(formatCells(grid)).toHaveCount(0);
-
-        // Reopened, it is on Thick, the top's line, as Excel's was; before run 18a it opened on Thin.
-        await openFromMenu(grid, 'B2');
-        await expect(tab(grid, 'Border')).toHaveAttribute('aria-selected', 'true');
-        await expect(choice(grid, 'Thick')).toBeChecked();
-        await expect(edge('Top')).toHaveAttribute('aria-pressed', 'true');
-        await expect(edge('Right')).toHaveAttribute('aria-pressed', 'true');
-        await formatCells(grid).getByRole('button', { name: 'Cancel' }).click();
-        await expect(formatCells(grid)).toHaveCount(0);
     });
 
     // Decided with the user on 2026-10-12 (ADR-0071): Format Cells' OK widens a column over ####

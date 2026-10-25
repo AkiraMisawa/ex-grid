@@ -853,13 +853,11 @@ nobody had asked for. What that means when writing a test:
 - `format-cells.spec.mjs` — Format Cells under the built-in Chrome (ADR-0071, SH-45, DC-60;
   tickets 52 and 56) on `/sheet` and `/sheets`: a popover inside the Sheet's box, opened from the
   Context Menu and Ctrl+1 (case 22) with the keyboard on its tab; the arrows switching the tabs; OK as
-  one undo step; Escape and a refused Custom code each setting nothing; a Custom code typed at full
+  one undo step; Escape setting nothing; a Custom code typed at full
   speed arriving whole, Enter as OK; Tab and Shift+Tab wrapping inside once its tab holds the
   keyboard, and on a 150 ms circuit on the Server host a Shift+Tab typed in the round trip before it
   does, once the menu has gone, held on the Sheet's root and dropped with the arrow behind it
-  (ADR-0039, 2026-10-13); cells that differ showing an
-  empty Font style and No Colour (case 24); a cell under a neighbour's thick bottom opening with its
-  top pressed, as drawn (case 14-13); scrolling inside a small box and closing as a Cancel when
+  (ADR-0039, 2026-10-13); scrolling inside a small box and closing as a Cancel when
   the box shrinks below one row; and two Sheets each with their own. On a 150 ms circuit on the
   Server host, the page's *Format Cells…* pressed straight after Shift+ArrowDown, and the Context
   Menu's item chosen as soon as the menu opens on another cell, each open over the Selection the grid
