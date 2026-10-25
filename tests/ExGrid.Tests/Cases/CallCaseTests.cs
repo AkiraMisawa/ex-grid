@@ -21,6 +21,11 @@ public class CallCaseTests
     private static readonly Dictionary<string, Type> Subjects = new()
     {
         ["CellTextMetrics"] = typeof(CellTextMetrics),
+        ["CompletionCandidate"] = typeof(ExGrid.Cells.CompletionCandidate),
+        ["EditorCompletion"] = typeof(ExGrid.Cells.EditorCompletion),
+        ["EditorHint"] = typeof(ExGrid.Cells.EditorHint),
+        ["EditorReference"] = typeof(ExGrid.Cells.EditorReference),
+        ["EditorTextRules"] = typeof(ExGrid.Cells.EditorTextRules),
         ["ClipboardParse"] = typeof(ExGrid.Clipboard.ClipboardParse),
         ["AutoWidth"] = typeof(AutoWidth),
         ["ColumnGeometry"] = typeof(ColumnGeometry),
@@ -36,6 +41,8 @@ public class CallCaseTests
         ["HeaderGroupLayout"] = typeof(HeaderGroupLayout),
         ["MenuKeys"] = typeof(ExGrid.Chrome.MenuKeys),
         ["OverflowRules"] = typeof(OverflowRules),
+        ["ReferenceColour"] = typeof(ExGrid.Cells.ReferenceColour),
+        ["ReferenceColouring"] = typeof(ExGrid.Cells.ReferenceColouring),
         ["RowRange"] = typeof(RowRange),
         ["ViewportBox"] = typeof(ViewportBox),
         ["ViewportGeometry"] = typeof(ViewportGeometry),
@@ -49,7 +56,7 @@ public class CallCaseTests
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         NumberHandling = JsonNumberHandling.AllowNamedFloatingPointLiterals,
-        Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase), new CommandFromCase(), new TupleAsArray() },
+        Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase), new CommandFromCase(), new TupleAsArray(), new RangeAsCase(), new ColourAsPlace() },
     };
 
     /// <summary>A menu's command as a case writes it, <c>{"id": …, "enabled": …}</c>: what the menu's keys
@@ -65,6 +72,38 @@ public class CallCaseTests
 
         public override void Write(Utf8JsonWriter writer, ExGrid.Chrome.GridCommand value, JsonSerializerOptions options)
             => throw new NotSupportedException("A command is an argument, never an answer.");
+    }
+
+    /// <summary>A range as a case writes it and the Script Core holds one, its four numbers: the derived
+    /// members C# serialises besides (<c>bottomRow</c>, <c>cellCount</c>, …) are none of the case's.</summary>
+    private sealed class RangeAsCase : JsonConverter<ExGrid.Selection.SelectionRange>
+    {
+        public override ExGrid.Selection.SelectionRange Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        {
+            var given = JsonElement.ParseValue(ref reader);
+            return new(given.GetProperty("topRow").GetInt32(), given.GetProperty("leftColumn").GetInt32(),
+                given.GetProperty("rowCount").GetInt32(), given.GetProperty("columnCount").GetInt32());
+        }
+
+        public override void Write(Utf8JsonWriter writer, ExGrid.Selection.SelectionRange value, JsonSerializerOptions options)
+        {
+            writer.WriteStartObject();
+            writer.WriteNumber("topRow", value.TopRow);
+            writer.WriteNumber("leftColumn", value.LeftColumn);
+            writer.WriteNumber("rowCount", value.RowCount);
+            writer.WriteNumber("columnCount", value.ColumnCount);
+            writer.WriteEndObject();
+        }
+    }
+
+    /// <summary>A Reference colour as its place in the palette, the number the Script Core's colour is.</summary>
+    private sealed class ColourAsPlace : JsonConverter<ExGrid.Cells.ReferenceColour>
+    {
+        public override ExGrid.Cells.ReferenceColour Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+            => new(reader.GetInt32());
+
+        public override void Write(Utf8JsonWriter writer, ExGrid.Cells.ReferenceColour value, JsonSerializerOptions options)
+            => writer.WriteNumberValue(value.Place);
     }
 
     /// <summary>A tuple answered as the array of its elements, as the Script Core answers one: System.Text.Json
@@ -175,8 +214,8 @@ public class CallCaseTests
             .Where(candidate =>
             {
                 var parameters = candidate.GetParameters();
-                return arguments.Keys.All(key => parameters.Any(p => p.Name == key))
-                    && parameters.All(p => arguments.ContainsKey(p.Name!) || p.HasDefaultValue);
+                return arguments.Keys.All(key => parameters.Any(p => NameOf(p) == key))
+                    && parameters.All(p => arguments.ContainsKey(NameOf(p)) || p.HasDefaultValue);
             })
             .ToArray();
         if (bound.Length > 1)
@@ -184,10 +223,14 @@ public class CallCaseTests
         if (bound.Length == 0)
             return null;
         var values = bound[0].GetParameters()
-            .Select(p => arguments.TryGetValue(p.Name!, out var value) ? Convert(value, p.ParameterType) : p.DefaultValue)
+            .Select(p => arguments.TryGetValue(NameOf(p), out var value) ? Convert(value, p.ParameterType) : p.DefaultValue)
             .ToArray();
         return (bound[0], values);
     }
+
+    /// <summary>A parameter's name as a case writes it: camelCase, which a record's positional parameter
+    /// (<c>Text</c>) is not.</summary>
+    private static string NameOf(ParameterInfo parameter) => char.ToLowerInvariant(parameter.Name![0]) + parameter.Name[1..];
 
     /// <summary>One check: a member read or called, and what it answers or how it is refused.</summary>
     private static void Holds(Type type, object? subject, JsonElement check)
@@ -376,7 +419,9 @@ public class CallCaseTests
             return want.Equals(got);
         return (expected, actual) switch
         {
-            (JsonObject e, JsonObject a) => e.Count == a.Count && e.All(p => a.TryGetPropertyValue(p.Key, out var v) && Same(p.Value, v)),
+            // A key one side lacks is null there: "none" is null in a case, and a language may leave it out.
+            (JsonObject e, JsonObject a) => e.Select(p => p.Key).Union(a.Select(p => p.Key)).All(key =>
+                Same(e.TryGetPropertyValue(key, out var want) ? want : null, a.TryGetPropertyValue(key, out var got) ? got : null)),
             (JsonArray e, JsonArray a) => e.Count == a.Count && e.Zip(a).All(pair => Same(pair.First, pair.Second)),
             (JsonValue e, JsonValue a) => e.ToJsonString() == a.ToJsonString(),
             _ => false,

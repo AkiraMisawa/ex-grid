@@ -1,0 +1,42 @@
+{
+  "about": "The argument hint beneath the candidates (ADR-0051), split around the span it sets off. From tests/ExGrid.Tests/EditorTextRulesTests.cs.",
+  "kind": "calls",
+  "subject": "EditorHint",
+  "cases": [
+    {
+      "name": "ADR-0051: the hint splits around the argument the caret is in",
+      "create": {"text": "SUM(number1, [number2], …)", "emphasisStart": 4, "emphasisLength": 7},
+      "expect": [
+        {"call": "parts", "args": [], "is": ["SUM(", "number1", ", [number2], …)"]}
+      ]
+    },
+    {
+      "name": "ADR-0051: an emphasis outside the hint sets off nothing rather than a guess (0+0)",
+      "create": {"text": "SUM(", "emphasisStart": 0, "emphasisLength": 0},
+      "expect": [
+        {"call": "parts", "args": [], "is": ["SUM(", "", ""]}
+      ]
+    },
+    {
+      "name": "ADR-0051: an emphasis outside the hint sets off nothing rather than a guess (-1+2)",
+      "create": {"text": "SUM(", "emphasisStart": -1, "emphasisLength": 2},
+      "expect": [
+        {"call": "parts", "args": [], "is": ["SUM(", "", ""]}
+      ]
+    },
+    {
+      "name": "ADR-0051: an emphasis outside the hint sets off nothing rather than a guess (3+10)",
+      "create": {"text": "SUM(", "emphasisStart": 3, "emphasisLength": 10},
+      "expect": [
+        {"call": "parts", "args": [], "is": ["SUM(", "", ""]}
+      ]
+    },
+    {
+      "name": "ADR-0051: a hint sets off nothing unless it says so",
+      "create": {"text": "SUM("},
+      "expect": [
+        {"call": "parts", "args": [], "is": ["SUM(", "", ""]}
+      ]
+    }
+  ]
+}
