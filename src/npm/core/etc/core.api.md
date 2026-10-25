@@ -276,6 +276,8 @@ export interface GridOptions<Row> {
     readonly density?: GridDensity;
     readonly headerGroups?: readonly GridHeaderGroup[];
     readonly headerHeight?: number;
+    readonly highlightFocusRow?: boolean;
+    readonly highlightHoverRow?: boolean;
     readonly onCellDoubleClick?: (cell: CellPosition) => void;
     readonly onClear?: (intent: GridClearIntent) => void;
     readonly onEdit?: (intent: GridEditIntent<Row>) => void;

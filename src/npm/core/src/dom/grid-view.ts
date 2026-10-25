@@ -122,6 +122,14 @@ export interface GridOptions<Row> {
     /** The most a paste reads, in UTF-8 bytes across both flavours (ADR-0005): past it the paste is refused
      * whole, never pasted from the plain-text flavour alone, which is already rounded. 16 MB unless given. */
     readonly pasteByteCap?: number;
+    /** A band across the Focus's row, beneath the Selection's tints (ADR-0008), filled with
+     * `--ex-focus-row-fill`. Off unless given. */
+    readonly highlightFocusRow?: boolean;
+    /** A band across the row under the pointer, what every design system's table calls Hover (ADR-0029),
+     * filled with `--ex-row-hover-background`. It is the overlay's, so no row learns anything and none is
+     * painted again; it goes when the pointer leaves the grid or the rows move under it. Off unless given,
+     * and while off the grid does not hear the pointer move at all. */
+    readonly highlightHoverRow?: boolean;
     /**
      * Hears the one Clear Intent Delete raises over the Selection (ADR-0054): the positions should hold no
      * value, which the Consumer maps onto its own Blank per column. Judged by the paste's gate first: only
@@ -234,6 +242,8 @@ interface Taken<Row> {
     readonly onRefused: ((refusal: GridRefusal) => void) | undefined;
     readonly onPaste: ((intent: GridPasteIntent) => void) | undefined;
     readonly pasteMaySpill: boolean;
+    readonly highlightFocusRow: boolean;
+    readonly highlightHoverRow: boolean;
     readonly pasteByteCap: number;
     readonly onClear: ((intent: GridClearIntent) => void) | undefined;
     readonly onUndo: (() => void) | undefined;
@@ -469,6 +479,10 @@ export class GridView<Row> {
     #onRefused: ((refusal: GridRefusal) => void) | undefined;
     #pasteHeard: ((intent: GridPasteIntent) => void) | undefined;
     #pasteMaySpill = false;
+    #highlightFocusRow = false;
+    #highlightHoverRow = false;
+    // The row under the pointer, while the hover band is on and the pointer is over a row (ADR-0029).
+    #hoverRow: number | undefined;
     #pasteByteCap = defaultPasteByteCap;
     #editHeard: ((intent: GridEditIntent<Row>) => void) | undefined;
     #onEditingChanged: ((open: boolean) => void) | undefined;
@@ -740,6 +754,8 @@ export class GridView<Row> {
                 () => { this.#header.removeEventListener('click', this.#onHeaderClick); },
                 () => { this.#header.removeEventListener('mousemove', this.#onDrag); },
                 () => { root.removeEventListener('mouseleave', this.#onLeave); },
+                () => { root.removeEventListener('mousemove', this.#onHover); },
+                () => { root.removeEventListener('mouseleave', this.#dropHover); },
                 () => { root.removeEventListener('copy', this.#onCopy); },
                 () => { root.removeEventListener('paste', this.#onPaste); },
                 reports.observeViewport(this.#scroller, report => {
@@ -875,6 +891,13 @@ export class GridView<Row> {
         if (pasteMaySpill !== undefined && typeof pasteMaySpill !== 'boolean') {
             throw new TypeError('pasteMaySpill is true or false.');
         }
+        const { highlightFocusRow, highlightHoverRow }: { readonly highlightFocusRow?: unknown; readonly highlightHoverRow?: unknown } = options;
+        if (highlightFocusRow !== undefined && typeof highlightFocusRow !== 'boolean') {
+            throw new TypeError('highlightFocusRow is true or false.');
+        }
+        if (highlightHoverRow !== undefined && typeof highlightHoverRow !== 'boolean') {
+            throw new TypeError('highlightHoverRow is true or false.');
+        }
         if (onClear !== undefined && typeof onClear !== 'function') {
             throw new TypeError('onClear is a function of the clear\'s intent.');
         }
@@ -921,6 +944,7 @@ export class GridView<Row> {
             width, height, pinnedCount: pinnedColumnCount, virtualiseColumns, headerGroups, headerLayout,
             onSelectionChanged: options.onSelectionChanged, copyCellCap, onRefused: options.onRefused,
             onPaste: options.onPaste, pasteMaySpill: options.pasteMaySpill === true, pasteByteCap, onClear: options.onClear,
+            highlightFocusRow: options.highlightFocusRow === true, highlightHoverRow: options.highlightHoverRow === true,
             onUndo: options.onUndo, onRedo: options.onRedo,
             onEdit: options.onEdit, onEditingChanged: options.onEditingChanged, onEditDiscarded: options.onEditDiscarded,
             onOverwriteNotice: options.onOverwriteNotice, onCellDoubleClick: options.onCellDoubleClick,
@@ -1014,6 +1038,20 @@ export class GridView<Row> {
         this.#onRefused = taken.onRefused;
         this.#pasteHeard = taken.onPaste;
         this.#pasteMaySpill = taken.pasteMaySpill;
+        this.#highlightFocusRow = taken.highlightFocusRow;
+        if (taken.highlightHoverRow !== this.#highlightHoverRow) {
+            this.#highlightHoverRow = taken.highlightHoverRow;
+            // Heard only while the band is on: off, a pointer crossing the grid costs nothing (ADR-0021's fifth
+            // entry, which the Script Core keeps as its own rule).
+            if (taken.highlightHoverRow) {
+                this.#root.addEventListener('mousemove', this.#onHover);
+                this.#root.addEventListener('mouseleave', this.#dropHover);
+            } else {
+                this.#root.removeEventListener('mousemove', this.#onHover);
+                this.#root.removeEventListener('mouseleave', this.#dropHover);
+                this.#hoverRow = undefined;
+            }
+        }
         this.#pasteByteCap = taken.pasteByteCap;
         this.#clearHeard = taken.onClear;
         this.#onUndo = taken.onUndo;
@@ -1048,6 +1086,9 @@ export class GridView<Row> {
         // The user scrolled away from a move whose cell is not painted yet: the page no longer follows it
         // (ADR-0204).
         this.#followArmed = undefined;
+        // The rows moved under a still pointer: the band would stand on a row the pointer is no longer over. It
+        // goes, and the next movement brings it back. Panning sideways moves no row under it.
+        if (top !== this.#scrollTopPx) this.#dropHover();
         const painted = this.#visible;
         const previousLeftPx = this.#scrollLeftPx;
         this.#scrollTopPx = top;
@@ -1534,6 +1575,28 @@ export class GridView<Row> {
     // timer. The drag stands, and the next move without the button ends it (ADR-0008).
     readonly #onLeave = (): void => {
         this.#stopEdgeTimer();
+    };
+
+    // The hover band (ADR-0029): the pointer moving onto another row moves it, by the same arithmetic a press
+    // goes through; a move within the row it stands on paints nothing. Cells take no pointer events, so a move
+    // over the rows lands on the Viewport. Inside it but on an element of its own, the editor or a Consumer's
+    // control, the band stands; on the header or a scrollbar no row is under the pointer, and it goes.
+    readonly #onHover = (event: MouseEvent): void => {
+        if (event.target !== this.#viewport) {
+            if (!(event.target instanceof Node && this.#viewport.contains(event.target))) this.#dropHover();
+            return;
+        }
+        const row = this.#cellUnder(event)?.row;
+        if (row === this.#hoverRow) return;
+        this.#hoverRow = row;
+        this.#invalidate();
+    };
+
+    // The pointer leaving the rows, or the rows moving under it, takes the band with it.
+    readonly #dropHover = (): void => {
+        if (this.#hoverRow === undefined) return;
+        this.#hoverRow = undefined;
+        this.#invalidate();
     };
 
     // ---- The Cell Editor (ADR-0010, ADR-0034, ADR-0142) ------------------------------------------------------
@@ -2937,6 +3000,9 @@ export class GridView<Row> {
             if (spansEveryColumn(range, extent) && !reveal.rowStart) left = this.#scrollLeftPx;
         }
         if (top === this.#scrollTopPx && left === this.#scrollLeftPx) return false;
+        // A reveal that moves the rows under a still pointer takes the band, as a scroll does; this pass paints
+        // it gone.
+        if (top !== this.#scrollTopPx) this.#hoverRow = undefined;
         this.#scrollTopPx = top;
         this.#scrollLeftPx = left;
         this.#revealToken += 1;
@@ -3071,6 +3137,9 @@ export class GridView<Row> {
         const inputs = {
             selection: this.#held.selection, copied: this.#copied, start: visible?.start, count: visible?.count, styles: this.#styles,
             rowHeightPx: this.#metrics.rowHeightPx, scrollLeftPx: this.#scrollLeftPx, firstOpenRow,
+            // A row the source has since taken away has no band; the next movement finds the row there now.
+            hoverRow: this.#hoverRow !== undefined && this.#hoverRow < this.#totalRows ? this.#hoverRow : undefined,
+            focusRow: this.#highlightFocusRow,
         };
         const was = this.#layerInputs;
         // A pass that moved none of them, every scroll frame along an axis the layers ignore, writes nothing.
@@ -3079,7 +3148,7 @@ export class GridView<Row> {
             const pieces = visible === undefined || geometry === undefined
                 ? { shade: undefined, pinned: [], scrollable: [] }
                 : selectionLayers(inputs.selection, inputs.copied === undefined ? [] : inputs.copied.rectangles, this.#styles.geometry, inputs.rowHeightPx, visible,
-                    { firstOpenRow, scrollLeftPx: this.#scrollLeftPx, hasHeader: true });
+                    { firstOpenRow, scrollLeftPx: this.#scrollLeftPx, hasHeader: true }, { hoverRow: inputs.hoverRow, focusRow: inputs.focusRow });
             const signature = JSON.stringify(pieces);
             if (signature !== this.#paintedLayers) {
                 this.#paintedLayers = signature;
