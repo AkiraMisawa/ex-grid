@@ -17,6 +17,10 @@ not kept, and what 0.3.0 does to speed is measured.)*
 *(Section 16 added 2026-10-25, decided with the user: the Script Core's public shape, from a design
 memo that put five questions with a recommendation each; the user took every recommendation.)*
 
+*(Amended 2026-10-25 by [ADR-0370](./0370-the-whole-family-moves-to-typescript-and-blazor-only-adapts-it.md), decided with the user: the whole family, its engines included, moves to
+TypeScript, and Blazor only adapts it. Sections 1, 6, 7, 8, 12, 13 and 14 carry dated notes where it
+changes them.)*
+
 ## Context
 
 ExGrid is usable only from Blazor. A React developer cannot write what a Consumer writes today: an
@@ -76,7 +80,7 @@ verified again on it. Whether any of them reaches React is a later decision.
 
 *(2026-10-25: the user decided that every product reaches React, and that the whole family moves to
 TypeScript, its engines included, with Blazor as a thin wrapper over it.
-[ADR-0370](./0370-the-whole-family-moves-to-typescript-and-blazor-wraps-it.md)
+[ADR-0370](./0370-the-whole-family-moves-to-typescript-and-blazor-only-adapts-it.md)
 says how, and replaces this paragraph.)*
 
 ### 2. The Script Core owns the DOM inside the instance root
@@ -142,7 +146,7 @@ made, nothing waits on a clock (its sections 1, 3 and 4), and where a Consumer a
 input, a gesture carries what it was taken against and is refused if that no longer holds (spine rule
 6). The machinery that held and replayed input across a round trip is not ported.
 
-*(2026-10-25: [ADR-0370](./0370-the-whole-family-moves-to-typescript-and-blazor-wraps-it.md)
+*(2026-10-25: [ADR-0370](./0370-the-whole-family-moves-to-typescript-and-blazor-only-adapts-it.md)
 moves ExSheet's, ExPivot's and ExChart's UIs to Script Cores of their own, and their scripts with them,
 so ADR-0021 governs no script once its section 6's removal holds and is superseded then. These rules
 hold for every Script Core.)*
@@ -170,7 +174,7 @@ longer do. A Consumer's answer that arrives after the input it answers is judged
 input was taken against (spine rule 6). What crosses the circuit per interaction is measured on the
 Server host before step 2 is called done, and recorded.
 
-*(2026-10-25: [ADR-0370](./0370-the-whole-family-moves-to-typescript-and-blazor-wraps-it.md)
+*(2026-10-25: [ADR-0370](./0370-the-whole-family-moves-to-typescript-and-blazor-only-adapts-it.md)
 section 6 has every product take these three steps, ExGrid's as written here and each product's once
 ExGrid's Script Core has what it asks of it, and adds a fourth, the repository's layout; 0.3.0 waits for
 all of them.)*
@@ -184,7 +188,7 @@ or in the browser as .NET WebAssembly. Whether one is later ported to TypeScript
 recorded measurement of the browser case, not before (CLAUDE.md, "Measure before claiming anything about
 performance").
 
-*(2026-10-25: [ADR-0370](./0370-the-whole-family-moves-to-typescript-and-blazor-wraps-it.md)
+*(2026-10-25: [ADR-0370](./0370-the-whole-family-moves-to-typescript-and-blazor-only-adapts-it.md)
 replaces this section, decided with the user: the engines move to TypeScript too, re-proved against
 Excel's recorded answers, the C# facts transcribed into shared cases, and a differential run against
 the C# engine (its section 2). The measurement this section waited on became the check of its section
@@ -237,6 +241,8 @@ the way ag-grid.com shows each Example, so React never runs inside the Blazor ap
 JavaScript does not grow. The site's build fails when a React Example does not build, as it fails today
 for a Blazor one.
 
+*(2026-10-25: [ADR-0370](./0370-the-whole-family-moves-to-typescript-and-blazor-only-adapts-it.md) section 8 widens the switch to every product's pages.)*
+
 *(2026-10-25: the switch is built ahead of the React packages, and what a page shows meanwhile is
 [ADR-0110](./0110-the-docs-site-is-a-webassembly-app-on-github-pages-and-its-examples-show-the-code-they-run.md)'s
 "The framework switch". It is remembered in `localStorage`, the site's second use of JavaScript there.)*
@@ -261,6 +267,9 @@ for a Blazor one.
   build and tests run there, as `tools/assets` does. CI gains the npm
   build, the two Vitest layers and the React host's layer 3.
 
+*(2026-10-25: [ADR-0370](./0370-the-whole-family-moves-to-typescript-and-blazor-only-adapts-it.md) section 9 moves the workspace from `src/npm/` to `packages/`, and the NuGet projects
+to `dotnet/`, as the last step of 0.3.0.)*
+
 ### 14. Blazor's surface is designed afresh, from the Script Core's
 
 No Consumer depends on the current surface yet (the user, 2026-10-24), so Blazor's ExGrid does not
@@ -275,7 +284,7 @@ step 2 of section 7. [ADR-0201](./0201-the-public-surface-is-what-consumers-chro
 rule stands: the surface is what Consumers, Chromes and the sibling products use, and nothing more is
 public. Every member that leaves or changes is a breaking Change Note.
 
-*(2026-10-25: under [ADR-0370](./0370-the-whole-family-moves-to-typescript-and-blazor-wraps-it.md)
+*(2026-10-25: under [ADR-0370](./0370-the-whole-family-moves-to-typescript-and-blazor-only-adapts-it.md)
 section 1, ExSheet, ExPivot, ExChart and ExBoard are not rewritten in Razor against the new surface:
 each becomes a thin Blazor wrapper over a Script Core of its own, which is that rewrite. The MudBlazor
 Wrappers stay Razor, over their product's wrapper.)*

@@ -455,11 +455,11 @@ _Avoid_: theme package, skin, integration (ExGrid.Fluxor integrates a store and 
 **Script Core**:
 A product's core written in TypeScript, running in the browser: it holds the instance's state, decides
 what each input means, and creates the elements inside the instance root itself, under the same DOM
-contract and stylesheet as the C# code it replaces. It depends on no UI framework. ExGrid's is the one
-every other product's Script Core draws through, as that grid's Consumer. From 0.3.0 each product's is
+contract and stylesheet as the C# code it replaces. It depends on no UI framework. ExSheet's and
+ExPivot's draw through ExGrid's, as that grid's Consumer. From 0.3.0 each product's is
 its only core, under React and Blazor alike
 ([ADR-0350](./docs/adr/0350-exgrids-core-moves-to-typescript-and-react-and-blazor-both-take-it.md),
-[ADR-0370](./docs/adr/0370-the-whole-family-moves-to-typescript-and-blazor-wraps-it.md)).
+[ADR-0370](./docs/adr/0370-the-whole-family-moves-to-typescript-and-blazor-only-adapts-it.md)).
 _Avoid_: JS grid, client grid, headless core (it owns its DOM)
 
 **Framework Adapter**:
@@ -477,7 +477,7 @@ _Avoid_: binding, wrapper, port
 Where a Script Core's engine runs, asked by asynchronous messages whose answers are data: the page's
 own thread, a Web Worker, or a server for server data. The engine and the messages are the same in
 each, and an answer names the version it was asked against
-([ADR-0370](./docs/adr/0370-the-whole-family-moves-to-typescript-and-blazor-wraps-it.md)).
+([ADR-0370](./docs/adr/0370-the-whole-family-moves-to-typescript-and-blazor-only-adapts-it.md)).
 _Avoid_: backend, engine service, bridge
 
 **Density**:

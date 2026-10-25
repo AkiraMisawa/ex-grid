@@ -1,10 +1,11 @@
-# The whole family moves to TypeScript, and Blazor wraps it
+# The whole family moves to TypeScript, and Blazor only adapts it
 
 *Decided with the user, 2026-10-25. The user first set the scope: React support covers the whole
 family, ExSheet, ExPivot, ExChart and ExBoard as well as ExGrid, and the products may be built in
 parallel. Then the user set the end state: everything moves to TypeScript, the engines included, and
-Blazor is built as a wrapper over it, the way the Blazor wrapper of ApexCharts wraps its JavaScript
-library. Section 10's locale, and section 9's layout being the last step, were settled with the user
+Blazor is built over it as the user put it, "as a wrapper", the way Blazor's package for ApexCharts
+sits over that JavaScript library. This ADR calls that package Blazor's Framework Adapter, because the
+glossary keeps "Wrapper" for a design system's package. Section 10's locale, and section 9's layout being the last step, were settled with the user
 the same day, from the research note on AG Grid's locales
 (https://claude.ai/artifact/9yXJqpjYpBMiBpB3JbsNhc).*
 
@@ -54,27 +55,28 @@ which has no Excel JSON of its own, are xUnit code.
 The render-bench baseline of 2026-10-25 (`spikes/render-bench/results/20261025-core/`) put an ExSheet
 edit that recalculates 20,000 cells at 130 ms on Blazor Server and 3.3 s on Blazor WebAssembly. About
 three quarters of the 3.3 s was the baseline serving a build configured for debugging; a published
-client takes about 1.1 s (the engine measurement of the same day, section 7).
+client takes about 1.1 s, as the engine measurement begun the same day reports (section 7); its
+record lands under `spikes/render-bench/results/` with that measurement's pull request.
 
 ## Options considered
 
-| | A. UIs in TypeScript, engines stay C# | B. UIs and engines in TypeScript, Blazor wraps them (chosen) | C. A React UI beside each Razor UI | D. Engines on a server only |
+| | A. UIs in TypeScript, engines stay C# | B. UIs and engines in TypeScript, Blazor adapts them (chosen) | C. A React UI beside each Razor UI | D. Engines on a server only |
 |---|---|---|---|---|
 | UI | Each product's UI moves as ExGrid's did; React and Blazor adapt it | As A | A TypeScript UI for React; Blazor keeps its Razor UI | As A |
 | Engines in the browser | .NET WebAssembly in a Worker | TypeScript | As A | None: a server the application runs |
-| Cost | ~26,500 lines of UI and ~5,900 of chart layout; an Arrow reader; the engines' WebAssembly build | A's, less the WebAssembly build, and ~51,000 more lines of engine and data ported, re-proved against Excel's recorded answers (section 2) | A React UI per product, the Razor ones kept | A's, less the WebAssembly build |
-| What it leaves | Two languages in the browser; a .NET runtime downloaded where an engine runs there | One language for everything the family does in a browser; Blazor a thin wrapper | Two UIs per product, kept alike by hand | No ExSheet or local ExPivot without a .NET server |
+| Cost | ~26,500 lines of UI and ~5,900 of chart layout; an Arrow reader; the engines' WebAssembly build | A's, less the WebAssembly build, and ~53,800 more lines of engine and data ported, re-proved against Excel's recorded answers (section 2) | A React UI per product, the Razor ones kept | A's, less the WebAssembly build |
+| What it leaves | Two languages in the browser; a .NET runtime downloaded where an engine runs there | One language for everything the family does in a browser; Blazor a thin adapter | Two UIs per product, kept alike by hand | No ExSheet or local ExPivot without a .NET server |
 
 The first draft recommended A, so as not to re-prove the engines before a measurement said
 WebAssembly could not hold. The user chose B. It gives the family one implementation in one language,
-no .NET runtime to download in a browser, and a Blazor package that only wraps, which is how Blazor
+no .NET runtime to download in a browser, and a Blazor package that only adapts, which is how Blazor
 already takes the JavaScript libraries it uses. The cost of re-proving is smaller than the first draft
 said, because Excel's answers are recorded and need no Excel to run again. C keeps two UIs per product
 in step by hand. D makes a .NET backend the price of a spreadsheet.
 
 ## Decision
 
-### 1. Everything the family does in a browser is TypeScript, and Blazor wraps it
+### 1. Everything the family does in a browser is TypeScript, and Blazor only adapts it
 
 Each product gets a Script Core of its own: ExSheet's, ExPivot's, ExChart's and ExBoard's. It holds what
 the Razor package holds today, the component and the logic beside it (ExSheet's Pointing, Format Cells,
@@ -83,18 +85,20 @@ Filters and its bridge from a grid selection; ExBoard's layout, links, outputs a
 decides what each input means. It depends on no UI framework. Its engine is a TypeScript package of its
 own (section 2).
 
-A product's Script Core is ExGrid's Consumer, as the Razor product is: it draws through ExGrid's Script
-Core's public surface and nothing private, so what it asks of ExGrid is stated as ADR-0063 states
-ExPivot's, and is a member of `@ex-grid/core`'s surface. ADR-0350 sections 2 to 6 hold for it as
+A product's Script Core uses ExGrid's as the Razor product uses ExGrid today: ExSheet's and ExPivot's
+draw through it as that grid's Consumer, ExChart's draws its own SVG and takes ExGrid only for its
+bridge from a selection (ADR-0250), and ExBoard's lays out the others. Each reaches ExGrid through its
+Script Core's public surface and nothing private, so what it asks of ExGrid is stated as ADR-0063
+states ExPivot's, and is a member of `@ex-grid/core`'s surface. ADR-0350 sections 2 to 6 hold for it as
 written: it owns the DOM inside its own root, writes the product's DOM contract and reads its
 stylesheet unchanged, and its layer-3 specs run against a React host as against both Blazor hosts.
 
-Each product has a React adapter and a Blazor wrapper, both Framework Adapters as ADR-0350 section 3
-defines them. The Blazor wrapper is thin in the way a Blazor wrapper of a JavaScript library is: the
+Each product has a React adapter and a Blazor adapter, both Framework Adapters as ADR-0350 section 3
+defines them. The Blazor adapter is thin in the way Blazor's package over a JavaScript library is: the
 component mounts the TypeScript package on the element it renders, hands it its parameters as options
 and its data as data, raises the package's events as `EventCallback`s, and fills Chrome and Template
 slots with Razor components. It decides nothing and computes nothing. Blazor's ExGrid, ExSheet, ExPivot,
-ExChart and ExBoard become these wrappers, which replaces ADR-0350 section 14's "rewritten against the
+ExChart and ExBoard become these adapters, which replaces ADR-0350 section 14's "rewritten against the
 new surface" for the products: the rewrite is the move.
 
 The scripts beside the products today (`ex-chart.js`'s pointer, 3D surface and PNG entries,
@@ -102,14 +106,15 @@ The scripts beside the products today (`ex-chart.js`'s pointer, 3D surface and P
 [ADR-0282](./0282-a-thirteenth-javascript-entry-paints-a-chart-to-png-and-saves-its-files.md)) become
 part of their product's Script Core, under ADR-0350 section 6's rules rather than ADR-0021's allowlist.
 
-The MudBlazor Wrappers stay Razor. Each becomes a Wrapper over its product's Blazor wrapper, as
+The MudBlazor Wrappers stay Razor. Each becomes a Wrapper over its product's Blazor adapter, as
 `ExGrid.MudBlazor` does over ExGrid's (ADR-0350 section 9), and fills the Chrome seams with MudBlazor's
 components. Each MUI Wrapper is new work beside it (section 5).
 
 ### 2. The engines move to TypeScript, re-proved against what Excel already answered
 
 ExSheet.Engine with ExSheet.Xlsx, ExPivot.Engine, ExChart.Engine, ExGrid.Data with ExGrid.Data.Xlsx,
-and the Snapshot's Arrow form move to TypeScript. ADR-0350 section 8 is replaced: its "decided on a
+and the Snapshot's Arrow form move to TypeScript; ExGrid.Data and its Arrow form also stay in C# for a
+.NET server (section 3). ADR-0350 section 8 is replaced: its "decided on a
 recorded measurement" is now the check of section 7, not a gate on the port. ADR-0047 and ADR-0060 hold
 as written: the TypeScript engine answers as Excel or not at all, and where it cannot answer exactly it
 refuses rather than approximates.
@@ -123,11 +128,18 @@ A TypeScript engine is proved in three ways, and none of them runs Excel again:
    A case transcribed is deleted from xUnit's code; the data stays.
 3. **A differential run against the C# engine reaches what the cases do not.** Random workbooks,
    formulas, Snapshots and Change Batches are answered by both engines, and every difference is a
-   defect in one of them. It runs where the two languages differ most: decimal arithmetic, which
-   JavaScript does not have and the TypeScript engine computes exactly (as a Summary's Sum does,
-   ADR-0350 section 16), never in doubles; `Math` functions near a rounding boundary; and number to
-   text. A C# engine is removed only once its differential run has found no difference over a run
-   recorded in the PR that removes it.
+   defect in one of them. It runs where the two languages differ most. A number is computed in the
+   type the C# engine computes it in: ExSheet's are doubles (ADR-0047), and ExPivot's Sum of a decimal
+   column is exact, falling back to a double where C#'s does (ADR-0060). JavaScript has no decimal, so
+   the TypeScript engine computes the exact ones by counting decimal places, as a Summary's Sum does
+   (ADR-0350 section 16), never by adding doubles; and it computes the doubles in doubles, never more
+   exactly than Excel does. The run also reaches `Math` functions near a rounding boundary and number
+   to text.
+
+An engine is removed only once it is held: its C# facts are shared cases green in TypeScript, and,
+where it has a differential run, that run has found no difference over a run recorded in the pull
+request that removes it. ExChart's layout and the `.xlsx` readers and writers have no differential run
+and are held by their cases alone.
 
 Under Blazor Server this moves the engine from the server to the browser. A Sheet Document and a
 pivot's Snapshot cross the circuit to the browser, and an edit or a field moved no longer does. What
@@ -143,16 +155,24 @@ Nothing the family draws stays in C#. What stays is what a .NET server uses to f
 - **The readers of the Chart Spec and the Board Spec**
   ([ADR-0320](./0320-an-ai-draws-a-chart-by-writing-a-chart-spec-that-names-data-it-never-holds.md),
   [ADR-0340](./0340-an-ai-composes-a-board-once-and-a-workflow-reuses-it-without-ai.md)), with which a
-  .NET host answers an AI's tool. The TypeScript reader runs the same cases, refusals and their paths
-  included.
+  .NET host answers an AI's tool. ExChart.Engine keeps the Chart Definition and the Chart Spec's
+  reading when its layout leaves; the Board Spec's reading leaves the ExBoard adapter for a package a
+  server takes without Blazor, `ExBoard.Spec`. Each TypeScript reader runs the same cases, refusals and
+  their paths included.
 - **The server pivot's engine**
   ([ADR-0151](./0151-server-pivots-send-report-windows-and-share-the-local-engine.md)), which computes a
   report over server data and sends its Windows. *(Put to the user, 2026-10-25; until answered, this is
   the recommendation.)* ExPivot.Engine stays in C# as that server's engine only, held to the TypeScript
   engine by the shared cases and the differential run of section 2, which then never ends: both engines
   live on, as both Arrow readers do. The alternatives put beside it were the TypeScript engine on a
-  JavaScript server, which asks a .NET backend to run one beside it, and no server pivot at all, which
-  makes the browser's memory the limit of a pivot's data.
+  JavaScript server, which asks a .NET backend to run one beside it; no server pivot at all, which
+  makes the browser's memory the limit of a pivot's data; and, raised by the user's question of how
+  React applications aggregate on a server, the server answering Leaf Aggregates only, as a database's
+  `GROUP BY` can in any language, with the TypeScript engine building the report from them in the
+  browser ([ADR-0066](./0066-expivot-asks-a-pivot-source-and-a-server-answers-with-leaf-aggregates.md)'s
+  boundary, which ADR-0151 replaced for WebAssembly's memory and the first transfer). Whichever is
+  chosen, the TypeScript engine becomes the reference ADR-0060 names, and ADR-0151 and ADR-0060 are
+  rewritten with the answer, before section 6's step 3 removes or keeps ExPivot.Engine.
 
 ### 4. Where an engine runs
 
@@ -165,14 +185,16 @@ host.
   measured scenarios of section 7 fit within a frame there; otherwise it runs in a Worker, so the grid
   keeps its frame while the engine works. Section 7's record says which, for each engine.
 - **An answer carries what it was asked against.** Each request names the version of the document or
-  the Snapshot it was taken on, and an answer that arrives for an older one is refused, not drawn
-  (spine rule 6). Nothing waits on a clock.
+  the Snapshot it was taken on, and the answer names it back. Nothing waits on a clock.
 - **Writes are never refused for being late, and reads coalesce.** An edit, a Change Batch or a field
   moved is a write: the host takes every one in the order it was made. A recalculation or a report in
-  flight is not restarted; when it ends, the next one runs for the newest version, so a stream of edits
-  is answered at the engine's pace rather than not at all. Until the shown version is answered, the
-  product says it is calculating, as Excel's status bar does, and never shows an older answer as the
-  current one. The mark is the product's ticket's to design.
+  flight is not restarted; when it ends, the next one runs for the newest version.
+- **An older answer is shown only as older.** An answer for an older version than the one shown is
+  drawn under the product's calculating mark, as Excel's status bar says "Calculating" over the values
+  it has, and never as the current one; the mark leaves when the shown version is answered. So a
+  stream of edits faster than the engine is answered at the engine's pace rather than not at all, and
+  no figure is passed off as current. A gesture taken against an older answer is refused if that
+  answer no longer holds (spine rule 6). The mark is the product's ticket's to design.
 - **The Consumer owns the server's transport and authentication**, as ADR-0151 says.
 
 ### 5. The packages
@@ -191,7 +213,7 @@ project references. The engines touch no DOM, so they run in a Worker as on the 
 | `@ex-grid/chart`, `-react`, `-mui` | ExChart's, its layout included | `ExChart`, `ExChart.Engine`, `ExChart.MudBlazor` |
 | `@ex-grid/board`, `-react` | ExBoard's | `ExBoard` |
 
-Source lives at `src/npm/<name>` until section 9's move. A Blazor wrapper carries its product's built
+Source lives at `src/npm/<name>` until section 9's move. A Blazor adapter carries its product's built
 script as a shipped asset of its own (ADR-0350 section 9, ADR-0123), so a Blazor Consumer still installs
 nothing from npm. Each MUI Wrapper is held to ADR-0030 as `@ex-grid/mui` is.
 
@@ -204,8 +226,8 @@ with a fourth for the repository:
    React host, in both browsers, and its engine's cases of section 2 are green. A product's UI starts
    once ExGrid's Script Core has what it asks of ExGrid. Its engine waits on nothing and may start at
    once, beginning with the transcription of its C# facts into shared cases.
-2. **Blazor.** The product's Blazor wrapper replaces its Razor component once its step 1 holds and
-   ExGrid's Blazor wrapper stands. Its specs pass on both Blazor hosts, and so do those of every product
+2. **Blazor.** The product's Blazor adapter replaces its Razor component once its step 1 holds and
+   ExGrid's Blazor adapter stands. Its specs pass on both Blazor hosts, and so do those of every product
    it draws or is drawn by. ExGrid's step 2 waits only on ExGrid's step 1, as ADR-0350 has it.
 3. **Removal.** The C# that moved goes: ExGrid's core as ADR-0350 has it, each product's Razor logic,
    and each engine once its differential run is clean (section 2), except what section 3 keeps.
@@ -219,7 +241,8 @@ product reaches React developers as a prerelease when its step 1 holds.
 
 ### 7. Each engine is measured beside the C# record
 
-The engine measurement of 2026-10-25 records the C# engines on Blazor Server, on a published Blazor
+The engine measurement begun on 2026-10-25, whose record lands under `spikes/render-bench/results/`
+before any product's step 1 is called done, records the C# engines on Blazor Server, on a published Blazor
 WebAssembly client, and as .NET WebAssembly in a Worker on the interpreter and compiled ahead of time,
 with a TypeScript spike of the same `/core/sheet` and `/core/pivot` scenarios beside them. That record is
 the line the TypeScript engines are held to. Before a product's step 1 is called done, render-bench runs
@@ -243,7 +266,7 @@ family is implemented. After step 3, the repository is laid out by platform:
 
 ```
 packages/<name>   the npm workspace: core, react, mui, data, sheet, sheet-engine, …
-dotnet/           the NuGet projects: the Blazor wrappers, the MudBlazor Wrappers, and section 3's
+dotnet/           the NuGet projects: the Blazor adapters, the MudBlazor Wrappers, and section 3's
                   server packages, with their tests
 tests/cases/      the shared cases, read by both
 ```
@@ -260,15 +283,19 @@ made.
 A Script Core reads text in a culture: a filter's value, a pasted cell's displayed text, a constant
 typed into a sheet, and ExSheet's formats. C# reads `CultureInfo`; TypeScript has no current culture.
 
-- **The locale is an option, said once.** Every product's options take `locale`, a BCP 47 tag. A
+- **The locale is an option, said once.** Every product's options take `locale`, a BCP 47 tag or
+  `"invariant"`, which reads as .NET's `InvariantCulture` does, from the core's own table and not from
+  `Intl`; a culture with no name, `InvariantCulture`'s, is passed as `"invariant"`, never as an empty
+  tag. A
   React adapter given none passes the browser's language, read once when the instance is made; a
-  Blazor wrapper passes the name of the `CultureInfo` the component reads today. The core never reads
+  Blazor adapter passes the name of the `CultureInfo` the component reads today. The core never reads
   `navigator.language` or calls `Intl` without a locale on its own, feature by feature, so one
   instance never reads two cultures. The engines take the locale from the Script Core that asks
   them.
 - **ADR-0023's reading holds as written.** Text in another culture's separators, or text that reads
   two ways, is refused, never read as some other number. A culture's separators come from
-  `Intl.NumberFormat`'s `formatToParts`, and the cases pin them.
+  `Intl.NumberFormat`'s `formatToParts` where ICU agrees with Windows, and from the core's table where
+  it does not (fr-FR's group separator is U+00A0 on Windows and U+202F in ICU), and the cases pin them.
 - **Where `Intl` differs from Excel, Excel's text wins, as data.** The browser's `Intl` is ICU's data,
   not Windows', and Excel's text is Windows'. The corrections ExSheet carries over .NET's data today
   ([ADR-0071](./0071-a-sheets-cell-format-is-document-data-painted-on-white-paper.md): Windows'
@@ -283,7 +310,7 @@ typed into a sheet, and ExSheet's formats. C# reads `CultureInfo`; TypeScript ha
 - Every product has one implementation in one language from 0.3.0. Until each step 3, the C# code still
   ships on `main`, and the shared cases, the differential runs and the shared layer 3 keep the two from
   drifting.
-- 0.3.0 grows by ~26,500 lines of UI and ~51,000 of engine and data to move, three MUI Wrappers written
+- 0.3.0 grows by ~26,500 lines of UI, ~5,900 of chart layout and ~53,800 of engine and data to move, three MUI Wrappers written
   new, and the transcription of ~27,000 lines of C# engine tests into shared cases.
 - A React or Blazor application downloads no .NET runtime for the family's engines, and Blazor
   WebAssembly's 1.1 s published edit is replaced by the TypeScript engine's.
