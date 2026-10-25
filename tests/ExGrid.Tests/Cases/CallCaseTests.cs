@@ -21,11 +21,14 @@ public class CallCaseTests
     private static readonly Dictionary<string, Type> Subjects = new()
     {
         ["CellTextMetrics"] = typeof(CellTextMetrics),
+        ["ClipboardParse"] = typeof(ExGrid.Clipboard.ClipboardParse),
         ["AutoWidth"] = typeof(AutoWidth),
         ["ColumnGeometry"] = typeof(ColumnGeometry),
         ["ColumnWidth"] = typeof(ColumnWidth),
         ["ColumnWidthSpec"] = typeof(ColumnWidthSpec),
         ["GlyphWidthTable"] = typeof(GlyphWidthTable),
+        ["GridEditingKeys"] = typeof(ExGrid.Keys.GridEditingKeys),
+        ["GridKeys"] = typeof(ExGrid.Keys.GridKeys),
         ["GridMetrics"] = typeof(GridMetrics),
         ["GridPresentationDefaults"] = typeof(GridPresentationDefaults),
         ["HeaderGroup"] = typeof(HeaderGroup),
@@ -168,6 +171,20 @@ public class CallCaseTests
                 throw new InvalidOperationException($"{label} answered nothing for \"then\" to read.");
             foreach (var next in then.EnumerateArray())
                 Holds(result.GetType(), result, next);
+            return;
+        }
+        var has = check.TryGetProperty("has", out var held);
+        var lacks = check.TryGetProperty("lacks", out var missing);
+        if (has || lacks)
+        {
+            if (JsonSerializer.SerializeToNode(result, Json) is not JsonArray members)
+                throw new InvalidOperationException($"{label} answered no list for \"has\" or \"lacks\" to search.");
+            if (has)
+                foreach (var wanted in held.EnumerateArray())
+                    Assert.True(members.Any(m => Same(JsonNode.Parse(wanted.GetRawText()), m)), $"{label}: expected it to hold {wanted}.");
+            if (lacks)
+                foreach (var unwanted in missing.EnumerateArray())
+                    Assert.False(members.Any(m => Same(JsonNode.Parse(unwanted.GetRawText()), m)), $"{label}: expected it not to hold {unwanted}.");
             return;
         }
         var atLeast = check.TryGetProperty("atLeast", out var least);

@@ -1,0 +1,20 @@
+{
+  "about": "The keys the core claims while a cell is being edited, one set per editing mode (ADR-0010, ADR-0051, ADR-0058). The C# core's GridEditingKeys.ByMode; the Script Core's editingKeysByMode. A map is compared whole: C# reads a dictionary's entries by no member name.",
+  "kind": "calls",
+  "subject": "GridEditingKeys",
+  "cases": [
+    {
+      "name": "ADR-0010 / ADR-0051 / ADR-0055 / ADR-0058 / ED-2: every mode claims commit, cancel, Tab, F2, Find's and Replace's keys; Point, Overwrite and pointing from outside the keys that move the outline or the Selection rather than the caret; a completion list only its Up and Down, and over Point the keys that point",
+      "expect": [
+        {"static": "byMode", "is": {
+          "editing": ["Escape", "Enter", "Shift+Enter", "Control+Enter", "Tab", "Shift+Tab", "F2", "Control+f", "Control+F", "Control+h", "Control+H"],
+          "overwrite": ["Escape", "Enter", "Shift+Enter", "Control+Enter", "Tab", "Shift+Tab", "F2", "Control+f", "Control+F", "Control+h", "Control+H", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Home", "End", "Shift+ArrowUp", "Shift+ArrowDown", "Shift+ArrowLeft", "Shift+ArrowRight", "Shift+Home", "Control+ArrowUp", "Control+ArrowDown", "Control+ArrowLeft", "Control+ArrowRight", "Control+Shift+ArrowUp", "Control+Shift+ArrowDown", "Control+Shift+ArrowLeft", "Control+Shift+ArrowRight"],
+          "point": ["Escape", "Enter", "Shift+Enter", "Control+Enter", "Tab", "Shift+Tab", "F2", "Control+f", "Control+F", "Control+h", "Control+H", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Home", "End", "Shift+ArrowUp", "Shift+ArrowDown", "Shift+ArrowLeft", "Shift+ArrowRight", "Shift+Home", "Control+ArrowUp", "Control+ArrowDown", "Control+ArrowLeft", "Control+ArrowRight", "Control+Shift+ArrowUp", "Control+Shift+ArrowDown", "Control+Shift+ArrowLeft", "Control+Shift+ArrowRight"],
+          "pointed": ["Escape", "Enter", "Shift+Enter", "Control+Enter", "Tab", "Shift+Tab", "F2", "Control+f", "Control+F", "Control+h", "Control+H", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Home", "End", "Shift+ArrowUp", "Shift+ArrowDown", "Shift+ArrowLeft", "Shift+ArrowRight", "Shift+Home", "Control+ArrowUp", "Control+ArrowDown", "Control+ArrowLeft", "Control+ArrowRight", "Control+Shift+ArrowUp", "Control+Shift+ArrowDown", "Control+Shift+ArrowLeft", "Control+Shift+ArrowRight"],
+          "completion": ["Escape", "Enter", "Shift+Enter", "Control+Enter", "Tab", "Shift+Tab", "F2", "Control+f", "Control+F", "Control+h", "Control+H", "ArrowUp", "ArrowDown"],
+          "completionOverPoint": ["Escape", "Enter", "Shift+Enter", "Control+Enter", "Tab", "Shift+Tab", "F2", "Control+f", "Control+F", "Control+h", "Control+H", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Home", "End", "Shift+ArrowUp", "Shift+ArrowDown", "Shift+ArrowLeft", "Shift+ArrowRight"]
+        }}
+      ]
+    }
+  ]
+}

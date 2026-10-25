@@ -175,9 +175,7 @@ public static class ClipboardParse
             var cellPosition = rowStart;
             while (true)
             {
-                var cellStart = IndexOfTag(html, "td", cellPosition, rowEnd);
-                if (cellStart < 0)
-                    cellStart = IndexOfTag(html, "th", cellPosition, rowEnd);
+                var cellStart = IndexOfCell(html, cellPosition, rowEnd);
                 if (cellStart < 0)
                     break;
                 var openEnd = html.IndexOf('>', cellStart);
@@ -203,23 +201,48 @@ public static class ClipboardParse
     }
 
     /// <summary>Finds <c>&lt;tag</c> as a real tag open — followed by whitespace, '>',
-    /// or '/'—between <paramref name="from"/> and <paramref name="until"/>.</summary>
+    /// or '/'—between <paramref name="from"/> and <paramref name="until"/>, never searching past
+    /// <paramref name="until"/>: a row looking for a tag it lacks would otherwise read the rest of the
+    /// document, row after row.</summary>
     private static int IndexOfTag(string html, string tag, int from, int until)
     {
         var needle = "<" + tag;
-        var i = from;
-        while (i >= 0 && i < until)
+        for (var i = IndexWithin(html, needle, from, until); i >= 0; i = IndexWithin(html, needle, i + needle.Length, until))
         {
-            i = html.IndexOf(needle, i, StringComparison.OrdinalIgnoreCase);
-            if (i < 0 || i >= until)
-                return -1;
-            var after = i + needle.Length;
-            if (after < html.Length && (char.IsWhiteSpace(html[after]) || html[after] is '>' or '/'))
+            if (EndsTagName(html, i + needle.Length))
                 return i;
-            i = after;
         }
         return -1;
     }
+
+    /// <summary>Finds the next cell's open, <c>&lt;td</c> or <c>&lt;th</c>, whichever comes first, between
+    /// <paramref name="from"/> and <paramref name="until"/>: in one scan, so a row of heading and data cells
+    /// keeps its order (a web table's row headings), and a row with no heading cell is not searched again
+    /// for one.</summary>
+    private static int IndexOfCell(string html, int from, int until)
+    {
+        for (var i = IndexWithin(html, "<t", from, until); i >= 0; i = IndexWithin(html, "<t", i + 2, until))
+        {
+            if (i + 2 < html.Length && html[i + 2] is 'd' or 'D' or 'h' or 'H' && EndsTagName(html, i + 3))
+                return i;
+        }
+        return -1;
+    }
+
+    /// <summary>Where <paramref name="needle"/> first starts at or after <paramref name="from"/> and before
+    /// <paramref name="until"/>, in any case, or -1.</summary>
+    private static int IndexWithin(string html, string needle, int from, int until)
+    {
+        var count = Math.Min(until, html.Length) - from;
+        if (count <= 0)
+            return -1;
+        // A match may run past until, as long as it starts before it.
+        count = Math.Min(count + needle.Length - 1, html.Length - from);
+        return html.IndexOf(needle, from, count, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool EndsTagName(string html, int at)
+        => at < html.Length && (char.IsWhiteSpace(html[at]) || html[at] is '>' or '/');
 
     /// <summary>Excel's <c>x:num="…"</c> — the raw number behind the displayed text.
     /// The bare form (<c>x:num</c> with no value) says only "this is a number", so the

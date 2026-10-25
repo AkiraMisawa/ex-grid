@@ -1,0 +1,124 @@
+{
+  "about": "Ctrl+D and Ctrl+R (ADR-0035, CP-24, CP-25): where the source is, what the target is, and every reason a fill is refused. From tests/ExGrid.Tests/FillKeyRuleTests.cs.",
+  "kind": "clipboard",
+  "extent": [1000, 20],
+  "cases": [
+    {
+      "name": "ADR-0035 / CP-24: Ctrl+D reads the top row and writes the rows below it, tiled by the paste arithmetic",
+      "steps": [
+        {"click": [3, 2]},
+        {"extendTo": [7, 4]},
+        {"planFill": {"direction": "down"}, "plan": {"source": [3, 2, 1, 3], "targets": [[4, 2, 4, 3]], "shape": [1, 3], "sourceCells": [[[7, 4], [0, 2]]]}}
+      ]
+    },
+    {
+      "name": "ADR-0035 / CP-24: Ctrl+R reads the left column and writes the columns right of it",
+      "steps": [
+        {"click": [3, 2]},
+        {"extendTo": [7, 4]},
+        {"planFill": {"direction": "right"}, "plan": {"source": [3, 2, 5, 1], "targets": [[3, 3, 5, 2]], "sourceCells": [[[7, 4], [4, 0]]]}}
+      ]
+    },
+    {
+      "name": "ADR-0035: a range one row tall fills from the row above, Excel's Ctrl+D on one cell",
+      "steps": [
+        {"click": [5, 1]},
+        {"extendTo": [5, 3]},
+        {"planFill": {"direction": "down"}, "plan": {"source": [4, 1, 1, 3], "targets": [[5, 1, 1, 3]]}}
+      ]
+    },
+    {
+      "name": "ADR-0035: a range one column wide fills from the column to its left",
+      "steps": [
+        {"click": [2, 6]},
+        {"extendTo": [4, 6]},
+        {"planFill": {"direction": "right"}, "plan": {"source": [2, 5, 3, 1], "targets": [[2, 6, 3, 1]]}}
+      ]
+    },
+    {
+      "name": "ADR-0035 / CP-25: at the first row there is nothing to fill down from",
+      "steps": [
+        {"click": [0, 3]},
+        {"planFill": {"direction": "down"}, "refused": "nothingToFillFrom"}
+      ]
+    },
+    {
+      "name": "ADR-0035 / CP-25: at the first column there is nothing to fill right from",
+      "steps": [
+        {"click": [3, 0]},
+        {"planFill": {"direction": "right"}, "refused": "nothingToFillFrom"}
+      ]
+    },
+    {
+      "name": "ADR-0035 / CP-25: several ranges would need several sources",
+      "steps": [
+        {"click": [1, 1]},
+        {"extendTo": [3, 1]},
+        {"toggleRange": [8, 8]},
+        {"planFill": {"direction": "down"}, "refused": "multipleRanges"}
+      ]
+    },
+    {
+      "name": "ADR-0035 / CP-25: an empty selection names nothing",
+      "steps": [
+        {"planFill": {"direction": "down"}, "refused": "emptySelection"}
+      ]
+    },
+    {
+      "name": "ADR-0035 / CP-25: the columns written must be Editable",
+      "steps": [
+        {"click": [1, 1]},
+        {"extendTo": [5, 3]},
+        {"planFill": {"direction": "down", "notEditable": [3]}, "refused": "targetNotEditable", "column": 3}
+      ]
+    },
+    {
+      "name": "ADR-0035 / CP-25: the declaration is reported before there being nothing to fill from",
+      "steps": [
+        {"click": [0, 0]},
+        {"planFill": {"direction": "down", "notEditable": "every"}, "refused": "targetNotEditable", "column": 0},
+        {"planFill": {"direction": "right", "notEditable": "every"}, "refused": "targetNotEditable", "column": 0}
+      ]
+    },
+    {
+      "name": "ADR-0035 / CP-25: and before several ranges, each judged on the target it alone would have",
+      "steps": [
+        {"click": [1, 1]},
+        {"extendTo": [3, 1]},
+        {"toggleRange": [8, 4]},
+        {"planFill": {"direction": "down", "notEditable": [4]}, "refused": "targetNotEditable", "column": 4}
+      ]
+    },
+    {
+      "name": "ADR-0035 / CP-25: Ctrl+R's source column is read, not written, so it may be not Editable",
+      "steps": [
+        {"click": [1, 1]},
+        {"extendTo": [5, 3]},
+        {"planFill": {"direction": "right", "notEditable": [1]}, "plan": {}},
+        {"click": [1, 2]},
+        {"extendTo": [5, 2]},
+        {"planFill": {"direction": "right", "notEditable": [1]}, "plan": {}}
+      ]
+    },
+    {
+      "name": "ADR-0035 / ADR-0005: a source past the copy cap is refused, as its read would be",
+      "steps": [
+        {"click": [0, 1]},
+        {"extendTo": [999, 2]},
+        {"planFill": {"direction": "right", "cellCap": 999}, "refused": "tooLarge"},
+        {"click": [0, 1]},
+        {"extendTo": [998, 2]},
+        {"planFill": {"direction": "right", "cellCap": 999}, "plan": {}}
+      ]
+    },
+    {
+      "name": "ADR-0035: a fill runs down or right; up and left are no keys the grid has",
+      "steps": [
+        {"click": [1, 1]},
+        {"extendTo": [2, 2]},
+        {"planFill": {"direction": "up"}, "throws": "outOfRange"},
+        {"planFill": {"direction": "left"}, "throws": "outOfRange"}
+      ]
+    }
+  ]
+}

@@ -1,0 +1,131 @@
+{
+  "about": "The two-flavour assembly of an approved copy (ADR-0005): the displayed text as TSV and the raw values as an HTML table, in one operation. A cell displays d{row}.{column} and is raw r{row}.{column}, and a header is H{column}, unless the step names other text. The plan comes from the real rules, so the order held here is the order copies get. From tests/ExGrid.Tests/ClipboardDataTests.cs.",
+  "kind": "clipboard",
+  "extent": [100, 26],
+  "cases": [
+    {
+      "name": "ADR-0005: one range emits its rows as lines and its columns as tab-separated cells, as TSV and as an HTML table",
+      "steps": [
+        {"click": [1, 2]},
+        {"extendTo": [2, 3]},
+        {"planCopy": {}, "assemble": {}, "text": "d1.2\td1.3\r\nd2.2\td2.3\r\n", "html": "<table data-ex-grid=\"invariant\"><tr><td>r1.2</td><td>r1.3</td></tr><tr><td>r2.2</td><td>r2.3</td></tr></table>"}
+      ]
+    },
+    {
+      "name": "ADR-0005 / CP-17: copy with headers emits one row of declared headers above the block, in both flavours",
+      "steps": [
+        {"click": [1, 2]},
+        {"extendTo": [2, 3]},
+        {"planCopy": {"withHeaders": true}, "assemble": {"headers": true}, "text": "H2\tH3\r\nd1.2\td1.3\r\nd2.2\td2.3\r\n", "html": "<table data-ex-grid=\"invariant\"><tr><th>H2</th><th>H3</th></tr><tr><td>r1.2</td><td>r1.3</td></tr><tr><td>r2.2</td><td>r2.3</td></tr></table>"}
+      ]
+    },
+    {
+      "name": "ADR-0005's note of 2026-10-13: a header with a raw form copies as shown in the TSV and in its raw form in the HTML, as a cell does; a header without one is its text in both",
+      "steps": [
+        {"click": [1, 2]},
+        {"extendTo": [2, 3]},
+        {"planCopy": {"withHeaders": true}, "assemble": {"headers": "1.23457E+11", "headerRaws": {"2": "123456789012.345"}}, "text": "1.23457E+11\t1.23457E+11\r\nd1.2\td1.3\r\nd2.2\td2.3\r\n", "html": "<table data-ex-grid=\"invariant\"><tr><th>123456789012.345</th><th>1.23457E+11</th></tr><tr><td>r1.2</td><td>r1.3</td></tr><tr><td>r2.2</td><td>r2.3</td></tr></table>"}
+      ]
+    },
+    {
+      "name": "ADR-0005's note of 2026-10-13: a header raw form that answers none everywhere copies exactly as no raw form does",
+      "steps": [
+        {"click": [1, 2]},
+        {"extendTo": [2, 3]},
+        {"planCopy": {"withHeaders": true}, "assemble": {"headers": true, "headerRaws": {}}, "text": "H2\tH3\r\nd1.2\td1.3\r\nd2.2\td2.3\r\n", "html": "<table data-ex-grid=\"invariant\"><tr><th>H2</th><th>H3</th></tr><tr><td>r1.2</td><td>r1.3</td></tr><tr><td>r2.2</td><td>r2.3</td></tr></table>"}
+      ]
+    },
+    {
+      "name": "ADR-0005's note of 2026-10-13: without a header row a header's raw form is never asked for",
+      "steps": [
+        {"click": [1, 2]},
+        {"extendTo": [2, 3]},
+        {"planCopy": {}, "assemble": {"headerRaws": {"2": "123456789012.345"}}, "text": "d1.2\td1.3\r\nd2.2\td2.3\r\n", "html": "<table data-ex-grid=\"invariant\"><tr><td>r1.2</td><td>r1.3</td></tr><tr><td>r2.2</td><td>r2.3</td></tr></table>"}
+      ]
+    },
+    {
+      "name": "ADR-0005 / CP-17: vertical segments share a column span, so one header row names them all",
+      "steps": [
+        {"click": [5, 0]},
+        {"extendTo": [5, 1]},
+        {"toggleRange": [1, 0]},
+        {"extendTo": [2, 1]},
+        {"planCopy": {"withHeaders": true}, "assemble": {"headers": true}, "text": "H0\tH1\r\nd1.0\td1.1\r\nd2.0\td2.1\r\nd5.0\td5.1\r\n", "html": "<table data-ex-grid=\"invariant\"><tr><th>H0</th><th>H1</th></tr><tr><td>r1.0</td><td>r1.1</td></tr><tr><td>r2.0</td><td>r2.1</td></tr><tr><td>r5.0</td><td>r5.1</td></tr></table>"}
+      ]
+    },
+    {
+      "name": "ADR-0005 / CP-17: horizontal segments concatenate, so the header row names their columns in the order the cells are emitted",
+      "steps": [
+        {"click": [3, 4]},
+        {"extendTo": [4, 4]},
+        {"toggleRange": [3, 1]},
+        {"extendTo": [4, 1]},
+        {"planCopy": {"withHeaders": true}, "assemble": {"headers": true}, "text": "H1\tH4\r\nd3.1\td3.4\r\nd4.1\td4.4\r\n", "html": "<table data-ex-grid=\"invariant\"><tr><th>H1</th><th>H4</th></tr><tr><td>r3.1</td><td>r3.4</td></tr><tr><td>r4.1</td><td>r4.4</td></tr></table>"}
+      ]
+    },
+    {
+      "name": "ADR-0005 / CP-17: without headers the plain copy is untouched",
+      "steps": [
+        {"click": [1, 2]},
+        {"extendTo": [1, 2]},
+        {"planCopy": {}, "assemble": {}, "text": "d1.2\r\n", "html": "<table data-ex-grid=\"invariant\"><tr><td>r1.2</td></tr></table>"}
+      ]
+    },
+    {
+      "name": "ADR-0011 / CP-9: vertically aligned ranges stack in position order, never creation order",
+      "steps": [
+        {"click": [5, 0]},
+        {"extendTo": [5, 1]},
+        {"toggleRange": [1, 0]},
+        {"extendTo": [2, 1]},
+        {"planCopy": {}, "plan": {"orientation": "vertical"}, "assemble": {}, "text": "d1.0\td1.1\r\nd2.0\td2.1\r\nd5.0\td5.1\r\n", "html": "<table data-ex-grid=\"invariant\"><tr><td>r1.0</td><td>r1.1</td></tr><tr><td>r2.0</td><td>r2.1</td></tr><tr><td>r5.0</td><td>r5.1</td></tr></table>"}
+      ]
+    },
+    {
+      "name": "ADR-0011: horizontally aligned ranges concatenate left to right, the gap closed",
+      "steps": [
+        {"click": [3, 4]},
+        {"extendTo": [4, 4]},
+        {"toggleRange": [3, 1]},
+        {"extendTo": [4, 1]},
+        {"planCopy": {}, "plan": {"orientation": "horizontal"}, "assemble": {}, "text": "d3.1\td3.4\r\nd4.1\td4.4\r\n", "html": "<table data-ex-grid=\"invariant\"><tr><td>r3.1</td><td>r3.4</td></tr><tr><td>r4.1</td><td>r4.4</td></tr></table>"}
+      ]
+    },
+    {
+      "name": "ADR-0005: a cell holding a tab, a break or a quote is quoted with its quotes doubled, Excel's convention, not mangled",
+      "steps": [
+        {"click": [0, 0]},
+        {"planCopy": {}, "assemble": {"display": "a\tb\"c\nd"}, "text": "\"a\tb\"\"c\nd\"\r\n", "html": "<table data-ex-grid=\"invariant\"><tr><td>r0.0</td></tr></table>"}
+      ]
+    },
+    {
+      "name": "ADR-0005: a carriage return alone is a break, and quotes the cell too",
+      "steps": [
+        {"click": [0, 0]},
+        {"planCopy": {}, "assemble": {"display": "a\rb"}, "text": "\"a\rb\"\r\n", "html": "<table data-ex-grid=\"invariant\"><tr><td>r0.0</td></tr></table>"}
+      ]
+    },
+    {
+      "name": "ADR-0005: the raw value travels HTML-escaped, so markup in a value stays a value, and a quote needs no escape in the HTML",
+      "steps": [
+        {"click": [0, 0]},
+        {"planCopy": {}, "assemble": {"raw": "a<b>&c\"d"}, "text": "d0.0\r\n", "html": "<table data-ex-grid=\"invariant\"><tr><td>a&lt;b&gt;&amp;c\"d</td></tr></table>"}
+      ]
+    },
+    {
+      "name": "ADR-0005: a header is quoted and escaped as a cell is",
+      "steps": [
+        {"click": [0, 0]},
+        {"planCopy": {"withHeaders": true}, "assemble": {"headers": "Q\"1 <a>"}, "text": "\"Q\"\"1 <a>\"\r\nd0.0\r\n", "html": "<table data-ex-grid=\"invariant\"><tr><th>Q\"1 &lt;a&gt;</th></tr><tr><td>r0.0</td></tr></table>"}
+      ]
+    },
+    {
+      "name": "ADR-0005: an empty value copies as an empty field in both flavours",
+      "steps": [
+        {"click": [0, 0]},
+        {"extendTo": [0, 1]},
+        {"planCopy": {}, "assemble": {"display": "", "raw": ""}, "text": "\t\r\n", "html": "<table data-ex-grid=\"invariant\"><tr><td></td><td></td></tr></table>"}
+      ]
+    }
+  ]
+}
