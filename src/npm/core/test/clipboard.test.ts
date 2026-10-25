@@ -2,8 +2,9 @@
 // Script Core. A case's steps make a selection with the gestures of the selection cases, then plan a copy,
 // a paste or a fill on it and say what the plan is or why it is refused.
 import { describe, expect, it } from 'vitest';
+import { assembleCopy } from '../src/clipboard/clipboard-data';
 import {
-    planCopy, planFill, planPaste, pasteShape, type CopyDecision, type FillDecision, type PasteDecision, type PastePlan,
+    planCopy, planFill, planPaste, pasteShape, type CopyDecision, type CopyPlan, type FillDecision, type PasteDecision, type PastePlan,
 } from '../src/clipboard/clipboard-rules';
 import type { GridDirection, GridExtent } from '../src/selection/cell';
 import { Selection } from '../src/selection/selection';
@@ -50,6 +51,41 @@ function holdsPaste(plan: PastePlan, expected: Options, label: string): void {
     }
 }
 
+// What a cell shows and holds unless a step names other text (tests/cases/README.md, `clipboard`).
+const shownAt = (row: number, column: number) => `d${row}.${column}`;
+const rawFormAt = (row: number, column: number) => `r${row}.${column}`;
+
+/** Both flavours of the copy (ADR-0005), from the providers the step names, held to its `text` and `html`. */
+function assembles(plan: CopyPlan, options: Options, step: Step, label: string): void {
+    let displayAt = shownAt;
+    let rawAt = rawFormAt;
+    let headerAt: ((column: number) => string) | undefined;
+    let headerRaws: Readonly<Record<string, string>> | undefined;
+    for (const [key, value] of Object.entries(options)) {
+        switch (key) {
+            case 'display': displayAt = () => value as string; break;
+            case 'raw': rawAt = () => value as string; break;
+            case 'headers':
+                if (value === true) headerAt = column => `H${column}`;
+                else if (typeof value === 'string') headerAt = () => value;
+                else throw new Error(`${label}: "headers" is true or a text, not ${JSON.stringify(value)}.`);
+                break;
+            case 'headerRaws': headerRaws = value as Record<string, string>; break;
+            default: throw new Error(`${label}: "${key}" is not an assembly option this runner knows.`);
+        }
+    }
+    const raws = headerRaws;
+    // Without a header row a raw form is never read, so one asked for then fails the case.
+    const headerRawAt = raws === undefined ? undefined
+        : headerAt === undefined ? (): never => { throw new Error(`${label}: a header's raw form was read without a header row.`); }
+        : (column: number) => (Object.hasOwn(raws, String(column)) ? raws[String(column)] : undefined);
+    const flavours = assembleCopy(plan, {
+        displayAt, rawAt, ...(headerAt === undefined ? {} : { headerAt }), ...(headerRawAt === undefined ? {} : { headerRawAt }),
+    });
+    expect(flavours.text, `${label}: text`).toBe(step['text']);
+    expect(flavours.html, `${label}: html`).toBe(step['html']);
+}
+
 function holdsDecision(decision: CopyDecision | PasteDecision | FillDecision, step: Step, label: string): void {
     if ('refused' in step) {
         expect(decision.refused ? decision.reason : 'approved', label).toBe(step['refused']);
@@ -58,11 +94,16 @@ function holdsDecision(decision: CopyDecision | PasteDecision | FillDecision, st
         }
         return;
     }
-    if (!('plan' in step)) throw new Error(`${label} says neither "refused", "plan" nor "throws".`);
+    if (!('plan' in step || 'assemble' in step)) throw new Error(`${label} says neither "refused", "plan", "assemble" nor "throws".`);
     expect(decision.refused ? decision.reason : 'approved', `${label}: expected a plan`).toBe('approved');
     if (decision.refused) return;
-    const expected = step['plan'] as Options;
     const { plan } = decision;
+    if ('assemble' in step) {
+        if (!('orientation' in plan)) throw new Error(`${label}: only a copy assembles.`);
+        assembles(plan, step['assemble'] as Options, step, label);
+    }
+    if (!('plan' in step)) return;
+    const expected = step['plan'] as Options;
     if ('orientation' in plan) {
         for (const [key, value] of Object.entries(expected)) {
             switch (key) {

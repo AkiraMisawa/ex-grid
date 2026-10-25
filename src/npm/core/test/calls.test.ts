@@ -4,6 +4,7 @@
 import { describe, expect, it } from 'vitest';
 import { AutoWidth } from '../src/columns/auto-width';
 import { CellTextMetrics } from '../src/columns/cell-text-metrics';
+import { parseClipboard, parseClipboardBlock } from '../src/clipboard/clipboard-parse';
 import { ColumnWidth, ColumnWidthSpec } from '../src/columns/column-width';
 import { ColumnGeometry } from '../src/columns/column-geometry';
 import { GlyphWidthTable } from '../src/columns/glyph-width-table';
@@ -38,6 +39,11 @@ const subjects: Readonly<Record<string, Subject>> = {
     CellTextMetrics: {
         create: (args, via) => via === undefined ? new CellTextMetrics(args as never) : noFactory('CellTextMetrics', via),
         statics: CellTextMetrics,
+    },
+    // C#'s ClipboardParse is a static class: its members are the module's functions here.
+    ClipboardParse: {
+        create: (_, via) => noFactory('ClipboardParse', via),
+        statics: { parse: parseClipboard, parseBlock: parseClipboardBlock },
     },
     ColumnGeometry: {
         create: (args, via) => via === undefined ? new ColumnGeometry(args as never) : noFactory('ColumnGeometry', via),

@@ -98,22 +98,74 @@ public class ClipboardCaseTests
                 Assert.Equal(expectedColumn.GetInt32(), column);
             return true;
         }
-        if (!step.TryGetProperty("plan", out var expected))
-            throw new InvalidOperationException($"{label} says neither \"refused\", \"plan\" nor \"throws\".");
+        var hasPlan = step.TryGetProperty("plan", out var expected);
+        var assembles = step.TryGetProperty("assemble", out var assembly);
+        if (!hasPlan && !assembles)
+            throw new InvalidOperationException($"{label} says neither \"refused\", \"plan\", \"assemble\" nor \"throws\".");
         Assert.False(refused, $"{label}: expected a plan, refused as {reason}.");
-        switch (decision)
+        if (hasPlan)
         {
-            case CopyDecision d:
-                HoldsCopy(d.Plan, expected, label);
-                break;
-            case PasteDecision d:
-                HoldsPaste(d.Plan, expected, label);
-                break;
-            case FillDecision d:
-                HoldsFill(d.Plan, expected, label);
-                break;
+            switch (decision)
+            {
+                case CopyDecision d:
+                    HoldsCopy(d.Plan, expected, label);
+                    break;
+                case PasteDecision d:
+                    HoldsPaste(d.Plan, expected, label);
+                    break;
+                case FillDecision d:
+                    HoldsFill(d.Plan, expected, label);
+                    break;
+            }
+        }
+        if (assembles)
+        {
+            if (decision is not CopyDecision copied)
+                throw new InvalidOperationException($"{label}: only a copy assembles.");
+            Assembles(copied.Plan, assembly, step, label);
         }
         return true;
+    }
+
+    /// <summary>Both flavours of the copy (ADR-0005), from the providers the step names, held to its
+    /// <c>text</c> and <c>html</c>.</summary>
+    private static void Assembles(CopyPlan plan, JsonElement options, JsonElement step, string label)
+    {
+        Func<int, int, string> display = (row, column) => $"d{row}.{column}";
+        Func<int, int, string> raw = (row, column) => $"r{row}.{column}";
+        Func<int, string>? header = null;
+        Dictionary<int, string>? headerRaws = null;
+        foreach (var option in options.EnumerateObject())
+        {
+            var value = option.Value;
+            switch (option.Name)
+            {
+                case "display": display = (_, _) => value.GetString()!; break;
+                case "raw": raw = (_, _) => value.GetString()!; break;
+                case "headers":
+                    header = value.ValueKind switch
+                    {
+                        JsonValueKind.True => column => $"H{column}",
+                        JsonValueKind.String => _ => value.GetString()!,
+                        _ => throw new InvalidOperationException($"{label}: \"headers\" is true or a text, not {value}."),
+                    };
+                    break;
+                case "headerRaws":
+                    headerRaws = value.EnumerateObject().ToDictionary(
+                        p => int.Parse(p.Name, System.Globalization.CultureInfo.InvariantCulture), p => p.Value.GetString()!);
+                    break;
+                default: throw new InvalidOperationException($"{label}: \"{option.Name}\" is not an assembly option this runner knows.");
+            }
+        }
+        // Without a header row a raw form is never read, so one asked for then fails the case.
+        Func<int, string?>? headerRaw = headerRaws is null ? null
+            : header is null ? _ => throw new InvalidOperationException($"{label}: a header's raw form was read without a header row.")
+            : column => headerRaws.GetValueOrDefault(column);
+
+        var (text, html) = ClipboardData.Assemble(plan, display, raw, header, headerRaw);
+
+        Assert.Equal(step.GetProperty("text").GetString(), text);
+        Assert.Equal(step.GetProperty("html").GetString(), html);
     }
 
     private static void HoldsCopy(CopyPlan plan, JsonElement expected, string label)

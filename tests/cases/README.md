@@ -119,7 +119,7 @@ the selection under the same version, `{"under": version}` reconciles with the v
 
 ## `clipboard`
 
-The copy, paste and fill rules (ADR-0005, ADR-0011, ADR-0014, ADR-0035, ADR-0050 item 3), run by
+The copy, paste and fill rules (ADR-0005, ADR-0011, ADR-0014, ADR-0035, ADR-0050 item 3) and a copy's assembly, run by
 `tests/ExGrid.Tests/Cases/ClipboardCaseTests.cs` and `src/npm/core/test/clipboard.test.ts`. A case's
 `steps` make a selection with the gestures of `selection` (on the case's `extent`, or the file's), and
 plan on the selection as it stands:
@@ -137,6 +137,16 @@ and says what it answers, with one of:
 | `refused` | The reason, as the C# enum's member in camelCase (`tooLarge`, `targetNotEditable`); with `column`, the column a `targetNotEditable` refusal names |
 | `plan` | Approved, and the plan holds every key given: a copy's `segments`, `orientation`, `totalRows`, `totalColumns`; a paste's `targets`, `source` (`[rows, columns]`), `collapses`, `sourceCells` (`[[cell, [row, column]], …]`, the block cell landing on each) and `outside` (cells no target holds, whose block cell is refused); a fill's `source` (a range) and `shape`, and a paste's keys for its write. `{}` says only that it is approved |
 | `throws` | The refusal of a call that is not a decision: a cap below one cell, a shape with no rows, a fill up or left |
+| `assemble` | Approved, and the copy's two flavours (ADR-0005) are the step's `text` and `html`, both written; with `plan` too, the plan holds its keys as well |
+
+`assemble` names what the copy reads. A cell displays `d{row}.{column}` and is raw `r{row}.{column}`, and
+there is no header row, unless the step says otherwise:
+
+| Key | Reads |
+|---|---|
+| `display`, `raw` | The text every cell displays, or holds raw |
+| `headers` | A header row: `true` for `H{column}`, or the text every header shows |
+| `headerRaws` | `{column: raw}`: a header's raw form, for the columns named; the others have none. Without `headers` a raw form is never read, and one read fails the case |
 
 ## `calls`
 

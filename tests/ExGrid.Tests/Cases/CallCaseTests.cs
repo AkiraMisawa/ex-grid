@@ -21,6 +21,7 @@ public class CallCaseTests
     private static readonly Dictionary<string, Type> Subjects = new()
     {
         ["CellTextMetrics"] = typeof(CellTextMetrics),
+        ["ClipboardParse"] = typeof(ExGrid.Clipboard.ClipboardParse),
         ["AutoWidth"] = typeof(AutoWidth),
         ["ColumnGeometry"] = typeof(ColumnGeometry),
         ["ColumnWidth"] = typeof(ColumnWidth),
