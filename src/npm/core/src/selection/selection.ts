@@ -163,6 +163,11 @@ export class Selection implements GridSelection {
         for (const range of this.ranges) {
             sum += rangeCellCount(range);
         }
+        // A number is exact only up to 2^53; past it the count would be a neighbouring one that looks
+        // right. C# counts in a long and reaches it (ADR-0011, SL-2); here it is refused (spine, rule 1).
+        if (!Number.isSafeInteger(sum)) {
+            throw new RangeError(`The selection holds more cells than a number counts exactly (${sum} is past 2^53).`);
+        }
         return sum;
     }
 
@@ -302,7 +307,7 @@ export class Selection implements GridSelection {
         const whole = selectionRange(0, column, extent.rowCount, 1);
         return this.coversColumn(column, extent)
             ? this.#takeOut(whole)
-            : this.#add(whole, cell(clamp(focusRow, 0, extent.rowCount - 1), column));
+            : this.#add(whole, cell(clamp(wholeNumber(focusRow, 'focusRow'), 0, extent.rowCount - 1), column));
     }
 
     /** Ctrl+click on a Row Heading (ADR-0050, item 1): toggleColumn on the other axis, with the Focus on
@@ -319,7 +324,7 @@ export class Selection implements GridSelection {
         const whole = selectionRange(row, 0, 1, extent.columnCount);
         return this.coversRow(row, extent)
             ? this.#takeOut(whole)
-            : this.#add(whole, cell(row, clamp(focusColumn, 0, extent.columnCount - 1)));
+            : this.#add(whole, cell(row, clamp(wholeNumber(focusColumn, 'focusColumn'), 0, extent.columnCount - 1)));
     }
 
     /** Arrow: collapses the selection to one cell and moves it from the Focus, clamped at the grid's edge
@@ -366,12 +371,14 @@ export class Selection implements GridSelection {
      * that is, is view geometry the selection never holds, so the caller passes the signed delta; the
      * grid's edge clamps it. */
     moveByViewport(rowDelta: number, extent: GridExtent): Selection {
+        wholeNumber(rowDelta, 'rowDelta');
         return this.#moveFocusTo(extent, focus => stepRows(focus, rowDelta, extent));
     }
 
     /** Shift+PageUp and Shift+PageDown (ADR-0012, ADR-0052): the Extent moves by a Viewport of rows and
      * the Focus stays. */
     extendByViewport(rowDelta: number, extent: GridExtent): Selection {
+        wholeNumber(rowDelta, 'rowDelta');
         return this.#extendAlong(extent, false, from => stepRows(from, rowDelta, extent));
     }
 
@@ -396,8 +403,8 @@ export class Selection implements GridSelection {
             this.#requireFits(extent);
             return new Selection([all], this.#focus, 0);
         }
-        const start = clamp(context.firstRow, 0, extent.rowCount - 1);
-        const count = clamp(context.rowCount, 1, extent.rowCount - start);
+        const start = clamp(wholeNumber(context.firstRow, 'context.firstRow'), 0, extent.rowCount - 1);
+        const count = clamp(wholeNumber(context.rowCount, 'context.rowCount'), 1, extent.rowCount - start);
         const page = selectionRange(start, 0, count, extent.columnCount);
         if (this.isEmpty || !rangeContains(page, this.#focus)) {
             return new Selection([page], cell(start, 0), 0);
@@ -495,6 +502,7 @@ export class Selection implements GridSelection {
      * nowhere: moving the Focus out of the selection is a click.
      */
     focusOn(position: CellPosition): Selection {
+        requireWholeCell(position);
         for (let i = this.ranges.length - 1; i >= 0; i--) {
             if (rangeContains(elementAt(this.ranges, i), position)) {
                 return new Selection(this.ranges, position, i, this.#origins);
@@ -550,6 +558,7 @@ export class Selection implements GridSelection {
         if (bottomRow(checked) >= extent.rowCount || rightColumn(checked) >= extent.columnCount) {
             throw new RangeError(`The range reaches outside the grid (${extent.rowCount} rows × ${extent.columnCount} columns) (ADR-0050).`);
         }
+        requireWholeCell(focus);
         if (!rangeContains(checked, focus)) {
             throw new RangeError('The Focus is placed inside the range it belongs to (ADR-0050, ADR-0052).');
         }
@@ -567,7 +576,7 @@ export class Selection implements GridSelection {
         }
         requireColumn(column, extent);
         return new Selection(
-            [selectionRange(0, column, extent.rowCount, 1)], cell(clamp(focusRow, 0, extent.rowCount - 1), column), 0);
+            [selectionRange(0, column, extent.rowCount, 1)], cell(clamp(wholeNumber(focusRow, 'focusRow'), 0, extent.rowCount - 1), column), 0);
     }
 
     /** A plain click on a Row Heading (ADR-0050, item 1): the whole row as one range, with the Focus on
@@ -578,7 +587,7 @@ export class Selection implements GridSelection {
         }
         requireRow(row, extent);
         return new Selection(
-            [selectionRange(row, 0, 1, extent.columnCount)], cell(row, clamp(focusColumn, 0, extent.columnCount - 1)), 0);
+            [selectionRange(row, 0, 1, extent.columnCount)], cell(row, clamp(wholeNumber(focusColumn, 'focusColumn'), 0, extent.columnCount - 1)), 0);
     }
 
     /** One cell selected, holding the Focus. */
@@ -740,7 +749,26 @@ function replaceAt(ranges: readonly SelectionRange[], index: number, replacement
 /** A grid with no rows or no columns has nothing to select: every transition yields nothing selected,
  * which is not an error. */
 function isDegenerate(extent: GridExtent): boolean {
+    wholeNumber(extent.rowCount, 'extent.rowCount');
+    wholeNumber(extent.columnCount, 'extent.columnCount');
     return extent.rowCount <= 0 || extent.columnCount <= 0;
+}
+
+/**
+ * A count or a position an adapter passes, which C# types as an int: a whole number, or a RangeError
+ * naming it. A row computed as scrollTop / rowHeight and not floored would otherwise become a Focus on
+ * half a row, and NaN a broken invariant blamed on the core.
+ */
+function wholeNumber(value: number, name: string): number {
+    if (!Number.isSafeInteger(value)) {
+        throw new RangeError(`${name} is a whole number, not ${value}.`);
+    }
+    return value;
+}
+
+function requireWholeCell(position: CellPosition): void {
+    wholeNumber(position.row, 'row');
+    wholeNumber(position.column, 'column');
 }
 
 function requireInside(position: CellPosition, extent: GridExtent): void {

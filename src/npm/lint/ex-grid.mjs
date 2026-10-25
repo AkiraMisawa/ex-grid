@@ -29,27 +29,53 @@ function rethrows(block) {
     return last !== undefined && last.type === 'ThrowStatement';
 }
 
+const functions = new Set(['FunctionDeclaration', 'FunctionExpression', 'ArrowFunctionExpression']);
+
+/** Whether a `return` leaves the catch before its throw: a fallback answered on one path. A function
+ * declared inside the block returns from itself, not from the catch, so it is not searched. */
+function returnsFrom(node) {
+    if (node === null || typeof node !== 'object') {
+        return false;
+    }
+    if (Array.isArray(node)) {
+        return node.some(returnsFrom);
+    }
+    if (node.type === 'ReturnStatement') {
+        return true;
+    }
+    if (functions.has(node.type)) {
+        return false;
+    }
+    return Object.entries(node).some(([key, value]) => key !== 'parent' && returnsFrom(value));
+}
+
 const noCatch = {
     meta: {
         type: 'problem',
-        docs: { description: 'A catch that does not rethrow makes an error disappear.' },
+        docs: { description: 'A catch that does not rethrow, on every path, makes an error disappear.' },
         messages: {
             clause: 'A catch that does not rethrow makes the error disappear. Let it propagate, or rethrow with context; where the failure is truly expected, disable this rule on the line with `-- <why>`.',
             method: '`.catch` makes a rejection disappear unless its handler rethrows. Let it propagate; where the rejection is truly expected, disable this rule on the line with `-- <why>`.',
+            rejectedInThen: '`.then`\'s second argument is a `.catch`: it makes a rejection disappear unless it rethrows. Let it propagate; where the rejection is truly expected, disable this rule on the line with `-- <why>`.',
         },
         schema: [],
     },
     create(context) {
         return {
             CatchClause(node) {
-                if (!rethrows(node.body)) {
+                if (!rethrows(node.body) || returnsFrom(node.body)) {
                     context.report({ node, messageId: 'clause' });
                 }
             },
             CallExpression(node) {
                 const callee = node.callee;
-                if (callee.type === 'MemberExpression' && !callee.computed && callee.property.type === 'Identifier' && callee.property.name === 'catch') {
+                if (callee.type !== 'MemberExpression' || callee.computed || callee.property.type !== 'Identifier') {
+                    return;
+                }
+                if (callee.property.name === 'catch') {
                     context.report({ node: callee.property, messageId: 'method' });
+                } else if (callee.property.name === 'then' && node.arguments.length >= 2) {
+                    context.report({ node: callee.property, messageId: 'rejectedInThen' });
                 }
             },
         };

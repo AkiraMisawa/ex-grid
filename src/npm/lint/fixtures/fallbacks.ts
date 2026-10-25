@@ -38,6 +38,30 @@ export function rejected(work: Promise<number>): Promise<number> {
     return work.catch(() => 0); // expect: ex-grid(no-catch)
 }
 
+export function rejectedInThen(work: Promise<number>): Promise<number> {
+    return work.then(value => value, () => 0); // expect: ex-grid(no-catch)
+}
+
+export function swallowedOnOnePath(text: string, lenient: boolean): number {
+    try {
+        return Number(JSON.parse(text));
+    } catch (error) { // expect: ex-grid(no-catch)
+        if (lenient) {
+            return 0;
+        }
+        throw new Error('The text is not JSON.', { cause: error });
+    }
+}
+
+export function rethrownAfterAHelper(text: string): unknown {
+    try {
+        return JSON.parse(text);
+    } catch (error) {
+        const describe = (): string => `not JSON: ${text}`;
+        throw new Error(describe(), { cause: error });
+    }
+}
+
 export function escaped(input: unknown): number {
     const loose = input as any; // expect: typescript(no-explicit-any), typescript(no-unsafe-assignment), typescript(no-unsafe-type-assertion)
     return loose.size; // expect: typescript(no-unsafe-member-access), typescript(no-unsafe-return)

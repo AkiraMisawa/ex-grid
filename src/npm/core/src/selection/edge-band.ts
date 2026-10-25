@@ -20,6 +20,10 @@ export const edgeBand = Object.freeze({
  * `rowsPerViewport`, the fling threshold's guard.
  */
 export function edgeBandRowsPerTick(positionPx: number, lengthPx: number, rowsPerViewport: number): number {
+    // A whole count, as C#'s int: 5.5 would make a fractional rate, and NaN every rate NaN.
+    if (!Number.isSafeInteger(rowsPerViewport)) {
+        throw new RangeError(`rowsPerViewport is a whole number of rows, not ${rowsPerViewport}.`);
+    }
     if (!Number.isFinite(positionPx) || !Number.isFinite(lengthPx) || lengthPx <= 0) {
         return 0;
     }

@@ -17,8 +17,8 @@ writes to make an error go away, so the workspace refuses it by tool rather than
 |---|---|
 | `list[i] ?? 0`, `map.get(k) \|\| ''`, `x ?? []` **(lint)** | Decide whether the value can be absent. If it cannot, read it with `elementAt` or `defined` (`core/src/must.ts`), which throw. If it can, the absence is part of the contract: a parameter or property default where the signature shows it, or `undefined` returned and documented |
 | `list[i]!`, `value!` **(lint)** | `elementAt(list, i)`, `defined(value, 'what it is')`. A `!` reads on with `undefined` where C# would have thrown |
-| `catch { … }` or `catch (e) { return fallback }` **(lint)** | Let the error propagate. A catch that adds context ends in `throw` (`throw new Error('…', { cause })`), and passes |
-| `promise.catch(() => x)` **(lint)** | Let the rejection propagate to whoever awaits it |
+| `catch { … }` or `catch (e) { return fallback }`, on any path **(lint)** | Let the error propagate. A catch that adds context ends in `throw` (`throw new Error('…', { cause })`), returns nothing on the way, and passes |
+| `promise.catch(() => x)`, `promise.then(f, () => x)` **(lint)** | Let the rejection propagate to whoever awaits it |
 | `if (count)`, `if (name)`, `a \|\| b` on numbers or strings **(lint)** | Say the comparison: `count > 0`, `name !== undefined`, `name !== ''`. 0, `''` and `NaN` are values, not absences |
 | A `default:` that returns something plausible, or a switch that falls out as `undefined` **(lint)** | Take every member of the union, and end with `default: return unreachable(value)` |
 | `any`, `as T` that narrows, `@ts-ignore` **(lint)** | `unknown` and a check that narrows it. `@ts-expect-error` only with a description |
@@ -84,7 +84,7 @@ own rules live in `lint/ex-grid.mjs`:
 | Rule | Refuses |
 |---|---|
 | `ex-grid/no-stand-in-default` | `??`, `\|\|`, `??=`, `\|\|=` whose right side is a literal, `undefined`, `[]` or `{}` |
-| `ex-grid/no-catch` | A `catch` clause that does not end in `throw`, and every `.catch(…)` |
+| `ex-grid/no-catch` | A `catch` clause that does not end in `throw` or returns before it, every `.catch(…)`, and `.then(…, onRejected)` |
 | `ex-grid/disable-states-why` | A disable comment without ` -- <why>`, or one that covers more than a line |
 
 **The lint is held to its own fixtures first.** `lint/fixtures/` holds code that breaks each rule on

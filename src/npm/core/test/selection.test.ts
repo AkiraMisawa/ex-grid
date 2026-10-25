@@ -260,6 +260,11 @@ for (const file of caseFiles<HeldCase>('selection', 'held')) {
                         held = held.under(step['under'] as number);
                     } else {
                         const expected = step['expect'] as { version?: number; empty?: boolean; sameAsBefore?: boolean };
+                        for (const key of Object.keys(expected)) {
+                            if (!['version', 'empty', 'sameAsBefore'].includes(key)) {
+                                throw new Error(`A held case expects "${key}", which this runner does not know.`);
+                            }
+                        }
                         if (expected.version !== undefined) expect(held.rowSequenceVersion).toBe(expected.version);
                         if (expected.empty !== undefined) expect(held.selection.isEmpty).toBe(expected.empty);
                         if (expected.sameAsBefore !== undefined) expect(held === before).toBe(expected.sameAsBefore);

@@ -301,6 +301,9 @@ public class SelectionCaseTests
             else
             {
                 var expected = step.GetProperty("expect");
+                foreach (var key in expected.EnumerateObject())
+                    if (key.Name is not ("version" or "empty" or "sameAsBefore"))
+                        throw new InvalidOperationException($"A held case expects \"{key.Name}\", which this runner does not know.");
                 if (expected.TryGetProperty("version", out var v))
                     Assert.Equal(v.GetInt32(), held.RowSequenceVersion);
                 if (expected.TryGetProperty("empty", out var empty))

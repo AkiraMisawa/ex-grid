@@ -4,8 +4,8 @@ using Xunit;
 namespace ExGrid.Tests;
 
 /// <summary>
-/// What of the selection's queries is C#'s alone: the spans the copy rules compare, and a list that
-/// cannot be cast back to a mutable one. The rest is in the shared cases
+/// What of the selection's queries is C#'s alone: the spans the copy rules compare, a list that
+/// cannot be cast back to a mutable one, and a hash that agrees with equality. The rest is in the shared cases
 /// (tests/cases/selection/queries.json, ADR-0350).
 /// </summary>
 public class SelectionQueryTests
@@ -26,6 +26,18 @@ public class SelectionQueryTests
         Assert.Equal(new ColumnRange(2, 2), selection.Ranges[1].ColumnSpan);
         Assert.Equal(new RowRange(1, 2), selection.Ranges[0].RowSpan);
         Assert.Equal(new RowRange(5, 2), selection.Ranges[1].RowSpan);
+    }
+
+    [Fact] // ADR-0003: equal selections hash alike, so a lookup or a memoised render treats them as one
+    public void Identical_gestures_give_equal_hashes()
+    {
+        static GridSelection Build() => GridSelection.Empty
+            .Click(new(1, 1), Grid)
+            .ExtendTo(new(3, 3), Grid)
+            .ToggleRange(new(5, 5), Grid);
+
+        Assert.Equal(Build(), Build());
+        Assert.Equal(Build().GetHashCode(), Build().GetHashCode());
     }
 
     [Fact] // ADR-0008: Ranges cannot be cast back to a mutable array — the selection stays immutable

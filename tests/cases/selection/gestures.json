@@ -117,7 +117,11 @@
         { "toggleRange": "F6" },
         { "toggleRange": "F6" },
         { "expect": { "ranges": "A1:B2", "focus": "A1" } },
-        { "cycle": "enter", "focuses": ["A2", "B1", "B2"] },
+        { "cycle": "enter", "focuses": ["A2"] },
+        { "expect": { "ranges": "A1:B2" } },
+        { "cycle": "enter", "focuses": ["B1"] },
+        { "expect": { "ranges": "A1:B2" } },
+        { "cycle": "enter", "focuses": ["B2"] },
         { "expect": { "ranges": "A1:B2" } }
       ]
     },
