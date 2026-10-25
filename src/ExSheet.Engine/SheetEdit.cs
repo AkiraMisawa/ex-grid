@@ -508,6 +508,21 @@ public abstract class SheetEdit
             return new SheetStep(done.Sheet, done.Change, _ => done.Undo(), _ => done.Redo());
         }
 
+        /// <summary>
+        /// A new Sheet's step, an insertion's or a copy's: undone, the Sheet is taken out and the count of Sheets
+        /// made put back (<see cref="Workbook.UncountSheetMade"/>); redone, it is put back and counted again.
+        /// </summary>
+        private protected static Done Counted(Workbook workbook, Sheet made, int index, int? numbered, int counted, SheetChange change) =>
+            new(made, change, () =>
+            {
+                workbook.UncountSheetMade(counted);
+                return workbook.TakeOut(made, delete: false, []);
+            }, () =>
+            {
+                workbook.CountSheetMade(numbered);
+                return workbook.Reinsert(made, index);
+            });
+
         private protected static int CheckIndex(int index, int count)
         {
             ArgumentOutOfRangeException.ThrowIfGreaterThan(index, count - 1, nameof(index));
@@ -522,18 +537,10 @@ public abstract class SheetEdit
         internal override Done Apply(Workbook workbook, Sheet sheet)
         {
             var index = workbook.IndexOf(sheet) + (before ? 0 : 1);
-            var named = name ?? workbook.NextSheetName();
-            var counted = workbook.Count(name is null ? named : null);
-            var inserted = workbook.InsertSheet(index, named, out var change);
-            return new Done(inserted, change, () =>
-            {
-                workbook.Uncount(counted);
-                return workbook.TakeOut(inserted, delete: false, []);
-            }, () =>
-            {
-                workbook.Count(name is null ? named : null);
-                return workbook.Reinsert(inserted, index);
-            });
+            int? numbered = name is null ? workbook.NextSheetNumber() : null;
+            var counted = workbook.CountSheetMade(numbered);
+            var inserted = workbook.InsertSheet(index, name ?? Workbook.SheetName(numbered!.Value), out var change);
+            return Counted(workbook, inserted, index, numbered, counted, change);
         }
     }
 
@@ -582,17 +589,9 @@ public abstract class SheetEdit
         internal override Done Apply(Workbook workbook, Sheet sheet)
         {
             var at = index is { } given ? CheckIndex(given, workbook.Sheets.Count + 1) : workbook.IndexOf(sheet) + 1;
-            var counted = workbook.Count(null);
+            var counted = workbook.CountSheetMade(null);
             var copy = workbook.Copy(sheet, at, workbook.CopyName(sheet.Name), out var change);
-            return new Done(copy, change, () =>
-            {
-                workbook.Uncount(counted);
-                return workbook.TakeOut(copy, delete: false, []);
-            }, () =>
-            {
-                workbook.Count(null);
-                return workbook.Reinsert(copy, at);
-            });
+            return Counted(workbook, copy, at, null, counted, change);
         }
     }
 

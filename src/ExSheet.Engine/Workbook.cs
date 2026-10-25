@@ -22,8 +22,10 @@ public sealed partial class Workbook
 
     /// <summary>
     /// How many Sheets the Workbook has made since it was created or opened, which numbers a new Sheet
-    /// (<see cref="NextSheetName"/>), as Excel's count does: a new Workbook has made the Sheets it starts
-    /// with, an opened one none, since a document records no count, as an <c>.xlsx</c> records none.
+    /// (<see cref="NextSheetName"/>), as Excel's count does: an opened one has made none, as Excel's opened
+    /// workbook has not (a document records no count, as an <c>.xlsx</c> records none). A new one has made the
+    /// Sheets it starts with, as Excel's new workbook has made its Sheet1; that a Workbook created with other
+    /// names has made those is ExSheet's reading, which no run has asked.
     /// </summary>
     private int _sheetsMade;
 
@@ -85,7 +87,7 @@ public sealed partial class Workbook
         for (var i = 0; i < document.Sheets.Count; i++) workbook._sheets[i].OpenFormats(document.Sheets[i]);
         for (var i = 0; i < document.Sheets.Count; i++) workbook._sheets[i].OpenEntries(document.Sheets[i]);
         workbook._shown = workbook.Find(document.Shown)!;
-        workbook._sheetsMade = 0;
+        workbook.Opened();
         return workbook;
     }
 
