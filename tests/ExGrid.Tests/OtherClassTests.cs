@@ -10,7 +10,7 @@ namespace ExGrid.Tests;
 /// glyph nobody listed errs toward <c>####</c>. A value that never hashes is charged it at the digit.
 ///
 /// <para>Its answers are shared cases (<c>tests/cases/columns/text-metrics.json</c>); what stays here is
-/// a lone UTF-16 half, and what reads the resolved Grid Metrics.</para>
+/// a lone UTF-16 half, and the time a default face paints wider than its digit charge.</para>
 /// </summary>
 public class OtherClassTests
 {
@@ -38,13 +38,4 @@ public class OtherClassTests
         Assert.False(OverflowRules.Decide(ColumnType.Date, time, core.EstimatePx(time), core).IsHashed);
     }
 
-    [Fact] // ADR-0016 (2026-09-25): a header is charged as text — its em of slack bounds the letters
-    public void A_header_and_the_name_box_are_charged_as_text()
-    {
-        var metrics = GridMetrics.Resolve(GridDensity.Compact);
-        var asText = metrics.CellMetrics.For(ColumnType.Text);
-
-        Assert.Equal(asText.EstimatePx("Amount") + 14, metrics.HeaderRequiredPx("Amount", menuButton: false, sortable: false));
-        Assert.Equal(asText.EstimatePx("XFD1048576"), metrics.NameBoxWidthPx);
-    }
 }

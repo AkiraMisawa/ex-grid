@@ -26,6 +26,8 @@ public class CallCaseTests
         ["ColumnWidth"] = typeof(ColumnWidth),
         ["ColumnWidthSpec"] = typeof(ColumnWidthSpec),
         ["GlyphWidthTable"] = typeof(GlyphWidthTable),
+        ["GridMetrics"] = typeof(GridMetrics),
+        ["GridPresentationDefaults"] = typeof(GridPresentationDefaults),
         ["OverflowRules"] = typeof(OverflowRules),
         ["RowRange"] = typeof(RowRange),
         ["ViewportBox"] = typeof(ViewportBox),
@@ -164,6 +166,17 @@ public class CallCaseTests
                 throw new InvalidOperationException($"{label} answered nothing for \"then\" to read.");
             foreach (var next in then.EnumerateArray())
                 Holds(result.GetType(), result, next);
+            return;
+        }
+        var atLeast = check.TryGetProperty("atLeast", out var least);
+        var atMost = check.TryGetProperty("atMost", out var most);
+        if (atLeast || atMost)
+        {
+            var got = System.Convert.ToDouble(result, CultureInfo.InvariantCulture);
+            if (atLeast)
+                Assert.True(got >= Number(JsonNode.Parse(least.GetRawText())!)!.Value, $"{label}: expected at least {least}, got {got}.");
+            if (atMost)
+                Assert.True(got <= Number(JsonNode.Parse(most.GetRawText())!)!.Value, $"{label}: expected at most {most}, got {got}.");
             return;
         }
         if (!check.TryGetProperty("is", out var expected))

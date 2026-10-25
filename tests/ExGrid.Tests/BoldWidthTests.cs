@@ -11,7 +11,8 @@ namespace ExGrid.Tests;
 /// and not at the bold ones is <c>####</c>.
 ///
 /// <para>Its answers are shared cases (<c>tests/cases/columns/text-metrics.json</c> and
-/// <c>overflow.json</c>); what stays here is C#'s printing, and what reads the resolved Grid Metrics.</para>
+/// <c>overflow.json</c>, <c>grid-metrics.json</c>); what stays here is C#'s printing and the cell
+/// appearance's own values.</para>
 /// </summary>
 public class BoldWidthTests
 {
@@ -27,54 +28,6 @@ public class BoldWidthTests
         Assert.Contains("DigitWidthPx = 9", text);
         Assert.Contains("BoldDigitWidthPx = 10", text);
         Assert.DoesNotContain("Bold = ", text);
-    }
-
-    [Theory] // ADR-0050 item 15 / §21.7a; ticket 83: the defaults are the widest measured at weight 700 on any platform
-    [InlineData(GridDensity.Compact, 14.36, 9.75, 6.41, 15.46)]
-    [InlineData(GridDensity.Standard, 14.36, 9.75, 6.41, 15.46)]
-    [InlineData(GridDensity.Comfortable, 14.36, 9.75, 6.41, 15.46)]
-    [InlineData(GridDensity.Excel, 12.44, 8.36, 5.49, 13.26)]
-    public void The_default_bold_widths_cover_the_widest_platform_measured(
-        GridDensity density, double wide, double digit, double narrow, double other)
-    {
-        var metrics = GridMetrics.Resolve(density).CellMetrics;
-
-        Assert.Equal(wide, metrics.BoldWideWidthPx);
-        Assert.Equal(digit, metrics.BoldDigitWidthPx);
-        Assert.Equal(narrow, metrics.BoldNarrowWidthPx);
-        Assert.Equal(other, metrics.BoldOtherWidthPx);
-    }
-
-    [Fact] // §21.7a, measured 2026-10-01 (ticket 83, tests/GlyphWidths): system-ui on macOS paints a bold % at 14.359px
-    public void The_default_bold_widths_cover_system_ui_on_macos_and_dejavu_sans_bold()
-    {
-        var metrics = GridMetrics.Resolve(GridDensity.Compact).CellMetrics;
-
-        Assert.True(metrics.BoldWideWidthPx >= 14.359);     // `%`, system-ui on macOS
-        Assert.True(metrics.BoldDigitWidthPx >= 9.75);      // a digit alone, DejaVu Sans Bold
-        Assert.True(metrics.BoldNarrowWidthPx >= 6.406);    // `(`, DejaVu Sans Bold
-        Assert.True(metrics.BoldOtherWidthPx >= 15.453);    // `W` and `₩`, DejaVu Sans Bold
-        Assert.True(metrics.Bold.TextWidthPx("123,456,789,012.50") >= 157.66);
-    }
-
-    [Fact] // ADR-0030 / ADR-0050 item 15: a Wrapper's bold widths are scaled to the preset's size as its regular ones are
-    public void A_wrappers_bold_widths_follow_the_resolved_font_size()
-    {
-        var defaults = new GridPresentationDefaults(10.4, 8, 4.95, 14, 10.4, 8.33, 4.95);
-
-        var metrics = GridMetrics.Resolve(GridDensity.Excel, defaults: defaults).CellMetrics;
-
-        Assert.Equal(8.33 * 12 / 14, metrics.BoldDigitWidthPx, 9);
-        Assert.Equal(10.4 * 12 / 14, metrics.BoldWideWidthPx, 9);
-        Assert.Equal(4.95 * 12 / 14, metrics.BoldNarrowWidthPx, 9);
-    }
-
-    [Fact] // ADR-0030: a Wrapper that states no bold widths gets the allowance over its regular ones
-    public void A_wrapper_without_bold_widths_gets_the_allowance()
-    {
-        var defaults = new GridPresentationDefaults(10.4, 8, 4.95, 14);
-
-        Assert.Equal(8 * CellTextMetrics.BoldWidthAllowance, defaults.BoldDigitWidthPx, 9);
     }
 
     [Fact] // ADR-0050 item 15: a Border with no line keeps no colour, and a colour is six hex digits

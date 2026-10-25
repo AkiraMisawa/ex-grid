@@ -1,7 +1,8 @@
 // Writes the per-glyph tables the estimate charges letters and currency signs by (ADR-0016; ticket
 // 83), from the records beside this file:
 //   src/ExGrid/Columns/DefaultGlyphWidths.cs  the core's, at 14px and at 12px;
-//   src/ExGrid.MudBlazor/RobotoGlyphTable.cs  ExGrid.MudBlazor's, at 14px, which the core scales.
+//   src/ExGrid.MudBlazor/RobotoGlyphTable.cs  ExGrid.MudBlazor's, at 14px, which the core scales;
+//   src/npm/core/src/columns/default-glyph-widths.ts  the Script Core's, the same as the C# core's.
 // Run it after measure.mjs: node tests/GlyphWidths/tables.mjs
 //
 // A glyph joins a table only where every record shows the face drawing it itself. A glyph the face
@@ -111,6 +112,42 @@ namespace ExGrid.MudBlazor;
 internal static class RobotoGlyphTable
 {
 ${table('At14', 14, robotoAt14, 'At 14px, which the core scales to the resolved size.')}
+}
+`);
+const tsGlyph = (g) => `'${g.replaceAll('\\', '\\\\').replaceAll("'", "\\'")}'`;
+const tsEntries = (rows) => rows.map(([g, r, b]) => `    [${tsGlyph(g)}, ${r.toFixed(2)}, ${b.toFixed(2)}],`).join('\n');
+fs.writeFileSync(path.join(repo, 'src/npm/core/src/columns/default-glyph-widths.ts'), `${header(core)}
+import { GlyphWidthTable } from './glyph-width-table';
+
+type Row = readonly [glyph: string, regularPx: number, boldPx: number];
+
+// At 14px: Compact, Standard and Comfortable.
+const at14: readonly Row[] = [
+${tsEntries(coreAt('14'))}
+];
+
+// At 12px, measured there rather than scaled: Excel.
+const at12: readonly Row[] = [
+${tsEntries(coreAt('12'))}
+];
+
+const built = new Map<14 | 12, GlyphWidthTable>();
+
+/**
+ * The core's per-glyph widths at \`sizePx\` (ADR-0016; ticket 83), the same as the C# core's
+ * DefaultGlyphWidths: each letter and currency sign DejaVu Sans draws, at the widest of macOS's
+ * \`system-ui\`, Windows' \`system-ui\` (Segoe UI under an English display, Yu Gothic UI under a Japanese
+ * one) and DejaVu Sans. Regular is the widest at 400, 500 and 600, bold at 700, a shade over. Built on
+ * first asking, so loading the module does no work.
+ */
+export function defaultGlyphWidthsAt(sizePx: 14 | 12): GlyphWidthTable {
+    const known = built.get(sizePx);
+    if (known !== undefined) {
+        return known;
+    }
+    const table = new GlyphWidthTable(sizePx, sizePx === 14 ? at14 : at12);
+    built.set(sizePx, table);
+    return table;
 }
 `);
 console.log(`core: ${coreGlyphs.length} glyphs; Roboto: ${robotoGlyphs.length} glyphs`);

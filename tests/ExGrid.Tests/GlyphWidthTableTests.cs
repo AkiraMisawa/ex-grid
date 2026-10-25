@@ -9,12 +9,11 @@ namespace ExGrid.Tests;
 /// classes still come first, and a glyph the table lacks is the other class.
 ///
 /// <para>The table's own answers are shared cases (<c>tests/cases/columns/glyph-width-table.json</c> and
-/// <c>text-metrics.json</c>); what stays here reads the resolved Grid Metrics.</para>
+/// <c>text-metrics.json</c>, and <c>grid-metrics.json</c>, which holds both cores' default tables equal
+/// glyph by glyph); what stays here is the generated table's coverage, read through C#'s own lookup.</para>
 /// </summary>
 public class GlyphWidthTableTests
 {
-    private static readonly GlyphWidthTable Table = new(14, [("M", 13, 14), ("i", 4, 5), ("E", 20, 20), ("₩", 12, 13)]);
-
     [Theory] // ADR-0016 / ticket 83: the core's defaults carry the table measured at their font size
     [InlineData(GridDensity.Compact, 14)]
     [InlineData(GridDensity.Standard, 14)]
@@ -35,26 +34,4 @@ public class GlyphWidthTableTests
         Assert.True(metrics.WidthOf('M') < metrics.OtherWidthPx);
     }
 
-    [Fact] // ADR-0028: a Consumer's explicit metrics are taken as given, with no table of the core's
-    public void Explicit_metrics_carry_no_table_of_the_cores()
-    {
-        var metrics = GridMetrics.Resolve(GridDensity.Compact, cellMetrics: new CellTextMetrics(14, 9, 5, 4)).CellMetrics;
-
-        Assert.Null(metrics.GlyphWidths);
-        Assert.Equal(18, metrics.WidthOf('M'));
-    }
-
-    [Fact] // ADR-0030 / ticket 83: a Wrapper's table travels in its defaults and is scaled to the preset's size
-    public void A_wrappers_table_is_scaled_to_the_preset()
-    {
-        var defaults = new GridPresentationDefaults(10.4, 8.3, 5.8, 14, 10.4, 8.34, 5.25, 12.44, 12.28, glyphWidths: Table);
-
-        var at14 = GridMetrics.Resolve(GridDensity.Compact, defaults: defaults).CellMetrics;
-        var at12 = GridMetrics.Resolve(GridDensity.Excel, defaults: defaults).CellMetrics;
-
-        Assert.Same(Table, at14.GlyphWidths);
-        Assert.Equal(13, at14.WidthOf('M'), 9);
-        Assert.Equal(13 * 12 / 14d, at12.WidthOf('M'), 9);
-        Assert.Equal(12.44, at14.WidthOf('W'), 9);
-    }
 }

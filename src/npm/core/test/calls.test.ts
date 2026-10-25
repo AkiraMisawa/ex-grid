@@ -8,6 +8,8 @@ import { ColumnWidth, ColumnWidthSpec } from '../src/columns/column-width';
 import { ColumnGeometry } from '../src/columns/column-geometry';
 import { GlyphWidthTable } from '../src/columns/glyph-width-table';
 import { decideOverflow, hashesWhenOverflowing } from '../src/columns/overflow-rules';
+import { GridMetrics } from '../src/grid-metrics';
+import { GridPresentationDefaults } from '../src/grid-presentation-defaults';
 import { rowRange } from '../src/viewport/row-range';
 import { ViewportBox } from '../src/viewport/viewport-box';
 import { ViewportGeometry } from '../src/viewport/viewport-geometry';
@@ -57,6 +59,14 @@ const subjects: Readonly<Record<string, Subject>> = {
         create: (args, via) => via === undefined
             ? new GlyphWidthTable(args['measuredAtPx'] as number, args['glyphs'] as never)
             : noFactory('GlyphWidthTable', via),
+        statics: {},
+    },
+    GridMetrics: {
+        create: (_, via) => noFactory('GridMetrics', via),
+        statics: GridMetrics,
+    },
+    GridPresentationDefaults: {
+        create: (args, via) => via === undefined ? new GridPresentationDefaults(args as never) : noFactory('GridPresentationDefaults', via),
         statics: {},
     },
     // C#'s OverflowRules is a static class: its members are functions of the module here.
@@ -154,6 +164,8 @@ interface Check {
     readonly args?: readonly unknown[] | Arguments;
     readonly is?: unknown;
     readonly near?: number;
+    readonly atLeast?: number | string;
+    readonly atMost?: number | string;
     readonly throws?: Refusal;
     readonly saying?: string;
     readonly then?: readonly Check[];
@@ -180,6 +192,12 @@ function holds(subject: Subject, instance: object | undefined, check: Check): vo
         // The answer is the subject of each check, its own statics included, as C# reads them off its type.
         const answered: Subject = { create: (_, via) => noFactory(result.constructor.name, via), statics: result.constructor };
         for (const next of check.then) holds(answered, result, next);
+        return;
+    }
+    if (check.atLeast !== undefined || check.atMost !== undefined) {
+        if (typeof result !== 'number') throw new Error(`${label} answered no number to bound.`);
+        if (check.atLeast !== undefined) expect(result, `${label}: expected at least ${String(check.atLeast)}`).toBeGreaterThanOrEqual(revive(check.atLeast) as number);
+        if (check.atMost !== undefined) expect(result, `${label}: expected at most ${String(check.atMost)}`).toBeLessThanOrEqual(revive(check.atMost) as number);
         return;
     }
     if (!('is' in check)) throw new Error(`The check ${JSON.stringify(check)} says neither what it is nor how it is refused.`);
