@@ -29,7 +29,7 @@ One directory per area, one file per group of cases. Each file is an object:
 | Key | Meaning |
 |---|---|
 | `about` | What the file covers, and where its cases came from |
-| `kind` | Which runner reads it: `selection`, `range`, `edgeBand`, `held`, `calls`, `clipboard`, `query`, `source`, `displayText` |
+| `kind` | Which runner reads it: `selection`, `range`, `edgeBand`, `held`, `calls`, `clipboard`, `query`, `source`, `displayText`, `find`, `replace` |
 | `extent` | `[rows, columns]`, the grid every case of the file runs against unless it names its own |
 | `cases` | The cases. Each has a `name`, which starts with the ADR it holds to (CLAUDE.md, "Put the ADR number in the test name") |
 
@@ -207,6 +207,8 @@ A row of `rows` written `{"sameAs": place}` is the object at that earlier place 
 | `{"markAll": true}` | Presses the Mark Column's header to mark (`true`) or unmark the result, under the Row Sequence Version in force, or under `"version": n` |
 | `{"markPositions": [{"start", "count"}]}` | A positional gesture over those rows of the result, under the version in force or `"version": n` |
 | `{"rowKind": {"column", "kinds": {text: kind}}}` | Hands the marks a Row Kind: a row whose value in that column reads as one of the texts is of its kind (`"group"`, `"total"`), every other row `"detail"` |
+| `{"find": request, "is": [row, column]}` | A Find step through the source (ADR-0055), the request written as a `find` case writes it and read under the version in force; `"is": null` for nothing found |
+| `{"replace": request, "answers": {…}}` | A Replace All through the source (ADR-0332 §3), the request written as a `replace` case writes it, under the version in force unless it names its own. The write sets a text column's text, and a number column's number where the text reads as one (an optional `-`, digits, and an optional `.` and digits), refusing it as `not a number` otherwise. With `"entryPrefix": {column: prefix}`, a cell of that column is matched by an entry the editor would open with, the prefix and the value's invariant text, and the write takes the prefix off again; with `"applyDuringWrite": batch`, the first write hands over that Change Batch first, as a feed would while the Consumer plans. `answers` holds any of `count`, `version`, `refused` and `changes` as a `replace` case's `is` does, `changes` a count here, and `applied: true`, that every rewritten row is in the Window by identity. The rows a Replace All rewrites keep their places |
 | `{"needRange": {"start", "count"}}` | Says the grid is about to show those rows |
 | `{"rows": {"start", "count"}, "is": [places]}` | Reads rows of the result |
 | `{"distinctValues": column, "is": [values]}` | Reads a column's value list; `"tooMany": true` in place of `is` |
@@ -225,6 +227,28 @@ The text a value cell displays (ADR-0006, ADR-0350 section 16), run by
 `src/npm/core/test/display-text.test.ts` against the Script Core's `textFor`. A case lists `texts`, each a
 `value` written as a `query` case writes it, an optional `format` as a `source` column names one, and the
 text it `is`.
+
+## `find` and `replace`
+
+The reference Find step (ADR-0055) and the reference Replace All (ADR-0332), the rules `GridSource.from`
+answers with and a remote source is held to, run by `tests/ExGrid.Tests/Cases/FindCaseTests.cs` against
+`GridFind.Step` and `GridReplace.Plan` and by `src/npm/core/test/find.test.ts` against `findStep` and
+`planReplace`. The file names its `columns` and its `rows`, each row the texts of its cells in that order:
+what a Find matches, the displayed text, or what a Replace matches, the entry. A request is written
+`{"text", "from", "backward", "matchCase", "wholeCell", "scope", "columns"}`, and a Replace All's adds
+`"replacement"` and `"editable"`; a flag left out is off, `columns` and `editable` are the file's columns,
+`from` and `scope` none.
+
+A `find` case lists `steps`, each `{"find": request, "is": [row, column]}`, `null` for nothing found.
+
+A `replace` file also names its `numberColumns`, whose write refuses a text that does not read as a number
+(an optional `-`, digits, and an optional `.` and digits) as `not a number`; every other write sets the
+text. A case may give its own `rows`, repeat them `repeat` times, and read them under the version `readIn`
+(0 unless given; the request's `version` is 0 unless it names one). It says what the plan `is`: any of
+`count`, `version`, `refused` (`[row, column, message]`, `null` where the column is not Editable),
+`changes` (`[row, values]`, each rewritten row by its place and its new texts) and `changeCount`; or how it
+is refused, with `throws` and `saying`. `"writeInPlace": true` makes a write that hands back the row it was
+given.
 
 ## `calls`
 

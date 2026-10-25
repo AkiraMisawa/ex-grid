@@ -7,6 +7,7 @@ import type { QueryColumn } from '../query/columns';
 import type { GridFilter } from '../query/filter';
 import type { SortSpec } from '../query/sort';
 import { InMemoryGridSource, type InMemorySourceOptions } from './in-memory-source';
+import type { GridFindRequest, GridFindResult } from '../finding/find';
 import type { RowMarks } from '../rows/row-marks';
 import type { RowKeyOf } from './row-key';
 import type { RowRange } from '../viewport/row-range';
@@ -64,6 +65,10 @@ export interface GridSource<Row> {
     /** Puts out at once the live changes the source gathered and has not yet published, so the Window is the
      * newest version it holds; the grid calls it just before it judges a write (ADR-0141, ADR-0142). */
     publishGathered?(): void;
+    /** Answers a Find step (ADR-0055), where this source searches: the grid asks only a source that has
+     * this member, and otherwise refuses Find as unavailable. `findStep` is the reference for what a match
+     * is. */
+    find?(request: GridFindRequest, signal: AbortSignal): Promise<GridFindResult>;
     /** The Consumer's half of Row Marks, where this source keeps them (ADR-0043). */
     readonly marks?: RowMarks<Row> | undefined;
 }

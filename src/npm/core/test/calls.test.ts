@@ -17,6 +17,9 @@ import { editingKeysByMode } from '../src/keys/editing-keys';
 import { canonicalKey, clipboardKeys, declareKeys, keysTakenFor, resolveKey, takenOnEveryGrid } from '../src/keys/grid-keys';
 import { decideOverflow, hashesWhenOverflowing } from '../src/columns/overflow-rules';
 import { GridMetrics } from '../src/grid-metrics';
+import { findMatches } from '../src/finding/find';
+import { headerAfterAnswer, headerBeforeAsking } from '../src/finding/header-find-walk';
+import { refusedCells, replacedEntry } from '../src/finding/replace';
 import { filterOperatorsFor } from '../src/query/filter';
 import { nextSort } from '../src/query/sort';
 import { cellClasses } from '../src/paint/cell-classes';
@@ -105,6 +108,24 @@ const subjects: Readonly<Record<string, Subject>> = {
             ? new GlyphWidthTable(args['measuredAtPx'] as number, args['glyphs'] as never)
             : noFactory('GlyphWidthTable', via),
         statics: {},
+    },
+    // C#'s GridFind, GridReplace and HeaderFindWalk are static classes, and GridReplaceResult's factories
+    // are functions: each member is the module's function here, under the C# name.
+    GridFind: {
+        create: (_, via) => noFactory('GridFind', via),
+        statics: { matches: findMatches },
+    },
+    GridReplace: {
+        create: (_, via) => noFactory('GridReplace', via),
+        statics: { replaced: replacedEntry },
+    },
+    GridReplaceResult: {
+        create: (_, via) => noFactory('GridReplaceResult', via),
+        statics: { refused: refusedCells },
+    },
+    HeaderFindWalk: {
+        create: (_, via) => noFactory('HeaderFindWalk', via),
+        statics: { beforeAsking: headerBeforeAsking, afterAnswer: headerAfterAnswer },
     },
     GridMetrics: {
         create: (_, via) => noFactory('GridMetrics', via),

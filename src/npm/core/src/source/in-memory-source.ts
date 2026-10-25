@@ -28,6 +28,8 @@ import { systemClock, type GridClock } from './grid-clock';
 import type { DistinctValues, GridSource, GridSourceState } from './grid-source';
 import { CellChangeTimes, defaultChangeTimesKeptFor, type CellChangedAt, type ChangedPair } from './cell-change-times';
 import { InMemoryRowMarks } from './in-memory-row-marks';
+import { findStep, type GridFindRequest, type GridFindResult } from '../finding/find';
+import { planReplace, replacedCells, type GridReplaceAnswer, type GridReplacedRow, type GridReplaceRequest, type GridReplaceWrite } from '../finding/replace';
 import { KeyedRows } from './keyed-rows';
 import { liveRequery, type LiveRequeryOutcome, type RowChange } from './live-requery';
 import { checkedKey, quoted, type RowKey, type RowKeyOf } from './row-key';
@@ -359,6 +361,112 @@ export class InMemoryGridSource<Row> implements GridSource<Row> {
             if (values.length > distinctValueCap) return Object.freeze({ kind: 'tooMany' });
         }
         return Object.freeze({ kind: 'values', values: Object.freeze(values) });
+    }
+
+    /**
+     * The reference Find (ADR-0055): `findStep` over the current result, matching each column's displayed
+     * text as the grid handed it over (`textOf`). A column this source was not told about, or one with no
+     * value of its own, is skipped. A request read under another version is answered anyway: the grid
+     * discards it by the version, which is the one place that knows.
+     */
+    async find(request: GridFindRequest, signal: AbortSignal): Promise<GridFindResult> {
+        signal.throwIfAborted();
+        const columns = this.#queryColumns();
+        return findStep(this.#state.window, request, name => displayedTextOf(columns, name));
+    }
+
+    /**
+     * The reference Replace All (ADR-0332 §3), for the grid's `onReplace`: `planReplace` over the current
+     * result and, when every match can be written, the rewritten rows applied as one change: one requery,
+     * one move of the Row Sequence Version at most, and under a Row Key the user's own write, as
+     * `replaceRow` is. When any match cannot be written, nothing is applied and the answer names every such
+     * cell. A request read under another version than this source's plans nothing, and the grid refuses
+     * the answer as the order having moved. Keep the answer's `changes` as one step of your undo stack, and
+     * hand the grid its `result`.
+     *
+     * `write` is your write of one cell: the row as written so far, the column's name and the replaced
+     * entry, answered with a new row holding it or a refusal in your words. It must only plan; this source
+     * applies. `entryOf` answers the entry a cell's editor opens with, where you give the grid one: the row
+     * and the column's name, answered with the entry, or `undefined` for the displayed text. Without it,
+     * every entry is the column's displayed text, which is what the editor opens with by default.
+     */
+    replace(
+        request: GridReplaceRequest,
+        write: (row: Row, column: string, text: string) => GridReplaceWrite<Row>,
+        entryOf?: (row: Row, column: string) => string | undefined,
+    ): GridReplaceAnswer<Row> {
+        const columns = this.#queryColumns();
+        const { window, rowSequenceVersion } = this.#state;
+        const answer = planReplace(window, rowSequenceVersion, request, name => {
+            const shown = displayedTextOf(columns, name);
+            if (shown === undefined || entryOf === undefined) return shown;
+            return (row: Row) => {
+                const entry = entryOf(row, name);
+                return entry === undefined ? shown(row) : entry;
+            };
+        }, write);
+        // A row changed under the plan, by a change taken in while the Consumer's write planned: nothing is
+        // applied, and the answer is under no version the request was read in, which the grid refuses as the
+        // order having moved rather than write over the newer row.
+        if (answer.changes.length > 0 && !this.#replaceRows(answer.changes)) {
+            return Object.freeze({ result: replacedCells(0, -1 - request.rowSequenceVersion), changes: Object.freeze([]) });
+        }
+        return answer;
+    }
+
+    /** Applies a Replace All's rewritten rows as one change (ADR-0332 §3): each by identity, as
+     * `replaceRow` places one, every one checked before any is taken in, and the result requeried once.
+     * False, with nothing applied, when a row under a Row Key is no longer the version planned on. */
+    #replaceRows(changes: readonly GridReplacedRow<Row>[]): boolean {
+        const columns = this.#requireColumns();
+        const live = this.#live;
+        if (live !== undefined) {
+            const { keyed } = live;
+            const changed: (readonly [RowKey, Row])[] = [];
+            for (const { before, after } of changes) {
+                const key = keyed.keyOf(before, 'The row');
+                if (keyed.get(key)?.row !== before) return false;
+                const afterKey = keyed.keyOf(after, 'The replacement');
+                if (afterKey !== key) {
+                    throw new TypeError(`A replacement changes the Row Key ${quoted(key)} to ${quoted(afterKey)}. A Row Key stays the same `
+                        + 'when a row\'s data changes (ADR-0140).');
+                }
+                changed.push([key, after]);
+            }
+            this.#checkValues(changes.map(change => change.after));
+            this.#fold(live, { added: [], changed, removed: [], order: undefined }, true);
+            if (this.#publishPending()) this.#notify();
+            return true;
+        }
+        const at = new Map<Row, number>();
+        this.#rows.forEach((row, index) => { if (!at.has(row)) at.set(row, index); });
+        const places = changes.map(({ before }) => {
+            const index = at.get(before);
+            if (index === undefined) {
+                throw new TypeError('A rewritten row is not in this source: a Replace All is planned on the rows this source holds (ADR-0332).');
+            }
+            return index;
+        });
+        const rows = [...this.#rows];
+        // What each new object stands for, so the sequence compares as one edit per row.
+        const stoodFor = new Map<Row, Row>();
+        changes.forEach(({ before, after }, i) => {
+            rows[itemAt(places, i)] = after;
+            stoodFor.set(after, before);
+        });
+        // Requeried before anything is taken in, as replaceRow is: a value the Query in force refuses
+        // leaves the rows and their marks as they were.
+        const next = applyQuery(rows, columns, this.#state.filter, this.#state.sorts);
+        changes.forEach(({ before, after }, i) => this.#marks.replaced(itemAt(places, i), before, after));
+        const { window } = this.#state;
+        const moved = next.length !== window.length || next.some((row, i) => {
+            const was = stoodFor.get(row);
+            return (was === undefined ? row : was) !== window[i];
+        });
+        this.#rows = Object.freeze(rows);
+        this.#show(next, this.#state.rowSequenceVersion + (moved ? 1 : 0));
+        this.#notify();
+        return true;
     }
 
     /** The rows held, in the source's order. */
@@ -748,6 +856,13 @@ export class InMemoryGridSource<Row> implements GridSource<Row> {
 
 /** No columns: the Query of a source the grid has not bound yet. */
 const noColumns: readonly never[] = Object.freeze([]);
+
+/** A column's displayed text by name, as Find and Replace All read it (ADR-0055, ADR-0332), or `undefined`
+ * for a column this source was not told about or one with no value of its own, which is skipped. */
+function displayedTextOf<Row>(columns: readonly QueryColumn<Row>[], name: string): ((row: Row) => string) | undefined {
+    const column = columns.find(each => each.name === name);
+    return column === undefined || column.queryable === false ? undefined : (row: Row) => textOf(column, row);
+}
 
 function isEmpty<Row>(plan: ChangePlan<Row>): boolean {
     return plan.added.length === 0 && plan.changed.length === 0 && plan.removed.length === 0 && plan.order === undefined;

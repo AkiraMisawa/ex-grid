@@ -2,7 +2,7 @@
 // source over its rows and takes steps on it in turn: each step is one thing the grid does to the source,
 // or what it then reads.
 import { describe, expect, it } from 'vitest';
-import { defined, elementAt } from '../src/must';
+import { defined, elementAt, itemAt } from '../src/must';
 import type { QueryColumn } from '../src/query/columns';
 import type { GridFilter } from '../src/query/filter';
 import type { SortSpec } from '../src/query/sort';
@@ -18,6 +18,8 @@ import { caseFiles, expectRefused, type Refusal } from './cases';
 import type { CellChangedAt } from '../src/source/cell-change-times';
 import { FakeClock } from './fake-clock';
 import { filterOf, formatOf, value } from './query-values';
+import type { GridReplaceWrite } from '../src/finding/replace';
+import { findRequestOf, numberText, replaceRequestOf, type WrittenFind, type WrittenReplace } from './find-requests';
 
 /** A row of a case: its values, and the place in the case's rows it stands for, which every version of
  * it keeps. A new object for every version, since identity is what says a row changed. */
@@ -38,7 +40,7 @@ interface Step {
     readonly version?: number;
     readonly rowKind?: { readonly column: string; readonly kinds: Readonly<Record<string, RowKind>> };
     readonly with?: readonly unknown[] | 'itself';
-    readonly apply?: { readonly added?: readonly Entry[]; readonly changed?: readonly Entry[]; readonly removedKeys?: readonly RowKey[] };
+    readonly apply?: Batch;
     readonly replaceAll?: readonly Entry[];
     readonly gatherInterval?: number;
     readonly advance?: number;
@@ -48,8 +50,13 @@ interface Step {
     readonly needRange?: RowRange;
     readonly rows?: RowRange;
     readonly distinctValues?: string;
-    readonly is?: readonly unknown[];
+    readonly is?: readonly unknown[] | null;
     readonly tooMany?: true;
+    readonly find?: WrittenFind;
+    readonly replace?: WrittenReplace;
+    readonly entryPrefix?: Readonly<Record<string, string>>;
+    readonly applyDuringWrite?: Batch;
+    readonly answers?: Answer;
     readonly expect?: Expectation;
     readonly throws?: Refusal;
     readonly saying?: string;
@@ -79,6 +86,21 @@ interface Expectation {
     readonly markHeader?: RowMarkHeaderState;
     readonly markedRows?: readonly (readonly unknown[] | RowKey)[];
     readonly marksHeard?: number;
+}
+
+interface Batch {
+    readonly added?: readonly Entry[];
+    readonly changed?: readonly Entry[];
+    readonly removedKeys?: readonly RowKey[];
+}
+
+/** What a Replace All through the source answers. */
+interface Answer {
+    readonly count?: number;
+    readonly version?: number;
+    readonly refused?: readonly (readonly [number, string, string | null])[];
+    readonly changes?: number;
+    readonly applied?: true;
 }
 
 /** A row a step names: by its place, a stranger, by its position in the Window, or under a key. */
@@ -129,6 +151,7 @@ for (const file of caseFiles<SourceCase>('source', 'source')) {
                     value: row => row.values[index],
                     ...(format === undefined ? {} : { format: formatOf(format) }),
                 }));
+                const columnNames = declared.map(column => column.name);
                 const held: Row[] = [];
                 for (const written of c.rows) held.push('sameAs' in written ? elementAt(held, written.sameAs) : rowOf(held.length, written));
                 const clock = new FakeClock();
@@ -159,6 +182,12 @@ for (const file of caseFiles<SourceCase>('source', 'source')) {
                     : 'stranger' in place ? rowOf(-1, place.stranger)
                     : 'window' in place ? elementAt(source.snapshot().window, place.window)
                     : entryOf(place);
+                const applyBatch = (written: Batch): void => {
+                    const { added = [], changed = [], removedKeys = [] } = written;
+                    const batch: GridChangeBatch<Row> = { added: added.map(entryOf), changed: changed.map(entryOf), removedKeys };
+                    source.apply(batch);
+                    for (const row of [...(batch.added ?? []), ...(batch.changed ?? [])]) hand(row); // oxlint-disable-line ex-grid/no-stand-in-default -- the batch was built just above with both lists
+                };
                 const versionOf = (step: Step): number => step.version ?? source.snapshot().rowSequenceVersion;
                 let heard = 0;
                 let marksHeard = 0;
@@ -227,6 +256,58 @@ for (const file of caseFiles<SourceCase>('source', 'source')) {
                     expectRefused(thrown, step.throws, step.saying);
                 }
 
+                // A Replace All through the source (ADR-0332 §3). The write sets a text column's text, and a
+                // number column's number where the text reads as one, refusing it otherwise; under
+                // "entryPrefix", the entry is the value's text after that prefix, and the write takes the
+                // prefix off again.
+                function replace(written: WrittenReplace, step: Step): void {
+                    const prefixes = step.entryPrefix;
+                    let during = step.applyDuringWrite;
+                    const write = (row: Row, column: string, text: string): GridReplaceWrite<Row> => {
+                        if (during !== undefined) {
+                            const batch = during;
+                            during = undefined;
+                            applyBatch(batch);
+                        }
+                        const at = declared.findIndex(each => each.name === column);
+                        if (at < 0) return { refusal: 'no such column' };
+                        let entry = text;
+                        if (prefixes !== undefined && Object.hasOwn(prefixes, column)) {
+                            const prefix = defined(prefixes[column], column);
+                            if (!entry.startsWith(prefix)) throw new Error(`"${c.name}" wrote '${entry}' in ${column} without its prefix ${prefix}.`);
+                            entry = entry.slice(prefix.length);
+                        }
+                        let cell: unknown = entry;
+                        if (elementAt(declared, at).type === 'number') {
+                            if (!numberText.test(entry)) return { refusal: 'not a number' };
+                            cell = Number(entry);
+                        }
+                        return { row: Object.freeze({ position: row.position, values: Object.freeze(row.values.with(at, cell)) }) };
+                    };
+                    const editorEntry = prefixes === undefined ? undefined : (row: Row, column: string): string | undefined => {
+                        if (!Object.hasOwn(prefixes, column)) return undefined;
+                        return defined(prefixes[column], column) + String(itemAt(row.values, declared.findIndex(each => each.name === column)));
+                    };
+                    const answer = source.replace(replaceRequestOf(written, columnNames, source.snapshot().rowSequenceVersion), write, editorEntry);
+                    for (const { after } of answer.changes) {
+                        if (after.position >= 0) held[after.position] = after;
+                        hand(after);
+                    }
+                    const expected = defined(step.answers, `what the Replace All of "${c.name}" answers`);
+                    const { result } = answer;
+                    if (expected.version !== undefined) expect(result.rowSequenceVersion, 'version').toBe(expected.version);
+                    if (expected.count !== undefined) expect(result.kind === 'replaced' ? result.count : result.kind, 'count').toBe(expected.count);
+                    if (expected.refused !== undefined) {
+                        expect(result.kind === 'refused' ? result.cells.map(cell => [cell.row, cell.column, cell.message === undefined ? null : cell.message]) : result.kind, 'refused')
+                            .toEqual(expected.refused);
+                    }
+                    if (expected.changes !== undefined) expect(answer.changes.length, 'changes').toBe(expected.changes);
+                    if (expected.applied === true) {
+                        const { window } = source.snapshot();
+                        expect(answer.changes.every(({ after }) => window.includes(after)), 'every rewritten row in the Window').toBe(true);
+                    }
+                }
+
                 async function take(step: Step): Promise<void> {
                     if (step.setColumns !== undefined) {
                         const names = step.setColumns;
@@ -245,10 +326,7 @@ for (const file of caseFiles<SourceCase>('source', 'source')) {
                         if (target.position >= 0) held[target.position] = replacement;
                         hand(replacement);
                     } else if (step.apply !== undefined) {
-                        const { added = [], changed = [], removedKeys = [] } = step.apply;
-                        const batch: GridChangeBatch<Row> = { added: added.map(entryOf), changed: changed.map(entryOf), removedKeys };
-                        source.apply(batch);
-                        for (const row of [...(batch.added ?? []), ...(batch.changed ?? [])]) hand(row); // oxlint-disable-line ex-grid/no-stand-in-default -- the batch was built just above with both lists
+                        applyBatch(step.apply);
                     } else if (step.replaceAll !== undefined) {
                         const rows = step.replaceAll.map(entryOf);
                         source.replaceAll(rows);
@@ -288,8 +366,14 @@ for (const file of caseFiles<SourceCase>('source', 'source')) {
                             expect(answer.kind).toBe('tooMany');
                         } else {
                             expect(answer.kind === 'values' ? answer.values.map(compared) : answer.kind)
-                                .toEqual(defined(step.is, `the values of "${c.name}"`).map(value).map(compared));
+                                .toEqual(defined(step.is === null ? undefined : step.is, `the values of "${c.name}"`).map(value).map(compared));
                         }
+                    } else if (step.find !== undefined) {
+                        const request = { ...findRequestOf(step.find, columnNames), rowSequenceVersion: source.snapshot().rowSequenceVersion };
+                        const found = await source.find(request, new AbortController().signal);
+                        expect(found.found ? [found.row, found.column] : null, JSON.stringify(step.find)).toEqual(step.is);
+                    } else if (step.replace !== undefined) {
+                        replace(step.replace, step);
                     } else {
                         throw new Error(`A step of "${c.name}" takes nothing: ${JSON.stringify(step)}.`);
                     }

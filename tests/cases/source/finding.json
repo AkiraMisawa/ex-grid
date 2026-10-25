@@ -1,0 +1,141 @@
+{
+  "about": "Find and Replace All on GridSource.from (ADR-0055, ADR-0332): the reference step and plan over the source's current result, each column's displayed text as the grid handed it over, the whole Replace All applied as one change. From tests/ExGrid.Tests/GridFindTests.cs and GridReplaceTests.cs.",
+  "kind": "source",
+  "columns": [{"name": "Book", "type": "text"}, {"name": "Trader", "type": "text"}, {"name": "Notional", "type": "number"}],
+  "cases": [
+    {
+      "name": "ADR-0055 / FD-7: GridSource.from matches each column's displayed text, in the result's order",
+      "columns": [{"name": "Book", "type": "text"}, {"name": "Trader", "type": "text"}, {"name": "Notional", "type": "number", "format": "whole"}],
+      "rows": [["Alpha", "Ishikawa", 1000], ["Beta", "Novak", 2500.5], ["Gamma", "novak", 30], ["Alpha", "Osei", 1000]],
+      "steps": [
+        {"setColumns": ["Book", "Notional"]},
+        {"setSorts": [{"column": "Book", "direction": "descending"}]},
+        {"find": {"text": "1000", "columns": ["Book", "Notional"]}, "is": [2, "Notional"]},
+        {"find": {"text": "2501", "columns": ["Book", "Notional"]}, "is": [1, "Notional"]},
+        {"find": {"text": "2500.5", "columns": ["Book", "Notional"]}, "is": null}
+      ]
+    },
+    {
+      "name": "ADR-0055: a column the source was not told about is skipped",
+      "columns": [{"name": "Book", "type": "text"}, {"name": "Trader", "type": "text"}, {"name": "Notional", "type": "number", "format": "whole"}],
+      "rows": [["Alpha", "Ishikawa", 1000], ["Beta", "Novak", 2500.5], ["Gamma", "novak", 30], ["Alpha", "Osei", 1000]],
+      "steps": [
+        {"setColumns": ["Book", "Notional"]},
+        {"find": {"text": "novak", "columns": ["Book", "Trader", "Notional"]}, "is": null},
+        {"find": {"text": "gamma", "columns": ["Book", "Trader", "Notional"]}, "is": [2, "Book"]}
+      ]
+    },
+    {
+      "name": "ADR-0055 / FD-7: GridSource.from answers every clause as the reference step does",
+      "rows": [["Alpha", "Ishikawa", 1000], ["Beta", "Novak", 2500.5], ["Gamma", "novak", 30], ["Alpha", "Osei", 1000]],
+      "steps": [
+        {"setColumns": true},
+        {"find": {"text": "nova", "from": [0, 2]}, "is": [1, "Trader"]},
+        {"find": {"text": "alpha"}, "is": [0, "Book"]},
+        {"find": {"text": "alpha", "from": [3, 0]}, "is": [0, "Book"]},
+        {"find": {"text": "beta", "from": [1, 0]}, "is": [1, "Book"]},
+        {"find": {"text": "alpha", "from": [0, 0], "backward": true}, "is": [3, "Book"]},
+        {"find": {"text": "NOVAK", "matchCase": true}, "is": null},
+        {"find": {"text": "novak", "matchCase": true}, "is": [2, "Trader"]},
+        {"find": {"text": "et", "wholeCell": true}, "is": null},
+        {"find": {"text": "beta", "wholeCell": true}, "is": [1, "Book"]},
+        {"find": {"text": "2500.5"}, "is": [1, "Notional"]},
+        {"find": {"text": "alpha", "scope": [[2, 0, 2, 2], [3, 0, 1, 1]]}, "is": [3, "Book"]}
+      ]
+    },
+    {
+      "name": "ADR-0055: the walk is over the filtered result, its rows counted in it",
+      "rows": [["Alpha", "Ishikawa", 1000], ["Beta", "Novak", 2500.5], ["Gamma", "novak", 30], ["Alpha", "Osei", 1000]],
+      "steps": [
+        {"setColumns": true},
+        {"setFilter": {"columns": {"Book": {"clauses": [{"operator": "equals", "value": "Alpha"}]}}}},
+        {"find": {"text": "osei"}, "is": [1, "Trader"]},
+        {"find": {"text": "novak"}, "is": null}
+      ]
+    },
+    {
+      "name": "ADR-0332 §3: GridSource.from applies every rewritten row as one change, and keeps the version when nothing moved",
+      "rows": [["Alpha", "Ishikawa", 1000], ["Beta", "Novak", 2500.5], ["Gamma", "novak", 30], ["Alpha", "Osei", 1000]],
+      "steps": [
+        {"setColumns": true},
+        {"expect": {"version": 0}},
+        {"replace": {"text": "novak", "replacement": "Rossi"}, "answers": {"count": 2, "version": 0, "changes": 2, "applied": true}},
+        {"expect": {"window": [0, 1, 2, 3], "values": [["Alpha", "Ishikawa", 1000], ["Beta", "Rossi", 2500.5], ["Gamma", "Rossi", 30], ["Alpha", "Osei", 1000]], "version": 0, "heard": 1}}
+      ]
+    },
+    {
+      "name": "ADR-0332 §3 / ADR-0011: a Replace All that reorders a sorted column moves the version once",
+      "rows": [["Alpha", "Ishikawa", 1000], ["Beta", "Novak", 2500.5], ["Gamma", "novak", 30], ["Alpha", "Osei", 1000]],
+      "steps": [
+        {"setColumns": true},
+        {"setSorts": [{"column": "Trader", "direction": "ascending"}]},
+        {"expect": {"window": [0, 1, 2, 3], "version": 0}},
+        {"replace": {"text": "novak", "replacement": "Aaron"}, "answers": {"count": 2, "version": 0}},
+        {"expect": {"window": [1, 2, 0, 3], "version": 1, "heard": 1}}
+      ]
+    },
+    {
+      "name": "ADR-0332 §2: a refused Replace All applies nothing, and names every cell it could not write",
+      "rows": [["Alpha", "Ishikawa", 1000], ["Beta", "Novak", 2500.5], ["Gamma", "novak", 30], ["Alpha", "Osei", 1000]],
+      "steps": [
+        {"setColumns": true},
+        {"expect": {"version": 0}},
+        {"replace": {"text": "a", "replacement": "4", "editable": ["Trader"]}, "answers": {"refused": [[0, "Book", null], [1, "Book", null], [2, "Book", null], [3, "Book", null]], "version": 0, "changes": 0}},
+        {"replace": {"text": "1000", "replacement": "x"}, "answers": {"refused": [[0, "Notional", "not a number"], [3, "Notional", "not a number"]], "version": 0, "changes": 0}},
+        {"expect": {"windowKept": true, "values": [["Alpha", "Ishikawa", 1000], ["Beta", "Novak", 2500.5], ["Gamma", "novak", 30], ["Alpha", "Osei", 1000]], "heard": 0}}
+      ]
+    },
+    {
+      "name": "ADR-0332 §3 / ADR-0011: a request read under another version than the source's applies nothing",
+      "rows": [["Alpha", "Ishikawa", 1000], ["Beta", "Novak", 2500.5], ["Gamma", "novak", 30], ["Alpha", "Osei", 1000]],
+      "steps": [
+        {"setColumns": true},
+        {"expect": {"version": 0}},
+        {"replace": {"text": "novak", "replacement": "Rossi", "version": 9}, "answers": {"count": 0, "version": 0, "changes": 0}},
+        {"expect": {"windowKept": true, "values": [["Alpha", "Ishikawa", 1000], ["Beta", "Novak", 2500.5], ["Gamma", "novak", 30], ["Alpha", "Osei", 1000]], "heard": 0}}
+      ]
+    },
+    {
+      "name": "ADR-0332 §3 / ADR-0043: a marked row stays marked when a Replace All rewrites it",
+      "rows": [["Alpha", "Ishikawa", 1000], ["Beta", "Novak", 2500.5], ["Gamma", "novak", 30], ["Alpha", "Osei", 1000]],
+      "steps": [
+        {"setColumns": true},
+        {"markRow": 1, "marked": true},
+        {"replace": {"text": "novak", "replacement": "Rossi"}, "answers": {"count": 2, "applied": true}},
+        {"expect": {"marked": [1], "markedRows": [["Beta", "Rossi", 2500.5]]}}
+      ]
+    },
+    {
+      "name": "ADR-0332 §2: the entry is the editor's, where the Consumer passes one",
+      "rows": [["Alpha", "Ishikawa", 1000], ["Beta", "Novak", 2500.5], ["Gamma", "novak", 30], ["Alpha", "Osei", 1000]],
+      "steps": [
+        {"setColumns": true},
+        {"replace": {"text": "=1000", "replacement": "=2000", "columns": ["Notional"], "editable": ["Notional"]}, "entryPrefix": {"Notional": "="}, "answers": {"count": 2, "changes": 2}},
+        {"expect": {"values": [["Alpha", "Ishikawa", 2000], ["Beta", "Novak", 2500.5], ["Gamma", "novak", 30], ["Alpha", "Osei", 2000]]}}
+      ]
+    },
+    {
+      "name": "ADR-0332 §3 / ADR-0141: under a Row Key, the rewritten rows reach the grid as one user's write",
+      "rowKey": "Book",
+      "rows": [["A", "Novak", 1], ["B", "novak", 2], ["C", "Osei", 3]],
+      "steps": [
+        {"setColumns": true},
+        {"expect": {"version": 0}},
+        {"replace": {"text": "novak", "replacement": "Rossi"}, "answers": {"count": 2, "changes": 2, "applied": true}},
+        {"expect": {"keys": ["A", "B", "C"], "values": [["A", "Rossi", 1], ["B", "Rossi", 2], ["C", "Osei", 3]], "heard": 1}}
+      ]
+    },
+    {
+      "name": "ADR-0332 §3 / ADR-0141: a row changed while the write plans applies nothing, and the answer is under no version the request was read in",
+      "rowKey": "Book",
+      "rows": [["A", "Novak", 1], ["B", "novak", 2], ["C", "Osei", 3]],
+      "steps": [
+        {"setColumns": true},
+        {"expect": {"version": 0}},
+        {"replace": {"text": "novak", "replacement": "Rossi"}, "applyDuringWrite": {"changed": [["B", "novak", 20]]}, "answers": {"count": 0, "version": -1, "changes": 0}},
+        {"publishGathered": true},
+        {"expect": {"values": [["A", "Novak", 1], ["B", "novak", 20], ["C", "Osei", 3]]}}
+      ]
+    }
+  ]
+}

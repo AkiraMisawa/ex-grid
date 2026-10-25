@@ -1,5 +1,6 @@
 using System.Text.Json;
 using ExGrid.Cells;
+using ExGrid.Finding;
 using ExGrid.Rows;
 using Microsoft.Extensions.Time.Testing;
 using Xunit;
@@ -171,6 +172,76 @@ public class SourceCaseTests
                 step.TryGetProperty("saying", out var saying) ? saying.GetString() : null);
         }
 
+        string[] ColumnNames() => [.. columns.Select(c => c.Name)];
+
+        // A Replace All through the source (ADR-0332 §3). The write sets a text column's text, and a number
+        // column's number where the text reads as one, refusing it otherwise; under "entryPrefix", the
+        // entry is the value's text after that prefix, and the write takes the prefix off again.
+        void Replace(JsonElement written, JsonElement step)
+        {
+            var prefixes = step.TryGetProperty("entryPrefix", out var given)
+                ? given.EnumerateObject().ToDictionary(p => p.Name, p => p.Value.GetString()!)
+                : null;
+            var during = step.TryGetProperty("applyDuringWrite", out var batch) ? batch : (JsonElement?)null;
+            GridReplaceWrite<Row> Write(Row row, string column, string text)
+            {
+                if (during is { } changes)
+                {
+                    during = null;
+                    Take(JsonSerializer.SerializeToElement(new { apply = changes })).GetAwaiter().GetResult();
+                }
+                var at = Array.FindIndex(columns, c => c.Name == column);
+                if (at < 0)
+                    return GridReplaceWrite<Row>.Refuse("no such column");
+                if (prefixes is not null && prefixes.TryGetValue(column, out var prefix))
+                {
+                    text = text.StartsWith(prefix, StringComparison.Ordinal)
+                        ? text[prefix.Length..]
+                        : throw new InvalidOperationException($"\"{name}\" wrote '{text}' in {column} without its prefix {prefix}.");
+                }
+                object value = text;
+                if (columns[at].Type == ColumnType.Number)
+                {
+                    if (!FindCaseTests.NumberText().IsMatch(text))
+                        return GridReplaceWrite<Row>.Refuse("not a number");
+                    value = double.Parse(text, System.Globalization.CultureInfo.InvariantCulture);
+                }
+                var values = row.Values.ToArray();
+                values[at] = value;
+                return GridReplaceWrite<Row>.To(new Row(row.Position, values));
+            }
+            Func<Row, string, string?>? entryOf = prefixes is null ? null : (row, column) =>
+                prefixes.TryGetValue(column, out var prefix)
+                    ? prefix + Convert.ToString(row.Values[Array.FindIndex(columns, c => c.Name == column)], System.Globalization.CultureInfo.InvariantCulture)
+                    : null;
+            var answer = source.Replace(FindCaseTests.ReplaceRequest(written, ColumnNames(), source.RowSequenceVersion), Write, entryOf);
+            foreach (var change in answer.Changes)
+            {
+                if (change.After.Position >= 0)
+                    held[change.After.Position] = change.After;
+                Hand(change.After);
+            }
+            var expected = step.GetProperty("answers");
+            var result = answer.Result;
+            if (expected.TryGetProperty("version", out var version))
+                Assert.Equal(version.GetInt32(), result.RowSequenceVersion);
+            if (expected.TryGetProperty("count", out var count))
+            {
+                Assert.True(result.IsReplaced, "expected cells replaced, got a refusal");
+                Assert.Equal(count.GetInt32(), result.Count);
+            }
+            if (expected.TryGetProperty("refused", out var refused))
+            {
+                Assert.Equal(
+                    [.. refused.EnumerateArray().Select(cell => (cell[0].GetInt32(), cell[1].GetString()!, cell[2].ValueKind == JsonValueKind.Null ? null : cell[2].GetString()))],
+                    result.RefusedCells.Select(cell => (cell.Row, cell.Column, cell.Message)).ToArray());
+            }
+            if (expected.TryGetProperty("changes", out var changeCount))
+                Assert.Equal(changeCount.GetInt32(), answer.Changes.Count);
+            if (expected.TryGetProperty("applied", out _))
+                Assert.All(answer.Changes, change => Assert.Contains(source.Window, row => ReferenceEquals(row, change.After)));
+        }
+
         async Task Take(JsonElement step)
         {
             if (step.TryGetProperty("setColumns", out var names))
@@ -280,6 +351,19 @@ public class SourceCaseTests
                     Assert.True(answer.IsTooMany);
                 else
                     Assert.Equal(step.GetProperty("is").EnumerateArray().Select(QueryCaseTests.Value), answer.Values);
+            }
+            else if (step.TryGetProperty("find", out var find))
+            {
+                var found = await source.FindAsync(FindCaseTests.FindRequest(find, ColumnNames(), source.RowSequenceVersion), CancellationToken.None);
+                var expected = step.GetProperty("is");
+                if (expected.ValueKind == JsonValueKind.Null)
+                    Assert.False(found.IsFound, $"{find}: expected nothing, got [{found.Row}, {found.Column}]");
+                else
+                    Assert.Equal((expected[0].GetInt32(), expected[1].GetString()), (found.Row, found.Column));
+            }
+            else if (step.TryGetProperty("replace", out var replace))
+            {
+                Replace(replace, step);
             }
             else
             {
