@@ -55,8 +55,11 @@ test, and the tests written for this decision, found five orders that ended diff
   - The place the press itself takes holds no event. At its turn, once every input sent before it is
     answered and the keyboard has settled where they left it, it gives the keyboard back to the control
     it pressed, or the control its label names, as its default did when it was made.
-  - It does so only while DOM focus is still the instance's. A click elsewhere on the page, outside the
-    Input Root, is one the grid does not hear, and it leaves the keyboard where that click put it.
+  - It does so only while DOM focus is still the instance's, or on nothing, as a hand-off does. A click on
+    a control elsewhere on the page, outside the Input Root, is one the grid does not hear, and it leaves
+    the keyboard where that click put it.
+  - It gives the keyboard to the control the pressed label names before a focusable box around the press.
+  - While it waits for its turn, a key typed does not end the hold it waits in.
   - It does not do so when a press made after it went on as it came, which put the keyboard where it
     pressed itself, even while its own turn has come and it waits for the inputs before it. A later
     press that takes a place of its own among the held inputs takes the keyboard in its own turn, after

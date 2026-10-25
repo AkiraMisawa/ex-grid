@@ -1187,8 +1187,9 @@ public class ShippedStylesheetTests
         var script = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.js", StringComparison.Ordinal)).Text;
         var endAtKey = Regex.Match(script, @"const endHoldAtKey = \(\) => \{.*?\n    \};", RegexOptions.Singleline).Value;
         Assert.NotEmpty(endAtKey);
-        // Only with nothing held, no press's answer or frame of the Consumer's own to come, and no wait with work after it.
-        Assert.Matches(new Regex(@"if \(!answering \|\| held\.length > 0 \|\| pressAnswer !== null \|\| frameInTurn !== null \|\| restlessWaits > 0\) \{\s*return;"), endAtKey);
+        // Only with nothing held, no press's answer, frame of the Consumer's own or press let through for its drag
+        // (ADR-0362) to come, and no wait with work after it.
+        Assert.Matches(new Regex(@"if \(!answering \|\| held\.length > 0 \|\| pressAnswer !== null \|\| frameInTurn !== null \|\| draggableInTurn !== null\s*\|\| restlessWaits > 0\) \{\s*return;"), endAtKey);
         // The waits are looked at now, as the frame would; a keyboard judged missed keeps the key held, to be refused.
         Assert.Matches(new Regex(@"lookAgain\(\);\s*if \(settledWaits\.size > 0 \|\| keyboardMissed \|\| \(focusDeclined && !declined\)\) \{\s*return;\s*\}"), endAtKey);
         // Before the drain has started, a popover key's answer counts as come once the stamp answers its number,
