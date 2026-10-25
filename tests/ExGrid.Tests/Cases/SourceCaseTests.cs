@@ -1,5 +1,6 @@
 using System.Text.Json;
 using ExGrid.Cells;
+using ExGrid.Rows;
 using Microsoft.Extensions.Time.Testing;
 using Xunit;
 
@@ -46,7 +47,10 @@ public class SourceCaseTests
                 Format: column.TryGetProperty("format", out var format) ? DisplayTextCaseTests.FormatOf(format.GetString()!) : null,
                 DateType: column.TryGetProperty("dateType", out var dateType) ? QueryCaseTests.Member<DateType>(dateType) : DateType.DateTime))
             .ToArray();
-        var held = entry.GetProperty("rows").EnumerateArray().Select((written, position) => RowOf(position, written)).ToArray();
+        // A row written {"sameAs": place} is the object at that place again: one row by identity (ADR-0003).
+        var held = new List<Row>();
+        foreach (var written in entry.GetProperty("rows").EnumerateArray())
+            held.Add(written.ValueKind == JsonValueKind.Object ? held[written.GetProperty("sameAs").GetInt32()] : RowOf(held.Count, written));
         var clock = new FakeTimeProvider();
         var start = clock.GetUtcNow();
         CellChangeOf<Row>? changedAt = null;
@@ -73,9 +77,17 @@ public class SourceCaseTests
         Row EntryOf(JsonElement written) => written.ValueKind == JsonValueKind.Array
             ? RowOf(-1, written)
             : handed[QueryCaseTests.Value(written.GetProperty("same"))!];
+        // A row a step names: by its place, a stranger, by its position in the Window, or under a key.
+        Row Named(JsonElement target) => target.ValueKind == JsonValueKind.Number ? held[target.GetInt32()]
+            : target.TryGetProperty("stranger", out var stranger) ? RowOf(-1, stranger)
+            : target.TryGetProperty("window", out var at) ? source.Window[at.GetInt32()]
+            : EntryOf(target);
+        int VersionOf(JsonElement step) => step.TryGetProperty("version", out var version) ? version.GetInt32() : source.RowSequenceVersion;
         var heard = 0;
+        var marksHeard = 0;
         var lastWindow = source.Window;
         source.StateChanged += () => heard++;
+        source.Marks.Changed += () => marksHeard++;
 
         foreach (var step in entry.GetProperty("steps").EnumerateArray())
         {
@@ -113,8 +125,41 @@ public class SourceCaseTests
                         }
                     }
                 }
+                if (expected.TryGetProperty("marked", out var marked))
+                {
+                    Assert.Equal(marked.EnumerateArray().Select(p => p.GetInt32()),
+                        Enumerable.Range(0, held.Count).Where(place => source.Marks.IsMarked(held[place])));
+                }
+                if (expected.TryGetProperty("windowMarks", out var windowMarks))
+                    Assert.Equal(windowMarks.EnumerateArray().Select(m => m.GetBoolean()), source.Window.Select(source.Marks.IsMarked));
+                if (expected.TryGetProperty("markCounts", out var markCounts))
+                {
+                    var counts = source.Marks.Counts ?? throw new InvalidOperationException("in memory, the counts are always known");
+                    Assert.Equal(markCounts.EnumerateArray().Select(n => n.GetInt32()),
+                        [counts.MarkedInResult, counts.RowsInResult, counts.MarkedOutsideResult]);
+                }
+                if (expected.TryGetProperty("markHeader", out var header))
+                {
+                    var counts = source.Marks.Counts ?? throw new InvalidOperationException("in memory, the counts are always known");
+                    Assert.Equal(QueryCaseTests.Member<RowMarkHeaderState>(header), RowMarkRules.HeaderState(counts));
+                }
+                if (expected.TryGetProperty("markedRows", out var markedRows))
+                {
+                    if (rowKey is null)
+                    {
+                        var rows = markedRows.EnumerateArray().Select(row => row.EnumerateArray().Select(QueryCaseTests.Value).ToArray()).ToArray();
+                        Assert.Equal(rows.Length, source.Marks.MarkedRows.Count);
+                        for (var i = 0; i < rows.Length; i++)
+                            Assert.Equal(rows[i], source.Marks.MarkedRows[i].Values);
+                    }
+                    else
+                        Assert.Equal(markedRows.EnumerateArray().Select(QueryCaseTests.Value), source.Marks.MarkedRows.Select(rowKey));
+                }
+                if (expected.TryGetProperty("marksHeard", out var marksTimes))
+                    Assert.Equal(marksTimes.GetInt32(), marksHeard);
                 lastWindow = source.Window;
                 heard = 0;
+                marksHeard = 0;
                 continue;
             }
             if (!step.TryGetProperty("throws", out var refusal))
@@ -150,10 +195,7 @@ public class SourceCaseTests
             }
             else if (step.TryGetProperty("replaceRow", out var target))
             {
-                var row = target.ValueKind == JsonValueKind.Number ? held[target.GetInt32()]
-                    : target.TryGetProperty("stranger", out var stranger) ? RowOf(-1, stranger)
-                    : target.TryGetProperty("window", out var at) ? source.Window[at.GetInt32()]
-                    : EntryOf(target);
+                var row = Named(target);
                 var written = step.GetProperty("with");
                 var replacement = written.ValueKind == JsonValueKind.String && written.GetString() == "itself"
                     ? row
@@ -199,6 +241,28 @@ public class SourceCaseTests
             else if (step.TryGetProperty("changeTimesKeptFor", out var keptFor))
             {
                 source.ChangeTimesKeptFor = TimeSpan.FromMilliseconds(keptFor.GetDouble());
+            }
+            else if (step.TryGetProperty("markRow", out var toMark))
+            {
+                await source.Marks.OnMarkIntentAsync(new RowMarkIntent<Row>.OneRow(Named(toMark), step.GetProperty("marked").GetBoolean()));
+            }
+            else if (step.TryGetProperty("markAll", out var all))
+            {
+                await source.Marks.OnMarkIntentAsync(new RowMarkIntent<Row>.AllRows(all.GetBoolean(), VersionOf(step)));
+            }
+            else if (step.TryGetProperty("markPositions", out var ranges))
+            {
+                await source.Marks.OnMarkIntentAsync(new RowMarkIntent<Row>.Positions(ranges.EnumerateArray().Select(RangeOf).ToArray(), VersionOf(step)));
+            }
+            else if (step.TryGetProperty("rowKind", out var rowKind))
+            {
+                var column = rowKind.GetProperty("column").GetString();
+                var at = Array.FindIndex(columns, c => c.Name == column);
+                if (at < 0)
+                    throw new InvalidOperationException($"\"{name}\" names no column {column} for its Row Kind.");
+                var kinds = rowKind.GetProperty("kinds").EnumerateObject().ToDictionary(k => k.Name, k => QueryCaseTests.Member<RowKind>(k.Value));
+                source.Marks.OnRowKindChanged(row => Convert.ToString(row.Values[at], System.Globalization.CultureInfo.InvariantCulture) is { } text
+                    && kinds.TryGetValue(text, out var kind) ? kind : RowKind.Detail);
             }
             else if (step.TryGetProperty("needRange", out var range))
             {

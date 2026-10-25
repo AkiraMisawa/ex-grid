@@ -223,7 +223,7 @@ header. A ticked row carries a **Row Mark**.
 ## Comments
 
 **2026-09-26 — implemented** on `claude/grill-with-docs-implement-ves2sr`, through `/implement`.
-Layers 1 and 2 pass (`RowMarkRuleTests`, `RowMarkSourceTests`, `RowMarkFetchTests`,
+Layers 1 and 2 pass (`RowMarkRuleTests`, `tests/cases/source/marks.json`, `RowMarkFetchTests`,
 `RowMarkColumnTests`), and `marks.spec.mjs` passes against both hosts — but on the bundled
 Chromium, headless, in a container without Chrome or Edge. That is not the layer-3 run
 ADR-0026 asks for: MK-6 and MK-7 are to be confirmed by CI's run on both installed browsers,

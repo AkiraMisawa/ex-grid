@@ -187,6 +187,9 @@ case reads its Window by key (`keys`), since a row it hands over is new and stan
 step hands over is an entry: its values, a new object, or `{"same": key}`, the object last handed under that
 key, the rows' own to begin with.
 
+A row of `rows` written `{"sameAs": place}` is the object at that earlier place again, one row by identity
+(ADR-0003), and reads as that place.
+
 | Step | Does |
 |---|---|
 | `{"setColumns": true}` | Binds the columns; `"rebuilt"` binds new objects, each equal to the one it was built after; a list of names binds those alone |
@@ -200,10 +203,14 @@ key, the rows' own to begin with.
 | `{"publishGathered": true}` | Publishes what was gathered at once |
 | `{"cellChangedAt": true}` | Reads the source's Change Highlight, which starts its recording; `changedAt` reads through what was read |
 | `{"changeTimesKeptFor": ms}` | Sets how long a change time is kept |
+| `{"markRow": place, "marked": true}` | Marks or unmarks one row (ADR-0043), the row named as `replaceRow` names it |
+| `{"markAll": true}` | Presses the Mark Column's header to mark (`true`) or unmark the result, under the Row Sequence Version in force, or under `"version": n` |
+| `{"markPositions": [{"start", "count"}]}` | A positional gesture over those rows of the result, under the version in force or `"version": n` |
+| `{"rowKind": {"column", "kinds": {text: kind}}}` | Hands the marks a Row Kind: a row whose value in that column reads as one of the texts is of its kind (`"group"`, `"total"`), every other row `"detail"` |
 | `{"needRange": {"start", "count"}}` | Says the grid is about to show those rows |
 | `{"rows": {"start", "count"}, "is": [places]}` | Reads rows of the result |
 | `{"distinctValues": column, "is": [values]}` | Reads a column's value list; `"tooMany": true` in place of `is` |
-| `{"expect": {…}}` | Reads the source: `window` (places), `values` (the Window's rows as values), `windowStart`, `totalCount`, `loading`, `version` (the Row Sequence Version), `sorts`, `filter`, and `heard`, the changes heard since the last `expect`; and of a live source `keys` (the Window's Row Keys), `windowKept` (whether the Window is the same object as at the last `expect`), `vouches` (that no Window holds a row twice), `handed: true` (every row of the Window is the object last handed under its key), `gatherInterval`, `changeTimes` (whether the source has a Change Highlight), `changeTimesKeptFor`, and `changedAt`, `{key: {column: ms}}`: when the cell of the Window's row under that key last changed, in milliseconds from the case's start, `null` for none |
+| `{"expect": {…}}` | Reads the source: `window` (places), `values` (the Window's rows as values), `windowStart`, `totalCount`, `loading`, `version` (the Row Sequence Version), `sorts`, `filter`, and `heard`, the changes heard since the last `expect`; and of a live source `keys` (the Window's Row Keys), `windowKept` (whether the Window is the same object as at the last `expect`), `vouches` (that no Window holds a row twice), `handed: true` (every row of the Window is the object last handed under its key), `gatherInterval`, `changeTimes` (whether the source has a Change Highlight), `changeTimesKeptFor`, and `changedAt`, `{key: {column: ms}}`: when the cell of the Window's row under that key last changed, in milliseconds from the case's start, `null` for none. Of its Row Marks: `marked`, the places whose row is marked, ascending; `windowMarks`, whether each row of the Window is marked; `markCounts`, `[markedInResult, rowsInResult, markedOutsideResult]`; `markHeader`, the header's state (`"none"`, `"some"`, `"all"`); `markedRows`, the rows an action runs over, in the source's order, as values, or under a Row Key as keys; and `marksHeard`, the changes the marks reported since the last `expect` |
 
 A step that is refused says so with `throws` and `saying`, as a `query` case does.
 

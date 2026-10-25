@@ -5,8 +5,9 @@ namespace ExGrid.Tests;
 
 /// <summary>
 /// <c>GridSource.From</c> with a Row Key (ADR-0141), where only C# can read it: the threads and contexts
-/// a change arrives on (LV-16), its Change Highlight's one delegate (LV-9), and its row marks. The live data
-/// itself is in the shared cases (tests/cases/source/live.json). The clock is a fake one the tests drive.
+/// a change arrives on (LV-16) and its Change Highlight's one delegate (LV-9). The live data itself, its Change
+/// Highlight and its Row Marks are in the shared cases (tests/cases/source). The clock is a fake one the tests
+/// drive.
 /// </summary>
 public class LiveSourceTests
 {
@@ -39,8 +40,6 @@ public class LiveSourceTests
         return source;
     }
 
-    private static string Ids(IGridSource<Deal> source) => string.Join(",", source.Window.Select(d => d.Id));
-
     private static GridFilter AmountAtLeast(decimal amount) => new(new Dictionary<string, FilterSpec>
     {
         ["Amount"] = new([new FilterClause(FilterOperator.GreaterThanOrEqual, amount)]),
@@ -48,10 +47,10 @@ public class LiveSourceTests
 
     private static readonly SortSpec[] ByAmount = [new("Amount", SortDirection.Ascending)];
 
-    // The source's live data itself (batches, whole lists, gathering, the Window it shows) and its Change
-    // Highlight are in the shared cases, tests/cases/source/live.json and change-highlight.json. What stays
-    // here reads what only C# has: the threads and contexts a change arrives on, one delegate held, and the
-    // row marks.
+    // The source's live data itself (batches, whole lists, gathering, the Window it shows), its Change
+    // Highlight and its Row Marks are in the shared cases, tests/cases/source/live.json and
+    // change-highlight.json. What stays here reads what only C# has: the threads and contexts a change
+    // arrives on, and one delegate held.
 
     [Fact] // ADR-0141 / LV-10: the key a keyed source names its rows by is the one it was given
     public void A_keyed_source_names_its_rows_by_its_key()
@@ -210,55 +209,5 @@ public class LiveSourceTests
         source.Apply(new(changed: [rows[0] with { Amount = 9 }]));
 
         Assert.Same(first, source.CellChangedAt);
-    }
-
-    [Fact] // ADR-0141 / ADR-0043: under a key, a mark follows the row through its versions and leaves with it
-    public async Task A_row_mark_follows_the_key()
-    {
-        var source = Live(new FakeTimeProvider(), out var rows);
-        await source.Marks.OnMarkIntentAsync(new Rows.RowMarkIntent<Deal>.OneRow(rows[1], true));
-
-        source.Apply(new(changed: [rows[1] with { Amount = 9 }]));
-        Assert.True(source.Marks.IsMarked(source.Window[1]));
-        Assert.Equal(new Rows.RowMarkCounts(1, 4, 0), source.Marks.Counts);
-
-        source.Apply(new(removedKeys: ["B"]));
-        source.Apply(new(added: [rows[1]]));
-        Assert.False(source.Marks.IsMarked(source.Window[^1]));
-        Assert.Empty(source.Marks.MarkedRows);
-    }
-
-    [Fact] // ADR-0141 / ADR-0043: a removed row's mark goes when the removal is shown, not when it is applied — Apply may run on any thread, and the marks are read on the grid's context
-    public async Task A_removed_rows_mark_goes_when_the_removal_is_shown()
-    {
-        var clock = new FakeTimeProvider();
-        var source = Live(clock, out var rows, gather: true);
-        await source.Marks.OnMarkIntentAsync(new Rows.RowMarkIntent<Deal>.OneRow(rows[1], true));
-        source.Apply(new(changed: [rows[0] with { Amount = 9 }]));
-
-        // Within the interval: gathered, the row still shown, and its mark with it.
-        source.Apply(new(removedKeys: ["B"]));
-        Assert.Equal("A,B,C,D", Ids(source));
-        Assert.True(source.Marks.IsMarked(source.Window[1]));
-
-        clock.Advance(TimeSpan.FromMilliseconds(250));
-
-        Assert.Equal("A,C,D", Ids(source));
-        Assert.Empty(source.Marks.MarkedRows);
-    }
-
-    [Fact] // ADR-0141 / ADR-0043: a key removed and added again within one gathering is a changed row, and keeps its mark
-    public async Task A_key_removed_and_added_again_within_one_gathering_keeps_its_mark()
-    {
-        var clock = new FakeTimeProvider();
-        var source = Live(clock, out var rows, gather: true);
-        await source.Marks.OnMarkIntentAsync(new Rows.RowMarkIntent<Deal>.OneRow(rows[1], true));
-        source.Apply(new(changed: [rows[0] with { Amount = 9 }]));
-
-        source.Apply(new(removedKeys: ["B"]));
-        source.Apply(new(added: [rows[1] with { Amount = 7 }]));
-        clock.Advance(TimeSpan.FromMilliseconds(250));
-
-        Assert.True(source.Marks.IsMarked(source.Window.Single(d => d.Id == "B")));
     }
 }

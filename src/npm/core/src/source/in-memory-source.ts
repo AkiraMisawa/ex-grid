@@ -27,6 +27,7 @@ import { filtersEqual, filterWithout, snapshotFilter } from './filters';
 import { systemClock, type GridClock } from './grid-clock';
 import type { DistinctValues, GridSource, GridSourceState } from './grid-source';
 import { CellChangeTimes, defaultChangeTimesKeptFor, type CellChangedAt, type ChangedPair } from './cell-change-times';
+import { InMemoryRowMarks } from './in-memory-row-marks';
 import { KeyedRows } from './keyed-rows';
 import { liveRequery, type LiveRequeryOutcome, type RowChange } from './live-requery';
 import { checkedKey, quoted, type RowKey, type RowKeyOf } from './row-key';
@@ -93,6 +94,7 @@ export class InMemoryGridSource<Row> implements GridSource<Row> {
     readonly #listeners = new Set<() => void>();
     readonly #rowKey: RowKeyOf<Row> | undefined;
     readonly #live: Live<Row> | undefined;
+    readonly #marks: InMemoryRowMarks<Row>;
     #columns: readonly QueryColumn<Row>[] | undefined;
     #state: GridSourceState<Row>;
 
@@ -120,6 +122,11 @@ export class InMemoryGridSource<Row> implements GridSource<Row> {
             };
             window = Object.freeze(held.rows);
         }
+        this.#marks = new InMemoryRowMarks({
+            current: () => this.#state,
+            shown: key => this.#shownUnder(key),
+            heldRows: () => this.#baseRows(),
+        }, rows, rowKey);
         this.#state = Object.freeze({
             window,
             windowStart: 0,
@@ -161,6 +168,12 @@ export class InMemoryGridSource<Row> implements GridSource<Row> {
     set gatherInterval(milliseconds: number) {
         this.#requireLive('gatherInterval').gatherer.interval = milliseconds;
         if (this.#shouldPublish() && this.#publishPending()) this.#notify();
+    }
+
+    /** The Row Marks of this source (ADR-0043): kept per row it holds, by identity, or under a Row Key by
+     * key. A changed row keeps its mark, and a removed row takes its mark with it when its removal is shown. */
+    get marks(): InMemoryRowMarks<Row> {
+        return this.#marks;
     }
 
     /**
@@ -256,6 +269,7 @@ export class InMemoryGridSource<Row> implements GridSource<Row> {
         const moved = next.length !== window.length
             || next.some((each, at) => each !== window[at] && !(each === replacement && window[at] === row));
         this.#rows = Object.freeze(rows);
+        this.#marks.replaced(index, row, replacement);
         this.#show(next, this.#state.rowSequenceVersion + (moved ? 1 : 0));
         this.#notify();
     }
@@ -415,7 +429,9 @@ export class InMemoryGridSource<Row> implements GridSource<Row> {
         const query = kept();
         // What was gathered is in the rows requeried here, so it reaches the grid with this commit. Under the
         // Change Highlight it is published first, under the Query it was gathered under, which is what its
-        // marks are compared against; otherwise it is let go.
+        // marks are compared against; otherwise it is let go, and the marks of the rows it removed go with this
+        // commit.
+        const removed = live.times.wanted ? [] : this.#removedUnshown(live);
         if (live.times.wanted) this.#publishPending();
         else this.#dropPending(live);
         const next = positions.map(at => itemAt(rows, at));
@@ -426,10 +442,12 @@ export class InMemoryGridSource<Row> implements GridSource<Row> {
         if (!sequenceMoved && !windowChanged && query.filter === before.filter && query.sorts === before.sorts) {
             // Nothing the grid reads changed: the snapshot is the one it had, whatever was published meanwhile.
             this.#state = before;
+            this.#marks.published(removed);
             return false;
         }
         // An unchanged result keeps its object, so the grid has nothing new to take.
         this.#show(windowChanged ? next : before.window, before.rowSequenceVersion + (sequenceMoved ? 1 : 0), query);
+        this.#marks.published(removed);
         return sequenceMoved || windowChanged;
     }
 
@@ -608,11 +626,13 @@ export class InMemoryGridSource<Row> implements GridSource<Row> {
         if (outcome !== undefined) this.#recordChanges(live.times, changes, gathered, outcome);
         this.#dropPending(live);
         if (outcome === undefined) return false;
-        const windowChanged = outcome.result !== window;
         live.ordinals = Object.freeze(outcome.ordinals);
-        if (!windowChanged && !outcome.moved) return false;
-        this.#show(outcome.result, this.#state.rowSequenceVersion + (outcome.moved ? 1 : 0));
-        return true;
+        const shown = outcome.result !== window || outcome.moved;
+        if (shown) this.#show(outcome.result, this.#state.rowSequenceVersion + (outcome.moved ? 1 : 0));
+        // A removed row's mark goes when its removal is shown, here, once the Window is the new one. A key
+        // removed and added again within one gathering is a changed row, and keeps its mark.
+        this.#marks.published(changes.flatMap(change => change.new === undefined ? [change.key] : []));
+        return shown;
     }
 
     /** The Change Highlight of one publication (ADR-0141, ADR-0067, LV-9): a row that stood in the result and
@@ -638,6 +658,20 @@ export class InMemoryGridSource<Row> implements GridSource<Row> {
             }
         });
         times.record(this.#queryColumns(), pairs, appeared, removed);
+    }
+
+    /** The version of the row under `key` that the grid shows: until a gathered change is published, the one
+     * before it. */
+    #shownUnder(key: RowKey): Row | undefined {
+        const live = this.#live;
+        if (live === undefined) return undefined;
+        const gathered = live.pending.get(key);
+        return gathered === undefined ? live.keyed.get(key)?.row : gathered.before?.row;
+    }
+
+    /** The keys whose removal was gathered and not yet shown. */
+    #removedUnshown(live: Live<Row>): RowKey[] {
+        return [...live.pending].flatMap(([key, each]) => each.before !== undefined && live.keyed.get(key) === undefined ? [key] : []);
     }
 
     /** Lets go of what was gathered, which reached the grid, and the wait for it. */

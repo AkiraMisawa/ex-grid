@@ -12,6 +12,8 @@ import { GridSource } from '../src/source/grid-source';
 import type { InMemoryGridSource } from '../src/source/in-memory-source';
 import type { RowKey } from '../src/source/row-key';
 import type { RowRange } from '../src/viewport/row-range';
+import type { RowKind } from '../src/paint/row-classes';
+import { rowMarkHeaderState, type RowMarkHeaderState } from '../src/rows/row-marks';
 import { caseFiles, expectRefused, type Refusal } from './cases';
 import type { CellChangedAt } from '../src/source/cell-change-times';
 import { FakeClock } from './fake-clock';
@@ -28,7 +30,13 @@ interface Step {
     readonly setColumns?: true | 'rebuilt' | readonly string[];
     readonly setSorts?: readonly SortSpec[];
     readonly setFilter?: GridFilter | null;
-    readonly replaceRow?: number | { readonly stranger: readonly unknown[] } | { readonly window: number } | Same;
+    readonly replaceRow?: Named;
+    readonly markRow?: Named;
+    readonly marked?: boolean;
+    readonly markAll?: boolean;
+    readonly markPositions?: readonly RowRange[];
+    readonly version?: number;
+    readonly rowKind?: { readonly column: string; readonly kinds: Readonly<Record<string, RowKind>> };
     readonly with?: readonly unknown[] | 'itself';
     readonly apply?: { readonly added?: readonly Entry[]; readonly changed?: readonly Entry[]; readonly removedKeys?: readonly RowKey[] };
     readonly replaceAll?: readonly Entry[];
@@ -65,7 +73,16 @@ interface Expectation {
     readonly changeTimes?: boolean;
     readonly changeTimesKeptFor?: number;
     readonly changedAt?: Readonly<Record<string, Readonly<Record<string, number | null>>>>;
+    readonly marked?: readonly number[];
+    readonly windowMarks?: readonly boolean[];
+    readonly markCounts?: readonly [number, number, number];
+    readonly markHeader?: RowMarkHeaderState;
+    readonly markedRows?: readonly (readonly unknown[] | RowKey)[];
+    readonly marksHeard?: number;
 }
+
+/** A row a step names: by its place, a stranger, by its position in the Window, or under a key. */
+type Named = number | { readonly stranger: readonly unknown[] } | { readonly window: number } | Same;
 
 /** The object last handed to the source under a key. */
 interface Same {
@@ -76,7 +93,8 @@ interface Same {
 type Entry = readonly unknown[] | Same;
 
 interface SourceCase {
-    readonly rows: readonly (readonly unknown[])[];
+    /** A row written `{"sameAs": place}` is the object at that place again: one row by identity (ADR-0003). */
+    readonly rows: readonly (readonly unknown[] | { readonly sameAs: number })[];
     readonly rowKey?: string;
     readonly fromThrows?: Refusal;
     readonly fromSaying?: string;
@@ -111,7 +129,8 @@ for (const file of caseFiles<SourceCase>('source', 'source')) {
                     value: row => row.values[index],
                     ...(format === undefined ? {} : { format: formatOf(format) }),
                 }));
-                const held: Row[] = c.rows.map((written, position) => rowOf(position, written));
+                const held: Row[] = [];
+                for (const written of c.rows) held.push('sameAs' in written ? elementAt(held, written.sameAs) : rowOf(held.length, written));
                 const clock = new FakeClock();
                 const start = clock.now();
                 let changedAt: CellChangedAt<Row> | undefined;
@@ -136,9 +155,16 @@ for (const file of caseFiles<SourceCase>('source', 'source')) {
                     return row;
                 };
                 const entryOf = (entry: Entry): Row => isWrittenRow(entry) ? rowOf(-1, entry) : defined(handed.get(entry.same), `the row handed under ${String(entry.same)}`);
+                const named = (place: Named): Row => typeof place === 'number' ? elementAt(held, place)
+                    : 'stranger' in place ? rowOf(-1, place.stranger)
+                    : 'window' in place ? elementAt(source.snapshot().window, place.window)
+                    : entryOf(place);
+                const versionOf = (step: Step): number => step.version ?? source.snapshot().rowSequenceVersion;
                 let heard = 0;
+                let marksHeard = 0;
                 let lastWindow = source.snapshot().window;
                 source.subscribe(() => { heard += 1; });
+                source.marks.subscribe(() => { marksHeard += 1; });
 
                 for (const step of c.steps) {
                     if (step.expect !== undefined) {
@@ -168,8 +194,24 @@ for (const file of caseFiles<SourceCase>('source', 'source')) {
                             const keyOf = defined(rowKey, `the Row Key of "${c.name}"`);
                             expect(state.window.every(row => handed.get(keyOf(row)) === row), 'every row the object last handed').toBe(true);
                         }
+                        const { marks } = source;
+                        if (step.expect.marked !== undefined) {
+                            expect(held.flatMap((row, place) => marks.isMarked(row) ? [place] : []), 'marked').toEqual(step.expect.marked);
+                        }
+                        if (step.expect.windowMarks !== undefined) expect(state.window.map(row => marks.isMarked(row)), 'windowMarks').toEqual(step.expect.windowMarks);
+                        if (step.expect.markCounts !== undefined) {
+                            const { counts } = marks;
+                            expect([counts.markedInResult, counts.rowsInResult, counts.markedOutsideResult], 'markCounts').toEqual(step.expect.markCounts);
+                        }
+                        if (step.expect.markHeader !== undefined) expect(rowMarkHeaderState(marks.counts), 'markHeader').toBe(step.expect.markHeader);
+                        if (step.expect.markedRows !== undefined) {
+                            expect(marks.markedRows.map(row => rowKey === undefined ? row.values.map(compared) : rowKey(row)), 'markedRows')
+                                .toEqual(step.expect.markedRows.map(each => Array.isArray(each) ? each.map(value).map(compared) : each));
+                        }
+                        if (step.expect.marksHeard !== undefined) expect(marksHeard, 'marksHeard').toBe(step.expect.marksHeard);
                         lastWindow = state.window;
                         heard = 0;
+                        marksHeard = 0;
                         continue;
                     }
                     if (step.throws === undefined) {
@@ -196,11 +238,7 @@ for (const file of caseFiles<SourceCase>('source', 'source')) {
                     } else if (step.setFilter !== undefined) {
                         source.setFilter(step.setFilter === null ? undefined : filterOf(step.setFilter));
                     } else if (step.replaceRow !== undefined) {
-                        const place = step.replaceRow;
-                        const target = typeof place === 'number' ? elementAt(held, place)
-                            : 'stranger' in place ? rowOf(-1, place.stranger)
-                            : 'window' in place ? elementAt(source.snapshot().window, place.window)
-                            : entryOf(place);
+                        const target = named(step.replaceRow);
                         const written = defined(step.with, `the replacement of "${c.name}"`);
                         const replacement = written === 'itself' ? target : rowOf(target.position, written);
                         source.replaceRow(target, replacement);
@@ -225,6 +263,20 @@ for (const file of caseFiles<SourceCase>('source', 'source')) {
                         changedAt = source.cellChangedAt;
                     } else if (step.changeTimesKeptFor !== undefined) {
                         source.changeTimesKeptFor = step.changeTimesKeptFor;
+                    } else if (step.markRow !== undefined) {
+                        await source.marks.onMarkIntent({ kind: 'oneRow', row: named(step.markRow), marked: defined(step.marked, `what "${c.name}" marks`) });
+                    } else if (step.markAll !== undefined) {
+                        await source.marks.onMarkIntent({ kind: 'allRows', marked: step.markAll, rowSequenceVersion: versionOf(step) });
+                    } else if (step.markPositions !== undefined) {
+                        await source.marks.onMarkIntent({ kind: 'positions', ranges: step.markPositions, rowSequenceVersion: versionOf(step) });
+                    } else if (step.rowKind !== undefined) {
+                        const { column, kinds } = step.rowKind;
+                        const at = declared.findIndex(each => each.name === column);
+                        if (at < 0) throw new Error(`"${c.name}" names no column ${column} for its Row Kind.`);
+                        source.marks.setRowKind(row => {
+                            const written = String(row.values[at]);
+                            return Object.hasOwn(kinds, written) ? defined(kinds[written], written) : 'detail';
+                        });
                     } else if (step.needRange !== undefined) {
                         await source.needRange(step.needRange);
                     } else if (step.rows !== undefined) {
