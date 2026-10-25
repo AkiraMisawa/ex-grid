@@ -309,8 +309,9 @@ public abstract class SheetEdit
     /// <summary>
     /// A new, empty Sheet inserted beside the Sheet the edit is done on — after it, as Excel's <c>+</c>
     /// button adds one, or before it, as Shift+F11 does — named <paramref name="name"/>, or <c>Sheet</c>
-    /// and one more than the highest number a <c>SheetN</c> of the Workbook has (ADR-0331). Undoing it
-    /// takes the Sheet out again. The step's <see cref="WorkbookStep.Sheet"/> is the new Sheet.
+    /// and the next number of the Workbook's count of the Sheets it has made, as Excel numbers one
+    /// (ADR-0331): with Sheet1 renamed Sheet5, Sheet2. Undoing it takes the Sheet out again, and gives
+    /// its number back. The step's <see cref="WorkbookStep.Sheet"/> is the new Sheet.
     /// </summary>
     /// <exception cref="ArgumentException">The name is not one a Sheet can have (<see cref="Sheet.IsValidName"/>).</exception>
     public static SheetEdit InsertSheet(string? name = null, bool before = false) =>
@@ -507,6 +508,21 @@ public abstract class SheetEdit
             return new SheetStep(done.Sheet, done.Change, _ => done.Undo(), _ => done.Redo());
         }
 
+        /// <summary>
+        /// A new Sheet's step, an insertion's or a copy's: undone, the Sheet is taken out and the count of Sheets
+        /// made put back (<see cref="Workbook.UncountSheetMade"/>); redone, it is put back and counted again.
+        /// </summary>
+        private protected static Done Counted(Workbook workbook, Sheet made, int index, int? numbered, int counted, SheetChange change) =>
+            new(made, change, () =>
+            {
+                workbook.UncountSheetMade(counted);
+                return workbook.TakeOut(made, delete: false, []);
+            }, () =>
+            {
+                workbook.CountSheetMade(numbered);
+                return workbook.Reinsert(made, index);
+            });
+
         private protected static int CheckIndex(int index, int count)
         {
             ArgumentOutOfRangeException.ThrowIfGreaterThan(index, count - 1, nameof(index));
@@ -521,8 +537,10 @@ public abstract class SheetEdit
         internal override Done Apply(Workbook workbook, Sheet sheet)
         {
             var index = workbook.IndexOf(sheet) + (before ? 0 : 1);
-            var inserted = workbook.InsertSheet(index, name ?? workbook.NextSheetName(), out var change);
-            return new Done(inserted, change, () => workbook.TakeOut(inserted, delete: false, []), () => workbook.Reinsert(inserted, index));
+            int? numbered = name is null ? workbook.NextSheetNumber() : null;
+            var counted = workbook.CountSheetMade(numbered);
+            var inserted = workbook.InsertSheet(index, name ?? Workbook.SheetName(numbered!.Value), out var change);
+            return Counted(workbook, inserted, index, numbered, counted, change);
         }
     }
 
@@ -571,8 +589,9 @@ public abstract class SheetEdit
         internal override Done Apply(Workbook workbook, Sheet sheet)
         {
             var at = index is { } given ? CheckIndex(given, workbook.Sheets.Count + 1) : workbook.IndexOf(sheet) + 1;
+            var counted = workbook.CountSheetMade(null);
             var copy = workbook.Copy(sheet, at, workbook.CopyName(sheet.Name), out var change);
-            return new Done(copy, change, () => workbook.TakeOut(copy, delete: false, []), () => workbook.Reinsert(copy, at));
+            return Counted(workbook, copy, at, null, counted, change);
         }
     }
 

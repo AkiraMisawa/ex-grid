@@ -1191,3 +1191,21 @@ static ExPivot.Engine.ValueCaptions.Resolve(System.Collections.Generic.IReadOnly
 virtual ExPivot.Engine.PivotReportSource.ReadAheadRows.get -> int
 ~override ExPivot.Engine.PivotEntry.Equals(object obj) -> bool
 ~override ExPivot.Engine.PivotEntry.ToString() -> string
+ExPivot.Engine.FetchingPivotReportSource.Shape.get -> System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<ExGrid.Data.DataShape!>>?
+ExPivot.Engine.FetchingPivotReportSource.Shape.set -> void
+ExPivot.Engine.PivotCellItems
+ExPivot.Engine.PivotCellItems.<Clone>$() -> ExPivot.Engine.PivotCellItems!
+ExPivot.Engine.PivotCellItems.Column.get -> System.Collections.Generic.IReadOnlyList<ExPivot.Engine.PivotFieldItem!>!
+ExPivot.Engine.PivotCellItems.Deconstruct(out System.Collections.Generic.IReadOnlyList<ExPivot.Engine.PivotFieldItem!>! Row, out System.Collections.Generic.IReadOnlyList<ExPivot.Engine.PivotFieldItem!>! Column) -> void
+ExPivot.Engine.PivotCellItems.Equals(ExPivot.Engine.PivotCellItems? other) -> bool
+ExPivot.Engine.PivotCellItems.Items.get -> System.Collections.Generic.IEnumerable<ExPivot.Engine.PivotFieldItem!>!
+ExPivot.Engine.PivotCellItems.PivotCellItems(System.Collections.Generic.IReadOnlyList<ExPivot.Engine.PivotFieldItem!>! Row, System.Collections.Generic.IReadOnlyList<ExPivot.Engine.PivotFieldItem!>! Column) -> void
+ExPivot.Engine.PivotCellItems.Row.get -> System.Collections.Generic.IReadOnlyList<ExPivot.Engine.PivotFieldItem!>!
+override ExPivot.Engine.FetchingPivotReportSource.ShapeAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<ExGrid.Data.DataShape?>
+override ExPivot.Engine.LocalPivotReportSource.ShapeAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<ExGrid.Data.DataShape?>
+override ExPivot.Engine.PivotCellItems.Equals(object? obj) -> bool
+override ExPivot.Engine.PivotCellItems.GetHashCode() -> int
+override ExPivot.Engine.PivotCellItems.ToString() -> string!
+static ExPivot.Engine.PivotCellItems.operator !=(ExPivot.Engine.PivotCellItems? left, ExPivot.Engine.PivotCellItems? right) -> bool
+static ExPivot.Engine.PivotCellItems.operator ==(ExPivot.Engine.PivotCellItems? left, ExPivot.Engine.PivotCellItems? right) -> bool
+virtual ExPivot.Engine.PivotReportSource.ShapeAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<ExGrid.Data.DataShape?>

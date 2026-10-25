@@ -54,8 +54,9 @@
             <code>system-ui</code> on macOS, on Linux, and on Windows under an English or a Japanese display language,
             and for Roboto under the MudBlazor Wrappers. Under another Windows display language <code>system-ui</code>
             is another face, and a character it paints wider than measured is judged at the measured width, so such a
-            value can come out cut at its column's edge rather than as <code>####</code>. It is one of 0.1.0's Known
-            limitations.
+            value can come out cut at its column's edge rather than as <code>####</code>. It is one of 0.1.0's and
+            0.2.0's Known limitations. On macOS the widths are measured and held by tests, but that a value painted
+            there fits as judged was not checked on a Mac for 0.2.0, another of its Known limitations.
         </p>
         <DocsExample Title="Types, widths, formats and tones" Builtin="typeof(ColumnTypes)" Mud="typeof(ColumnTypesMud)"
                      Files="@(["Examples/Grid/Position.cs"])" />

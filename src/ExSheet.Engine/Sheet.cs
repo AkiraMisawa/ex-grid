@@ -80,6 +80,7 @@ public sealed partial class Sheet
         foreach (var table in document.LinkedTables) sheet.Declare(table.Name, table.Columns, table.KeyColumns);
         sheet.OpenFormats(document);
         sheet.OpenEntries(document);
+        sheet.Workbook.Opened();
         return sheet;
     }
 

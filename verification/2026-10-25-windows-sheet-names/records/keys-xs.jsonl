@@ -1,0 +1,15 @@
+{"t": "01:51:10", "cmd": "start", "answer": "ok start pid=44944 book=Book1 sheet=Sheet1 openedByItself= before= layout=0x08090809 version=16.0 t=9930"}
+{"t": "01:51:11", "cmd": "keys 40 +{F11}", "answer": "ok keys 1 t=10511"}
+{"t": "01:51:11", "cmd": "ps (1..$wb.Worksheets.Count | % { $wb.Worksheets.Item($_).Name }) -join \",\"", "answer": "ok ps Sheet2,Sheet1 t=11451"}
+{"t": "01:51:12", "cmd": "keys 40 ^z", "answer": "ok keys 1 t=12483"}
+{"t": "01:51:13", "cmd": "ps (1..$wb.Worksheets.Count | % { $wb.Worksheets.Item($_).Name }) -join \",\"", "answer": "ok ps Sheet1 t=13446"}
+{"t": "01:51:14", "cmd": "keys 40 +{F11}", "answer": "ok keys 1 t=14490"}
+{"t": "01:51:15", "cmd": "ps (1..$wb.Worksheets.Count | % { $wb.Worksheets.Item($_).Name }) -join \",\"", "answer": "ok ps Sheet2,Sheet1 t=15460"}
+{"t": "01:51:16", "cmd": "keys 40 +{F11}", "answer": "ok keys 1 t=16507"}
+{"t": "01:51:17", "cmd": "ps (1..$wb.Worksheets.Count | % { $wb.Worksheets.Item($_).Name }) -join \",\"", "answer": "ok ps Sheet3,Sheet2,Sheet1 t=17472"}
+{"t": "01:51:19", "cmd": "keys 40 ^z", "answer": "ok keys 1 t=18509"}
+{"t": "01:51:20", "cmd": "keys 40 ^z", "answer": "ok keys 1 t=19525"}
+{"t": "01:51:20", "cmd": "ps (1..$wb.Worksheets.Count | % { $wb.Worksheets.Item($_).Name }) -join \",\"", "answer": "ok ps Sheet1 t=20481"}
+{"t": "01:51:22", "cmd": "keys 40 ^y", "answer": "ok keys 1 t=21524"}
+{"t": "01:51:22", "cmd": "ps (1..$wb.Worksheets.Count | % { $wb.Worksheets.Item($_).Name }) -join \",\"", "answer": "ok ps Sheet1 t=22491"}
+{"t": "01:51:34", "cmd": "stop", "answer": "ok stop 44944 ended by Stop-Process (its own) t=33763"}

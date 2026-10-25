@@ -1,0 +1,10 @@
+
+Running 4 tests using 1 worker
+
+  ok 1 [chrome] › part-c.spec.mjs:481:1 › FN-12e (Part C, case 3c): #### fills its cell with whole # in the face it is painted in, and no more fit (ADR-0016) (1.2s)
+  ok 2 [chrome] › sizing.spec.mjs:62:1 › a bold total the estimate fits paints whole, and a #### run fits its cell (FN-12e, ADR-0016) (998ms)
+  ok 3 [msedge] › part-c.spec.mjs:481:1 › FN-12e (Part C, case 3c): #### fills its cell with whole # in the face it is painted in, and no more fit (ADR-0016) (958ms)
+  ok 4 [msedge] › sizing.spec.mjs:62:1 › a bold total the estimate fits paints whole, and a #### run fits its cell (FN-12e, ADR-0016) (1.1s)
+
+  4 passed (6.8s)
+exit=0 

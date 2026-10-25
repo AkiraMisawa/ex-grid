@@ -24,6 +24,15 @@ public sealed record GridChartDeclarations<TRow>
     public Func<string, SeriesKind>? KindOf { get; init; }
 
     /// <summary>
+    /// Whether each column's values are read from zero, by its name (ADR-0253, ADR-0258): false for a
+    /// level read away from zero, such as rates between 3.0% and 3.6%; null, or no answer, leaves the
+    /// Series Kind's default. A series in rows takes its columns' declaration; they must read zero alike
+    /// once each is resolved by its Series Kind's default (null beside true is alike for a Level), or the
+    /// curve is refused by name.
+    /// </summary>
+    public Func<string, bool?>? FromZeroOf { get; init; }
+
+    /// <summary>
     /// The number columns that are an axis, by name. A date column is always one; a number column is
     /// one only when it is named here.
     /// </summary>

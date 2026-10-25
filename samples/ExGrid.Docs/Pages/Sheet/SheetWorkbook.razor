@@ -44,7 +44,7 @@
             The claim, and a summary that reads it. Change a quantity on Claim, then select the Summary tab. Type
             <code>=</code> in an empty cell of Summary, press the Claim tab and press a quantity: the Formula reads
             <code>=Claim!</code> and that cell, and <kbd>Enter</kbd> puts it on Summary. "Add a
-            sheet" inserts an empty Sheet after the last, named <code>Sheet</code> and the next number no Sheet has,
+            sheet" inserts an empty Sheet after the last, named <code>Sheet</code> and the next number, as Excel numbers it,
             the line beside the buttons says what the Sheets are now, and <kbd>Ctrl</kbd> + <kbd>Z</kbd> takes it out
             again. The tabs do the same themselves: press <code>+</code>, double-click Claim and type a new name, or
             right-click a tab for Delete, Move Left, Move Right and Copy, or drag a tab onto another, and watch
@@ -159,7 +159,10 @@ await sheet.DoAsync("Totals", SheetEdit.MoveSheet(0));</code></pre>
             <li>
                 <b>Add.</b> <code>+</code> after the tabs adds an empty Sheet after the one shown;
                 <kbd>Shift</kbd> + <kbd>F11</kbd>, in the grid or on a tab, adds one before it, as Excel's does. It is
-                named <code>Sheet</code> and the next number no Sheet has, and shown.
+                named <code>Sheet</code> and the next number, and shown. As in Excel, the number counts the Sheets the
+                Workbook has made since it was opened, copies included, and passes over a name a Sheet has: rename
+                Sheet1 to Sheet5 and the next is Sheet2. Opened from a document, it starts from the first number no
+                Sheet has.
             </li>
             <li>
                 <b>Rename.</b> Double-click a tab, or choose Rename on its menu, and the name is edited on the tab, all of

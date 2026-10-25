@@ -93,6 +93,14 @@ open, and the Sheet's notice says so.)*
 across a hidden Sheet need rules of their own, as hidden rows do in ADR-0046), and grouped Sheets,
 which edit Sheets the user cannot see.
 
+*(As built, 2026-10-25, from Excel's answer, exsheet-workbook ticket 12's answer 13 and
+`verification/2026-10-25-windows-sheet-names`: a new Sheet is `Sheet` and the next number of a count of the
+Sheets the Workbook has made, a copy included, passing over a name a Sheet has; undoing an insertion gives its
+number back; a Workbook opened from a document starts the count at none, as Excel's opened workbook does, so
+its first new Sheet takes the first number no Sheet has. ExSheet's own, where Excel has no answer: a redo counts
+the Sheet again, an undone copy gives its number back, and a Workbook created with Sheets of any names has made
+those.)*
+
 **Sheet names follow Excel's rules**: at most 31 characters, none of `[ ] : * ? / \`, not empty,
 and unique without regard to case. A name that breaks one is refused by name.
 

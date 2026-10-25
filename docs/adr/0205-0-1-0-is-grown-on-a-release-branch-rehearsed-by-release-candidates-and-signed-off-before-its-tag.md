@@ -171,6 +171,11 @@ form of its own that says the sign-off is being made against this candidate, and
 - **An urgent fix ships first as a release candidate** from `release/0.1` (`0.1.1-rc.1`), the same day,
   and the stable patch follows its sign-off. Patches come from the release branch; new features go on
   `main` toward the next minor version, whose prereleases are `0.2.0-beta.N`.
+  *(2026-10-24 and 2026-10-25, decided with the user: `0.2.0` has no beta and goes straight to release
+  candidates, and it is grown on `release/0.2` as `0.1.0` was on `release/0.1`, because `main` has moved
+  on to the Script Core and React (ADR-0350). The branch is cut at `5e3eecb4`, the commit the by-hand
+  rows' records of 2026-10-25 were made at, so they hold on it. The changes `0.2.0` takes from `main`
+  after that commit are cherry-picked onto the branch, each with `-x`; the Script Core's are not taken.)*
 - **Once a stable version exists, a prerelease does not publish the Docs Site.** The site describes the
   latest stable version; a prerelease's notes are on its GitHub release, and reach the site with the next
   stable publish. The on-demand publish of `main` or a `lab/*` branch stays, under its banner (ADR-0110).
