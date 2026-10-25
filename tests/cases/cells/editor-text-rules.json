@@ -1,0 +1,34 @@
+{
+  "about": "What formula entry's own operations do to the editor's text (ADR-0051): a candidate accepted, a span replaced, the caret after what was written. From tests/ExGrid.Tests/EditorTextRulesTests.cs. The C# core's EditorTextRules is a static class; the Script Core's cells/editor-text.ts has replaceSpan and acceptCandidate.",
+  "kind": "calls",
+  "subject": "EditorTextRules",
+  "cases": [
+    {
+      "name": "ADR-0051: accepting a candidate replaces its span, and the caret lands after it",
+      "expect": [
+        {"static": "accept", "args": ["=SU+1", {"new": "CompletionCandidate", "with": {"label": "SUM", "start": 1, "length": 2, "insert": "SUM("}}], "is": ["=SUM(+1", 5]}
+      ]
+    },
+    {
+      "name": "ADR-0051: a zero-length span inserts",
+      "expect": [
+        {"static": "replace", "args": ["=SUM()", 5, 0, "A3"], "is": ["=SUM(A3)", 7]}
+      ]
+    },
+    {
+      "name": "ADR-0051: a span outside the text is refused by name, never clamped onto the wrong characters",
+      "expect": [
+        {"static": "replace", "args": ["=SU", -1, 0, "X"], "throws": "outOfRange", "saying": "ADR-0051"},
+        {"static": "replace", "args": ["=SU", 4, 0, "X"], "throws": "outOfRange", "saying": "ADR-0051"},
+        {"static": "replace", "args": ["=SU", 2, 2, "X"], "throws": "outOfRange", "saying": "ADR-0051"},
+        {"static": "replace", "args": ["=SU", 0, -1, "X"], "throws": "outOfRange", "saying": "ADR-0051"}
+      ]
+    },
+    {
+      "name": "ADR-0051: a candidate whose span lies outside the text is refused as a span is",
+      "expect": [
+        {"static": "accept", "args": ["=S", {"new": "CompletionCandidate", "with": {"label": "SUM", "start": 1, "length": 2, "insert": "SUM("}}], "throws": "outOfRange"}
+      ]
+    }
+  ]
+}

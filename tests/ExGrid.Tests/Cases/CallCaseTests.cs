@@ -20,7 +20,13 @@ public class CallCaseTests
     /// <summary>The subjects a case may name, by the name it uses.</summary>
     private static readonly Dictionary<string, Type> Subjects = new()
     {
+        ["CellClasses"] = typeof(ExGrid.Components.CellClasses),
         ["CellTextMetrics"] = typeof(CellTextMetrics),
+        ["CompletionCandidate"] = typeof(ExGrid.Cells.CompletionCandidate),
+        ["EditorCompletion"] = typeof(ExGrid.Cells.EditorCompletion),
+        ["EditorHint"] = typeof(ExGrid.Cells.EditorHint),
+        ["EditorReference"] = typeof(ExGrid.Cells.EditorReference),
+        ["EditorTextRules"] = typeof(ExGrid.Cells.EditorTextRules),
         ["ClipboardParse"] = typeof(ExGrid.Clipboard.ClipboardParse),
         ["AutoWidth"] = typeof(AutoWidth),
         ["ColumnGeometry"] = typeof(ColumnGeometry),
@@ -28,12 +34,19 @@ public class CallCaseTests
         ["ColumnWidthSpec"] = typeof(ColumnWidthSpec),
         ["GlyphWidthTable"] = typeof(GlyphWidthTable),
         ["GridEditingKeys"] = typeof(ExGrid.Keys.GridEditingKeys),
+        ["HeaderReorder"] = typeof(HeaderReorder),
         ["GridKeys"] = typeof(ExGrid.Keys.GridKeys),
         ["GridMetrics"] = typeof(GridMetrics),
         ["GridPresentationDefaults"] = typeof(GridPresentationDefaults),
         ["HeaderGroup"] = typeof(HeaderGroup),
         ["HeaderGroupLayout"] = typeof(HeaderGroupLayout),
+        ["MenuKeys"] = typeof(ExGrid.Chrome.MenuKeys),
         ["OverflowRules"] = typeof(OverflowRules),
+        ["ReferenceColour"] = typeof(ExGrid.Cells.ReferenceColour),
+        ["ReferenceColouring"] = typeof(ExGrid.Cells.ReferenceColouring),
+        ["RowClasses"] = typeof(ExGrid.Components.RowClasses),
+        ["RowMarkCounts"] = typeof(ExGrid.Rows.RowMarkCounts),
+        ["RowMarkRules"] = typeof(ExGrid.Rows.RowMarkRules),
         ["RowRange"] = typeof(RowRange),
         ["ViewportBox"] = typeof(ViewportBox),
         ["ViewportGeometry"] = typeof(ViewportGeometry),
@@ -47,8 +60,88 @@ public class CallCaseTests
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         NumberHandling = JsonNumberHandling.AllowNamedFloatingPointLiterals,
-        Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) },
+        Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase), new CommandFromCase(), new TupleAsArray(), new RangeAsCase(), new ColourAsPlace() },
     };
+
+    /// <summary>A menu's command as a case writes it, <c>{"id": …, "enabled": …}</c>: what the menu's keys
+    /// read of it. A case never runs one.</summary>
+    private sealed class CommandFromCase : JsonConverter<ExGrid.Chrome.GridCommand>
+    {
+        public override ExGrid.Chrome.GridCommand Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        {
+            var given = JsonElement.ParseValue(ref reader);
+            var id = given.GetProperty("id").GetString()
+                ?? throw new InvalidOperationException($"A command's id is text, not {given.GetProperty("id")}.");
+            return new(id, given.GetProperty("enabled").GetBoolean(),
+                () => throw new InvalidOperationException("A case's command is never run."));
+        }
+
+        public override void Write(Utf8JsonWriter writer, ExGrid.Chrome.GridCommand value, JsonSerializerOptions options)
+            => throw new NotSupportedException("A command is an argument, never an answer.");
+    }
+
+    /// <summary>A range as a case writes it and the Script Core holds one, its four numbers: the derived
+    /// members C# serialises besides (<c>bottomRow</c>, <c>cellCount</c>, …) are none of the case's.</summary>
+    private sealed class RangeAsCase : JsonConverter<ExGrid.Selection.SelectionRange>
+    {
+        public override ExGrid.Selection.SelectionRange Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        {
+            var given = JsonElement.ParseValue(ref reader);
+            return new(given.GetProperty("topRow").GetInt32(), given.GetProperty("leftColumn").GetInt32(),
+                given.GetProperty("rowCount").GetInt32(), given.GetProperty("columnCount").GetInt32());
+        }
+
+        public override void Write(Utf8JsonWriter writer, ExGrid.Selection.SelectionRange value, JsonSerializerOptions options)
+        {
+            writer.WriteStartObject();
+            writer.WriteNumber("topRow", value.TopRow);
+            writer.WriteNumber("leftColumn", value.LeftColumn);
+            writer.WriteNumber("rowCount", value.RowCount);
+            writer.WriteNumber("columnCount", value.ColumnCount);
+            writer.WriteEndObject();
+        }
+    }
+
+    /// <summary>A Reference colour as its place in the palette, the number the Script Core's colour is.</summary>
+    private sealed class ColourAsPlace : JsonConverter<ExGrid.Cells.ReferenceColour>
+    {
+        public override ExGrid.Cells.ReferenceColour Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+            => new(reader.GetInt32());
+
+        public override void Write(Utf8JsonWriter writer, ExGrid.Cells.ReferenceColour value, JsonSerializerOptions options)
+            => writer.WriteNumberValue(value.Place);
+    }
+
+    /// <summary>A tuple answered as the array of its elements, as the Script Core answers one: System.Text.Json
+    /// would write it as an empty object, since its elements are fields.</summary>
+    private sealed class TupleAsArray : JsonConverterFactory
+    {
+        public override bool CanConvert(Type typeToConvert)
+            => typeToConvert.IsValueType && typeToConvert.IsGenericType && typeof(System.Runtime.CompilerServices.ITuple).IsAssignableFrom(typeToConvert);
+
+        public override JsonConverter CreateConverter(Type typeToConvert, JsonSerializerOptions options)
+            => Activator.CreateInstance(typeof(Elements<>).MakeGenericType(typeToConvert)) as JsonConverter
+                ?? throw new InvalidOperationException($"No converter for {typeToConvert}.");
+
+        private sealed class Elements<T> : JsonConverter<T>
+        {
+            public override T Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+                => throw new NotSupportedException("A tuple argument is read element by element.");
+
+            public override void Write(Utf8JsonWriter writer, T value, JsonSerializerOptions options)
+            {
+                // By position, as ITuple numbers the elements: reflection's field order is unspecified. A tuple
+                // of eight or more nests the rest, which no case answers.
+                if (value is not System.Runtime.CompilerServices.ITuple tuple || tuple.Length > 7)
+                    throw new NotSupportedException($"{typeof(T)} is not a tuple of at most seven elements.");
+                var types = typeof(T).GetGenericArguments();
+                writer.WriteStartArray();
+                for (var i = 0; i < tuple.Length; i++)
+                    JsonSerializer.Serialize(writer, tuple[i], types[i], options);
+                writer.WriteEndArray();
+            }
+        }
+    }
 
     public static TheoryData<string, string, string> Cases()
     {
@@ -133,8 +226,8 @@ public class CallCaseTests
             .Where(candidate =>
             {
                 var parameters = candidate.GetParameters();
-                return arguments.Keys.All(key => parameters.Any(p => p.Name == key))
-                    && parameters.All(p => arguments.ContainsKey(p.Name!) || p.HasDefaultValue);
+                return arguments.Keys.All(key => parameters.Any(p => NameOf(p) == key))
+                    && parameters.All(p => arguments.ContainsKey(NameOf(p)) || p.HasDefaultValue);
             })
             .ToArray();
         if (bound.Length > 1)
@@ -142,10 +235,14 @@ public class CallCaseTests
         if (bound.Length == 0)
             return null;
         var values = bound[0].GetParameters()
-            .Select(p => arguments.TryGetValue(p.Name!, out var value) ? Convert(value, p.ParameterType) : p.DefaultValue)
+            .Select(p => arguments.TryGetValue(NameOf(p), out var value) ? Convert(value, p.ParameterType) : p.DefaultValue)
             .ToArray();
         return (bound[0], values);
     }
+
+    /// <summary>A parameter's name as a case writes it: camelCase, which a record's positional parameter
+    /// (<c>Text</c>) is not.</summary>
+    private static string NameOf(ParameterInfo parameter) => char.ToLowerInvariant(parameter.Name![0]) + parameter.Name[1..];
 
     /// <summary>One check: a member read or called, and what it answers or how it is refused.</summary>
     private static void Holds(Type type, object? subject, JsonElement check)
@@ -334,7 +431,9 @@ public class CallCaseTests
             return want.Equals(got);
         return (expected, actual) switch
         {
-            (JsonObject e, JsonObject a) => e.Count == a.Count && e.All(p => a.TryGetPropertyValue(p.Key, out var v) && Same(p.Value, v)),
+            // A key one side lacks is null there: "none" is null in a case, and a language may leave it out.
+            (JsonObject e, JsonObject a) => e.Select(p => p.Key).Union(a.Select(p => p.Key)).All(key =>
+                Same(e.TryGetPropertyValue(key, out var want) ? want : null, a.TryGetPropertyValue(key, out var got) ? got : null)),
             (JsonArray e, JsonArray a) => e.Count == a.Count && e.Zip(a).All(pair => Same(pair.First, pair.Second)),
             (JsonValue e, JsonValue a) => e.ToJsonString() == a.ToJsonString(),
             _ => false,

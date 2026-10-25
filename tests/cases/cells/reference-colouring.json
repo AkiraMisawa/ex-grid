@@ -1,0 +1,81 @@
+{
+  "about": "Who wears which colour among the References in one text (ADR-0057, DC-46): the same cells or the same key share a colour, colours are handed out in order of first appearance, round a palette of seven; an answer that would colour the wrong characters is refused by name. A colour is its place in the palette, 1 to 7. From tests/ExGrid.Tests/ReferenceColouringTests.cs.",
+  "kind": "calls",
+  "subject": "ReferenceColouring",
+  "cases": [
+    {
+      "name": "ADR-0057 / DC-46: =A1+B2:C3 gives two colours, in the order the References stand",
+      "expect": [
+        {"static": "of", "args": ["=A1+B2:C3", [{"new": "EditorReference", "with": {"start": 1, "length": 2, "range": {"topRow": 0, "leftColumn": 0, "rowCount": 1, "columnCount": 1}}}, {"new": "EditorReference", "with": {"start": 4, "length": 5, "range": {"topRow": 1, "leftColumn": 1, "rowCount": 2, "columnCount": 2}}}]], "then": [{"get": "colours", "is": [1, 2]}, {"get": "ranges", "is": [[{"topRow": 0, "leftColumn": 0, "rowCount": 1, "columnCount": 1}, 1], [{"topRow": 1, "leftColumn": 1, "rowCount": 2, "columnCount": 2}, 2]]}, {"get": "keys", "is": []}]}
+      ]
+    },
+    {
+      "name": "ADR-0057 / DC-46, the eighth Windows run: =A1+A1 names one range, so it is one colour, but each Reference draws its own outline",
+      "expect": [
+        {"static": "of", "args": ["=A1+A1", [{"new": "EditorReference", "with": {"start": 1, "length": 2, "range": {"topRow": 0, "leftColumn": 0, "rowCount": 1, "columnCount": 1}}}, {"new": "EditorReference", "with": {"start": 4, "length": 2, "range": {"topRow": 0, "leftColumn": 0, "rowCount": 1, "columnCount": 1}}}]], "then": [{"get": "colours", "is": [1, 1]}, {"get": "ranges", "is": [[{"topRow": 0, "leftColumn": 0, "rowCount": 1, "columnCount": 1}, 1]]}, {"get": "outlines", "is": [[{"topRow": 0, "leftColumn": 0, "rowCount": 1, "columnCount": 1}, 1], [{"topRow": 0, "leftColumn": 0, "rowCount": 1, "columnCount": 1}, 1]]}]}
+      ]
+    },
+    {
+      "name": "ADR-0057 / DC-46, the eighth Windows run: the outlines follow the text, one per Reference with cells, and a key draws none here",
+      "expect": [
+        {"static": "of", "args": ["=B2:C3+T[a]+A1", [{"new": "EditorReference", "with": {"start": 12, "length": 2, "range": {"topRow": 0, "leftColumn": 0, "rowCount": 1, "columnCount": 1}}}, {"new": "EditorReference", "with": {"start": 7, "length": 4, "key": "t/a"}}, {"new": "EditorReference", "with": {"start": 1, "length": 5, "range": {"topRow": 1, "leftColumn": 1, "rowCount": 2, "columnCount": 2}}}]], "then": [{"get": "outlines", "is": [[{"topRow": 1, "leftColumn": 1, "rowCount": 2, "columnCount": 2}, 1], [{"topRow": 0, "leftColumn": 0, "rowCount": 1, "columnCount": 1}, 3]]}]}
+      ]
+    },
+    {
+      "name": "ADR-0057: =A1+$A$1, however written, the same cells share a colour, and a range named again takes no new one",
+      "expect": [
+        {"static": "of", "args": ["=A1+$A$1+B2:C3", [{"new": "EditorReference", "with": {"start": 1, "length": 2, "range": {"topRow": 0, "leftColumn": 0, "rowCount": 1, "columnCount": 1}}}, {"new": "EditorReference", "with": {"start": 4, "length": 4, "range": {"topRow": 0, "leftColumn": 0, "rowCount": 1, "columnCount": 1}}}, {"new": "EditorReference", "with": {"start": 9, "length": 5, "range": {"topRow": 1, "leftColumn": 1, "rowCount": 2, "columnCount": 2}}}]], "then": [{"get": "colours", "is": [1, 1, 2]}]}
+      ]
+    },
+    {
+      "name": "ADR-0057: first appearance is where a Reference stands in the text, whatever order the answer lists them in",
+      "expect": [
+        {"static": "of", "args": ["=A1+B2:C3", [{"new": "EditorReference", "with": {"start": 4, "length": 5, "range": {"topRow": 1, "leftColumn": 1, "rowCount": 2, "columnCount": 2}}}, {"new": "EditorReference", "with": {"start": 1, "length": 2, "range": {"topRow": 0, "leftColumn": 0, "rowCount": 1, "columnCount": 1}}}]], "then": [{"get": "references", "is": [{"start": 1, "length": 2, "range": {"topRow": 0, "leftColumn": 0, "rowCount": 1, "columnCount": 1}}, {"start": 4, "length": 5, "range": {"topRow": 1, "leftColumn": 1, "rowCount": 2, "columnCount": 2}}]}, {"get": "colours", "is": [1, 2]}, {"call": "colourOf", "args": [{"topRow": 0, "leftColumn": 0, "rowCount": 1, "columnCount": 1}], "is": 1}, {"call": "colourOf", "args": [{"topRow": 1, "leftColumn": 1, "rowCount": 2, "columnCount": 2}], "is": 2}, {"call": "colourOf", "args": [{"topRow": 5, "leftColumn": 5, "rowCount": 1, "columnCount": 1}], "is": null}]}
+      ]
+    },
+    {
+      "name": "ADR-0057 / DC-46: a key shares its colour with every Reference carrying it, and counts in the order with the ranges",
+      "expect": [
+        {"static": "of", "args": ["=A1+SUM(T[PV])+T[PV]+T[Qty]", [{"new": "EditorReference", "with": {"start": 1, "length": 2, "range": {"topRow": 0, "leftColumn": 0, "rowCount": 1, "columnCount": 1}}}, {"new": "EditorReference", "with": {"start": 8, "length": 5, "key": "t/pv"}}, {"new": "EditorReference", "with": {"start": 15, "length": 5, "key": "t/pv"}}, {"new": "EditorReference", "with": {"start": 21, "length": 6, "key": "t/qty"}}]], "then": [{"get": "colours", "is": [1, 2, 2, 3]}, {"get": "keys", "is": [{"key": "t/pv", "colour": 2}, {"key": "t/qty", "colour": 3}]}, {"get": "ranges", "is": [[{"topRow": 0, "leftColumn": 0, "rowCount": 1, "columnCount": 1}, 1]]}]}
+      ]
+    },
+    {
+      "name": "ADR-0057: keys are compared as written; one spelled differently is another thing",
+      "expect": [
+        {"static": "of", "args": ["=T[a]+T[A]", [{"new": "EditorReference", "with": {"start": 1, "length": 4, "key": "t/a"}}, {"new": "EditorReference", "with": {"start": 6, "length": 4, "key": "t/A"}}]], "then": [{"get": "colours", "is": [1, 2]}]}
+      ]
+    },
+    {
+      "name": "ADR-0057 / DC-46, the eighth Windows run: the palette has seven colours, as Excel's, and the eighth thing named takes the first again",
+      "expect": [
+        {"static": "of", "args": ["=A1+A1+A1+A1+A1+A1+A1+A1+A1+A1+", [{"new": "EditorReference", "with": {"start": 1, "length": 2, "range": {"topRow": 0, "leftColumn": 0, "rowCount": 1, "columnCount": 1}}}, {"new": "EditorReference", "with": {"start": 4, "length": 2, "range": {"topRow": 1, "leftColumn": 0, "rowCount": 1, "columnCount": 1}}}, {"new": "EditorReference", "with": {"start": 7, "length": 2, "range": {"topRow": 2, "leftColumn": 0, "rowCount": 1, "columnCount": 1}}}, {"new": "EditorReference", "with": {"start": 10, "length": 2, "range": {"topRow": 3, "leftColumn": 0, "rowCount": 1, "columnCount": 1}}}, {"new": "EditorReference", "with": {"start": 13, "length": 2, "range": {"topRow": 4, "leftColumn": 0, "rowCount": 1, "columnCount": 1}}}, {"new": "EditorReference", "with": {"start": 16, "length": 2, "range": {"topRow": 5, "leftColumn": 0, "rowCount": 1, "columnCount": 1}}}, {"new": "EditorReference", "with": {"start": 19, "length": 2, "range": {"topRow": 6, "leftColumn": 0, "rowCount": 1, "columnCount": 1}}}, {"new": "EditorReference", "with": {"start": 22, "length": 2, "range": {"topRow": 7, "leftColumn": 0, "rowCount": 1, "columnCount": 1}}}, {"new": "EditorReference", "with": {"start": 25, "length": 2, "range": {"topRow": 8, "leftColumn": 0, "rowCount": 1, "columnCount": 1}}}, {"new": "EditorReference", "with": {"start": 28, "length": 2, "range": {"topRow": 9, "leftColumn": 0, "rowCount": 1, "columnCount": 1}}}]], "then": [{"get": "colours", "is": [1, 2, 3, 4, 5, 6, 7, 1, 2, 3]}, {"get": "ranges", "is": [[{"topRow": 0, "leftColumn": 0, "rowCount": 1, "columnCount": 1}, 1], [{"topRow": 1, "leftColumn": 0, "rowCount": 1, "columnCount": 1}, 2], [{"topRow": 2, "leftColumn": 0, "rowCount": 1, "columnCount": 1}, 3], [{"topRow": 3, "leftColumn": 0, "rowCount": 1, "columnCount": 1}, 4], [{"topRow": 4, "leftColumn": 0, "rowCount": 1, "columnCount": 1}, 5], [{"topRow": 5, "leftColumn": 0, "rowCount": 1, "columnCount": 1}, 6], [{"topRow": 6, "leftColumn": 0, "rowCount": 1, "columnCount": 1}, 7], [{"topRow": 7, "leftColumn": 0, "rowCount": 1, "columnCount": 1}, 1], [{"topRow": 8, "leftColumn": 0, "rowCount": 1, "columnCount": 1}, 2], [{"topRow": 9, "leftColumn": 0, "rowCount": 1, "columnCount": 1}, 3]]}]}
+      ]
+    },
+    {
+      "name": "ADR-0057: no answer, or an empty one, colours nothing",
+      "expect": [
+        {"static": "of", "args": ["5", null], "then": [{"get": "colours", "is": []}, {"get": "ranges", "is": []}, {"get": "outlines", "is": []}, {"get": "keys", "is": []}, {"call": "colourOf", "args": [{"topRow": 0, "leftColumn": 0, "rowCount": 1, "columnCount": 1}], "is": null}]},
+        {"static": "of", "args": ["5", []], "then": [{"get": "references", "is": []}]}
+      ]
+    },
+    {
+      "name": "ADR-0057: a span outside the text is refused by name, never coloured over the wrong characters",
+      "expect": [
+        {"static": "of", "args": ["=A1", [{"new": "EditorReference", "with": {"start": 2, "length": 2, "range": {"topRow": 0, "leftColumn": 0, "rowCount": 1, "columnCount": 1}}}]], "throws": "outOfRange", "saying": "ADR-0057"},
+        {"static": "of", "args": ["=A1", [{"new": "EditorReference", "with": {"start": 4, "length": 1, "range": {"topRow": 0, "leftColumn": 0, "rowCount": 1, "columnCount": 1}}}]], "throws": "outOfRange", "saying": "ADR-0057"}
+      ]
+    },
+    {
+      "name": "ADR-0057: two spans that overlap are refused by name: a character belongs to one Reference at most",
+      "expect": [
+        {"static": "of", "args": ["=B2:C3", [{"new": "EditorReference", "with": {"start": 1, "length": 5, "range": {"topRow": 1, "leftColumn": 1, "rowCount": 2, "columnCount": 2}}}, {"new": "EditorReference", "with": {"start": 4, "length": 2, "range": {"topRow": 0, "leftColumn": 0, "rowCount": 1, "columnCount": 1}}}]], "throws": "argument", "saying": "overlap"}
+      ]
+    },
+    {
+      "name": "ADR-0057: spans that meet without overlapping are two References",
+      "expect": [
+        {"static": "of", "args": ["=A1B2", [{"new": "EditorReference", "with": {"start": 1, "length": 2, "range": {"topRow": 0, "leftColumn": 0, "rowCount": 1, "columnCount": 1}}}, {"new": "EditorReference", "with": {"start": 3, "length": 2, "range": {"topRow": 1, "leftColumn": 1, "rowCount": 2, "columnCount": 2}}}]], "then": [{"get": "colours", "is": [1, 2]}]}
+      ]
+    }
+  ]
+}

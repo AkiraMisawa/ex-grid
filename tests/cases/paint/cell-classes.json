@@ -1,0 +1,82 @@
+{
+  "about": "The class attribute a cell is painted with (ADR-0006, ADR-0016, ADR-0068, ADR-0332 §4): the DOM contract a replacement Chrome and a theme paint against, the same under every Framework Adapter (ADR-0350). From tests/ExGrid.Tests/CellStateTests.cs, MatchMarkClassesTests.cs and ChangeHighlightRulesTests.cs. The C# core's CellClasses is a static class; the Script Core's paint/cell-classes.ts is cellClasses under the name for. That every combination is a string of its own, and one held string, is checked by each language's own tests.",
+  "kind": "calls",
+  "subject": "CellClasses",
+  "cases": [
+    {
+      "name": "ADR-0006: Normal is painted exactly as a cell was before Cell State existed",
+      "expect": [
+        {"static": "for", "args": {"numeric": false, "pinned": false, "state": "normal"}, "is": "ex-cell"},
+        {"static": "for", "args": {"numeric": true, "pinned": false, "state": "normal"}, "is": "ex-cell ex-cell-numeric"},
+        {"static": "for", "args": {"numeric": false, "pinned": true, "state": "normal"}, "is": "ex-cell ex-pinned"},
+        {"static": "for", "args": {"numeric": true, "pinned": true, "state": "normal"}, "is": "ex-cell ex-cell-numeric ex-pinned"}
+      ]
+    },
+    {
+      "name": "ADR-0006: the state rides alongside the presentation classes, it does not replace them",
+      "expect": [
+        {"static": "for", "args": {"numeric": false, "pinned": false, "state": "stale"}, "is": "ex-cell ex-state-stale"},
+        {"static": "for", "args": {"numeric": true, "pinned": true, "state": "error"}, "is": "ex-cell ex-cell-numeric ex-pinned ex-state-error"}
+      ]
+    },
+    {
+      "name": "ADR-0006: every state has a class of its own",
+      "expect": [
+        {"static": "for", "args": {"numeric": false, "pinned": false, "state": "normal"}, "is": "ex-cell"},
+        {"static": "for", "args": {"numeric": false, "pinned": false, "state": "stale"}, "is": "ex-cell ex-state-stale"},
+        {"static": "for", "args": {"numeric": false, "pinned": false, "state": "missing"}, "is": "ex-cell ex-state-missing"},
+        {"static": "for", "args": {"numeric": false, "pinned": false, "state": "error"}, "is": "ex-cell ex-state-error"},
+        {"static": "for", "args": {"numeric": false, "pinned": false, "state": "modified"}, "is": "ex-cell ex-state-modified"}
+      ]
+    },
+    {
+      "name": "ADR-0016: an explicit alignment joins the classes, and auto adds nothing",
+      "expect": [
+        {"static": "for", "args": {"numeric": false, "pinned": false, "state": "normal", "align": "auto"}, "is": "ex-cell"},
+        {"static": "for", "args": {"numeric": false, "pinned": false, "state": "normal", "align": "left"}, "is": "ex-cell ex-align-left"},
+        {"static": "for", "args": {"numeric": false, "pinned": false, "state": "normal", "align": "center"}, "is": "ex-cell ex-align-center"},
+        {"static": "for", "args": {"numeric": false, "pinned": false, "state": "normal", "align": "right"}, "is": "ex-cell ex-align-right"}
+      ]
+    },
+    {
+      "name": "ADR-0006: a tone names a meaning, and none adds nothing",
+      "expect": [
+        {"static": "for", "args": {"numeric": false, "pinned": false, "state": "stale", "align": "auto", "tone": "positive"}, "is": "ex-cell ex-tone-positive ex-state-stale"},
+        {"static": "for", "args": {"numeric": true, "pinned": false, "state": "normal", "tone": "negative"}, "is": "ex-cell ex-cell-numeric ex-tone-negative"},
+        {"static": "for", "args": {"numeric": false, "pinned": false, "state": "normal", "tone": "none"}, "is": "ex-cell"}
+      ]
+    },
+    {
+      "name": "ADR-0068 / ADR-0029: the Change Highlight is one more class on the cell, joining the others and replacing none",
+      "expect": [
+        {"static": "for", "args": {"numeric": false, "pinned": false, "state": "normal", "changed": true}, "is": "ex-cell ex-changed"},
+        {"static": "for", "args": {"numeric": true, "pinned": true, "state": "stale", "align": "right", "tone": "negative", "changed": true}, "is": "ex-cell ex-cell-numeric ex-pinned ex-align-right ex-tone-negative ex-state-stale ex-changed"},
+        {"static": "for", "args": {"numeric": true, "pinned": true, "state": "error", "align": "left", "tone": "positive", "changed": false}, "is": "ex-cell ex-cell-numeric ex-pinned ex-align-left ex-tone-positive ex-state-error"}
+      ]
+    },
+    {
+      "name": "ADR-0332 §4: a match wears ex-match-mark, the current match ex-match-mark-current as well",
+      "expect": [
+        {"static": "for", "args": {"numeric": false, "pinned": false, "state": "normal", "mark": "match"}, "is": "ex-cell ex-match-mark"},
+        {"static": "for", "args": {"numeric": false, "pinned": false, "state": "normal", "mark": "current"}, "is": "ex-cell ex-match-mark ex-match-mark-current"},
+        {"static": "for", "args": {"numeric": true, "pinned": true, "state": "stale", "align": "right", "tone": "negative", "changed": true, "mark": "match"}, "is": "ex-cell ex-cell-numeric ex-pinned ex-align-right ex-tone-negative ex-state-stale ex-changed ex-match-mark"},
+        {"static": "for", "args": {"numeric": true, "pinned": true, "state": "stale", "align": "right", "tone": "negative", "changed": true, "mark": "current"}, "is": "ex-cell ex-cell-numeric ex-pinned ex-align-right ex-tone-negative ex-state-stale ex-changed ex-match-mark ex-match-mark-current"}
+      ]
+    },
+    {
+      "name": "ADR-0332 §4: an unmarked cell is painted as it was before the mark existed",
+      "expect": [
+        {"static": "for", "args": {"numeric": true, "pinned": true, "state": "error", "align": "left", "tone": "positive", "mark": "none"}, "is": "ex-cell ex-cell-numeric ex-pinned ex-align-left ex-tone-positive ex-state-error"}
+      ]
+    },
+    {
+      "name": "ADR-0006: a state, tone, alignment or mark cast in from a number is refused, never painted as an ordinary cell",
+      "expect": [
+        {"static": "for", "args": {"numeric": false, "pinned": false, "state": 99}, "throws": "outOfRange"},
+        {"static": "for", "args": {"numeric": false, "pinned": false, "state": "normal", "tone": 9}, "throws": "outOfRange"},
+        {"static": "for", "args": {"numeric": false, "pinned": false, "state": "normal", "align": 7}, "throws": "outOfRange"},
+        {"static": "for", "args": {"numeric": false, "pinned": false, "state": "normal", "mark": 7}, "throws": "outOfRange"}
+      ]
+    }
+  ]
+}

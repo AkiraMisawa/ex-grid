@@ -1,0 +1,44 @@
+{
+  "about": "What the Consumer answers about its Row Marks for the header and the count display (ADR-0043). From tests/ExGrid.Tests/RowMarkRuleTests.cs.",
+  "kind": "calls",
+  "subject": "RowMarkCounts",
+  "cases": [
+    {
+      "name": "ADR-0043: the counts are read back, and every mark is those inside the result and those outside it",
+      "create": {"markedInResult": 3, "rowsInResult": 10, "markedOutsideResult": 70},
+      "expect": [
+        {"get": "markedInResult", "is": 3},
+        {"get": "rowsInResult", "is": 10},
+        {"get": "markedOutsideResult", "is": 70},
+        {"get": "marked", "is": 73}
+      ]
+    },
+    {
+      "name": "ADR-0043: an empty result with no marks is counts like any other",
+      "create": {"markedInResult": 0, "rowsInResult": 0, "markedOutsideResult": 0},
+      "expect": [
+        {"get": "marked", "is": 0}
+      ]
+    },
+    {
+      "name": "ADR-0043: a count that contradicts itself is refused, not painted",
+      "create": {"markedInResult": 11, "rowsInResult": 10, "markedOutsideResult": 0},
+      "throws": "outOfRange"
+    },
+    {
+      "name": "ADR-0043: a negative marked count is refused",
+      "create": {"markedInResult": -1, "rowsInResult": 10, "markedOutsideResult": 0},
+      "throws": "outOfRange"
+    },
+    {
+      "name": "ADR-0043: a negative row count is refused",
+      "create": {"markedInResult": 0, "rowsInResult": -1, "markedOutsideResult": 0},
+      "throws": "outOfRange"
+    },
+    {
+      "name": "ADR-0043: a negative count outside the result is refused",
+      "create": {"markedInResult": 0, "rowsInResult": 10, "markedOutsideResult": -1},
+      "throws": "outOfRange"
+    }
+  ]
+}

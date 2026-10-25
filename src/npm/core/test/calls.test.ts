@@ -4,15 +4,22 @@
 import { describe, expect, it } from 'vitest';
 import { AutoWidth } from '../src/columns/auto-width';
 import { CellTextMetrics } from '../src/columns/cell-text-metrics';
+import { acceptCandidate, EditorCompletion, EditorHint, replaceSpan } from '../src/cells/editor-text';
+import { colourForAppearance, editorReference, referenceColour, ReferenceColouring } from '../src/cells/reference-colouring';
 import { parseClipboard, parseClipboardBlock } from '../src/clipboard/clipboard-parse';
 import { ColumnWidth, ColumnWidthSpec } from '../src/columns/column-width';
 import { ColumnGeometry } from '../src/columns/column-geometry';
 import { GlyphWidthTable } from '../src/columns/glyph-width-table';
 import { HeaderGroup, HeaderGroupLayout } from '../src/columns/header-groups';
+import { allowedBoundaries, reorderColumns } from '../src/columns/header-reorder';
+import { firstEnabled, lastEnabled, letterOf, menuLetter, resolveColumnMenuKey, resolveMenuKey, splitAtLetter } from '../src/chrome/menu-keys';
 import { editingKeysByMode } from '../src/keys/editing-keys';
 import { canonicalKey, clipboardKeys, declareKeys, keysTakenFor, resolveKey, takenOnEveryGrid } from '../src/keys/grid-keys';
 import { decideOverflow, hashesWhenOverflowing } from '../src/columns/overflow-rules';
 import { GridMetrics } from '../src/grid-metrics';
+import { cellClasses } from '../src/paint/cell-classes';
+import { rowClasses } from '../src/paint/row-classes';
+import { lineUpMarks, rowMarkHeaderPress, rowMarkHeaderState, RowMarkCounts } from '../src/rows/row-marks';
 import { GridPresentationDefaults } from '../src/grid-presentation-defaults';
 import { rowRange } from '../src/viewport/row-range';
 import { ViewportBox } from '../src/viewport/viewport-box';
@@ -36,6 +43,11 @@ const subjects: Readonly<Record<string, Subject>> = {
         create: (args, via) => via === undefined ? AutoWidth.of(args['spec'] as ColumnWidthSpec) : noFactory('AutoWidth', via),
         statics: {},
     },
+    // C#'s CellClasses and RowClasses are static classes: each is one function of its module here.
+    CellClasses: {
+        create: (_, via) => noFactory('CellClasses', via),
+        statics: { for: cellClasses },
+    },
     CellTextMetrics: {
         create: (args, via) => via === undefined ? new CellTextMetrics(args as never) : noFactory('CellTextMetrics', via),
         statics: CellTextMetrics,
@@ -44,6 +56,11 @@ const subjects: Readonly<Record<string, Subject>> = {
     ClipboardParse: {
         create: (_, via) => noFactory('ClipboardParse', via),
         statics: { parse: parseClipboard, parseBlock: parseClipboardBlock },
+    },
+    // A candidate is a Consumer's plain object in the Script Core.
+    CompletionCandidate: {
+        create: (args, via) => via === undefined ? Object.freeze({ ...args }) : noFactory('CompletionCandidate', via),
+        statics: {},
     },
     ColumnGeometry: {
         create: (args, via) => via === undefined ? new ColumnGeometry(args as never) : noFactory('ColumnGeometry', via),
@@ -63,6 +80,23 @@ const subjects: Readonly<Record<string, Subject>> = {
     ColumnWidthSpec: {
         create: (args, via) => via === undefined ? new ColumnWidthSpec(args as never) : noFactory('ColumnWidthSpec', via),
         statics: ColumnWidthSpec,
+    },
+    EditorCompletion: {
+        create: (args, via) => via === undefined ? new EditorCompletion(args as never) : noFactory('EditorCompletion', via),
+        statics: EditorCompletion,
+    },
+    EditorHint: {
+        create: (args, via) => via === undefined ? new EditorHint(args as never) : noFactory('EditorHint', via),
+        statics: {},
+    },
+    EditorReference: {
+        create: (args, via) => via === undefined ? editorReference(args as never) : noFactory('EditorReference', via),
+        statics: {},
+    },
+    // C#'s EditorTextRules is a static class: its members are the module's functions here.
+    EditorTextRules: {
+        create: (_, via) => noFactory('EditorTextRules', via),
+        statics: { replace: replaceSpan, accept: acceptCandidate },
     },
     GlyphWidthTable: {
         create: (args, via) => via === undefined
@@ -107,9 +141,44 @@ const subjects: Readonly<Record<string, Subject>> = {
         },
         statics: HeaderGroupLayout,
     },
+    // C#'s HeaderReorder and MenuKeys are static classes: their members are the modules' functions here, under
+    // the C# names.
+    HeaderReorder: {
+        create: (_, via) => noFactory('HeaderReorder', via),
+        statics: { allowedBoundaries, reorder: reorderColumns },
+    },
+    MenuKeys: {
+        create: (_, via) => noFactory('MenuKeys', via),
+        statics: {
+            resolve: resolveMenuKey, resolveInColumnMenu: resolveColumnMenuKey, letter: menuLetter, letterOf, splitAtLetter,
+            first: firstEnabled, last: lastEnabled,
+        },
+    },
     OverflowRules: {
         create: (_, via) => noFactory('OverflowRules', via),
         statics: { decide: decideOverflow, hashesWhenOverflowing },
+    },
+    // A Reference colour is its place in the palette, a number, in the Script Core.
+    ReferenceColour: {
+        create: (args, via) => via === undefined ? { place: referenceColour(args['place'] as number) } : noFactory('ReferenceColour', via),
+        statics: { forAppearance: colourForAppearance },
+    },
+    ReferenceColouring: {
+        create: (_, via) => noFactory('ReferenceColouring', via),
+        statics: ReferenceColouring,
+    },
+    RowClasses: {
+        create: (_, via) => noFactory('RowClasses', via),
+        statics: { for: rowClasses },
+    },
+    RowMarkCounts: {
+        create: (args, via) => via === undefined ? new RowMarkCounts(args as never) : noFactory('RowMarkCounts', via),
+        statics: {},
+    },
+    // C#'s RowMarkRules is a static class: its members are the module's functions here, under the C# names.
+    RowMarkRules: {
+        create: (_, via) => noFactory('RowMarkRules', via),
+        statics: { lineUp: lineUpMarks, headerState: rowMarkHeaderState, headerPress: rowMarkHeaderPress },
     },
     RowRange: {
         create: (args, via) => via === undefined ? rowRange(args['start'] as number, args['count'] as number) : noFactory('RowRange', via),
@@ -170,7 +239,9 @@ function argument(value: unknown): unknown {
 
 /** Whether the answer is the value the case expects: numbers by value, `undefined` as `null`, objects
  * by every key, arrays in order. */
-function same(expected: unknown, actual: unknown): boolean {
+function same(wanted: unknown, actual: unknown): boolean {
+    // A key the case leaves out of an object is null, as one the answer leaves out is.
+    const expected = wanted === undefined ? null : wanted;
     // A set is compared as the list of its members in order, as C# serialises one.
     const answer = actual === undefined ? null : actual instanceof Set ? [...(actual as ReadonlySet<unknown>)] : actual;
     if (typeof expected === 'number' && typeof answer === 'number') {
@@ -181,9 +252,9 @@ function same(expected: unknown, actual: unknown): boolean {
     }
     if (typeof expected === 'object' && expected !== null) {
         if (typeof answer !== 'object' || answer === null || Array.isArray(answer)) return false;
-        const keys = Object.keys(expected);
-        return keys.length === Object.keys(answer).length
-            && keys.every(key => key in answer && same(Reflect.get(expected, key), Reflect.get(answer, key)));
+        // A key one side lacks is null there: "none" is null in a case, and a language may leave it out.
+        const keys = new Set([...Object.keys(expected), ...Object.keys(answer)]);
+        return [...keys].every(key => same(Reflect.get(expected, key), Reflect.get(answer, key)));
     }
     return expected === answer;
 }

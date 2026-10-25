@@ -1,0 +1,27 @@
+{
+  "about": "The Consumer's answer to the editor's text and caret (ADR-0051): an answer with neither candidates nor a hint shows nothing. From tests/ExGrid.Tests/EditorTextRulesTests.cs.",
+  "kind": "calls",
+  "subject": "EditorCompletion",
+  "cases": [
+    {
+      "name": "ADR-0051: an answer with neither candidates nor hint is empty",
+      "expect": [
+        {"static": "none", "then": [{"get": "isEmpty", "is": true}]}
+      ]
+    },
+    {
+      "name": "ADR-0051: an answer with a hint alone is not empty",
+      "create": {"candidates": [], "hint": {"new": "EditorHint", "with": {"text": "SUM("}}},
+      "expect": [
+        {"get": "isEmpty", "is": false}
+      ]
+    },
+    {
+      "name": "ADR-0051: an answer with a candidate alone is not empty",
+      "create": {"candidates": [{"new": "CompletionCandidate", "with": {"label": "SUM", "start": 1, "length": 2, "insert": "SUM("}}]},
+      "expect": [
+        {"get": "isEmpty", "is": false}
+      ]
+    }
+  ]
+}

@@ -76,23 +76,6 @@ public class ChangeHighlightRulesTests
         Assert.Equal(DateTimeOffset.MaxValue, ChangeHighlightRules.ShowingUntil(DateTimeOffset.MaxValue, Second, ChangedAt));
     }
 
-    [Fact] // ADR-0068 / ADR-0029: the mark is one more class on the cell, joining the others and replacing none
-    public void The_mark_joins_the_cell_classes_as_ex_changed()
-    {
-        Assert.Equal("ex-cell ex-changed", CellClasses.For(numeric: false, pinned: false, CellState.Normal, changed: true));
-        Assert.Equal("ex-cell ex-cell-numeric ex-pinned ex-align-right ex-tone-negative ex-state-stale ex-changed",
-            CellClasses.For(numeric: true, pinned: true, CellState.Stale, CellAlign.Right, CellTone.Negative, changed: true));
-    }
-
-    [Fact] // ADR-0068 / DC-1: a cell that is not marked is painted exactly as it was before the mark existed
-    public void An_unmarked_cell_is_painted_as_before()
-    {
-        Assert.Same(
-            CellClasses.For(numeric: true, pinned: true, CellState.Error, CellAlign.Left, CellTone.Positive),
-            CellClasses.For(numeric: true, pinned: true, CellState.Error, CellAlign.Left, CellTone.Positive, changed: false));
-        Assert.DoesNotContain("ex-changed", CellClasses.For(numeric: false, pinned: false, CellState.Normal), StringComparison.Ordinal);
-    }
-
     [Fact] // ADR-0068 / ADR-0027 P5: the marked class is interned — the same instance on every call, never composed on the render path
     public void The_marked_class_is_interned()
         => Assert.Same(

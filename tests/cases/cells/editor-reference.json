@@ -1,0 +1,50 @@
+{
+  "about": "One Reference in the text being edited (ADR-0057): a span of at least one character, and the cells it names or a key, never both. From tests/ExGrid.Tests/ReferenceColouringTests.cs.",
+  "kind": "calls",
+  "subject": "EditorReference",
+  "cases": [
+    {
+      "name": "ADR-0057: a Reference names its cells and no key",
+      "create": {"start": 1, "length": 2, "range": {"topRow": 0, "leftColumn": 0, "rowCount": 1, "columnCount": 1}},
+      "expect": [
+        {"get": "start", "is": 1},
+        {"get": "length", "is": 2},
+        {"get": "range", "is": {"topRow": 0, "leftColumn": 0, "rowCount": 1, "columnCount": 1}},
+        {"get": "key", "is": null}
+      ]
+    },
+    {
+      "name": "ADR-0057: a Reference names its key and no cells",
+      "create": {"start": 1, "length": 2, "key": "t/pv"},
+      "expect": [
+        {"get": "range", "is": null},
+        {"get": "key", "is": "t/pv"}
+      ]
+    },
+    {
+      "name": "ADR-0057: a Reference starts at a place in the text",
+      "create": {"start": -1, "length": 2, "range": {"topRow": 0, "leftColumn": 0, "rowCount": 1, "columnCount": 1}},
+      "throws": "outOfRange"
+    },
+    {
+      "name": "ADR-0057: a Reference to cells covers at least one character",
+      "create": {"start": 1, "length": 0, "range": {"topRow": 0, "leftColumn": 0, "rowCount": 1, "columnCount": 1}},
+      "throws": "outOfRange"
+    },
+    {
+      "name": "ADR-0057: a keyed Reference covers at least one character",
+      "create": {"start": 1, "length": 0, "key": "t/pv"},
+      "throws": "outOfRange"
+    },
+    {
+      "name": "ADR-0057: a key is not empty",
+      "create": {"start": 1, "length": 2, "key": ""},
+      "throws": "argument"
+    },
+    {
+      "name": "ADR-0057: no key is no key",
+      "create": {"start": 1, "length": 2, "key": null},
+      "throws": "argument"
+    }
+  ]
+}

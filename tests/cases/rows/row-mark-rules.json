@@ -1,0 +1,57 @@
+{
+  "about": "What the gestures on a Mark Column mean (ADR-0043): lining a block of rows up, the header's state from the Consumer's counts, and what pressing the header does. From tests/ExGrid.Tests/RowMarkRuleTests.cs. The C# core's RowMarkRules is a static class; the Script Core's rows/row-marks.ts is its functions under these names.",
+  "kind": "calls",
+  "subject": "RowMarkRules",
+  "cases": [
+    {
+      "name": "ADR-0043: Space brings the rows into line — any unmarked row means all become marked",
+      "expect": [
+        {"static": "lineUp", "args": [0, 5], "is": true},
+        {"static": "lineUp", "args": [3, 5], "is": true},
+        {"static": "lineUp", "args": [4, 5], "is": true},
+        {"static": "lineUp", "args": [5, 5], "is": false},
+        {"static": "lineUp", "args": [1, 1], "is": false},
+        {"static": "lineUp", "args": [0, 1], "is": true}
+      ]
+    },
+    {
+      "name": "ADR-0043: a count of marked rows that is negative or more than the rows is refused",
+      "expect": [
+        {"static": "lineUp", "args": [-1, 5], "throws": "outOfRange"},
+        {"static": "lineUp", "args": [6, 5], "throws": "outOfRange"},
+        {"static": "lineUp", "args": [0, -1], "throws": "outOfRange"}
+      ]
+    },
+    {
+      "name": "ADR-0043: the header's state compares marked rows with the rows of the result",
+      "expect": [
+        {"static": "headerState", "args": [{"new": "RowMarkCounts", "with": {"markedInResult": 0, "rowsInResult": 0, "markedOutsideResult": 0}}], "is": "none"},
+        {"static": "headerState", "args": [{"new": "RowMarkCounts", "with": {"markedInResult": 0, "rowsInResult": 10, "markedOutsideResult": 0}}], "is": "none"},
+        {"static": "headerState", "args": [{"new": "RowMarkCounts", "with": {"markedInResult": 1, "rowsInResult": 10, "markedOutsideResult": 0}}], "is": "some"},
+        {"static": "headerState", "args": [{"new": "RowMarkCounts", "with": {"markedInResult": 9, "rowsInResult": 10, "markedOutsideResult": 0}}], "is": "some"},
+        {"static": "headerState", "args": [{"new": "RowMarkCounts", "with": {"markedInResult": 10, "rowsInResult": 10, "markedOutsideResult": 0}}], "is": "all"}
+      ]
+    },
+    {
+      "name": "ADR-0043: 40 loaded rows all marked in a result of a million is some, never all",
+      "expect": [
+        {"static": "headerState", "args": [{"new": "RowMarkCounts", "with": {"markedInResult": 40, "rowsInResult": 1000000, "markedOutsideResult": 0}}], "is": "some"}
+      ]
+    },
+    {
+      "name": "ADR-0043: marks outside the current filter do not make the header all",
+      "expect": [
+        {"static": "headerState", "args": [{"new": "RowMarkCounts", "with": {"markedInResult": 0, "rowsInResult": 10, "markedOutsideResult": 70}}], "is": "none"},
+        {"static": "headerState", "args": [{"new": "RowMarkCounts", "with": {"markedInResult": 10, "rowsInResult": 10, "markedOutsideResult": 70}}], "is": "all"}
+      ]
+    },
+    {
+      "name": "ADR-0043: pressing some marks all; only all unmarks",
+      "expect": [
+        {"static": "headerPress", "args": ["none"], "is": true},
+        {"static": "headerPress", "args": ["some"], "is": true},
+        {"static": "headerPress", "args": ["all"], "is": false}
+      ]
+    }
+  ]
+}
