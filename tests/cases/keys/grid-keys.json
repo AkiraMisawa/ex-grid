@@ -1,0 +1,404 @@
+{
+  "about": "The key table (ADR-0010: the core arbitrates the keys; ADR-0012's keyboard; ADR-0050 item 14's declared keys). From tests/ExGrid.Tests/GridKeyTests.cs and DeclaredKeyTests.cs. The C# core's GridKeys is a static class; the Script Core's keys/grid-keys.ts is its functions under these names.",
+  "kind": "calls",
+  "subject": "GridKeys",
+  "cases": [
+    {
+      "name": "ADR-0012: the four forms of an arrow key",
+      "expect": [
+        {"static": "resolve", "args": {"key": "ArrowDown", "ctrl": false, "shift": false, "alt": false, "meta": false, "metaIsPrimary": true}, "is": {"kind": "move", "direction": "down", "order": "columnMajor", "backward": false}},
+        {"static": "resolve", "args": {"key": "ArrowDown", "ctrl": false, "shift": true, "alt": false, "meta": false, "metaIsPrimary": true}, "is": {"kind": "extend", "direction": "down", "order": "columnMajor", "backward": false}},
+        {"static": "resolve", "args": {"key": "ArrowDown", "ctrl": true, "shift": false, "alt": false, "meta": false, "metaIsPrimary": true}, "is": {"kind": "moveToEdge", "direction": "down", "order": "columnMajor", "backward": false}},
+        {"static": "resolve", "args": {"key": "ArrowDown", "ctrl": true, "shift": true, "alt": false, "meta": false, "metaIsPrimary": true}, "is": {"kind": "extendToEdge", "direction": "down", "order": "columnMajor", "backward": false}}
+      ]
+    },
+    {
+      "name": "ADR-0012: where Meta is Command, it is the modifier a user reaches for",
+      "expect": [
+        {"static": "resolve", "args": {"key": "a", "ctrl": false, "shift": false, "alt": false, "meta": true, "metaIsPrimary": true}, "then": [{"get": "kind", "is": "selectAll"}]},
+        {"static": "resolve", "args": {"key": "ArrowUp", "ctrl": false, "shift": false, "alt": false, "meta": true, "metaIsPrimary": true}, "then": [{"get": "kind", "is": "moveToEdge"}]},
+        {"static": "canonical", "args": {"key": "ArrowUp", "ctrl": false, "shift": false, "alt": false, "meta": true, "metaIsPrimary": true}, "is": "Control+ArrowUp"}
+      ]
+    },
+    {
+      "name": "ADR-0012: elsewhere the Meta key is the OS's, the grid does not take it, and it stays in the form",
+      "expect": [
+        {"static": "resolve", "args": {"key": "a", "ctrl": false, "shift": false, "alt": false, "meta": true, "metaIsPrimary": false}, "then": [{"get": "kind", "is": "none"}]},
+        {"static": "resolve", "args": {"key": "ArrowUp", "ctrl": false, "shift": false, "alt": false, "meta": true, "metaIsPrimary": false}, "then": [{"get": "kind", "is": "none"}]},
+        {"static": "canonical", "args": {"key": "ArrowUp", "ctrl": false, "shift": false, "alt": false, "meta": true, "metaIsPrimary": false}, "is": "Meta+ArrowUp"},
+        {"static": "resolve", "args": {"key": "Enter", "ctrl": false, "shift": false, "alt": false, "meta": true, "metaIsPrimary": false}, "then": [{"get": "kind", "is": "none"}]},
+        {"static": "resolve", "args": {"key": " ", "ctrl": false, "shift": false, "alt": false, "meta": true, "metaIsPrimary": false}, "then": [{"get": "kind", "is": "none"}]}
+      ]
+    },
+    {
+      "name": "ADR-0012: the canonical form puts the modifiers in one order",
+      "expect": [
+        {"static": "canonical", "args": {"key": "x", "ctrl": true, "shift": true, "alt": true, "meta": false, "metaIsPrimary": true}, "is": "Control+Shift+Alt+x"},
+        {"static": "canonical", "args": {"key": "x", "ctrl": true, "shift": true, "alt": true, "meta": true, "metaIsPrimary": false}, "is": "Control+Meta+Shift+Alt+x"},
+        {"static": "canonical", "args": {"key": "x", "ctrl": false, "shift": false, "alt": false, "meta": false, "metaIsPrimary": true}, "is": "x"}
+      ]
+    },
+    {
+      "name": "ADR-0012: Control is primary on every platform, so Ctrl+A works on a Mac too",
+      "expect": [
+        {"static": "resolve", "args": {"key": "a", "ctrl": true, "shift": false, "alt": false, "meta": false, "metaIsPrimary": true}, "then": [{"get": "kind", "is": "selectAll"}]},
+        {"static": "resolve", "args": {"key": "a", "ctrl": true, "shift": false, "alt": false, "meta": false, "metaIsPrimary": false}, "then": [{"get": "kind", "is": "selectAll"}]},
+        {"static": "resolve", "args": {"key": "ArrowUp", "ctrl": true, "shift": false, "alt": false, "meta": false, "metaIsPrimary": false}, "then": [{"get": "kind", "is": "moveToEdge"}]}
+      ]
+    },
+    {
+      "name": "ADR-0012: Enter runs down columns, Tab runs across rows, Shift runs both backwards",
+      "expect": [
+        {"static": "resolve", "args": {"key": "Enter", "ctrl": false, "shift": false, "alt": false, "meta": false, "metaIsPrimary": true}, "is": {"kind": "cycle", "direction": "down", "order": "columnMajor", "backward": false}},
+        {"static": "resolve", "args": {"key": "Enter", "ctrl": false, "shift": true, "alt": false, "meta": false, "metaIsPrimary": true}, "is": {"kind": "cycle", "direction": "down", "order": "columnMajor", "backward": true}},
+        {"static": "resolve", "args": {"key": "Tab", "ctrl": false, "shift": false, "alt": false, "meta": false, "metaIsPrimary": true}, "is": {"kind": "cycle", "direction": "down", "order": "rowMajor", "backward": false}},
+        {"static": "resolve", "args": {"key": "Tab", "ctrl": false, "shift": true, "alt": false, "meta": false, "metaIsPrimary": true}, "is": {"kind": "cycle", "direction": "down", "order": "rowMajor", "backward": true}}
+      ]
+    },
+    {
+      "name": "ADR-0012: Home and End are the row's edges; with Ctrl, the result's corners",
+      "expect": [
+        {"static": "resolve", "args": {"key": "Home", "ctrl": false, "shift": false, "alt": false, "meta": false, "metaIsPrimary": true}, "is": {"kind": "moveToEdge", "direction": "left", "order": "columnMajor", "backward": false}},
+        {"static": "resolve", "args": {"key": "End", "ctrl": false, "shift": true, "alt": false, "meta": false, "metaIsPrimary": true}, "is": {"kind": "extendToEdge", "direction": "right", "order": "columnMajor", "backward": false}},
+        {"static": "resolve", "args": {"key": "Home", "ctrl": true, "shift": false, "alt": false, "meta": false, "metaIsPrimary": true}, "is": {"kind": "moveToCorner", "direction": "down", "order": "columnMajor", "backward": true}},
+        {"static": "resolve", "args": {"key": "End", "ctrl": true, "shift": false, "alt": false, "meta": false, "metaIsPrimary": true}, "is": {"kind": "moveToCorner", "direction": "down", "order": "columnMajor", "backward": false}}
+      ]
+    },
+    {
+      "name": "ADR-0011 / ADR-0012 / ADR-0020: the whole-selection keys and Space",
+      "expect": [
+        {"static": "resolve", "args": {"key": "a", "ctrl": true, "shift": false, "alt": false, "meta": false, "metaIsPrimary": true}, "then": [{"get": "kind", "is": "selectAll"}]},
+        {"static": "resolve", "args": {"key": "A", "ctrl": true, "shift": false, "alt": false, "meta": false, "metaIsPrimary": true}, "then": [{"get": "kind", "is": "selectAll"}]},
+        {"static": "resolve", "args": {"key": " ", "ctrl": true, "shift": false, "alt": false, "meta": false, "metaIsPrimary": true}, "then": [{"get": "kind", "is": "selectWholeColumns"}]},
+        {"static": "resolve", "args": {"key": " ", "ctrl": false, "shift": true, "alt": false, "meta": false, "metaIsPrimary": true}, "then": [{"get": "kind", "is": "selectWholeRows"}]},
+        {"static": "resolve", "args": {"key": " ", "ctrl": false, "shift": false, "alt": false, "meta": false, "metaIsPrimary": true}, "then": [{"get": "kind", "is": "engage"}]},
+        {"static": "resolve", "args": {"key": "Escape", "ctrl": false, "shift": false, "alt": false, "meta": false, "metaIsPrimary": true}, "then": [{"get": "kind", "is": "leave"}]}
+      ]
+    },
+    {
+      "name": "ADR-0052: Excel's three keys for the active cell",
+      "expect": [
+        {"static": "resolve", "args": {"key": ".", "ctrl": true, "shift": false, "alt": false, "meta": false, "metaIsPrimary": true}, "then": [{"get": "kind", "is": "moveFocusToNextCorner"}]},
+        {"static": "resolve", "args": {"key": "Backspace", "ctrl": true, "shift": false, "alt": false, "meta": false, "metaIsPrimary": true}, "then": [{"get": "kind", "is": "revealFocus"}]},
+        {"static": "resolve", "args": {"key": "Backspace", "ctrl": false, "shift": true, "alt": false, "meta": false, "metaIsPrimary": true}, "then": [{"get": "kind", "is": "collapseToFocus"}]}
+      ]
+    },
+    {
+      "name": "ADR-0010: what the core does not take is left to the browser and the cell",
+      "expect": [
+        {"static": "resolve", "args": {"key": "c", "ctrl": true, "shift": false, "alt": false, "meta": false, "metaIsPrimary": true}, "then": [{"get": "kind", "is": "none"}]},
+        {"static": "resolve", "args": {"key": "v", "ctrl": true, "shift": false, "alt": false, "meta": false, "metaIsPrimary": true}, "then": [{"get": "kind", "is": "none"}]},
+        {"static": "resolve", "args": {"key": "F2", "ctrl": false, "shift": false, "alt": false, "meta": false, "metaIsPrimary": true}, "then": [{"get": "kind", "is": "none"}]},
+        {"static": "resolve", "args": {"key": "p", "ctrl": true, "shift": false, "alt": false, "meta": false, "metaIsPrimary": true}, "then": [{"get": "kind", "is": "none"}]},
+        {"static": "resolve", "args": {"key": "x", "ctrl": false, "shift": false, "alt": false, "meta": false, "metaIsPrimary": true}, "then": [{"get": "kind", "is": "none"}]},
+        {"static": "resolve", "args": {"key": "F5", "ctrl": false, "shift": false, "alt": false, "meta": false, "metaIsPrimary": true}, "then": [{"get": "kind", "is": "none"}]},
+        {"static": "resolve", "args": {"key": "ArrowUp", "ctrl": false, "shift": false, "alt": true, "meta": false, "metaIsPrimary": true}, "then": [{"get": "kind", "is": "none"}]},
+        {"static": "resolve", "args": {"key": "ArrowDown", "ctrl": false, "shift": true, "alt": true, "meta": false, "metaIsPrimary": true}, "then": [{"get": "kind", "is": "none"}]}
+      ]
+    },
+    {
+      "name": "ADR-0039 / KB-28: Alt+Down opens the Focus column's menu, and nothing near it does",
+      "expect": [
+        {"static": "resolve", "args": {"key": "ArrowDown", "ctrl": false, "shift": false, "alt": true, "meta": false, "metaIsPrimary": true}, "then": [{"get": "kind", "is": "openColumnMenu"}]},
+        {"static": "resolve", "args": {"key": "ArrowDown", "ctrl": true, "shift": false, "alt": true, "meta": false, "metaIsPrimary": true}, "then": [{"get": "kind", "is": "none"}]},
+        {"static": "resolve", "args": {"key": "ArrowDown", "ctrl": false, "shift": true, "alt": true, "meta": false, "metaIsPrimary": true}, "then": [{"get": "kind", "is": "none"}]},
+        {"static": "resolve", "args": {"key": "ArrowUp", "ctrl": false, "shift": false, "alt": true, "meta": false, "metaIsPrimary": true}, "then": [{"get": "kind", "is": "none"}]}
+      ]
+    },
+    {
+      "name": "ADR-0012: PageUp and PageDown move the Focus and the Viewport together; Shift extends",
+      "expect": [
+        {"static": "resolve", "args": {"key": "PageUp", "ctrl": false, "shift": false, "alt": false, "meta": false, "metaIsPrimary": true}, "is": {"kind": "moveByViewport", "direction": "up", "order": "columnMajor", "backward": false}},
+        {"static": "resolve", "args": {"key": "PageDown", "ctrl": false, "shift": false, "alt": false, "meta": false, "metaIsPrimary": true}, "is": {"kind": "moveByViewport", "direction": "down", "order": "columnMajor", "backward": false}},
+        {"static": "resolve", "args": {"key": "PageUp", "ctrl": false, "shift": true, "alt": false, "meta": false, "metaIsPrimary": true}, "is": {"kind": "extendByViewport", "direction": "up", "order": "columnMajor", "backward": false}},
+        {"static": "resolve", "args": {"key": "PageDown", "ctrl": false, "shift": true, "alt": false, "meta": false, "metaIsPrimary": true}, "is": {"kind": "extendByViewport", "direction": "down", "order": "columnMajor", "backward": false}}
+      ]
+    },
+    {
+      "name": "ADR-0012: the Control forms of PageUp and PageDown are the browser's, which switches tabs with them",
+      "expect": [
+        {"static": "resolve", "args": {"key": "PageUp", "ctrl": true, "shift": false, "alt": false, "meta": false, "metaIsPrimary": true}, "then": [{"get": "kind", "is": "none"}]},
+        {"static": "resolve", "args": {"key": "PageDown", "ctrl": true, "shift": false, "alt": false, "meta": false, "metaIsPrimary": true}, "then": [{"get": "kind", "is": "none"}]},
+        {"static": "taken", "lacks": ["Control+PageUp", "Control+PageDown"]}
+      ]
+    },
+    {
+      "name": "ADR-0010: an unknown key is not an error: the browser may send Unidentified, a dead key or an IME's own",
+      "expect": [
+        {"static": "resolve", "args": {"key": "Unidentified", "ctrl": false, "shift": false, "alt": false, "meta": false, "metaIsPrimary": true}, "then": [{"get": "kind", "is": "none"}]},
+        {"static": "resolve", "args": {"key": "Dead", "ctrl": false, "shift": false, "alt": false, "meta": false, "metaIsPrimary": true}, "then": [{"get": "kind", "is": "none"}]},
+        {"static": "resolve", "args": {"key": "Process", "ctrl": true, "shift": true, "alt": true, "meta": false, "metaIsPrimary": true}, "then": [{"get": "kind", "is": "none"}]},
+        {"static": "resolve", "args": {"key": "", "ctrl": false, "shift": false, "alt": false, "meta": false, "metaIsPrimary": true}, "then": [{"get": "kind", "is": "none"}]}
+      ]
+    },
+    {
+      "name": "ADR-0036: the context menu is reachable without a mouse, on both spellings, and F10 alone stays the browser's",
+      "expect": [
+        {"static": "resolve", "args": {"key": "ContextMenu", "ctrl": false, "shift": false, "alt": false, "meta": false, "metaIsPrimary": false}, "then": [{"get": "kind", "is": "openContextMenu"}]},
+        {"static": "resolve", "args": {"key": "F10", "ctrl": false, "shift": true, "alt": false, "meta": false, "metaIsPrimary": false}, "then": [{"get": "kind", "is": "openContextMenu"}]},
+        {"static": "resolve", "args": {"key": "F10", "ctrl": false, "shift": false, "alt": false, "meta": false, "metaIsPrimary": false}, "then": [{"get": "kind", "is": "none"}]},
+        {"static": "taken", "has": ["ContextMenu", "Shift+F10"]}
+      ]
+    },
+    {
+      "name": "ADR-0007: undo on Ctrl+Z; redo on both of Excel's spellings, CapsLock or not, Command folded and the Windows key not",
+      "expect": [
+        {"static": "resolve", "args": {"key": "z", "ctrl": true, "shift": false, "alt": false, "meta": false, "metaIsPrimary": true}, "then": [{"get": "kind", "is": "undo"}]},
+        {"static": "resolve", "args": {"key": "z", "ctrl": false, "shift": false, "alt": false, "meta": true, "metaIsPrimary": true}, "then": [{"get": "kind", "is": "undo"}]},
+        {"static": "resolve", "args": {"key": "z", "ctrl": false, "shift": false, "alt": false, "meta": true, "metaIsPrimary": false}, "then": [{"get": "kind", "is": "none"}]},
+        {"static": "resolve", "args": {"key": "Z", "ctrl": true, "shift": false, "alt": false, "meta": false, "metaIsPrimary": true}, "then": [{"get": "kind", "is": "undo"}]},
+        {"static": "resolve", "args": {"key": "Z", "ctrl": false, "shift": false, "alt": false, "meta": true, "metaIsPrimary": true}, "then": [{"get": "kind", "is": "undo"}]},
+        {"static": "resolve", "args": {"key": "Z", "ctrl": false, "shift": false, "alt": false, "meta": true, "metaIsPrimary": false}, "then": [{"get": "kind", "is": "none"}]},
+        {"static": "resolve", "args": {"key": "y", "ctrl": true, "shift": false, "alt": false, "meta": false, "metaIsPrimary": true}, "then": [{"get": "kind", "is": "redo"}]},
+        {"static": "resolve", "args": {"key": "y", "ctrl": false, "shift": false, "alt": false, "meta": true, "metaIsPrimary": true}, "then": [{"get": "kind", "is": "redo"}]},
+        {"static": "resolve", "args": {"key": "y", "ctrl": false, "shift": false, "alt": false, "meta": true, "metaIsPrimary": false}, "then": [{"get": "kind", "is": "none"}]},
+        {"static": "resolve", "args": {"key": "Y", "ctrl": true, "shift": false, "alt": false, "meta": false, "metaIsPrimary": true}, "then": [{"get": "kind", "is": "redo"}]},
+        {"static": "resolve", "args": {"key": "Y", "ctrl": false, "shift": false, "alt": false, "meta": true, "metaIsPrimary": true}, "then": [{"get": "kind", "is": "redo"}]},
+        {"static": "resolve", "args": {"key": "Y", "ctrl": false, "shift": false, "alt": false, "meta": true, "metaIsPrimary": false}, "then": [{"get": "kind", "is": "none"}]},
+        {"static": "resolve", "args": {"key": "Z", "ctrl": true, "shift": true, "alt": false, "meta": false, "metaIsPrimary": true}, "then": [{"get": "kind", "is": "redo"}]},
+        {"static": "resolve", "args": {"key": "Z", "ctrl": false, "shift": true, "alt": false, "meta": true, "metaIsPrimary": true}, "then": [{"get": "kind", "is": "redo"}]},
+        {"static": "resolve", "args": {"key": "Z", "ctrl": false, "shift": true, "alt": false, "meta": true, "metaIsPrimary": false}, "then": [{"get": "kind", "is": "none"}]},
+        {"static": "resolve", "args": {"key": "z", "ctrl": true, "shift": true, "alt": false, "meta": false, "metaIsPrimary": true}, "then": [{"get": "kind", "is": "redo"}]},
+        {"static": "resolve", "args": {"key": "z", "ctrl": false, "shift": true, "alt": false, "meta": true, "metaIsPrimary": true}, "then": [{"get": "kind", "is": "redo"}]},
+        {"static": "resolve", "args": {"key": "z", "ctrl": false, "shift": true, "alt": false, "meta": true, "metaIsPrimary": false}, "then": [{"get": "kind", "is": "none"}]}
+      ]
+    },
+    {
+      "name": "ADR-0007: undo and redo are claimed only while someone listens, since a key taken for nobody is stolen from the page",
+      "expect": [
+        {"static": "taken", "lacks": ["Control+z", "Control+y"]},
+        {"static": "takenFor", "args": [{"canEdit": false, "canUndo": true, "canRedo": false}], "has": ["Control+z", "Control+Z"], "lacks": ["Control+y", "Control+Shift+Z"]},
+        {"static": "takenFor", "args": [{"canEdit": false, "canUndo": false, "canRedo": true}], "has": ["Control+y", "Control+Y", "Control+Shift+Z", "Control+Shift+z"], "lacks": ["Control+z"]}
+      ]
+    },
+    {
+      "name": "ADR-0035 / ADR-0054: the writing keys",
+      "expect": [
+        {"static": "resolve", "args": {"key": "Delete", "ctrl": false, "shift": false, "alt": false, "meta": false, "metaIsPrimary": true}, "then": [{"get": "kind", "is": "clear"}]},
+        {"static": "resolve", "args": {"key": "Backspace", "ctrl": false, "shift": false, "alt": false, "meta": false, "metaIsPrimary": true}, "then": [{"get": "kind", "is": "clearAndEdit"}]},
+        {"static": "resolve", "args": {"key": "d", "ctrl": true, "shift": false, "alt": false, "meta": false, "metaIsPrimary": true}, "then": [{"get": "kind", "is": "fillDown"}]},
+        {"static": "resolve", "args": {"key": "D", "ctrl": true, "shift": false, "alt": false, "meta": false, "metaIsPrimary": true}, "then": [{"get": "kind", "is": "fillDown"}]},
+        {"static": "resolve", "args": {"key": "r", "ctrl": true, "shift": false, "alt": false, "meta": false, "metaIsPrimary": true}, "then": [{"get": "kind", "is": "fillRight"}]},
+        {"static": "resolve", "args": {"key": "R", "ctrl": true, "shift": false, "alt": false, "meta": false, "metaIsPrimary": true}, "then": [{"get": "kind", "is": "fillRight"}]}
+      ]
+    },
+    {
+      "name": "ADR-0054 / ED-25: a display-only grid leaves the page Delete, Backspace, Ctrl+D and Ctrl+R",
+      "expect": [
+        {"static": "taken", "lacks": ["Delete", "Backspace", "Control+d", "Control+D", "Control+r", "Control+R"]},
+        {"static": "takenFor", "args": [{"canEdit": false, "canUndo": false, "canRedo": false}], "lacks": ["Delete", "Backspace", "Control+d", "Control+D", "Control+r", "Control+R"]},
+        {"static": "takenFor", "args": [{"canEdit": true, "canUndo": false, "canRedo": false}], "has": ["Delete", "Backspace", "Control+d", "Control+D", "Control+r", "Control+R"]}
+      ]
+    },
+    {
+      "name": "ADR-0055 / FD-1: Ctrl+F is every grid's, wired or not, and Ctrl+Shift+F stays the browser's",
+      "expect": [
+        {"static": "resolve", "args": {"key": "f", "ctrl": true, "shift": false, "alt": false, "meta": false, "metaIsPrimary": true}, "then": [{"get": "kind", "is": "find"}]},
+        {"static": "resolve", "args": {"key": "F", "ctrl": true, "shift": false, "alt": false, "meta": false, "metaIsPrimary": true}, "then": [{"get": "kind", "is": "find"}]},
+        {"static": "resolve", "args": {"key": "f", "ctrl": false, "shift": false, "alt": false, "meta": true, "metaIsPrimary": true}, "then": [{"get": "kind", "is": "find"}]},
+        {"static": "taken", "has": ["Control+f", "Control+F"]},
+        {"static": "takenFor", "args": [{"canEdit": false, "canUndo": false, "canRedo": false}], "has": ["Control+F"]},
+        {"static": "resolve", "args": {"key": "F", "ctrl": true, "shift": true, "alt": false, "meta": false, "metaIsPrimary": true}, "then": [{"get": "kind", "is": "none"}]}
+      ]
+    },
+    {
+      "name": "ADR-0332 §2: Ctrl+H is every grid's, as Find is",
+      "expect": [
+        {"static": "resolve", "args": {"key": "h", "ctrl": true, "shift": false, "alt": false, "meta": false, "metaIsPrimary": true}, "then": [{"get": "kind", "is": "replace"}]},
+        {"static": "resolve", "args": {"key": "H", "ctrl": true, "shift": false, "alt": false, "meta": false, "metaIsPrimary": true}, "then": [{"get": "kind", "is": "replace"}]},
+        {"static": "taken", "has": ["Control+h", "Control+H"]}
+      ]
+    },
+    {
+      "name": "ADR-0005 / ADR-0014: the clipboard's keys are never taken, or the browser's copy and paste events would not fire",
+      "expect": [
+        {"static": "clipboardKeys", "has": ["Control+c", "Control+C", "Control+Insert", "Control+x", "Shift+Delete", "Control+v", "Shift+Insert", "Control+Shift+V"]},
+        {"static": "takenFor", "args": [{"canEdit": true, "canUndo": true, "canRedo": true}], "lacks": ["Control+c", "Control+C", "Control+v", "Control+V", "Control+x", "Shift+Insert"]}
+      ]
+    },
+    {
+      "name": "ADR-0050 item 14 / DC-57 / DC-1: no declaration declares nothing",
+      "expect": [
+        {"static": "declare", "args": [null], "is": []},
+        {"static": "declare", "args": [[]], "is": []}
+      ]
+    },
+    {
+      "name": "ADR-0050 item 14 / DC-57: keys the core leaves to the browser are declared as given, each exactly",
+      "expect": [
+        {"static": "declare", "args": [["Control+b", "Control+B", "Control+#", "Control+Shift+#", "Control+Shift++", "Control+2", "Control+Shift+_", "F5", "Control+PageDown"]], "is": ["Control+b", "Control+B", "Control+#", "Control+Shift+#", "Control+Shift++", "Control+2", "Control+Shift+_", "F5", "Control+PageDown"]},
+        {"static": "declare", "args": [["Control+b", "Control+B", "Control+#", "Control+Shift+#", "Control+Shift++", "Control+2", "Control+Shift+_", "F5", "Control+PageDown"]], "lacks": ["Control+Shift+B", "Control+i"]}
+      ]
+    },
+    {
+      "name": "ADR-0050 item 14 / ADR-0010 / DC-57: declaring \"Control+a\", a key the core answers, is refused by name",
+      "expect": [
+        {"static": "declare", "args": [["Control+b", "Control+a"]], "throws": "argument", "saying": "'Control+a' is one the core answers itself: the core's "}
+      ]
+    },
+    {
+      "name": "ADR-0050 item 14 / ADR-0010 / DC-57: declaring \"Escape\", a key the core answers, is refused by name",
+      "expect": [
+        {"static": "declare", "args": [["Control+b", "Escape"]], "throws": "argument", "saying": "'Escape' is one the core answers itself: the core's "}
+      ]
+    },
+    {
+      "name": "ADR-0050 item 14 / ADR-0010 / DC-57: declaring \"Shift+ArrowDown\", a key the core answers, is refused by name",
+      "expect": [
+        {"static": "declare", "args": [["Control+b", "Shift+ArrowDown"]], "throws": "argument", "saying": "'Shift+ArrowDown' is one the core answers itself: the core's "}
+      ]
+    },
+    {
+      "name": "ADR-0050 item 14 / ADR-0010 / DC-57: declaring \"Alt+ArrowDown\", a key the core answers, is refused by name",
+      "expect": [
+        {"static": "declare", "args": [["Control+b", "Alt+ArrowDown"]], "throws": "argument", "saying": "'Alt+ArrowDown' is one the core answers itself: the core's "}
+      ]
+    },
+    {
+      "name": "ADR-0050 item 14 / ADR-0010 / DC-57: declaring \"Control+f\", a key the core answers, is refused by name",
+      "expect": [
+        {"static": "declare", "args": [["Control+b", "Control+f"]], "throws": "argument", "saying": "'Control+f' is one the core answers itself: the core's "}
+      ]
+    },
+    {
+      "name": "ADR-0050 item 14 / ADR-0010 / DC-57: declaring \"Control+z\", a key the core answers, is refused by name",
+      "expect": [
+        {"static": "declare", "args": [["Control+b", "Control+z"]], "throws": "argument", "saying": "'Control+z' is one the core answers itself: the core's "}
+      ]
+    },
+    {
+      "name": "ADR-0050 item 14 / ADR-0010 / DC-57: declaring \"Control+Shift+Z\", a key the core answers, is refused by name",
+      "expect": [
+        {"static": "declare", "args": [["Control+b", "Control+Shift+Z"]], "throws": "argument", "saying": "'Control+Shift+Z' is one the core answers itself: the core's "}
+      ]
+    },
+    {
+      "name": "ADR-0050 item 14 / ADR-0010 / DC-57: declaring \"Control+d\", a key the core answers, is refused by name",
+      "expect": [
+        {"static": "declare", "args": [["Control+b", "Control+d"]], "throws": "argument", "saying": "'Control+d' is one the core answers itself: the core's "}
+      ]
+    },
+    {
+      "name": "ADR-0050 item 14 / ADR-0010 / DC-57: declaring \"Delete\", a key the core answers, is refused by name",
+      "expect": [
+        {"static": "declare", "args": [["Control+b", "Delete"]], "throws": "argument", "saying": "'Delete' is one the core answers itself: the core's "}
+      ]
+    },
+    {
+      "name": "ADR-0050 item 14 / ADR-0010 / DC-57: declaring \"Control+Enter\", a key the core answers, is refused by name",
+      "expect": [
+        {"static": "declare", "args": [["Control+b", "Control+Enter"]], "throws": "argument", "saying": "'Control+Enter' is one the core answers itself: "},
+        {"static": "declare", "args": [["Control+b", "Control+Enter"]], "throws": "argument", "saying": "fills the selection"}
+      ]
+    },
+    {
+      "name": "ADR-0050 item 14 / ADR-0010 / DC-57: declaring \"F4\", a key the core answers, is refused by name",
+      "expect": [
+        {"static": "declare", "args": [["Control+b", "F4"]], "throws": "argument", "saying": "'F4' is one the core answers itself: "},
+        {"static": "declare", "args": [["Control+b", "F4"]], "throws": "argument", "saying": "cycles the Reference"}
+      ]
+    },
+    {
+      "name": "ADR-0050 item 14 / ADR-0010 / DC-57: declaring \"F2\", a key the core answers, is refused by name",
+      "expect": [
+        {"static": "declare", "args": [["Control+b", "F2"]], "throws": "argument", "saying": "'F2' is one the core answers itself: "},
+        {"static": "declare", "args": [["Control+b", "F2"]], "throws": "argument", "saying": "opens the Cell Editor"}
+      ]
+    },
+    {
+      "name": "ADR-0050 item 14 / ADR-0010 / DC-57: declaring \"Shift+F2\", a key the core answers, is refused by name",
+      "expect": [
+        {"static": "declare", "args": [["Control+b", "Shift+F2"]], "throws": "argument", "saying": "'Shift+F2' is one the core answers itself: "},
+        {"static": "declare", "args": [["Control+b", "Shift+F2"]], "throws": "argument", "saying": "opens the Cell Editor"}
+      ]
+    },
+    {
+      "name": "ADR-0050 item 14 / ADR-0010 / DC-57: declaring \"x\", a key the core answers, is refused by name",
+      "expect": [
+        {"static": "declare", "args": [["Control+b", "x"]], "throws": "argument", "saying": "'x' is one the core answers itself: "},
+        {"static": "declare", "args": [["Control+b", "x"]], "throws": "argument", "saying": "opens the Cell Editor"}
+      ]
+    },
+    {
+      "name": "ADR-0050 item 14 / ADR-0010 / DC-57: declaring \"Shift+X\", a key the core answers, is refused by name",
+      "expect": [
+        {"static": "declare", "args": [["Control+b", "Shift+X"]], "throws": "argument", "saying": "'Shift+X' is one the core answers itself: "},
+        {"static": "declare", "args": [["Control+b", "Shift+X"]], "throws": "argument", "saying": "opens the Cell Editor"}
+      ]
+    },
+    {
+      "name": "ADR-0050 item 14 / ADR-0010 / DC-57: declaring \"Control+Alt+q\", a key the core answers, is refused by name",
+      "expect": [
+        {"static": "declare", "args": [["Control+b", "Control+Alt+q"]], "throws": "argument", "saying": "'Control+Alt+q' is one the core answers itself: "},
+        {"static": "declare", "args": [["Control+b", "Control+Alt+q"]], "throws": "argument", "saying": "AltGr"}
+      ]
+    },
+    {
+      "name": "ADR-0050 item 14 / ADR-0010 / DC-57: declaring \"Control+Shift+Alt+q\", a key the core answers, is refused by name",
+      "expect": [
+        {"static": "declare", "args": [["Control+b", "Control+Shift+Alt+q"]], "throws": "argument", "saying": "'Control+Shift+Alt+q' is one the core answers itself: "},
+        {"static": "declare", "args": [["Control+b", "Control+Shift+Alt+q"]], "throws": "argument", "saying": "AltGr"}
+      ]
+    },
+    {
+      "name": "ADR-0050 item 14 / ADR-0010 / DC-57: declaring \"Control+c\", a key the core answers, is refused by name",
+      "expect": [
+        {"static": "declare", "args": [["Control+b", "Control+c"]], "throws": "argument", "saying": "'Control+c' is one the core answers itself: "},
+        {"static": "declare", "args": [["Control+b", "Control+c"]], "throws": "argument", "saying": "copy event"}
+      ]
+    },
+    {
+      "name": "ADR-0050 item 14 / ADR-0010 / DC-57: declaring \"Control+V\", a key the core answers, is refused by name",
+      "expect": [
+        {"static": "declare", "args": [["Control+b", "Control+V"]], "throws": "argument", "saying": "'Control+V' is one the core answers itself: "},
+        {"static": "declare", "args": [["Control+b", "Control+V"]], "throws": "argument", "saying": "paste event"}
+      ]
+    },
+    {
+      "name": "ADR-0050 item 14 / ADR-0010 / DC-57: declaring \"Shift+Insert\", a key the core answers, is refused by name",
+      "expect": [
+        {"static": "declare", "args": [["Control+b", "Shift+Insert"]], "throws": "argument", "saying": "'Shift+Insert' is one the core answers itself: "},
+        {"static": "declare", "args": [["Control+b", "Shift+Insert"]], "throws": "argument", "saying": "paste event"}
+      ]
+    },
+    {
+      "name": "ADR-0050 item 14 / DC-57: a key no press would ever match is refused by name, not claimed for nothing",
+      "expect": [
+        {"static": "declare", "args": [["Ctrl+B"]], "throws": "argument", "saying": "'Ctrl+B' is not in the canonical form"},
+        {"static": "declare", "args": [["Shift+Control+b"]], "throws": "argument", "saying": "'Shift+Control+b' is not in the canonical form"},
+        {"static": "declare", "args": [["Control+"]], "throws": "argument", "saying": "'Control+' is not in the canonical form"},
+        {"static": "declare", "args": [["Control+Control+b"]], "throws": "argument", "saying": "'Control+Control+b' is not in the canonical form"},
+        {"static": "declare", "args": [["Control+Shift"]], "throws": "argument", "saying": "'Control+Shift' is not in the canonical form"},
+        {"static": "declare", "args": [["Alt"]], "throws": "argument", "saying": "'Alt' is not in the canonical form"},
+        {"static": "declare", "args": [["Control+Alt+Alt"]], "throws": "argument", "saying": "'Control+Alt+Alt' is not in the canonical form"},
+        {"static": "declare", "args": [["Shift+Alt+Alt"]], "throws": "argument", "saying": "'Shift+Alt+Alt' is not in the canonical form"},
+        {"static": "declare", "args": [["++"]], "throws": "argument", "saying": "'++' is not in the canonical form"},
+        {"static": "declare", "args": [[""]], "throws": "argument", "saying": "'' is not in the canonical form"}
+      ]
+    },
+    {
+      "name": "ADR-0050 item 14 (note of 2026-10-02) / ADR-0100: the Alt key alone may be declared, in the form its own keydown canonicalises to",
+      "expect": [
+        {"static": "canonical", "args": {"key": "Alt", "ctrl": false, "shift": false, "alt": true, "meta": false, "metaIsPrimary": false}, "is": "Alt+Alt"},
+        {"static": "declare", "args": [["Alt+Alt", "F10", "Control+F1"]], "is": ["Alt+Alt", "F10", "Control+F1"]}
+      ]
+    },
+    {
+      "name": "ADR-0050 item 14 / ADR-0012: a declared key is matched in the form a press canonicalises to, Command folded where it is primary",
+      "expect": [
+        {"static": "canonical", "args": {"key": "b", "ctrl": true, "shift": false, "alt": false, "meta": false, "metaIsPrimary": false}, "is": "Control+b"},
+        {"static": "canonical", "args": {"key": "b", "ctrl": false, "shift": false, "alt": false, "meta": true, "metaIsPrimary": true}, "is": "Control+b"},
+        {"static": "canonical", "args": {"key": "$", "ctrl": true, "shift": true, "alt": false, "meta": false, "metaIsPrimary": false}, "is": "Control+Shift+$"},
+        {"static": "canonical", "args": {"key": "#", "ctrl": true, "shift": false, "alt": false, "meta": false, "metaIsPrimary": false}, "is": "Control+#"},
+        {"static": "canonical", "args": {"key": "b", "ctrl": false, "shift": false, "alt": false, "meta": true, "metaIsPrimary": false}, "is": "Meta+b"}
+      ]
+    },
+    {
+      "name": "ADR-0050 item 14: a declared key resolves to nothing of the core's, so the table and a declaration never overlap",
+      "expect": [
+        {"static": "takenFor", "args": [{"canEdit": true, "canUndo": true, "canRedo": true, "canFind": true}], "lacks": ["Control+b", "Control+Shift+~", "Control+5"]},
+        {"static": "resolve", "args": {"key": "b", "ctrl": true, "shift": false, "alt": false, "meta": false, "metaIsPrimary": false}, "then": [{"get": "kind", "is": "none"}]}
+      ]
+    }
+  ]
+}

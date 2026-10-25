@@ -8,6 +8,8 @@ import { ColumnWidth, ColumnWidthSpec } from '../src/columns/column-width';
 import { ColumnGeometry } from '../src/columns/column-geometry';
 import { GlyphWidthTable } from '../src/columns/glyph-width-table';
 import { HeaderGroup, HeaderGroupLayout } from '../src/columns/header-groups';
+import { editingKeysByMode } from '../src/keys/editing-keys';
+import { canonicalKey, clipboardKeys, declareKeys, keysTakenFor, resolveKey, takenOnEveryGrid } from '../src/keys/grid-keys';
 import { decideOverflow, hashesWhenOverflowing } from '../src/columns/overflow-rules';
 import { GridMetrics } from '../src/grid-metrics';
 import { GridPresentationDefaults } from '../src/grid-presentation-defaults';
@@ -71,6 +73,19 @@ const subjects: Readonly<Record<string, Subject>> = {
         statics: {},
     },
     // C#'s OverflowRules is a static class: its members are functions of the module here.
+    // C#'s GridKeys and GridEditingKeys are static classes: their members are functions and constants of
+    // the modules here, under the C# names.
+    GridEditingKeys: {
+        create: (_, via) => noFactory('GridEditingKeys', via),
+        statics: { byMode: editingKeysByMode },
+    },
+    GridKeys: {
+        create: (_, via) => noFactory('GridKeys', via),
+        statics: {
+            resolve: resolveKey, canonical: canonicalKey, taken: takenOnEveryGrid, takenFor: keysTakenFor,
+            declare: declareKeys, clipboardKeys,
+        },
+    },
     HeaderGroup: {
         create: (args, via) => via === undefined ? new HeaderGroup(args as never) : noFactory('HeaderGroup', via),
         statics: {},
@@ -150,7 +165,8 @@ function argument(value: unknown): unknown {
 /** Whether the answer is the value the case expects: numbers by value, `undefined` as `null`, objects
  * by every key, arrays in order. */
 function same(expected: unknown, actual: unknown): boolean {
-    const answer = actual === undefined ? null : actual;
+    // A set is compared as the list of its members in order, as C# serialises one.
+    const answer = actual === undefined ? null : actual instanceof Set ? [...(actual as ReadonlySet<unknown>)] : actual;
     if (typeof expected === 'number' && typeof answer === 'number') {
         return expected === answer || (Number.isNaN(expected) && Number.isNaN(answer));
     }
@@ -192,6 +208,8 @@ interface Check {
     readonly throws?: Refusal;
     readonly saying?: string;
     readonly then?: readonly Check[];
+    readonly has?: readonly unknown[];
+    readonly lacks?: readonly unknown[];
 }
 
 function holds(subject: Subject, instance: object | undefined, check: Check): void {
@@ -215,6 +233,18 @@ function holds(subject: Subject, instance: object | undefined, check: Check): vo
         // The answer is the subject of each check, its own statics included, as C# reads them off its type.
         const answered: Subject = { create: (_, via) => noFactory(result.constructor.name, via), statics: result.constructor };
         for (const next of check.then) holds(answered, result, next);
+        return;
+    }
+    if (check.has !== undefined || check.lacks !== undefined) {
+        if (typeof result !== 'object' || result === null || !(Symbol.iterator in result)) throw new Error(`${label} answered no list for "has" or "lacks" to search.`);
+        const members = [...(result as Iterable<unknown>)];
+        const isMember = (member: unknown) => members.some(each => same(revive(member), each));
+        if (check.has !== undefined) {
+            for (const wanted of check.has) expect(isMember(wanted), `${label}: expected it to hold ${JSON.stringify(wanted)}`).toBe(true);
+        }
+        if (check.lacks !== undefined) {
+            for (const unwanted of check.lacks) expect(isMember(unwanted), `${label}: expected it not to hold ${JSON.stringify(unwanted)}`).toBe(false);
+        }
         return;
     }
     if (check.atLeast !== undefined || check.atMost !== undefined) {

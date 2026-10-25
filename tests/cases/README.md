@@ -144,6 +144,7 @@ and says what it answers:
 | `is` | The answer: a value, or `null` for none. An object is compared by every key, as it serialises in C# (camelCase) and as its own properties in TypeScript |
 | `near` | With `is`, how far a number may be from it, where the arithmetic is not exact in both languages |
 | `atLeast`, `atMost` | Bounds a number holds, inclusive, in place of `is`: where the fact is a bound (a default estimate covers a measured width), not a value |
+| `has`, `lacks` | Members a list or set holds, and members it does not, in place of `is`: where the fact is membership (a key claimed or not), not the whole list |
 | `throws`, `saying` | The refusal, and text its message holds in both languages |
 | `then` | Checks on the answer, as the subject of each |
 
