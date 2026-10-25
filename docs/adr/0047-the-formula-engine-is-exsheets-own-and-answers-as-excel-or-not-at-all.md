@@ -1,5 +1,9 @@
 # The formula engine is ExSheet's own, and answers as Excel does or not at all
 
+*(2026-10-25: [ADR-0370](./0370-the-whole-family-moves-to-typescript-and-blazor-only-adapts-it.md) moves the formula engine to TypeScript, proved against Excel's recorded answers,
+the C# engine's facts as shared cases and a differential run against the C# engine. Its numbers stay
+doubles, as below.)*
+
 *(Decided with the user, 2026-09-27, in the design grilling that started ExSheet —
 [ADR-0046](./0046-exsheet-is-a-general-purpose-sheet-drawn-by-exgrid-as-its-consumer.md).)*
 

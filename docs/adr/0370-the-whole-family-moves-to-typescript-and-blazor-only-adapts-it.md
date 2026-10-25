@@ -15,7 +15,7 @@ and the engines stay C#, reached as .NET WebAssembly in a Worker or on a server.
 moving everything was the fastest, and why a port would need Excel again when the C# engine's tests
 already hold Excel's answers. It does not, which section 2 records. The user then chose B. Sections 1, 2,
 3, 4, 6 and 7 changed; the products' UIs moving to Script Cores of their own, the packages' names and
-the Docs Site did not. Section 3's server pivot is the one part still put to the user.)*
+the Docs Site did not. Section 3's server pivot was settled with the user last, the same day.)*
 
 ## Context
 
@@ -117,7 +117,8 @@ and the Snapshot's Arrow form move to TypeScript; ExGrid.Data and its Arrow form
 .NET server (section 3). ADR-0350 section 8 is replaced: its "decided on a
 recorded measurement" is now the check of section 7, not a gate on the port. ADR-0047 and ADR-0060 hold
 as written: the TypeScript engine answers as Excel or not at all, and where it cannot answer exactly it
-refuses rather than approximates.
+refuses rather than approximates. Until a C# engine is removed it is the oracle its TypeScript engine is proved
+against; from then the TypeScript engine is the reference ADR-0060 and ADR-0047 name.
 
 A TypeScript engine is proved in three ways, and none of them runs Excel again:
 
@@ -159,20 +160,47 @@ Nothing the family draws stays in C#. What stays is what a .NET server uses to f
   reading when its layout leaves; the Board Spec's reading leaves the ExBoard adapter for a package a
   server takes without Blazor, `ExBoard.Spec`. Each TypeScript reader runs the same cases, refusals and
   their paths included.
-- **The server pivot's engine**
-  ([ADR-0151](./0151-server-pivots-send-report-windows-and-share-the-local-engine.md)), which computes a
-  report over server data and sends its Windows. *(Put to the user, 2026-10-25; until answered, this is
-  the recommendation.)* ExPivot.Engine stays in C# as that server's engine only, held to the TypeScript
-  engine by the shared cases and the differential run of section 2, which then never ends: both engines
-  live on, as both Arrow readers do. The alternatives put beside it were the TypeScript engine on a
-  JavaScript server, which asks a .NET backend to run one beside it; no server pivot at all, which
-  makes the browser's memory the limit of a pivot's data; and, raised by the user's question of how
-  React applications aggregate on a server, the server answering Leaf Aggregates only, as a database's
-  `GROUP BY` can in any language, with the TypeScript engine building the report from them in the
-  browser ([ADR-0066](./0066-expivot-asks-a-pivot-source-and-a-server-answers-with-leaf-aggregates.md)'s
-  boundary, which ADR-0151 replaced for WebAssembly's memory and the first transfer). Whichever is
-  chosen, the TypeScript engine becomes the reference ADR-0060 names, and ADR-0151 and ADR-0060 are
-  rewritten with the answer, before section 6's step 3 removes or keeps ExPivot.Engine.
+- **The Leaf Aggregate contract**, with which a .NET server answers a server pivot (below). The
+  contract's types and the pass that answers it over records stay in a small C# package, held to the
+  TypeScript engine's local pass by shared cases; Excel's rules for the report do not.
+
+#### The server pivot answers Leaf Aggregates, and the TypeScript engine lays out the report
+
+*(Decided with the user, 2026-10-25, after comparing AG Grid's server-side row model, where the
+application's server returns every group row's and pivot cell's figure and the grid shows it unchecked.
+Three other ways were put to the user: ExPivot.Engine kept in C# as the server's engine, which keeps two
+implementations of Excel's rules for good; the TypeScript engine on a JavaScript server, which asks an
+ASP.NET backend to run one beside it; and no server pivot.)*
+
+[ADR-0066](./0066-expivot-asks-a-pivot-source-and-a-server-answers-with-leaf-aggregates.md)'s boundary
+returns for server data, and
+[ADR-0151](./0151-server-pivots-send-report-windows-and-share-the-local-engine.md)'s server report
+Windows end with ExPivot.Engine at step 3. The server answers one `GROUP BY` at the leaves, the parts
+each Value Field asks for, in any language and against any database; the TypeScript engine computes
+every cell, subtotal and grand total from them and lays out, sorts, collapses and applies Show Values
+As in the browser. So Excel's rules for a report have one implementation, a total is computed from its
+records and never from the totals below it (ADR-0060), and a parent and its children cannot disagree,
+which is the error a server that returns each level's figures can make without anyone seeing it.
+ADR-0151 chose report Windows for WebAssembly's first transfer and retained memory; both are measured
+again with the TypeScript engine (section 7) before ExPivot.Engine is removed.
+
+What a server cannot answer from leaves is refused, as ADR-0066 has it: a source declares the
+Aggregations it answers, and Value Field Settings offers the others disabled with the reason.
+
+**A layout over the leaf cap is refused by name, and the user is told as early as it can be known.**
+ADR-0066's cap stands (`MaxLeaves`, 200,000 by default, the Consumer's to change; re-measured on the
+TypeScript engine before it is settled again). The leaves grow with the product of the placed fields'
+Items, not with the records, so the refusal names the fields that make it:
+
+- **Before a field is placed.** When a server's source is opened, it answers each field's count of
+  Items once, and the Field List shows it beside the field's name.
+- **While a field is dragged.** The product of the counts is an upper bound known in the browser at
+  once. A drop target where the bound passes the cap is marked while the field is over it.
+- **When the drop is made.** Only where the bound passes the cap is the source asked for the actual
+  number of leaves, which is often far smaller. If it passes the cap, the move is refused in the Field
+  List, the report stays on the layout it had, and the refusal names the field and the numbers, for
+  example "Customer (1,020,000 items) in Rows makes about 34,000,000 combinations; server data allows
+  200,000", and the ways that remain: Customer in Filters, or Customer filtered first.
 
 ### 4. Where an engine runs
 
@@ -195,7 +223,7 @@ host.
   stream of edits faster than the engine is answered at the engine's pace rather than not at all, and
   no figure is passed off as current. A gesture taken against an older answer is refused if that
   answer no longer holds (spine rule 6). The mark is the product's ticket's to design.
-- **The Consumer owns the server's transport and authentication**, as ADR-0151 says.
+- **The Consumer owns the server's transport and authentication**, as ADR-0066 says.
 
 ### 5. The packages
 
