@@ -17,7 +17,8 @@
    this page, which lists them under the pivot; absent, they open in a tab at the report's foot
    (ADR-0059). ?words=ja speaks Excel's Japanese edition's words (ADR-0060). ?second=1 adds a second
    pivot over the same trades under the first, so a field dragged from one can be dropped on the
-   other, which takes nothing from it (ADR-0061). *@
+   other, which takes nothing from it (ADR-0061). ?first=held holds the source's answers until "Answer
+   the first report" is pressed, so the pane stands with no report drawn (ADR-0360). *@
 <DemoChromeAssets Name="@ChromeName" Paper="true" Dark="_dark">
     <Head>
         <ExPivotStylesheet />
@@ -58,6 +59,10 @@
     <button id="pivot-save" @onclick="Save">Save the layout</button>
     <button id="pivot-restore" disabled="@(_saved is null)" @onclick="Restore">Restore the saved layout</button>
     <button id="pivot-revalue" @onclick="Revalue">Revalue the trades by +1%</button>
+    @if (_firstHeld is not null)
+    {
+        <button id="pivot-answer-first" @onclick="AnswerFirst">Answer the first report</button>
+    }
     <button id="pivot-words" @onclick="ToggleWords">@(_japanese ? "English words" : "日本語 (Excel's Japanese words)")</button>
     @if (DemoChrome.IsMud(ChromeName))
     {
@@ -173,6 +178,12 @@ else
 
     private bool SecondOn => SecondName == "1";
 
+    [SupplyParameterFromQuery(Name = "first")]
+    public string? FirstName { get; set; }
+
+    // ?first=held: the source's answers wait for the page's button, so no report is drawn until then.
+    private TaskCompletionSource? _firstHeld;
+
     [SupplyParameterFromQuery(Name = "trades")]
     public int? TradesAsked { get; set; }
 
@@ -196,6 +207,8 @@ else
         var trades = DemoPivotData.Trades(count: TradeCount);
         var clock = Stopwatch.StartNew();
         _source = PivotSource.From(trades, DemoPivotData.Fields);
+        if (FirstName == "held")
+            _source = HeldFirst(_source);
         _read = $"{trades.Length.ToString("N0", Culture)} trades read into a Snapshot in {clock.ElapsedMilliseconds.ToString("N0", Culture)} ms.";
         Describe();
     }
@@ -248,11 +261,31 @@ else
     {
         // New data is a new source: ExPivot asks it again (ADR-0059/0066).
         _revaluation *= 1.01m;
+        AnswerFirst();
         _source = PivotSource.From(DemoPivotData.Trades(_revaluation, TradeCount), DemoPivotData.Fields);
         Describe();
     }
 
     private void ToggleWords() => _japanese = !_japanese;
+
+    private PivotSource HeldFirst(PivotSource data)
+    {
+        var held = _firstHeld = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        return PivotSource.Fetch(DemoPivotData.Fields.Fields, PivotSourceFeatures.All,
+            async (query, ct) =>
+            {
+                await held.Task.WaitAsync(ct);
+                return await data.AggregateAsync(query, ct);
+            },
+            (query, ct) => data.ItemsAsync(query, ct),
+            (query, ct) => data.DetailsAsync(query, ct));
+    }
+
+    private void AnswerFirst()
+    {
+        _firstHeld?.TrySetResult();
+        _firstHeld = null;
+    }
 
     #region The code: save
     private void Save()

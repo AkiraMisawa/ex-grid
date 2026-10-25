@@ -113,6 +113,11 @@ ExGrid.Components.GridInputText.Surface.get -> string!
 ExGrid.Components.GridInputText.Surface.set -> void
 ExGrid.Components.GridInputText.Text.get -> string!
 ExGrid.Components.GridInputText.Text.set -> void
+ExGrid.Components.GridScriptFocus
+ExGrid.Components.GridScriptFocus.DisposeAsync() -> System.Threading.Tasks.ValueTask
+ExGrid.Components.GridScriptFocus.FocusBoxAsync(Microsoft.AspNetCore.Components.ElementReference box) -> System.Threading.Tasks.Task<bool>!
+ExGrid.Components.GridScriptFocus.GridScriptFocus(Microsoft.JSInterop.IJSRuntime! js, Microsoft.AspNetCore.Components.ResourceAssetCollection! assets) -> void
+ExGrid.Components.GridScriptFocus.LoadAsync() -> System.Threading.Tasks.Task<bool>!
 ExGrid.Rows.MarkRefusalReason.RowLeftTheWindow = 2 -> ExGrid.Rows.MarkRefusalReason
 *REMOVED*ExGrid.Components.ExGrid<TRow>.PressTakenAt(string! kind, double offsetX, double offsetY, int firstRow, double scrollLeftPx, double scrollTopPx, int rowSequence, int layout, int editorRow = -1, int editorColumn = -1, int input = 0, int doubleClickInput = 0) -> void
 *REMOVED*ExGrid.Components.ExGrid<TRow>.BarPressAnsweredAsync(bool barHoldsFocus, int input = 0) -> System.Threading.Tasks.Task!

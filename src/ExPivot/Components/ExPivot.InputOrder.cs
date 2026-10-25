@@ -24,6 +24,9 @@ namespace ExPivot.Components;
 /// </summary>
 public partial class ExPivot
 {
+    // The grid's script, imported on its own while the report is empty (ADR-0360).
+    [Inject] private IJSRuntime JS { get; set; } = default!;
+
     private readonly PivotInput _input;
 
     // The seam the Chrome contexts carry (InOrder, TakeKeyboard), made once so a context's delegates
@@ -48,7 +51,8 @@ public partial class ExPivot
     private Action? _noteRendered;
 
     /// <summary>The report grid that owns the pivot's Input Order: none while the report is empty, and
-    /// none before the grid is drawn — an input is then handled at once, with nothing to order it among.</summary>
+    /// none before the grid is drawn — an input is then taken in the order it arrived, behind the turn
+    /// under way (ADR-0360).</summary>
     private ExGrid<PivotDisplayRow>? OrderGrid => _report is { IsEmpty: false } ? _grid : null;
 
     /// <summary>
@@ -57,7 +61,9 @@ public partial class ExPivot
     /// keyboard where it leaves it.
     /// </summary>
     internal Task InOrderAsync(GridInputKind kind, Func<Task> handling)
-        => OrderGrid is { } grid ? grid.InOrderAsync(kind, () => TurnAsync(handling)) : TurnAsync(handling);
+        => InTurnUnordered ? TurnAsync(handling)
+            : OrderGrid is { } grid ? grid.InOrderAsync(kind, () => AfterTurnsAsync(handling, unordered: false))
+            : AfterTurnsAsync(handling, unordered: true);
 
     /// <summary>
     /// <paramref name="handling"/>, an input no control numbered — a key in a draft's field, a drop, a
@@ -65,7 +71,62 @@ public partial class ExPivot
     /// once inside the turn of an input under way.
     /// </summary>
     internal Task InOrderAsync(Func<Task> handling)
-        => OrderGrid is { } grid ? grid.InOrderAsync(() => TurnAsync(handling)) : TurnAsync(handling);
+        => InTurnUnordered ? TurnAsync(handling)
+            : OrderGrid is { } grid ? grid.InOrderAsync(() => AfterTurnsAsync(handling, unordered: false))
+            : AfterTurnsAsync(handling, unordered: true);
+
+    // With no report grid nothing numbers the pivot's inputs, but a turn still ends before the next one
+    // begins (ADR-0360). A turn's hand-off of the keyboard can wait on the browser — the grid's script
+    // loading, a focus a round trip away — and a turn begun meanwhile had its own request parked, then
+    // dropped as the first turn ended: Field Settings… pressed while the menu's first command was taking
+    // the keyboard opened with the keyboard nowhere. A turn the report grid orders joins the same line, so
+    // the report drawn or emptied between two inputs does not let the second overlap the first. An input
+    // handled inside a turn is part of it and runs at once, as in the grid's own order: through the grid
+    // inside a turn the grid ordered (its flow), and directly inside one it did not.
+    private readonly AsyncLocal<object?> _turnFlow = new();
+    private object? _turnRunning;
+    private bool _turnRunningUnordered;
+    private Task _turnsInLine = Task.CompletedTask;
+
+    private bool InTurnFlow => _turnRunning is { } running && ReferenceEquals(_turnFlow.Value, running);
+
+    private bool InTurnUnordered => InTurnFlow && _turnRunningUnordered;
+
+    private Task AfterTurnsAsync(Func<Task> handling, bool unordered)
+    {
+        if (InTurnFlow)
+            return TurnAsync(handling);
+        var turn = AfterAsync(_turnsInLine, handling, unordered);
+        _turnsInLine = turn;
+        return turn;
+    }
+
+    private async Task AfterAsync(Task previous, Func<Task> handling, bool unordered)
+    {
+        try
+        {
+            await previous;
+        }
+        catch (Exception)
+        {
+            // The turn before failed on its own; it has said so to its caller, and this one still runs.
+        }
+        // A pivot disposed while the input waited has nothing to handle it on.
+        if (_disposed)
+            return;
+        var running = new object();
+        _turnRunning = running;
+        _turnRunningUnordered = unordered;
+        _turnFlow.Value = running;
+        try
+        {
+            await TurnAsync(handling);
+        }
+        finally
+        {
+            _turnRunning = null;
+        }
+    }
 
     /// <summary><see cref="InOrderAsync(GridInputKind, Func{Task})"/> for work that waits on nothing.</summary>
     internal Task InOrderAsync(GridInputKind kind, Action handling) => InOrderAsync(kind, () =>
@@ -175,22 +236,70 @@ public partial class ExPivot
 
     /// <summary>
     /// Hands the keyboard to <paramref name="control"/> through the report grid's guard, granted only
-    /// while the keyboard is still the pivot's (ADR-0070's note of 2026-10-02, ADR-0240 section 6); with
-    /// no report grid, the control's own focus.
+    /// while the keyboard is still the pivot's (ADR-0070's note of 2026-10-02, ADR-0240 section 6). With
+    /// no report grid — the report empty, its first answer on its way, or failed — the grid's script,
+    /// imported on its own, focuses the control, or the first control inside the box a Chrome named, as
+    /// the grid would have (ADR-0360): a box drawn with <c>display: contents</c> around a design system's
+    /// select cannot take focus itself. The control's own focus is still asked where the script is
+    /// refused, a script of another version, or where no control took the keyboard.
     /// </summary>
     internal async Task HandKeyboardToAsync(ElementReference control)
     {
         try
         {
+            var script = OrderGrid is null ? await LoadedScriptFocusAsync() : null;
+            // Checked again once the script is loaded: a report drawn meanwhile hands the keyboard on.
             if (OrderGrid is { } grid)
                 await grid.HandKeyboardToAsync(control);
-            else
+            else if (script is null || !await FocusBoxAsync(script, control))
                 await control.FocusAsync();
         }
         catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException or OperationCanceledException or InvalidOperationException)
         {
             // The circuit or the control went away first; there is nothing left to focus.
         }
+    }
+
+    // The grid's script, loaded the first time the keyboard is handed on with no report grid, and kept
+    // for the pivot's life, so each later hand-off is one call, as the control's own focus was (ADR-0360).
+    private GridScriptFocus? _scriptFocus;
+
+    /// <summary>The grid's script, loaded and this build's; or none, where it would not load or answered
+    /// with another version's stamp, which leaves the control's own focus to be asked.</summary>
+    private async Task<GridScriptFocus?> LoadedScriptFocusAsync()
+    {
+        if (_disposed)
+            return null;
+        var script = _scriptFocus ??= new GridScriptFocus(JS, Assets);
+        try
+        {
+            return await script.LoadAsync() ? script : null;
+        }
+        catch (JSException)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>Whether a control inside the box took the keyboard from the script; a call the script
+    /// threw on leaves the control's own focus to be asked.</summary>
+    private static async Task<bool> FocusBoxAsync(GridScriptFocus script, ElementReference control)
+    {
+        try
+        {
+            return await script.FocusBoxAsync(control);
+        }
+        catch (JSException)
+        {
+            return false;
+        }
+    }
+
+    private void DisposeScriptFocus()
+    {
+        if (_scriptFocus is { } focus)
+            _ = focus.DisposeAsync().AsTask();
+        _scriptFocus = null;
     }
 
     private void EndTurns()

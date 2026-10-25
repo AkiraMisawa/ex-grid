@@ -377,7 +377,7 @@ public class FieldListTests : PivotTestContext
         Assert.DoesNotContain(handle.Invocations, i => i.Identifier is "takeKeyboardBack" or "handOff");
     }
 
-    [Fact] // ADR-0240 §6: with no report grid there is nothing to order an input among: Escape typed in a panel closes it at once, and its search takes the keyboard by its own focus
+    [Fact] // ADR-0240 §6 / ADR-0360: with no report grid there is nothing to order an input among: Escape typed in a panel closes it at once, and its search takes the keyboard from the grid's script, with no condition read
     public async Task With_no_report_a_report_filters_panel_opens_and_closes_at_once()
     {
         var cut = RenderPivot(new PivotLayout { Filters = [P("Online")] });
@@ -387,6 +387,7 @@ public class FieldListTests : PivotTestContext
         await cut.InvokeAsync(() => cut.Find(".ex-pivot-filter-button").ClickAsync(new MouseEventArgs { Detail = 1 }));
         Assert.Single(cut.FindAll(".ex-pivot-toolbar .ex-pivot-popup"));
         Assert.True(KeyboardMoves > before);
+        Assert.True(BoxFocuses > 0);
 
         await cut.Find(".ex-pivot-toolbar .ex-pivot-popup .ex-pivot-search").KeyDownAsync(new KeyboardEventArgs { Key = "Escape" });
         Assert.Empty(cut.FindAll(".ex-pivot-toolbar .ex-pivot-popup"));

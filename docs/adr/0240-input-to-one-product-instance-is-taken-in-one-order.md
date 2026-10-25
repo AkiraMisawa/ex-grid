@@ -259,6 +259,9 @@ Five questions were put to the user on 2026-10-20; the user took the recommendat
   grid owns its order: the Field List, the Pivot Toolbar and its band, the menus and panels, the report's
   expand toggles and the Details tabs and dialog put their input in it through the grid's seam. While the
   report is empty there is no grid, and an input is handled at once, with nothing to order it among.
+  *(Changed 2026-10-25, ADR-0360: with no grid the pivot's inputs still take their turns one after
+  another, in the order they arrived, and a turn the grid orders joins the same line, because a turn's
+  hand-off of the keyboard can wait on the browser and a turn overlapping it lost its own.)*
 - **Each details grid keeps an order of its own**, inside an Input Root of its own (decided with the user,
   2026-10-22, on the recommended option): a details grid shows records, not the report, and holding its keys
   behind the report's would make it wait on work it does not depend on.
@@ -315,6 +318,10 @@ Five questions were put to the user on 2026-10-20; the user took the recommendat
   the report is empty there is no grid, and a box a Chrome names takes the keyboard by its own focus, which
   a box drawn with `display: contents` cannot take: the MudBlazor Wrapper's Field Settings… opened from a
   Report Filter while nothing else is placed leaves the keyboard where it was (ticket 06's remainder).
+  *(Closed 2026-10-24 by [ADR-0360](0360-a-boxs-first-control-takes-the-keyboard-from-the-grids-script-where-no-grid-stands.md):
+  with no report grid, the grid's script focuses the box's first control. Field Settings… is offered on
+  a row or column field only, so the case is a report not yet drawn — its first answer on its way, or
+  failed — rather than a Report Filter alone.)*
 
 ## As built: ticket 06, the Wrappers' surfaces outside the Input Root (2026-10-23)
 
@@ -404,6 +411,10 @@ The first part: the mechanism, and ExSheet.MudBlazor's Format Cells dialog and i
   drawn with `display: contents` cannot take focus; MudSelect hands out no reference to its input. Closing it
   needs a seam member a Wrapper can name the field by, or a focus made in script with no grid, which is
   another ADR-0021 entry: a decision, not left to an implementation.
+  *(Decided with the user 2026-10-24: the ADR-0021 entry,
+  [ADR-0360](0360-a-boxs-first-control-takes-the-keyboard-from-the-grids-script-where-no-grid-stands.md).
+  With no report grid, ExPivot's hand-off goes through the grid's script, which finds the box's control as
+  the grid's hand-on does; ticket 06 is done.)*
 
 ## Added 2026-10-20, decided with the user: the Input Journal, a circuit that is down, and a paste cancelled
 

@@ -464,8 +464,11 @@ public class ShippedStylesheetTests
         // preventScroll, a Sheet Tab's); the field a press left standing is given up with the keyboard.
         Assert.Contains("element instanceof HTMLElement && element.isConnected", body, StringComparison.Ordinal);
         Assert.Matches(new Regex(@"staleField = null;[\s\S]*target\.focus\(\{ preventScroll: preventScroll === true \}\);"), body);
-        Assert.Contains("element.querySelectorAll('input, textarea')].find(isTextField)", body, StringComparison.Ordinal);
-        Assert.Contains("target === firstText && isTextField(target)", body, StringComparison.Ordinal);
+        // A box's control is found as a box with no grid around it is (boxTarget, ADR-0360), and only a
+        // text field found inside it has its text selected.
+        Assert.Contains("const target = boxTarget(element);", body, StringComparison.Ordinal);
+        Assert.Contains("element.querySelectorAll('input, textarea')].find(isTextField)", script, StringComparison.Ordinal);
+        Assert.Contains("target !== element && isTextField(target)", body, StringComparison.Ordinal);
         Assert.Contains("target.select()", body, StringComparison.Ordinal);
         Assert.Single(Regex.Matches(body, @"\.(focus|blur)\("));
         // While the keyboard is on its way to a frame of the Consumer's own and a hold stands, the
@@ -529,8 +532,10 @@ public class ShippedStylesheetTests
         // replayed while a surface of the product's own still holds the keyboard it held as the press
         // was made, which the press's default would have taken; and, ninth since ADR-0240's note on
         // ticket 06, a frame's waiting element taking the keyboard as the hand-off to it is told
-        // (waitForFrameAt), granted from the Consumer's control the hand-off started on.
-        Assert.Equal(9, Regex.Matches(script.Text, @"\.(focus|blur)\(").Count);
+        // (waitForFrameAt), granted from the Consumer's control the hand-off started on; and, tenth since
+        // ADR-0360, a box's first control focused where no grid stands to hand the keyboard on
+        // (focusBox, ExPivot's empty report), outside any instance.
+        Assert.Equal(10, Regex.Matches(script.Text, @"\.(focus|blur)\(").Count);
         Assert.DoesNotMatch(new Regex(@"getBoundingClientRect|offsetWidth|offsetHeight|getComputedStyle"), body);
         // The surface is forgotten with the instance.
         Assert.Matches(new Regex(@"dispose: \(\) => \{.*lastSurface = null;", RegexOptions.Singleline), script.Text);
@@ -630,14 +635,17 @@ public class ShippedStylesheetTests
         Assert.DoesNotMatch(new Regex(@"window\.addEventListener\('(?!(submit|focus)', onClaimedAhead, true\))|window\.dispatchEvent|document\.dispatchEvent|document\.addEventListener\('ex-"), script.Text);
         // A submission on a surface joined to the instance's order is its own too (ADR-0240 section 6, ticket 06).
         Assert.Matches(new Regex(@"const onClaimedAhead = \(event\) => \{\s*if \(!root \|\| !\(event\.target instanceof Node\)\) \{\s*return;\s*\}\s*if \(!root\.contains\(event\.target\)\) \{\s*if \(event\.type === 'submit' && joinedControl\(event\.target\) !== null\) \{\s*onClaimedEvent\(event\);\s*\}\s*return;"), script.Text);
-        // And no state outside an instance: the module's top-level statements are attach, and the
-        // stamp the grid reads before it (ADR-0123), which holds nothing; so everything above lives
-        // in one instance's closure and no instance keeps another's.
+        // And no state outside an instance: the module's top-level statements are attach, the stamp
+        // the grid reads before it (ADR-0123), and the focus of a box where no grid stands (ADR-0360)
+        // with the two pure functions it shares with attach, none of which holds anything; so
+        // everything above lives in one instance's closure and no instance keeps another's.
         var topLevel = script.Text.Split('\n')
             .Where(line => line.Length > 0 && !char.IsWhiteSpace(line[0]) && !line.StartsWith("//", StringComparison.Ordinal)
                 && !line.StartsWith("/**", StringComparison.Ordinal))
             .ToList();
-        Assert.Equal(["export function stamp() {", "}", "export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, canFind, declaredKeys, reportTimeZone, leaveDeclared, gateKeys, canReplace) {", "}"], topLevel);
+        Assert.Equal(["export function stamp() {", "}",
+            "const isTextField = (element) => (element instanceof HTMLTextAreaElement", "const boxTarget = (element) => {", "};",
+            "export function focusBox(element) {", "}", "export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, canFind, declaredKeys, reportTimeZone, leaveDeclared, gateKeys, canReplace) {", "}"], topLevel);
     }
 
     [Fact] // ADR-0021 (2026-09-28/29) / ED-26: a bar a passed-on press leaves holding DOM focus is the hand-back's to take only until that press is answered
@@ -654,6 +662,32 @@ public class ShippedStylesheetTests
         // Every mark is numbered, a held press's too, so taking one off never takes a later one's.
         Assert.Matches(new Regex(@"const markStale = \(field\) => \{\s*staleField = field;\s*return \+\+staleMarks;"), script.Text);
         Assert.Single(Regex.Matches(script.Text, @"staleField = field;"));
+    }
+
+    [Fact] // ADR-0360 / ADR-0021: where no grid stands, a box's first control takes the keyboard as handKeyboardTo finds it, only a control still on the page, nothing measured and no listener added
+    public void ADR0360_a_boxs_first_control_takes_the_keyboard_where_no_grid_stands()
+    {
+        var script = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.js", StringComparison.Ordinal)).Text;
+        var focusBox = Regex.Match(script, @"export function focusBox\(element\) \{.*?\n\}", RegexOptions.Singleline);
+        Assert.True(focusBox.Success, "focusBox(element) is not in the module");
+        var boxTarget = Regex.Match(script, @"const boxTarget = \(element\) => \{.*?\n\};", RegexOptions.Singleline);
+        Assert.True(boxTarget.Success, "boxTarget(element) is not in the module");
+        var body = focusBox.Value;
+
+        // Only an element still on the page, and the control found as the hand-on finds it: the element
+        // itself when it is a control, else its first enabled text field, else its first enabled control.
+        Assert.Contains("!(element instanceof HTMLElement) || !element.isConnected", body, StringComparison.Ordinal);
+        Assert.Contains("const target = boxTarget(element);", body, StringComparison.Ordinal);
+        Assert.Contains("if (element.matches('input, textarea, select, button, a[href], [tabindex]')) {", boxTarget.Value, StringComparison.Ordinal);
+        Assert.Contains("[...element.querySelectorAll('input, textarea')].find(isTextField)", boxTarget.Value, StringComparison.Ordinal);
+        Assert.Contains("input[readonly]:not([disabled]):not([type=\"hidden\"])", boxTarget.Value, StringComparison.Ordinal);
+        // Focused once, a text field found inside the box with its text selected, and the answer read
+        // from document.activeElement.
+        Assert.Single(Regex.Matches(body, @"\.(focus|blur)\("));
+        Assert.Contains("if (target !== element && isTextField(target)) {", body, StringComparison.Ordinal);
+        Assert.Contains("return document.activeElement === target;", body, StringComparison.Ordinal);
+        // Nothing measured, no listener, nothing kept.
+        Assert.DoesNotMatch(new Regex(@"getBoundingClientRect|offsetWidth|offsetHeight|getComputedStyle|getClientRects|addEventListener|setTimeout|requestAnimationFrame"), body + boxTarget.Value);
     }
 
     [Fact] // ADR-0051 (2026-10-01) / ADR-0021 / ticket 78: the press that gives the Name Box the keyboard selects its whole text, at its release, in the listeners already attached; no focus moved, nothing measured
@@ -693,9 +727,9 @@ public class ShippedStylesheetTests
         // Selected in those two places alone, by no listener of its own, and no focus is moved: the
         // press's default gives the field the keyboard (ADR-0021's decisions about focus are not
         // added to: six since 2026-10-02, seven since ADR-0204, eight since ADR-0240's note on
-        // ticket 05 and nine since its note on ticket 06, none of them this one's).
+        // ticket 05, nine since its note on ticket 06 and ten since ADR-0360, none of them this one's).
         Assert.Equal(2, Regex.Matches(script, @"nameBox(Selected)?\.select\(\);").Count);
-        Assert.Equal(9, Regex.Matches(script, @"\.(focus|blur)\(").Count);
+        Assert.Equal(10, Regex.Matches(script, @"\.(focus|blur)\(").Count);
         Assert.DoesNotMatch(new Regex(@"getBoundingClientRect|offsetWidth|offsetHeight|offsetTop|offsetLeft|clientWidth|clientHeight|scrollWidth|scrollHeight|getComputedStyle|getClientRects"), script);
     }
 
