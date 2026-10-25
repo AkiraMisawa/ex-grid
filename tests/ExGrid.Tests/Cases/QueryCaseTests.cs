@@ -91,7 +91,7 @@ public class QueryCaseTests
     /// <c>{"bigint": text}</c> a long, <c>{"double": text}</c> a double JSON cannot hold, <c>{"dateTime": text}</c>
     /// a DateTime, <c>{"dateOnly": text}</c> a DateOnly, and <c>{"dateTimeOffset": text}</c> and
     /// <c>{"jsDate": text}</c> a DateTimeOffset.</summary>
-    private static object? Value(JsonElement written) => written.ValueKind switch
+    internal static object? Value(JsonElement written) => written.ValueKind switch
     {
         JsonValueKind.Null => null,
         JsonValueKind.String => written.GetString(),
@@ -114,12 +114,12 @@ public class QueryCaseTests
     };
 
     /// <summary>An enum's member as a case names it, or a number cast in from outside the vocabulary.</summary>
-    private static T Member<T>(JsonElement written) where T : struct, Enum
+    internal static T Member<T>(JsonElement written) where T : struct, Enum
         => written.ValueKind == JsonValueKind.Number
             ? (T)Enum.ToObject(typeof(T), written.GetInt32())
             : Enum.Parse<T>(written.GetString()!, ignoreCase: true);
 
-    private static GridFilter FilterOf(JsonElement filter)
+    internal static GridFilter FilterOf(JsonElement filter)
     {
         var columns = new Dictionary<string, FilterSpec>(StringComparer.Ordinal);
         foreach (var column in filter.GetProperty("columns").EnumerateObject())

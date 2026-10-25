@@ -29,7 +29,7 @@ One directory per area, one file per group of cases. Each file is an object:
 | Key | Meaning |
 |---|---|
 | `about` | What the file covers, and where its cases came from |
-| `kind` | Which runner reads it: `selection`, `range`, `edgeBand`, `held`, `calls`, `clipboard`, `query` |
+| `kind` | Which runner reads it: `selection`, `range`, `edgeBand`, `held`, `calls`, `clipboard`, `query`, `source` |
 | `extent` | `[rows, columns]`, the grid every case of the file runs against unless it names its own |
 | `cases` | The cases. Each has a `name`, which starts with the ADR it holds to (CLAUDE.md, "Put the ADR number in the test name") |
 
@@ -171,6 +171,28 @@ offset, and `{"jsDate": text}` a `DateTimeOffset` and a JavaScript `Date`. A col
 `dateType`, as C#'s `ColumnInfo` and the Script Core's `QueryColumn` do. An operator, a
 combinator, a direction or a column's type written as a number is one cast in from outside the vocabulary.
 A `clauses` or `values` list or a `combinator` written as `null` is absent, as a Query that came through JSON writes it.
+
+## `source`
+
+A Grid Source taken through what the grid does to it (ADR-0001), run by
+`tests/ExGrid.Tests/Cases/SourceCaseTests.cs` against `GridSource.From` and `src/npm/core/test/source.test.ts`
+against the Script Core's `GridSource.from`. The file names its `columns` as a `query` file does, and a case
+may name its own. A case gives its `rows`, values written as a `query` case writes them, and `steps` taken in
+turn. A row is an object of its own, and stands for its place in `rows`: a Window is read as those places,
+and a row replaced keeps its place.
+
+| Step | Does |
+|---|---|
+| `{"setColumns": true}` | Binds the columns; a list of names binds those alone |
+| `{"setSorts": [{"column", "direction"}]}` | Applies a Sort |
+| `{"setFilter": filter}` | Applies a Filter, `null` for none |
+| `{"replaceRow": place, "with": [values]}` | Replaces the row at that place with a new one; `"with": "itself"` hands it back as its own replacement, and `{"stranger": [values]}` in place of a place names a row the source does not hold |
+| `{"needRange": {"start", "count"}}` | Says the grid is about to show those rows |
+| `{"rows": {"start", "count"}, "is": [places]}` | Reads rows of the result |
+| `{"distinctValues": column, "is": [values]}` | Reads a column's value list; `"tooMany": true` in place of `is` |
+| `{"expect": {…}}` | Reads the source: `window` (places), `values` (the Window's rows as values), `windowStart`, `totalCount`, `loading`, `version` (the Row Sequence Version), `sorts`, `filter`, and `heard`, the changes heard since the last `expect` |
+
+A step that is refused says so with `throws` and `saying`, as a `query` case does.
 
 ## `calls`
 
