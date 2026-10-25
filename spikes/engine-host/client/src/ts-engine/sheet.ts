@@ -72,12 +72,13 @@ const parseNumber = (text: string): number | null =>
     /^[+-]?(\d+\.?\d*|\.\d+)(E[+-]?\d+)?$/i.test(text) ? Number(text) : null;
 
 /** .NET's "G15", which ExSheet.Engine's Sheet.GetDisplay writes a number in General with
- * (NumberText.General): fifteen significant digits, scientific below 1E-05 and from 1E+15. */
+ * (NumberText.General): fifteen significant digits, fixed for an exponent from -4 to 14 and scientific
+ * otherwise, so 1E-05 and 1E+15 are both scientific. */
 export const general = (number: number): string => {
     if (number === 0) return '0';
     const [mantissa = '', exponentText = ''] = number.toExponential(14).split('e');
     const exponent = Number(exponentText);
-    if (exponent < -5 || exponent >= 15) {
+    if (exponent <= -5 || exponent >= 15) {
         const trimmed = mantissa.replace(/\.?0+$/, '');
         const power = Math.abs(exponent);
         return `${trimmed}E${exponent < 0 ? '-' : '+'}${power < 10 ? '0' : ''}${power}`;

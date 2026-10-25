@@ -4,7 +4,7 @@ the five C# engines (ExSheet.Engine, ExSheet.Xlsx, ExPivot.Engine, ExGrid.Data, 
 only what the two scenarios exercise, in the same Worker and on the page's own thread; and published
 Blazor WebAssembly running the C# engines on the page, as ExSheet and ExPivot ship today. Every arm but
 Blazor draws with ExGrid's Script Core. Every figure is a median over 5 rounds unless it says otherwise.
-Taken 2026-10-25 between 12:37 and 13:02 UTC, one arm at a time, in one 4-core Linux container,
+Taken 2026-10-25 between 12:37 and 13:16 UTC, one arm at a time, in one 4-core Linux container,
 headless Chromium 153 (Playwright's build, no GPU) at 1400x1000, on loopback with no added latency;
 `main` at eaea3b2. Read the figures against each other, not as what a user's machine shows.
 
@@ -18,9 +18,12 @@ The labels:
   csharp-wasm-published  Bench.Client published (-c Release), served by tools/serve-published.mjs:
                          what a user downloads (debugLevel 0, trimmed, Brotli)
   worker-interp          the C# engines in the Worker (spikes/engine-host), published, interpreted
-  worker-aot             the same, compiled ahead of time (-p:RunAOTCompilation=true)
+  worker-aot             the same, compiled ahead of time (-p:RunAOTCompilation=true). Both builds
+                         are of the first commit; the review's commit after it only refuses a null
+                         trade field in PivotOpen, where these took it without a check
   worker-ts              the TypeScript engine (client/src/ts-engine/) in the same Worker, the same
-                         protocol (serve.mjs ts)
+                         protocol (serve.mjs ts). Its runs, and page-ts's, are of 13:13 to 13:16,
+                         after the review's fixes (superseded/before-review holds the ones before)
   page-ts                the TypeScript engine on the page's own thread, behind a MessageChannel in the
                          Worker's place (serve.mjs ts-page): every call it answers blocks the page
 The pages stand in for ExSheet's and ExPivot's Script Cores, which do not exist yet: ExGrid's Script
@@ -30,21 +33,27 @@ the same bytes for every engine arm.
 
 The TypeScript engine is not a port. It reads numbers, cell references, + - * / ^, unary minus,
 parentheses and ROW(); one pivot layout (the sum of P&L by Book and Trade date, across Currency or
-Product); and refuses anything else. It keeps none of what ExSheet.Engine keeps beside the Values (the
+Product), summing P&L exactly in base ten as ExPivot.Engine sums a Decimal column; and refuses anything
+else. It keeps none of what ExSheet.Engine keeps beside the Values (the
 Steps an edit is undone by, Spills, formats carried by Formulas, volatile functions, the Sheet Document
 handed back): its times are the floor of a TypeScript engine on these scenarios, not a port's.
 
 == Is it the same answer? tools/cdp-check.mjs ==
 
 Both Workers on one page (/check), the same calls to each, every Window compared cell by cell:
-the whole Sheet in use (2,010 rows by 26 columns) after the open and after each of 14 edits (A1 and L1
+the whole Sheet in use (2,010 rows by 26 columns) after the open and after each of 17 edits (A1 and L1
 as the driver types them, then decimals, a negative, text where a number is read, numbers General
-writes in scientific form, a typed exponent, an error that spreads, a new Formula); every row of the
-report across both layouts after the open and after each of 4 Change Batches (CorePivot's, cents, a
-negative million). 834,860 cells, 14 lists of changed rows, 27,110 report rows and 162,660 report values
-compared: 0 mismatches (20261025T125237-check.json). The check found one Excel fact on the way, which the
-engine then took: a number typed with an exponent gives its cell 0.00E+00, and the cell keeps it
-(ExSheet.Engine's ConstantParser.Implied, observed in Excel).
+writes in scientific form at both ends, a typed exponent, an error that spreads, a new Formula); every
+row of the report across both layouts after the open and after each of 7 Change Batches (CorePivot's,
+cents exact in binary and not, 0.1, 0.01 and -0.07, a negative million). Both directions: the rows,
+cells and values each answer holds are counted too. 1,002,560 cells, 17 lists of changed rows, 43,376
+report rows and 260,256 report values compared: 0 mismatches (20261025T131331-check.json).
+
+Two Excel facts surfaced on the way, which the engine then took: a number typed with an exponent gives
+its cell 0.00E+00, and the cell keeps it (ExSheet.Engine's ConstantParser.Implied, observed in Excel),
+which the check found; and General writes 1E-05 in scientific form, where the engine first wrote
+0.00001, which the code review found and the check now covers. A sum of P&L in doubles would have
+drifted from ExPivot's decimal one at the first 0.1; the review found that too.
 
 What crosses, as JSON characters: an edit answered with a Window of 140 rows, 21,354 from C# and
 21,376 from TypeScript; a report Window of 140 rows, 101,155 and 100,456 (the same fields; the
@@ -54,41 +63,41 @@ TypeScript engine's metadata leaves out the layout and settings echoed back).
 
 /core/sheet
                                                       csharp-server            csharp-wasm  csharp-wasm-published          worker-interp             worker-aot              worker-ts                page-ts
-edit A1 (20,000 recalculated): dom ms p50                     129.2                 4068.6                 1018.1                 1045.3                  556.1                   10.3                   17.4
-edit A1 (20,000 recalculated): dom ms p95                     145.6                 4218.7                 1163.1                 1244.4                  647.6                   13.8                   19.5
-edit A1 (20,000 recalculated): frame ms p50                   140.9                 4070.2                 1019.3                 1049.9                  566.8                   17.1                   20.5
+edit A1 (20,000 recalculated): dom ms p50                     129.2                 4068.6                 1018.1                 1045.3                  556.1                   10.7                   14.5
+edit A1 (20,000 recalculated): dom ms p95                     145.6                 4218.7                 1163.1                 1244.4                  647.6                   13.2                   16.9
+edit A1 (20,000 recalculated): frame ms p50                   140.9                 4070.2                 1019.3                 1049.9                  566.8                   17.0                   16.8
 edit A1 (20,000 recalculated): bytes                         15,755                      -                      -                      -                      -                      -                      -
-edit L1 (nothing reads it): dom ms p50                         15.0                  430.4                  180.7                   16.8                   10.9                    5.3                    6.6
-edit L1 (nothing reads it): dom ms p95                         17.1                  488.0                  227.8                   23.9                   15.2                    5.6                    7.6
-edit L1 (nothing reads it): frame ms p50                       17.3                  431.9                  181.9                   20.0                   17.1                   16.6                   18.0
+edit L1 (nothing reads it): dom ms p50                         15.0                  430.4                  180.7                   16.8                   10.9                    4.8                    7.0
+edit L1 (nothing reads it): dom ms p95                         17.1                  488.0                  227.8                   23.9                   15.2                    6.7                    7.7
+edit L1 (nothing reads it): frame ms p50                       17.3                  431.9                  181.9                   20.0                   17.1                   17.2                   17.9
 edit L1 (nothing reads it): bytes                             4,997                      -                      -                      -                      -                      -                      -
-scroll 37 px per frame: frame p95                              17.7                   70.5                   32.3                   17.8                   17.4                   17.2                   18.8
-scroll 37 px per frame: lag ms                                  0.1                    1.7                    1.5                    2.7                    3.0                    2.1                    2.6
-fling 50 rows per frame: frame p95                             17.8                   39.2                   23.6                   17.0                   17.6                   17.4                   17.4
-fling 50 rows per frame: lag ms                               167.3                  360.4                  221.2                  155.3                  153.0                  152.3                  153.4
+scroll 37 px per frame: frame p95                              17.7                   70.5                   32.3                   17.8                   17.4                   17.3                   17.9
+scroll 37 px per frame: lag ms                                  0.1                    1.7                    1.5                    2.7                    3.0                    2.0                    3.1
+fling 50 rows per frame: frame p95                             17.8                   39.2                   23.6                   17.0                   17.6                   17.2                   17.0
+fling 50 rows per frame: lag ms                               167.3                  360.4                  221.2                  155.3                  153.0                  152.2                  152.9
 
 /core/pivot
                                                       csharp-server            csharp-wasm  csharp-wasm-published          worker-interp             worker-aot              worker-ts                page-ts
-one trade amended: dom ms p50                                   3.8                   88.1                   24.2                   37.1                   16.9                    3.8                    5.1
-one trade amended: dom ms p95                                   8.7                  118.4                   42.1                   50.3                   22.9                    4.9                    6.4
-one trade amended: frame ms p50                                16.6                   90.7                   26.6                   49.9                   18.2                   16.5                   17.1
+one trade amended: dom ms p50                                   3.8                   88.1                   24.2                   37.1                   16.9                    4.2                    5.3
+one trade amended: dom ms p95                                   8.7                  118.4                   42.1                   50.3                   22.9                    5.5                   12.6
+one trade amended: frame ms p50                                16.6                   90.7                   26.6                   49.9                   18.2                   17.1                   17.7
 one trade amended: bytes                                      2,644                      -                      -                      -                      -                      -                      -
-columns swapped: dom ms p50                                    17.0                  508.6                  140.2                  120.1                   36.6                   13.7                   15.5
-columns swapped: dom ms p95                                    23.7                  558.7                  170.4                  151.7                   39.3                   21.1                   20.5
-columns swapped: frame ms p50                                  17.0                  508.7                  140.3                  132.9                   49.8                   16.6                   18.9
+columns swapped: dom ms p50                                    17.0                  508.6                  140.2                  120.1                   36.6                   15.9                   18.2
+columns swapped: dom ms p95                                    23.7                  558.7                  170.4                  151.7                   39.3                   19.8                   25.3
+columns swapped: frame ms p50                                  17.0                  508.7                  140.3                  132.9                   49.8                   19.3                   18.4
 columns swapped: bytes                                        2,323                      -                      -                      -                      -                      -                      -
-scroll 37 px per frame: frame p95                              16.9                   76.5                   25.4                   17.3                   17.5                   17.2                   17.3
-scroll 37 px per frame: lag ms                                  0.5                    0.8                    0.7                    1.9                    1.6                    1.9                    2.2
-fling 50 rows per frame: frame p95                             16.9                   18.7                   20.1                   17.1                   17.0                   17.1                   17.1
-fling 50 rows per frame: lag ms                               158.7                  201.9                  162.7                  169.2                  160.5                  153.3                  152.9
+scroll 37 px per frame: frame p95                              16.9                   76.5                   25.4                   17.3                   17.5                   17.4                   17.6
+scroll 37 px per frame: lag ms                                  0.5                    0.8                    0.7                    1.9                    1.6                    1.9                    1.9
+fling 50 rows per frame: frame p95                             16.9                   18.7                   20.1                   17.1                   17.0                   17.2                   17.1
+fling 50 rows per frame: lag ms                               158.7                  201.9                  162.7                  169.2                  160.5                  153.9                  153.1
 
 csharp-server: 20261025T022927-core-csharp-server.json, http://127.0.0.1:5491, 2026-10-25T02:29:27.169Z, rounds 5, Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.0.0 Safari/537.36, 4 cores, dpr 1
 csharp-wasm: 20261025T121130-core-csharp-wasm.json, http://127.0.0.1:5492, 2026-10-25T12:11:30.309Z, rounds 5, Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.0.0 Safari/537.36, 4 cores, dpr 1
 csharp-wasm-published: 20261025T124157-core-csharp-wasm-published.json, http://127.0.0.1:5495, 2026-10-25T12:41:57.177Z, rounds 5, Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.0.0 Safari/537.36, 4 cores, dpr 1
 worker-interp: 20261025T123820-core-worker-interp.json, http://127.0.0.1:5493, 2026-10-25T12:38:20.504Z, rounds 5, Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.0.0 Safari/537.36, 4 cores, dpr 1
 worker-aot: 20261025T124038-core-worker-aot.json, http://127.0.0.1:5494, 2026-10-25T12:40:38.402Z, rounds 5, Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.0.0 Safari/537.36, 4 cores, dpr 1
-worker-ts: 20261025T124955-core-worker-ts.json, http://127.0.0.1:5496, 2026-10-25T12:49:55.890Z, rounds 5, Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.0.0 Safari/537.36, 4 cores, dpr 1
-page-ts: 20261025T125055-core-page-ts.json, http://127.0.0.1:5497, 2026-10-25T12:50:55.855Z, rounds 5, Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.0.0 Safari/537.36, 4 cores, dpr 1
+worker-ts: 20261025T131344-core-worker-ts.json, http://127.0.0.1:5496, 2026-10-25T13:13:44.437Z, rounds 5, Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.0.0 Safari/537.36, 4 cores, dpr 1
+page-ts: 20261025T131444-core-page-ts.json, http://127.0.0.1:5497, 2026-10-25T13:14:44.441Z, rounds 5, Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.0.0 Safari/537.36, 4 cores, dpr 1
 
 What each operation cost the engine's side, as the pages recorded it (ms, medians of 25): engine is the
 engine's call alone, worker the whole request on the engine's thread (the call and its JSON), round trip
@@ -97,20 +106,20 @@ from the post to the answer on the page.
                                      engine   worker  round trip
 /core/sheet edit A1   worker-interp  1095.2   1103.3   1103.7
                       worker-aot      551.2    552.9    553.8
-                      worker-ts         6.7      8.0      8.6
-                      page-ts           7.7      9.1     13.8
+                      worker-ts         6.4      7.7      8.2
+                      page-ts           6.0      7.9     11.9
 /core/sheet edit L1   worker-interp     7.0     14.7     15.3
                       worker-aot        6.5      9.2      9.8
-                      worker-ts         0.0      1.2      3.4
-                      page-ts           0.0      1.5      5.4
+                      worker-ts         0.0      1.2      3.8
+                      page-ts           0.0      1.3      4.8
 /core/pivot amend     worker-interp    22.9     34.8     35.8
                       worker-aot        9.3     14.9     15.8
-                      worker-ts         0.6      0.6      2.9
-                      page-ts           0.6      0.6      4.2
+                      worker-ts         0.8      0.8      3.2
+                      page-ts           0.7      0.7      4.6
 /core/pivot swap      worker-interp   119.3    126.8    127.5
                       worker-aot       30.1     34.4     35.2
-                      worker-ts        10.0     10.0     11.1
-                      page-ts          10.7     10.8     14.8
+                      worker-ts        13.4     13.4     15.0
+                      page-ts          13.9     13.9     17.7
 
 The grid without an engine, Blazor WebAssembly's build output against its publish (the morning's
 csharp-wasm column, and the published client's of 12:03, superseded/first-run): the debugging
@@ -188,33 +197,33 @@ engine pages say where their time went (window.engineBoot).
 
 /core/sheet
                                                        csharp-wasm   csharp-wasm-published           worker-interp              worker-aot               worker-ts                 page-ts
-first cell with text: ms                                    12,406                   5,034                   5,033                   1,996                     167                     167
-  Worker made                                                    -                       -                      42                      39                      39                      36
-  the engine ready in it (.NET started)                          -                       -                     420                     548                      60                      59
-  document open (engine ms)                                      -                       -                   4,507                   1,385                      76                      84
-  document open                                                  -                       -                   4,960                   1,969                     145                     150
-  first Window answered                                          -                       -                   5,017                   1,984                     152                     153
-bytes downloaded                                        13,009,915               4,010,648               2,744,826               5,665,937                  57,622                  57,708
+first cell with text: ms                                    12,406                   5,034                   5,033                   1,996                     187                     171
+  Worker made                                                    -                       -                      42                      39                      38                      44
+  the engine ready in it (.NET started)                          -                       -                     420                     548                      60                      63
+  document open (engine ms)                                      -                       -                   4,507                   1,385                      75                      73
+  document open                                                  -                       -                   4,960                   1,969                     148                     155
+  first Window answered                                          -                       -                   5,017                   1,984                     159                     158
+bytes downloaded                                        13,009,915               4,010,648               2,744,826               5,665,937                  57,888                  57,960
   runtime                                                1,567,102               1,207,699               1,185,675               4,518,635                       0                       0
   framework assemblies                                   8,442,011               1,427,252               1,052,911                 773,211                       0                       0
   product and app assemblies                             2,800,186               1,325,485                 453,348                 321,199                       0                       0
-  page                                                     200,616                  50,212                  52,892                  52,892                  57,622                  57,708
+  page                                                     200,616                  50,212                  52,892                  52,892                  57,888                  57,960
 requests                                                       237                      73                      35                      35                       5                       5
 complaints                                                       0                       0                       0                       0                       0                       0
 
 /core/pivot
                                                        csharp-wasm   csharp-wasm-published           worker-interp              worker-aot               worker-ts                 page-ts
-first cell with text: ms                                     2,679                   2,141                   1,538                   1,119                     144                     157
-  Worker made                                                    -                       -                      76                      98                      81                      93
-  the engine ready in it (.NET started)                          -                       -                     376                     559                      98                     109
-  document open (engine ms)                                      -                       -                     520                     176                      11                       6
-  document open                                                  -                       -                     930                     787                     116                     119
-  first Window answered                                          -                       -                   1,527                   1,107                     133                     142
-bytes downloaded                                        13,009,915               4,010,648               2,745,651               5,666,762                  58,447                  58,533
+first cell with text: ms                                     2,679                   2,141                   1,538                   1,119                     185                     206
+  Worker made                                                    -                       -                      76                      98                      76                      85
+  the engine ready in it (.NET started)                          -                       -                     376                     559                      99                     101
+  document open (engine ms)                                      -                       -                     520                     176                      36                      53
+  document open                                                  -                       -                     930                     787                     147                     165
+  first Window answered                                          -                       -                   1,527                   1,107                     169                     192
+bytes downloaded                                        13,009,915               4,010,648               2,745,651               5,666,762                  58,708                  58,780
   runtime                                                1,567,102               1,207,699               1,185,675               4,518,635                       0                       0
   framework assemblies                                   8,442,011               1,427,252               1,052,911                 773,211                       0                       0
   product and app assemblies                             2,800,186               1,325,485                 453,348                 321,199                       0                       0
-  page                                                     200,616                  50,212                  53,717                  53,717                  58,447                  58,533
+  page                                                     200,616                  50,212                  53,717                  53,717                  58,708                  58,780
 requests                                                       237                      73                      35                      35                       5                       5
 complaints                                                       0                       0                       0                       0                       0                       0
 
@@ -222,8 +231,8 @@ csharp-wasm: 20261025T125828-boot-csharp-wasm.json, http://127.0.0.1:5492, 2026-
 csharp-wasm-published: 20261025T125952-boot-csharp-wasm-published.json, http://127.0.0.1:5495, 2026-10-25T12:59:52.541Z
 worker-interp: 20261025T130037-boot-worker-interp.json, http://127.0.0.1:5493, 2026-10-25T13:00:37.919Z
 worker-aot: 20261025T130117-boot-worker-aot.json, http://127.0.0.1:5494, 2026-10-25T13:01:17.243Z
-worker-ts: 20261025T130139-boot-worker-ts.json, http://127.0.0.1:5496, 2026-10-25T13:01:39.339Z
-page-ts: 20261025T130147-boot-page-ts.json, http://127.0.0.1:5497, 2026-10-25T13:01:47.371Z
+worker-ts: 20261025T131544-boot-worker-ts.json, http://127.0.0.1:5496, 2026-10-25T13:15:44.511Z
+page-ts: 20261025T131552-boot-page-ts.json, http://127.0.0.1:5497, 2026-10-25T13:15:52.593Z
 
 One open of the 30 the AOT build was asked for in this run did not paint (superseded/
 boot-without-worker-script/20261025T124427-boot-worker-aot.json, the fourth /core/pivot round): its
@@ -237,61 +246,64 @@ have told the user. A product that starts a .NET runtime this way needs a start 
 EngineProbe/Probe.cs on the .NET JIT (a console) and in the Worker on the interpreter and AOT
 (tools/cdp-probe.mjs); the TypeScript engine's probe (ts-engine/host.ts) in the Worker and on the page.
 ms, the median of the runs after the first fifth. The TypeScript engine's open is one step where the
-C# engine's is FromJson and Workbook.Open; it has no ToDocument.
+C# engine's is FromJson and Workbook.Open; it has no ToDocument. Its "source over the trades" is
+taking each P&L into base ten.
 
                                                              jit    interp       aot        ts   ts-page
 sheet: build the document                                  109.6    1174.4     179.2         -         -
-sheet: document to JSON                                     15.1      59.8      16.0       3.4       2.9
+sheet: document to JSON                                     15.1      59.8      16.0       3.1       3.4
 sheet: document from JSON                                  199.6    1346.5     196.9         -         -
 sheet: open (first recalculation)                          269.9    1302.8     597.8         -         -
-sheet: edit A1 (20,000 recalculated)                       161.5     970.1     525.1       5.0       5.6
+sheet: edit A1 (20,000 recalculated)                       161.5     970.1     525.1       6.0       6.6
 sheet: edit A1, rows named                                2001.0    2001.0    2001.0    2001.0    2001.0
-sheet: read the painted cells                                0.1       1.5       0.6       0.2       0.3
+sheet: read the painted cells                                0.1       1.5       0.6       0.3       0.3
 sheet: document handed back (ToDocument)                     3.4      35.5      51.3         -         -
 sheet: edit L1 (nothing reads it)                            2.0       5.3       4.9       0.0       0.0
 sheet: document handed back after L1 (ToDocument)            3.3      41.2      50.0         -         -
-pivot: make the trades                                       2.6      25.2       8.9      20.5      26.0
-pivot: source over the trades                               11.2      45.6      13.1       0.1       0.1
-pivot: first report Window                                  20.7     106.7      31.1       8.9      12.5
+pivot: make the trades                                       2.6      25.2       8.9      21.7      21.4
+pivot: source over the trades                               11.2      45.6      13.1      26.8      20.5
+pivot: first report Window                                  20.7     106.7      31.1      13.7      15.1
 pivot: report rows                                        2711.0    2711.0    2711.0         -         -
 pivot: report Window to JSON                                 1.0      22.8       7.0         -         -
 pivot: Change Batch applied                                  0.1       0.3       0.2       0.0       0.0
-pivot: Window after one trade                                3.6      15.1       5.2       0.3       0.2
-pivot: Window after the columns swapped                     20.6      94.1      25.6       7.7      10.5
-sheet: open from JSON (TypeScript: parse and first recalculation)         -         -         -      44.2      48.9
+pivot: Window after one trade                                3.6      15.1       5.2       0.5       0.4
+pivot: Window after the columns swapped                     20.6      94.1      25.6      12.9      18.5
+sheet: open from JSON (TypeScript: parse and first recalculation)         -         -         -      40.4      46.7
 
 == Reading ==
 
 - The TypeScript engine against the C# engines, on these two scenarios. An edit that recalculates
-  20,000 cells shows in 10 ms from the TypeScript Worker, against 556 ms from the C# Worker compiled
+  20,000 cells shows in 11 ms from the TypeScript Worker, against 556 ms from the C# Worker compiled
   ahead of time, 1,045 ms interpreted and 1,018 ms on published Blazor; an edit nothing reads, 5 ms
-  against 11, 17 and 181. The pivot: a Change Batch of one trade 3.8 ms against 17, 37 and 24; the
-  columns swapped 14 ms against 37, 120 and 140. Alone, the recalculation takes the TypeScript engine
-  5 ms, and the C# engine 162 ms on the JIT, 525 AOT and 970 interpreted. The answers are the same,
+  against 11, 17 and 181. The pivot: a Change Batch of one trade 4.2 ms against 17, 37 and 24; the
+  columns swapped 16 ms against 37, 120 and 140. Alone, the recalculation takes the TypeScript engine
+  6 ms, and the C# engine 162 ms on the JIT, 525 AOT and 970 interpreted. The answers are the same,
   cell for cell (the check above).
 - What that gap is, and is not. The TypeScript engine calculates Values and nothing else; the C# engine
   keeps, on every edit, what ExSheet needs beside them (the Step that undoes it, Spills, formats,
-  volatile functions, the change named to the grid). So 5 ms is the floor of a TypeScript engine here,
+  volatile functions, the change named to the grid). So 6 ms is the floor of a TypeScript engine here,
   not what a port will take, and the 30 times between it and the C# JIT is not the language's: a C#
   engine written as the spike is was not measured. What the record does say is that the language and the
-  runtime leave room: V8 runs the floor in 5 ms where .NET's WebAssembly runtimes take 0.5 to 1 s over
-  the same cells.
+  runtime leave room: V8 runs the floor in 6 ms where .NET's WebAssembly runtimes take 0.5 to 1 s over
+  the same cells. Exact decimal costs something even here: taking 20,000 P&Ls into base ten is 27 ms
+  of the pivot's open, and a swap went from 10 to 13 ms when the sums became bigints.
 - Does a TypeScript engine need a Worker? Not for these scenarios. On the page's own thread the edit of
-  A1 blocks the page for 9 ms (worker column, page-ts) and shows in 17 ms; the swap blocks it for 11 ms;
-  scrolling holds 18.8 ms frames (p95) against 17.2 in the Worker, and nothing recalculates while the
-  driver scrolls. Each is within a frame or two. The open is 49 ms on the page. But this is the floor:
-  a port that costs ten times the spike's recalculation (50 to 90 ms) drops three to five frames an edit
-  on the page, and a Sheet fifty times this one costs fifty times more. So the evidence supports making
+  A1 blocks the page for 8 ms (worker column, page-ts) and shows in 15 ms; the swap blocks it for 14 ms;
+  scrolling holds 17.9 ms frames (p95) against 17.3 in the Worker, and nothing recalculates while the
+  driver scrolls. Each is within a frame. The open is 47 ms on the page. But this is the floor: a port
+  that costs ten times the spike's recalculation (60 to 80 ms) drops three to five frames an edit on
+  the page, and a Sheet fifty times this one costs fifty times more. So the evidence supports making
   the protocol the rule rather than the Worker: the engine reached only by asynchronous calls whose
   answers carry their version (spine rule 6), as here, where moving it between a Worker and the page
   changed no line of the pages; and a Worker where the real port measures an operation past a frame
-  budget. ExPivot's redraws (under 11 ms on the page) need none at this size.
-- Start. The TypeScript engine's page paints the Sheet in 0.17 s and the pivot in 0.14 to 0.16 s, the
-  whole download 58 KB (ExGrid's Script Core and the page about 52 KB, the engine about 5 KB Brotli).
+  budget. ExPivot's redraws (under 14 ms on the page) need none at this size.
+- Start. The TypeScript engine's page paints the Sheet in 0.17 to 0.19 s and the pivot in 0.19 to
+  0.21 s, the whole download 58 KB (ExGrid's Script Core and the page about 52 KB, the engine about
+  6 KB Brotli).
   The C# Worker downloads 2.74 MB interpreted and paints the Sheet in 5.0 s, 5.67 MB AOT and 2.0 s;
   published Blazor 4.01 MB and 5.0 s (the pivot 2.1 s). .NET starts in the Worker in 0.4 to 0.6 s;
   the rest is the first pass over the data: the Sheet's 20,000 Formulas take 4.5 s of engine time to
-  open interpreted, 1.4 s AOT, 76 ms in TypeScript.
+  open interpreted, 1.4 s AOT, 75 ms in TypeScript.
 - Where Blazor WebAssembly's 3.3 s went. About three quarters of it was the baseline's configuration:
   Bench.Host under `dotnet run` serves the build output, whose .NET runtime is set up for debugging
   (debugLevel -1), and C# runs there two to five times slower. Published, the same page edits A1 in
@@ -309,7 +321,7 @@ sheet: open from JSON (TypeScript: parse and first recalculation)         -     
 
 == What a full port would take ==
 
-The TypeScript engine is 572 lines (ts-engine/sheet.ts and pivot.ts) for two scenarios. What it would
+The TypeScript engine is 611 lines (ts-engine/sheet.ts and pivot.ts) for two scenarios. What it would
 replace, in lines (not blank and not a comment in brackets):
 
   src/ExSheet.Engine      20,874 (13,303)   91 files, about 180 declared functions
@@ -340,13 +352,14 @@ is data already, and the rest can be made data. In three parts:
   3. A differential fuzz against the C# engine where neither set reaches, above all:
      - decimal arithmetic: ExPivot sums a Decimal column exactly (decimal appears 93 times in
        ExPivot.Engine); JavaScript has no decimal, so the port chooses one (a library, or scaled bigint),
-       which the Script Core API memo's number|bigint question touches. The spike sums doubles and is
-       exact only because CorePivot's P&L are whole numbers;
+       which the Script Core API memo's number|bigint question touches. The spike holds 10^-10ths in a
+       bigint, which covers its amounts and refuses finer ones; a port needs decimal's 28 digits and
+       its scale (decimal keeps 1.0 apart from 1), which the spike does not;
      - Math functions near rounding boundaries (Formulas/CorrectlyRounded.cs,
        Functions.ObservedRounding.cs);
      - number to text: NumberText and NumberFormat answer as .NET's "G15" and .NET's culture data do;
-       JavaScript's toPrecision and Intl (ICU) are not those. The check found one such fact unaided
-       (the typed exponent above).
+       JavaScript's toPrecision and Intl (ICU) are not those. Two such facts surfaced while building
+       the spike's few lines (the typed exponent, General's 1E-05).
      Beside them, what the runtime gave the C# engine for free and a port supplies: cultures (CultureInfo
      against Intl for en-GB, de-DE, ja-JP), dates (DateTime against Temporal), regular expressions
      (PortableRegex.cs exists because .NET's and JavaScript's differ), and the .xlsx readers' zip and XML.

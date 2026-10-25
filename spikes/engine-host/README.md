@@ -9,8 +9,8 @@ Disposable, like the rest of `spikes/`.
 
 The figures and what they say are in [`results/20261025-engine-host/summary.txt`](results/20261025-engine-host/summary.txt).
 In short: an edit that recalculates 20,000 cells shows in 1.0 s on published Blazor WebAssembly, 1.0 s
-from the .NET Worker interpreted, 0.56 s compiled ahead of time, and 10 ms from the TypeScript Worker
-(17 ms with the TypeScript engine on the page), whose answers equal the C# engine's cell for cell. The
+from the .NET Worker interpreted, 0.56 s compiled ahead of time, and 11 ms from the TypeScript Worker
+(15 ms with the TypeScript engine on the page), whose answers equal the C# engine's cell for cell. The
 TypeScript page downloads 58 KB and paints in 0.17 s, against 2.7 to 5.7 MB and 2 to 5 s. The TypeScript
 engine calculates Values only, so its times are a floor, not a port's. And **the 3.3 s the morning's
 baseline recorded for Blazor WebAssembly was mostly the baseline's own configuration**: Bench.Host under
@@ -90,7 +90,7 @@ Run one host at a time, on a quiet machine: a build that has just finished moved
 
 - **What a TypeScript port costs at run time.** The TypeScript engine keeps none of what ExSheet.Engine
   keeps beside the Values (Steps, Spills, formats carried by Formulas, volatile functions); a port's
-  recalculation will cost more than its 5 ms. What the port costs to write is estimated in the record.
+  recalculation will cost more than its 6 ms. What the port costs to write is estimated in the record.
 - **ExSheet's and ExPivot's own Script Cores** are not written; the pages draw what render-bench's driver
   reads and nothing more. Their figures include ExGrid's Script Core and the crossing, not a product UI.
 - **The page's frame during a recalculation** was not measured as frames: the driver scrolls only when

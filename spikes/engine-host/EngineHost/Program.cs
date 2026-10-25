@@ -148,8 +148,8 @@ namespace EngineHost
             for (var i = 0; i < trades.Length; i++)
             {
                 trades[i] = new Probe.Trade(
-                    ids[i].GetString()!, books[i].GetString()!, products[i].GetString()!, currencies[i].GetString()!,
-                    DateTime.ParseExact(dates[i].GetString()!, "yyyy-MM-dd", CultureInfo.InvariantCulture),
+                    Text(ids, i), Text(books, i), Text(products, i), Text(currencies, i),
+                    DateTime.ParseExact(Text(dates, i), "yyyy-MM-dd", CultureInfo.InvariantCulture),
                     pnls[i].GetDecimal());
             }
             _trades = trades;
@@ -161,6 +161,10 @@ namespace EngineHost
                 w.WriteNumber("engineMs", clock.Elapsed.TotalMilliseconds);
             });
         }
+
+        // A trade's text field; a null in the page's columns is refused here, at the boundary.
+        private static string Text(JsonElement column, int index) =>
+            column[index].GetString() ?? throw new InvalidOperationException($"Trade {index} has a null where its columns hold text.");
 
         /// <summary>The report Window, rows <paramref name="start"/> on, laid out across <paramref name="across"/>, as <see cref="PivotReportJson"/> writes it.</summary>
         [JSExport]
@@ -179,10 +183,12 @@ namespace EngineHost
         public static async Task<string> PivotAmend(int index, double delta, string across, int start, int count)
         {
             var trades = _trades ?? throw new InvalidOperationException("No trades are open.");
+            var source = _pivotSource ?? throw new InvalidOperationException("No trades are open.");
+            var reports = _reports ?? throw new InvalidOperationException("No trades are open.");
             var clock = Stopwatch.StartNew();
             var amended = trades[index] = trades[index] with { Pnl = trades[index].Pnl + (decimal)delta };
-            _pivotSource!.Apply(Probe.Fields.Batch(changed: [amended]));
-            var update = await _reports!.WindowAsync(new PivotReportRequest(
+            source.Apply(Probe.Fields.Batch(changed: [amended]));
+            var update = await reports.WindowAsync(new PivotReportRequest(
                 "r" + (++_requests).ToString(CultureInfo.InvariantCulture), Probe.Layout(across), PivotSettings, new PivotReportWindow(start, count)));
             return Wrapped(update, clock.Elapsed.TotalMilliseconds);
         }

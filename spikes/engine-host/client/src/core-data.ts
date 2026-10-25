@@ -38,6 +38,14 @@ const pick = (random: DotNetRandom, from: readonly string[]): string => {
     return item;
 };
 
+/** The trade CorePivot's Amend changes: the first book's, on its first date, the first in order. */
+export const corePivotAmended = (trades: Trades): number => {
+    const first = trades.tradeDate.filter((_, i) => trades.book[i] === books[0]).sort()[0];
+    const at = trades.id.findIndex((_, i) => trades.book[i] === books[0] && trades.tradeDate[i] === first);
+    if (at < 0) throw new Error('Internal: the first book has no trade.');
+    return at;
+};
+
 /** CorePivot's trades, in its order and from its seed. */
 export const makeTrades = (): Trades => {
     const random = new DotNetRandom(20261025);

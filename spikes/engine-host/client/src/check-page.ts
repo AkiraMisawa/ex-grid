@@ -5,7 +5,7 @@
 // tools/cdp-check.mjs reads it.
 
 import { EngineClient } from './engine-client';
-import { documentJson, makeTrades } from './core-data';
+import { corePivotAmended, documentJson, makeTrades } from './core-data';
 
 interface Mismatch {
     readonly where: string;
@@ -55,6 +55,9 @@ const main = async (): Promise<void> => {
     // --- The Sheet -----------------------------------------------------------------------------------
     const compareSheet = (where: string, a: SheetAnswer, b: SheetAnswer): void => {
         differ(`${where}: version`, a.version, b.version);
+        differ(`${where}: start`, a.start, b.start);
+        differ(`${where}: rows answered`, a.rows.length, b.rows.length);
+        differ(`${where}: cells answered`, a.rows.map((row) => row.length), b.rows.map((row) => row.length));
         a.rows.forEach((row, r) => {
             row.forEach((text, c) => {
                 counts.cells++;
@@ -69,7 +72,7 @@ const main = async (): Promise<void> => {
     // text where a number is read, a number General writes in scientific form, an error that spreads.
     const edits: [string, string][] = [
         ['A1', '1234'], ['L1', '77'], ['A1', '0.1'], ['A1', '-5.5'], ['A1', '1E+20'], ['A1', '123456789012'],
-        ['A1', '0.000001'], ['A1', 'abc'], ['A1', '7'], ['C5', '=B5*2-1/4'], ['B7', '=1/0'], ['K3', '=A3^0.5'],
+        ['A1', '0.000001'], ['A1', '0.0000123'], ['L1', '0.00001'], ['L1', '0.0001234'], ['A1', 'abc'], ['A1', '7'], ['C5', '=B5*2-1/4'], ['B7', '=1/0'], ['K3', '=A3^0.5'],
         ['D9', '=-C9^2'], ['A1', '1'],
     ];
     for (const [address, typed] of edits) {
@@ -91,6 +94,8 @@ const main = async (): Promise<void> => {
             if (sizes['PivotWindow, the whole report'] === undefined) sizes['PivotWindow, the whole report'] = { csharp: aSize, typescript: bSize };
             const at = `${where}, across ${across}`;
             differ(`${at}: rows`, a.update.metadata.rowCount, b.update.metadata.rowCount);
+            differ(`${at}: rows answered`, a.update.rows.length, b.update.rows.length);
+            differ(`${at}: values answered`, a.update.rows.map((row) => row.values.length), b.update.rows.map((row) => row.values.length));
             differ(`${at}: columns`, a.update.metadata.valueColumns.map((c) => [c.name, c.header]), b.update.metadata.valueColumns.map((c) => [c.name, c.header]));
             a.update.rows.forEach((row, r) => {
                 const other = b.update.rows[r];
@@ -109,8 +114,11 @@ const main = async (): Promise<void> => {
     const [small, smallTs, smallSize, smallTsSize] = await both<ReportAnswer>('PivotWindow', 'Currency', 0, 140, true);
     sizes['PivotWindow, a Window of 140 rows'] = { csharp: smallSize, typescript: smallTsSize };
     differ('a Window of 140 rows: rows', small.update.rows.length, smallTs.update.rows.length);
-    // CorePivot's amendment, then amounts with cents, a trade of each layout's last column, the last trade.
-    const amendments: [number, number][] = [[trades.book.indexOf('BK-A'), 1_000_003], [7, 12.5], [19_999, -7.25], [123, -1_000_000]];
+    // CorePivot's amendment, then amounts with cents (exact in binary, and not: 0.1 and 0.01 are where a
+    // sum in doubles drifts from ExPivot's decimal one), the last trade, a negative million.
+    const amendments: [number, number][] = [
+        [corePivotAmended(trades), 1_000_003], [7, 12.5], [19_999, -7.25], [11, 0.1], [11, 0.01], [12, -0.07], [123, -1_000_000],
+    ];
     for (const [index, delta] of amendments) {
         await both('PivotAmend', index, delta, 'Currency', 0, 140);
         await compareReport(`trade ${index} += ${delta}`);

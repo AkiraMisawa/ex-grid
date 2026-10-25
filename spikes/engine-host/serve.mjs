@@ -37,9 +37,11 @@ const onPage = published === 'ts-page';
 const typescript = published === 'ts' || onPage;
 const types = { '.js': 'text/javascript', '.mjs': 'text/javascript', '.wasm': 'application/wasm', '.json': 'application/json', '.css': 'text/css', '.map': 'application/json', '.dat': 'application/octet-stream', '.html': 'text/html; charset=utf-8' };
 
+const onPageLine = onPage ? `<script>window.engineOnPage = '/dist/ts-engine-page.js';</script>` : '';
+
 const bare = (name) => `<!DOCTYPE html>
 <html lang="en">
-<head><meta charset="utf-8" /><title>Engine Host: ${name}</title><link rel="icon" href="data:," /></head>
+<head><meta charset="utf-8" /><title>Engine Host: ${name}</title><link rel="icon" href="data:," />${onPageLine}</head>
 <body><script type="module" src="/dist/${name}-page.js"></script></body>
 </html>
 `;
@@ -52,7 +54,7 @@ const page = (scenario) => `<!DOCTYPE html>
     <link rel="icon" href="data:," />
     <link rel="stylesheet" href="/ex-grid.min.css" />
     <script src="/core-bench.js"></script>
-${onPage ? `    <script>window.engineOnPage = '/dist/ts-engine-page.js';</script>
+${onPage ? `    ${onPageLine}
 ` : ''}
 </head>
 <body>

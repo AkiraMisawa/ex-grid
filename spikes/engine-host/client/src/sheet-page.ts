@@ -41,13 +41,19 @@ const columns: readonly GridColumn<SheetRow>[] = Array.from({ length: columnCoun
 }));
 
 const sameRow = (painted: SheetRow, next: SheetRow): boolean =>
-    painted.index === next.index && painted.texts.every((text, c) => text === next.texts[c]);
+    painted.index === next.index && painted.texts.length === next.texts.length && painted.texts.every((text, c) => text === next.texts[c]);
 
 const toAnswer = (json: WindowJson, rowCount: number): WindowAnswer<SheetRow> => ({
     rows: json.rows.map((texts, i) => ({ index: json.start + i, texts })),
     start: json.start,
     totalCount: rowCount,
 });
+
+/** A write the engine refused: said on the console, which render-bench's driver counts as a complaint. The
+ * stand-in has no editor to keep the entry in, as ExSheet's would. */
+const refused = (what: string) => (error: unknown): void => {
+    console.error(`The engine refused ${what}:`, error);
+};
 
 const main = async (): Promise<void> => {
     const engine = new EngineClient('/dist/engine-worker.js');
@@ -82,16 +88,18 @@ const main = async (): Promise<void> => {
         } else if (event.key === 'Escape') {
             typed = '';
         } else if (event.key === 'Enter' && typed !== '') {
-            const focus = /r(\d+)c(\d+)$/.exec(element.getAttribute('aria-activedescendant') ?? '');
-            if (!focus) throw new Error('Enter with typed digits and no Focus.');
-            const address = `${letters(Number(focus[2]))}${Number(focus[1]) + 1}`;
+            // data-ex-follow-focus names the Focus whether or not its cell is painted; aria-activedescendant
+            // only while it is.
+            const focus = /r(\d+)c(\d+)$/.exec(element.getAttribute('data-ex-follow-focus') ?? '');
             const text = typed;
             typed = '';
-            void source.write(async (held) => {
+            if (!focus) throw new Error('Enter with typed digits and no Focus.');
+            const address = `${letters(Number(focus[2]))}${Number(focus[1]) + 1}`;
+            source.write(async (held) => {
                 const answer = await engine.call<WindowJson & { engineMs: number; windowMs: number }>('SheetEnter', address, text, held.start, held.count, columnCount);
                 edits.push({ address, engineMs: answer.value.engineMs, windowMs: answer.value.windowMs, workerMs: answer.workerMs, roundTripMs: answer.roundTripMs });
                 return toAnswer(answer.value, rowCount);
-            });
+            }).catch(refused(`${address} := ${text}`));
         }
     }, true);
 

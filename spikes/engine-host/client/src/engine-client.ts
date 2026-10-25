@@ -34,15 +34,22 @@ export class EngineClient {
     constructor(workerUrl: string) {
         const createdAt = performance.now();
         const onPage = (globalThis as { engineOnPage?: string }).engineOnPage;
+        let pagePort: MessagePort | undefined;
         if (onPage === undefined) {
             this.#worker = new Worker(workerUrl, { type: 'module' });
         } else {
             const channel = new MessageChannel();
             this.#worker = channel.port1;
+            pagePort = channel.port2;
             channel.port1.start();
-            void (import(/* @vite-ignore */ onPage) as Promise<{ start: (port: MessagePort) => void }>).then((module) => { module.start(channel.port2); });
         }
         this.ready = new Promise<EngineBoot>((resolve, reject) => {
+            if (onPage !== undefined && pagePort !== undefined) {
+                const port = pagePort;
+                (import(/* @vite-ignore */ onPage) as Promise<{ start: (port: MessagePort) => void }>)
+                    .then((module) => { module.start(port); })
+                    .catch((error: unknown) => { reject(new Error(`The engine on the page did not start: ${String(error)}`)); });
+            }
             (this.#worker as Worker).addEventListener('message', (event: MessageEvent<EngineMessage>) => {
                 const message = event.data;
                 switch (message.kind) {

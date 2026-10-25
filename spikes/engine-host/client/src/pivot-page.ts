@@ -16,7 +16,7 @@ import { createGrid, type GridColumn, type GridHandle } from '../../../../src/np
 import { EngineClient } from './engine-client';
 import { EngineWindowSource, type WindowAnswer } from './engine-window-source';
 import { recordBoot, waitForPaint } from './boot';
-import { books, makeTrades } from './core-data';
+import { books, corePivotAmended, makeTrades } from './core-data';
 
 const rowHeightPx = 22;
 
@@ -45,12 +45,16 @@ interface ReportJson {
 }
 
 const sameRow = (painted: ReportRow, next: ReportRow): boolean =>
-    painted.key === next.key && painted.texts.every((text, c) => text === next.texts[c]);
+    painted.key === next.key && painted.texts.length === next.texts.length && painted.texts.every((text, c) => text === next.texts[c]);
+
+/** A write the engine refused: said on the console, which render-bench's driver counts as a complaint. */
+const refused = (what: string) => (error: unknown): void => {
+    console.error(`The engine refused ${what}:`, error);
+};
 
 const main = async (): Promise<void> => {
     const trades = makeTrades();
-    const first = trades.tradeDate.filter((_, i) => trades.book[i] === books[0]).sort()[0];
-    const amendedAt = trades.id.findIndex((_, i) => trades.book[i] === books[0] && trades.tradeDate[i] === first);
+    const amendedAt = corePivotAmended(trades);
     let firstBookPnl = trades.pnl.reduce((sum, pnl, i) => (trades.book[i] === books[0] ? sum + pnl : sum), 0);
     const format = new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 });
 
@@ -118,21 +122,21 @@ const main = async (): Promise<void> => {
         firstBookPnl += 1_000_003;
         amendments += 1;
         show();
-        void source.write(async (held) => {
+        source.write(async (held) => {
             const answer = await engine.call<ReportJson>('PivotAmend', amendedAt, 1_000_003, across, held.start, held.count);
             operations.push({ op: 'amend', engineMs: answer.value.engineMs, jsonMs: answer.value.jsonMs, workerMs: answer.workerMs, roundTripMs: answer.roundTripMs });
             return answerOf(answer.value);
-        });
+        }).catch(refused('the amendment'));
     });
     document.getElementById('core-layout')?.addEventListener('click', () => {
         across = across === 'Currency' ? 'Product' : 'Currency';
         const asked = across;
         show();
-        void source.write(async (held) => {
+        source.write(async (held) => {
             const answer = await engine.call<ReportJson>('PivotWindow', asked, held.start, held.count, false);
             operations.push({ op: 'layout', engineMs: answer.value.engineMs, jsonMs: answer.value.jsonMs, workerMs: answer.workerMs, roundTripMs: answer.roundTripMs });
             return answerOf(answer.value);
-        });
+        }).catch(refused(`the layout across ${asked}`));
     });
 
     const firstPaintAt = await waitForPaint(element);

@@ -6,16 +6,45 @@
 // A report Window is written in PivotReportJson's shape (ExPivot.Engine), the fields of each row
 // included, so that what crosses to the page is the size the C# engine sends. A Change Batch of one
 // trade is applied to the sums it reaches, without reading the other trades again.
+//
+// P&L is summed exactly in base ten, as ExPivot.Engine sums a Decimal column: each amount is taken at
+// fifteen significant digits (as .NET converts a double to decimal) and held as a bigint of
+// 10^-10ths; an amount finer than that is refused. A sum in doubles would drift from the C# engine's at
+// the first cent that binary cannot hold (0.1, 0.01).
 
 import type { Trades } from '../core-data';
 import { Refused } from './sheet';
 
 type Across = 'Currency' | 'Product';
 
-/** The sums of one report row: one per column item and the grand total last; NaN where no trade fell. */
+/** The sums of one report row, in 10^-10ths: one per column item and the grand total last; null where no trade fell. */
 interface Sums {
-    readonly values: Float64Array;
+    readonly values: (bigint | null)[];
 }
+
+const scale = 10;
+const unit = 10n ** BigInt(scale);
+
+/** An amount as a bigint of 10^-10ths, taken at fifteen significant digits as .NET's (decimal)double is. */
+export const toScaled = (amount: number): bigint => {
+    if (!Number.isFinite(amount)) throw new Refused(`${amount} is not an amount.`);
+    if (amount === 0) return 0n;
+    const [mantissa = '', exponentText = ''] = Math.abs(amount).toExponential(14).split('e');
+    const digits = mantissa.replace('.', '').replace(/0+$/, '');
+    const power = Number(exponentText) - (digits.length - 1) + scale;
+    if (power < 0) throw new Refused(`${amount} has more than ${scale} decimals: the spike does not sum it.`);
+    const scaled = BigInt(digits) * 10n ** BigInt(power);
+    return amount < 0 ? -scaled : scaled;
+};
+
+/** A sum in 10^-10ths as decimal text, its trailing zeros dropped: the JSON number ExPivot.Engine writes. */
+const decimalText = (scaled: bigint): string => {
+    const negative = scaled < 0n;
+    const magnitude = negative ? -scaled : scaled;
+    const whole = magnitude / unit;
+    const fraction = (magnitude % unit).toString().padStart(scale, '0').replace(/0+$/, '');
+    return `${negative ? '-' : ''}${whole}${fraction === '' ? '' : `.${fraction}`}`;
+};
 
 interface Aggregate {
     readonly across: Across;
@@ -30,24 +59,26 @@ interface Aggregate {
 
 const collator = new Intl.Collator('en-US');
 
-const newSums = (columns: number): Sums => ({ values: new Float64Array(columns).fill(Number.NaN) });
+const newSums = (columns: number): Sums => ({ values: new Array<bigint | null>(columns).fill(null) });
 
-const add = (sums: Sums, column: number, amount: number): void => {
-    const now = sums.values[column] ?? Number.NaN;
-    sums.values[column] = Number.isNaN(now) ? amount : now + amount;
+const add = (sums: Sums, column: number, amount: bigint): void => {
+    const now = sums.values[column];
+    if (now === undefined) throw new Refused('Internal: a sum outside its row.');
+    sums.values[column] = now === null ? amount : now + amount;
 };
 
-/** "#,##0" under en-US: rounded half away from zero, grouped by threes. */
-export const wholeGrouped = (number: number): string => {
-    const rounded = Math.round(Math.abs(number));
-    const digits = String(rounded);
+/** "#,##0" under en-US, of a sum in 10^-10ths: rounded half away from zero, grouped by threes. */
+export const wholeGrouped = (scaled: bigint): string => {
+    const magnitude = scaled < 0n ? -scaled : scaled;
+    const rounded = magnitude / unit + (magnitude % unit >= unit / 2n ? 1n : 0n);
+    const digits = rounded.toString();
     let text = '';
     for (let i = 0; i < digits.length; i++) {
         if (i > 0 && (digits.length - i) % 3 === 0) text += ',';
         text += digits[i];
     }
     // ExPivot.Engine's "-" for a negative that rounds to 0 is not reached by the scenario: unverified.
-    return number < 0 && rounded !== 0 ? `-${text}` : text;
+    return scaled < 0n && rounded !== 0n ? `-${text}` : text;
 };
 
 const dateKey = (date: string): string => `${date}T00:00:00`;
@@ -61,6 +92,8 @@ const at = <T>(column: readonly T[], index: number): T => {
 
 export class Pivot {
     readonly #trades: Trades;
+    /** The P&L of each trade, in 10^-10ths. */
+    readonly #pnl: bigint[];
     #aggregate: Aggregate | undefined;
     #version = 0;
 
@@ -69,7 +102,8 @@ export class Pivot {
         for (const column of [trades.book, trades.product, trades.currency, trades.tradeDate, trades.pnl]) {
             if (column.length !== count) throw new Refused('The trades\' columns are not all as long as their ids.');
         }
-        this.#trades = { ...trades, pnl: [...trades.pnl] };
+        this.#trades = trades;
+        this.#pnl = trades.pnl.map(toScaled);
     }
 
     get tradeCount(): number {
@@ -80,7 +114,8 @@ export class Pivot {
     amend(index: number, delta: number): void {
         const trades = this.#trades;
         if (!Number.isSafeInteger(index) || index < 0 || index >= trades.id.length) throw new Refused(`There is no trade ${index}.`);
-        trades.pnl[index] = at(trades.pnl, index) + delta;
+        const change = toScaled(delta);
+        this.#pnl[index] = at(this.#pnl, index) + change;
         this.#version++;
         const aggregate = this.#aggregate;
         if (aggregate === undefined) return;
@@ -92,8 +127,8 @@ export class Pivot {
         if (column === undefined || leaf === undefined || bookSums === undefined) throw new Refused('Internal: an amended trade outside the report.');
         const total = aggregate.items.length;
         for (const sums of [leaf, bookSums, aggregate.grand]) {
-            add(sums, column, delta);
-            add(sums, total, delta);
+            add(sums, column, change);
+            add(sums, total, change);
         }
     }
 
@@ -113,7 +148,7 @@ export class Pivot {
             const leafKey = `${book}\u0000${at(trades.tradeDate, i)}`;
             const column = itemIndex.get(at(acrossColumn, i));
             if (column === undefined) throw new Refused('Internal: an item outside the columns.');
-            const pnl = at(trades.pnl, i);
+            const pnl = at(this.#pnl, i);
             let leaf = leaves.get(leafKey);
             if (leaf === undefined) leaves.set(leafKey, leaf = newSums(columns));
             let bookSums = books.get(book);
@@ -187,8 +222,11 @@ export class Pivot {
                 labels = `[{"text":${JSON.stringify(row.date)},"indent":1,"toggle":null}]`;
                 path = `[{"field":"Book","item":${book}},{"field":"TradeDate","item":${date}}]`;
             }
-            const values = Array.from(row.sums.values, (sum) =>
-                Number.isNaN(sum) ? 'null' : `{"number":${sum},"exact":${sum},"error":null,"text":"${wholeGrouped(sum)}"}`).join(',');
+            const values = row.sums.values.map((sum) => {
+                if (sum === null) return 'null';
+                const exact = decimalText(sum);
+                return `{"number":${Number(exact)},"exact":${exact},"error":null,"text":"${wholeGrouped(sum)}"}`;
+            }).join(',');
             parts.push(`{"key":${key},"role":${role},"valueField":-1,"carriesValues":true,"labels":${labels},"values":[${values}],"rowPath":${path},"changedIn":${changedIn}}`);
         }
         const metadata = {

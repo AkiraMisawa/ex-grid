@@ -130,8 +130,9 @@ const probe = (runtime: string, repeats: number): string => {
             time('pivot: Change Batch applied', () => { report.amend(at, 1_000_003); });
             time('pivot: Window after one trade', () => report.window('Currency', 0, 80));
         }
+        // To Product and back, as Probe.cs times it.
         time('pivot: Window after the columns swapped', () => report.window('Product', 0, 80));
-        report.window('Currency', 0, 80);
+        time('pivot: Window after the columns swapped', () => report.window('Currency', 0, 80));
     }
     return JSON.stringify({ runtime, steps });
 };
