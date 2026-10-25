@@ -14,19 +14,19 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/25/2026 - 22:20:14 |
+| Generated on: | 10/25/2026 - 22:32:09 |
 | Parser: | MultiReport (19x Cobertura) |
 | Assemblies: | 16 |
 | Classes: | 1183 |
 | Files: | 606 |
-| **Line coverage:** | 94.5% (81834 of 86562) |
-| Covered lines: | 81834 |
+| **Line coverage:** | 94.5% (81845 of 86573) |
+| Covered lines: | 81845 |
 | Uncovered lines: | 4728 |
-| Coverable lines: | 86562 |
-| Total lines: | 138379 |
-| **Branch coverage:** | 87.3% (49387 of 56570) |
-| Covered branches: | 49387 |
-| Total branches: | 56570 |
+| Coverable lines: | 86573 |
+| Total lines: | 138402 |
+| **Branch coverage:** | 87.3% (49395 of 56576) |
+| Covered branches: | 49395 |
+| Total branches: | 56576 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
@@ -278,7 +278,7 @@
 |ExGrid.Chrome.ContextMenuContext<TRow>|91.6%||
 |ExGrid.Chrome.DistinctValues|100%||
 |ExGrid.Chrome.EditorCompletionContext|100%||
-|ExGrid.Chrome.FilterPanelChoices|95.9%|90.6%|
+|ExGrid.Chrome.FilterPanelChoices|96%|90.9%|
 |ExGrid.Chrome.FilterPanelContext|88.8%||
 |ExGrid.Chrome.FindContext|90.9%||
 |ExGrid.Chrome.FindPanelLabelIds|100%|100%|
@@ -1032,12 +1032,12 @@
 |ExSheet.BuiltInToolbarItem|96.4%|97.3%|
 |ExSheet.ColourItem|96%|100%|
 |ExSheet.CommaItem|83.3%||
-|ExSheet.Components.ExSheet|91.3%|81.7%|
+|ExSheet.Components.ExSheet|91.3%|81.8%|
 |ExSheet.Components.ExSheet.KeyboardListener|100%||
 |ExSheet.Components.ExSheet.KeyUpListener|100%||
 |ExSheet.Components.ExSheet.OwnFindOutcome|100%||
 |ExSheet.Components.ExSheet.SheetGridChrome|86.6%|73%|
-|ExSheet.Components.ExSheet<T>|91.3%|81.7%|
+|ExSheet.Components.ExSheet<T>|91.3%|81.8%|
 |ExSheet.Components.ExSheetStylesheet|100%||
 |ExSheet.Components.FormatCellsPanel|97.3%|87.5%|
 |ExSheet.Components.SheetFindPanel|91.7%|76.5%|
