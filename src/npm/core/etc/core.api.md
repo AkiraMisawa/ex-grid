@@ -163,6 +163,9 @@ export interface FilterSpec {
 }
 
 // @public
+export type FilterUi = 'condition' | 'valueList' | 'both';
+
+// @public
 export interface FixedColumnWidth {
     readonly maxPx?: number;
     readonly minPx?: number;
@@ -195,6 +198,7 @@ export interface GridClock {
 export interface GridColumn<Row> extends QueryColumn<Row> {
     readonly align?: CellAlign;
     readonly editable?: boolean;
+    readonly filterUi?: FilterUi;
     readonly header?: string;
     readonly validate?: (row: Row, text: string) => EditVerdict;
     readonly width?: GridColumnWidth;
@@ -325,6 +329,7 @@ export interface GridOptions<Row> {
     readonly hideCopyWithHeaders?: boolean;
     readonly highlightFocusRow?: boolean;
     readonly highlightHoverRow?: boolean;
+    readonly locale?: string;
     readonly onCellDoubleClick?: (cell: CellPosition) => void;
     readonly onClear?: (intent: GridClearIntent) => void;
     readonly onColumnHidden?: (column: string) => void;
@@ -346,6 +351,7 @@ export interface GridOptions<Row> {
     readonly rowHeight?: number;
     readonly rows?: readonly Row[];
     readonly source?: GridSource<Row>;
+    readonly temporal?: TemporalLike;
     readonly viewportHeight?: ViewportSize;
     readonly viewportWidth?: ViewportSize;
     readonly virtualiseColumns?: boolean;
@@ -704,6 +710,31 @@ export interface SourceCell {
 
 // @public
 export type SummaryFigure = 'average' | 'count' | 'numericalCount' | 'min' | 'max' | 'sum';
+
+// @public
+export interface TemporalLike {
+    readonly PlainDate: {
+        from(fields: {
+            year: number;
+            month: number;
+            day: number;
+        }): unknown;
+    };
+    readonly PlainDateTime: {
+        from(fields: {
+            year: number;
+            month: number;
+            day: number;
+            hour: number;
+            minute: number;
+            second: number;
+            nanosecond: number;
+        }): unknown;
+    };
+    readonly ZonedDateTime: {
+        from(text: string): unknown;
+    };
+}
 
 // @public
 export type ViewportSize = number | 'stretch';

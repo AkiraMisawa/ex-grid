@@ -7,6 +7,7 @@ import type { CellAlign } from '../paint/cell-classes';
 import { ColumnWidth, ColumnWidthSpec } from '../columns/column-width';
 import { hashesWhenOverflowing } from '../columns/overflow-rules';
 import type { QueryColumn } from '../query/columns';
+import type { FilterUi } from './filter-panel';
 
 /** An Auto width with its bounds (ADR-0016): computed from what is painted, between `minPx` and `maxPx`. */
 export interface AutoColumnWidth {
@@ -48,6 +49,10 @@ export interface GridColumn<Row> extends QueryColumn<Row> {
     /** The Consumer's verdict on a commit to this column, asked as it commits (ADR-0034): accept, flag or
      * reject. None means every commit is accepted. It runs on the commit's path, so it is cheap. */
     readonly validate?: (row: Row, text: string) => EditVerdict;
+    /** What the column's filter panel lays out (ADR-0009): `condition` unless given, the safe default, which
+     * never asks the source for the column's values; `valueList`, a list of its distinct values to tick,
+     * degraded to the condition form where the source answers TooMany; or `both`. */
+    readonly filterUi?: FilterUi;
 }
 
 /** A column with what its declaration resolves to, checked once, where the Consumer handed it over. */
@@ -62,9 +67,12 @@ export interface ResolvedColumn<Row> {
     readonly numeric: boolean;
     /** Whether a paste may write its cells (ADR-0035). */
     readonly editable: boolean;
+    /** What its filter panel lays out (ADR-0009). */
+    readonly filterUi: FilterUi;
 }
 
 const aligns: ReadonlySet<string> = new Set<CellAlign>(['auto', 'left', 'center', 'right']);
+const filterUis: ReadonlySet<string> = new Set<FilterUi>(['condition', 'valueList', 'both']);
 
 /** Resolves the declared columns, refusing by name what no grid could paint honestly. */
 export function resolveColumns<Row>(columns: readonly GridColumn<Row>[]): readonly ResolvedColumn<Row>[] {
@@ -73,9 +81,9 @@ export function resolveColumns<Row>(columns: readonly GridColumn<Row>[]): readon
     const names = new Set<string>();
     return Object.freeze(columns.map((column, index) => {
         // Checked as an untyped caller may hand it, where it arrives (CONVENTIONS.md).
-        const { name, value, align, header, type, editable, validate }: {
+        const { name, value, align, header, type, editable, validate, filterUi }: {
             readonly name: unknown; readonly value: unknown; readonly align?: unknown; readonly header?: unknown; readonly type: unknown;
-            readonly editable?: unknown; readonly validate?: unknown;
+            readonly editable?: unknown; readonly validate?: unknown; readonly filterUi?: unknown;
         } = column;
         if (typeof name !== 'string' || name === '') {
             throw new TypeError(`The column at ${index} has no name: a column is named by a non-empty string.`);
@@ -102,12 +110,16 @@ export function resolveColumns<Row>(columns: readonly GridColumn<Row>[]): readon
         if (validate !== undefined && typeof validate !== 'function') {
             throw new TypeError(`Column '${name}': validate is a function of the row and the text (ADR-0034).`);
         }
+        if (filterUi !== undefined && (typeof filterUi !== 'string' || !filterUis.has(filterUi))) {
+            throw new RangeError(`Column '${name}': filterUi is one of ${[...filterUis].join(', ')}, not ${JSON.stringify(filterUi)} (ADR-0009).`);
+        }
         return Object.freeze({
             column,
             header: header ?? name,
             spec: specOf(column),
             numeric: hashesWhenOverflowing(type),
             editable: editable === true,
+            filterUi: column.filterUi ?? 'condition', // oxlint-disable-line ex-grid/no-stand-in-default -- ADR-0009: the condition form is the safe default, which never enumerates
         });
     }));
 }

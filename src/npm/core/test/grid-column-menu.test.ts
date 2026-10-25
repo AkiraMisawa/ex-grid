@@ -87,8 +87,10 @@ describe('opening the column menu', () => {
         expect([menu(root)?.getAttribute('aria-label'), active()]).toEqual(['Book', item(root, 'Sort ascending')]);
         expect(key(root, 'ArrowDown', { altKey: true }).defaultPrevented).toBe(true);
         expect(root.querySelectorAll('.ex-popover')).toHaveLength(1);
-        // Tab leaves the menu as a Cancel: no filter stands below its commands (ADR-0044).
+        // Tab goes into the filter below the commands, and Escape closes the whole popover (ADR-0039, ADR-0044).
         key(active(), 'Tab');
+        expect(active().closest('.ex-popover-filter')).not.toBeNull();
+        key(active(), 'Escape');
         expect([menu(root), active()]).toEqual([null, root]);
         view.update({ ...base, hideColumnMenu: true });
         await painted();

@@ -118,7 +118,8 @@ function FetchPage({ source, fetches, error, failArmed, onFailNext, onClear }: F
                 <span id="fetch-status">Fetches: {fetches}{state.loading ? ' (loading)' : ''}</span>
                 <span id="fetch-error">{error === undefined ? '' : `Last failure: ${error}`}</span>
             </p>
-            <ExGrid columns={columns} source={source} rowHeight={28} viewportHeight={600} viewportWidth={700} pinnedColumnCount={1} />
+            {/* The polyfill this page's dates are, which a date typed into a filter is made with. */}
+            <ExGrid columns={columns} source={source} rowHeight={28} viewportHeight={600} viewportWidth={700} pinnedColumnCount={1} temporal={Temporal} />
         </>
     );
 }

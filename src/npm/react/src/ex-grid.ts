@@ -6,8 +6,18 @@
 import { createElement, useLayoutEffect, useRef, type ReactElement } from 'react';
 import { createGrid, type GridHandle, type GridOptions } from '@ex-grid/core';
 
-/** An ExGrid's props: the Script Core's options, whole. */
+/**
+ * An ExGrid's props: the Script Core's options, whole. `locale` is the browser's language where not given,
+ * read once when the grid is made (ADR-0370 section 10); the core never reads it on its own. `temporal` is
+ * never the browser's: a grid with a Date column whose filter is offered is given one on every browser
+ * alike, or refused on every browser alike (ADR-0350 section 16).
+ */
 export type ExGridProps<Row> = GridOptions<Row>;
+
+/** The props as the core takes them: the browser's language where the Consumer gave no locale. */
+function withLocale<Row>(props: ExGridProps<Row>, browserLocale: string): GridOptions<Row> {
+    return props.locale === undefined ? { ...props, locale: browserLocale } : props;
+}
 
 /**
  * An Excel-like grid. The element it renders is the grid's instance root, which the Script Core owns; every
@@ -16,19 +26,23 @@ export type ExGridProps<Row> = GridOptions<Row>;
 export function ExGrid<Row>(props: ExGridProps<Row>): ReactElement {
     const element = useRef<HTMLDivElement>(null);
     const grid = useRef<GridHandle<Row> | undefined>(undefined);
+    const browserLocale = useRef<string | undefined>(undefined);
     // Drawn before the browser paints, so a mounted grid is never seen empty.
     useLayoutEffect(() => {
         const root = element.current;
         if (root === null) throw new Error('Internal: React mounted no element for the grid to draw into.');
+        browserLocale.current ??= navigator.language;
+        const options = withLocale(props, browserLocale.current);
         if (grid.current === undefined) {
-            grid.current = createGrid(root, props);
+            grid.current = createGrid(root, options);
         } else {
-            grid.current.update(props);
+            grid.current.update(options);
         }
     });
     useLayoutEffect(() => () => {
         grid.current?.destroy();
         grid.current = undefined;
+        browserLocale.current = undefined;
     }, []);
     return createElement('div', { ref: element });
 }

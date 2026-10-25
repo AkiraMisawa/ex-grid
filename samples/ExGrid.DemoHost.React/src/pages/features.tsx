@@ -5,7 +5,7 @@ import {
     type GridRefusal,
 } from '@ex-grid/core';
 import { ExGrid } from '@ex-grid/react';
-import type { Temporal } from 'temporal-polyfill';
+import { Temporal } from 'temporal-polyfill';
 import { DemoNav } from '../demo-nav';
 import { firstDay, pick, type DemoTrade } from '../demo-data';
 import { useQuery } from '../router';
@@ -30,8 +30,9 @@ const isoDate = (value: unknown): string => (value as Temporal.PlainDateTime).to
 const twoPlaces = (value: unknown): string => (value as number).toFixed(2);
 
 const columns: readonly GridColumn<DemoTrade>[] = Object.freeze([
-    { name: 'Book', type: 'text', value: (t: DemoTrade) => t.book, width: 110 },
-    { name: 'Trader', type: 'text', value: (t: DemoTrade) => t.trader, width: 120, editable: true },
+    // Book and Trader offer their values and a condition, as on the Blazor page (ADR-0009).
+    { name: 'Book', type: 'text', value: (t: DemoTrade) => t.book, width: 110, filterUi: 'both' },
+    { name: 'Trader', type: 'text', value: (t: DemoTrade) => t.trader, width: 120, editable: true, filterUi: 'both' },
     // The Blazor page's rule on Notional: what does not parse is rejected, and a negative value is flagged
     // (ADR-0034).
     {
@@ -362,6 +363,8 @@ export function Features(): ReactElement {
                 viewportWidth={720}
                 headerGroups={groups}
                 pinnedColumnCount={pinned}
+                // The polyfill this page's dates are, which a date typed into a filter is made with.
+                temporal={Temporal}
                 onRefused={onRefused}
                 onEdit={onEdit}
                 onEditDiscarded={onEditDiscarded}

@@ -1,0 +1,1568 @@
+{
+  "about": "What a filter condition's typed operand reads as, and the text an operand reopens in (ADR-0023, ADR-0006's note of 2026-10-01; tickets 94, 96, 97, 98), under a culture: C#'s FilterPanelChoices.ReadOperand, OperandText and RefusalText, and the Script Core's chrome/operand-reading.ts under ADR-0370 section 10's locale. From tests/ExGrid.Tests/OperandReadingTests.cs, DateOperandReadingTests.cs and DateTypeOperandReadingTests.cs; the rows where C#'s DateTime.TryParse reads what the Script Core refuses (a month's name, a 12-hour clock, a two-digit year) stay there, and so does ja-JP's 13/01/2026, which .NET's parser refuses before ticket 97's rule reads the one order that is a date. A case either reads (`reads`, the value; null for no operand) or is `refused` by kind, with the two `readings` of readsTwoWays and what was `read` for notTheColumnsDateForm; `says` is the built-in refusal's words. An `operandText` case gives the text a value reopens in, and `readsBack` the column type it is read back as, to the same value.",
+  "kind": "operand",
+  "cases": [
+    {
+      "name": "ADR-0023, principle 1: under en-US, \"1,234.5\" reads as 1234.5",
+      "culture": "en-US",
+      "type": "number",
+      "text": "1,234.5",
+      "reads": {
+        "number": "1234.5"
+      }
+    },
+    {
+      "name": "ADR-0023, principle 1: under en-US, \"1234.5\" reads as 1234.5",
+      "culture": "en-US",
+      "type": "number",
+      "text": "1234.5",
+      "reads": {
+        "number": "1234.5"
+      }
+    },
+    {
+      "name": "ADR-0023, principle 1: under en-US, \"1,234\" reads as 1234",
+      "culture": "en-US",
+      "type": "number",
+      "text": "1,234",
+      "reads": {
+        "number": "1234"
+      }
+    },
+    {
+      "name": "ADR-0023, principle 1: under en-US, \"-1,234,567.25\" reads as -1234567.25",
+      "culture": "en-US",
+      "type": "number",
+      "text": "-1,234,567.25",
+      "reads": {
+        "number": "-1234567.25"
+      }
+    },
+    {
+      "name": "ADR-0023, principle 1: under de-DE, \"1.234,5\" reads as 1234.5",
+      "culture": "de-DE",
+      "type": "number",
+      "text": "1.234,5",
+      "reads": {
+        "number": "1234.5"
+      }
+    },
+    {
+      "name": "ADR-0023, principle 1: under de-DE, \"1234,5\" reads as 1234.5",
+      "culture": "de-DE",
+      "type": "number",
+      "text": "1234,5",
+      "reads": {
+        "number": "1234.5"
+      }
+    },
+    {
+      "name": "ADR-0023, principle 1: under de-DE, \"1,234\" reads as 1.234",
+      "culture": "de-DE",
+      "type": "number",
+      "text": "1,234",
+      "reads": {
+        "number": "1.234"
+      }
+    },
+    {
+      "name": "ADR-0023, principle 1: under de-DE, \"1.234.567\" reads as 1234567",
+      "culture": "de-DE",
+      "type": "number",
+      "text": "1.234.567",
+      "reads": {
+        "number": "1234567"
+      }
+    },
+    {
+      "name": "ADR-0023, principle 1: under de-DE, \"-1.234,5\" reads as -1234.5",
+      "culture": "de-DE",
+      "type": "number",
+      "text": "-1.234,5",
+      "reads": {
+        "number": "-1234.5"
+      }
+    },
+    {
+      "name": "ADR-0023, principle 1: under fr-FR, \"1 234,5\" reads as 1234.5",
+      "culture": "fr-FR",
+      "type": "number",
+      "text": "1 234,5",
+      "reads": {
+        "number": "1234.5"
+      }
+    },
+    {
+      "name": "ADR-0023, principle 1: under fr-FR, \"1 234,5\" reads as 1234.5",
+      "culture": "fr-FR",
+      "type": "number",
+      "text": "1 234,5",
+      "reads": {
+        "number": "1234.5"
+      }
+    },
+    {
+      "name": "ADR-0023, principle 1: under fr-FR, \"1 234,5\" reads as 1234.5",
+      "culture": "fr-FR",
+      "type": "number",
+      "text": "1 234,5",
+      "reads": {
+        "number": "1234.5"
+      }
+    },
+    {
+      "name": "ADR-0023, principle 1: under fr-FR, \"1234,5\" reads as 1234.5",
+      "culture": "fr-FR",
+      "type": "number",
+      "text": "1234,5",
+      "reads": {
+        "number": "1234.5"
+      }
+    },
+    {
+      "name": "ADR-0023, principle 1: under ja-JP, \"1,234.5\" reads as 1234.5",
+      "culture": "ja-JP",
+      "type": "number",
+      "text": "1,234.5",
+      "reads": {
+        "number": "1234.5"
+      }
+    },
+    {
+      "name": "ADR-0023, principle 1: under ja-JP, \"1234.5\" reads as 1234.5",
+      "culture": "ja-JP",
+      "type": "number",
+      "text": "1234.5",
+      "reads": {
+        "number": "1234.5"
+      }
+    },
+    {
+      "name": "ADR-0023, principle 1: under de-DE, 1.234 reads two ways and is refused by name, never guessed",
+      "culture": "de-DE",
+      "type": "number",
+      "text": "1.234",
+      "refused": "readsTwoWays",
+      "readings": [
+        {
+          "number": "1234"
+        },
+        {
+          "number": "1.234"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0023, principle 1: under de-DE, 1.000 reads two ways and is refused by name, never guessed",
+      "culture": "de-DE",
+      "type": "number",
+      "text": "1.000",
+      "refused": "readsTwoWays",
+      "readings": [
+        {
+          "number": "1000"
+        },
+        {
+          "number": "1"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0023, principle 1: under de-DE, -12.345 reads two ways and is refused by name, never guessed",
+      "culture": "de-DE",
+      "type": "number",
+      "text": "-12.345",
+      "refused": "readsTwoWays",
+      "readings": [
+        {
+          "number": "-12345"
+        },
+        {
+          "number": "-12.345"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0023, principle 1: under en-US, 1234,5 is not the culture's number and is not read",
+      "culture": "en-US",
+      "type": "number",
+      "text": "1234,5",
+      "refused": "notReadable"
+    },
+    {
+      "name": "ADR-0023, principle 1: under en-US, 12,34 is not the culture's number and is not read",
+      "culture": "en-US",
+      "type": "number",
+      "text": "12,34",
+      "refused": "notReadable"
+    },
+    {
+      "name": "ADR-0023, principle 1: under de-DE, 1234.5 is not the culture's number and is not read",
+      "culture": "de-DE",
+      "type": "number",
+      "text": "1234.5",
+      "refused": "notReadable"
+    },
+    {
+      "name": "ADR-0023, principle 1: under de-DE, 12.34 is not the culture's number and is not read",
+      "culture": "de-DE",
+      "type": "number",
+      "text": "12.34",
+      "refused": "notReadable"
+    },
+    {
+      "name": "ADR-0023, principle 1: under fr-FR, 1.234 is not the culture's number and is not read",
+      "culture": "fr-FR",
+      "type": "number",
+      "text": "1.234",
+      "refused": "notReadable"
+    },
+    {
+      "name": "ADR-0023, principle 1: under fr-FR, 1234.5 is not the culture's number and is not read",
+      "culture": "fr-FR",
+      "type": "number",
+      "text": "1234.5",
+      "refused": "notReadable"
+    },
+    {
+      "name": "ADR-0023, principle 1: under ja-JP, 1234,5 is not the culture's number and is not read",
+      "culture": "ja-JP",
+      "type": "number",
+      "text": "1234,5",
+      "refused": "notReadable"
+    },
+    {
+      "name": "ADR-0023, principle 1: under ja-JP, abc is not the culture's number and is not read",
+      "culture": "ja-JP",
+      "type": "number",
+      "text": "abc",
+      "refused": "notReadable"
+    },
+    {
+      "name": "ADR-0023, principle 1: under en-US, 1.234,5 is not the culture's number and is not read",
+      "culture": "en-US",
+      "type": "number",
+      "text": "1.234,5",
+      "refused": "notReadable"
+    },
+    {
+      "name": "ADR-0023: nothing typed is no operand, not a refusal",
+      "culture": "de-DE",
+      "type": "number",
+      "text": "",
+      "reads": null
+    },
+    {
+      "name": "ADR-0023, principle 1: the refusal of two readings names both, and how to type each",
+      "culture": "de-DE",
+      "type": "number",
+      "text": "1.234",
+      "refused": "readsTwoWays",
+      "readings": [
+        {
+          "number": "1234"
+        },
+        {
+          "number": "1.234"
+        }
+      ],
+      "says": "“1.234” reads two ways: as 1234, and as 1.234. Type 1234 without separators, or 1,234 for the other."
+    },
+    {
+      "name": "ADR-0023, principle 1: the refusal of another culture's number names the culture",
+      "culture": "de-DE",
+      "type": "number",
+      "text": "1234.5",
+      "refused": "notReadable",
+      "says": "“1234.5” is not a value of this column as German (Germany) writes it."
+    },
+    {
+      "name": "ADR-0023: the invariant culture reads a point and groups with a comma",
+      "culture": "invariant",
+      "type": "number",
+      "text": "1,234.5",
+      "reads": {
+        "number": "1234.5"
+      }
+    },
+    {
+      "name": "ADR-0023: a boolean is true or false",
+      "culture": "en-US",
+      "type": "boolean",
+      "text": "true",
+      "reads": true
+    },
+    {
+      "name": "ADR-0023: a boolean is read in either case",
+      "culture": "en-US",
+      "type": "boolean",
+      "text": "False",
+      "reads": false
+    },
+    {
+      "name": "ADR-0023: a boolean that is neither is not read",
+      "culture": "en-US",
+      "type": "boolean",
+      "text": "yes",
+      "refused": "notReadable"
+    },
+    {
+      "name": "ADR-0023: text is itself",
+      "culture": "de-DE",
+      "type": "text",
+      "text": "x",
+      "reads": "x"
+    },
+    {
+      "name": "ADR-0023, ticket 97: under en-US, 05/01/2026 reads as 2026-05-01T00:00:00",
+      "culture": "en-US",
+      "type": "date",
+      "text": "05/01/2026",
+      "reads": {
+        "dateTime": "2026-05-01T00:00:00"
+      }
+    },
+    {
+      "name": "ADR-0023, ticket 97: under en-US, 2026/01/05 reads as 2026-01-05T00:00:00",
+      "culture": "en-US",
+      "type": "date",
+      "text": "2026/01/05",
+      "reads": {
+        "dateTime": "2026-01-05T00:00:00"
+      }
+    },
+    {
+      "name": "ADR-0023, ticket 97: under en-GB, 05/01/2026 reads as 2026-01-05T00:00:00",
+      "culture": "en-GB",
+      "type": "date",
+      "text": "05/01/2026",
+      "reads": {
+        "dateTime": "2026-01-05T00:00:00"
+      }
+    },
+    {
+      "name": "ADR-0023, ticket 97: under en-GB, 05/01/2026 09:05 reads as 2026-01-05T09:05:00",
+      "culture": "en-GB",
+      "type": "date",
+      "text": "05/01/2026 09:05",
+      "reads": {
+        "dateTime": "2026-01-05T09:05:00"
+      }
+    },
+    {
+      "name": "ADR-0023, ticket 97: under de-DE, 05.01.2026 reads as 2026-01-05T00:00:00",
+      "culture": "de-DE",
+      "type": "date",
+      "text": "05.01.2026",
+      "reads": {
+        "dateTime": "2026-01-05T00:00:00"
+      }
+    },
+    {
+      "name": "ADR-0023, ticket 97: under de-DE, 05.01.2026 21:05:07 reads as 2026-01-05T21:05:07",
+      "culture": "de-DE",
+      "type": "date",
+      "text": "05.01.2026 21:05:07",
+      "reads": {
+        "dateTime": "2026-01-05T21:05:07"
+      }
+    },
+    {
+      "name": "ADR-0023, ticket 97: under de-DE, 05/01/2026 reads as 2026-01-05T00:00:00",
+      "culture": "de-DE",
+      "type": "date",
+      "text": "05/01/2026",
+      "reads": {
+        "dateTime": "2026-01-05T00:00:00"
+      }
+    },
+    {
+      "name": "ADR-0023, ticket 97: under ja-JP, 2026/01/05 reads as 2026-01-05T00:00:00",
+      "culture": "ja-JP",
+      "type": "date",
+      "text": "2026/01/05",
+      "reads": {
+        "dateTime": "2026-01-05T00:00:00"
+      }
+    },
+    {
+      "name": "ADR-0023, ticket 97: under ja-JP, 2026/01/05 9:05:07 reads as 2026-01-05T09:05:07",
+      "culture": "ja-JP",
+      "type": "date",
+      "text": "2026/01/05 9:05:07",
+      "reads": {
+        "dateTime": "2026-01-05T09:05:07"
+      }
+    },
+    {
+      "name": "ADR-0023, ticket 97: under ja-JP, 01/13/2026 reads as 2026-01-13T00:00:00",
+      "culture": "ja-JP",
+      "type": "date",
+      "text": "01/13/2026",
+      "reads": {
+        "dateTime": "2026-01-13T00:00:00"
+      }
+    },
+    {
+      "name": "ADR-0023, ticket 97: under ja-JP, 05/05/2026 reads as 2026-05-05T00:00:00",
+      "culture": "ja-JP",
+      "type": "date",
+      "text": "05/05/2026",
+      "reads": {
+        "dateTime": "2026-05-05T00:00:00"
+      }
+    },
+    {
+      "name": "ticket 94: under en-US, the ISO day reads exactly",
+      "culture": "en-US",
+      "type": "date",
+      "text": "2026-01-05",
+      "reads": {
+        "dateTime": "2026-01-05T00:00:00"
+      }
+    },
+    {
+      "name": "ticket 94: under en-US, the ISO date and time reads exactly",
+      "culture": "en-US",
+      "type": "date",
+      "text": "2026-01-05 09:05:07",
+      "reads": {
+        "dateTime": "2026-01-05T09:05:07"
+      }
+    },
+    {
+      "name": "ticket 94: under en-GB, the ISO day reads exactly",
+      "culture": "en-GB",
+      "type": "date",
+      "text": "2026-01-05",
+      "reads": {
+        "dateTime": "2026-01-05T00:00:00"
+      }
+    },
+    {
+      "name": "ticket 94: under en-GB, the ISO date and time reads exactly",
+      "culture": "en-GB",
+      "type": "date",
+      "text": "2026-01-05 09:05:07",
+      "reads": {
+        "dateTime": "2026-01-05T09:05:07"
+      }
+    },
+    {
+      "name": "ticket 94: under de-DE, the ISO day reads exactly",
+      "culture": "de-DE",
+      "type": "date",
+      "text": "2026-01-05",
+      "reads": {
+        "dateTime": "2026-01-05T00:00:00"
+      }
+    },
+    {
+      "name": "ticket 94: under de-DE, the ISO date and time reads exactly",
+      "culture": "de-DE",
+      "type": "date",
+      "text": "2026-01-05 09:05:07",
+      "reads": {
+        "dateTime": "2026-01-05T09:05:07"
+      }
+    },
+    {
+      "name": "ticket 94: under fr-FR, the ISO day reads exactly",
+      "culture": "fr-FR",
+      "type": "date",
+      "text": "2026-01-05",
+      "reads": {
+        "dateTime": "2026-01-05T00:00:00"
+      }
+    },
+    {
+      "name": "ticket 94: under fr-FR, the ISO date and time reads exactly",
+      "culture": "fr-FR",
+      "type": "date",
+      "text": "2026-01-05 09:05:07",
+      "reads": {
+        "dateTime": "2026-01-05T09:05:07"
+      }
+    },
+    {
+      "name": "ticket 94: under ja-JP, the ISO day reads exactly",
+      "culture": "ja-JP",
+      "type": "date",
+      "text": "2026-01-05",
+      "reads": {
+        "dateTime": "2026-01-05T00:00:00"
+      }
+    },
+    {
+      "name": "ticket 94: under ja-JP, the ISO date and time reads exactly",
+      "culture": "ja-JP",
+      "type": "date",
+      "text": "2026-01-05 09:05:07",
+      "reads": {
+        "dateTime": "2026-01-05T09:05:07"
+      }
+    },
+    {
+      "name": "ticket 97: under ja-JP, a year-last date reads two ways and is refused",
+      "culture": "ja-JP",
+      "type": "date",
+      "text": "05/01/2026",
+      "refused": "readsTwoWays",
+      "readings": [
+        {
+          "dateTime": "2026-05-01T00:00:00"
+        },
+        {
+          "dateTime": "2026-01-05T00:00:00"
+        }
+      ],
+      "says": "“05/01/2026” reads two ways: as 2026-05-01, and as 2026-01-05. Type the one you mean as 2026-05-01 or 2026-01-05."
+    },
+    {
+      "name": "ticket 97: under en-US, 13/01/2026 is not a date the culture writes",
+      "culture": "en-US",
+      "type": "date",
+      "text": "13/01/2026",
+      "refused": "notReadable"
+    },
+    {
+      "name": "ticket 97: under en-GB, 01/13/2026 is not a date the culture writes",
+      "culture": "en-GB",
+      "type": "date",
+      "text": "01/13/2026",
+      "refused": "notReadable"
+    },
+    {
+      "name": "ticket 97: under de-DE, 01/13/2026 is not a date the culture writes",
+      "culture": "de-DE",
+      "type": "date",
+      "text": "01/13/2026",
+      "refused": "notReadable"
+    },
+    {
+      "name": "ticket 97: under en-GB, 2026/13/01 is not a date the culture writes",
+      "culture": "en-GB",
+      "type": "date",
+      "text": "2026/13/01",
+      "refused": "notReadable"
+    },
+    {
+      "name": "ticket 97: under de-DE, abc is not a date the culture writes",
+      "culture": "de-DE",
+      "type": "date",
+      "text": "abc",
+      "refused": "notReadable"
+    },
+    {
+      "name": "ticket 97: the refusal of a date the culture does not write names the culture",
+      "culture": "en-US",
+      "type": "date",
+      "text": "13/01/2026",
+      "refused": "notReadable",
+      "says": "“13/01/2026” is not a value of this column as English (United States) writes it."
+    },
+    {
+      "name": "ADR-0023, 2026-10-02: under en-US, a day reads as a day on a dateOnly column",
+      "culture": "en-US",
+      "type": "date",
+      "text": "2026-10-02",
+      "dateType": "dateOnly",
+      "reads": {
+        "dateOnly": "2026-10-02"
+      }
+    },
+    {
+      "name": "ADR-0023, 2026-10-02: under de-DE, a day reads as a day on a dateOnly column",
+      "culture": "de-DE",
+      "type": "date",
+      "text": "2026-10-02",
+      "dateType": "dateOnly",
+      "reads": {
+        "dateOnly": "2026-10-02"
+      }
+    },
+    {
+      "name": "ADR-0023, 2026-10-02: under ja-JP, a day reads as a day on a dateOnly column",
+      "culture": "ja-JP",
+      "type": "date",
+      "text": "2026-10-02",
+      "dateType": "dateOnly",
+      "reads": {
+        "dateOnly": "2026-10-02"
+      }
+    },
+    {
+      "name": "ADR-0023, 2026-10-02: a day reads in the culture's order (en-GB)",
+      "culture": "en-GB",
+      "type": "date",
+      "text": "05/01/2026",
+      "dateType": "dateOnly",
+      "reads": {
+        "dateOnly": "2026-01-05"
+      }
+    },
+    {
+      "name": "ADR-0023, 2026-10-02: a day reads in the culture's order (en-US)",
+      "culture": "en-US",
+      "type": "date",
+      "text": "05/01/2026",
+      "dateType": "dateOnly",
+      "reads": {
+        "dateOnly": "2026-05-01"
+      }
+    },
+    {
+      "name": "ADR-0023, 2026-10-02: a year-last day reads two ways under ja-JP",
+      "culture": "ja-JP",
+      "type": "date",
+      "text": "05/01/2026",
+      "dateType": "dateOnly",
+      "refused": "readsTwoWays",
+      "readings": [
+        {
+          "dateTime": "2026-05-01T00:00:00"
+        },
+        {
+          "dateTime": "2026-01-05T00:00:00"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0023, 2026-10-02: on a dateOnly column, 2026-10-02 13:00:00 under en-US has a time or an offset and is refused",
+      "culture": "en-US",
+      "type": "date",
+      "text": "2026-10-02 13:00:00",
+      "dateType": "dateOnly",
+      "refused": "notTheColumnsDateForm",
+      "read": {
+        "dateTime": "2026-10-02T13:00:00"
+      }
+    },
+    {
+      "name": "ADR-0023, 2026-10-02: on a dateOnly column, 2026-10-02 00:00:00 under en-US has a time or an offset and is refused",
+      "culture": "en-US",
+      "type": "date",
+      "text": "2026-10-02 00:00:00",
+      "dateType": "dateOnly",
+      "refused": "notTheColumnsDateForm",
+      "read": {
+        "dateTime": "2026-10-02T00:00:00"
+      }
+    },
+    {
+      "name": "ADR-0023, 2026-10-02: on a dateOnly column, 05/01/2026 09:05 under en-GB has a time or an offset and is refused",
+      "culture": "en-GB",
+      "type": "date",
+      "text": "05/01/2026 09:05",
+      "dateType": "dateOnly",
+      "refused": "notTheColumnsDateForm",
+      "read": {
+        "dateTime": "2026-01-05T09:05:00"
+      }
+    },
+    {
+      "name": "ADR-0023, 2026-10-02: on a dateOnly column, 05/01/2026 00:00 under en-GB has a time or an offset and is refused",
+      "culture": "en-GB",
+      "type": "date",
+      "text": "05/01/2026 00:00",
+      "dateType": "dateOnly",
+      "refused": "notTheColumnsDateForm",
+      "read": {
+        "dateTime": "2026-01-05T00:00:00"
+      }
+    },
+    {
+      "name": "ADR-0023, 2026-10-02: on a dateOnly column, 2026-10-02 13:00:00 +09:00 under ja-JP has a time or an offset and is refused",
+      "culture": "ja-JP",
+      "type": "date",
+      "text": "2026-10-02 13:00:00 +09:00",
+      "dateType": "dateOnly",
+      "refused": "notTheColumnsDateForm",
+      "read": {
+        "dateTimeOffset": "2026-10-02T13:00:00+09:00"
+      }
+    },
+    {
+      "name": "ADR-0023, 2026-10-02: on a dateOnly column, 2026-10-02T13:00:00Z under de-DE has a time or an offset and is refused",
+      "culture": "de-DE",
+      "type": "date",
+      "text": "2026-10-02T13:00:00Z",
+      "dateType": "dateOnly",
+      "refused": "notTheColumnsDateForm",
+      "read": {
+        "dateTimeOffset": "2026-10-02T13:00:00+00:00"
+      }
+    },
+    {
+      "name": "ADR-0023, 2026-10-02: under en-US, a day reads as a dateTime",
+      "culture": "en-US",
+      "type": "date",
+      "text": "2026-10-02",
+      "dateType": "dateTime",
+      "reads": {
+        "dateTime": "2026-10-02T00:00:00"
+      }
+    },
+    {
+      "name": "ADR-0023, 2026-10-02: under en-US, a date and time reads as a dateTime",
+      "culture": "en-US",
+      "type": "date",
+      "text": "2026-10-02 13:00:00",
+      "dateType": "dateTime",
+      "reads": {
+        "dateTime": "2026-10-02T13:00:00"
+      }
+    },
+    {
+      "name": "ADR-0023, 2026-10-02: under de-DE, a day reads as a dateTime",
+      "culture": "de-DE",
+      "type": "date",
+      "text": "2026-10-02",
+      "dateType": "dateTime",
+      "reads": {
+        "dateTime": "2026-10-02T00:00:00"
+      }
+    },
+    {
+      "name": "ADR-0023, 2026-10-02: under de-DE, a date and time reads as a dateTime",
+      "culture": "de-DE",
+      "type": "date",
+      "text": "2026-10-02 13:00:00",
+      "dateType": "dateTime",
+      "reads": {
+        "dateTime": "2026-10-02T13:00:00"
+      }
+    },
+    {
+      "name": "ADR-0023, 2026-10-02: under ja-JP, a day reads as a dateTime",
+      "culture": "ja-JP",
+      "type": "date",
+      "text": "2026-10-02",
+      "dateType": "dateTime",
+      "reads": {
+        "dateTime": "2026-10-02T00:00:00"
+      }
+    },
+    {
+      "name": "ADR-0023, 2026-10-02: under ja-JP, a date and time reads as a dateTime",
+      "culture": "ja-JP",
+      "type": "date",
+      "text": "2026-10-02 13:00:00",
+      "dateType": "dateTime",
+      "reads": {
+        "dateTime": "2026-10-02T13:00:00"
+      }
+    },
+    {
+      "name": "ADR-0023, 2026-10-02: on a dateTime column, 2026-10-02 13:00:00 +09:00 has an offset and is refused",
+      "culture": "en-US",
+      "type": "date",
+      "text": "2026-10-02 13:00:00 +09:00",
+      "dateType": "dateTime",
+      "refused": "notTheColumnsDateForm",
+      "read": {
+        "dateTimeOffset": "2026-10-02T13:00:00+09:00"
+      }
+    },
+    {
+      "name": "ADR-0023, 2026-10-02: on a dateTime column, 2026-10-02T13:00:00+09:00 has an offset and is refused",
+      "culture": "en-GB",
+      "type": "date",
+      "text": "2026-10-02T13:00:00+09:00",
+      "dateType": "dateTime",
+      "refused": "notTheColumnsDateForm",
+      "read": {
+        "dateTimeOffset": "2026-10-02T13:00:00+09:00"
+      }
+    },
+    {
+      "name": "ADR-0023, 2026-10-02: on a dateTime column, 2026-10-02T04:00:00Z has an offset and is refused",
+      "culture": "ja-JP",
+      "type": "date",
+      "text": "2026-10-02T04:00:00Z",
+      "dateType": "dateTime",
+      "refused": "notTheColumnsDateForm",
+      "read": {
+        "dateTimeOffset": "2026-10-02T04:00:00+00:00"
+      }
+    },
+    {
+      "name": "ADR-0023, 2026-10-02: under en-US, 2026-10-02T13:00:00+09:00 reads as the moment in its own offset",
+      "culture": "en-US",
+      "type": "date",
+      "text": "2026-10-02T13:00:00+09:00",
+      "dateType": "dateTimeOffset",
+      "reads": {
+        "dateTimeOffset": "2026-10-02T13:00:00+09:00"
+      }
+    },
+    {
+      "name": "ADR-0023, 2026-10-02: under de-DE, 2026-10-02T13:00:00+09:00 reads as the moment in its own offset",
+      "culture": "de-DE",
+      "type": "date",
+      "text": "2026-10-02T13:00:00+09:00",
+      "dateType": "dateTimeOffset",
+      "reads": {
+        "dateTimeOffset": "2026-10-02T13:00:00+09:00"
+      }
+    },
+    {
+      "name": "ADR-0023, 2026-10-02: under ja-JP, 2026-10-02T13:00:00+09:00 reads as the moment in its own offset",
+      "culture": "ja-JP",
+      "type": "date",
+      "text": "2026-10-02T13:00:00+09:00",
+      "dateType": "dateTimeOffset",
+      "reads": {
+        "dateTimeOffset": "2026-10-02T13:00:00+09:00"
+      }
+    },
+    {
+      "name": "ADR-0023, 2026-10-02: under en-US, 2026-10-02T13:00+09:00 reads as the moment in its own offset",
+      "culture": "en-US",
+      "type": "date",
+      "text": "2026-10-02T13:00+09:00",
+      "dateType": "dateTimeOffset",
+      "reads": {
+        "dateTimeOffset": "2026-10-02T13:00:00+09:00"
+      }
+    },
+    {
+      "name": "ADR-0023, 2026-10-02: under de-DE, 2026-10-02T13:00+09:00 reads as the moment in its own offset",
+      "culture": "de-DE",
+      "type": "date",
+      "text": "2026-10-02T13:00+09:00",
+      "dateType": "dateTimeOffset",
+      "reads": {
+        "dateTimeOffset": "2026-10-02T13:00:00+09:00"
+      }
+    },
+    {
+      "name": "ADR-0023, 2026-10-02: under ja-JP, 2026-10-02T13:00+09:00 reads as the moment in its own offset",
+      "culture": "ja-JP",
+      "type": "date",
+      "text": "2026-10-02T13:00+09:00",
+      "dateType": "dateTimeOffset",
+      "reads": {
+        "dateTimeOffset": "2026-10-02T13:00:00+09:00"
+      }
+    },
+    {
+      "name": "ADR-0023, 2026-10-02: under en-US, 2026-10-02T04:00:00Z reads as the moment in its own offset",
+      "culture": "en-US",
+      "type": "date",
+      "text": "2026-10-02T04:00:00Z",
+      "dateType": "dateTimeOffset",
+      "reads": {
+        "dateTimeOffset": "2026-10-02T04:00:00+00:00"
+      }
+    },
+    {
+      "name": "ADR-0023, 2026-10-02: under de-DE, 2026-10-02T04:00:00Z reads as the moment in its own offset",
+      "culture": "de-DE",
+      "type": "date",
+      "text": "2026-10-02T04:00:00Z",
+      "dateType": "dateTimeOffset",
+      "reads": {
+        "dateTimeOffset": "2026-10-02T04:00:00+00:00"
+      }
+    },
+    {
+      "name": "ADR-0023, 2026-10-02: under ja-JP, 2026-10-02T04:00:00Z reads as the moment in its own offset",
+      "culture": "ja-JP",
+      "type": "date",
+      "text": "2026-10-02T04:00:00Z",
+      "dateType": "dateTimeOffset",
+      "reads": {
+        "dateTimeOffset": "2026-10-02T04:00:00+00:00"
+      }
+    },
+    {
+      "name": "ADR-0023, 2026-10-02: under en-US, 2026-10-02T04:00:00-05:30 reads as the moment in its own offset",
+      "culture": "en-US",
+      "type": "date",
+      "text": "2026-10-02T04:00:00-05:30",
+      "dateType": "dateTimeOffset",
+      "reads": {
+        "dateTimeOffset": "2026-10-02T04:00:00-05:30"
+      }
+    },
+    {
+      "name": "ADR-0023, 2026-10-02: under de-DE, 2026-10-02T04:00:00-05:30 reads as the moment in its own offset",
+      "culture": "de-DE",
+      "type": "date",
+      "text": "2026-10-02T04:00:00-05:30",
+      "dateType": "dateTimeOffset",
+      "reads": {
+        "dateTimeOffset": "2026-10-02T04:00:00-05:30"
+      }
+    },
+    {
+      "name": "ADR-0023, 2026-10-02: under ja-JP, 2026-10-02T04:00:00-05:30 reads as the moment in its own offset",
+      "culture": "ja-JP",
+      "type": "date",
+      "text": "2026-10-02T04:00:00-05:30",
+      "dateType": "dateTimeOffset",
+      "reads": {
+        "dateTimeOffset": "2026-10-02T04:00:00-05:30"
+      }
+    },
+    {
+      "name": "ADR-0023, 2026-10-02: under en-US, 2026-10-02T13:00:00.000+09:00 reads as the moment in its own offset",
+      "culture": "en-US",
+      "type": "date",
+      "text": "2026-10-02T13:00:00.000+09:00",
+      "dateType": "dateTimeOffset",
+      "reads": {
+        "dateTimeOffset": "2026-10-02T13:00:00+09:00"
+      }
+    },
+    {
+      "name": "ADR-0023, 2026-10-02: under de-DE, 2026-10-02T13:00:00.000+09:00 reads as the moment in its own offset",
+      "culture": "de-DE",
+      "type": "date",
+      "text": "2026-10-02T13:00:00.000+09:00",
+      "dateType": "dateTimeOffset",
+      "reads": {
+        "dateTimeOffset": "2026-10-02T13:00:00+09:00"
+      }
+    },
+    {
+      "name": "ADR-0023, 2026-10-02: under ja-JP, 2026-10-02T13:00:00.000+09:00 reads as the moment in its own offset",
+      "culture": "ja-JP",
+      "type": "date",
+      "text": "2026-10-02T13:00:00.000+09:00",
+      "dateType": "dateTimeOffset",
+      "reads": {
+        "dateTimeOffset": "2026-10-02T13:00:00+09:00"
+      }
+    },
+    {
+      "name": "ADR-0023, 2026-10-02: under en-US, 2026-10-02 13:00:00 +09:00 reads as the moment in its own offset",
+      "culture": "en-US",
+      "type": "date",
+      "text": "2026-10-02 13:00:00 +09:00",
+      "dateType": "dateTimeOffset",
+      "reads": {
+        "dateTimeOffset": "2026-10-02T13:00:00+09:00"
+      }
+    },
+    {
+      "name": "ADR-0023, 2026-10-02: under de-DE, 2026-10-02 13:00:00 +09:00 reads as the moment in its own offset",
+      "culture": "de-DE",
+      "type": "date",
+      "text": "2026-10-02 13:00:00 +09:00",
+      "dateType": "dateTimeOffset",
+      "reads": {
+        "dateTimeOffset": "2026-10-02T13:00:00+09:00"
+      }
+    },
+    {
+      "name": "ADR-0023, 2026-10-02: under ja-JP, 2026-10-02 13:00:00 +09:00 reads as the moment in its own offset",
+      "culture": "ja-JP",
+      "type": "date",
+      "text": "2026-10-02 13:00:00 +09:00",
+      "dateType": "dateTimeOffset",
+      "reads": {
+        "dateTimeOffset": "2026-10-02T13:00:00+09:00"
+      }
+    },
+    {
+      "name": "ADR-0023, 2026-10-02: on a dateTimeOffset column, 2026-10-02 has no ISO offset and is refused",
+      "culture": "en-US",
+      "type": "date",
+      "text": "2026-10-02",
+      "dateType": "dateTimeOffset",
+      "refused": "notTheColumnsDateForm",
+      "read": {
+        "dateTime": "2026-10-02T00:00:00"
+      }
+    },
+    {
+      "name": "ADR-0023, 2026-10-02: on a dateTimeOffset column, 2026-10-02 13:00:00 has no ISO offset and is refused",
+      "culture": "ja-JP",
+      "type": "date",
+      "text": "2026-10-02 13:00:00",
+      "dateType": "dateTimeOffset",
+      "refused": "notTheColumnsDateForm",
+      "read": {
+        "dateTime": "2026-10-02T13:00:00"
+      }
+    },
+    {
+      "name": "ADR-0023, 2026-10-02: on a dateTimeOffset column, 2026-10-02T13:00:00 has no ISO offset and is refused",
+      "culture": "en-GB",
+      "type": "date",
+      "text": "2026-10-02T13:00:00",
+      "dateType": "dateTimeOffset",
+      "refused": "notTheColumnsDateForm",
+      "read": {
+        "dateTime": "2026-10-02T13:00:00"
+      }
+    },
+    {
+      "name": "ADR-0023, 2026-10-02: on a dateTimeOffset column, 05/01/2026 09:05 has no ISO offset and is refused",
+      "culture": "en-GB",
+      "type": "date",
+      "text": "05/01/2026 09:05",
+      "dateType": "dateTimeOffset",
+      "refused": "notTheColumnsDateForm",
+      "read": {
+        "dateTime": "2026-01-05T09:05:00"
+      }
+    },
+    {
+      "name": "ADR-0023, 2026-10-02: on a dateTime column, a text that is no date is not readable",
+      "culture": "en-US",
+      "type": "date",
+      "text": "abc",
+      "dateType": "dateTime",
+      "refused": "notReadable"
+    },
+    {
+      "name": "ADR-0023, 2026-10-02: on a dateOnly column, a text that is no date is not readable",
+      "culture": "en-US",
+      "type": "date",
+      "text": "abc",
+      "dateType": "dateOnly",
+      "refused": "notReadable"
+    },
+    {
+      "name": "ADR-0023, 2026-10-02: on a dateTimeOffset column, a text that is no date is not readable",
+      "culture": "en-US",
+      "type": "date",
+      "text": "abc",
+      "dateType": "dateTimeOffset",
+      "refused": "notReadable"
+    },
+    {
+      "name": "ADR-0023, 2026-10-02: a time on a day column names the day to type",
+      "culture": "en-US",
+      "type": "date",
+      "text": "2026-10-02 13:00:00",
+      "dateType": "dateOnly",
+      "refused": "notTheColumnsDateForm",
+      "read": {
+        "dateTime": "2026-10-02T13:00:00"
+      },
+      "says": "“2026-10-02 13:00:00” has a time, and this column holds days. Type the day alone, as 2026-10-02."
+    },
+    {
+      "name": "ADR-0023, 2026-10-02: an offset on a day column names the day to type",
+      "culture": "en-US",
+      "type": "date",
+      "text": "2026-10-02 13:00:00 +09:00",
+      "dateType": "dateOnly",
+      "refused": "notTheColumnsDateForm",
+      "read": {
+        "dateTimeOffset": "2026-10-02T13:00:00+09:00"
+      },
+      "says": "“2026-10-02 13:00:00 +09:00” has an offset, and this column holds days. Type the day alone, as 2026-10-02."
+    },
+    {
+      "name": "ADR-0023, 2026-10-02: an offset on a dateTime column names the form without one",
+      "culture": "en-US",
+      "type": "date",
+      "text": "2026-10-02T13:00:00+09:00",
+      "dateType": "dateTime",
+      "refused": "notTheColumnsDateForm",
+      "read": {
+        "dateTimeOffset": "2026-10-02T13:00:00+09:00"
+      },
+      "says": "“2026-10-02T13:00:00+09:00” has an offset, and this column's dates have none. Type it without one, as 2026-10-02 13:00:00."
+    },
+    {
+      "name": "ADR-0023, 2026-10-02: no offset on a moment column names the form with one",
+      "culture": "en-US",
+      "type": "date",
+      "text": "2026-10-02 13:00:00",
+      "dateType": "dateTimeOffset",
+      "refused": "notTheColumnsDateForm",
+      "read": {
+        "dateTime": "2026-10-02T13:00:00"
+      },
+      "says": "“2026-10-02 13:00:00” has no offset, and this column holds moments. Type it with one, as 2026-10-02T13:00:00+hh:mm, or with Z for UTC."
+    },
+    {
+      "name": "ADR-0023, principle 1: under en-US, 0 reopens ungrouped and reads back as itself",
+      "culture": "en-US",
+      "operandText": {
+        "number": "0"
+      },
+      "is": "0",
+      "readsBack": "number"
+    },
+    {
+      "name": "ADR-0023, principle 1: under en-US, 1 reopens ungrouped and reads back as itself",
+      "culture": "en-US",
+      "operandText": {
+        "number": "1"
+      },
+      "is": "1",
+      "readsBack": "number"
+    },
+    {
+      "name": "ADR-0023, principle 1: under en-US, 0.5 reopens ungrouped and reads back as itself",
+      "culture": "en-US",
+      "operandText": {
+        "number": "0.5"
+      },
+      "is": "0.5",
+      "readsBack": "number"
+    },
+    {
+      "name": "ADR-0023, principle 1: under en-US, 1.234 reopens ungrouped and reads back as itself",
+      "culture": "en-US",
+      "operandText": {
+        "number": "1.234"
+      },
+      "is": "1.234",
+      "readsBack": "number"
+    },
+    {
+      "name": "ADR-0023, principle 1: under en-US, 1000 reopens ungrouped and reads back as itself",
+      "culture": "en-US",
+      "operandText": {
+        "number": "1000"
+      },
+      "is": "1000",
+      "readsBack": "number"
+    },
+    {
+      "name": "ADR-0023, principle 1: under en-US, 1234.5 reopens ungrouped and reads back as itself",
+      "culture": "en-US",
+      "operandText": {
+        "number": "1234.5"
+      },
+      "is": "1234.5",
+      "readsBack": "number"
+    },
+    {
+      "name": "ADR-0023, principle 1: under en-US, -1234.5 reopens ungrouped and reads back as itself",
+      "culture": "en-US",
+      "operandText": {
+        "number": "-1234.5"
+      },
+      "is": "-1234.5",
+      "readsBack": "number"
+    },
+    {
+      "name": "ADR-0023, principle 1: under en-US, 1234567.89 reopens ungrouped and reads back as itself",
+      "culture": "en-US",
+      "operandText": {
+        "number": "1234567.89"
+      },
+      "is": "1234567.89",
+      "readsBack": "number"
+    },
+    {
+      "name": "ADR-0023, principle 1: under en-US, -0.001 reopens ungrouped and reads back as itself",
+      "culture": "en-US",
+      "operandText": {
+        "number": "-0.001"
+      },
+      "is": "-0.001",
+      "readsBack": "number"
+    },
+    {
+      "name": "ADR-0023, principle 1: under en-US, 12345678901234.5 reopens ungrouped and reads back as itself",
+      "culture": "en-US",
+      "operandText": {
+        "number": "12345678901234.5"
+      },
+      "is": "12345678901234.5",
+      "readsBack": "number"
+    },
+    {
+      "name": "ADR-0006, ticket 94: under en-US, a date and time reopens in its ISO form",
+      "culture": "en-US",
+      "operandText": {
+        "dateTime": "2026-01-05T09:05:07"
+      },
+      "is": "2026-01-05 09:05:07",
+      "readsBack": "date"
+    },
+    {
+      "name": "ADR-0006, ticket 94: under en-US, a day reopens in its ISO form",
+      "culture": "en-US",
+      "operandText": {
+        "dateOnly": "2026-10-02"
+      },
+      "is": "2026-10-02",
+      "readsBack": "date",
+      "dateType": "dateOnly"
+    },
+    {
+      "name": "ADR-0006, ticket 94: under en-US, a moment reopens in its ISO form with its own offset",
+      "culture": "en-US",
+      "operandText": {
+        "dateTimeOffset": "2026-10-02T13:00:00+09:00"
+      },
+      "is": "2026-10-02 13:00:00 +09:00",
+      "readsBack": "date",
+      "dateType": "dateTimeOffset"
+    },
+    {
+      "name": "ADR-0023, principle 1: under de-DE, 0 reopens ungrouped and reads back as itself",
+      "culture": "de-DE",
+      "operandText": {
+        "number": "0"
+      },
+      "is": "0",
+      "readsBack": "number"
+    },
+    {
+      "name": "ADR-0023, principle 1: under de-DE, 1 reopens ungrouped and reads back as itself",
+      "culture": "de-DE",
+      "operandText": {
+        "number": "1"
+      },
+      "is": "1",
+      "readsBack": "number"
+    },
+    {
+      "name": "ADR-0023, principle 1: under de-DE, 0.5 reopens ungrouped and reads back as itself",
+      "culture": "de-DE",
+      "operandText": {
+        "number": "0.5"
+      },
+      "is": "0,5",
+      "readsBack": "number"
+    },
+    {
+      "name": "ADR-0023, principle 1: under de-DE, 1.234 reopens ungrouped and reads back as itself",
+      "culture": "de-DE",
+      "operandText": {
+        "number": "1.234"
+      },
+      "is": "1,234",
+      "readsBack": "number"
+    },
+    {
+      "name": "ADR-0023, principle 1: under de-DE, 1000 reopens ungrouped and reads back as itself",
+      "culture": "de-DE",
+      "operandText": {
+        "number": "1000"
+      },
+      "is": "1000",
+      "readsBack": "number"
+    },
+    {
+      "name": "ADR-0023, principle 1: under de-DE, 1234.5 reopens ungrouped and reads back as itself",
+      "culture": "de-DE",
+      "operandText": {
+        "number": "1234.5"
+      },
+      "is": "1234,5",
+      "readsBack": "number"
+    },
+    {
+      "name": "ADR-0023, principle 1: under de-DE, -1234.5 reopens ungrouped and reads back as itself",
+      "culture": "de-DE",
+      "operandText": {
+        "number": "-1234.5"
+      },
+      "is": "-1234,5",
+      "readsBack": "number"
+    },
+    {
+      "name": "ADR-0023, principle 1: under de-DE, 1234567.89 reopens ungrouped and reads back as itself",
+      "culture": "de-DE",
+      "operandText": {
+        "number": "1234567.89"
+      },
+      "is": "1234567,89",
+      "readsBack": "number"
+    },
+    {
+      "name": "ADR-0023, principle 1: under de-DE, -0.001 reopens ungrouped and reads back as itself",
+      "culture": "de-DE",
+      "operandText": {
+        "number": "-0.001"
+      },
+      "is": "-0,001",
+      "readsBack": "number"
+    },
+    {
+      "name": "ADR-0023, principle 1: under de-DE, 12345678901234.5 reopens ungrouped and reads back as itself",
+      "culture": "de-DE",
+      "operandText": {
+        "number": "12345678901234.5"
+      },
+      "is": "12345678901234,5",
+      "readsBack": "number"
+    },
+    {
+      "name": "ADR-0006, ticket 94: under de-DE, a date and time reopens in its ISO form",
+      "culture": "de-DE",
+      "operandText": {
+        "dateTime": "2026-01-05T09:05:07"
+      },
+      "is": "2026-01-05 09:05:07",
+      "readsBack": "date"
+    },
+    {
+      "name": "ADR-0006, ticket 94: under de-DE, a day reopens in its ISO form",
+      "culture": "de-DE",
+      "operandText": {
+        "dateOnly": "2026-10-02"
+      },
+      "is": "2026-10-02",
+      "readsBack": "date",
+      "dateType": "dateOnly"
+    },
+    {
+      "name": "ADR-0006, ticket 94: under de-DE, a moment reopens in its ISO form with its own offset",
+      "culture": "de-DE",
+      "operandText": {
+        "dateTimeOffset": "2026-10-02T13:00:00+09:00"
+      },
+      "is": "2026-10-02 13:00:00 +09:00",
+      "readsBack": "date",
+      "dateType": "dateTimeOffset"
+    },
+    {
+      "name": "ADR-0023, principle 1: under fr-FR, 0 reopens ungrouped and reads back as itself",
+      "culture": "fr-FR",
+      "operandText": {
+        "number": "0"
+      },
+      "is": "0",
+      "readsBack": "number"
+    },
+    {
+      "name": "ADR-0023, principle 1: under fr-FR, 1 reopens ungrouped and reads back as itself",
+      "culture": "fr-FR",
+      "operandText": {
+        "number": "1"
+      },
+      "is": "1",
+      "readsBack": "number"
+    },
+    {
+      "name": "ADR-0023, principle 1: under fr-FR, 0.5 reopens ungrouped and reads back as itself",
+      "culture": "fr-FR",
+      "operandText": {
+        "number": "0.5"
+      },
+      "is": "0,5",
+      "readsBack": "number"
+    },
+    {
+      "name": "ADR-0023, principle 1: under fr-FR, 1.234 reopens ungrouped and reads back as itself",
+      "culture": "fr-FR",
+      "operandText": {
+        "number": "1.234"
+      },
+      "is": "1,234",
+      "readsBack": "number"
+    },
+    {
+      "name": "ADR-0023, principle 1: under fr-FR, 1000 reopens ungrouped and reads back as itself",
+      "culture": "fr-FR",
+      "operandText": {
+        "number": "1000"
+      },
+      "is": "1000",
+      "readsBack": "number"
+    },
+    {
+      "name": "ADR-0023, principle 1: under fr-FR, 1234.5 reopens ungrouped and reads back as itself",
+      "culture": "fr-FR",
+      "operandText": {
+        "number": "1234.5"
+      },
+      "is": "1234,5",
+      "readsBack": "number"
+    },
+    {
+      "name": "ADR-0023, principle 1: under fr-FR, -1234.5 reopens ungrouped and reads back as itself",
+      "culture": "fr-FR",
+      "operandText": {
+        "number": "-1234.5"
+      },
+      "is": "-1234,5",
+      "readsBack": "number"
+    },
+    {
+      "name": "ADR-0023, principle 1: under fr-FR, 1234567.89 reopens ungrouped and reads back as itself",
+      "culture": "fr-FR",
+      "operandText": {
+        "number": "1234567.89"
+      },
+      "is": "1234567,89",
+      "readsBack": "number"
+    },
+    {
+      "name": "ADR-0023, principle 1: under fr-FR, -0.001 reopens ungrouped and reads back as itself",
+      "culture": "fr-FR",
+      "operandText": {
+        "number": "-0.001"
+      },
+      "is": "-0,001",
+      "readsBack": "number"
+    },
+    {
+      "name": "ADR-0023, principle 1: under fr-FR, 12345678901234.5 reopens ungrouped and reads back as itself",
+      "culture": "fr-FR",
+      "operandText": {
+        "number": "12345678901234.5"
+      },
+      "is": "12345678901234,5",
+      "readsBack": "number"
+    },
+    {
+      "name": "ADR-0006, ticket 94: under fr-FR, a date and time reopens in its ISO form",
+      "culture": "fr-FR",
+      "operandText": {
+        "dateTime": "2026-01-05T09:05:07"
+      },
+      "is": "2026-01-05 09:05:07",
+      "readsBack": "date"
+    },
+    {
+      "name": "ADR-0006, ticket 94: under fr-FR, a day reopens in its ISO form",
+      "culture": "fr-FR",
+      "operandText": {
+        "dateOnly": "2026-10-02"
+      },
+      "is": "2026-10-02",
+      "readsBack": "date",
+      "dateType": "dateOnly"
+    },
+    {
+      "name": "ADR-0006, ticket 94: under fr-FR, a moment reopens in its ISO form with its own offset",
+      "culture": "fr-FR",
+      "operandText": {
+        "dateTimeOffset": "2026-10-02T13:00:00+09:00"
+      },
+      "is": "2026-10-02 13:00:00 +09:00",
+      "readsBack": "date",
+      "dateType": "dateTimeOffset"
+    },
+    {
+      "name": "ADR-0023, principle 1: under ja-JP, 0 reopens ungrouped and reads back as itself",
+      "culture": "ja-JP",
+      "operandText": {
+        "number": "0"
+      },
+      "is": "0",
+      "readsBack": "number"
+    },
+    {
+      "name": "ADR-0023, principle 1: under ja-JP, 1 reopens ungrouped and reads back as itself",
+      "culture": "ja-JP",
+      "operandText": {
+        "number": "1"
+      },
+      "is": "1",
+      "readsBack": "number"
+    },
+    {
+      "name": "ADR-0023, principle 1: under ja-JP, 0.5 reopens ungrouped and reads back as itself",
+      "culture": "ja-JP",
+      "operandText": {
+        "number": "0.5"
+      },
+      "is": "0.5",
+      "readsBack": "number"
+    },
+    {
+      "name": "ADR-0023, principle 1: under ja-JP, 1.234 reopens ungrouped and reads back as itself",
+      "culture": "ja-JP",
+      "operandText": {
+        "number": "1.234"
+      },
+      "is": "1.234",
+      "readsBack": "number"
+    },
+    {
+      "name": "ADR-0023, principle 1: under ja-JP, 1000 reopens ungrouped and reads back as itself",
+      "culture": "ja-JP",
+      "operandText": {
+        "number": "1000"
+      },
+      "is": "1000",
+      "readsBack": "number"
+    },
+    {
+      "name": "ADR-0023, principle 1: under ja-JP, 1234.5 reopens ungrouped and reads back as itself",
+      "culture": "ja-JP",
+      "operandText": {
+        "number": "1234.5"
+      },
+      "is": "1234.5",
+      "readsBack": "number"
+    },
+    {
+      "name": "ADR-0023, principle 1: under ja-JP, -1234.5 reopens ungrouped and reads back as itself",
+      "culture": "ja-JP",
+      "operandText": {
+        "number": "-1234.5"
+      },
+      "is": "-1234.5",
+      "readsBack": "number"
+    },
+    {
+      "name": "ADR-0023, principle 1: under ja-JP, 1234567.89 reopens ungrouped and reads back as itself",
+      "culture": "ja-JP",
+      "operandText": {
+        "number": "1234567.89"
+      },
+      "is": "1234567.89",
+      "readsBack": "number"
+    },
+    {
+      "name": "ADR-0023, principle 1: under ja-JP, -0.001 reopens ungrouped and reads back as itself",
+      "culture": "ja-JP",
+      "operandText": {
+        "number": "-0.001"
+      },
+      "is": "-0.001",
+      "readsBack": "number"
+    },
+    {
+      "name": "ADR-0023, principle 1: under ja-JP, 12345678901234.5 reopens ungrouped and reads back as itself",
+      "culture": "ja-JP",
+      "operandText": {
+        "number": "12345678901234.5"
+      },
+      "is": "12345678901234.5",
+      "readsBack": "number"
+    },
+    {
+      "name": "ADR-0006, ticket 94: under ja-JP, a date and time reopens in its ISO form",
+      "culture": "ja-JP",
+      "operandText": {
+        "dateTime": "2026-01-05T09:05:07"
+      },
+      "is": "2026-01-05 09:05:07",
+      "readsBack": "date"
+    },
+    {
+      "name": "ADR-0006, ticket 94: under ja-JP, a day reopens in its ISO form",
+      "culture": "ja-JP",
+      "operandText": {
+        "dateOnly": "2026-10-02"
+      },
+      "is": "2026-10-02",
+      "readsBack": "date",
+      "dateType": "dateOnly"
+    },
+    {
+      "name": "ADR-0006, ticket 94: under ja-JP, a moment reopens in its ISO form with its own offset",
+      "culture": "ja-JP",
+      "operandText": {
+        "dateTimeOffset": "2026-10-02T13:00:00+09:00"
+      },
+      "is": "2026-10-02 13:00:00 +09:00",
+      "readsBack": "date",
+      "dateType": "dateTimeOffset"
+    },
+    {
+      "name": "ADR-0023: no operand is no text",
+      "culture": "de-DE",
+      "operandText": null,
+      "is": ""
+    }
+  ]
+}

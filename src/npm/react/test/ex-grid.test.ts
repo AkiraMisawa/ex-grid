@@ -17,6 +17,8 @@ const columns: readonly GridColumn<Trade>[] = [{ name: 'Book', type: 'text', val
 
 afterEach(() => { cleanup(); });
 
+const from = (): never => { throw new Error('Not read.'); };
+
 describe('ExGrid', () => {
     it('ADR-0350: the element React renders is the grid\'s instance root, drawn before the browser paints', () => {
         const { container } = render(createElement(ExGrid<Trade>, { columns, rows: [{ book: 'Rates' }] }));
@@ -32,6 +34,34 @@ describe('ExGrid', () => {
         await Promise.resolve();
         expect(container.firstElementChild).toBe(root);
         expect(root?.getAttribute('aria-rowcount')).toBe('3');
+    });
+
+    it('ADR-0370 section 10: given no locale, the grid reads typed text in the browser\'s language, read once when it is made', () => {
+        // An own property over the prototype's getter, taken away again after.
+        Object.defineProperty(navigator, 'language', { value: 'de-DE', configurable: true });
+        try {
+            const numbers: readonly GridColumn<{ readonly notional: number }>[] = [{ name: 'Notional', type: 'number', value: row => row.notional, width: 120 }];
+            const { container } = render(createElement(ExGrid<{ readonly notional: number }>, { columns: numbers, rows: [{ notional: 1 }] }));
+            const menu = container.querySelector<HTMLElement>('.ex-menu-button');
+            menu?.click();
+            const operand = container.querySelector<HTMLInputElement>('.ex-popover-filter input:not([type])');
+            if (operand === null) throw new Error('The filter panel stands.');
+            operand.value = '1234.5';
+            operand.dispatchEvent(new Event('input', { bubbles: true }));
+            expect(container.querySelector('.ex-popover-refusal')?.textContent).toContain('as German (Germany) writes it');
+        } finally {
+            Reflect.deleteProperty(navigator, 'language');
+        }
+    });
+
+    it('ADR-0350 section 16: a Date column\'s filter is never made with the browser\'s own Temporal, so every browser refuses a grid given none alike', () => {
+        Reflect.set(globalThis, 'Temporal', { PlainDate: { from }, PlainDateTime: { from }, ZonedDateTime: { from } });
+        try {
+            const dates: readonly GridColumn<{ readonly day: unknown }>[] = [{ name: 'Day', type: 'date', value: row => row.day, width: 120 }];
+            expect(() => render(createElement(ExGrid<{ readonly day: unknown }>, { columns: dates, rows: [] }))).toThrow(/Column 'Day'/u);
+        } finally {
+            Reflect.deleteProperty(globalThis, 'Temporal');
+        }
     });
 
     it('ADR-0018: unmounted, the grid is destroyed and its root emptied; under StrictMode one grid stands', () => {

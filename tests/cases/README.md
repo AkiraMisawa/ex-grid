@@ -32,7 +32,7 @@ One directory per area, one file per group of cases. Each file is an object:
 | Key | Meaning |
 |---|---|
 | `about` | What the file covers, and where its cases came from |
-| `kind` | Which runner reads it: `selection`, `range`, `edgeBand`, `held`, `calls`, `clipboard`, `query`, `source`, `fetch`, `displayText`, `find`, `replace`, `summary`, `arrowRead`, `arrowShape`, `arrowWrite`, `changeBatch`, `chart`, and ExPivot's (`pivot/`) |
+| `kind` | Which runner reads it: `selection`, `range`, `edgeBand`, `held`, `calls`, `clipboard`, `query`, `source`, `fetch`, `displayText`, `operand`, `find`, `replace`, `summary`, `arrowRead`, `arrowShape`, `arrowWrite`, `changeBatch`, `chart`, and ExPivot's (`pivot/`) |
 | `extent` | `[rows, columns]`, the grid every case of the file runs against unless it names its own |
 | `cases` | The cases. Each has a `name`, which starts with the ADR it holds to (CLAUDE.md, "Put the ADR number in the test name") |
 
@@ -262,6 +262,23 @@ The text a value cell displays (ADR-0006, ADR-0350 section 16), run by
 `src/npm/core/test/display-text.test.ts` against the Script Core's `textFor`. A case lists `texts`, each a
 `value` written as a `query` case writes it, an optional `format` as a `source` column names one, and the
 text it `is`.
+
+## `operand`
+
+What a filter condition's typed value reads as under a culture, and the text a value reopens in (ADR-0023,
+ADR-0370 section 10): C#'s `FilterPanelChoices.ReadOperand`, `OperandText` and `RefusalText`, and the Script
+Core's `chrome/operand-reading.ts`. Every case names its `culture`, a BCP 47 tag or `invariant`.
+
+| Field | Meaning |
+|---|---|
+| `type`, `dateType`, `text` | A reading: the column's type (and a Date column's date type, `dateTime` unless given), and the text typed |
+| `reads` | The value it reads as, written as a query case writes a value, a number as `{"number": decimal text}`; `null` for no value (empty text) |
+| `refused` | Or the refusal's kind: `notReadable`, `readsTwoWays` or `notTheColumnsDateForm` |
+| `readings` | For `readsTwoWays`, the two readings: a number's in the culture and as the invariant culture reads it, a date's month first and day first |
+| `read` | For `notTheColumnsDateForm`, the date the text read as |
+| `says` | The built-in refusal's words, whole |
+| `operandText`, `is` | A reopening: the value, and the text it reopens in |
+| `readsBack` | The column type the text is read back as, to the same value |
 
 ## `find` and `replace`
 
