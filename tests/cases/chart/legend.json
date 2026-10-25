@@ -1,0 +1,581 @@
+{
+  "about": "Each panel's legend, placed by a side and an alignment and never over a plot (ADR-0271), from tests/ExChart.Engine.Tests/ComponentSupportTests.cs.",
+  "kind": "chart",
+  "definitions": {
+    "exposure": {
+      "axis": {
+        "values": "numbers",
+        "title": "Years"
+      },
+      "series": [
+        {
+          "id": "epe-before",
+          "name": "EPE · Before",
+          "kind": "level",
+          "points": [
+            [
+              0,
+              1
+            ],
+            [
+              1,
+              5
+            ],
+            [
+              2,
+              9
+            ]
+          ],
+          "panel": "EPE",
+          "keys": {
+            "colour": "Before"
+          }
+        },
+        {
+          "id": "epe-after",
+          "name": "EPE · After",
+          "kind": "level",
+          "points": [
+            [
+              0,
+              2
+            ],
+            [
+              1,
+              4
+            ],
+            [
+              2,
+              8
+            ]
+          ],
+          "panel": "EPE",
+          "keys": {
+            "colour": "After"
+          }
+        },
+        {
+          "id": "ene-after",
+          "name": "ENE · After",
+          "kind": "level",
+          "points": [
+            [
+              0,
+              -1
+            ],
+            [
+              1,
+              -3
+            ],
+            [
+              2,
+              -2
+            ]
+          ],
+          "panel": "ENE",
+          "keys": {
+            "colour": "After"
+          }
+        }
+      ]
+    }
+  },
+  "cases": [
+    {
+      "name": "ADR-0271: each panel has its own legend, hidden entries stay, and a top legend sits above its plot",
+      "definition": "exposure",
+      "scene": {
+        "metrics": {
+          "width": 800,
+          "height": 400
+        },
+        "view": {
+          "hidden": [
+            "epe-before"
+          ]
+        }
+      },
+      "expect": [
+        {
+          "at": "panels.0.legend",
+          "map": "id",
+          "is": [
+            "epe-before",
+            "epe-after"
+          ]
+        },
+        {
+          "at": "panels.0.legend",
+          "map": "hidden",
+          "is": [
+            true,
+            false
+          ]
+        },
+        {
+          "at": "panels.1.legend",
+          "map": "id",
+          "is": [
+            "ene-after"
+          ]
+        },
+        {
+          "at": "panels.0.legend",
+          "each": [
+            {
+              "at": "box.y",
+              "atMost": {
+                "at": "$.panels.0.plot.y",
+                "plus": {
+                  "at": "box.height",
+                  "times": -1
+                }
+              }
+            }
+          ]
+        },
+        {
+          "at": "panels.1.legend",
+          "each": [
+            {
+              "at": "box.y",
+              "atMost": {
+                "at": "$.panels.1.plot.y",
+                "plus": {
+                  "at": "box.height",
+                  "times": -1
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ADR-0271: a panel whose series are all hidden keeps its legend, so they can be shown again",
+      "definition": "exposure",
+      "scene": {
+        "metrics": {
+          "width": 800,
+          "height": 400
+        },
+        "view": {
+          "hidden": [
+            "ene-after"
+          ]
+        }
+      },
+      "expect": [
+        {
+          "at": "panels",
+          "count": true,
+          "is": 2
+        },
+        {
+          "at": "panels.1.series",
+          "empty": true
+        },
+        {
+          "at": "panels.1.legend",
+          "map": "id",
+          "is": [
+            "ene-after"
+          ]
+        },
+        {
+          "at": "panels.1.legend.0.hidden",
+          "is": true
+        }
+      ]
+    },
+    {
+      "name": "ADR-0271: a left legend takes a column left of the plots",
+      "build": {
+        "top": {
+          "definition": "exposure",
+          "scene": {
+            "metrics": {
+              "width": 800,
+              "height": 400
+            }
+          }
+        },
+        "placed": {
+          "definition": "exposure",
+          "scene": {
+            "metrics": {
+              "width": 800,
+              "height": 400
+            },
+            "legend": {
+              "position": "left"
+            }
+          }
+        }
+      },
+      "expect": [
+        {
+          "at": "placed.panels.0.plot.x",
+          "above": {
+            "at": "top.panels.0.plot.x"
+          }
+        },
+        {
+          "at": "placed.panels.0.legend",
+          "each": [
+            {
+              "at": "box.x",
+              "atMost": {
+                "at": "$.placed.panels.0.plot.x",
+                "plus": {
+                  "at": "box.width",
+                  "times": -1
+                }
+              }
+            }
+          ]
+        },
+        {
+          "at": "placed.panels.1.legend",
+          "each": [
+            {
+              "at": "box.x",
+              "atMost": {
+                "at": "$.placed.panels.1.plot.x",
+                "plus": {
+                  "at": "box.width",
+                  "times": -1
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ADR-0271: a right legend takes a column right of the plots",
+      "build": {
+        "top": {
+          "definition": "exposure",
+          "scene": {
+            "metrics": {
+              "width": 800,
+              "height": 400
+            }
+          }
+        },
+        "placed": {
+          "definition": "exposure",
+          "scene": {
+            "metrics": {
+              "width": 800,
+              "height": 400
+            },
+            "legend": {
+              "position": "right"
+            }
+          }
+        }
+      },
+      "expect": [
+        {
+          "at": "placed.panels.0.plot.width",
+          "below": {
+            "at": "top.panels.0.plot.width"
+          }
+        },
+        {
+          "at": "placed.panels.0.legend",
+          "each": [
+            {
+              "at": "box.x",
+              "atLeast": {
+                "at": "$.placed.panels.0.plot.x",
+                "plus": {
+                  "at": "$.placed.panels.0.plot.width"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "at": "placed.panels.1.legend",
+          "each": [
+            {
+              "at": "box.x",
+              "atLeast": {
+                "at": "$.placed.panels.1.plot.x",
+                "plus": {
+                  "at": "$.placed.panels.1.plot.width"
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ADR-0271: a bottom legend sits below each plot, the last one's under the horizontal axis",
+      "build": {
+        "top": {
+          "definition": "exposure",
+          "scene": {
+            "metrics": {
+              "width": 800,
+              "height": 400
+            }
+          }
+        },
+        "placed": {
+          "definition": "exposure",
+          "scene": {
+            "metrics": {
+              "width": 800,
+              "height": 400
+            },
+            "legend": {
+              "position": "bottom"
+            }
+          }
+        }
+      },
+      "expect": [
+        {
+          "at": "placed.panels.0.legend",
+          "each": [
+            {
+              "at": "box.y",
+              "atLeast": {
+                "at": "$.placed.panels.0.plot.y",
+                "plus": {
+                  "at": "$.placed.panels.0.plot.height"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "at": "placed.panels.1.legend",
+          "each": [
+            {
+              "at": "box.y",
+              "atLeast": {
+                "at": "$.placed.panels.1.plot.y",
+                "plus": {
+                  "at": "$.placed.panels.1.plot.height"
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ADR-0271: no legend takes no space",
+      "build": {
+        "top": {
+          "definition": "exposure",
+          "scene": {
+            "metrics": {
+              "width": 800,
+              "height": 400
+            }
+          }
+        },
+        "placed": {
+          "definition": "exposure",
+          "scene": {
+            "metrics": {
+              "width": 800,
+              "height": 400
+            },
+            "legend": {
+              "position": "none"
+            }
+          }
+        }
+      },
+      "expect": [
+        {
+          "at": "placed.panels",
+          "each": [
+            {
+              "at": "legend",
+              "empty": true
+            }
+          ]
+        },
+        {
+          "at": "placed.panels.0.plot.height",
+          "above": {
+            "at": "top.panels.0.plot.height"
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0271: aligned to the start, a row begins at the plot's left",
+      "definition": "exposure",
+      "scene": {
+        "metrics": {
+          "width": 800,
+          "height": 400
+        },
+        "legend": {
+          "position": "top",
+          "align": "start"
+        }
+      },
+      "expect": [
+        {
+          "at": "panels.0.legend.0.box.x",
+          "near": 1e-06,
+          "sameAs": "panels.0.plot.x"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0271: centred, a row leaves the same space at either end",
+      "definition": "exposure",
+      "scene": {
+        "metrics": {
+          "width": 800,
+          "height": 400
+        },
+        "legend": {
+          "position": "top",
+          "align": "centre"
+        }
+      },
+      "expect": [
+        {
+          "at": "panels.0.legend.0.box.x",
+          "near": 1e-06,
+          "atLeast": {
+            "at": "panels.0.plot.x",
+            "times": 2,
+            "plus": {
+              "at": "panels.0.plot.width",
+              "plus": {
+                "at": "panels.0.legend.-1.box.x",
+                "times": -1,
+                "plus": {
+                  "at": "panels.0.legend.-1.box.width",
+                  "times": -1
+                }
+              }
+            }
+          },
+          "atMost": {
+            "at": "panels.0.plot.x",
+            "times": 2,
+            "plus": {
+              "at": "panels.0.plot.width",
+              "plus": {
+                "at": "panels.0.legend.-1.box.x",
+                "times": -1,
+                "plus": {
+                  "at": "panels.0.legend.-1.box.width",
+                  "times": -1
+                }
+              }
+            }
+          }
+        },
+        {
+          "at": "panels.0.legend.0.box.x",
+          "above": {
+            "at": "panels.0.plot.x"
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0271: aligned to the end, a row finishes at the plot's right",
+      "definition": "exposure",
+      "scene": {
+        "metrics": {
+          "width": 800,
+          "height": 400
+        },
+        "legend": {
+          "position": "top",
+          "align": "end"
+        }
+      },
+      "expect": [
+        {
+          "at": "panels.0.legend.-1.box.x",
+          "near": 1e-06,
+          "atLeast": {
+            "at": "panels.0.plot.x",
+            "plus": {
+              "at": "panels.0.plot.width",
+              "plus": {
+                "at": "panels.0.legend.-1.box.width",
+                "times": -1
+              }
+            }
+          },
+          "atMost": {
+            "at": "panels.0.plot.x",
+            "plus": {
+              "at": "panels.0.plot.width",
+              "plus": {
+                "at": "panels.0.legend.-1.box.width",
+                "times": -1
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0271: a side legend aligned to the end finishes at the plot's foot",
+      "definition": "exposure",
+      "scene": {
+        "metrics": {
+          "width": 800,
+          "height": 400
+        },
+        "legend": {
+          "position": "left",
+          "align": "end"
+        }
+      },
+      "expect": [
+        {
+          "at": "panels.0.legend.-1.box.y",
+          "near": 1e-06,
+          "atLeast": {
+            "at": "panels.0.plot.y",
+            "plus": {
+              "at": "panels.0.plot.height",
+              "plus": {
+                "at": "panels.0.legend.-1.box.height",
+                "times": -1
+              }
+            }
+          },
+          "atMost": {
+            "at": "panels.0.legend.-1.box.y"
+          }
+        },
+        {
+          "at": "panels.0.legend.-1.box.y",
+          "near": 1e-06,
+          "atMost": {
+            "at": "panels.0.plot.y",
+            "plus": {
+              "at": "panels.0.plot.height",
+              "plus": {
+                "at": "panels.0.legend.-1.box.height",
+                "times": -1
+              }
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

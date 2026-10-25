@@ -1,0 +1,891 @@
+{
+  "about": "Observations: marks never joined, merged on one device pixel, rounded bounds, a narrowed left axis and logarithmic axes (ADR-0290), from tests/ExChart.Engine.Tests/ScatterTests.cs.",
+  "kind": "chart",
+  "cases": [
+    {
+      "name": "ADR-0290: an Observation's points are neither ordered nor unique in x, and are never joined",
+      "definition": {
+        "axis": {
+          "values": "numbers",
+          "title": "Leverage"
+        },
+        "series": [
+          {
+            "id": "names",
+            "name": "Names",
+            "kind": "observation",
+            "points": [
+              [
+                3,
+                200,
+                "C"
+              ],
+              [
+                1,
+                150,
+                "A"
+              ],
+              [
+                3,
+                260,
+                "D"
+              ],
+              [
+                2,
+                180,
+                "B"
+              ]
+            ]
+          }
+        ]
+      },
+      "scene": {
+        "metrics": {
+          "width": 800,
+          "height": 400
+        }
+      },
+      "expect": [
+        {
+          "at": "panels.0.series.0.lines",
+          "empty": true
+        },
+        {
+          "at": "panels.0.series.0.markers",
+          "count": true,
+          "is": 4
+        },
+        {
+          "at": "scatter",
+          "is": true
+        }
+      ]
+    },
+    {
+      "name": "ADR-0290: a missing value is no point, never a point at zero",
+      "definition": {
+        "axis": {
+          "values": "numbers",
+          "title": "Leverage"
+        },
+        "series": [
+          {
+            "id": "names",
+            "name": "Names",
+            "kind": "observation",
+            "points": [
+              [
+                1,
+                150
+              ],
+              [
+                2,
+                null
+              ],
+              [
+                3,
+                200
+              ]
+            ]
+          }
+        ]
+      },
+      "scene": {
+        "metrics": {
+          "width": 800,
+          "height": 400
+        }
+      },
+      "expect": [
+        {
+          "at": "marks",
+          "count": true,
+          "is": 2
+        },
+        {
+          "at": "marks",
+          "lacks": {
+            "point": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0290: an Observation needs a value axis across",
+      "definition": {
+        "axis": {
+          "values": "labels",
+          "labels": [
+            "a",
+            "b"
+          ]
+        },
+        "series": [
+          {
+            "id": "o",
+            "name": "Names",
+            "kind": "observation",
+            "points": [
+              [
+                0,
+                1
+              ]
+            ]
+          }
+        ]
+      },
+      "throws": "chartRefused",
+      "saying": "Observation"
+    },
+    {
+      "name": "ADR-0290: an Observation's axes do not include zero unless the series says so",
+      "build": {
+        "away": {
+          "definition": {
+            "axis": {
+              "values": "numbers",
+              "title": "Leverage"
+            },
+            "series": [
+              {
+                "id": "names",
+                "name": "Names",
+                "kind": "observation",
+                "points": [
+                  [
+                    2.1,
+                    180
+                  ],
+                  [
+                    3.5,
+                    320
+                  ]
+                ]
+              }
+            ]
+          },
+          "scene": {
+            "metrics": {
+              "width": 800,
+              "height": 400
+            }
+          }
+        },
+        "fromZero": {
+          "definition": {
+            "axis": {
+              "values": "numbers",
+              "title": "Leverage"
+            },
+            "series": [
+              {
+                "id": "names",
+                "name": "Names",
+                "kind": "observation",
+                "points": [
+                  [
+                    2.1,
+                    180
+                  ],
+                  [
+                    3.5,
+                    320
+                  ]
+                ],
+                "fromZero": true
+              }
+            ]
+          },
+          "scene": {
+            "metrics": {
+              "width": 800,
+              "height": 400
+            }
+          }
+        }
+      },
+      "expect": [
+        {
+          "at": "away.panels.0.left.min",
+          "above": 0
+        },
+        {
+          "at": "away.panels.0.left.broken",
+          "is": true
+        },
+        {
+          "at": "fromZero.panels.0.left.min",
+          "is": 0
+        }
+      ]
+    },
+    {
+      "name": "ADR-0290: a scatter's bounds across are rounded out, so no mark stands on the plot's edge",
+      "definition": {
+        "axis": {
+          "values": "numbers",
+          "title": "Leverage"
+        },
+        "series": [
+          {
+            "id": "names",
+            "name": "Names",
+            "kind": "observation",
+            "points": [
+              [
+                2.1,
+                180
+              ],
+              [
+                3.7,
+                320
+              ]
+            ]
+          }
+        ]
+      },
+      "scene": {
+        "metrics": {
+          "width": 800,
+          "height": 400
+        }
+      },
+      "expect": [
+        {
+          "at": "xFrom",
+          "below": 2.1
+        },
+        {
+          "at": "xTo",
+          "above": 3.7
+        },
+        {
+          "at": "marks",
+          "each": [
+            {
+              "at": "x",
+              "above": {
+                "at": "$.panels.0.plot.x"
+              }
+            },
+            {
+              "at": "x",
+              "below": {
+                "at": "$.panels.0.plot.x",
+                "plus": {
+                  "at": "$.panels.0.plot.width"
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ADR-0290: markers centred on one device pixel are merged, and the mark says how many it holds",
+      "definition": {
+        "axis": {
+          "values": "numbers",
+          "title": "Leverage"
+        },
+        "series": [
+          {
+            "id": "names",
+            "name": "Names",
+            "kind": "observation",
+            "points": [
+              {
+                "generate": {
+                  "count": 50,
+                  "x": {
+                    "from": 1,
+                    "step": 1e-07
+                  },
+                  "y": 100,
+                  "name": "N"
+                }
+              },
+              [
+                5,
+                300,
+                "Far"
+              ]
+            ]
+          }
+        ]
+      },
+      "scene": {
+        "metrics": {
+          "width": 800,
+          "height": 400
+        }
+      },
+      "expect": [
+        {
+          "at": "marks",
+          "count": true,
+          "is": 2
+        },
+        {
+          "at": "marks",
+          "where": {
+            "count": 50
+          },
+          "map": "point",
+          "is": [
+            0
+          ]
+        },
+        {
+          "at": "marks",
+          "where": {
+            "count": 1
+          },
+          "map": "point",
+          "is": [
+            50
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ADR-0290: the left axis narrowed by a rectangle drops the marks outside it and cuts lines at its edge",
+      "definition": {
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "o",
+            "name": "Names",
+            "kind": "observation",
+            "points": [
+              [
+                1,
+                100
+              ],
+              [
+                2,
+                200
+              ],
+              [
+                3,
+                300
+              ]
+            ]
+          },
+          {
+            "id": "fit",
+            "name": "Fit",
+            "kind": "level",
+            "points": [
+              [
+                1,
+                100
+              ],
+              [
+                3,
+                300
+              ]
+            ],
+            "fromZero": false
+          }
+        ]
+      },
+      "scene": {
+        "metrics": {
+          "width": 800,
+          "height": 400
+        },
+        "view": {
+          "yFrom": 150,
+          "yTo": 250
+        }
+      },
+      "expect": [
+        {
+          "at": "panels.0.left.min",
+          "is": 150
+        },
+        {
+          "at": "panels.0.left.max",
+          "is": 250
+        },
+        {
+          "at": "marks",
+          "count": true,
+          "is": 1
+        },
+        {
+          "at": "panels.0.series.1.lines",
+          "count": true,
+          "is": 1
+        },
+        {
+          "at": "panels.0.series.1.lines.0",
+          "each": [
+            {
+              "at": "y",
+              "atLeast": {
+                "at": "$.panels.0.plot.y",
+                "plus": -1e-06
+              }
+            },
+            {
+              "at": "y",
+              "atMost": {
+                "at": "$.panels.0.plot.y",
+                "plus": {
+                  "at": "$.panels.0.plot.height",
+                  "plus": 1e-06
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ADR-0290: a logarithmic axis across places positions by their logarithm, with decade ticks",
+      "definition": {
+        "axis": {
+          "values": "numbers",
+          "scale": "logarithmic"
+        },
+        "series": [
+          {
+            "id": "o",
+            "name": "Names",
+            "kind": "observation",
+            "points": [
+              [
+                1,
+                1
+              ],
+              [
+                10,
+                2
+              ],
+              [
+                100,
+                3
+              ]
+            ]
+          }
+        ]
+      },
+      "scene": {
+        "metrics": {
+          "width": 800,
+          "height": 400
+        }
+      },
+      "expect": [
+        {
+          "at": "xFrom",
+          "is": 1
+        },
+        {
+          "at": "xTo",
+          "is": 100
+        },
+        {
+          "at": "logarithmicX",
+          "is": true
+        },
+        {
+          "at": "marks",
+          "sortBy": "x",
+          "map": "x",
+          "near": 1e-06,
+          "evenlySpaced": true
+        },
+        {
+          "at": "xTicks",
+          "map": "0",
+          "has": 10
+        },
+        {
+          "positionAt": {
+            "at": "marks.[point=1].x"
+          },
+          "near": 1e-06,
+          "is": 10
+        }
+      ]
+    },
+    {
+      "name": "ADR-0290: a logarithmic axis across refuses a position at or below zero by name",
+      "definition": {
+        "axis": {
+          "values": "numbers",
+          "scale": "logarithmic"
+        },
+        "series": [
+          {
+            "id": "o",
+            "name": "Names",
+            "kind": "observation",
+            "points": [
+              [
+                0,
+                1
+              ],
+              [
+                1,
+                2
+              ]
+            ]
+          }
+        ]
+      },
+      "throws": "chartRefused",
+      "saying": "'Names'"
+    },
+    {
+      "name": "ADR-0290: a vertical axis switched to logarithmic is placed by decades",
+      "definition": {
+        "axis": {
+          "values": "numbers",
+          "title": "Leverage"
+        },
+        "series": [
+          {
+            "id": "names",
+            "name": "Names",
+            "kind": "observation",
+            "points": [
+              [
+                1,
+                20
+              ],
+              [
+                2,
+                300
+              ],
+              [
+                3,
+                4000
+              ]
+            ]
+          }
+        ]
+      },
+      "scene": {
+        "metrics": {
+          "width": 800,
+          "height": 400
+        },
+        "view": {
+          "yScale": "logarithmic"
+        }
+      },
+      "expect": [
+        {
+          "at": "panels.0.left.logarithmic",
+          "is": true
+        },
+        {
+          "at": "panels.0.left.min",
+          "is": 10
+        },
+        {
+          "at": "panels.0.left.max",
+          "is": 10000
+        },
+        {
+          "at": "panels.0.left.ticks",
+          "map": "0",
+          "has": 100
+        },
+        {
+          "at": "notes",
+          "is": []
+        }
+      ]
+    },
+    {
+      "name": "ADR-0290: a value at or below zero keeps the vertical axis proportional, with a Note naming it",
+      "definition": {
+        "axis": {
+          "values": "numbers",
+          "title": "Leverage"
+        },
+        "series": [
+          {
+            "id": "names",
+            "name": "Names",
+            "kind": "observation",
+            "points": [
+              [
+                1,
+                0,
+                "Zero Co"
+              ],
+              [
+                2,
+                300
+              ]
+            ]
+          }
+        ]
+      },
+      "scene": {
+        "metrics": {
+          "width": 800,
+          "height": 400
+        },
+        "view": {
+          "yScale": "logarithmic"
+        }
+      },
+      "expect": [
+        {
+          "at": "panels.0.left.logarithmic",
+          "is": false
+        },
+        {
+          "at": "notes",
+          "has": "The vertical axis stays proportional: 'Names' has 0 at 1, which a logarithmic axis cannot place."
+        },
+        {
+          "at": "marks",
+          "count": true,
+          "is": 2
+        }
+      ]
+    },
+    {
+      "name": "ADR-0290: a click finds the point's Row Key through its mark",
+      "build": {
+        "definition": {
+          "definition": {
+            "axis": {
+              "values": "numbers",
+              "title": "Leverage"
+            },
+            "series": [
+              {
+                "id": "names",
+                "name": "Names",
+                "kind": "observation",
+                "points": [
+                  {
+                    "x": 1,
+                    "y": 100,
+                    "name": "A",
+                    "row": "row-a"
+                  },
+                  {
+                    "x": 2,
+                    "y": 200,
+                    "name": "B",
+                    "row": "row-b"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        "scene": {
+          "definition": {
+            "axis": {
+              "values": "numbers",
+              "title": "Leverage"
+            },
+            "series": [
+              {
+                "id": "names",
+                "name": "Names",
+                "kind": "observation",
+                "points": [
+                  {
+                    "x": 1,
+                    "y": 100,
+                    "name": "A",
+                    "row": "row-a"
+                  },
+                  {
+                    "x": 2,
+                    "y": 200,
+                    "name": "B",
+                    "row": "row-b"
+                  }
+                ]
+              }
+            ]
+          },
+          "scene": {
+            "metrics": {
+              "width": 800,
+              "height": 400
+            }
+          }
+        }
+      },
+      "expect": [
+        {
+          "at": "scene.marks.[point=1].seriesId",
+          "is": "names"
+        },
+        {
+          "at": "definition.series.0.points.1.row",
+          "is": "row-b"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0252: an unchanged Observation series builds an equal piece, so its component skips its render",
+      "build": {
+        "a": {
+          "definition": {
+            "axis": {
+              "values": "numbers",
+              "title": "Leverage"
+            },
+            "series": [
+              {
+                "id": "names",
+                "name": "Names",
+                "kind": "observation",
+                "points": [
+                  [
+                    1,
+                    100,
+                    "A"
+                  ],
+                  [
+                    2,
+                    200,
+                    "B"
+                  ]
+                ]
+              }
+            ]
+          },
+          "scene": {
+            "metrics": {
+              "width": 800,
+              "height": 400
+            }
+          }
+        },
+        "b": {
+          "definition": {
+            "axis": {
+              "values": "numbers",
+              "title": "Leverage"
+            },
+            "series": [
+              {
+                "id": "names",
+                "name": "Names",
+                "kind": "observation",
+                "points": [
+                  [
+                    1,
+                    100,
+                    "A"
+                  ],
+                  [
+                    2,
+                    200,
+                    "B"
+                  ]
+                ]
+              }
+            ]
+          },
+          "scene": {
+            "metrics": {
+              "width": 800,
+              "height": 400
+            }
+          }
+        }
+      },
+      "expect": [
+        {
+          "at": "a.panels.0.series.0",
+          "sameAs": "b.panels.0.series.0"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0290: a fitted line that crosses zero keeps a logarithmic vertical axis proportional, with a Note naming it",
+      "definition": {
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "names",
+            "name": "Names",
+            "kind": "observation",
+            "points": [
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                1
+              ],
+              [
+                3,
+                100
+              ]
+            ]
+          },
+          {
+            "id": "fit",
+            "name": "OLS",
+            "kind": "level",
+            "sampler": {
+              "from": 1,
+              "to": 3,
+              "value": {
+                "line": [
+                  -65,
+                  49.5
+                ]
+              }
+            },
+            "fromZero": false,
+            "segments": [
+              {
+                "from": 1,
+                "to": 3,
+                "method": "OLS: y = -65 + 49.5x"
+              }
+            ]
+          }
+        ]
+      },
+      "scene": {
+        "metrics": {
+          "width": 800,
+          "height": 400
+        },
+        "view": {
+          "yScale": "logarithmic"
+        }
+      },
+      "expect": [
+        {
+          "at": "panels.0.left.logarithmic",
+          "is": false
+        },
+        {
+          "at": "notes",
+          "mentions": "'OLS' reaches"
+        },
+        {
+          "at": "marks",
+          "count": true,
+          "is": 3
+        }
+      ]
+    }
+  ]
+}
