@@ -495,16 +495,14 @@ export class PartColumns {
         this.extremes?.forEach(finishExtremes);
     }
 
-    /** Writes each exact sum and exact extreme without trailing zeros (ADR-0064). */
-    canonicalize(): void {
-        if (this.sums !== undefined) {
-            for (const sum of this.sums) {
-                if (!sum.inexact) sum.exact = decimalCanonical(sum.exact);
-            }
-        }
-        if (this.extremes === undefined) return;
-        for (const extremes of this.extremes) {
-            if (!extremes.inexact) {
+    /** Writes each exact sum and exact extreme of cells [from, to) without trailing zeros (ADR-0064); every
+     * cell when no range is given. */
+    canonicalize(from = 0, to = this.counts.length): void {
+        for (let cell = from; cell < to; cell++) {
+            const sum = this.sums?.[cell];
+            if (sum !== undefined && !sum.inexact) sum.exact = decimalCanonical(sum.exact);
+            const extremes = this.extremes?.[cell];
+            if (extremes !== undefined && !extremes.inexact) {
                 extremes.exactMin = decimalCanonical(extremes.exactMin);
                 extremes.exactMax = decimalCanonical(extremes.exactMax);
             }

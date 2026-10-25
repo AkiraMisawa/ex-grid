@@ -3,7 +3,7 @@
 // with no UI. The C# engine's PivotEngine.
 
 import type { PivotAnswer } from './cube/answer';
-import { buildCube, cubeParts, ItemRef, type PivotCube } from './cube/cube';
+import { buildCube, buildCubeSteps, cubeParts, ItemRef, type PivotCube } from './cube/cube';
 import { placedFields, queryForLayout, type PivotQuery } from './cube/query';
 import { fieldMeta, fieldMetas, numberFormatProblem, type FieldMeta, type PivotField, type PivotRecordField } from './fields/pivot-field';
 import { fromPublicKey, keyIdOf, toPublicKey, type PivotItemKey } from './items/item-key';
@@ -11,8 +11,9 @@ import { pivotAggregations, type PivotArea } from './layout/pivot-enums';
 import { createPivotFieldPlacement, placementOf, placementsIn, type PivotLayout } from './layout/pivot-layout';
 import { defined, elementAt } from './must';
 import { ItemLabels, ItemOrder, resolveOptions, type PivotOptions } from './report/labels';
-import { buildReport, type PivotReport, type PivotReportRow } from './report/report';
+import { buildReport, buildReportSteps, type PivotReport, type PivotReportRow } from './report/report';
 import { allItemsOf, RecordPivotSource, type PivotItemPage } from './source/pivot-source';
+import { Slicer, checkedSlicing, type PivotSlicing } from './source/slicing';
 
 /** One Item as Filter… lists it (ADR-0061): its key as a layout writes it, what it is painted as, and
  * whether the layout hides it now. */
@@ -99,17 +100,48 @@ export function pivotCube(query: PivotQuery, answer: PivotAnswer, fields: readon
 }
 
 /**
+ * {@link pivotCube} in slices (PV-40): the same steps over the answer's leaves and cells, a piece at a time,
+ * yielding between slices as `slicing` paces them, so that a large answer's cube leaves the page painting. It
+ * gives the cube {@link pivotCube} gives, and rejects with what it throws. Once `signal` is aborted, it stops at
+ * the next slice and rejects with the signal's reason. A call begins a slice of its own, and its last slice ends
+ * without a yield, as a source's question does: a caller that asks, makes the cube and lays out the report one
+ * after another yields between them where the page must paint.
+ */
+export async function pivotCubeAsync(query: PivotQuery, answer: PivotAnswer, fields: readonly PivotField[],
+    slicing?: PivotSlicing, signal?: AbortSignal): Promise<PivotCube> {
+    const slicer = new Slicer(checkedSlicing(slicing), signal);
+    return slicer.run(buildCubeSteps(query, answer, fieldMetas(fields)));
+}
+
+/**
  * Lays a cube out under a layout (ADR-0060): the rows, the label columns, the value columns and their
  * Header Group spans. Cheap — nothing is asked of the source. Refuses a layout the cube does not hold.
  */
 export function pivotReport(cube: PivotCube, layout: PivotLayout, options?: PivotOptions): PivotReport {
+    checkHolds(cube, layout);
+    return buildReport(cube, layout, resolveOptions(options));
+}
+
+/**
+ * {@link pivotReport} in slices (PV-40): each tree walked a node at a time and thousands of siblings ordered
+ * a piece at a time, yielding between slices as `slicing` paces them. It gives the report {@link pivotReport}
+ * gives, and rejects with what it throws, an Order Key that fails included. Once `signal` is aborted, it stops at
+ * the next slice and rejects with the signal's reason.
+ */
+export async function pivotReportAsync(cube: PivotCube, layout: PivotLayout, options?: PivotOptions,
+    slicing?: PivotSlicing, signal?: AbortSignal): Promise<PivotReport> {
+    const slicer = new Slicer(checkedSlicing(slicing), signal);
+    checkHolds(cube, layout);
+    return slicer.run(buildReportSteps(cube, layout, resolveOptions(options)));
+}
+
+function checkHolds(cube: PivotCube, layout: PivotLayout): void {
     validateLayout(layout, cubeParts(cube).meta);
     if (!cube.holds(layout)) {
         throw new Error('The cube was aggregated under other placed fields, Hidden Items or Value Fields than this layout '
             + 'has, or without the parts one of its Aggregations reads; ask again (aggregatePivot, or the '
             + 'source with queryForLayout) before laying it out (ADR-0060/0066).');
     }
-    return buildReport(cube, layout, resolveOptions(options));
 }
 
 /** Aggregates and lays out in one step: {@link aggregatePivot} then {@link pivotReport}. */

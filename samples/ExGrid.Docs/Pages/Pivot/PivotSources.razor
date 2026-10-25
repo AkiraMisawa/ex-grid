@@ -204,6 +204,17 @@ const answer = await source.aggregate(query, controller.signal);</code></pre>
             exact numbers, and a sum of doubles may differ in its last bit where the order changed it. The shared cases
             and a differential run over random batches hold both.
         </p>
+        <p>
+            The cube and the report run in slices too. <code>pivotCubeAsync</code> and <code>pivotReportAsync</code> take
+            the same slicing and an <code>AbortSignal</code>, and give what <code>pivotCube</code> and
+            <code>pivotReport</code> give, so an answer of a hundred thousand leaves, or a field with thousands of Items
+            to order, leaves the page painting while its report is made. A report's <code>hasSameRowsAsAsync</code>
+            compares its rows with another's in slices the same way. Each call begins a slice of its own and ends
+            without yielding, so yield between them where the page must paint:
+        </p>
+        <pre class="docs-code"><code>const cube = await pivotCubeAsync(query, answer, source.fields, { sliceBudgetMs: 30 }, controller.signal);
+const report = await pivotReportAsync(cube, layout, { locale: 'en-US' }, { sliceBudgetMs: 30 }, controller.signal);
+const keepState = await report.hasSameRowsAsAsync(shown, { sliceBudgetMs: 30 }, controller.signal);</code></pre>
     </DocsSection>
 
     <DocsSection Title="API">

@@ -83,6 +83,9 @@ function ordinal(a: string, b: string): number {
     return a < b ? -1 : a > b ? 1 : 0;
 }
 
+/** Every reading of a report that no data set is needed for. */
+export const everyReading: readonly string[] = ['names', 'keys', 'numbers', 'captions', 'empty', 'toggles', 'columns', 'tiers'];
+
 export function read(report: PivotReport, also: readonly string[], data: DataSet): Record<string, Json> {
     const answer: Record<string, Json> = { headers: headers(report), lines: lines(report), spans: spans(report) };
     for (const more of also) answer[more] = reading(report, more, data);

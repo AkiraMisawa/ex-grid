@@ -14,6 +14,7 @@ import { ItemKeys, fromPublicKey, keyIdOf, textItemKey, toPublicKey, type ItemKe
 import { foldedText } from '../text/casing';
 import { elementAt, unreachable } from '../must';
 import { datePartOfTicks, type FieldBinding } from './binding';
+import { runWhole } from './slicing';
 
 /** The most rows read column by column at once, as C#'s pass reads them. */
 export const chunkRows = 4096;
@@ -985,14 +986,6 @@ export class AggregationPass {
             if (row % chunkRows === 0) yield;
         }
         return indexed.toSorted((a, b) => elementAt(first, a) - elementAt(first, b));
-    }
-}
-
-/** Runs a piece of work that yields between its steps through to its result, unsliced. */
-export function runWhole<T>(steps: Generator<void, T>): T {
-    for (;;) {
-        const next = steps.next();
-        if (next.done === true) return next.value;
     }
 }
 

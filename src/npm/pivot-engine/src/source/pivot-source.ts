@@ -15,8 +15,8 @@ import { readRecordValue } from '../items/record-value';
 import { pivotAggregations, type PivotAggregation } from '../layout/pivot-enums';
 import { defined, elementAt, unreachable } from '../must';
 import { foldedText } from '../text/casing';
-import { AggregationPass, chunkRows, itemsOfField, itemsOfFieldSteps, runWhole } from './aggregation-pass';
-import { Slicer, checkedSlicing, type CheckedSlicing, type PivotSlicing } from './slicing';
+import { AggregationPass, chunkRows, itemsOfField, itemsOfFieldSteps } from './aggregation-pass';
+import { Slicer, checkedSlicing, runWhole, type CheckedSlicing, type PivotSlicing } from './slicing';
 import { bindSnapshot, detailAt, itemKeyAt, recordSnapshot, type FieldBinding } from './binding';
 
 // ---- What a source offers -----------------------------------------------------------------------

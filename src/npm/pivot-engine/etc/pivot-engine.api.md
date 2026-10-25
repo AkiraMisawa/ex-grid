@@ -175,6 +175,9 @@ export class PivotCube {
 export function pivotCube(query: PivotQuery, answer: PivotAnswer, fields: readonly PivotField[]): PivotCube;
 
 // @public
+export function pivotCubeAsync(query: PivotQuery, answer: PivotAnswer, fields: readonly PivotField[], slicing?: PivotSlicing, signal?: AbortSignal): Promise<PivotCube>;
+
+// @public
 export type PivotDatePart = 'year' | 'quarter' | 'month';
 
 // @public
@@ -521,6 +524,7 @@ export class PivotReport {
     readonly cube: PivotCube;
     detailsQuery(row: PivotReportRow, valueColumn: number, start?: number, count?: number): PivotDetailsQuery;
     hasSameRowsAs(other: PivotReport | undefined): boolean;
+    hasSameRowsAsAsync(other: PivotReport | undefined, slicing?: PivotSlicing, signal?: AbortSignal): Promise<boolean>;
     readonly headerSpans: readonly PivotHeaderSpan[];
     readonly headerTierCount: number;
     get isEmpty(): boolean;
@@ -537,6 +541,9 @@ export class PivotReport {
 
 // @public
 export function pivotReport(cube: PivotCube, layout: PivotLayout, options?: PivotOptions): PivotReport;
+
+// @public
+export function pivotReportAsync(cube: PivotCube, layout: PivotLayout, options?: PivotOptions, slicing?: PivotSlicing, signal?: AbortSignal): Promise<PivotReport>;
 
 // @public
 export class PivotReportColumn {

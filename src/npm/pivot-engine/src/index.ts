@@ -56,5 +56,5 @@ export type { PivotHeaderSpan, PivotLabelColumn, PivotRowLabel, PivotToggle } fr
 export { PivotReport, PivotReportColumn, PivotReportRow, PivotRowKey } from './report/report';
 export type { PivotItemInfo } from './engine';
 export {
-    aggregatePivot, computePivot, itemsOfCube, itemsOfPage, pivotCube, pivotReport, recordsBehind, validateLayout,
+    aggregatePivot, computePivot, itemsOfCube, itemsOfPage, pivotCube, pivotCubeAsync, pivotReport, pivotReportAsync, recordsBehind, validateLayout,
 } from './engine';

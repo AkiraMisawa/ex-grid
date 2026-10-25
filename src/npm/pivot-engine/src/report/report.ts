@@ -14,6 +14,7 @@ import type { PivotAggregation, PivotColumnRole, PivotRowRole, PivotShowValuesAs
 import { itemKindOrder } from '../layout/pivot-enums';
 import type { PivotFieldPlacement, PivotLayout, PivotValueField } from '../layout/pivot-layout';
 import { elementAt } from '../must';
+import { Slicer, checkedSlicing, inPieces, pieceUnits, runWhole, sortedSteps, type PivotSlicing } from '../source/slicing';
 import { escapeDataString, foldedText, upperInvariant } from '../text/casing';
 import { captionId, fillWord, pivotWordIds } from '../words/pivot-words';
 import { ItemLabels, ItemOrder, type ResolvedOptions } from './labels';
@@ -329,11 +330,37 @@ export class PivotReport {
     /** Whether the other report's rows stand, one for one, for what this one's do. */
     hasSameRowsAs(other: PivotReport | undefined): boolean {
         if (other === undefined || other.rows.length !== this.rows.length) return false;
-        if (other === this) return true;
-        return this.rows.every((mine, i) => {
+        return other === this || this.#sameRows(other, 0, this.rows.length);
+    }
+
+    /**
+     * {@link PivotReport.hasSameRowsAs} in slices (ADR-0066, PV-40): the rows compared a piece at a time, yielding
+     * between slices as `slicing` paces them — a refresh of a large report compares every row. Once `signal` is
+     * aborted, it stops at the next slice and rejects with the signal's reason.
+     */
+    async hasSameRowsAsAsync(other: PivotReport | undefined, slicing?: PivotSlicing, signal?: AbortSignal): Promise<boolean> {
+        const slicer = new Slicer(checkedSlicing(slicing), signal);
+        if (other === undefined || other.rows.length !== this.rows.length) return false;
+        return other === this || slicer.run(this.#sameRowsSteps(other));
+    }
+
+    *#sameRowsSteps(other: PivotReport): Generator<void, boolean> {
+        // A row is worth a unit for each level its path is compared at.
+        const size = Math.max(1, Math.floor(pieceUnits / (this.layout.rows.length + 1)));
+        for (let from = 0; from < this.rows.length; from += size) {
+            if (from > 0) yield;
+            if (!this.#sameRows(other, from, Math.min(this.rows.length, from + size))) return false;
+        }
+        return true;
+    }
+
+    #sameRows(other: PivotReport, from: number, to: number): boolean {
+        for (let i = from; i < to; i++) {
+            const mine = elementAt(this.rows, i);
             const theirs = elementAt(other.rows, i);
-            return mine.role === theirs.role && mine.valueField === theirs.valueField && samePath(rowNode(mine), rowNode(theirs));
-        });
+            if (mine.role !== theirs.role || mine.valueField !== theirs.valueField || !samePath(rowNode(mine), rowNode(theirs))) return false;
+        }
+        return true;
     }
 
     /** The row's Items, outermost first, each with its field. */
@@ -437,8 +464,21 @@ class CollapseState {
 
 /** Lays a report out from a cube and a layout the cube holds. */
 export function buildReport(cube: PivotCube, layout: PivotLayout, options: ResolvedOptions): PivotReport {
-    return new ReportBuilder(cube, layout, options).build();
+    return runWhole(new ReportBuilder(cube, layout, options, false).build());
 }
+
+/** {@link buildReport}, a step at a time (PV-40): each tree walked a node at a time and a node's children
+ * ordered a piece at a time, yielding once a piece of work is done, for a caller to slice. Siblings are merged
+ * in order a piece at a time where {@link buildReport} sorts them at once, and both sort stably, so the two
+ * give one order. */
+export function buildReportSteps(cube: PivotCube, layout: PivotLayout, options: ResolvedOptions): Generator<void, PivotReport> {
+    return new ReportBuilder(cube, layout, options, true).build();
+}
+
+// What a step of the walk is worth, in the units a piece counts: a node entered or left, each row it emits,
+// and each column, whose name is written from its Items.
+const rowUnits = 4;
+const columnUnits = 8;
 
 class ReportBuilder {
     readonly #cube: PivotCube;
@@ -458,9 +498,11 @@ class ReportBuilder {
     readonly #labelColumnCount: number;
     readonly #pending: (AxisNode | undefined)[];
     readonly #lineage = {};
+    readonly #sliced: boolean;
 
-    constructor(cube: PivotCube, layout: PivotLayout, options: ResolvedOptions) {
+    constructor(cube: PivotCube, layout: PivotLayout, options: ResolvedOptions, sliced: boolean) {
         this.#cube = cube;
+        this.#sliced = sliced;
         this.#layout = layout;
         this.#options = options;
         this.#labels = new ItemLabels(options);
@@ -512,13 +554,13 @@ class ReportBuilder {
         return this.#rowLevels + (this.#valuesOnRows ? 1 : 0);
     }
 
-    build(): PivotReport {
+    *build(): Generator<void, PivotReport> {
         const columns: PivotReportColumn[] = [];
         const spans: PivotHeaderSpan[] = [];
         const rows: PivotReportRow[] = [];
         if (!this.#empty) {
-            this.#emitColumns(columns, spans);
-            this.#emitRows(rows);
+            yield* this.#emitColumns(columns, spans);
+            yield* this.#emitRows(rows);
         }
         const tiers = this.#columnLevels === 0 ? 0 : this.#valuesOnColumns ? this.#columnLevels : this.#columnLevels - 1;
         return makeReport(this.#cube, this.#layout, this.#options, this.#reader, this.#labelColumnList(), columns, spans, tiers, rows, this.#lineage);
@@ -548,10 +590,50 @@ class ReportBuilder {
 
     // ---- The walk ----
 
-    #walk(node: AxisNode, rows: boolean, enter: (node: AxisNode) => number, leave: (node: AxisNode, mark: number) => void): void {
+    // Depth first, in the Items' order: each node entered, its children ordered and walked, then left. A
+    // step — a node entered or left, or a piece of its children ordered — is worth a unit and each row or
+    // column it emits more; once a piece's worth is done, the walk yields.
+    *#walk(root: AxisNode, rows: boolean, enter: (node: AxisNode) => number, leave: (node: AxisNode, mark: number) => void,
+        emitted: () => number, unitsEach: number): Generator<void, void> {
+        if (!this.#sliced) {
+            this.#walkAtOnce(root, rows, enter, leave);
+            return;
+        }
+        const frames: WalkFrame[] = [];
+        let units = 0;
+        const entered = (node: AxisNode): number => {
+            const before = emitted();
+            const mark = enter(node);
+            units += 1 + ((emitted() - before) * unitsEach);
+            return mark;
+        };
+        const rootMark = entered(root);
+        if (rootMark < 0) return;
+        frames.push({ node: root, mark: rootMark, children: this.#atOnce(root) ? this.#orderAtOnce(root, rows) : yield* this.#order(root, rows), next: 0 });
+        for (let top = frames.at(-1); top !== undefined; top = frames.at(-1)) {
+            const child = top.children[top.next];
+            if (child === undefined) {
+                const before = emitted();
+                leave(top.node, top.mark);
+                units += 1 + ((emitted() - before) * unitsEach);
+                frames.pop();
+            } else {
+                top.next++;
+                const mark = entered(child);
+                if (mark >= 0) frames.push({ node: child, mark, children: this.#atOnce(child) ? this.#orderAtOnce(child, rows) : yield* this.#order(child, rows), next: 0 });
+            }
+            if (units >= pieceUnits) {
+                units = 0;
+                yield;
+            }
+        }
+    }
+
+    // The same walk at once, for a report laid out at once.
+    #walkAtOnce(node: AxisNode, rows: boolean, enter: (node: AxisNode) => number, leave: (node: AxisNode, mark: number) => void): void {
         const mark = enter(node);
         if (mark < 0) return;
-        for (const child of this.#order(node, rows)) this.#walk(child, rows, enter, leave);
+        for (const child of this.#orderAtOnce(node, rows)) this.#walkAtOnce(child, rows, enter, leave);
         leave(node, mark);
     }
 
@@ -561,7 +643,7 @@ class ReportBuilder {
         return this.#valuesOnColumns ? this.#columnLevels - level : this.#columnLevels - 1 - level;
     }
 
-    #emitColumns(columns: PivotReportColumn[], spans: PivotHeaderSpan[]): void {
+    *#emitColumns(columns: PivotReportColumn[], spans: PivotHeaderSpan[]): Generator<void, void> {
         const root = cubeParts(this.#cube).columnRoot;
         if (this.#columnLevels === 0) {
             if (this.#valueCount === 0) return;
@@ -573,7 +655,8 @@ class ReportBuilder {
             }
             return;
         }
-        this.#walk(root, false, node => this.#enterColumn(node, columns, spans), (node, start) => this.#leaveColumn(node, start, columns, spans));
+        yield* this.#walk(root, false, node => this.#enterColumn(node, columns, spans), (node, start) => this.#leaveColumn(node, start, columns, spans),
+            () => columns.length + spans.length, columnUnits);
         if (this.#layout.grandTotalColumn && this.#valueCount > 0) {
             const label = this.#word(pivotWordIds.grandTotal);
             if (this.#valuesOnColumns) {
@@ -651,7 +734,7 @@ class ReportBuilder {
         return makeRow(role, node, valueField, carriesValues, labels, this.#lineage);
     }
 
-    #emitRows(rows: PivotReportRow[]): void {
+    *#emitRows(rows: PivotReportRow[]): Generator<void, void> {
         const root = cubeParts(this.#cube).rowRoot;
         if (this.#rowLevels === 0) {
             if (this.#valueCount === 0) return;
@@ -667,9 +750,9 @@ class ReportBuilder {
             return;
         }
         if (this.#layout.form === 'tabular') {
-            this.#walk(root, true, node => this.#enterTabular(node, rows), node => this.#leaveTabular(node, rows));
+            yield* this.#walk(root, true, node => this.#enterTabular(node, rows), node => this.#leaveTabular(node, rows), () => rows.length, rowUnits);
         } else {
-            this.#walk(root, true, node => this.#enterGrouped(node, rows), node => this.#leaveGrouped(node, rows));
+            yield* this.#walk(root, true, node => this.#enterGrouped(node, rows), node => this.#leaveGrouped(node, rows), () => rows.length, rowUnits);
         }
         if (this.#layout.grandTotalRow && this.#valueCount > 0) {
             if (this.#valuesOnRows) {
@@ -850,7 +933,43 @@ class ReportBuilder {
 
     // ---- Order ----
 
-    #order(node: AxisNode, rows: boolean): readonly AxisNode[] {
+    // A node's children in their field's order (ADR-0060). A short list is ordered at once, and so is every
+    // list when the report is laid out at once; a long one in slices is ordered a piece at a time — its Order
+    // Keys asked, the values it is ordered by read, and the sort — yielding once a piece's worth is done. Both
+    // sort stably, so the two give one order.
+    *#order(node: AxisNode, rows: boolean): Generator<void, readonly AxisNode[]> {
+        if (this.#atOnce(node)) return this.#orderAtOnce(node, rows);
+        const children = node.children;
+        const ordering = this.#ordering(node, rows);
+        yield* inPieces(children.length, 2, ordering.prepare);
+        const order = yield* sortedSteps(children.map((_, i) => i), ordering.compare);
+        return order.map(i => elementAt(children, i));
+    }
+
+    #atOnce(node: AxisNode): boolean {
+        return !this.#sliced || node.children.length <= pieceUnits / 8;
+    }
+
+    // At once, the order is made as directly as it can be: this is every node's order in a report laid out at
+    // once, and a few hundred thousand nodes' in a large one.
+    #orderAtOnce(node: AxisNode, rows: boolean): readonly AxisNode[] {
+        const level = node.level + 1;
+        const placement = elementAt(rows ? this.#rowPlacements : this.#columnPlacements, level);
+        if (placement.sort.byValue !== undefined) {
+            const children = node.children;
+            const ordering = this.#ordering(node, rows);
+            ordering.prepare(0, children.length);
+            return children.map((_, i) => i).toSorted(ordering.compare).map(i => elementAt(children, i));
+        }
+        const meta = elementAt(rows ? this.#rowMeta : this.#columnMeta, level);
+        const order = new ItemOrder(meta, this.#labels, this.#options.culture, placement.sort.direction === 'descending');
+        for (const child of node.children) order.prepare(itemOf(child));
+        return node.children.toSorted((a, b) => order.compare(itemOf(a), itemOf(b)));
+    }
+
+    // How a node's children are ordered: what is read of each child first — its Order Key, or the value it is
+    // ordered by — and the comparison of two children by their places among them.
+    #ordering(node: AxisNode, rows: boolean): ChildOrdering {
         const level = node.level + 1;
         const placement = elementAt(rows ? this.#rowPlacements : this.#columnPlacements, level);
         const meta = elementAt(rows ? this.#rowMeta : this.#columnMeta, level);
@@ -861,28 +980,50 @@ class ReportBuilder {
         if (byValue !== undefined) {
             const other = rows ? cubeParts(this.#cube).columnRoot : cubeParts(this.#cube).rowRoot;
             const byLabel = new ItemOrder(meta, this.#labels, culture, false, false);
-            const keys = children.map(child => {
-                const value = rows ? this.#reader.shown(child, other, byValue) : this.#reader.shown(other, child, byValue);
-                return value.kind === 'number' ? value.number : undefined;
-            });
-            return children.map((_, i) => i).toSorted((i, j) => {
-                const x = keys[i];
-                const y = keys[j];
-                const xItem = itemOf(elementAt(children, i));
-                const yItem = itemOf(elementAt(children, j));
-                if (x === undefined || y === undefined) {
-                    if (x === undefined && y === undefined) return byLabel.compare(xItem, yItem);
-                    return x === undefined ? 1 : -1;
-                }
-                let compared = x < y ? -1 : x > y ? 1 : 0;
-                if (descending) compared = -compared;
-                return compared !== 0 ? compared : byLabel.compare(xItem, yItem);
-            }).map(i => elementAt(children, i));
+            const keys: (number | undefined)[] = [];
+            return {
+                prepare: (from, to) => {
+                    for (let i = from; i < to; i++) {
+                        const child = elementAt(children, i);
+                        const value = rows ? this.#reader.shown(child, other, byValue) : this.#reader.shown(other, child, byValue);
+                        keys.push(value.kind === 'number' ? value.number : undefined);
+                    }
+                },
+                compare: (i, j) => {
+                    const x = keys[i];
+                    const y = keys[j];
+                    const xItem = itemOf(elementAt(children, i));
+                    const yItem = itemOf(elementAt(children, j));
+                    if (x === undefined || y === undefined) {
+                        if (x === undefined && y === undefined) return byLabel.compare(xItem, yItem);
+                        return x === undefined ? 1 : -1;
+                    }
+                    let compared = x < y ? -1 : x > y ? 1 : 0;
+                    if (descending) compared = -compared;
+                    return compared !== 0 ? compared : byLabel.compare(xItem, yItem);
+                },
+            };
         }
         const order = new ItemOrder(meta, this.#labels, culture, descending);
-        for (const child of children) order.prepare(itemOf(child));
-        return children.toSorted((a, b) => order.compare(itemOf(a), itemOf(b)));
+        return {
+            prepare: (from, to) => {
+                for (let i = from; i < to; i++) order.prepare(itemOf(elementAt(children, i)));
+            },
+            compare: (i, j) => order.compare(itemOf(elementAt(children, i)), itemOf(elementAt(children, j))),
+        };
     }
+}
+
+interface ChildOrdering {
+    readonly prepare: (from: number, to: number) => void;
+    readonly compare: (i: number, j: number) => number;
+}
+
+interface WalkFrame {
+    readonly node: AxisNode;
+    readonly mark: number;
+    readonly children: readonly AxisNode[];
+    next: number;
 }
 
 function span(label: string, firstColumn: number, columnCount: number, tier: number, tierSpan: number): PivotHeaderSpan {
