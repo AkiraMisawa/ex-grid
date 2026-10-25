@@ -140,19 +140,19 @@ public class ClipboardCaseTests
             var value = option.Value;
             switch (option.Name)
             {
-                case "display": display = (_, _) => value.GetString()!; break;
-                case "raw": raw = (_, _) => value.GetString()!; break;
+                case "display": var shown = Text(value, label); display = (_, _) => shown; break;
+                case "raw": var held = Text(value, label); raw = (_, _) => held; break;
                 case "headers":
                     header = value.ValueKind switch
                     {
                         JsonValueKind.True => column => $"H{column}",
-                        JsonValueKind.String => _ => value.GetString()!,
+                        JsonValueKind.String => _ => Text(value, label),
                         _ => throw new InvalidOperationException($"{label}: \"headers\" is true or a text, not {value}."),
                     };
                     break;
                 case "headerRaws":
                     headerRaws = value.EnumerateObject().ToDictionary(
-                        p => int.Parse(p.Name, System.Globalization.CultureInfo.InvariantCulture), p => p.Value.GetString()!);
+                        p => int.Parse(p.Name, System.Globalization.CultureInfo.InvariantCulture), p => Text(p.Value, label));
                     break;
                 default: throw new InvalidOperationException($"{label}: \"{option.Name}\" is not an assembly option this runner knows.");
             }
@@ -164,9 +164,15 @@ public class ClipboardCaseTests
 
         var (text, html) = ClipboardData.Assemble(plan, display, raw, header, headerRaw);
 
-        Assert.Equal(step.GetProperty("text").GetString(), text);
-        Assert.Equal(step.GetProperty("html").GetString(), html);
+        Assert.Equal(Text(step.GetProperty("text"), label), text);
+        Assert.Equal(Text(step.GetProperty("html"), label), html);
     }
+
+    /// <summary>A case's text, which must be text: a null read as "none" would let a malformed case pass
+    /// here that the Script Core's runner refuses.</summary>
+    private static string Text(JsonElement value, string label) => value.ValueKind == JsonValueKind.String
+        ? value.GetString()!
+        : throw new InvalidOperationException($"{label}: {value} is not text.");
 
     private static void HoldsCopy(CopyPlan plan, JsonElement expected, string label)
     {

@@ -94,6 +94,14 @@
       ]
     },
     {
+      "name": "ADR-0005: a row of heading and data cells keeps them in their order, so a web table's row headings do not shift its values left",
+      "expect": [
+        {"static": "parse", "args": ["<table><tr><th>Name</th><td>1</td></tr><tr><th>Other</th><td>2</td></tr></table>", null], "is": [["Name", "1"], ["Other", "2"]]},
+        {"static": "parse", "args": ["<table><tr><td>a</td><th>b</th><td>c</td></tr></table>", null], "is": [["a", "b", "c"]]},
+        {"static": "parse", "args": ["<table><tr><tbody-ish><td>a</td><thead-ish>x</thead-ish><td>b</td></tr></table>", null], "is": [["a", "b"]]}
+      ]
+    },
+    {
       "name": "ADR-0005: a plain table of raw values reads back as written",
       "expect": [
         {"static": "parse", "args": ["<table><tr><td>100.5</td><td>2026-01-05T00:00:00</td></tr><tr><td>-7</td><td>2026-01-06T00:00:00</td></tr></table>", null], "is": [["100.5", "2026-01-05T00:00:00"], ["-7", "2026-01-06T00:00:00"]]}

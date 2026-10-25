@@ -233,55 +233,56 @@
     {
       "name": "ADR-0050 item 14 / ADR-0010 / DC-57: declaring \"Control+a\", a key the core answers, is refused by name",
       "expect": [
-        {"static": "declare", "args": [["Control+b", "Control+a"]], "throws": "argument", "saying": "'Control+a' is one the core answers itself: the core's "}
+        {"static": "declare", "args": [["Control+b", "Control+a"]], "throws": "argument", "saying": "'Control+a' is one the core answers itself: the core's select all. "},
+        {"static": "declare", "args": [["Control+b", "Control+a"]], "throws": "argument", "saying": "(ADR-0050, item 14; ADR-0010)"}
       ]
     },
     {
       "name": "ADR-0050 item 14 / ADR-0010 / DC-57: declaring \"Escape\", a key the core answers, is refused by name",
       "expect": [
-        {"static": "declare", "args": [["Control+b", "Escape"]], "throws": "argument", "saying": "'Escape' is one the core answers itself: the core's "}
+        {"static": "declare", "args": [["Control+b", "Escape"]], "throws": "argument", "saying": "'Escape' is one the core answers itself: the core's leave. "}
       ]
     },
     {
       "name": "ADR-0050 item 14 / ADR-0010 / DC-57: declaring \"Shift+ArrowDown\", a key the core answers, is refused by name",
       "expect": [
-        {"static": "declare", "args": [["Control+b", "Shift+ArrowDown"]], "throws": "argument", "saying": "'Shift+ArrowDown' is one the core answers itself: the core's "}
+        {"static": "declare", "args": [["Control+b", "Shift+ArrowDown"]], "throws": "argument", "saying": "'Shift+ArrowDown' is one the core answers itself: the core's extend. "}
       ]
     },
     {
       "name": "ADR-0050 item 14 / ADR-0010 / DC-57: declaring \"Alt+ArrowDown\", a key the core answers, is refused by name",
       "expect": [
-        {"static": "declare", "args": [["Control+b", "Alt+ArrowDown"]], "throws": "argument", "saying": "'Alt+ArrowDown' is one the core answers itself: the core's "}
+        {"static": "declare", "args": [["Control+b", "Alt+ArrowDown"]], "throws": "argument", "saying": "'Alt+ArrowDown' is one the core answers itself: the core's open column menu. "}
       ]
     },
     {
       "name": "ADR-0050 item 14 / ADR-0010 / DC-57: declaring \"Control+f\", a key the core answers, is refused by name",
       "expect": [
-        {"static": "declare", "args": [["Control+b", "Control+f"]], "throws": "argument", "saying": "'Control+f' is one the core answers itself: the core's "}
+        {"static": "declare", "args": [["Control+b", "Control+f"]], "throws": "argument", "saying": "'Control+f' is one the core answers itself: the core's find. "}
       ]
     },
     {
       "name": "ADR-0050 item 14 / ADR-0010 / DC-57: declaring \"Control+z\", a key the core answers, is refused by name",
       "expect": [
-        {"static": "declare", "args": [["Control+b", "Control+z"]], "throws": "argument", "saying": "'Control+z' is one the core answers itself: the core's "}
+        {"static": "declare", "args": [["Control+b", "Control+z"]], "throws": "argument", "saying": "'Control+z' is one the core answers itself: the core's undo. "}
       ]
     },
     {
       "name": "ADR-0050 item 14 / ADR-0010 / DC-57: declaring \"Control+Shift+Z\", a key the core answers, is refused by name",
       "expect": [
-        {"static": "declare", "args": [["Control+b", "Control+Shift+Z"]], "throws": "argument", "saying": "'Control+Shift+Z' is one the core answers itself: the core's "}
+        {"static": "declare", "args": [["Control+b", "Control+Shift+Z"]], "throws": "argument", "saying": "'Control+Shift+Z' is one the core answers itself: the core's redo. "}
       ]
     },
     {
       "name": "ADR-0050 item 14 / ADR-0010 / DC-57: declaring \"Control+d\", a key the core answers, is refused by name",
       "expect": [
-        {"static": "declare", "args": [["Control+b", "Control+d"]], "throws": "argument", "saying": "'Control+d' is one the core answers itself: the core's "}
+        {"static": "declare", "args": [["Control+b", "Control+d"]], "throws": "argument", "saying": "'Control+d' is one the core answers itself: the core's fill down. "}
       ]
     },
     {
       "name": "ADR-0050 item 14 / ADR-0010 / DC-57: declaring \"Delete\", a key the core answers, is refused by name",
       "expect": [
-        {"static": "declare", "args": [["Control+b", "Delete"]], "throws": "argument", "saying": "'Delete' is one the core answers itself: the core's "}
+        {"static": "declare", "args": [["Control+b", "Delete"]], "throws": "argument", "saying": "'Delete' is one the core answers itself: the core's clear. "}
       ]
     },
     {
@@ -390,13 +391,16 @@
         {"static": "canonical", "args": {"key": "b", "ctrl": false, "shift": false, "alt": false, "meta": true, "metaIsPrimary": true}, "is": "Control+b"},
         {"static": "canonical", "args": {"key": "$", "ctrl": true, "shift": true, "alt": false, "meta": false, "metaIsPrimary": false}, "is": "Control+Shift+$"},
         {"static": "canonical", "args": {"key": "#", "ctrl": true, "shift": false, "alt": false, "meta": false, "metaIsPrimary": false}, "is": "Control+#"},
-        {"static": "canonical", "args": {"key": "b", "ctrl": false, "shift": false, "alt": false, "meta": true, "metaIsPrimary": false}, "is": "Meta+b"}
+        {"static": "canonical", "args": {"key": "b", "ctrl": false, "shift": false, "alt": false, "meta": true, "metaIsPrimary": false}, "is": "Meta+b"},
+        {"static": "declare", "args": [["Control+b", "Control+Shift+$", "Control+#"]], "is": ["Control+b", "Control+Shift+$", "Control+#"]},
+        {"static": "declare", "args": [["Control+b", "Control+Shift+$", "Control+#"]], "lacks": ["Meta+b"]}
       ]
     },
     {
       "name": "ADR-0050 item 14: a declared key resolves to nothing of the core's, so the table and a declaration never overlap",
       "expect": [
         {"static": "takenFor", "args": [{"canEdit": true, "canUndo": true, "canRedo": true, "canFind": true}], "lacks": ["Control+b", "Control+Shift+~", "Control+5"]},
+        {"static": "declare", "args": [["Control+b", "Control+Shift+~", "Control+5"]], "is": ["Control+b", "Control+Shift+~", "Control+5"]},
         {"static": "resolve", "args": {"key": "b", "ctrl": true, "shift": false, "alt": false, "meta": false, "metaIsPrimary": false}, "then": [{"get": "kind", "is": "none"}]}
       ]
     }

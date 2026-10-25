@@ -88,13 +88,19 @@ export interface SourceCell {
 /** A block of `rows` × `columns`. A shape with no rows or columns is a parser defect, not a refusal: when
  * the clipboard holds nothing tabular the rules are never asked (ADR-0014). */
 export function pasteShape(rows: number, columns: number): PasteShape {
-    if (!Number.isSafeInteger(rows) || rows < 1) {
-        throw new RangeError(`A paste shape has at least one row. (rows: ${rows})`);
+    const shape = { rows, columns };
+    checkShape(shape);
+    return Object.freeze(shape);
+}
+
+/** A shape not made by {@link pasteShape} is refused by name rather than divided by. */
+function checkShape(shape: PasteShape): void {
+    if (!Number.isSafeInteger(shape.rows) || shape.rows < 1) {
+        throw new RangeError(`A paste shape has at least one row. (rows: ${shape.rows})`);
     }
-    if (!Number.isSafeInteger(columns) || columns < 1) {
-        throw new RangeError(`A paste shape has at least one column. (columns: ${columns})`);
+    if (!Number.isSafeInteger(shape.columns) || shape.columns < 1) {
+        throw new RangeError(`A paste shape has at least one column. (columns: ${shape.columns})`);
     }
-    return Object.freeze({ rows, columns });
 }
 
 function isSingleCell(shape: PasteShape): boolean {
@@ -118,6 +124,7 @@ export class PastePlan {
 
     /** @internal */
     constructor(targets: readonly SelectionRange[], source: PasteShape, collapsesSelection = false) {
+        checkShape(source);
         this.targets = Object.freeze([...targets]);
         this.source = source;
         this.collapsesSelection = collapsesSelection;
@@ -175,7 +182,7 @@ function checkCap(cellCap: number): void {
     }
 }
 
-function refuse<R extends Exclude<PasteRefusalReason, 'targetNotEditable'>>(reason: R) {
+function refuse<R extends Exclude<PasteRefusalReason, 'targetNotEditable'> | CopyRefusalReason>(reason: R) {
     return Object.freeze({ refused: true as const, reason });
 }
 
@@ -195,17 +202,17 @@ export function planCopy(
     const { cellCap = defaultCellCap, withHeaders = false } = options;
     checkCap(cellCap);
     if (selection.isEmpty) {
-        return Object.freeze({ refused: true, reason: 'emptySelection' });
+        return refuse('emptySelection');
     }
     // Alignment before the cap: overlapping ranges double-count, so until the shapes line up there is no
     // well-formed block for the cap to judge.
     const plan = alignedPlan(selection.ranges);
     if (plan === undefined) {
-        return Object.freeze({ refused: true, reason: 'misalignedShape' });
+        return refuse('misalignedShape');
     }
     const rows = plan.totalRows + (withHeaders ? 1 : 0);
     if (rows * plan.totalColumns > cellCap) {
-        return Object.freeze({ refused: true, reason: 'tooLarge' });
+        return refuse('tooLarge');
     }
     return Object.freeze({ refused: false, plan });
 }
@@ -227,10 +234,7 @@ export function planPaste(
     options: { readonly spillWithin?: GridExtent; readonly plainTextOnly?: boolean } = {},
 ): PasteDecision {
     const { spillWithin, plainTextOnly = false } = options;
-    // A shape not made by pasteShape is refused by name rather than divided by.
-    if (!Number.isSafeInteger(source.rows) || source.rows < 1 || !Number.isSafeInteger(source.columns) || source.columns < 1) {
-        throw new RangeError(`A paste shape covers at least one cell. (rows: ${source.rows}, columns: ${source.columns})`);
-    }
+    checkShape(source);
     if (target.isEmpty) {
         return refuse('emptySelection');
     }

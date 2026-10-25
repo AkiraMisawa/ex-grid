@@ -44,7 +44,7 @@
         {"extendTo": [8, 7]},
         {"toggleRange": [0, 9]},
         {"extendTo": [1, 9]},
-        {"cycle": "enter", "times": 2},
+        {"cycle": "enter", "focuses": [[1, 9], [1, 1]]},
         {"planPaste": {"source": [1, 1], "plainTextOnly": true}, "plan": {"targets": [[0, 9, 1, 1]]}}
       ]
     },

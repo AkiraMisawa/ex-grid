@@ -151,13 +151,34 @@ function parseTsv(text: string): string[][] {
     return rows;
 }
 
-/** Where `needle`, ASCII, first stands in `text` at or after `from`, in any case, or -1. Lower-casing the
- * whole text would move the indexes wherever a character's lower case is longer than itself. */
-function indexOfIgnoringCase(text: string, needle: string, from: number): number {
-    const pattern = new RegExp(needle.replaceAll(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
-    pattern.lastIndex = from;
-    const found = pattern.exec(text);
-    return found === null ? -1 : found.index;
+/** A character's code, an ASCII capital folded to its small letter. */
+function foldedAt(text: string, at: number): number {
+    const code = text.charCodeAt(at);
+    return code >= 65 && code <= 90 ? code + 32 : code;
+}
+
+/**
+ * Where `needle`, ASCII and in small letters, first starts in `text` at or after `from` and before `until`,
+ * in any case, or -1. A scan, not a regular expression made on every call, and never past `until`: a row
+ * looking for a tag it lacks would otherwise read the rest of the document, row after row. Lower-casing
+ * the whole text instead would move the indexes wherever a character's small letter is longer than itself.
+ */
+function indexOfIgnoringCase(text: string, needle: string, from: number, until: number = text.length): number {
+    const last = Math.min(until, text.length - needle.length + 1);
+    const first = needle.charCodeAt(0);
+    for (let i = from; i < last; i++) {
+        if (foldedAt(text, i) !== first) continue;
+        let matched = 1;
+        while (matched < needle.length && foldedAt(text, i + matched) === needle.charCodeAt(matched)) matched++;
+        if (matched === needle.length) return i;
+    }
+    return -1;
+}
+
+/** Whether the character after a tag's name ends the name: whitespace, `>` or `/`. */
+function endsTagName(html: string, at: number): boolean {
+    const after = html.charAt(at);
+    return /\s/.test(after) || after === '>' || after === '/';
 }
 
 /**
@@ -175,7 +196,7 @@ function parseHtmlTable(html: string): Field[][] | undefined {
     // it says so on the table, and nothing else on a clipboard does.
     const tableOpenEnd = html.indexOf('>', tableStart);
     const ownInvariant = tableOpenEnd > 0 && tableOpenEnd < tableEnd
-        && indexOfIgnoringCase(html.slice(tableStart, tableOpenEnd), invariantMarker, 0) >= 0;
+        && indexOfIgnoringCase(html, invariantMarker, tableStart, tableOpenEnd - invariantMarker.length + 1) >= 0;
 
     const rows: Field[][] = [];
     let position = tableStart;
@@ -188,8 +209,7 @@ function parseHtmlTable(html: string): Field[][] | undefined {
         const cells: Field[] = [];
         let cellPosition = rowStart;
         for (;;) {
-            let cellStart = indexOfTag(html, 'td', cellPosition, rowEnd);
-            if (cellStart < 0) cellStart = indexOfTag(html, 'th', cellPosition, rowEnd);
+            const cellStart = indexOfCell(html, cellPosition, rowEnd);
             if (cellStart < 0) break;
             const openEnd = html.indexOf('>', cellStart);
             if (openEnd < 0 || openEnd > rowEnd) break;
@@ -216,13 +236,19 @@ function parseHtmlTable(html: string): Field[][] | undefined {
 /** Finds `<tag` as a real tag open, followed by whitespace, `>` or `/`, between `from` and `until`. */
 function indexOfTag(html: string, tag: string, from: number, until: number): number {
     const needle = `<${tag}`;
-    let i = from;
-    while (i >= 0 && i < until) {
-        i = indexOfIgnoringCase(html, needle, i);
-        if (i < 0 || i >= until) return -1;
-        const after = html.charAt(i + needle.length);
-        if (/\s/.test(after) || after === '>' || after === '/') return i;
-        i += needle.length;
+    for (let i = indexOfIgnoringCase(html, needle, from, until); i >= 0; i = indexOfIgnoringCase(html, needle, i + needle.length, until)) {
+        if (endsTagName(html, i + needle.length)) return i;
+    }
+    return -1;
+}
+
+/** Finds the next cell's open, `<td` or `<th`, whichever comes first, between `from` and `until`: in one
+ * scan, so a row of heading and data cells keeps its order (a web table's row headings), and a row with
+ * no heading cell is not searched again for one. */
+function indexOfCell(html: string, from: number, until: number): number {
+    for (let i = indexOfIgnoringCase(html, '<t', from, until); i >= 0; i = indexOfIgnoringCase(html, '<t', i + 2, until)) {
+        const name = foldedAt(html, i + 2);
+        if ((name === 100 || name === 104) && endsTagName(html, i + 3)) return i;
     }
     return -1;
 }

@@ -81,9 +81,11 @@ export interface GridKeyClaims {
     readonly canUndo: boolean;
     /** Whether someone listens for redo: Ctrl+Y and Ctrl+Shift+Z are claimed only then. */
     readonly canRedo: boolean;
-    /** Whether anything can answer a Find (ADR-0055): Ctrl+F opens the find panel, or is refused. */
+    /** Whether anything can answer a Find (ADR-0055): Ctrl+F opens the find panel, or is refused. Ctrl+F is
+     * claimed either way, so {@link keysTakenFor} does not read it; the grid does, when the key arrives. */
     readonly canFind?: boolean;
-    /** Whether a Replace can land (ADR-0332 §2): Ctrl+H opens Replace, or is refused. */
+    /** Whether a Replace can land (ADR-0332 §2): Ctrl+H opens Replace, or is refused. Ctrl+H is claimed
+     * either way, so {@link keysTakenFor} does not read it; the grid does, when the key arrives. */
     readonly canReplace?: boolean;
 }
 
@@ -309,7 +311,8 @@ function parseCanonical(declared: string): Parsed | undefined {
 function coreAnswer(canonical: string, parsed: Parsed): string | undefined {
     const taken = table.get(canonical);
     if (taken !== undefined) {
-        return `the core's ${taken.kind}`;
+        // In words, selectAll as "select all", as the C# core writes its SelectAll.
+        return `the core's ${taken.kind.replaceAll(/[A-Z]/g, letter => ` ${letter.toLowerCase()}`)}`;
     }
     const outside = answeredOutsideTable.get(canonical);
     if (outside !== undefined) {

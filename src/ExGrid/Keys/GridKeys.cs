@@ -232,11 +232,26 @@ internal static class GridKeys
         ["Shift+Insert"] = "the browser's paste event, which the core answers (ADR-0014)",
     };
 
+    /// <summary>A kind in words, <c>SelectAll</c> as "select all": the Script Core writes the same message
+    /// (ADR-0350), where the kind is spelt <c>selectAll</c>.</summary>
+    private static string Words(GridKeyKind kind)
+    {
+        var name = kind.ToString();
+        var words = new System.Text.StringBuilder(name.Length + 4);
+        foreach (var c in name)
+        {
+            if (char.IsUpper(c) && words.Length > 0)
+                words.Append(' ');
+            words.Append(char.ToLowerInvariant(c));
+        }
+        return words.ToString();
+    }
+
     /// <summary>What the core does with a key, in words, or null when the core leaves it alone.</summary>
     private static string? CoreAnswer(string canonical, bool control, bool meta, bool alt, string key)
     {
         if (Table.TryGetValue(canonical, out var action))
-            return $"the core's {action.Kind}";
+            return $"the core's {Words(action.Kind)}";
         if (AnsweredOutsideTable.TryGetValue(canonical, out var answer))
             return answer;
         // The gate's typing rules (ADR-0010): a character, or F2, with nothing but Shift opens the
