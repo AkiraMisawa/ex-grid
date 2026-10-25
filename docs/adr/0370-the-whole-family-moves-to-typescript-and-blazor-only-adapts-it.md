@@ -15,7 +15,8 @@ and the engines stay C#, reached as .NET WebAssembly in a Worker or on a server.
 moving everything was the fastest, and why a port would need Excel again when the C# engine's tests
 already hold Excel's answers. It does not, which section 2 records. The user then chose B. Sections 1, 2,
 3, 4, 6 and 7 changed; the products' UIs moving to Script Cores of their own, the packages' names and
-the Docs Site did not. Section 3's server pivot was settled with the user last, the same day.)*
+the Docs Site did not. Section 3's server pivot was settled with the user last, the same day.
+Section 11 was added with the user after this ADR merged.)*
 
 ## Context
 
@@ -90,7 +91,8 @@ bridge from a selection (ADR-0250), and ExBoard's lays out the others. Each reac
 Script Core's public surface and nothing private, so what it asks of ExGrid is stated as ADR-0063
 states ExPivot's, and is a member of `@ex-grid/core`'s surface. ADR-0350 sections 2 to 6 hold for it as
 written: it owns the DOM inside its own root, writes the product's DOM contract and reads its
-stylesheet unchanged, and its layer-3 specs run against a React host as against both Blazor hosts.
+stylesheet unchanged, and its layer-3 specs run against a React host as against both Blazor hosts
+until its step 3 holds, and then on the hosts section 11 gives them.
 
 Each product has a React adapter and a Blazor adapter, both Framework Adapters as ADR-0350 section 3
 defines them. The Blazor adapter is thin in the way Blazor's package over a JavaScript library is: the
@@ -261,10 +263,21 @@ that does, a layout past `MaxLeaves` is not refused:
 - **What crosses the wire is what is shown.** The transfer grows with the rows on screen, not with the
   leaves: a million customers under a collapsed region are one row. Each expand and each sort by value
   is a round trip, which is the price of Level Aggregates, and why they are answered only past the cap.
-- **Two cases are open**, and are decided with the user before the engine builds Level Aggregates: a
-  sibling set too large to fetch whole, which the check needs whole; and rank, running totals and Top 10
-  across a level that is not all in the browser. Each is either answered by the server's window
-  functions, which the engine then cannot check, or refused by name, as the cap is now.
+- **A sibling set too large to fetch whole is answered as a window with what lies on either side.**
+  *(Decided with the user, 2026-10-25, over a cap on a group's children and over trusting the server's
+  window functions unchecked.)* Where a group's children pass what the screen can hold (a million
+  customers under one region, expanded), the server answers the children in the window on screen, in
+  the order the engine sorts siblings (the sort's key, then the Items' order), with two more sets of
+  parts: those of the siblings before the window and those after it, each with its count of siblings
+  and the key of its nearest sibling to the window. The engine checks that before, window and after
+  compose to the parent, part by part, as above; that the nearest key before the window does not sort
+  after the window's first sibling, and the nearest key after it does not sort before its last; and
+  that the counts give the window's place. A running total then starts from the parts before the
+  window, a rank is the count before the window plus the place within it, and a Top 10 is a window
+  whose after-set's nearest key does not sort ahead of its tenth. Any mismatch is refused naming the
+  group, as above. What the engine cannot check is that the nearest keys the server states are the
+  nearest; that is the `GROUP BY` premise again, held by the same shared cases as the rest of
+  `ExPivot.Server`'s pass.
 
 **Live server data re-asks what is shown.** ADR-0066 refused answers that name the leaves that changed,
 because a source naming too few painted totals that did not add up with nothing to say so, and
@@ -423,6 +436,39 @@ typed into a sheet, and ExSheet's formats. C# reads `CultureInfo`; TypeScript ha
   version and a figure that changes with the runtime is the quiet error the spine's first rule
   refuses.
 
+### 11. Layer 3 judges a behaviour once, and a Blazor host what Blazor touches
+
+*(Decided with the user, 2026-10-25, after this ADR merged. Asked what else was left, the thread had
+estimated that layer 3 would take nearly twice its time, every product's full specs running on a third
+host. The user answered that Blazor would be little more than an adapter, so the doubling made no sense.
+For the end state it does not: the estimate counted the same code judged three times.)*
+
+A behaviour is the Script Core's code under either adapter, drawing the same DOM contract (ADR-0350
+section 4), so running its spec on three hosts judges the same code three times. Once a product's
+step 3 holds, its layer 3 is split by what a spec judges:
+
+- **Behaviour specs** run on the React host, in both browsers: keys, selection, copy and paste, the
+  engines' answers on screen and the rest, under the built-in Chrome and with data the page already
+  holds.
+- **Blazor specs** run on both Blazor hosts, in both browsers. A spec is one when anything it judges
+  passes through Blazor: a parameter reaching the Script Core; an event or callback reaching the
+  Consumer; data handed, changed or answered across the Server host's circuit, a Window asked for by
+  a scroll included (spine rule 6 holds at that boundary); a Chrome or Template slot filled with
+  Razor, the MudBlazor Wrappers' editors, popovers and panels among them; Blazor's own runtime at the
+  root, its delegated events (ADR-0240), prerender and attach; and the Docs Site's Blazor Examples.
+  `@ex-grid/mui`'s specs run on the React host in the same way.
+- **A spec says which it is**, in its title's tag, and one that says neither runs on all three hosts,
+  so a missing tag costs time and never a test.
+
+Until a product's step 3 holds, its C# UI still ships, so its specs keep running on the Blazor hosts as
+they do today. Its step 2 holds when its full specs pass on both Blazor hosts, and they keep running
+there until step 3, which is the proof that the adapter carries every behaviour (section 6). CI
+therefore grows while a product's two implementations ship side by side. Whether it comes out lighter
+than today once step 3 holds is measured, not assumed: each step 3 records layer 3's minutes before and
+after in its pull request. ADR-0350 section 4's three hosts, ADR-0041's per-host jobs and the
+Definition of Done's criteria checked "on the Server host" are read with this split from each product's
+step 3, and those criteria are rewritten then, naming the host each is checked on, without dropping any.
+
 ## Consequences
 
 - Every product has one implementation in one language from 0.3.0. Until each step 3, the C# code still
@@ -438,6 +484,10 @@ typed into a sheet, and ExSheet's formats. C# reads `CultureInfo`; TypeScript ha
   ExBoard.Spec and the reduced ExChart.Engine, each held to its TypeScript counterpart by shared cases.
 - A server pivot past the cap is refused by name until Level Aggregates are built, and is then asked
   for the groups it shows, a round trip per expand, with every level checked against its parent; live
-  server data re-asks what is shown. Two cases of Level Aggregates are open (section 3).
+  server data re-asks what is shown. A sibling set too large to fetch is a window checked with what lies
+  on either side (section 3).
+- CI's layer 3 grows while a product's C# UI and Script Core both ship. From its step 3, behaviour runs
+  on the React host and Blazor's hosts run what passes through Blazor; each step 3 records the minutes
+  (section 11).
 - The family publishes nineteen npm packages, and the release workflow publishes them from the same
   tag as NuGet's.
