@@ -352,7 +352,10 @@ with a fourth for the repository:
    for every Script Core.
 4. **The repository's layout** (section 9), once every product's step 3 holds.
 
-0.3.0 is not tagged until every step holds (ADR-0350 section 7). Prereleases publish from tags meanwhile
+0.3.0 is not tagged until every step holds (ADR-0350 section 7), and until the React package of every
+product, all five, runs stably *(decided with the user, 2026-10-25: "0.3.0 ships once the React version
+of every product works stably")*: its layer 3 green on CI with no red open against it that passed on a
+re-run (ADR-0220). No product ships as 0.3.0 alone ahead of the others. Prereleases publish from tags meanwhile
 ([ADR-0042](./0042-prereleases-ship-before-sign-off-and-only-a-stable-version-waits-for-it.md)), so a
 product reaches React developers as a prerelease when its step 1 holds.
 
