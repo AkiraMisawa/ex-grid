@@ -330,6 +330,34 @@ export function aggregateSliced(source: SnapshotPivotSource, query: PivotQuery, 
     return aggregateOn(source, query, slicer);
 }
 
+/** A Snapshot the source answers from, its fields' bindings, and the Source Version it answers under. */
+export interface BoundSnapshot {
+    readonly snapshot: Snapshot;
+    readonly bindings: ReadonlyMap<string, FieldBinding>;
+    readonly version: string;
+}
+
+/** What a report's computation reads of a Snapshot's source, which keeps its own pass (ADR-0153): not part of
+ * the public surface. */
+export interface SnapshotSourceLink {
+    /** The Snapshot the source answers from now. */
+    capture(): BoundSnapshot;
+    /** Tells `listener` each Change Batch the source applies, with the next version's bindings, before its
+     * subscribers are told; the function returned stops it. */
+    watch(listener: (change: SnapshotChange, bindings: ReadonlyMap<string, FieldBinding>) => void): () => void;
+    /** Keeps answering Items and records under the version a computation published. */
+    remember(snapshot: Snapshot, bindings: ReadonlyMap<string, FieldBinding>): void;
+    /** The Source Version of a Snapshot of the source. */
+    versionOf(snapshot: Snapshot): string;
+}
+
+let linkOf: (source: SnapshotPivotSource) => SnapshotSourceLink;
+
+/** The link a report's computation keeps to a Snapshot's source. */
+export function snapshotSourceLink(source: SnapshotPivotSource): SnapshotSourceLink {
+    return linkOf(source);
+}
+
 /**
  * The bundled source over a Snapshot (ADR-0066): it answers every Aggregation under the version
  * `{identity}:{snapshot version}`, in slices (PV-40).
@@ -360,6 +388,7 @@ export class SnapshotPivotSource implements PivotSource {
     readonly #id = newIdentity();
     readonly #answered: Bound[] = [];
     readonly #listeners = new Set<(changed: PivotSourceChanged) => void>();
+    readonly #watchers = new Set<(change: SnapshotChange, bindings: ReadonlyMap<string, FieldBinding>) => void>();
     #snapshot: Snapshot;
     #bindings: ReadonlyMap<string, FieldBinding>;
     #held: HeldPass | undefined;
@@ -421,9 +450,10 @@ export class SnapshotPivotSource implements PivotSource {
             // An answer being assembled from the pass reads it between slices: the batch waits until it is
             // made, so that the answer is the version before the batch, whole.
             if (held.assembling > 0) held.deferred.push({ change, bindings });
-            else if (!foldDeferred(held) || !held.pass.fold(change, bindings)) this.#held = undefined;
+            else if (!foldDeferred(held) || !foldHeld(held, change, bindings)) this.#held = undefined;
         }
         this.#heldAnswer = undefined;
+        for (const watcher of Array.from(this.#watchers)) watcher(change, bindings);
         const changed = Object.freeze({ sourceVersion: this.#versionOf(change.after) });
         // A copy, so that a listener subscribed while the others are told is told from the next batch.
         for (const listener of Array.from(this.#listeners)) {
@@ -453,6 +483,22 @@ export class SnapshotPivotSource implements PivotSource {
     }
 
     static {
+        linkOf = (source): SnapshotSourceLink => {
+            const link: SnapshotSourceLink = {
+                capture: () => Object.freeze({ snapshot: source.#snapshot, bindings: source.#bindings, version: source.#versionOf(source.#snapshot) }),
+                watch: listener => {
+                    source.#watchers.add(listener);
+                    return () => {
+                        source.#watchers.delete(listener);
+                    };
+                },
+                remember: (snapshot, bindings) => {
+                    source.#remember(snapshot, bindings);
+                },
+                versionOf: snapshot => source.#versionOf(snapshot),
+            };
+            return Object.freeze(link);
+        };
         aggregateOn = (source, query, slicer) => {
             const refusal = queryRefusal(source.fields, source.features, query);
             return refusal === undefined ? source.#aggregate(query, slicer) : Promise.resolve(PivotAnswer.refused(refusal));
@@ -557,8 +603,15 @@ export class SnapshotPivotSource implements PivotSource {
 function foldDeferred(held: HeldPass): boolean {
     while (held.deferred.length > 0) {
         const next = defined(held.deferred.shift(), 'a deferred batch');
-        if (!held.pass.fold(next.change, next.bindings)) return false;
+        if (!foldHeld(held, next.change, next.bindings)) return false;
     }
+    return true;
+}
+
+// Folds a batch into the source's own pass. No computation reads what it touched, so that is forgotten at once.
+function foldHeld(held: HeldPass, change: SnapshotChange, bindings: ReadonlyMap<string, FieldBinding>): boolean {
+    if (!held.pass.fold(change, bindings)) return false;
+    held.pass.clearChanges();
     return true;
 }
 

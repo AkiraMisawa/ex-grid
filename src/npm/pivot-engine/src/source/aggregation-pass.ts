@@ -19,6 +19,9 @@ import { runWhole } from './slicing';
 /** The most rows read column by column at once, as C#'s pass reads them. */
 export const chunkRows = 4096;
 
+/** The first row of a leaf that holds no record. */
+export const noFirstRow = 0x7fffffff;
+
 // ---- Items --------------------------------------------------------------------------------------
 
 /**
@@ -48,6 +51,10 @@ export class ItemSpace {
     #error = -1;
     #false = -1;
     #true = -1;
+    #noting = false;
+    /** The text Items whose rows a Change Batch took away or brought since {@link clearChanges}, whose
+     * spelling may have changed with them (ADR-0153). */
+    readonly changedItems = new Set<number>();
 
     constructor(binding: FieldBinding, hidden: readonly PivotItemKey[] | undefined) {
         this.#binding = binding;
@@ -68,6 +75,7 @@ export class ItemSpace {
      * and an Item that first appears takes the next.
      */
     rebind(binding: FieldBinding): void {
+        this.#noting = true;
         const text = textColumnOf(binding);
         if ((text === undefined) !== (this.#textColumn === undefined) || binding.columns.length !== this.#binding.columns.length) {
             throw new Error(`Internal: '${binding.field.name}' is bound to columns of other kinds in the next version.`);
@@ -93,7 +101,14 @@ export class ItemSpace {
         const column = this.#textColumn;
         if (column === undefined) return;
         const code = column.codeAt(row);
-        if (code >= 0) this.#presence[code] = elementAt(this.#presence, code) - 1;
+        if (code < 0) return;
+        this.#presence[code] = elementAt(this.#presence, code) - 1;
+        this.changedItems.add(elementAt(this.#itemOfCode, code));
+    }
+
+    /** Forgets the Items {@link changedItems} names. */
+    clearChanges(): void {
+        this.changedItems.clear();
     }
 
     /** How many Items the space has handed out. */
@@ -181,8 +196,11 @@ export class ItemSpace {
                     if (blanks) items[i] = this.#blankItem();
                     continue;
                 }
-                items[i] = elementAt(this.#itemOfCode, code);
+                const item = elementAt(this.#itemOfCode, code);
+                items[i] = item;
                 this.#presence[code] = elementAt(this.#presence, code) + 1;
+                // Once batches are folded in, a row brought may change its Item's spelling.
+                if (this.#noting) this.changedItems.add(item);
                 continue;
             }
             if (column.isBlank(row)) {
@@ -684,9 +702,17 @@ export class AggregationPass {
     // of an axis field whose Items are met in the rows' order, for the order they were met in.
     #leafOf: Int32Array | undefined;
     #rowItems: (Int32Array | undefined)[];
+    // Each kept row's place in the order the rows came, which a batch never reorders: a fresh pass's row
+    // number until a batch is folded in. A changed record takes the place of a row the batch removed where it
+    // stands, a record added a place after every other; so a leaf's first row by place is where a fresh pass
+    // first meets it, though the rows are numbered again (ADR-0153).
+    #places: Int32Array | undefined;
+    #nextPlace = 0;
     // Whether a batch has been folded in: the Items and leaves are then numbered as they came, and the
     // answer lists them in the order a fresh pass would have met them.
     #folded = false;
+    // The leaves the batches folded in since the last clearChanges took records from or brought them to.
+    readonly #changedLeaves = new Set<number>();
 
     constructor(snapshot: Snapshot, bindings: ReadonlyMap<string, FieldBinding>, query: PivotQuery, keepRows = false) {
         this.query = query;
@@ -717,6 +743,66 @@ export class AggregationPass {
     /** The refusal, once the answer would pass the cap on leaves. */
     get refusal(): PivotSourceRefusal | undefined {
         return this.#refusal;
+    }
+
+    /** How many leaves the pass has made, holding records or not. */
+    get leafCount(): number {
+        return this.#leaves.count;
+    }
+
+    /** How many records a leaf holds now: 0 for one a batch emptied. */
+    recordsOf(leaf: number): number {
+        return elementAt(this.#leaves.records, leaf);
+    }
+
+    /** The Item a leaf has at a level of the axes, the row fields' then the column fields'. */
+    itemOfLeaf(level: number, leaf: number): number {
+        return elementAt(elementAt(this.#leaves.itemOfLeaf, level), leaf);
+    }
+
+    /** The Items of a level of the axes, the row fields' then the column fields'. */
+    axis(level: number): ItemSpace {
+        return elementAt(this.#axis, level);
+    }
+
+    /** The leaves the batches folded in since {@link clearChanges} took records from or brought them to
+     * (ADR-0153). */
+    get changedLeaves(): ReadonlySet<number> {
+        return this.#changedLeaves;
+    }
+
+    /** Forgets the leaves and Items the batches folded in so far touched. */
+    clearChanges(): void {
+        this.#changedLeaves.clear();
+        for (const space of [...this.#axis, ...this.#filters]) space.clearChanges();
+    }
+
+    /** Each field in Values, finished at the leaves named, in that order: the parts an answer carries for them. */
+    partsOf(leaves: readonly number[]): readonly PartColumns[] {
+        return this.#values.map(values => values.finished(leaves));
+    }
+
+    /**
+     * Where a fresh pass over the Snapshot first meets each leaf, by leaf: the place of its first record, which
+     * orders the leaves as the answer lists them and as a total merges them, and which a batch moves only for a
+     * leaf it touched (ADR-0153). A pass that keeps no
+     * rows numbers its leaves as their first rows come, so a leaf's number stands for its row. A leaf that
+     * holds no record has none: the largest number.
+     */
+    firstRows(): Int32Array {
+        const count = this.#leaves.count;
+        const leafOf = this.#leafOf;
+        const first = new Int32Array(count).fill(noFirstRow);
+        if (leafOf === undefined) {
+            for (let leaf = 0; leaf < count; leaf++) if (elementAt(this.#leaves.records, leaf) > 0) first[leaf] = leaf;
+            return first;
+        }
+        const places = this.#places;
+        for (let row = leafOf.length - 1; row >= 0; row--) {
+            const leaf = elementAt(leafOf, row);
+            if (leaf >= 0) first[leaf] = places === undefined ? row : elementAt(places, row);
+        }
+        return first;
     }
 
     /** Reads the next rows, up to `to`, a chunk at a time; false once the question is refused. */
@@ -801,6 +887,7 @@ export class AggregationPass {
             if (leaf < 0) continue;
             records[leaf] = elementAt(records, leaf) - 1;
             touched.add(leaf);
+            this.#changedLeaves.add(leaf);
             this.#values.forEach((values, v) => {
                 const leaves = elementAt(marked, v);
                 if (!leaves.has(leaf) && !values.trySubtract(leaf, row)) leaves.add(leaf);
@@ -816,6 +903,10 @@ export class AggregationPass {
         const nextLeafOf = leafOf === undefined ? undefined : new Int32Array(rowCount);
         const nextItems = this.#rowItems.map(kept => (kept === undefined ? undefined : new Int32Array(rowCount)));
         const added = change.added;
+        const places = this.#places;
+        const placeOf = (row: number): number => (places === undefined ? row : elementAt(places, row));
+        const nextPlaces = leafOf === undefined ? undefined : new Int32Array(rowCount);
+        if (this.#places === undefined) this.#nextPlace = change.before.rowCount;
         // The last row of the next version that the one before held: a row brought after it comes last.
         let lastKept = -1;
         let removed = 0;
@@ -824,12 +915,25 @@ export class AggregationPass {
         for (let row = 0; row < rowCount; row++) {
             if (addedAt < added.length && elementAt(added, addedAt) === row) {
                 addedAt++;
+                if (nextPlaces === undefined) continue;
+                if (removed < change.removed.length && elementAt(change.removed, removed) === before) {
+                    // A record brought where rows were removed takes the place of the first of them.
+                    nextPlaces[row] = placeOf(before);
+                    removed++;
+                    before++;
+                } else {
+                    // One brought after every row kept takes a new place; one before a row kept that took no
+                    // removed row's place is not a batch's shape, and the question is asked afresh.
+                    if (before < change.before.rowCount || this.#nextPlace >= noFirstRow) return false;
+                    nextPlaces[row] = this.#nextPlace++;
+                }
                 continue;
             }
             while (removed < change.removed.length && elementAt(change.removed, removed) === before) {
                 removed++;
                 before++;
             }
+            if (nextPlaces !== undefined) nextPlaces[row] = placeOf(before);
             if (nextLeafOf !== undefined && leafOf !== undefined) nextLeafOf[row] = elementAt(leafOf, before);
             nextItems.forEach((next, level) => {
                 const kept = this.#rowItems[level];
@@ -839,6 +943,7 @@ export class AggregationPass {
             before++;
         }
         this.#leafOf = nextLeafOf;
+        this.#places = nextPlaces;
         this.#rowItems = nextItems;
         for (let first = 0; first < added.length;) {
             let end = first + 1;
@@ -847,7 +952,11 @@ export class AggregationPass {
             const n = end - first;
             const { items, leaves } = this.#assign(at, n, false);
             this.#keep(at, items, leaves);
-            for (const leaf of leaves) if (leaf >= 0) touched.add(leaf);
+            for (const leaf of leaves) {
+                if (leaf < 0) continue;
+                touched.add(leaf);
+                this.#changedLeaves.add(leaf);
+            }
             this.#values.forEach((values, v) => {
                 values.ensureLeaves(this.#leaves.count);
                 const leavesMarked = elementAt(marked, v);

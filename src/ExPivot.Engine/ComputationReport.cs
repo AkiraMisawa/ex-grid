@@ -364,13 +364,19 @@ internal sealed class ComputationReport
         for (var i = 0; i < made.Length; i++)
         {
             var prior = held.FirstOrDefault(row => row.Key.Equals(made[i].Key));
-            if (prior is not null && prior.CarriesValues == made[i].CarriesValues && prior.Labels.SequenceEqual(made[i].Labels))
+            // Its Items spelt alike too: a row whose Item took another spelling stands for it as it is now spelt.
+            if (prior is not null && prior.CarriesValues == made[i].CarriesValues && prior.Labels.SequenceEqual(made[i].Labels)
+                && SpelledAlike(prior.Key, made[i].Key))
                 made[i] = prior;
             else _labels.Add(made[i]);
             identical &= i < held.Length && ReferenceEquals(held[i], made[i]);
         }
         return identical ? held : made;
     }
+
+    // Two keys of one row, whose Items are spelt alike.
+    private static bool SpelledAlike(PivotRowKey a, PivotRowKey b)
+        => a.Items.Zip(b.Items).All(pair => pair.First.Kind == pair.Second.Kind && pair.First.Value == pair.Second.Value);
 
     private void Remove(int id)
     {

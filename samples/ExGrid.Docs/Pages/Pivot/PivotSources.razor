@@ -237,6 +237,14 @@ if (shown.refusal === undefined) {
     times.adopt(shown, Date.now(), 1000);            // times = new PivotChangeTimes()
     const copy = await reports.copy({ version: shown.metadata.version, columns, ranges });
 }</code></pre>
+        <p>
+            Over a <code>SnapshotPivotSource</code>, a Window after a Change Batch is computed from what the batch touched,
+            as the C# source computes it (ADR-0153): the leaves it moved, the totals above them, and the rows that show
+            them, so one record changed among a hundred thousand costs a few tens of milliseconds, not a whole report.
+            Every other row is the very object the Window before held. The result is the report a fresh source over the
+            same Snapshot makes, to the last bit of every number. Once a batch has begun to be folded in, the work is
+            carried through to its end, and a cancellation is heard only before that, or while a new layout is laid out.
+        </p>
     </DocsSection>
 
     <DocsSection Title="API">

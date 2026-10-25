@@ -165,11 +165,28 @@ internal sealed class ComputationAxis(AxisNode[] initial, ImmutableDictionary<in
                         var before = Node(id);
                         if (before.Item!.PublicKey.Kind == key.Kind && before.Item.PublicKey.Value == key.Value)
                             continue;
-                        _nodes = _nodes.SetItem(id, new AxisNode(id, before.Level, before.Parent, ItemRef.Of(key)));
+                        var node = new AxisNode(id, before.Level, before.Parent, ItemRef.Of(key));
+                        _nodes = _nodes.SetItem(id, node);
                         if (_users[id] > 0)
                             Changed.Add(id);
+                        Reparent(node);
                     }
                 }
+            }
+        }
+
+        // Every node ever made under a relabelled one, made again under it: a node's key path,
+        // made from its parent's, is then spelled as this version spells it.
+        private void Reparent(AxisNode parent)
+        {
+            foreach (var id in PathsUnder(parent.Id).Values)
+            {
+                var child = Node(id);
+                var node = new AxisNode(id, child.Level, parent, child.Item);
+                _nodes = _nodes.SetItem(id, node);
+                if (_users[id] > 0)
+                    Changed.Add(id);
+                Reparent(node);
             }
         }
 
