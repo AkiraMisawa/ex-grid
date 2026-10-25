@@ -239,7 +239,7 @@ describe('GridSource.from with a Row Key', () => {
         expect(first === undefined ? undefined : Object.isFrozen(first)).toBe(true);
     });
 
-    it('ADR-0141 / LV-9: a format that throws while a change is compared leaves the times as they were', () => {
+    it('ADR-0141 / LV-9: under the Change Highlight, a row its format throws on refuses the batch whole, and nothing is taken in', () => {
         let throwing = false;
         const formatted: readonly QueryColumn<Keyed>[] = [{
             name: 'Amount', type: 'number', value: row => row.amount,
@@ -249,10 +249,12 @@ describe('GridSource.from with a Row Key', () => {
         source.setColumns(formatted);
         source.gatherInterval = 0;
         const changedAt = source.cellChangedAt;
+        const changed = { id: 'A', amount: 2 };
         throwing = true;
-        expect(() => { source.apply({ changed: [{ id: 'A', amount: 2 }] }); }).toThrow('format');
+        expect(() => { source.apply({ changed: [changed] }); }).toThrow('format');
         throwing = false;
-        source.publishGathered();
+        expect(source.snapshot().window.map(row => row.amount)).toEqual([1]);
+        source.apply({ changed: [changed] });
         const [row] = source.snapshot().window;
         expect(row === undefined || changedAt === undefined ? 'missing' : changedAt(row, 'Amount')).toBeTypeOf('number');
     });

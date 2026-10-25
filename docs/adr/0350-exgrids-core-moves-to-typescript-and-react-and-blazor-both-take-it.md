@@ -301,9 +301,10 @@ than its spelling, Blazor's surface follows it under section 14.
   values are read like the browser's.
 - **A value without a format shows C#'s text where the two can agree** (ADR-0006). A boolean reads `True`
   or `False` and a date one ISO form by its type, `yyyy-MM-dd HH:mm:ss ±hh:mm` for an instant in the offset
-  it holds, so a column reads alike on either core; a `Date`, which holds no offset, reads in UTC's. A
-  number is JavaScript's own shortest text for it: a `number` keeps no trailing zeros, as C#'s decimal does,
-  and a column that wants a fixed number of places declares a `format`. An object of the Consumer's own
+  it holds, so a column reads alike on either core; a `Date`, which holds no offset, reads in UTC's, and a
+  date held in another calendar shows the ISO day it names, the day its filter and sort read. A
+  number is JavaScript's own shortest text for it: a `number` keeps no trailing zeros, where C#'s decimal
+  keeps its scale, so a column that wants a fixed number of places declares a `format`. An object of the Consumer's own
   shows its own `toString`. The cell paints by this text and a source compares by it, so a change the format
   hides is not marked (ADR-0067).
 - **A Row Key is a `string`, a `number` or a `bigint`**, given as `GridSource.from(rows, { rowKey })`.

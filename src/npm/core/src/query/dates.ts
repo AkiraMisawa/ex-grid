@@ -62,13 +62,26 @@ function notDeclared(type: DateType): string {
  * Temporal holds, negative ones included. A day in another calendar is the ISO day it names, as
  * Temporal's own `compare` takes it. */
 function dayKey(date: object): number | string {
+    const day = isoDay(date);
+    return day === undefined ? malformed : day.year * 10000 + day.month * 100 + day.day;
+}
+
+/** A day as ISO's calendar names it. */
+export interface IsoDay {
+    readonly year: number;
+    readonly month: number;
+    readonly day: number;
+}
+
+/** The ISO day a Temporal date, date and time, or zoned date and time names, in whatever calendar it is
+ * held, read through its own members; `undefined` for a value that does not hold one. */
+export function isoDay(date: object): IsoDay | undefined {
     const iso = Reflect.get(date, 'calendarId') === 'iso8601' ? date : inIsoCalendar(date);
-    if (iso === undefined) return malformed;
+    if (iso === undefined) return undefined;
     const year = whole(iso, 'year');
     const month = whole(iso, 'month');
     const day = whole(iso, 'day');
-    if (year === undefined || month === undefined || day === undefined) return malformed;
-    return year * 10000 + month * 100 + day;
+    return year === undefined || month === undefined || day === undefined ? undefined : { year, month, day };
 }
 
 /** A date and time as its day × 10^15 plus its nanosecond of the day, which is under 10^14. */
@@ -106,7 +119,7 @@ function inIsoCalendar(date: object): object | undefined {
 }
 
 /** A member that is a whole number, or `undefined` when it is missing or is not one. */
-function whole(value: object, name: string): number | undefined {
+export function whole(value: object, name: string): number | undefined {
     const read: unknown = Reflect.get(value, name);
     return typeof read === 'number' && Number.isSafeInteger(read) ? read : undefined;
 }

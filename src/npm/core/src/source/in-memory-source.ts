@@ -13,6 +13,7 @@
 // sequence moved; and the source names its rows by the key and vouches that no Window holds a row twice.
 // Without a key it is the source it always was.
 
+import { textOf } from '../cells/display-text';
 import { defined, itemAt } from '../must';
 import type { QueryColumn } from '../query/columns';
 import { dateIdentity } from '../query/dates';
@@ -524,8 +525,12 @@ export class InMemoryGridSource<Row> implements GridSource<Row> {
      * contradicts its column's declaration is refused now, by name, rather than when the change reaches the
      * grid (ADR-0023). */
     #checkValues(rows: readonly Row[]): void {
-        if (this.#columns !== undefined && rows.length > 0) {
-            queryPositions(rows, this.#columns, this.#state.filter, this.#state.sorts);
+        if (this.#columns === undefined || rows.length === 0) return;
+        queryPositions(rows, this.#columns, this.#state.filter, this.#state.sorts);
+        // Under the Change Highlight each new row's text is compared at publication: a format that throws on
+        // one refuses it now, before anything is taken in, rather than leaving a change held and unpublished.
+        if (this.#live?.times.wanted === true) {
+            for (const row of rows) for (const column of this.#columns) if (column.queryable !== false) textOf(column, row);
         }
     }
 

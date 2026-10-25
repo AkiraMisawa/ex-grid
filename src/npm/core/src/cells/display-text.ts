@@ -7,9 +7,11 @@
 // A value's own text is C#'s where the two can agree: a boolean reads `True` or `False`, as C#'s does, so
 // a column reads alike on either core. A number is JavaScript's own shortest text for it, which holds no
 // trailing zeros, since a `number` keeps none; a column that wants a fixed number of places says so with a
-// `format`. A date is read through its own members, never the global Temporal (see dates.ts).
+// `format`. A date is read through its own members, never the global Temporal, and shows the ISO day it
+// names in whatever calendar it is held, the day its filter and sort read (see dates.ts).
 
 import type { QueryColumn } from '../query/columns';
+import { isoDay, whole as wholeMember } from '../query/dates';
 
 /** The text a value shows when its column declares no format: empty for a Blank, `yyyy-MM-dd` for a
  * `Temporal.PlainDate`, `yyyy-MM-dd HH:mm:ss` for a `Temporal.PlainDateTime`, `yyyy-MM-dd HH:mm:ss ±hh:mm`
@@ -22,9 +24,10 @@ export function displayText(value: unknown): string {
         case 'string': return value;
         case 'boolean': return value ? 'True' : 'False';
         case 'number':
-        case 'bigint': return value.toString();
+        case 'bigint':
         case 'symbol': return value.toString();
         case 'function': throw new TypeError('A cell\'s value is a function, which has no text to show; a column reads a value.');
+        // A Blank returned above: what is left is an object.
         case 'object':
         case 'undefined': break;
         default: throw new Error(`Internal: a value of the type ${typeof value}, which JavaScript does not have.`);
@@ -62,7 +65,9 @@ export function textFor<Row>(column: Pick<QueryColumn<Row>, 'name' | 'format'>, 
 }
 
 function day(value: object): string {
-    return dayText(whole(value, 'year'), whole(value, 'month'), whole(value, 'day'));
+    const iso = isoDay(value);
+    if (iso === undefined) throw new TypeError(`A value tagged ${tagOf(value)} does not hold the day its type names.`);
+    return dayText(iso.year, iso.month, iso.day);
 }
 
 function time(value: object): string {
@@ -82,7 +87,9 @@ function timeText(hour: number, minute: number, second: number): string {
 /** A `Date` holds an instant and no offset, so it is written in UTC's, the same for every reader. */
 function dateObject(date: object): string {
     const milliseconds: unknown = called(date, 'getTime');
-    if (typeof milliseconds !== 'number' || !Number.isFinite(milliseconds)) return 'Invalid Date';
+    // An invalid Date names no instant, and the query refuses it too: it is refused, never shown as a text
+    // that compares equal to every other invalid one.
+    if (typeof milliseconds !== 'number' || !Number.isFinite(milliseconds)) throw new TypeError('A cell\'s Date is not a valid date.');
     const utc = new Date(milliseconds);
     return `${dayText(utc.getUTCFullYear(), utc.getUTCMonth() + 1, utc.getUTCDate())} `
         + `${timeText(utc.getUTCHours(), utc.getUTCMinutes(), utc.getUTCSeconds())} +00:00`;
@@ -91,17 +98,19 @@ function dateObject(date: object): string {
 /** A member that is a whole number; a value whose tag names a type whose members it does not hold is
  * refused. */
 function whole(value: object, name: string): number {
-    const read: unknown = Reflect.get(value, name);
-    if (typeof read !== 'number' || !Number.isSafeInteger(read)) {
-        throw new TypeError(`A value tagged ${Object.prototype.toString.call(value)} has no whole ${name}.`);
-    }
+    const read = wholeMember(value, name);
+    if (read === undefined) throw new TypeError(`A value tagged ${tagOf(value)} has no whole ${name}.`);
     return read;
+}
+
+function tagOf(value: object): string {
+    return Object.prototype.toString.call(value);
 }
 
 function text(value: object, name: string): string {
     const read: unknown = Reflect.get(value, name);
     if (typeof read !== 'string') {
-        throw new TypeError(`A value tagged ${Object.prototype.toString.call(value)} has no ${name} text.`);
+        throw new TypeError(`A value tagged ${tagOf(value)} has no ${name} text.`);
     }
     return read;
 }
@@ -110,7 +119,7 @@ function text(value: object, name: string): string {
 function called(value: object, name: string, ...args: unknown[]): unknown {
     const method: unknown = Reflect.get(value, name);
     if (typeof method !== 'function') {
-        throw new TypeError(`A value tagged ${Object.prototype.toString.call(value)} has no ${name}.`);
+        throw new TypeError(`A value tagged ${tagOf(value)} has no ${name}.`);
     }
     return Reflect.apply(method, value, args);
 }

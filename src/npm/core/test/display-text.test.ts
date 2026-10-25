@@ -41,6 +41,17 @@ describe('displayText', () => {
         expect(displayText(Temporal.PlainTime.from('07:08:09.5'))).toBe('07:08:09');
     });
 
+    it('ADR-0350: a date held in another calendar shows the ISO day it names, the day its filter and sort read', async () => {
+        // The full polyfill, for its calendars other than ISO's.
+        const { Temporal } = await import('temporal-polyfill/full');
+        expect(displayText(Temporal.PlainDate.from('2026-01-02').withCalendar('hebrew'))).toBe('2026-01-02');
+        expect(displayText(Temporal.PlainDateTime.from('2026-01-02T03:04:05').withCalendar('japanese'))).toBe('2026-01-02 03:04:05');
+    });
+
+    it('ADR-0006: an invalid Date names no instant, and is refused rather than shown as a text every other one shares', () => {
+        expect(() => displayText(new Date(Number.NaN))).toThrow(TypeError);
+    });
+
     it('ADR-0006: a value whose tag names a date it does not hold is refused, never written as some other day', () => {
         const forged = { [Symbol.toStringTag]: 'Temporal.PlainDate', year: 2026, month: 'Jan', day: 1 };
         expect(() => displayText(forged)).toThrow(TypeError);

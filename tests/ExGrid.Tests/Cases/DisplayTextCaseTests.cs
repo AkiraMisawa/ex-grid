@@ -6,7 +6,7 @@ namespace ExGrid.Tests.Cases;
 
 /// <summary>
 /// The text a value cell displays (<c>tests/cases/cells</c>, kind <c>displayText</c>; ADR-0006, ADR-0350
-/// section 5), run against <see cref="ColumnInfo{TRow}.TextFor"/>, which reads <see cref="DisplayText"/>
+/// sections 5 and 16), run against <see cref="ColumnInfo{TRow}.TextFor"/>, which reads <see cref="DisplayText"/>
 /// where the column has no format.
 /// </summary>
 public class DisplayTextCaseTests
