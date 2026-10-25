@@ -9,7 +9,10 @@ apply: the 2026-10-06 note above, "retained here to explain the earlier boundary
 and "Under ADR-0151 a server sends report Windows" in the 2026-10-08 section. A server's source no
 longer answers through ExPivot.Engine but through `ExPivot.Server`'s pass, held to the TypeScript
 engine's by shared cases rather than being the reference's by construction. The refusal of answers
-naming the leaves that changed stands; live server data's form is open there.
+naming the leaves that changed stands: until Level Aggregates are built, live server data asks the
+whole question again. Past the cap, ADR-0370 makes Level Aggregates the target, for a source that
+answers them: the engine asks for the groups it shows, in these parts, and checks each group against
+its parent, and live server data then re-asks only what is shown.
 
 **Boundary changed, 2026-10-06:**
 [ADR-0151](./0151-server-pivots-send-report-windows-and-share-the-local-engine.md) chooses

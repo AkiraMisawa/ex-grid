@@ -1180,6 +1180,13 @@ total is computed from these parts, whether the report is computed locally or on
 [ADR-0151](./docs/adr/0151-server-pivots-send-report-windows-and-share-the-local-engine.md)).
 _Avoid_: cube (the engine's own word for what it holds), summary, pre-aggregate, rollup
 
+**Level Aggregate**:
+The same parts as a Leaf Aggregate, for one group the report shows rather than one combination at the
+leaves: the grand total, a collapsed group, or the children of an expanded one. What a server pivot
+answers in place of Leaf Aggregates when its leaves pass the cap
+([ADR-0370](./docs/adr/0370-the-whole-family-moves-to-typescript-and-blazor-only-adapts-it.md)).
+_Avoid_: subtotal (the engine's figure, laid out from parts), server total, rollup
+
 **Question**:
 What a Pivot Source is asked to aggregate for a Pivot Report: the part of its Pivot Layout that
 decides the Leaf Aggregates — the row and column fields in order, the Hidden Items of each placed

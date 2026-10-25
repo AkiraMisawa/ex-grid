@@ -181,7 +181,9 @@ each Value Field asks for, in any language and against any database; the TypeScr
 every cell, subtotal and grand total from them and lays out, sorts, collapses and applies Show Values
 As in the browser. So Excel's rules for a report have one implementation, a total is computed from its
 records and never from the totals below it (ADR-0060), and a parent and its children cannot disagree,
-which is the error a server that returns each level's figures can make without anyone seeing it.
+which is the error a server that returns each level's figures can make without anyone seeing it. Past
+the cap, Level Aggregates (below) give that up for size, and are checked where Leaf Aggregates need no
+check.
 ADR-0151 chose report Windows for WebAssembly's first transfer and retained memory; both are measured
 again with the TypeScript engine (section 7) before ExPivot.Engine is removed.
 
@@ -189,6 +191,7 @@ What a server cannot answer from leaves is refused, as ADR-0066 has it: a source
 Aggregations it answers, and Value Field Settings offers the others disabled with the reason.
 
 **A layout over the leaf cap is refused by name, and the user is told as early as it can be known.**
+This is the first build, and stays for a source that does not answer Level Aggregates (below).
 ADR-0066's cap stands (`MaxLeaves`, 200,000 by default, the Consumer's to change; re-measured on the
 TypeScript engine before it is settled again). The leaves grow with the product of the placed fields'
 Items, not with the records, so the refusal names the fields that make it:
@@ -215,12 +218,62 @@ Items, not with the records, so the refusal names the fields that make it:
   returns to the last layout answered (spine rule 6). Under Defer Layout Update the question is asked
   at Update, and the refusal is said there.
 
-**Live server data under this boundary is open.** ADR-0066 refused answers that name the leaves that
-changed, because a source naming too few painted totals that did not add up with nothing to say so,
-and ADR-0151's Window Changes end with its report Windows. Until a form that can be checked is
-decided, a server's live source answers the whole question again under each new Source Version
-(ADR-0066's `Changed`: ask again), which near the cap is a full answer per change. The form is decided
-with the user before ExPivot's step 1 is called done, measured against ADR-0151's record.
+#### Over the cap, the engine asks level by level and checks every level it is given
+
+*(Decided with the user, 2026-10-25, as the target the cap's refusal grows into. The first build is the
+refusal above; this is built after it, on the same contract.)*
+
+Leaf Aggregates fail at size by their count, not by their correctness: the records may be any number,
+but the leaves cross the wire. So a source may declare that it answers **Level Aggregates**, and for one
+that does, a layout past `MaxLeaves` is not refused:
+
+- **The source's answer decides, per question, in one round trip.** A question that may pass the cap
+  (the bound of the counts passes it, or no bound is known) is asked with `MaxLeaves` and with the
+  groups the report would show. The source answers with the leaves when they fit, and with those
+  groups' Level Aggregates when they do not. Every new question is asked the same way, so a filter that
+  brings the leaves under the cap brings Leaf Aggregates back. While a field is dragged, the mark
+  over a target past the bound says the report will be answered level by level, not that the drop is
+  refused.
+- **The engine names what it shows.** It asks for the groups it will draw: the grand total, each
+  collapsed group as one row, and the children of each group the user expands, crossed with the column
+  groups the same way. Every question names the whole screen, so the parent of every group shown is in
+  the same answer as its siblings. The server answers in one query (`GROUPING SETS` in SQL), under one
+  Source Version, with ADR-0066's parts: the count of values, the count of numbers, the sum, the
+  extremes, the product and the running variance, and for a double's sum also its sum of absolute
+  values. A Value Field whose Aggregation does not compose from parts (a distinct count, a median) is
+  offered disabled with the reason, as ADR-0066 has it.
+- **Excel's rules stay in the engine.** Averages, variances, Show Values As, subtotals and the layout
+  are computed from the parts in the browser, by the same code as Leaf Aggregates.
+- **Every group shown is checked against its parent.** The engine composes each sibling set's parts and
+  compares every part with the parent's: counts, extremes and exact decimal sums (ADR-0060) exactly,
+  and a double part (a sum, a product, a running variance) within the rounding its composition can
+  make. A sum's bound comes from its sum of absolute values; the bound for the product and the running
+  variance is fixed with shared cases before Level Aggregates are built. A part that is not finite is
+  `#NUM!` in the parent and its children alike, as ADR-0060 has it, and a check whose bound is not
+  finite refuses. A mismatch is refused naming the group, as "the server's answer for Region = EU does
+  not add up", and no figure from that answer is shown (spine rule 1). What the engine cannot check is
+  a collapsed group against children it does not show, and that each level's `GROUP BY` is the right
+  question; the second is the premise of Leaf Aggregates too.
+- **One answer is one Source Version.** An answer under a newer Source Version than the report shows
+  replaces the whole screen, because it names the whole screen; it is never refused for its version,
+  and the check never spans two answers. So an expand on a live source shows the newer data with the
+  children, whenever it arrives (spine rule 6).
+- **What crosses the wire is what is shown.** The transfer grows with the rows on screen, not with the
+  leaves: a million customers under a collapsed region are one row. Each expand and each sort by value
+  is a round trip, which is the price of Level Aggregates, and why they are answered only past the cap.
+- **Two cases are open**, and are decided with the user before the engine builds Level Aggregates: a
+  sibling set too large to fetch whole, which the check needs whole; and rank, running totals and Top 10
+  across a level that is not all in the browser. Each is either answered by the server's window
+  functions, which the engine then cannot check, or refused by name, as the cap is now.
+
+**Live server data re-asks what is shown.** ADR-0066 refused answers that name the leaves that changed,
+because a source naming too few painted totals that did not add up with nothing to say so, and
+ADR-0151's Window Changes end with its report Windows. Under a new Source Version the engine asks the
+question again, so nothing a source leaves out goes unseen: under Leaf Aggregates that is the whole
+question, at most `MaxLeaves`, and under Level Aggregates it is the screen, checked as above. Until
+Level Aggregates are built, every live re-ask is the whole question (ADR-0066's `Changed`: ask again),
+and the re-ask near the cap is measured against ADR-0151's record before ExPivot's step 1 is called
+done.
 
 ### 4. Where an engine runs
 
@@ -379,7 +432,8 @@ typed into a sheet, and ExSheet's formats. C# reads `CultureInfo`; TypeScript ha
   crosses the circuit once instead of its edits crossing it each time (section 2).
 - A .NET server keeps the packages of section 3 in C#: ExGrid.Data, ExGrid.Data.Arrow, ExPivot.Server,
   ExBoard.Spec and the reduced ExChart.Engine, each held to its TypeScript counterpart by shared cases.
-- ExPivot over live server data answers the whole question per change until section 3's open form is
-  decided.
+- A server pivot past the cap is refused by name until Level Aggregates are built, and is then asked
+  for the groups it shows, a round trip per expand, with every level checked against its parent; live
+  server data re-asks what is shown. Two cases of Level Aggregates are open (section 3).
 - The family publishes nineteen npm packages, and the release workflow publishes them from the same
   tag as NuGet's.
