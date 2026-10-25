@@ -36,6 +36,7 @@ import { ViewportBox } from '../viewport/viewport-box';
 import { ViewportGeometry } from '../viewport/viewport-geometry';
 import type { BrowserReports, ViewportReport } from './browser-reports';
 import { ColumnStyles } from './column-styles';
+import { CopiedRange } from './copied-range';
 import { copyValues, gatherRows, windowCovers, windowRowAt } from './grid-copy';
 import type { GridRefusal } from './grid-refusal';
 import { resolveColumns, type GridColumn, type ResolvedColumn } from './grid-column';
@@ -158,6 +159,23 @@ interface Repaint {
     readonly top: number;
     readonly left: number;
     cancel: () => void;
+}
+
+// A copy past the Window as gathered (ADR-0005): its flavours, and the copy to outline once they are written,
+// where the browser can say the clipboard changed (ADR-0170).
+interface GatheredCopy<Row> {
+    readonly flavours: CopyFlavours;
+    /** Made once the write lands, so the cells' text is read again off the write's path. */
+    readonly outline: () => CopiedRange<Row>;
+}
+
+// A write of the grid's own by the asynchronous route (ADR-0170): what was gathered, once in hand; whether it
+// was counted among the writes the browser has yet to report; and whether the write has already ended, after
+// which it is never counted.
+interface OwnWrite<Row> {
+    gathered: GatheredCopy<Row> | undefined;
+    counted: boolean;
+    ended: boolean;
 }
 
 /** A page follow (ADR-0204): armed by a move for the Focus it moved to and the cell its reveal brought into
@@ -293,6 +311,11 @@ export class GridView<Row> {
     // stops the latest one's reads of the source when another copy supersedes it or the grid is destroyed.
     #clipboardWrites = 0;
     #copy: AbortController | undefined;
+    // The Copied Range (ADR-0170): the copy outlined, and the writes of this grid's own copies the browser has
+    // yet to report as a change of the clipboard. A browser that cannot report a change outlines nothing.
+    #copied: CopiedRange<Row> | undefined;
+    #ownWrites = 0;
+    readonly #clipboardWatched: boolean;
 
     // The Selection (ADR-0011, ADR-0012), held under the Row Sequence Version it was made under, and the
     // columns it was made over, by name: either changing drops it.
@@ -493,6 +516,9 @@ export class GridView<Row> {
                     this.#invalidate();
                 }),
             );
+            const stopClipboard = reports.observeClipboard(root, this.#onClipboardChange);
+            this.#clipboardWatched = stopClipboard !== undefined;
+            if (stopClipboard !== undefined) this.#stops.push(stopClipboard);
             this.#pass();
             drawn = true;
         } finally {
@@ -930,8 +956,16 @@ export class GridView<Row> {
     #reconcileSelection(): void {
         const version = this.#sequence();
         const names = this.#columns.map(({ column }) => column.name);
-        this.#held = sameItems(names, this.#columnNames) ? this.#held.under(version) : HeldSelection.empty(version);
+        const columnsMoved = !sameItems(names, this.#columnNames);
+        this.#held = columnsMoved ? HeldSelection.empty(version) : this.#held.under(version);
         this.#columnNames = names;
+        // The Copied Range is written in the same coordinates and dropped on the same triggers; it also goes
+        // when a copied cell the Window holds comes to read otherwise (ADR-0170).
+        const copied = this.#copied;
+        if (copied !== undefined && (copied.version !== version || !sameItems(copied.columnNames, names)
+            || !copied.holds(this.#columns, this.#state.window, this.#state.windowStart))) {
+            this.#copied = undefined;
+        }
     }
 
     // Takes a gesture's Selection; whether it changed anything.
@@ -1017,9 +1051,12 @@ export class GridView<Row> {
         event.stopPropagation();
         this.#answered += 1;
         if (action.kind === 'leave') {
-            // Escape with nothing left to dismiss is the way out of Enter and Tab cycling: the root keeps DOM
-            // focus and the next Tab leaves the grid.
-            this.#tabReleased = true;
+            this.#reconcileSelection();
+            // The Copied Range is the last layer before the way out (ADR-0170, ADR-0012): with a copy
+            // outlined, Escape removes the outline and does nothing else. With nothing left to dismiss it is
+            // the way out of Enter and Tab cycling: the root keeps DOM focus and the next Tab leaves the grid.
+            if (this.#copied === undefined) this.#tabReleased = true;
+            else this.#copied = undefined;
         } else {
             this.#moveByKey(action);
         }
@@ -1143,10 +1180,26 @@ export class GridView<Row> {
             event.preventDefault();
             data.setData('text/plain', text);
             data.setData('text/html', html);
+            // Set here, the write cannot fail: it is the grid's own, and it has landed (ADR-0170).
+            if (this.#clipboardWatched) {
+                this.#ownWrites += 1;
+                this.#land(CopiedRange.of(plan, this.#sequence(), columns, windowRowAt(state)));
+            }
             return;
         }
         const copy = new AbortController();
-        const flavours = this.#gatherCopy(plan, state, columns, this.#sequence(), copy.signal);
+        // Counted as the grid's own write the moment it is in hand, before the browser writes it, so the change
+        // it causes finds it counted (ADR-0170).
+        const own: OwnWrite<Row> = { gathered: undefined, counted: false, ended: false };
+        const flavours = this.#gatherCopy(plan, state, columns, this.#sequence(), copy.signal).then(gathered => {
+            if (gathered === undefined) return undefined;
+            own.gathered = gathered;
+            if (this.#clipboardWatched && !own.ended) {
+                this.#ownWrites += 1;
+                own.counted = true;
+            }
+            return gathered.flavours;
+        });
         // Started before the event is taken from the browser: a write that cannot start leaves the clipboard
         // as the default copy leaves it, untouched.
         let written: Promise<boolean>;
@@ -1158,7 +1211,28 @@ export class GridView<Row> {
         }
         event.preventDefault();
         this.#copy = copy;
-        this.#holdWhileWriting(written, copy);
+        this.#holdWhileWriting(written, copy, own);
+    };
+
+    // A copy's write landed (ADR-0170): its outline replaces the one before, or none does. The pass checks it
+    // as it checks every outline: the order or the columns moved since it was made drop it, as does a copied
+    // cell the Window holds that reads otherwise.
+    #land(copied: CopiedRange<Row> | undefined): void {
+        this.#copied = copied;
+        this.#invalidate();
+    }
+
+    // The clipboard changed. A change this grid's own copy made is the one counted; any other — another
+    // application's, another grid's, a text field's — means the clipboard no longer holds what the outline
+    // marks (ADR-0170).
+    readonly #onClipboardChange = (): void => {
+        if (this.#ownWrites > 0) {
+            this.#ownWrites -= 1;
+            return;
+        }
+        if (this.#copied === undefined) return;
+        this.#copied = undefined;
+        this.#invalidate();
     };
 
     // The flavours of a copy past the Window, or nothing. Rows that could not all be had, or that the order
@@ -1166,7 +1240,7 @@ export class GridView<Row> {
     // hand nor rows of two orders is ever written (ADR-0005, ADR-0011). A copy superseded or a grid
     // destroyed writes nothing and says nothing.
     async #gatherCopy(plan: CopyPlan, state: GridSourceState<Row>, columns: readonly ResolvedColumn<Row>[], version: number,
-        signal: AbortSignal): Promise<CopyFlavours | undefined> {
+        signal: AbortSignal): Promise<GatheredCopy<Row> | undefined> {
         const moved = (): boolean => this.#sequence() !== version || this.#columns !== columns;
         let rows: ReadonlyMap<number, Row> | undefined;
         try {
@@ -1183,13 +1257,15 @@ export class GridView<Row> {
             this.#refuse({ kind: 'copy', reason: 'rowsUnavailable' });
             return undefined;
         }
-        return assembleCopy(plan, copyValues(columns, row => defined(rows.get(row), 'a gathered row')));
+        const rowAt = (row: number): Row => defined(rows.get(row), 'a gathered row');
+        return { flavours: assembleCopy(plan, copyValues(columns, rowAt)), outline: () => CopiedRange.of(plan, version, columns, rowAt) };
     }
 
     // The asynchronous write (ADR-0005) holds the Settled Mark until it has written or refused (ADR-0220). A
     // write the browser would not make is a refusal of its own: a user told nothing would paste the old
-    // clipboard believing it the copy.
-    #holdWhileWriting(written: Promise<boolean>, copy: AbortController): void {
+    // clipboard believing it the copy. A write that lands is outlined (ADR-0170), and one that fails gives
+    // back its count of the grid's own writes.
+    #holdWhileWriting(written: Promise<boolean>, copy: AbortController, own: OwnWrite<Row>): void {
         this.#clipboardWrites += 1;
         this.#showSettled(false);
         const done = (): void => {
@@ -1197,8 +1273,22 @@ export class GridView<Row> {
             if (this.#copy === copy) this.#copy = undefined;
             if (!this.#destroyed) this.#lookSettled();
         };
+        const landed = (wrote: boolean): void => {
+            own.ended = true;
+            const { gathered } = own;
+            // Landed before the Settled Mark is looked at, so the mark never shows the write without its outline.
+            // A newer copy superseded this one, and yet its write landed after it: the clipboard holds this
+            // one, which the newer outline would misname, so none stands (ADR-0170).
+            if (wrote && gathered !== undefined && this.#clipboardWatched && !this.#destroyed) {
+                this.#land(copy.signal.aborted ? undefined : gathered.outline());
+            }
+            done();
+        };
         // oxlint-disable-next-line ex-grid/no-catch -- every rejection is said: a refused write as a refusal, anything else rethrown
-        written.then(done, (error: unknown) => {
+        written.then(landed, (error: unknown) => {
+            own.ended = true;
+            // Never below none: a change from elsewhere may have taken the count already.
+            if (own.counted && this.#ownWrites > 0) this.#ownWrites -= 1;
             done();
             if (this.#destroyed || copy.signal.aborted) return;
             // By name, not by class: the error is the grid's window's, which need not be this realm's.
@@ -1664,7 +1754,7 @@ export class GridView<Row> {
         const firstOpenRow = visible === undefined || geometry === undefined ? -1
             : geometry.viewportTopPxOf(visible.start, this.#scrollTopPx) > 0.01 ? visible.start : visible.start + 1;
         const inputs = {
-            selection: this.#held.selection, start: visible?.start, count: visible?.count, styles: this.#styles,
+            selection: this.#held.selection, copied: this.#copied, start: visible?.start, count: visible?.count, styles: this.#styles,
             rowHeightPx: this.#metrics.rowHeightPx, scrollLeftPx: this.#scrollLeftPx, firstOpenRow,
         };
         const was = this.#layerInputs;
@@ -1673,7 +1763,7 @@ export class GridView<Row> {
             this.#layerInputs = inputs;
             const pieces = visible === undefined || geometry === undefined
                 ? { shade: undefined, pinned: [], scrollable: [] }
-                : selectionLayers(inputs.selection, this.#styles.geometry, inputs.rowHeightPx, visible,
+                : selectionLayers(inputs.selection, inputs.copied === undefined ? [] : inputs.copied.rectangles, this.#styles.geometry, inputs.rowHeightPx, visible,
                     { firstOpenRow, scrollLeftPx: this.#scrollLeftPx, hasHeader: true });
             const signature = JSON.stringify(pieces);
             if (signature !== this.#paintedLayers) {
@@ -1737,6 +1827,9 @@ export class GridView<Row> {
         this.#write(root, 'root', 'aria-activedescendant',
             focus !== undefined && this.#cellIsPainted(focus) ? this.#cellId(focus) : undefined);
         this.#write(this.#stamp, 'stamp', 'data-ex-answered', String(this.#answered));
+        // Whether an Escape on the root would leave the grid now: not while it would peel the Copied Range
+        // (ADR-0230 section 1, ADR-0170).
+        this.#write(this.#stamp, 'stamp', 'data-ex-escape-leaves', this.#copied === undefined ? '' : undefined);
         this.#write(this.#scroller, 'scroller', 'style', this.#scrollerStyle());
         const scrollHeightPx = this.#geometry?.scrollHeightPx ?? 0; // oxlint-disable-line ex-grid/no-stand-in-default -- ADR-0013: a Viewport with no room for a row scrolls nothing
         this.#write(this.#spacer, 'spacer', 'style', `width: ${geometry.totalWidthPx}px; height: ${this.#bandHeightPx + scrollHeightPx}px`);

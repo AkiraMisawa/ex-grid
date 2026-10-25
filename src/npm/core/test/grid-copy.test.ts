@@ -40,8 +40,10 @@ function press(root: HTMLElement, x: number, y: number, init: MouseEventInit = {
     }
 }
 
-function key(root: HTMLElement, name: string, init: KeyboardEventInit = {}): void {
-    root.dispatchEvent(new KeyboardEvent('keydown', { key: name, bubbles: true, cancelable: true, ...init }));
+function key(root: HTMLElement, name: string, init: KeyboardEventInit = {}): KeyboardEvent {
+    const event = new KeyboardEvent('keydown', { key: name, bubbles: true, cancelable: true, ...init });
+    root.dispatchEvent(event);
+    return event;
 }
 
 /** The copy event the browser's copy command fires, with the data it carries out. */
@@ -245,5 +247,170 @@ describe('a copy from the grid', () => {
         press(root, 10, rowY(0));
         const { event, data } = copy(q(root, '.ex-header'));
         expect([event.defaultPrevented, data.size, listener.refusals]).toEqual([false, 0, []]);
+    });
+});
+
+const dashes = (root: HTMLElement): HTMLElement[] => [...root.querySelectorAll<HTMLElement>('.ex-copied-range')];
+const escapeLeaves = (root: HTMLElement): boolean => q(root, '[data-ex-answered]').hasAttribute('data-ex-escape-leaves');
+
+describe('the Copied Range', () => {
+    it('ADR-0170 CP-26/CP-28: a copy that lands is outlined over the Focus; Escape takes the outline away, and only the next Escape leaves', async () => {
+        const { root } = mount({ columns, rows: dated(100), rowHeight: 24, viewportHeight: 480 });
+        await painted();
+        press(root, 130, rowY(0));
+        key(root, 'ArrowDown', { shiftKey: true });
+        await painted();
+        expect([dashes(root), escapeLeaves(root)]).toEqual([[], true]);
+
+        copy(root);
+        await painted();
+        // After the Focus, so the dashes lie over the Selection's outline the copy shares.
+        const layer = q(root, '.ex-selection');
+        expect(dashes(root)).toEqual([layer.lastElementChild]);
+        expect(layer.lastElementChild?.previousElementSibling?.classList.contains('ex-focus')).toBe(true);
+        expect(escapeLeaves(root)).toBe(false);
+
+        // The first Escape peels the outline and keeps the grid's keys: Tab still moves inside the Selection.
+        key(root, 'Escape');
+        await painted();
+        expect([dashes(root), escapeLeaves(root)]).toEqual([[], true]);
+        expect(key(root, 'Tab').defaultPrevented).toBe(true);
+        key(root, 'Escape');
+        expect(key(root, 'Tab').defaultPrevented).toBe(false);
+    });
+
+    it('ADR-0170 CP-27: the grid\'s own write is counted and keeps the outline, any other change drops it; a refused copy leaves it', async () => {
+        const { root, told } = mount({ columns, rows: dated(100), rowHeight: 24, viewportHeight: 480 });
+        await painted();
+        press(root, 10, rowY(0));
+        copy(root);
+        await painted();
+        told.clipboardChanged();
+        await painted();
+        expect(dashes(root)).toHaveLength(1);
+
+        // A Selection that does not line up is refused: the clipboard still holds the copy, outlined.
+        press(root, 130, rowY(2), { ctrlKey: true });
+        await painted();
+        expect(copy(root).data.size).toBe(0);
+        await painted();
+        expect(dashes(root)).toHaveLength(1);
+
+        // Another application's write, another grid's, a text field's.
+        told.clipboardChanged();
+        await painted();
+        expect(dashes(root)).toEqual([]);
+    });
+
+    it('ADR-0170 CP-29/CP-30: a copied cell that comes to read otherwise drops the outline; a row replaced with the same copied text keeps it', async () => {
+        const rows = dated(100);
+        const source = GridSource.from(rows);
+        const { root } = mount({ columns, source, rowHeight: 24, viewportHeight: 480 });
+        await painted();
+        press(root, 10, rowY(0));
+        copy(root);
+        await painted();
+
+        // Another instance whose Book, the copied cell, reads as it did.
+        const first = defined(rows[0], 'the first row');
+        const renotioned = { ...first, notional: 1 };
+        source.replaceRow(first, renotioned);
+        await painted();
+        expect(dashes(root)).toHaveLength(1);
+
+        source.replaceRow(renotioned, { ...renotioned, book: 'Book-moved' });
+        await painted();
+        expect(dashes(root)).toEqual([]);
+    });
+
+    it('ADR-0170 / ADR-0011: the order moving or the columns changing drops the outline, as it drops the Selection', async () => {
+        const source = GridSource.from(dated(100));
+        const options = { columns, source, rowHeight: 24, viewportHeight: 480 } as const;
+        const { root, view } = mount(options);
+        await painted();
+        press(root, 10, rowY(0));
+        copy(root);
+        await painted();
+        source.setSorts([{ column: 'Book', direction: 'descending' }]);
+        await painted();
+        expect(dashes(root)).toEqual([]);
+
+        press(root, 10, rowY(0));
+        copy(root);
+        await painted();
+        view.update({ ...options, columns: columns.toReversed() });
+        await painted();
+        expect(dashes(root)).toEqual([]);
+    });
+
+    it('ADR-0170: each rectangle of a copy of several ranges is outlined', async () => {
+        const { root } = mount({ columns, rows: dated(100), rowHeight: 24, viewportHeight: 480 });
+        await painted();
+        press(root, 10, rowY(0));
+        press(root, 10, rowY(2), { ctrlKey: true });
+        copy(root);
+        await painted();
+        expect(dashes(root)).toHaveLength(2);
+    });
+
+    it('ADR-0170 CP-7: a copy past the Window is outlined only once its write lands', async () => {
+        const answers: ((page: GridPage<Dated>) => void)[] = [];
+        const all = dated(5000);
+        const source = GridSource.fetch<Dated>(() => new Promise(resolve => { answers.push(resolve); }), { readAheadRows: 0 });
+        const { root, told } = mount({ columns, source, rowHeight: 24, viewportHeight: 480 });
+        await painted();
+        defined(answers.shift(), 'the first question')({ rows: all.slice(0, 40), start: 0, totalCount: 5000 });
+        await settle();
+        press(root, 10, rowY(0));
+        key(root, 'ArrowDown', { ctrlKey: true, shiftKey: true });
+        await painted();
+        answers.length = 0;
+
+        copy(root);
+        await painted();
+        expect(dashes(root)).toEqual([]);
+        defined(answers.shift(), 'the copy\'s question')({ rows: all, start: 0, totalCount: 5000 });
+        await settle();
+        expect([told.clipboard.length, told.writing, dashes(root).length]).toEqual([1, 0, 1]);
+    });
+
+    it('ADR-0170 CP-23: a write the browser refuses gives back its count, so the next change from elsewhere still drops an outline', async () => {
+        const answers: ((page: GridPage<Dated>) => void)[] = [];
+        const all = dated(5000);
+        const source = GridSource.fetch<Dated>(() => new Promise(resolve => { answers.push(resolve); }), { readAheadRows: 0 });
+        const { root, told } = mount({ columns, source, rowHeight: 24, viewportHeight: 480 });
+        await painted();
+        defined(answers.shift(), 'the first question')({ rows: all.slice(0, 40), start: 0, totalCount: 5000 });
+        await settle();
+        press(root, 10, rowY(0));
+        key(root, 'ArrowDown', { ctrlKey: true, shiftKey: true });
+        await painted();
+        answers.length = 0;
+        told.clipboardRefused = true;
+        copy(root);
+        await painted();
+        defined(answers.shift(), 'the copy\'s question')({ rows: all, start: 0, totalCount: 5000 });
+        await settle();
+        expect([told.clipboard, dashes(root)]).toEqual([[], []]);
+
+        // Back in the Window: written on the event, counted once, and reported once.
+        key(root, 'ArrowUp', { ctrlKey: true });
+        await painted();
+        copy(root);
+        told.clipboardChanged();
+        await painted();
+        expect(dashes(root)).toHaveLength(1);
+        told.clipboardChanged();
+        await painted();
+        expect(dashes(root)).toEqual([]);
+    });
+
+    it('ADR-0170 CP-32: a browser that cannot say the clipboard changed outlines nothing, and the copy still lands', async () => {
+        const { root } = mount({ columns, rows: dated(100), rowHeight: 24, viewportHeight: 480 }, { clipboardWatched: false });
+        await painted();
+        press(root, 10, rowY(0));
+        const { data } = copy(root);
+        await painted();
+        expect([data.get('text/plain'), dashes(root), escapeLeaves(root)]).toEqual(['Book-0\r\n', [], true]);
     });
 });

@@ -2,7 +2,8 @@
 // knows has changed, and never measures it on the path to a paint. Each report is the C# core's
 // allowlisted one, kept to the same shape: a ResizeObserver for the Scrollbar Gutter and the Viewport's
 // own size (ADR-0013, ADR-0028), one for the Layout Ceiling (ADR-0053), and a media query on the current
-// resolution for the Device Pixel (ADR-0090). A layer-2 test hands in its own, and tells by hand.
+// resolution for the Device Pixel (ADR-0090), and the clipboard's own change for the Copied Range
+// (ADR-0170, ADR-0021's clipboard entry). A layer-2 test hands in its own, and tells by hand.
 
 import type { CopyFlavours } from '../clipboard/clipboard-data';
 import type { GridClock } from '../source/grid-clock';
@@ -43,6 +44,9 @@ export interface BrowserReports {
      * it held; a write the browser refuses rejects with the browser's error.
      */
     writeClipboard(element: HTMLElement, flavours: Promise<CopyFlavours | undefined>): Promise<boolean>;
+    /** Hears each change of the clipboard, by any write, the grid's own included (ADR-0170): `undefined`
+     * where the browser cannot say the clipboard changed, and the grid then outlines no copy. */
+    observeClipboard(element: HTMLElement, tell: () => void): (() => void) | undefined;
 }
 
 /**
@@ -141,6 +145,18 @@ export const browserReports: BrowserReports = Object.freeze({
             if (await flavours === undefined) return false;
             throw error;
         });
+    },
+    observeClipboard(element: HTMLElement, tell: () => void): (() => void) | undefined {
+        const view = element.ownerDocument.defaultView;
+        if (view === null) throw new Error('The grid\'s element is in a document with no window: it has no clipboard.');
+        // A browser before Chrome 143 has no clipboardchange, and an insecure context no clipboard at all.
+        const clipboard = view.navigator.clipboard as Clipboard | undefined;
+        if (typeof Reflect.get(view, 'ClipboardChangeEvent') !== 'function' || typeof clipboard?.addEventListener !== 'function') {
+            return undefined;
+        }
+        const heard = (): void => { tell(); };
+        clipboard.addEventListener('clipboardchange', heard);
+        return () => { clipboard.removeEventListener('clipboardchange', heard); };
     },
     nextFrame(element: HTMLElement, callback: () => void): () => void {
         const view = element.ownerDocument.defaultView;
