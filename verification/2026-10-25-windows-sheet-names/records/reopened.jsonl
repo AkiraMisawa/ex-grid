@@ -1,0 +1,9 @@
+﻿{"group":"meta","version":"16.0","build":20430,"culture":"en-GB","started":"2026-10-25T01:49:53.0770364+00:00"}
+{"id":"three","saved":"Sheet1,Sheet2,Sheet3","reopenedThenAddedTwice":"Sheet1,Sheet2,Sheet3,Sheet4,Sheet5"}
+{"id":"gap","saved":"Sheet1,Sheet3","reopenedThenAddedTwice":"Sheet1,Sheet3,Sheet2,Sheet4"}
+{"id":"last-deleted","saved":"Sheet1,Sheet2","reopenedThenAddedTwice":"Sheet1,Sheet2,Sheet3,Sheet4"}
+{"id":"renamed-5","saved":"Sheet5","reopenedThenAddedTwice":"Sheet5,Sheet1,Sheet2"}
+{"id":"renamed-jan","saved":"Jan","reopenedThenAddedTwice":"Jan,Sheet1,Sheet2"}
+{"id":"many-deleted","saved":"Sheet1","reopenedThenAddedTwice":"Sheet1,Sheet2,Sheet3"}
+{"id":"jan-feb","saved":"Jan,Feb","reopenedThenAddedTwice":"Jan,Feb,Sheet1,Sheet2"}
+{"id":"sheet9-only","saved":"Sheet9","reopenedThenAddedTwice":"Sheet9,Sheet1,Sheet2"}

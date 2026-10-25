@@ -170,8 +170,10 @@ as they are.
 
 - **A new Sheet takes `Sheet` and a number the workbook counts, never given twice, skipping a name taken**: Sheet1,
   Sheet2, Sheet3 with Sheet2 deleted gives Sheet4 (COM and Shift+F11 alike); Sheet1 renamed Sheet5 gives Sheet2; Sheet1
-  renamed Sheet3 gives Sheet2, then Sheet4; Sheet1 renamed Jan gives Sheet2. A Sheet inserted and undone still used its
-  number (Shift+F11 afterwards gave Sheet6, then Sheet7).
+  renamed Sheet3 gives Sheet2, then Sheet4; Sheet1 renamed Jan gives Sheet2. ~~A Sheet inserted and undone still used its
+  number (Shift+F11 afterwards gave Sheet6, then Sheet7).~~ *[2026-10-25: misread. That Sheet6 followed two copies,
+  which use a number each; asked alone, an undone insertion gives its number back
+  (`../2026-10-25-windows-sheet-names/report.md`).]*
 - **A copy is `name (2)`, its name cut so that it fits 31 characters**: a copy of 31, 30 or 27 `A`s is 27 `A`s and
   ` (2)`, the next ` (3)`. A copy of `Jan (2)` is `Jan (3)`, and of `Sheet1 (2)` `Sheet1 (3)`.
 
@@ -180,7 +182,7 @@ as they are.
 These are for the user; none is changed by this record.
 
 1. **Answer 11:** Excel writes a Reference to a deleted Sheet `#REF!B2`; ExSheet writes `#REF!` (ticket 03).
-2. **Answer 13:** Excel numbers a new Sheet from a count of the Sheets the workbook has made, skipping names taken;
+2. *(Built for 0.2.0 on 2026-10-25, with the questions it raised asked in `../2026-10-25-windows-sheet-names`.)* **Answer 13:** Excel numbers a new Sheet from a count of the Sheets the workbook has made, skipping names taken;
    ExSheet takes one more than the highest `SheetN` (`NextSheetName`). With Sheet1 renamed Sheet5, Excel gives Sheet2
    and ExSheet Sheet6.
 3. **Answer 9:** Excel cannot undo a deletion or a copy of a Sheet, and a deletion empties its undo stack; ExSheet
