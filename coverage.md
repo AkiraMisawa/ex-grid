@@ -14,18 +14,18 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/25/2026 - 21:47:10 |
+| Generated on: | 10/25/2026 - 22:02:02 |
 | Parser: | MultiReport (19x Cobertura) |
 | Assemblies: | 16 |
 | Classes: | 1181 |
 | Files: | 605 |
-| **Line coverage:** | 94.5% (81711 of 86434) |
-| Covered lines: | 81711 |
-| Uncovered lines: | 4723 |
+| **Line coverage:** | 94.5% (81710 of 86434) |
+| Covered lines: | 81710 |
+| Uncovered lines: | 4724 |
 | Coverable lines: | 86434 |
 | Total lines: | 138141 |
-| **Branch coverage:** | 87.2% (49336 of 56516) |
-| Covered branches: | 49336 |
+| **Branch coverage:** | 87.2% (49338 of 56516) |
+| Covered branches: | 49338 |
 | Total branches: | 56516 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
@@ -278,7 +278,7 @@
 |ExGrid.Chrome.ContextMenuContext<TRow>|91.6%||
 |ExGrid.Chrome.DistinctValues|100%||
 |ExGrid.Chrome.EditorCompletionContext|100%||
-|ExGrid.Chrome.FilterPanelChoices|95.9%|90.3%|
+|ExGrid.Chrome.FilterPanelChoices|95.9%|90.6%|
 |ExGrid.Chrome.FilterPanelContext|88.8%||
 |ExGrid.Chrome.FindContext|90.9%||
 |ExGrid.Chrome.FindPanelLabelIds|100%|100%|
@@ -528,7 +528,7 @@
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExGrid.Data**|**94.9%**|**90.6%**|
+|**ExGrid.Data**|**94.9%**|**90.5%**|
 |ExGrid.Data.AggregateAccumulator|93%|92.4%|
 |ExGrid.Data.AggregateArithmetic|97.8%|95.7%|
 |ExGrid.Data.AggregateResult|86.2%|55.5%|
@@ -621,7 +621,7 @@
 |ExGrid.Data.Storage.DoubleColumnWriter|100%||
 |ExGrid.Data.Storage.DoubleData|100%||
 |ExGrid.Data.Storage.DoubleObjectColumn<T>|100%|100%|
-|ExGrid.Data.Storage.FixedCodes|96.7%|87.5%|
+|ExGrid.Data.Storage.FixedCodes|93.5%|75%|
 |ExGrid.Data.Storage.Gather|98.8%|96.1%|
 |ExGrid.Data.Storage.Int32ObjectColumn<T>|82.3%|100%|
 |ExGrid.Data.Storage.IntegerColumnWriter|100%||
@@ -1030,12 +1030,12 @@
 |ExSheet.BuiltInToolbarItem|96.4%|97.3%|
 |ExSheet.ColourItem|96%|100%|
 |ExSheet.CommaItem|83.3%||
-|ExSheet.Components.ExSheet|91.3%|81.7%|
+|ExSheet.Components.ExSheet|91.3%|81.8%|
 |ExSheet.Components.ExSheet.KeyboardListener|100%||
 |ExSheet.Components.ExSheet.KeyUpListener|100%||
 |ExSheet.Components.ExSheet.OwnFindOutcome|100%||
 |ExSheet.Components.ExSheet.SheetGridChrome|86.6%|73%|
-|ExSheet.Components.ExSheet<T>|91.3%|81.7%|
+|ExSheet.Components.ExSheet<T>|91.3%|81.8%|
 |ExSheet.Components.ExSheetStylesheet|100%||
 |ExSheet.Components.FormatCellsPanel|97.3%|87.5%|
 |ExSheet.Components.SheetFindPanel|91.7%|76.5%|
