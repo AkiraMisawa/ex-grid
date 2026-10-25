@@ -1,2 +1,1 @@
 #nullable enable
-static ExGrid.Data.Arrow.SnapshotArrow.ReadShapeAsync(System.IO.Stream! stream, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<ExGrid.Data.DataShape!>

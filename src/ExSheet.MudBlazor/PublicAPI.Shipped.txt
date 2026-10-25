@@ -11,10 +11,6 @@ ExSheet.MudBlazor.MudFormatCellsDialog.Drawn.get -> System.Action?
 ExSheet.MudBlazor.MudFormatCellsDialog.Drawn.set -> void
 ExSheet.MudBlazor.MudFormatCellsDialog.KeyboardTaken.get -> System.Action?
 ExSheet.MudBlazor.MudFormatCellsDialog.KeyboardTaken.set -> void
-ExSheet.MudBlazor.MudFormatCellsDialog.KeysArrive.get -> System.Func<System.Func<Microsoft.AspNetCore.Components.Web.KeyboardEventArgs!, System.Threading.Tasks.Task<bool>!>!, System.Threading.Tasks.Task!>?
-ExSheet.MudBlazor.MudFormatCellsDialog.KeysArrive.set -> void
-ExSheet.MudBlazor.MudFormatCellsDialog.KeyWhileClosing.get -> System.Action<Microsoft.AspNetCore.Components.Web.KeyboardEventArgs!>?
-ExSheet.MudBlazor.MudFormatCellsDialog.KeyWhileClosing.set -> void
 ExSheet.MudBlazor.MudFormatCellsDialog.MudFormatCellsDialog() -> void
 ExSheet.MudBlazor.MudFormatCellsFrame
 ExSheet.MudBlazor.MudFormatCellsFrame.Context.get -> ExSheet.FormatCellsContext!
@@ -55,3 +51,21 @@ static ExSheet.MudBlazor.MudSheetChrome.Default.get -> ExSheet.MudBlazor.MudShee
 ~override ExSheet.MudBlazor.MudToolbarItem.BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder __builder) -> void
 ExSheet.MudBlazor.MudFormatCellsDialog.DisposeAsync() -> System.Threading.Tasks.ValueTask
 override ExSheet.MudBlazor.MudFormatCellsDialog.OnAfterRenderAsync(bool firstRender) -> System.Threading.Tasks.Task!
+ExSheet.MudBlazor.MudSheetChrome.SheetFindPanel(ExSheet.SheetFindContext! context) -> Microsoft.AspNetCore.Components.RenderFragment?
+ExSheet.MudBlazor.MudSheetChrome.SheetTab(ExSheet.SheetTabContext! context) -> Microsoft.AspNetCore.Components.RenderFragment?
+ExSheet.MudBlazor.MudSheetChrome.SheetTabAdd() -> Microsoft.AspNetCore.Components.RenderFragment?
+ExSheet.MudBlazor.MudSheetChrome.SheetTabMenu(ExSheet.SheetTabMenuContext! context) -> Microsoft.AspNetCore.Components.RenderFragment?
+ExSheet.MudBlazor.MudSheetFindPanel
+ExSheet.MudBlazor.MudSheetFindPanel.Context.get -> ExSheet.SheetFindContext!
+ExSheet.MudBlazor.MudSheetFindPanel.Context.set -> void
+ExSheet.MudBlazor.MudSheetFindPanel.MudSheetFindPanel() -> void
+ExSheet.MudBlazor.MudSheetTabMenu
+ExSheet.MudBlazor.MudSheetTabMenu.Context.get -> ExSheet.SheetTabMenuContext!
+ExSheet.MudBlazor.MudSheetTabMenu.Context.set -> void
+ExSheet.MudBlazor.MudSheetTabMenu.MudSheetTabMenu() -> void
+ExSheet.MudBlazor.MudToolbarItem.DisposeAsync() -> System.Threading.Tasks.ValueTask
+override ExSheet.MudBlazor.MudSheetFindPanel.OnAfterRenderAsync(bool firstRender) -> System.Threading.Tasks.Task!
+override ExSheet.MudBlazor.MudSheetFindPanel.OnInitialized() -> void
+override ExSheet.MudBlazor.MudSheetFindPanel.OnParametersSet() -> void
+~override ExSheet.MudBlazor.MudSheetFindPanel.BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder __builder) -> void
+~override ExSheet.MudBlazor.MudSheetTabMenu.BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder __builder) -> void

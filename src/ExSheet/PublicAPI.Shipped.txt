@@ -154,8 +154,6 @@ ExSheet.FormatCellsContext.Ok.get -> System.Func<System.Threading.Tasks.Task<boo
 ExSheet.FormatCellsContext.Ok.init -> void
 ExSheet.FormatCellsContext.ReturnKeyboard.get -> System.Func<System.Threading.Tasks.Task!>!
 ExSheet.FormatCellsContext.ReturnKeyboard.init -> void
-ExSheet.FormatCellsContext.ReturnKeyboardFrom.get -> System.Func<Microsoft.AspNetCore.Components.ElementReference, System.Func<System.Collections.Generic.IReadOnlyList<Microsoft.AspNetCore.Components.Web.KeyboardEventArgs!>!>!, System.Threading.Tasks.Task!>?
-ExSheet.FormatCellsContext.ReturnKeyboardFrom.init -> void
 ExSheet.FormatCellsContext.Tab.get -> ExSheet.FormatCellsTab
 ExSheet.FormatCellsContext.Tab.init -> void
 ExSheet.FormatCellsContext.TabShown.get -> System.Action<ExSheet.FormatCellsTab>!
@@ -390,19 +388,13 @@ ExSheet.ToolbarItemContext.Active.get -> bool
 ExSheet.ToolbarItemContext.Active.init -> void
 ExSheet.ToolbarItemContext.Choices.get -> System.Collections.Generic.IReadOnlyList<ExSheet.ToolbarChoice!>!
 ExSheet.ToolbarItemContext.Choices.init -> void
-ExSheet.ToolbarItemContext.ChoicesClosed.get -> System.Func<System.Threading.Tasks.Task!>!
 ExSheet.ToolbarItemContext.ChoicesClosed.init -> void
-ExSheet.ToolbarItemContext.ChoicesClosing.get -> System.Func<Microsoft.AspNetCore.Components.Web.KeyboardEventArgs?, System.Action<Microsoft.AspNetCore.Components.Web.KeyboardEventArgs!>!>!
-ExSheet.ToolbarItemContext.ChoicesClosing.init -> void
-ExSheet.ToolbarItemContext.ChoicesOpened.get -> System.Func<bool, System.Collections.Generic.IReadOnlyList<Microsoft.AspNetCore.Components.Web.KeyboardEventArgs!>!>!
-ExSheet.ToolbarItemContext.ChoicesOpened.init -> void
 ExSheet.ToolbarItemContext.CloseRequest.get -> int
 ExSheet.ToolbarItemContext.CloseRequest.init -> void
 ExSheet.ToolbarItemContext.Colour.get -> ExSheet.Engine.CellColour?
 ExSheet.ToolbarItemContext.Colour.init -> void
 ExSheet.ToolbarItemContext.Content.get -> Microsoft.AspNetCore.Components.RenderFragment?
 ExSheet.ToolbarItemContext.Content.init -> void
-ExSheet.ToolbarItemContext.Deconstruct(out string! Id, out ExSheet.ToolbarItemKind Kind, out string! Name, out string? Shortcut, out ExSheet.ToolbarIcon Icon, out string? Text, out bool Pressed, out bool Enabled, out string? DisabledReason, out System.Func<System.Threading.Tasks.Task!>! Invoke, out System.Collections.Generic.IReadOnlyList<ExSheet.ToolbarChoice!>! Choices, out ExSheet.Engine.CellColour? Colour, out bool Active, out int OpenRequest, out int CloseRequest, out System.Func<System.Threading.Tasks.Task!>! ChoicesClosed, out System.Func<Microsoft.AspNetCore.Components.Web.KeyboardEventArgs?, System.Action<Microsoft.AspNetCore.Components.Web.KeyboardEventArgs!>!>! ChoicesClosing, out System.Func<bool, System.Collections.Generic.IReadOnlyList<Microsoft.AspNetCore.Components.Web.KeyboardEventArgs!>!>! ChoicesOpened, out Microsoft.AspNetCore.Components.RenderFragment? Content, out string? KeyTip, out bool ShowKeyTip) -> void
 ExSheet.ToolbarItemContext.DisabledReason.get -> string?
 ExSheet.ToolbarItemContext.DisabledReason.init -> void
 ExSheet.ToolbarItemContext.Enabled.get -> bool
@@ -430,7 +422,6 @@ ExSheet.ToolbarItemContext.ShowKeyTip.get -> bool
 ExSheet.ToolbarItemContext.ShowKeyTip.init -> void
 ExSheet.ToolbarItemContext.Text.get -> string?
 ExSheet.ToolbarItemContext.Text.init -> void
-ExSheet.ToolbarItemContext.ToolbarItemContext(string! Id, ExSheet.ToolbarItemKind Kind, string! Name, string? Shortcut, ExSheet.ToolbarIcon Icon, string? Text, bool Pressed, bool Enabled, string? DisabledReason, System.Func<System.Threading.Tasks.Task!>! Invoke, System.Collections.Generic.IReadOnlyList<ExSheet.ToolbarChoice!>! Choices, ExSheet.Engine.CellColour? Colour, bool Active, int OpenRequest, int CloseRequest, System.Func<System.Threading.Tasks.Task!>! ChoicesClosed, System.Func<Microsoft.AspNetCore.Components.Web.KeyboardEventArgs?, System.Action<Microsoft.AspNetCore.Components.Web.KeyboardEventArgs!>!>! ChoicesClosing, System.Func<bool, System.Collections.Generic.IReadOnlyList<Microsoft.AspNetCore.Components.Web.KeyboardEventArgs!>!>! ChoicesOpened, Microsoft.AspNetCore.Components.RenderFragment? Content, string? KeyTip, bool ShowKeyTip) -> void
 ExSheet.ToolbarItemContext.Tooltip.get -> string!
 ExSheet.ToolbarItemFace
 ExSheet.ToolbarItemFace.<Clone>$() -> ExSheet.ToolbarItemFace!
@@ -565,7 +556,129 @@ virtual ExSheet.ToolbarItemBase.ReturnsKeyboard.get -> bool
 ~override ExSheet.SheetToolbar.BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder __builder) -> void
 ~override ExSheet.ToolbarChoicesPanel.BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder __builder) -> void
 ~override ExSheet.ToolbarRow.BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder __builder) -> void
-ExSheet.FormatCellsContext.HoldKeysForPopup.get -> System.Func<Microsoft.AspNetCore.Components.ElementReference, System.Func<System.Collections.Generic.IReadOnlyList<Microsoft.AspNetCore.Components.Web.KeyboardEventArgs!>!>!, System.Threading.Tasks.Task!>?
-ExSheet.FormatCellsContext.HoldKeysForPopup.init -> void
 ExSheet.FormatCellsContext.TakeKeyboard.get -> System.Func<Microsoft.AspNetCore.Components.ElementReference, System.Threading.Tasks.Task!>?
 ExSheet.FormatCellsContext.TakeKeyboard.init -> void
+const ExSheet.SheetFindLabelIds.Within = "exsheet.find-within" -> string!
+const ExSheet.SheetFindLabelIds.WithinSheet = "exsheet.find-within-sheet" -> string!
+const ExSheet.SheetFindLabelIds.WithinWorkbook = "exsheet.find-within-workbook" -> string!
+ExSheet.Components.ExSheet.CellFormatAt(string! sheet, ExSheet.Engine.CellAddress address) -> ExSheet.Engine.CellFormat!
+ExSheet.Components.ExSheet.DoAsync(string! sheet, ExSheet.Engine.SheetEdit! edit) -> System.Threading.Tasks.Task!
+ExSheet.Components.ExSheet.OpenAsync(System.Func<System.Threading.CancellationToken, System.Threading.Tasks.Task<ExSheet.Engine.WorkbookDocument!>!>! read) -> System.Threading.Tasks.Task<bool>!
+ExSheet.Components.ExSheet.SaveAsync(System.Func<ExSheet.Engine.Workbook!, System.Threading.Tasks.Task!>! write) -> System.Threading.Tasks.Task!
+ExSheet.Components.ExSheet.SheetsChanged.get -> Microsoft.AspNetCore.Components.EventCallback<ExSheet.SheetsChange!>
+ExSheet.Components.ExSheet.SheetsChanged.set -> void
+ExSheet.Components.ExSheet.ShowSheetTabs.get -> bool
+ExSheet.Components.ExSheet.ShowSheetTabs.set -> void
+ExSheet.Components.ExSheet.ToWorkbookDocument() -> ExSheet.Engine.WorkbookDocument!
+ExSheet.Components.ExSheet.Workbook.get -> ExSheet.Engine.WorkbookDocument?
+ExSheet.Components.ExSheet.Workbook.set -> void
+ExSheet.Components.ExSheet.WorkbookChanged.get -> Microsoft.AspNetCore.Components.EventCallback<ExSheet.Engine.WorkbookDocument!>
+ExSheet.Components.ExSheet.WorkbookChanged.set -> void
+ExSheet.FormatCellsContext.HandKeyboardToFrame.get -> System.Func<Microsoft.AspNetCore.Components.ElementReference?, System.Threading.Tasks.Task!>?
+ExSheet.FormatCellsContext.HandKeyboardToFrame.init -> void
+ExSheet.FormatCellsContext.InOrder.get -> System.Func<ExGrid.Chrome.GridInputKind, System.Func<System.Threading.Tasks.Task!>!, System.Threading.Tasks.Task!>?
+ExSheet.FormatCellsContext.InOrder.init -> void
+ExSheet.FormatCellsContext.JoinSurface.get -> System.Func<Microsoft.AspNetCore.Components.ElementReference, string?, System.Func<System.Threading.Tasks.Task!>?, System.Threading.Tasks.Task<System.IAsyncDisposable!>!>?
+ExSheet.FormatCellsContext.JoinSurface.init -> void
+ExSheet.ISheetChrome.SheetFindPanel(ExSheet.SheetFindContext! context) -> Microsoft.AspNetCore.Components.RenderFragment?
+ExSheet.ISheetChrome.SheetTab(ExSheet.SheetTabContext! context) -> Microsoft.AspNetCore.Components.RenderFragment?
+ExSheet.ISheetChrome.SheetTabAdd() -> Microsoft.AspNetCore.Components.RenderFragment?
+ExSheet.ISheetChrome.SheetTabMenu(ExSheet.SheetTabMenuContext! context) -> Microsoft.AspNetCore.Components.RenderFragment?
+ExSheet.SheetFindContext
+ExSheet.SheetFindContext.<Clone>$() -> ExSheet.SheetFindContext!
+ExSheet.SheetFindContext.Deconstruct(out ExGrid.Chrome.FindContext! Find, out ExSheet.SheetFindWithin Within, out System.Func<ExSheet.SheetFindWithin, System.Threading.Tasks.Task!>! WithinChanged, out System.Func<string!>! OutcomeText, out System.Func<ExGrid.Finding.FindOutcome>! Outcome, out System.Func<string!, string!>! Words) -> void
+ExSheet.SheetFindContext.Equals(ExSheet.SheetFindContext? other) -> bool
+ExSheet.SheetFindContext.Find.get -> ExGrid.Chrome.FindContext!
+ExSheet.SheetFindContext.Find.init -> void
+ExSheet.SheetFindContext.Outcome.get -> System.Func<ExGrid.Finding.FindOutcome>!
+ExSheet.SheetFindContext.Outcome.init -> void
+ExSheet.SheetFindContext.OutcomeText.get -> System.Func<string!>!
+ExSheet.SheetFindContext.OutcomeText.init -> void
+ExSheet.SheetFindContext.SheetFindContext(ExGrid.Chrome.FindContext! Find, ExSheet.SheetFindWithin Within, System.Func<ExSheet.SheetFindWithin, System.Threading.Tasks.Task!>! WithinChanged, System.Func<string!>! OutcomeText, System.Func<ExGrid.Finding.FindOutcome>! Outcome, System.Func<string!, string!>! Words) -> void
+ExSheet.SheetFindContext.Within.get -> ExSheet.SheetFindWithin
+ExSheet.SheetFindContext.Within.init -> void
+ExSheet.SheetFindContext.WithinChanged.get -> System.Func<ExSheet.SheetFindWithin, System.Threading.Tasks.Task!>!
+ExSheet.SheetFindContext.WithinChanged.init -> void
+ExSheet.SheetFindContext.Words.get -> System.Func<string!, string!>!
+ExSheet.SheetFindContext.Words.init -> void
+ExSheet.SheetFindLabelIds
+ExSheet.SheetFindWithin
+ExSheet.SheetFindWithin.Sheet = 0 -> ExSheet.SheetFindWithin
+ExSheet.SheetFindWithin.Workbook = 1 -> ExSheet.SheetFindWithin
+ExSheet.SheetsChange
+ExSheet.SheetsChange.After.get -> System.Collections.Generic.IReadOnlyList<string!>!
+ExSheet.SheetsChange.Before.get -> System.Collections.Generic.IReadOnlyList<string!>!
+ExSheet.SheetsChange.Shown.get -> string!
+ExSheet.SheetTabCommand
+ExSheet.SheetTabCommand.<Clone>$() -> ExSheet.SheetTabCommand!
+ExSheet.SheetTabCommand.Active.get -> bool
+ExSheet.SheetTabCommand.Active.init -> void
+ExSheet.SheetTabCommand.Deconstruct(out string! Id, out ExSheet.SheetTabCommandKind Kind, out string! Label, out bool Enabled, out string? DisabledReason, out bool Active, out System.Func<System.Threading.Tasks.Task!>! Invoke) -> void
+ExSheet.SheetTabCommand.DisabledReason.get -> string?
+ExSheet.SheetTabCommand.DisabledReason.init -> void
+ExSheet.SheetTabCommand.Enabled.get -> bool
+ExSheet.SheetTabCommand.Enabled.init -> void
+ExSheet.SheetTabCommand.Equals(ExSheet.SheetTabCommand? other) -> bool
+ExSheet.SheetTabCommand.Id.get -> string!
+ExSheet.SheetTabCommand.Id.init -> void
+ExSheet.SheetTabCommand.Invoke.get -> System.Func<System.Threading.Tasks.Task!>!
+ExSheet.SheetTabCommand.Invoke.init -> void
+ExSheet.SheetTabCommand.Kind.get -> ExSheet.SheetTabCommandKind
+ExSheet.SheetTabCommand.Kind.init -> void
+ExSheet.SheetTabCommand.Label.get -> string!
+ExSheet.SheetTabCommand.Label.init -> void
+ExSheet.SheetTabCommand.SheetTabCommand(string! Id, ExSheet.SheetTabCommandKind Kind, string! Label, bool Enabled, string? DisabledReason, bool Active, System.Func<System.Threading.Tasks.Task!>! Invoke) -> void
+ExSheet.SheetTabCommandKind
+ExSheet.SheetTabCommandKind.Copy = 4 -> ExSheet.SheetTabCommandKind
+ExSheet.SheetTabCommandKind.Delete = 1 -> ExSheet.SheetTabCommandKind
+ExSheet.SheetTabCommandKind.MoveLeft = 2 -> ExSheet.SheetTabCommandKind
+ExSheet.SheetTabCommandKind.MoveRight = 3 -> ExSheet.SheetTabCommandKind
+ExSheet.SheetTabCommandKind.Rename = 0 -> ExSheet.SheetTabCommandKind
+ExSheet.SheetTabContext
+ExSheet.SheetTabContext.<Clone>$() -> ExSheet.SheetTabContext!
+ExSheet.SheetTabContext.Deconstruct(out string! Name, out bool Selected) -> void
+ExSheet.SheetTabContext.Equals(ExSheet.SheetTabContext? other) -> bool
+ExSheet.SheetTabContext.Name.get -> string!
+ExSheet.SheetTabContext.Name.init -> void
+ExSheet.SheetTabContext.Selected.get -> bool
+ExSheet.SheetTabContext.Selected.init -> void
+ExSheet.SheetTabContext.SheetTabContext(string! Name, bool Selected) -> void
+ExSheet.SheetTabMenuContext
+ExSheet.SheetTabMenuContext.<Clone>$() -> ExSheet.SheetTabMenuContext!
+ExSheet.SheetTabMenuContext.Commands.get -> System.Collections.Generic.IReadOnlyList<ExSheet.SheetTabCommand!>!
+ExSheet.SheetTabMenuContext.Commands.init -> void
+ExSheet.SheetTabMenuContext.Deconstruct(out string! Sheet, out System.Collections.Generic.IReadOnlyList<ExSheet.SheetTabCommand!>! Commands) -> void
+ExSheet.SheetTabMenuContext.Equals(ExSheet.SheetTabMenuContext? other) -> bool
+ExSheet.SheetTabMenuContext.Sheet.get -> string!
+ExSheet.SheetTabMenuContext.Sheet.init -> void
+ExSheet.SheetTabMenuContext.SheetTabMenuContext(string! Sheet, System.Collections.Generic.IReadOnlyList<ExSheet.SheetTabCommand!>! Commands) -> void
+ExSheet.ToolbarItemContext.ChoicesClosed.get -> System.Func<ExSheet.ToolbarChoice?, bool, System.Threading.Tasks.Task!>!
+ExSheet.ToolbarItemContext.Deconstruct(out string! Id, out ExSheet.ToolbarItemKind Kind, out string! Name, out string? Shortcut, out ExSheet.ToolbarIcon Icon, out string? Text, out bool Pressed, out bool Enabled, out string? DisabledReason, out System.Func<System.Threading.Tasks.Task!>! Invoke, out System.Collections.Generic.IReadOnlyList<ExSheet.ToolbarChoice!>! Choices, out ExSheet.Engine.CellColour? Colour, out bool Active, out int OpenRequest, out int CloseRequest, out System.Func<ExSheet.ToolbarChoice?, bool, System.Threading.Tasks.Task!>! ChoicesClosed, out Microsoft.AspNetCore.Components.RenderFragment? Content, out string? KeyTip, out bool ShowKeyTip) -> void
+ExSheet.ToolbarItemContext.InOrder.get -> System.Func<ExGrid.Chrome.GridInputKind, System.Func<System.Threading.Tasks.Task!>!, System.Threading.Tasks.Task!>!
+ExSheet.ToolbarItemContext.InOrder.init -> void
+ExSheet.ToolbarItemContext.JoinSurface.get -> System.Func<Microsoft.AspNetCore.Components.ElementReference, string?, System.Func<System.Threading.Tasks.Task!>?, System.Threading.Tasks.Task<System.IAsyncDisposable!>!>?
+ExSheet.ToolbarItemContext.JoinSurface.init -> void
+ExSheet.ToolbarItemContext.TakeKeyboard.get -> System.Func<Microsoft.AspNetCore.Components.ElementReference, System.Threading.Tasks.Task!>!
+ExSheet.ToolbarItemContext.TakeKeyboard.init -> void
+ExSheet.ToolbarItemContext.ToolbarItemContext(string! Id, ExSheet.ToolbarItemKind Kind, string! Name, string? Shortcut, ExSheet.ToolbarIcon Icon, string? Text, bool Pressed, bool Enabled, string? DisabledReason, System.Func<System.Threading.Tasks.Task!>! Invoke, System.Collections.Generic.IReadOnlyList<ExSheet.ToolbarChoice!>! Choices, ExSheet.Engine.CellColour? Colour, bool Active, int OpenRequest, int CloseRequest, System.Func<ExSheet.ToolbarChoice?, bool, System.Threading.Tasks.Task!>! ChoicesClosed, Microsoft.AspNetCore.Components.RenderFragment? Content, string? KeyTip, bool ShowKeyTip) -> void
+override ExSheet.SheetFindContext.Equals(object? obj) -> bool
+override ExSheet.SheetFindContext.GetHashCode() -> int
+override ExSheet.SheetFindContext.ToString() -> string!
+override ExSheet.SheetTabCommand.Equals(object? obj) -> bool
+override ExSheet.SheetTabCommand.GetHashCode() -> int
+override ExSheet.SheetTabCommand.ToString() -> string!
+override ExSheet.SheetTabContext.Equals(object? obj) -> bool
+override ExSheet.SheetTabContext.GetHashCode() -> int
+override ExSheet.SheetTabContext.ToString() -> string!
+override ExSheet.SheetTabMenuContext.Equals(object? obj) -> bool
+override ExSheet.SheetTabMenuContext.GetHashCode() -> int
+override ExSheet.SheetTabMenuContext.ToString() -> string!
+static ExSheet.SheetFindContext.operator !=(ExSheet.SheetFindContext? left, ExSheet.SheetFindContext? right) -> bool
+static ExSheet.SheetFindContext.operator ==(ExSheet.SheetFindContext? left, ExSheet.SheetFindContext? right) -> bool
+static ExSheet.SheetFindLabelIds.EnglishFor(string! id) -> string?
+static ExSheet.SheetTabCommand.operator !=(ExSheet.SheetTabCommand? left, ExSheet.SheetTabCommand? right) -> bool
+static ExSheet.SheetTabCommand.operator ==(ExSheet.SheetTabCommand? left, ExSheet.SheetTabCommand? right) -> bool
+static ExSheet.SheetTabContext.operator !=(ExSheet.SheetTabContext? left, ExSheet.SheetTabContext? right) -> bool
+static ExSheet.SheetTabContext.operator ==(ExSheet.SheetTabContext? left, ExSheet.SheetTabContext? right) -> bool
+static ExSheet.SheetTabMenuContext.operator !=(ExSheet.SheetTabMenuContext? left, ExSheet.SheetTabMenuContext? right) -> bool
+static ExSheet.SheetTabMenuContext.operator ==(ExSheet.SheetTabMenuContext? left, ExSheet.SheetTabMenuContext? right) -> bool

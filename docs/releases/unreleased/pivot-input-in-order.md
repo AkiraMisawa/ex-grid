@@ -1,6 +1,0 @@
-Product: ExPivot
-Kind: Behaviour
-ADR: 0240
-Docs: expivot/layout#the-pivottable-fields-pane
-
-A press, a key or a tick in the PivotTable Fields pane, its menus and panels, the Pivot Toolbar, the report filter band, the report's expand toggles and the Details tabs and dialog now takes its place in the report's Input Order, under the built-in Chrome and the MudBlazor Wrapper alike: one made while an earlier input is still being answered waits for it, and the keys typed meanwhile go where that answer left the keyboard, on Blazor Server and WebAssembly alike (ADR-0240). Enter and Space press the pivot's buttons at their keydown. The local queues that held the keys typed while a menu or a panel opened or closed are gone; a script that sent such input at machine speed now gets the outcome it gets sending it slowly. A field dropped on the pane or off the report takes its place in the order too, under any Chrome, and is refused if an input answered before it replaced the layout it was dropped on. A Chrome of your own that does not use the context's `InOrder` keeps a closing menu or panel standing until its opener has the keyboard back, as before. Each details grid keeps an Input Order of its own.

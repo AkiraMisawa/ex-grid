@@ -1,7 +1,1 @@
 #nullable enable
-ExPivot.MudBlazor.MudPivotButton.InOrder.get -> System.Func<ExGrid.Chrome.GridInputKind, System.Func<System.Threading.Tasks.Task!>!, System.Threading.Tasks.Task!>?
-ExPivot.MudBlazor.MudPivotButton.InOrder.set -> void
-ExPivot.MudBlazor.MudPivotIconButton
-ExPivot.MudBlazor.MudPivotIconButton.InOrder.get -> System.Func<ExGrid.Chrome.GridInputKind, System.Func<System.Threading.Tasks.Task!>!, System.Threading.Tasks.Task!>?
-ExPivot.MudBlazor.MudPivotIconButton.InOrder.set -> void
-ExPivot.MudBlazor.MudPivotIconButton.MudPivotIconButton() -> void

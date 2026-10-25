@@ -1,5 +1,0 @@
-Product: ExPivot
-Kind: Added
-ADR: 0332
-
-Ctrl+F in the report opens the report grid's find panel and finds a row label, a value, a subtotal or a grand total by its displayed text, the rows beyond the ones on screen included; a collapsed group is not searched inside, and nothing is expanded to show a match. Ctrl+H opens nothing and the Pivot Toolbar says "Cannot change this part of a PivotTable report." A step that cannot read the report (the source refuses, answers another version, or no longer holds the report shown, or the report keeps changing) moves nothing and is said on the Pivot Toolbar, never as "No match"; a live update while a step reads is searched again over the report now shown. The matches on screen are marked as they are in ExGrid (`--ex-match-mark-fill`, `--ex-match-mark-current-fill`). Nothing is wired for it; over a server's report (`PivotReportSource.Fetch`) the rows beyond the Window are read through its `copy` transport, by the Report Version on screen.

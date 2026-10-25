@@ -1,5 +1,0 @@
-Product: ExSheet
-Kind: Added
-ADR: 0330
-
-`ExSheet.OpenAsync(read)` replaces the Workbook with a Workbook Document still being read, such as `XlsxWorkbookReader.ReadAsync`'s, at its place in the Input Order: what is typed while the file is read waits, and lands on the Workbook it opened. It is refused by name (`SheetRefusedException`, `EditIsOpen`) while a cell is being edited. While the read is under way the Sheet says so and its grid is busy. A plain Escape in the Sheet typed against a page that shows the opening — from the call on, waiting or reading — cancels it (`OpenAsync` answers `false`); one typed before the page showed it is an ordinary key; a cancelled or refused read leaves the Workbook as it was, an Escape too late or with nothing to cancel is said, and a document that lands clears the undo stack, drops the Linked Tables declared on the Workbook it replaces, and raises `WorkbookChanged`. `ExSheet.SaveAsync(write)` lends the Workbook, as the inputs before it left it, to a writer such as `XlsxWorkbookWriter.WriteAsync`, and is refused by name (`SheetRefusedException`, `EditIsOpen`) while a cell is being edited.
