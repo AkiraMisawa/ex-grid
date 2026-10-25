@@ -22,4 +22,10 @@
     <ProjectReference Include="..\..\src\ExGrid.Data\ExGrid.Data.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- The shared Change Batch cases (ADR-0370 section 5): written once as data, run here against
+         ExGrid.Data and by Vitest against @ex-grid/data. tests/cases/README.md says what a file holds. -->
+    <None Include="..\cases\data\**\*" Link="cases\data\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>

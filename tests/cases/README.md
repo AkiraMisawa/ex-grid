@@ -32,7 +32,7 @@ One directory per area, one file per group of cases. Each file is an object:
 | Key | Meaning |
 |---|---|
 | `about` | What the file covers, and where its cases came from |
-| `kind` | Which runner reads it: `selection`, `range`, `edgeBand`, `held`, `calls`, `clipboard`, `query`, `source`, `fetch`, `displayText`, `find`, `replace`, `summary`, `arrowRead`, `arrowShape`, `arrowWrite`, `chart`, and ExPivot's (`pivot/`) |
+| `kind` | Which runner reads it: `selection`, `range`, `edgeBand`, `held`, `calls`, `clipboard`, `query`, `source`, `fetch`, `displayText`, `find`, `replace`, `summary`, `arrowRead`, `arrowShape`, `arrowWrite`, `changeBatch`, `chart`, and ExPivot's (`pivot/`) |
 | `extent` | `[rows, columns]`, the grid every case of the file runs against unless it names its own |
 | `cases` | The cases. Each has a `name`, which starts with the ADR it holds to (CLAUDE.md, "Put the ADR number in the test name") |
 
@@ -459,6 +459,31 @@ An `arrowShape` case names a stream and gives its `shape`, each column's `name` 
 written), and the schema's `metadata` whole — and `written`, the path of what `@ex-grid/data` wrote.
 Each runner writes the Snapshot, holds the schema to `expect`, reads it back as the Snapshot it was, and
 reads `written` the same way.
+
+## `changeBatch`
+
+A Change Batch applied to a Snapshot ([ADR-0064](../../docs/adr/0064-the-snapshot-is-the-familys-immutable-data-held-in-columns.md),
+[ADR-0067](../../docs/adr/0067-live-data-a-change-batch-makes-the-next-snapshot-and-expivot-folds-it-in.md), ADR-0370 section 5), under `data/`: xUnit runs them
+against ExGrid.Data (`tests/ExGrid.Data.Tests/Cases/ChangeBatchCaseTests.cs`) and Vitest against `@ex-grid/data`
+(`src/npm/data/test/change-batch-cases.test.ts`). These are not the Script Core's either, and both stay. The C# runner
+writes the answers: with `EXGRID_WRITE_DATA_CASES=1`, `dotnet test tests/ExGrid.Data.Tests` writes what ExGrid.Data
+answers into each batch's `expect`. It runs every case under three storages (one segment; segments of four rows; segments
+of four that compact after every batch), and they must answer alike, because how a version is stored is ExGrid.Data's own.
+
+A case gives a `snapshot`, in the form of an `arrowWrite` case's, and its `batches`, each applied to the case's Snapshot,
+or with `"on": "previous"` to the version the step before made, or with `"on": n` to the version step `n` made. A batch
+names `added` and `changed` records, each `columns` with a `name`, `kind` and `values` and no Record Key (a batch's records
+carry no captions: the next version keeps the Snapshot's), and `removedKeys`: a string is a Text key, a number an Integer
+key, `{"integer": "…"}` an Integer key past a double's exact integers; a number that is no integer, or `null`, is there to
+be refused. A key a batch leaves out is a part it does not have.
+
+Its `expect` is what the batch made: the next version's `version`; `removed`, the rows of the version before it no longer
+holds, and `added`, the rows of the next it did not hold, each by its place in its version's order, ascending; and `after`,
+each column's `name`, `caption`, `values` and, for Text, its `dictionary`, which keeps the version before's codes and only
+grows. A refused batch is `{"refused": {message, row, column, key}}` as an `arrowRead` refusal is, or `{"refused":
+"argument"}` where the batch itself cannot be made (`ArgumentException`, `TypeError`). Each runner also holds, at every step,
+that the version a batch was applied to still reads as it did, and ADR-0067's fold: the rows the next version holds that
+the batch did not bring are the rows of the version before less those it removed, in their order.
 
 ## ExPivot's engine, under `pivot/`
 

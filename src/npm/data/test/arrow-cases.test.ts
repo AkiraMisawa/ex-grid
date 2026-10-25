@@ -10,50 +10,14 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import {
-    SnapshotError, createSnapshot, decimalFromText, decimalText, readArrowShape, readArrowSnapshot, ticksFromText, writeArrowSnapshot,
-    type Snapshot, type SnapshotColumnInput, type SnapshotKind,
+    SnapshotError, decimalText, readArrowShape, readArrowSnapshot, ticksFromText, writeArrowSnapshot, type Snapshot,
 } from '../src/index';
 import { streamMessages } from '../src/arrow/ipc';
 import { fieldTypeName, readSchema } from '../src/arrow/schema';
+import { build, doubleBits, isObject, key, kindOf, list, text, textValue, whole, type Json, type JsonObject } from './case-json';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../../../tests/cases/arrow');
 const writeCases = process.env['EXGRID_WRITE_ARROW_CASES'] === '1';
-
-/** A value of a case, as JSON holds it. */
-type Json = null | boolean | number | string | readonly Json[] | { readonly [key: string]: Json };
-type JsonObject = { readonly [key: string]: Json };
-
-function isObject(value: Json | undefined): value is JsonObject {
-    return typeof value === 'object' && value !== null && !isList(value);
-}
-
-/** The key's value, which the case must write: a missing key fails the case rather than taking a default. */
-function key(object: Json | undefined, name: string): Json {
-    if (!isObject(object)) throw new Error(`Expected an object holding '${name}'.`);
-    const value = object[name];
-    if (value === undefined) throw new Error(`The case leaves out '${name}'.`);
-    return value;
-}
-
-function text(value: Json): string {
-    if (typeof value !== 'string') throw new Error(`Expected a string, not ${JSON.stringify(value)}.`);
-    return value;
-}
-
-function isList(value: Json): value is readonly Json[] {
-    return Array.isArray(value);
-}
-
-function list(value: Json): readonly Json[] {
-    if (!isList(value)) throw new Error(`Expected a list, not ${JSON.stringify(value)}.`);
-    return value;
-}
-
-function kindOf(value: Json): SnapshotKind {
-    const kind = text(value);
-    if (kind === 'text' || kind === 'decimal' || kind === 'double' || kind === 'integer' || kind === 'date' || kind === 'boolean') return kind;
-    throw new Error(`'${kind}' is not a kind.`);
-}
 
 interface CaseFile {
     readonly file: string;
@@ -67,56 +31,6 @@ function caseFiles(kind: string): CaseFile[] {
         .map(name => ({ name, json: JSON.parse(fs.readFileSync(path.join(root, name), 'utf8')) as Json }))
         .filter(({ json }) => key(json, 'kind') === kind)
         .map(({ name, json }) => ({ file: name, cases: list(key(json, 'cases')).filter(isObject) }));
-}
-
-/** Text as a case writes it: a string, or `{"utf16": …}` with `\uXXXX` escapes for text JSON readers refuse. */
-function textValue(value: Json): string {
-    if (typeof value === 'string') return value;
-    return text(key(value, 'utf16')).replace(/\\u([0-9a-fA-F]{4})/g, (_, hex: string) => String.fromCharCode(Number.parseInt(hex, 16)));
-}
-
-/** A double's IEEE 754 bits, as a case writes the double. */
-function doubleBits(value: Json): bigint {
-    const view = new DataView(new ArrayBuffer(8));
-    if (isObject(value)) return BigInt(`0x${text(key(value, 'bits'))}`);
-    if (value === 'Infinity') view.setFloat64(0, Number.POSITIVE_INFINITY);
-    else if (value === '-Infinity') view.setFloat64(0, Number.NEGATIVE_INFINITY);
-    else if (typeof value === 'number') view.setFloat64(0, value);
-    else throw new Error(`${JSON.stringify(value)} is not a double.`);
-    return view.getBigUint64(0);
-}
-
-function doubleOf(value: Json): number {
-    const view = new DataView(new ArrayBuffer(8));
-    view.setBigUint64(0, doubleBits(value));
-    return view.getFloat64(0);
-}
-
-function whole(value: Json): bigint {
-    if (typeof value === 'number' && Number.isSafeInteger(value)) return BigInt(value);
-    return BigInt(text(value));
-}
-
-/** The Snapshot a write case gives, every key written. */
-function build(snapshot: Json): Snapshot {
-    const columns = list(key(snapshot, 'columns')).map((column): SnapshotColumnInput => {
-        const name = text(key(column, 'name'));
-        const caption = text(key(column, 'caption'));
-        const values = list(key(column, 'values'));
-        const kind = kindOf(key(column, 'kind'));
-        const each = <T>(read: (value: Json) => T): (T | null)[] => values.map(value => (value === null ? null : read(value)));
-        switch (kind) {
-            case 'text': return { name, caption, kind, values: each(textValue) };
-            case 'decimal': return { name, caption, kind, values: each(value => decimalFromText(text(value))) };
-            case 'double': return { name, caption, kind, values: each(doubleOf) };
-            case 'integer': return { name, caption, kind, values: each(whole) };
-            case 'date': return { name, caption, kind, values: each(value => ticksFromText(text(value))) };
-            case 'boolean': return { name, caption, kind, values: each(value => { if (typeof value !== 'boolean') throw new Error('Expected a boolean.'); return value; }) };
-            default: throw new Error(`'${String(kind satisfies never)}' is not a kind.`);
-        }
-    });
-    const recordKey = key(snapshot, 'recordKey');
-    return createSnapshot({ columns, version: whole(key(snapshot, 'version')), ...(recordKey === null ? {} : { recordKey: text(recordKey) }) });
 }
 
 /** Holds a Snapshot to what a case expects of it: its version, Record Key, and each column whole. */

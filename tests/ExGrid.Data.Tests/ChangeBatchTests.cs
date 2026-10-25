@@ -5,44 +5,12 @@ using static ExGrid.Data.Tests.Fixtures;
 
 namespace ExGrid.Data.Tests;
 
-/// <summary>What applying a Change Batch hands a reader, and what it does to the next version
-/// (ADR-0064, ADR-0067).</summary>
+/// <summary>What applying a Change Batch does to ExGrid.Data's storage (ADR-0064, ADR-0067): the slices and
+/// compactions, and the records a reader gets back. What every reader sees is the shared cases'
+/// (<c>tests/cases/data/change-batch.json</c>).</summary>
 public class ChangeBatchTests
 {
     private static readonly SnapshotTuning Small = new(SegmentShift: 2);
-
-    [Fact] // ADR-0064: each batch applied moves the version on by one
-    public void Each_batch_moves_the_version_on()
-    {
-        var builder = Trades(Small);
-        var first = builder.Build(Trades(5));
-
-        var second = first.Apply(builder.Batch(added: [Make(5)])).After;
-        var third = second.Apply(ChangeBatch.Of()).After;
-
-        Assert.Equal([0L, 1L, 2L], new[] { first, second, third }.Select(s => s.Version));
-        Assert.Equal(Values(second, "Id"), Values(third, "Id"));
-    }
-
-    [Fact] // ADR-0067: a reader folds a batch in — the sum over After is the sum over Before, less Removed, plus Added
-    public void Folding_removed_and_added_gives_the_sum_over_after()
-    {
-        var builder = Trades(Small);
-        var snapshot = builder.Build(Trades(40));
-
-        var change = snapshot.Apply(builder.Batch(
-            added: [Make(40), Make(41) with { Notional = 1e20m }],
-            changed: [Make(3) with { Notional = 99.99m }, Make(17) with { Notional = null }, Make(33) with { Notional = 0.001m }],
-            removedKeys: [5L, 22L]));
-
-        Assert.Equal(
-            Sum(change.After, change.After.Rows),
-            Sum(change.Before, change.Before.Rows) - Sum(change.Before, change.Removed) + Sum(change.After, change.Added));
-        Assert.Equal(change.Before.RowCount - change.Removed.Count + change.Added.Count, change.After.RowCount);
-
-        static decimal Sum(Snapshot snapshot, IEnumerable<SnapshotRow> rows)
-            => rows.Sum(r => (decimal?)snapshot.ValueAt(r, snapshot["Notional"]) ?? 0m);
-    }
 
     [Fact] // ADR-0064: Removed are rows Before holds and After does not; Added are rows After holds and Before did not
     public void Removed_and_added_are_rows_that_left_and_came()
@@ -145,48 +113,5 @@ public class ChangeBatchTests
         // Its Record Keys are indexed anew: the next batch finds them.
         var next = compacted.After.Apply(builder.Batch(changed: [records[14] with { Live = null }], removedKeys: [0L, 16L]));
         Assert.Equal(14, next.After.RowCount);
-    }
-
-    [Fact] // ADR-0064: two versions made from one Snapshot each keep the text they brought, and the one before keeps its own
-    public void Two_versions_made_from_one_keep_their_own_text()
-    {
-        var builder = Trades(Small);
-        var snapshot = builder.Build(Trades(4));
-        var count = ((TextColumn)snapshot["Desk"]).Dictionary.Count;
-
-        var left = snapshot.Apply(builder.Batch(added: [Make(10) with { Desk = "Left" }])).After;
-        var right = snapshot.Apply(builder.Batch(added: [Make(10) with { Desk = "Right" }, Make(11) with { Desk = "Left" }])).After;
-        var further = left.Apply(builder.Batch(added: [Make(12) with { Desk = "Further" }])).After;
-
-        Assert.Equal(count, ((TextColumn)snapshot["Desk"]).Dictionary.Count);
-        Assert.Equal("Left", ((TextColumn)left["Desk"]).Dictionary[count]);
-        Assert.Equal(["Right", "Left"], ((TextColumn)right["Desk"]).Dictionary.Skip(count));
-        Assert.Equal(["Left", "Further"], ((TextColumn)further["Desk"]).Dictionary.Skip(count));
-        Assert.Equal("Left", Values(left, "Desk")[^1]);
-        Assert.Equal(["Right", "Left"], Values(right, "Desk")[^2..]);
-        Assert.Equal(["Left", "Further"], Values(further, "Desk")[^2..]);
-        Assert.False(((TextColumn)snapshot["Desk"]).Dictionary.TryGetCode("Left", out _));
-        Assert.True(((TextColumn)right["Desk"]).Dictionary.TryGetCode("Left", out var code));
-        Assert.Equal(count + 1, code);
-    }
-
-    [Fact] // ADR-0064: a batch may come from any way in, and its text is taken under the Snapshot's own codes
-    public void A_batch_built_from_columns_meets_the_snapshots_codes()
-    {
-        var columns = new SnapshotColumnsBuilder { Tuning = Small };
-        columns.Integer("Id").Append([1L, 2L]);
-        columns.Text("Desk").AppendCodes([0, 1], ["EMEA", "AMER"]);
-        columns.Decimal("Notional").AppendBlanks(2);
-        var snapshot = columns.Build();
-        var batch = new SnapshotColumnsBuilder();
-        batch.Integer("Id").Append([3L, 4L, 5L]);
-        batch.Text("Desk").AppendCodes([0, 1, 0], ["AMER", "APAC"]);
-        batch.Decimal("Notional").Append([1m, 2m, 3m]);
-
-        var change = snapshot.Apply(ChangeBatch.Of(added: batch.Build()));
-
-        Assert.Equal(["EMEA", "AMER", "APAC"], ((TextColumn)change.After["Desk"]).Dictionary);
-        Assert.Equal([0, 1, 1, 2, 1], Codes(change.After, "Desk"));
-        Assert.Equal([null, null, 1m, 2m, 3m], Values(change.After, "Notional"));
     }
 }
