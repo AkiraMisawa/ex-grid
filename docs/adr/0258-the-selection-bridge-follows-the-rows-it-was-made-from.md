@@ -79,8 +79,10 @@ leaves the Series Kind's default. It is the Consumer's declaration, never read o
 would make a chart's axis jump as a recalculation crossed a threshold.
 
 - A series in columns takes its column's declaration.
-- A series in rows takes its columns' declaration, which they share. A curve whose columns are declared
-  differently is refused by name, as one that mixes Series Kinds is: its axis would mean neither.
+- A series in rows takes its columns' declaration, which they share. A curve whose columns read zero
+  differently, each declaration resolved by its Series Kind's default (`null` beside `true` is alike for
+  a Level), is refused by name, as one that mixes Series Kinds is: its axis would mean neither. A curve
+  whose declarations change after it was made is refused when it is drawn, never drawn by one column's.
 
 Considered and rejected: one switch for every column (a sheet of rates and exposures beside them
 wants both), and one declaration per header group (a group is a picture of the columns, not what they

@@ -149,7 +149,34 @@ public class SelectionBridgeTests
         var declarations = Declarations() with { FromZeroOf = c => c == "y1" ? false : null };
         var (chart, refusal) = await SelectionReader.ReadAsync(State(), [R(1, 5, 2, 2)], _version, declarations, null, null);
         Assert.Null(chart);
-        Assert.Equal("Rates are declared both from zero and away from it (1Y, 5Y), so they are not one curve.", refusal);
+        Assert.Equal("Rates are declared both from zero (5Y) and away from it (1Y), so they are not one curve.", refusal);
+    }
+
+    [Fact] // ADR-0253, ADR-0258: declarations are compared as they are drawn: null beside true is alike for a Level
+    public async Task ADR0258_declarations_that_read_zero_alike_are_one_curve()
+    {
+        var declarations = Declarations() with { FromZeroOf = c => c == "y1" ? true : null };
+        var (chart, refusal) = await SelectionReader.ReadAsync(State(), [R(1, 5, 2, 2)], _version, declarations, null, null);
+        Assert.Null(refusal);
+        Assert.All(SelectionReader.Draw(Columns, Groups, chart!, declarations).Series, s => Assert.True(s.ReachesZero));
+    }
+
+    [Fact] // ADR-0258, spine rule 1: a curve whose declarations changed after it was made is refused when drawn, not drawn by one column's
+    public async Task ADR0258_a_curve_whose_declarations_changed_is_refused_when_drawn()
+    {
+        var (chart, _) = await SelectionReader.ReadAsync(State(), [R(1, 5, 2, 2)], _version, Declarations() with { FromZeroOf = _ => false }, null, null);
+        var changed = Declarations() with { FromZeroOf = c => c == "y1" ? false : null };
+        var refused = Assert.Throws<ChartRefusedException>(() => SelectionReader.Draw(Columns, Groups, chart!, changed));
+        Assert.Contains("now declared both from zero and away from it", refused.Message);
+    }
+
+    [Fact] // ADR-0253: an amount per period declared away from zero is refused by name when the selection is read
+    public async Task ADR0253_an_amount_per_period_away_from_zero_is_refused()
+    {
+        var declarations = Declarations() with { KindOf = _ => SeriesKind.AmountPerPeriod, FromZeroOf = _ => false };
+        var (chart, refusal) = await SelectionReader.ReadAsync(State(), [R(0, 0, 3, 1), R(0, 2, 3, 1)], _version, declarations, ChartOrientation.SeriesInColumns, null);
+        Assert.Null(chart);
+        Assert.StartsWith("'Exposure · EPE' is an Amount per period", refusal);
     }
 
     [Fact] // ADR-0258: series in rows, a row across the columns at declared positions
