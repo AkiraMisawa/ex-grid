@@ -96,8 +96,23 @@ export class Told implements BrowserReports {
         }
     }
 
+    /** Whether the browser can say the clipboard changed, as Chrome 143 and later can; set before mounting. */
+    clipboardWatched = true;
+    #clipboardChange: (() => void) | undefined;
+
+    observeClipboard(_element: HTMLElement, tell: () => void): (() => void) | undefined {
+        if (!this.clipboardWatched) return undefined;
+        this.#clipboardChange = tell;
+        return () => { this.#clipboardChange = undefined; };
+    }
+
+    /** The browser reports a change of the clipboard: a write by the grid's own copy, or by anyone else. */
+    clipboardChanged(): void {
+        defined(this.#clipboardChange, 'the clipboard\'s listener')();
+    }
+
     get listening(): boolean {
-        return this.#viewport !== undefined || this.#ceiling !== undefined;
+        return this.#viewport !== undefined || this.#ceiling !== undefined || this.#clipboardChange !== undefined;
     }
 }
 
@@ -106,10 +121,13 @@ export async function painted(): Promise<void> {
     await Promise.resolve();
 }
 
-export function mount<Row>(options: GridOptions<Row>): { readonly root: HTMLElement; readonly view: GridView<Row>; readonly told: Told } {
+/** Mounts a grid; `browser` sets what the browser can do before the grid attaches. */
+export function mount<Row>(
+    options: GridOptions<Row>, browser: Partial<Pick<Told, 'clipboardWatched'>> = {},
+): { readonly root: HTMLElement; readonly view: GridView<Row>; readonly told: Told } {
     const root = document.createElement('div');
     document.body.append(root);
-    const told = new Told();
+    const told = Object.assign(new Told(), browser);
     const view = new GridView(root, options, told);
     told.viewport();
     told.ceiling();
