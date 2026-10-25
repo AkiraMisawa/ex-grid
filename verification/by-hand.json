@@ -287,9 +287,9 @@
         "samples/ExGrid.DemoPages/"
       ],
       "record": {
-        "commit": "f6b5e8fe6c4b87d077200616d305bdd87a723aba",
-        "tag": "verified/2026-10-18-linux-mudblazor-floor",
-        "path": "verification/2026-10-18-linux-mudblazor-floor/report.md",
+        "commit": "5e3eecb44fb9dcfec074cfa8eefe03a91809fbc3",
+        "tag": "verified/2026-10-25-linux-mudblazor-floor",
+        "path": "verification/2026-10-25-linux-mudblazor-floor/report.md",
         "verdict": "pass",
         "versions": [
           "9.6.0",

@@ -31,7 +31,7 @@ put back (ED-30, below).
 | `sh42-probe.mjs`, `sh42.cmd`, `part-a/sh42/` | SH-42 |
 | `part_d_sheet.py`, `part_d_extra.py`, `sh52_speed.py`, `part-d-summary.py`, `part-d-summary.md`, `run-sh.sh` | SH-51 and SH-52, then VZ-16, one after another |
 | `part_g_vz16.py` | VZ-16 |
-| `part-g/ed30/` | ED-30: the probe and scripts, the IME setting's scripts, its registry exports and the times it was changed (`logs/`), `summary.txt`, `against-18b.txt`, the records. `ime19-probe.mjs` and `run-ime19.cmd` add one check of this run's own (k13y, below) |
+| `part-g/ed30/` | ED-30: the probe and scripts, the IME setting's scripts, its registry exports and the times it was changed (`logs/`), `summary.txt`, `against-18b.txt`, the records. `ime19-probe.mjs` and `run-ime19.cmd` add this run's own checks of k13x's paste (k13y and k13w, below) |
 | `t3_ime.py`, `run-t3.sh` | ED-30: the IME and the Alt key, t3a and t3b |
 | `records/` | the `pg.py` probes' records |
 | `shots/` | the page's own pictures: ED-30's for WebAssembly and Chrome, SH-52's, t3's, VZ-16's device-pixel clips |
@@ -107,17 +107,21 @@ ED-30 94, SH-42 60, SH-51 65, SH-52 90. Every one ran.
 
 ## Differences
 
-**A paste is lost on the Server host behind 150 ms.** It is not a clause of ED-30's pass column, and it is new since
-`0.1.0`'s record.
+**A paste lands later on the Server host behind 150 ms.** It is not a clause of ED-30's pass column. The paste is not
+lost.
 
 - k13x types `150` in D10, copies it with Ctrl+C, presses D12, then types Ctrl+V. On the Server host behind 150 ms,
-  in all four configurations (`/sheet` and `/sheet?chrome=mud`, Chrome and Edge), D12 stayed empty after Ctrl+V.
-- The page heard the paste (`paste '150\r\n'` on the Keyboard Field), and the state had settled when it was read,
-  900 ms after the key.
-- Run 18b read `D12 '150'` there. WebAssembly and the Server host with no added latency read `D12 '150'` here too.
-- It happened again on a second run (`records/k13x-repeat-*`), under both Chromes.
-- It is not the IME's. k13y is k13x with the IME left off, a check of this run's own (`ime19-probe.mjs`). Behind
-  150 ms it pasted nothing into D12, and with no added latency it pasted `150` (`records/k13y-*`).
+  in all four configurations (`/sheet` and `/sheet?chrome=mud`, Chrome and Edge), D12 was still empty when the probe
+  read it, 900 ms after the key. Run 18b read `D12 '150'` there; WebAssembly and the Server host with no added
+  latency read `D12 '150'` here too.
+- The probe reads at 900 ms behind latency, and its own settled check does not wait for the Settled Mark, so the
+  paste was still in flight (the root held `ex-pasting`, as the project's Input Order thread read on Linux). The
+  Delete that follows cleared D12 after the paste landed.
+- Read again 2 s after Ctrl+V (`ime19-probe.mjs`, k13w; `records/k13wy-*`), D12 held `150` under both Chromes, with
+  the IME on (k13w) and left off (k13y). An earlier pass of this run read k13y only at 900 ms and took it for a lost
+  paste (`records/k13y-*`, `records/k13x-repeat-*`); that reading was wrong.
+- What remains is the time: at `0.1.0` the paste landed within the probe's 900 ms; here it takes longer (about
+  1.35 s on Linux, by the Input Order thread's reading). That is a slowdown to record, not a defect.
 
 Every other reading matches run 18b's.
 
@@ -125,7 +129,7 @@ Every other reading matches run 18b's.
 
 `verification/by-hand.json`: VZ-14, VZ-16, FN-12e (Windows), ED-30, SH-42, SH-51 and SH-52 name this record, the
 verified commit `5e3eecb44fb9dcfec074cfa8eefe03a91809fbc3` and its tag `verified/2026-10-25-windows-19`, with the
-verdict pass. WR-10 is filed by its own record, `verification/2026-10-25-linux-mudblazor-floor/`.
+verdict pass. The run read a paste landing later behind 150 ms (k13x), recorded under "Differences". WR-10 is filed by its own record, `verification/2026-10-25-linux-mudblazor-floor/`.
 
 Still without a record that holds at the verified commit: FN-12e and KB-3 on macOS (the user's Mac), and VZ-18 (the
 remote-isolation PC; its Known limitation reaches `0.1.0` only).

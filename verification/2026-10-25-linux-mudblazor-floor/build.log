@@ -1,0 +1,78 @@
+warning: Git tree '/home/akira/src/hobby/ex-grid-wr10' has uncommitted changes
+dotnet 10.0.203 (nix-managed)
+  Determining projects to restore...
+  Restored /home/akira/src/hobby/ex-grid-wr10/samples/ExChart.Showcases/ExChart.Showcases.csproj (in 242 ms).
+  Restored /home/akira/src/hobby/ex-grid-wr10/samples/ExGrid.DemoHost/ExGrid.DemoHost.csproj (in 242 ms).
+  Restored /home/akira/src/hobby/ex-grid-wr10/samples/ExGrid.DemoPages/ExGrid.DemoPages.csproj (in 242 ms).
+  16 of 19 projects are up-to-date for restore.
+  ExSheet.Engine -> /home/akira/src/hobby/ex-grid-wr10/src/ExSheet.Engine/bin/Debug/net10.0/ExSheet.Engine.dll
+  ExGrid.Data -> /home/akira/src/hobby/ex-grid-wr10/src/ExGrid.Data/bin/Debug/net10.0/ExGrid.Data.dll
+  ExChart.Engine -> /home/akira/src/hobby/ex-grid-wr10/src/ExChart.Engine/bin/Debug/net10.0/ExChart.Engine.dll
+  ExPivot.Engine -> /home/akira/src/hobby/ex-grid-wr10/src/ExPivot.Engine/bin/Debug/net10.0/ExPivot.Engine.dll
+  ExGrid.Data.Arrow -> /home/akira/src/hobby/ex-grid-wr10/src/ExGrid.Data.Arrow/bin/Debug/net10.0/ExGrid.Data.Arrow.dll
+  ExGrid -> /home/akira/src/hobby/ex-grid-wr10/src/ExGrid/bin/Debug/net10.0/ExGrid.dll
+  ExGrid.Data.Xlsx -> /home/akira/src/hobby/ex-grid-wr10/src/ExGrid.Data.Xlsx/bin/Debug/net10.0/ExGrid.Data.Xlsx.dll
+  ExPivot -> /home/akira/src/hobby/ex-grid-wr10/src/ExPivot/bin/Debug/net10.0/ExPivot.dll
+  ExSheet -> /home/akira/src/hobby/ex-grid-wr10/src/ExSheet/bin/Debug/net10.0/ExSheet.dll
+  ExChart -> /home/akira/src/hobby/ex-grid-wr10/src/ExChart/bin/Debug/net10.0/ExChart.dll
+  ExGrid.MudBlazor -> /home/akira/src/hobby/ex-grid-wr10/src/ExGrid.MudBlazor/bin/Debug/net10.0/ExGrid.MudBlazor.dll
+  ExBoard -> /home/akira/src/hobby/ex-grid-wr10/src/ExBoard/bin/Debug/net10.0/ExBoard.dll
+  ExPivot.MudBlazor -> /home/akira/src/hobby/ex-grid-wr10/src/ExPivot.MudBlazor/bin/Debug/net10.0/ExPivot.MudBlazor.dll
+  ExChart.MudBlazor -> /home/akira/src/hobby/ex-grid-wr10/src/ExChart.MudBlazor/bin/Debug/net10.0/ExChart.MudBlazor.dll
+  ExSheet.MudBlazor -> /home/akira/src/hobby/ex-grid-wr10/src/ExSheet.MudBlazor/bin/Debug/net10.0/ExSheet.MudBlazor.dll
+  ExSheet.Xlsx -> /home/akira/src/hobby/ex-grid-wr10/src/ExSheet.Xlsx/bin/Debug/net10.0/ExSheet.Xlsx.dll
+  ExChart.Showcases -> /home/akira/src/hobby/ex-grid-wr10/samples/ExChart.Showcases/bin/Debug/net10.0/ExChart.Showcases.dll
+  ExGrid.DemoPages -> /home/akira/src/hobby/ex-grid-wr10/samples/ExGrid.DemoPages/bin/Debug/net10.0/ExGrid.DemoPages.dll
+  ExGrid.DemoHost -> /home/akira/src/hobby/ex-grid-wr10/samples/ExGrid.DemoHost/bin/Debug/net10.0/ExGrid.DemoHost.dll
+  ExGrid.DemoHost (Blazor output) -> /home/akira/src/hobby/ex-grid-wr10/samples/ExGrid.DemoHost/bin/Debug/net10.0/wwwroot
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:07.26
+warning: Git tree '/home/akira/src/hobby/ex-grid-wr10' has uncommitted changes
+dotnet 10.0.203 (nix-managed)
+  Determining projects to restore...
+  Restored /home/akira/src/hobby/ex-grid-wr10/samples/ExGrid.DemoHost.Server/ExGrid.DemoHost.Server.csproj (in 238 ms).
+  18 of 19 projects are up-to-date for restore.
+  ExChart.Engine -> /home/akira/src/hobby/ex-grid-wr10/src/ExChart.Engine/bin/Debug/net10.0/ExChart.Engine.dll
+  ExSheet.Engine -> /home/akira/src/hobby/ex-grid-wr10/src/ExSheet.Engine/bin/Debug/net10.0/ExSheet.Engine.dll
+  ExGrid.Data -> /home/akira/src/hobby/ex-grid-wr10/src/ExGrid.Data/bin/Debug/net10.0/ExGrid.Data.dll
+  ExGrid.Data.Xlsx -> /home/akira/src/hobby/ex-grid-wr10/src/ExGrid.Data.Xlsx/bin/Debug/net10.0/ExGrid.Data.Xlsx.dll
+  ExGrid.Data.Arrow -> /home/akira/src/hobby/ex-grid-wr10/src/ExGrid.Data.Arrow/bin/Debug/net10.0/ExGrid.Data.Arrow.dll
+  ExPivot.Engine -> /home/akira/src/hobby/ex-grid-wr10/src/ExPivot.Engine/bin/Debug/net10.0/ExPivot.Engine.dll
+  ExSheet.Xlsx -> /home/akira/src/hobby/ex-grid-wr10/src/ExSheet.Xlsx/bin/Debug/net10.0/ExSheet.Xlsx.dll
+  ExGrid -> /home/akira/src/hobby/ex-grid-wr10/src/ExGrid/bin/Debug/net10.0/ExGrid.dll
+  ExGrid.MudBlazor -> /home/akira/src/hobby/ex-grid-wr10/src/ExGrid.MudBlazor/bin/Debug/net10.0/ExGrid.MudBlazor.dll
+  ExChart -> /home/akira/src/hobby/ex-grid-wr10/src/ExChart/bin/Debug/net10.0/ExChart.dll
+  ExSheet -> /home/akira/src/hobby/ex-grid-wr10/src/ExSheet/bin/Debug/net10.0/ExSheet.dll
+  ExPivot -> /home/akira/src/hobby/ex-grid-wr10/src/ExPivot/bin/Debug/net10.0/ExPivot.dll
+  ExChart.MudBlazor -> /home/akira/src/hobby/ex-grid-wr10/src/ExChart.MudBlazor/bin/Debug/net10.0/ExChart.MudBlazor.dll
+  ExSheet.MudBlazor -> /home/akira/src/hobby/ex-grid-wr10/src/ExSheet.MudBlazor/bin/Debug/net10.0/ExSheet.MudBlazor.dll
+  ExChart.Showcases -> /home/akira/src/hobby/ex-grid-wr10/samples/ExChart.Showcases/bin/Debug/net10.0/ExChart.Showcases.dll
+  ExBoard -> /home/akira/src/hobby/ex-grid-wr10/src/ExBoard/bin/Debug/net10.0/ExBoard.dll
+  ExPivot.MudBlazor -> /home/akira/src/hobby/ex-grid-wr10/src/ExPivot.MudBlazor/bin/Debug/net10.0/ExPivot.MudBlazor.dll
+  ExGrid.DemoPages -> /home/akira/src/hobby/ex-grid-wr10/samples/ExGrid.DemoPages/bin/Debug/net10.0/ExGrid.DemoPages.dll
+  ExGrid.DemoHost.Server -> /home/akira/src/hobby/ex-grid-wr10/samples/ExGrid.DemoHost.Server/bin/Debug/net10.0/ExGrid.DemoHost.Server.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:02.89
+warning: Git tree '/home/akira/src/hobby/ex-grid-wr10' has uncommitted changes
+dotnet 10.0.203 (nix-managed)
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+  ExGrid.Data -> /home/akira/src/hobby/ex-grid-wr10/src/ExGrid.Data/bin/Debug/net10.0/ExGrid.Data.dll
+  ExPivot.Engine -> /home/akira/src/hobby/ex-grid-wr10/src/ExPivot.Engine/bin/Debug/net10.0/ExPivot.Engine.dll
+  ExGrid.Data.Arrow -> /home/akira/src/hobby/ex-grid-wr10/src/ExGrid.Data.Arrow/bin/Debug/net10.0/ExGrid.Data.Arrow.dll
+  ExGrid -> /home/akira/src/hobby/ex-grid-wr10/src/ExGrid/bin/Debug/net10.0/ExGrid.dll
+  ExGrid.DemoApi -> /home/akira/src/hobby/ex-grid-wr10/samples/ExGrid.DemoApi/bin/Debug/net10.0/ExGrid.DemoApi.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:01.16
