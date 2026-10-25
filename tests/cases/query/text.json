@@ -1,0 +1,110 @@
+{
+  "about": "Text compares as .NET's OrdinalIgnoreCase does (ADR-0023): each character upper-cased by the invariant simple mapping, never into ASCII from outside it, never into two characters, and then ordinal. The reader's culture never takes part.",
+  "kind": "query",
+  "columns": [{"name": "Book", "type": "text"}, {"name": "Amount", "type": "number"}, {"name": "Cleared", "type": "boolean"}],
+  "cases": [
+    {
+      "name": "ADR-0023: accented letters fold to their capitals",
+      "rows": [
+        ["é", null, null],
+        ["e", null, null]
+      ],
+      "filter": {"columns": {"Book": {"clauses": [{"operator": "equals", "value": "É"}]}}},
+      "keeps": [0]
+    },
+    {
+      "name": "ADR-0023: the dotless ı is not I, whatever the culture",
+      "rows": [
+        ["ı", null, null],
+        ["i", null, null]
+      ],
+      "filter": {"columns": {"Book": {"clauses": [{"operator": "equals", "value": "I"}]}}},
+      "keeps": [1]
+    },
+    {
+      "name": "ADR-0023: the long ſ is not S",
+      "rows": [
+        ["ſ", null, null],
+        ["s", null, null]
+      ],
+      "filter": {"columns": {"Book": {"clauses": [{"operator": "equals", "value": "S"}]}}},
+      "keeps": [1]
+    },
+    {
+      "name": "ADR-0023: ß is not SS: a letter never becomes two",
+      "rows": [
+        ["straße", null, null],
+        ["strasse", null, null]
+      ],
+      "filter": {"columns": {"Book": {"clauses": [{"operator": "equals", "value": "STRASSE"}]}}},
+      "keeps": [1]
+    },
+    {
+      "name": "ADR-0023: Greek's two lower sigmas both fold to Σ",
+      "rows": [
+        ["ς", null, null],
+        ["σ", null, null],
+        ["x", null, null]
+      ],
+      "filter": {"columns": {"Book": {"clauses": [{"operator": "equals", "value": "Σ"}]}}},
+      "keeps": [0, 1]
+    },
+    {
+      "name": "ADR-0023: the Kelvin sign is not K",
+      "rows": [
+        ["K", null, null],
+        ["k", null, null]
+      ],
+      "filter": {"columns": {"Book": {"clauses": [{"operator": "equals", "value": "K"}]}}},
+      "keeps": [1]
+    },
+    {
+      "name": "ADR-0023: letters outside the Basic Multilingual Plane fold too",
+      "rows": [
+        ["𐐨", null, null],
+        ["x", null, null]
+      ],
+      "filter": {"columns": {"Book": {"clauses": [{"operator": "equals", "value": "𐐀"}]}}},
+      "keeps": [0]
+    },
+    {
+      "name": "ADR-0023: contains folds case on both sides",
+      "rows": [
+        ["Ünïcode", null, null],
+        ["unicode", null, null]
+      ],
+      "filter": {"columns": {"Book": {"clauses": [{"operator": "contains", "value": "NÏC"}]}}},
+      "keeps": [0]
+    },
+    {
+      "name": "ADR-0023: a value list folds case",
+      "rows": [
+        ["ÉCLAIR", null, null],
+        ["eclair", null, null]
+      ],
+      "filter": {"columns": {"Book": {"clauses": [{"operator": "in", "values": ["éclair"]}]}}},
+      "keeps": [0]
+    },
+    {
+      "name": "ADR-0023: text orders by its folded code units, so Z sorts before a and é after z",
+      "rows": [
+        ["é", null, null],
+        ["z", null, null],
+        ["a", null, null],
+        ["Z", null, null],
+        ["B", null, null]
+      ],
+      "sorts": [{"column": "Book", "direction": "ascending"}],
+      "keeps": [2, 4, 1, 3, 0]
+    },
+    {
+      "name": "ADR-0023: an underscore sorts after the letters, as the capitals they fold to sort before it",
+      "rows": [
+        ["_x", null, null],
+        ["ax", null, null]
+      ],
+      "sorts": [{"column": "Book", "direction": "ascending"}],
+      "keeps": [1, 0]
+    }
+  ]
+}

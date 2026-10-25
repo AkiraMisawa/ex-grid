@@ -1,0 +1,32 @@
+{
+  "about": "The operators each column type offers (ADR-0009, ADR-0023), which are the ones the reference implementation accepts. From tests/ExGrid.Tests/AllowedOperatorTests.cs. The C# core's FilterOperators is a static class; the Script Core's query/filter.ts has it as filterOperatorsFor.",
+  "kind": "calls",
+  "subject": "FilterOperators",
+  "cases": [
+    {
+      "name": "ADR-0009 / ADR-0023: text columns offer the text operators",
+      "expect": [
+        {"static": "allowedFor", "args": ["text"], "is": ["equals", "notEquals", "contains", "doesNotContain", "startsWith", "endsWith", "in", "isBlank", "isNotBlank"]}
+      ]
+    },
+    {
+      "name": "ADR-0009 / ADR-0023: number and date columns offer the ordering operators",
+      "expect": [
+        {"static": "allowedFor", "args": ["number"], "is": ["equals", "notEquals", "greaterThan", "greaterThanOrEqual", "lessThan", "lessThanOrEqual", "in", "isBlank", "isNotBlank"]},
+        {"static": "allowedFor", "args": ["date"], "is": ["equals", "notEquals", "greaterThan", "greaterThanOrEqual", "lessThan", "lessThanOrEqual", "in", "isBlank", "isNotBlank"]}
+      ]
+    },
+    {
+      "name": "ADR-0009 / ADR-0023: boolean columns offer equals, the value list and blankness",
+      "expect": [
+        {"static": "allowedFor", "args": ["boolean"], "is": ["equals", "in", "isBlank", "isNotBlank"]}
+      ]
+    },
+    {
+      "name": "ADR-0023: a type nobody declared is refused",
+      "expect": [
+        {"static": "allowedFor", "args": [9], "throws": "outOfRange"}
+      ]
+    }
+  ]
+}

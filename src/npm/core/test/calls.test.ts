@@ -17,6 +17,8 @@ import { editingKeysByMode } from '../src/keys/editing-keys';
 import { canonicalKey, clipboardKeys, declareKeys, keysTakenFor, resolveKey, takenOnEveryGrid } from '../src/keys/grid-keys';
 import { decideOverflow, hashesWhenOverflowing } from '../src/columns/overflow-rules';
 import { GridMetrics } from '../src/grid-metrics';
+import { filterOperatorsFor } from '../src/query/filter';
+import { nextSort } from '../src/query/sort';
 import { cellClasses } from '../src/paint/cell-classes';
 import { rowClasses } from '../src/paint/row-classes';
 import { lineUpMarks, rowMarkHeaderPress, rowMarkHeaderState, RowMarkCounts } from '../src/rows/row-marks';
@@ -115,6 +117,11 @@ const subjects: Readonly<Record<string, Subject>> = {
     // C#'s OverflowRules is a static class: its members are functions of the module here.
     // C#'s GridKeys and GridEditingKeys are static classes: their members are functions and constants of
     // the modules here, under the C# names.
+    // C#'s FilterOperators and SortCycle are static classes: each is one function of its module here.
+    FilterOperators: {
+        create: (_, via) => noFactory('FilterOperators', via),
+        statics: { allowedFor: filterOperatorsFor },
+    },
     GridEditingKeys: {
         create: (_, via) => noFactory('GridEditingKeys', via),
         statics: { byMode: editingKeysByMode },
@@ -183,6 +190,10 @@ const subjects: Readonly<Record<string, Subject>> = {
     RowRange: {
         create: (args, via) => via === undefined ? rowRange(args['start'] as number, args['count'] as number) : noFactory('RowRange', via),
         statics: {},
+    },
+    SortCycle: {
+        create: (_, via) => noFactory('SortCycle', via),
+        statics: { next: nextSort },
     },
     ViewportBox: {
         create: (args, via) => {

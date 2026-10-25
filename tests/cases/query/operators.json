@@ -1,0 +1,648 @@
+{
+  "about": "Every filter operator on every column type (FL-6, ADR-0023), against the reference implementation GridSource.From runs: a value either side of the operand and a Blank where an operator is offered, a refusal naming the column where it is not. From tests/ExGrid.Tests/OperatorMatrixTests.cs; the Date rows wait for the Script Core's date values.",
+  "kind": "query",
+  "columns": [{"name": "Book", "type": "text"}, {"name": "Amount", "type": "number"}, {"name": "Cleared", "type": "boolean"}],
+  "cases": [
+    {
+      "name": "FL-6, ADR-0023: text, equals \"ALPHA\" on \"Alpha\": kept",
+      "rows": [
+        ["Alpha", null, null]
+      ],
+      "filter": {"columns": {"Book": {"clauses": [{"operator": "equals", "value": "ALPHA"}]}}},
+      "keeps": [0]
+    },
+    {
+      "name": "FL-6, ADR-0023: text, equals \"Alph\" on \"Alpha\": dropped",
+      "rows": [
+        ["Alpha", null, null]
+      ],
+      "filter": {"columns": {"Book": {"clauses": [{"operator": "equals", "value": "Alph"}]}}},
+      "keeps": []
+    },
+    {
+      "name": "FL-6, ADR-0023: text, equals \"\" on a Blank: dropped",
+      "rows": [
+        [null, null, null]
+      ],
+      "filter": {"columns": {"Book": {"clauses": [{"operator": "equals", "value": ""}]}}},
+      "keeps": []
+    },
+    {
+      "name": "FL-6, ADR-0023: text, notEquals \"Beta\" on \"Alpha\": kept",
+      "rows": [
+        ["Alpha", null, null]
+      ],
+      "filter": {"columns": {"Book": {"clauses": [{"operator": "notEquals", "value": "Beta"}]}}},
+      "keeps": [0]
+    },
+    {
+      "name": "FL-6, ADR-0023: text, notEquals \"aLPHA\" on \"Alpha\": dropped",
+      "rows": [
+        ["Alpha", null, null]
+      ],
+      "filter": {"columns": {"Book": {"clauses": [{"operator": "notEquals", "value": "aLPHA"}]}}},
+      "keeps": []
+    },
+    {
+      "name": "FL-6, ADR-0023: text, notEquals \"Beta\" on a Blank: dropped",
+      "rows": [
+        [null, null, null]
+      ],
+      "filter": {"columns": {"Book": {"clauses": [{"operator": "notEquals", "value": "Beta"}]}}},
+      "keeps": []
+    },
+    {
+      "name": "FL-6, ADR-0023: text, contains \"LPH\" on \"Alpha\": kept",
+      "rows": [
+        ["Alpha", null, null]
+      ],
+      "filter": {"columns": {"Book": {"clauses": [{"operator": "contains", "value": "LPH"}]}}},
+      "keeps": [0]
+    },
+    {
+      "name": "FL-6, ADR-0023: text, contains \"x\" on \"Alpha\": dropped",
+      "rows": [
+        ["Alpha", null, null]
+      ],
+      "filter": {"columns": {"Book": {"clauses": [{"operator": "contains", "value": "x"}]}}},
+      "keeps": []
+    },
+    {
+      "name": "FL-6, ADR-0023: text, contains \"\" on a Blank: dropped",
+      "rows": [
+        [null, null, null]
+      ],
+      "filter": {"columns": {"Book": {"clauses": [{"operator": "contains", "value": ""}]}}},
+      "keeps": []
+    },
+    {
+      "name": "FL-6, ADR-0023: text, doesNotContain \"x\" on \"Alpha\": kept",
+      "rows": [
+        ["Alpha", null, null]
+      ],
+      "filter": {"columns": {"Book": {"clauses": [{"operator": "doesNotContain", "value": "x"}]}}},
+      "keeps": [0]
+    },
+    {
+      "name": "FL-6, ADR-0023: text, doesNotContain \"lph\" on \"Alpha\": dropped",
+      "rows": [
+        ["Alpha", null, null]
+      ],
+      "filter": {"columns": {"Book": {"clauses": [{"operator": "doesNotContain", "value": "lph"}]}}},
+      "keeps": []
+    },
+    {
+      "name": "FL-6, ADR-0023: text, doesNotContain \"x\" on a Blank: dropped",
+      "rows": [
+        [null, null, null]
+      ],
+      "filter": {"columns": {"Book": {"clauses": [{"operator": "doesNotContain", "value": "x"}]}}},
+      "keeps": []
+    },
+    {
+      "name": "FL-6, ADR-0023: text, startsWith \"aL\" on \"Alpha\": kept",
+      "rows": [
+        ["Alpha", null, null]
+      ],
+      "filter": {"columns": {"Book": {"clauses": [{"operator": "startsWith", "value": "aL"}]}}},
+      "keeps": [0]
+    },
+    {
+      "name": "FL-6, ADR-0023: text, startsWith \"lpha\" on \"Alpha\": dropped",
+      "rows": [
+        ["Alpha", null, null]
+      ],
+      "filter": {"columns": {"Book": {"clauses": [{"operator": "startsWith", "value": "lpha"}]}}},
+      "keeps": []
+    },
+    {
+      "name": "FL-6, ADR-0023: text, startsWith \"\" on a Blank: dropped",
+      "rows": [
+        [null, null, null]
+      ],
+      "filter": {"columns": {"Book": {"clauses": [{"operator": "startsWith", "value": ""}]}}},
+      "keeps": []
+    },
+    {
+      "name": "FL-6, ADR-0023: text, endsWith \"PHA\" on \"Alpha\": kept",
+      "rows": [
+        ["Alpha", null, null]
+      ],
+      "filter": {"columns": {"Book": {"clauses": [{"operator": "endsWith", "value": "PHA"}]}}},
+      "keeps": [0]
+    },
+    {
+      "name": "FL-6, ADR-0023: text, endsWith \"Alp\" on \"Alpha\": dropped",
+      "rows": [
+        ["Alpha", null, null]
+      ],
+      "filter": {"columns": {"Book": {"clauses": [{"operator": "endsWith", "value": "Alp"}]}}},
+      "keeps": []
+    },
+    {
+      "name": "FL-6, ADR-0023: text, endsWith \"\" on a Blank: dropped",
+      "rows": [
+        [null, null, null]
+      ],
+      "filter": {"columns": {"Book": {"clauses": [{"operator": "endsWith", "value": ""}]}}},
+      "keeps": []
+    },
+    {
+      "name": "FL-6, ADR-0023: text, in [\"Alpha\", \"BETA\"] on \"beta\": kept",
+      "rows": [
+        ["beta", null, null]
+      ],
+      "filter": {"columns": {"Book": {"clauses": [{"operator": "in", "values": ["Alpha", "BETA"]}]}}},
+      "keeps": [0]
+    },
+    {
+      "name": "FL-6, ADR-0023: text, in [\"Alpha\", \"Beta\"] on \"Gamma\": dropped",
+      "rows": [
+        ["Gamma", null, null]
+      ],
+      "filter": {"columns": {"Book": {"clauses": [{"operator": "in", "values": ["Alpha", "Beta"]}]}}},
+      "keeps": []
+    },
+    {
+      "name": "FL-6, ADR-0023: text, in [\"Alpha\", null] on a Blank: kept",
+      "rows": [
+        [null, null, null]
+      ],
+      "filter": {"columns": {"Book": {"clauses": [{"operator": "in", "values": ["Alpha", null]}]}}},
+      "keeps": [0]
+    },
+    {
+      "name": "FL-6, ADR-0023: text, in [\"Alpha\"] on a Blank: dropped",
+      "rows": [
+        [null, null, null]
+      ],
+      "filter": {"columns": {"Book": {"clauses": [{"operator": "in", "values": ["Alpha"]}]}}},
+      "keeps": []
+    },
+    {
+      "name": "FL-6, ADR-0023: text, isBlank null on a Blank: kept",
+      "rows": [
+        [null, null, null]
+      ],
+      "filter": {"columns": {"Book": {"clauses": [{"operator": "isBlank"}]}}},
+      "keeps": [0]
+    },
+    {
+      "name": "FL-6, ADR-0023: text, isBlank null on \"\": dropped",
+      "rows": [
+        ["", null, null]
+      ],
+      "filter": {"columns": {"Book": {"clauses": [{"operator": "isBlank"}]}}},
+      "keeps": []
+    },
+    {
+      "name": "FL-6, ADR-0023: text, isNotBlank null on \"\": kept",
+      "rows": [
+        ["", null, null]
+      ],
+      "filter": {"columns": {"Book": {"clauses": [{"operator": "isNotBlank"}]}}},
+      "keeps": [0]
+    },
+    {
+      "name": "FL-6, ADR-0023: text, isNotBlank null on a Blank: dropped",
+      "rows": [
+        [null, null, null]
+      ],
+      "filter": {"columns": {"Book": {"clauses": [{"operator": "isNotBlank"}]}}},
+      "keeps": []
+    },
+    {
+      "name": "FL-6, ADR-0023: number, equals 2.5 on 2.5: kept",
+      "rows": [
+        [null, 2.5, null]
+      ],
+      "filter": {"columns": {"Amount": {"clauses": [{"operator": "equals", "value": 2.5}]}}},
+      "keeps": [0]
+    },
+    {
+      "name": "FL-6, ADR-0023: number, equals 2.5 on 2: dropped",
+      "rows": [
+        [null, 2, null]
+      ],
+      "filter": {"columns": {"Amount": {"clauses": [{"operator": "equals", "value": 2.5}]}}},
+      "keeps": []
+    },
+    {
+      "name": "FL-6, ADR-0023: number, equals 0 on a Blank: dropped",
+      "rows": [
+        [null, null, null]
+      ],
+      "filter": {"columns": {"Amount": {"clauses": [{"operator": "equals", "value": 0}]}}},
+      "keeps": []
+    },
+    {
+      "name": "FL-6, ADR-0023: number, notEquals 3 on 2: kept",
+      "rows": [
+        [null, 2, null]
+      ],
+      "filter": {"columns": {"Amount": {"clauses": [{"operator": "notEquals", "value": 3}]}}},
+      "keeps": [0]
+    },
+    {
+      "name": "FL-6, ADR-0023: number, notEquals 3 on 3: dropped",
+      "rows": [
+        [null, 3, null]
+      ],
+      "filter": {"columns": {"Amount": {"clauses": [{"operator": "notEquals", "value": 3}]}}},
+      "keeps": []
+    },
+    {
+      "name": "FL-6, ADR-0023: number, notEquals 3 on a Blank: dropped",
+      "rows": [
+        [null, null, null]
+      ],
+      "filter": {"columns": {"Amount": {"clauses": [{"operator": "notEquals", "value": 3}]}}},
+      "keeps": []
+    },
+    {
+      "name": "FL-6, ADR-0023: number, greaterThan 2.99 on 3: kept",
+      "rows": [
+        [null, 3, null]
+      ],
+      "filter": {"columns": {"Amount": {"clauses": [{"operator": "greaterThan", "value": 2.99}]}}},
+      "keeps": [0]
+    },
+    {
+      "name": "FL-6, ADR-0023: number, greaterThan 3 on 3: dropped",
+      "rows": [
+        [null, 3, null]
+      ],
+      "filter": {"columns": {"Amount": {"clauses": [{"operator": "greaterThan", "value": 3}]}}},
+      "keeps": []
+    },
+    {
+      "name": "FL-6, ADR-0023: number, greaterThan -1000000 on a Blank: dropped",
+      "rows": [
+        [null, null, null]
+      ],
+      "filter": {"columns": {"Amount": {"clauses": [{"operator": "greaterThan", "value": -1000000}]}}},
+      "keeps": []
+    },
+    {
+      "name": "FL-6, ADR-0023: number, greaterThanOrEqual 3 on 3: kept",
+      "rows": [
+        [null, 3, null]
+      ],
+      "filter": {"columns": {"Amount": {"clauses": [{"operator": "greaterThanOrEqual", "value": 3}]}}},
+      "keeps": [0]
+    },
+    {
+      "name": "FL-6, ADR-0023: number, greaterThanOrEqual 3 on 2.99: dropped",
+      "rows": [
+        [null, 2.99, null]
+      ],
+      "filter": {"columns": {"Amount": {"clauses": [{"operator": "greaterThanOrEqual", "value": 3}]}}},
+      "keeps": []
+    },
+    {
+      "name": "FL-6, ADR-0023: number, greaterThanOrEqual -1000000 on a Blank: dropped",
+      "rows": [
+        [null, null, null]
+      ],
+      "filter": {"columns": {"Amount": {"clauses": [{"operator": "greaterThanOrEqual", "value": -1000000}]}}},
+      "keeps": []
+    },
+    {
+      "name": "FL-6, ADR-0023: number, lessThan 0 on -1: kept",
+      "rows": [
+        [null, -1, null]
+      ],
+      "filter": {"columns": {"Amount": {"clauses": [{"operator": "lessThan", "value": 0}]}}},
+      "keeps": [0]
+    },
+    {
+      "name": "FL-6, ADR-0023: number, lessThan 0 on 0: dropped",
+      "rows": [
+        [null, 0, null]
+      ],
+      "filter": {"columns": {"Amount": {"clauses": [{"operator": "lessThan", "value": 0}]}}},
+      "keeps": []
+    },
+    {
+      "name": "FL-6, ADR-0023: number, lessThan 1000000 on a Blank: dropped",
+      "rows": [
+        [null, null, null]
+      ],
+      "filter": {"columns": {"Amount": {"clauses": [{"operator": "lessThan", "value": 1000000}]}}},
+      "keeps": []
+    },
+    {
+      "name": "FL-6, ADR-0023: number, lessThanOrEqual 0 on 0: kept",
+      "rows": [
+        [null, 0, null]
+      ],
+      "filter": {"columns": {"Amount": {"clauses": [{"operator": "lessThanOrEqual", "value": 0}]}}},
+      "keeps": [0]
+    },
+    {
+      "name": "FL-6, ADR-0023: number, lessThanOrEqual 0 on 0.01: dropped",
+      "rows": [
+        [null, 0.01, null]
+      ],
+      "filter": {"columns": {"Amount": {"clauses": [{"operator": "lessThanOrEqual", "value": 0}]}}},
+      "keeps": []
+    },
+    {
+      "name": "FL-6, ADR-0023: number, lessThanOrEqual 1000000 on a Blank: dropped",
+      "rows": [
+        [null, null, null]
+      ],
+      "filter": {"columns": {"Amount": {"clauses": [{"operator": "lessThanOrEqual", "value": 1000000}]}}},
+      "keeps": []
+    },
+    {
+      "name": "FL-6, ADR-0023: number, in [1, 2] on 2: kept",
+      "rows": [
+        [null, 2, null]
+      ],
+      "filter": {"columns": {"Amount": {"clauses": [{"operator": "in", "values": [1, 2]}]}}},
+      "keeps": [0]
+    },
+    {
+      "name": "FL-6, ADR-0023: number, in [1, 2] on 3: dropped",
+      "rows": [
+        [null, 3, null]
+      ],
+      "filter": {"columns": {"Amount": {"clauses": [{"operator": "in", "values": [1, 2]}]}}},
+      "keeps": []
+    },
+    {
+      "name": "FL-6, ADR-0023: number, in [1, null] on a Blank: kept",
+      "rows": [
+        [null, null, null]
+      ],
+      "filter": {"columns": {"Amount": {"clauses": [{"operator": "in", "values": [1, null]}]}}},
+      "keeps": [0]
+    },
+    {
+      "name": "FL-6, ADR-0023: number, isBlank null on a Blank: kept",
+      "rows": [
+        [null, null, null]
+      ],
+      "filter": {"columns": {"Amount": {"clauses": [{"operator": "isBlank"}]}}},
+      "keeps": [0]
+    },
+    {
+      "name": "FL-6, ADR-0023: number, isBlank null on 0: dropped",
+      "rows": [
+        [null, 0, null]
+      ],
+      "filter": {"columns": {"Amount": {"clauses": [{"operator": "isBlank"}]}}},
+      "keeps": []
+    },
+    {
+      "name": "FL-6, ADR-0023: number, isNotBlank null on 0: kept",
+      "rows": [
+        [null, 0, null]
+      ],
+      "filter": {"columns": {"Amount": {"clauses": [{"operator": "isNotBlank"}]}}},
+      "keeps": [0]
+    },
+    {
+      "name": "FL-6, ADR-0023: number, isNotBlank null on a Blank: dropped",
+      "rows": [
+        [null, null, null]
+      ],
+      "filter": {"columns": {"Amount": {"clauses": [{"operator": "isNotBlank"}]}}},
+      "keeps": []
+    },
+    {
+      "name": "FL-6, ADR-0023: boolean, equals true on true: kept",
+      "rows": [
+        [null, null, true]
+      ],
+      "filter": {"columns": {"Cleared": {"clauses": [{"operator": "equals", "value": true}]}}},
+      "keeps": [0]
+    },
+    {
+      "name": "FL-6, ADR-0023: boolean, equals true on false: dropped",
+      "rows": [
+        [null, null, false]
+      ],
+      "filter": {"columns": {"Cleared": {"clauses": [{"operator": "equals", "value": true}]}}},
+      "keeps": []
+    },
+    {
+      "name": "FL-6, ADR-0023: boolean, equals false on a Blank: dropped",
+      "rows": [
+        [null, null, null]
+      ],
+      "filter": {"columns": {"Cleared": {"clauses": [{"operator": "equals", "value": false}]}}},
+      "keeps": []
+    },
+    {
+      "name": "FL-6, ADR-0023: boolean, in [false] on false: kept",
+      "rows": [
+        [null, null, false]
+      ],
+      "filter": {"columns": {"Cleared": {"clauses": [{"operator": "in", "values": [false]}]}}},
+      "keeps": [0]
+    },
+    {
+      "name": "FL-6, ADR-0023: boolean, in [false] on true: dropped",
+      "rows": [
+        [null, null, true]
+      ],
+      "filter": {"columns": {"Cleared": {"clauses": [{"operator": "in", "values": [false]}]}}},
+      "keeps": []
+    },
+    {
+      "name": "FL-6, ADR-0023: boolean, in [true, null] on a Blank: kept",
+      "rows": [
+        [null, null, null]
+      ],
+      "filter": {"columns": {"Cleared": {"clauses": [{"operator": "in", "values": [true, null]}]}}},
+      "keeps": [0]
+    },
+    {
+      "name": "FL-6, ADR-0023: boolean, isBlank null on a Blank: kept",
+      "rows": [
+        [null, null, null]
+      ],
+      "filter": {"columns": {"Cleared": {"clauses": [{"operator": "isBlank"}]}}},
+      "keeps": [0]
+    },
+    {
+      "name": "FL-6, ADR-0023: boolean, isBlank null on false: dropped",
+      "rows": [
+        [null, null, false]
+      ],
+      "filter": {"columns": {"Cleared": {"clauses": [{"operator": "isBlank"}]}}},
+      "keeps": []
+    },
+    {
+      "name": "FL-6, ADR-0023: boolean, isNotBlank null on false: kept",
+      "rows": [
+        [null, null, false]
+      ],
+      "filter": {"columns": {"Cleared": {"clauses": [{"operator": "isNotBlank"}]}}},
+      "keeps": [0]
+    },
+    {
+      "name": "FL-6, ADR-0023: boolean, isNotBlank null on a Blank: dropped",
+      "rows": [
+        [null, null, null]
+      ],
+      "filter": {"columns": {"Cleared": {"clauses": [{"operator": "isNotBlank"}]}}},
+      "keeps": []
+    },
+    {
+      "name": "FL-6, ADR-0023: greaterThan is not offered on a text column, and is refused naming it",
+      "rows": [
+        ["Alpha", null, null]
+      ],
+      "filter": {"columns": {"Book": {"clauses": [{"operator": "greaterThan", "value": "Alpha"}]}}},
+      "throws": "invalidOperation",
+      "saying": "Book"
+    },
+    {
+      "name": "FL-6, ADR-0023: greaterThanOrEqual is not offered on a text column, and is refused naming it",
+      "rows": [
+        ["Alpha", null, null]
+      ],
+      "filter": {"columns": {"Book": {"clauses": [{"operator": "greaterThanOrEqual", "value": "Alpha"}]}}},
+      "throws": "invalidOperation",
+      "saying": "Book"
+    },
+    {
+      "name": "FL-6, ADR-0023: lessThan is not offered on a text column, and is refused naming it",
+      "rows": [
+        ["Alpha", null, null]
+      ],
+      "filter": {"columns": {"Book": {"clauses": [{"operator": "lessThan", "value": "Alpha"}]}}},
+      "throws": "invalidOperation",
+      "saying": "Book"
+    },
+    {
+      "name": "FL-6, ADR-0023: lessThanOrEqual is not offered on a text column, and is refused naming it",
+      "rows": [
+        ["Alpha", null, null]
+      ],
+      "filter": {"columns": {"Book": {"clauses": [{"operator": "lessThanOrEqual", "value": "Alpha"}]}}},
+      "throws": "invalidOperation",
+      "saying": "Book"
+    },
+    {
+      "name": "FL-6, ADR-0023: contains is not offered on a number column, and is refused naming it",
+      "rows": [
+        [null, 1, null]
+      ],
+      "filter": {"columns": {"Amount": {"clauses": [{"operator": "contains", "value": 1}]}}},
+      "throws": "invalidOperation",
+      "saying": "Amount"
+    },
+    {
+      "name": "FL-6, ADR-0023: doesNotContain is not offered on a number column, and is refused naming it",
+      "rows": [
+        [null, 1, null]
+      ],
+      "filter": {"columns": {"Amount": {"clauses": [{"operator": "doesNotContain", "value": 1}]}}},
+      "throws": "invalidOperation",
+      "saying": "Amount"
+    },
+    {
+      "name": "FL-6, ADR-0023: startsWith is not offered on a number column, and is refused naming it",
+      "rows": [
+        [null, 1, null]
+      ],
+      "filter": {"columns": {"Amount": {"clauses": [{"operator": "startsWith", "value": 1}]}}},
+      "throws": "invalidOperation",
+      "saying": "Amount"
+    },
+    {
+      "name": "FL-6, ADR-0023: endsWith is not offered on a number column, and is refused naming it",
+      "rows": [
+        [null, 1, null]
+      ],
+      "filter": {"columns": {"Amount": {"clauses": [{"operator": "endsWith", "value": 1}]}}},
+      "throws": "invalidOperation",
+      "saying": "Amount"
+    },
+    {
+      "name": "FL-6, ADR-0023: notEquals is not offered on a boolean column, and is refused naming it",
+      "rows": [
+        [null, null, true]
+      ],
+      "filter": {"columns": {"Cleared": {"clauses": [{"operator": "notEquals", "value": true}]}}},
+      "throws": "invalidOperation",
+      "saying": "Cleared"
+    },
+    {
+      "name": "FL-6, ADR-0023: contains is not offered on a boolean column, and is refused naming it",
+      "rows": [
+        [null, null, true]
+      ],
+      "filter": {"columns": {"Cleared": {"clauses": [{"operator": "contains", "value": true}]}}},
+      "throws": "invalidOperation",
+      "saying": "Cleared"
+    },
+    {
+      "name": "FL-6, ADR-0023: doesNotContain is not offered on a boolean column, and is refused naming it",
+      "rows": [
+        [null, null, true]
+      ],
+      "filter": {"columns": {"Cleared": {"clauses": [{"operator": "doesNotContain", "value": true}]}}},
+      "throws": "invalidOperation",
+      "saying": "Cleared"
+    },
+    {
+      "name": "FL-6, ADR-0023: startsWith is not offered on a boolean column, and is refused naming it",
+      "rows": [
+        [null, null, true]
+      ],
+      "filter": {"columns": {"Cleared": {"clauses": [{"operator": "startsWith", "value": true}]}}},
+      "throws": "invalidOperation",
+      "saying": "Cleared"
+    },
+    {
+      "name": "FL-6, ADR-0023: endsWith is not offered on a boolean column, and is refused naming it",
+      "rows": [
+        [null, null, true]
+      ],
+      "filter": {"columns": {"Cleared": {"clauses": [{"operator": "endsWith", "value": true}]}}},
+      "throws": "invalidOperation",
+      "saying": "Cleared"
+    },
+    {
+      "name": "FL-6, ADR-0023: greaterThan is not offered on a boolean column, and is refused naming it",
+      "rows": [
+        [null, null, true]
+      ],
+      "filter": {"columns": {"Cleared": {"clauses": [{"operator": "greaterThan", "value": true}]}}},
+      "throws": "invalidOperation",
+      "saying": "Cleared"
+    },
+    {
+      "name": "FL-6, ADR-0023: greaterThanOrEqual is not offered on a boolean column, and is refused naming it",
+      "rows": [
+        [null, null, true]
+      ],
+      "filter": {"columns": {"Cleared": {"clauses": [{"operator": "greaterThanOrEqual", "value": true}]}}},
+      "throws": "invalidOperation",
+      "saying": "Cleared"
+    },
+    {
+      "name": "FL-6, ADR-0023: lessThan is not offered on a boolean column, and is refused naming it",
+      "rows": [
+        [null, null, true]
+      ],
+      "filter": {"columns": {"Cleared": {"clauses": [{"operator": "lessThan", "value": true}]}}},
+      "throws": "invalidOperation",
+      "saying": "Cleared"
+    },
+    {
+      "name": "FL-6, ADR-0023: lessThanOrEqual is not offered on a boolean column, and is refused naming it",
+      "rows": [
+        [null, null, true]
+      ],
+      "filter": {"columns": {"Cleared": {"clauses": [{"operator": "lessThanOrEqual", "value": true}]}}},
+      "throws": "invalidOperation",
+      "saying": "Cleared"
+    }
+  ]
+}

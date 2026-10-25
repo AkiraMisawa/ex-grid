@@ -115,4 +115,26 @@ internal static class SharedCases
                 throw new InvalidOperationException($"\"{refusal}\" is not a refusal the cases name.");
         }
     }
+
+    /// <summary>
+    /// The refusals of <see cref="Refused(Action, string)"/>, and <c>argument</c>: an argument of a kind the
+    /// member does not take. With <c>saying</c>, the message holds that text, as the Script Core's does.
+    /// </summary>
+    public static void Refused(Action action, string refusal, string? saying)
+    {
+        if (refusal == "argument")
+        {
+            var thrown = Assert.ThrowsAny<ArgumentException>(action);
+            Assert.IsNotType<ArgumentOutOfRangeException>(thrown);
+            if (saying is not null)
+                Assert.Contains(saying, thrown.Message, StringComparison.Ordinal);
+            return;
+        }
+        Refused(action, refusal);
+        if (saying is not null)
+        {
+            var thrown = Assert.ThrowsAny<Exception>(action);
+            Assert.Contains(saying, thrown.Message, StringComparison.Ordinal);
+        }
+    }
 }

@@ -1,0 +1,39 @@
+{
+  "about": "What one header click does to the Sorts list (ADR-0012). From tests/ExGrid.Tests/SortCycleTests.cs. The C# core's SortCycle is a static class; the Script Core's query/sort.ts has it as nextSort.",
+  "kind": "calls",
+  "subject": "SortCycle",
+  "cases": [
+    {
+      "name": "ADR-0012: a click cycles one column through ascending, descending and unsorted",
+      "expect": [
+        {"static": "next", "args": [[], "Amount"], "is": [{"column": "Amount", "direction": "ascending"}]},
+        {"static": "next", "args": [[{"column": "Amount", "direction": "ascending"}], "Amount"], "is": [{"column": "Amount", "direction": "descending"}]},
+        {"static": "next", "args": [[{"column": "Amount", "direction": "descending"}], "Amount"], "is": []}
+      ]
+    },
+    {
+      "name": "ADR-0012: a click on another column starts over at ascending on it",
+      "expect": [
+        {"static": "next", "args": [[{"column": "Amount", "direction": "descending"}], "Book"], "is": [{"column": "Book", "direction": "ascending"}]}
+      ]
+    },
+    {
+      "name": "ADR-0012: a several-column sort a Consumer set up is replaced, not amended",
+      "expect": [
+        {"static": "next", "args": [[{"column": "Book", "direction": "ascending"}, {"column": "Amount", "direction": "descending"}], "Book"], "is": [{"column": "Book", "direction": "ascending"}]}
+      ]
+    },
+    {
+      "name": "ADR-0012: column names are exact, so the cycle advances only on the very same column",
+      "expect": [
+        {"static": "next", "args": [[{"column": "Amount", "direction": "ascending"}], "amount"], "is": [{"column": "amount", "direction": "ascending"}]}
+      ]
+    },
+    {
+      "name": "ADR-0012: a click names a column",
+      "expect": [
+        {"static": "next", "args": [[], ""], "throws": "argument"}
+      ]
+    }
+  ]
+}

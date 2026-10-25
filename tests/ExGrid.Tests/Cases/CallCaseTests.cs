@@ -33,6 +33,7 @@ public class CallCaseTests
         ["ColumnWidth"] = typeof(ColumnWidth),
         ["ColumnWidthSpec"] = typeof(ColumnWidthSpec),
         ["GlyphWidthTable"] = typeof(GlyphWidthTable),
+        ["FilterOperators"] = typeof(FilterOperators),
         ["GridEditingKeys"] = typeof(ExGrid.Keys.GridEditingKeys),
         ["HeaderReorder"] = typeof(HeaderReorder),
         ["GridKeys"] = typeof(ExGrid.Keys.GridKeys),
@@ -48,6 +49,7 @@ public class CallCaseTests
         ["RowMarkCounts"] = typeof(ExGrid.Rows.RowMarkCounts),
         ["RowMarkRules"] = typeof(ExGrid.Rows.RowMarkRules),
         ["RowRange"] = typeof(RowRange),
+        ["SortCycle"] = typeof(SortCycle),
         ["ViewportBox"] = typeof(ViewportBox),
         ["ViewportGeometry"] = typeof(ViewportGeometry),
     };
@@ -171,7 +173,7 @@ public class CallCaseTests
             var via = entry.TryGetProperty("via", out var factory) ? factory.GetString() : null;
             if (entry.TryGetProperty("throws", out var refusal))
             {
-                Refused(() => Create(type, via, arguments), refusal.GetString()!, Saying(entry));
+                SharedCases.Refused(() => Create(type, via, arguments), refusal.GetString()!, Saying(entry));
                 Assert.False(entry.TryGetProperty("expect", out _), $"The case \"{name}\" is refused at its creation, so it can expect nothing after it.");
                 return;
             }
@@ -258,7 +260,7 @@ public class CallCaseTests
         object? read() => Invoke(type, isStatic ? null : subject, Pascal(member.GetString()!), args);
         if (check.TryGetProperty("throws", out var refusal))
         {
-            Refused(() => read(), refusal.GetString()!, Saying(check));
+            SharedCases.Refused(() => read(), refusal.GetString()!, Saying(check));
             return;
         }
         var result = read();
@@ -462,28 +464,6 @@ public class CallCaseTests
     }
 
     private static string? Saying(JsonElement entry) => entry.TryGetProperty("saying", out var text) ? text.GetString() : null;
-
-    /// <summary>
-    /// The refusals of <see cref="SharedCases.Refused"/>, and <c>argument</c>: an argument of a kind the
-    /// member does not take. With <c>saying</c>, the message holds that text, as the Script Core's does.
-    /// </summary>
-    private static void Refused(Action action, string refusal, string? saying)
-    {
-        if (refusal == "argument")
-        {
-            var thrown = Assert.ThrowsAny<ArgumentException>(action);
-            Assert.IsNotType<ArgumentOutOfRangeException>(thrown);
-            if (saying is not null)
-                Assert.Contains(saying, thrown.Message, StringComparison.Ordinal);
-            return;
-        }
-        SharedCases.Refused(action, refusal);
-        if (saying is not null)
-        {
-            var thrown = Assert.ThrowsAny<Exception>(action);
-            Assert.Contains(saying, thrown.Message, StringComparison.Ordinal);
-        }
-    }
 
     private static string Pascal(string name) => char.ToUpperInvariant(name[0]) + name[1..];
 }
