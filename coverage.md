@@ -14,18 +14,18 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/25/2026 - 02:09:07 |
+| Generated on: | 10/25/2026 - 02:27:31 |
 | Parser: | MultiReport (19x Cobertura) |
 | Assemblies: | 16 |
 | Classes: | 1181 |
 | Files: | 605 |
-| **Line coverage:** | 94.4% (81463 of 86254) |
-| Covered lines: | 81463 |
-| Uncovered lines: | 4791 |
-| Coverable lines: | 86254 |
-| Total lines: | 137901 |
-| **Branch coverage:** | 87% (49109 of 56396) |
-| Covered branches: | 49109 |
+| **Line coverage:** | 94.4% (81497 of 86289) |
+| Covered lines: | 81497 |
+| Uncovered lines: | 4792 |
+| Coverable lines: | 86289 |
+| Total lines: | 137963 |
+| **Branch coverage:** | 87% (49110 of 56396) |
+| Covered branches: | 49110 |
 | Total branches: | 56396 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
@@ -1117,7 +1117,7 @@
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExSheet.Engine**|**97.8%**|**91.8%**|
+|**ExSheet.Engine**|**97.8%**|**91.9%**|
 |ExSheet.Engine.ArgumentHint|100%||
 |ExSheet.Engine.ArgumentValue|100%||
 |ExSheet.Engine.AxisFormat|100%|100%|
@@ -1239,7 +1239,7 @@
 |ExSheet.Engine.SheetDocumentColumnWidth|100%||
 |ExSheet.Engine.SheetDocumentException|100%||
 |ExSheet.Engine.SheetDocumentTable|100%|100%|
-|ExSheet.Engine.SheetEdit|97.7%|84.9%|
+|ExSheet.Engine.SheetEdit|97.8%|85.1%|
 |ExSheet.Engine.SheetEdit.CellFormatEdit|100%||
 |ExSheet.Engine.SheetEdit.CellFormatsEdit|100%||
 |ExSheet.Engine.SheetEdit.CellsEdit|100%|100%|
@@ -1253,13 +1253,13 @@
 |ExSheet.Engine.SheetEdit.RefusedEdit|66.6%||
 |ExSheet.Engine.SheetEdit.RenameEdit|100%||
 |ExSheet.Engine.SheetEdit.StructureEdit|100%|100%|
-|ExSheet.Engine.SheetEdit.WorkbookEdit|60%||
+|ExSheet.Engine.SheetEdit.WorkbookEdit|78.9%||
 |ExSheet.Engine.SheetEdit.WorkbookEdit.Done|100%||
 |ExSheet.Engine.SheetRefusal|100%||
 |ExSheet.Engine.SheetRefusedException|100%|50%|
 |ExSheet.Engine.SheetStep|100%|100%|
 |ExSheet.Engine.Value|94.2%|79.4%|
-|ExSheet.Engine.Workbook|97.8%|92.9%|
+|ExSheet.Engine.Workbook|97.6%|92.8%|
 |ExSheet.Engine.Workbook.SheetRename|100%||
 |ExSheet.Engine.WorkbookChange|100%|100%|
 |ExSheet.Engine.WorkbookDocument|96.6%|86.5%|
