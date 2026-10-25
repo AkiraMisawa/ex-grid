@@ -1,5 +1,19 @@
 # ExPivot asks a Pivot Source, and a server answers with the Leaf Aggregates
 
+**Boundary restored, 2026-10-25:** [ADR-0370](./0370-the-whole-family-moves-to-typescript-and-blazor-only-adapts-it.md) section 3, decided with the user, makes the Leaf Aggregates
+the server pivot's boundary again once the family's engines are TypeScript, and ADR-0151's server
+report Windows end with ExPivot.Engine. The cap below stands, and a layout over it is refused naming
+the fields that make it, with each field's count of Items shown in the Field List before it is placed
+where the source answers it. From that step, the passages below that defer to ADR-0151 no longer
+apply: the 2026-10-06 note above, "retained here to explain the earlier boundary, not to constrain",
+and "Under ADR-0151 a server sends report Windows" in the 2026-10-08 section. A server's source no
+longer answers through ExPivot.Engine but through `ExPivot.Server`'s pass, held to the TypeScript
+engine's by shared cases rather than being the reference's by construction. The refusal of answers
+naming the leaves that changed stands: until Level Aggregates are built, live server data asks the
+whole question again. Past the cap, ADR-0370 makes Level Aggregates the target, for a source that
+answers them: the engine asks for the groups it shows, in these parts, and checks each group against
+its parent, and live server data then re-asks only what is shown.
+
 **Boundary changed, 2026-10-06:**
 [ADR-0151](./0151-server-pivots-send-report-windows-and-share-the-local-engine.md) chooses
 server-computed report Windows and changes, with the same incremental engine used locally for

@@ -1,5 +1,9 @@
 # The pivot engine answers as Excel's PivotTable does, and is the reference implementation
 
+*(2026-10-25: [ADR-0370](./0370-the-whole-family-moves-to-typescript-and-blazor-only-adapts-it.md) moves the pivot engine to TypeScript. ExPivot.Engine stays the reference until it
+is removed at that ADR's step 3, and is the oracle the TypeScript engine is proved against; from then
+the TypeScript engine is the reference this ADR names, and every rule below holds for it as written.)*
+
 *(Numbered ADR-0059 until 2026-10-01. ExSheet's Pointing Scope took ADR-0058 first, and ExPivot's
 ADRs moved up by one into the block [`docs/agents/numbering.md`](../agents/numbering.md) reserves
 for them. Commit messages before then use the old numbers.)*
