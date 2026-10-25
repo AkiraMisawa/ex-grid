@@ -1,5 +1,5 @@
 import { test, expect, dataRowCount } from './fixtures.mjs';
-import { codeRegion } from './demo-code.mjs';
+import { expectCodeIsSource } from './demo-code.mjs';
 
 // ExPivot on /pivot-risk (ADR-0060, ADR-0069), under ExPivot's own markup and under
 // ExPivot.MudBlazor's Chrome: a rate-delta report with desks and curves in Rows and tenors in
@@ -154,18 +154,14 @@ for (const chrome of ['builtin', 'mud']) {
             const net = /net PV01, summed by the page itself: (-?[\d,]+) USD/.exec(await page.locator('#risk-net').textContent());
             expect(grand.values.at(-1)).toBe(Number(net[1].replace(/,/g, '')));
         });
-
-        test(`ADR-0069: the code the page shows is the code it runs, the README's Order Key among it (${chrome})`, async ({ page }) => {
-            await open(page, chrome);
-            const shown = (file, region) => page.locator(`.demo-code code[data-file="${file}"][data-region="${region}"]`).textContent();
-
-            const tenors = await shown('DemoRiskData.cs', 'tenors');
-            expect(tenors).toBe(codeRegion('DemoRiskData.cs', 'tenors'));
-            expect(tenors).toContain('public static IComparable? Months(string tenor)');
-            const fields = await shown('DemoRiskData.cs', 'fields');
-            expect(fields).toBe(codeRegion('DemoRiskData.cs', 'fields'));
-            expect(fields).toContain('.Text("Tenor", p => p.Tenor, orderKey: Tenors.Months)');
-            expect(await shown('PivotRiskPage.razor', 'pivot')).toBe(codeRegion('PivotRiskPage.razor', 'pivot'));
-        });
     });
 }
+
+// The code blocks a page shows do not depend on the Chrome, so they are read once (ADR-0370 §11).
+test(`ADR-0069: the code the page shows is the code it runs, the README's Order Key among it`, async ({ page }) => {
+    await open(page, 'builtin');
+    const code = await expectCodeIsSource(page);
+    expect(code['DemoRiskData.cs#tenors']).toContain('public static IComparable? Months(string tenor)');
+    expect(code['DemoRiskData.cs#fields']).toContain('.Text("Tenor", p => p.Tenor, orderKey: Tenors.Months)');
+    expect(Object.keys(code)).toContain('PivotRiskPage.razor#pivot');
+});
