@@ -81,6 +81,14 @@ Enter did nothing.
 - **Tested where the race is real**: layer 3 on the Server host with a 300 ms round trip, the choice
   pressed in the frame it is painted, and it keeps the keyboard (`format-cells.spec.mjs`, ticket 240).
 
+### Under the Input Order (ticket 07, 2026-10-25)
+
+`pressedPopovers` is **kept**. The opening focus is not an input of its own: it is the answer to the
+input that opened the popover, landing after a press the user made inside it. The Input Order puts
+that press behind the opening input, so it is handled after it, but the browser has already moved DOM
+focus to what was pressed, and the opening focus arriving afterwards would still take it back.
+Removed, ticket 240's test failed 3 runs of 3 on the Server host.
+
 ## Considered options
 
 - **The page never follows**, the editor included (`preventScroll` on its focus). Consistent, but the

@@ -553,7 +553,12 @@ pull request, with its reason.
 - ADR-0220: ASY-7's exclusions narrow to drafts inside a popover (5); RR-14 still holds.
 - ADR-0230 §1–§3, `InputOvertaken`, ADR-0204's addendum (`pressedPopovers`) and ADR-0210's synthetic
   `change` are each kept, folded into, or removed by ticket 07, and each of those ADRs gains a note
-  saying which.
+  saying which. *(Done 2026-10-25: ADR-0230 §1 and §2 kept; `InputOvertaken` kept as §5's rule;
+  ADR-0230 §3 folded into the order; `pressedPopovers` and the synthetic `change` kept. None was
+  removed: each covers what the order does not, the browser's own move of focus, a key's meaning
+  inside a field, or a native event script cannot fire. §8's differential test runs ExGrid and
+  ExSheet; ExPivot's sequences found races still open, which ASY-8 names, so ASY-8 is not yet met for
+  it.)*
 - The Docs Site's page on automation (the Settled Mark) and the Chrome seams' pages say what the order
   is and how a Consumer's Chrome takes part; each stage writes its Change Note.
 - `CONTEXT.md` gains **Input Order** and **Input Root**.

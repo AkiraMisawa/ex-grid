@@ -155,6 +155,8 @@ jobs:
         env:
           EXGRID_HOSTS: ${{ github.workspace }}/hosts
           EXGRID_HOSTING: ${{ matrix.hosting }}
+          # The differential test's seed drawn by this run, beside its fixed ones (ADR-0240 §8).
+          EXGRID_DIFF_SEED: ${{ github.run_id }}
         run: >
           xvfb-run --auto-servernum --server-args="-screen 0 2560x1600x24"
           ./counted-run.sh ${REPEAT} ${{ steps.shard.outputs.files }} --project=${{ matrix.project }}
@@ -231,6 +233,7 @@ jobs:
           EXGRID_HOSTING: ${{ matrix.hosting }}
           EXGRID_RTT_FLOOR: ${{ env.RTT_FLOOR }}
           EXGRID_CPU_THROTTLE: ${{ env.CPU_THROTTLE }}
+          EXGRID_DIFF_SEED: ${{ github.run_id }}
         run: >
           xvfb-run --auto-servernum --server-args="-screen 0 2560x1600x24"
           ./counted-run.sh 1 ${{ steps.shard.outputs.files }} --project=${{ matrix.project }}
