@@ -11,7 +11,8 @@ namespace ExPivot.MudBlazor;
 /// the keyboard. The press runs through the context's <c>InOrder</c>. Enter, and Space but for its
 /// repeats, press it at the keydown, in that key's turn, so a key the grid hands on — a keydown
 /// dispatched from script, which activates no button — presses it too; the click the browser then makes
-/// of the same key (detail 0) is that key's, and is claimed with nothing done. Any other key is ExPivot's
+/// of the same key (detail 0) is that key's, and does nothing. The button says so
+/// (<c>data-ex-key-presses</c>), and the grid does not number that click (ADR-0362). Any other key is ExPivot's
 /// frame's around the button, if any, in the same turn (Escape closes a menu), through the frame's
 /// cascaded handler: the turn then ends with the keyboard where the frame's answer left it, and the keys
 /// typed behind it go there. A MudBlazor component cannot stop a key's propagation, so the frame hears
@@ -51,10 +52,12 @@ internal sealed class MudPivotPress
         if (InOrder is null)
         {
             attributes.Remove("data-ex-claims");
+            attributes.Remove("data-ex-key-presses");
             attributes.Remove("onkeydown");
             return _pressed;
         }
         attributes["data-ex-claims"] = "click keydown";
+        attributes["data-ex-key-presses"] = true;
         attributes["onkeydown"] = _keyDown;
         return _click;
     }
@@ -85,7 +88,7 @@ internal sealed class MudPivotPress
         if (e.Detail == 0 && _keyClicks > 0)
         {
             _keyClicks--;
-            return InOrderAsync(GridInputKind.Click, static () => Task.CompletedTask);
+            return Task.CompletedTask;
         }
         _keyClicks = 0;
         return InOrderAsync(GridInputKind.Click, () => PressAsync(e));

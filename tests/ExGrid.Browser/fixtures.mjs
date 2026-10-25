@@ -962,6 +962,19 @@ export const test = base.extend({
     },
 });
 
+/**
+ * Ticks or unticks a pivot Field List entry with a click, and reads it once it shows the state. A
+ * press on an entry, which the browser may drag, is let through behind an input still being answered,
+ * but its click waits for its turn among the held inputs (ADR-0362), and the tick turns only then.
+ * Playwright's `check()` reads the box straight after its click, which is too early.
+ */
+export async function setTicked(box, ticked = true) {
+    if (await box.isChecked() !== ticked) {
+        await box.click();
+    }
+    await expect(box).toBeChecked({ checked: ticked });
+}
+
 export { expect };
 
 // Whether the next keydown of `key` — a key name, or a list of them — reaches the page with its
