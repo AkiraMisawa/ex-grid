@@ -320,7 +320,7 @@ const pivotScenario = {
         }
         return {
             fields: await pivotPane(page).getByRole('list', { name: 'PivotTable Fields' }).getByRole('checkbox')
-                .evaluateAll((boxes) => boxes.map((b) => `${b.getAttribute('aria-label') ?? b.closest('li')?.textContent?.trim()}=${b.checked}`)),
+                .evaluateAll((boxes) => boxes.map((b) => `${(b.getAttribute('aria-label') ?? b.labels?.[0]?.textContent ?? b.closest('[role=listitem]')?.textContent)?.trim()}=${b.checked}`)),
             areas,
             report: await pivotReport(page).evaluate((root) => ({
                 rows: root.getAttribute('aria-rowcount'),
