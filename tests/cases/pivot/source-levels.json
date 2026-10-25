@@ -1,0 +1,2580 @@
+{
+  "about": "Level Aggregates (ADR-0370 section 3): a question that says which groups the report shows, answered past the cap with the cells of those groups, each named down to its depth, with the parts a cell's check against its parent reads; and what is another question's answer.",
+  "kind": "pivotSource",
+  "data": "deals",
+  "locale": "en-US",
+  "words": "english",
+  "cases": [
+    {
+      "name": "ADR-0370 (section 3): a question with levels whose leaves fit the cap is answered with the leaves",
+      "asks": [
+        {
+          "aggregate": {
+            "rows": [
+              "Desk",
+              "Book"
+            ],
+            "values": [
+              {
+                "field": "Amount",
+                "parts": [
+                  "sum"
+                ]
+              }
+            ],
+            "maxLeaves": 8,
+            "levels": {
+              "rows": [
+                {
+                  "collapsed": true
+                },
+                {}
+              ]
+            }
+          }
+        }
+      ],
+      "expect": [
+        {
+          "leaves": 8,
+          "rows": [
+            {
+              "field": "Desk",
+              "items": [
+                {
+                  "kind": "text",
+                  "value": "Rates"
+                },
+                {
+                  "kind": "text",
+                  "value": "Credit"
+                },
+                {
+                  "kind": "text",
+                  "value": ""
+                },
+                {
+                  "kind": "text",
+                  "value": "FX"
+                },
+                {
+                  "kind": "blank"
+                }
+              ]
+            },
+            {
+              "field": "Book",
+              "items": [
+                {
+                  "kind": "text",
+                  "value": "LDN-1"
+                },
+                {
+                  "kind": "text",
+                  "value": "NY-2"
+                },
+                {
+                  "kind": "text",
+                  "value": "TKY-3"
+                },
+                {
+                  "kind": "blank"
+                }
+              ]
+            }
+          ],
+          "columns": [],
+          "leaf": [
+            {
+              "at": [
+                0,
+                0
+              ],
+              "records": 2
+            },
+            {
+              "at": [
+                1,
+                1
+              ],
+              "records": 1
+            },
+            {
+              "at": [
+                1,
+                3
+              ],
+              "records": 1
+            },
+            {
+              "at": [
+                4,
+                1
+              ],
+              "records": 1
+            },
+            {
+              "at": [
+                2,
+                2
+              ],
+              "records": 1
+            },
+            {
+              "at": [
+                3,
+                2
+              ],
+              "records": 1
+            },
+            {
+              "at": [
+                3,
+                0
+              ],
+              "records": 1
+            },
+            {
+              "at": [
+                0,
+                1
+              ],
+              "records": 1
+            }
+          ],
+          "values": [
+            {
+              "field": "Amount",
+              "parts": [
+                "sum"
+              ],
+              "leaves": [
+                {
+                  "values": 2,
+                  "numbers": 2,
+                  "sum": {
+                    "decimal": "300.5"
+                  }
+                },
+                {
+                  "values": 1,
+                  "numbers": 1,
+                  "sum": {
+                    "decimal": "7"
+                  }
+                },
+                {
+                  "values": 1,
+                  "numbers": 0,
+                  "sum": {
+                    "decimal": "0"
+                  }
+                },
+                {
+                  "values": 0,
+                  "numbers": 0,
+                  "sum": {
+                    "decimal": "0"
+                  }
+                },
+                {
+                  "values": 1,
+                  "numbers": 1,
+                  "sum": {
+                    "decimal": "79228162514264337593543950335"
+                  }
+                },
+                {
+                  "values": 1,
+                  "numbers": 1,
+                  "sum": {
+                    "decimal": "79228162514264337593543950335"
+                  }
+                },
+                {
+                  "values": 1,
+                  "numbers": 1,
+                  "sum": {
+                    "decimal": "12345678901234567890"
+                  }
+                },
+                {
+                  "values": 1,
+                  "numbers": 1,
+                  "sum": 0.1
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ADR-0370 (section 3): past the cap, a question with levels is answered with the cells of the groups shown, a double sum with its magnitudes",
+      "asks": [
+        {
+          "aggregate": {
+            "rows": [
+              "Desk",
+              "Book"
+            ],
+            "values": [
+              {
+                "field": "Amount",
+                "parts": [
+                  "sum",
+                  "extremes",
+                  "product",
+                  "variance"
+                ]
+              },
+              {
+                "field": "Risk",
+                "parts": [
+                  "sum",
+                  "extremes",
+                  "product",
+                  "variance"
+                ]
+              },
+              "Tag"
+            ],
+            "maxLeaves": 7,
+            "levels": {
+              "rows": [
+                {
+                  "collapsed": true
+                },
+                {}
+              ]
+            }
+          }
+        }
+      ],
+      "expect": [
+        {
+          "leaves": 6,
+          "rows": [
+            {
+              "field": "Desk",
+              "items": [
+                {
+                  "kind": "text",
+                  "value": "Rates"
+                },
+                {
+                  "kind": "text",
+                  "value": "Credit"
+                },
+                {
+                  "kind": "text",
+                  "value": ""
+                },
+                {
+                  "kind": "text",
+                  "value": "FX"
+                },
+                {
+                  "kind": "blank"
+                }
+              ]
+            },
+            {
+              "field": "Book",
+              "items": []
+            }
+          ],
+          "columns": [],
+          "leaf": [
+            {
+              "at": [
+                0,
+                -1
+              ],
+              "records": 3
+            },
+            {
+              "at": [
+                -1,
+                -1
+              ],
+              "records": 9
+            },
+            {
+              "at": [
+                1,
+                -1
+              ],
+              "records": 2
+            },
+            {
+              "at": [
+                4,
+                -1
+              ],
+              "records": 1
+            },
+            {
+              "at": [
+                2,
+                -1
+              ],
+              "records": 1
+            },
+            {
+              "at": [
+                3,
+                -1
+              ],
+              "records": 2
+            }
+          ],
+          "values": [
+            {
+              "field": "Amount",
+              "parts": [
+                "sum",
+                "extremes",
+                "product",
+                "variance"
+              ],
+              "leaves": [
+                {
+                  "values": 3,
+                  "numbers": 3,
+                  "sum": 300.6,
+                  "absoluteSum": 300.6,
+                  "min": 0.1,
+                  "max": 200,
+                  "product": 2010,
+                  "mean": 100.19999999999999,
+                  "m2": 19980.14
+                },
+                {
+                  "values": 8,
+                  "numbers": 7,
+                  "sum": 1.5845632504087434E+29,
+                  "absoluteSum": 1.5845632504087434E+29,
+                  "min": 0.1,
+                  "max": 7.922816251426434E+28,
+                  "product": 1.09035581014841E+81,
+                  "mean": 2.2636617862982055E+28,
+                  "m2": 8.967288192850615E+57
+                },
+                {
+                  "values": 2,
+                  "numbers": 1,
+                  "sum": {
+                    "decimal": "7"
+                  },
+                  "min": {
+                    "decimal": "7"
+                  },
+                  "max": {
+                    "decimal": "7"
+                  },
+                  "product": 7,
+                  "mean": 7,
+                  "m2": 0
+                },
+                {
+                  "values": 0,
+                  "numbers": 0,
+                  "sum": {
+                    "decimal": "0"
+                  },
+                  "min": {
+                    "decimal": "0"
+                  },
+                  "max": {
+                    "decimal": "0"
+                  },
+                  "product": 0,
+                  "mean": 0,
+                  "m2": 0
+                },
+                {
+                  "values": 1,
+                  "numbers": 1,
+                  "sum": {
+                    "decimal": "79228162514264337593543950335"
+                  },
+                  "min": {
+                    "decimal": "79228162514264337593543950335"
+                  },
+                  "max": {
+                    "decimal": "79228162514264337593543950335"
+                  },
+                  "product": 7.922816251426434E+28,
+                  "mean": 7.922816251426434E+28,
+                  "m2": 0
+                },
+                {
+                  "values": 2,
+                  "numbers": 2,
+                  "sum": 7.922816252661002E+28,
+                  "absoluteSum": 7.922816252661002E+28,
+                  "min": {
+                    "decimal": "12345678901234567890"
+                  },
+                  "max": {
+                    "decimal": "79228162514264337593543950335"
+                  },
+                  "product": 9.781254543359367E+47,
+                  "mean": 3.9614081263305E+28,
+                  "m2": 3.138550866715215E+57
+                }
+              ]
+            },
+            {
+              "field": "Risk",
+              "parts": [
+                "sum",
+                "extremes",
+                "product",
+                "variance"
+              ],
+              "leaves": [
+                {
+                  "values": 3,
+                  "numbers": 3,
+                  "sum": 4.6,
+                  "absoluteSum": 4.6,
+                  "min": 0.1,
+                  "max": 3,
+                  "product": 0.45000000000000007,
+                  "mean": 1.5333333333333334,
+                  "m2": 4.206666666666667
+                },
+                {
+                  "values": 9,
+                  "numbers": 9,
+                  "nonFinite": true,
+                  "sum": 1E+300,
+                  "absoluteSum": 1E+300,
+                  "min": 0,
+                  "max": 1E+300,
+                  "product": {
+                    "double": "-0"
+                  },
+                  "mean": 1.1111111111111112E+299,
+                  "m2": {
+                    "double": "Infinity"
+                  }
+                },
+                {
+                  "values": 2,
+                  "numbers": 2,
+                  "nonFinite": true,
+                  "sum": 0,
+                  "absoluteSum": 0,
+                  "min": 0,
+                  "max": 0,
+                  "product": {
+                    "double": "-0"
+                  },
+                  "mean": 0,
+                  "m2": 0
+                },
+                {
+                  "values": 1,
+                  "numbers": 1,
+                  "nonFinite": true,
+                  "sum": {
+                    "decimal": "0"
+                  },
+                  "min": {
+                    "decimal": "0"
+                  },
+                  "max": {
+                    "decimal": "0"
+                  },
+                  "product": 0,
+                  "mean": 0,
+                  "m2": 0
+                },
+                {
+                  "values": 1,
+                  "numbers": 1,
+                  "sum": 5E-324,
+                  "absoluteSum": 5E-324,
+                  "min": 5E-324,
+                  "max": 5E-324,
+                  "product": 5E-324,
+                  "mean": 5E-324,
+                  "m2": 0
+                },
+                {
+                  "values": 2,
+                  "numbers": 2,
+                  "sum": 1E+300,
+                  "absoluteSum": 1E+300,
+                  "min": 2.5,
+                  "max": 1E+300,
+                  "product": 2.5E+300,
+                  "mean": 5E+299,
+                  "m2": {
+                    "double": "Infinity"
+                  }
+                }
+              ]
+            },
+            {
+              "field": "Tag",
+              "parts": [],
+              "leaves": [
+                {
+                  "values": 3,
+                  "numbers": 0
+                },
+                {
+                  "values": 8,
+                  "numbers": 1
+                },
+                {
+                  "values": 1,
+                  "numbers": 0
+                },
+                {
+                  "values": 1,
+                  "numbers": 1
+                },
+                {
+                  "values": 1,
+                  "numbers": 0
+                },
+                {
+                  "values": 2,
+                  "numbers": 0
+                }
+              ]
+            }
+          ],
+          "levels": true
+        }
+      ]
+    },
+    {
+      "name": "ADR-0370 (section 3): an Item toggled from its field's state shows the groups below it, down to the next collapsed one, and text Items are matched ignoring case",
+      "asks": [
+        {
+          "aggregate": {
+            "rows": [
+              "Desk",
+              "Book",
+              "Tag"
+            ],
+            "values": [
+              {
+                "field": "Amount",
+                "parts": [
+                  "sum",
+                  "extremes",
+                  "product",
+                  "variance"
+                ]
+              },
+              {
+                "field": "Risk",
+                "parts": [
+                  "sum"
+                ]
+              }
+            ],
+            "maxLeaves": 8,
+            "levels": {
+              "rows": [
+                {
+                  "collapsed": true,
+                  "toggledItems": [
+                    {
+                      "kind": "text",
+                      "value": "RATES"
+                    }
+                  ]
+                },
+                {
+                  "collapsed": true
+                },
+                {}
+              ]
+            }
+          }
+        }
+      ],
+      "expect": [
+        {
+          "leaves": 8,
+          "rows": [
+            {
+              "field": "Desk",
+              "items": [
+                {
+                  "kind": "text",
+                  "value": "Rates"
+                },
+                {
+                  "kind": "text",
+                  "value": "Credit"
+                },
+                {
+                  "kind": "text",
+                  "value": ""
+                },
+                {
+                  "kind": "text",
+                  "value": "FX"
+                },
+                {
+                  "kind": "blank"
+                }
+              ]
+            },
+            {
+              "field": "Book",
+              "items": [
+                {
+                  "kind": "text",
+                  "value": "LDN-1"
+                },
+                {
+                  "kind": "text",
+                  "value": "NY-2"
+                }
+              ]
+            },
+            {
+              "field": "Tag",
+              "items": []
+            }
+          ],
+          "columns": [],
+          "leaf": [
+            {
+              "at": [
+                0,
+                0,
+                -1
+              ],
+              "records": 2
+            },
+            {
+              "at": [
+                0,
+                -1,
+                -1
+              ],
+              "records": 3
+            },
+            {
+              "at": [
+                -1,
+                -1,
+                -1
+              ],
+              "records": 9
+            },
+            {
+              "at": [
+                1,
+                -1,
+                -1
+              ],
+              "records": 2
+            },
+            {
+              "at": [
+                4,
+                -1,
+                -1
+              ],
+              "records": 1
+            },
+            {
+              "at": [
+                2,
+                -1,
+                -1
+              ],
+              "records": 1
+            },
+            {
+              "at": [
+                3,
+                -1,
+                -1
+              ],
+              "records": 2
+            },
+            {
+              "at": [
+                0,
+                1,
+                -1
+              ],
+              "records": 1
+            }
+          ],
+          "values": [
+            {
+              "field": "Amount",
+              "parts": [
+                "sum",
+                "extremes",
+                "product",
+                "variance"
+              ],
+              "leaves": [
+                {
+                  "values": 2,
+                  "numbers": 2,
+                  "sum": {
+                    "decimal": "300.5"
+                  },
+                  "min": {
+                    "decimal": "100.5"
+                  },
+                  "max": {
+                    "decimal": "200"
+                  },
+                  "product": 20100,
+                  "mean": 150.25,
+                  "m2": 4950.125
+                },
+                {
+                  "values": 3,
+                  "numbers": 3,
+                  "sum": 300.6,
+                  "absoluteSum": 300.6,
+                  "min": 0.1,
+                  "max": 200,
+                  "product": 2010,
+                  "mean": 100.19999999999999,
+                  "m2": 19980.14
+                },
+                {
+                  "values": 8,
+                  "numbers": 7,
+                  "sum": 1.5845632504087434E+29,
+                  "absoluteSum": 1.5845632504087434E+29,
+                  "min": 0.1,
+                  "max": 7.922816251426434E+28,
+                  "product": 1.09035581014841E+81,
+                  "mean": 2.2636617862982055E+28,
+                  "m2": 8.967288192850615E+57
+                },
+                {
+                  "values": 2,
+                  "numbers": 1,
+                  "sum": {
+                    "decimal": "7"
+                  },
+                  "min": {
+                    "decimal": "7"
+                  },
+                  "max": {
+                    "decimal": "7"
+                  },
+                  "product": 7,
+                  "mean": 7,
+                  "m2": 0
+                },
+                {
+                  "values": 0,
+                  "numbers": 0,
+                  "sum": {
+                    "decimal": "0"
+                  },
+                  "min": {
+                    "decimal": "0"
+                  },
+                  "max": {
+                    "decimal": "0"
+                  },
+                  "product": 0,
+                  "mean": 0,
+                  "m2": 0
+                },
+                {
+                  "values": 1,
+                  "numbers": 1,
+                  "sum": {
+                    "decimal": "79228162514264337593543950335"
+                  },
+                  "min": {
+                    "decimal": "79228162514264337593543950335"
+                  },
+                  "max": {
+                    "decimal": "79228162514264337593543950335"
+                  },
+                  "product": 7.922816251426434E+28,
+                  "mean": 7.922816251426434E+28,
+                  "m2": 0
+                },
+                {
+                  "values": 2,
+                  "numbers": 2,
+                  "sum": 7.922816252661002E+28,
+                  "absoluteSum": 7.922816252661002E+28,
+                  "min": {
+                    "decimal": "12345678901234567890"
+                  },
+                  "max": {
+                    "decimal": "79228162514264337593543950335"
+                  },
+                  "product": 9.781254543359367E+47,
+                  "mean": 3.9614081263305E+28,
+                  "m2": 3.138550866715215E+57
+                },
+                {
+                  "values": 1,
+                  "numbers": 1,
+                  "sum": 0.1,
+                  "absoluteSum": 0.1,
+                  "min": 0.1,
+                  "max": 0.1,
+                  "product": 0.1,
+                  "mean": 0.1,
+                  "m2": 0
+                }
+              ]
+            },
+            {
+              "field": "Risk",
+              "parts": [
+                "sum"
+              ],
+              "leaves": [
+                {
+                  "values": 2,
+                  "numbers": 2,
+                  "sum": 1.6,
+                  "absoluteSum": 1.6
+                },
+                {
+                  "values": 3,
+                  "numbers": 3,
+                  "sum": 4.6,
+                  "absoluteSum": 4.6
+                },
+                {
+                  "values": 9,
+                  "numbers": 9,
+                  "nonFinite": true,
+                  "sum": 1E+300,
+                  "absoluteSum": 1E+300
+                },
+                {
+                  "values": 2,
+                  "numbers": 2,
+                  "nonFinite": true,
+                  "sum": 0,
+                  "absoluteSum": 0
+                },
+                {
+                  "values": 1,
+                  "numbers": 1,
+                  "nonFinite": true,
+                  "sum": {
+                    "decimal": "0"
+                  }
+                },
+                {
+                  "values": 1,
+                  "numbers": 1,
+                  "sum": 5E-324,
+                  "absoluteSum": 5E-324
+                },
+                {
+                  "values": 2,
+                  "numbers": 2,
+                  "sum": 1E+300,
+                  "absoluteSum": 1E+300
+                },
+                {
+                  "values": 1,
+                  "numbers": 1,
+                  "sum": 3,
+                  "absoluteSum": 3
+                }
+              ]
+            }
+          ],
+          "levels": true
+        }
+      ]
+    },
+    {
+      "name": "ADR-0370 (section 3): a column group is named down to its depth as a row group is, and an exact sum carries no magnitudes",
+      "data": "booked",
+      "asks": [
+        {
+          "aggregate": {
+            "columns": [
+              "Book",
+              "Tenor"
+            ],
+            "values": [
+              {
+                "field": "Amount",
+                "parts": [
+                  "sum",
+                  "extremes",
+                  "variance"
+                ]
+              }
+            ],
+            "maxLeaves": 3,
+            "levels": {
+              "rows": [],
+              "columns": [
+                {
+                  "collapsed": true
+                },
+                {}
+              ]
+            }
+          }
+        }
+      ],
+      "expect": [
+        {
+          "leaves": 3,
+          "rows": [],
+          "columns": [
+            {
+              "field": "Book",
+              "items": [
+                {
+                  "kind": "text",
+                  "value": "A"
+                },
+                {
+                  "kind": "text",
+                  "value": "B"
+                }
+              ]
+            },
+            {
+              "field": "Tenor",
+              "items": []
+            }
+          ],
+          "leaf": [
+            {
+              "at": [
+                0,
+                -1
+              ],
+              "records": 13
+            },
+            {
+              "at": [
+                -1,
+                -1
+              ],
+              "records": 39
+            },
+            {
+              "at": [
+                1,
+                -1
+              ],
+              "records": 26
+            }
+          ],
+          "values": [
+            {
+              "field": "Amount",
+              "parts": [
+                "sum",
+                "extremes",
+                "variance"
+              ],
+              "leaves": [
+                {
+                  "values": 13,
+                  "numbers": 13,
+                  "sum": {
+                    "decimal": "91"
+                  },
+                  "min": {
+                    "decimal": "1"
+                  },
+                  "max": {
+                    "decimal": "13"
+                  },
+                  "mean": 7,
+                  "m2": 182
+                },
+                {
+                  "values": 39,
+                  "numbers": 39,
+                  "sum": {
+                    "decimal": "4173"
+                  },
+                  "min": {
+                    "decimal": "1"
+                  },
+                  "max": {
+                    "decimal": "213"
+                  },
+                  "mean": 107,
+                  "m2": 260546
+                },
+                {
+                  "values": 26,
+                  "numbers": 26,
+                  "sum": {
+                    "decimal": "4082"
+                  },
+                  "min": {
+                    "decimal": "101"
+                  },
+                  "max": {
+                    "decimal": "213"
+                  },
+                  "mean": 157,
+                  "m2": 65364
+                }
+              ]
+            }
+          ],
+          "levels": true
+        }
+      ]
+    },
+    {
+      "name": "ADR-0370 (section 3): a row group crossed with a column group, each named down to its own depth",
+      "data": "rows",
+      "rows": [
+        [
+          "East",
+          {
+            "decimal": "-20.00"
+          },
+          -0.5,
+          0,
+          null,
+          false
+        ],
+        [
+          "West",
+          {
+            "decimal": "-13.25"
+          },
+          -0.4,
+          3,
+          null,
+          true
+        ],
+        [
+          "east",
+          {
+            "decimal": "-6.50"
+          },
+          -0.30000000000000004,
+          6,
+          null,
+          true
+        ],
+        [
+          "West",
+          {
+            "decimal": "1.75"
+          },
+          1e+16,
+          9,
+          null,
+          false
+        ],
+        [
+          "East",
+          {
+            "decimal": "8.00"
+          },
+          -0.1,
+          12,
+          null,
+          true
+        ],
+        [
+          "West",
+          {
+            "decimal": "15.25"
+          },
+          0.0,
+          15,
+          null,
+          true
+        ],
+        [
+          "EAST",
+          {
+            "decimal": "22.50"
+          },
+          0.1,
+          18,
+          null,
+          false
+        ],
+        [
+          "west",
+          {
+            "decimal": "29.75"
+          },
+          0.2,
+          21,
+          null,
+          true
+        ],
+        [
+          "East",
+          {
+            "decimal": "36.00"
+          },
+          0.30000000000000004,
+          24,
+          null,
+          true
+        ],
+        [
+          "West",
+          {
+            "decimal": "43.25"
+          },
+          0.4,
+          27,
+          null,
+          false
+        ],
+        [
+          "East",
+          {
+            "decimal": "50.50"
+          },
+          0.5,
+          30,
+          null,
+          true
+        ],
+        [
+          "West",
+          {
+            "decimal": "57.75"
+          },
+          0.6000000000000001,
+          33,
+          null,
+          true
+        ]
+      ],
+      "asks": [
+        {
+          "aggregate": {
+            "rows": [
+              "Text",
+              "Count"
+            ],
+            "columns": [
+              "Flag",
+              "Money"
+            ],
+            "values": [
+              {
+                "field": "Measure",
+                "parts": [
+                  "sum"
+                ]
+              },
+              {
+                "field": "Money",
+                "parts": [
+                  "sum",
+                  "extremes"
+                ]
+              }
+            ],
+            "maxLeaves": 9,
+            "levels": {
+              "rows": [
+                {
+                  "collapsed": true
+                },
+                {}
+              ],
+              "columns": [
+                {
+                  "collapsed": true
+                },
+                {}
+              ]
+            }
+          }
+        }
+      ],
+      "expect": [
+        {
+          "leaves": 9,
+          "rows": [
+            {
+              "field": "Text",
+              "items": [
+                {
+                  "kind": "text",
+                  "value": "East"
+                },
+                {
+                  "kind": "text",
+                  "value": "West"
+                }
+              ]
+            },
+            {
+              "field": "Count",
+              "items": []
+            }
+          ],
+          "columns": [
+            {
+              "field": "Flag",
+              "items": [
+                {
+                  "kind": "boolean",
+                  "value": "FALSE"
+                },
+                {
+                  "kind": "boolean",
+                  "value": "TRUE"
+                }
+              ]
+            },
+            {
+              "field": "Money",
+              "items": []
+            }
+          ],
+          "leaf": [
+            {
+              "at": [
+                0,
+                -1,
+                0,
+                -1
+              ],
+              "records": 2
+            },
+            {
+              "at": [
+                0,
+                -1,
+                -1,
+                -1
+              ],
+              "records": 6
+            },
+            {
+              "at": [
+                -1,
+                -1,
+                0,
+                -1
+              ],
+              "records": 4
+            },
+            {
+              "at": [
+                -1,
+                -1,
+                -1,
+                -1
+              ],
+              "records": 12
+            },
+            {
+              "at": [
+                1,
+                -1,
+                1,
+                -1
+              ],
+              "records": 4
+            },
+            {
+              "at": [
+                1,
+                -1,
+                -1,
+                -1
+              ],
+              "records": 6
+            },
+            {
+              "at": [
+                -1,
+                -1,
+                1,
+                -1
+              ],
+              "records": 8
+            },
+            {
+              "at": [
+                0,
+                -1,
+                1,
+                -1
+              ],
+              "records": 4
+            },
+            {
+              "at": [
+                1,
+                -1,
+                0,
+                -1
+              ],
+              "records": 2
+            }
+          ],
+          "values": [
+            {
+              "field": "Measure",
+              "parts": [
+                "sum"
+              ],
+              "leaves": [
+                {
+                  "values": 2,
+                  "numbers": 2,
+                  "sum": -0.4,
+                  "absoluteSum": 0.6
+                },
+                {
+                  "values": 6,
+                  "numbers": 6,
+                  "sum": 0,
+                  "absoluteSum": 1.8
+                },
+                {
+                  "values": 4,
+                  "numbers": 4,
+                  "sum": 10000000000000000,
+                  "absoluteSum": 10000000000000000
+                },
+                {
+                  "values": 12,
+                  "numbers": 12,
+                  "sum": 10000000000000000,
+                  "absoluteSum": 10000000000000002
+                },
+                {
+                  "values": 4,
+                  "numbers": 4,
+                  "sum": 0.4000000000000001,
+                  "absoluteSum": 1.2000000000000002
+                },
+                {
+                  "values": 6,
+                  "numbers": 6,
+                  "sum": 10000000000000000,
+                  "absoluteSum": 10000000000000000
+                },
+                {
+                  "values": 8,
+                  "numbers": 8,
+                  "sum": 0.8,
+                  "absoluteSum": 2.4000000000000004
+                },
+                {
+                  "values": 4,
+                  "numbers": 4,
+                  "sum": 0.4,
+                  "absoluteSum": 1.2000000000000002
+                },
+                {
+                  "values": 2,
+                  "numbers": 2,
+                  "sum": 10000000000000000,
+                  "absoluteSum": 10000000000000000
+                }
+              ]
+            },
+            {
+              "field": "Money",
+              "parts": [
+                "sum",
+                "extremes"
+              ],
+              "leaves": [
+                {
+                  "values": 2,
+                  "numbers": 2,
+                  "sum": {
+                    "decimal": "2.5"
+                  },
+                  "min": {
+                    "decimal": "-20"
+                  },
+                  "max": {
+                    "decimal": "22.5"
+                  }
+                },
+                {
+                  "values": 6,
+                  "numbers": 6,
+                  "sum": {
+                    "decimal": "90.5"
+                  },
+                  "min": {
+                    "decimal": "-20"
+                  },
+                  "max": {
+                    "decimal": "50.5"
+                  }
+                },
+                {
+                  "values": 4,
+                  "numbers": 4,
+                  "sum": {
+                    "decimal": "47.5"
+                  },
+                  "min": {
+                    "decimal": "-20"
+                  },
+                  "max": {
+                    "decimal": "43.25"
+                  }
+                },
+                {
+                  "values": 12,
+                  "numbers": 12,
+                  "sum": {
+                    "decimal": "225"
+                  },
+                  "min": {
+                    "decimal": "-20"
+                  },
+                  "max": {
+                    "decimal": "57.75"
+                  }
+                },
+                {
+                  "values": 4,
+                  "numbers": 4,
+                  "sum": {
+                    "decimal": "89.5"
+                  },
+                  "min": {
+                    "decimal": "-13.25"
+                  },
+                  "max": {
+                    "decimal": "57.75"
+                  }
+                },
+                {
+                  "values": 6,
+                  "numbers": 6,
+                  "sum": {
+                    "decimal": "134.5"
+                  },
+                  "min": {
+                    "decimal": "-13.25"
+                  },
+                  "max": {
+                    "decimal": "57.75"
+                  }
+                },
+                {
+                  "values": 8,
+                  "numbers": 8,
+                  "sum": {
+                    "decimal": "177.5"
+                  },
+                  "min": {
+                    "decimal": "-13.25"
+                  },
+                  "max": {
+                    "decimal": "57.75"
+                  }
+                },
+                {
+                  "values": 4,
+                  "numbers": 4,
+                  "sum": {
+                    "decimal": "88"
+                  },
+                  "min": {
+                    "decimal": "-6.5"
+                  },
+                  "max": {
+                    "decimal": "50.5"
+                  }
+                },
+                {
+                  "values": 2,
+                  "numbers": 2,
+                  "sum": {
+                    "decimal": "45"
+                  },
+                  "min": {
+                    "decimal": "1.75"
+                  },
+                  "max": {
+                    "decimal": "43.25"
+                  }
+                }
+              ]
+            }
+          ],
+          "levels": true
+        }
+      ]
+    },
+    {
+      "name": "ADR-0370 (section 3): every group expanded holds more cells than leaves, and past the cap is refused",
+      "asks": [
+        {
+          "aggregate": {
+            "rows": [
+              "Desk",
+              "Book"
+            ],
+            "values": [
+              {
+                "field": "Amount",
+                "parts": [
+                  "sum"
+                ]
+              }
+            ],
+            "maxLeaves": 7,
+            "levels": {
+              "rows": [
+                {},
+                {}
+              ]
+            }
+          }
+        }
+      ],
+      "expect": [
+        {
+          "refused": "tooManyLeaves",
+          "limit": 7,
+          "saying": "This layout needs more than 7 cells."
+        }
+      ]
+    },
+    {
+      "name": "ADR-0370 (section 3): cells past the cap are refused as leaves are",
+      "asks": [
+        {
+          "aggregate": {
+            "rows": [
+              "Desk",
+              "Book",
+              "Tag"
+            ],
+            "values": [
+              {
+                "field": "Amount",
+                "parts": [
+                  "sum"
+                ]
+              }
+            ],
+            "maxLeaves": 7,
+            "levels": {
+              "rows": [
+                {
+                  "collapsed": true,
+                  "toggledItems": [
+                    {
+                      "kind": "text",
+                      "value": "RATES"
+                    }
+                  ]
+                },
+                {
+                  "collapsed": true
+                },
+                {}
+              ]
+            }
+          }
+        }
+      ],
+      "expect": [
+        {
+          "refused": "tooManyLeaves",
+          "limit": 7,
+          "saying": "This layout needs more than 7 cells."
+        }
+      ]
+    },
+    {
+      "name": "ADR-0370 (section 3): levels that are not one rule a field are refused by name",
+      "asks": [
+        {
+          "aggregate": {
+            "rows": [
+              "Desk",
+              "Book"
+            ],
+            "values": [
+              "Amount"
+            ],
+            "levels": {
+              "rows": [
+                {}
+              ]
+            }
+          }
+        }
+      ],
+      "expect": [
+        {
+          "refusal": "argument",
+          "saying": "The question's levels give 1 row and 0 column rules, and it places 2 row and 0 column fields; a field has one rule (ADR-0370 section 3)."
+        }
+      ]
+    },
+    {
+      "name": "ADR-0370 (section 3): over a Snapshot, exact columns summed in runs and doubles alike carry what a level answer carries",
+      "data": "rows",
+      "rows": [
+        [
+          "East",
+          {
+            "decimal": "1.25"
+          },
+          0.1,
+          3,
+          null,
+          true
+        ],
+        [
+          "East",
+          {
+            "decimal": "-2.5"
+          },
+          0.2,
+          -4,
+          null,
+          false
+        ],
+        [
+          "east",
+          {
+            "decimal": "79228162514264337593543950335"
+          },
+          -1e+20,
+          5,
+          null,
+          true
+        ],
+        [
+          "West",
+          {
+            "decimal": "0.75"
+          },
+          1e+20,
+          6,
+          null,
+          false
+        ],
+        [
+          "West",
+          null,
+          0.3,
+          null,
+          null,
+          true
+        ],
+        [
+          null,
+          {
+            "decimal": "10"
+          },
+          null,
+          7,
+          null,
+          null
+        ]
+      ],
+      "asks": [
+        {
+          "aggregate": {
+            "rows": [
+              "Text",
+              "Flag"
+            ],
+            "values": [
+              {
+                "field": "Money",
+                "parts": [
+                  "sum"
+                ]
+              },
+              {
+                "field": "Measure",
+                "parts": [
+                  "sum",
+                  "variance"
+                ]
+              },
+              {
+                "field": "Count",
+                "parts": [
+                  "sum",
+                  "extremes"
+                ]
+              }
+            ],
+            "maxLeaves": 4,
+            "levels": {
+              "rows": [
+                {
+                  "collapsed": true
+                },
+                {}
+              ]
+            }
+          }
+        }
+      ],
+      "expect": [
+        {
+          "leaves": 4,
+          "rows": [
+            {
+              "field": "Text",
+              "items": [
+                {
+                  "kind": "text",
+                  "value": "East"
+                },
+                {
+                  "kind": "text",
+                  "value": "West"
+                },
+                {
+                  "kind": "blank"
+                }
+              ]
+            },
+            {
+              "field": "Flag",
+              "items": []
+            }
+          ],
+          "columns": [],
+          "leaf": [
+            {
+              "at": [
+                0,
+                -1
+              ],
+              "records": 3
+            },
+            {
+              "at": [
+                -1,
+                -1
+              ],
+              "records": 6
+            },
+            {
+              "at": [
+                1,
+                -1
+              ],
+              "records": 2
+            },
+            {
+              "at": [
+                2,
+                -1
+              ],
+              "records": 1
+            }
+          ],
+          "values": [
+            {
+              "field": "Money",
+              "parts": [
+                "sum"
+              ],
+              "leaves": [
+                {
+                  "values": 3,
+                  "numbers": 3,
+                  "sum": 7.922816251426434E+28,
+                  "absoluteSum": 7.922816251426434E+28
+                },
+                {
+                  "values": 5,
+                  "numbers": 5,
+                  "sum": 7.922816251426434E+28,
+                  "absoluteSum": 7.922816251426434E+28
+                },
+                {
+                  "values": 1,
+                  "numbers": 1,
+                  "sum": {
+                    "decimal": "0.75"
+                  }
+                },
+                {
+                  "values": 1,
+                  "numbers": 1,
+                  "sum": {
+                    "decimal": "10"
+                  }
+                }
+              ]
+            },
+            {
+              "field": "Measure",
+              "parts": [
+                "sum",
+                "variance"
+              ],
+              "leaves": [
+                {
+                  "values": 3,
+                  "numbers": 3,
+                  "sum": -1E+20,
+                  "absoluteSum": 1E+20,
+                  "mean": -3.3333333333333336E+19,
+                  "m2": 6.666666666666667E+39
+                },
+                {
+                  "values": 5,
+                  "numbers": 5,
+                  "sum": 0.5,
+                  "absoluteSum": 2E+20,
+                  "mean": 0.06,
+                  "m2": 2.0000000000000003E+40
+                },
+                {
+                  "values": 2,
+                  "numbers": 2,
+                  "sum": 1E+20,
+                  "absoluteSum": 1E+20,
+                  "mean": 5E+19,
+                  "m2": 5E+39
+                },
+                {
+                  "values": 0,
+                  "numbers": 0,
+                  "sum": {
+                    "decimal": "0"
+                  },
+                  "mean": 0,
+                  "m2": 0
+                }
+              ]
+            },
+            {
+              "field": "Count",
+              "parts": [
+                "sum",
+                "extremes"
+              ],
+              "leaves": [
+                {
+                  "values": 3,
+                  "numbers": 3,
+                  "sum": {
+                    "decimal": "4"
+                  },
+                  "min": {
+                    "decimal": "-4"
+                  },
+                  "max": {
+                    "decimal": "5"
+                  }
+                },
+                {
+                  "values": 5,
+                  "numbers": 5,
+                  "sum": {
+                    "decimal": "17"
+                  },
+                  "min": {
+                    "decimal": "-4"
+                  },
+                  "max": {
+                    "decimal": "7"
+                  }
+                },
+                {
+                  "values": 1,
+                  "numbers": 1,
+                  "sum": {
+                    "decimal": "6"
+                  },
+                  "min": {
+                    "decimal": "6"
+                  },
+                  "max": {
+                    "decimal": "6"
+                  }
+                },
+                {
+                  "values": 1,
+                  "numbers": 1,
+                  "sum": {
+                    "decimal": "7"
+                  },
+                  "min": {
+                    "decimal": "7"
+                  },
+                  "max": {
+                    "decimal": "7"
+                  }
+                }
+              ]
+            }
+          ],
+          "levels": true
+        }
+      ]
+    },
+    {
+      "name": "ADR-0370 (section 3): a fetching source that answers Level Aggregates crosses PivotJson with its levels and its cells",
+      "fetch": {
+        "levels": true
+      },
+      "asks": [
+        {
+          "aggregate": {
+            "rows": [
+              "Desk",
+              "Book",
+              "Tag"
+            ],
+            "values": [
+              {
+                "field": "Amount",
+                "parts": [
+                  "sum",
+                  "extremes",
+                  "product",
+                  "variance"
+                ]
+              },
+              {
+                "field": "Risk",
+                "parts": [
+                  "sum"
+                ]
+              }
+            ],
+            "maxLeaves": 8,
+            "levels": {
+              "rows": [
+                {
+                  "collapsed": true,
+                  "toggledItems": [
+                    {
+                      "kind": "text",
+                      "value": "RATES"
+                    }
+                  ]
+                },
+                {
+                  "collapsed": true
+                },
+                {}
+              ]
+            }
+          }
+        }
+      ],
+      "expect": [
+        {
+          "leaves": 8,
+          "rows": [
+            {
+              "field": "Desk",
+              "items": [
+                {
+                  "kind": "text",
+                  "value": "Rates"
+                },
+                {
+                  "kind": "text",
+                  "value": "Credit"
+                },
+                {
+                  "kind": "text",
+                  "value": ""
+                },
+                {
+                  "kind": "text",
+                  "value": "FX"
+                },
+                {
+                  "kind": "blank"
+                }
+              ]
+            },
+            {
+              "field": "Book",
+              "items": [
+                {
+                  "kind": "text",
+                  "value": "LDN-1"
+                },
+                {
+                  "kind": "text",
+                  "value": "NY-2"
+                }
+              ]
+            },
+            {
+              "field": "Tag",
+              "items": []
+            }
+          ],
+          "columns": [],
+          "leaf": [
+            {
+              "at": [
+                0,
+                0,
+                -1
+              ],
+              "records": 2
+            },
+            {
+              "at": [
+                0,
+                -1,
+                -1
+              ],
+              "records": 3
+            },
+            {
+              "at": [
+                -1,
+                -1,
+                -1
+              ],
+              "records": 9
+            },
+            {
+              "at": [
+                1,
+                -1,
+                -1
+              ],
+              "records": 2
+            },
+            {
+              "at": [
+                4,
+                -1,
+                -1
+              ],
+              "records": 1
+            },
+            {
+              "at": [
+                2,
+                -1,
+                -1
+              ],
+              "records": 1
+            },
+            {
+              "at": [
+                3,
+                -1,
+                -1
+              ],
+              "records": 2
+            },
+            {
+              "at": [
+                0,
+                1,
+                -1
+              ],
+              "records": 1
+            }
+          ],
+          "values": [
+            {
+              "field": "Amount",
+              "parts": [
+                "sum",
+                "extremes",
+                "product",
+                "variance"
+              ],
+              "leaves": [
+                {
+                  "values": 2,
+                  "numbers": 2,
+                  "sum": {
+                    "decimal": "300.5"
+                  },
+                  "min": {
+                    "decimal": "100.5"
+                  },
+                  "max": {
+                    "decimal": "200"
+                  },
+                  "product": 20100,
+                  "mean": 150.25,
+                  "m2": 4950.125
+                },
+                {
+                  "values": 3,
+                  "numbers": 3,
+                  "sum": 300.6,
+                  "absoluteSum": 300.6,
+                  "min": 0.1,
+                  "max": 200,
+                  "product": 2010,
+                  "mean": 100.19999999999999,
+                  "m2": 19980.14
+                },
+                {
+                  "values": 8,
+                  "numbers": 7,
+                  "sum": 1.5845632504087434E+29,
+                  "absoluteSum": 1.5845632504087434E+29,
+                  "min": 0.1,
+                  "max": 7.922816251426434E+28,
+                  "product": 1.09035581014841E+81,
+                  "mean": 2.2636617862982055E+28,
+                  "m2": 8.967288192850615E+57
+                },
+                {
+                  "values": 2,
+                  "numbers": 1,
+                  "sum": {
+                    "decimal": "7"
+                  },
+                  "min": {
+                    "decimal": "7"
+                  },
+                  "max": {
+                    "decimal": "7"
+                  },
+                  "product": 7,
+                  "mean": 7,
+                  "m2": 0
+                },
+                {
+                  "values": 0,
+                  "numbers": 0,
+                  "sum": {
+                    "decimal": "0"
+                  },
+                  "min": {
+                    "decimal": "0"
+                  },
+                  "max": {
+                    "decimal": "0"
+                  },
+                  "product": 0,
+                  "mean": 0,
+                  "m2": 0
+                },
+                {
+                  "values": 1,
+                  "numbers": 1,
+                  "sum": {
+                    "decimal": "79228162514264337593543950335"
+                  },
+                  "min": {
+                    "decimal": "79228162514264337593543950335"
+                  },
+                  "max": {
+                    "decimal": "79228162514264337593543950335"
+                  },
+                  "product": 7.922816251426434E+28,
+                  "mean": 7.922816251426434E+28,
+                  "m2": 0
+                },
+                {
+                  "values": 2,
+                  "numbers": 2,
+                  "sum": 7.922816252661002E+28,
+                  "absoluteSum": 7.922816252661002E+28,
+                  "min": {
+                    "decimal": "12345678901234567890"
+                  },
+                  "max": {
+                    "decimal": "79228162514264337593543950335"
+                  },
+                  "product": 9.781254543359367E+47,
+                  "mean": 3.9614081263305E+28,
+                  "m2": 3.138550866715215E+57
+                },
+                {
+                  "values": 1,
+                  "numbers": 1,
+                  "sum": 0.1,
+                  "absoluteSum": 0.1,
+                  "min": 0.1,
+                  "max": 0.1,
+                  "product": 0.1,
+                  "mean": 0.1,
+                  "m2": 0
+                }
+              ]
+            },
+            {
+              "field": "Risk",
+              "parts": [
+                "sum"
+              ],
+              "leaves": [
+                {
+                  "values": 2,
+                  "numbers": 2,
+                  "sum": 1.6,
+                  "absoluteSum": 1.6
+                },
+                {
+                  "values": 3,
+                  "numbers": 3,
+                  "sum": 4.6,
+                  "absoluteSum": 4.6
+                },
+                {
+                  "values": 9,
+                  "numbers": 9,
+                  "nonFinite": true,
+                  "sum": 1E+300,
+                  "absoluteSum": 1E+300
+                },
+                {
+                  "values": 2,
+                  "numbers": 2,
+                  "nonFinite": true,
+                  "sum": 0,
+                  "absoluteSum": 0
+                },
+                {
+                  "values": 1,
+                  "numbers": 1,
+                  "nonFinite": true,
+                  "sum": {
+                    "decimal": "0"
+                  }
+                },
+                {
+                  "values": 1,
+                  "numbers": 1,
+                  "sum": 5E-324,
+                  "absoluteSum": 5E-324
+                },
+                {
+                  "values": 2,
+                  "numbers": 2,
+                  "sum": 1E+300,
+                  "absoluteSum": 1E+300
+                },
+                {
+                  "values": 1,
+                  "numbers": 1,
+                  "sum": 3,
+                  "absoluteSum": 3
+                }
+              ]
+            }
+          ],
+          "levels": true
+        }
+      ]
+    },
+    {
+      "name": "ADR-0370 (section 3): a level answer to a question that asked for the leaves is another question's answer",
+      "fetch": {
+        "answers": {
+          "rows": [
+            "Desk",
+            "Book"
+          ],
+          "values": [
+            {
+              "field": "Amount",
+              "parts": [
+                "sum"
+              ]
+            }
+          ],
+          "maxLeaves": 7,
+          "levels": {
+            "rows": [
+              {
+                "collapsed": true
+              },
+              {}
+            ]
+          }
+        }
+      },
+      "asks": [
+        {
+          "aggregate": {
+            "rows": [
+              "Desk",
+              "Book"
+            ],
+            "values": [
+              {
+                "field": "Amount",
+                "parts": [
+                  "sum"
+                ]
+              }
+            ],
+            "maxLeaves": 7
+          }
+        }
+      ],
+      "expect": [
+        {
+          "refusal": "invalidOperation",
+          "saying": "The server answered another question than the one asked: it holds Level Aggregates, and the question asks for the leaves (ADR-0066)."
+        }
+      ]
+    },
+    {
+      "name": "ADR-0370 (section 3): a cell the question's levels do not show is another question's answer",
+      "fetch": {
+        "answers": {
+          "rows": [
+            "Desk",
+            "Book",
+            "Tag"
+          ],
+          "values": [
+            {
+              "field": "Amount",
+              "parts": [
+                "sum"
+              ]
+            }
+          ],
+          "maxLeaves": 8,
+          "levels": {
+            "rows": [
+              {
+                "collapsed": true,
+                "toggledItems": [
+                  {
+                    "kind": "text",
+                    "value": "RATES"
+                  }
+                ]
+              },
+              {
+                "collapsed": true
+              },
+              {}
+            ]
+          }
+        }
+      },
+      "asks": [
+        {
+          "aggregate": {
+            "rows": [
+              "Desk",
+              "Book",
+              "Tag"
+            ],
+            "values": [
+              {
+                "field": "Amount",
+                "parts": [
+                  "sum"
+                ]
+              }
+            ],
+            "maxLeaves": 8,
+            "levels": {
+              "rows": [
+                {
+                  "collapsed": true
+                },
+                {
+                  "collapsed": true
+                },
+                {}
+              ]
+            }
+          }
+        }
+      ],
+      "expect": [
+        {
+          "refusal": "invalidOperation",
+          "saying": "The server answered another question than the one asked: its cell [Desk=Text:Rates, Book=Text:LDN-1] × [] is a group the question's levels do not show (ADR-0066)."
+        }
+      ]
+    },
+    {
+      "name": "ADR-0370 (section 3): a cell shown without its parent is another question's answer",
+      "fetch": {
+        "levels": true,
+        "replies": {
+          "version": 1,
+          "type": "answer",
+          "sourceVersion": "server",
+          "levels": true,
+          "rows": [
+            {
+              "field": "Desk",
+              "items": [
+                {
+                  "kind": "text",
+                  "value": "Rates"
+                }
+              ],
+              "leaves": [
+                -1,
+                0
+              ]
+            },
+            {
+              "field": "Book",
+              "items": [
+                {
+                  "kind": "text",
+                  "value": "LDN-1"
+                }
+              ],
+              "leaves": [
+                -1,
+                0
+              ]
+            }
+          ],
+          "columns": [],
+          "records": [
+            9,
+            2
+          ],
+          "values": []
+        }
+      },
+      "asks": [
+        {
+          "aggregate": {
+            "rows": [
+              "Desk",
+              "Book"
+            ],
+            "maxLeaves": 7,
+            "levels": {
+              "rows": [
+                {
+                  "collapsed": true,
+                  "toggledItems": [
+                    {
+                      "kind": "text",
+                      "value": "Rates"
+                    }
+                  ]
+                },
+                {}
+              ]
+            }
+          }
+        }
+      ],
+      "expect": [
+        {
+          "refusal": "invalidOperation",
+          "saying": "The server answered another question than the one asked: its cell [Desk=Text:Rates, Book=Text:LDN-1] × [] is shown without its parent row group (ADR-0066)."
+        }
+      ]
+    },
+    {
+      "name": "ADR-0370 (section 3): two cells for one group are another question's answer",
+      "fetch": {
+        "levels": true,
+        "replies": {
+          "version": 1,
+          "type": "answer",
+          "sourceVersion": "server",
+          "levels": true,
+          "rows": [
+            {
+              "field": "Desk",
+              "items": [
+                {
+                  "kind": "text",
+                  "value": "Rates"
+                }
+              ],
+              "leaves": [
+                -1,
+                0,
+                0
+              ]
+            },
+            {
+              "field": "Book",
+              "items": [],
+              "leaves": [
+                -1,
+                -1,
+                -1
+              ]
+            }
+          ],
+          "columns": [],
+          "records": [
+            9,
+            3,
+            3
+          ],
+          "values": []
+        }
+      },
+      "asks": [
+        {
+          "aggregate": {
+            "rows": [
+              "Desk",
+              "Book"
+            ],
+            "maxLeaves": 7,
+            "levels": {
+              "rows": [
+                {
+                  "collapsed": true,
+                  "toggledItems": [
+                    {
+                      "kind": "text",
+                      "value": "Rates"
+                    }
+                  ]
+                },
+                {}
+              ]
+            }
+          }
+        }
+      ],
+      "expect": [
+        {
+          "refusal": "invalidOperation",
+          "saying": "The server answered another question than the one asked: it has two cells for [Desk=Text:Rates] × [] (ADR-0066)."
+        }
+      ]
+    }
+  ]
+}

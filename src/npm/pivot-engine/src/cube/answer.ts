@@ -3,12 +3,20 @@
 // parts asked for of each field in Values — under the Source Version they were computed at; or a refusal,
 // which is an answer and not a failure. The C# engine's PivotAnswer, PivotSourceRefusal, PivotNumber and
 // PivotAnswerBuilder.
+//
+// To a question carrying levels, a source that answers Level Aggregates may answer, when the leaves would pass
+// the cap, with the cells of the groups shown instead (ADR-0370 section 3): each a shown row group crossed
+// with a shown column group that some record reaches, named by its Items down to its depth — an axis's
+// `itemAt` is −1 below it — with its records and its parts, and, beside a sum that is a double, the sum of its
+// numbers' magnitudes. What is said here of a leaf is then said of a cell.
 
 import type { SnapshotDecimal } from '@ex-grid/data';
 import { decimalCanonical, decimalEquals, decimalToNumber } from '../aggregates/exact-decimal';
 import { PartColumns, partsText } from '../aggregates/parts';
 import { itemKeyText, pivotItemKey, publicKeyId, type PivotItemKey } from '../items/item-key';
 import { aggregationTitle, type PivotAggregation } from '../layout/pivot-enums';
+import { PivotFormatError } from '../errors';
+import { levelAnswerMismatch } from '../levels/level-shown';
 import { elementAt } from '../must';
 import { partBits, partList, placedFields, type PivotPart, type PivotQuery } from './query';
 
@@ -94,7 +102,8 @@ export class PivotAnswerAxis {
         this.#itemOfLeaf = itemOfLeaf;
     }
 
-    /** The index among {@link PivotAnswerAxis.items} of a leaf's Item. */
+    /** The index among {@link PivotAnswerAxis.items} of a leaf's Item; in a level answer, −1 for a cell above
+     * this field, which stands for every Item of it. */
     itemAt(leaf: number): number {
         return elementAt(this.#itemOfLeaf, checkLeaf(leaf, this.#itemOfLeaf.length));
     }
@@ -164,6 +173,16 @@ export class PivotAnswerValues {
         return extremes.inexact ? double(extremes.max) : exact(extremes.exactMax);
     }
 
+    /** The sum of the magnitudes of a cell's numbers, which a level answer carries beside a sum that is a
+     * double: what bounds its rounding when it is checked against its parent (ADR-0370 section 3).
+     * `undefined` for an exact sum, and in an answer of leaves. */
+    absoluteSumAt(leaf: number): number | undefined {
+        const at = this.#at(leaf);
+        const sum = elementAt(this.#carried(this.#columns.sums, 'Sum'), at);
+        const absolutes = this.#columns.absolutes;
+        return sum.inexact && absolutes !== undefined ? elementAt(absolutes, at) : undefined;
+    }
+
     /** The product of a leaf's numbers. */
     productAt(leaf: number): number {
         return elementAt(this.#carried(this.#columns.products, 'Product'), this.#at(leaf));
@@ -198,7 +217,35 @@ function sameNames(a: readonly { readonly field: string }[], b: readonly { reado
 }
 
 let makeAnswer: (sourceVersion: string, rows: readonly PivotAnswerAxis[], columns: readonly PivotAnswerAxis[], leafCount: number,
-    records: readonly number[], values: readonly PivotAnswerValues[]) => PivotAnswer;
+    records: readonly number[], values: readonly PivotAnswerValues[], levels: boolean) => PivotAnswer;
+
+// A level answer's shape (ADR-0370 section 3): each cell named down to its depth on each axis and by nothing
+// below, and a double sum carried with its magnitudes.
+function checkLevels(rows: readonly PivotAnswerAxis[], columns: readonly PivotAnswerAxis[], cells: number, values: readonly PivotAnswerValues[]): void {
+    for (let cell = 0; cell < cells; cell++) {
+        checkDepth(rows, cell);
+        checkDepth(columns, cell);
+    }
+    for (const value of values) {
+        const parts = columnsOfValues(value);
+        const sums = parts.sums;
+        if (sums === undefined) continue;
+        const absolutes = parts.absolutes;
+        for (let cell = 0; cell < cells; cell++) {
+            if (elementAt(sums, cell).inexact && !elementAt(parts.counts, cell).nonFinite && (absolutes === undefined || Number.isNaN(elementAt(absolutes, cell)))) {
+                throw new PivotFormatError(`Cell ${cell}'s sum of '${value.field}' is a double, and carries no sum of its magnitudes (ADR-0370 section 3).`);
+            }
+        }
+    }
+}
+
+function checkDepth(axes: readonly PivotAnswerAxis[], cell: number): void {
+    let below = false;
+    for (const axis of axes) {
+        if (axis.itemAt(cell) < 0) below = true;
+        else if (below) throw new PivotFormatError(`Cell ${cell} names an Item of '${axis.field}' below a field it names none of; a cell is named down to its depth (ADR-0370 section 3).`);
+    }
+}
 
 /** A Pivot Source's answer: the Leaf Aggregates under a Source Version, or a refusal. */
 export class PivotAnswer {
@@ -211,11 +258,17 @@ export class PivotAnswer {
     readonly #columns: readonly PivotAnswerAxis[];
     readonly #values: readonly PivotAnswerValues[];
     readonly #records: readonly number[];
+    /** Whether the answer holds the cells of the groups shown — Level Aggregates — rather than the leaves
+     * (ADR-0370 section 3). */
+    readonly isLevels: boolean;
 
     private constructor(
         sourceVersion: string | undefined, refusal: PivotSourceRefusal | undefined, rows: readonly PivotAnswerAxis[],
         columns: readonly PivotAnswerAxis[], leafCount: number, records: readonly number[], values: readonly PivotAnswerValues[],
+        levels: boolean,
     ) {
+        if (levels) checkLevels(rows, columns, leafCount, values);
+        this.isLevels = levels;
         this.#sourceVersion = sourceVersion;
         this.refusal = refusal;
         this.#rows = Object.freeze([...rows]);
@@ -226,13 +279,13 @@ export class PivotAnswer {
     }
 
     static {
-        makeAnswer = (sourceVersion, rows, columns, leafCount, records, values) =>
-            new PivotAnswer(sourceVersion, undefined, rows, columns, leafCount, records, values);
+        makeAnswer = (sourceVersion, rows, columns, leafCount, records, values, levels) =>
+            new PivotAnswer(sourceVersion, undefined, rows, columns, leafCount, records, values, levels);
     }
 
     /** A refusal, as an answer. */
     static refused(refusal: PivotSourceRefusal): PivotAnswer {
-        return new PivotAnswer(undefined, refusal, [], [], 0, [], []);
+        return new PivotAnswer(undefined, refusal, [], [], 0, [], [], false);
     }
 
     /** Whether the source refused. */
@@ -272,6 +325,7 @@ export class PivotAnswer {
     /** What does not answer the question, in words, or `undefined` when the answer answers it. */
     mismatch(query: PivotQuery): string | undefined {
         if (this.refusal !== undefined) return `the source refused: ${this.refusal.message}`;
+        if (this.isLevels && query.levels === undefined) return 'it holds Level Aggregates, and the question asks for the leaves';
         if (!sameNames(this.#rows, query.rows)) return `its row fields are ${names(this.#rows)}, and the question's ${names(query.rows)}`;
         if (!sameNames(this.#columns, query.columns)) return `its column fields are ${names(this.#columns)}, and the question's ${names(query.columns)}`;
         if (!sameNames(this.#values, query.values)) return `its fields in Values are ${names(this.#values)}, and the question's ${names(query.values)}`;
@@ -282,8 +336,10 @@ export class PivotAnswer {
                 return `it carries the parts ${partsText(columnsOfValues(held).parts)} of '${held.field}', and the question asks for ${partsText(asked)}`;
             }
         }
-        if (this.leafCount > query.maxLeaves) return `it holds ${this.leafCount} leaves, and the question allows ${query.maxLeaves}`;
-        return undefined;
+        if (this.leafCount > query.maxLeaves) {
+            return `it holds ${this.leafCount} ${this.isLevels ? 'cells' : 'leaves'}, and the question allows ${query.maxLeaves}`;
+        }
+        return query.levels !== undefined && this.isLevels ? levelAnswerMismatch(query.levels, this) : undefined;
     }
 
     #refusedError(): Error {
@@ -295,6 +351,10 @@ export class PivotAnswer {
  * Builds an answer a leaf at a time, as a server's rows arrive (ADR-0066): each leaf named by its Items, one
  * per row and column field, with its record count, and the parts asked for of each field in Values set on
  * it. Two leaves for one combination of Items are refused, and so is a part the question did not ask for.
+ *
+ * A server that answers Level Aggregates (ADR-0370 section 3) adds the cells of the groups shown with
+ * {@link PivotAnswerBuilder.addCell} instead, from `GROUPING SETS` for instance, and gives a sum that is a
+ * double with the sum of its magnitudes; an answer holds leaves or cells, never both.
  */
 export class PivotAnswerBuilder {
     readonly #query: PivotQuery;
@@ -306,6 +366,7 @@ export class PivotAnswerBuilder {
     readonly #records: number[] = [];
     readonly #values: PartColumns[];
     readonly #leaves = new Map<string, number>();
+    #cells: boolean | undefined;
     #built = false;
 
     /** A builder for the answer to `query`, under `sourceVersion`. */
@@ -332,19 +393,62 @@ export class PivotAnswerBuilder {
         if (items.length !== this.#levels) {
             throw new TypeError(`A leaf names one Item per row and column field: ${this.#levels}, not ${items.length}.`);
         }
-        const indexes = items.map((item, level) => {
-            const key = pivotItemKey(item.kind, item.value);
-            const id = publicKeyId(key);
-            const index = elementAt(this.#itemIndex, level);
-            const found = index.get(id);
-            if (found !== undefined) return found;
-            const made = elementAt(this.#items, level).length;
-            elementAt(this.#items, level).push(key);
-            index.set(id, made);
-            return made;
-        });
+        if (this.#cells === true) throw new Error('This answer holds the cells of the groups shown; it is given them with addCell (ADR-0370 section 3).');
+        this.#cells = false;
+        const indexes = items.map((item, level) => this.#indexOf(level, item));
         const leafKey = indexes.join(',');
         if (this.#leaves.has(leafKey)) throw new TypeError(`The answer already has a leaf for [${items.map(itemKeyText).join(', ')}].`);
+        return this.#add(leafKey, indexes, records);
+    }
+
+    /**
+     * Adds the cell of a shown row group crossed with a shown column group, and returns its index (ADR-0370
+     * section 3): an answer of Level Aggregates, to a question carrying levels. Each group is named by its
+     * Items, outermost first, down to its depth — none for a grand total. Refuses a cell of no records, more
+     * Items than an axis has fields, and a second cell for the same Items. Which cells are shown, and that each
+     * has its parent, is checked when the answer is read against the question.
+     */
+    addCell(rowItems: readonly PivotItemKey[], columnItems: readonly PivotItemKey[], records: number): number {
+        if (!Number.isSafeInteger(records) || records < 1) throw new RangeError(`A leaf holds at least one record, not ${records}.`);
+        if (this.#query.levels === undefined) throw new Error('The question asks for the leaves, and carries no levels to answer with cells (ADR-0370 section 3).');
+        const rowCount = this.#query.rows.length;
+        const columnCount = this.#query.columns.length;
+        if (rowItems.length > rowCount) throw new TypeError(`A row group names at most one Item per row field: ${rowCount}, not ${rowItems.length}.`);
+        if (columnItems.length > columnCount) throw new TypeError(`A column group names at most one Item per column field: ${columnCount}, not ${columnItems.length}.`);
+        if (this.#cells === false) throw new Error('This answer holds leaves; it is given them with addLeaf (ADR-0370 section 3).');
+        if (this.#cells === undefined) {
+            this.#cells = true;
+            for (const parts of this.#values) if (parts.sums !== undefined) parts.trackAbsolutes();
+        }
+        const indexes = Array.from({ length: this.#levels }, () => -1);
+        rowItems.forEach((item, level) => {
+            indexes[level] = this.#indexOf(level, item);
+        });
+        columnItems.forEach((item, level) => {
+            indexes[rowCount + level] = this.#indexOf(rowCount + level, item);
+        });
+        const cellKey = indexes.join(',');
+        if (this.#leaves.has(cellKey)) {
+            throw new TypeError(`The answer already has a cell for [${rowItems.map(itemKeyText).join(', ')}] × [${columnItems.map(itemKeyText).join(', ')}].`);
+        }
+        const cell = this.#add(cellKey, indexes, records);
+        for (const parts of this.#values) if (parts.absolutes !== undefined) parts.absolutes[cell] = Number.NaN;
+        return cell;
+    }
+
+    #indexOf(level: number, item: PivotItemKey): number {
+        const key = pivotItemKey(item.kind, item.value);
+        const id = publicKeyId(key);
+        const index = elementAt(this.#itemIndex, level);
+        const found = index.get(id);
+        if (found !== undefined) return found;
+        const made = elementAt(this.#items, level).length;
+        elementAt(this.#items, level).push(key);
+        index.set(id, made);
+        return made;
+    }
+
+    #add(leafKey: string, indexes: readonly number[], records: number): number {
         const leaf = this.#records.length;
         this.#leaves.set(leafKey, leaf);
         indexes.forEach((index, level) => elementAt(this.#itemOfLeaf, level).push(index));
@@ -369,6 +473,18 @@ export class PivotAnswerBuilder {
         sums[leaf] = sum.kind === 'exact'
             ? { exact: decimalCanonical(sum.value), double: 0, compensation: 0, inexact: false }
             : { exact: { mantissa: 0n, scale: 0 }, double: sum.value, compensation: 0, inexact: true };
+    }
+
+    /** Sets a cell's sum of Level Aggregates with the sum of its numbers' magnitudes, which a sum that is a
+     * double carries (ADR-0370 section 3): what bounds its rounding when the cell is checked against its
+     * parent. */
+    setLevelSum(leaf: number, value: number, sum: PivotNumber, absoluteSum: number): void {
+        if (this.#cells !== true) throw new Error('A sum of magnitudes is carried by a cell of Level Aggregates (ADR-0370 section 3).');
+        if (Number.isNaN(absoluteSum) || absoluteSum < 0) throw new RangeError(`A sum of magnitudes is a number, not below 0, not ${absoluteSum} (ADR-0370 section 3).`);
+        this.setSum(leaf, value, sum);
+        const absolutes = elementAt(this.#values, value).absolutes;
+        if (absolutes === undefined) throw new Error('Internal: a cell of Level Aggregates keeps the magnitudes beside its sum.');
+        absolutes[leaf] = absoluteSum;
     }
 
     /** Sets a leaf's extremes for a field in Values: both exact or both doubles. */
@@ -404,7 +520,12 @@ export class PivotAnswerBuilder {
         const axes = placedFields(this.#query).slice(0, this.#levels).map((field, level) =>
             new PivotAnswerAxis(field.field, elementAt(this.#items, level), elementAt(this.#itemOfLeaf, level)));
         const values = this.#values.map((parts, v) => makeValues(elementAt(this.#query.values, v).field, parts, leafCount));
-        return makeAnswer(this.#sourceVersion, axes.slice(0, rowCount), axes.slice(rowCount), leafCount, [...this.#records], values);
+        try {
+            return makeAnswer(this.#sourceVersion, axes.slice(0, rowCount), axes.slice(rowCount), leafCount, [...this.#records], values, this.#cells === true);
+        } catch (error) {
+            if (error instanceof PivotFormatError) throw new Error(error.message, { cause: error });
+            throw error;
+        }
     }
 
     #columnsOf(leaf: number, value: number): PartColumns {
@@ -424,10 +545,11 @@ export class PivotAnswerBuilder {
     }
 }
 
-/** An answer with its leaves, as a pass or a builder makes it. */
+/** An answer with its leaves, or with its cells of Level Aggregates (`levels`), as a pass, a builder or a
+ * reader makes it; a level answer's shape is checked, and refused with a PivotFormatError. */
 export function madeAnswer(sourceVersion: string, rows: readonly PivotAnswerAxis[], columns: readonly PivotAnswerAxis[], leafCount: number,
-    records: readonly number[], values: readonly PivotAnswerValues[]): PivotAnswer {
-    return makeAnswer(sourceVersion, rows, columns, leafCount, records, values);
+    records: readonly number[], values: readonly PivotAnswerValues[], levels = false): PivotAnswer {
+    return makeAnswer(sourceVersion, rows, columns, leafCount, records, values, levels);
 }
 
 /** One field in Values of an answer, from its parts column by column. */

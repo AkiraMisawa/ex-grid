@@ -244,6 +244,18 @@ that does, a layout past `MaxLeaves` is not refused:
   extremes, the product and the running variance, and for a double's sum also its sum of absolute
   values. A Value Field whose Aggregation does not compose from parts (a distinct count, a median) is
   offered disabled with the reason, as ADR-0066 has it.
+
+  *(The question's and the answer's shape, written on 2026-10-25 as the contract is built.)* The groups
+  shown are said as the layout says them, so a server can turn them into `GROUPING SETS` without knowing
+  the report: the question carries, for each row and each column field, whether its Items are collapsed
+  and the Items toggled from that (`PivotLevels`, one rule a field). A group is shown when every Item
+  above it is expanded, and the grand total always is; a cell is a shown row group crossed with a shown
+  column group, and the answer holds every such cell some record reaches, each named by its Items down
+  to its depth and nothing below. A source that declares Level Aggregates answers with the leaves when
+  they fit `MaxLeaves`, and otherwise with these cells, at most `MaxLeaves` of them, or refuses. The
+  answer says which it is; a level answer to a question that asked for none, or a cell the rules do not
+  show, or a shown cell without its parent, is refused as another question's answer (ADR-0066). The
+  records of a cell are checked like its parts: its children's add up to it, exactly.
 - **Excel's rules stay in the engine.** Averages, variances, Show Values As, subtotals and the layout
   are computed from the parts in the browser, by the same code as Leaf Aggregates.
 - **Every group shown is checked against its parent.** The engine composes each sibling set's parts and

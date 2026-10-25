@@ -94,7 +94,9 @@ public sealed class SnapshotPivotSource : PivotSource
     /// Answers with the Leaf Aggregates of the current Snapshot (ADR-0066), read in slices — or, for
     /// the question it answered last, from the answer it holds and has folded every batch into
     /// since. Refuses, as soon as it is passed, an answer of more leaves than
-    /// <see cref="PivotQuery.MaxLeaves"/>. The answer is assembled in slices too, after the last
+    /// <see cref="PivotQuery.MaxLeaves"/> — unless the question carries <see cref="PivotQuery.Levels"/>:
+    /// it is then answered with the cells of the groups shown, at most that many (ADR-0370 section 3),
+    /// though the source does not declare it, for a server that answers from it. The answer is assembled in slices too, after the last
     /// slice of rows (PV-40), and a cancelled question throws at the next slice. A batch applied
     /// while the answer held is being assembled is folded in once it is made: no answer is half a
     /// batch (ADR-0067).
@@ -128,6 +130,9 @@ public sealed class SnapshotPivotSource : PivotSource
         await slicer.PassAsync(pass.RowCount, pass.Step).ConfigureAwait(false);
         await pass.CompleteAsync(slicer).ConfigureAwait(false);
         var answer = await pass.AnswerAsync(VersionOf(snapshot), slicer).ConfigureAwait(false);
+        // Past the cap, a question with levels is answered with the cells it shows (ADR-0370 section 3).
+        if (pass.Refusal is { Kind: PivotSourceRefusalKind.TooManyLeaves } && query.Levels is not null)
+            answer = await PivotLevelAnswers.AnswerAsync(snapshot, _bindings, query, _slicing.RowsRead, VersionOf(snapshot), slicer).ConfigureAwait(false);
         lock (_gate)
         {
             if (pass.Refusal is null && ReferenceEquals(_snapshot, snapshot))
@@ -135,7 +140,7 @@ public sealed class SnapshotPivotSource : PivotSource
                 _held = pass;
                 _heldAnswer = answer;
             }
-            if (pass.Refusal is null)
+            if (!answer.IsRefused)
                 Remember(snapshot);
         }
         return answer;

@@ -33,7 +33,28 @@ internal sealed class PartColumns
     public double[]? Products;
     public VariancePart[]? Variances;
 
+    /// <summary>The sum of the magnitudes of each cell's numbers, as <c>double</c>s added in the
+    /// records' order: what bounds the rounding of a sum that is a <c>double</c>, which a level answer
+    /// carries with it (ADR-0370 section 3). Kept only where <see cref="TrackAbsolutes"/> asked for
+    /// it, beside a sum.</summary>
+    public double[]? Absolutes;
+
     public int Capacity => Counts.Length;
+
+    /// <summary>Keeps <see cref="Absolutes"/> beside the sum from now on; the cells hold none yet.</summary>
+    public void TrackAbsolutes()
+    {
+        if (Sums is null)
+            throw new InvalidOperationException("Internal: magnitudes are kept beside a sum.");
+        Absolutes ??= new double[Counts.Length];
+    }
+
+    /// <summary>Adds a number's magnitude to a cell's, where they are kept.</summary>
+    public void AddAbsolute(int cell, double value)
+    {
+        if (Absolutes is not null)
+            Absolutes[cell] += Math.Abs(value);
+    }
 
     /// <summary>Makes room for <paramref name="count"/> cells, doubling as it grows.</summary>
     public void EnsureCapacity(int count)
@@ -50,6 +71,8 @@ internal sealed class PartColumns
             Array.Resize(ref Products, capacity);
         if (Variances is not null)
             Array.Resize(ref Variances, capacity);
+        if (Absolutes is not null)
+            Array.Resize(ref Absolutes, capacity);
     }
 
     /// <summary>The first <paramref name="count"/> cells of <paramref name="other"/>, which holds
@@ -75,6 +98,8 @@ internal sealed class PartColumns
             Array.Copy(other.Products!, from, Products, from, count);
         if (Variances is not null)
             Array.Copy(other.Variances!, from, Variances, from, count);
+        if (Absolutes is not null)
+            Array.Copy(other.Absolutes!, from, Absolutes, from, count);
     }
 
     /// <summary>Cell <paramref name="from"/> of <paramref name="other"/>, which holds at least these
@@ -90,6 +115,8 @@ internal sealed class PartColumns
             Products[cell] = other.Products![from];
         if (Variances is not null)
             Variances[cell] = other.Variances![from];
+        if (Absolutes is not null)
+            Absolutes[cell] = other.Absolutes![from];
     }
 
     /// <summary>A cell back to no value at all, as a new cell starts.</summary>
@@ -104,6 +131,8 @@ internal sealed class PartColumns
             Products[cell] = 0;
         if (Variances is not null)
             Variances[cell] = default;
+        if (Absolutes is not null)
+            Absolutes[cell] = 0;
     }
 
     /// <summary>
@@ -208,6 +237,8 @@ internal sealed class PartColumns
             var first = counts.Numbers == 0;
             if (Sums is not null)
                 AggregateArithmetic.Add(ref Sums[cell], value, first);
+            if (Absolutes is not null)
+                Absolutes[cell] += Math.Abs((double)value);
             if (Extremes is not null)
                 AggregateArithmetic.Add(ref Extremes[cell], value, first);
             if (Products is not null)
@@ -234,6 +265,8 @@ internal sealed class PartColumns
             var first = counts.Numbers == 0;
             if (Sums is not null)
                 AggregateArithmetic.Add(ref Sums[cell], value, first);
+            if (Absolutes is not null)
+                Absolutes[cell] += Math.Abs(value);
             if (Extremes is not null)
                 AggregateArithmetic.Add(ref Extremes[cell], value, first);
             if (Products is not null)
@@ -293,6 +326,8 @@ internal sealed class PartColumns
         var first = counts.Numbers == 0;
         if (Sums is not null)
             AggregateArithmetic.Merge(ref Sums[cell], other.Sums![from], first);
+        if (Absolutes is not null)
+            Absolutes[cell] += other.Absolutes![from];
         if (Extremes is not null)
             AggregateArithmetic.Merge(ref Extremes[cell], other.Extremes![from], first);
         if (Products is not null)

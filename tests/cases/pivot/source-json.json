@@ -628,6 +628,114 @@
       "document": "itemCounts",
       "read": "{\"version\":1,\"type\":\"itemCounts\",\"sourceVersion\":\"1\",\"counts\":{\"Region\":3,\"2024\":5,\"1\":0}}",
       "expect": "{\"version\":1,\"type\":\"itemCounts\",\"sourceVersion\":\"1\",\"counts\":{\"Region\":3,\"2024\":5,\"1\":0}}"
+    },
+    {
+      "name": "ADR-0370 (section 3): a question for Level Aggregates crosses with one rule a field, an expanded rule written as nothing",
+      "document": "query",
+      "read": "{\"version\":1,\"type\":\"query\",\"rows\":[{\"field\":\"Desk\"},{\"field\":\"Book\"}],\"columns\":[{\"field\":\"Live\"}],\"filters\":[],\"values\":[{\"field\":\"Amount\",\"parts\":[\"sum\"]}],\"maxLeaves\":7,\"levels\":{\"rows\":[{\"collapsed\":true,\"toggledItems\":[{\"kind\":\"text\",\"value\":\"Rates\"}]},{}],\"columns\":[{\"collapsed\":false}]}}",
+      "expect": "{\"version\":1,\"type\":\"query\",\"rows\":[{\"field\":\"Desk\"},{\"field\":\"Book\"}],\"columns\":[{\"field\":\"Live\"}],\"filters\":[],\"values\":[{\"field\":\"Amount\",\"parts\":[\"sum\"]}],\"maxLeaves\":7,\"levels\":{\"rows\":[{\"collapsed\":true,\"toggledItems\":[{\"kind\":\"text\",\"value\":\"Rates\"}]},{}],\"columns\":[{}]}}"
+    },
+    {
+      "name": "ADR-0370 (section 3): a question's levels that are not one rule a field are refused by name",
+      "document": "query",
+      "read": "{\"version\":1,\"type\":\"query\",\"rows\":[{\"field\":\"Desk\"},{\"field\":\"Book\"}],\"columns\":[{\"field\":\"Live\"}],\"filters\":[],\"values\":[{\"field\":\"Amount\",\"parts\":[\"sum\"]}],\"maxLeaves\":7,\"levels\":{\"rows\":[{}],\"columns\":[]}}",
+      "expect": {
+        "refusal": "format",
+        "saying": "The document holds a value that cannot be: The question's levels give 1 row and 0 column rules, and it places 2 row and 1 column fields; a field has one rule (ADR-0370 section 3)."
+      }
+    },
+    {
+      "name": "ADR-0370 (section 3): a rule's collapse is true or false",
+      "document": "query",
+      "read": "{\"version\":1,\"type\":\"query\",\"rows\":[{\"field\":\"Desk\"},{\"field\":\"Book\"}],\"columns\":[{\"field\":\"Live\"}],\"filters\":[],\"values\":[{\"field\":\"Amount\",\"parts\":[\"sum\"]}],\"maxLeaves\":7,\"levels\":{\"rows\":[{\"collapsed\":\"yes\"},{}],\"columns\":[{}]}}",
+      "expect": {
+        "refusal": "format",
+        "saying": "'collapsed' is true or false."
+      }
+    },
+    {
+      "name": "ADR-0370 (section 3): a level answer crosses: cells named down to their depth, a double sum with its magnitudes and an exact one with none",
+      "document": "answer",
+      "read": "{\"version\":1,\"type\":\"answer\",\"sourceVersion\":\"s\",\"levels\":true,\"rows\":[{\"field\":\"Desk\",\"items\":[{\"kind\":\"text\",\"value\":\"Rates\"},{\"kind\":\"text\",\"value\":\"FX\"}],\"leaves\":[0,-1,1]},{\"field\":\"Book\",\"items\":[],\"leaves\":[-1,-1,-1]}],\"columns\":[],\"records\":[3,5,2],\"values\":[{\"field\":\"Amount\",\"parts\":[\"sum\"],\"values\":[3,5,2],\"numbers\":[3,5,2],\"nonFinite\":[],\"sum\":[\"300.6\",\"1E+300\",12],\"absoluteSum\":[300.6,1e+300,null]}]}",
+      "expect": "{\"version\":1,\"type\":\"answer\",\"sourceVersion\":\"s\",\"levels\":true,\"rows\":[{\"field\":\"Desk\",\"items\":[{\"kind\":\"text\",\"value\":\"Rates\"},{\"kind\":\"text\",\"value\":\"FX\"}],\"leaves\":[0,-1,1]},{\"field\":\"Book\",\"items\":[],\"leaves\":[-1,-1,-1]}],\"columns\":[],\"records\":[3,5,2],\"values\":[{\"field\":\"Amount\",\"parts\":[\"sum\"],\"values\":[3,5,2],\"numbers\":[3,5,2],\"nonFinite\":[],\"sum\":[\"300.6\",\"1E\\u002B300\",12],\"absoluteSum\":[300.6,1E+300,null]}]}"
+    },
+    {
+      "name": "ADR-0370 (section 3): a cell of #NUM! may carry no magnitudes",
+      "document": "answer",
+      "read": "{\"version\":1,\"type\":\"answer\",\"sourceVersion\":\"s\",\"levels\":true,\"rows\":[{\"field\":\"Desk\",\"items\":[{\"kind\":\"text\",\"value\":\"Rates\"},{\"kind\":\"text\",\"value\":\"FX\"}],\"leaves\":[0,-1,1]},{\"field\":\"Book\",\"items\":[],\"leaves\":[-1,-1,-1]}],\"columns\":[],\"records\":[3,5,2],\"values\":[{\"field\":\"Amount\",\"parts\":[\"sum\"],\"values\":[3,5,2],\"numbers\":[3,5,2],\"nonFinite\":[1],\"sum\":[\"300.6\",\"1E+300\",12],\"absoluteSum\":[300.6,null,null]}]}",
+      "expect": "{\"version\":1,\"type\":\"answer\",\"sourceVersion\":\"s\",\"levels\":true,\"rows\":[{\"field\":\"Desk\",\"items\":[{\"kind\":\"text\",\"value\":\"Rates\"},{\"kind\":\"text\",\"value\":\"FX\"}],\"leaves\":[0,-1,1]},{\"field\":\"Book\",\"items\":[],\"leaves\":[-1,-1,-1]}],\"columns\":[],\"records\":[3,5,2],\"values\":[{\"field\":\"Amount\",\"parts\":[\"sum\"],\"values\":[3,5,2],\"numbers\":[3,5,2],\"nonFinite\":[1],\"sum\":[\"300.6\",\"1E\\u002B300\",12],\"absoluteSum\":[300.6,null,null]}]}"
+    },
+    {
+      "name": "ADR-0370 (section 3): a double sum without its magnitudes is refused",
+      "document": "answer",
+      "read": "{\"version\":1,\"type\":\"answer\",\"sourceVersion\":\"s\",\"levels\":true,\"rows\":[{\"field\":\"Desk\",\"items\":[{\"kind\":\"text\",\"value\":\"Rates\"},{\"kind\":\"text\",\"value\":\"FX\"}],\"leaves\":[0,-1,1]},{\"field\":\"Book\",\"items\":[],\"leaves\":[-1,-1,-1]}],\"columns\":[],\"records\":[3,5,2],\"values\":[{\"field\":\"Amount\",\"parts\":[\"sum\"],\"values\":[3,5,2],\"numbers\":[3,5,2],\"nonFinite\":[],\"sum\":[\"300.6\",\"1E+300\",12],\"absoluteSum\":[null,1e+300,null]}]}",
+      "expect": {
+        "refusal": "format",
+        "saying": "Cell 0's sum of 'Amount' is a double, and carries no sum of its magnitudes (ADR-0370 section 3)."
+      }
+    },
+    {
+      "name": "ADR-0370 (section 3): an exact sum carried with magnitudes is refused",
+      "document": "answer",
+      "read": "{\"version\":1,\"type\":\"answer\",\"sourceVersion\":\"s\",\"levels\":true,\"rows\":[{\"field\":\"Desk\",\"items\":[{\"kind\":\"text\",\"value\":\"Rates\"},{\"kind\":\"text\",\"value\":\"FX\"}],\"leaves\":[0,-1,1]},{\"field\":\"Book\",\"items\":[],\"leaves\":[-1,-1,-1]}],\"columns\":[],\"records\":[3,5,2],\"values\":[{\"field\":\"Amount\",\"parts\":[\"sum\"],\"values\":[3,5,2],\"numbers\":[3,5,2],\"nonFinite\":[],\"sum\":[\"300.6\",\"1E+300\",12],\"absoluteSum\":[300.6,1e+300,12]}]}",
+      "expect": {
+        "refusal": "format",
+        "saying": "Cell 2's sum of 'Amount' is exact, and carries a sum of magnitudes; only a double's does (ADR-0370 section 3)."
+      }
+    },
+    {
+      "name": "ADR-0370 (section 3): a sum of magnitudes below 0 is refused",
+      "document": "answer",
+      "read": "{\"version\":1,\"type\":\"answer\",\"sourceVersion\":\"s\",\"levels\":true,\"rows\":[{\"field\":\"Desk\",\"items\":[{\"kind\":\"text\",\"value\":\"Rates\"},{\"kind\":\"text\",\"value\":\"FX\"}],\"leaves\":[0,-1,1]},{\"field\":\"Book\",\"items\":[],\"leaves\":[-1,-1,-1]}],\"columns\":[],\"records\":[3,5,2],\"values\":[{\"field\":\"Amount\",\"parts\":[\"sum\"],\"values\":[3,5,2],\"numbers\":[3,5,2],\"nonFinite\":[],\"sum\":[\"300.6\",\"1E+300\",12],\"absoluteSum\":[300.6,-1e+300,null]}]}",
+      "expect": {
+        "refusal": "format",
+        "saying": "A sum of magnitudes of 'Amount' is -1e+300; it is a number not below 0, or null for none (ADR-0370 section 3)."
+      }
+    },
+    {
+      "name": "ADR-0370 (section 3): a sum of magnitudes that is not a number is refused, null being how none is written",
+      "document": "answer",
+      "read": "{\"version\":1,\"type\":\"answer\",\"sourceVersion\":\"s\",\"levels\":true,\"rows\":[{\"field\":\"Desk\",\"items\":[{\"kind\":\"text\",\"value\":\"Rates\"},{\"kind\":\"text\",\"value\":\"FX\"}],\"leaves\":[0,-1,1]},{\"field\":\"Book\",\"items\":[],\"leaves\":[-1,-1,-1]}],\"columns\":[],\"records\":[3,5,2],\"values\":[{\"field\":\"Amount\",\"parts\":[\"sum\"],\"values\":[3,5,2],\"numbers\":[3,5,2],\"nonFinite\":[],\"sum\":[\"300.6\",\"1E+300\",12],\"absoluteSum\":[300.6,\"NaN\",null]}]}",
+      "expect": {
+        "refusal": "format",
+        "saying": "A sum of magnitudes of 'Amount' is \"NaN\"; it is a number not below 0, or null for none (ADR-0370 section 3)."
+      }
+    },
+    {
+      "name": "ADR-0370 (section 3): a level answer's sum carries one magnitude a cell",
+      "document": "answer",
+      "read": "{\"version\":1,\"type\":\"answer\",\"sourceVersion\":\"s\",\"levels\":true,\"rows\":[{\"field\":\"Desk\",\"items\":[{\"kind\":\"text\",\"value\":\"Rates\"},{\"kind\":\"text\",\"value\":\"FX\"}],\"leaves\":[0,-1,1]},{\"field\":\"Book\",\"items\":[],\"leaves\":[-1,-1,-1]}],\"columns\":[],\"records\":[3,5,2],\"values\":[{\"field\":\"Amount\",\"parts\":[\"sum\"],\"values\":[3,5,2],\"numbers\":[3,5,2],\"nonFinite\":[],\"sum\":[\"300.6\",\"1E+300\",12]}]}",
+      "expect": {
+        "refusal": "format",
+        "saying": "'absoluteSum' is an array, and is required."
+      }
+    },
+    {
+      "name": "ADR-0370 (section 3): a cell named below a field it names nothing of is refused",
+      "document": "answer",
+      "read": "{\"version\":1,\"type\":\"answer\",\"sourceVersion\":\"s\",\"levels\":true,\"rows\":[{\"field\":\"Desk\",\"items\":[{\"kind\":\"text\",\"value\":\"Rates\"},{\"kind\":\"text\",\"value\":\"FX\"}],\"leaves\":[0,-1,1]},{\"field\":\"Book\",\"items\":[{\"kind\":\"text\",\"value\":\"LDN-1\"}],\"leaves\":[-1,0,-1]}],\"columns\":[],\"records\":[3,5,2],\"values\":[{\"field\":\"Amount\",\"parts\":[\"sum\"],\"values\":[3,5,2],\"numbers\":[3,5,2],\"nonFinite\":[],\"sum\":[\"300.6\",\"1E+300\",12],\"absoluteSum\":[300.6,1e+300,null]}]}",
+      "expect": {
+        "refusal": "format",
+        "saying": "Cell 1 names an Item of 'Book' below a field it names none of; a cell is named down to its depth (ADR-0370 section 3)."
+      }
+    },
+    {
+      "name": "ADR-0370 (section 3): an answer of leaves names an Item at every level",
+      "document": "answer",
+      "read": "{\"version\":1,\"type\":\"answer\",\"sourceVersion\":\"s\",\"rows\":[{\"field\":\"Desk\",\"items\":[{\"kind\":\"text\",\"value\":\"Rates\"},{\"kind\":\"text\",\"value\":\"FX\"}],\"leaves\":[0,-1,1]},{\"field\":\"Book\",\"items\":[],\"leaves\":[-1,-1,-1]}],\"columns\":[],\"records\":[3,5,2],\"values\":[{\"field\":\"Amount\",\"parts\":[\"sum\"],\"values\":[3,5,2],\"numbers\":[3,5,2],\"nonFinite\":[],\"sum\":[\"300.6\",\"1E+300\",12]}]}",
+      "expect": {
+        "refusal": "format",
+        "saying": "Leaf 1 names Item -1 of 'Desk', which has 2."
+      }
+    },
+    {
+      "name": "ADR-0370 (section 3): an answer's levels flag is true or false",
+      "document": "answer",
+      "read": "{\"version\":1,\"type\":\"answer\",\"sourceVersion\":\"s\",\"levels\":1,\"rows\":[{\"field\":\"Desk\",\"items\":[{\"kind\":\"text\",\"value\":\"Rates\"},{\"kind\":\"text\",\"value\":\"FX\"}],\"leaves\":[0,-1,1]},{\"field\":\"Book\",\"items\":[],\"leaves\":[-1,-1,-1]}],\"columns\":[],\"records\":[3,5,2],\"values\":[{\"field\":\"Amount\",\"parts\":[\"sum\"],\"values\":[3,5,2],\"numbers\":[3,5,2],\"nonFinite\":[],\"sum\":[\"300.6\",\"1E+300\",12],\"absoluteSum\":[300.6,1e+300,null]}]}",
+      "expect": {
+        "refusal": "format",
+        "saying": "'levels' is true or false."
+      }
     }
   ]
 }

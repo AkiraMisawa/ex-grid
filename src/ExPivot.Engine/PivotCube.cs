@@ -151,6 +151,8 @@ internal sealed class PivotCube
     {
         if (answer.Mismatch(query) is { } mismatch)
             throw new InvalidOperationException($"The answer does not answer the question: {mismatch} (ADR-0066).");
+        if (answer.IsLevels)
+            throw new InvalidOperationException("The answer holds Level Aggregates, which this engine does not lay a report out from; the TypeScript engine does (ADR-0370 section 3).");
         foreach (var field in query.Placed.Select(f => f.Field).Concat(query.Values.Select(v => v.Field)))
         {
             if (!meta.ContainsKey(field))

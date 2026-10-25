@@ -49,6 +49,75 @@ export interface PivotQueryValue {
     readonly parts: readonly PivotPart[];
 }
 
+/**
+ * One field's rule of a question's levels (ADR-0370 section 3): whether its Items are collapsed, and the
+ * Items whose state is the other. Item `x` is expanded when `collapsed` is not `x ∈ toggledItems`; the Items
+ * of the innermost field have nothing below them, and their rule changes nothing.
+ */
+export interface PivotLevelRule {
+    /** Whether its Items are collapsed, but for the toggled ones. */
+    readonly collapsed: boolean;
+    /** The Items whose state is the other of `collapsed`. */
+    readonly toggledItems: readonly PivotItemKey[];
+}
+
+/**
+ * Which groups a report shows, as a question for Level Aggregates carries them (ADR-0370 section 3): one
+ * rule a row field and one a column field. A group is shown when every Item above it is expanded, and the
+ * grand total always is; a cell is a shown row group crossed with a shown column group. A server can turn
+ * them into `GROUPING SETS` without knowing the report.
+ */
+export interface PivotLevels {
+    /** The row fields' rules, outermost first. */
+    readonly rows: readonly PivotLevelRule[];
+    /** The column fields' rules, outermost first. */
+    readonly columns: readonly PivotLevelRule[];
+}
+
+/** A rule's settings, each left out taking its default: every Item expanded. */
+export interface PivotLevelRuleInput {
+    /** Whether the Items are collapsed, but for the toggled ones. */
+    readonly collapsed?: boolean;
+    /** The Items whose state is the other. */
+    readonly toggledItems?: readonly PivotItemKey[];
+}
+
+/** A rule, checked and frozen. */
+export function pivotLevelRule(input: PivotLevelRuleInput = {}): PivotLevelRule {
+    const collapsed = input.collapsed ?? false; // oxlint-disable-line ex-grid/no-stand-in-default -- a rule left unsaid is every Item expanded
+    if (typeof collapsed !== 'boolean') throw new TypeError("A rule's collapse is true or false.");
+    const toggled = (input.toggledItems ?? []).map(key => pivotItemKey(key.kind, key.value)); // oxlint-disable-line ex-grid/no-stand-in-default -- a rule that toggles nothing toggles no Item
+    return Object.freeze({ collapsed, toggledItems: Object.freeze(toggled) });
+}
+
+/** Whether the groups below `item` are shown under `rule`. */
+export function isLevelExpanded(rule: PivotLevelRule, item: PivotItemKey): boolean {
+    const id = publicKeyId(item);
+    return rule.collapsed === rule.toggledItems.some(toggled => publicKeyId(toggled) === id);
+}
+
+function ruleOfPlacement(placement: PivotFieldPlacement): PivotLevelRule {
+    return pivotLevelRule({ collapsed: placement.collapsed, toggledItems: placement.toggledItems });
+}
+
+/** The groups a layout shows: each row and column field's collapse state. */
+export function levelsOfLayout(layout: PivotLayout): PivotLevels {
+    return Object.freeze({ rows: Object.freeze(layout.rows.map(ruleOfPlacement)), columns: Object.freeze(layout.columns.map(ruleOfPlacement)) });
+}
+
+function sameRules(one: readonly PivotLevelRule[], other: readonly PivotLevelRule[]): boolean {
+    return one.length === other.length
+        && one.every((rule, i) => {
+            const theirs = other[i];
+            return theirs !== undefined && rule.collapsed === theirs.collapsed && sameKeys(rule.toggledItems, theirs.toggledItems);
+        });
+}
+
+function sameLevels(a: PivotLevels | undefined, b: PivotLevels | undefined): boolean {
+    if (a === undefined || b === undefined) return a === b;
+    return sameRules(a.rows, b.rows) && sameRules(a.columns, b.columns);
+}
+
 /** The question for a report's Leaf Aggregates. */
 export interface PivotQuery {
     /** The row fields, outermost first. */
@@ -61,6 +130,12 @@ export interface PivotQuery {
     readonly values: readonly PivotQueryValue[];
     /** The most leaves the answer may have; one more refuses the question. */
     readonly maxLeaves: number;
+    /**
+     * Which groups the report shows, for a source that answers Level Aggregates (ADR-0370 section 3): it may
+     * then answer, when the leaves would pass the cap, with the cells of the groups shown instead
+     * (an answer's `isLevels`). Left out, the question asks for the leaves alone.
+     */
+    readonly levels?: PivotLevels;
 }
 
 /** A question's settings, each left out taking its default: no field anywhere and the default cap. */
@@ -75,6 +150,8 @@ export interface PivotQueryInput {
     readonly values?: readonly (string | { readonly field: string; readonly parts?: readonly PivotPart[] })[];
     /** The cap on leaves; {@link defaultMaxLeaves} when left out. */
     readonly maxLeaves?: number;
+    /** Which groups the report shows, one rule a row and a column field; none when left out. */
+    readonly levels?: { readonly rows?: readonly PivotLevelRuleInput[]; readonly columns?: readonly PivotLevelRuleInput[] };
 }
 
 function queryField(input: string | { readonly field: string; readonly hiddenItems?: readonly PivotItemKey[] }): PivotQueryField {
@@ -115,7 +192,15 @@ export function pivotQuery(input: PivotQueryInput = {}): PivotQuery {
         }
         asked.add(value.field);
     }
-    return Object.freeze({ rows, columns, filters, values, maxLeaves });
+    if (input.levels === undefined) return Object.freeze({ rows, columns, filters, values, maxLeaves });
+    const levels: PivotLevels = Object.freeze({
+        rows: Object.freeze((input.levels.rows ?? []).map(pivotLevelRule)), // oxlint-disable-line ex-grid/no-stand-in-default -- no row field, no rule
+        columns: Object.freeze((input.levels.columns ?? []).map(pivotLevelRule)), // oxlint-disable-line ex-grid/no-stand-in-default -- no column field, no rule
+    });
+    if (levels.rows.length !== rows.length || levels.columns.length !== columns.length) {
+        throw new TypeError(`The question's levels give ${levels.rows.length} row and ${levels.columns.length} column rules, and it places ${rows.length} row and ${columns.length} column fields; a field has one rule (ADR-0370 section 3).`);
+    }
+    return Object.freeze({ rows, columns, filters, values, maxLeaves, levels });
 }
 
 function askedOf(p: PivotFieldPlacement): PivotQueryField {
@@ -139,6 +224,12 @@ export function queryForLayout(layout: PivotLayout, maxLeaves: number = defaultM
         values: values.map(value => ({ field: value.field, parts: partList(value.parts) })),
         maxLeaves,
     });
+}
+
+/** The question {@link queryForLayout} asks, with the groups the layout shows (ADR-0370 section 3): what
+ * ExPivot asks a source that answers Level Aggregates. */
+export function levelQueryForLayout(layout: PivotLayout, maxLeaves: number = defaultMaxLeaves): PivotQuery {
+    return Object.freeze({ ...queryForLayout(layout, maxLeaves), levels: levelsOfLayout(layout) });
 }
 
 /** The Filters that hide something. */
@@ -171,6 +262,7 @@ function sameFields(one: readonly PivotQueryField[], other: readonly PivotQueryF
 export function queriesEqual(a: PivotQuery, b: PivotQuery): boolean {
     return a === b
         || (a.maxLeaves === b.maxLeaves
+            && sameLevels(a.levels, b.levels)
             && sameFields(a.rows, b.rows) && sameFields(a.columns, b.columns) && sameFields(a.filters, b.filters)
             && a.values.length === b.values.length
             && a.values.every((value, i) => {
