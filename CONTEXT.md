@@ -459,7 +459,7 @@ contract and stylesheet as the C# code it replaces. It depends on no UI framewor
 every other product's Script Core draws through, as that grid's Consumer. From 0.3.0 each product's is
 its only core, under React and Blazor alike
 ([ADR-0350](./docs/adr/0350-exgrids-core-moves-to-typescript-and-react-and-blazor-both-take-it.md),
-[ADR-0370](./docs/adr/0370-every-product-reaches-react-as-exgrid-does-and-asks-its-engine-across-one-boundary.md)).
+[ADR-0370](./docs/adr/0370-the-whole-family-moves-to-typescript-and-blazor-wraps-it.md)).
 _Avoid_: JS grid, client grid, headless core (it owns its DOM)
 
 **Framework Adapter**:
@@ -474,11 +474,10 @@ Distinct from a Wrapper, which adapts a design system, not a framework.
 _Avoid_: binding, wrapper, port
 
 **Engine Host**:
-Where an engine runs for a Script Core, which asks it by asynchronous messages whose answers are data:
-the Blazor adapter's own .NET side, a Web Worker running the engine as .NET WebAssembly, or a server.
-The engine and the messages are the same in all three, and an answer names the version it was asked
-against
-([ADR-0370](./docs/adr/0370-every-product-reaches-react-as-exgrid-does-and-asks-its-engine-across-one-boundary.md)).
+Where a Script Core's engine runs, asked by asynchronous messages whose answers are data: the page's
+own thread, a Web Worker, or a server for server data. The engine and the messages are the same in
+each, and an answer names the version it was asked against
+([ADR-0370](./docs/adr/0370-the-whole-family-moves-to-typescript-and-blazor-wraps-it.md)).
 _Avoid_: backend, engine service, bridge
 
 **Density**:
