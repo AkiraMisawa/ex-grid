@@ -299,6 +299,12 @@ than its spelling, Blazor's surface follows it under section 14.
   (January 2026); a browser without it (Safari, when this was decided) takes a polyfill the Consumer
   loads. The core does not bundle one, and recognises a Temporal value by its own tag, so a polyfill's
   values are read like the browser's.
+- **A Row Key is a `string`, a `number` or a `bigint`**, given as `GridSource.from(rows, { rowKey })`.
+  Two keys are the same key when they are the same value, as a `Map` holds them, so `1` and `1n` are two
+  keys, as C#'s `1` and `1L` are. An object is refused, with `NaN` and a null key: it would be the same key
+  only as itself, and a key rebuilt from the same data would name another row (ADR-0140). The clock that
+  gathers live changes (ADR-0141) is an option too, `{ clock }`, the system's unless given, which is
+  C#'s `TimeProvider` and what a test drives.
 - **One callback hears every refusal.** `onRefused` receives one event whose `kind` says what was
   refused (a copy, a paste, a Find, …) and carries that kind's own facts. C#'s separate
   `OnCopyRefused`, `OnPasteRefused` and the rest become kinds of it.

@@ -1,10 +1,12 @@
 // Layer 1: what a Grid Source does beyond the shared cases (tests/cases/source): the cap of a value list,
-// cancellation, and that what a Consumer hands it, or reads from it, cannot move it.
-import { describe, expect, it } from 'vitest';
+// cancellation, that what a Consumer hands it, or reads from it, cannot move it, and the Row Keys and the
+// clock that JSON cannot write.
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { QueryColumn } from '../src/query/columns';
 import type { FilterSpec, GridFilter } from '../src/query/filter';
 import type { SortSpec } from '../src/query/sort';
 import { elementAt } from '../src/must';
+import { applyQuery } from '../src/query/query-engine';
 import { GridSource } from '../src/source/grid-source';
 
 interface Trade {
@@ -128,5 +130,79 @@ describe('GridSource.from', () => {
         source.replaceRow(elementAt(rows, 0), { book: 'Rates', amount: 3 });
         expect(source.snapshot().filter).toBe(filter);
         expect(source.snapshot().sorts).toBe(sorts);
+    });
+});
+
+interface Keyed {
+    readonly id: unknown;
+    readonly amount: number;
+}
+
+const keyedColumns: readonly QueryColumn<Keyed>[] = [{ name: 'Amount', type: 'number', value: row => row.amount }];
+
+describe('GridSource.from with a Row Key', () => {
+    afterEach(() => {
+        vi.useRealTimers();
+    });
+
+    it.each([
+        ['NaN', Number.NaN, 'NaN'],
+        ['an object', { id: 1 }, 'a object'],
+        ['a boolean', true, 'a boolean'],
+    ])('ADR-0140: a Row Key that is %s names no row, and is refused by name', (_, id, saying) => {
+        expect(() => GridSource.from<Keyed>([{ id: 1, amount: 1 }, { id, amount: 2 }], { rowKey: row => row.id as never }))
+            .toThrow(expect.objectContaining({ name: 'TypeError', message: expect.stringContaining(`a Row Key that is ${saying}`) as unknown }));
+    });
+
+    it('ADR-0140: 1 and 1n are two keys, as a Map holds them, and so are 1 and \'1\'', () => {
+        const source = GridSource.from<Keyed>([{ id: 1, amount: 1 }, { id: 1n, amount: 2 }, { id: '1', amount: 3 }], { rowKey: row => row.id as never });
+        source.setColumns(keyedColumns);
+        source.gatherInterval = 0;
+        source.apply({ removedKeys: [1n] });
+        expect(source.snapshot().window.map(row => row.amount)).toEqual([1, 3]);
+    });
+
+    it('ADR-0141 / LV-6: without a clock given, changes are gathered on the system\'s clock, 250 ms by default', () => {
+        vi.useFakeTimers();
+        const source = GridSource.from<Keyed>([{ id: 'A', amount: 1 }], { rowKey: row => row.id as never });
+        source.setColumns(keyedColumns);
+        expect(source.gatherInterval).toBe(250);
+        source.apply({ added: [{ id: 'B', amount: 2 }] });
+        source.apply({ added: [{ id: 'C', amount: 3 }] });
+        expect(source.snapshot().window.map(row => row.id)).toEqual(['A', 'B']);
+        vi.advanceTimersByTime(249);
+        expect(source.snapshot().window).toHaveLength(2);
+        vi.advanceTimersByTime(1);
+        expect(source.snapshot().window.map(row => row.id)).toEqual(['A', 'B', 'C']);
+    });
+
+    it('ADR-0141 / LV-6: a gathering interval that is not a finite number of milliseconds from 0 is refused', () => {
+        const source = GridSource.from<Keyed>([], { rowKey: row => row.id as never });
+        for (const interval of [-1, Number.NaN, Number.POSITIVE_INFINITY]) {
+            expect(() => { source.gatherInterval = interval; }).toThrow(RangeError);
+        }
+        expect(source.gatherInterval).toBe(250);
+    });
+
+    it('ADR-0141 / LV-5: most of the rows removed a few at a time, and the rest reordered, still match applyQuery', () => {
+        const rows: Keyed[] = Array.from({ length: 300 }, (_, i) => ({ id: i, amount: (i * 7919) % 101 }));
+        const source = GridSource.from(rows, { rowKey: row => row.id as never });
+        source.setColumns(keyedColumns);
+        source.setSorts([{ column: 'Amount', direction: 'descending' }]);
+        source.gatherInterval = 0;
+        let held = rows;
+        for (let at = 0; at < 260; at += 4) {
+            const removed = new Set([at, at + 1, at + 2]);
+            source.apply({ removedKeys: [...removed] });
+            held = held.filter(row => !removed.has(row.id as number));
+            expect(source.snapshot().window).toEqual(applyQuery(held, keyedColumns, undefined, [{ column: 'Amount', direction: 'descending' }]));
+        }
+        held = held.toReversed();
+        source.replaceAll(held);
+        source.apply({ changed: [{ id: 299, amount: 50 }] });
+        held = held.map(row => row.id === 299 ? { id: 299, amount: 50 } : row);
+        const window = source.snapshot().window;
+        expect(window.map(row => [row.id, row.amount])).toEqual(
+            applyQuery(held, keyedColumns, undefined, [{ column: 'Amount', direction: 'descending' }]).map(row => [row.id, row.amount]));
     });
 });
