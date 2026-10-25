@@ -9,6 +9,9 @@
 // microtask, so a burst of changes in one task paints once.
 
 import { AutoWidth } from '../columns/auto-width';
+import { assembleCopy, type CopyFlavours } from '../clipboard/clipboard-data';
+import { defaultCellCap, planCopy, type CopyPlan } from '../clipboard/clipboard-rules';
+import { copyRefusalWords } from '../chrome/refusal-words';
 import { ColumnGeometry, type ColumnRange } from '../columns/column-geometry';
 import { HeaderGroup, HeaderGroupLayout, type ResolvedHeaderGroup } from '../columns/header-groups';
 import { decideOverflow } from '../columns/overflow-rules';
@@ -33,6 +36,8 @@ import { ViewportBox } from '../viewport/viewport-box';
 import { ViewportGeometry } from '../viewport/viewport-geometry';
 import type { BrowserReports, ViewportReport } from './browser-reports';
 import { ColumnStyles } from './column-styles';
+import { copyValues, gatherRows, windowCovers, windowRowAt } from './grid-copy';
+import type { GridRefusal } from './grid-refusal';
 import { resolveColumns, type GridColumn, type ResolvedColumn } from './grid-column';
 import { moveByKey, movingKinds, type KeyReveal } from './key-moves';
 import { selectionLayers, type LayerPiece } from './selection-layers';
@@ -86,6 +91,13 @@ export interface GridOptions<Row> {
      * many gestures changed it in between. A Selection is dropped, and heard empty, when the Row Sequence
      * Version or the columns change. */
     readonly onSelectionChanged?: (selection: GridSelection) => void;
+    /** The most cells one copy carries (ADR-0005): past it the grid copies nothing at all and says so,
+     * rather than copy a part. A million unless given; at least one, since the cap may be raised but not
+     * used to switch copying off. */
+    readonly copyCellCap?: number;
+    /** Hears every gesture the grid refused, by kind and reason (ADR-0005): nothing it would have done was
+     * done, and the grid has said why through its live region. */
+    readonly onRefused?: (refusal: GridRefusal) => void;
 }
 
 const defaultViewportWidthPx = 800;
@@ -136,6 +148,8 @@ interface Taken<Row> {
     readonly headerGroups: readonly HeaderGroup[];
     readonly headerLayout: HeaderGroupLayout;
     readonly onSelectionChanged: ((selection: GridSelection) => void) | undefined;
+    readonly copyCellCap: number;
+    readonly onRefused: ((refusal: GridRefusal) => void) | undefined;
 }
 
 /** A reveal's repaint under way (ADR-0012, 2026-10-08): where the reveal left the scroller, and what stops
@@ -273,6 +287,12 @@ export class GridView<Row> {
     #headerGroups: readonly HeaderGroup[] = [];
     #headerLayout = HeaderGroupLayout.empty;
     #onSelectionChanged: ((selection: GridSelection) => void) | undefined;
+    #copyCellCap = defaultCellCap;
+    #onRefused: ((refusal: GridRefusal) => void) | undefined;
+    // The copies the asynchronous route is still writing, each holding the Settled Mark (ADR-0220), and what
+    // stops the latest one's reads of the source when another copy supersedes it or the grid is destroyed.
+    #clipboardWrites = 0;
+    #copy: AbortController | undefined;
 
     // The Selection (ADR-0011, ADR-0012), held under the Row Sequence Version it was made under, and the
     // columns it was made over, by name: either changing drops it.
@@ -443,6 +463,9 @@ export class GridView<Row> {
             this.#header.addEventListener('click', this.#onHeaderClick);
             root.addEventListener('focusout', this.#onFocusLeft);
             this.#scroller.addEventListener('focus', this.#onScrollerFocus);
+            // The browser's own copy command fires the copy event on the root that holds the keyboard; Ctrl+C is
+            // never a key of the grid's, which would prevent the very command that fires it (ADR-0005).
+            root.addEventListener('copy', this.#onCopy);
             this.#stops.push(
                 () => { this.#scroller.removeEventListener('scroll', onScroll); },
                 () => { root.removeEventListener('keydown', this.#onKeyDown, true); },
@@ -456,6 +479,7 @@ export class GridView<Row> {
                 () => { this.#header.removeEventListener('mousemove', this.#onDrag); },
                 () => { root.removeEventListener('mouseleave', this.#onLeave); },
                 () => { this.#scroller.removeEventListener('focus', this.#onScrollerFocus); },
+                () => { root.removeEventListener('copy', this.#onCopy); },
                 reports.observeViewport(this.#scroller, report => {
                     this.#viewportReport = report;
                     this.#invalidate();
@@ -495,6 +519,7 @@ export class GridView<Row> {
         this.#cancelFollow?.();
         this.#repaint?.cancel();
         this.#stopEdgeTimer();
+        this.#copy?.abort();
         for (const stop of this.#stops) stop();
         this.#unsubscribe?.();
         this.#root.replaceChildren();
@@ -558,9 +583,17 @@ export class GridView<Row> {
         if (!Number.isSafeInteger(pinnedColumnCount) || pinnedColumnCount < 0) {
             throw new RangeError(`pinnedColumnCount is a whole number of at least 0, not ${pinnedColumnCount}.`);
         }
-        const { onSelectionChanged }: { readonly onSelectionChanged?: unknown } = options;
+        const { onSelectionChanged, onRefused }: { readonly onSelectionChanged?: unknown; readonly onRefused?: unknown } = options;
         if (onSelectionChanged !== undefined && typeof onSelectionChanged !== 'function') {
             throw new TypeError('onSelectionChanged is a function of the Selection.');
+        }
+        if (onRefused !== undefined && typeof onRefused !== 'function') {
+            throw new TypeError('onRefused is a function of the refusal.');
+        }
+        const { copyCellCap = defaultCellCap } = options;
+        if (!Number.isSafeInteger(copyCellCap) || copyCellCap < 1) {
+            throw new RangeError(`copyCellCap is a whole number of at least one cell, not ${copyCellCap}: the cap may be raised, `
+                + 'not used to switch copying off (ADR-0005).');
         }
         const { headerGroups, headerLayout } = this.#layoutOf(options.headerGroups, columns, pinnedColumnCount, columnsChanged);
         // The band comes off the scroll budget, and the refusal names the band (ADR-0032): a Viewport that
@@ -573,7 +606,7 @@ export class GridView<Row> {
         return {
             source, own, rows: options.rows, metrics, declared: options.columns, columns, autoWidths, columnsChanged,
             width, height, pinnedCount: pinnedColumnCount, virtualiseColumns, headerGroups, headerLayout,
-            onSelectionChanged: options.onSelectionChanged,
+            onSelectionChanged: options.onSelectionChanged, copyCellCap, onRefused: options.onRefused,
         };
     }
 
@@ -658,6 +691,8 @@ export class GridView<Row> {
         }
         this.#headerLayout = taken.headerLayout;
         this.#onSelectionChanged = taken.onSelectionChanged;
+        this.#copyCellCap = taken.copyCellCap;
+        this.#onRefused = taken.onRefused;
     }
 
     // The Row Sequence Version the grid writes: its source's, carried past every change of source.
@@ -749,7 +784,7 @@ export class GridView<Row> {
     #lookSettled(): void {
         this.#showSettled(!this.#passOwed && this.#cancelSettle === undefined && this.#cancelAnnounce === undefined
             && this.#repaint === undefined && this.#followArmed === undefined && this.#cancelFollow === undefined
-            && this.#viewportReport !== undefined && this.#ceilingPx !== undefined);
+            && this.#clipboardWrites === 0 && this.#viewportReport !== undefined && this.#ceilingPx !== undefined);
     }
 
     #showSettled(settled: boolean): void {
@@ -1077,6 +1112,127 @@ export class GridView<Row> {
     readonly #onLeave = (): void => {
         this.#stopEdgeTimer();
     };
+
+    // ---- The clipboard (ADR-0005) ------------------------------------------------------------------------
+
+    // A copy the browser's command asked for. Refused, the clipboard stays as it was: the default copy of a
+    // user-select: none root carries nothing, so the event is left alone. Approved, a Selection the Window
+    // holds is written on the event itself, which needs no permission; one that runs past it starts the
+    // asynchronous write now, inside the gesture, and gathers the rows while the browser waits. Each copy
+    // supersedes the one before it, so a slow copy still gathering never lands over a newer one.
+    readonly #onCopy = (event: ClipboardEvent): void => {
+        // Only when the root itself holds the keyboard: a control inside the grid keeps its own clipboard.
+        if (event.target !== this.#root) return;
+        this.#copy?.abort();
+        this.#copy = undefined;
+        // The Selection as the source and the columns stand now, not as the last pass left it (ADR-0011).
+        this.#reconcileSelection();
+        const decision = planCopy(this.#held.selection, { cellCap: this.#copyCellCap });
+        if (decision.refused) {
+            this.#refuse({ kind: 'copy', reason: decision.reason });
+            return;
+        }
+        const { plan } = decision;
+        const state = this.#state;
+        const columns = this.#columns;
+        const data = event.clipboardData;
+        if (data !== null && windowCovers(plan, state)) {
+            // Both flavours in one operation: what was on screen in text/plain, and the raw value in
+            // text/html, which Excel prefers and reads with its precision and type (ADR-0005).
+            const { text, html } = assembleCopy(plan, copyValues(columns, windowRowAt(state)));
+            event.preventDefault();
+            data.setData('text/plain', text);
+            data.setData('text/html', html);
+            return;
+        }
+        const copy = new AbortController();
+        const flavours = this.#gatherCopy(plan, state, columns, this.#sequence(), copy.signal);
+        // Started before the event is taken from the browser: a write that cannot start leaves the clipboard
+        // as the default copy leaves it, untouched.
+        let written: Promise<boolean>;
+        try {
+            written = this.#reports.writeClipboard(this.#root, flavours);
+        } catch (error) {
+            copy.abort();
+            throw error;
+        }
+        event.preventDefault();
+        this.#copy = copy;
+        this.#holdWhileWriting(written, copy);
+    };
+
+    // The flavours of a copy past the Window, or nothing. Rows that could not all be had, or that the order
+    // or the columns moved under while they were gathered, refuse the copy by name: neither the fraction in
+    // hand nor rows of two orders is ever written (ADR-0005, ADR-0011). A copy superseded or a grid
+    // destroyed writes nothing and says nothing.
+    async #gatherCopy(plan: CopyPlan, state: GridSourceState<Row>, columns: readonly ResolvedColumn<Row>[], version: number,
+        signal: AbortSignal): Promise<CopyFlavours | undefined> {
+        const moved = (): boolean => this.#sequence() !== version || this.#columns !== columns;
+        let rows: ReadonlyMap<number, Row> | undefined;
+        try {
+            rows = await gatherRows(plan, state, this.#source, signal, moved);
+        // oxlint-disable-next-line ex-grid/no-catch -- a superseded copy's own abort is expected and writes nothing; any other failure is rethrown
+        } catch (error) {
+            if (signal.aborted) return undefined;
+            // Said, and the failure itself left to surface: the refusal is the user's, the error the Consumer's.
+            this.#refuse({ kind: 'copy', reason: 'rowsUnavailable' });
+            throw error;
+        }
+        if (signal.aborted) return undefined;
+        if (rows === undefined || moved()) {
+            this.#refuse({ kind: 'copy', reason: 'rowsUnavailable' });
+            return undefined;
+        }
+        return assembleCopy(plan, copyValues(columns, row => defined(rows.get(row), 'a gathered row')));
+    }
+
+    // The asynchronous write (ADR-0005) holds the Settled Mark until it has written or refused (ADR-0220). A
+    // write the browser would not make is a refusal of its own: a user told nothing would paste the old
+    // clipboard believing it the copy.
+    #holdWhileWriting(written: Promise<boolean>, copy: AbortController): void {
+        this.#clipboardWrites += 1;
+        this.#showSettled(false);
+        const done = (): void => {
+            this.#clipboardWrites -= 1;
+            if (this.#copy === copy) this.#copy = undefined;
+            if (!this.#destroyed) this.#lookSettled();
+        };
+        // oxlint-disable-next-line ex-grid/no-catch -- every rejection is said: a refused write as a refusal, anything else rethrown
+        written.then(done, (error: unknown) => {
+            done();
+            if (this.#destroyed || copy.signal.aborted) return;
+            // By name, not by class: the error is the grid's window's, which need not be this realm's.
+            if (typeof error === 'object' && error !== null && Reflect.get(error, 'name') === 'NotAllowedError') {
+                this.#refuse({ kind: 'copy', reason: 'clipboardUnavailable' });
+                return;
+            }
+            throw error;
+        });
+    }
+
+    // A refused gesture is said in the live region and raised by name (ADR-0005, ADR-0203). It stands down
+    // a description of the Selection still owed, which would otherwise say over it, and a refusal said
+    // again is emptied first and said in the next frame: the same text written again is no change, and the
+    // second refusal is the one the user needs (A11Y-16).
+    #refuse(refusal: GridRefusal): void {
+        const words = copyRefusalWords[refusal.reason];
+        this.#announcedRanges = this.#held.selection.ranges;
+        this.#cancelAnnounce?.();
+        this.#cancelAnnounce = undefined;
+        if (this.#announce.textContent === words) {
+            this.#say('');
+            this.#showSettled(false);
+            this.#cancelAnnounce = this.#reports.nextFrame(this.#root, () => {
+                this.#cancelAnnounce = undefined;
+                if (this.#destroyed) return;
+                this.#say(words);
+                this.#lookSettled();
+            });
+        } else {
+            this.#say(words);
+        }
+        this.#onRefused?.(refusal);
+    }
 
     // DOM focus leaving the grid ends a release of Tab, as the C# core's key gate does (ADR-0080).
     readonly #onFocusLeft = (event: FocusEvent): void => {

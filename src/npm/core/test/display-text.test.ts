@@ -1,7 +1,7 @@
 // Layer 1: the text a value cell displays (tests/cases/cells, kind "displayText"), run against the Script
 // Core's textFor, which reads displayText where the column has no format.
 import { describe, expect, it } from 'vitest';
-import { displayText, textFor } from '../src/cells/display-text';
+import { displayText, rawText, textFor } from '../src/cells/display-text';
 import { caseFiles } from './cases';
 import { formatOf, value } from './query-values';
 
@@ -59,5 +59,20 @@ describe('displayText', () => {
 
     it('ADR-0006: a format that answers anything but text is refused, naming the column', () => {
         expect(() => textFor({ name: 'Amount', format: () => 3 as unknown as string }, 3)).toThrow("Column 'Amount''s format answered number");
+    });
+});
+
+describe('rawText', () => {
+    it('ADR-0005: the clipboard\'s raw form is locale-free and whole, in the forms the C# core writes', async () => {
+        const { Temporal } = await import('temporal-polyfill');
+        expect([rawText(null), rawText(undefined), rawText(true), rawText(false)]).toEqual(['', '', 'TRUE', 'FALSE']);
+        expect([rawText(1234567.891), rawText(-0.5), rawText(10n ** 20n), rawText('1,234')]).toEqual(['1234567.891', '-0.5', '100000000000000000000', '1,234']);
+        expect(rawText(Temporal.PlainDate.from('2026-03-04'))).toBe('2026-03-04');
+        expect(rawText(Temporal.PlainDateTime.from('2026-03-04T05:06:07.5'))).toBe('2026-03-04T05:06:07');
+        expect(rawText(Temporal.PlainTime.from('05:06:07'))).toBe('05:06:07');
+        expect(rawText(Temporal.ZonedDateTime.from('2026-03-04T05:06:07+09:00[Asia/Tokyo]'))).toBe('2026-03-04T05:06:07+09:00');
+        // An instant holds no offset of its own, and is written in UTC's.
+        expect(rawText(Temporal.Instant.from('2026-03-04T05:06:07Z'))).toBe('2026-03-04T05:06:07+00:00');
+        expect(rawText(new Date(Date.UTC(2026, 2, 4, 5, 6, 7)))).toBe('2026-03-04T05:06:07+00:00');
     });
 });

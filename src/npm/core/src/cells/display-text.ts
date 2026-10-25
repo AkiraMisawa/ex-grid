@@ -64,6 +64,27 @@ export function textFor<Row>(column: Pick<QueryColumn<Row>, 'name' | 'format'>, 
     return formatted;
 }
 
+/**
+ * The raw, locale-free text of a value, for the clipboard's `text/html` flavour (ADR-0005): what a spreadsheet
+ * reads back as the same value, never the displayed format, whose separators are a locale trap. Empty for a
+ * Blank, `TRUE` or `FALSE` for a boolean, a number's own shortest text in full precision, and a date in ISO
+ * form with a `T` between the day and the time, as the C# core writes them: `yyyy-MM-ddTHH:mm:ss` for a
+ * `Temporal.PlainDateTime`, with `±hh:mm` after it for a `Temporal.ZonedDateTime`, and `+00:00` for a
+ * `Temporal.Instant` or a `Date`, which hold no offset of their own. Anything else is its own text.
+ */
+export function rawText(value: unknown): string {
+    if (value === null || value === undefined) return '';
+    if (typeof value === 'boolean') return value ? 'TRUE' : 'FALSE';
+    if (typeof value !== 'object') return displayText(value);
+    switch (Object.prototype.toString.call(value)) {
+        case '[object Temporal.PlainDateTime]': return `${day(value)}T${time(value)}`;
+        case '[object Temporal.ZonedDateTime]': return `${day(value)}T${time(value)}${text(value, 'offset')}`;
+        case '[object Temporal.Instant]': return rawText(called(value, 'toZonedDateTimeISO', 'UTC'));
+        case '[object Date]': return displayText(value).replace(' ', 'T').replace(' ', '');
+        default: return displayText(value);
+    }
+}
+
 function day(value: object): string {
     const iso = isoDay(value);
     if (iso === undefined) throw new TypeError(`A value tagged ${tagOf(value)} does not hold the day its type names.`);
