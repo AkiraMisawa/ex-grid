@@ -271,6 +271,28 @@ function lineageOf(row: PivotReportRow): object | undefined {
 
 // ---- The report ---------------------------------------------------------------------------------
 
+function sameRows(mine: PivotReport, other: PivotReport, from: number, to: number): boolean {
+    for (let i = from; i < to; i++) {
+        const row = elementAt(mine.rows, i);
+        const theirs = elementAt(other.rows, i);
+        if (row.role !== theirs.role || row.valueField !== theirs.valueField || !samePath(rowNode(row), rowNode(theirs))) return false;
+    }
+    return true;
+}
+
+/** Whether the other report's rows stand, one for one, for what this one's do, compared a piece at a time. */
+export function* sameRowsSteps(mine: PivotReport, other: PivotReport | undefined): Generator<void, boolean> {
+    if (other === undefined || other.rows.length !== mine.rows.length) return false;
+    if (other === mine) return true;
+    // A row is worth a unit for each level its path is compared at.
+    const size = Math.max(1, Math.floor(pieceUnits / (mine.layout.rows.length + 1)));
+    for (let from = 0; from < mine.rows.length; from += size) {
+        if (from > 0) yield;
+        if (!sameRows(mine, other, from, Math.min(mine.rows.length, from + size))) return false;
+    }
+    return true;
+}
+
 let makeReport: (cube: PivotCube, layout: PivotLayout, options: ResolvedOptions, reader: CellReader, labelColumns: readonly PivotLabelColumn[],
     valueColumns: readonly PivotReportColumn[], headerSpans: readonly PivotHeaderSpan[], headerTierCount: number,
     rows: readonly PivotReportRow[], lineage: object) => PivotReport;
@@ -330,7 +352,7 @@ export class PivotReport {
     /** Whether the other report's rows stand, one for one, for what this one's do. */
     hasSameRowsAs(other: PivotReport | undefined): boolean {
         if (other === undefined || other.rows.length !== this.rows.length) return false;
-        return other === this || this.#sameRows(other, 0, this.rows.length);
+        return other === this || sameRows(this, other, 0, this.rows.length);
     }
 
     /**
@@ -340,27 +362,7 @@ export class PivotReport {
      */
     async hasSameRowsAsAsync(other: PivotReport | undefined, slicing?: PivotSlicing, signal?: AbortSignal): Promise<boolean> {
         const slicer = new Slicer(checkedSlicing(slicing), signal);
-        if (other === undefined || other.rows.length !== this.rows.length) return false;
-        return other === this || slicer.run(this.#sameRowsSteps(other));
-    }
-
-    *#sameRowsSteps(other: PivotReport): Generator<void, boolean> {
-        // A row is worth a unit for each level its path is compared at.
-        const size = Math.max(1, Math.floor(pieceUnits / (this.layout.rows.length + 1)));
-        for (let from = 0; from < this.rows.length; from += size) {
-            if (from > 0) yield;
-            if (!this.#sameRows(other, from, Math.min(this.rows.length, from + size))) return false;
-        }
-        return true;
-    }
-
-    #sameRows(other: PivotReport, from: number, to: number): boolean {
-        for (let i = from; i < to; i++) {
-            const mine = elementAt(this.rows, i);
-            const theirs = elementAt(other.rows, i);
-            if (mine.role !== theirs.role || mine.valueField !== theirs.valueField || !samePath(rowNode(mine), rowNode(theirs))) return false;
-        }
-        return true;
+        return slicer.run(sameRowsSteps(this, other));
     }
 
     /** The row's Items, outermost first, each with its field. */

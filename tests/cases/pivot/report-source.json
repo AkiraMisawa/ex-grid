@@ -1,0 +1,1922 @@
+{
+  "about": "A report source (ADR-0151, ADR-0152, ADR-0153, as ADR-0370 section 4 leaves them): Windows of the report a layout makes over a Pivot Source, under display settings, with the whole report's metadata; the cells a change of the data moved, marked; and the operations a Report Version names: Copy, the Selection Summary, a field's Items and the records behind a cell. Transcribed from ExPivot.Engine.Tests' ReportProtocolTests, DetailsQueryTests, ItemTests, ReportLabelMetricsTests and CancelledComputationTests.",
+  "kind": "pivotReportSource",
+  "locale": "invariant",
+  "words": "english",
+  "cases": [
+    {
+      "name": "ADR-0151: a Window holds the rows asked for, and the metadata the whole report's extent and exact values",
+      "data": "sales",
+      "asks": [
+        {
+          "window": [0, 1],
+          "layout": {"rows": [{"field": "Region"}], "values": [{"field": "Amount", "aggregation": "sum"}]},
+          "also": ["numbers"]
+        }
+      ],
+      "expect": [
+        {
+          "version": "v1",
+          "sourceVersion": "s1",
+          "rowSequence": "r1",
+          "rowCount": 5,
+          "headers": ["Row Labels", "Sum of Amount"],
+          "lines": ["i East || 180"],
+          "changeMarks": [],
+          "numbers": [{"labels": [null], "values": ["m180"]}]
+        }
+      ]
+    },
+    {
+      "name": "ADR-0151: a Window from its second row is the report's own rows, in the compact form with noCalculation and the values in columns",
+      "data": "sales",
+      "asks": [
+        {
+          "window": [1, 3],
+          "layout": {
+            "rows": [{"field": "Region"}, {"field": "Product"}],
+            "columns": [{"field": "Online"}],
+            "values": [
+              {"field": "Amount", "aggregation": "sum", "showValuesAs": "noCalculation"},
+              {"field": "Quantity", "aggregation": "countNumbers"}
+            ],
+            "form": "compact",
+            "valuesAxis": "columns",
+            "repeatItemLabels": true
+          },
+          "also": ["keys", "numbers", "columns", "spans", "captions", "tiers"]
+        }
+      ],
+      "expect": [
+        {
+          "version": "v1",
+          "sourceVersion": "s1",
+          "rowSequence": "r1",
+          "rowCount": 11,
+          "headers": [
+            "Row Labels",
+            "Sum of Amount",
+            "Count of Quantity",
+            "Sum of Amount",
+            "Count of Quantity",
+            "Sum of Amount",
+            "Count of Quantity"
+          ],
+          "lines": [
+            "i   Apples ||  |  | 130 | 2 | 130 | 2",
+            "i   Pears || 50 | 1 |  |  | 50 | 1",
+            "g [-]North || 10 | 1 |  |  | 10 | 1"
+          ],
+          "changeMarks": [],
+          "keys": [
+            {
+              "role": "item",
+              "valueField": -1,
+              "items": [{"kind": "text", "value": "East"}, {"kind": "text", "value": "Apples"}]
+            },
+            {
+              "role": "item",
+              "valueField": -1,
+              "items": [{"kind": "text", "value": "East"}, {"kind": "text", "value": "Pears"}]
+            },
+            {"role": "group", "valueField": -1, "items": [{"kind": "text", "value": "North"}]}
+          ],
+          "numbers": [
+            {"labels": [null], "values": [null, null, "m130", "m2", "m130", "m2"]},
+            {"labels": [null], "values": ["m50", "m1", null, null, "m50", "m1"]},
+            {"labels": [null], "values": ["m10", "m1", null, null, "m10", "m1"]}
+          ],
+          "columns": [
+            {
+              "name": "v:i/3:FALSE#Sum%20of%20Amount",
+              "role": "item",
+              "valueField": 0,
+              "path": ["Online={\"kind\":\"boolean\",\"value\":\"FALSE\"}"]
+            },
+            {
+              "name": "v:i/3:FALSE#Count%20of%20Quantity",
+              "role": "item",
+              "valueField": 1,
+              "path": ["Online={\"kind\":\"boolean\",\"value\":\"FALSE\"}"]
+            },
+            {
+              "name": "v:i/3:TRUE#Sum%20of%20Amount",
+              "role": "item",
+              "valueField": 0,
+              "path": ["Online={\"kind\":\"boolean\",\"value\":\"TRUE\"}"]
+            },
+            {
+              "name": "v:i/3:TRUE#Count%20of%20Quantity",
+              "role": "item",
+              "valueField": 1,
+              "path": ["Online={\"kind\":\"boolean\",\"value\":\"TRUE\"}"]
+            },
+            {"name": "v:g#Sum%20of%20Amount", "role": "grandTotal", "valueField": 0, "path": []},
+            {"name": "v:g#Count%20of%20Quantity", "role": "grandTotal", "valueField": 1, "path": []}
+          ],
+          "spans": ["FALSE@0+2 t1x1", "TRUE@2+2 t1x1", "Grand Total@4+2 t1x1"],
+          "captions": ["Sum of Amount", "Count of Quantity"],
+          "tiers": 1
+        }
+      ]
+    },
+    {
+      "name": "ADR-0151: a Window from its second row is the report's own rows, in the outline form with percentOfGrandTotal and the values in rows",
+      "data": "sales",
+      "asks": [
+        {
+          "window": [1, 3],
+          "layout": {
+            "rows": [{"field": "Region"}, {"field": "Product"}],
+            "columns": [{"field": "Online"}],
+            "values": [
+              {"field": "Amount", "aggregation": "sum", "showValuesAs": "percentOfGrandTotal"},
+              {"field": "Quantity", "aggregation": "countNumbers"}
+            ],
+            "form": "outline",
+            "valuesAxis": "rows",
+            "repeatItemLabels": true
+          },
+          "also": ["keys", "numbers", "columns", "spans", "captions", "tiers"]
+        }
+      ],
+      "expect": [
+        {
+          "version": "v1",
+          "sourceVersion": "s1",
+          "rowSequence": "r1",
+          "rowCount": 32,
+          "headers": ["Region", "Product", "Values", "FALSE", "TRUE", "Grand Total"],
+          "lines": [
+            "g East | Apples |  ||  |  |",
+            "i East | Apples | Sum of Amount ||  | 45.61% | 45.61%",
+            "i East | Apples | Count of Quantity ||  | 2 | 2"
+          ],
+          "changeMarks": [],
+          "keys": [
+            {
+              "role": "group",
+              "valueField": -1,
+              "items": [{"kind": "text", "value": "East"}, {"kind": "text", "value": "Apples"}]
+            },
+            {
+              "role": "item",
+              "valueField": 0,
+              "items": [{"kind": "text", "value": "East"}, {"kind": "text", "value": "Apples"}]
+            },
+            {
+              "role": "item",
+              "valueField": 1,
+              "items": [{"kind": "text", "value": "East"}, {"kind": "text", "value": "Apples"}]
+            }
+          ],
+          "numbers": [
+            {"labels": [null, null, null], "values": [null, null, null]},
+            {"labels": [null, null, null], "values": [null, "d0.45614035087719296", "d0.45614035087719296"]},
+            {"labels": [null, null, null], "values": [null, "m2", "m2"]}
+          ],
+          "columns": [
+            {
+              "name": "v:i/3:FALSE",
+              "role": "item",
+              "valueField": -1,
+              "path": ["Online={\"kind\":\"boolean\",\"value\":\"FALSE\"}"]
+            },
+            {
+              "name": "v:i/3:TRUE",
+              "role": "item",
+              "valueField": -1,
+              "path": ["Online={\"kind\":\"boolean\",\"value\":\"TRUE\"}"]
+            },
+            {"name": "v:g", "role": "grandTotal", "valueField": -1, "path": []}
+          ],
+          "spans": [],
+          "captions": ["Sum of Amount", "Count of Quantity"],
+          "tiers": 0
+        }
+      ]
+    },
+    {
+      "name": "ADR-0151: a Window from its second row is the report's own rows, in the tabular form with percentOfColumnTotal and the values in columns",
+      "data": "sales",
+      "asks": [
+        {
+          "window": [1, 3],
+          "layout": {
+            "rows": [{"field": "Region"}, {"field": "Product"}],
+            "columns": [{"field": "Online"}],
+            "values": [
+              {"field": "Amount", "aggregation": "sum", "showValuesAs": "percentOfColumnTotal"},
+              {"field": "Quantity", "aggregation": "countNumbers"}
+            ],
+            "form": "tabular",
+            "valuesAxis": "columns",
+            "repeatItemLabels": true
+          },
+          "also": ["keys", "numbers", "columns", "spans", "captions", "tiers"]
+        }
+      ],
+      "expect": [
+        {
+          "version": "v1",
+          "sourceVersion": "s1",
+          "rowSequence": "r1",
+          "rowCount": 11,
+          "headers": [
+            "Region",
+            "Product",
+            "Sum of Amount",
+            "Count of Quantity",
+            "Sum of Amount",
+            "Count of Quantity",
+            "Sum of Amount",
+            "Count of Quantity"
+          ],
+          "lines": [
+            "i East | Pears || 38.46% | 1 |  |  | 17.54% | 1",
+            "s East Total |  || 38.46% | 1 | 83.87% | 2 | 63.16% | 3",
+            "i [-]North | Pears || 7.69% | 1 |  |  | 3.51% | 1"
+          ],
+          "changeMarks": [],
+          "keys": [
+            {
+              "role": "item",
+              "valueField": -1,
+              "items": [{"kind": "text", "value": "East"}, {"kind": "text", "value": "Pears"}]
+            },
+            {"role": "subtotal", "valueField": -1, "items": [{"kind": "text", "value": "East"}]},
+            {
+              "role": "item",
+              "valueField": -1,
+              "items": [{"kind": "text", "value": "North"}, {"kind": "text", "value": "Pears"}]
+            }
+          ],
+          "numbers": [
+            {"labels": [null, null], "values": ["d0.38461538461538464", "m1", null, null, "d0.17543859649122806", "m1"]},
+            {
+              "labels": [null, null],
+              "values": ["d0.38461538461538464", "m1", "d0.8387096774193549", "m2", "d0.631578947368421", "m3"]
+            },
+            {"labels": [null, null], "values": ["d0.07692307692307693", "m1", null, null, "d0.03508771929824561", "m1"]}
+          ],
+          "columns": [
+            {
+              "name": "v:i/3:FALSE#Sum%20of%20Amount",
+              "role": "item",
+              "valueField": 0,
+              "path": ["Online={\"kind\":\"boolean\",\"value\":\"FALSE\"}"]
+            },
+            {
+              "name": "v:i/3:FALSE#Count%20of%20Quantity",
+              "role": "item",
+              "valueField": 1,
+              "path": ["Online={\"kind\":\"boolean\",\"value\":\"FALSE\"}"]
+            },
+            {
+              "name": "v:i/3:TRUE#Sum%20of%20Amount",
+              "role": "item",
+              "valueField": 0,
+              "path": ["Online={\"kind\":\"boolean\",\"value\":\"TRUE\"}"]
+            },
+            {
+              "name": "v:i/3:TRUE#Count%20of%20Quantity",
+              "role": "item",
+              "valueField": 1,
+              "path": ["Online={\"kind\":\"boolean\",\"value\":\"TRUE\"}"]
+            },
+            {"name": "v:g#Sum%20of%20Amount", "role": "grandTotal", "valueField": 0, "path": []},
+            {"name": "v:g#Count%20of%20Quantity", "role": "grandTotal", "valueField": 1, "path": []}
+          ],
+          "spans": ["FALSE@0+2 t1x1", "TRUE@2+2 t1x1", "Grand Total@4+2 t1x1"],
+          "captions": ["Sum of Amount", "Count of Quantity"],
+          "tiers": 1
+        }
+      ]
+    },
+    {
+      "name": "ADR-0151: a Window from its second row is the report's own rows, in the tabular form with percentOfRowTotal and the values in rows",
+      "data": "sales",
+      "asks": [
+        {
+          "window": [1, 3],
+          "layout": {
+            "rows": [{"field": "Region"}, {"field": "Product"}],
+            "columns": [{"field": "Online"}],
+            "values": [
+              {"field": "Amount", "aggregation": "sum", "showValuesAs": "percentOfRowTotal"},
+              {"field": "Quantity", "aggregation": "countNumbers"}
+            ],
+            "form": "tabular",
+            "valuesAxis": "rows",
+            "repeatItemLabels": true
+          },
+          "also": ["keys", "numbers", "columns", "spans", "captions", "tiers"]
+        }
+      ],
+      "expect": [
+        {
+          "version": "v1",
+          "sourceVersion": "s1",
+          "rowSequence": "r1",
+          "rowCount": 22,
+          "headers": ["Region", "Product", "Values", "FALSE", "TRUE", "Grand Total"],
+          "lines": [
+            "i East | Apples | Count of Quantity ||  | 2 | 2",
+            "i East | Pears | Sum of Amount || 100.00% |  | 100.00%",
+            "i East | Pears | Count of Quantity || 1 |  | 1"
+          ],
+          "changeMarks": [],
+          "keys": [
+            {
+              "role": "item",
+              "valueField": 1,
+              "items": [{"kind": "text", "value": "East"}, {"kind": "text", "value": "Apples"}]
+            },
+            {
+              "role": "item",
+              "valueField": 0,
+              "items": [{"kind": "text", "value": "East"}, {"kind": "text", "value": "Pears"}]
+            },
+            {
+              "role": "item",
+              "valueField": 1,
+              "items": [{"kind": "text", "value": "East"}, {"kind": "text", "value": "Pears"}]
+            }
+          ],
+          "numbers": [
+            {"labels": [null, null, null], "values": [null, "m2", "m2"]},
+            {"labels": [null, null, null], "values": ["d1", null, "d1"]},
+            {"labels": [null, null, null], "values": ["m1", null, "m1"]}
+          ],
+          "columns": [
+            {
+              "name": "v:i/3:FALSE",
+              "role": "item",
+              "valueField": -1,
+              "path": ["Online={\"kind\":\"boolean\",\"value\":\"FALSE\"}"]
+            },
+            {
+              "name": "v:i/3:TRUE",
+              "role": "item",
+              "valueField": -1,
+              "path": ["Online={\"kind\":\"boolean\",\"value\":\"TRUE\"}"]
+            },
+            {"name": "v:g", "role": "grandTotal", "valueField": -1, "path": []}
+          ],
+          "spans": [],
+          "captions": ["Sum of Amount", "Count of Quantity"],
+          "tiers": 0
+        }
+      ]
+    },
+    {
+      "name": "ADR-0152: a change off the Window makes a new Report Version and Source Version under the same row sequence; Copy and the Summary answer the version they name, an evicted one is refused, and the records behind a cell answer its Source Version",
+      "data": "entries",
+      "rows": [[1, "A", {"decimal": "10"}], [2, "B", {"decimal": "20"}]],
+      "asks": [
+        {
+          "window": [0, 1],
+          "layout": {"rows": [{"field": "Label"}], "values": [{"field": "Amount", "aggregation": "sum", "numberFormat": "0"}]}
+        },
+        {"apply": {"changed": [[2, "B", {"decimal": "30"}]]}},
+        {"window": [0, 1]},
+        {"copy": {"version": "v1", "columns": [1], "ranges": [[1, 0, 1, 0]]}},
+        {"copy": {"version": "v2", "columns": [1], "ranges": [[1, 0, 1, 0]]}},
+        {"summary": {"version": "v2", "columns": [1], "ranges": [[0, 0, 1, 0], [1, 0, 2, 0]]}},
+        {"apply": {"changed": [[2, "B", {"decimal": "40"}]]}},
+        {"window": [0, 1]},
+        {"copy": {"version": "v1", "columns": [1], "ranges": [[1, 0, 1, 0]]}},
+        {"details": {"version": "v1", "row": 0, "column": 0}}
+      ],
+      "expect": [
+        {
+          "version": "v1",
+          "sourceVersion": "s1",
+          "rowSequence": "r1",
+          "rowCount": 3,
+          "headers": ["Row Labels", "Sum of Amount"],
+          "lines": ["i A || 10"],
+          "changeMarks": []
+        },
+        {"applied": "s2"},
+        {
+          "version": "v2",
+          "sourceVersion": "s2",
+          "rowSequence": "r1",
+          "rowCount": 3,
+          "headers": ["Row Labels", "Sum of Amount"],
+          "lines": ["i A || 10"],
+          "changeMarks": ["v2"]
+        },
+        {"version": "v1", "blocks": [{"headers": ["Sum of Amount"], "rows": [[["20", "20", true]]]}]},
+        {"version": "v2", "blocks": [{"headers": ["Sum of Amount"], "rows": [[["30", "30", true]]]}]},
+        {
+          "version": "v2",
+          "values": 3,
+          "numbers": 3,
+          "sum": "m80",
+          "min": "m10",
+          "max": "m40",
+          "hasError": false,
+          "locale": "invariant"
+        },
+        {"applied": "s3"},
+        {
+          "version": "v3",
+          "sourceVersion": "s3",
+          "rowSequence": "r1",
+          "rowCount": 3,
+          "headers": ["Row Labels", "Sum of Amount"],
+          "lines": ["i A || 10"],
+          "changeMarks": ["v3", "v2"]
+        },
+        {"refused": "reportVersionNotHeld", "saying": "Report Version 'v1' is no longer held."},
+        {
+          "sourceVersion": "s1",
+          "start": 0,
+          "total": 1,
+          "fields": ["Id", "Label", "Amount"],
+          "records": [[{"decimal": "1"}, "A", {"decimal": "10"}]]
+        }
+      ]
+    },
+    {
+      "name": "ADR-0152: the settings' locale and words lay the report out, a registered Order Key policy orders its rows and Items, and a policy not registered is refused naming the field",
+      "data": "entries",
+      "rows": [[1, "A", {"decimal": "1.25"}], [2, "BB", {"decimal": "2"}]],
+      "orderKeys": {"long-first": "longFirst"},
+      "asks": [
+        {
+          "window": [0, 3],
+          "layout": {"rows": [{"field": "Label"}], "values": [{"field": "Amount", "aggregation": "sum", "numberFormat": "0.00"}]},
+          "settings": {"locale": "de-DE", "words": {"grand-total": "My Total"}, "orderKeyPolicies": {"Label": "long-first"}}
+        },
+        {"reportItems": {"version": "v1", "field": "Label"}},
+        {
+          "window": [0, 3],
+          "settings": {"locale": "de-DE", "words": {"grand-total": "My Total"}, "orderKeyPolicies": {"Label": "missing"}}
+        },
+        {"window": [0, 3], "settings": {"orderKeyPolicies": {"Nothing": "long-first"}}}
+      ],
+      "expect": [
+        {
+          "version": "v1",
+          "sourceVersion": "s1",
+          "rowSequence": "r1",
+          "rowCount": 3,
+          "headers": ["Row Labels", "Sum of Amount"],
+          "lines": ["i BB || 2,00", "i A || 1,25", "t My Total || 3,25"],
+          "changeMarks": []
+        },
+        {
+          "version": "v1",
+          "sourceVersion": "s1",
+          "total": 2,
+          "items": [
+            {"key": {"kind": "text", "value": "BB"}, "label": "BB", "isHidden": false},
+            {"key": {"kind": "text", "value": "A"}, "label": "A", "isHidden": false}
+          ]
+        },
+        {
+          "refused": "unknownOrderKeyPolicy",
+          "field": "Label",
+          "saying": "The Order Key policy 'missing' for 'Label' is not registered."
+        },
+        {
+          "refused": "unknownOrderKeyPolicy",
+          "field": "Nothing",
+          "saying": "The Order Key policy names unknown field 'Nothing'."
+        }
+      ]
+    },
+    {
+      "name": "ADR-0152, ADR-0060 (LV-26): a registered Order Key that throws is refused by name, naming the field and the Item; with that Item hidden the report is answered, and Filter's Items are refused by name",
+      "data": "entries",
+      "rows": [[1, "A", {"decimal": "1"}], [2, "BB", {"decimal": "2"}], [3, "C", {"decimal": "3"}]],
+      "orderKeys": {"picky": "throwsOnBB"},
+      "settings": {"orderKeyPolicies": {"Label": "picky"}},
+      "asks": [
+        {
+          "window": [0, 10],
+          "layout": {"rows": [{"field": "Label"}], "values": [{"field": "Amount", "aggregation": "sum", "numberFormat": "0"}]}
+        },
+        {
+          "window": [0, 10],
+          "layout": {
+            "rows": [{"field": "Label", "hiddenItems": [{"kind": "text", "value": "BB"}]}],
+            "values": [{"field": "Amount", "aggregation": "sum", "numberFormat": "0"}]
+          }
+        },
+        {"reportItems": {"version": "v1", "field": "Label"}}
+      ],
+      "expect": [
+        {"refused": "orderKeyFailed", "field": "Label", "saying": "The Order Key of Label failed on 'BB'."},
+        {
+          "version": "v1",
+          "sourceVersion": "s1",
+          "rowSequence": "r1",
+          "rowCount": 3,
+          "headers": ["Row Labels", "Sum of Amount"],
+          "lines": ["i A || 1", "i C || 3", "t Grand Total || 4"],
+          "changeMarks": []
+        },
+        {"refused": "orderKeyFailed", "field": "Label", "saying": "The Order Key of Label failed on 'BB'."}
+      ]
+    },
+    {
+      "name": "ADR-0152 (spine 1): a request under another Order Key policy that the Pivot Source refuses leaves the next request under the old settings ordered as they say",
+      "data": "entries",
+      "rows": [[1, "A", {"decimal": "1"}], [2, "BB", {"decimal": "2"}]],
+      "orderKeys": {"long-first": "longFirst"},
+      "asks": [
+        {
+          "window": [0, 10],
+          "layout": {"rows": [{"field": "Label"}], "values": [{"field": "Amount", "aggregation": "sum", "numberFormat": "0"}]}
+        },
+        {"window": [0, 10], "settings": {"orderKeyPolicies": {"Label": "long-first"}}, "maxLeaves": 1},
+        {"window": [0, 10], "settings": {}}
+      ],
+      "expect": [
+        {
+          "version": "v1",
+          "sourceVersion": "s1",
+          "rowSequence": "r1",
+          "rowCount": 3,
+          "headers": ["Row Labels", "Sum of Amount"],
+          "lines": ["i A || 1", "i BB || 2", "t Grand Total || 3"],
+          "changeMarks": []
+        },
+        {"refused": "sourceRefused", "saying": "This layout needs more than 1 cells."},
+        {
+          "version": "v2",
+          "sourceVersion": "s1",
+          "rowSequence": "r1",
+          "rowCount": 3,
+          "headers": ["Row Labels", "Sum of Amount"],
+          "lines": ["i A || 1", "i BB || 2", "t Grand Total || 3"],
+          "changeMarks": []
+        }
+      ]
+    },
+    {
+      "name": "ADR-0153: a parent Item's new spelling reaches its child's path, and the child's labels stay as they were",
+      "data": {
+        "snapshot": {
+          "recordKey": "Id",
+          "columns": [
+            {"name": "Id", "kind": "integer"},
+            {"name": "Label", "kind": "text"},
+            {"name": "Child", "kind": "text"},
+            {"name": "Amount", "kind": "decimal"}
+          ]
+        },
+        "rows": [[1, "Parent", "child", {"decimal": "1"}]]
+      },
+      "asks": [
+        {
+          "window": [0, 10],
+          "layout": {
+            "rows": [{"field": "Label"}, {"field": "Child"}],
+            "values": [{"field": "Amount", "aggregation": "sum", "numberFormat": "0"}]
+          },
+          "also": ["paths"]
+        },
+        {"apply": {"changed": [[1, "PARENT", "child", {"decimal": "1"}]]}},
+        {"window": [0, 10], "also": ["paths"]}
+      ],
+      "expect": [
+        {
+          "version": "v1",
+          "sourceVersion": "s1",
+          "rowSequence": "r1",
+          "rowCount": 3,
+          "headers": ["Row Labels", "Sum of Amount"],
+          "lines": ["g [-]Parent || 1", "i   child || 1", "t Grand Total || 1"],
+          "changeMarks": [],
+          "paths": [
+            ["Label={\"kind\":\"text\",\"value\":\"Parent\"}"],
+            ["Label={\"kind\":\"text\",\"value\":\"Parent\"}", "Child={\"kind\":\"text\",\"value\":\"child\"}"],
+            []
+          ]
+        },
+        {"applied": "s2"},
+        {
+          "version": "v2",
+          "sourceVersion": "s2",
+          "rowSequence": "r1",
+          "rowCount": 3,
+          "headers": ["Row Labels", "Sum of Amount"],
+          "lines": ["g [-]PARENT || 1", "i   child || 1", "t Grand Total || 1"],
+          "changeMarks": ["v2"],
+          "paths": [
+            ["Label={\"kind\":\"text\",\"value\":\"PARENT\"}"],
+            ["Label={\"kind\":\"text\",\"value\":\"PARENT\"}", "Child={\"kind\":\"text\",\"value\":\"child\"}"],
+            []
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ADR-0153: a change the number format hides moves the value and marks nothing",
+      "data": "entries",
+      "rows": [[1, "A", {"decimal": "1.1"}]],
+      "asks": [
+        {
+          "window": [0, 1],
+          "layout": {"rows": [{"field": "Label"}], "values": [{"field": "Amount", "aggregation": "sum", "numberFormat": "0"}]},
+          "also": ["numbers"]
+        },
+        {"apply": {"changed": [[1, "A", {"decimal": "1.2"}]]}},
+        {"window": [0, 1], "also": ["numbers"]}
+      ],
+      "expect": [
+        {
+          "version": "v1",
+          "sourceVersion": "s1",
+          "rowSequence": "r1",
+          "rowCount": 2,
+          "headers": ["Row Labels", "Sum of Amount"],
+          "lines": ["i A || 1"],
+          "changeMarks": [],
+          "numbers": [{"labels": [null], "values": ["m1.1"]}]
+        },
+        {"applied": "s2"},
+        {
+          "version": "v2",
+          "sourceVersion": "s2",
+          "rowSequence": "r1",
+          "rowCount": 2,
+          "headers": ["Row Labels", "Sum of Amount"],
+          "lines": ["i A || 1"],
+          "changeMarks": ["v2"],
+          "numbers": [{"labels": [null], "values": ["m1.2"]}]
+        }
+      ]
+    },
+    {
+      "name": "ADR-0152: Copy, the Summary, a field's Items and the records behind a cell answer a held Report Version exactly, its decimals as decimals",
+      "data": "sales",
+      "asks": [
+        {
+          "window": [0, 1],
+          "layout": {"rows": [{"field": "Region"}], "values": [{"field": "Amount", "aggregation": "sum"}]}
+        },
+        {"copy": {"version": "v1", "columns": [1], "ranges": [[1, 0, 3, 0]]}},
+        {"summary": {"version": "v1", "columns": [1], "ranges": [[1, 0, 3, 0]]}},
+        {"details": {"version": "v1", "row": 0, "column": 0, "start": 0, "count": 10}},
+        {"reportItems": {"version": "v1", "field": "Region"}},
+        {"reportItems": {"version": "v1", "field": "Region", "search": "e", "max": 1}}
+      ],
+      "expect": [
+        {
+          "version": "v1",
+          "sourceVersion": "s1",
+          "rowSequence": "r1",
+          "rowCount": 5,
+          "headers": ["Row Labels", "Sum of Amount"],
+          "lines": ["i East || 180"],
+          "changeMarks": []
+        },
+        {
+          "version": "v1",
+          "blocks": [{"headers": ["Sum of Amount"], "rows": [[["10", "10", true]], [["90", "90", true]], [["5", "5", true]]]}]
+        },
+        {
+          "version": "v1",
+          "values": 3,
+          "numbers": 3,
+          "sum": "m105",
+          "min": "m5",
+          "max": "m90",
+          "hasError": false,
+          "locale": "invariant"
+        },
+        {
+          "sourceVersion": "s1",
+          "start": 0,
+          "total": 3,
+          "fields": ["Region", "Product", "Date", "Amount", "Quantity", "Online"],
+          "records": [
+            ["East", "Apples", {"date": "2026-01-10"}, {"decimal": "100"}, {"decimal": "10"}, true],
+            ["East", "Pears", {"date": "2026-01-12"}, {"decimal": "50"}, {"decimal": "5"}, false],
+            ["East", "Apples", {"date": "2026-02-03"}, {"decimal": "30"}, {"decimal": "3"}, true]
+          ]
+        },
+        {
+          "version": "v1",
+          "sourceVersion": "s1",
+          "total": 4,
+          "items": [
+            {"key": {"kind": "text", "value": "East"}, "label": "East", "isHidden": false},
+            {"key": {"kind": "text", "value": "North"}, "label": "North", "isHidden": false},
+            {"key": {"kind": "text", "value": "West"}, "label": "West", "isHidden": false},
+            {"key": {"kind": "blank"}, "label": "(blank)", "isHidden": false}
+          ]
+        },
+        {
+          "version": "v1",
+          "sourceVersion": "s1",
+          "total": 2,
+          "items": [{"key": {"kind": "text", "value": "East"}, "label": "East", "isHidden": false}]
+        }
+      ]
+    },
+    {
+      "name": "ADR-0130: the Selection Summary counts a cell under two rectangles once, counts labels as values, leaves an error out of the numbers, and is shown in the Focus value's format",
+      "data": "sales",
+      "asks": [
+        {
+          "window": [0, 10],
+          "layout": {
+            "rows": [{"field": "Region"}],
+            "values": [
+              {"field": "Amount", "aggregation": "sum", "numberFormat": "#,##0.0"},
+              {"field": "Amount", "aggregation": "sum", "showValuesAs": "percentOfGrandTotal"},
+              {"field": "Amount", "aggregation": "average"},
+              {"field": "Region", "aggregation": "min"}
+            ]
+          }
+        },
+        {"summary": {"version": "v1", "columns": [0, 1, 2], "ranges": [[0, 0, 2, 1], [1, 1, 3, 2]], "focus": [1, 1]}},
+        {"summary": {"version": "v1", "columns": [0, 1, 2], "ranges": [[0, 2, 4, 2]], "focus": [0, 2]}},
+        {"summary": {"version": "v1", "columns": [0, 3, 4], "ranges": [[0, 1, 4, 2]], "focus": [0, 1]}},
+        {"summary": {"version": "v1", "columns": [0, 1], "ranges": [[0, 0, 0, 0]], "focus": [0, 0]}}
+      ],
+      "expect": [
+        {
+          "version": "v1",
+          "sourceVersion": "s1",
+          "rowSequence": "r1",
+          "rowCount": 5,
+          "headers": ["Row Labels", "Sum of Amount", "Sum of Amount2", "Average of Amount", "Min of Region"],
+          "lines": [
+            "i East || 180.0 | 63.16% | 60 | 0",
+            "i North || 10.0 | 3.51% | 10 | 0",
+            "i West || 90.0 | 31.58% | 45 | 0",
+            "i (blank) || 5.0 | 1.75% | 5 |",
+            "t Grand Total || 285.0 | 100.00% | 40.71428571 | 0"
+          ],
+          "changeMarks": []
+        },
+        {
+          "version": "v1",
+          "values": 10,
+          "numbers": 7,
+          "sum": "d285.36842105263156",
+          "min": "d0.017543859649122806",
+          "max": "d180",
+          "hasError": false,
+          "numberFormat": "#,##0.0",
+          "locale": "invariant"
+        },
+        {
+          "version": "v1",
+          "values": 5,
+          "numbers": 5,
+          "sum": "d2",
+          "min": "d0.017543859649122806",
+          "max": "d1",
+          "hasError": false,
+          "numberFormat": "0.00%",
+          "locale": "invariant"
+        },
+        {
+          "version": "v1",
+          "values": 9,
+          "numbers": 9,
+          "sum": "m160.71428571428571428571428571",
+          "min": "m0",
+          "max": "m60",
+          "hasError": false,
+          "numberFormat": "G15",
+          "locale": "invariant"
+        },
+        {"version": "v1", "values": 1, "numbers": 0, "hasError": false, "locale": "invariant"}
+      ]
+    },
+    {
+      "name": "ADR-0152: a selection outside the report, naming a column twice or not the report's, or past the copy's cap is refused by name, never cut short",
+      "data": "sales",
+      "asks": [
+        {
+          "window": [0, 10],
+          "layout": {"rows": [{"field": "Region"}], "values": [{"field": "Amount", "aggregation": "sum"}]}
+        },
+        {"copy": {"version": "v1", "columns": [0, 1], "ranges": [[0, 0, 5, 1]]}},
+        {"copy": {"version": "v1", "columns": [0, 0], "ranges": [[0, 0, 1, 1]]}},
+        {"copy": {"version": "v1", "columns": ["nothing"], "ranges": [[0, 0, 0, 0]]}},
+        {"copy": {"version": "v1", "columns": [0, 1], "ranges": [[0, 0, 4, 1]], "maxCells": 9}},
+        {"copy": {"version": "v1", "columns": [0, 1], "ranges": [[0, 0, 4, 1], [0, 0, 0, 0]], "maxCells": 10}},
+        {"summary": {"version": "v1", "columns": [1], "ranges": [[2, 0, 1, 0]]}},
+        {"summary": {"version": "stale", "columns": [1], "ranges": [[0, 0, 0, 0]]}},
+        {"reportItems": {"version": "v1", "field": "Nothing"}},
+        {"window": [-1, 10]}
+      ],
+      "expect": [
+        {
+          "version": "v1",
+          "sourceVersion": "s1",
+          "rowSequence": "r1",
+          "rowCount": 5,
+          "headers": ["Row Labels", "Sum of Amount"],
+          "lines": ["i East || 180", "i North || 10", "i West || 90", "i (blank) || 5", "t Grand Total || 285"],
+          "changeMarks": []
+        },
+        {"refused": "invalidRequest", "saying": "The selection is outside the requested report."},
+        {"refused": "invalidRequest", "saying": "The selection names an unknown or repeated column."},
+        {"refused": "invalidRequest", "saying": "The selection names an unknown or repeated column."},
+        {"refused": "invalidRequest", "saying": "Copy exceeds the limit of 9 cells."},
+        {"refused": "invalidRequest", "saying": "Copy exceeds the limit of 10 cells."},
+        {"refused": "invalidRequest", "saying": "The selection is outside the requested report."},
+        {"refused": "reportVersionNotHeld", "saying": "Report Version 'stale' is no longer held."},
+        {"refused": "invalidRequest", "saying": "Items needs a declared field and nonnegative cap."},
+        {"refused": "invalidRequest", "saying": "The report Window is negative."}
+      ]
+    },
+    {
+      "name": "ADR-0153, ADR-0068: a change marks the cells whose text it moved with its version, a row first asked for later carries its mark, and a mark leaves the list once its highlight has ended while the cell keeps it",
+      "data": "entries",
+      "rows": [[1, "A", {"decimal": "10"}], [2, "B", {"decimal": "20"}]],
+      "asks": [
+        {
+          "window": [0, 1],
+          "layout": {"rows": [{"field": "Label"}], "values": [{"field": "Amount", "aggregation": "sum", "numberFormat": "0"}]}
+        },
+        {"advance": 100},
+        {"apply": {"changed": [[2, "B", {"decimal": "25"}]]}},
+        {"window": [0, 1]},
+        {"advance": 100},
+        {"apply": {"changed": [[1, "A", {"decimal": "11"}]]}},
+        {"window": [0, 1]},
+        {"window": [1, 1]},
+        {"window": [0, 3]},
+        {"advance": 1000},
+        {"window": [0, 3]},
+        {"apply": {"changed": [[1, "A", {"decimal": "12"}]]}},
+        {"window": [0, 3]}
+      ],
+      "expect": [
+        {
+          "version": "v1",
+          "sourceVersion": "s1",
+          "rowSequence": "r1",
+          "rowCount": 3,
+          "headers": ["Row Labels", "Sum of Amount"],
+          "lines": ["i A || 10"],
+          "changeMarks": []
+        },
+        {"advanced": 100},
+        {"applied": "s2"},
+        {
+          "version": "v2",
+          "sourceVersion": "s2",
+          "rowSequence": "r1",
+          "rowCount": 3,
+          "headers": ["Row Labels", "Sum of Amount"],
+          "lines": ["i A || 10"],
+          "changeMarks": ["v2"]
+        },
+        {"advanced": 100},
+        {"applied": "s3"},
+        {
+          "version": "v3",
+          "sourceVersion": "s3",
+          "rowSequence": "r1",
+          "rowCount": 3,
+          "headers": ["Row Labels", "Sum of Amount"],
+          "lines": ["i A || 11"],
+          "changeMarks": ["v3", "v2"],
+          "changed": [["v3"]]
+        },
+        {
+          "version": "v3",
+          "sourceVersion": "s3",
+          "rowSequence": "r1",
+          "rowCount": 3,
+          "headers": ["Row Labels", "Sum of Amount"],
+          "lines": ["i B || 25"],
+          "changeMarks": ["v3", "v2"],
+          "changed": [["v2"]]
+        },
+        {
+          "version": "v3",
+          "sourceVersion": "s3",
+          "rowSequence": "r1",
+          "rowCount": 3,
+          "headers": ["Row Labels", "Sum of Amount"],
+          "lines": ["i A || 11", "i B || 25", "t Grand Total || 36"],
+          "changeMarks": ["v3", "v2"],
+          "changed": [["v3"], ["v2"], ["v3"]]
+        },
+        {"advanced": 1000},
+        {
+          "version": "v3",
+          "sourceVersion": "s3",
+          "rowSequence": "r1",
+          "rowCount": 3,
+          "headers": ["Row Labels", "Sum of Amount"],
+          "lines": ["i A || 11", "i B || 25", "t Grand Total || 36"],
+          "changeMarks": ["v3", "v2"],
+          "changed": [["v3"], ["v2"], ["v3"]]
+        },
+        {"applied": "s4"},
+        {
+          "version": "v4",
+          "sourceVersion": "s4",
+          "rowSequence": "r1",
+          "rowCount": 3,
+          "headers": ["Row Labels", "Sum of Amount"],
+          "lines": ["i A || 12", "i B || 25", "t Grand Total || 37"],
+          "changeMarks": ["v4"],
+          "changed": [["v4"], ["v2"], ["v4"]]
+        }
+      ]
+    },
+    {
+      "name": "ADR-0153, ADR-0068: a change marks nothing under a layout gesture or new settings, and a highlight of no duration lists the newest change alone",
+      "data": "entries",
+      "rows": [[1, "A", {"decimal": "10"}], [2, "B", {"decimal": "20"}]],
+      "asks": [
+        {
+          "window": [0, 3],
+          "layout": {"rows": [{"field": "Label"}], "values": [{"field": "Amount", "aggregation": "sum", "numberFormat": "0"}]},
+          "settings": {"changeHighlightMs": 0}
+        },
+        {"apply": {"changed": [[2, "B", {"decimal": "25"}]]}},
+        {"window": [0, 3]},
+        {"apply": {"changed": [[1, "A", {"decimal": "11"}]]}},
+        {"window": [0, 3]},
+        {"apply": {"changed": [[1, "A", {"decimal": "12"}]]}},
+        {"window": [0, 3], "markChanges": false},
+        {"window": [0, 3], "settings": {}},
+        {"apply": {"changed": [[2, "B", {"decimal": "26"}]]}},
+        {"window": [0, 3], "settings": {"locale": "de-DE"}}
+      ],
+      "expect": [
+        {
+          "version": "v1",
+          "sourceVersion": "s1",
+          "rowSequence": "r1",
+          "rowCount": 3,
+          "headers": ["Row Labels", "Sum of Amount"],
+          "lines": ["i A || 10", "i B || 20", "t Grand Total || 30"],
+          "changeMarks": []
+        },
+        {"applied": "s2"},
+        {
+          "version": "v2",
+          "sourceVersion": "s2",
+          "rowSequence": "r1",
+          "rowCount": 3,
+          "headers": ["Row Labels", "Sum of Amount"],
+          "lines": ["i A || 10", "i B || 25", "t Grand Total || 35"],
+          "changeMarks": []
+        },
+        {"applied": "s3"},
+        {
+          "version": "v3",
+          "sourceVersion": "s3",
+          "rowSequence": "r1",
+          "rowCount": 3,
+          "headers": ["Row Labels", "Sum of Amount"],
+          "lines": ["i A || 11", "i B || 25", "t Grand Total || 36"],
+          "changeMarks": []
+        },
+        {"applied": "s4"},
+        {
+          "version": "v4",
+          "sourceVersion": "s3",
+          "rowSequence": "r1",
+          "rowCount": 3,
+          "headers": ["Row Labels", "Sum of Amount"],
+          "lines": ["i A || 11", "i B || 25", "t Grand Total || 36"],
+          "changeMarks": []
+        },
+        {
+          "version": "v5",
+          "sourceVersion": "s4",
+          "rowSequence": "r1",
+          "rowCount": 3,
+          "headers": ["Row Labels", "Sum of Amount"],
+          "lines": ["i A || 12", "i B || 25", "t Grand Total || 37"],
+          "changeMarks": []
+        },
+        {"applied": "s5"},
+        {
+          "version": "v6",
+          "sourceVersion": "s5",
+          "rowSequence": "r1",
+          "rowCount": 3,
+          "headers": ["Row Labels", "Sum of Amount"],
+          "lines": ["i A || 12", "i B || 26", "t Grand Total || 38"],
+          "changeMarks": []
+        }
+      ]
+    },
+    {
+      "name": "ADR-0153, ADR-0068 (spine 6): a layout gesture lays out the data the Consumer holds, though a newer version was published that it discarded; the next request that marks changes shows the change and marks what it moved",
+      "data": "desks",
+      "rows": [
+        [1, "Desk0", {"decimal": "0"}],
+        [2, "Desk1", {"decimal": "1"}],
+        [3, "Desk2", {"decimal": "2"}],
+        [4, "Desk3", {"decimal": "3"}],
+        [5, "Desk4", {"decimal": "4"}],
+        [6, "Desk5", {"decimal": "5"}],
+        [7, "Desk6", {"decimal": "6"}],
+        [8, "Desk0", {"decimal": "7"}],
+        [9, "Desk1", {"decimal": "8"}],
+        [10, "Desk2", {"decimal": "9"}],
+        [11, "Desk3", {"decimal": "10"}],
+        [12, "Desk4", {"decimal": "11"}],
+        [13, "Desk5", {"decimal": "12"}],
+        [14, "Desk6", {"decimal": "13"}],
+        [15, "Desk0", {"decimal": "14"}],
+        [16, "Desk1", {"decimal": "15"}],
+        [17, "Desk2", {"decimal": "16"}],
+        [18, "Desk3", {"decimal": "17"}],
+        [19, "Desk4", {"decimal": "18"}],
+        [20, "Desk5", {"decimal": "19"}],
+        [21, "Desk6", {"decimal": "20"}]
+      ],
+      "asks": [
+        {
+          "window": [0, 40],
+          "layout": {"rows": [{"field": "Desk"}], "values": [{"field": "Amount", "aggregation": "sum"}]}
+        },
+        {"apply": {"changed": [[1, "Desk0", {"decimal": "5000"}]]}},
+        {"window": [0, 40], "discard": true},
+        {
+          "window": [0, 40],
+          "layout": {
+            "rows": [{"field": "Desk", "sort": {"direction": "descending"}}],
+            "values": [{"field": "Amount", "aggregation": "sum"}]
+          },
+          "markChanges": false
+        },
+        {"window": [0, 40]}
+      ],
+      "expect": [
+        {
+          "version": "v1",
+          "sourceVersion": "s1",
+          "rowSequence": "r1",
+          "rowCount": 8,
+          "headers": ["Row Labels", "Sum of Amount"],
+          "lines": [
+            "i Desk0 || 21",
+            "i Desk1 || 24",
+            "i Desk2 || 27",
+            "i Desk3 || 30",
+            "i Desk4 || 33",
+            "i Desk5 || 36",
+            "i Desk6 || 39",
+            "t Grand Total || 210"
+          ],
+          "changeMarks": []
+        },
+        {"applied": "s2"},
+        {
+          "version": "v2",
+          "sourceVersion": "s2",
+          "rowSequence": "r1",
+          "rowCount": 8,
+          "headers": ["Row Labels", "Sum of Amount"],
+          "lines": [
+            "i Desk0 || 5021",
+            "i Desk1 || 24",
+            "i Desk2 || 27",
+            "i Desk3 || 30",
+            "i Desk4 || 33",
+            "i Desk5 || 36",
+            "i Desk6 || 39",
+            "t Grand Total || 5210"
+          ],
+          "changeMarks": ["v2"],
+          "changed": [["v2"], [null], [null], [null], [null], [null], [null], ["v2"]]
+        },
+        {
+          "version": "v3",
+          "sourceVersion": "s1",
+          "rowSequence": "r2",
+          "rowCount": 8,
+          "headers": ["Row Labels", "Sum of Amount"],
+          "lines": [
+            "i Desk6 || 39",
+            "i Desk5 || 36",
+            "i Desk4 || 33",
+            "i Desk3 || 30",
+            "i Desk2 || 27",
+            "i Desk1 || 24",
+            "i Desk0 || 21",
+            "t Grand Total || 210"
+          ],
+          "changeMarks": []
+        },
+        {
+          "version": "v4",
+          "sourceVersion": "s2",
+          "rowSequence": "r2",
+          "rowCount": 8,
+          "headers": ["Row Labels", "Sum of Amount"],
+          "lines": [
+            "i Desk6 || 39",
+            "i Desk5 || 36",
+            "i Desk4 || 33",
+            "i Desk3 || 30",
+            "i Desk2 || 27",
+            "i Desk1 || 24",
+            "i Desk0 || 5021",
+            "t Grand Total || 5210"
+          ],
+          "changeMarks": ["v4"],
+          "changed": [[null], [null], [null], [null], [null], [null], ["v4"], ["v4"]]
+        }
+      ]
+    },
+    {
+      "name": "ADR-0151 (PV-14): the records behind a cell answer after layouts that evicted its Report Version, and are refused once the Pivot Source no longer holds its Source Version",
+      "data": "desks",
+      "rows": [[1, "East", {"decimal": "10"}], [2, "East", {"decimal": "20"}], [3, "West", {"decimal": "30"}]],
+      "asks": [
+        {
+          "window": [0, 10],
+          "layout": {"rows": [{"field": "Desk"}], "values": [{"field": "Amount", "aggregation": "sum"}]}
+        },
+        {
+          "window": [0, 10],
+          "layout": {
+            "rows": [{"field": "Desk", "sort": {"direction": "descending"}}],
+            "values": [{"field": "Amount", "aggregation": "sum"}]
+          },
+          "markChanges": false
+        },
+        {
+          "window": [0, 10],
+          "layout": {"rows": [{"field": "Desk"}], "values": [{"field": "Amount", "aggregation": "sum"}], "form": "tabular"},
+          "markChanges": false
+        },
+        {"copy": {"version": "v1", "columns": [1], "ranges": [[0, 0, 0, 0]]}},
+        {"details": {"version": "v1", "row": 0, "column": 0, "start": 1, "count": 1}},
+        {"apply": {"changed": [[3, "West", {"decimal": "31"}]]}},
+        {"window": [0, 10]},
+        {"apply": {"changed": [[3, "West", {"decimal": "32"}]]}},
+        {"window": [0, 10]},
+        {"apply": {"changed": [[3, "West", {"decimal": "33"}]]}},
+        {"window": [0, 10]},
+        {"apply": {"changed": [[3, "West", {"decimal": "34"}]]}},
+        {"window": [0, 10]},
+        {"apply": {"changed": [[3, "West", {"decimal": "35"}]]}},
+        {"window": [0, 10]},
+        {"details": {"version": "v1", "row": 0, "column": 0, "start": 1, "count": 1}}
+      ],
+      "expect": [
+        {
+          "version": "v1",
+          "sourceVersion": "s1",
+          "rowSequence": "r1",
+          "rowCount": 3,
+          "headers": ["Row Labels", "Sum of Amount"],
+          "lines": ["i East || 30", "i West || 30", "t Grand Total || 60"],
+          "changeMarks": []
+        },
+        {
+          "version": "v2",
+          "sourceVersion": "s1",
+          "rowSequence": "r2",
+          "rowCount": 3,
+          "headers": ["Row Labels", "Sum of Amount"],
+          "lines": ["i West || 30", "i East || 30", "t Grand Total || 60"],
+          "changeMarks": []
+        },
+        {
+          "version": "v3",
+          "sourceVersion": "s1",
+          "rowSequence": "r3",
+          "rowCount": 3,
+          "headers": ["Desk", "Sum of Amount"],
+          "lines": ["i East || 30", "i West || 30", "t Grand Total || 60"],
+          "changeMarks": []
+        },
+        {"refused": "reportVersionNotHeld", "saying": "Report Version 'v1' is no longer held."},
+        {
+          "sourceVersion": "s1",
+          "start": 1,
+          "total": 2,
+          "fields": ["Id", "Desk", "Amount"],
+          "records": [[{"decimal": "2"}, "East", {"decimal": "20"}]]
+        },
+        {"applied": "s2"},
+        {
+          "version": "v4",
+          "sourceVersion": "s2",
+          "rowSequence": "r3",
+          "rowCount": 3,
+          "headers": ["Desk", "Sum of Amount"],
+          "lines": ["i East || 30", "i West || 31", "t Grand Total || 61"],
+          "changeMarks": ["v4"],
+          "changed": [[null], ["v4"], ["v4"]]
+        },
+        {"applied": "s3"},
+        {
+          "version": "v5",
+          "sourceVersion": "s3",
+          "rowSequence": "r3",
+          "rowCount": 3,
+          "headers": ["Desk", "Sum of Amount"],
+          "lines": ["i East || 30", "i West || 32", "t Grand Total || 62"],
+          "changeMarks": ["v5", "v4"],
+          "changed": [[null], ["v5"], ["v5"]]
+        },
+        {"applied": "s4"},
+        {
+          "version": "v6",
+          "sourceVersion": "s4",
+          "rowSequence": "r3",
+          "rowCount": 3,
+          "headers": ["Desk", "Sum of Amount"],
+          "lines": ["i East || 30", "i West || 33", "t Grand Total || 63"],
+          "changeMarks": ["v6", "v5", "v4"],
+          "changed": [[null], ["v6"], ["v6"]]
+        },
+        {"applied": "s5"},
+        {
+          "version": "v7",
+          "sourceVersion": "s5",
+          "rowSequence": "r3",
+          "rowCount": 3,
+          "headers": ["Desk", "Sum of Amount"],
+          "lines": ["i East || 30", "i West || 34", "t Grand Total || 64"],
+          "changeMarks": ["v7", "v6", "v5", "v4"],
+          "changed": [[null], ["v7"], ["v7"]]
+        },
+        {"applied": "s6"},
+        {
+          "version": "v8",
+          "sourceVersion": "s6",
+          "rowSequence": "r3",
+          "rowCount": 3,
+          "headers": ["Desk", "Sum of Amount"],
+          "lines": ["i East || 30", "i West || 35", "t Grand Total || 65"],
+          "changeMarks": ["v8", "v7", "v6", "v5", "v4"],
+          "changed": [[null], ["v8"], ["v8"]]
+        },
+        {"refused": "sourceVersionNotHeld", "saying": "The data has changed since version 's1'; refresh the report."}
+      ]
+    },
+    {
+      "name": "ADR-0151, ADR-0063: the question for the records behind each cell, resolved from the Window, and its records (compact)",
+      "data": "sales",
+      "asks": [
+        {
+          "window": [0, 1000],
+          "layout": {
+            "rows": [{"field": "Region"}, {"field": "Product"}],
+            "columns": [{"field": "Online"}],
+            "values": [{"field": "Amount", "aggregation": "sum"}]
+          }
+        },
+        {"detailsEach": "v1"}
+      ],
+      "expect": [
+        {
+          "version": "v1",
+          "sourceVersion": "s1",
+          "rowSequence": "r1",
+          "rowCount": 11,
+          "headers": ["Row Labels", "FALSE", "TRUE", "Grand Total"],
+          "lines": [
+            "g [-]East || 50 | 130 | 180",
+            "i   Apples ||  | 130 | 130",
+            "i   Pears || 50 |  | 50",
+            "g [-]North || 10 |  | 10",
+            "i   Pears || 10 |  | 10",
+            "g [-]West || 70 | 20 | 90",
+            "i   Apples || 70 |  | 70",
+            "i   Plums ||  | 20 | 20",
+            "g [-](blank) ||  | 5 | 5",
+            "i   Plums ||  | 5 | 5",
+            "t Grand Total || 130 | 155 | 285"
+          ],
+          "changeMarks": []
+        },
+        [
+          [
+            "-1: Region={\"kind\":\"text\",\"value\":\"East\"} /  /  -> 3: [\"East\",\"Apples\",{\"date\":\"2026-01-10\"},{\"decimal\":\"100\"},{\"decimal\":\"10\"},true]; [\"East\",\"Pears\",{\"date\":\"2026-01-12\"},{\"decimal\":\"50\"},{\"decimal\":\"5\"},false]; [\"East\",\"Apples\",{\"date\":\"2026-02-03\"},{\"decimal\":\"30\"},{\"decimal\":\"3\"},true]",
+            "0: Region={\"kind\":\"text\",\"value\":\"East\"} / Online={\"kind\":\"boolean\",\"value\":\"FALSE\"} /  -> 1: [\"East\",\"Pears\",{\"date\":\"2026-01-12\"},{\"decimal\":\"50\"},{\"decimal\":\"5\"},false]",
+            "1: Region={\"kind\":\"text\",\"value\":\"East\"} / Online={\"kind\":\"boolean\",\"value\":\"TRUE\"} /  -> 2: [\"East\",\"Apples\",{\"date\":\"2026-01-10\"},{\"decimal\":\"100\"},{\"decimal\":\"10\"},true]; [\"East\",\"Apples\",{\"date\":\"2026-02-03\"},{\"decimal\":\"30\"},{\"decimal\":\"3\"},true]",
+            "2: Region={\"kind\":\"text\",\"value\":\"East\"} /  /  -> 3: [\"East\",\"Apples\",{\"date\":\"2026-01-10\"},{\"decimal\":\"100\"},{\"decimal\":\"10\"},true]; [\"East\",\"Pears\",{\"date\":\"2026-01-12\"},{\"decimal\":\"50\"},{\"decimal\":\"5\"},false]; [\"East\",\"Apples\",{\"date\":\"2026-02-03\"},{\"decimal\":\"30\"},{\"decimal\":\"3\"},true]"
+          ],
+          [
+            "-1: Region={\"kind\":\"text\",\"value\":\"East\"}, Product={\"kind\":\"text\",\"value\":\"Apples\"} /  /  -> 2: [\"East\",\"Apples\",{\"date\":\"2026-01-10\"},{\"decimal\":\"100\"},{\"decimal\":\"10\"},true]; [\"East\",\"Apples\",{\"date\":\"2026-02-03\"},{\"decimal\":\"30\"},{\"decimal\":\"3\"},true]",
+            "0: Region={\"kind\":\"text\",\"value\":\"East\"}, Product={\"kind\":\"text\",\"value\":\"Apples\"} / Online={\"kind\":\"boolean\",\"value\":\"FALSE\"} /  -> 0: ",
+            "1: Region={\"kind\":\"text\",\"value\":\"East\"}, Product={\"kind\":\"text\",\"value\":\"Apples\"} / Online={\"kind\":\"boolean\",\"value\":\"TRUE\"} /  -> 2: [\"East\",\"Apples\",{\"date\":\"2026-01-10\"},{\"decimal\":\"100\"},{\"decimal\":\"10\"},true]; [\"East\",\"Apples\",{\"date\":\"2026-02-03\"},{\"decimal\":\"30\"},{\"decimal\":\"3\"},true]",
+            "2: Region={\"kind\":\"text\",\"value\":\"East\"}, Product={\"kind\":\"text\",\"value\":\"Apples\"} /  /  -> 2: [\"East\",\"Apples\",{\"date\":\"2026-01-10\"},{\"decimal\":\"100\"},{\"decimal\":\"10\"},true]; [\"East\",\"Apples\",{\"date\":\"2026-02-03\"},{\"decimal\":\"30\"},{\"decimal\":\"3\"},true]"
+          ],
+          [
+            "-1: Region={\"kind\":\"text\",\"value\":\"East\"}, Product={\"kind\":\"text\",\"value\":\"Pears\"} /  /  -> 1: [\"East\",\"Pears\",{\"date\":\"2026-01-12\"},{\"decimal\":\"50\"},{\"decimal\":\"5\"},false]",
+            "0: Region={\"kind\":\"text\",\"value\":\"East\"}, Product={\"kind\":\"text\",\"value\":\"Pears\"} / Online={\"kind\":\"boolean\",\"value\":\"FALSE\"} /  -> 1: [\"East\",\"Pears\",{\"date\":\"2026-01-12\"},{\"decimal\":\"50\"},{\"decimal\":\"5\"},false]",
+            "1: Region={\"kind\":\"text\",\"value\":\"East\"}, Product={\"kind\":\"text\",\"value\":\"Pears\"} / Online={\"kind\":\"boolean\",\"value\":\"TRUE\"} /  -> 0: ",
+            "2: Region={\"kind\":\"text\",\"value\":\"East\"}, Product={\"kind\":\"text\",\"value\":\"Pears\"} /  /  -> 1: [\"East\",\"Pears\",{\"date\":\"2026-01-12\"},{\"decimal\":\"50\"},{\"decimal\":\"5\"},false]"
+          ],
+          [
+            "-1: Region={\"kind\":\"text\",\"value\":\"North\"} /  /  -> 1: [\"North\",\"Pears\",{\"date\":\"2026-02-18\"},{\"decimal\":\"10\"},{\"decimal\":\"1\"},false]",
+            "0: Region={\"kind\":\"text\",\"value\":\"North\"} / Online={\"kind\":\"boolean\",\"value\":\"FALSE\"} /  -> 1: [\"North\",\"Pears\",{\"date\":\"2026-02-18\"},{\"decimal\":\"10\"},{\"decimal\":\"1\"},false]",
+            "1: Region={\"kind\":\"text\",\"value\":\"North\"} / Online={\"kind\":\"boolean\",\"value\":\"TRUE\"} /  -> 0: ",
+            "2: Region={\"kind\":\"text\",\"value\":\"North\"} /  /  -> 1: [\"North\",\"Pears\",{\"date\":\"2026-02-18\"},{\"decimal\":\"10\"},{\"decimal\":\"1\"},false]"
+          ],
+          [
+            "-1: Region={\"kind\":\"text\",\"value\":\"North\"}, Product={\"kind\":\"text\",\"value\":\"Pears\"} /  /  -> 1: [\"North\",\"Pears\",{\"date\":\"2026-02-18\"},{\"decimal\":\"10\"},{\"decimal\":\"1\"},false]",
+            "0: Region={\"kind\":\"text\",\"value\":\"North\"}, Product={\"kind\":\"text\",\"value\":\"Pears\"} / Online={\"kind\":\"boolean\",\"value\":\"FALSE\"} /  -> 1: [\"North\",\"Pears\",{\"date\":\"2026-02-18\"},{\"decimal\":\"10\"},{\"decimal\":\"1\"},false]",
+            "1: Region={\"kind\":\"text\",\"value\":\"North\"}, Product={\"kind\":\"text\",\"value\":\"Pears\"} / Online={\"kind\":\"boolean\",\"value\":\"TRUE\"} /  -> 0: ",
+            "2: Region={\"kind\":\"text\",\"value\":\"North\"}, Product={\"kind\":\"text\",\"value\":\"Pears\"} /  /  -> 1: [\"North\",\"Pears\",{\"date\":\"2026-02-18\"},{\"decimal\":\"10\"},{\"decimal\":\"1\"},false]"
+          ],
+          [
+            "-1: Region={\"kind\":\"text\",\"value\":\"West\"} /  /  -> 2: [\"West\",\"Apples\",{\"date\":\"2026-01-20\"},{\"decimal\":\"70\"},{\"decimal\":\"7\"},false]; [\"West\",\"Plums\",{\"date\":\"2026-02-15\"},{\"decimal\":\"20\"},{\"decimal\":\"2\"},true]",
+            "0: Region={\"kind\":\"text\",\"value\":\"West\"} / Online={\"kind\":\"boolean\",\"value\":\"FALSE\"} /  -> 1: [\"West\",\"Apples\",{\"date\":\"2026-01-20\"},{\"decimal\":\"70\"},{\"decimal\":\"7\"},false]",
+            "1: Region={\"kind\":\"text\",\"value\":\"West\"} / Online={\"kind\":\"boolean\",\"value\":\"TRUE\"} /  -> 1: [\"West\",\"Plums\",{\"date\":\"2026-02-15\"},{\"decimal\":\"20\"},{\"decimal\":\"2\"},true]",
+            "2: Region={\"kind\":\"text\",\"value\":\"West\"} /  /  -> 2: [\"West\",\"Apples\",{\"date\":\"2026-01-20\"},{\"decimal\":\"70\"},{\"decimal\":\"7\"},false]; [\"West\",\"Plums\",{\"date\":\"2026-02-15\"},{\"decimal\":\"20\"},{\"decimal\":\"2\"},true]"
+          ],
+          [
+            "-1: Region={\"kind\":\"text\",\"value\":\"West\"}, Product={\"kind\":\"text\",\"value\":\"Apples\"} /  /  -> 1: [\"West\",\"Apples\",{\"date\":\"2026-01-20\"},{\"decimal\":\"70\"},{\"decimal\":\"7\"},false]",
+            "0: Region={\"kind\":\"text\",\"value\":\"West\"}, Product={\"kind\":\"text\",\"value\":\"Apples\"} / Online={\"kind\":\"boolean\",\"value\":\"FALSE\"} /  -> 1: [\"West\",\"Apples\",{\"date\":\"2026-01-20\"},{\"decimal\":\"70\"},{\"decimal\":\"7\"},false]",
+            "1: Region={\"kind\":\"text\",\"value\":\"West\"}, Product={\"kind\":\"text\",\"value\":\"Apples\"} / Online={\"kind\":\"boolean\",\"value\":\"TRUE\"} /  -> 0: ",
+            "2: Region={\"kind\":\"text\",\"value\":\"West\"}, Product={\"kind\":\"text\",\"value\":\"Apples\"} /  /  -> 1: [\"West\",\"Apples\",{\"date\":\"2026-01-20\"},{\"decimal\":\"70\"},{\"decimal\":\"7\"},false]"
+          ],
+          [
+            "-1: Region={\"kind\":\"text\",\"value\":\"West\"}, Product={\"kind\":\"text\",\"value\":\"Plums\"} /  /  -> 1: [\"West\",\"Plums\",{\"date\":\"2026-02-15\"},{\"decimal\":\"20\"},{\"decimal\":\"2\"},true]",
+            "0: Region={\"kind\":\"text\",\"value\":\"West\"}, Product={\"kind\":\"text\",\"value\":\"Plums\"} / Online={\"kind\":\"boolean\",\"value\":\"FALSE\"} /  -> 0: ",
+            "1: Region={\"kind\":\"text\",\"value\":\"West\"}, Product={\"kind\":\"text\",\"value\":\"Plums\"} / Online={\"kind\":\"boolean\",\"value\":\"TRUE\"} /  -> 1: [\"West\",\"Plums\",{\"date\":\"2026-02-15\"},{\"decimal\":\"20\"},{\"decimal\":\"2\"},true]",
+            "2: Region={\"kind\":\"text\",\"value\":\"West\"}, Product={\"kind\":\"text\",\"value\":\"Plums\"} /  /  -> 1: [\"West\",\"Plums\",{\"date\":\"2026-02-15\"},{\"decimal\":\"20\"},{\"decimal\":\"2\"},true]"
+          ],
+          [
+            "-1: Region={\"kind\":\"blank\"} /  /  -> 1: [null,\"Plums\",{\"date\":\"2026-03-01\"},{\"decimal\":\"5\"},{\"decimal\":\"1\"},true]",
+            "0: Region={\"kind\":\"blank\"} / Online={\"kind\":\"boolean\",\"value\":\"FALSE\"} /  -> 0: ",
+            "1: Region={\"kind\":\"blank\"} / Online={\"kind\":\"boolean\",\"value\":\"TRUE\"} /  -> 1: [null,\"Plums\",{\"date\":\"2026-03-01\"},{\"decimal\":\"5\"},{\"decimal\":\"1\"},true]",
+            "2: Region={\"kind\":\"blank\"} /  /  -> 1: [null,\"Plums\",{\"date\":\"2026-03-01\"},{\"decimal\":\"5\"},{\"decimal\":\"1\"},true]"
+          ],
+          [
+            "-1: Region={\"kind\":\"blank\"}, Product={\"kind\":\"text\",\"value\":\"Plums\"} /  /  -> 1: [null,\"Plums\",{\"date\":\"2026-03-01\"},{\"decimal\":\"5\"},{\"decimal\":\"1\"},true]",
+            "0: Region={\"kind\":\"blank\"}, Product={\"kind\":\"text\",\"value\":\"Plums\"} / Online={\"kind\":\"boolean\",\"value\":\"FALSE\"} /  -> 0: ",
+            "1: Region={\"kind\":\"blank\"}, Product={\"kind\":\"text\",\"value\":\"Plums\"} / Online={\"kind\":\"boolean\",\"value\":\"TRUE\"} /  -> 1: [null,\"Plums\",{\"date\":\"2026-03-01\"},{\"decimal\":\"5\"},{\"decimal\":\"1\"},true]",
+            "2: Region={\"kind\":\"blank\"}, Product={\"kind\":\"text\",\"value\":\"Plums\"} /  /  -> 1: [null,\"Plums\",{\"date\":\"2026-03-01\"},{\"decimal\":\"5\"},{\"decimal\":\"1\"},true]"
+          ],
+          [
+            "-1:  /  /  -> 7: [\"East\",\"Apples\",{\"date\":\"2026-01-10\"},{\"decimal\":\"100\"},{\"decimal\":\"10\"},true]; [\"East\",\"Pears\",{\"date\":\"2026-01-12\"},{\"decimal\":\"50\"},{\"decimal\":\"5\"},false]; [\"East\",\"Apples\",{\"date\":\"2026-02-03\"},{\"decimal\":\"30\"},{\"decimal\":\"3\"},true]; [\"West\",\"Apples\",{\"date\":\"2026-01-20\"},{\"decimal\":\"70\"},{\"decimal\":\"7\"},false]; [\"West\",\"Plums\",{\"date\":\"2026-02-15\"},{\"decimal\":\"20\"},{\"decimal\":\"2\"},true]; [\"North\",\"Pears\",{\"date\":\"2026-02-18\"},{\"decimal\":\"10\"},{\"decimal\":\"1\"},false]; [null,\"Plums\",{\"date\":\"2026-03-01\"},{\"decimal\":\"5\"},{\"decimal\":\"1\"},true]",
+            "0:  / Online={\"kind\":\"boolean\",\"value\":\"FALSE\"} /  -> 3: [\"East\",\"Pears\",{\"date\":\"2026-01-12\"},{\"decimal\":\"50\"},{\"decimal\":\"5\"},false]; [\"West\",\"Apples\",{\"date\":\"2026-01-20\"},{\"decimal\":\"70\"},{\"decimal\":\"7\"},false]; [\"North\",\"Pears\",{\"date\":\"2026-02-18\"},{\"decimal\":\"10\"},{\"decimal\":\"1\"},false]",
+            "1:  / Online={\"kind\":\"boolean\",\"value\":\"TRUE\"} /  -> 4: [\"East\",\"Apples\",{\"date\":\"2026-01-10\"},{\"decimal\":\"100\"},{\"decimal\":\"10\"},true]; [\"East\",\"Apples\",{\"date\":\"2026-02-03\"},{\"decimal\":\"30\"},{\"decimal\":\"3\"},true]; [\"West\",\"Plums\",{\"date\":\"2026-02-15\"},{\"decimal\":\"20\"},{\"decimal\":\"2\"},true]; [null,\"Plums\",{\"date\":\"2026-03-01\"},{\"decimal\":\"5\"},{\"decimal\":\"1\"},true]",
+            "2:  /  /  -> 7: [\"East\",\"Apples\",{\"date\":\"2026-01-10\"},{\"decimal\":\"100\"},{\"decimal\":\"10\"},true]; [\"East\",\"Pears\",{\"date\":\"2026-01-12\"},{\"decimal\":\"50\"},{\"decimal\":\"5\"},false]; [\"East\",\"Apples\",{\"date\":\"2026-02-03\"},{\"decimal\":\"30\"},{\"decimal\":\"3\"},true]; [\"West\",\"Apples\",{\"date\":\"2026-01-20\"},{\"decimal\":\"70\"},{\"decimal\":\"7\"},false]; [\"West\",\"Plums\",{\"date\":\"2026-02-15\"},{\"decimal\":\"20\"},{\"decimal\":\"2\"},true]; [\"North\",\"Pears\",{\"date\":\"2026-02-18\"},{\"decimal\":\"10\"},{\"decimal\":\"1\"},false]; [null,\"Plums\",{\"date\":\"2026-03-01\"},{\"decimal\":\"5\"},{\"decimal\":\"1\"},true]"
+          ]
+        ]
+      ]
+    },
+    {
+      "name": "ADR-0151, ADR-0063: the question for the records behind each cell, resolved from the Window, and its records (tabular, values on rows)",
+      "data": "sales",
+      "asks": [
+        {
+          "window": [0, 1000],
+          "layout": {
+            "rows": [{"field": "Region"}, {"field": "Product"}],
+            "columns": [{"field": "Online"}],
+            "form": "tabular",
+            "valuesAxis": "rows",
+            "values": [{"field": "Amount", "aggregation": "sum"}, {"field": "Quantity", "aggregation": "count"}]
+          }
+        },
+        {"detailsEach": "v1"}
+      ],
+      "expect": [
+        {
+          "version": "v1",
+          "sourceVersion": "s1",
+          "rowSequence": "r1",
+          "rowCount": 22,
+          "headers": ["Region", "Product", "Values", "FALSE", "TRUE", "Grand Total"],
+          "lines": [
+            "i [-]East | Apples | Sum of Amount ||  | 130 | 130",
+            "i  |  | Count of Quantity ||  | 2 | 2",
+            "i  | Pears | Sum of Amount || 50 |  | 50",
+            "i  |  | Count of Quantity || 1 |  | 1",
+            "s East Total |  | Sum of Amount || 50 | 130 | 180",
+            "s East Total |  | Count of Quantity || 1 | 2 | 3",
+            "i [-]North | Pears | Sum of Amount || 10 |  | 10",
+            "i  |  | Count of Quantity || 1 |  | 1",
+            "s North Total |  | Sum of Amount || 10 |  | 10",
+            "s North Total |  | Count of Quantity || 1 |  | 1",
+            "i [-]West | Apples | Sum of Amount || 70 |  | 70",
+            "i  |  | Count of Quantity || 1 |  | 1",
+            "i  | Plums | Sum of Amount ||  | 20 | 20",
+            "i  |  | Count of Quantity ||  | 1 | 1",
+            "s West Total |  | Sum of Amount || 70 | 20 | 90",
+            "s West Total |  | Count of Quantity || 1 | 1 | 2",
+            "i [-](blank) | Plums | Sum of Amount ||  | 5 | 5",
+            "i  |  | Count of Quantity ||  | 1 | 1",
+            "s (blank) Total |  | Sum of Amount ||  | 5 | 5",
+            "s (blank) Total |  | Count of Quantity ||  | 1 | 1",
+            "t Grand Total |  | Sum of Amount || 130 | 155 | 285",
+            "t Grand Total |  | Count of Quantity || 3 | 4 | 7"
+          ],
+          "changeMarks": []
+        },
+        [
+          [
+            "-1: Region={\"kind\":\"text\",\"value\":\"East\"}, Product={\"kind\":\"text\",\"value\":\"Apples\"} /  /  -> 2: [\"East\",\"Apples\",{\"date\":\"2026-01-10\"},{\"decimal\":\"100\"},{\"decimal\":\"10\"},true]; [\"East\",\"Apples\",{\"date\":\"2026-02-03\"},{\"decimal\":\"30\"},{\"decimal\":\"3\"},true]",
+            "0: Region={\"kind\":\"text\",\"value\":\"East\"}, Product={\"kind\":\"text\",\"value\":\"Apples\"} / Online={\"kind\":\"boolean\",\"value\":\"FALSE\"} /  -> 0: ",
+            "1: Region={\"kind\":\"text\",\"value\":\"East\"}, Product={\"kind\":\"text\",\"value\":\"Apples\"} / Online={\"kind\":\"boolean\",\"value\":\"TRUE\"} /  -> 2: [\"East\",\"Apples\",{\"date\":\"2026-01-10\"},{\"decimal\":\"100\"},{\"decimal\":\"10\"},true]; [\"East\",\"Apples\",{\"date\":\"2026-02-03\"},{\"decimal\":\"30\"},{\"decimal\":\"3\"},true]",
+            "2: Region={\"kind\":\"text\",\"value\":\"East\"}, Product={\"kind\":\"text\",\"value\":\"Apples\"} /  /  -> 2: [\"East\",\"Apples\",{\"date\":\"2026-01-10\"},{\"decimal\":\"100\"},{\"decimal\":\"10\"},true]; [\"East\",\"Apples\",{\"date\":\"2026-02-03\"},{\"decimal\":\"30\"},{\"decimal\":\"3\"},true]"
+          ],
+          [
+            "-1: Region={\"kind\":\"text\",\"value\":\"East\"}, Product={\"kind\":\"text\",\"value\":\"Apples\"} /  /  -> 2: [\"East\",\"Apples\",{\"date\":\"2026-01-10\"},{\"decimal\":\"100\"},{\"decimal\":\"10\"},true]; [\"East\",\"Apples\",{\"date\":\"2026-02-03\"},{\"decimal\":\"30\"},{\"decimal\":\"3\"},true]",
+            "0: Region={\"kind\":\"text\",\"value\":\"East\"}, Product={\"kind\":\"text\",\"value\":\"Apples\"} / Online={\"kind\":\"boolean\",\"value\":\"FALSE\"} /  -> 0: ",
+            "1: Region={\"kind\":\"text\",\"value\":\"East\"}, Product={\"kind\":\"text\",\"value\":\"Apples\"} / Online={\"kind\":\"boolean\",\"value\":\"TRUE\"} /  -> 2: [\"East\",\"Apples\",{\"date\":\"2026-01-10\"},{\"decimal\":\"100\"},{\"decimal\":\"10\"},true]; [\"East\",\"Apples\",{\"date\":\"2026-02-03\"},{\"decimal\":\"30\"},{\"decimal\":\"3\"},true]",
+            "2: Region={\"kind\":\"text\",\"value\":\"East\"}, Product={\"kind\":\"text\",\"value\":\"Apples\"} /  /  -> 2: [\"East\",\"Apples\",{\"date\":\"2026-01-10\"},{\"decimal\":\"100\"},{\"decimal\":\"10\"},true]; [\"East\",\"Apples\",{\"date\":\"2026-02-03\"},{\"decimal\":\"30\"},{\"decimal\":\"3\"},true]"
+          ],
+          [
+            "-1: Region={\"kind\":\"text\",\"value\":\"East\"}, Product={\"kind\":\"text\",\"value\":\"Pears\"} /  /  -> 1: [\"East\",\"Pears\",{\"date\":\"2026-01-12\"},{\"decimal\":\"50\"},{\"decimal\":\"5\"},false]",
+            "0: Region={\"kind\":\"text\",\"value\":\"East\"}, Product={\"kind\":\"text\",\"value\":\"Pears\"} / Online={\"kind\":\"boolean\",\"value\":\"FALSE\"} /  -> 1: [\"East\",\"Pears\",{\"date\":\"2026-01-12\"},{\"decimal\":\"50\"},{\"decimal\":\"5\"},false]",
+            "1: Region={\"kind\":\"text\",\"value\":\"East\"}, Product={\"kind\":\"text\",\"value\":\"Pears\"} / Online={\"kind\":\"boolean\",\"value\":\"TRUE\"} /  -> 0: ",
+            "2: Region={\"kind\":\"text\",\"value\":\"East\"}, Product={\"kind\":\"text\",\"value\":\"Pears\"} /  /  -> 1: [\"East\",\"Pears\",{\"date\":\"2026-01-12\"},{\"decimal\":\"50\"},{\"decimal\":\"5\"},false]"
+          ],
+          [
+            "-1: Region={\"kind\":\"text\",\"value\":\"East\"}, Product={\"kind\":\"text\",\"value\":\"Pears\"} /  /  -> 1: [\"East\",\"Pears\",{\"date\":\"2026-01-12\"},{\"decimal\":\"50\"},{\"decimal\":\"5\"},false]",
+            "0: Region={\"kind\":\"text\",\"value\":\"East\"}, Product={\"kind\":\"text\",\"value\":\"Pears\"} / Online={\"kind\":\"boolean\",\"value\":\"FALSE\"} /  -> 1: [\"East\",\"Pears\",{\"date\":\"2026-01-12\"},{\"decimal\":\"50\"},{\"decimal\":\"5\"},false]",
+            "1: Region={\"kind\":\"text\",\"value\":\"East\"}, Product={\"kind\":\"text\",\"value\":\"Pears\"} / Online={\"kind\":\"boolean\",\"value\":\"TRUE\"} /  -> 0: ",
+            "2: Region={\"kind\":\"text\",\"value\":\"East\"}, Product={\"kind\":\"text\",\"value\":\"Pears\"} /  /  -> 1: [\"East\",\"Pears\",{\"date\":\"2026-01-12\"},{\"decimal\":\"50\"},{\"decimal\":\"5\"},false]"
+          ],
+          [
+            "-1: Region={\"kind\":\"text\",\"value\":\"East\"} /  /  -> 3: [\"East\",\"Apples\",{\"date\":\"2026-01-10\"},{\"decimal\":\"100\"},{\"decimal\":\"10\"},true]; [\"East\",\"Pears\",{\"date\":\"2026-01-12\"},{\"decimal\":\"50\"},{\"decimal\":\"5\"},false]; [\"East\",\"Apples\",{\"date\":\"2026-02-03\"},{\"decimal\":\"30\"},{\"decimal\":\"3\"},true]",
+            "0: Region={\"kind\":\"text\",\"value\":\"East\"} / Online={\"kind\":\"boolean\",\"value\":\"FALSE\"} /  -> 1: [\"East\",\"Pears\",{\"date\":\"2026-01-12\"},{\"decimal\":\"50\"},{\"decimal\":\"5\"},false]",
+            "1: Region={\"kind\":\"text\",\"value\":\"East\"} / Online={\"kind\":\"boolean\",\"value\":\"TRUE\"} /  -> 2: [\"East\",\"Apples\",{\"date\":\"2026-01-10\"},{\"decimal\":\"100\"},{\"decimal\":\"10\"},true]; [\"East\",\"Apples\",{\"date\":\"2026-02-03\"},{\"decimal\":\"30\"},{\"decimal\":\"3\"},true]",
+            "2: Region={\"kind\":\"text\",\"value\":\"East\"} /  /  -> 3: [\"East\",\"Apples\",{\"date\":\"2026-01-10\"},{\"decimal\":\"100\"},{\"decimal\":\"10\"},true]; [\"East\",\"Pears\",{\"date\":\"2026-01-12\"},{\"decimal\":\"50\"},{\"decimal\":\"5\"},false]; [\"East\",\"Apples\",{\"date\":\"2026-02-03\"},{\"decimal\":\"30\"},{\"decimal\":\"3\"},true]"
+          ],
+          [
+            "-1: Region={\"kind\":\"text\",\"value\":\"East\"} /  /  -> 3: [\"East\",\"Apples\",{\"date\":\"2026-01-10\"},{\"decimal\":\"100\"},{\"decimal\":\"10\"},true]; [\"East\",\"Pears\",{\"date\":\"2026-01-12\"},{\"decimal\":\"50\"},{\"decimal\":\"5\"},false]; [\"East\",\"Apples\",{\"date\":\"2026-02-03\"},{\"decimal\":\"30\"},{\"decimal\":\"3\"},true]",
+            "0: Region={\"kind\":\"text\",\"value\":\"East\"} / Online={\"kind\":\"boolean\",\"value\":\"FALSE\"} /  -> 1: [\"East\",\"Pears\",{\"date\":\"2026-01-12\"},{\"decimal\":\"50\"},{\"decimal\":\"5\"},false]",
+            "1: Region={\"kind\":\"text\",\"value\":\"East\"} / Online={\"kind\":\"boolean\",\"value\":\"TRUE\"} /  -> 2: [\"East\",\"Apples\",{\"date\":\"2026-01-10\"},{\"decimal\":\"100\"},{\"decimal\":\"10\"},true]; [\"East\",\"Apples\",{\"date\":\"2026-02-03\"},{\"decimal\":\"30\"},{\"decimal\":\"3\"},true]",
+            "2: Region={\"kind\":\"text\",\"value\":\"East\"} /  /  -> 3: [\"East\",\"Apples\",{\"date\":\"2026-01-10\"},{\"decimal\":\"100\"},{\"decimal\":\"10\"},true]; [\"East\",\"Pears\",{\"date\":\"2026-01-12\"},{\"decimal\":\"50\"},{\"decimal\":\"5\"},false]; [\"East\",\"Apples\",{\"date\":\"2026-02-03\"},{\"decimal\":\"30\"},{\"decimal\":\"3\"},true]"
+          ],
+          [
+            "-1: Region={\"kind\":\"text\",\"value\":\"North\"}, Product={\"kind\":\"text\",\"value\":\"Pears\"} /  /  -> 1: [\"North\",\"Pears\",{\"date\":\"2026-02-18\"},{\"decimal\":\"10\"},{\"decimal\":\"1\"},false]",
+            "0: Region={\"kind\":\"text\",\"value\":\"North\"}, Product={\"kind\":\"text\",\"value\":\"Pears\"} / Online={\"kind\":\"boolean\",\"value\":\"FALSE\"} /  -> 1: [\"North\",\"Pears\",{\"date\":\"2026-02-18\"},{\"decimal\":\"10\"},{\"decimal\":\"1\"},false]",
+            "1: Region={\"kind\":\"text\",\"value\":\"North\"}, Product={\"kind\":\"text\",\"value\":\"Pears\"} / Online={\"kind\":\"boolean\",\"value\":\"TRUE\"} /  -> 0: ",
+            "2: Region={\"kind\":\"text\",\"value\":\"North\"}, Product={\"kind\":\"text\",\"value\":\"Pears\"} /  /  -> 1: [\"North\",\"Pears\",{\"date\":\"2026-02-18\"},{\"decimal\":\"10\"},{\"decimal\":\"1\"},false]"
+          ],
+          [
+            "-1: Region={\"kind\":\"text\",\"value\":\"North\"}, Product={\"kind\":\"text\",\"value\":\"Pears\"} /  /  -> 1: [\"North\",\"Pears\",{\"date\":\"2026-02-18\"},{\"decimal\":\"10\"},{\"decimal\":\"1\"},false]",
+            "0: Region={\"kind\":\"text\",\"value\":\"North\"}, Product={\"kind\":\"text\",\"value\":\"Pears\"} / Online={\"kind\":\"boolean\",\"value\":\"FALSE\"} /  -> 1: [\"North\",\"Pears\",{\"date\":\"2026-02-18\"},{\"decimal\":\"10\"},{\"decimal\":\"1\"},false]",
+            "1: Region={\"kind\":\"text\",\"value\":\"North\"}, Product={\"kind\":\"text\",\"value\":\"Pears\"} / Online={\"kind\":\"boolean\",\"value\":\"TRUE\"} /  -> 0: ",
+            "2: Region={\"kind\":\"text\",\"value\":\"North\"}, Product={\"kind\":\"text\",\"value\":\"Pears\"} /  /  -> 1: [\"North\",\"Pears\",{\"date\":\"2026-02-18\"},{\"decimal\":\"10\"},{\"decimal\":\"1\"},false]"
+          ],
+          [
+            "-1: Region={\"kind\":\"text\",\"value\":\"North\"} /  /  -> 1: [\"North\",\"Pears\",{\"date\":\"2026-02-18\"},{\"decimal\":\"10\"},{\"decimal\":\"1\"},false]",
+            "0: Region={\"kind\":\"text\",\"value\":\"North\"} / Online={\"kind\":\"boolean\",\"value\":\"FALSE\"} /  -> 1: [\"North\",\"Pears\",{\"date\":\"2026-02-18\"},{\"decimal\":\"10\"},{\"decimal\":\"1\"},false]",
+            "1: Region={\"kind\":\"text\",\"value\":\"North\"} / Online={\"kind\":\"boolean\",\"value\":\"TRUE\"} /  -> 0: ",
+            "2: Region={\"kind\":\"text\",\"value\":\"North\"} /  /  -> 1: [\"North\",\"Pears\",{\"date\":\"2026-02-18\"},{\"decimal\":\"10\"},{\"decimal\":\"1\"},false]"
+          ],
+          [
+            "-1: Region={\"kind\":\"text\",\"value\":\"North\"} /  /  -> 1: [\"North\",\"Pears\",{\"date\":\"2026-02-18\"},{\"decimal\":\"10\"},{\"decimal\":\"1\"},false]",
+            "0: Region={\"kind\":\"text\",\"value\":\"North\"} / Online={\"kind\":\"boolean\",\"value\":\"FALSE\"} /  -> 1: [\"North\",\"Pears\",{\"date\":\"2026-02-18\"},{\"decimal\":\"10\"},{\"decimal\":\"1\"},false]",
+            "1: Region={\"kind\":\"text\",\"value\":\"North\"} / Online={\"kind\":\"boolean\",\"value\":\"TRUE\"} /  -> 0: ",
+            "2: Region={\"kind\":\"text\",\"value\":\"North\"} /  /  -> 1: [\"North\",\"Pears\",{\"date\":\"2026-02-18\"},{\"decimal\":\"10\"},{\"decimal\":\"1\"},false]"
+          ],
+          [
+            "-1: Region={\"kind\":\"text\",\"value\":\"West\"}, Product={\"kind\":\"text\",\"value\":\"Apples\"} /  /  -> 1: [\"West\",\"Apples\",{\"date\":\"2026-01-20\"},{\"decimal\":\"70\"},{\"decimal\":\"7\"},false]",
+            "0: Region={\"kind\":\"text\",\"value\":\"West\"}, Product={\"kind\":\"text\",\"value\":\"Apples\"} / Online={\"kind\":\"boolean\",\"value\":\"FALSE\"} /  -> 1: [\"West\",\"Apples\",{\"date\":\"2026-01-20\"},{\"decimal\":\"70\"},{\"decimal\":\"7\"},false]",
+            "1: Region={\"kind\":\"text\",\"value\":\"West\"}, Product={\"kind\":\"text\",\"value\":\"Apples\"} / Online={\"kind\":\"boolean\",\"value\":\"TRUE\"} /  -> 0: ",
+            "2: Region={\"kind\":\"text\",\"value\":\"West\"}, Product={\"kind\":\"text\",\"value\":\"Apples\"} /  /  -> 1: [\"West\",\"Apples\",{\"date\":\"2026-01-20\"},{\"decimal\":\"70\"},{\"decimal\":\"7\"},false]"
+          ],
+          [
+            "-1: Region={\"kind\":\"text\",\"value\":\"West\"}, Product={\"kind\":\"text\",\"value\":\"Apples\"} /  /  -> 1: [\"West\",\"Apples\",{\"date\":\"2026-01-20\"},{\"decimal\":\"70\"},{\"decimal\":\"7\"},false]",
+            "0: Region={\"kind\":\"text\",\"value\":\"West\"}, Product={\"kind\":\"text\",\"value\":\"Apples\"} / Online={\"kind\":\"boolean\",\"value\":\"FALSE\"} /  -> 1: [\"West\",\"Apples\",{\"date\":\"2026-01-20\"},{\"decimal\":\"70\"},{\"decimal\":\"7\"},false]",
+            "1: Region={\"kind\":\"text\",\"value\":\"West\"}, Product={\"kind\":\"text\",\"value\":\"Apples\"} / Online={\"kind\":\"boolean\",\"value\":\"TRUE\"} /  -> 0: ",
+            "2: Region={\"kind\":\"text\",\"value\":\"West\"}, Product={\"kind\":\"text\",\"value\":\"Apples\"} /  /  -> 1: [\"West\",\"Apples\",{\"date\":\"2026-01-20\"},{\"decimal\":\"70\"},{\"decimal\":\"7\"},false]"
+          ],
+          [
+            "-1: Region={\"kind\":\"text\",\"value\":\"West\"}, Product={\"kind\":\"text\",\"value\":\"Plums\"} /  /  -> 1: [\"West\",\"Plums\",{\"date\":\"2026-02-15\"},{\"decimal\":\"20\"},{\"decimal\":\"2\"},true]",
+            "0: Region={\"kind\":\"text\",\"value\":\"West\"}, Product={\"kind\":\"text\",\"value\":\"Plums\"} / Online={\"kind\":\"boolean\",\"value\":\"FALSE\"} /  -> 0: ",
+            "1: Region={\"kind\":\"text\",\"value\":\"West\"}, Product={\"kind\":\"text\",\"value\":\"Plums\"} / Online={\"kind\":\"boolean\",\"value\":\"TRUE\"} /  -> 1: [\"West\",\"Plums\",{\"date\":\"2026-02-15\"},{\"decimal\":\"20\"},{\"decimal\":\"2\"},true]",
+            "2: Region={\"kind\":\"text\",\"value\":\"West\"}, Product={\"kind\":\"text\",\"value\":\"Plums\"} /  /  -> 1: [\"West\",\"Plums\",{\"date\":\"2026-02-15\"},{\"decimal\":\"20\"},{\"decimal\":\"2\"},true]"
+          ],
+          [
+            "-1: Region={\"kind\":\"text\",\"value\":\"West\"}, Product={\"kind\":\"text\",\"value\":\"Plums\"} /  /  -> 1: [\"West\",\"Plums\",{\"date\":\"2026-02-15\"},{\"decimal\":\"20\"},{\"decimal\":\"2\"},true]",
+            "0: Region={\"kind\":\"text\",\"value\":\"West\"}, Product={\"kind\":\"text\",\"value\":\"Plums\"} / Online={\"kind\":\"boolean\",\"value\":\"FALSE\"} /  -> 0: ",
+            "1: Region={\"kind\":\"text\",\"value\":\"West\"}, Product={\"kind\":\"text\",\"value\":\"Plums\"} / Online={\"kind\":\"boolean\",\"value\":\"TRUE\"} /  -> 1: [\"West\",\"Plums\",{\"date\":\"2026-02-15\"},{\"decimal\":\"20\"},{\"decimal\":\"2\"},true]",
+            "2: Region={\"kind\":\"text\",\"value\":\"West\"}, Product={\"kind\":\"text\",\"value\":\"Plums\"} /  /  -> 1: [\"West\",\"Plums\",{\"date\":\"2026-02-15\"},{\"decimal\":\"20\"},{\"decimal\":\"2\"},true]"
+          ],
+          [
+            "-1: Region={\"kind\":\"text\",\"value\":\"West\"} /  /  -> 2: [\"West\",\"Apples\",{\"date\":\"2026-01-20\"},{\"decimal\":\"70\"},{\"decimal\":\"7\"},false]; [\"West\",\"Plums\",{\"date\":\"2026-02-15\"},{\"decimal\":\"20\"},{\"decimal\":\"2\"},true]",
+            "0: Region={\"kind\":\"text\",\"value\":\"West\"} / Online={\"kind\":\"boolean\",\"value\":\"FALSE\"} /  -> 1: [\"West\",\"Apples\",{\"date\":\"2026-01-20\"},{\"decimal\":\"70\"},{\"decimal\":\"7\"},false]",
+            "1: Region={\"kind\":\"text\",\"value\":\"West\"} / Online={\"kind\":\"boolean\",\"value\":\"TRUE\"} /  -> 1: [\"West\",\"Plums\",{\"date\":\"2026-02-15\"},{\"decimal\":\"20\"},{\"decimal\":\"2\"},true]",
+            "2: Region={\"kind\":\"text\",\"value\":\"West\"} /  /  -> 2: [\"West\",\"Apples\",{\"date\":\"2026-01-20\"},{\"decimal\":\"70\"},{\"decimal\":\"7\"},false]; [\"West\",\"Plums\",{\"date\":\"2026-02-15\"},{\"decimal\":\"20\"},{\"decimal\":\"2\"},true]"
+          ],
+          [
+            "-1: Region={\"kind\":\"text\",\"value\":\"West\"} /  /  -> 2: [\"West\",\"Apples\",{\"date\":\"2026-01-20\"},{\"decimal\":\"70\"},{\"decimal\":\"7\"},false]; [\"West\",\"Plums\",{\"date\":\"2026-02-15\"},{\"decimal\":\"20\"},{\"decimal\":\"2\"},true]",
+            "0: Region={\"kind\":\"text\",\"value\":\"West\"} / Online={\"kind\":\"boolean\",\"value\":\"FALSE\"} /  -> 1: [\"West\",\"Apples\",{\"date\":\"2026-01-20\"},{\"decimal\":\"70\"},{\"decimal\":\"7\"},false]",
+            "1: Region={\"kind\":\"text\",\"value\":\"West\"} / Online={\"kind\":\"boolean\",\"value\":\"TRUE\"} /  -> 1: [\"West\",\"Plums\",{\"date\":\"2026-02-15\"},{\"decimal\":\"20\"},{\"decimal\":\"2\"},true]",
+            "2: Region={\"kind\":\"text\",\"value\":\"West\"} /  /  -> 2: [\"West\",\"Apples\",{\"date\":\"2026-01-20\"},{\"decimal\":\"70\"},{\"decimal\":\"7\"},false]; [\"West\",\"Plums\",{\"date\":\"2026-02-15\"},{\"decimal\":\"20\"},{\"decimal\":\"2\"},true]"
+          ],
+          [
+            "-1: Region={\"kind\":\"blank\"}, Product={\"kind\":\"text\",\"value\":\"Plums\"} /  /  -> 1: [null,\"Plums\",{\"date\":\"2026-03-01\"},{\"decimal\":\"5\"},{\"decimal\":\"1\"},true]",
+            "0: Region={\"kind\":\"blank\"}, Product={\"kind\":\"text\",\"value\":\"Plums\"} / Online={\"kind\":\"boolean\",\"value\":\"FALSE\"} /  -> 0: ",
+            "1: Region={\"kind\":\"blank\"}, Product={\"kind\":\"text\",\"value\":\"Plums\"} / Online={\"kind\":\"boolean\",\"value\":\"TRUE\"} /  -> 1: [null,\"Plums\",{\"date\":\"2026-03-01\"},{\"decimal\":\"5\"},{\"decimal\":\"1\"},true]",
+            "2: Region={\"kind\":\"blank\"}, Product={\"kind\":\"text\",\"value\":\"Plums\"} /  /  -> 1: [null,\"Plums\",{\"date\":\"2026-03-01\"},{\"decimal\":\"5\"},{\"decimal\":\"1\"},true]"
+          ],
+          [
+            "-1: Region={\"kind\":\"blank\"}, Product={\"kind\":\"text\",\"value\":\"Plums\"} /  /  -> 1: [null,\"Plums\",{\"date\":\"2026-03-01\"},{\"decimal\":\"5\"},{\"decimal\":\"1\"},true]",
+            "0: Region={\"kind\":\"blank\"}, Product={\"kind\":\"text\",\"value\":\"Plums\"} / Online={\"kind\":\"boolean\",\"value\":\"FALSE\"} /  -> 0: ",
+            "1: Region={\"kind\":\"blank\"}, Product={\"kind\":\"text\",\"value\":\"Plums\"} / Online={\"kind\":\"boolean\",\"value\":\"TRUE\"} /  -> 1: [null,\"Plums\",{\"date\":\"2026-03-01\"},{\"decimal\":\"5\"},{\"decimal\":\"1\"},true]",
+            "2: Region={\"kind\":\"blank\"}, Product={\"kind\":\"text\",\"value\":\"Plums\"} /  /  -> 1: [null,\"Plums\",{\"date\":\"2026-03-01\"},{\"decimal\":\"5\"},{\"decimal\":\"1\"},true]"
+          ],
+          [
+            "-1: Region={\"kind\":\"blank\"} /  /  -> 1: [null,\"Plums\",{\"date\":\"2026-03-01\"},{\"decimal\":\"5\"},{\"decimal\":\"1\"},true]",
+            "0: Region={\"kind\":\"blank\"} / Online={\"kind\":\"boolean\",\"value\":\"FALSE\"} /  -> 0: ",
+            "1: Region={\"kind\":\"blank\"} / Online={\"kind\":\"boolean\",\"value\":\"TRUE\"} /  -> 1: [null,\"Plums\",{\"date\":\"2026-03-01\"},{\"decimal\":\"5\"},{\"decimal\":\"1\"},true]",
+            "2: Region={\"kind\":\"blank\"} /  /  -> 1: [null,\"Plums\",{\"date\":\"2026-03-01\"},{\"decimal\":\"5\"},{\"decimal\":\"1\"},true]"
+          ],
+          [
+            "-1: Region={\"kind\":\"blank\"} /  /  -> 1: [null,\"Plums\",{\"date\":\"2026-03-01\"},{\"decimal\":\"5\"},{\"decimal\":\"1\"},true]",
+            "0: Region={\"kind\":\"blank\"} / Online={\"kind\":\"boolean\",\"value\":\"FALSE\"} /  -> 0: ",
+            "1: Region={\"kind\":\"blank\"} / Online={\"kind\":\"boolean\",\"value\":\"TRUE\"} /  -> 1: [null,\"Plums\",{\"date\":\"2026-03-01\"},{\"decimal\":\"5\"},{\"decimal\":\"1\"},true]",
+            "2: Region={\"kind\":\"blank\"} /  /  -> 1: [null,\"Plums\",{\"date\":\"2026-03-01\"},{\"decimal\":\"5\"},{\"decimal\":\"1\"},true]"
+          ],
+          [
+            "-1:  /  /  -> 7: [\"East\",\"Apples\",{\"date\":\"2026-01-10\"},{\"decimal\":\"100\"},{\"decimal\":\"10\"},true]; [\"East\",\"Pears\",{\"date\":\"2026-01-12\"},{\"decimal\":\"50\"},{\"decimal\":\"5\"},false]; [\"East\",\"Apples\",{\"date\":\"2026-02-03\"},{\"decimal\":\"30\"},{\"decimal\":\"3\"},true]; [\"West\",\"Apples\",{\"date\":\"2026-01-20\"},{\"decimal\":\"70\"},{\"decimal\":\"7\"},false]; [\"West\",\"Plums\",{\"date\":\"2026-02-15\"},{\"decimal\":\"20\"},{\"decimal\":\"2\"},true]; [\"North\",\"Pears\",{\"date\":\"2026-02-18\"},{\"decimal\":\"10\"},{\"decimal\":\"1\"},false]; [null,\"Plums\",{\"date\":\"2026-03-01\"},{\"decimal\":\"5\"},{\"decimal\":\"1\"},true]",
+            "0:  / Online={\"kind\":\"boolean\",\"value\":\"FALSE\"} /  -> 3: [\"East\",\"Pears\",{\"date\":\"2026-01-12\"},{\"decimal\":\"50\"},{\"decimal\":\"5\"},false]; [\"West\",\"Apples\",{\"date\":\"2026-01-20\"},{\"decimal\":\"70\"},{\"decimal\":\"7\"},false]; [\"North\",\"Pears\",{\"date\":\"2026-02-18\"},{\"decimal\":\"10\"},{\"decimal\":\"1\"},false]",
+            "1:  / Online={\"kind\":\"boolean\",\"value\":\"TRUE\"} /  -> 4: [\"East\",\"Apples\",{\"date\":\"2026-01-10\"},{\"decimal\":\"100\"},{\"decimal\":\"10\"},true]; [\"East\",\"Apples\",{\"date\":\"2026-02-03\"},{\"decimal\":\"30\"},{\"decimal\":\"3\"},true]; [\"West\",\"Plums\",{\"date\":\"2026-02-15\"},{\"decimal\":\"20\"},{\"decimal\":\"2\"},true]; [null,\"Plums\",{\"date\":\"2026-03-01\"},{\"decimal\":\"5\"},{\"decimal\":\"1\"},true]",
+            "2:  /  /  -> 7: [\"East\",\"Apples\",{\"date\":\"2026-01-10\"},{\"decimal\":\"100\"},{\"decimal\":\"10\"},true]; [\"East\",\"Pears\",{\"date\":\"2026-01-12\"},{\"decimal\":\"50\"},{\"decimal\":\"5\"},false]; [\"East\",\"Apples\",{\"date\":\"2026-02-03\"},{\"decimal\":\"30\"},{\"decimal\":\"3\"},true]; [\"West\",\"Apples\",{\"date\":\"2026-01-20\"},{\"decimal\":\"70\"},{\"decimal\":\"7\"},false]; [\"West\",\"Plums\",{\"date\":\"2026-02-15\"},{\"decimal\":\"20\"},{\"decimal\":\"2\"},true]; [\"North\",\"Pears\",{\"date\":\"2026-02-18\"},{\"decimal\":\"10\"},{\"decimal\":\"1\"},false]; [null,\"Plums\",{\"date\":\"2026-03-01\"},{\"decimal\":\"5\"},{\"decimal\":\"1\"},true]"
+          ],
+          [
+            "-1:  /  /  -> 7: [\"East\",\"Apples\",{\"date\":\"2026-01-10\"},{\"decimal\":\"100\"},{\"decimal\":\"10\"},true]; [\"East\",\"Pears\",{\"date\":\"2026-01-12\"},{\"decimal\":\"50\"},{\"decimal\":\"5\"},false]; [\"East\",\"Apples\",{\"date\":\"2026-02-03\"},{\"decimal\":\"30\"},{\"decimal\":\"3\"},true]; [\"West\",\"Apples\",{\"date\":\"2026-01-20\"},{\"decimal\":\"70\"},{\"decimal\":\"7\"},false]; [\"West\",\"Plums\",{\"date\":\"2026-02-15\"},{\"decimal\":\"20\"},{\"decimal\":\"2\"},true]; [\"North\",\"Pears\",{\"date\":\"2026-02-18\"},{\"decimal\":\"10\"},{\"decimal\":\"1\"},false]; [null,\"Plums\",{\"date\":\"2026-03-01\"},{\"decimal\":\"5\"},{\"decimal\":\"1\"},true]",
+            "0:  / Online={\"kind\":\"boolean\",\"value\":\"FALSE\"} /  -> 3: [\"East\",\"Pears\",{\"date\":\"2026-01-12\"},{\"decimal\":\"50\"},{\"decimal\":\"5\"},false]; [\"West\",\"Apples\",{\"date\":\"2026-01-20\"},{\"decimal\":\"70\"},{\"decimal\":\"7\"},false]; [\"North\",\"Pears\",{\"date\":\"2026-02-18\"},{\"decimal\":\"10\"},{\"decimal\":\"1\"},false]",
+            "1:  / Online={\"kind\":\"boolean\",\"value\":\"TRUE\"} /  -> 4: [\"East\",\"Apples\",{\"date\":\"2026-01-10\"},{\"decimal\":\"100\"},{\"decimal\":\"10\"},true]; [\"East\",\"Apples\",{\"date\":\"2026-02-03\"},{\"decimal\":\"30\"},{\"decimal\":\"3\"},true]; [\"West\",\"Plums\",{\"date\":\"2026-02-15\"},{\"decimal\":\"20\"},{\"decimal\":\"2\"},true]; [null,\"Plums\",{\"date\":\"2026-03-01\"},{\"decimal\":\"5\"},{\"decimal\":\"1\"},true]",
+            "2:  /  /  -> 7: [\"East\",\"Apples\",{\"date\":\"2026-01-10\"},{\"decimal\":\"100\"},{\"decimal\":\"10\"},true]; [\"East\",\"Pears\",{\"date\":\"2026-01-12\"},{\"decimal\":\"50\"},{\"decimal\":\"5\"},false]; [\"East\",\"Apples\",{\"date\":\"2026-02-03\"},{\"decimal\":\"30\"},{\"decimal\":\"3\"},true]; [\"West\",\"Apples\",{\"date\":\"2026-01-20\"},{\"decimal\":\"70\"},{\"decimal\":\"7\"},false]; [\"West\",\"Plums\",{\"date\":\"2026-02-15\"},{\"decimal\":\"20\"},{\"decimal\":\"2\"},true]; [\"North\",\"Pears\",{\"date\":\"2026-02-18\"},{\"decimal\":\"10\"},{\"decimal\":\"1\"},false]; [null,\"Plums\",{\"date\":\"2026-03-01\"},{\"decimal\":\"5\"},{\"decimal\":\"1\"},true]"
+          ]
+        ]
+      ]
+    },
+    {
+      "name": "ADR-0151, ADR-0063: the question for the records behind each cell, resolved from the Window, and its records (hidden items and a report filter)",
+      "data": "sales",
+      "asks": [
+        {
+          "window": [0, 1000],
+          "layout": {
+            "filters": [{"field": "Online", "hiddenItems": [{"kind": "boolean", "value": "FALSE"}]}],
+            "rows": [{"field": "Region", "hiddenItems": [{"kind": "text", "value": "North"}]}],
+            "columns": [{"field": "Product"}],
+            "values": [{"field": "Amount", "aggregation": "sum"}, {"field": "Amount", "aggregation": "max"}]
+          }
+        },
+        {"detailsEach": "v1"}
+      ],
+      "expect": [
+        {
+          "version": "v1",
+          "sourceVersion": "s1",
+          "rowSequence": "r1",
+          "rowCount": 4,
+          "headers": [
+            "Row Labels",
+            "Sum of Amount",
+            "Max of Amount",
+            "Sum of Amount",
+            "Max of Amount",
+            "Sum of Amount",
+            "Max of Amount"
+          ],
+          "lines": [
+            "i East || 130 | 100 |  |  | 130 | 100",
+            "i West ||  |  | 20 | 20 | 20 | 20",
+            "i (blank) ||  |  | 5 | 5 | 5 | 5",
+            "t Grand Total || 130 | 100 | 25 | 20 | 155 | 100"
+          ],
+          "changeMarks": []
+        },
+        [
+          [
+            "-1: Region={\"kind\":\"text\",\"value\":\"East\"} /  / Region!={\"kind\":\"text\",\"value\":\"North\"}, Online!={\"kind\":\"boolean\",\"value\":\"FALSE\"} -> 2: [\"East\",\"Apples\",{\"date\":\"2026-01-10\"},{\"decimal\":\"100\"},{\"decimal\":\"10\"},true]; [\"East\",\"Apples\",{\"date\":\"2026-02-03\"},{\"decimal\":\"30\"},{\"decimal\":\"3\"},true]",
+            "0: Region={\"kind\":\"text\",\"value\":\"East\"} / Product={\"kind\":\"text\",\"value\":\"Apples\"} / Region!={\"kind\":\"text\",\"value\":\"North\"}, Online!={\"kind\":\"boolean\",\"value\":\"FALSE\"} -> 2: [\"East\",\"Apples\",{\"date\":\"2026-01-10\"},{\"decimal\":\"100\"},{\"decimal\":\"10\"},true]; [\"East\",\"Apples\",{\"date\":\"2026-02-03\"},{\"decimal\":\"30\"},{\"decimal\":\"3\"},true]",
+            "1: Region={\"kind\":\"text\",\"value\":\"East\"} / Product={\"kind\":\"text\",\"value\":\"Apples\"} / Region!={\"kind\":\"text\",\"value\":\"North\"}, Online!={\"kind\":\"boolean\",\"value\":\"FALSE\"} -> 2: [\"East\",\"Apples\",{\"date\":\"2026-01-10\"},{\"decimal\":\"100\"},{\"decimal\":\"10\"},true]; [\"East\",\"Apples\",{\"date\":\"2026-02-03\"},{\"decimal\":\"30\"},{\"decimal\":\"3\"},true]",
+            "2: Region={\"kind\":\"text\",\"value\":\"East\"} / Product={\"kind\":\"text\",\"value\":\"Plums\"} / Region!={\"kind\":\"text\",\"value\":\"North\"}, Online!={\"kind\":\"boolean\",\"value\":\"FALSE\"} -> 0: ",
+            "3: Region={\"kind\":\"text\",\"value\":\"East\"} / Product={\"kind\":\"text\",\"value\":\"Plums\"} / Region!={\"kind\":\"text\",\"value\":\"North\"}, Online!={\"kind\":\"boolean\",\"value\":\"FALSE\"} -> 0: ",
+            "4: Region={\"kind\":\"text\",\"value\":\"East\"} /  / Region!={\"kind\":\"text\",\"value\":\"North\"}, Online!={\"kind\":\"boolean\",\"value\":\"FALSE\"} -> 2: [\"East\",\"Apples\",{\"date\":\"2026-01-10\"},{\"decimal\":\"100\"},{\"decimal\":\"10\"},true]; [\"East\",\"Apples\",{\"date\":\"2026-02-03\"},{\"decimal\":\"30\"},{\"decimal\":\"3\"},true]",
+            "5: Region={\"kind\":\"text\",\"value\":\"East\"} /  / Region!={\"kind\":\"text\",\"value\":\"North\"}, Online!={\"kind\":\"boolean\",\"value\":\"FALSE\"} -> 2: [\"East\",\"Apples\",{\"date\":\"2026-01-10\"},{\"decimal\":\"100\"},{\"decimal\":\"10\"},true]; [\"East\",\"Apples\",{\"date\":\"2026-02-03\"},{\"decimal\":\"30\"},{\"decimal\":\"3\"},true]"
+          ],
+          [
+            "-1: Region={\"kind\":\"text\",\"value\":\"West\"} /  / Region!={\"kind\":\"text\",\"value\":\"North\"}, Online!={\"kind\":\"boolean\",\"value\":\"FALSE\"} -> 1: [\"West\",\"Plums\",{\"date\":\"2026-02-15\"},{\"decimal\":\"20\"},{\"decimal\":\"2\"},true]",
+            "0: Region={\"kind\":\"text\",\"value\":\"West\"} / Product={\"kind\":\"text\",\"value\":\"Apples\"} / Region!={\"kind\":\"text\",\"value\":\"North\"}, Online!={\"kind\":\"boolean\",\"value\":\"FALSE\"} -> 0: ",
+            "1: Region={\"kind\":\"text\",\"value\":\"West\"} / Product={\"kind\":\"text\",\"value\":\"Apples\"} / Region!={\"kind\":\"text\",\"value\":\"North\"}, Online!={\"kind\":\"boolean\",\"value\":\"FALSE\"} -> 0: ",
+            "2: Region={\"kind\":\"text\",\"value\":\"West\"} / Product={\"kind\":\"text\",\"value\":\"Plums\"} / Region!={\"kind\":\"text\",\"value\":\"North\"}, Online!={\"kind\":\"boolean\",\"value\":\"FALSE\"} -> 1: [\"West\",\"Plums\",{\"date\":\"2026-02-15\"},{\"decimal\":\"20\"},{\"decimal\":\"2\"},true]",
+            "3: Region={\"kind\":\"text\",\"value\":\"West\"} / Product={\"kind\":\"text\",\"value\":\"Plums\"} / Region!={\"kind\":\"text\",\"value\":\"North\"}, Online!={\"kind\":\"boolean\",\"value\":\"FALSE\"} -> 1: [\"West\",\"Plums\",{\"date\":\"2026-02-15\"},{\"decimal\":\"20\"},{\"decimal\":\"2\"},true]",
+            "4: Region={\"kind\":\"text\",\"value\":\"West\"} /  / Region!={\"kind\":\"text\",\"value\":\"North\"}, Online!={\"kind\":\"boolean\",\"value\":\"FALSE\"} -> 1: [\"West\",\"Plums\",{\"date\":\"2026-02-15\"},{\"decimal\":\"20\"},{\"decimal\":\"2\"},true]",
+            "5: Region={\"kind\":\"text\",\"value\":\"West\"} /  / Region!={\"kind\":\"text\",\"value\":\"North\"}, Online!={\"kind\":\"boolean\",\"value\":\"FALSE\"} -> 1: [\"West\",\"Plums\",{\"date\":\"2026-02-15\"},{\"decimal\":\"20\"},{\"decimal\":\"2\"},true]"
+          ],
+          [
+            "-1: Region={\"kind\":\"blank\"} /  / Region!={\"kind\":\"text\",\"value\":\"North\"}, Online!={\"kind\":\"boolean\",\"value\":\"FALSE\"} -> 1: [null,\"Plums\",{\"date\":\"2026-03-01\"},{\"decimal\":\"5\"},{\"decimal\":\"1\"},true]",
+            "0: Region={\"kind\":\"blank\"} / Product={\"kind\":\"text\",\"value\":\"Apples\"} / Region!={\"kind\":\"text\",\"value\":\"North\"}, Online!={\"kind\":\"boolean\",\"value\":\"FALSE\"} -> 0: ",
+            "1: Region={\"kind\":\"blank\"} / Product={\"kind\":\"text\",\"value\":\"Apples\"} / Region!={\"kind\":\"text\",\"value\":\"North\"}, Online!={\"kind\":\"boolean\",\"value\":\"FALSE\"} -> 0: ",
+            "2: Region={\"kind\":\"blank\"} / Product={\"kind\":\"text\",\"value\":\"Plums\"} / Region!={\"kind\":\"text\",\"value\":\"North\"}, Online!={\"kind\":\"boolean\",\"value\":\"FALSE\"} -> 1: [null,\"Plums\",{\"date\":\"2026-03-01\"},{\"decimal\":\"5\"},{\"decimal\":\"1\"},true]",
+            "3: Region={\"kind\":\"blank\"} / Product={\"kind\":\"text\",\"value\":\"Plums\"} / Region!={\"kind\":\"text\",\"value\":\"North\"}, Online!={\"kind\":\"boolean\",\"value\":\"FALSE\"} -> 1: [null,\"Plums\",{\"date\":\"2026-03-01\"},{\"decimal\":\"5\"},{\"decimal\":\"1\"},true]",
+            "4: Region={\"kind\":\"blank\"} /  / Region!={\"kind\":\"text\",\"value\":\"North\"}, Online!={\"kind\":\"boolean\",\"value\":\"FALSE\"} -> 1: [null,\"Plums\",{\"date\":\"2026-03-01\"},{\"decimal\":\"5\"},{\"decimal\":\"1\"},true]",
+            "5: Region={\"kind\":\"blank\"} /  / Region!={\"kind\":\"text\",\"value\":\"North\"}, Online!={\"kind\":\"boolean\",\"value\":\"FALSE\"} -> 1: [null,\"Plums\",{\"date\":\"2026-03-01\"},{\"decimal\":\"5\"},{\"decimal\":\"1\"},true]"
+          ],
+          [
+            "-1:  /  / Region!={\"kind\":\"text\",\"value\":\"North\"}, Online!={\"kind\":\"boolean\",\"value\":\"FALSE\"} -> 4: [\"East\",\"Apples\",{\"date\":\"2026-01-10\"},{\"decimal\":\"100\"},{\"decimal\":\"10\"},true]; [\"East\",\"Apples\",{\"date\":\"2026-02-03\"},{\"decimal\":\"30\"},{\"decimal\":\"3\"},true]; [\"West\",\"Plums\",{\"date\":\"2026-02-15\"},{\"decimal\":\"20\"},{\"decimal\":\"2\"},true]; [null,\"Plums\",{\"date\":\"2026-03-01\"},{\"decimal\":\"5\"},{\"decimal\":\"1\"},true]",
+            "0:  / Product={\"kind\":\"text\",\"value\":\"Apples\"} / Region!={\"kind\":\"text\",\"value\":\"North\"}, Online!={\"kind\":\"boolean\",\"value\":\"FALSE\"} -> 2: [\"East\",\"Apples\",{\"date\":\"2026-01-10\"},{\"decimal\":\"100\"},{\"decimal\":\"10\"},true]; [\"East\",\"Apples\",{\"date\":\"2026-02-03\"},{\"decimal\":\"30\"},{\"decimal\":\"3\"},true]",
+            "1:  / Product={\"kind\":\"text\",\"value\":\"Apples\"} / Region!={\"kind\":\"text\",\"value\":\"North\"}, Online!={\"kind\":\"boolean\",\"value\":\"FALSE\"} -> 2: [\"East\",\"Apples\",{\"date\":\"2026-01-10\"},{\"decimal\":\"100\"},{\"decimal\":\"10\"},true]; [\"East\",\"Apples\",{\"date\":\"2026-02-03\"},{\"decimal\":\"30\"},{\"decimal\":\"3\"},true]",
+            "2:  / Product={\"kind\":\"text\",\"value\":\"Plums\"} / Region!={\"kind\":\"text\",\"value\":\"North\"}, Online!={\"kind\":\"boolean\",\"value\":\"FALSE\"} -> 2: [\"West\",\"Plums\",{\"date\":\"2026-02-15\"},{\"decimal\":\"20\"},{\"decimal\":\"2\"},true]; [null,\"Plums\",{\"date\":\"2026-03-01\"},{\"decimal\":\"5\"},{\"decimal\":\"1\"},true]",
+            "3:  / Product={\"kind\":\"text\",\"value\":\"Plums\"} / Region!={\"kind\":\"text\",\"value\":\"North\"}, Online!={\"kind\":\"boolean\",\"value\":\"FALSE\"} -> 2: [\"West\",\"Plums\",{\"date\":\"2026-02-15\"},{\"decimal\":\"20\"},{\"decimal\":\"2\"},true]; [null,\"Plums\",{\"date\":\"2026-03-01\"},{\"decimal\":\"5\"},{\"decimal\":\"1\"},true]",
+            "4:  /  / Region!={\"kind\":\"text\",\"value\":\"North\"}, Online!={\"kind\":\"boolean\",\"value\":\"FALSE\"} -> 4: [\"East\",\"Apples\",{\"date\":\"2026-01-10\"},{\"decimal\":\"100\"},{\"decimal\":\"10\"},true]; [\"East\",\"Apples\",{\"date\":\"2026-02-03\"},{\"decimal\":\"30\"},{\"decimal\":\"3\"},true]; [\"West\",\"Plums\",{\"date\":\"2026-02-15\"},{\"decimal\":\"20\"},{\"decimal\":\"2\"},true]; [null,\"Plums\",{\"date\":\"2026-03-01\"},{\"decimal\":\"5\"},{\"decimal\":\"1\"},true]",
+            "5:  /  / Region!={\"kind\":\"text\",\"value\":\"North\"}, Online!={\"kind\":\"boolean\",\"value\":\"FALSE\"} -> 4: [\"East\",\"Apples\",{\"date\":\"2026-01-10\"},{\"decimal\":\"100\"},{\"decimal\":\"10\"},true]; [\"East\",\"Apples\",{\"date\":\"2026-02-03\"},{\"decimal\":\"30\"},{\"decimal\":\"3\"},true]; [\"West\",\"Plums\",{\"date\":\"2026-02-15\"},{\"decimal\":\"20\"},{\"decimal\":\"2\"},true]; [null,\"Plums\",{\"date\":\"2026-03-01\"},{\"decimal\":\"5\"},{\"decimal\":\"1\"},true]"
+          ]
+        ]
+      ]
+    },
+    {
+      "name": "ADR-0151, ADR-0063: the question for the records behind each cell, resolved from the Window, and its records (no rows)",
+      "data": "sales",
+      "asks": [
+        {
+          "window": [0, 1000],
+          "layout": {"columns": [{"field": "Product"}], "values": [{"field": "Amount", "aggregation": "sum"}]}
+        },
+        {"detailsEach": "v1"}
+      ],
+      "expect": [
+        {
+          "version": "v1",
+          "sourceVersion": "s1",
+          "rowSequence": "r1",
+          "rowCount": 1,
+          "headers": ["Apples", "Pears", "Plums", "Grand Total"],
+          "lines": ["t  || 200 | 60 | 25 | 285"],
+          "changeMarks": []
+        },
+        [
+          [
+            "-1:  /  /  -> 7: [\"East\",\"Apples\",{\"date\":\"2026-01-10\"},{\"decimal\":\"100\"},{\"decimal\":\"10\"},true]; [\"East\",\"Pears\",{\"date\":\"2026-01-12\"},{\"decimal\":\"50\"},{\"decimal\":\"5\"},false]; [\"East\",\"Apples\",{\"date\":\"2026-02-03\"},{\"decimal\":\"30\"},{\"decimal\":\"3\"},true]; [\"West\",\"Apples\",{\"date\":\"2026-01-20\"},{\"decimal\":\"70\"},{\"decimal\":\"7\"},false]; [\"West\",\"Plums\",{\"date\":\"2026-02-15\"},{\"decimal\":\"20\"},{\"decimal\":\"2\"},true]; [\"North\",\"Pears\",{\"date\":\"2026-02-18\"},{\"decimal\":\"10\"},{\"decimal\":\"1\"},false]; [null,\"Plums\",{\"date\":\"2026-03-01\"},{\"decimal\":\"5\"},{\"decimal\":\"1\"},true]",
+            "0:  / Product={\"kind\":\"text\",\"value\":\"Apples\"} /  -> 3: [\"East\",\"Apples\",{\"date\":\"2026-01-10\"},{\"decimal\":\"100\"},{\"decimal\":\"10\"},true]; [\"East\",\"Apples\",{\"date\":\"2026-02-03\"},{\"decimal\":\"30\"},{\"decimal\":\"3\"},true]; [\"West\",\"Apples\",{\"date\":\"2026-01-20\"},{\"decimal\":\"70\"},{\"decimal\":\"7\"},false]",
+            "1:  / Product={\"kind\":\"text\",\"value\":\"Pears\"} /  -> 2: [\"East\",\"Pears\",{\"date\":\"2026-01-12\"},{\"decimal\":\"50\"},{\"decimal\":\"5\"},false]; [\"North\",\"Pears\",{\"date\":\"2026-02-18\"},{\"decimal\":\"10\"},{\"decimal\":\"1\"},false]",
+            "2:  / Product={\"kind\":\"text\",\"value\":\"Plums\"} /  -> 2: [\"West\",\"Plums\",{\"date\":\"2026-02-15\"},{\"decimal\":\"20\"},{\"decimal\":\"2\"},true]; [null,\"Plums\",{\"date\":\"2026-03-01\"},{\"decimal\":\"5\"},{\"decimal\":\"1\"},true]",
+            "3:  /  /  -> 7: [\"East\",\"Apples\",{\"date\":\"2026-01-10\"},{\"decimal\":\"100\"},{\"decimal\":\"10\"},true]; [\"East\",\"Pears\",{\"date\":\"2026-01-12\"},{\"decimal\":\"50\"},{\"decimal\":\"5\"},false]; [\"East\",\"Apples\",{\"date\":\"2026-02-03\"},{\"decimal\":\"30\"},{\"decimal\":\"3\"},true]; [\"West\",\"Apples\",{\"date\":\"2026-01-20\"},{\"decimal\":\"70\"},{\"decimal\":\"7\"},false]; [\"West\",\"Plums\",{\"date\":\"2026-02-15\"},{\"decimal\":\"20\"},{\"decimal\":\"2\"},true]; [\"North\",\"Pears\",{\"date\":\"2026-02-18\"},{\"decimal\":\"10\"},{\"decimal\":\"1\"},false]; [null,\"Plums\",{\"date\":\"2026-03-01\"},{\"decimal\":\"5\"},{\"decimal\":\"1\"},true]"
+          ]
+        ]
+      ]
+    },
+    {
+      "name": "ADR-0060, PV-7, ADR-0005: a number Item's label copies its number in full, as a value cell does, and a number column Item's header carries its number in full",
+      "data": "keyed",
+      "asks": [
+        {
+          "window": [0, 3],
+          "layout": {"rows": [{"field": "Key"}], "values": [{"field": "Amount", "aggregation": "sum"}]}
+        },
+        {"copy": {"version": "v1", "columns": [0, 1], "ranges": [[0, 0, 2, 1]]}},
+        {
+          "window": [0, 1],
+          "layout": {"columns": [{"field": "Key"}], "values": [{"field": "Amount", "aggregation": "sum"}]}
+        },
+        {"copy": {"version": "v2", "columns": [0, 1, 2], "ranges": [[0, 0, 0, 2]]}},
+        {"copy": {"version": "v2", "columns": [2], "ranges": [[0, 0, 0, 0]]}}
+      ],
+      "expect": [
+        {
+          "version": "v1",
+          "sourceVersion": "s1",
+          "rowSequence": "r1",
+          "rowCount": 3,
+          "headers": ["Row Labels", "Sum of Amount"],
+          "lines": ["i 1.23456789 || 1", "i 1.23457E+11 || 2", "t Grand Total || 3"],
+          "changeMarks": []
+        },
+        {
+          "version": "v1",
+          "blocks": [
+            {
+              "headers": ["Row Labels", "Sum of Amount"],
+              "rows": [
+                [["1.23456789", "1.23456789012345", true], ["1", "1", true]],
+                [["1.23457E+11", "123456789012.345", true], ["2", "2", true]],
+                [["Grand Total", "Grand Total", false], ["3", "3", true]]
+              ]
+            }
+          ]
+        },
+        {
+          "version": "v2",
+          "sourceVersion": "s1",
+          "rowSequence": "r2",
+          "rowCount": 1,
+          "headers": ["1.23456789", "1.23457E+11", "Grand Total"],
+          "lines": ["t  || 1 | 2 | 3"],
+          "changeMarks": []
+        },
+        {
+          "version": "v2",
+          "blocks": [
+            {
+              "headers": ["1.23456789", "1.23457E+11", "Grand Total"],
+              "headerRaws": ["1.23456789012345", "123456789012.345", null],
+              "rows": [[["1", "1", true], ["2", "2", true], ["3", "3", true]]]
+            }
+          ]
+        },
+        {"version": "v2", "blocks": [{"headers": ["Grand Total"], "rows": [[["3", "3", true]]]}]}
+      ]
+    },
+    {
+      "name": "ADR-0151, ADR-0153: the widest label of each label column, estimated under the settings' label geometry — its indent and button a full-width character each, rounded to even — and none without it",
+      "data": "sales",
+      "asks": [
+        {
+          "window": [0, 3],
+          "layout": {"rows": [{"field": "Region"}, {"field": "Product"}], "values": [{"field": "Amount", "aggregation": "sum"}]},
+          "settings": {
+            "labelMetrics": {
+              "wideWidthPx": 12,
+              "digitWidthPx": 8,
+              "narrowWidthPx": 4,
+              "fullWidthPx": 16.5,
+              "otherWidthPx": 11,
+              "cellHorizontalPaddingPx": 3,
+              "glyphWidths": {"87": 14, "119070": 13}
+            }
+          }
+        },
+        {
+          "window": [0, 3],
+          "layout": {
+            "rows": [{"field": "Region"}, {"field": "Product"}],
+            "values": [{"field": "Amount", "aggregation": "sum"}],
+            "form": "tabular"
+          }
+        },
+        {
+          "window": [0, 3],
+          "settings": {
+            "labelMetrics": {
+              "wideWidthPx": 12,
+              "digitWidthPx": 8,
+              "narrowWidthPx": 4,
+              "fullWidthPx": 17.5,
+              "otherWidthPx": 11,
+              "cellHorizontalPaddingPx": 3,
+              "glyphWidths": {"87": 14, "119070": 13}
+            }
+          }
+        },
+        {"window": [0, 3], "settings": {}},
+        {
+          "window": [0, 3],
+          "layout": {"rows": [{"field": "Product"}], "values": [{"field": "Amount", "aggregation": "sum"}]},
+          "settings": {
+            "labelMetrics": {
+              "wideWidthPx": 12,
+              "digitWidthPx": 8,
+              "narrowWidthPx": 4,
+              "fullWidthPx": 16.5,
+              "otherWidthPx": 11,
+              "cellHorizontalPaddingPx": 3,
+              "glyphWidths": {}
+            }
+          },
+          "locale": "ja-JP",
+          "words": "japanese"
+        }
+      ],
+      "expect": [
+        {
+          "version": "v1",
+          "sourceVersion": "s1",
+          "rowSequence": "r1",
+          "rowCount": 11,
+          "headers": ["Row Labels", "Sum of Amount"],
+          "lines": ["g [-]East || 180", "i   Apples || 130", "i   Pears || 50"],
+          "changeMarks": [],
+          "labelWidths": [120]
+        },
+        {
+          "version": "v2",
+          "sourceVersion": "s1",
+          "rowSequence": "r2",
+          "rowCount": 11,
+          "headers": ["Region", "Product", "Sum of Amount"],
+          "lines": ["i [-]East | Apples || 130", "i  | Pears || 50", "s East Total |  || 180"],
+          "changeMarks": [],
+          "labelWidths": [128, 72]
+        },
+        {
+          "version": "v3",
+          "sourceVersion": "s1",
+          "rowSequence": "r2",
+          "rowCount": 11,
+          "headers": ["Region", "Product", "Sum of Amount"],
+          "lines": ["i [-]East | Apples || 130", "i  | Pears || 50", "s East Total |  || 180"],
+          "changeMarks": [],
+          "labelWidths": [128, 72]
+        },
+        {
+          "version": "v4",
+          "sourceVersion": "s1",
+          "rowSequence": "r2",
+          "rowCount": 11,
+          "headers": ["Region", "Product", "Sum of Amount"],
+          "lines": ["i [-]East | Apples || 130", "i  | Pears || 50", "s East Total |  || 180"],
+          "changeMarks": []
+        },
+        {
+          "version": "v5",
+          "sourceVersion": "s1",
+          "rowSequence": "r3",
+          "rowCount": 4,
+          "headers": ["行ラベル", "合計 / Amount"],
+          "lines": ["i Apples || 200", "i Pears || 60", "i Plums || 25"],
+          "changeMarks": [],
+          "labelWidths": [72]
+        }
+      ]
+    },
+    {
+      "name": "ADR-0153: a source over records cannot name its changes and is asked again only for a refresh; the same data laid out again is the same row sequence",
+      "data": "sales",
+      "asks": [
+        {
+          "window": [0, 2],
+          "layout": {"rows": [{"field": "Region"}], "values": [{"field": "Amount", "aggregation": "sum"}]}
+        },
+        {"window": [0, 2]},
+        {"window": [0, 2], "refreshData": true},
+        {
+          "window": [0, 2],
+          "layout": {
+            "rows": [{"field": "Region", "sort": {"direction": "descending"}}],
+            "values": [{"field": "Amount", "aggregation": "sum"}]
+          }
+        }
+      ],
+      "expect": [
+        {
+          "version": "v1",
+          "sourceVersion": "s1",
+          "rowSequence": "r1",
+          "rowCount": 5,
+          "headers": ["Row Labels", "Sum of Amount"],
+          "lines": ["i East || 180", "i North || 10"],
+          "changeMarks": []
+        },
+        {
+          "version": "v1",
+          "sourceVersion": "s1",
+          "rowSequence": "r1",
+          "rowCount": 5,
+          "headers": ["Row Labels", "Sum of Amount"],
+          "lines": ["i East || 180", "i North || 10"],
+          "changeMarks": []
+        },
+        {
+          "version": "v2",
+          "sourceVersion": "s1",
+          "rowSequence": "r1",
+          "rowCount": 5,
+          "headers": ["Row Labels", "Sum of Amount"],
+          "lines": ["i East || 180", "i North || 10"],
+          "changeMarks": []
+        },
+        {
+          "version": "v3",
+          "sourceVersion": "s1",
+          "rowSequence": "r2",
+          "rowCount": 5,
+          "headers": ["Row Labels", "Sum of Amount"],
+          "lines": ["i West || 90", "i North || 10"],
+          "changeMarks": []
+        }
+      ]
+    },
+    {
+      "name": "ADR-0066: a layout past the cap on leaves is refused by the Pivot Source, by name, and the report source answers the next layout",
+      "data": "sales",
+      "asks": [
+        {
+          "window": [0, 5],
+          "layout": {"rows": [{"field": "Region"}, {"field": "Product"}], "values": [{"field": "Amount", "aggregation": "sum"}]},
+          "maxLeaves": 3
+        },
+        {"window": [0, 5], "maxLeaves": 100}
+      ],
+      "expect": [
+        {"refused": "sourceRefused", "saying": "This layout needs more than 3 cells."},
+        {
+          "version": "v1",
+          "sourceVersion": "s1",
+          "rowSequence": "r1",
+          "rowCount": 11,
+          "headers": ["Row Labels", "Sum of Amount"],
+          "lines": ["g [-]East || 180", "i   Apples || 130", "i   Pears || 50", "g [-]North || 10", "i   Pears || 10"],
+          "changeMarks": []
+        }
+      ]
+    }
+  ]
+}

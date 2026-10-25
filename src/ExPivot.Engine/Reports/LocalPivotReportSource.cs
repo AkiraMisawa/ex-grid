@@ -144,8 +144,15 @@ public sealed class LocalPivotReportSource : PivotReportSource
             ObjectDisposedException.ThrowIf(_disposed, this);
             var settings = PivotReportJson.Write(request.Settings);
             var layout = PivotLayoutJson.Write(request.Layout);
-            if (_settings != settings && ResolveFields(request.Settings) is { } policyRefusal)
-                return PivotReportUpdate.Refused(request, policyRefusal);
+            // The fields under the request's Order Key policies, adopted only with the version they publish: a
+            // request refused or cancelled leaves the next one ordered by the policies its settings name.
+            var fields = _effectiveFields;
+            if (_settings != settings)
+            {
+                var policyRefusal = ResolveFields(request.Settings, out fields);
+                if (policyRefusal is not null)
+                    return PivotReportUpdate.Refused(request, policyRefusal);
+            }
             var last = _versions.First?.Value;
             // The Baseline Window the request names, read before a publication below evicts its
             // Report Version: Window Changes are made against what the Consumer holds, however few
@@ -162,7 +169,7 @@ public sealed class LocalPivotReportSource : PivotReportSource
                 if (_computation is null || policies != _policies)
                 {
                     _computation?.Dispose();
-                    _computation = new(_source, _effectiveFields);
+                    _computation = new(_source, fields);
                     _policies = policies;
                 }
                 if (_settings != settings) _options = request.Settings.ToOptions();
@@ -215,7 +222,7 @@ public sealed class LocalPivotReportSource : PivotReportSource
                         column.Role, column.ValueField, report.ColumnPath(index).Select(p => new PivotFieldItem(p.Field, p.Item)).ToArray())).ToArray(),
                     report.HeaderSpans, report.HeaderTierCount, report.ValueCaptions)
                 { LabelWidths = widths, ChangeMarks = marks };
-                var next = new HeldReport(metadata, report, _source, _effectiveFields);
+                var next = new HeldReport(metadata, report, _source, fields);
                 last = next;
                 lock (_published)
                 {
@@ -228,6 +235,7 @@ public sealed class LocalPivotReportSource : PivotReportSource
                     }
                 }
                 _settings = settings;
+                _effectiveFields = fields;
                 _layout = layout;
                 _maxLeaves = request.MaxLeaves;
                 _unpublished = null;
@@ -299,8 +307,9 @@ public sealed class LocalPivotReportSource : PivotReportSource
         return cube.Holds(request.Layout) && cube.Query.MaxLeaves == request.MaxLeaves ? cube : null;
     }
 
-    private PivotReportRefusal? ResolveFields(PivotReportSettings settings)
+    private PivotReportRefusal? ResolveFields(PivotReportSettings settings, out IReadOnlyList<PivotField> resolved)
     {
+        resolved = _effectiveFields;
         var fields = new List<PivotField>(Fields.Count);
         foreach (var name in settings.OrderKeyPolicies.Keys)
             if (!Fields.Any(field => field.Name == name))
@@ -313,7 +322,7 @@ public sealed class LocalPivotReportSource : PivotReportSource
             fields.Add(new PivotField(field.Name, field.Type, field.Caption, field.Format, field.ItemOrder)
                 { Column = field.Column, DatePart = field.DatePart, OrderKey = key });
         }
-        _effectiveFields = fields;
+        resolved = fields;
         return null;
     }
 

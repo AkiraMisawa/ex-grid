@@ -58,3 +58,15 @@ export type { PivotItemInfo } from './engine';
 export {
     aggregatePivot, computePivot, itemsOfCube, itemsOfPage, pivotCube, pivotCubeAsync, pivotReport, pivotReportAsync, recordsBehind, validateLayout,
 } from './engine';
+export type {
+    PivotDisplayColumn, PivotDisplayRow, PivotReportAnswer, PivotReportCopyBlock, PivotReportCopyCell, PivotReportCopyQuery, PivotReportCopyResult,
+    PivotReportItemsQuery, PivotReportItemsResult, PivotReportMetadata, PivotReportRange, PivotReportRefusal, PivotReportRefusalKind,
+    PivotReportRefused, PivotReportRequest, PivotReportSettings, PivotReportState, PivotReportSummaryQuery, PivotReportSummaryResult,
+    PivotReportUpdate, PivotReportWindow,
+} from './reports/contract';
+export { pivotReportDetailsQuery } from './reports/contract';
+export type { PivotLabelMetrics } from './reports/label-metrics';
+export { estimateLabelPx } from './reports/label-metrics';
+export { PivotChangeTimes } from './reports/change-times';
+export type { LocalPivotReportSourceOptions, PivotReportSource, PivotReportUpdateMode } from './reports/local-report-source';
+export { LocalPivotReportSource } from './reports/local-report-source';

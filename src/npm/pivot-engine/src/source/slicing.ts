@@ -33,6 +33,11 @@ export class Slicer {
         signal?.throwIfAborted();
     }
 
+    /** The signal the question is cancelled with, which a source asked on these slices hears. */
+    get signal(): AbortSignal | undefined {
+        return this.#signal;
+    }
+
     /** A point between two steps: throws once the question is cancelled, and yields when the slice is spent. */
     async step(): Promise<void> {
         this.#signal?.throwIfAborted();

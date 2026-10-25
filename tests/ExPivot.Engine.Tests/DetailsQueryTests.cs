@@ -6,8 +6,9 @@ namespace ExPivot.Engine.Tests;
 /// <summary>
 /// Show Details is a Source Version question (ADR-0151): resolved from the detached cell the user
 /// acted on — its row's Items, its value column's Items, the Hidden Items and the Source Version —
-/// it is the question the engine itself asks for the same cell, and it stays answerable after any
-/// number of later layouts, while the Pivot Source holds that version.
+/// it is the question the engine itself asks for the same cell. That it stays answerable after any
+/// number of later layouts, while the Pivot Source holds that version, is a shared case
+/// (<c>tests/cases/pivot/report-source.json</c>), as are the questions and records themselves.
 /// </summary>
 public class DetailsQueryTests
 {
@@ -58,44 +59,5 @@ public class DetailsQueryTests
                 Assert.Equal(engine.Records.Select(record => record.Values), records.Records.Select(record => record.Values));
             }
         }
-    }
-
-    private sealed record Trade(long Id, string Desk, decimal Amount);
-
-    [Fact] // ADR-0151 (PV-14): Details keep answering after layouts that evicted their Report Version, and are refused — as the data having changed — only once the Pivot Source no longer holds their Source Version
-    public async Task Details_outlive_the_report_version_and_end_with_their_source_version()
-    {
-        var fields = PivotFields.Of<Trade>().Key("Id", t => t.Id).Text("Desk", t => t.Desk).Number("Amount", t => t.Amount);
-        var trades = new[] { new Trade(1, "East", 10m), new Trade(2, "East", 20m), new Trade(3, "West", 30m) };
-        var data = PivotSource.From(trades, fields);
-        await using var source = PivotReportSource.From(data);
-        var client = new PivotReportClient(source);
-        var layout = new PivotLayout { Rows = [P("Desk")], Values = [Sum("Amount")] };
-        Assert.True(await client.ReadAsync(layout, PivotReportSettings.Invariant, new(0, 10), cancellationToken: Ct));
-        var shown = client.Current!;
-        var details = shown.Metadata.DetailsQuery(shown.Rows[0], 0, start: 1, count: 1);
-
-        // Two layout gestures: two Report Versions, and the one the cell was shown in is evicted.
-        Assert.True(await client.ReadAsync(layout with { Rows = [P("Desk") with { Sort = PivotSort.Descending }] },
-            PivotReportSettings.Invariant, new(0, 10), cancellationToken: Ct, markChanges: false));
-        Assert.True(await client.ReadAsync(layout with { Form = PivotReportForm.Tabular },
-            PivotReportSettings.Invariant, new(0, 10), cancellationToken: Ct, markChanges: false));
-        var copy = await source.CopyAsync(new(shown.Metadata.Version, [shown.Metadata.ValueColumns[0].Name], [new(0, 0, 0, 0)]), Ct);
-        Assert.Equal(PivotReportRefusalKind.ReportVersionNotHeld, copy.Refusal!.Kind);
-
-        var page = await source.DetailsAsync(details, Ct);
-        Assert.False(page.IsRefused);
-        Assert.Equal(2, page.Total);
-        Assert.Equal(20m, Assert.Single(page.Records).Values[^1]);
-
-        // Data that moved on further than the Pivot Source holds: refused, naming the data's change.
-        for (var i = 0; i < SnapshotPivotSource.AnswersHeld + 1; i++)
-        {
-            data.Apply(fields.Batch(changed: [trades[2] = trades[2] with { Amount = trades[2].Amount + 1 }]));
-            Assert.True(await client.ReadAsync(layout, PivotReportSettings.Invariant, new(0, 10), cancellationToken: Ct));
-        }
-        var refused = await source.DetailsAsync(details, Ct);
-        Assert.True(refused.IsRefused);
-        Assert.Equal(PivotSourceRefusalKind.SourceVersionNotHeld, refused.Refusal!.Kind);
     }
 }

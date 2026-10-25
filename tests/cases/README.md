@@ -571,3 +571,26 @@ place of the one asked. Each of `asks` is answered in turn:
 A page says `"version": "asked"` when it was answered under the version it was asked under. A source's
 refusal is `{"refused": kind, "field", "limit", "saying"}`, the version asked under written `{version}`.
 
+
+### `pivotReportSource`
+
+A local report source (ADR-0151 to ADR-0153, as ADR-0370 section 4 leaves them) over a Pivot Source of the
+data set, made as a `pivotSource` case makes one, with the Order Keys `orderKeys` registers by a policy's name
+(`longFirst`, which orders longer text first, and `throwsOnBB`, which fails on `BB`), `versionsKept`, and a
+clock that starts at 2026-10-06T12:00Z and moves only when a case says. Versions are written as tokens in the
+order the source first named them, `v1`… for Report Versions, `s1`… for Source Versions and `r1`… for row
+sequences, in its messages too; a token the source never named (`stale`) is asked as written. Each of `asks`
+is answered in turn:
+
+| Ask | Answer |
+|---|---|
+| `{"window": [start, count]}` | A Window, asked with the `layout`, the `settings` (`locale`, `words`, `changeHighlightMs`, `labelMetrics`, `orderKeyPolicies`), the `locale` and the `words` the step names or the step before named (the case's `settings` before any), `markChanges`, `refreshData`, `maxLeaves`, and the `baseline` it names (`null` for none) or the Window adopted last; with `"discard": true` it is not adopted. Answered by its `version`, `sourceVersion`, `rowSequence` and `rowCount`, the `headers`, a line a row as a `pivotReport` case reads one, the `changeMarks` it lists, each row's marks (`changed`) where a cell has one, its `labelWidths` where the settings give a geometry, and the readings `also` asks for: `keys`, `paths`, `numbers`, `columns` (each value column's `name`, `role`, `valueField` and `path`), `spans`, `captions`, `tiers` |
+| `{"apply": batch}` | A Change Batch applied to the source over a Snapshot, as a `pivotSource` case applies one; answered by the Source Version it made (`applied`) |
+| `{"advance": ms}` | The clock moved on |
+| `{"copy": query}` | A Copy under a `version`, its `columns` (an index among the label columns and then the value columns of the Window answered under it, or a name), its `ranges` (`[top, left, bottom, right]`) and `maxCells`; answered by each block's `headers`, its `headerRaws` where any header has one, and its `rows`, each cell `[text, raw, isNumber]` |
+| `{"summary": query}` | A Selection Summary, its `columns` and `ranges` as a Copy's, and its `focus` (`[row, column]`); answered by Count (`values`), Numerical Count (`numbers`), the `sum`, `min` and `max` where a number was selected (`m…` or `d…`), `hasError`, the Focus value's `numberFormat` and the `locale` |
+| `{"reportItems": query}` | A field's Items under a `version`, with `search` and `max`: `sourceVersion`, `total` and each Item's `key`, `label` and `isHidden` |
+| `{"details": cell}` | The records behind a cell of a Window answered under a `version`: its `row` (its place in the report) and `column` (−1 for its label), `start` and `count`; answered as a `pivotSource` case's page, or by the Pivot Source's refusal |
+| `{"detailsEach": version}` | The question for the records behind every cell of that Window, resolved from its rows, and its records: a line a cell, `column: the row's Items / the column's / the Hidden Items -> total: each record` |
+
+A report source's refusal is `{"refused": kind, "field", "saying"}`; what it throws is a refusal as above.

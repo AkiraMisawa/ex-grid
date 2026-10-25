@@ -14,7 +14,7 @@ internal static class PivotSourceCases
 {
     // A source, how often its server was asked for Leaf Aggregates, the version of each answer, and the
     // versions the source told of since the last batch; and the shape a batch's records are written in.
-    private sealed class Bench
+    internal sealed class Bench
     {
         public required PivotSource Source { get; set; }
         public required Func<PivotSource> Again { get; init; }
@@ -57,7 +57,7 @@ internal static class PivotSourceCases
 
     // The source a case asks: over the data set's Snapshot or its records, and behind a fetching source when
     // the case names one.
-    private static Bench Open(JsonObject document, JsonObject entry)
+    internal static Bench Open(JsonObject document, JsonObject entry)
     {
         var snapshot = PivotCases.SnapshotOf(document, entry);
         var data = snapshot is null ? PivotCases.Data(document, entry) : new PivotCases.DataSet([], [], []);
@@ -394,7 +394,7 @@ internal static class PivotSourceCases
     }
 
     // A value a record behind a cell carries, as a case writes a value.
-    private static JsonNode? DetailValue(object? value) => value switch
+    internal static JsonNode? DetailValue(object? value) => value switch
     {
         null => null,
         string text => JsonValue.Create(text),

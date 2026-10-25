@@ -92,11 +92,13 @@ function noCounts(): CountsPart {
     return { values: 0, numbers: 0, nonFinite: false };
 }
 
-function noSum(): SumPart {
+/** A sum that holds no number. */
+export function noSum(): SumPart {
     return { exact: decimalZero, double: 0, compensation: 0, inexact: false };
 }
 
-function noExtremes(): ExtremesPart {
+/** Extremes that hold no number. */
+export function noExtremes(): ExtremesPart {
     return { exactMin: decimalZero, exactMax: decimalZero, min: 0, max: 0, inexact: false };
 }
 
@@ -255,7 +257,8 @@ function mergeVariance(variance: VariancePart, other: VariancePart, count: numbe
 
 // ---- Finishing ----------------------------------------------------------------------------------
 
-function finishSum(sum: SumPart): void {
+/** Ends a sum: a double takes its compensation in, and the figures it does not use are zeroed. */
+export function finishSum(sum: SumPart): void {
     if (sum.inexact) {
         sum.double = sum.double + sum.compensation;
         sum.compensation = 0;
@@ -266,7 +269,8 @@ function finishSum(sum: SumPart): void {
     }
 }
 
-function finishExtremes(extremes: ExtremesPart): void {
+/** Ends extremes, as {@link finishSum} ends a sum. */
+export function finishExtremes(extremes: ExtremesPart): void {
     if (extremes.inexact) {
         extremes.exactMin = decimalZero;
         extremes.exactMax = decimalZero;

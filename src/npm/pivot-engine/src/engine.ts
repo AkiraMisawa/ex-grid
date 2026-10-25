@@ -118,7 +118,7 @@ export async function pivotCubeAsync(query: PivotQuery, answer: PivotAnswer, fie
  * Header Group spans. Cheap — nothing is asked of the source. Refuses a layout the cube does not hold.
  */
 export function pivotReport(cube: PivotCube, layout: PivotLayout, options?: PivotOptions): PivotReport {
-    checkHolds(cube, layout);
+    checkCubeHolds(cube, layout);
     return buildReport(cube, layout, resolveOptions(options));
 }
 
@@ -131,11 +131,13 @@ export function pivotReport(cube: PivotCube, layout: PivotLayout, options?: Pivo
 export async function pivotReportAsync(cube: PivotCube, layout: PivotLayout, options?: PivotOptions,
     slicing?: PivotSlicing, signal?: AbortSignal): Promise<PivotReport> {
     const slicer = new Slicer(checkedSlicing(slicing), signal);
-    checkHolds(cube, layout);
+    checkCubeHolds(cube, layout);
     return slicer.run(buildReportSteps(cube, layout, resolveOptions(options)));
 }
 
-function checkHolds(cube: PivotCube, layout: PivotLayout): void {
+/** Refuses a layout the cube cannot lay out: one {@link validateLayout} refuses, or one it was not aggregated
+ * for. */
+export function checkCubeHolds(cube: PivotCube, layout: PivotLayout): void {
     validateLayout(layout, cubeParts(cube).meta);
     if (!cube.holds(layout)) {
         throw new Error('The cube was aggregated under other placed fields, Hidden Items or Value Fields than this layout '

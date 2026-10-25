@@ -72,27 +72,6 @@ public class ItemTests
     // the Schema ExPivot suggested for it.
     private static readonly Keyed[] E16b = [new(1.23456789012345m, 1), new(123456789012.345m, 2)];
 
-    private static readonly PivotLayout ByKey = new() { Rows = [P("Key")], Values = [Sum("Amount")] };
-
-    [Fact] // ADR-0060, PV-7, ADR-0005: a number Item's label is shown in General, and its copy carries the number in full, as a value cell's does — Excel's label cell holds 123456789012.345 (R3 (c))
-    public async Task ADR0060_PV7_A_number_Items_copy_carries_the_number_in_full()
-    {
-        var ct = TestContext.Current.CancellationToken;
-        await using var source = PivotReportSource.From(PivotSource.From(E16b, KeyedFields));
-        var client = new PivotReportClient(source);
-        Assert.True(await client.ReadAsync(ByKey, PivotReportSettings.Invariant, new(0, 3), cancellationToken: ct));
-        var shown = client.Current!.Metadata;
-        string[] columns = [shown.LabelColumns[0].Name, shown.ValueColumns[0].Name];
-
-        var copy = await source.CopyAsync(new(shown.Version, columns, [new(0, 0, 2, 1)]), ct);
-
-        var rows = copy.Blocks[0].Rows;
-        Assert.Equal(["1.23456789", "1.23457E+11", "Grand Total"], rows.Select(row => row[0].Text));
-        Assert.Equal(["1.23456789012345", "123456789012.345", "Grand Total"], rows.Select(row => row[0].Raw));
-        Assert.Equal([true, true, false], rows.Select(row => row[0].IsNumber));
-        Assert.Equal(["1", "2", "3"], rows.Select(row => row[1].Raw));
-    }
-
     [Fact] // ADR-0005's note of 2026-10-13 (decided with the user), ADR-0060: a number column Item heads its column in General, and a copy's header carries its number in full for the HTML flavour; it travels a server's JSON
     public async Task ADR0005_A_number_column_Items_header_carries_its_number_in_full()
     {

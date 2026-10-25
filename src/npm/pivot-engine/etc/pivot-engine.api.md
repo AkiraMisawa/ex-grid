@@ -55,6 +55,9 @@ export const emptyPivotLayout: PivotLayout;
 export const errorItemKey: PivotItemKey;
 
 // @public
+export function estimateLabelPx(metrics: PivotLabelMetrics, text: string): number;
+
+// @public
 export class FetchingPivotSource implements PivotSource {
     constructor(fields: readonly PivotField[], features: PivotSourceFeatures, fetch: PivotFetchers);
     aggregate(query: PivotQuery, signal?: AbortSignal): Promise<PivotAnswer>;
@@ -90,6 +93,30 @@ export const japanesePivotWords: PivotLabel;
 
 // @public
 export function layoutChoiceChanges(layout: PivotLayout, choice: PivotLayoutChoice): boolean;
+
+// @public
+export class LocalPivotReportSource implements PivotReportSource {
+    constructor(source: PivotSource, options?: LocalPivotReportSourceOptions);
+    copy(query: PivotReportCopyQuery, signal?: AbortSignal): Promise<PivotReportCopyResult>;
+    details(query: PivotDetailsQuery, signal?: AbortSignal): Promise<PivotDetailPage>;
+    dispose(): void;
+    get features(): PivotSourceFeatures;
+    get fields(): readonly PivotField[];
+    items(query: PivotReportItemsQuery, signal?: AbortSignal): Promise<PivotReportItemsResult>;
+    rawItems(query: PivotItemsQuery, signal?: AbortSignal): Promise<PivotItemPage>;
+    subscribe(listener: (changed: PivotSourceChanged) => void): () => void;
+    summary(query: PivotReportSummaryQuery, signal?: AbortSignal): Promise<PivotReportSummaryResult>;
+    get updateMode(): PivotReportUpdateMode;
+    window(request: PivotReportRequest, signal?: AbortSignal): Promise<PivotReportUpdate>;
+}
+
+// @public
+export interface LocalPivotReportSourceOptions {
+    readonly now?: () => number;
+    readonly orderKeys?: Readonly<Record<string, PivotOrderKey>>;
+    readonly slicing?: PivotSlicing;
+    readonly versionsKept?: number;
+}
 
 // @public
 export function moveEntry(layout: PivotLayout, entry: PivotEntry, area: PivotArea, index: number, field: PivotFieldInfo | undefined): PivotLayout;
@@ -161,6 +188,13 @@ export type PivotArea = 'filters' | 'columns' | 'rows' | 'values';
 export type PivotAxis = 'columns' | 'rows';
 
 // @public
+export class PivotChangeTimes {
+    adopt(state: PivotReportState, now: number, highlightMs: number): void;
+    at(mark: string | undefined): number | undefined;
+    changedAt(row: PivotDisplayRow, valueColumn: number): number | undefined;
+}
+
+// @public
 export type PivotColumnRole = 'item' | 'subtotal' | 'grandTotal';
 
 // @public
@@ -221,6 +255,27 @@ export function pivotDetailsQuery(input: {
 
 // @public
 export type PivotDetailValue = string | SnapshotDecimal | number | bigint | boolean | null;
+
+// @public
+export interface PivotDisplayColumn {
+    readonly columnPath: readonly PivotFieldItem[];
+    readonly header: string;
+    readonly name: string;
+    readonly role: PivotColumnRole;
+    readonly valueField: number;
+}
+
+// @public
+export interface PivotDisplayRow {
+    readonly carriesValues: boolean;
+    readonly changedIn: readonly (string | undefined)[];
+    readonly items: readonly PivotItemKey[];
+    readonly labels: readonly PivotRowLabel[];
+    readonly role: PivotRowRole;
+    readonly rowPath: readonly PivotFieldItem[];
+    readonly valueField: number;
+    readonly values: readonly (PivotValue | undefined)[];
+}
 
 // @public
 export interface PivotEditResult {
@@ -374,6 +429,17 @@ export interface PivotLabelColumn {
     readonly field: string | undefined;
     readonly header: string;
     readonly name: string;
+}
+
+// @public
+export interface PivotLabelMetrics {
+    readonly cellHorizontalPaddingPx: number;
+    readonly digitWidthPx: number;
+    readonly fullWidthPx: number;
+    readonly glyphWidths?: Readonly<Record<number, number>>;
+    readonly narrowWidthPx: number;
+    readonly otherWidthPx: number;
+    readonly wideWidthPx: number;
 }
 
 // @public
@@ -543,6 +609,12 @@ export class PivotReport {
 export function pivotReport(cube: PivotCube, layout: PivotLayout, options?: PivotOptions): PivotReport;
 
 // @public
+export interface PivotReportAnswer extends PivotReportState {
+    readonly refusal?: undefined;
+    readonly requestId: string;
+}
+
+// @public
 export function pivotReportAsync(cube: PivotCube, layout: PivotLayout, options?: PivotOptions, slicing?: PivotSlicing, signal?: AbortSignal): Promise<PivotReport>;
 
 // @public
@@ -555,7 +627,111 @@ export class PivotReportColumn {
 }
 
 // @public
+export interface PivotReportCopyBlock {
+    readonly headerRaws?: readonly (string | undefined)[];
+    readonly headers: readonly string[];
+    readonly rows: readonly (readonly PivotReportCopyCell[])[];
+}
+
+// @public
+export interface PivotReportCopyCell {
+    readonly isNumber: boolean;
+    readonly raw?: string;
+    readonly text: string;
+}
+
+// @public
+export interface PivotReportCopyQuery {
+    readonly columns: readonly string[];
+    readonly maxCells?: number;
+    readonly ranges: readonly PivotReportRange[];
+    readonly version: string;
+}
+
+// @public
+export interface PivotReportCopyResult {
+    readonly blocks: readonly PivotReportCopyBlock[];
+    readonly refusal?: PivotReportRefusal;
+    readonly version: string;
+}
+
+// @public
+export function pivotReportDetailsQuery(metadata: PivotReportMetadata, row: PivotDisplayRow, valueColumn: number, start?: number, count?: number): PivotDetailsQuery;
+
+// @public
 export type PivotReportForm = 'compact' | 'outline' | 'tabular';
+
+// @public
+export interface PivotReportItemsQuery {
+    readonly field: string;
+    readonly max?: number;
+    readonly search?: string;
+    readonly version: string;
+}
+
+// @public
+export interface PivotReportItemsResult {
+    readonly items: readonly PivotItemInfo[];
+    readonly refusal?: PivotReportRefusal;
+    readonly sourceVersion: string;
+    readonly total: number;
+    readonly version: string;
+}
+
+// @public
+export interface PivotReportMetadata {
+    readonly changeMarks: readonly string[];
+    readonly headerSpans: readonly PivotHeaderSpan[];
+    readonly headerTierCount: number;
+    readonly labelColumns: readonly PivotLabelColumn[];
+    readonly labelWidths: readonly number[];
+    readonly layout: PivotLayout;
+    readonly rowCount: number;
+    readonly rowSequenceVersion: string;
+    readonly settings: PivotReportSettings;
+    readonly sourceVersion: string;
+    readonly valueCaptions: readonly string[];
+    readonly valueColumns: readonly PivotDisplayColumn[];
+    readonly version: string;
+}
+
+// @public
+export interface PivotReportRange {
+    readonly bottom: number;
+    readonly left: number;
+    readonly right: number;
+    readonly top: number;
+}
+
+// @public
+export interface PivotReportRefusal {
+    readonly field?: string;
+    readonly kind: PivotReportRefusalKind;
+    readonly message: string;
+    readonly sourceRefusal?: PivotSourceRefusal;
+}
+
+// @public
+export type PivotReportRefusalKind = 'reportVersionNotHeld' | 'unknownOrderKeyPolicy' | 'sourceRefused' | 'invalidRequest' | 'orderKeyFailed';
+
+// @public
+export interface PivotReportRefused {
+    readonly refusal: PivotReportRefusal;
+    readonly requestId: string;
+    readonly window: PivotReportWindow;
+}
+
+// @public
+export interface PivotReportRequest {
+    readonly baseline?: string;
+    readonly layout: PivotLayout;
+    readonly markChanges?: boolean;
+    readonly maxLeaves?: number;
+    readonly refreshData?: boolean;
+    readonly requestId: string;
+    readonly settings: PivotReportSettings;
+    readonly window: PivotReportWindow;
+}
 
 // @public
 export class PivotReportRow {
@@ -564,6 +740,72 @@ export class PivotReportRow {
     readonly labels: readonly PivotRowLabel[];
     readonly role: PivotRowRole;
     readonly valueField: number;
+}
+
+// @public
+export interface PivotReportSettings {
+    readonly changeHighlightMs?: number;
+    readonly labelMetrics?: PivotLabelMetrics;
+    readonly locale?: string;
+    readonly orderKeyPolicies?: Readonly<Record<string, string>>;
+    readonly words?: Readonly<Record<string, string>>;
+}
+
+// @public
+export interface PivotReportSource {
+    copy(query: PivotReportCopyQuery, signal?: AbortSignal): Promise<PivotReportCopyResult>;
+    details(query: PivotDetailsQuery, signal?: AbortSignal): Promise<PivotDetailPage>;
+    dispose(): void;
+    readonly features: PivotSourceFeatures;
+    readonly fields: readonly PivotField[];
+    items(query: PivotReportItemsQuery, signal?: AbortSignal): Promise<PivotReportItemsResult>;
+    rawItems(query: PivotItemsQuery, signal?: AbortSignal): Promise<PivotItemPage>;
+    subscribe(listener: (changed: PivotSourceChanged) => void): () => void;
+    summary(query: PivotReportSummaryQuery, signal?: AbortSignal): Promise<PivotReportSummaryResult>;
+    readonly updateMode: PivotReportUpdateMode;
+    window(request: PivotReportRequest, signal?: AbortSignal): Promise<PivotReportUpdate>;
+}
+
+// @public
+export interface PivotReportState {
+    readonly metadata: PivotReportMetadata;
+    readonly rows: readonly PivotDisplayRow[];
+    readonly window: PivotReportWindow;
+}
+
+// @public
+export interface PivotReportSummaryQuery {
+    readonly columns: readonly string[];
+    readonly focusColumn?: number;
+    readonly focusRow?: number;
+    readonly ranges: readonly PivotReportRange[];
+    readonly version: string;
+}
+
+// @public
+export interface PivotReportSummaryResult {
+    readonly hasError: boolean;
+    readonly locale: string;
+    readonly max?: PivotNumber;
+    readonly min?: PivotNumber;
+    readonly numberFormat?: string;
+    readonly numbers: number;
+    readonly refusal?: PivotReportRefusal;
+    readonly sum?: PivotNumber;
+    readonly values: number;
+    readonly version: string;
+}
+
+// @public
+export type PivotReportUpdate = PivotReportAnswer | PivotReportRefused;
+
+// @public
+export type PivotReportUpdateMode = 'incremental' | 'fullRefresh';
+
+// @public
+export interface PivotReportWindow {
+    readonly count: number;
+    readonly start: number;
 }
 
 // @public

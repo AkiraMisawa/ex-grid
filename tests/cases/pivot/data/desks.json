@@ -1,0 +1,12 @@
+{
+  "about": "Trades keyed by their Id, booked to one of seven desks and thirteen books, the C# report source tests' Trade, which Change Batches are applied to. A case gives its own rows.",
+  "snapshot": {
+    "recordKey": "Id",
+    "columns": [
+      {"name": "Id", "kind": "integer"},
+      {"name": "Desk", "kind": "text"},
+      {"name": "Amount", "kind": "decimal"}
+    ]
+  },
+  "rows": []
+}
