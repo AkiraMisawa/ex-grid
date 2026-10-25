@@ -47,9 +47,10 @@ block on `main` before it uses the first number.
 | 0320–0329 | `claude/project-thread-2f4kcm` | ExChart's Chart Spec: a declarative entry an AI writes, nodes and edges, and the Chart Source, grilled with the user (2026-10-20) |
 | 0330–0339 | `claude/project-thread-5x47er` | ExSheet's `.xlsx` (ADR-0330) and the Workbook it waits on (ADR-0331), grilled with the user 2026-10-20. Numbered 0320 and 0321 on the branch until 2026-10-20, when the block was found taken |
 | 0340–0349 | `claude/project-thread-2m226m` | ExBoard: the family as an AI's visualisation tool, a Board an AI composes once and a workflow reuses, its typed inputs, and the grid built at run time, grilled with the user (2026-10-20) |
-| 0350–0359 | `claude/project-thread-6ny54c` | 0.3.0: ExGrid's core in TypeScript, taken by React and by Blazor's ExGrid (decided with the user, 2026-10-24); 0351, every product reaching React, taken on `claude/project-thread-ubb577` (2026-10-25) |
+| 0350–0359 | `claude/project-thread-6ny54c` | 0.3.0: ExGrid's core in TypeScript, taken by React and by Blazor's ExGrid (decided with the user, 2026-10-24) |
 | 0360–0369 | `claude/project-thread-3sdzq1` | Input Order's remainder: a box's first control taking the keyboard from the grid's script where no grid stands (ExPivot's report not yet drawn; ADR-0360, chosen by the user 2026-10-24; numbered 0350 on the branch until the block was found taken), and ticket 07's differential test |
-| 0370– | free | reserve a block of ten |
+| 0370–0379 | `claude/project-thread-ubb577` | 0.3.0 for the whole family: every product reaching React as ExGrid does, and its engine asked across one boundary (ADR-0370; scope decided by the user 2026-10-25) |
+| 0380– | free | reserve a block of ten |
 
 ## ExSheet tickets (`docs/specs/exsheet/issues/`)
 

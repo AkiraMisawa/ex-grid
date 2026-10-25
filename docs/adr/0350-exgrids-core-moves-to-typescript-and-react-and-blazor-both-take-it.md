@@ -75,7 +75,7 @@ ported, but from 0.3.0 the ExGrid that draws them is Blazor's adapter over the S
 verified again on it. Whether any of them reaches React is a later decision.
 
 *(2026-10-25: the user decided that every product reaches React.
-[ADR-0351](./0351-every-product-reaches-react-as-exgrid-does-and-asks-its-engine-across-one-boundary.md)
+[ADR-0370](./0370-every-product-reaches-react-as-exgrid-does-and-asks-its-engine-across-one-boundary.md)
 says how, and replaces this paragraph: each product's UI moves to TypeScript as ExGrid's does, and
 React and Blazor both adapt it.)*
 
@@ -142,6 +142,11 @@ made, nothing waits on a clock (its sections 1, 3 and 4), and where a Consumer a
 input, a gesture carries what it was taken against and is refused if that no longer holds (spine rule
 6). The machinery that held and replayed input across a round trip is not ported.
 
+*(2026-10-25: [ADR-0370](./0370-every-product-reaches-react-as-exgrid-does-and-asks-its-engine-across-one-boundary.md)
+moves ExSheet's, ExPivot's and ExChart's UIs to Script Cores of their own, and their scripts with them,
+so ADR-0021 governs no script once its section 5's removal holds and is superseded then. These rules
+hold for every Script Core.)*
+
 ### 7. Blazor's ExGrid moves onto the Script Core in 0.3.0, once React's holds
 
 Blazor's ExGrid becomes a Framework Adapter over the Script Core in the same version. The order inside
@@ -165,6 +170,10 @@ longer do. A Consumer's answer that arrives after the input it answers is judged
 input was taken against (spine rule 6). What crosses the circuit per interaction is measured on the
 Server host before step 2 is called done, and recorded.
 
+*(2026-10-25: [ADR-0370](./0370-every-product-reaches-react-as-exgrid-does-and-asks-its-engine-across-one-boundary.md)
+section 5 has every product take these three steps, ExGrid's as written here and each product's once
+ExGrid's Script Core has what it asks of it; 0.3.0 waits for all of them.)*
+
 ### 8. The engines stay in C#
 
 ExGrid.Data, ExPivot.Engine and ExSheet.Engine are not ported. A React application reaches them on a
@@ -174,7 +183,7 @@ or in the browser as .NET WebAssembly. Whether one is later ported to TypeScript
 recorded measurement of the browser case, not before (CLAUDE.md, "Measure before claiming anything about
 performance").
 
-*(2026-10-25: [ADR-0351](./0351-every-product-reaches-react-as-exgrid-does-and-asks-its-engine-across-one-boundary.md)
+*(2026-10-25: [ADR-0370](./0370-every-product-reaches-react-as-exgrid-does-and-asks-its-engine-across-one-boundary.md)
 section 2 says how a React application reaches these engines, through an Engine Host, and section 6
 what is measured. ExChart.Engine, which this section did not name, moves its layout to TypeScript with
 ExChart's UI, section 3.)*
@@ -263,6 +272,11 @@ ExSheet, ExPivot, ExChart, ExBoard and the MudBlazor Wrappers are rewritten agai
 step 2 of section 7. [ADR-0201](./0201-the-public-surface-is-what-consumers-chromes-and-the-sibling-products-use.md)'s
 rule stands: the surface is what Consumers, Chromes and the sibling products use, and nothing more is
 public. Every member that leaves or changes is a breaking Change Note.
+
+*(2026-10-25: under [ADR-0370](./0370-every-product-reaches-react-as-exgrid-does-and-asks-its-engine-across-one-boundary.md)
+section 1, ExSheet, ExPivot, ExChart and ExBoard are not rewritten in Razor against the new surface:
+each becomes a Blazor adapter over a Script Core of its own, which is that rewrite. The MudBlazor
+Wrappers stay Razor, over their product's adapter.)*
 
 ### 15. Speed is measured, not assumed
 
