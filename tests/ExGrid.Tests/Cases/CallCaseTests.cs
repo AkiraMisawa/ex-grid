@@ -174,6 +174,10 @@ public class CallCaseTests
         var atMost = check.TryGetProperty("atMost", out var most);
         if (atLeast || atMost)
         {
+            // Only a number is bounded: Convert.ToDouble would make a null 0 and read a string, where the
+            // Script Core's runner refuses both.
+            if (result is not (double or float or int or long or decimal))
+                throw new InvalidOperationException($"{label} answered no number to bound.");
             var got = System.Convert.ToDouble(result, CultureInfo.InvariantCulture);
             if (atLeast)
                 Assert.True(got >= Number(JsonNode.Parse(least.GetRawText())!)!.Value, $"{label}: expected at least {least}, got {got}.");
@@ -256,6 +260,16 @@ public class CallCaseTests
             var subject = Subjects[subjectName.GetString()!];
             var with = value.TryGetProperty("with", out var given) ? Merged(default, given) : [];
             var made = Create(subject, value.TryGetProperty("via", out var via) ? via.GetString() : null, with);
+            if (value.TryGetProperty("after", out var after))
+            {
+                foreach (var step in after.EnumerateArray())
+                {
+                    if (!step.TryGetProperty("call", out var call) || !step.TryGetProperty("args", out var args) || args.ValueKind != JsonValueKind.Array)
+                        throw new InvalidOperationException($"An \"after\" step {step} is a call with positional args.");
+                    made = Invoke(made.GetType(), made, Pascal(call.GetString()!), args)
+                        ?? throw new InvalidOperationException($"An \"after\" step {step} answered nothing.");
+                }
+            }
             return type.IsInstanceOfType(made) || Nullable.GetUnderlyingType(type)?.IsInstanceOfType(made) == true
                 ? made
                 : throw new JsonException($"A {subject.Name} is not a {type.Name}.");

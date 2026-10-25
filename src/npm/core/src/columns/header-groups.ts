@@ -25,11 +25,18 @@ export class HeaderGroup {
      */
     constructor(options: { readonly label: string; readonly columns: readonly string[]; readonly tier?: number; readonly tierSpan?: number }) {
         const { label, columns, tier = 1, tierSpan = 1 } = options;
+        if (typeof label !== 'string') {
+            throw new TypeError(`A Header Group's label is text, empty for a spacer. (label: ${String(label)})`);
+        }
+        const given: unknown = columns;
+        if (!Array.isArray(given)) {
+            throw new TypeError(`Header Group '${label}' names its member columns in a list.`);
+        }
         if (columns.length === 0) {
             throw new TypeError(`Header Group '${label}' names no member columns.`);
         }
-        if (columns.some(name => name === '')) {
-            throw new TypeError(`Header Group '${label}' names an empty member column.`);
+        if (columns.some(name => typeof name !== 'string' || name === '')) {
+            throw new TypeError(`Header Group '${label}' names a missing or empty member column.`);
         }
         if (new Set(columns).size !== columns.length) {
             throw new TypeError(`Header Group '${label}' names a member column twice.`);

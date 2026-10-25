@@ -63,6 +63,10 @@ longer suppresses anything. A reviewer reads every one.
   any caller may make one, or a private constructor behind static factories and transitions where only
   the class may make its states (`Selection`). A derived value made on first asking may be kept in a
   private field, the one field written after construction. Stateless helpers are functions.
+- **A C# record's equality is `equals(other)`**, comparing what the record compares. A class compared
+  with `===` is compared by reference, and a value made again on every push would always look changed.
+- **A rounding the C# core does is rounded as C# does**: `Math.Round` sends a tie to the even number,
+  `Math.round` sends it up, so it is `roundHalfToEven` (`core/src/rounding.ts`).
 - **Only syntax TypeScript erases** **(tsc, `erasableSyntaxOnly`)**: no `enum`, `namespace` or parameter
   properties. A closed set of names is a union of string literals (`'up' | 'down' | 'left' | 'right'`).
 - **Names are the glossary's** (`CONTEXT.md`): Focus, Extent, Overlay, Window. Types and classes are

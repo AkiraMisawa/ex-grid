@@ -40,3 +40,11 @@ describe('a whole number where C# takes an int', () => {
         expect(() => layout.leafTierSpanOf(-1)).toThrow(RangeError);
     });
 });
+
+describe('what only an untyped caller can pass', () => {
+    it('ADR-0032: a member or a label that is not text is refused at construction, as C# refuses null', () => {
+        expect(() => new HeaderGroup({ label: 'CVA', columns: ['A', null as unknown as string] })).toThrow(TypeError);
+        expect(() => new HeaderGroup({ label: undefined as unknown as string, columns: ['A'] })).toThrow(TypeError);
+        expect(() => new HeaderGroup({ label: 'CVA', columns: 'A' as unknown as string[] })).toThrow(TypeError);
+    });
+});

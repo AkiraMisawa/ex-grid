@@ -35,7 +35,7 @@
       "create": {"width": {"new": "ColumnWidth", "via": "fixed", "with": {"px": 500}}, "minWidthPx": 40, "maxWidthPx": 400},
       "expect": [
         {"get": "width", "then": [{"get": "isAuto", "is": false}, {"get": "fixedPx", "is": 500}]},
-        {"call": "resolveWidthPx", "args": [{"new": "AutoWidth", "with": {"spec": {"new": "ColumnWidthSpec", "with": {"width": {"new": "ColumnWidth", "via": "fixed", "with": {"px": 500}}, "minWidthPx": 40, "maxWidthPx": 400}}}}], "is": 500},
+        {"call": "resolveWidthPx", "args": [{"new": "AutoWidth", "with": {"spec": {"new": "ColumnWidthSpec", "with": {"width": {"new": "ColumnWidth", "via": "fixed", "with": {"px": 500}}, "minWidthPx": 40, "maxWidthPx": 400}}}, "after": [{"call": "observe", "args": [900]}]}], "is": 500},
         {"get": "maxWidthPx", "is": 400},
         {"call": "sizeToFit", "args": [900], "then": [{"get": "isAuto", "is": false}, {"get": "fixedPx", "is": 400}]}
       ]
@@ -64,14 +64,14 @@
       "name": "ADR-0016: the Auto-or-Fixed branch lives in one place: an Auto spec reads the tracker",
       "create": {"width": {"new": "ColumnWidth", "via": "auto"}},
       "expect": [
-        {"call": "resolveWidthPx", "args": [{"new": "AutoWidth", "with": {"spec": {"new": "ColumnWidthSpec", "with": {"width": {"new": "ColumnWidth", "via": "auto"}}}}}], "is": 40}
+        {"call": "resolveWidthPx", "args": [{"new": "AutoWidth", "with": {"spec": {"new": "ColumnWidthSpec", "with": {"width": {"new": "ColumnWidth", "via": "auto"}}}}, "after": [{"call": "observe", "args": [180]}]}], "is": 180}
       ]
     },
     {
       "name": "ADR-0016: the Auto-or-Fixed branch lives in one place: a Fixed spec ignores the tracker",
       "create": {"width": {"new": "ColumnWidth", "via": "fixed", "with": {"px": 100}}},
       "expect": [
-        {"call": "resolveWidthPx", "args": [{"new": "AutoWidth", "with": {"spec": {"new": "ColumnWidthSpec", "with": {"width": {"new": "ColumnWidth", "via": "auto"}}}}}], "is": 100}
+        {"call": "resolveWidthPx", "args": [{"new": "AutoWidth", "with": {"spec": {"new": "ColumnWidthSpec", "with": {"width": {"new": "ColumnWidth", "via": "auto"}}}}, "after": [{"call": "observe", "args": [180]}]}], "is": 100}
       ]
     }
   ]

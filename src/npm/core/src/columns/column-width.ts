@@ -39,6 +39,11 @@ export class ColumnWidth {
         return this.#px;
     }
 
+    /** Whether `other` is the same width: both Auto, or Fixed at the same pixels. */
+    equals(other: ColumnWidth): boolean {
+        return other instanceof ColumnWidth && this.#px === other.#px;
+    }
+
     /** `Auto` or `Fixed(120px)`, for a message or a log. */
     toString(): string {
         return this.isAuto ? 'Auto' : `Fixed(${this.#px}px)`;
@@ -77,6 +82,9 @@ export class ColumnWidthSpec {
             minWidthPx = ColumnWidthSpec.defaultMinWidthPx,
             maxWidthPx = ColumnWidthSpec.defaultMaxWidthPx,
         } = options;
+        if (!(width instanceof ColumnWidth)) {
+            throw new TypeError(`A width is a ColumnWidth: ColumnWidth.auto or ColumnWidth.fixed(px). (width: ${String(width)})`);
+        }
         if (!Number.isFinite(minWidthPx) || minWidthPx <= 0) {
             throw new RangeError(`MinWidth is a finite, positive number of pixels. (minWidthPx: ${minWidthPx})`);
         }
@@ -86,6 +94,13 @@ export class ColumnWidthSpec {
         this.width = width;
         this.minWidthPx = minWidthPx;
         this.maxWidthPx = maxWidthPx;
+    }
+
+    /** Whether `other` declares the same width and bounds. A changed declaration means a fresh Auto
+     * tracker, so an equal one must not be mistaken for a change (ADR-0016). */
+    equals(other: ColumnWidthSpec): boolean {
+        return other instanceof ColumnWidthSpec && this.width.equals(other.width)
+            && this.minWidthPx === other.minWidthPx && this.maxWidthPx === other.maxWidthPx;
     }
 
     /** A width brought within [MinWidth, MaxWidth]. @internal */

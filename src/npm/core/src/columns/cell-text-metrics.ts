@@ -61,6 +61,12 @@ const otherWidthAllowance = 2;
 /** Every width resolved: what the metrics hold, whichever form gave them. */
 type Widths = Readonly<Required<EveryClass>>;
 
+// Every width, for comparing two metrics whole.
+const widthNames = [
+    'wideWidthPx', 'digitWidthPx', 'narrowWidthPx', 'fullWidthPx', 'cellHorizontalPaddingPx',
+    'boldWideWidthPx', 'boldDigitWidthPx', 'boldNarrowWidthPx', 'otherWidthPx', 'boldOtherWidthPx',
+] as const satisfies readonly (keyof Widths)[];
+
 // The form the options take, by the groups they give: a group given in part, or after one left out,
 // matches no form. Only an untyped caller can pass one.
 function widthsOf(options: CellTextMetricsOptions): Widths {
@@ -194,6 +200,22 @@ export class CellTextMetrics {
         const options = { ...widths };
         carried.set(options, { table, scale, bold });
         return new CellTextMetrics(options);
+    }
+
+    /** Whether `other` charges every glyph as these do, as C#'s record equality says: the same widths, the
+     * same glyph table at the same scale and weight. */
+    equals(other: CellTextMetrics): boolean {
+        if (other === this) {
+            return true;
+        }
+        if (!(other instanceof CellTextMetrics)) {
+            return false;
+        }
+        const theirs = other.#widths;
+        return widthNames.every(name => this.#widths[name] === theirs[name])
+            && this.#glyphs === other.#glyphs
+            && this.#glyphScale === other.#glyphScale
+            && this.#glyphBold === other.#glyphBold;
     }
 
     /** What `%` costs, and `€ − + #`, each measured past the digit on some platform. One `#` of an

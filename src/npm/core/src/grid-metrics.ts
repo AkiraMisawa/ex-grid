@@ -2,6 +2,7 @@ import { CellTextMetrics } from './columns/cell-text-metrics';
 import { defaultGlyphWidthsAt } from './columns/default-glyph-widths';
 import type { GridPresentationDefaults } from './grid-presentation-defaults';
 import { unreachable } from './must';
+import { roundHalfToEven } from './rounding';
 import { ViewportGeometry } from './viewport/viewport-geometry';
 
 /**
@@ -64,6 +65,8 @@ interface Preset {
 // is optically sized. The C# core's GridMetrics.Resolve holds the same table and says each number's origin.
 const fourteen = { font: 14, wide: 14.04, digit: 9.75, narrow: 6.41, other: 15.46, boldWide: 14.36, boldDigit: 9.75, boldNarrow: 6.41, boldOther: 15.46 } as const;
 const chrome = { actionPad: 6, actionBorder: 1, actionGap: 4, menuWidth: 16, menuInset: 6, sortMark: 20 } as const;
+
+const densities: ReadonlySet<string> = new Set<GridDensity>(['compact', 'comfortable', 'standard', 'excel']);
 
 function presetOf(density: GridDensity): Preset {
     switch (density) {
@@ -135,6 +138,11 @@ export class GridMetrics {
      * header always matched its rows. A Wrapper's defaults sit between the two for the widths (ADR-0030).
      */
     static resolve(options: GridMetricsOptions): GridMetrics {
+        // An untyped caller's unknown density is its argument refused, as C#'s ArgumentOutOfRangeException
+        // says, not the switch's defect.
+        if (!densities.has(options.density)) {
+            throw new RangeError(`Unknown density preset '${options.density}' (ADR-0028).`);
+        }
         const preset = presetOf(options.density);
         const rowHeightPx = options.rowHeightPx ?? preset.row;
         const headerHeightPx = options.headerHeightPx ?? options.rowHeightPx ?? preset.header;
@@ -171,6 +179,26 @@ export class GridMetrics {
         return (ViewportGeometry.maxScrollHeightPx - headerHeightPx) / totalRowCount;
     }
 
+    /**
+     * Whether `other` resolves to the same numbers, as C#'s record equality says: a push that resolves the
+     * same metrics again is no change, and keeps every Auto width it carries (ADR-0016, ADR-0028).
+     */
+    equals(other: GridMetrics): boolean {
+        return other === this || (other instanceof GridMetrics
+            && this.rowHeightPx === other.rowHeightPx
+            && this.headerHeightPx === other.headerHeightPx
+            && this.fontSizePx === other.fontSizePx
+            && this.cellMetrics.equals(other.cellMetrics)
+            && this.actionPaddingXPx === other.actionPaddingXPx
+            && this.actionBorderPx === other.actionBorderPx
+            && this.actionGapPx === other.actionGapPx
+            && this.menuButtonWidthPx === other.menuButtonWidthPx
+            && this.menuButtonInsetPx === other.menuButtonInsetPx
+            && this.sortMarkWidthPx === other.sortMarkWidthPx
+            && this.resizeGripWidthPx === other.resizeGripWidthPx
+            && this.columnGuideWidthPx === other.columnGuideWidthPx);
+    }
+
     /** The Formula Bar's height: the header's, so the bar reads as one more band of the frame (ADR-0051). */
     get formulaBarHeightPx(): number {
         return this.headerHeightPx;
@@ -183,7 +211,7 @@ export class GridMetrics {
 
     /** The fill handle's side (ADR-0050, item 5): a little under a third of a row, and at least 5px. */
     get fillHandleSizePx(): number {
-        return Math.max(5, Math.round(this.rowHeightPx * 0.3));
+        return Math.max(5, roundHalfToEven(this.rowHeightPx * 0.3));
     }
 
     /** A cell's horizontal padding on one side; a cell pays it twice. */

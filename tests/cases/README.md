@@ -153,7 +153,9 @@ case cannot pass or expect them as text, and the C# runner refuses one that pass
 
 An argument may be another subject, `{"new": "Subject", "with": {name: value, …}}` (and `"via"`), made as a
 case makes one: a `CellTextMetrics` passed to `OverflowRules.decide`, a `GlyphWidthTable` to
-`withGlyphWidths`. An array passed where C# takes a tuple, or a list of them, is read element by element.
+`withGlyphWidths`. With `"after": [{"call": name, "args": […]}, …]` the subject is what those calls answer
+in turn, each on the answer before it: an `AutoWidth` that has observed a width, passed to
+`resolveWidthPx`. An array passed where C# takes a tuple, or a list of them, is read element by element.
 A case reads what the core's own code reads: in C#, public and internal members, never private ones;
 in the Script Core, a module's exports.
 

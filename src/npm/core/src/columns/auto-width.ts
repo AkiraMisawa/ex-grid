@@ -26,6 +26,11 @@ export class AutoWidth {
         return new AutoWidth(spec, spec.minWidthPx);
     }
 
+    /** Whether `other` tracks the same declaration and stands at the same width. */
+    equals(other: AutoWidth): boolean {
+        return other instanceof AutoWidth && this.#spec.equals(other.#spec) && this.currentPx === other.currentPx;
+    }
+
     /**
      * Folds in the full cell width one value requires: `estimatePx`'s output, padding included, in the unit
      * of the resolved column width. Not the content width, which would make a column exactly twice the

@@ -129,11 +129,18 @@ function argument(value: unknown): unknown {
     if (Array.isArray(value)) return value.map(argument);
     if (typeof value === 'object') {
         if ('new' in value) {
-            const made = value as { readonly new: string; readonly with?: Arguments; readonly via?: string };
+            const made = value as { readonly new: string; readonly with?: Arguments; readonly via?: string; readonly after?: readonly Check[] };
             const subject = subjects[made.new];
             if (subject === undefined) throw new Error(`"${made.new}" is not a subject this runner knows.`);
             // oxlint-disable-next-line ex-grid/no-stand-in-default -- tests/cases/README.md: a subject made with no "with" takes no arguments
-            return subject.create(argument(made.with ?? {}) as Arguments, made.via);
+            let result: unknown = subject.create(argument(made.with ?? {}) as Arguments, made.via);
+            // oxlint-disable-next-line ex-grid/no-stand-in-default -- tests/cases/README.md: "after" is optional, and no calls leave the subject as made
+            for (const step of made.after ?? []) {
+                if (step.call === undefined || !Array.isArray(step.args)) throw new Error(`An "after" step ${JSON.stringify(step)} is a call with positional args.`);
+                if (typeof result !== 'object' || result === null) throw new Error(`An "after" step ${step.call} has no object to call.`);
+                result = read(result, step.call, argument(step.args) as unknown[]);
+            }
+            return result;
         }
         return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, argument(item)]));
     }

@@ -119,6 +119,15 @@
       ]
     },
     {
+      "name": "ADR-0050: the fill handle is a little under a third of a row, a half going to the even pixel as the C# core rounds it",
+      "expect": [
+        {"static": "resolve", "args": {"density": "compact", "rowHeightPx": 35}, "then": [{"get": "fillHandleSizePx", "is": 10}]},
+        {"static": "resolve", "args": {"density": "compact", "rowHeightPx": 45}, "then": [{"get": "fillHandleSizePx", "is": 14}]},
+        {"static": "resolve", "args": {"density": "compact", "rowHeightPx": 55}, "then": [{"get": "fillHandleSizePx", "is": 16}]},
+        {"static": "resolve", "args": {"density": "compact", "rowHeightPx": 10}, "then": [{"get": "fillHandleSizePx", "is": 5}]}
+      ]
+    },
+    {
       "name": "ADR-0016: a full-width character is an em, so explicit metrics are charged at least the font size for it",
       "expect": [
         {"static": "resolve", "args": {"density": "compact", "cellMetrics": {"new": "CellTextMetrics", "with": {"digitWidthPx": 9, "cellHorizontalPaddingPx": 8}}}, "then": [{"get": "cellMetrics", "then": [{"get": "fullWidthPx", "is": 14}, {"get": "digitWidthPx", "is": 9}]}]},
