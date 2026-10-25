@@ -1,9 +1,11 @@
 import { gridCommandIds } from './command-ids';
+import { findPanelWords } from './find-panel-labels';
 
 // The built-in Chrome's English for the core's commands, as the C# core's BuiltInCommandLabels says them
 // (ADR-0036). A command is an id, whether it may run, and what running it does: what it is called is
 // rendering, so it belongs to the Chrome and is resolved from the id. A Consumer who keeps the built-in menu
-// and wants it in another language answers `commandLabel` first.
+// and wants it in another language answers `commandLabel` first. The find panel's words are resolved the same
+// way, by their ids (ADR-0055).
 const words: ReadonlyMap<string, string> = new Map([
     [gridCommandIds.sortAscending, 'Sort ascending'],
     [gridCommandIds.sortDescending, 'Sort descending'],
@@ -14,6 +16,7 @@ const words: ReadonlyMap<string, string> = new Map([
     [gridCommandIds.sizeToFit, 'Size to fit'],
     [gridCommandIds.copy, 'Copy'],
     [gridCommandIds.copyWithHeaders, 'Copy with headers'],
+    ...findPanelWords,
 ]);
 
 /**

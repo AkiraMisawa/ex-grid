@@ -14,6 +14,7 @@ import { defaultCellCap, pasteShape, planCopy, planFill, planPaste, type CopyPla
 import { GridClearIntent } from '../clipboard/clear-intent';
 import { columnPlaceholder, copyRefusalWords, pasteRefusalWords, shapeMismatchMaySpillWords } from '../chrome/refusal-words';
 import { builtInCommandLabel } from '../chrome/command-labels';
+import { findOutcomeText, type FindOutcome, type FindPanelRefusedCell } from '../chrome/find-panel-labels';
 import { gridCommandIds } from '../chrome/command-ids';
 import { letterOf, menuLetter, resolveColumnMenuKey, resolveMenuKey } from '../chrome/menu-keys';
 import { canApply } from '../chrome/filter-panel-choices';
@@ -29,10 +30,14 @@ import { decideOverflow } from '../columns/overflow-rules';
 import { rawText, textFor } from '../cells/display-text';
 import { checkedVerdict, GridEditIntent, type EditDiscardReason, type EditVerdict, type GridOverwriteNotice } from '../cells/edit-intent';
 import { GridMetrics, type GridDensity } from '../grid-metrics';
+import { matcherOf, patternOf, type GridFindPattern, type GridFindRequest, type GridFindResult } from '../finding/find';
+import { columnHeaderId, findHeaders, groupHeaderId, matchingHeaders, sameHeaders, type FindHeader } from '../finding/header-find';
+import { headerAfterAnswer, headerBeforeAsking } from '../finding/header-find-walk';
+import { replacedEntry, type GridReplaceRequest, type GridReplaceResult } from '../finding/replace';
 import { defined, itemAt } from '../must';
 import { editingKeysByMode } from '../keys/editing-keys';
 import { canonicalKey, resolveKey, type GridKeyAction, type KeyPress } from '../keys/grid-keys';
-import { cellClasses } from '../paint/cell-classes';
+import { cellClasses, type MatchMark } from '../paint/cell-classes';
 import { columnMark } from '../paint/heading-mark-styles';
 import { rowClasses } from '../paint/row-classes';
 import { cell as cellPosition, sameCell, type CellPosition, type GridExtent } from '../selection/cell';
@@ -58,6 +63,7 @@ import { CopiedRange } from './copied-range';
 import type { GridCommand, GridContextMenuContext } from './grid-command';
 import { contextMenuRoomPx, contextMenuStyle, MenuItems, popoverAcross, type MenuKeyTable } from './menu-popover';
 import { FilterPanel } from './filter-panel';
+import { FindPanel, type FindHeld } from './find-panel';
 import { copyValues, gatherRows, windowCovers, windowRowAt } from './grid-copy';
 import { defaultPasteByteCap, exceedsUtf8 } from './grid-paste';
 import type { GridRefusal } from './grid-refusal';
@@ -244,6 +250,32 @@ export interface GridOptions<Row> {
      * Date column whose filter is offered is refused without it, naming the column, on every browser alike.
      */
     readonly temporal?: TemporalLike;
+    /**
+     * The Replace Request (ADR-0332 §3): Replace All, asked of the Consumer, who performs it and answers. Ctrl+H
+     * opens the find panel with Replace only while this is given, a column is `editable` and the source finds;
+     * otherwise the key is still taken, opens nothing and is refused (`onRefused`, kind `find`, reason
+     * `replaceUnavailable`). The request carries Find's text and options, the replacement, the Selection as the
+     * scope when more than one cell is selected, the columns in their current order, which of them are
+     * Editable, and the source's Row Sequence Version they were read in. What is matched is each cell's entry,
+     * the text the Cell Editor opens with. The Consumer writes every match or none, as one step of its undo
+     * stack, and answers the count or the cells it could not write, under the version it read its rows in; an
+     * answer under another is refused as the order having moved. `GridSource.from`'s `replace` answers it, and
+     * `planReplace` is the reference. Replace, the current match alone, is an ordinary `onEdit`.
+     */
+    readonly onReplace?: (request: GridReplaceRequest) => GridReplaceResult | Promise<GridReplaceResult>;
+    /**
+     * The Match Mark's rule (ADR-0332 §4): whether a painted cell matches what the find panel holds. While the
+     * panel holds a search, every painted cell it says matches wears `ex-match-mark`, and the current match, the
+     * Focus a found step moved to, `ex-match-mark-current` as well. Unless given, the reference rule marks the
+     * cells where the source is `GridSource.from`'s, which finds by it, and nothing is marked anywhere else: a
+     * source that finds by a rule of its own passes it here to have the marks. Hold it in a field: its identity
+     * is the change signal, and a new function makes every painted row judge its cells again (ADR-0003).
+     */
+    readonly findMatch?: (row: Row, column: GridColumn<Row>, pattern: GridFindPattern) => boolean;
+    /** Whether Find searches the column headers and Header Group labels too (ADR-0333): true unless given. A
+     * header found is the current match, marked and named in the panel, and the Focus stays where it is. Turn
+     * it off where the headers are addresses rather than content. */
+    readonly findsHeaders?: boolean;
 }
 
 const defaultViewportWidthPx = 800;
@@ -277,6 +309,27 @@ function isTemporal(value: unknown): value is TemporalLike {
     const { PlainDate, PlainDateTime, ZonedDateTime } = value as { readonly PlainDate?: unknown; readonly PlainDateTime?: unknown; readonly ZonedDateTime?: unknown };
     return [PlainDate, PlainDateTime, ZonedDateTime].every(member => typeof member === 'function' && 'from' in member
         && typeof member.from === 'function');
+}
+
+/** A column as the find panel names it: its header, or its name where the header is blank (ADR-0332 §2). */
+function headerOf<Row>(column: ResolvedColumn<Row>): string {
+    return column.header.trim() === '' ? column.column.name : column.header;
+}
+
+/** Whether a Consumer answered later rather than now. */
+function isThenable<T>(value: T | PromiseLike<T>): value is PromiseLike<T> {
+    return typeof value === 'object' && value !== null && 'then' in value && typeof value.then === 'function';
+}
+
+/** Whether a Consumer's answer to a Replace All is one: a count, or the cells refused, under a version. */
+function isReplaceResult(value: unknown): value is GridReplaceResult {
+    if (typeof value !== 'object' || value === null) return false;
+    const { kind, count, cells, rowSequenceVersion } = value as {
+        readonly kind?: unknown; readonly count?: unknown; readonly cells?: unknown; readonly rowSequenceVersion?: unknown;
+    };
+    if (typeof rowSequenceVersion !== 'number') return false;
+    return (kind === 'replaced' && typeof count === 'number' && Number.isSafeInteger(count) && count >= 0)
+        || (kind === 'refused' && Array.isArray(cells) && cells.length > 0);
 }
 
 /** Sets an attribute on an element the grid made, or takes it away, only when it changed. */
@@ -314,6 +367,64 @@ interface PaintedRow<Row> {
     readonly columns: readonly ResolvedColumn<Row>[];
     readonly placeholder: boolean;
     readonly scrollable: ColumnRange | undefined;
+    /** What its cells' Match Marks were judged by, and the column of the current match in it, or -1. */
+    readonly marks: MatchMarks<Row> | undefined;
+    readonly current: number;
+    /** The painted cells its marks fell on, so a new search repaints only the rows whose marks moved. */
+    readonly matched: string;
+}
+
+/**
+ * What the painted cells are judged by while the find panel holds a search (ADR-0332 §4): the rule and the
+ * pattern, made once per search and kept while neither changes, so a row whose marks did not move is not
+ * painted again (ADR-0003). The reference rule is Find's own over the displayed text.
+ */
+class MatchMarks<Row> {
+    readonly rule: ((row: Row, column: GridColumn<Row>, pattern: GridFindPattern) => boolean) | undefined;
+    readonly pattern: GridFindPattern;
+    readonly #judge: (row: Row, column: GridColumn<Row>) => boolean;
+    readonly #matcher: (shown: string) => boolean;
+
+    /** `rule` undefined is the reference rule. */
+    constructor(rule: ((row: Row, column: GridColumn<Row>, pattern: GridFindPattern) => boolean) | undefined, pattern: GridFindPattern) {
+        this.rule = rule;
+        this.pattern = pattern;
+        const matches = matcherOf(pattern);
+        this.#matcher = matches;
+        if (rule === undefined) {
+            this.#judge = (row, column) => matches(textFor(column, column.value(row)));
+        } else {
+            this.#judge = (row, column) => {
+                const answer: unknown = rule(row, column, pattern);
+                if (typeof answer !== 'boolean') {
+                    throw new TypeError(`findMatch answered ${typeof answer} for column '${column.name}': it answers whether the cell matches, true or false (ADR-0332).`);
+                }
+                return answer;
+            };
+        }
+    }
+
+    same(rule: MatchMarks<Row>['rule'], held: FindHeld): boolean {
+        return rule === this.rule && held.text === this.pattern.text && held.matchCase === this.pattern.matchCase
+            && held.wholeCell === this.pattern.wholeCell;
+    }
+
+    /** Whether the cell matches; `shown` is its displayed text where the caller has it already, which the
+     * reference rule judges. */
+    matches(row: Row, column: GridColumn<Row>, shown?: string): boolean {
+        return shown !== undefined && this.rule === undefined ? this.#matcher(shown) : this.#judge(row, column);
+    }
+}
+
+/** What the header band marks (ADR-0333 §1): each column header's and each Header Group's mark, judged once per
+ * search, columns, layout and current header, never per frame. */
+interface HeaderMatches<Row> {
+    readonly pattern: GridFindPattern;
+    readonly columns: readonly ResolvedColumn<Row>[];
+    readonly layout: HeaderGroupLayout;
+    readonly current: string | undefined;
+    readonly leaves: readonly MatchMark[];
+    readonly groups: ReadonlyMap<string, MatchMark>;
 }
 
 /** The options as `update` takes them: checked and resolved, and not yet the grid's. */
@@ -359,13 +470,19 @@ interface Taken<Row> {
     readonly onPinnedCountChanged: ((count: number) => void) | undefined;
     readonly culture: GridCulture;
     readonly temporal: TemporalLike | undefined;
+    readonly onReplace: ((request: GridReplaceRequest) => GridReplaceResult | Promise<GridReplaceResult>) | undefined;
+    readonly findMatch: ((row: Row, column: GridColumn<Row>, pattern: GridFindPattern) => boolean) | undefined;
+    readonly findsHeaders: boolean;
 }
 
 // The popover standing (ADR-0039, ADR-0040): its element and the commands it shows, and where it stands. The
 // Context Menu is held where it was opened in the Viewport's readable box and against what: an order, columns
 // or a source that moved take the Selection its commands act on, and the menu with it (ADR-0011, ADR-0036).
 // A column's menu stands under its column's header, followed by the column's name (ADR-0010).
-type OpenPopover = {
+// The find panel stands in the grid's top right under the header, and holds no commands (ADR-0055).
+type OpenPopover = MenuPopover | { readonly kind: 'find'; readonly element: HTMLElement; readonly panel: FindPanel };
+
+type MenuPopover = {
     readonly element: HTMLElement;
     readonly commands: readonly GridCommand[];
     readonly items: MenuItems;
@@ -383,7 +500,7 @@ type OpenPopover = {
 });
 
 /** A popover about to stand: everything but the items #standMenu makes. */
-type StandingPopover = OpenPopover extends infer P ? (P extends unknown ? Omit<P, 'items'> : never) : never;
+type StandingPopover = MenuPopover extends infer P ? (P extends unknown ? Omit<P, 'items'> : never) : never;
 
 // A Selection the rows or the source dropped: where the typing aimed at it was going, why it went, and whether
 // the Consumer has heard of typing thrown away with it (ADR-0142).
@@ -536,6 +653,8 @@ interface HeadingMarkRuns {
  * rectangles' styles and their elements, so a pass that changes none of them touches nothing (PF-3). */
 interface PaintedHeadingMarks {
     readonly marks: HeadingMarkRuns;
+    /** The header band's Match Marks it was painted with (ADR-0333), by identity. */
+    readonly matches: unknown;
     readonly styles: ColumnStyles;
     readonly topPx: number;
     readonly heightPx: number;
@@ -725,6 +844,7 @@ export class GridView<Row> {
     #paintedTiers: {
         readonly styles: ColumnStyles; readonly columns: readonly ResolvedColumn<Row>[]; readonly layout: HeaderGroupLayout;
         readonly tierPx: number; readonly rows: readonly HTMLElement[]; readonly leaves: HTMLElement;
+        readonly groups: readonly { readonly element: HTMLElement; readonly id: string }[];
     } | undefined;
     // The header cells as painted, each with its class before the Heading Mark's, and the mark's runs and
     // rectangles (ADR-0008, 2026-10-13): made once per Selection and extent, and the rectangles once per
@@ -771,6 +891,25 @@ export class GridView<Row> {
     // The culture typed text is read in, and the Temporal a typed date is made with (ADR-0370 section 10).
     #culture: GridCulture = gridCulture(invariantLocale);
     #temporal: TemporalLike | undefined;
+    // Find and Replace (ADR-0055, ADR-0332, ADR-0333). What the panel holds outlives it, as Excel's dialog's
+    // does. A step out with the source is cancelled by the next, or by the panel closing; its answer is
+    // somebody else's then. The current match is the cell a found step moved the Focus to, under the version
+    // it was found in, forgotten the moment either moves; a header found is current under the Selection it
+    // was found under. The marks are judged once per search, never per frame (ADR-0332 §4).
+    #onReplace: ((request: GridReplaceRequest) => GridReplaceResult | Promise<GridReplaceResult>) | undefined;
+    #findMatch: ((row: Row, column: GridColumn<Row>, pattern: GridFindPattern) => boolean) | undefined;
+    #findsHeaders = true;
+    readonly #findHeld: FindHeld = { text: '', matchCase: false, wholeCell: false, replaceText: '' };
+    #findOutcome: FindOutcome = { kind: 'none' };
+    #findStepping: AbortController | undefined;
+    #replacing = 0;
+    #findCurrent: { readonly cell: CellPosition; readonly version: number } | undefined;
+    #findCurrentHeader: {
+        readonly id: string; readonly selection: Selection; readonly columns: readonly ResolvedColumn<Row>[]; readonly layout: HeaderGroupLayout;
+    } | undefined;
+    #revealHeaderOwed: { readonly first: number; readonly last: number } | undefined;
+    #matchMarks: MatchMarks<Row> | undefined;
+    #headerMatches: HeaderMatches<Row> | undefined;
     // The edge band (ADR-0008): where the pointer stands in the Viewport's readable box and the step each
     // tick takes, and an offset a step moved that the next pass writes.
     #edge: { readonly x: number; readonly y: number; readonly rows: number; readonly stepXPx: number } | undefined;
@@ -962,6 +1101,8 @@ export class GridView<Row> {
         this.#stopEdgeTimer();
         this.#copy?.abort();
         this.#fill?.abort();
+        this.#findStepping?.abort();
+        this.#findStepping = undefined;
         // An edit open as the grid goes ends with it: the Consumer hears the end of every open (ADR-0050
         // section 6). The typing goes with the grid, which is the Consumer's own doing.
         this.#edit = undefined;
@@ -1160,6 +1301,7 @@ export class GridView<Row> {
             contextCommands: options.contextCommands, commandLabel: options.commandLabel, hideCopyWithHeaders: options.hideCopyWithHeaders === true,
             hideColumnMenu: options.hideColumnMenu === true, onColumnHidden: options.onColumnHidden,
             onPinnedCountChanged: options.onPinnedCountChanged, culture, temporal,
+            onReplace: options.onReplace, findMatch: options.findMatch, findsHeaders: options.findsHeaders !== false,
         };
     }
 
@@ -1283,6 +1425,19 @@ export class GridView<Row> {
         this.#onPinnedCountChanged = taken.onPinnedCountChanged;
         this.#culture = taken.culture;
         this.#temporal = taken.temporal;
+        this.#onReplace = taken.onReplace;
+        this.#findMatch = taken.findMatch;
+        this.#findsHeaders = taken.findsHeaders;
+        // A panel over a source that no longer finds closes, as a Cancel: nothing could answer its steps
+        // (ADR-0055). One offering Replace where none can land any more offers Find alone (ADR-0332 §2).
+        const popover = this.#popover;
+        if (popover?.kind === 'find' && !this.#canFind) {
+            this.#closePopover(true);
+        } else if (popover?.kind === 'find' && popover.panel.replaceShown && !this.#canReplace) {
+            const held = popover.element.contains(this.#root.ownerDocument.activeElement);
+            popover.panel.showReplace(false);
+            if (held) popover.panel.focusField();
+        }
     }
 
     // The Row Sequence Version the grid writes: its source's, carried past every change of source.
@@ -1375,7 +1530,8 @@ export class GridView<Row> {
         this.#showSettled(!this.#passOwed && this.#cancelSettle === undefined && this.#cancelAnnounce === undefined
             && this.#repaint === undefined && this.#followArmed === undefined && this.#cancelFollow === undefined
             && this.#clipboardWrites === 0 && this.#viewportReport !== undefined && this.#ceilingPx !== undefined
-            && !(this.#popover?.kind === 'column' && this.#popover.panel?.fetching === true));
+            && !(this.#popover?.kind === 'column' && this.#popover.panel?.fetching === true)
+            && this.#findStepping === undefined && this.#replacing === 0);
     }
 
     #showSettled(settled: boolean): void {
@@ -1548,8 +1704,9 @@ export class GridView<Row> {
         // that moved took that Selection, and the menu goes with it, as a Cancel (ADR-0011, ADR-0036). A
         // column's menu follows its column wherever it moved, and goes with it, or with the ▾ when the column
         // menu is hidden.
+        // The find panel stands through both: a step's answer is judged against the order it was asked under.
         const popover = this.#popover;
-        if (popover !== undefined && (popover.kind === 'context'
+        if (popover !== undefined && popover.kind !== 'find' && (popover.kind === 'context'
             ? columnsMoved || popover.version !== version || popover.source !== this.#source
             : !names.includes(popover.column) || this.#hideColumnMenu)) {
             this.#closePopover(true);
@@ -1667,6 +1824,18 @@ export class GridView<Row> {
             this.#focusEditor();
             this.#onEditorKey(event, press, edit);
             return;
+        }
+        // Ctrl+F and Ctrl+H on the grid, or anywhere in a popover of its own, its fields included: the find panel
+        // takes the popover's place, and the browser's own find, which sees only the painted rows, stays shut. Taken
+        // on every grid, and refused where nothing can search (ADR-0055, ADR-0332 §2).
+        const inPopover = popover !== undefined && event.target instanceof Node && popover.element.contains(event.target);
+        if (event.target === this.#root || event.target === this.#keyField || inPopover) {
+            const { kind } = resolveKey(press);
+            if (kind === 'find' || kind === 'replace') {
+                this.#taken(event);
+                this.#openFind(kind === 'replace');
+                return;
+            }
         }
         // A key typed in a control inside the root is that control's: only the root and this grid's own
         // Keyboard Field are the grid's (ADR-0010, ADR-0080).
@@ -2635,7 +2804,7 @@ export class GridView<Row> {
     // 2026-10-12).
     #runCommand(index: number): void {
         const popover = this.#popover;
-        if (popover === undefined) return;
+        if (popover === undefined || popover.kind === 'find') return;
         const shown = itemAt(popover.commands, index);
         if (!shown.enabled) return;
         // A column's commands are asked again as the grid stands now: the column may have moved, or the pinned
@@ -2668,6 +2837,11 @@ export class GridView<Row> {
         if (popover === undefined) return;
         this.#popover = undefined;
         if (popover.kind === 'column') popover.panel?.close();
+        // A step still out is nobody's once the panel is gone (ADR-0055).
+        if (popover.kind === 'find') {
+            this.#findStepping?.abort();
+            this.#findStepping = undefined;
+        }
         const doc = this.#root.ownerDocument;
         const active = doc.activeElement;
         const held = popover.element.contains(active);
@@ -2685,6 +2859,15 @@ export class GridView<Row> {
         if (popover.kind === 'context') {
             setAttribute(popover.element, 'style',
                 contextMenuStyle(popover.leftPx, this.#bandHeightPx + popover.topPx, this.#visibleWidthPx, this.#visibleHeightPx));
+            return;
+        }
+        // The find panel in the grid's top right, under the header, anchored by its right edge at the Viewport's
+        // with the width bounds every popover is clamped with, so it never reaches past the grid's left edge
+        // either (ADR-0040).
+        if (popover.kind === 'find') {
+            setAttribute(popover.element, 'style', `left: ${Math.max(0, this.#visibleWidthPx)}px; top: ${this.#bandHeightPx}px; `
+                + `transform: translateX(-100%); ${popoverAcross(0, this.#visibleWidthPx).widths}; `
+                + `max-height: ${this.#popoverRoomPx(popover, this.#visibleHeightPx)}px`);
             return;
         }
         // Under its column's header, from the band's foot to the box's (ADR-0040).
@@ -2762,7 +2945,10 @@ export class GridView<Row> {
             apply: spec => { this.#applyFilter(name, spec); },
             cancel: () => { this.#closePopover(true); },
             letter: key => this.#valueListLetter(key),
-            returnToCommands: () => { this.#popover?.items.focusFirst(); },
+            returnToCommands: () => {
+                const standing = this.#popover;
+                if (standing?.kind === 'column') standing.items.focusFirst();
+            },
             answered: this.#answer,
             fetched: () => { this.#invalidate(); },
         }) : undefined;
@@ -2865,6 +3051,468 @@ export class GridView<Row> {
             ? undefined
             : Object.freeze({ columns: Object.freeze(columns), ...(filter.opaque === undefined ? {} : { opaque: filter.opaque }) });
         this.#source.setFilter(next);
+    }
+
+    // ---- Find and Replace (ADR-0055, ADR-0332, ADR-0333) ---------------------------------------------------
+
+    // Whether anything can answer a Find: a source that has `find` (ADR-0055, ADR-0350 section 16).
+    get #canFind(): boolean {
+        return this.#source.find !== undefined;
+    }
+
+    // Whether a Replace can land (ADR-0332 §2): someone handles the Replace Request, a column is Editable, and a
+    // Find is wired, which Replace's next match is.
+    get #canReplace(): boolean {
+        return this.#onReplace !== undefined && this.#columns.some(({ editable }) => editable) && this.#canFind;
+    }
+
+    // Ctrl+F, and Ctrl+H with `replace` (ADR-0055, ADR-0332 §2): the find panel in the place of whatever popover
+    // stood, taking the keyboard as every popover does (ADR-0039); or, where nothing can search or no Replace
+    // can land, a refusal and nothing opened, because the browser's own find would look complete and see only
+    // the painted rows. The panel already open stays, only what it shows changing: Ctrl+F turns it back into Find
+    // alone, and Ctrl+H shows Replace. Either way its field takes the keyboard with its text selected.
+    #openFind(replace: boolean): void {
+        if (!this.#canFind || (replace && !this.#canReplace)) {
+            this.#onRefused?.({ kind: 'find', reason: replace ? 'replaceUnavailable' : 'unavailable' });
+            return;
+        }
+        this.#findCurrent = undefined;
+        this.#findCurrentHeader = undefined;
+        let popover = this.#popover;
+        if (popover?.kind !== 'find') {
+            this.#closePopover(false);
+            const panel = new FindPanel(this.#root.ownerDocument, this.#findHeld, id => this.#labelOf(id), {
+                step: backward => { this.#findStep(backward); },
+                replaceOne: () => { this.#replaceOne(); },
+                replaceAll: () => { this.#replaceAll(); },
+                heldChanged: () => { this.#invalidate(); },
+                answered: this.#answer,
+            });
+            popover = { kind: 'find', element: panel.element, panel };
+            this.#popover = popover;
+            this.#placePopover();
+            this.#scroller.after(panel.element);
+        }
+        popover.panel.showReplace(replace);
+        this.#setFindOutcome({ kind: 'none' });
+        popover.panel.focusField();
+    }
+
+    // What the panel holds, as a step and a mark judge by it.
+    #findPattern(): GridFindPattern {
+        const { text, matchCase, wholeCell } = this.#findHeld;
+        return Object.freeze({ text, matchCase, wholeCell });
+    }
+
+    // What the last step or Replace came to, said in the panel's outcome line (ADR-0033): a step that moves
+    // nothing is otherwise a key that did nothing and said nothing.
+    #setFindOutcome(outcome: FindOutcome): void {
+        this.#findOutcome = outcome;
+        const popover = this.#popover;
+        if (popover?.kind === 'find') popover.panel.say(findOutcomeText(outcome, id => this.#labelOf(id)));
+        this.#invalidate();
+    }
+
+    // A step that moved nothing (ADR-0055): the panel says why, and the Consumer is told.
+    #refuseFind(reason: 'notFound' | 'orderChanged' | 'sourceChanged'): void {
+        this.#setFindOutcome({ kind: reason });
+        this.#onRefused?.({ kind: 'find', reason });
+    }
+
+    /**
+     * One Find step (ADR-0055): asked of the source with the Focus to start from, the Selection as the scope
+     * when it is more than one cell, the columns in their current order and the source's version they were read
+     * in. The headers come first in the walk where they are searched (ADR-0333 §3), and the grid holds them, so
+     * a header the step reaches before any row is landed on without asking. An answer under another version, or
+     * from a source since replaced, moves nothing (ADR-0011, ADR-0142); a found cell becomes the Focus and is
+     * revealed. A new step, or the panel closing, makes the answer of the one still out nobody's.
+     */
+    #findStep(backward: boolean): void {
+        const source = this.#source;
+        if (this.#popover?.kind !== 'find' || this.#findHeld.text === '' || source.find === undefined) return;
+        this.#findStepping?.abort();
+        this.#findStepping = undefined;
+        this.#reconcileSelection();
+        const selection = this.#held.selection;
+        const scope = !selection.isEmpty && selection.cellCount > 1 ? selection.ranges : undefined;
+        // The headers this step may stop on, read now and carried with it; a Selection as the scope searches
+        // none. The header it starts from, when the current match is one.
+        const headers = scope === undefined ? this.#findHeaders() : [];
+        const fromHeader = this.#currentHeaderIn(headers);
+        const pattern = this.#findPattern();
+        // No match is current until this step finds one (ADR-0332 §4).
+        this.#findCurrent = undefined;
+        this.#findCurrentHeader = undefined;
+        const before = headerBeforeAsking(matchingHeaders(headers, pattern), fromHeader, !selection.isEmpty, backward);
+        if (before !== undefined) {
+            this.#landOnHeader(itemAt(headers, before));
+            return;
+        }
+        // The version is the source's own, which its answer is read against: the grid's goes on past a change
+        // of source, which the source's identity tells apart.
+        const request: GridFindRequest = Object.freeze({
+            ...pattern, backward,
+            // From a header the rows are searched from their start (their end, backward): the header rows lie
+            // before the first data row (ADR-0333 §3).
+            from: selection.isEmpty || fromHeader !== undefined ? undefined : selection.focus,
+            scope, columns: Object.freeze(this.#columns.map(({ column }) => column.name)),
+            rowSequenceVersion: this.#state.rowSequenceVersion,
+        });
+        const stepping = new AbortController();
+        this.#findStepping = stepping;
+        this.#invalidate();
+        // oxlint-disable-next-line ex-grid/no-catch -- a step given up by whoever answers moves nothing and says so; any other failure is rethrown
+        source.find(request, stepping.signal).then(answer => {
+            if (this.#destroyed || this.#findStepping !== stepping) return;
+            this.#findStepping = undefined;
+            // The grid stands settled again whatever the answer comes to, a defect named included.
+            this.#invalidate();
+            this.#findAnswered(request, answer, source, selection, headers);
+        }, (error: unknown) => {
+            if (this.#destroyed || this.#findStepping !== stepping) return;
+            this.#findStepping = undefined;
+            this.#setFindOutcome({ kind: 'none' });
+            // Given up by whoever answers, who says why itself: nothing moves, and no "No match" is claimed for
+            // cells nobody read (ADR-0055, ADR-0025).
+            if (error instanceof DOMException && error.name === 'AbortError') return;
+            throw error;
+        });
+    }
+
+    // A step's answer, judged against what it was asked under (ADR-0055, ADR-0333 §3).
+    #findAnswered(request: GridFindRequest, answer: GridFindResult, source: GridSource<Row>, selection: Selection,
+        headers: readonly FindHeader[]): void {
+        // Another source was handed over while the question was out: the answer, found or not, is about the
+        // rows of a source the grid no longer shows (ADR-0011, ADR-0142).
+        if (source !== this.#source) {
+            this.#refuseFind('sourceChanged');
+            return;
+        }
+        // The order moved while the question was out: the answer is about positions that no longer stand.
+        if (request.rowSequenceVersion !== this.#state.rowSequenceVersion) {
+            this.#refuseFind('orderChanged');
+            return;
+        }
+        // An answer outside the question is the source's defect, named rather than reworded as a reorder: a
+        // column it was not asked about, or a row the result does not have.
+        const given: unknown = answer;
+        if (typeof given !== 'object' || given === null || typeof (given as { readonly found?: unknown }).found !== 'boolean') {
+            throw new TypeError('The source\'s find answered something other than a Find result: { found: true, row, column } or '
+                + '{ found: false } (ADR-0055).');
+        }
+        const total = this.#totalRows;
+        if (answer.found && (!request.columns.includes(answer.column) || !Number.isInteger(answer.row) || answer.row < 0 || answer.row >= total)) {
+            throw new RangeError(`The Find answer (row ${answer.row}, column '${answer.column}') is outside the request: it asked about `
+                + `the columns [${request.columns.join(', ')}] of a result of ${total} rows (ADR-0055).`);
+        }
+        // Whether the walk passes the header rows before it reaches the answer: it wrapped, or there was none.
+        // The headers are read again as they stand now, and must stand where they stood when the step was
+        // taken; headers that moved meanwhile are the columns having moved, the order changed's other half.
+        const answered = answer.found ? cellPosition(answer.row, request.columns.indexOf(answer.column)) : undefined;
+        const headersNow = headers.length === 0 ? headers : this.#findHeaders();
+        const after = headerAfterAnswer(matchingHeaders(headersNow, patternOf(request)), request.from, answered, request.backward);
+        if (after !== undefined) {
+            if (!sameHeaders(headers, headersNow)) {
+                this.#refuseFind('orderChanged');
+                return;
+            }
+            this.#landOnHeader(itemAt(headersNow, after));
+            return;
+        }
+        if (!answer.found) {
+            this.#refuseFind('notFound');
+            return;
+        }
+        // A column the request named that has since left the grid: the columns moved while the step was out.
+        const column = this.#columns.findIndex(({ column: declared }) => declared.name === answer.column);
+        if (column < 0) {
+            this.#refuseFind('orderChanged');
+            return;
+        }
+        this.#reconcileSelection();
+        const found = cellPosition(answer.row, column);
+        this.#findCurrent = { cell: found, version: this.#sequence() };
+        this.#setFindOutcome({ kind: 'found' });
+        // With a scope the Selection stands and only the Focus moves inside it, so the next step searches the
+        // same ranges; without one it collapses onto the match. A scope is kept only while it is the Selection
+        // the step was asked under: one the columns moved has been dropped (ADR-0011), and one the user replaced
+        // is theirs, and either way the match is clicked onto.
+        const held = this.#held.selection;
+        this.#apply(request.scope !== undefined && held === selection && held.contains(found) ? held.focusOn(found) : held.click(found, this.#extent));
+        this.#revealOwed = { target: found, extending: undefined, rowStart: false, stepRows: 0 };
+        this.#revealHeaderOwed = undefined;
+        this.#followArmed = { focus: found, target: found };
+    }
+
+    // The headers a step may stop on, in walk order (ADR-0333 §3); none while they are not searched.
+    #findHeaders(): readonly FindHeader[] {
+        if (!this.#findsHeaders) return [];
+        return findHeaders(this.#columns.map(({ column, header }) => ({ name: column.name, header })), this.#headerLayout);
+    }
+
+    // The current header's index among `headers`, wherever the columns have moved it, or none: none is current,
+    // the Selection it was found under has been replaced, or it is not among them, and then it is forgotten.
+    #currentHeaderIn(headers: readonly FindHeader[]): number | undefined {
+        this.#forgetCurrentHeaderOffSelection();
+        const current = this.#findCurrentHeader;
+        if (current === undefined) return undefined;
+        const index = headers.findIndex(header => header.id === current.id);
+        if (index >= 0) return index;
+        this.#dropCurrentHeader();
+        return undefined;
+    }
+
+    // A header found is the current match only under the Selection it was found under: the user has moved,
+    // and the next step starts from where they moved to (ADR-0333).
+    #forgetCurrentHeaderOffSelection(): void {
+        const current = this.#findCurrentHeader;
+        if (current !== undefined && current.selection !== this.#held.selection) this.#dropCurrentHeader();
+    }
+
+    // No header is current any more, and the panel no longer says one was found: it would name a header that
+    // is not the current match.
+    #dropCurrentHeader(): void {
+        if (this.#findCurrentHeader === undefined) return;
+        this.#findCurrentHeader = undefined;
+        if (this.#findOutcome.kind === 'foundInHeader') this.#setFindOutcome({ kind: 'none' });
+    }
+
+    // A step's header becomes the current match (ADR-0333 §1): the current Match Mark on it, the columns under
+    // it scrolled into view across, the panel naming it. The Focus and the Selection stay where they are.
+    #landOnHeader(header: FindHeader): void {
+        this.#findCurrent = undefined;
+        this.#findCurrentHeader = { id: header.id, selection: this.#held.selection, columns: this.#columns, layout: this.#headerLayout };
+        this.#setFindOutcome({ kind: 'foundInHeader', header: header.text });
+        this.#revealOwed = undefined;
+        this.#revealHeaderOwed = { first: header.firstColumn, last: header.lastColumn };
+    }
+
+    // The current match is the Focus a found step moved to only while the Focus stays there, in the order it
+    // was found in: once either moves it is forgotten, not merely hidden, so coming back to that position, or
+    // another row arriving there, is not taken for it (ADR-0332 §4). A header found goes with its Selection,
+    // and with its header no longer shown.
+    #forgetCurrentMatchOffFocus(): void {
+        this.#forgetCurrentHeaderOffSelection();
+        // Looked for again only once the columns or the Header Groups have changed, not on every pass.
+        const header = this.#findCurrentHeader;
+        if (header !== undefined && (header.columns !== this.#columns || header.layout !== this.#headerLayout)) {
+            if (this.#findHeaders().some(({ id }) => id === header.id)) {
+                this.#findCurrentHeader = { ...header, columns: this.#columns, layout: this.#headerLayout };
+            } else {
+                this.#dropCurrentHeader();
+            }
+        }
+        const current = this.#findCurrent;
+        if (current === undefined) return;
+        const focus = this.#held.selection.focus;
+        if (focus === undefined || !sameCell(focus, current.cell) || current.version !== this.#sequence()) this.#findCurrent = undefined;
+    }
+
+    // What the painted cells are judged by in this pass (ADR-0332 §4), or none while the panel is closed, holds
+    // no text, or nobody can judge: the Consumer's rule, else the reference rule where `GridSource.from`'s
+    // source answers Find by it. The same instance while nothing it holds changed.
+    #matchMarksNow(): MatchMarks<Row> | undefined {
+        const held = this.#findHeld;
+        const rule = this.#findMatch;
+        if (this.#popover?.kind !== 'find' || held.text === '' || (rule === undefined && !(this.#source instanceof InMemoryGridSource))) {
+            this.#matchMarks = undefined;
+            return undefined;
+        }
+        const marks = this.#matchMarks;
+        if (marks?.same(rule, held) === true) return marks;
+        this.#matchMarks = new MatchMarks(rule, this.#findPattern());
+        return this.#matchMarks;
+    }
+
+    // What the header band marks in this pass (ADR-0333 §1), or none while the panel is closed, holds no text,
+    // or the headers are not searched. Judged by the reference rule over the text the header shows, whoever
+    // answers Find: the grid holds that text. The same instance while nothing it holds changed.
+    #headerMatchesNow(): HeaderMatches<Row> | undefined {
+        const held = this.#findHeld;
+        if (this.#popover?.kind !== 'find' || held.text === '' || !this.#findsHeaders) {
+            this.#headerMatches = undefined;
+            return undefined;
+        }
+        const current = this.#findCurrentHeader?.id;
+        const was = this.#headerMatches;
+        if (was !== undefined && was.columns === this.#columns && was.layout === this.#headerLayout && was.current === current
+            && was.pattern.text === held.text && was.pattern.matchCase === held.matchCase && was.pattern.wholeCell === held.wholeCell) {
+            return was;
+        }
+        const pattern = this.#findPattern();
+        const matches = matcherOf(pattern);
+        const mark = (text: string, id: string): MatchMark => (!matches(text) ? 'none' : id === current ? 'current' : 'match');
+        const groups = new Map(this.#headerLayout.groups.map(group => [groupHeaderId(group), mark(group.label, groupHeaderId(group))] as const));
+        this.#headerMatches = {
+            pattern, columns: this.#columns, layout: this.#headerLayout, current, groups,
+            leaves: this.#columns.map(({ column, header }) => mark(header, columnHeaderId(column.name))),
+        };
+        return this.#headerMatches;
+    }
+
+    /**
+     * Replace (ADR-0332 §2): the current match written with the replacement, as one Edit Intent with its Edit
+     * Verdict, and then the next match found. With no current match, this finds the next one, so the user sees
+     * what the next press writes; a current match whose entry no longer matches is passed over to the next. One
+     * that cannot be written, its column not Editable, a Reject or the Consumer's refusal, writes nothing and is
+     * said, and stays the current match.
+     */
+    #replaceOne(): void {
+        const popover = this.#popover;
+        const held = this.#findHeld;
+        // While a Replace All is out, its buttons are disabled: a Replace taken now would be judged on rows the
+        // Consumer is still writing.
+        if (popover?.kind !== 'find' || !popover.panel.replaceShown || !this.#canReplace || held.text === '' || this.#replacing > 0) return;
+        // Made on the newest rows the source holds, as every write is (ADR-0142 D5).
+        this.#source.publishGathered?.();
+        this.#reconcileSelection();
+        this.#forgetCurrentMatchOffFocus();
+        const current = this.#findCurrent;
+        const holding = current === undefined ? undefined : this.#rowAt(current.cell.row);
+        if (current === undefined || holding === undefined) {
+            this.#findStep(false);
+            return;
+        }
+        const { cell } = current;
+        // What the cell paints now is what the editor would open with, what the user sees as they press, and
+        // what the write replaces (ADR-0142).
+        const painted = this.#paintedTextAt(cell);
+        const text = replacedEntry(painted, this.#findPattern(), held.replaceText);
+        if (text === undefined) {
+            this.#findStep(false);
+            return;
+        }
+        const resolved = itemAt(this.#columns, cell.column);
+        const name = resolved.column.name;
+        const refused = (reason: string | undefined): void => {
+            this.#refuseReplace([{ rowNumber: cell.row + 1, column: headerOf(resolved), reason }]);
+        };
+        // With nobody hearing the write, it is refused and said, never a step that looks like it wrote.
+        const heard = this.#editHeard;
+        if (!resolved.editable || heard === undefined) {
+            refused(undefined);
+            return;
+        }
+        // The Consumer's judgement, as at a commit (ADR-0034): a Reject writes nothing.
+        const verdict: EditVerdict = resolved.column.validate === undefined
+            ? { kind: 'accept' }
+            : checkedVerdict(resolved.column.validate(holding.row, text), name);
+        if (verdict.kind === 'reject') {
+            refused(verdict.message);
+            return;
+        }
+        this.#supersedeFill();
+        const intent = new GridEditIntent(holding.row, name, text, painted, painted);
+        // The user's own write (D1), noted before the Consumer hears it, and taken back if refused.
+        const written = this.#noteUserWrite([fromCorners(cell, cell)]);
+        let returned = false;
+        try {
+            heard(intent);
+            returned = true;
+        } finally {
+            intent.seal();
+            // What the source gathered while the Consumer wrote is put out as its handler returns (D5).
+            this.#source.publishGathered?.();
+            this.#userWriteAnswered(written, !returned || intent.refused);
+        }
+        const refusal = intent.refusalMessage;
+        if (refusal !== undefined) {
+            refused(refusal);
+            return;
+        }
+        this.#findStep(false);
+    }
+
+    /**
+     * Replace All (ADR-0332 §3): one Replace Request, raised under the source's version the positions in it were
+     * read in, which the Consumer performs and answers, now or later. The grid writes nothing: it says the
+     * count, or names the cells the Consumer could not write, and refuses an answer under another version than
+     * the request's, or from a source since replaced, as the order having moved (ADR-0011).
+     */
+    #replaceAll(): void {
+        const popover = this.#popover;
+        const held = this.#findHeld;
+        const replace = this.#onReplace;
+        if (popover?.kind !== 'find' || !popover.panel.replaceShown || !this.#canReplace || held.text === '' || replace === undefined
+            || this.#replacing > 0) {
+            return;
+        }
+        this.#source.publishGathered?.();
+        this.#reconcileSelection();
+        // The write moves the Focus nowhere, and no match is current after it (ADR-0332 §4).
+        this.#findCurrent = undefined;
+        this.#dropCurrentHeader();
+        const selection = this.#held.selection;
+        const request: GridReplaceRequest = Object.freeze({
+            ...this.#findPattern(), replacement: held.replaceText,
+            scope: !selection.isEmpty && selection.cellCount > 1 ? selection.ranges : undefined,
+            columns: Object.freeze(this.#columns.map(({ column }) => column.name)),
+            editableColumns: Object.freeze(this.#columns.filter(({ editable }) => editable).map(({ column }) => column.name)),
+            rowSequenceVersion: this.#state.rowSequenceVersion,
+        });
+        const source = this.#source;
+        const answer = replace(request);
+        if (!isThenable(answer)) {
+            this.#replaceAnswered(request, answer, source);
+            return;
+        }
+        // Answered later: until then a second Replace All, raised under the same version over rows the first is
+        // still writing, would be performed or not as the answer's timing fell, so the buttons wait for it
+        // (the spine's sixth rule).
+        this.#replacing += 1;
+        popover.panel.waitForReplace(true);
+        this.#invalidate();
+        const answered = (): void => {
+            this.#replacing -= 1;
+            const standing = this.#popover;
+            if (standing?.kind === 'find') standing.panel.waitForReplace(false);
+            this.#invalidate();
+        };
+        // oxlint-disable-next-line ex-grid/no-catch -- the grid stops waiting on a Replace All the Consumer failed, and rethrows the failure
+        answer.then(result => {
+            answered();
+            if (!this.#destroyed) this.#replaceAnswered(request, result, source);
+        }, (error: unknown) => {
+            answered();
+            throw error;
+        });
+    }
+
+    // A Replace All's answer (ADR-0332 §3).
+    #replaceAnswered(request: GridReplaceRequest, result: GridReplaceResult, source: GridSource<Row>): void {
+        // The source puts out what the write gathered before the next gesture (D5).
+        this.#source.publishGathered?.();
+        if (!isReplaceResult(result)) {
+            throw new TypeError('onReplace answered something other than a Replace result: it answers replacedCells(count, version) '
+                + 'or refusedCells(cells, version), as GridSource.from\'s replace does (ADR-0332).');
+        }
+        if (result.rowSequenceVersion !== request.rowSequenceVersion || source !== this.#source) {
+            this.#refuseFind('orderChanged');
+            return;
+        }
+        if (result.kind === 'refused') {
+            this.#refuseReplace(result.cells.map(cell => {
+                const index = request.columns.indexOf(cell.column);
+                if (index < 0 || !Number.isInteger(cell.row) || cell.row < 0 || cell.row >= this.#totalRows) {
+                    throw new RangeError(`The Replace answer names row ${cell.row}, column '${cell.column}', outside the request: it asked `
+                        + `about the columns [${request.columns.join(', ')}] of a result of ${this.#totalRows} rows (ADR-0332).`);
+                }
+                const now = index < this.#columns.length ? itemAt(this.#columns, index) : undefined;
+                return { rowNumber: cell.row + 1, column: now?.column.name === cell.column ? headerOf(now) : cell.column, reason: cell.message };
+            }));
+            return;
+        }
+        if (result.count === 0) {
+            this.#refuseFind('notFound');
+            return;
+        }
+        this.#setFindOutcome({ kind: 'replaced', count: result.count });
+    }
+
+    // A Replace that wrote nothing (ADR-0332 §2): the panel names the cells and why, and the Consumer is told.
+    #refuseReplace(cells: readonly FindPanelRefusedCell[]): void {
+        this.#setFindOutcome({ kind: 'replaceRefused', cells });
+        this.#onRefused?.({ kind: 'find', reason: 'replaceRefused' });
     }
 
     // ---- The clipboard (ADR-0005) ------------------------------------------------------------------------
@@ -3819,10 +4467,20 @@ export class GridView<Row> {
     #stageReveal(): boolean {
         const reveal = this.#revealOwed;
         this.#revealOwed = undefined;
+        const across = this.#revealHeaderOwed;
+        this.#revealHeaderOwed = undefined;
         const geometry = this.#geometry;
+        const columns = this.#styles.geometry;
+        // A header Find found is scrolled into view across only (ADR-0333 §1): its last column, then its first,
+        // so a header wider than the Viewport shows its start. A pinned header is in view already.
+        if (reveal === undefined && across !== undefined && geometry !== undefined) {
+            let left = this.#scrollLeftPx;
+            if (across.last < columns.count) left = columns.scrollLeftToReveal(across.last, left);
+            if (across.first < columns.count) left = columns.scrollLeftToReveal(across.first, left);
+            return this.#revealAt(this.#scrollTopPx, left);
+        }
         if (reveal === undefined || geometry === undefined) return false;
         const { target } = reveal;
-        const columns = this.#styles.geometry;
         if (target.row >= this.#totalRows || target.column >= columns.count) return false;
         // PageUp and PageDown scroll by the rows the Focus moved, through the mapping, so a compressed grid
         // moves by rows (ADR-0053); the reveal still runs over the stepped offset.
@@ -3839,6 +4497,11 @@ export class GridView<Row> {
             if (spansEveryRow(range, extent)) top = this.#scrollTopPx;
             if (spansEveryColumn(range, extent) && !reveal.rowStart) left = this.#scrollLeftPx;
         }
+        return this.#revealAt(top, left);
+    }
+
+    // Moves the offsets a reveal asked for, whether it moved anything.
+    #revealAt(top: number, left: number): boolean {
         if (top === this.#scrollTopPx && left === this.#scrollLeftPx) return false;
         // A reveal that moves the rows under a still pointer takes the band, as a scroll does; this pass paints
         // it gone.
@@ -4064,6 +4727,8 @@ export class GridView<Row> {
         this.#write(this.#scroller, 'scroller', 'style', this.#scrollerStyle());
         const scrollHeightPx = this.#geometry?.scrollHeightPx ?? 0; // oxlint-disable-line ex-grid/no-stand-in-default -- ADR-0013: a Viewport with no room for a row scrolls nothing
         this.#write(this.#spacer, 'spacer', 'style', `width: ${geometry.totalWidthPx}px; height: ${this.#bandHeightPx + scrollHeightPx}px`);
+        // A current match the user has moved off is no longer marked as one (ADR-0332 §4).
+        this.#forgetCurrentMatchOffFocus();
         this.#paintHeader();
         this.#paintViewport();
         this.#paintMessage();
@@ -4159,12 +4824,13 @@ export class GridView<Row> {
             let tiers = this.#paintedTiers;
             if (tiers === undefined || tiers.styles !== this.#styles || tiers.columns !== this.#columns || tiers.layout !== layout
                 || tiers.tierPx !== tierPx) {
-                const rows = Array.from({ length: layout.tierCount }, (_, headerRow) => this.#tierRow(headerRow));
+                const groups: { readonly element: HTMLElement; readonly id: string }[] = [];
+                const rows = Array.from({ length: layout.tierCount }, (_, headerRow) => this.#tierRow(headerRow, groups));
                 const leaves = doc.createElement('div');
                 leaves.setAttribute('role', 'row');
                 leaves.setAttribute('aria-rowindex', String(layout.tierCount + 1));
                 leaves.setAttribute('style', 'display: contents');
-                tiers = { styles: this.#styles, columns: this.#columns, layout, tierPx, rows, leaves };
+                tiers = { styles: this.#styles, columns: this.#columns, layout, tierPx, rows, leaves, groups };
                 this.#paintedTiers = tiers;
                 header.replaceChildren(...rows, leaves);
             }
@@ -4180,7 +4846,7 @@ export class GridView<Row> {
     // One tier's row of Header Groups, the top tier first (ADR-0032). A rectangle stands from the geometry,
     // absolutely, so it is correct whether or not its leaves are in the DOM; one inside the pinned block
     // rides a zero-size sticky anchor held at the band's left edge, as the pinned header cells are.
-    #tierRow(headerRow: number): HTMLElement {
+    #tierRow(headerRow: number, painted: { readonly element: HTMLElement; readonly id: string }[]): HTMLElement {
         const doc = this.#root.ownerDocument;
         const layout = this.#headerLayout;
         const tier = layout.tierCount - headerRow;
@@ -4193,15 +4859,20 @@ export class GridView<Row> {
         // the band paints no rectangles, as the rows paint nothing (ADR-0028).
         if (geometry.count !== this.#columns.length) return row;
         const held = (group: ResolvedHeaderGroup): boolean => group.pinned && !geometry.isPinningSuspended;
+        const groupElement = (group: ResolvedHeaderGroup): HTMLElement => {
+            const element = this.#groupElement(group);
+            painted.push({ element, id: groupHeaderId(group) });
+            return element;
+        };
         const inTier = layout.groups.filter(group => group.topTier === tier);
         const pinned = inTier.filter(held);
         if (pinned.length > 0) {
             const anchor = doc.createElement('div');
             anchor.className = 'ex-header-groups-pinned';
-            anchor.append(...pinned.map(group => this.#groupElement(group)));
+            anchor.append(...pinned.map(groupElement));
             row.append(anchor);
         }
-        row.append(...inTier.filter(group => !held(group)).map(group => this.#groupElement(group)));
+        row.append(...inTier.filter(group => !held(group)).map(groupElement));
         return row;
     }
 
@@ -4242,16 +4913,27 @@ export class GridView<Row> {
         }
         const heightPx = this.#metrics.headerHeightPx;
         const topPx = this.#bandHeightPx - heightPx;
+        const matches = this.#headerMatchesNow();
         const painted = this.#paintedMarks;
-        if (!rebuilt && painted !== undefined && painted.marks === marks && painted.styles === this.#styles
+        if (!rebuilt && painted !== undefined && painted.marks === marks && painted.matches === matches && painted.styles === this.#styles
             && painted.topPx === topPx && painted.heightPx === heightPx) {
             return;
         }
 
+        // The Match Mark rides the same class, and the current header says so to assistive technology as its
+        // mark says it to the eye (ADR-0333 §1).
         for (const { element, column, align, pinned } of this.#headerCells) {
             const mark = runsHold(marks.whole, column) ? 'whole' : runsHold(marks.columns, column) ? 'marked' : 'none';
-            const className = headerClass(align, pinned, mark);
+            const match = matches === undefined ? 'none' : itemAt(matches.leaves, column);
+            const className = headerClass(align, pinned, mark) + matchMarkClasses[match];
             if (element.className !== className) element.className = className;
+            setAttribute(element, 'aria-current', match === 'current' ? 'true' : undefined);
+        }
+        for (const { element, id } of this.#paintedTiers?.groups ?? []) { // oxlint-disable-line ex-grid/no-stand-in-default -- an untiered header has no group to mark
+            const match = matches?.groups.get(id) ?? 'none'; // oxlint-disable-line ex-grid/no-stand-in-default -- a group the marks were not judged for wears none
+            const className = `ex-header-group${matchMarkClasses[match]}`;
+            if (element.className !== className) element.className = className;
+            setAttribute(element, 'aria-current', match === 'current' ? 'true' : undefined);
         }
 
         const geometry = this.#styles.geometry;
@@ -4264,7 +4946,7 @@ export class GridView<Row> {
             // The same rectangles: a header rebuilt by a scroll or a Sort takes the marks it had back,
             // rather than making them again (PF-3).
             if (!rebuilt) {
-                this.#paintedMarks = { ...painted, marks, styles: this.#styles, topPx, heightPx };
+                this.#paintedMarks = { ...painted, marks, matches, styles: this.#styles, topPx, heightPx };
                 return;
             }
             elements = painted.elements;
@@ -4277,7 +4959,7 @@ export class GridView<Row> {
         }
         if (elements.pinned !== undefined) this.#header.prepend(elements.pinned);
         this.#header.append(...elements.scrollable);
-        this.#paintedMarks = { marks, styles: this.#styles, topPx, heightPx, pinnedStyles, scrollableStyles, elements };
+        this.#paintedMarks = { marks, matches, styles: this.#styles, topPx, heightPx, pinnedStyles, scrollableStyles, elements };
     }
 
     #headingMarkElements(pinnedStyles: readonly string[], scrollableStyles: readonly string[]): PaintedHeadingMarks['elements'] {
@@ -4347,6 +5029,8 @@ export class GridView<Row> {
         if (visible !== undefined) {
             const { window, windowStart } = this.#state;
             const rowKey = this.#source.rowKey;
+            const marks = this.#matchMarksNow();
+            const found = this.#findCurrent;
             for (let index = visible.start; index < visible.start + visible.count; index++) {
                 const slice = index - windowStart;
                 if (slice < 0 || slice >= window.length) {
@@ -4363,18 +5047,31 @@ export class GridView<Row> {
                 const key: unknown = rowKey === undefined ? row : rowKey(row);
                 const was = this.#painted.get(key);
                 const scrollable = this.#placeholderMode ? undefined : this.#scrollable;
+                const current = marks === undefined || found?.cell.row !== index ? -1 : found.cell.column;
                 if (was !== undefined && !next.has(key) && was.row === row && was.index === index && was.styles === this.#styles
                     && was.columns === this.#columns && was.placeholder === this.#placeholderMode && sameRange(was.scrollable, scrollable)) {
-                    next.set(key, was);
-                    rows.push(was.element);
-                    continue;
+                    if (was.marks === marks && was.current === current) {
+                        next.set(key, was);
+                        rows.push(was.element);
+                        continue;
+                    }
+                    // A new search judges the row's cells again, and paints the row again only where its marks
+                    // moved (ADR-0332 §4, ADR-0003).
+                    if (this.#matchedIn(row, scrollable, marks, current) === was.matched) {
+                        next.set(key, { ...was, marks, current });
+                        rows.push(was.element);
+                        continue;
+                    }
                 }
-                const element = this.#rowElement(row, index, scrollable);
+                const { element, matched } = this.#rowElement(row, index, scrollable, marks, current);
                 repainted = true;
                 // A key met twice in one Window is painted, never paired: which of the two a later row
                 // continues cannot be told (ADR-0140).
                 if (!next.has(key)) {
-                    next.set(key, { element, row, index, styles: this.#styles, columns: this.#columns, placeholder: this.#placeholderMode, scrollable });
+                    next.set(key, {
+                        element, row, index, styles: this.#styles, columns: this.#columns, placeholder: this.#placeholderMode, scrollable,
+                        marks, current, matched,
+                    });
                 }
                 rows.push(element);
             }
@@ -4506,28 +5203,55 @@ export class GridView<Row> {
 
     // A row: the Pinned Columns, then one gap for what is virtualised away to the left, then the scrollable
     // columns on screen (ADR-0004). Mid-fling only the pinned cells are painted, and the row says it is busy.
-    #rowElement(row: Row, index: number, scrollable: ColumnRange | undefined): HTMLElement {
+    #rowElement(row: Row, index: number, scrollable: ColumnRange | undefined, marks: MatchMarks<Row> | undefined,
+        current: number): { readonly element: HTMLElement; readonly matched: string } {
         const element = this.#root.ownerDocument.createElement('div');
         element.className = rowClasses({ kind: 'detail', placeholder: this.#placeholderMode });
         element.setAttribute('role', 'row');
         element.setAttribute('aria-rowindex', String(this.#headerRowCount + index + 1));
         if (this.#placeholderMode) element.setAttribute('aria-busy', 'true');
-        for (let c = 0; c < this.#styles.geometry.pinnedCount; c++) element.append(this.#cell(row, index, c, true));
+        let matched = '';
+        const cell = (c: number, pinned: boolean): HTMLElement => {
+            const painted = this.#cell(row, index, c, pinned, marks, current);
+            matched += markKey(c, painted.mark);
+            return painted.element;
+        };
+        for (let c = 0; c < this.#styles.geometry.pinnedCount; c++) element.append(cell(c, true));
         if (scrollable !== undefined) {
             if (this.#styles.hasGap(scrollable.start)) element.append(this.#gap(scrollable.start));
-            for (let c = scrollable.start; c < scrollable.start + scrollable.count; c++) element.append(this.#cell(row, index, c, false));
+            for (let c = scrollable.start; c < scrollable.start + scrollable.count; c++) element.append(cell(c, false));
         }
-        return element;
+        return { element, matched };
     }
 
-    #cell(row: Row, index: number, c: number, pinned: boolean): HTMLElement {
+    // The Match Mark a painted cell wears (ADR-0332 §4): only on a cell Find can land on, which a column with
+    // no value of its own to search is not, judged by its displayed text where the caller has it.
+    #markOf(row: Row, c: number, marks: MatchMarks<Row> | undefined, current: number, shown?: string): MatchMark {
+        const { column } = itemAt(this.#columns, c);
+        if (marks === undefined || column.queryable === false || !marks.matches(row, column, shown)) return 'none';
+        return c === current ? 'current' : 'match';
+    }
+
+    // The marks a row's painted cells wear, written as #rowElement writes them while it paints.
+    #matchedIn(row: Row, scrollable: ColumnRange | undefined, marks: MatchMarks<Row> | undefined, current: number): string {
+        let matched = '';
+        for (let c = 0; c < this.#styles.geometry.pinnedCount; c++) matched += markKey(c, this.#markOf(row, c, marks, current));
+        if (scrollable !== undefined) {
+            for (let c = scrollable.start; c < scrollable.start + scrollable.count; c++) matched += markKey(c, this.#markOf(row, c, marks, current));
+        }
+        return matched;
+    }
+
+    #cell(row: Row, index: number, c: number, pinned: boolean, marks: MatchMarks<Row> | undefined,
+        current: number): { readonly element: HTMLElement; readonly mark: MatchMark } {
         const { column, numeric } = itemAt(this.#columns, c);
         const text = textFor(column, column.value(row));
+        const mark = this.#markOf(row, c, marks, current, text);
         // The declared width, not the one put on Device Pixels: an Auto column is exactly as wide as its
         // widest estimate, and rounding it must not hash the value it grew for (ADR-0090).
         const decision = decideOverflow(column.type, text, this.#styles.geometry.declaredWidthPxOf(c), this.#metrics.cellMetrics);
         const cell = this.#root.ownerDocument.createElement('div');
-        cell.className = cellClasses({ numeric, pinned, state: 'normal', align: column.align ?? 'auto' }); // oxlint-disable-line ex-grid/no-stand-in-default -- ADR-0006: a column that declares no alignment aligns by its type
+        cell.className = cellClasses({ numeric, pinned, state: 'normal', align: column.align ?? 'auto', mark }); // oxlint-disable-line ex-grid/no-stand-in-default -- ADR-0006: a column that declares no alignment aligns by its type
         cell.setAttribute('style', pinned ? this.#styles.pinnedCell(c) : this.#styles.cell(c));
         cell.setAttribute('role', 'gridcell');
         cell.setAttribute('id', `${this.#ids}r${index}c${c}`);
@@ -4542,8 +5266,13 @@ export class GridView<Row> {
         } else {
             cell.textContent = decision.displayText;
         }
-        return cell;
+        return { element: cell, mark };
     }
+}
+
+/** A painted cell's Match Mark as a row's record of its marks writes it: nothing for none. */
+function markKey(column: number, mark: MatchMark): string {
+    return mark === 'none' ? '' : mark === 'current' ? `${column}*,` : `${column},`;
 }
 
 /** Whether one of `runs`, disjoint and in order, holds `index`: a binary search, so a header cell's mark
@@ -4566,6 +5295,11 @@ const present = (style: string | undefined): readonly string[] => (style === und
 /** How the Heading Mark marks a column's header (ADR-0008): not, as holding part of the Selection, or as
  * covered whole by it (D1). */
 type HeadingMark = 'none' | 'marked' | 'whole';
+
+/** A header's Match Mark (ADR-0333 §1), after its other classes, as the C# core composes them. */
+const matchMarkClasses: Readonly<Record<MatchMark, string>> = {
+    none: '', match: ' ex-match-mark', current: ' ex-match-mark ex-match-mark-current',
+};
 
 const headingMarkClasses: Readonly<Record<HeadingMark, string>> = {
     none: '', marked: ' ex-heading-marked', whole: ' ex-heading-marked ex-heading-whole',
