@@ -1,4 +1,4 @@
-import { test, expect, setRoundTrip, circuitQuiet, alterPage, settled, holdFrames } from './fixtures.mjs';
+import { test, expect, setRoundTrip, circuitQuiet, alterPage, settled, holdFrames, holdReplies } from './fixtures.mjs';
 import { SERVER } from './hosting.mjs';
 import { sheet, openSheet, cell, pressCell, expectFocusAt, pressAt, boxOf, columnHeader, hashesAtTheStandardWidth } from './sheet-helpers.mjs';
 import { expectKeyboardOn } from './keyboard.mjs';
@@ -306,6 +306,42 @@ test.describe('on /sheet', () => {
         await settled(grid);
         await expect(tab(grid, 'Number')).toBeFocused();
         await expect(formatCells(grid)).toBeVisible();
+    });
+
+    // The same Shift+Tab, typed once the tab holds the keyboard but before Ctrl+1's own reply has come
+    // back (CI on PR #278, WebAssembly, Chrome). Ctrl+1 is ExSheet's key, not one the gate knows opens a
+    // popover, so a key typed then ended the hold only on that reply, and the Shift+Tab was held and
+    // refused once it came. The core's hand-off to Format Cells now makes it a popover key, answered by
+    // the Settled Stamp under its own number (ADR-0240). Here neither the reply nor a frame comes until
+    // the keys have been typed, so that is the case every time; on the Server host with a 150 ms round
+    // trip, where the hand-off's own number is answered on a round trip of its own beside the one the
+    // tab's focus takes.
+    test('DC-60/ADR-0240: a Shift+Tab typed once Format Cells\' tab holds the keyboard wraps, before Ctrl+1\'s reply has come', async ({ page }) => {
+        const letReplies = await holdReplies(page, 'OnKeyAsync');
+        await openSheet(page);
+        const grid = sheet(page);
+        await pressCell(grid, 'C2');
+        await settled(grid);
+        if (SERVER) await setRoundTrip(150);
+        try {
+            const letFrames = await holdFrames(page);
+
+            await page.keyboard.press('Control+1');
+            await expect(tab(grid, 'Number')).toBeFocused();
+            await page.keyboard.press('Shift+Tab');
+            await letReplies();
+            await expect(formatCells(grid).getByRole('button', { name: 'Cancel' })).toBeFocused();
+            await page.keyboard.press('Tab');
+            await expect(tab(grid, 'Number')).toBeFocused();
+
+            await letFrames();
+            await circuitQuiet();
+            await settled(grid);
+            await expect(tab(grid, 'Number')).toBeFocused();
+            await expect(formatCells(grid)).toBeVisible();
+        } finally {
+            if (SERVER) await setRoundTrip(0);
+        }
     });
 
     // ADR-0039's note of 2026-10-13. Format Cells replaces the Context Menu in one render, and its tab
