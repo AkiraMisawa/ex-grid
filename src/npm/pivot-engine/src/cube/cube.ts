@@ -90,28 +90,103 @@ export class AxisNode {
 
 const nodeLimit = 67108864;
 
-// A cell by its row's and its column's node ids, each below 2^26, so the key is a safe integer: a cube of
-// more nodes than that holds more cells than a Map can.
-function cellKey(row: number, column: number): number {
+/** A cell by its row's and its column's node ids, each below 2^26, so the key is a safe integer: a cube of
+ * more nodes than that holds more cells than a Map can. */
+export function cellKey(row: number, column: number): number {
     if (row >= nodeLimit || column >= nodeLimit) throw new RangeError(`A cube holds at most ${nodeLimit} nodes an axis.`);
     return row * nodeLimit + column;
+}
+
+/** One axis of a cube as a report reads it: its root, and each node's children and present form. A cube built
+ * from an answer holds its tree as it was made; a computation's later versions hold it under an overlay of the
+ * nodes and child lists their updates wrote (ADR-0153). Not part of the public surface. */
+export interface CubeAxis {
+    readonly root: AxisNode;
+    /** The node of an id. */
+    node(id: number): AxisNode;
+    /** The node as this version holds it: an Item relabelled since the node was made carries its new spelling. */
+    nodeOf(node: AxisNode): AxisNode;
+    /** A node's children as this version holds them, in the order they were made. */
+    childrenOf(node: AxisNode): readonly AxisNode[];
+}
+
+/** A cube's cells, by the ids of their row's and their column's nodes. Not part of the public surface. */
+export interface CubeCells {
+    /** An Aggregation's answer at a cell, Empty where the cube holds none. */
+    read(row: number, column: number, source: number, aggregation: PivotAggregation): AggregateValue;
 }
 
 /** What the report reads of a cube: not part of the public surface. */
 export interface CubeParts {
     readonly meta: ReadonlyMap<string, FieldMeta>;
-    readonly rowRoot: AxisNode;
-    readonly columnRoot: AxisNode;
+    readonly rows: CubeAxis;
+    readonly columns: CubeAxis;
     /** Each field in Values, by the answer's order. */
     readonly sources: readonly string[];
     /** Every Item of a field over all the data, where the cube was made from records it can read again. */
     readonly allItems: ((field: string) => readonly ItemKey[]) | undefined;
-    /** An Aggregation's answer at a row and a column. */
-    read(row: AxisNode, column: AxisNode, source: number, aggregation: PivotAggregation): AggregateValue;
+    readonly cells: CubeCells;
+}
+
+/** What a cube's build made, for a computation that keeps the cube up to date (ADR-0153): each tree's nodes by
+ * id, the nodes each of the answer's leaves stands at, in the answer's order, and the cells — the leaves first,
+ * as the answer has them, then the totals. Nothing writes any of it once the cube is made. */
+export interface CubeBuild {
+    readonly rowNodes: readonly AxisNode[];
+    readonly columnNodes: readonly AxisNode[];
+    readonly rowLeaves: readonly AxisNode[];
+    readonly columnLeaves: readonly AxisNode[];
+    readonly cells: ReadonlyMap<number, number>;
+    readonly values: readonly PartColumns[];
+}
+
+// An axis as its build made it.
+class BuiltAxis implements CubeAxis {
+    readonly root: AxisNode;
+    readonly #nodes: readonly AxisNode[];
+
+    constructor(nodes: readonly AxisNode[]) {
+        this.root = elementAt(nodes, 0);
+        this.#nodes = nodes;
+    }
+
+    node(id: number): AxisNode {
+        return elementAt(this.#nodes, id);
+    }
+
+    nodeOf(node: AxisNode): AxisNode {
+        return node;
+    }
+
+    childrenOf(node: AxisNode): readonly AxisNode[] {
+        return node.children;
+    }
+}
+
+// The cells as the build made them.
+class BuiltCells implements CubeCells {
+    readonly #cells: ReadonlyMap<number, number>;
+    readonly #values: readonly PartColumns[];
+
+    constructor(cells: ReadonlyMap<number, number>, values: readonly PartColumns[]) {
+        this.#cells = cells;
+        this.#values = values;
+    }
+
+    read(row: number, column: number, source: number, aggregation: PivotAggregation): AggregateValue {
+        const cell = this.#cells.get(cellKey(row, column));
+        return cell === undefined ? emptyValue : elementAt(this.#values, source).read(cell, aggregation);
+    }
+}
+
+/** An Aggregation's answer at a row and a column of a cube. */
+export function readCell(parts: CubeParts, row: AxisNode, column: AxisNode, source: number, aggregation: PivotAggregation): AggregateValue {
+    return parts.cells.read(row.id, column.id, source, aggregation);
 }
 
 let partsOfCube: (cube: PivotCube) => CubeParts;
 let makeCube: (query: PivotQuery, sourceVersion: string, included: number, parts: CubeParts, values: readonly PartColumns[]) => PivotCube;
+let withCells: (cube: PivotCube, sourceVersion: string, included: number, rows: CubeAxis, columns: CubeAxis, cells: CubeCells) => PivotCube;
 
 /** The cube a report is laid out from (ADR-0060/0066): the answer's leaves, each axis's tree of Items, and
  * every total merged from the leaves beneath it. Made by {@link pivotCube} or {@link aggregatePivot}. */
@@ -137,6 +212,8 @@ export class PivotCube {
     static {
         partsOfCube = cube => cube.#parts;
         makeCube = (query, sourceVersion, included, parts, values) => new PivotCube(query, sourceVersion, included, parts, values);
+        withCells = (cube, sourceVersion, included, rows, columns, cells) =>
+            new PivotCube(cube.query, sourceVersion, included, Object.freeze({ ...cube.#parts, rows, columns, cells }), cube.#values);
     }
 
     /** Whether the cube was aggregated under the layout's placed fields, Hidden Items and Value Fields, with
@@ -160,6 +237,12 @@ export function cubeParts(cube: PivotCube): CubeParts {
     return partsOfCube(cube);
 }
 
+/** The cube a computation's update made of `cube` (ADR-0153): the same question, fields and Values, at another
+ * Source Version, with the trees and cells the update holds. */
+export function cubeWith(cube: PivotCube, sourceVersion: string, included: number, rows: CubeAxis, columns: CubeAxis, cells: CubeCells): PivotCube {
+    return withCells(cube, sourceVersion, included, rows, columns, cells);
+}
+
 /** The cube of an answer to a question (ADR-0066): an answer to another question is refused by name, and so
  * is a field no declared Pivot Field names, or two leaves for one cell. */
 export function buildCube(query: PivotQuery, answer: PivotAnswer, meta: ReadonlyMap<string, FieldMeta>,
@@ -169,19 +252,20 @@ export function buildCube(query: PivotQuery, answer: PivotAnswer, meta: Readonly
 
 /** {@link buildCube}, a step at a time (PV-40): the trees, the leaves' cells, every total merged and every exact
  * value written in one form, each over its leaves or cells a piece at a time, yielding after each piece for a
- * caller to slice. The answer is only read. */
+ * caller to slice. The answer is only read. `made` is handed what the build made, for a computation that keeps
+ * the cube up to date (ADR-0153). */
 export function* buildCubeSteps(query: PivotQuery, answer: PivotAnswer, meta: ReadonlyMap<string, FieldMeta>,
-    allItems?: (field: string) => readonly ItemKey[]): Generator<void, PivotCube> {
+    allItems?: (field: string) => readonly ItemKey[], made?: (build: CubeBuild) => void): Generator<void, PivotCube> {
     const mismatch = answer.mismatch(query);
     if (mismatch !== undefined) throw new Error(`The answer does not answer the question: ${mismatch} (ADR-0066).`);
     for (const field of [...placedFields(query).map(f => f.field), ...query.values.map(v => v.field)]) {
         if (!meta.has(field)) throw new Error(`The question names '${field}', and no Pivot Field of that name is declared (ADR-0060).`);
     }
     const leafCount = answer.leafCount;
-    const rowRoot = new AxisNode(0, -1, undefined, undefined);
-    const columnRoot = new AxisNode(0, -1, undefined, undefined);
-    const rowLeaves = yield* tree(answer.rows, rowRoot, leafCount);
-    const columnLeaves = yield* tree(answer.columns, columnRoot, leafCount);
+    const rowTree = yield* tree(answer.rows, leafCount);
+    const columnTree = yield* tree(answer.columns, leafCount);
+    const rowLeaves = rowTree.leaves;
+    const columnLeaves = columnTree.leaves;
 
     const sources = answer.values.map(v => v.field);
     const values: PartColumns[] = [];
@@ -238,12 +322,12 @@ export function* buildCubeSteps(query: PivotQuery, answer: PivotAnswer, meta: Re
     // One form for each exact value (ADR-0064): decimal addition keeps the larger scale.
     for (const columns of values) yield* inPieces(columns.count, 1, (from, to) => columns.canonicalize(from, to));
     const parts: CubeParts = Object.freeze({
-        meta, rowRoot, columnRoot, sources, allItems,
-        read: (row: AxisNode, column: AxisNode, source: number, aggregation: PivotAggregation): AggregateValue => {
-            const cell = cells.get(cellKey(row.id, column.id));
-            return cell === undefined ? emptyValue : elementAt(values, source).read(cell, aggregation);
-        },
+        meta, sources, allItems,
+        rows: new BuiltAxis(rowTree.nodes),
+        columns: new BuiltAxis(columnTree.nodes),
+        cells: new BuiltCells(cells, values),
     });
+    made?.(Object.freeze({ rowNodes: rowTree.nodes, columnNodes: columnTree.nodes, rowLeaves, columnLeaves, cells, values }));
     return makeCube(query, answer.sourceVersion, included, parts, values);
 }
 
@@ -255,9 +339,10 @@ function sameFields(placements: readonly PivotFieldPlacement[], held: readonly P
     });
 }
 
-// One axis's tree from the leaves' Items, level by level, a piece of leaves at a time; the node each leaf
-// ends at.
-function* tree(axes: readonly PivotAnswerAxis[], root: AxisNode, leafCount: number): Generator<void, AxisNode[]> {
+// One axis's tree from the leaves' Items, level by level, a piece of leaves at a time: its nodes by id, and the
+// node each leaf ends at.
+function* tree(axes: readonly PivotAnswerAxis[], leafCount: number): Generator<void, { readonly nodes: AxisNode[]; readonly leaves: AxisNode[] }> {
+    const root = new AxisNode(0, -1, undefined, undefined);
     const nodes: AxisNode[] = [root];
     const refs: ItemRef[][] = [];
     for (const axis of axes) {
@@ -278,5 +363,5 @@ function* tree(axes: readonly PivotAnswerAxis[], root: AxisNode, leafCount: numb
             leaves.push(node);
         }
     });
-    return leaves;
+    return { nodes, leaves };
 }

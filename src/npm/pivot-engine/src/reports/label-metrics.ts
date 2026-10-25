@@ -3,7 +3,7 @@
 // font. The source never reads a browser's layout; it is told the geometry and estimates. The C# engine's
 // PivotReportLabelMetrics and PivotLabelSizing.
 
-import type { PivotReport, PivotReportRow } from '../report/report';
+import { rowIdOf, type PivotReport, type PivotReportRow, type PivotRowKey } from '../report/report';
 import { elementAt } from '../must';
 import { pieceUnits } from '../source/slicing';
 
@@ -145,4 +145,95 @@ export function* labelWidthSteps(report: PivotReport, metrics: PivotLabelMetrics
         }
     }
     return Object.freeze(widths);
+}
+
+/** The rows one computation's result changed: those it added or relabelled, and the keys of those it took away. */
+export interface LabelBatch {
+    readonly labels: readonly PivotReportRow[];
+    readonly removed: readonly PivotRowKey[];
+}
+
+/**
+ * The widest label of each label column, kept across a report's versions (ADR-0153): every row measured on a
+ * reset or under new geometry, otherwise the rows the batches added or relabelled measured and the rows they
+ * took away forgotten, batch by batch in order. It keeps only each row's widths, by its key, and how many rows
+ * have each width. Every step sets a row's entry to what one batch says of it, so a pass cancelled half way and
+ * begun again from the first batch ends where one pass uncancelled would have. The C# engine's
+ * PivotLabelSizing.
+ */
+export class PivotLabelSizing {
+    #metrics: PivotLabelMetrics | undefined;
+    readonly #rows = new Map<string, readonly number[]>();
+    #widths: Map<number, number>[] = [];
+
+    /** The widths of `report`'s label columns under `metrics`. */
+    *widthSteps(report: PivotReport, metrics: PivotLabelMetrics, batches: readonly LabelBatch[], reset: boolean): Generator<void, readonly number[]> {
+        let units = 0;
+        if (reset || this.#metrics === undefined || !sameLabelMetrics(this.#metrics, metrics) || this.#widths.length !== report.labelColumns.length) {
+            this.#rows.clear();
+            this.#widths = report.labelColumns.map(() => new Map<number, number>());
+            // Not the metrics until every row is measured: a pass cancelled before then is begun again whole.
+            this.#metrics = undefined;
+            for (const row of report.rows) {
+                this.#add(row, metrics);
+                units += 4;
+                if (units >= pieceUnits) {
+                    units = 0;
+                    yield;
+                }
+            }
+            this.#metrics = metrics;
+        } else {
+            for (const { labels, removed } of batches) {
+                for (const key of removed) this.#remove(rowKeyId(key));
+                for (const row of labels) {
+                    this.#remove(rowKeyId(row.key));
+                    this.#add(row, metrics);
+                    units += 4;
+                    if (units >= pieceUnits) {
+                        units = 0;
+                        yield;
+                    }
+                }
+            }
+        }
+        return Object.freeze(this.#widths.map(column => {
+            let widest = 0;
+            for (const width of column.keys()) widest = Math.max(widest, width);
+            return widest;
+        }));
+    }
+
+    /** A version published without widths: the next one asked for measures every row, since the batches between
+     * were not counted. */
+    forget(): void {
+        this.#metrics = undefined;
+    }
+
+    #add(row: PivotReportRow, metrics: PivotLabelMetrics): void {
+        const widths = this.#widths.map((column, at) => {
+            const width = rowWidth(row, at, metrics);
+            const had = column.get(width);
+            column.set(width, had === undefined ? 1 : had + 1);
+            return width;
+        });
+        this.#rows.set(rowKeyId(row.key), widths);
+    }
+
+    #remove(id: string): void {
+        const widths = this.#rows.get(id);
+        if (widths === undefined) return;
+        this.#rows.delete(id);
+        widths.forEach((width, at) => {
+            const column = elementAt(this.#widths, at);
+            const count = column.get(width);
+            if (count === undefined) throw new Error('Internal: a label width the sizing measured is not counted (ADR-0153).');
+            if (count === 1) column.delete(width);
+            else column.set(width, count - 1);
+        });
+    }
+}
+
+function rowKeyId(key: PivotRowKey): string {
+    return rowIdOf(key.role, key.valueField, key.items);
 }

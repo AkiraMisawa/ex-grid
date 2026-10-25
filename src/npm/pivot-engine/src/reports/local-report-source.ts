@@ -10,23 +10,22 @@ import {
     addDoubleToExtremes, addDoubleToSum, addExactToExtremes, addExactToSum, finishExtremes, finishSum, noExtremes, noSum,
 } from '../aggregates/parts';
 import { decimalEquals } from '../aggregates/exact-decimal';
-import { buildCubeSteps, type PivotCube } from '../cube/cube';
-import { defaultMaxLeaves, pivotItemsQuery, queryForLayout, type PivotDetailsQuery, type PivotItemsQuery, type PivotQuery } from '../cube/query';
-import type { PivotAnswer, PivotNumber, PivotSourceRefusal } from '../cube/answer';
+import { PivotComputationSession, type PivotComputationResult } from '../computation/session';
+import type { PivotCube } from '../cube/cube';
+import { defaultMaxLeaves, pivotItemsQuery, type PivotDetailsQuery, type PivotItemsQuery } from '../cube/query';
+import type { PivotNumber } from '../cube/answer';
 import { checkCubeHolds, itemsOfPage } from '../engine';
 import { PivotOrderKeyError } from '../errors';
-import { fieldMetas, type PivotField, type PivotOrderKey } from '../fields/pivot-field';
-import { itemKeysEqual, publicKeyId, type PivotItemKey } from '../items/item-key';
+import type { PivotField, PivotOrderKey } from '../fields/pivot-field';
 import { readPivotLayoutJson, writePivotLayoutJson } from '../layout/layout-json';
 import { defined, elementAt } from '../must';
-import { resolveOptions, type PivotOptions, type ResolvedOptions } from '../report/labels';
-import { buildReportSteps, sameRowsSteps, type PivotReport, type PivotReportRow, type PivotRowKey, type PivotRowLabel } from '../report/report';
+import { resolveOptions, type PivotOptions } from '../report/labels';
+import { buildReportSteps, rowIdOf, rowLabelsAlike, sameRowsSteps, type PivotReport, type PivotReportRow, type PivotRowKey } from '../report/report';
 import type { PivotValue } from '../report/value';
 import { invariantNumbers } from '../text/invariant';
 import { formatDouble } from '../text/number-text';
 import {
-    aggregateSliced, SnapshotPivotSource, type PivotDetailPage, type PivotItemPage, type PivotSource, type PivotSourceChanged,
-    type PivotSourceFeatures,
+    SnapshotPivotSource, type PivotDetailPage, type PivotItemPage, type PivotSource, type PivotSourceChanged, type PivotSourceFeatures,
 } from '../source/pivot-source';
 import { checkedSlicing, pieceUnits, Slicer, type CheckedSlicing, type PivotSlicing } from '../source/slicing';
 import type {
@@ -34,7 +33,7 @@ import type {
     PivotReportItemsQuery, PivotReportItemsResult, PivotReportMetadata, PivotReportRange, PivotReportRefusal, PivotReportRequest,
     PivotReportSettings, PivotReportState, PivotReportSummaryQuery, PivotReportSummaryResult, PivotReportUpdate, PivotReportWindow,
 } from './contract';
-import { checkLabelMetrics, labelWidthSteps, sameLabelMetrics } from './label-metrics';
+import { checkLabelMetrics, PivotLabelSizing, sameLabelMetrics, type LabelBatch } from './label-metrics';
 
 /** How a report source learns that its data changed (ADR-0153), declared: `incremental` when the Pivot
  * Source names its changes — Change Batches — and `fullRefresh` when it cannot, and a notice of newer data
@@ -92,16 +91,12 @@ interface HeldReport {
     readonly options: PivotOptions;
 }
 
-function rowId(role: string, valueField: number, items: readonly PivotItemKey[]): string {
-    return `${role}\u0001${valueField}\u0001${items.map(publicKeyId).join('\u0001')}`;
-}
-
 function keyId(key: PivotRowKey): string {
-    return rowId(key.role, key.valueField, key.items);
+    return rowIdOf(key.role, key.valueField, key.items);
 }
 
 function displayId(row: PivotDisplayRow): string {
-    return rowId(row.role, row.valueField, row.items);
+    return rowIdOf(row.role, row.valueField, row.items);
 }
 
 // A Source Version whose changes are marked: the report that shows it, the change's mark — the Report Version
@@ -203,13 +198,6 @@ function frozenSettings(settings: PivotReportSettings): PivotReportSettings {
 
 function windowsEqual(a: PivotReportWindow, b: PivotReportWindow): boolean {
     return a.start === b.start && a.count === b.count;
-}
-
-function labelsEqual(a: PivotRowLabel, b: PivotRowLabel): boolean {
-    if (a.text !== b.text || a.indent !== b.indent || a.number !== b.number) return false;
-    if (a.toggle === undefined || b.toggle === undefined) return a.toggle === b.toggle;
-    return a.toggle.field === b.toggle.field && itemKeysEqual(a.toggle.item, b.toggle.item)
-        && a.toggle.itemLabel === b.toggle.itemLabel && a.toggle.isCollapsed === b.toggle.isCollapsed;
 }
 
 // Two value cells alike as C#'s record compares them: their text, number, exact value and error.
@@ -346,6 +334,25 @@ function exactOrDouble(inexact: boolean, exact: SnapshotDecimal, value: number):
     return Object.freeze(inexact ? { kind: 'double', value } : { kind: 'exact', value: exact });
 }
 
+// What the computation returned that no published version shows yet: a request cancelled after its computation
+// returned and before its version was published, or a version laid out aside. The next computation's result is
+// merged into it, and published with it.
+class Unpublished {
+    reset = false;
+    rowSequenceChanged = false;
+    readonly batches: LabelBatch[] = [];
+
+    add(result: PivotComputationResult): void {
+        this.rowSequenceChanged ||= result.rowSequenceChanged;
+        if (result.isReset) {
+            this.reset = true;
+            this.batches.length = 0;
+        } else if (!this.reset) {
+            this.batches.push({ labels: result.labelChanges, removed: result.removedRows });
+        }
+    }
+}
+
 /**
  * A report source over a Pivot Source in memory — a Snapshot's, records', or a server's behind a fetching
  * source (ADR-0151). Each request lays the report out afresh where its question, layout or data changed,
@@ -377,13 +384,12 @@ export class LocalPivotReportSource implements PivotReportSource {
     #settings: string | undefined;
     #layout: string | undefined;
     #maxLeaves = -1;
-    // The newest computation: its cube and the report laid out from it, under the layout, options and Order
-    // Key policies it was laid out with.
-    #cube: PivotCube | undefined;
-    #report: PivotReport | undefined;
-    #reportLayout: string | undefined;
-    #reportOptions: string | undefined;
+    // The computation, under the Order Key policies it orders by; what it returned that no version shows yet;
+    // and the label widths kept across versions.
+    #session: PivotComputationSession | undefined;
     #policies: string | undefined;
+    #unpublished: Unpublished | undefined;
+    readonly #labelSizing = new PivotLabelSizing();
 
     /** A report source over `source`, which it does not own. Refuses, with a RangeError, a `versionsKept` that
      * is not a whole number of at least 1. */
@@ -517,33 +523,53 @@ export class LocalPivotReportSource implements PivotReportSource {
         // The Window the Consumer holds, read before a publication below evicts its version.
         const baseline = request.baseline === undefined ? undefined : this.#windows.get(request.baseline);
         const previous = baseline !== undefined && windowsEqual(baseline.window, request.window) ? baseline : undefined;
-        if (request.refreshData === true || this.#dirty || this.#settings !== settings || this.#layout !== layout || this.#maxLeaves !== maxLeaves || last === undefined) {
+        if (request.refreshData === true || this.#dirty || this.#unpublished !== undefined || this.#settings !== settings || this.#layout !== layout
+            || this.#maxLeaves !== maxLeaves || last === undefined) {
             const wasDirty = this.#dirty;
             this.#dirty = false;
-            const options = optionsOf(request.settings);
-            const resolved = resolveOptions(options);
+            const resolved = resolveOptions(optionsOf(request.settings));
             const policies = policiesKey(request.settings);
+            if (this.#session === undefined || this.#policies !== policies) {
+                this.#session?.dispose();
+                this.#session = new PivotComputationSession(this.#source, fields);
+                this.#policies = policies;
+            }
             let report: PivotReport;
+            let detached = false;
             const shown = this.#shown(request, policies, maxLeaves, markChanges);
             if (shown !== undefined) {
                 // A layout gesture lays out the data the Consumer shows — the request's baseline — which is older
-                // than the newest computation: a version published for a request the Consumer discarded. The
-                // newer data comes with the next request that marks changes.
+                // than the newest computation: a version published for a request the Consumer discarded. Laid out
+                // aside, that version is what the gesture shows; the newer data comes with the next request that
+                // marks changes.
                 checkCubeHolds(shown, request.layout);
                 report = await slicer.run(buildReportSteps(shown, request.layout, resolved));
+                (this.#unpublished ??= new Unpublished()).reset = true;
+                detached = true;
             } else {
-                const computed = await this.#compute(request, layout, fields, resolved, policies, maxLeaves, markChanges, slicer);
-                if (!('report' in computed)) {
+                const result = await this.#session.compute({
+                    layout: request.layout, options: resolved, optionsKey: optionsKeyOf(request.settings), maxLeaves, slicing: this.#slicing, slicer,
+                    refreshData: request.refreshData === true, preferHeld: !markChanges,
+                });
+                if (result.report === undefined) {
                     this.#dirty = true;
+                    const computed = defined(result.refusal, "the computation's refusal");
                     return refusedWith(Object.freeze({ kind: 'sourceRefused', message: computed.message, ...(computed.field === undefined ? {} : { field: computed.field }), sourceRefusal: computed }));
                 }
-                report = computed.report;
+                // Kept until a version publishes it: a cancellation below must not lose the computation's changes,
+                // which it returns once.
+                (this.#unpublished ??= new Unpublished()).add(result);
+                report = result.report;
             }
+            const unpublished = this.#unpublished;
             const cube = report.cube;
             if (!markChanges && wasDirty && last?.metadata.sourceVersion === cube.sourceVersion) this.#dirty = true;
-            const sameRows = last !== undefined && await slicer.run(sameRowsSteps(report, last.report));
+            const sameRows = last !== undefined && (last.report === report
+                || (!unpublished.reset ? !unpublished.rowSequenceChanged : await slicer.run(sameRowsSteps(report, last.report))));
             const metrics = request.settings.labelMetrics;
-            const widths = metrics === undefined ? Object.freeze([]) : await slicer.run(labelWidthSteps(report, metrics));
+            let widths: readonly number[] = Object.freeze([]);
+            if (metrics === undefined) this.#labelSizing.forget();
+            else widths = await slicer.run(this.#labelSizing.widthSteps(report, metrics, unpublished.batches, unpublished.reset));
             // Nothing below awaits: the version is published whole, or not at all; and not by a source disposed
             // while it was computed.
             this.#checkOpen();
@@ -566,15 +592,21 @@ export class LocalPivotReportSource implements PivotReportSource {
                 labelWidths: widths,
                 changeMarks: marks,
             });
-            last = Object.freeze({ metadata, report, source: this.#source, fields, options });
+            last = Object.freeze({ metadata, report, source: this.#source, fields, options: optionsOf(request.settings) });
             this.#versions.unshift(last);
             while (this.#versions.length > this.#versionsKept) this.#windows.delete(defined(this.#versions.pop(), 'the oldest version').metadata.version);
             this.#settings = settings;
             this.#effectiveFields = fields;
             this.#layout = layout;
             this.#maxLeaves = maxLeaves;
-            // The computation holds newer data than a version laid out aside: the next request computes.
-            if (shown !== undefined) this.#dirty = true;
+            this.#unpublished = undefined;
+            if (detached) {
+                // The computation holds newer data than this version, under the layout it last laid out: its next
+                // result is compared with this version afresh, and the next request computes.
+                this.#unpublished = new Unpublished();
+                this.#unpublished.reset = true;
+                this.#dirty = true;
+            }
         }
         const comparable = previous !== undefined && sameSettings(previous.metadata.settings, request.settings)
             && writePivotLayoutJson(previous.metadata.layout) === layout;
@@ -594,53 +626,11 @@ export class LocalPivotReportSource implements PivotReportSource {
         return Object.freeze({ requestId: request.requestId, ...state });
     }
 
-    // The newest cube for the request, and the report laid out from it; or the Pivot Source's refusal.
-    async #compute(request: PivotReportRequest, layout: string, fields: readonly PivotField[], resolved: ResolvedOptions, policies: string,
-        maxLeaves: number, markChanges: boolean, slicer: Slicer): Promise<{ readonly report: PivotReport } | PivotSourceRefusal> {
-        // Another Order Key orders the Items another way: nothing laid out under the old one is used.
-        const newest = this.#policies === policies ? this.#cube : undefined;
-        const held = newest !== undefined && newest.holds(request.layout) && newest.query.maxLeaves === maxLeaves ? newest : undefined;
-        const source = this.#source;
-        let cube: PivotCube;
-        if (held !== undefined && !markChanges) {
-            // A layout gesture shows the data it was made on: the cube held, newer batches or not.
-            cube = held;
-        } else if (held !== undefined && (source instanceof SnapshotPivotSource ? held.sourceVersion === source.sourceVersion : request.refreshData !== true)) {
-            // A source that cannot name its changes is asked again only for a refresh (ADR-0153).
-            cube = held;
-        } else {
-            const query = queryForLayout(request.layout, maxLeaves);
-            const answer = source instanceof SnapshotPivotSource ? await aggregateSliced(source, query, slicer) : await this.#asked(source, query, slicer);
-            if (answer.refusal !== undefined) return answer.refusal;
-            cube = await slicer.run(buildCubeSteps(query, answer, fieldMetas(fields)));
-        }
-        const optionsKey = optionsKeyOf(request.settings);
-        let report = this.#report;
-        if (report === undefined || report.cube !== cube || this.#reportLayout !== layout || this.#reportOptions !== optionsKey) {
-            checkCubeHolds(cube, request.layout);
-            report = await slicer.run(buildReportSteps(cube, request.layout, resolved));
-        }
-        // Adopted together, after the last await, by a source still open.
-        this.#checkOpen();
-        this.#cube = cube;
-        this.#report = report;
-        this.#reportLayout = layout;
-        this.#reportOptions = optionsKey;
-        this.#policies = policies;
-        return { report };
-    }
-
-    // A source that is not a Snapshot's, asked on the request's slices: the request's signal stops it.
-    async #asked(source: PivotSource, query: PivotQuery, slicer: Slicer): Promise<PivotAnswer> {
-        await slicer.step();
-        return source.aggregate(query, slicer.signal);
-    }
-
     // The cube of the version the request names as its baseline — the data the Consumer shows — when a layout
     // gesture should lay it out rather than the newest computation's: held, from this Pivot Source under the
     // same Order Key policies, older than the newest cube, and holding the layout.
     #shown(request: PivotReportRequest, policies: string, maxLeaves: number, markChanges: boolean): PivotCube | undefined {
-        const newest = this.#cube;
+        const newest = this.#session?.heldCube;
         if (markChanges || request.baseline === undefined || newest === undefined) return undefined;
         const shown = this.#held(request.baseline);
         if (shown === undefined || shown.report.cube === newest || shown.source !== this.#source || policiesKey(shown.metadata.settings) !== policies) return undefined;
@@ -687,7 +677,7 @@ export class LocalPivotReportSource implements PivotReportSource {
         const marked = this.#highlightRows(key, keyId(key), rowIndex);
         let same = prior !== undefined && prior.role === row.role && prior.valueField === row.valueField
             && prior.carriesValues === row.carriesValues && prior.labels.length === row.labels.length
-            && prior.labels.every((label, i) => labelsEqual(label, elementAt(row.labels, i))) && prior.values.length === columns.length
+            && prior.labels.every((label, i) => rowLabelsAlike(label, elementAt(row.labels, i))) && prior.values.length === columns.length
             && prior.rowPath.length === path.length
             // By spelling, not as Items match: a parent's new spelling reaches its child's path (ADR-0153).
             && prior.rowPath.every((step, i) => step.field === elementAt(path, i).field && step.item.kind === elementAt(path, i).item.kind
@@ -864,8 +854,9 @@ export class LocalPivotReportSource implements PivotReportSource {
         this.#versions.length = 0;
         this.#windows.clear();
         this.#highlight = [];
-        this.#cube = undefined;
-        this.#report = undefined;
+        this.#session?.dispose();
+        this.#session = undefined;
+        this.#unpublished = undefined;
     }
 }
 

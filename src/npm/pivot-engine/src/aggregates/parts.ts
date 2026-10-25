@@ -446,6 +446,16 @@ export class PartColumns {
         return cell;
     }
 
+    /** Writes over cell `cell` a copy of `other`'s cell `from`, which holds at least these parts. */
+    setCell(cell: number, other: PartColumns, from: number): void {
+        if (cell < 0 || cell >= this.counts.length) throw new RangeError(`There is no cell ${cell} of ${this.counts.length}.`);
+        this.counts[cell] = { ...elementAt(other.counts, from) };
+        if (this.sums !== undefined) this.sums[cell] = { ...elementAt(must(other.sums), from) };
+        if (this.extremes !== undefined) this.extremes[cell] = { ...elementAt(must(other.extremes), from) };
+        if (this.products !== undefined) this.products[cell] = elementAt(must(other.products), from);
+        if (this.variances !== undefined) this.variances[cell] = { ...elementAt(must(other.variances), from) };
+    }
+
     /** Folds in a value that is neither Blank nor a number: counted, never a number. */
     addOther(cell: number): void {
         elementAt(this.counts, cell).values++;

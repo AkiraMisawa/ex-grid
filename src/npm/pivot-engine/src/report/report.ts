@@ -6,10 +6,10 @@
 import type { AggregateValue } from '../aggregates/parts';
 import { divideByZeroValue, doubleValue, numberErrorValue } from '../aggregates/parts';
 import type { PivotCube } from '../cube/cube';
-import { cubeParts, type AxisNode, type ItemRef } from '../cube/cube';
+import { cubeParts, readCell, type AxisNode, type CubeAxis, type ItemRef } from '../cube/cube';
 import { pivotDetailsQuery, placedFields, type PivotDetailsQuery, type PivotFieldItem } from '../cube/query';
 import type { FieldMeta } from '../fields/pivot-field';
-import { fromPublicKey, itemKeysEqual, itemKeyText, keyIdOf, sameItem, type PivotItemKey } from '../items/item-key';
+import { fromPublicKey, itemKeysEqual, itemKeyText, keyIdOf, publicKeyId, sameItem, type PivotItemKey } from '../items/item-key';
 import type { PivotAggregation, PivotColumnRole, PivotRowRole, PivotShowValuesAs } from '../layout/pivot-enums';
 import { itemKindOrder } from '../layout/pivot-enums';
 import type { PivotFieldPlacement, PivotLayout, PivotValueField } from '../layout/pivot-layout';
@@ -81,7 +81,7 @@ class CellReader {
 
     read(row: AxisNode, column: AxisNode, vf: number): AggregateValue {
         const plan = elementAt(this.values, vf);
-        return cubeParts(this.#cube).read(row, column, plan.source, plan.aggregation);
+        return readCell(cubeParts(this.#cube), row, column, plan.source, plan.aggregation);
     }
 
     shown(row: AxisNode, column: AxisNode, vf: number): AggregateValue {
@@ -90,9 +90,9 @@ class CellReader {
         if (plan.showValuesAs === 'noCalculation' || value.kind !== 'number') return value;
         let divisor: AggregateValue;
         switch (plan.showValuesAs) {
-            case 'percentOfGrandTotal': divisor = this.read(cubeParts(this.#cube).rowRoot, cubeParts(this.#cube).columnRoot, vf); break;
-            case 'percentOfColumnTotal': divisor = this.read(cubeParts(this.#cube).rowRoot, column, vf); break;
-            case 'percentOfRowTotal': divisor = this.read(row, cubeParts(this.#cube).columnRoot, vf); break;
+            case 'percentOfGrandTotal': divisor = this.read(cubeParts(this.#cube).rows.root, cubeParts(this.#cube).columns.root, vf); break;
+            case 'percentOfColumnTotal': divisor = this.read(cubeParts(this.#cube).rows.root, column, vf); break;
+            case 'percentOfRowTotal': divisor = this.read(row, cubeParts(this.#cube).columns.root, vf); break;
         }
         if (divisor.kind !== 'number' || divisor.number === 0) return divideByZeroValue;
         const shown = value.number / divisor.number;
@@ -124,6 +124,21 @@ export interface PivotRowLabel {
     readonly toggle?: PivotToggle;
     /** The number a number Item's label shows, in full, which its copy carries. */
     readonly number?: number;
+}
+
+/** Whether two labels are alike as C#'s records compare them: text, indent, number and toggle, the toggle's Item as
+ * it is spelt. */
+export function rowLabelsAlike(a: PivotRowLabel, b: PivotRowLabel): boolean {
+    if (a.text !== b.text || a.indent !== b.indent || a.number !== b.number) return false;
+    if (a.toggle === undefined || b.toggle === undefined) return a.toggle === b.toggle;
+    return a.toggle.field === b.toggle.field && a.toggle.item.kind === b.toggle.item.kind && a.toggle.item.value === b.toggle.item.value
+        && a.toggle.itemLabel === b.toggle.itemLabel && a.toggle.isCollapsed === b.toggle.isCollapsed;
+}
+
+/** A row's role, Value Field and Items written in one form, each Item as Items match: two keys that stand for one
+ * row are one text, however their Items are spelt. */
+export function rowIdOf(role: PivotRowRole, valueField: number, items: readonly PivotItemKey[]): string {
+    return `${role}\u0001${valueField}\u0001${items.map(publicKeyId).join('\u0001')}`;
 }
 
 const noLabel: PivotRowLabel = Object.freeze({ text: undefined, indent: 0 });
@@ -293,6 +308,8 @@ export function* sameRowsSteps(mine: PivotReport, other: PivotReport | undefined
     return true;
 }
 
+let reportOptions: (report: PivotReport) => ResolvedOptions;
+let reportLineage: (report: PivotReport) => object;
 let makeReport: (cube: PivotCube, layout: PivotLayout, options: ResolvedOptions, reader: CellReader, labelColumns: readonly PivotLabelColumn[],
     valueColumns: readonly PivotReportColumn[], headerSpans: readonly PivotHeaderSpan[], headerTierCount: number,
     rows: readonly PivotReportRow[], lineage: object) => PivotReport;
@@ -337,6 +354,8 @@ export class PivotReport {
 
     static {
         makeReport = (...args) => new PivotReport(...args);
+        reportOptions = report => report.#options;
+        reportLineage = report => report.#lineage;
     }
 
     /** The locale the report is written in. */
@@ -368,12 +387,12 @@ export class PivotReport {
     /** The row's Items, outermost first, each with its field. */
     rowPath(row: PivotReportRow): readonly PivotFieldItem[] {
         this.#own(row);
-        return path(rowNode(row), this.layout.rows);
+        return path(rowNode(row), this.layout.rows, cubeParts(this.cube).rows);
     }
 
     /** The value column's Items, outermost first, each with its field. */
     columnPath(valueColumn: number): readonly PivotFieldItem[] {
-        return path(columnNode(elementAt(this.valueColumns, valueColumn)), this.layout.columns);
+        return path(columnNode(elementAt(this.valueColumns, valueColumn)), this.layout.columns, cubeParts(this.cube).columns);
     }
 
     /** The question for the records behind a cell (ADR-0063): its row's and its column's Items, and every
@@ -439,10 +458,11 @@ function samePath(one: AxisNode, other: AxisNode): boolean {
     return a === b;
 }
 
-function path(node: AxisNode, placements: readonly PivotFieldPlacement[]): readonly PivotFieldItem[] {
+// A node's Items, outermost first, each spelled as the cube's version holds it.
+function path(node: AxisNode, placements: readonly PivotFieldPlacement[], axis: CubeAxis): readonly PivotFieldItem[] {
     const steps: PivotFieldItem[] = [];
     for (let at: AxisNode | undefined = node; at?.item !== undefined; at = at.parent) {
-        steps.unshift(Object.freeze({ field: elementAt(placements, at.level).field, item: at.item.publicKey }));
+        steps.unshift(Object.freeze({ field: elementAt(placements, at.level).field, item: itemOf(axis.nodeOf(at)).publicKey }));
     }
     return Object.freeze(steps);
 }
@@ -482,7 +502,9 @@ export function buildReportSteps(cube: PivotCube, layout: PivotLayout, options: 
 const rowUnits = 4;
 const columnUnits = 8;
 
-class ReportBuilder {
+/** Lays a report out from a cube: the walk {@link buildReportSteps} takes, and the steps a computation lays a
+ * report out with node by node (ADR-0153). Not part of the public surface. */
+export class ReportBuilder {
     readonly #cube: PivotCube;
     readonly #layout: PivotLayout;
     readonly #options: ResolvedOptions;
@@ -499,12 +521,19 @@ class ReportBuilder {
     readonly #valuesOnColumns: boolean;
     readonly #labelColumnCount: number;
     readonly #pending: (AxisNode | undefined)[];
-    readonly #lineage = {};
+    readonly #lineage: object;
     readonly #sliced: boolean;
+    readonly #rowAxis: CubeAxis;
+    readonly #columnAxis: CubeAxis;
 
-    constructor(cube: PivotCube, layout: PivotLayout, options: ResolvedOptions, sliced: boolean) {
+    /** A builder of `cube` under `layout`, which the cube holds; its rows are of `lineage`, a report's that it
+     * lays out again, or of a lineage of their own. */
+    constructor(cube: PivotCube, layout: PivotLayout, options: ResolvedOptions, sliced: boolean, lineage: object = {}) {
+        this.#lineage = lineage;
         this.#cube = cube;
         this.#sliced = sliced;
+        this.#rowAxis = cubeParts(cube).rows;
+        this.#columnAxis = cubeParts(cube).columns;
         this.#layout = layout;
         this.#options = options;
         this.#labels = new ItemLabels(options);
@@ -556,6 +585,89 @@ class ReportBuilder {
         return this.#rowLevels + (this.#valuesOnRows ? 1 : 0);
     }
 
+    /** A builder that lays `cube` out again as `previous` was laid out: under its layout and options, its rows of
+     * its lineage, so that a row it shares is the report's own (ADR-0153). */
+    static again(cube: PivotCube, previous: PivotReport): ReportBuilder {
+        return new ReportBuilder(cube, previous.layout, reportOptions(previous), true, reportLineage(previous));
+    }
+
+    /** The cube laid out. */
+    get cube(): PivotCube {
+        return this.#cube;
+    }
+
+    /** The layout laid out. */
+    get layout(): PivotLayout {
+        return this.#layout;
+    }
+
+    /** The report around `rows`, which this builder laid out node by node ({@link rowsOf}): the value columns and
+     * their spans laid out as {@link build} lays them out. */
+    *buildAround(rows: readonly PivotReportRow[]): Generator<void, PivotReport> {
+        const columns: PivotReportColumn[] = [];
+        const spans: PivotHeaderSpan[] = [];
+        if (!this.#empty) yield* this.#emitColumns(columns, spans);
+        return makeReport(this.#cube, this.#layout, this.#options, this.#reader, this.#labelColumnList(), columns, spans, this.#tiers(), rows, this.#lineage);
+    }
+
+    /** `previous` with `rows` laid out by this builder: its label columns, and its value columns and spans unless
+     * the columns changed — laid out again then, each column `previous` showed alike kept. */
+    *withRows(previous: PivotReport, rows: readonly PivotReportRow[], columnsChanged: boolean): Generator<void, PivotReport> {
+        if (!columnsChanged) {
+            return makeReport(this.#cube, this.#layout, this.#options, this.#reader, previous.labelColumns, previous.valueColumns, previous.headerSpans,
+                previous.headerTierCount, rows, this.#lineage);
+        }
+        const columns: PivotReportColumn[] = [];
+        const spans: PivotHeaderSpan[] = [];
+        if (!this.#empty) yield* this.#emitColumns(columns, spans);
+        const old = new Map(previous.valueColumns.map(column => [column.name, column]));
+        const kept = columns.map(column => {
+            const held = old.get(column.name);
+            return held !== undefined && held.header === column.header ? held : column;
+        });
+        return makeReport(this.#cube, this.#layout, this.#options, this.#reader, previous.labelColumns, kept, spans, previous.headerTierCount, rows,
+            this.#lineage);
+    }
+
+    /**
+     * One node's own rows, as the walk lays the node out (ADR-0153): those before its children's, those after, and
+     * whether its children are laid out. In the Tabular form an outer Item's label stands on the first row of its
+     * block: `pendingFrom` is the first level whose ancestor's label is still to be shown — the node's own level
+     * for a node that is not its parent's first child, its parent's for one that is.
+     */
+    rowsOf(node: AxisNode, pendingFrom: number): { readonly before: PivotReportRow[]; readonly after: PivotReportRow[]; readonly descend: boolean } {
+        const before: PivotReportRow[] = [];
+        const after: PivotReportRow[] = [];
+        if (this.#empty) return { before, after, descend: false };
+        if (node.item === undefined) {
+            if (this.#rowLevels === 0) {
+                runWhole(this.#emitRows(before));
+                return { before, after, descend: false };
+            }
+            this.#grandTotalRows(after);
+            return { before, after, descend: true };
+        }
+        this.#pending.fill(undefined);
+        for (let level = pendingFrom; level < node.level; level++) this.#pending[level] = this.#ancestorAt(node, level);
+        const tabular = this.#layout.form === 'tabular';
+        const descend = (tabular ? this.#enterTabular(node, before) : this.#enterGrouped(node, before)) >= 0;
+        this.#pending.fill(undefined);
+        if (descend) {
+            if (tabular) this.#leaveTabular(node, after);
+            else this.#leaveGrouped(node, after);
+        }
+        return { before, after, descend };
+    }
+
+    /** A row node's children in their field's order, ordered a piece at a time. */
+    orderedChildren(node: AxisNode): Generator<void, readonly AxisNode[]> {
+        return this.#order(node, true);
+    }
+
+    #tiers(): number {
+        return this.#columnLevels === 0 ? 0 : this.#valuesOnColumns ? this.#columnLevels : this.#columnLevels - 1;
+    }
+
     *build(): Generator<void, PivotReport> {
         const columns: PivotReportColumn[] = [];
         const spans: PivotHeaderSpan[] = [];
@@ -564,8 +676,7 @@ class ReportBuilder {
             yield* this.#emitColumns(columns, spans);
             yield* this.#emitRows(rows);
         }
-        const tiers = this.#columnLevels === 0 ? 0 : this.#valuesOnColumns ? this.#columnLevels : this.#columnLevels - 1;
-        return makeReport(this.#cube, this.#layout, this.#options, this.#reader, this.#labelColumnList(), columns, spans, tiers, rows, this.#lineage);
+        return makeReport(this.#cube, this.#layout, this.#options, this.#reader, this.#labelColumnList(), columns, spans, this.#tiers(), rows, this.#lineage);
     }
 
     #word(id: string): string {
@@ -611,7 +722,7 @@ class ReportBuilder {
         };
         const rootMark = entered(root);
         if (rootMark < 0) return;
-        frames.push({ node: root, mark: rootMark, children: this.#atOnce(root) ? this.#orderAtOnce(root, rows) : yield* this.#order(root, rows), next: 0 });
+        frames.push({ node: root, mark: rootMark, children: this.#atOnce(root, rows) ? this.#orderAtOnce(root, rows) : yield* this.#order(root, rows), next: 0 });
         for (let top = frames.at(-1); top !== undefined; top = frames.at(-1)) {
             const child = top.children[top.next];
             if (child === undefined) {
@@ -622,7 +733,7 @@ class ReportBuilder {
             } else {
                 top.next++;
                 const mark = entered(child);
-                if (mark >= 0) frames.push({ node: child, mark, children: this.#atOnce(child) ? this.#orderAtOnce(child, rows) : yield* this.#order(child, rows), next: 0 });
+                if (mark >= 0) frames.push({ node: child, mark, children: this.#atOnce(child, rows) ? this.#orderAtOnce(child, rows) : yield* this.#order(child, rows), next: 0 });
             }
             if (units >= pieceUnits) {
                 units = 0;
@@ -646,7 +757,7 @@ class ReportBuilder {
     }
 
     *#emitColumns(columns: PivotReportColumn[], spans: PivotHeaderSpan[]): Generator<void, void> {
-        const root = cubeParts(this.#cube).columnRoot;
+        const root = this.#columnAxis.root;
         if (this.#columnLevels === 0) {
             if (this.#valueCount === 0) return;
             if (this.#valuesOnColumns) {
@@ -720,7 +831,7 @@ class ReportBuilder {
     #columnName(role: PivotColumnRole, node: AxisNode, vf: number): string {
         const parts: string[] = [];
         for (let at: AxisNode | undefined = node; at?.item !== undefined; at = at.parent) {
-            const key = at.item.publicKey;
+            const key = itemOf(this.#columnAxis.nodeOf(at)).publicKey;
             const text = key.kind === 'text' ? upperInvariant(key.value ?? '') : key.value ?? ''; // oxlint-disable-line ex-grid/no-stand-in-default -- a Blank's key has no text, and its name's part is empty as C# writes it
             parts.unshift(`${itemKindOrder(key.kind)}:${escapeDataString(text)}`);
         }
@@ -737,7 +848,7 @@ class ReportBuilder {
     }
 
     *#emitRows(rows: PivotReportRow[]): Generator<void, void> {
-        const root = cubeParts(this.#cube).rowRoot;
+        const root = this.#rowAxis.root;
         if (this.#rowLevels === 0) {
             if (this.#valueCount === 0) return;
             if (this.#valuesOnRows) {
@@ -756,12 +867,16 @@ class ReportBuilder {
         } else {
             yield* this.#walk(root, true, node => this.#enterGrouped(node, rows), node => this.#leaveGrouped(node, rows), () => rows.length, rowUnits);
         }
-        if (this.#layout.grandTotalRow && this.#valueCount > 0) {
-            if (this.#valuesOnRows) {
-                for (let vf = 0; vf < this.#valueCount; vf++) rows.push(this.#row('grandTotal', root, vf, true, this.#grandTotalLabels(vf)));
-            } else {
-                rows.push(this.#row('grandTotal', root, -1, true, this.#grandTotalLabels(-1)));
-            }
+        this.#grandTotalRows(rows);
+    }
+
+    #grandTotalRows(rows: PivotReportRow[]): void {
+        if (!this.#layout.grandTotalRow || this.#valueCount === 0) return;
+        const root = this.#rowAxis.root;
+        if (this.#valuesOnRows) {
+            for (let vf = 0; vf < this.#valueCount; vf++) rows.push(this.#row('grandTotal', root, vf, true, this.#grandTotalLabels(vf)));
+        } else {
+            rows.push(this.#row('grandTotal', root, -1, true, this.#grandTotalLabels(-1)));
         }
     }
 
@@ -796,10 +911,11 @@ class ReportBuilder {
         });
     }
 
+    // The node's ancestor at a level, as the cube's version holds it.
     #ancestorAt(node: AxisNode, level: number): AxisNode {
         let at = node;
         while (at.level > level) at = parentOf(at);
-        return at;
+        return this.#rowAxis.nodeOf(at);
     }
 
     // The Compact and Outline forms: a group row heads each outer Item's block. An innermost or collapsed
@@ -940,16 +1056,20 @@ class ReportBuilder {
     // Keys asked, the values it is ordered by read, and the sort — yielding once a piece's worth is done. Both
     // sort stably, so the two give one order.
     *#order(node: AxisNode, rows: boolean): Generator<void, readonly AxisNode[]> {
-        if (this.#atOnce(node)) return this.#orderAtOnce(node, rows);
-        const children = node.children;
+        if (this.#atOnce(node, rows)) return this.#orderAtOnce(node, rows);
+        const children = this.#childrenOf(node, rows);
         const ordering = this.#ordering(node, rows);
         yield* inPieces(children.length, 2, ordering.prepare);
         const order = yield* sortedSteps(children.map((_, i) => i), ordering.compare);
         return order.map(i => elementAt(children, i));
     }
 
-    #atOnce(node: AxisNode): boolean {
-        return !this.#sliced || node.children.length <= pieceUnits / 8;
+    #atOnce(node: AxisNode, rows: boolean): boolean {
+        return !this.#sliced || this.#childrenOf(node, rows).length <= pieceUnits / 8;
+    }
+
+    #childrenOf(node: AxisNode, rows: boolean): readonly AxisNode[] {
+        return (rows ? this.#rowAxis : this.#columnAxis).childrenOf(node);
     }
 
     // At once, the order is made as directly as it can be: this is every node's order in a report laid out at
@@ -958,15 +1078,16 @@ class ReportBuilder {
         const level = node.level + 1;
         const placement = elementAt(rows ? this.#rowPlacements : this.#columnPlacements, level);
         if (placement.sort.byValue !== undefined) {
-            const children = node.children;
+            const children = this.#childrenOf(node, rows);
             const ordering = this.#ordering(node, rows);
             ordering.prepare(0, children.length);
             return children.map((_, i) => i).toSorted(ordering.compare).map(i => elementAt(children, i));
         }
         const meta = elementAt(rows ? this.#rowMeta : this.#columnMeta, level);
         const order = new ItemOrder(meta, this.#labels, this.#options.culture, placement.sort.direction === 'descending');
-        for (const child of node.children) order.prepare(itemOf(child));
-        return node.children.toSorted((a, b) => order.compare(itemOf(a), itemOf(b)));
+        const children = this.#childrenOf(node, rows);
+        for (const child of children) order.prepare(itemOf(child));
+        return children.toSorted((a, b) => order.compare(itemOf(a), itemOf(b)));
     }
 
     // How a node's children are ordered: what is read of each child first — its Order Key, or the value it is
@@ -975,12 +1096,12 @@ class ReportBuilder {
         const level = node.level + 1;
         const placement = elementAt(rows ? this.#rowPlacements : this.#columnPlacements, level);
         const meta = elementAt(rows ? this.#rowMeta : this.#columnMeta, level);
-        const children = node.children;
+        const children = this.#childrenOf(node, rows);
         const descending = placement.sort.direction === 'descending';
         const culture = this.#options.culture;
         const byValue = placement.sort.byValue;
         if (byValue !== undefined) {
-            const other = rows ? cubeParts(this.#cube).columnRoot : cubeParts(this.#cube).rowRoot;
+            const other = rows ? this.#columnAxis.root : this.#rowAxis.root;
             const byLabel = new ItemOrder(meta, this.#labels, culture, false, false);
             const keys: (number | undefined)[] = [];
             return {

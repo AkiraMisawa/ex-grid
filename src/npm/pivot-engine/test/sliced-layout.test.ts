@@ -5,7 +5,7 @@
 // says is the cases'.
 import { createSnapshot, type Snapshot } from '@ex-grid/data';
 import { describe, expect, it } from 'vitest';
-import { cubeParts, type AxisNode, type PivotCube } from '../src/cube/cube';
+import { cubeParts, readCell, type AxisNode, type PivotCube } from '../src/cube/cube';
 import { sortedSteps } from '../src/source/slicing';
 import {
     aggregatePivot, computePivot, pivotCube, pivotCubeAsync, pivotReport, pivotReportAsync, queryForLayout, RecordPivotSource, SnapshotPivotSource,
@@ -77,14 +77,14 @@ function refusal(work: () => unknown): JsonObject {
 // What a cube holds: each tree, an Item a node, and what every cell of the layout's Value Fields reads.
 function cubeJson(cube: PivotCube, layout: PivotLayout): Json {
     const parts = cubeParts(cube);
-    const rows = nodesOf(parts.rowRoot);
-    const columns = nodesOf(parts.columnRoot);
+    const rows = nodesOf(parts.rows.root);
+    const columns = nodesOf(parts.columns.root);
     return {
         rows: rows.map(named),
         columns: columns.map(named),
         included: cube.includedRecordCount,
         cells: layout.values.map(value => rows.flatMap(row => columns.map(column =>
-            written(parts.read(row, column, parts.sources.indexOf(value.field), value.aggregation))))),
+            written(readCell(parts, row, column, parts.sources.indexOf(value.field), value.aggregation))))),
     };
 }
 
@@ -232,7 +232,7 @@ describe('A large answer, in slices', { timeout: 20_000 }, () => {
         expect(cubeJson(sliced, large)).toEqual(cubeJson(cube, large));
         // Every exact sum in one form (ADR-0064), in every piece the cells were written in: 0.50 is 0.5.
         const parts = cubeParts(sliced);
-        const sums = nodesOf(parts.rowRoot).flatMap(row => nodesOf(parts.columnRoot).map(column => parts.read(row, column, 0, 'sum')));
+        const sums = nodesOf(parts.rows.root).flatMap(row => nodesOf(parts.columns.root).map(column => readCell(parts, row, column, 0, 'sum')));
         expect(sums.length).toBeGreaterThan(3 * 1024);
         expect(sums.filter(sum => sum.kind === 'number' && sum.exact !== undefined && sum.exact.scale > 0 && sum.exact.mantissa % 10n === 0n)).toEqual([]);
         for (const layout of [
@@ -270,7 +270,7 @@ describe('A large answer, in slices', { timeout: 20_000 }, () => {
             createPivotLayout({ rows: ['Product', { field: 'Notional', sort: { direction: 'ascending', byValue: 0 } }], columns: ['Book'], values: [{ field: 'Price', aggregation: 'min' }] }),
         ]) {
             const { cube } = await answered(layout);
-            const root = cubeParts(cube).rowRoot;
+            const root = cubeParts(cube).rows.root;
             expect(Math.max(root.children.length, ...root.children.map(child => child.children.length))).toBeGreaterThan(1000);
             expect(laidOut(await pivotReportAsync(cube, layout, undefined, everyStep().slicing))).toEqual(laidOut(pivotReport(cube, layout)));
         }
