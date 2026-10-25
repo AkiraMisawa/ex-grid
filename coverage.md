@@ -14,19 +14,19 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/25/2026 - 10:16:46 |
+| Generated on: | 10/25/2026 - 12:43:37 |
 | Parser: | MultiReport (19x Cobertura) |
 | Assemblies: | 16 |
 | Classes: | 1181 |
 | Files: | 605 |
-| **Line coverage:** | 94.5% (81632 of 86375) |
-| Covered lines: | 81632 |
+| **Line coverage:** | 94.5% (81634 of 86377) |
+| Covered lines: | 81634 |
 | Uncovered lines: | 4743 |
-| Coverable lines: | 86375 |
-| Total lines: | 138074 |
-| **Branch coverage:** | 87.1% (49219 of 56462) |
-| Covered branches: | 49219 |
-| Total branches: | 56462 |
+| Coverable lines: | 86377 |
+| Total lines: | 138076 |
+| **Branch coverage:** | 87.1% (49222 of 56466) |
+| Covered branches: | 49222 |
+| Total branches: | 56466 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
@@ -524,11 +524,11 @@
 |ExGrid.ViewStateDocument|100%||
 
 </details>
-<details><summary>ExGrid.Data - 94.8%</summary>
+<details><summary>ExGrid.Data - 94.9%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExGrid.Data**|**94.8%**|**90.4%**|
+|**ExGrid.Data**|**94.9%**|**90.4%**|
 |ExGrid.Data.AggregateAccumulator|93%|92.4%|
 |ExGrid.Data.AggregateArithmetic|97.8%|95.7%|
 |ExGrid.Data.AggregateResult|86.2%|55.5%|
@@ -580,7 +580,7 @@
 |ExGrid.Data.DoubleColumn|100%||
 |ExGrid.Data.DoubleColumnBuilder|100%|100%|
 |ExGrid.Data.IntegerColumn|100%||
-|ExGrid.Data.IntegerColumnBuilder|92.8%|50%|
+|ExGrid.Data.IntegerColumnBuilder|100%|100%|
 |ExGrid.Data.Snapshot|97.3%|93.1%|
 |ExGrid.Data.SnapshotBuilder<T>|100%|100%|
 |ExGrid.Data.SnapshotBuilder<T>|98.1%|96.6%|
@@ -661,7 +661,7 @@
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExGrid.Data.Arrow**|**93.8%**|**89%**|
+|**ExGrid.Data.Arrow**|**93.8%**|**88.9%**|
 |ExGrid.Data.Arrow.ArrowSnapshotReader|94.7%|92.6%|
 |ExGrid.Data.Arrow.ArrowSnapshotReader<T>|94.7%|92.6%|
 |ExGrid.Data.Arrow.ArrowSnapshotWriter|97.6%|91.6%|
@@ -676,7 +676,7 @@
 |ExGrid.Data.Arrow.DateWriter|100%|100%|
 |ExGrid.Data.Arrow.DecimalReader|93.4%|93.7%|
 |ExGrid.Data.Arrow.DecimalWriter|95.2%|91.1%|
-|ExGrid.Data.Arrow.DictionaryReader|96.8%|80.5%|
+|ExGrid.Data.Arrow.DictionaryReader|96%|80.2%|
 |ExGrid.Data.Arrow.DoubleReader|100%|100%|
 |ExGrid.Data.Arrow.DoubleWriter|100%|100%|
 |ExGrid.Data.Arrow.IntegerReader|100%|100%|
@@ -1030,12 +1030,12 @@
 |ExSheet.BuiltInToolbarItem|96.4%|97.3%|
 |ExSheet.ColourItem|96%|100%|
 |ExSheet.CommaItem|83.3%||
-|ExSheet.Components.ExSheet|91.3%|81.8%|
+|ExSheet.Components.ExSheet|91.3%|81.7%|
 |ExSheet.Components.ExSheet.KeyboardListener|100%||
 |ExSheet.Components.ExSheet.KeyUpListener|100%||
 |ExSheet.Components.ExSheet.OwnFindOutcome|100%||
 |ExSheet.Components.ExSheet.SheetGridChrome|86.6%|73%|
-|ExSheet.Components.ExSheet<T>|91.3%|81.8%|
+|ExSheet.Components.ExSheet<T>|91.3%|81.7%|
 |ExSheet.Components.ExSheetStylesheet|100%||
 |ExSheet.Components.FormatCellsPanel|97.3%|87.5%|
 |ExSheet.Components.SheetFindPanel|91.7%|76.5%|
@@ -1117,7 +1117,7 @@
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExSheet.Engine**|**97.8%**|**91.8%**|
+|**ExSheet.Engine**|**97.8%**|**91.9%**|
 |ExSheet.Engine.ArgumentHint|100%||
 |ExSheet.Engine.ArgumentValue|100%||
 |ExSheet.Engine.AxisFormat|100%|100%|
