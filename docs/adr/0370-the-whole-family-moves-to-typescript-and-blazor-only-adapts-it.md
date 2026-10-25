@@ -457,8 +457,16 @@ step 3 holds, its layer 3 is split by what a spec judges:
   Razor, the MudBlazor Wrappers' editors, popovers and panels among them; Blazor's own runtime at the
   root, its delegated events (ADR-0240), prerender and attach; and the Docs Site's Blazor Examples.
   `@ex-grid/mui`'s specs run on the React host in the same way.
-- **A spec says which it is**, in its title's tag, and one that says neither runs on all three hosts,
-  so a missing tag costs time and never a test.
+- **A spec says which it is**, in its title's tag, and the run refuses a spec that says neither, so no
+  spec runs on a host by default and none is left out by default.
+
+**A layer-3 test earns its run.** *(Decided with the user, 2026-10-25: "do not add useless layer-3
+tests, remove the redundant ones, and make the tests ones that develop the product and raise its
+value".)* A layer-3 test judges what only a browser shows (the table of layers in `CLAUDE.md`) and
+what a user or a Consumer would meet; each one names the criterion or the defect it holds. A test that
+repeats a judgement layer 1 or 2 already makes, or another layer-3 test already makes on the same
+path, is removed, not added, and a port to the React host moves a test rather than copying it. A
+removal keeps every Definition of Done criterion checked: it names the test that still checks it.
 
 Until a product's step 3 holds, its C# UI still ships, so its specs keep running on the Blazor hosts as
 they do today. Its step 2 holds when its full specs pass on both Blazor hosts, and they keep running
