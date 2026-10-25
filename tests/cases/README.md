@@ -29,7 +29,7 @@ One directory per area, one file per group of cases. Each file is an object:
 | Key | Meaning |
 |---|---|
 | `about` | What the file covers, and where its cases came from |
-| `kind` | Which runner reads it: `selection`, `range`, `edgeBand`, `held`, `calls`, `clipboard` |
+| `kind` | Which runner reads it: `selection`, `range`, `edgeBand`, `held`, `calls`, `clipboard`, `query` |
 | `extent` | `[rows, columns]`, the grid every case of the file runs against unless it names its own |
 | `cases` | The cases. Each has a `name`, which starts with the ADR it holds to (CLAUDE.md, "Put the ADR number in the test name") |
 
@@ -147,6 +147,26 @@ there is no header row, unless the step says otherwise:
 | `display`, `raw` | The text every cell displays, or holds raw |
 | `headers` | A header row: `true` for `H{column}`, or the text every header shows |
 | `headerRaws` | `{column: raw}`: a header's raw form, for the columns named; the others have none. Without `headers` a raw form is never read, and one read fails the case |
+
+## `query`
+
+The reference implementation's Filter and Sort semantics (ADR-0001, ADR-0023), run by
+`tests/ExGrid.Tests/Cases/QueryCaseTests.cs` against `GridQueryEngine` and `src/npm/core/test/query.test.ts`
+against the Script Core's `query/query-engine.ts`. The file names its `columns`, each `{"name", "type"}`;
+a case gives its `rows`, each an array of one value per column, then any of `filter` and `sorts`, and says
+what stays with `keeps` (the positions of the rows kept, in the Query's order) or how the Query is refused
+with `throws` and `saying`.
+
+| Key | Holds |
+|---|---|
+| `filter` | `{"columns": {name: {"clauses": [{"operator", "value", "values"}], "combinator"}}, "opaque"}`; `combinator` and `opaque` optional |
+| `sorts` | `[{"column", "direction"}]`, the primary first |
+
+A value is JSON's own: text, `true`/`false`, `null` for a Blank, and a number, which is a double in C# and a
+number in the Script Core. `{"bigint": text}` is a whole number held exactly, a long in C# and a bigint in
+the Script Core; `{"double": text}` a number JSON cannot hold (`"NaN"`, `"Infinity"`). An operator, a
+combinator, a direction or a column's type written as a number is one cast in from outside the vocabulary.
+A `clauses` or `values` list or a `combinator` written as `null` is absent, as a Query that came through JSON writes it.
 
 ## `calls`
 

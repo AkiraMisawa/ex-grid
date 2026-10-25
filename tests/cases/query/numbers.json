@@ -1,0 +1,162 @@
+{
+  "about": "A Number column's one number line (ADR-0023). C#'s reference implementation holds every number as a decimal, so a double reads at fifteen significant digits and at most 28 decimal places; the Script Core reads a number the same way and keeps a bigint exact, as C# keeps a long. A JSON number is a double in C# and a number in the Script Core; {\"bigint\": text} a long and a bigint; {\"double\": \"NaN\"} a value JSON cannot hold.",
+  "kind": "query",
+  "columns": [{"name": "Book", "type": "text"}, {"name": "Amount", "type": "number"}, {"name": "Cleared", "type": "boolean"}],
+  "cases": [
+    {
+      "name": "ADR-0023: a number is compared at fifteen significant digits, as Excel and a decimal compare it",
+      "rows": [
+        [null, 0.30000000000000004, null],
+        [null, 0.3, null],
+        [null, 0.29999999999999, null]
+      ],
+      "filter": {"columns": {"Amount": {"clauses": [{"operator": "equals", "value": 0.3}]}}},
+      "keeps": [0, 1]
+    },
+    {
+      "name": "ADR-0023: a sixteenth digit does not order two numbers",
+      "rows": [
+        [null, 1.0000000000000002, null],
+        [null, 1, null]
+      ],
+      "sorts": [{"column": "Amount", "direction": "ascending"}],
+      "keeps": [0, 1]
+    },
+    {
+      "name": "ADR-0023: the fifteenth digit does",
+      "rows": [
+        [null, 1.00000000000001, null],
+        [null, 1, null]
+      ],
+      "sorts": [{"column": "Amount", "direction": "ascending"}],
+      "keeps": [1, 0]
+    },
+    {
+      "name": "ADR-0023: a whole number past a double's exact range stays exact",
+      "rows": [
+        [null, {"bigint": "9007199254740993"}, null],
+        [null, {"bigint": "9007199254740992"}, null]
+      ],
+      "filter": {"columns": {"Amount": {"clauses": [{"operator": "equals", "value": {"bigint": "9007199254740993"}}]}}},
+      "keeps": [0]
+    },
+    {
+      "name": "ADR-0023: a whole number written either way is one value",
+      "rows": [
+        [null, {"bigint": "2"}, null],
+        [null, 2, null],
+        [null, 2.5, null]
+      ],
+      "filter": {"columns": {"Amount": {"clauses": [{"operator": "in", "values": [2]}]}}},
+      "keeps": [0, 1]
+    },
+    {
+      "name": "ADR-0023: zero and negative zero are one value",
+      "rows": [
+        [null, -0.0, null],
+        [null, 0, null]
+      ],
+      "filter": {"columns": {"Amount": {"clauses": [{"operator": "equals", "value": 0}]}}},
+      "keeps": [0, 1]
+    },
+    {
+      "name": "ADR-0023: a number that is not finite is refused",
+      "rows": [
+        [null, {"double": "NaN"}, null]
+      ],
+      "filter": {"columns": {"Amount": {"clauses": [{"operator": "isNotBlank"}]}}},
+      "throws": "invalidOperation",
+      "saying": "not a finite number"
+    },
+    {
+      "name": "ADR-0023: infinity is refused as an operand too",
+      "rows": [
+        [null, 1, null]
+      ],
+      "filter": {"columns": {"Amount": {"clauses": [{"operator": "lessThan", "value": {"double": "Infinity"}}]}}},
+      "throws": "invalidOperation",
+      "saying": "not a finite number"
+    },
+    {
+      "name": "ADR-0023: a number beyond a decimal's range is refused",
+      "rows": [
+        [null, 1e+29, null]
+      ],
+      "filter": {"columns": {"Amount": {"clauses": [{"operator": "isNotBlank"}]}}},
+      "throws": "invalidOperation",
+      "saying": "outside the range"
+    },
+    {
+      "name": "ADR-0023: a number too small to tell from zero is refused, never flattened to zero",
+      "rows": [
+        [null, 1e-29, null]
+      ],
+      "filter": {"columns": {"Amount": {"clauses": [{"operator": "isNotBlank"}]}}},
+      "throws": "invalidOperation",
+      "saying": "too small"
+    },
+    {
+      "name": "ADR-0023: a small number a decimal holds is kept and told from zero",
+      "rows": [
+        [null, 1e-27, null],
+        [null, 0, null]
+      ],
+      "filter": {"columns": {"Amount": {"clauses": [{"operator": "greaterThan", "value": 0}]}}},
+      "keeps": [0]
+    },
+    {
+      "name": "ADR-0023: a double is read as .NET reads it into a decimal: scaled in double arithmetic, the fifteenth digit rounded half to even",
+      "rows": [
+        [null, 6217.274962094275, null],
+        [null, 6217.27496209427, null]
+      ],
+      "filter": {"columns": {"Amount": {"clauses": [{"operator": "equals", "value": 6217.27496209428}]}}},
+      "keeps": [0]
+    },
+    {
+      "name": "ADR-0023: a small double is scaled the same way before it is rounded",
+      "rows": [
+        [null, 9.792040903024395e-13, null],
+        [null, 9.79204090302439e-13, null]
+      ],
+      "filter": {"columns": {"Amount": {"clauses": [{"operator": "equals", "value": 9.7920409030244e-13}]}}},
+      "keeps": [0]
+    },
+    {
+      "name": "ADR-0023: a large double is its fifteen digits, which a whole number written exactly equals",
+      "rows": [
+        [null, 68554523619150056, null],
+        [null, {"bigint": "68554523619150056"}, null]
+      ],
+      "filter": {"columns": {"Amount": {"clauses": [{"operator": "equals", "value": {"bigint": "68554523619150000"}}]}}},
+      "keeps": [0]
+    },
+    {
+      "name": "ADR-0023: a value list holds a large double as its fifteen digits too",
+      "rows": [
+        [null, 68554523619150056, null],
+        [null, {"bigint": "68554523619150056"}, null]
+      ],
+      "filter": {"columns": {"Amount": {"clauses": [{"operator": "in", "values": [{"bigint": "68554523619150000"}]}]}}},
+      "keeps": [0]
+    },
+    {
+      "name": "ADR-0023: 2^96, the first double past a decimal's range, is refused",
+      "rows": [
+        [null, 7.922816251426434e+28, null]
+      ],
+      "filter": {"columns": {"Amount": {"clauses": [{"operator": "isNotBlank"}]}}},
+      "throws": "invalidOperation",
+      "saying": "outside the range"
+    },
+    {
+      "name": "ADR-0023: digits past the 28th decimal place do not order two numbers",
+      "rows": [
+        [null, 1.2345678901234e-20, null],
+        [null, 1.23456789e-20, null]
+      ],
+      "sorts": [{"column": "Amount", "direction": "ascending"}],
+      "keeps": [0, 1]
+    }
+  ]
+}

@@ -1,0 +1,156 @@
+{
+  "about": "The reference implementation's sort (ADR-0023): case-insensitive ordinal text, one number line, FALSE before TRUE, Blanks last both ways, stable, priority order, refused rather than guessed. From tests/ExGrid.Tests/SortSemanticsTests.cs; the Date rows wait for the Script Core's date values.",
+  "kind": "query",
+  "columns": [{"name": "Book", "type": "text"}, {"name": "Amount", "type": "number"}, {"name": "Cleared", "type": "boolean"}],
+  "cases": [
+    {
+      "name": "ADR-0023: text sorts case-insensitively",
+      "rows": [
+        ["credit", null, null],
+        ["Rates", null, null],
+        ["CREDIT", null, null]
+      ],
+      "sorts": [{"column": "Book", "direction": "ascending"}],
+      "keeps": [0, 2, 1]
+    },
+    {
+      "name": "ADR-0023: Blanks sort last ascending",
+      "rows": [
+        [null, 2, null],
+        [null, null, null],
+        [null, 1, null]
+      ],
+      "sorts": [{"column": "Amount", "direction": "ascending"}],
+      "keeps": [2, 0, 1]
+    },
+    {
+      "name": "ADR-0023: Blanks sort last descending too, as Excel does",
+      "rows": [
+        [null, 2, null],
+        [null, null, null],
+        [null, 1, null]
+      ],
+      "sorts": [{"column": "Amount", "direction": "descending"}],
+      "keeps": [0, 2, 1]
+    },
+    {
+      "name": "ADR-0023: the sort is stable, so equal keys keep the incoming order",
+      "rows": [
+        ["rates", 1, null],
+        ["Credit", 2, null],
+        ["RATES", 3, null],
+        ["Rates", 4, null]
+      ],
+      "sorts": [{"column": "Book", "direction": "ascending"}],
+      "keeps": [1, 0, 2, 3]
+    },
+    {
+      "name": "ADR-0023: the sort is stable descending too",
+      "rows": [
+        ["rates", 1, null],
+        ["Credit", 2, null],
+        ["RATES", 3, null]
+      ],
+      "sorts": [{"column": "Book", "direction": "descending"}],
+      "keeps": [0, 2, 1]
+    },
+    {
+      "name": "ADR-0023: the Sorts list is priority order, the first entry primary",
+      "rows": [
+        ["Credit", 1, null],
+        ["Rates", 2, null],
+        ["Credit", 3, null]
+      ],
+      "sorts": [{"column": "Book", "direction": "ascending"}, {"column": "Amount", "direction": "descending"}],
+      "keeps": [2, 0, 1]
+    },
+    {
+      "name": "ADR-0023: a whole number and a fraction sort on one number line",
+      "rows": [
+        [null, 2, null],
+        [null, 1.5, null],
+        [null, {"bigint": "3"}, null],
+        [null, 10, null]
+      ],
+      "sorts": [{"column": "Amount", "direction": "ascending"}],
+      "keeps": [1, 0, 2, 3]
+    },
+    {
+      "name": "ADR-0023: false sorts before true ascending, as Excel's FALSE < TRUE",
+      "rows": [
+        [null, null, true],
+        [null, null, false],
+        [null, null, null]
+      ],
+      "sorts": [{"column": "Cleared", "direction": "ascending"}],
+      "keeps": [1, 0, 2]
+    },
+    {
+      "name": "ADR-0023: the collation is ordinal, so é sorts after z",
+      "rows": [
+        ["éclair", null, null],
+        ["zebra", null, null]
+      ],
+      "sorts": [{"column": "Book", "direction": "ascending"}],
+      "keeps": [1, 0]
+    },
+    {
+      "name": "ADR-0023: no sort keeps the input order",
+      "rows": [
+        ["b", null, null],
+        ["a", null, null]
+      ],
+      "sorts": [],
+      "keeps": [0, 1]
+    },
+    {
+      "name": "ADR-0023: a sort applies to what the filter kept",
+      "rows": [
+        ["b", 2, null],
+        ["a", 1, null],
+        ["c", 3, null]
+      ],
+      "filter": {"columns": {"Amount": {"clauses": [{"operator": "greaterThan", "value": 1}]}}},
+      "sorts": [{"column": "Book", "direction": "descending"}],
+      "keeps": [2, 0]
+    },
+    {
+      "name": "ADR-0023: an unknown direction is refused before any row, naming the column",
+      "rows": [
+
+      ],
+      "sorts": [{"column": "Book", "direction": 2}],
+      "throws": "invalidOperation",
+      "saying": "Book"
+    },
+    {
+      "name": "ADR-0023: sorting by an unknown column is refused, naming it",
+      "rows": [
+        ["Rates", null, null]
+      ],
+      "sorts": [{"column": "Notional", "direction": "ascending"}],
+      "throws": "invalidOperation",
+      "saying": "Notional"
+    },
+    {
+      "name": "ADR-0023: a cell that contradicts the declared type is refused when sorting, naming the column",
+      "rows": [
+        [null, 1, null],
+        [null, "two", null]
+      ],
+      "sorts": [{"column": "Amount", "direction": "ascending"}],
+      "throws": "invalidOperation",
+      "saying": "Amount"
+    },
+    {
+      "name": "ADR-0023: a cell of the wrong type is refused even when the primary level never ties",
+      "rows": [
+        ["a", 1, null],
+        ["b", "two", null]
+      ],
+      "sorts": [{"column": "Book", "direction": "ascending"}, {"column": "Amount", "direction": "ascending"}],
+      "throws": "invalidOperation",
+      "saying": "Amount"
+    }
+  ]
+}

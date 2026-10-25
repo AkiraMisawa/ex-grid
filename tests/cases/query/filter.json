@@ -1,0 +1,224 @@
+{
+  "about": "How a Filter combines and what it refuses (ADR-0009, ADR-0023). From tests/ExGrid.Tests/FilterCombinationTests.cs and AllowedOperatorTests.cs.",
+  "kind": "query",
+  "columns": [{"name": "Book", "type": "text"}, {"name": "Amount", "type": "number"}, {"name": "Cleared", "type": "boolean"}],
+  "cases": [
+    {
+      "name": "ADR-0009: columns combine with And",
+      "rows": [
+        ["Rates", 150, null],
+        ["Rates", 50, null],
+        ["Credit", 150, null]
+      ],
+      "filter": {"columns": {"Book": {"clauses": [{"operator": "equals", "value": "Rates"}]}, "Amount": {"clauses": [{"operator": "greaterThan", "value": 100}]}}},
+      "keeps": [0]
+    },
+    {
+      "name": "ADR-0009: clauses within a column can combine with Or",
+      "rows": [
+        ["Credit", null, null],
+        ["Rates", null, null],
+        ["Equity", null, null]
+      ],
+      "filter": {"columns": {"Book": {"clauses": [{"operator": "equals", "value": "Rates"}, {"operator": "equals", "value": "Credit"}], "combinator": "or"}}},
+      "keeps": [0, 1]
+    },
+    {
+      "name": "ADR-0023: there is no Between, it is And of two comparisons",
+      "rows": [
+        [null, 150, null],
+        [null, 250, null],
+        [null, 50, null],
+        [null, 100, null],
+        [null, 200, null]
+      ],
+      "filter": {"columns": {"Amount": {"clauses": [{"operator": "greaterThanOrEqual", "value": 100}, {"operator": "lessThanOrEqual", "value": 200}]}}},
+      "keeps": [0, 3, 4]
+    },
+    {
+      "name": "ADR-0009: a column's clauses combine with And unless it says Or",
+      "rows": [
+        ["Rates", null, null],
+        ["Credit", null, null]
+      ],
+      "filter": {"columns": {"Book": {"clauses": [{"operator": "contains", "value": "a"}, {"operator": "contains", "value": "e"}], "combinator": "and"}}},
+      "keeps": [0]
+    },
+    {
+      "name": "ADR-0023: the Opaque Filter's meaning is the Consumer's, and the reference implementation ignores it",
+      "rows": [
+        ["Rates", null, null],
+        ["Credit", null, null]
+      ],
+      "filter": {"columns": {"Book": {"clauses": [{"operator": "equals", "value": "Rates"}]}}, "opaque": "only-my-consumer-understands-this"},
+      "keeps": [0]
+    },
+    {
+      "name": "ADR-0023: a filter on an unknown column is refused, naming it",
+      "rows": [
+        [null, null, null]
+      ],
+      "filter": {"columns": {"Notional": {"clauses": [{"operator": "equals", "value": 1}]}}},
+      "throws": "invalidOperation",
+      "saying": "Notional"
+    },
+    {
+      "name": "ADR-0023: a column's filter without clauses is refused",
+      "rows": [
+        ["Rates", null, null]
+      ],
+      "filter": {"columns": {"Book": {"clauses": []}}},
+      "throws": "invalidOperation",
+      "saying": "Book"
+    },
+    {
+      "name": "ADR-0023: an unknown combinator is refused up front, even over no rows",
+      "rows": [
+
+      ],
+      "filter": {"columns": {"Book": {"clauses": [{"operator": "equals", "value": "Rates"}], "combinator": 7}}},
+      "throws": "invalidOperation",
+      "saying": "Book"
+    },
+    {
+      "name": "ADR-0023: a malformed Query is refused even when no row exercises it",
+      "rows": [
+
+      ],
+      "filter": {"columns": {"Amount": {"clauses": [{"operator": "equals", "value": "ten"}]}}},
+      "throws": "invalidOperation",
+      "saying": "Amount"
+    },
+    {
+      "name": "ADR-0023: a malformed Query is refused over rows that are Blank in that column",
+      "rows": [
+        [null, null, null]
+      ],
+      "filter": {"columns": {"Amount": {"clauses": [{"operator": "equals", "value": "ten"}]}}},
+      "throws": "invalidOperation",
+      "saying": "Amount"
+    },
+    {
+      "name": "ADR-0023: an operator without its operand is refused, and a Blank is not a stand-in for isBlank",
+      "rows": [
+        ["Rates", null, null]
+      ],
+      "filter": {"columns": {"Book": {"clauses": [{"operator": "equals"}]}}},
+      "throws": "invalidOperation",
+      "saying": "Book"
+    },
+    {
+      "name": "ADR-0023: in without a list is refused",
+      "rows": [
+        ["Rates", null, null]
+      ],
+      "filter": {"columns": {"Book": {"clauses": [{"operator": "in"}]}}},
+      "throws": "invalidOperation",
+      "saying": "Book"
+    },
+    {
+      "name": "ADR-0023: in with an empty list is refused",
+      "rows": [
+        ["Rates", null, null]
+      ],
+      "filter": {"columns": {"Book": {"clauses": [{"operator": "in", "values": []}]}}},
+      "throws": "invalidOperation",
+      "saying": "Book"
+    },
+    {
+      "name": "ADR-0023: isBlank with an operand is refused",
+      "rows": [
+        ["Rates", null, null]
+      ],
+      "filter": {"columns": {"Book": {"clauses": [{"operator": "isBlank", "value": "operand"}]}}},
+      "throws": "invalidOperation",
+      "saying": "Book"
+    },
+    {
+      "name": "ADR-0023: equals with a values list is refused",
+      "rows": [
+        ["Rates", null, null]
+      ],
+      "filter": {"columns": {"Book": {"clauses": [{"operator": "equals", "value": "Rates", "values": ["Rates"]}]}}},
+      "throws": "invalidOperation",
+      "saying": "Book"
+    },
+    {
+      "name": "ADR-0023: an operator nobody declared is refused, naming the column",
+      "rows": [
+        ["Rates", null, null]
+      ],
+      "filter": {"columns": {"Book": {"clauses": [{"operator": 99, "value": "Rates"}]}}},
+      "throws": "invalidOperation",
+      "saying": "Book"
+    },
+    {
+      "name": "ADR-0023: a cell that contradicts the declared type is refused whatever the operator",
+      "rows": [
+        [null, "ten", null]
+      ],
+      "filter": {"columns": {"Amount": {"clauses": [{"operator": "isNotBlank"}]}}},
+      "throws": "invalidOperation",
+      "saying": "Amount"
+    },
+    {
+      "name": "ADR-0023: a text cell is text, never a number read as one",
+      "rows": [
+        [1, null, null]
+      ],
+      "filter": {"columns": {"Book": {"clauses": [{"operator": "isBlank"}]}}},
+      "throws": "invalidOperation",
+      "saying": "Book"
+    },
+    {
+      "name": "ADR-0023: a boolean cell is a boolean, never text read as one",
+      "rows": [
+        [null, null, "true"]
+      ],
+      "filter": {"columns": {"Cleared": {"clauses": [{"operator": "equals", "value": true}]}}},
+      "throws": "invalidOperation",
+      "saying": "Cleared"
+    },
+    {
+      "name": "ADR-0023: clauses written as null are refused as no clauses, naming the column",
+      "rows": [],
+      "filter": {"columns": {"Book": {"clauses": null}}},
+      "throws": "invalidOperation",
+      "saying": "Book"
+    },
+    {
+      "name": "ADR-0023: a values list written as null is absent, as a Query that came through JSON writes it",
+      "rows": [
+        ["a", null, null],
+        ["b", null, null]
+      ],
+      "filter": {"columns": {"Book": {"clauses": [{"operator": "equals", "value": "A", "values": null}]}}},
+      "keeps": [0]
+    },
+    {
+      "name": "ADR-0023: in with a list written as null is refused as in without a list",
+      "rows": [],
+      "filter": {"columns": {"Book": {"clauses": [{"operator": "in", "values": null}]}}},
+      "throws": "invalidOperation",
+      "saying": "Book"
+    },
+    {
+      "name": "ADR-0009: a combinator written as null is absent, so the clauses combine with And",
+      "rows": [
+        ["ab", null, null],
+        ["a", null, null],
+        ["b", null, null]
+      ],
+      "filter": {"columns": {"Book": {"combinator": null, "clauses": [{"operator": "contains", "value": "A"}, {"operator": "contains", "value": "b"}]}}},
+      "keeps": [0]
+    },
+    {
+      "name": "ADR-0023: no Query keeps every row in its order",
+      "rows": [
+        ["b", null, null],
+        ["a", null, null]
+      ],
+      "keeps": [0, 1]
+    }
+  ]
+}

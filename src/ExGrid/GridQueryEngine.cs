@@ -152,6 +152,10 @@ public static class GridQueryEngine
     {
         if (!columns.TryGetValue(name, out var column))
             throw new InvalidOperationException($"Unknown column '{name}'.");
+        // Checked here, before any row is read, so a type outside the vocabulary is refused whatever the
+        // rows hold, not by the first comparison that happens to meet it.
+        if (!Enum.IsDefined(column.Type))
+            throw new ArgumentOutOfRangeException(nameof(ColumnInfo<TRow>.Type), column.Type, $"Column '{name}' has an unknown type.");
         // An Action Column carries no value, so every row would compare equal and a sort
         // would shuffle the result into an order nobody could account for. Refused here,
         // where every other ambiguity is (ADR-0020).
