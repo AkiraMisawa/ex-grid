@@ -80,9 +80,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-dotnet@v6
-        with:
-          global-json-file: global.json
+      - uses: ./.github/actions/dotnet
 
       # The version and its kind; the branch; whether the long run gates it and whether its release
       # publishes the Docs Site (ADR-0042, ADR-0205).
@@ -195,9 +193,7 @@ jobs:
           done
           [ "$(ls packages | wc -l)" -eq 32 ] || { echo "::error::the artifact holds more than the thirty-two expected files"; exit 1; }
 
-      - uses: actions/setup-dotnet@v6
-        with:
-          dotnet-version: 10.0.x
+      - uses: ./.github/actions/dotnet
 
       - name: Sign in to nuget.org
         id: login

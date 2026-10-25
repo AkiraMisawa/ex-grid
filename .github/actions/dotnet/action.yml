@@ -1,0 +1,46 @@
+name: .NET SDK
+description: >-
+  Installs the newest SDK of global.json's major.minor from the .NET CDN by its exact version, and
+  falls back, with a warning, to an SDK the runner image already holds that global.json accepts.
+
+# Not actions/setup-dotnet. It turns global.json into a channel, and dotnet-install.sh resolves a
+# channel through an aka.ms redirect: when the redirect answers but its target fails, the script
+# tries no other feed. From 2026-10-25 19:05 UTC that target, dotnetorigin.blob.core.windows.net,
+# answered 409 for every SDK and runtime, and every job of every workflow failed before its first
+# step. An exact version never goes through aka.ms, so the version is read from the CDN's own
+# latest.version, which is the file the script falls back to.
+runs:
+  using: composite
+  steps:
+    - id: install
+      shell: bash
+      continue-on-error: true
+      run: |
+        set -euo pipefail
+        feed=https://builds.dotnet.microsoft.com/dotnet
+        channel=$(jq -r '.sdk.version | split(".")[0:2] | join(".")' global.json)
+        version=$(curl -fsSL --retry 3 "$feed/Sdk/$channel/latest.version" | tail -n 1 | tr -d '\r')
+        [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+ ]] || { echo "::warning::$feed/Sdk/$channel/latest.version names no version: '$version'"; exit 1; }
+        script="$RUNNER_TEMP/dotnet-install.sh"
+        curl -fsSL --retry 3 -o "$script" "$feed/scripts/v1/dotnet-install.sh"
+        bash "$script" --version "$version" --install-dir "$HOME/.dotnet"
+        echo "DOTNET_ROOT=$HOME/.dotnet" >> "$GITHUB_ENV"
+        echo "$HOME/.dotnet" >> "$GITHUB_PATH"
+        echo "version=$version" >> "$GITHUB_OUTPUT"
+
+    # Run from the repository root, `dotnet --version` resolves through global.json and fails when
+    # no SDK it accepts is installed.
+    - name: The SDK global.json resolves
+      shell: bash
+      env:
+        INSTALLED: ${{ steps.install.outputs.version }}
+      run: |
+        set -euo pipefail
+        resolved=$(dotnet --version)
+        if [[ -z "$INSTALLED" ]]; then
+          echo "::warning::The newest .NET SDK could not be installed from builds.dotnet.microsoft.com; this job runs on the runner's own $resolved."
+        elif [[ "$resolved" != "$INSTALLED" ]]; then
+          echo "::error::.NET $INSTALLED was installed, and global.json resolves $resolved."
+          exit 1
+        fi
+        echo ".NET SDK $resolved"
