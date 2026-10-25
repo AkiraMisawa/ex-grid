@@ -142,7 +142,7 @@ export class Culture {
         return this.#data.name === '' ? 'invariant' : this.#data.name;
     }
 
-    /** The culture's data. */
+    /** The culture's data: its separators, names and patterns, as .NET's culture records them. @internal */
     get data(): CultureData {
         return this.#data;
     }

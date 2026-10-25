@@ -288,7 +288,7 @@ export abstract class SheetEdit {
         return undefined;
     }
 
-    /** @internal */
+    /** Does the operation on `sheet`, checked already, and answers the step that undoes it. @internal */
     abstract apply(sheet: Sheet): SheetStep;
 
     /** The ranges the operation changes on its Sheet: what an undo or a redo of it selects (ADR-0331 §3). None for an operation on the Sheets. @internal */

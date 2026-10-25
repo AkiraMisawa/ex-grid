@@ -15,6 +15,7 @@ import { Culture } from './culture';
 import { equalsIgnoreCase, formatExponential, formatRoundTrip, ignoreCaseKey, isDigit, toUpperInvariant, trimWhiteSpace } from './dotnet';
 import { Entry } from './entry';
 import { entryText } from './entry-text';
+import { completeFormula, formulaReferences, type FormulaCompletion, type FormulaReference, type LinkedTableColumn } from './formula-entry';
 import { FormulaSyntaxError } from './formula-syntax-error';
 import { atFifteenDigits } from './formulas/arithmetic';
 import type { CellReader, SheetDay, SheetMoment } from './formulas/cell-reader';
@@ -240,8 +241,10 @@ export class SheetStep {
     readonly #redo: (sheet: Sheet) => SheetChange;
     #isUndone = false;
 
+/** The Sheet the operation was done on. */
     readonly sheet: Sheet;
 
+/** What doing the operation changed. */
     readonly change: SheetChange;
 
     /** @internal */
@@ -283,6 +286,7 @@ export class SheetStep {
 export class SheetBlock {
     readonly #cells: readonly CellState[];
 
+/** The range the block was copied from. */
     readonly source: CellRange;
 
     /** @internal */
@@ -291,10 +295,12 @@ export class SheetBlock {
         this.#cells = cells;
     }
 
+/** How many rows the block holds. */
     get rowCount(): number {
         return this.source.rowCount;
     }
 
+/** How many columns the block holds. */
     get columnCount(): number {
         return this.source.columnCount;
     }
@@ -309,7 +315,7 @@ export class SheetBlock {
         return this.at(row, column).cellFormat;
     }
 
-    /** @internal */
+    /** The cell at a position inside the block, as copied: its Entry and the Cell Format it showed. @internal */
     at(row: number, column: number): CellState {
         if (!Number.isInteger(row) || row < 0 || row >= this.rowCount) throw new RangeError(`The block has ${String(this.rowCount)} row(s).`);
         if (!Number.isInteger(column) || column < 0 || column >= this.columnCount) throw new RangeError(`The block has ${String(this.columnCount)} column(s).`);
@@ -347,6 +353,7 @@ export class SheetCopy {
         this.html = html;
     }
 
+/** Whether the copy is refused (`refusal`). */
     get isRefused(): boolean {
         return this.refusal !== undefined;
     }
@@ -1803,6 +1810,33 @@ export class Sheet {
         return this.workbook.seed === undefined && callsRandom(node);
     }
 
+    // ---- Typing aids (FormulaEntry.cs) ----
+
+    /**
+     * Completion for the Formula being typed (ADR-0051, ADR-0058): the declared functions and the Workbook's Linked
+     * Tables whose names begin with the name at the caret, the columns of one of its tables after `Table[`, and an
+     * argument's values where it takes one of a fixed list (`completeFormula`).
+     */
+    complete(text: string, caret: number): FormulaCompletion | undefined {
+        const tables = [...this.workbook.tables.values()].toSorted((a, b) => a.order - b.order);
+        return completeFormula(text, caret, tables.map(t => t.name),
+            name => this.workbook.tables.get(ignoreCaseKey(name))?.columns);
+    }
+
+    /**
+     * The References in the Formula being edited (ADR-0057), a qualifier naming this Sheet by its name as it is now
+     * (`formulaReferences`). A structured reference is kept only when its Linked Table is declared with that
+     * column: one naming a table or a column that is not names nothing, as a Reference to another Sheet does not. A
+     * declared table still waiting for its data is kept.
+     */
+    references(text: string): readonly FormulaReference[] {
+        return formulaReferences(text, this.#name).filter(r => r.linkedColumn === undefined || this.#isDeclared(r.linkedColumn));
+    }
+
+    #isDeclared(column: LinkedTableColumn): boolean {
+        return this.workbook.tables.get(ignoreCaseKey(column.table))?.columnIndex.has(ignoreCaseKey(column.column)) === true;
+    }
+
     // ---- Linked Tables (Sheet.LinkedTables.cs) ----
 
     /** The Linked Tables declared on the Sheet's Workbook, in the order they were declared. @internal */
@@ -1832,7 +1866,7 @@ export class Sheet {
         return this.#recalculateReaders(name);
     }
 
-    /** @internal */
+    /** Records a Linked Table's declaration on the Workbook, checked already. @internal */
     declare(name: string, columns: readonly string[], key: readonly string[], order?: number): void {
         const tables = this.workbook.tables;
         const index = new Map<string, number>();
@@ -1983,8 +2017,8 @@ export class Sheet {
         return this.#name;
     }
 
-    /** @internal */
-    set name(name: string) {
+    /** Gives the Sheet a new name; the Workbook checks it and rewrites the References that name the Sheet. @internal */
+    setName(name: string): void {
         this.#name = name;
     }
 

@@ -6,6 +6,7 @@ import type { Area } from './reference';
 
 /** A calendar day: the Sheet Day `TODAY` answers (ADR-0121). */
 export interface SheetDay {
+    /** The year, 1900 to 9999. */
     readonly year: number;
     /** 1 to 12. */
     readonly month: number;

@@ -49,11 +49,12 @@ export class CellColour {
         return this.#value;
     }
 
-    /** @internal */
+    /** A value equal ones share, to key a map by. @internal */
     get key(): number {
         return this.#value;
     }
 
+    /** Whether `other` is the same colour. */
     equals(other: CellColour): boolean {
         return this.#value === other.#value;
     }
@@ -74,10 +75,13 @@ export type HorizontalAlignment = 'general' | 'left' | 'center' | 'right';
 export class CellFont {
     /** The text's colour; Automatic is the Ink. */
     readonly colour: CellColour;
+    /** Bold. */
     readonly bold: boolean;
+    /** Italic. */
     readonly italic: boolean;
     /** A single underline. */
     readonly underline: boolean;
+    /** Strikethrough. */
     readonly strikethrough: boolean;
 
     constructor(parts: { colour?: CellColour; bold?: boolean; italic?: boolean; underline?: boolean; strikethrough?: boolean } = {}) {
@@ -102,11 +106,12 @@ export class CellFont {
         });
     }
 
-    /** @internal */
+    /** A value equal ones share, to key a map by. @internal */
     get key(): string {
         return `${String(this.colour.key)}${this.bold ? 'b' : ''}${this.italic ? 'i' : ''}${this.underline ? 'u' : ''}${this.strikethrough ? 's' : ''}`;
     }
 
+    /** Whether `other` is the same Font. */
     equals(other: CellFont): boolean {
         return this.colour.equals(other.colour) && this.bold === other.bold && this.italic === other.italic
             && this.underline === other.underline && this.strikethrough === other.strikethrough;
@@ -142,11 +147,12 @@ export class CellFill {
         return this.colour === undefined;
     }
 
-    /** @internal */
+    /** A value equal ones share, to key a map by. @internal */
     get key(): number {
         return this.colour === undefined ? -2 : this.colour.key;
     }
 
+    /** Whether `other` is the same Fill. */
     equals(other: CellFill): boolean {
         return this.key === other.key;
     }
@@ -182,11 +188,12 @@ export class BorderLine {
         return this.style === 'none';
     }
 
-    /** @internal */
+    /** A value equal ones share, to key a map by. @internal */
     get key(): string {
         return `${this.style}:${String(this.colour.key)}`;
     }
 
+    /** Whether `other` is the same line. */
     equals(other: BorderLine): boolean {
         return this.style === other.style && this.colour.equals(other.colour);
     }
@@ -200,9 +207,13 @@ export class BorderLine {
  * either side (the eleventh run, case 7).
  */
 export class CellBorders {
+    /** The line on the cell's top side. */
     readonly top: BorderLine;
+    /** The line on the cell's bottom side. */
     readonly bottom: BorderLine;
+    /** The line on the cell's left side. */
     readonly left: BorderLine;
+    /** The line on the cell's right side. */
     readonly right: BorderLine;
 
     constructor(sides: { top?: BorderLine; bottom?: BorderLine; left?: BorderLine; right?: BorderLine } = {}) {
@@ -225,11 +236,12 @@ export class CellBorders {
         });
     }
 
-    /** @internal */
+    /** A value equal ones share, to key a map by. @internal */
     get key(): string {
         return `${this.top.key}|${this.bottom.key}|${this.left.key}|${this.right.key}`;
     }
 
+    /** Whether `other` is the same Borders. */
     equals(other: CellBorders): boolean {
         return this.top.equals(other.top) && this.bottom.equals(other.bottom) && this.left.equals(other.left) && this.right.equals(other.right);
     }
@@ -241,9 +253,13 @@ export class CellBorders {
  * in the order met.
  */
 export interface RangeEdgeLines {
+    /** The lines along the range's top edge. */
     readonly top: readonly BorderLine[];
+    /** The lines along the range's bottom edge. */
     readonly bottom: readonly BorderLine[];
+    /** The lines along the range's left edge. */
     readonly left: readonly BorderLine[];
+    /** The lines along the range's right edge. */
     readonly right: readonly BorderLine[];
 }
 
@@ -252,14 +268,15 @@ export interface RangeEdgeLines {
  * over row over column, and the part's default where no level does.
  */
 export class CellFormat {
+    /** The Number Format. */
     readonly numberFormat: NumberFormat;
-
+    /** The horizontal alignment. */
     readonly alignment: HorizontalAlignment;
-
+    /** The Font. */
     readonly font: CellFont;
-
+    /** The Fill. */
     readonly fill: CellFill;
-
+    /** The Borders. */
     readonly borders: CellBorders;
 
     constructor(
@@ -276,11 +293,12 @@ export class CellFormat {
         this.borders = borders;
     }
 
-    /** @internal */
+    /** A value equal ones share, to key a map by. @internal */
     get key(): string {
         return `${this.numberFormat.code}\u0000${this.alignment}\u0000${this.font.key}\u0000${String(this.fill.key)}\u0000${this.borders.key}`;
     }
 
+    /** Whether `other` is the same Cell Format. */
     equals(other: CellFormat): boolean {
         return this.numberFormat.equals(other.numberFormat) && this.alignment === other.alignment && this.font.equals(other.font)
             && this.fill.equals(other.fill) && this.borders.equals(other.borders);

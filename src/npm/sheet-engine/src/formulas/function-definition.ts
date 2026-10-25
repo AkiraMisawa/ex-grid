@@ -13,7 +13,9 @@ export type ThreeDArgument = 'value' | 'range' | 'handOn' | 'valueError' | 'oneS
 
 /** One of a fixed list of values an argument takes, as completion lists it (ADR-0058): the value, and Excel's text for it. */
 export interface ArgumentValue {
+    /** What choosing it writes into the Formula: `-1`. */
     readonly value: string;
+    /** The text the list shows, Excel's: `-1 - Exact match or next smaller item`. */
     readonly text: string;
 }
 

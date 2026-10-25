@@ -151,12 +151,14 @@ export class Workbook {
         return new WorkbookDocument(this.culture.name, this.#shown.name, this.#first.tableDeclarations, this.#sheets.map(s => sheetDocumentOf(s, [])));
     }
 
-    /** The Sheet shown: the one whose tab is selected (ADR-0331). Showing another Sheet changes nothing a step records. */
+    /**
+     * The Sheet shown: the one whose tab is selected (ADR-0331). Showing another Sheet changes nothing a step records.
+     * Setting a Sheet that is not one of this Workbook's throws a RangeError.
+     */
     get shown(): Sheet {
         return this.#shown;
     }
 
-    /** Throws a RangeError for a Sheet that is not one of this Workbook's. */
     set shown(sheet: Sheet) {
         if (!this.#sheets.includes(sheet)) throw new RangeError("The Sheet is not one of this Workbook's.");
         this.#shown = sheet;
@@ -511,7 +513,7 @@ export class Workbook {
                 sheetName: r.sheetName !== undefined && Sheet.names(r.sheetName, oldName) ? name : r.sheetName,
                 lastSheetName: r.lastSheetName !== undefined && Sheet.names(r.lastSheetName, oldName) ? name : r.lastSheetName,
             }), requalify, rewritten, dirty);
-            sheet.name = name;
+            sheet.setName(name);
         });
         return { change, oldName, rewritten };
     }
@@ -521,7 +523,7 @@ export class Workbook {
         if (sheet.name === rename.oldName) return SheetChange.none;
         return this.#reshape(sheet, () => {
             for (const { sheet: owner, address, entry } of rename.rewritten) owner.replaceEntry(address, entry);
-            sheet.name = rename.oldName;
+            sheet.setName(rename.oldName);
         });
     }
 

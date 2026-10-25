@@ -104,10 +104,13 @@ export interface CellFormatChangeParts {
     readonly alignment?: HorizontalAlignment | undefined;
     /** The Font colour to set; Automatic sets the Ink. */
     readonly fontColour?: CellColour | undefined;
+/** Bold set on, or off. */
     readonly bold?: boolean | undefined;
+/** Italic set on, or off. */
     readonly italic?: boolean | undefined;
     /** A single underline set on, or off. */
     readonly underline?: boolean | undefined;
+/** Strikethrough set on, or off. */
     readonly strikethrough?: boolean | undefined;
     /** The Fill to set; `CellFill.none` takes it away. */
     readonly fill?: CellFill | undefined;
@@ -121,14 +124,23 @@ export interface CellFormatChangeParts {
  * is set on, so several ranges each get their own outline, as in Excel.
  */
 export class CellFormatChange implements CellFormatChangeParts {
+/** {@inheritDoc CellFormatChangeParts.numberFormat} */
     readonly numberFormat: NumberFormat | undefined;
+/** {@inheritDoc CellFormatChangeParts.alignment} */
     readonly alignment: HorizontalAlignment | undefined;
+/** {@inheritDoc CellFormatChangeParts.fontColour} */
     readonly fontColour: CellColour | undefined;
+/** {@inheritDoc CellFormatChangeParts.bold} */
     readonly bold: boolean | undefined;
+/** {@inheritDoc CellFormatChangeParts.italic} */
     readonly italic: boolean | undefined;
+/** {@inheritDoc CellFormatChangeParts.underline} */
     readonly underline: boolean | undefined;
+/** {@inheritDoc CellFormatChangeParts.strikethrough} */
     readonly strikethrough: boolean | undefined;
+/** {@inheritDoc CellFormatChangeParts.fill} */
     readonly fill: CellFill | undefined;
+/** {@inheritDoc CellFormatChangeParts.borders} */
     readonly borders: BorderChange | undefined;
 
     constructor(parts: CellFormatChangeParts) {
@@ -225,11 +237,17 @@ export interface BorderChangeParts {
  * their record of the same edge.
  */
 export class BorderChange implements BorderChangeParts {
+/** {@inheritDoc BorderChangeParts.top} */
     readonly top: BorderLine | undefined;
+/** {@inheritDoc BorderChangeParts.bottom} */
     readonly bottom: BorderLine | undefined;
+/** {@inheritDoc BorderChangeParts.left} */
     readonly left: BorderLine | undefined;
+/** {@inheritDoc BorderChangeParts.right} */
     readonly right: BorderLine | undefined;
+/** {@inheritDoc BorderChangeParts.insideHorizontal} */
     readonly insideHorizontal: BorderLine | undefined;
+/** {@inheritDoc BorderChangeParts.insideVertical} */
     readonly insideVertical: BorderLine | undefined;
 
     constructor(parts: BorderChangeParts) {

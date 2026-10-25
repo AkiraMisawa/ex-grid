@@ -9,6 +9,7 @@ import type { SheetColumnWidthKind } from './sheet-change';
 
 /** One cell of a Sheet Document: where it is, its Entry and its own Cell Format. Never its Value (ADR-0048). */
 export class SheetDocumentCell {
+/** Where the cell is. */
     readonly address: CellAddress;
 
     /** What the user put into it; `undefined` for a cell that holds only a Cell Format. */
@@ -17,12 +18,16 @@ export class SheetDocumentCell {
     /** The Number Format the cell records itself; `undefined` when it takes its row's or column's (ADR-0047). */
     readonly numberFormat: NumberFormat | undefined;
 
+/** The horizontal alignment the cell records itself; `undefined` when it takes its row's or column's. */
     readonly alignment: HorizontalAlignment | undefined;
 
+/** The Font the cell records itself; `undefined` when it takes its row's or column's (ADR-0071). */
     readonly font: CellFont | undefined;
 
+/** The Fill the cell records itself; `undefined` when it takes its row's or column's (ADR-0071). */
     readonly fill: CellFill | undefined;
 
+/** The Borders the cell records itself; `undefined` for none (ADR-0071). */
     readonly borders: CellBorders | undefined;
 
     constructor(
@@ -55,14 +60,19 @@ export class SheetDocumentAxisFormat {
     /** The last column (row) of the run. */
     readonly last: number;
 
+/** The Number Format the run records; `undefined` for none. */
     readonly numberFormat: NumberFormat | undefined;
 
+/** The horizontal alignment the run records; `undefined` for none. */
     readonly alignment: HorizontalAlignment | undefined;
 
+/** The Font the run records; `undefined` for none. */
     readonly font: CellFont | undefined;
 
+/** The Fill the run records; `undefined` for none. */
     readonly fill: CellFill | undefined;
 
+/** The Borders the run records; `undefined` for none. */
     readonly borders: CellBorders | undefined;
 
     constructor(
@@ -91,13 +101,16 @@ export class SheetDocumentAxisFormat {
 
 /** A width recorded on columns, as a Sheet Document records it: one entry for a run of adjacent columns of one width and one kind (ADR-0046). */
 export class SheetDocumentColumnWidth {
+/** The first column of the run, from 0. */
     readonly first: number;
 
+/** The last column of the run. */
     readonly last: number;
 
     /** The width, in characters of the default font (Excel's unit, ADR-0047). */
     readonly width: number;
 
+/** What recorded the width. */
     readonly kind: SheetColumnWidthKind;
 
     constructor(
@@ -123,8 +136,10 @@ export class SheetDocumentTable {
     /** The key's columns: one, several for a key of several columns (version 9; ADR-0058), or none. */
     readonly keyColumns: readonly string[];
 
+/** The table's name, as declared. */
     readonly name: string;
 
+/** Its column names, in the declared order. */
     readonly columns: readonly string[];
 
     constructor(name: string, columns: readonly string[], keyColumns: readonly string[] = []) {

@@ -17,8 +17,10 @@ export type SheetColumnWidthKind = 'widenedByEntry' | 'setByUser';
  * well as one the user set (`customWidth`; CW-018, CW-027..029).
  */
 export class SheetColumnWidth {
+/** How wide the column is, in characters of the default font. */
     readonly width: number;
 
+/** What recorded it. */
     readonly kind: SheetColumnWidthKind;
 
     constructor(width: number, kind: SheetColumnWidthKind) {
@@ -36,6 +38,7 @@ export class SheetColumnWidth {
         return this.kind === 'setByUser';
     }
 
+/** Whether `other` is the same width, recorded the same way. */
     equals(other: SheetColumnWidth): boolean {
         return this.width === other.width && this.kind === other.kind;
     }
@@ -124,8 +127,10 @@ export type SheetRefusalReason = 'entriesWouldLeaveSheet' | 'blockWouldLeaveShee
 
 /** An operation a Sheet refused, and why, with the refusal in words naming what caused it. Nothing was changed. */
 export class SheetRefusal {
+/** Why it was refused. */
     readonly reason: SheetRefusalReason;
 
+/** The refusal in words, naming what caused it. */
     readonly message: string;
 
     constructor(reason: SheetRefusalReason, message: string) {
@@ -133,6 +138,7 @@ export class SheetRefusal {
         this.message = message;
     }
 
+/** Whether `other` is the same refusal, for the same reason and in the same words. */
     equals(other: SheetRefusal): boolean {
         return this.reason === other.reason && this.message === other.message;
     }
@@ -140,6 +146,7 @@ export class SheetRefusal {
 
 /** Thrown when an operation the caller asked for is refused. Nothing was changed. */
 export class SheetRefusedError extends Error {
+/** The refusal. */
     readonly refusal: SheetRefusal;
 
     constructor(refusal: SheetRefusal) {
