@@ -28,9 +28,11 @@
    where its answer left the keyboard. Enter, and Space but for its repeats, press it at the keydown, in
    that key's turn, so a key the grid hands on — a keydown dispatched from script, which activates no
    button — presses it too; the click the browser then makes of the same key (detail 0) is that key's,
-   and is claimed with nothing done. Any other key is the frame's around it, if any — Escape closes a
+   and does nothing. The button says so (data-ex-key-presses), and the grid does not number that click:
+   numbered, it waited for a handler that never came when the key's press closed the menu the button
+   stood in, and held every input behind it (ADR-0362). Any other key is the frame's around it, if any — Escape closes a
    menu — in the same turn. *@
-<button @ref="_button" type="button" class="@Class" disabled="@Disabled" data-ex-claims="click keydown"
+<button @ref="_button" type="button" class="@Class" disabled="@Disabled" data-ex-claims="click keydown" data-ex-key-presses
         @onclick="OnClickAsync" @onkeydown="OnKeyDownAsync" @onkeydown:stopPropagation @attributes="Attributes">@ChildContent</button>
 
 @code {
@@ -89,7 +91,7 @@
         if (e.Detail == 0 && _keyClicks > 0)
         {
             _keyClicks--;
-            return InOrderAsync(GridInputKind.Click, () => Task.CompletedTask);
+            return Task.CompletedTask;
         }
         _keyClicks = 0;
         return InOrderAsync(GridInputKind.Click, () => OnClick.InvokeAsync());

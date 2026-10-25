@@ -1,4 +1,4 @@
-import { test, expect, alterPage, circuitQuiet, setRoundTrip, dataRowCount, settled, stylesheetsLoaded } from './fixtures.mjs';
+import { test, expect, alterPage, circuitQuiet, setRoundTrip, dataRowCount, settled, setTicked, stylesheetsLoaded } from './fixtures.mjs';
 import { codeRegion } from './demo-code.mjs';
 import { API_URL, SERVER } from './hosting.mjs';
 
@@ -218,7 +218,7 @@ for (const chrome of ['builtin', 'mud']) {
         test(`PV-10 / ADR-0061: Σ Values dropped on the report stays where it is, and so does every other field (${chrome})`, async ({ page }) => {
             await open(page, chrome);
             // A second Value Field brings Σ Values into Columns, after Product.
-            await field(page, 'Notional').getByRole('checkbox').check();
+            await setTicked(field(page, 'Notional').getByRole('checkbox'));
             await expect.poll(() => entriesOf(page, 'Columns')).toEqual(['Product', 'Σ Values']);
             const values = await entriesOf(page, 'Values');
             expect(values).toHaveLength(2);
@@ -1114,7 +1114,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(update).toBeDisabled();
 
             await pane(page).getByRole('checkbox', { name: 'Defer Layout Update' }).check();
-            await page.getByRole('checkbox', { name: 'Month', exact: true }).check();
+            await setTicked(page.getByRole('checkbox', { name: 'Month', exact: true }));
 
             await expect.poll(() => entriesOf(page, 'Rows')).toEqual(['Region', 'Desk', 'Month']);
             await expect(update).toBeEnabled();
@@ -1155,7 +1155,7 @@ for (const chrome of ['builtin', 'mud']) {
             await page.getByRole('menuitem', { name: 'Remove Field' }).click();
             await expect.poll(() => entriesOf(page, 'Columns')).toEqual([]);
             // A date part is declared Date, so a ticked one goes to Rows; from there, to Columns.
-            await page.getByRole('checkbox', { name: 'Month', exact: true }).check();
+            await setTicked(page.getByRole('checkbox', { name: 'Month', exact: true }));
             await expect.poll(() => entriesOf(page, 'Rows')).toEqual(['Region', 'Desk', 'Month']);
             await entry(page, 'Month').click();
 
@@ -1411,3 +1411,172 @@ test('PV-18 / ADR-0062/0030: every Visual Token ExPivot reads is the palette ent
         expect(shown, `${token}, dark`).toBe(palette);
     }
 });
+
+// ADR-0362: what the presses aim at, and whether Layout ▾ shows subtotals.
+const tickOf = (page, caption) => field(page, caption).getByRole('checkbox', { name: caption, exact: true });
+const centreOf = async (locator) => {
+    const box = await locator.boundingBox();
+    expect(box).not.toBeNull();
+    return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+};
+const subtotalsShown = async (page) => {
+    const button = toolbarButton(page, 'Layout');
+    await button.click();
+    const choice = page.getByRole('menu', { name: 'Layout', exact: true }).getByRole('menuitemradio', { name: 'Do Not Show Subtotals' });
+    await expect(choice).toBeVisible();
+    await settled(report(page));
+    const shown = (await choice.getAttribute('aria-checked')) !== 'true';
+    await page.keyboard.press('Escape');
+    await expect(page.getByRole('menu', { name: 'Layout', exact: true })).toHaveCount(0);
+    return shown;
+};
+
+/**
+ * Waits, on WebAssembly only, for Layout ▾'s menu to be gone. With no circuit nothing holds the menu
+ * back: it stands painted until the Enter's command has run, and a press made on it then dismisses it
+ * and does nothing else (ADR-0061), an outcome that depends on what was painted, which ADR-0240 §8
+ * leaves out (seen in CI under the Wrapper, 2026-10-25). On the Server host the menu is a round trip
+ * away, and a press made at machine speed lands on what stands beneath it.
+ */
+const pastMenuWithoutCircuit = async (page) => {
+    if (!SERVER) {
+        await expect(page.getByRole('menu')).toHaveCount(0);
+    }
+};
+
+/**
+ * What `steps` leave in the pivot sent at machine speed, and sent one at a time with each answered first
+ * (ADR-0240 §8): the Field List's ticks, where the keyboard is, how many menus stand, and Layout ▾'s
+ * choices. The pivot raises a layout only once its report has come (ADR-0061), so how many it raised is
+ * the speed's, and is not compared. Each step is given the centres of Layout ▾, of the ticks named, and of
+ * what `more` locates, by its name.
+ */
+async function slowAndFast(page, chrome, ticks, steps, more = {}) {
+    const run = async (eachAnswered) => {
+        await open(page, chrome);
+        const at = { layout: await centreOf(toolbarButton(page, 'Layout')) };
+        for (const caption of ticks) {
+            at[caption] = await centreOf(tickOf(page, caption));
+        }
+        for (const [name, locate] of Object.entries(more)) {
+            at[name] = await centreOf(locate(page));
+        }
+        await setRoundTrip(150);
+        for (const step of steps) {
+            await step(at);
+            if (eachAnswered) {
+                await settled(report(page));
+                await circuitQuiet();
+            }
+        }
+        await settled(report(page));
+        await circuitQuiet();
+        const state = {
+            ticks: await fieldsList(page).getByRole('checkbox').evaluateAll((boxes) => boxes.map((b) => b.checked)),
+            keyboard: await page.evaluate(() => {
+                const active = document.activeElement;
+                return active === null || active === document.body ? null
+                    : (active.labels?.[0]?.textContent ?? active.textContent ?? '').trim();
+            }),
+            menus: await page.getByRole('menu').count(),
+        };
+        await setRoundTrip(0);
+        await toolbarButton(page, 'Layout').click();
+        const menu = page.getByRole('menu', { name: 'Layout', exact: true });
+        await expect(menu).toBeVisible();
+        await settled(report(page));
+        state.choices = await menu.getByRole('menuitemradio').evaluateAll((choices) =>
+            choices.map((c) => `${c.textContent.trim()}=${c.getAttribute('aria-checked')}`));
+        await page.keyboard.press('Escape');
+        await expect(menu).toHaveCount(0);
+        return state;
+    };
+    const slow = await run(true);
+    const fast = await run(false);
+    expect(fast, 'sent at machine speed, the steps end where they end one at a time').toEqual(slow);
+    return slow;
+}
+
+for (const chrome of ['builtin', 'mud']) {
+    test.describe(`ADR-0362 (${chrome})`, () => {
+        test(`ADR-0362: a field ticked straight after Layout ▾ and Enter keeps the keyboard, behind the menu's command (${chrome})`, async ({ page }) => {
+            // Layout ▾ opens its menu and gives its first choice the keyboard a round trip later; the Enter
+            // typed meanwhile presses that choice, and the tick pressed after it — let through, so a drag
+            // could start from it — takes the keyboard back only in its own turn, as typed slowly.
+            const slow = await slowAndFast(page, chrome, ['Book'], [
+                (at) => page.mouse.click(at.layout.x, at.layout.y),
+                () => page.keyboard.press('Enter'),
+                async (at) => {
+                    await pastMenuWithoutCircuit(page);
+                    await page.mouse.click(at.Book.x, at.Book.y);
+                },
+            ]);
+            expect(slow.menus).toBe(0);
+        });
+
+        test(`ADR-0362: a field's caption pressed straight after Layout ▾ and Enter waits for the menu's command, as its tick does (${chrome})`, async ({ page }) => {
+            // The caption is the tick's label: its press ends in the tick's click, which takes its turn behind
+            // the Enter as a press on the tick itself does.
+            const slow = await slowAndFast(page, chrome, ['Book'], [
+                (at) => page.mouse.click(at.layout.x, at.layout.y),
+                () => page.keyboard.press('Enter'),
+                async (at) => {
+                    await pastMenuWithoutCircuit(page);
+                    await page.mouse.click(at.BookCaption.x, at.BookCaption.y);
+                },
+            ], { BookCaption: (p) => field(p, 'Book').getByText('Book', { exact: true }) });
+            expect(slow.menus).toBe(0);
+        });
+
+        test(`ADR-0362: Space typed straight after Layout ▾, pressed from a ticked field, presses the menu's choice and not the tick (${chrome})`, async ({ page }) => {
+            // The press on Layout ▾ is held behind the tick still being answered, and DOM focus stays on the
+            // tick meanwhile. The Space typed after it is the press's: held, and handed to the menu's first
+            // choice, where typed slowly it lands. Let through, its release toggled the tick.
+            const slow = await slowAndFast(page, chrome, ['Book'], [
+                (at) => page.mouse.click(at.Book.x, at.Book.y),
+                (at) => page.mouse.click(at.layout.x, at.layout.y),
+                () => page.keyboard.press('Space'),
+            ]);
+            expect(slow.menus).toBe(0);
+        });
+    });
+}
+
+test(`ADR-0362: Space typed on a field ticked straight after Layout ▾ and Enter goes to that field in its turn, and a field pressed after it takes the keyboard after it (builtin)`, async ({ page }) => {
+    // Built-in only: the MudBlazor Field List's tick does not keep DOM focus after its click (seen
+    // 2026-10-25, typed slowly). The Space then reaches whatever holds the keyboard instead, and that run
+    // ended with Layout ▾'s menu open, so the press after it landed on the menu's backdrop: an outcome
+    // that depends on what was painted, which ADR-0240 §8 leaves out.
+    //
+    // The Space typed on the tick is held behind the menu's command and the tick's press, and goes to
+    // the tick in its turn, as the click the browser makes of it. The second tick, pressed after,
+    // takes the keyboard in its own turn, after the first one's.
+    await slowAndFast(page, 'builtin', ['Book', 'Currency'], [
+        (at) => page.mouse.click(at.layout.x, at.layout.y),
+        () => page.keyboard.press('Enter'),
+        async (at) => {
+            await pastMenuWithoutCircuit(page);
+            await page.mouse.click(at.Book.x, at.Book.y);
+        },
+        () => page.keyboard.press('Space'),
+        (at) => page.mouse.click(at.Currency.x, at.Currency.y),
+    ]);
+});
+
+for (const chrome of ['builtin', 'mud']) {
+    test(`ADR-0362: Enter on a Layout ▾ choice, which closes the menu it stands in, is answered and the pivot settles (${chrome})`, async ({ page }) => {
+        await open(page, chrome);
+        await toolbarButton(page, 'Layout').click();
+        const choice = page.getByRole('menu', { name: 'Layout', exact: true }).getByRole('menuitemradio', { name: 'Do Not Show Subtotals' });
+        await expect(choice).toBeFocused();
+        await settled(report(page));
+
+        // The choice is pressed at Enter's keydown, and the click the browser makes of the same key reaches
+        // a choice already gone: numbered, it was never answered, and the Settled Mark never came back.
+        await page.keyboard.press('Enter');
+        await settled(report(page));
+        await expect(page.getByRole('menu', { name: 'Layout', exact: true })).toHaveCount(0);
+        await expect(toolbarButton(page, 'Layout')).toBeFocused();
+        expect(await subtotalsShown(page)).toBe(false);
+    });
+}

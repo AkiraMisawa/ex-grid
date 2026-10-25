@@ -534,8 +534,10 @@ public class ShippedStylesheetTests
         // ticket 06, a frame's waiting element taking the keyboard as the hand-off to it is told
         // (waitForFrameAt), granted from the Consumer's control the hand-off started on; and, tenth since
         // ADR-0360, a box's first control focused where no grid stands to hand the keyboard on
-        // (focusBox, ExPivot's empty report), outside any instance.
-        Assert.Equal(10, Regex.Matches(script.Text, @"\.(focus|blur)\(").Count);
+        // (focusBox, ExPivot's empty report), outside any instance; and, eleventh since ADR-0362, a
+        // press let through for its drag giving the keyboard back to what it pressed at its turn
+        // (answerDraggablePress).
+        Assert.Equal(11, Regex.Matches(script.Text, @"\.(focus|blur)\(").Count);
         Assert.DoesNotMatch(new Regex(@"getBoundingClientRect|offsetWidth|offsetHeight|getComputedStyle"), body);
         // The surface is forgotten with the instance.
         Assert.Matches(new Regex(@"dispose: \(\) => \{.*lastSurface = null;", RegexOptions.Singleline), script.Text);
@@ -569,7 +571,7 @@ public class ShippedStylesheetTests
         // bar, a press on the rows.
         Assert.Single(Regex.Matches(script.Text, @"answering = true;"));
         // Nothing in it counts time: a hold ends on what it waits for (ADR-0240 section 4).
-        Assert.Matches(new Regex(@"const startHold = \(answer, upTo = 0\) => \{\s*answering = true;\s*const epoch = holdEpoch;\s*if \(answer\)"), script.Text);
+        Assert.Matches(new Regex(@"const startHold = \(answer, upTo = 0, input = 0\) => \{\s*answering = true;\s*const epoch = holdEpoch;\s*if \(answer\)"), script.Text);
         Assert.DoesNotContain("holdStartedAt", script.Text, StringComparison.Ordinal);
         Assert.Matches(new Regex(@"const drain = async \(epoch = holdEpoch\) => \{.*?while \(pressAnswer !== null\) \{\s*const answer = pressAnswer;\s*await answer;.*?await editorSettled\(\);",
             RegexOptions.Singleline), script.Text);
@@ -727,9 +729,10 @@ public class ShippedStylesheetTests
         // Selected in those two places alone, by no listener of its own, and no focus is moved: the
         // press's default gives the field the keyboard (ADR-0021's decisions about focus are not
         // added to: six since 2026-10-02, seven since ADR-0204, eight since ADR-0240's note on
-        // ticket 05, nine since its note on ticket 06 and ten since ADR-0360, none of them this one's).
+        // ticket 05, nine since its note on ticket 06, ten since ADR-0360 and eleven since ADR-0362, none
+        // of them this one's).
         Assert.Equal(2, Regex.Matches(script, @"nameBox(Selected)?\.select\(\);").Count);
-        Assert.Equal(10, Regex.Matches(script, @"\.(focus|blur)\(").Count);
+        Assert.Equal(11, Regex.Matches(script, @"\.(focus|blur)\(").Count);
         Assert.DoesNotMatch(new Regex(@"getBoundingClientRect|offsetWidth|offsetHeight|offsetTop|offsetLeft|clientWidth|clientHeight|scrollWidth|scrollHeight|getComputedStyle|getClientRects"), script);
     }
 
@@ -1178,23 +1181,31 @@ public class ShippedStylesheetTests
         Assert.Single(Regex.Matches(script, @"addEventListener\('focusout'"));
     }
 
-    [Fact] // DC-60 / FD-1 / ADR-0240 (note of 2026-10-21): a hold whose wait is met ends at the next key, not at the next frame, and only when nothing is held, nothing is left to do after the wait, and the keyboard arrived
+    [Fact] // DC-60 / FD-1 / ADR-0240 (notes of 2026-10-21 and 2026-10-25): a hold whose wait is met ends at the next key, not at the next frame, and only when nothing is held, nothing is left to do after the wait, and the keyboard arrived
     public void ADR0240_a_hold_whose_wait_is_met_ends_at_the_key_not_at_the_next_frame()
     {
         var script = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.js", StringComparison.Ordinal)).Text;
         var endAtKey = Regex.Match(script, @"const endHoldAtKey = \(\) => \{.*?\n    \};", RegexOptions.Singleline).Value;
         Assert.NotEmpty(endAtKey);
-        // Only with nothing held, no press's answer or frame of the Consumer's own to come, and no wait with work after it.
-        Assert.Matches(new Regex(@"if \(!answering \|\| held\.length > 0 \|\| pressAnswer !== null \|\| frameInTurn !== null \|\| restlessWaits > 0\) \{\s*return;"), endAtKey);
+        // Only with nothing held, no press's answer, frame of the Consumer's own or press let through for its drag
+        // (ADR-0362) to come, and no wait with work after it.
+        Assert.Matches(new Regex(@"if \(!answering \|\| held\.length > 0 \|\| pressAnswer !== null \|\| frameInTurn !== null \|\| draggableInTurn !== null\s*\|\| restlessWaits > 0\) \{\s*return;"), endAtKey);
         // The waits are looked at now, as the frame would; a keyboard judged missed keeps the key held, to be refused.
         Assert.Matches(new Regex(@"lookAgain\(\);\s*if \(settledWaits\.size > 0 \|\| keyboardMissed \|\| \(focusDeclined && !declined\)\) \{\s*return;\s*\}"), endAtKey);
         // Before the drain has started, a popover key's answer counts as come once the stamp answers its number,
         // and only a keyboard already arrived there ends the hold.
         // An answer still to come ends the hold only as the popover key's, answered by the stamp.
-        Assert.Matches(new Regex(@"if \(holdAnswer !== null && !\(holdAnswer\.upTo > 0 && inputsAnswered\(holdAnswer\.upTo\)\)\) \{\s*return;"), endAtKey);
-        Assert.Matches(new Regex(@"if \(holdAnswer === null \|\| !awaitingPopover \|\| !keyboardArrived\(\)\) \{\s*return;"), endAtKey);
+        Assert.Matches(new Regex(@"if \(holdAnswer !== null && !answeredAtKey\(\)\) \{\s*return;"), endAtKey);
+        Assert.Matches(new Regex(@"if \(holdAnswer === null \|\| !\(awaitingPopover \|\| handOff === 'popover'\) \|\| !keyboardArrived\(\)\) \{\s*return;"), endAtKey);
         Assert.Matches(new Regex(@"holdAnswer = null;\s*holdEpoch\+\+;\s*endHold\(\);"), endAtKey);
-        Assert.Contains("startHold(answer, awaitingPopover ? inputsSent : 0);", script, StringComparison.Ordinal);
+        Assert.Contains("startHold(answer, awaitingPopover ? inputsSent : 0, keyInput);", script, StringComparison.Ordinal);
+        // A popover key's own number (upTo); or, for a key the core answered by a hand-off to a Consumer's popover
+        // numbered after it (ExSheet's Ctrl+1, CI on PR #278), the key's own number, never the hand-off's, which a
+        // circuit answers on a round trip of its own beside the one the popover's focus takes.
+        var answeredAtKey = Regex.Match(script, @"const answeredAtKey = \(\) => \{.*?\n    \};", RegexOptions.Singleline).Value;
+        Assert.Matches(new Regex(@"if \(holdAnswer\.upTo > 0\) \{\s*return inputsAnswered\(holdAnswer\.upTo\);"), answeredAtKey);
+        Assert.Matches(new Regex(@"handOff === 'popover' && holdAnswer\.input > 0 && handOffInput > holdAnswer\.input && stamp !== null\s*&& Number\(stamp\.getAttribute\('data-ex-answered'\)\) >= Math\.max\(holdAnswer\.input, awaitingMove\?\.upTo \?\? 0\);"), answeredAtKey);
+        Assert.Contains("const keyInput = inputsSent + 1;\n        const answer = forward(k);", script, StringComparison.Ordinal);
         Assert.Contains("answer.then(() => drain(epoch));", script, StringComparison.Ordinal);
         // Both keydown listeners that hold keys ask first: the root's and the product's own surfaces' around it.
         foreach (var listener in new[] { "onKeyDown", "onOuterKey" })

@@ -289,7 +289,10 @@ These are the places where reaching for JS would be the easy answer, and where w
   in the last note of this ADR.)* *(Ten since 2026-10-24: the seventh is ADR-0204's, the eighth and ninth are ADR-0240's notes on
   tickets 05 and 06 above, and the tenth is the twentieth entry,
   [ADR-0360](./0360-a-boxs-first-control-takes-the-keyboard-from-the-grids-script-where-no-grid-stands.md):
-  a box's first control focused where no grid stands, in place of the control's own `FocusAsync`.)*
+  a box's first control focused where no grid stands, in place of the control's own `FocusAsync`.)* *(Eleven since 2026-10-25,
+  [ADR-0362](./0362-a-press-let-through-for-its-drag-takes-its-place-among-the-held-inputs.md): a press
+  let through for its drag behind an unanswered input gives the keyboard back to what it pressed at its
+  turn, inside the capture-phase `mousedown` entry.)*
 - **Measuring the scrollbar.** The gutter is *reported*, never read — see the fourth entry above
   for why those are different things. Nothing in the grid calls `getBoundingClientRect`,
   `clientWidth` or `offsetWidth` on the path to a paint.

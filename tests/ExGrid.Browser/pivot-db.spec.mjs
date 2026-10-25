@@ -1,4 +1,4 @@
-import { test, expect, scrollRowToTop, circuitQuiet, setRoundTrip, dataRowCount } from './fixtures.mjs';
+import { test, expect, scrollRowToTop, circuitQuiet, setRoundTrip, dataRowCount, setTicked } from './fixtures.mjs';
 import { readClipboard } from './sheet-helpers.mjs';
 import { API_URL, SERVER } from './hosting.mjs';
 import { expectCodeIsSource } from './demo-code.mjs';
@@ -73,7 +73,7 @@ async function asked(page, kind) {
 test('LV-24/ADR-0151: a server report scrolls beyond its first Window with bounded rendered rows', async ({ page }) => {
     await open(page, 'builtin');
     const grid = report(page, 'server');
-    await section(page, 'server').getByRole('checkbox', { name: 'Trade ID', exact: true }).check();
+    await setTicked(section(page, 'server').getByRole('checkbox', { name: 'Trade ID', exact: true }));
     const status = await api('/api/status');
     await expect.poll(() => dataRowCount(grid)).toBeGreaterThanOrEqual(status.trades);
     const count = await dataRowCount(grid);
@@ -94,7 +94,7 @@ test('LV-24/ADR-0151: a report that shrinks under the Window scrolled to shows i
         // The first layout's rows: the regions and their desks, and the Grand Total.
         const first = await rowCount();
         const tradeId = section(page, side).getByRole('checkbox', { name: 'Trade ID', exact: true });
-        await tradeId.check();
+        await setTicked(tradeId);
         await expect.poll(rowCount).toBeGreaterThan(1000);
         const count = await rowCount();
         // Scrolled to the last row, thousands of rows below the end of the first layout's report.
@@ -104,7 +104,7 @@ test('LV-24/ADR-0151: a report that shrinks under the Window scrolled to shows i
         // Trade ID out of the rows again: the report shrinks to the first layout's, which ends long
         // before the Window the grid stands on. The grid shows the new report's last rows, its Grand
         // Total among them — not an error, and not an empty Window.
-        await tradeId.uncheck();
+        await setTicked(tradeId, false);
         await expect.poll(rowCount).toBe(first);
         await expect(grid.locator(`[id$='-r${first - 1}c0']`)).toContainText('Grand Total');
         await circuitQuiet();
@@ -140,7 +140,7 @@ test('LV-34/FN-3a/ADR-0182/0183: a server report scrolls within the Window it re
     try {
         const grid = report(page, 'server');
         const placeholders = rows(page, 'server').and(page.locator('.ex-placeholder'));
-        await section(page, 'server').getByRole('checkbox', { name: 'Trade ID', exact: true }).check();
+        await setTicked(section(page, 'server').getByRole('checkbox', { name: 'Trade ID', exact: true }));
         await expect.poll(() => dataRowCount(grid)).toBeGreaterThan(1000);
         await circuitQuiet();
 
@@ -201,7 +201,7 @@ test('LV-34/FN-3a/ADR-0182/0183: a question asked early stays in flight while th
     try {
         const grid = report(page, 'server');
         const placeholders = rows(page, 'server').and(page.locator('.ex-placeholder'));
-        await section(page, 'server').getByRole('checkbox', { name: 'Trade ID', exact: true }).check();
+        await setTicked(section(page, 'server').getByRole('checkbox', { name: 'Trade ID', exact: true }));
         await expect.poll(() => dataRowCount(grid)).toBeGreaterThan(1000);
         await circuitQuiet();
 
@@ -268,7 +268,7 @@ test('LV-34/FN-3a/ADR-0182/0183: a question asked early stays in flight while th
 test('LV-28/ADR-0152: remote whole-column Copy and Summary include rows outside the Window', async ({ page, context }) => {
     await context.grantPermissions(['clipboard-read', 'clipboard-write']);
     await open(page, 'builtin');
-    await section(page, 'snapshot').getByRole('checkbox', { name: 'Trade ID', exact: true }).check();
+    await setTicked(section(page, 'snapshot').getByRole('checkbox', { name: 'Trade ID', exact: true }));
     await expect.poll(() => dataRowCount(report(page, 'snapshot'))).toBeGreaterThan(1000);
     await page.locator('#pivot-db-same-layout').click();
     await expectSameReports(page);
@@ -320,7 +320,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expectSameReports(page);
             const before = await painted(page, 'snapshot');
             // Month into Rows, in the Snapshot pivot's own pane: answered in this process.
-            await section(page, 'snapshot').getByRole('checkbox', { name: 'Month', exact: true }).check();
+            await setTicked(section(page, 'snapshot').getByRole('checkbox', { name: 'Month', exact: true }));
             await expect.poll(async () => (await painted(page, 'snapshot')).rows).toBeGreaterThan(before.rows);
             // The same layout on the server's pivot: a GROUP BY over three fields, answered in SQL.
             const aggregates = await asked(page, 'Window');
