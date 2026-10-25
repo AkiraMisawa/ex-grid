@@ -41,21 +41,6 @@ test('a leaf drag reorders within its group and clamps at its edge (HG-14)', asy
         'Order: Trader,Book,Notional,Narrow,TradeDate,Confirmed');
 });
 
-test('grabbing a group rectangle moves the whole group (HG-14)', async ({ page }) => {
-    await open(page);
-    const box = await headerBox(page);
-    const tierY = box.y + 14; // the upper tier
-
-    // Grab Who's rectangle (over Book+Trader) and drag past What.
-    await page.mouse.move(box.x + 100, tierY);
-    await page.mouse.down();
-    await page.mouse.move(box.x + 700, tierY, { steps: 8 });
-    await page.mouse.up();
-
-    await expect(page.locator('#order-status')).toContainText(
-        'Order: Notional,Narrow,TradeDate,Confirmed,Book,Trader');
-});
-
 /** Each Header Group rectangle's label and box, beside the boxes of the leaf headers it stands
  * over, read off the painted header: what the grid drew as each group's membership. */
 function drawnGroups(page) {

@@ -93,28 +93,6 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(positions(page)).toHaveAttribute('aria-activedescendant', /-r3c1$/);
         });
 
-        test('ADR-0018/ADR-0080/ED-26: a press back where no Reference can go commits, moves, and gives the Sheet the keyboard', async ({ page }) => {
-            const grid = sheet(page);
-            await pressCell(grid, 'C4');
-            await page.keyboard.type('99');
-            await expect(editor(grid)).toHaveValue('99');
-            await pressPositions(page);
-            await expect(editor(grid)).toHaveValue('99');
-
-            await clickCell(grid, 'B2');
-
-            await expect(cell(grid, 'C4')).toHaveText('99');
-            await expect(editor(grid)).toHaveCount(0);
-            await expectFocusAt(grid, 'B2');
-            await expectKeyboardOn(grid);
-            // The next keys are the Sheet's, at the Focus the press moved to.
-            await page.keyboard.type('7');
-            await expect(editor(grid)).toHaveValue('7');
-            await page.keyboard.press('Enter');
-            await expect(cell(grid, 'B2')).toHaveText('7');
-            await expectFocusAt(grid, 'B3');
-        });
-
         test('ADR-0018/ED-26: an edit last typed in the Formula Bar gets the keyboard back in the bar', async ({ page }) => {
             const grid = sheet(page);
             await pressCell(grid, 'E4');

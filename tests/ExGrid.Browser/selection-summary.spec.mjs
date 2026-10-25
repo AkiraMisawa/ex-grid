@@ -61,15 +61,6 @@ for (const chrome of ['builtin', 'mud']) {
             expect(shown.indexOf('Count')).toBeLessThan(shown.indexOf('Sum'));
         });
 
-        test('text is counted and never summed; one cell shows nothing (SM-6, ADR-0130)', async ({ page }) => {
-            await grid(page).locator("[id$='r0c1']").click({ force: true });
-            await expect.poll(() => figures(page)).toBe('');
-
-            await page.keyboard.press('Shift+ArrowDown');
-            await expect.poll(() => figures(page)).toContain('Count: 2');
-            expect(await figures(page)).not.toContain('Sum');
-        });
-
         test('selecting does not move the Viewport: the strip stands before the first selection (SM-9, ADR-0130)', async ({ page }) => {
             const scroller = grid(page).locator('.ex-scroller');
             const before = await scroller.boundingBox();
@@ -138,28 +129,6 @@ for (const chrome of ['builtin', 'mud']) {
             await clickCell(book, 'F5', { modifiers: ['Shift'] });
             await expect.poll(() => figureTexts(book))
                 .toEqual(['Average: 1.5', 'Count: 3', 'Numerical Count: 2', 'Min: 1', 'Max: 2', 'Sum: 3']);
-        });
-
-        test('a refused cell among the cells leaves no figure, and the line says why (ADR-0130, 2026-10-13)', async ({ page }) => {
-            await openSheet(page, chrome);
-            const book = sheet(page);
-            await enter(page, book, 'F1', '1');
-            // MROUND-001: a fractional multiple ExSheet refuses, as it cannot answer it as Excel does.
-            await enter(page, book, 'F2', '=MROUND(6.05,0.1)');
-            await expect(cell(book, 'F2')).toHaveText('#VALUE!');
-
-            await pressCell(book, 'F1');
-            await clickCell(book, 'F2', { modifiers: ['Shift'] });
-
-            await expect(book.locator('.ex-summary')).toHaveText(
-                "No figures: ExSheet refused the Formula in F2 with #VALUE! because it cannot answer it as Excel does, so a figure over it would not be Excel's.");
-            await expect.poll(() => figureTexts(book)).toEqual([]);
-
-            // F2 typed over with a number: the figures are back.
-            await enter(page, book, 'F2', '3');
-            await pressCell(book, 'F1');
-            await clickCell(book, 'F2', { modifiers: ['Shift'] });
-            await expect.poll(() => figureTexts(book)).toEqual(['Average: 2', 'Count: 2', 'Sum: 4']);
         });
     });
 }

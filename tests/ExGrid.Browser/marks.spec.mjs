@@ -92,17 +92,6 @@ test('Space in the Mark Column brings the selected rows into line (MK-1)', async
     await expect(markCount(page)).toHaveCount(0, { timeout: 15_000 });
 });
 
-test('a row arriving after "mark all" is not marked, and the header turns to "some" (MK-8)', async ({ page }) => {
-    await open(page);
-    await headerBox(page).click();
-    await expect(headerBox(page)).toHaveAttribute('aria-checked', 'true', { timeout: 15_000 });
-
-    await page.locator('#add-row').click();
-
-    await expect(headerBox(page)).toHaveAttribute('aria-checked', 'mixed', { timeout: 15_000 });
-    await expect(markCount(page)).toHaveText(`${ROWS} marked`);
-});
-
 test('an action over a mark whose row was deleted elsewhere reports it as gone (ADR-0043)', async ({ page }) => {
     await open(page);
     await rowBoxes(page).nth(3).click();

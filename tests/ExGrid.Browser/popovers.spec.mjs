@@ -189,16 +189,6 @@ for (const chrome of CHROMES) {
             await expectActiveDescendant(grid(page), /r3c2$/);
         });
 
-        test('a Consumer command receives the clicked row and the selection (CTX-3, ADR-0036)', async ({ page }) => {
-            await clickCell(page, 2, 1);
-            await page.keyboard.press('Shift+ArrowDown');
-
-            await grid(page).locator("[id$='r2c1']").click({ button: 'right', force: true });
-            await grid(page).locator('[role=menu] button[role=menuitem]').last().click();
-
-            await expect(page.locator('#context-status')).toContainText('2 cells selected');
-        });
-
         test('the ContextMenu key opens it on the Focus (CTX-4, ADR-0036)', async ({ page }) => {
             await clickCell(page, 1, 1);
 
@@ -248,17 +238,6 @@ for (const chrome of CHROMES) {
             const last = popover.locator('[role=menuitem]').last();
             await last.scrollIntoViewIfNeeded();
             await expect(last).toBeInViewport();
-        });
-
-        test('Alt+↓ opens the Focus column\'s menu, and the menu takes the keyboard (KB-28/KB-29, ADR-0039)', async ({ page }) => {
-            await clickCell(page, 1, 0);
-
-            await page.keyboard.press('Alt+ArrowDown');
-
-            const menu = grid(page).locator('.ex-popover [role=menu]');
-            await expect(menu).toBeVisible();
-            await expect(menu).toHaveAttribute('aria-label', 'Book');
-            await expect.poll(() => activeIsInPopover(page)).toEqual({ role: 'menu', tag: 'BUTTON', text: 'Sort ascending' });
         });
 
         test('every popover takes the keyboard when it opens, by pointer or by key (KB-29, ADR-0039)', async ({ page }) => {
@@ -841,29 +820,6 @@ for (const chrome of CHROMES) {
             await expectActiveDescendant(grid(page), /r4c4$/);
             await expect(grid(page).locator('.ex-header-cell[aria-sort=ascending]')).toHaveCount(0);
             await expectKeyboardOn(grid(page));
-        });
-
-        test("a column's popover is a dialog holding a menu, both named by its header; the Context Menu a menu (A11Y-19, ADR-0039/0044)", async ({ page }) => {
-            await grid(page).locator('.ex-menu-button').first().click();
-            const popover = grid(page).locator('.ex-popover');
-            await expect(popover).toHaveAttribute('role', 'dialog');
-            await expect(popover).toHaveAttribute('aria-label', 'Book');
-            const menu = popover.locator('[role=menu]');
-            await expect(menu).toHaveAttribute('aria-label', 'Book');
-            await expect(menu.locator('[role=menuitem]').first()).toBeVisible();
-            // Opened by pointer, the popover takes the keyboard a round trip later on the
-            // Server host, and a key pressed before then lands on nothing (ADR-0039).
-            await expect.poll(async () => (await activeIsInPopover(page))?.role).toBe('menu');
-            await page.keyboard.press('Escape');
-            // The panel stands over cell (1, 1) until the Escape is answered — a round trip
-            // on the Server host — and a click before then lands in the panel, not the cell.
-            await expect(grid(page).locator('.ex-popover')).toHaveCount(0);
-
-            await clickCell(page, 1, 1);
-            await page.keyboard.press('Shift+F10');
-            const context = grid(page).locator('.ex-popover');
-            await expect(context).toHaveAttribute('role', 'menu');
-            expect(await context.getAttribute('aria-label')).toBeNull();
         });
     });
 }

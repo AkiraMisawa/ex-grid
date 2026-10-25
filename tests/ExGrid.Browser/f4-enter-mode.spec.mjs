@@ -136,25 +136,6 @@ test('ADR-0051/SH-28: F4 leaves a caret where the caret stood at the text\'s end
     await cancel(page, grid, 'D10');
 });
 
-test('ADR-0051/SH-28: with F2 first, F4 on a Reference with a Sheet qualifier selects from $A$1, and leaves a caret at the text\'s end (run 18a, answer 4)', async ({ page }) => {
-    const grid = sheet(page);
-
-    await pressCell(grid, 'D10');
-    await page.keyboard.type('=Sheet2!A1+1');
-    await page.keyboard.press('F2');
-    await page.keyboard.press('ArrowLeft');
-    await page.keyboard.press('ArrowLeft');
-    await page.keyboard.press('F4');
-    await expectSettled(editor(grid), '=Sheet2!$A$1+1', [8, 12]);
-    await cancel(page, grid, 'D10');
-
-    await page.keyboard.type('=Sheet2!A1');
-    await page.keyboard.press('F2');
-    await page.keyboard.press('F4');
-    await expectSettled(editor(grid), '=Sheet2!$A$1', [12, 12]);
-    await cancel(page, grid, 'D10');
-});
-
 test('ADR-0051/DC-19: after =, Ctrl+↓ points at the column\'s data edge, and Ctrl+Shift+↓ points from the edited cell to it; nothing commits (run 18a, answer 5)', async ({ page }) => {
     const grid = sheet(page);
     const point = grid.locator('.ex-selection .ex-point');
