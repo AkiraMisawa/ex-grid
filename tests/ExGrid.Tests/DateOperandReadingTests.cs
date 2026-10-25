@@ -78,6 +78,31 @@ public class DateOperandReadingTests
         }
     }
 
+    [Theory, MemberData(nameof(Cultures))] // ADR-0023, principle 1: a moment with a fraction of a second reopens in a text that reads back as the same moment, not a fraction off
+    public void A_moment_with_a_fraction_of_a_second_reads_back_as_itself(string culture)
+    {
+        var c = CultureInfo.GetCultureInfo(culture);
+        var moment = new DateTimeOffset(2026, 1, 5, 10, 0, 0, TimeSpan.FromHours(9)).AddTicks(2_500_000);
+
+        var text = FilterPanelChoices.OperandText(moment, c);
+
+        Assert.Equal("2026-01-05T10:00:00.25+09:00", text);
+        var read = Assert.IsType<DateTimeOffset>(FilterPanelChoices.ReadOperand(ColumnType.Date, text, c, DateType.DateTimeOffset).Value);
+        Assert.Equal((moment.Ticks, moment.Offset), (read.Ticks, read.Offset));
+    }
+
+    [Theory, MemberData(nameof(Cultures))] // ADR-0023, principle 1: a date and time with a fraction of a second reopens in ISO's T form, which reads back exactly in every culture
+    public void A_date_and_time_with_a_fraction_of_a_second_reads_back_as_itself(string culture)
+    {
+        var c = CultureInfo.GetCultureInfo(culture);
+        var date = new DateTime(2026, 1, 5, 10, 0, 0).AddTicks(2_500_000);
+
+        var text = FilterPanelChoices.OperandText(date, c);
+
+        Assert.Equal("2026-01-05T10:00:00.25", text);
+        Assert.Equal(date, FilterPanelChoices.ReadOperand(ColumnType.Date, text, c).Value);
+    }
+
     [Fact] // ADR-0023, principle 1: under a culture that writes the year first, a date with its year last reads two ways, and is refused
     public void Under_ja_jp_a_year_last_date_reads_two_ways()
     {

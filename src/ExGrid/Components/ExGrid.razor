@@ -8366,7 +8366,9 @@
         }
         if (OnPaste.HasDelegate)
         {
-            var intent = new GridPasteIntent(plan.Paste, block, version, fillSource: source);
+            // Raw values are written in the invariant notation, and read so (ADR-0050, item 10): never
+            // shown text, which a culture whose separators differ would read as another number.
+            var intent = new GridPasteIntent(plan.Paste, block, version, GridPasteIntent.All(PasteFieldOrigin.Invariant, block), fillSource: source);
             // The user's own write (ADR-0142 D1), taken back if the Consumer refuses it; the bound
             // source puts out what it gathered as the handler completes (D5).
             var written = NoteOwnWrite(plan.Paste.Targets);
@@ -9000,7 +9002,9 @@
 
         // Copied before the editor is torn down: the intent names the cell the text was
         // entered in, which a clipboard paste of the same field does not (ADR-0050 item 5).
-        var intent = new GridPasteIntent(decision.Plan, [[_editText]], _sequenceVersion, enteredAt: _editingCell);
+        IReadOnlyList<IReadOnlyList<string>> typed = [[_editText]];
+        // Typed, so read as typed (ADR-0050, item 10).
+        var intent = new GridPasteIntent(decision.Plan, typed, _sequenceVersion, GridPasteIntent.All(PasteFieldOrigin.ShownText, typed), enteredAt: _editingCell);
         // The user's own write (ADR-0142 D1), taken back if the Consumer refuses it; the bound source
         // puts out what it gathered as the handler completes (D5).
         var written = OnPaste.HasDelegate ? NoteOwnWrite(decision.Plan.Targets) : null;

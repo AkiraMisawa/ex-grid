@@ -289,7 +289,9 @@ public static class FilterPanelChoices
     /// The text a condition form shows an operand in, which <see cref="ReadOperand"/> reads back
     /// as the same value in <paramref name="culture"/> (ADR-0006, note of 2026-10-01; ticket 96):
     /// a number in the culture's own digits and decimal separator, ungrouped; a date or a time in
-    /// its ISO form (ticket 94); anything else its own text. Empty for no operand.
+    /// its ISO form (ticket 94), in ISO's T form with its fraction where it holds a fraction of a
+    /// second, which the spaced form a cell shows would drop; anything else its own text. Empty
+    /// for no operand.
     /// </summary>
     public static string OperandText(object? operand, CultureInfo culture)
     {
@@ -300,6 +302,11 @@ public static class FilterPanelChoices
             decimal number => number.ToString(culture),
             double or float or int or long or short or byte or sbyte or uint or ulong or ushort =>
                 Convert.ToDecimal(operand, CultureInfo.InvariantCulture).ToString(culture),
+            // A condition reopened a fraction off would be applied again on a moment nobody chose.
+            DateTimeOffset moment when moment.Ticks % TimeSpan.TicksPerSecond != 0 =>
+                moment.ToString("yyyy-MM-dd'T'HH:mm:ss.FFFFFFFzzz", CultureInfo.InvariantCulture),
+            DateTime date when date.Ticks % TimeSpan.TicksPerSecond != 0 =>
+                date.ToString("yyyy-MM-dd'T'HH:mm:ss.FFFFFFF", CultureInfo.InvariantCulture),
             _ => DisplayText.Of(operand),
         };
     }
@@ -341,7 +348,9 @@ public static class FilterPanelChoices
     }
 
     // Ticket 94's forms, which a date or a time operand reopens in: read exactly, in every culture.
-    private static readonly string[] IsoDateForms = ["yyyy-MM-dd HH:mm:ss", "yyyy-MM-dd"];
+    // The T form with a fraction is the one a date and time holding a fraction of a second
+    // reopens in (OperandText), read exactly here rather than by the culture's own parser.
+    private static readonly string[] IsoDateForms = ["yyyy-MM-dd HH:mm:ss", "yyyy-MM-dd", "yyyy-MM-dd'T'HH:mm:ss.FFFFFFF"];
 
     // The forms an offset is read in (ADR-0023, section of 2026-10-02): ticket 94's, which a
     // DateTimeOffset reopens in, and ISO 8601's extended form, with an offset or Z.

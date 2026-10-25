@@ -1563,6 +1563,47 @@
       "culture": "de-DE",
       "operandText": null,
       "is": ""
+    },
+    {
+      "name": "ADR-0023, ticket 94: under de-DE, a date and time in ISO's T form with a fraction of a second reads exactly",
+      "culture": "de-DE",
+      "type": "date",
+      "text": "2026-01-05T10:00:00.25",
+      "dateType": "dateTime",
+      "reads": {
+        "dateTime": "2026-01-05T10:00:00.25"
+      }
+    },
+    {
+      "name": "ADR-0023, ticket 94: under ja-JP, a date and time in ISO's T form with seven digits of fraction reads exactly",
+      "culture": "ja-JP",
+      "type": "date",
+      "text": "2026-01-05T10:00:00.1234567",
+      "dateType": "dateTime",
+      "reads": {
+        "dateTime": "2026-01-05T10:00:00.1234567"
+      }
+    },
+    {
+      "name": "ADR-0023, ticket 94: under en-US, a date and time in ISO's T form without a fraction reads exactly",
+      "culture": "en-US",
+      "type": "date",
+      "text": "2026-01-05T10:00:00",
+      "dateType": "dateTime",
+      "reads": {
+        "dateTime": "2026-01-05T10:00:00"
+      }
+    },
+    {
+      "name": "ADR-0023, 2026-10-02: on a dateTimeOffset column, 2026-01-05T10:00:00.25 has no offset and is refused",
+      "culture": "en-GB",
+      "type": "date",
+      "text": "2026-01-05T10:00:00.25",
+      "dateType": "dateTimeOffset",
+      "refused": "notTheColumnsDateForm",
+      "read": {
+        "dateTime": "2026-01-05T10:00:00.25"
+      }
     }
   ]
 }

@@ -248,7 +248,7 @@ public class ExcelKeyTests : GridTestContext
 
     // ---- Ctrl+D and Ctrl+R (ADR-0035, CP-24/CP-25) ----
 
-    [Fact] // ADR-0035 / CP-24: Ctrl+D writes the top row's raw values down the range, as one intent
+    [Fact] // ADR-0035 / CP-24 / ADR-0050 item 10: Ctrl+D writes the top row's raw values down the range, as one intent, read as invariant
     public async Task Ctrl_d_fills_down_with_the_raw_values()
     {
         var heard = new Heard();
@@ -264,6 +264,9 @@ public class ExcelKeyTests : GridTestContext
         Assert.Equal([new SelectionRange(3, 0, 2, 2)], paste.Plan.Targets);
         Assert.Equal("Row 000002", paste.ValueFor(new(4, 0)));
         Assert.Equal("1234.5", paste.ValueFor(new(3, 1)));
+        // A raw value, read under the invariant culture, never as shown text (ADR-0050 item 10).
+        Assert.Equal(PasteFieldOrigin.Invariant, paste.OriginFor(new(3, 1)));
+        Assert.Equal(PasteFieldOrigin.Invariant, paste.OriginFor(new(4, 0)));
         Assert.Empty(heard.Refusals);
         Assert.Equal(0, heard.Validations);
     }

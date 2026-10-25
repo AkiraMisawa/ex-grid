@@ -77,6 +77,14 @@ describe('the text a condition reopens in', () => {
         expect(Temporal.ZonedDateTime.compare(read as Temporal.ZonedDateTime, moment)).toBe(0);
     });
 
+    it('ticket 96: a date and time with a fraction of a second reopens in ISO\'s T form, which reads back exactly', () => {
+        const typed = Temporal.PlainDateTime.from('2026-01-05T10:00:00.25');
+        const text = operandText(typed, gridCulture('de-DE'));
+        expect(text).toBe('2026-01-05T10:00:00.25');
+        const read = readOperand('date', text, gridCulture('de-DE'), 'dateTime', Temporal).value;
+        expect(Temporal.PlainDateTime.compare(read as Temporal.PlainDateTime, typed)).toBe(0);
+    });
+
     it('ticket 96: a moment on the second reopens in the spaced form a cell shows', () => {
         const moment = Temporal.ZonedDateTime.from('2026-01-05T10:00:00+09:00[+09:00]');
         expect(operandText(moment, gridCulture('invariant'))).toBe('2026-01-05 10:00:00 +09:00');
