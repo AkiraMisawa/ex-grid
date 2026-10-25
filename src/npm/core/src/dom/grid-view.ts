@@ -19,7 +19,7 @@ import { ColumnGeometry, type ColumnRange } from '../columns/column-geometry';
 import { HeaderGroup, HeaderGroupLayout, type ResolvedHeaderGroup } from '../columns/header-groups';
 import { decideOverflow } from '../columns/overflow-rules';
 import { rawText, textFor } from '../cells/display-text';
-import { checkedVerdict, GridEditIntent, type EditDiscardReason, type EditVerdict } from '../cells/edit-intent';
+import { checkedVerdict, GridEditIntent, type EditDiscardReason, type EditVerdict, type GridOverwriteNotice } from '../cells/edit-intent';
 import { GridMetrics, type GridDensity } from '../grid-metrics';
 import { defined, itemAt } from '../must';
 import { editingKeysByMode } from '../keys/editing-keys';
@@ -31,7 +31,7 @@ import { cell as cellPosition, sameCell, type CellPosition, type GridExtent } fr
 import { markedColumns, wholeColumnRuns } from '../selection/heading-marks';
 import { edgeBandRowsPerTick } from '../selection/edge-band';
 import { HeldSelection } from '../selection/held';
-import { bottomRow, rangeCellCount, sameRange as sameSelectionRange, spansEveryColumn, spansEveryRow, type SelectionRange } from '../selection/range';
+import { bottomRow, fromCorners, rangeCellCount, sameRange as sameSelectionRange, spansEveryColumn, spansEveryRow, type SelectionRange } from '../selection/range';
 import { Selection, type GridSelection } from '../selection/selection';
 import { nextSort } from '../query/sort';
 import type { GridSource, GridSourceState } from '../source/grid-source';
@@ -154,6 +154,16 @@ export interface GridOptions<Row> {
     /** Hears an edit the grid threw away, with the reason (ADR-0011): the typing is gone when this arrives,
      * and what a Consumer owes the user is the reason, since nobody asked for it to happen. */
     readonly onEditDiscarded?: (reason: EditDiscardReason) => void;
+    /**
+     * Hears the Overwrite Notice (ADR-0142, LV-11, LV-21): a Cell Editor commit — Enter, Tab, an arrow in
+     * Overwrite, a press elsewhere, Ctrl+Enter — landed, accepted, over a cell whose painted text changed while
+     * the editor covered it, the one change the user could not see. It carries the Edit Intent's two texts, and
+     * is raised exactly when they differ. The user's own earlier write to the cell, not yet settled when the
+     * editor opened, is never told as a change (D1). The grid holds no string for it: Chrome words it into the
+     * root's live region, as it words a refusal (A11Y-16), and nothing is added to the row. Not raised for a
+     * commit whose handler handed over another source or other columns.
+     */
+    readonly onOverwriteNotice?: (notice: GridOverwriteNotice) => void;
     /** Hears a double click on a cell where no edit opens, after the click has placed the Focus there
      * (ADR-0063). The grid changes nothing: what the gesture means is the Consumer's. While an edit is open a
      * double click is the editor's, and on an Editable cell it opens one. */
@@ -231,6 +241,7 @@ interface Taken<Row> {
     readonly onEdit: ((intent: GridEditIntent<Row>) => void) | undefined;
     readonly onEditingChanged: ((open: boolean) => void) | undefined;
     readonly onEditDiscarded: ((reason: EditDiscardReason) => void) | undefined;
+    readonly onOverwriteNotice: ((notice: GridOverwriteNotice) => void) | undefined;
     readonly onCellDoubleClick: ((cell: CellPosition) => void) | undefined;
 }
 
@@ -267,6 +278,33 @@ interface OwnWrite<Row> {
     ended: boolean;
 }
 
+/**
+ * A write the grid raised for one of the user's own gestures (ADR-0142, D1) — an Edit Intent, a paste or fill
+ * intent, a Clear Intent — until it settles: the source, the order and the columns its positions are written
+ * in, and the cells of it the Window held when it was raised. Positions only, never a row or a string
+ * (ADR-0160).
+ */
+interface UserWrite {
+    readonly source: unknown;
+    readonly sequence: number;
+    /** The columns its positions are written among, by name: other columns name other cells. */
+    readonly columnNames: readonly string[];
+    /** Its cells, by row and then column. */
+    readonly cells: Map<number, Set<number>>;
+    /** How many cells it follows. */
+    cellCount: number;
+    /** Whether its intent's handler has returned, and did not refuse it. */
+    answered: boolean;
+    /** Whether a new Window has been taken in since it was raised. */
+    windowTakenIn: boolean;
+}
+
+// The bounds on what D1 follows, for a Consumer that never hands over a new Window: cells per write, the
+// painted rows first, and writes kept. Beyond them a cell is not followed, and an editor opened on it tells
+// the user's own write arriving under it as a change, erring towards a notice (ADR-0142).
+const userWriteCellsFollowed = 1024;
+const userWritesKept = 64;
+
 /** An edit open in the Cell Editor (ADR-0010, ADR-0142). Its text is the editor's own field: nothing the grid
  * holds writes it back while the user types (the bind trap the C# core names, SRV-7). */
 interface OpenEdit<Row> {
@@ -282,8 +320,15 @@ interface OpenEdit<Row> {
     readonly sequence: number;
     /** The Row Key of the row it opened on, where one is in force: the third holding ADR-0160 names. */
     readonly key: RowKey | undefined;
-    /** What the cell painted as it opened: the intent's seen text (ADR-0142). */
-    readonly seenText: string;
+    /** What the user saw of the cell (ADR-0142, D1): what it painted as the editor opened, or, once a write
+     * of the user's own to it that had not settled then has settled, what it painted at that moment. The
+     * intent's seen text. */
+    seenText: string;
+    /** The user's own writes over its cell, unsettled, when it opened (D1). */
+    readonly awaits: Set<UserWrite>;
+    /** One of them settled or went as a Window was taken in: the seen text is read again once the editor has
+     * followed its row. */
+    rebaseOwed: boolean;
     /** The row instance it opened on: what a fill is judged against once the Window no longer holds its row. */
     readonly openedOn: Row;
     /** The sentence a Reject or a refusal holds it with (ADR-0034), shown at it while it stands. */
@@ -428,6 +473,7 @@ export class GridView<Row> {
     #editHeard: ((intent: GridEditIntent<Row>) => void) | undefined;
     #onEditingChanged: ((open: boolean) => void) | undefined;
     #onEditDiscarded: ((reason: EditDiscardReason) => void) | undefined;
+    #onOverwriteNotice: ((notice: GridOverwriteNotice) => void) | undefined;
     #onCellDoubleClick: ((cell: CellPosition) => void) | undefined;
     // The copies the asynchronous route is still writing, each holding the Settled Mark (ADR-0220), and what
     // stops the latest one's reads of the source when another copy supersedes it or the grid is destroyed.
@@ -452,6 +498,8 @@ export class GridView<Row> {
     #heardOpen = false;
     // The editor asks for the keyboard once it is painted: on opening, and after a gesture it held.
     #editorFocusOwed = false;
+    // The user's own writes that have not settled, oldest first (ADR-0142, D1).
+    readonly #userWrites: UserWrite[] = [];
     readonly #keyFieldLayer: HTMLElement;
     readonly #keyField: HTMLInputElement;
     // The Keyboard Field's composition (ADR-0080): whether an IME composes there now; how much of the field's
@@ -807,11 +855,13 @@ export class GridView<Row> {
             throw new RangeError(`pinnedColumnCount is a whole number of at least 0, not ${pinnedColumnCount}.`);
         }
         const {
-            onSelectionChanged, onRefused, onPaste, pasteMaySpill, onClear, onUndo, onRedo, onEdit, onEditingChanged, onEditDiscarded, onCellDoubleClick,
+            onSelectionChanged, onRefused, onPaste, pasteMaySpill, onClear, onUndo, onRedo, onEdit, onEditingChanged, onEditDiscarded,
+            onOverwriteNotice, onCellDoubleClick,
         }: {
             readonly onSelectionChanged?: unknown; readonly onRefused?: unknown; readonly onPaste?: unknown; readonly pasteMaySpill?: unknown;
             readonly onClear?: unknown; readonly onUndo?: unknown; readonly onRedo?: unknown;
-            readonly onEdit?: unknown; readonly onEditingChanged?: unknown; readonly onEditDiscarded?: unknown; readonly onCellDoubleClick?: unknown;
+            readonly onEdit?: unknown; readonly onEditingChanged?: unknown; readonly onEditDiscarded?: unknown;
+            readonly onOverwriteNotice?: unknown; readonly onCellDoubleClick?: unknown;
         } = options;
         if (onSelectionChanged !== undefined && typeof onSelectionChanged !== 'function') {
             throw new TypeError('onSelectionChanged is a function of the Selection.');
@@ -843,6 +893,9 @@ export class GridView<Row> {
         if (onEditDiscarded !== undefined && typeof onEditDiscarded !== 'function') {
             throw new TypeError('onEditDiscarded is a function of the reason.');
         }
+        if (onOverwriteNotice !== undefined && typeof onOverwriteNotice !== 'function') {
+            throw new TypeError('onOverwriteNotice is a function of the notice.');
+        }
         if (onCellDoubleClick !== undefined && typeof onCellDoubleClick !== 'function') {
             throw new TypeError('onCellDoubleClick is a function of the cell.');
         }
@@ -870,7 +923,7 @@ export class GridView<Row> {
             onPaste: options.onPaste, pasteMaySpill: options.pasteMaySpill === true, pasteByteCap, onClear: options.onClear,
             onUndo: options.onUndo, onRedo: options.onRedo,
             onEdit: options.onEdit, onEditingChanged: options.onEditingChanged, onEditDiscarded: options.onEditDiscarded,
-            onCellDoubleClick: options.onCellDoubleClick,
+            onOverwriteNotice: options.onOverwriteNotice, onCellDoubleClick: options.onCellDoubleClick,
         };
     }
 
@@ -929,9 +982,11 @@ export class GridView<Row> {
             this.#unsubscribe?.();
             this.#source = source;
             this.#unsubscribe = source.subscribe(this.#onSource);
+            const { window, windowStart } = this.#state;
             this.#state = source.snapshot();
             this.#sequenceOffset = shown === undefined ? 0 : shown + 1 - this.#state.rowSequenceVersion;
             this.#lastRaised = undefined;
+            this.#userWritesTakenIn(window, windowStart);
         }
         this.#ownSource = taken.own;
         this.#ownRows = taken.own === undefined ? undefined : taken.rows;
@@ -966,6 +1021,7 @@ export class GridView<Row> {
         this.#editHeard = taken.onEdit;
         this.#onEditingChanged = taken.onEditingChanged;
         this.#onEditDiscarded = taken.onEditDiscarded;
+        this.#onOverwriteNotice = taken.onOverwriteNotice;
         this.#onCellDoubleClick = taken.onCellDoubleClick;
     }
 
@@ -975,7 +1031,9 @@ export class GridView<Row> {
     }
 
     readonly #onSource = (): void => {
+        const { window, windowStart } = this.#state;
         this.#state = this.#source.snapshot();
+        this.#userWritesTakenIn(window, windowStart);
         this.#invalidate();
     };
 
@@ -1561,6 +1619,7 @@ export class GridView<Row> {
             cell: at, mode, element, source: this.#source, columnNames: this.#columnNames, sequence: this.#sequence(),
             key: rowKey === undefined ? undefined : keyOf(rowKey, held.row, 'The row an edit opens on'),
             seenText: this.#paintedTextAt(at), openedOn: held.row, error: undefined,
+            awaits: this.#userWritesOver(at), rebaseOwed: false,
         };
         // The editor takes the keyboard in the task that opened it, with the caret placed by the core at the end
         // of the opening text: a key typed next lands in it whenever the pass paints, never in the Keyboard
@@ -1662,24 +1721,172 @@ export class GridView<Row> {
         // (ADR-0142). A flag raises the intent unchanged: the mark comes back through what the cell shows.
         this.#supersedeFill();
         const intent = new GridEditIntent(row, name, text, edit.seenText, this.#paintedTextAt(landing.cell));
+        // The user's own write (D1), noted before the Consumer hears it, and taken back if refused.
+        const written = this.#noteUserWrite([fromCorners(landing.cell, landing.cell)]);
+        let returned = false;
         try {
             heard(intent);
+            returned = true;
         } finally {
             intent.seal();
             // What the source gathered while the Consumer wrote is put out as its handler returns (D5).
             this.#source.publishGathered?.();
+            this.#userWriteAnswered(written, !returned || intent.refused);
         }
         // A source or columns the Consumer handed over while it heard the intent are the commit's own doing:
         // accepted, the edit ends as committed; refused, the editor cannot stand over rows or columns the grid
-        // no longer shows, and the edit is discarded with the reason (ADR-0142).
+        // no longer shows, and the edit is discarded with the reason (ADR-0142). Neither raises a notice: its
+        // cell would name a position among rows or columns the grid no longer shows.
         const outlived = this.#outlivedBy(edit);
         const refusal = intent.refusalMessage;
         if (refusal === undefined || outlived !== undefined) {
             this.#endEdit(refusal === undefined ? undefined : outlived);
+            if (refusal === undefined && outlived === undefined) {
+                this.#raiseOverwriteNotice(landing.cell, name, intent.seenText, intent.replacedText);
+            }
             return true;
         }
         this.#holdEdit(edit, refusal);
         return false;
+    }
+
+    // ---- D1: the user's own writes count as seen, for the Overwrite Notice (ADR-0142) ----------------------
+    //
+    // A write the grid raises for the user's own gesture is followed from the moment it is raised until it
+    // settles, by the positions it covers. An editor opened over one of its cells while it has not settled
+    // awaits it, and when it settles the editor's seen text becomes what the cell paints then: the change it
+    // brings is the user's own. After that, any change under the editor is told. A write settles at a point
+    // in the grid's order of events, never at a time and never by comparing text: once its handler has
+    // returned unrefused and a new Window — another list or another start — has been taken in since it was
+    // raised. A bound source is asked to put out what it gathered as the handler returns (D5), so a source
+    // that publishes the Consumer's write at once settles it at once. An order move or another source lets it
+    // go, as does a Window that holds none of its rows; an editor that awaited it reads the cell then too.
+
+    // Notes a write as it is raised, before the Consumer hears it: the cells of it the Window holds, the
+    // painted rows first, as far as the bound.
+    #noteUserWrite(targets: readonly SelectionRange[]): UserWrite {
+        const write: UserWrite = {
+            source: this.#source, sequence: this.#sequence(), columnNames: this.#columnNames, cells: new Map(), cellCount: 0,
+            answered: false, windowTakenIn: false,
+        };
+        const visible = this.#visible;
+        if (visible !== undefined) this.#followUserWriteCells(targets, visible.start, visible.start + visible.count - 1, write);
+        const { window, windowStart } = this.#state;
+        this.#followUserWriteCells(targets, windowStart, windowStart + window.length - 1, write);
+        if (write.cellCount > 0) {
+            this.#userWrites.push(write);
+            if (this.#userWrites.length > userWritesKept) {
+                // Past the bound: no longer followed, and an editor that awaited it keeps what it saw.
+                const dropped = defined(this.#userWrites.shift(), 'the oldest write followed');
+                this.#edit?.awaits.delete(dropped);
+            }
+        }
+        return write;
+    }
+
+    #followUserWriteCells(targets: readonly SelectionRange[], fromRow: number, toRow: number, write: UserWrite): void {
+        const columnCount = this.#columns.length;
+        for (const range of targets) {
+            for (let row = Math.max(range.topRow, fromRow); row <= Math.min(bottomRow(range), toRow); row++) {
+                if (this.#rowAt(row) === undefined) continue;
+                let columns = write.cells.get(row);
+                for (let column = Math.max(range.leftColumn, 0); column < Math.min(range.leftColumn + range.columnCount, columnCount); column++) {
+                    if (write.cellCount >= userWriteCellsFollowed) return;
+                    if (columns === undefined) {
+                        columns = new Set();
+                        write.cells.set(row, columns);
+                    }
+                    if (columns.has(column)) continue;
+                    columns.add(column);
+                    write.cellCount += 1;
+                }
+            }
+        }
+    }
+
+    // The unsettled writes of the user's own over a cell an editor opens on, under the source, the order and
+    // the columns now.
+    #userWritesOver(at: CellPosition): Set<UserWrite> {
+        const sequence = this.#sequence();
+        return new Set(this.#userWrites.filter(write => write.source === this.#source && write.sequence === sequence
+            && sameItems(write.columnNames, this.#columnNames) && write.cells.get(at.row)?.has(at.column) === true));
+    }
+
+    // A write's handler is done (D1, D5), after the source put out what it gathered. One refused, or whose
+    // handler threw, is taken back: nothing says it wrote. An accepted one settles now if a new Window was
+    // taken in since it was raised, and otherwise with the first one taken in after this.
+    #userWriteAnswered(write: UserWrite, refused: boolean): void {
+        const kept = this.#userWrites.indexOf(write);
+        if (refused) {
+            if (kept >= 0) this.#userWrites.splice(kept, 1);
+            this.#edit?.awaits.delete(write);
+            return;
+        }
+        write.answered = true;
+        if (!write.windowTakenIn || kept < 0) return;
+        this.#userWrites.splice(kept, 1);
+        this.#settled(write);
+    }
+
+    // The user's own writes against the Window just taken in (D1). Under another source or another order a
+    // write's positions name other rows, and it goes. A new Window lets go of the cells whose rows it no
+    // longer holds, and is the one a write waits for: one whose handler has returned settles. The same
+    // Window again settles nothing.
+    #userWritesTakenIn(previous: readonly Row[], previousStart: number): void {
+        if (this.#userWrites.length === 0) return;
+        const { window, windowStart } = this.#state;
+        const newWindow = previous !== window || previousStart !== windowStart;
+        const sequence = this.#sequence();
+        for (let i = this.#userWrites.length - 1; i >= 0; i--) {
+            const write = itemAt(this.#userWrites, i);
+            let goes: boolean;
+            if (write.source !== this.#source || write.sequence !== sequence) {
+                goes = true;
+            } else if (!newWindow) {
+                goes = false;
+            } else {
+                for (const [row, columns] of write.cells) {
+                    if (this.#rowAt(row) !== undefined) continue;
+                    write.cells.delete(row);
+                    write.cellCount -= columns.size;
+                }
+                write.windowTakenIn = true;
+                goes = write.answered || write.cellCount === 0;
+            }
+            if (!goes) continue;
+            this.#userWrites.splice(i, 1);
+            this.#settled(write);
+        }
+    }
+
+    // A write settled or went: an editor that awaited it reads its cell again, once it has followed its row.
+    #settled(write: UserWrite): void {
+        const edit = this.#edit;
+        if (edit === undefined || !edit.awaits.delete(write)) return;
+        edit.rebaseOwed = true;
+        this.#invalidate();
+    }
+
+    // The editor's seen text moves to what its cell paints now, read from the edited row only: by its Row
+    // Key, or by its position while the order it opened under holds. While the Window does not hold that
+    // row, the editor keeps what it saw before, never another row's text; the commit may then tell the user's
+    // own write as a change, which errs towards a notice (ADR-0142's accepted limits).
+    #rebaseEdit(edit: OpenEdit<Row>): void {
+        edit.rebaseOwed = false;
+        const held = this.#rowAt(edit.cell.row);
+        if (held === undefined) return;
+        const rowKey = this.#source.rowKey;
+        const own = edit.key === undefined
+            ? this.#sequence() === edit.sequence
+            : rowKey !== undefined && keyOf(rowKey, held.row, 'A row of the Window') === edit.key;
+        if (own) edit.seenText = this.#paintedTextAt(edit.cell);
+    }
+
+    // The Overwrite Notice a landed commit owes (ADR-0142, LV-11): exactly when what the user saw and what
+    // the commit replaced differ.
+    #raiseOverwriteNotice(cell: CellPosition, column: string, seenText: string, replacedText: string): void {
+        if (seenText === replacedText || this.#destroyed) return;
+        this.#onOverwriteNotice?.({ cell, column, seenText, replacedText });
     }
 
     // Where a commit lands (ADR-0142, LV-20): on the row the editor opened on, by its Row Key wherever the
@@ -1720,7 +1927,8 @@ export class GridView<Row> {
     // What took the open edit's rows or columns away: another source, or other columns (ADR-0011, ADR-0142).
     #outlivedBy(edit: OpenEdit<Row>): EditDiscardReason | undefined {
         if (edit.source !== this.#source) return 'sourceChanged';
-        if (!sameItems(edit.columnNames, this.#columnNames)) return 'columnsChanged';
+        // The columns in force, not as last reconciled: a handler may have handed over others just now.
+        if (!sameItems(edit.columnNames, this.#columns.map(({ column: { name } }) => name))) return 'columnsChanged';
         return undefined;
     }
 
@@ -1736,12 +1944,15 @@ export class GridView<Row> {
             this.#endEdit(outlived);
             return;
         }
-        if (edit.key === undefined) return;
-        const at = this.#positionOfKey(edit.key, edit.cell.row);
-        if (at === undefined) return;
-        edit.cell = cellPosition(at, edit.cell.column);
-        const focus = this.#held.selection.focus;
-        if (focus === undefined || !sameCell(focus, edit.cell)) this.#apply(Selection.empty.click(edit.cell, this.#extent));
+        if (edit.key !== undefined) {
+            const at = this.#positionOfKey(edit.key, edit.cell.row);
+            if (at !== undefined) {
+                edit.cell = cellPosition(at, edit.cell.column);
+                const focus = this.#held.selection.focus;
+                if (focus === undefined || !sameCell(focus, edit.cell)) this.#apply(Selection.empty.click(edit.cell, this.#extent));
+            }
+        }
+        if (edit.rebaseOwed) this.#rebaseEdit(edit);
     }
 
     // Holds the editor (ADR-0034, ADR-0142): the typing stays, the keyboard stays in it, and the Consumer's
@@ -1791,16 +2002,25 @@ export class GridView<Row> {
         }
         this.#supersedeFill();
         const intent = new GridPasteIntent(decision.plan, [[text]], [['shownText']], edit.sequence, undefined, edit.cell);
+        // The fill lands over its target as entered (ADR-0142, LV-13). The edited cell lay under the editor: a
+        // change there is told once the fill lands (LV-11).
+        const seen = edit.seenText;
+        const replaced = this.#paintedTextAt(edit.cell);
+        const written = this.#noteUserWrite(decision.plan.targets);
         // The editor is down before the Consumer hears the fill, so whatever it hands over meanwhile discards
-        // nothing: it is the fill's own doing (ADR-0142).
+        // nothing: it is the fill's own doing (ADR-0142), and no notice follows another source or other columns.
         this.#endEdit(undefined, () => {
+            let returned = false;
             try {
                 defined(heard, 'the paste\'s listener')(intent);
+                returned = true;
             } finally {
                 intent.seal();
                 this.#source.publishGathered?.();
+                this.#userWriteAnswered(written, !returned || intent.refused);
             }
         });
+        if (this.#outlivedBy(edit) === undefined && !intent.refused) this.#raiseOverwriteNotice(edit.cell, column.column.name, seen, replaced);
     }
 
     /**
@@ -1888,11 +2108,15 @@ export class GridView<Row> {
             return;
         }
         this.#supersedeFill();
+        const written = this.#noteUserWrite(decision.plan.targets);
+        let returned = false;
         try {
             heard(new GridClearIntent(decision.plan.targets, this.#sequence()));
+            returned = true;
         } finally {
             // What the source gathered while the Consumer wrote is put out as its handler returns (D5).
             this.#source.publishGathered?.();
+            this.#userWriteAnswered(written, !returned);
         }
     }
 
@@ -1961,11 +2185,15 @@ export class GridView<Row> {
         // which a Consumer reads under its own culture, `1234.5` becoming 12345 under de-DE.
         const intent = new GridPasteIntent(plan.paste, values, values.map(row => row.map(() => 'invariant' as const)),
             this.#sequence(), undefined, undefined, source);
+        const written = this.#noteUserWrite(plan.paste.targets);
+        let returned = false;
         try {
             heard(intent);
+            returned = true;
         } finally {
             intent.seal();
             this.#source.publishGathered?.();
+            this.#userWriteAnswered(written, !returned || intent.refused);
         }
         this.#invalidate();
     }
@@ -2213,14 +2441,18 @@ export class GridView<Row> {
         const version = this.#sequence();
         this.#supersedeFill();
         const intent = new GridPasteIntent(plan, block.values, block.origins, version, block.marks);
+        const noted = this.#noteUserWrite(plan.targets);
+        let returned = false;
         try {
             defined(this.#pasteHeard, 'the paste\'s listener')(intent);
+            returned = true;
         } finally {
             // Answered once it returns: a refusal after that would be one the grid can no longer honour.
             intent.seal();
             // What the source gathered while the Consumer wrote is put out as its handler returns, or throws
             // (ADR-0142 D5).
             this.#source.publishGathered?.();
+            this.#userWriteAnswered(noted, !returned || intent.refused);
         }
         // A refused paste wrote nothing: the Selection stays where it was (ADR-0050, item 3).
         if (intent.refused) return;

@@ -5,11 +5,11 @@
 // moving under it are answered by the row the commit goes to (ADR-0011, ADR-0142).
 import { describe, expect, it } from 'vitest';
 import { defined } from '../src/must';
-import type { EditDiscardReason, GridEditIntent } from '../src/cells/edit-intent';
+import type { EditDiscardReason, GridEditIntent, GridOverwriteNotice } from '../src/cells/edit-intent';
 import type { GridClearIntent } from '../src/clipboard/clear-intent';
 import type { GridPasteIntent } from '../src/clipboard/paste-intent';
 import type { GridColumn } from '../src/dom/grid-column';
-import type { GridOptions } from '../src/dom/grid-view';
+import type { GridOptions, GridView } from '../src/dom/grid-view';
 import type { GridRefusal } from '../src/dom/grid-refusal';
 import type { CellPosition } from '../src/selection/cell';
 import type { GridSelection } from '../src/selection/selection';
@@ -639,6 +639,157 @@ describe('an edit under rows and columns that move', () => {
         key('Enter');
         await painted();
         expect([hasEditor(root), listener.discards, listener.edits.length]).toEqual([false, ['columnNoLongerEditable'], 0]);
+    });
+});
+
+/** A grid over a source the test changes, hearing the notice beside the rest. Every edit heard is written at
+ * once, unless `defer` holds the writes in `pending` for the test to make later. */
+async function live(defer = false, options: Partial<GridOptions<Trade>> = {}): Promise<{
+    readonly root: HTMLElement; readonly source: ReturnType<typeof GridSource.from<Trade>>; readonly rows: Trade[];
+    readonly listener: ReturnType<typeof heard>; readonly notices: GridOverwriteNotice[]; readonly pending: (() => void)[];
+    readonly view: GridView<Trade>;
+}> {
+    const listener = heard();
+    const rows = [...trades(20)];
+    const source = GridSource.from(rows);
+    const notices: GridOverwriteNotice[] = [];
+    const pending: (() => void)[] = [];
+    const write = (intent: GridEditIntent<Trade>): void => {
+        const at = rows.indexOf(intent.row);
+        const next = { ...intent.row, book: intent.value };
+        source.replaceRow(intent.row, next);
+        rows[at] = next;
+    };
+    const { root, view } = mount({
+        columns, source, rowHeight: 24, viewportHeight: 480, ...listener.options,
+        onEdit: intent => {
+            listener.edits.push(intent);
+            if (defer) pending.push(() => { write(intent); });
+            else write(intent);
+        },
+        onOverwriteNotice: notice => { notices.push(notice); },
+        ...options,
+    });
+    await painted();
+    return { root, source, rows, listener, notices, pending, view };
+}
+
+/** A change upstream to the Book of `row`, as a live feed brings it. */
+function amend(feed: Pick<Awaited<ReturnType<typeof live>>, 'source' | 'rows'>, row: number, text: string): void {
+    const was = defined(feed.rows[row], 'the amended row');
+    const next = { ...was, book: text };
+    feed.source.replaceRow(was, next);
+    feed.rows[row] = next;
+}
+
+describe('the Overwrite Notice', () => {
+    it('ADR-0142 LV-11: a commit over a cell that changed under the editor lands, and the notice names what was seen and what was replaced', async () => {
+        const feed = await live();
+        press(feed.root, book, rowY(1));
+        await painted();
+        key('X');
+        amend(feed, 1, 'Moved');
+        await painted();
+        key('Enter');
+        await painted();
+        const intent = defined(feed.listener.edits[0], 'the intent');
+        expect([intent.value, intent.seenText, intent.replacedText]).toEqual(['X', 'Book-1', 'Moved']);
+        expect(feed.notices).toEqual([{ cell: { row: 1, column: 0 }, column: 'Book', seenText: 'Book-1', replacedText: 'Moved' }]);
+    });
+
+    it('ADR-0142 LV-11: Escape over a changed cell tells nothing, and neither does a commit over a cell nothing changed', async () => {
+        const feed = await live();
+        press(feed.root, book, rowY(1));
+        await painted();
+        key('X');
+        amend(feed, 1, 'Moved');
+        key('Escape');
+        await painted();
+        key('Y');
+        key('Enter');
+        await painted();
+        expect([feed.notices, feed.listener.edits.map(intent => intent.value)]).toEqual([[], ['Y']]);
+    });
+
+    it('ADR-0142 LV-13: a Ctrl+Enter fill over a cell that changed under the editor lands, and is told', async () => {
+        const fills: GridPasteIntent[] = [];
+        const feed = await live(false, { onPaste: intent => { fills.push(intent); } });
+        press(feed.root, book, rowY(1));
+        await painted();
+        key('X');
+        amend(feed, 1, 'Moved');
+        await painted();
+        key('Enter', { ctrlKey: true });
+        await painted();
+        expect([fills.length, feed.notices.map(notice => [notice.seenText, notice.replacedText])]).toEqual([1, [['Book-1', 'Moved']]]);
+    });
+
+    it('ADR-0142 LV-32 / ED-21: a commit whose handler hands over other columns ends as committed, with no notice', async () => {
+        const handOver: { view?: GridView<Trade>; source?: GridSource<Trade> } = {};
+        const feed = await live(false, {
+            onEdit: intent => {
+                feed.listener.edits.push(intent);
+                // The columns in another order; the grid still hears the edits and tells the notices.
+                defined(handOver.view, 'the grid').update({
+                    columns: columns.toReversed(), source: defined(handOver.source, 'the source'), rowHeight: 24, viewportHeight: 480,
+                    onEdit: next => { feed.listener.edits.push(next); },
+                    onOverwriteNotice: notice => { feed.notices.push(notice); },
+                });
+            },
+        });
+        handOver.view = feed.view;
+        handOver.source = feed.source;
+        press(feed.root, book, rowY(1));
+        await painted();
+        key('X');
+        amend(feed, 1, 'Moved');
+        await painted();
+        key('Enter');
+        await painted();
+        expect([hasEditor(feed.root), feed.listener.discards, feed.notices, feed.listener.edits.length]).toEqual([false, [], [], 1]);
+    });
+
+    it('ADR-0142 D1 / LV-17: the user\'s own write that settles under a later editor is what it saw; a change after that is told', async () => {
+        const feed = await live(true);
+        press(feed.root, book, rowY(1));
+        await painted();
+        key('A');
+        key('Enter');
+        await painted();
+        // The Consumer writes the first commit only now, with a second editor open over the same cell.
+        key('ArrowUp');
+        key('B');
+        await painted();
+        for (const write of feed.pending.splice(0)) write();
+        await painted();
+        key('Enter');
+        await painted();
+        expect(feed.notices).toEqual([]);
+        expect(defined(feed.listener.edits[1], 'the second intent').seenText).toBe('A');
+        for (const write of feed.pending.splice(0)) write();
+        await painted();
+
+        // Settled, the user's value is what the next editor saw: a change upstream under it is told.
+        key('ArrowUp');
+        key('C');
+        amend(feed, 1, 'Moved');
+        await painted();
+        key('Enter');
+        await painted();
+        expect(feed.notices.map(notice => [notice.seenText, notice.replacedText])).toEqual([['B', 'Moved']]);
+    });
+
+    it('ADR-0142 D1: without the user\'s own write in flight, the same keys tell its arrival as a change', async () => {
+        const feed = await live(true);
+        press(feed.root, book, rowY(1));
+        await painted();
+        // Another user's write reaches the cell while this editor covers it.
+        key('B');
+        amend(feed, 1, 'A');
+        await painted();
+        key('Enter');
+        await painted();
+        expect(feed.notices.map(notice => [notice.seenText, notice.replacedText])).toEqual([['Book-1', 'A']]);
     });
 });
 

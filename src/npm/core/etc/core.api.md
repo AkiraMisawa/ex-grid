@@ -281,6 +281,7 @@ export interface GridOptions<Row> {
     readonly onEdit?: (intent: GridEditIntent<Row>) => void;
     readonly onEditDiscarded?: (reason: EditDiscardReason) => void;
     readonly onEditingChanged?: (open: boolean) => void;
+    readonly onOverwriteNotice?: (notice: GridOverwriteNotice) => void;
     readonly onPaste?: (intent: GridPasteIntent) => void;
     readonly onRedo?: () => void;
     readonly onRefused?: (refusal: GridRefusal) => void;
@@ -295,6 +296,14 @@ export interface GridOptions<Row> {
     readonly viewportHeight?: ViewportSize;
     readonly viewportWidth?: ViewportSize;
     readonly virtualiseColumns?: boolean;
+}
+
+// @public
+export interface GridOverwriteNotice {
+    readonly cell: CellPosition;
+    readonly column: string;
+    readonly replacedText: string;
+    readonly seenText: string;
 }
 
 // @public

@@ -15,7 +15,7 @@ export type { CopyRefusalReason, PastePlan, PasteRefusalReason, PasteShape, Sour
 export type { PasteFieldOrigin } from './clipboard/clipboard-parse';
 export type { GridPasteIntent } from './clipboard/paste-intent';
 export type { GridClearIntent } from './clipboard/clear-intent';
-export type { CommitRefusalReason, EditDiscardReason, EditVerdict, GridEditIntent } from './cells/edit-intent';
+export type { CommitRefusalReason, EditDiscardReason, EditVerdict, GridEditIntent, GridOverwriteNotice } from './cells/edit-intent';
 export type { AutoColumnWidth, GridColumn, GridColumnWidth } from './dom/grid-column';
 export { GridSource } from './source/grid-source';
 export type { ColumnType, DateType, QueryColumn } from './query/columns';
