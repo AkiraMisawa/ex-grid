@@ -180,7 +180,7 @@ as they are.
 These are for the user; none is changed by this record.
 
 1. **Answer 11:** Excel writes a Reference to a deleted Sheet `#REF!B2`; ExSheet writes `#REF!` (ticket 03).
-2. **Answer 13:** Excel numbers a new Sheet from a count of the Sheets the workbook has made, skipping names taken;
+2. *(Built for 0.2.0 on 2026-10-25, with the questions it raised asked in `../2026-10-25-windows-sheet-names`.)* **Answer 13:** Excel numbers a new Sheet from a count of the Sheets the workbook has made, skipping names taken;
    ExSheet takes one more than the highest `SheetN` (`NextSheetName`). With Sheet1 renamed Sheet5, Excel gives Sheet2
    and ExSheet Sheet6.
 3. **Answer 9:** Excel cannot undo a deletion or a copy of a Sheet, and a deletion empties its undo stack; ExSheet

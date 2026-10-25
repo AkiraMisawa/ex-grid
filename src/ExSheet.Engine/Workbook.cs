@@ -21,6 +21,13 @@ public sealed partial class Workbook
     private bool _reshaped;
 
     /// <summary>
+    /// How many Sheets the Workbook has made since it was created or opened, which numbers a new Sheet
+    /// (<see cref="NextSheetName"/>), as Excel's count does: a new Workbook has made the Sheets it starts
+    /// with, an opened one none, since a document records no count, as an <c>.xlsx</c> records none.
+    /// </summary>
+    private int _sheetsMade;
+
+    /// <summary>
     /// Creates a Workbook of empty Sheets named <paramref name="sheetNames"/>, in that order, whose
     /// constants are read and whose Values are shown under <paramref name="culture"/> (ADR-0048).
     /// </summary>
@@ -42,6 +49,7 @@ public sealed partial class Workbook
         }
         if (_sheets.Count == 0) throw new ArgumentException("A Workbook holds at least one Sheet.", nameof(sheetNames));
         _shown = _sheets[0];
+        _sheetsMade = _sheets.Count;
     }
 
     /// <summary>
@@ -59,6 +67,7 @@ public sealed partial class Workbook
         Culture = only.Culture;
         _sheets.Add(only);
         _shown = only;
+        _sheetsMade = 1;
     }
 
     /// <summary>
@@ -76,6 +85,7 @@ public sealed partial class Workbook
         for (var i = 0; i < document.Sheets.Count; i++) workbook._sheets[i].OpenFormats(document.Sheets[i]);
         for (var i = 0; i < document.Sheets.Count; i++) workbook._sheets[i].OpenEntries(document.Sheets[i]);
         workbook._shown = workbook.Find(document.Shown)!;
+        workbook._sheetsMade = 0;
         return workbook;
     }
 

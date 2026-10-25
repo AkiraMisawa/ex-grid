@@ -70,16 +70,47 @@ public sealed partial class Workbook
             ? new SheetRefusal(SheetRefusalReason.SheetNameTaken, $"A Sheet of the Workbook is already named '{other.Name}'.")
             : null;
 
-    /// <summary>The name a new Sheet takes: <c>Sheet</c> and one more than the highest number any <c>SheetN</c> has.</summary>
+    /// <summary>
+    /// The name a new Sheet takes, as Excel names one (exsheet-workbook ticket 12, answer 13;
+    /// verification/2026-10-25-windows-sheet-names): <c>Sheet</c> and the next number of the Workbook's count
+    /// of the Sheets it has made, passing over a name a Sheet has. So with Sheet1 renamed Sheet5 the next is
+    /// Sheet2, and after Sheet2 is inserted and deleted Sheet3; in a Workbook opened from a document, which
+    /// keeps no count, the first number no Sheet has.
+    /// </summary>
     internal string NextSheetName()
     {
-        var highest = 0;
-        foreach (var sheet in _sheets)
+        for (var n = _sheetsMade + 1; ; n++)
         {
-            if (NumberedSheet().Match(sheet.Name) is { Success: true } match && int.TryParse(match.Groups[1].ValueSpan, out var n)) highest = Math.Max(highest, n);
+            var name = "Sheet" + n.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            if (Find(name) is null) return name;
         }
-        return "Sheet" + (highest + 1).ToString(System.Globalization.CultureInfo.InvariantCulture);
     }
+
+    /// <summary>A Workbook just opened from a document: it has made no Sheet yet, as Excel's opened workbook has not (<see cref="NextSheetName"/>).</summary>
+    internal void Opened() => _sheetsMade = 0;
+
+    /// <summary>
+    /// Counts a Sheet made, inserted named <paramref name="name"/> or copied (<paramref name="name"/>
+    /// <see langword="null"/>), as Excel counts it: an insertion counts up to the number its name took, a
+    /// copy one. The count before is returned, which undoing the insertion or the copy puts back
+    /// (<see cref="Uncount"/>), as Excel's undo of an insertion gives its number back.
+    /// </summary>
+    internal int Count(string? name)
+    {
+        var before = _sheetsMade;
+        if (name is not null && NumberedSheet().Match(name) is { Success: true } match && int.TryParse(match.Groups[1].ValueSpan, out var n) && n > _sheetsMade)
+        {
+            _sheetsMade = n;
+        }
+        else
+        {
+            _sheetsMade++;
+        }
+        return before;
+    }
+
+    /// <summary>Puts back the count of Sheets made as it was before an insertion or copy (<see cref="Count"/>).</summary>
+    internal void Uncount(int before) => _sheetsMade = before;
 
     /// <summary>The name a copy of the Sheet named <paramref name="name"/> takes, as Excel names one: <c>Name (2)</c>, or the next number free, the name cut to fit 31 characters.</summary>
     internal string CopyName(string name)
