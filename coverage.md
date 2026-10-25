@@ -4,7 +4,7 @@
 |---|---|---|
 | ExGrid | 95.2% | 88.5% |
 | ExSheet | 95.4% | 88.6% |
-| ExPivot | 94.2% | 85.5% |
+| ExPivot | 94.3% | 85.9% |
 | ExChart | 90.5% | 81.6% |
 | ExBoard | 91.7% | 81.8% |
 | Data | 94% | 88.8% |
@@ -14,18 +14,18 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/25/2026 - 21:06:16 |
+| Generated on: | 10/25/2026 - 21:18:25 |
 | Parser: | MultiReport (19x Cobertura) |
 | Assemblies: | 16 |
 | Classes: | 1181 |
 | Files: | 605 |
-| **Line coverage:** | 94.5% (81666 of 86399) |
-| Covered lines: | 81666 |
-| Uncovered lines: | 4733 |
-| Coverable lines: | 86399 |
-| Total lines: | 138109 |
-| **Branch coverage:** | 87.2% (49288 of 56504) |
-| Covered branches: | 49288 |
+| **Line coverage:** | 94.5% (81683 of 86406) |
+| Covered lines: | 81683 |
+| Uncovered lines: | 4723 |
+| Coverable lines: | 86406 |
+| Total lines: | 138118 |
+| **Branch coverage:** | 87.2% (49324 of 56504) |
+| Covered branches: | 49324 |
 | Total branches: | 56504 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
@@ -528,7 +528,7 @@
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExGrid.Data**|**94.9%**|**90.5%**|
+|**ExGrid.Data**|**94.9%**|**90.6%**|
 |ExGrid.Data.AggregateAccumulator|93%|92.4%|
 |ExGrid.Data.AggregateArithmetic|97.8%|95.7%|
 |ExGrid.Data.AggregateResult|86.2%|55.5%|
@@ -621,7 +621,7 @@
 |ExGrid.Data.Storage.DoubleColumnWriter|100%||
 |ExGrid.Data.Storage.DoubleData|100%||
 |ExGrid.Data.Storage.DoubleObjectColumn<T>|100%|100%|
-|ExGrid.Data.Storage.FixedCodes|93.5%|75%|
+|ExGrid.Data.Storage.FixedCodes|96.7%|87.5%|
 |ExGrid.Data.Storage.Gather|98.8%|96.1%|
 |ExGrid.Data.Storage.Int32ObjectColumn<T>|82.3%|100%|
 |ExGrid.Data.Storage.IntegerColumnWriter|100%||
@@ -834,11 +834,11 @@
 |ExPivot.PivotDetails|100%||
 
 </details>
-<details><summary>ExPivot.Engine - 96.1%</summary>
+<details><summary>ExPivot.Engine - 96.2%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExPivot.Engine**|**96.1%**|**87.7%**|
+|**ExPivot.Engine**|**96.2%**|**88.4%**|
 |ExPivot.Engine.AggregateValue|100%|100%|
 |ExPivot.Engine.AggregationPass|98.7%|96.1%|
 |ExPivot.Engine.AxisNode|87%|80%|
@@ -872,7 +872,7 @@
 |ExPivot.Engine.ItemSpace|98.4%|98.7%|
 |ExPivot.Engine.ItemsPass|100%|97%|
 |ExPivot.Engine.LeafIndex|84%|85.8%|
-|ExPivot.Engine.LocalPivotReportSource|98.7%|90%|
+|ExPivot.Engine.LocalPivotReportSource|100%|96.3%|
 |ExPivot.Engine.LocalPivotReportSource.HeldReport|100%||
 |ExPivot.Engine.LocalPivotReportSource.HighlightVersion|100%|100%|
 |ExPivot.Engine.LocalPivotReportSource.Unpublished|100%|100%|
@@ -888,7 +888,7 @@
 |ExPivot.Engine.PivotCellItems|100%|50%|
 |ExPivot.Engine.PivotChangeTimes|100%|95.4%|
 |ExPivot.Engine.PivotComputationResult|100%|100%|
-|ExPivot.Engine.PivotComputationSession|97.2%|93.9%|
+|ExPivot.Engine.PivotComputationSession|98.3%|95.6%|
 |ExPivot.Engine.PivotCube|99.4%|97%|
 |ExPivot.Engine.PivotCube.LeafNodes|100%||
 |ExPivot.Engine.PivotDateWords|100%|78.1%|
@@ -921,7 +921,7 @@
 |ExPivot.Engine.PivotLabelSizing|100%|97.5%|
 |ExPivot.Engine.PivotLayout|96.3%|74.2%|
 |ExPivot.Engine.PivotLayoutEdits|94.5%|81.3%|
-|ExPivot.Engine.PivotLayoutJson|96.9%|92.4%|
+|ExPivot.Engine.PivotLayoutJson|97.3%|93.1%|
 |ExPivot.Engine.PivotNumber|82.6%|50%|
 |ExPivot.Engine.PivotNumberFormat|85.1%|92.8%|
 |ExPivot.Engine.PivotOptions|80%||
@@ -939,12 +939,12 @@
 |ExPivot.Engine.PivotReportDigest.Fnv|100%|87.5%|
 |ExPivot.Engine.PivotReportItemsQuery|100%||
 |ExPivot.Engine.PivotReportItemsResult|100%||
-|ExPivot.Engine.PivotReportJson|100%|83.3%|
+|ExPivot.Engine.PivotReportJson|100%|88.8%|
 |ExPivot.Engine.PivotReportJson.DetailPageConverter|100%||
 |ExPivot.Engine.PivotReportJson.DetailsQueryConverter|100%||
 |ExPivot.Engine.PivotReportJson.ItemPageConverter|100%||
 |ExPivot.Engine.PivotReportJson.LayoutConverter|100%||
-|ExPivot.Engine.PivotReportLabelMetrics|95.8%|51.5%|
+|ExPivot.Engine.PivotReportLabelMetrics|95.8%|55.7%|
 |ExPivot.Engine.PivotReportMetadata|88.8%|78.5%|
 |ExPivot.Engine.PivotReportRange|100%||
 |ExPivot.Engine.PivotReportRefusal|100%||
