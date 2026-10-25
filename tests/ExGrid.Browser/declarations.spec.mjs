@@ -1376,7 +1376,6 @@ async function caretBeforeTheLastCharacter(page, grid, surface, text) {
 }
 
 for (const surface of ['cell', 'bar']) {
-
     test(`SH-28/DC-45: =SUM(A1:B2), the caret after B2, F4 four times cycles B2 alone through its four forms, each selected (ADR-0051; the seventeenth Windows run, Part C, case 5; ${surface})`, async ({ page }) => {
         const grid = sheet(page);
         const field = await caretBeforeTheLastCharacter(page, grid, surface, '=SUM(A1:B2)');
@@ -1410,10 +1409,6 @@ test('SH-28/DC-45: typed into a cell, F4 leaves the caret after the rewritten Re
     }
 });
 
-// Overwrite is Excel's Enter mode (ADR-0010, ED-2): typed into a cell, Shift+Home and the
-// Shift+arrows commit the entry and extend the Selection, where ExSheet once selected the editor's
-// text (the seventeenth Windows run, Part C, case 7: B10:D10).
-//
 // R1 (vii): typed into D10 in a cleared sheet, each from a fresh entry, Excel's Enter mode committed
 // on Shift+→, Shift+↓ and Shift+← and extended the Selection from D10; on Ctrl+→ it committed and
 // moved to XFD10, and on Ctrl+Shift+→ it committed and selected D10:XFD10. Row 10 of /sheet holds

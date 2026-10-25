@@ -57,7 +57,7 @@ function drawnGroups(page) {
     });
 }
 
-test('HG-15 / ADR-0032: HeaderGroups survives a reorder within a group and a whole-group move unchanged', async ({ page }) => {
+test('HG-14/HG-15 / ADR-0032: grabbing a group moves the whole group, and HeaderGroups survives a reorder within a group and a whole-group move unchanged', async ({ page }) => {
     await open(page, '/features?groups=1');
     const groups = page.locator('#groups-status');
     const declared = 'Groups: Who [Book,Trader] tier 1 span 1; What [Notional,Narrow,TradeDate,Confirmed] tier 1 span 1';
