@@ -25,20 +25,24 @@ export interface RowClassOptions {
     readonly stripe?: boolean;
 }
 
-const kinds: readonly RowKind[] = ['detail', 'group', 'total'];
-const kindClass: Readonly<Record<RowKind, string>> = { detail: '', group: ' ex-row-group', total: ' ex-row-total' };
+// Each kind's place in the table, and the class it adds.
+const kinds: Readonly<Record<RowKind, readonly [place: number, adds: string]>> = {
+    detail: [0, ''], group: [1, ' ex-row-group'], total: [2, ' ex-row-total'],
+};
 
 let composed: readonly string[] | undefined;
 
 /** Every combination, composed on first asking: nothing runs at module load (`sideEffects: false`). */
 function table(): readonly string[] {
     if (composed !== undefined) return composed;
-    composed = Object.freeze(kinds.flatMap(kind => [
-        `ex-row${kindClass[kind]}`,
-        `ex-row${kindClass[kind]} ex-row-stripe`,
-        `ex-row ex-placeholder${kindClass[kind]}`,
-        `ex-row ex-placeholder${kindClass[kind]} ex-row-stripe`,
-    ]));
+    const all: string[] = [];
+    for (const [place, adds] of Object.values(kinds)) {
+        all[place * 4] = `ex-row${adds}`;
+        all[place * 4 + 1] = `ex-row${adds} ex-row-stripe`;
+        all[place * 4 + 2] = `ex-row ex-placeholder${adds}`;
+        all[place * 4 + 3] = `ex-row ex-placeholder${adds} ex-row-stripe`;
+    }
+    composed = Object.freeze(all);
     return composed;
 }
 
@@ -47,7 +51,8 @@ function table(): readonly string[] {
  * undeclared Cell State is (ADR-0006 / ADR-0024). */
 export function rowClasses(options: RowClassOptions): string {
     const { kind, placeholder, stripe = false } = options;
-    const place = kinds.indexOf(kind);
-    if (place < 0) throw new RangeError(`kind is one of ${kinds.join(', ')}, not ${kind}.`);
-    return elementAt(table(), place * 4 + (placeholder ? 2 : 0) + (stripe ? 1 : 0));
+    if (typeof kind !== 'string' || !Object.hasOwn(kinds, kind)) {
+        throw new RangeError(`kind is one of ${Object.keys(kinds).join(', ')}, not ${JSON.stringify(kind)}.`);
+    }
+    return elementAt(table(), kinds[kind][0] * 4 + (placeholder ? 2 : 0) + (stripe ? 1 : 0));
 }

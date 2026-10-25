@@ -46,35 +46,38 @@ export interface CellClassOptions {
     readonly mark?: MatchMark;
 }
 
-// Each vocabulary in the order of its places in the table, and the class each member adds. The first
-// member of each adds nothing, so an ordinary cell is painted exactly as it was before the vocabularies
-// existed (ADR-0006/0016/0068).
-const states: readonly CellState[] = ['normal', 'stale', 'missing', 'error', 'modified'];
-const tones: readonly CellTone[] = ['none', 'positive', 'negative'];
-const aligns: readonly CellAlign[] = ['auto', 'left', 'center', 'right'];
-const marks: readonly MatchMark[] = ['none', 'match', 'current'];
-const stateClass: Readonly<Record<CellState, string>> = {
-    normal: '', stale: ' ex-state-stale', missing: ' ex-state-missing', error: ' ex-state-error', modified: ' ex-state-modified',
-};
-const toneClass: Readonly<Record<CellTone, string>> = { none: '', positive: ' ex-tone-positive', negative: ' ex-tone-negative' };
-const alignClass: Readonly<Record<CellAlign, string>> = {
-    auto: '', left: ' ex-align-left', center: ' ex-align-center', right: ' ex-align-right',
-};
-const markClass: Readonly<Record<MatchMark, string>> = {
-    none: '', match: ' ex-match-mark', current: ' ex-match-mark ex-match-mark-current',
-};
+/** A member of a vocabulary: its place in the table, and the class it adds. */
+type Member = readonly [place: number, adds: string];
 
-/** A member's place in its vocabulary. A member nobody declared, which only an untyped caller can pass, is
- * refused rather than painted as the ordinary cell: it would hide a Consumer's mapping defect behind a cell
- * that looks perfectly ordinary, the one outcome ADR-0006 exists to prevent. */
-function placeOf<T extends string>(members: readonly T[], value: T, name: string): number {
-    const place = members.indexOf(value);
-    if (place < 0) throw new RangeError(`${name} is one of ${members.join(', ')}, not ${value}.`);
-    return place;
+// Each vocabulary's members. The first of each adds nothing, so an ordinary cell is painted exactly as it was
+// before the vocabularies existed (ADR-0006/0016/0068).
+const states: Readonly<Record<CellState, Member>> = {
+    normal: [0, ''], stale: [1, ' ex-state-stale'], missing: [2, ' ex-state-missing'], error: [3, ' ex-state-error'],
+    modified: [4, ' ex-state-modified'],
+};
+const tones: Readonly<Record<CellTone, Member>> = { none: [0, ''], positive: [1, ' ex-tone-positive'], negative: [2, ' ex-tone-negative'] };
+const aligns: Readonly<Record<CellAlign, Member>> = {
+    auto: [0, ''], left: [1, ' ex-align-left'], center: [2, ' ex-align-center'], right: [3, ' ex-align-right'],
+};
+const marks: Readonly<Record<MatchMark, Member>> = {
+    none: [0, ''], match: [1, ' ex-match-mark'], current: [2, ' ex-match-mark ex-match-mark-current'],
+};
+const stateCount = 5;
+const toneCount = 3;
+const alignCount = 4;
+
+/** A member of its vocabulary. One nobody declared, which only an untyped caller can pass, is refused rather
+ * than painted as the ordinary cell: it would hide a Consumer's mapping defect behind a cell that looks
+ * perfectly ordinary, the one outcome ADR-0006 exists to prevent. */
+function memberOf<T extends string>(vocabulary: Readonly<Record<T, Member>>, value: T, name: string): Member {
+    if (typeof value !== 'string' || !Object.hasOwn(vocabulary, value)) {
+        throw new RangeError(`${name} is one of ${Object.keys(vocabulary).join(', ')}, not ${JSON.stringify(value)}.`);
+    }
+    return vocabulary[value];
 }
 
 function indexOf(mark: number, changed: boolean, tone: number, state: number, align: number, numeric: boolean, pinned: boolean): number {
-    const combination = (((mark * 2 + (changed ? 1 : 0)) * tones.length + tone) * states.length + state) * aligns.length + align;
+    const combination = (((mark * 2 + (changed ? 1 : 0)) * toneCount + tone) * stateCount + state) * alignCount + align;
     return combination * 4 + (numeric ? 2 : 0) + (pinned ? 1 : 0);
 }
 
@@ -84,28 +87,26 @@ let composed: readonly string[] | undefined;
 function table(): readonly string[] {
     if (composed !== undefined) return composed;
     const all: string[] = [];
-    marks.forEach((mark, m) => {
+    for (const [m, mark] of Object.values(marks)) {
         for (const changed of [false, true]) {
-            tones.forEach((tone, t) => {
-                states.forEach((state, s) => {
-                    aligns.forEach((align, a) => {
+            for (const [t, tone] of Object.values(tones)) {
+                for (const [s, state] of Object.values(states)) {
+                    for (const [a, align] of Object.values(aligns)) {
                         for (const numeric of [false, true]) {
                             for (const pinned of [false, true]) {
                                 all[indexOf(m, changed, t, s, a, numeric, pinned)] = 'ex-cell'
                                     + (numeric ? ' ex-cell-numeric' : '')
                                     + (pinned ? ' ex-pinned' : '')
-                                    + alignClass[align]
-                                    + toneClass[tone]
-                                    + stateClass[state]
+                                    + align + tone + state
                                     + (changed ? ' ex-changed' : '')
-                                    + markClass[mark];
+                                    + mark;
                             }
                         }
-                    });
-                });
-            });
+                    }
+                }
+            }
         }
-    });
+    }
     composed = Object.freeze(all);
     return composed;
 }
@@ -118,7 +119,7 @@ function table(): readonly string[] {
 export function cellClasses(options: CellClassOptions): string {
     const { numeric, pinned, state, align = 'auto', tone = 'none', changed = false, mark = 'none' } = options;
     const index = indexOf(
-        placeOf(marks, mark, 'mark'), changed, placeOf(tones, tone, 'tone'), placeOf(states, state, 'state'),
-        placeOf(aligns, align, 'align'), numeric, pinned);
+        memberOf(marks, mark, 'mark')[0], changed, memberOf(tones, tone, 'tone')[0], memberOf(states, state, 'state')[0],
+        memberOf(aligns, align, 'align')[0], numeric, pinned);
     return elementAt(table(), index);
 }

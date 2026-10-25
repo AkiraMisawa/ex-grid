@@ -53,7 +53,7 @@ export type EditorReference =
  * written, never both and never neither.
  */
 export function editorReference(
-    given: { readonly start: number; readonly length: number; readonly range?: SelectionRange; readonly key?: string },
+    given: { readonly start: number; readonly length: number; readonly range?: SelectionRange | undefined; readonly key?: string | undefined },
 ): EditorReference {
     const { start, length, range, key } = given;
     if (!Number.isSafeInteger(start) || start < 0) {
@@ -123,18 +123,22 @@ export class ReferenceColouring {
      * appearance is where each stands in the text. `undefined` or empty colours nothing. */
     static of(text: string, references: readonly EditorReference[] | undefined): ReferenceColouring {
         if (references === undefined || references.length === 0) return ReferenceColouring.none;
-        for (const reference of references) {
-            // The References function is a Consumer's: what it answers is checked here.
-            const checked: unknown = reference;
-            if (typeof checked !== 'object' || checked === null) {
+        // The References function is a Consumer's: each answer is made a Reference again, which checks its
+        // place and that it names cells or a key, one and not both.
+        const checked = references.map(reference => {
+            const given: unknown = reference;
+            if (typeof given !== 'object' || given === null) {
                 throw new TypeError('The References function answered something that is not a Reference (ADR-0057).');
             }
+            return editorReference(reference);
+        });
+        for (const reference of checked) {
             if (reference.length > text.length - reference.start) {
                 throw new RangeError(`The Reference at ${reference.start}+${reference.length} does not lie inside the editor's text of ${text.length} characters (ADR-0057).`);
             }
         }
         // Stable, so an answer already in order keeps it.
-        const ordered = references.toSorted((a, b) => a.start - b.start);
+        const ordered = checked.toSorted((a, b) => a.start - b.start);
         for (let i = 1; i < ordered.length; i++) {
             const before = elementAt(ordered, i - 1);
             const here = elementAt(ordered, i);

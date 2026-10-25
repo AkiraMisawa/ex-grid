@@ -30,6 +30,10 @@ export function allowedBoundaries(options: {
 }): number[] {
     const { layout, columnCount, pinnedCount, unitFirst, unitCount } = options;
     checkUnit(unitFirst, unitCount, columnCount);
+    // A pinned block past the columns would offer drops beyond the last one (ColumnGeometry refuses it too).
+    if (!Number.isSafeInteger(pinnedCount) || pinnedCount < 0 || pinnedCount > columnCount) {
+        throw new RangeError(`The pinned columns are some of the columns. (pinnedCount: ${pinnedCount}, columns: ${columnCount})`);
+    }
     const unitEnd = unitFirst + unitCount;
 
     // The pinned boundary first (ADR-0011): position and pinned-ness are the same fact, so a drop across it

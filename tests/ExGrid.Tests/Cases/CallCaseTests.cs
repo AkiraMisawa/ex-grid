@@ -70,7 +70,9 @@ public class CallCaseTests
         public override ExGrid.Chrome.GridCommand Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
             var given = JsonElement.ParseValue(ref reader);
-            return new(given.GetProperty("id").GetString()!, given.GetProperty("enabled").GetBoolean(),
+            var id = given.GetProperty("id").GetString()
+                ?? throw new InvalidOperationException($"A command's id is text, not {given.GetProperty("id")}.");
+            return new(id, given.GetProperty("enabled").GetBoolean(),
                 () => throw new InvalidOperationException("A case's command is never run."));
         }
 
@@ -115,10 +117,11 @@ public class CallCaseTests
     private sealed class TupleAsArray : JsonConverterFactory
     {
         public override bool CanConvert(Type typeToConvert)
-            => typeToConvert.IsGenericType && typeToConvert.FullName!.StartsWith("System.ValueTuple`", StringComparison.Ordinal);
+            => typeToConvert.IsValueType && typeToConvert.IsGenericType && typeof(System.Runtime.CompilerServices.ITuple).IsAssignableFrom(typeToConvert);
 
         public override JsonConverter CreateConverter(Type typeToConvert, JsonSerializerOptions options)
-            => (JsonConverter)Activator.CreateInstance(typeof(Elements<>).MakeGenericType(typeToConvert))!;
+            => Activator.CreateInstance(typeof(Elements<>).MakeGenericType(typeToConvert)) as JsonConverter
+                ?? throw new InvalidOperationException($"No converter for {typeToConvert}.");
 
         private sealed class Elements<T> : JsonConverter<T>
         {
@@ -127,9 +130,14 @@ public class CallCaseTests
 
             public override void Write(Utf8JsonWriter writer, T value, JsonSerializerOptions options)
             {
+                // By position, as ITuple numbers the elements: reflection's field order is unspecified. A tuple
+                // of eight or more nests the rest, which no case answers.
+                if (value is not System.Runtime.CompilerServices.ITuple tuple || tuple.Length > 7)
+                    throw new NotSupportedException($"{typeof(T)} is not a tuple of at most seven elements.");
+                var types = typeof(T).GetGenericArguments();
                 writer.WriteStartArray();
-                foreach (var field in typeof(T).GetFields())
-                    JsonSerializer.Serialize(writer, field.GetValue(value), field.FieldType, options);
+                for (var i = 0; i < tuple.Length; i++)
+                    JsonSerializer.Serialize(writer, tuple[i], types[i], options);
                 writer.WriteEndArray();
             }
         }

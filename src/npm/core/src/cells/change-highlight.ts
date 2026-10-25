@@ -27,6 +27,10 @@ export function changeHighlightEnd(changedAtMs: number, durationMs: number): num
  * it had already seen, and a mark is keyed by row and column, never held.
  */
 export function changeHighlightShowingUntil(changedAtMs: number | undefined, durationMs: number, nowMs: number): number | undefined {
+    // The grid's clock: a reading that is no instant would leave every changed cell unmarked, and say nothing.
+    if (!Number.isFinite(nowMs)) {
+        throw new RangeError(`The current time is an instant. (nowMs: ${nowMs})`);
+    }
     if (changedAtMs === undefined) return undefined;
     const end = changeHighlightEnd(changedAtMs, durationMs);
     return nowMs < end ? end : undefined;

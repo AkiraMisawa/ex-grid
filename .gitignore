@@ -34,3 +34,6 @@ src/npm/node_modules/
 src/npm/*/node_modules/
 src/npm/*/dist/
 src/npm/*/temp/
+
+# A test runner started from the repository root writes its cache here; the workspace is src/npm
+/node_modules/

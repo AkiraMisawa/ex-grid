@@ -36,6 +36,12 @@ export class EditorHint {
     /** A hint, with the span it sets off; none by default. */
     constructor(options: { readonly text: string; readonly emphasisStart?: number; readonly emphasisLength?: number }) {
         const { text, emphasisStart = 0, emphasisLength = 0 } = options;
+        // A Consumer's answer: the span is whole numbers, as C# holds it, so a NaN or a fraction cannot reach
+        // `slice` and split the hint where nobody said. A span outside the text is a whole number too, and sets
+        // off nothing.
+        if (!Number.isSafeInteger(emphasisStart) || !Number.isSafeInteger(emphasisLength)) {
+            throw new RangeError(`A hint's emphasis is a whole-number span. (emphasisStart: ${emphasisStart}, emphasisLength: ${emphasisLength})`);
+        }
         this.text = text;
         this.emphasisStart = emphasisStart;
         this.emphasisLength = emphasisLength;

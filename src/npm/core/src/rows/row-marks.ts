@@ -91,8 +91,15 @@ export function rowMarkHeaderState(counts: RowMarkCounts): RowMarkHeaderState {
     return counts.markedInResult < counts.rowsInResult ? 'some' : 'all';
 }
 
+const pressMarks: Readonly<Record<RowMarkHeaderState, boolean>> = { none: true, some: true, all: false };
+
 /** What pressing the header does from a given state: mark all, unless all are already marked. Pressing
  * "some" completes the marking, and only "all" clears it (ADR-0043). True to mark all, false to unmark. */
 export function rowMarkHeaderPress(state: RowMarkHeaderState): boolean {
-    return state !== 'all';
+    // A state nobody declared, which only an untyped caller can pass, is refused: read as "some", it would
+    // mark every row of the result.
+    if (typeof state !== 'string' || !Object.hasOwn(pressMarks, state)) {
+        throw new RangeError(`A header's state is none, some or all, not ${JSON.stringify(state)}.`);
+    }
+    return pressMarks[state];
 }

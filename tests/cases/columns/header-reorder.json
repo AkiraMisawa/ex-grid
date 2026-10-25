@@ -60,6 +60,14 @@
         {"static": "reorder", "args": {"names": ["TradeId", "CvaBefore", "CvaAfter", "CvaDiff", "FvaBefore", "FvaAfter"], "unitFirst": 0, "unitCount": 1, "insertAt": 7}, "throws": "outOfRange"},
         {"static": "reorder", "args": {"names": ["TradeId", "CvaBefore", "CvaAfter", "CvaDiff", "FvaBefore", "FvaAfter"], "unitFirst": 0, "unitCount": 1, "insertAt": -1}, "throws": "outOfRange"}
       ]
+    },
+    {
+      "name": "ADR-0011: a pinned block is some of the columns, never more and never fewer than none",
+      "expect": [
+        {"static": "allowedBoundaries", "args": {"layout": {"new": "HeaderGroupLayout", "via": "empty"}, "columnCount": 4, "unitFirst": 1, "unitCount": 1, "pinnedCount": 6}, "throws": "outOfRange"},
+        {"static": "allowedBoundaries", "args": {"layout": {"new": "HeaderGroupLayout", "via": "empty"}, "columnCount": 4, "unitFirst": 1, "unitCount": 1, "pinnedCount": -1}, "throws": "outOfRange"},
+        {"static": "allowedBoundaries", "args": {"layout": {"new": "HeaderGroupLayout", "via": "empty"}, "columnCount": 4, "unitFirst": 1, "unitCount": 1, "pinnedCount": 4}, "is": [0, 1, 2, 3, 4]}
+      ]
     }
   ]
 }

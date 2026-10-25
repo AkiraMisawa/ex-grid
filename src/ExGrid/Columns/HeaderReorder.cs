@@ -22,6 +22,9 @@ internal static class HeaderReorder
         ArgumentOutOfRangeException.ThrowIfNegative(unitFirst);
         ArgumentOutOfRangeException.ThrowIfLessThan(unitCount, 1);
         ArgumentOutOfRangeException.ThrowIfGreaterThan(unitFirst + unitCount, columnCount);
+        // A pinned block past the columns would offer drops beyond the last one (ColumnGeometry refuses it too).
+        ArgumentOutOfRangeException.ThrowIfNegative(pinnedCount);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(pinnedCount, columnCount);
 
         var unitEnd = unitFirst + unitCount;
 
