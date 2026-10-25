@@ -256,6 +256,19 @@ that does, a layout past `MaxLeaves` is not refused:
   not add up", and no figure from that answer is shown (spine rule 1). What the engine cannot check is
   a collapsed group against children it does not show, and that each level's `GROUP BY` is the right
   question; the second is the premise of Leaf Aggregates too.
+
+  *(The bounds, fixed on 2026-10-25 by `test/level-check.test.ts` in `@ex-grid/pivot-engine`, before the
+  rest is built, as this item asked.)* With u = 2⁻⁵³ and γ = k·u / (1 − k·u), k the parent's numbers plus
+  the children composed: any order of summing is within γ·Σ|x| of the true sum and any order of
+  multiplying within γ·|Π x|, and each side may be that far off. So a double sum agrees within 2γ·Σ|x|,
+  Σ|x| being the parent's absolute sum, which must not be below |sum|, and the children's absolute sums,
+  where every child carries one, within 2γ of the parent's; a product within 2γ of the larger, two
+  products both below the normal range agreeing, since their rounding has no relative bound and both show
+  0. A running variance is bounded through S = m2 + n·mean², the parent's Σx²: the mean within 4γ·√S and m2
+  within 8γ·S, which admit both Welford's merge and the m2 = Σx² − (Σx)²/n a SQL server computes. The
+  test makes honest answers both ways, each group in an order of its own, over cancellation, magnitudes
+  eighteen orders apart and a 10⁹ offset under a unit spread; the largest error it met was 8% of its bound,
+  and a part moved by 10⁻⁹ of its scale is refused.
 - **One answer is one Source Version.** An answer under a newer Source Version than the report shows
   replaces the whole screen, because it names the whole screen; it is never refused for its version,
   and the check never spans two answers. So an expand on a live source shows the newer data with the
