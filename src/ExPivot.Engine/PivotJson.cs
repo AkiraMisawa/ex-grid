@@ -1,6 +1,8 @@
 using System.Globalization;
+using System.Numerics;
 using System.Text;
 using System.Text.Json;
+using ExGrid.Data;
 
 namespace ExPivot.Engine;
 
@@ -13,7 +15,9 @@ namespace ExPivot.Engine;
 ///
 /// <para>Written and read by hand, member by member, as <see cref="PivotLayoutJson"/> is, so that
 /// nothing depends on reflection a trimmed WebAssembly build may have removed. What must survive
-/// the trip does: a <c>decimal</c> is written as its exact digits; a <c>double</c> in its shortest
+/// the trip does: a <c>decimal</c> is written as its exact digits, without trailing zeros (ADR-0064:
+/// a Decimal is a value, not the places it was written with), and a number no decimal holds exactly
+/// is refused rather than rounded; a <c>double</c> in its shortest
 /// round-trip form, and a non-finite one as the named literal <c>"NaN"</c>, <c>"Infinity"</c> or
 /// <c>"-Infinity"</c>, as System.Text.Json's <c>AllowNamedFloatingPointLiterals</c> writes it. A
 /// part that is exact or not — a sum, an extreme — is a JSON number when it is an exact
@@ -327,7 +331,7 @@ public static class PivotJson
                 if (sum.Inexact)
                     json.WriteStringValue(DoubleText(sum.Double + sum.Compensation));
                 else
-                    json.WriteNumberValue(sum.Exact);
+                    json.WriteNumberValue(AggregateArithmetic.Canonical(sum.Exact));
             }
             json.WriteEndArray();
         }
@@ -339,7 +343,7 @@ public static class PivotJson
                 if (extremes[leaf].Inexact)
                     json.WriteStringValue(DoubleText(extremes[leaf].Min));
                 else
-                    json.WriteNumberValue(extremes[leaf].ExactMin);
+                    json.WriteNumberValue(AggregateArithmetic.Canonical(extremes[leaf].ExactMin));
             }
             json.WriteEndArray();
             json.WriteStartArray("max");
@@ -348,7 +352,7 @@ public static class PivotJson
                 if (extremes[leaf].Inexact)
                     json.WriteStringValue(DoubleText(extremes[leaf].Max));
                 else
-                    json.WriteNumberValue(extremes[leaf].ExactMax);
+                    json.WriteNumberValue(AggregateArithmetic.Canonical(extremes[leaf].ExactMax));
             }
             json.WriteEndArray();
         }
@@ -394,7 +398,7 @@ public static class PivotJson
                 json.WriteStringValue(text);
                 return;
             case (PivotFieldType.Number, decimal number):
-                json.WriteNumberValue(number);
+                json.WriteNumberValue(AggregateArithmetic.Canonical(number));
                 return;
             case (PivotFieldType.Number, double number):
                 json.WriteStringValue(DoubleText(number));
@@ -413,7 +417,7 @@ public static class PivotJson
                 json.WriteString("text", text);
                 break;
             case decimal number:
-                json.WriteNumber("number", number);
+                json.WriteNumber("number", AggregateArithmetic.Canonical(number));
                 break;
             case double number:
                 json.WriteString("double", DoubleText(number));
@@ -439,7 +443,7 @@ public static class PivotJson
         ReadFields(root, "rows"),
         ReadFields(root, "columns"),
         ReadFields(root, "filters"),
-        Array(root, "values").Select(value => new PivotQueryValue(String(value, "field"), ReadParts(value))).ToArray(),
+        Objects(root, "values").Select(value => new PivotQueryValue(String(value, "field"), ReadParts(value))).ToArray(),
         Int(root, "maxLeaves")));
 
     /// <summary>
@@ -462,7 +466,7 @@ public static class PivotJson
         }
         var rows = ReadAxes(root, "rows", leaves);
         var columns = ReadAxes(root, "columns", leaves);
-        var values = Array(root, "values").Select(element => ReadValues(element, records)).ToArray();
+        var values = Objects(root, "values").Select(element => ReadValues(element, records)).ToArray();
         return new PivotAnswer(sourceVersion, rows, columns, leaves, records, values);
     });
 
@@ -496,7 +500,7 @@ public static class PivotJson
     {
         if (ReadRefusal(root) is { } refusal)
             return PivotDetailPage.Refused(refusal);
-        var fields = Array(root, "fields").Select(field => new PivotField(
+        var fields = Objects(root, "fields").Select(field => new PivotField(
             String(field, "name"),
             Parse(field, "type", ParseType),
             OptionalString(field, "caption"),
@@ -546,7 +550,7 @@ public static class PivotJson
         }
         catch (JsonException error)
         {
-            throw new FormatException("A Pivot Source document is JSON: " + error.Message, error);
+            throw new FormatException("A Pivot Source document is JSON.", error);
         }
         using (document)
         {
@@ -567,10 +571,29 @@ public static class PivotJson
             catch (ArgumentException error)
             {
                 // A value the model refuses — a key naming no Item, a count out of range — is a
-                // document this reader cannot take.
-                throw new FormatException("The document holds a value that cannot be: " + error.Message, error);
+                // document this reader cannot take, said in the model's own sentence.
+                throw new FormatException("The document holds a value that cannot be: " + Sentence(error), error);
             }
         }
+    }
+
+    // An argument exception's message without what .NET appends to it: the parameter's name, the value.
+    private static string Sentence(ArgumentException error)
+    {
+        var message = error.Message;
+        if (error is ArgumentOutOfRangeException { ActualValue: { } actual })
+        {
+            var actualSuffix = $"{Environment.NewLine}Actual value was {actual}.";
+            if (message.EndsWith(actualSuffix, StringComparison.Ordinal))
+                message = message[..^actualSuffix.Length];
+        }
+        if (error.ParamName is { } param)
+        {
+            var suffix = $" (Parameter '{param}')";
+            if (message.EndsWith(suffix, StringComparison.Ordinal))
+                message = message[..^suffix.Length];
+        }
+        return message;
     }
 
     private static PivotSourceRefusal? ReadRefusal(JsonElement root)
@@ -587,10 +610,10 @@ public static class PivotJson
     }
 
     private static PivotQueryField[] ReadFields(JsonElement element, string name)
-        => Array(element, name).Select(field => new PivotQueryField(String(field, "field"), ReadKeys(field, "hiddenItems"))).ToArray();
+        => Objects(element, name).Select(field => new PivotQueryField(String(field, "field"), ReadKeys(field, "hiddenItems"))).ToArray();
 
     private static PivotFieldItem[] ReadPath(JsonElement element, string name)
-        => Array(element, name).Select(step => new PivotFieldItem(
+        => Objects(element, name).Select(step => new PivotFieldItem(
             String(step, "field"),
             step.TryGetProperty("item", out var item) ? ReadKey(item) : throw new FormatException("A step of a cell's path names its 'item'."))).ToArray();
 
@@ -620,7 +643,7 @@ public static class PivotJson
     }
 
     private static PivotAnswerAxis[] ReadAxes(JsonElement root, string name, int leaves)
-        => Array(root, name).Select(axis =>
+        => Objects(root, name).Select(axis =>
         {
             var field = String(axis, "field");
             var items = ReadKeys(axis, "items");
@@ -707,12 +730,67 @@ public static class PivotJson
     // A part that is exact or not: a JSON number is an exact decimal, a JSON string a double.
     private static PivotNumber ReadExactOrDouble(JsonElement element) => element.ValueKind switch
     {
-        JsonValueKind.Number => element.TryGetDecimal(out var exact)
-            ? PivotNumber.Exact(exact)
-            : throw new FormatException($"{element.GetRawText()} is not an exact decimal; a double is written as a string."),
+        JsonValueKind.Number => PivotNumber.Exact(ExactDecimal(element)),
         JsonValueKind.String => PivotNumber.Double(ParseDouble(element.GetString()!)),
         _ => throw new FormatException("An exact part is a number, and a double one a string."),
     };
+
+    // An exact number: the decimal its spelling writes, refused where no decimal holds that value exactly —
+    // more than 28 places that are not trailing zeros, or digits past 2^96 — which TryGetDecimal would
+    // round to one that looks plausible (ADR-0060).
+    private static decimal ExactDecimal(JsonElement element)
+    {
+        var raw = element.GetRawText();
+        if (element.TryGetDecimal(out var value) && Spells(raw, value))
+            return value;
+        throw new FormatException($"{raw} is not an exact decimal; a double is written as a string.");
+    }
+
+    // Whether a JSON number's spelling has the decimal's value: both as digits and a scale, the trailing
+    // zeros taken off.
+    private static bool Spells(string raw, decimal value)
+    {
+        var e = raw.AsSpan().IndexOfAny('e', 'E');
+        var exponent = 0L;
+        if (e >= 0 && !long.TryParse(raw.AsSpan(e + 1), NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out exponent))
+            return false;
+        var digits = e < 0 ? raw : raw[..e];
+        var negative = digits.StartsWith('-');
+        if (negative)
+            digits = digits[1..];
+        var point = digits.IndexOf('.');
+        var places = point < 0 ? 0 : digits.Length - point - 1;
+        // Trailing zeros are taken off the text, where they cost nothing, before the digits are a number.
+        var unpointed = point < 0 ? digits : digits.Remove(point, 1);
+        var trimmed = unpointed.TrimEnd('0');
+        if (trimmed.Length == 0)
+            return value == 0m;
+        var scale = places - exponent - (unpointed.Length - trimmed.Length);
+        var whole = BigInteger.Parse(trimmed, CultureInfo.InvariantCulture);
+        // A decimal's digits stand at most 28 places past the point, and lie below 10^29.
+        if (scale < -29)
+            return false;
+        var written = Canonical(whole, scale);
+        var bits = decimal.GetBits(value);
+        var magnitude = ((BigInteger)(uint)bits[2] << 64) | ((BigInteger)(uint)bits[1] << 32) | (uint)bits[0];
+        var held = Canonical(magnitude, (bits[3] >> 16) & 0xFF);
+        return written == held && (held.Digits.IsZero || negative == (bits[3] < 0));
+    }
+
+    // Digits and a scale with the trailing zeros taken off, a negative scale carried into the digits.
+    private static (BigInteger Digits, long Scale) Canonical(BigInteger digits, long scale)
+    {
+        if (digits.IsZero)
+            return (digits, 0);
+        if (scale < 0)
+            return (digits * BigInteger.Pow(10, (int)-scale), 0);
+        while (scale > 0 && digits % 10 == 0)
+        {
+            digits /= 10;
+            scale--;
+        }
+        return (digits, scale);
+    }
 
     // A double: a JSON number, or a named literal.
     private static double ReadDouble(JsonElement element) => element.ValueKind switch
@@ -748,9 +826,7 @@ public static class PivotJson
             case JsonValueKind.String when field.Type == PivotFieldType.Date:
                 return ParseDate(element.GetString()!);
             case JsonValueKind.Number when field.Type == PivotFieldType.Number:
-                return element.TryGetDecimal(out var number)
-                    ? number
-                    : throw new FormatException($"{element.GetRawText()} is not an exact decimal; a double is written as a string.");
+                return ExactDecimal(element);
             case JsonValueKind.True or JsonValueKind.False when field.Type == PivotFieldType.Boolean:
                 return element.GetBoolean();
             default:
@@ -767,7 +843,7 @@ public static class PivotJson
         return properties[0].Name switch
         {
             "text" when value.ValueKind == JsonValueKind.String => value.GetString()!,
-            "number" when value.ValueKind == JsonValueKind.Number && value.TryGetDecimal(out var number) => number,
+            "number" when value.ValueKind == JsonValueKind.Number => ExactDecimal(value),
             "double" when value.ValueKind == JsonValueKind.String => ParseDouble(value.GetString()!),
             "date" when value.ValueKind == JsonValueKind.String => ParseDate(value.GetString()!),
             "boolean" when value.ValueKind is JsonValueKind.True or JsonValueKind.False => value.GetBoolean(),
@@ -787,6 +863,18 @@ public static class PivotJson
         if (array.ValueKind != JsonValueKind.Array)
             throw new FormatException($"'{name}' is an array.");
         return array.EnumerateArray().ToArray();
+    }
+
+    // An array whose entries are objects, each refused by name where it is not one.
+    private static IEnumerable<JsonElement> Objects(JsonElement element, string name)
+    {
+        var entries = Array(element, name);
+        foreach (var entry in entries)
+        {
+            if (entry.ValueKind != JsonValueKind.Object)
+                throw new FormatException($"An entry of '{name}' is not an object.");
+        }
+        return entries;
     }
 
     private static string String(JsonElement element, string name)

@@ -205,6 +205,25 @@ const report = pivotReport(pivotCube(query, answer, source.fields), layout, { lo
             package script of its own.
         </p>
         <p>
+            <code>PivotJson</code> writes and reads every question and answer a <code>FetchingPivotSource</code> sends its
+            server, as the C# engine's <code>PivotJson</code> does, the same document to the byte: the Leaf Aggregates,
+            a page of Items or of records, the counts of Items and a notice that the data moved on. A page can so ask a
+            server built on <code>ExPivot.Engine</code>, over whatever transport you choose (<code>post</code> here is
+            your own, such as a <code>fetch</code> call):
+        </p>
+        <pre class="docs-code"><code>const source = new FetchingPivotSource(fields, features, {
+    aggregate: async (query, signal) => PivotJson.readAnswer(await post('/pivot/aggregate', PivotJson.writeQuery(query), signal)),
+    items: async (query, signal) => PivotJson.readItemPage(await post('/pivot/items', PivotJson.writeItemsQuery(query), signal)),
+    details: async (query, signal) => PivotJson.readDetailPage(await post('/pivot/details', PivotJson.writeDetailsQuery(query), signal)),
+});</code></pre>
+        <p>
+            An exact number crosses as its digits, without trailing zeros, since a Decimal is a value and not the places
+            it was written with; one that no decimal holds exactly, past 28 places or past 2^96, is refused by name
+            rather than rounded, by either engine. A document of a version the reader does not read is refused with a
+            <code>PivotVersionError</code>, and one that cannot be with a <code>PivotFormatError</code> naming what is
+            wrong.
+        </p>
+        <p>
             A <code>SnapshotPivotSource</code> is live as the C# one is (<a href="expivot/live">Live data</a>):
             <code>apply(batch)</code> takes a Change Batch, folds it into the answer held for the last question, and tells
             each listener given to <code>subscribe</code> the new Source Version. Its work runs in slices of 30 ms by

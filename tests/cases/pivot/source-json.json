@@ -1,0 +1,633 @@
+{
+  "about": "Every Pivot Source question and answer as it crosses to a server (ADR-0066, ADR-0370 sections 2 and 3): a document read as the document it names and written again, which both engines write as one text to the byte, or what refuses it. The documents the first cases read were written by the C# engine over the Pivot Source tests' deals (tests/ExPivot.Engine.Tests/Sources.cs); the rest are written to be refused.",
+  "kind": "pivotJson",
+  "cases": [
+    {
+      "name": "ADR-0066: an answer crosses to the last bit: a row field, every part of an exact and a double field",
+      "document": "answer",
+      "read": "{\"version\":1,\"type\":\"answer\",\"sourceVersion\":\"a68f07a5ef514c7e950982287efafdcc\",\"rows\":[{\"field\":\"Desk\",\"items\":[{\"kind\":\"text\",\"value\":\"Rates\"},{\"kind\":\"text\",\"value\":\"Credit\"},{\"kind\":\"text\",\"value\":\"\"},{\"kind\":\"text\",\"value\":\"FX\"},{\"kind\":\"blank\"}],\"leaves\":[0,1,4,2,3]}],\"columns\":[],\"records\":[3,2,1,1,2],\"values\":[{\"field\":\"Amount\",\"parts\":[\"sum\",\"extremes\",\"product\",\"variance\"],\"values\":[3,2,0,1,2],\"numbers\":[3,1,0,1,2],\"nonFinite\":[],\"sum\":[\"300.6\",7,0,79228162514264337593543950335,\"7.922816252661002E\\u002B28\"],\"min\":[\"0.1\",7,0,79228162514264337593543950335,12345678901234567890],\"max\":[\"200\",7,0,79228162514264337593543950335,79228162514264337593543950335],\"product\":[2010,7,0,7.922816251426434E+28,9.781254543359367E+47],\"mean\":[100.19999999999999,7,0,7.922816251426434E+28,3.9614081263305E+28],\"m2\":[19980.14,0,0,0,3.1385508667152147E+57]},{\"field\":\"Risk\",\"parts\":[\"sum\",\"extremes\",\"product\",\"variance\"],\"values\":[3,2,1,1,2],\"numbers\":[3,2,1,1,2],\"nonFinite\":[1,2],\"sum\":[\"4.6\",0,0,\"5E-324\",\"1E\\u002B300\"],\"min\":[\"0.1\",0,0,\"5E-324\",\"2.5\"],\"max\":[\"3\",0,0,\"5E-324\",\"1E\\u002B300\"],\"product\":[0.45000000000000007,0,0,5E-324,2.5E+300],\"mean\":[1.5333333333333334,0,0,5E-324,5E+299],\"m2\":[4.206666666666667,0,0,0,\"Infinity\"]}]}",
+      "expect": "{\"version\":1,\"type\":\"answer\",\"sourceVersion\":\"a68f07a5ef514c7e950982287efafdcc\",\"rows\":[{\"field\":\"Desk\",\"items\":[{\"kind\":\"text\",\"value\":\"Rates\"},{\"kind\":\"text\",\"value\":\"Credit\"},{\"kind\":\"text\",\"value\":\"\"},{\"kind\":\"text\",\"value\":\"FX\"},{\"kind\":\"blank\"}],\"leaves\":[0,1,4,2,3]}],\"columns\":[],\"records\":[3,2,1,1,2],\"values\":[{\"field\":\"Amount\",\"parts\":[\"sum\",\"extremes\",\"product\",\"variance\"],\"values\":[3,2,0,1,2],\"numbers\":[3,1,0,1,2],\"nonFinite\":[],\"sum\":[\"300.6\",7,0,79228162514264337593543950335,\"7.922816252661002E\\u002B28\"],\"min\":[\"0.1\",7,0,79228162514264337593543950335,12345678901234567890],\"max\":[\"200\",7,0,79228162514264337593543950335,79228162514264337593543950335],\"product\":[2010,7,0,7.922816251426434E+28,9.781254543359367E+47],\"mean\":[100.19999999999999,7,0,7.922816251426434E+28,3.9614081263305E+28],\"m2\":[19980.14,0,0,0,3.1385508667152147E+57]},{\"field\":\"Risk\",\"parts\":[\"sum\",\"extremes\",\"product\",\"variance\"],\"values\":[3,2,1,1,2],\"numbers\":[3,2,1,1,2],\"nonFinite\":[1,2],\"sum\":[\"4.6\",0,0,\"5E-324\",\"1E\\u002B300\"],\"min\":[\"0.1\",0,0,\"5E-324\",\"2.5\"],\"max\":[\"3\",0,0,\"5E-324\",\"1E\\u002B300\"],\"product\":[0.45000000000000007,0,0,5E-324,2.5E+300],\"mean\":[1.5333333333333334,0,0,5E-324,5E+299],\"m2\":[4.206666666666667,0,0,0,\"Infinity\"]}]}"
+    },
+    {
+      "name": "ADR-0066: a question crosses: a row field, every part of an exact and a double field",
+      "document": "query",
+      "read": "{\"version\":1,\"type\":\"query\",\"rows\":[{\"field\":\"Desk\"}],\"columns\":[],\"filters\":[],\"values\":[{\"field\":\"Amount\",\"parts\":[\"sum\",\"extremes\",\"product\",\"variance\"]},{\"field\":\"Risk\",\"parts\":[\"sum\",\"extremes\",\"product\",\"variance\"]}],\"maxLeaves\":200000}",
+      "expect": "{\"version\":1,\"type\":\"query\",\"rows\":[{\"field\":\"Desk\"}],\"columns\":[],\"filters\":[],\"values\":[{\"field\":\"Amount\",\"parts\":[\"sum\",\"extremes\",\"product\",\"variance\"]},{\"field\":\"Risk\",\"parts\":[\"sum\",\"extremes\",\"product\",\"variance\"]}],\"maxLeaves\":200000}"
+    },
+    {
+      "name": "ADR-0066: an answer crosses to the last bit: rows and a column of Booleans, a sum and the counts alone",
+      "document": "answer",
+      "read": "{\"version\":1,\"type\":\"answer\",\"sourceVersion\":\"a68f07a5ef514c7e950982287efafdcc\",\"rows\":[{\"field\":\"Desk\",\"items\":[{\"kind\":\"text\",\"value\":\"Rates\"},{\"kind\":\"text\",\"value\":\"Credit\"},{\"kind\":\"text\",\"value\":\"\"},{\"kind\":\"text\",\"value\":\"FX\"},{\"kind\":\"blank\"}],\"leaves\":[0,0,1,1,4,2,3,3,0]},{\"field\":\"Book\",\"items\":[{\"kind\":\"text\",\"value\":\"LDN-1\"},{\"kind\":\"text\",\"value\":\"NY-2\"},{\"kind\":\"text\",\"value\":\"TKY-3\"},{\"kind\":\"blank\"}],\"leaves\":[0,0,1,3,1,2,2,0,1]}],\"columns\":[{\"field\":\"Live\",\"items\":[{\"kind\":\"boolean\",\"value\":\"TRUE\"},{\"kind\":\"boolean\",\"value\":\"FALSE\"},{\"kind\":\"blank\"}],\"leaves\":[0,1,0,2,0,1,0,1,0]}],\"records\":[1,1,1,1,1,1,1,1,1],\"values\":[{\"field\":\"Amount\",\"parts\":[\"sum\"],\"values\":[1,1,1,1,0,1,1,1,1],\"numbers\":[1,1,1,0,0,1,1,1,1],\"nonFinite\":[],\"sum\":[100.5,200,7,0,0,79228162514264337593543950335,79228162514264337593543950335,12345678901234567890,\"0.1\"]},{\"field\":\"Tag\",\"parts\":[],\"values\":[1,1,0,1,1,1,1,1,1],\"numbers\":[0,0,0,0,1,0,0,0,0],\"nonFinite\":[]}]}",
+      "expect": "{\"version\":1,\"type\":\"answer\",\"sourceVersion\":\"a68f07a5ef514c7e950982287efafdcc\",\"rows\":[{\"field\":\"Desk\",\"items\":[{\"kind\":\"text\",\"value\":\"Rates\"},{\"kind\":\"text\",\"value\":\"Credit\"},{\"kind\":\"text\",\"value\":\"\"},{\"kind\":\"text\",\"value\":\"FX\"},{\"kind\":\"blank\"}],\"leaves\":[0,0,1,1,4,2,3,3,0]},{\"field\":\"Book\",\"items\":[{\"kind\":\"text\",\"value\":\"LDN-1\"},{\"kind\":\"text\",\"value\":\"NY-2\"},{\"kind\":\"text\",\"value\":\"TKY-3\"},{\"kind\":\"blank\"}],\"leaves\":[0,0,1,3,1,2,2,0,1]}],\"columns\":[{\"field\":\"Live\",\"items\":[{\"kind\":\"boolean\",\"value\":\"TRUE\"},{\"kind\":\"boolean\",\"value\":\"FALSE\"},{\"kind\":\"blank\"}],\"leaves\":[0,1,0,2,0,1,0,1,0]}],\"records\":[1,1,1,1,1,1,1,1,1],\"values\":[{\"field\":\"Amount\",\"parts\":[\"sum\"],\"values\":[1,1,1,1,0,1,1,1,1],\"numbers\":[1,1,1,0,0,1,1,1,1],\"nonFinite\":[],\"sum\":[100.5,200,7,0,0,79228162514264337593543950335,79228162514264337593543950335,12345678901234567890,\"0.1\"]},{\"field\":\"Tag\",\"parts\":[],\"values\":[1,1,0,1,1,1,1,1,1],\"numbers\":[0,0,0,0,1,0,0,0,0],\"nonFinite\":[]}]}"
+    },
+    {
+      "name": "ADR-0066: a question crosses: rows and a column of Booleans, a sum and the counts alone",
+      "document": "query",
+      "read": "{\"version\":1,\"type\":\"query\",\"rows\":[{\"field\":\"Desk\"},{\"field\":\"Book\"}],\"columns\":[{\"field\":\"Live\"}],\"filters\":[],\"values\":[{\"field\":\"Amount\",\"parts\":[\"sum\"]},{\"field\":\"Tag\",\"parts\":[]}],\"maxLeaves\":200000}",
+      "expect": "{\"version\":1,\"type\":\"query\",\"rows\":[{\"field\":\"Desk\"},{\"field\":\"Book\"}],\"columns\":[{\"field\":\"Live\"}],\"filters\":[],\"values\":[{\"field\":\"Amount\",\"parts\":[\"sum\"]},{\"field\":\"Tag\",\"parts\":[]}],\"maxLeaves\":200000}"
+    },
+    {
+      "name": "ADR-0066: an answer crosses to the last bit: dates in Columns and a hiding filter",
+      "document": "answer",
+      "read": "{\"version\":1,\"type\":\"answer\",\"sourceVersion\":\"a68f07a5ef514c7e950982287efafdcc\",\"rows\":[{\"field\":\"Book\",\"items\":[{\"kind\":\"text\",\"value\":\"LDN-1\"},{\"kind\":\"text\",\"value\":\"NY-2\"},{\"kind\":\"text\",\"value\":\"TKY-3\"},{\"kind\":\"blank\"}],\"leaves\":[0,1,3,2]}],\"columns\":[{\"field\":\"Date\",\"items\":[{\"kind\":\"date\",\"value\":\"2026-01-02T00:00:00\"},{\"kind\":\"date\",\"value\":\"2026-02-03T00:00:00\"},{\"kind\":\"blank\"},{\"kind\":\"date\",\"value\":\"2026-03-04T00:00:00\"}],\"leaves\":[0,1,2,3]}],\"records\":[1,3,1,1],\"values\":[{\"field\":\"Risk\",\"parts\":[\"sum\",\"extremes\"],\"values\":[1,3,1,1],\"numbers\":[1,3,1,1],\"nonFinite\":[1],\"sum\":[\"1.5\",0,\"0\",\"2.5\"],\"min\":[\"1.5\",0,\"-0\",\"2.5\"],\"max\":[\"1.5\",0,\"-0\",\"2.5\"]}]}",
+      "expect": "{\"version\":1,\"type\":\"answer\",\"sourceVersion\":\"a68f07a5ef514c7e950982287efafdcc\",\"rows\":[{\"field\":\"Book\",\"items\":[{\"kind\":\"text\",\"value\":\"LDN-1\"},{\"kind\":\"text\",\"value\":\"NY-2\"},{\"kind\":\"text\",\"value\":\"TKY-3\"},{\"kind\":\"blank\"}],\"leaves\":[0,1,3,2]}],\"columns\":[{\"field\":\"Date\",\"items\":[{\"kind\":\"date\",\"value\":\"2026-01-02T00:00:00\"},{\"kind\":\"date\",\"value\":\"2026-02-03T00:00:00\"},{\"kind\":\"blank\"},{\"kind\":\"date\",\"value\":\"2026-03-04T00:00:00\"}],\"leaves\":[0,1,2,3]}],\"records\":[1,3,1,1],\"values\":[{\"field\":\"Risk\",\"parts\":[\"sum\",\"extremes\"],\"values\":[1,3,1,1],\"numbers\":[1,3,1,1],\"nonFinite\":[1],\"sum\":[\"1.5\",0,\"0\",\"2.5\"],\"min\":[\"1.5\",0,\"-0\",\"2.5\"],\"max\":[\"1.5\",0,\"-0\",\"2.5\"]}]}"
+    },
+    {
+      "name": "ADR-0066: a question crosses: dates in Columns and a hiding filter",
+      "document": "query",
+      "read": "{\"version\":1,\"type\":\"query\",\"rows\":[{\"field\":\"Book\"}],\"columns\":[{\"field\":\"Date\"}],\"filters\":[{\"field\":\"Live\",\"hiddenItems\":[{\"kind\":\"boolean\",\"value\":\"FALSE\"}]}],\"values\":[{\"field\":\"Risk\",\"parts\":[\"sum\",\"extremes\"]}],\"maxLeaves\":200000}",
+      "expect": "{\"version\":1,\"type\":\"query\",\"rows\":[{\"field\":\"Book\"}],\"columns\":[{\"field\":\"Date\"}],\"filters\":[{\"field\":\"Live\",\"hiddenItems\":[{\"kind\":\"boolean\",\"value\":\"FALSE\"}]}],\"values\":[{\"field\":\"Risk\",\"parts\":[\"sum\",\"extremes\"]}],\"maxLeaves\":200000}"
+    },
+    {
+      "name": "ADR-0066: an answer crosses to the last bit: Items of every kind in Columns",
+      "document": "answer",
+      "read": "{\"version\":1,\"type\":\"answer\",\"sourceVersion\":\"a68f07a5ef514c7e950982287efafdcc\",\"rows\":[],\"columns\":[{\"field\":\"Tag\",\"items\":[{\"kind\":\"text\",\"value\":\"High\"},{\"kind\":\"text\",\"value\":\"Low\"},{\"kind\":\"text\",\"value\":\"7d3f7a52-1b49-4a3e-9d57-2b8c3c0e6f11\"},{\"kind\":\"number\",\"value\":\"12\"},{\"kind\":\"boolean\",\"value\":\"TRUE\"},{\"kind\":\"date\",\"value\":\"2026-01-01T00:00:00\"},{\"kind\":\"blank\"}],\"leaves\":[0,1,6,2,3,4,5]}],\"records\":[2,2,1,1,1,1,1],\"values\":[{\"field\":\"Amount\",\"parts\":[\"sum\",\"extremes\",\"product\",\"variance\"],\"values\":[2,2,1,1,0,1,1],\"numbers\":[2,2,1,0,0,1,1],\"nonFinite\":[],\"sum\":[\"7.922816251426434E\\u002B28\",\"7.922816251426434E\\u002B28\",7,0,0,12345678901234567890,\"0.1\"],\"min\":[100.5,200,7,0,0,12345678901234567890,\"0.1\"],\"max\":[79228162514264337593543950335,79228162514264337593543950335,7,0,0,12345678901234567890,\"0.1\"],\"product\":[7.962430332683566E+30,1.5845632502852868E+31,7,0,0,1.2345678901234567E+19,0.1],\"mean\":[3.961408125713217E+28,3.961408125713217E+28,7,0,0,1.2345678901234567E+19,0.1],\"m2\":[3.1385508676933404E+57,3.1385508676933404E+57,0,0,0,0,0]}]}",
+      "expect": "{\"version\":1,\"type\":\"answer\",\"sourceVersion\":\"a68f07a5ef514c7e950982287efafdcc\",\"rows\":[],\"columns\":[{\"field\":\"Tag\",\"items\":[{\"kind\":\"text\",\"value\":\"High\"},{\"kind\":\"text\",\"value\":\"Low\"},{\"kind\":\"text\",\"value\":\"7d3f7a52-1b49-4a3e-9d57-2b8c3c0e6f11\"},{\"kind\":\"number\",\"value\":\"12\"},{\"kind\":\"boolean\",\"value\":\"TRUE\"},{\"kind\":\"date\",\"value\":\"2026-01-01T00:00:00\"},{\"kind\":\"blank\"}],\"leaves\":[0,1,6,2,3,4,5]}],\"records\":[2,2,1,1,1,1,1],\"values\":[{\"field\":\"Amount\",\"parts\":[\"sum\",\"extremes\",\"product\",\"variance\"],\"values\":[2,2,1,1,0,1,1],\"numbers\":[2,2,1,0,0,1,1],\"nonFinite\":[],\"sum\":[\"7.922816251426434E\\u002B28\",\"7.922816251426434E\\u002B28\",7,0,0,12345678901234567890,\"0.1\"],\"min\":[100.5,200,7,0,0,12345678901234567890,\"0.1\"],\"max\":[79228162514264337593543950335,79228162514264337593543950335,7,0,0,12345678901234567890,\"0.1\"],\"product\":[7.962430332683566E+30,1.5845632502852868E+31,7,0,0,1.2345678901234567E+19,0.1],\"mean\":[3.961408125713217E+28,3.961408125713217E+28,7,0,0,1.2345678901234567E+19,0.1],\"m2\":[3.1385508676933404E+57,3.1385508676933404E+57,0,0,0,0,0]}]}"
+    },
+    {
+      "name": "ADR-0066: a question crosses: Items of every kind in Columns",
+      "document": "query",
+      "read": "{\"version\":1,\"type\":\"query\",\"rows\":[],\"columns\":[{\"field\":\"Tag\"}],\"filters\":[],\"values\":[{\"field\":\"Amount\",\"parts\":[\"sum\",\"extremes\",\"product\",\"variance\"]}],\"maxLeaves\":200000}",
+      "expect": "{\"version\":1,\"type\":\"query\",\"rows\":[],\"columns\":[{\"field\":\"Tag\"}],\"filters\":[],\"values\":[{\"field\":\"Amount\",\"parts\":[\"sum\",\"extremes\",\"product\",\"variance\"]}],\"maxLeaves\":200000}"
+    },
+    {
+      "name": "ADR-0066: an answer crosses to the last bit: the grand total alone",
+      "document": "answer",
+      "read": "{\"version\":1,\"type\":\"answer\",\"sourceVersion\":\"a68f07a5ef514c7e950982287efafdcc\",\"rows\":[],\"columns\":[],\"records\":[9],\"values\":[{\"field\":\"Amount\",\"parts\":[\"sum\"],\"values\":[8],\"numbers\":[7],\"nonFinite\":[],\"sum\":[\"1.5845632504087434E\\u002B29\"]}]}",
+      "expect": "{\"version\":1,\"type\":\"answer\",\"sourceVersion\":\"a68f07a5ef514c7e950982287efafdcc\",\"rows\":[],\"columns\":[],\"records\":[9],\"values\":[{\"field\":\"Amount\",\"parts\":[\"sum\"],\"values\":[8],\"numbers\":[7],\"nonFinite\":[],\"sum\":[\"1.5845632504087434E\\u002B29\"]}]}"
+    },
+    {
+      "name": "ADR-0066: a question crosses: the grand total alone",
+      "document": "query",
+      "read": "{\"version\":1,\"type\":\"query\",\"rows\":[],\"columns\":[],\"filters\":[],\"values\":[{\"field\":\"Amount\",\"parts\":[\"sum\"]}],\"maxLeaves\":200000}",
+      "expect": "{\"version\":1,\"type\":\"query\",\"rows\":[],\"columns\":[],\"filters\":[],\"values\":[{\"field\":\"Amount\",\"parts\":[\"sum\"]}],\"maxLeaves\":200000}"
+    },
+    {
+      "name": "ADR-0066: an answer crosses to the last bit: Hidden Items in Rows",
+      "document": "answer",
+      "read": "{\"version\":1,\"type\":\"answer\",\"sourceVersion\":\"a68f07a5ef514c7e950982287efafdcc\",\"rows\":[{\"field\":\"Desk\",\"items\":[{\"kind\":\"text\",\"value\":\"Credit\"},{\"kind\":\"text\",\"value\":\"\"},{\"kind\":\"text\",\"value\":\"FX\"}],\"leaves\":[0,1,2]}],\"columns\":[],\"records\":[2,1,2],\"values\":[{\"field\":\"Amount\",\"parts\":[\"sum\"],\"values\":[2,1,2],\"numbers\":[1,1,2],\"nonFinite\":[],\"sum\":[7,79228162514264337593543950335,\"7.922816252661002E\\u002B28\"]},{\"field\":\"Risk\",\"parts\":[\"variance\"],\"values\":[2,1,2],\"numbers\":[2,1,2],\"nonFinite\":[0],\"mean\":[0,5E-324,5E+299],\"m2\":[0,0,\"Infinity\"]}]}",
+      "expect": "{\"version\":1,\"type\":\"answer\",\"sourceVersion\":\"a68f07a5ef514c7e950982287efafdcc\",\"rows\":[{\"field\":\"Desk\",\"items\":[{\"kind\":\"text\",\"value\":\"Credit\"},{\"kind\":\"text\",\"value\":\"\"},{\"kind\":\"text\",\"value\":\"FX\"}],\"leaves\":[0,1,2]}],\"columns\":[],\"records\":[2,1,2],\"values\":[{\"field\":\"Amount\",\"parts\":[\"sum\"],\"values\":[2,1,2],\"numbers\":[1,1,2],\"nonFinite\":[],\"sum\":[7,79228162514264337593543950335,\"7.922816252661002E\\u002B28\"]},{\"field\":\"Risk\",\"parts\":[\"variance\"],\"values\":[2,1,2],\"numbers\":[2,1,2],\"nonFinite\":[0],\"mean\":[0,5E-324,5E+299],\"m2\":[0,0,\"Infinity\"]}]}"
+    },
+    {
+      "name": "ADR-0066: a question crosses: Hidden Items in Rows",
+      "document": "query",
+      "read": "{\"version\":1,\"type\":\"query\",\"rows\":[{\"field\":\"Desk\",\"hiddenItems\":[{\"kind\":\"text\",\"value\":\"rates\"},{\"kind\":\"blank\"}]}],\"columns\":[],\"filters\":[],\"values\":[{\"field\":\"Amount\",\"parts\":[\"sum\"]},{\"field\":\"Risk\",\"parts\":[\"variance\"]}],\"maxLeaves\":200000}",
+      "expect": "{\"version\":1,\"type\":\"query\",\"rows\":[{\"field\":\"Desk\",\"hiddenItems\":[{\"kind\":\"text\",\"value\":\"rates\"},{\"kind\":\"blank\"}]}],\"columns\":[],\"filters\":[],\"values\":[{\"field\":\"Amount\",\"parts\":[\"sum\"]},{\"field\":\"Risk\",\"parts\":[\"variance\"]}],\"maxLeaves\":200000}"
+    },
+    {
+      "name": "ADR-0066: an answer crosses to the last bit: the empty question",
+      "document": "answer",
+      "read": "{\"version\":1,\"type\":\"answer\",\"sourceVersion\":\"a68f07a5ef514c7e950982287efafdcc\",\"rows\":[],\"columns\":[],\"records\":[9],\"values\":[]}",
+      "expect": "{\"version\":1,\"type\":\"answer\",\"sourceVersion\":\"a68f07a5ef514c7e950982287efafdcc\",\"rows\":[],\"columns\":[],\"records\":[9],\"values\":[]}"
+    },
+    {
+      "name": "ADR-0066: a question crosses: the empty question",
+      "document": "query",
+      "read": "{\"version\":1,\"type\":\"query\",\"rows\":[],\"columns\":[],\"filters\":[],\"values\":[],\"maxLeaves\":200000}",
+      "expect": "{\"version\":1,\"type\":\"query\",\"rows\":[],\"columns\":[],\"filters\":[],\"values\":[],\"maxLeaves\":200000}"
+    },
+    {
+      "name": "ADR-0066: a question crosses with Hidden Items of every kind, and text past ASCII and that HTML gives a meaning to spelt as System.Text.Json spells it",
+      "document": "query",
+      "read": "{\"version\":1,\"type\":\"query\",\"rows\":[{\"field\":\"Desk\",\"hiddenItems\":[{\"kind\":\"text\",\"value\":\"Rates\"},{\"kind\":\"text\",\"value\":\"\\u00C9CHANGE \\u0022x\\u0022 \\u003C\\u0026\\u003E\\u0027\\u002B\\u0060 \\\\ \\n\"},{\"kind\":\"blank\"}]},{\"field\":\"Book\"}],\"columns\":[{\"field\":\"Date\",\"hiddenItems\":[{\"kind\":\"date\",\"value\":\"2026-01-02T13:45:00.5\"}]}],\"filters\":[{\"field\":\"Live\",\"hiddenItems\":[{\"kind\":\"boolean\",\"value\":\"FALSE\"}]},{\"field\":\"Risk\",\"hiddenItems\":[{\"kind\":\"number\",\"value\":\"1234.5\"},{\"kind\":\"error\",\"value\":\"#NUM!\"}]}],\"values\":[{\"field\":\"Amount\",\"parts\":[\"sum\",\"extremes\"]},{\"field\":\"Tag\",\"parts\":[]},{\"field\":\"Risk\",\"parts\":[\"product\",\"variance\"]}],\"maxLeaves\":12345}",
+      "expect": "{\"version\":1,\"type\":\"query\",\"rows\":[{\"field\":\"Desk\",\"hiddenItems\":[{\"kind\":\"text\",\"value\":\"Rates\"},{\"kind\":\"text\",\"value\":\"\\u00C9CHANGE \\u0022x\\u0022 \\u003C\\u0026\\u003E\\u0027\\u002B\\u0060 \\\\ \\n\"},{\"kind\":\"blank\"}]},{\"field\":\"Book\"}],\"columns\":[{\"field\":\"Date\",\"hiddenItems\":[{\"kind\":\"date\",\"value\":\"2026-01-02T13:45:00.5\"}]}],\"filters\":[{\"field\":\"Live\",\"hiddenItems\":[{\"kind\":\"boolean\",\"value\":\"FALSE\"}]},{\"field\":\"Risk\",\"hiddenItems\":[{\"kind\":\"number\",\"value\":\"1234.5\"},{\"kind\":\"error\",\"value\":\"#NUM!\"}]}],\"values\":[{\"field\":\"Amount\",\"parts\":[\"sum\",\"extremes\"]},{\"field\":\"Tag\",\"parts\":[]},{\"field\":\"Risk\",\"parts\":[\"product\",\"variance\"]}],\"maxLeaves\":12345}"
+    },
+    {
+      "name": "ADR-0066: an exact number crosses as its digits, a double as its shortest text, and one not finite by name",
+      "document": "answer",
+      "read": "{\"version\":1,\"type\":\"answer\",\"sourceVersion\":\"v7\",\"rows\":[{\"field\":\"Desk\",\"items\":[{\"kind\":\"text\",\"value\":\"Rates\"},{\"kind\":\"text\",\"value\":\"FX\"}],\"leaves\":[0,1]}],\"columns\":[],\"records\":[3,2],\"values\":[{\"field\":\"Amount\",\"parts\":[\"sum\",\"extremes\",\"product\",\"variance\"],\"values\":[3,2],\"numbers\":[3,2],\"nonFinite\":[1],\"sum\":[79228162514264337593543950335,\"0.30000000000000004\"],\"min\":[-1.000000000000000000000000001,\"-0\"],\"max\":[0.1,\"NaN\"],\"product\":[\"Infinity\",5E-324],\"mean\":[\"NaN\",1E+300],\"m2\":[\"-Infinity\",-0]}]}",
+      "expect": "{\"version\":1,\"type\":\"answer\",\"sourceVersion\":\"v7\",\"rows\":[{\"field\":\"Desk\",\"items\":[{\"kind\":\"text\",\"value\":\"Rates\"},{\"kind\":\"text\",\"value\":\"FX\"}],\"leaves\":[0,1]}],\"columns\":[],\"records\":[3,2],\"values\":[{\"field\":\"Amount\",\"parts\":[\"sum\",\"extremes\",\"product\",\"variance\"],\"values\":[3,2],\"numbers\":[3,2],\"nonFinite\":[1],\"sum\":[79228162514264337593543950335,\"0.30000000000000004\"],\"min\":[-1.000000000000000000000000001,\"-0\"],\"max\":[0.1,\"NaN\"],\"product\":[\"Infinity\",5E-324],\"mean\":[\"NaN\",1E+300],\"m2\":[\"-Infinity\",-0]}]}"
+    },
+    {
+      "name": "ADR-0066: a question for Items crosses: a field's Items",
+      "document": "itemsQuery",
+      "read": "{\"version\":1,\"type\":\"itemsQuery\",\"field\":\"Desk\",\"sourceVersion\":\"a68f07a5ef514c7e950982287efafdcc\",\"max\":10000}",
+      "expect": "{\"version\":1,\"type\":\"itemsQuery\",\"field\":\"Desk\",\"sourceVersion\":\"a68f07a5ef514c7e950982287efafdcc\",\"max\":10000}"
+    },
+    {
+      "name": "ADR-0066: a page of Items crosses: a field's Items",
+      "document": "itemPage",
+      "read": "{\"version\":1,\"type\":\"itemPage\",\"sourceVersion\":\"a68f07a5ef514c7e950982287efafdcc\",\"items\":[{\"kind\":\"text\",\"value\":\"\"},{\"kind\":\"text\",\"value\":\"Credit\"},{\"kind\":\"text\",\"value\":\"FX\"},{\"kind\":\"text\",\"value\":\"Rates\"},{\"kind\":\"blank\"}],\"total\":5}",
+      "expect": "{\"version\":1,\"type\":\"itemPage\",\"sourceVersion\":\"a68f07a5ef514c7e950982287efafdcc\",\"items\":[{\"kind\":\"text\",\"value\":\"\"},{\"kind\":\"text\",\"value\":\"Credit\"},{\"kind\":\"text\",\"value\":\"FX\"},{\"kind\":\"text\",\"value\":\"Rates\"},{\"kind\":\"blank\"}],\"total\":5}"
+    },
+    {
+      "name": "ADR-0066: a question for Items crosses: a search and a cap",
+      "document": "itemsQuery",
+      "read": "{\"version\":1,\"type\":\"itemsQuery\",\"field\":\"Tag\",\"sourceVersion\":\"a68f07a5ef514c7e950982287efafdcc\",\"search\":\"o\",\"max\":2}",
+      "expect": "{\"version\":1,\"type\":\"itemsQuery\",\"field\":\"Tag\",\"sourceVersion\":\"a68f07a5ef514c7e950982287efafdcc\",\"search\":\"o\",\"max\":2}"
+    },
+    {
+      "name": "ADR-0066: a page of Items crosses: a search and a cap",
+      "document": "itemPage",
+      "read": "{\"version\":1,\"type\":\"itemPage\",\"sourceVersion\":\"a68f07a5ef514c7e950982287efafdcc\",\"items\":[{\"kind\":\"text\",\"value\":\"Low\"}],\"total\":1}",
+      "expect": "{\"version\":1,\"type\":\"itemPage\",\"sourceVersion\":\"a68f07a5ef514c7e950982287efafdcc\",\"items\":[{\"kind\":\"text\",\"value\":\"Low\"}],\"total\":1}"
+    },
+    {
+      "name": "ADR-0066: a question for Items crosses: no Item wanted",
+      "document": "itemsQuery",
+      "read": "{\"version\":1,\"type\":\"itemsQuery\",\"field\":\"Date\",\"sourceVersion\":\"a68f07a5ef514c7e950982287efafdcc\",\"max\":0}",
+      "expect": "{\"version\":1,\"type\":\"itemsQuery\",\"field\":\"Date\",\"sourceVersion\":\"a68f07a5ef514c7e950982287efafdcc\",\"max\":0}"
+    },
+    {
+      "name": "ADR-0066: a page of Items crosses: no Item wanted",
+      "document": "itemPage",
+      "read": "{\"version\":1,\"type\":\"itemPage\",\"sourceVersion\":\"a68f07a5ef514c7e950982287efafdcc\",\"items\":[],\"total\":5}",
+      "expect": "{\"version\":1,\"type\":\"itemPage\",\"sourceVersion\":\"a68f07a5ef514c7e950982287efafdcc\",\"items\":[],\"total\":5}"
+    },
+    {
+      "name": "ADR-0066: a question for the records behind a cell crosses",
+      "document": "detailsQuery",
+      "read": "{\"version\":1,\"type\":\"detailsQuery\",\"sourceVersion\":\"a68f07a5ef514c7e950982287efafdcc\",\"rowItems\":[{\"field\":\"Book\",\"item\":{\"kind\":\"text\",\"value\":\"LDN-1\"}}],\"columnItems\":[{\"field\":\"Date\",\"item\":{\"kind\":\"date\",\"value\":\"2026-01-02T00:00:00\"}}],\"hiddenItems\":[{\"field\":\"Desk\",\"hiddenItems\":[{\"kind\":\"text\",\"value\":\"FX\"}]},{\"field\":\"Live\",\"hiddenItems\":[{\"kind\":\"blank\"}]}],\"start\":0,\"count\":10}",
+      "expect": "{\"version\":1,\"type\":\"detailsQuery\",\"sourceVersion\":\"a68f07a5ef514c7e950982287efafdcc\",\"rowItems\":[{\"field\":\"Book\",\"item\":{\"kind\":\"text\",\"value\":\"LDN-1\"}}],\"columnItems\":[{\"field\":\"Date\",\"item\":{\"kind\":\"date\",\"value\":\"2026-01-02T00:00:00\"}}],\"hiddenItems\":[{\"field\":\"Desk\",\"hiddenItems\":[{\"kind\":\"text\",\"value\":\"FX\"}]},{\"field\":\"Live\",\"hiddenItems\":[{\"kind\":\"blank\"}]}],\"start\":0,\"count\":10}"
+    },
+    {
+      "name": "ADR-0066: a question for every record behind the grand total crosses, its count every record",
+      "document": "detailsQuery",
+      "read": "{\"version\":1,\"type\":\"detailsQuery\",\"sourceVersion\":\"a68f07a5ef514c7e950982287efafdcc\",\"rowItems\":[],\"columnItems\":[],\"hiddenItems\":[],\"start\":0,\"count\":2147483647}",
+      "expect": "{\"version\":1,\"type\":\"detailsQuery\",\"sourceVersion\":\"a68f07a5ef514c7e950982287efafdcc\",\"rowItems\":[],\"columnItems\":[],\"hiddenItems\":[],\"start\":0,\"count\":2147483647}"
+    },
+    {
+      "name": "ADR-0066: the records behind a cell cross, each value by its field's type and one of another type tagged with its own",
+      "document": "detailPage",
+      "read": "{\"version\":1,\"type\":\"detailPage\",\"sourceVersion\":\"a68f07a5ef514c7e950982287efafdcc\",\"fields\":[{\"name\":\"Desk\",\"type\":\"text\"},{\"name\":\"Book\",\"type\":\"text\",\"caption\":\"Trading book\"},{\"name\":\"Date\",\"type\":\"date\",\"format\":\"yyyy-MM-dd\"},{\"name\":\"Amount\",\"type\":\"number\",\"format\":\"#,##0.00\"},{\"name\":\"Risk\",\"type\":\"number\"},{\"name\":\"Live\",\"type\":\"boolean\"},{\"name\":\"Tag\",\"type\":\"text\"}],\"start\":0,\"total\":9,\"records\":[[\"Rates\",\"LDN-1\",\"2026-01-02T00:00:00\",100.5,\"1.5\",true,\"High\"],[\"RATES\",\"LDN-1\",\"2026-01-02T13:45:00\",200,\"0.1\",false,\"Low\"],[\"Credit\",\"NY-2\",\"2026-02-03T00:00:00\",7,\"NaN\",true,null],[\"Credit\",null,null,{\"text\":\"7\"},\"-0\",null,\"7d3f7a52-1b49-4a3e-9d57-2b8c3c0e6f11\"],[null,\"NY-2\",\"2026-02-03T00:00:00\",null,\"Infinity\",true,{\"number\":12}],[\"\",\"TKY-3\",\"2026-03-04T00:00:00\",79228162514264337593543950335,\"5E-324\",false,\"High\"],[\"FX\",\"TKY-3\",\"2026-03-04T00:00:00\",79228162514264337593543950335,\"2.5\",true,\"Low\"],[\"FX\",\"LDN-1\",\"2026-01-02T00:00:00\",12345678901234567890,\"1E\\u002B300\",false,{\"boolean\":true}],[\"Rates\",\"NY-2\",\"2026-02-03T00:00:00\",\"0.1\",\"3\",true,{\"date\":\"2026-01-01T00:00:00\"}]]}",
+      "expect": "{\"version\":1,\"type\":\"detailPage\",\"sourceVersion\":\"a68f07a5ef514c7e950982287efafdcc\",\"fields\":[{\"name\":\"Desk\",\"type\":\"text\"},{\"name\":\"Book\",\"type\":\"text\",\"caption\":\"Trading book\"},{\"name\":\"Date\",\"type\":\"date\",\"format\":\"yyyy-MM-dd\"},{\"name\":\"Amount\",\"type\":\"number\",\"format\":\"#,##0.00\"},{\"name\":\"Risk\",\"type\":\"number\"},{\"name\":\"Live\",\"type\":\"boolean\"},{\"name\":\"Tag\",\"type\":\"text\"}],\"start\":0,\"total\":9,\"records\":[[\"Rates\",\"LDN-1\",\"2026-01-02T00:00:00\",100.5,\"1.5\",true,\"High\"],[\"RATES\",\"LDN-1\",\"2026-01-02T13:45:00\",200,\"0.1\",false,\"Low\"],[\"Credit\",\"NY-2\",\"2026-02-03T00:00:00\",7,\"NaN\",true,null],[\"Credit\",null,null,{\"text\":\"7\"},\"-0\",null,\"7d3f7a52-1b49-4a3e-9d57-2b8c3c0e6f11\"],[null,\"NY-2\",\"2026-02-03T00:00:00\",null,\"Infinity\",true,{\"number\":12}],[\"\",\"TKY-3\",\"2026-03-04T00:00:00\",79228162514264337593543950335,\"5E-324\",false,\"High\"],[\"FX\",\"TKY-3\",\"2026-03-04T00:00:00\",79228162514264337593543950335,\"2.5\",true,\"Low\"],[\"FX\",\"LDN-1\",\"2026-01-02T00:00:00\",12345678901234567890,\"1E\\u002B300\",false,{\"boolean\":true}],[\"Rates\",\"NY-2\",\"2026-02-03T00:00:00\",\"0.1\",\"3\",true,{\"date\":\"2026-01-01T00:00:00\"}]]}"
+    },
+    {
+      "name": "ADR-0066: a refused answer crosses: too many leaves",
+      "document": "answer",
+      "read": "{\"version\":1,\"type\":\"answer\",\"refusal\":{\"kind\":\"tooManyLeaves\",\"message\":\"This layout needs more than 200,000 cells.\",\"limit\":200000}}",
+      "expect": "{\"version\":1,\"type\":\"answer\",\"refusal\":{\"kind\":\"tooManyLeaves\",\"message\":\"This layout needs more than 200,000 cells.\",\"limit\":200000}}"
+    },
+    {
+      "name": "ADR-0066: a refused page of Items crosses: too many leaves",
+      "document": "itemPage",
+      "read": "{\"version\":1,\"type\":\"itemPage\",\"refusal\":{\"kind\":\"tooManyLeaves\",\"message\":\"This layout needs more than 200,000 cells.\",\"limit\":200000}}",
+      "expect": "{\"version\":1,\"type\":\"itemPage\",\"refusal\":{\"kind\":\"tooManyLeaves\",\"message\":\"This layout needs more than 200,000 cells.\",\"limit\":200000}}"
+    },
+    {
+      "name": "ADR-0066: a refused page of records crosses: too many leaves",
+      "document": "detailPage",
+      "read": "{\"version\":1,\"type\":\"detailPage\",\"refusal\":{\"kind\":\"tooManyLeaves\",\"message\":\"This layout needs more than 200,000 cells.\",\"limit\":200000}}",
+      "expect": "{\"version\":1,\"type\":\"detailPage\",\"refusal\":{\"kind\":\"tooManyLeaves\",\"message\":\"This layout needs more than 200,000 cells.\",\"limit\":200000}}"
+    },
+    {
+      "name": "ADR-0066: a refused answer crosses: an unknown field",
+      "document": "answer",
+      "read": "{\"version\":1,\"type\":\"answer\",\"refusal\":{\"kind\":\"unknownField\",\"message\":\"The source has no field named \\u0027Desk\\u0027.\",\"field\":\"Desk\"}}",
+      "expect": "{\"version\":1,\"type\":\"answer\",\"refusal\":{\"kind\":\"unknownField\",\"message\":\"The source has no field named \\u0027Desk\\u0027.\",\"field\":\"Desk\"}}"
+    },
+    {
+      "name": "ADR-0066: a refused page of Items crosses: an unknown field",
+      "document": "itemPage",
+      "read": "{\"version\":1,\"type\":\"itemPage\",\"refusal\":{\"kind\":\"unknownField\",\"message\":\"The source has no field named \\u0027Desk\\u0027.\",\"field\":\"Desk\"}}",
+      "expect": "{\"version\":1,\"type\":\"itemPage\",\"refusal\":{\"kind\":\"unknownField\",\"message\":\"The source has no field named \\u0027Desk\\u0027.\",\"field\":\"Desk\"}}"
+    },
+    {
+      "name": "ADR-0066: a refused page of records crosses: an unknown field",
+      "document": "detailPage",
+      "read": "{\"version\":1,\"type\":\"detailPage\",\"refusal\":{\"kind\":\"unknownField\",\"message\":\"The source has no field named \\u0027Desk\\u0027.\",\"field\":\"Desk\"}}",
+      "expect": "{\"version\":1,\"type\":\"detailPage\",\"refusal\":{\"kind\":\"unknownField\",\"message\":\"The source has no field named \\u0027Desk\\u0027.\",\"field\":\"Desk\"}}"
+    },
+    {
+      "name": "ADR-0066: a refused answer crosses: an Aggregation not offered",
+      "document": "answer",
+      "read": "{\"version\":1,\"type\":\"answer\",\"refusal\":{\"kind\":\"aggregationNotOffered\",\"message\":\"The source does not offer Product, which the question asks of \\u0027Amount\\u0027.\",\"field\":\"Amount\"}}",
+      "expect": "{\"version\":1,\"type\":\"answer\",\"refusal\":{\"kind\":\"aggregationNotOffered\",\"message\":\"The source does not offer Product, which the question asks of \\u0027Amount\\u0027.\",\"field\":\"Amount\"}}"
+    },
+    {
+      "name": "ADR-0066: a refused page of Items crosses: an Aggregation not offered",
+      "document": "itemPage",
+      "read": "{\"version\":1,\"type\":\"itemPage\",\"refusal\":{\"kind\":\"aggregationNotOffered\",\"message\":\"The source does not offer Product, which the question asks of \\u0027Amount\\u0027.\",\"field\":\"Amount\"}}",
+      "expect": "{\"version\":1,\"type\":\"itemPage\",\"refusal\":{\"kind\":\"aggregationNotOffered\",\"message\":\"The source does not offer Product, which the question asks of \\u0027Amount\\u0027.\",\"field\":\"Amount\"}}"
+    },
+    {
+      "name": "ADR-0066: a refused page of records crosses: an Aggregation not offered",
+      "document": "detailPage",
+      "read": "{\"version\":1,\"type\":\"detailPage\",\"refusal\":{\"kind\":\"aggregationNotOffered\",\"message\":\"The source does not offer Product, which the question asks of \\u0027Amount\\u0027.\",\"field\":\"Amount\"}}",
+      "expect": "{\"version\":1,\"type\":\"detailPage\",\"refusal\":{\"kind\":\"aggregationNotOffered\",\"message\":\"The source does not offer Product, which the question asks of \\u0027Amount\\u0027.\",\"field\":\"Amount\"}}"
+    },
+    {
+      "name": "ADR-0066: a refused answer crosses: a version not held",
+      "document": "answer",
+      "read": "{\"version\":1,\"type\":\"answer\",\"refusal\":{\"kind\":\"sourceVersionNotHeld\",\"message\":\"The data has changed since version \\u002741\\u0027; refresh the report.\"}}",
+      "expect": "{\"version\":1,\"type\":\"answer\",\"refusal\":{\"kind\":\"sourceVersionNotHeld\",\"message\":\"The data has changed since version \\u002741\\u0027; refresh the report.\"}}"
+    },
+    {
+      "name": "ADR-0066: a refused page of Items crosses: a version not held",
+      "document": "itemPage",
+      "read": "{\"version\":1,\"type\":\"itemPage\",\"refusal\":{\"kind\":\"sourceVersionNotHeld\",\"message\":\"The data has changed since version \\u002741\\u0027; refresh the report.\"}}",
+      "expect": "{\"version\":1,\"type\":\"itemPage\",\"refusal\":{\"kind\":\"sourceVersionNotHeld\",\"message\":\"The data has changed since version \\u002741\\u0027; refresh the report.\"}}"
+    },
+    {
+      "name": "ADR-0066: a refused page of records crosses: a version not held",
+      "document": "detailPage",
+      "read": "{\"version\":1,\"type\":\"detailPage\",\"refusal\":{\"kind\":\"sourceVersionNotHeld\",\"message\":\"The data has changed since version \\u002741\\u0027; refresh the report.\"}}",
+      "expect": "{\"version\":1,\"type\":\"detailPage\",\"refusal\":{\"kind\":\"sourceVersionNotHeld\",\"message\":\"The data has changed since version \\u002741\\u0027; refresh the report.\"}}"
+    },
+    {
+      "name": "ADR-0067: a notice that the data moved on crosses with its version",
+      "document": "sourceChanged",
+      "read": "{\"version\":1,\"type\":\"sourceChanged\",\"sourceVersion\":\"42\"}",
+      "expect": "{\"version\":1,\"type\":\"sourceChanged\",\"sourceVersion\":\"42\"}"
+    },
+    {
+      "name": "ADR-0067: a notice that the data moved on crosses without a version the source does not know yet",
+      "document": "sourceChanged",
+      "read": "{\"version\":1,\"type\":\"sourceChanged\"}",
+      "expect": "{\"version\":1,\"type\":\"sourceChanged\"}"
+    },
+    {
+      "name": "ADR-0370: each field's count of Items crosses",
+      "document": "itemCounts",
+      "read": "{\"version\":1,\"type\":\"itemCounts\",\"sourceVersion\":\"a68f07a5ef514c7e950982287efafdcc\",\"counts\":{\"Desk\":5,\"Book\":4,\"Date\":5,\"Amount\":8,\"Risk\":8,\"Live\":3,\"Tag\":7}}",
+      "expect": "{\"version\":1,\"type\":\"itemCounts\",\"sourceVersion\":\"a68f07a5ef514c7e950982287efafdcc\",\"counts\":{\"Desk\":5,\"Book\":4,\"Date\":5,\"Amount\":8,\"Risk\":8,\"Live\":3,\"Tag\":7}}"
+    },
+    {
+      "name": "ADR-0060: an exact number crosses as its value, not the places it was written with: 100.50 is 100.5",
+      "document": "answer",
+      "read": "{\"version\":1,\"type\":\"answer\",\"sourceVersion\":\"1\",\"rows\":[{\"field\":\"Desk\",\"items\":[{\"kind\":\"text\",\"value\":\"Rates\"}],\"leaves\":[0]}],\"columns\":[],\"records\":[2],\"values\":[{\"field\":\"Amount\",\"parts\":[\"sum\"],\"values\":[2],\"numbers\":[2],\"nonFinite\":[],\"sum\":[100.50]}]}",
+      "expect": "{\"version\":1,\"type\":\"answer\",\"sourceVersion\":\"1\",\"rows\":[{\"field\":\"Desk\",\"items\":[{\"kind\":\"text\",\"value\":\"Rates\"}],\"leaves\":[0]}],\"columns\":[],\"records\":[2],\"values\":[{\"field\":\"Amount\",\"parts\":[\"sum\"],\"values\":[2],\"numbers\":[2],\"nonFinite\":[],\"sum\":[100.5]}]}"
+    },
+    {
+      "name": "ADR-0066: an exact number written with an exponent is read as the decimal it writes",
+      "document": "answer",
+      "read": "{\"version\":1,\"type\":\"answer\",\"sourceVersion\":\"1\",\"rows\":[{\"field\":\"Desk\",\"items\":[{\"kind\":\"text\",\"value\":\"Rates\"}],\"leaves\":[0]}],\"columns\":[],\"records\":[2],\"values\":[{\"field\":\"Amount\",\"parts\":[\"sum\"],\"values\":[2],\"numbers\":[2],\"nonFinite\":[],\"sum\":[1.5E2]}]}",
+      "expect": "{\"version\":1,\"type\":\"answer\",\"sourceVersion\":\"1\",\"rows\":[{\"field\":\"Desk\",\"items\":[{\"kind\":\"text\",\"value\":\"Rates\"}],\"leaves\":[0]}],\"columns\":[],\"records\":[2],\"values\":[{\"field\":\"Amount\",\"parts\":[\"sum\"],\"values\":[2],\"numbers\":[2],\"nonFinite\":[],\"sum\":[150]}]}"
+    },
+    {
+      "name": "ADR-0060: an exact number past the 28 places a decimal holds is refused, not rounded",
+      "document": "answer",
+      "read": "{\"version\":1,\"type\":\"answer\",\"sourceVersion\":\"1\",\"rows\":[{\"field\":\"Desk\",\"items\":[{\"kind\":\"text\",\"value\":\"Rates\"}],\"leaves\":[0]}],\"columns\":[],\"records\":[2],\"values\":[{\"field\":\"Amount\",\"parts\":[\"sum\"],\"values\":[2],\"numbers\":[2],\"nonFinite\":[],\"sum\":[0.12345678901234567890123456789]}]}",
+      "expect": {
+        "refusal": "format",
+        "saying": "0.12345678901234567890123456789 is not an exact decimal; a double is written as a string."
+      }
+    },
+    {
+      "name": "ADR-0060: an exact number too small for a decimal is refused, not read as zero",
+      "document": "answer",
+      "read": "{\"version\":1,\"type\":\"answer\",\"sourceVersion\":\"1\",\"rows\":[{\"field\":\"Desk\",\"items\":[{\"kind\":\"text\",\"value\":\"Rates\"}],\"leaves\":[0]}],\"columns\":[],\"records\":[2],\"values\":[{\"field\":\"Amount\",\"parts\":[\"sum\"],\"values\":[2],\"numbers\":[2],\"nonFinite\":[],\"sum\":[1e-29]}]}",
+      "expect": {
+        "refusal": "format",
+        "saying": "1e-29 is not an exact decimal; a double is written as a string."
+      }
+    },
+    {
+      "name": "ADR-0060: an exact number past 2^96 is refused",
+      "document": "answer",
+      "read": "{\"version\":1,\"type\":\"answer\",\"sourceVersion\":\"1\",\"rows\":[{\"field\":\"Desk\",\"items\":[{\"kind\":\"text\",\"value\":\"Rates\"}],\"leaves\":[0]}],\"columns\":[],\"records\":[2],\"values\":[{\"field\":\"Amount\",\"parts\":[\"sum\"],\"values\":[2],\"numbers\":[2],\"nonFinite\":[],\"sum\":[79228162514264337593543950336]}]}",
+      "expect": {
+        "refusal": "format",
+        "saying": "79228162514264337593543950336 is not an exact decimal; a double is written as a string."
+      }
+    },
+    {
+      "name": "ADR-0060: an exact zero, however it is spelt, is zero",
+      "document": "answer",
+      "read": "{\"version\":1,\"type\":\"answer\",\"sourceVersion\":\"1\",\"rows\":[{\"field\":\"Desk\",\"items\":[{\"kind\":\"text\",\"value\":\"Rates\"}],\"leaves\":[0]}],\"columns\":[],\"records\":[2],\"values\":[{\"field\":\"Amount\",\"parts\":[\"sum\"],\"values\":[2],\"numbers\":[2],\"nonFinite\":[],\"sum\":[-0.000e5]}]}",
+      "expect": "{\"version\":1,\"type\":\"answer\",\"sourceVersion\":\"1\",\"rows\":[{\"field\":\"Desk\",\"items\":[{\"kind\":\"text\",\"value\":\"Rates\"}],\"leaves\":[0]}],\"columns\":[],\"records\":[2],\"values\":[{\"field\":\"Amount\",\"parts\":[\"sum\"],\"values\":[2],\"numbers\":[2],\"nonFinite\":[],\"sum\":[0]}]}"
+    },
+    {
+      "name": "ADR-0066: a document of a version this reader does not read is refused, whatever it is",
+      "document": "answer",
+      "read": "{\"version\":2,\"type\":\"answer\",\"sourceVersion\":\"1\",\"rows\":[{\"field\":\"Desk\",\"items\":[{\"kind\":\"text\",\"value\":\"Rates\"}],\"leaves\":[0]}],\"columns\":[],\"records\":[2],\"values\":[]}",
+      "expect": {
+        "refusal": "version",
+        "saying": "A Pivot Source document of version 2 cannot be read; this reader reads version 1."
+      }
+    },
+    {
+      "name": "ADR-0066: a document of a version written as a fraction is refused as a version",
+      "document": "itemCounts",
+      "read": "{\"version\":1.0,\"type\":\"itemCounts\",\"sourceVersion\":\"1\",\"counts\":{}}",
+      "expect": {
+        "refusal": "version",
+        "saying": "A Pivot Source document of version 1.0 cannot be read; this reader reads version 1."
+      }
+    },
+    {
+      "name": "ADR-0066: a document that names no version is refused",
+      "document": "sourceChanged",
+      "read": "{\"type\":\"sourceChanged\"}",
+      "expect": {
+        "refusal": "format",
+        "saying": "A Pivot Source document names its version."
+      }
+    },
+    {
+      "name": "ADR-0066: a document of another type is refused, naming both",
+      "document": "query",
+      "read": "{\"version\":1,\"type\":\"answer\",\"sourceVersion\":\"1\",\"rows\":[{\"field\":\"Desk\",\"items\":[{\"kind\":\"text\",\"value\":\"Rates\"}],\"leaves\":[0]}],\"columns\":[],\"records\":[2],\"values\":[]}",
+      "expect": {
+        "refusal": "format",
+        "saying": "The document is a Pivot Source 'answer' document, not a 'query'."
+      }
+    },
+    {
+      "name": "ADR-0066: a document that names no type is refused",
+      "document": "query",
+      "read": "{\"version\":1}",
+      "expect": {
+        "refusal": "format",
+        "saying": "The document is a Pivot Source '(untyped)' document, not a 'query'."
+      }
+    },
+    {
+      "name": "ADR-0066: a document that is not an object is refused",
+      "document": "answer",
+      "read": "[1]",
+      "expect": {
+        "refusal": "format",
+        "saying": "A Pivot Source document is a JSON object."
+      }
+    },
+    {
+      "name": "ADR-0066: text that is not JSON is refused",
+      "document": "answer",
+      "read": "{\"version\":1,",
+      "expect": {
+        "refusal": "format",
+        "saying": "A Pivot Source document is JSON."
+      }
+    },
+    {
+      "name": "ADR-0066: a leaf array one entry short is refused",
+      "document": "answer",
+      "read": "{\"version\":1,\"type\":\"answer\",\"sourceVersion\":\"1\",\"rows\":[{\"field\":\"Desk\",\"items\":[{\"kind\":\"text\",\"value\":\"Rates\"}],\"leaves\":[0]}],\"columns\":[],\"records\":[2,1],\"values\":[]}",
+      "expect": {
+        "refusal": "format",
+        "saying": "'leaves' has 1 entries, and the answer has 2 leaves."
+      }
+    },
+    {
+      "name": "ADR-0066: a leaf naming an Item past its field's is refused",
+      "document": "answer",
+      "read": "{\"version\":1,\"type\":\"answer\",\"sourceVersion\":\"1\",\"rows\":[{\"field\":\"Desk\",\"items\":[{\"kind\":\"text\",\"value\":\"Rates\"}],\"leaves\":[1]}],\"columns\":[],\"records\":[2],\"values\":[]}",
+      "expect": {
+        "refusal": "format",
+        "saying": "Leaf 0 names Item 1 of 'Desk', which has 1."
+      }
+    },
+    {
+      "name": "ADR-0060: two Items of one field that are one Item, told apart ignoring case, are refused",
+      "document": "answer",
+      "read": "{\"version\":1,\"type\":\"answer\",\"sourceVersion\":\"1\",\"rows\":[{\"field\":\"Desk\",\"items\":[{\"kind\":\"text\",\"value\":\"Rates\"},{\"kind\":\"text\",\"value\":\"RATES\"}],\"leaves\":[0,1]}],\"columns\":[],\"records\":[1,1],\"values\":[]}",
+      "expect": {
+        "refusal": "format",
+        "saying": "'Desk' lists the Item Text:RATES twice; text Items are told apart ignoring case (ADR-0060)."
+      }
+    },
+    {
+      "name": "ADR-0066: a leaf without records is refused",
+      "document": "answer",
+      "read": "{\"version\":1,\"type\":\"answer\",\"sourceVersion\":\"1\",\"rows\":[{\"field\":\"Desk\",\"items\":[{\"kind\":\"text\",\"value\":\"Rates\"}],\"leaves\":[0]}],\"columns\":[],\"records\":[0],\"values\":[]}",
+      "expect": {
+        "refusal": "format",
+        "saying": "Leaf 0 holds 0 records; a leaf has records."
+      }
+    },
+    {
+      "name": "ADR-0066: more numbers than values is refused",
+      "document": "answer",
+      "read": "{\"version\":1,\"type\":\"answer\",\"sourceVersion\":\"1\",\"rows\":[{\"field\":\"Desk\",\"items\":[{\"kind\":\"text\",\"value\":\"Rates\"}],\"leaves\":[0]}],\"columns\":[],\"records\":[2],\"values\":[{\"field\":\"Amount\",\"parts\":[\"sum\"],\"values\":[2],\"numbers\":[3],\"nonFinite\":[],\"sum\":[3]}]}",
+      "expect": {
+        "refusal": "format",
+        "saying": "Leaf 0 of 'Amount' holds 2 records, 2 values and 3 numbers."
+      }
+    },
+    {
+      "name": "ADR-0066: more values than records is refused",
+      "document": "answer",
+      "read": "{\"version\":1,\"type\":\"answer\",\"sourceVersion\":\"1\",\"rows\":[{\"field\":\"Desk\",\"items\":[{\"kind\":\"text\",\"value\":\"Rates\"}],\"leaves\":[0]}],\"columns\":[],\"records\":[2],\"values\":[{\"field\":\"Amount\",\"parts\":[\"sum\"],\"values\":[3],\"numbers\":[1],\"nonFinite\":[],\"sum\":[3]}]}",
+      "expect": {
+        "refusal": "format",
+        "saying": "Leaf 0 of 'Amount' holds 2 records, 3 values and 1 numbers."
+      }
+    },
+    {
+      "name": "ADR-0066: a non-finite leaf past the answer's is refused",
+      "document": "answer",
+      "read": "{\"version\":1,\"type\":\"answer\",\"sourceVersion\":\"1\",\"rows\":[{\"field\":\"Desk\",\"items\":[{\"kind\":\"text\",\"value\":\"Rates\"}],\"leaves\":[0]}],\"columns\":[],\"records\":[2],\"values\":[{\"field\":\"Amount\",\"parts\":[\"sum\"],\"values\":[2],\"numbers\":[2],\"nonFinite\":[1],\"sum\":[3]}]}",
+      "expect": {
+        "refusal": "format",
+        "saying": "'nonFinite' names leaf 1, and the answer has 1."
+      }
+    },
+    {
+      "name": "ADR-0066: one extreme exact and the other a double is refused",
+      "document": "answer",
+      "read": "{\"version\":1,\"type\":\"answer\",\"sourceVersion\":\"1\",\"rows\":[{\"field\":\"Desk\",\"items\":[{\"kind\":\"text\",\"value\":\"Rates\"}],\"leaves\":[0]}],\"columns\":[],\"records\":[2],\"values\":[{\"field\":\"Amount\",\"parts\":[\"extremes\"],\"values\":[2],\"numbers\":[2],\"nonFinite\":[],\"sum\":[3],\"min\":[1],\"max\":[\"2\"]}]}",
+      "expect": {
+        "refusal": "format",
+        "saying": "Leaf 0 of 'Amount' has one extreme exact and the other a double."
+      }
+    },
+    {
+      "name": "ADR-0066: an exact sum spelt as a double's text is a double",
+      "document": "answer",
+      "read": "{\"version\":1,\"type\":\"answer\",\"sourceVersion\":\"1\",\"rows\":[{\"field\":\"Desk\",\"items\":[{\"kind\":\"text\",\"value\":\"Rates\"}],\"leaves\":[0]}],\"columns\":[],\"records\":[2],\"values\":[{\"field\":\"Amount\",\"parts\":[\"sum\"],\"values\":[2],\"numbers\":[2],\"nonFinite\":[],\"sum\":[\"1E-05\"]}]}",
+      "expect": "{\"version\":1,\"type\":\"answer\",\"sourceVersion\":\"1\",\"rows\":[{\"field\":\"Desk\",\"items\":[{\"kind\":\"text\",\"value\":\"Rates\"}],\"leaves\":[0]}],\"columns\":[],\"records\":[2],\"values\":[{\"field\":\"Amount\",\"parts\":[\"sum\"],\"values\":[2],\"numbers\":[2],\"nonFinite\":[],\"sum\":[\"1E-05\"]}]}"
+    },
+    {
+      "name": "ADR-0066: a part asked for and not carried is refused",
+      "document": "answer",
+      "read": "{\"version\":1,\"type\":\"answer\",\"sourceVersion\":\"1\",\"rows\":[{\"field\":\"Desk\",\"items\":[{\"kind\":\"text\",\"value\":\"Rates\"}],\"leaves\":[0]}],\"columns\":[],\"records\":[2],\"values\":[{\"field\":\"Amount\",\"parts\":[\"sum\",\"product\"],\"values\":[2],\"numbers\":[2],\"nonFinite\":[],\"sum\":[3]}]}",
+      "expect": {
+        "refusal": "format",
+        "saying": "'product' is an array, and is required."
+      }
+    },
+    {
+      "name": "ADR-0066: a double named otherwise than NaN, Infinity or -Infinity is refused",
+      "document": "answer",
+      "read": "{\"version\":1,\"type\":\"answer\",\"sourceVersion\":\"1\",\"rows\":[{\"field\":\"Desk\",\"items\":[{\"kind\":\"text\",\"value\":\"Rates\"}],\"leaves\":[0]}],\"columns\":[],\"records\":[2],\"values\":[{\"field\":\"Amount\",\"parts\":[\"product\"],\"values\":[2],\"numbers\":[2],\"nonFinite\":[],\"sum\":[3],\"product\":[\"nan\"]}]}",
+      "expect": {
+        "refusal": "format",
+        "saying": "'nan' is not NaN, Infinity or -Infinity; a finite double is a number."
+      }
+    },
+    {
+      "name": "ADR-0066: a part this reader does not know is refused",
+      "document": "query",
+      "read": "{\"version\":1,\"type\":\"query\",\"values\":[{\"field\":\"A\",\"parts\":[\"median\"]}]}",
+      "expect": {
+        "refusal": "format",
+        "saying": "'median' is not a part this reader knows."
+      }
+    },
+    {
+      "name": "ADR-0061: a question placing a field twice is refused in the model's own words",
+      "document": "query",
+      "read": "{\"version\":1,\"type\":\"query\",\"rows\":[{\"field\":\"A\"}],\"columns\":[{\"field\":\"A\"}],\"maxLeaves\":10}",
+      "expect": {
+        "refusal": "format",
+        "saying": "The document holds a value that cannot be: The question places 'A' twice among Filters, Rows and Columns; a field stands in one of them at most (ADR-0061)."
+      }
+    },
+    {
+      "name": "ADR-0066: a question without its cap on leaves is refused",
+      "document": "query",
+      "read": "{\"version\":1,\"type\":\"query\"}",
+      "expect": {
+        "refusal": "format",
+        "saying": "'maxLeaves' is an integer, and is required."
+      }
+    },
+    {
+      "name": "ADR-0060: a number Item that is not invariant text is refused in the model's own words",
+      "document": "itemPage",
+      "read": "{\"version\":1,\"type\":\"itemPage\",\"sourceVersion\":\"1\",\"items\":[{\"kind\":\"number\",\"value\":\"12,5\"}],\"total\":1}",
+      "expect": {
+        "refusal": "format",
+        "saying": "The document holds a value that cannot be: '12,5' is not the invariant text of a finite number."
+      }
+    },
+    {
+      "name": "ADR-0066: an Item without its kind is refused",
+      "document": "itemPage",
+      "read": "{\"version\":1,\"type\":\"itemPage\",\"sourceVersion\":\"1\",\"items\":[{\"value\":\"x\"}],\"total\":1}",
+      "expect": {
+        "refusal": "format",
+        "saying": "'kind' is a string, and is required."
+      }
+    },
+    {
+      "name": "ADR-0066: a page of Items with fewer in total than listed is refused",
+      "document": "itemPage",
+      "read": "{\"version\":1,\"type\":\"itemPage\",\"sourceVersion\":\"1\",\"items\":[{\"kind\":\"blank\"}],\"total\":0}",
+      "expect": {
+        "refusal": "format",
+        "saying": "The document holds a value that cannot be: A page of 1 Items has at least that many in total."
+      }
+    },
+    {
+      "name": "ADR-0370: a negative count of Items is refused",
+      "document": "itemCounts",
+      "read": "{\"version\":1,\"type\":\"itemCounts\",\"sourceVersion\":\"1\",\"counts\":{\"Desk\":-1}}",
+      "expect": {
+        "refusal": "format",
+        "saying": "The document holds a value that cannot be: A field has no fewer than 0 Items; 'Desk' was counted -1."
+      }
+    },
+    {
+      "name": "ADR-0370: a field counted twice is refused",
+      "document": "itemCounts",
+      "read": "{\"version\":1,\"type\":\"itemCounts\",\"sourceVersion\":\"1\",\"counts\":{\"Desk\":1,\"Desk\":2}}",
+      "expect": {
+        "refusal": "format",
+        "saying": "'counts' names 'Desk' twice."
+      }
+    },
+    {
+      "name": "ADR-0370: a count that is not a whole number is refused",
+      "document": "itemCounts",
+      "read": "{\"version\":1,\"type\":\"itemCounts\",\"sourceVersion\":\"1\",\"counts\":{\"Desk\":1.5}}",
+      "expect": {
+        "refusal": "format",
+        "saying": "'counts' holds integers; 1.5 is not one."
+      }
+    },
+    {
+      "name": "ADR-0370: counts that are missing are refused",
+      "document": "itemCounts",
+      "read": "{\"version\":1,\"type\":\"itemCounts\",\"sourceVersion\":\"1\"}",
+      "expect": {
+        "refusal": "format",
+        "saying": "'counts' is an object, and is required."
+      }
+    },
+    {
+      "name": "ADR-0066: a record carrying fewer values than the page has fields is refused",
+      "document": "detailPage",
+      "read": "{\"version\":1,\"type\":\"detailPage\",\"sourceVersion\":\"1\",\"fields\":[{\"name\":\"Desk\",\"type\":\"text\"},{\"name\":\"Amount\",\"type\":\"number\"},{\"name\":\"Date\",\"type\":\"date\"},{\"name\":\"Live\",\"type\":\"boolean\"}],\"start\":0,\"total\":1,\"records\":[[\"Rates\",1,\"2026-01-02T00:00:00\"]]}",
+      "expect": {
+        "refusal": "format",
+        "saying": "A detail record carries 3 values, and the page has 4 fields."
+      }
+    },
+    {
+      "name": "ADR-0066: a value of another type than its field's, untagged, is refused",
+      "document": "detailPage",
+      "read": "{\"version\":1,\"type\":\"detailPage\",\"sourceVersion\":\"1\",\"fields\":[{\"name\":\"Desk\",\"type\":\"text\"},{\"name\":\"Amount\",\"type\":\"number\"},{\"name\":\"Date\",\"type\":\"date\"},{\"name\":\"Live\",\"type\":\"boolean\"}],\"start\":0,\"total\":1,\"records\":[[1,1,null,null]]}",
+      "expect": {
+        "refusal": "format",
+        "saying": "A Number is not a value of 'Desk', declared Text; a value of another type is tagged with its own."
+      }
+    },
+    {
+      "name": "ADR-0066: a tag this reader does not know is refused",
+      "document": "detailPage",
+      "read": "{\"version\":1,\"type\":\"detailPage\",\"sourceVersion\":\"1\",\"fields\":[{\"name\":\"Desk\",\"type\":\"text\"},{\"name\":\"Amount\",\"type\":\"number\"},{\"name\":\"Date\",\"type\":\"date\"},{\"name\":\"Live\",\"type\":\"boolean\"}],\"start\":0,\"total\":1,\"records\":[[{\"guid\":\"x\"},1,null,null]]}",
+      "expect": {
+        "refusal": "format",
+        "saying": "'guid' with a String is not a tagged detail value this reader knows."
+      }
+    },
+    {
+      "name": "ADR-0066: a date that is not ISO is refused",
+      "document": "detailPage",
+      "read": "{\"version\":1,\"type\":\"detailPage\",\"sourceVersion\":\"1\",\"fields\":[{\"name\":\"Desk\",\"type\":\"text\"},{\"name\":\"Amount\",\"type\":\"number\"},{\"name\":\"Date\",\"type\":\"date\"},{\"name\":\"Live\",\"type\":\"boolean\"}],\"start\":0,\"total\":1,\"records\":[[\"Rates\",1,\"02/01/2026\",true]]}",
+      "expect": {
+        "refusal": "format",
+        "saying": "'02/01/2026' is not an ISO date (yyyy-MM-dd'T'HH:mm:ss.FFFFFFF)."
+      }
+    },
+    {
+      "name": "ADR-0066: a value of each type crosses tagged in a field of another, and a Blank as null",
+      "document": "detailPage",
+      "read": "{\"version\":1,\"type\":\"detailPage\",\"sourceVersion\":\"1\",\"fields\":[{\"name\":\"Desk\",\"type\":\"text\"},{\"name\":\"Amount\",\"type\":\"number\"},{\"name\":\"Date\",\"type\":\"date\"},{\"name\":\"Live\",\"type\":\"boolean\"}],\"start\":0,\"total\":2,\"records\":[[{\"number\":12.5},{\"text\":\"7\"},{\"boolean\":false},{\"date\":\"2026-01-01T00:00:00\"}],[{\"double\":\"NaN\"},\"-Infinity\",null,false]]}",
+      "expect": "{\"version\":1,\"type\":\"detailPage\",\"sourceVersion\":\"1\",\"fields\":[{\"name\":\"Desk\",\"type\":\"text\"},{\"name\":\"Amount\",\"type\":\"number\"},{\"name\":\"Date\",\"type\":\"date\"},{\"name\":\"Live\",\"type\":\"boolean\"}],\"start\":0,\"total\":2,\"records\":[[{\"number\":12.5},{\"text\":\"7\"},{\"boolean\":false},{\"date\":\"2026-01-01T00:00:00\"}],[{\"double\":\"NaN\"},\"-Infinity\",null,false]]}"
+    },
+    {
+      "name": "ADR-0066: a question for records with a path step without its Item is refused",
+      "document": "detailsQuery",
+      "read": "{\"version\":1,\"type\":\"detailsQuery\",\"sourceVersion\":\"1\",\"rowItems\":[{\"field\":\"Desk\"}],\"start\":0,\"count\":1}",
+      "expect": {
+        "refusal": "format",
+        "saying": "A step of a cell's path names its 'item'."
+      }
+    },
+    {
+      "name": "ADR-0066: a question for records naming a field twice in its path is refused in the model's own words",
+      "document": "detailsQuery",
+      "read": "{\"version\":1,\"type\":\"detailsQuery\",\"sourceVersion\":\"1\",\"rowItems\":[{\"field\":\"Desk\",\"item\":{\"kind\":\"blank\"}}],\"columnItems\":[{\"field\":\"Desk\",\"item\":{\"kind\":\"blank\"}}],\"start\":0,\"count\":1}",
+      "expect": {
+        "refusal": "format",
+        "saying": "The document holds a value that cannot be: The cell's path names 'Desk' twice."
+      }
+    },
+    {
+      "name": "ADR-0066: an entry that is not an object where an object stands is refused by name",
+      "document": "answer",
+      "read": "{\"version\":1,\"type\":\"answer\",\"sourceVersion\":\"1\",\"rows\":[1],\"columns\":[],\"records\":[],\"values\":[]}",
+      "expect": {
+        "refusal": "format",
+        "saying": "An entry of 'rows' is not an object."
+      }
+    },
+    {
+      "name": "ADR-0066: a tagged value that names its tag twice is refused",
+      "document": "detailPage",
+      "read": "{\"version\":1,\"type\":\"detailPage\",\"sourceVersion\":\"1\",\"fields\":[{\"name\":\"Desk\",\"type\":\"text\"}],\"start\":0,\"total\":1,\"records\":[[{\"text\":\"a\",\"text\":\"b\"}]]}",
+      "expect": {
+        "refusal": "format",
+        "saying": "A tagged detail value has one member: text, number, double, date or boolean."
+      }
+    },
+    {
+      "name": "ADR-0060: a tagged exact number no decimal holds is refused, not rounded",
+      "document": "detailPage",
+      "read": "{\"version\":1,\"type\":\"detailPage\",\"sourceVersion\":\"1\",\"fields\":[{\"name\":\"Desk\",\"type\":\"text\"}],\"start\":0,\"total\":1,\"records\":[[{\"number\":1e-29}]]}",
+      "expect": {
+        "refusal": "format",
+        "saying": "1e-29 is not an exact decimal; a double is written as a string."
+      }
+    },
+    {
+      "name": "ADR-0370: counts keep the order the document wrote them in, a field named by a number among them",
+      "document": "itemCounts",
+      "read": "{\"version\":1,\"type\":\"itemCounts\",\"sourceVersion\":\"1\",\"counts\":{\"Region\":3,\"2024\":5,\"1\":0}}",
+      "expect": "{\"version\":1,\"type\":\"itemCounts\",\"sourceVersion\":\"1\",\"counts\":{\"Region\":3,\"2024\":5,\"1\":0}}"
+    }
+  ]
+}

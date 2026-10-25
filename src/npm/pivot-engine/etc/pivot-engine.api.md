@@ -432,6 +432,27 @@ export function pivotItemsQuery(input: {
 }): PivotItemsQuery;
 
 // @public
+export const PivotJson: Readonly<{
+    version: 1;
+    writeQuery(query: PivotQuery): string;
+    writeAnswer(answer: PivotAnswer): string;
+    writeItemsQuery(query: PivotItemsQuery): string;
+    writeItemPage(page: PivotItemPage): string;
+    writeDetailsQuery(query: PivotDetailsQuery): string;
+    writeDetailPage(page: PivotDetailPage): string;
+    writeSourceChanged(change: PivotSourceChanged): string;
+    writeItemCounts(counts: PivotItemCounts): string;
+    readQuery(json: string): PivotQuery;
+    readAnswer(json: string): PivotAnswer;
+    readItemsQuery(json: string): PivotItemsQuery;
+    readItemPage(json: string): PivotItemPage;
+    readDetailsQuery(json: string): PivotDetailsQuery;
+    readDetailPage(json: string): PivotDetailPage;
+    readSourceChanged(json: string): PivotSourceChanged;
+    readItemCounts(json: string): PivotItemCounts;
+}>;
+
+// @public
 export type PivotLabel = (id: string) => string | undefined;
 
 // @public
@@ -878,7 +899,7 @@ export interface PivotSource {
 
 // @public
 export interface PivotSourceChanged {
-    readonly sourceVersion: string;
+    readonly sourceVersion?: string;
 }
 
 // @public

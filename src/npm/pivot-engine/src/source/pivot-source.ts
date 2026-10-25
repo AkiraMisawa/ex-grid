@@ -85,9 +85,8 @@ export class PivotItemPage {
     /** A page: the Items listed, and how many match in all. */
     static of(sourceVersion: string, items: readonly PivotItemKey[], total: number): PivotItemPage {
         if (typeof sourceVersion !== 'string') throw new TypeError('A page names its Source Version.');
-        if (!Number.isSafeInteger(total) || total < items.length) {
-            throw new RangeError(`A page of ${items.length} Items has at least that many in total, not ${total}.`);
-        }
+        if (!Number.isSafeInteger(total)) throw new TypeError(`A page counts its Items in a whole number, not ${total}.`);
+        if (total < items.length) throw new RangeError(`A page of ${items.length} Items has at least that many in total.`);
         return new PivotItemPage(sourceVersion, Object.freeze([...items]), total, undefined);
     }
 
@@ -231,7 +230,8 @@ export class PivotItemCounts {
         const read = new Map<string, number>();
         for (const [field, count] of counts) {
             if (typeof field !== 'string' || field.length === 0) throw new TypeError('A counted field is named.');
-            if (!Number.isSafeInteger(count) || count < 0) throw new RangeError(`A field has a whole number of Items, at least 0; '${field}' was counted ${count}.`);
+            if (!Number.isSafeInteger(count)) throw new TypeError(`A field has a whole number of Items; '${field}' was counted ${count}.`);
+            if (count < 0) throw new RangeError(`A field has no fewer than 0 Items; '${field}' was counted ${count}.`);
             if (read.has(field)) throw new TypeError(`The field '${field}' is counted twice.`);
             read.set(field, count);
         }
@@ -347,8 +347,9 @@ function rowsBehind(snapshot: Snapshot, bindings: ReadonlyMap<string, FieldBindi
 
 /** What a source says when its data moved on (ADR-0067): the Source Version it answers under now. */
 export interface PivotSourceChanged {
-    /** The Source Version the source answers under from now. */
-    readonly sourceVersion: string;
+    /** The Source Version the source answers under from now; absent where the source does not know it yet,
+     * as a server's notice may not, and the next answer carries it. A source over a Snapshot always knows it. */
+    readonly sourceVersion?: string;
 }
 
 // A version a source answers under, and its fields' bindings to that version's columns.

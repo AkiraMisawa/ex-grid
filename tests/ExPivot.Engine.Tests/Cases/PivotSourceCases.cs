@@ -81,18 +81,25 @@ internal static class PivotSourceCases
             var counts = fetch["counts"];
             var features = new PivotSourceFeatures(offered, inner.Features.CanRefresh, countsItems: counts is not null);
             var instead = fetch["answers"] is { } other ? Query(other.AsObject()) : null;
-            Func<PivotQuery, CancellationToken, ValueTask<PivotAnswer>> aggregate = (query, ct) =>
+            // Every question and answer crosses PivotJson, written and read back, as a server's would.
+            Func<PivotQuery, CancellationToken, ValueTask<PivotAnswer>> aggregate = async (query, ct) =>
             {
                 bench!.Asked++;
-                return inner.AggregateAsync(instead ?? query, ct);
+                var asked = PivotJson.ReadQuery(PivotJson.Write(instead ?? query));
+                return PivotJson.ReadAnswer(PivotJson.Write(await inner.AggregateAsync(asked, ct)));
             };
+            Func<PivotItemsQuery, CancellationToken, ValueTask<PivotItemPage>> items = async (query, ct)
+                => PivotJson.ReadItemPage(PivotJson.Write(await inner.ItemsAsync(PivotJson.ReadItemsQuery(PivotJson.Write(query)), ct)));
+            Func<PivotDetailsQuery, CancellationToken, ValueTask<PivotDetailPage>> details = async (query, ct)
+                => PivotJson.ReadDetailPage(PivotJson.Write(await inner.DetailsAsync(PivotJson.ReadDetailsQuery(PivotJson.Write(query)), ct)));
             if (counts is null)
-                return PivotSource.Fetch(inner.Fields, features, aggregate, (query, ct) => inner.ItemsAsync(query, ct), (query, ct) => inner.DetailsAsync(query, ct));
+                return PivotSource.Fetch(inner.Fields, features, aggregate, items, details);
             // "counts": true counts through the source behind; an object is what the server answers instead.
-            Func<CancellationToken, ValueTask<PivotItemCounts>> itemCounts = counts is JsonObject answered
+            Func<CancellationToken, ValueTask<PivotItemCounts>> counted = counts is JsonObject answered
                 ? _ => ValueTask.FromResult(new PivotItemCounts("server", answered.ToDictionary(c => c.Key, c => (int)c.Value!)))
                 : ct => inner.ItemCountsAsync(ct);
-            return PivotSource.Fetch(inner.Fields, features, aggregate, (query, ct) => inner.ItemsAsync(query, ct), (query, ct) => inner.DetailsAsync(query, ct), itemCounts);
+            return PivotSource.Fetch(inner.Fields, features, aggregate, items, details,
+                async ct => PivotJson.ReadItemCounts(PivotJson.Write(await counted(ct))));
         }
         bench = new Bench { Source = Make(), Again = Make, Data = data, Shape = shape };
         return bench;

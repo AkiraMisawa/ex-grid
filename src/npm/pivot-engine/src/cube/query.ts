@@ -215,6 +215,10 @@ export function pivotItemsQuery(input: { readonly field: string; readonly source
     return Object.freeze(query);
 }
 
+/** The most records a question for them asks for: every one, as the C# engine's `int.MaxValue`, the most a
+ * document carries (PivotJson). */
+export const everyRecord = 2_147_483_647;
+
 /** One page of the records behind a cell (ADR-0063/0066): those carrying every Item of its paths and no
  * Hidden Item of any placed field, under a Source Version. */
 export interface PivotDetailsQuery {
@@ -228,13 +232,14 @@ export interface PivotDetailsQuery {
     readonly hiddenItems: readonly PivotQueryField[];
     /** The place of the page's first record. */
     readonly start: number;
-    /** The most records the page holds. */
+    /** The most records the page holds; every one, 2^31 − 1 as the C# engine's `int.MaxValue`, when the
+     * question was made without one, so that it crosses to a C# server as it is. */
     readonly count: number;
 }
 
 /** A question for the records behind a cell, checked: a path naming a field twice, or Hidden Items given
  * twice for one field, are refused by name. */
-export function pivotDetailsQuery({ sourceVersion, rowItems = [], columnItems = [], hiddenItems = [], start = 0, count = Number.MAX_SAFE_INTEGER }: {
+export function pivotDetailsQuery({ sourceVersion, rowItems = [], columnItems = [], hiddenItems = [], start = 0, count = everyRecord }: {
     readonly sourceVersion: string;
     readonly rowItems?: readonly PivotFieldItem[];
     readonly columnItems?: readonly PivotFieldItem[];

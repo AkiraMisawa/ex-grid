@@ -51,6 +51,7 @@ export {
     FetchingPivotSource, PivotDetailPage, PivotItemCounts, PivotItemPage, PivotSourceFeatures, RecordPivotSource, SnapshotPivotSource,
 } from './source/pivot-source';
 export { pivotLeafBound, pivotLeafBoundMost } from './source/leaf-bound';
+export { PivotJson } from './source/pivot-json';
 export type { PivotOptions } from './report/labels';
 export type { PivotValue } from './report/value';
 export type { PivotHeaderSpan, PivotLabelColumn, PivotRowLabel, PivotToggle } from './report/report';

@@ -6,7 +6,7 @@
 // The C# engine's PivotReportContract and PivotReportOperations.
 
 import type { PivotSourceRefusal } from '../cube/answer';
-import { placedFields, pivotDetailsQuery, queryForLayout, type PivotDetailsQuery, type PivotFieldItem } from '../cube/query';
+import { everyRecord, placedFields, pivotDetailsQuery, queryForLayout, type PivotDetailsQuery, type PivotFieldItem } from '../cube/query';
 import type { PivotItemInfo } from '../engine';
 import type { PivotItemKey } from '../items/item-key';
 import type { PivotColumnRole, PivotRowRole } from '../layout/pivot-enums';
@@ -312,7 +312,7 @@ export interface PivotReportSummaryResult {
  * Source Version.
  */
 export function pivotReportDetailsQuery(metadata: PivotReportMetadata, row: PivotDisplayRow, valueColumn: number,
-    start = 0, count: number = Number.MAX_SAFE_INTEGER): PivotDetailsQuery {
+    start = 0, count: number = everyRecord): PivotDetailsQuery {
     if (!Number.isInteger(valueColumn) || valueColumn < -1 || valueColumn >= metadata.valueColumns.length) {
         throw new RangeError('Not a value column of the report, nor −1.');
     }

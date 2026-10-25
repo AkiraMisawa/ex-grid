@@ -5,13 +5,13 @@
 // runs for a differential run's random cases.
 import { createChangeBatch, decimalText, SnapshotError, ticksText } from '@ex-grid/data';
 import {
-    datePartField, FetchingPivotSource, pivotAggregations, pivotCube, pivotDetailsQuery, pivotField, pivotItemsQuery, pivotParts, pivotQuery,
+    datePartField, FetchingPivotSource, PivotJson, pivotAggregations, pivotCube, pivotDetailsQuery, pivotField, pivotItemsQuery, pivotParts, pivotQuery,
     pivotLeafBound, pivotReport, PivotItemCounts, PivotSourceFeatures, queryForLayout, RecordPivotSource, SnapshotPivotSource, type PivotAggregation, type PivotAnswer,
     type PivotAnswerAxis, type PivotDatePart, type PivotDetailValue, type PivotField, type PivotFieldItem, type PivotFieldType,
-    type PivotNumber, type PivotOptions, type PivotPart, type PivotQuery, type PivotQueryField, type PivotSource, type PivotSourceRefusal,
+    type PivotNumber, type PivotOptions, type PivotPart, type PivotQuery, type PivotQueryField, type PivotSource, type PivotSourceChanged, type PivotSourceRefusal,
 } from '../src/index';
 import { isDecimal } from '../src/items/record-value';
-import { elementAt } from '../src/must';
+import { defined, elementAt } from '../src/must';
 import {
     array, caseValue, dataSet, itemKeyOf, layoutOf, must, object, optionsOf, refusalOf, rowsSnapshot, snapshotOf, snapshotShapeOf, text, type DataSet,
     type Json, type JsonObject,
@@ -61,6 +61,11 @@ function declared(written: JsonObject): PivotField {
     });
 }
 
+/** The version a source over a Snapshot told of: it always names one, where a server's notice may not. */
+export function versionOf(changed: PivotSourceChanged): string {
+    return defined(changed.sourceVersion, 'the Source Version a source over a Snapshot tells of');
+}
+
 // The source a case asks: over the data set's Snapshot or its records, and behind a fetching source when the
 // case names one.
 export function open(file: JsonObject, entry: JsonObject): Bench {
@@ -70,7 +75,7 @@ export function open(file: JsonObject, entry: JsonObject): Bench {
     const bundled = (): PivotSource => {
         if (snapshot === undefined) return new RecordPivotSource(data.records, data.fields);
         const live = new SnapshotPivotSource(snapshot, fields);
-        live.subscribe(changed => bench.told.push(changed.sourceVersion));
+        live.subscribe(changed => bench.told.push(versionOf(changed)));
         return live;
     };
     const fetch = entry['fetch'] === undefined ? undefined : object(entry['fetch']);
@@ -83,15 +88,21 @@ export function open(file: JsonObject, entry: JsonObject): Bench {
         const features = new PivotSourceFeatures(offered, inner.features.canRefresh, counts !== undefined);
         const answers = fetch['answers'];
         const instead = answers === undefined ? undefined : queryOf(object(answers));
+        // Every question and answer crosses PivotJson, written and read back, as a server's would.
         return new FetchingPivotSource(inner.fields, features, {
-            aggregate: (query, signal) => {
+            aggregate: async (query, signal) => {
                 bench.asked++;
-                return inner.aggregate(instead ?? query, signal);
+                const asked = PivotJson.readQuery(PivotJson.writeQuery(instead ?? query));
+                return PivotJson.readAnswer(PivotJson.writeAnswer(await inner.aggregate(asked, signal)));
             },
-            items: (query, signal) => inner.items(query, signal),
-            details: (query, signal) => inner.details(query, signal),
+            items: async (query, signal) =>
+                PivotJson.readItemPage(PivotJson.writeItemPage(await inner.items(PivotJson.readItemsQuery(PivotJson.writeItemsQuery(query)), signal))),
+            details: async (query, signal) =>
+                PivotJson.readDetailPage(PivotJson.writeDetailPage(await inner.details(PivotJson.readDetailsQuery(PivotJson.writeDetailsQuery(query)), signal))),
             // "counts": true counts through the source behind; an object is what the server answers instead.
-            ...(counts === undefined ? {} : { itemCounts: (signal?: AbortSignal) => countedBy(inner, counts, signal) }),
+            ...(counts === undefined ? {} : {
+                itemCounts: async (signal?: AbortSignal) => PivotJson.readItemCounts(PivotJson.writeItemCounts(await countedBy(inner, counts, signal))),
+            }),
         });
     };
     const shape = snapshot === undefined ? undefined : snapshotShapeOf(file, entry);

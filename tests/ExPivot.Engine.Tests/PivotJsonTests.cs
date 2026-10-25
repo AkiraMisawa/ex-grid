@@ -70,7 +70,9 @@ public class PivotJsonTests
         var values = read.Values[0];
         Assert.Equal(79228162514264337593543950335m, values.SumAt(0).ExactValue);
         Assert.Equal(-1.000000000000000000000000001m, values.MinAt(0).ExactValue);
-        Assert.Equal(2, values.MaxAt(0).ExactValue.Scale);
+        // A decimal is a value, not its places (ADR-0064): 0.10 crosses as 0.1.
+        Assert.Equal(0.1m, values.MaxAt(0).ExactValue);
+        Assert.Contains("\"max\":[0.1,", json);
         Assert.True(double.IsPositiveInfinity(values.ProductAt(0)));
         Assert.True(double.IsNaN(values.MeanAt(0)));
         Assert.Equal(PivotNumber.Double(0.30000000000000004), values.SumAt(1));
@@ -173,7 +175,7 @@ public class PivotJsonTests
 
         // By its field's type: text, an exact number, a double as its text, a date, a Boolean; a
         // value of another type — "7" in Amount, a Boolean in Tag — tagged with its own.
-        Assert.Contains("[\"Rates\",\"LDN-1\",\"2026-01-02T00:00:00\",100.50,\"1.5\",true,\"High\"]", json);
+        Assert.Contains("[\"Rates\",\"LDN-1\",\"2026-01-02T00:00:00\",100.5,\"1.5\",true,\"High\"]", json);
         Assert.Contains("{\"text\":\"7\"}", json);
         Assert.Contains("{\"boolean\":true}", json);
         Assert.Contains("{\"date\":\"2026-01-01T00:00:00\"}", json);

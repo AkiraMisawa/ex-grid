@@ -7,7 +7,7 @@ import type { AggregateValue } from '../aggregates/parts';
 import { divideByZeroValue, doubleValue, numberErrorValue } from '../aggregates/parts';
 import type { PivotCube } from '../cube/cube';
 import { cubeParts, readCell, type AxisNode, type CubeAxis, type ItemRef } from '../cube/cube';
-import { pivotDetailsQuery, placedFields, type PivotDetailsQuery, type PivotFieldItem } from '../cube/query';
+import { everyRecord, pivotDetailsQuery, placedFields, type PivotDetailsQuery, type PivotFieldItem } from '../cube/query';
 import type { FieldMeta } from '../fields/pivot-field';
 import { fromPublicKey, itemKeysEqual, itemKeyText, keyIdOf, publicKeyId, sameItem, type PivotItemKey } from '../items/item-key';
 import type { PivotAggregation, PivotColumnRole, PivotRowRole, PivotShowValuesAs } from '../layout/pivot-enums';
@@ -397,7 +397,7 @@ export class PivotReport {
 
     /** The question for the records behind a cell (ADR-0063): its row's and its column's Items, and every
      * placed field's Hidden Items, under the cube's Source Version. A column of −1 asks for the row's. */
-    detailsQuery(row: PivotReportRow, valueColumn: number, start = 0, count: number = Number.MAX_SAFE_INTEGER): PivotDetailsQuery {
+    detailsQuery(row: PivotReportRow, valueColumn: number, start = 0, count: number = everyRecord): PivotDetailsQuery {
         if (!this.rows.includes(row)) throw new TypeError('The row belongs to another report.');
         if (!Number.isInteger(valueColumn) || valueColumn < -1 || valueColumn >= this.valueColumns.length) {
             throw new RangeError('Not a value column of the report, nor −1.');

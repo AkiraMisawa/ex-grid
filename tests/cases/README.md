@@ -589,9 +589,19 @@ the Source Version `server`. Each of `asks` is answered in turn:
 | `{"asked": true}` | How often the fetching source asked its server for Leaf Aggregates |
 | `{"refresh": true}` | The source made again over the same data, which is Excel's Refresh |
 
+A fetching source's every question and answer crosses `PivotJson`, written and read back, as a server's
+would, so each `fetch` case holds the wire too.
+
 A page says `"version": "asked"` when it was answered under the version it was asked under. A source's
 refusal is `{"refused": kind, "field", "limit", "saying"}`, the version asked under written `{version}`.
 
+
+### `pivotJson`
+
+A Pivot Source document (ADR-0066) as it crosses to a server: `read`, read as the `document` it names
+(`query`, `answer`, `itemsQuery`, `itemPage`, `detailsQuery`, `detailPage`, `sourceChanged`, `itemCounts`) and
+written again, is answered by the text written, which both engines write to the byte, or by what refuses it.
+The documents a case reads back unchanged were written by the C# engine.
 
 ### `pivotReportSource`
 
