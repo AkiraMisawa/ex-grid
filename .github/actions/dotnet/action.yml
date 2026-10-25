@@ -1,7 +1,8 @@
 name: .NET SDK
 description: >-
   Installs the newest SDK of global.json's major.minor from the .NET CDN by its exact version, and
-  falls back, with a warning, to an SDK the runner image already holds that global.json accepts.
+  unless told not to, falls back, with a warning, to an SDK the runner image already holds that
+  global.json accepts.
 
 # Not actions/setup-dotnet. It turns global.json into a channel, and dotnet-install.sh resolves a
 # channel through an aka.ms redirect: when the redirect answers but its target fails, the script
@@ -9,9 +10,25 @@ description: >-
 # answered 409 for every SDK and runtime, and every job of every workflow failed before its first
 # step. An exact version never goes through aka.ms, so the version is read from the CDN's own
 # latest.version, which is the file the script falls back to.
+inputs:
+  fallback:
+    description: >-
+      Whether a job may run on the runner's own SDK when the newest cannot be installed. A job whose
+      output is released says false: it fails rather than build with an SDK CI did not test.
+    default: 'true'
+
 runs:
   using: composite
   steps:
+    # The newest of the channel is what global.json accepts only while it rolls forward across
+    # feature bands.
+    - name: global.json rolls forward across feature bands
+      shell: bash
+      run: |
+        set -euo pipefail
+        roll=$(jq -r '.sdk.rollForward' global.json)
+        [[ "$roll" == latestFeature ]] || { echo "::error::global.json rolls forward by '$roll': .github/actions/dotnet installs the newest SDK of its major.minor, which only latestFeature accepts."; exit 1; }
+
     - id: install
       shell: bash
       continue-on-error: true
@@ -20,7 +37,7 @@ runs:
         feed=https://builds.dotnet.microsoft.com/dotnet
         channel=$(jq -r '.sdk.version | split(".")[0:2] | join(".")' global.json)
         version=$(curl -fsSL --retry 3 "$feed/Sdk/$channel/latest.version" | tail -n 1 | tr -d '\r')
-        [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+ ]] || { echo "::warning::$feed/Sdk/$channel/latest.version names no version: '$version'"; exit 1; }
+        [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "::warning::$feed/Sdk/$channel/latest.version names no version: '$version'"; exit 1; }
         script="$RUNNER_TEMP/dotnet-install.sh"
         curl -fsSL --retry 3 -o "$script" "$feed/scripts/v1/dotnet-install.sh"
         bash "$script" --version "$version" --install-dir "$HOME/.dotnet"
@@ -34,13 +51,24 @@ runs:
       shell: bash
       env:
         INSTALLED: ${{ steps.install.outputs.version }}
+        FALLBACK: ${{ inputs.fallback }}
       run: |
         set -euo pipefail
-        resolved=$(dotnet --version)
         if [[ -z "$INSTALLED" ]]; then
+          if [[ "$FALLBACK" != true ]]; then
+            echo "::error::The newest .NET SDK could not be installed from builds.dotnet.microsoft.com, and this job does not run on the runner's own."
+            exit 1
+          fi
+          resolved=$(dotnet --version) || { echo "::error::The newest .NET SDK could not be installed from builds.dotnet.microsoft.com, and the runner holds none that global.json accepts."; exit 1; }
           echo "::warning::The newest .NET SDK could not be installed from builds.dotnet.microsoft.com; this job runs on the runner's own $resolved."
-        elif [[ "$resolved" != "$INSTALLED" ]]; then
-          echo "::error::.NET $INSTALLED was installed, and global.json resolves $resolved."
-          exit 1
+        else
+          resolved=$(dotnet --version)
+          if [[ "$resolved" != "$INSTALLED" ]]; then
+            echo "::error::.NET $INSTALLED was installed, and global.json resolves $resolved."
+            exit 1
+          fi
         fi
         echo ".NET SDK $resolved"
+        # The compiler's errors and warnings as annotations on the lines they name, as
+        # actions/setup-dotnet registered them (its csc.json).
+        echo "::add-matcher::$GITHUB_ACTION_PATH/csc.json"

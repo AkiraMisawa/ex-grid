@@ -81,6 +81,8 @@ jobs:
           fetch-depth: 0
 
       - uses: ./.github/actions/dotnet
+        with:
+          fallback: false
 
       # The version and its kind; the branch; whether the long run gates it and whether its release
       # publishes the Docs Site (ADR-0042, ADR-0205).
@@ -194,6 +196,8 @@ jobs:
           [ "$(ls packages | wc -l)" -eq 32 ] || { echo "::error::the artifact holds more than the thirty-two expected files"; exit 1; }
 
       - uses: ./.github/actions/dotnet
+        with:
+          fallback: false
 
       - name: Sign in to nuget.org
         id: login

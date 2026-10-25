@@ -599,7 +599,10 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      # A release's packages are the ones this job packs: built only with the SDK it installs.
       - uses: ./.github/actions/dotnet
+        with:
+          fallback: ${{ !inputs.version }}
 
       # Packs the family's sixteen, reads back what each .nuspec declares, and publishes a net10.0
       # application that restores them from the packed files alone.
