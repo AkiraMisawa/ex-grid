@@ -204,20 +204,29 @@ public partial class RepositoryTests
         Assert.All(Skips.Allowed, a => Assert.Contains(a.Project, projects));
     }
 
-    [Fact] // ADR-0208 (VZ-18, decided with the user 2026-10-12): VZ-18 is a Known limitation of 0.1.0 in the index and the table, with no record
-    public void VZ_18_is_a_known_limitation_of_0_1_0()
+    [Fact] // ADR-0208 (decided with the user 2026-10-25): VZ-18, and FN-12e and KB-3 on macOS, are Known limitations of 0.2.0 in the index and the table, with no record
+    public void VZ_18_and_the_macOS_rows_are_known_limitations_of_0_2_0()
     {
         var report = new Report();
         var index = ByHand.ReadIndex(Tree, report)!;
         var table = ByHandTable.Read(Tree, report)!;
 
-        Assert.True(report.Admitted, string.Join("\n", report.Refusals.Select(r => r.Message)));
+        Assert.True(report.Admitted, string.Join("
+", report.Refusals.Select(r => r.Message)));
         var vz18 = Assert.Single(index, r => r.Row == "VZ-18");
         Assert.Null(vz18.Record);
-        Assert.Equal(new KnownLimitation("0.1.0", "2026-10-12",
-            "VZ-18, the check on the remote-isolation PC, is a Known limitation of 0.1.0. It is not run, and the 2026-10-08 observation, which names no commit, is not taken as its record."), vz18.Limitation);
-        Assert.Equal("0.1.0", Assert.Single(table.Rows, r => r.Row == "VZ-18").KnownLimitation);
-        Assert.All(index.Where(r => r.Row != "VZ-18"), r => Assert.Null(r.Limitation));
+        Assert.Equal(new KnownLimitation("0.2.0", "2026-10-25",
+            "VZ-18, the check on the remote-isolation PC, is a Known limitation of 0.2.0 as it was of 0.1.0 (2026-10-12). It is not run for it."), vz18.Limitation);
+        foreach (var row in new[] { "FN-12e", "KB-3" })
+        {
+            var mac = Assert.Single(index, r => r.Row == row && r.Where == "macOS");
+            Assert.Null(mac.Record);
+            Assert.Equal(new KnownLimitation("0.2.0", "2026-10-25",
+                $"{row} on macOS is a Known limitation of 0.2.0. It is not run for it, and its record at 0.1.0-rc.3's commit, which no longer holds, is not carried."), mac.Limitation);
+            Assert.Equal("0.2.0", Assert.Single(table.Rows, r => r.Row == row && r.Where == "macOS").KnownLimitation);
+        }
+        Assert.Equal("0.2.0", Assert.Single(table.Rows, r => r.Row == "VZ-18").KnownLimitation);
+        Assert.All(index.Where(r => r.Row != "VZ-18" && r.Where != "macOS"), r => Assert.Null(r.Limitation));
     }
 
     // Every .cs file of every test project but this one, whose own tests write the patterns as text.
