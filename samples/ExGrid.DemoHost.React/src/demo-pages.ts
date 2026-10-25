@@ -18,4 +18,8 @@ export const demoPages: readonly DemoPage[] = Object.freeze([
         route: 'wide', title: 'Wide', group: 'Rows and data',
         description: 'Rows and 100 columns virtualised on both axes, with pinned columns; compare with horizontal virtualisation off (ADR-0004).',
     },
+    {
+        route: 'features', title: 'Features', group: 'Interaction',
+        description: 'Sorting and Header Groups on one page, with every notification written out; editing, the clipboard and filtering join as the Script Core comes to them.',
+    },
 ]);

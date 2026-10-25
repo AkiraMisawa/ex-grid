@@ -10,6 +10,7 @@
 
 import { AutoWidth } from '../columns/auto-width';
 import { ColumnGeometry, type ColumnRange } from '../columns/column-geometry';
+import { HeaderGroup, HeaderGroupLayout, type ResolvedHeaderGroup } from '../columns/header-groups';
 import { decideOverflow } from '../columns/overflow-rules';
 import { textFor } from '../cells/display-text';
 import { GridMetrics, type GridDensity } from '../grid-metrics';
@@ -40,6 +41,21 @@ import { stylesheetName, stylesheetStamp } from './shipped-stylesheet';
 /** A Viewport axis: a number of pixels the Consumer declares, or `'stretch'`, the parent's (ADR-0028). */
 export type ViewportSize = number | 'stretch';
 
+/**
+ * A labelled rectangle over adjacent columns, in a tier above the header row (ADR-0032): colspan and rowspan
+ * without a column tree. Its members are named, as a set: the painted order is the columns' own.
+ */
+export interface GridHeaderGroup {
+    /** The caption; empty for a spacer rectangle. */
+    readonly label: string;
+    /** The member columns' names. They stand side by side in the column order, or the grid refuses the group. */
+    readonly columns: readonly string[];
+    /** The rectangle's top tier, 1 directly above the header row; 1 unless given. */
+    readonly tier?: number;
+    /** How many tiers the rectangle spans downward from its top tier; 1 unless given. */
+    readonly tierSpan?: number;
+}
+
 /** What a grid is drawn from. Rows reach it only through a Grid Source; `rows` is `GridSource.from(rows)`. */
 export interface GridOptions<Row> {
     /** The columns, in display order. */
@@ -62,6 +78,10 @@ export interface GridOptions<Row> {
     readonly pinnedColumnCount?: number;
     /** Whether the columns off screen are left out of the DOM (ADR-0004); true unless given. */
     readonly virtualiseColumns?: boolean;
+    /** The Header Groups over the columns, in tiers above the header row (ADR-0032); none unless given. A
+     * group whose members are not side by side, that straddles the Pinned Columns' edge or that overlaps
+     * another is refused by name, as is a Viewport too short for the band and one row. */
+    readonly headerGroups?: readonly GridHeaderGroup[];
     /** Hears the Selection each time it changes (ADR-0011): after the grid has painted it, once however
      * many gestures changed it in between. A Selection is dropped, and heard empty, when the Row Sequence
      * Version or the columns change. */
@@ -83,9 +103,6 @@ const modifierKeys: ReadonlySet<string> = new Set(['Control', 'Shift', 'Alt', 'M
 
 /** The built-in Chrome's words for a stylesheet of another version (ADR-0123, ADR-0203). */
 const stylesheetNoticeWords = 'This page holds another version\'s stylesheet. Reload the page.';
-
-/** The rows the header stands for in the accessibility tree, ahead of the data rows (ADR-0033). */
-const headerRowCount = 1;
 
 /** What each instance's ids begin with, so two grids on a page never share one (ADR-0018). */
 let instances = 0;
@@ -116,6 +133,8 @@ interface Taken<Row> {
     readonly height: ViewportSize;
     readonly pinnedCount: number;
     readonly virtualiseColumns: boolean;
+    readonly headerGroups: readonly GridHeaderGroup[] | undefined;
+    readonly headerLayout: HeaderGroupLayout;
     readonly onSelectionChanged: ((selection: GridSelection) => void) | undefined;
 }
 
@@ -229,6 +248,9 @@ export class GridView<Row> {
     #height: ViewportSize = defaultViewportHeightPx;
     #pinnedCount = 0;
     #virtualiseColumns = true;
+    // The Header Groups as handed over, and resolved against the columns and the pinned count (ADR-0032).
+    #headerGroups: readonly GridHeaderGroup[] | undefined;
+    #headerLayout = HeaderGroupLayout.empty;
     #onSelectionChanged: ((selection: GridSelection) => void) | undefined;
 
     // The Selection (ADR-0011, ADR-0012), held under the Row Sequence Version it was made under, and the
@@ -276,7 +298,8 @@ export class GridView<Row> {
     // What is painted.
     #painted = new Map<unknown, PaintedRow<Row>>();
     #paintedHeader: {
-        readonly styles: ColumnStyles; readonly columns: readonly ResolvedColumn<Row>[]; readonly scrollable: ColumnRange | undefined; readonly sorts: string;
+        readonly styles: ColumnStyles; readonly columns: readonly ResolvedColumn<Row>[]; readonly scrollable: ColumnRange | undefined;
+        readonly sorts: string; readonly layout: HeaderGroupLayout; readonly tierPx: number;
     } | undefined;
     // The header cells as painted, each with its class before the Heading Mark's, and the mark's runs and
     // rectangles (ADR-0008, 2026-10-13): made once per Selection and extent, and the rectangles once per
@@ -354,9 +377,8 @@ export class GridView<Row> {
         // inside it; tabindex -1 keeps it out of the tab sequence (A11Y-4).
         this.#scroller = element('div', { class: 'ex-scroller', tabindex: '-1', role: 'presentation' });
         this.#spacer = element('div', { class: 'ex-spacer', role: 'presentation' });
-        this.#header = element('div', {
-            class: 'ex-header', role: 'row', 'aria-rowindex': '1', 'data-ex-claims': 'mousedown click',
-        });
+        // Its role and place in the tree are the header pass's: a row, or a group of tiers (ADR-0032/0033).
+        this.#header = element('div', { class: 'ex-header', 'data-ex-claims': 'mousedown click' });
         this.#viewport = element('div', { class: 'ex-viewport', role: 'presentation', 'data-ex-claims': 'contextmenu' });
         // The selection layers (ADR-0008, ADR-0206): paint, not content, so hidden from the accessibility
         // tree, and the Viewport's first children, so they ride its translation and pass under the pinned
@@ -512,10 +534,38 @@ export class GridView<Row> {
         if (onSelectionChanged !== undefined && typeof onSelectionChanged !== 'function') {
             throw new TypeError('onSelectionChanged is a function of the Selection.');
         }
+        const { headerGroups } = options;
+        const headerLayout = this.#layoutOf(headerGroups, columns, pinnedColumnCount, columnsChanged);
+        // The band comes off the scroll budget, and the refusal names the band (ADR-0032): a Viewport that
+        // cannot hold it and one row shows headers and no data, which reads as an empty result.
+        const bandPx = (1 + headerLayout.tierCount) * metrics.headerHeightPx;
+        if (headerLayout.tierCount > 0 && height !== 'stretch' && height <= bandPx + metrics.rowHeightPx) {
+            throw new RangeError(`viewportHeight (${height}px) must exceed the header band — ${1 + headerLayout.tierCount} tiers × `
+                + `${metrics.headerHeightPx}px = ${bandPx}px — plus one row of ${metrics.rowHeightPx}px (ADR-0032).`);
+        }
         return {
             source, own, rows: options.rows, metrics, declared: options.columns, columns, autoWidths, columnsChanged,
-            width, height, pinnedCount: pinnedColumnCount, virtualiseColumns, onSelectionChanged: options.onSelectionChanged,
+            width, height, pinnedCount: pinnedColumnCount, virtualiseColumns, headerGroups, headerLayout,
+            onSelectionChanged: options.onSelectionChanged,
         };
+    }
+
+    // The Header Groups resolved against the columns' order and the pinned count (ADR-0032): the layout in
+    // force kept while none of the three changed, so the header is not built again.
+    #layoutOf(groups: readonly GridHeaderGroup[] | undefined, columns: readonly ResolvedColumn<Row>[], pinnedCount: number,
+        columnsChanged: boolean): HeaderGroupLayout {
+        if (groups === undefined || groups.length === 0) return HeaderGroupLayout.empty;
+        const given: unknown = groups;
+        if (!Array.isArray(given)) throw new TypeError('headerGroups is a list of Header Groups (ADR-0032).');
+        if (!columnsChanged && pinnedCount === this.#pinnedCount && this.#headerGroups !== undefined
+            && sameItems(groups, this.#headerGroups)) {
+            return this.#headerLayout;
+        }
+        return HeaderGroupLayout.resolve({
+            groups: groups.map(group => new HeaderGroup(group)),
+            columnNames: columns.map(({ column }) => column.name),
+            pinnedCount,
+        });
     }
 
     // What the taken options ask of the sources, the last step that may refuse them: the source told its
@@ -564,6 +614,14 @@ export class GridView<Row> {
         this.#height = taken.height;
         this.#pinnedCount = taken.pinnedCount;
         this.#virtualiseColumns = taken.virtualiseColumns;
+        this.#headerGroups = taken.headerGroups;
+        // Every row's place in the accessibility tree counts the header's rows, so a change in the tiers
+        // paints every row again (ADR-0033).
+        if (taken.headerLayout.tierCount !== this.#headerLayout.tierCount) {
+            this.#painted = new Map();
+            this.#placeholders = new Map();
+        }
+        this.#headerLayout = taken.headerLayout;
         this.#onSelectionChanged = taken.onSelectionChanged;
     }
 
@@ -667,8 +725,14 @@ export class GridView<Row> {
 
     // ---- Resolving (the C# core's PrepareRender) ------------------------------------------------------
 
+    // The header band: the header row and a tier per level of Header Groups above it (ADR-0032).
     get #bandHeightPx(): number {
-        return this.#metrics.headerHeightPx;
+        return (1 + this.#headerLayout.tierCount) * this.#metrics.headerHeightPx;
+    }
+
+    // The rows the header stands for in the accessibility tree, ahead of the data rows (ADR-0033).
+    get #headerRowCount(): number {
+        return 1 + this.#headerLayout.tierCount;
     }
 
     #resolve(): void {
@@ -1087,13 +1151,20 @@ export class GridView<Row> {
     }
 
     // The column a press or a click on the header names, or none: the corner where the Headings meet names
-    // none, nor does the dead space past the last column, where columnAt would clamp for a drag.
+    // none, nor does the dead space past the last column, where columnAt would clamp for a drag, nor a Header
+    // Group's rectangle, which is not the leaf under it (ADR-0032).
     #headerColumnAt(event: MouseEvent): number | undefined {
         const geometry = this.#styles.geometry;
         const x = event.offsetX;
         if (!Number.isFinite(x) || !Number.isFinite(event.offsetY) || geometry.isInLead(x, this.#scrollLeftPx)
             || x < 0 || x >= geometry.totalWidthPx) return undefined;
-        return geometry.columnAt(x, this.#scrollLeftPx);
+        const column = geometry.columnAt(x, this.#scrollLeftPx);
+        if (column === undefined) return undefined;
+        const layout = this.#headerLayout;
+        if (layout.tierCount > 0 && event.offsetY < this.#bandHeightPx - (layout.leafTierSpanOf(column) * this.#metrics.headerHeightPx)) {
+            return undefined;
+        }
+        return column;
     }
 
     // The row the Focus lands on when a Column Heading is pressed: the first on screen, so the Viewport
@@ -1463,7 +1534,7 @@ export class GridView<Row> {
             + `--ex-resize-grip-width: ${metrics.resizeGripWidthPx}px; --ex-column-guide-width: ${metrics.columnGuideWidthPx}px`
             + stretchRootStyle(this.#width, this.#height)
             + (this.#devicePixelRatio === undefined ? '' : `; --ex-dp: ${1 / this.#devicePixelRatio}px`));
-        this.#write(root, 'root', 'aria-rowcount', String(this.#totalRows + headerRowCount));
+        this.#write(root, 'root', 'aria-rowcount', String(this.#totalRows + this.#headerRowCount));
         this.#write(root, 'root', 'aria-colcount', String(this.#columns.length));
         // The numbers a reveal and a page follow are known by (ADR-0012, ADR-0204), the Focus a follow
         // was taken for, painted or not, and the Focus cell for assistive technology only while it is in
@@ -1493,27 +1564,45 @@ export class GridView<Row> {
 
     #paintHeader(): void {
         const painted = this.#paintedHeader;
+        const layout = this.#headerLayout;
+        const tierPx = this.#metrics.headerHeightPx;
         // The Sort in force is painted too, as each header's aria-sort (ADR-0033).
         const sorts = this.#state.sorts.map(({ column, direction }) => `${JSON.stringify(column)}:${direction}`).join(',');
         if (painted !== undefined && painted.styles === this.#styles && painted.columns === this.#columns
-            && sameRange(painted.scrollable, this.#scrollable) && painted.sorts === sorts) {
+            && sameRange(painted.scrollable, this.#scrollable) && painted.sorts === sorts && painted.layout === layout
+            && painted.tierPx === tierPx) {
             this.#paintHeadingMarks(false);
             return;
         }
-        this.#paintedHeader = { styles: this.#styles, columns: this.#columns, scrollable: this.#scrollable, sorts };
+        this.#paintedHeader = { styles: this.#styles, columns: this.#columns, scrollable: this.#scrollable, sorts, layout, tierPx };
         const doc = this.#root.ownerDocument;
+        const tiered = layout.tierCount > 0;
+        const header = this.#header;
+        // Untiered, the header is the one row it always was. Tiered, it holds a row per tier of Header Groups,
+        // top first, and the leaf row below them; each is display: contents, so the band lays out, paints and
+        // stacks as one element of cells and rectangles would, and only the tree says rows (ADR-0032/0033).
+        this.#write(header, 'header', 'role', tiered ? 'rowgroup' : 'row');
+        this.#write(header, 'header', 'aria-rowindex', tiered ? undefined : '1');
+        this.#write(header, 'header', 'style', tiered ? `height: ${this.#bandHeightPx}px; line-height: ${tierPx}px` : undefined);
         const cells: HTMLElement[] = [];
         const headerCells: HeaderCell[] = [];
+        // While tiers stand, a leaf is anchored to the band's bottom edge, as tall as the tiers no
+        // rectangle covers above it (ADR-0032).
+        const tieredStyle = (c: number, style: string): string => {
+            if (!tiered) return style;
+            const heightPx = layout.leafTierSpanOf(c) * tierPx;
+            return `${style}; align-self: flex-end; height: ${heightPx}px; line-height: ${heightPx}px`;
+        };
         const headerCell = (c: number, pinned: boolean): void => {
-            const { column, header } = itemAt(this.#columns, c);
+            const { column, header: label } = itemAt(this.#columns, c);
             const cell = doc.createElement('div');
             cell.className = headerClass(column.align, pinned, 'none');
-            cell.setAttribute('style', pinned ? this.#styles.pinnedCell(c) : this.#styles.cell(c));
+            cell.setAttribute('style', tieredStyle(c, pinned ? this.#styles.pinnedCell(c) : this.#styles.cell(c)));
             cell.setAttribute('role', 'columnheader');
             cell.setAttribute('aria-colindex', String(c + 1));
             // Sorted or not, a column that can be sorted says so (ADR-0033).
             if (column.queryable !== false) cell.setAttribute('aria-sort', this.#ariaSort(column.name));
-            cell.textContent = header;
+            cell.textContent = label;
             cells.push(cell);
             headerCells.push({ element: cell, column: c, align: column.align, pinned });
         };
@@ -1523,9 +1612,67 @@ export class GridView<Row> {
             if (this.#styles.hasGap(scrollable.start)) cells.push(this.#gap(scrollable.start));
             for (let c = scrollable.start; c < scrollable.start + scrollable.count; c++) headerCell(c, false);
         }
-        this.#header.replaceChildren(...cells);
+        if (tiered) {
+            const rows = Array.from({ length: layout.tierCount }, (_, headerRow) => this.#tierRow(headerRow));
+            const leaves = doc.createElement('div');
+            leaves.setAttribute('role', 'row');
+            leaves.setAttribute('aria-rowindex', String(layout.tierCount + 1));
+            leaves.setAttribute('style', 'display: contents');
+            leaves.append(...cells);
+            header.replaceChildren(...rows, leaves);
+        } else {
+            header.replaceChildren(...cells);
+        }
         this.#headerCells = headerCells;
         this.#paintHeadingMarks(true);
+    }
+
+    // One tier's row of Header Groups, the top tier first (ADR-0032). A rectangle stands from the geometry,
+    // absolutely, so it is correct whether or not its leaves are in the DOM; one inside the pinned block
+    // rides a zero-size sticky anchor held at the band's left edge, as the pinned header cells are.
+    #tierRow(headerRow: number): HTMLElement {
+        const doc = this.#root.ownerDocument;
+        const layout = this.#headerLayout;
+        const tier = layout.tierCount - headerRow;
+        const row = doc.createElement('div');
+        row.setAttribute('role', 'row');
+        row.setAttribute('aria-rowindex', String(headerRow + 1));
+        row.setAttribute('style', 'display: contents');
+        const geometry = this.#styles.geometry;
+        // Until the column geometry stands for these columns, as under a stretched axis not yet reported,
+        // the band paints no rectangles, as the rows paint nothing (ADR-0028).
+        if (geometry.count !== this.#columns.length) return row;
+        const held = (group: ResolvedHeaderGroup): boolean => group.pinned && !geometry.isPinningSuspended;
+        const inTier = layout.groups.filter(group => group.topTier === tier);
+        const pinned = inTier.filter(held);
+        if (pinned.length > 0) {
+            const anchor = doc.createElement('div');
+            anchor.className = 'ex-header-groups-pinned';
+            anchor.append(...pinned.map(group => this.#groupElement(group)));
+            row.append(anchor);
+        }
+        row.append(...inTier.filter(group => !held(group)).map(group => this.#groupElement(group)));
+        return row;
+    }
+
+    #groupElement(group: ResolvedHeaderGroup): HTMLElement {
+        const geometry = this.#styles.geometry;
+        const tierPx = this.#metrics.headerHeightPx;
+        const last = group.firstColumn + group.memberCount - 1;
+        const leftPx = geometry.offsetPxOf(group.firstColumn);
+        const widthPx = geometry.offsetPxOf(last) + geometry.widthPxOf(last) - leftPx;
+        const topPx = (this.#headerLayout.tierCount - group.topTier) * tierPx;
+        const heightPx = group.tierSpan * tierPx;
+        const element = this.#root.ownerDocument.createElement('div');
+        element.className = 'ex-header-group';
+        element.setAttribute('style', `left: ${leftPx}px; top: ${topPx}px; width: ${widthPx}px; height: ${heightPx}px; line-height: ${heightPx}px`);
+        element.setAttribute('role', 'columnheader');
+        element.setAttribute('aria-colindex', String(group.firstColumn + 1));
+        element.setAttribute('aria-colspan', String(group.memberCount));
+        // A cell spans one row unless it says otherwise (ADR-0033).
+        if (group.tierSpan > 1) element.setAttribute('aria-rowspan', String(group.tierSpan));
+        element.textContent = group.label;
+        return element;
     }
 
     // The Heading Mark over the header (ADR-0008, 2026-10-13): every column holding part of the Selection
@@ -1630,7 +1777,10 @@ export class GridView<Row> {
         }
         // Placed from the offset the slice is painted at, on the nearest Device Pixel (ADR-0053, DC-59).
         const topPx = geometry === undefined || visible === undefined ? 0 : geometry.paintedTopPxOf(visible.start, this.#scrollTopPx);
-        this.#write(viewport, 'viewport', 'style', `transform: translateY(round(nearest, ${topPx}px, var(--ex-dp, 1px)))`);
+        // The stylesheet's default is one header tier; tiers move where the rows begin, so the band's height
+        // travels inline (ADR-0032).
+        const transform = `transform: translateY(round(nearest, ${topPx}px, var(--ex-dp, 1px)))`;
+        this.#write(viewport, 'viewport', 'style', this.#headerLayout.tierCount === 0 ? transform : `top: ${this.#bandHeightPx}px; ${transform}`);
         this.#write(viewport, 'viewport', 'data-ex-first-row', visible === undefined ? undefined : String(visible.start));
         this.#write(viewport, 'viewport', 'data-ex-sequence', String(this.#sequence()));
         this.#write(viewport, 'viewport', 'data-ex-layout', String(this.#layoutId));
@@ -1708,7 +1858,7 @@ export class GridView<Row> {
         const element = this.#root.ownerDocument.createElement('div');
         element.className = rowClasses({ kind: 'detail', placeholder: true });
         element.setAttribute('role', 'row');
-        element.setAttribute('aria-rowindex', String(headerRowCount + index + 1));
+        element.setAttribute('aria-rowindex', String(this.#headerRowCount + index + 1));
         element.setAttribute('aria-busy', 'true');
         return element;
     }
@@ -1719,7 +1869,7 @@ export class GridView<Row> {
         const element = this.#root.ownerDocument.createElement('div');
         element.className = rowClasses({ kind: 'detail', placeholder: this.#placeholderMode });
         element.setAttribute('role', 'row');
-        element.setAttribute('aria-rowindex', String(headerRowCount + index + 1));
+        element.setAttribute('aria-rowindex', String(this.#headerRowCount + index + 1));
         if (this.#placeholderMode) element.setAttribute('aria-busy', 'true');
         for (let c = 0; c < this.#styles.geometry.pinnedCount; c++) element.append(this.#cell(row, index, c, true));
         if (scrollable !== undefined) {
