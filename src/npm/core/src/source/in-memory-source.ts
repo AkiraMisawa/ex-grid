@@ -87,24 +87,27 @@ export class InMemoryGridSource<Row> implements GridSource<Row> {
 
     private constructor(rows: readonly Row[], { rowKey, clock = systemClock }: InMemorySourceOptions<Row>) {
         this.#rowKey = rowKey;
+        let window: readonly Row[];
         if (rowKey === undefined) {
             // A copy: the Consumer changing the list it passed cannot move the Window under the grid, nor the
             // order the next sequence is compared with.
             this.#rows = Object.freeze([...rows]);
             this.#live = undefined;
+            window = this.#rows;
         } else {
             // Keys are checked before anything is kept: a repeated key, or one that names no row, is refused.
             const keyed = new KeyedRows(rows, rowKey);
+            const held = keyed.snapshot();
             this.#rows = Object.freeze([]);
             this.#live = {
                 keyed,
                 gatherer: new ChangeGatherer(clock, () => { this.#gatherDue(); }),
                 pending: new Map(),
-                ordinals: Object.freeze(keyed.snapshot().ordinals),
+                ordinals: Object.freeze(held.ordinals),
                 reordered: false,
             };
+            window = Object.freeze(held.rows);
         }
-        const window = Object.freeze(rowKey === undefined ? [...rows] : [...this.#baseRows()]);
         this.#state = Object.freeze({
             window,
             windowStart: 0,
@@ -366,7 +369,8 @@ export class InMemoryGridSource<Row> implements GridSource<Row> {
         const { rows, ordinals } = live.keyed.snapshot();
         const positions = queryPositions(rows, pushed.columns, pushed.filter, pushed.sorts);
         const query = kept();
-        this.#publishPending();
+        // What was gathered is in the rows requeried here, so it is published by this commit.
+        this.#dropPending(live);
         const next = positions.map(at => itemAt(rows, at));
         live.ordinals = Object.freeze(positions.map(at => itemAt(ordinals, at)));
         this.#columns = query.columns;
@@ -464,9 +468,7 @@ export class InMemoryGridSource<Row> implements GridSource<Row> {
         }
         // Every held key the list names is kept or changed; when fewer are named than are held, the rest are
         // removed.
-        const removed = listed.size - added.length < keyed.count
-            ? keyed.snapshot().rows.map(row => keyed.keyOf(row, 'A row held')).filter(key => !listed.has(key))
-            : [];
+        const removed = listed.size - added.length < keyed.count ? [...keyed.keys()].filter(key => !listed.has(key)) : [];
         const newRows = [...changed, ...added].map(([, row]) => row);
         this.#checkValues(newRows);
         return { added, changed, removed, order: reordered ? keys : undefined };
@@ -529,8 +531,7 @@ export class InMemoryGridSource<Row> implements GridSource<Row> {
     #publishPending(): boolean {
         const live = this.#live;
         if (live === undefined || (live.pending.size === 0 && !live.reordered)) return false;
-        const { keyed, gatherer, pending } = live;
-        gatherer.disarm();
+        const { keyed, pending, reordered } = live;
         const changes: RowChange<Row>[] = [];
         for (const [key, old] of pending) {
             const now = keyed.get(key);
@@ -539,20 +540,33 @@ export class InMemoryGridSource<Row> implements GridSource<Row> {
                 : now !== undefined && now.row === old.row && now.ordinal === old.ordinal;
             if (!unchanged) changes.push({ key, old, new: now });
         }
-        pending.clear();
-        gatherer.shown();
-        const { reordered } = live;
-        live.reordered = false;
-        if (changes.length === 0 && !reordered) return false;
-
-        const columns = this.#columns === undefined ? [] : this.#columns;
+        // Requeried before anything gathered is let go: a requery that throws leaves the changes waiting.
         const { window, filter, sorts } = this.#state;
-        const outcome = liveRequery(window, live.ordinals, changes, { columns, filter, sorts }, keyed.count, () => keyed.snapshot(), reordered);
+        const outcome = changes.length === 0 && !reordered ? undefined
+            : liveRequery(window, live.ordinals, changes, { columns: this.#queryColumns(), filter, sorts }, keyed.count, () => keyed.snapshot(), reordered);
+        this.#dropPending(live);
+        if (outcome === undefined) return false;
         const windowChanged = outcome.result !== window;
         live.ordinals = Object.freeze(outcome.ordinals);
         if (!windowChanged && !outcome.moved) return false;
         this.#show(outcome.result, this.#state.rowSequenceVersion + (outcome.moved ? 1 : 0));
         return true;
+    }
+
+    /** Lets go of what was gathered, which reached the grid, and the wait for it. */
+    #dropPending(live: Live<Row>): void {
+        if (live.pending.size === 0 && !live.reordered) return;
+        live.gatherer.disarm();
+        live.pending.clear();
+        live.reordered = false;
+        live.gatherer.shown();
+    }
+
+    /** The columns the Query in force reads. Before the grid binds none have come, and no Sort or Filter can
+     * be in force either, since both name columns: the rows stand in the source's order, which no column
+     * is needed to read. */
+    #queryColumns(): readonly QueryColumn<Row>[] {
+        return this.#columns === undefined ? noColumns : this.#columns;
     }
 
     /** The Consumer's own edit under a Row Key: not gathered, so it reaches the grid at once with whatever
@@ -610,6 +624,9 @@ export class InMemoryGridSource<Row> implements GridSource<Row> {
         for (const listener of Array.from(this.#listeners)) listener();
     }
 }
+
+/** No columns: the Query of a source the grid has not bound yet. */
+const noColumns: readonly never[] = Object.freeze([]);
 
 function isEmpty<Row>(plan: ChangePlan<Row>): boolean {
     return plan.added.length === 0 && plan.changed.length === 0 && plan.removed.length === 0 && plan.order === undefined;

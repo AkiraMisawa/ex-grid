@@ -86,10 +86,9 @@ export class KeyedRows<Row> {
         this.#gone.push(false);
     }
 
-    /** Takes the row held under `key` out. */
+    /** Takes the row held under `key` out; the caller has checked that one is held. */
     remove(key: RowKey): void {
-        const held = this.#byKey.get(key);
-        if (held === undefined) return;
+        const held = defined(this.#byKey.get(key), `the row held under ${quoted(key)}`);
         this.#byKey.delete(key);
         const slot = this.#slotOf(held.ordinal);
         this.#gone[slot] = true;
@@ -119,6 +118,11 @@ export class KeyedRows<Row> {
         this.#gone = rows.map(() => false);
         this.#goneCount = 0;
         this.#nextOrdinal += keys.length;
+    }
+
+    /** Every key held, in no order. */
+    keys(): IterableIterator<RowKey> {
+        return this.#byKey.keys();
     }
 
     /** The rows held, in order, with their ordinals: what a whole requery reads. */

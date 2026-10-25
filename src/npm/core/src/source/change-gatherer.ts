@@ -8,6 +8,10 @@ import type { GridClock } from './grid-clock';
  * forty times a second cannot be read. */
 export const defaultGatherInterval = 250;
 
+/** The longest wait armed at once. A browser's timer runs a delay past 2^31 - 1 ms at once; a wait cut short
+ * asks nothing, and is armed again for what remains, as C#'s is. */
+const longestWait = 86_400_000;
+
 /** Decides when gathered changes are published. */
 export class ChangeGatherer {
     readonly #clock: GridClock;
@@ -21,11 +25,6 @@ export class ChangeGatherer {
     constructor(clock: GridClock, due: () => void) {
         this.#clock = clock;
         this.#due = due;
-    }
-
-    /** The clock the source reads its times from. */
-    get clock(): GridClock {
-        return this.#clock;
     }
 
     /** The shortest time, in milliseconds, between two changes reaching the grid. Zero passes every change
@@ -79,6 +78,6 @@ export class ChangeGatherer {
         if (this.#armedFor === due) return;
         this.#cancel?.();
         this.#armedFor = due;
-        this.#cancel = this.#clock.setTimer(this.#due, wait);
+        this.#cancel = this.#clock.setTimer(this.#due, Math.min(wait, longestWait));
     }
 }

@@ -21,7 +21,7 @@
 // Its result equals applyQuery over the rows held now exactly, the stable tie order included; a property
 // test holds it to that (LV-5).
 
-import { elementAt, itemAt } from '../must';
+import { defined, elementAt, itemAt } from '../must';
 import type { QueryColumn } from '../query/columns';
 import type { GridFilter } from '../query/filter';
 import { filterPredicate, queryPositions, rowOrder, type RowOrder, type SortKeys } from '../query/query-engine';
@@ -81,6 +81,7 @@ export function liveRequery<Row>(
 
     // 1. Where each old version stood in the previous result, if it stood there at all.
     const oldIndex = changes.map(() => -1);
+    const missed: number[] = [];
     let touchesResult = false;
     let requeryWhole = changes.length * wholeRequeryShare > count;
     changes.forEach((change, j) => {
@@ -96,6 +97,7 @@ export function liveRequery<Row>(
             // whole, which reads them as they are.
             requeryWhole = true;
             touchesResult = true;
+            missed.push(j);
         }
     });
 
@@ -116,6 +118,12 @@ export function liveRequery<Row>(
     let result: readonly Row[];
     let ordinals: readonly number[];
     if (requeryWhole) {
+        // An old version the search missed stood in the previous result all the same: found there by
+        // identity, so that its leaving, or its moving, is seen below.
+        if (missed.length > 0) {
+            const previousAt = indexOf(previous);
+            for (const j of missed) oldIndex[j] = positionIn(previousAt, defined(itemAt(changes, j).old, 'a missed old version').row);
+        }
         ({ result, ordinals } = requeried(whole(), query));
         for (const at of passed) {
             const { j, row, ordinal } = elementAt(entering, at);

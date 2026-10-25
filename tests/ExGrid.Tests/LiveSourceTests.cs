@@ -69,6 +69,34 @@ public class LiveSourceTests
         Assert.Null(((IGridSource<Deal>)GridSource.From(Deals())).RowKey);
     }
 
+    // ---- LV-7: a row changed in place ----------------------------------------------------------
+
+    private sealed class Mutable(string id, decimal amount)
+    {
+        public string Id { get; } = id;
+        public decimal Amount { get; set; } = amount;
+    }
+
+    [Fact] // ADR-0003 / LV-7: a row changed in place, then changed out of the result, moves the Row Sequence Version
+    public void A_row_changed_in_place_then_out_of_the_result_moves_the_version()
+    {
+        // Changed in place, which ADR-0003 forbids, so the search for its old version misses: the whole
+        // requery drops it all the same, and the grid must hear that the sequence moved.
+        Mutable[] rows = [new("A", 3), new("B", 5), new("C", 7)];
+        var source = GridSource.From(rows, r => r.Id, new FakeTimeProvider());
+        source.OnColumnsChanged([new ColumnInfo<Mutable>("Amount", ColumnType.Number, r => r.Amount)]);
+        source.OnFilterChanged(AmountAtLeast(2));
+        source.OnSortChanged(ByAmount);
+        source.GatherInterval = TimeSpan.Zero;
+        var before = source.RowSequenceVersion;
+
+        rows[0].Amount = 6;
+        source.Apply(new(changed: [new Mutable("A", 0)]));
+
+        Assert.Equal(["B", "C"], source.Window.Select(r => r.Id));
+        Assert.Equal(before + 1, source.RowSequenceVersion);
+    }
+
     // ---- LV-4: a whole new list, paired by key -----------------------------------------------
 
     [Fact] // ADR-0141 / LV-4 (D7), LV-9: a row added inside the list stands where the list puts it, and is marked whole; the rows it moved are not marked
