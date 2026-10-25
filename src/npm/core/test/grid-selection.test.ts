@@ -14,13 +14,29 @@ function press(root: HTMLElement, x: number, y: number, init: MouseEventInit = {
     return pointer(root, 'mousedown', x, y, { button: 0, buttons: 1, ...init });
 }
 
-function pointer(root: HTMLElement, type: string, x: number, y: number, init: MouseEventInit): MouseEvent {
+function pointer(root: HTMLElement, type: string, x: number, y: number, init: MouseEventInit, on = '.ex-viewport'): MouseEvent {
     const event = new MouseEvent(type, { bubbles: true, cancelable: true, ...init });
     Object.defineProperty(event, 'offsetX', { value: x });
     Object.defineProperty(event, 'offsetY', { value: y });
-    q(root, '.ex-viewport').dispatchEvent(event);
+    q(root, on).dispatchEvent(event);
     return event;
 }
+
+/** An event on the header at its own offsets, and at the same client position, which a Heading drag's
+ * later events are placed from (ADR-0012). */
+function onHeader(root: HTMLElement, type: string, x: number, init: MouseEventInit = {}): MouseEvent {
+    return pointer(root, type, x, 10, { button: 0, clientX: x, clientY: 10, ...init }, '.ex-header');
+}
+
+/** A click on a header: its press, its release and its click. */
+function clickHeader(root: HTMLElement, x: number, init: MouseEventInit = {}): void {
+    onHeader(root, 'mousedown', x, { buttons: 1, ...init });
+    onHeader(root, 'mouseup', x, { buttons: 0, ...init });
+    onHeader(root, 'click', x, { buttons: 0, ...init });
+}
+
+const wholeColumns = (left: number, count: number, rows = 1000): unknown =>
+    [{ topRow: 0, leftColumn: left, rowCount: rows, columnCount: count }];
 
 function key(root: HTMLElement, name: string, init: KeyboardEventInit = {}): KeyboardEvent {
     const event = new KeyboardEvent('keydown', { key: name, bubbles: true, cancelable: true, ...init });
@@ -248,6 +264,148 @@ describe('the Selection in the grid', () => {
         expect(headerCells().map(cell => cell.className)).toEqual(['ex-header-cell ex-pinned', 'ex-header-cell ex-heading-marked']);
     });
 
+    it('ADR-0012: a click on a column header sorts through the source and selects nothing; the next click turns the Sort', async () => {
+        const source = GridSource.from(trades(1000));
+        const listener = heard();
+        const { root } = mount({ columns, source, rowHeight: 24, viewportHeight: 480, ...listener });
+        await painted();
+        clickHeader(root, 130);
+        await painted();
+        expect(source.snapshot().sorts).toEqual([{ column: 'Notional', direction: 'ascending' }]);
+        expect(q(root, '.ex-header-cell[aria-colindex="2"]').getAttribute('aria-sort')).toBe('ascending');
+        expect(listener.selections).toEqual([]);
+        // The press and the click are each an input answered; the release over the header is neither.
+        expect(q(root, '[data-ex-answered]').getAttribute('data-ex-answered')).toBe('2');
+        clickHeader(root, 130);
+        await painted();
+        expect(source.snapshot().sorts).toEqual([{ column: 'Notional', direction: 'descending' }]);
+    });
+
+    it('ADR-0012: Shift+click on a header selects whole columns from the Focus\'s, Ctrl+click adds one or takes it out, and neither sorts', async () => {
+        const source = GridSource.from(trades(1000));
+        const listener = heard();
+        const { root } = mount({ columns, source, rowHeight: 24, viewportHeight: 480, ...listener });
+        await painted();
+        press(root, 10, rowY(2));
+        clickHeader(root, 130, { shiftKey: true });
+        await painted();
+        expect(listener.selections.at(-1)?.ranges).toEqual(wholeColumns(0, 2));
+        expect(listener.selections.at(-1)?.focus).toEqual({ row: 2, column: 0 });
+
+        press(root, 10, rowY(2));
+        clickHeader(root, 130, { ctrlKey: true });
+        await painted();
+        expect(listener.selections.at(-1)?.ranges).toEqual([
+            { topRow: 2, leftColumn: 0, rowCount: 1, columnCount: 1 }, ...wholeColumns(1, 1) as object[],
+        ]);
+        clickHeader(root, 130, { ctrlKey: true });
+        await painted();
+        expect(listener.selections.at(-1)?.ranges).toEqual([{ topRow: 2, leftColumn: 0, rowCount: 1, columnCount: 1 }]);
+        expect(source.snapshot().sorts).toEqual([]);
+    });
+
+    it('ADR-0050/0012: a header press dragged onto another column selects whole columns, and its click sorts nothing', async () => {
+        const source = GridSource.from(trades(1000));
+        const listener = heard();
+        const { root } = mount({ columns, source, rowHeight: 24, viewportHeight: 480, ...listener });
+        await painted();
+        onHeader(root, 'mousedown', 10, { buttons: 1 });
+        // Over the press's own column, nothing yet: released there, it would be a click that sorts.
+        onHeader(root, 'mousemove', 60, { buttons: 1 });
+        await painted();
+        expect(listener.selections).toEqual([]);
+        // Onto the next column, over the cells: placed by its client delta from the press, not its offsets.
+        pointer(root, 'mousemove', 3, 3, { buttons: 1, clientX: 130, clientY: 200 });
+        await painted();
+        expect(listener.selections.at(-1)?.ranges).toEqual(wholeColumns(0, 2));
+        // Back over the first column, the drag stands and shrinks to it.
+        onHeader(root, 'mousemove', 10, { buttons: 1 });
+        await painted();
+        expect(listener.selections.at(-1)?.ranges).toEqual(wholeColumns(0, 1));
+        onHeader(root, 'mouseup', 10);
+        onHeader(root, 'click', 10);
+        await painted();
+        expect(source.snapshot().sorts).toEqual([]);
+        expect(listener.selections.at(-1)?.ranges).toEqual(wholeColumns(0, 1));
+    });
+
+    it('ADR-0050/0012: a header press released on another column with no move between is a drag, and its click sorts nothing', async () => {
+        const source = GridSource.from(trades(1000));
+        const listener = heard();
+        const { root } = mount({ columns, source, rowHeight: 24, viewportHeight: 480, ...listener });
+        await painted();
+        onHeader(root, 'mousedown', 10, { buttons: 1 });
+        onHeader(root, 'mouseup', 130);
+        onHeader(root, 'click', 130);
+        await painted();
+        expect(listener.selections.at(-1)?.ranges).toEqual(wholeColumns(0, 2));
+        expect(source.snapshot().sorts).toEqual([]);
+    });
+
+    it('ADR-0012: a press on a cell after a Heading drag released outside the grid is a cell drag, not more of the Heading drag', async () => {
+        const source = GridSource.from(trades(1000));
+        const listener = heard();
+        const { root } = mount({ columns, source, rowHeight: 24, viewportHeight: 480, ...listener });
+        await painted();
+        onHeader(root, 'mousedown', 10, { buttons: 1 });
+        onHeader(root, 'mousemove', 130, { buttons: 1 });
+        await painted();
+        expect(listener.selections.at(-1)?.ranges).toEqual(wholeColumns(0, 2));
+        // Released away from the grid, unheard; the next thing heard is a press on a cell.
+        press(root, 10, rowY(3), { clientX: 10, clientY: 200 });
+        pointer(root, 'mousemove', 130, rowY(5), { buttons: 1, clientX: 400, clientY: 300 });
+        await painted();
+        expect(listener.selections.at(-1)?.ranges).toEqual([{ topRow: 3, leftColumn: 0, rowCount: 3, columnCount: 2 }]);
+        expect(source.snapshot().sorts).toEqual([]);
+    });
+
+    it('ADR-0008: a drag held in the bottom edge band scrolls a step a tick and extends with it, and the release stops it', async () => {
+        const listener = heard();
+        const { root, told } = mount({ columns, rows: trades(1000), rowHeight: 24, viewportHeight: 480, ...listener });
+        await painted();
+        press(root, 10, rowY(1));
+        // 5 px above the bottom of the 456 px the rows have: fifteen pixels into the band, six rows a tick.
+        pointer(root, 'mousemove', 10, 451, { buttons: 1 });
+        await painted();
+        expect(listener.selections.at(-1)?.ranges).toEqual([{ topRow: 1, leftColumn: 0, rowCount: 18, columnCount: 1 }]);
+        const scroller = q(root, '.ex-scroller');
+        told.clock.advance(50);
+        await painted();
+        expect(scroller.scrollTop).toBe(144);
+        expect(listener.selections.at(-1)?.ranges).toEqual([{ topRow: 1, leftColumn: 0, rowCount: 24, columnCount: 1 }]);
+        told.clock.advance(50);
+        await painted();
+        expect(scroller.scrollTop).toBe(288);
+        pointer(root, 'mouseup', 10, 451, { buttons: 0 });
+        told.clock.advance(500);
+        await painted();
+        expect(scroller.scrollTop).toBe(288);
+        expect(listener.selections.at(-1)?.ranges).toEqual([{ topRow: 1, leftColumn: 0, rowCount: 30, columnCount: 1 }]);
+    });
+
+    it('ADR-0050: a Heading drag held at the right edge scrolls sideways only, and the Extent follows the column under it', async () => {
+        const wide = Array.from({ length: 12 }, (_, i) => ({ name: `C${i}`, type: 'number' as const, value: (trade: Trade) => trade.notional + i, width: 100 }));
+        const listener = heard();
+        const { root, told } = mount({ columns: wide, rows: trades(1000), rowHeight: 24, viewportHeight: 480, viewportWidth: 400, ...listener });
+        await painted();
+        onHeader(root, 'mousedown', 10, { buttons: 1 });
+        // Over the cells by the Viewport's bottom right corner, in both edge bands: 451 px down the rows.
+        pointer(root, 'mousemove', 3, 3, { buttons: 1, clientX: 395, clientY: 10 + 14 + 451 });
+        await painted();
+        expect(listener.selections.at(-1)?.ranges).toEqual(wholeColumns(0, 4));
+        const scroller = q(root, '.ex-scroller');
+        told.clock.advance(50);
+        await painted();
+        expect(scroller.scrollTop).toBe(0);
+        expect(scroller.scrollLeft).toBeGreaterThan(0);
+        const left = scroller.scrollLeft;
+        expect(listener.selections.at(-1)?.ranges).toEqual(wholeColumns(0, Math.floor((left + 395) / 100) + 1));
+        root.dispatchEvent(new MouseEvent('mouseleave'));
+        told.clock.advance(500);
+        await painted();
+        expect(scroller.scrollLeft).toBe(left);
+    });
+
     it('ADR-0012: a drag extends to the cell under the pointer while the button is down, and ends when it is up', async () => {
         const listener = heard();
         const { root } = mount({ columns, rows: trades(1000), rowHeight: 24, viewportHeight: 480, ...listener });
@@ -284,7 +442,7 @@ describe('the Selection in the grid', () => {
         expect(listener.selections.at(-1)?.ranges).toEqual([{ topRow: 1, leftColumn: 0, rowCount: 1, columnCount: 1 }]);
     });
 
-    it('ADR-0220: only a press the grid answered, and its release, count as inputs answered', async () => {
+    it('ADR-0220: a left press the grid answered and a left release on the rows count as inputs answered, wherever the release\'s press was', async () => {
         const { root } = mount({ columns, rows: trades(1000), rowHeight: 24, viewportHeight: 480 });
         await painted();
         press(root, 10, rowY(1), { button: 2, buttons: 2 });
@@ -295,6 +453,10 @@ describe('the Selection in the grid', () => {
         pointer(root, 'mouseup', 10, rowY(1), { button: 0 });
         await painted();
         expect(q(root, '[data-ex-answered]').getAttribute('data-ex-answered')).toBe('2');
+        // A press made outside the grid and released over its rows: the C# core numbers the release.
+        pointer(root, 'mouseup', 10, rowY(3), { button: 0 });
+        await painted();
+        expect(q(root, '[data-ex-answered]').getAttribute('data-ex-answered')).toBe('3');
     });
 
     it('ADR-0204, ADR-0220: a page follow waiting for its row to arrive is owed, and the grid is not settled until it runs', async () => {
