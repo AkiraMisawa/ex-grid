@@ -7,25 +7,25 @@
 | ExPivot | 94.3% | 85.5% |
 | ExChart | 90.3% | 81.2% |
 | ExBoard | 91.7% | 81.8% |
-| Data | 93.9% | 88.6% |
+| Data | 93.9% | 88.7% |
 
 # Summary
 <details open><summary>Summary</summary>
 
 |||
 |:---|:---|
-| Generated on: | 10/24/2026 - 23:11:47 |
+| Generated on: | 10/25/2026 - 00:51:03 |
 | Parser: | MultiReport (19x Cobertura) |
 | Assemblies: | 16 |
 | Classes: | 1179 |
 | Files: | 604 |
-| **Line coverage:** | 94.4% (81289 of 86072) |
-| Covered lines: | 81289 |
-| Uncovered lines: | 4783 |
+| **Line coverage:** | 94.4% (81297 of 86072) |
+| Covered lines: | 81297 |
+| Uncovered lines: | 4775 |
 | Coverable lines: | 86072 |
 | Total lines: | 137643 |
-| **Branch coverage:** | 87% (49008 of 56318) |
-| Covered branches: | 49008 |
+| **Branch coverage:** | 87% (49016 of 56318) |
+| Covered branches: | 49016 |
 | Total branches: | 56318 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
@@ -492,7 +492,7 @@
 |ExGrid.Selection.FillRules|100%|100%|
 |ExGrid.Selection.GridExtent|100%||
 |ExGrid.Selection.GridFillIntent|100%||
-|ExGrid.Selection.GridSelection|92.2%|84.9%|
+|ExGrid.Selection.GridSelection|93.6%|86.4%|
 |ExGrid.Selection.HeadingMarks|98%|95.5%|
 |ExGrid.Selection.HeadingMarks.CoverageEvent|100%||
 |ExGrid.Selection.HeadingMarks.CoverageMinimum|100%|100%|
@@ -619,7 +619,7 @@
 |ExGrid.Data.Storage.DoubleColumnWriter|100%||
 |ExGrid.Data.Storage.DoubleData|100%||
 |ExGrid.Data.Storage.DoubleObjectColumn<T>|100%|100%|
-|ExGrid.Data.Storage.FixedCodes|93.5%|75%|
+|ExGrid.Data.Storage.FixedCodes|96.7%|87.5%|
 |ExGrid.Data.Storage.Gather|98.8%|96.1%|
 |ExGrid.Data.Storage.Int32ObjectColumn<T>|82.3%|100%|
 |ExGrid.Data.Storage.IntegerColumnWriter|100%||
@@ -1028,12 +1028,12 @@
 |ExSheet.BuiltInToolbarItem|96.4%|97.3%|
 |ExSheet.ColourItem|96%|100%|
 |ExSheet.CommaItem|83.3%||
-|ExSheet.Components.ExSheet|91.3%|81.7%|
+|ExSheet.Components.ExSheet|91.3%|81.8%|
 |ExSheet.Components.ExSheet.KeyboardListener|100%||
 |ExSheet.Components.ExSheet.KeyUpListener|100%||
 |ExSheet.Components.ExSheet.OwnFindOutcome|100%||
 |ExSheet.Components.ExSheet.SheetGridChrome|86.6%|73%|
-|ExSheet.Components.ExSheet<T>|91.3%|81.7%|
+|ExSheet.Components.ExSheet<T>|91.3%|81.8%|
 |ExSheet.Components.ExSheetStylesheet|100%||
 |ExSheet.Components.FormatCellsPanel|97.3%|87.5%|
 |ExSheet.Components.SheetFindPanel|91.7%|76.5%|
