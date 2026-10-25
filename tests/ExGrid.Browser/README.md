@@ -653,6 +653,15 @@ nobody had asked for. What that means when writing a test:
   Server host, back once the key's move is painted, changing once each way; twenty arrows typed at
   once over a 150 ms round trip, the Name Box read once straight after the mark; the offset after a
   reveal read once and unchanged three frames later; an edit opened by a key and committed by Enter.
+- `differential.spec.mjs` — the Input Order's acceptance (ADR-0240 §8, ASY-8): for ExGrid on
+  `/features` and the Sheet on `/sheet` (ExPivot joins once its races are fixed; ASY-8 says which are
+  open), a sequence of presses, typed text and
+  keys drawn from a seed is sent at machine speed and again one input at a time, each read once the
+  product has settled, and the two readings must be equal. The seed and the steps are printed with
+  each test. Fixed seeds run everywhere; `EXGRID_DIFF_SEED=<n>` adds one, which the Hunt sets to its
+  run's id. A press is aimed only at a place no step moves, so no sequence scrolls or reorders what
+  lies under it, and what is laid out above the grid keeps its height (a refusal written in a status
+  line would otherwise move the grid); each run checks at its end that no target moved.
 - `observational.spec.mjs` — the numbers that are recorded, never gated, into
   `metrics.json`: mount to first row at 10⁶ (BIG-7), the DOM with horizontal
   virtualisation on and off (DOM-5), the settle repaint and the frame intervals at both

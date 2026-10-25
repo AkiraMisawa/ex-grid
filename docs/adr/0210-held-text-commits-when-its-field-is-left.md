@@ -44,6 +44,13 @@ removed with the other two, and is the same entry of ADR-0021's allowlist, not a
 Where typing after the held text has changed the value, the browser commits it itself, so the
 supplement stays out and no change is sent twice.
 
+### Under the Input Order (ticket 07, 2026-10-25)
+
+The supplied `change` is **kept**. ADR-0240 §5 has the core adopt the text a field holds with the next
+input, but the field's own handlers commit on the browser's `change`, and a value written by script —
+held typing typed into the field at its turn — still gets none. The order makes the core hear the
+text; this note is still what makes the design system's field commit it.
+
 ## Alternatives
 
 Keeping MudBlazor's existing inputs was chosen over replacing its colour entry and modes in
