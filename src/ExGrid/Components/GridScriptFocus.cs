@@ -22,6 +22,7 @@ public sealed class GridScriptFocus(IJSRuntime js, ResourceAssetCollection asset
     private readonly IJSRuntime _js = js ?? throw new ArgumentNullException(nameof(js));
     private readonly ResourceAssetCollection _assets = assets ?? throw new ArgumentNullException(nameof(assets));
     private Task<IJSObjectReference?>? _module;
+    private bool _disposed;
 
     /// <summary>
     /// Imports the grid's script at the address of the file this build ships (ADR-0123), once, and
@@ -41,25 +42,31 @@ public sealed class GridScriptFocus(IJSRuntime js, ResourceAssetCollection asset
     public async Task<bool> FocusBoxAsync(ElementReference box)
         => await ModuleAsync() is { } module && await module.InvokeAsync<bool>("focusBox", box);
 
-    /// <summary>Lets go of the script, where it was loaded.</summary>
+    /// <summary>Lets go of the script, where it was loaded or is loading; a later call loads nothing and
+    /// focuses nothing.</summary>
     public async ValueTask DisposeAsync()
     {
+        _disposed = true;
         var loading = _module;
         _module = null;
-        if (loading is null || !loading.IsCompletedSuccessfully || loading.Result is not { } module)
+        if (loading is null)
             return;
         try
         {
-            await module.DisposeAsync();
+            // A load still on its way is let go once it lands.
+            if (await loading is { } module)
+                await module.DisposeAsync();
         }
         catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
         {
-            // The circuit or the page went first; there is nothing left to let go of.
+            // The circuit or the page went first, or the load failed; there is nothing left to let go of.
         }
     }
 
     private async Task<IJSObjectReference?> ModuleAsync()
     {
+        if (_disposed)
+            return null;
         var loading = _module ??= ImportAsync();
         try
         {
@@ -80,7 +87,17 @@ public sealed class GridScriptFocus(IJSRuntime js, ResourceAssetCollection asset
         // Only a runtime that answers nothing at all, as a test's loose stand-in does.
         if (module is null)
             return null;
-        if (await GridScriptStamp.IsOwnAsync(module))
+        bool own;
+        try
+        {
+            own = await GridScriptStamp.IsOwnAsync(module);
+        }
+        catch (JSException)
+        {
+            // A script older than the stamp has no stamp to answer with: another version's, refused.
+            own = false;
+        }
+        if (own)
             return module;
         await module.DisposeAsync();
         return null;

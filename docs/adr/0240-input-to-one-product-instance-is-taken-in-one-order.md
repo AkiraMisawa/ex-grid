@@ -259,6 +259,9 @@ Five questions were put to the user on 2026-10-20; the user took the recommendat
   grid owns its order: the Field List, the Pivot Toolbar and its band, the menus and panels, the report's
   expand toggles and the Details tabs and dialog put their input in it through the grid's seam. While the
   report is empty there is no grid, and an input is handled at once, with nothing to order it among.
+  *(Changed 2026-10-25, ADR-0360: with no grid the pivot's inputs still take their turns one after
+  another, in the order they arrived, and a turn the grid orders joins the same line, because a turn's
+  hand-off of the keyboard can wait on the browser and a turn overlapping it lost its own.)*
 - **Each details grid keeps an order of its own**, inside an Input Root of its own (decided with the user,
   2026-10-22, on the recommended option): a details grid shows records, not the report, and holding its keys
   behind the report's would make it wait on work it does not depend on.

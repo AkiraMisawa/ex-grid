@@ -36,6 +36,15 @@ control, and `FocusAsync` on the box focuses nothing.
   it calls `focusBox`. Where the script is refused, would not load, threw, or no control took the
   keyboard, the control's own `FocusAsync` is still asked, as before. `GridScriptFocus` is public because
   a sibling product uses it, and hidden from a Consumer's editor (ADR-0201).
+- **With no grid, the pivot's turns still run one after another.** Nothing numbers its inputs then, but
+  the hand-off can wait on the script loading, and a turn begun meanwhile had its own request for the
+  keyboard parked and dropped as the first turn ended: Field Settings… pressed while the menu's first
+  command was taking the keyboard opened with the keyboard nowhere (CI, Server host, 2026-10-25). A
+  turn begins once the one before has ended, and a turn the report grid orders waits in the same line,
+  so a report drawn or emptied between two inputs does not let them overlap; an input handled inside a
+  turn is part of it and runs at once, as in the grid's own order, and inputs still waiting when the
+  pivot is disposed are let go. This changes ADR-0240's note that an input with no grid is handled at
+  once.
 - **It is a new entry of ADR-0021's list**, the twentieth, and the tenth place where script moves DOM
   focus. It runs once per request, never per render; it reads `document.activeElement` and no layout,
   adds no listener and sets no timer, and keeps no state: the module's top level holds only pure

@@ -1300,6 +1300,12 @@ for (const chrome of ['builtin', 'mud']) {
         await stylesheetsLoaded(page);
         await expect(entry(page, 'Region')).toBeVisible({ timeout: 30_000 });
         await expect(report(page)).toHaveCount(0);
+        // On the Server host the menu's first command takes the keyboard while the grid's script loads,
+        // a few round trips, and Field Settings… is pressed meanwhile: its turn waits for the menu's to
+        // end, and its panel takes the keyboard after (ADR-0360). Before, the two turns overlapped and the
+        // panel's request was dropped as the menu's turn ended — one run in a few with no round trip,
+        // every run with this one.
+        await setRoundTrip(150);
 
         await entry(page, 'Region').click();
         await page.getByRole('menuitem', { name: 'Field Settings…', exact: true }).click();
