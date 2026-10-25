@@ -395,3 +395,5 @@ ExChart.Components.ExChart.Spec.get -> string?
 ExChart.Components.ExChart.Spec.set -> void
 ExChart.Components.ExChart.Sources.get -> System.Func<string!, ExChart.Engine.IChartSource?>?
 ExChart.Components.ExChart.Sources.set -> void
+ExChart.GridChartDeclarations<TRow>.FromZeroOf.get -> System.Func<string!, bool?>?
+ExChart.GridChartDeclarations<TRow>.FromZeroOf.init -> void

@@ -222,6 +222,7 @@ internal static class SelectionReader
 
         var series = new List<GridChartSeries>();
         var seen = new HashSet<object>();
+        var curves = new HashSet<string>();
         foreach (var position in ranges.SelectMany(r => Enumerable.Range(r.TopRow, r.RowCount)).Distinct().Order())
         {
             var row = rows[position];
@@ -235,9 +236,9 @@ internal static class SelectionReader
                 if (inGroup.Count == 1 && !whole) inGroup = all.Where(c => GroupOf(g.Groups, c.Name) == group).ToList();
                 if (target?.Chart.Series.Any(s => s is RowSeries r && Equals(r.RowKey, key) && r.Group == group) == true)
                     return (null, $"{Label(name, group)} is already in '{target.Name}'.");
-                var kinds = inGroup.Select(c => d.KindOf?.Invoke(c.Name) ?? SeriesKind.Undeclared).Distinct().ToList();
-                if (kinds.Count > 1)
-                    return (null, $"{(group.Length == 0 ? "The positioned columns" : group)} mix Series Kinds ({Headers(inGroup)}), so they are not one curve.");
+                // What makes a group one curve does not depend on the row: checked once a group.
+                if (curves.Add(group) && Curve(inGroup, group, d) is { } notOne)
+                    return (null, notOne);
                 var ordered = inGroup.OrderBy(c => PositionOf(c, d)).Select(c => c.Name).ToEquatableList();
                 var id = group.Length == 0 ? $"{key}" : $"{key} · {group}";
                 series.Add(new RowSeries(id, "", key, name, group, ordered));
@@ -245,6 +246,23 @@ internal static class SelectionReader
         }
         return (new GridChart(ChartOrientation.SeriesInRows, null, series.ToEquatableList()), null);
     }
+
+    // Why a group's columns are not one curve, or null: they mix Series Kinds, or read zero differently
+    // (ADR-0253, ADR-0258), each column's declaration resolved by its Series Kind's default.
+    private static string? Curve<TRow>(List<GridColumn<TRow>> columns, string group, GridChartDeclarations<TRow> d)
+    {
+        var name = group.Length == 0 ? "The positioned columns" : group;
+        if (columns.Select(c => d.KindOf?.Invoke(c.Name) ?? SeriesKind.Undeclared).Distinct().Count() > 1)
+            return $"{name} mix Series Kinds ({Headers(columns)}), so they are not one curve.";
+        var reach = columns.ToLookup(c => ReachesZero(c.Name, d));
+        if (reach.Count > 1)
+            return $"{name} are declared both from zero ({Headers(reach[true])}) and away from it ({Headers(reach[false])}), so they are not one curve.";
+        return null;
+    }
+
+    // Whether a column's values are read from zero: its declaration, or its Series Kind's default (ADR-0253).
+    private static bool ReachesZero<TRow>(string column, GridChartDeclarations<TRow> d) =>
+        (ChartSeries.Of(column, column, d.KindOf?.Invoke(column) ?? SeriesKind.Undeclared, []) with { FromZero = d.FromZeroOf?.Invoke(column) }).ReachesZero;
 
     private static int IndexOf<TRow>(IReadOnlyList<GridColumn<TRow>> columns, GridColumn<TRow> column)
     {
@@ -319,6 +337,7 @@ internal static class SelectionReader
                     Id = s.Id,
                     Name = string.Join(" · ", path.Append(header)),
                     Kind = d.KindOf?.Invoke(s.Column) ?? SeriesKind.Undeclared,
+                    FromZero = d.FromZeroOf?.Invoke(s.Column),
                     Panel = s.Panel,
                     Keys = new AppearanceKeys(header, group.Length == 0 ? null : group),
                     Points = points,
@@ -343,11 +362,16 @@ internal static class SelectionReader
                     .OrderBy(p => p.X).ToEquatableList();
                 var name = row is null ? s.Name : d.RowName?.Invoke(row) ?? s.Name;
                 var first = cols.OfType<GridColumn<TRow>>().FirstOrDefault();
+                // Declarations are the Consumer's and may change after the chart was made: a curve
+                // whose columns no longer read zero alike is refused, never drawn by one column's (ADR-0258).
+                if (cols.OfType<GridColumn<TRow>>().Select(c => ReachesZero(c.Name, d)).Distinct().Count() > 1)
+                    throw new ChartRefusedException($"{Label(s.Name, s.Group)}: its columns are now declared both from zero and away from it, so they are not one curve.");
                 series.Add(new ChartSeries
                 {
                     Id = s.Id,
                     Name = Label(name, s.Group),
                     Kind = first is null ? SeriesKind.Undeclared : d.KindOf?.Invoke(first.Name) ?? SeriesKind.Undeclared,
+                    FromZero = first is null ? null : d.FromZeroOf?.Invoke(first.Name),
                     Panel = s.Panel,
                     Keys = new AppearanceKeys(name, s.Group.Length == 0 ? null : s.Group),
                     Points = points,

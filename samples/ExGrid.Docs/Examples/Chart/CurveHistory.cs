@@ -35,7 +35,8 @@ public static class CurveHistory
 
     /// <summary>
     /// What the chart needs to know of the rows: how to find a row again by its key, what each column
-    /// is (a level), and where a tenor column stands along a curve. A chart follows the rows it was made
+    /// is (a level, read away from zero so rates between 3.0% and 3.6% are not drawn flat), and where a
+    /// tenor column stands along a curve. A chart follows the rows it was made
     /// from: a recalculated rate is redrawn, a deleted row becomes a gap with a note.
     /// </summary>
     public static GridChartDeclarations<Row> Declarations() => new()
@@ -43,6 +44,7 @@ public static class CurveHistory
         RowKey = KeyOf,
         RowOf = key => Rows.FirstOrDefault(r => r.Date == (DateOnly)key),
         KindOf = _ => SeriesKind.Level,
+        FromZeroOf = _ => false,
         PositionOf = column => Tenors.TryGetValue(column, out var years) ? years : null,
         PositionTitle = "Tenor (years)",
         RowName = r => r.Date.ToString("yyyy-MM-dd"),
