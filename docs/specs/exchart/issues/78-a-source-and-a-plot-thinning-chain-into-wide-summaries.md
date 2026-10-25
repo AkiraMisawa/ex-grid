@@ -13,3 +13,7 @@ pixel it is read at.
 
 - [ ] Decide whether a region may be split at the drawn pixel's edges, attributing a source pixel's count to the drawn pixel its kept points fall in, or whether the width is the price of never counting a row twice
 - [ ] A layer-1 test of the chained case, naming ADR-0344
+
+## Comments
+
+- 2026-10-25: the user agreed to leave it past 0.2.0: nothing is counted twice, the summary is only coarse, and fixing it first needs the choice above.
