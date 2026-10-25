@@ -159,7 +159,8 @@ function prepareClause<Row>(column: QueryColumn<Row>, clause: FilterClause): Pre
     return { operator, operand: wantsValue ? keyOf(column, value, true) : null };
 }
 
-function isBlank(value: unknown): value is null | undefined {
+/** Absent, as a Query that came through JSON writes it: `undefined`, or `null`. */
+export function isBlank(value: unknown): value is null | undefined {
     return value === undefined || value === null;
 }
 

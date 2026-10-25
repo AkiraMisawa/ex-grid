@@ -8,11 +8,12 @@
 
 import type { QueryColumn } from '../query/columns';
 import type { GridFilter } from '../query/filter';
+import { dateIdentity } from '../query/dates';
 import { applyQuery } from '../query/query-engine';
 import type { SortSpec } from '../query/sort';
-import { filtersEqual, filterWithout, snapshotFilter, dateIdentity } from './filters';
+import { rowRange, type RowRange } from '../viewport/row-range';
+import { filtersEqual, filterWithout, snapshotFilter } from './filters';
 import type { DistinctValues, GridSource, GridSourceState } from './grid-source';
-import { checkRange, type RowRange } from './row-range';
 
 /** Past this many distinct values the answer is too many (ADR-0009), and the panel offers a condition,
  * Excel's own shape for a large domain. */
@@ -92,23 +93,24 @@ export class InMemoryGridSource<Row> implements GridSource<Row> {
         const columns = this.#requireColumns();
         const rows = this.#rows.with(index, replacement);
         const next = applyQuery(rows, columns, this.#state.filter, this.#state.sorts);
-        this.#rows = rows;
         const { window } = this.#state;
         // The edited row standing where its earlier version stood is the same sequence, not a reorder.
         const moved = next.length !== window.length
             || next.some((each, at) => each !== window[at] && !(each === replacement && window[at] === row));
-        this.#publish({ window: next, moved, columns, filter: this.#state.filter, sorts: this.#state.sorts }, true);
+        this.#publish({ rows, window: next, moved, columns, filter: this.#state.filter, sorts: this.#state.sorts }, true);
     }
 
     /** Everything is in hand, so a range needs no answer; a range past the rows is no error, since a
-     * request can cross a change to the data. */
-    async needRange(range: RowRange): Promise<void> {
-        checkRange(range);
+     * request can cross a change to the data. A range that names no rows is refused as the call is made,
+     * not in the promise, since the grid does not wait on a notification. */
+    needRange(range: RowRange): Promise<void> {
+        checked(range);
+        return Promise.resolve();
     }
 
     /** The rows of the result in the range, as many of them as there are (ADR-0005). */
     async rows(range: RowRange, signal: AbortSignal): Promise<readonly Row[]> {
-        checkRange(range);
+        checked(range);
         signal.throwIfAborted();
         return Object.freeze(this.#state.window.slice(range.start, range.start + range.count));
     }
@@ -157,15 +159,38 @@ export class InMemoryGridSource<Row> implements GridSource<Row> {
         const next = applyQuery(this.#rows, columns, filter, sorts);
         const { window } = this.#state;
         const moved = next.length !== window.length || next.some((row, at) => row !== window[at]);
-        this.#publish({ window: next, moved, columns, filter, sorts }, moved || sortsChanged || filterChanged);
+        const heard = moved || sortsChanged || filterChanged;
+        if (!heard) {
+            // Only the columns are new, and the result is what it was: the snapshot stays the same object,
+            // since no listener is told it changed.
+            this.#columns = Object.freeze([...columns]);
+            return;
+        }
+        this.#publish({
+            rows: this.#rows,
+            window: next,
+            moved,
+            columns,
+            filter: filterChanged ? snapshotFilter(filter) : this.#state.filter,
+            sorts: sortsChanged ? Object.freeze(sorts.map(sort => Object.freeze({ ...sort }))) : this.#state.sorts,
+        }, heard);
     }
 
+    /** Keeps what was computed and tells the listeners. `filter` and `sorts` are the source's own frozen
+     * copies, so the Consumer's objects behind them can change without reaching the source (ADR-0023);
+     * nothing here can throw, so a change is kept whole or not at all. */
     #publish(
-        next: { window: Row[]; moved: boolean; columns: readonly QueryColumn<Row>[]; filter: GridFilter | undefined; sorts: readonly SortSpec[] },
+        next: {
+            rows: readonly Row[];
+            window: Row[];
+            moved: boolean;
+            columns: readonly QueryColumn<Row>[];
+            filter: GridFilter | undefined;
+            sorts: readonly SortSpec[];
+        },
         heard: boolean,
     ): void {
-        // Copies of what was applied, so the Consumer's own objects behind them can change without reaching
-        // the source (ADR-0023).
+        this.#rows = next.rows;
         this.#columns = Object.freeze([...next.columns]);
         this.#state = Object.freeze({
             window: Object.freeze(next.window),
@@ -173,12 +198,17 @@ export class InMemoryGridSource<Row> implements GridSource<Row> {
             totalCount: next.window.length,
             loading: false,
             rowSequenceVersion: this.#state.rowSequenceVersion + (next.moved ? 1 : 0),
-            sorts: Object.freeze(next.sorts.map(sort => Object.freeze({ ...sort }))),
-            filter: snapshotFilter(next.filter),
+            sorts: next.sorts,
+            filter: next.filter,
         });
         // A copy, so a listener that subscribes another meanwhile is heard from the next change on.
         if (heard) for (const listener of Array.from(this.#listeners)) listener();
     }
+}
+
+/** The range, refused when it names no rows: a start before the first, or fewer than one row (ADR-0001). */
+function checked(range: RowRange): RowRange {
+    return rowRange(range.start, range.count);
 }
 
 function sortsEqual(a: readonly SortSpec[], b: readonly SortSpec[]): boolean {

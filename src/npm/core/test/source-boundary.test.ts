@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import type { QueryColumn } from '../src/query/columns';
 import type { FilterSpec, GridFilter } from '../src/query/filter';
 import type { SortSpec } from '../src/query/sort';
+import { elementAt } from '../src/must';
 import { GridSource } from '../src/source/grid-source';
 
 interface Trade {
@@ -91,5 +92,41 @@ describe('GridSource.from', () => {
         stop();
         source.setSorts([{ column: 'Amount', direction: 'descending' }]);
         expect(heard).toBe(1);
+    });
+
+    it('ADR-0350: new columns that change nothing keep the snapshot the same object, since nobody is told', () => {
+        const source = bound();
+        source.setSorts([{ column: 'Amount', direction: 'ascending' }]);
+        const before = source.snapshot();
+        source.setColumns(columns.map(column => ({ ...column, value: (row: Trade) => column.value(row) })));
+        expect(source.snapshot()).toBe(before);
+    });
+
+    it('ADR-0023: an Opaque Filter built afresh with the same data is no change, and other data is one', () => {
+        const source = bound();
+        let heard = 0;
+        source.subscribe(() => { heard += 1; });
+        source.setFilter({ columns: {}, opaque: { search: 'abc', books: ['Rates'] } });
+        source.setFilter({ columns: {}, opaque: { books: ['Rates'], search: 'abc' } });
+        expect(heard).toBe(1);
+        source.setFilter({ columns: {}, opaque: { search: 'abc', books: ['Rates', 'FX'] } });
+        expect(heard).toBe(2);
+    });
+
+    it('ADR-0001: a range that names no rows is refused as the call is made, not in a promise nobody awaits', () => {
+        const source = bound();
+        expect(() => source.needRange({ start: -1, count: 5 })).toThrow(RangeError);
+        expect(() => source.needRange({ start: 0, count: 0 })).toThrow(RangeError);
+    });
+
+    it('ADR-0007: an edit keeps the Filter and the Sort in force as the same objects, rather than copying them again', () => {
+        const rows = [...trades];
+        const source = bound(rows);
+        source.setFilter({ columns: { Amount: { clauses: [{ operator: 'in', values: [1, 2, 3] }] } } });
+        source.setSorts([{ column: 'Amount', direction: 'ascending' }]);
+        const { filter, sorts } = source.snapshot();
+        source.replaceRow(elementAt(rows, 0), { book: 'Rates', amount: 3 });
+        expect(source.snapshot().filter).toBe(filter);
+        expect(source.snapshot().sorts).toBe(sorts);
     });
 });

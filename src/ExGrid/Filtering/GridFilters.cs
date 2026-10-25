@@ -64,6 +64,10 @@ internal static class GridFilters
         {
             if (!b.Columns.TryGetValue(name, out var other))
                 return false;
+            // Clauses written as null, as a Query that came through JSON writes them, are never the
+            // Filter in force: a change, which the engine then refuses and says why.
+            if (spec.Clauses is null || other.Clauses is null)
+                return false;
             if (spec.Combinator != other.Combinator || spec.Clauses.Count != other.Clauses.Count)
                 return false;
             for (var i = 0; i < spec.Clauses.Count; i++)

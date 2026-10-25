@@ -13,12 +13,20 @@ public class SourceCaseTests
     private const string Area = "source";
 
     /// <summary>A row of a case: its values, and the place in the case's rows it stands for, which every
-    /// version of it keeps. A new object for every version, since identity is what says a row changed.</summary>
-    private sealed class Row(int position, object?[] values)
+    /// version of it keeps. A new object for every version, since identity is what says a row changed. Two
+    /// rows with the same values are equal, as two records are, so a source that found a row by value
+    /// rather than by identity would take a twin or a stranger for it (ADR-0007).</summary>
+    private sealed class Row(int position, object?[] values) : IEquatable<Row>
     {
         public int Position { get; } = position;
 
         public object?[] Values { get; } = values;
+
+        public bool Equals(Row? other) => other is not null && Values.SequenceEqual(other.Values);
+
+        public override bool Equals(object? obj) => Equals(obj as Row);
+
+        public override int GetHashCode() => Values.Aggregate(0, (hash, value) => HashCode.Combine(hash, value));
     }
 
     public static TheoryData<string, string> Cases() => SharedCases.Of(Area, "source");
@@ -61,9 +69,13 @@ public class SourceCaseTests
         {
             if (step.TryGetProperty("setColumns", out var names))
             {
-                source.OnColumnsChanged(names.ValueKind == JsonValueKind.True
-                    ? columns
-                    : names.EnumerateArray().Select(n => columns.Single(c => c.Name == n.GetString())).ToArray());
+                source.OnColumnsChanged(names.ValueKind switch
+                {
+                    JsonValueKind.True => columns,
+                    // New objects, each equal to the one it was built after.
+                    JsonValueKind.String when names.GetString() == "rebuilt" => columns.Select(c => c with { }).ToArray(),
+                    _ => names.EnumerateArray().Select(n => columns.Single(c => c.Name == n.GetString())).ToArray(),
+                });
             }
             else if (step.TryGetProperty("setSorts", out var sorts))
             {

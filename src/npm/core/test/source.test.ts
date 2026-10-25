@@ -6,9 +6,9 @@ import { defined, elementAt } from '../src/must';
 import type { QueryColumn } from '../src/query/columns';
 import type { GridFilter } from '../src/query/filter';
 import type { SortSpec } from '../src/query/sort';
-import { dateIdentity } from '../src/source/filters';
+import { dateIdentity } from '../src/query/dates';
 import { GridSource } from '../src/source/grid-source';
-import type { RowRange } from '../src/source/row-range';
+import type { RowRange } from '../src/viewport/row-range';
 import { caseFiles, expectRefused, type Refusal } from './cases';
 import { filterOf, value } from './query-values';
 
@@ -20,7 +20,7 @@ interface Row {
 }
 
 interface Step {
-    readonly setColumns?: true | readonly string[];
+    readonly setColumns?: true | 'rebuilt' | readonly string[];
     readonly setSorts?: readonly SortSpec[];
     readonly setFilter?: GridFilter | null;
     readonly replaceRow?: number | { readonly stranger: readonly unknown[] };
@@ -99,7 +99,9 @@ for (const file of caseFiles<SourceCase>('source', 'source')) {
                 async function take(step: Step): Promise<void> {
                     if (step.setColumns !== undefined) {
                         const names = step.setColumns;
-                        source.setColumns(names === true ? columns : names.map(name => defined(columns.find(column => column.name === name), name)));
+                        source.setColumns(names === true ? columns
+                            : names === 'rebuilt' ? columns.map(column => ({ ...column }))
+                            : names.map(name => defined(columns.find(column => column.name === name), name)));
                     } else if (step.setSorts !== undefined) {
                         source.setSorts(step.setSorts);
                     } else if (step.setFilter !== undefined) {

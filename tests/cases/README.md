@@ -183,7 +183,7 @@ and a row replaced keeps its place.
 
 | Step | Does |
 |---|---|
-| `{"setColumns": true}` | Binds the columns; a list of names binds those alone |
+| `{"setColumns": true}` | Binds the columns; `"rebuilt"` binds new objects, each equal to the one it was built after; a list of names binds those alone |
 | `{"setSorts": [{"column", "direction"}]}` | Applies a Sort |
 | `{"setFilter": filter}` | Applies a Filter, `null` for none |
 | `{"replaceRow": place, "with": [values]}` | Replaces the row at that place with a new one; `"with": "itself"` hands it back as its own replacement, and `{"stranger": [values]}` in place of a place names a row the source does not hold |

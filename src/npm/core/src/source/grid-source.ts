@@ -7,7 +7,7 @@ import type { QueryColumn } from '../query/columns';
 import type { GridFilter } from '../query/filter';
 import type { SortSpec } from '../query/sort';
 import { InMemoryGridSource } from './in-memory-source';
-import type { RowRange } from './row-range';
+import type { RowRange } from '../viewport/row-range';
 
 /** What a Grid Source holds at one moment, frozen. A new object whenever any of it changes, and the same
  * one until then. */

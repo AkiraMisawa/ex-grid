@@ -177,8 +177,24 @@
         {"setColumns": true},
         {"setSorts": [{"column": "Book", "direction": "ascending"}]},
         {"expect": {"version": 1, "heard": 1}},
+        {"setColumns": ["Book"]},
+        {"expect": {"window": [1, 0, 2], "version": 1, "heard": 0}}
+      ]
+    },
+    {
+      "name": "ADR-0023: the same columns again, or columns rebuilt from the same declaration, are no change",
+      "rows": [
+        ["Rates", 2],
+        ["Credit", 3],
+        ["Rates", 1]
+      ],
+      "steps": [
         {"setColumns": true},
-        {"expect": {"version": 1, "heard": 0}}
+        {"setSorts": [{"column": "Book", "direction": "ascending"}]},
+        {"expect": {"version": 1, "heard": 1}},
+        {"setColumns": true},
+        {"setColumns": "rebuilt"},
+        {"expect": {"window": [1, 0, 2], "version": 1, "heard": 0}}
       ]
     },
     {
@@ -385,6 +401,52 @@
       "steps": [
         {"setColumns": true},
         {"distinctValues": "Settles", "is": [{"dateOnly": "2026-08-30"}, {"dateOnly": "2026-08-31"}]}
+      ]
+    },
+    {
+      "name": "ADR-0009, ADR-0023: an instant is one value in the list in whatever offset, and however it is held",
+      "rows": [
+        [{"dateTimeOffset": "2026-08-30T09:00:00+09:00"}],
+        [{"dateTimeOffset": "2026-08-30T00:00:00+00:00"}],
+        [{"jsDate": "2026-08-30T00:00:00Z"}],
+        [{"dateTimeOffset": "2026-08-30T09:00:00+00:00"}]
+      ],
+      "columns": [{"name": "Stamped", "type": "date", "dateType": "dateTimeOffset"}],
+      "steps": [
+        {"setColumns": true},
+        {"distinctValues": "Stamped", "is": [{"dateTimeOffset": "2026-08-30T09:00:00+09:00"}, {"dateTimeOffset": "2026-08-30T09:00:00+00:00"}]}
+      ]
+    },
+    {
+      "name": "ADR-0023: a Filter whose operand names the same instant in another offset is the same Filter, and is not heard",
+      "rows": [
+        [{"dateTimeOffset": "2026-08-30T09:00:00+09:00"}],
+        [{"dateTimeOffset": "2026-08-30T09:00:00+00:00"}]
+      ],
+      "columns": [{"name": "Stamped", "type": "date", "dateType": "dateTimeOffset"}],
+      "steps": [
+        {"setColumns": true},
+        {"setFilter": {"columns": {"Stamped": {"clauses": [{"operator": "equals", "value": {"dateTimeOffset": "2026-08-30T09:00:00+09:00"}}]}}}},
+        {"expect": {"window": [0], "version": 1, "heard": 1}},
+        {"setFilter": {"columns": {"Stamped": {"clauses": [{"operator": "equals", "value": {"dateTimeOffset": "2026-08-30T00:00:00+00:00"}}]}}}},
+        {"expect": {"window": [0], "version": 1, "heard": 0}}
+      ]
+    },
+    {
+      "name": "ADR-0023: members written as null are absent, as a Query that came through JSON writes them",
+      "rows": [
+        ["Rates", 2],
+        ["Credit", 3],
+        ["Rates", 1]
+      ],
+      "steps": [
+        {"setColumns": true},
+        {"setFilter": {"columns": {"Book": {"combinator": null, "clauses": [{"operator": "equals", "value": "Rates", "values": null}]}}}},
+        {"expect": {"window": [0, 2], "version": 1, "heard": 1}},
+        {"setFilter": {"columns": {"Book": {"clauses": [{"operator": "equals", "value": "Rates"}]}}}},
+        {"expect": {"window": [0, 2], "version": 1, "heard": 0, "filter": {"columns": {"Book": {"clauses": [{"operator": "equals", "value": "Rates"}]}}}}},
+        {"setFilter": {"columns": {"Book": {"clauses": null}}}, "throws": "invalidOperation", "saying": "Book"},
+        {"expect": {"window": [0, 2], "version": 1, "heard": 0}}
       ]
     }
   ]

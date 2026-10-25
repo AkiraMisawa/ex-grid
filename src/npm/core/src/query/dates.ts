@@ -33,6 +33,27 @@ export function dateKey(type: DateType, value: unknown): DateKey | string {
     }
 }
 
+/** A text that is the same for two dates exactly when C# holds their counterparts equal: a day by its day,
+ * a date and time by its fields, an instant by the instant it names, whichever of a ZonedDateTime, an
+ * Instant or a `Date` holds it and in whatever zone. `undefined` for a value that is not a date, or that
+ * does not hold the date its tag names. */
+export function dateIdentity(value: unknown): string | undefined {
+    if (typeof value !== 'object' || value === null) return undefined;
+    const key = identityKey(value);
+    return key === undefined || typeof key[1] === 'string' ? undefined : `${key[0]}:${key[1].toString()}`;
+}
+
+function identityKey(value: object): readonly [string, DateKey | string] | undefined {
+    switch (Object.prototype.toString.call(value)) {
+        case '[object Temporal.PlainDate]': return ['day', dayKey(value)];
+        case '[object Temporal.PlainDateTime]': return ['dateTime', dateTimeKey(value)];
+        case '[object Temporal.ZonedDateTime]':
+        case '[object Temporal.Instant]': return ['instant', instantKey(value)];
+        case '[object Date]': return ['instant', dateObjectKey(value)];
+        default: return undefined;
+    }
+}
+
 function notDeclared(type: DateType): string {
     return `is not the column's declared ${type}`;
 }
