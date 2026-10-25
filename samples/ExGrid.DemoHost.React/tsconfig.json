@@ -7,7 +7,10 @@
     "emitDeclarationOnly": false,
     "noEmit": true,
     "types": ["vite/client", "node"],
+    // The adapter's source sits outside this folder; its React is this host's, as Vite's dedupe makes it.
     "paths": {
+      "react": ["./node_modules/@types/react/index.d.ts"],
+      "react/*": ["./node_modules/@types/react/*"],
       "@ex-grid/core": ["../../src/npm/core/src/index.ts"],
       "@ex-grid/react": ["../../src/npm/react/src/index.ts"]
     }
