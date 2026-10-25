@@ -14,7 +14,7 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/25/2026 - 13:52:42 |
+| Generated on: | 10/25/2026 - 14:34:28 |
 | Parser: | MultiReport (19x Cobertura) |
 | Assemblies: | 16 |
 | Classes: | 1181 |
@@ -109,8 +109,8 @@
 |ExChart.Components.Svg|50%|25%|
 |ExChart.GridCell|100%||
 |ExChart.GridChart|25%|0%|
-|ExChart.GridChartBridge<TRow>|46.3%|17.5%|
 |ExChart.GridChartBridge<TRow>|70.3%|42.3%|
+|ExChart.GridChartBridge<TRow>|46.3%|17.5%|
 |ExChart.GridChartCommands|62.5%|62.5%|
 |ExChart.GridChartDeclarations<TRow>|100%||
 |ExChart.GridChartSeries|100%||
