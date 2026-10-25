@@ -1,5 +1,6 @@
 import { defined, elementAt, unreachable } from '../must';
-import type { ColumnType, QueryColumn } from './columns';
+import type { ColumnType, DateType, QueryColumn } from './columns';
+import { dateKey, type DateKey } from './dates';
 import { filterOperatorsFor, type FilterClause, type FilterCombinator, type FilterOperator, type GridFilter } from './filter';
 import { compareNumbers, numberIdentity, numberKey, numberRefusal, type NumberKey } from './numbers';
 import type { SortDirection, SortSpec } from './sort';
@@ -10,11 +11,12 @@ import { foldCase } from './text-casing';
 // row is read, so a malformed one is refused whatever the rows hold; every cell is then held to its
 // column's declared type as it is read, whichever operator reads it.
 
-/** A cell as it is compared: a text folded as OrdinalIgnoreCase folds it, a Number key or a boolean, or
- * `null` for a Blank. Text is folded once as it is read, never again per comparison. */
-type Key = string | NumberKey | boolean | null;
+/** A cell as it is compared: a text folded as OrdinalIgnoreCase folds it, a Number key, a Date key or a
+ * boolean, or `null` for a Blank. Each is read once, never again per comparison. */
+type Key = string | NumberKey | DateKey | boolean | null;
 
 const columnTypes: readonly ColumnType[] = Object.freeze(['text', 'number', 'date', 'boolean'] as const);
+const dateTypes: readonly DateType[] = Object.freeze(['dateTime', 'dateOnly', 'dateTimeOffset'] as const);
 const combinators: readonly FilterCombinator[] = Object.freeze(['and', 'or'] as const);
 const directions: readonly SortDirection[] = Object.freeze(['ascending', 'descending'] as const);
 
@@ -95,15 +97,13 @@ function resolve<Row>(columns: ReadonlyMap<string, QueryColumn<Row>>, name: stri
     if (!columnTypes.includes(column.type)) {
         throw new RangeError(`Column '${name}' has an unknown type (${JSON.stringify(column.type)}).`);
     }
+    if (column.type === 'date' && column.dateType !== undefined && !dateTypes.includes(column.dateType)) {
+        throw new RangeError(`Column '${name}' has an unknown date type (${JSON.stringify(column.dateType)}).`);
+    }
     // An Action Column carries no value, so every row would compare equal and a sort would shuffle the
     // result into an order nobody could account for (ADR-0020).
     if (column.queryable === false) {
         throw new Error(`Column '${name}' carries actions only and has no value, so it cannot be sorted or filtered.`);
-    }
-    if (column.type === 'date') {
-        // The Script Core's date values wait on the decision of their type (the API memo of 2026-10-25);
-        // until then a Date column is refused rather than compared by a guess.
-        throw new Error(`Column '${name}' is a Date column, which the Script Core does not sort or filter yet.`);
     }
     return column;
 }
@@ -234,9 +234,9 @@ function compareKeys(type: ColumnType, x: Key, y: Key, direction: SortDirection)
 function compare(type: ColumnType, x: Key, y: Key): number {
     switch (type) {
         case 'text': return compareFolded(text(x), text(y));
-        case 'number': return compareNumbers(number(x), number(y));
+        case 'number': return compareNumbers(ordinal(x), ordinal(y));
         case 'boolean': return Number(bool(x)) - Number(bool(y));
-        case 'date': throw new Error('Internal: a Date column reached a comparison.');
+        case 'date': return compareNumbers(ordinal(x), ordinal(y));
         default: return unreachable(type);
     }
 }
@@ -245,9 +245,9 @@ function compare(type: ColumnType, x: Key, y: Key): number {
 function identity(type: ColumnType, key: NonNullable<Key>): string {
     switch (type) {
         case 'text': return text(key);
-        case 'number': return numberIdentity(number(key));
+        case 'number': return numberIdentity(ordinal(key));
         case 'boolean': return String(bool(key));
-        case 'date': throw new Error('Internal: a Date column reached a value list.');
+        case 'date': return ordinal(key).toString();
         default: return unreachable(type);
     }
 }
@@ -267,7 +267,11 @@ function keyOf<Row>(column: QueryColumn<Row>, value: unknown, isOperand: boolean
             const key = numberKey(value);
             return key === undefined ? refuse(defined(numberRefusal(value), 'the reason a Number was refused')) : key;
         }
-        case 'date': throw new Error('Internal: a Date column reached a value.');
+        case 'date': {
+            const { dateType = 'dateTime' } = column;
+            const key = dateKey(dateType, value);
+            return typeof key === 'string' ? refuse(key) : key;
+        }
         default: return unreachable(column.type);
     }
 }
@@ -279,7 +283,8 @@ function shown(value: unknown): string {
         case 'bigint':
         case 'number':
         case 'boolean': return `'${String(value)}' (${kind})`;
-        case 'object':
+        // An object is named by its tag (a Temporal.PlainDate, a Date), as C# names a value's type.
+        case 'object': return value === null ? '(null)' : `(${Object.prototype.toString.call(value).slice('[object '.length, -1)})`;
         case 'function':
         case 'symbol':
         case 'undefined': return `(${kind})`;
@@ -298,8 +303,9 @@ function text(key: Key): string {
     return key;
 }
 
-function number(key: Key): NumberKey {
-    if (typeof key !== 'number' && typeof key !== 'bigint') throw new Error('Internal: a number comparison read a key that is not a number.');
+/** A Number or Date key, both of which order on one line. */
+function ordinal(key: Key): NumberKey {
+    if (typeof key !== 'number' && typeof key !== 'bigint') throw new Error('Internal: a comparison read a key that is not ordinal.');
     return key;
 }
 

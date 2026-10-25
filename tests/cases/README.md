@@ -164,7 +164,11 @@ with `throws` and `saying`.
 
 A value is JSON's own: text, `true`/`false`, `null` for a Blank, and a number, which is a double in C# and a
 number in the Script Core. `{"bigint": text}` is a whole number held exactly, a long in C# and a bigint in
-the Script Core; `{"double": text}` a number JSON cannot hold (`"NaN"`, `"Infinity"`). An operator, a
+the Script Core; `{"double": text}` a number JSON cannot hold (`"NaN"`, `"Infinity"`). A date is written as its date type: `{"dateTime": text}` is a
+`DateTime` in C# and a `Temporal.PlainDateTime` in the Script Core, `{"dateOnly": text}` a `DateOnly` and a
+`Temporal.PlainDate`, `{"dateTimeOffset": text}` a `DateTimeOffset` and a `Temporal.ZonedDateTime` at that
+offset, and `{"jsDate": text}` a `DateTimeOffset` and a JavaScript `Date`. A column may declare its
+`dateType`, as C#'s `ColumnInfo` and the Script Core's `QueryColumn` do. An operator, a
 combinator, a direction or a column's type written as a number is one cast in from outside the vocabulary.
 A `clauses` or `values` list or a `combinator` written as `null` is absent, as a Query that came through JSON writes it.
 

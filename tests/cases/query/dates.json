@@ -1,0 +1,242 @@
+{
+  "about": "A Date column's values (ADR-0023, ADR-0350 section 16): a date and time compared by its fields, a day by its day, an instant by the instant it names; every cell and operand held to the column's declared date type. {\"dateTime\": text} is a DateTime in C# and a Temporal.PlainDateTime in the Script Core, {\"dateOnly\": text} a DateOnly and a Temporal.PlainDate, {\"dateTimeOffset\": text} a DateTimeOffset and a Temporal.ZonedDateTime at that offset, {\"jsDate\": text} a DateTimeOffset and a JavaScript Date. From tests/ExGrid.Tests/SortSemanticsTests.cs, DateOperatorTests.cs, DateTimeOffsetSemanticsTests.cs and DeclaredDateTypeTests.cs.",
+  "kind": "query",
+  "columns": [{"name": "Book", "type": "text"}, {"name": "TradedOn", "type": "date", "dateType": "dateTime"}, {"name": "Settles", "type": "date", "dateType": "dateOnly"}, {"name": "Stamped", "type": "date", "dateType": "dateTimeOffset"}],
+  "cases": [
+    {
+      "name": "ADR-0023: dates and times sort chronologically, Blanks last when descending too",
+      "rows": [
+        [null, {"dateTime": "2026-08-30T00:00:00"}, null, null],
+        [null, {"dateTime": "2026-01-01T00:00:00"}, null, null],
+        [null, null, null, null],
+        [null, {"dateTime": "2026-08-30T00:00:00.0000001"}, null, null]
+      ],
+      "sorts": [{"column": "TradedOn", "direction": "descending"}],
+      "keeps": [3, 0, 1, 2]
+    },
+    {
+      "name": "ADR-0023: a day sorts by its day",
+      "rows": [
+        [null, null, {"dateOnly": "2026-08-30"}, null],
+        [null, null, null, null],
+        [null, null, {"dateOnly": "0001-01-01"}, null],
+        [null, null, {"dateOnly": "9999-12-31"}, null]
+      ],
+      "sorts": [{"column": "Settles", "direction": "ascending"}],
+      "keeps": [2, 0, 3, 1]
+    },
+    {
+      "name": "ADR-0023: a day matches its day in a value list",
+      "rows": [
+        [null, null, {"dateOnly": "2026-08-30"}, null],
+        [null, null, {"dateOnly": "2026-08-31"}, null],
+        [null, null, null, null]
+      ],
+      "filter": {"columns": {"Settles": {"clauses": [{"operator": "in", "values": [{"dateOnly": "2026-08-30"}, null]}]}}},
+      "keeps": [0, 2]
+    },
+    {
+      "name": "ADR-0023: an instant compares as the instant it names, whatever offset it is written in",
+      "rows": [
+        [null, null, null, {"dateTimeOffset": "2026-08-30T09:00:00+09:00"}],
+        [null, null, null, {"dateTimeOffset": "2026-08-30T00:00:00+00:00"}],
+        [null, null, null, {"dateTimeOffset": "2026-08-30T09:00:00+00:00"}]
+      ],
+      "filter": {"columns": {"Stamped": {"clauses": [{"operator": "equals", "value": {"dateTimeOffset": "2026-08-30T00:00:00+00:00"}}]}}},
+      "keeps": [0, 1]
+    },
+    {
+      "name": "ADR-0023: instants sort by the instant, not by the wall clock they are written in",
+      "rows": [
+        [null, null, null, {"dateTimeOffset": "2026-08-30T08:00:00+00:00"}],
+        [null, null, null, {"dateTimeOffset": "2026-08-30T10:00:00+09:00"}]
+      ],
+      "sorts": [{"column": "Stamped", "direction": "ascending"}],
+      "keeps": [1, 0]
+    },
+    {
+      "name": "ADR-0023: an instant held as a JavaScript Date is the same instant written with an offset",
+      "rows": [
+        [null, null, null, {"jsDate": "2026-08-30T00:00:00Z"}],
+        [null, null, null, {"dateTimeOffset": "2026-08-30T09:00:00+09:00"}],
+        [null, null, null, {"jsDate": "2026-08-30T00:00:00.001Z"}]
+      ],
+      "filter": {"columns": {"Stamped": {"clauses": [{"operator": "in", "values": [{"dateTimeOffset": "2026-08-30T00:00:00+00:00"}]}]}}},
+      "keeps": [0, 1]
+    },
+    {
+      "name": "ADR-0023: a cell of another date type is refused, naming the column and its declared type",
+      "rows": [
+        [null, {"dateTime": "2026-08-30T00:00:00"}, null, null],
+        [null, {"dateOnly": "2026-08-30"}, null, null]
+      ],
+      "sorts": [{"column": "TradedOn", "direction": "ascending"}],
+      "throws": "invalidOperation",
+      "saying": "TradedOn"
+    },
+    {
+      "name": "ADR-0023: a cell of another date type is refused even when the primary level never ties",
+      "rows": [
+        ["credit", {"dateTime": "2026-08-30T00:00:00"}, null, null],
+        ["rates", {"dateOnly": "2026-08-30"}, null, null]
+      ],
+      "sorts": [{"column": "Book", "direction": "ascending"}, {"column": "TradedOn", "direction": "ascending"}],
+      "throws": "invalidOperation",
+      "saying": "declared"
+    },
+    {
+      "name": "ADR-0023: an operand of another date type is refused, even over no rows",
+      "rows": [],
+      "filter": {"columns": {"Settles": {"clauses": [{"operator": "equals", "value": {"dateTime": "2026-08-30T00:00:00"}}]}}},
+      "throws": "invalidOperation",
+      "saying": "declared"
+    },
+    {
+      "name": "ADR-0023: text in a Date column is refused, never read as a date",
+      "rows": [
+        [null, "2026-08-30", null, null]
+      ],
+      "filter": {"columns": {"TradedOn": {"clauses": [{"operator": "isNotBlank"}]}}},
+      "throws": "invalidOperation",
+      "saying": "TradedOn"
+    },
+    {
+      "name": "ADR-0023: a day is not a date and time at midnight",
+      "rows": [
+        [null, {"dateTime": "2026-08-30T00:00:00"}, null, null]
+      ],
+      "filter": {"columns": {"TradedOn": {"clauses": [{"operator": "equals", "value": {"dateOnly": "2026-08-30"}}]}}},
+      "throws": "invalidOperation",
+      "saying": "TradedOn"
+    },
+    {
+      "name": "ADR-0023: ordering operators compare chronologically",
+      "rows": [
+        [null, {"dateTime": "2026-08-30T00:00:00"}, null, null],
+        [null, {"dateTime": "2026-08-29T00:00:00"}, null, null]
+      ],
+      "filter": {"columns": {"TradedOn": {"clauses": [{"operator": "greaterThan", "value": {"dateTime": "2026-08-29T00:00:00"}}]}}},
+      "keeps": [0]
+    },
+    {
+      "name": "ADR-0023: a date and time is not less than itself",
+      "rows": [
+        [null, {"dateTime": "2026-08-30T00:00:00"}, null, null]
+      ],
+      "filter": {"columns": {"TradedOn": {"clauses": [{"operator": "lessThan", "value": {"dateTime": "2026-08-30T00:00:00"}}]}}},
+      "keeps": []
+    },
+    {
+      "name": "ADR-0023: a day equals its day",
+      "rows": [
+        [null, null, {"dateOnly": "2026-08-30"}, null],
+        [null, null, {"dateOnly": "2026-08-31"}, null],
+        [null, null, null, null]
+      ],
+      "filter": {"columns": {"Settles": {"clauses": [{"operator": "equals", "value": {"dateOnly": "2026-08-30"}}]}}},
+      "keeps": [0]
+    },
+    {
+      "name": "ADR-0023: a day filters by its day",
+      "rows": [
+        [null, null, {"dateOnly": "2026-08-01"}, null],
+        [null, null, {"dateOnly": "2026-08-02"}, null],
+        [null, null, {"dateOnly": "2026-07-31"}, null]
+      ],
+      "filter": {"columns": {"Settles": {"clauses": [{"operator": "lessThanOrEqual", "value": {"dateOnly": "2026-08-01"}}]}}},
+      "keeps": [0, 2]
+    },
+    {
+      "name": "ADR-0023: a value list of dates is set membership, agreeing with equals",
+      "rows": [
+        [null, {"dateTime": "2026-08-30T00:00:00"}, null, null],
+        [null, {"dateTime": "2026-08-31T00:00:00"}, null, null]
+      ],
+      "filter": {"columns": {"TradedOn": {"clauses": [{"operator": "in", "values": [{"dateTime": "2026-08-29T00:00:00"}, {"dateTime": "2026-08-30T00:00:00"}]}]}}},
+      "keeps": [0]
+    },
+    {
+      "name": "ADR-0023: an instant orders by the instant, not the wall clock it is written in",
+      "rows": [
+        [null, null, null, {"dateTimeOffset": "2026-08-30T10:00:00+09:00"}]
+      ],
+      "filter": {"columns": {"Stamped": {"clauses": [{"operator": "lessThan", "value": {"dateTimeOffset": "2026-08-30T09:00:00+00:00"}}]}}},
+      "keeps": [0]
+    },
+    {
+      "name": "ADR-0023: two values of one instant tie in a sort and keep their order",
+      "rows": [
+        ["first", null, null, {"dateTimeOffset": "2026-08-30T18:00:00+09:00"}],
+        ["second", null, null, {"dateTimeOffset": "2026-08-30T09:00:00+00:00"}]
+      ],
+      "sorts": [{"column": "Stamped", "direction": "ascending"}],
+      "keeps": [0, 1]
+    },
+    {
+      "name": "ADR-0023: a value list of instants is membership by instant",
+      "rows": [
+        [null, null, null, {"dateTimeOffset": "2026-08-30T18:00:00+09:00"}],
+        [null, null, null, {"dateTimeOffset": "2026-08-30T18:01:00+09:00"}]
+      ],
+      "filter": {"columns": {"Stamped": {"clauses": [{"operator": "in", "values": [{"dateTimeOffset": "2026-08-30T09:00:00+00:00"}]}]}}},
+      "keeps": [0]
+    },
+    {
+      "name": "ADR-0023: an operand of another date type in a later clause is refused up front too",
+      "rows": [],
+      "filter": {"columns": {"TradedOn": {"combinator": "or", "clauses": [{"operator": "equals", "value": {"dateTime": "2026-08-30T00:00:00"}}, {"operator": "equals", "value": {"dateOnly": "2026-01-01"}}]}}},
+      "throws": "invalidOperation",
+      "saying": "TradedOn"
+    },
+    {
+      "name": "ADR-0023: a value list holding another date type is refused up front, even over no rows",
+      "rows": [],
+      "filter": {"columns": {"TradedOn": {"clauses": [{"operator": "in", "values": [{"dateTime": "2026-08-30T00:00:00"}, {"dateOnly": "2026-01-01"}]}]}}},
+      "throws": "invalidOperation",
+      "saying": "TradedOn"
+    },
+    {
+      "name": "ADR-0023: a value list of instants holding a date and time is refused up front",
+      "rows": [],
+      "filter": {"columns": {"Stamped": {"clauses": [{"operator": "in", "values": [{"dateTimeOffset": "2026-08-30T00:00:00+00:00"}, {"dateTime": "2026-08-30T00:00:00"}]}]}}},
+      "throws": "invalidOperation",
+      "saying": "Stamped"
+    },
+    {
+      "name": "ADR-0023: a cell of another date type is refused whichever operator would compare it",
+      "rows": [
+        [null, {"dateOnly": "2026-08-30"}, null, null]
+      ],
+      "filter": {"columns": {"TradedOn": {"combinator": "or", "clauses": [{"operator": "isNotBlank"}, {"operator": "equals", "value": {"dateTime": "2026-08-30T00:00:00"}}]}}},
+      "throws": "invalidOperation",
+      "saying": "declared"
+    },
+    {
+      "name": "ADR-0023: a date and time in a day column is refused, naming it",
+      "rows": [
+        [null, null, {"dateTime": "2026-08-30T00:00:00"}, null]
+      ],
+      "filter": {"columns": {"Settles": {"clauses": [{"operator": "isNotBlank"}]}}},
+      "throws": "invalidOperation",
+      "saying": "'Settles'"
+    },
+    {
+      "name": "ADR-0023: a date and time in an instant column is refused, naming it",
+      "rows": [
+        [null, null, null, {"dateTime": "2026-08-30T00:00:00"}]
+      ],
+      "filter": {"columns": {"Stamped": {"clauses": [{"operator": "isNotBlank"}]}}},
+      "throws": "invalidOperation",
+      "saying": "'Stamped'"
+    },
+    {
+      "name": "ADR-0023: a sort reads every cell against the declaration, even one no tie reaches",
+      "rows": [
+        ["a", {"dateOnly": "2026-08-30"}, null, null]
+      ],
+      "sorts": [{"column": "TradedOn", "direction": "ascending"}],
+      "throws": "invalidOperation",
+      "saying": "'TradedOn'"
+    }
+  ]
+}

@@ -1,7 +1,7 @@
 {
-  "about": "A column's declared type is checked before any row is read (ADR-0023): a type outside the vocabulary, cast in from outside it, is refused by the Query that names the column, whatever the rows hold.",
+  "about": "A column's declared type, and a Date column's date type, are checked before any row is read (ADR-0023): a type outside the vocabulary, cast in from outside it, is refused by the Query that names the column, whatever the rows hold.",
   "kind": "query",
-  "columns": [{"name": "Book", "type": "text"}, {"name": "Odd", "type": 9}],
+  "columns": [{"name": "Book", "type": "text"}, {"name": "Odd", "type": 9}, {"name": "OddDate", "type": "date", "dateType": 9}],
   "cases": [
     {
       "name": "ADR-0023: a sort on a column of an undeclared type is refused, even over no rows",
@@ -18,10 +18,17 @@
       "saying": "Odd"
     },
     {
+      "name": "ADR-0023: a Date column of an undeclared date type is refused, even over no rows",
+      "rows": [],
+      "sorts": [{"column": "OddDate", "direction": "ascending"}],
+      "throws": "outOfRange",
+      "saying": "OddDate"
+    },
+    {
       "name": "ADR-0023: a column of an undeclared type no Query names is not read",
       "rows": [
-        ["b", 1],
-        ["a", 2]
+        ["b", 1, null],
+        ["a", 2, null]
       ],
       "sorts": [{"column": "Book", "direction": "ascending"}],
       "keeps": [1, 0]

@@ -15,7 +15,10 @@ export interface QueryColumn<Row> {
     readonly name: string;
     /** The declared type. */
     readonly type: ColumnType;
-    /** Reads the row's value in this column. `undefined` and `null` are a Blank. */
+    /** Reads the row's value in this column. `undefined` and `null` are a Blank. A Text column's value is a
+     * string, a Number column's a `number` or a `bigint`, a Boolean column's a boolean, and a Date column's
+     * the Temporal value of its date type: `Temporal.PlainDateTime`, `Temporal.PlainDate`, or for an
+     * instant `Temporal.ZonedDateTime`, `Temporal.Instant` or `Date`. */
     readonly value: (row: Row) => unknown;
     /** False for a column that carries no value (an Action Column, a Mark Column), which cannot be sorted
      * or filtered (ADR-0020). True unless given. */
