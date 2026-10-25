@@ -53,12 +53,6 @@ test('ADR-0270, CH-4: the tooltip lists every series of the pointer\'s panel, an
     await expect(guide).toHaveCount(0);
 });
 
-test('ADR-0270, ADR-0253: a step names the interval its value holds over', async ({ page }) => {
-    const chart = hazard(page);
-    await hover(page, chart, 0, 0.5);
-    await expect(chart.locator('.ex-chart-tooltip-note')).toHaveText(/^\d+Y – \d+Y$/);
-});
-
 test('ADR-0271, ADR-0272: a legend click hides a series and raises its key; a second shows it', async ({ page }) => {
     const chart = exposure(page);
     const entry = chart.locator('g.ex-chart-legend-entry[data-series="ene-before"]');

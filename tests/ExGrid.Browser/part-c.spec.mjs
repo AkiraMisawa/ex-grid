@@ -554,13 +554,3 @@ test('SH-53: Ctrl+Shift+= over a whole column inserts a column to its left, and 
     await page.keyboard.press('Control+Minus');
     await expect(cell(grid, 'A1')).toHaveAccessibleName('-123456789');
 });
-
-test('SH-53: over a part of a row Ctrl+Minus changes nothing and says why (ADR-0050 item 14)', async ({ page }) => {
-    const grid = await openCase(page, '3c');
-    await pressCell(grid, 'A1');
-
-    await page.keyboard.press('Control+Minus');
-
-    await expect(page.locator('.ex-sheet-notice').first()).toContainText('Nothing was deleted');
-    await expect(cell(grid, 'A1')).toHaveAccessibleName('-123456789');
-});

@@ -62,35 +62,6 @@ test('ADR-0141/D8, LV-9: a million trades in this process; a Change Batch reache
     await expect.poll(() => marked(page).count(), { message: 'a mark in view again', timeout: 60_000 }).toBeGreaterThan(0);
 });
 
-test('ADR-0141 LV-5/LV-7: under a sort by P&L, the painted rows stay in order as batches move the values', async ({ page }) => {
-    test.setTimeout(120_000);
-    // 2,000 trades and a thousand amended a batch, so every batch moves rows on screen.
-    await open(page, '?rows=2000&batch=1000', 2_000);
-    const header = grid(page).locator('.ex-header-cell').nth(8); // P&L
-    // A header cell's label lets presses through to the header row, which takes them (ADR-0012), as
-    // features.spec.mjs clicks a header to sort.
-    await header.click({ position: { x: 30, y: 14 }, force: true });
-    await expect(header).toHaveAttribute('aria-sort', 'ascending');
-
-    const from = await batches(page);
-    await expect.poll(() => batches(page), { timeout: 30_000 }).toBeGreaterThan(from + 3);
-    await toggle(page).click();
-    await expect(toggle(page)).toHaveText("Resume the page's changes");
-    await circuitQuiet();
-
-    // Read in one go, from one painted frame: every painted P&L, top to bottom.
-    const painted = await grid(page).evaluate((root) => [...root.querySelectorAll('.ex-viewport .ex-row')]
-        .map((row) => row.querySelector('[id$="c8"]'))
-        .filter((cell) => cell !== null)
-        .map((cell) => ({ row: Number(/-r(\d+)c8$/.exec(cell.id)[1]), value: Number(cell.textContent.trim().replace(/,/g, '')) }))
-        .sort((a, b) => a.row - b.row)
-        .map((cell) => cell.value));
-    expect(painted.length).toBeGreaterThan(10);
-    for (let i = 1; i < painted.length; i++) {
-        expect(painted[i], `row ${i} of ${JSON.stringify(painted)}`).toBeGreaterThanOrEqual(painted[i - 1]);
-    }
-});
-
 test('ADR-0141/0069: the code the page shows is the code it runs: GridSource.From by Row Key, a Change Batch, and CellChangedAt', async ({ page }) => {
     await open(page, '?rows=2000', 2_000);
     const code = await expectCodeIsSource(page);

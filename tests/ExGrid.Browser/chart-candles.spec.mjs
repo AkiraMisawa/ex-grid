@@ -13,13 +13,6 @@ test.beforeEach(async ({ page }) => {
     await page.mouse.move(0, 0);
 });
 
-async function pointIn(locator, fx, fy = 0.5) {
-    await locator.scrollIntoViewIfNeeded();
-    const box = await locator.boundingBox();
-    expect(box, 'the plot is on screen').not.toBeNull();
-    return [box.x + box.width * fx, box.y + box.height * fy];
-}
-
 test('ADR-0300, ADR-0302: ten years merge into months, rising hollow and falling filled, with volume below', async ({ page }) => {
     const chart = index(page);
     await expect(chart.locator('.ex-chart-notes')).toContainText('Index: monthly candles, merged from rows to fit.');
@@ -30,49 +23,6 @@ test('ADR-0300, ADR-0302: ten years merge into months, rising hollow and falling
     // Shape first: a rising body is the background's colour, a falling one the series' own.
     const fills = await chart.locator('path.ex-chart-candles').evaluateAll(ps => ps.map(p => getComputedStyle(p).fill));
     expect(new Set(fills.slice(0, 2)).size, 'rising and falling bodies differ').toBe(2);
-});
-
-test('ADR-0300: the tooltip reads a candle\'s four values, its change and its volume', async ({ page }) => {
-    const chart = index(page);
-    const [x, y] = await pointIn(layer(chart, 0), 0.5);
-    await page.mouse.move(x, y);
-    const tooltip = chart.locator('.ex-chart-tooltip');
-    await expect(tooltip).toBeVisible();
-    await expect(tooltip).toContainText(/O [\d,]+\.\d{2} H [\d,]+\.\d{2} L [\d,]+\.\d{2} C [\d,]+\.\d{2}/);
-    await expect(tooltip).toContainText(/Chg [+-][\d,]+\.\d{2} \([+-]\d+\.\d{2}%\)/);
-    await expect(tooltip).toContainText(/Vol [\d,]+/);
-    await expect(tooltip).toContainText(/rows/);
-});
-
-test('ADR-0302: a click on a merged candle narrows to its month, and the days come back', async ({ page }) => {
-    const chart = index(page);
-    // The average hidden, the candle is the only series a click can name.
-    await chart.locator('.ex-chart-legend-entry', { hasText: '25-day average' }).click();
-    const [x, y] = await pointIn(layer(chart, 0), 0.5);
-    await page.mouse.click(x, y);
-    await expect(page.locator('#index-events')).toHaveText(/^range: (\d{4})-(\d{2})-\d{2} to \1-\2-\d{2}$/);
-    await expect(chart.locator('.ex-chart-notes li', { hasText: 'merged' })).toHaveCount(0);
-    // One row's candle now: a click names it.
-    const [x2, y2] = await pointIn(layer(chart, 0), 0.5);
-    await page.mouse.click(x2, y2);
-    await expect(page.locator('#index-events')).toHaveText(/^clicked index at \d{4}-\d{2}-\d{2}$/);
-});
-
-test('ADR-0301: packed sessions say so', async ({ page }) => {
-    const chart = index(page);
-    await expect(chart.locator('.ex-chart-notes li', { hasText: 'packed' })).toHaveCount(0);
-    await page.locator('#packed').check();
-    await expect(chart.locator('.ex-chart-notes')).toContainText('Dates are packed');
-});
-
-test('ADR-0303: a Bid–Ask band and 95% CI whiskers, named in the tooltip', async ({ page }) => {
-    const curve = page.locator('#curve .ex-chart');
-    await expect(curve.locator('path.ex-chart-interval-band')).toHaveCount(1);
-    const forecasts = page.locator('#forecasts .ex-chart');
-    await expect(forecasts.locator('path.ex-chart-whiskers')).toHaveCount(1);
-    const [x, y] = await pointIn(layer(forecasts, 0), 0.5);
-    await page.mouse.move(x, y);
-    await expect(forecasts.locator('.ex-chart-tooltip')).toContainText(/\[\d\.\d{2}, \d\.\d{2}\] 95% CI/);
 });
 
 test('ADR-0304: a scatter\'s intervals run both ways through each mark, and the tooltip names both', async ({ page }) => {

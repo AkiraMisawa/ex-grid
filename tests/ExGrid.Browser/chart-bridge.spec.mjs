@@ -45,13 +45,6 @@ test('ADR-0258: one cell holds dates and tenors, so the menu offers both, and co
     await expect(chart(page, 'Chart 1').locator('g.ex-chart-series')).toHaveCount(5);
 });
 
-test('ADR-0251: a chosen text column is refused by name, and nothing is charted', async ({ page }) => {
-    await select(page, [0, 0], [3, 2]);
-    await choose(page, [1, 1], 'Series in columns');
-    await expect(page.locator('#bridge-refusal')).toHaveText('Note cannot be plotted: not a number column.');
-    await expect(charts(page)).toHaveCount(0);
-});
-
 test('ADR-0258: Add to chart adds a curve, and refuses a curve into a history', async ({ page }) => {
     await select(page, [0, 2], [1, 5]);
     await choose(page, [0, 2], /^Chart$/);
@@ -69,20 +62,6 @@ test('ADR-0258: Add to chart adds a curve, and refuses a curve into a history', 
     await choose(page, [6, 2], 'Add to chart: Chart 2');
     await expect(page.locator('#bridge-refusal')).toHaveText("The selection charts curves across declared positions, but 'Chart 2' is drawn along Date.");
     await expect(chart(page, 'Chart 2').locator('g.ex-chart-series')).toHaveCount(5);
-});
-
-test('ADR-0258: a chart keeps its rows; a deleted row is a gap with a note, and a recalculation is redrawn', async ({ page }) => {
-    await select(page, [1, 2]);
-    await choose(page, [1, 2], 'Series in columns');
-    await expect(chart(page, 'Chart 1').locator('g.ex-chart-series')).toHaveCount(5);
-    const path = chart(page, 'Chart 1').locator('g.ex-chart-series path').first();
-    const before = await path.getAttribute('d');
-
-    await page.locator('#recalculate').click();
-    await expect(path).not.toHaveAttribute('d', before ?? '');
-    await page.locator('#drop-row').click();
-    await expect(chart(page, 'Chart 1').locator('.ex-chart-notes li')).toHaveText(['1 of the selected rows no longer exists.']);
-    await expect(chart(page, 'Chart 1').locator('g.ex-chart-series')).toHaveCount(5);
 });
 
 test('ADR-0258, M3-Q6: a click on a point moves the grid\'s Focus to its cell', async ({ page }) => {

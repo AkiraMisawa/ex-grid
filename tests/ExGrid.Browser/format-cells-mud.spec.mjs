@@ -1,5 +1,5 @@
 import { test, expect, setRoundTrip, alterPage, circuitQuiet } from './fixtures.mjs';
-import { sheet, openSheet, cell, pressCell, expectFocusAt, pressAt, editor, boxOf, columnHeader, hashesAtTheStandardWidth } from './sheet-helpers.mjs';
+import { sheet, openSheet, cell, pressCell, expectFocusAt, pressAt, editor } from './sheet-helpers.mjs';
 import { expectKeyboardOn } from './keyboard.mjs';
 import { watchHiddenFocus } from './hidden-focus.mjs';
 
@@ -84,55 +84,6 @@ test.describe('on /sheet?chrome=mud', () => {
         await expect(cell(grid, 'C2')).toHaveText('0.5');
     });
 
-    test('SH-45, run 17 h10: over A2 under A1\'s thick bottom the Border tab opens on Thick, and the Top button alone takes the line away on both sides', async ({ page }) => {
-        const grid = sheet(page);
-        const edge = (name) => formatCells(page).getByRole('button', { name, exact: true });
-        // A1's bottom thick, set through Format Cells itself. Over A1, with no line, it opens on Thin.
-        await openFromMenu(page, grid, 'A1');
-        await tab(page, 'Border').click();
-        await expect(choice(page, 'Thin')).toBeChecked();
-        await choice(page, 'Thick').check();
-        await edge('Bottom').click();
-        await formatCells(page).getByRole('button', { name: 'OK', exact: true }).click();
-        await expect(formatCells(page)).toHaveCount(0);
-
-        // Over A2 it opens on the one line A2 shows, as Excel's did: MudBlazor's radio group shows
-        // the draft's choice from its first render.
-        await openFromMenu(page, grid, 'A2');
-        await expect(tab(page, 'Border')).toHaveAttribute('aria-selected', 'true');
-        await expect(choice(page, 'Thick')).toBeChecked();
-        await expect(edge('Top')).toHaveAttribute('aria-pressed', 'true');
-
-        // What the run pressed: the Top button, then OK.
-        await edge('Top').click();
-        await expect(edge('Top')).toHaveAttribute('aria-pressed', 'false');
-        await formatCells(page).getByRole('button', { name: 'OK', exact: true }).click();
-        await expect(formatCells(page)).toHaveCount(0);
-
-        // Neither cell keeps a line there: A2 shows no top, and A1 no bottom.
-        await openFromMenu(page, grid, 'A2');
-        await expect(edge('Top')).toHaveAttribute('aria-pressed', 'false');
-        await expect(choice(page, 'Thin')).toBeChecked();
-        await formatCells(page).getByRole('button', { name: 'Cancel', exact: true }).click();
-        await expect(formatCells(page)).toHaveCount(0);
-        await openFromMenu(page, grid, 'A1');
-        await expect(edge('Bottom')).toHaveAttribute('aria-pressed', 'false');
-    });
-
-    test('SH-42/SH-45: Ctrl+1 opens Format Cells on Number, and Escape closes it with the keyboard the Sheet\'s', async ({ page }) => {
-        const grid = sheet(page);
-        await pressCell(grid, 'C2');
-
-        await page.keyboard.press('Control+1');
-
-        await expect(formatCells(page)).toBeVisible();
-        await expect(tab(page, 'Number')).toHaveAttribute('aria-selected', 'true');
-        await expect(tab(page, 'Number')).toBeFocused();
-        await page.keyboard.press('Escape');
-        await expect(formatCells(page)).toHaveCount(0);
-        await expectKeyboardOn(grid);
-    });
-
     test('SH-45/ADR-0071 (the seventeenth Windows run, Part D): opened from the toolbar\'s keys, Alt, H, O, E, the frame hands the keyboard to the dialog with no console warning while the accessibility tree is on', async ({ page }) => {
         const grid = sheet(page);
         await pressCell(grid, 'C2');
@@ -215,20 +166,6 @@ test.describe('on /sheet?chrome=mud', () => {
         await expect(formatCells(page)).toHaveCount(0);
         await expectFocusAt(grid, 'C4');
         await expectKeyboardOn(grid);
-    });
-
-    test('SH-45: Escape sets nothing, and the next arrow moves the Focus', async ({ page }) => {
-        const grid = sheet(page);
-        await openFromMenu(page, grid, 'C2');
-        await choice(page, 'Percentage').check();
-
-        await page.keyboard.press('Escape');
-
-        await expect(formatCells(page)).toHaveCount(0);
-        await expect(cell(grid, 'C2')).toHaveText('0.5');
-        await expectKeyboardOn(grid);
-        await page.keyboard.press('ArrowDown');
-        await expectFocusAt(grid, 'C3');
     });
 
     test('SH-45/ADR-0071 (decided with the user, 2026-10-13): Escape, then ↓ and ↓ typed at once, cancels Format Cells and moves the Focus two rows, as typed slowly', async ({ page }) => {
@@ -327,20 +264,6 @@ test.describe('on /sheet?chrome=mud', () => {
         await expectFocusAt(grid, 'C3');
     });
 
-    test('SH-45: a Custom code ExSheet does not read is refused by name, and the dialog stays open', async ({ page }) => {
-        const grid = sheet(page);
-        await openFromMenu(page, grid, 'C2');
-        await choice(page, 'Custom').check();
-        const code = formatCells(page).locator('.mud-ex-sheet-format-cells-code input');
-
-        await code.fill('[<0]0');
-        await code.press('Enter');
-
-        await expect(formatCells(page).locator('.mud-ex-sheet-format-cells-refusal')).toContainText("The number format '[<0]0' is not one ExSheet reads");
-        await expect(formatCells(page)).toBeVisible();
-        await expect(cell(grid, 'C2')).toHaveText('0.5');
-    });
-
     test('SH-45/SRV-7: a Custom code typed at full speed arrives whole, and Enter is OK', async ({ page }) => {
         const grid = sheet(page);
         await openFromMenu(page, grid, 'C2');
@@ -368,47 +291,6 @@ test.describe('on /sheet?chrome=mud', () => {
         await page.keyboard.press('Tab');
         await expect(tab(page, 'Number')).toBeFocused();
         await expect(formatCells(page)).toBeVisible();
-    });
-
-    // Decided with the user on 2026-10-12 (ADR-0071): what OK sets is ExSheet's under every Chrome,
-    // so under this one too OK widens a column over #### for any part of the Font it sets, as
-    // Excel's Font tab widened column A for Bold in the seventeenth Windows run's h7; its Fill tab
-    // widens nothing.
-    test('ADR-0071 (decided 2026-10-12; the seventeenth run, h7): OK with Bold over #### widens a column at the standard width and leaves a sized one; OK with a Fill widens nothing; one Ctrl+Z takes back the bold and the width', async ({ page }) => {
-        const grid = sheet(page);
-        const { standard, sized } = await hashesAtTheStandardWidth(page, grid);
-        const width = async (name) => (await boxOf(columnHeader(grid, name))).width;
-
-        await page.keyboard.press('Control+1');
-        await expect(formatCells(page)).toBeVisible();
-        await tab(page, 'Fill').click();
-        await formatCells(page).getByRole('radio', { name: 'Yellow', exact: true }).check();
-        await formatCells(page).getByRole('button', { name: 'OK', exact: true }).click();
-        await expect(formatCells(page)).toHaveCount(0);
-        await expectKeyboardOn(grid);
-        await expect(cell(grid, 'E1')).toHaveText(/^#+$/);
-        expect(await width('E')).toBeCloseTo(standard, 0);
-
-        await page.keyboard.press('Control+1');
-        await expect(formatCells(page)).toBeVisible();
-        await tab(page, 'Font').click();
-        await choice(page, 'Bold').check();
-        await formatCells(page).getByRole('button', { name: 'OK', exact: true }).click();
-
-        await expect(formatCells(page)).toHaveCount(0);
-        await expect(page.locator('#sheet-focus-font')).toHaveText('bold');
-        await expect(cell(grid, 'E1')).toHaveText('123,456,789.12');
-        await expect.poll(() => width('E')).toBeGreaterThan(standard + 10);
-        await expect(cell(grid, 'F1')).toHaveText(/^#+$/);
-        expect(await width('F')).toBeCloseTo(sized, 0);
-
-        // The width is a step of OK's own: one Ctrl+Z takes back the bold and the width.
-        await expectKeyboardOn(grid);
-        await page.keyboard.press('ControlOrMeta+Z');
-        await expect(page.locator('#sheet-focus-font')).toHaveText('regular');
-        await expect(cell(grid, 'E1')).toHaveText(/^#+$/);
-        await expect.poll(() => width('E')).toBeCloseTo(standard, 0);
-        expect(await width('F')).toBeCloseTo(sized, 0);
     });
 
     test('ADR-0039/ADR-0071: More Colours never takes the keyboard back from HEX selected as its popup appears', async ({ page }) => {

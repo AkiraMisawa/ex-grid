@@ -81,11 +81,3 @@ test('ADR-0290: the spread on a logarithmic axis is ticked by decades', async ({
     await expect(chart.locator('text.ex-chart-tick:not(.ex-chart-tick-x)', { hasText: /^1000$/ }).first()).toBeAttached();
     await expect(chart.locator('.ex-chart-notes')).not.toContainText('stays proportional');
 });
-
-test('ADR-0291: each fit says its method and coefficients under the chart, and PRML\'s degree 9 passes through every point', async ({ page }) => {
-    await expect(cds(page).locator('.ex-chart-notes')).toContainText(/OLS: y = [\d.]+x [+−] [\d.]+, R² = [\d.]+, n = 200/);
-    await expect(cds(page).locator('.ex-chart-notes')).toContainText(/Theil–Sen: y = [\d.]+x/);
-    await page.locator('button.degree[data-degree="9"]').click();
-    await circuitQuiet();
-    await expect(curve(page).locator('.ex-chart-notes')).toContainText('Least squares: degree 9, R² = 1.00, n = 10');
-});

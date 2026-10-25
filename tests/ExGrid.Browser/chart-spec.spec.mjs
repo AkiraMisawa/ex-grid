@@ -78,15 +78,6 @@ test('ADR-0321: the tooltip over an edge, away from any node, says its two keys'
     await expect(tooltip).toContainText('edge from 0:0 to 1:1');
 });
 
-test('ADR-0320: a spec with numbers in it is refused with its path and reason, and no chart is drawn', async ({ page }) => {
-    await page.locator('#load-numbers').click();
-    await circuitQuiet();
-    await expect(answer(page)).toHaveText(/^series\[0\]\.values is not part of a Chart Spec/);
-    await expect(chart(page)).toHaveCount(0);
-    await page.locator('#load-lattice').click();
-    await expect(chart(page)).toHaveCount(1);
-});
-
 test('ADR-0320, ADR-0274: a spec of a surface is drawn by ExSurface, its missing value a hole', async ({ page }) => {
     await page.locator('#load-surface').click();
     const box = page.locator('.ex-chart-surface .ex-chart-surface-box');

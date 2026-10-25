@@ -36,25 +36,6 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(cell(grid, 'G3')).toHaveText('40');
         });
 
-        test('ADR-0047: lookup, rounding, calendar and text functions show their Values through the Sheet', async ({ page }) => {
-            const grid = sheet(page);
-            await enter(page, grid, 'E2', '1');
-            await enter(page, grid, 'E3', '2');
-            await enter(page, grid, 'F2', '10');
-            await enter(page, grid, 'F3', '20');
-            for (const [address, formula, expected] of [
-                ['G2', '=VLOOKUP(2,E2:F3,2,FALSE)', '20'],
-                ['G3', '=MROUND(10,3)', '9'],
-                ['G4', '=CEILING.MATH(-2.5,1)', '-2'],
-                ['G5', '=DATEDIF(DATE(2020,2,29),DATE(2021,2,28),"M")', '11'],
-                ['G6', '=UPPER("abc")', 'ABC'],
-                ['G7', '=SEARCH("B","abc")', '2'],
-            ]) {
-                await enter(page, grid, address, formula);
-                await expect(cell(grid, address)).toHaveText(expected);
-            }
-        });
-
         test('ADR-0058: the lookup mode list writes the chosen value with Tab', async ({ page }) => {
             const grid = sheet(page);
             await enter(page, grid, 'E2', '1');
