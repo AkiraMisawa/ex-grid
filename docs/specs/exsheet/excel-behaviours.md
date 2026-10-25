@@ -3,7 +3,12 @@
 Status: done — every item was observed beside Excel at 9a78a14 on 2026-09-27, as the first Windows
 run's Part D (`verification/2026-09-27-windows-excel/behaviours.md`). Its probes are
 `tests/ExGrid.Browser/sheet-vs-excel.spec.mjs`, which the second to fourth runs ran again. *(Set
-from the records on 2026-10-10.)*
+from the records on 2026-10-10.)* *(2026-10-25, ADR-0370 section 11: the probes that read only an
+engine's Values left that file, since the case corpus holds the same answers: item 20's copied number,
+date by day, shifted Formula, trend and refused patterns (`ExcelCases/fill.json`), and item 27's
+`#CIRC!` (`ExcelCases/iferror.json`). Item 20's fill handle leaving source and target selected is
+`declarations.spec.mjs`' DC-13/DC-27 test, and item 23's `#REF!` is `sheet.spec.mjs`' SH-5/SH-18
+row deletion.)*
 
 The engine's Values are checked against Excel automatically, by the case corpus and its oracle
 (`verify-on-windows.md`, Part A). This list is about what a user **does**: keys, clicks and drags.

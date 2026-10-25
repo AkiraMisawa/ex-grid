@@ -853,13 +853,11 @@ nobody had asked for. What that means when writing a test:
 - `format-cells.spec.mjs` — Format Cells under the built-in Chrome (ADR-0071, SH-45, DC-60;
   tickets 52 and 56) on `/sheet` and `/sheets`: a popover inside the Sheet's box, opened from the
   Context Menu and Ctrl+1 (case 22) with the keyboard on its tab; the arrows switching the tabs; OK as
-  one undo step; Escape and a refused Custom code each setting nothing; a Custom code typed at full
+  one undo step; Escape setting nothing; a Custom code typed at full
   speed arriving whole, Enter as OK; Tab and Shift+Tab wrapping inside once its tab holds the
   keyboard, and on a 150 ms circuit on the Server host a Shift+Tab typed in the round trip before it
   does, once the menu has gone, held on the Sheet's root and dropped with the arrow behind it
-  (ADR-0039, 2026-10-13); cells that differ showing an
-  empty Font style and No Colour (case 24); a cell under a neighbour's thick bottom opening with its
-  top pressed, as drawn (case 14-13); scrolling inside a small box and closing as a Cancel when
+  (ADR-0039, 2026-10-13); scrolling inside a small box and closing as a Cancel when
   the box shrinks below one row; and two Sheets each with their own. On a 150 ms circuit on the
   Server host, the page's *Format Cells…* pressed straight after Shift+ArrowDown, and the Context
   Menu's item chosen as soon as the menu opens on another cell, each open over the Selection the grid
@@ -876,16 +874,14 @@ nobody had asked for. What that means when writing a test:
   one Sheet are never the other's, which types as ever afterwards (ADR-0018).
 - `format-cells-mud.spec.mjs` — Format Cells under `ExSheet.MudBlazor`'s Chrome (ADR-0071, SH-45;
   ticket 53) on `/sheet?chrome=mud` and `/sheets?chrome=mud`: a MudDialog at page level, nothing
-  of it inside the grid, opened from the Context Menu, the page's button and Ctrl+1 with the
-  keyboard on its tab; the arrows, Home and End switching the tabs; OK as one undo step, and
-  Escape, a press on the backdrop and a refused Custom code each setting nothing; Escape in an open
+  of it inside the grid, opened from the Context Menu and the page's button with the
+  keyboard on its tab (Ctrl+1 under this Chrome is `format-cells-keys.spec.mjs`'s); the arrows, Home and End switching the tabs; OK as one undo step, and
+  Escape and a press on the backdrop each setting nothing; Escape in an open
   dropdown (Horizontal) closing only its list, and the next one cancelling; a Custom code
   typed at full speed arriving whole, Enter as OK; Tab and Shift+Tab kept inside; More Colours as
   MudBlazor's colour picker, read back through Format Cells; and, however it closes, the next
   arrow moving the Focus — from the page's button too, which MudBlazor would otherwise hand the
-  keyboard back to. Over numbers showing `####`, OK widens as under the built-in Chrome: not for a
-  Fill, and for Bold the column at the standard width, never the one sized by its grip, in OK's one
-  step. Two Sheets each keep their own last tab and get the keyboard back.
+  keyboard back to. Two Sheets each keep their own last tab and get the keyboard back.
 - `sheet-toolbar.spec.mjs` — the Sheet Toolbar (ADR-0100, SH-48 to SH-50; ticket 54) on `/sheet`
   under both Chromes: above the Formula Bar and outside the grid's root, Bold shown pressed over a
   bold Focus, a press that leaves the keyboard on the Sheet, every item greyed out while a cell is

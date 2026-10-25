@@ -655,32 +655,6 @@ test('one cell copied inside the Sheet still fills the whole range, as Excel\'s 
 
 // ---- Fill (ADR-0050, item 5) --------------------------------------------------------------------
 
-test('item 20: the fill handle continues a series, and leaves source and target selected (ADR-0050 item 5, ADR-0052, ticket 15)', async ({ page }) => {
-    await enter(page, 'E1', '1');
-    await enter(page, 'E2', '3');
-    await click(page, 'E1');
-    await click(page, 'E2', { modifiers: ['Shift'] });
-    await dragFillHandle(page, 'E6');
-    await expect(cell(page, 'E6')).toHaveText('11');
-    await expectSelection(page, 'E1', 'E6');
-    await expectActive(page, 'E1');
-});
-
-test('item 20: one number is copied, one date goes on by day, a Formula shifts (ADR-0050, ticket 15)', async ({ page }) => {
-    await enter(page, 'E1', '5');
-    await click(page, 'E1');
-    await dragFillHandle(page, 'E4');
-    await expect(cell(page, 'E4')).toHaveText('5');
-    await enter(page, 'F1', '9/26/2026');
-    await click(page, 'F1');
-    await dragFillHandle(page, 'F4');
-    await expect(cell(page, 'F4')).toHaveText('9/29/2026');
-    await enter(page, 'E8', '=B2*2');
-    await click(page, 'E8');
-    await dragFillHandle(page, 'E10');
-    expect(await entryOf(page, 'E10')).toBe('=B4*2');
-});
-
 test('run 18a: a lone number over an empty cell, dragged right, goes on as a series; two numbers are copied (ADR-0050 item 5)', async ({ page }) => {
     // Excel, fill-handle-axis 4: C1 1 over an empty C2 dragged two columns right gives 2 3, row 2 empty;
     // C1 1 over C2 5 gives 1 1 and 5 5.
@@ -698,18 +672,6 @@ test('run 18a: a lone number over an empty cell, dragged right, goes on as a ser
     await dragFillHandle(page, 'G6');
     await expect(cell(page, 'G6')).toHaveText('5');
     await expect(cell(page, 'G5')).toHaveText('1');
-});
-
-test('item 20: 1, 2, 4 continue as Excel\'s trend, to the 15 digits Excel keeps (ADR-0050, ticket 15)', async ({ page }) => {
-    await enter(page, 'E1', '1');
-    await enter(page, 'E2', '2');
-    await enter(page, 'E3', '4');
-    await click(page, 'E1');
-    await click(page, 'E3', { modifiers: ['Shift'] });
-    await dragFillHandle(page, 'E5');
-    // Excel's Value2 is 5.33333333333333 exactly (rounded to 15 digits), and its bar shows that.
-    expect(await entryOf(page, 'E4')).toBe('5.33333333333333');
-    expect(await entryOf(page, 'E5')).toBe('6.83333333333333');
 });
 
 test('item 20: a series filled up goes backwards, and the Focus stays on the source (ADR-0050, ADR-0052, ticket 15)', async ({ page }) => {
@@ -736,18 +698,6 @@ test('item 20: text in two cells filled left repeats backwards (ADR-0050, ticket
     await expect(cell(page, 'B10')).toHaveText('a');
 });
 
-test('item 20: Item 1, Mon and a date with a time are refused, by decision (ADR-0050)', async ({ page }) => {
-    // Excel continues them (Item 2, Tue, the next day at 10:00, losing about 5 ms); ExSheet
-    // refuses a pattern it has not implemented rather than fill it with copies.
-    for (const typed of ['Item 1', 'Mon', '9/26/2026 10:00']) {
-        await enter(page, 'E1', typed);
-        await click(page, 'E1');
-        await dragFillHandle(page, 'E3');
-        await expect(cell(page, 'E2')).toHaveText('');
-        await expect(page.locator('.ex-sheet-notice')).not.toHaveText('');
-    }
-});
-
 test('item 21: with several ranges selected there is no fill handle (ADR-0050, ticket 15)', async ({ page }) => {
     await click(page, 'A1');
     await click(page, 'B2', { modifiers: ['Shift'] });
@@ -768,21 +718,6 @@ test('item 22: inserting rows above a selected range keeps the Selection where i
     await expectSelection(page, 'B3', 'C4');
     await expectActive(page, 'B3');
     await expect(cell(page, 'A5')).toHaveText('Pears');
-});
-
-test('item 23: deleting a row a Formula references writes #REF! in its place (ADR-0046, ticket 13)', async ({ page }) => {
-    await enter(page, 'E1', '=B3*2');
-    await enter(page, 'F1', '=SUM(B2:B4)');
-    await click(page, 'B3', { button: 'right' });
-    await page.getByRole('menuitem', { name: /delete rows/i }).click();
-    // The deletion lands a round trip after the click on the Server host, and the render that
-    // brings it replaces row 1's cells: a click on E1 made in between reached for an element
-    // being taken out ("Element is not visible", Windows, fourth run), and one made earlier
-    // still would read the Entry from before the deletion. Pears was row 3; Plums moves up.
-    await expect(cell(page, 'A3')).toHaveText('Plums');
-    // Excel: =A5*2 became =#REF!*2, and =SUM(A4:A6) became =SUM(A4:A5).
-    expect(await entryOf(page, 'E1')).toBe('=#REF!*2');
-    expect(await entryOf(page, 'F1')).toBe('=SUM(B2:B3)');
 });
 
 // Nothing to drive yet: /sheet offers the user no rename.
@@ -833,15 +768,4 @@ test('item 26: a number or a date too wide for a column the user sized shows ###
     // Nothing widened the column: the entries and the format left it where the user put it.
     expect((await header.boundingBox()).width).toBeCloseTo(sized, 0);
     expect(await entryOf(page, 'E2')).toBe('12345');
-});
-
-test('item 27: every cell of a cycle and its dependents is #CIRC!, by decision; Excel shows 0 (ADR-0047)', async ({ page }) => {
-    // Excel: one warning dialog when the cycle closes, 0 in all three, and "Circular References: A1"
-    // in the status bar.
-    await enter(page, 'E1', '=F1');
-    await enter(page, 'F1', '=E1');
-    await enter(page, 'E2', '=IFERROR(E1,0)');
-    await expect(cell(page, 'E1')).toHaveText('#CIRC!');
-    await expect(cell(page, 'F1')).toHaveText('#CIRC!');
-    await expect(cell(page, 'E2')).toHaveText('#CIRC!');
 });

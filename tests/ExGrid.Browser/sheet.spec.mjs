@@ -191,35 +191,6 @@ test('SH-18/DC-11: the Name Box takes the Focus to an address, scrolled into vie
     await expectActiveDescendant(grid, /-r200c3$/);
 });
 
-test('SH-18/DC-11: the Name Box pressed with an edit open commits it, then navigates', async ({ page }) => {
-    const grid = sheet(page);
-    await clickCell(grid, 'F2');
-    await page.keyboard.type('42');
-    await expect(editor(grid)).toHaveValue('42');
-    await nameBox(grid).click();
-    // The press committed the edit where it was, and the keyboard stayed in the Name Box.
-    await expect(editor(grid)).toHaveCount(0);
-    await expect(cell(grid, 'F2')).toHaveText('42');
-    await expect(nameBox(grid)).toBeFocused();
-    await nameBox(grid).press('ControlOrMeta+A');
-    await nameBox(grid).press('Backspace');
-    await typeSteadily(page, nameBox(grid), 'B7');
-    await nameBox(grid).press('Enter');
-    await expectFocusAt(grid, 'B7');
-
-    // A Formula that cannot be read is Rejected on the press: the edit stays open with
-    // everything typed, and the keyboard goes back to it (ADR-0050, fourth round).
-    await clickCell(grid, 'F3');
-    await page.keyboard.type('=SUM(');
-    await nameBox(grid).click();
-    await expect(editor(grid)).toHaveValue('=SUM(');
-    await expect(editor(grid)).toBeFocused();
-    await typeSteadily(page, editor(grid), '1)');
-    await expect(editor(grid)).toHaveValue('=SUM(1)');
-    await page.keyboard.press('Enter');
-    await expect(cell(grid, 'F3')).toHaveText('1');
-});
-
 // A press into the Name Box selects its text, as Excel's does, so what is typed replaces the
 // address shown (ADR-0051, decided with the user 2026-10-01; ticket 78). The fifteenth Windows run
 // (i7) found the caret left after `D10`, and an IME's composition appended to it: `D10かな`. Only

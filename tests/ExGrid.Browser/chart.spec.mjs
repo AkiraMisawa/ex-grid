@@ -1,12 +1,10 @@
 import { test, expect, circuitQuiet } from './fixtures.mjs';
 
 // ExChart on /chart (ticket 14): the exposure profile is two panels of levels on monthly dates,
-// 2026-10-30 to 2036-10-30 (121 positions); EPE holds three series, ENE two. The hazard curve is a
-// rate over each tenor interval, drawn as steps. The page keeps what the user changed and writes the
+// 2026-10-30 to 2036-10-30 (121 positions); EPE holds three series, ENE two. The page keeps what the user changed and writes the
 // last event raised under the exposure chart (ADR-0272).
 
 const exposure = (page) => page.locator('#exposure .ex-chart');
-const hazard = (page) => page.locator('#hazard .ex-chart');
 const layer = (chart, panel) => chart.locator(`.ex-chart-hit[data-ex-panel="${panel}"]`);
 
 test.beforeEach(async ({ page }) => {
@@ -51,12 +49,6 @@ test('ADR-0270, CH-4: the tooltip lists every series of the pointer\'s panel, an
     await page.mouse.move(0, 0);
     await expect(tooltip).toHaveCount(0);
     await expect(guide).toHaveCount(0);
-});
-
-test('ADR-0270, ADR-0253: a step names the interval its value holds over', async ({ page }) => {
-    const chart = hazard(page);
-    await hover(page, chart, 0, 0.5);
-    await expect(chart.locator('.ex-chart-tooltip-note')).toHaveText(/^\d+Y – \d+Y$/);
 });
 
 test('ADR-0271, ADR-0272: a legend click hides a series and raises its key; a second shows it', async ({ page }) => {

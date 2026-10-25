@@ -3,7 +3,7 @@ import { test, expect, circuitQuiet } from './fixtures.mjs';
 // The Chart Spec on /chart-spec (tickets 70 to 75, ADR-0320, ADR-0321). An American put's 4-step lattice,
 // as a node table and a branch table, drawn from the spec in the field: coloured by value in the heat
 // bands, sized by the chance of reaching each node, its twenty branches as edges. The tool's answer is
-// written under the field; a second button loads a spec with numbers in it.
+// written under the field. A spec with numbers in it is refused by ChartSpecTests.
 
 const chart = (page) => page.locator('.ex-chart');
 const answer = (page) => page.locator('#answer');
@@ -76,15 +76,6 @@ test('ADR-0321: the tooltip over an edge, away from any node, says its two keys'
     const tooltip = chart(page).locator('.ex-chart-tooltip');
     await expect(tooltip.locator('.ex-chart-tooltip-position')).toHaveText('0:0 → 1:1');
     await expect(tooltip).toContainText('edge from 0:0 to 1:1');
-});
-
-test('ADR-0320: a spec with numbers in it is refused with its path and reason, and no chart is drawn', async ({ page }) => {
-    await page.locator('#load-numbers').click();
-    await circuitQuiet();
-    await expect(answer(page)).toHaveText(/^series\[0\]\.values is not part of a Chart Spec/);
-    await expect(chart(page)).toHaveCount(0);
-    await page.locator('#load-lattice').click();
-    await expect(chart(page)).toHaveCount(1);
 });
 
 test('ADR-0320, ADR-0274: a spec of a surface is drawn by ExSurface, its missing value a hole', async ({ page }) => {

@@ -2,13 +2,12 @@ import { test, expect, circuitQuiet } from './fixtures.mjs';
 
 // Scatter on /scatter (tickets 54 to 59, ADR-0290, ADR-0291). The CDS chart holds 200 names, the
 // distressed DSTR at row 57 the highest spread by far, beside a grid of Name, Leverage and 5Y spread;
-// a least-squares and a Theil–Sen line over them. Old Faithful holds 272 eruptions; the curve-fitting
-// chart switches its polynomial's degree by buttons. The page writes the range it was handed under the
-// checkbox.
+// a least-squares and a Theil–Sen line over them. Old Faithful holds 272 eruptions. The page writes the
+// range it was handed under the checkbox. The fits' notes are held by FittingTests and
+// chart-showcases.spec.mjs.
 
 const cds = (page) => page.locator('.scatter-side-by-side .ex-chart');
 const grid = (page) => page.locator('.ex-grid').first();
-const curve = (page) => page.locator('.ex-chart').last();
 
 test.beforeEach(async ({ page }) => {
     await page.goto('/scatter');
@@ -80,12 +79,4 @@ test('ADR-0290: the spread on a logarithmic axis is ticked by decades', async ({
     await circuitQuiet();
     await expect(chart.locator('text.ex-chart-tick:not(.ex-chart-tick-x)', { hasText: /^1000$/ }).first()).toBeAttached();
     await expect(chart.locator('.ex-chart-notes')).not.toContainText('stays proportional');
-});
-
-test('ADR-0291: each fit says its method and coefficients under the chart, and PRML\'s degree 9 passes through every point', async ({ page }) => {
-    await expect(cds(page).locator('.ex-chart-notes')).toContainText(/OLS: y = [\d.]+x [+−] [\d.]+, R² = [\d.]+, n = 200/);
-    await expect(cds(page).locator('.ex-chart-notes')).toContainText(/Theil–Sen: y = [\d.]+x/);
-    await page.locator('button.degree[data-degree="9"]').click();
-    await circuitQuiet();
-    await expect(curve(page).locator('.ex-chart-notes')).toContainText('Least squares: degree 9, R² = 1.00, n = 10');
 });
