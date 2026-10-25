@@ -1,0 +1,104 @@
+{
+  "about": "Dates, times and flags read from Arrow (ADR-0065): date32, date64 and a timestamp without a time zone as the clock value written; a timestamp in UTC, under any of its names, as the UTC clock value; time32 and time64 as the clock time on the first day; bool as Boolean. Transcribed from ExGrid.Data.Arrow.Tests' ReadTests and ProducerTests.",
+  "kind": "arrowRead",
+  "cases": [
+    {
+      "name": "ADR-0065: date32, date64 and a timestamp without a time zone are Date, as the clock value written, from 0001-01-01 to 9999-12-31 and in every unit",
+      "stream": "streams/dates.arrows",
+      "expect": {
+        "version": 0,
+        "recordKey": null,
+        "columns": [
+          { "name": "D32", "caption": "D32", "kind": "date", "values": ["2026-09-30", "0001-01-01", "9999-12-31", null] },
+          { "name": "D64", "caption": "D64", "kind": "date", "values": ["2026-09-30T12:00:00", "1969-12-31T23:59:59.999", "1970-01-01", null] },
+          { "name": "S", "caption": "S", "kind": "date", "values": ["2026-09-30T12:00:00", "0001-01-01", "9999-12-31T23:59:59", null] },
+          { "name": "Ms", "caption": "Ms", "kind": "date", "values": ["2026-09-30T12:00:00.001", "1969-12-31T23:59:59.999", "1970-01-01", null] },
+          { "name": "Us", "caption": "Us", "kind": "date", "values": ["2026-09-30T12:00:00.000001", "1969-12-31T23:59:59.999999", "1970-01-01", null] },
+          { "name": "Ns", "caption": "Ns", "kind": "date", "values": ["2026-09-30T12:00:00.0000001", "1677-09-21T00:12:43.1452242", "2262-04-11T23:47:16.8547758", null] }
+        ]
+      }
+    },
+    {
+      "name": "ADR-0065: time32 and time64 are Date on the first day, the clock time on 0001-01-01, as a database's TimeOnly is read, with Blanks, from midnight to the day's last instant",
+      "stream": "streams/times.arrows",
+      "expect": {
+        "version": 0,
+        "recordKey": null,
+        "columns": [
+          { "name": "S", "caption": "S", "kind": "date", "values": ["0001-01-01", "0001-01-01T12:30:15", null, "0001-01-01T23:59:59"] },
+          { "name": "Ms", "caption": "Ms", "kind": "date", "values": ["0001-01-01", "0001-01-01T12:30:15.001", null, "0001-01-01T23:59:59.999"] },
+          { "name": "Us", "caption": "Us", "kind": "date", "values": ["0001-01-01", "0001-01-01T12:30:15.000001", null, "0001-01-01T23:59:59.999999"] },
+          { "name": "Ns", "caption": "Ns", "kind": "date", "values": ["0001-01-01", "0001-01-01T12:30:15.0000001", null, "0001-01-01T23:59:59.9999999"] }
+        ]
+      }
+    },
+    {
+      "name": "ADR-0065: a timestamp in UTC, under any of its IANA names, each also under Etc/, as +00:00, -00:00 or Z, in any case, is Date, as the UTC clock value",
+      "stream": "streams/utc-zones.arrows",
+      "expect": {
+        "version": 0,
+        "recordKey": null,
+        "columns": [
+          { "name": "UTC", "caption": "UTC", "kind": "date", "values": ["2026-09-30T21:15:00", null] },
+          { "name": "Etc/UTC", "caption": "Etc/UTC", "kind": "date", "values": ["2026-09-30T21:15:00", null] },
+          { "name": "GMT", "caption": "GMT", "kind": "date", "values": ["2026-09-30T21:15:00", null] },
+          { "name": "Etc/GMT", "caption": "Etc/GMT", "kind": "date", "values": ["2026-09-30T21:15:00", null] },
+          { "name": "UCT", "caption": "UCT", "kind": "date", "values": ["2026-09-30T21:15:00", null] },
+          { "name": "Etc/UCT", "caption": "Etc/UCT", "kind": "date", "values": ["2026-09-30T21:15:00", null] },
+          { "name": "Universal", "caption": "Universal", "kind": "date", "values": ["2026-09-30T21:15:00", null] },
+          { "name": "Etc/Universal", "caption": "Etc/Universal", "kind": "date", "values": ["2026-09-30T21:15:00", null] },
+          { "name": "Zulu", "caption": "Zulu", "kind": "date", "values": ["2026-09-30T21:15:00", null] },
+          { "name": "Etc/Zulu", "caption": "Etc/Zulu", "kind": "date", "values": ["2026-09-30T21:15:00", null] },
+          { "name": "Greenwich", "caption": "Greenwich", "kind": "date", "values": ["2026-09-30T21:15:00", null] },
+          { "name": "Etc/Greenwich", "caption": "Etc/Greenwich", "kind": "date", "values": ["2026-09-30T21:15:00", null] },
+          { "name": "GMT0", "caption": "GMT0", "kind": "date", "values": ["2026-09-30T21:15:00", null] },
+          { "name": "Etc/GMT0", "caption": "Etc/GMT0", "kind": "date", "values": ["2026-09-30T21:15:00", null] },
+          { "name": "GMT+0", "caption": "GMT+0", "kind": "date", "values": ["2026-09-30T21:15:00", null] },
+          { "name": "Etc/GMT+0", "caption": "Etc/GMT+0", "kind": "date", "values": ["2026-09-30T21:15:00", null] },
+          { "name": "GMT-0", "caption": "GMT-0", "kind": "date", "values": ["2026-09-30T21:15:00", null] },
+          { "name": "Etc/GMT-0", "caption": "Etc/GMT-0", "kind": "date", "values": ["2026-09-30T21:15:00", null] },
+          { "name": "+00:00", "caption": "+00:00", "kind": "date", "values": ["2026-09-30T21:15:00", null] },
+          { "name": "-00:00", "caption": "-00:00", "kind": "date", "values": ["2026-09-30T21:15:00", null] },
+          { "name": "Z", "caption": "Z", "kind": "date", "values": ["2026-09-30T21:15:00", null] },
+          { "name": "utc", "caption": "utc", "kind": "date", "values": ["2026-09-30T21:15:00", null] },
+          { "name": "gmt", "caption": "gmt", "kind": "date", "values": ["2026-09-30T21:15:00", null] },
+          { "name": "etc/zulu", "caption": "etc/zulu", "kind": "date", "values": ["2026-09-30T21:15:00", null] },
+          { "name": "UNIVERSAL", "caption": "UNIVERSAL", "kind": "date", "values": ["2026-09-30T21:15:00", null] }
+        ]
+      }
+    },
+    {
+      "name": "ADR-0065: bool is Boolean, across a byte and with a null",
+      "stream": "streams/bool.arrows",
+      "expect": {
+        "version": 0,
+        "recordKey": null,
+        "columns": [
+          {
+            "name": "Live", "caption": "Live", "kind": "boolean",
+            "values": [true, false, false, true, false, false, true, false, false, null, false, false, true, false, false, true, false, false, true, false]
+          }
+        ]
+      }
+    },
+    {
+      "name": "ADR-0065: Polars' stream for older readers, large_utf8, a Categorical over large_utf8 with uint32 indices, its numbers, dates, decimals and booleans, and a timestamp in UTC, is read whole",
+      "stream": "producers/polars-oldest.arrows",
+      "expect": {
+        "version": 0,
+        "recordKey": null,
+        "columns": [
+          { "name": "region", "caption": "region", "kind": "text", "values": ["amer", "AMER", null, "emea"], "dictionary": ["amer", "AMER", "emea"] },
+          { "name": "category", "caption": "category", "kind": "text", "values": ["b", "a", "b", null], "dictionary": ["b", "a"] },
+          { "name": "amount", "caption": "amount", "kind": "double", "values": [1.5, -2.0, null, "Infinity"] },
+          { "name": "quantity", "caption": "quantity", "kind": "integer", "values": [1, null, 3, -4] },
+          { "name": "when", "caption": "when", "kind": "date", "values": ["2026-01-01T12:30:00", null, "2026-01-02", "2026-01-03T00:00:00.123456"] },
+          { "name": "day", "caption": "day", "kind": "date", "values": ["2026-01-01", null, "2026-01-02", "1969-12-31"] },
+          { "name": "pnl", "caption": "pnl", "kind": "decimal", "values": ["1.5", null, "-2.25", "0"] },
+          { "name": "live", "caption": "live", "kind": "boolean", "values": [true, false, null, true] },
+          { "name": "utc", "caption": "utc", "kind": "date", "values": ["2026-01-01T12:00:00", "2026-01-01T12:00:00", "2026-01-01T12:00:00", "2026-01-01T12:00:00"] }
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,131 @@
+{
+  "about": "Numbers read from Arrow (ADR-0065): every decimal width as Decimal, held exactly; float64 and float32 as Double, by their bits; every integer width as Integer. Transcribed from ExGrid.Data.Arrow.Tests' ReadTests and ProducerTests.",
+  "kind": "arrowRead",
+  "cases": [
+    {
+      "name": "ADR-0065: decimal128 is Decimal, exact, as scaled integers where they fit and as decimals where they do not",
+      "stream": "streams/decimal128.arrows",
+      "expect": {
+        "version": 0,
+        "recordKey": null,
+        "columns": [
+          { "name": "Small", "caption": "Small", "kind": "decimal", "values": ["1.5", "-0.0001", null, "0"] },
+          { "name": "Large", "caption": "Large", "kind": "decimal", "values": ["79228162514264337593543950335", "-123456789012345678901234.5678", null, "0.0001"] }
+        ]
+      }
+    },
+    {
+      "name": "ADR-0065: decimal256 within a decimal's range is Decimal, across record batches",
+      "stream": "streams/decimal256.arrows",
+      "expect": {
+        "version": 0,
+        "recordKey": null,
+        "columns": [
+          { "name": "Wide", "caption": "Wide", "kind": "decimal", "values": ["-2.5", null, "79228162514264337593543950335", "0.01", "0.02", "0.03"] }
+        ]
+      }
+    },
+    {
+      "name": "ADR-0065: a decimal256 at 40 places whose places are trailing zeros is read exactly: 10^40 at 40 places is 1",
+      "stream": "streams/decimal256-tens.arrows",
+      "expect": {
+        "version": 0,
+        "recordKey": null,
+        "columns": [
+          { "name": "Tens", "caption": "Tens", "kind": "decimal", "values": ["1", "0"] }
+        ]
+      }
+    },
+    {
+      "name": "ADR-0065: decimal32 and decimal64 are Decimal, exact, with Blanks, to the last digit of their precision",
+      "stream": "streams/decimal32-decimal64.arrows",
+      "expect": {
+        "version": 0,
+        "recordKey": null,
+        "columns": [
+          { "name": "D32", "caption": "D32", "kind": "decimal", "values": ["1.5", null, "-2.25", "9999999.99", "0"] },
+          { "name": "D32Whole", "caption": "D32Whole", "kind": "decimal", "values": ["0.999999999", "-0.999999999", null, "0.000000001", "0"] },
+          { "name": "D64", "caption": "D64", "kind": "decimal", "values": ["1.5", "-0.0001", null, "99999999999999.9999", "0"] },
+          { "name": "D64Whole", "caption": "D64Whole", "kind": "decimal", "values": ["0.999999999999999999", null, "-0.999999999999999999", "0.000000000000000001", "0"] }
+        ]
+      }
+    },
+    {
+      "name": "ADR-0065: a decimal32's or decimal64's negative scale multiplies, and a scale past 28 whose places are trailing zeros is read exactly",
+      "stream": "streams/decimal-odd-scales.arrows",
+      "expect": {
+        "version": 0,
+        "recordKey": null,
+        "columns": [
+          { "name": "Thousands", "caption": "Thousands", "kind": "decimal", "values": ["7000", "-12000", null, "2147483647000"] },
+          { "name": "Tiny", "caption": "Tiny", "kind": "decimal", "values": ["0.0000000000000000015", null, "-0.00000000000025", "0"] }
+        ]
+      }
+    },
+    {
+      "name": "ADR-0065: a decimal128's negative scale multiplies, and places past 28 that are trailing zeros are dropped",
+      "stream": "streams/decimal-negative-scale.arrows",
+      "expect": {
+        "version": 0,
+        "recordKey": null,
+        "columns": [
+          { "name": "Hundreds", "caption": "Hundreds", "kind": "decimal", "values": ["500", "-700"] },
+          { "name": "Fine", "caption": "Fine", "kind": "decimal", "values": ["1.5", "-0.025"] }
+        ]
+      }
+    },
+    {
+      "name": "ADR-0065: float64 is Double as it came, non-finite values and negative zero kept by their bits; float32 is widened exactly",
+      "stream": "streams/floats.arrows",
+      "expect": {
+        "version": 0,
+        "recordKey": null,
+        "columns": [
+          { "name": "F64", "caption": "F64", "kind": "double", "values": [{ "bits": "7ff8000000000000" }, "-Infinity", -0.0, null, 0.1] },
+          { "name": "F32", "caption": "F32", "kind": "double", "values": [{ "bits": "7ff8000000000000" }, "Infinity", 0.10000000149011612, null, 1.401298464324817e-45] }
+        ]
+      }
+    },
+    {
+      "name": "ADR-0065: int8 to int64, uint8 to uint32, and uint64 within a 64-bit integer's range are Integer",
+      "stream": "streams/integers.arrows",
+      "expect": {
+        "version": 0,
+        "recordKey": null,
+        "columns": [
+          { "name": "I8", "caption": "I8", "kind": "integer", "values": [-128, 127, null] },
+          { "name": "I16", "caption": "I16", "kind": "integer", "values": [-32768, 32767, null] },
+          { "name": "I32", "caption": "I32", "kind": "integer", "values": [-2147483648, 2147483647, null] },
+          { "name": "I64", "caption": "I64", "kind": "integer", "values": ["-9223372036854775808", "9223372036854775807", null] },
+          { "name": "U8", "caption": "U8", "kind": "integer", "values": [0, 255, null] },
+          { "name": "U16", "caption": "U16", "kind": "integer", "values": [0, 65535, null] },
+          { "name": "U32", "caption": "U32", "kind": "integer", "values": [0, 4294967295, null] },
+          { "name": "U64", "caption": "U64", "kind": "integer", "values": [0, "9223372036854775807", null] }
+        ]
+      }
+    },
+    {
+      "name": "ADR-0065: DuckDB's stream, an ENUM as a dictionary with uint8 indices, decimals, a TIMESTAMPTZ in Etc/UTC, every TIMESTAMP unit, a HUGEINT and a UBIGINT within range, is read whole",
+      "stream": "producers/duckdb.arrows",
+      "expect": {
+        "version": 0,
+        "recordKey": null,
+        "columns": [
+          { "name": "desk", "caption": "desk", "kind": "text", "values": ["FX", null, "Rates"], "dictionary": ["FX", "Rates"] },
+          { "name": "pnl", "caption": "pnl", "kind": "decimal", "values": ["1.5", null, "-0.01"] },
+          { "name": "big", "caption": "big", "kind": "decimal", "values": ["12345678901234567890.12", null, "-1"] },
+          { "name": "tstz", "caption": "tstz", "kind": "date", "values": ["2026-01-01T12:00:00", null, "1999-12-31T23:59:59"] },
+          { "name": "ts", "caption": "ts", "kind": "date", "values": ["2026-01-01T12:00:00.123456", null, "1970-01-01"] },
+          { "name": "ts_s", "caption": "ts_s", "kind": "date", "values": ["2026-01-01T12:00:01", null, "1970-01-01"] },
+          { "name": "ts_ms", "caption": "ts_ms", "kind": "date", "values": ["2026-01-01T12:00:00.5", null, "1970-01-01"] },
+          { "name": "ts_ns", "caption": "ts_ns", "kind": "date", "values": ["2026-01-01T12:00:00.0000001", null, "1970-01-01"] },
+          { "name": "d", "caption": "d", "kind": "date", "values": ["2026-01-01", null, "1970-01-01"] },
+          { "name": "b", "caption": "b", "kind": "boolean", "values": [true, null, false] },
+          { "name": "n", "caption": "n", "kind": "integer", "values": [42, null, -42] },
+          { "name": "h", "caption": "h", "kind": "decimal", "values": ["12345678901234567890123", null, "-1"] },
+          { "name": "u", "caption": "u", "kind": "integer", "values": ["9223372036854775807", null, 0] }
+        ]
+      }
+    }
+  ]
+}

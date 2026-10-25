@@ -1,0 +1,106 @@
+{
+  "about": "The shape an Arrow stream's schema says, read before any row (ADR-0341): each column's name and kind by ADR-0065's table. Transcribed from ExGrid.Data.Arrow.Tests' ShapeTests.",
+  "kind": "arrowShape",
+  "cases": [
+    {
+      "name": "ADR-0341: a stream's shape is its schema's, by ADR-0065's table",
+      "stream": "streams/metadata.arrows",
+      "shape": [
+        {
+          "name": "Id",
+          "kind": "integer"
+        },
+        {
+          "name": "Desk",
+          "kind": "text"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0341: a shape is read from the schema alone, so a value the rows would be refused for does not stop it",
+      "stream": "streams/uint64-beyond.arrows",
+      "shape": [
+        {
+          "name": "Count",
+          "kind": "integer"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0341: a shape is read from the schema alone, so a stream cut after it still says its shape",
+      "stream": "streams/cut-between-batches.arrows",
+      "shape": [
+        {
+          "name": "N",
+          "kind": "integer"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0341: dates, timestamps and times give Date",
+      "stream": "streams/dates.arrows",
+      "shape": [
+        {
+          "name": "D32",
+          "kind": "date"
+        },
+        {
+          "name": "D64",
+          "kind": "date"
+        },
+        {
+          "name": "S",
+          "kind": "date"
+        },
+        {
+          "name": "Ms",
+          "kind": "date"
+        },
+        {
+          "name": "Us",
+          "kind": "date"
+        },
+        {
+          "name": "Ns",
+          "kind": "date"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0341: an Arrow file says its schema after its rows, so its shape is not read from it",
+      "stream": "streams/file.arrow",
+      "refused": {
+        "message": "An Arrow file says its schema in its footer, after its rows; a shape is read from an Arrow stream, whose schema comes first.",
+        "row": null,
+        "column": null
+      }
+    },
+    {
+      "name": "ADR-0341: bytes that are not an Arrow stream say no shape",
+      "stream": "streams/not-arrow-2.bin",
+      "refused": {
+        "message": "The bytes are not an Arrow IPC stream or file: they begin with neither an IPC message nor ARROW1.",
+        "row": null,
+        "column": null
+      }
+    },
+    {
+      "name": "ADR-0341: a schema with a type outside ADR-0065's table says no shape, naming the column and the type",
+      "stream": "streams/outside-struct.arrows",
+      "refused": {
+        "message": "Column 'Value': the Arrow type struct<a: int64> is not one a Snapshot reads.",
+        "row": null,
+        "column": "Value"
+      }
+    },
+    {
+      "name": "ADR-0341: a schema with a name twice says no shape",
+      "stream": "streams/duplicate-name.arrows",
+      "refused": {
+        "message": "Column 'A': the Arrow stream has two columns of this name, and a column's name is unique within a Snapshot.",
+        "row": null,
+        "column": "A"
+      }
+    }
+  ]
+}

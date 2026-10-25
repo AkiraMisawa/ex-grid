@@ -1,0 +1,748 @@
+{
+  "about": "A Snapshot written as an Arrow stream (ADR-0065): each kind its Arrow type, a Blank a null slot, the captions, Record Key and version in the metadata, and every value checked before the first byte, so a refused write writes nothing. Each written case is read back as the Snapshot it was, and its stream as @ex-grid/data writes it is kept under written/, which the C# reader reads too (ADR-0370 section 3). Transcribed from ExGrid.Data.Arrow.Tests' WriteTests and RoundTripTests.",
+  "kind": "arrowWrite",
+  "cases": [
+    {
+      "name": "ADR-0065: each kind has the Arrow type ADR-0065 gives it, a Blank a null slot, and the captions, the Record Key and the version travel in the metadata",
+      "snapshot": {
+        "version": 2,
+        "recordKey": "Id",
+        "columns": [
+          {
+            "name": "Id",
+            "caption": "Id",
+            "kind": "integer",
+            "values": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6
+            ]
+          },
+          {
+            "name": "Desk",
+            "caption": "Trading desk",
+            "kind": "text",
+            "values": [
+              "EMEA",
+              "AMER",
+              "amer",
+              null,
+              "",
+              "Zürich 東京 🚀"
+            ]
+          },
+          {
+            "name": "Notional",
+            "caption": "Notional",
+            "kind": "decimal",
+            "values": [
+              "0.25",
+              "-0.125",
+              "2000000",
+              null,
+              "1.5",
+              "-4"
+            ]
+          },
+          {
+            "name": "Price",
+            "caption": "Price (USD)",
+            "kind": "double",
+            "values": [
+              1.5,
+              {
+                "bits": "7ff8000000000000"
+              },
+              "Infinity",
+              "-Infinity",
+              -0.0,
+              null
+            ]
+          },
+          {
+            "name": "Quantity",
+            "caption": "Quantity",
+            "kind": "integer",
+            "values": [
+              "-9223372036854775808",
+              "9223372036854775807",
+              0,
+              null,
+              -495,
+              7
+            ]
+          },
+          {
+            "name": "Day",
+            "caption": "Trade date",
+            "kind": "date",
+            "values": [
+              "2026-01-01",
+              "1969-12-31",
+              null,
+              "0001-01-01",
+              "9999-12-31",
+              "2025-06-15"
+            ]
+          },
+          {
+            "name": "When",
+            "caption": "When",
+            "kind": "date",
+            "values": [
+              "2026-01-01T00:00:07.919",
+              null,
+              "2026-01-01T00:00:15.838",
+              "1970-01-01",
+              "2026-01-01",
+              "2026-01-01T00:00:23.757"
+            ]
+          },
+          {
+            "name": "Live",
+            "caption": "Live",
+            "kind": "boolean",
+            "values": [
+              false,
+              true,
+              null,
+              true,
+              false,
+              false
+            ]
+          }
+        ]
+      },
+      "expect": {
+        "fields": [
+          {
+            "name": "Id",
+            "type": "int64",
+            "caption": null
+          },
+          {
+            "name": "Desk",
+            "type": "dictionary<values=utf8, indices=int32>",
+            "caption": "Trading desk"
+          },
+          {
+            "name": "Notional",
+            "type": "decimal128(38, 3)",
+            "caption": null
+          },
+          {
+            "name": "Price",
+            "type": "float64",
+            "caption": "Price (USD)"
+          },
+          {
+            "name": "Quantity",
+            "type": "int64",
+            "caption": null
+          },
+          {
+            "name": "Day",
+            "type": "date32",
+            "caption": "Trade date"
+          },
+          {
+            "name": "When",
+            "type": "timestamp[ms]",
+            "caption": null
+          },
+          {
+            "name": "Live",
+            "type": "bool",
+            "caption": null
+          }
+        ],
+        "metadata": {
+          "exgrid.version": "2",
+          "exgrid.recordKey": "Id"
+        }
+      },
+      "written": "written/every-kind.arrows"
+    },
+    {
+      "name": "ADR-0065: a Snapshot without a Record Key writes none, and its version 0",
+      "snapshot": {
+        "version": 0,
+        "recordKey": null,
+        "columns": [
+          {
+            "name": "Id",
+            "caption": "Id",
+            "kind": "integer",
+            "values": [
+              1,
+              2,
+              3
+            ]
+          }
+        ]
+      },
+      "expect": {
+        "fields": [
+          {
+            "name": "Id",
+            "type": "int64",
+            "caption": null
+          }
+        ],
+        "metadata": {
+          "exgrid.version": "0"
+        }
+      },
+      "written": "written/no-key.arrows"
+    },
+    {
+      "name": "ADR-0065: Date is date32 when that is the coarsest unit that holds every value exactly, without a time zone",
+      "snapshot": {
+        "version": 0,
+        "recordKey": null,
+        "columns": [
+          {
+            "name": "When",
+            "caption": "When",
+            "kind": "date",
+            "values": [
+              "2026-01-01",
+              "1969-12-31",
+              "0001-01-01",
+              "9999-12-31",
+              null
+            ]
+          }
+        ]
+      },
+      "expect": {
+        "fields": [
+          {
+            "name": "When",
+            "type": "date32",
+            "caption": null
+          }
+        ],
+        "metadata": {
+          "exgrid.version": "0"
+        }
+      },
+      "written": "written/date-date32.arrows"
+    },
+    {
+      "name": "ADR-0065: Date is timestamp[s] when that is the coarsest unit that holds every value exactly, without a time zone",
+      "snapshot": {
+        "version": 0,
+        "recordKey": null,
+        "columns": [
+          {
+            "name": "When",
+            "caption": "When",
+            "kind": "date",
+            "values": [
+              "2026-01-01",
+              "2026-01-01T12:00:01",
+              null
+            ]
+          }
+        ]
+      },
+      "expect": {
+        "fields": [
+          {
+            "name": "When",
+            "type": "timestamp[s]",
+            "caption": null
+          }
+        ],
+        "metadata": {
+          "exgrid.version": "0"
+        }
+      },
+      "written": "written/date-timestamp-s.arrows"
+    },
+    {
+      "name": "ADR-0065: Date is timestamp[ms] when that is the coarsest unit that holds every value exactly, without a time zone",
+      "snapshot": {
+        "version": 0,
+        "recordKey": null,
+        "columns": [
+          {
+            "name": "When",
+            "caption": "When",
+            "kind": "date",
+            "values": [
+              "2026-01-01T12:00:01",
+              "2026-01-01T12:00:01.5",
+              null
+            ]
+          }
+        ]
+      },
+      "expect": {
+        "fields": [
+          {
+            "name": "When",
+            "type": "timestamp[ms]",
+            "caption": null
+          }
+        ],
+        "metadata": {
+          "exgrid.version": "0"
+        }
+      },
+      "written": "written/date-timestamp-ms.arrows"
+    },
+    {
+      "name": "ADR-0065: Date is timestamp[us] when that is the coarsest unit that holds every value exactly, without a time zone",
+      "snapshot": {
+        "version": 0,
+        "recordKey": null,
+        "columns": [
+          {
+            "name": "When",
+            "caption": "When",
+            "kind": "date",
+            "values": [
+              "2026-01-01T12:00:01.5",
+              "1969-12-31T23:59:59.999999",
+              null
+            ]
+          }
+        ]
+      },
+      "expect": {
+        "fields": [
+          {
+            "name": "When",
+            "type": "timestamp[us]",
+            "caption": null
+          }
+        ],
+        "metadata": {
+          "exgrid.version": "0"
+        }
+      },
+      "written": "written/date-timestamp-us.arrows"
+    },
+    {
+      "name": "ADR-0065: Date is timestamp[ns] when that is the coarsest unit that holds every value exactly, without a time zone",
+      "snapshot": {
+        "version": 0,
+        "recordKey": null,
+        "columns": [
+          {
+            "name": "When",
+            "caption": "When",
+            "kind": "date",
+            "values": [
+              "2026-01-01T12:00:00.0000001",
+              "1970-01-01",
+              "2262-04-11",
+              null
+            ]
+          }
+        ]
+      },
+      "expect": {
+        "fields": [
+          {
+            "name": "When",
+            "type": "timestamp[ns]",
+            "caption": null
+          }
+        ],
+        "metadata": {
+          "exgrid.version": "0"
+        }
+      },
+      "written": "written/date-timestamp-ns.arrows"
+    },
+    {
+      "name": "ADR-0065: a Date column of Blanks alone is date32",
+      "snapshot": {
+        "version": 0,
+        "recordKey": null,
+        "columns": [
+          {
+            "name": "When",
+            "caption": "When",
+            "kind": "date",
+            "values": [
+              null,
+              null
+            ]
+          }
+        ]
+      },
+      "expect": {
+        "fields": [
+          {
+            "name": "When",
+            "type": "date32",
+            "caption": null
+          }
+        ],
+        "metadata": {
+          "exgrid.version": "0"
+        }
+      },
+      "written": "written/date-blanks.arrows"
+    },
+    {
+      "name": "ADR-0065: a date no unit holds exactly, one that needs nanoseconds and lies outside their reach, is refused by row and column, and nothing is written",
+      "snapshot": {
+        "version": 0,
+        "recordKey": null,
+        "columns": [
+          {
+            "name": "When",
+            "caption": "When",
+            "kind": "date",
+            "values": [
+              "2026-01-01T00:00:00.0000001",
+              null,
+              "2300-01-01"
+            ]
+          }
+        ]
+      },
+      "refused": {
+        "message": "Row 3, column 'When': the date 2300-01-01T00:00:00.0000000 cannot be written: the column holds a time finer than a microsecond, so it is written in nanoseconds, which reach only from 1677-09-21 to 2262-04-11.",
+        "row": 3,
+        "column": "When"
+      }
+    },
+    {
+      "name": "ADR-0065: Decimal is decimal128(38, scale) at the largest scale, and a value that would pass 38 digits there is refused by row and column, and nothing is written",
+      "snapshot": {
+        "version": 0,
+        "recordKey": "Id",
+        "columns": [
+          {
+            "name": "Id",
+            "caption": "Id",
+            "kind": "integer",
+            "values": [
+              1,
+              2,
+              3
+            ]
+          },
+          {
+            "name": "Value",
+            "caption": "Value",
+            "kind": "decimal",
+            "values": [
+              "79228162514264337593543950335",
+              "1",
+              "0.0000000001"
+            ]
+          }
+        ]
+      },
+      "refused": {
+        "message": "Row 1, column 'Value': the value 79228162514264337593543950335 cannot be written exactly as decimal128(38, 10): at the column's 10 places it passes 38 digits.",
+        "row": 1,
+        "column": "Value"
+      }
+    },
+    {
+      "name": "ADR-0065: the extreme decimals that fit 38 digits at the column's scale are written exactly",
+      "snapshot": {
+        "version": 0,
+        "recordKey": null,
+        "columns": [
+          {
+            "name": "Value",
+            "caption": "Value",
+            "kind": "decimal",
+            "values": [
+              "79228162514264337593543950335",
+              "-79228162514264337593543950335",
+              "-9223372036854775808",
+              "0",
+              "0.000000001",
+              "-0.000000001"
+            ]
+          }
+        ]
+      },
+      "expect": {
+        "fields": [
+          {
+            "name": "Value",
+            "type": "decimal128(38, 9)",
+            "caption": null
+          }
+        ],
+        "metadata": {
+          "exgrid.version": "0"
+        }
+      },
+      "written": "written/decimal-extremes.arrows"
+    },
+    {
+      "name": "ADR-0065: decimals of different places are written at the largest, and read back exact",
+      "snapshot": {
+        "version": 0,
+        "recordKey": null,
+        "columns": [
+          {
+            "name": "Notional",
+            "caption": "Notional",
+            "kind": "decimal",
+            "values": [
+              "1.25",
+              "2.5",
+              "3.75",
+              "5",
+              "6.25",
+              "7.5",
+              "8.75",
+              "10",
+              "11.25",
+              "12.5",
+              "0.0001",
+              "-1234.5678",
+              "79228162514264337593543.950335",
+              "1.5"
+            ]
+          }
+        ]
+      },
+      "expect": {
+        "fields": [
+          {
+            "name": "Notional",
+            "type": "decimal128(38, 6)",
+            "caption": null
+          }
+        ],
+        "metadata": {
+          "exgrid.version": "0"
+        }
+      },
+      "written": "written/decimal-places.arrows"
+    },
+    {
+      "name": "ADR-0065: text that is not valid Unicode cannot be UTF-8, and is refused by row and column, and nothing is written",
+      "snapshot": {
+        "version": 0,
+        "recordKey": null,
+        "columns": [
+          {
+            "name": "Name",
+            "caption": "Name",
+            "kind": "text",
+            "values": [
+              "fine",
+              null,
+              {
+                "utf16": "lone \\ud800 surrogate"
+              }
+            ]
+          }
+        ]
+      },
+      "refused": {
+        "message": "Row 3, column 'Name': the text is not valid Unicode — it holds a lone surrogate — so UTF-8 cannot carry it.",
+        "row": 3,
+        "column": "Name"
+      }
+    },
+    {
+      "name": "ADR-0065: a double keeps its bits: NaN, both infinities, negative zero, the smallest subnormal and the largest double",
+      "snapshot": {
+        "version": 0,
+        "recordKey": null,
+        "columns": [
+          {
+            "name": "Value",
+            "caption": "Value",
+            "kind": "double",
+            "values": [
+              {
+                "bits": "7ff8000000000000"
+              },
+              "Infinity",
+              "-Infinity",
+              -0.0,
+              0.0,
+              5e-324,
+              1.7976931348623157e+308,
+              null
+            ]
+          }
+        ]
+      },
+      "expect": {
+        "fields": [
+          {
+            "name": "Value",
+            "type": "float64",
+            "caption": null
+          }
+        ],
+        "metadata": {
+          "exgrid.version": "0"
+        }
+      },
+      "written": "written/doubles.arrows"
+    },
+    {
+      "name": "ADR-0065: text round-trips exactly, as the Snapshot's own dictionary: two spellings two values, the empty string a value and not a Blank",
+      "snapshot": {
+        "version": 0,
+        "recordKey": null,
+        "columns": [
+          {
+            "name": "Value",
+            "caption": "Value",
+            "kind": "text",
+            "values": [
+              "amer",
+              "AMER",
+              "",
+              " ",
+              null,
+              "Zürich",
+              "東京",
+              "🚀",
+              "amer",
+              "\u0000",
+              "a\r\nb"
+            ]
+          }
+        ]
+      },
+      "expect": {
+        "fields": [
+          {
+            "name": "Value",
+            "type": "dictionary<values=utf8, indices=int32>",
+            "caption": null
+          }
+        ],
+        "metadata": {
+          "exgrid.version": "0"
+        }
+      },
+      "written": "written/text.arrows"
+    },
+    {
+      "name": "ADR-0065: the extreme integers and dates round-trip",
+      "snapshot": {
+        "version": 0,
+        "recordKey": null,
+        "columns": [
+          {
+            "name": "Number",
+            "caption": "Number",
+            "kind": "integer",
+            "values": [
+              "-9223372036854775808",
+              "9223372036854775807",
+              0,
+              null
+            ]
+          },
+          {
+            "name": "When",
+            "caption": "When",
+            "kind": "date",
+            "values": [
+              "0001-01-01",
+              "9999-12-31T23:59:59.999",
+              null,
+              "1969-12-31T23:59:59.001"
+            ]
+          }
+        ]
+      },
+      "expect": {
+        "fields": [
+          {
+            "name": "Number",
+            "type": "int64",
+            "caption": null
+          },
+          {
+            "name": "When",
+            "type": "timestamp[ms]",
+            "caption": null
+          }
+        ],
+        "metadata": {
+          "exgrid.version": "0"
+        }
+      },
+      "written": "written/extremes.arrows"
+    },
+    {
+      "name": "ADR-0065: a Snapshot of no rows round-trips its columns, captions, Record Key and version",
+      "snapshot": {
+        "version": 1,
+        "recordKey": "Id",
+        "columns": [
+          {
+            "name": "Id",
+            "caption": "Id",
+            "kind": "integer",
+            "values": []
+          },
+          {
+            "name": "Desk",
+            "caption": "Trading desk",
+            "kind": "text",
+            "values": []
+          },
+          {
+            "name": "Notional",
+            "caption": "Notional",
+            "kind": "decimal",
+            "values": []
+          },
+          {
+            "name": "Day",
+            "caption": "Day",
+            "kind": "date",
+            "values": []
+          }
+        ]
+      },
+      "expect": {
+        "fields": [
+          {
+            "name": "Id",
+            "type": "int64",
+            "caption": null
+          },
+          {
+            "name": "Desk",
+            "type": "dictionary<values=utf8, indices=int32>",
+            "caption": "Trading desk"
+          },
+          {
+            "name": "Notional",
+            "type": "decimal128(38, 0)",
+            "caption": null
+          },
+          {
+            "name": "Day",
+            "type": "date32",
+            "caption": null
+          }
+        ],
+        "metadata": {
+          "exgrid.version": "1",
+          "exgrid.recordKey": "Id"
+        }
+      },
+      "written": "written/empty.arrows"
+    }
+  ]
+}

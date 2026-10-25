@@ -1,0 +1,58 @@
+== ExGrid.MudBlazor.Tests, MudBlazor 9.7.0, at 5e3eecb44fb9dcfec074cfa8eefe03a91809fbc3
+warning: Git tree '/home/akira/src/hobby/ex-grid-wr10' has uncommitted changes
+dotnet 10.0.203 (nix-managed)
+  Determining projects to restore...
+  Restored /home/akira/src/hobby/ex-grid-wr10/tests/ExGrid.MudBlazor.Tests/ExGrid.MudBlazor.Tests.csproj (in 184 ms).
+  3 of 4 projects are up-to-date for restore.
+  ExGrid.Data -> /home/akira/src/hobby/ex-grid-wr10/src/ExGrid.Data/bin/Debug/net10.0/ExGrid.Data.dll
+  ExGrid -> /home/akira/src/hobby/ex-grid-wr10/src/ExGrid/bin/Debug/net10.0/ExGrid.dll
+  ExGrid.MudBlazor -> /home/akira/src/hobby/ex-grid-wr10/src/ExGrid.MudBlazor/bin/Debug/net10.0/ExGrid.MudBlazor.dll
+  ExGrid.MudBlazor.Tests -> /home/akira/src/hobby/ex-grid-wr10/tests/ExGrid.MudBlazor.Tests/bin/Debug/net10.0/ExGrid.MudBlazor.Tests.dll
+  Run tests: '/home/akira/src/hobby/ex-grid-wr10/tests/ExGrid.MudBlazor.Tests/bin/Debug/net10.0/ExGrid.MudBlazor.Tests.dll' [net10.0|x64]
+  Passed! - Failed: 0, Passed: 329, Skipped: 0, Total: 329, Duration: 1s 275ms - ExGrid.MudBlazor.Tests.dll (net10.0|x64)
+  Tests succeeded: '/home/akira/src/hobby/ex-grid-wr10/tests/ExGrid.MudBlazor.Tests/bin/Debug/net10.0/ExGrid.MudBlazor.Tests.dll' [net10.0|x64]
+FileVersion
+9.7.0.0
+== ExSheet.MudBlazor.Tests, MudBlazor 9.7.0, at 5e3eecb44fb9dcfec074cfa8eefe03a91809fbc3
+warning: Git tree '/home/akira/src/hobby/ex-grid-wr10' has uncommitted changes
+dotnet 10.0.203 (nix-managed)
+  Determining projects to restore...
+  Restored /home/akira/src/hobby/ex-grid-wr10/tests/ExSheet.MudBlazor.Tests/ExSheet.MudBlazor.Tests.csproj (in 208 ms).
+  13 of 14 projects are up-to-date for restore.
+  ExChart.Engine -> /home/akira/src/hobby/ex-grid-wr10/src/ExChart.Engine/bin/Debug/net10.0/ExChart.Engine.dll
+  ExSheet.Engine -> /home/akira/src/hobby/ex-grid-wr10/src/ExSheet.Engine/bin/Debug/net10.0/ExSheet.Engine.dll
+  ExGrid.Data -> /home/akira/src/hobby/ex-grid-wr10/src/ExGrid.Data/bin/Debug/net10.0/ExGrid.Data.dll
+  ExPivot.Engine -> /home/akira/src/hobby/ex-grid-wr10/src/ExPivot.Engine/bin/Debug/net10.0/ExPivot.Engine.dll
+  ExGrid -> /home/akira/src/hobby/ex-grid-wr10/src/ExGrid/bin/Debug/net10.0/ExGrid.dll
+  ExPivot -> /home/akira/src/hobby/ex-grid-wr10/src/ExPivot/bin/Debug/net10.0/ExPivot.dll
+  ExSheet -> /home/akira/src/hobby/ex-grid-wr10/src/ExSheet/bin/Debug/net10.0/ExSheet.dll
+  ExGrid.MudBlazor -> /home/akira/src/hobby/ex-grid-wr10/src/ExGrid.MudBlazor/bin/Debug/net10.0/ExGrid.MudBlazor.dll
+  ExChart -> /home/akira/src/hobby/ex-grid-wr10/src/ExChart/bin/Debug/net10.0/ExChart.dll
+  ExPivot.MudBlazor -> /home/akira/src/hobby/ex-grid-wr10/src/ExPivot.MudBlazor/bin/Debug/net10.0/ExPivot.MudBlazor.dll
+  ExBoard -> /home/akira/src/hobby/ex-grid-wr10/src/ExBoard/bin/Debug/net10.0/ExBoard.dll
+  ExSheet.MudBlazor -> /home/akira/src/hobby/ex-grid-wr10/src/ExSheet.MudBlazor/bin/Debug/net10.0/ExSheet.MudBlazor.dll
+  ExChart.MudBlazor -> /home/akira/src/hobby/ex-grid-wr10/src/ExChart.MudBlazor/bin/Debug/net10.0/ExChart.MudBlazor.dll
+  ExSheet.MudBlazor.Tests -> /home/akira/src/hobby/ex-grid-wr10/tests/ExSheet.MudBlazor.Tests/bin/Debug/net10.0/ExSheet.MudBlazor.Tests.dll
+  Run tests: '/home/akira/src/hobby/ex-grid-wr10/tests/ExSheet.MudBlazor.Tests/bin/Debug/net10.0/ExSheet.MudBlazor.Tests.dll' [net10.0|x64]
+  Passed! - Failed: 0, Passed: 106, Skipped: 0, Total: 106, Duration: 11s 197ms - ExSheet.MudBlazor.Tests.dll (net10.0|x64)
+  Tests succeeded: '/home/akira/src/hobby/ex-grid-wr10/tests/ExSheet.MudBlazor.Tests/bin/Debug/net10.0/ExSheet.MudBlazor.Tests.dll' [net10.0|x64]
+FileVersion
+9.7.0.0
+== ExPivot.MudBlazor.Tests, MudBlazor 9.7.0, at 5e3eecb44fb9dcfec074cfa8eefe03a91809fbc3
+warning: Git tree '/home/akira/src/hobby/ex-grid-wr10' has uncommitted changes
+dotnet 10.0.203 (nix-managed)
+  Determining projects to restore...
+  Restored /home/akira/src/hobby/ex-grid-wr10/tests/ExPivot.MudBlazor.Tests/ExPivot.MudBlazor.Tests.csproj (in 176 ms).
+  6 of 7 projects are up-to-date for restore.
+  ExGrid.Data -> /home/akira/src/hobby/ex-grid-wr10/src/ExGrid.Data/bin/Debug/net10.0/ExGrid.Data.dll
+  ExPivot.Engine -> /home/akira/src/hobby/ex-grid-wr10/src/ExPivot.Engine/bin/Debug/net10.0/ExPivot.Engine.dll
+  ExGrid -> /home/akira/src/hobby/ex-grid-wr10/src/ExGrid/bin/Debug/net10.0/ExGrid.dll
+  ExGrid.MudBlazor -> /home/akira/src/hobby/ex-grid-wr10/src/ExGrid.MudBlazor/bin/Debug/net10.0/ExGrid.MudBlazor.dll
+  ExPivot -> /home/akira/src/hobby/ex-grid-wr10/src/ExPivot/bin/Debug/net10.0/ExPivot.dll
+  ExPivot.MudBlazor -> /home/akira/src/hobby/ex-grid-wr10/src/ExPivot.MudBlazor/bin/Debug/net10.0/ExPivot.MudBlazor.dll
+  ExPivot.MudBlazor.Tests -> /home/akira/src/hobby/ex-grid-wr10/tests/ExPivot.MudBlazor.Tests/bin/Debug/net10.0/ExPivot.MudBlazor.Tests.dll
+  Run tests: '/home/akira/src/hobby/ex-grid-wr10/tests/ExPivot.MudBlazor.Tests/bin/Debug/net10.0/ExPivot.MudBlazor.Tests.dll' [net10.0|x64]
+  Passed! - Failed: 0, Passed: 92, Skipped: 0, Total: 92, Duration: 1s 890ms - ExPivot.MudBlazor.Tests.dll (net10.0|x64)
+  Tests succeeded: '/home/akira/src/hobby/ex-grid-wr10/tests/ExPivot.MudBlazor.Tests/bin/Debug/net10.0/ExPivot.MudBlazor.Tests.dll' [net10.0|x64]
+FileVersion
+9.7.0.0

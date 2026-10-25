@@ -1,0 +1,63 @@
+{
+  "about": "The stream itself (ADR-0065): Arrow's file format and the legacy framing are read, a stream of no record batch is a Snapshot of no rows, and the captions, Record Key and version under exgrid.* are honoured whoever wrote them. Transcribed from ExGrid.Data.Arrow.Tests' ReadTests.",
+  "kind": "arrowRead",
+  "cases": [
+    {
+      "name": "ADR-0065: Arrow's file format is read, its dictionary shared by its record batches",
+      "stream": "streams/file.arrow",
+      "expect": {
+        "version": 0,
+        "recordKey": null,
+        "columns": [
+          { "name": "Desk", "caption": "Desk", "kind": "text", "values": ["FX", "Rates", null, "Rates"], "dictionary": ["FX", "Rates"] },
+          { "name": "Pnl", "caption": "Pnl", "kind": "double", "values": [1.5, null, -2.0, 3.0] }
+        ]
+      }
+    },
+    {
+      "name": "ADR-0065: the captions, Record Key and version another producer writes under ExGrid.Data.Arrow's keys are honoured",
+      "stream": "streams/metadata.arrows",
+      "expect": {
+        "version": 41,
+        "recordKey": "Id",
+        "columns": [
+          { "name": "Id", "caption": "Id", "kind": "integer", "values": [7, 8] },
+          { "name": "Desk", "caption": "Trading desk", "kind": "text", "values": ["FX", null], "dictionary": ["FX"] }
+        ]
+      }
+    },
+    {
+      "name": "ADR-0065: a stream without metadata reads with each column's name its caption, version 0 and no Record Key",
+      "stream": "streams/no-metadata.arrows",
+      "expect": {
+        "version": 0,
+        "recordKey": null,
+        "columns": [
+          { "name": "Desk", "caption": "Desk", "kind": "text", "values": ["FX"], "dictionary": ["FX"] }
+        ]
+      }
+    },
+    {
+      "name": "ADR-0065: a stream with a schema and no record batch is a Snapshot of no rows",
+      "stream": "streams/no-batches.arrows",
+      "expect": {
+        "version": 0,
+        "recordKey": null,
+        "columns": [
+          { "name": "Desk", "caption": "Desk", "kind": "text", "values": [], "dictionary": [] }
+        ]
+      }
+    },
+    {
+      "name": "ADR-0065: a stream written in the legacy framing, without continuation markers, is read",
+      "stream": "streams/legacy-framing.arrows",
+      "expect": {
+        "version": 0,
+        "recordKey": null,
+        "columns": [
+          { "name": "N", "caption": "N", "kind": "integer", "values": [1, null, 3] }
+        ]
+      }
+    }
+  ]
+}
