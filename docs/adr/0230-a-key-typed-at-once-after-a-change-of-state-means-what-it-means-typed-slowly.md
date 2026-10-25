@@ -163,6 +163,31 @@ and it uses the hold that already exists. No listener is added.
 - **(3)** At its turn, the Name Box's press waits for the stamp to answer every input sent before it,
   then selects the box's whole text.
 
+## Under the Input Order (ticket 07, 2026-10-25)
+
+ADR-0240 numbers every input and holds what comes after an unanswered one. Ticket 07 asked of each
+fix here whether the order now covers it:
+
+- **(1) is kept.** The order holds a Tab behind the Escape before it, but cannot make the browser's
+  move of DOM focus when the Tab's turn comes (ADR-0021). The release taken at the Escape's keydown
+  from `data-ex-escape-leaves` is still what lets a Tab typed at once leave the grid as one typed
+  slowly does, and (b)'s refusal said aloud is still what a Tab typed before the stamp can trust it
+  hears.
+- **(2) is kept.** The order decides when a key is handled, not which of two meanings a key has
+  while a field holds text the core has not heard: Home in a list of names, or Home moving the
+  caret. The gate still reads the mode its render marks, with its version and its text.
+- **`InputOvertaken` is kept, as ADR-0240 §5's rule.** Ticket 03 made the text a key carried the
+  text every numbered input carries; the input events older than it are dropped as overtaken for a
+  press, a heading and a commit as for a key.
+- **(3) is folded into the order.** The Name Box's press is one kind of input waiting among the held
+  ones, in the same queue every input waits in, and answered at its turn as every input is. No order
+  of its own remains.
+
+The differential test of ADR-0240 §8 (`differential.spec.mjs`) types ExGrid's and ExSheet's seeded
+sequences fast and slow on both hosts, and finds no difference these fixes leave. ExPivot is not among
+its products yet: its sequences found races of their own, none in these fixes, and they are open under
+ticket 07 (ASY-8).
+
 ## Consequences
 
 - ADR-0012 gains a note on (1), ADR-0021 a note on (1), (2) and (3). None adds an allowlist entry.
