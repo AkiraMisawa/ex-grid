@@ -211,8 +211,7 @@ public partial class RepositoryTests
         var index = ByHand.ReadIndex(Tree, report)!;
         var table = ByHandTable.Read(Tree, report)!;
 
-        Assert.True(report.Admitted, string.Join("
-", report.Refusals.Select(r => r.Message)));
+        Assert.True(report.Admitted, string.Join("\n", report.Refusals.Select(r => r.Message)));
         var vz18 = Assert.Single(index, r => r.Row == "VZ-18");
         Assert.Null(vz18.Record);
         Assert.Equal(new KnownLimitation("0.2.0", "2026-10-25",
