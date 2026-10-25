@@ -15,7 +15,10 @@
             <kbd>Home</kbd>, and <kbd>Ctrl</kbd> with an arrow, commit and then extend the selection or go to the
             edge from the edited cell, as they do with no edit open — as Excel's Enter mode was seen to do with
             <kbd>Shift</kbd> and an arrow, <kbd>Shift</kbd>+<kbd>Home</kbd> and <kbd>Ctrl</kbd>+<kbd>→</kbd>.
-            After <kbd>F2</kbd> in the cell they move the caret, or select text, instead.
+            After <kbd>F2</kbd> in the cell they move the caret, or select text, instead. A click on another cell
+            commits too, and the click then selects as usual. A click on the cell being edited lands in the editor
+            and keeps the edit, even one made at once after the first key, before the editor has appeared on a slow
+            Blazor Server connection.
         </p>
         <p>
             On Blazor Server, an IME composition completed while a popover opens follows the keyboard into
