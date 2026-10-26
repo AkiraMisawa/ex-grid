@@ -328,8 +328,10 @@ export class PivotView {
     #layoutGiven: PivotLayout | undefined;
     #shown: Shown;
     #asked: Question | undefined;
-    // While Defer Layout Update is ticked, the layout the pane builds and Update applies (ADR-0061).
+    // While Defer Layout Update is ticked, the layout the pane builds and Update applies (ADR-0061), and what the
+    // pane moved into it, which a refusal of that layout names.
     #pending: PivotLayout | undefined;
+    #pendingMoves: readonly FieldListMove[] = [];
     #generation = 0;
     #requests = 0;
     #refusal: string | undefined;
@@ -492,7 +494,7 @@ export class PivotView {
         root.addEventListener('focusin', outside, listening);
 
         this.#askCounts();
-        if (options.layout !== undefined) this.#ask(options.layout, 'consumer', undefined);
+        if (options.layout !== undefined) this.#ask(options.layout, 'consumer', []);
         this.#draw();
     }
 
@@ -522,8 +524,12 @@ export class PivotView {
         if (asked !== undefined) validateLayout(asked, this.#declared(options.source));
         this.#options = options;
         if (layoutMoved) this.#layoutGiven = options.layout;
-        // The Consumer's layout replaces the user's, a pending one too.
-        if (consumerLayout !== undefined && this.#pending !== undefined) this.#pending = consumerLayout;
+        // The Consumer's layout replaces the user's, a pending one too. A pending layout placing a field the new source
+        // does not have goes back to the report's, which is checked against it above.
+        if (this.#pending !== undefined && (consumerLayout !== undefined || (sourceMoved && !placesOnly(this.#pending, this.#declared(options.source))))) {
+            this.#pending = asked ?? this.#layoutAhead;
+            this.#pendingMoves = [];
+        }
         const densityMoved = options.density !== before.density;
         const settingsMoved = options.locale !== before.locale || options.label !== before.label || densityMoved;
         if (options.label !== before.label) {
@@ -545,9 +551,9 @@ export class PivotView {
             this.#askCounts();
         }
         if (asked !== undefined) {
-            this.#ask(asked, consumerLayout !== undefined ? 'consumer' : 'data', undefined);
+            this.#ask(asked, consumerLayout !== undefined ? 'consumer' : 'data', []);
         } else if (settingsMoved || options.maxLeaves !== before.maxLeaves) {
-            this.#ask(this.#layoutAhead, 'consumer', undefined);
+            this.#ask(this.#layoutAhead, 'consumer', []);
         }
         if (options.rowHeight !== before.rowHeight || options.density !== before.density || options.viewportHeight !== before.viewportHeight
             || options.viewportWidth !== before.viewportWidth) {
@@ -659,22 +665,25 @@ export class PivotView {
         // left alone (ADR-0061).
         if (this.#pending !== undefined) {
             this.#pending = edit.layout;
+            if (edit.moved !== undefined) this.#pendingMoves = [...this.#pendingMoves, edit.moved];
             this.#refusal = undefined;
             this.#draw();
             return;
         }
-        this.#move(edit.layout, edit.moved);
+        this.#move(edit.layout, edit.moved === undefined ? [] : [edit.moved]);
     }
 
     // A gesture on the report or the Pivot Toolbar, made to the layout the report is on. While Defer Layout Update
     // holds a pending layout, it reaches that one too, so Update does not take it back; where the pending layout does
     // not hold what the gesture was for, it stays as it is. A gesture that would change nothing now asks nothing.
     #reportEdit(edit: (layout: PivotLayout) => PivotLayout | undefined, toggled?: ToggledItem): void {
-        if (this.#pending !== undefined) this.#pending = edit(this.#pending) ?? this.#pending;
         const now = this.#layoutAhead;
         const next = edit(now);
+        const pending = this.#pending;
+        // A pending layout that is the report's own holds nothing to apply, and goes on holding nothing.
+        if (pending !== undefined) this.#pending = pending === now ? next ?? pending : edit(pending) ?? pending;
         if (next === undefined || next === now) this.#draw();
-        else this.#move(next, undefined, toggled);
+        else this.#move(next, [], toggled);
     }
 
     // Defer Layout Update ticked holds the pane's changes from here on; unticked, it applies them, as Excel does.
@@ -682,23 +691,28 @@ export class PivotView {
         if (deferred === (this.#pending !== undefined)) return;
         if (deferred) {
             this.#pending = this.#layoutAhead;
+            this.#pendingMoves = [];
             this.#draw();
             return;
         }
         const pending = defined(this.#pending, 'a pending layout');
+        const moves = this.#pendingMoves;
         this.#pending = undefined;
+        this.#pendingMoves = [];
         if (pending === this.#layoutAhead) this.#draw();
-        else this.#move(pending, undefined);
+        else this.#move(pending, moves);
     }
 
     // Update applies the pending layout in one change, and Defer Layout Update stays ticked.
     #applyPending(): void {
         const pending = this.#pending;
         if (pending === undefined || pending === this.#layoutAhead) return;
-        this.#move(pending, undefined);
+        const moves = this.#pendingMoves;
+        this.#pendingMoves = [];
+        this.#move(pending, moves);
     }
 
-    #move(layout: PivotLayout, moved: FieldListMove | undefined, toggled?: ToggledItem): void {
+    #move(layout: PivotLayout, moved: readonly FieldListMove[], toggled?: ToggledItem): void {
         // A move after a toggle asks for another report: the Item toggled is no longer the one to follow.
         this.#placing?.();
         this.#refusal = undefined;
@@ -706,7 +720,7 @@ export class PivotView {
         this.#draw();
     }
 
-    #ask(layout: PivotLayout, asked: Cause, moved: FieldListMove | undefined, toggled?: ToggledItem): void {
+    #ask(layout: PivotLayout, asked: Cause, moved: readonly FieldListMove[], toggled?: ToggledItem): void {
         const superseded = this.#asked;
         superseded?.controller.abort();
         // A layout asked again before its answer came keeps what that question was owed: the user's raises once
@@ -719,7 +733,7 @@ export class PivotView {
         // An Item toggled into the layout keeps the Focus in its report, asked again or not.
         const focusOn = toggled ?? (again ? superseded.toggled : undefined);
         // A user's move made while a user's question was out was taken against it, and carries its moves on.
-        const moves = [...(raise && superseded?.raise === true ? superseded.moves : []), ...(moved === undefined ? [] : [moved])];
+        const moves = [...(raise && superseded?.raise === true ? superseded.moves : []), ...moved];
         const generation = ++this.#generation;
         if (showsNothing(layout) && layout.filters.length === 0) {
             // Nothing to compute: the report is the empty box that says how to start. A layout with fields in Filters
@@ -791,7 +805,8 @@ export class PivotView {
     }
 
     // A refused question: the pane goes back to the layout the report shows, and the sentence says why. Every
-    // move taken against the refused layout went with it, and is named (ADR-0370 section 3).
+    // move taken against the refused layout went with it, and is named (ADR-0370 section 3). A pending layout, while
+    // Defer Layout Update is ticked, is the user's work in the pane, and stays, as the Razor component keeps it.
     #refuse(refusal: PivotReportRefusal, question: Question): void {
         const { message, fields } = this.#sentenceFor(refusal, question);
         this.#refusal = message;
@@ -931,7 +946,7 @@ export class PivotView {
     // report on screen is asked again under its layout, unless something newer is asked already.
     #reportMoved(answer: PivotReportState): void {
         if (this.#destroyed || this.#shown.answer !== answer || this.#asked !== undefined) return;
-        this.#ask(this.#shown.layout, 'data', undefined);
+        this.#ask(this.#shown.layout, 'data', []);
         this.#draw();
     }
 
@@ -1063,7 +1078,8 @@ export class PivotView {
             metadata: answer.metadata,
             row: context.row,
             column: context.column,
-            pane: this.#layoutAhead,
+            report: this.#layoutAhead,
+            pane: this.#paneLayout,
             fieldListShown: this.#fieldListShown,
             captionOf: field => this.#captionOf(field),
         }, {
@@ -1128,7 +1144,7 @@ export class PivotView {
         this.#refreshOwed = true;
         this.#refusal = undefined;
         this.#askCounts();
-        this.#ask(this.#layoutAhead, 'data', undefined);
+        this.#ask(this.#layoutAhead, 'data', []);
         this.#draw();
     }
 
@@ -1617,6 +1633,11 @@ export class PivotView {
         this.#keyboardAfterDraw = undefined;
         if (left !== undefined) this.#returnKeyboard(left, this.#entryNow(left));
     }
+}
+
+// Whether every field `layout` places is one of `declared`.
+function placesOnly(layout: PivotLayout, declared: ReadonlyMap<string, unknown>): boolean {
+    return [...layout.filters, ...layout.rows, ...layout.columns, ...layout.values].every(placed => declared.has(placed.field));
 }
 
 // .NET's Math.Round, which sends a tie to the even number (CONVENTIONS.md).

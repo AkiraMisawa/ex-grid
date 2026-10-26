@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactElement } from 'react';
+import { useMemo, useRef, useState, type ReactElement } from 'react';
 import { GridSource, type GridColumn } from '@ex-grid/core';
 import { decimalText, type SnapshotDecimal } from '@ex-grid/data';
 import {
@@ -20,7 +20,8 @@ function amountText(value: unknown): string {
 }
 
 // The details grid of ?details=page, as the Blazor page's DetailColumns. Held once: a new array would paint every row
-// again (ADR-0003).
+// again (ADR-0003). The amounts are exact decimals, which a Number column does not order or filter: they are shown,
+// and not queried.
 const detailColumns: readonly GridColumn<DemoPivotTrade>[] = Object.freeze([
     { name: 'Id', type: 'text', value: (t: DemoPivotTrade) => t.id },
     { name: 'Region', type: 'text', value: (t: DemoPivotTrade) => t.region },
@@ -28,9 +29,9 @@ const detailColumns: readonly GridColumn<DemoPivotTrade>[] = Object.freeze([
     { name: 'Book', type: 'text', value: (t: DemoPivotTrade) => t.book },
     { name: 'Product', type: 'text', value: (t: DemoPivotTrade) => t.product },
     { name: 'Currency', type: 'text', value: (t: DemoPivotTrade) => t.currency },
-    { name: 'TradeDate', type: 'date', value: (t: DemoPivotTrade) => t.tradeDate, header: 'Trade date' },
-    { name: 'Notional', type: 'number', value: (t: DemoPivotTrade) => t.notional, format: amountText },
-    { name: 'Pnl', type: 'number', value: (t: DemoPivotTrade) => t.pnl, header: 'P&L', format: amountText },
+    { name: 'TradeDate', type: 'date', dateType: 'dateOnly', value: (t: DemoPivotTrade) => t.tradeDate, header: 'Trade date' },
+    { name: 'Notional', type: 'number', queryable: false, value: (t: DemoPivotTrade) => t.notional, format: amountText },
+    { name: 'Pnl', type: 'number', queryable: false, value: (t: DemoPivotTrade) => t.pnl, header: 'P&L', format: amountText },
 ]);
 
 /** ?first=held: the source's answers wait for the page's button, so the pane stands with no report drawn (ADR-0360). */
@@ -88,21 +89,29 @@ export function Pivot(): ReactElement {
     const [secondChanges, setSecondChanges] = useState(0);
     const [details, setDetails] = useState<Details>({ caption: 'Double-click a value in the report.', trades: [] });
     const detailsSource = useMemo(() => GridSource.from(details.trades), [details]);
+    const detailsAsks = useRef(0);
     // Listening to Show Details is what takes the records from the tab and the dialog. The page takes every record
-    // behind the cell, under the report's Source Version, and its own trade objects with them.
-    const onShowDetails = useMemo(() => (detailsAsked !== 'page' ? undefined : async (event: PivotShowDetailsEvent) => {
-        const page = await event.records(0, Number.MAX_SAFE_INTEGER);
-        if (page.refusal !== undefined) {
-            setDetails({ caption: page.refusal.message, trades: [] });
-            return;
-        }
-        const trades = page.records.map(record => record.record as DemoPivotTrade);
-        const where = [...event.rowItems, ...event.columnItems].map(item => `${item.field} = ${item.item}`).join(', ');
-        setDetails({
-            caption: `${count(page.total)} trades behind ${event.valueField ?? 'the cell'}${where.length > 0 ? ` where ${where}.` : '.'}`,
-            trades,
-        });
-    }), [detailsAsked]);
+    // behind the cell, under the report's Source Version, and its own trade objects with them; an answer to a cell
+    // asked before the newest is not shown (spine rule 6). Made once: a new function would reach the pivot as a change.
+    const onShowDetails = useMemo(() => {
+        if (detailsAsked !== 'page') return undefined;
+        const show = async (event: PivotShowDetailsEvent): Promise<void> => {
+            const asked = ++detailsAsks.current;
+            const page = await event.records(0, Number.MAX_SAFE_INTEGER);
+            if (asked !== detailsAsks.current) return;
+            if (page.refusal !== undefined) {
+                setDetails({ caption: page.refusal.message, trades: [] });
+                return;
+            }
+            const trades = page.records.map(record => record.record as DemoPivotTrade);
+            const where = [...event.rowItems, ...event.columnItems].map(item => `${item.field} = ${item.item}`).join(', ');
+            setDetails({
+                caption: `${count(page.total)} trades behind ${event.valueField ?? 'the cell'}${where.length > 0 ? ` where ${where}.` : '.'}`,
+                trades,
+            });
+        };
+        return (event: PivotShowDetailsEvent): void => { void show(event); };
+    }, [detailsAsked]);
     const words = japanese ? { label: japanesePivotWords } : {};
     return (
         <>
@@ -152,7 +161,7 @@ export function Pivot(): ReactElement {
                 onLayoutChanged={({ layout: next }) => { setLayout(next); setChanges(made => made + 1); }}
                 showFieldList={showFieldList}
                 onShowFieldListChanged={({ shown }) => { setShowFieldList(shown); }}
-                {...(onShowDetails === undefined ? {} : { onShowDetails: (event: PivotShowDetailsEvent) => { void onShowDetails(event); } })}
+                {...(onShowDetails === undefined ? {} : { onShowDetails })}
                 detailsView={detailsAsked === 'dialog' ? 'dialog' : 'tab'}
                 {...words}
                 locale="en-US"
