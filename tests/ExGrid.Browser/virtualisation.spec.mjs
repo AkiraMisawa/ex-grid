@@ -258,17 +258,28 @@ test('a scroll to the end made as the grid becomes ready is not undone by the La
     await page.addInitScript(() => {
         let done = false;
         // The circuit replaces the prerendered grid, so the ready one is found wherever it is.
-        new MutationObserver(() => {
+        // And styled: on WebAssembly the package's stylesheet is a root component the app renders
+        // into the head after it boots, and a grid can be ready before it has loaded (ADR-0123: it
+        // paints unstyled until then). Unstyled, the scroller is no scroll container, and the
+        // browser drops the scroll at 0: the grid stayed on row 0, on CI's chrome shard 4/4 of
+        // #388, and every time with the stylesheet held back 3 s. Nothing the grid could have
+        // heard, and nothing a user could do there. The first moment the grid is both is still
+        // before the Layout Ceiling can have been heard, whose probe is styled inline.
+        const scrollWhenReady = () => {
             const root = done ? null : document.querySelector('.ex-grid:not([aria-busy])');
-            if (!root) {
+            const scroller = root?.querySelector('.ex-scroller');
+            if (!scroller || getComputedStyle(scroller).overflowY === 'visible') {
                 return;
             }
             done = true;
-            const scroller = root.querySelector('.ex-scroller');
             const spacer = scroller.querySelector('.ex-spacer');
             window.__spacerAtScroll = Number(/height: ([\d.]+)px/.exec(spacer.getAttribute('style'))[1]);
             scroller.scrollTop = scroller.scrollHeight;
-        }).observe(document, { subtree: true, childList: true, attributes: true, attributeFilter: ['aria-busy'] });
+        };
+        new MutationObserver(scrollWhenReady)
+            .observe(document, { subtree: true, childList: true, attributes: true, attributeFilter: ['aria-busy'] });
+        // A stylesheet's load changes no markup, so it is heard as itself.
+        document.addEventListener('load', scrollWhenReady, true);
     });
     await page.goto('/wide');
     await expect.poll(() => dataRowCount(page.locator('.ex-grid'))).toBe(ROWS);
