@@ -400,6 +400,7 @@ internal sealed class Run(CultureInfo culture)
     [
         "enter", "enterAll", "enterRun", "do", "check", "undo", "redo", "reopen", "remember", "read", "copy",
         "setNumberFormat", "setAlignment", "declareTable", "pushTable", "setToday", "setSeed", "setClock", "recalculateVolatile", "getDisplay", "setCellFormat", "show",
+        "doAll", "readTable",
     ];
 
     private static readonly string[] Modifiers = ["on", "expect", "note"];
@@ -465,6 +466,9 @@ internal sealed class Run(CultureInfo culture)
         public int ClockReadsBefore { get; init; }
         /// <summary>What a step, an undo or a redo changed across the Workbook.</summary>
         public WorkbookChange? WorkbookChange { get; set; }
+        /// <summary>A Linked Table's columns as <c>readTable</c> read them, or <c>null</c> while it waits.</summary>
+        public IReadOnlyList<IReadOnlyList<Value?>>? TableColumns { get; set; }
+        public bool TableRead { get; set; }
     }
 
     /// <summary>A Sheet's change as a case reads one.</summary>
@@ -540,6 +544,20 @@ internal sealed class Run(CultureInfo culture)
                 outcome.WorkbookChange = step.Change;
                 outcome.Change = step.Change.ChangesSheets && !Workbook.Sheets.Contains(step.Sheet) ? null : step.Change.For(step.Sheet);
                 break;
+            case "doAll":
+            {
+                // Several edits, each on the Sheet it names, as one operation.
+                var all = Workbook.Do([.. argument.AsArray().Select(pair => ((string)pair![0]!, Edit(pair[1]!)))]);
+                _done.Add(all);
+                outcome.Step = all;
+                outcome.WorkbookChange = all.Change;
+                outcome.Change = all.Change.For(all.Sheet);
+                break;
+            }
+            case "readTable":
+                outcome.TableRead = true;
+                outcome.TableColumns = Workbook.LinkedTableColumns((string)argument!);
+                break;
             case "check":
                 outcome.Checked = true;
                 outcome.Refusal = Workbook.Check(sheet.Name, Edit(argument));
@@ -608,6 +626,11 @@ internal sealed class Run(CultureInfo culture)
             case "declareTable":
             {
                 var table = argument.AsObject();
+                foreach (var (part, _) in table)
+                {
+                    if (part is not ("name" or "columns" or "key"))
+                        throw new InvalidDataException($"'{part}' is no part of a Linked Table declared: name, columns and key.");
+                }
                 var columns = table["columns"]!.AsArray().Select(c => (string)c!).ToList();
                 var change = table["key"] switch
                 {
@@ -622,7 +645,8 @@ internal sealed class Run(CultureInfo culture)
             {
                 var table = argument.AsObject();
                 var rows = table["rows"]!.AsArray().Select(r => (IReadOnlyList<Value?>)[.. r!.AsArray().Select(SheetCases.Decode)]).ToList();
-                outcome.Change = Workbook.PushLinkedTable((string)table["name"]!, rows).For(sheet);
+                outcome.WorkbookChange = Workbook.PushLinkedTable((string)table["name"]!, rows);
+                outcome.Change = outcome.WorkbookChange.For(sheet);
                 break;
             }
             case "setToday":
@@ -937,6 +961,15 @@ internal sealed class Run(CultureInfo culture)
             case "shown":
                 actual = Workbook.Shown.Name;
                 break;
+            case "sheetsReached":
+                actual = new JsonArray([.. (outcome.WorkbookChange ?? throw new InvalidDataException($"{where}: only a step, an undo, a redo or a push reads the Sheets it reached.")).Sheets.Select(s => (JsonNode)s.Name)]);
+                break;
+            case "tableColumns":
+                if (!outcome.TableRead) throw new InvalidDataException($"{where}: only readTable reads a Linked Table's columns.");
+                actual = outcome.TableColumns is { } columns
+                    ? new JsonArray([.. columns.Select(c => (JsonNode)new JsonArray([.. c.Select(SheetCases.Encode)]))])
+                    : null;
+                break;
             case "copies":
             {
                 var each = new JsonObject();
@@ -964,6 +997,7 @@ internal sealed class Run(CultureInfo culture)
                     ["today"] = Workbook.Today?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
                     ["hasVolatileFormulas"] = Workbook.HasVolatileFormulas,
                     ["changes"] = Workbook.Changes,
+                    ["seed"] = Workbook.Seed?.ToString(CultureInfo.InvariantCulture),
                     ["linkedTables"] = new JsonArray([.. Workbook.LinkedTables.Select(t => (JsonNode)new JsonObject
                     {
                         ["name"] = t.Name,

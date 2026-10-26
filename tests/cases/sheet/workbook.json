@@ -1,0 +1,256 @@
+{
+  "about": "A Workbook of Sheets (ADR-0331, ADR-0332): Sheets in order under one culture, each holding its own Entries, References across them computed in one dependency order and followed as they change, the seed and the count of changes held by the Workbook, Linked Tables declared on it and read from any Sheet, and edits on several Sheets done as one operation. RAND's draws are written as both engines draw them from seed 7; that two differ is the fact. Transcribed from ExSheet.Engine.Tests' WorkbookTests.",
+  "kind": "sheet",
+  "culture": "en-US",
+  "cases": [
+    {
+      "name": "ADR-0331: a Workbook holds its Sheets in order, each named, and finds one without regard to case",
+      "sheets": ["Inputs", "Totals", "Notes"],
+      "steps": [
+        {"enter": {"A1": "here"}, "on": "Totals"},
+        {"read": true, "on": "TOTALS", "expect": {"sheets": ["Inputs", "Totals", "Notes"], "entryTexts": {"A1": "here"}}}
+      ]
+    },
+    {
+      "name": "ADR-0331: a Workbook's Sheets hold Entries, each Sheet its own",
+      "sheets": ["Sheet1", "Sheet2"],
+      "steps": [
+        {"do": {"enter": {"A1": "1"}}, "on": "Sheet1"},
+        {"do": {"enter": {"A1": "2"}}, "on": "sheet2"},
+        {"read": true, "on": "Sheet1", "expect": {"values": {"A1": 1}}},
+        {"read": true, "on": "Sheet2", "expect": {"values": {"A1": 2}}}
+      ]
+    },
+    {
+      "name": "ADR-0331: =Sheet2!A1 reads another Sheet, and recalculates when that cell changes",
+      "sheets": ["Sheet1", "Sheet2"],
+      "steps": [
+        {"do": {"enter": {"A1": "5"}}, "on": "Sheet2"},
+        {"do": {"enter": {"B1": "=Sheet2!A1*2"}}, "on": "Sheet1"},
+        {"do": {"enter": {"C1": "=SUM(sheet2!A1:A3)"}}, "on": "Sheet1", "expect": {"values": {"B1": 10}}},
+        {"do": {"enter": {"A2": "7"}}, "on": "Sheet2", "expect": {"sheetsReached": ["Sheet1", "Sheet2"], "changes": {"Sheet2": {"valueChanges": ["A2"]}, "Sheet1": {"valueChanges": ["C1"], "recalculated": ["C1"]}}}},
+        {"read": true, "on": "Sheet1", "expect": {"values": {"C1": 12}}}
+      ]
+    },
+    {
+      "name": "ADR-0331, ADR-0047: one dependency order across Sheets, each Formula computed once, from Values already final",
+      "sheets": ["Sheet1", "Sheet2"],
+      "steps": [
+        {"do": {"enter": {"A1": "=Sheet1!A1+1"}}, "on": "Sheet2"},
+        {"do": {"enter": {"B1": "=Sheet2!A1*2"}}, "on": "Sheet1"},
+        {"do": {"enter": {"B1": "=Sheet1!B1+Sheet2!A1"}}, "on": "Sheet2"},
+        {"do": {"enter": {"A1": "5"}}, "on": "Sheet1", "expect": {"values": {"B1": 12}, "changes": {"Sheet1": {"recalculated": ["B1"]}, "Sheet2": {"recalculated": ["A1", "B1"]}}}},
+        {"read": true, "on": "Sheet2", "expect": {"values": {"A1": 6, "B1": 18}}}
+      ]
+    },
+    {
+      "name": "ADR-0331, ADR-0047: a cycle through two Sheets is #CIRC! on both",
+      "sheets": ["Sheet1", "Sheet2"],
+      "steps": [
+        {"do": {"enter": {"A1": "=Sheet2!A1+1"}}, "on": "Sheet1"},
+        {"do": {"enter": {"A1": "=Sheet1!A1+1"}}, "on": "Sheet2", "expect": {"values": {"A1": {"error": "#CIRC!"}}}},
+        {"read": true, "on": "Sheet1", "expect": {"values": {"A1": {"error": "#CIRC!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0331: a name with a space is quoted, as in Excel, and read without regard to case",
+      "sheets": ["Sheet1", "Q1 Sales"],
+      "steps": [
+        {"do": {"enter": {"B2": "3", "B3": "4"}}, "on": "Q1 Sales"},
+        {"do": {"enter": {"A1": "=SUM('Q1 Sales'!B2:B3)", "A2": "=INDIRECT(\"'q1 sales'!B3\")"}}, "on": "Sheet1", "expect": {"values": {"A1": 7, "A2": 4}}}
+      ]
+    },
+    {
+      "name": "ADR-0331: a Formula that stops naming another Sheet stops following it",
+      "sheets": ["Sheet1", "Sheet2"],
+      "steps": [
+        {"do": {"enter": {"A1": "=Sheet2!A1", "A2": "=SUM(Sheet2!A1:A3)"}}, "on": "Sheet1"},
+        {"do": {"enter": {"A1": "1", "A2": "2"}}, "on": "Sheet1"},
+        {"do": {"enter": {"A1": "5"}}, "on": "Sheet2", "expect": {"sheetsReached": ["Sheet2"]}}
+      ]
+    },
+    {
+      "name": "ADR-0331, ADR-0047: a Formula entered into a General cell takes the format of the cell it reads on another Sheet, as of one on its own",
+      "sheets": ["Sheet1", "Sheet2"],
+      "steps": [
+        {"do": {"enter": {"A1": "10%"}}, "on": "Sheet2"},
+        {"do": {"enter": {"A1": "=Sheet2!A1"}}, "on": "Sheet1", "expect": {"texts": {"A1": "10%"}}}
+      ]
+    },
+    {
+      "name": "ADR-0331 §9, ADR-0180: the Workbook holds the seed and the count, so a change on one Sheet draws again on every Sheet, as Excel's recalculation does",
+      "sheets": ["Sheet1", "Sheet2"],
+      "steps": [
+        {"setSeed": 7},
+        {"do": {"enter": {"A1": "=RAND()"}}, "on": "Sheet2", "expect": {"values": {"A1": 0.056716439685047026}, "workbook": {"changes": 1}}},
+        {"do": {"enter": {"A1": "1"}}, "on": "Sheet1", "expect": {"sheetsReached": ["Sheet1", "Sheet2"], "workbook": {"changes": 2}}},
+        {"read": true, "on": "Sheet2", "expect": {"values": {"A1": 0.3655032670991335}}}
+      ]
+    },
+    {
+      "name": "ADR-0180 (2026-10-20), ADR-0331 §9: a draw names its Sheet, so the same Formula at the same cell of two Sheets draws two numbers",
+      "sheets": ["Sheet1", "Sheet2"],
+      "steps": [
+        {"setSeed": 7},
+        {"do": {"enter": {"A1": "=RAND()"}}, "on": "Sheet1"},
+        {"do": {"enter": {"A1": "=RAND()"}}, "on": "Sheet2", "expect": {"values": {"A1": 0.3655032670991335}}},
+        {"read": true, "on": "Sheet1", "expect": {"values": {"A1": 0.7364862066618978}}}
+      ]
+    },
+    {
+      "name": "ADR-0331 §9: a copied Sheet draws from the Workbook's seed, under its own name",
+      "steps": [
+        {"setSeed": 7},
+        {"do": {"enter": {"A1": "=RAND()"}}},
+        {"do": {"copySheet": true}, "expect": {"workbook": {"seed": "7"}, "sheets": ["Sheet1", "Sheet1 (2)"], "values": {"A1": 0.4704172415674208}}},
+        {"read": true, "expect": {"values": {"A1": 0.7364862066618978}}}
+      ]
+    },
+    {
+      "name": "ADR-0331: a qualifier naming no Sheet of the Workbook is #REF!",
+      "sheets": ["Sheet1", "Sheet2"],
+      "steps": [
+        {"do": {"enter": {"A1": "=Sheet3!A1", "A2": "=SUM(Sheet3!A1:B2)", "A3": "=INDIRECT(\"Sheet3!A1\")"}}, "on": "Sheet1", "expect": {"values": {"A1": {"error": "#REF!"}, "A2": {"error": "#REF!"}, "A3": {"error": "#REF!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0331, ADR-0124: INDIRECT and OFFSET reach another Sheet, and read it as this recalculation leaves it",
+      "sheets": ["Sheet1", "Sheet2"],
+      "steps": [
+        {"do": {"enter": {"A1": "1", "A2": "=Sheet1!C1*3"}}, "on": "Sheet2"},
+        {"do": {"enter": {"A1": "=INDIRECT(\"Sheet2!A2\")", "B1": "=SUM(OFFSET(Sheet2!A1,0,0,2,1))"}}, "on": "Sheet1"},
+        {"do": {"enter": {"C1": "4"}}, "on": "Sheet1", "expect": {"values": {"A1": 12, "B1": 13}}}
+      ]
+    },
+    {
+      "name": "ADR-0331, ADR-0047: criteria and lookup ranges on another Sheet read that Sheet's cells",
+      "sheets": ["Sheet1", "Data"],
+      "steps": [
+        {"do": {"enter": {"A1": "x", "A2": "y", "A3": "x", "B1": "1", "B2": "2", "B3": "4"}}, "on": "Data"},
+        {"do": {"enter": {"A1": "y", "A2": "100", "B1": "=SUMIF(Data!A1:A3,\"x\",Data!B1:B3)", "B2": "=XLOOKUP(\"y\",Data!A1:A3,Data!B1:B3)", "B3": "=INDEX(Data!B1:B3,3)"}}, "on": "Sheet1", "expect": {"values": {"B1": 5, "B2": 2, "B3": 4}}}
+      ]
+    },
+    {
+      "name": "ADR-0331, ADR-0125: A1# qualified with another Sheet reads that Sheet's spill",
+      "sheets": ["Sheet1", "Sheet2"],
+      "steps": [
+        {"do": {"enter": {"A1": "=SEQUENCE(3)"}}, "on": "Sheet2"},
+        {"do": {"enter": {"A1": "=SUM(Sheet2!A1#)"}}, "on": "Sheet1", "expect": {"values": {"A1": 6}}},
+        {"do": {"enter": {"A3": "x"}}, "on": "Sheet2", "expect": {"values": {"A1": {"error": "#SPILL!"}}}},
+        {"read": true, "on": "Sheet1", "expect": {"values": {"A1": {"error": "#REF!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0331, ADR-0049: Linked Tables are declared on the Workbook and read from any Sheet",
+      "sheets": ["Sheet1", "Sheet2"],
+      "steps": [
+        {"do": {"enter": {"A1": "=SUM(Trades[Amount])"}}, "on": "Sheet1", "expect": {"values": {"A1": {"error": "#NAME?"}}}},
+        {"do": {"enter": {"A1": "=IFERROR(COUNT(Trades[Amount]),-1)"}}, "on": "Sheet2"},
+        {"declareTable": {"name": "Trades", "columns": ["Id", "Amount"], "key": ["Id"]}, "on": "Sheet1", "expect": {"workbook": {"linkedTables": [{"name": "Trades"}]}, "values": {"A1": {"error": "#GETTING_DATA"}}}},
+        {"read": true, "on": "Sheet2", "expect": {"values": {"A1": {"error": "#GETTING_DATA"}}}},
+        {"pushTable": {"name": "Trades", "rows": [[1, 10], [2, 5]]}, "on": "Sheet1", "expect": {"values": {"A1": 15}, "sheetsReached": ["Sheet1", "Sheet2"]}},
+        {"read": true, "on": "Sheet2", "expect": {"values": {"A1": 2}}}
+      ]
+    },
+    {
+      "name": "ADR-0049, ADR-0330 §6: a Linked Table's snapshot is read as it stands, column by column, none while it waits, and a later snapshot replaces it without changing it",
+      "steps": [
+        {"declareTable": {"name": "Trades", "columns": ["Id", "Amount"], "key": ["Id"]}},
+        {"readTable": "trades", "expect": {"tableColumns": null}},
+        {"pushTable": {"name": "Trades", "rows": [[1, 10], [2, null]]}},
+        {"readTable": "Trades", "expect": {"tableColumns": [[1, 2], [10, null]]}},
+        {"pushTable": {"name": "Trades", "rows": [[3, 7]]}},
+        {"readTable": "Trades", "expect": {"tableColumns": [[3], [7]]}},
+        {"readTable": "Positions", "expect": {"throws": {"refusal": "invalidOperation"}}},
+        {"pushTable": {"name": "Trades", "rows": [[3, null], [3, null]]}, "expect": {"throws": {"refusal": "repeatedKey"}}},
+        {"readTable": "Trades", "expect": {"tableColumns": null}}
+      ]
+    },
+    {
+      "name": "ADR-0331, ADR-0049: a waiting cell on another Sheet makes its reader wait, which IFERROR does not catch",
+      "sheets": ["Sheet1", "Sheet2"],
+      "steps": [
+        {"declareTable": {"name": "Trades", "columns": ["Amount"], "key": []}},
+        {"do": {"enter": {"A1": "=SUM(Trades[Amount])"}}, "on": "Sheet2"},
+        {"do": {"enter": {"A1": "=IFERROR(Sheet2!A1,0)"}}, "on": "Sheet1", "expect": {"values": {"A1": {"error": "#GETTING_DATA"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0331, ADR-0048: an edit names its Sheet, and its step undoes and redoes it with the Workbook recalculated",
+      "sheets": ["Sheet1", "Sheet2"],
+      "steps": [
+        {"do": {"enter": {"A1": "1"}}, "on": "Sheet2"},
+        {"do": {"enter": {"A1": "=Sheet2!A1+1"}}, "on": "Sheet1"},
+        {"do": {"enter": {"A1": "41"}}, "on": "Sheet2", "expect": {"stepSheet": "Sheet2"}},
+        {"read": true, "on": "Sheet1", "expect": {"values": {"A1": 42}}},
+        {"undo": "last", "on": "Sheet2", "expect": {"isUndone": true, "values": {"A1": 1}, "changes": {"Sheet1": {"valueChanges": ["A1"]}}}},
+        {"read": true, "on": "Sheet1", "expect": {"values": {"A1": 2}}},
+        {"redo": "last"},
+        {"read": true, "on": "Sheet1", "expect": {"values": {"A1": 42}}}
+      ]
+    },
+    {
+      "name": "ADR-0331: a Sheet created on its own is a Workbook of one Sheet, and reads as it did",
+      "steps": [
+        {"enter": {"A1": "=Sheet2!A1"}, "expect": {"values": {"A1": {"error": "#REF!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0332 §5, ADR-0180: edits on several Sheets are one operation: one change, counted once, one step",
+      "sheets": ["One", "Two"],
+      "steps": [
+        {"do": {"enter": {"A1": "1"}}, "on": "One"},
+        {"do": {"enter": {"A1": "=One!A1+1"}}, "on": "Two", "expect": {"workbook": {"changes": 2}}},
+        {"doAll": [["One", {"enter": {"A1": "10"}}], ["Two", {"enter": {"B1": "x"}}]], "expect": {"workbook": {"changes": 3}, "sheetsReached": ["One", "Two"]}},
+        {"read": true, "on": "One", "expect": {"values": {"A1": 10}}},
+        {"read": true, "on": "Two", "expect": {"values": {"A1": 11}, "entryTexts": {"B1": "x"}}}
+      ]
+    },
+    {
+      "name": "ADR-0332 §5, ADR-0048: the one step undoes every edit, on every Sheet, and redoes them all",
+      "sheets": ["One", "Two"],
+      "steps": [
+        {"do": {"enter": {"A1": "1"}}, "on": "One"},
+        {"do": {"enter": {"A1": "=One!A1+1"}}, "on": "Two"},
+        {"doAll": [["One", {"enter": {"A1": "10"}}], ["Two", {"enter": {"B1": "x"}}]]},
+        {"undo": "last"},
+        {"read": true, "on": "One", "expect": {"values": {"A1": 1}}},
+        {"read": true, "on": "Two", "expect": {"values": {"A1": 2}, "entries": {"B1": null}}},
+        {"redo": "last"},
+        {"read": true, "on": "One", "expect": {"values": {"A1": 10}}},
+        {"read": true, "on": "Two", "expect": {"entryTexts": {"B1": "x"}}}
+      ]
+    },
+    {
+      "name": "ADR-0332 §2, ADR-0180: a Formula that cannot be read leaves every Sheet, and the count of changes, as they were",
+      "sheets": ["One", "Two"],
+      "steps": [
+        {"do": {"enter": {"A1": "1"}}, "on": "One", "expect": {"workbook": {"changes": 1}}},
+        {"doAll": [["One", {"enter": {"A1": "2"}}], ["Two", {"enter": {"A1": "=1+"}}]], "expect": {"throws": {"refusal": "formulaSyntax"}, "workbook": {"changes": 1}}},
+        {"read": true, "on": "One", "expect": {"values": {"A1": 1}}},
+        {"read": true, "on": "Two", "expect": {"entries": {"A1": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0331 §3: an operation is at least one edit",
+      "sheets": ["One", "Two"],
+      "steps": [
+        {"doAll": [], "expect": {"throws": {"refusal": "argument"}}}
+      ]
+    },
+    {
+      "name": "ADR-0331 §3: a Sheet operation is done alone, not among several edits",
+      "sheets": ["One", "Two"],
+      "steps": [
+        {"doAll": [["One", {"deleteSheet": true}]], "expect": {"throws": {"refusal": "argument"}, "sheets": ["One", "Two"]}}
+      ]
+    },
+    {
+      "name": "ADR-0331 §3: several edits naming no Sheet of the Workbook are refused",
+      "sheets": ["One", "Two"],
+      "steps": [
+        {"doAll": [["Three", {"enter": {"A1": "1"}}]], "expect": {"throws": {"refusal": "argument"}}}
+      ]
+    }
+  ]
+}

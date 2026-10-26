@@ -339,6 +339,7 @@ function cultureOf(name: string): Culture {
 const verbs = new Set([
     'enter', 'enterAll', 'enterRun', 'do', 'check', 'undo', 'redo', 'reopen', 'remember', 'read', 'copy',
     'setNumberFormat', 'setAlignment', 'declareTable', 'pushTable', 'setToday', 'setSeed', 'setClock', 'recalculateVolatile', 'getDisplay', 'setCellFormat', 'show',
+    'doAll', 'readTable',
 ]);
 const modifiers = new Set(['on', 'expect', 'note']);
 
@@ -353,6 +354,8 @@ interface Outcome {
     clockReadsBefore: number;
     /** What a step, an undo or a redo changed across the Workbook. */
     workbookChange: WorkbookChange | undefined;
+    /** A Linked Table's columns as `readTable` read them (`undefined` while it waits), or `false` when no table was read. */
+    tableColumns: readonly (readonly (Value | undefined)[])[] | undefined | false;
 }
 
 function padded(n: number, width: number): string {
@@ -427,7 +430,7 @@ class Run {
             sheet = found;
         }
         const expect = step['expect'] === undefined ? undefined : object(step['expect'], 'expect');
-        const outcome: Outcome = { sheet, change: undefined, checked: false, refusal: undefined, step: undefined, clockReadsBefore: this.#clockReads, workbookChange: undefined };
+        const outcome: Outcome = { sheet, change: undefined, checked: false, refusal: undefined, step: undefined, clockReadsBefore: this.#clockReads, workbookChange: undefined, tableColumns: false };
         try {
             this.#act(verb, argument, sheet, outcome);
         } catch (e) { // oxlint-disable-line ex-grid/no-catch -- a refusal a case expects is read, not rethrown
@@ -490,6 +493,21 @@ class Run {
                 outcome.change = step.change.changesSheets && !this.workbook.sheets.includes(step.sheet) ? undefined : step.change.for(step.sheet);
                 break;
             }
+            case 'doAll': {
+                // Several edits, each on the Sheet it names, as one operation.
+                const all = this.workbook.doAll(list(argument, 'doAll').map(pair => {
+                    const [on, edit] = list(pair, 'an edit on a Sheet');
+                    return [text(on, 'a Sheet'), this.#edit(orNull(edit))] as const;
+                }));
+                this.#done.push(all);
+                outcome.step = all;
+                outcome.workbookChange = all.change;
+                outcome.change = all.change.for(all.sheet);
+                break;
+            }
+            case 'readTable':
+                outcome.tableColumns = this.workbook.linkedTableColumns(text(argument, 'readTable'));
+                break;
             case 'check':
                 outcome.checked = true;
                 outcome.refusal = this.workbook.check(sheet.name, this.#edit(argument));
@@ -540,6 +558,8 @@ class Run {
             }
             case 'declareTable': {
                 const table = object(argument, 'declareTable');
+                const stray = Object.keys(table).find(part => !['name', 'columns', 'key'].includes(part));
+                if (stray !== undefined) throw new CaseError(`'${stray}' is no part of a Linked Table declared: name, columns and key.`);
                 const columns = list(table['columns'], 'columns').map(c => text(c, 'a column'));
                 const key = table['key'];
                 const name = text(table['name'], 'name');
@@ -552,7 +572,8 @@ class Run {
             case 'pushTable': {
                 const table = object(argument, 'pushTable');
                 const rows = list(table['rows'], 'rows').map(r => list(r, 'a row').map(decode));
-                outcome.change = this.workbook.pushLinkedTable(text(table['name'], 'name'), rows).for(sheet);
+                outcome.workbookChange = this.workbook.pushLinkedTable(text(table['name'], 'name'), rows);
+                outcome.change = outcome.workbookChange.for(sheet);
                 break;
             }
             case 'setToday': {
@@ -860,6 +881,16 @@ class Run {
             case 'shown':
                 actual = this.workbook.shown.name;
                 break;
+            case 'sheetsReached':
+                if (outcome.workbookChange === undefined) throw new CaseError(`${where}: only a step, an undo, a redo or a push reads the Sheets it reached.`);
+                actual = outcome.workbookChange.sheets.map(s => s.name);
+                break;
+            case 'tableColumns': {
+                const columns = outcome.tableColumns;
+                if (columns === false) throw new CaseError(`${where}: only readTable reads a Linked Table's columns.`);
+                actual = columns === undefined ? null : columns.map(c => c.map(encode));
+                break;
+            }
             case 'copies':
                 actual = Object.fromEntries(Object.keys(object(expected, key)).map(name => {
                     const copy = this.#copies.get(name);
@@ -882,6 +913,7 @@ class Run {
                     today: today === undefined ? null : `${padded(today.year, 4)}-${padded(today.month, 2)}-${padded(today.day, 2)}`,
                     hasVolatileFormulas: this.workbook.hasVolatileFormulas,
                     changes: this.workbook.changes,
+                    seed: this.workbook.seed === undefined ? null : this.workbook.seed.toString(),
                     linkedTables: this.workbook.linkedTables.map(t => ({
                         name: t.name, columns: [...t.columns], keyColumns: [...t.keyColumns], isWaiting: t.isWaiting, rowCount: t.rowCount,
                     })),

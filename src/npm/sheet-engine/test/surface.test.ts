@@ -7,7 +7,9 @@ import { CellRange } from '../src/cell-range';
 import { Culture } from '../src/culture';
 import { Entry } from '../src/entry';
 import { NumberFormat, numberFormatColourRgb } from '../src/number-format';
+import { CellAddress } from '../src/cell-address';
 import { Sheet } from '../src/sheet';
+import { SheetEdit } from '../src/sheet-edit';
 import { Workbook } from '../src/workbook';
 
 describe('the engine surface', () => {
@@ -79,6 +81,25 @@ describe('the engine surface', () => {
         expect(() => {
             workbook.shown = other;
         }).toThrow(RangeError);
+    });
+
+    // ADR-0331: names follow Excel's rules, unique without regard to case, and a Workbook holds at least one Sheet.
+    it.each([[['Sheet1', 'SHEET1']], [['a:b']], [[]]] as const)('refuses a Workbook of the names %j', names => {
+        expect(() => new Workbook(Culture.of('en-US'), names)).toThrow(RangeError);
+    });
+
+    // ADR-0331: every Sheet is under the Workbook's culture, and a name no Sheet has finds none.
+    it('puts every Sheet under the Workbook\'s culture, and finds no missing name', () => {
+        const workbook = new Workbook(Culture.of('en-US'), ['Inputs', 'Totals']);
+        for (const sheet of workbook.sheets) expect(sheet.culture).toBe(workbook.culture);
+        expect(workbook.find('Missing')).toBeUndefined();
+    });
+
+    // ADR-0331: an edit naming no Sheet of the Workbook is refused, and changes nothing.
+    it('refuses an edit naming no Sheet', () => {
+        const workbook = new Workbook(Culture.of('en-US'), ['Sheet1', 'Sheet2']);
+        expect(() => workbook.do('Sheet3', SheetEdit.enter(CellAddress.parse('A1'), '1'))).toThrow(RangeError);
+        for (const sheet of workbook.sheets) expect([...sheet.entryAddresses]).toEqual([]);
     });
 
     // ADR-0071, SH-40 (a reading until the eleventh Windows run, case 1): the eight names are Excel's legacy palette.

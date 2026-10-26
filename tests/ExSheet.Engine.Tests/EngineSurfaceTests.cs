@@ -97,6 +97,31 @@ public class EngineSurfaceTests
         Assert.Throws<ArgumentException>(() => workbook.Shown = NewSheet());
     }
 
+    [Theory] // ADR-0331: names follow Excel's rules, unique without regard to case, and a Workbook holds at least one Sheet
+    [InlineData("Sheet1|SHEET1")]
+    [InlineData("a:b")]
+    [InlineData("")]
+    public void A_workbook_refuses_names_excel_refuses(string names) =>
+        Assert.Throws<ArgumentException>(() => new Workbook(EnUs, names.Length == 0 ? [] : names.Split('|')));
+
+    [Fact] // ADR-0331: every Sheet is under the Workbook's culture, and a name no Sheet has finds none
+    public void A_workbooks_sheets_share_its_culture_and_a_missing_name_finds_none()
+    {
+        var workbook = new Workbook(EnUs, ["Inputs", "Totals"]);
+
+        Assert.All(workbook.Sheets, s => Assert.Same(workbook.Culture, s.Culture));
+        Assert.Null(workbook.Find("Missing"));
+    }
+
+    [Fact] // ADR-0331: an edit naming no Sheet of the Workbook is refused, and changes nothing
+    public void An_edit_naming_no_sheet_is_refused()
+    {
+        var workbook = new Workbook(EnUs, ["Sheet1", "Sheet2"]);
+
+        Assert.Throws<ArgumentException>(() => workbook.Do("Sheet3", SheetEdit.Enter(CellAddress.Parse("A1"), "1")));
+        Assert.All(workbook.Sheets, s => Assert.Empty(s.EntryAddresses));
+    }
+
     [Theory] // ADR-0071, SH-40 (a reading until the eleventh Windows run, case 1): the eight names are Excel's legacy palette
     [InlineData(NumberFormatColour.Black, 0x000000)]
     [InlineData(NumberFormatColour.Blue, 0x0000FF)]
