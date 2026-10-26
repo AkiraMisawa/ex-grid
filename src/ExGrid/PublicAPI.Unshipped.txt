@@ -420,6 +420,42 @@ ExGrid.ShapedRow
 ExGrid.ShapedRow.At.get -> ExGrid.Data.SnapshotRow
 ExGrid.ShapedRow.Page.get -> ExGrid.Data.Snapshot!
 ExGrid.ShapedRow.Position.get -> int
+ExGrid.Validation.Breach
+ExGrid.Validation.Breach.<Clone>$() -> ExGrid.Validation.Breach!
+ExGrid.Validation.Breach.Breach(string! Rule, string! Message, System.Collections.Generic.IReadOnlyList<ExGrid.Validation.BreachCell>! Cells) -> void
+ExGrid.Validation.Breach.Cells.get -> System.Collections.Generic.IReadOnlyList<ExGrid.Validation.BreachCell>!
+ExGrid.Validation.Breach.Cells.init -> void
+ExGrid.Validation.Breach.Deconstruct(out string! Rule, out string! Message, out System.Collections.Generic.IReadOnlyList<ExGrid.Validation.BreachCell>! Cells) -> void
+ExGrid.Validation.Breach.Equals(ExGrid.Validation.Breach? other) -> bool
+ExGrid.Validation.Breach.Message.get -> string!
+ExGrid.Validation.Breach.Message.init -> void
+ExGrid.Validation.Breach.Rule.get -> string!
+ExGrid.Validation.Breach.Rule.init -> void
+ExGrid.Validation.BreachCell
+ExGrid.Validation.BreachCell.BreachCell() -> void
+ExGrid.Validation.BreachCell.BreachCell(object! RowKey, string! Column) -> void
+ExGrid.Validation.BreachCell.Column.get -> string!
+ExGrid.Validation.BreachCell.Column.init -> void
+ExGrid.Validation.BreachCell.Deconstruct(out object! RowKey, out string! Column) -> void
+ExGrid.Validation.BreachCell.Equals(ExGrid.Validation.BreachCell other) -> bool
+ExGrid.Validation.BreachCell.RowKey.get -> object!
+ExGrid.Validation.BreachCell.RowKey.init -> void
+ExGrid.Validation.GridErrorStepRequest
+ExGrid.Validation.GridErrorStepRequest.<Clone>$() -> ExGrid.Validation.GridErrorStepRequest!
+ExGrid.Validation.GridErrorStepRequest.Backward.get -> bool
+ExGrid.Validation.GridErrorStepRequest.Backward.init -> void
+ExGrid.Validation.GridErrorStepRequest.Columns.get -> System.Collections.Generic.IReadOnlyList<string!>!
+ExGrid.Validation.GridErrorStepRequest.Columns.init -> void
+ExGrid.Validation.GridErrorStepRequest.Equals(ExGrid.Validation.GridErrorStepRequest? other) -> bool
+ExGrid.Validation.GridErrorStepRequest.From.get -> ExGrid.Selection.CellPosition?
+ExGrid.Validation.GridErrorStepRequest.From.init -> void
+ExGrid.Validation.GridErrorStepRequest.GridErrorStepRequest() -> void
+ExGrid.Validation.GridErrorStepRequest.RowSequenceVersion.get -> int
+ExGrid.Validation.GridErrorStepRequest.RowSequenceVersion.init -> void
+ExGrid.Validation.GridRuleset<TRow>.Breaches.get -> System.Collections.Generic.IReadOnlyList<ExGrid.Validation.Breach!>!
+ExGrid.Validation.GridRuleset<TRow>.FindError(ExGrid.Validation.GridErrorStepRequest! request, System.Collections.Generic.IReadOnlyList<TRow!>! rowsInOrder) -> ExGrid.Finding.GridFindResult!
+ExGrid.Validation.GridRuleset<TRow>.GridRuleset(System.Func<TRow!, object!>! rowKey) -> void
+ExGrid.Validation.GridRuleset<TRow>.Set(System.Func<System.Collections.Generic.IReadOnlyList<TRow!>!, System.Collections.Generic.IEnumerable<ExGrid.Validation.Breach!>!>! rule) -> ExGrid.Validation.GridRuleset<TRow!>!
 override ExGrid.Chrome.FindPanelRefusedCell.Equals(object? obj) -> bool
 override ExGrid.Chrome.FindPanelRefusedCell.GetHashCode() -> int
 override ExGrid.Chrome.FindPanelRefusedCell.ToString() -> string!
@@ -468,6 +504,13 @@ override ExGrid.ShapedColumn.ToString() -> string!
 override ExGrid.ShapedPage.Equals(object? obj) -> bool
 override ExGrid.ShapedPage.GetHashCode() -> int
 override ExGrid.ShapedPage.ToString() -> string!
+override ExGrid.Validation.Breach.Equals(object? obj) -> bool
+override ExGrid.Validation.Breach.GetHashCode() -> int
+override ExGrid.Validation.Breach.ToString() -> string!
+override ExGrid.Validation.BreachCell.GetHashCode() -> int
+override ExGrid.Validation.GridErrorStepRequest.Equals(object? obj) -> bool
+override ExGrid.Validation.GridErrorStepRequest.GetHashCode() -> int
+override ExGrid.Validation.GridErrorStepRequest.ToString() -> string!
 override sealed ExGrid.Script.GridRefusal<TRow>.Action.Equals(ExGrid.Script.GridRefusal<TRow!>? other) -> bool
 override sealed ExGrid.Script.GridRefusal<TRow>.Commit.Equals(ExGrid.Script.GridRefusal<TRow!>? other) -> bool
 override sealed ExGrid.Script.GridRefusal<TRow>.Copy.Equals(ExGrid.Script.GridRefusal<TRow!>? other) -> bool
@@ -507,6 +550,12 @@ static ExGrid.ShapedGrid.Fetch(ExGrid.GridViewSpecReading! spec, System.Func<ExG
 static ExGrid.ShapedGrid.Of(ExGrid.Data.Snapshot! snapshot, ExGrid.GridViewSpecReading! spec, System.Globalization.CultureInfo? culture = null) -> ExGrid.ShapedGrid!
 static ExGrid.ShapedPage.operator !=(ExGrid.ShapedPage? left, ExGrid.ShapedPage? right) -> bool
 static ExGrid.ShapedPage.operator ==(ExGrid.ShapedPage? left, ExGrid.ShapedPage? right) -> bool
+static ExGrid.Validation.Breach.operator !=(ExGrid.Validation.Breach? left, ExGrid.Validation.Breach? right) -> bool
+static ExGrid.Validation.Breach.operator ==(ExGrid.Validation.Breach? left, ExGrid.Validation.Breach? right) -> bool
+static ExGrid.Validation.BreachCell.operator !=(ExGrid.Validation.BreachCell left, ExGrid.Validation.BreachCell right) -> bool
+static ExGrid.Validation.BreachCell.operator ==(ExGrid.Validation.BreachCell left, ExGrid.Validation.BreachCell right) -> bool
+static ExGrid.Validation.GridErrorStepRequest.operator !=(ExGrid.Validation.GridErrorStepRequest? left, ExGrid.Validation.GridErrorStepRequest? right) -> bool
+static ExGrid.Validation.GridErrorStepRequest.operator ==(ExGrid.Validation.GridErrorStepRequest? left, ExGrid.Validation.GridErrorStepRequest? right) -> bool
 virtual ExGrid.Finding.FindMatchOf<TRow>.Invoke(TRow row, ExGrid.GridColumn<TRow>! column, ExGrid.Finding.GridFindPattern! pattern) -> bool
 virtual ExGrid.Script.GridRefusal<TRow>.EqualityContract.get -> System.Type!
 virtual ExGrid.Script.GridRefusal<TRow>.PrintMembers(System.Text.StringBuilder! builder) -> bool
@@ -536,6 +585,8 @@ virtual ExGrid.Script.GridRefusal<TRow>.PrintMembers(System.Text.StringBuilder! 
 ~override ExGrid.Script.GridRefusal<TRow>.Mark.<Clone>$() -> ExGrid.Script.GridRefusal<TRow>.Mark!
 ~override ExGrid.Script.GridRefusal<TRow>.Paste.<Clone>$() -> ExGrid.Script.GridRefusal<TRow>.Paste!
 ~override ExGrid.Script.GridRefusal<TRow>.Placement.<Clone>$() -> ExGrid.Script.GridRefusal<TRow>.Placement!
+~override ExGrid.Validation.BreachCell.Equals(object obj) -> bool
+~override ExGrid.Validation.BreachCell.ToString() -> string
 ~static ExGrid.Script.GridRefusal<TRow>.Action.operator !=(ExGrid.Script.GridRefusal<TRow>.Action? left, ExGrid.Script.GridRefusal<TRow>.Action? right) -> bool
 ~static ExGrid.Script.GridRefusal<TRow>.Action.operator ==(ExGrid.Script.GridRefusal<TRow>.Action? left, ExGrid.Script.GridRefusal<TRow>.Action? right) -> bool
 ~static ExGrid.Script.GridRefusal<TRow>.Commit.operator !=(ExGrid.Script.GridRefusal<TRow>.Commit? left, ExGrid.Script.GridRefusal<TRow>.Commit? right) -> bool

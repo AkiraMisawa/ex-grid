@@ -1,0 +1,71 @@
+@using ExGrid.Cells
+@using ExGrid.Clipboard
+@using ExGrid.Columns
+@using ExGrid.Selection
+@using ExGrid.Validation
+
+<MudExGridPaper Class="docs-stretch-paper" Elevation="0" Outlined="true">
+    <ToolBarContent>
+        <MudButton Size="Size.Small" Variant="Variant.Outlined" OnClick="Save">Save</MudButton>
+        <MudText Typo="Typo.body2" Class="ml-2">@_message</MudText>
+    </ToolBarContent>
+    <ChildContent>
+        <ExGrid TRow="CurveTrade" Source="_source" Columns="_columns" PinnedColumnCount="1"
+                CellState="_rules.State" CellMessageOf="_rules.Message"
+                OnEdit="OnEdit" OnPaste="OnPaste" Chrome="_chrome"
+                ViewportHeight="300" ViewportWidth="ViewportSize.Stretch" />
+    </ChildContent>
+</MudExGridPaper>
+
+@code {
+    private static readonly MudGridChrome _chrome = new();
+    private readonly List<CurveTrade> _trades = CurveTrade.Sample();
+    private readonly InMemoryGridSource<CurveTrade> _source;
+    // Keyed by the trade id, the Row Key: a Breach names trades wherever they stand, on screen or not.
+    private readonly GridRuleset<CurveTrade> _rules = new GridRuleset<CurveTrade>(t => t.Id).Set(CurveTrade.OneCurvePerCsa);
+    private readonly GridColumn<CurveTrade>[] _columns =
+    [
+        new("Id", ColumnType.Text, t => t.Id, width: new(ColumnWidth.Fixed(80))),
+        new("Csa", ColumnType.Text, t => t.Csa, header: "CSA", width: new(ColumnWidth.Fixed(90))),
+        new("Counterparty", ColumnType.Text, t => t.Counterparty, width: new(ColumnWidth.Fixed(140))),
+        new("Curve", ColumnType.Text, t => t.Curve, header: "Discount curve", width: new(ColumnWidth.Fixed(140)), editable: true),
+    ];
+    private string _message = "CSA ABC discounts on USD-SOFR. Move its trades to USD-FF one by one.";
+
+    public CollectionRulesMud()
+    {
+        _source = GridSource.From(_trades);
+        _rules.Evaluate(_trades, _columns);
+    }
+
+    private void OnEdit(GridEditIntent<CurveTrade> edit) => Apply([(edit.Row, edit.Value)]);
+
+    // Ctrl+Enter over a selection fills every cell at once: the one gesture that moves a whole CSA in a step.
+    private void OnPaste(GridPasteIntent paste)
+        => Apply([.. Cells(paste.Plan.Targets).Where(cell => _columns[cell.Column].Name == "Curve")
+            .Select(cell => (_source.Window[cell.Row], paste.ValueFor(cell)))]);
+
+    private void Apply(IReadOnlyList<(CurveTrade Row, string Curve)> writes)
+    {
+        foreach (var (row, curve) in writes)
+        {
+            var replacement = row with { Curve = curve.Trim() };
+            _source.ReplaceRow(row, replacement);
+            _trades[_trades.FindIndex(t => t.Id == row.Id)] = replacement;
+        }
+        // The rule is judged over the whole collection after every apply, never at the editor: the edit lands.
+        _rules.Evaluate(_trades, _columns);
+        _message = _rules.Breaches.Count == 0 ? "Every CSA has one curve." : $"{_rules.Breaches.Count} breach(es) stand.";
+    }
+
+    // The refusal belongs to the save, as a database's deferred constraint is checked at commit.
+    private void Save() => _message = _rules.Breaches.Count == 0
+        ? "Saved."
+        : $"Not saved: {_rules.Breaches[0].Message}";
+
+    private static IEnumerable<CellPosition> Cells(IEnumerable<SelectionRange> ranges) =>
+        from range in ranges
+        from row in Enumerable.Range(range.TopRow, range.RowCount)
+        from column in Enumerable.Range(range.LeftColumn, range.ColumnCount)
+        select new CellPosition(row, column);
+}

@@ -254,6 +254,17 @@ export function resolveKey(press: KeyPress): GridKeyAction {
     return known === undefined ? none : known;
 }
 
+/**
+ * The error step's keys (ADR-0381 section 3, decided with the user 2026-10-26): F8 to the next error cell and
+ * Shift+F8 to the previous, the keys VS Code and Visual Studio step through problems with. Outside the table: they
+ * are the core's only on a grid given `findError`, and a grid without it leaves them to the page or to a Consumer
+ * that declares them. `undefined` for any other key.
+ */
+export function errorStepOf(press: KeyPress): 'next' | 'previous' | undefined {
+    const canonical = canonicalKey(press);
+    return canonical === 'F8' ? 'next' : canonical === 'Shift+F8' ? 'previous' : undefined;
+}
+
 /** The clipboard's keys (ADR-0005, ADR-0014): answered through the browser's copy and paste events, with
  * cut and paste as plain text. Never taken, or the events would not fire. */
 export const clipboardKeys: readonly string[] = Object.freeze([

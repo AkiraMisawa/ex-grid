@@ -71,6 +71,19 @@ export const replaceCellChangedId = 'replace-cell-changed';
  * Said once for the inputs of one answer. */
 export const heldInputLostId = 'pending-input-lost';
 
+/** The error step found no cell with an error anywhere the Consumer looked (ADR-0381 section 3). */
+export const errorStepNoneId = 'error-step-none';
+
+/** The error step's answer came back about rows or columns that moved while it was out: nothing moved (ADR-0381,
+ * ADR-0011). */
+export const errorStepMovedId = 'error-step-moved';
+
+/** The built-in English for the error step's words (ADR-0381 section 3). */
+export const errorStepWords: readonly (readonly [string, string])[] = Object.freeze([
+    [errorStepNoneId, 'No error among the rows and columns shown.'],
+    [errorStepMovedId, 'The rows moved while the next error was looked for, so the step was set aside. Press F8 again.'],
+]);
+
 /** The built-in English for a Pending Commit's words. */
 export const pendingCommitWords: readonly (readonly [string, string])[] = Object.freeze([
     [commitCancelledId, 'Nothing was changed: the edit was cancelled while it was being checked.'],

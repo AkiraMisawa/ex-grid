@@ -1,7 +1,7 @@
 import { gridCommandIds, gridLabelIds } from './command-ids';
 import { findPanelWords } from './find-panel-labels';
 import { markWords } from './mark-words';
-import { pendingCommitWords, rowCommandRefusalWords } from './refusal-words';
+import { errorStepWords, pendingCommitWords, rowCommandRefusalWords } from './refusal-words';
 import { selectionWords } from './selection-words';
 import { summaryWords } from './summary-words';
 
@@ -25,6 +25,7 @@ const words: ReadonlyMap<string, string> = new Map([
     ...findPanelWords,
     ...rowCommandRefusalWords,
     ...pendingCommitWords,
+    ...errorStepWords,
     ...markWords,
     ...selectionWords,
     ...summaryWords,
