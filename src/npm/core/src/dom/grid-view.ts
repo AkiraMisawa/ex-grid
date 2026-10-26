@@ -40,7 +40,7 @@ import { headerAfterAnswer, headerBeforeAsking } from '../finding/header-find-wa
 import { replacedEntry, type GridReplaceRequest, type GridReplaceResult } from '../finding/replace';
 import { defined, itemAt } from '../must';
 import { editingKeysByMode } from '../keys/editing-keys';
-import { canonicalKey, resolveKey, type GridKeyAction, type KeyPress } from '../keys/grid-keys';
+import { canonicalKey, declareKeys, resolveKey, type GridKeyAction, type KeyPress } from '../keys/grid-keys';
 import { cellClasses, type CellTone, type MatchMark } from '../paint/cell-classes';
 import { columnMark, rowMark } from '../paint/heading-mark-styles';
 import { rowClasses, type RowKind } from '../paint/row-classes';
@@ -93,6 +93,23 @@ import { ConsumerPopoverFrame, type GridPopoverContext } from './consumer-popove
 
 /** A Viewport axis: a number of pixels the Consumer declares, or `'stretch'`, the parent's (ADR-0028). */
 export type ViewportSize = number | 'stretch';
+
+/**
+ * A declared key, pressed (ADR-0050, item 14): the key as it was declared, whether an edit was open, and the
+ * Selection as the grid holds it at the key, with the Row Sequence Version it is written in. Raised and not
+ * interpreted: the grid moves nothing, opens nothing, and leaves an open edit as it was, its text and caret
+ * included.
+ */
+export interface GridDeclaredKeyPress {
+    /** The key, in the canonical form it was declared in. */
+    readonly key: string;
+    /** Whether an edit was open: while one is, the Consumer decides what the key does. */
+    readonly editOpen: boolean;
+    /** The Selection at the key, which a key that acts on the Selection acts on. */
+    readonly selection: GridSelection;
+    /** The Row Sequence Version the Selection's positions are written in. */
+    readonly rowSequenceVersion: number;
+}
 
 /**
  * What a reader of the grid looks at (ADR-0331): the Selection, with the Row Sequence Version its positions are
@@ -225,6 +242,19 @@ export interface GridOptions<Row> extends CellPaintOptions<Row>, FormulaBarOptio
      * grid does not hear the pointer move for it.
      */
     readonly cellMessage?: (row: Row, column: GridColumn<Row>) => string | undefined;
+    /**
+     * Keys the Consumer names, which the grid takes from the browser and raises through `onDeclaredKey`, whether or
+     * not an edit is open (ADR-0050, item 14): ExSheet's formatting keys, or a key of the page's own. Each is in
+     * the canonical form, the event's `key` after `Control+`, `Meta+`, `Shift+` and `Alt+` in that order for the
+     * modifiers held, Command folding into Control where it is the Primary Modifier (ADR-0012), and is matched
+     * exactly, so a letter wanted under CapsLock too is declared in both cases. A key the core answers itself is
+     * refused by name, as is one not in the canonical form. Taken only while the grid holds the keyboard on its
+     * root, its Keyboard Field or an editor surface: a control inside the grid keeps its own keys.
+     */
+    readonly declaredKeys?: readonly string[];
+    /** Hears a declared key pressed (ADR-0050, item 14). Required with `declaredKeys`: a key taken from the page
+     * for nobody would be taken for nothing. */
+    readonly onDeclaredKey?: (press: GridDeclaredKeyPress) => void;
     /** Paints a Row Stripe on every second row of the result (ADR-0038), appearance only and off unless given.
      * Counted by the row's position in the whole result, so a stripe stays with its row while scrolling and on a
      * Placeholder; Row Kind and Cell State paint over it, and the overlays above it. The colour is
@@ -642,6 +672,8 @@ interface Taken<Row> {
     readonly highlightFocusRow: boolean;
     readonly highlightHoverRow: boolean;
     readonly cellMessage: ((row: Row, column: GridColumn<Row>) => string | undefined) | undefined;
+    readonly declaredKeys: ReadonlySet<string>;
+    readonly onDeclaredKey: ((press: GridDeclaredKeyPress) => void) | undefined;
     readonly stripeRows: boolean;
     readonly rowKind: ((row: Row) => RowKind) | undefined;
     readonly pasteByteCap: number;
@@ -1097,6 +1129,8 @@ export class GridView<Row> {
     // A flagged cell's message (ADR-0034): the Consumer's question, the cell the Focus waits on and the timer that
     // opens it, the pointer's rest timer, and the message shown, which is for one cell at a time.
     #cellMessage: ((row: Row, column: GridColumn<Row>) => string | undefined) | undefined;
+    #declaredKeys: ReadonlySet<string> = declareKeys();
+    #onDeclaredKey: ((press: GridDeclaredKeyPress) => void) | undefined;
     #cancelMessage: (() => void) | undefined;
     #cancelRest: (() => void) | undefined;
     #restAt: { readonly x: number; readonly y: number; readonly movedAt: number } | undefined;
@@ -1755,6 +1789,16 @@ export class GridView<Row> {
         if (cellMessage !== undefined && typeof cellMessage !== 'function') {
             throw new TypeError('cellMessage is a function of the row and the column (ADR-0034).');
         }
+        const { declaredKeys: declaring, onDeclaredKey }: { readonly declaredKeys?: unknown; readonly onDeclaredKey?: unknown } = options;
+        if (declaring !== undefined && !Array.isArray(declaring)) throw new TypeError('declaredKeys is a list of keys in the canonical form (ADR-0050, item 14).');
+        if (onDeclaredKey !== undefined && typeof onDeclaredKey !== 'function') {
+            throw new TypeError('onDeclaredKey is a function of the key pressed (ADR-0050, item 14).');
+        }
+        const declaredKeys = declareKeys(options.declaredKeys);
+        if (declaredKeys.size > 0 && onDeclaredKey === undefined) {
+            throw new TypeError('declaredKeys names keys, but no onDeclaredKey hears them: the keys would be taken from the page and nobody told '
+                + '(ADR-0050, item 14).');
+        }
         const { stripeRows, rowKind }: { readonly stripeRows?: unknown; readonly rowKind?: unknown } = options;
         if (stripeRows !== undefined && typeof stripeRows !== 'boolean') throw new TypeError('stripeRows is true or false.');
         if (rowKind !== undefined && typeof rowKind !== 'function') throw new TypeError('rowKind is a function of the row (ADR-0024).');
@@ -1885,7 +1929,7 @@ export class GridView<Row> {
             marks,
             onPaste: options.onPaste, pasteMaySpill: options.pasteMaySpill === true, pasteByteCap, onClear: options.onClear,
             highlightFocusRow: options.highlightFocusRow === true, highlightHoverRow: options.highlightHoverRow === true,
-            cellMessage: options.cellMessage,
+            cellMessage: options.cellMessage, declaredKeys, onDeclaredKey: options.onDeclaredKey,
             stripeRows: options.stripeRows === true, rowKind: options.rowKind,
             onUndo: options.onUndo, onRedo: options.onRedo,
             onEdit: options.onEdit, onEditingChanged: options.onEditingChanged, onEditDiscarded: options.onEditDiscarded,
@@ -2085,6 +2129,8 @@ export class GridView<Row> {
                 this.#hoverRow = undefined;
             }
         }
+        this.#declaredKeys = taken.declaredKeys;
+        this.#onDeclaredKey = taken.onDeclaredKey;
         if (taken.cellMessage !== this.#cellMessage) {
             const heard = this.#cellMessage !== undefined;
             this.#cellMessage = taken.cellMessage;
@@ -2609,11 +2655,19 @@ export class GridView<Row> {
             if (event.target === this.#keyField) this.#imeKeyTold = true;
             return;
         }
-        if (modifierKeys.has(event.key)) return;
         const press: KeyPress = {
             key: event.key, ctrl: event.ctrlKey, shift: event.shiftKey, alt: event.altKey, meta: event.metaKey,
             metaIsPrimary: this.#metaIsPrimary,
         };
+        if (modifierKeys.has(event.key)) {
+            // The Alt key alone is the one modifier a Consumer may declare (ADR-0100), heard where the grid holds the
+            // keyboard: its root, its Keyboard Field, or an editor surface.
+            const edit = this.#edit;
+            const held = event.target === this.#root || event.target === this.#keyField
+                || (edit !== undefined && (event.target === edit.element || event.target === this.#bar.text));
+            if (event.key === 'Alt' && held) this.#raiseDeclaredKey(event, press);
+            return;
+        }
         // The page's text selection is never the grid's to copy (CP-10): a key on the root drops it before the
         // browser runs the command it is the default of, so Ctrl+C fires its copy event on the root. Not from the
         // Keyboard Field (ADR-0080), whose caret is the document's selection then, and which an IME needs.
@@ -2647,6 +2701,7 @@ export class GridView<Row> {
         const edit = this.#edit;
         // The Formula Bar's text is the editor's second surface, and its keys are the editor's (ADR-0051).
         if (edit !== undefined && (event.target === edit.element || event.target === this.#bar.text)) {
+            if (this.#raiseDeclaredKey(event, press)) return;
             this.#onEditorKey(event, press, edit);
             return;
         }
@@ -2662,6 +2717,8 @@ export class GridView<Row> {
         // in the Keyboard Field: the key it took before has been told whole, so the editor takes the keyboard
         // now, and the key is the editor's, its character typed where DOM focus now is (ADR-0080).
         if (edit !== undefined && event.target === this.#keyField) {
+            // A declared key is the Consumer's to answer while the edit stays as it is, waiting for the keyboard too.
+            if (this.#raiseDeclaredKey(event, press)) return;
             this.#imeKeyTold = false;
             this.#editorFocusOwed = true;
             this.#focusEditor();
@@ -2728,6 +2785,9 @@ export class GridView<Row> {
                 this.#invalidate();
             }
         }
+        // A declared key is the Consumer's, and resolves to nothing of the core's (ADR-0050, item 14): raised, and
+        // it moves nothing.
+        if (action.kind === 'none' && this.#raiseDeclaredKey(event, press)) return;
         // Space engages with the Focus cell's content (ADR-0020, ADR-0037). Aimed with a Selection an order move
         // or a replaced source has dropped since, it engages nothing, never the Focus in force the user did not
         // aim at, and an action it was aimed at is refused (ADR-0142). With nothing selected it is a first key
@@ -3501,6 +3561,20 @@ export class GridView<Row> {
         this.#focusEditor();
         this.#tellEditing();
         this.#invalidate();
+    }
+
+    // Raises the key when it is declared (ADR-0050, item 14), and answers whether it was: the key then means nothing
+    // more to the core, in either state, and the browser does nothing with it either. Nothing is reconciled first:
+    // an open edit is left exactly as it was, and the Selection is the one the grid holds at the key.
+    #raiseDeclaredKey(event: KeyboardEvent, press: KeyPress): boolean {
+        const heard = this.#onDeclaredKey;
+        const key = canonicalKey(press);
+        if (heard === undefined || !this.#declaredKeys.has(key)) return false;
+        this.#taken(event);
+        heard(Object.freeze({
+            key, editOpen: this.#edit !== undefined, selection: this.#held.selection, rowSequenceVersion: this.#handedVersion(),
+        }));
+        return true;
     }
 
     // A key typed in the Cell Editor: the mode's own keys are the grid's, and every other is the field's
@@ -6782,8 +6856,7 @@ export class GridView<Row> {
     #offScreenStatus(): readonly HTMLElement[] {
         const { ranges } = this.#held.selection;
         if (ranges.length === 0 || this.#selectionInView(ranges)) return [];
-        const cells = ranges.reduce((sum, range) => sum + rangeCellCount(range), 0);
-        const said = this.#labelOf(selectionLabelIds.selectedOutsideView).replaceAll('{count}', String(cells));
+        const said = this.#labelOf(selectionLabelIds.selectedOutsideView).replaceAll('{count}', String(this.#held.selection.cellCount));
         if (this.#offScreen.textContent !== said) this.#offScreen.textContent = said;
         const go = this.#labelOf(selectionLabelIds.goToSelection);
         if (this.#goToSelection.textContent !== go) this.#goToSelection.textContent = go;
@@ -6791,9 +6864,10 @@ export class GridView<Row> {
     }
 
     // Whether any rectangle meets the painted rows and, on them, a pinned column or the painted slice of the others.
+    // Before the first pass nothing is known to be out of view, and nothing is said.
     #selectionInView(ranges: readonly SelectionRange[]): boolean {
         const visible = this.#visible;
-        if (visible === undefined) return false;
+        if (visible === undefined) return true;
         const pinned = this.#styles.geometry.pinnedCount;
         const scrollable = this.#scrollable;
         return ranges.some(range => range.topRow < visible.start + visible.count && bottomRow(range) >= visible.start

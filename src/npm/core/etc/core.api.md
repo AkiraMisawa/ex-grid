@@ -493,6 +493,14 @@ export interface GridCopyRequest {
 }
 
 // @public
+export interface GridDeclaredKeyPress {
+    readonly editOpen: boolean;
+    readonly key: string;
+    readonly rowSequenceVersion: number;
+    readonly selection: GridSelection;
+}
+
+// @public
 export type GridDensity = 'compact' | 'comfortable' | 'standard' | 'excel';
 
 // @public
@@ -604,6 +612,7 @@ export interface GridOptions<Row> extends CellPaintOptions<Row>, FormulaBarOptio
     readonly copyAnswerAsync?: (request: GridCopyRequest, signal: AbortSignal) => Promise<GridCopyAnswer>;
     readonly copyCellCap?: number;
     readonly dataEdge?: (from: CellPosition, direction: GridDirection) => CellPosition;
+    readonly declaredKeys?: readonly string[];
     readonly density?: GridDensity;
     readonly findMatch?: (row: Row, column: GridColumn<Row>, pattern: GridFindPattern) => boolean;
     readonly findsHeaders?: boolean;
@@ -623,6 +632,7 @@ export interface GridOptions<Row> extends CellPaintOptions<Row>, FormulaBarOptio
     readonly onColumnHidden?: (column: string) => void;
     readonly onColumnOrderChanged?: (order: readonly string[]) => void;
     readonly onColumnWidthChanged?: (change: GridColumnWidthChange) => void;
+    readonly onDeclaredKey?: (press: GridDeclaredKeyPress) => void;
     readonly onEdit?: (intent: GridEditIntent<Row>) => void;
     readonly onEditDiscarded?: (reason: EditDiscardReason) => void;
     readonly onEditingChanged?: (open: boolean) => void;
