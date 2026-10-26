@@ -1,0 +1,2452 @@
+{
+  "about": "Writing a View State's and a Query's JSON (ADR-0207): the text the C# core writes, byte for byte, which reads back as what was written, and what writing refuses; and a View State made from a grid's columns, and one refused when it is made. Transcribed from tests/ExGrid.Tests/GridViewStateJsonTests.cs and QuerySerialisationTests.cs.",
+  "kind": "viewStateJson",
+  "columns": [
+    "Notional",
+    "Book",
+    "AsOf",
+    "Active",
+    "Settles",
+    "Stamped",
+    "Hidden"
+  ],
+  "cases": [
+    {
+      "name": "ADR-0207: the form written is the documented one",
+      "write": {
+        "columns": [
+          {
+            "column": "Notional",
+            "width": 120.5,
+            "pinned": true
+          },
+          {
+            "column": "Book",
+            "width": "Auto",
+            "pinned": false
+          }
+        ],
+        "sorts": [
+          {
+            "column": "Book",
+            "direction": "Descending"
+          }
+        ],
+        "filter": {
+          "columns": {
+            "AsOf": {
+              "combinator": "And",
+              "clauses": [
+                {
+                  "operator": "LessThan",
+                  "value": {
+                    "type": "DateTime",
+                    "value": "2026-01-05T09:30:00.0000000",
+                    "kind": "Utc"
+                  }
+                }
+              ]
+            },
+            "Notional": {
+              "combinator": "Or",
+              "clauses": [
+                {
+                  "operator": "In",
+                  "values": [
+                    {
+                      "type": "Decimal",
+                      "value": "1.50"
+                    },
+                    null
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      },
+      "writes": "{\"version\":1,\"columns\":[{\"column\":\"Notional\",\"width\":120.5,\"pinned\":true},{\"column\":\"Book\",\"width\":\"Auto\",\"pinned\":false}],\"sorts\":[{\"column\":\"Book\",\"direction\":\"Descending\"}],\"filter\":{\"columns\":{\"AsOf\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"LessThan\",\"value\":{\"type\":\"DateTime\",\"value\":\"2026-01-05T09:30:00.0000000\",\"kind\":\"Utc\"}}]},\"Notional\":{\"combinator\":\"Or\",\"clauses\":[{\"operator\":\"In\",\"values\":[{\"type\":\"Decimal\",\"value\":\"1.50\"},null]}]}}}}"
+    },
+    {
+      "name": "ADR-0207: an empty View State is written as itself",
+      "write": {
+        "columns": [],
+        "sorts": []
+      },
+      "writes": "{\"version\":1,\"columns\":[],\"sorts\":[]}"
+    },
+    {
+      "name": "ST-4: widths, order, pins, sort and filter are written as they are",
+      "write": {
+        "columns": [
+          {
+            "column": "Notional",
+            "width": 137.5,
+            "pinned": true
+          },
+          {
+            "column": "Book",
+            "width": "Auto",
+            "pinned": false
+          },
+          {
+            "column": "AsOf",
+            "width": 400.25,
+            "pinned": false
+          }
+        ],
+        "sorts": [
+          {
+            "column": "AsOf",
+            "direction": "Descending"
+          },
+          {
+            "column": "Hidden",
+            "direction": "Ascending"
+          }
+        ],
+        "filter": {
+          "columns": {
+            "Book": {
+              "combinator": "And",
+              "clauses": [
+                {
+                  "operator": "IsNotBlank"
+                }
+              ]
+            },
+            "Notional": {
+              "combinator": "Or",
+              "clauses": [
+                {
+                  "operator": "GreaterThan",
+                  "value": {
+                    "type": "Decimal",
+                    "value": "1000000"
+                  }
+                },
+                {
+                  "operator": "LessThan",
+                  "value": {
+                    "type": "Decimal",
+                    "value": "0"
+                  }
+                }
+              ]
+            },
+            "AsOf": {
+              "combinator": "And",
+              "clauses": [
+                {
+                  "operator": "GreaterThanOrEqual",
+                  "value": {
+                    "type": "DateTime",
+                    "value": "2026-10-01T00:00:00.0000000",
+                    "kind": "Unspecified"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "writes": "{\"version\":1,\"columns\":[{\"column\":\"Notional\",\"width\":137.5,\"pinned\":true},{\"column\":\"Book\",\"width\":\"Auto\",\"pinned\":false},{\"column\":\"AsOf\",\"width\":400.25,\"pinned\":false}],\"sorts\":[{\"column\":\"AsOf\",\"direction\":\"Descending\"},{\"column\":\"Hidden\",\"direction\":\"Ascending\"}],\"filter\":{\"columns\":{\"Book\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"IsNotBlank\"}]},\"Notional\":{\"combinator\":\"Or\",\"clauses\":[{\"operator\":\"GreaterThan\",\"value\":{\"type\":\"Decimal\",\"value\":\"1000000\"}},{\"operator\":\"LessThan\",\"value\":{\"type\":\"Decimal\",\"value\":\"0\"}}]},\"AsOf\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"GreaterThanOrEqual\",\"value\":{\"type\":\"DateTime\",\"value\":\"2026-10-01T00:00:00.0000000\",\"kind\":\"Unspecified\"}}]}}}}"
+    },
+    {
+      "name": "ADR-0016: a Fixed width of 1000000000000000.0 is written as its round trip",
+      "write": {
+        "columns": [
+          {
+            "column": "Book",
+            "width": 1000000000000000.0,
+            "pinned": false
+          }
+        ],
+        "sorts": []
+      },
+      "writes": "{\"version\":1,\"columns\":[{\"column\":\"Book\",\"width\":1000000000000000,\"pinned\":false}],\"sorts\":[]}"
+    },
+    {
+      "name": "ADR-0016: a Fixed width of 1e+16 is written as its round trip",
+      "write": {
+        "columns": [
+          {
+            "column": "Book",
+            "width": 1e+16,
+            "pinned": false
+          }
+        ],
+        "sorts": []
+      },
+      "writes": "{\"version\":1,\"columns\":[{\"column\":\"Book\",\"width\":10000000000000000,\"pinned\":false}],\"sorts\":[]}"
+    },
+    {
+      "name": "ADR-0016: a Fixed width of 1e+17 is written as its round trip",
+      "write": {
+        "columns": [
+          {
+            "column": "Book",
+            "width": 1e+17,
+            "pinned": false
+          }
+        ],
+        "sorts": []
+      },
+      "writes": "{\"version\":1,\"columns\":[{\"column\":\"Book\",\"width\":1E+17,\"pinned\":false}],\"sorts\":[]}"
+    },
+    {
+      "name": "ADR-0016: a Fixed width of 0.1 is written as its round trip",
+      "write": {
+        "columns": [
+          {
+            "column": "Book",
+            "width": 0.1,
+            "pinned": false
+          }
+        ],
+        "sorts": []
+      },
+      "writes": "{\"version\":1,\"columns\":[{\"column\":\"Book\",\"width\":0.1,\"pinned\":false}],\"sorts\":[]}"
+    },
+    {
+      "name": "ADR-0016: a Fixed width of 1e-05 is written as its round trip",
+      "write": {
+        "columns": [
+          {
+            "column": "Book",
+            "width": 1e-05,
+            "pinned": false
+          }
+        ],
+        "sorts": []
+      },
+      "writes": "{\"version\":1,\"columns\":[{\"column\":\"Book\",\"width\":1E-05,\"pinned\":false}],\"sorts\":[]}"
+    },
+    {
+      "name": "ADR-0016: a Fixed width of 88.75 is written as its round trip",
+      "write": {
+        "columns": [
+          {
+            "column": "Book",
+            "width": 88.75,
+            "pinned": false
+          }
+        ],
+        "sorts": []
+      },
+      "writes": "{\"version\":1,\"columns\":[{\"column\":\"Book\",\"width\":88.75,\"pinned\":false}],\"sorts\":[]}"
+    },
+    {
+      "name": "ADR-0016: a Fixed width of 1234567890123456.0 is written as its round trip",
+      "write": {
+        "columns": [
+          {
+            "column": "Book",
+            "width": 1234567890123456.0,
+            "pinned": false
+          }
+        ],
+        "sorts": []
+      },
+      "writes": "{\"version\":1,\"columns\":[{\"column\":\"Book\",\"width\":1234567890123456,\"pinned\":false}],\"sorts\":[]}"
+    },
+    {
+      "name": "ADR-0023: a Decimal operand ('25000000.50') is written as its type and its invariant text, and reads back as itself",
+      "write": {
+        "columns": [
+          {
+            "column": "Notional",
+            "width": "Auto",
+            "pinned": false
+          }
+        ],
+        "sorts": [],
+        "filter": {
+          "columns": {
+            "Notional": {
+              "combinator": "And",
+              "clauses": [
+                {
+                  "operator": "GreaterThanOrEqual",
+                  "value": {
+                    "type": "Decimal",
+                    "value": "25000000.50"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "writes": "{\"version\":1,\"columns\":[{\"column\":\"Notional\",\"width\":\"Auto\",\"pinned\":false}],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"GreaterThanOrEqual\",\"value\":{\"type\":\"Decimal\",\"value\":\"25000000.50\"}}]}}}}"
+    },
+    {
+      "name": "ADR-0023: a Decimal operand ('79228162514264337593543950335') is written as its type and its invariant text, and reads back as itself",
+      "write": {
+        "columns": [
+          {
+            "column": "Notional",
+            "width": "Auto",
+            "pinned": false
+          }
+        ],
+        "sorts": [],
+        "filter": {
+          "columns": {
+            "Notional": {
+              "combinator": "And",
+              "clauses": [
+                {
+                  "operator": "LessThan",
+                  "value": {
+                    "type": "Decimal",
+                    "value": "79228162514264337593543950335"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "writes": "{\"version\":1,\"columns\":[{\"column\":\"Notional\",\"width\":\"Auto\",\"pinned\":false}],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"LessThan\",\"value\":{\"type\":\"Decimal\",\"value\":\"79228162514264337593543950335\"}}]}}}}"
+    },
+    {
+      "name": "ADR-0023: a Decimal operand ('-0.0000000000000000000000000001') is written as its type and its invariant text, and reads back as itself",
+      "write": {
+        "columns": [
+          {
+            "column": "Notional",
+            "width": "Auto",
+            "pinned": false
+          }
+        ],
+        "sorts": [],
+        "filter": {
+          "columns": {
+            "Notional": {
+              "combinator": "And",
+              "clauses": [
+                {
+                  "operator": "GreaterThan",
+                  "value": {
+                    "type": "Decimal",
+                    "value": "-0.0000000000000000000000000001"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "writes": "{\"version\":1,\"columns\":[{\"column\":\"Notional\",\"width\":\"Auto\",\"pinned\":false}],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"GreaterThan\",\"value\":{\"type\":\"Decimal\",\"value\":\"-0.0000000000000000000000000001\"}}]}}}}"
+    },
+    {
+      "name": "ADR-0023: a Decimal operand ('1234567890123456789.10') is written as its type and its invariant text, and reads back as itself",
+      "write": {
+        "columns": [
+          {
+            "column": "Notional",
+            "width": "Auto",
+            "pinned": false
+          }
+        ],
+        "sorts": [],
+        "filter": {
+          "columns": {
+            "Notional": {
+              "combinator": "And",
+              "clauses": [
+                {
+                  "operator": "Equals",
+                  "value": {
+                    "type": "Decimal",
+                    "value": "1234567890123456789.10"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "writes": "{\"version\":1,\"columns\":[{\"column\":\"Notional\",\"width\":\"Auto\",\"pinned\":false}],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Decimal\",\"value\":\"1234567890123456789.10\"}}]}}}}"
+    },
+    {
+      "name": "ADR-0023: a Double operand ('0.1') is written as its type and its invariant text, and reads back as itself",
+      "write": {
+        "columns": [
+          {
+            "column": "Notional",
+            "width": "Auto",
+            "pinned": false
+          }
+        ],
+        "sorts": [],
+        "filter": {
+          "columns": {
+            "Notional": {
+              "combinator": "And",
+              "clauses": [
+                {
+                  "operator": "Equals",
+                  "value": {
+                    "type": "Double",
+                    "value": "0.1"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "writes": "{\"version\":1,\"columns\":[{\"column\":\"Notional\",\"width\":\"Auto\",\"pinned\":false}],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Double\",\"value\":\"0.1\"}}]}}}}"
+    },
+    {
+      "name": "ADR-0023: a Double operand ('1.7976931348623157E+308') is written as its type and its invariant text, and reads back as itself",
+      "write": {
+        "columns": [
+          {
+            "column": "Notional",
+            "width": "Auto",
+            "pinned": false
+          }
+        ],
+        "sorts": [],
+        "filter": {
+          "columns": {
+            "Notional": {
+              "combinator": "And",
+              "clauses": [
+                {
+                  "operator": "Equals",
+                  "value": {
+                    "type": "Double",
+                    "value": "1.7976931348623157E+308"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "writes": "{\"version\":1,\"columns\":[{\"column\":\"Notional\",\"width\":\"Auto\",\"pinned\":false}],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Double\",\"value\":\"1.7976931348623157E\\u002B308\"}}]}}}}"
+    },
+    {
+      "name": "ADR-0023: a Double operand ('-5E-324') is written as its type and its invariant text, and reads back as itself",
+      "write": {
+        "columns": [
+          {
+            "column": "Notional",
+            "width": "Auto",
+            "pinned": false
+          }
+        ],
+        "sorts": [],
+        "filter": {
+          "columns": {
+            "Notional": {
+              "combinator": "And",
+              "clauses": [
+                {
+                  "operator": "Equals",
+                  "value": {
+                    "type": "Double",
+                    "value": "-5E-324"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "writes": "{\"version\":1,\"columns\":[{\"column\":\"Notional\",\"width\":\"Auto\",\"pinned\":false}],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Double\",\"value\":\"-5E-324\"}}]}}}}"
+    },
+    {
+      "name": "ADR-0023: a Single operand ('0.1') is written as its type and its invariant text, and reads back as itself",
+      "write": {
+        "columns": [
+          {
+            "column": "Notional",
+            "width": "Auto",
+            "pinned": false
+          }
+        ],
+        "sorts": [],
+        "filter": {
+          "columns": {
+            "Notional": {
+              "combinator": "And",
+              "clauses": [
+                {
+                  "operator": "Equals",
+                  "value": {
+                    "type": "Single",
+                    "value": "0.1"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "writes": "{\"version\":1,\"columns\":[{\"column\":\"Notional\",\"width\":\"Auto\",\"pinned\":false}],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Single\",\"value\":\"0.1\"}}]}}}}"
+    },
+    {
+      "name": "ADR-0023: a Int64 operand ('-9223372036854775808') is written as its type and its invariant text, and reads back as itself",
+      "write": {
+        "columns": [
+          {
+            "column": "Notional",
+            "width": "Auto",
+            "pinned": false
+          }
+        ],
+        "sorts": [],
+        "filter": {
+          "columns": {
+            "Notional": {
+              "combinator": "And",
+              "clauses": [
+                {
+                  "operator": "Equals",
+                  "value": {
+                    "type": "Int64",
+                    "value": "-9223372036854775808"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "writes": "{\"version\":1,\"columns\":[{\"column\":\"Notional\",\"width\":\"Auto\",\"pinned\":false}],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Int64\",\"value\":\"-9223372036854775808\"}}]}}}}"
+    },
+    {
+      "name": "ADR-0023: a Int32 operand ('2147483647') is written as its type and its invariant text, and reads back as itself",
+      "write": {
+        "columns": [
+          {
+            "column": "Notional",
+            "width": "Auto",
+            "pinned": false
+          }
+        ],
+        "sorts": [],
+        "filter": {
+          "columns": {
+            "Notional": {
+              "combinator": "And",
+              "clauses": [
+                {
+                  "operator": "Equals",
+                  "value": {
+                    "type": "Int32",
+                    "value": "2147483647"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "writes": "{\"version\":1,\"columns\":[{\"column\":\"Notional\",\"width\":\"Auto\",\"pinned\":false}],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Int32\",\"value\":\"2147483647\"}}]}}}}"
+    },
+    {
+      "name": "ADR-0023: a Int16 operand ('-12') is written as its type and its invariant text, and reads back as itself",
+      "write": {
+        "columns": [
+          {
+            "column": "Notional",
+            "width": "Auto",
+            "pinned": false
+          }
+        ],
+        "sorts": [],
+        "filter": {
+          "columns": {
+            "Notional": {
+              "combinator": "And",
+              "clauses": [
+                {
+                  "operator": "Equals",
+                  "value": {
+                    "type": "Int16",
+                    "value": "-12"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "writes": "{\"version\":1,\"columns\":[{\"column\":\"Notional\",\"width\":\"Auto\",\"pinned\":false}],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Int16\",\"value\":\"-12\"}}]}}}}"
+    },
+    {
+      "name": "ADR-0023: a SByte operand ('-128') is written as its type and its invariant text, and reads back as itself",
+      "write": {
+        "columns": [
+          {
+            "column": "Notional",
+            "width": "Auto",
+            "pinned": false
+          }
+        ],
+        "sorts": [],
+        "filter": {
+          "columns": {
+            "Notional": {
+              "combinator": "And",
+              "clauses": [
+                {
+                  "operator": "Equals",
+                  "value": {
+                    "type": "SByte",
+                    "value": "-128"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "writes": "{\"version\":1,\"columns\":[{\"column\":\"Notional\",\"width\":\"Auto\",\"pinned\":false}],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"SByte\",\"value\":\"-128\"}}]}}}}"
+    },
+    {
+      "name": "ADR-0023: a UInt64 operand ('18446744073709551615') is written as its type and its invariant text, and reads back as itself",
+      "write": {
+        "columns": [
+          {
+            "column": "Notional",
+            "width": "Auto",
+            "pinned": false
+          }
+        ],
+        "sorts": [],
+        "filter": {
+          "columns": {
+            "Notional": {
+              "combinator": "And",
+              "clauses": [
+                {
+                  "operator": "Equals",
+                  "value": {
+                    "type": "UInt64",
+                    "value": "18446744073709551615"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "writes": "{\"version\":1,\"columns\":[{\"column\":\"Notional\",\"width\":\"Auto\",\"pinned\":false}],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"UInt64\",\"value\":\"18446744073709551615\"}}]}}}}"
+    },
+    {
+      "name": "ADR-0023: a UInt32 operand ('4294967295') is written as its type and its invariant text, and reads back as itself",
+      "write": {
+        "columns": [
+          {
+            "column": "Notional",
+            "width": "Auto",
+            "pinned": false
+          }
+        ],
+        "sorts": [],
+        "filter": {
+          "columns": {
+            "Notional": {
+              "combinator": "And",
+              "clauses": [
+                {
+                  "operator": "Equals",
+                  "value": {
+                    "type": "UInt32",
+                    "value": "4294967295"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "writes": "{\"version\":1,\"columns\":[{\"column\":\"Notional\",\"width\":\"Auto\",\"pinned\":false}],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"UInt32\",\"value\":\"4294967295\"}}]}}}}"
+    },
+    {
+      "name": "ADR-0023: a UInt16 operand ('65535') is written as its type and its invariant text, and reads back as itself",
+      "write": {
+        "columns": [
+          {
+            "column": "Notional",
+            "width": "Auto",
+            "pinned": false
+          }
+        ],
+        "sorts": [],
+        "filter": {
+          "columns": {
+            "Notional": {
+              "combinator": "And",
+              "clauses": [
+                {
+                  "operator": "Equals",
+                  "value": {
+                    "type": "UInt16",
+                    "value": "65535"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "writes": "{\"version\":1,\"columns\":[{\"column\":\"Notional\",\"width\":\"Auto\",\"pinned\":false}],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"UInt16\",\"value\":\"65535\"}}]}}}}"
+    },
+    {
+      "name": "ADR-0023: a Byte operand ('255') is written as its type and its invariant text, and reads back as itself",
+      "write": {
+        "columns": [
+          {
+            "column": "Notional",
+            "width": "Auto",
+            "pinned": false
+          }
+        ],
+        "sorts": [],
+        "filter": {
+          "columns": {
+            "Notional": {
+              "combinator": "And",
+              "clauses": [
+                {
+                  "operator": "Equals",
+                  "value": {
+                    "type": "Byte",
+                    "value": "255"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "writes": "{\"version\":1,\"columns\":[{\"column\":\"Notional\",\"width\":\"Auto\",\"pinned\":false}],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Byte\",\"value\":\"255\"}}]}}}}"
+    },
+    {
+      "name": "ADR-0023: a String operand ('Rates') is written as its type and its invariant text, and reads back as itself",
+      "write": {
+        "columns": [
+          {
+            "column": "Book",
+            "width": "Auto",
+            "pinned": false
+          }
+        ],
+        "sorts": [],
+        "filter": {
+          "columns": {
+            "Book": {
+              "combinator": "And",
+              "clauses": [
+                {
+                  "operator": "Contains",
+                  "value": {
+                    "type": "String",
+                    "value": "Rates"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "writes": "{\"version\":1,\"columns\":[{\"column\":\"Book\",\"width\":\"Auto\",\"pinned\":false}],\"sorts\":[],\"filter\":{\"columns\":{\"Book\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Contains\",\"value\":{\"type\":\"String\",\"value\":\"Rates\"}}]}}}}"
+    },
+    {
+      "name": "ADR-0023: a String operand ('2026-01-05') is written as its type and its invariant text, and reads back as itself",
+      "write": {
+        "columns": [
+          {
+            "column": "Book",
+            "width": "Auto",
+            "pinned": false
+          }
+        ],
+        "sorts": [],
+        "filter": {
+          "columns": {
+            "Book": {
+              "combinator": "And",
+              "clauses": [
+                {
+                  "operator": "Equals",
+                  "value": {
+                    "type": "String",
+                    "value": "2026-01-05"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "writes": "{\"version\":1,\"columns\":[{\"column\":\"Book\",\"width\":\"Auto\",\"pinned\":false}],\"sorts\":[],\"filter\":{\"columns\":{\"Book\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"String\",\"value\":\"2026-01-05\"}}]}}}}"
+    },
+    {
+      "name": "ADR-0023: a String operand ('') is written as its type and its invariant text, and reads back as itself",
+      "write": {
+        "columns": [
+          {
+            "column": "Book",
+            "width": "Auto",
+            "pinned": false
+          }
+        ],
+        "sorts": [],
+        "filter": {
+          "columns": {
+            "Book": {
+              "combinator": "And",
+              "clauses": [
+                {
+                  "operator": "Equals",
+                  "value": {
+                    "type": "String",
+                    "value": ""
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "writes": "{\"version\":1,\"columns\":[{\"column\":\"Book\",\"width\":\"Auto\",\"pinned\":false}],\"sorts\":[],\"filter\":{\"columns\":{\"Book\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"String\",\"value\":\"\"}}]}}}}"
+    },
+    {
+      "name": "ADR-0023: a String operand ('\"Ünïcödé\" — 日本語, tab\\tand newline\\n & \\'...') is written as its type and its invariant text, and reads back as itself",
+      "write": {
+        "columns": [
+          {
+            "column": "Book",
+            "width": "Auto",
+            "pinned": false
+          }
+        ],
+        "sorts": [],
+        "filter": {
+          "columns": {
+            "Book": {
+              "combinator": "And",
+              "clauses": [
+                {
+                  "operator": "StartsWith",
+                  "value": {
+                    "type": "String",
+                    "value": "\"Ünïcödé\" — 日本語, tab\tand newline\n & 'x' + <y> `z` \\ 😀"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "writes": "{\"version\":1,\"columns\":[{\"column\":\"Book\",\"width\":\"Auto\",\"pinned\":false}],\"sorts\":[],\"filter\":{\"columns\":{\"Book\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"StartsWith\",\"value\":{\"type\":\"String\",\"value\":\"\\u0022\\u00DCn\\u00EFc\\u00F6d\\u00E9\\u0022 \\u2014 \\u65E5\\u672C\\u8A9E, tab\\tand newline\\n \\u0026 \\u0027x\\u0027 \\u002B \\u003Cy\\u003E \\u0060z\\u0060 \\\\ \\uD83D\\uDE00\"}}]}}}}"
+    },
+    {
+      "name": "ADR-0023: a Boolean operand ('true') is written as its type and its invariant text, and reads back as itself",
+      "write": {
+        "columns": [
+          {
+            "column": "Active",
+            "width": "Auto",
+            "pinned": false
+          }
+        ],
+        "sorts": [],
+        "filter": {
+          "columns": {
+            "Active": {
+              "combinator": "And",
+              "clauses": [
+                {
+                  "operator": "Equals",
+                  "value": {
+                    "type": "Boolean",
+                    "value": "true"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "writes": "{\"version\":1,\"columns\":[{\"column\":\"Active\",\"width\":\"Auto\",\"pinned\":false}],\"sorts\":[],\"filter\":{\"columns\":{\"Active\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Boolean\",\"value\":\"true\"}}]}}}}"
+    },
+    {
+      "name": "ADR-0023: a Boolean operand ('false') is written as its type and its invariant text, and reads back as itself",
+      "write": {
+        "columns": [
+          {
+            "column": "Active",
+            "width": "Auto",
+            "pinned": false
+          }
+        ],
+        "sorts": [],
+        "filter": {
+          "columns": {
+            "Active": {
+              "combinator": "And",
+              "clauses": [
+                {
+                  "operator": "Equals",
+                  "value": {
+                    "type": "Boolean",
+                    "value": "false"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "writes": "{\"version\":1,\"columns\":[{\"column\":\"Active\",\"width\":\"Auto\",\"pinned\":false}],\"sorts\":[],\"filter\":{\"columns\":{\"Active\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Boolean\",\"value\":\"false\"}}]}}}}"
+    },
+    {
+      "name": "ADR-0023: a DateTime operand ('2026-01-05T09:30:00.0000000', Unspecified) is written as its type and its invariant text, and reads back as itself",
+      "write": {
+        "columns": [
+          {
+            "column": "AsOf",
+            "width": "Auto",
+            "pinned": false
+          }
+        ],
+        "sorts": [],
+        "filter": {
+          "columns": {
+            "AsOf": {
+              "combinator": "And",
+              "clauses": [
+                {
+                  "operator": "LessThan",
+                  "value": {
+                    "type": "DateTime",
+                    "value": "2026-01-05T09:30:00.0000000",
+                    "kind": "Unspecified"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "writes": "{\"version\":1,\"columns\":[{\"column\":\"AsOf\",\"width\":\"Auto\",\"pinned\":false}],\"sorts\":[],\"filter\":{\"columns\":{\"AsOf\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"LessThan\",\"value\":{\"type\":\"DateTime\",\"value\":\"2026-01-05T09:30:00.0000000\",\"kind\":\"Unspecified\"}}]}}}}"
+    },
+    {
+      "name": "ADR-0023: a DateTime operand ('2026-01-05T09:30:00.0000001', Utc) is written as its type and its invariant text, and reads back as itself",
+      "write": {
+        "columns": [
+          {
+            "column": "AsOf",
+            "width": "Auto",
+            "pinned": false
+          }
+        ],
+        "sorts": [],
+        "filter": {
+          "columns": {
+            "AsOf": {
+              "combinator": "And",
+              "clauses": [
+                {
+                  "operator": "LessThan",
+                  "value": {
+                    "type": "DateTime",
+                    "value": "2026-01-05T09:30:00.0000001",
+                    "kind": "Utc"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "writes": "{\"version\":1,\"columns\":[{\"column\":\"AsOf\",\"width\":\"Auto\",\"pinned\":false}],\"sorts\":[],\"filter\":{\"columns\":{\"AsOf\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"LessThan\",\"value\":{\"type\":\"DateTime\",\"value\":\"2026-01-05T09:30:00.0000001\",\"kind\":\"Utc\"}}]}}}}"
+    },
+    {
+      "name": "ADR-0023: a DateTime operand ('2026-01-05T09:30:00.0000000', Local) is written as its type and its invariant text, and reads back as itself",
+      "write": {
+        "columns": [
+          {
+            "column": "AsOf",
+            "width": "Auto",
+            "pinned": false
+          }
+        ],
+        "sorts": [],
+        "filter": {
+          "columns": {
+            "AsOf": {
+              "combinator": "And",
+              "clauses": [
+                {
+                  "operator": "LessThan",
+                  "value": {
+                    "type": "DateTime",
+                    "value": "2026-01-05T09:30:00.0000000",
+                    "kind": "Local"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "writes": "{\"version\":1,\"columns\":[{\"column\":\"AsOf\",\"width\":\"Auto\",\"pinned\":false}],\"sorts\":[],\"filter\":{\"columns\":{\"AsOf\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"LessThan\",\"value\":{\"type\":\"DateTime\",\"value\":\"2026-01-05T09:30:00.0000000\",\"kind\":\"Local\"}}]}}}}"
+    },
+    {
+      "name": "ADR-0023: a DateTime operand ('9999-12-31T23:59:59.9999999', Unspecified) is written as its type and its invariant text, and reads back as itself",
+      "write": {
+        "columns": [
+          {
+            "column": "AsOf",
+            "width": "Auto",
+            "pinned": false
+          }
+        ],
+        "sorts": [],
+        "filter": {
+          "columns": {
+            "AsOf": {
+              "combinator": "And",
+              "clauses": [
+                {
+                  "operator": "LessThan",
+                  "value": {
+                    "type": "DateTime",
+                    "value": "9999-12-31T23:59:59.9999999",
+                    "kind": "Unspecified"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "writes": "{\"version\":1,\"columns\":[{\"column\":\"AsOf\",\"width\":\"Auto\",\"pinned\":false}],\"sorts\":[],\"filter\":{\"columns\":{\"AsOf\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"LessThan\",\"value\":{\"type\":\"DateTime\",\"value\":\"9999-12-31T23:59:59.9999999\",\"kind\":\"Unspecified\"}}]}}}}"
+    },
+    {
+      "name": "ADR-0023: a DateOnly operand ('2026-01-05') is written as its type and its invariant text, and reads back as itself",
+      "write": {
+        "columns": [
+          {
+            "column": "Settles",
+            "width": "Auto",
+            "pinned": false
+          }
+        ],
+        "sorts": [],
+        "filter": {
+          "columns": {
+            "Settles": {
+              "combinator": "And",
+              "clauses": [
+                {
+                  "operator": "Equals",
+                  "value": {
+                    "type": "DateOnly",
+                    "value": "2026-01-05"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "writes": "{\"version\":1,\"columns\":[{\"column\":\"Settles\",\"width\":\"Auto\",\"pinned\":false}],\"sorts\":[],\"filter\":{\"columns\":{\"Settles\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"DateOnly\",\"value\":\"2026-01-05\"}}]}}}}"
+    },
+    {
+      "name": "ADR-0023: a DateOnly operand ('0001-01-01') is written as its type and its invariant text, and reads back as itself",
+      "write": {
+        "columns": [
+          {
+            "column": "Settles",
+            "width": "Auto",
+            "pinned": false
+          }
+        ],
+        "sorts": [],
+        "filter": {
+          "columns": {
+            "Settles": {
+              "combinator": "And",
+              "clauses": [
+                {
+                  "operator": "Equals",
+                  "value": {
+                    "type": "DateOnly",
+                    "value": "0001-01-01"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "writes": "{\"version\":1,\"columns\":[{\"column\":\"Settles\",\"width\":\"Auto\",\"pinned\":false}],\"sorts\":[],\"filter\":{\"columns\":{\"Settles\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"DateOnly\",\"value\":\"0001-01-01\"}}]}}}}"
+    },
+    {
+      "name": "ADR-0023: a DateTimeOffset operand ('2026-01-05T09:30:00.0000000+09:00') is written as its type and its invariant text, and reads back as itself",
+      "write": {
+        "columns": [
+          {
+            "column": "Stamped",
+            "width": "Auto",
+            "pinned": false
+          }
+        ],
+        "sorts": [],
+        "filter": {
+          "columns": {
+            "Stamped": {
+              "combinator": "And",
+              "clauses": [
+                {
+                  "operator": "GreaterThan",
+                  "value": {
+                    "type": "DateTimeOffset",
+                    "value": "2026-01-05T09:30:00.0000000+09:00"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "writes": "{\"version\":1,\"columns\":[{\"column\":\"Stamped\",\"width\":\"Auto\",\"pinned\":false}],\"sorts\":[],\"filter\":{\"columns\":{\"Stamped\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"GreaterThan\",\"value\":{\"type\":\"DateTimeOffset\",\"value\":\"2026-01-05T09:30:00.0000000\\u002B09:00\"}}]}}}}"
+    },
+    {
+      "name": "ADR-0023: a DateTimeOffset operand ('2026-01-05T09:30:00.0000007-09:30') is written as its type and its invariant text, and reads back as itself",
+      "write": {
+        "columns": [
+          {
+            "column": "Stamped",
+            "width": "Auto",
+            "pinned": false
+          }
+        ],
+        "sorts": [],
+        "filter": {
+          "columns": {
+            "Stamped": {
+              "combinator": "And",
+              "clauses": [
+                {
+                  "operator": "GreaterThan",
+                  "value": {
+                    "type": "DateTimeOffset",
+                    "value": "2026-01-05T09:30:00.0000007-09:30"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "writes": "{\"version\":1,\"columns\":[{\"column\":\"Stamped\",\"width\":\"Auto\",\"pinned\":false}],\"sorts\":[],\"filter\":{\"columns\":{\"Stamped\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"GreaterThan\",\"value\":{\"type\":\"DateTimeOffset\",\"value\":\"2026-01-05T09:30:00.0000007-09:30\"}}]}}}}"
+    },
+    {
+      "name": "ADR-0023: a DateTimeOffset operand ('2026-01-05T09:30:00.0000000+00:00') is written as its type and its invariant text, and reads back as itself",
+      "write": {
+        "columns": [
+          {
+            "column": "Stamped",
+            "width": "Auto",
+            "pinned": false
+          }
+        ],
+        "sorts": [],
+        "filter": {
+          "columns": {
+            "Stamped": {
+              "combinator": "And",
+              "clauses": [
+                {
+                  "operator": "GreaterThan",
+                  "value": {
+                    "type": "DateTimeOffset",
+                    "value": "2026-01-05T09:30:00.0000000+00:00"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "writes": "{\"version\":1,\"columns\":[{\"column\":\"Stamped\",\"width\":\"Auto\",\"pinned\":false}],\"sorts\":[],\"filter\":{\"columns\":{\"Stamped\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"GreaterThan\",\"value\":{\"type\":\"DateTimeOffset\",\"value\":\"2026-01-05T09:30:00.0000000\\u002B00:00\"}}]}}}}"
+    },
+    {
+      "name": "ADR-0023: an In list of 3 on Notional, a Blank written as null, reads back as itself",
+      "write": {
+        "columns": [
+          {
+            "column": "Notional",
+            "width": "Auto",
+            "pinned": false
+          }
+        ],
+        "sorts": [],
+        "filter": {
+          "columns": {
+            "Notional": {
+              "combinator": "And",
+              "clauses": [
+                {
+                  "operator": "In",
+                  "values": [
+                    {
+                      "type": "Decimal",
+                      "value": "1"
+                    },
+                    null,
+                    {
+                      "type": "Decimal",
+                      "value": "2.5"
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      },
+      "writes": "{\"version\":1,\"columns\":[{\"column\":\"Notional\",\"width\":\"Auto\",\"pinned\":false}],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"In\",\"values\":[{\"type\":\"Decimal\",\"value\":\"1\"},null,{\"type\":\"Decimal\",\"value\":\"2.5\"}]}]}}}}"
+    },
+    {
+      "name": "ADR-0023: an In list of 1 on Book, a Blank written as null, reads back as itself",
+      "write": {
+        "columns": [
+          {
+            "column": "Book",
+            "width": "Auto",
+            "pinned": false
+          }
+        ],
+        "sorts": [],
+        "filter": {
+          "columns": {
+            "Book": {
+              "combinator": "And",
+              "clauses": [
+                {
+                  "operator": "In",
+                  "values": [
+                    null
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      },
+      "writes": "{\"version\":1,\"columns\":[{\"column\":\"Book\",\"width\":\"Auto\",\"pinned\":false}],\"sorts\":[],\"filter\":{\"columns\":{\"Book\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"In\",\"values\":[null]}]}}}}"
+    },
+    {
+      "name": "ADR-0023: an In list of 0 on Active, a Blank written as null, reads back as itself",
+      "write": {
+        "columns": [
+          {
+            "column": "Active",
+            "width": "Auto",
+            "pinned": false
+          }
+        ],
+        "sorts": [],
+        "filter": {
+          "columns": {
+            "Active": {
+              "combinator": "And",
+              "clauses": [
+                {
+                  "operator": "In",
+                  "values": []
+                }
+              ]
+            }
+          }
+        }
+      },
+      "writes": "{\"version\":1,\"columns\":[{\"column\":\"Active\",\"width\":\"Auto\",\"pinned\":false}],\"sorts\":[],\"filter\":{\"columns\":{\"Active\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"In\",\"values\":[]}]}}}}"
+    },
+    {
+      "name": "ADR-0023: every operator and combinator is written by its name",
+      "write": {
+        "columns": [],
+        "sorts": [
+          {
+            "column": "Book",
+            "direction": "Ascending"
+          },
+          {
+            "column": "AsOf",
+            "direction": "Descending"
+          }
+        ],
+        "filter": {
+          "columns": {
+            "Book": {
+              "combinator": "Or",
+              "clauses": [
+                {
+                  "operator": "Equals",
+                  "value": {
+                    "type": "String",
+                    "value": "x"
+                  }
+                },
+                {
+                  "operator": "NotEquals",
+                  "value": {
+                    "type": "String",
+                    "value": "x"
+                  }
+                },
+                {
+                  "operator": "GreaterThan",
+                  "value": {
+                    "type": "String",
+                    "value": "x"
+                  }
+                },
+                {
+                  "operator": "GreaterThanOrEqual",
+                  "value": {
+                    "type": "String",
+                    "value": "x"
+                  }
+                },
+                {
+                  "operator": "LessThan",
+                  "value": {
+                    "type": "String",
+                    "value": "x"
+                  }
+                },
+                {
+                  "operator": "LessThanOrEqual",
+                  "value": {
+                    "type": "String",
+                    "value": "x"
+                  }
+                },
+                {
+                  "operator": "Contains",
+                  "value": {
+                    "type": "String",
+                    "value": "x"
+                  }
+                },
+                {
+                  "operator": "DoesNotContain",
+                  "value": {
+                    "type": "String",
+                    "value": "x"
+                  }
+                },
+                {
+                  "operator": "StartsWith",
+                  "value": {
+                    "type": "String",
+                    "value": "x"
+                  }
+                },
+                {
+                  "operator": "EndsWith",
+                  "value": {
+                    "type": "String",
+                    "value": "x"
+                  }
+                },
+                {
+                  "operator": "In",
+                  "values": [
+                    {
+                      "type": "String",
+                      "value": "x"
+                    }
+                  ]
+                },
+                {
+                  "operator": "IsBlank"
+                },
+                {
+                  "operator": "IsNotBlank"
+                }
+              ]
+            },
+            "AsOf": {
+              "combinator": "And",
+              "clauses": [
+                {
+                  "operator": "IsBlank"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "writes": "{\"version\":1,\"columns\":[],\"sorts\":[{\"column\":\"Book\",\"direction\":\"Ascending\"},{\"column\":\"AsOf\",\"direction\":\"Descending\"}],\"filter\":{\"columns\":{\"Book\":{\"combinator\":\"Or\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"String\",\"value\":\"x\"}},{\"operator\":\"NotEquals\",\"value\":{\"type\":\"String\",\"value\":\"x\"}},{\"operator\":\"GreaterThan\",\"value\":{\"type\":\"String\",\"value\":\"x\"}},{\"operator\":\"GreaterThanOrEqual\",\"value\":{\"type\":\"String\",\"value\":\"x\"}},{\"operator\":\"LessThan\",\"value\":{\"type\":\"String\",\"value\":\"x\"}},{\"operator\":\"LessThanOrEqual\",\"value\":{\"type\":\"String\",\"value\":\"x\"}},{\"operator\":\"Contains\",\"value\":{\"type\":\"String\",\"value\":\"x\"}},{\"operator\":\"DoesNotContain\",\"value\":{\"type\":\"String\",\"value\":\"x\"}},{\"operator\":\"StartsWith\",\"value\":{\"type\":\"String\",\"value\":\"x\"}},{\"operator\":\"EndsWith\",\"value\":{\"type\":\"String\",\"value\":\"x\"}},{\"operator\":\"In\",\"values\":[{\"type\":\"String\",\"value\":\"x\"}]},{\"operator\":\"IsBlank\"},{\"operator\":\"IsNotBlank\"}]},\"AsOf\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"IsBlank\"}]}}}}"
+    },
+    {
+      "name": "ADR-0009: a spec that names no combinator is written as And",
+      "write": {
+        "columns": [],
+        "sorts": [],
+        "filter": {
+          "columns": {
+            "Book": {
+              "clauses": [
+                {
+                  "operator": "IsBlank"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "writes": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Book\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"IsBlank\"}]}}}}"
+    },
+    {
+      "name": "FN-13: a Query's range, sorts, columns, operators and combinators are written as they are",
+      "writeQuery": {
+        "range": {
+          "start": 120,
+          "count": 60
+        },
+        "sorts": [
+          {
+            "column": "Book",
+            "direction": "Ascending"
+          },
+          {
+            "column": "Notional",
+            "direction": "Descending"
+          }
+        ],
+        "filter": {
+          "columns": {
+            "Book": {
+              "combinator": "Or",
+              "clauses": [
+                {
+                  "operator": "IsBlank"
+                },
+                {
+                  "operator": "IsNotBlank"
+                }
+              ]
+            },
+            "Notional": {
+              "combinator": "And",
+              "clauses": [
+                {
+                  "operator": "IsNotBlank"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "writes": "{\"version\":1,\"range\":{\"start\":120,\"count\":60},\"sorts\":[{\"column\":\"Book\",\"direction\":\"Ascending\"},{\"column\":\"Notional\",\"direction\":\"Descending\"}],\"filter\":{\"columns\":{\"Book\":{\"combinator\":\"Or\",\"clauses\":[{\"operator\":\"IsBlank\"},{\"operator\":\"IsNotBlank\"}]},\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"IsNotBlank\"}]}}}}"
+    },
+    {
+      "name": "FN-13: a Query with no filter and no sort is written as itself",
+      "writeQuery": {
+        "range": {
+          "start": 0,
+          "count": 1
+        },
+        "sorts": []
+      },
+      "writes": "{\"version\":1,\"range\":{\"start\":0,\"count\":1},\"sorts\":[]}"
+    },
+    {
+      "name": "FN-13: a Query's decimal operand is its exact digits in a string",
+      "writeQuery": {
+        "range": {
+          "start": 0,
+          "count": 1
+        },
+        "sorts": [],
+        "filter": {
+          "columns": {
+            "Notional": {
+              "combinator": "And",
+              "clauses": [
+                {
+                  "operator": "Equals",
+                  "value": {
+                    "type": "Decimal",
+                    "value": "1234567890123456789.10"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "writes": "{\"version\":1,\"range\":{\"start\":0,\"count\":1},\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Decimal\",\"value\":\"1234567890123456789.10\"}}]}}}}"
+    },
+    {
+      "name": "ADR-0023: a Double that is not finite has no JSON form, and is refused by name (NaN, a View State)",
+      "write": {
+        "columns": [],
+        "sorts": [],
+        "filter": {
+          "columns": {
+            "Notional": {
+              "combinator": "And",
+              "clauses": [
+                {
+                  "operator": "Equals",
+                  "value": {
+                    "type": "Double",
+                    "value": "NaN"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "refused": {
+        "kind": "notSupported",
+        "saying": "is not a finite number, which no filter takes (ADR-0023)."
+      }
+    },
+    {
+      "name": "ADR-0023: a Double that is not finite has no JSON form, and is refused by name (NaN, a Query)",
+      "writeQuery": {
+        "range": {
+          "start": 0,
+          "count": 1
+        },
+        "sorts": [],
+        "filter": {
+          "columns": {
+            "Notional": {
+              "combinator": "And",
+              "clauses": [
+                {
+                  "operator": "Equals",
+                  "value": {
+                    "type": "Double",
+                    "value": "NaN"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "refused": {
+        "kind": "notSupported",
+        "saying": "is not a finite number, which no filter takes (ADR-0023)."
+      }
+    },
+    {
+      "name": "ADR-0023: a Double that is not finite has no JSON form, and is refused by name (Infinity, a View State)",
+      "write": {
+        "columns": [],
+        "sorts": [],
+        "filter": {
+          "columns": {
+            "Notional": {
+              "combinator": "And",
+              "clauses": [
+                {
+                  "operator": "Equals",
+                  "value": {
+                    "type": "Double",
+                    "value": "Infinity"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "refused": {
+        "kind": "notSupported",
+        "saying": "is not a finite number, which no filter takes (ADR-0023)."
+      }
+    },
+    {
+      "name": "ADR-0023: a Double that is not finite has no JSON form, and is refused by name (Infinity, a Query)",
+      "writeQuery": {
+        "range": {
+          "start": 0,
+          "count": 1
+        },
+        "sorts": [],
+        "filter": {
+          "columns": {
+            "Notional": {
+              "combinator": "And",
+              "clauses": [
+                {
+                  "operator": "Equals",
+                  "value": {
+                    "type": "Double",
+                    "value": "Infinity"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "refused": {
+        "kind": "notSupported",
+        "saying": "is not a finite number, which no filter takes (ADR-0023)."
+      }
+    },
+    {
+      "name": "ADR-0023: a Single that is not finite has no JSON form, and is refused by name (-Infinity, a View State)",
+      "write": {
+        "columns": [],
+        "sorts": [],
+        "filter": {
+          "columns": {
+            "Notional": {
+              "combinator": "And",
+              "clauses": [
+                {
+                  "operator": "Equals",
+                  "value": {
+                    "type": "Single",
+                    "value": "-Infinity"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "refused": {
+        "kind": "notSupported",
+        "saying": "is not a finite number, which no filter takes (ADR-0023)."
+      }
+    },
+    {
+      "name": "ADR-0023: a Single that is not finite has no JSON form, and is refused by name (-Infinity, a Query)",
+      "writeQuery": {
+        "range": {
+          "start": 0,
+          "count": 1
+        },
+        "sorts": [],
+        "filter": {
+          "columns": {
+            "Notional": {
+              "combinator": "And",
+              "clauses": [
+                {
+                  "operator": "Equals",
+                  "value": {
+                    "type": "Single",
+                    "value": "-Infinity"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "refused": {
+        "kind": "notSupported",
+        "saying": "is not a finite number, which no filter takes (ADR-0023)."
+      }
+    },
+    {
+      "name": "ADR-0002: an Opaque Filter has no JSON form here, and is refused by name (a View State)",
+      "write": {
+        "columns": [],
+        "sorts": [],
+        "filter": {
+          "columns": {},
+          "opaque": "region = EMEA"
+        }
+      },
+      "refused": {
+        "kind": "notSupported",
+        "saying": "The filter's Opaque Filter has no JSON form here: its meaning is the Consumer's alone (ADR-0002, ADR-0023)."
+      }
+    },
+    {
+      "name": "ADR-0002: an Opaque Filter has no JSON form here, and is refused by name (a Query)",
+      "writeQuery": {
+        "range": {
+          "start": 0,
+          "count": 1
+        },
+        "sorts": [],
+        "filter": {
+          "columns": {},
+          "opaque": "region = EMEA"
+        }
+      },
+      "refused": {
+        "kind": "notSupported",
+        "saying": "The filter's Opaque Filter has no JSON form here: its meaning is the Consumer's alone (ADR-0002, ADR-0023)."
+      }
+    },
+    {
+      "name": "ADR-0002: an Opaque Filter is refused before a column's filter is looked at",
+      "write": {
+        "columns": [],
+        "sorts": [],
+        "filter": {
+          "columns": {
+            "": null
+          },
+          "opaque": "x"
+        }
+      },
+      "refused": {
+        "kind": "notSupported",
+        "saying": "The filter's Opaque Filter has no JSON form here"
+      }
+    },
+    {
+      "name": "ADR-0207: writing refuses what reading would refuse, by name: a sort level naming no column (a Query)",
+      "writeQuery": {
+        "range": {
+          "start": 0,
+          "count": 1
+        },
+        "sorts": [
+          {
+            "column": "",
+            "direction": "Ascending"
+          }
+        ],
+        "filter": {
+          "columns": {
+            "Book": {
+              "combinator": "And",
+              "clauses": [
+                {
+                  "operator": "IsBlank"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "refused": {
+        "kind": "argument",
+        "saying": "Sort level 1 names no column."
+      }
+    },
+    {
+      "name": "ADR-0207: writing refuses what reading would refuse, by name: a sort level naming no column (a View State)",
+      "write": {
+        "columns": [],
+        "sorts": [
+          {
+            "column": "",
+            "direction": "Ascending"
+          }
+        ],
+        "filter": {
+          "columns": {
+            "Book": {
+              "combinator": "And",
+              "clauses": [
+                {
+                  "operator": "IsBlank"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "refused": {
+        "kind": "argument",
+        "saying": "Sort level 1 names no column."
+      }
+    },
+    {
+      "name": "ADR-0207: writing refuses what reading would refuse, by name: a direction its enum does not name (a Query)",
+      "writeQuery": {
+        "range": {
+          "start": 0,
+          "count": 1
+        },
+        "sorts": [
+          {
+            "column": "Book",
+            "direction": 5
+          }
+        ],
+        "filter": {
+          "columns": {
+            "Book": {
+              "combinator": "And",
+              "clauses": [
+                {
+                  "operator": "IsBlank"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "refused": {
+        "kind": "argument",
+        "saying": "Sort level 1: 5 is not a SortDirection"
+      }
+    },
+    {
+      "name": "ADR-0207: writing refuses what reading would refuse, by name: a direction its enum does not name (a View State)",
+      "write": {
+        "columns": [],
+        "sorts": [
+          {
+            "column": "Book",
+            "direction": 5
+          }
+        ],
+        "filter": {
+          "columns": {
+            "Book": {
+              "combinator": "And",
+              "clauses": [
+                {
+                  "operator": "IsBlank"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "refused": {
+        "kind": "argument",
+        "saying": "Sort level 1: 5 is not a SortDirection"
+      }
+    },
+    {
+      "name": "ADR-0207: writing refuses what reading would refuse, by name: a filter naming no column (a Query)",
+      "writeQuery": {
+        "range": {
+          "start": 0,
+          "count": 1
+        },
+        "sorts": [],
+        "filter": {
+          "columns": {
+            "": {
+              "combinator": "And",
+              "clauses": [
+                {
+                  "operator": "IsBlank"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "refused": {
+        "kind": "argument",
+        "saying": "The filter names no column."
+      }
+    },
+    {
+      "name": "ADR-0207: writing refuses what reading would refuse, by name: a filter naming no column (a View State)",
+      "write": {
+        "columns": [],
+        "sorts": [],
+        "filter": {
+          "columns": {
+            "": {
+              "combinator": "And",
+              "clauses": [
+                {
+                  "operator": "IsBlank"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "refused": {
+        "kind": "argument",
+        "saying": "The filter names no column."
+      }
+    },
+    {
+      "name": "ADR-0207: writing refuses what reading would refuse, by name: a null column filter (a Query)",
+      "writeQuery": {
+        "range": {
+          "start": 0,
+          "count": 1
+        },
+        "sorts": [],
+        "filter": {
+          "columns": {
+            "Book": null
+          }
+        }
+      },
+      "refused": {
+        "kind": "argument",
+        "saying": "The filter on 'Book' is null."
+      }
+    },
+    {
+      "name": "ADR-0207: writing refuses what reading would refuse, by name: a null column filter (a View State)",
+      "write": {
+        "columns": [],
+        "sorts": [],
+        "filter": {
+          "columns": {
+            "Book": null
+          }
+        }
+      },
+      "refused": {
+        "kind": "argument",
+        "saying": "The filter on 'Book' is null."
+      }
+    },
+    {
+      "name": "ADR-0207: writing refuses what reading would refuse, by name: no list of clauses (a Query)",
+      "writeQuery": {
+        "range": {
+          "start": 0,
+          "count": 1
+        },
+        "sorts": [],
+        "filter": {
+          "columns": {
+            "Book": {
+              "combinator": "And",
+              "clauses": null
+            }
+          }
+        }
+      },
+      "refused": {
+        "kind": "argument",
+        "saying": "The filter on 'Book' has no list of clauses"
+      }
+    },
+    {
+      "name": "ADR-0207: writing refuses what reading would refuse, by name: no list of clauses (a View State)",
+      "write": {
+        "columns": [],
+        "sorts": [],
+        "filter": {
+          "columns": {
+            "Book": {
+              "combinator": "And",
+              "clauses": null
+            }
+          }
+        }
+      },
+      "refused": {
+        "kind": "argument",
+        "saying": "The filter on 'Book' has no list of clauses"
+      }
+    },
+    {
+      "name": "ADR-0207: writing refuses what reading would refuse, by name: a null clause (a Query)",
+      "writeQuery": {
+        "range": {
+          "start": 0,
+          "count": 1
+        },
+        "sorts": [],
+        "filter": {
+          "columns": {
+            "Book": {
+              "combinator": "And",
+              "clauses": [
+                {
+                  "operator": "IsBlank"
+                },
+                null
+              ]
+            }
+          }
+        }
+      },
+      "refused": {
+        "kind": "argument",
+        "saying": "The filter on 'Book', clause 2 is null."
+      }
+    },
+    {
+      "name": "ADR-0207: writing refuses what reading would refuse, by name: a null clause (a View State)",
+      "write": {
+        "columns": [],
+        "sorts": [],
+        "filter": {
+          "columns": {
+            "Book": {
+              "combinator": "And",
+              "clauses": [
+                {
+                  "operator": "IsBlank"
+                },
+                null
+              ]
+            }
+          }
+        }
+      },
+      "refused": {
+        "kind": "argument",
+        "saying": "The filter on 'Book', clause 2 is null."
+      }
+    },
+    {
+      "name": "ADR-0207: writing refuses what reading would refuse, by name: a combinator its enum does not name (a Query)",
+      "writeQuery": {
+        "range": {
+          "start": 0,
+          "count": 1
+        },
+        "sorts": [],
+        "filter": {
+          "columns": {
+            "Book": {
+              "combinator": 7,
+              "clauses": [
+                {
+                  "operator": "IsBlank"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "refused": {
+        "kind": "argument",
+        "saying": "The filter on 'Book': 7 is not a FilterCombinator"
+      }
+    },
+    {
+      "name": "ADR-0207: writing refuses what reading would refuse, by name: a combinator its enum does not name (a View State)",
+      "write": {
+        "columns": [],
+        "sorts": [],
+        "filter": {
+          "columns": {
+            "Book": {
+              "combinator": 7,
+              "clauses": [
+                {
+                  "operator": "IsBlank"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "refused": {
+        "kind": "argument",
+        "saying": "The filter on 'Book': 7 is not a FilterCombinator"
+      }
+    },
+    {
+      "name": "ADR-0207: writing refuses what reading would refuse, by name: a combinator checked before the clauses (a Query)",
+      "writeQuery": {
+        "range": {
+          "start": 0,
+          "count": 1
+        },
+        "sorts": [],
+        "filter": {
+          "columns": {
+            "Book": {
+              "combinator": 7,
+              "clauses": [
+                null
+              ]
+            }
+          }
+        }
+      },
+      "refused": {
+        "kind": "argument",
+        "saying": "The filter on 'Book': 7 is not a FilterCombinator"
+      }
+    },
+    {
+      "name": "ADR-0207: writing refuses what reading would refuse, by name: a combinator checked before the clauses (a View State)",
+      "write": {
+        "columns": [],
+        "sorts": [],
+        "filter": {
+          "columns": {
+            "Book": {
+              "combinator": 7,
+              "clauses": [
+                null
+              ]
+            }
+          }
+        }
+      },
+      "refused": {
+        "kind": "argument",
+        "saying": "The filter on 'Book': 7 is not a FilterCombinator"
+      }
+    },
+    {
+      "name": "ADR-0207: writing refuses what reading would refuse, by name: an operator its enum does not name (a Query)",
+      "writeQuery": {
+        "range": {
+          "start": 0,
+          "count": 1
+        },
+        "sorts": [],
+        "filter": {
+          "columns": {
+            "Book": {
+              "combinator": "And",
+              "clauses": [
+                {
+                  "operator": 99
+                }
+              ]
+            }
+          }
+        }
+      },
+      "refused": {
+        "kind": "argument",
+        "saying": "The filter on 'Book', clause 1: 99 is not a FilterOperator"
+      }
+    },
+    {
+      "name": "ADR-0207: writing refuses what reading would refuse, by name: an operator its enum does not name (a View State)",
+      "write": {
+        "columns": [],
+        "sorts": [],
+        "filter": {
+          "columns": {
+            "Book": {
+              "combinator": "And",
+              "clauses": [
+                {
+                  "operator": 99
+                }
+              ]
+            }
+          }
+        }
+      },
+      "refused": {
+        "kind": "argument",
+        "saying": "The filter on 'Book', clause 1: 99 is not a FilterOperator"
+      }
+    },
+    {
+      "name": "ADR-0207: writing refuses what reading would refuse, by name: a null sort level (a Query)",
+      "writeQuery": {
+        "range": {
+          "start": 0,
+          "count": 1
+        },
+        "sorts": [
+          {
+            "column": "Book",
+            "direction": "Ascending"
+          },
+          null
+        ],
+        "filter": {
+          "columns": {
+            "Book": {
+              "combinator": "And",
+              "clauses": [
+                {
+                  "operator": "IsBlank"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "refused": {
+        "kind": "argument",
+        "saying": "Sort level 2 is null."
+      }
+    },
+    {
+      "name": "ADR-0207: writing refuses what reading would refuse, by name: a range left at its default",
+      "writeQuery": {
+        "range": "default",
+        "sorts": [],
+        "filter": {
+          "columns": {
+            "Book": {
+              "combinator": "And",
+              "clauses": [
+                {
+                  "operator": "IsBlank"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "refused": {
+        "kind": "argument",
+        "saying": "A Query's range is a run of at least one row, and 0 rows at 0 is not"
+      }
+    },
+    {
+      "name": "ADR-0207: a sort is refused before the filter",
+      "writeQuery": {
+        "range": {
+          "start": 0,
+          "count": 1
+        },
+        "sorts": [
+          {
+            "column": "",
+            "direction": "Ascending"
+          }
+        ],
+        "filter": {
+          "columns": {},
+          "opaque": "x"
+        }
+      },
+      "refused": {
+        "kind": "argument",
+        "saying": "Sort level 1 names no column."
+      }
+    },
+    {
+      "name": "ST-4: the View State a grid is shown under is its columns' names and width intents, the leading ones pinned, and the sort in force",
+      "of": {
+        "columns": [
+          {
+            "name": "Notional",
+            "width": 120
+          },
+          {
+            "name": "Book"
+          },
+          {
+            "name": "AsOf",
+            "width": 90
+          }
+        ],
+        "pinnedColumnCount": 2,
+        "sorts": [
+          {
+            "column": "AsOf",
+            "direction": "Ascending"
+          }
+        ]
+      },
+      "writes": "{\"version\":1,\"columns\":[{\"column\":\"Notional\",\"width\":120,\"pinned\":true},{\"column\":\"Book\",\"width\":\"Auto\",\"pinned\":true},{\"column\":\"AsOf\",\"width\":90,\"pinned\":false}],\"sorts\":[{\"column\":\"AsOf\",\"direction\":\"Ascending\"}]}"
+    },
+    {
+      "name": "ST-4: a grid with nothing pinned",
+      "of": {
+        "columns": [
+          {
+            "name": "Notional",
+            "width": 120
+          },
+          {
+            "name": "Book"
+          },
+          {
+            "name": "AsOf",
+            "width": 90
+          }
+        ],
+        "pinnedColumnCount": 0,
+        "sorts": []
+      },
+      "writes": "{\"version\":1,\"columns\":[{\"column\":\"Notional\",\"width\":120,\"pinned\":false},{\"column\":\"Book\",\"width\":\"Auto\",\"pinned\":false},{\"column\":\"AsOf\",\"width\":90,\"pinned\":false}],\"sorts\":[]}"
+    },
+    {
+      "name": "ADR-0004: a pinned count past the columns is refused, as the grid refuses it",
+      "of": {
+        "columns": [
+          {
+            "name": "Notional",
+            "width": 120
+          },
+          {
+            "name": "Book"
+          },
+          {
+            "name": "AsOf",
+            "width": 90
+          }
+        ],
+        "pinnedColumnCount": 4,
+        "sorts": []
+      },
+      "refused": {
+        "kind": "outOfRange"
+      }
+    },
+    {
+      "name": "ADR-0004: a negative pinned count is refused, as the grid refuses it",
+      "of": {
+        "columns": [
+          {
+            "name": "Notional",
+            "width": 120
+          },
+          {
+            "name": "Book"
+          },
+          {
+            "name": "AsOf",
+            "width": 90
+          }
+        ],
+        "pinnedColumnCount": -1,
+        "sorts": []
+      },
+      "refused": {
+        "kind": "outOfRange"
+      }
+    },
+    {
+      "name": "ADR-0004: a View State built in code refuses a pinned column after an unpinned one",
+      "construct": {
+        "columns": [
+          {
+            "column": "Book",
+            "width": "Auto",
+            "pinned": false
+          },
+          {
+            "column": "AsOf",
+            "width": "Auto",
+            "pinned": true
+          }
+        ],
+        "sorts": []
+      },
+      "refused": {
+        "kind": "argument",
+        "saying": "Column 'AsOf' is pinned after a column that is not; the pinned columns are the leading ones (ADR-0004)."
+      }
+    },
+    {
+      "name": "ADR-0207: a View State built in code refuses a column named twice",
+      "construct": {
+        "columns": [
+          {
+            "column": "Book",
+            "width": "Auto",
+            "pinned": false
+          },
+          {
+            "column": "Book",
+            "width": 50,
+            "pinned": false
+          }
+        ],
+        "sorts": []
+      },
+      "refused": {
+        "kind": "argument",
+        "saying": "Column 'Book' appears twice in the View State; a column stands in one place."
+      }
+    },
+    {
+      "name": "ADR-0207: a View State built in code refuses a null column",
+      "construct": {
+        "columns": [
+          {
+            "column": "Book",
+            "width": "Auto",
+            "pinned": false
+          },
+          null
+        ],
+        "sorts": []
+      },
+      "refused": {
+        "kind": "argument",
+        "saying": "The View State's column 2 is null."
+      }
+    },
+    {
+      "name": "ADR-0207: a View State built in code refuses a null sort level",
+      "construct": {
+        "columns": [],
+        "sorts": [
+          null
+        ]
+      },
+      "refused": {
+        "kind": "argument",
+        "saying": "The View State's sort level 1 is null."
+      }
+    },
+    {
+      "name": "ADR-0207: a column with no name is refused",
+      "construct": {
+        "columns": [
+          {
+            "column": "",
+            "width": "Auto",
+            "pinned": false
+          }
+        ],
+        "sorts": []
+      },
+      "refused": {
+        "kind": "argument"
+      }
+    },
+    {
+      "name": "ADR-0016: a Fixed width of no pixels is refused",
+      "construct": {
+        "columns": [
+          {
+            "column": "Book",
+            "width": 0,
+            "pinned": false
+          }
+        ],
+        "sorts": []
+      },
+      "refused": {
+        "kind": "outOfRange"
+      }
+    },
+    {
+      "name": "ADR-0016: a negative Fixed width is refused",
+      "construct": {
+        "columns": [
+          {
+            "column": "Book",
+            "width": -1,
+            "pinned": false
+          }
+        ],
+        "sorts": []
+      },
+      "refused": {
+        "kind": "outOfRange"
+      }
+    }
+  ]
+}

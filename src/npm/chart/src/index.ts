@@ -2,10 +2,11 @@
  * ExChart in TypeScript (ADR-0370): a chart's definition, checked when it is made, and the scene it is
  * laid out as in CSS pixels — panels, axes, ticks, each series' lines, markers, candles and intervals —
  * what its tooltip, its summary and its files say, the fits and interpolations a Consumer hands in, and a 3D
- * surface as the mesh its entry draws and the 2D charts its slices are; and its Script Core, `createChart`
- * and `createSurface`, which draw a chart as SVG into an element and hear the pointer, free of any UI
- * framework. A Framework Adapter mounts it; the C# engine and this package are held to one another by the
- * shared cases under `tests/cases/chart/`.
+ * surface as the mesh its entry draws and the 2D charts its slices are; the Chart Spec, a chart said in JSON as
+ * an AI writes it and a Board holds it, read against the tables its Data Handles name (ADR-0320); and its Script
+ * Core, `createChart` and `createSurface`, which draw a chart as SVG into an element and hear the pointer, the
+ * legend and Chart Filters, free of any UI framework. A Framework Adapter mounts it; the C# engine and this
+ * package are held to one another by the shared cases under `tests/cases/chart/`.
  *
  * @packageDocumentation
  */
@@ -39,6 +40,10 @@ export type {
     SurfaceSlice, SurfaceSliceAxis, SurfaceTriangle, SurfaceTrianglesOptions, SurfaceValue, SurfaceView,
 } from './surface';
 export { surfaceBandCount, surfaceMesh, surfaceSlicePath, surfaceSummary } from './surface-mesh';
+export { chartDataOf } from './chart-data';
+export type { ChartData } from './chart-data';
+export { ChartSpecReading, ChartSpecRefusedError, chartSpecVersion, readChartSpec } from './spec';
+export type { ChartSpecReadingOptions } from './spec';
 export type { SurfaceColourBar, SurfaceFace, SurfaceMesh, SurfaceMeshNode, SurfaceMeshPoint, SurfaceTick } from './surface-mesh';
 export { FittedCurve, fitLeastSquares, fitPolynomial, fitTheilSen, theilSenLimit } from './fitting';
 export type { FitSpace, FittedCurveOptions } from './fitting';

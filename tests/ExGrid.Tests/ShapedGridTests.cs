@@ -1,4 +1,3 @@
-using System.Globalization;
 using ExGrid.Columns;
 using ExGrid.Data;
 using Xunit;
@@ -7,74 +6,8 @@ namespace ExGrid.Tests;
 
 public sealed class ShapedGridTests
 {
-    private static readonly CultureInfo Invariant = CultureInfo.InvariantCulture;
-
-    private static string Formatted(string code, object value)
-    {
-        Assert.True(FormatCode.TryParse(code, out var format, out var reason), reason);
-        return format.Format(value, Invariant);
-    }
-
-    [Theory] // ADR-0342: an Excel format code in the invariant spelling (ADR-0120)
-    [InlineData("#,##0.00", 1234567.891, "1,234,567.89")]
-    [InlineData("#,##0.00", -1234.5, "-1,234.50")]
-    [InlineData("0.00%", 0.1234, "12.34%")]
-    [InlineData("0.00000", 1.08734, "1.08734")]
-    [InlineData("0.00E+00", 1234.5, "1.23E+03")]
-    [InlineData("0.00E+00", 1.5e-30, "1.50E-30")]
-    [InlineData("#,##0,", 1234567.0, "1,235")]
-    [InlineData("#,##0.00;(#,##0.00)", -5.0, "(5.00)")]
-    [InlineData("#,##0.00;(#,##0.00);\"-\"", 0.0, "-")]
-    [InlineData("\"$\"#,##0.00", 1.5, "$1.50")]
-    [InlineData("$#,##0.00", 1.5, "$1.50")]
-    [InlineData("0.0 \"bp\"", 12.25, "12.3 bp")]
-    [InlineData("0.00\" p.a.\"", 4.5, "4.50 p.a.")]
-    [InlineData("#,##0.00;", -1500.0, "")]
-    [InlineData("#,##0;-#,##0;", 0.0, "")]
-    public void A_number_shows_as_its_format_code_says(string code, double value, string text) =>
-        Assert.Equal(text, Formatted(code, value));
-
-    [Fact] // ADR-0342: a double keeps 15 significant digits, as Excel shows 1.005 in 0.00
-    public void A_double_rounds_as_excel_rounds_it() => Assert.Equal("1.01", Formatted("0.00", 1.005));
-
-    [Fact] // ADR-0342, ExSheet's FMT-063: a negative that rounds to zero in one section shows no minus
-    public void A_negative_rounding_to_zero_shows_no_minus() => Assert.Equal("0.00", Formatted("0.00", -0.001));
-
-    [Fact] // ADR-0342: the section is chosen by the value's sign before rounding, as Excel chooses it
-    public void A_negative_rounding_to_zero_takes_the_negative_section() =>
-        Assert.Equal("(0.00)", Formatted("0.00;(0.00)", -0.001));
-
-    [Theory] // ADR-0342: decimals and integers are formatted exactly
-    [InlineData("#,##0.00", "12345678901234567890.125", "12,345,678,901,234,567,890.13")]
-    public void A_decimal_shows_as_its_format_code_says(string code, string value, string text) =>
-        Assert.Equal(text, Formatted(code, decimal.Parse(value, Invariant)));
-
-    [Theory] // ADR-0342: dates, with m read as minutes after an hour and before a second
-    [InlineData("yyyy-mm-dd", "2026-10-20 09:05:07", "2026-10-20")]
-    [InlineData("yyyy-mm-dd hh:mm:ss", "2026-10-20 09:05:07", "2026-10-20 09:05:07")]
-    [InlineData("d mmm yyyy", "2026-10-20 09:05:07", "20 Oct 2026")]
-    [InlineData("m/d/yy", "2026-10-20 09:05:07", "10/20/26")]
-    [InlineData("h:mm AM/PM", "2026-10-20 15:05:07", "3:05 PM")]
-    [InlineData("mm:ss", "2026-10-20 15:05:07", "05:07")]
-    [InlineData("d", "2026-10-20 15:05:07", "20")]
-    [InlineData("h", "2026-10-20 15:05:07", "15")]
-    public void A_date_shows_as_its_format_code_says(string code, string value, string text) =>
-        Assert.Equal(text, Formatted(code, DateTime.Parse(value, Invariant)));
-
-    [Theory] // ADR-0342: a code outside the subset is refused rather than shown some other way
-    [InlineData("", "is empty")]
-    [InlineData("General", "holds the letter 'G' unquoted; quote text as \"text\"")]
-    [InlineData("[Red]0.00", "holds a part in brackets (a colour, a condition or a locale), which a grid does not show")]
-    [InlineData("0.00_)", "holds '_' spacing, which a grid does not show")]
-    [InlineData("# ?/?", "holds the placeholder '?', which a grid does not show")]
-    [InlineData("0;@", "holds a text placeholder '@', and a number column holds no text")]
-    [InlineData("\"open", "opens a quotation that it does not close")]
-    [InlineData("hh:mm:ss.000", "holds fractional seconds, which a grid does not show")]
-    public void A_code_outside_the_subset_is_refused(string code, string reason)
-    {
-        Assert.False(FormatCode.TryParse(code, out _, out var said));
-        Assert.Equal(reason, said);
-    }
+    // The format code's own cases, what it reads, refuses and writes, are shared with the Script Core:
+    // tests/cases/shaped/format-code.json, run by Cases/FormatCodeCaseTests.cs (ADR-0370 section 2).
 
     private static readonly DataShape Shape = new(
     [

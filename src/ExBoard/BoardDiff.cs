@@ -109,7 +109,8 @@ public sealed class BoardDiff
     /// </summary>
     /// <exception cref="BoardRefusedException">The JSON is not a Diff this reader reads: not JSON, a
     /// version other than <see cref="Version"/>, a member it does not have, a view that is not one of
-    /// grid, pivot and chart, or a part its own reader refuses. Naming the path, as a Board's refusal does.</exception>
+    /// grid, pivot and chart, a column both shown and hidden, an end of a chart's range that is no finite
+    /// number, or a part its own reader refuses. Naming the path, as a Board's refusal does.</exception>
     public static BoardDiff Read(string json)
     {
         ArgumentNullException.ThrowIfNull(json);
@@ -249,6 +250,11 @@ public sealed class BoardDiff
         var placed = columns.Select(c => c.Column).Concat(hidden).ToHashSet(StringComparer.Ordinal);
         foreach (var added in view.Grid.ViewState.Columns.Where(c => !placed.Contains(c.Column)))
             columns.Add(new ColumnViewState(added.Column, added.Width));
+        if (columns.Count == 0)
+        {
+            dropped.Add($"{path}: none of the columns it shows is shown by view '{view.Id}' now, and a grid shows one at least.");
+            return null;
+        }
         var sorts = new List<SortSpec>();
         foreach (var sort in state.Sorts)
         {
@@ -311,8 +317,10 @@ public sealed class BoardDiff
         {
             throw new BoardRefusedException($"{path}.viewState", e.Message);
         }
-        return new BoardGridChange(state, Texts(grid["hidden"], $"{path}.hidden", "A grid's 'hidden' is a list of column names."),
-            ReadKinds(grid["kinds"], $"{path}.kinds"));
+        var hidden = Texts(grid["hidden"], $"{path}.hidden", "A grid's 'hidden' is a list of column names.");
+        if (hidden.FirstOrDefault(h => state.Columns.Any(c => c.Column == h)) is { } both)
+            throw new BoardRefusedException($"{path}.hidden", $"Column '{both}' is both shown and hidden.");
+        return new BoardGridChange(state, hidden, ReadKinds(grid["kinds"], $"{path}.kinds"));
     }
 
     private static BoardPivotChange ReadPivot(JsonNode? node, string path)
@@ -326,7 +334,7 @@ public sealed class BoardDiff
         {
             return new BoardPivotChange(PivotLayoutJson.Read(layout.ToJsonString()), ReadKinds(pivot["kinds"], $"{path}.kinds"));
         }
-        catch (Exception e) when (e is FormatException or JsonException or ArgumentException or InvalidOperationException)
+        catch (Exception e) when (e is FormatException or JsonException or ArgumentException or InvalidOperationException or NotSupportedException)
         {
             throw new BoardRefusedException($"{path}.layout", $"The pivot's layout cannot be read: {e.Message}");
         }
@@ -382,7 +390,7 @@ public sealed class BoardDiff
             double? End(string key) => value[key] switch
             {
                 null => null,
-                JsonValue end when end.TryGetValue<double>(out var number) => number,
+                JsonValue end when end.TryGetValue<double>(out var number) && double.IsFinite(number) => number,
                 _ => throw new BoardRefusedException($"{path}.range.{key}", "An end of a range is a number in the axis' values."),
             };
             range = new ChartRange(End("from"), End("to"), End("yFrom"), End("yTo"));

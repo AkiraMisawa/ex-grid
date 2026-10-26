@@ -595,3 +595,96 @@ describe('a copy of the Sheet\'s own (ADR-0050 item 9, ADR-0048)', () => {
         await vi.waitFor(() => { expect(sheet.workbook.shown.getEntryText(CellAddress.parse('D1'))).toBe('5'); });
     });
 });
+
+function toolbarItem(element: HTMLElement, name: string): HTMLButtonElement {
+    const found = [...element.querySelectorAll<HTMLButtonElement>('.ex-sheet-toolbar-item')].find(button => button.getAttribute('aria-label') === name);
+    if (found === undefined) throw new Error(`No Toolbar Item is named ${name}.`);
+    return found;
+}
+
+describe('the Sheet Toolbar (ADR-0100)', () => {
+
+    it('ADR-0100: shown only when asked for, above the grid, its band off the Sheet\'s height; Excel\'s Home tab in its order', async () => {
+        const plain = sheetOf();
+        expect(plain.element.querySelector('.ex-sheet-toolbar')).toBeNull();
+        const { element } = sheetOf({ showToolbar: true, showSheetTabs: false });
+        const band = element.querySelector<HTMLElement>('.ex-sheet-toolbar');
+        expect(band?.nextElementSibling?.querySelector('.ex-grid, [data-ex-answered]')).not.toBeNull();
+        expect([band?.getAttribute('role'), band?.getAttribute('aria-label'), band?.tabIndex]).toEqual(['toolbar', 'Formatting', 0]);
+        expect([...element.querySelectorAll('.ex-sheet-toolbar-item')].map(button => button.getAttribute('aria-label'))).toEqual([
+            'Bold', 'Italic', 'Underline', 'Strikethrough', 'Align Left', 'Centre', 'Align Right', 'Percent Style', 'Comma Style',
+            'Format Cells',
+        ]);
+        expect(toolbarItem(element, 'Bold').title).toBe('Bold (Ctrl+B)');
+        expect(toolbarItem(element, 'Comma Style').disabled).toBe(true);
+        await vi.waitFor(() => { expect(element.querySelector<HTMLElement>('.ex-scroller')?.style.height).not.toBe(''); });
+        const bandPx = Number.parseFloat(band?.style.height ?? ''); // oxlint-disable-line ex-grid/no-stand-in-default -- a band without a height reads as NaN, which the expectation names
+        expect(bandPx).toBeGreaterThan(0);
+    });
+
+    it('ADR-0100: a press sets the format on the Selection as one step, keeps the keyboard on the Sheet, and the toggle follows the Focus cell', async () => {
+        const { element, sheet } = sheetOf({ showToolbar: true, document: documentOf({ A1: 'x', A2: 'y' }) });
+        await vi.waitFor(() => { expect(textAt(element, 0, 0)).toBe('x'); });
+        press(element, 0, 0);
+        const grid = document.activeElement;
+        const bold = toolbarItem(element, 'Bold');
+        const down = new MouseEvent('mousedown', { bubbles: true, cancelable: true });
+        bold.dispatchEvent(down);
+        expect(down.defaultPrevented).toBe(true);
+        bold.click();
+        expect(document.activeElement).toBe(grid);
+        expect(sheet.workbook.shown.getCellFormat(CellAddress.parse('A1')).font.bold).toBe(true);
+        await vi.waitFor(() => { expect(bold.getAttribute('aria-pressed')).toBe('true'); });
+        press(element, 1, 0);
+        await vi.waitFor(() => { expect(bold.getAttribute('aria-pressed')).toBe('false'); });
+        toolbarItem(element, 'Centre').click();
+        expect(sheet.workbook.shown.getCellFormat(CellAddress.parse('A2')).alignment).toBe('center');
+        // Pressed again where the Focus cell has it, General.
+        toolbarItem(element, 'Centre').click();
+        expect(sheet.workbook.shown.getCellFormat(CellAddress.parse('A2')).alignment).toBe('general');
+        sheet.undo();
+        expect(sheet.workbook.shown.getCellFormat(CellAddress.parse('A2')).alignment).toBe('center');
+    });
+
+    it('ADR-0100: one tab stop; arrows move among the items that can be pressed, Enter presses one and gives the keyboard back', async () => {
+        const { element, sheet } = sheetOf({ showToolbar: true, document: documentOf({ A1: '0.5' }) });
+        await vi.waitFor(() => { expect(textAt(element, 0, 0)).toBe('0.5'); });
+        press(element, 0, 0);
+        const grid = document.activeElement;
+        const band = element.querySelector<HTMLElement>('.ex-sheet-toolbar');
+        band?.focus();
+        expect(band?.getAttribute('aria-activedescendant')).toBe(toolbarItem(element, 'Bold').id);
+        key('End');
+        expect(band?.getAttribute('aria-activedescendant')).toBe(toolbarItem(element, 'Format Cells').id);
+        // Comma Style cannot be pressed, so ← passes over it.
+        key('ArrowLeft');
+        expect(band?.getAttribute('aria-activedescendant')).toBe(toolbarItem(element, 'Percent Style').id);
+        key('Enter');
+        expect(document.activeElement).toBe(grid);
+        await vi.waitFor(() => { expect(textAt(element, 0, 0)).toBe('50%'); });
+        // Back on the band, the keyboard is on the item it last stood on.
+        band?.focus();
+        expect(band?.getAttribute('aria-activedescendant')).toBe(toolbarItem(element, 'Percent Style').id);
+        key('Home');
+        key('ArrowRight');
+        expect(band?.getAttribute('aria-activedescendant')).toBe(toolbarItem(element, 'Italic').id);
+        // Ctrl+I on the band is the Sheet's, as its tooltip says.
+        key('i', { ctrlKey: true });
+        expect(sheet.workbook.shown.getCellFormat(CellAddress.parse('A1')).font.italic).toBe(true);
+        sheet.undo();
+        key('Escape');
+        expect(document.activeElement).toBe(grid);
+        expect(sheet.workbook.shown.getCellFormat(CellAddress.parse('A1')).font.italic).toBe(false);
+    });
+
+    it('ADR-0100: while an edit is open every item is unavailable, and says why', async () => {
+        const { element } = sheetOf({ showToolbar: true });
+        await vi.waitFor(() => { expect(element.querySelector('.ex-viewport')).not.toBeNull(); });
+        press(element, 0, 0);
+        key('Z');
+        await vi.waitFor(() => { expect(toolbarItem(element, 'Bold').disabled).toBe(true); });
+        expect(toolbarItem(element, 'Bold').title).toBe('Bold (Ctrl+B): A cell is being edited. Press Enter to commit the edit or Escape to cancel it first.');
+        key('Escape');
+        await vi.waitFor(() => { expect(toolbarItem(element, 'Bold').disabled).toBe(false); });
+    });
+});

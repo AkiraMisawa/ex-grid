@@ -1,0 +1,1695 @@
+{
+  "about": "A Chart Spec of a 3D surface, on a grid or a mesh, and a series' intervals (ADR-0320, ADR-0274, ADR-0303, ADR-0304, ADR-0310, ADR-0311, ADR-0312), from tests/ExChart.Engine.Tests/ChartSpecSurfaceTests.cs.",
+  "kind": "chart",
+  "tables": {
+    "vols": {
+      "tenor": [
+        "1W",
+        "1W",
+        "1M",
+        "1M",
+        "1Y",
+        "1Y"
+      ],
+      "delta": [
+        {
+          "integer": 25
+        },
+        {
+          "integer": 50
+        },
+        {
+          "integer": 25
+        },
+        {
+          "integer": 50
+        },
+        {
+          "integer": 25
+        },
+        {
+          "integer": 50
+        }
+      ],
+      "vol": [
+        {
+          "decimal": "8.1"
+        },
+        {
+          "decimal": "7.9"
+        },
+        {
+          "decimal": "8.4"
+        },
+        null,
+        {
+          "decimal": "9"
+        },
+        {
+          "decimal": "8.7"
+        }
+      ],
+      "filled": [
+        false,
+        true,
+        false,
+        false,
+        false,
+        true
+      ]
+    },
+    "nodes": {
+      "node": [
+        "p",
+        "q",
+        "r",
+        "s"
+      ],
+      "strike": [
+        90.0,
+        110.0,
+        90.0,
+        110.0
+      ],
+      "expiry": [
+        0.5,
+        0.5,
+        1.0,
+        1.0
+      ],
+      "pnl": [
+        -2.0,
+        1.0,
+        0.5,
+        3.0
+      ]
+    },
+    "triangles": {
+      "a": [
+        "p",
+        "q"
+      ],
+      "b": [
+        "q",
+        "s"
+      ],
+      "c": [
+        "r",
+        "r"
+      ]
+    },
+    "quotes": {
+      "x": [
+        1.0,
+        2.0,
+        3.0
+      ],
+      "y": [
+        {
+          "decimal": "10"
+        },
+        {
+          "decimal": "12"
+        },
+        {
+          "decimal": "11"
+        }
+      ],
+      "lo": [
+        {
+          "decimal": "9"
+        },
+        null,
+        {
+          "decimal": "10"
+        }
+      ],
+      "hi": [
+        {
+          "decimal": "11"
+        },
+        {
+          "decimal": "13"
+        },
+        {
+          "decimal": "12"
+        }
+      ],
+      "xlo": [
+        0.9,
+        1.8,
+        2.7
+      ],
+      "xhi": [
+        1.1,
+        2.2,
+        3.3
+      ]
+    }
+  },
+  "cases": [
+    {
+      "name": "ADR-0320, ADR-0274: a surface spec reads a grid from its x, y and z columns, a null value a hole",
+      "spec": {
+        "version": 1,
+        "title": "EURUSD volatility",
+        "surface": {
+          "data": "vols",
+          "x": "tenor",
+          "y": "delta",
+          "z": "vol",
+          "xTitle": "Tenor",
+          "zTitle": "Volatility"
+        },
+        "notes": [
+          "Mid quotes."
+        ]
+      },
+      "expect": [
+        {
+          "at": "title",
+          "is": "EURUSD volatility"
+        },
+        {
+          "at": "definition",
+          "is": {
+            "refused": "invalidOperation"
+          }
+        },
+        {
+          "at": "surface.x.values",
+          "is": [
+            "1W",
+            "1M",
+            "1Y"
+          ]
+        },
+        {
+          "at": "surface.x.title",
+          "is": "Tenor"
+        },
+        {
+          "at": "surface.x.scale",
+          "is": "categories"
+        },
+        {
+          "at": "surface.y.values",
+          "is": [
+            25,
+            50
+          ]
+        },
+        {
+          "at": "surface.y.title",
+          "is": "delta"
+        },
+        {
+          "at": "surface.zTitle",
+          "is": "Volatility"
+        },
+        {
+          "at": "surface.z",
+          "is": [
+            [
+              8.1,
+              8.4,
+              9
+            ],
+            [
+              7.9,
+              null,
+              8.7
+            ]
+          ]
+        },
+        {
+          "at": "surface.notes",
+          "is": [
+            "Mid quotes."
+          ]
+        },
+        {
+          "at": "surface.method",
+          "is": null
+        },
+        {
+          "at": "surface.interpolated",
+          "is": null
+        },
+        {
+          "at": "surface.isMesh",
+          "is": false
+        },
+        {
+          "at": "surface.zScale",
+          "is": "proportional"
+        },
+        {
+          "at": "surface.centre",
+          "is": null
+        }
+      ]
+    },
+    {
+      "name": "ADR-0310, ADR-0312, ADR-0257: a surface takes its centre, its scales and the method a capability interpolated with",
+      "spec": {
+        "version": 1,
+        "title": "EURUSD volatility",
+        "surface": {
+          "data": "vols",
+          "x": "tenor",
+          "y": "delta",
+          "z": "vol",
+          "xTitle": "Tenor",
+          "zTitle": "Volatility",
+          "centre": 8.5,
+          "yScale": "logarithmic",
+          "zScale": "logarithmic",
+          "method": "bilinear",
+          "interpolated": "filled"
+        },
+        "notes": [
+          "Mid quotes."
+        ]
+      },
+      "expect": [
+        {
+          "at": "surface.centre",
+          "is": 8.5
+        },
+        {
+          "at": "surface.y.scale",
+          "is": "logarithmic"
+        },
+        {
+          "at": "surface.x.scale",
+          "is": "categories"
+        },
+        {
+          "at": "surface.zScale",
+          "is": "logarithmic"
+        },
+        {
+          "at": "surface.method",
+          "is": "bilinear"
+        },
+        {
+          "at": "surface.interpolated",
+          "is": [
+            [
+              false,
+              false,
+              false
+            ],
+            [
+              true,
+              false,
+              true
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ADR-0257: a method without marks marks every value interpolated",
+      "spec": {
+        "version": 1,
+        "title": "EURUSD volatility",
+        "surface": {
+          "data": "vols",
+          "x": "tenor",
+          "y": "delta",
+          "z": "vol",
+          "xTitle": "Tenor",
+          "zTitle": "Volatility",
+          "method": "bilinear"
+        },
+        "notes": [
+          "Mid quotes."
+        ]
+      },
+      "expect": [
+        {
+          "at": "surface.method",
+          "is": "bilinear"
+        },
+        {
+          "at": "surface.interpolated",
+          "is": null
+        }
+      ]
+    },
+    {
+      "name": "ADR-0311: a mesh is the nodes keyed by a column and a table of triangles naming them",
+      "spec": {
+        "version": 1,
+        "surface": {
+          "data": "nodes",
+          "x": "strike",
+          "y": "expiry",
+          "z": "pnl",
+          "key": "node",
+          "centre": 0,
+          "triangles": {
+            "data": "triangles",
+            "a": "a",
+            "b": "b",
+            "c": "c"
+          }
+        }
+      },
+      "expect": [
+        {
+          "at": "title",
+          "is": ""
+        },
+        {
+          "at": "surface.isMesh",
+          "is": true
+        },
+        {
+          "at": "surface.nodes",
+          "is": [
+            {
+              "x": 90,
+              "y": 0.5,
+              "z": -2
+            },
+            {
+              "x": 110,
+              "y": 0.5,
+              "z": 1
+            },
+            {
+              "x": 90,
+              "y": 1,
+              "z": 0.5
+            },
+            {
+              "x": 110,
+              "y": 1,
+              "z": 3
+            }
+          ]
+        },
+        {
+          "at": "surface.triangles",
+          "is": [
+            {
+              "a": 0,
+              "b": 1,
+              "c": 2
+            },
+            {
+              "a": 1,
+              "b": 3,
+              "c": 2
+            }
+          ]
+        },
+        {
+          "at": "surface.x.scale",
+          "is": "proportional"
+        },
+        {
+          "at": "surface.x.title",
+          "is": "strike"
+        },
+        {
+          "at": "surface.zTitle",
+          "is": "pnl"
+        },
+        {
+          "at": "surface.centre",
+          "is": 0
+        }
+      ]
+    },
+    {
+      "name": "ADR-0311: a triangle naming a node no row is keyed by is refused naming its row",
+      "spec": {
+        "version": 1,
+        "surface": {
+          "data": "nodes",
+          "x": "strike",
+          "y": "expiry",
+          "z": "pnl",
+          "key": "node",
+          "centre": 0,
+          "triangles": {
+            "data": "triangles",
+            "a": "a",
+            "b": "b",
+            "c": "c"
+          }
+        }
+      },
+      "tables": {
+        "triangles": {
+          "a": [
+            "p",
+            "q"
+          ],
+          "b": [
+            "q",
+            "t"
+          ],
+          "c": [
+            "r",
+            "r"
+          ]
+        }
+      },
+      "refused": {
+        "path": "surface.triangles.b",
+        "message": "surface.triangles.b: row 2 of \"triangles\" names node t, but no node is keyed t."
+      }
+    },
+    {
+      "name": "ADR-0311: a mesh's nodes say which column holds their keys",
+      "spec": {
+        "version": 1,
+        "surface": {
+          "data": "nodes",
+          "x": "strike",
+          "y": "expiry",
+          "z": "pnl",
+          "centre": 0,
+          "triangles": {
+            "data": "triangles",
+            "a": "a",
+            "b": "b",
+            "c": "c"
+          }
+        }
+      },
+      "refused": {
+        "path": "surface.key",
+        "message": "surface.key is missing: a triangle names its nodes by key, so the nodes say which column holds theirs."
+      }
+    },
+    {
+      "name": "ADR-0311: two nodes of one key are refused, since a triangle could not say which it names",
+      "spec": {
+        "version": 1,
+        "surface": {
+          "data": "nodes",
+          "x": "strike",
+          "y": "expiry",
+          "z": "pnl",
+          "key": "node",
+          "centre": 0,
+          "triangles": {
+            "data": "triangles",
+            "a": "a",
+            "b": "b",
+            "c": "c"
+          }
+        }
+      },
+      "tables": {
+        "nodes": {
+          "node": [
+            "p",
+            "q",
+            "p"
+          ],
+          "strike": [
+            90.0,
+            110.0,
+            90.0
+          ],
+          "expiry": [
+            0.5,
+            0.5,
+            1.0
+          ],
+          "pnl": [
+            1.0,
+            2.0,
+            3.0
+          ]
+        }
+      },
+      "refused": {
+        "path": "surface.key",
+        "message": "surface.key: rows 1 and 3 of \"nodes\" are both keyed p; a triangle could not say which it names."
+      }
+    },
+    {
+      "name": "ADR-0311: a mesh's nodes are placed by position, never as categories",
+      "spec": {
+        "version": 1,
+        "surface": {
+          "data": "nodes",
+          "x": "strike",
+          "y": "expiry",
+          "z": "pnl",
+          "key": "node",
+          "centre": 0,
+          "triangles": {
+            "data": "triangles",
+            "a": "a",
+            "b": "b",
+            "c": "c"
+          },
+          "yScale": "categories"
+        }
+      },
+      "refused": {
+        "path": "surface.yScale",
+        "message": "surface.yScale \"categories\": a mesh's nodes are placed by their position, proportionally or logarithmically."
+      }
+    },
+    {
+      "name": "ADR-0311: a mesh's values are its nodes, so it names no method",
+      "spec": {
+        "version": 1,
+        "surface": {
+          "data": "nodes",
+          "x": "strike",
+          "y": "expiry",
+          "z": "pnl",
+          "key": "node",
+          "centre": 0,
+          "triangles": {
+            "data": "triangles",
+            "a": "a",
+            "b": "b",
+            "c": "c"
+          },
+          "method": "linear"
+        }
+      },
+      "refused": {
+        "path": "surface.method",
+        "message": "surface.method belongs to a grid; a mesh's nodes are its values, and between them it is read linearly on its triangles, which it says."
+      }
+    },
+    {
+      "name": "ADR-0311: a grid's points stand at their x and y, so it names no key",
+      "spec": {
+        "version": 1,
+        "title": "EURUSD volatility",
+        "surface": {
+          "data": "vols",
+          "x": "tenor",
+          "y": "delta",
+          "z": "vol",
+          "xTitle": "Tenor",
+          "zTitle": "Volatility",
+          "key": "tenor"
+        },
+        "notes": [
+          "Mid quotes."
+        ]
+      },
+      "refused": {
+        "path": "surface.key",
+        "message": "surface.key belongs to a mesh, whose triangles name its nodes; a grid's points stand at their x and y."
+      }
+    },
+    {
+      "name": "ADR-0311: a node needs a position in the plane",
+      "spec": {
+        "version": 1,
+        "surface": {
+          "data": "nodes",
+          "x": "strike",
+          "y": "expiry",
+          "z": "pnl",
+          "key": "node",
+          "centre": 0,
+          "triangles": {
+            "data": "triangles",
+            "a": "a",
+            "b": "b",
+            "c": "c"
+          }
+        }
+      },
+      "tables": {
+        "nodes": {
+          "node": [
+            "p",
+            "q"
+          ],
+          "strike": [
+            90.0,
+            null
+          ],
+          "expiry": [
+            0.5,
+            0.5
+          ],
+          "pnl": [
+            1.0,
+            2.0
+          ]
+        }
+      },
+      "refused": {
+        "path": "surface.x",
+        "message": "surface.x: row 2 of \"nodes\" has no position; a node needs one in the plane."
+      }
+    },
+    {
+      "name": "ADR-0311: the triangles are an object naming their table",
+      "spec": {
+        "version": 1,
+        "surface": {
+          "data": "nodes",
+          "x": "strike",
+          "y": "expiry",
+          "z": "pnl",
+          "key": "node",
+          "centre": 0,
+          "triangles": [
+            "a",
+            "b",
+            "c"
+          ]
+        }
+      },
+      "refused": {
+        "path": "surface.triangles",
+        "message": "surface.triangles is a JSON object."
+      }
+    },
+    {
+      "name": "ADR-0311: the triangles' table is one the host knows",
+      "spec": {
+        "version": 1,
+        "surface": {
+          "data": "nodes",
+          "x": "strike",
+          "y": "expiry",
+          "z": "pnl",
+          "key": "node",
+          "centre": 0,
+          "triangles": {
+            "data": "faces",
+            "a": "a",
+            "b": "b",
+            "c": "c"
+          }
+        }
+      },
+      "refused": {
+        "path": "surface.triangles.data",
+        "message": "surface.triangles.data \"faces\" is not known: name a Data Handle a capability returned."
+      }
+    },
+    {
+      "name": "ADR-0274, ADR-0257: rows that form no grid are refused, never interpolated onto one",
+      "spec": {
+        "version": 1,
+        "surface": {
+          "data": "s",
+          "x": "x",
+          "y": "y",
+          "z": "z"
+        }
+      },
+      "tables": {
+        "s": {
+          "x": [
+            1.0,
+            2.0,
+            3.0
+          ],
+          "y": [
+            1.0,
+            1.0,
+            2.0
+          ],
+          "z": [
+            1.0,
+            2.0,
+            3.0
+          ]
+        }
+      },
+      "refused": {
+        "path": "surface.x",
+        "message": "surface.x: x 1 has a value at only one y. Rows that form no grid join a surface only by interpolation, which the chart does not choose: have the capability interpolate them onto a grid and name its method, or hand its own triangles."
+      }
+    },
+    {
+      "name": "ADR-0274: two rows at one grid point are refused naming the second",
+      "spec": {
+        "version": 1,
+        "surface": {
+          "data": "s",
+          "x": "x",
+          "y": "y",
+          "z": "z",
+          "xTitle": "Strike"
+        }
+      },
+      "tables": {
+        "s": {
+          "x": [
+            1.0,
+            2.0,
+            1.0
+          ],
+          "y": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "z": [
+            1.0,
+            2.0,
+            3.0
+          ]
+        }
+      },
+      "refused": {
+        "path": "surface.x",
+        "message": "surface: two rows of \"s\" lie at Strike 1 and y 1, the second row 3; a grid point holds one value."
+      }
+    },
+    {
+      "name": "ADR-0274: a grid's point needs a position",
+      "spec": {
+        "version": 1,
+        "surface": {
+          "data": "s",
+          "x": "x",
+          "y": "y",
+          "z": "z"
+        }
+      },
+      "tables": {
+        "s": {
+          "x": [
+            1.0,
+            2.0
+          ],
+          "y": [
+            1.0,
+            null
+          ],
+          "z": [
+            1.0,
+            2.0
+          ]
+        }
+      },
+      "refused": {
+        "path": "surface.y",
+        "message": "surface.y: row 2 of \"s\" has no position; a point needs one."
+      }
+    },
+    {
+      "name": "ADR-0274: an axis places one kind of value",
+      "spec": {
+        "version": 1,
+        "surface": {
+          "data": "s",
+          "x": "x",
+          "y": "y",
+          "z": "z"
+        }
+      },
+      "tables": {
+        "s": {
+          "x": [
+            1.0,
+            "2"
+          ],
+          "y": [
+            1.0,
+            1.0
+          ],
+          "z": [
+            1.0,
+            2.0
+          ]
+        }
+      },
+      "refused": {
+        "path": "surface.x",
+        "message": "surface.x: row 2 of \"s\" holds \"2\", but the rows before it hold numbers; an axis places one kind of value."
+      }
+    },
+    {
+      "name": "ADR-0274: a surface's dates are days, and a grid of them reads its values at each day",
+      "spec": {
+        "version": 1,
+        "surface": {
+          "data": "s",
+          "x": "day",
+          "y": "k",
+          "z": "z"
+        }
+      },
+      "tables": {
+        "s": {
+          "day": [
+            {
+              "date": "2026-01-02"
+            },
+            {
+              "date": "2026-01-02"
+            },
+            {
+              "dateTime": "2026-01-05T00:00:00"
+            },
+            {
+              "date": "2026-01-05"
+            }
+          ],
+          "k": [
+            {
+              "integer": 1
+            },
+            {
+              "integer": 2
+            },
+            {
+              "integer": 1
+            },
+            {
+              "integer": 2
+            }
+          ],
+          "z": [
+            1.0,
+            2.0,
+            3.0,
+            4.0
+          ]
+        }
+      },
+      "expect": [
+        {
+          "at": "surface.x.title",
+          "is": "day"
+        },
+        {
+          "at": "surface.x.values.length",
+          "is": 2
+        },
+        {
+          "at": "surface.y.values",
+          "is": [
+            1,
+            2
+          ]
+        },
+        {
+          "at": "surface.z",
+          "is": [
+            [
+              1,
+              3
+            ],
+            [
+              2,
+              4
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ADR-0274: a surface places days, so a time of day is refused",
+      "spec": {
+        "version": 1,
+        "surface": {
+          "data": "s",
+          "x": "day",
+          "y": "k",
+          "z": "z"
+        }
+      },
+      "tables": {
+        "s": {
+          "day": [
+            {
+              "date": "2026-01-02"
+            },
+            {
+              "dateTime": "2026-01-02T09:00:00"
+            }
+          ],
+          "k": [
+            {
+              "integer": 1
+            },
+            {
+              "integer": 2
+            }
+          ],
+          "z": [
+            1.0,
+            2.0
+          ]
+        }
+      },
+      "refused": {
+        "path": "surface.x",
+        "message": "surface.x: row 2 of \"s\" holds 01/02/2026 09:00:00, a time of day; a surface places days."
+      }
+    },
+    {
+      "name": "ADR-0274: two rows on one day are named by the day",
+      "spec": {
+        "version": 1,
+        "surface": {
+          "data": "s",
+          "x": "day",
+          "y": "k",
+          "z": "z"
+        }
+      },
+      "tables": {
+        "s": {
+          "day": [
+            {
+              "date": "2026-01-02"
+            },
+            {
+              "date": "2026-01-02"
+            }
+          ],
+          "k": [
+            {
+              "integer": 1
+            },
+            {
+              "integer": 1
+            }
+          ],
+          "z": [
+            1.0,
+            2.0
+          ]
+        }
+      },
+      "refused": {
+        "path": "surface.x",
+        "message": "surface: two rows of \"s\" lie at day 2026-01-02 and k 1, the second row 2; a grid point holds one value."
+      }
+    },
+    {
+      "name": "ADR-0312: only numbers are placed by value; dates are placed evenly",
+      "spec": {
+        "version": 1,
+        "surface": {
+          "data": "s",
+          "x": "day",
+          "y": "k",
+          "z": "z",
+          "xScale": "logarithmic"
+        }
+      },
+      "tables": {
+        "s": {
+          "day": [
+            {
+              "date": "2026-01-02"
+            },
+            {
+              "date": "2026-01-05"
+            }
+          ],
+          "k": [
+            {
+              "integer": 1
+            },
+            {
+              "integer": 1
+            }
+          ],
+          "z": [
+            1.0,
+            2.0
+          ]
+        }
+      },
+      "refused": {
+        "path": "surface.xScale",
+        "message": "surface.xScale: only numbers are placed by value; surface.x's dates are placed evenly, as categories."
+      }
+    },
+    {
+      "name": "ADR-0257: a mark of interpolation is true or false",
+      "spec": {
+        "version": 1,
+        "title": "EURUSD volatility",
+        "surface": {
+          "data": "vols",
+          "x": "tenor",
+          "y": "delta",
+          "z": "vol",
+          "xTitle": "Tenor",
+          "zTitle": "Volatility",
+          "method": "bilinear",
+          "interpolated": "tenor"
+        },
+        "notes": [
+          "Mid quotes."
+        ]
+      },
+      "refused": {
+        "path": "surface.interpolated",
+        "message": "surface.interpolated: row 1 of \"vols\" holds \"1W\", which is not true or false."
+      }
+    },
+    {
+      "name": "ADR-0320: a spec draws a surface or series, and a surface beside an axis is refused at the axis",
+      "spec": {
+        "version": 1,
+        "title": "EURUSD volatility",
+        "axis": {
+          "values": "numbers"
+        },
+        "surface": {
+          "data": "vols",
+          "x": "tenor",
+          "y": "delta",
+          "z": "vol",
+          "xTitle": "Tenor",
+          "zTitle": "Volatility"
+        },
+        "notes": [
+          "Mid quotes."
+        ]
+      },
+      "refused": {
+        "path": "axis",
+        "message": "axis belongs to a chart of series; a spec draws a surface or series, and its surface names its own x, y and z."
+      }
+    },
+    {
+      "name": "ADR-0320: a surface beside series is refused at the series",
+      "spec": {
+        "version": 1,
+        "surface": {
+          "data": "vols",
+          "x": "tenor",
+          "y": "delta",
+          "z": "vol",
+          "xTitle": "Tenor",
+          "zTitle": "Volatility"
+        },
+        "series": []
+      },
+      "refused": {
+        "path": "series",
+        "message": "series belongs to a chart of series; a spec draws a surface or series, and its surface names its own x, y and z."
+      }
+    },
+    {
+      "name": "ADR-0320: a surface's column is one of its table's",
+      "spec": {
+        "version": 1,
+        "title": "EURUSD volatility",
+        "surface": {
+          "data": "vols",
+          "x": "tenor",
+          "y": "delta",
+          "z": "price",
+          "xTitle": "Tenor",
+          "zTitle": "Volatility"
+        },
+        "notes": [
+          "Mid quotes."
+        ]
+      },
+      "refused": {
+        "path": "surface.z",
+        "message": "surface.z: \"vols\" has no column \"price\"; its columns are tenor, delta, vol, filled."
+      }
+    },
+    {
+      "name": "ADR-0312: a surface's labels are placed evenly, never by value",
+      "spec": {
+        "version": 1,
+        "title": "EURUSD volatility",
+        "surface": {
+          "data": "vols",
+          "x": "tenor",
+          "y": "delta",
+          "z": "vol",
+          "xScale": "proportional",
+          "xTitle": "Tenor",
+          "zTitle": "Volatility"
+        },
+        "notes": [
+          "Mid quotes."
+        ]
+      },
+      "refused": {
+        "path": "surface.xScale",
+        "message": "surface.xScale: only numbers are placed by value; surface.x's labels are placed evenly, as categories."
+      }
+    },
+    {
+      "name": "ADR-0257: a surface that marks values interpolated names its method",
+      "spec": {
+        "version": 1,
+        "title": "EURUSD volatility",
+        "surface": {
+          "data": "vols",
+          "x": "tenor",
+          "y": "delta",
+          "z": "vol",
+          "interpolated": "filled",
+          "xTitle": "Tenor",
+          "zTitle": "Volatility"
+        },
+        "notes": [
+          "Mid quotes."
+        ]
+      },
+      "refused": {
+        "path": "surface.method",
+        "message": "surface.method is missing: a surface that marks values interpolated names the method they were made with, which the chart says (ADR-0257)."
+      }
+    },
+    {
+      "name": "ADR-0320: a key a surface does not take is named with the keys it does",
+      "spec": {
+        "version": 1,
+        "title": "EURUSD volatility",
+        "surface": {
+          "data": "vols",
+          "x": "tenor",
+          "y": "delta",
+          "z": "vol",
+          "colour": "red",
+          "xTitle": "Tenor",
+          "zTitle": "Volatility"
+        },
+        "notes": [
+          "Mid quotes."
+        ]
+      },
+      "refused": {
+        "path": "surface.colour",
+        "message": "surface.colour is not part of a Chart Spec: surface takes data, x, y, z, xTitle, yTitle, zTitle, xScale, yScale, zScale, centre, method, interpolated, key, triangles."
+      }
+    },
+    {
+      "name": "ADR-0320: a surface is an object",
+      "spec": {
+        "version": 1,
+        "surface": "vols"
+      },
+      "refused": {
+        "path": "surface",
+        "message": "surface is a JSON object."
+      }
+    },
+    {
+      "name": "ADR-0320: a surface names the Data Handle of its table",
+      "spec": {
+        "version": 1,
+        "surface": {
+          "x": "tenor",
+          "y": "delta",
+          "z": "vol"
+        }
+      },
+      "refused": {
+        "path": "surface.data",
+        "message": "surface.data is missing: the Data Handle of the table of its points."
+      }
+    },
+    {
+      "name": "ADR-0320: a surface's notes are read before the surface itself",
+      "spec": {
+        "version": 1,
+        "surface": {
+          "x": "tenor"
+        },
+        "notes": "Mid quotes."
+      },
+      "refused": {
+        "path": "notes",
+        "message": "notes is a list of lines."
+      }
+    },
+    {
+      "name": "ADR-0310: a surface's centre is a finite number",
+      "spec": {
+        "version": 1,
+        "title": "EURUSD volatility",
+        "surface": {
+          "data": "vols",
+          "x": "tenor",
+          "y": "delta",
+          "z": "vol",
+          "xTitle": "Tenor",
+          "zTitle": "Volatility",
+          "centre": "mid"
+        },
+        "notes": [
+          "Mid quotes."
+        ]
+      },
+      "refused": {
+        "path": "surface.centre",
+        "message": "surface.centre is a finite number."
+      }
+    },
+    {
+      "name": "ADR-0312: a surface's values are placed up proportionally or logarithmically",
+      "spec": {
+        "version": 1,
+        "title": "EURUSD volatility",
+        "surface": {
+          "data": "vols",
+          "x": "tenor",
+          "y": "delta",
+          "z": "vol",
+          "xTitle": "Tenor",
+          "zTitle": "Volatility",
+          "zScale": "categories"
+        },
+        "notes": [
+          "Mid quotes."
+        ]
+      },
+      "refused": {
+        "path": "surface.zScale",
+        "message": "surface.zScale \"categories\" is not known: it is one of proportional, logarithmic."
+      }
+    },
+    {
+      "name": "ADR-0303, ADR-0320: a level's interval is read from its lower and upper columns, with its meaning and style",
+      "spec": {
+        "version": 1,
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "c",
+            "name": "Curve",
+            "kind": "level",
+            "data": "quotes",
+            "x": "x",
+            "y": "y",
+            "interval": {
+              "lower": "lo",
+              "upper": "hi",
+              "meaning": "Bid–Ask",
+              "style": "band"
+            }
+          }
+        ]
+      },
+      "expect": [
+        {
+          "at": "definition.series.0.interval",
+          "is": {
+            "meaning": "Bid–Ask",
+            "style": "band",
+            "bounds": [
+              {
+                "x": 1,
+                "lower": 9,
+                "upper": 11
+              },
+              {
+                "x": 2,
+                "lower": null,
+                "upper": 13
+              },
+              {
+                "x": 3,
+                "lower": 10,
+                "upper": 12
+              }
+            ]
+          }
+        },
+        {
+          "at": "definition.series.0.xInterval",
+          "is": null
+        }
+      ]
+    },
+    {
+      "name": "ADR-0303: an interval says what its bounds are",
+      "spec": {
+        "version": 1,
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "c",
+            "name": "Curve",
+            "kind": "level",
+            "data": "quotes",
+            "x": "x",
+            "y": "y",
+            "interval": {
+              "lower": "lo",
+              "upper": "hi",
+              "style": "band"
+            }
+          }
+        ]
+      },
+      "refused": {
+        "path": "series[0].interval.meaning",
+        "message": "series[0].interval.meaning is missing: what the bounds are, such as 95% CI, ±1σ or Bid–Ask; an interval that does not say is not drawn."
+      }
+    },
+    {
+      "name": "ADR-0303: an interval whose meaning is blank says nothing",
+      "spec": {
+        "version": 1,
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "c",
+            "name": "Curve",
+            "kind": "level",
+            "data": "quotes",
+            "x": "x",
+            "y": "y",
+            "interval": {
+              "lower": "lo",
+              "upper": "hi",
+              "meaning": "  ",
+              "style": "band"
+            }
+          }
+        ]
+      },
+      "refused": {
+        "path": "series[0].interval.meaning",
+        "message": "series[0].interval.meaning is missing: what the bounds are, such as 95% CI, ±1σ or Bid–Ask; an interval that does not say is not drawn."
+      }
+    },
+    {
+      "name": "ADR-0303: an interval belongs to a level or an observation",
+      "spec": {
+        "version": 1,
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "c",
+            "name": "Curve",
+            "kind": "rateOverInterval",
+            "data": "quotes",
+            "x": "x",
+            "y": "y",
+            "interval": {
+              "lower": "lo",
+              "upper": "hi",
+              "meaning": "Bid–Ask",
+              "style": "band"
+            }
+          }
+        ]
+      },
+      "refused": {
+        "path": "series[0].interval",
+        "message": "series[0].interval belongs to a level or an observation, whose points the bounds stand at."
+      }
+    },
+    {
+      "name": "ADR-0303: an interval's style is whiskers or a band",
+      "spec": {
+        "version": 1,
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "c",
+            "name": "Curve",
+            "kind": "level",
+            "data": "quotes",
+            "x": "x",
+            "y": "y",
+            "interval": {
+              "lower": "lo",
+              "upper": "hi",
+              "meaning": "Bid–Ask",
+              "style": "area"
+            }
+          }
+        ]
+      },
+      "refused": {
+        "path": "series[0].interval.style",
+        "message": "series[0].interval.style \"area\" is not known: it is one of whiskers, band."
+      }
+    },
+    {
+      "name": "ADR-0303: an interval's bounds are numbers",
+      "spec": {
+        "version": 1,
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "c",
+            "name": "Curve",
+            "kind": "level",
+            "data": "quotes",
+            "x": "x",
+            "y": "y",
+            "interval": {
+              "lower": "lo",
+              "upper": "hi",
+              "meaning": "Bid–Ask",
+              "style": "band"
+            }
+          }
+        ]
+      },
+      "tables": {
+        "quotes": {
+          "x": [
+            1.0
+          ],
+          "y": [
+            {
+              "decimal": "10"
+            }
+          ],
+          "lo": [
+            "low"
+          ],
+          "hi": [
+            {
+              "decimal": "11"
+            }
+          ],
+          "xlo": [
+            null
+          ],
+          "xhi": [
+            null
+          ]
+        }
+      },
+      "refused": {
+        "path": "series[0].interval.lower",
+        "message": "series[0].interval.lower: row 1 of \"quotes\" holds \"low\", which is not a number."
+      }
+    },
+    {
+      "name": "ADR-0304, ADR-0320: an observation's horizontal interval is read in the units across",
+      "spec": {
+        "version": 1,
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "o",
+            "name": "Names",
+            "kind": "observation",
+            "data": "quotes",
+            "x": "x",
+            "y": "y",
+            "interval": {
+              "lower": "lo",
+              "upper": "hi",
+              "meaning": "95% CI"
+            },
+            "xInterval": {
+              "lower": "xlo",
+              "upper": "xhi",
+              "meaning": "±1σ"
+            }
+          }
+        ]
+      },
+      "expect": [
+        {
+          "at": "definition.series.0.xInterval",
+          "is": {
+            "meaning": "±1σ",
+            "style": "whiskers",
+            "bounds": [
+              {
+                "x": 1,
+                "lower": 0.9,
+                "upper": 1.1
+              },
+              {
+                "x": 2,
+                "lower": 1.8,
+                "upper": 2.2
+              },
+              {
+                "x": 3,
+                "lower": 2.7,
+                "upper": 3.3
+              }
+            ]
+          }
+        },
+        {
+          "at": "definition.series.0.interval.meaning",
+          "is": "95% CI"
+        },
+        {
+          "at": "definition.series.0.interval.style",
+          "is": "whiskers"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0304: an observation's interval takes whiskers, and the definition refuses a band by the series' path",
+      "spec": {
+        "version": 1,
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "o",
+            "name": "Names",
+            "kind": "observation",
+            "data": "quotes",
+            "x": "x",
+            "y": "y",
+            "interval": {
+              "lower": "lo",
+              "upper": "hi",
+              "meaning": "95% CI",
+              "style": "band"
+            },
+            "xInterval": {
+              "lower": "xlo",
+              "upper": "xhi",
+              "meaning": "±1σ"
+            }
+          }
+        ]
+      },
+      "refused": {
+        "path": "series[0]",
+        "message": "series[0]: 'Names' draws its Interval as a band, which joins neighbours: an Observation's points have none, so it takes whiskers."
+      }
+    },
+    {
+      "name": "ADR-0304: a horizontal interval belongs to an observation",
+      "spec": {
+        "version": 1,
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "o",
+            "name": "Names",
+            "kind": "level",
+            "data": "quotes",
+            "x": "x",
+            "y": "y",
+            "xInterval": {
+              "lower": "xlo",
+              "upper": "xhi",
+              "meaning": "±1σ"
+            }
+          }
+        ]
+      },
+      "refused": {
+        "path": "series[0].xInterval",
+        "message": "series[0].xInterval belongs to an observation, whose points each stand at a position of their own."
+      }
+    },
+    {
+      "name": "ADR-0304: a horizontal interval on dates is read as days",
+      "spec": {
+        "version": 1,
+        "axis": {
+          "values": "dates"
+        },
+        "series": [
+          {
+            "id": "o",
+            "name": "Trades",
+            "kind": "observation",
+            "data": "t",
+            "x": "d",
+            "y": "v",
+            "xInterval": {
+              "lower": "from",
+              "upper": "to",
+              "meaning": "settlement"
+            }
+          }
+        ]
+      },
+      "tables": {
+        "t": {
+          "d": [
+            {
+              "date": "2026-01-05"
+            }
+          ],
+          "v": [
+            1.0
+          ],
+          "from": [
+            {
+              "date": "2026-01-02"
+            }
+          ],
+          "to": [
+            null
+          ]
+        }
+      },
+      "expect": [
+        {
+          "at": "definition.series.0.xInterval.bounds",
+          "is": [
+            {
+              "x": {
+                "date": "2026-01-05"
+              },
+              "lower": {
+                "date": "2026-01-02"
+              },
+              "upper": null
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

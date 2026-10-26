@@ -1,0 +1,21 @@
+{
+  "about": "Reading a View State's JSON against a grid whose column names are unusual (ADR-0207): written again in the order and the spelling the C# core writes.",
+  "kind": "viewStateJson",
+  "columns": [
+    "Book",
+    "1",
+    "A+B <\"Ü\">"
+  ],
+  "cases": [
+    {
+      "name": "ADR-0207: a filter's columns are written again in the order they were read, a name that is a whole number among them",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Book\":{\"combinator\":\"And\",\"clauses\":[]},\"1\":{\"combinator\":\"And\",\"clauses\":[]}}}}",
+      "writes": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Book\":{\"combinator\":\"And\",\"clauses\":[]},\"1\":{\"combinator\":\"And\",\"clauses\":[]}}}}"
+    },
+    {
+      "name": "ADR-0207: a name is written with the default encoder's escapes",
+      "read": "{\"version\":1,\"columns\":[{\"column\":\"A+B <\\\"Ü\\\">\",\"width\":\"Auto\",\"pinned\":false}],\"sorts\":[]}",
+      "writes": "{\"version\":1,\"columns\":[{\"column\":\"A\\u002BB \\u003C\\u0022\\u00DC\\u0022\\u003E\",\"width\":\"Auto\",\"pinned\":false}],\"sorts\":[]}"
+    }
+  ]
+}

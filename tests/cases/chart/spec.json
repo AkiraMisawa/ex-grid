@@ -1,0 +1,2226 @@
+{
+  "about": "The Chart Spec read into a Chart Definition (ADR-0320, ADR-0251, ADR-0253, ADR-0290, ADR-0300): what it reads from the tables it names, and each refusal with its path, from tests/ExChart.Engine.Tests/ChartSpecTests.cs.",
+  "kind": "chart",
+  "tables": {
+    "rates": {
+      "date": [
+        {
+          "date": "2026-01-02"
+        },
+        {
+          "date": "2026-01-03"
+        },
+        {
+          "date": "2026-01-06"
+        }
+      ],
+      "rate": [
+        {
+          "decimal": "1.25"
+        },
+        null,
+        {
+          "decimal": "1.5"
+        }
+      ],
+      "spread": [
+        0.1,
+        0.2,
+        0.3
+      ]
+    }
+  },
+  "cases": [
+    {
+      "name": "ADR-0320: a Chart Spec names its data's columns and becomes a Chart Definition",
+      "spec": {
+        "version": 1,
+        "title": "Policy rate",
+        "axis": {
+          "values": "dates",
+          "title": "Date"
+        },
+        "series": [
+          {
+            "id": "rate",
+            "name": "Rate",
+            "kind": "level",
+            "data": "rates",
+            "x": "date",
+            "y": "rate",
+            "fromZero": false
+          }
+        ],
+        "notes": [
+          "Source: the central bank."
+        ]
+      },
+      "expect": [
+        {
+          "at": "title",
+          "is": "Policy rate"
+        },
+        {
+          "at": "surface",
+          "is": null
+        },
+        {
+          "at": "definition.axis.values",
+          "is": "dates"
+        },
+        {
+          "at": "definition.axis.title",
+          "is": "Date"
+        },
+        {
+          "at": "definition.axis.scale",
+          "is": null
+        },
+        {
+          "at": "definition.axis.labels",
+          "is": []
+        },
+        {
+          "at": "definition.axis.packed",
+          "is": false
+        },
+        {
+          "at": "definition.notes",
+          "is": [
+            "Source: the central bank."
+          ]
+        },
+        {
+          "at": "definition.series",
+          "is": [
+            {
+              "id": "rate",
+              "name": "Rate",
+              "kind": "level",
+              "step": "preceding",
+              "axis": "left",
+              "panel": "",
+              "keys": null,
+              "fromZero": false,
+              "interpolated": false,
+              "segments": [],
+              "points": [
+                {
+                  "x": {
+                    "date": "2026-01-02"
+                  },
+                  "y": 1.25
+                },
+                {
+                  "x": {
+                    "date": "2026-01-03"
+                  },
+                  "y": null
+                },
+                {
+                  "x": {
+                    "date": "2026-01-06"
+                  },
+                  "y": 1.5
+                }
+              ],
+              "colourBy": null,
+              "sizeBy": null,
+              "details": [],
+              "edges": [],
+              "bars": [],
+              "mergeTo": null,
+              "interval": null,
+              "xInterval": null,
+              "thinned": [],
+              "sampler": null,
+              "format": null,
+              "effectiveKeys": {
+                "colour": "rate"
+              },
+              "reachesZero": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ADR-0320: the version is required",
+      "spec": {
+        "title": "Policy rate",
+        "axis": {
+          "values": "dates",
+          "title": "Date"
+        },
+        "series": [
+          {
+            "id": "rate",
+            "name": "Rate",
+            "kind": "level",
+            "data": "rates",
+            "x": "date",
+            "y": "rate",
+            "fromZero": false
+          }
+        ],
+        "notes": [
+          "Source: the central bank."
+        ]
+      },
+      "refused": {
+        "path": "version",
+        "message": "version is missing: a Chart Spec says which version it is written in; this reader reads version 1."
+      }
+    },
+    {
+      "name": "ADR-0320: an unknown version is refused, never read as the nearest",
+      "spec": {
+        "version": 2,
+        "title": "Policy rate",
+        "axis": {
+          "values": "dates",
+          "title": "Date"
+        },
+        "series": [
+          {
+            "id": "rate",
+            "name": "Rate",
+            "kind": "level",
+            "data": "rates",
+            "x": "date",
+            "y": "rate",
+            "fromZero": false
+          }
+        ],
+        "notes": [
+          "Source: the central bank."
+        ]
+      },
+      "refused": {
+        "path": "version",
+        "message": "version 2 is not known: this reader reads version 1, and never reads a spec as the nearest version."
+      }
+    },
+    {
+      "name": "ADR-0320: a version written with a fraction is not the version, though it is the same number",
+      "specText": "{ \"version\": 1.0, \"axis\": { \"values\": \"numbers\" }, \"series\": [] }",
+      "refused": {
+        "path": "version",
+        "message": "version 1.0 is not known: this reader reads version 1, and never reads a spec as the nearest version."
+      }
+    },
+    {
+      "name": "ADR-0320: a version written as text is not the version",
+      "spec": {
+        "version": "1",
+        "title": "Policy rate",
+        "axis": {
+          "values": "dates",
+          "title": "Date"
+        },
+        "series": [
+          {
+            "id": "rate",
+            "name": "Rate",
+            "kind": "level",
+            "data": "rates",
+            "x": "date",
+            "y": "rate",
+            "fromZero": false
+          }
+        ],
+        "notes": [
+          "Source: the central bank."
+        ]
+      },
+      "refused": {
+        "path": "version",
+        "message": "version \"1\" is not known: this reader reads version 1, and never reads a spec as the nearest version."
+      }
+    },
+    {
+      "name": "ADR-0320 (AI-Q4): every series writes its kind, with no default",
+      "spec": {
+        "version": 1,
+        "title": "Policy rate",
+        "axis": {
+          "values": "dates",
+          "title": "Date"
+        },
+        "series": [
+          {
+            "id": "rate",
+            "name": "Rate",
+            "data": "rates",
+            "x": "date",
+            "y": "rate",
+            "fromZero": false
+          }
+        ],
+        "notes": [
+          "Source: the central bank."
+        ]
+      },
+      "refused": {
+        "path": "series[0].kind",
+        "message": "series[0].kind is missing: every series says what its numbers are: level, rateOverInterval, amountPerPeriod, observation, priceRange; there is no default."
+      }
+    },
+    {
+      "name": "ADR-0320: a kind written as null is missing, refused by its path, never a crash",
+      "spec": {
+        "version": 1,
+        "title": "Policy rate",
+        "axis": {
+          "values": "dates",
+          "title": "Date"
+        },
+        "series": [
+          {
+            "id": "rate",
+            "name": "Rate",
+            "kind": null,
+            "data": "rates",
+            "x": "date",
+            "y": "rate",
+            "fromZero": false
+          }
+        ],
+        "notes": [
+          "Source: the central bank."
+        ]
+      },
+      "refused": {
+        "path": "series[0].kind",
+        "message": "series[0].kind is missing: every series says what its numbers are: level, rateOverInterval, amountPerPeriod, observation, priceRange; there is no default."
+      }
+    },
+    {
+      "name": "ADR-0320: an unknown key is named, and a spec without numbers in it is not told it holds none",
+      "spec": {
+        "version": 1,
+        "title": "Policy rate",
+        "axis": {
+          "values": "dates",
+          "title": "Date"
+        },
+        "series": [
+          {
+            "id": "rate",
+            "name": "Rate",
+            "kind": "level",
+            "data": "rates",
+            "x": "date",
+            "y": "rate",
+            "color": "red"
+          }
+        ],
+        "notes": [
+          "Source: the central bank."
+        ]
+      },
+      "refused": {
+        "path": "series[0].color",
+        "message": "series[0].color is not part of a Chart Spec: series[0] takes id, name, kind, data, x, y, open, high, low, close, volume, label, panel, axis, fromZero, step, colour, size, key, edges, tooltip, interval, xInterval."
+      }
+    },
+    {
+      "name": "ADR-0320: numbers written in a spec are told a spec holds none",
+      "spec": {
+        "version": 1,
+        "title": "Policy rate",
+        "axis": {
+          "values": "dates",
+          "title": "Date"
+        },
+        "series": [
+          {
+            "id": "rate",
+            "name": "Rate",
+            "kind": "level",
+            "data": "rates",
+            "x": "date",
+            "y": "rate",
+            "values": [
+              1,
+              2
+            ]
+          }
+        ],
+        "notes": [
+          "Source: the central bank."
+        ]
+      },
+      "refused": {
+        "path": "series[0].values",
+        "message": "series[0].values is not part of a Chart Spec: a spec holds no numbers, only the columns they are read from; series[0] takes id, name, kind, data, x, y, open, high, low, close, volume, label, panel, axis, fromZero, step, colour, size, key, edges, tooltip, interval, xInterval."
+      }
+    },
+    {
+      "name": "ADR-0320: a spec holds no numbers; values written beside the columns are refused before anything is read",
+      "spec": {
+        "version": 1,
+        "title": "Policy rate",
+        "axis": {
+          "values": "dates",
+          "title": "Date"
+        },
+        "series": [
+          {
+            "id": "rate",
+            "name": "Rate",
+            "kind": "level",
+            "data": "rates",
+            "x": "date",
+            "y": "rate",
+            "values": [
+              1,
+              2,
+              3
+            ],
+            "fromZero": false
+          }
+        ],
+        "notes": [
+          "Source: the central bank."
+        ]
+      },
+      "refused": {
+        "path": "series[0].values",
+        "message": "series[0].values is not part of a Chart Spec: a spec holds no numbers, only the columns they are read from; series[0] takes id, name, kind, data, x, y, open, high, low, close, volume, label, panel, axis, fromZero, step, colour, size, key, edges, tooltip, interval, xInterval."
+      }
+    },
+    {
+      "name": "ADR-0320: an unknown key of the spec itself is named with the keys a spec takes",
+      "spec": {
+        "version": 1,
+        "title": "Policy rate",
+        "axis": {
+          "values": "dates",
+          "title": "Date"
+        },
+        "series": [
+          {
+            "id": "rate",
+            "name": "Rate",
+            "kind": "level",
+            "data": "rates",
+            "x": "date",
+            "y": "rate",
+            "fromZero": false
+          }
+        ],
+        "notes": [
+          "Source: the central bank."
+        ],
+        "colour": "red"
+      },
+      "refused": {
+        "path": "colour",
+        "message": "colour is not part of a Chart Spec: a spec takes version, title, axis, series, surface, notes."
+      }
+    },
+    {
+      "name": "ADR-0320: a definition's refusal names the series by its index",
+      "spec": {
+        "version": 1,
+        "title": "Policy rate",
+        "axis": {
+          "values": "dates",
+          "title": "Date"
+        },
+        "series": [
+          {
+            "id": "rate",
+            "name": "Rate",
+            "kind": "level",
+            "data": "rates",
+            "x": "date",
+            "y": "rate",
+            "fromZero": false
+          },
+          {
+            "id": "other",
+            "name": "Rate",
+            "kind": "level",
+            "data": "rates",
+            "x": "date",
+            "y": "rate",
+            "colour": {
+              "column": "spread",
+              "scale": "sequential"
+            }
+          }
+        ],
+        "notes": [
+          "Source: the central bank."
+        ]
+      },
+      "refused": {
+        "path": "series[1]",
+        "message": "series[1]: 'Rate' takes a colour or a size from a column, which belongs to marks drawn one a row: an observation."
+      }
+    },
+    {
+      "name": "ADR-0320: two series of one identity are refused at the second one's id",
+      "spec": {
+        "version": 1,
+        "title": "Policy rate",
+        "axis": {
+          "values": "dates",
+          "title": "Date"
+        },
+        "series": [
+          {
+            "id": "rate",
+            "name": "Rate",
+            "kind": "level",
+            "data": "rates",
+            "x": "date",
+            "y": "rate",
+            "fromZero": false
+          },
+          {
+            "id": "rate",
+            "name": "Rate",
+            "kind": "observation",
+            "data": "rates",
+            "x": "date",
+            "y": "rate",
+            "colour": {
+              "column": "spread",
+              "scale": "sequential"
+            }
+          }
+        ],
+        "notes": [
+          "Source: the central bank."
+        ]
+      },
+      "refused": {
+        "path": "series[1].id",
+        "message": "series[1].id \"rate\" is series[0]'s too: each series needs an identity of its own."
+      }
+    },
+    {
+      "name": "ADR-0320: an unknown kind is named, with the kinds that exist",
+      "spec": {
+        "version": 1,
+        "title": "Policy rate",
+        "axis": {
+          "values": "dates",
+          "title": "Date"
+        },
+        "series": [
+          {
+            "id": "rate",
+            "name": "Rate",
+            "kind": "line",
+            "data": "rates",
+            "x": "date",
+            "y": "rate",
+            "fromZero": false
+          }
+        ],
+        "notes": [
+          "Source: the central bank."
+        ]
+      },
+      "refused": {
+        "path": "series[0].kind",
+        "message": "series[0].kind \"line\" is not a Series Kind: it is one of level, rateOverInterval, amountPerPeriod, observation, priceRange."
+      }
+    },
+    {
+      "name": "ADR-0320: a Data Handle the host's lookup does not know is refused by name",
+      "spec": {
+        "version": 1,
+        "title": "Policy rate",
+        "axis": {
+          "values": "dates",
+          "title": "Date"
+        },
+        "series": [
+          {
+            "id": "rate",
+            "name": "Rate",
+            "kind": "level",
+            "data": "curves",
+            "x": "date",
+            "y": "rate",
+            "fromZero": false
+          }
+        ],
+        "notes": [
+          "Source: the central bank."
+        ]
+      },
+      "refused": {
+        "path": "series[0].data",
+        "message": "series[0].data \"curves\" is not known: name a Data Handle a capability returned."
+      }
+    },
+    {
+      "name": "ADR-0320: a column the table does not have is refused, naming the columns it has",
+      "spec": {
+        "version": 1,
+        "title": "Policy rate",
+        "axis": {
+          "values": "dates",
+          "title": "Date"
+        },
+        "series": [
+          {
+            "id": "rate",
+            "name": "Rate",
+            "kind": "level",
+            "data": "rates",
+            "x": "date",
+            "y": "yield",
+            "fromZero": false
+          }
+        ],
+        "notes": [
+          "Source: the central bank."
+        ]
+      },
+      "refused": {
+        "path": "series[0].y",
+        "message": "series[0].y: \"rates\" has no column \"yield\"; its columns are date, rate, spread."
+      }
+    },
+    {
+      "name": "ADR-0320: a value of the wrong type in a column is refused naming the row",
+      "spec": {
+        "version": 1,
+        "title": "Policy rate",
+        "axis": {
+          "values": "dates",
+          "title": "Date"
+        },
+        "series": [
+          {
+            "id": "rate",
+            "name": "Rate",
+            "kind": "level",
+            "data": "rates",
+            "x": "date",
+            "y": "rate",
+            "fromZero": false
+          }
+        ],
+        "notes": [
+          "Source: the central bank."
+        ]
+      },
+      "tables": {
+        "rates": {
+          "date": [
+            {
+              "date": "2026-01-02"
+            },
+            "soon"
+          ],
+          "rate": [
+            {
+              "decimal": "1"
+            },
+            {
+              "decimal": "2"
+            }
+          ]
+        }
+      },
+      "refused": {
+        "path": "series[0].x",
+        "message": "series[0].x: row 2 of \"rates\" holds \"soon\", but the axis is dates and needs a date."
+      }
+    },
+    {
+      "name": "ADR-0251: a NaN is not a gap; the data says null for a missing value",
+      "spec": {
+        "version": 1,
+        "title": "Policy rate",
+        "axis": {
+          "values": "dates",
+          "title": "Date"
+        },
+        "series": [
+          {
+            "id": "rate",
+            "name": "Rate",
+            "kind": "level",
+            "data": "rates",
+            "x": "date",
+            "y": "rate",
+            "fromZero": false
+          }
+        ],
+        "notes": [
+          "Source: the central bank."
+        ]
+      },
+      "tables": {
+        "rates": {
+          "date": [
+            {
+              "date": "2026-01-02"
+            }
+          ],
+          "rate": [
+            {
+              "double": "NaN"
+            }
+          ]
+        }
+      },
+      "refused": {
+        "path": "series[0].y",
+        "message": "series[0].y: row 1 of \"rates\" is NaN, which is no number; a missing value is null, drawn as a gap."
+      }
+    },
+    {
+      "name": "ADR-0251: an infinity is no number either",
+      "spec": {
+        "version": 1,
+        "title": "Policy rate",
+        "axis": {
+          "values": "dates",
+          "title": "Date"
+        },
+        "series": [
+          {
+            "id": "rate",
+            "name": "Rate",
+            "kind": "level",
+            "data": "rates",
+            "x": "date",
+            "y": "rate",
+            "fromZero": false
+          }
+        ],
+        "notes": [
+          "Source: the central bank."
+        ]
+      },
+      "tables": {
+        "rates": {
+          "date": [
+            {
+              "date": "2026-01-02"
+            }
+          ],
+          "rate": [
+            {
+              "double": "-Infinity"
+            }
+          ]
+        }
+      },
+      "refused": {
+        "path": "series[0].y",
+        "message": "series[0].y: row 1 of \"rates\" is -Infinity, which is no number; a missing value is null, drawn as a gap."
+      }
+    },
+    {
+      "name": "ADR-0320: the definition's own refusal comes back with the series' path",
+      "spec": {
+        "version": 1,
+        "title": "Policy rate",
+        "axis": {
+          "values": "dates",
+          "title": "Date"
+        },
+        "series": [
+          {
+            "id": "rate",
+            "name": "Rate",
+            "kind": "amountPerPeriod",
+            "data": "rates",
+            "x": "date",
+            "y": "rate",
+            "fromZero": false
+          }
+        ],
+        "notes": [
+          "Source: the central bank."
+        ]
+      },
+      "refused": {
+        "path": "series[0]",
+        "message": "series[0]: 'Rate' is an Amount per period, which is always drawn from zero."
+      }
+    },
+    {
+      "name": "ADR-0320: the JSON itself being broken is said, in the platform's words after the spec's own",
+      "specText": "{ \"version\": 1, ",
+      "refused": {
+        "path": "",
+        "startsWith": "The Chart Spec is not JSON: "
+      }
+    },
+    {
+      "name": "ADR-0320: a member written twice is refused, never read as whichever came last",
+      "specText": "{ \"version\": 1, \"version\": 2, \"axis\": { \"values\": \"numbers\" }, \"series\": [] }",
+      "refused": {
+        "path": "",
+        "startsWith": "The Chart Spec is not JSON: "
+      }
+    },
+    {
+      "name": "ADR-0320: a spec is a JSON object",
+      "specText": "[1, 2]",
+      "refused": {
+        "path": "",
+        "message": "The Chart Spec is a JSON object."
+      }
+    },
+    {
+      "name": "ADR-0320: a chart of series names its axis",
+      "spec": {
+        "version": 1
+      },
+      "refused": {
+        "path": "axis",
+        "message": "axis is missing."
+      }
+    },
+    {
+      "name": "ADR-0320: the axis is an object",
+      "spec": {
+        "version": 1,
+        "title": "Policy rate",
+        "axis": "dates",
+        "series": [
+          {
+            "id": "rate",
+            "name": "Rate",
+            "kind": "level",
+            "data": "rates",
+            "x": "date",
+            "y": "rate",
+            "fromZero": false
+          }
+        ],
+        "notes": [
+          "Source: the central bank."
+        ]
+      },
+      "refused": {
+        "path": "axis",
+        "message": "axis is a JSON object."
+      }
+    },
+    {
+      "name": "ADR-0320: the axis says what its positions are, from a closed list",
+      "spec": {
+        "version": 1,
+        "title": "Policy rate",
+        "axis": {
+          "values": "times"
+        },
+        "series": [
+          {
+            "id": "rate",
+            "name": "Rate",
+            "kind": "level",
+            "data": "rates",
+            "x": "date",
+            "y": "rate",
+            "fromZero": false
+          }
+        ],
+        "notes": [
+          "Source: the central bank."
+        ]
+      },
+      "refused": {
+        "path": "axis.values",
+        "message": "axis.values \"times\" is not known: it is one of dates, numbers, labels."
+      }
+    },
+    {
+      "name": "ADR-0320: an axis that does not say what its positions are is refused with the choices",
+      "spec": {
+        "version": 1,
+        "title": "Policy rate",
+        "axis": {
+          "title": "Date"
+        },
+        "series": [
+          {
+            "id": "rate",
+            "name": "Rate",
+            "kind": "level",
+            "data": "rates",
+            "x": "date",
+            "y": "rate",
+            "fromZero": false
+          }
+        ],
+        "notes": [
+          "Source: the central bank."
+        ]
+      },
+      "refused": {
+        "path": "axis.values",
+        "message": "axis.values is missing: it says what the positions across are, one of dates, numbers, labels."
+      }
+    },
+    {
+      "name": "ADR-0320: an axis' scale is one of three",
+      "spec": {
+        "version": 1,
+        "title": "Policy rate",
+        "axis": {
+          "values": "numbers",
+          "scale": "squared"
+        },
+        "series": [
+          {
+            "id": "rate",
+            "name": "Rate",
+            "kind": "level",
+            "data": "rates",
+            "x": "date",
+            "y": "rate",
+            "fromZero": false
+          }
+        ],
+        "notes": [
+          "Source: the central bank."
+        ]
+      },
+      "refused": {
+        "path": "axis.scale",
+        "message": "axis.scale \"squared\" is not known: it is one of proportional, categories, logarithmic."
+      }
+    },
+    {
+      "name": "ADR-0320: a spec lists at least one series",
+      "spec": {
+        "version": 1,
+        "title": "Policy rate",
+        "axis": {
+          "values": "dates",
+          "title": "Date"
+        },
+        "series": [],
+        "notes": [
+          "Source: the central bank."
+        ]
+      },
+      "refused": {
+        "path": "series",
+        "message": "series is missing: a Chart Spec lists at least one series."
+      }
+    },
+    {
+      "name": "ADR-0320: a series is an object",
+      "spec": {
+        "version": 1,
+        "title": "Policy rate",
+        "axis": {
+          "values": "dates",
+          "title": "Date"
+        },
+        "series": [
+          "rate"
+        ],
+        "notes": [
+          "Source: the central bank."
+        ]
+      },
+      "refused": {
+        "path": "series[0]",
+        "message": "series[0] is a JSON object."
+      }
+    },
+    {
+      "name": "ADR-0320: a title is text",
+      "spec": {
+        "version": 1,
+        "title": 3,
+        "axis": {
+          "values": "dates",
+          "title": "Date"
+        },
+        "series": [
+          {
+            "id": "rate",
+            "name": "Rate",
+            "kind": "level",
+            "data": "rates",
+            "x": "date",
+            "y": "rate",
+            "fromZero": false
+          }
+        ],
+        "notes": [
+          "Source: the central bank."
+        ]
+      },
+      "refused": {
+        "path": "title",
+        "message": "title is text, not number."
+      }
+    },
+    {
+      "name": "ADR-0320: a column is named as text",
+      "spec": {
+        "version": 1,
+        "title": "Policy rate",
+        "axis": {
+          "values": "dates",
+          "title": "Date"
+        },
+        "series": [
+          {
+            "id": "rate",
+            "name": "Rate",
+            "kind": "level",
+            "data": "rates",
+            "x": "date",
+            "y": [
+              "rate"
+            ],
+            "fromZero": false
+          }
+        ],
+        "notes": [
+          "Source: the central bank."
+        ]
+      },
+      "refused": {
+        "path": "series[0].y",
+        "message": "series[0].y is text, not array."
+      }
+    },
+    {
+      "name": "ADR-0320: fromZero is true or false",
+      "spec": {
+        "version": 1,
+        "title": "Policy rate",
+        "axis": {
+          "values": "dates",
+          "title": "Date"
+        },
+        "series": [
+          {
+            "id": "rate",
+            "name": "Rate",
+            "kind": "level",
+            "data": "rates",
+            "x": "date",
+            "y": "rate",
+            "fromZero": "no"
+          }
+        ],
+        "notes": [
+          "Source: the central bank."
+        ]
+      },
+      "refused": {
+        "path": "series[0].fromZero",
+        "message": "series[0].fromZero is true or false."
+      }
+    },
+    {
+      "name": "ADR-0320: the notes are a list of lines",
+      "spec": {
+        "version": 1,
+        "title": "Policy rate",
+        "axis": {
+          "values": "dates",
+          "title": "Date"
+        },
+        "series": [
+          {
+            "id": "rate",
+            "name": "Rate",
+            "kind": "level",
+            "data": "rates",
+            "x": "date",
+            "y": "rate",
+            "fromZero": false
+          }
+        ],
+        "notes": "Source: the central bank."
+      },
+      "refused": {
+        "path": "notes",
+        "message": "notes is a list of lines."
+      }
+    },
+    {
+      "name": "ADR-0320: each note is a line of text",
+      "spec": {
+        "version": 1,
+        "title": "Policy rate",
+        "axis": {
+          "values": "dates",
+          "title": "Date"
+        },
+        "series": [
+          {
+            "id": "rate",
+            "name": "Rate",
+            "kind": "level",
+            "data": "rates",
+            "x": "date",
+            "y": "rate",
+            "fromZero": false
+          }
+        ],
+        "notes": [
+          "Source: the central bank.",
+          2
+        ]
+      },
+      "refused": {
+        "path": "notes[1]",
+        "message": "notes[1] is a line of text."
+      }
+    },
+    {
+      "name": "ADR-0320: the axis' title is read after the series, and refused there",
+      "spec": {
+        "version": 1,
+        "title": "Policy rate",
+        "axis": {
+          "values": "dates",
+          "title": 3
+        },
+        "series": [
+          {
+            "id": "rate",
+            "name": "Rate",
+            "kind": "line"
+          }
+        ],
+        "notes": [
+          "Source: the central bank."
+        ]
+      },
+      "refused": {
+        "path": "series[0].kind",
+        "message": "series[0].kind \"line\" is not a Series Kind: it is one of level, rateOverInterval, amountPerPeriod, observation, priceRange."
+      }
+    },
+    {
+      "name": "ADR-0251: labels are categories in the data's order of first appearance",
+      "spec": {
+        "version": 1,
+        "axis": {
+          "values": "labels"
+        },
+        "series": [
+          {
+            "id": "d",
+            "name": "DV01",
+            "kind": "level",
+            "data": "risk",
+            "x": "bucket",
+            "y": "dv01"
+          }
+        ]
+      },
+      "tables": {
+        "risk": {
+          "bucket": [
+            "1Y",
+            "5Y",
+            "10Y"
+          ],
+          "dv01": [
+            {
+              "integer": 3
+            },
+            {
+              "integer": -2
+            },
+            {
+              "integer": 7
+            }
+          ]
+        }
+      },
+      "expect": [
+        {
+          "at": "definition.axis.labels",
+          "is": [
+            "1Y",
+            "5Y",
+            "10Y"
+          ]
+        },
+        {
+          "at": "definition.axis.effectiveScale",
+          "is": "categories"
+        },
+        {
+          "at": "definition.series.0.points",
+          "is": [
+            {
+              "x": 0,
+              "y": 3
+            },
+            {
+              "x": 1,
+              "y": -2
+            },
+            {
+              "x": 2,
+              "y": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ADR-0251: two series on a labels axis share its categories, each label placed once",
+      "spec": {
+        "version": 1,
+        "axis": {
+          "values": "labels"
+        },
+        "series": [
+          {
+            "id": "a",
+            "name": "A",
+            "kind": "level",
+            "data": "a",
+            "x": "bucket",
+            "y": "v"
+          },
+          {
+            "id": "b",
+            "name": "B",
+            "kind": "level",
+            "data": "b",
+            "x": "bucket",
+            "y": "v"
+          }
+        ]
+      },
+      "tables": {
+        "a": {
+          "bucket": [
+            "1Y",
+            "5Y"
+          ],
+          "v": [
+            1,
+            2
+          ]
+        },
+        "b": {
+          "bucket": [
+            "5Y",
+            "10Y"
+          ],
+          "v": [
+            3,
+            4
+          ]
+        }
+      },
+      "expect": [
+        {
+          "at": "definition.axis.labels",
+          "is": [
+            "1Y",
+            "5Y",
+            "10Y"
+          ]
+        },
+        {
+          "at": "definition.series.1.points",
+          "is": [
+            {
+              "x": 1,
+              "y": 3
+            },
+            {
+              "x": 2,
+              "y": 4
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ADR-0251: a labels axis needs a label in every row",
+      "spec": {
+        "version": 1,
+        "axis": {
+          "values": "labels"
+        },
+        "series": [
+          {
+            "id": "d",
+            "name": "DV01",
+            "kind": "level",
+            "data": "risk",
+            "x": "bucket",
+            "y": "dv01"
+          }
+        ]
+      },
+      "tables": {
+        "risk": {
+          "bucket": [
+            "1Y",
+            5
+          ],
+          "dv01": [
+            1,
+            2
+          ]
+        }
+      },
+      "refused": {
+        "path": "series[0].x",
+        "message": "series[0].x: row 2 of \"risk\" holds \"5\", but the axis is labels and needs a label."
+      }
+    },
+    {
+      "name": "ADR-0251: a point without a position is refused, never placed at zero",
+      "spec": {
+        "version": 1,
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "d",
+            "name": "D",
+            "kind": "level",
+            "data": "d",
+            "x": "x",
+            "y": "y"
+          }
+        ]
+      },
+      "tables": {
+        "d": {
+          "x": [
+            1,
+            null
+          ],
+          "y": [
+            1,
+            2
+          ]
+        }
+      },
+      "refused": {
+        "path": "series[0].x",
+        "message": "series[0].x: row 2 of \"d\" has no position; a point needs one across."
+      }
+    },
+    {
+      "name": "ADR-0251: a numbers axis reads a decimal, an integer and a double alike",
+      "spec": {
+        "version": 1,
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "d",
+            "name": "D",
+            "kind": "level",
+            "data": "d",
+            "x": "x",
+            "y": "y"
+          }
+        ]
+      },
+      "tables": {
+        "d": {
+          "x": [
+            {
+              "decimal": "0.5"
+            },
+            {
+              "integer": 1
+            },
+            2.25
+          ],
+          "y": [
+            {
+              "integer": 10
+            },
+            {
+              "decimal": "-0.25"
+            },
+            3.5
+          ]
+        }
+      },
+      "expect": [
+        {
+          "at": "definition.series.0.points",
+          "is": [
+            {
+              "x": 0.5,
+              "y": 10
+            },
+            {
+              "x": 1,
+              "y": -0.25
+            },
+            {
+              "x": 2.25,
+              "y": 3.5
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ADR-0251: a value that is not a number is refused naming the row",
+      "spec": {
+        "version": 1,
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "d",
+            "name": "D",
+            "kind": "level",
+            "data": "d",
+            "x": "x",
+            "y": "y"
+          }
+        ]
+      },
+      "tables": {
+        "d": {
+          "x": [
+            1,
+            2
+          ],
+          "y": [
+            1,
+            true
+          ]
+        }
+      },
+      "refused": {
+        "path": "series[0].y",
+        "message": "series[0].y: row 2 of \"d\" holds \"True\", which is not a number."
+      }
+    },
+    {
+      "name": "ADR-0251: a date is no number",
+      "spec": {
+        "version": 1,
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "d",
+            "name": "D",
+            "kind": "level",
+            "data": "d",
+            "x": "x",
+            "y": "y"
+          }
+        ]
+      },
+      "tables": {
+        "d": {
+          "x": [
+            {
+              "date": "2026-01-02"
+            }
+          ],
+          "y": [
+            1
+          ]
+        }
+      },
+      "refused": {
+        "path": "series[0].x",
+        "message": "series[0].x: row 1 of \"d\" holds \"01/02/2026\", which is not a number."
+      }
+    },
+    {
+      "name": "ADR-0251: a dates axis places days, so a time of day is refused",
+      "spec": {
+        "version": 1,
+        "title": "Policy rate",
+        "axis": {
+          "values": "dates",
+          "title": "Date"
+        },
+        "series": [
+          {
+            "id": "rate",
+            "name": "Rate",
+            "kind": "level",
+            "data": "rates",
+            "x": "date",
+            "y": "rate",
+            "fromZero": false
+          }
+        ],
+        "notes": [
+          "Source: the central bank."
+        ]
+      },
+      "tables": {
+        "rates": {
+          "date": [
+            {
+              "dateTime": "2026-01-02T00:00:00"
+            },
+            {
+              "dateTime": "2026-01-03T12:30:00"
+            }
+          ],
+          "rate": [
+            {
+              "decimal": "1"
+            },
+            {
+              "decimal": "2"
+            }
+          ]
+        }
+      },
+      "refused": {
+        "path": "series[0].x",
+        "message": "series[0].x: row 2 of \"rates\" holds 01/03/2026 12:30:00, a time of day; a dates axis places days."
+      }
+    },
+    {
+      "name": "ADR-0251: a date and time at midnight is its day",
+      "spec": {
+        "version": 1,
+        "title": "Policy rate",
+        "axis": {
+          "values": "dates",
+          "title": "Date"
+        },
+        "series": [
+          {
+            "id": "rate",
+            "name": "Rate",
+            "kind": "level",
+            "data": "rates",
+            "x": "date",
+            "y": "rate",
+            "fromZero": false
+          }
+        ],
+        "notes": [
+          "Source: the central bank."
+        ]
+      },
+      "tables": {
+        "rates": {
+          "date": [
+            {
+              "dateTime": "2026-01-02T00:00:00"
+            },
+            {
+              "date": "2026-01-05"
+            }
+          ],
+          "rate": [
+            {
+              "decimal": "1"
+            },
+            {
+              "decimal": "2"
+            }
+          ]
+        }
+      },
+      "expect": [
+        {
+          "at": "definition.series.0.points",
+          "is": [
+            {
+              "x": {
+                "date": "2026-01-02"
+              },
+              "y": 1
+            },
+            {
+              "x": {
+                "date": "2026-01-05"
+              },
+              "y": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ADR-0251: a number is not a date",
+      "spec": {
+        "version": 1,
+        "title": "Policy rate",
+        "axis": {
+          "values": "dates",
+          "title": "Date"
+        },
+        "series": [
+          {
+            "id": "rate",
+            "name": "Rate",
+            "kind": "level",
+            "data": "rates",
+            "x": "date",
+            "y": "rate",
+            "fromZero": false
+          }
+        ],
+        "notes": [
+          "Source: the central bank."
+        ]
+      },
+      "tables": {
+        "rates": {
+          "date": [
+            46000
+          ],
+          "rate": [
+            {
+              "decimal": "1"
+            }
+          ]
+        }
+      },
+      "refused": {
+        "path": "series[0].x",
+        "message": "series[0].x: row 1 of \"rates\" holds \"46000\", but the axis is dates and needs a date."
+      }
+    },
+    {
+      "name": "ADR-0300: a Price Range is read from its four columns, and a fifth for volume",
+      "spec": {
+        "version": 1,
+        "axis": {
+          "values": "dates"
+        },
+        "series": [
+          {
+            "id": "px",
+            "name": "Index",
+            "kind": "priceRange",
+            "data": "px",
+            "x": "d",
+            "open": "o",
+            "high": "h",
+            "low": "l",
+            "close": "c",
+            "volume": "v"
+          }
+        ]
+      },
+      "tables": {
+        "px": {
+          "d": [
+            {
+              "date": "2026-01-02"
+            },
+            {
+              "date": "2026-01-05"
+            }
+          ],
+          "o": [
+            {
+              "decimal": "10"
+            },
+            {
+              "decimal": "11"
+            }
+          ],
+          "h": [
+            {
+              "decimal": "12"
+            },
+            {
+              "decimal": "12"
+            }
+          ],
+          "l": [
+            {
+              "decimal": "9"
+            },
+            {
+              "decimal": "10"
+            }
+          ],
+          "c": [
+            {
+              "decimal": "11"
+            },
+            {
+              "decimal": "10.5"
+            }
+          ],
+          "v": [
+            {
+              "integer": 1000
+            },
+            {
+              "integer": 1200
+            }
+          ]
+        }
+      },
+      "expect": [
+        {
+          "at": "definition.series.0.kind",
+          "is": "priceRange"
+        },
+        {
+          "at": "definition.series.0.reachesZero",
+          "is": false
+        },
+        {
+          "at": "definition.series.0.bars",
+          "is": [
+            {
+              "x": {
+                "date": "2026-01-02"
+              },
+              "open": 10,
+              "high": 12,
+              "low": 9,
+              "close": 11,
+              "volume": 1000
+            },
+            {
+              "x": {
+                "date": "2026-01-05"
+              },
+              "open": 11,
+              "high": 12,
+              "low": 10,
+              "close": 10.5,
+              "volume": 1200
+            }
+          ]
+        },
+        {
+          "at": "definition.series.0.points",
+          "is": [
+            {
+              "x": {
+                "date": "2026-01-02"
+              },
+              "y": 11
+            },
+            {
+              "x": {
+                "date": "2026-01-05"
+              },
+              "y": 10.5
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ADR-0300: a Price Range's open and volume are optional",
+      "spec": {
+        "version": 1,
+        "axis": {
+          "values": "dates"
+        },
+        "series": [
+          {
+            "id": "px",
+            "name": "Index",
+            "kind": "priceRange",
+            "data": "px",
+            "x": "d",
+            "high": "h",
+            "low": "l",
+            "close": "c"
+          }
+        ]
+      },
+      "tables": {
+        "px": {
+          "d": [
+            {
+              "date": "2026-01-02"
+            }
+          ],
+          "h": [
+            {
+              "decimal": "12"
+            }
+          ],
+          "l": [
+            {
+              "decimal": "9"
+            }
+          ],
+          "c": [
+            {
+              "decimal": "11"
+            }
+          ]
+        }
+      },
+      "expect": [
+        {
+          "at": "definition.series.0.bars",
+          "is": [
+            {
+              "x": {
+                "date": "2026-01-02"
+              },
+              "open": null,
+              "high": 12,
+              "low": 9,
+              "close": 11,
+              "volume": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ADR-0300: a Price Range reads its close",
+      "spec": {
+        "version": 1,
+        "title": "Policy rate",
+        "axis": {
+          "values": "dates",
+          "title": "Date"
+        },
+        "series": [
+          {
+            "id": "rate",
+            "name": "Rate",
+            "kind": "priceRange",
+            "data": "rates",
+            "x": "date",
+            "fromZero": false,
+            "high": "rate",
+            "low": "rate"
+          }
+        ],
+        "notes": [
+          "Source: the central bank."
+        ]
+      },
+      "refused": {
+        "path": "series[0].close",
+        "message": "series[0].close is missing: the column it is read from."
+      }
+    },
+    {
+      "name": "ADR-0300: a Price Range has no y",
+      "spec": {
+        "version": 1,
+        "title": "Policy rate",
+        "axis": {
+          "values": "dates",
+          "title": "Date"
+        },
+        "series": [
+          {
+            "id": "rate",
+            "name": "Rate",
+            "kind": "priceRange",
+            "data": "rates",
+            "x": "date",
+            "y": "rate",
+            "fromZero": false
+          }
+        ],
+        "notes": [
+          "Source: the central bank."
+        ]
+      },
+      "refused": {
+        "path": "series[0].y",
+        "message": "series[0].y belongs to a series of one value a row; a priceRange reads open, high, low and close."
+      }
+    },
+    {
+      "name": "ADR-0300: another kind has no open",
+      "spec": {
+        "version": 1,
+        "title": "Policy rate",
+        "axis": {
+          "values": "dates",
+          "title": "Date"
+        },
+        "series": [
+          {
+            "id": "rate",
+            "name": "Rate",
+            "kind": "level",
+            "data": "rates",
+            "x": "date",
+            "y": "rate",
+            "open": "rate",
+            "fromZero": false
+          }
+        ],
+        "notes": [
+          "Source: the central bank."
+        ]
+      },
+      "refused": {
+        "path": "series[0].open",
+        "message": "series[0].open belongs to a priceRange; a level reads one value a row, from y."
+      }
+    },
+    {
+      "name": "ADR-0290: an Observation's points may carry names from a column",
+      "spec": {
+        "version": 1,
+        "axis": {
+          "values": "numbers",
+          "title": "Leverage"
+        },
+        "series": [
+          {
+            "id": "n",
+            "name": "Names",
+            "kind": "observation",
+            "data": "credit",
+            "x": "lev",
+            "y": "spr",
+            "label": "name"
+          }
+        ]
+      },
+      "tables": {
+        "credit": {
+          "lev": [
+            2.5,
+            4.0
+          ],
+          "spr": [
+            {
+              "decimal": "120"
+            },
+            {
+              "decimal": "310"
+            }
+          ],
+          "name": [
+            "Acme",
+            "Globex"
+          ]
+        }
+      },
+      "expect": [
+        {
+          "at": "definition.series.0.points",
+          "is": [
+            {
+              "x": 2.5,
+              "y": 120,
+              "name": "Acme"
+            },
+            {
+              "x": 4,
+              "y": 310,
+              "name": "Globex"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ADR-0290: a name read from a column of numbers or nothing is written as the column holds it",
+      "spec": {
+        "version": 1,
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "n",
+            "name": "Names",
+            "kind": "observation",
+            "data": "credit",
+            "x": "lev",
+            "y": "spr",
+            "label": "name"
+          }
+        ]
+      },
+      "tables": {
+        "credit": {
+          "lev": [
+            2.5,
+            4.0,
+            5.0
+          ],
+          "spr": [
+            1,
+            2,
+            3
+          ],
+          "name": [
+            0.1,
+            null,
+            {
+              "decimal": "7.25"
+            }
+          ]
+        }
+      },
+      "expect": [
+        {
+          "at": "definition.series.0.points",
+          "map": "name",
+          "is": [
+            "0.1",
+            "",
+            "7.25"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ADR-0320: panels and the right axis are said by name",
+      "spec": {
+        "version": 1,
+        "title": "Policy rate",
+        "axis": {
+          "values": "dates",
+          "title": "Date"
+        },
+        "series": [
+          {
+            "id": "rate",
+            "name": "Rate",
+            "kind": "level",
+            "data": "rates",
+            "x": "date",
+            "y": "rate",
+            "fromZero": false,
+            "panel": "Rates",
+            "axis": "right"
+          }
+        ],
+        "notes": [
+          "Source: the central bank."
+        ]
+      },
+      "expect": [
+        {
+          "at": "definition.series.0.panel",
+          "is": "Rates"
+        },
+        {
+          "at": "definition.series.0.axis",
+          "is": "right"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0253: a step says which interval its point stands for",
+      "spec": {
+        "version": 1,
+        "title": "Policy rate",
+        "axis": {
+          "values": "dates",
+          "title": "Date"
+        },
+        "series": [
+          {
+            "id": "rate",
+            "name": "Rate",
+            "kind": "rateOverInterval",
+            "data": "rates",
+            "x": "date",
+            "y": "rate",
+            "fromZero": false,
+            "step": "following"
+          }
+        ],
+        "notes": [
+          "Source: the central bank."
+        ]
+      },
+      "expect": [
+        {
+          "at": "definition.series.0.kind",
+          "is": "rateOverInterval"
+        },
+        {
+          "at": "definition.series.0.step",
+          "is": "following"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0253: a step's side is one of two",
+      "spec": {
+        "version": 1,
+        "title": "Policy rate",
+        "axis": {
+          "values": "dates",
+          "title": "Date"
+        },
+        "series": [
+          {
+            "id": "rate",
+            "name": "Rate",
+            "kind": "rateOverInterval",
+            "data": "rates",
+            "x": "date",
+            "y": "rate",
+            "fromZero": false,
+            "step": "after"
+          }
+        ],
+        "notes": [
+          "Source: the central bank."
+        ]
+      },
+      "refused": {
+        "path": "series[0].step",
+        "message": "series[0].step \"after\" is not known: it is one of preceding, following."
+      }
+    },
+    {
+      "name": "ADR-0320: the vertical axis is left or right",
+      "spec": {
+        "version": 1,
+        "title": "Policy rate",
+        "axis": {
+          "values": "dates",
+          "title": "Date"
+        },
+        "series": [
+          {
+            "id": "rate",
+            "name": "Rate",
+            "kind": "level",
+            "data": "rates",
+            "x": "date",
+            "y": "rate",
+            "fromZero": false,
+            "axis": "top"
+          }
+        ],
+        "notes": [
+          "Source: the central bank."
+        ]
+      },
+      "refused": {
+        "path": "series[0].axis",
+        "message": "series[0].axis \"top\" is not known: it is one of left, right."
+      }
+    },
+    {
+      "name": "ADR-0301: a packed axis is said on the axis, and the definition refuses one without a Price Range",
+      "spec": {
+        "version": 1,
+        "title": "Policy rate",
+        "axis": {
+          "values": "dates",
+          "packed": true
+        },
+        "series": [
+          {
+            "id": "rate",
+            "name": "Rate",
+            "kind": "level",
+            "data": "rates",
+            "x": "date",
+            "y": "rate",
+            "fromZero": false
+          }
+        ],
+        "notes": [
+          "Source: the central bank."
+        ]
+      },
+      "refused": {
+        "path": "series[0]",
+        "message": "series[0]: A packed axis takes its sessions from a Price Range, and the chart has none."
+      }
+    },
+    {
+      "name": "ADR-0301: packed is true or false",
+      "spec": {
+        "version": 1,
+        "title": "Policy rate",
+        "axis": {
+          "values": "dates",
+          "packed": "yes"
+        },
+        "series": [
+          {
+            "id": "rate",
+            "name": "Rate",
+            "kind": "level",
+            "data": "rates",
+            "x": "date",
+            "y": "rate",
+            "fromZero": false
+          }
+        ],
+        "notes": [
+          "Source: the central bank."
+        ]
+      },
+      "refused": {
+        "path": "axis.packed",
+        "message": "axis.packed is true or false."
+      }
+    },
+    {
+      "name": "ADR-0304: a labels axis has no units for a horizontal interval",
+      "spec": {
+        "version": 1,
+        "axis": {
+          "values": "labels"
+        },
+        "series": [
+          {
+            "id": "d",
+            "name": "D",
+            "kind": "observation",
+            "data": "risk",
+            "x": "bucket",
+            "y": "dv01",
+            "xInterval": {
+              "lower": "dv01",
+              "upper": "dv01",
+              "meaning": "range"
+            }
+          }
+        ]
+      },
+      "tables": {
+        "risk": {
+          "bucket": [
+            "1Y"
+          ],
+          "dv01": [
+            {
+              "integer": 3
+            }
+          ]
+        }
+      },
+      "refused": {
+        "path": "series[0].xInterval",
+        "message": "series[0].xInterval: a labels axis has no units for a bound to stand in."
+      }
+    }
+  ]
+}

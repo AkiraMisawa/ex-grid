@@ -64,7 +64,7 @@ import {
 } from './column-gestures';
 import { CopiedRange } from './copied-range';
 import type { GridCommand, GridContextMenuContext } from './grid-command';
-import { contextMenuRoomPx, contextMenuStyle, MenuItems, popoverAcross, type MenuKeyTable } from './menu-popover';
+import { contextMenuRoomPx, contextMenuStyle, MenuItems, popoverAcross, popoverMinWidthPx, type MenuKeyTable } from './menu-popover';
 import { FilterPanel } from './filter-panel';
 import { FindPanel, type FindHeld } from './find-panel';
 import { GridMarks, rowMarkBox, rowsSelectedIn } from './grid-marks';
@@ -82,6 +82,7 @@ import { FormulaBar, formulaBarDeclarations, type FormulaBarDeclarations, type F
 import type { ColumnType } from '../query/columns';
 import { checkedAppearance, RowAppearances, type RowAppearance } from '../paint/row-appearances';
 import { hashesWhenOverflowing } from '../columns/overflow-rules';
+import { ConsumerPopoverFrame, type GridPopoverContext } from './consumer-popover';
 
 /** A Viewport axis: a number of pixels the Consumer declares, or `'stretch'`, the parent's (ADR-0028). */
 export type ViewportSize = number | 'stretch';
@@ -567,7 +568,9 @@ interface Taken<Row> {
 // or a source that moved take the Selection its commands act on, and the menu with it (ADR-0011, ADR-0036).
 // A column's menu stands under its column's header, followed by the column's name (ADR-0010).
 // The find panel stands in the grid's top right under the header, and holds no commands (ADR-0055).
-type OpenPopover = MenuPopover | { readonly kind: 'find'; readonly element: HTMLElement; readonly panel: FindPanel };
+// A Consumer's popover stands under the header band, centred across the grid (ADR-0050, item 16).
+type OpenPopover = MenuPopover | { readonly kind: 'find'; readonly element: HTMLElement; readonly panel: FindPanel }
+    | { readonly kind: 'consumer'; readonly element: HTMLElement; readonly frame: ConsumerPopoverFrame; readonly opening: object };
 
 type MenuPopover = {
     readonly element: HTMLElement;
@@ -2045,7 +2048,8 @@ export class GridView<Row> {
         // menu is hidden.
         // The find panel stands through both: a step's answer is judged against the order it was asked under.
         const popover = this.#popover;
-        if (popover !== undefined && popover.kind !== 'find' && (popover.kind === 'context'
+        // So does a Consumer's popover: what it acts on is the Consumer's to judge (ADR-0050, item 16).
+        if (popover !== undefined && popover.kind !== 'find' && popover.kind !== 'consumer' && (popover.kind === 'context'
             ? columnsMoved || popover.version !== version || popover.source !== this.#source
             : !names.includes(popover.column) || this.#hideColumnMenu)) {
             this.#closePopover(true);
@@ -2143,6 +2147,7 @@ export class GridView<Row> {
         // ADR-0039); the keyboard comes back to the grid.
         const popover = this.#popover;
         if (popover !== undefined && event.key === 'Escape' && !event.ctrlKey && !event.altKey && !event.metaKey
+            && !(popover.kind === 'consumer' && popover.frame.innerPopupOpen)
             && (event.target === this.#root || event.target === this.#keyField
                 || (event.target instanceof Node && popover.element.contains(event.target)))) {
             this.#taken(event);
@@ -2181,7 +2186,9 @@ export class GridView<Row> {
             const { kind } = resolveKey(press);
             if (kind === 'find' || kind === 'replace') {
                 this.#taken(event);
-                this.#openFind(kind === 'replace');
+                // A Consumer's popover holds work of the Consumer's, as Format Cells holds a draft: the find panel does
+                // not take its place, and the browser's find stays shut too.
+                if (!(inPopover && popover.kind === 'consumer')) this.#openFind(kind === 'replace');
                 return;
             }
         }
@@ -3776,7 +3783,7 @@ export class GridView<Row> {
     // 2026-10-12).
     #runCommand(index: number): void {
         const popover = this.#popover;
-        if (popover === undefined || popover.kind === 'find') return;
+        if (popover === undefined || popover.kind === 'find' || popover.kind === 'consumer') return;
         const shown = itemAt(popover.commands, index);
         if (!shown.enabled) return;
         // A column's commands are asked again as the grid stands now: the column may have moved, or the pinned
@@ -3823,6 +3830,56 @@ export class GridView<Row> {
         this.#invalidate();
     }
 
+    /**
+     * Shows a Consumer's own contents in the grid's popover frame (ADR-0050, item 16), in place of any popover that
+     * stands. The frame stands under the header band, centred across the grid and inside its box, and contents taller
+     * or wider than the room scroll inside it (ADR-0040). Its first control takes the keyboard, Tab and Shift+Tab wrap
+     * inside it, and Escape, a press elsewhere in
+     * the instance and the box shrinking below a row close it as a Cancel; however it closes, the keyboard returns to
+     * the grid (ADR-0039). Refused (false) while an edit is open, which the popover would take the keyboard from with
+     * its text uncommitted. A label that names nothing is refused by name: a dialog that names nothing says nothing
+     * to assistive technology (ADR-0033). The opening, a wrap and a close by the handle are each an input answered
+     * (ADR-0220); a popover that stood before is closed only once the new contents are made.
+     */
+    openPopover(content: (context: GridPopoverContext) => HTMLElement, label: string): boolean {
+        if (this.#destroyed) throw new Error('This grid was destroyed.');
+        if (typeof content !== 'function') throw new TypeError("A Consumer's popover's content is a function that makes its element (ADR-0050, item 16).");
+        if (typeof label !== 'string' || label.trim() === '') throw new TypeError("A Consumer's popover is named in the Consumer's words: its label is not empty (ADR-0033).");
+        if (this.#edit !== undefined) return false;
+        // The context speaks for this opening only: once another popover stands, its close closes nothing.
+        const opening = {};
+        const standing = (): ConsumerPopoverFrame | undefined => {
+            const popover = this.#popover;
+            return popover?.kind === 'consumer' && popover.opening === opening ? popover.frame : undefined;
+        };
+        const context: GridPopoverContext = Object.freeze({
+            close: () => { if (standing() !== undefined) this.#closePopover(true); },
+            innerPopupChanged: (open: boolean) => {
+                const frame = standing();
+                if (frame !== undefined) frame.innerPopupOpen = open;
+            },
+        });
+        const contents: unknown = content(context);
+        if (!(contents instanceof HTMLElement)) throw new TypeError("A Consumer's popover's content function answers the element to show (ADR-0050, item 16).");
+        // The contents may have opened another popover as they were made: this one takes its place.
+        this.#closePopover(false);
+        const frame = new ConsumerPopoverFrame(this.#root.ownerDocument, label, contents, this.#answer);
+        this.#popover = { kind: 'consumer', element: frame.element, frame, opening };
+        this.#placePopover();
+        this.#scroller.after(frame.element);
+        frame.focusFirst();
+        this.#answer();
+        return true;
+    }
+
+    /** Closes a Consumer's popover where one stands (ADR-0050, item 16); the keyboard returns to the grid. */
+    closePopover(): void {
+        if (this.#destroyed) throw new Error('This grid was destroyed.');
+        if (this.#popover?.kind !== 'consumer') return;
+        this.#closePopover(true);
+        this.#answer();
+    }
+
     // The popover's place and bounds, from the geometry the grid already holds (ADR-0040): written again as the
     // box changes, never measured.
     #placePopover(): void {
@@ -3831,6 +3888,15 @@ export class GridView<Row> {
         if (popover.kind === 'context') {
             setAttribute(popover.element, 'style',
                 this.#underBar(contextMenuStyle(popover.leftPx, this.#bandHeightPx + popover.topPx, this.#visibleWidthPx, this.#visibleHeightPx)));
+            return;
+        }
+        // A Consumer's popover under the header, centred across the grid, as wide as its contents within the grid's
+        // width (ADR-0050, item 16).
+        if (popover.kind === 'consumer') {
+            const widest = Math.max(0, this.#visibleWidthPx);
+            setAttribute(popover.element, 'style', this.#underBar(`left: ${widest / 2}px; top: ${this.#bandHeightPx}px; transform: translateX(-50%); `
+                + `width: max-content; min-width: ${Math.min(popoverMinWidthPx, widest)}px; max-width: ${widest}px; `
+                + `max-height: ${this.#popoverRoomPx(popover, this.#visibleHeightPx)}px`));
             return;
         }
         // The find panel in the grid's top right, under the header, anchored by its right edge at the Viewport's
