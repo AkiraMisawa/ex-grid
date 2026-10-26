@@ -138,6 +138,14 @@ internal static class SheetCases
         {
             case null:
                 return null;
+            case JsonObject { Count: 2 } refused when refused["refused"] is JsonValue flag && flag.GetValueKind() == JsonValueKind.True:
+                // A refusal, as a Consumer holds one read from a refused cell.
+                return (string?)refused["error"] switch
+                {
+                    "#VALUE!" => Value.Refusal,
+                    "#NAME?" => Value.RefusedName,
+                    _ => throw new InvalidDataException($"{refused.ToJsonString()} is no refusal: a refusal is #VALUE! or #NAME?."),
+                };
             case JsonObject error:
                 // The two states of a computation are no Error Value typed, but a case may give one to be refused.
                 if (error.Count != 1)
@@ -347,6 +355,7 @@ internal static class SheetCases
                 ["last"] = w.Last,
                 ["width"] = w.Width,
                 ["kind"] = Camel(w.Kind),
+                ["isCustom"] = w.IsCustom,
             })]),
         };
     }
@@ -431,7 +440,7 @@ internal sealed class Run(CultureInfo culture)
     [
         "enter", "enterAll", "enterRun", "do", "check", "undo", "redo", "reopen", "remember", "read", "copy",
         "setNumberFormat", "setAlignment", "declareTable", "pushTable", "setToday", "setSeed", "setClock", "recalculateVolatile", "getDisplay", "setCellFormat", "show",
-        "doAll", "readTable",
+        "doAll", "readTable", "setColumnWidth", "setAutomaticColumnWidth", "rename", "retype",
     ];
 
     private static readonly string[] Modifiers = ["on", "expect", "note"];
@@ -664,6 +673,27 @@ internal sealed class Run(CultureInfo culture)
                 foreach (var (at, alignment) in argument.AsObject())
                     outcome.Change = sheet.SetAlignment(CellRange.Parse(at), SheetCases.Enum<HorizontalAlignment>(alignment!));
                 break;
+            case "setColumnWidth":
+                // The Sheet's own forms, outside any step.
+                if (!argument.AsObject().TryGetPropertyValue("width", out var setWidth))
+                    throw new InvalidDataException("setColumnWidth names no width: write null for the default.");
+                outcome.Change = sheet.SetColumnWidth(CellRange.Parse((string)argument["columns"]!), setWidth is null ? null : SheetCases.Number(setWidth));
+                break;
+            case "setAutomaticColumnWidth":
+                outcome.Change = sheet.SetAutomaticColumnWidth(CellRange.Parse((string)argument["columns"]!), SheetCases.Number(argument["width"]!));
+                break;
+            case "rename":
+                // The Sheet's own rename, outside any step.
+                outcome.Change = sheet.Rename((string)argument!);
+                break;
+            case "retype":
+                // Each cell's Entry text, as the Cell Editor opens it, typed back into the cell.
+                foreach (var cell in argument!.AsArray())
+                {
+                    var address = CellAddress.Parse((string)cell!);
+                    outcome.Change = sheet.Enter(address, sheet.GetEntryText(address));
+                }
+                break;
             case "setCellFormat":
                 // The Sheet's own form, outside any step.
                 outcome.Change = sheet.SetCellFormat([.. argument["ranges"]!.AsArray().Select(r => CellRange.Parse((string)r!))], SheetCases.ChangeOf(argument["change"]!));
@@ -698,8 +728,14 @@ internal sealed class Run(CultureInfo culture)
                 outcome.Change = Workbook.SetToday(argument is null ? null : DateOnly.ParseExact((string)argument!, "yyyy-MM-dd", CultureInfo.InvariantCulture)).For(sheet);
                 break;
             case "setSeed":
-                outcome.Change = Workbook.SetSeed(argument is null ? null : ulong.Parse(argument.ToJsonString().Trim('"'), CultureInfo.InvariantCulture)).For(sheet);
+            {
+                // A seed, or {"seed", "changes"}: the seed and the count of changes together.
+                static ulong? Seed(JsonNode? node) => node is null ? null : ulong.Parse(node.ToJsonString().Trim('"'), CultureInfo.InvariantCulture);
+                outcome.Change = (argument is JsonObject both
+                    ? Workbook.SetSeed(both.TryGetPropertyValue("seed", out var seed) ? Seed(seed) : throw new InvalidDataException("setSeed names no seed: write null for none."), both["changes"]!.GetValue<long>())
+                    : Workbook.SetSeed(Seed(argument))).For(sheet);
                 break;
+            }
             case "getDisplay":
                 // A display asked for, so that a width refused is a refusal the step can expect.
                 _ = sheet.GetDisplay(CellAddress.Parse((string)argument["at"]!), SheetCases.Number(argument["width"]!));
@@ -939,6 +975,10 @@ internal sealed class Run(CultureInfo culture)
             case "widthOnEntry":
                 actual = PerCell(expected, a => sheet.GetWidthOnEntry(a));
                 break;
+            case "entryAddressesIn":
+                // The cells of each range that hold an Entry, in row order and then column order.
+                actual = PerRange(expected, r => SheetCases.Addresses(sheet.EntryAddressesIn(r).Order()));
+                break;
             case "spilledFrom":
                 actual = PerCell(expected, a => sheet.SpilledFrom(a)?.ToString());
                 break;
@@ -949,7 +989,7 @@ internal sealed class Run(CultureInfo culture)
                 {
                     if (!CellAddress.TryParseColumn(column, out var index)) throw new InvalidDataException($"'{column}' is no column.");
                     widths[column] = sheet.GetColumnWidth(index) is { } width
-                        ? new JsonObject { ["width"] = width.Width, ["kind"] = SheetCases.Camel(width.Kind) }
+                        ? new JsonObject { ["width"] = width.Width, ["kind"] = SheetCases.Camel(width.Kind), ["isCustom"] = width.IsCustom, ["isSetByUser"] = width.IsSetByUser }
                         : null;
                 }
                 actual = widths;
@@ -1000,6 +1040,21 @@ internal sealed class Run(CultureInfo culture)
                 break;
             case "valueAddresses":
                 actual = SheetCases.Addresses(sheet.ValueAddresses);
+                break;
+            case "alike":
+            {
+                // Groups of cells whose Values are one another's, a refusal alike only to a refusal.
+                var groups = new JsonArray();
+                foreach (var group in expected!.AsArray())
+                {
+                    var values = group!.AsArray().Select(c => SheetCases.Encode(sheet.GetValue(CellAddress.Parse((string)c!)))?.ToJsonString() ?? "null").ToList();
+                    groups.Add(values.Distinct().Count() == 1 ? group.DeepClone() : (JsonNode)$"unlike: {string.Join(", ", values)}");
+                }
+                actual = groups;
+                break;
+            }
+            case "recalculationPasses":
+                actual = sheet.RecalculationPasses;
                 break;
             case "sheets":
                 actual = new JsonArray([.. Workbook.Sheets.Select(s => (JsonNode)s.Name)]);

@@ -71,6 +71,24 @@ export const chartWordIds = Object.freeze({
     moreSeries: 'exchart.tooltip.more',
     /** The notice of a stylesheet of another version (ADR-0123). */
     stylesheetNotice: 'exchart.notice.stylesheet',
+    /** A 3D surface's button that returns its view (ADR-0274): `Reset view`. */
+    resetView: 'exchart.surface.reset-view',
+    /** A surface's name where it has no title: `Surface`. */
+    surface: 'exchart.surface',
+    /** A surface's table's caption where it has no title: `Surface data`. */
+    surfaceData: 'exchart.surface.data',
+    /** What a surface's box is announced as: `3D surface`. */
+    surfaceRole: 'exchart.surface.role',
+    /** The values' name where the surface gives none: `Value`. */
+    surfaceValue: 'exchart.surface.value',
+    /** The tooltip's note on a value the data holds, on a surface the Consumer interpolated (ADR-0257): `quoted`. */
+    quoted: 'exchart.surface.quoted',
+    /** The note on an interpolated value, `{0}` the method: `interpolated, {0}`. */
+    interpolated: 'exchart.surface.interpolated',
+    /** A slice a grid does not hold, `{0}` the axis and `{1}` the value: `No slice at {0} {1}: this surface has no such value.` */
+    noSliceOnGrid: 'exchart.surface.no-slice.grid',
+    /** A slice no triangle of a mesh crosses: `No slice at {0} {1}: no triangle of the mesh crosses there.` */
+    noSliceOnMesh: 'exchart.surface.no-slice.mesh',
 });
 
 const english: Readonly<Record<string, string>> = {
@@ -105,6 +123,15 @@ const english: Readonly<Record<string, string>> = {
     'exchart.tooltip.one-more': 'and 1 more series',
     'exchart.tooltip.more': 'and {0} more series',
     'exchart.notice.stylesheet': 'This page holds another version\'s stylesheet. Reload the page.',
+    'exchart.surface.reset-view': 'Reset view',
+    'exchart.surface': 'Surface',
+    'exchart.surface.data': 'Surface data',
+    'exchart.surface.role': '3D surface',
+    'exchart.surface.value': 'Value',
+    'exchart.surface.quoted': 'quoted',
+    'exchart.surface.interpolated': 'interpolated, {0}',
+    'exchart.surface.no-slice.grid': 'No slice at {0} {1}: this surface has no such value.',
+    'exchart.surface.no-slice.mesh': 'No slice at {0} {1}: no triangle of the mesh crosses there.',
 };
 
 // Excel's Japanese edition's words where Excel shows the same thing (グラフ フィルター, 表), the family's
@@ -141,6 +168,15 @@ const japanese: Readonly<Record<string, string>> = {
     'exchart.tooltip.one-more': 'ほか 1 系列',
     'exchart.tooltip.more': 'ほか {0} 系列',
     'exchart.notice.stylesheet': 'このページには別のバージョンのスタイルシートがあります。ページを再読み込みしてください。',
+    'exchart.surface.reset-view': '表示をリセット',
+    'exchart.surface': 'サーフェス',
+    'exchart.surface.data': 'サーフェスのデータ',
+    'exchart.surface.role': '3D サーフェス',
+    'exchart.surface.value': '値',
+    'exchart.surface.quoted': '気配値',
+    'exchart.surface.interpolated': '補間 ({0})',
+    'exchart.surface.no-slice.grid': '{0} {1} の断面はありません。このサーフェスにその値はありません。',
+    'exchart.surface.no-slice.mesh': '{0} {1} の断面はありません。メッシュのどの三角形もそこを通りません。',
 };
 
 /** ExChart's Japanese: `label: japaneseChartWords`. A Consumer's own function may fall back to it. */

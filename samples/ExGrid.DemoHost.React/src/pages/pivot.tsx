@@ -10,7 +10,7 @@ import { useQuery } from '../router';
 const count = (value: number): string => value.toLocaleString('en-US');
 
 /** The page /pivot of the Blazor hosts, as far as ExPivot's Script Core draws it so far: the trades pivoted
- * by the bundled source, the Field List with its drag and drop, collapsing by double-click, saving the
+ * by the bundled source, the Field List with its drag and drop, collapsing by its button or a double-click, saving the
  * layout and Excel's Japanese words (ADR-0059, ADR-0061, ADR-0370 section 3). */
 export function Pivot(): ReactElement {
     const asked = useQuery('trades');
@@ -41,8 +41,8 @@ export function Pivot(): ReactElement {
             <p><code>?trades=1000000</code> pivots a million of the trades instead, or any other count.</p>
             <p>
                 Tick fields in the PivotTable Fields pane, or drag them between Filters, Columns, Rows and Values;
-                drop one back on the list to remove it. The report is one ExGrid: select and copy, and double-click
-                an outer Item to collapse or expand it.
+                drop one back on the list to remove it. The report is one ExGrid: select and copy, and press the button
+                beside an outer Item, or double-click its label, to collapse or expand it.
             </p>
             <div className="demo-toolbar">
                 <button id="pivot-reset" type="button" onClick={() => { setLayout(demoPivotFirstLayout()); }}>Reset the layout</button>

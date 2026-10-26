@@ -9,5 +9,6 @@ export { browserPivotLocale } from './browser-locale';
 export { createPivot } from './create-pivot';
 export type { PivotHandle } from './create-pivot';
 export type {
-    PivotFieldListShownEvent, PivotLayoutChangedEvent, PivotRefusedEvent, PivotViewOptions,
+    PivotFieldListShownEvent, PivotLayoutChangedEvent, PivotRefusedEvent, PivotSelectionChangedEvent, PivotViewOptions,
 } from './pivot-view';
+export type { PivotCellItems } from './report-grid';

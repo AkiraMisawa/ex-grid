@@ -4,12 +4,13 @@
 // DOM and the memory grow with the rows on screen, not with the report (ADR-0151, ADR-0027 P1).
 
 import {
-    GridSource, type FetchingGridSource, type GridColumn, type GridColumnWidth, type GridHeaderGroup, type GridPage, type GridQuery,
+    GridSource, gridHeaderRequiredPx, type FetchingGridSource, type GridColumn, type GridColumnWidth, type GridDensity, type GridHeaderGroup,
+    type GridPage, type GridQuery, type GridSelection, type GridTemplate,
 } from '@ex-grid/core';
 import { decimalText } from '@ex-grid/data';
 import {
-    PivotRowKey, type PivotDisplayRow, type PivotLayout, type PivotReportMetadata, type PivotReportSettings, type PivotReportSource,
-    type PivotReportState, type PivotValue,
+    PivotRowKey, type PivotDisplayRow, type PivotFieldItem, type PivotLabelColumn, type PivotLayout, type PivotReportMetadata, type PivotReportSettings, type PivotReportSource,
+    type PivotReportState, type PivotToggle, type PivotValue,
 } from '@ex-grid/pivot-engine';
 import { elementAt } from './must';
 
@@ -44,7 +45,66 @@ export function reportRowKey(row: PivotDisplayRow): string {
     return new PivotRowKey(row.role, row.valueField, row.items).toString();
 }
 
-function labelColumn(name: string, header: string, index: number, width: GridColumnWidth): GridColumn<PivotDisplayRow> {
+/** What a label cell paints beside its text: a level's indent, and the expand / collapse button's name and press. */
+export interface LabelPainter {
+    /** A level's indent, in pixels: the em of the grid's font, as the report source charges it (ADR-0151). */
+    readonly indentPx: number;
+    /** The button's accessible name: "Expand East", "Collapse East". */
+    readonly toggleName: (toggle: PivotToggle) => string;
+    /** The button pressed: the Item is to be collapsed or expanded. */
+    readonly toggled: (toggle: PivotToggle) => void;
+}
+
+/**
+ * One label column's cells (ADR-0059), the Razor component's markup: the indent, the expand / collapse button
+ * of an outer Item, and the label. The button is pressed, never reached by Tab, and takes the keyboard when
+ * Space asks the cell to (ADR-0037); a press on it keeps the keyboard where it was, as the grid's own buttons
+ * do, and a double click on it stops there, since its offsets are the button's (ADR-0063).
+ */
+function labelTemplate(index: number, painter: LabelPainter): GridTemplate<PivotDisplayRow> {
+    // A button pressed by Enter or Space asks the report again, and is painted anew: the grid takes back the
+    // keyboard it held (ADR-0037).
+    return (slot, cell) => {
+        const label = elementAt(cell.row.labels, index);
+        const document = slot.ownerDocument;
+        const box = document.createElement('span');
+        box.className = 'ex-pivot-label';
+        if (label.indent > 0) box.style.paddingLeft = `${label.indent * painter.indentPx}px`;
+        const listening = new AbortController();
+        const { toggle } = label;
+        let button: HTMLButtonElement | undefined;
+        if (toggle !== undefined) {
+            const made = document.createElement('button');
+            made.type = 'button';
+            made.className = toggle.isCollapsed ? 'ex-pivot-toggle ex-interactive ex-pivot-toggle-collapsed' : 'ex-pivot-toggle ex-interactive';
+            made.tabIndex = -1;
+            made.setAttribute('data-ex-claims', 'click');
+            made.setAttribute('aria-expanded', toggle.isCollapsed ? 'false' : 'true');
+            made.setAttribute('aria-label', painter.toggleName(toggle));
+            made.textContent = toggle.isCollapsed ? '+' : '\u2212';
+            const { signal } = listening;
+            made.addEventListener('mousedown', event => { event.preventDefault(); }, { signal });
+            made.addEventListener('click', () => { painter.toggled(toggle); }, { signal });
+            made.addEventListener('dblclick', event => { event.stopPropagation(); }, { signal });
+            box.append(made);
+            button = made;
+        }
+        if (label.text !== undefined) {
+            const text = document.createElement('span');
+            text.className = 'ex-pivot-label-text';
+            text.textContent = label.text;
+            box.append(text);
+        }
+        slot.append(box);
+        if (button !== undefined && cell.focusRequest !== 0) cell.takeKeyboard(button);
+        return () => {
+            listening.abort();
+            box.remove();
+        };
+    };
+}
+
+function labelColumn(name: string, header: string, index: number, width: GridColumnWidth, painter: LabelPainter): GridColumn<PivotDisplayRow> {
     return Object.freeze({
         name,
         header,
@@ -54,6 +114,7 @@ function labelColumn(name: string, header: string, index: number, width: GridCol
         align: 'left',
         queryable: false,
         value: (row: PivotDisplayRow) => elementAt(row.labels, index).text,
+        template: labelTemplate(index, painter),
     });
 }
 
@@ -82,41 +143,85 @@ function valueColumn(name: string, header: string, index: number, width: GridCol
 }
 
 /** What the grid is handed for one report: its columns, its Header Groups and how many columns are pinned. */
-export interface ReportColumns {
+export interface ReportColumnSet {
     readonly columns: readonly GridColumn<PivotDisplayRow>[];
     readonly headerGroups: readonly GridHeaderGroup[];
     readonly pinnedColumnCount: number;
 }
 
-/** The label columns' widths when the user has not set one: the widest label the grid paints, between 40 and
- * 400 pixels, as Auto widths are (ADR-0016). */
-const labelWidth: GridColumnWidth = Object.freeze({ auto: true });
+/** The narrowest and the widest a label column is laid out at when the user has not set its width (ADR-0059). */
+const minLabelWidthPx = 60;
+const maxLabelWidthPx = 480;
+
+function fixedWidth(px: number): GridColumnWidth {
+    return Object.freeze({ px, minPx: Math.min(40, px), maxPx: Math.max(400, px) });
+}
 
 /**
- * The grid's columns for a report: each label column, then each value column, with any width the user
- * dragged a column of that name to (ADR-0016), and the column Items as Header Groups over the value columns,
- * never over the pinned labels (ADR-0032).
+ * The grid's columns for each report, made once for each name, header, place and width and held, so a report
+ * that keeps a column hands the grid the same column, and its cells are not painted again (ADR-0003). Made
+ * anew when what a label cell paints with changes.
  */
-export function reportColumns(metadata: PivotReportMetadata, userWidths: ReadonlyMap<string, number>): ReportColumns {
-    const widthOf = (name: string): GridColumnWidth | undefined => {
-        const px = userWidths.get(name);
-        return px === undefined ? undefined : Object.freeze({ px, minPx: Math.min(40, px), maxPx: Math.max(400, px) });
-    };
-    const columns: GridColumn<PivotDisplayRow>[] = [];
-    metadata.labelColumns.forEach((label, index) => {
-        columns.push(labelColumn(label.name, label.header, index, widthOf(label.name) ?? labelWidth));
-    });
-    metadata.valueColumns.forEach((value, index) => {
-        columns.push(valueColumn(value.name, value.header, index, widthOf(value.name)));
-    });
-    const names = metadata.valueColumns.map(column => column.name);
-    const headerGroups = metadata.headerSpans.map(span => Object.freeze({
-        label: span.label,
-        columns: Object.freeze(names.slice(span.firstColumn, span.firstColumn + span.columnCount)),
-        tier: span.tier,
-        tierSpan: span.tierSpan,
-    }));
-    return Object.freeze({ columns: Object.freeze(columns), headerGroups: Object.freeze(headerGroups), pinnedColumnCount: metadata.labelColumns.length });
+export class ReportColumns {
+    readonly #painter: LabelPainter;
+    readonly #density: GridDensity | undefined;
+    readonly #made = new Map<string, GridColumn<PivotDisplayRow>>();
+
+    constructor(painter: LabelPainter, density: GridDensity | undefined) {
+        this.#painter = painter;
+        this.#density = density;
+    }
+
+    /**
+     * The grid's columns for a report: each label column, then each value column, with any width the user
+     * dragged a column of that name to (ADR-0016), and the column Items as Header Groups over the value columns,
+     * never over the pinned labels (ADR-0032). A label column the user has not sized is as wide as its header
+     * or its widest label, which the report source estimated under the grid's text geometry, between 60 and 480
+     * pixels, since its cells paint a template that no Auto width observes.
+     */
+    of(metadata: PivotReportMetadata, userWidths: ReadonlyMap<string, number>): ReportColumnSet {
+        const columns: GridColumn<PivotDisplayRow>[] = [];
+        metadata.labelColumns.forEach((label, index) => {
+            const user = userWidths.get(label.name);
+            const px = user ?? this.#labelWidth(label.header, metadata.labelWidths[index]);
+            columns.push(this.#held(`l\u001F${label.name}\u001F${label.header}\u001F${index}\u001F${px}`,
+                () => labelColumn(label.name, label.header, index, fixedWidth(px), this.#painter)));
+        });
+        metadata.valueColumns.forEach((value, index) => {
+            const px = userWidths.get(value.name);
+            columns.push(this.#held(`v\u001F${value.name}\u001F${value.header}\u001F${index}\u001F${px}`,
+                () => valueColumn(value.name, value.header, index, px === undefined ? undefined : fixedWidth(px))));
+        });
+        // Columns no report has kept are let go once they outnumber the ones in use, as the Razor component's are.
+        if (this.#made.size > (4 * columns.length) + 64) {
+            const used = new Set(columns);
+            for (const [key, column] of this.#made) if (!used.has(column)) this.#made.delete(key);
+        }
+        const names = metadata.valueColumns.map(column => column.name);
+        const headerGroups = metadata.headerSpans.map(span => Object.freeze({
+            label: span.label,
+            columns: Object.freeze(names.slice(span.firstColumn, span.firstColumn + span.columnCount)),
+            tier: span.tier,
+            tierSpan: span.tierSpan,
+        }));
+        return Object.freeze({ columns: Object.freeze(columns), headerGroups: Object.freeze(headerGroups), pinnedColumnCount: metadata.labelColumns.length });
+    }
+
+    #labelWidth(header: string, label: number | undefined): number {
+        const headerPx = gridHeaderRequiredPx(header, { ...(this.#density === undefined ? {} : { density: this.#density }), menuButton: false, sortable: false });
+        // A report answered without label geometry has no estimate, and its header alone sizes it.
+        const widest = label === undefined ? headerPx : Math.max(headerPx, label);
+        return Math.min(maxLabelWidthPx, Math.max(minLabelWidthPx, Math.ceil(widest)));
+    }
+
+    #held(key: string, make: () => GridColumn<PivotDisplayRow>): GridColumn<PivotDisplayRow> {
+        let column = this.#made.get(key);
+        if (column === undefined) {
+            column = make();
+            this.#made.set(key, column);
+        }
+        return column;
+    }
 }
 
 /** Thrown when a Window is answered from another report than the one the grid shows: the data moved on, and
@@ -188,4 +293,55 @@ export function reportRows(request: ReportRowsRequest): FetchingGridSource<Pivot
             request.moved();
         },
     });
+}
+
+/** What one cell of the report stands for (ADR-0340): its row's Items and, for a value cell, its column's. */
+export interface PivotCellItems {
+    /** The Items its row's path names, outermost first. */
+    readonly row: readonly PivotFieldItem[];
+    /** The Items its column's path names, outermost first; none for a label cell. */
+    readonly column: readonly PivotFieldItem[];
+}
+
+// A label column of its own field (outline and tabular forms) shows that field's Item, so its cell stands for the
+// path down to it; the compact form's one column shows the row's own.
+function labelPath(path: readonly PivotFieldItem[], column: PivotLabelColumn): readonly PivotFieldItem[] {
+    const at = column.field === undefined ? -1 : path.findIndex(item => item.field === column.field);
+    return at < 0 ? path : Object.freeze(path.slice(0, at + 1));
+}
+
+const noItems: readonly PivotFieldItem[] = Object.freeze([]);
+
+/**
+ * What each cell of a selection of the report grid stands for (ADR-0340, Q5), as the Razor component's `ItemsOf`
+ * reads it: each cell once, in the order selected. `undefined` when the selection reaches a row the grid does not
+ * hold drawn now, or a column past the report's, which is read from no Items rather than from some of them
+ * (spine rule 1).
+ */
+export function cellItems(
+    selection: GridSelection, metadata: PivotReportMetadata, rows: readonly PivotDisplayRow[], windowStart: number,
+): readonly PivotCellItems[] | undefined {
+    const labels = metadata.labelColumns.length;
+    // A cell two ranges both hold is said once; one range holds each of its cells once.
+    const seen = selection.ranges.length > 1 ? new Set<string>() : undefined;
+    const cells: PivotCellItems[] = [];
+    for (const range of selection.ranges) {
+        const bottom = range.topRow + range.rowCount - 1;
+        const right = range.leftColumn + range.columnCount - 1;
+        if (range.topRow < windowStart || bottom >= windowStart + rows.length || right >= labels + metadata.valueColumns.length) return undefined;
+        for (let r = range.topRow; r <= bottom; r++) {
+            const row = elementAt(rows, r - windowStart);
+            for (let c = range.leftColumn; c <= right; c++) {
+                if (seen !== undefined) {
+                    const key = `${r},${c}`;
+                    if (seen.has(key)) continue;
+                    seen.add(key);
+                }
+                cells.push(Object.freeze(c < labels
+                    ? { row: labelPath(row.rowPath, elementAt(metadata.labelColumns, c)), column: noItems }
+                    : { row: row.rowPath, column: elementAt(metadata.valueColumns, c - labels).columnPath }));
+            }
+        }
+    }
+    return Object.freeze(cells);
 }

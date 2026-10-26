@@ -2,7 +2,7 @@
 
 @* What the site shows under React where it has nothing for React yet (ADR-0350 §12): it says so where
    the Example or the page would be, rather than showing Blazor's in its place, and offers to switch the
-   whole site back. ExGrid's, ExSheet's and ExPivot's React packages are coming in 0.3.0; the other products have none yet. *@
+   whole site back. ExGrid's, ExChart's, ExSheet's and ExPivot's React packages are coming in 0.3.0; the other products have none yet. *@
 <div class="@($"docs-not-in-react docs-not-in-react-{(Example ? "example" : "page")}")" role="note">
     <MudIcon Icon="@Icons.Material.Outlined.Info" Class="docs-not-in-react-icon" />
     <div class="docs-not-in-react-text">
@@ -25,6 +25,7 @@
     // The React package being built for a product that has one coming (ADR-0370 section 1).
     private string ReactPackage => Product switch
     {
+        "ExChart" => "@ex-grid/chart-react",
         "ExSheet" => "@ex-grid/sheet-react",
         "ExPivot" => "@ex-grid/pivot-react",
         _ => "@ex-grid/react",
@@ -32,8 +33,8 @@
 
     private string Sentence => (Product, Example) switch
     {
-        ("ExGrid" or "ExSheet" or "ExPivot", true) => $"This Example is not in {Product} for React yet. Its React package, {ReactPackage}, is being built for 0.3.0; until then it runs under Blazor only.",
-        ("ExGrid" or "ExSheet" or "ExPivot", false) => $"{Product} for React, {ReactPackage}, is not published yet. This page describes {Product} for Blazor, and each Example says so where it would run.",
+        ("ExGrid" or "ExChart" or "ExSheet" or "ExPivot", true) => $"This Example is not in {Product} for React yet. Its React package, {ReactPackage}, is being built for 0.3.0; until then it runs under Blazor only.",
+        ("ExGrid" or "ExChart" or "ExSheet" or "ExPivot", false) => $"{Product} for React, {ReactPackage}, is not published yet. This page describes {Product} for Blazor, and each Example says so where it would run.",
         (null, _) => "The React packages are not published yet, so everything on this page is for Blazor.",
         ("ExGrid.Data.Arrow", false) =>
             "ExGrid.Data.Arrow is a .NET package. Its TypeScript counterpart, @ex-grid/data, reads and writes the same Arrow and is published with 0.3.0; this page describes both from .NET, and says where they differ.",

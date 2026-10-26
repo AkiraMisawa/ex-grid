@@ -3,13 +3,13 @@
 // tested there: here the grid is a stand-in that records what the pivot hands it, and the tests judge what the
 // pivot decides — what it asks, which answer it shows, what the Field List draws and marks, what it refuses.
 import { afterEach, describe, expect, it } from 'vitest';
-import type { GridHandle, GridOptions } from '@ex-grid/core';
+import type { GridHandle, GridOptions, GridSelection } from '@ex-grid/core';
 import {
     FetchingPivotSource, PivotSourceFeatures, RecordPivotSource, createPivotLayout, japanesePivotWords, pivotRecordField,
     type PivotDisplayRow, type PivotLayout, type PivotSlicing, type PivotSource,
 } from '@ex-grid/pivot-engine';
 import { browserPivotLocale } from '../src/browser-locale';
-import { PivotView, type PivotViewOptions } from '../src/pivot-view';
+import { PivotView, type PivotSelectionChangedEvent, type PivotViewOptions } from '../src/pivot-view';
 
 interface Trade {
     readonly region: string;
@@ -65,6 +65,16 @@ class HeldSource implements PivotSource {
     }
 }
 
+/** A template cell mounted by a test: its slot, the controls it handed the keyboard to, and how to take it away or
+ * mount it again into the same slot. */
+interface PaintedCell {
+    readonly slot: HTMLElement;
+    readonly handed: readonly HTMLElement[];
+    readonly dispose: () => void;
+    readonly repaint: () => PaintedCell;
+    readonly button: () => HTMLButtonElement;
+}
+
 /** The grid as the pivot sees it: the options it was last handed. */
 class GridStandIn {
     options: GridOptions<PivotDisplayRow> | undefined;
@@ -76,7 +86,7 @@ class GridStandIn {
         this.options = options;
         return {
             update: next => { this.options = next; },
-            placeSelection: () => { throw new Error('The report places no Selection.'); },
+            placeSelection: () => { throw new Error('The pivot places no selection.'); },
             destroy: () => { this.destroyed = true; },
         };
     };
@@ -89,6 +99,30 @@ class GridStandIn {
     /** The headers of the columns handed to the grid. */
     get headers(): readonly string[] {
         return this.current.columns.map(column => column.header ?? column.name);
+    }
+
+    /** Mounts a template cell of the rows the grid would show first, as the grid mounts it. */
+    async paint(row: number, column: number, focusRequest = 0): Promise<PaintedCell> {
+        const { source, columns } = this.current;
+        const template = columns[column]?.template;
+        if (source === undefined || template === undefined) throw new Error('The cell has no template.');
+        const [shown] = await source.rows({ start: row, count: 1 }, new AbortController().signal);
+        if (shown === undefined) throw new Error(`The report has no row ${row}.`);
+        const slot = document.createElement('div');
+        document.body.append(slot);
+        const into = (request: number): PaintedCell => {
+            const handed: HTMLElement[] = [];
+            const dispose = template(slot, { row: shown, column: columns[column]?.name ?? '', focusRequest: request, takeKeyboard: control => { handed.push(control); } }); // oxlint-disable-line ex-grid/no-stand-in-default -- the column was read above
+            return {
+                slot, handed, dispose, repaint: () => into(0),
+                button: () => {
+                    const button = slot.querySelector('button');
+                    if (button === null) throw new Error('The cell paints no button.');
+                    return button;
+                },
+            };
+        };
+        return into(focusRequest);
     }
 
     /** The painted text of the rows the grid would show first, label and value columns alike. */
@@ -209,6 +243,135 @@ describe('ExPivot\'s report', () => {
         await settled();
         expect((await grid.texts()).map(row => row[0])).toEqual(['EU', 'US', 'FX', 'Rates', 'Grand Total']);
         expect(changed).toHaveLength(1);
+    });
+
+    it('ADR-0059: a label cell paints its indent, its Item\'s button and its text, as the Razor component\'s does', async () => {
+        const { root, grid } = mount({ source: local(), layout: createPivotLayout({ rows: ['Region', 'Desk'], values: ['Amount'] }) });
+        await settled();
+        const outer = await grid.paint(0, 0);
+        const button = outer.slot.querySelector('button.ex-pivot-toggle.ex-interactive');
+        expect(button?.getAttribute('aria-label')).toBe('Collapse EU');
+        expect(button?.getAttribute('aria-expanded')).toBe('true');
+        expect(button?.getAttribute('tabindex')).toBe('-1');
+        expect(button?.textContent).toBe('\u2212');
+        expect(outer.slot.querySelector('.ex-pivot-label-text')?.textContent).toBe('EU');
+        const inner = await grid.paint(1, 0);
+        // A level's indent is the em of the grid's font, which the root's token sizes the button by too.
+        expect(inner.slot.querySelector<HTMLElement>('.ex-pivot-label')?.style.paddingLeft).toBe('14px');
+        expect(inner.slot.querySelector('button')).toBeNull();
+        expect(root.style.getPropertyValue('--ex-pivot-indent')).toBe('14px');
+        outer.dispose();
+        expect(outer.slot.childElementCount).toBe(0);
+    });
+
+    it('ADR-0063: the button beside an outer Item collapses it, and expands it once collapsed', async () => {
+        const changed: PivotLayout[] = [];
+        const { grid } = mount({ source: local(), layout: createPivotLayout({ rows: ['Region', 'Desk'], values: ['Amount'] }), onLayoutChanged: event => changed.push(event.layout) });
+        await settled();
+        (await grid.paint(0, 0)).button().click();
+        await settled();
+        expect((await grid.texts()).map(row => row[0])).toEqual(['EU', 'US', 'FX', 'Rates', 'Grand Total']);
+        const collapsed = await grid.paint(0, 0);
+        expect(collapsed.button().getAttribute('aria-label')).toBe('Expand EU');
+        expect(collapsed.button().textContent).toBe('+');
+        collapsed.button().click();
+        await settled();
+        expect((await grid.texts()).map(row => row[0])).toEqual(['EU', 'Credit', 'Rates', 'US', 'FX', 'Rates', 'Grand Total']);
+        expect(changed).toHaveLength(2);
+    });
+
+    it('spine rule 6: a press does what its button said, and one taken on a button a press already acted on is refused', async () => {
+        const layout = createPivotLayout({ rows: ['Region', 'Desk'], values: ['Amount'] });
+        const { grid } = mount({ source: local(), layout });
+        await settled();
+        const before = await grid.texts();
+        const button = (await grid.paint(0, 0)).button();
+        button.click();
+        button.click();
+        await settled();
+        expect((await grid.texts()).map(row => row[0])).toEqual(['EU', 'US', 'FX', 'Rates', 'Grand Total']);
+        // The button painted for the collapsed Item says Expand, and does it.
+        (await grid.paint(0, 0)).button().click();
+        await settled();
+        expect(await grid.texts()).toEqual(before);
+    });
+
+    it('ADR-0037: Space on a label cell hands the keyboard to its button, and no other mount takes it', async () => {
+        const { grid } = mount({ source: local(), layout: createPivotLayout({ rows: ['Region', 'Desk'], values: ['Amount'] }) });
+        await settled();
+        const asked = await grid.paint(0, 0, 1);
+        expect(asked.handed).toEqual([asked.button()]);
+        asked.dispose();
+        // The same cell mounted again, its row's new version, takes nothing: the request was acted on once.
+        expect(asked.repaint().handed).toEqual([]);
+    });
+
+    it('ADR-0059: a label column is as wide as its widest label, and a report that keeps a column hands the grid the same one', async () => {
+        const wide = 'A region whose name is far wider than the header';
+        const source = new RecordPivotSource([...trades, { region: wide, desk: 'FX', amount: 1 }], fields);
+        const options: PivotViewOptions = { source, layout: byRegion };
+        const { view, grid } = mount(options);
+        await settled();
+        const [label] = grid.current.columns;
+        const width = label?.width;
+        if (width === undefined || typeof width === 'number' || 'auto' in width) throw new Error('A label column is handed a width of its own.');
+        // Every character is charged at least the narrow class, and both sides' padding.
+        expect(width.px).toBeGreaterThan(wide.length * 4);
+        expect(width.px).toBeLessThanOrEqual(480);
+        view.update({ ...options, layout: createPivotLayout({ rows: ['Region'], values: ['Amount'] }) });
+        await settled();
+        expect(grid.current.columns[0]).toBe(label);
+    });
+});
+
+const named = (items: readonly { readonly field: string; readonly item: { readonly value?: string } }[]): string =>
+    items.map(({ field: name, item }) => {
+        if (item.value === undefined) throw new Error('These trades have no Blank Item.');
+        return `${name}=${item.value}`;
+    }).join(' ');
+
+async function selected(layout: PivotLayout, ranges: GridSelection['ranges']): Promise<readonly PivotSelectionChangedEvent[]> {
+    const said: PivotSelectionChangedEvent[] = [];
+    const { grid } = mount({ source: local(), layout, onSelectionChanged: event => said.push(event) });
+    await settled();
+    await grid.current.source?.needRange({ start: 0, count: 10 });
+    grid.current.onSelectionChanged?.({ ranges } as GridSelection); // oxlint-disable-line typescript/consistent-type-assertions -- the pivot reads only the ranges of the selection the core makes
+    return said;
+}
+
+describe('ExPivot\'s selection (ADR-0340)', () => {
+    it('ADR-0340: each selected cell is said with its row\'s Items and, for a value cell, its column\'s, once and in the order selected', async () => {
+        const layout = createPivotLayout({ rows: ['Region'], columns: ['Desk'], values: ['Amount'] });
+        const [event] = await selected(layout, [
+            { topRow: 1, leftColumn: 0, rowCount: 1, columnCount: 3 },
+            { topRow: 0, leftColumn: 2, rowCount: 2, columnCount: 1 },
+        ]);
+        const items = event?.items;
+        if (items === undefined) throw new Error('The selection is held drawn, so its Items are said.');
+        expect(items.map(cell => [named(cell.row), named(cell.column)])).toEqual([
+            ['Region=US', ''],
+            ['Region=US', 'Desk=Credit'],
+            ['Region=US', 'Desk=FX'],
+            ['Region=EU', 'Desk=FX'],
+        ]);
+    });
+
+    it('ADR-0340: a label cell of its own field stands for the path down to that field', async () => {
+        const [event] = await selected(createPivotLayout({ rows: ['Region', 'Desk'], values: ['Amount'], form: 'tabular' }), [
+            { topRow: 0, leftColumn: 0, rowCount: 1, columnCount: 2 },
+        ]);
+        expect(event?.items?.map(cell => named(cell.row))).toEqual(['Region=EU', 'Region=EU Desk=Credit']);
+    });
+
+    it('ADR-0340: a selection dropped is said with no Items, so what it narrowed is let go', async () => {
+        const [event] = await selected(byRegion, []);
+        expect(event?.items).toEqual([]);
+    });
+
+    it('spine rule 1: a selection reaching a row the grid does not hold is said with no Items rather than some', async () => {
+        const [event] = await selected(byRegion, [{ topRow: 0, leftColumn: 0, rowCount: 50, columnCount: 1 }]);
+        expect(event?.selection.ranges).toHaveLength(1);
+        expect(event?.items).toBeUndefined();
     });
 });
 
