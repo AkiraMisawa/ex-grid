@@ -74,6 +74,35 @@
             only ever Flags: at commit time the row it would judge does not exist yet, and there is nothing for it to
             refuse.
         </p>
+        <p>
+            <strong>A verdict may come later.</strong> In ExGrid for React (<code>@@ex-grid/react</code>, published with
+            0.3.0) a column's <code>validate</code> may answer a promise of a verdict, and <code>onEdit</code> may return a
+            promise, before which <code>intent.refuse(message)</code> still holds the editor. Each is handed an
+            <code>AbortSignal</code>. While the answer is out the commit is pending: the editor keeps the text and the
+            keyboard, read-only and <code>aria-busy</code> with its outline dashed, the pointer shows the grid busy, and the
+            root carries <code>data-ex-pending-commit</code> in place of the Settled Mark. Every key, press and paste made
+            meanwhile waits, and is taken once the answer has come, against what it left: <code>150</code>
+            <kbd>Enter</kbd> <code>200</code> <kbd>Enter</kbd> typed at once ends in the same cells as typed after each
+            answer, under a Reject as under an Accept. <kbd>Escape</kbd> while it is pending cancels: the signal is
+            aborted, nothing is written, the editor stays open with the text, and the grid says so. A paste or a fill whose
+            <code>onPaste</code> answers later is pending in the same way, with no editor.
+        </p>
+        <p>
+            That lets a verdict judge the object an edit would make, not only its text. Compose it from the row and the
+            text, and ask your domain whether it can exist, on a server if it has to be; a Reject on a domain invariant is
+            what the editor is held for. A <kbd>Ctrl</kbd>+<kbd>Enter</kbd> fill asks the verdict once, for the row the
+            editor was opened on, so the other rows of a fill are judged in <code>onPaste</code>, where the whole target is
+            in hand: apply the objects that can exist, and refuse the fill, or flag the rest. ExGrid for Blazor answers its
+            <code>Validate</code> at once until it runs on the same core.
+        </p>
+        <pre class="docs-code"><code>const columns: GridColumn&lt;Trade&gt;[] = [{
+    name: 'Notional', type: 'number', editable: true, value: trade =&gt; trade.notional,
+    validate: async (trade, text, signal) =&gt; {
+        const candidate = { ...trade, notional: Number(text) };      // the object the edit would make
+        const problem = await domain.check(candidate, { signal });  // your domain, wherever it runs
+        return problem === undefined ? { kind: 'accept' } : { kind: 'reject', message: problem };
+    },
+}];</code></pre>
     </DocsSection>
 
     <DocsSection Title="Bulk changes, Delete and Undo">

@@ -91,6 +91,8 @@ function commitRefused(reason: CommitRefusalReason, column: string): string {
             return `OrderMoved — ${column} was not written: the rows moved while you were typing; press Escape to leave it`;
         case 'rowLeftTheWindow':
             return `RowLeftTheWindow — ${column} was not written: the row is not in the rows the grid holds now; bring it back into view and commit again, or press Escape`;
+        case 'cancelled':
+            return `Cancelled — ${column} was not written: the edit was cancelled while it was being checked`;
     }
 }
 

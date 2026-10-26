@@ -71,6 +71,11 @@
                 fixed bar sets <code>scroll-padding</code>.
             </li>
             <li>
+                <strong>A report is read, not edited.</strong> Its cells take no typing and no paste, so the grid's
+                validation is not offered on a pivot: the values are your data's, aggregated, and change where your
+                data does.
+            </li>
+            <li>
                 <strong>Your application owns the layout.</strong> The <code>PivotLayout</code> is View State:
                 an immutable record that says which fields stand where, with their settings, and holds no
                 value. Bind it, store it as a user's setting with <code>PivotLayoutJson</code>, and hand it
