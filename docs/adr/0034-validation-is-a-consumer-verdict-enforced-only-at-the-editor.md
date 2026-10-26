@@ -242,6 +242,12 @@ a "cannot". Who is judging no longer separates the two; what is judged still doe
   replaced.** When the two differ, the grid raises an Overwrite Notice, and the commit still lands
   (ADR-0142).
 
+*(2026-10-26: [ADR-0380](./0380-a-verdict-or-a-refusal-may-be-answered-later-and-the-next-input-waits-for-it.md)
+lets a verdict be a promise. The commit is then pending: the editor stands, and the input behind it waits
+for the answer. A Reject on a domain invariant is legitimate: the Consumer composes the object inside its
+verdict, so the "row-dependent judgements are Flag-tier" convention above no longer follows from the
+verdict having to be immediate. A rule over the whole collection is the subject of ADR-0381.)*
+
 ## Consequences
 
 - `CONTEXT.md` gains **Edit Verdict**.

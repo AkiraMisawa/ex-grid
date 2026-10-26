@@ -1,8 +1,9 @@
 # A verdict or a refusal may be answered later, and the next input waits for it
 
-*Proposed 2026-10-26, from the survey of how AG Grid and Apex Grid validate an edit (thread "AG
-Gridとapex-gridの入力検証を調査"). Not yet decided: the user is asked on a card whether the grid's
-contract takes this.*
+*Decided with the user on 2026-10-26, from the survey of how AG Grid and Apex Grid validate an edit
+(thread "AG Gridとapex-gridの入力検証を調査"). The user's aim is in Context; asked whether the grid's
+contract judges the candidate row and may answer later, the user chose that over synchronous declarative
+rules only, and over leaving it until after 0.3.0.*
 
 ## Context
 

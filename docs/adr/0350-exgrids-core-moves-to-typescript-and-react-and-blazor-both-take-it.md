@@ -184,6 +184,10 @@ section 6 has every product take these three steps, ExGrid's as written here and
 ExGrid's Script Core has what it asks of it, and adds a fourth, the repository's layout; 0.3.0 waits for
 all of them.)*
 
+*(2026-10-26: [ADR-0380](./0380-a-verdict-or-a-refusal-may-be-answered-later-and-the-next-input-waits-for-it.md)
+section 5: Blazor's adapter carries `Validate`, `OnEdit`'s `Refuse`, `CellStateOf` and `CellMessageOf`.
+The first two cross as pending answers, which the Script Core waits for. It does not refuse them.)*
+
 ### 8. The engines stay in C#
 
 ExGrid.Data, ExPivot.Engine and ExSheet.Engine are not ported. A React application reaches them on a
