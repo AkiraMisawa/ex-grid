@@ -4,7 +4,7 @@
 import { FormatCode, type GridColumn, type GridColumnWidth } from '@ex-grid/core';
 import { BoardRefusedError, ticksOfTemporal, type Snapshot, type SnapshotColumn } from '@ex-grid/data';
 import type { GridViewSpecReading, ShapedColumn } from './grid-view-spec';
-import { plainDateTimeOf, significantDigits } from './snapshot-values';
+import { exactDigits, gridNumberOf, plainDateTimeOf, significantDigits } from './snapshot-values';
 
 /** The format of an Integer column that writes none. */
 export const integerFormat = '#,##0';
@@ -12,10 +12,6 @@ export const integerFormat = '#,##0';
 export const dateFormat = 'yyyy-mm-dd';
 /** The format of a Date column that writes none, a value of which has a time. */
 export const dateTimeFormat = 'yyyy-mm-dd hh:mm:ss';
-
-/** The most significant digits a Decimal shows exactly in a grid, whose numbers are C#'s decimal read from a
- * double, fifteen digits at most (ADR-0023). */
-const exactDigits = 15;
 
 /** A row of a grid built from a source's shape: where it stands in its Snapshot. */
 export interface ShapedRow {
@@ -85,7 +81,7 @@ function shapedColumn(shown: ShapedColumn, held: SnapshotColumn, rowCount: numbe
                 ...named, type: 'number',
                 value: (row: ShapedRow) => {
                     const value = held.valueAt(row.at);
-                    return value === null ? null : Number(`${value.mantissa}e-${value.scale}`);
+                    return value === null ? null : gridNumberOf(value);
                 },
                 format: (value: unknown) => code.format(numberOf(value), locale),
             });

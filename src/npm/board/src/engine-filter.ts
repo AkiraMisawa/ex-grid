@@ -5,11 +5,7 @@
 import type { FilterClause, GridFilter, ViewStateOperand } from '@ex-grid/core';
 import { BoardRefusedError, type SnapshotKind } from '@ex-grid/data';
 import type { ShapedColumn } from './grid-view-spec';
-import { plainDateTimeOf, significantDigits } from './snapshot-values';
-
-/** The most significant digits a Decimal operand is compared at exactly: a grid's numbers are C#'s decimal read
- * from a double, fifteen digits at most (ADR-0023). */
-const exactDigits = 15;
+import { exactDigits, gridNumberOf, plainDateTimeOf, significantDigits } from './snapshot-values';
 
 /**
  * `filter`, its operands made the values the core compares a column of each kind with: text a string, a Decimal,
@@ -36,6 +32,8 @@ export function engineFilter(filter: GridFilter | undefined, columns: readonly S
 }
 
 function operand(written: unknown, kind: SnapshotKind, column: string, path: string): unknown {
+    // A Blank among In's operands, as the View State's reader keeps it.
+    if (written === null) return null;
     if (!isOperand(written)) throw new Error(`Internal: the filter on column '${column}' holds an operand without its type.`);
     const tagged = written;
     const refuse = (): never => {
@@ -52,7 +50,7 @@ function operand(written: unknown, kind: SnapshotKind, column: string, path: str
                 throw new BoardRefusedError(path, `Column '${column}': the filter's ${significantDigits(tagged.value)} significant digits are more than a grid `
                     + `compares a number at (${exactDigits}).`);
             }
-            return Number(`${tagged.value.mantissa}e-${tagged.value.scale}`);
+            return gridNumberOf(tagged.value);
         }
         case 'int64':
         case 'int32':

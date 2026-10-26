@@ -70,9 +70,14 @@ const files = fs.readdirSync(root)
     .map(name => ({ name, json: JSON.parse(fs.readFileSync(path.join(root, name), 'utf8')) as Json }))
     .filter(({ json }) => key(json, 'kind') === 'boardSpec');
 
+/** `text` as a pattern that matches it at the start of a message. */
+function startingWith(words: string): RegExp {
+    return new RegExp(`^${words.replaceAll(/[\\^$.*+?()[\]{}|/-]/g, '\\$&')}`);
+}
+
 for (const { name: file, json } of files) {
     describe(`board/${file}`, () => {
-        for (const entry of list(key(json, 'cases')).filter(isObject)) {
+        for (const entry of list(key(json, 'cases')).map(case_ => { if (!isObject(case_)) throw new Error('A case is an object.'); return case_; })) {
             it(text(key(entry, 'name')), () => {
                 expect.hasAssertions();
                 const read = (): BoardReading => readBoard(text(key(entry, 'read')));
@@ -83,7 +88,7 @@ for (const { name: file, json } of files) {
                     const saying = isObject(refused) ? refused['saying'] : undefined;
                     // A message quoting a platform's own words is held to the words before them.
                     if (saying === undefined) expect(read).toThrow(expect.objectContaining({ message: text(key(refused, 'message')) }));
-                    else expect(read).toThrow(text(saying));
+                    else expect(read).toThrow(startingWith(text(saying)));
                     return;
                 }
                 const held = summary(read());

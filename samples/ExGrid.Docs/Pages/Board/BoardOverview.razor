@@ -177,6 +177,28 @@
         <DocsExample Builtin="typeof(ServerBoardBuiltin)" Mud="typeof(ServerBoardMud)" Files="@(["Examples/Board/ServerBoard.cs"])" />
     </DocsSection>
 
+    <DocsSection Title="From TypeScript">
+        <p>
+            <code>@@ex-grid/board</code> is ExBoard in TypeScript, the package ExBoard's React and Blazor packages move onto
+            (ADR-0370), built in this repository and published with 0.3.0. <code>readBoard</code> reads a Board and refuses
+            what <code>BoardSpec.Read</code> refuses, at the same path and in the same words: both readers run the same
+            cases, under <code>tests/cases/board/</code>. <code>bindBoard</code> binds it to Snapshots from
+            <code>@@ex-grid/data</code>: each grid view's columns are built from its input's shape, a grid's or a pivot's
+            selection narrows the views its links reach, and an output is raised only by <code>confirm</code>. A Board
+            over a server is not yet bound in TypeScript, and the Board Diff is not yet read there.
+        </p>
+        <pre class="docs-code"><code>import { bindBoard, boardInput, readBoard } from '@@ex-grid/board';
+
+const board = readBoard(json);                                  // throws a BoardRefusedError naming the path
+const trades = boardInput(board, 'trades')!.fromJson(rowsJson);  // or a Snapshot read from Arrow
+const bound = bindBoard(board, { trades });
+bound.select('blotter', selection);                             // a grid's selection narrows its links' views
+const output = bound.confirm('chosen');                         // the values chosen, with their version</code></pre>
+        <p>
+            There is no Example here, because this site is a Blazor app and runs no package script of its own.
+        </p>
+    </DocsSection>
+
     <DocsSection Title="The package">
         <p>
             ExBoard is one package, <code>ExBoard</code>, published at the family's one version with exact references

@@ -52,6 +52,16 @@ export function declaredChartData(snapshot: Snapshot, input: BoardInput, rows: r
     });
 }
 
+/** The most significant digits a Decimal is shown and compared at exactly in a grid, whose numbers are C#'s decimal
+ * read from a double, fifteen digits at most (ADR-0023). */
+export const exactDigits = 15;
+
+/** A Decimal as the number a grid reads it as, which holds it exactly while it has no more than
+ * {@link exactDigits} significant digits. */
+export function gridNumberOf(value: SnapshotDecimal): number {
+    return Number(`${value.mantissa}e-${value.scale}`);
+}
+
 /** How many significant digits a Decimal holds, trailing zeros after the point left out. */
 export function significantDigits(value: SnapshotDecimal): number {
     let mantissa = value.mantissa < 0n ? -value.mantissa : value.mantissa;

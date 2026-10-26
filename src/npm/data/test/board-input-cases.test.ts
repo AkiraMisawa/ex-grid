@@ -88,9 +88,14 @@ async function answer(entry: JsonObject): Promise<Json> {
     return snapshotOf(input.fromJson(text(key(entry, 'fromJson'))));
 }
 
+/** `text` as a pattern that matches it at the start of a message. */
+function startingWith(words: string): RegExp {
+    return new RegExp(`^${words.replaceAll(/[\\^$.*+?()[\]{}|/-]/g, '\\$&')}`);
+}
+
 for (const { name: file, json } of files) {
     describe(`data/${file}`, () => {
-        for (const entry of list(key(json, 'cases')).filter(isObject)) {
+        for (const entry of list(key(json, 'cases')).map(case_ => { if (!isObject(case_)) throw new Error('A case is an object.'); return case_; })) {
             it(text(key(entry, 'name')), async () => {
                 expect.hasAssertions();
                 const refused = entry['refused'];
@@ -100,7 +105,7 @@ for (const { name: file, json } of files) {
                     await expect(answer(entry)).rejects.toMatchObject({ path: text(key(refused, 'path')) });
                     // A message quoting the platform's JSON parser is held to the words before it.
                     if (saying === undefined) await expect(answer(entry)).rejects.toMatchObject({ message: text(key(refused, 'message')) });
-                    else await expect(answer(entry)).rejects.toThrow(text(saying));
+                    else await expect(answer(entry)).rejects.toThrow(startingWith(text(saying)));
                     return;
                 }
                 const want = entry['columns'] ?? entry['snapshot'] ?? key(entry, 'binds');

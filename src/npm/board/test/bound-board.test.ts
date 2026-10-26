@@ -191,6 +191,28 @@ describe('a link (ADR-0340 Q5)', () => {
     });
 });
 
+function withGrid(spec: string): BoardReading {
+    return readBoard(`{"version": 1, ${inputs}, "views": [{"id": "blotter", "grid": ${spec}}], "layout": [{"views": ["blotter"]}]}`);
+}
+
+describe('a grid view (ADR-0342)', () => {
+    it('opens under its spec\'s filter, a Blank among In\'s operands included', () => {
+        const reading = withGrid('{"data": "trades", "columns": [{"column": "desk"}], "filter": {"columns": {"desk": {"combinator": "Or", '
+            + '"clauses": [{"operator": "In", "values": [null, {"type": "String", "value": "rates"}]}]}}}}');
+        const bound = bindBoard(reading, data(reading));
+
+        expect(desks(bound, 'blotter')).toEqual(['Rates', 'Rates']);
+    });
+
+    it('refuses a sort by a column it does not show, and a filter compared with another type, naming the path', () => {
+        const sorted = withGrid('{"data": "trades", "columns": [{"column": "desk"}], "sorts": [{"column": "day", "direction": "Ascending"}]}');
+        expect(() => bindBoard(sorted, data(sorted))).toThrow(expect.objectContaining({ path: 'views[0].grid.sorts[0]' }));
+        const filtered = withGrid('{"data": "trades", "columns": [{"column": "desk"}], "filter": {"columns": {"desk": {"combinator": "And", '
+            + '"clauses": [{"operator": "Equals", "value": {"type": "Int32", "value": "1"}}]}}}}');
+        expect(() => bindBoard(filtered, data(filtered))).toThrow(new BoardRefusedError('views[0].grid.filter', "Column 'desk' is text, and its filter compares it with a int32."));
+    });
+});
+
 describe('an output (ADR-0340 Q6)', () => {
     const chosen = '"chosen": {"from": "blotter", "on": ["desk", "month"], "confirm": "Use these"}';
 

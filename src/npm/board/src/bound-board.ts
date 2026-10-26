@@ -51,7 +51,7 @@ export function bindBoard(board: BoardReading, data: Readonly<Record<string, Sna
     const inputs = new Map(board.inputs.map(input => [input.name, input]));
     const views = board.views.map((view, i): BoundView => {
         switch (view.kind) {
-            case 'grid': return new BoundGridView(view, held(bound, view.grid.data), locale, `views[${i}].grid.filter`);
+            case 'grid': return new BoundGridView(view, held(bound, view.grid.data), locale, `views[${i}].grid`);
             case 'pivot': return new BoundPivotView(view, held(bound, view.input));
             case 'chart': return new BoundChartView(view, readChart(view, bound, inputs, `views[${i}].chart`, undefined));
             default: throw new Error(`Internal: ${String(view satisfies never)} is not a view.`);
@@ -323,8 +323,14 @@ export class BoundGridView {
         this.source = InMemoryGridSource.from(this.#rows, { rowKey: row => row.at });
         this.source.gatherInterval = 0;
         this.source.setColumns(columns);
+        // The spec's reader reads the sort against every column the input declares; the grid sorts by those it shows.
+        view.grid.viewState.sorts.forEach((sort, i) => {
+            if (!columns.some(column => column.name === sort.column)) {
+                throw new BoardRefusedError(`${path}.sorts[${i}]`, `The grid sorts by column '${sort.column}', which it does not show.`);
+            }
+        });
         this.source.setSorts(view.grid.viewState.sorts);
-        this.source.setFilter(engineFilter(view.grid.viewState.filter, view.grid.columns, path));
+        this.source.setFilter(engineFilter(view.grid.viewState.filter, view.grid.columns, `${path}.filter`));
     }
 
     /** How many leading columns are pinned. */
@@ -537,10 +543,11 @@ function valuesUnder(pivot: BoundPivotView, on: readonly string[], cells: readon
         group.items.add(steps.map(step => publicKeyId(step.item)).join('\u001f'));
     }
     const columns = on.map(name => column(name, 'The link compares column'));
+    const groupList = [...groups.values()];
     const tuples: BoardValue[][] = [];
     for (let row = 0; row < snapshot.rowCount; row++) {
         if (hidden.some(h => h.hidden.has(publicKeyId(pivotItemKeyAt(h.column, row))))) continue;
-        const under = [...groups.values()].some(g => g.items.has(g.columns.map(c => publicKeyId(pivotItemKeyAt(c, row))).join('\u001f')));
+        const under = groupList.some(g => g.items.has(g.columns.map(c => publicKeyId(pivotItemKeyAt(c, row))).join('\u001f')));
         if (under) tuples.push(columns.map(c => valueAt(c, row)));
     }
     return new LinkCondition(on, tuples);
