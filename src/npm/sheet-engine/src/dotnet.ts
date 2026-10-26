@@ -267,7 +267,11 @@ export function fusedProductError(a: number, b: number, minusProduct: number): n
 
 // ---- Formatting ------------------------------------------------------------------------------------------
 
-/** The significant digits and decimal exponent of a finite, non-zero double rounded to `digits` digits, as .NET rounds them: the exact value, a midpoint away from zero. */
+/**
+ * The significant digits and decimal exponent of a finite, non-zero double rounded to `digits` digits, as ADR-0047
+ * reads a number: the exact value, a midpoint away from zero. (.NET's own formats round an exact midpoint to even;
+ * the C# engine reads its fifteen digits through `Arithmetic.AtFifteenDigits`, which rounds it away from zero.)
+ */
 function significant(x: number, digits: number): { digits: string; exponent: number } {
     const spelled = Math.abs(x).toExponential(digits - 1);
     const e = spelled.indexOf('e');

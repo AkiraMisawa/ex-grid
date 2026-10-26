@@ -38,10 +38,31 @@ internal static class Arithmetic
     /// </summary>
     public static bool ApproximatelyEqual(double a, double b) => a == b || AtFifteenDigits(a) == AtFifteenDigits(b);
 
-    /// <summary>A number rounded to 15 significant digits. .NET formats the exact decimal value
-    /// of the double and rounds a midpoint away from zero.</summary>
-    internal static double AtFifteenDigits(double x) =>
-        double.IsFinite(x) ? double.Parse(x.ToString("E14", CultureInfo.InvariantCulture), CultureInfo.InvariantCulture) : x;
+    /// <summary>
+    /// A number rounded to 15 significant digits, half away from zero on its exact decimal value (ADR-0047),
+    /// as the nearest double: every place the engine reads a number at Excel's precision spells this one
+    /// with <c>"E14"</c> or <c>"G15"</c>, which writes its 15 digits back exactly. .NET's own <c>"E14"</c>
+    /// rounds the exact decimal value too, but an exact midpoint to even: 1.000030517578125 (1+2^-15) is
+    /// 1.00003051757812 there and 1.00003051757813 here, as the Script Core reads it. The differential
+    /// run found it (src/npm/sheet-engine/differential/README.md).
+    /// </summary>
+    internal static double AtFifteenDigits(double x)
+    {
+        if (!double.IsFinite(x) || x == 0) return x;
+        var rounded = double.Parse(x.ToString("E14", CultureInfo.InvariantCulture), CultureInfo.InvariantCulture);
+        // A midpoint is a double whose exact value has 16 significant digits, the last a 5. "E15" spells 16
+        // digits, rounded from the 17th, so it shows every midpoint, and "E800", every digit any double has,
+        // tells a midpoint from a number beside one.
+        var magnitude = Math.Abs(x);
+        var sixteen = magnitude.ToString("E15", CultureInfo.InvariantCulture);
+        if (sixteen[16] != '5') return rounded;
+        var exact = magnitude.ToString("E800", CultureInfo.InvariantCulture);
+        if (!exact.AsSpan(0, 17).SequenceEqual(sixteen.AsSpan(0, 17)) || exact.AsSpan(17, 785).IndexOfAnyExcept('0') >= 0) return rounded;
+        var kept = long.Parse(sixteen[0] + sixteen[2..16], CultureInfo.InvariantCulture) + 1;
+        var exponent = int.Parse(sixteen.AsSpan(18), NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture) - 14;
+        var away = double.Parse($"{kept.ToString(CultureInfo.InvariantCulture)}E{exponent.ToString(CultureInfo.InvariantCulture)}", CultureInfo.InvariantCulture);
+        return x < 0 ? -away : away;
+    }
 
     private static bool Near(double a, double b, double tolerance)
     {

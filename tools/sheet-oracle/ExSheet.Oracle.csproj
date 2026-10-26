@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- The C# side of @ex-grid/sheet-engine's differential runs (ADR-0370, section 2): it answers, line by
+       line, what ExSheet.Engine gives for the Sheets the TypeScript side draws. Real cultures, so no
+       InvariantGlobalization. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+    <RootNamespace>ExSheet.Oracle</RootNamespace>
+    <UseAppHost>false</UseAppHost>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\ExSheet.Engine\ExSheet.Engine.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -657,7 +657,7 @@ internal static partial class FunctionLibrary
     {
         if (number == 0) return 0;
         // "E14": 15 significant digits, d.dddddddddddddd, then the exponent.
-        var spelled = Math.Abs(number).ToString("E14", CultureInfo.InvariantCulture);
+        var spelled = Arithmetic.AtFifteenDigits(Math.Abs(number)).ToString("E14", CultureInfo.InvariantCulture);
         var mantissa = spelled[0] + spelled[2..16];
         var exponent = int.Parse(spelled.AsSpan(17), NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture);
         // How many of the 15 digits sit at or above the 10^-digits place.

@@ -427,7 +427,7 @@ internal static partial class FunctionLibrary
     /// documents, so a kept blank is 0 whichever way it is read (<see cref="Made"/>), an answer that
     /// agrees with every reading rather than one a run read; an Error Value is the result. An operator
     /// on ranges is evaluated as an array first (ADR-0125), so <c>SUMPRODUCT((A1:A3="x")*B1:B3)</c>
-    /// counts what it is meant to.
+    /// counts what it is meant to. A sum past the largest double is <c>#NUM!</c>.
     /// </summary>
     private static Operand SumProduct(FunctionCall call)
     {
@@ -454,6 +454,6 @@ internal static partial class FunctionLibrary
                 sum += product;
             }
         }
-        return Operand.Of(Value.FromNumber(sum));
+        return Operand.Of(Evaluator.Number(sum));
     }
 }
