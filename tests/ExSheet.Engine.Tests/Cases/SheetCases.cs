@@ -364,7 +364,7 @@ internal sealed class Run(CultureInfo culture)
     private static readonly string[] Verbs =
     [
         "enter", "enterAll", "enterRun", "do", "check", "undo", "redo", "reopen", "remember", "read", "copy",
-        "setNumberFormat", "setAlignment", "declareTable", "pushTable", "setToday", "setSeed", "setClock", "recalculateVolatile", "getDisplay", "setCellFormat",
+        "setNumberFormat", "setAlignment", "declareTable", "pushTable", "setToday", "setSeed", "setClock", "recalculateVolatile", "getDisplay", "setCellFormat", "show",
     ];
 
     private static readonly string[] Modifiers = ["on", "expect", "note"];
@@ -620,6 +620,11 @@ internal sealed class Run(CultureInfo culture)
             case "recalculateVolatile":
                 outcome.Change = Workbook.RecalculateVolatile().For(sheet);
                 break;
+            case "show":
+                // The Sheet shown, by its name.
+                Workbook.Shown = Workbook.Find((string)argument!) ?? throw new InvalidDataException($"The Workbook has no Sheet '{(string)argument!}' to show.");
+                outcome.Sheet = Workbook.Shown;
+                break;
             default:
                 throw new InvalidDataException($"'{verb}' is no step.");
         }
@@ -847,6 +852,13 @@ internal sealed class Run(CultureInfo culture)
                 break;
             case "clockReads":
                 actual = _clockReads - outcome.ClockReadsBefore;
+                break;
+            case "stepSheet":
+                // The Sheet a step was done on, or made: an inserted or copied Sheet is its step's.
+                actual = outcome.Step?.Sheet.Name ?? throw new InvalidDataException($"{where}: no step to read.");
+                break;
+            case "changesSheets":
+                actual = outcome.WorkbookChange?.ChangesSheets ?? throw new InvalidDataException($"{where}: only a step, an undo or a redo reads whether it changed the Sheets.");
                 break;
             case "isUndone":
                 actual = (outcome.Step ?? throw new InvalidDataException($"{where}: no step to read.")).IsUndone;

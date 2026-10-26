@@ -311,7 +311,7 @@ function cultureOf(name: string): Culture {
 
 const verbs = new Set([
     'enter', 'enterAll', 'enterRun', 'do', 'check', 'undo', 'redo', 'reopen', 'remember', 'read', 'copy',
-    'setNumberFormat', 'setAlignment', 'declareTable', 'pushTable', 'setToday', 'setSeed', 'setClock', 'recalculateVolatile', 'getDisplay', 'setCellFormat',
+    'setNumberFormat', 'setAlignment', 'declareTable', 'pushTable', 'setToday', 'setSeed', 'setClock', 'recalculateVolatile', 'getDisplay', 'setCellFormat', 'show',
 ]);
 const modifiers = new Set(['on', 'expect', 'note']);
 
@@ -568,6 +568,14 @@ class Run {
             case 'recalculateVolatile':
                 outcome.change = this.workbook.recalculateVolatile().for(sheet);
                 break;
+            case 'show': {
+                // The Sheet shown, by its name.
+                const shown = this.workbook.find(text(argument, 'show'));
+                if (shown === undefined) throw new CaseError(`The Workbook has no Sheet '${text(argument, 'show')}' to show.`);
+                this.workbook.shown = shown;
+                outcome.sheet = shown;
+                break;
+            }
             default:
                 throw new CaseError(`'${verb}' is no step.`);
         }
@@ -771,6 +779,15 @@ class Run {
                 break;
             case 'clockReads':
                 actual = this.#clockReads - outcome.clockReadsBefore;
+                break;
+            case 'stepSheet':
+                // The Sheet a step was done on, or made: an inserted or copied Sheet is its step's.
+                if (outcome.step === undefined) throw new CaseError(`${where}: no step to read.`);
+                actual = outcome.step.sheet.name;
+                break;
+            case 'changesSheets':
+                if (outcome.workbookChange === undefined) throw new CaseError(`${where}: only a step, an undo or a redo reads whether it changed the Sheets.`);
+                actual = outcome.workbookChange.changesSheets;
                 break;
             case 'isUndone':
                 if (outcome.step === undefined) throw new CaseError(`${where}: no step to read.`);

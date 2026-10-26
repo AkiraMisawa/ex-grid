@@ -665,7 +665,8 @@ name; `read`; `copy` a `range` `as` a name for a later `paste`; `setNumberFormat
 `setCellFormat` (`ranges` and a `change`) directly, outside any step; `declareTable` and `pushTable` for a
 Linked Table; `setToday`, `setSeed` and `recalculateVolatile`; `setClock`, a clock that starts `from` a
 moment written `yyyy-MM-ddTHH:mm:ss` and moves on a finite `step` of seconds each time it is read; and
-`getDisplay` of a cell `at` a `width`, so that a width refused is a refusal to expect. An edit is an object
+`getDisplay` of a cell `at` a `width`, so that a width refused is a refusal to expect; and `show`, the Sheet
+shown, by its name. An edit is an object
 of one key, the factory, and its arguments, as `SheetEdit` takes them.
 
 An expectation names readings: per cell, `values` (a string is text, a number a double, `true`/`false` a
@@ -675,7 +676,8 @@ range, `cellFormats` (the Cell Formats it shows, each once) and `edgeLines` (the
 each a set written in the ordinal order of its members' JSON text; of
 the Sheet, `document`, `columnWidths`, `entryAddresses` and `valueAddresses`; of the step, `change`,
 `changes` (what a step, an undo or a redo changed on each Sheet it reached, by the Sheet's name), `refusal`
-(a `check`'s), `isUndone`, `ranges`, and `clockReads` (how often the step read the clock); of the Workbook,
+(a `check`'s), `isUndone`, `ranges`, `stepSheet` (the Sheet a step was done on or made), `changesSheets`, and
+`clockReads` (how often the step read the clock); of the Workbook,
 `sheets`, `shown`, `workbook` (its `culture`, `today`, `hasVolatileFormulas` and `linkedTables`), and
 `picture` or `pictureNot` against one remembered. An object or a list compares in full where it is written, and a number
 exactly (`-0` apart from `0`) unless it is `{"near", "within"}`.
