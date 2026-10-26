@@ -1,6 +1,6 @@
 import { test, expect, scrollRowToTop, circuitQuiet, setRoundTrip, dataRowCount, setTicked } from './fixtures.mjs';
 import { readClipboard } from './sheet-helpers.mjs';
-import { API_URL, SERVER } from './hosting.mjs';
+import { API_URL, REACT, SERVER } from './hosting.mjs';
 import { expectCodeIsSource } from './demo-code.mjs';
 
 // /pivot-db (ADR-0065/0066/0069), under ExPivot's own markup and under ExPivot.MudBlazor's Chrome:
@@ -64,6 +64,11 @@ async function expectSameReports(page) {
     }).toBe('the same');
 }
 
+// The questions that bring the server pivot's report: a report Window on the Blazor hosts, which ask the server's
+// report through PivotReportSource.Fetch, and the Leaf Aggregates on the React host, whose pivot builds the report
+// from them (ADR-0370 section 3).
+const REPORT_QUESTION = REACT ? 'aggregate' : 'Window';
+
 /** How many questions of a kind the page has asked the server, as its status line counts them. */
 async function asked(page, kind) {
     const text = await page.locator('#pivot-db-server-status').textContent();
@@ -82,7 +87,7 @@ test('LV-24/ADR-0151: a server report scrolls beyond its first Window with bound
     await scrollRowToTop(grid, last);
     await expect(grid.locator(`[id$='-r${last}c0']`)).toContainText('Grand Total');
     expect(await rows(page, 'server').count()).toBeLessThan(100);
-    expect(await asked(page, 'Window')).toBeGreaterThan(1);
+    expect(await asked(page, REPORT_QUESTION)).toBeGreaterThan(1);
 });
 
 test('LV-24/ADR-0151: a report that shrinks under the Window scrolled to shows its last rows, and scrolls on', async ({ page }) => {
@@ -149,7 +154,7 @@ test('LV-34/FN-3a/ADR-0182/0183: a server report scrolls within the Window it re
         await expect(placeholders).toHaveCount(0);
         await circuitQuiet();
         const onScreen = await rows(page, 'server').count();
-        const atFiveHundred = await asked(page, 'Window');
+        const atFiveHundred = await asked(page, REPORT_QUESTION);
         if (!SERVER) {
             await expect.poll(() => windowsAsked.at(-1)).toEqual({ start: 440, count: onScreen + 120 });
         }
@@ -160,16 +165,16 @@ test('LV-34/FN-3a/ADR-0182/0183: a server report scrolls within the Window it re
             await scrollRowToTop(grid, row);
             await expect(placeholders).toHaveCount(0);
             await circuitQuiet();
-            expect(await asked(page, 'Window'), `asked at row ${row}`).toBe(atFiveHundred);
+            expect(await asked(page, REPORT_QUESTION), `asked at row ${row}`).toBe(atFiveHundred);
         }
 
         // Row 555: every row on screen is held, but the tenth row below them is not. The next Window
         // is asked for, once, and the rows on screen stay painted while it is out.
         await scrollRowToTop(grid, 555);
-        await expect.poll(() => asked(page, 'Window')).toBe(atFiveHundred + 1);
+        await expect.poll(() => asked(page, REPORT_QUESTION)).toBe(atFiveHundred + 1);
         await expect(placeholders).toHaveCount(0);
         await circuitQuiet();
-        expect(await asked(page, 'Window')).toBe(atFiveHundred + 1);
+        expect(await asked(page, REPORT_QUESTION)).toBe(atFiveHundred + 1);
         if (!SERVER) {
             await expect.poll(() => windowsAsked.at(-1)).toEqual({ start: 495, count: onScreen + 120 });
         }
@@ -211,19 +216,19 @@ test('LV-34/FN-3a/ADR-0182/0183: a question asked early stays in flight while th
         await circuitQuiet();
         const onScreen = await rows(page, 'server').count();
         await expect.poll(lastWindow).toEqual({ start: 440, count: onScreen + 120 });
-        const base = await asked(page, 'Window');
+        const base = await asked(page, REPORT_QUESTION);
         for (let row = 505; row <= 550; row += 5) {
             await scrollRowToTop(grid, row);
         }
         await circuitQuiet();
-        expect(await asked(page, 'Window')).toBe(base);
+        expect(await asked(page, REPORT_QUESTION)).toBe(base);
 
         // Row 555: the tenth row below the rows on screen is not held. The next Window is asked for, and
         // its answer held at the gate. Every row on screen is still held, and the report is not dimmed.
         const sentBefore = (await windowsAsked()).length;
         await gate(true);
         await scrollRowToTop(grid, 555);
-        await expect.poll(() => asked(page, 'Window')).toBe(base + 1);
+        await expect.poll(() => asked(page, REPORT_QUESTION)).toBe(base + 1);
         await expect.poll(lastWindow).toEqual({ start: 495, count: onScreen + 120 });
         await circuitQuiet();
         await expect(placeholders).toHaveCount(0);
@@ -235,7 +240,7 @@ test('LV-34/FN-3a/ADR-0182/0183: a question asked early stays in flight while th
         for (let row = 560; row <= 600; row += 5) {
             await scrollRowToTop(grid, row);
             await circuitQuiet();
-            expect(await asked(page, 'Window'), `asked at row ${row}`).toBe(base + 1);
+            expect(await asked(page, REPORT_QUESTION), `asked at row ${row}`).toBe(base + 1);
         }
         await expect(placeholders).not.toHaveCount(0);
         await expect(grid).toHaveClass(/\bex-loading\b/);
@@ -247,15 +252,15 @@ test('LV-34/FN-3a/ADR-0182/0183: a question asked early stays in flight while th
         await expect(placeholders).toHaveCount(0);
         await expect(grid).not.toHaveClass(/\bex-loading\b/);
         await circuitQuiet();
-        expect(await asked(page, 'Window')).toBe(base + 1);
+        expect(await asked(page, REPORT_QUESTION)).toBe(base + 1);
 
         // The new Window reaches sixty rows past the rows asked for at 555: at 605 the tenth row below the
         // rows on screen is its last, and nothing is asked; at 606 it leaves it, and one question more is.
         await scrollRowToTop(grid, 605);
         await circuitQuiet();
-        expect(await asked(page, 'Window')).toBe(base + 1);
+        expect(await asked(page, REPORT_QUESTION)).toBe(base + 1);
         await scrollRowToTop(grid, 606);
-        await expect.poll(() => asked(page, 'Window')).toBe(base + 2);
+        await expect.poll(() => asked(page, REPORT_QUESTION)).toBe(base + 2);
         await expect.poll(lastWindow).toEqual({ start: 546, count: onScreen + 120 });
         await expect(placeholders).toHaveCount(0);
     } finally {
@@ -302,16 +307,16 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(page.locator('#pivot-db-snapshot-status'))
                 .toContainText(`Read ${status.trades.toLocaleString('en-US')} trades at version ${status.version} `);
             await expectSameReports(page);
-            expect(await asked(page, 'Window')).toBeGreaterThanOrEqual(1);
+            expect(await asked(page, REPORT_QUESTION)).toBeGreaterThanOrEqual(1);
             // A server's source can be refreshed; the bundled source is refreshed by a new source
             // instead, and shows no Refresh (ADR-0066).
             await expect(toolbarButton(page, 'server', 'Refresh')).toBeVisible();
             await expect(toolbarButton(page, 'snapshot', 'Refresh')).toHaveCount(0);
             // The server's data holds still while live updates are off: a Refresh asks again and
             // shows the same numbers.
-            const aggregates = await asked(page, 'Window');
+            const aggregates = await asked(page, REPORT_QUESTION);
             await toolbarButton(page, 'server', 'Refresh').click();
-            await expect.poll(() => asked(page, 'Window')).toBe(aggregates + 1);
+            await expect.poll(() => asked(page, REPORT_QUESTION)).toBe(aggregates + 1);
             await expectSameReports(page);
         });
 
@@ -323,9 +328,9 @@ for (const chrome of ['builtin', 'mud']) {
             await setTicked(section(page, 'snapshot').getByRole('checkbox', { name: 'Month', exact: true }));
             await expect.poll(async () => (await painted(page, 'snapshot')).rows).toBeGreaterThan(before.rows);
             // The same layout on the server's pivot: a GROUP BY over three fields, answered in SQL.
-            const aggregates = await asked(page, 'Window');
+            const aggregates = await asked(page, REPORT_QUESTION);
             await page.locator('#pivot-db-same-layout').click();
-            await expect.poll(() => asked(page, 'Window')).toBeGreaterThan(aggregates);
+            await expect.poll(() => asked(page, REPORT_QUESTION)).toBeGreaterThan(aggregates);
             await expectSameReports(page);
             await expect(section(page, 'server').getByRole('checkbox', { name: 'Month', exact: true })).toBeChecked();
         });

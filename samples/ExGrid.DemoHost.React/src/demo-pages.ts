@@ -75,6 +75,10 @@ export const demoPages: readonly DemoPage[] = Object.freeze([
         description: 'A rate-delta report by tenor: desks and curves in Rows, tenors in Columns, ordered ON to 30Y by the page\'s Order Key, with 18M and 1Y6M two Items side by side (ADR-0060).',
     },
     {
+        route: 'pivot-db', title: 'Pivot over a database', group: 'ExPivot',
+        description: 'The demo API server\'s SQLite trades two ways, side by side: read over Arrow into a Snapshot and pivoted here, and asked of the server\'s Pivot Source, which answers each question\'s Leaf Aggregates in SQL (ADR-0066, ADR-0069, ADR-0370).',
+    },
+    {
         route: 'sheet', title: 'Sheet', group: 'ExSheet',
         description: 'ExSheet drawn by ExGrid: Formulas, editing, paste, Delete, the fill keys and undo, with ?lang=ja for the Sheet\'s Japanese (ADR-0046, ADR-0370).',
     },
