@@ -50,6 +50,10 @@ export interface FieldListModel {
     readonly locale: string;
     /** The words. */
     readonly words: PivotScreenWords;
+    /** Whether Defer Layout Update is ticked: the pane's changes build a pending layout, which Update applies. */
+    readonly deferred: boolean;
+    /** Whether Update would apply anything: the pending layout is not the report's. */
+    readonly canUpdate: boolean;
     /** The field menu or panel open in the pane: the entry it was opened on, and its frame, which the pane places
      * under that entry. */
     readonly popup: { readonly entry: PivotEntry; readonly frame: HTMLElement } | undefined;
@@ -65,6 +69,10 @@ export interface FieldListHandlers {
     readonly dragging: (removable: boolean) => void;
     /** An entry's button was pressed, which opens its menu or closes it (ADR-0061). */
     readonly menu: (entry: PivotEntry) => void;
+    /** Defer Layout Update was ticked or unticked. */
+    readonly defer: (deferred: boolean) => void;
+    /** Update was pressed. */
+    readonly update: () => void;
 }
 
 /** What is dragged: a field from the list, or an entry of an Area. */
@@ -121,6 +129,9 @@ export class FieldListView {
     readonly #search: HTMLInputElement;
     readonly #list: HTMLUListElement;
     readonly #dragCaption: HTMLElement;
+    readonly #defer: HTMLInputElement;
+    readonly #deferCaption: HTMLElement;
+    readonly #update: HTMLButtonElement;
     readonly #areas = new Map<PivotArea, AreaElements>();
     readonly #areaBoxes = new Set<HTMLElement>();
     #model: FieldListModel | undefined;
@@ -186,7 +197,22 @@ export class FieldListView {
             this.#areaBoxes.add(box);
             areas.append(box);
         }
-        body.append(this.#chooseCaption, this.#search, this.#list, this.#dragCaption, areas);
+        // Excel's Defer Layout Update at the pane's foot (ADR-0061): while it is ticked, the pane's changes build a
+        // pending layout, and Update applies it in one change.
+        const defer = element(document, 'div', 'ex-pivot-defer');
+        const deferLabel = element(document, 'label', 'ex-pivot-defer-label');
+        this.#defer = element(document, 'input');
+        this.#defer.type = 'checkbox';
+        this.#defer.setAttribute('data-ex-claims', 'click');
+        this.#defer.addEventListener('change', () => { this.#handlers.defer(this.#defer.checked); });
+        this.#deferCaption = element(document, 'span');
+        deferLabel.append(this.#defer, this.#deferCaption);
+        this.#update = element(document, 'button', 'ex-pivot-update');
+        this.#update.type = 'button';
+        this.#update.setAttribute('data-ex-claims', 'click');
+        this.#update.addEventListener('click', () => { this.#handlers.update(); });
+        defer.append(deferLabel, this.#update);
+        body.append(this.#chooseCaption, this.#search, this.#list, this.#dragCaption, areas, defer);
         pane.append(heading, body);
         root.append(pane);
     }
@@ -208,6 +234,10 @@ export class FieldListView {
         this.#search.setAttribute('aria-label', search);
         this.#list.setAttribute('aria-label', title);
         this.#dragCaption.textContent = words.word('drag-fields');
+        this.#deferCaption.textContent = words.word('defer-layout-update');
+        this.#defer.checked = model.deferred;
+        this.#update.textContent = words.word('update');
+        this.#update.disabled = !model.canUpdate;
         this.#drawFields();
         this.#drawAreas();
         this.#placeMenu();

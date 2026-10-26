@@ -15,8 +15,8 @@ import {
 } from '@ex-grid/core';
 import {
     FetchingPivotSource, LocalPivotReportSource, chooseLayout, defaultMaxLeaves, emptyPivotLayout, formatPivotCount, isLayoutChosen, isValuesPseudoField,
-    layoutChoiceChanges, pivotLayoutChoices, pivotValueCaptions, placementOf, placementsIn, isItemCollapsed, pivotWord, pivotWordIdList, setCollapsed,
-    itemKeysEqual, pivotItemKeyId, validateLayout, type PivotDisplayRow, type PivotEntry, type PivotFieldPlacement, type PivotItemInfo, type PivotItemCounts, type PivotLabel, type PivotLayout, type PivotLayoutChoice,
+    layoutChoiceChanges, pivotLayoutChoices, pivotValueCaptions, placementOf, placementsIn, isItemCollapsed, pivotWord, pivotWordIdList, setCollapsed, setHiddenItems,
+    itemKeysEqual, pivotItemKeyId, validateLayout, writePivotLayoutJson, type PivotDisplayRow, type PivotEntry, type PivotFieldPlacement, type PivotItemInfo, type PivotItemCounts, type PivotLabel, type PivotLayout, type PivotLayoutChoice,
     type PivotReportRefusal, type PivotReportSettings, type PivotReportState, type PivotSlicing, type PivotSource, type PivotToggle,
     pivotReportDetailsQuery, PivotItemPage, itemsOfPage, type PivotFieldItem,
 } from '@ex-grid/pivot-engine';
@@ -27,7 +27,7 @@ import { FieldListView, fieldOf, sameEntry, type FieldListEdit, type FieldListMo
 import { ItemFilterPanel, itemsProblemText } from './item-filter';
 import { ItemListings, pendingFirst, searchItems, type FieldItems, type ItemsUnder } from './items';
 import { PivotMenuFrame, type PivotMenuCommand } from './menu';
-import { element } from './dom';
+import { clearStyle, element, writeStyle } from './dom';
 import { defined, elementAt, unreachable } from './must';
 import { fieldSettingsPanel, valueFieldSettingsPanel, type PivotPanel } from './panels';
 import { cellItems, ReportColumns, reportRows, type PivotCellItems } from './report-grid';
@@ -328,6 +328,9 @@ export class PivotView {
     #layoutGiven: PivotLayout | undefined;
     #shown: Shown;
     #asked: Question | undefined;
+    // While Defer Layout Update is ticked (ADR-0061): the layout the pane shows and builds, which Update applies, and
+    // what the pane moved into it that the report on screen does not hold yet, which a refusal of that layout names.
+    #deferred: Deferred | undefined;
     #generation = 0;
     #requests = 0;
     #refusal: string | undefined;
@@ -447,6 +450,8 @@ export class PivotView {
             close: () => { this.#setFieldListShown(false); },
             dragging: removable => { this.#paintDropRemove(removable); },
             menu: entry => { this.#toggleEntryMenu(entry); },
+            defer: deferred => { this.#setDeferred(deferred); },
+            update: () => { this.#applyPending(); },
         });
         root.append(this.#report, this.#fieldListBox);
         this.#details = new DetailsSheets({
@@ -488,7 +493,7 @@ export class PivotView {
         root.addEventListener('focusin', outside, listening);
 
         this.#askCounts();
-        if (options.layout !== undefined) this.#ask(options.layout, 'consumer', undefined);
+        if (options.layout !== undefined) this.#ask(options.layout, 'consumer', []);
         this.#draw();
     }
 
@@ -510,14 +515,21 @@ export class PivotView {
         const sourceMoved = options.source !== before.source;
         // A layout handed in is a question, unless the pane holds it already or this pivot raised it.
         const layoutMoved = options.layout !== this.#layoutGiven;
-        const consumerLayout = layoutMoved && options.layout !== undefined && options.layout !== this.#paneLayout && !this.#raised.has(options.layout)
+        const consumerLayout = layoutMoved && options.layout !== undefined && options.layout !== this.#layoutAhead && !this.#raised.has(options.layout)
             ? options.layout
             : undefined;
-        const asked = consumerLayout ?? (sourceMoved ? this.#paneLayout : undefined);
-        // Checked against the source it will be asked of before anything changes.
+        const asked = consumerLayout ?? (sourceMoved ? this.#layoutAhead : undefined);
+        // Checked against the source it will be asked of before anything changes; a new source is always asked.
         if (asked !== undefined) validateLayout(asked, this.#declared(options.source));
         this.#options = options;
         if (layoutMoved) this.#layoutGiven = options.layout;
+        // The Consumer's layout replaces the user's, a pending one too. A pending layout placing a field the new source
+        // does not have goes back to the one asked of it, which is checked above: the rest of what a layout is checked
+        // for does not depend on the source, and the pending one was made by the pane's own edits.
+        const pending = this.#deferred?.layout;
+        if (asked !== undefined && pending !== undefined && (consumerLayout !== undefined || !placesOnly(pending, this.#declared(options.source)))) {
+            this.#deferred = Object.freeze({ layout: asked, moves: Object.freeze([]) });
+        }
         const densityMoved = options.density !== before.density;
         const settingsMoved = options.locale !== before.locale || options.label !== before.label || densityMoved;
         if (options.label !== before.label) {
@@ -539,9 +551,9 @@ export class PivotView {
             this.#askCounts();
         }
         if (asked !== undefined) {
-            this.#ask(asked, consumerLayout !== undefined ? 'consumer' : 'data', undefined);
+            this.#ask(asked, consumerLayout !== undefined ? 'consumer' : 'data', []);
         } else if (settingsMoved || options.maxLeaves !== before.maxLeaves) {
-            this.#ask(this.#paneLayout, 'consumer', undefined);
+            this.#ask(this.#layoutAhead, 'consumer', []);
         }
         if (options.rowHeight !== before.rowHeight || options.density !== before.density || options.viewportHeight !== before.viewportHeight
             || options.viewportWidth !== before.viewportWidth) {
@@ -577,7 +589,7 @@ export class PivotView {
         this.#root.replaceChildren();
         this.#root.classList.remove('ex-pivot');
         this.#root.removeAttribute('data-ex-input-root');
-        this.#root.removeAttribute('style');
+        clearStyle(this.#root);
         this.#root.removeAttribute('aria-busy');
     }
 
@@ -592,9 +604,14 @@ export class PivotView {
         return this.#shown.answer !== undefined && !showsNothing(this.#shown.layout);
     }
 
-    // The pane's layout: the one the newest question asks for, or the one the report shows.
-    get #paneLayout(): PivotLayout {
+    // The layout the report is on, or on its way to: the one the newest question asks for, or the one it shows.
+    get #layoutAhead(): PivotLayout {
         return this.#asked?.layout ?? this.#shown.layout;
+    }
+
+    // The pane's layout: the pending one while Defer Layout Update is ticked, otherwise the report's.
+    get #paneLayout(): PivotLayout {
+        return this.#deferred?.layout ?? this.#layoutAhead;
     }
 
     get #maxLeaves(): number {
@@ -644,10 +661,64 @@ export class PivotView {
             this.#draw();
             return;
         }
-        this.#move(edit.layout, edit.moved);
+        // While Defer Layout Update is ticked the pane builds the pending layout, and the report and the source are
+        // left alone (ADR-0061).
+        const deferred = this.#deferred;
+        if (deferred !== undefined) {
+            const { moved } = edit;
+            // A field moved into an Area again replaces its earlier move into that Area, so the moves stay bounded.
+            const moves = moved === undefined ? deferred.moves
+                : [...deferred.moves.filter(move => move.field !== moved.field || move.area !== moved.area), moved];
+            this.#deferred = Object.freeze({ layout: edit.layout, moves: Object.freeze(moves) });
+            this.#refusal = undefined;
+            this.#draw();
+            return;
+        }
+        this.#move(edit.layout, edit.moved === undefined ? [] : [edit.moved]);
     }
 
-    #move(layout: PivotLayout, moved: FieldListMove | undefined, toggled?: ToggledItem): void {
+    // A gesture on the report or the Pivot Toolbar, made to the layout the report is on. While Defer Layout Update
+    // holds a pending layout, it reaches that one too, so Update does not take it back; where the pending layout does
+    // not hold what the gesture was for, it stays as it is. A gesture that would change nothing now asks nothing.
+    #reportEdit(edit: (layout: PivotLayout) => PivotLayout | undefined, toggled?: ToggledItem): void {
+        const deferred = this.#deferred;
+        if (deferred !== undefined) this.#deferred = Object.freeze({ ...deferred, layout: edit(deferred.layout) ?? deferred.layout });
+        const now = this.#layoutAhead;
+        const next = edit(now);
+        if (next === undefined || next === now) this.#draw();
+        else this.#move(next, [], toggled);
+    }
+
+    // Defer Layout Update ticked holds the pane's changes from here on; unticked, it applies them, as Excel does.
+    #setDeferred(deferred: boolean): void {
+        const held = this.#deferred;
+        if (deferred === (held !== undefined)) return;
+        if (deferred) {
+            this.#deferred = Object.freeze({ layout: this.#layoutAhead, moves: Object.freeze([]) });
+            this.#draw();
+            return;
+        }
+        const unticked = defined(held, 'Defer Layout Update ticked');
+        this.#deferred = undefined;
+        if (this.#pendingApplies(unticked.layout)) this.#move(unticked.layout, unticked.moves);
+        else this.#draw();
+    }
+
+    // Update applies the pending layout in one change, and Defer Layout Update stays ticked. The pending layout stays
+    // the pane's, as the Razor component keeps it: refused, it is still the user's work, with the moves it names.
+    #applyPending(): void {
+        const held = this.#deferred;
+        if (held !== undefined && this.#pendingApplies(held.layout)) this.#move(held.layout, held.moves);
+    }
+
+    // Whether a pending layout would change the report's: layouts are compared by what they say, since a gesture on
+    // the report makes the pending layout and the report's anew, each its own.
+    #pendingApplies(pending: PivotLayout): boolean {
+        const now = this.#layoutAhead;
+        return pending !== now && writePivotLayoutJson(pending) !== writePivotLayoutJson(now);
+    }
+
+    #move(layout: PivotLayout, moved: readonly FieldListMove[], toggled?: ToggledItem): void {
         // A move after a toggle asks for another report: the Item toggled is no longer the one to follow.
         this.#placing?.();
         this.#refusal = undefined;
@@ -655,7 +726,7 @@ export class PivotView {
         this.#draw();
     }
 
-    #ask(layout: PivotLayout, asked: Cause, moved: FieldListMove | undefined, toggled?: ToggledItem): void {
+    #ask(layout: PivotLayout, asked: Cause, moved: readonly FieldListMove[], toggled?: ToggledItem): void {
         const superseded = this.#asked;
         superseded?.controller.abort();
         // A layout asked again before its answer came keeps what that question was owed: the user's raises once
@@ -668,7 +739,7 @@ export class PivotView {
         // An Item toggled into the layout keeps the Focus in its report, asked again or not.
         const focusOn = toggled ?? (again ? superseded.toggled : undefined);
         // A user's move made while a user's question was out was taken against it, and carries its moves on.
-        const moves = [...(raise && superseded?.raise === true ? superseded.moves : []), ...(moved === undefined ? [] : [moved])];
+        const moves = [...(raise && superseded?.raise === true ? superseded.moves : []), ...moved];
         const generation = ++this.#generation;
         if (showsNothing(layout) && layout.filters.length === 0) {
             // Nothing to compute: the report is the empty box that says how to start. A layout with fields in Filters
@@ -727,6 +798,11 @@ export class PivotView {
     #showLayout(layout: PivotLayout, answered: { readonly answer: PivotReportState; readonly question: Question } | undefined, raise: boolean): void {
         const answer = answered?.answer;
         this.#shown = { layout, answer, question: answered?.question };
+        // A pending move the report on screen now holds is news no more: a refusal of the pending layout names it no more.
+        const deferred = this.#deferred;
+        if (deferred !== undefined && deferred.moves.length > 0) {
+            this.#deferred = Object.freeze({ layout: deferred.layout, moves: Object.freeze(deferred.moves.filter(move => !holdsMove(layout, move))) });
+        }
         this.#showReport(answered);
         if (answer !== undefined && this.#counts !== undefined && this.#counts.sourceVersion !== answer.metadata.sourceVersion) {
             // Counted under another Source Version: asked again, so the marks follow the data (ADR-0370 section 3).
@@ -740,7 +816,8 @@ export class PivotView {
     }
 
     // A refused question: the pane goes back to the layout the report shows, and the sentence says why. Every
-    // move taken against the refused layout went with it, and is named (ADR-0370 section 3).
+    // move taken against the refused layout went with it, and is named (ADR-0370 section 3). A pending layout, while
+    // Defer Layout Update is ticked, is the user's work in the pane, and stays, as the Razor component keeps it.
     #refuse(refusal: PivotReportRefusal, question: Question): void {
         const { message, fields } = this.#sentenceFor(refusal, question);
         this.#refusal = message;
@@ -752,7 +829,7 @@ export class PivotView {
         // The moves the refused layout still holds: a field moved and then taken out again is not in it.
         // A field may stand in Values as well as in an axis, so a move is known by its field and its Area.
         const held = question.moves.filter((move, i, all) => all.findLastIndex(later => later.field === move.field && later.area === move.area) === i
-            && (move.area === 'values' ? question.layout.values.some(value => value.field === move.field) : placementOf(question.layout, move.field)?.area === move.area));
+            && holdsMove(question.layout, move));
         const named = [...new Set(held.map(move => move.field))];
         const source = refusal.sourceRefusal;
         if (source?.kind !== 'tooManyLeaves') return { message: refusal.message, fields: refusal.field === undefined ? named : [refusal.field] };
@@ -880,7 +957,7 @@ export class PivotView {
     // report on screen is asked again under its layout, unless something newer is asked already.
     #reportMoved(answer: PivotReportState): void {
         if (this.#destroyed || this.#shown.answer !== answer || this.#asked !== undefined) return;
-        this.#ask(this.#shown.layout, 'data', undefined);
+        this.#ask(this.#shown.layout, 'data', []);
         this.#draw();
     }
 
@@ -1012,17 +1089,12 @@ export class PivotView {
             metadata: answer.metadata,
             row: context.row,
             column: context.column,
+            report: this.#layoutAhead,
             pane: this.#paneLayout,
             fieldListShown: this.#fieldListShown,
             captionOf: field => this.#captionOf(field),
         }, {
-            // A command that would change nothing now asks nothing.
-            edit: (edit, toggled) => {
-                const now = this.#paneLayout;
-                const next = edit(now);
-                if (next === undefined || next === now) this.#draw();
-                else this.#move(next, undefined, toggled === undefined ? undefined : this.#toggledItemOf(context.row, toggled));
-            },
+            edit: (edit, toggled) => { this.#reportEdit(edit, toggled === undefined ? undefined : this.#toggledItemOf(context.row, toggled)); },
             showDetails: valueColumn => { this.#showDetails(answer, question, context.row, valueColumn); },
             valueFieldSettings: (valueField, holds) => { this.#openFromReport(valueField, holds); },
             setFieldListShown: shown => { this.#setFieldListShown(shown); },
@@ -1053,10 +1125,10 @@ export class PivotView {
     }
 
     // An outer Item's button pressed, or its label double clicked: the Item is collapsed or expanded (ADR-0063).
-    // The press does what the button it was taken on said, against the pane's layout, the one the newest question
+    // The press does what the button it was taken on said, against the report's layout, the one the newest question
     // asks for; where that layout no longer holds the Item as the button painted it, a press already moved it, or
-    // its field left the pane, and the press is refused rather than turned into its opposite (spine rule 6). Two
-    // presses of one painted button collapse once, as the Razor component's do.
+    // its field left the layout, and the press is refused rather than turned into its opposite (spine rule 6). Two
+    // presses of one painted button collapse once, as the Razor component's do. A pending layout follows it.
     // An Item toggled on a row, as it keeps the Focus in the report the toggle brings.
     #toggledItemOf(row: PivotDisplayRow, toggled: PivotFieldItem): ToggledItem {
         const level = row.rowPath.findIndex(step => step.field === toggled.field && itemKeysEqual(step.item, toggled.item));
@@ -1067,10 +1139,12 @@ export class PivotView {
     // The Item keeps the Focus in the report the press brings.
     #toggled(toggle: PivotToggle, row: PivotDisplayRow): void {
         if (this.#destroyed) return;
-        const pane = this.#paneLayout;
-        const placed = pane.rows.find(placement => placement.field === toggle.field);
+        const now = this.#layoutAhead;
+        const placed = now.rows.find(placement => placement.field === toggle.field);
         if (placed === undefined || isItemCollapsed(placed, toggle.item) !== toggle.isCollapsed) return;
-        this.#move(setCollapsed(pane, toggle.field, toggle.item, !toggle.isCollapsed), undefined, this.#toggledItemOf(row, toggle));
+        this.#reportEdit(layout => (layout.rows.some(placement => placement.field === toggle.field)
+            ? setCollapsed(layout, toggle.field, toggle.item, !toggle.isCollapsed)
+            : undefined), this.#toggledItemOf(row, toggle));
     }
 
     // The report asked again of the Pivot Source, under the pane's layout. A move of the user's still out is asked again
@@ -1081,7 +1155,7 @@ export class PivotView {
         this.#refreshOwed = true;
         this.#refusal = undefined;
         this.#askCounts();
-        this.#ask(this.#paneLayout, 'data', undefined);
+        this.#ask(this.#layoutAhead, 'data', []);
         this.#draw();
     }
 
@@ -1134,12 +1208,16 @@ export class PivotView {
             this.#close('opener');
             return;
         }
-        const pane = this.#paneLayout;
+        const report = this.#layoutAhead;
         const handlers = {
-            // OK's layout is the pane's next, taken against the layout Filter… was opened on (spine rule 6).
+            // OK's Hidden Items are the report's next, taken against the layout Filter… was opened on (spine rule 6),
+            // and reach a pending layout that holds the field too.
             apply: (layout: PivotLayout) => {
                 this.#finish(surface, () => {
-                    this.#edited({ layout, against: pane, moved: undefined });
+                    if (report === this.#layoutAhead) {
+                        const hidden = defined(layout.filters.find(placement => placement.field === field), `the report filter '${field}'`).hiddenItems;
+                        this.#reportEdit(now => (placementOf(now, field) === undefined ? undefined : setHiddenItems(now, field, hidden, []).layout));
+                    }
                     return undefined;
                 });
             },
@@ -1150,9 +1228,9 @@ export class PivotView {
         };
         this.#items.retry(field);
         const popup = new ItemFilterPanel(this.#root.ownerDocument,
-            { layout: pane, field, caption: this.#captionOf(field), place: 'toolbar-start', locale: this.#locale, words: this.#words }, handlers);
+            { layout: report, field, caption: this.#captionOf(field), place: 'toolbar-start', locale: this.#locale, words: this.#words }, handlers);
         this.#closeOnLeaving(popup.element);
-        const surface: OpenSurface = { kind: 'band', field, against: pane, popup };
+        const surface: OpenSurface = { kind: 'band', field, against: report, popup };
         this.#openSurface(surface);
     }
 
@@ -1225,9 +1303,10 @@ export class PivotView {
     }
 
     // The Layout menu (ADR-0061): Excel's Design tab choices, the current one of each group marked, and one that
-    // would change nothing disabled, read from the pane's layout, which a choice is taken against.
+    // would change nothing disabled, read from the report's layout. A choice is the report's, and reaches a pending
+    // layout too.
     #layoutCommands(open: OpenSurface): readonly PivotMenuCommand[] {
-        const pane = this.#paneLayout;
+        const report = this.#layoutAhead;
         const words = this.#words;
         return pivotLayoutChoices.map(choice => {
             const id = layoutChoiceId(choice);
@@ -1235,11 +1314,11 @@ export class PivotView {
             return this.#command(open, {
                 id,
                 label: words.word(id),
-                enabled: layoutChoiceChanges(pane, choice),
-                checked: isLayoutChosen(pane, choice),
+                enabled: layoutChoiceChanges(report, choice),
+                checked: isLayoutChosen(report, choice),
                 ...(heading === undefined ? {} : { heading: words.word(heading) }),
             }, () => {
-                this.#move(chooseLayout(pane, choice), undefined);
+                this.#reportEdit(now => chooseLayout(now, choice));
                 return undefined;
             });
         });
@@ -1335,7 +1414,8 @@ export class PivotView {
     #drawMenu(valueCaptions: readonly string[] | undefined): void {
         const open = this.#open;
         const inList = open?.kind === 'entry' || open?.kind === 'panel';
-        if (open !== undefined && open.kind !== 'layout' && (open.against !== this.#paneLayout || (inList && !this.#fieldListShown))) {
+        const holding = open?.kind === 'band' ? this.#layoutAhead : this.#paneLayout;
+        if (open !== undefined && open.kind !== 'layout' && (open.against !== holding || (inList && !this.#fieldListShown))) {
             const held = open.popup.element.contains(this.#root.ownerDocument.activeElement);
             this.#takeDown();
             // Hidden with the Field List, the keyboard goes to the toggle that shows it again.
@@ -1370,7 +1450,7 @@ export class PivotView {
     #drawBand(): void {
         const document = this.#root.ownerDocument;
         const words = this.#words;
-        const filters = this.#paneLayout.filters;
+        const filters = this.#layoutAhead.filters;
         const open = this.#open;
         const drawn: HTMLElement[] = [];
         const kept = new Set<string>();
@@ -1499,7 +1579,7 @@ export class PivotView {
         const stretch = this.#options.viewportHeight === 'stretch';
         const width = this.#options.fieldListWidth ?? 300; // oxlint-disable-line ex-grid/no-stand-in-default -- ADR-0061: the Field List's declared default width, as the Razor component's
         // The Geometry Tokens, inline on the root (ADR-0027): the Field List's width and a level's indent.
-        this.#root.setAttribute('style', `--ex-pivot-field-list-width: ${width}px; --ex-pivot-indent: ${this.#indentPx}px${stretch ? '; height: 100%; flex: 1 1 auto; min-height: 0' : ''}`);
+        writeStyle(this.#root, `--ex-pivot-field-list-width: ${width}px; --ex-pivot-indent: ${this.#indentPx}px${stretch ? '; height: 100%; flex: 1 1 auto; min-height: 0' : ''}`);
         if (this.#asked === undefined) this.#root.removeAttribute('aria-busy');
         else this.#root.setAttribute('aria-busy', 'true');
         this.#fieldListToggle.textContent = words.word('field-list-toggle');
@@ -1513,7 +1593,7 @@ export class PivotView {
         this.#fieldListToggle.setAttribute('aria-pressed', this.#fieldListShown ? 'true' : 'false');
         if (this.#notice.textContent !== (this.#refusal ?? '')) this.#notice.textContent = this.#refusal ?? ''; // oxlint-disable-line ex-grid/no-stand-in-default -- no refusal is an empty notice, which takes no room
         this.#notice.hidden = this.#refusal === undefined;
-        this.#sheet.setAttribute('style', stretch ? 'display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0' : '');
+        writeStyle(this.#sheet, stretch ? 'display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0' : '');
         const answered = this.#reportDrawn;
         // The report or the box that says why there is none, and over the report, while a placed field is
         // dragged, the mark that a drop there removes it (ADR-0061). Elements come and go rather than hide, since
@@ -1540,10 +1620,9 @@ export class PivotView {
             if (shown.parentNode !== this.#root) this.#root.append(shown);
         }
         if (!answered) {
-            const pane = this.#paneLayout;
-            this.#empty.textContent = words.word(this.#asked !== undefined && !showsNothing(pane) ? 'loading' : 'empty-report');
+            this.#empty.textContent = words.word(this.#asked !== undefined && !showsNothing(this.#layoutAhead) ? 'loading' : 'empty-report');
             const height = this.#options.viewportHeight ?? 400; // oxlint-disable-line ex-grid/no-stand-in-default -- ADR-0028: the report's declared default height, as the Razor component's
-            this.#empty.setAttribute('style', height === 'stretch' ? 'flex: 1 1 auto; min-height: 0' : `height: ${height}px`);
+            writeStyle(this.#empty, height === 'stretch' ? 'flex: 1 1 auto; min-height: 0' : `height: ${height}px`);
         }
         this.#fieldListBox.hidden = !this.#fieldListShown;
         this.#fieldListBox.setAttribute('aria-label', words.word('field-list'));
@@ -1556,6 +1635,8 @@ export class PivotView {
                 maxLeaves: this.#maxLeaves,
                 locale: this.#locale,
                 words,
+                deferred: this.#deferred !== undefined,
+                canUpdate: this.#deferred !== undefined && this.#pendingApplies(this.#deferred.layout),
                 popup: this.#open?.kind === 'entry' || this.#open?.kind === 'panel' ? { entry: this.#open.entry, frame: this.#open.popup.element } : undefined,
             });
         }
@@ -1563,6 +1644,22 @@ export class PivotView {
         this.#keyboardAfterDraw = undefined;
         if (left !== undefined) this.#returnKeyboard(left, this.#entryNow(left));
     }
+}
+
+/** Defer Layout Update ticked: the layout the pane shows and builds, and the moves into it the report does not hold. */
+interface Deferred {
+    readonly layout: PivotLayout;
+    readonly moves: readonly FieldListMove[];
+}
+
+// Whether `layout` holds the field a move put in its Area.
+function holdsMove(layout: PivotLayout, move: FieldListMove): boolean {
+    return move.area === 'values' ? layout.values.some(value => value.field === move.field) : placementOf(layout, move.field)?.area === move.area;
+}
+
+// Whether every field `layout` places is one of `declared`.
+function placesOnly(layout: PivotLayout, declared: ReadonlyMap<string, unknown>): boolean {
+    return [...layout.filters, ...layout.rows, ...layout.columns, ...layout.values].every(placed => declared.has(placed.field));
 }
 
 // .NET's Math.Round, which sends a tie to the even number (CONVENTIONS.md).

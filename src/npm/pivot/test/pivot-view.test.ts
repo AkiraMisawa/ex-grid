@@ -55,7 +55,8 @@ class HeldSource implements PivotSource {
     readonly features = this.#behind.features;
 
     aggregate(...args: Parameters<PivotSource['aggregate']>): ReturnType<PivotSource['aggregate']> {
-        return new Promise(resolve => { this.held.push(() => { resolve(this.#behind.aggregate(...args)); }); });
+        // Asked once let through, as a source asks: one whose question was given up meanwhile refuses it then.
+        return new Promise(resolve => { this.held.push(() => { resolve(Promise.resolve().then(() => this.#behind.aggregate(...args))); }); });
     }
 
     details(...args: Parameters<PivotSource['details']>): ReturnType<PivotSource['details']> {
@@ -274,6 +275,20 @@ describe('ExPivot\'s report', () => {
         const value = amount.value(first);
         expect(amount.format(value)).toBe('30.00');
         expect(String(value)).toBe('30');
+    });
+
+    it('ADR-0027: a style the page set on the root stays through a redraw, until the pivot\'s own geometry changes', async () => {
+        const options: PivotViewOptions = { source: local(), layout: byRegion };
+        const { root, view } = mount(options);
+        await settled();
+        root.style.height = '260px';
+        tick(root, 'Desk');
+        await settled();
+        expect(root.style.height).toBe('260px');
+        expect(root.style.getPropertyValue('--ex-pivot-field-list-width')).toBe('300px');
+        view.update({ ...options, fieldListWidth: 200 });
+        expect(root.style.getPropertyValue('--ex-pivot-field-list-width')).toBe('200px');
+        expect(root.style.height).toBe('');
     });
 
     it('ADR-0059: with nothing placed, the report says how to start and no grid stands', async () => {
@@ -1319,6 +1334,212 @@ function bandButton(root: HTMLElement, caption: string): HTMLButtonElement {
     if (button === undefined || button === null) throw new Error(`The band has no report filter '${caption}'.`);
     return button;
 }
+
+function deferBox(root: HTMLElement): HTMLInputElement {
+    const box = root.querySelector<HTMLInputElement>('.ex-pivot-defer input[type=checkbox]');
+    if (box === null) throw new Error('The Field List has no Defer Layout Update.');
+    return box;
+}
+
+function updateButton(root: HTMLElement): HTMLButtonElement {
+    const button = root.querySelector<HTMLButtonElement>('.ex-pivot-defer .ex-pivot-update');
+    if (button === null) throw new Error('The Field List has no Update.');
+    return button;
+}
+
+function setDeferred(root: HTMLElement, deferred: boolean): void {
+    const box = deferBox(root);
+    box.checked = deferred;
+    box.dispatchEvent(new Event('change', { bubbles: true }));
+}
+
+const rowFields = (layout: PivotLayout | undefined): readonly string[] => defined(layout, 'a layout').rows.map(placement => placement.field);
+
+describe('ExPivot\'s Defer Layout Update (ADR-0061)', () => {
+    it('ADR-0061: while it is ticked the pane\'s changes wait, and Update applies them in one change', async () => {
+        const changed: PivotLayout[] = [];
+        const { root, view } = mount({ source: local(), layout: byRegion, onLayoutChanged: event => changed.push(event.layout) });
+        await settled();
+        expect(deferBox(root).checked).toBe(false);
+        expect(updateButton(root).disabled).toBe(true);
+        expect(deferBox(root).nextElementSibling?.textContent).toBe('Defer Layout Update');
+        expect(updateButton(root).textContent).toBe('Update');
+        setDeferred(root, true);
+        expect(updateButton(root).disabled).toBe(true);
+        tick(root, 'Desk');
+        await settled();
+        // The pane shows the pending layout; the report and the Consumer are left alone.
+        expect([...area(root, 'rows').querySelectorAll('.ex-pivot-entry-caption')].map(e => e.textContent)).toEqual(['Region', 'Desk']);
+        expect(rowFields(view.shownLayout)).toEqual(['Region']);
+        expect(changed).toHaveLength(0);
+        expect(updateButton(root).disabled).toBe(false);
+        updateButton(root).click();
+        await settled();
+        expect(rowFields(view.shownLayout)).toEqual(['Region', 'Desk']);
+        expect(changed.map(rowFields)).toEqual([['Region', 'Desk']]);
+        // Still ticked, with nothing left to apply.
+        expect(deferBox(root).checked).toBe(true);
+        expect(updateButton(root).disabled).toBe(true);
+    });
+
+    it('ADR-0061: unticking it applies the pending layout, as Excel does', async () => {
+        const changed: PivotLayout[] = [];
+        const { root, view } = mount({ source: local(), layout: byRegion, onLayoutChanged: event => changed.push(event.layout) });
+        await settled();
+        setDeferred(root, true);
+        tick(root, 'Desk');
+        await settled();
+        expect(changed).toHaveLength(0);
+        setDeferred(root, false);
+        await settled();
+        expect(rowFields(view.shownLayout)).toEqual(['Region', 'Desk']);
+        expect(changed).toHaveLength(1);
+        expect(updateButton(root).disabled).toBe(true);
+    });
+
+    it('ADR-0061: a gesture on the report applies at once and reaches the pending layout, so Update does not take it back', async () => {
+        const changed: PivotLayout[] = [];
+        const { root, grid } = mount({ source: local(), layout: createPivotLayout({ rows: ['Region', 'Desk'], values: ['Amount'] }), onLayoutChanged: event => changed.push(event.layout) });
+        await settled();
+        setDeferred(root, true);
+        // The pending layout sorts Desk Z to A, which the report does not show yet.
+        entryButton(root, 'rows', 1).click();
+        command(root, 'Sort Z to A').click();
+        await settled();
+        expect(changed).toHaveLength(0);
+        // EU collapsed by its button: the report shows it at once.
+        (await grid.paint(0, 0)).button().click();
+        await settled();
+        expect((await grid.texts()).map(row => row[0])).toEqual(['EU', 'US', 'FX', 'Rates', 'Grand Total']);
+        expect(changed).toHaveLength(1);
+        updateButton(root).click();
+        await settled();
+        // Desk sorted Z to A under the US, and EU still collapsed.
+        expect((await grid.texts()).map(row => row[0])).toEqual(['EU', 'US', 'Rates', 'FX', 'Grand Total']);
+        expect(changed).toHaveLength(2);
+    });
+
+    it('ADR-0061: a gesture on the report made with nothing pending leaves nothing for Update to apply', async () => {
+        const changed: PivotLayout[] = [];
+        const { root, grid } = mount({ source: local(), layout: createPivotLayout({ rows: ['Region', 'Desk'], values: ['Amount'] }), onLayoutChanged: event => changed.push(event.layout) });
+        await settled();
+        setDeferred(root, true);
+        (await grid.paint(0, 0)).button().click();
+        await settled();
+        expect(changed).toHaveLength(1);
+        expect(updateButton(root).disabled).toBe(true);
+        setDeferred(root, false);
+        await settled();
+        expect(changed).toHaveLength(1);
+    });
+
+    it('ADR-0370 section 3: an Update the source refuses names the fields the pane moved while it was deferred', async () => {
+        const refused: (readonly string[])[] = [];
+        const { root } = mount({ source: server(), layout: createPivotLayout({ values: ['Amount'] }), maxLeaves: 1, onRefused: event => refused.push(event.fields) });
+        await settled();
+        setDeferred(root, true);
+        drag(field(root, 'Region'), 'dragstart');
+        drag(area(root, 'rows'), 'dragenter');
+        drag(area(root, 'rows'), 'drop');
+        await settled();
+        expect(refused).toEqual([]);
+        updateButton(root).click();
+        await settled();
+        expect(refused).toEqual([['Region']]);
+        // The pending layout is the user's work in the pane, and stays, with the moves it names.
+        expect([...area(root, 'rows').querySelectorAll('.ex-pivot-entry-caption')].map(e => e.textContent)).toEqual(['Region']);
+        expect(updateButton(root).disabled).toBe(false);
+        setDeferred(root, false);
+        await settled();
+        expect(refused).toEqual([['Region'], ['Region']]);
+    });
+
+    it('ADR-0061: a gesture on the report while Update is asked for leaves nothing for Update to apply once both are shown', async () => {
+        const source = new HeldSource();
+        const changed: PivotLayout[] = [];
+        const { root, grid } = mount({ source, layout: byRegion, onLayoutChanged: event => changed.push(event.layout) });
+        await settled();
+        source.held.shift()?.();
+        await settled();
+        setDeferred(root, true);
+        tick(root, 'Desk');
+        updateButton(root).click();
+        await settled();
+        expect(source.held).toHaveLength(1);
+        // The Layout menu's choice, made while Update's question for Desk is out.
+        layoutButton(root).click();
+        command(root, 'Show in Tabular Form').click();
+        for (let round = 0; round < 5; round++) {
+            for (const release of source.held.splice(0).toReversed()) release();
+            await settled();
+        }
+        expect(grid.headers).toEqual(['Region', 'Desk', 'Sum of Amount']);
+        expect(changed).toHaveLength(1);
+        expect(updateButton(root).disabled).toBe(true);
+        setDeferred(root, false);
+        await settled();
+        expect(changed).toHaveLength(1);
+    });
+
+    it('ADR-0370 section 3: a move Update has shown is not named again when a later Update is refused', async () => {
+        const source = new HeldSource();
+        const refused: (readonly string[])[] = [];
+        const { root } = mount({ source, layout: createPivotLayout({ values: ['Amount'] }), maxLeaves: 3, onRefused: event => refused.push(event.fields) });
+        await settled();
+        source.held.shift()?.();
+        await settled();
+        setDeferred(root, true);
+        drag(field(root, 'Region'), 'dragstart');
+        drag(area(root, 'rows'), 'dragenter');
+        drag(area(root, 'rows'), 'drop');
+        updateButton(root).click();
+        await settled();
+        // Desk to Columns while Update's question for Region is out.
+        drag(field(root, 'Desk'), 'dragstart');
+        drag(area(root, 'columns'), 'dragenter');
+        drag(area(root, 'columns'), 'drop');
+        for (const release of source.held.splice(0)) release();
+        await settled();
+        expect(refused).toEqual([]);
+        updateButton(root).click();
+        for (let round = 0; round < 5; round++) {
+            for (const release of source.held.splice(0)) release();
+            await settled();
+        }
+        expect(refused).toEqual([['Desk']]);
+    });
+
+    it('ADR-0061: a new source without a field the pending layout places takes the pane back to the report\'s layout', async () => {
+        const options: PivotViewOptions = { source: local(), layout: byRegion };
+        const { root, view } = mount(options);
+        await settled();
+        setDeferred(root, true);
+        tick(root, 'Desk');
+        const withoutDesk = new RecordPivotSource(trades, fields.filter(declared => declared.name !== 'Desk'));
+        view.update({ ...options, source: withoutDesk });
+        await settled();
+        expect([...area(root, 'rows').querySelectorAll('.ex-pivot-entry-caption')].map(e => e.textContent)).toEqual(['Region']);
+        expect(rowFields(view.shownLayout)).toEqual(['Region']);
+        expect(updateButton(root).disabled).toBe(true);
+    });
+
+    it('ADR-0061: a layout the Consumer hands in replaces the pending one', async () => {
+        const changed: PivotLayout[] = [];
+        const options: PivotViewOptions = { source: local(), layout: byRegion, onLayoutChanged: event => changed.push(event.layout) };
+        const { root, view } = mount(options);
+        await settled();
+        setDeferred(root, true);
+        tick(root, 'Desk');
+        const byDesk = createPivotLayout({ rows: ['Desk'], values: ['Amount'] });
+        view.update({ ...options, layout: byDesk });
+        await settled();
+        expect(rowFields(view.shownLayout)).toEqual(['Desk']);
+        expect([...area(root, 'rows').querySelectorAll('.ex-pivot-entry-caption')].map(e => e.textContent)).toEqual(['Desk']);
+        expect(deferBox(root).checked).toBe(true);
+        expect(updateButton(root).disabled).toBe(true);
+        expect(changed).toHaveLength(0);
+    });
+});
 
 describe('ExPivot\'s report filter band (ADR-0061)', () => {
     it('ADR-0061: each field in Filters stands in the band with what it shows, and its Filter… opens over the report and applies there', async () => {

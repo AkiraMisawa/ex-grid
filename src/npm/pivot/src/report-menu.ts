@@ -1,7 +1,7 @@
 // The report's own commands in the grid's Context Menu (ADR-0036, ADR-0059): the ones the Razor component's
 // ContextCommandsFor builds, in its order and under its ids, after the grid's clipboard commands. Each is enabled from
-// the report the menu was opened over, and runs against the pane's layout when it is chosen: where the pane no longer
-// holds what it was for, it changes nothing (spine rule 6).
+// the report the menu was opened over, and runs against the report's layout when it is chosen: where that layout no
+// longer holds what it was for, it changes nothing (spine rule 6).
 
 import type { GridCommand } from '@ex-grid/core';
 import {
@@ -17,7 +17,10 @@ export interface ReportMenuModel {
     readonly row: PivotDisplayRow;
     /** The name of the column it was opened on. */
     readonly column: string;
-    /** The pane's layout now: Value Field Settings… opens in the pane, under the entry it shows. */
+    /** The report's layout now: the one it shows, or is on its way to, which its commands are run against. */
+    readonly report: PivotLayout;
+    /** The pane's layout now, which is the report's unless Defer Layout Update holds another: Value Field Settings…
+     * opens in the pane, under the entry it shows. */
     readonly pane: PivotLayout;
     readonly fieldListShown: boolean;
     /** A field's caption. */
@@ -26,9 +29,9 @@ export interface ReportMenuModel {
 
 /** What the commands do. */
 export interface ReportMenuActions {
-    /** A change of the pane's layout, made from the pane's layout when chosen; `undefined` changes nothing. An Item
+    /** A change of the report's layout, made from the layout when chosen; `undefined` changes nothing. An Item
      * expanded or collapsed is named, and keeps the Focus in the report the change brings. */
-    readonly edit: (edit: (pane: PivotLayout) => PivotLayout | undefined, toggled?: PivotFieldItem) => void;
+    readonly edit: (edit: (layout: PivotLayout) => PivotLayout | undefined, toggled?: PivotFieldItem) => void;
     /** Show Details on the row's value cell in `valueColumn`. */
     readonly showDetails: (valueColumn: number) => void;
     /** Value Field Settings… for the Value Field at `valueField`, in the pane, while `holds` says the pane holds the
@@ -72,21 +75,21 @@ function inRows(layout: PivotLayout, field: string): boolean {
 }
 
 /** The report's commands for the cell the menu was opened on. Which Items and fields they stand for is read from the
- * report on screen; whether each would change something, from the pane's layout, which it is run against. */
+ * report on screen; whether each would change something, from the report's layout, which it is run against. */
 export function reportMenuCommands(model: ReportMenuModel, actions: ReportMenuActions): readonly GridCommand[] {
-    const { metadata, row, column, pane, captionOf } = model;
+    const { metadata, row, column, report, pane, captionOf } = model;
     const labelColumn = metadata.labelColumns.findIndex(label => label.name === column);
     const valueColumn = labelColumn >= 0 ? -1 : metadata.valueColumns.findIndex(value => value.name === column);
     const commands: GridCommand[] = [];
     const add = (id: string, enabled: boolean, invoke: () => void): void => { commands.push(Object.freeze({ id, enabled, invoke })); };
-    // A change of a field in Rows, made while the pane still holds it there.
-    const editRows = (field: string, edit: (pane: PivotLayout) => PivotLayout | undefined, toggled?: PivotFieldItem): () => void =>
+    // A change of a field in Rows, made while the layout still holds it there.
+    const editRows = (field: string, edit: (layout: PivotLayout) => PivotLayout | undefined, toggled?: PivotFieldItem): () => void =>
         () => { actions.edit(now => (inRows(now, field) ? edit(now) : undefined), toggled); };
-    const inPane = (field: string): PivotFieldPlacement | undefined => pane.rows.find(placement => placement.field === field);
+    const inReport = (field: string): PivotFieldPlacement | undefined => report.rows.find(placement => placement.field === field);
 
     const item = collapsibleItemOf(metadata, row);
     if (item !== undefined) {
-        const placement = inPane(item.field);
+        const placement = inReport(item.field);
         const collapsed = placement !== undefined && isItemCollapsed(placement, item.item);
         const toggled = placement !== undefined && placement.toggledItems.length > 0;
         add('expand', collapsed, editRows(item.field, now => setCollapsed(now, item.field, item.item, false), item));
@@ -98,10 +101,10 @@ export function reportMenuCommands(model: ReportMenuModel, actions: ReportMenuAc
     const field = labelColumn >= 0
         ? elementAt(metadata.labelColumns, labelColumn).field ?? (row.valueField < 0 ? innermostFieldOf(row) : undefined)
         : innermostFieldOf(row);
-    // A sort by a Value Field is by the one the cell shows, while the pane holds it at the same place.
+    // A sort by a Value Field is by the one the cell shows, while the layout holds it at the same place.
     const sortBy = (sortField: string, sort: PivotSort, holds: (now: PivotLayout) => boolean): void => {
-        const placement = inPane(sortField);
-        add(sortCommandId(sort), placement !== undefined && holds(pane) && !sortsEqual(placement.sort, sort),
+        const placement = inReport(sortField);
+        add(sortCommandId(sort), placement !== undefined && holds(report) && !sortsEqual(placement.sort, sort),
             editRows(sortField, now => (holds(now) ? setSort(now, sortField, sort) : undefined)));
     };
     if (labelColumn >= 0 && field !== undefined) {
@@ -127,7 +130,7 @@ export function reportMenuCommands(model: ReportMenuModel, actions: ReportMenuAc
         if (shown !== undefined) add('value-field-settings', holds(pane), () => { actions.valueFieldSettings(valueField, holds); });
     }
     if (field !== undefined) {
-        add(`${removeNamedFieldId}:${captionOf(field)}`, inPane(field) !== undefined, editRows(field, now => removeEntry(now, defined(placementOf(now, field), 'the field in Rows'))));
+        add(`${removeNamedFieldId}:${captionOf(field)}`, inReport(field) !== undefined, editRows(field, now => removeEntry(now, defined(placementOf(now, field), 'the field in Rows'))));
     }
     if (model.fieldListShown) add('hide-field-list', true, () => { actions.setFieldListShown(false); });
     else add('show-field-list', true, () => { actions.setFieldListShown(true); });
