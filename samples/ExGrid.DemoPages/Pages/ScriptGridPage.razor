@@ -22,7 +22,14 @@
                      StripeRows="true"
                      SelectionChanged="OnSelectionChanged"
                      OnEdit="OnEdit"
-                     OnRefused="OnRefused" />
+                     OnRefused="OnRefused"
+                     OnCellDoubleClick="OpenNoteAsync"
+                     @ref="_grid" />
+
+<p>
+    <label for="script-note">Note (a double click on a Trader hands the keyboard here, Enter gives it back):</label>
+    <input id="script-note" @onkeydown="NoteKeyAsync" @ref="_noteField" />
+</p>
 
 <p>
     <span id="script-selection" role="status">Selection: @_selection</span><br />
@@ -42,6 +49,8 @@
 
     private readonly InMemoryGridSource<DemoTrade> _source = GridSource.From(DemoData.Window(1_000, 7));
 
+    private ExGrid.Script.ExGrid<DemoTrade>? _grid;
+    private ElementReference _noteField;
     private string _selection = "none";
     private string _edit = "none";
     private string _refused = "none";
@@ -57,6 +66,19 @@
             Id = row.Id, Book = intent.Value, Trader = row.Trader, Notional = row.Notional, TradeDate = row.TradeDate, Confirmed = row.Confirmed,
         });
         _edit = $"{intent.Column} of {row.Book} set to {intent.Value}";
+    }
+
+    // DC-61: handed on and given back by the grid, so a press made meanwhile keeps the keyboard.
+    private async Task OpenNoteAsync(CellPosition at)
+    {
+        if (_grid is not null)
+            await _grid.HandKeyboardToAsync(_noteField);
+    }
+
+    private async Task NoteKeyAsync(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" && !e.IsComposing && _grid is not null)
+            await _grid.ReturnKeyboardAsync(_noteField);
     }
 
     private void OnRefused(GridRefusal<DemoTrade> refusal) => _refused = refusal.ToString();

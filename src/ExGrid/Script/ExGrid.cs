@@ -379,6 +379,90 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
         await grid.InvokeVoidAsync("focus");
     }
 
+    /// <summary>
+    /// Gives the keyboard back to the grid from something of the Consumer's that held it over the grid and goes
+    /// away, a dialog, a panel, a tab (DC-61, ADR-0070): to an open edit's field, else where the grid takes keys
+    /// (ADR-0080). It is granted only while the keyboard is still this grid's, DOM focus inside it or on nothing,
+    /// so a control or another grid the user has moved to keeps it.
+    ///
+    /// <para>It moves neither the Focus nor the Selection, and scrolls nothing. On Blazor Server the request lands
+    /// a round trip after the call, and a press made in that time wins. Before the grid is attached, and after it
+    /// is gone, it does nothing, and with the circuit gone it is dropped.</para>
+    /// </summary>
+    /// <returns>A task that completes once the request has been made.</returns>
+    public Task ReturnKeyboardAsync() => ReturnKeyboardAsync(default);
+
+    /// <summary>
+    /// <see cref="ReturnKeyboardAsync()"/>, from a frame of the Consumer's own that holds the keyboard as it goes:
+    /// it is granted while DOM focus is on <paramref name="from"/> too, so the frame gives the keyboard back
+    /// before it is removed (DC-61, ADR-0070). A frame not yet drawn has no element to name, and the grid's own
+    /// condition stands. Keys typed on the frame before the request lands are the frame's: this grid joins no
+    /// surface to its order, so it has no keys typed on the way to hand on, unlike
+    /// <c>ExGrid.Components.ExGrid</c>'s overload that collects them.
+    /// </summary>
+    /// <param name="from">The frame's element that holds the keyboard, or that holds the element that does.</param>
+    /// <returns>A task that completes once the request has been made.</returns>
+    public Task ReturnKeyboardAsync(ElementReference from)
+        => InvokeAsync(async () =>
+        {
+            var grid = _grid;
+            if (grid is null || _disposed)
+                return;
+            try
+            {
+                await grid.InvokeVoidAsync("returnKeyboard", string.IsNullOrEmpty(from.Id) ? null : from);
+            }
+            catch (Exception ex) when (ex is JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
+            {
+                // The grid or the circuit is gone: there is no keyboard left to give back.
+            }
+        });
+
+    /// <summary>
+    /// Hands the keyboard the grid holds on to a control of the Consumer's own, a frame's first control or a
+    /// dialog's Close, in place of the control's own <c>FocusAsync</c> (DC-61, ADR-0070). It is granted under
+    /// <see cref="ReturnKeyboardAsync()"/>'s condition, so a press the user made before the request lands keeps
+    /// the keyboard where it put it, whatever the round trip took.
+    ///
+    /// <para>It moves neither the Focus nor the Selection, and renders nothing. The control scrolls into view, as
+    /// its own focus would have it. Before the grid is attached, and after it is gone, the control takes the
+    /// keyboard by its own <c>FocusAsync</c>, as it would without the grid. A control a render removed before the
+    /// request lands takes nothing, and with the circuit gone the request is dropped.</para>
+    /// </summary>
+    /// <param name="control">The element to hand the keyboard to. Once the grid is attached, a container names its
+    /// first enabled text field, its text selected, or else its first enabled control; one holding neither is
+    /// refused with a <see cref="JSException"/>, as is an element that cannot take the keyboard.</param>
+    /// <exception cref="ArgumentException"><paramref name="control"/> names no element: it is not drawn yet.</exception>
+    /// <returns>A task that completes once the request has been made.</returns>
+    public Task HandKeyboardToAsync(ElementReference control) => HandKeyboardToAsync(control, preventScroll: false);
+
+    /// <summary>
+    /// <see cref="HandKeyboardToAsync(ElementReference)"/>, with the control taking the keyboard where it stands
+    /// when <paramref name="preventScroll"/> is true: nothing scrolls to bring it into view, as
+    /// <c>FocusAsync(preventScroll: true)</c> has it.
+    /// </summary>
+    /// <param name="control">The element to hand the keyboard to, as for <see cref="HandKeyboardToAsync(ElementReference)"/>.</param>
+    /// <param name="preventScroll">Whether the control takes the keyboard without scrolling into view.</param>
+    /// <returns>A task that completes once the request has been made.</returns>
+    public Task HandKeyboardToAsync(ElementReference control, bool preventScroll)
+        => InvokeAsync(async () =>
+        {
+            if (string.IsNullOrEmpty(control.Id))
+                throw new ArgumentException("A control not yet drawn has no element to hand the keyboard to.", nameof(control));
+            var grid = _grid;
+            try
+            {
+                if (grid is null || _disposed)
+                    await control.FocusAsync(preventScroll);
+                else
+                    await grid.InvokeVoidAsync("handKeyboardTo", control, preventScroll);
+            }
+            catch (Exception ex) when (ex is JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
+            {
+                // The grid or the circuit is gone: there is nothing left to take the keyboard.
+            }
+        });
+
     // ---- What crosses to the browser ------------------------------------------------------------------------
 
     private async Task SendUpdateAsync()

@@ -1,8 +1,16 @@
 @using ExGrid.Docs.Examples.Data
 @using ExGrid.Cells
+@using ExGrid.Selection
 
+@* A double click on a cell that does not edit opens that trade's note: the grid hands the keyboard on to the
+   field, and Enter there gives it back. *@
+<div style="display: flex; gap: 8px; align-items: center; margin-bottom: 8px">
+    <label for="trade-note">@(_noteFor is null ? "Double-click a Trader for its note" : $"Note for trade {_noteFor.Id}")</label>
+    <input id="trade-note" placeholder="Enter to go back to the grid" style="flex: 1"
+           @bind:get="Note" @bind:set="SetNote" @bind:event="oninput" @onkeydown="NoteKeyAsync" @ref="_noteField" />
+</div>
 <ExGrid.Script.ExGrid TRow="Trade" Source="_source" Columns="_columns" ViewportHeight="320" ViewportWidth="ViewportSize.Stretch"
-                      OnEdit="Edit" />
+                      OnEdit="Edit" OnCellDoubleClick="OpenNoteAsync" @ref="_grid" />
 
 @code {
     // Kept in fields, as for the C# core's grid: a new source is a new grid's worth of rows.
@@ -19,6 +27,39 @@
         new("TradeDate", ColumnType.Date, t => t.TradeDate, header: "Trade date", dateType: DateType.DateOnly),
         new("Confirmed", ColumnType.Boolean, t => t.Confirmed),
     ];
+
+    private ExGrid.Script.ExGrid<Trade>? _grid;
+    private ElementReference _noteField;
+    private Trade? _noteFor;
+    private readonly Dictionary<int, string> _notes = [];
+
+    private string Note => _noteFor is null ? "" : _notes.GetValueOrDefault(_noteFor.Id, "");
+
+    private void SetNote(string? text)
+    {
+        if (_noteFor is null)
+            return;
+        if (string.IsNullOrEmpty(text))
+            _notes.Remove(_noteFor.Id);
+        else
+            _notes[_noteFor.Id] = text;
+    }
+
+    // Handed on by the grid, not by the field's own FocusAsync: a cell the user pressed meanwhile keeps the keyboard.
+    private async Task OpenNoteAsync(CellPosition at)
+    {
+        if (_grid is null || at.Row >= _source.Window.Count)
+            return;
+        _noteFor = _source.Window[at.Row];
+        await _grid.HandKeyboardToAsync(_noteField);
+    }
+
+    // Given back from the field, which still holds the keyboard as it asks; an Enter that ends a composition is the IME's.
+    private async Task NoteKeyAsync(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" && !e.IsComposing && _grid is not null)
+            await _grid.ReturnKeyboardAsync(_noteField);
+    }
 
     // The browser committed the edit; your source holds what the cell shows from then on.
     private void Edit(GridEditIntent<Trade> intent) => _source.ReplaceRow(intent.Row, intent.Row with { Book = intent.Value });

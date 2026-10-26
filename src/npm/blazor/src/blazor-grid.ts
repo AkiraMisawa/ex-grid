@@ -51,6 +51,13 @@ export interface BlazorGrid {
     placeSelection(range: SelectionRange, focus: CellPosition, rowSequenceVersion: number): boolean;
     /** Hands the keyboard to the grid (ADR-0080). */
     focus(): void;
+    /** Gives the keyboard back to the grid, from the frame `from` when .NET names one, as the core's handle does
+     * (DC-61, ADR-0070). */
+    returnKeyboard(from: Element | null): void;
+    /** Hands the keyboard the grid holds on to a control of the Consumer's own, as the core's handle does (DC-61,
+     * ADR-0070). A control a render removed before the request landed reaches here as null, and keeps nothing to
+     * hand on, as the core does with one no longer in the document. */
+    handKeyboardTo(control: HTMLElement | null, preventScroll: boolean): void;
     /** Stops the grid and empties its element. */
     dispose(): void;
 }
@@ -121,6 +128,10 @@ export function attach(root: HTMLElement, dotnet: DotNetHandle, json: string, ma
             return grid.placeSelection(range, focus, rowSequenceVersion);
         },
         focus: () => { grid.focus(); },
+        returnKeyboard: (from: Element | null) => { grid.returnKeyboard(from === null ? undefined : from); },
+        handKeyboardTo: (control: HTMLElement | null, preventScroll: boolean) => {
+            if (control !== null) grid.handKeyboardTo(control, { preventScroll });
+        },
         dispose: () => {
             // Nothing is let go once .NET has let go of the bridge, and nothing held is taken in.
             gate.stop();
