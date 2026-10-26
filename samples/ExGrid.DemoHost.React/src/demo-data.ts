@@ -68,3 +68,36 @@ export const wideColumns: readonly GridColumn<DemoWideRow>[] = Object.freeze([
         return { name: `M${String(column - 1).padStart(2, '0')}`, type: 'number', value: (r: DemoWideRow) => metric(r.index, column), width: 91 };
     }),
 ]);
+
+/** A position, as DemoData.cs's DemoPosition, whose Row Kind joins when the Script Core paints one. */
+export interface DemoPosition {
+    readonly book: string;
+    readonly closeOfBusiness: number;
+    readonly intraday: number;
+    readonly limitUsed: number;
+}
+
+/** The positions of the page /cells, as DemoData.Positions builds them: a group row per region and its
+ * books, then the total. */
+export const demoPositions: readonly DemoPosition[] = Object.freeze((() => {
+    const rows: DemoPosition[] = [];
+    let totalCob = 0;
+    let totalIntraday = 0;
+    for (const region of ['EMEA', 'Americas']) {
+        let groupCob = 0;
+        let groupIntraday = 0;
+        const details = books.map((book, b): DemoPosition => {
+            const index = b + (region === 'EMEA' ? 0 : 5);
+            const cob = (1000 * (index + 3)) + (index * 137);
+            const intraday = cob + (index % 3 === 0 ? -420.5 : 318.25);
+            groupCob += cob;
+            groupIntraday += intraday;
+            return { book: `${region} · ${book}`, closeOfBusiness: cob, intraday, limitUsed: Math.min(1, 0.25 + (index * 0.09)) };
+        });
+        rows.push({ book: region, closeOfBusiness: groupCob, intraday: groupIntraday, limitUsed: 0 }, ...details);
+        totalCob += groupCob;
+        totalIntraday += groupIntraday;
+    }
+    rows.push({ book: 'All books', closeOfBusiness: totalCob, intraday: totalIntraday, limitUsed: 0 });
+    return rows.map(row => Object.freeze(row));
+})());

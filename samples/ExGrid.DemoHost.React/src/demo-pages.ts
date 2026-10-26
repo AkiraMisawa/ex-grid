@@ -27,6 +27,10 @@ export const demoPages: readonly DemoPage[] = Object.freeze([
         description: 'Sorting, the Selection, copying and Header Groups on one page; editing, paste and filtering, with the status lines that report them, join as the Script Core comes to them.',
     },
     {
+        route: 'cells', title: 'Cells and rows', group: 'Cells and rows',
+        description: 'Template Columns and Action Columns, what the value alone cannot say (ADR-0020); Cell State and Row Kind join as the Script Core comes to them.',
+    },
+    {
         route: 'filter-panel', title: 'Filter panel', group: 'Interaction',
         description: 'The filter panel\'s value list, Blank entry, search, condition form and TooMany under the built-in Chrome, with the Filter it applied written out (ADR-0009, WR-1).',
     },

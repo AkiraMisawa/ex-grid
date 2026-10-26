@@ -4,6 +4,7 @@ import { StrictMode, useEffect, useState, type ReactElement } from 'react';
 import { createRoot } from 'react-dom/client';
 import '../../ExGrid.DemoPages/wwwroot/app.css';
 import '../../../src/ExGrid/wwwroot/ex-grid.min.css';
+import { Cells } from './pages/cells';
 import { Features } from './pages/features';
 import { Fetch } from './pages/fetch';
 import { FilterPanel } from './pages/filter-panel';
@@ -21,7 +22,7 @@ declare global {
 
 window.exDemo = Object.freeze({ navigateTo });
 
-const pages = { '': Home, virtual: Virtual, wide: Wide, fetch: Fetch, features: Features, 'filter-panel': FilterPanel };
+const pages = { '': Home, virtual: Virtual, wide: Wide, fetch: Fetch, features: Features, 'filter-panel': FilterPanel, cells: Cells };
 
 /** Present once the page handles events, as Routes.razor's marker is: at once under React. */
 function Interactive(): ReactElement | null {
