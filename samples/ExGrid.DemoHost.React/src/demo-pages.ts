@@ -35,6 +35,14 @@ export const demoPages: readonly DemoPage[] = Object.freeze([
         description: 'Stripes decided from each row\'s position in the whole result, so they stay with the row as it scrolls (ADR-0038).',
     },
     {
+        route: 'sizing', title: 'Sizing', group: 'Layout',
+        description: 'Column width gestures and a box that narrows until pinning is suspended (ADR-0016, ADR-0045).',
+    },
+    {
+        route: 'stretch', title: 'Stretch', group: 'Layout',
+        description: 'A Viewport that takes its parent\'s box: a sized box, the rest of a flex column, a box that follows the window, and a parent with no height (ADR-0028).',
+    },
+    {
         route: 'marks', title: 'Row Marks', group: 'Cells and rows',
         description: 'A Mark Column over 1,000,000 fetched rows: mark all, marks that survive a filter, and an action over them (ADR-0043).',
     },

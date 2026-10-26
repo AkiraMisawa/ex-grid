@@ -24,6 +24,8 @@ import { PivotCsv } from './pages/pivot-csv';
 import { PivotDb } from './pages/pivot-db';
 import { PivotRisk } from './pages/pivot-risk';
 import { SheetDemo } from './pages/sheet';
+import { Sizing } from './pages/sizing';
+import { Stretch } from './pages/stretch';
 import { Stripes } from './pages/stripes';
 import { Marks } from './pages/marks';
 import { Virtual } from './pages/virtual';
@@ -56,6 +58,8 @@ const pages = { '': Home, virtual: Virtual, wide: Wide, fetch: Fetch, features: 
     sheet: SheetDemo,
     marks: Marks,
     stripes: Stripes,
+    stretch: Stretch,
+    sizing: Sizing,
     board: Board,
 };
 

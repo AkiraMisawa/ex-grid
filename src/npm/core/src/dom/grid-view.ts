@@ -859,10 +859,12 @@ interface BarReading<Row> {
 type WordedRefusal = Extract<GridRefusal, { readonly kind: 'copy' | 'paste' }>;
 
 /** A page follow (ADR-0204): armed by a move for the Focus it moved to and the cell its reveal brought into
- * the Viewport, and asked once that cell is painted. */
+ * the Viewport, and asked once that cell is painted. `rowsKept` says the reveal left the rows where the user had
+ * them, as it does for a range of whole columns (ADR-0052). */
 interface Follow {
     readonly focus: CellPosition;
     readonly target: CellPosition;
+    readonly rowsKept?: boolean;
 }
 
 /** Whether two lists hold the same ranges, in order. */
@@ -2185,10 +2187,12 @@ export class GridView<Row> {
     }
 
     // Settled while nothing is owed: no pass, no fling's settle, no announcement, no reveal's repaint and
-    // no page follow, and the browser has told the box and the ceiling (ADR-0220).
+    // no page follow, and the browser has told the box and the ceiling (ADR-0220). A follow armed while the box
+    // holds no row waits on the browser to grow the box, which nothing the grid does brings, so it is not owed.
     #lookSettled(): void {
         this.#showSettled(!this.#passOwed && this.#cancelSettle === undefined && this.#cancelAnnounce === undefined
-            && this.#repaint === undefined && this.#followArmed === undefined && this.#cancelFollow === undefined
+            && this.#repaint === undefined && (this.#followArmed === undefined || this.#visible === undefined)
+            && this.#cancelFollow === undefined
             && this.#clipboardWrites === 0 && this.#viewportReport !== undefined && this.#ceilingPx !== undefined
             && !(this.#popover?.kind === 'column' && this.#popover.panel?.fetching === true)
             && this.#findStepping === undefined && this.#replacing === 0);
@@ -2731,12 +2735,13 @@ export class GridView<Row> {
     #moveByKey(action: GridKeyAction, key: string): void {
         this.#reconcileSelection();
         const geometry = this.#geometry;
-        const visible = this.#visible;
-        // Nothing painted is nothing the keys can be aimed at.
-        if (geometry === undefined || visible === undefined) return;
-        const start = defined(this.#firstVisibleCell(), 'the first cell of painted rows');
-        // PageUp and PageDown move by the rows fully visible, at least one (ADR-0012).
-        const viewportRows = Math.max(1, Math.floor(geometry.viewportHeightPx / this.#metrics.rowHeightPx));
+        // A key with nothing selected starts at the first cell on screen, and with nothing painted it has nothing to
+        // start at; a key with a Focus moves from it whatever the box shows meanwhile, a box too small for a row
+        // included. A key typed as the box grows back moves, whether or not the browser has reported the new size
+        // yet (ADR-0040; spine rule 6), as the C# core's does.
+        const start = this.#firstVisibleCell();
+        // PageUp and PageDown move by the rows fully visible, at least one (ADR-0012): one in a box that holds none.
+        const viewportRows = geometry === undefined ? 1 : Math.max(1, Math.floor(geometry.viewportHeightPx / this.#metrics.rowHeightPx));
         // The Consumer's edge is asked on the arrows only: Home and End resolve to the same moves and keep ADR-0012's
         // meaning (ADR-0050, item 2).
         const edge = this.#dataEdge !== undefined && key.startsWith('Arrow') ? this.#dataEdge : undefined;
@@ -6176,21 +6181,24 @@ export class GridView<Row> {
     // Moves the model to where a key's reveal is going, and resolves the slice there, so the pass paints
     // the rows at the offset it then writes (ADR-0012, 2026-09-29). Whether there is an offset to write.
     #stageReveal(): boolean {
+        const geometry = this.#geometry;
+        // A box too small for a row has no offset to reveal at: the reveal stays owed for the pass that has one,
+        // so a key that moved the Focus meanwhile brings it into view once the box grows back (ADR-0040).
+        if (geometry === undefined) return false;
         const reveal = this.#revealOwed;
         this.#revealOwed = undefined;
         const across = this.#revealHeaderOwed;
         this.#revealHeaderOwed = undefined;
-        const geometry = this.#geometry;
         const columns = this.#styles.geometry;
         // A header Find found is scrolled into view across only (ADR-0333 §1): its last column, then its first,
         // so a header wider than the Viewport shows its start. A pinned header is in view already.
-        if (reveal === undefined && across !== undefined && geometry !== undefined) {
+        if (reveal === undefined && across !== undefined) {
             let left = this.#scrollLeftPx;
             if (across.last < columns.count) left = columns.scrollLeftToReveal(across.last, left);
             if (across.first < columns.count) left = columns.scrollLeftToReveal(across.first, left);
             return this.#revealAt(this.#scrollTopPx, left);
         }
-        if (reveal === undefined || geometry === undefined) return false;
+        if (reveal === undefined) return false;
         const { target } = reveal;
         if (target.row >= this.#totalRows || target.column >= columns.count) return false;
         // PageUp and PageDown scroll by the rows the Focus moved, through the mapping, so a compressed grid
@@ -6205,7 +6213,11 @@ export class GridView<Row> {
         const range = reveal.extending;
         if (range !== undefined) {
             const extent = this.#extent;
-            if (spansEveryRow(range, extent)) top = this.#scrollTopPx;
+            if (spansEveryRow(range, extent)) {
+                top = this.#scrollTopPx;
+                const follow = this.#followArmed;
+                if (follow !== undefined) this.#followArmed = { ...follow, rowsKept: true };
+            }
             if (spansEveryColumn(range, extent) && !reveal.rowStart) left = this.#scrollLeftPx;
         }
         return this.#revealAt(top, left);
@@ -6293,9 +6305,11 @@ export class GridView<Row> {
             // A target whose row is painted and whose column is not is one no later pass will paint on its own: the
             // reveal moved the axis the Selection grew on and left the other where the user had it, so the Extent of
             // whole rows is the last column, off to the right for ever (ADR-0052). Rows still on their way are the
-            // other case, and that follow stays armed for the pass that paints them. Dropped rather than kept, or the
-            // Settled Mark would never come back (ADR-0220).
-            if (this.#rowIsPainted(follow.target.row)) this.#followArmed = undefined;
+            // other case, and that follow stays armed for the pass that paints them. Whole columns are the same on the
+            // other axis: the reveal left the rows where the user had them, so the Extent, the last row, is one no
+            // later pass reaches either. Dropped rather than kept, or the Settled Mark would never come back
+            // (ADR-0220).
+            if (follow.rowsKept === true || this.#rowIsPainted(follow.target.row)) this.#followArmed = undefined;
             return;
         }
         this.#followArmed = undefined;
