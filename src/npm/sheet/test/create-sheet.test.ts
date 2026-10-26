@@ -250,3 +250,22 @@ describe('The Sheet as a component of state (ADR-0048, ADR-0331)', () => {
         expect(textAt(element, 0, 0)).toBe('');
     });
 });
+
+describe('Ctrl+arrow (ADR-0050, item 2)', () => {
+    it('ADR-0050 item 2: Ctrl+arrow stops where the data ends, as Excel\'s does, and follows an edit', async () => {
+        const { element } = sheetOf({ document: documentOf({ A1: '1', A2: '2', A3: '3', A7: '7' }) });
+        await vi.waitFor(() => { expect(textAt(element, 0, 0)).toBe('1'); });
+        press(element, 0, 0);
+        key('ArrowDown', { ctrlKey: true });
+        await vi.waitFor(() => { expect(nameBox(element).value).toBe('A3'); });
+        key('ArrowDown', { ctrlKey: true });
+        await vi.waitFor(() => { expect(nameBox(element).value).toBe('A7'); });
+        key('Delete');
+        await vi.waitFor(() => { expect(textAt(element, 6, 0)).toBe(''); });
+        key('ArrowUp', { ctrlKey: true });
+        await vi.waitFor(() => { expect(nameBox(element).value).toBe('A3'); });
+        // End, which resolves to the same move, keeps the grid's meaning: the row's last column.
+        key('End', { ctrlKey: false });
+        await vi.waitFor(() => { expect(nameBox(element).value).toBe('XFD3'); });
+    });
+});

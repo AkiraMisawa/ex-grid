@@ -8,7 +8,7 @@
 // carry none (ADR-0050 item 12).
 
 import {
-    createGrid, type CellPosition,
+    createGrid, type CellPosition, type GridDirection,
     type GridClearIntent, type GridColumnWidthChange, type GridDensity, type GridEditIntent, type GridHandle, type GridOptions,
     type GridOverwriteNotice, type GridPasteIntent, type GridRefusal, type GridSelection, type EditDiscardReason, type SelectionRange,
     type ViewportSize,
@@ -24,6 +24,7 @@ import { SheetHistory, type SheetOperationStepped } from './sheet-history';
 import type { SheetRow } from './sheet-row';
 import { SheetSource } from './sheet-source';
 import { readNameBoxPlace } from './name-box-text';
+import { SheetEdges } from './sheet-edges';
 import { SheetWords, type SheetLabel } from './sheet-words';
 
 /** What a Sheet is drawn with. */
@@ -102,6 +103,9 @@ class SheetView {
     // A resize of several whole columns, reported a column at a time: its first step, and the columns still to
     // come, which join that step on the undo stack (FN-12c, ADR-0048).
     #resizing: { readonly first: WorkbookStep; readonly pending: Set<number> } | undefined;
+    // Where Ctrl+arrow stops on the Sheet shown: its filled cells, indexed on the first Ctrl+arrow and kept in step
+    // with every change after (ADR-0050, item 2).
+    #edges: SheetEdges | undefined;
     #destroyed = false;
     // The documents this Sheet handed out: one handed back as `document`, as a controlled component's state comes
     // back, is the Sheet's own state, and is not opened again over its undo stack.
@@ -213,6 +217,7 @@ class SheetView {
             showFormulaBar: this.#options.showFormulaBar !== false,
             nameBoxLabel,
             onNameBoxEntered: this.#onNameBoxEntered,
+            dataEdge: this.#dataEdge,
             hideColumnMenu: true,
             hideCopyWithHeaders: true,
             pasteMaySpill: true,
@@ -384,6 +389,13 @@ class SheetView {
         this.#select(place.range);
     };
 
+    readonly #dataEdge = (from: CellPosition, direction: GridDirection): CellPosition => {
+        const sheet = this.#source.sheet;
+        this.#edges ??= SheetEdges.of(sheet);
+        const at = this.#edges.find(new CellAddress(from.row, from.column), direction);
+        return { row: at.row, column: at.column };
+    };
+
     // Places the Selection on `range`, its Focus on the first cell, against the rows shown now (ADR-0050, item 4).
     #select(range: CellRange): void {
         const first = range.first;
@@ -512,6 +524,8 @@ class SheetView {
 
     #sheetChanged(changes: readonly SheetChange[]): void {
         this.#clearNotice();
+        const edges = this.#edges;
+        if (edges !== undefined) for (const change of changes) edges.update(this.#source.sheet, change);
         let options = false;
         // A whole row's or column's Cell Format reaches cells that hold nothing, which the engine names no row of:
         // every painted row is read again, and the grid repaints those whose look changed (ADR-0071).
@@ -531,6 +545,7 @@ class SheetView {
         // there (ADR-0331).
         this.#workbook.shown = sheet;
         this.#resizing = undefined;
+        this.#edges = undefined;
         this.#columns.read(sheet);
         this.#appearance = appearanceLookup(++this.#reading);
         this.#source.show(sheet);

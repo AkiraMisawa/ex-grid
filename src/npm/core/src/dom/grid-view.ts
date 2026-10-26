@@ -42,12 +42,12 @@ import { cellClasses, type MatchMark } from '../paint/cell-classes';
 import { columnMark } from '../paint/heading-mark-styles';
 import { rowClasses } from '../paint/row-classes';
 import { rowMarkHeaderPress, rowMarkHeaderState, type MarkRefusalReason, type RowMarkIntent, type RowMarks } from '../rows/row-marks';
-import { cell as cellPosition, sameCell, type CellPosition, type GridExtent } from '../selection/cell';
+import { cell as cellPosition, sameCell, type CellPosition, type GridDirection, type GridExtent } from '../selection/cell';
 import { markedColumns, wholeColumnRuns } from '../selection/heading-marks';
 import { edgeBandRowsPerTick } from '../selection/edge-band';
 import { HeldSelection } from '../selection/held';
 import { bottomRow, fromCorners, rangeCellCount, sameRange as sameSelectionRange, spansEveryColumn, spansEveryRow, type SelectionRange } from '../selection/range';
-import { Selection, type GridSelection } from '../selection/selection';
+import { Selection, type EdgeAnswer, type GridSelection } from '../selection/selection';
 import { nextSort } from '../query/sort';
 import type { GridSource, GridSourceState } from '../source/grid-source';
 import { InMemoryGridSource } from '../source/in-memory-source';
@@ -305,6 +305,11 @@ export interface GridOptions<Row> extends CellPaintOptions<Row>, FormulaBarOptio
      * ADR-0012 gives the click to sorting (ADR-0050, item 1). Shift+click extends from the Focus's column as
      * always. Off unless given. */
     readonly headerClickSelects?: boolean;
+    /** Where Ctrl+arrow stops (ADR-0050, item 2): handed the Focus and the direction, it answers the cell on that
+     * line where the data ends, which the grid cannot know since it does not hold the data. Asked on Ctrl+arrow
+     * and Ctrl+Shift+arrow only; Home and End keep their meaning. An answer off the Focus's line, behind it or
+     * outside the grid is refused by name. The grid's edge unless given (ADR-0012). */
+    readonly dataEdge?: (from: CellPosition, direction: GridDirection) => CellPosition;
 }
 
 const defaultViewportWidthPx = 800;
@@ -527,6 +532,7 @@ interface Taken<Row> {
     readonly findsHeaders: boolean;
     readonly cellPaint: CellPaint<Row>;
     readonly headerClickSelects: boolean;
+    readonly dataEdge: EdgeAnswer | undefined;
     readonly formulaBar: FormulaBarDeclarations<Row>;
 }
 
@@ -1062,6 +1068,8 @@ export class GridView<Row> {
     #appearanceVersion = -1;
     #appearanceWritten = 0;
     #headerClickSelects = false;
+    // The Consumer's answer to where Ctrl+arrow stops (ADR-0050, item 2), or the grid's edge.
+    #dataEdge: EdgeAnswer | undefined;
     readonly #findHeld: FindHeld = { text: '', matchCase: false, wholeCell: false, replaceText: '' };
     #findOutcome: FindOutcome = { kind: 'none' };
     #findStepping: AbortController | undefined;
@@ -1469,6 +1477,8 @@ export class GridView<Row> {
         }
         const marks = this.#marksOf(options, columns, source);
         const { headerClickSelects }: { readonly headerClickSelects?: unknown } = options;
+        const { dataEdge }: { readonly dataEdge?: unknown } = options;
+        if (dataEdge !== undefined && typeof dataEdge !== 'function') throw new TypeError('dataEdge is a function (ADR-0050, item 2).');
         if (headerClickSelects !== undefined && typeof headerClickSelects !== 'boolean') {
             throw new TypeError('headerClickSelects is true or false.');
         }
@@ -1516,6 +1526,7 @@ export class GridView<Row> {
             onPinnedCountChanged: options.onPinnedCountChanged, culture, temporal,
             onReplace: options.onReplace, findMatch: options.findMatch, findsHeaders: options.findsHeaders !== false,
             cellPaint: CellPaint.take(options, this.#cellPaint), headerClickSelects: headerClickSelects === true, formulaBar,
+            dataEdge: options.dataEdge,
         };
     }
 
@@ -1673,6 +1684,7 @@ export class GridView<Row> {
         this.#findsHeaders = taken.findsHeaders;
         this.#cellPaint = taken.cellPaint;
         this.#headerClickSelects = taken.headerClickSelects;
+        this.#dataEdge = taken.dataEdge;
         this.#formulaBarDeclared = taken.formulaBar;
         // A panel over a source that no longer finds closes, as a Cancel: nothing could answer its steps
         // (ADR-0055). One offering Replace where none can land any more offers Find alone (ADR-0332 §2).
@@ -2234,7 +2246,7 @@ export class GridView<Row> {
             else if (this.#copied === undefined) this.#tabReleased = true;
             else this.#copied = undefined;
         } else {
-            this.#moveByKey(action);
+            this.#moveByKey(action, event.key);
         }
     };
 
@@ -2247,7 +2259,7 @@ export class GridView<Row> {
         this.#invalidate();
     }
 
-    #moveByKey(action: GridKeyAction): void {
+    #moveByKey(action: GridKeyAction, key: string): void {
         this.#reconcileSelection();
         const geometry = this.#geometry;
         const visible = this.#visible;
@@ -2256,7 +2268,10 @@ export class GridView<Row> {
         const start = defined(this.#firstVisibleCell(), 'the first cell of painted rows');
         // PageUp and PageDown move by the rows fully visible, at least one (ADR-0012).
         const viewportRows = Math.max(1, Math.floor(geometry.viewportHeightPx / this.#metrics.rowHeightPx));
-        const move = moveByKey(action, this.#held.selection, this.#extent, start, viewportRows);
+        // The Consumer's edge is asked on the arrows only: Home and End resolve to the same moves and keep ADR-0012's
+        // meaning (ADR-0050, item 2).
+        const edge = this.#dataEdge !== undefined && key.startsWith('Arrow') ? this.#dataEdge : undefined;
+        const move = moveByKey(action, this.#held.selection, this.#extent, start, viewportRows, edge);
         if (move === undefined) return;
         this.#apply(move.selection);
         this.#revealOwed = move.reveal;
@@ -2829,7 +2844,7 @@ export class GridView<Row> {
         this.#reconcileSelection();
         if (this.#held.selection.isEmpty) return;
         const action = resolveKey(press);
-        if (movingKinds.has(action.kind)) this.#moveByKey(action);
+        if (movingKinds.has(action.kind)) this.#moveByKey(action, press.key);
     }
 
     /**
