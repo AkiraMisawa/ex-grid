@@ -1,0 +1,31 @@
+{
+  "name": "@ex-grid/sheet-engine",
+  "version": "0.0.0-dev",
+  "description": "ExSheet's formula engine in TypeScript: a Sheet of Entries, Excel's formula syntax and a declared set of functions that answer as Excel does or not at all, incremental recalculation and number formats.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AkiraMisawa/ex-grid.git",
+    "directory": "src/npm/sheet-engine"
+  },
+  "homepage": "https://akiramisawa.github.io/ex-grid/",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist/index.js",
+    "dist/index.js.map",
+    "dist/index.d.ts"
+  ],
+  "scripts": {
+    "build": "node ../scripts/build.mjs",
+    "api": "node ../scripts/build.mjs --local",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  }
+}

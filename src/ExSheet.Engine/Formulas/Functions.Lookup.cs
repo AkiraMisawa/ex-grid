@@ -524,14 +524,14 @@ internal static partial class FunctionLibrary
         ^(?:(?<sheet>'(?:[^']|'')+'|[A-Za-z_][A-Za-z0-9_.]*)!)?
         (?<first>[Rr](?:[0-9]+|\[[+-]?[0-9]+\])?(?:[Cc](?:[0-9]+|\[[+-]?[0-9]+\])?)?|[Cc](?:[0-9]+|\[[+-]?[0-9]+\])?)
         (?:(?<inside>\#)?:(?<second>[Rr](?:[0-9]+|\[[+-]?[0-9]+\])?(?:[Cc](?:[0-9]+|\[[+-]?[0-9]+\])?)?|[Cc](?:[0-9]+|\[[+-]?[0-9]+\])?)
-        (?::(?<third>[Rr](?:[0-9]+|\[[+-]?[0-9]+\])?(?:[Cc](?:[0-9]+|\[[+-]?[0-9]+\])?)?|[Cc](?:[0-9]+|\[[+-]?[0-9]+\])?))?)?$
+        (?::(?<third>[Rr](?:[0-9]+|\[[+-]?[0-9]+\])?(?:[Cc](?:[0-9]+|\[[+-]?[0-9]+\])?)?|[Cc](?:[0-9]+|\[[+-]?[0-9]+\])?))?)?\z
         """,
         System.Text.RegularExpressions.RegexOptions.IgnorePatternWhitespace | System.Text.RegularExpressions.RegexOptions.CultureInvariant)]
     private static partial System.Text.RegularExpressions.Regex RowColumnText();
 
     /// <summary>One R1C1 part: an R with a row or none, a C with a column or none, or both; each a number or an offset in brackets.</summary>
     [System.Text.RegularExpressions.GeneratedRegex(
-        @"^(?:(?<r>[Rr])(?<row>[0-9]+|\[[+-]?[0-9]+\])?)?(?:(?<c>[Cc])(?<column>[0-9]+|\[[+-]?[0-9]+\])?)?$",
+        @"^(?:(?<r>[Rr])(?<row>[0-9]+|\[[+-]?[0-9]+\])?)?(?:(?<c>[Cc])(?<column>[0-9]+|\[[+-]?[0-9]+\])?)?\z",
         System.Text.RegularExpressions.RegexOptions.CultureInvariant)]
     private static partial System.Text.RegularExpressions.Regex RowColumnPartText();
 
