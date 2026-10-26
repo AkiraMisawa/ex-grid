@@ -445,6 +445,9 @@ export interface PivotItemKey {
 export function pivotItemKey(kind: PivotItemKind, value?: string): PivotItemKey;
 
 // @public
+export function pivotItemKeyId(key: PivotItemKey): string;
+
+// @public
 export type PivotItemKind = 'number' | 'date' | 'text' | 'boolean' | 'error' | 'blank';
 
 // @public

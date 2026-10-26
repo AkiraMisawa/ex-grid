@@ -3,7 +3,7 @@
 // taken against the layout the menu was drawn from, as a gesture in the Field List does (spine rule 6), and where
 // the entry it was opened on stands in that layout, which the keyboard goes back to.
 //
-// Field Settings… and Value Field Settings… open a panel in the menu's place. Filter… is not offered yet.
+// Filter…, Field Settings… and Value Field Settings… open a panel in the menu's place.
 
 import {
     isValuesPseudoField, moveEntry, placementOf, placementsIn, removeEntry, setFieldCollapsed, setSort, valuesPseudoField, type PivotArea,
@@ -31,7 +31,7 @@ export interface EntryMenuEdit extends FieldListEdit {
 }
 
 /** A panel a field's menu opens. */
-export type EntryPanel = 'field-settings' | 'value-field-settings';
+export type EntryPanel = 'filter-items' | 'field-settings' | 'value-field-settings';
 
 /** One command of a field's menu: what it is, and the change it makes when pressed, or the panel it opens. */
 export interface EntryMenuCommand extends Omit<PivotMenuCommand, 'invoke'> {
@@ -98,12 +98,14 @@ export function entryMenuCommands(model: EntryMenuModel, entry: PivotEntry): rea
         return edit(next, entryOfField(next, name, entry));
     });
     if (entry.area === 'values') opens('value-field-settings');
+    if (entry.area === 'filters') opens('filter-items');
     if (entry.area !== 'rows' && entry.area !== 'columns') return Object.freeze(commands);
 
     const placement = elementAt(placementsIn(layout, entry.area), entry.index);
     const bySort = (direction: 'ascending' | 'descending'): boolean => placement.sort.direction === direction && placement.sort.byValue === undefined;
     add('sort-ascending', !bySort('ascending'), () => edit(setSort(layout, name, { direction: 'ascending' }), entry));
     add('sort-descending', !bySort('descending'), () => edit(setSort(layout, name, { direction: 'descending' }), entry));
+    opens('filter-items');
     // The innermost field has nothing under its Items to collapse (ADR-0060).
     const outer = entry.index < count - 1;
     const toggled = placement.toggledItems.length > 0;
