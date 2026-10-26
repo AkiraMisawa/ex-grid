@@ -1270,6 +1270,50 @@ export class GridView<Row> {
         this.#invalidate();
     }
 
+    /**
+     * The Consumer asks the grid to place the Selection and the Focus (ADR-0050, item 4): `range` becomes the
+     * one range, with the Focus on `focus` inside it, and the grid then does what it does after a click: an open
+     * edit commits first, a menu closes, and the Focus is scrolled into view. The Selection stays the grid's; the
+     * Consumer asks and the grid places. Positions mean something only under the order they were written in, so
+     * a request under another Row Sequence Version than the grid's places nothing and is refused (`onRefused`,
+     * kind `placement`, reason `orderMoved`), as is one whose edit commit brought in another source
+     * (`sourceChanged`, ADR-0142). True once placed; false when refused, or when a Reject or a refusal held the
+     * open edit (ADR-0034), which says so itself. A range reaching outside the grid, or a Focus outside the
+     * range, throws a RangeError and changes nothing.
+     */
+    placeSelection(range: SelectionRange, focus: CellPosition, rowSequenceVersion: number): boolean {
+        if (this.#destroyed) throw new Error('This grid was destroyed: a grid destroyed places nothing.');
+        if (rowSequenceVersion !== this.#sequence()) {
+            this.#onRefused?.({ kind: 'placement', reason: 'orderMoved' });
+            return false;
+        }
+        // The source the request was made under: the version alone cannot tell a replaced one (ADR-0142).
+        const source = this.#source;
+        // Checked before anything changes: a request that names cells the grid does not have commits nothing.
+        this.#held.selection.place(range, focus, this.#extent);
+        this.#answered += 1;
+        this.#invalidate();
+        if (!this.#commitEdit()) return false;
+        this.#closePopover(true);
+        this.#interactive = undefined;
+        // The commit's intent may have moved the order or handed over another source: the positions name other
+        // rows now (ADR-0011, ADR-0142).
+        if (source !== this.#source) {
+            this.#onRefused?.({ kind: 'placement', reason: 'sourceChanged' });
+            return false;
+        }
+        if (rowSequenceVersion !== this.#sequence()) {
+            this.#onRefused?.({ kind: 'placement', reason: 'orderMoved' });
+            return false;
+        }
+        this.#reconcileSelection();
+        if (this.#apply(this.#held.selection.place(range, focus, this.#extent))) {
+            this.#revealOwed = { target: focus, extending: undefined, rowStart: false, stepRows: 0 };
+            this.#revealHeaderOwed = undefined;
+        }
+        return true;
+    }
+
     /** Stops hearing everything and empties the root. */
     destroy(): void {
         if (this.#destroyed) return;
@@ -3203,35 +3247,6 @@ export class GridView<Row> {
     }
 
     // ---- The Formula Bar (ADR-0051) ---------------------------------------------------------------------------
-
-    /**
-     * A Consumer's placement of the Selection (ADR-0050, item 4): `range` becomes the one range, with the Focus on
-     * `focus`, revealed. Taken against `rowSequenceVersion`, the one the grid reports (an intent's, `data-ex-sequence`),
-     * which is the source's own until the source is replaced; refused (false) once that moved, or
-     * while an edit stands; a range outside the grid is refused by name (the spine's sixth rule).
-     */
-    placeSelection(range: SelectionRange, focus: CellPosition, rowSequenceVersion: number): boolean {
-        if (this.#destroyed) throw new Error('This grid was destroyed.');
-        // Changes a live source gathered are the order's before the check, as a commit's are (ADR-0142 D5).
-        this.#source.publishGathered?.();
-        this.#reconcileSelection();
-        // Checked first: a place outside the grid is the Consumer's mistake, whatever else holds.
-        const placed = this.#held.selection.place(range, focus, this.#extent);
-        if (this.#edit !== undefined || rowSequenceVersion !== this.#sequence()) return false;
-        // The place is the Selection's now: a menu standing at the old one closes, and a drag ends, so its next
-        // move does not reshape the place from the old anchor.
-        this.#closePopover(true);
-        this.#setDragging(false);
-        this.#apply(placed);
-        const target = placed.focus;
-        if (target !== undefined) {
-            this.#revealOwed = { target, extending: undefined, rowStart: false, stepRows: 0 };
-            this.#followArmed = { focus: target, target };
-        }
-        this.#answered += 1;
-        this.#invalidate();
-        return true;
-    }
 
     // A press or a key into the bar's text opens an edit on the Focus there, in Caret, its caret where the press
     // put it; an edit standing in the cell moves to the bar, in Caret (ADR-0051).

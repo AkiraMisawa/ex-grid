@@ -559,6 +559,12 @@ export type GridRefusal<Row = unknown> =
 | {
     readonly kind: 'mark';
     readonly reason: MarkRefusalReason;
+}
+/** A Consumer's `placeSelection` that placed nothing, because its positions no longer name the rows they were
+* written for (ADR-0050 item 4, ADR-0011). */
+| {
+    readonly kind: 'placement';
+    readonly reason: PlacementRefusalReason;
 };
 
 // @public
@@ -802,6 +808,9 @@ export interface PasteShape {
     readonly columns: number;
     readonly rows: number;
 }
+
+// @public
+export type PlacementRefusalReason = 'orderMoved' | 'sourceChanged';
 
 // @public
 export interface QueryColumn<Row> {

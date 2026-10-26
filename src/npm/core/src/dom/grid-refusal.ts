@@ -19,6 +19,13 @@ export type FindRefusalReason = 'unavailable' | 'notFound' | 'orderChanged' | 's
 export type ActionRefusalReason = 'rowLeftTheWindow' | 'orderMoved' | 'sourceChanged';
 
 /**
+ * Why a Consumer's placement of the Selection placed nothing (ADR-0050 item 4, ADR-0011): it was asked under
+ * another Row Sequence Version than the grid's, or the commit of an open edit it caused brought in another
+ * source (ADR-0142).
+ */
+export type PlacementRefusalReason = 'orderMoved' | 'sourceChanged';
+
+/**
  * A gesture the grid refused, said by what was refused and why (ADR-0005, ADR-0350 section 16): one callback
  * hears every refusal, and the `kind` tells them apart. Nothing a refused gesture would have done has been
  * done: a refused copy leaves the clipboard as it was, and a refused paste writes no cell.
@@ -45,4 +52,7 @@ export type GridRefusal<Row = unknown> =
      * a row's checkbox whose row the Window no longer holds, or that only a position under a moved order names;
      * the header's checkbox pressed under an order that has moved since; or either, made on what a source since
      * replaced painted. */
-    | { readonly kind: 'mark'; readonly reason: MarkRefusalReason };
+    | { readonly kind: 'mark'; readonly reason: MarkRefusalReason }
+    /** A Consumer's `placeSelection` that placed nothing, because its positions no longer name the rows they were
+     * written for (ADR-0050 item 4, ADR-0011). */
+    | { readonly kind: 'placement'; readonly reason: PlacementRefusalReason };

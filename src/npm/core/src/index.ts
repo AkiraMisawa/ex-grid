@@ -13,7 +13,7 @@ export type { GridHeaderGroup, GridOptions, ViewportSize } from './dom/grid-view
 export { cellTextMeasure, type CellPaintOptions } from './dom/cell-paint';
 export type { FormulaBarOptions } from './dom/formula-bar';
 export type { BorderStyle, CellAppearance, CellBorder, CellTextMeasure, EdgeBorderOf } from './cells/cell-appearance';
-export type { ActionRefusalReason, FindRefusalReason, GridRefusal } from './dom/grid-refusal';
+export type { ActionRefusalReason, FindRefusalReason, GridRefusal, PlacementRefusalReason } from './dom/grid-refusal';
 export type { GridColumnWidthChange } from './dom/column-gestures';
 export type { GridCommand, GridContextMenuContext } from './dom/grid-command';
 export { gridCommandIds, gridLabelIds } from './chrome/command-ids';
