@@ -12,7 +12,7 @@ import { AutoWidth } from '../columns/auto-width';
 import { assembleCopy, type CopyFlavours } from '../clipboard/clipboard-data';
 import { defaultCellCap, pasteShape, planCopy, planFill, planPaste, type CopyPlan, type FillPlan } from '../clipboard/clipboard-rules';
 import { GridClearIntent } from '../clipboard/clear-intent';
-import { columnPlaceholder, copyRefusalWords, pasteRefusalWords, shapeMismatchMaySpillWords } from '../chrome/refusal-words';
+import { columnPlaceholder, copyRefusalWords, pasteRefusalWords, rowCommandRefusalId, shapeMismatchMaySpillWords } from '../chrome/refusal-words';
 import { builtInCommandLabel } from '../chrome/command-labels';
 import { findOutcomeText, type FindOutcome, type FindPanelRefusedCell } from '../chrome/find-panel-labels';
 import { gridCommandIds } from '../chrome/command-ids';
@@ -66,8 +66,10 @@ import { FilterPanel } from './filter-panel';
 import { FindPanel, type FindHeld } from './find-panel';
 import { copyValues, gatherRows, windowCovers, windowRowAt } from './grid-copy';
 import { defaultPasteByteCap, exceedsUtf8 } from './grid-paste';
-import type { GridRefusal } from './grid-refusal';
-import { resolveColumns, type GridColumn, type ResolvedColumn } from './grid-column';
+import type { ActionRefusalReason, GridRefusal } from './grid-refusal';
+import {
+    resolveColumns, type GridAction, type GridActionEvent, type GridColumn, type GridTemplate, type GridTemplateCell, type ResolvedColumn,
+} from './grid-column';
 import { moveByKey, movingKinds, type KeyReveal } from './key-moves';
 import { selectionLayers, type LayerPiece } from './selection-layers';
 import { stylesheetName, stylesheetStamp } from './shipped-stylesheet';
@@ -130,7 +132,15 @@ export interface GridOptions<Row> extends CellPaintOptions<Row> {
     readonly copyCellCap?: number;
     /** Hears every gesture the grid refused, by kind and reason (ADR-0005): nothing it would have done was
      * done, and the grid has said why through its live region. */
-    readonly onRefused?: (refusal: GridRefusal) => void;
+    readonly onRefused?: (refusal: GridRefusal<Row>) => void;
+    /**
+     * Hears an action pressed (ADR-0020): a press on an Action Column's button, or Space on its cell, which
+     * fires its one action, or the one chosen inside a cell with several (ADR-0037). On the row it was pressed
+     * on, as the Window holds that row now; a press whose row the Window no longer holds, or that only a
+     * position under a moved order names, raises nothing and is refused (`onRefused`, kind `action`). The
+     * grid moves no keyboard after it: what the action opens is the Consumer's.
+     */
+    readonly onAction?: (event: GridActionEvent<Row>) => void;
     /**
      * Hears the one intent each approved paste raises (ADR-0007, ADR-0014): every cell in one notification.
      * The grid writes nothing; the screen changes when the source hands over new row instances. A Consumer
@@ -383,6 +393,10 @@ interface PaintedRow<Row> {
     /** The per-cell declarations it was painted under, and its cells' appearance (ADR-0050, item 15). */
     readonly paint: CellPaint<Row>;
     readonly appearance: RowAppearance | undefined;
+    /** The chosen action of an Interactive cell in it, as `column:action`, or empty (ADR-0037). */
+    readonly chosen: string;
+    /** The Template slots it painted (ADR-0020). */
+    readonly slots: readonly MountedTemplate<Row>[];
 }
 
 /**
@@ -457,7 +471,8 @@ interface Taken<Row> {
     readonly headerLayout: HeaderGroupLayout;
     readonly onSelectionChanged: ((selection: GridSelection) => void) | undefined;
     readonly copyCellCap: number;
-    readonly onRefused: ((refusal: GridRefusal) => void) | undefined;
+    readonly onRefused: ((refusal: GridRefusal<Row>) => void) | undefined;
+    readonly onAction: ((event: GridActionEvent<Row>) => void) | undefined;
     readonly onPaste: ((intent: GridPasteIntent) => void) | undefined;
     readonly pasteMaySpill: boolean;
     readonly highlightFocusRow: boolean;
@@ -520,7 +535,53 @@ type StandingPopover = MenuPopover extends infer P ? (P extends unknown ? Omit<P
 interface DroppedAim {
     readonly focus: CellPosition | undefined;
     readonly reason: EditDiscardReason;
+    /** The action chosen in the Focus's cell while it was Interactive (ADR-0037). */
+    readonly chosenAction: number | undefined;
     told: boolean;
+}
+
+/** A Template cell's content as mounted (ADR-0020): its slot, what it was mounted with, and how to take it
+ * away. `cell` is undefined while a pass owes it a mount. */
+interface MountedTemplate<Row> {
+    readonly slot: HTMLElement;
+    template: GridTemplate<Row>;
+    row: Row;
+    readonly column: string;
+    cell: GridTemplateCell<Row> | undefined;
+    unmount: (() => void) | undefined;
+}
+
+/** A row pressed on, as its element was painted: its row, its position, and the order and source it was
+ * painted under (ADR-0142). */
+interface PressedRow<Row> {
+    readonly row: Row;
+    readonly index: number;
+    readonly sequence: number;
+    readonly source: unknown;
+}
+
+/** A press on an action's button, from its mousedown until its click (ADR-0142): what the button stood for
+ * when it was pressed. */
+interface ActionPress<Row> extends PressedButton<Row> {
+    readonly button: Element;
+    readonly pressed: PressedRow<Row>;
+}
+
+/** What an action's button stands for: its column as painted, and the action. */
+interface PressedButton<Row> {
+    readonly column: ResolvedColumn<Row>;
+    readonly action: GridAction;
+}
+
+/** What a row being painted is told and gathers (ADR-0037, ADR-0020): its key, the chosen action of an
+ * Interactive cell in it, the Template slots this pass has painted so far, and the ones it paints. */
+interface RowPaint<Row> {
+    readonly key: unknown;
+    readonly chosen: { readonly column: number; readonly action: number } | undefined;
+    readonly used: Set<MountedTemplate<Row>>;
+    readonly slots: MountedTemplate<Row>[];
+    /** Its cells' appearance (ADR-0050, item 15). */
+    readonly appearance: RowAppearance | undefined;
 }
 
 /** A reveal's repaint under way (ADR-0012, 2026-10-08): where the reveal left the scroller, and what stops
@@ -738,7 +799,28 @@ export class GridView<Row> {
     #headerLayout = HeaderGroupLayout.empty;
     #onSelectionChanged: ((selection: GridSelection) => void) | undefined;
     #copyCellCap = defaultCellCap;
-    #onRefused: ((refusal: GridRefusal) => void) | undefined;
+    #onRefused: ((refusal: GridRefusal<Row>) => void) | undefined;
+    #onAction: ((event: GridActionEvent<Row>) => void) | undefined;
+    // Interactive over the core's own actions (ADR-0037): the cell Space entered and the action chosen in it.
+    // The keyboard never leaves the root; this is what the arrows move, what Space fires and what the row
+    // paints. Valid only while the Focus is still that cell (#interactiveChoice).
+    #interactive: { readonly cell: CellPosition; readonly action: number } | undefined;
+    // A Template cell's focus request (ADR-0037): pending from the Space that asked until the pass that paints
+    // the cell hands it over, then gone, so a cell mounted again later is never handed it. Dropped if the
+    // Focus moves first.
+    #focusRequest: { readonly cell: CellPosition; readonly number: number } | undefined;
+    #focusRequests = 0;
+    // The Template cells' content as mounted (ADR-0020), by row key and column: a cell painted again keeps its
+    // slot, and its content is mounted again into it only when its row instance changed or a request is handed
+    // over. Mounts wait until the rows are in the DOM.
+    readonly #templates = new Map<unknown, Map<string, MountedTemplate<Row>>>();
+    // What each painted row element was painted for, and the order and source the last pass painted under, so
+    // a press on one of its buttons names its row (ADR-0142). Every row in the DOM is the last pass's.
+    readonly #rowsPainted = new WeakMap<Element, { readonly row: Row; readonly index: number }>();
+    #paintedUnder: { readonly sequence: number; readonly source: unknown } | undefined;
+    // Which action each painted button stands for, by column and position in it.
+    readonly #actionButtons = new WeakMap<Element, PressedButton<Row>>();
+    #actionPress: ActionPress<Row> | undefined;
     #pasteHeard: ((intent: GridPasteIntent) => void) | undefined;
     #pasteMaySpill = false;
     #highlightFocusRow = false;
@@ -1036,6 +1118,8 @@ export class GridView<Row> {
             root.addEventListener('keydown', this.#onKeyDown, true);
             this.#viewport.addEventListener('mousedown', this.#onPress);
             this.#viewport.addEventListener('mouseup', this.#onRelease);
+            this.#viewport.addEventListener('mousedown', this.#onActionPress);
+            this.#viewport.addEventListener('click', this.#onActionClick);
             this.#viewport.addEventListener('dblclick', this.#onDoubleClick);
             this.#viewport.addEventListener('contextmenu', this.#onContextMenu);
             root.addEventListener('mousedown', this.#onRootPress, true);
@@ -1057,6 +1141,8 @@ export class GridView<Row> {
                 () => { root.removeEventListener('keydown', this.#onKeyDown, true); },
                 () => { this.#viewport.removeEventListener('mousedown', this.#onPress); },
                 () => { this.#viewport.removeEventListener('mouseup', this.#onRelease); },
+                () => { this.#viewport.removeEventListener('mousedown', this.#onActionPress); },
+                () => { this.#viewport.removeEventListener('click', this.#onActionClick); },
                 () => { this.#viewport.removeEventListener('dblclick', this.#onDoubleClick); },
                 () => { this.#viewport.removeEventListener('contextmenu', this.#onContextMenu); },
                 () => { root.removeEventListener('mousedown', this.#onRootPress, true); },
@@ -1131,6 +1217,11 @@ export class GridView<Row> {
         this.#popover = undefined;
         for (const stop of this.#stops) stop();
         this.#unsubscribe?.();
+        // Every Template cell's content is taken away with the grid (ADR-0020).
+        for (const byColumn of this.#templates.values()) {
+            for (const mounted of byColumn.values()) this.#unmount(mounted);
+        }
+        this.#templates.clear();
         this.#root.replaceChildren();
         for (const name of ['tabindex', 'dir', 'id', 'role', 'aria-multiselectable', 'data-ex-reveal', 'data-ex-follow',
             'data-ex-follow-focus', 'aria-activedescendant', 'data-ex-settled', 'class', 'style', 'aria-rowcount', 'aria-colcount',
@@ -1178,16 +1269,22 @@ export class GridView<Row> {
             // metrics, as the C# core carries it, and measured afresh otherwise: two equal declarations may
             // paint differently (ADR-0016; ADR-0003's note of 2026-10-11).
             const at = new Map(previous.map(({ column }, i) => [column.name, i]));
-            autoWidths = columns.map(({ column, spec, header }) => {
+            autoWidths = columns.map(({ column, spec, header, actions }) => {
                 const was = at.get(column.name);
                 if (!metricsChanged && !menusChanged && was !== undefined && itemAt(previous, was).column === column) {
                     return itemAt(previousWidths, was);
                 }
                 // The header is content the column paints too: unobserved, a short Auto column would
                 // stand with its label chopped (ADR-0016).
-                return spec.width.isAuto
-                    ? AutoWidth.of(spec).observe(metrics.headerRequiredPx({ label: header, menuButton: options.hideColumnMenu !== true, sortable: column.queryable !== false }))
-                    : AutoWidth.of(spec);
+                if (!spec.width.isAuto) return AutoWidth.of(spec);
+                const auto = AutoWidth.of(spec).observe(metrics.headerRequiredPx({ label: header, menuButton: options.hideColumnMenu !== true, sortable: column.queryable !== false }));
+                // An Action Column paints no value, so the rows never grow it and its header is usually empty:
+                // what it declares is its labels, measured once, side by side, each with its button's box, and
+                // the cell's own padding once (ADR-0016, ADR-0020). A label is text (ticket 83).
+                if (actions.length === 0) return auto;
+                const asText = metrics.cellMetrics.for('text');
+                return auto.observe(actions.reduce((required, action) => required + asText.textWidthPx(action.label) + metrics.actionButtonChromePx,
+                    asText.estimatePx('')));
             });
         }
         const width = sizeOf(options.viewportWidth, defaultViewportWidthPx, 'viewportWidth');
@@ -1196,11 +1293,12 @@ export class GridView<Row> {
             throw new RangeError(`pinnedColumnCount is a whole number of at least 0, not ${pinnedColumnCount}.`);
         }
         const {
-            onSelectionChanged, onRefused, onPaste, pasteMaySpill, onClear, onUndo, onRedo, onEdit, onEditingChanged, onEditDiscarded,
+            onSelectionChanged, onRefused, onAction, onPaste, pasteMaySpill, onClear, onUndo, onRedo, onEdit, onEditingChanged, onEditDiscarded,
             onOverwriteNotice, onCellDoubleClick, onColumnWidthChanged, onColumnOrderChanged, contextCommands, commandLabel, hideCopyWithHeaders,
             hideColumnMenu, onColumnHidden, onPinnedCountChanged,
         }: {
-            readonly onSelectionChanged?: unknown; readonly onRefused?: unknown; readonly onPaste?: unknown; readonly pasteMaySpill?: unknown;
+            readonly onSelectionChanged?: unknown; readonly onRefused?: unknown; readonly onAction?: unknown; readonly onPaste?: unknown;
+            readonly pasteMaySpill?: unknown;
             readonly onClear?: unknown; readonly onUndo?: unknown; readonly onRedo?: unknown;
             readonly onEdit?: unknown; readonly onEditingChanged?: unknown; readonly onEditDiscarded?: unknown;
             readonly onOverwriteNotice?: unknown; readonly onCellDoubleClick?: unknown;
@@ -1213,6 +1311,9 @@ export class GridView<Row> {
         }
         if (onRefused !== undefined && typeof onRefused !== 'function') {
             throw new TypeError('onRefused is a function of the refusal.');
+        }
+        if (onAction !== undefined && typeof onAction !== 'function') {
+            throw new TypeError('onAction is a function of the action pressed.');
         }
         if (onPaste !== undefined && typeof onPaste !== 'function') {
             throw new TypeError('onPaste is a function of the paste\'s intent.');
@@ -1321,7 +1422,7 @@ export class GridView<Row> {
         return {
             source, own, rows: options.rows, metrics, declared: options.columns, columns, autoWidths, columnsChanged,
             width, height, pinnedCount: pinnedColumnCount, virtualiseColumns, headerGroups, headerLayout,
-            onSelectionChanged: options.onSelectionChanged, copyCellCap, onRefused: options.onRefused,
+            onSelectionChanged: options.onSelectionChanged, copyCellCap, onRefused: options.onRefused, onAction: options.onAction,
             onPaste: options.onPaste, pasteMaySpill: options.pasteMaySpill === true, pasteByteCap, onClear: options.onClear,
             highlightFocusRow: options.highlightFocusRow === true, highlightHoverRow: options.highlightHoverRow === true,
             onUndo: options.onUndo, onRedo: options.onRedo,
@@ -1421,6 +1522,7 @@ export class GridView<Row> {
         this.#onSelectionChanged = taken.onSelectionChanged;
         this.#copyCellCap = taken.copyCellCap;
         this.#onRefused = taken.onRefused;
+        this.#onAction = taken.onAction;
         this.#pasteHeard = taken.onPaste;
         this.#pasteMaySpill = taken.pasteMaySpill;
         this.#highlightFocusRow = taken.highlightFocusRow;
@@ -1657,8 +1759,10 @@ export class GridView<Row> {
             const slice = index - windowStart;
             if (slice < 0 || slice >= window.length) continue;
             const row = itemAt(window, slice);
-            this.#columns.forEach(({ column, spec }, c) => {
-                if (!spec.width.isAuto) return;
+            this.#columns.forEach(({ column, spec, paintsValue }, c) => {
+                // A Template or Action cell has no text to measure: observed, the empty string would hold the
+                // column at MinWidth, below the estimate it already carries (ADR-0016, ADR-0020).
+                if (!spec.width.isAuto || !paintsValue) return;
                 const text = textFor(column, column.value(row));
                 widths[c] = itemAt(widths, c).observe(this.#metrics.cellMetrics.for(column.type).estimatePx(text));
             });
@@ -1723,9 +1827,12 @@ export class GridView<Row> {
         const was = this.#held.selection;
         this.#held = columnsMoved ? HeldSelection.empty(version) : this.#held.under(version);
         if (!was.isEmpty && this.#held.selection.isEmpty) {
+            const interactive = this.#interactive;
             this.#droppedAim = {
                 focus: columnsMoved ? undefined : was.focus,
                 reason: this.#source === this.#heldSource ? 'orderMoved' : 'sourceChanged',
+                chosenAction: !columnsMoved && interactive !== undefined && was.focus !== undefined && sameCell(interactive.cell, was.focus)
+                    ? interactive.action : undefined,
                 told: false,
             };
             this.#drops += 1;
@@ -1870,22 +1977,75 @@ export class GridView<Row> {
                 return;
             }
         }
+        // Escape from a control inside a cell, a Template Column's own, is the way out of that cell and not of
+        // the grid (ADR-0020): the keyboard comes back to the grid, and an Interactive cell the pointer walked
+        // away from ends too. Not from a control of a grid nested in a cell, whose own Escape it is.
+        const target = event.target;
+        if (target instanceof Element && target !== this.#keyField && this.#viewport.contains(target)
+            && target.closest('.ex-grid') === this.#root && resolveKey(press).kind === 'leave') {
+            this.#taken(event);
+            this.#interactive = undefined;
+            this.#takeKeyboard();
+            return;
+        }
         // A key typed in a control inside the root is that control's: only the root and this grid's own
         // Keyboard Field are the grid's (ADR-0010, ADR-0080).
-        if (event.target !== this.#root && event.target !== this.#keyField) return;
+        if (target !== this.#root && target !== this.#keyField) return;
         // A released Tab is the browser's, and any other key ends the release (ADR-0012).
         if (this.#tabReleased) {
             this.#tabReleased = false;
             const canonical = canonicalKey(press);
             if (canonical === 'Tab' || canonical === 'Shift+Tab') return;
         }
+        // A held Space engages once (ADR-0037): it fires a single action, and its repeats would fire it again on
+        // the same row for as long as it is held. They are taken, so the page does not scroll by them either,
+        // and dropped. Shift+Space and Ctrl+Space name whole regions, and repeat harmlessly.
+        if (event.repeat && canonicalKey(press) === ' ') {
+            this.#taken(event);
+            return;
+        }
         const action = resolveKey(press);
+        // Inside a cell with several actions the keyboard never left the root (ADR-0037): the arrows, Home and
+        // End choose within it, clamped at both ends, never leaving it by overshoot; Space and Escape are
+        // answered below; every other key leaves the cell first and keeps the meaning it has everywhere else,
+        // Enter and Tab included, which is why nothing ever fires on them (ADR-0020).
+        this.#reconcileSelection();
+        const choice = this.#interactiveChoice();
+        if (choice !== undefined) {
+            const chosen = this.#choiceAfter(choice, action);
+            if (chosen !== undefined) {
+                this.#taken(event);
+                this.#interactive = { cell: choice.cell, action: chosen };
+                return;
+            }
+            if (action.kind !== 'engage' && action.kind !== 'leave') {
+                this.#interactive = undefined;
+                this.#invalidate();
+            }
+        }
+        // Space engages with the Focus cell's content (ADR-0020, ADR-0037). Aimed with a Selection an order move
+        // or a replaced source has dropped since, it engages nothing, never the Focus in force the user did not
+        // aim at, and an action it was aimed at is refused (ADR-0142). With nothing selected it is a first key
+        // like any other, and only places the Focus (ADR-0012): it never fires or enters a cell the user has not
+        // seen focused.
+        if (action.kind === 'engage') {
+            const dropped = this.#droppedAim;
+            if (dropped !== undefined) {
+                this.#taken(event);
+                this.#refuseDroppedSpace(dropped);
+                return;
+            }
+            if (!this.#held.selection.isEmpty) {
+                this.#taken(event);
+                this.#engage();
+                return;
+            }
+        }
         // F2 and a character the key table does not name open the Cell Editor on a cell that edits (ADR-0010):
         // the character typed onto it is not lost, since the editor opens holding it; Caret keeps the cell's
-        // text. Space opens one only onto a Focus the user has seen (ADR-0037). Shift+Space and Ctrl+Space are
-        // the key table's, and select.
+        // text. Shift+Space and Ctrl+Space are the key table's, and select.
         const typed = action.kind === 'none' && opensAnEdit(event.key, event.ctrlKey, event.altKey, event.metaKey);
-        if (this.#canEdit && (typed || (action.kind === 'engage' && !this.#held.selection.isEmpty))) {
+        if (this.#canEdit && typed) {
             const caret = event.key === 'F2';
             if (this.#tryOpenEdit(caret ? 'caret' : 'overwrite', caret ? undefined : event.key)) {
                 this.#taken(event);
@@ -1934,10 +2094,12 @@ export class GridView<Row> {
         this.#taken(event);
         if (action.kind === 'leave') {
             this.#reconcileSelection();
-            // The Copied Range is the last layer before the way out (ADR-0170, ADR-0012): with a copy
-            // outlined, Escape removes the outline and does nothing else. With nothing left to dismiss it is
-            // the way out of Enter and Tab cycling: the keyboard stays and the next Tab leaves the grid.
-            if (this.#copied === undefined) this.#tabReleased = true;
+            // The Interactive layer comes first (ADR-0037, ADR-0012's layering): Escape leaves the cell, and the
+            // Focus and the keyboard stay. The Copied Range is the last layer before the way out (ADR-0170): with
+            // a copy outlined, Escape removes the outline and does nothing else. With nothing left to dismiss it
+            // is the way out of Enter and Tab cycling: the keyboard stays and the next Tab leaves the grid.
+            if (this.#interactiveChoice() !== undefined) this.#interactive = undefined;
+            else if (this.#copied === undefined) this.#tabReleased = true;
             else this.#copied = undefined;
         } else {
             this.#moveByKey(action);
@@ -1969,6 +2131,209 @@ export class GridView<Row> {
         const focus = move.selection.focus;
         // And the page follows what the reveal brings into view (ADR-0204).
         if (focus !== undefined) this.#followArmed = { focus, target: move.reveal.target };
+    }
+
+    // ---- Actions and Template cells (ADR-0020, ADR-0037, ADR-0142) --------------------------------------
+
+    // Space on the Focus cell (ADR-0020, completed by ADR-0037): fires a single action; enters a cell with
+    // several, the first one chosen; asks a Template cell's content to take the keyboard; and opens Overwrite
+    // on a cell that edits, the space already in it. Inside an Interactive cell it fires the chosen action, and
+    // leaves: an action changes the row under it, and staying would leave the chosen action over whatever row
+    // slid into its place, one Space from firing on that. A Focus over a row not in hand engages nothing.
+    #engage(): void {
+        const focus = defined(this.#held.selection.focus, 'the Focus Space engages');
+        const resolved = itemAt(this.#columns, focus.column);
+        const choice = this.#interactiveChoice();
+        this.#interactive = undefined;
+        const held = this.#rowAt(focus.row);
+        if (held === undefined) return;
+        const pressed: PressedRow<Row> = { row: held.row, index: focus.row, sequence: this.#sequence(), source: this.#source };
+        const { actions, template } = resolved;
+        if (choice !== undefined) {
+            this.#pressAction(pressed, resolved, itemAt(actions, choice.action));
+        } else if (actions.length === 1) {
+            this.#pressAction(pressed, resolved, itemAt(actions, 0));
+        } else if (actions.length > 1) {
+            // The keyboard stays on the root: what changes is which action the row paints as chosen, and what
+            // aria-activedescendant names. A chosen button nobody can see is no choice, so the Focus is revealed.
+            this.#interactive = { cell: focus, action: 0 };
+            this.#revealOwed = { target: focus, extending: undefined, rowStart: false, stepRows: 0 };
+        } else if (template !== undefined) {
+            // Asked, never reached into: the pass that paints the cell hands the request to its content, which
+            // focuses its own control (ADR-0037), so the cell has to be painted for it.
+            this.#focusRequests += 1;
+            this.#focusRequest = { cell: focus, number: this.#focusRequests };
+            this.#revealOwed = { target: focus, extending: undefined, rowStart: false, stepRows: 0 };
+        } else if (this.#canEdit) {
+            this.#tryOpenEdit('overwrite', ' ');
+        }
+    }
+
+    // Space aimed with a Selection an order move or a replaced source has dropped since (ADR-0142, LV-12,
+    // LV-20): an action it would have fired is refused, naming no row, since the grid kept no row and no Row
+    // Key of that Selection (ADR-0160). One action fires on Space; of several, the one chosen in the cell, and
+    // none before one was.
+    #refuseDroppedSpace(dropped: DroppedAim): void {
+        const focus = dropped.focus;
+        if (focus === undefined || focus.column >= this.#columns.length) return;
+        const { column, actions } = itemAt(this.#columns, focus.column);
+        const fired = actions.length === 1 ? 0 : dropped.chosenAction;
+        if (fired === undefined || fired >= actions.length) return;
+        this.#refuseAction({
+            kind: 'action', reason: dropped.reason === 'sourceChanged' ? 'sourceChanged' : 'orderMoved', row: undefined,
+            column: column.name, action: itemAt(actions, fired).name,
+        });
+    }
+
+    // An action refused is said in the live region, in the words a row command whose row is gone says
+    // (A11Y-16), and raised by name (ADR-0142): nothing the press would have done was done.
+    #refuseAction(refusal: GridRefusal<Row> & { readonly kind: 'action' }): void {
+        this.#sayRefusal(this.#labelOf(rowCommandRefusalId));
+        this.#onRefused?.(refusal);
+    }
+
+    // An action pressed, by pointer or by Space, raised on the row it was pressed on as that row is now
+    // (ADR-0142, LV-12), or refused. Acted on the newest rows the source holds: one that gathers live changes
+    // puts them out first (D5). Nothing else is done, not even to the keyboard (ADR-0037, amended): a press
+    // never focused the button, and what the handler opens is the Consumer's.
+    #pressAction(pressed: PressedRow<Row>, resolved: ResolvedColumn<Row>, action: GridAction): void {
+        const column = resolved.column.name;
+        // Made on what a source since replaced painted: its row is another source's, whatever the new one holds
+        // there, so the refusal names no row.
+        if (pressed.source !== this.#source) {
+            this.#refuseAction({ kind: 'action', reason: 'sourceChanged', row: undefined, column, action: action.name });
+            return;
+        }
+        this.#source.publishGathered?.();
+        this.#reconcileSelection();
+        const now = this.#pressedRowNow(pressed);
+        if ('refused' in now) {
+            // The refusal names the row only while the Window holds it (ADR-0160).
+            this.#refuseAction({
+                kind: 'action', reason: now.refused, row: this.#windowHolds(pressed.row) ? pressed.row : undefined, column, action: action.name,
+            });
+            return;
+        }
+        this.#onAction?.({ row: now.row, column, action: action.name });
+    }
+
+    // The row a press acts on now (ADR-0142, LV-12): with a Row Key, the row under the pressed row's key,
+    // wherever the Window holds it (ADR-0140); without one, the pressed instance while the Window holds it,
+    // else the row at the position it was pressed at, while the order it was pressed under holds.
+    #pressedRowNow(pressed: PressedRow<Row>): { readonly row: Row } | { readonly refused: ActionRefusalReason } {
+        const rowKey = this.#source.rowKey;
+        if (rowKey !== undefined) {
+            // A key met twice in one Window names its row only where it was pressed (ADR-0140).
+            const at = this.#positionOfKey(keyOf(rowKey, pressed.row, 'The row an action was pressed on'), pressed.index);
+            const found = at === undefined ? undefined : this.#rowAt(at);
+            return found === undefined ? { refused: 'rowLeftTheWindow' } : found;
+        }
+        if (this.#state.window.includes(pressed.row)) return { row: pressed.row };
+        if (this.#sequence() !== pressed.sequence) return { refused: 'orderMoved' };
+        const at = this.#rowAt(pressed.index);
+        return at === undefined ? { refused: 'rowLeftTheWindow' } : at;
+    }
+
+    // Whether the Window holds a row: by its key where the source keys its rows, else as the instance.
+    #windowHolds(row: Row): boolean {
+        const rowKey = this.#source.rowKey;
+        if (rowKey === undefined) return this.#state.window.includes(row);
+        const key = keyOf(rowKey, row, 'The row an action was pressed on');
+        return this.#state.window.some(held => keyOf(rowKey, held, 'A row of the Window') === key);
+    }
+
+    // The chosen action of the Interactive cell, or none, including when the field is stale: Interactive
+    // belongs to the Focus, so a Focus moved or dropped since, by a press, a sort or new columns, has ended it,
+    // whatever the field still says (ADR-0037).
+    #interactiveChoice(): { readonly cell: CellPosition; readonly action: number } | undefined {
+        const interactive = this.#interactive;
+        const focus = this.#held.selection.focus;
+        if (interactive === undefined || focus === undefined || !sameCell(focus, interactive.cell)
+            || interactive.cell.column >= this.#columns.length) {
+            return undefined;
+        }
+        const { actions } = itemAt(this.#columns, interactive.cell.column);
+        return actions.length > 1 && interactive.action < actions.length ? interactive : undefined;
+    }
+
+    // The action a key chooses inside an Interactive cell, or none for a key that does not choose (ADR-0037):
+    // ← and → step, and Home and End, with the Ctrl+arrows that resolve to the same edge move, go to either
+    // end. Clamped at both, never wrapping.
+    #choiceAfter(choice: { readonly cell: CellPosition; readonly action: number }, action: GridKeyAction): number | undefined {
+        const last = itemAt(this.#columns, choice.cell.column).actions.length - 1;
+        const left = action.direction === 'left';
+        if (!left && action.direction !== 'right') return undefined;
+        if (action.kind === 'move') return left ? Math.max(0, choice.action - 1) : Math.min(last, choice.action + 1);
+        if (action.kind === 'moveToEdge') return left ? 0 : last;
+        return undefined;
+    }
+
+    // A press on an action's button (ADR-0020). Its default is prevented, so the button never takes the
+    // keyboard: a press dragged off it, the platform's way to cancel a click, would leave it focused, and Enter
+    // would then fire it natively, the key that never fires (ADR-0037). What it stood for is noted for its
+    // click, as the row was painted when it was pressed.
+    readonly #onActionPress = (event: MouseEvent): void => {
+        const button = event.target;
+        const stands = button instanceof Element ? this.#actionButtons.get(button) : undefined;
+        if (stands === undefined || !(button instanceof Element)) return;
+        event.preventDefault();
+        if (event.button !== 0) return;
+        const pressed = this.#pressedRowOf(button);
+        this.#actionPress = pressed === undefined ? undefined : { ...stands, button, pressed };
+    };
+
+    // The click on an action's button: acted on the row it was pressed on (ADR-0142). A click no press of
+    // the pointer came before, one a script made, is taken on the row as painted now.
+    readonly #onActionClick = (event: MouseEvent): void => {
+        const press = this.#actionPress;
+        this.#actionPress = undefined;
+        const button = event.target;
+        const stands = button instanceof Element ? this.#actionButtons.get(button) : undefined;
+        if (stands === undefined || !(button instanceof Element)) return;
+        const pressed = press !== undefined && press.button === button ? press.pressed : this.#pressedRowOf(button);
+        if (pressed === undefined) return;
+        this.#answered += 1;
+        this.#invalidate();
+        // A press past an open editor commits it first, as any click away does; a Reject or a refusal holds it,
+        // and the press keeps no meaning of its own (ADR-0034).
+        if (!this.#commitEdit()) return;
+        this.#pressAction(pressed, stands.column, stands.action);
+    };
+
+    // A press whose button a pass took away before its release, as a row the source handed over again is
+    // painted anew: the browser clicks no button then, so the press is answered at its release, over the
+    // button that stands in its place, for the same action of the same row. A release anywhere else is the
+    // platform's cancel, and ends the press. No press is lost, and none fires twice (ADR-0142).
+    #releaseActionPress(event: MouseEvent): void {
+        const press = this.#actionPress;
+        const target = event.target;
+        if (press === undefined || target === press.button) return;
+        this.#actionPress = undefined;
+        if (press.button.isConnected || !(target instanceof Element)) return;
+        const over = this.#actionButtons.get(target);
+        const overRow = this.#pressedRowOf(target);
+        if (over === undefined || overRow === undefined || over.column.column.name !== press.column.column.name
+            || over.action.name !== press.action.name || !this.#sameRowPainted(press.pressed, overRow)) {
+            return;
+        }
+        if (!this.#commitEdit()) return;
+        this.#pressAction(press.pressed, press.column, press.action);
+    }
+
+    // Whether two painted rows are one row: by its key where the source keys its rows, else by its position
+    // under the same order, a new instance there being its new version (ADR-0140).
+    #sameRowPainted(was: PressedRow<Row>, now: PressedRow<Row>): boolean {
+        const rowKey = this.#source.rowKey;
+        if (rowKey === undefined) return was.sequence === now.sequence && was.index === now.index;
+        return keyOf(rowKey, was.row, 'The row an action was pressed on') === keyOf(rowKey, now.row, 'A row of the Window');
+    }
+
+    // The row a button was painted in, under the order and source of the pass that painted it.
+    #pressedRowOf(button: Element): PressedRow<Row> | undefined {
+        const element = button.closest('[role="row"]');
+        const painted = element === null ? undefined : this.#rowsPainted.get(element);
+        const under = this.#paintedUnder;
+        return painted === undefined || under === undefined ? undefined : { ...painted, ...under };
     }
 
     readonly #onPress = (event: MouseEvent): void => {
@@ -2026,6 +2391,7 @@ export class GridView<Row> {
         if (event.button !== 0) return;
         this.#answered += 1;
         this.#invalidate();
+        this.#releaseActionPress(event);
     };
 
     // A drag ends at its release anywhere on the grid, over the header too; released outside it, the next
@@ -3078,7 +3444,7 @@ export class GridView<Row> {
             coreCommand(gridCommandIds.pin, pinned !== undefined && geometry.requestedPinnedCount !== column + 1
                 && this.#headerLayout.allowsPinnedCount(column + 1), () => { pinned?.(column + 1); }),
             coreCommand(gridCommandIds.unpin, pinned !== undefined && geometry.requestedPinnedCount > 0, () => { pinned?.(0); }),
-            coreCommand(gridCommandIds.sizeToFit, widths !== undefined, () => {
+            coreCommand(gridCommandIds.sizeToFit, widths !== undefined && itemAt(this.#columns, column).paintsValue, () => {
                 widths?.({ column: name, widthPx: this.#fittedPx(column) });
             }),
         ]);
@@ -3900,6 +4266,9 @@ export class GridView<Row> {
     // its default the press would end it after moving the Focus, and the text would open an edit there
     // (ADR-0080).
     readonly #onRootPress = (event: MouseEvent): void => {
+        // A new press, whose own button, if it is one, is noted after this: one before it whose release went
+        // unheard is over.
+        this.#actionPress = undefined;
         // Ended before the press is marked: the field left says the keyboard has gone (#onFocusLeft).
         if (this.#composing && event.button === 0) this.#keyField.blur();
         this.#keyboardByPress = true;
@@ -3910,6 +4279,12 @@ export class GridView<Row> {
         const toggle = popover?.kind === 'column' && event.target instanceof Element && this.#menuButtons.get(event.target) === popover.column;
         if (popover !== undefined && !toggle && !(event.target instanceof Node && popover.element.contains(event.target))) {
             this.#closePopover(false);
+        }
+        // A press anywhere on the rows or the header leaves an Interactive cell, and keeps its own meaning
+        // (ADR-0037): the chosen button's paint goes even where the press moves nothing.
+        if (this.#interactive !== undefined && event.target instanceof Node && this.#scroller.contains(event.target)) {
+            this.#interactive = undefined;
+            this.#invalidate();
         }
     };
 
@@ -4174,6 +4549,8 @@ export class GridView<Row> {
         this.#invalidate();
         this.#reconcileSelection();
         const changes = columnsResizedWith(this.#held.selection.wholeColumns(this.#extent), grip)
+            // Only a column that paints its value is fitted to it (ADR-0020).
+            .filter(column => itemAt(this.#columns, column).paintsValue)
             .map(column => ({ column: itemAt(this.#columns, column).column.name, widthPx: this.#fittedPx(column) }));
         // Decided before the first is heard: a Consumer answering it with new columns does not move the rest.
         for (const change of changes) heard(change);
@@ -4765,14 +5142,19 @@ export class GridView<Row> {
         // The element holding the keyboard carries it: the Keyboard Field on a grid that edits, which is then
         // the one tab stop, and the root otherwise (ADR-0080).
         const keyFieldShown = this.#canEdit;
-        const active = focus !== undefined && this.#cellIsPainted(focus) ? this.#cellId(focus) : undefined;
+        // Interactive over several actions, it names the chosen button, which assistive technology reads by the
+        // label every action carries, as it would under real focus (ADR-0037).
+        const choice = this.#interactiveChoice();
+        const active = focus === undefined || !this.#cellIsPainted(focus) ? undefined
+            : choice === undefined ? this.#cellId(focus) : `${this.#cellId(focus)}a${choice.action}`;
         this.#write(root, 'root', 'tabindex', keyFieldShown ? '-1' : '0');
         this.#write(root, 'root', 'aria-activedescendant', keyFieldShown ? undefined : active);
         this.#write(this.#keyField, 'keyField', 'aria-activedescendant', keyFieldShown ? active : undefined);
         this.#write(this.#stamp, 'stamp', 'data-ex-answered', String(this.#answered));
-        // Whether an Escape on the root would leave the grid now: not while it would peel the Copied Range
-        // (ADR-0230 section 1, ADR-0170).
-        this.#write(this.#stamp, 'stamp', 'data-ex-escape-leaves', this.#copied === undefined && this.#edit === undefined && this.#popover === undefined ? '' : undefined);
+        // Whether an Escape on the root would leave the grid now: not while it would leave an Interactive cell
+        // or peel the Copied Range (ADR-0230 section 1, ADR-0037, ADR-0170).
+        this.#write(this.#stamp, 'stamp', 'data-ex-escape-leaves',
+            choice === undefined && this.#copied === undefined && this.#edit === undefined && this.#popover === undefined ? '' : undefined);
         this.#write(this.#scroller, 'scroller', 'style', this.#scrollerStyle());
         const scrollHeightPx = this.#geometry?.scrollHeightPx ?? 0; // oxlint-disable-line ex-grid/no-stand-in-default -- ADR-0013: a Viewport with no room for a row scrolls nothing
         this.#write(this.#spacer, 'spacer', 'style', `width: ${geometry.totalWidthPx}px; height: ${this.#bandHeightPx + scrollHeightPx}px`);
@@ -5075,6 +5457,15 @@ export class GridView<Row> {
         const next = new Map<unknown, PaintedRow<Row>>();
         const nextPlaceholders = new Map<number, HTMLElement>();
         let repainted = false;
+        const doc = viewport.ownerDocument;
+        // A control of a Template cell's content holding the keyboard: a row painted again moves its slot,
+        // which takes DOM focus off it, so it is given back once the rows stand (ADR-0020).
+        const active = doc.activeElement;
+        const slotHeld = active instanceof HTMLElement && active !== this.#keyField && active !== this.#edit?.element
+            && viewport.contains(active) ? active : undefined;
+        // The Template slots this pass paints; every other is taken away after it (ADR-0020).
+        const used = new Set<MountedTemplate<Row>>();
+        const choice = this.#interactiveChoice();
         if (visible !== undefined) {
             const { window, windowStart } = this.#state;
             const rowKey = this.#source.rowKey;
@@ -5110,11 +5501,16 @@ export class GridView<Row> {
                 const scrollable = this.#placeholderMode ? undefined : this.#scrollable;
                 const current = marks === undefined || found?.cell.row !== index ? -1 : found.cell.column;
                 const appearance = lookup === undefined ? undefined : this.#appearances.at(index, row, rowIn(index - 1), rowIn(index + 1));
+                // Only the row of an Interactive cell is told its chosen action, so that no other row paints
+                // again for the choice (ADR-0037, ADR-0003).
+                const chosenHere = choice !== undefined && choice.cell.row === index ? { column: choice.cell.column, action: choice.action } : undefined;
+                const chosen = chosenHere === undefined ? '' : `${chosenHere.column}:${chosenHere.action}`;
                 if (was !== undefined && !next.has(key) && was.row === row && was.index === index && was.styles === this.#styles
                     && was.columns === this.#columns && was.placeholder === this.#placeholderMode && sameRange(was.scrollable, scrollable)
-                    && paint.paintsRowsAs(was.paint) && was.appearance === appearance) {
+                    && paint.paintsRowsAs(was.paint) && was.appearance === appearance && was.chosen === chosen) {
                     if (was.marks === marks && was.current === current) {
                         next.set(key, was);
+                        for (const slot of was.slots) used.add(slot);
                         rows.push(was.element);
                         continue;
                     }
@@ -5122,18 +5518,20 @@ export class GridView<Row> {
                     // moved (ADR-0332 §4, ADR-0003).
                     if (this.#matchedIn(row, scrollable, marks, current) === was.matched) {
                         next.set(key, { ...was, marks, current });
+                        for (const slot of was.slots) used.add(slot);
                         rows.push(was.element);
                         continue;
                     }
                 }
-                const { element, matched } = this.#rowElement(row, index, scrollable, marks, current, appearance);
+                const rowPaint: RowPaint<Row> = { key, chosen: chosenHere, used, slots: [], appearance };
+                const { element, matched } = this.#rowElement(row, index, scrollable, marks, current, rowPaint);
                 repainted = true;
                 // A key met twice in one Window is painted, never paired: which of the two a later row
                 // continues cannot be told (ADR-0140).
                 if (!next.has(key)) {
                     next.set(key, {
                         element, row, index, styles: this.#styles, columns: this.#columns, placeholder: this.#placeholderMode, scrollable,
-                        marks, current, matched, paint, appearance,
+                        marks, current, matched, paint, appearance, chosen, slots: rowPaint.slots,
                     });
                 }
                 rows.push(element);
@@ -5150,7 +5548,6 @@ export class GridView<Row> {
             || node === this.#editorPinned || node === this.#edit?.element;
         // The shade layer gone is taken out first, or every row after it would be moved past it.
         if (!layers.includes(this.#shadeLayer)) this.#shadeLayer.remove();
-        const doc = viewport.ownerDocument;
         if (field.length === 0) {
             // A grid that stopped editing hands the keyboard to its root as the field goes, or DOM focus would
             // fall to the page (ADR-0080). Taken once the field is gone, which the root's focus would hand on.
@@ -5183,7 +5580,97 @@ export class GridView<Row> {
         if (editorHeld !== undefined && doc.activeElement !== editorHeld) editorHeld.focus({ preventScroll: true });
         if (repainted) this.#paintId += 1;
         this.#write(viewport, 'viewport', 'data-ex-paint', String(this.#paintId));
+        this.#paintedUnder = { sequence: this.#sequence(), source: this.#source };
+        this.#mountTemplates(used);
+        // Given back once the content stands: a control mounted again in its place is a new one, and the keyboard
+        // it held comes back to the grid rather than falling to the page.
+        if (slotHeld !== undefined && doc.activeElement !== slotHeld) {
+            if (slotHeld.isConnected) slotHeld.focus({ preventScroll: true });
+            else if (!this.#root.contains(doc.activeElement)) this.#takeKeyboard();
+        }
     }
+
+    // The Template cells' content, once the rows stand in the DOM (ADR-0020): a slot no longer painted has its
+    // content taken away, a slot owed a mount is mounted, and a focus request is handed to the cell it was
+    // made for on the pass that paints it, then gone (ADR-0037).
+    #mountTemplates(used: ReadonlySet<MountedTemplate<Row>>): void {
+        for (const [key, byColumn] of this.#templates) {
+            for (const [name, mounted] of byColumn) {
+                if (used.has(mounted)) continue;
+                byColumn.delete(name);
+                this.#unmount(mounted);
+            }
+            if (byColumn.size === 0) this.#templates.delete(key);
+        }
+        const handed = this.#focusRequestHanded(used);
+        for (const mounted of used) {
+            if (mounted.cell === undefined && mounted !== handed?.mounted) this.#mount(mounted, 0);
+        }
+        if (handed !== undefined) this.#mount(handed.mounted, handed.number);
+    }
+
+    // The slot this pass hands the focus request to, and the request, which is then gone: the Focus's cell,
+    // once it is painted. A Focus moved first takes the request with it: nothing may take the keyboard for a
+    // cell the user left.
+    #focusRequestHanded(used: ReadonlySet<MountedTemplate<Row>>): { readonly mounted: MountedTemplate<Row>; readonly number: number } | undefined {
+        const request = this.#focusRequest;
+        if (request === undefined) return undefined;
+        const focus = this.#held.selection.focus;
+        if (focus === undefined || !sameCell(focus, request.cell)) {
+            this.#focusRequest = undefined;
+            return undefined;
+        }
+        const held = this.#rowAt(focus.row);
+        if (held === undefined || !this.#cellIsPainted(focus)) return undefined;
+        this.#focusRequest = undefined;
+        const rowKey = this.#source.rowKey;
+        const mounted = this.#templates.get(rowKey === undefined ? held.row : rowKey(held.row))?.get(itemAt(this.#columns, focus.column).column.name);
+        return mounted !== undefined && used.has(mounted) ? { mounted, number: request.number } : undefined;
+    }
+
+    // Mounts a Template cell's content into its slot, taking away what was mounted there first (ADR-0020).
+    #mount(mounted: MountedTemplate<Row>, focusRequest: number): void {
+        this.#unmount(mounted);
+        const cell: GridTemplateCell<Row> = Object.freeze({
+            row: mounted.row, column: mounted.column, focusRequest, takeKeyboard: this.#takeKeyboardFor,
+        });
+        mounted.cell = cell;
+        const unmount: unknown = mounted.template(mounted.slot, cell);
+        if (!isUnmount(unmount)) {
+            throw new TypeError(`Column '${mounted.column}': a template answers the function that takes its content away, not ${typeof unmount} (ADR-0020).`);
+        }
+        mounted.unmount = unmount;
+    }
+
+    #unmount(mounted: MountedTemplate<Row>): void {
+        const unmount = mounted.unmount;
+        mounted.unmount = undefined;
+        mounted.cell = undefined;
+        unmount?.();
+    }
+
+    // A Template cell's content asking for the keyboard (ADR-0037): granted only while it is still this grid's,
+    // DOM focus inside its root or on nothing (ADR-0204). A container hands it to its first enabled text field,
+    // with its text selected, or else to its first enabled control.
+    readonly #takeKeyboardFor = (control: HTMLElement): void => {
+        if (!(control instanceof HTMLElement)) {
+            throw new TypeError('takeKeyboard is handed the element that takes the keyboard.');
+        }
+        // Content taken away since, or a grid gone, has nothing to hand the keyboard to.
+        if (this.#destroyed || !control.isConnected) return;
+        if (!this.#viewport.contains(control)) {
+            throw new RangeError('takeKeyboard is handed a control inside its own cell: this grid hands the keyboard only within its rows.');
+        }
+        const field = control.matches(focusableControls) ? undefined : control.querySelector<HTMLInputElement | HTMLTextAreaElement>(textFields);
+        const target = control.matches(focusableControls) ? control : field ?? control.querySelector<HTMLElement>(focusableControls);
+        if (target === null) {
+            throw new RangeError('takeKeyboard is handed an element that takes no keyboard and holds no enabled control that does.');
+        }
+        // Only while the keyboard is still the grid's (ADR-0204).
+        if (!this.#keyboardHere()) return;
+        target.focus({ preventScroll: true });
+        field?.select();
+    };
 
     // The Keyboard Field's box and state (ADR-0080): over the Focus, or the first painted cell with none, and
     // read-only over a cell that typing would not open, so an IME stays off there.
@@ -5304,15 +5791,16 @@ export class GridView<Row> {
     // A row: the Pinned Columns, then one gap for what is virtualised away to the left, then the scrollable
     // columns on screen (ADR-0004). Mid-fling only the pinned cells are painted, and the row says it is busy.
     #rowElement(row: Row, index: number, scrollable: ColumnRange | undefined, marks: MatchMarks<Row> | undefined,
-        current: number, appearance: RowAppearance | undefined): { readonly element: HTMLElement; readonly matched: string } {
+        current: number, paint: RowPaint<Row>): { readonly element: HTMLElement; readonly matched: string } {
         const element = this.#root.ownerDocument.createElement('div');
         element.className = rowClasses({ kind: 'detail', placeholder: this.#placeholderMode });
         element.setAttribute('role', 'row');
         element.setAttribute('aria-rowindex', String(this.#headerRowCount + index + 1));
         if (this.#placeholderMode) element.setAttribute('aria-busy', 'true');
+        this.#rowsPainted.set(element, { row, index });
         let matched = '';
         const cell = (c: number, pinned: boolean): HTMLElement => {
-            const painted = this.#cell(row, index, c, pinned, marks, current, appearance);
+            const painted = this.#cell(row, index, c, pinned, marks, current, paint);
             matched += markKey(c, painted.mark);
             return painted.element;
         };
@@ -5343,23 +5831,28 @@ export class GridView<Row> {
     }
 
     #cell(row: Row, index: number, c: number, pinned: boolean, marks: MatchMarks<Row> | undefined,
-        current: number, appearance: RowAppearance | undefined): { readonly element: HTMLElement; readonly mark: MatchMark } {
-        const { column, numeric: columnNumeric } = itemAt(this.#columns, c);
-        const paint = this.#cellPaint;
+        current: number, paint: RowPaint<Row>): { readonly element: HTMLElement; readonly mark: MatchMark } {
+        const { column, numeric: columnNumeric, paintsValue } = itemAt(this.#columns, c);
+        if (!paintsValue) {
+            const mark = this.#markOf(row, c, marks, current);
+            return { element: this.#contentCell(row, index, c, pinned, mark, paint), mark };
+        }
+        const cellPaint = this.#cellPaint;
+        const { appearance } = paint;
         const text = textFor(column, column.value(row));
         const mark = this.#markOf(row, c, marks, current, text);
         // A cell's own kind and alignment, where the Consumer declares them, over its column's (ADR-0050, items 6
         // and 7); a bold cell is judged by the bold widths (ADR-0016).
-        const type = paint.cellType === undefined ? column.type : checkedType(paint.cellType(row, column));
-        const numeric = paint.cellType === undefined ? columnNumeric : hashesWhenOverflowing(type);
+        const type = cellPaint.cellType === undefined ? column.type : checkedType(cellPaint.cellType(row, column));
+        const numeric = cellPaint.cellType === undefined ? columnNumeric : hashesWhenOverflowing(type);
         const metrics = appearance?.isBold(c) === true ? this.#metrics.cellMetrics.bold : this.#metrics.cellMetrics;
         // The declared width, not the one put on Device Pixels: an Auto column is exactly as wide as its
         // widest estimate, and rounding it must not hash the value it grew for (ADR-0090).
         const widthPx = this.#styles.geometry.declaredWidthPxOf(c);
-        const painted = paint.paintedText?.(row, column, metrics.contentWidthPx(widthPx), metrics) ?? text;
+        const painted = cellPaint.paintedText?.(row, column, metrics.contentWidthPx(widthPx), metrics) ?? text;
         const decision = decideOverflow(type, painted, widthPx, metrics);
         const cell = this.#root.ownerDocument.createElement('div');
-        const align = paint.cellAlign === undefined ? column.align ?? 'auto' : paint.cellAlign(row, column); // oxlint-disable-line ex-grid/no-stand-in-default -- ADR-0006: a column that declares no alignment aligns by its type
+        const align = cellPaint.cellAlign === undefined ? column.align ?? 'auto' : cellPaint.cellAlign(row, column); // oxlint-disable-line ex-grid/no-stand-in-default -- ADR-0006: a column that declares no alignment aligns by its type
         const base = cellClasses({ numeric, pinned, state: 'normal', align, mark });
         const own = appearance?.classOf(c);
         cell.className = own === undefined ? base : `${base} ${own}`;
@@ -5379,6 +5872,70 @@ export class GridView<Row> {
         }
         return { element: cell, mark };
     }
+
+    // An Action or Template cell (ADR-0020): the grid's own buttons, or the Consumer's content in a slot kept
+    // across the row's rebuilds. It paints no text, so nothing of it is hashed or named by a value.
+    #contentCell(row: Row, index: number, c: number, pinned: boolean, mark: MatchMark, paint: RowPaint<Row>): HTMLElement {
+        const resolved = itemAt(this.#columns, c);
+        const { column, numeric, actions, template } = resolved;
+        const mounted = template === undefined ? undefined : this.#templateSlot(row, resolved, template, paint);
+        const cell = mounted === undefined ? this.#root.ownerDocument.createElement('div') : mounted.slot;
+        cell.className = cellClasses({ numeric, pinned, state: 'normal', align: column.align ?? 'auto', mark }); // oxlint-disable-line ex-grid/no-stand-in-default -- ADR-0006: a column that declares no alignment aligns by its type
+        cell.setAttribute('style', pinned ? this.#styles.pinnedCell(c) : this.#styles.cell(c));
+        cell.setAttribute('role', 'gridcell');
+        cell.setAttribute('id', `${this.#ids}r${index}c${c}`);
+        cell.setAttribute('aria-colindex', String(c + 1));
+        actions.forEach((action, a) => {
+            cell.append(this.#actionButton(resolved, action, paint.chosen?.column === c && paint.chosen.action === a ? `${this.#ids}r${index}c${c}a${a}` : undefined));
+        });
+        return cell;
+    }
+
+    // One action's button (ADR-0020): the label its text, or its name where a class paints an icon. Never
+    // holding the keyboard (ADR-0033, ADR-0037): out of the tab sequence, since the root is the grid's one tab
+    // stop, and its press prevented. The chosen one of an Interactive cell is painted as the Focus is, and
+    // carries the only id the root ever names a button by.
+    #actionButton(column: ResolvedColumn<Row>, action: GridAction, chosenId: string | undefined): HTMLElement {
+        const button = this.#root.ownerDocument.createElement('button');
+        button.type = 'button';
+        button.setAttribute('data-ex-claims', 'click');
+        button.className = (chosenId === undefined ? 'ex-action' : 'ex-action ex-action-chosen') + (action.className === undefined ? '' : ` ${action.className}`);
+        if (chosenId !== undefined) button.id = chosenId;
+        button.tabIndex = -1;
+        button.title = action.label;
+        // An icon-only button has no text to name it, and title alone is the last resort of the accessible
+        // name, ignored by several readers' settings and out of reach of touch.
+        if (action.className === undefined) button.textContent = action.label;
+        else button.setAttribute('aria-label', action.label);
+        this.#actionButtons.set(button, { column, action });
+        return button;
+    }
+
+    // The slot of a Template cell (ADR-0020): kept by its row's key and its column while it is painted, so a
+    // row painted again keeps its content. Owed a mount when it is new, or its row instance or template
+    // changed. A key met twice in one Window paints its content once, in the first of its rows (ADR-0140):
+    // one slot cannot stand in two places.
+    #templateSlot(row: Row, resolved: ResolvedColumn<Row>, template: GridTemplate<Row>, paint: RowPaint<Row>): MountedTemplate<Row> | undefined {
+        let byColumn = this.#templates.get(paint.key);
+        if (byColumn === undefined) {
+            byColumn = new Map();
+            this.#templates.set(paint.key, byColumn);
+        }
+        const name = resolved.column.name;
+        let mounted = byColumn.get(name);
+        if (mounted !== undefined && paint.used.has(mounted)) return undefined;
+        if (mounted === undefined) {
+            mounted = { slot: this.#root.ownerDocument.createElement('div'), template, row, column: name, cell: undefined, unmount: undefined };
+            byColumn.set(name, mounted);
+        } else if (mounted.template !== template || mounted.row !== row) {
+            mounted.template = template;
+            mounted.row = row;
+            mounted.cell = undefined;
+        }
+        paint.used.add(mounted);
+        paint.slots.push(mounted);
+        return mounted;
+    }
 }
 
 const columnTypes: ReadonlySet<string> = new Set(['text', 'number', 'date', 'boolean']);
@@ -5392,6 +5949,17 @@ function checkedType(type: ColumnType): ColumnType {
     }
     return type;
 }
+
+/** A Template's answer, checked as an untyped Consumer may give it. */
+function isUnmount(value: unknown): value is () => void {
+    return typeof value === 'function';
+}
+
+/** What takes the keyboard of itself, and the text fields a container hands it to first (ADR-0037). */
+const focusableControls = 'input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), '
+    + 'button:not([disabled]), a[href], [tabindex]';
+const textFields = 'input:not([disabled]):is(:not([type]), [type="text"], [type="search"], [type="email"], [type="tel"], [type="url"], '
+    + '[type="password"], [type="number"]), textarea:not([disabled])';
 
 /** A painted cell's Match Mark as a row's record of its marks writes it: nothing for none. */
 function markKey(column: number, mark: MatchMark): string {

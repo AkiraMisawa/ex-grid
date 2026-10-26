@@ -376,10 +376,10 @@ does a check that says neither `is` nor `throws`, and a case that checks nothing
 ## `chart`
 
 ExChart's layout (ADR-0370, section 2): scales, ticks, Thinning, each Series Kind's steps and gaps, the
-scene and its legend, and the 3D surface, its slices and its mesh. Every file of `chart/` is of this kind, run by
-`tests/ExChart.Engine.Tests/Cases/ChartCase.cs` and `src/npm/chart/test/chart-case.ts`. A file may say
-`near`, how far a number may be from what a check expects in every case of the file, and `definitions`,
-named definitions a case refers to by their name.
+scene and its legend, what its tooltip, its summary and its files say, and the 3D surface, its slices and
+its mesh. Every file of `chart/` is of this kind, run by `tests/ExChart.Engine.Tests/Cases/ChartCase.cs`
+and `src/npm/chart/test/chart-case.ts`. A file may say `near`, how far a number may be from what a check
+expects in every case of the file, and `definitions`, named definitions a case refers to by their name.
 
 A case names one operation, or several under `"build": {name: operation}`, each answer then read under
 its name. An operation is one key, beside a `definition` or a `surface` where it reads one; with none, the
@@ -399,6 +399,9 @@ answer is the definition or the surface itself:
 | `"format": {format, value}` | A number written as the engine writes it with that .NET format (`0.####`, `0.##`, `R`, `G3`, `N0`) |
 | `"mesh": {}` | What the surface's 3D entry draws (`SurfaceMesh.Of`, `surfaceMesh`) |
 | `"slice": {axis, value}`, `"slicePath": {axis, value}` | A slice as a 2D chart (`null` where the surface holds no such slice), and its line on the surface |
+| `"reading": {metrics, view, style, independentScales, legend, at}` | The tooltip of the scene laid out with the same keys as `scene` (ADR-0270): `at` is `{position, panel, pointerY}` (`ChartReadings.At`, `readingAt`), `{mark}`, an index into the scene's marks (`OfMark`, `readingOfMark`), or `{edge}`, an index into its edge marks (`OfEdge`, `readingOfEdge`). Its `metrics` and `view` are always written, `{}` for the whole chart |
+| `"summary": {metrics, view, style, independentScales, legend, title, description}` | What a screen reader says of that scene (`ChartSummary.Of`, `chartSummary`, ADR-0275) |
+| `"csv": {form, metrics, view}` | The files (ticket 07): `form` `long` or `wide` answers the CSV, byte-order mark first (`ChartCsv.Long`/`Wide`, `chartCsvLong`/`chartCsvWide`), and `table` the `{header, rows}` "View as table" shows (`WideTable`, `chartTable`) |
 
 A definition, an axis and a series are written as the Script Core's options objects name them, each key
 optional where the options' is; a series that leaves out `kind` declares none. A position is a number or

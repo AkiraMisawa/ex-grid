@@ -1,0 +1,4123 @@
+{
+  "about": "The tooltip (ADR-0270): a series read at a position by its Series Kind — a level's value, a step's interval, a thinned pixel's range, a sampler's value and its Segment's method, an Interval's bounds, a candle and its volume — the nearest series when not all fit, an Observation's mark and an edge (ADR-0290, ADR-0300 to ADR-0304, ADR-0320, ADR-0321), from tests/ExChart.Engine.Tests (ComponentSupportTests, IntervalTests, PriceRangeTests, ScatterTests, ObservationIntervalTests, PointScaleTests, EdgeTests, ChartSpecTests).",
+  "kind": "chart",
+  "definitions": {
+    "forty": {
+      "axis": {
+        "values": "numbers"
+      },
+      "series": [
+        {
+          "id": "s0",
+          "name": "S0",
+          "kind": "level",
+          "points": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ]
+          ]
+        },
+        {
+          "id": "s1",
+          "name": "S1",
+          "kind": "level",
+          "points": [
+            [
+              0,
+              1
+            ],
+            [
+              1,
+              1
+            ]
+          ]
+        },
+        {
+          "id": "s2",
+          "name": "S2",
+          "kind": "level",
+          "points": [
+            [
+              0,
+              2
+            ],
+            [
+              1,
+              2
+            ]
+          ]
+        },
+        {
+          "id": "s3",
+          "name": "S3",
+          "kind": "level",
+          "points": [
+            [
+              0,
+              3
+            ],
+            [
+              1,
+              3
+            ]
+          ]
+        },
+        {
+          "id": "s4",
+          "name": "S4",
+          "kind": "level",
+          "points": [
+            [
+              0,
+              4
+            ],
+            [
+              1,
+              4
+            ]
+          ]
+        },
+        {
+          "id": "s5",
+          "name": "S5",
+          "kind": "level",
+          "points": [
+            [
+              0,
+              5
+            ],
+            [
+              1,
+              5
+            ]
+          ]
+        },
+        {
+          "id": "s6",
+          "name": "S6",
+          "kind": "level",
+          "points": [
+            [
+              0,
+              6
+            ],
+            [
+              1,
+              6
+            ]
+          ]
+        },
+        {
+          "id": "s7",
+          "name": "S7",
+          "kind": "level",
+          "points": [
+            [
+              0,
+              7
+            ],
+            [
+              1,
+              7
+            ]
+          ]
+        },
+        {
+          "id": "s8",
+          "name": "S8",
+          "kind": "level",
+          "points": [
+            [
+              0,
+              8
+            ],
+            [
+              1,
+              8
+            ]
+          ]
+        },
+        {
+          "id": "s9",
+          "name": "S9",
+          "kind": "level",
+          "points": [
+            [
+              0,
+              9
+            ],
+            [
+              1,
+              9
+            ]
+          ]
+        },
+        {
+          "id": "s10",
+          "name": "S10",
+          "kind": "level",
+          "points": [
+            [
+              0,
+              10
+            ],
+            [
+              1,
+              10
+            ]
+          ]
+        },
+        {
+          "id": "s11",
+          "name": "S11",
+          "kind": "level",
+          "points": [
+            [
+              0,
+              11
+            ],
+            [
+              1,
+              11
+            ]
+          ]
+        },
+        {
+          "id": "s12",
+          "name": "S12",
+          "kind": "level",
+          "points": [
+            [
+              0,
+              12
+            ],
+            [
+              1,
+              12
+            ]
+          ]
+        },
+        {
+          "id": "s13",
+          "name": "S13",
+          "kind": "level",
+          "points": [
+            [
+              0,
+              13
+            ],
+            [
+              1,
+              13
+            ]
+          ]
+        },
+        {
+          "id": "s14",
+          "name": "S14",
+          "kind": "level",
+          "points": [
+            [
+              0,
+              14
+            ],
+            [
+              1,
+              14
+            ]
+          ]
+        },
+        {
+          "id": "s15",
+          "name": "S15",
+          "kind": "level",
+          "points": [
+            [
+              0,
+              15
+            ],
+            [
+              1,
+              15
+            ]
+          ]
+        },
+        {
+          "id": "s16",
+          "name": "S16",
+          "kind": "level",
+          "points": [
+            [
+              0,
+              16
+            ],
+            [
+              1,
+              16
+            ]
+          ]
+        },
+        {
+          "id": "s17",
+          "name": "S17",
+          "kind": "level",
+          "points": [
+            [
+              0,
+              17
+            ],
+            [
+              1,
+              17
+            ]
+          ]
+        },
+        {
+          "id": "s18",
+          "name": "S18",
+          "kind": "level",
+          "points": [
+            [
+              0,
+              18
+            ],
+            [
+              1,
+              18
+            ]
+          ]
+        },
+        {
+          "id": "s19",
+          "name": "S19",
+          "kind": "level",
+          "points": [
+            [
+              0,
+              19
+            ],
+            [
+              1,
+              19
+            ]
+          ]
+        },
+        {
+          "id": "s20",
+          "name": "S20",
+          "kind": "level",
+          "points": [
+            [
+              0,
+              20
+            ],
+            [
+              1,
+              20
+            ]
+          ]
+        },
+        {
+          "id": "s21",
+          "name": "S21",
+          "kind": "level",
+          "points": [
+            [
+              0,
+              21
+            ],
+            [
+              1,
+              21
+            ]
+          ]
+        },
+        {
+          "id": "s22",
+          "name": "S22",
+          "kind": "level",
+          "points": [
+            [
+              0,
+              22
+            ],
+            [
+              1,
+              22
+            ]
+          ]
+        },
+        {
+          "id": "s23",
+          "name": "S23",
+          "kind": "level",
+          "points": [
+            [
+              0,
+              23
+            ],
+            [
+              1,
+              23
+            ]
+          ]
+        },
+        {
+          "id": "s24",
+          "name": "S24",
+          "kind": "level",
+          "points": [
+            [
+              0,
+              24
+            ],
+            [
+              1,
+              24
+            ]
+          ]
+        },
+        {
+          "id": "s25",
+          "name": "S25",
+          "kind": "level",
+          "points": [
+            [
+              0,
+              25
+            ],
+            [
+              1,
+              25
+            ]
+          ]
+        },
+        {
+          "id": "s26",
+          "name": "S26",
+          "kind": "level",
+          "points": [
+            [
+              0,
+              26
+            ],
+            [
+              1,
+              26
+            ]
+          ]
+        },
+        {
+          "id": "s27",
+          "name": "S27",
+          "kind": "level",
+          "points": [
+            [
+              0,
+              27
+            ],
+            [
+              1,
+              27
+            ]
+          ]
+        },
+        {
+          "id": "s28",
+          "name": "S28",
+          "kind": "level",
+          "points": [
+            [
+              0,
+              28
+            ],
+            [
+              1,
+              28
+            ]
+          ]
+        },
+        {
+          "id": "s29",
+          "name": "S29",
+          "kind": "level",
+          "points": [
+            [
+              0,
+              29
+            ],
+            [
+              1,
+              29
+            ]
+          ]
+        },
+        {
+          "id": "s30",
+          "name": "S30",
+          "kind": "level",
+          "points": [
+            [
+              0,
+              30
+            ],
+            [
+              1,
+              30
+            ]
+          ]
+        },
+        {
+          "id": "s31",
+          "name": "S31",
+          "kind": "level",
+          "points": [
+            [
+              0,
+              31
+            ],
+            [
+              1,
+              31
+            ]
+          ]
+        },
+        {
+          "id": "s32",
+          "name": "S32",
+          "kind": "level",
+          "points": [
+            [
+              0,
+              32
+            ],
+            [
+              1,
+              32
+            ]
+          ]
+        },
+        {
+          "id": "s33",
+          "name": "S33",
+          "kind": "level",
+          "points": [
+            [
+              0,
+              33
+            ],
+            [
+              1,
+              33
+            ]
+          ]
+        },
+        {
+          "id": "s34",
+          "name": "S34",
+          "kind": "level",
+          "points": [
+            [
+              0,
+              34
+            ],
+            [
+              1,
+              34
+            ]
+          ]
+        },
+        {
+          "id": "s35",
+          "name": "S35",
+          "kind": "level",
+          "points": [
+            [
+              0,
+              35
+            ],
+            [
+              1,
+              35
+            ]
+          ]
+        },
+        {
+          "id": "s36",
+          "name": "S36",
+          "kind": "level",
+          "points": [
+            [
+              0,
+              36
+            ],
+            [
+              1,
+              36
+            ]
+          ]
+        },
+        {
+          "id": "s37",
+          "name": "S37",
+          "kind": "level",
+          "points": [
+            [
+              0,
+              37
+            ],
+            [
+              1,
+              37
+            ]
+          ]
+        },
+        {
+          "id": "s38",
+          "name": "S38",
+          "kind": "level",
+          "points": [
+            [
+              0,
+              38
+            ],
+            [
+              1,
+              38
+            ]
+          ]
+        },
+        {
+          "id": "s39",
+          "name": "S39",
+          "kind": "level",
+          "points": [
+            [
+              0,
+              39
+            ],
+            [
+              1,
+              39
+            ]
+          ]
+        }
+      ]
+    },
+    "levels": {
+      "axis": {
+        "values": "numbers"
+      },
+      "series": [
+        {
+          "id": "a",
+          "name": "A",
+          "kind": "level",
+          "points": [
+            [
+              0,
+              1234567.89
+            ],
+            [
+              2,
+              2
+            ]
+          ],
+          "format": {
+            "prefix": "$"
+          }
+        },
+        {
+          "id": "b",
+          "name": "B",
+          "kind": "level",
+          "points": [
+            [
+              0,
+              1
+            ],
+            [
+              1,
+              1
+            ],
+            [
+              2,
+              1
+            ]
+          ]
+        }
+      ]
+    },
+    "hazard": {
+      "axis": {
+        "values": "numbers"
+      },
+      "series": [
+        {
+          "id": "h",
+          "name": "Hazard",
+          "kind": "rateOverInterval",
+          "points": [
+            [
+              0,
+              0.01
+            ],
+            [
+              1,
+              0.02
+            ],
+            [
+              3,
+              0.03
+            ]
+          ]
+        }
+      ]
+    },
+    "hazardFollowing": {
+      "axis": {
+        "values": "numbers"
+      },
+      "series": [
+        {
+          "id": "h",
+          "name": "Hazard",
+          "kind": "rateOverInterval",
+          "points": [
+            [
+              0,
+              0.01
+            ],
+            [
+              1,
+              0.02
+            ],
+            [
+              3,
+              0.03
+            ]
+          ],
+          "step": "following"
+        }
+      ]
+    },
+    "curve": {
+      "axis": {
+        "values": "numbers"
+      },
+      "series": [
+        {
+          "id": "q",
+          "name": "USD",
+          "kind": "level",
+          "points": [
+            [
+              1,
+              3.1
+            ],
+            [
+              30,
+              3.5
+            ]
+          ],
+          "keys": {
+            "colour": "USD"
+          }
+        },
+        {
+          "id": "c",
+          "name": "USD curve",
+          "kind": "level",
+          "keys": {
+            "colour": "USD"
+          },
+          "interpolated": true,
+          "segments": [
+            {
+              "from": 1,
+              "to": 30,
+              "method": "Log-linear"
+            },
+            {
+              "from": 30,
+              "to": 40,
+              "method": "Flat",
+              "extrapolated": true
+            }
+          ],
+          "sampler": {
+            "from": 1,
+            "to": 50,
+            "value": {
+              "line": [
+                3,
+                0.01
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "candles": {
+      "axis": {
+        "values": "dates"
+      },
+      "series": [
+        {
+          "id": "idx",
+          "name": "Index",
+          "kind": "priceRange",
+          "bars": [
+            [
+              {
+                "date": "2026-10-13"
+              },
+              39000,
+              39200,
+              38900,
+              39100,
+              5
+            ],
+            [
+              {
+                "date": "2026-10-14"
+              },
+              39120,
+              39480,
+              38950,
+              39310,
+              7
+            ],
+            [
+              {
+                "date": "2026-10-15"
+              },
+              39310,
+              39320,
+              39000,
+              39050,
+              null
+            ],
+            [
+              {
+                "date": "2026-10-16"
+              },
+              39050,
+              39100,
+              39000,
+              39050,
+              3
+            ]
+          ]
+        }
+      ]
+    },
+    "names": {
+      "axis": {
+        "values": "numbers",
+        "title": "Leverage"
+      },
+      "series": [
+        {
+          "id": "names",
+          "name": "Names",
+          "kind": "observation",
+          "points": [
+            {
+              "x": 3.2,
+              "y": 245,
+              "name": "XYZ Corp",
+              "row": 7
+            },
+            {
+              "x": 1,
+              "y": 100,
+              "name": "ABC"
+            }
+          ],
+          "format": {
+            "suffix": "bp"
+          }
+        }
+      ]
+    },
+    "spreads": {
+      "axis": {
+        "values": "numbers",
+        "title": "Leverage"
+      },
+      "series": [
+        {
+          "id": "names",
+          "name": "Names",
+          "kind": "observation",
+          "points": [
+            [
+              1,
+              150,
+              "A"
+            ],
+            [
+              3,
+              200,
+              "C"
+            ],
+            [
+              3,
+              260,
+              "D"
+            ]
+          ],
+          "interval": {
+            "meaning": "95% CI",
+            "bounds": [
+              [
+                1,
+                140,
+                160
+              ],
+              [
+                3,
+                190,
+                215
+              ],
+              [
+                3,
+                240,
+                290
+              ]
+            ]
+          },
+          "xInterval": {
+            "meaning": "±1σ",
+            "bounds": [
+              [
+                1,
+                0.5,
+                1.5
+              ],
+              [
+                3,
+                2.8,
+                3.4
+              ],
+              [
+                3,
+                null,
+                3.1
+              ]
+            ]
+          }
+        }
+      ]
+    },
+    "tree": {
+      "axis": {
+        "values": "numbers",
+        "title": "Step"
+      },
+      "series": [
+        {
+          "id": "tree",
+          "name": "Tree",
+          "kind": "observation",
+          "points": [
+            {
+              "x": 0,
+              "y": 100,
+              "row": "0,0"
+            },
+            {
+              "x": 1,
+              "y": 90,
+              "row": "1,0"
+            },
+            {
+              "x": 1,
+              "y": 110,
+              "row": "1,1"
+            },
+            {
+              "x": 2,
+              "y": 81,
+              "row": "2,0"
+            },
+            {
+              "x": 2,
+              "y": 99,
+              "row": "2,1"
+            },
+            {
+              "x": 2,
+              "y": 121,
+              "row": "2,2"
+            }
+          ],
+          "edges": [
+            [
+              "0,0",
+              "1,0"
+            ],
+            [
+              "0,0",
+              "1,1"
+            ],
+            [
+              "1,0",
+              "2,0"
+            ],
+            [
+              "1,0",
+              "2,1"
+            ],
+            [
+              "1,1",
+              "2,1"
+            ],
+            [
+              "1,1",
+              "2,2"
+            ]
+          ]
+        }
+      ]
+    }
+  },
+  "cases": [
+    {
+      "name": "ADR-0270, ADR-0251: a level's value is the one handed in, through its format; between points there is none",
+      "build": {
+        "scene": {
+          "definition": "levels",
+          "scene": {
+            "metrics": {
+              "width": 800,
+              "height": 400
+            },
+            "view": {}
+          }
+        },
+        "at0": {
+          "definition": "levels",
+          "reading": {
+            "metrics": {
+              "width": 800,
+              "height": 400
+            },
+            "view": {},
+            "at": {
+              "position": 0,
+              "panel": 0,
+              "pointerY": 0
+            }
+          }
+        },
+        "at1": {
+          "definition": "levels",
+          "reading": {
+            "metrics": {
+              "width": 800,
+              "height": 400
+            },
+            "view": {},
+            "at": {
+              "position": 1,
+              "panel": 0,
+              "pointerY": 0
+            }
+          }
+        }
+      },
+      "expect": [
+        {
+          "at": "at0.position",
+          "is": "0"
+        },
+        {
+          "at": "at0.lines.[id=a].value",
+          "is": "$1234567.89"
+        },
+        {
+          "at": "at0.lines.[id=a].note",
+          "is": null
+        },
+        {
+          "at": "at0.lines.[id=a].name",
+          "is": "A"
+        },
+        {
+          "at": "at0.lines.[id=a].look",
+          "sameAs": "scene.panels.0.series.0.look"
+        },
+        {
+          "at": "at0.lines.[id=b].y",
+          "atLeast": {
+            "yOf": [
+              0,
+              "left",
+              1
+            ],
+            "of": "scene"
+          },
+          "atMost": {
+            "yOf": [
+              0,
+              "left",
+              1
+            ],
+            "of": "scene"
+          }
+        },
+        {
+          "at": "at0.more",
+          "is": 0
+        },
+        {
+          "at": "at1.lines.[id=a].value",
+          "is": null
+        },
+        {
+          "at": "at1.lines.[id=a].note",
+          "is": "no point here"
+        },
+        {
+          "at": "at1.lines.[id=a].y",
+          "is": null
+        },
+        {
+          "at": "at1.lines.[id=b].value",
+          "is": "1"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0270: the lines are ordered top to bottom by their height, a line with no value last",
+      "build": {
+        "scene": {
+          "definition": "levels",
+          "scene": {
+            "metrics": {
+              "width": 800,
+              "height": 400
+            },
+            "view": {}
+          }
+        },
+        "at0": {
+          "definition": "levels",
+          "reading": {
+            "metrics": {
+              "width": 800,
+              "height": 400
+            },
+            "view": {},
+            "at": {
+              "position": 0,
+              "panel": 0,
+              "pointerY": 0
+            }
+          }
+        },
+        "at1": {
+          "definition": "levels",
+          "reading": {
+            "metrics": {
+              "width": 800,
+              "height": 400
+            },
+            "view": {},
+            "at": {
+              "position": 1,
+              "panel": 0,
+              "pointerY": 0
+            }
+          }
+        }
+      },
+      "expect": [
+        {
+          "at": "at0.lines",
+          "map": "id",
+          "is": [
+            "a",
+            "b"
+          ]
+        },
+        {
+          "at": "at1.lines",
+          "map": "id",
+          "is": [
+            "b",
+            "a"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ADR-0270: a level's missing value says so",
+      "definition": {
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "a",
+            "name": "A",
+            "kind": "level",
+            "points": [
+              [
+                0,
+                1
+              ],
+              [
+                1,
+                null
+              ],
+              [
+                2,
+                3
+              ]
+            ]
+          }
+        ]
+      },
+      "reading": {
+        "metrics": {
+          "width": 800,
+          "height": 400
+        },
+        "view": {},
+        "at": {
+          "position": 1,
+          "panel": 0,
+          "pointerY": 0
+        }
+      },
+      "expect": [
+        {
+          "at": "lines.0.value",
+          "is": null
+        },
+        {
+          "at": "lines.0.note",
+          "is": "missing"
+        },
+        {
+          "at": "lines.0.y",
+          "is": null
+        }
+      ]
+    },
+    {
+      "name": "ADR-0270: a series on the right axis stands at its height on that axis",
+      "build": {
+        "scene": {
+          "definition": {
+            "axis": {
+              "values": "numbers"
+            },
+            "series": [
+              {
+                "id": "a",
+                "name": "A",
+                "kind": "level",
+                "points": [
+                  [
+                    0,
+                    1
+                  ],
+                  [
+                    1,
+                    2
+                  ]
+                ]
+              },
+              {
+                "id": "r",
+                "name": "R",
+                "kind": "level",
+                "points": [
+                  [
+                    0,
+                    100
+                  ],
+                  [
+                    1,
+                    200
+                  ]
+                ],
+                "axis": "right"
+              }
+            ]
+          },
+          "scene": {
+            "metrics": {
+              "width": 800,
+              "height": 400
+            },
+            "view": {}
+          }
+        },
+        "reading": {
+          "definition": {
+            "axis": {
+              "values": "numbers"
+            },
+            "series": [
+              {
+                "id": "a",
+                "name": "A",
+                "kind": "level",
+                "points": [
+                  [
+                    0,
+                    1
+                  ],
+                  [
+                    1,
+                    2
+                  ]
+                ]
+              },
+              {
+                "id": "r",
+                "name": "R",
+                "kind": "level",
+                "points": [
+                  [
+                    0,
+                    100
+                  ],
+                  [
+                    1,
+                    200
+                  ]
+                ],
+                "axis": "right"
+              }
+            ]
+          },
+          "reading": {
+            "metrics": {
+              "width": 800,
+              "height": 400
+            },
+            "view": {},
+            "at": {
+              "position": 1,
+              "panel": 0,
+              "pointerY": 0
+            }
+          }
+        }
+      },
+      "expect": [
+        {
+          "at": "reading.lines.[id=r].y",
+          "atLeast": {
+            "yOf": [
+              0,
+              "right",
+              200
+            ],
+            "of": "scene"
+          },
+          "atMost": {
+            "yOf": [
+              0,
+              "right",
+              200
+            ],
+            "of": "scene"
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0270, ADR-0253: a step names its interval",
+      "definition": "hazard",
+      "reading": {
+        "metrics": {
+          "width": 800,
+          "height": 400
+        },
+        "view": {},
+        "at": {
+          "position": 3,
+          "panel": 0,
+          "pointerY": 0
+        }
+      },
+      "expect": [
+        {
+          "at": "position",
+          "is": "3"
+        },
+        {
+          "at": "lines.0.value",
+          "is": "0.03"
+        },
+        {
+          "at": "lines.0.note",
+          "is": "1 – 3"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0253: a preceding step's first point holds at its own position only",
+      "definition": "hazard",
+      "reading": {
+        "metrics": {
+          "width": 800,
+          "height": 400
+        },
+        "view": {},
+        "at": {
+          "position": 0,
+          "panel": 0,
+          "pointerY": 0
+        }
+      },
+      "expect": [
+        {
+          "at": "lines.0.value",
+          "is": "0.01"
+        },
+        {
+          "at": "lines.0.note",
+          "is": "at 0"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0253: a preceding step's value holds over the interval up to its point",
+      "definition": "hazard",
+      "reading": {
+        "metrics": {
+          "width": 800,
+          "height": 400
+        },
+        "view": {},
+        "at": {
+          "position": 2,
+          "panel": 0,
+          "pointerY": 0
+        }
+      },
+      "expect": [
+        {
+          "at": "lines.0.value",
+          "is": "0.03"
+        },
+        {
+          "at": "lines.0.note",
+          "is": "1 – 3"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0253: past a step's last point there is no interval",
+      "definition": "hazard",
+      "reading": {
+        "metrics": {
+          "width": 800,
+          "height": 400
+        },
+        "view": {},
+        "at": {
+          "position": 5,
+          "panel": 0,
+          "pointerY": 0
+        }
+      },
+      "expect": [
+        {
+          "at": "lines.0.value",
+          "is": null
+        },
+        {
+          "at": "lines.0.note",
+          "is": "no interval here"
+        },
+        {
+          "at": "lines.0.y",
+          "is": null
+        }
+      ]
+    },
+    {
+      "name": "ADR-0253: a following step's value holds from its point to the next",
+      "definition": "hazardFollowing",
+      "reading": {
+        "metrics": {
+          "width": 800,
+          "height": 400
+        },
+        "view": {},
+        "at": {
+          "position": 2,
+          "panel": 0,
+          "pointerY": 0
+        }
+      },
+      "expect": [
+        {
+          "at": "lines.0.value",
+          "is": "0.02"
+        },
+        {
+          "at": "lines.0.note",
+          "is": "1 – 3"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0253: a following step's last point holds at its own position only",
+      "definition": "hazardFollowing",
+      "reading": {
+        "metrics": {
+          "width": 800,
+          "height": 400
+        },
+        "view": {},
+        "at": {
+          "position": 3,
+          "panel": 0,
+          "pointerY": 0
+        }
+      },
+      "expect": [
+        {
+          "at": "lines.0.value",
+          "is": "0.03"
+        },
+        {
+          "at": "lines.0.note",
+          "is": "at 3"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0253: a following step reads nothing before its first point",
+      "definition": "hazardFollowing",
+      "reading": {
+        "metrics": {
+          "width": 800,
+          "height": 400
+        },
+        "view": {},
+        "at": {
+          "position": -1,
+          "panel": 0,
+          "pointerY": 0
+        }
+      },
+      "expect": [
+        {
+          "at": "lines.0.value",
+          "is": null
+        },
+        {
+          "at": "lines.0.note",
+          "is": "no interval here"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0253: a step whose holding value is missing says so",
+      "definition": {
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "h",
+            "name": "Hazard",
+            "kind": "rateOverInterval",
+            "points": [
+              [
+                0,
+                0.01
+              ],
+              [
+                1,
+                null
+              ],
+              [
+                3,
+                0.03
+              ]
+            ]
+          }
+        ]
+      },
+      "reading": {
+        "metrics": {
+          "width": 800,
+          "height": 400
+        },
+        "view": {},
+        "at": {
+          "position": 0.5,
+          "panel": 0,
+          "pointerY": 0
+        }
+      },
+      "expect": [
+        {
+          "at": "lines.0.value",
+          "is": null
+        },
+        {
+          "at": "lines.0.note",
+          "is": "missing"
+        },
+        {
+          "at": "lines.0.y",
+          "is": null
+        }
+      ]
+    },
+    {
+      "name": "ADR-0253: an Amount per period reads its amount, standing at the amount per year",
+      "build": {
+        "scene": {
+          "definition": {
+            "axis": {
+              "values": "numbers"
+            },
+            "series": [
+              {
+                "id": "c",
+                "name": "Coupons",
+                "kind": "amountPerPeriod",
+                "points": [
+                  [
+                    0,
+                    null
+                  ],
+                  [
+                    2,
+                    20
+                  ],
+                  [
+                    4,
+                    30
+                  ]
+                ]
+              }
+            ]
+          },
+          "scene": {
+            "metrics": {
+              "width": 800,
+              "height": 400
+            },
+            "view": {}
+          }
+        },
+        "reading": {
+          "definition": {
+            "axis": {
+              "values": "numbers"
+            },
+            "series": [
+              {
+                "id": "c",
+                "name": "Coupons",
+                "kind": "amountPerPeriod",
+                "points": [
+                  [
+                    0,
+                    null
+                  ],
+                  [
+                    2,
+                    20
+                  ],
+                  [
+                    4,
+                    30
+                  ]
+                ]
+              }
+            ]
+          },
+          "reading": {
+            "metrics": {
+              "width": 800,
+              "height": 400
+            },
+            "view": {},
+            "at": {
+              "position": 1,
+              "panel": 0,
+              "pointerY": 0
+            }
+          }
+        }
+      },
+      "expect": [
+        {
+          "at": "reading.lines.0.value",
+          "is": "20"
+        },
+        {
+          "at": "reading.lines.0.note",
+          "is": "0 – 2"
+        },
+        {
+          "at": "reading.lines.0.y",
+          "atLeast": {
+            "yOf": [
+              0,
+              "left",
+              10
+            ],
+            "of": "scene"
+          },
+          "atMost": {
+            "yOf": [
+              0,
+              "left",
+              10
+            ],
+            "of": "scene"
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0253: an Amount per period's first point bounds its first interval and holds no amount",
+      "definition": {
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "c",
+            "name": "Coupons",
+            "kind": "amountPerPeriod",
+            "points": [
+              [
+                0,
+                null
+              ],
+              [
+                2,
+                20
+              ],
+              [
+                4,
+                30
+              ]
+            ]
+          }
+        ]
+      },
+      "reading": {
+        "metrics": {
+          "width": 800,
+          "height": 400
+        },
+        "view": {},
+        "at": {
+          "position": 0,
+          "panel": 0,
+          "pointerY": 0
+        }
+      },
+      "expect": [
+        {
+          "at": "lines.0.value",
+          "is": null
+        },
+        {
+          "at": "lines.0.note",
+          "is": "missing"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0270, ADR-0254: a thinned pixel names its range and count, never one point as if it were the only one",
+      "build": {
+        "scene": {
+          "definition": {
+            "axis": {
+              "values": "numbers"
+            },
+            "series": [
+              {
+                "id": "n",
+                "name": "Noise",
+                "kind": "level",
+                "points": [
+                  {
+                    "generate": {
+                      "count": 5000,
+                      "x": {
+                        "from": 0,
+                        "step": 1
+                      },
+                      "y": {
+                        "mod": 7
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          "scene": {
+            "metrics": {
+              "width": 800,
+              "height": 400
+            },
+            "view": {}
+          }
+        },
+        "reading": {
+          "definition": {
+            "axis": {
+              "values": "numbers"
+            },
+            "series": [
+              {
+                "id": "n",
+                "name": "Noise",
+                "kind": "level",
+                "points": [
+                  {
+                    "generate": {
+                      "count": 5000,
+                      "x": {
+                        "from": 0,
+                        "step": 1
+                      },
+                      "y": {
+                        "mod": 7
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          "reading": {
+            "metrics": {
+              "width": 800,
+              "height": 400
+            },
+            "view": {},
+            "at": {
+              "position": 2500,
+              "panel": 0,
+              "pointerY": 0
+            }
+          }
+        }
+      },
+      "expect": [
+        {
+          "at": "reading.lines.0.value",
+          "has": " – "
+        },
+        {
+          "at": "reading.lines.0.note",
+          "has": " points, "
+        },
+        {
+          "at": "reading.lines.0.y",
+          "isNot": null
+        },
+        {
+          "at": "scene.panels.0.series.0.thinned",
+          "empty": false
+        }
+      ]
+    },
+    {
+      "name": "ADR-0254: an Amount per period's thinned pixel has no single height",
+      "definition": {
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "n",
+            "name": "Amounts",
+            "kind": "amountPerPeriod",
+            "points": [
+              {
+                "generate": {
+                  "count": 5000,
+                  "x": {
+                    "from": 0,
+                    "step": 1
+                  },
+                  "y": {
+                    "mod": 7
+                  },
+                  "at": {
+                    "0": null
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "reading": {
+        "metrics": {
+          "width": 800,
+          "height": 400
+        },
+        "view": {},
+        "at": {
+          "position": 2500,
+          "panel": 0,
+          "pointerY": 0
+        }
+      },
+      "expect": [
+        {
+          "at": "lines.0.y",
+          "is": null
+        },
+        {
+          "at": "lines.0.note",
+          "has": " points, "
+        }
+      ]
+    },
+    {
+      "name": "ADR-0344: a pixel the Chart Source thinned names the points of it that were handed in",
+      "build": {
+        "scene": {
+          "definition": {
+            "axis": {
+              "values": "numbers"
+            },
+            "series": [
+              {
+                "id": "s",
+                "name": "Source",
+                "kind": "level",
+                "points": [
+                  [
+                    0,
+                    1
+                  ],
+                  [
+                    1,
+                    3
+                  ],
+                  [
+                    2,
+                    2
+                  ],
+                  [
+                    5,
+                    4
+                  ]
+                ],
+                "thinned": [
+                  {
+                    "from": 0,
+                    "to": 2,
+                    "min": 1,
+                    "max": 3,
+                    "count": 40
+                  }
+                ]
+              }
+            ]
+          },
+          "scene": {
+            "metrics": {
+              "width": 800,
+              "height": 400
+            },
+            "view": {}
+          }
+        },
+        "reading": {
+          "definition": {
+            "axis": {
+              "values": "numbers"
+            },
+            "series": [
+              {
+                "id": "s",
+                "name": "Source",
+                "kind": "level",
+                "points": [
+                  [
+                    0,
+                    1
+                  ],
+                  [
+                    1,
+                    3
+                  ],
+                  [
+                    2,
+                    2
+                  ],
+                  [
+                    5,
+                    4
+                  ]
+                ],
+                "thinned": [
+                  {
+                    "from": 0,
+                    "to": 2,
+                    "min": 1,
+                    "max": 3,
+                    "count": 40
+                  }
+                ]
+              }
+            ]
+          },
+          "reading": {
+            "metrics": {
+              "width": 800,
+              "height": 400
+            },
+            "view": {},
+            "at": {
+              "position": 1,
+              "panel": 0,
+              "pointerY": 0
+            }
+          }
+        }
+      },
+      "expect": [
+        {
+          "at": "reading.lines.0.value",
+          "is": "1 – 3"
+        },
+        {
+          "at": "reading.lines.0.note",
+          "is": "3 points, 0 – 2"
+        },
+        {
+          "at": "reading.lines.0.y",
+          "atLeast": {
+            "yOf": [
+              0,
+              "left",
+              2
+            ],
+            "of": "scene"
+          },
+          "atMost": {
+            "yOf": [
+              0,
+              "left",
+              2
+            ],
+            "of": "scene"
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0254: a thinned pixel holding one point reads that point",
+      "definition": {
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "s",
+            "name": "Source",
+            "kind": "level",
+            "points": [
+              [
+                0,
+                1
+              ],
+              [
+                1,
+                3
+              ],
+              [
+                5,
+                4
+              ]
+            ],
+            "thinned": [
+              {
+                "from": 0.5,
+                "to": 1.5,
+                "min": 3,
+                "max": 3,
+                "count": 9
+              }
+            ]
+          }
+        ]
+      },
+      "reading": {
+        "metrics": {
+          "width": 800,
+          "height": 400
+        },
+        "view": {},
+        "at": {
+          "position": 1,
+          "panel": 0,
+          "pointerY": 0
+        }
+      },
+      "expect": [
+        {
+          "at": "lines.0.value",
+          "is": "3"
+        },
+        {
+          "at": "lines.0.note",
+          "is": null
+        }
+      ]
+    },
+    {
+      "name": "ADR-0257: a sampled series reads its sampler's value, said as interpolated with its Segment's method",
+      "definition": "curve",
+      "reading": {
+        "metrics": {
+          "width": 800,
+          "height": 400
+        },
+        "view": {},
+        "at": {
+          "position": 10,
+          "panel": 0,
+          "pointerY": 0
+        }
+      },
+      "expect": [
+        {
+          "at": "lines.[id=c].value",
+          "is": "3.1"
+        },
+        {
+          "at": "lines.[id=c].note",
+          "is": "interpolated, Log-linear"
+        },
+        {
+          "at": "lines.[id=q].value",
+          "is": null
+        },
+        {
+          "at": "lines.[id=q].note",
+          "is": "no point here"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0257: an extrapolated range says so with its method",
+      "definition": "curve",
+      "reading": {
+        "metrics": {
+          "width": 800,
+          "height": 400
+        },
+        "view": {},
+        "at": {
+          "position": 35,
+          "panel": 0,
+          "pointerY": 0
+        }
+      },
+      "expect": [
+        {
+          "at": "lines.[id=c].note",
+          "is": "Flat, extrapolated"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0257: a Segment's end belongs to the Segment it ends",
+      "definition": "curve",
+      "reading": {
+        "metrics": {
+          "width": 800,
+          "height": 400
+        },
+        "view": {},
+        "at": {
+          "position": 40,
+          "panel": 0,
+          "pointerY": 0
+        }
+      },
+      "expect": [
+        {
+          "at": "lines.[id=c].note",
+          "is": "Flat, extrapolated"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0257: past every Segment an Interpolated value is still said as interpolated",
+      "definition": "curve",
+      "reading": {
+        "metrics": {
+          "width": 800,
+          "height": 400
+        },
+        "view": {},
+        "at": {
+          "position": 45,
+          "panel": 0,
+          "pointerY": 0
+        }
+      },
+      "expect": [
+        {
+          "at": "lines.[id=c].value",
+          "is": "3.45"
+        },
+        {
+          "at": "lines.[id=c].note",
+          "is": "interpolated"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0257: outside its sampler's range a series has no value",
+      "definition": "curve",
+      "reading": {
+        "metrics": {
+          "width": 800,
+          "height": 400
+        },
+        "view": {},
+        "at": {
+          "position": 0,
+          "panel": 0,
+          "pointerY": 0
+        }
+      },
+      "expect": [
+        {
+          "at": "lines.[id=c].value",
+          "is": null
+        },
+        {
+          "at": "lines.[id=c].note",
+          "is": "outside its range"
+        },
+        {
+          "at": "lines.[id=c].y",
+          "is": null
+        }
+      ]
+    },
+    {
+      "name": "ADR-0257: a quote inside a Segment says the method that covers it, and that it is quoted",
+      "definition": {
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "q",
+            "name": "USD",
+            "kind": "level",
+            "points": [
+              [
+                1,
+                3.1
+              ],
+              [
+                30,
+                3.5
+              ]
+            ],
+            "segments": [
+              {
+                "from": 1,
+                "to": 30,
+                "method": "Log-linear"
+              }
+            ]
+          }
+        ]
+      },
+      "reading": {
+        "metrics": {
+          "width": 800,
+          "height": 400
+        },
+        "view": {},
+        "at": {
+          "position": 1,
+          "panel": 0,
+          "pointerY": 0
+        }
+      },
+      "expect": [
+        {
+          "at": "lines.0.value",
+          "is": "3.1"
+        },
+        {
+          "at": "lines.0.note",
+          "is": "Log-linear"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0257: an Interpolated series of points says so, with no Segment to name",
+      "definition": {
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "c",
+            "name": "Curve",
+            "kind": "level",
+            "points": [
+              [
+                1,
+                3.1
+              ],
+              [
+                2,
+                3.2
+              ]
+            ],
+            "interpolated": true
+          }
+        ]
+      },
+      "reading": {
+        "metrics": {
+          "width": 800,
+          "height": 400
+        },
+        "view": {},
+        "at": {
+          "position": 2,
+          "panel": 0,
+          "pointerY": 0
+        }
+      },
+      "expect": [
+        {
+          "at": "lines.0.value",
+          "is": "3.2"
+        },
+        {
+          "at": "lines.0.note",
+          "is": "interpolated"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0257: an Interpolated step names its interval and its method",
+      "definition": {
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "h",
+            "name": "Hazard",
+            "kind": "rateOverInterval",
+            "points": [
+              [
+                0,
+                0.01
+              ],
+              [
+                1,
+                0.02
+              ],
+              [
+                3,
+                0.03
+              ]
+            ],
+            "interpolated": true,
+            "segments": [
+              {
+                "from": 0,
+                "to": 3,
+                "method": "Bootstrap"
+              }
+            ]
+          }
+        ]
+      },
+      "reading": {
+        "metrics": {
+          "width": 800,
+          "height": 400
+        },
+        "view": {},
+        "at": {
+          "position": 2,
+          "panel": 0,
+          "pointerY": 0
+        }
+      },
+      "expect": [
+        {
+          "at": "lines.0.note",
+          "is": "1 – 3, interpolated, Bootstrap"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0303: the tooltip carries the bounds and their meaning",
+      "definition": {
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "2y",
+            "name": "2Y",
+            "kind": "level",
+            "points": [
+              [
+                0,
+                3.0
+              ],
+              [
+                1,
+                3.01
+              ],
+              [
+                2,
+                3.02
+              ],
+              [
+                3,
+                3.03
+              ],
+              [
+                4,
+                3.04
+              ]
+            ],
+            "fromZero": false,
+            "interval": {
+              "meaning": "95% CI",
+              "bounds": [
+                [
+                  0,
+                  2.9,
+                  3.1
+                ],
+                [
+                  1,
+                  2.91,
+                  3.11
+                ],
+                [
+                  2,
+                  2.92,
+                  3.12
+                ],
+                [
+                  3,
+                  null,
+                  3.13
+                ],
+                [
+                  4,
+                  2.94,
+                  3.14
+                ]
+              ]
+            }
+          }
+        ]
+      },
+      "reading": {
+        "metrics": {
+          "width": 1200,
+          "height": 400
+        },
+        "view": {},
+        "at": {
+          "position": 1,
+          "panel": 0,
+          "pointerY": 0
+        }
+      },
+      "expect": [
+        {
+          "at": "lines.0.value",
+          "is": "3.01"
+        },
+        {
+          "at": "lines.0.note",
+          "is": "[2.91, 3.11] 95% CI"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0303: a missing bound says the interval is missing",
+      "definition": {
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "2y",
+            "name": "2Y",
+            "kind": "level",
+            "points": [
+              [
+                0,
+                3.0
+              ],
+              [
+                1,
+                3.01
+              ],
+              [
+                2,
+                3.02
+              ],
+              [
+                3,
+                3.03
+              ],
+              [
+                4,
+                3.04
+              ]
+            ],
+            "fromZero": false,
+            "interval": {
+              "meaning": "95% CI",
+              "bounds": [
+                [
+                  0,
+                  2.9,
+                  3.1
+                ],
+                [
+                  1,
+                  2.91,
+                  3.11
+                ],
+                [
+                  2,
+                  2.92,
+                  3.12
+                ],
+                [
+                  3,
+                  null,
+                  3.13
+                ],
+                [
+                  4,
+                  2.94,
+                  3.14
+                ]
+              ]
+            }
+          }
+        ]
+      },
+      "reading": {
+        "metrics": {
+          "width": 1200,
+          "height": 400
+        },
+        "view": {},
+        "at": {
+          "position": 3,
+          "panel": 0,
+          "pointerY": 0
+        }
+      },
+      "expect": [
+        {
+          "at": "lines.0.value",
+          "is": "3.03"
+        },
+        {
+          "at": "lines.0.note",
+          "is": "(no interval)"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0303: a point with no bounds at all says the interval is missing, after its method",
+      "definition": {
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "2y",
+            "name": "2Y",
+            "kind": "level",
+            "points": [
+              [
+                0,
+                3.0
+              ],
+              [
+                1,
+                3.01
+              ],
+              [
+                2,
+                3.02
+              ]
+            ],
+            "fromZero": false,
+            "segments": [
+              {
+                "from": 0,
+                "to": 2,
+                "method": "Linear"
+              }
+            ],
+            "interval": {
+              "meaning": "95% CI",
+              "bounds": [
+                [
+                  0,
+                  2.9,
+                  3.1
+                ],
+                [
+                  1,
+                  2.91,
+                  3.11
+                ]
+              ]
+            }
+          }
+        ]
+      },
+      "reading": {
+        "metrics": {
+          "width": 1200,
+          "height": 400
+        },
+        "view": {},
+        "at": {
+          "position": 2,
+          "panel": 0,
+          "pointerY": 0
+        }
+      },
+      "expect": [
+        {
+          "at": "lines.0.note",
+          "is": "Linear, (no interval)"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0300: the tooltip gives the four values, the change from the previous close and the volume",
+      "definition": "candles",
+      "reading": {
+        "metrics": {
+          "width": 1200,
+          "height": 400
+        },
+        "view": {},
+        "at": {
+          "position": {
+            "date": "2026-10-14"
+          },
+          "panel": 0,
+          "pointerY": 0
+        }
+      },
+      "expect": [
+        {
+          "at": "position",
+          "is": "2026-10-14"
+        },
+        {
+          "at": "lines.0.value",
+          "is": "O 39120 H 39480 L 38950 C 39310"
+        },
+        {
+          "at": "lines.0.note",
+          "is": "Chg +210 (+0.54%), Vol 7"
+        },
+        {
+          "at": "lines.0.name",
+          "is": "Index"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0300: the first candle has no change to say",
+      "definition": "candles",
+      "reading": {
+        "metrics": {
+          "width": 1200,
+          "height": 400
+        },
+        "view": {},
+        "at": {
+          "position": {
+            "date": "2026-10-13"
+          },
+          "panel": 0,
+          "pointerY": 0
+        }
+      },
+      "expect": [
+        {
+          "at": "lines.0.note",
+          "is": "Chg —, Vol 5"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0300: a fall is said with its sign, and a candle with no volume says none",
+      "definition": "candles",
+      "reading": {
+        "metrics": {
+          "width": 1200,
+          "height": 400
+        },
+        "view": {},
+        "at": {
+          "position": {
+            "date": "2026-10-15"
+          },
+          "panel": 0,
+          "pointerY": 0
+        }
+      },
+      "expect": [
+        {
+          "at": "lines.0.value",
+          "is": "O 39310 H 39320 L 39000 C 39050"
+        },
+        {
+          "at": "lines.0.note",
+          "is": "Chg -260 (-0.66%)"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0300: an unchanged candle says so",
+      "definition": "candles",
+      "reading": {
+        "metrics": {
+          "width": 1200,
+          "height": 400
+        },
+        "view": {},
+        "at": {
+          "position": {
+            "date": "2026-10-16"
+          },
+          "panel": 0,
+          "pointerY": 0
+        }
+      },
+      "expect": [
+        {
+          "at": "lines.0.note",
+          "is": "unchanged, Chg +0 (+0.00%), Vol 3"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0300: a candle stands at its close",
+      "build": {
+        "scene": {
+          "definition": "candles",
+          "scene": {
+            "metrics": {
+              "width": 1200,
+              "height": 400
+            },
+            "view": {}
+          }
+        },
+        "reading": {
+          "definition": "candles",
+          "reading": {
+            "metrics": {
+              "width": 1200,
+              "height": 400
+            },
+            "view": {},
+            "at": {
+              "position": {
+                "date": "2026-10-14"
+              },
+              "panel": 0,
+              "pointerY": 0
+            }
+          }
+        }
+      },
+      "expect": [
+        {
+          "at": "reading.lines.0.y",
+          "near": 1e-09,
+          "sameAs": "scene.panels.0.series.0.candles.1.closeY"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0300: the volume panel reads the volume alone",
+      "definition": "candles",
+      "reading": {
+        "metrics": {
+          "width": 1200,
+          "height": 400
+        },
+        "view": {},
+        "at": {
+          "position": {
+            "date": "2026-10-14"
+          },
+          "panel": 1,
+          "pointerY": 0
+        }
+      },
+      "expect": [
+        {
+          "at": "lines.0.value",
+          "is": "Vol 7"
+        },
+        {
+          "at": "lines.0.note",
+          "is": null
+        },
+        {
+          "at": "lines.0.name",
+          "is": "Index volume"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0300: the volume panel says a row with no volume has none",
+      "definition": "candles",
+      "reading": {
+        "metrics": {
+          "width": 1200,
+          "height": 400
+        },
+        "view": {},
+        "at": {
+          "position": {
+            "date": "2026-10-15"
+          },
+          "panel": 1,
+          "pointerY": 0
+        }
+      },
+      "expect": [
+        {
+          "at": "lines.0.value",
+          "is": "(no value)"
+        },
+        {
+          "at": "lines.0.y",
+          "is": null
+        }
+      ]
+    },
+    {
+      "name": "ADR-0300: a volume stands at its height in the volume panel",
+      "build": {
+        "scene": {
+          "definition": "candles",
+          "scene": {
+            "metrics": {
+              "width": 1200,
+              "height": 400
+            },
+            "view": {}
+          }
+        },
+        "reading": {
+          "definition": "candles",
+          "reading": {
+            "metrics": {
+              "width": 1200,
+              "height": 400
+            },
+            "view": {},
+            "at": {
+              "position": {
+                "date": "2026-10-14"
+              },
+              "panel": 1,
+              "pointerY": 0
+            }
+          }
+        }
+      },
+      "expect": [
+        {
+          "at": "reading.lines.0.y",
+          "near": 1e-09,
+          "sameAs": "scene.panels.1.series.0.volumes.1.topY"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0300: a row missing a value reads as a gap",
+      "definition": {
+        "axis": {
+          "values": "dates"
+        },
+        "series": [
+          {
+            "id": "idx",
+            "name": "Index",
+            "kind": "priceRange",
+            "bars": {
+              "weekdays": {
+                "count": 3,
+                "set": {
+                  "1": {
+                    "close": null
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      "reading": {
+        "metrics": {
+          "width": 1200,
+          "height": 400
+        },
+        "view": {},
+        "at": {
+          "position": {
+            "date": "2026-01-06"
+          },
+          "panel": 0,
+          "pointerY": 0
+        }
+      },
+      "expect": [
+        {
+          "at": "lines.0.value",
+          "is": null
+        },
+        {
+          "at": "lines.0.note",
+          "is": "(no value)"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0300: a position with no row has no candle",
+      "definition": {
+        "axis": {
+          "values": "dates"
+        },
+        "series": [
+          {
+            "id": "idx",
+            "name": "Index",
+            "kind": "priceRange",
+            "bars": {
+              "weekdays": {
+                "count": 3
+              }
+            }
+          }
+        ]
+      },
+      "reading": {
+        "metrics": {
+          "width": 1200,
+          "height": 400
+        },
+        "view": {},
+        "at": {
+          "position": {
+            "date": "2026-01-10"
+          },
+          "panel": 0,
+          "pointerY": 0
+        }
+      },
+      "expect": [
+        {
+          "at": "lines.0.value",
+          "is": null
+        },
+        {
+          "at": "lines.0.note",
+          "is": "no candle here"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0300: a High-Low-Close bar is read without an open",
+      "definition": {
+        "axis": {
+          "values": "dates"
+        },
+        "series": [
+          {
+            "id": "idx",
+            "name": "Index",
+            "kind": "priceRange",
+            "bars": {
+              "weekdays": {
+                "count": 3,
+                "withoutOpen": true
+              }
+            }
+          }
+        ]
+      },
+      "reading": {
+        "metrics": {
+          "width": 1200,
+          "height": 400
+        },
+        "view": {},
+        "at": {
+          "position": {
+            "date": "2026-01-06"
+          },
+          "panel": 0,
+          "pointerY": 0
+        }
+      },
+      "expect": [
+        {
+          "at": "lines.0.value",
+          "is": "H 99 L 93 C 95"
+        },
+        {
+          "at": "lines.0.note",
+          "is": "Chg -2 (-2.06%)"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0300: a change from a close of zero has no percentage",
+      "definition": {
+        "axis": {
+          "values": "dates"
+        },
+        "series": [
+          {
+            "id": "idx",
+            "name": "Index",
+            "kind": "priceRange",
+            "bars": [
+              [
+                {
+                  "date": "2026-10-13"
+                },
+                0,
+                1,
+                0,
+                0
+              ],
+              [
+                {
+                  "date": "2026-10-14"
+                },
+                0,
+                6,
+                0,
+                5
+              ]
+            ]
+          }
+        ]
+      },
+      "reading": {
+        "metrics": {
+          "width": 1200,
+          "height": 400
+        },
+        "view": {},
+        "at": {
+          "position": {
+            "date": "2026-10-14"
+          },
+          "panel": 0,
+          "pointerY": 0
+        }
+      },
+      "expect": [
+        {
+          "at": "lines.0.note",
+          "is": "Chg +5"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0302: a merged candle names its period and how many rows it holds",
+      "definition": {
+        "axis": {
+          "values": "dates"
+        },
+        "series": [
+          {
+            "id": "idx",
+            "name": "Index",
+            "kind": "priceRange",
+            "bars": {
+              "weekdays": {
+                "count": 2450,
+                "volume": true
+              }
+            }
+          }
+        ]
+      },
+      "reading": {
+        "metrics": {
+          "width": 600,
+          "height": 400
+        },
+        "view": {},
+        "at": {
+          "position": {
+            "date": "2026-01-07"
+          },
+          "panel": 0,
+          "pointerY": 0
+        }
+      },
+      "expect": [
+        {
+          "at": "lines.0.note",
+          "startsWith": "2026-01-05 – 2026-01-30, 20 rows, "
+        },
+        {
+          "at": "lines.0.value",
+          "startsWith": "O 100 "
+        }
+      ]
+    },
+    {
+      "name": "ADR-0302: a period the Consumer fixed is named even where it holds one row",
+      "definition": {
+        "axis": {
+          "values": "dates"
+        },
+        "series": [
+          {
+            "id": "idx",
+            "name": "Index",
+            "kind": "priceRange",
+            "bars": {
+              "weekdays": {
+                "count": 3
+              }
+            },
+            "mergeTo": "week"
+          }
+        ]
+      },
+      "reading": {
+        "metrics": {
+          "width": 1200,
+          "height": 400
+        },
+        "view": {},
+        "at": {
+          "position": {
+            "date": "2026-01-06"
+          },
+          "panel": 0,
+          "pointerY": 0
+        }
+      },
+      "expect": [
+        {
+          "at": "lines.0.note",
+          "startsWith": "2026-01-05 – 2026-01-07, 3 rows, "
+        }
+      ]
+    },
+    {
+      "name": "ADR-0300, ADR-0290: on a logarithmic axis a candle is read at the height its close is drawn",
+      "definition": {
+        "axis": {
+          "values": "dates"
+        },
+        "series": [
+          {
+            "id": "idx",
+            "name": "Index",
+            "kind": "priceRange",
+            "bars": {
+              "weekdays": {
+                "count": 3
+              }
+            }
+          }
+        ]
+      },
+      "reading": {
+        "metrics": {
+          "width": 1200,
+          "height": 400
+        },
+        "view": {
+          "yScale": "logarithmic"
+        },
+        "at": {
+          "position": {
+            "date": "2026-01-06"
+          },
+          "panel": 0,
+          "pointerY": 0
+        }
+      },
+      "expect": [
+        {
+          "at": "lines.0.y",
+          "is": 202.34,
+          "near": 0.01
+        }
+      ]
+    },
+    {
+      "name": "ADR-0270: past what fits the plot, the nearest series are listed and the rest counted",
+      "build": {
+        "scene": {
+          "definition": "forty",
+          "scene": {
+            "metrics": {
+              "width": 800,
+              "height": 200
+            },
+            "view": {},
+            "legend": {
+              "position": "none"
+            }
+          }
+        },
+        "reading": {
+          "definition": "forty",
+          "reading": {
+            "metrics": {
+              "width": 800,
+              "height": 200
+            },
+            "view": {},
+            "legend": {
+              "position": "none"
+            },
+            "at": {
+              "position": 0,
+              "panel": 0,
+              "pointerY": 8
+            }
+          }
+        }
+      },
+      "expect": [
+        {
+          "at": "reading.more",
+          "above": 0
+        },
+        {
+          "at": "reading.lines.length",
+          "atLeast": {
+            "at": "$.reading.more",
+            "times": -1,
+            "plus": 40
+          },
+          "atMost": {
+            "at": "$.reading.more",
+            "times": -1,
+            "plus": 40
+          }
+        },
+        {
+          "at": "reading.lines",
+          "has": {
+            "id": "s39"
+          }
+        },
+        {
+          "at": "reading.lines",
+          "lacks": {
+            "id": "s0"
+          }
+        },
+        {
+          "at": "reading.lines.0.id",
+          "is": "s39"
+        },
+        {
+          "at": "scene.panels.0.plot.y",
+          "is": 8
+        }
+      ]
+    },
+    {
+      "name": "ADR-0270: the series nearest the pointer are the ones listed",
+      "definition": "forty",
+      "reading": {
+        "metrics": {
+          "width": 800,
+          "height": 200
+        },
+        "view": {},
+        "legend": {
+          "position": "none"
+        },
+        "at": {
+          "position": 0,
+          "panel": 0,
+          "pointerY": 400
+        }
+      },
+      "expect": [
+        {
+          "at": "lines",
+          "has": {
+            "id": "s0"
+          }
+        },
+        {
+          "at": "lines",
+          "lacks": {
+            "id": "s39"
+          }
+        },
+        {
+          "at": "lines.-1.id",
+          "is": "s0"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0270: the position is written as the axis writes it",
+      "definition": {
+        "axis": {
+          "values": "numbers",
+          "named": [
+            [
+              0.5,
+              "6M"
+            ]
+          ]
+        },
+        "series": [
+          {
+            "id": "a",
+            "name": "A",
+            "kind": "level",
+            "points": [
+              [
+                0.5,
+                1
+              ],
+              [
+                1,
+                2
+              ]
+            ]
+          }
+        ]
+      },
+      "reading": {
+        "metrics": {
+          "width": 800,
+          "height": 400
+        },
+        "view": {},
+        "at": {
+          "position": 0.5,
+          "panel": 0,
+          "pointerY": 0
+        }
+      },
+      "expect": [
+        {
+          "at": "position",
+          "is": "6M"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0270: a hidden series is not read",
+      "definition": "levels",
+      "reading": {
+        "metrics": {
+          "width": 800,
+          "height": 400
+        },
+        "view": {
+          "hidden": [
+            "a"
+          ]
+        },
+        "at": {
+          "position": 0,
+          "panel": 0,
+          "pointerY": 0
+        }
+      },
+      "expect": [
+        {
+          "at": "lines",
+          "map": "id",
+          "is": [
+            "b"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ADR-0290: the reading over a mark names the point and gives its x and y",
+      "build": {
+        "scene": {
+          "definition": "names",
+          "scene": {
+            "metrics": {
+              "width": 800,
+              "height": 400
+            },
+            "view": {}
+          }
+        },
+        "reading": {
+          "definition": "names",
+          "reading": {
+            "metrics": {
+              "width": 800,
+              "height": 400
+            },
+            "view": {},
+            "at": {
+              "mark": 0
+            }
+          }
+        }
+      },
+      "expect": [
+        {
+          "at": "reading.position",
+          "is": "XYZ Corp"
+        },
+        {
+          "at": "reading.lines.0.value",
+          "is": "3.2, 245bp"
+        },
+        {
+          "at": "reading.lines.0.note",
+          "is": null
+        },
+        {
+          "at": "reading.lines.0.id",
+          "is": "names"
+        },
+        {
+          "at": "reading.lines.0.name",
+          "is": "Names"
+        },
+        {
+          "at": "reading.lines.0.y",
+          "sameAs": "scene.marks.0.y"
+        },
+        {
+          "at": "reading.more",
+          "is": 0
+        },
+        {
+          "at": "scene.marks.0.point",
+          "is": 0
+        }
+      ]
+    },
+    {
+      "name": "ADR-0290: a merged mark's tooltip says how many points it holds, named by the first",
+      "definition": {
+        "axis": {
+          "values": "numbers",
+          "title": "Leverage"
+        },
+        "series": [
+          {
+            "id": "names",
+            "name": "Names",
+            "kind": "observation",
+            "points": [
+              {
+                "generate": {
+                  "count": 50,
+                  "x": {
+                    "from": 1,
+                    "step": 1e-07
+                  },
+                  "y": 100,
+                  "name": "N"
+                }
+              },
+              [
+                5,
+                300,
+                "Far"
+              ]
+            ]
+          }
+        ]
+      },
+      "reading": {
+        "metrics": {
+          "width": 800,
+          "height": 400
+        },
+        "view": {},
+        "at": {
+          "mark": 0
+        }
+      },
+      "expect": [
+        {
+          "at": "position",
+          "is": "N0"
+        },
+        {
+          "at": "lines.0.note",
+          "is": "50 points here: N0 and 49 more"
+        },
+        {
+          "at": "lines.0.value",
+          "is": "1, 100"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0290: a merged mark of unnamed points says this one and the rest, at its position across",
+      "definition": {
+        "axis": {
+          "values": "numbers",
+          "title": "Leverage"
+        },
+        "series": [
+          {
+            "id": "names",
+            "name": "Names",
+            "kind": "observation",
+            "points": [
+              {
+                "generate": {
+                  "count": 3,
+                  "x": {
+                    "from": 1,
+                    "step": 1e-07
+                  },
+                  "y": 100
+                }
+              },
+              [
+                5,
+                300
+              ]
+            ]
+          }
+        ]
+      },
+      "reading": {
+        "metrics": {
+          "width": 800,
+          "height": 400
+        },
+        "view": {},
+        "at": {
+          "mark": 0
+        }
+      },
+      "expect": [
+        {
+          "at": "position",
+          "is": "1"
+        },
+        {
+          "at": "lines.0.note",
+          "is": "3 points here: this one and 2 more"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0304: the tooltip says what each interval means",
+      "definition": "spreads",
+      "reading": {
+        "metrics": {
+          "width": 800,
+          "height": 400
+        },
+        "view": {},
+        "at": {
+          "mark": 2
+        }
+      },
+      "expect": [
+        {
+          "at": "position",
+          "is": "D"
+        },
+        {
+          "at": "lines.0.value",
+          "is": "3, 260"
+        },
+        {
+          "at": "lines.0.note",
+          "is": "y [240, 290] 95% CI, x (no interval)"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0304: a point's horizontal bounds are written as the axis writes them",
+      "definition": "spreads",
+      "reading": {
+        "metrics": {
+          "width": 800,
+          "height": 400
+        },
+        "view": {},
+        "at": {
+          "mark": 0
+        }
+      },
+      "expect": [
+        {
+          "at": "lines.0.note",
+          "is": "y [140, 160] 95% CI, x [0.5, 1.5] ±1σ"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0304: a lone vertical interval is said without naming its direction",
+      "definition": {
+        "axis": {
+          "values": "numbers",
+          "title": "Leverage"
+        },
+        "series": [
+          {
+            "id": "names",
+            "name": "Names",
+            "kind": "observation",
+            "points": [
+              [
+                1,
+                150,
+                "A"
+              ],
+              [
+                3,
+                200,
+                "C"
+              ]
+            ],
+            "interval": {
+              "meaning": "95% CI",
+              "bounds": [
+                [
+                  1,
+                  140,
+                  160
+                ],
+                [
+                  3,
+                  null,
+                  215
+                ]
+              ]
+            }
+          }
+        ]
+      },
+      "reading": {
+        "metrics": {
+          "width": 800,
+          "height": 400
+        },
+        "view": {},
+        "at": {
+          "mark": 1
+        }
+      },
+      "expect": [
+        {
+          "at": "lines.0.note",
+          "is": "(no interval)"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0320: the tooltip says the colour's and the size's values",
+      "definition": {
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "n",
+            "name": "Names",
+            "kind": "observation",
+            "points": [
+              [
+                1,
+                2,
+                "Acme"
+              ]
+            ],
+            "colourBy": {
+              "title": "P&L",
+              "values": [
+                -3
+              ]
+            },
+            "sizeBy": {
+              "title": "Notional",
+              "values": [
+                5
+              ]
+            }
+          }
+        ]
+      },
+      "reading": {
+        "metrics": {
+          "width": 600,
+          "height": 400
+        },
+        "view": {},
+        "at": {
+          "mark": 0
+        }
+      },
+      "expect": [
+        {
+          "at": "lines.0.note",
+          "is": "P&L -3, Notional 5"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0320: a point with no colour or size value says it has none",
+      "definition": {
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "n",
+            "name": "Names",
+            "kind": "observation",
+            "points": [
+              [
+                1,
+                2,
+                "Acme"
+              ],
+              [
+                2,
+                3,
+                "Beta"
+              ]
+            ],
+            "colourBy": {
+              "title": "P&L",
+              "values": [
+                -3,
+                null
+              ]
+            },
+            "sizeBy": {
+              "title": "Notional",
+              "values": [
+                null,
+                5
+              ]
+            }
+          }
+        ]
+      },
+      "reading": {
+        "metrics": {
+          "width": 600,
+          "height": 400
+        },
+        "view": {},
+        "at": {
+          "mark": 1
+        }
+      },
+      "expect": [
+        {
+          "at": "lines.0.note",
+          "is": "P&L has no value, Notional 5"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0321: the tooltip says the columns the Consumer named, and a missing one has no value",
+      "definition": {
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "n",
+            "name": "Nodes",
+            "kind": "observation",
+            "points": [
+              [
+                1,
+                1,
+                "a"
+              ],
+              [
+                2,
+                2,
+                "b"
+              ],
+              [
+                3,
+                3,
+                "c"
+              ]
+            ],
+            "details": [
+              {
+                "title": "probability",
+                "values": [
+                  "1",
+                  "0.5",
+                  null
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "reading": {
+        "metrics": {
+          "width": 600,
+          "height": 400
+        },
+        "view": {},
+        "at": {
+          "mark": 1
+        }
+      },
+      "expect": [
+        {
+          "at": "lines.0.note",
+          "is": "probability 0.5"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0321: a missing detail says it has no value",
+      "definition": {
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "n",
+            "name": "Nodes",
+            "kind": "observation",
+            "points": [
+              [
+                1,
+                1,
+                "a"
+              ],
+              [
+                2,
+                2,
+                "b"
+              ],
+              [
+                3,
+                3,
+                "c"
+              ]
+            ],
+            "details": [
+              {
+                "title": "probability",
+                "values": [
+                  "1",
+                  "0.5",
+                  null
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "reading": {
+        "metrics": {
+          "width": 600,
+          "height": 400
+        },
+        "view": {},
+        "at": {
+          "mark": 2
+        }
+      },
+      "expect": [
+        {
+          "at": "lines.0.note",
+          "is": "probability has no value"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0321: a node with no label is read by its key",
+      "definition": {
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "n",
+            "name": "Nodes",
+            "kind": "observation",
+            "points": [
+              {
+                "x": 1,
+                "y": 1,
+                "row": "0:0"
+              },
+              {
+                "x": 2,
+                "y": 2,
+                "row": "1:1"
+              }
+            ],
+            "edges": [
+              [
+                "0:0",
+                "1:1"
+              ]
+            ]
+          }
+        ]
+      },
+      "reading": {
+        "metrics": {
+          "width": 600,
+          "height": 400
+        },
+        "view": {},
+        "at": {
+          "mark": 0
+        }
+      },
+      "expect": [
+        {
+          "at": "position",
+          "is": "0:0"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0321: a node keyed by a number is read by that number",
+      "definition": {
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "n",
+            "name": "Nodes",
+            "kind": "observation",
+            "points": [
+              {
+                "x": 1,
+                "y": 1,
+                "row": 7
+              },
+              {
+                "x": 2,
+                "y": 2,
+                "row": 8.5
+              }
+            ],
+            "edges": [
+              [
+                7,
+                8.5
+              ]
+            ]
+          }
+        ]
+      },
+      "reading": {
+        "metrics": {
+          "width": 600,
+          "height": 400
+        },
+        "view": {},
+        "at": {
+          "mark": 1
+        }
+      },
+      "expect": [
+        {
+          "at": "position",
+          "is": "8.5"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0321: the pointer can be over an edge, and its tooltip says its two keys",
+      "build": {
+        "scene": {
+          "definition": "tree",
+          "scene": {
+            "metrics": {
+              "width": 600,
+              "height": 400
+            },
+            "view": {}
+          }
+        },
+        "reading": {
+          "definition": "tree",
+          "reading": {
+            "metrics": {
+              "width": 600,
+              "height": 400
+            },
+            "view": {},
+            "at": {
+              "edge": 4
+            }
+          }
+        }
+      },
+      "expect": [
+        {
+          "at": "reading.position",
+          "is": "1,1 → 2,1"
+        },
+        {
+          "at": "reading.lines.length",
+          "is": 1
+        },
+        {
+          "at": "reading.lines.0.name",
+          "is": "Tree"
+        },
+        {
+          "at": "reading.lines.0.value",
+          "is": "edge from 1,1 to 2,1"
+        },
+        {
+          "at": "reading.lines.0.note",
+          "is": null
+        },
+        {
+          "at": "reading.lines.0.y",
+          "atLeast": {
+            "at": "$.scene.edgeMarks.4.edge.y1",
+            "times": 0.5,
+            "plus": {
+              "at": "$.scene.edgeMarks.4.edge.y2",
+              "times": 0.5
+            }
+          },
+          "atMost": {
+            "at": "$.scene.edgeMarks.4.edge.y1",
+            "times": 0.5,
+            "plus": {
+              "at": "$.scene.edgeMarks.4.edge.y2",
+              "times": 0.5
+            }
+          }
+        },
+        {
+          "at": "scene.edgeMarks.4.edge.index",
+          "is": 4
+        }
+      ]
+    },
+    {
+      "name": "ADR-0321: an edge between nodes keyed by numbers says the numbers",
+      "definition": {
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "n",
+            "name": "Nodes",
+            "kind": "observation",
+            "points": [
+              {
+                "x": 1,
+                "y": 1,
+                "row": 7
+              },
+              {
+                "x": 2,
+                "y": 2,
+                "row": 8.5
+              }
+            ],
+            "edges": [
+              [
+                7,
+                8.5
+              ]
+            ]
+          }
+        ]
+      },
+      "reading": {
+        "metrics": {
+          "width": 600,
+          "height": 400
+        },
+        "view": {},
+        "at": {
+          "edge": 0
+        }
+      },
+      "expect": [
+        {
+          "at": "position",
+          "is": "7 → 8.5"
+        },
+        {
+          "at": "lines.0.value",
+          "is": "edge from 7 to 8.5"
+        }
+      ]
+    }
+  ]
+}

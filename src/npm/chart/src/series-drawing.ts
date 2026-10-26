@@ -345,3 +345,9 @@ export function sample(f: SeriesSampler, segments: readonly Segment[], from: num
     }
     return points;
 }
+
+/** The Segment that covers `x`: the one it lies in, or the one it ends, since a Segment's end is its own (ADR-0257). */
+export function segmentAt(s: ChartSeries, x: number): Segment | undefined {
+    const inside = s.segments.find(k => k.from <= x && x < k.to);
+    return inside !== undefined ? inside : s.segments.findLast(k => k.to === x);
+}

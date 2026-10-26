@@ -330,20 +330,14 @@ public class ChartSpecEdgeTests
         Assert.Equal(new ChartEdge("0", "2"), s.Edges[1]);
     }
 
-    [Fact] // ADR-0321: a node's tooltip says the columns the spec names, and no other
-    public void A_nodes_tooltip_says_the_columns_the_spec_names()
+    // What the tooltip and the table say of these columns is shared cases (tests/cases/chart/reading.json, csv.json).
+    [Fact] // ADR-0321: a node's tooltip columns are the ones the spec names, and no other
+    public void A_nodes_tooltip_columns_are_the_ones_the_spec_names()
     {
         var d = ChartSpec.Read(Spec.Replace("\"key\": \"id\",", "\"key\": \"id\", \"tooltip\": [\"probability\"],"), Tables).Definition;
         var detail = Assert.Single(d.Series[0].Details);
         Assert.Equal("probability", detail.Title);
         Assert.Equal(["1", "0.5", null], detail.Values);
-        var scene = ChartScene.Build(d, new ChartMetrics(600, 400));
-        var mark = scene.Marks.ToList().FindIndex(m => m.Point == 1);
-        var note = ChartReadings.OfMark(d, scene, mark).Lines[0].Note;
-        Assert.Contains("probability 0.5", note);
-        Assert.DoesNotContain("exercise", note);
-        Assert.Contains("probability has no value", ChartReadings.OfMark(d, scene, scene.Marks.ToList().FindIndex(m => m.Point == 2)).Lines[0].Note);
-        Assert.Contains("probability", ChartCsv.WideTable(d, new ChartMetrics(600, 400)).Header);
     }
 
     [Fact] // ADR-0321: the tooltip's columns are an observation's, and each is one of its table's
