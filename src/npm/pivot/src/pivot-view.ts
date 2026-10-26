@@ -15,14 +15,15 @@ import {
 } from '@ex-grid/core';
 import {
     FetchingPivotSource, LocalPivotReportSource, chooseLayout, defaultMaxLeaves, emptyPivotLayout, formatPivotCount, isLayoutChosen, isValuesPseudoField,
-    layoutChoiceChanges, pivotLayoutChoices, pivotValueCaptions, placementOf, isItemCollapsed, pivotWordIdList, setCollapsed,
+    layoutChoiceChanges, pivotLayoutChoices, pivotValueCaptions, placementOf, placementsIn, isItemCollapsed, pivotWordIdList, setCollapsed,
     validateLayout, type PivotDisplayRow, type PivotEntry, type PivotItemCounts, type PivotLabel, type PivotLayout, type PivotLayoutChoice,
     type PivotReportRefusal, type PivotReportSettings, type PivotReportState, type PivotSlicing, type PivotSource, type PivotToggle,
 } from '@ex-grid/pivot-engine';
-import { entryMenuCommands, entryOfField } from './entry-menu';
+import { entryMenuCommands, entryOfField, type EntryMenuCommand, type EntryPanel } from './entry-menu';
 import { FieldListView, fieldOf, sameEntry, type FieldListEdit, type FieldListMove } from './field-list';
 import { PivotMenuFrame, type PivotMenuCommand } from './menu';
 import { defined, elementAt } from './must';
+import { fieldSettingsPanel, valueFieldSettingsPanel, type PivotPanel } from './panels';
 import { cellItems, ReportColumns, reportRows, type PivotCellItems } from './report-grid';
 import { layoutChoiceId, PivotScreenWords } from './words';
 
@@ -140,18 +141,23 @@ interface Shown {
     readonly question: Question | undefined;
 }
 
-/** The menu open in the pivot: the Layout menu from the Pivot Toolbar, or a placed field's menu in the Field List,
- * drawn from the layout it was opened on, which it closes on leaving (ADR-0061). One stands at a time. */
-type OpenMenu =
-    | { readonly kind: 'layout'; readonly frame: PivotMenuFrame }
-    | {
-        readonly kind: 'entry';
-        readonly entry: PivotEntry;
-        /** The field the entry stands for; none for Σ Values. */
-        readonly field: string | undefined;
-        readonly against: PivotLayout;
-        readonly frame: PivotMenuFrame;
-    };
+/** What a menu or a panel opened under a field's entry was opened on. */
+interface AtEntry {
+    readonly entry: PivotEntry;
+    /** The field the entry stands for; none for Σ Values. */
+    readonly field: string | undefined;
+    /** The pane's layout it was opened on, which it closes on leaving. */
+    readonly against: PivotLayout;
+}
+
+/** What is open in the pivot (ADR-0061), one at a time: the Layout menu from the Pivot Toolbar, a placed field's menu
+ * in the Field List, or a panel that menu opened in its place. */
+type OpenSurface =
+    | { readonly kind: 'layout'; readonly popup: PivotMenuFrame }
+    | (AtEntry & { readonly kind: 'entry'; readonly popup: PivotMenuFrame })
+    | (AtEntry & { readonly kind: 'panel'; readonly popup: PivotPanel });
+
+type EntrySurface = Exclude<OpenSurface, { readonly kind: 'layout' }>;
 
 // The Layout menu's groups, each headed where it starts, in Excel's order (ADR-0061).
 const layoutHeadings: ReadonlyMap<PivotLayoutChoice, string> = new Map([
@@ -256,9 +262,9 @@ export class PivotView {
     #grid: GridHandle<PivotDisplayRow> | undefined;
     #rows: FetchingGridSource<PivotDisplayRow> | undefined;
     #dropRemoveShown = false;
-    #open: OpenMenu | undefined;
+    #open: OpenSurface | undefined;
     // A field menu the pane left while it held the keyboard: the keyboard goes to its field's entry once drawn.
-    #keyboardAfterDraw: Extract<OpenMenu, { readonly kind: 'entry' }> | undefined;
+    #keyboardAfterDraw: EntrySurface | undefined;
     #destroyed = false;
 
     constructor(root: HTMLElement, options: PivotViewOptions, mountGrid: MountGrid) {
@@ -317,7 +323,7 @@ export class PivotView {
         this.#backdrop = div('ex-pivot-backdrop');
         this.#backdrop.setAttribute('data-ex-claims', 'click');
         this.#backdrop.setAttribute('aria-hidden', 'true');
-        this.#backdrop.addEventListener('click', () => { this.#closeMenu('opener'); });
+        this.#backdrop.addEventListener('click', () => { this.#close('opener'); });
         toolbar.append(start, end);
         this.#notice = div('ex-pivot-refusal-notice');
         this.#notice.setAttribute('role', 'alert');
@@ -358,13 +364,13 @@ export class PivotView {
             if (to instanceof Node && !root.contains(to)) this.#fieldList.leaveTargets();
         }, listening);
         // A press, or focus coming in, anywhere in the pivot outside an open field menu and its entry dismisses the
-        // menu, and leaves the keyboard where it went (ADR-0061).
+        // menu, and leaves the keyboard where it went (ADR-0061). A panel keeps its draft until OK or Cancel.
         const outside = (event: Event): void => {
             const open = this.#open;
             if (open?.kind !== 'entry') return;
-            const item = open.frame.element.parentNode;
+            const item = open.popup.element.parentNode;
             if (event.target instanceof Node && item !== null && item.contains(event.target)) return;
-            this.#closeMenu('stay');
+            this.#close('stay');
         };
         root.addEventListener('mousedown', outside, listening);
         root.addEventListener('focusin', outside, listening);
@@ -789,98 +795,99 @@ export class PivotView {
         this.#move(setCollapsed(pane, toggle.field, toggle.item, !toggle.isCollapsed), undefined);
     }
 
-    // ---- Menus (ADR-0061) ------------------------------------------------------------------------------
+    // ---- Menus and panels (ADR-0061) -------------------------------------------------------------------
 
     #toggleLayoutMenu(): void {
         if (this.#open?.kind === 'layout') {
-            this.#closeMenu('opener');
+            this.#close('opener');
             return;
         }
-        this.#openMenu({ kind: 'layout', frame: this.#frame('toolbar-end') });
+        this.#openSurface({ kind: 'layout', popup: this.#menuFrame('toolbar-end') });
     }
 
+    // An entry's button opens its menu, and closes the menu standing under it.
     #toggleEntryMenu(entry: PivotEntry): void {
+        // A panel open under the entry is dropped for the menu, as the Razor component's ToggleMenu does.
         const open = this.#open;
         if (open?.kind === 'entry' && sameEntry(open.entry, entry)) {
-            this.#closeMenu('opener');
+            this.#close('opener');
             return;
         }
         const pane = this.#paneLayout;
         const field = isValuesPseudoField(entry) ? undefined : fieldOf(pane, entry);
-        this.#openMenu({ kind: 'entry', entry, field, against: pane, frame: this.#frame('field-list') });
+        this.#openSurface({ kind: 'entry', entry, field, against: pane, popup: this.#menuFrame('field-list') });
     }
 
-    #frame(place: 'field-list' | 'toolbar-end'): PivotMenuFrame {
-        const frame = new PivotMenuFrame(this.#root.ownerDocument, place, () => { this.#closeMenu('opener'); });
+    #menuFrame(place: 'field-list' | 'toolbar-end'): PivotMenuFrame {
+        const frame = new PivotMenuFrame(this.#root.ownerDocument, place, () => { this.#close('opener'); });
         // The keyboard leaving a menu for another control — Tab past its last command — closes it, so the Layout
         // menu's backdrop takes no press meant for that control, and a field menu does not stand open over the pane
         // once the keyboard left the pivot. A field menu's entry, which toggles it, is inside its bounds.
         frame.element.addEventListener('focusout', event => {
             const to = event.relatedTarget;
             const open = this.#open;
-            if (open?.frame !== frame || !(to instanceof Node)) return;
+            if (open?.popup !== frame || !(to instanceof Node)) return;
             const bounds = open.kind === 'entry' ? frame.element.parentNode : frame.element;
-            if (bounds !== null && !bounds.contains(to)) this.#closeMenu('stay');
+            if (bounds !== null && !bounds.contains(to)) this.#close('stay');
         });
         return frame;
     }
 
-    // Opened, its first enabled command takes the keyboard.
-    #openMenu(open: OpenMenu): void {
+    // Opened, its first enabled command, or its panel's first control, takes the keyboard.
+    #openSurface(open: OpenSurface): void {
         this.#takeDown();
         this.#open = open;
         this.#draw();
-        open.frame.takeKeyboard();
+        open.popup.takeKeyboard();
     }
 
-    // Closed by Escape, by its button or by the backdrop, the keyboard goes back to what opened it. Dismissed by a
-    // press or focus elsewhere, it stays where that put it.
-    #closeMenu(keyboard: 'opener' | 'stay'): void {
+    // Closed by Escape, by its button, by the backdrop or by Cancel, the keyboard goes back to what opened it.
+    // Dismissed by a press or focus elsewhere, it stays where that put it.
+    #close(keyboard: 'opener' | 'stay'): void {
         const open = this.#takeDown();
         if (open === undefined) return;
         this.#draw();
-        if (keyboard === 'opener') this.#returnKeyboard(open, open.kind === 'entry' ? open.entry : undefined);
+        if (keyboard === 'opener') this.#returnKeyboard(open, open.kind === 'layout' ? undefined : this.#entryNow(open));
     }
 
-    // Takes the open menu off the page, without drawing.
-    #takeDown(): OpenMenu | undefined {
+    // Takes what is open off the page, without drawing.
+    #takeDown(): OpenSurface | undefined {
         const open = this.#open;
         this.#open = undefined;
-        open?.frame.element.remove();
+        open?.popup.element.remove();
         return open;
     }
 
     // The keyboard goes back to the button that opened the menu: Layout ▾, or the entry `entry` names, where the field
     // the menu was for stands now; a field taken out of the Areas hands it to its tick box in the list.
-    #returnKeyboard(open: OpenMenu, entry: PivotEntry | undefined): void {
+    #returnKeyboard(open: OpenSurface, entry: PivotEntry | undefined): void {
         if (open.kind === 'layout') this.#layoutButton.focus();
         else if (entry !== undefined) this.#fieldList.focusEntry(entry);
         else this.#fieldList.focusField(open.field);
     }
 
     // Where the field a menu was for stands in the pane's layout now.
-    #entryNow(open: Extract<OpenMenu, { readonly kind: 'entry' }>): PivotEntry | undefined {
+    #entryNow(open: EntrySurface): PivotEntry | undefined {
         return entryOfField(this.#paneLayout, open.field, open.entry);
     }
 
-    // A command closes its menu, does what it says, and hands the keyboard back once the pivot is drawn after it.
-    #command(open: OpenMenu, command: Omit<PivotMenuCommand, 'invoke'>, run: () => PivotEntry | undefined): PivotMenuCommand {
-        return Object.freeze({
-            ...command,
-            invoke: () => {
-                if (this.#open !== open) return;
-                // The frame leaves the page once the keyboard has gone back, so the Layout menu's never passes it through
-                // the page's body (ADR-0061).
-                this.#open = undefined;
-                this.#returnKeyboard(open, run());
-                open.frame.element.remove();
-            },
-        });
+    // Closes what is open, does what its command or its OK says, and hands the keyboard back once the pivot is drawn
+    // after it. The popup leaves the page once the keyboard has gone back, so the Layout menu's never passes it
+    // through the page's body (ADR-0061). Pressed once what it stood in has closed, it does nothing.
+    #finish(open: OpenSurface, run: () => PivotEntry | undefined): void {
+        if (this.#open !== open) return;
+        this.#open = undefined;
+        this.#returnKeyboard(open, run());
+        open.popup.element.remove();
+    }
+
+    #command(open: OpenSurface, command: Omit<PivotMenuCommand, 'invoke'>, run: () => PivotEntry | undefined): PivotMenuCommand {
+        return Object.freeze({ ...command, invoke: () => { this.#finish(open, run); } });
     }
 
     // The Layout menu (ADR-0061): Excel's Design tab choices, the current one of each group marked, and one that
     // would change nothing disabled, read from the pane's layout, which a choice is taken against.
-    #layoutCommands(open: OpenMenu): readonly PivotMenuCommand[] {
+    #layoutCommands(open: OpenSurface): readonly PivotMenuCommand[] {
         const pane = this.#paneLayout;
         const words = this.#words;
         return pivotLayoutChoices.map(choice => {
@@ -905,13 +912,66 @@ export class PivotView {
         return this.#captionOf(fieldOf(this.#paneLayout, entry));
     }
 
-    // Each draw draws the open menu again from the pane's layout. A field menu goes when the pane leaves the layout
-    // it was opened on, since its entry may now be another field's, and when the Field List is hidden; the keyboard
-    // it held goes to the entry its field stands at now.
+    // A field menu's command: a change of the layout, made as the menu closes, or a panel opened in its place.
+    #entryCommand(open: EntrySurface, command: EntryMenuCommand): PivotMenuCommand {
+        const { does, ...shown } = command;
+        if ('edit' in does) {
+            return this.#command(open, shown, () => {
+                const made = does.edit();
+                this.#edited(made);
+                return made.entry;
+            });
+        }
+        return Object.freeze({ ...shown, invoke: () => { this.#openPanel(open, does.panel); } });
+    }
+
+    #openPanel(open: EntrySurface, panel: EntryPanel): void {
+        if (this.#open !== open) return;
+        const document = this.#root.ownerDocument;
+        const { entry, against } = open;
+        // The panel's OK and Cancel are called once it stands, and act only while it does.
+        const handlers = {
+            // OK's layout is the pane's next, taken against the layout the panel was opened on (spine rule 6).
+            apply: (layout: PivotLayout) => {
+                this.#finish(surface, () => {
+                    this.#edited({ layout, against, moved: undefined });
+                    return this.#entryNow(open);
+                });
+            },
+            cancel: () => { if (this.#open === surface) this.#close('opener'); },
+        };
+        const words = this.#words;
+        const fields = this.#options.source.fields;
+        const captions = pivotValueCaptions(against, fields, { locale: this.#locale, ...(words.label === undefined ? {} : { label: words.label }) });
+        const popup = panel === 'field-settings'
+            ? fieldSettingsPanel(document, {
+                layout: against,
+                placement: elementAt(placementsIn(against, entry.area), entry.index),
+                caption: this.#entryCaption(entry, captions),
+                valueCaptions: captions,
+                words: this.#words,
+            }, handlers)
+            : valueFieldSettingsPanel(document, {
+                layout: against,
+                index: entry.index,
+                fieldCaption: this.#captionOf(fieldOf(against, entry)),
+                caption: elementAt(captions, entry.index),
+                fields: this.#options.source.fields,
+                features: this.#options.source.features,
+                locale: this.#locale,
+                words: this.#words,
+            }, handlers);
+        const surface: EntrySurface = { kind: 'panel', entry, field: open.field, against, popup };
+        this.#openSurface(surface);
+    }
+
+    // Each draw draws the open menu again from the pane's layout. A field's menu or panel goes when the pane leaves
+    // the layout it was opened on, since its entry may now be another field's, and when the Field List is hidden; the
+    // keyboard it held goes to the entry its field stands at now.
     #drawMenu(valueCaptions: readonly string[] | undefined): void {
         const open = this.#open;
-        if (open?.kind === 'entry' && (open.against !== this.#paneLayout || !this.#fieldListShown)) {
-            const held = open.frame.element.contains(this.#root.ownerDocument.activeElement);
+        if (open !== undefined && open.kind !== 'layout' && (open.against !== this.#paneLayout || !this.#fieldListShown)) {
+            const held = open.popup.element.contains(this.#root.ownerDocument.activeElement);
             this.#takeDown();
             // Hidden with the Field List, the keyboard goes to the toggle that shows it again.
             if (held && this.#fieldListShown) this.#keyboardAfterDraw = open;
@@ -921,8 +981,8 @@ export class PivotView {
         this.#layoutLabel.textContent = this.#words.word('layout-menu');
         this.#layoutButton.setAttribute('aria-expanded', shown?.kind === 'layout' ? 'true' : 'false');
         if (shown?.kind === 'layout') {
-            shown.frame.draw(this.#words.word('layout-menu'), this.#layoutCommands(shown));
-            if (shown.frame.element.parentNode !== this.#layoutAnchor) this.#layoutAnchor.append(shown.frame.element);
+            shown.popup.draw(this.#words.word('layout-menu'), this.#layoutCommands(shown));
+            if (shown.popup.element.parentNode !== this.#layoutAnchor) this.#layoutAnchor.append(shown.popup.element);
             if (this.#backdrop.parentNode !== this.#root) this.#root.append(this.#backdrop);
         } else {
             this.#backdrop.remove();
@@ -930,12 +990,8 @@ export class PivotView {
         if (shown?.kind === 'entry') {
             const { entry } = shown;
             const commands = entryMenuCommands({ layout: this.#paneLayout, fields: this.#options.source.fields, words: this.#words }, entry);
-            shown.frame.draw(this.#words.fill('field-menu', this.#entryCaption(entry, valueCaptions)), commands.map(({ edit, ...command }) =>
-                this.#command(shown, command, () => {
-                    const made = edit();
-                    this.#edited(made);
-                    return made.entry;
-                })));
+            shown.popup.draw(this.#words.fill('field-menu', this.#entryCaption(entry, valueCaptions)),
+                commands.map(command => this.#entryCommand(shown, command)));
         }
     }
 
@@ -1003,7 +1059,7 @@ export class PivotView {
                 maxLeaves: this.#maxLeaves,
                 locale: this.#locale,
                 words,
-                menu: this.#open?.kind === 'entry' ? { entry: this.#open.entry, frame: this.#open.frame.element } : undefined,
+                popup: this.#open !== undefined && this.#open.kind !== 'layout' ? { entry: this.#open.entry, frame: this.#open.popup.element } : undefined,
             });
         }
         const left = this.#keyboardAfterDraw;

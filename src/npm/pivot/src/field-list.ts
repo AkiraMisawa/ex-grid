@@ -12,6 +12,7 @@ import {
     formatPivotCount, isValuesPseudoField, moveEntry, pivotLeafBound, placeField, placementOf, placementsIn, placesField, removeEntry,
     tickField, untickField, valuesPseudoField, type PivotArea, type PivotEntry, type PivotField, type PivotItemCounts, type PivotLayout,
 } from '@ex-grid/pivot-engine';
+import { element } from './dom';
 import { defined, elementAt } from './must';
 import type { PivotScreenWords } from './words';
 
@@ -49,9 +50,9 @@ export interface FieldListModel {
     readonly locale: string;
     /** The words. */
     readonly words: PivotScreenWords;
-    /** The field menu open in the pane: the entry it was opened on, and its frame, which the pane places under
-     * that entry. */
-    readonly menu: { readonly entry: PivotEntry; readonly frame: HTMLElement } | undefined;
+    /** The field menu or panel open in the pane: the entry it was opened on, and its frame, which the pane places
+     * under that entry. */
+    readonly popup: { readonly entry: PivotEntry; readonly frame: HTMLElement } | undefined;
 }
 
 /** Whom the pane calls back. */
@@ -99,11 +100,6 @@ interface AreaElements {
     readonly cap: HTMLElement;
 }
 
-function element<K extends keyof HTMLElementTagNameMap>(document: Document, tag: K, className?: string): HTMLElementTagNameMap[K] {
-    const made = document.createElement(tag);
-    if (className !== undefined) made.className = className;
-    return made;
-}
 
 /** The field a placed entry stands for. */
 export function fieldOf(layout: PivotLayout, entry: PivotEntry): string {
@@ -137,8 +133,6 @@ export class FieldListView {
     #fieldsDrawnFrom: readonly PivotField[] | undefined;
     #areasDrawnFrom: { readonly layout: PivotLayout; readonly words: PivotScreenWords; readonly captions: string; readonly fields: readonly PivotField[] } | undefined;
     #entryItems: { readonly entry: PivotEntry; readonly element: HTMLElement; readonly button: HTMLButtonElement; readonly index: number }[] = [];
-    // Whether the last press in an entry was on its open menu, from which no drag of the entry starts.
-    #pressedInMenu = false;
 
     constructor(root: HTMLElement, handlers: FieldListHandlers) {
         this.#root = root;
@@ -375,18 +369,7 @@ export class FieldListView {
                 arrow.textContent = '▾';
                 button.append(arrow);
                 item.append(button);
-                item.addEventListener('mousedown', event => {
-                    const frame = this.#model?.menu?.frame;
-                    this.#pressedInMenu = frame !== undefined && event.target instanceof Node && frame.contains(event.target);
-                });
-                item.addEventListener('dragstart', event => {
-                    // A press on a command that moves a little is the command's, not a drag of the entry under the menu.
-                    if (this.#pressedInMenu) {
-                        event.preventDefault();
-                        return;
-                    }
-                    this.#startDrag(event, { kind: 'entry', entry });
-                });
+                item.addEventListener('dragstart', event => { this.#startDrag(event, { kind: 'entry', entry }); });
                 item.addEventListener('dragend', () => { this.#endDrag(); });
                 item.addEventListener('dragenter', event => {
                     event.stopPropagation();
@@ -419,10 +402,13 @@ export class FieldListView {
     // The open field menu stands under its entry, in the flow, as wide as the pane (ADR-0061); every other entry's
     // button says its menu is closed.
     #placeMenu(): void {
-        const { menu } = this.#current;
+        const { popup: menu } = this.#current;
         for (const { entry, element: item, button } of this.#entryItems) {
             const open = menu !== undefined && sameEntry(menu.entry, entry);
             button.setAttribute('aria-expanded', open ? 'true' : 'false');
+            // While a menu or a panel stands under the entry, a press that moves a little on it is a command's, or
+            // selects text in a field, never a drag of the entry.
+            item.draggable = !open;
             if (open && menu.frame.parentNode !== item) {
                 // The entries were drawn again under it: the command that held the keyboard keeps it.
                 const held = item.ownerDocument.activeElement;

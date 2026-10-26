@@ -3,7 +3,7 @@
 // taken against the layout the menu was drawn from, as a gesture in the Field List does (spine rule 6), and where
 // the entry it was opened on stands in that layout, which the keyboard goes back to.
 //
-// Filter…, Field Settings… and Value Field Settings… open panels, which this menu does not offer yet.
+// Field Settings… and Value Field Settings… open a panel in the menu's place. Filter… is not offered yet.
 
 import {
     isValuesPseudoField, moveEntry, placementOf, placementsIn, removeEntry, setFieldCollapsed, setSort, valuesPseudoField, type PivotArea,
@@ -30,9 +30,12 @@ export interface EntryMenuEdit extends FieldListEdit {
     readonly entry: PivotEntry | undefined;
 }
 
-/** One command of a field's menu: what it is, and the change it makes when pressed. */
+/** A panel a field's menu opens. */
+export type EntryPanel = 'field-settings' | 'value-field-settings';
+
+/** One command of a field's menu: what it is, and the change it makes when pressed, or the panel it opens. */
 export interface EntryMenuCommand extends Omit<PivotMenuCommand, 'invoke'> {
-    readonly edit: () => EntryMenuEdit;
+    readonly does: { readonly edit: () => EntryMenuEdit } | { readonly panel: EntryPanel };
 }
 
 /** Where `field` stands in `layout`, for the keyboard to go back to: at `near`, the entry a menu was opened on, if it
@@ -53,7 +56,10 @@ export function entryMenuCommands(model: EntryMenuModel, entry: PivotEntry): rea
     const { layout, fields, words } = model;
     const commands: EntryMenuCommand[] = [];
     const add = (id: string, enabled: boolean, edit: () => EntryMenuEdit): void => {
-        commands.push(Object.freeze({ id, label: words.word(id), enabled, edit }));
+        commands.push(Object.freeze({ id, label: words.word(id), enabled, does: Object.freeze({ edit }) }));
+    };
+    const opens = (panel: EntryPanel): void => {
+        commands.push(Object.freeze({ id: panel, label: words.word(panel), enabled: true, does: Object.freeze({ panel }) }));
     };
     const edit = (next: PivotLayout, at: PivotEntry | undefined, moved?: { readonly field: string; readonly area: PivotArea }): EntryMenuEdit =>
         ({ layout: next, against: layout, moved, entry: at });
@@ -91,6 +97,7 @@ export function entryMenuCommands(model: EntryMenuModel, entry: PivotEntry): rea
         const next = removeEntry(layout, entry);
         return edit(next, entryOfField(next, name, entry));
     });
+    if (entry.area === 'values') opens('value-field-settings');
     if (entry.area !== 'rows' && entry.area !== 'columns') return Object.freeze(commands);
 
     const placement = elementAt(placementsIn(layout, entry.area), entry.index);
@@ -102,5 +109,6 @@ export function entryMenuCommands(model: EntryMenuModel, entry: PivotEntry): rea
     const toggled = placement.toggledItems.length > 0;
     add('expand-field', outer && (placement.collapsed || toggled), () => edit(setFieldCollapsed(layout, name, false), entry));
     add('collapse-field', outer && (!placement.collapsed || toggled), () => edit(setFieldCollapsed(layout, name, true), entry));
+    opens('field-settings');
     return Object.freeze(commands);
 }
