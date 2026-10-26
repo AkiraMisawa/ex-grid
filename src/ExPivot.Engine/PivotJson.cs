@@ -64,6 +64,21 @@ public static class PivotJson
                 json.WriteStartObject("levels");
                 WriteRules(json, "rows", levels.Rows);
                 WriteRules(json, "columns", levels.Columns);
+                if (levels.Window is { } window)
+                {
+                    json.WriteStartObject("window");
+                    json.WriteNumber("limit", window.Limit);
+                    json.WriteStartArray("starts");
+                    foreach (var start in window.Starts)
+                    {
+                        json.WriteStartObject();
+                        WriteKeys(json, "rows", start.Rows);
+                        json.WriteNumber("start", start.Start);
+                        json.WriteEndObject();
+                    }
+                    json.WriteEndArray();
+                    json.WriteEndObject();
+                }
                 json.WriteEndObject();
             }
         });
@@ -94,6 +109,27 @@ public static class PivotJson
             foreach (var values in answer.ValueColumns)
                 WriteValues(json, values, leaves, answer.IsLevels);
             json.WriteEndArray();
+            // Its windows and each cell's rest code, written only where it has a window.
+            if (answer.WindowArray.Length > 0)
+            {
+                json.WriteStartArray("windows");
+                foreach (var window in answer.WindowArray)
+                {
+                    json.WriteStartObject();
+                    json.WriteStartArray("parent");
+                    foreach (var item in window.Parent)
+                        json.WriteNumberValue(item);
+                    json.WriteEndArray();
+                    json.WriteNumber("before", window.Before);
+                    json.WriteNumber("after", window.After);
+                    json.WriteEndObject();
+                }
+                json.WriteEndArray();
+                json.WriteStartArray("rests");
+                for (var leaf = 0; leaf < leaves; leaf++)
+                    json.WriteNumberValue(answer.Rests![leaf]);
+                json.WriteEndArray();
+            }
         });
     }
 
@@ -260,6 +296,14 @@ public static class PivotJson
                 json.WriteBoolean("collapsed", true);
             if (rule.ToggledItems.Count > 0)
                 WriteKeys(json, "toggledItems", rule.ToggledItems);
+            if (rule.Order is { } order)
+            {
+                json.WriteStartObject("order");
+                json.WriteNumber("value", order.Value);
+                json.WriteString("aggregation", PivotLayoutJson.Name(order.Aggregation));
+                json.WriteBoolean("descending", order.Descending);
+                json.WriteEndObject();
+            }
             json.WriteEndObject();
         }
         json.WriteEndArray();
@@ -511,8 +555,29 @@ public static class PivotJson
         var rows = ReadAxes(root, "rows", leaves, levels);
         var columns = ReadAxes(root, "columns", leaves, levels);
         var values = Objects(root, "values").Select(element => ReadValues(element, records, levels)).ToArray();
-        return new PivotAnswer(sourceVersion, rows, columns, leaves, records, values, levels);
+        var (windows, rests) = ReadWindowing(root, leaves, levels);
+        return new PivotAnswer(sourceVersion, rows, columns, leaves, records, values, levels, windows, rests);
     });
+
+    // An answer's windows and rest codes: none where it has no window.
+    private static (PivotAnswerWindow[]? Windows, int[]? Rests) ReadWindowing(JsonElement root, int leaves, bool levels)
+    {
+        if (!root.TryGetProperty("windows", out _))
+        {
+            if (root.TryGetProperty("rests", out _))
+                throw new FormatException("The answer has 'rests' and no 'windows' (ADR-0370 section 3).");
+            return (null, null);
+        }
+        if (!levels)
+            throw new FormatException("An answer of leaves has no window (ADR-0370 section 3).");
+        var windows = Objects(root, "windows").Select(window => new PivotAnswerWindow(
+            Array(window, "parent").Select(element => IntValue(element, "parent")).ToArray(),
+            Int(window, "before"),
+            Int(window, "after"))).ToArray();
+        if (windows.Length == 0)
+            throw new FormatException("'windows' is left out where the answer has none.");
+        return (windows, Column(root, "rests", leaves, element => IntValue(element, "rests")));
+    }
 
     /// <summary>A question for a field's Items read back from <see cref="Write(PivotItemsQuery)"/>'s JSON.</summary>
     public static PivotItemsQuery ReadItemsQuery(string json) => Read(json, ItemsQueryType, root => new PivotItemsQuery(
@@ -659,11 +724,35 @@ public static class PivotJson
             return null;
         if (levels.ValueKind != JsonValueKind.Object)
             throw new FormatException("'levels' is an object.");
-        return new PivotLevels(ReadRules(levels, "rows"), ReadRules(levels, "columns"));
+        return new PivotLevels(ReadRules(levels, "rows"), ReadRules(levels, "columns"), ReadWindow(levels));
+    }
+
+    private static PivotLevelWindow? ReadWindow(JsonElement levels)
+    {
+        if (!levels.TryGetProperty("window", out var window))
+            return null;
+        if (window.ValueKind != JsonValueKind.Object)
+            throw new FormatException("'window' is an object.");
+        return new PivotLevelWindow(
+            Int(window, "limit"),
+            Objects(window, "starts").Select(start => new PivotWindowStart(ReadKeys(start, "rows"), Int(start, "start"))).ToArray());
     }
 
     private static PivotLevelRule[] ReadRules(JsonElement element, string name)
-        => Objects(element, name).Select(rule => new PivotLevelRule(OptionalBool(rule, "collapsed"), ReadKeys(rule, "toggledItems"))).ToArray();
+        => Objects(element, name).Select(rule => new PivotLevelRule(OptionalBool(rule, "collapsed"), ReadKeys(rule, "toggledItems"), ReadOrder(rule))).ToArray();
+
+    private static PivotLevelOrder? ReadOrder(JsonElement rule)
+    {
+        if (!rule.TryGetProperty("order", out var order))
+            return null;
+        if (order.ValueKind != JsonValueKind.Object)
+            throw new FormatException("'order' is an object.");
+        var name = String(order, "aggregation");
+        var aggregation = PivotLayoutJson.AggregationNamed(name) ?? throw new FormatException($"'{name}' is not an Aggregation this reader knows.");
+        if (!order.TryGetProperty("descending", out var descending) || descending.ValueKind is not (JsonValueKind.True or JsonValueKind.False))
+            throw new FormatException("'descending' is true or false, and is required.");
+        return new PivotLevelOrder(Int(order, "value"), aggregation, descending.GetBoolean());
+    }
 
     // A flag, written only when it is true; false when it is left out.
     private static bool OptionalBool(JsonElement element, string name)

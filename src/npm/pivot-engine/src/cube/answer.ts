@@ -8,7 +8,9 @@
 // the cap, with the cells of the groups shown instead (ADR-0370 section 3): each a shown row group crossed
 // with a shown column group that some record reaches, named by its Items down to its depth — an axis's
 // `itemAt` is −1 below it — with its records and its parts, and, beside a sum that is a double, the sum of its
-// numbers' magnitudes. What is said here of a leaf is then said of a cell.
+// numbers' magnitudes. What is said here of a leaf is then said of a cell. A sibling set ordered by a value and
+// passing the question's window limit is answered as a window: its siblings from where the window starts, a
+// margin on either side, and rest cells merging the siblings beyond each margin, one a shown column group.
 
 import type { SnapshotDecimal } from '@ex-grid/data';
 import { decimalCanonical, decimalEquals, decimalToNumber } from '../aggregates/exact-decimal';
@@ -216,16 +218,57 @@ function sameNames(a: readonly { readonly field: string }[], b: readonly { reado
     return a.length === b.length && a.every((f, i) => f.field === b[i]?.field);
 }
 
+/**
+ * A sibling set answered as a window (ADR-0370 section 3): its parent row group, and how many of its siblings
+ * come before the first one shown and after the last. Each count, when above 0, takes in a margin — the
+ * nearest sibling on that side, answered as any shown group is and not shown — and the siblings beyond it,
+ * merged into the window's rest cells on that side.
+ */
+export interface PivotAnswerWindow {
+    /** The parent's Item at each row field above the set, as an index among that axis's Items: none for the
+     * grand total. */
+    readonly parent: readonly number[];
+    /** The siblings before the first one shown, its margin among them. */
+    readonly before: number;
+    /** The siblings after the last one shown, its margin among them. */
+    readonly after: number;
+}
+
+/** Which side of a window a rest cell merges. */
+export type PivotRestSide = 'before' | 'after';
+
+const restSides: ReadonlySet<string> = new Set(['before', 'after']);
+
+/** A rest cell's window, by its place among the answer's windows, and its side. */
+export interface PivotAnswerRest {
+    /** The window, by its place among {@link PivotAnswer.windows}. */
+    readonly window: number;
+    /** The side whose siblings beyond the margin it merges. */
+    readonly side: PivotRestSide;
+}
+
+/** An answer's windows, and each cell's rest code: −1 for a cell, 2w for the before side of window w, 2w + 1 for
+ * its after side. */
+export interface PivotAnswerWindowing {
+    readonly windows: readonly PivotAnswerWindow[];
+    readonly rests: readonly number[];
+}
+
+/** No window. */
+export const noWindowing: PivotAnswerWindowing = Object.freeze({ windows: Object.freeze([]), rests: Object.freeze([]) });
+
 let makeAnswer: (sourceVersion: string, rows: readonly PivotAnswerAxis[], columns: readonly PivotAnswerAxis[], leafCount: number,
-    records: readonly number[], values: readonly PivotAnswerValues[], levels: boolean) => PivotAnswer;
+    records: readonly number[], values: readonly PivotAnswerValues[], levels: boolean, windowing: PivotAnswerWindowing) => PivotAnswer;
 
 // A level answer's shape (ADR-0370 section 3): each cell named down to its depth on each axis and by nothing
-// below, and a double sum carried with its magnitudes.
-function checkLevels(rows: readonly PivotAnswerAxis[], columns: readonly PivotAnswerAxis[], cells: number, values: readonly PivotAnswerValues[]): void {
+// below, a double sum carried with its magnitudes, and each rest cell named by its window's parent.
+function checkLevels(rows: readonly PivotAnswerAxis[], columns: readonly PivotAnswerAxis[], cells: number, values: readonly PivotAnswerValues[],
+    windowing: PivotAnswerWindowing): void {
     for (let cell = 0; cell < cells; cell++) {
         checkDepth(rows, cell);
         checkDepth(columns, cell);
     }
+    checkWindowing(rows, cells, windowing);
     for (const value of values) {
         const parts = columnsOfValues(value);
         const sums = parts.sums;
@@ -237,6 +280,37 @@ function checkLevels(rows: readonly PivotAnswerAxis[], columns: readonly PivotAn
             }
         }
     }
+}
+
+function checkWindowing(rows: readonly PivotAnswerAxis[], cells: number, windowing: PivotAnswerWindowing): void {
+    const { windows, rests } = windowing;
+    if (windows.length === 0) {
+        if (rests.length !== 0) throw new PivotFormatError('The answer has rest cells and no window (ADR-0370 section 3).');
+        return;
+    }
+    if (rests.length !== cells) throw new PivotFormatError(`The answer says whether ${rests.length} cells are rests, and has ${cells}.`);
+    windows.forEach((window, w) => {
+        if (window.parent.length >= rows.length) {
+            throw new PivotFormatError(`Window ${w}'s parent names ${window.parent.length} Items, and the answer has ${rows.length} row fields; its siblings are a row field's Items (ADR-0370 section 3).`);
+        }
+        window.parent.forEach((item, level) => {
+            if (!Number.isSafeInteger(item) || item < 0 || item >= elementAt(rows, level).items.length) {
+                throw new PivotFormatError(`Window ${w}'s parent names Item ${item} of '${elementAt(rows, level).field}', which has ${elementAt(rows, level).items.length}.`);
+            }
+        });
+        for (const [side, count] of [['before', window.before], ['after', window.after]] as const) {
+            if (!Number.isSafeInteger(count) || count < 0) throw new PivotFormatError(`Window ${w} has ${count} siblings ${side} it; a count is a whole number, not below 0.`);
+        }
+    });
+    rests.forEach((code, cell) => {
+        if (code === -1) return;
+        if (!Number.isSafeInteger(code) || code < 0 || code >= 2 * windows.length) {
+            throw new PivotFormatError(`Cell ${cell} is a rest of window ${Math.floor(code / 2)}, and the answer has ${windows.length}.`);
+        }
+        const window = elementAt(windows, Math.floor(code / 2));
+        const named = rows.every((axis, level) => axis.itemAt(cell) === (level < window.parent.length ? elementAt(window.parent, level) : -1));
+        if (!named) throw new PivotFormatError(`Cell ${cell} is a rest of window ${Math.floor(code / 2)}, and is not named by its parent's Items alone (ADR-0370 section 3).`);
+    });
 }
 
 function checkDepth(axes: readonly PivotAnswerAxis[], cell: number): void {
@@ -261,14 +335,17 @@ export class PivotAnswer {
     /** Whether the answer holds the cells of the groups shown — Level Aggregates — rather than the leaves
      * (ADR-0370 section 3). */
     readonly isLevels: boolean;
+    readonly #windowing: PivotAnswerWindowing;
 
     private constructor(
         sourceVersion: string | undefined, refusal: PivotSourceRefusal | undefined, rows: readonly PivotAnswerAxis[],
         columns: readonly PivotAnswerAxis[], leafCount: number, records: readonly number[], values: readonly PivotAnswerValues[],
-        levels: boolean,
+        levels: boolean, windowing: PivotAnswerWindowing,
     ) {
-        if (levels) checkLevels(rows, columns, leafCount, values);
+        if (levels) checkLevels(rows, columns, leafCount, values, windowing);
+        else if (windowing.windows.length > 0) throw new PivotFormatError('An answer of leaves has no window (ADR-0370 section 3).');
         this.isLevels = levels;
+        this.#windowing = windowing;
         this.#sourceVersion = sourceVersion;
         this.refusal = refusal;
         this.#rows = Object.freeze([...rows]);
@@ -279,13 +356,13 @@ export class PivotAnswer {
     }
 
     static {
-        makeAnswer = (sourceVersion, rows, columns, leafCount, records, values, levels) =>
-            new PivotAnswer(sourceVersion, undefined, rows, columns, leafCount, records, values, levels);
+        makeAnswer = (sourceVersion, rows, columns, leafCount, records, values, levels, windowing) =>
+            new PivotAnswer(sourceVersion, undefined, rows, columns, leafCount, records, values, levels, windowing);
     }
 
     /** A refusal, as an answer. */
     static refused(refusal: PivotSourceRefusal): PivotAnswer {
-        return new PivotAnswer(undefined, refusal, [], [], 0, [], [], false);
+        return new PivotAnswer(undefined, refusal, [], [], 0, [], [], false, noWindowing);
     }
 
     /** Whether the source refused. */
@@ -322,6 +399,20 @@ export class PivotAnswer {
         return elementAt(this.#records, checkLeaf(leaf, this.leafCount));
     }
 
+    /** The sibling sets answered as windows (ADR-0370 section 3); none in an answer of leaves. */
+    get windows(): readonly PivotAnswerWindow[] {
+        if (this.refusal !== undefined) throw this.#refusedError();
+        return this.#windowing.windows;
+    }
+
+    /** The window and side a rest cell merges, or `undefined` for a cell of a group. */
+    restAt(cell: number): PivotAnswerRest | undefined {
+        checkLeaf(cell, this.leafCount);
+        if (this.#windowing.windows.length === 0) return undefined;
+        const code = elementAt(this.#windowing.rests, cell);
+        return code < 0 ? undefined : { window: Math.floor(code / 2), side: code % 2 === 0 ? 'before' : 'after' };
+    }
+
     /** What does not answer the question, in words, or `undefined` when the answer answers it. */
     mismatch(query: PivotQuery): string | undefined {
         if (this.refusal !== undefined) return `the source refused: ${this.refusal.message}`;
@@ -339,7 +430,7 @@ export class PivotAnswer {
         if (this.leafCount > query.maxLeaves) {
             return `it holds ${this.leafCount} ${this.isLevels ? 'cells' : 'leaves'}, and the question allows ${query.maxLeaves}`;
         }
-        return query.levels !== undefined && this.isLevels ? levelAnswerMismatch(query.levels, this) : undefined;
+        return query.levels !== undefined && this.isLevels ? levelAnswerMismatch(query.levels, this, this.#windowing) : undefined;
     }
 
     #refusedError(): Error {
@@ -366,6 +457,9 @@ export class PivotAnswerBuilder {
     readonly #records: number[] = [];
     readonly #values: PartColumns[];
     readonly #leaves = new Map<string, number>();
+    readonly #windows: PivotAnswerWindow[] = [];
+    readonly #windowOf = new Map<string, number>();
+    readonly #rests: number[] = [];
     #cells: boolean | undefined;
     #built = false;
 
@@ -410,16 +504,11 @@ export class PivotAnswerBuilder {
      */
     addCell(rowItems: readonly PivotItemKey[], columnItems: readonly PivotItemKey[], records: number): number {
         if (!Number.isSafeInteger(records) || records < 1) throw new RangeError(`A leaf holds at least one record, not ${records}.`);
-        if (this.#query.levels === undefined) throw new Error('The question asks for the leaves, and carries no levels to answer with cells (ADR-0370 section 3).');
         const rowCount = this.#query.rows.length;
         const columnCount = this.#query.columns.length;
         if (rowItems.length > rowCount) throw new TypeError(`A row group names at most one Item per row field: ${rowCount}, not ${rowItems.length}.`);
         if (columnItems.length > columnCount) throw new TypeError(`A column group names at most one Item per column field: ${columnCount}, not ${columnItems.length}.`);
-        if (this.#cells === false) throw new Error('This answer holds leaves; it is given them with addLeaf (ADR-0370 section 3).');
-        if (this.#cells === undefined) {
-            this.#cells = true;
-            for (const parts of this.#values) if (parts.sums !== undefined) parts.trackAbsolutes();
-        }
+        this.#startCells();
         const indexes = Array.from({ length: this.#levels }, () => -1);
         rowItems.forEach((item, level) => {
             indexes[level] = this.#indexOf(level, item);
@@ -436,6 +525,67 @@ export class PivotAnswerBuilder {
         return cell;
     }
 
+    /**
+     * Adds a sibling set answered as a window, and returns its index (ADR-0370 section 3): the children of the
+     * row group `parentRows` names, of which `before` come before the first one shown and `after` after the
+     * last, each count taking in its margin. The margins and the siblings shown are added as cells; the siblings
+     * beyond each margin as rest cells with {@link PivotAnswerBuilder.addRest}. Refuses a second window for one
+     * parent; whether the window answers the question is checked when the answer is read against it.
+     */
+    addWindow(parentRows: readonly PivotItemKey[], before: number, after: number): number {
+        this.#startCells();
+        if (parentRows.length >= this.#query.rows.length) {
+            throw new TypeError(`A window's parent names fewer Items than there are row fields: ${this.#query.rows.length}, not ${parentRows.length}.`);
+        }
+        for (const [side, count] of [['before', before], ['after', after]] as const) {
+            if (!Number.isSafeInteger(count) || count < 0) throw new RangeError(`A window has a whole number of siblings ${side} it, not ${count}.`);
+        }
+        const parent = parentRows.map((item, level) => this.#indexOf(level, item));
+        const key = parent.join(',');
+        if (this.#windowOf.has(key)) throw new TypeError(`The answer already has a window under [${parentRows.map(itemKeyText).join(', ')}].`);
+        const window = this.#windows.length;
+        this.#windowOf.set(key, window);
+        this.#windows.push(Object.freeze({ parent: Object.freeze(parent), before, after }));
+        return window;
+    }
+
+    /**
+     * Adds a rest cell of a window, and returns its index (ADR-0370 section 3): the siblings on one side beyond
+     * its margin, merged, crossed with the shown column group `columnItems` names. Its parts are set as a cell's.
+     * Refuses one of no records and a second one for the same side and column group.
+     */
+    addRest(window: number, side: PivotRestSide, columnItems: readonly PivotItemKey[], records: number): number {
+        if (!Number.isSafeInteger(records) || records < 1) throw new RangeError(`A leaf holds at least one record, not ${records}.`);
+        const held = this.#windows[window];
+        if (held === undefined) throw new RangeError(`The answer has ${this.#windows.length} windows.`);
+        if (!restSides.has(side)) throw new TypeError(`A rest is before or after its window, not '${side}'.`);
+        const rowCount = this.#query.rows.length;
+        const columnCount = this.#query.columns.length;
+        if (columnItems.length > columnCount) throw new TypeError(`A column group names at most one Item per column field: ${columnCount}, not ${columnItems.length}.`);
+        const indexes = Array.from({ length: this.#levels }, () => -1);
+        held.parent.forEach((item, level) => {
+            indexes[level] = item;
+        });
+        columnItems.forEach((item, level) => {
+            indexes[rowCount + level] = this.#indexOf(rowCount + level, item);
+        });
+        const code = 2 * window + (side === 'after' ? 1 : 0);
+        const restKey = `${indexes.join(',')}|${code}`;
+        if (this.#leaves.has(restKey)) throw new TypeError(`Window ${window} already has a rest ${side} it at [${columnItems.map(itemKeyText).join(', ')}].`);
+        const cell = this.#add(restKey, indexes, records, code);
+        for (const parts of this.#values) if (parts.absolutes !== undefined) parts.absolutes[cell] = Number.NaN;
+        return cell;
+    }
+
+    #startCells(): void {
+        if (this.#query.levels === undefined) throw new Error('The question asks for the leaves, and carries no levels to answer with cells (ADR-0370 section 3).');
+        if (this.#cells === false) throw new Error('This answer holds leaves; it is given them with addLeaf (ADR-0370 section 3).');
+        if (this.#cells === undefined) {
+            this.#cells = true;
+            for (const parts of this.#values) if (parts.sums !== undefined) parts.trackAbsolutes();
+        }
+    }
+
     #indexOf(level: number, item: PivotItemKey): number {
         const key = pivotItemKey(item.kind, item.value);
         const id = publicKeyId(key);
@@ -448,11 +598,12 @@ export class PivotAnswerBuilder {
         return made;
     }
 
-    #add(leafKey: string, indexes: readonly number[], records: number): number {
+    #add(leafKey: string, indexes: readonly number[], records: number, rest = -1): number {
         const leaf = this.#records.length;
         this.#leaves.set(leafKey, leaf);
         indexes.forEach((index, level) => elementAt(this.#itemOfLeaf, level).push(index));
         this.#records.push(records);
+        this.#rests.push(rest);
         for (const values of this.#values) values.addCell();
         return leaf;
     }
@@ -521,7 +672,8 @@ export class PivotAnswerBuilder {
             new PivotAnswerAxis(field.field, elementAt(this.#items, level), elementAt(this.#itemOfLeaf, level)));
         const values = this.#values.map((parts, v) => makeValues(elementAt(this.#query.values, v).field, parts, leafCount));
         try {
-            return makeAnswer(this.#sourceVersion, axes.slice(0, rowCount), axes.slice(rowCount), leafCount, [...this.#records], values, this.#cells === true);
+            const windowing = this.#windows.length === 0 ? noWindowing : Object.freeze({ windows: Object.freeze([...this.#windows]), rests: Object.freeze([...this.#rests]) });
+            return makeAnswer(this.#sourceVersion, axes.slice(0, rowCount), axes.slice(rowCount), leafCount, [...this.#records], values, this.#cells === true, windowing);
         } catch (error) {
             if (error instanceof PivotFormatError) throw new Error(error.message, { cause: error });
             throw error;
@@ -548,8 +700,8 @@ export class PivotAnswerBuilder {
 /** An answer with its leaves, or with its cells of Level Aggregates (`levels`), as a pass, a builder or a
  * reader makes it; a level answer's shape is checked, and refused with a PivotFormatError. */
 export function madeAnswer(sourceVersion: string, rows: readonly PivotAnswerAxis[], columns: readonly PivotAnswerAxis[], leafCount: number,
-    records: readonly number[], values: readonly PivotAnswerValues[], levels = false): PivotAnswer {
-    return makeAnswer(sourceVersion, rows, columns, leafCount, records, values, levels);
+    records: readonly number[], values: readonly PivotAnswerValues[], levels = false, windowing: PivotAnswerWindowing = noWindowing): PivotAnswer {
+    return makeAnswer(sourceVersion, rows, columns, leafCount, records, values, levels, windowing);
 }
 
 /** One field in Values of an answer, from its parts column by column. */

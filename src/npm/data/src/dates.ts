@@ -24,7 +24,7 @@ function isLeap(year: number): boolean {
 const monthDays = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
 
 /** The days of a month the caller has checked is one. */
-function daysIn(year: number, month: number): number {
+export function daysIn(year: number, month: number): number {
     return month === 2 && isLeap(year) ? 29 : elementAt(monthDays, month - 1);
 }
 

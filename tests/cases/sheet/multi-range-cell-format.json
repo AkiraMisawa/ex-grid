@@ -1,0 +1,124 @@
+{
+  "about": "A Cell Format set on several ranges in one step, whole columns and rows included, is one undo step like any other operation (ADR-0046, ADR-0048). Transcribed from ExSheet.Engine.Tests' MultiRangeCellFormatTests; the two null arguments C# refuses are none TypeScript's types let through.",
+  "kind": "sheet",
+  "culture": "en-US",
+  "cases": [
+    {
+      "name": "ADR-0046/0047: every range takes the change, whole columns and rows recorded as one entry each",
+      "steps": [
+        {"enter": {"B2": "0.5", "E7": "0.5", "Z4": "0.5"}},
+        {"do": {"setCellFormat": {"ranges": ["B2:C3", "E:E", "4:4"], "change": {"numberFormat": "0.00", "alignment": "right"}}}, "expect": {"numberFormats": {"B2": "0.00", "C3": "0.00", "E7": "0.00", "E1048576": "0.00", "Z4": "0.00", "A4": "0.00", "D2": "General"}, "alignments": {"B2": "right", "C3": "right", "E7": "right", "E1048576": "right", "Z4": "right", "A4": "right"}, "document": {"columns": [{"first": 4, "last": 4, "numberFormat": "0.00"}], "rows": [{"first": 3, "last": 3, "numberFormat": "0.00"}]}, "change": {"rows": [1, 2, 3, 6], "valueChanges": []}}}
+      ]
+    },
+    {
+      "name": "ADR-0046/0048: several ranges are one step, and undoing it puts every level back exactly (B:B, 3:4)",
+      "steps": [
+        {"enter": {"B2": "0.5", "C3": "0.25", "D5": "7"}},
+        {"setNumberFormat": {"B2": "0%", "3:3": "#,##0"}},
+        {"setAlignment": {"C:C": "center"}},
+        {"remember": "before"},
+        {"do": {"setCellFormat": {"ranges": ["B:B", "3:4"], "change": {"numberFormat": "0.00", "alignment": "left"}}}, "expect": {"pictureNot": "before"}},
+        {"remember": "after"},
+        {"undo": "last", "expect": {"picture": "before", "change": {"rows": [1, 2]}}},
+        {"redo": "last", "expect": {"picture": "after"}},
+        {"undo": "last", "expect": {"picture": "before"}}
+      ]
+    },
+    {
+      "name": "ADR-0046/0048: several ranges are one step, and undoing it puts every level back exactly (3:4, B:B)",
+      "steps": [
+        {"enter": {"B2": "0.5", "C3": "0.25", "D5": "7"}},
+        {"setNumberFormat": {"B2": "0%", "3:3": "#,##0"}},
+        {"setAlignment": {"C:C": "center"}},
+        {"remember": "before"},
+        {"do": {"setCellFormat": {"ranges": ["3:4", "B:B"], "change": {"numberFormat": "0.00", "alignment": "left"}}}, "expect": {"pictureNot": "before"}},
+        {"remember": "after"},
+        {"undo": "last", "expect": {"picture": "before", "change": {"rows": [1, 2]}}},
+        {"redo": "last", "expect": {"picture": "after"}},
+        {"undo": "last", "expect": {"picture": "before"}}
+      ]
+    },
+    {
+      "name": "ADR-0046/0048: several ranges are one step, and undoing it puts every level back exactly (B2:C3, C:C, 2:2)",
+      "steps": [
+        {"enter": {"B2": "0.5", "C3": "0.25", "D5": "7"}},
+        {"setNumberFormat": {"B2": "0%", "3:3": "#,##0"}},
+        {"setAlignment": {"C:C": "center"}},
+        {"remember": "before"},
+        {"do": {"setCellFormat": {"ranges": ["B2:C3", "C:C", "2:2"], "change": {"numberFormat": "0.00", "alignment": "left"}}}, "expect": {"pictureNot": "before"}},
+        {"remember": "after"},
+        {"undo": "last", "expect": {"picture": "before", "change": {"rows": [1, 2]}}},
+        {"redo": "last", "expect": {"picture": "after"}},
+        {"undo": "last", "expect": {"picture": "before"}}
+      ]
+    },
+    {
+      "name": "ADR-0046/0048: several ranges are one step, and undoing it puts every level back exactly (B2:C3, B2:C3)",
+      "steps": [
+        {"enter": {"B2": "0.5", "C3": "0.25", "D5": "7"}},
+        {"setNumberFormat": {"B2": "0%", "3:3": "#,##0"}},
+        {"setAlignment": {"C:C": "center"}},
+        {"remember": "before"},
+        {"do": {"setCellFormat": {"ranges": ["B2:C3", "B2:C3"], "change": {"numberFormat": "0.00", "alignment": "left"}}}, "expect": {"pictureNot": "before"}},
+        {"remember": "after"},
+        {"undo": "last", "expect": {"picture": "before", "change": {"rows": [1, 2]}}},
+        {"redo": "last", "expect": {"picture": "after"}},
+        {"undo": "last", "expect": {"picture": "before"}}
+      ]
+    },
+    {
+      "name": "ADR-0046/0048: several ranges are one step, and undoing it puts every level back exactly (A:XFD, D5)",
+      "steps": [
+        {"enter": {"B2": "0.5", "C3": "0.25", "D5": "7"}},
+        {"setNumberFormat": {"B2": "0%", "3:3": "#,##0"}},
+        {"setAlignment": {"C:C": "center"}},
+        {"remember": "before"},
+        {"do": {"setCellFormat": {"ranges": ["A:XFD", "D5"], "change": {"numberFormat": "0.00", "alignment": "left"}}}, "expect": {"pictureNot": "before"}},
+        {"remember": "after"},
+        {"undo": "last", "expect": {"picture": "before", "change": {"rows": [1, 2, 4]}}},
+        {"redo": "last", "expect": {"picture": "after"}},
+        {"undo": "last", "expect": {"picture": "before"}}
+      ]
+    },
+    {
+      "name": "ADR-0046: a property the change leaves out is left as it is; General is set as General",
+      "steps": [
+        {"setNumberFormat": {"B2": "0%"}},
+        {"setAlignment": {"D4": "center"}},
+        {"do": {"setCellFormat": {"ranges": ["B2", "D4"], "change": {"alignment": "right"}}}, "expect": {"numberFormats": {"B2": "0%"}, "alignments": {"D4": "right"}}},
+        {"do": {"setCellFormat": {"ranges": ["B2", "D4"], "change": {"numberFormat": "General"}}}, "expect": {"numberFormats": {"B2": "General"}, "alignments": {"B2": "right"}}}
+      ]
+    },
+    {
+      "name": "ADR-0046: the Sheet's own form does the same as the step",
+      "steps": [
+        {"enter": {"B2": "0.5"}},
+        {"setCellFormat": {"ranges": ["B:B", "D:D"], "change": {"numberFormat": "0%"}}, "expect": {"texts": {"B2": "50%"}, "document": {"columns": [{"first": 1, "last": 1, "numberFormat": "0%"}, {"first": 3, "last": 3, "numberFormat": "0%"}]}, "change": {"rows": [1]}}}
+      ]
+    },
+    {
+      "name": "ADR-0046, ADR-0071: a change on no range, or one setting nothing, is a mistake the caller made (no range)",
+      "steps": [
+        {"do": {"setCellFormat": {"ranges": [], "change": {"numberFormat": "0.00"}}}, "expect": {"throws": {"refusal": "argument"}}}
+      ]
+    },
+    {
+      "name": "ADR-0046, ADR-0071: a change on no range, or one setting nothing, is a mistake the caller made (a change of nothing)",
+      "steps": [
+        {"do": {"setCellFormat": {"ranges": ["B2"], "change": {}}}, "expect": {"throws": {"refusal": "argument"}}}
+      ]
+    },
+    {
+      "name": "ADR-0046, ADR-0071: a change on no range, or one setting nothing, is a mistake the caller made (Borders that change nothing)",
+      "steps": [
+        {"do": {"setCellFormat": {"ranges": ["B2"], "change": {"borders": {}}}}, "expect": {"throws": {"refusal": "argument"}}}
+      ]
+    },
+    {
+      "name": "ADR-0046, ADR-0071: a change on no range, or one setting nothing, is a mistake the caller made (an alignment outside the vocabulary)",
+      "steps": [
+        {"do": {"setCellFormat": {"ranges": ["B2"], "change": {"alignment": 42}}}, "expect": {"throws": {"refusal": "argument"}}}
+      ]
+    }
+  ]
+}

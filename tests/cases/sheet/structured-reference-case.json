@@ -1,0 +1,74 @@
+{
+  "about": "A structured reference is stored in its Linked Table's declared case, the table's name and the column's, as Excel writes one back, and keeps it when the Formula is written again (ticket 180, ADR-0047, ADR-0049). Transcribed from ExSheet.Engine.Tests' StructuredReferenceCaseTests.",
+  "kind": "sheet",
+  "culture": "en-US",
+  "setups": {
+    "limits": [
+      {"declareTable": {"name": "LIMIT", "columns": ["Line", "Net PV", "Rate#"]}},
+      {"pushTable": {"name": "LIMIT", "rows": [[3, 10, 0.5], [4, 20, 1]]}}
+    ]
+  },
+  "cases": [
+    {
+      "name": "ADR-0047 (ticket 180): typed in another case, written in the declared case of the table and of the column: =sum(limit[line])",
+      "setup": "limits",
+      "steps": [
+        {"do": {"enter": {"B2": "=sum(limit[line])"}}, "expect": {"formulas": {"B2": "=SUM(LIMIT[Line])"}, "values": {"B2": 7}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (ticket 180): typed in another case, written in the declared case of the table and of the column: =SUM(Limit[[net pv]])",
+      "setup": "limits",
+      "steps": [
+        {"do": {"enter": {"B2": "=SUM(Limit[[net pv]])"}}, "expect": {"formulas": {"B2": "=SUM(LIMIT[Net PV])"}, "values": {"B2": 30}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (ticket 180): typed in another case, written in the declared case of the table and of the column: =sum(limit[RATE'#])*2",
+      "setup": "limits",
+      "steps": [
+        {"do": {"enter": {"B2": "=sum(limit[RATE'#])*2"}}, "expect": {"formulas": {"B2": "=SUM(LIMIT[Rate'#])*2"}, "values": {"B2": 3}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (ticket 180): typed in another case, written in the declared case of the table and of the column: =SUM(LIMIT[Line])",
+      "setup": "limits",
+      "steps": [
+        {"do": {"enter": {"B2": "=SUM(LIMIT[Line])"}}, "expect": {"formulas": {"B2": "=SUM(LIMIT[Line])"}, "values": {"B2": 7}}}
+      ]
+    },
+    {
+      "name": "ADR-0048 (ticket 180): pasted as text, and entered with Ctrl+Enter, a Formula is written in the declared case too",
+      "setup": "limits",
+      "steps": [
+        {"do": {"pasteText": {"fields": [["=sum(limit[line])"]], "at": "B2"}}},
+        {"do": {"enterInto": {"targets": ["C2:C3"], "at": "C2", "typed": "=sum(limit[net pv])"}}, "expect": {"formulas": {"B2": "=SUM(LIMIT[Line])", "C2": "=SUM(LIMIT[Net PV])", "C3": "=SUM(LIMIT[Net PV])"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (ticket 180): a table or a column not declared is left as typed, and is #NAME? or #REF! as before",
+      "setup": "limits",
+      "steps": [
+        {"do": {"enter": {"B2": "=sum(other[line])"}}},
+        {"do": {"enter": {"B3": "=sum(limit[nothing])"}}, "expect": {"formulas": {"B2": "=SUM(other[line])", "B3": "=SUM(limit[nothing])"}, "values": {"B2": {"error": "#NAME?"}, "B3": {"error": "#REF!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (ticket 180): written again by an insertion and a fill, the declared case is kept",
+      "setup": "limits",
+      "steps": [
+        {"do": {"enter": {"B2": "=sum(limit[line])+a1"}}},
+        {"do": {"insertRows": [0]}},
+        {"do": {"fill": {"source": "B3", "target": "B3:B4", "direction": "down"}}, "expect": {"formulas": {"B3": "=SUM(LIMIT[Line])+A2", "B4": "=SUM(LIMIT[Line])+A3"}}}
+      ]
+    },
+    {
+      "name": "ADR-0048 (ticket 180): a reopened Workbook's text is the declared case",
+      "setup": "limits",
+      "steps": [
+        {"do": {"enter": {"B2": "=sum(limit[net pv])"}}},
+        {"reopen": "json", "expect": {"formulas": {"B2": "=SUM(LIMIT[Net PV])"}}}
+      ]
+    }
+  ]
+}

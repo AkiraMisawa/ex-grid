@@ -113,9 +113,16 @@ internal static class SheetCases
             case null:
                 return null;
             case JsonObject error:
-                if (!ErrorValues.TryParseWritten((string?)error["error"], out var parsed) || error.Count != 1)
+                // The two states of a computation are no Error Value typed, but a case may give one to be refused.
+                if (error.Count != 1)
                     throw new InvalidDataException($"{error.ToJsonString()} is no Error Value a case gives.");
-                return Value.FromError(parsed);
+                return Value.FromError((string?)error["error"] switch
+                {
+                    "#CIRC!" => ErrorValue.Circ,
+                    "#GETTING_DATA" => ErrorValue.GettingData,
+                    var written when ErrorValues.TryParseWritten(written, out var parsed) => parsed,
+                    _ => throw new InvalidDataException($"{error.ToJsonString()} is no Error Value a case gives."),
+                });
             case JsonValue value when value.GetValueKind() == JsonValueKind.String:
                 return Value.FromText((string)value!);
             case JsonValue value when value.GetValueKind() is JsonValueKind.True or JsonValueKind.False:
@@ -194,7 +201,13 @@ internal static class SheetCases
         return new CellFormatChange
         {
             NumberFormat = parts["numberFormat"] is { } code ? NumberFormat.Parse((string)code!) : null,
-            Alignment = parts["alignment"] is { } alignment ? Enum<HorizontalAlignment>(alignment) : null,
+            // A number is a value cast in from outside the vocabulary, given to be refused.
+            Alignment = parts["alignment"] switch
+            {
+                null => null,
+                var cast when cast.GetValueKind() == JsonValueKind.Number => (HorizontalAlignment)cast.GetValue<int>(),
+                var alignment => Enum<HorizontalAlignment>(alignment),
+            },
             FontColour = parts["fontColour"] is { } colour ? ColourOf(colour) : null,
             Bold = (bool?)parts["bold"],
             Italic = (bool?)parts["italic"],
@@ -332,12 +345,13 @@ internal sealed class Run(CultureInfo culture)
 
     private readonly List<WorkbookStep> _done = [];
     private readonly Dictionary<string, string> _pictures = new(StringComparer.Ordinal);
+    private int _clockReads;
     private readonly Dictionary<string, SheetCopy> _copies = new(StringComparer.Ordinal);
 
     private static readonly string[] Verbs =
     [
         "enter", "enterAll", "enterRun", "do", "check", "undo", "redo", "reopen", "remember", "read", "copy",
-        "setNumberFormat", "setAlignment", "declareTable", "pushTable", "setToday", "setSeed", "recalculateVolatile",
+        "setNumberFormat", "setAlignment", "declareTable", "pushTable", "setToday", "setSeed", "setClock", "recalculateVolatile", "getDisplay", "setCellFormat",
     ];
 
     private static readonly string[] Modifiers = ["on", "expect", "note"];
@@ -357,7 +371,7 @@ internal sealed class Run(CultureInfo culture)
             ? Workbook.Find((string)on!) ?? throw new InvalidDataException($"{where}: the Workbook has no Sheet '{(string)on!}'.")
             : Workbook.Shown;
         var expect = step["expect"] as JsonObject;
-        var outcome = new Outcome(sheet);
+        var outcome = new Outcome(sheet) { ClockReadsBefore = _clockReads };
         try
         {
             Act(verb, argument!, sheet, outcome);
@@ -399,7 +413,22 @@ internal sealed class Run(CultureInfo culture)
         public bool Checked { get; set; }
         public SheetRefusal? Refusal { get; set; }
         public WorkbookStep? Step { get; set; }
+        /// <summary>How many times the case's clock had been read before the step.</summary>
+        public int ClockReadsBefore { get; init; }
+        /// <summary>What a step, an undo or a redo changed across the Workbook.</summary>
+        public WorkbookChange? WorkbookChange { get; set; }
     }
+
+    /// <summary>A Sheet's change as a case reads one.</summary>
+    private static JsonObject ChangeJson(SheetChange change) => new()
+    {
+        ["valueChanges"] = SheetCases.Addresses(change.ValueChanges),
+        ["recalculated"] = SheetCases.Addresses(change.Recalculated),
+        ["recalculatedCount"] = change.Recalculated.Count,
+        ["rows"] = SheetCases.Numbers(change.Rows),
+        ["columns"] = SheetCases.Numbers(change.Columns),
+        ["reformatsUnnamedRows"] = change.ReformatsUnnamedRows,
+    };
 
     /// <summary>Whether the innermost frame outside .NET's own libraries is this runner's rather than the engine's.</summary>
     private static bool ThrownByTheRunner(Exception e)
@@ -460,6 +489,7 @@ internal sealed class Run(CultureInfo culture)
                 _done.Add(step);
                 outcome.Step = step;
                 outcome.Sheet = step.Sheet;
+                outcome.WorkbookChange = step.Change;
                 outcome.Change = step.Change.ChangesSheets && !Workbook.Sheets.Contains(step.Sheet) ? null : step.Change.For(step.Sheet);
                 break;
             case "check":
@@ -471,6 +501,7 @@ internal sealed class Run(CultureInfo culture)
                 var done = Done(argument);
                 outcome.Step = done;
                 var change = done.Undo();
+                outcome.WorkbookChange = change;
                 outcome.Change = Workbook.Sheets.Contains(done.Sheet) ? change.For(done.Sheet) : null;
                 break;
             }
@@ -479,15 +510,25 @@ internal sealed class Run(CultureInfo culture)
                 var done = Done(argument);
                 outcome.Step = done;
                 var change = done.Redo();
+                outcome.WorkbookChange = change;
                 outcome.Change = Workbook.Sheets.Contains(done.Sheet) ? change.For(done.Sheet) : null;
                 break;
             }
             case "reopen":
-                Workbook = (string)argument! switch
+                Workbook = argument switch
                 {
-                    "document" => Workbook.Open(Workbook.ToDocument()),
-                    "json" => Workbook.Open(WorkbookDocument.FromJson(Workbook.ToDocument().ToJson())),
-                    var other => throw new InvalidDataException($"'{other}' is no way to reopen a Workbook."),
+                    // One Sheet saved as a Sheet Document's JSON, read back, and opened as a Workbook of that one Sheet.
+                    JsonObject { Count: 1 } one when one["sheet"] is { } name => Workbook.Open(SheetDocument.FromJson(Workbook.ToDocument((string)name!).ToJson())),
+                    // A document's JSON as the case writes it, read and opened.
+                    JsonObject { Count: 1 } one when one["sheetJson"] is { } json => Workbook.Open(SheetDocument.FromJson((string)json!)),
+                    JsonObject { Count: 1 } one when one["workbookJson"] is { } json => Workbook.Open(WorkbookDocument.FromJson((string)json!)),
+                    JsonObject other => throw new InvalidDataException($"{other.ToJsonString()} is no way to reopen a Workbook."),
+                    _ => (string)argument! switch
+                    {
+                        "document" => Workbook.Open(Workbook.ToDocument()),
+                        "json" => Workbook.Open(WorkbookDocument.FromJson(Workbook.ToDocument().ToJson())),
+                        var other => throw new InvalidDataException($"'{other}' is no way to reopen a Workbook."),
+                    },
                 };
                 outcome.Sheet = Workbook.Shown;
                 break;
@@ -511,6 +552,10 @@ internal sealed class Run(CultureInfo culture)
             case "setAlignment":
                 foreach (var (at, alignment) in argument.AsObject())
                     outcome.Change = sheet.SetAlignment(CellRange.Parse(at), SheetCases.Enum<HorizontalAlignment>(alignment!));
+                break;
+            case "setCellFormat":
+                // The Sheet's own form, outside any step.
+                outcome.Change = sheet.SetCellFormat([.. argument["ranges"]!.AsArray().Select(r => CellRange.Parse((string)r!))], SheetCases.ChangeOf(argument["change"]!));
                 break;
             case "declareTable":
             {
@@ -538,6 +583,27 @@ internal sealed class Run(CultureInfo culture)
             case "setSeed":
                 outcome.Change = Workbook.SetSeed(argument is null ? null : ulong.Parse(argument.ToJsonString().Trim('"'), CultureInfo.InvariantCulture)).For(sheet);
                 break;
+            case "getDisplay":
+                // A display asked for, so that a width refused is a refusal the step can expect.
+                _ = sheet.GetDisplay(CellAddress.Parse((string)argument["at"]!), SheetCases.Number(argument["width"]!));
+                break;
+            case "setClock":
+            {
+                // A clock that moves on `step` seconds each time it is read, and counts its reads.
+                var clock = argument.AsObject();
+                var at = DateTime.ParseExact((string)clock["from"]!, "yyyy-MM-ddTHH:mm:ss", CultureInfo.InvariantCulture);
+                // A finite number of seconds, as the TS runner reads it: no spelled non-finite step.
+                var seconds = clock["step"] is JsonValue stepNode && stepNode.GetValueKind() == JsonValueKind.Number
+                    ? stepNode.GetValue<double>()
+                    : throw new InvalidDataException("setClock.step is a number of seconds.");
+                Workbook.NowSource = () =>
+                {
+                    _clockReads++;
+                    at = at.AddSeconds(seconds);
+                    return at;
+                };
+                break;
+            }
             case "recalculateVolatile":
                 outcome.Change = Workbook.RecalculateVolatile().For(sheet);
                 break;
@@ -735,23 +801,25 @@ internal sealed class Run(CultureInfo culture)
                 break;
             }
             case "change":
-                actual = outcome.Change is { } change
-                    ? new JsonObject
-                    {
-                        ["valueChanges"] = SheetCases.Addresses(change.ValueChanges),
-                        ["recalculated"] = SheetCases.Addresses(change.Recalculated),
-                        ["recalculatedCount"] = change.Recalculated.Count,
-                        ["rows"] = SheetCases.Numbers(change.Rows),
-                        ["columns"] = SheetCases.Numbers(change.Columns),
-                        ["reformatsUnnamedRows"] = change.ReformatsUnnamedRows,
-                    }
-                    : null;
+                actual = outcome.Change is { } change ? ChangeJson(change) : null;
                 break;
+            case "changes":
+            {
+                // What a step, an undo or a redo changed on each Sheet it reached, by the Sheet's name.
+                var changes = outcome.WorkbookChange ?? throw new InvalidDataException($"{where}: only a step, an undo or a redo reads its changes.");
+                var each = new JsonObject();
+                foreach (var reached in changes.Sheets) each[reached.Name] = ChangeJson(changes.For(reached));
+                actual = each;
+                break;
+            }
             case "refusal":
                 if (!outcome.Checked) throw new InvalidDataException($"{where}: only a check reads a refusal.");
                 actual = outcome.Refusal is { } refusal
                     ? new JsonObject { ["reason"] = SheetCases.Camel(refusal.Reason), ["saying"] = refusal.Message }
                     : null;
+                break;
+            case "clockReads":
+                actual = _clockReads - outcome.ClockReadsBefore;
                 break;
             case "isUndone":
                 actual = (outcome.Step ?? throw new InvalidDataException($"{where}: no step to read.")).IsUndone;
@@ -776,6 +844,22 @@ internal sealed class Run(CultureInfo culture)
                 break;
             case "shown":
                 actual = Workbook.Shown.Name;
+                break;
+            case "workbook":
+                actual = new JsonObject
+                {
+                    ["culture"] = Workbook.Culture.Name,
+                    ["today"] = Workbook.Today?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+                    ["hasVolatileFormulas"] = Workbook.HasVolatileFormulas,
+                    ["linkedTables"] = new JsonArray([.. Workbook.LinkedTables.Select(t => (JsonNode)new JsonObject
+                    {
+                        ["name"] = t.Name,
+                        ["columns"] = new JsonArray([.. t.Columns.Select(c => (JsonNode)c)]),
+                        ["keyColumns"] = new JsonArray([.. t.KeyColumns.Select(c => (JsonNode)c)]),
+                        ["isWaiting"] = t.IsWaiting,
+                        ["rowCount"] = t.RowCount,
+                    })]),
+                };
                 break;
             default:
                 throw new InvalidDataException($"{where}: '{key}' is no reading.");

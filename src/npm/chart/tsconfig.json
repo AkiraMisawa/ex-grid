@@ -1,9 +1,11 @@
 {
-  // The sources and the tests, for the editor and for `npm run typecheck`.
+  // The sources and the tests, for the editor and for `npm run typecheck`. The core is read from its
+  // sources, so a change to it is checked here before it is built.
   "extends": "../tsconfig.base.json",
   "compilerOptions": {
     "types": ["node"],
-    "resolveJsonModule": true
+    "resolveJsonModule": true,
+    "paths": { "@ex-grid/core": ["../core/src/index.ts"] }
   },
   "include": ["src", "test"]
 }

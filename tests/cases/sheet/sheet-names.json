@@ -1,0 +1,214 @@
+{
+  "about": "A Sheet's name (ADR-0046): Sheet1 unless given one, Excel's rules for what a name may be, and Formulas qualified with it. Transcribed from ExSheet.Engine.Tests' SheetNameTests.",
+  "kind": "sheet",
+  "culture": "en-US",
+  "cases": [
+    {
+      "name": "ADR-0046: a Sheet is named Sheet1 unless it is given a name",
+      "steps": [
+        {"read": true, "expect": {"sheets": ["Sheet1"]}}
+      ]
+    },
+    {
+      "name": "ADR-0046: a Sheet given a name has it",
+      "sheets": ["Positions"],
+      "steps": [
+        {"read": true, "expect": {"sheets": ["Positions"]}}
+      ]
+    },
+    {
+      "name": "ADR-0046/0047: a Formula qualified with the Sheet's name recalculates when the cell it reads changes",
+      "steps": [
+        {"enter": {"A1": "1", "B1": "=Sheet1!A1+1", "C1": "=SUM(Sheet1!A1:A3)"}},
+        {"enter": {"A1": "10"}, "expect": {"values": {"B1": 11, "C1": 10}, "change": {"valueChanges": ["A1", "B1", "C1"]}}}
+      ]
+    },
+    {
+      "name": "ADR-0046: Excel's rules for a Sheet's name refuse \"\"",
+      "steps": [
+        {"do": {"rename": ""}, "expect": {"throws": {"refusal": "argument", "saying": "A Sheet's name cannot be empty."}, "sheets": ["Sheet1"]}}
+      ]
+    },
+    {
+      "name": "ADR-0046: Excel's rules for a Sheet's name refuse \"a:b\"",
+      "steps": [
+        {"do": {"rename": "a:b"}, "expect": {"throws": {"refusal": "argument", "saying": "A Sheet's name cannot contain any of : \\ / ? * [ ]."}, "sheets": ["Sheet1"]}}
+      ]
+    },
+    {
+      "name": "ADR-0046: Excel's rules for a Sheet's name refuse \"a\\\\b\"",
+      "steps": [
+        {"do": {"rename": "a\\b"}, "expect": {"throws": {"refusal": "argument", "saying": "A Sheet's name cannot contain any of : \\ / ? * [ ]."}, "sheets": ["Sheet1"]}}
+      ]
+    },
+    {
+      "name": "ADR-0046: Excel's rules for a Sheet's name refuse \"a/b\"",
+      "steps": [
+        {"do": {"rename": "a/b"}, "expect": {"throws": {"refusal": "argument", "saying": "A Sheet's name cannot contain any of : \\ / ? * [ ]."}, "sheets": ["Sheet1"]}}
+      ]
+    },
+    {
+      "name": "ADR-0046: Excel's rules for a Sheet's name refuse \"a?b\"",
+      "steps": [
+        {"do": {"rename": "a?b"}, "expect": {"throws": {"refusal": "argument", "saying": "A Sheet's name cannot contain any of : \\ / ? * [ ]."}, "sheets": ["Sheet1"]}}
+      ]
+    },
+    {
+      "name": "ADR-0046: Excel's rules for a Sheet's name refuse \"a*b\"",
+      "steps": [
+        {"do": {"rename": "a*b"}, "expect": {"throws": {"refusal": "argument", "saying": "A Sheet's name cannot contain any of : \\ / ? * [ ]."}, "sheets": ["Sheet1"]}}
+      ]
+    },
+    {
+      "name": "ADR-0046: Excel's rules for a Sheet's name refuse \"a[b\"",
+      "steps": [
+        {"do": {"rename": "a[b"}, "expect": {"throws": {"refusal": "argument", "saying": "A Sheet's name cannot contain any of : \\ / ? * [ ]."}, "sheets": ["Sheet1"]}}
+      ]
+    },
+    {
+      "name": "ADR-0046: Excel's rules for a Sheet's name refuse \"a]b\"",
+      "steps": [
+        {"do": {"rename": "a]b"}, "expect": {"throws": {"refusal": "argument", "saying": "A Sheet's name cannot contain any of : \\ / ? * [ ]."}, "sheets": ["Sheet1"]}}
+      ]
+    },
+    {
+      "name": "ADR-0046: Excel's rules for a Sheet's name refuse \"'quoted\"",
+      "steps": [
+        {"do": {"rename": "'quoted"}, "expect": {"throws": {"refusal": "argument", "saying": "A Sheet's name cannot begin or end with an apostrophe."}, "sheets": ["Sheet1"]}}
+      ]
+    },
+    {
+      "name": "ADR-0046: Excel's rules for a Sheet's name refuse \"quoted'\"",
+      "steps": [
+        {"do": {"rename": "quoted'"}, "expect": {"throws": {"refusal": "argument", "saying": "A Sheet's name cannot begin or end with an apostrophe."}, "sheets": ["Sheet1"]}}
+      ]
+    },
+    {
+      "name": "ADR-0046: Excel's rules for a Sheet's name refuse \"History\"",
+      "steps": [
+        {"do": {"rename": "History"}, "expect": {"throws": {"refusal": "argument", "saying": "'History' is a name Excel reserves."}, "sheets": ["Sheet1"]}}
+      ]
+    },
+    {
+      "name": "ADR-0046: Excel's rules for a Sheet's name refuse \"history\"",
+      "steps": [
+        {"do": {"rename": "history"}, "expect": {"throws": {"refusal": "argument", "saying": "'History' is a name Excel reserves."}, "sheets": ["Sheet1"]}}
+      ]
+    },
+    {
+      "name": "ADR-0046: Excel's rules for a Sheet's name refuse \"12345678901234567890123456789012\"",
+      "steps": [
+        {"do": {"rename": "12345678901234567890123456789012"}, "expect": {"throws": {"refusal": "argument", "saying": "A Sheet's name is at most 31 characters."}, "sheets": ["Sheet1"]}}
+      ]
+    },
+    {
+      "name": "ADR-0046: a name Excel accepts: \"Sheet1\"",
+      "sheets": ["Sheet1"],
+      "steps": [
+        {"read": true, "expect": {"sheets": ["Sheet1"]}}
+      ]
+    },
+    {
+      "name": "ADR-0046: a name Excel accepts is taken by a rename: \"Sheet1\"",
+      "steps": [
+        {"do": {"rename": "Sheet1"}, "expect": {"sheets": ["Sheet1"]}}
+      ]
+    },
+    {
+      "name": "ADR-0046: a name Excel accepts: \"My Sheet\"",
+      "sheets": ["My Sheet"],
+      "steps": [
+        {"read": true, "expect": {"sheets": ["My Sheet"]}}
+      ]
+    },
+    {
+      "name": "ADR-0046: a name Excel accepts is taken by a rename: \"My Sheet\"",
+      "steps": [
+        {"do": {"rename": "My Sheet"}, "expect": {"sheets": ["My Sheet"]}}
+      ]
+    },
+    {
+      "name": "ADR-0046: a name Excel accepts: \"It's\"",
+      "sheets": ["It's"],
+      "steps": [
+        {"read": true, "expect": {"sheets": ["It's"]}}
+      ]
+    },
+    {
+      "name": "ADR-0046: a name Excel accepts is taken by a rename: \"It's\"",
+      "steps": [
+        {"do": {"rename": "It's"}, "expect": {"sheets": ["It's"]}}
+      ]
+    },
+    {
+      "name": "ADR-0046: a name Excel accepts: \"1234567890123456789012345678901\"",
+      "sheets": ["1234567890123456789012345678901"],
+      "steps": [
+        {"read": true, "expect": {"sheets": ["1234567890123456789012345678901"]}}
+      ]
+    },
+    {
+      "name": "ADR-0046: a name Excel accepts is taken by a rename: \"1234567890123456789012345678901\"",
+      "steps": [
+        {"do": {"rename": "1234567890123456789012345678901"}, "expect": {"sheets": ["1234567890123456789012345678901"]}}
+      ]
+    },
+    {
+      "name": "ADR-0046: a name Excel accepts: \"損益 (円)\"",
+      "sheets": ["損益 (円)"],
+      "steps": [
+        {"read": true, "expect": {"sheets": ["損益 (円)"]}}
+      ]
+    },
+    {
+      "name": "ADR-0046: a name Excel accepts is taken by a rename: \"損益 (円)\"",
+      "steps": [
+        {"do": {"rename": "損益 (円)"}, "expect": {"sheets": ["損益 (円)"]}}
+      ]
+    },
+    {
+      "name": "ADR-0046: a name Excel accepts: \"A1\"",
+      "sheets": ["A1"],
+      "steps": [
+        {"read": true, "expect": {"sheets": ["A1"]}}
+      ]
+    },
+    {
+      "name": "ADR-0046: a name Excel accepts is taken by a rename: \"A1\"",
+      "steps": [
+        {"do": {"rename": "A1"}, "expect": {"sheets": ["A1"]}}
+      ]
+    },
+    {
+      "name": "ADR-0046: a name Excel accepts: \"History2\"",
+      "sheets": ["History2"],
+      "steps": [
+        {"read": true, "expect": {"sheets": ["History2"]}}
+      ]
+    },
+    {
+      "name": "ADR-0046: a name Excel accepts is taken by a rename: \"History2\"",
+      "steps": [
+        {"do": {"rename": "History2"}, "expect": {"sheets": ["History2"]}}
+      ]
+    },
+    {
+      "name": "ADR-0046: a qualifier that comes to name the Sheet after a rename resolves, and one that stops is #REF!",
+      "steps": [
+        {"enter": {"A1": "5", "B1": "=Data!A1"}, "expect": {"values": {"B1": {"error": "#REF!"}}}},
+        {"do": {"rename": "Data"}, "expect": {"values": {"B1": 5}, "change": {"valueChanges": ["B1"]}}},
+        {"enter": {"A1": "6"}, "expect": {"values": {"B1": 6}}}
+      ]
+    },
+    {
+      "name": "ADR-0046/0048: undoing a rename puts back the name and every Formula exactly, and redoing does it again",
+      "steps": [
+        {"enter": {"A1": "5", "B1": "=Sheet1!A1", "B2": "=Data!A1"}},
+        {"remember": "before"},
+        {"do": {"rename": "Data"}, "expect": {"formulas": {"B1": "=Data!A1"}, "values": {"B2": 5}}},
+        {"undo": "last", "expect": {"sheets": ["Sheet1"], "picture": "before", "values": {"B1": 5, "B2": {"error": "#REF!"}}}},
+        {"redo": "last", "expect": {"sheets": ["Data"], "formulas": {"B1": "=Data!A1"}, "values": {"B2": 5}}}
+      ]
+    }
+  ]
+}

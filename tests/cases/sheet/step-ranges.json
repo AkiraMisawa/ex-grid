@@ -1,0 +1,148 @@
+{
+  "about": "The ranges a step changed (ADR-0331 §3; exsheet-workbook ticket 08): what an undo or a redo of it selects, as Excel's do, each operation reporting the cells it wrote, the ranges it formatted, or the whole rows and columns it inserted or deleted. An operation on the Sheets themselves reports none. A whole row or column is written as the box it is, A3:XFD4 or B1:D1048576. Transcribed from ExSheet.Engine.Tests' WorkbookStepRangesTests.",
+  "kind": "sheet",
+  "culture": "en-US",
+  "cases": [
+    {
+      "name": "ADR-0331 §3: an entry's step names the cell it wrote",
+      "sheets": ["One", "Two"],
+      "steps": [
+        {"do": {"enter": {"C4": "7"}}, "expect": {"ranges": ["C4"]}}
+      ]
+    },
+    {
+      "name": "ADR-0331 §3: cells named one by one name the smallest range that holds them",
+      "sheets": ["One", "Two"],
+      "steps": [
+        {"do": {"setEntries": {"D2": null, "B5": null}}, "expect": {"ranges": ["B2:D5"]}}
+      ]
+    },
+    {
+      "name": "ADR-0331 §3: Ctrl+Enter names its ranges, the one it was typed in first",
+      "sheets": ["One", "Two"],
+      "steps": [
+        {"do": {"enterInto": {"targets": ["A1:B2", "E5:F6"], "at": "E5", "typed": "1"}}, "expect": {"ranges": ["E5:F6", "A1:B2"]}}
+      ]
+    },
+    {
+      "name": "ADR-0331 §3: a paste names the cells it wrote: from its origin the block's size",
+      "sheets": ["One", "Two"],
+      "steps": [
+        {"do": {"enter": {"A1": "1"}}},
+        {"copy": {"range": "A1:B3", "as": "block"}},
+        {"do": {"paste": {"copy": "block", "at": "D4"}}, "expect": {"ranges": ["D4:E6"]}}
+      ]
+    },
+    {
+      "name": "ADR-0331 §3: a paste names the cells it wrote: onto a range, the range",
+      "sheets": ["One", "Two"],
+      "steps": [
+        {"do": {"enter": {"A1": "1"}}},
+        {"copy": {"range": "A1:B3", "as": "block"}},
+        {"do": {"paste": {"copy": "block", "at": "D4:E9"}}, "expect": {"ranges": ["D4:E9"]}}
+      ]
+    },
+    {
+      "name": "ADR-0331 §3: a paste names the cells it wrote: onto several targets, each target",
+      "sheets": ["One", "Two"],
+      "steps": [
+        {"do": {"enter": {"A1": "1"}}},
+        {"copy": {"range": "A1:B3", "as": "block"}},
+        {"do": {"paste": {"copy": "block", "at": ["G1:H3", "J1:K3"]}}, "expect": {"ranges": ["G1:H3", "J1:K3"]}}
+      ]
+    },
+    {
+      "name": "ADR-0331 §3: a paste of text names the cells it wrote",
+      "sheets": ["One", "Two"],
+      "steps": [
+        {"do": {"pasteText": {"fields": [["a", "b"], ["c", "d"]], "at": "C2"}}, "expect": {"ranges": ["C2:D3"]}}
+      ]
+    },
+    {
+      "name": "ADR-0331 §3: a fill names its source with what it filled",
+      "sheets": ["One"],
+      "steps": [
+        {"do": {"enter": {"A1": "x"}}},
+        {"do": {"fill": {"source": "A1", "target": "A2:A4", "direction": "down"}}, "expect": {"ranges": ["A1:A4"]}},
+        {"do": {"fillCopy": {"source": "A1", "target": "B1:C1", "direction": "right"}}, "expect": {"ranges": ["A1:C1"]}}
+      ]
+    },
+    {
+      "name": "ADR-0331 §3: a Cell Format names the ranges it was set on, whole columns among them",
+      "sheets": ["One", "Two"],
+      "steps": [
+        {"do": {"setCellFormat": {"ranges": ["B2:C3", "E:F"], "change": {"bold": true}}}, "expect": {"ranges": ["B2:C3", "E1:F1048576"]}}
+      ]
+    },
+    {
+      "name": "ADR-0331 §3: a width names the whole columns it was set on",
+      "sheets": ["One", "Two"],
+      "steps": [
+        {"do": {"setColumnWidth": {"columns": "B:C", "width": 20}}, "expect": {"ranges": ["B1:C1048576"]}}
+      ]
+    },
+    {
+      "name": "ADR-0331 §3: an insertion or deletion names the whole rows or columns: rows inserted",
+      "sheets": ["One", "Two"],
+      "steps": [
+        {"do": {"insertRows": [2, 2]}, "expect": {"ranges": ["A3:XFD4"]}}
+      ]
+    },
+    {
+      "name": "ADR-0331 §3: an insertion or deletion names the whole rows or columns: a row deleted",
+      "sheets": ["One", "Two"],
+      "steps": [
+        {"do": {"deleteRows": [4]}, "expect": {"ranges": ["A5:XFD5"]}}
+      ]
+    },
+    {
+      "name": "ADR-0331 §3: an insertion or deletion names the whole rows or columns: columns inserted",
+      "sheets": ["One", "Two"],
+      "steps": [
+        {"do": {"insertColumns": [1, 3]}, "expect": {"ranges": ["B1:D1048576"]}}
+      ]
+    },
+    {
+      "name": "ADR-0331 §3: an insertion or deletion names the whole rows or columns: a column deleted",
+      "sheets": ["One", "Two"],
+      "steps": [
+        {"do": {"deleteColumns": [0]}, "expect": {"ranges": ["A1:A1048576"]}}
+      ]
+    },
+    {
+      "name": "ADR-0331 §3: an operation on the Sheets themselves names no range (insert)",
+      "sheets": ["One", "Two"],
+      "steps": [
+        {"do": {"insertSheet": {}}, "expect": {"ranges": []}}
+      ]
+    },
+    {
+      "name": "ADR-0331 §3: an operation on the Sheets themselves names no range (copy)",
+      "sheets": ["One", "Two"],
+      "steps": [
+        {"do": {"copySheet": true}, "expect": {"ranges": []}}
+      ]
+    },
+    {
+      "name": "ADR-0331 §3: an operation on the Sheets themselves names no range (move)",
+      "sheets": ["One", "Two"],
+      "steps": [
+        {"do": {"moveSheet": 1}, "expect": {"ranges": []}}
+      ]
+    },
+    {
+      "name": "ADR-0331 §3: an operation on the Sheets themselves names no range (rename)",
+      "sheets": ["One", "Two"],
+      "steps": [
+        {"do": {"rename": "First"}, "expect": {"ranges": []}}
+      ]
+    },
+    {
+      "name": "ADR-0331 §3: an operation on the Sheets themselves names no range (delete)",
+      "sheets": ["One", "Two"],
+      "steps": [
+        {"do": {"deleteSheet": true}, "expect": {"ranges": []}}
+      ]
+    }
+  ]
+}

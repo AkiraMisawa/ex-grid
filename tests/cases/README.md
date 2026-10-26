@@ -32,7 +32,7 @@ One directory per area, one file per group of cases. Each file is an object:
 | Key | Meaning |
 |---|---|
 | `about` | What the file covers, and where its cases came from |
-| `kind` | Which runner reads it: `selection`, `range`, `edgeBand`, `held`, `calls`, `clipboard`, `query`, `source`, `fetch`, `displayText`, `operand`, `find`, `replace`, `summary`, `arrowRead`, `arrowShape`, `arrowWrite`, `changeBatch`, `chart`, and ExPivot's (`pivot/`) |
+| `kind` | Which runner reads it: `selection`, `range`, `edgeBand`, `held`, `calls`, `clipboard`, `query`, `source`, `fetch`, `displayText`, `operand`, `find`, `replace`, `summary`, `arrowRead`, `arrowShape`, `arrowWrite`, `changeBatch`, `boardInput`, `chart`, and ExPivot's (`pivot/`) |
 | `extent` | `[rows, columns]`, the grid every case of the file runs against unless it names its own |
 | `cases` | The cases. Each has a `name`, which starts with the ADR it holds to (CLAUDE.md, "Put the ADR number in the test name") |
 
@@ -505,6 +505,21 @@ grows. A refused batch is `{"refused": {message, row, column, key}}` as an `arro
 that the version a batch was applied to still reads as it did, and ADR-0067's fold: the rows the next version holds that
 the batch did not bring are the rows of the version before less those it removed, in their order.
 
+## `boardInput`
+
+A Board Input ([ADR-0341](../../docs/adr/0341-a-board-input-declares-its-columns-and-a-source-answers-its-shape-first.md),
+ADR-0370 section 3), under `data/`: xUnit runs them against ExGrid.Data (`tests/ExGrid.Data.Tests/Cases/BoardInputCaseTests.cs`)
+and Vitest against `@ex-grid/data` (`src/npm/data/test/board-input-cases.test.ts`). Both stay, because a .NET server reads a
+Board's inputs as a browser does.
+
+A case does one of four things. `read` is a declaration's text, read as input `trades` standing at `inputs.trades`, and
+`columns` is what it declares, each `name` and `type`. The other three start from `declared`, a declaration's columns:
+`check` is a source's shape, checked against it; `checkSource` is the shape a source answers when asked, or `null` for one
+that says none; and `fromJson` is rows as JSON text, made a Snapshot. `binds: true` says a check passed, and `snapshot` is
+each column's `name`, `kind` and `values`, written as an `arrowRead` case writes them except that a double that is no
+number is written by its name, `"NaN"`, because .NET's NaN and JavaScript's carry different bits. A refusal is `refused`,
+its `path` and its `message` whole, or `saying`, the words before a platform's own JSON parser speaks.
+
 ## ExPivot's engine, under `pivot/`
 
 The cases of ExPivot's engine (ADR-0370, sections 2 and 5): xUnit runs them against `ExPivot.Engine`
@@ -582,7 +597,7 @@ and `replies`, an answer document its server sends whatever it is asked. Each of
 | Ask | Answer |
 |---|---|
 | `{"fields": true}` | Each field's `name`, `caption`, `type`, and its `format`, `column` and `datePart` where it has one |
-| `{"aggregate": question}` | The Leaf Aggregates: `leaves`, each axis's `field` and `items`, each `leaf`'s Item at every level (`at`, rows then columns) and `records`, and each value's `parts` and what it carries at every leaf — `values`, `numbers`, `nonFinite`, and `sum`, `min`, `max`, `product`, `mean`, `m2` as asked for, to the last bit. A question is `rows`, `columns`, `filters` (a field by name, or with its `hiddenItems`), `values` (a field, its counts, or with the `parts` it asks for: `sum`, `extremes`, `product`, `variance`) and `maxLeaves`, and `levels`, one rule a row and a column field (`{}`, or with `collapsed` and its `toggledItems`), for Level Aggregates: a level answer adds `"levels": true`, an Item of −1 below each cell's depth, and beside a sum that is a double its `absoluteSum`. With `"order": "any"`, each axis's Items are listed in the ordinal order of their kind and value and the leaves in the order of their Items: after a batch that changes records, ExGrid.Data reads rows in its storage's order and the Script Core in the Snapshot's (ADR-0067), and such a step holds what both say |
+| `{"aggregate": question}` | The Leaf Aggregates: `leaves`, each axis's `field` and `items`, each `leaf`'s Item at every level (`at`, rows then columns) and `records`, and each value's `parts` and what it carries at every leaf — `values`, `numbers`, `nonFinite`, and `sum`, `min`, `max`, `product`, `mean`, `m2` as asked for, to the last bit. A question is `rows`, `columns`, `filters` (a field by name, or with its `hiddenItems`), `values` (a field, its counts, or with the `parts` it asks for: `sum`, `extremes`, `product`, `variance`) and `maxLeaves`, and `levels`, one rule a row and a column field (`{}`, or with `collapsed`, its `toggledItems` and, on a row field, the `order` its sibling sets are windowed by: the `value` it reads, from 0, its `aggregation` and `descending`), and a `window` (its `limit`, and `starts`, each a parent's `rows` Items and the `start` asked under it), for Level Aggregates: a level answer adds `"levels": true`, an Item of −1 below each cell's depth, and beside a sum that is a double its `absoluteSum`; a windowed one adds `windows`, each its `parent`'s Items as indexes and the siblings `before` and `after` it, and marks each rest cell's leaf with its `rest`, the `window` and the `side`. With `"order": "any"`, each axis's Items are listed in the ordinal order of their kind and value and the leaves in the order of their Items: after a batch that changes records, ExGrid.Data reads rows in its storage's order and the Script Core in the Snapshot's (ADR-0067), and such a step holds what both say |
 | `{"apply": batch}` | A Change Batch applied to a source over a Snapshot (keyed by the column its `snapshot` names as `recordKey`, or with no key): its `added` and `changed` records, rows in the data set's columns, and its `removedKeys`. Answered by the Snapshot version it made (`applied`) and the Source Versions the source `told` its listeners of, each written `{version}` where it is the one the source answers under now; or by the Snapshot's refusal (`"refusal": "snapshot"`) and what was told |
 | `{"items": field}` | A page of the field's Items, with `search` and `max`: `total` and `items`, under the last answer's Source Version, or `"under"` an earlier answer's (`{"answer": n}`, from 0), the version a source over a Snapshot answers under now (`"current"`), or one no source held (`"stale"`) |
 | `{"details": cell}` | A page of the records behind a cell: its `rows` and `columns` path (each a `field` and its `item`), the `hiddenItems` of placed fields, `start` and `count`, under a version as a page of Items is; answered by `start`, `total`, `fields` and `records` |
@@ -643,18 +658,24 @@ A case is a list of steps on a Workbook. A step has one verb, and may name the S
 what to `expect` after it. The verbs: `enter` (each cell typed alone, in order) and `enterAll` (one batch);
 `enterRun`, a `range` typed in one batch from a template naming each cell's row as `{row}` or `{row-1}`; `do`,
 a Sheet Edit done as a step, and `check`, the same edit only checked; `undo` and `redo` of the `last` step or
-of the step at an index among those done; `reopen` from the `document` or its `json`; `remember` a picture
-of the Workbook by name; `read`; `copy` a `range` `as` a name for a later `paste`; `setNumberFormat` and
-`setAlignment` directly, outside any step; `declareTable` and `pushTable` for a Linked Table; `setToday`,
-`setSeed` and `recalculateVolatile`. An edit is an object of one key, the factory, and its arguments, as
-`SheetEdit` takes them.
+of the step at an index among those done; `reopen` from the Workbook's `document` or that document's `json`,
+from `{"sheet": name}` (that one Sheet's Sheet Document, written to JSON and read back), or from a document
+the case writes, `{"sheetJson": text}` or `{"workbookJson": text}`; `remember` a picture of the Workbook by
+name; `read`; `copy` a `range` `as` a name for a later `paste`; `setNumberFormat`, `setAlignment` and
+`setCellFormat` (`ranges` and a `change`) directly, outside any step; `declareTable` and `pushTable` for a
+Linked Table; `setToday`, `setSeed` and `recalculateVolatile`; `setClock`, a clock that starts `from` a
+moment written `yyyy-MM-ddTHH:mm:ss` and moves on a finite `step` of seconds each time it is read; and
+`getDisplay` of a cell `at` a `width`, so that a width refused is a refusal to expect. An edit is an object
+of one key, the factory, and its arguments, as `SheetEdit` takes them.
 
 An expectation names readings: per cell, `values` (a string is text, a number a double, `true`/`false` a
 Boolean, `null` a Blank, `{"error": "#N/A"}` an Error Value), `displays`, `texts`, `formulas`, `entryTexts`,
 `entries`, `numberFormats`, `alignments`, `fonts`, `fills`, `borders`, `widthOnEntry` and `spilledFrom`; of
 the Sheet, `document`, `columnWidths`, `entryAddresses` and `valueAddresses`; of the step, `change`,
-`refusal` (a `check`'s), `isUndone` and `ranges`; of the Workbook, `sheets`, `shown`, and `picture` or
-`pictureNot` against one remembered. An object or a list compares in full where it is written, and a number
+`changes` (what a step, an undo or a redo changed on each Sheet it reached, by the Sheet's name), `refusal`
+(a `check`'s), `isUndone`, `ranges`, and `clockReads` (how often the step read the clock); of the Workbook,
+`sheets`, `shown`, `workbook` (its `culture`, `today`, `hasVolatileFormulas` and `linkedTables`), and
+`picture` or `pictureNot` against one remembered. An object or a list compares in full where it is written, and a number
 exactly (`-0` apart from `0`) unless it is `{"near", "within"}`.
 
 A step that throws is read as a refusal, `{"refusal": kind, "reason"?, "saying"?}`, by .NET's exception type

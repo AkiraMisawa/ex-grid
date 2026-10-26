@@ -1,0 +1,198 @@
+{
+  "about": "What the formula grammar reads and refuses (ADR-0047): one spelling in every culture, and what ExSheet cannot read is refused rather than guessed at. Transcribed from ExSheet.Engine.Tests' FormulaGrammarTests.",
+  "kind": "sheet",
+  "culture": "en-US",
+  "cases": [
+    {
+      "name": "ADR-0047: one spelling in every culture, ',' between arguments and '.' the decimal separator (de-DE)",
+      "culture": "de-DE",
+      "steps": [
+        {"enter": {"ZZ1000": "=1.5*2"}, "expect": {"values": {"ZZ1000": 3}, "entryTexts": {"ZZ1000": "=1.5*2"}}},
+        {"enter": {"A1": "=1,5*2"}, "expect": {"throws": {"refusal": "formulaSyntax"}, "entries": {"A1": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: one spelling in every culture, ',' between arguments and '.' the decimal separator (fr-FR)",
+      "culture": "fr-FR",
+      "steps": [
+        {"enter": {"ZZ1000": "=1.5*2"}, "expect": {"values": {"ZZ1000": 3}, "entryTexts": {"ZZ1000": "=1.5*2"}}},
+        {"enter": {"A1": "=1,5*2"}, "expect": {"throws": {"refusal": "formulaSyntax"}, "entries": {"A1": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: one spelling in every culture, ',' between arguments and '.' the decimal separator (ja-JP)",
+      "culture": "ja-JP",
+      "steps": [
+        {"enter": {"ZZ1000": "=1.5*2"}, "expect": {"values": {"ZZ1000": 3}, "entryTexts": {"ZZ1000": "=1.5*2"}}},
+        {"enter": {"A1": "=1,5*2"}, "expect": {"throws": {"refusal": "formulaSyntax"}, "entries": {"A1": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: one spelling in every culture, ',' between arguments and '.' the decimal separator (en-US)",
+      "culture": "en-US",
+      "steps": [
+        {"enter": {"ZZ1000": "=1.5*2"}, "expect": {"values": {"ZZ1000": 3}, "entryTexts": {"ZZ1000": "=1.5*2"}}},
+        {"enter": {"A1": "=1,5*2"}, "expect": {"throws": {"refusal": "formulaSyntax"}, "entries": {"A1": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: what ExSheet cannot read is refused, never guessed at: =1+",
+      "steps": [
+        {"enter": {"A1": "=1+"}, "expect": {"throws": {"refusal": "formulaSyntax"}, "entries": {"A1": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: what ExSheet cannot read is refused, never guessed at: =(1",
+      "steps": [
+        {"enter": {"A1": "=(1"}, "expect": {"throws": {"refusal": "formulaSyntax"}, "entries": {"A1": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: what ExSheet cannot read is refused, never guessed at: =1)",
+      "steps": [
+        {"enter": {"A1": "=1)"}, "expect": {"throws": {"refusal": "formulaSyntax"}, "entries": {"A1": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: what ExSheet cannot read is refused, never guessed at: =A1 B1",
+      "note": "intersection is not read",
+      "steps": [
+        {"enter": {"A1": "=A1 B1"}, "expect": {"throws": {"refusal": "formulaSyntax"}, "entries": {"A1": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: what ExSheet cannot read is refused, never guessed at: =(A1,B1)",
+      "note": "union is not read",
+      "steps": [
+        {"enter": {"A1": "=(A1,B1)"}, "expect": {"throws": {"refusal": "formulaSyntax"}, "entries": {"A1": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: what ExSheet cannot read is refused, never guessed at: ={1,2}",
+      "note": "array constants are not read",
+      "steps": [
+        {"enter": {"A1": "={1,2}"}, "expect": {"throws": {"refusal": "formulaSyntax"}, "entries": {"A1": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: what ExSheet cannot read is refused, never guessed at: =\"open",
+      "steps": [
+        {"enter": {"A1": "=\"open"}, "expect": {"throws": {"refusal": "formulaSyntax"}, "entries": {"A1": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: what ExSheet cannot read is refused, never guessed at: =#BOGUS!",
+      "steps": [
+        {"enter": {"A1": "=#BOGUS!"}, "expect": {"throws": {"refusal": "formulaSyntax"}, "entries": {"A1": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: what ExSheet cannot read is refused, never guessed at: =#GETTING_DATA",
+      "steps": [
+        {"enter": {"A1": "=#GETTING_DATA"}, "expect": {"throws": {"refusal": "formulaSyntax"}, "entries": {"A1": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: what ExSheet cannot read is refused, never guessed at: =#CIRC!",
+      "steps": [
+        {"enter": {"A1": "=#CIRC!"}, "expect": {"throws": {"refusal": "formulaSyntax"}, "entries": {"A1": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: what ExSheet cannot read is refused, never guessed at: =A1:B",
+      "steps": [
+        {"enter": {"A1": "=A1:B"}, "expect": {"throws": {"refusal": "formulaSyntax"}, "entries": {"A1": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: what ExSheet cannot read is refused, never guessed at: =Positions[#All]",
+      "steps": [
+        {"enter": {"A1": "=Positions[#All]"}, "expect": {"throws": {"refusal": "formulaSyntax"}, "entries": {"A1": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: what ExSheet cannot read is refused, never guessed at: =Positions[@PV]",
+      "steps": [
+        {"enter": {"A1": "=Positions[@PV]"}, "expect": {"throws": {"refusal": "formulaSyntax"}, "entries": {"A1": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: what ExSheet cannot read is refused, never guessed at: =Positions[]",
+      "steps": [
+        {"enter": {"A1": "=Positions[]"}, "expect": {"throws": {"refusal": "formulaSyntax"}, "entries": {"A1": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: what ExSheet cannot read is refused, never guessed at: =1E999",
+      "steps": [
+        {"enter": {"A1": "=1E999"}, "expect": {"throws": {"refusal": "formulaSyntax"}, "entries": {"A1": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: what ExSheet cannot read is refused, never guessed at: =*2",
+      "steps": [
+        {"enter": {"A1": "=*2"}, "expect": {"throws": {"refusal": "formulaSyntax"}, "entries": {"A1": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0047, second run: an intersection with a name in it is read, as Excel reads it typed, and is #NAME?: =- item one",
+      "steps": [
+        {"enter": {"B5": "=- item one"}, "expect": {"formulas": {"B5": "=- item one"}, "values": {"B5": {"error": "#NAME?"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047, second run: an intersection with a name in it is read, as Excel reads it typed, and is #NAME?: =item one",
+      "steps": [
+        {"enter": {"B5": "=item one"}, "expect": {"formulas": {"B5": "=item one"}, "values": {"B5": {"error": "#NAME?"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047, second run: an intersection with a name in it is read, as Excel reads it typed, and is #NAME?: =a1 total",
+      "steps": [
+        {"enter": {"B5": "=a1 total"}, "expect": {"formulas": {"B5": "=A1 total"}, "values": {"B5": {"error": "#NAME?"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047, second run: an intersection with a name in it is read, as Excel reads it typed, and is #NAME?: =total A1:B2",
+      "steps": [
+        {"enter": {"B5": "=total A1:B2"}, "expect": {"formulas": {"B5": "=total A1:B2"}, "values": {"B5": {"error": "#NAME?"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047, second run: an intersection with a name in it is read, as Excel reads it typed, and is #NAME?: =item one two",
+      "steps": [
+        {"enter": {"B5": "=item one two"}, "expect": {"formulas": {"B5": "=item one two"}, "values": {"B5": {"error": "#NAME?"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047, second run: an intersection with a name in it is read, as Excel reads it typed, and is #NAME?: =item one%",
+      "steps": [
+        {"enter": {"B5": "=item one%"}, "expect": {"formulas": {"B5": "=item one%"}, "values": {"B5": {"error": "#NAME?"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: the intersection of two References, or with what is no Reference, is still not read: =A1 B1 total",
+      "steps": [
+        {"enter": {"A1": "=A1 B1 total"}, "expect": {"throws": {"refusal": "formulaSyntax"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: the intersection of two References, or with what is no Reference, is still not read: =A1 TRUE",
+      "steps": [
+        {"enter": {"A1": "=A1 TRUE"}, "expect": {"throws": {"refusal": "formulaSyntax"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: the intersection of two References, or with what is no Reference, is still not read: =item SUM(A1)",
+      "steps": [
+        {"enter": {"A1": "=item SUM(A1)"}, "expect": {"throws": {"refusal": "formulaSyntax"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: the intersection of two References, or with what is no Reference, is still not read: =item 1",
+      "steps": [
+        {"enter": {"A1": "=item 1"}, "expect": {"throws": {"refusal": "formulaSyntax"}}}
+      ]
+    }
+  ]
+}
