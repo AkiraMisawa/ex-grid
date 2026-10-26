@@ -55,6 +55,7 @@ public static class Interpolate
     public static Interpolant1D Linear(IReadOnlyList<double> xs, IReadOnlyList<double> ys)
     {
         Check(xs, ys.Count, 2);
+        Finite(ys);
         var x = xs.ToArray();
         var y = ys.ToArray();
         return new Interpolant1D("linear", x[0], x[^1], t =>
@@ -70,6 +71,7 @@ public static class Interpolate
     public static Interpolant1D NaturalCubicSpline(IReadOnlyList<double> xs, IReadOnlyList<double> ys)
     {
         Check(xs, ys.Count, 3);
+        Finite(ys);
         var x = xs.ToArray();
         var y = ys.ToArray();
         var m = SecondDerivatives(x, y);
@@ -90,10 +92,14 @@ public static class Interpolate
     /// </summary>
     public static Interpolant2D Bilinear(IReadOnlyList<double> xs, IReadOnlyList<double> ys, IReadOnlyList<IReadOnlyList<double?>> z)
     {
-        Check(xs, xs.Count, 2);
-        Check(ys, ys.Count, 2);
+        Check(xs, xs.Count, 2, "X position");
+        Check(ys, ys.Count, 2, "Y position");
         if (z.Count != ys.Count || z.Any(r => r.Count != xs.Count))
             throw new ArgumentException("The table needs one row per y value, each with one value per x value.", nameof(z));
+        for (var j = 0; j < z.Count; j++)
+            for (var i = 0; i < xs.Count; i++)
+                if (z[j][i] is { } value && !double.IsFinite(value))
+                    throw new ArgumentException($"The table's value in row {j}, column {i} is not a finite number; a missing value is null.", nameof(z));
         var x = xs.ToArray();
         var y = ys.ToArray();
         return new Interpolant2D("bilinear", x[0], x[^1], y[0], y[^1], (u, v) =>
@@ -119,6 +125,9 @@ public static class Interpolate
         foreach (var (a, b, c) in triangles)
             if (new[] { a, b, c }.Any(k => k < 0 || k >= points.Count))
                 throw new ArgumentException("A triangle names a point the mesh does not hold.", nameof(triangles));
+        for (var k = 0; k < points.Count; k++)
+            if (!double.IsFinite(points[k].X) || !double.IsFinite(points[k].Y) || !double.IsFinite(points[k].Z))
+                throw new ArgumentException($"Point {k} is not a finite number.", nameof(points));
         var p = points.ToArray();
         var t = triangles.ToArray();
         return new Interpolant2D("linear on triangles (P1)", p.Min(q => q.X), p.Max(q => q.X), p.Min(q => q.Y), p.Max(q => q.Y), (u, v) =>
@@ -138,12 +147,22 @@ public static class Interpolate
         });
     }
 
-    private static void Check(IReadOnlyList<double> xs, int count, int least)
+    private static void Check(IReadOnlyList<double> xs, int count, int least, string position = "Position")
     {
         if (xs.Count != count) throw new ArgumentException("Each position needs one value.");
         if (xs.Count < least) throw new ArgumentException($"The method needs {least} points at least.");
+        for (var k = 0; k < xs.Count; k++)
+            if (!double.IsFinite(xs[k])) throw new ArgumentException($"{position} {k} is not a finite number.");
         for (var k = 1; k < xs.Count; k++)
             if (!(xs[k - 1] < xs[k])) throw new ArgumentException("The positions must be strictly increasing.");
+    }
+
+    // A value that is no number would spread to every interval a spline or a line reads it in, so it is
+    // refused by its place rather than drawn (spine rule 1).
+    private static void Finite(IReadOnlyList<double> ys)
+    {
+        for (var k = 0; k < ys.Count; k++)
+            if (!double.IsFinite(ys[k])) throw new ArgumentException($"Value {k} is not a finite number.");
     }
 
     // The interval [x[k], x[k+1]] that holds t, which lies within x[0]..x[^1].

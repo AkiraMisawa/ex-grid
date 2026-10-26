@@ -200,7 +200,15 @@ export function fitTheilSen(xs: readonly number[], ys: readonly number[], space:
         for (let j = i + 1; j < x.length; j++) {
             const xj = elementAt(x, j);
             if (xi !== xj) {
-                slopes.push((elementAt(y, j) - yi) / (xj - xi));
+                const run = xj - xi;
+                const between = (elementAt(y, j) - yi) / run;
+                // A slope past what a double holds would sort to an end and pass as a median or not by chance, and
+                // a run past it reads as a slope of zero, so either is refused by the pair rather than weighed
+                // (spine rule 1).
+                if (!Number.isFinite(run) || !Number.isFinite(between)) {
+                    throw new TypeError(`Points ${String(i)} and ${String(j)} lie too far apart for the slope between them to be a finite number.`);
+                }
+                slopes.push(between);
             }
         }
     }
@@ -236,11 +244,40 @@ function fitted(xs: readonly number[], ys: readonly number[], degree: number, sp
         }
     }
     const scaled = solveLeastSquares(a, x.length, n, y);
-    return curve(method, unscale(scaled, mid, half), x, y, xs, space);
+    const c = unscale(scaled, mid, half);
+    kept(scaled, c, x, y, mid, half, degree, space);
+    return curve(method, c, x, y, xs, space, true);
+}
+
+// Coefficients in powers of x far from zero cancel one another, and past a degree they no longer say the curve
+// that was fitted in centred x: the fitted values at the points are compared, and a curve that has lost them is
+// refused, never handed back as plausible coefficients (spine rule 1). A millionth of the values' spread is a loss
+// a reader could see; a few dozen units in the last place of the largest value is rounding the values themselves
+// carry, so a line through large values close together still fits.
+function kept(scaled: readonly number[], c: readonly number[], x: readonly number[], y: readonly number[], mid: number, half: number, degree: number, space: FitSpace): void {
+    const tolerance = Math.max(1e-6 * (greatest(y) - least(y)), 64 * Number.EPSILON * greatest(y.map(v => Math.abs(v))));
+    for (const xi of x) {
+        let inT = 0;
+        let inX = 0;
+        const t = (xi - mid) / half;
+        for (let k = c.length - 1; k >= 0; k--) {
+            inT = inT * t + elementAt(scaled, k);
+            inX = inX * xi + elementAt(c, k);
+        }
+        if (!Number.isFinite(inT) || !Number.isFinite(inX) || !Number.isFinite(tolerance)) {
+            throw overflow();
+        }
+        if (!(Math.abs(inT - inX) <= tolerance)) {
+            throw new TypeError(space === 'logLog'
+                // On ln x, dividing x by a constant is what moves the centre to zero.
+                ? `A polynomial of degree ${String(degree)} on ln x near ${roundTrip(mid)} cannot be written in powers of ln x without losing its fit; fit it on x ÷ ${roundTrip(Math.exp(mid))} instead.`
+                : `A polynomial of degree ${String(degree)} on x near ${roundTrip(mid)} cannot be written in powers of x without losing its fit; fit it on x − ${roundTrip(mid)} instead.`);
+        }
+    }
 }
 
 // R² over the points in the space the fit was made in, the curve's range over the points as handed in.
-function curve(method: string, c: readonly number[], x: readonly number[], y: readonly number[], xs: readonly number[], space: FitSpace): FittedCurve {
+function curve(method: string, c: readonly number[], x: readonly number[], y: readonly number[], xs: readonly number[], space: FitSpace, leastSquares = false): FittedCurve {
     // A mean as .NET's Average takes it: summed in order, then divided.
     let sum = 0;
     for (const v of y) {
@@ -259,8 +296,19 @@ function curve(method: string, c: readonly number[], x: readonly number[], y: re
         res += (yi - f) * (yi - f);
         tot += (yi - mean) * (yi - mean);
     }
-    const rSquared = tot === 0 ? (res === 0 ? 1 : 0) : 1 - res / tot;
+    // Sums past what a double holds would read as an R² of 1 or, clamped, of 0.
+    if (c.some(v => !Number.isFinite(v)) || !Number.isFinite(res) || !Number.isFinite(tot)) {
+        throw overflow();
+    }
+    const explained = tot === 0 ? (res === 0 ? 1 : 0) : 1 - res / tot;
+    // Least squares with a constant does no worse than the mean, so its R² is never below zero; a value below is
+    // rounding, which would read `R² = -0.00` (Theil–Sen's may truly be below).
+    const rSquared = leastSquares ? Math.max(explained, 0) : explained;
     return new FittedCurve({ method, coefficients: c, rSquared, count: x.length, from: least(xs), to: greatest(xs), space });
+}
+
+function overflow(): TypeError {
+    return new TypeError('The fit overflows at these values: its coefficients or its R² are not finite numbers.');
 }
 
 // The points in the space the fit is made in: ln y, and ln x for a power law. A value a logarithm cannot take
