@@ -508,7 +508,11 @@ internal sealed class Run(CultureInfo culture)
                 Workbook = argument switch
                 {
                     // One Sheet saved as a Sheet Document, opened as a Workbook of that one Sheet.
-                    JsonObject one => Workbook.Open(Workbook.ToDocument((string)one["sheet"]!)),
+                    JsonObject { Count: 1 } one when one["sheet"] is { } name => Workbook.Open(Workbook.ToDocument((string)name!)),
+                    // A document's JSON as the case writes it, read and opened.
+                    JsonObject { Count: 1 } one when one["sheetJson"] is { } json => Workbook.Open(SheetDocument.FromJson((string)json!)),
+                    JsonObject { Count: 1 } one when one["workbookJson"] is { } json => Workbook.Open(WorkbookDocument.FromJson((string)json!)),
+                    JsonObject other => throw new InvalidDataException($"{other.ToJsonString()} is no way to reopen a Workbook."),
                     _ => (string)argument! switch
                     {
                         "document" => Workbook.Open(Workbook.ToDocument()),

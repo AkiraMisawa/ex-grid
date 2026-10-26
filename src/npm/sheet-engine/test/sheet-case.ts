@@ -17,7 +17,7 @@ import { NumberFormat } from '../src/number-format';
 import type { FillDirection, Sheet, SheetCopy } from '../src/sheet';
 import { RepeatedKeyError, SheetRefusedError, type SheetChange, type SheetRefusal } from '../src/sheet-change';
 import { SheetDocumentError, type SheetDocumentAxisFormat } from '../src/sheet-document-parts';
-import type { SheetDocument } from '../src/sheet-document';
+import { SheetDocument } from '../src/sheet-document';
 import { SheetEdit } from '../src/sheet-edit';
 import { parseWrittenError, Value } from '../src/value';
 import { Workbook, type WorkbookChange, type WorkbookStep } from '../src/workbook';
@@ -408,6 +408,15 @@ class Run {
         for (const [key, value] of Object.entries(expect)) this.#read(where, key, value, outcome);
     }
 
+    /** A Workbook opened from one Sheet saved as a Sheet Document, or from a document's JSON as the case writes it. */
+    #reopened(argument: JsonObject): Workbook {
+        const keys = Object.keys(argument);
+        if (keys.length === 1 && argument['sheet'] !== undefined) return Workbook.open(this.workbook.toSheetDocument(text(argument['sheet'], 'reopen.sheet')));
+        if (keys.length === 1 && argument['sheetJson'] !== undefined) return Workbook.open(SheetDocument.fromJson(text(argument['sheetJson'], 'reopen.sheetJson')));
+        if (keys.length === 1 && argument['workbookJson'] !== undefined) return Workbook.open(WorkbookDocument.fromJson(text(argument['workbookJson'], 'reopen.workbookJson')));
+        throw new CaseError(`${JSON.stringify(argument)} is no way to reopen a Workbook.`);
+    }
+
     #act(verb: string, argument: Json, sheet: Sheet, outcome: Outcome): void {
         switch (verb) {
             case 'enter':
@@ -450,7 +459,7 @@ class Run {
             }
             case 'reopen':
                 // One Sheet saved as a Sheet Document, opened as a Workbook of that one Sheet.
-                if (isObject(argument)) this.workbook = Workbook.open(this.workbook.toSheetDocument(text(argument['sheet'], 'reopen.sheet')));
+                if (isObject(argument)) this.workbook = this.#reopened(argument);
                 else if (argument === 'document') this.workbook = Workbook.open(this.workbook.toDocument());
                 else if (argument === 'json') this.workbook = Workbook.open(WorkbookDocument.fromJson(this.workbook.toDocument().toJson()));
                 else throw new CaseError(`'${JSON.stringify(argument)}' is no way to reopen a Workbook.`);

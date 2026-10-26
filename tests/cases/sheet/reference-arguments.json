@@ -1,0 +1,272 @@
+{
+  "about": "The arguments Excel takes only as a Reference (ADR-0047; the seventeenth Windows run): Excel refuses SUBTOTAL(9,5), SUBTOTAL(9,SEQUENCE(3)), RANK.EQ(1,1) and AGGREGATE(14,6,A1:A11,1,2) on entry, and so does the engine. What can give a Reference is taken, and judged when it is computed. Transcribed from ExSheet.Engine.Tests' ReferenceArgumentTests.",
+  "kind": "sheet",
+  "culture": "en-US",
+  "cases": [
+    {
+      "name": "ADR-0047 (SUBTOTAL-029, SUBTOTAL-030, RANKEQ-005, AGGREGATE-040): what can never be a Reference is refused on entry where only a Reference is taken: =SUBTOTAL(9,5)",
+      "steps": [
+        {"enter": {"A5": "=SUBTOTAL(9,5)"}, "expect": {"throws": {"refusal": "formulaSyntax"}, "values": {"A5": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (SUBTOTAL-029, SUBTOTAL-030, RANKEQ-005, AGGREGATE-040): what can never be a Reference is refused on entry where only a Reference is taken: =SUBTOTAL(9,SEQUENCE(3))",
+      "steps": [
+        {"enter": {"A5": "=SUBTOTAL(9,SEQUENCE(3))"}, "expect": {"throws": {"refusal": "formulaSyntax"}, "values": {"A5": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (SUBTOTAL-029, SUBTOTAL-030, RANKEQ-005, AGGREGATE-040): what can never be a Reference is refused on entry where only a Reference is taken: =SUBTOTAL(9,\"A1:A3\")",
+      "steps": [
+        {"enter": {"A5": "=SUBTOTAL(9,\"A1:A3\")"}, "expect": {"throws": {"refusal": "formulaSyntax"}, "values": {"A5": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (SUBTOTAL-029, SUBTOTAL-030, RANKEQ-005, AGGREGATE-040): what can never be a Reference is refused on entry where only a Reference is taken: =SUBTOTAL(9,TRUE)",
+      "steps": [
+        {"enter": {"A5": "=SUBTOTAL(9,TRUE)"}, "expect": {"throws": {"refusal": "formulaSyntax"}, "values": {"A5": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (SUBTOTAL-029, SUBTOTAL-030, RANKEQ-005, AGGREGATE-040): what can never be a Reference is refused on entry where only a Reference is taken: =SUBTOTAL(9,A1:A3*1)",
+      "steps": [
+        {"enter": {"A5": "=SUBTOTAL(9,A1:A3*1)"}, "expect": {"throws": {"refusal": "formulaSyntax"}, "values": {"A5": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (SUBTOTAL-029, SUBTOTAL-030, RANKEQ-005, AGGREGATE-040): what can never be a Reference is refused on entry where only a Reference is taken: =SUBTOTAL(9,-A1:A3)",
+      "steps": [
+        {"enter": {"A5": "=SUBTOTAL(9,-A1:A3)"}, "expect": {"throws": {"refusal": "formulaSyntax"}, "values": {"A5": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (SUBTOTAL-029, SUBTOTAL-030, RANKEQ-005, AGGREGATE-040): what can never be a Reference is refused on entry where only a Reference is taken: =SUBTOTAL(9,A1:A3%)",
+      "steps": [
+        {"enter": {"A5": "=SUBTOTAL(9,A1:A3%)"}, "expect": {"throws": {"refusal": "formulaSyntax"}, "values": {"A5": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (SUBTOTAL-029, SUBTOTAL-030, RANKEQ-005, AGGREGATE-040): what can never be a Reference is refused on entry where only a Reference is taken: =SUBTOTAL(9,(5))",
+      "steps": [
+        {"enter": {"A5": "=SUBTOTAL(9,(5))"}, "expect": {"throws": {"refusal": "formulaSyntax"}, "values": {"A5": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (SUBTOTAL-029, SUBTOTAL-030, RANKEQ-005, AGGREGATE-040): what can never be a Reference is refused on entry where only a Reference is taken: =SUBTOTAL(9,A1:A3,SUM(A1:A3))",
+      "steps": [
+        {"enter": {"A5": "=SUBTOTAL(9,A1:A3,SUM(A1:A3))"}, "expect": {"throws": {"refusal": "formulaSyntax"}, "values": {"A5": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (SUBTOTAL-029, SUBTOTAL-030, RANKEQ-005, AGGREGATE-040): what can never be a Reference is refused on entry where only a Reference is taken: =SUBTOTAL(109,A1:A3,B1:B3,7)",
+      "steps": [
+        {"enter": {"A5": "=SUBTOTAL(109,A1:A3,B1:B3,7)"}, "expect": {"throws": {"refusal": "formulaSyntax"}, "values": {"A5": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (SUBTOTAL-029, SUBTOTAL-030, RANKEQ-005, AGGREGATE-040): what can never be a Reference is refused on entry where only a Reference is taken: =RANK.EQ(1,1)",
+      "steps": [
+        {"enter": {"A5": "=RANK.EQ(1,1)"}, "expect": {"throws": {"refusal": "formulaSyntax"}, "values": {"A5": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (SUBTOTAL-029, SUBTOTAL-030, RANKEQ-005, AGGREGATE-040): what can never be a Reference is refused on entry where only a Reference is taken: =RANK.EQ(1,SEQUENCE(3))",
+      "steps": [
+        {"enter": {"A5": "=RANK.EQ(1,SEQUENCE(3))"}, "expect": {"throws": {"refusal": "formulaSyntax"}, "values": {"A5": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (SUBTOTAL-029, SUBTOTAL-030, RANKEQ-005, AGGREGATE-040): what can never be a Reference is refused on entry where only a Reference is taken: =RANK.EQ(1,A1:A3+0,1)",
+      "steps": [
+        {"enter": {"A5": "=RANK.EQ(1,A1:A3+0,1)"}, "expect": {"throws": {"refusal": "formulaSyntax"}, "values": {"A5": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (SUBTOTAL-029, SUBTOTAL-030, RANKEQ-005, AGGREGATE-040): what can never be a Reference is refused on entry where only a Reference is taken: =AGGREGATE(14,6,A1:A3,1,2)",
+      "steps": [
+        {"enter": {"A5": "=AGGREGATE(14,6,A1:A3,1,2)"}, "expect": {"throws": {"refusal": "formulaSyntax"}, "values": {"A5": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (SUBTOTAL-029, SUBTOTAL-030, RANKEQ-005, AGGREGATE-040): what can never be a Reference is refused on entry where only a Reference is taken: =AGGREGATE(9,6,A1:A3,B1:B3,5)",
+      "steps": [
+        {"enter": {"A5": "=AGGREGATE(9,6,A1:A3,B1:B3,5)"}, "expect": {"throws": {"refusal": "formulaSyntax"}, "values": {"A5": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (SUBTOTAL-029, SUBTOTAL-030, RANKEQ-005, AGGREGATE-040): what can never be a Reference is refused on entry where only a Reference is taken: =SUM(1,SUBTOTAL(9,5))",
+      "steps": [
+        {"enter": {"A5": "=SUM(1,SUBTOTAL(9,5))"}, "expect": {"throws": {"refusal": "formulaSyntax"}, "values": {"A5": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (SUBTOTAL-029, SUBTOTAL-030, RANKEQ-005, AGGREGATE-040): what can never be a Reference is refused on entry where only a Reference is taken: =IF(TRUE,SUBTOTAL(9,5))",
+      "steps": [
+        {"enter": {"A5": "=IF(TRUE,SUBTOTAL(9,5))"}, "expect": {"throws": {"refusal": "formulaSyntax"}, "values": {"A5": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (SUBTOTAL-031, AGGREGATE-036, 039, 041): a Reference, and what can give one, is taken: =SUBTOTAL(9,A1:A3)",
+      "steps": [
+        {"enter": {"A5": "=SUBTOTAL(9,A1:A3)"}, "expect": {"values": {"A5": 0}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (SUBTOTAL-031, AGGREGATE-036, 039, 041): a Reference, and what can give one, is taken: =SUBTOTAL(9,(A1:A3))",
+      "steps": [
+        {"enter": {"A5": "=SUBTOTAL(9,(A1:A3))"}, "expect": {"values": {"A5": 0}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (SUBTOTAL-031, AGGREGATE-036, 039, 041): a Reference, and what can give one, is taken: =SUBTOTAL(9,A1:A3,B1:B3)",
+      "steps": [
+        {"enter": {"A5": "=SUBTOTAL(9,A1:A3,B1:B3)"}, "expect": {"values": {"A5": 0}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (SUBTOTAL-031, AGGREGATE-036, 039, 041): a Reference, and what can give one, is taken: =SUBTOTAL(9,OFFSET(A1,0,0,3,1))",
+      "steps": [
+        {"enter": {"A5": "=SUBTOTAL(9,OFFSET(A1,0,0,3,1))"}, "expect": {"values": {"A5": 0}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (SUBTOTAL-031, AGGREGATE-036, 039, 041): a Reference, and what can give one, is taken: =SUBTOTAL(9,INDIRECT(\"A1:A3\"))",
+      "steps": [
+        {"enter": {"A5": "=SUBTOTAL(9,INDIRECT(\"A1:A3\"))"}, "expect": {"values": {"A5": 0}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (SUBTOTAL-031, AGGREGATE-036, 039, 041): a Reference, and what can give one, is taken: =SUBTOTAL(9,INDEX(A1:B3,0,1))",
+      "steps": [
+        {"enter": {"A5": "=SUBTOTAL(9,INDEX(A1:B3,0,1))"}, "expect": {"values": {"A5": 0}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (SUBTOTAL-031, AGGREGATE-036, 039, 041): a Reference, and what can give one, is taken: =SUBTOTAL(9,CHOOSE(1,A1:A3,B1:B3))",
+      "steps": [
+        {"enter": {"A5": "=SUBTOTAL(9,CHOOSE(1,A1:A3,B1:B3))"}, "expect": {"values": {"A5": 0}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (SUBTOTAL-031, AGGREGATE-036, 039, 041): a Reference, and what can give one, is taken: =SUBTOTAL(9,IF(TRUE,A1:A3))",
+      "steps": [
+        {"enter": {"A5": "=SUBTOTAL(9,IF(TRUE,A1:A3))"}, "expect": {"values": {"A5": 0}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (SUBTOTAL-031, AGGREGATE-036, 039, 041): a Reference, and what can give one, is taken: =SUBTOTAL(9,IFS(TRUE,A1:A3))",
+      "steps": [
+        {"enter": {"A5": "=SUBTOTAL(9,IFS(TRUE,A1:A3))"}, "expect": {"values": {"A5": 0}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (SUBTOTAL-031, AGGREGATE-036, 039, 041): a Reference, and what can give one, is taken: =SUBTOTAL(9,SWITCH(1,1,A1:A3))",
+      "steps": [
+        {"enter": {"A5": "=SUBTOTAL(9,SWITCH(1,1,A1:A3))"}, "expect": {"values": {"A5": 0}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (SUBTOTAL-031, AGGREGATE-036, 039, 041): a Reference, and what can give one, is taken: =SUBTOTAL(9,XLOOKUP(1,A1:A3,B1:B3))",
+      "steps": [
+        {"enter": {"A5": "=SUBTOTAL(9,XLOOKUP(1,A1:A3,B1:B3))"}, "expect": {"values": {"A5": {"error": "#N/A"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (SUBTOTAL-031, AGGREGATE-036, 039, 041): a Reference, and what can give one, is taken: =SUBTOTAL(9,LET(r,A1:A3,r))",
+      "steps": [
+        {"enter": {"A5": "=SUBTOTAL(9,LET(r,A1:A3,r))"}, "expect": {"values": {"A5": 0}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (SUBTOTAL-031, AGGREGATE-036, 039, 041): a Reference, and what can give one, is taken: =LET(r,A1:A3,SUBTOTAL(9,r))",
+      "steps": [
+        {"enter": {"A5": "=LET(r,A1:A3,SUBTOTAL(9,r))"}, "expect": {"values": {"A5": 0}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (SUBTOTAL-031, AGGREGATE-036, 039, 041): a Reference, and what can give one, is taken: =SUBTOTAL(9,#REF!)",
+      "steps": [
+        {"enter": {"A5": "=SUBTOTAL(9,#REF!)"}, "expect": {"values": {"A5": {"error": "#REF!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (SUBTOTAL-031, AGGREGATE-036, 039, 041): a Reference, and what can give one, is taken: =SUBTOTAL(9,NOSUCHFUNCTION(1))",
+      "steps": [
+        {"enter": {"A5": "=SUBTOTAL(9,NOSUCHFUNCTION(1))"}, "expect": {"values": {"A5": {"error": "#NAME?"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (SUBTOTAL-031, AGGREGATE-036, 039, 041): a Reference, and what can give one, is taken: =SUBTOTAL(9,nosuchname)",
+      "steps": [
+        {"enter": {"A5": "=SUBTOTAL(9,nosuchname)"}, "expect": {"values": {"A5": {"error": "#NAME?"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (SUBTOTAL-031, AGGREGATE-036, 039, 041): a Reference, and what can give one, is taken: =RANK.EQ(1,A1:A3)",
+      "steps": [
+        {"enter": {"A5": "=RANK.EQ(1,A1:A3)"}, "expect": {"values": {"A5": {"error": "#N/A"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (SUBTOTAL-031, AGGREGATE-036, 039, 041): a Reference, and what can give one, is taken: =RANK.EQ(A1*1,A1:A3,1)",
+      "steps": [
+        {"enter": {"A5": "=RANK.EQ(A1*1,A1:A3,1)"}, "expect": {"values": {"A5": {"error": "#N/A"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (SUBTOTAL-031, AGGREGATE-036, 039, 041): a Reference, and what can give one, is taken: =AGGREGATE(9,6,A1:A3*1)",
+      "steps": [
+        {"enter": {"A5": "=AGGREGATE(9,6,A1:A3*1)"}, "expect": {"values": {"A5": {"error": "#VALUE!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (SUBTOTAL-031, AGGREGATE-036, 039, 041): a Reference, and what can give one, is taken: =AGGREGATE(14,6,5,1)",
+      "steps": [
+        {"enter": {"A5": "=AGGREGATE(14,6,5,1)"}, "expect": {"values": {"A5": 5}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (SUBTOTAL-031, AGGREGATE-036, 039, 041): a Reference, and what can give one, is taken: =AGGREGATE(14,6,A1:A3*2,1.5)",
+      "steps": [
+        {"enter": {"A5": "=AGGREGATE(14,6,A1:A3*2,1.5)"}, "expect": {"values": {"A5": 0}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (SUBTOTAL-031, AGGREGATE-036, 039, 041): a Reference, and what can give one, is taken: =AGGREGATE(9,6,B1:B3,5)",
+      "steps": [
+        {"enter": {"A5": "=AGGREGATE(9,6,B1:B3,5)"}, "expect": {"values": {"A5": {"error": "#VALUE!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (SUBTOTAL-031, AGGREGATE-036, 039, 041): a Reference, and what can give one, is taken: =AGGREGATE(14,6,A1:A3,1,B1:B3)",
+      "steps": [
+        {"enter": {"A5": "=AGGREGATE(14,6,A1:A3,1,B1:B3)"}, "expect": {"values": {"A5": {"error": "#VALUE!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (SUBTOTAL-031, AGGREGATE-036, 039, 041): a Reference, and what can give one, is taken: =SUBTOTAL(9+0,A1:A3)",
+      "steps": [
+        {"enter": {"A5": "=SUBTOTAL(9+0,A1:A3)"}, "expect": {"values": {"A5": 0}}}
+      ]
+    },
+    {
+      "name": "ADR-0047, ADR-0048: a deletion that takes a Reference away leaves #REF! where only a Reference is taken, and the Formula is kept",
+      "steps": [
+        {"enter": {"B1": "1", "A1": "=SUBTOTAL(9,B1:B3)", "A2": "=RANK.EQ(1,B1:B3)"}},
+        {"do": {"deleteColumns": [1]}, "expect": {"formulas": {"A1": "=SUBTOTAL(9,#REF!)"}, "values": {"A1": {"error": "#REF!"}, "A2": {"error": "#REF!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047, ADR-0048: a Sheet Document holding a Formula Excel refuses on entry is refused when it is read, naming the Formula",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":9,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"cells\":[{\"at\":\"A1\",\"formula\":\"=SUBTOTAL(9,5)\"}]}"}, "expect": {"throws": {"refusal": "document", "saying": "The Formula '=SUBTOTAL(9,5)' cannot be read at position 1: SUBTOTAL takes only a Reference as its argument 2."}}}
+      ]
+    },
+    {
+      "name": "ADR-0047, ADR-0048: pasted, a Formula Excel refuses on entry is text, as a pasted Formula that cannot be read is",
+      "steps": [
+        {"do": {"pasteText": {"fields": [["=SUBTOTAL(9,5)"]], "at": "A1"}}, "expect": {"values": {"A1": "=SUBTOTAL(9,5)"}}}
+      ]
+    }
+  ]
+}
