@@ -14,7 +14,7 @@ import { findInReport } from '../src/report-find';
 import { browserPivotLocale } from '../src/browser-locale';
 import { defined, elementAt } from '../src/must';
 import type { PivotShowDetailsEvent } from '../src/details';
-import { PivotView, type PivotSelectionChangedEvent, type PivotViewOptions } from '../src/pivot-view';
+import { PivotView, type PivotFailedEvent, type PivotSelectionChangedEvent, type PivotViewOptions } from '../src/pivot-view';
 
 interface Trade {
     readonly region: string;
@@ -527,14 +527,25 @@ describe('ExPivot\'s copy (ADR-0152)', () => {
     });
 });
 
-/** A server's source whose data the test moves: each move is told over the transport as a `changed` notice. */
-function liveServer(): { readonly source: FetchingPivotSource; readonly asked: () => number; readonly move: (moved: readonly Trade[]) => void } {
+/** A server's source whose data the test moves: each move is told over the transport as a `changed` notice, unless
+ * it is made quietly, as a server whose push was lost. */
+function liveServer(): {
+    readonly source: FetchingPivotSource; readonly asked: () => number; readonly move: (moved: readonly Trade[], quietly?: boolean) => void;
+    /** Whether the server fails each question from now. */
+    readonly fail: (failing: boolean) => void;
+    /** Holds each question from now until the function returned is called. */
+    readonly hold: () => () => void;
+} {
     let behind = local();
     let asked = 0;
+    let failing = false;
+    let held: Promise<void> | undefined;
     const listeners = new Set<(notice: PivotServerNotice) => void>();
     const source = new FetchingPivotSource(behind.fields, new PivotSourceFeatures(['sum', 'count'], false, true), {
-        aggregate: (query, signal) => {
+        aggregate: async (query, signal) => {
             asked++;
+            await held;
+            if (failing) throw new Error('The server is down.');
             return behind.aggregate(query, signal);
         },
         details: (query, signal) => behind.details(query, signal),
@@ -548,11 +559,27 @@ function liveServer(): { readonly source: FetchingPivotSource; readonly asked: (
     return {
         source,
         asked: () => asked,
-        move: moved => {
+        move: (moved, quietly = false) => {
             behind = new RecordPivotSource(moved, fields);
-            for (const notify of listeners) notify({ kind: 'changed' });
+            if (!quietly) for (const notify of listeners) notify({ kind: 'changed' });
+        },
+        fail: now => { failing = now; },
+        hold: () => {
+            const gate: { open?: () => void } = {};
+            held = new Promise(resolve => { gate.open = resolve; });
+            return () => {
+                held = undefined;
+                defined(gate.open, 'the gate')();
+            };
         },
     };
+}
+
+/** The one element `selector` finds in the pivot. */
+function shownIn(root: HTMLElement, selector: string): HTMLElement {
+    const found = root.querySelector<HTMLElement>(selector);
+    if (found === null) throw new Error(`The pivot shows no '${selector}'.`);
+    return found;
 }
 
 describe('ExPivot\'s live data (ADR-0067)', () => {
@@ -609,6 +636,69 @@ describe('ExPivot\'s live data (ADR-0067)', () => {
         const shown = defined(grid.current.source, 'the report rows');
         await vi.advanceTimersByTimeAsync(1000);
         expect([live.asked(), grid.current.source]).toEqual([asked, shown]);
+    });
+
+    it('ADR-0067: newer data the report cannot show leaves a Stale Report: the notice says as of when and why, the numbers are muted, Copy is refused, and Retry ends it', async () => {
+        const live = liveServer();
+        const { root, grid } = mount({ source: live.source, layout: byRegion, redrawInterval: 0, maxLeaves: 2, locale: 'en-US' });
+        await settled();
+        expect(root.querySelector('.ex-pivot-stale')?.getAttribute('role')).toBe('status');
+        expect(root.querySelector('.ex-pivot-stale-notice')).toBeNull();
+        // A third Region: three leaves past the cap of two.
+        live.move([...trades, { region: 'JP', desk: 'FX', amount: 100 }]);
+        await settled();
+        const message = shownIn(root, '.ex-pivot-stale-message').textContent;
+        expect(message).toMatch(/^Showing the data as of \d{1,2}:\d{2}:\d{2}\s?[AP]M: the newest data needs more than 2 cells\.$/u);
+        expect(root.querySelector('.ex-pivot-report')?.classList.contains('ex-pivot-report-stale')).toBe(true);
+        expect(root.querySelector('.ex-pivot-refusal-notice')?.textContent).toBe('');
+        expect(await grid.texts()).toEqual([['EU', '30'], ['US', '12'], ['Grand Total', '42']]);
+        const answer = defined(grid.current.copyAnswerAsync, 'the copy answer');
+        const version = defined(grid.current.source, 'the report rows').snapshot().rowSequenceVersion;
+        const plan = Object.freeze({ segments: [{ topRow: 0, leftColumn: 1, rowCount: 1, columnCount: 1 }], orientation: 'vertical', totalRows: 1, totalColumns: 1 } as const);
+        const copied = await answer({ plan, withHeaders: false, rowSequenceVersion: version }, new AbortController().signal);
+        expect(copied.kind === 'refuse' ? copied.sentence : copied.text).toMatch(/^The report shows the data as of .+: Retry before copying\.$/u);
+
+        // The data comes back under the cap with no notice: Retry asks for it.
+        live.move(trades, true);
+        await settled();
+        expect(root.querySelector('.ex-pivot-report')?.classList.contains('ex-pivot-report-stale')).toBe(true);
+        const retry = shownIn(root, '.ex-pivot-retry');
+        expect(retry.textContent).toBe('Retry');
+        retry.click();
+        await settled();
+        expect(root.querySelector('.ex-pivot-stale-notice')).toBeNull();
+        expect(root.querySelector('.ex-pivot-report')?.classList.contains('ex-pivot-report-stale')).toBe(false);
+    });
+
+    it('ADR-0067: a source that fails on newer data leaves a Stale Report; Retry stays offered while a quiet redraw is out, asks the report again, and keeps the keyboard in the pivot', async () => {
+        const live = liveServer();
+        const failed: PivotFailedEvent[] = [];
+        const { root } = mount({ source: live.source, layout: byRegion, redrawInterval: 0, locale: 'en-US', onFailed: event => { failed.push(event); } });
+        await settled();
+        live.fail(true);
+        live.move([...trades, { region: 'US', desk: 'FX', amount: 100 }]);
+        await settled();
+        expect(shownIn(root, '.ex-pivot-stale-message').textContent).toMatch(/: the source could not answer: The server is down\.$/u);
+        expect(failed.map(event => [event.error instanceof Error ? event.error.message : event.error, event.stale])).toEqual([['The server is down.', true]]);
+        expect(root.querySelector('.ex-pivot-refusal-notice')?.textContent).toBe('');
+
+        // A notice's redraw is asked quietly: the pivot is not busy, and Retry is still offered.
+        live.fail(false);
+        const release = live.hold();
+        live.move([...trades, { region: 'US', desk: 'FX', amount: 200 }]);
+        await settled();
+        const retry = shownIn(root, '.ex-pivot-retry') as HTMLButtonElement;
+        expect([root.getAttribute('aria-busy'), retry.disabled]).toEqual([null, false]);
+        retry.focus();
+        retry.click();
+        await settled();
+        // Retry's own question is under the loading indication, and the keyboard Retry held goes to the toggle beside it.
+        expect([root.getAttribute('aria-busy'), retry.disabled]).toEqual(['true', true]);
+        expect(document.activeElement?.classList.contains('ex-pivot-field-list-toggle')).toBe(true);
+        release();
+        await settled();
+        expect(root.querySelector('.ex-pivot-stale-notice')).toBeNull();
+        expect(root.getAttribute('aria-busy')).toBeNull();
     });
 
     it('ADR-0067: a source handed over is no longer heard, and a destroyed pivot hears nothing', async () => {

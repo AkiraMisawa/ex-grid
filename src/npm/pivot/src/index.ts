@@ -10,6 +10,6 @@ export { createPivot } from './create-pivot';
 export type { PivotDetailItem, PivotDetailsView, PivotShowDetailsEvent } from './details';
 export type { PivotHandle } from './create-pivot';
 export type {
-    PivotFieldListShownEvent, PivotLayoutChangedEvent, PivotRefusedEvent, PivotSelectionChangedEvent, PivotViewOptions,
+    PivotFailedEvent, PivotFieldListShownEvent, PivotLayoutChangedEvent, PivotRefusedEvent, PivotSelectionChangedEvent, PivotViewOptions,
 } from './pivot-view';
 export type { PivotCellItems } from './report-grid';
