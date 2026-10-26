@@ -29,7 +29,7 @@ import { ColumnGeometry, type ColumnRange } from '../columns/column-geometry';
 import { HeaderGroup, HeaderGroupLayout, type ResolvedHeaderGroup } from '../columns/header-groups';
 import { reorderColumns } from '../columns/header-reorder';
 import { decideOverflow } from '../columns/overflow-rules';
-import { rawText, textFor } from '../cells/display-text';
+import { entryFor, rawText, textFor } from '../cells/display-text';
 import { checkedVerdict, GridEditIntent, type EditDiscardReason, type EditVerdict, type GridOverwriteNotice } from '../cells/edit-intent';
 import { GridMetrics, type GridDensity } from '../grid-metrics';
 import { matcherOf, patternOf, type GridFindPattern, type GridFindRequest, type GridFindResult } from '../finding/find';
@@ -3187,7 +3187,16 @@ export class GridView<Row> {
         const declared = this.#cellPaint.editorText;
         const held = declared === undefined ? undefined : this.#rowAt(at.row);
         const text = declared === undefined || held === undefined ? undefined : declared(held.row, itemAt(this.#columns, at.column).column);
-        return text ?? this.#paintedTextAt(at);
+        return text ?? this.#entryAt(at);
+    }
+
+    // The entry a cell holds where the Consumer declares none: the painted text, or an unformatted number whole
+    // (ADR-0006, note of 2026-10-26).
+    #entryAt(at: CellPosition): string {
+        const held = this.#rowAt(at.row);
+        if (held === undefined) return '';
+        const { column } = itemAt(this.#columns, at.column);
+        return entryFor(column, column.value(held.row));
     }
 
     // The text a cell paints: what an edit opens on in Caret, and what a commit is told it saw and replaced.

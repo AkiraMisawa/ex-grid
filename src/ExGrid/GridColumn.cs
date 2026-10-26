@@ -304,13 +304,16 @@ public sealed record GridColumn<TRow>
     /// <summary>
     /// The column's display format (ADR-0006): the text a non-null value paints as, or
     /// null for the value's own text — a date or a time in one ISO form by its type, in the
-    /// invariant culture (ADR-0006, note of 2026-10-01), anything else its own
+    /// invariant culture (ADR-0006, note of 2026-10-01), a <see cref="double"/> in at most 15
+    /// significant digits as Excel's General shows it (note of 2026-10-26), anything else its own
     /// <c>ToString()</c>. A null value paints empty either way —
     /// an absent value is a Cell State, not a format's business. This is the ONE text the
     /// grid shows for a value, so it is also what copy puts in <c>text/plain</c>, what the
     /// value list offers, what the Auto width estimates over and what the editor opens
-    /// with (ADR-0005/0016); the raw, locale-free <c>text/html</c> form never goes through
-    /// it. The Consumer's delegate owns the culture: the grid takes no view on separators.
+    /// with (ADR-0005/0016) — except that with no Format the editor opens on a
+    /// <see cref="double"/> whole, so an unchanged commit never writes the rounded digits back;
+    /// the raw, locale-free <c>text/html</c> form never goes through it. The Consumer's delegate
+    /// owns the culture: the grid takes no view on separators.
     /// </summary>
     public Func<object, string>? Format => Info.Format;
 

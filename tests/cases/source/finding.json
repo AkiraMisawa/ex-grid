@@ -115,6 +115,15 @@
       ]
     },
     {
+      "name": "ADR-0006 / ADR-0332 §2: without a format a number's entry is whole, so a Replace keeps the digits its 15 shown ones leave out",
+      "rows": [["Alpha", "Ishikawa", 1234.5678901234567], ["Beta", "Novak", 0.30000000000000004]],
+      "steps": [
+        {"setColumns": true},
+        {"replace": {"text": "1234.", "replacement": "4321.", "columns": ["Notional"], "editable": ["Notional"]}, "answers": {"count": 1, "changes": 1}},
+        {"expect": {"values": [["Alpha", "Ishikawa", 4321.5678901234567], ["Beta", "Novak", 0.30000000000000004]]}}
+      ]
+    },
+    {
       "name": "ADR-0332 §3 / ADR-0141: under a Row Key, the rewritten rows reach the grid as one user's write",
       "rowKey": "Book",
       "rows": [["A", "Novak", 1], ["B", "novak", 2], ["C", "Osei", 3]],

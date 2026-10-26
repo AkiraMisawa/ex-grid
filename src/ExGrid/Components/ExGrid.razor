@@ -8378,25 +8378,18 @@
         AskSummaryAgain();
     }
 
-    private string CellTextOf(CellPosition cell)
-    {
-        var slice = cell.Row - _windowStart;
-        return slice >= 0 && slice < _window.Count
-            ? ExGridRow<TRow>.CellText(Columns[cell.Column], _window[slice])
-            : "";
-    }
-
     /// <summary>The text an edit opens on (ADR-0051): the Consumer's, where it supplies one
-    /// for this cell — the Entry on a Sheet — and the cell's text otherwise, as before.</summary>
+    /// for this cell — the Entry on a Sheet — and the cell's text otherwise, but an unformatted
+    /// <see cref="double"/> whole, so committing it unchanged never writes the 15 digits it shows
+    /// back over the value (ADR-0006, note of 2026-10-26).</summary>
     private string OpeningTextOf(CellPosition cell)
     {
         var slice = cell.Row - _windowStart;
-        if (EditorTextOf is { } opening && slice >= 0 && slice < _window.Count
-            && opening(_window[slice], Columns[cell.Column]) is { } supplied)
-        {
-            return supplied;
-        }
-        return CellTextOf(cell);
+        if (slice < 0 || slice >= _window.Count)
+            return "";
+        var row = _window[slice];
+        var column = Columns[cell.Column];
+        return EditorTextOf?.Invoke(row, column) ?? column.Info.EntryOf(row);
     }
 
     /// <summary>The cell the Cell Editor's box stands over, as its <c>data-ex-cell</c> says it: a press
@@ -8470,6 +8463,9 @@
             // the Server host, and a day and a month read the wrong way round are quietly wrong.
             var date when column.Format is null && date is DateOnly or DateTime or DateTimeOffset or TimeOnly
                 => DisplayText.Of(date),
+            // The entry the editor opens on, so the bar and the edit it opens never differ (ADR-0006,
+            // note of 2026-10-26).
+            double number when column.Format is null => DisplayText.EntryOf(number),
             IFormattable formattable => formattable.ToString(null, CultureInfo.CurrentCulture),
             var value => value.ToString() ?? "",
         };

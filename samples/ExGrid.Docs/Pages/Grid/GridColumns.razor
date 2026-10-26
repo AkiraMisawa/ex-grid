@@ -26,7 +26,11 @@
             <li>
                 <strong><code>format</code> is the one text a value shows.</strong> It is what the cell paints, what
                 copy puts on the clipboard as text, what the filter's value list offers and what the editor opens with.
-                Your delegate owns the culture; the grid takes no view on separators.
+                Your delegate owns the culture; the grid takes no view on separators. Without one, a <code>double</code>
+                shows at most 15 significant digits, as Excel's General does, so <code>0.1 + 0.2</code> shows
+                <code>0.3</code>, as sorting and filtering already compared it. The value itself is not rounded: the copy a
+                spreadsheet reads back carries it whole, and the editor opens on it whole, so an edit committed
+                unchanged writes back the same number. A date shows one ISO form by its type.
             </li>
             <li>
                 <strong><code>align</code> and <code>headerAlign</code></strong> override the type's alignment.
