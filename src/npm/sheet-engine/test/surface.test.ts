@@ -1,13 +1,15 @@
-// The calls a sheet case does not make, held here as EngineSurfaceTests.cs holds them on ExSheet.Engine until the
-// shared cases have a kind that makes them (ADR-0370 section 2): a name asked about, a Sheet renamed directly, two
-// Entries compared, and the package's surface read for a row that can be hidden.
+// The calls a shared case does not make, held here as EngineSurfaceTests.cs, CellAddressTests.cs and
+// FormulaReferencesTests.cs hold them on ExSheet.Engine (ADR-0370 section 2): a name asked about, a Sheet renamed
+// directly, two Entries or two keys compared, a walk over every column or every prefix, and the package's surface
+// read for a row that can be hidden.
 import { describe, expect, it } from 'vitest';
 import * as engine from '../src/index';
 import { CellRange } from '../src/cell-range';
 import { Culture } from '../src/culture';
 import { Entry } from '../src/entry';
 import { NumberFormat, numberFormatColourRgb } from '../src/number-format';
-import { CellAddress } from '../src/cell-address';
+import { CellAddress, columnCount } from '../src/cell-address';
+import { formulaReferences } from '../src/formula-entry';
 import { Sheet } from '../src/sheet';
 import { SheetDocument } from '../src/sheet-document';
 import { SheetEdit } from '../src/sheet-edit';
@@ -191,5 +193,66 @@ describe('the engine surface', () => {
     // ADR-0071, ticket 103: d-mmm-yy typed under en-GB, which spells built-in 15 otherwise, is a code of its own.
     it('reads d-mmm-yy under en-GB as a code of its own', () => {
         expect(NumberFormat.tryParseLocal('d-mmm-yy', Culture.of('en-GB')).format?.code).toBe('d\\-mmm\\-yy');
+    });
+
+    // ADR-0046: Columns A to XFD are the Column Headings.
+    it('reads every column name back as its column', () => {
+        for (let column = 0; column < columnCount; column++) {
+            expect(CellAddress.tryParseColumn(CellAddress.columnName(column))).toBe(column);
+        }
+        expect(CellAddress.columnName(columnCount - 1)).toBe('XFD');
+    });
+
+    // ADR-0046: addresses order row by row, as the rows a change repaints.
+    it('orders addresses row by row', () => {
+        const sorted = ['B2', 'A2', 'C1', 'A1'].map(a => CellAddress.parse(a)).toSorted((a, b) => a.compareTo(b));
+        expect(sorted.map(a => a.toString())).toEqual(['A1', 'C1', 'A2', 'B2']);
+    });
+
+    // ADR-0057 / SH-30: a structured reference's key compares equal however the table and the column were cased.
+    it('keys a structured reference alike however it is cased', () => {
+        const columns = formulaReferences('=SUM(Positions[PV])+SUM(positions[pv])+SUM(POSITIONS[[Pv]])', 'Sheet1').map(r => r.linkedColumn);
+        expect(columns).toHaveLength(3);
+        const [first] = columns;
+        if (first === undefined) throw new Error('The first answer names no column.');
+        for (const column of columns) {
+            if (column === undefined) throw new Error('An answer names no column.');
+            expect(column.equals(first)).toBe(true);
+            expect(column.key).toBe(first.key);
+        }
+    });
+
+    // ADR-0057 / SH-30: another column, or another table's column of the same name, is another key.
+    it.each(['=SUM(Positions[PV])+SUM(Positions[Id])', '=SUM(Positions[PV])+SUM(Accounts[PV])'])('keys %s apart', text => {
+        const [first, second] = formulaReferences(text, 'Sheet1').map(r => r.linkedColumn);
+        if (first === undefined || second === undefined) throw new Error(`${text} names fewer than two columns.`);
+        expect(first.equals(second)).toBe(false);
+        expect(first.key).not.toBe(second.key);
+    });
+
+    // ADR-0057 reading: an unfinished Formula is coloured as far as it goes: every prefix of a Formula as it is typed
+    // is answered, and none throws.
+    it('answers every prefix of a Formula being typed', () => {
+        const formulas = [
+            '=SUM(A1,Sheet1!B2:C3,"x""y",Positions[[PV]],LOG10(D4))+\'Sheet 1\'!E5*$F$6%-G:G&1:1',
+            "=IF(Sheet2!A1<>#N/A,XLOOKUP(A1,Positions[Id],Positions[a'[b]),'It''s'!B2)",
+            '=-$XFD$1048576^2/Sheet1!#REF!',
+        ];
+        for (const formula of formulas) {
+            for (let typed = 0; typed <= formula.length; typed++) {
+                const text = formula.slice(0, typed);
+                for (const sheetName of ['Sheet1', 'Sheet 1', "It's"]) {
+                    let end = 1;
+                    for (const answer of formulaReferences(text, sheetName)) {
+                        // In the text, after the =, in the order written, none overlapping another, and either cells or a column.
+                        expect(answer.start).toBeGreaterThanOrEqual(end);
+                        expect(answer.length).toBeGreaterThanOrEqual(1);
+                        expect(answer.start + answer.length).toBeLessThanOrEqual(text.length);
+                        expect(answer.cells === undefined).not.toBe(answer.linkedColumn === undefined);
+                        end = answer.start + answer.length;
+                    }
+                }
+            }
+        }
     });
 });

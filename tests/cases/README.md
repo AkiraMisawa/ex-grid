@@ -689,6 +689,8 @@ Boolean, `null` a Blank, `{"error": "#N/A"}` an Error Value, which compares in f
 `"refused": true` is never a refusal; a Value a case gives written so is a refusal as a Consumer holds one read from a
 refused cell), `displays`, `texts`, `formulas`, `entryTexts`,
 `entries`, `numberFormats`, `alignments`, `fonts`, `fills`, `borders`, `widthOnEntry` and `spilledFrom`; per
+text being edited, `references` (the References the Sheet answers in it, each `{start, length, cells, linkedColumn}`, `cells` a range
+and `linkedColumn` a `{table, column}`, the other `null`); per
 range, `cellFormats` (the Cell Formats it shows, each once), `entryAddressesIn` (its cells that hold an Entry, in row order) and `edgeLines` (the lines along each outer edge),
 each a set written in the ordinal order of its members' JSON text as `JSON.stringify` writes it; `alike`, groups of
 cells whose Values are one another's, a refusal alike only to a refusal, where the fact is that two Formulas answer the same
@@ -711,3 +713,18 @@ on one side and the Script Core's error on the other: `formulaSyntax` (`FormulaS
 `RangeError`), `format` (`FormatException`, `FormatError`) and `invalidOperation`
 (`InvalidOperationException`, `Error`). What is not the engine refusing is never read as one: the runner's
 own reading of a malformed case, an engine defect, and what JavaScript throws by itself fail the case.
+
+### `sheetCalls`
+
+A file of kind `sheetCalls` holds calls of the engine's surface made directly, outside a Workbook: a `call` of
+`Subject.member` (a static method, or a property read when the case writes no `args`) or `new Subject`, its `args`,
+and what it answers (`is`) or refuses (`throws`, a refusal as above). The subjects are `CellAddress`, `CellRange` and
+`FormulaEntry`; a member is named as the Script Core spells it, and xUnit finds it as C# spells it, `parse` as
+`Parse`. An argument is JSON as it stands, or one of the engine's own values tagged: `{"value": v}` as a sheet case
+writes a Value, `{"address": "A1"}`, `{"range": "A1:B2"}`, `{"culture": name}`, and `{"lookup": {name: [...]}}`,
+a function from a name, found without regard to case, to what the map holds for it, or nothing. A C# method that
+answers through a trailing `out` parameter answers what it holds, and `null` when it answers false, as the Script
+Core's `tryParse` does. An answer is read in the shape the case writes it: a Value as a sheet case writes one, an
+address or a range as its text unless the case writes an object of its members, a list element by element, an
+object by the keys written. `then` reads members of the answer the same way, each `{"call", "args"}` or
+`{"get"}` with its own `is` or `throws`.

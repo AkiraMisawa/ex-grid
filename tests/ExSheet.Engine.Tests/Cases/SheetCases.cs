@@ -540,7 +540,7 @@ internal sealed class Run(CultureInfo culture)
         return false;
     }
 
-    private static JsonObject Thrown(Exception e) => e switch
+    internal static JsonObject Thrown(Exception e) => e switch
     {
         FormulaSyntaxException f => new JsonObject { ["refusal"] = "formulaSyntax", ["reason"] = f.Reason, ["beyondLimit"] = f.IsBeyondLimit, ["saying"] = e.Message },
         SheetRefusedException r => new JsonObject { ["refusal"] = "refused", ["reason"] = SheetCases.Camel(r.Refusal.Reason), ["saying"] = r.Refusal.Message },
@@ -994,6 +994,16 @@ internal sealed class Run(CultureInfo culture)
                 break;
             case "spilledFrom":
                 actual = PerCell(expected, a => sheet.SpilledFrom(a)?.ToString());
+                break;
+            case "references":
+                // Per text being edited, the References the Sheet answers in it: each span, and its cells or its Linked Table's column.
+                actual = new JsonObject([.. expected!.AsObject().Select(p => KeyValuePair.Create(p.Key, (JsonNode?)new JsonArray([.. sheet.References(p.Key).Select(r => (JsonNode)new JsonObject
+                {
+                    ["start"] = r.Start,
+                    ["length"] = r.Length,
+                    ["cells"] = r.Cells?.ToString(),
+                    ["linkedColumn"] = r.LinkedColumn is { } column ? new JsonObject { ["table"] = column.Table, ["column"] = column.Column } : null,
+                })])))]);
                 break;
             case "columnWidths":
             {
