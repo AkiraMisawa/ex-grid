@@ -44,6 +44,20 @@ export interface CellPosition {
 export type ColumnType = 'text' | 'number' | 'date' | 'boolean';
 
 // @public
+export interface ColumnViewState {
+    readonly column: string;
+    readonly pinned: boolean;
+    readonly width: ColumnViewStateWidth;
+}
+
+// @public
+export type ColumnViewStateWidth = {
+    readonly auto: true;
+} | {
+    readonly px: number;
+};
+
+// @public
 export type CommitRefusalReason =
 /** A Row Key is in force and no row in the Window answers the key of the row the editor was opened on. A
 * commit made once the row is back in the Window lands. */
@@ -570,6 +584,39 @@ export type GridSummaryResult = {
 };
 
 // @public
+export class GridViewState {
+    constructor(options: GridViewStateOptions);
+    get columns(): readonly ColumnViewState[];
+    equals(other: GridViewState): boolean;
+    get filter(): GridFilter | undefined;
+    static of(columns: readonly ViewStateColumnSource[], pinnedColumnCount: number, sorts?: readonly SortSpec[], filter?: GridFilter): GridViewState;
+    get pinnedColumnCount(): number;
+    get sorts(): readonly SortSpec[];
+}
+
+// @public
+export const GridViewStateJson: Readonly<{
+    version: 1;
+    write: typeof writeGridViewStateJson;
+    read: typeof readGridViewStateJson;
+    writeQuery: typeof writeGridQueryJson;
+    readQuery: typeof readGridQueryJson;
+}>;
+
+// @public
+export class GridViewStateJsonError extends Error {
+    constructor(message: string, path?: string, options?: ErrorOptions);
+    readonly path: string | undefined;
+}
+
+// @public
+export interface GridViewStateOptions {
+    readonly columns: readonly ColumnViewState[];
+    readonly filter?: GridFilter | undefined;
+    readonly sorts: readonly SortSpec[];
+}
+
+// @public
 export class InMemoryGridSource<Row> implements GridSource<Row> {
     apply(batch: GridChangeBatch<Row>): void;
     get cellChangedAt(): CellChangedAt<Row> | undefined;
@@ -665,6 +712,12 @@ export interface QueryColumn<Row> {
 export type QueryInForce = Omit<GridQuery, 'range'>;
 
 // @public
+export function readGridQueryJson(json: string): GridQuery;
+
+// @public
+export function readGridViewStateJson(json: string, columns: Iterable<string>): GridViewState;
+
+// @public
 export type RowKey = string | number | bigint;
 
 // @public
@@ -716,6 +769,12 @@ export interface RowRange {
     readonly count: number;
     readonly start: number;
 }
+
+// @public
+export function sameGridFilter(a: GridFilter | undefined, b: GridFilter | undefined): boolean;
+
+// @public
+export function sameGridQuery(a: GridQuery, b: GridQuery): boolean;
 
 // @public
 export interface SelectionRange {
@@ -772,5 +831,52 @@ export interface TemporalLike {
 
 // @public
 export type ViewportSize = number | 'stretch';
+
+// @public
+export interface ViewStateColumnSource {
+    readonly name: string;
+    readonly width?: GridColumnWidth;
+}
+
+// @public
+export type ViewStateDateTimeKind = 'unspecified' | 'utc' | 'local';
+
+// @public
+export type ViewStateIntegerType = 'int64' | 'int32' | 'int16' | 'sByte' | 'uInt64' | 'uInt32' | 'uInt16' | 'byte';
+
+// @public
+export type ViewStateOperand = {
+    readonly type: 'string';
+    readonly value: string;
+} | {
+    readonly type: 'boolean';
+    readonly value: boolean;
+} | {
+    readonly type: 'decimal';
+    readonly value: SnapshotDecimal;
+} | {
+    readonly type: 'double' | 'single';
+    readonly value: number;
+} | {
+    readonly type: ViewStateIntegerType;
+    readonly value: bigint;
+} | {
+    readonly type: 'dateTime';
+    readonly ticks: bigint;
+    readonly kind: ViewStateDateTimeKind;
+} | {
+    readonly type: 'dateOnly';
+    readonly ticks: bigint;
+} | {
+    readonly type: 'dateTimeOffset';
+    readonly ticks: bigint;
+    readonly offsetMinutes: number;
+};
+
+// @public
+export function writeGridQueryJson(query: GridQuery): string;
+
+// @public
+export function writeGridViewStateJson(viewState: GridViewState): string;
 
 ```

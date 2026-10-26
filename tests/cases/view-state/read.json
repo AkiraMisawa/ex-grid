@@ -1,0 +1,1620 @@
+{
+  "about": "Reading a View State's JSON (ADR-0207): what the reader refuses, in the C# core's words and at the path it names, and what it takes, written again by the writer. Transcribed from tests/ExGrid.Tests/GridViewStateJsonTests.cs and QuerySerialisationTests.cs.",
+  "kind": "viewStateJson",
+  "columns": [
+    "Notional",
+    "Book",
+    "AsOf",
+    "Active",
+    "Settles",
+    "Stamped",
+    "Hidden"
+  ],
+  "cases": [
+    {
+      "name": "ADR-0207: a View State of version 0 is refused by name, never half-read",
+      "read": "{\"version\":0,\"columns\":[],\"sorts\":[]}",
+      "refused": {
+        "path": null,
+        "says": "A View State of version 0 cannot be read; this reader reads version 1 (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a View State of version 2 is refused by name, never half-read",
+      "read": "{\"version\":2,\"columns\":[],\"sorts\":[]}",
+      "refused": {
+        "path": null,
+        "says": "A View State of version 2 cannot be read; this reader reads version 1 (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a View State of version -1 is refused by name, never half-read",
+      "read": "{\"version\":-1,\"columns\":[],\"sorts\":[]}",
+      "refused": {
+        "path": null,
+        "says": "A View State of version -1 cannot be read; this reader reads version 1 (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a View State of version 1.5 is refused by name, never half-read",
+      "read": "{\"version\":1.5,\"columns\":[],\"sorts\":[]}",
+      "refused": {
+        "path": null,
+        "says": "A View State of version 1.5 cannot be read; this reader reads version 1 (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a View State of version 1.0 is refused by name, never half-read",
+      "read": "{\"version\":1.0,\"columns\":[],\"sorts\":[]}",
+      "refused": {
+        "path": null,
+        "says": "A View State of version 1.0 cannot be read; this reader reads version 1 (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a View State that names no version is refused",
+      "read": "{\"columns\":[],\"sorts\":[]}",
+      "refused": {
+        "path": null,
+        "says": "A View State names its version as a number; this reader reads version 1 (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a View State that names its version as a string is refused",
+      "read": "{\"version\":\"1\",\"columns\":[],\"sorts\":[]}",
+      "refused": {
+        "path": null,
+        "says": "A View State names its version as a number; this reader reads version 1 (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a View State that names its version as null is refused",
+      "read": "{\"version\":null,\"columns\":[],\"sorts\":[]}",
+      "refused": {
+        "path": null,
+        "says": "A View State names its version as a number; this reader reads version 1 (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: empty text is not a View State, and is refused",
+      "read": "",
+      "refused": {
+        "path": null,
+        "saying": "A View State cannot be read: "
+      }
+    },
+    {
+      "name": "ADR-0207: text that is not JSON is not a View State, and is refused",
+      "read": "not json",
+      "refused": {
+        "path": null,
+        "saying": "A View State cannot be read: "
+      }
+    },
+    {
+      "name": "ADR-0207: a document cut short is not a View State, and is refused",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[]",
+      "refused": {
+        "path": null,
+        "saying": "A View State cannot be read: "
+      }
+    },
+    {
+      "name": "ADR-0207: an array is not a View State, and is refused",
+      "read": "[]",
+      "refused": {
+        "path": null,
+        "says": "A View State is a JSON object."
+      }
+    },
+    {
+      "name": "ADR-0207: null is not a View State, and is refused",
+      "read": "null",
+      "refused": {
+        "path": null,
+        "says": "A View State is a JSON object."
+      }
+    },
+    {
+      "name": "ADR-0207: a number is not a View State, and is refused",
+      "read": "1",
+      "refused": {
+        "path": null,
+        "says": "A View State is a JSON object."
+      }
+    },
+    {
+      "name": "ADR-0207: a member named twice is refused, never settled by whichever came last",
+      "read": "{\"version\":1,\"columns\":[],\"columns\":[],\"sorts\":[]}",
+      "refused": {
+        "path": null,
+        "saying": "A View State cannot be read: "
+      }
+    },
+    {
+      "name": "ADR-0207: a filter on a column named twice is refused, never settled by whichever came last",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Book\":{\"combinator\":\"And\",\"clauses\":[]},\"Book\":{\"combinator\":\"Or\",\"clauses\":[]}}}}",
+      "refused": {
+        "path": null,
+        "saying": "A View State cannot be read: "
+      }
+    },
+    {
+      "name": "ADR-0207: a misshapen document is refused in the form's words, at where it stands: a member this version does not have",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"layout\":\"wide\"}",
+      "refused": {
+        "path": "$",
+        "says": "A View State cannot be read at $: it has no member 'layout' in version 1 (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a misshapen document is refused in the form's words, at where it stands: a member of a column this version does not have",
+      "read": "{\"version\":1,\"columns\":[{\"column\":\"Book\",\"width\":\"Auto\",\"pinned\":false,\"hidden\":true}],\"sorts\":[]}",
+      "refused": {
+        "path": "$.columns[0]",
+        "says": "A View State cannot be read at $.columns[0]: it has no member 'hidden' in version 1 (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a misshapen document is refused in the form's words, at where it stands: an Opaque Filter, which this version does not have",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{},\"opaque\":\"x\"}}",
+      "refused": {
+        "path": "$.filter",
+        "says": "A View State cannot be read at $.filter: it has no member 'opaque' in version 1 (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a misshapen document is refused in the form's words, at where it stands: a member of a sort level this version does not have",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[{\"column\":\"Book\",\"direction\":\"Ascending\",\"nulls\":\"first\"}]}",
+      "refused": {
+        "path": "$.sorts[0]",
+        "says": "A View State cannot be read at $.sorts[0]: it has no member 'nulls' in version 1 (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a misshapen document is refused in the form's words, at where it stands: a member in another case",
+      "read": "{\"version\":1,\"Columns\":[],\"sorts\":[]}",
+      "refused": {
+        "path": "$",
+        "says": "A View State cannot be read at $: it has no member 'Columns' in version 1 (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a misshapen document is refused in the form's words, at where it stands: the columns missing",
+      "read": "{\"version\":1,\"sorts\":[]}",
+      "refused": {
+        "path": "$",
+        "says": "A View State cannot be read at $: its member 'columns' is missing (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a misshapen document is refused in the form's words, at where it stands: the sorts missing",
+      "read": "{\"version\":1,\"columns\":[]}",
+      "refused": {
+        "path": "$",
+        "says": "A View State cannot be read at $: its member 'sorts' is missing (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a misshapen document is refused in the form's words, at where it stands: a width missing",
+      "read": "{\"version\":1,\"columns\":[{\"column\":\"Book\",\"pinned\":false}],\"sorts\":[]}",
+      "refused": {
+        "path": "$.columns[0]",
+        "says": "A View State cannot be read at $.columns[0]: its member 'width' is missing (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a misshapen document is refused in the form's words, at where it stands: pinned missing",
+      "read": "{\"version\":1,\"columns\":[{\"column\":\"Book\",\"width\":\"Auto\"}],\"sorts\":[]}",
+      "refused": {
+        "path": "$.columns[0]",
+        "says": "A View State cannot be read at $.columns[0]: its member 'pinned' is missing (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a misshapen document is refused in the form's words, at where it stands: a column's name null",
+      "read": "{\"version\":1,\"columns\":[{\"column\":null,\"width\":\"Auto\",\"pinned\":false}],\"sorts\":[]}",
+      "refused": {
+        "path": "$.columns[0].column",
+        "says": "A View State cannot be read at $.columns[0].column: 'column' is null, and it is a string (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a misshapen document is refused in the form's words, at where it stands: a column's name missing",
+      "read": "{\"version\":1,\"columns\":[{\"width\":\"Auto\",\"pinned\":false}],\"sorts\":[]}",
+      "refused": {
+        "path": "$.columns[0]",
+        "says": "A View State cannot be read at $.columns[0]: its member 'column' is missing (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a misshapen document is refused in the form's words, at where it stands: a direction missing",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[{\"column\":\"Book\"}]}",
+      "refused": {
+        "path": "$.sorts[0]",
+        "says": "A View State cannot be read at $.sorts[0]: its member 'direction' is missing (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a misshapen document is refused in the form's words, at where it stands: a sort level's column missing",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[{\"direction\":\"Ascending\"}]}",
+      "refused": {
+        "path": "$.sorts[0]",
+        "says": "A View State cannot be read at $.sorts[0]: its member 'column' is missing (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a misshapen document is refused in the form's words, at where it stands: the columns null",
+      "read": "{\"version\":1,\"columns\":null,\"sorts\":[]}",
+      "refused": {
+        "path": "$.columns",
+        "says": "A View State cannot be read at $.columns: 'columns' is null, and it is an array (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a misshapen document is refused in the form's words, at where it stands: pinned as a string",
+      "read": "{\"version\":1,\"columns\":[{\"column\":\"Book\",\"width\":\"Auto\",\"pinned\":\"yes\"}],\"sorts\":[]}",
+      "refused": {
+        "path": "$.columns[0].pinned",
+        "says": "A View State cannot be read at $.columns[0].pinned: 'pinned' is true or false, and here it is a string (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a misshapen document is refused in the form's words, at where it stands: pinned null",
+      "read": "{\"version\":1,\"columns\":[{\"column\":\"Book\",\"width\":\"Auto\",\"pinned\":null}],\"sorts\":[]}",
+      "refused": {
+        "path": "$.columns[0].pinned",
+        "says": "A View State cannot be read at $.columns[0].pinned: 'pinned' is null, and it is true or false (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a misshapen document is refused in the form's words, at where it stands: the columns as an object",
+      "read": "{\"version\":1,\"columns\":{},\"sorts\":[]}",
+      "refused": {
+        "path": "$.columns",
+        "says": "A View State cannot be read at $.columns: 'columns' is an array, and here it is an object (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a misshapen document is refused in the form's words, at where it stands: a column as a number",
+      "read": "{\"version\":1,\"columns\":[7],\"sorts\":[]}",
+      "refused": {
+        "path": "$.columns[0]",
+        "says": "A View State cannot be read at $.columns[0]: item 1 of 'columns' is an object, and here it is the number 7 (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a misshapen document is refused in the form's words, at where it stands: a direction as a number",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[{\"column\":\"Book\",\"direction\":1}]}",
+      "refused": {
+        "path": "$.sorts[0].direction",
+        "says": "A View State cannot be read at $.sorts[0].direction: 'direction' is a string, and here it is the number 1 (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a misshapen document is refused in the form's words, at where it stands: the filter's columns as an array",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":[]}}",
+      "refused": {
+        "path": "$.filter.columns",
+        "says": "A View State cannot be read at $.filter.columns: 'columns' is an object, and here it is an array (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a misshapen document is refused in the form's words, at where it stands: the filter as an array",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":[]}",
+      "refused": {
+        "path": "$.filter",
+        "says": "A View State cannot be read at $.filter: 'filter' is an object, and here it is an array (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a misshapen document is refused in the form's words, at where it stands: a spec as a string",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Book\":\"x\"}}}",
+      "refused": {
+        "path": "$.filter.columns['Book']",
+        "says": "A View State cannot be read at $.filter.columns['Book']: 'Book' in 'columns' is an object, and here it is a string (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a misshapen document is refused in the form's words, at where it stands: a clause as a number",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Book\":{\"combinator\":\"And\",\"clauses\":[3]}}}}",
+      "refused": {
+        "path": "$.filter.columns['Book'].clauses[0]",
+        "says": "A View State cannot be read at $.filter.columns['Book'].clauses[0]: item 1 of 'clauses' is an object, and here it is the number 3 (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a misshapen document is refused in the form's words, at where it stands: an operand's value as a JSON number",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Decimal\",\"value\":25000000.50}}]}}}}",
+      "refused": {
+        "path": "$.filter.columns['Notional'].clauses[0].value.value",
+        "says": "A View State cannot be read at $.filter.columns['Notional'].clauses[0].value.value: 'value' is a string, and here it is the number 25000000.50 (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a misshapen document is refused in the form's words, at where it stands: an operand's value as true",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Boolean\",\"value\":true}}]}}}}",
+      "refused": {
+        "path": "$.filter.columns['Notional'].clauses[0].value.value",
+        "says": "A View State cannot be read at $.filter.columns['Notional'].clauses[0].value.value: 'value' is a string, and here it is true (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a misshapen document is refused in the form's words, at where it stands: an operand's value missing",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Decimal\"}}]}}}}",
+      "refused": {
+        "path": "$.filter.columns['Notional'].clauses[0].value",
+        "says": "A View State cannot be read at $.filter.columns['Notional'].clauses[0].value: its member 'value' is missing (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a misshapen document is refused in the form's words, at where it stands: an operand as a bare number",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":25000000.50}]}}}}",
+      "refused": {
+        "path": "$.filter.columns['Notional'].clauses[0].value",
+        "says": "A View State cannot be read at $.filter.columns['Notional'].clauses[0].value: 'value' is an object, and here it is the number 25000000.50 (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a misshapen document is refused in the form's words, at where it stands: an operand with a member this version does not have",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Decimal\",\"value\":\"1\",\"unit\":\"USD\"}}]}}}}",
+      "refused": {
+        "path": "$.filter.columns['Notional'].clauses[0].value",
+        "says": "A View State cannot be read at $.filter.columns['Notional'].clauses[0].value: it has no member 'unit' in version 1 (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a misshapen document is refused in the form's words, at where it stands: an operand among In's values missing its value",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"In\",\"values\":[{\"type\":\"Decimal\"}]}]}}}}",
+      "refused": {
+        "path": "$.filter.columns['Notional'].clauses[0].values[0]",
+        "says": "A View State cannot be read at $.filter.columns['Notional'].clauses[0].values[0]: its member 'value' is missing (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a misshapen document is refused in the form's words, at where it stands: a kind as a number",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"DateTime\",\"value\":\"2026-01-05T09:30:00.0000000\",\"kind\":1}}]}}}}",
+      "refused": {
+        "path": "$.filter.columns['Notional'].clauses[0].value.kind",
+        "says": "A View State cannot be read at $.filter.columns['Notional'].clauses[0].value.kind: 'kind' is a string, and here it is the number 1 (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a misshapen document is refused in the form's words, at where it stands: a version's later member, refused before a missing one",
+      "read": "{\"version\":1,\"columns\":[{\"column\":\"Book\",\"width\":\"Auto\",\"pinned\":1}]}",
+      "refused": {
+        "path": "$.columns[0].pinned",
+        "says": "A View State cannot be read at $.columns[0].pinned: 'pinned' is true or false, and here it is the number 1 (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a null column is refused by what it stands for",
+      "read": "{\"version\":1,\"columns\":[null],\"sorts\":[]}",
+      "refused": {
+        "path": null,
+        "says": "The View State's column 1 is null."
+      }
+    },
+    {
+      "name": "ADR-0207: a null sort level is refused by what it stands for",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[null]}",
+      "refused": {
+        "path": null,
+        "says": "Sort level 1 is null."
+      }
+    },
+    {
+      "name": "ADR-0207: a null column filter is refused by what it stands for",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Book\":null}}}",
+      "refused": {
+        "path": null,
+        "says": "The filter on 'Book' is null."
+      }
+    },
+    {
+      "name": "ADR-0207: a null clause is refused by what it stands for",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Book\":{\"combinator\":\"And\",\"clauses\":[null]}}}}",
+      "refused": {
+        "path": null,
+        "says": "The filter on 'Book', clause 1 is null."
+      }
+    },
+    {
+      "name": "ADR-0207: a column the grid does not have is refused by name, in the columns",
+      "read": "{\"version\":1,\"columns\":[{\"column\":\"Gone\",\"width\":\"Auto\",\"pinned\":false}],\"sorts\":[]}",
+      "refused": {
+        "path": null,
+        "says": "The View State's column 1 names column 'Gone', which the grid does not have (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a column the grid does not have is refused by name, in the sort",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[{\"column\":\"Gone\",\"direction\":\"Ascending\"}]}",
+      "refused": {
+        "path": null,
+        "says": "Sort level 1 names column 'Gone', which the grid does not have (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a column the grid does not have is refused by name, in the filter",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Gone\":{\"combinator\":\"And\",\"clauses\":[]}}}}",
+      "refused": {
+        "path": null,
+        "says": "The filter names column 'Gone', which the grid does not have (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a column name is matched exactly, by its case too",
+      "read": "{\"version\":1,\"columns\":[{\"column\":\"book\",\"width\":\"Auto\",\"pinned\":false}],\"sorts\":[]}",
+      "refused": {
+        "path": null,
+        "says": "The View State's column 1 names column 'book', which the grid does not have (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a column with an empty name is refused",
+      "read": "{\"version\":1,\"columns\":[{\"column\":\"\",\"width\":\"Auto\",\"pinned\":false}],\"sorts\":[]}",
+      "refused": {
+        "path": null,
+        "says": "The View State's column 1 names no column."
+      }
+    },
+    {
+      "name": "ADR-0207: a sort level with an empty column is refused",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[{\"column\":\"\",\"direction\":\"Ascending\"}]}",
+      "refused": {
+        "path": null,
+        "says": "Sort level 1 names no column."
+      }
+    },
+    {
+      "name": "ADR-0207: a filter on an empty column name is refused",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"\":{\"combinator\":\"And\",\"clauses\":[]}}}}",
+      "refused": {
+        "path": null,
+        "says": "The filter names no column."
+      }
+    },
+    {
+      "name": "ADR-0207: a column named twice among the columns is refused by name",
+      "read": "{\"version\":1,\"columns\":[{\"column\":\"Book\",\"width\":\"Auto\",\"pinned\":false},{\"column\":\"Book\",\"width\":80,\"pinned\":false}],\"sorts\":[]}",
+      "refused": {
+        "path": null,
+        "says": "Column 'Book' appears twice in the View State's columns; a column stands in one place."
+      }
+    },
+    {
+      "name": "ADR-0004: a pinned column after one that is not is refused",
+      "read": "{\"version\":1,\"columns\":[{\"column\":\"Book\",\"width\":\"Auto\",\"pinned\":false},{\"column\":\"AsOf\",\"width\":\"Auto\",\"pinned\":true}],\"sorts\":[]}",
+      "refused": {
+        "path": null,
+        "says": "Column 'AsOf' is pinned after a column that is not; the pinned columns are the leading ones (ADR-0004)."
+      }
+    },
+    {
+      "name": "ADR-0016: a width no column may declare is refused when read, naming the column: 0",
+      "read": "{\"version\":1,\"columns\":[{\"column\":\"Book\",\"width\":0,\"pinned\":false}],\"sorts\":[]}",
+      "refused": {
+        "path": null,
+        "says": "Column 'Book': a width is \"Auto\" or a finite, positive number of pixels, and 0 is neither (ADR-0016, ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0016: a width no column may declare is refused when read, naming the column: -12",
+      "read": "{\"version\":1,\"columns\":[{\"column\":\"Book\",\"width\":-12,\"pinned\":false}],\"sorts\":[]}",
+      "refused": {
+        "path": null,
+        "says": "Column 'Book': a width is \"Auto\" or a finite, positive number of pixels, and -12 is neither (ADR-0016, ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0016: a width no column may declare is refused when read, naming the column: 1e999",
+      "read": "{\"version\":1,\"columns\":[{\"column\":\"Book\",\"width\":1e999,\"pinned\":false}],\"sorts\":[]}",
+      "refused": {
+        "path": null,
+        "says": "Column 'Book': a width is \"Auto\" or a finite, positive number of pixels, and 1e999 is neither (ADR-0016, ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0016: a width no column may declare is refused when read, naming the column: \"auto\"",
+      "read": "{\"version\":1,\"columns\":[{\"column\":\"Book\",\"width\":\"auto\",\"pinned\":false}],\"sorts\":[]}",
+      "refused": {
+        "path": null,
+        "says": "Column 'Book': a width is \"Auto\" or a finite, positive number of pixels, and \"auto\" is neither (ADR-0016, ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0016: a width no column may declare is refused when read, naming the column: \"auto-ish\"",
+      "read": "{\"version\":1,\"columns\":[{\"column\":\"Book\",\"width\":\"auto-ish\",\"pinned\":false}],\"sorts\":[]}",
+      "refused": {
+        "path": null,
+        "says": "Column 'Book': a width is \"Auto\" or a finite, positive number of pixels, and \"auto-ish\" is neither (ADR-0016, ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0016: a width no column may declare is refused when read, naming the column: \"120\"",
+      "read": "{\"version\":1,\"columns\":[{\"column\":\"Book\",\"width\":\"120\",\"pinned\":false}],\"sorts\":[]}",
+      "refused": {
+        "path": null,
+        "says": "Column 'Book': a width is \"Auto\" or a finite, positive number of pixels, and \"120\" is neither (ADR-0016, ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0016: a width no column may declare is refused when read, naming the column: {}",
+      "read": "{\"version\":1,\"columns\":[{\"column\":\"Book\",\"width\":{},\"pinned\":false}],\"sorts\":[]}",
+      "refused": {
+        "path": null,
+        "says": "Column 'Book': a width is \"Auto\" or a finite, positive number of pixels, and {} is neither (ADR-0016, ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0016: a width no column may declare is refused when read, naming the column: []",
+      "read": "{\"version\":1,\"columns\":[{\"column\":\"Book\",\"width\":[],\"pinned\":false}],\"sorts\":[]}",
+      "refused": {
+        "path": null,
+        "says": "Column 'Book': a width is \"Auto\" or a finite, positive number of pixels, and [] is neither (ADR-0016, ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0016: a width no column may declare is refused when read, naming the column: true",
+      "read": "{\"version\":1,\"columns\":[{\"column\":\"Book\",\"width\":true,\"pinned\":false}],\"sorts\":[]}",
+      "refused": {
+        "path": null,
+        "says": "Column 'Book': a width is \"Auto\" or a finite, positive number of pixels, and true is neither (ADR-0016, ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0016: a width no column may declare is refused when read, naming the column: null",
+      "read": "{\"version\":1,\"columns\":[{\"column\":\"Book\",\"width\":null,\"pinned\":false}],\"sorts\":[]}",
+      "refused": {
+        "path": null,
+        "says": "Column 'Book': a width is \"Auto\" or a finite, positive number of pixels, and null is neither (ADR-0016, ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0016: a Fixed width comes back Fixed at its pixels, written as their round trip: 88.75",
+      "read": "{\"version\":1,\"columns\":[{\"column\":\"Book\",\"width\":88.75,\"pinned\":false}],\"sorts\":[]}",
+      "writes": "{\"version\":1,\"columns\":[{\"column\":\"Book\",\"width\":88.75,\"pinned\":false}],\"sorts\":[]}"
+    },
+    {
+      "name": "ADR-0016: a Fixed width comes back Fixed at its pixels, written as their round trip: 120",
+      "read": "{\"version\":1,\"columns\":[{\"column\":\"Book\",\"width\":120,\"pinned\":false}],\"sorts\":[]}",
+      "writes": "{\"version\":1,\"columns\":[{\"column\":\"Book\",\"width\":120,\"pinned\":false}],\"sorts\":[]}"
+    },
+    {
+      "name": "ADR-0016: a Fixed width comes back Fixed at its pixels, written as their round trip: 1e2",
+      "read": "{\"version\":1,\"columns\":[{\"column\":\"Book\",\"width\":1e2,\"pinned\":false}],\"sorts\":[]}",
+      "writes": "{\"version\":1,\"columns\":[{\"column\":\"Book\",\"width\":100,\"pinned\":false}],\"sorts\":[]}"
+    },
+    {
+      "name": "ADR-0016: a Fixed width comes back Fixed at its pixels, written as their round trip: 0.5",
+      "read": "{\"version\":1,\"columns\":[{\"column\":\"Book\",\"width\":0.5,\"pinned\":false}],\"sorts\":[]}",
+      "writes": "{\"version\":1,\"columns\":[{\"column\":\"Book\",\"width\":0.5,\"pinned\":false}],\"sorts\":[]}"
+    },
+    {
+      "name": "ADR-0016: a Fixed width comes back Fixed at its pixels, written as their round trip: 120.50",
+      "read": "{\"version\":1,\"columns\":[{\"column\":\"Book\",\"width\":120.50,\"pinned\":false}],\"sorts\":[]}",
+      "writes": "{\"version\":1,\"columns\":[{\"column\":\"Book\",\"width\":120.5,\"pinned\":false}],\"sorts\":[]}"
+    },
+    {
+      "name": "ADR-0016: a Fixed width comes back Fixed at its pixels, written as their round trip: 5e-324",
+      "read": "{\"version\":1,\"columns\":[{\"column\":\"Book\",\"width\":5e-324,\"pinned\":false}],\"sorts\":[]}",
+      "writes": "{\"version\":1,\"columns\":[{\"column\":\"Book\",\"width\":5E-324,\"pinned\":false}],\"sorts\":[]}"
+    },
+    {
+      "name": "ADR-0207: a direction this version does not name is refused by name: Down",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[{\"column\":\"Book\",\"direction\":\"Down\"}]}",
+      "refused": {
+        "path": null,
+        "says": "Sort level 1: 'Down' is not a sort direction; a direction is Ascending or Descending (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a direction this version does not name is refused by name: ascending",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[{\"column\":\"Book\",\"direction\":\"ascending\"}]}",
+      "refused": {
+        "path": null,
+        "says": "Sort level 1: 'ascending' is not a sort direction; a direction is Ascending or Descending (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a direction this version does not name is refused by name: 1",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[{\"column\":\"Book\",\"direction\":\"1\"}]}",
+      "refused": {
+        "path": null,
+        "says": "Sort level 1: '1' is not a sort direction; a direction is Ascending or Descending (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a combinator this version does not name is refused by name",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Book\":{\"combinator\":\"Xor\",\"clauses\":[]}}}}",
+      "refused": {
+        "path": null,
+        "says": "The filter on 'Book': 'Xor' is not a combinator; a combinator is And or Or (ADR-0009, ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: an operator this version does not name is refused by name: Between",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Book\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Between\"}]}}}}",
+      "refused": {
+        "path": null,
+        "says": "The filter on 'Book', clause 1: 'Between' is not an operator this reader knows (ADR-0023, ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: an operator this version does not name is refused by name: equals",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Book\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"equals\"}]}}}}",
+      "refused": {
+        "path": null,
+        "says": "The filter on 'Book', clause 1: 'equals' is not an operator this reader knows (ADR-0023, ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a clause's operator is read before the spec's combinator",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Book\":{\"combinator\":\"Xor\",\"clauses\":[{\"operator\":\"Between\"}]}}}}",
+      "refused": {
+        "path": null,
+        "says": "The filter on 'Book', clause 1: 'Between' is not an operator this reader knows (ADR-0023, ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0023: an operand type the filter model does not admit is refused by its tag: 'Money'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Money\",\"value\":\"1\"}}]}}}}",
+      "refused": {
+        "path": null,
+        "says": "The filter on 'Notional', clause 1: 'Money' is not an operand type this reader knows; it reads String, Boolean, Decimal, Double, Single, Int64, Int32, Int16, SByte, UInt64, UInt32, UInt16, Byte, DateTime, DateOnly and DateTimeOffset (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0023: an operand type the filter model does not admit is refused by its tag: 'decimal'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"decimal\",\"value\":\"1\"}}]}}}}",
+      "refused": {
+        "path": null,
+        "says": "The filter on 'Notional', clause 1: 'decimal' is not an operand type this reader knows; it reads String, Boolean, Decimal, Double, Single, Int64, Int32, Int16, SByte, UInt64, UInt32, UInt16, Byte, DateTime, DateOnly and DateTimeOffset (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0023: an operand type the filter model does not admit is refused by its tag: 'Guid'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Guid\",\"value\":\"1\"}}]}}}}",
+      "refused": {
+        "path": null,
+        "says": "The filter on 'Notional', clause 1: 'Guid' is not an operand type this reader knows; it reads String, Boolean, Decimal, Double, Single, Int64, Int32, Int16, SByte, UInt64, UInt32, UInt16, Byte, DateTime, DateOnly and DateTimeOffset (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0023: an operand type the filter model does not admit is refused by its tag: 'TimeOnly'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"TimeOnly\",\"value\":\"1\"}}]}}}}",
+      "refused": {
+        "path": null,
+        "says": "The filter on 'Notional', clause 1: 'TimeOnly' is not an operand type this reader knows; it reads String, Boolean, Decimal, Double, Single, Int64, Int32, Int16, SByte, UInt64, UInt32, UInt16, Byte, DateTime, DateOnly and DateTimeOffset (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0023: an operand type the filter model does not admit is refused by its tag: 'Char'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Char\",\"value\":\"1\"}}]}}}}",
+      "refused": {
+        "path": null,
+        "says": "The filter on 'Notional', clause 1: 'Char' is not an operand type this reader knows; it reads String, Boolean, Decimal, Double, Single, Int64, Int32, Int16, SByte, UInt64, UInt32, UInt16, Byte, DateTime, DateOnly and DateTimeOffset (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0023: an operand type the filter model does not admit is refused by its tag: ''",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"\",\"value\":\"1\"}}]}}}}",
+      "refused": {
+        "path": null,
+        "says": "The filter on 'Notional', clause 1: '' is not an operand type this reader knows; it reads String, Boolean, Decimal, Double, Single, Int64, Int32, Int16, SByte, UInt64, UInt32, UInt16, Byte, DateTime, DateOnly and DateTimeOffset (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a value that does not parse as its type in the invariant culture is refused, naming both: Decimal '25,000.50'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Decimal\",\"value\":\"25,000.50\"}}]}}}}",
+      "refused": {
+        "path": null,
+        "says": "The filter on 'Notional', clause 1: '25,000.50' is not a Decimal written in the invariant culture (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a value that does not parse as its type in the invariant culture is refused, naming both: Decimal '25.000,50'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Decimal\",\"value\":\"25.000,50\"}}]}}}}",
+      "refused": {
+        "path": null,
+        "says": "The filter on 'Notional', clause 1: '25.000,50' is not a Decimal written in the invariant culture (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a value that does not parse as its type in the invariant culture is refused, naming both: Decimal '1e3'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Decimal\",\"value\":\"1e3\"}}]}}}}",
+      "refused": {
+        "path": null,
+        "says": "The filter on 'Notional', clause 1: '1e3' is not a Decimal written in the invariant culture (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a value that does not parse as its type in the invariant culture is refused, naming both: Decimal ' 1'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Decimal\",\"value\":\" 1\"}}]}}}}",
+      "refused": {
+        "path": null,
+        "says": "The filter on 'Notional', clause 1: ' 1' is not a Decimal written in the invariant culture (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a value that does not parse as its type in the invariant culture is refused, naming both: Decimal ''",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Decimal\",\"value\":\"\"}}]}}}}",
+      "refused": {
+        "path": null,
+        "says": "The filter on 'Notional', clause 1: '' is not a Decimal written in the invariant culture (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a value that does not parse as its type in the invariant culture is refused, naming both: Decimal '0.00000000000000000000000000001'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Decimal\",\"value\":\"0.00000000000000000000000000001\"}}]}}}}",
+      "refused": {
+        "path": null,
+        "says": "The filter on 'Notional', clause 1: '0.00000000000000000000000000001' is not a Decimal written in the invariant culture (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a value that does not parse as its type in the invariant culture is refused, naming both: Decimal '-0.00000000000000000000000000001'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Decimal\",\"value\":\"-0.00000000000000000000000000001\"}}]}}}}",
+      "refused": {
+        "path": null,
+        "says": "The filter on 'Notional', clause 1: '-0.00000000000000000000000000001' is not a Decimal written in the invariant culture (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a value that does not parse as its type in the invariant culture is refused, naming both: Decimal '1.00000000000000000000000000001'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Decimal\",\"value\":\"1.00000000000000000000000000001\"}}]}}}}",
+      "refused": {
+        "path": null,
+        "says": "The filter on 'Notional', clause 1: '1.00000000000000000000000000001' is not a Decimal written in the invariant culture (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a value that does not parse as its type in the invariant culture is refused, naming both: Decimal '25000000.500000000000000000000001'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Decimal\",\"value\":\"25000000.500000000000000000000001\"}}]}}}}",
+      "refused": {
+        "path": null,
+        "says": "The filter on 'Notional', clause 1: '25000000.500000000000000000000001' is not a Decimal written in the invariant culture (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a value that does not parse as its type in the invariant culture is refused, naming both: Decimal '+1'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Decimal\",\"value\":\"+1\"}}]}}}}",
+      "refused": {
+        "path": null,
+        "says": "The filter on 'Notional', clause 1: '+1' is not a Decimal written in the invariant culture (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a value that does not parse as its type in the invariant culture is refused, naming both: Decimal '01'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Decimal\",\"value\":\"01\"}}]}}}}",
+      "refused": {
+        "path": null,
+        "says": "The filter on 'Notional', clause 1: '01' is not a Decimal written in the invariant culture (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a value that does not parse as its type in the invariant culture is refused, naming both: Decimal '.5'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Decimal\",\"value\":\".5\"}}]}}}}",
+      "refused": {
+        "path": null,
+        "says": "The filter on 'Notional', clause 1: '.5' is not a Decimal written in the invariant culture (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a value that does not parse as its type in the invariant culture is refused, naming both: Decimal '1.'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Decimal\",\"value\":\"1.\"}}]}}}}",
+      "refused": {
+        "path": null,
+        "says": "The filter on 'Notional', clause 1: '1.' is not a Decimal written in the invariant culture (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a value that does not parse as its type in the invariant culture is refused, naming both: Decimal '-0'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Decimal\",\"value\":\"-0\"}}]}}}}",
+      "refused": {
+        "path": null,
+        "says": "The filter on 'Notional', clause 1: '-0' is not a Decimal written in the invariant culture (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a value that does not parse as its type in the invariant culture is refused, naming both: Decimal '-0.0'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Decimal\",\"value\":\"-0.0\"}}]}}}}",
+      "refused": {
+        "path": null,
+        "says": "The filter on 'Notional', clause 1: '-0.0' is not a Decimal written in the invariant culture (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a value that does not parse as its type in the invariant culture is refused, naming both: Decimal '79228162514264337593543950336'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Decimal\",\"value\":\"79228162514264337593543950336\"}}]}}}}",
+      "refused": {
+        "path": null,
+        "says": "The filter on 'Notional', clause 1: '79228162514264337593543950336' is not a Decimal written in the invariant culture (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a value that does not parse as its type in the invariant culture is refused, naming both: Decimal '7922816251426433759354395033.50'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Decimal\",\"value\":\"7922816251426433759354395033.50\"}}]}}}}",
+      "refused": {
+        "path": null,
+        "says": "The filter on 'Notional', clause 1: '7922816251426433759354395033.50' is not a Decimal written in the invariant culture (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a value that does not parse as its type in the invariant culture is refused, naming both: Double 'NaN'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Double\",\"value\":\"NaN\"}}]}}}}",
+      "refused": {
+        "path": null,
+        "says": "The filter on 'Notional', clause 1: 'NaN' is not a Double written in the invariant culture (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a value that does not parse as its type in the invariant culture is refused, naming both: Double 'Infinity'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Double\",\"value\":\"Infinity\"}}]}}}}",
+      "refused": {
+        "path": null,
+        "says": "The filter on 'Notional', clause 1: 'Infinity' is not a Double written in the invariant culture (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a value that does not parse as its type in the invariant culture is refused, naming both: Double '-Infinity'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Double\",\"value\":\"-Infinity\"}}]}}}}",
+      "refused": {
+        "path": null,
+        "says": "The filter on 'Notional', clause 1: '-Infinity' is not a Double written in the invariant culture (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a value that does not parse as its type in the invariant culture is refused, naming both: Double '0,5'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Double\",\"value\":\"0,5\"}}]}}}}",
+      "refused": {
+        "path": null,
+        "says": "The filter on 'Notional', clause 1: '0,5' is not a Double written in the invariant culture (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a value that does not parse as its type in the invariant culture is refused, naming both: Double '1e-400'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Double\",\"value\":\"1e-400\"}}]}}}}",
+      "refused": {
+        "path": null,
+        "says": "The filter on 'Notional', clause 1: '1e-400' is not a Double written in the invariant culture (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a value that does not parse as its type in the invariant culture is refused, naming both: Double '-1e-400'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Double\",\"value\":\"-1e-400\"}}]}}}}",
+      "refused": {
+        "path": null,
+        "says": "The filter on 'Notional', clause 1: '-1e-400' is not a Double written in the invariant culture (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a value that does not parse as its type in the invariant culture is refused, naming both: Double '0.00001e-320'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Double\",\"value\":\"0.00001e-320\"}}]}}}}",
+      "refused": {
+        "path": null,
+        "says": "The filter on 'Notional', clause 1: '0.00001e-320' is not a Double written in the invariant culture (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a value that does not parse as its type in the invariant culture is refused, naming both: Double '1e400'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Double\",\"value\":\"1e400\"}}]}}}}",
+      "refused": {
+        "path": null,
+        "says": "The filter on 'Notional', clause 1: '1e400' is not a Double written in the invariant culture (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a value that does not parse as its type in the invariant culture is refused, naming both: Double '1e'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Double\",\"value\":\"1e\"}}]}}}}",
+      "refused": {
+        "path": null,
+        "says": "The filter on 'Notional', clause 1: '1e' is not a Double written in the invariant culture (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a value that does not parse as its type in the invariant culture is refused, naming both: Double '.'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Double\",\"value\":\".\"}}]}}}}",
+      "refused": {
+        "path": null,
+        "says": "The filter on 'Notional', clause 1: '.' is not a Double written in the invariant culture (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a value that does not parse as its type in the invariant culture is refused, naming both: Double ' 1'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Double\",\"value\":\" 1\"}}]}}}}",
+      "refused": {
+        "path": null,
+        "says": "The filter on 'Notional', clause 1: ' 1' is not a Double written in the invariant culture (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a value that does not parse as its type in the invariant culture is refused, naming both: Double '0x10'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Double\",\"value\":\"0x10\"}}]}}}}",
+      "refused": {
+        "path": null,
+        "says": "The filter on 'Notional', clause 1: '0x10' is not a Double written in the invariant culture (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a value that does not parse as its type in the invariant culture is refused, naming both: Single '1e39'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Single\",\"value\":\"1e39\"}}]}}}}",
+      "refused": {
+        "path": null,
+        "says": "The filter on 'Notional', clause 1: '1e39' is not a Single written in the invariant culture (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a value that does not parse as its type in the invariant culture is refused, naming both: Single '1e-50'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Single\",\"value\":\"1e-50\"}}]}}}}",
+      "refused": {
+        "path": null,
+        "says": "The filter on 'Notional', clause 1: '1e-50' is not a Single written in the invariant culture (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a value that does not parse as its type in the invariant culture is refused, naming both: Single '1e-400'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Single\",\"value\":\"1e-400\"}}]}}}}",
+      "refused": {
+        "path": null,
+        "says": "The filter on 'Notional', clause 1: '1e-400' is not a Single written in the invariant culture (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a value that does not parse as its type in the invariant culture is refused, naming both: Single '3.4028236e38'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Single\",\"value\":\"3.4028236e38\"}}]}}}}",
+      "refused": {
+        "path": null,
+        "says": "The filter on 'Notional', clause 1: '3.4028236e38' is not a Single written in the invariant culture (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a value that does not parse as its type in the invariant culture is refused, naming both: Single 'NaN'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Single\",\"value\":\"NaN\"}}]}}}}",
+      "refused": {
+        "path": null,
+        "says": "The filter on 'Notional', clause 1: 'NaN' is not a Single written in the invariant culture (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a value that does not parse as its type in the invariant culture is refused, naming both: Int32 '1.5'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Int32\",\"value\":\"1.5\"}}]}}}}",
+      "refused": {
+        "path": null,
+        "says": "The filter on 'Notional', clause 1: '1.5' is not a Int32 written in the invariant culture (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a value that does not parse as its type in the invariant culture is refused, naming both: Int32 '2147483648'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Int32\",\"value\":\"2147483648\"}}]}}}}",
+      "refused": {
+        "path": null,
+        "says": "The filter on 'Notional', clause 1: '2147483648' is not a Int32 written in the invariant culture (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a value that does not parse as its type in the invariant culture is refused, naming both: Int32 '-2147483649'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Int32\",\"value\":\"-2147483649\"}}]}}}}",
+      "refused": {
+        "path": null,
+        "says": "The filter on 'Notional', clause 1: '-2147483649' is not a Int32 written in the invariant culture (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a value that does not parse as its type in the invariant culture is refused, naming both: Int32 ' 1'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Int32\",\"value\":\" 1\"}}]}}}}",
+      "refused": {
+        "path": null,
+        "says": "The filter on 'Notional', clause 1: ' 1' is not a Int32 written in the invariant culture (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a value that does not parse as its type in the invariant culture is refused, naming both: Int64 '1e3'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Int64\",\"value\":\"1e3\"}}]}}}}",
+      "refused": {
+        "path": null,
+        "says": "The filter on 'Notional', clause 1: '1e3' is not a Int64 written in the invariant culture (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a value that does not parse as its type in the invariant culture is refused, naming both: Int64 '9223372036854775808'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Int64\",\"value\":\"9223372036854775808\"}}]}}}}",
+      "refused": {
+        "path": null,
+        "says": "The filter on 'Notional', clause 1: '9223372036854775808' is not a Int64 written in the invariant culture (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a value that does not parse as its type in the invariant culture is refused, naming both: Int16 '40000'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Int16\",\"value\":\"40000\"}}]}}}}",
+      "refused": {
+        "path": null,
+        "says": "The filter on 'Notional', clause 1: '40000' is not a Int16 written in the invariant culture (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a value that does not parse as its type in the invariant culture is refused, naming both: SByte '128'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"SByte\",\"value\":\"128\"}}]}}}}",
+      "refused": {
+        "path": null,
+        "says": "The filter on 'Notional', clause 1: '128' is not a SByte written in the invariant culture (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a value that does not parse as its type in the invariant culture is refused, naming both: UInt64 '-1'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"UInt64\",\"value\":\"-1\"}}]}}}}",
+      "refused": {
+        "path": null,
+        "says": "The filter on 'Notional', clause 1: '-1' is not a UInt64 written in the invariant culture (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a value that does not parse as its type in the invariant culture is refused, naming both: UInt64 '18446744073709551616'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"UInt64\",\"value\":\"18446744073709551616\"}}]}}}}",
+      "refused": {
+        "path": null,
+        "says": "The filter on 'Notional', clause 1: '18446744073709551616' is not a UInt64 written in the invariant culture (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a value that does not parse as its type in the invariant culture is refused, naming both: UInt32 '-1'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"UInt32\",\"value\":\"-1\"}}]}}}}",
+      "refused": {
+        "path": null,
+        "says": "The filter on 'Notional', clause 1: '-1' is not a UInt32 written in the invariant culture (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a value that does not parse as its type in the invariant culture is refused, naming both: UInt32 '+1'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"UInt32\",\"value\":\"+1\"}}]}}}}",
+      "refused": {
+        "path": null,
+        "says": "The filter on 'Notional', clause 1: '+1' is not a UInt32 written in the invariant culture (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a value that does not parse as its type in the invariant culture is refused, naming both: UInt16 '65536'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"UInt16\",\"value\":\"65536\"}}]}}}}",
+      "refused": {
+        "path": null,
+        "says": "The filter on 'Notional', clause 1: '65536' is not a UInt16 written in the invariant culture (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a value that does not parse as its type in the invariant culture is refused, naming both: Byte '256'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Byte\",\"value\":\"256\"}}]}}}}",
+      "refused": {
+        "path": null,
+        "says": "The filter on 'Notional', clause 1: '256' is not a Byte written in the invariant culture (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a value that does not parse as its type in the invariant culture is refused, naming both: Boolean 'True'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Boolean\",\"value\":\"True\"}}]}}}}",
+      "refused": {
+        "path": null,
+        "says": "The filter on 'Notional', clause 1: 'True' is not a Boolean written in the invariant culture (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a value that does not parse as its type in the invariant culture is refused, naming both: Boolean '1'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Boolean\",\"value\":\"1\"}}]}}}}",
+      "refused": {
+        "path": null,
+        "says": "The filter on 'Notional', clause 1: '1' is not a Boolean written in the invariant culture (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a value that does not parse as its type in the invariant culture is refused, naming both: Boolean 'yes'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Boolean\",\"value\":\"yes\"}}]}}}}",
+      "refused": {
+        "path": null,
+        "says": "The filter on 'Notional', clause 1: 'yes' is not a Boolean written in the invariant culture (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a value that does not parse as its type in the invariant culture is refused, naming both: DateOnly '05/01/2026'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"DateOnly\",\"value\":\"05/01/2026\"}}]}}}}",
+      "refused": {
+        "path": null,
+        "says": "The filter on 'Notional', clause 1: '05/01/2026' is not a DateOnly written in the invariant culture (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a value that does not parse as its type in the invariant culture is refused, naming both: DateOnly '2026-01-05T00:00:00.0000000'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"DateOnly\",\"value\":\"2026-01-05T00:00:00.0000000\"}}]}}}}",
+      "refused": {
+        "path": null,
+        "says": "The filter on 'Notional', clause 1: '2026-01-05T00:00:00.0000000' is not a DateOnly written in the invariant culture (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a value that does not parse as its type in the invariant culture is refused, naming both: DateOnly '2026-02-29'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"DateOnly\",\"value\":\"2026-02-29\"}}]}}}}",
+      "refused": {
+        "path": null,
+        "says": "The filter on 'Notional', clause 1: '2026-02-29' is not a DateOnly written in the invariant culture (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a value that does not parse as its type in the invariant culture is refused, naming both: DateOnly '0000-01-01'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"DateOnly\",\"value\":\"0000-01-01\"}}]}}}}",
+      "refused": {
+        "path": null,
+        "says": "The filter on 'Notional', clause 1: '0000-01-01' is not a DateOnly written in the invariant culture (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a value that does not parse as its type in the invariant culture is refused, naming both: DateOnly '2026-1-05'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"DateOnly\",\"value\":\"2026-1-05\"}}]}}}}",
+      "refused": {
+        "path": null,
+        "says": "The filter on 'Notional', clause 1: '2026-1-05' is not a DateOnly written in the invariant culture (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a value that does not parse as its type in the invariant culture is refused, naming both: DateTimeOffset '2026-01-05T09:30:00.0000000'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"DateTimeOffset\",\"value\":\"2026-01-05T09:30:00.0000000\"}}]}}}}",
+      "refused": {
+        "path": null,
+        "says": "The filter on 'Notional', clause 1: '2026-01-05T09:30:00.0000000' is not a DateTimeOffset written in the invariant culture (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a value that does not parse as its type in the invariant culture is refused, naming both: DateTimeOffset '2026-01-05T09:30:00.0000000Z'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"DateTimeOffset\",\"value\":\"2026-01-05T09:30:00.0000000Z\"}}]}}}}",
+      "refused": {
+        "path": null,
+        "says": "The filter on 'Notional', clause 1: '2026-01-05T09:30:00.0000000Z' is not a DateTimeOffset written in the invariant culture (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a value that does not parse as its type in the invariant culture is refused, naming both: DateTimeOffset '2026-01-05'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"DateTimeOffset\",\"value\":\"2026-01-05\"}}]}}}}",
+      "refused": {
+        "path": null,
+        "says": "The filter on 'Notional', clause 1: '2026-01-05' is not a DateTimeOffset written in the invariant culture (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a value that does not parse as its type in the invariant culture is refused, naming both: DateTimeOffset '2026-01-05T09:30:00.0000000+930'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"DateTimeOffset\",\"value\":\"2026-01-05T09:30:00.0000000+930\"}}]}}}}",
+      "refused": {
+        "path": null,
+        "says": "The filter on 'Notional', clause 1: '2026-01-05T09:30:00.0000000+930' is not a DateTimeOffset written in the invariant culture (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a value that does not parse as its type in the invariant culture is refused, naming both: DateTimeOffset '2026-01-05T09:30:00.0000000+14:01'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"DateTimeOffset\",\"value\":\"2026-01-05T09:30:00.0000000+14:01\"}}]}}}}",
+      "refused": {
+        "path": null,
+        "says": "The filter on 'Notional', clause 1: '2026-01-05T09:30:00.0000000+14:01' is not a DateTimeOffset written in the invariant culture (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a value that does not parse as its type in the invariant culture is refused, naming both: DateTimeOffset '2026-01-05T09:30:00.0000000+15:00'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"DateTimeOffset\",\"value\":\"2026-01-05T09:30:00.0000000+15:00\"}}]}}}}",
+      "refused": {
+        "path": null,
+        "says": "The filter on 'Notional', clause 1: '2026-01-05T09:30:00.0000000+15:00' is not a DateTimeOffset written in the invariant culture (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a value that does not parse as its type in the invariant culture is refused, naming both: DateTimeOffset '2026-01-05T09:30:00.0000000+09:3'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"DateTimeOffset\",\"value\":\"2026-01-05T09:30:00.0000000+09:3\"}}]}}}}",
+      "refused": {
+        "path": null,
+        "says": "The filter on 'Notional', clause 1: '2026-01-05T09:30:00.0000000+09:3' is not a DateTimeOffset written in the invariant culture (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a value that does not parse as its type in the invariant culture is refused, naming both: DateTimeOffset '2026-01-05T09:30:00.0000000+09:60'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"DateTimeOffset\",\"value\":\"2026-01-05T09:30:00.0000000+09:60\"}}]}}}}",
+      "refused": {
+        "path": null,
+        "says": "The filter on 'Notional', clause 1: '2026-01-05T09:30:00.0000000+09:60' is not a DateTimeOffset written in the invariant culture (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a value that does not parse as its type in the invariant culture is refused, naming both: DateTimeOffset '2026-01-05T09:30:00.0000000 +09:00'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"DateTimeOffset\",\"value\":\"2026-01-05T09:30:00.0000000 +09:00\"}}]}}}}",
+      "refused": {
+        "path": null,
+        "says": "The filter on 'Notional', clause 1: '2026-01-05T09:30:00.0000000 +09:00' is not a DateTimeOffset written in the invariant culture (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a value that does not parse as its type in the invariant culture is refused, naming both: DateTimeOffset '0001-01-01T00:00:00.0000000+00:01'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"DateTimeOffset\",\"value\":\"0001-01-01T00:00:00.0000000+00:01\"}}]}}}}",
+      "refused": {
+        "path": null,
+        "says": "The filter on 'Notional', clause 1: '0001-01-01T00:00:00.0000000+00:01' is not a DateTimeOffset written in the invariant culture (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a value that does not parse as its type in the invariant culture is refused, naming both: DateTimeOffset '9999-12-31T23:59:59.9999999-00:01'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"DateTimeOffset\",\"value\":\"9999-12-31T23:59:59.9999999-00:01\"}}]}}}}",
+      "refused": {
+        "path": null,
+        "says": "The filter on 'Notional', clause 1: '9999-12-31T23:59:59.9999999-00:01' is not a DateTimeOffset written in the invariant culture (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a DateTime in another form is refused: '2026-01-05'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"DateTime\",\"value\":\"2026-01-05\",\"kind\":\"Utc\"}}]}}}}",
+      "refused": {
+        "path": null,
+        "says": "The filter on 'Notional', clause 1: '2026-01-05' is not a DateTime written in the invariant culture (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a DateTime in another form is refused: '2026-01-05T09:30:00'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"DateTime\",\"value\":\"2026-01-05T09:30:00\",\"kind\":\"Utc\"}}]}}}}",
+      "refused": {
+        "path": null,
+        "says": "The filter on 'Notional', clause 1: '2026-01-05T09:30:00' is not a DateTime written in the invariant culture (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a DateTime in another form is refused: '2026-01-05T09:30:00.0000000Z'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"DateTime\",\"value\":\"2026-01-05T09:30:00.0000000Z\",\"kind\":\"Utc\"}}]}}}}",
+      "refused": {
+        "path": null,
+        "says": "The filter on 'Notional', clause 1: '2026-01-05T09:30:00.0000000Z' is not a DateTime written in the invariant culture (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a DateTime in another form is refused: '2026-01-05T09:30:00.0000000+09:00'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"DateTime\",\"value\":\"2026-01-05T09:30:00.0000000+09:00\",\"kind\":\"Utc\"}}]}}}}",
+      "refused": {
+        "path": null,
+        "says": "The filter on 'Notional', clause 1: '2026-01-05T09:30:00.0000000+09:00' is not a DateTime written in the invariant culture (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a DateTime in another form is refused: '05/01/2026 09:30'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"DateTime\",\"value\":\"05/01/2026 09:30\",\"kind\":\"Utc\"}}]}}}}",
+      "refused": {
+        "path": null,
+        "says": "The filter on 'Notional', clause 1: '05/01/2026 09:30' is not a DateTime written in the invariant culture (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a DateTime in another form is refused: '2026-01-05T24:00:00.0000000'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"DateTime\",\"value\":\"2026-01-05T24:00:00.0000000\",\"kind\":\"Utc\"}}]}}}}",
+      "refused": {
+        "path": null,
+        "says": "The filter on 'Notional', clause 1: '2026-01-05T24:00:00.0000000' is not a DateTime written in the invariant culture (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a DateTime in another form is refused: '2026-02-30T09:30:00.0000000'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"DateTime\",\"value\":\"2026-02-30T09:30:00.0000000\",\"kind\":\"Utc\"}}]}}}}",
+      "refused": {
+        "path": null,
+        "says": "The filter on 'Notional', clause 1: '2026-02-30T09:30:00.0000000' is not a DateTime written in the invariant culture (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a DateTime in another form is refused: '2026-01-05T09:30:00.000000'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"DateTime\",\"value\":\"2026-01-05T09:30:00.000000\",\"kind\":\"Utc\"}}]}}}}",
+      "refused": {
+        "path": null,
+        "says": "The filter on 'Notional', clause 1: '2026-01-05T09:30:00.000000' is not a DateTime written in the invariant culture (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a DateTime names its kind",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"DateTime\",\"value\":\"2026-01-05T09:30:00.0000000\"}}]}}}}",
+      "refused": {
+        "path": null,
+        "says": "The filter on 'Notional', clause 1: a DateTime names its kind — Unspecified, Utc or Local (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a DateTime's kind is checked before its text",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"DateTime\",\"value\":\"not a date\"}}]}}}}",
+      "refused": {
+        "path": null,
+        "says": "The filter on 'Notional', clause 1: a DateTime names its kind — Unspecified, Utc or Local (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a DateTime's kind is one of three",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"DateTime\",\"value\":\"2026-01-05T09:30:00.0000000\",\"kind\":\"Zulu\"}}]}}}}",
+      "refused": {
+        "path": null,
+        "says": "The filter on 'Notional', clause 1: 'Zulu' is not a DateTime kind; a kind is Unspecified, Utc or Local (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a DateTime's kind is matched exactly, by its case too",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"DateTime\",\"value\":\"2026-01-05T09:30:00.0000000\",\"kind\":\"utc\"}}]}}}}",
+      "refused": {
+        "path": null,
+        "says": "The filter on 'Notional', clause 1: 'utc' is not a DateTime kind; a kind is Unspecified, Utc or Local (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a kind on another operand is refused",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"DateOnly\",\"value\":\"2026-01-05\",\"kind\":\"Utc\"}}]}}}}",
+      "refused": {
+        "path": null,
+        "says": "The filter on 'Notional', clause 1: a kind belongs to a DateTime, and this operand is a DateOnly."
+      }
+    },
+    {
+      "name": "ADR-0207: a kind on an unknown tag is refused for the kind first",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Money\",\"value\":\"1\",\"kind\":\"Utc\"}}]}}}}",
+      "refused": {
+        "path": null,
+        "says": "The filter on 'Notional', clause 1: a kind belongs to a DateTime, and this operand is a Money."
+      }
+    },
+    {
+      "name": "ADR-0207: a null kind is no kind",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"DateOnly\",\"value\":\"2026-01-05\",\"kind\":null}}]}}}}",
+      "writes": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"DateOnly\",\"value\":\"2026-01-05\"}}]}}}}"
+    },
+    {
+      "name": "ADR-0207: an operand among In's values is held to the same, a null there being a Blank",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"In\",\"values\":[{\"type\":\"Decimal\",\"value\":\"1\"},null,{\"type\":\"Decimal\",\"value\":\"x\"}]}]}}}}",
+      "refused": {
+        "path": null,
+        "says": "The filter on 'Notional', clause 1, value 3: 'x' is not a Decimal written in the invariant culture (ADR-0207)."
+      }
+    },
+    {
+      "name": "ADR-0207: a Decimal written '1.50' reads, and is written again as '1.50'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Decimal\",\"value\":\"1.50\"}}]}}}}",
+      "writes": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Decimal\",\"value\":\"1.50\"}}]}}}}"
+    },
+    {
+      "name": "ADR-0207: a Decimal written '0.0000000000000000000000000000' reads, and is written again as '0.0000000000000000000000000000'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Decimal\",\"value\":\"0.0000000000000000000000000000\"}}]}}}}",
+      "writes": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Decimal\",\"value\":\"0.0000000000000000000000000000\"}}]}}}}"
+    },
+    {
+      "name": "ADR-0207: a Decimal written '79228162514264337593543950335' reads, and is written again as '79228162514264337593543950335'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Decimal\",\"value\":\"79228162514264337593543950335\"}}]}}}}",
+      "writes": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Decimal\",\"value\":\"79228162514264337593543950335\"}}]}}}}"
+    },
+    {
+      "name": "ADR-0207: a Decimal written '-7922816251426433759354395033.5' reads, and is written again as '-7922816251426433759354395033.5'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Decimal\",\"value\":\"-7922816251426433759354395033.5\"}}]}}}}",
+      "writes": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Decimal\",\"value\":\"-7922816251426433759354395033.5\"}}]}}}}"
+    },
+    {
+      "name": "ADR-0207: a Decimal written '1.0000000000000000000000000001' reads, and is written again as '1.0000000000000000000000000001'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Decimal\",\"value\":\"1.0000000000000000000000000001\"}}]}}}}",
+      "writes": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Decimal\",\"value\":\"1.0000000000000000000000000001\"}}]}}}}"
+    },
+    {
+      "name": "ADR-0207: a Double written '1e3' reads, and is written again as '1000'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Double\",\"value\":\"1e3\"}}]}}}}",
+      "writes": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Double\",\"value\":\"1000\"}}]}}}}"
+    },
+    {
+      "name": "ADR-0207: a Double written '-0' reads, and is written again as '-0'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Double\",\"value\":\"-0\"}}]}}}}",
+      "writes": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Double\",\"value\":\"-0\"}}]}}}}"
+    },
+    {
+      "name": "ADR-0207: a Double written '0.0e-999' reads, and is written again as '0'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Double\",\"value\":\"0.0e-999\"}}]}}}}",
+      "writes": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Double\",\"value\":\"0\"}}]}}}}"
+    },
+    {
+      "name": "ADR-0207: a Double written '+1.5' reads, and is written again as '1.5'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Double\",\"value\":\"+1.5\"}}]}}}}",
+      "writes": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Double\",\"value\":\"1.5\"}}]}}}}"
+    },
+    {
+      "name": "ADR-0207: a Double written '.5' reads, and is written again as '0.5'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Double\",\"value\":\".5\"}}]}}}}",
+      "writes": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Double\",\"value\":\"0.5\"}}]}}}}"
+    },
+    {
+      "name": "ADR-0207: a Double written '1.' reads, and is written again as '1'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Double\",\"value\":\"1.\"}}]}}}}",
+      "writes": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Double\",\"value\":\"1\"}}]}}}}"
+    },
+    {
+      "name": "ADR-0207: a Double written '1E+2' reads, and is written again as '100'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Double\",\"value\":\"1E+2\"}}]}}}}",
+      "writes": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Double\",\"value\":\"100\"}}]}}}}"
+    },
+    {
+      "name": "ADR-0207: a Double written '5e-324' reads, and is written again as '5E-324'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Double\",\"value\":\"5e-324\"}}]}}}}",
+      "writes": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Double\",\"value\":\"5E-324\"}}]}}}}"
+    },
+    {
+      "name": "ADR-0207: a Double written '1e-5' reads, and is written again as '1E-05'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Double\",\"value\":\"1e-5\"}}]}}}}",
+      "writes": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Double\",\"value\":\"1E-05\"}}]}}}}"
+    },
+    {
+      "name": "ADR-0207: a Double written '0.0001' reads, and is written again as '0.0001'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Double\",\"value\":\"0.0001\"}}]}}}}",
+      "writes": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Double\",\"value\":\"0.0001\"}}]}}}}"
+    },
+    {
+      "name": "ADR-0207: a Double written '123456789012345' reads, and is written again as '123456789012345'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Double\",\"value\":\"123456789012345\"}}]}}}}",
+      "writes": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Double\",\"value\":\"123456789012345\"}}]}}}}"
+    },
+    {
+      "name": "ADR-0207: a Double written '1e15' reads, and is written again as '1000000000000000'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Double\",\"value\":\"1e15\"}}]}}}}",
+      "writes": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Double\",\"value\":\"1000000000000000\"}}]}}}}"
+    },
+    {
+      "name": "ADR-0207: a Double written '1234567890123456' reads, and is written again as '1234567890123456'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Double\",\"value\":\"1234567890123456\"}}]}}}}",
+      "writes": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Double\",\"value\":\"1234567890123456\"}}]}}}}"
+    },
+    {
+      "name": "ADR-0207: a Double written '1e16' reads, and is written again as '10000000000000000'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Double\",\"value\":\"1e16\"}}]}}}}",
+      "writes": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Double\",\"value\":\"10000000000000000\"}}]}}}}"
+    },
+    {
+      "name": "ADR-0207: a Double written '12345678901234567' reads, and is written again as '12345678901234568'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Double\",\"value\":\"12345678901234567\"}}]}}}}",
+      "writes": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Double\",\"value\":\"12345678901234568\"}}]}}}}"
+    },
+    {
+      "name": "ADR-0207: a Double written '1e17' reads, and is written again as '1E+17'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Double\",\"value\":\"1e17\"}}]}}}}",
+      "writes": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Double\",\"value\":\"1E\\u002B17\"}}]}}}}"
+    },
+    {
+      "name": "ADR-0207: a Double written '123456789012345678' reads, and is written again as '1.2345678901234568E+17'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Double\",\"value\":\"123456789012345678\"}}]}}}}",
+      "writes": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Double\",\"value\":\"1.2345678901234568E\\u002B17\"}}]}}}}"
+    },
+    {
+      "name": "ADR-0207: a Double written '0.1' reads, and is written again as '0.1'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Double\",\"value\":\"0.1\"}}]}}}}",
+      "writes": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Double\",\"value\":\"0.1\"}}]}}}}"
+    },
+    {
+      "name": "ADR-0207: a Double written '1.7976931348623157e308' reads, and is written again as '1.7976931348623157E+308'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Double\",\"value\":\"1.7976931348623157e308\"}}]}}}}",
+      "writes": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Double\",\"value\":\"1.7976931348623157E\\u002B308\"}}]}}}}"
+    },
+    {
+      "name": "ADR-0207: a Single written '0.1' reads, and is written again as '0.1'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Single\",\"value\":\"0.1\"}}]}}}}",
+      "writes": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Single\",\"value\":\"0.1\"}}]}}}}"
+    },
+    {
+      "name": "ADR-0207: a Single written '16777217' reads, and is written again as '16777216'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Single\",\"value\":\"16777217\"}}]}}}}",
+      "writes": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Single\",\"value\":\"16777216\"}}]}}}}"
+    },
+    {
+      "name": "ADR-0207: a Single written '3.4028235e38' reads, and is written again as '3.4028235E+38'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Single\",\"value\":\"3.4028235e38\"}}]}}}}",
+      "writes": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Single\",\"value\":\"3.4028235E\\u002B38\"}}]}}}}"
+    },
+    {
+      "name": "ADR-0207: a Single written '1e-45' reads, and is written again as '1E-45'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Single\",\"value\":\"1e-45\"}}]}}}}",
+      "writes": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Single\",\"value\":\"1E-45\"}}]}}}}"
+    },
+    {
+      "name": "ADR-0207: a Single written '1e7' reads, and is written again as '10000000'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Single\",\"value\":\"1e7\"}}]}}}}",
+      "writes": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Single\",\"value\":\"10000000\"}}]}}}}"
+    },
+    {
+      "name": "ADR-0207: a Single written '1e8' reads, and is written again as '100000000'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Single\",\"value\":\"1e8\"}}]}}}}",
+      "writes": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Single\",\"value\":\"100000000\"}}]}}}}"
+    },
+    {
+      "name": "ADR-0207: a Single written '1e9' reads, and is written again as '1E+09'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Single\",\"value\":\"1e9\"}}]}}}}",
+      "writes": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Single\",\"value\":\"1E\\u002B09\"}}]}}}}"
+    },
+    {
+      "name": "ADR-0207: a Single written '123456789' reads, and is written again as '123456790'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Single\",\"value\":\"123456789\"}}]}}}}",
+      "writes": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Single\",\"value\":\"123456790\"}}]}}}}"
+    },
+    {
+      "name": "ADR-0207: a Single written '0.3333333333' reads, and is written again as '0.33333334'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Single\",\"value\":\"0.3333333333\"}}]}}}}",
+      "writes": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Single\",\"value\":\"0.33333334\"}}]}}}}"
+    },
+    {
+      "name": "ADR-0207: a Single written '-0' reads, and is written again as '-0'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Single\",\"value\":\"-0\"}}]}}}}",
+      "writes": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Single\",\"value\":\"-0\"}}]}}}}"
+    },
+    {
+      "name": "ADR-0207: a Int32 written '+007' reads, and is written again as '7'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Int32\",\"value\":\"+007\"}}]}}}}",
+      "writes": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Int32\",\"value\":\"7\"}}]}}}}"
+    },
+    {
+      "name": "ADR-0207: a Int32 written '-0' reads, and is written again as '0'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Int32\",\"value\":\"-0\"}}]}}}}",
+      "writes": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Int32\",\"value\":\"0\"}}]}}}}"
+    },
+    {
+      "name": "ADR-0207: a Int64 written '-9223372036854775808' reads, and is written again as '-9223372036854775808'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Int64\",\"value\":\"-9223372036854775808\"}}]}}}}",
+      "writes": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Int64\",\"value\":\"-9223372036854775808\"}}]}}}}"
+    },
+    {
+      "name": "ADR-0207: a UInt64 written '18446744073709551615' reads, and is written again as '18446744073709551615'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"UInt64\",\"value\":\"18446744073709551615\"}}]}}}}",
+      "writes": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"UInt64\",\"value\":\"18446744073709551615\"}}]}}}}"
+    },
+    {
+      "name": "ADR-0207: a SByte written '-128' reads, and is written again as '-128'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"SByte\",\"value\":\"-128\"}}]}}}}",
+      "writes": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"SByte\",\"value\":\"-128\"}}]}}}}"
+    },
+    {
+      "name": "ADR-0207: a Byte written '007' reads, and is written again as '7'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Byte\",\"value\":\"007\"}}]}}}}",
+      "writes": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Byte\",\"value\":\"7\"}}]}}}}"
+    },
+    {
+      "name": "ADR-0207: a Boolean written 'false' reads, and is written again as 'false'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Boolean\",\"value\":\"false\"}}]}}}}",
+      "writes": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"Boolean\",\"value\":\"false\"}}]}}}}"
+    },
+    {
+      "name": "ADR-0207: a DateTimeOffset written '2026-01-05T09:30:00.0000000+9:30' reads, and is written again as '2026-01-05T09:30:00.0000000+09:30'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"DateTimeOffset\",\"value\":\"2026-01-05T09:30:00.0000000+9:30\"}}]}}}}",
+      "writes": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"DateTimeOffset\",\"value\":\"2026-01-05T09:30:00.0000000\\u002B09:30\"}}]}}}}"
+    },
+    {
+      "name": "ADR-0207: a DateTimeOffset written '2026-01-05T09:30:00.0000000+0930' reads, and is written again as '2026-01-05T09:30:00.0000000+09:30'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"DateTimeOffset\",\"value\":\"2026-01-05T09:30:00.0000000+0930\"}}]}}}}",
+      "writes": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"DateTimeOffset\",\"value\":\"2026-01-05T09:30:00.0000000\\u002B09:30\"}}]}}}}"
+    },
+    {
+      "name": "ADR-0207: a DateTimeOffset written '2026-01-05T09:30:00.0000000-14:00' reads, and is written again as '2026-01-05T09:30:00.0000000-14:00'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"DateTimeOffset\",\"value\":\"2026-01-05T09:30:00.0000000-14:00\"}}]}}}}",
+      "writes": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"DateTimeOffset\",\"value\":\"2026-01-05T09:30:00.0000000-14:00\"}}]}}}}"
+    },
+    {
+      "name": "ADR-0207: a DateTimeOffset written '0001-01-01T00:00:00.0000000-00:01' reads, and is written again as '0001-01-01T00:00:00.0000000-00:01'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"DateTimeOffset\",\"value\":\"0001-01-01T00:00:00.0000000-00:01\"}}]}}}}",
+      "writes": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"DateTimeOffset\",\"value\":\"0001-01-01T00:00:00.0000000-00:01\"}}]}}}}"
+    },
+    {
+      "name": "ADR-0207: a DateOnly written '2024-02-29' reads, and is written again as '2024-02-29'",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"DateOnly\",\"value\":\"2024-02-29\"}}]}}}}",
+      "writes": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":{\"columns\":{\"Notional\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"Equals\",\"value\":{\"type\":\"DateOnly\",\"value\":\"2024-02-29\"}}]}}}}"
+    },
+    {
+      "name": "ADR-0207: the documented form reads back as itself",
+      "read": "{\"version\":1,\"columns\":[{\"column\":\"Notional\",\"width\":120.5,\"pinned\":true},{\"column\":\"Book\",\"width\":\"Auto\",\"pinned\":false}],\"sorts\":[{\"column\":\"Book\",\"direction\":\"Descending\"}],\"filter\":{\"columns\":{\"AsOf\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"LessThan\",\"value\":{\"type\":\"DateTime\",\"value\":\"2026-01-05T09:30:00.0000000\",\"kind\":\"Utc\"}}]},\"Notional\":{\"combinator\":\"Or\",\"clauses\":[{\"operator\":\"In\",\"values\":[{\"type\":\"Decimal\",\"value\":\"1.50\"},null]}]}}}}",
+      "writes": "{\"version\":1,\"columns\":[{\"column\":\"Notional\",\"width\":120.5,\"pinned\":true},{\"column\":\"Book\",\"width\":\"Auto\",\"pinned\":false}],\"sorts\":[{\"column\":\"Book\",\"direction\":\"Descending\"}],\"filter\":{\"columns\":{\"AsOf\":{\"combinator\":\"And\",\"clauses\":[{\"operator\":\"LessThan\",\"value\":{\"type\":\"DateTime\",\"value\":\"2026-01-05T09:30:00.0000000\",\"kind\":\"Utc\"}}]},\"Notional\":{\"combinator\":\"Or\",\"clauses\":[{\"operator\":\"In\",\"values\":[{\"type\":\"Decimal\",\"value\":\"1.50\"},null]}]}}}}"
+    },
+    {
+      "name": "ADR-0207: an empty View State reads back as itself",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[]}",
+      "writes": "{\"version\":1,\"columns\":[],\"sorts\":[]}"
+    },
+    {
+      "name": "ADR-0207: a document's spaces and escapes are not part of what it says",
+      "read": "{ \"version\" : 1, \"columns\" : [ { \"column\" : \"Bo\\u006fk\", \"width\" : \"Auto\", \"pinned\" : false } ],\n \"sorts\" : [ ] }",
+      "writes": "{\"version\":1,\"columns\":[{\"column\":\"Book\",\"width\":\"Auto\",\"pinned\":false}],\"sorts\":[]}"
+    },
+    {
+      "name": "ADR-0207: an absent filter and a null one are both no filter",
+      "read": "{\"version\":1,\"columns\":[],\"sorts\":[],\"filter\":null}",
+      "writes": "{\"version\":1,\"columns\":[],\"sorts\":[]}"
+    }
+  ]
+}
