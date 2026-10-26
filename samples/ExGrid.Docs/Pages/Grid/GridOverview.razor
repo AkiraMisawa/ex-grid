@@ -64,6 +64,16 @@
             few hundred. The script it runs is bundled into the package, at an address that changes with its
             content, as ExGrid's own script is.
         </p>
+        <p>
+            A dialog or panel of yours that took the keyboard over the grid gives it back with
+            <code>ReturnKeyboardAsync</code>, and hands it on to one of your controls with
+            <code>HandKeyboardToAsync</code>, as on <code>ExGrid.Components.ExGrid</code>. In the Example, a double
+            click on a Trader hands the keyboard from the grid to that trade's note, and Enter there gives it back.
+            The overload of <code>ReturnKeyboardAsync</code> that collects the keys typed on a joined surface is not
+            carried: this grid joins no surface to its order. Both are judged
+            in the browser: a control the user pressed meanwhile keeps the keyboard, however long the circuit took
+            to carry the request.
+        </p>
     </DocsSection>
 
     <DocsSection Title="The parts of a grid">

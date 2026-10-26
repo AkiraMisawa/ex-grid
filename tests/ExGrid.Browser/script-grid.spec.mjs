@@ -40,3 +40,14 @@ test('ADR-0350 section 7, ADR-0001: a header click sorts through the source in .
     const shown = await Promise.all([0, 1, 2].map(row => cell(page, row, 2).textContent()));
     expect(shown).toEqual(['-496956', '-494971', '-494956']);
 });
+
+test('DC-61, ADR-0070: the grid hands the keyboard on to a control of the page\'s, and takes it back from there, across the bridge', async ({ page }) => {
+    await cell(page, 0, 1).dblclick({ force: true });
+    await expect(page.locator('#script-note')).toBeFocused();
+
+    await page.keyboard.type('checked');
+    await page.keyboard.press('Enter');
+    await expect.poll(() => grid(page).evaluate(root => root.contains(document.activeElement))).toBe(true);
+    await page.keyboard.press('ArrowDown');
+    await expect(page.locator('#script-selection')).toHaveText('Selection: 1 range(s), Focus at row 1, column 1');
+});
