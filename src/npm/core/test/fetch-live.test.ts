@@ -34,6 +34,8 @@ class Server {
     /** Every answer's rows as new objects, as rows read from JSON are. */
     fresh = false;
     holds = false;
+    /** Every question fails, as an unreachable server's does. */
+    fails = false;
     readonly asked: GridQuery[] = [];
     readonly held: { readonly query: GridQuery; readonly answer: (page: GridPage<Deal>) => void }[] = [];
 
@@ -43,6 +45,7 @@ class Server {
 
     readonly fetch = async (query: GridQuery): Promise<GridPage<Deal>> => {
         this.asked.push(query);
+        if (this.fails) throw new Error('The server cannot be reached.');
         if (!this.holds) return this.answer(query);
         return new Promise(resolve => { this.held.push({ query, answer: resolve }); });
     };
@@ -154,6 +157,35 @@ describe('a fetching source over live data', () => {
         void plain.needRange(rowRange(150, 20));
         await settle();
         expect(plain.snapshot().rowSequenceVersion).toBe(1);
+    });
+
+    it('ADR-0141 LV-8 ADR-0025: a change a failed read could not show is carried by the next question asked', async () => {
+        const server = new Server(300);
+        server.token = undefined;
+        const failures: unknown[] = [];
+        const source = GridSource.fetch(server.fetch, { readAheadRows: 0, rowKey: deal => deal.id, clock: new FakeClock(), onFetchFailed: ({ error }) => failures.push(error) });
+        source.setColumns(columns);
+        await settle();
+        const version = source.snapshot().rowSequenceVersion;
+
+        server.fails = true;
+        server.change(3, deal => ({ ...deal, amount: 77 }));
+        source.notifyChanged();
+        await settle();
+        expect(String(failures[0])).toMatch(/cannot be reached/);
+        expect(source.snapshot().rowSequenceVersion).toBe(version);
+
+        // Nothing retries on its own; the next question, a scroll here, answers with the newer data, so it carries
+        // the change the failed read owed, and a server that sends no token moves the order with it.
+        server.fails = false;
+        void source.needRange(rowRange(150, 20));
+        await settle();
+        expect(source.snapshot().rowSequenceVersion).toBe(version + 1);
+
+        // Carried once: the scroll after it is a scroll.
+        void source.needRange(rowRange(0, 20));
+        await settle();
+        expect(source.snapshot().rowSequenceVersion).toBe(version + 1);
     });
 
     it('ADR-0141 LV-6: the first notice after a quiet interval reads at once, the ones within it once at its end, and the interval is settable', async () => {
