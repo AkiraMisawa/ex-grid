@@ -103,6 +103,8 @@ export class InMemoryRowMarks<Row> implements RowMarks<Row> {
         if (rowKind === this.#rowKind) return;
         this.#rowKind = rowKind;
         this.#counts = undefined;
+        // The counts moved with the roles, and whoever shows them hears it, not only the grid that told them.
+        this.#announce();
     }
 
     /** One marking gesture, applied at once. */

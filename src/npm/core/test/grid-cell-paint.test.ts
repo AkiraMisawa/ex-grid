@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
-// Layer 2 (ADR-0350 section 13): what a Consumer that holds every cell declares per cell (ADR-0050, items 1, 6,
-// 7, 11 and 15; ADR-0051), as a Sheet declares it: a cell's own kind, alignment and painted text, its Font, Fill
+// Layer 2 (ADR-0350 section 13): a cell's Cell State (ADR-0006), and what a Consumer that holds every cell declares
+// per cell (ADR-0050, items 1, 6, 7, 11 and 15; ADR-0051), as a Sheet declares it: a cell's own kind, alignment and painted text, its Font, Fill
 // and Borders through generated classes, the text an edit opens on, and a header click that selects.
 import { describe, expect, it } from 'vitest';
 import type { CellAppearance } from '../src/cells/cell-appearance';
@@ -43,6 +43,26 @@ const cellAt = (root: HTMLElement, row: number, column: number): HTMLElement =>
     q(root, `.ex-viewport > .ex-row[aria-rowindex="${row + 2}"] > [aria-colindex="${column + 1}"]`);
 
 describe('Per-cell declarations (ADR-0050)', () => {
+    it('ADR-0006: a Cell State is painted as its class and nothing more, and the function\'s identity is the change signal', async () => {
+        const lines: readonly Line[] = [{ cells: ['a', 1, 'c'] }];
+        let state: 'missing' | 'stale' = 'missing';
+        const asked: GridOptions<Line>['cellState'] = (_line, column) => (indexOf(column) === 1 ? state : 'normal');
+        const { root, view } = mount({ columns: sheetColumns, rows: lines, rowHeight: 24, viewportHeight: 480, cellState: asked });
+        await painted();
+        expect([0, 1, 2].map(c => cellAt(root, 0, c).className)).toEqual(['ex-cell', 'ex-cell ex-state-missing', 'ex-cell']);
+        expect(cellAt(root, 0, 1).textContent).toBe('1');
+        // The same function answering otherwise leaves the states on screen where they are (ADR-0003).
+        state = 'stale';
+        view.update({ columns: sheetColumns, rows: lines, rowHeight: 24, viewportHeight: 480, cellState: asked });
+        await painted();
+        expect(cellAt(root, 0, 1).className).toBe('ex-cell ex-state-missing');
+        view.update({ columns: sheetColumns, rows: lines, rowHeight: 24, viewportHeight: 480, cellState: (line, column) => asked(line, column) });
+        await painted();
+        expect(cellAt(root, 0, 1).className).toBe('ex-cell ex-state-stale');
+        expect(() => { view.update({ columns: sheetColumns, rows: lines, rowHeight: 24, viewportHeight: 480, cellState: 'missing' as never }); })
+            .toThrow(/cellState is a function \(ADR-0006\)/);
+    });
+
     it('ADR-0050 item 6: a cell declared a Number in a Text column is right-aligned and becomes #### when it does not fit', async () => {
         const root = sheet([{ cells: ['label', 123, 12_345_678_901_234] }], { cellType });
         await painted();

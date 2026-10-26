@@ -35,4 +35,8 @@ describe('row classes', () => {
         const all = kinds.flatMap(kind => truths.flatMap(placeholder => truths.map(stripe => rowClasses({ kind, placeholder, stripe }))));
         expect(new Set(all).size).toBe(12);
     });
+
+    it('ADR-0024: a kind nobody declared is refused, never painted as a detail row', () => {
+        expect(() => rowClasses({ kind: 'subtotal' as RowKind, placeholder: false })).toThrow(/kind is one of detail, group, total/);
+    });
 });

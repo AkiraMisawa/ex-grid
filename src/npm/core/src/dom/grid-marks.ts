@@ -4,6 +4,7 @@
 
 import { markCountText, markLabelIds } from '../chrome/mark-words';
 import { rowMarkHeaderState, type RowMarks } from '../rows/row-marks';
+import type { RowKind } from '../paint/row-classes';
 import { rowRunsOf } from '../selection/heading-marks';
 import type { SelectionRange } from '../selection/range';
 import type { RowRange } from '../viewport/row-range';
@@ -22,6 +23,7 @@ export class GridMarks<Row> {
     readonly #changed: () => void;
     #marks: RowMarks<Row> | undefined;
     #unsubscribe: (() => void) | undefined;
+    #rowKind: ((row: Row) => RowKind) | undefined;
 
     /** Marks painted in `doc`; `changed` hears that the marks or their counts moved, so the grid paints again. */
     constructor(doc: Document, changed: () => void) {
@@ -37,16 +39,22 @@ export class GridMarks<Row> {
         return this.#marks;
     }
 
-    /** Binds the marks of the grid's Mark Column, or none: heard while bound, and told the grid's Row Kind, which
-     * leaves Group and Total rows out of "all" and the counts. The grid declares none yet, so every row is a
-     * Detail row (ADR-0024). */
-    bind(marks: RowMarks<Row> | undefined): void {
-        if (marks === this.#marks) return;
+    /** Binds the marks of the grid's Mark Column, or none: heard while bound, and told the grid's Row Kind whenever
+     * it is another, which leaves Group and Total rows out of "all" and the counts (ADR-0024, ADR-0043). */
+    bind(marks: RowMarks<Row> | undefined, rowKind: ((row: Row) => RowKind) | undefined): void {
+        if (marks === this.#marks) {
+            if (marks !== undefined && rowKind !== this.#rowKind) marks.setRowKind(rowKind);
+            this.#rowKind = rowKind;
+            return;
+        }
         this.#unsubscribe?.();
         this.#unsubscribe = undefined;
+        // The marks let go keep no Row Kind of this grid's: no grid declares it over them any more.
+        if (this.#marks !== undefined && this.#rowKind !== undefined) this.#marks.setRowKind(undefined);
         this.#marks = marks;
+        this.#rowKind = rowKind;
         if (marks === undefined) return;
-        marks.setRowKind(undefined);
+        marks.setRowKind(rowKind);
         this.#unsubscribe = marks.subscribe(this.#changed);
     }
 
@@ -72,7 +80,7 @@ export class GridMarks<Row> {
 
     /** Stops hearing the marks. */
     destroy(): void {
-        this.bind(undefined);
+        this.bind(undefined, undefined);
     }
 }
 

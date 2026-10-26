@@ -76,6 +76,7 @@ export type CellChangedAt<Row> = (row: Row, column: string) => number | undefine
 export interface CellPaintOptions<Row> {
     readonly cellAlign?: (row: Row, column: GridColumn<Row>) => CellAlign;
     readonly cellAppearance?: (row: Row, column: GridColumn<Row>) => CellAppearance;
+    readonly cellState?: (row: Row, column: GridColumn<Row>) => CellState;
     readonly cellType?: (row: Row, column: GridColumn<Row>) => ColumnType;
     readonly edgeBorder?: EdgeBorderOf;
     readonly editorAppearance?: (row: Row, column: GridColumn<Row>) => CellAppearance;
@@ -88,6 +89,9 @@ export interface CellPosition {
     readonly column: number;
     readonly row: number;
 }
+
+// @public
+export type CellState = 'normal' | 'stale' | 'missing' | 'error' | 'modified';
 
 // @public
 export interface CellTextMeasure {
@@ -622,9 +626,11 @@ export interface GridOptions<Row> extends CellPaintOptions<Row>, FormulaBarOptio
     readonly pasteMaySpill?: boolean;
     readonly pinnedColumnCount?: number;
     readonly rowHeight?: number;
+    readonly rowKind?: (row: Row) => RowKind;
     readonly rows?: readonly Row[];
     readonly showSelectionSummary?: boolean;
     readonly source?: GridSource<Row>;
+    readonly stripeRows?: boolean;
     readonly summaryFigures?: readonly SummaryFigure[];
     readonly temporal?: TemporalLike;
     readonly viewportHeight?: ViewportSize;

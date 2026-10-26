@@ -21,6 +21,7 @@ import { Scatter } from './pages/scatter';
 import { Surface } from './pages/surface';
 import { Pivot } from './pages/pivot';
 import { SheetDemo } from './pages/sheet';
+import { Stripes } from './pages/stripes';
 import { Marks } from './pages/marks';
 import { Virtual } from './pages/virtual';
 import { Wide } from './pages/wide';
@@ -48,6 +49,7 @@ const pages = { '': Home, virtual: Virtual, wide: Wide, fetch: Fetch, features: 
     pivot: Pivot,
     sheet: SheetDemo,
     marks: Marks,
+    stripes: Stripes,
     board: Board,
 };
 

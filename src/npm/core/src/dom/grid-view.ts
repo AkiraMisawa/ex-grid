@@ -41,7 +41,7 @@ import { editingKeysByMode } from '../keys/editing-keys';
 import { canonicalKey, resolveKey, type GridKeyAction, type KeyPress } from '../keys/grid-keys';
 import { cellClasses, type MatchMark } from '../paint/cell-classes';
 import { columnMark } from '../paint/heading-mark-styles';
-import { rowClasses } from '../paint/row-classes';
+import { rowClasses, type RowKind } from '../paint/row-classes';
 import { rowMarkHeaderPress, rowMarkHeaderState, type MarkRefusalReason, type RowMarkIntent, type RowMarks } from '../rows/row-marks';
 import { cell as cellPosition, sameCell, type CellPosition, type GridDirection, type GridExtent } from '../selection/cell';
 import { markedColumns, wholeColumnRuns } from '../selection/heading-marks';
@@ -206,6 +206,17 @@ export interface GridOptions<Row> extends CellPaintOptions<Row>, FormulaBarOptio
      * painted again; it goes when the pointer leaves the grid or the rows move under it. Off unless given,
      * and while off the grid does not hear the pointer move at all. */
     readonly highlightHoverRow?: boolean;
+    /** Paints a Row Stripe on every second row of the result (ADR-0038), appearance only and off unless given.
+     * Counted by the row's position in the whole result, so a stripe stays with its row while scrolling and on a
+     * Placeholder; Row Kind and Cell State paint over it, and the overlays above it. The colour is
+     * `--ex-row-stripe-background`. */
+    readonly stripeRows?: boolean;
+    /** What role each row plays, detail, group or total (ADR-0024): none, and every row is a detail row. Asked once
+     * per row painted, and by the Row Marks of every row of the result when they count or mark all, so it is a cheap
+     * read of the row; its identity is the change signal: a new function paints the rows again, and the same one
+     * answering otherwise paints nothing. The Mark Column paints no checkbox on a group or total row, and the marks
+     * leave them out of "all" and of the counts. */
+    readonly rowKind?: (row: Row) => RowKind;
     /**
      * Hears the one Clear Intent Delete raises over the Selection (ADR-0054): the positions should hold no
      * value, which the Consumer maps onto its own Blank per column. Judged by the paste's gate first: only
@@ -492,6 +503,9 @@ interface PaintedRow<Row> {
     /** Whether its Mark Column's checkbox was painted marked (ADR-0043): a changed mark paints this row again
      * and no other (MK-4). */
     readonly marked: boolean;
+    /** The Row Kind it was asked under, and whether it wore a stripe (ADR-0024, ADR-0038). */
+    readonly rowKind: ((row: Row) => RowKind) | undefined;
+    readonly stripe: boolean;
 }
 
 /**
@@ -575,6 +589,8 @@ interface Taken<Row> {
     readonly pasteMaySpill: boolean;
     readonly highlightFocusRow: boolean;
     readonly highlightHoverRow: boolean;
+    readonly stripeRows: boolean;
+    readonly rowKind: ((row: Row) => RowKind) | undefined;
     readonly pasteByteCap: number;
     readonly onClear: ((intent: GridClearIntent) => void) | undefined;
     readonly onUndo: (() => void) | undefined;
@@ -695,6 +711,8 @@ interface RowPaint<Row> {
     readonly slots: MountedTemplate<Row>[];
     /** Its cells' appearance (ADR-0050, item 15). */
     readonly appearance: RowAppearance | undefined;
+    /** The role it plays, asked once for the row (ADR-0024). */
+    readonly kind: RowKind;
 }
 
 /** A reveal's repaint under way (ADR-0012, 2026-10-08): where the reveal left the scroller, and what stops
@@ -985,6 +1003,8 @@ export class GridView<Row> {
     #pasteMaySpill = false;
     #highlightFocusRow = false;
     #highlightHoverRow = false;
+    #stripeRows = false;
+    #rowKind: ((row: Row) => RowKind) | undefined;
     // The row under the pointer, while the hover band is on and the pointer is over a row (ADR-0029).
     #hoverRow: number | undefined;
     #pasteByteCap = defaultPasteByteCap;
@@ -1603,6 +1623,9 @@ export class GridView<Row> {
         if (highlightHoverRow !== undefined && typeof highlightHoverRow !== 'boolean') {
             throw new TypeError('highlightHoverRow is true or false.');
         }
+        const { stripeRows, rowKind }: { readonly stripeRows?: unknown; readonly rowKind?: unknown } = options;
+        if (stripeRows !== undefined && typeof stripeRows !== 'boolean') throw new TypeError('stripeRows is true or false.');
+        if (rowKind !== undefined && typeof rowKind !== 'function') throw new TypeError('rowKind is a function of the row (ADR-0024).');
         if (onClear !== undefined && typeof onClear !== 'function') {
             throw new TypeError('onClear is a function of the clear\'s intent.');
         }
@@ -1717,6 +1740,7 @@ export class GridView<Row> {
             marks,
             onPaste: options.onPaste, pasteMaySpill: options.pasteMaySpill === true, pasteByteCap, onClear: options.onClear,
             highlightFocusRow: options.highlightFocusRow === true, highlightHoverRow: options.highlightHoverRow === true,
+            stripeRows: options.stripeRows === true, rowKind: options.rowKind,
             onUndo: options.onUndo, onRedo: options.onRedo,
             onEdit: options.onEdit, onEditingChanged: options.onEditingChanged, onEditDiscarded: options.onEditDiscarded,
             onOverwriteNotice: options.onOverwriteNotice, onCellDoubleClick: options.onCellDoubleClick, onLeave: options.onLeave,
@@ -1890,7 +1914,13 @@ export class GridView<Row> {
         this.#copyAnswer = taken.copyAnswer;
         this.#onRefused = taken.onRefused;
         this.#onAction = taken.onAction;
-        this.#rowMarks.bind(taken.marks);
+        this.#rowMarks.bind(taken.marks, taken.rowKind);
+        if (taken.stripeRows !== this.#stripeRows) {
+            this.#stripeRows = taken.stripeRows;
+            // A Placeholder wears its stripe too, and is painted again with it.
+            this.#placeholders = new Map();
+        }
+        this.#rowKind = taken.rowKind;
         this.#pasteHeard = taken.onPaste;
         this.#pasteMaySpill = taken.pasteMaySpill;
         this.#highlightFocusRow = taken.highlightFocusRow;
@@ -6562,7 +6592,9 @@ export class GridView<Row> {
                 // Asked for every row painted while a Mark Column stands, and part of what decides whether the row
                 // paints again, so a changed mark paints its row and no other (ADR-0043, MK-4).
                 const marked = this.#rowMarks.isMarked(row);
+                const stripe = this.#stripeAt(index);
                 if (was !== undefined && !next.has(key) && was.row === row && was.index === index && was.styles === this.#styles
+                    && was.rowKind === this.#rowKind && was.stripe === stripe
                     && was.columns === this.#columns && was.placeholder === this.#placeholderMode && sameRange(was.scrollable, scrollable)
                     && paint.paintsRowsAs(was.paint) && was.appearance === appearance && was.chosen === chosen && was.marked === marked) {
                     if (was.marks === marks && was.current === current) {
@@ -6580,15 +6612,16 @@ export class GridView<Row> {
                         continue;
                     }
                 }
-                const rowPaint: RowPaint<Row> = { key, chosen: chosenHere, marked, used, slots: [], appearance };
-                const { element, matched } = this.#rowElement(row, index, scrollable, marks, current, rowPaint);
+                const kind = this.#rowKind === undefined ? 'detail' : this.#rowKind(row);
+                const rowPaint: RowPaint<Row> = { key, chosen: chosenHere, marked, used, slots: [], appearance, kind };
+                const { element, matched } = this.#rowElement(row, index, scrollable, marks, current, rowPaint, stripe);
                 repainted = true;
                 // A key met twice in one Window is painted, never paired: which of the two a later row
                 // continues cannot be told (ADR-0140).
                 if (!next.has(key)) {
                     next.set(key, {
                         element, row, index, styles: this.#styles, columns: this.#columns, placeholder: this.#placeholderMode, scrollable,
-                        marks, current, matched, paint, appearance, chosen, slots: rowPaint.slots, marked,
+                        marks, current, matched, paint, appearance, chosen, slots: rowPaint.slots, marked, rowKind: this.#rowKind, stripe,
                     });
                 }
                 rows.push(element);
@@ -6815,11 +6848,17 @@ export class GridView<Row> {
         element.setSelectionRange(element.value.length, element.value.length);
     }
 
+    // Whether the row at this position in the whole result wears a stripe: the second, the fourth, …, counted in the
+    // result and never on the screen, so a stripe stays with its row however far the Viewport scrolls (ADR-0038).
+    #stripeAt(index: number): boolean {
+        return this.#stripeRows && (index & 1) === 1;
+    }
+
     // A position with no row behind it at all: not even a Pinned Column has anything to paint, and
     // aria-busy, because a value that has not arrived must not read as one (ADR-0004, ADR-0033).
     #placeholderRow(index: number): HTMLElement {
         const element = this.#root.ownerDocument.createElement('div');
-        element.className = rowClasses({ kind: 'detail', placeholder: true });
+        element.className = rowClasses({ kind: 'detail', placeholder: true, stripe: this.#stripeAt(index) });
         element.setAttribute('role', 'row');
         element.setAttribute('aria-rowindex', String(this.#headerRowCount + index + 1));
         element.setAttribute('aria-busy', 'true');
@@ -6853,9 +6892,11 @@ export class GridView<Row> {
     // A row: the Pinned Columns, then one gap for what is virtualised away to the left, then the scrollable
     // columns on screen (ADR-0004). Mid-fling only the pinned cells are painted, and the row says it is busy.
     #rowElement(row: Row, index: number, scrollable: ColumnRange | undefined, marks: MatchMarks<Row> | undefined,
-        current: number, paint: RowPaint<Row>): { readonly element: HTMLElement; readonly matched: string } {
+        current: number, paint: RowPaint<Row>, stripe: boolean): { readonly element: HTMLElement; readonly matched: string } {
         const element = this.#root.ownerDocument.createElement('div');
-        element.className = rowClasses({ kind: 'detail', placeholder: this.#placeholderMode });
+        // A Placeholder keeps its Kind: a group row that blinked into a detail row mid-fling would be the landmark
+        // lying about itself (ADR-0024, ADR-0004).
+        element.className = rowClasses({ kind: paint.kind, placeholder: this.#placeholderMode, stripe });
         element.setAttribute('role', 'row');
         element.setAttribute('aria-rowindex', String(this.#headerRowCount + index + 1));
         if (this.#placeholderMode) element.setAttribute('aria-busy', 'true');
@@ -6915,7 +6956,8 @@ export class GridView<Row> {
         const decision = decideOverflow(type, painted, widthPx, metrics);
         const cell = this.#root.ownerDocument.createElement('div');
         const align = cellPaint.cellAlign === undefined ? column.align ?? 'auto' : cellPaint.cellAlign(row, column); // oxlint-disable-line ex-grid/no-stand-in-default -- ADR-0006: a column that declares no alignment aligns by its type
-        const base = cellClasses({ numeric, pinned, state: 'normal', align, mark });
+        const state = cellPaint.cellState === undefined ? 'normal' : cellPaint.cellState(row, column);
+        const base = cellClasses({ numeric, pinned, state, align, mark });
         const own = appearance?.classOf(c);
         cell.className = own === undefined ? base : `${base} ${own}`;
         cell.setAttribute('style', pinned ? this.#styles.pinnedCell(c) : this.#styles.cell(c));
@@ -6942,7 +6984,8 @@ export class GridView<Row> {
         const { column, numeric, actions, template } = resolved;
         const mounted = template === undefined ? undefined : this.#templateSlot(row, resolved, template, paint);
         const cell = mounted === undefined ? this.#root.ownerDocument.createElement('div') : mounted.slot;
-        cell.className = cellClasses({ numeric, pinned, state: 'normal', align: column.align ?? 'auto', mark }); // oxlint-disable-line ex-grid/no-stand-in-default -- ADR-0006: a column that declares no alignment aligns by its type
+        const state = this.#cellPaint.cellState === undefined ? 'normal' : this.#cellPaint.cellState(row, column);
+        cell.className = cellClasses({ numeric, pinned, state, align: column.align ?? 'auto', mark }); // oxlint-disable-line ex-grid/no-stand-in-default -- ADR-0006: a column that declares no alignment aligns by its type
         cell.setAttribute('style', pinned ? this.#styles.pinnedCell(c) : this.#styles.cell(c));
         cell.setAttribute('role', 'gridcell');
         cell.setAttribute('id', `${this.#ids}r${index}c${c}`);
@@ -6950,7 +6993,8 @@ export class GridView<Row> {
         actions.forEach((action, a) => {
             cell.append(this.#actionButton(resolved, action, paint.chosen?.column === c && paint.chosen.action === a ? `${this.#ids}r${index}c${c}a${a}` : undefined));
         });
-        if (resolved.mark) {
+        // A group or total row is no target of a mark, so it has no checkbox to press (ADR-0043, ADR-0024).
+        if (resolved.mark && paint.kind === 'detail') {
             const box = rowMarkBox(this.#root.ownerDocument, paint.marked, this.#labelOf(markLabelIds.markRow));
             this.#markBoxes.set(box, paint.marked);
             cell.append(box);
