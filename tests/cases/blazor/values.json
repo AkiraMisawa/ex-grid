@@ -1,0 +1,31 @@
+{
+  "about": "A cell's value as Blazor's ExGrid sends it to the Script Core (ADR-0350 sections 7 and 16): what ExGrid.Script.ScriptValues writes for a .NET value, and what the bridge (src/npm/blazor/src/wire-values.ts) reads the same JSON as. A case with `dotnet` and `wire` holds on the C# side; one with `wire` and `reads` on the bridge's; one with both is the contract end to end. `refused` names what C# refuses to send (`notSupported`) or the bridge refuses to read (`argument`).",
+  "kind": "wireValue",
+  "cases": [
+    { "name": "ADR-0350 s16: text crosses as itself", "dotnet": { "type": "string", "value": "Rates" }, "wire": "Rates", "reads": { "type": "string", "text": "Rates" } },
+    { "name": "ADR-0350 s16: a boolean crosses as itself", "dotnet": { "type": "bool", "value": true }, "wire": true, "reads": { "type": "boolean", "text": "true" } },
+    { "name": "ADR-0350 s16: an int crosses as a number", "dotnet": { "type": "int", "value": 42 }, "wire": 42, "reads": { "type": "number", "text": "42" } },
+    { "name": "ADR-0350 s16: the largest long a double holds exactly crosses as a number", "dotnet": { "type": "long", "value": "9007199254740991" }, "wire": 9007199254740991, "reads": { "type": "number", "text": "9007199254740991" } },
+    { "name": "ADR-0350 s16: a long past a double crosses tagged and is read as a bigint", "dotnet": { "type": "long", "value": "9007199254740993" }, "wire": { "$": "i", "v": "9007199254740993" }, "reads": { "type": "bigint", "text": "9007199254740993" } },
+    { "name": "ADR-0350 s16: a negative long past a double crosses tagged", "dotnet": { "type": "long", "value": "-9007199254740993" }, "wire": { "$": "i", "v": "-9007199254740993" }, "reads": { "type": "bigint", "text": "-9007199254740993" } },
+    { "name": "ADR-0350 s16: the largest ulong crosses tagged", "dotnet": { "type": "ulong", "value": "18446744073709551615" }, "wire": { "$": "i", "v": "18446744073709551615" }, "reads": { "type": "bigint", "text": "18446744073709551615" } },
+    { "name": "ADR-0350 s16: a double crosses as itself", "dotnet": { "type": "double", "value": 0.1 }, "wire": 0.1, "reads": { "type": "number", "text": "0.1" } },
+    { "name": "ADR-0350 s16: NaN crosses tagged", "dotnet": { "type": "double", "value": "NaN" }, "wire": { "$": "f", "v": "NaN" }, "reads": { "type": "number", "text": "NaN" } },
+    { "name": "ADR-0350 s16: negative infinity crosses tagged", "dotnet": { "type": "double", "value": "-Infinity" }, "wire": { "$": "f", "v": "-Infinity" }, "reads": { "type": "number", "text": "-Infinity" } },
+    { "name": "ADR-0023: a float crosses as the decimal it holds, never with the digits widening invents", "dotnet": { "type": "float", "value": 0.1 }, "wire": 0.1, "reads": { "type": "number", "text": "0.1" } },
+    { "name": "ADR-0023: a float past decimal's range is refused, as the C# core refuses it", "dotnet": { "type": "float", "value": "1e30" }, "refused": "notSupported" },
+    { "name": "ADR-0023: a float too small for a decimal is refused, never sent as a zero", "dotnet": { "type": "float", "value": "1e-30" }, "refused": "notSupported" },
+    { "name": "ADR-0350 s16: a decimal of fifteen significant digits crosses as a number", "dotnet": { "type": "decimal", "value": "123456789012.345" }, "wire": 123456789012.345, "reads": { "type": "number", "text": "123456789012.345" } },
+    { "name": "ADR-0350 s16: a decimal's trailing zeros are no digits of its value", "dotnet": { "type": "decimal", "value": "1500.2500" }, "wire": 1500.25, "reads": { "type": "number", "text": "1500.25" } },
+    { "name": "ADR-0350 s16: a whole decimal past fifteen digits crosses tagged and is read as a bigint", "dotnet": { "type": "decimal", "value": "12345678901234567890" }, "wire": { "$": "i", "v": "12345678901234567890" }, "reads": { "type": "bigint", "text": "12345678901234567890" } },
+    { "name": "spine rule 1: a decimal of sixteen significant digits with a fraction is refused, never sent as the nearest double", "dotnet": { "type": "decimal", "value": "1234567890123.456" }, "refused": "notSupported" },
+    { "name": "ADR-0350 s16: a DateOnly crosses as the ticks of its day and is read as a PlainDate", "dotnet": { "type": "dateOnly", "value": "2026-10-26" }, "wire": { "$": "d", "v": "639285696000000000" }, "reads": { "type": "PlainDate", "text": "2026-10-26" } },
+    { "name": "ADR-0350 s16: a DateTime crosses as its ticks and is read as a PlainDateTime", "dotnet": { "type": "dateTime", "value": "2026-10-26T13:45:30" }, "wire": { "$": "t", "v": "639286191300000000" }, "reads": { "type": "PlainDateTime", "text": "2026-10-26T13:45:30" } },
+    { "name": "ADR-0350 s16: a DateTimeOffset crosses as its clock's ticks and its offset, and shows in that offset", "dotnet": { "type": "dateTimeOffset", "value": "2026-10-26T13:45:30+09:00" }, "wire": { "$": "o", "v": "639286191300000000", "m": 540 }, "reads": { "type": "ZonedDateTime", "text": "2026-10-26T13:45:30+09:00[+09:00]" } },
+    { "name": "ADR-0350 s16: a missing value crosses as null", "dotnet": { "type": "null", "value": null }, "wire": null, "reads": { "type": "null", "text": "null" } },
+    { "name": "ADR-0006: a TimeOnly crosses as the invariant text the C# core shows of it, whatever the culture", "dotnet": { "type": "timeOnly", "value": "09:05:00" }, "wire": "09:05:00", "reads": { "type": "string", "text": "09:05:00" } },
+    { "name": "spine rule 1: a tag the bridge does not know is refused, never read as another value", "wire": { "$": "x", "v": "1" }, "refused": "argument" },
+    { "name": "spine rule 1: a non-finite double of another spelling is refused", "wire": { "$": "f", "v": "nan" }, "refused": "argument" },
+    { "name": "spine rule 1: a DateTimeOffset without its offset is refused", "wire": { "$": "o", "v": "639286191300000000" }, "refused": "argument" }
+  ]
+}

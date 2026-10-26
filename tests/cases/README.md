@@ -32,7 +32,7 @@ One directory per area, one file per group of cases. Each file is an object:
 | Key | Meaning |
 |---|---|
 | `about` | What the file covers, and where its cases came from |
-| `kind` | Which runner reads it: `selection`, `range`, `edgeBand`, `held`, `calls`, `clipboard`, `query`, `source`, `fetch`, `displayText`, `operand`, `find`, `replace`, `summary`, `arrowRead`, `arrowShape`, `arrowWrite`, `changeBatch`, `csvRead`, `csvSuggest`, `listSeparator`, `boardInput`, `boardSpec`, `boardDiff`, `chart`, and ExPivot's (`pivot/`) |
+| `kind` | Which runner reads it: `selection`, `range`, `edgeBand`, `held`, `calls`, `clipboard`, `query`, `source`, `fetch`, `displayText`, `operand`, `find`, `replace`, `summary`, `arrowRead`, `arrowShape`, `arrowWrite`, `changeBatch`, `csvRead`, `csvSuggest`, `listSeparator`, `boardInput`, `boardSpec`, `boardDiff`, `chart`, `wireValue`, and ExPivot's (`pivot/`) |
 | `extent` | `[rows, columns]`, the grid every case of the file runs against unless it names its own |
 | `cases` | The cases. Each has a `name`, which starts with the ADR it holds to (CLAUDE.md, "Put the ADR number in the test name") |
 
@@ -874,3 +874,16 @@ a double's sixteen hexadecimal digits, and the answer the exact value rounded on
 even. The functions are `atan`, `asin`, `acos`, `atan2`, `sinh`, `cosh`, `tanh`, `asinh`, `acosh`, `atanh`, `log10`
 and `powWhole` (a whole power). The answers are mpmath's at 400 bits (`to_float`, `round_nearest`), computed from
 the argument's own double, never from its decimal spelling.
+
+### `wireValue`
+
+A file of kind `wireValue` (`blazor/`) holds a cell's value as Blazor's ExGrid sends it to the Script Core
+(ADR-0350 sections 7 and 16): not the grid's logic but the contract between its two halves, `ScriptValues` in
+.NET and the bridge's `wire-values.ts`, so each half is held to the one text. A case gives any of: `dotnet`, a
+.NET value as `{"type", "value"}` (`string`, `bool`, `int`, `long`, `ulong`, `double`, `float`, `decimal`,
+`dateOnly`, `dateTime`, `dateTimeOffset` or `null`, the value as JSON or, where JSON cannot hold it exactly, as
+its invariant text); `wire`, the JSON it crosses as; `reads`, what the bridge reads that JSON as, by its `type`
+(`typeof`, or the Temporal type's name, or `null`) and its `text` (`String` of it). xUnit writes `dotnet` and
+compares it with `wire`; Vitest reads `wire` and compares it with `reads`. `refused` is what is refused instead:
+`notSupported` where .NET refuses to send the value (`NotSupportedException`), `argument` where the bridge
+refuses to read the JSON (`TypeError`).

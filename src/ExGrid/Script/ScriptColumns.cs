@@ -1,0 +1,110 @@
+using System.Text.Json;
+using ExGrid.Columns;
+
+namespace ExGrid.Script;
+
+/// <summary>
+/// A column as it crosses to the Script Core (ADR-0350 section 16): its declaration, which the core reads as a
+/// plain column of its own, and nothing of its behaviour, which stays in .NET. A column's values and its format
+/// are read in .NET and sent with each row. What a column declares that this adapter does not carry yet is
+/// refused by name, never dropped: a grid that quietly did not validate, tone or template a column would look
+/// as if it did (the spine's first rule).
+/// </summary>
+internal static class ScriptColumns
+{
+    /// <summary>Whether any column formats its values in .NET, so each row carries its texts.</summary>
+    internal static bool AnyFormatted<TRow>(IReadOnlyList<GridColumn<TRow>> columns)
+    {
+        foreach (var column in columns)
+        {
+            if (column.Format is not null)
+                return true;
+        }
+        return false;
+    }
+
+    /// <summary>Refuses what the adapter does not carry yet, naming the column.</summary>
+    internal static void Check<TRow>(IReadOnlyList<GridColumn<TRow>> columns)
+    {
+        ArgumentNullException.ThrowIfNull(columns);
+        foreach (var column in columns)
+        {
+            ArgumentNullException.ThrowIfNull(column);
+            if (column.Template is not null)
+                throw NotCarried(column.Name, "a Template");
+            if (column.Validate is not null)
+                throw NotCarried(column.Name, "Validate, which the Script Core asks as the editor commits, before .NET can answer");
+            if (column.Tone is not null)
+                throw NotCarried(column.Name, "a Tone");
+            if (column.IsMarkColumn)
+                throw NotCarried(column.Name, "Row Marks");
+        }
+    }
+
+    private static NotSupportedException NotCarried(string column, string what) => new(
+        $"Column '{column}' declares {what}: ExGrid over the Script Core does not carry it yet (ADR-0350 section 7). Use ExGrid.Components.ExGrid for it meanwhile.");
+
+    /// <summary>Writes the columns as the bridge reads them (<c>WireColumn</c>). A formatted column's <c>format</c>
+    /// names its format and <paramref name="culture"/>: another format, or the same in another culture, writes
+    /// other texts, and the bridge takes them as a new column's (ADR-0006).</summary>
+    internal static void Write<TRow>(Utf8JsonWriter json, IReadOnlyList<GridColumn<TRow>> columns, FormatNames formats, string culture)
+    {
+        json.WriteStartArray();
+        foreach (var column in columns)
+        {
+            json.WriteStartObject();
+            json.WriteString("name", column.Name);
+            json.WriteString("type", ScriptJson.Camel(column.Type));
+            json.WriteString("header", column.Header);
+            json.WritePropertyName("width");
+            WriteWidth(json, column.Width);
+            json.WriteBoolean("editable", column.Editable);
+            json.WriteString("align", ScriptJson.Camel(column.Align));
+            json.WriteString("headerAlign", ScriptJson.Camel(column.HeaderAlign));
+            json.WriteString("filterUi", ScriptJson.Camel(column.FilterUi));
+            json.WriteString("dateType", ScriptJson.Camel(column.DateType));
+            json.WriteBoolean("queryable", column.IsQueryable);
+            if (column.Format is { } format)
+                json.WriteString("format", FormattableString.Invariant($"{formats.NumberOf(format)} {culture}"));
+            else
+                json.WriteNull("format");
+            if (column.Actions.Count > 0)
+            {
+                json.WriteStartArray("actions");
+                foreach (var action in column.Actions)
+                {
+                    json.WriteStartObject();
+                    json.WriteString("name", action.Name);
+                    json.WriteString("label", action.Label);
+                    if (action.CssClass is { } className)
+                        json.WriteString("className", className);
+                    json.WriteEndObject();
+                }
+                json.WriteEndArray();
+            }
+            json.WriteEndObject();
+        }
+        json.WriteEndArray();
+    }
+
+    private static void WriteWidth(Utf8JsonWriter json, ColumnWidthSpec width)
+    {
+        json.WriteStartObject();
+        if (width.Width.IsAuto)
+            json.WriteBoolean("auto", true);
+        else
+            json.WriteNumber("px", width.Width.FixedPx);
+        json.WriteNumber("minPx", width.MinWidthPx);
+        json.WriteNumber("maxPx", width.MaxWidthPx);
+        json.WriteEndObject();
+    }
+}
+
+/// <summary>A number for each format a grid's columns have used, the same while the delegate is the same.</summary>
+internal sealed class FormatNames
+{
+    private readonly System.Runtime.CompilerServices.ConditionalWeakTable<object, object> _numbers = [];
+    private int _last;
+
+    internal int NumberOf(Delegate format) => (int)_numbers.GetValue(format, _ => ++_last);
+}

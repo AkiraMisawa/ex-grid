@@ -1,0 +1,19 @@
+{
+  "name": "@ex-grid/blazor",
+  "private": true,
+  "version": "0.0.0-dev",
+  "description": "Blazor's ExGrid, the browser's half: the Script Core and its bridge to .NET, bundled into the script the ExGrid NuGet package ships (ADR-0350 sections 7 and 9). Never published to npm.",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "scripts": {
+    "build": "node ../scripts/build-blazor.mjs",
+    "api": "node ../scripts/build-blazor.mjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@ex-grid/core": "0.0.0-dev",
+    "@ex-grid/data": "0.0.0-dev"
+  }
+}

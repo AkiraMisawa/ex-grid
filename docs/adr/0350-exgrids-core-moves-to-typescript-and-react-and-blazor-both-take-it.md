@@ -184,6 +184,25 @@ section 6 has every product take these three steps, ExGrid's as written here and
 ExGrid's Script Core has what it asks of it, and adds a fourth, the repository's layout; 0.3.0 waits for
 all of them.)*
 
+*(2026-10-26: the adapter's first slice. Until step 2 holds, Blazor's adapter is
+`ExGrid.Script.ExGrid<TRow>`, beside `ExGrid.Components.ExGrid<TRow>`, so that ExSheet, ExPivot, ExChart and
+ExBoard keep drawing through the C# core until each moves (ADR-0370 section 11); step 2 replaces the one with
+the other. Its browser half is a private workspace package, `src/npm/blazor`, bundled with the core into
+`_content/ExGrid/ex-grid-core.min.js` as ExGrid builds (ADR-0123's dated note). The Consumer's
+`IGridSource` stays in .NET: the bridge hands the core a Grid Source that relays each call to it and is fed
+the part of the source's Window around the rows the core last asked for (a few screens either side, so a source
+holding every row never crosses whole), a row by an id kept until the browser can no longer hand the row back,
+and a Sort or Filter as `GridViewStateJson`'s query text. What a column declares that the adapter does not
+carry yet, a Template, `Validate`, a Tone or Row Marks, is refused by name as its parameters are set; Find and
+the Selection Summary, which need the source to answer in .NET, are not offered (Ctrl+F is refused). An
+edit's or a paste's intent reaches .NET after the browser committed it, so a Consumer that refuses one is
+refused in turn, with an exception that says so: step 2 needs the core to ask before it commits, which on
+Blazor Server is a round trip, and that is the core's decision to make, not the adapter's. Until then the cell
+shows what its row held for that round trip after the commit, and the bridge holds what .NET sends while .NET
+handles the write, so the first Window the grid takes in after it is one that holds the write (ADR-0142, D1).
+The note below, from ADR-0380, takes back the refusal of `Validate` and of a refused edit once the core waits
+for a pending answer.)*
+
 *(2026-10-26: [ADR-0380](./0380-a-verdict-or-a-refusal-may-be-answered-later-and-the-next-input-waits-for-it.md)
 section 5: Blazor's adapter carries `Validate`, `OnEdit`'s `Refuse`, `CellStateOf` and `CellMessageOf`.
 The first two cross as pending answers, which the Script Core waits for. It does not refuse them.)*
@@ -356,6 +375,10 @@ than its spelling, Blazor's surface follows it under section 14.
     Temporal in its place, as it passes the browser's language (ADR-0370 section 10): where one browser
     has Temporal and another does not, the same page would mount on the first and be refused on the
     second, a failure the Consumer never sees in development. Given or not, every browser answers alike.
+  - *(Added 2026-10-26.)* Blazor's adapter passes the browser's own Temporal, where React's does not:
+    a C# Consumer has no JavaScript namespace to hand over, and the browsers a Blazor product serves,
+    Chrome and Edge (ADR-0017), all ship one. In a browser without it the core refuses the column by
+    name, as it does for a React Consumer who passed none.
   - *(Added 2026-10-25.)* A typed date is read in ADR-0023's ISO forms and in the culture's numeric
     order, with a 24-hour time. C#'s `DateTime.TryParse` also reads a month's name, a 12-hour clock
     and a two-digit year by .NET's own culture data; the Script Core refuses those as not readable

@@ -3,14 +3,23 @@
 
   inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
 
-  outputs = { self, nixpkgs }:
+  # Node from a later nixpkgs than the .NET SDK's: the first with Node 26.12.1, the security release
+  # of 2026-10-21 (CVE-2026-111497 and others), which .node-version names for CI. Its own input, so
+  # moving Node on does not move the SDK with it.
+  inputs.nixpkgs-node = {
+    url = "https://releases.nixos.org/nixos/unstable/nixos-26.11pre1100280.3ec636362e18/nixexprs.tar.xz";
+    flake = false;
+  };
+
+  outputs = { self, nixpkgs, nixpkgs-node }:
     let
       systems = [ "x86_64-linux" "aarch64-linux" "x86_64-darwin" "aarch64-darwin" ];
-      forAllSystems = f: nixpkgs.lib.genAttrs systems (system: f (import nixpkgs { inherit system; }));
+      forAllSystems = f: nixpkgs.lib.genAttrs systems (system: f system (import nixpkgs { inherit system; }));
     in
     {
-      devShells = forAllSystems (pkgs:
+      devShells = forAllSystems (system: pkgs:
         let
+          nodejs = (import nixpkgs-node { inherit system; }).nodejs_26;
           # SDK 10, whose bundled runtime is also the shipped packages' target
           # (ADR-0022), so the gating tests execute on it without a second
           # runtime alongside. (Until 2026-09-25 the target was net8.0 and the
@@ -20,8 +29,10 @@
           ];
         in
         {
+        # Node too: ExGrid's build bundles the Script Core's module from src/npm
+        # (ADR-0350 section 7), so `dotnet build` runs it.
         default = pkgs.mkShell {
-          packages = [ dotnet ];
+          packages = [ dotnet nodejs ];
           shellHook = ''
             # Child processes (the test host) resolve frameworks from DOTNET_ROOT;
             # without it they follow the muxer's real path into the SDK-only store
@@ -49,7 +60,7 @@
         # Silicon Mac, so `.#browser` had never once been usable on the machine
         # this project is developed on.
         browser = pkgs.mkShell {
-          packages = [ dotnet pkgs.nodejs ];
+          packages = [ dotnet nodejs ];
           shellHook = ''
             export DOTNET_ROOT=${dotnet}/share/dotnet
             export DOTNET_CLI_TELEMETRY_OPTOUT=1

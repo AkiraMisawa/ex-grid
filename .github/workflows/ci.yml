@@ -173,7 +173,7 @@ jobs:
 
       - uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version-file: .node-version
           cache: npm
           cache-dependency-path: src/npm/package-lock.json
 
@@ -255,7 +255,7 @@ jobs:
       # source by Vite, as a Consumer's bundler builds them, into static files.
       - uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version-file: .node-version
           cache: npm
           cache-dependency-path: samples/ExGrid.DemoHost.React/package-lock.json
 
@@ -301,7 +301,7 @@ jobs:
 
       - uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version-file: .node-version
           cache: npm
           cache-dependency-path: tests/ExGrid.Browser/package-lock.json
 
@@ -382,7 +382,7 @@ jobs:
 
       - uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version-file: .node-version
           cache: npm
           cache-dependency-path: tests/ExGrid.Browser/package-lock.json
 
@@ -444,7 +444,7 @@ jobs:
 
       - uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version-file: .node-version
           cache: npm
           cache-dependency-path: tests/ExGrid.Browser/package-lock.json
 
@@ -571,7 +571,7 @@ jobs:
       - uses: actions/setup-node@v7
         if: steps.changed.outputs.specs != ''
         with:
-          node-version: 22
+          node-version-file: .node-version
           cache: npm
           cache-dependency-path: tests/ExGrid.Browser/package-lock.json
 

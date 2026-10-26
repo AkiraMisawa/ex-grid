@@ -94,6 +94,10 @@ for p in ExGrid ExGrid.MudBlazor ExSheet ExSheet.MudBlazor ExPivot ExPivot.MudBl
   if grep -qiE '(^|/)Assets/' <<<"$(entries "$p")"; then fail "$p packs its Assets sources"; fi
 done
 grep -qxF 'staticwebassets/ex-grid.min.js.map' <<<"$(entries ExGrid)" || fail "ExGrid ships no source map for its script"
+# The Script Core's module is bundled as ExGrid builds, never committed (ADR-0350 section 7): a pack that
+# found no Node, or ran before the bundle, would ship without it.
+grep -qxF 'staticwebassets/ex-grid-core.min.js' <<<"$(entries ExGrid)" || fail "ExGrid ships no Script Core module"
+grep -qxF 'staticwebassets/ex-grid-core.min.js.map' <<<"$(entries ExGrid)" || fail "ExGrid ships no source map for its Script Core module"
 grep -qxF 'staticwebassets/ex-chart.min.js.map' <<<"$(entries ExChart)" || fail "ExChart ships no source map for its script"
 
 # The Wrapper still takes no ExSheet package: the direction is one-way (SH-47).

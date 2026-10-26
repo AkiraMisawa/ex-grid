@@ -1,0 +1,25 @@
+@using ExGrid.Docs.Examples.Data
+@using ExGrid.Cells
+
+<ExGrid.Script.ExGrid TRow="Trade" Source="_source" Columns="_columns" ViewportHeight="320" ViewportWidth="ViewportSize.Stretch"
+                      OnEdit="Edit" />
+
+@code {
+    // Kept in fields, as for the C# core's grid: a new source is a new grid's worth of rows.
+    private readonly InMemoryGridSource<Trade> _source = GridSource.From(Trade.Sample());
+
+    private readonly GridColumn<Trade>[] _columns =
+    [
+        new("Id", ColumnType.Number, t => t.Id),
+        new("Book", ColumnType.Text, t => t.Book, editable: true),
+        new("Trader", ColumnType.Text, t => t.Trader),
+        new("Instrument", ColumnType.Text, t => t.Instrument),
+        new("Notional", ColumnType.Number, t => t.Notional, format: v => ((decimal)v).ToString("N0")),
+        new("Price", ColumnType.Number, t => t.Price),
+        new("TradeDate", ColumnType.Date, t => t.TradeDate, header: "Trade date", dateType: DateType.DateOnly),
+        new("Confirmed", ColumnType.Boolean, t => t.Confirmed),
+    ];
+
+    // The browser committed the edit; your source holds what the cell shows from then on.
+    private void Edit(GridEditIntent<Trade> intent) => _source.ReplaceRow(intent.Row, intent.Row with { Book = intent.Value });
+}

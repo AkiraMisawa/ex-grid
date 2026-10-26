@@ -1,0 +1,382 @@
+// Rows and columns as .NET sends them (ADR-0350 sections 3 and 15). A row is .NET's: the bridge holds the
+// values its columns read of it, and an id by which .NET finds the row again when the grid hands one back in
+// an event. The same row, sent again with the same values, is the same object, so the core skips it as it
+// skips any row that did not change (ADR-0003); a row the grid no longer holds anywhere is let go on .NET's
+// side too, once the browser has collected it, so .NET never keeps a row the grid can still hand back
+// without, nor holds every row it ever sent.
+
+import { actionColumn, type CellAlign, type ColumnType, type DateType, type FilterUi, type GridAction, type GridColumn, type GridColumnWidth, type RowKey } from '@ex-grid/core';
+import { rowKeyOf, valueKey, valueOf } from './wire-values';
+
+/** A row of .NET's as the grid holds it: the values its columns read, and the id .NET knows it by. */
+export interface BlazorRow {
+    /** The id .NET sent the row with, by which an event names it back. */
+    readonly id: number;
+    /** The row's Row Key, where the source names its rows by one (ADR-0140). */
+    readonly key: RowKey | undefined;
+    /** The value of each column, in the columns' order. */
+    readonly cells: readonly unknown[];
+}
+
+/** A row as .NET sends it: its id, its Row Key where the source has one, its cells, and for each column .NET
+ * formats, the text of the cell's value, `null` where it does not. */
+export interface WireRow {
+    readonly i: number;
+    readonly k?: unknown;
+    readonly c: readonly unknown[];
+    readonly t?: readonly (string | null)[];
+}
+
+/** A column as .NET declares it. `format`, where .NET formats the column's values and sends each cell's text with
+ * them, names that format and the culture it writes in: another name is another format, whose texts are new. */
+export interface WireColumn {
+    readonly name: string;
+    readonly type: ColumnType;
+    readonly header: string;
+    readonly width: GridColumnWidth;
+    readonly editable: boolean;
+    readonly align: CellAlign;
+    readonly headerAlign: CellAlign;
+    readonly filterUi: FilterUi;
+    readonly dateType: DateType;
+    readonly queryable: boolean;
+    readonly format: string | null;
+    readonly actions?: readonly GridAction[];
+}
+
+/** One column's texts, by the value they are the text of. C#'s format is a function of the value alone, so a
+ * value is shown one way wherever it stands. A text is kept while a row the grid can still read holds its value,
+ * or the column's last value list does, and no longer: scrolling a million values past leaves only the shown. */
+class FormatTexts {
+    readonly #texts = new Map<string, { readonly text: string; holders: number }>();
+    readonly #column: string;
+
+    constructor(column: string) {
+        this.#column = column;
+    }
+
+    /** Checks `text` against the one held for `value`, and answers the value's key, to hold it by. */
+    record(value: unknown, text: string): string {
+        const key = valueKey(value);
+        const held = this.#texts.get(key);
+        // The bridge reads a value less finely than .NET held it where a decimal's scale is lost to a double:
+        // two texts for one value would leave the grid to pick one, and it does not pick (the spine's first rule).
+        if (held === undefined) {
+            this.#texts.set(key, { text, holders: 0 });
+        } else if (held.text !== text) {
+            throw new Error(`Column '${this.#column}' formats one value two ways, '${held.text}' and '${text}': the grid reads them as one value `
+                + '(a decimal\'s trailing zeros do not cross to the browser), so its text must not depend on them.');
+        }
+        return key;
+    }
+
+    hold(key: string): void {
+        const held = this.#texts.get(key);
+        if (held === undefined) throw new Error(`Internal: column '${this.#column}' held a text it never recorded.`);
+        held.holders += 1;
+    }
+
+    letGo(key: string): void {
+        const held = this.#texts.get(key);
+        if (held === undefined) throw new Error(`Internal: column '${this.#column}' let go of a text it does not hold.`);
+        held.holders -= 1;
+        if (held.holders === 0) this.#texts.delete(key);
+    }
+
+    textOf(value: unknown): string {
+        const held = this.#texts.get(valueKey(value));
+        if (held === undefined) throw new Error(`Internal: column '${this.#column}' was asked the text of a value no row it holds was sent with.`);
+        return held.text;
+    }
+
+    /** How many texts are kept, for the tests. */
+    get size(): number {
+        return this.#texts.size;
+    }
+}
+
+/** The texts one row object, or one value list, holds: each once, whatever number of times it arrives. */
+class TextHolding {
+    readonly #held = new Map<FormatTexts, Set<string>>();
+
+    hold(texts: FormatTexts, value: unknown, text: string): void {
+        const key = texts.record(value, text);
+        let keys = this.#held.get(texts);
+        if (keys === undefined) {
+            keys = new Set();
+            this.#held.set(texts, keys);
+        }
+        if (keys.has(key)) return;
+        keys.add(key);
+        texts.hold(key);
+    }
+
+    letGo(): void {
+        for (const [texts, keys] of this.#held) {
+            for (const key of keys) texts.letGo(key);
+        }
+        this.#held.clear();
+    }
+}
+
+interface HeldColumn {
+    readonly signature: string;
+    readonly column: GridColumn<BlazorRow>;
+    readonly texts: FormatTexts | undefined;
+}
+
+/** The columns as the core takes them, the same objects while .NET declares them the same. */
+export class ColumnSet {
+    #held: readonly HeldColumn[] = [];
+    #version = 0;
+    readonly #valueLists = new Map<string, TextHolding>();
+    readonly #awaited: { readonly version: number; readonly reached: () => void }[] = [];
+
+    /** Takes .NET's declarations, numbered `version` by .NET each time they change: a column declared as before is
+     * the object it was, so the core keeps its Auto width and repaints nothing (ADR-0003, ADR-0016). */
+    take(declared: readonly WireColumn[], version: number): void {
+        if (!Number.isSafeInteger(version) || version < this.#version) throw new TypeError(`.NET sent columns numbered ${version} after ${this.#version}.`);
+        this.#version = version;
+        for (let i = this.#awaited.length - 1; i >= 0; i -= 1) {
+            const awaited = this.#awaited[i];
+            if (awaited === undefined || awaited.version > version) continue;
+            this.#awaited.splice(i, 1);
+            awaited.reached();
+        }
+        const before = new Map(this.#held.map(held => [held.signature, held]));
+        this.#held = Object.freeze(declared.map((wire, index) => {
+            const signature = JSON.stringify(wire);
+            const kept = before.get(signature);
+            if (kept !== undefined && this.#held.indexOf(kept) === index) return kept;
+            return columnOf(wire, index, signature);
+        }));
+    }
+
+    /** Settles once the declarations numbered `version` or later have been taken, or `signal` gives up: the
+     * caller reads which. .NET sends columns before it reads anything by them, but an answer to a question can
+     * overtake them while the bridge holds what .NET sends (`attach`), and is then read by them once they arrive,
+     * not asked again meanwhile. */
+    async reached(version: number, signal: AbortSignal): Promise<void> {
+        if (version <= this.#version || signal.aborted) return;
+        await new Promise<void>(resolve => {
+            const awaited = { version, reached: () => { signal.removeEventListener('abort', abort); resolve(); } };
+            const abort = (): void => {
+                const at = this.#awaited.indexOf(awaited);
+                if (at >= 0) this.#awaited.splice(at, 1);
+                resolve();
+            };
+            signal.addEventListener('abort', abort, { once: true });
+            this.#awaited.push(awaited);
+        });
+    }
+
+    /** The number of the declarations taken last: rows .NET read by other ones are not read by these. */
+    get version(): number {
+        return this.#version;
+    }
+
+    /** The columns, for the core's options. */
+    get columns(): readonly GridColumn<BlazorRow>[] {
+        return this.#held.map(held => held.column);
+    }
+
+    /** Holds, in `holding`, the texts a row was sent with. */
+    holdTexts(cells: readonly unknown[], texts: readonly (string | null)[] | undefined, holding: TextHolding): void {
+        if (texts === undefined) return;
+        if (texts.length !== this.#held.length) throw new TypeError(`.NET sent ${texts.length} texts for a row of ${this.#held.length} columns.`);
+        this.#held.forEach((held, index) => {
+            const text = texts[index];
+            if (text === undefined || text === null) return;
+            if (held.texts === undefined) throw new TypeError(`.NET sent a text for column '${held.column.name}', which it does not format.`);
+            if (cells[index] === null) throw new TypeError(`.NET sent a text for a Blank of column '${held.column.name}'.`);
+            holding.hold(held.texts, cells[index], text);
+        });
+    }
+
+    /** Holds the texts of a column's values, sent without their rows (the filter's value list), in place of the
+     * list before it: the filter panel shows one list of a column at a time. */
+    holdColumnTexts(name: string, values: readonly unknown[], texts: readonly unknown[]): void {
+        const held = this.#held.find(each => each.column.name === name);
+        const format = held?.texts;
+        if (format === undefined) throw new TypeError(`.NET sent texts for column '${name}', which it does not format.`);
+        if (texts.length !== values.length) throw new TypeError(`.NET sent ${texts.length} texts for ${values.length} values of column '${name}'.`);
+        const holding = new TextHolding();
+        values.forEach((value, index) => {
+            const text = texts[index];
+            if (text === null) return;
+            if (typeof text !== 'string') throw new TypeError(`.NET sent a text for column '${name}' that is not text.`);
+            holding.hold(format, value, text);
+        });
+        this.#valueLists.get(name)?.letGo();
+        this.#valueLists.set(name, holding);
+    }
+
+    /** How many texts column `name` keeps, for the tests. */
+    textCount(name: string): number {
+        const held = this.#held.find(each => each.column.name === name);
+        if (held?.texts === undefined) throw new Error(`Column '${name}' keeps no texts.`);
+        return held.texts.size;
+    }
+
+    get count(): number {
+        return this.#held.length;
+    }
+}
+
+function columnOf(wire: WireColumn, index: number, signature: string): HeldColumn {
+    if (wire.actions !== undefined) {
+        return { signature, column: actionColumn(wire.name, wire.actions, { header: wire.header, width: wire.width }), texts: undefined };
+    }
+    const texts = wire.format === null ? undefined : new FormatTexts(wire.name);
+    const column: GridColumn<BlazorRow> = Object.freeze({
+        name: wire.name,
+        type: wire.type,
+        header: wire.header,
+        width: wire.width,
+        editable: wire.editable,
+        align: wire.align,
+        headerAlign: wire.headerAlign,
+        filterUi: wire.filterUi,
+        queryable: wire.queryable,
+        ...(wire.type === 'date' ? { dateType: wire.dateType } : {}),
+        value: (row: BlazorRow) => cellOf(row, index),
+        ...(texts === undefined ? {} : { format: (value: unknown) => texts.textOf(value) }),
+    });
+    return { signature, column, texts };
+}
+
+function cellOf(row: BlazorRow, index: number): unknown {
+    if (index >= row.cells.length) throw new Error(`Internal: a row of ${row.cells.length} cells was read at column ${index}.`);
+    return row.cells[index];
+}
+
+/** What the bridge needs of the browser to let rows go: a registry that says when one was collected. */
+export interface RowCollector {
+    /** Registers `row`, made as the bridge's object number `held`. */
+    register(row: BlazorRow, held: number): void;
+}
+
+interface HeldRow {
+    readonly row: WeakRef<BlazorRow>;
+    readonly signature: string;
+}
+
+/**
+ * The rows .NET sent, by id. A row sent again with the same key and values is the same object; one whose values
+ * changed is a new one. An id is let go to .NET once no object of it is left, together with the number of the last
+ * message the bridge took in: .NET keeps a row it sent again after that, which the bridge has yet to read.
+ */
+export class RowSet {
+    readonly #held = new Map<number, HeldRow>();
+    readonly #live = new Map<number, number>();
+    readonly #collector: RowCollector;
+    readonly #release: (ids: readonly number[], seen: number) => void;
+    // The messages taken in past `#seen`, which .NET may send in another order than it numbered them.
+    readonly #ahead = new Set<number>();
+    // Ids of messages given up, let go once every message up to the one they came in has been taken in.
+    readonly #givenUp: { readonly sequence: number; readonly ids: readonly number[] }[] = [];
+    #pending: number[] = [];
+    #seen = 0;
+    #stopped = false;
+    // Each row object made, by the number the collector says it by: the row it is, and the texts it holds.
+    readonly #objects = new Map<number, { readonly id: number; readonly holding: TextHolding }>();
+    readonly #holdings = new WeakMap<BlazorRow, TextHolding>();
+    #made = 0;
+
+    constructor(makeCollector: (collected: (held: number) => void) => RowCollector, release: (ids: readonly number[], seen: number) => void) {
+        this.#collector = makeCollector(held => { this.#collected(held); });
+        this.#release = release;
+    }
+
+    /** Stops letting rows go: the grid is gone, and .NET with the object it would tell. */
+    stop(): void {
+        this.#stopped = true;
+        this.#pending = [];
+    }
+
+    /** Reads a message's rows, numbered `sequence`. */
+    read(rows: readonly WireRow[], sequence: number, columns: ColumnSet): readonly BlazorRow[] {
+        const read = Object.freeze(rows.map(wire => this.#rowOf(wire, columns)));
+        this.#took(sequence);
+        return read;
+    }
+
+    /** Takes in a message whose rows the grid no longer asks for: no object is made of them, and those of its
+     * rows the grid holds no object of are let go, as if made and collected. */
+    discard(rows: readonly WireRow[], sequence: number): void {
+        this.#givenUp.push({ sequence, ids: rows.map(row => row.i) });
+        this.#took(sequence);
+    }
+
+    // `#seen` is the last message before which every message has been taken in, so .NET lets a row go only when
+    // no message it sent the row in is still on its way: one numbered past it may be, and then .NET keeps the row.
+    #took(sequence: number): void {
+        if (!Number.isSafeInteger(sequence) || sequence < 1) throw new TypeError(`.NET numbered a message ${sequence}.`);
+        if (sequence <= this.#seen || this.#ahead.has(sequence)) throw new TypeError(`.NET sent message ${sequence} twice.`);
+        this.#ahead.add(sequence);
+        while (this.#ahead.delete(this.#seen + 1)) this.#seen += 1;
+        for (let i = this.#givenUp.length - 1; i >= 0; i -= 1) {
+            const given = this.#givenUp[i];
+            if (given === undefined || given.sequence > this.#seen) continue;
+            this.#givenUp.splice(i, 1);
+            for (const id of given.ids) {
+                if (!this.#live.has(id)) this.#letGo(id);
+            }
+        }
+    }
+
+    #rowOf(wire: WireRow, columns: ColumnSet): BlazorRow {
+        if (!Number.isSafeInteger(wire.i)) throw new TypeError(`.NET sent a row whose id is ${String(wire.i)}.`);
+        if (wire.c.length !== columns.count) throw new TypeError(`.NET sent a row of ${wire.c.length} cells for ${columns.count} columns.`);
+        const cells = Object.freeze(wire.c.map(valueOf));
+        const signature = JSON.stringify([wire.k, wire.c]);
+        const held = this.#held.get(wire.i);
+        const kept = held?.signature === signature ? held.row.deref() : undefined;
+        if (kept !== undefined) {
+            // Columns declared since may format the row's values: the object holds their texts too.
+            const holding = this.#holdings.get(kept);
+            if (holding === undefined) throw new Error(`Internal: row ${wire.i} is held without its texts.`);
+            columns.holdTexts(cells, wire.t, holding);
+            return kept;
+        }
+        const holding = new TextHolding();
+        columns.holdTexts(cells, wire.t, holding);
+        const row: BlazorRow = Object.freeze({ id: wire.i, key: wire.k === undefined ? undefined : rowKeyOf(wire.k), cells });
+        this.#held.set(wire.i, { row: new WeakRef(row), signature });
+        this.#live.set(wire.i, (this.#live.get(wire.i) ?? 0) + 1); // oxlint-disable-line ex-grid/no-stand-in-default -- an id not yet live has no objects
+        this.#made += 1;
+        this.#objects.set(this.#made, { id: wire.i, holding });
+        this.#holdings.set(row, holding);
+        this.#collector.register(row, this.#made);
+        return row;
+    }
+
+    #collected(made: number): void {
+        const object = this.#objects.get(made);
+        if (object === undefined) throw new Error(`Internal: row object ${made} was collected without being made.`);
+        this.#objects.delete(made);
+        object.holding.letGo();
+        const { id } = object;
+        const live = this.#live.get(id);
+        if (live === undefined) throw new Error(`Internal: row ${id} was collected without being counted.`);
+        if (live > 1) {
+            this.#live.set(id, live - 1);
+            return;
+        }
+        this.#live.delete(id);
+        this.#held.delete(id);
+        this.#letGo(id);
+    }
+
+    #letGo(id: number): void {
+        if (this.#stopped) return;
+        if (this.#pending.length === 0) {
+            queueMicrotask(() => {
+                const ids = this.#pending;
+                this.#pending = [];
+                if (!this.#stopped && ids.length > 0) this.#release(ids, this.#seen);
+            });
+        }
+        this.#pending.push(id);
+    }
+}

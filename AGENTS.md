@@ -113,6 +113,15 @@ nix develop .#browser -c npx playwright test   # layer 3, from tests/ExGrid.Brow
   [ADR-0022](docs/adr/0022-packages-target-net10-and-run-on-everything-newer.md)). The **SDK**
   is .NET 10 too — SDK version and target framework are independent, and coincide today. The
   code is therefore C# 14; do not raise `LangVersion`
+- **Building ExGrid builds TypeScript.** `src/ExGrid` bundles the Script Core's module for
+  `ExGrid.Script.ExGrid` from `src/npm` as it builds (ADR-0350 section 7, ADR-0123's note of 2026-10-26),
+  so the default shell carries Node, and the first build runs `npm ci` in `src/npm`. The bundle is not
+  committed
+- **Node is 26.12.1, the security release of 2026-10-21** (26 is LTS from 2026-10-28 to 2029-04-30). `.node-version` names it for CI's
+  `setup-node`, and the flake takes it from a later nixpkgs than the SDK's (`nixpkgs-node`). Move both
+  together, and the `engines` ranges with them, when the next security release lands. Its npm runs a
+  dependency's install script only when `allowScripts` in that `package.json` names the exact version
+  (esbuild's, today): a bumped esbuild warns until `npm install-scripts approve esbuild` is run again
 - **Flakes only see git-tracked files.** A new file must be `git add`-ed before the build can
   see it (committing is not required)
 - **Do not commit or push unless asked**

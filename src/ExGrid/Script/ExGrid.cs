@@ -1,0 +1,1019 @@
+using System.Buffers;
+using System.Globalization;
+using System.Text;
+using System.Text.Json;
+using ExGrid.Cells;
+using ExGrid.Chrome;
+using ExGrid.Clipboard;
+using ExGrid.Columns;
+using ExGrid.Components;
+using ExGrid.Selection;
+using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Rendering;
+using Microsoft.JSInterop;
+
+namespace ExGrid.Script;
+
+/// <summary>
+/// An Excel-like grid for Blazor, drawn by the Script Core (ADR-0350 section 7, ADR-0370 section 1): Blazor's
+/// Framework Adapter over <c>@ex-grid/core</c>. The component renders one element, the grid's instance root,
+/// mounts the Script Core on it, hands it its parameters as options and its source's Window as data, and raises
+/// the grid's events as <see cref="EventCallback"/>s. It holds no state of the grid's, draws nothing inside the
+/// root and decides nothing: keys, selection, copy and paste, the editor, the overflow decision and Auto width are
+/// the Script Core's, in the browser, on both hosting models. The rows, their order and what an intent does to them
+/// stay the Consumer's, in .NET, behind an <see cref="IGridSource{TRow}"/>.
+/// </summary>
+/// <remarks>
+/// It stands beside <see cref="Components.ExGrid{TRow}"/>, the C# core, until every product that draws through
+/// that one has moved (ADR-0350 section 7). What this adapter does not carry yet is refused by name as its
+/// parameters are set, never left out quietly; Find and the Selection Summary, which no column declares, are not
+/// offered: Ctrl+F is refused as a Find with nothing to answer it, and no summary is drawn.
+/// </remarks>
+/// <typeparam name="TRow">The Consumer's row type.</typeparam>
+public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
+    where TRow : class
+{
+    /// <summary>The script's address under the application's base: the package's minified Script Core and bridge.</summary>
+    private const string ScriptPath = "_content/ExGrid/ex-grid-core.min.js";
+
+    [Inject] private IJSRuntime JS { get; set; } = default!;
+
+    /// <summary>Where the rows come from (ADR-0001): the grid neither holds nor executes, and tells the source the
+    /// columns, the Sort and the Filter. Exactly one of this and <see cref="Rows"/>.</summary>
+    [Parameter] public IGridSource<TRow>? Source { get; set; }
+
+    /// <summary>Rows held in memory, sorted and filtered by <see cref="GridSource.From{TRow}(IReadOnlyList{TRow})"/>,
+    /// the reference semantics (ADR-0001). A new list is a new source. Exactly one of this and <see cref="Source"/>.</summary>
+    [Parameter] public IReadOnlyList<TRow>? Rows { get; set; }
+
+    /// <summary>The columns, in display order. A new list holding the same columns is the same columns (ADR-0003).</summary>
+    [Parameter, EditorRequired] public IReadOnlyList<GridColumn<TRow>> Columns { get; set; } = [];
+
+    /// <summary>The density preset the Grid Metrics resolve from (ADR-0028); the core's Compact unless set.</summary>
+    [Parameter] public GridDensity? Density { get; set; }
+
+    /// <summary>A row's height in CSS pixels, through which every geometry is computed (ADR-0013); the density's unless set.</summary>
+    [Parameter] public double? RowHeight { get; set; }
+
+    /// <summary>The header band's height in CSS pixels; the density's unless set.</summary>
+    [Parameter] public double? HeaderHeight { get; set; }
+
+    /// <summary>The Viewport's height: pixels, or <see cref="ViewportSize.Stretch"/> to fill the parent (ADR-0028); the core's unless set.</summary>
+    [Parameter] public ViewportSize? ViewportHeight { get; set; }
+
+    /// <summary>The Viewport's width: pixels, or <see cref="ViewportSize.Stretch"/>; the core's unless set.</summary>
+    [Parameter] public ViewportSize? ViewportWidth { get; set; }
+
+    /// <summary>How many leading columns stay in place while the rest scroll (ADR-0007).</summary>
+    [Parameter] public int PinnedColumnCount { get; set; }
+
+    /// <summary>Whether only the columns in view are drawn (ADR-0004); on unless set off.</summary>
+    [Parameter] public bool VirtualiseColumns { get; set; } = true;
+
+    /// <summary>Whether every other row is striped (UX-15).</summary>
+    [Parameter] public bool StripeRows { get; set; }
+
+    /// <summary>Whether the Focus's row is tinted (ADR-0029).</summary>
+    [Parameter] public bool HighlightFocusRow { get; set; }
+
+    /// <summary>Whether the row under the pointer is tinted (ADR-0029).</summary>
+    [Parameter] public bool HighlightHoverRow { get; set; }
+
+    /// <summary>Whether the header's ▾ column menu is hidden (ADR-0044).</summary>
+    [Parameter] public bool HideColumnMenu { get; set; }
+
+    /// <summary>Whether the menus leave out Copy with headers (ADR-0036).</summary>
+    [Parameter] public bool HideCopyWithHeaders { get; set; }
+
+    /// <summary>Whether a click on a header selects its column (ADR-0050).</summary>
+    [Parameter] public bool HeaderClickSelects { get; set; }
+
+    /// <summary>Whether a paste larger than the Selection may write past it (ADR-0014). Off: it is refused.</summary>
+    [Parameter] public bool PasteMaySpill { get; set; }
+
+    /// <summary>Whether Find matches the headers too (ADR-0333); on unless set off.</summary>
+    [Parameter] public bool FindsHeaders { get; set; } = true;
+
+    /// <summary>The most cells a copy writes, past which it is refused (ADR-0005); the core's unless set.</summary>
+    [Parameter] public long? CopyCellCap { get; set; }
+
+    /// <summary>The most a paste reads, in UTF-8 bytes, past which it is refused (ADR-0005); the core's unless set.</summary>
+    [Parameter] public long? PasteByteCap { get; set; }
+
+    /// <summary>The header's groups, over the columns they name (ADR-0032).</summary>
+    [Parameter] public IReadOnlyList<HeaderGroup>? HeaderGroups { get; set; }
+
+    /// <summary>Hears the Selection each time it changes.</summary>
+    [Parameter] public EventCallback<GridSelection> SelectionChanged { get; set; }
+
+    /// <summary>
+    /// Hears a Cell Editor's commit (ADR-0034): the Consumer writes the value, and the row it then shows is what the
+    /// cell paints. Without it the grid edits nothing. The intent reaches .NET after the browser has committed, so it
+    /// cannot be refused here: a handler that calls <see cref="GridEditIntent{TRow}.Refuse"/> fails the component with
+    /// a <see cref="NotSupportedException"/> once it returns, and a value the Consumer does not take is answered by the
+    /// row it shows unchanged.
+    /// </summary>
+    [Parameter] public EventCallback<GridEditIntent<TRow>> OnEdit { get; set; }
+
+    /// <summary>Hears a paste or a fill the grid planned (ADR-0014): the Consumer writes it. Without it the grid
+    /// pastes nothing. As with <see cref="OnEdit"/>, a handler that calls <see cref="GridPasteIntent.Refuse"/> fails the
+    /// component with a <see cref="NotSupportedException"/> once it returns.</summary>
+    [Parameter] public EventCallback<GridPasteIntent> OnPaste { get; set; }
+
+    /// <summary>Hears Delete over editable cells (ADR-0035): the Consumer clears them.</summary>
+    [Parameter] public EventCallback<GridClearIntent> OnClear { get; set; }
+
+    /// <summary>Hears Ctrl+Z (ADR-0012): undo is the Consumer's.</summary>
+    [Parameter] public EventCallback OnUndo { get; set; }
+
+    /// <summary>Hears Ctrl+Y (ADR-0012): redo is the Consumer's.</summary>
+    [Parameter] public EventCallback OnRedo { get; set; }
+
+    /// <summary>Hears every gesture the grid refused, by kind and reason (ADR-0005, ADR-0350 section 16).</summary>
+    [Parameter] public EventCallback<GridRefusal<TRow>> OnRefused { get; set; }
+
+    /// <summary>Hears a column's width set by a drag or by Size to fit (ADR-0016): the Consumer declares it.</summary>
+    [Parameter] public EventCallback<ColumnWidthChange> OnColumnWidthChanged { get; set; }
+
+    /// <summary>Hears the columns' order after a header drag (ADR-0032): the Consumer reorders them.</summary>
+    [Parameter] public EventCallback<IReadOnlyList<string>> OnColumnOrderChanged { get; set; }
+
+    /// <summary>Hears Hide from the column menu: the Consumer leaves the column out.</summary>
+    [Parameter] public EventCallback<string> OnColumnHidden { get; set; }
+
+    /// <summary>Hears Pin or Unpin from the column menu: the Consumer sets <see cref="PinnedColumnCount"/>.</summary>
+    [Parameter] public EventCallback<int> OnPinnedCountChanged { get; set; }
+
+    /// <summary>Hears the Cell Editor open and close.</summary>
+    [Parameter] public EventCallback<bool> OnEditingChanged { get; set; }
+
+    /// <summary>Hears an open edit discarded, with the reason (ADR-0011, ADR-0035).</summary>
+    [Parameter] public EventCallback<EditDiscardReason> OnEditDiscarded { get; set; }
+
+    /// <summary>Hears a double click on a cell that does not edit.</summary>
+    [Parameter] public EventCallback<CellPosition> OnCellDoubleClick { get; set; }
+
+    /// <summary>Hears Escape with nothing left to dismiss (DC-62): the Consumer takes the keyboard elsewhere.</summary>
+    [Parameter] public EventCallback OnLeave { get; set; }
+
+    /// <summary>Hears a commit that wrote over a value the user had not seen (ADR-0142).</summary>
+    [Parameter] public EventCallback<GridOverwriteNotice> OnOverwriteNotice { get; set; }
+
+    /// <summary>Hears an Action Column's action pressed (ADR-0020): what it does is the Consumer's.</summary>
+    [Parameter] public EventCallback<GridActionEventArgs<TRow>> OnAction { get; set; }
+
+    private ElementReference _root;
+    private IJSObjectReference? _module;
+    private IJSObjectReference? _grid;
+    private DotNetObjectReference<ScriptBridge<TRow>>? _bridge;
+    private readonly ScriptRows<TRow> _rows = new();
+    private readonly Dictionary<long, CancellationTokenSource> _asked = [];
+    private readonly Queue<(Func<Task> Hand, TaskCompletionSource Done)> _heard = new();
+
+    private IGridSource<TRow>? _source;
+    private InMemoryGridSource<TRow>? _ownSource;
+    private IReadOnlyList<TRow>? _ownRows;
+    private int _generation;
+    private IReadOnlyList<GridColumn<TRow>>? _toldColumns;
+
+    /// <summary>The rows sent before the grid has asked for any: about five screens at the Compact density.</summary>
+    private const int FirstRows = 256;
+
+    /// <summary>The part of the source's Window the browser is sent: around the rows the grid last asked for, so a
+    /// source that holds every row, as <see cref="GridSource.From{TRow}(IReadOnlyList{TRow})"/> does, crosses the
+    /// rows in view and a few screens either side, never the whole result on every change (ADR-0004).</summary>
+    private RowRange _shown = new(0, FirstRows);
+
+    private int _columnsVersion;
+    private string? _toldCulture;
+    private readonly FormatNames _formats = new();
+
+    private string? _sentOptions;
+    private bool _sourceReplaced;
+    private bool _columnsChanged;
+    private bool _attached;
+    private bool _attaching;
+    private bool _refused;
+    private bool _disposed;
+    private bool _stateOwed;
+    private bool _stateScheduled;
+    private bool _hearing;
+    private bool _renderOwed = true;
+
+    /// <inheritdoc />
+    protected override void OnParametersSet()
+    {
+        if ((Source is null) == (Rows is null))
+            throw new InvalidOperationException("ExGrid takes its rows from exactly one of Source and Rows (ADR-0350 section 16).");
+        ScriptColumns.Check(Columns);
+
+        IGridSource<TRow> source;
+        if (Rows is { } rows)
+        {
+            if (_ownSource is null || !ReferenceEquals(rows, _ownRows))
+            {
+                _ownSource = GridSource.From(rows);
+                _ownRows = rows;
+            }
+            source = _ownSource;
+        }
+        else
+        {
+            source = Source!;
+            _ownSource = null;
+            _ownRows = null;
+        }
+
+        if (!ReferenceEquals(source, _source))
+        {
+            // A bundled source belongs to one circuit (ADR-0018 section 5): attached before the swap, so a refusal
+            // leaves the grid bound to what it had.
+            if (source is IBindsToOneCircuit bindsTo)
+                bindsTo.Binding.Attach(this, SynchronizationContext.Current);
+            if (_source is not null)
+            {
+                _source.StateChanged -= OnSourceChanged;
+                (_source as IBindsToOneCircuit)?.Binding.Detach(this);
+                _sourceReplaced = true;
+            }
+            _source = source;
+            _generation += 1;
+            _toldColumns = null;
+            source.StateChanged += OnSourceChanged;
+        }
+        var culture = CultureInfo.CurrentCulture.Name;
+        var sameColumns = SameColumns(_toldColumns, Columns);
+        if (!sameColumns || culture != _toldCulture)
+        {
+            // Another declaration, or another culture for the formats to write in, is another number, and the rows
+            // the browser holds were read by the one before (ADR-0006).
+            _columnsVersion += 1;
+            _columnsChanged = _toldCulture is not null;
+            _toldCulture = culture;
+            if (!sameColumns)
+            {
+                // The source sorts and filters by the columns' values, read in .NET, as the C# core tells it (ADR-0001).
+                source.OnColumnsChanged([.. Columns.Select(column => column.Info)]);
+                _toldColumns = Columns;
+            }
+        }
+    }
+
+    /// <inheritdoc />
+    protected override async Task OnParametersSetAsync()
+    {
+        if (_attached)
+            await SendUpdateAsync();
+    }
+
+    /// <inheritdoc />
+    protected override bool ShouldRender() => _renderOwed;
+
+    /// <inheritdoc />
+    protected override void BuildRenderTree(RenderTreeBuilder builder)
+    {
+        _renderOwed = false;
+        builder.OpenElement(0, "div");
+        builder.AddElementReferenceCapture(1, element => _root = element);
+        if (_refused)
+        {
+            // The core never attached: the root is Blazor's to say why, in the built-in words (ADR-0123).
+            builder.OpenElement(2, "div");
+            builder.AddAttribute(3, "role", "alert");
+            builder.AddAttribute(4, "data-ex-notice", "script");
+            builder.AddContent(5, BuiltInCommandLabels.For(ReloadNoticeLabelIds.Script));
+            builder.CloseElement();
+        }
+        builder.CloseElement();
+    }
+
+    /// <inheritdoc />
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+            return;
+        // The script this build was made with, by an address that changes with its content (ADR-0123), and refused
+        // when the browser holds another version's: nothing is attached, and the root says so.
+        var address = "./" + PackageStylesheet.AddressOf(Assets, ScriptPath, ScriptCoreAsset.Version);
+        IJSObjectReference? module = null;
+        string? stamp;
+        try
+        {
+            module = await JS.InvokeAsync<IJSObjectReference>("import", address);
+            _module = module;
+            stamp = await module.InvokeAsync<string?>("stamp");
+        }
+        catch (JSException)
+        {
+            // A module that does not load, or one older than the stamp, which has no `stamp` to call.
+            stamp = null;
+        }
+        catch (JsonException)
+        {
+            // An answer that is not a string is no stamp of this family's.
+            stamp = null;
+        }
+        if (_disposed)
+        {
+            // Disposed while the module loaded: what DisposeAsync could not yet see is let go here.
+            await ReleaseAsync(null, module);
+            return;
+        }
+        if (module is null || stamp != ScriptCoreAsset.Stamp)
+        {
+            _refused = true;
+            _renderOwed = true;
+            StateHasChanged();
+            return;
+        }
+        // What the attach carries is what the browser holds once it returns: anything that changes while it is on
+        // its way is owed again, and sent after it, in the order it changed.
+        var options = OptionsJson();
+        var attach = AttachJson(options);
+        _sentOptions = options;
+        _sourceReplaced = false;
+        _columnsChanged = false;
+        _stateOwed = false;
+        var bridge = DotNetObjectReference.Create(new ScriptBridge<TRow>(this));
+        _bridge = bridge;
+        _attaching = true;
+        IJSObjectReference grid;
+        try
+        {
+            grid = await module.InvokeAsync<IJSObjectReference>("attach", _root, bridge, attach);
+        }
+        finally
+        {
+            _attaching = false;
+        }
+        if (_disposed)
+        {
+            // Disposed while it attached: the browser's grid is stopped before the object it calls is let go.
+            await ReleaseAsync(grid, module);
+            bridge.Dispose();
+            return;
+        }
+        _grid = grid;
+        _attached = true;
+        await SendUpdateAsync();
+    }
+
+    /// <summary>Places the Selection as a click leaves it (ADR-0050 item 4), if the source still says
+    /// <paramref name="rowSequenceVersion"/>: true once placed, and otherwise refused through <see cref="OnRefused"/>.</summary>
+    public async Task<bool> PlaceSelectionAsync(SelectionRange range, CellPosition focus, int rowSequenceVersion)
+    {
+        var grid = _grid ?? throw new InvalidOperationException("This ExGrid is not attached: a grid not drawn places nothing.");
+        // The version is judged against the source's state the browser holds: a change the Consumer made just
+        // before crosses first, whatever is still waiting to send it (the spine's sixth rule).
+        await SendStateAsync();
+        return await grid.InvokeAsync<bool>("placeSelection",
+            new Dictionary<string, int> { ["topRow"] = range.TopRow, ["leftColumn"] = range.LeftColumn, ["rowCount"] = range.RowCount, ["columnCount"] = range.ColumnCount },
+            new Dictionary<string, int> { ["row"] = focus.Row, ["column"] = focus.Column },
+            rowSequenceVersion);
+    }
+
+    /// <summary>Hands the keyboard to the grid (ADR-0080).</summary>
+    public async Task FocusAsync()
+    {
+        var grid = _grid ?? throw new InvalidOperationException("This ExGrid is not attached: a grid not drawn takes no keyboard.");
+        await grid.InvokeVoidAsync("focus");
+    }
+
+    // ---- What crosses to the browser ------------------------------------------------------------------------
+
+    private async Task SendUpdateAsync()
+    {
+        var grid = _grid;
+        if (grid is null || _disposed)
+            return;
+        var options = OptionsJson();
+        var replaced = _sourceReplaced;
+        var columnsChanged = _columnsChanged;
+        if (!replaced && !columnsChanged && options == _sentOptions)
+        {
+            if (_stateOwed)
+                await SendStateAsync();
+            return;
+        }
+        _sentOptions = options;
+        _sourceReplaced = false;
+        _columnsChanged = false;
+        // The rows go with columns that changed, read by the new columns: a row the browser holds was read by the old ones.
+        var state = replaced || columnsChanged ? StateJson() : null;
+        if (state is not null)
+            _stateOwed = false;
+        await grid.InvokeVoidAsync("update", Json(json =>
+        {
+            json.WriteStartObject();
+            json.WritePropertyName("options");
+            json.WriteRawValue(options);
+            if (replaced)
+            {
+                json.WritePropertyName("source");
+                WriteTraits(json);
+            }
+            if (state is not null)
+            {
+                json.WritePropertyName("state");
+                json.WriteRawValue(state);
+            }
+            json.WriteEndObject();
+        }));
+        if (_stateOwed)
+            await SendStateAsync();
+    }
+
+    private void OnSourceChanged()
+    {
+        _stateOwed = true;
+        if (_stateScheduled)
+            return;
+        _stateScheduled = true;
+        // A source may say it changed from any thread, and many times in one handler's writes: the state is sent
+        // from the component's context once what is running there now is done, so a paste of 500 rows crosses
+        // as one Window, as the C# core takes a handler's writes in once.
+        _ = InvokeAsync(async () =>
+        {
+            await Task.Yield();
+            _stateScheduled = false;
+            try
+            {
+                if (_attached)
+                    await SendStateAsync();
+            }
+            catch (Exception ex) when (ex is not JSDisconnectedException)
+            {
+                await DispatchExceptionAsync(ex);
+            }
+        });
+    }
+
+    private async Task SendStateAsync()
+    {
+        var grid = _grid;
+        if (grid is null || _disposed || !_stateOwed)
+            return;
+        _stateOwed = false;
+        await grid.InvokeVoidAsync("state", StateJson());
+    }
+
+    private string AttachJson(string options) => Json(json =>
+    {
+        json.WriteStartObject();
+        json.WritePropertyName("options");
+        json.WriteRawValue(options);
+        json.WritePropertyName("source");
+        WriteTraits(json);
+        json.WritePropertyName("state");
+        json.WriteRawValue(StateJson());
+        json.WriteEndObject();
+    });
+
+    private void WriteTraits(Utf8JsonWriter json)
+    {
+        var source = _source ?? throw new InvalidOperationException("Internal: the grid has no source.");
+        json.WriteStartObject();
+        json.WriteNumber("generation", _generation);
+        json.WriteBoolean("rowKey", source.RowKey is not null);
+        json.WriteBoolean("vouchesDistinctRows", source.VouchesDistinctRows);
+        json.WriteEndObject();
+    }
+
+    private string StateJson()
+    {
+        var source = _source ?? throw new InvalidOperationException("Internal: the grid has no source.");
+        var window = source.Window;
+        var from = Math.Max(source.WindowStart, _shown.Start);
+        var to = Math.Min(source.WindowStart + window.Count, _shown.Start + _shown.Count);
+        return _rows.Sending(sequence => Json(json =>
+        {
+            json.WriteStartObject();
+            json.WriteNumber("seq", sequence);
+            json.WriteNumber("cv", _columnsVersion);
+            json.WriteStartArray("window");
+            for (var at = from; at < to; at++)
+                _rows.Write(json, window[at - source.WindowStart], Columns, source.RowKey);
+            json.WriteEndArray();
+            json.WriteNumber("windowStart", to > from ? from : source.WindowStart);
+            if (source.TotalCount is { } total)
+                json.WriteNumber("totalCount", total);
+            else
+                json.WriteNull("totalCount");
+            json.WriteBoolean("loading", source.IsLoading);
+            json.WriteNumber("rowSequenceVersion", source.RowSequenceVersion);
+            json.WriteString("query", GridViewStateJson.WriteQuery(new GridQuery(new RowRange(0, 1), source.Sorts, source.Filter)));
+            json.WriteEndObject();
+        }));
+    }
+
+    private string OptionsJson() => Json(json =>
+    {
+        json.WriteStartObject();
+        json.WritePropertyName("columns");
+        ScriptColumns.Write(json, Columns, _formats, _toldCulture ?? throw new InvalidOperationException("Internal: options written before the parameters were set."));
+        json.WriteNumber("columnsVersion", _columnsVersion);
+        // The culture the component reads, as the C# core reads it (ADR-0370 section 10).
+        var culture = CultureInfo.CurrentCulture.Name;
+        json.WriteString("locale", culture.Length == 0 ? "invariant" : culture);
+        if (Density is { } density)
+            json.WriteString("density", ScriptJson.Camel(density));
+        if (RowHeight is { } rowHeight)
+            json.WriteNumber("rowHeight", rowHeight);
+        if (HeaderHeight is { } headerHeight)
+            json.WriteNumber("headerHeight", headerHeight);
+        if (ViewportHeight is { } height)
+            WriteSize(json, "viewportHeight", height);
+        if (ViewportWidth is { } width)
+            WriteSize(json, "viewportWidth", width);
+        json.WriteNumber("pinnedColumnCount", PinnedColumnCount);
+        json.WriteBoolean("virtualiseColumns", VirtualiseColumns);
+        json.WriteBoolean("stripeRows", StripeRows);
+        json.WriteBoolean("highlightFocusRow", HighlightFocusRow);
+        json.WriteBoolean("highlightHoverRow", HighlightHoverRow);
+        json.WriteBoolean("hideColumnMenu", HideColumnMenu);
+        json.WriteBoolean("hideCopyWithHeaders", HideCopyWithHeaders);
+        json.WriteBoolean("headerClickSelects", HeaderClickSelects);
+        json.WriteBoolean("pasteMaySpill", PasteMaySpill);
+        json.WriteBoolean("findsHeaders", FindsHeaders);
+        // Nothing answers a Selection Summary over a source in .NET yet (ADR-0130): none is drawn, rather than a
+        // status line that never fills.
+        json.WriteBoolean("showSelectionSummary", false);
+        if (CopyCellCap is { } copyCap)
+            json.WriteNumber("copyCellCap", copyCap);
+        if (PasteByteCap is { } pasteCap)
+            json.WriteNumber("pasteByteCap", pasteCap);
+        if (HeaderGroups is { } groups)
+        {
+            json.WriteStartArray("headerGroups");
+            foreach (var group in groups)
+            {
+                json.WriteStartObject();
+                json.WriteString("label", group.Label);
+                json.WriteStartArray("columns");
+                foreach (var column in group.Columns)
+                    json.WriteStringValue(column);
+                json.WriteEndArray();
+                json.WriteNumber("tier", group.Tier);
+                json.WriteNumber("tierSpan", group.TierSpan);
+                json.WriteEndObject();
+            }
+            json.WriteEndArray();
+        }
+        json.WriteStartArray("hears");
+        foreach (var (kind, heard) in Hears())
+        {
+            if (heard)
+                json.WriteStringValue(kind);
+        }
+        json.WriteEndArray();
+        json.WriteEndObject();
+    });
+
+    private IEnumerable<(string Kind, bool Heard)> Hears()
+    {
+        yield return ("selectionChanged", SelectionChanged.HasDelegate);
+        yield return ("edit", OnEdit.HasDelegate);
+        yield return ("paste", OnPaste.HasDelegate);
+        yield return ("clear", OnClear.HasDelegate);
+        yield return ("undo", OnUndo.HasDelegate);
+        yield return ("redo", OnRedo.HasDelegate);
+        yield return ("refused", OnRefused.HasDelegate);
+        yield return ("columnWidthChanged", OnColumnWidthChanged.HasDelegate);
+        yield return ("columnOrderChanged", OnColumnOrderChanged.HasDelegate);
+        yield return ("columnHidden", OnColumnHidden.HasDelegate);
+        yield return ("pinnedCountChanged", OnPinnedCountChanged.HasDelegate);
+        yield return ("editingChanged", OnEditingChanged.HasDelegate);
+        yield return ("editDiscarded", OnEditDiscarded.HasDelegate);
+        yield return ("cellDoubleClick", OnCellDoubleClick.HasDelegate);
+        yield return ("leave", OnLeave.HasDelegate);
+        yield return ("overwriteNotice", OnOverwriteNotice.HasDelegate);
+        yield return ("action", OnAction.HasDelegate);
+    }
+
+    private static void WriteSize(Utf8JsonWriter json, string name, ViewportSize size)
+    {
+        if (size.IsStretch)
+            json.WriteString(name, "stretch");
+        else
+            json.WriteNumber(name, size.Px);
+    }
+
+    private static string Json(Action<Utf8JsonWriter> write)
+    {
+        var buffer = new ArrayBufferWriter<byte>();
+        using (var json = new Utf8JsonWriter(buffer))
+            write(json);
+        return Encoding.UTF8.GetString(buffer.WrittenSpan);
+    }
+
+    private static bool SameColumns(IReadOnlyList<GridColumn<TRow>>? a, IReadOnlyList<GridColumn<TRow>> b)
+    {
+        if (a is null || a.Count != b.Count)
+            return false;
+        for (var i = 0; i < a.Count; i++)
+        {
+            if (!ReferenceEquals(a[i], b[i]))
+                return false;
+        }
+        return true;
+    }
+
+    // ---- What the browser asks of .NET (ScriptBridge) -------------------------------------------------------
+
+    /// <summary>The source a question from the browser is for, or null where the Consumer has since replaced it:
+    /// what the browser asked of a source it no longer reads is not acted on.</summary>
+    private IGridSource<TRow>? SourceOf(int generation) => generation == _generation && !_disposed ? _source : null;
+
+    // What the grid tells its source is the Consumer's code running: what it throws fails the component as a
+    // handler of Blazor's own does, so the error UI or an error boundary says so, rather than a promise the
+    // browser was left with.
+    internal Task SetSortsAsync(int generation, string query)
+        => Telling(() => SourceOf(generation)?.OnSortChanged(GridViewStateJson.ReadQuery(query).Sorts));
+
+    internal Task SetFilterAsync(int generation, string query)
+        => Telling(() => SourceOf(generation)?.OnFilterChanged(GridViewStateJson.ReadQuery(query).Filter));
+
+    internal async Task NeedRangeAsync(int generation, int start, int count)
+    {
+        if (SourceOf(generation) is not { } source)
+            return;
+        try
+        {
+            // The rows asked for, and two times as many either side, so a page down or a fling's landing is
+            // mostly in hand already; the source is told too, for a source that fetches (ADR-0001).
+            var pad = 2 * Math.Max(count, 64);
+            var shownStart = Math.Max(0, start - pad);
+            _shown = new RowRange(shownStart, start + count + pad - shownStart);
+            _stateOwed = true;
+            await source.OnRangeNeededAsync(new RowRange(start, count));
+            if (_attached)
+                await SendStateAsync();
+        }
+        catch (Exception ex)
+        {
+            await DispatchExceptionAsync(ex);
+        }
+    }
+
+    private async Task Telling(Action tell)
+    {
+        try
+        {
+            tell();
+        }
+        catch (Exception ex)
+        {
+            await DispatchExceptionAsync(ex);
+        }
+    }
+
+    internal async Task<string> RowsAsync(int generation, long id, int start, int count)
+    {
+        var source = SourceOf(generation) ?? throw new OperationCanceledException("The source asked was replaced.");
+        using var asked = Ask(id);
+        try
+        {
+            var rows = await source.GetRowsAsync(new RowRange(start, count), asked.Token);
+            return _rows.Sending(sequence => Json(json =>
+            {
+                json.WriteStartObject();
+                json.WriteNumber("seq", sequence);
+                json.WriteNumber("cv", _columnsVersion);
+                json.WriteStartArray("rows");
+                foreach (var row in rows)
+                    _rows.Write(json, row, Columns, source.RowKey);
+                json.WriteEndArray();
+                json.WriteEndObject();
+            }));
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            // The source's own failure, or a value refused as it crossed, fails the component as the C# core's copy
+            // fails on it; the browser's question is answered by the same failure, so nothing waits on it.
+            await DispatchExceptionAsync(ex);
+            throw;
+        }
+        finally
+        {
+            _asked.Remove(id);
+        }
+    }
+
+    internal async Task<string> DistinctValuesAsync(int generation, long id, string column)
+    {
+        var source = SourceOf(generation) ?? throw new OperationCanceledException("The source asked was replaced.");
+        using var asked = Ask(id);
+        try
+        {
+            // A column the Consumer took away while the browser asked, before .NET heard it or while its source
+            // answered, is answered as gone: the browser reads that once it has the columns that say so.
+            if (Declared(column) is null)
+                return Gone();
+            var answer = await source.GetDistinctValuesAsync(column, asked.Token);
+            if (Declared(column) is not { } declared)
+                return Gone();
+            return Json(json =>
+            {
+                json.WriteStartObject();
+                json.WriteNumber("cv", _columnsVersion);
+                if (answer.IsTooMany)
+                {
+                    json.WriteString("kind", "tooMany");
+                }
+                else
+                {
+                    json.WriteString("kind", "values");
+                    json.WriteStartArray("values");
+                    foreach (var value in answer.Values)
+                        ScriptValues.Write(json, value, column);
+                    json.WriteEndArray();
+                    if (declared.Format is { } format)
+                    {
+                        json.WriteStartArray("texts");
+                        foreach (var value in answer.Values)
+                        {
+                            if (value is null)
+                                json.WriteNullValue();
+                            else
+                                json.WriteStringValue(format(value));
+                        }
+                        json.WriteEndArray();
+                    }
+                }
+                json.WriteEndObject();
+            });
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            // As RowsAsync: the source's failure, or a format's, fails the component, and the panel's question too.
+            await DispatchExceptionAsync(ex);
+            throw;
+        }
+        finally
+        {
+            _asked.Remove(id);
+        }
+    }
+
+    private GridColumn<TRow>? Declared(string column) => Columns.FirstOrDefault(each => each.Name == column);
+
+    private string Gone() => Json(json =>
+    {
+        json.WriteStartObject();
+        json.WriteNumber("cv", _columnsVersion);
+        json.WriteString("kind", "gone");
+        json.WriteEndObject();
+    });
+
+    private CancellationTokenSource Ask(long id)
+    {
+        var asked = new CancellationTokenSource();
+        _asked[id] = asked;
+        return asked;
+    }
+
+    internal void Cancel(long id)
+    {
+        if (_asked.TryGetValue(id, out var asked))
+            asked.Cancel();
+    }
+
+    internal void Release(long[] ids, long seen) => _rows.Release(ids, seen);
+
+    /// <summary>Hears an event the grid raised. It is read as it arrives, so a row it names is the row the browser
+    /// meant even if the browser lets that row go before the event's turn comes. Each is handed to the Consumer once
+    /// the one before it was, in the order the grid raised them, whatever a handler awaits (the spine's sixth rule).
+    /// What the handler wrote to the source crosses before the browser hears the event was handled, so the browser,
+    /// which holds what .NET sends while an edit, a paste or a clear is being handled, takes in a Window that holds
+    /// the write, never one sent before it (ADR-0142, D1). A handler that throws fails the component as a handler of
+    /// Blazor's own events does, so an error boundary or the host's error UI says so, and the browser is never left
+    /// with the exception.</summary>
+    internal async Task HeardAsync(string kind, JsonElement payload)
+    {
+        Func<Task> hand;
+        try
+        {
+            hand = Prepare(kind, payload);
+        }
+        catch (Exception ex)
+        {
+            // An event .NET cannot read fails the component in its turn, as a handler's exception does.
+            hand = () => Task.FromException(ex);
+        }
+        var heard = (Hand: hand, Done: new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously));
+        await InvokeAsync(async () =>
+        {
+            _heard.Enqueue(heard);
+            if (_hearing)
+                return;
+            _hearing = true;
+            try
+            {
+                while (_heard.TryDequeue(out var next))
+                {
+                    try
+                    {
+                        if (_disposed)
+                            continue;
+                        await next.Hand();
+                        if (_attached)
+                            await SendStateAsync();
+                    }
+                    catch (JSDisconnectedException)
+                    {
+                        // The circuit is gone, and the browser that raised the event with it: nobody is left to tell.
+                    }
+                    catch (Exception ex)
+                    {
+                        await DispatchExceptionAsync(ex);
+                    }
+                    finally
+                    {
+                        next.Done.TrySetResult();
+                    }
+                }
+            }
+            finally
+            {
+                _hearing = false;
+            }
+        });
+        await heard.Done.Task;
+    }
+
+    private Func<Task> Prepare(string kind, JsonElement payload)
+    {
+        switch (kind)
+        {
+            case "selectionChanged":
+            {
+                var selection = ScriptJson.Selection(payload);
+                return () => SelectionChanged.InvokeAsync(selection);
+            }
+            case "edit":
+            {
+                var intent = new GridEditIntent<TRow>(
+                    _rows.RowOf(payload.GetProperty("row").GetInt64()), Text(payload, "column"), Text(payload, "value"))
+                {
+                    SeenText = Text(payload, "seenText"),
+                    ReplacedText = Text(payload, "replacedText"),
+                };
+                return async () =>
+                {
+                    await OnEdit.InvokeAsync(intent);
+                    if (intent.IsRefused)
+                        throw NotRefusable("an edit");
+                };
+            }
+            case "paste":
+            {
+                var source = payload.GetProperty("source");
+                var plan = new PastePlan(ScriptJson.Ranges(payload.GetProperty("targets")),
+                    new PasteShape(source.GetProperty("rows").GetInt32(), source.GetProperty("columns").GetInt32()),
+                    payload.GetProperty("collapsesSelection").GetBoolean());
+                var intent = new GridPasteIntent(plan,
+                    [.. payload.GetProperty("values").EnumerateArray().Select(ScriptJson.Texts)],
+                    payload.GetProperty("rowSequenceVersion").GetInt32(),
+                    [.. payload.GetProperty("origins").EnumerateArray().Select(row => (IReadOnlyList<PasteFieldOrigin>)[.. row.EnumerateArray().Select(ScriptJson.Member<PasteFieldOrigin>)])],
+                    ScriptJson.Present(payload, "fillSource", out var fill) ? ScriptJson.Range(fill) : null,
+                    ScriptJson.Present(payload, "enteredAt", out var entered) ? ScriptJson.Cell(entered) : null);
+                return async () =>
+                {
+                    await OnPaste.InvokeAsync(intent);
+                    if (intent.IsRefused)
+                        throw NotRefusable("a paste");
+                };
+            }
+            case "clear":
+            {
+                var intent = new GridClearIntent(ScriptJson.Ranges(payload.GetProperty("targets")), payload.GetProperty("rowSequenceVersion").GetInt32());
+                return () => OnClear.InvokeAsync(intent);
+            }
+            case "undo":
+                return () => OnUndo.InvokeAsync();
+            case "redo":
+                return () => OnRedo.InvokeAsync();
+            case "refused":
+            {
+                var refusal = RefusalOf(payload);
+                return () => OnRefused.InvokeAsync(refusal);
+            }
+            case "columnWidthChanged":
+            {
+                var change = new ColumnWidthChange(Text(payload, "column"), payload.GetProperty("widthPx").GetDouble());
+                return () => OnColumnWidthChanged.InvokeAsync(change);
+            }
+            case "columnOrderChanged":
+            {
+                var order = ScriptJson.Texts(payload);
+                return () => OnColumnOrderChanged.InvokeAsync(order);
+            }
+            case "columnHidden":
+            {
+                var column = payload.GetString() ?? throw new InvalidOperationException("Internal: a column hidden without its name.");
+                return () => OnColumnHidden.InvokeAsync(column);
+            }
+            case "pinnedCountChanged":
+            {
+                var count = payload.GetInt32();
+                return () => OnPinnedCountChanged.InvokeAsync(count);
+            }
+            case "editingChanged":
+            {
+                var open = payload.GetBoolean();
+                return () => OnEditingChanged.InvokeAsync(open);
+            }
+            case "editDiscarded":
+            {
+                var reason = ScriptJson.Member<EditDiscardReason>(payload);
+                return () => OnEditDiscarded.InvokeAsync(reason);
+            }
+            case "cellDoubleClick":
+            {
+                var cell = ScriptJson.Cell(payload);
+                return () => OnCellDoubleClick.InvokeAsync(cell);
+            }
+            case "leave":
+                return () => OnLeave.InvokeAsync();
+            case "overwriteNotice":
+            {
+                var notice = new GridOverwriteNotice(
+                    ScriptJson.Cell(payload.GetProperty("cell")), Text(payload, "column"), Text(payload, "seenText"), Text(payload, "replacedText"));
+                return () => OnOverwriteNotice.InvokeAsync(notice);
+            }
+            case "action":
+            {
+                var action = new GridActionEventArgs<TRow>(
+                    _rows.RowOf(payload.GetProperty("row").GetInt64()), Text(payload, "column"), Text(payload, "action"));
+                return () => OnAction.InvokeAsync(action);
+            }
+            default:
+                throw new InvalidOperationException($"Internal: the Script Core raised '{kind}', which the adapter does not hear.");
+        }
+    }
+
+    private GridRefusal<TRow> RefusalOf(JsonElement payload)
+    {
+        var reason = payload.GetProperty("reason");
+        return Text(payload, "kind") switch
+        {
+            "copy" => new GridRefusal<TRow>.Copy(ScriptJson.Member<CopyRefusalReason>(reason)),
+            "paste" => new GridRefusal<TRow>.Paste(ScriptJson.Member<PasteRefusalReason>(reason)),
+            "commit" => new GridRefusal<TRow>.Commit(ScriptJson.Member<CommitRefusalReason>(reason), ScriptJson.Cell(payload.GetProperty("cell")), Text(payload, "column")),
+            "find" => new GridRefusal<TRow>.Find(ScriptJson.Member<Finding.FindRefusalReason>(reason)),
+            "mark" => new GridRefusal<TRow>.Mark(ScriptJson.Member<Rows.MarkRefusalReason>(reason)),
+            "placement" => new GridRefusal<TRow>.Placement(ScriptJson.Member<PlacementRefusalReason>(reason)),
+            "action" => new GridRefusal<TRow>.Action(ScriptJson.Member<ActionRefusalReason>(reason),
+                ScriptJson.Present(payload, "row", out var row) ? _rows.RowOf(row.GetInt64()) : null,
+                Text(payload, "column"), Text(payload, "action")),
+            var other => throw new InvalidOperationException($"Internal: the Script Core refused a gesture of the kind '{other}'."),
+        };
+    }
+
+    private static string Text(JsonElement json, string name)
+        => json.GetProperty(name).GetString() ?? throw new InvalidOperationException($"Internal: the Script Core sent no {name}.");
+
+    private static NotSupportedException NotRefusable(string what) => new(
+        $"The Consumer refused {what}, which ExGrid over the Script Core cannot refuse: the browser committed it before .NET heard it (ADR-0350 section 7). "
+        + "Answer it with the row unchanged instead, and the cell shows what the row holds.");
+
+    /// <inheritdoc />
+    public async ValueTask DisposeAsync()
+    {
+        if (_disposed)
+            return;
+        _disposed = true;
+        if (_source is not null)
+        {
+            _source.StateChanged -= OnSourceChanged;
+            (_source as IBindsToOneCircuit)?.Binding.Detach(this);
+        }
+        // A question's continuation may run inside Cancel and take itself off the list.
+        foreach (var asked in _asked.Values.ToArray())
+            asked.Cancel();
+        // While it attaches, the grid it makes is stopped once it is made, and the bridge let go after it.
+        if (_attaching)
+            return;
+        await ReleaseAsync(_grid, _module);
+        _bridge?.Dispose();
+    }
+
+    /// <summary>Stops the browser's grid, and lets go what .NET holds of the browser.</summary>
+    private static async Task ReleaseAsync(IJSObjectReference? grid, IJSObjectReference? module)
+    {
+        try
+        {
+            if (grid is not null)
+            {
+                await grid.InvokeVoidAsync("dispose");
+                await grid.DisposeAsync();
+            }
+            if (module is not null)
+                await module.DisposeAsync();
+        }
+        catch (JSDisconnectedException)
+        {
+            // The circuit is gone, and the browser's grid with it: nothing is left there to stop.
+        }
+    }
+}

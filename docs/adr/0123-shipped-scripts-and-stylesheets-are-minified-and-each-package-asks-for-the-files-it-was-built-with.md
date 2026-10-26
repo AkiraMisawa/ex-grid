@@ -31,6 +31,16 @@ as served, 45 KB under gzip. Measured on 2026-10-03, a minified build of the sam
   the script or the stylesheets (ADR-0021's allowlist, the shipped stylesheet's rules) read
   `Assets/`. Layer 3 runs against what ships.
 
+*(2026-10-26: one file is not committed. `_content/ExGrid/ex-grid-core.min.js`, the Script Core and
+Blazor's bridge to it (ADR-0350 section 7), is bundled from `src/npm` as ExGrid builds, so building ExGrid
+needs Node (26.12.1, or 22.23.4 or 24.22.1), and the build installs `src/npm`'s dependencies the first time. The core is in the same
+repository and changes with most pull requests: a committed bundle would be stale in each of them, and two
+branches would conflict over its every line. Everything else here holds for it: it is minified with a linked
+map, it answers the SHA-256 of every source it was bundled from as its stamp, the component compares that
+stamp with the one compiled into it (`ScriptCoreAsset`, generated beside the build's other outputs) and
+refuses another, and it is imported at an address that changes with its content. The package check asks
+that the packed `.nupkg` holds it.)*
+
 ## Each package asks for the files it was built with
 
 A browser that keeps an old copy of `ex-grid.min.js` or `ex-grid.min.css` beside a newer `ExGrid.dll`

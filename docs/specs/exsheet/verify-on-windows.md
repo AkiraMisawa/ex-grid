@@ -19,7 +19,7 @@ Branch: `claude/exsheet-start-8cx3v1`. Commit what you record there, in English,
 - `git clone` the repository and check out `claude/exsheet-start-8cx3v1`.
 - **.NET SDK 10** (`winget install Microsoft.DotNet.SDK.10`). `nix` is not used on Windows; run
   `dotnet` directly wherever `AGENTS.md` writes `nix develop -c dotnet`.
-- **Node 22 or later**, then `npm ci` in `tests/ExGrid.Browser`.
+- **Node 26.12.1** (the security release of 2026-10-21; `.node-version` names it; 22.23.4 or 24.22.1 also work), then `npm ci` in `tests/ExGrid.Browser`.
 - **Google Chrome and Microsoft Edge**, installed normally: the suite drives the installed
   browsers, not downloaded ones (ADR-0026).
 - **Excel desktop (Microsoft 365)**. Record its version and build (File → Account → About Excel),

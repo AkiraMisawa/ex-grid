@@ -35,6 +35,12 @@ public sealed record GridSelection
     /// when the Row Sequence Version or the visible-column set changes (ADR-0011).</summary>
     public static GridSelection Empty { get; } = new([], default, focusRangeIndex: 0);
 
+    /// <summary>A Selection the Script Core made and reported (ADR-0350 section 7): read back for a Consumer
+    /// of ExGrid over the Script Core, which reads it and never transforms it, so each range is taken to be
+    /// made in its own turn.</summary>
+    internal static GridSelection Read(IReadOnlyList<SelectionRange> ranges, CellPosition focus, int focusRangeIndex)
+        => new([.. ranges], focus, focusRangeIndex, [.. Enumerable.Range(0, ranges.Count)]);
+
     private readonly CellPosition _focus;
 
     /// <summary>Index of the range holding the Focus. Meaningless on Empty.</summary>

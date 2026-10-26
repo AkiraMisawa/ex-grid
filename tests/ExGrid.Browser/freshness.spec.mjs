@@ -50,6 +50,14 @@ function publish(work, mark) {
     for (const project of ['src/ExGrid', 'src/ExGrid.Data', 'tests/ExGrid.Browser/freshness-app']) {
         copy(path.join(repository, project), path.join(root, project));
     }
+    // ExGrid's build bundles the Script Core from src/npm (ADR-0350 section 7): the sources it bundles,
+    // with their times, so the lock file reads as installed, and this checkout's installed packages.
+    for (const part of ['package.json', 'package-lock.json', 'scripts', 'core', 'data', 'blazor']) {
+        fs.cpSync(path.join(repository, 'src/npm', part), path.join(root, 'src/npm', part), {
+            recursive: true, preserveTimestamps: true, filter: (source) => !/[\\/](node_modules|dist)$/.test(source),
+        });
+    }
+    fs.symlinkSync(path.join(repository, 'src/npm/node_modules'), path.join(root, 'src/npm/node_modules'), 'dir');
 
     // This version's script: it answers a stamp of its own, and says which version it is.
     const wwwroot = path.join(root, 'src/ExGrid/wwwroot');
