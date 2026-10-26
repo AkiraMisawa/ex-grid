@@ -43,6 +43,9 @@ export type SheetToolbarCommand =
     | 'bold' | 'italic' | 'underline' | 'strikethrough' | 'fontColour' | 'fill' | 'borders' | 'alignLeft' | 'alignCenter'
     | 'alignRight' | 'numberFormat' | 'percent' | 'comma' | 'formatCells';
 
+/** A preset of the Sheet Toolbar's Borders list (ADR-0100), in Excel's order. */
+export type SheetToolbarBorder = 'bottom' | 'top' | 'left' | 'right' | 'none' | 'all' | 'outside' | 'thickOutside';
+
 /**
  * The id of every word ExSheet shows: stable, so a Consumer's label function can answer it. An id with a
  * reason or a name in it takes the reason or the name as the union beside it spells it.
@@ -54,7 +57,8 @@ export type SheetWordId =
     | 'openingNothingToCancel' | 'editDiscardedByOpening' | 'formatKeyWhileEditing'
     | 'structureKeyWhileEditing.insert' | 'structureKeyWhileEditing.delete'
     | 'structureKeyNeedsWholeRowsOrColumns.insert' | 'structureKeyNeedsWholeRowsOrColumns.delete'
-    | 'toolbarName' | 'toolbarWhileEditing' | 'toolbar.row.home' | 'toolbar.withShortcut' | `toolbar.item.${SheetToolbarCommand}` | 'sheetTabsName' | 'editSheetGone'
+    | 'toolbarName' | 'toolbarWhileEditing' | 'toolbar.row.home' | 'toolbar.withShortcut' | `toolbar.item.${SheetToolbarCommand}` | 'toolbar.more' | 'toolbar.automatic' | 'toolbar.noFill'
+    | `toolbar.border.${SheetToolbarBorder}` | 'toolbar.moreNumberFormats' | 'sheetTabsName' | 'editSheetGone'
     | 'sheetSwitchWhileEditing' | 'sheetOperationWhileEditing' | 'sheetAdded'
     | 'sheetRenamed' | 'sheetDeleted' | 'sheetMoved' | 'sheetCopied'
     | 'sheetNotRenamed' | 'newSheetName' | 'sheetNameField' | 'sheetMenuName'
@@ -270,6 +274,31 @@ export class SheetWords {
     /** A Toolbar Item's tooltip, its name with its key (ADR-0100): `Bold (Ctrl+B)`. */
     toolbarItemWithShortcut(name: string, shortcut: string): string {
         return this.#say('toolbar.withShortcut', name, shortcut);
+    }
+
+    /** A split control's arrow, which opens its list: `Borders, more`. */
+    toolbarMore(name: string): string {
+        return this.#say('toolbar.more', name);
+    }
+
+    /** The Font Colour list's first choice, which takes the colour away: Excel's Automatic. */
+    get toolbarAutomatic(): string {
+        return this.word('toolbar.automatic');
+    }
+
+    /** The Fill Colour list's first choice, which takes the fill away: Excel's No Fill. */
+    get toolbarNoFill(): string {
+        return this.word('toolbar.noFill');
+    }
+
+    /** A preset of the Borders list: `Bottom Border`. */
+    toolbarBorder(preset: SheetToolbarBorder): string {
+        return this.word(`toolbar.border.${preset}`);
+    }
+
+    /** The Number Format list's last choice, which opens Format Cells: Excel's More Number Formats…. */
+    get toolbarMoreNumberFormats(): string {
+        return this.word('toolbar.moreNumberFormats');
     }
 
     /** Why the Sheet Toolbar's items cannot be pressed while an edit is open (ADR-0100). */

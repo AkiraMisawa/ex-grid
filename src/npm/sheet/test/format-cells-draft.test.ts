@@ -11,6 +11,7 @@ import {
     numberNegativeStyles, percentageCode, recogniseNumberFormat, scientificCode, SheetWords, timeTypes, type NumberFormatCategory,
 } from '../src/index';
 import { colourFromRgb } from '../src/cell-colour';
+import { defaultCodeOf } from '../src/number-format-codes';
 
 const enUs = Culture.of('en-US');
 const thin = new BorderLine('thin');
@@ -105,6 +106,18 @@ describe('FormatCellsDraft', () => {
         const draft = open(undefined, 'A1', 'A1');
         expect(() => draft.selectCategory('fraction')).toThrow(/^Fractions are not/u);
         expect(draft.change.isEmpty).toBe(true);
+    });
+
+    it('ADR-0100: a category chosen writes the code the Sheet Toolbar\'s Number Format list sets for it', () => {
+        expect.hasAssertions();
+        const categories = ['general', 'number', 'currency', 'date', 'time', 'percentage', 'scientific', 'text'] as const;
+        for (const culture of ['en-US', 'ja-JP', 'de-DE']) {
+            for (const category of categories) {
+                const draft = openIn(culture, undefined);
+                draft.selectCategory(category);
+                expect(draft.numberFormatCode, `${category} under ${culture}`).toBe(defaultCodeOf(category, Culture.of(culture)));
+            }
+        }
     });
 
     it('ADR-0071 / SH-45: Custom starts from the code shown, as Excel\'s does', () => {

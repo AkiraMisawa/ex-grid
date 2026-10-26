@@ -5,6 +5,7 @@
 import { NumberFormat, type Culture } from '@ex-grid/sheet-engine';
 import { currencyDecimalDigitsOf, currencyPositivePatternOf, currencySymbolOf } from './culture-facts';
 import type { NumberFormatCategory } from './format-cells-offer';
+import { elementAt, unreachable } from './must';
 
 /** The most decimal places Excel's spinner offers. */
 export const mostDecimalPlaces = 30;
@@ -93,6 +94,26 @@ function symbolised(body: string, culture: Culture): string {
 /** The culture's default decimal places for a category, as Excel offers them. */
 export function defaultPlaces(category: NumberFormatCategory, culture: Culture): number {
     return category === 'currency' ? currencyDecimalDigitsOf(culture) : 2;
+}
+
+/**
+ * The code a category writes with its defaults, as Format Cells' Number tab sets it when the category is chosen and as
+ * the Sheet Toolbar's Number Format list sets it (ADR-0100). Only a category chosen from a code alone: Accounting and
+ * Fraction are shown disabled, Special is not on the list, and Custom is the code as typed.
+ */
+export function defaultCodeOf(category: Exclude<NumberFormatCategory, 'accounting' | 'fraction' | 'special' | 'custom'>, culture: Culture): string {
+    const places = defaultPlaces(category, culture);
+    switch (category) {
+        case 'general': return NumberFormat.general.code;
+        case 'number': return numberCode(places, false, 0);
+        case 'currency': return currencyCode(places, 0, culture);
+        case 'date': return elementAt(dateTypes, 0);
+        case 'time': return elementAt(timeTypes, 0);
+        case 'percentage': return percentageCode(places);
+        case 'scientific': return scientificCode(places);
+        case 'text': return '@';
+        default: return unreachable(category);
+    }
 }
 
 /** What a category shows a code as when Format Cells opens on it. */
