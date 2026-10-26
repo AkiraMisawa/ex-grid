@@ -14,14 +14,14 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/26/2026 - 18:37:26 |
+| Generated on: | 10/26/2026 - 18:50:57 |
 | Parser: | MultiReport (19x Cobertura) |
 | Assemblies: | 16 |
 | Classes: | 1199 |
 | Files: | 609 |
-| **Line coverage:** | 94.7% (83605 of 88232) |
-| Covered lines: | 83605 |
-| Uncovered lines: | 4627 |
+| **Line coverage:** | 94.7% (83606 of 88232) |
+| Covered lines: | 83606 |
+| Uncovered lines: | 4626 |
 | Coverable lines: | 88232 |
 | Total lines: | 140874 |
 | **Branch coverage:** | 87.7% (50681 of 57742) |
@@ -528,7 +528,7 @@
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExGrid.Data**|**95.9%**|**92.7%**|
+|**ExGrid.Data**|**95.9%**|**92.8%**|
 |ExGrid.Data.AggregateAccumulator|93%|92.4%|
 |ExGrid.Data.AggregateArithmetic|97.8%|95.7%|
 |ExGrid.Data.AggregateResult|86.2%|55.5%|
@@ -621,7 +621,7 @@
 |ExGrid.Data.Storage.DoubleColumnWriter|100%||
 |ExGrid.Data.Storage.DoubleData|100%||
 |ExGrid.Data.Storage.DoubleObjectColumn<T>|100%|100%|
-|ExGrid.Data.Storage.FixedCodes|93.5%|75%|
+|ExGrid.Data.Storage.FixedCodes|96.7%|87.5%|
 |ExGrid.Data.Storage.Gather|98.8%|96.1%|
 |ExGrid.Data.Storage.Int32ObjectColumn<T>|82.3%|100%|
 |ExGrid.Data.Storage.IntegerColumnWriter|100%||
