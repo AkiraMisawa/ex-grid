@@ -1853,7 +1853,8 @@ tag.)* *(2026-10-25, decided with the user: [ADR-0370](adr/0370-the-whole-family
 section 3 ends the server report Windows when ExPivot.Engine is removed, and a server answers Leaf
 Aggregates again. LV-24, LV-25 and LV-28, and PV-2's server clause, judge the C# path as written until
 then. They are rewritten for the Leaf Aggregate boundary, with live server data's form, before
-ExPivot's step 1 is called done, not relaxed to fit it.)* Without a Row Key declared, the Row Key's criteria change nothing
+ExPivot's step 1 is called done, not relaxed to fit it. That form was settled with the user on 2026-10-26,
+in the same section: a notice, or a Change Batch of records the engine folds.)* Without a Row Key declared, the Row Key's criteria change nothing
 (DC-1); the rules for a write over live data hold for every grid.
 
 | ID | Level | Statement | Verification | Pass |

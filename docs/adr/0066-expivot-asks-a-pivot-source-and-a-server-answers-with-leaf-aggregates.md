@@ -12,7 +12,10 @@ engine's by shared cases rather than being the reference's by construction. The 
 naming the leaves that changed stands: until Level Aggregates are built, live server data asks the
 whole question again. Past the cap, ADR-0370 makes Level Aggregates the target, for a source that
 answers them: the engine asks for the groups it shows, in these parts, and checks each group against
-its parent, and live server data then re-asks only what is shown.
+its parent, and live server data then re-asks only what is shown. *(2026-10-26, decided with the user:
+ADR-0370 section 3 lets the Consumer's transport hand the source a Change Batch of the records the server's
+data lost and gained, which the engine folds into the Leaf Aggregates it holds where subtraction and
+addition keep them exactly. The refusal below stands: the server names records, never leaves.)*
 
 **Boundary changed, 2026-10-06:**
 [ADR-0151](./0151-server-pivots-send-report-windows-and-share-the-local-engine.md) chooses
@@ -301,6 +304,11 @@ source naming too few leaves painted totals that did not add up, with nothing to
 taken. Under [ADR-0151](./0151-server-pivots-send-report-windows-and-share-the-local-engine.md) a
 server sends report Windows and their changes, and only the bundled Snapshot source computes
 incrementally, from its own fold.
+
+*(2026-10-26: [ADR-0370](./0370-the-whole-family-moves-to-typescript-and-blazor-only-adapts-it.md) section 3
+takes a server's Change Batch instead — the records lost and gained, with their values — and the engine
+finds their leaves itself, by the binding that answers the question, folding only what subtraction and
+addition keep exactly. The server names no leaf, so this refusal is not reopened.)*
 
 ## Consequences
 

@@ -19,6 +19,7 @@ import { AggregationPass, chunkRows, itemsOfField, itemsOfFieldSteps } from './a
 import { Slicer, checkedSlicing, runWhole, type CheckedSlicing, type PivotSlicing } from './slicing';
 import { levelAnswerSteps } from '../levels/level-answers';
 import { bindSnapshot, detailAt, itemKeyAt, recordSnapshot, type FieldBinding } from './binding';
+import { checkBatchRecords, foldServerBatches, type ServerBatch } from './server-batches';
 
 // ---- What a source offers -----------------------------------------------------------------------
 
@@ -271,6 +272,12 @@ export interface PivotSource {
      * one, and do not declare it: in the page, a layout past the cap is refused as soon as a count would be
      * known. */
     itemCounts?(signal?: AbortSignal): Promise<PivotItemCounts>;
+    /** Tells `listener` each time the source's data moves on (ADR-0067, ADR-0370 section 3); the function
+     * returned stops telling it. A source whose data never moves has none. */
+    subscribe?(listener: (changed: PivotSourceChanged) => void): () => void;
+    /** Refresh: lets go of whatever the source holds for its questions, so the next one is asked of its data.
+     * A source that holds nothing past its data has none; a source that wraps another passes it on. */
+    refresh?(): void;
 }
 
 function knows(fields: readonly PivotField[], name: string): boolean {
@@ -806,6 +813,37 @@ function recordsAt<TRecord>(records: readonly TRecord[], rows: readonly number[]
     return records.filter((_, row) => wanted.has(row));
 }
 
+/** That a server's data moved on, however the Consumer learned it (ADR-0370 section 3): the question is asked
+ * again. */
+export interface PivotServerChanged {
+    /** Names the notice: the data moved on, and its changes are not told. */
+    readonly kind: 'changed';
+    /** The Source Version the server answers under now, where the Consumer knows it. */
+    readonly sourceVersion?: string;
+}
+
+/**
+ * A server's Change Batch (ADR-0370 section 3): the records its data lost and the records it gained between two
+ * Source Versions, each with its values in the source's field order, as a record behind a cell carries them —
+ * a date by its ticks, a date part by its number. A changed record is the old one lost and the new one
+ * gained.
+ */
+export interface PivotServerChangeBatch {
+    /** Names the notice: the records the data lost and gained are told. */
+    readonly kind: 'changeBatch';
+    /** The Source Version the batch starts from. */
+    readonly from: string;
+    /** The Source Version it makes. */
+    readonly to: string;
+    /** The records the data lost, each with the values it had. */
+    readonly removed: readonly (readonly PivotDetailValue[])[];
+    /** The records the data gained. */
+    readonly added: readonly (readonly PivotDetailValue[])[];
+}
+
+/** What the Consumer's transport tells a fetching source: that the data moved on, or how. */
+export type PivotServerNotice = PivotServerChanged | PivotServerChangeBatch;
+
 /** How a fetching source asks its server. */
 export interface PivotFetchers {
     /** Asks the server for the Leaf Aggregates of a question. */
@@ -816,17 +854,48 @@ export interface PivotFetchers {
     readonly details: (query: PivotDetailsQuery, signal?: AbortSignal) => Promise<PivotDetailPage>;
     /** Asks the server for each field's count of Items, when the features declare that it counts them. */
     readonly itemCounts?: (signal?: AbortSignal) => Promise<PivotItemCounts>;
+    /**
+     * Starts the Consumer's transport telling the source that the server's data moved on (ADR-0370 section 3):
+     * WebSocket, server-sent events, SignalR or polling, the Consumer's own. The source calls it when its first
+     * listener subscribes, with the function the transport calls for each notice or Change Batch, and calls the
+     * function it returns when its last listener leaves.
+     */
+    readonly subscribe?: (notify: (notice: PivotServerNotice) => void) => () => void;
 }
 
-/** A source whose answers a Consumer fetches from a server (ADR-0066). The engine refuses what every source
+// The answer a fetching source holds for the question it answered last, and the batches heard since.
+interface HeldServerAnswer {
+    readonly query: PivotQuery;
+    readonly answer: PivotAnswer;
+    readonly batches: ServerBatch[];
+    // The records the batches carry: past the answer's leaves, asking again is the cheaper.
+    records: number;
+}
+
+/**
+ * A source whose answers a Consumer fetches from a server (ADR-0066). The engine refuses what every source
  * refuses before asking, and holds what comes back to the question: an answer to another question, more
- * Items or records than were asked for, or records of other fields fail by name. */
+ * Items or records than were asked for, or records of other fields fail by name.
+ *
+ * **Live data** (ADR-0370 section 3): the Consumer's transport, started by {@link PivotFetchers.subscribe},
+ * tells the source that the server's data moved on, or hands it a Change Batch of the records the data lost
+ * and gained. Each listener {@link FetchingPivotSource.subscribe}d is told the new Source Version. Asked the
+ * question it answered last again, the source answers from the Leaf Aggregates it holds with the batches
+ * folded in, where subtraction and addition keep every part they touch exactly; otherwise — a notice, a batch
+ * out of chain, a sum that is a double, a product, a variance, an extreme a number left, Level Aggregates — it
+ * asks the server again. An answer fetched while a notice or a batch arrived is not held.
+ */
 export class FetchingPivotSource implements PivotSource {
     /** The fields the server has. */
     readonly fields: readonly PivotField[];
     /** The Aggregations the server answers. */
     readonly features: PivotSourceFeatures;
     readonly #fetch: PivotFetchers;
+    readonly #listeners = new Set<(changed: PivotSourceChanged) => void>();
+    #stop: (() => void) | undefined;
+    #held: HeldServerAnswer | undefined;
+    // How many notices and batches the source has heard: an answer fetched across one is not held.
+    #heard = 0;
 
     /** A source of the server's fields and Aggregations, asked through the fetchers; the features declare
      * that it counts Items exactly when a fetcher counts them. */
@@ -842,16 +911,118 @@ export class FetchingPivotSource implements PivotSource {
         this.#fetch = fetch;
     }
 
-    /** The server's Leaf Aggregates, held to the question. */
+    /** The server's Leaf Aggregates, held to the question; for the question answered last, the answer held
+     * with the batches heard since folded in, where they fold. */
     async aggregate(query: PivotQuery, signal?: AbortSignal): Promise<PivotAnswer> {
         const refusal = queryRefusal(this.fields, this.features, query);
         if (refusal !== undefined) return PivotAnswer.refused(refusal);
+        const held = this.#held;
+        if (held !== undefined && queriesEqual(held.query, query)) {
+            if (held.batches.length === 0) return held.answer;
+            const folded = foldServerBatches(query, held.answer, held.batches, this.fields);
+            this.#held = folded === undefined ? undefined : { query, answer: folded, batches: [], records: 0 };
+            if (folded !== undefined) return folded;
+        }
+        const heard = this.#heard;
         const answer = await this.#fetch.aggregate(query, signal);
         if (!answer.isRefused) {
             const mismatch = answer.mismatch(query);
             if (mismatch !== undefined) throw new Error(`The server answered another question than the one asked: ${mismatch} (ADR-0066).`);
         }
+        // Held to fold batches into: an answer of leaves, fetched while a transport runs to say what moves, with
+        // nothing heard while it was asked. Without a transport nothing would say the answer went stale.
+        this.#held = this.#stop !== undefined && !answer.isRefused && !answer.isLevels && heard === this.#heard
+            ? { query, answer, batches: [], records: 0 }
+            : undefined;
         return answer;
+    }
+
+    /** Tells `listener` each new Source Version the Consumer's transport reports, after the source has moved on
+     * to it; the function returned stops telling it. The transport runs while a listener is subscribed. */
+    subscribe(listener: (changed: PivotSourceChanged) => void): () => void {
+        if (typeof listener !== 'function') throw new TypeError('A listener is a function.');
+        const held = (changed: PivotSourceChanged): void => {
+            listener(changed);
+        };
+        const fetch = this.#fetch;
+        const starts = this.#listeners.size === 0 && fetch.subscribe !== undefined;
+        this.#listeners.add(held);
+        if (starts) {
+            let stop: (() => void) | undefined;
+            try {
+                // Called on the fetchers, as the other fetchers are, so a fetcher written as a method keeps its `this`.
+                stop = fetch.subscribe(notice => {
+                    this.#hear(notice);
+                });
+            } catch (error) {
+                this.#listeners.delete(held);
+                throw error;
+            }
+            if (typeof (stop as unknown) !== 'function') {
+                this.#listeners.delete(held);
+                throw new TypeError("The fetchers' subscribe returns the function that stops the transport (ADR-0370 section 3).");
+            }
+            this.#stop = stop;
+        }
+        return () => {
+            if (!this.#listeners.delete(held) || this.#listeners.size > 0) return;
+            this.#stopTransport();
+        };
+    }
+
+    /** Refresh: lets go of the answer held, so the next question is asked of the server. */
+    refresh(): void {
+        this.#held = undefined;
+    }
+
+    // Stops the transport, and lets go of the answer held: nothing would say what moves while it is stopped.
+    #stopTransport(): void {
+        const stop = this.#stop;
+        this.#stop = undefined;
+        this.#held = undefined;
+        stop?.();
+    }
+
+    // A notice or a batch the Consumer's transport handed the source: checked whole before anything moves, so a
+    // malformed one throws to the transport and changes nothing.
+    #hear(notice: PivotServerNotice): void {
+        if (typeof notice !== 'object' || (notice as unknown) === null) throw new TypeError('A notice is an object: changed, or changeBatch (ADR-0370 section 3).');
+        let changed: PivotSourceChanged;
+        switch (notice.kind) {
+            case 'changed': {
+                const version = notice.sourceVersion;
+                if (version !== undefined && (typeof version !== 'string' || version.length === 0)) throw new TypeError('A notice names its Source Version with text, or not at all.');
+                this.#held = undefined;
+                changed = Object.freeze(version === undefined ? {} : { sourceVersion: version });
+                break;
+            }
+            case 'changeBatch': {
+                const batch = checkedBatch(notice, this.fields);
+                const held = this.#held;
+                const end = held === undefined ? undefined : (held.batches.at(-1)?.to ?? held.answer.sourceVersion);
+                if (held === undefined || end !== batch.from || held.records + batch.removed.length + batch.added.length > held.answer.leafCount + chunkRows) {
+                    this.#held = undefined;
+                } else {
+                    held.batches.push(batch);
+                    held.records += batch.removed.length + batch.added.length;
+                }
+                changed = Object.freeze({ sourceVersion: batch.to });
+                break;
+            }
+            default:
+                throw new TypeError(`'${String((notice as { readonly kind: unknown }).kind)}' is no notice a fetching source takes: changed, or changeBatch (ADR-0370 section 3).`);
+        }
+        this.#heard++;
+        // A copy, so that a listener subscribed while the others are told is told from the next notice.
+        for (const listener of Array.from(this.#listeners)) {
+            try {
+                listener(changed);
+            } catch (error) { // oxlint-disable-line ex-grid/no-catch -- the notice is taken whatever a listener does; its error is reported, as an event listener's is, not swallowed
+                queueMicrotask(() => {
+                    throw error;
+                });
+            }
+        }
     }
 
     /** The server's page of Items, held to the most asked for. */
@@ -894,4 +1065,29 @@ export class FetchingPivotSource implements PivotSource {
         }
         return page;
     }
+}
+
+// A Change Batch as the transport handed it, checked: its versions are text, and its records are the source's
+// fields' values, as they will be read.
+function checkedBatch(batch: PivotServerChangeBatch, fields: readonly PivotField[]): ServerBatch {
+    const { from, to, removed, added } = batch;
+    if (typeof from !== 'string' || from.length === 0 || typeof to !== 'string' || to.length === 0) {
+        throw new TypeError('A Change Batch names the Source Versions it goes from and to, with text (ADR-0370 section 3).');
+    }
+    if (from === to) throw new TypeError(`A Change Batch goes from one Source Version to another, not from '${from}' to itself (ADR-0370 section 3).`);
+    for (const [side, records] of [['removed', removed], ['added', added]] as const) {
+        if (!Array.isArray(records)) throw new TypeError(`A Change Batch's ${side} records are an array (ADR-0370 section 3).`);
+        try {
+            checkBatchRecords(records, fields);
+        } catch (error) {
+            if (error instanceof Error) throw new TypeError(`A Change Batch's ${side} records: ${error.message}`, { cause: error });
+            throw error;
+        }
+    }
+    return Object.freeze({ from, to, removed: copiedRecords(removed), added: copiedRecords(added) });
+}
+
+// Records copied, so that a transport reusing its arrays changes nothing the source holds.
+function copiedRecords(records: readonly (readonly PivotDetailValue[])[]): readonly (readonly PivotDetailValue[])[] {
+    return Object.freeze(records.map(record => Object.freeze([...record])));
 }
