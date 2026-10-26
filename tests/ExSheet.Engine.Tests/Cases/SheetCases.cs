@@ -174,6 +174,19 @@ internal static class SheetCases
         ? new BorderLine(Enum<BorderLineStyle>(line["style"]!), line["colour"] is { } colour ? ColourOf(colour) : CellColour.Automatic)
         : (string)node! == "none" ? BorderLine.None : throw new InvalidDataException($"{node.ToJsonString()} is no line.");
 
+    internal static JsonObject CellFormatJson(CellFormat format) => new()
+    {
+        ["numberFormat"] = format.NumberFormat.Code,
+        ["alignment"] = Camel(format.Alignment),
+        ["font"] = Font(format.Font),
+        ["fill"] = Fill(format.Fill),
+        ["borders"] = Borders(format.Borders),
+    };
+
+    /// <summary>Nodes in the ordinal order of their JSON's text, so that a set reads the same from both runners.</summary>
+    internal static JsonArray Sorted(IEnumerable<JsonNode> nodes) =>
+        new([.. nodes.OrderBy(n => n.ToJsonString(), StringComparer.Ordinal)]);
+
     internal static JsonObject Borders(CellBorders borders) => new()
     {
         ["top"] = Line(borders.Top),
@@ -763,6 +776,20 @@ internal sealed class Run(CultureInfo culture)
             case "borders":
                 actual = PerCell(expected, a => SheetCases.Borders(sheet.GetBorders(a)));
                 break;
+            case "cellFormats":
+                // The Cell Formats a range shows, each once, in the order of their JSON's text, as the TS runner orders them.
+                actual = PerRange(expected, r => SheetCases.Sorted(sheet.GetCellFormats(r).Select(SheetCases.CellFormatJson)));
+                break;
+            case "edgeLines":
+                // The lines along each of a range's outer edges, each once, in the order of their JSON's text.
+                actual = PerRange(expected, r => sheet.GetEdgeLines(r) is var lines ? new JsonObject
+                {
+                    ["top"] = SheetCases.Sorted(lines.Top.Select(SheetCases.Line)),
+                    ["bottom"] = SheetCases.Sorted(lines.Bottom.Select(SheetCases.Line)),
+                    ["left"] = SheetCases.Sorted(lines.Left.Select(SheetCases.Line)),
+                    ["right"] = SheetCases.Sorted(lines.Right.Select(SheetCases.Line)),
+                } : null);
+                break;
             case "document":
                 actual = SheetCases.Document(Workbook.ToDocument(sheet.Name));
                 break;
@@ -865,6 +892,14 @@ internal sealed class Run(CultureInfo culture)
                 throw new InvalidDataException($"{where}: '{key}' is no reading.");
         }
         SheetCases.Compare($"{where}.{key}", expected, actual, Differences);
+    }
+
+    private static JsonObject PerRange(JsonNode? expected, Func<CellRange, JsonNode?> read)
+    {
+        var answer = new JsonObject();
+        foreach (var (range, _) in expected!.AsObject())
+            answer[range] = read(CellRange.Parse(range));
+        return answer;
     }
 
     private static JsonObject PerCell(JsonNode? expected, Func<CellAddress, JsonNode?> read)

@@ -5,7 +5,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { CellAddress } from '../src/cell-address';
-import { BorderLine, CellColour, CellFill, type BorderLineStyle, type CellBorders, type CellFont, type HorizontalAlignment } from '../src/cell-format';
+import { BorderLine, CellColour, CellFill, type BorderLineStyle, type CellFormat, type CellBorders, type CellFont, type HorizontalAlignment } from '../src/cell-format';
 import { BorderChange, CellFormatChange } from '../src/cell-format-change';
 import { CellRange } from '../src/cell-range';
 import { Culture } from '../src/culture';
@@ -160,6 +160,15 @@ function lineOf(node: Json | undefined): BorderLine {
 
 function borders(of: CellBorders): JsonObject {
     return { top: line(of.top), bottom: line(of.bottom), left: line(of.left), right: line(of.right) };
+}
+
+function cellFormatJson(of: CellFormat): JsonObject {
+    return { numberFormat: of.numberFormat.code, alignment: of.alignment, font: font(of.font), fill: fill(of.fill), borders: borders(of.borders) };
+}
+
+/** Nodes in the code-unit order of their JSON's text, so that a set reads the same from both runners. */
+function sorted(nodes: readonly Json[]): Json[] {
+    return nodes.map(n => [JSON.stringify(n), n] as const).toSorted(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)).map(([, n]) => n);
 }
 
 function entryJson(entry: Entry | undefined): Json {
@@ -668,6 +677,8 @@ class Run {
         const sheet = outcome.sheet;
         const perCell = (read: (address: CellAddress) => Json): JsonObject =>
             Object.fromEntries(Object.keys(object(expected, key)).map(a => [a, read(CellAddress.parse(a))]));
+        const perRange = (read: (range: CellRange) => Json): JsonObject =>
+            Object.fromEntries(Object.keys(object(expected, key)).map(r => [r, read(CellRange.parse(r))]));
         let actual: Json;
         switch (key) {
             case 'values':
@@ -700,6 +711,18 @@ class Run {
             case 'borders':
                 actual = perCell(a => borders(sheet.getBorders(a)));
                 break;
+            case 'cellFormats':
+                // The Cell Formats a range shows, each once, in the order of their JSON's text, as the C# runner orders them.
+                actual = perRange(r => sorted(sheet.getCellFormats(r).map(cellFormatJson)));
+                break;
+            case 'edgeLines': {
+                // The lines along each of a range's outer edges, each once, in the order of their JSON's text.
+                actual = perRange(r => {
+                    const lines = sheet.getEdgeLines(r);
+                    return { top: sorted(lines.top.map(line)), bottom: sorted(lines.bottom.map(line)), left: sorted(lines.left.map(line)), right: sorted(lines.right.map(line)) };
+                });
+                break;
+            }
             case 'document':
                 actual = documentJson(this.workbook.toSheetDocument(sheet.name));
                 break;

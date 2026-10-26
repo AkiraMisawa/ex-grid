@@ -670,7 +670,9 @@ of one key, the factory, and its arguments, as `SheetEdit` takes them.
 
 An expectation names readings: per cell, `values` (a string is text, a number a double, `true`/`false` a
 Boolean, `null` a Blank, `{"error": "#N/A"}` an Error Value), `displays`, `texts`, `formulas`, `entryTexts`,
-`entries`, `numberFormats`, `alignments`, `fonts`, `fills`, `borders`, `widthOnEntry` and `spilledFrom`; of
+`entries`, `numberFormats`, `alignments`, `fonts`, `fills`, `borders`, `widthOnEntry` and `spilledFrom`; per
+range, `cellFormats` (the Cell Formats it shows, each once) and `edgeLines` (the lines along each outer edge),
+each a set written in the ordinal order of its members' JSON text; of
 the Sheet, `document`, `columnWidths`, `entryAddresses` and `valueAddresses`; of the step, `change`,
 `changes` (what a step, an undo or a redo changed on each Sheet it reached, by the Sheet's name), `refusal`
 (a `check`'s), `isUndone`, `ranges`, and `clockReads` (how often the step read the clock); of the Workbook,
