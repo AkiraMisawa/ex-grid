@@ -452,6 +452,21 @@ describe('ExPivot\'s options', () => {
         expect(view.shownLayout).toBe(both);
     });
 
+    it('ADR-0059: an earlier layout the user made, handed in by a Consumer that never handed the layouts back, is asked for', async () => {
+        const changed: PivotLayout[] = [];
+        const options: PivotViewOptions = { source: local(), onLayoutChanged: event => changed.push(event.layout) };
+        const { root, view } = mount(options);
+        tick(root, 'Region');
+        await settled();
+        tick(root, 'Desk');
+        await settled();
+        const [regionOnly] = changed;
+        if (regionOnly === undefined) throw new Error('A layout was raised.');
+        view.update({ ...options, layout: regionOnly });
+        await settled();
+        expect(view.shownLayout).toBe(regionOnly);
+    });
+
     it('ADR-0059: layouts this pivot raised, handed back late and in turn, ask for nothing', async () => {
         const changed: PivotLayout[] = [];
         const options: PivotViewOptions = { source: local(), layout: byRegion, onLayoutChanged: event => changed.push(event.layout) };
@@ -468,6 +483,35 @@ describe('ExPivot\'s options', () => {
         await settled();
         expect(view.shownLayout).toBe(deskOnly);
         expect(changed).toHaveLength(2);
+    });
+
+    it('spine rule 6: the layout last raised, handed back while the user\'s newer move is out, does not undo that move', async () => {
+        const changed: PivotLayout[] = [];
+        const options: PivotViewOptions = { source: local(), layout: byRegion, onLayoutChanged: event => changed.push(event.layout) };
+        const { root, view } = mount(options);
+        await settled();
+        tick(root, 'Desk');
+        await settled();
+        const [both] = changed;
+        if (both === undefined) throw new Error('A layout was raised.');
+        tick(root, 'Region');
+        view.update({ ...options, layout: both });
+        await settled();
+        expect(view.shownLayout.rows.map(p => p.field)).toEqual(['Desk']);
+    });
+
+    it('ADR-0370 section 3: a field moved into Values is named when the question it went with is refused', async () => {
+        const refused: (readonly string[])[] = [];
+        const { root } = mount({ source: server(), layout: createPivotLayout({ values: ['Amount'] }), maxLeaves: 1, onRefused: event => refused.push(event.fields) });
+        await settled();
+        drag(field(root, 'Desk'), 'dragstart');
+        drag(area(root, 'values'), 'dragenter');
+        drag(area(root, 'values'), 'drop');
+        drag(field(root, 'Region'), 'dragstart');
+        drag(area(root, 'rows'), 'dragenter');
+        drag(area(root, 'rows'), 'drop');
+        await settled();
+        expect(refused).toEqual([['Desk', 'Region']]);
     });
 
     it('ADR-0059: a layout naming a field the source does not offer is refused, and the pivot stays as it was', async () => {

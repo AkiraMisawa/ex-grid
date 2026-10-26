@@ -184,14 +184,6 @@ export class FieldListView {
         body.append(this.#chooseCaption, this.#search, this.#list, this.#dragCaption, areas);
         pane.append(heading, body);
         root.append(pane);
-        // A drag that moves on from an Area to elsewhere in the pane leaves that Area unmarked: an Area hears its
-        // own entry first, so what reaches the pane from outside every Area is somewhere else. Leaving by
-        // dragleave is not heard, since WebKit names no element a drag left for.
-        root.addEventListener('dragenter', event => {
-            const target = event.target;
-            if (!(target instanceof Node) || ![...this.#areas.values()].some(({ area }) => area.contains(target))) this.leaveTargets();
-        });
-
     }
 
     /** Draws `model`. A drag in progress is dropped when the layout it started on is no longer the pane's. */
@@ -219,6 +211,12 @@ export class FieldListView {
     /** Whether a placed field is being dragged, which a drop on the report removes. */
     get removable(): boolean {
         return this.#drag?.subject.kind === 'entry' && !isValuesPseudoField(this.#drag.subject.entry);
+    }
+
+    /** A drag entered `target`: unless it is in an Area, which hears its own entry first, no Area is the target. */
+    dragEntered(target: EventTarget | null): void {
+        if (target instanceof Node && [...this.#areas.values()].some(({ area }) => area.contains(target))) return;
+        this.leaveTargets();
     }
 
     /** The drag is over no Area of the pane now: none is marked as its target. */

@@ -7,8 +7,8 @@ import { browserPivotLocale, createPivot, type PivotHandle, type PivotViewOption
 
 /**
  * An ExPivot's props: the Script Core's options, whole. `locale` is the browser's language where not given,
- * the first of its languages the pivot writes in, read once when the pivot is made (ADR-0370 section 10); the
- * core never reads it on its own.
+ * the first of its languages the pivot writes in, read once, the first time the pivot is given none (ADR-0370
+ * section 10); the core never reads it on its own.
  */
 export type ExPivotProps = PivotViewOptions;
 

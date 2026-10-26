@@ -101,6 +101,8 @@ interface Question {
     /** What it is asked of and under: the rows of its answer are asked of the same, with the same. */
     readonly reportSource: LocalPivotReportSource;
     readonly settings: PivotReportSettings;
+    /** The locale its settings carry, which its counts and its report are written in. */
+    readonly locale: string;
     readonly maxLeaves: number;
 }
 
@@ -180,9 +182,11 @@ export class PivotView {
     #reportSource: LocalPivotReportSource;
     // The report source the rows on screen read their Windows from: the one before a new source's answer lands.
     #shownReportSource: LocalPivotReportSource | undefined;
-    // The layouts raised through onLayoutChanged and not yet handed back, oldest first: one handed back is the
-    // layout on screen, or one the report has moved on from, and with it every one raised before it.
-    readonly #raised: PivotLayout[] = [];
+    // The layout last raised through onLayoutChanged. Handed back while a newer move of the user's is out, it is
+    // the Consumer catching up, not a layout asked for; at any other time the Consumer's layout is the one shown.
+    #raised: PivotLayout | undefined;
+    // The locale of the report on screen, which the grid writes it in until another report replaces it.
+    #shownLocale: string | undefined;
     #layoutGiven: PivotLayout | undefined;
     #shown: Shown;
     #asked: Question | undefined;
@@ -234,7 +238,6 @@ export class PivotView {
         this.#notice = div('ex-pivot-refusal-notice');
         this.#notice.setAttribute('role', 'alert');
         this.#sheet = div('ex-pivot-sheet');
-        this.#sheet.addEventListener('dragenter', () => { this.#fieldList.leaveTargets(); });
         this.#sheet.addEventListener('dragover', event => {
             if (!this.#fieldList.removable) return;
             event.preventDefault();
@@ -260,6 +263,14 @@ export class PivotView {
             dragging: removable => { this.#paintDropRemove(removable); },
         });
         root.append(this.#report, this.#fieldListBox);
+        // A drag that moves on from an Area, anywhere in the pivot, leaves it unmarked; and one that leaves the
+        // pivot for an element the browser names. WebKit names none on leaving one element for another, so a
+        // leave that names nothing is not taken as one.
+        root.addEventListener('dragenter', event => { this.#fieldList.dragEntered(event.target); });
+        root.addEventListener('dragleave', event => {
+            const to = event.relatedTarget;
+            if (to instanceof Node && !root.contains(to)) this.#fieldList.leaveTargets();
+        });
 
         this.#askCounts();
         if (options.layout !== undefined) this.#ask(options.layout, 'consumer', undefined);
@@ -276,13 +287,6 @@ export class PivotView {
         if (reportSource !== undefined && reportSource !== this.#reportSource && reportSource !== this.#shownReportSource) reportSource.dispose();
     }
 
-    // Whether a layout handed in is one this pivot raised: the echo of the screen, or of a screen since replaced.
-    #echoed(layout: PivotLayout): boolean {
-        const at = this.#raised.indexOf(layout);
-        if (at < 0) return false;
-        this.#raised.splice(0, at + 1);
-        return true;
-    }
 
     /** Takes the options again, whole. Options refused leave the pivot as it was. */
     update(options: PivotViewOptions): void {
@@ -290,20 +294,18 @@ export class PivotView {
         checkedOptions(options);
         const before = this.#options;
         const sourceMoved = options.source !== before.source;
-        // A layout handed in is a question, unless it is the one this pivot last raised, handed back, or the one
-        // the pane holds already.
+        // A layout handed in is a question, unless the pane holds it already, or it is the one this pivot last
+        // raised, handed back while the user's newer move is out.
         const layoutMoved = options.layout !== this.#layoutGiven;
-        const consumerLayout = layoutMoved && options.layout !== undefined && options.layout !== this.#paneLayout && !this.#raised.includes(options.layout)
+        const echo = options.layout === this.#raised && this.#asked?.cause === 'user';
+        const consumerLayout = layoutMoved && options.layout !== undefined && options.layout !== this.#paneLayout && !echo
             ? options.layout
             : undefined;
         const asked = consumerLayout ?? (sourceMoved ? this.#paneLayout : undefined);
         // Checked against the source it will be asked of before anything changes.
         if (asked !== undefined) validateLayout(asked, this.#declared(options.source));
         this.#options = options;
-        if (layoutMoved) {
-            this.#layoutGiven = options.layout;
-            if (options.layout !== undefined) this.#echoed(options.layout);
-        }
+        if (layoutMoved) this.#layoutGiven = options.layout;
         const settingsMoved = options.locale !== before.locale || options.label !== before.label;
         if (options.label !== before.label) this.#words = new PivotScreenWords(options.label);
         if (settingsMoved) this.#settings = this.#settingsOf(options);
@@ -416,7 +418,7 @@ export class PivotView {
         }
         const question: Question = {
             layout, generation, controller: new AbortController(), cause, moves: Object.freeze(moves),
-            reportSource: this.#reportSource, settings: this.#settings, maxLeaves: this.#maxLeaves,
+            reportSource: this.#reportSource, settings: this.#settings, locale: this.#locale, maxLeaves: this.#maxLeaves,
         };
         this.#asked = question;
         void this.#run(question);
@@ -466,7 +468,7 @@ export class PivotView {
         }
         this.#draw();
         if (cause === 'user') {
-            this.#raised.push(layout);
+            this.#raised = layout;
             this.#options.onLayoutChanged?.(Object.freeze({ layout }));
         }
     }
@@ -482,13 +484,15 @@ export class PivotView {
 
     #sentenceFor(refusal: PivotReportRefusal, question: Question): { readonly message: string; readonly fields: readonly string[] } {
         // The moves the refused layout still holds: a field moved and then taken out again is not in it.
-        const held = question.moves.filter((move, i, all) => all.findLastIndex(later => later.field === move.field) === i
-            && placementOf(question.layout, move.field)?.area === move.area);
-        const named = held.map(move => move.field);
+        // A field may stand in Values as well as in an axis, so a move is known by its field and its Area.
+        const held = question.moves.filter((move, i, all) => all.findLastIndex(later => later.field === move.field && later.area === move.area) === i
+            && (move.area === 'values' ? question.layout.values.some(value => value.field === move.field) : placementOf(question.layout, move.field)?.area === move.area));
+        const named = [...new Set(held.map(move => move.field))];
         const source = refusal.sourceRefusal;
         if (source?.kind !== 'tooManyLeaves') return { message: refusal.message, fields: refusal.field === undefined ? named : [refusal.field] };
         // A source that names no limit stopped at the cap it was asked with (ADR-0066).
-        const cap = formatPivotCount(source.limit ?? this.#maxLeaves, this.#locale);
+        const { locale } = question;
+        const cap = formatPivotCount(source.limit ?? question.maxLeaves, locale);
         // Server data is refused naming each field moved into Rows or Columns, which make the combinations
         // (ADR-0370 section 3); data the pivot computes itself is refused by the cells the layout needs, as the
         // Razor component says it.
@@ -502,7 +506,7 @@ export class PivotView {
             const count = this.#counts?.countOf(move.field);
             const sentence = count === undefined
                 ? this.#words.fill('refused-too-many-combinations', caption, area, cap)
-                : this.#words.fill('refused-too-many-combinations-counted', caption, formatPivotCount(count, this.#locale), area, cap);
+                : this.#words.fill('refused-too-many-combinations-counted', caption, formatPivotCount(count, locale), area, cap);
             return `${sentence} ${this.#words.fill('refused-too-many-combinations-remedy', caption)}`;
         });
         return { message: sentences.join(' '), fields: named };
@@ -559,6 +563,7 @@ export class PivotView {
             return;
         }
         const { answer, question } = answered;
+        this.#shownLocale = question.locale;
         this.#rows = reportRows({
             source: question.reportSource,
             layout: question.layout,
@@ -582,7 +587,8 @@ export class PivotView {
     #drawGrid(): void {
         const answer = this.#shown.answer;
         const rows = this.#rows;
-        if (answer === undefined || rows === undefined) return;
+        const locale = this.#shownLocale;
+        if (answer === undefined || rows === undefined || locale === undefined) return;
         const { columns, headerGroups, pinnedColumnCount } = reportColumns(answer.metadata, this.#userWidths);
         const { rowHeight, density, label } = this.#options;
         const options: GridOptions<PivotDisplayRow> = {
@@ -590,7 +596,7 @@ export class PivotView {
             headerGroups,
             pinnedColumnCount,
             source: rows,
-            locale: this.#locale,
+            locale,
             viewportHeight: this.#options.viewportHeight ?? 400, // oxlint-disable-line ex-grid/no-stand-in-default -- ADR-0028: the report's declared default height, as the Razor component's
             viewportWidth: this.#options.viewportWidth ?? 'stretch', // oxlint-disable-line ex-grid/no-stand-in-default -- ADR-0028: the report takes what the Field List leaves unless told
             // Item order and Hidden Items are the Pivot Layout's, and a report is computed: no column menu, no
