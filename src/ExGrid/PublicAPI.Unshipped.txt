@@ -19,10 +19,13 @@ const ExGrid.Chrome.GridLabelIds.PasteAlreadyLanded = "paste-already-landed" -> 
 const ExGrid.Chrome.GridLabelIds.PasteUnderWay = "paste-under-way" -> string!
 const ExGrid.Chrome.KeyRefusalLabelIds.KeyboardDidNotArrive = "key-refusal-keyboard-did-not-arrive" -> string!
 const ExGrid.Chrome.KeyRefusalLabelIds.RowCommandTargetLeft = "key-refusal-row-command-target-left" -> string!
+ExGrid.Cells.GridEditIntent<TRow>.CancellationToken.get -> System.Threading.CancellationToken
+ExGrid.Cells.GridEditIntent<TRow>.CancellationToken.init -> void
 ExGrid.Chrome.FindContext.Deconstruct(out string! Text, out bool MatchCase, out bool WholeCell, out ExGrid.Finding.FindOutcome Outcome, out System.Action<string!>! TextChanged, out System.Func<bool, System.Threading.Tasks.Task!>! MatchCaseChanged, out System.Func<bool, System.Threading.Tasks.Task!>! WholeCellChanged, out System.Func<System.Threading.Tasks.Task!>! Next, out System.Func<System.Threading.Tasks.Task!>! Previous, out System.Action! Close, out int FocusRequest, out System.Action<bool>? InnerPopupChanged, out System.Func<Microsoft.AspNetCore.Components.ElementReference, bool, System.Threading.Tasks.Task!>? TakeFocus) -> void
 ExGrid.Chrome.FindContext.FindContext(string! Text, bool MatchCase, bool WholeCell, ExGrid.Finding.FindOutcome Outcome, System.Action<string!>! TextChanged, System.Func<bool, System.Threading.Tasks.Task!>! MatchCaseChanged, System.Func<bool, System.Threading.Tasks.Task!>! WholeCellChanged, System.Func<System.Threading.Tasks.Task!>! Next, System.Func<System.Threading.Tasks.Task!>! Previous, System.Action! Close, int FocusRequest = 0, System.Action<bool>? InnerPopupChanged = null, System.Func<Microsoft.AspNetCore.Components.ElementReference, bool, System.Threading.Tasks.Task!>? TakeFocus = null) -> void
 ExGrid.Chrome.FindContext.MatchCaseChanged.get -> System.Func<bool, System.Threading.Tasks.Task!>!
 ExGrid.Chrome.FindContext.WholeCellChanged.get -> System.Func<bool, System.Threading.Tasks.Task!>!
+ExGrid.Clipboard.GridPasteIntent.CancellationToken.get -> System.Threading.CancellationToken
 ExGrid.Components.ExGrid<TRow>.BarPressAnsweredAsync(bool barHoldsFocus, int input = 0, ExGrid.Components.GridInputText? fieldText = null) -> System.Threading.Tasks.Task!
 ExGrid.Components.ExGrid<TRow>.BeginRowClick(int ticket, int input, ExGrid.Components.GridInputText? fieldText = null) -> void
 ExGrid.Components.ExGrid<TRow>.BuildCopyPayloadAsync(bool withHeaders = false, int input = 0, ExGrid.Components.GridInputText? fieldText = null) -> System.Threading.Tasks.Task<ExGrid.Clipboard.ClipboardPayload?>!
@@ -118,6 +121,8 @@ ExGrid.Components.GridScriptFocus.DisposeAsync() -> System.Threading.Tasks.Value
 ExGrid.Components.GridScriptFocus.FocusBoxAsync(Microsoft.AspNetCore.Components.ElementReference box) -> System.Threading.Tasks.Task<bool>!
 ExGrid.Components.GridScriptFocus.GridScriptFocus(Microsoft.JSInterop.IJSRuntime! js, Microsoft.AspNetCore.Components.ResourceAssetCollection! assets) -> void
 ExGrid.Components.GridScriptFocus.LoadAsync() -> System.Threading.Tasks.Task<bool>!
+ExGrid.GridColumn<TRow>.ValidateAsync.get -> System.Func<TRow, string!, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<ExGrid.Cells.EditVerdict>>?
+ExGrid.GridColumn<TRow>.ValidateAsync.init -> void
 ExGrid.Rows.MarkRefusalReason.RowLeftTheWindow = 2 -> ExGrid.Rows.MarkRefusalReason
 *REMOVED*ExGrid.Components.ExGrid<TRow>.PressTakenAt(string! kind, double offsetX, double offsetY, int firstRow, double scrollLeftPx, double scrollTopPx, int rowSequence, int layout, int editorRow = -1, int editorColumn = -1, int input = 0, int doubleClickInput = 0) -> void
 *REMOVED*ExGrid.Components.ExGrid<TRow>.BarPressAnsweredAsync(bool barHoldsFocus, int input = 0) -> System.Threading.Tasks.Task!
@@ -255,6 +260,10 @@ ExGrid.GridViewSpecReading.ViewState.get -> ExGrid.GridViewState!
 ExGrid.GridViewSpecReading.ViewState.init -> void
 ExGrid.InMemoryGridSource<TRow>.Replace(ExGrid.Finding.GridReplaceRequest! request, System.Func<TRow, string!, string!, ExGrid.Finding.GridReplaceWrite<TRow>>! write, System.Func<TRow, string!, string?>? entryOf = null) -> ExGrid.Finding.GridReplaceAnswer<TRow>!
 ExGrid.Script.ExGrid<TRow>
+ExGrid.Script.ExGrid<TRow>.CellMessageOf.get -> System.Func<TRow!, ExGrid.GridColumn<TRow!>!, string?>?
+ExGrid.Script.ExGrid<TRow>.CellMessageOf.set -> void
+ExGrid.Script.ExGrid<TRow>.CellState.get -> ExGrid.Cells.CellStateOf<TRow!>?
+ExGrid.Script.ExGrid<TRow>.CellState.set -> void
 ExGrid.Script.ExGrid<TRow>.Columns.get -> System.Collections.Generic.IReadOnlyList<ExGrid.GridColumn<TRow!>!>!
 ExGrid.Script.ExGrid<TRow>.Columns.set -> void
 ExGrid.Script.ExGrid<TRow>.CopyCellCap.get -> long?

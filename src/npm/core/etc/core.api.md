@@ -608,7 +608,7 @@ export function gridNumberOf(value: SnapshotDecimal): number;
 
 // @public
 export interface GridOptions<Row> extends CellPaintOptions<Row>, FormulaBarOptions<Row> {
-    readonly cellMessage?: (row: Row, column: GridColumn<Row>) => string | undefined;
+    readonly cellMessage?: (row: Row, column: GridColumn<Row>) => string | undefined | PromiseLike<string | undefined>;
     readonly columns: readonly GridColumn<Row>[];
     readonly commandLabel?: (id: string) => string | undefined;
     readonly contextCommands?: (context: GridContextMenuContext<Row>) => readonly GridCommand[];

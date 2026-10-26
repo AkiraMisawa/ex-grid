@@ -1,5 +1,6 @@
 @page "/script-grid"
 @using global::ExGrid.Script
+@using global::ExGrid.Clipboard
 
 <DemoNav />
 
@@ -13,6 +14,12 @@
     the header menu, select a range, edit a Book, and each notification is written out below.
 </p>
 
+<p>
+    Notional is judged by the trade's domain in .NET, asked across the circuit as the editor commits
+    (ADR-0380): a notional under 1,000 cannot be booked and holds the editor, and one above 1,000,000
+    is booked flagged, painted as an error whose reason opens when the Focus stands on it.
+</p>
+
 <ExGrid.Script.ExGrid TRow="DemoTrade"
                      Source="_source"
                      Columns="Columns"
@@ -22,6 +29,9 @@
                      StripeRows="true"
                      SelectionChanged="OnSelectionChanged"
                      OnEdit="OnEdit"
+                     OnPaste="OnPaste"
+                     CellState="_cellState"
+                     CellMessageOf="MessageOf"
                      OnRefused="OnRefused"
                      OnCellDoubleClick="OpenNoteAsync"
                      @ref="_grid" />
@@ -34,6 +44,7 @@
 <p>
     <span id="script-selection" role="status">Selection: @_selection</span><br />
     <span id="script-edit" role="status">Edit: @_edit</span><br />
+    <span id="script-paste" role="status">Paste: @_paste</span><br />
     <span id="script-refused" role="status">Refused: @_refused</span>
 </p>
 
@@ -42,7 +53,11 @@
     [
         new("Book", ColumnType.Text, r => r.Book, editable: true),
         new("Trader", ColumnType.Text, r => r.Trader),
-        new("Notional", ColumnType.Number, r => r.Notional),
+        new("Notional", ColumnType.Number, r => r.Notional, editable: true)
+        {
+            // Asked across the circuit, so the commit is pending until .NET answers (ADR-0380 section 5).
+            ValidateAsync = (_, text, _) => ValueTask.FromResult(Judge(text).Verdict),
+        },
         new("TradeDate", ColumnType.Date, r => r.TradeDate, header: "Trade date"),
         new("Confirmed", ColumnType.Boolean, r => r.Confirmed),
     ];
@@ -54,6 +69,26 @@
     private string _selection = "none";
     private string _edit = "none";
     private string _refused = "none";
+    private string _paste = "none";
+    // The trades booked above the limit, by Id, and the state painted for them: a new delegate when they change.
+    private readonly Dictionary<int, string> _flags = [];
+    private CellStateOf<DemoTrade>? _cellState;
+
+    private const decimal Minimum = 1_000m;
+    private const decimal Limit = 1_000_000m;
+
+    // The trade's domain: a notional that cannot be booked is refused, and one the desk books under a second
+    // signature is applied and flagged (ADR-0034, ADR-0380 section 4).
+    private static (EditVerdict Verdict, decimal Notional) Judge(string text)
+    {
+        if (!decimal.TryParse(text, System.Globalization.NumberStyles.Number, System.Globalization.CultureInfo.CurrentCulture, out var notional))
+            return (EditVerdict.Reject($"'{text}' is not a notional."), 0m);
+        if (notional < Minimum)
+            return (EditVerdict.Reject($"A notional of {notional} cannot be booked: the desk's minimum is 1,000."), notional);
+        if (notional > Limit)
+            return (EditVerdict.Flag($"A notional of {notional} is above the desk's limit of 1,000,000: a second signature is needed."), notional);
+        return (EditVerdict.Accept, notional);
+    }
 
     private void OnSelectionChanged(GridSelection selection)
         => _selection = selection.IsEmpty ? "none" : $"{selection.Ranges.Count} range(s), Focus at row {selection.Focus.Row}, column {selection.Focus.Column}";
@@ -61,12 +96,66 @@
     private void OnEdit(GridEditIntent<DemoTrade> intent)
     {
         var row = intent.Row;
-        _source.ReplaceRow(row, new DemoTrade
+        if (intent.Column == "Notional")
         {
-            Id = row.Id, Book = intent.Value, Trader = row.Trader, Notional = row.Notional, TradeDate = row.TradeDate, Confirmed = row.Confirmed,
-        });
+            Book(row, Judge(intent.Value));
+        }
+        else
+        {
+            _source.ReplaceRow(row, new DemoTrade
+            {
+                Id = row.Id, Book = intent.Value, Trader = row.Trader, Notional = row.Notional, TradeDate = row.TradeDate, Confirmed = row.Confirmed,
+            });
+        }
         _edit = $"{intent.Column} of {row.Book} set to {intent.Value}";
     }
+
+    // A fill asks the verdict once, for the editor's row (ADR-0034): the rest of its rows are judged here, and a fill
+    // over a trade that cannot be booked is refused whole (ADR-0380 section 4). Only Notional takes a fill.
+    private void OnPaste(GridPasteIntent intent)
+    {
+        var window = _source.Window;
+        var booked = new List<(DemoTrade Row, (EditVerdict Verdict, decimal Notional) Judged)>();
+        foreach (var target in intent.Plan.Targets)
+        {
+            for (var row = target.TopRow; row <= target.BottomRow; row++)
+            {
+                for (var column = target.LeftColumn; column <= target.RightColumn; column++)
+                {
+                    var judged = Judge(intent.ValueFor(new CellPosition(row, column)));
+                    if (Columns[column].Name != "Notional" || judged.Verdict.Kind == EditVerdictKind.Reject)
+                    {
+                        intent.Refuse();
+                        _paste = $"refused: {judged.Verdict.Message ?? "only Notional takes a fill"}";
+                        return;
+                    }
+                    booked.Add((window[row - _source.WindowStart], judged));
+                }
+            }
+        }
+        foreach (var (row, judged) in booked)
+            Book(row, judged);
+        _paste = $"{booked.Count} notionals booked";
+    }
+
+    private void Book(DemoTrade row, (EditVerdict Verdict, decimal Notional) judged)
+    {
+        _source.ReplaceRow(row, new DemoTrade
+        {
+            Id = row.Id, Book = row.Book, Trader = row.Trader, Notional = judged.Notional, TradeDate = row.TradeDate, Confirmed = row.Confirmed,
+        });
+        var flagged = judged.Verdict.Kind == EditVerdictKind.Flag;
+        if (flagged)
+            _flags[row.Id] = judged.Verdict.Message ?? throw new InvalidOperationException("A Flag carries its message (ADR-0034).");
+        if (flagged || _flags.Remove(row.Id))
+        {
+            var flags = _flags.Keys.ToHashSet();
+            _cellState = flags.Count == 0 ? null : (trade, column) => column.Name == "Notional" && flags.Contains(trade.Id) ? CellState.Error : CellState.Normal;
+        }
+    }
+
+    private string? MessageOf(DemoTrade row, GridColumn<DemoTrade> column)
+        => column.Name == "Notional" && _flags.TryGetValue(row.Id, out var message) ? message : null;
 
     // DC-61: handed on and given back by the grid, so a press made meanwhile keeps the keyboard.
     private async Task OpenNoteAsync(CellPosition at)

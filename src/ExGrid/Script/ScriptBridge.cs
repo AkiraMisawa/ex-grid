@@ -12,7 +12,17 @@ internal sealed class ScriptBridge<TRow>(ExGrid<TRow> grid)
     where TRow : class
 {
     [JSInvokable]
-    public Task Heard(string kind, JsonElement payload) => grid.HeardAsync(kind, payload);
+    public Task<string?> Heard(string kind, JsonElement payload) => grid.HeardAsync(kind, payload);
+
+    [JSInvokable]
+    public Task<string?> Validate(long number, int columnsVersion, long row, string column, string text)
+        => grid.ValidateAsync(number, columnsVersion, row, column, text);
+
+    [JSInvokable]
+    public Task<string?> Message(long row, string column) => grid.MessageAsync(row, column);
+
+    [JSInvokable]
+    public void CancelAnswer(long number) => grid.CancelAnswer(number);
 
     [JSInvokable]
     public Task SetSorts(int generation, string query) => grid.SetSortsAsync(generation, query);

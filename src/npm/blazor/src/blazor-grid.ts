@@ -5,11 +5,11 @@
 // does to them are the Consumer's, in .NET.
 
 import {
-    createGrid, type CellPosition, type GridHandle,
+    createGrid, type CellPosition, type CellState, type EditVerdict, type GridColumn, type GridHandle,
     type GridOptions, type GridRefusal, type GridSelection, type SelectionRange, type TemporalLike,
 } from '@ex-grid/core';
 import { DotNetSource, type DotNetHandle, type WireSourceTraits, type WireState } from './dotnet-source';
-import { ColumnSet, RowSet, type BlazorRow, type RowCollector, type WireColumn } from './wire-rows';
+import { ColumnSet, RowSet, type BlazorRow, type RowCollector, type VerdictOf, type WireColumn } from './wire-rows';
 import { WriteGate } from './write-gate';
 
 /** The events .NET listens to: each one the component has a handler for, and no other, since a grid given a
@@ -26,6 +26,11 @@ export interface WireOptions extends Partial<Pick<GridOptions<BlazorRow>, Passed
     readonly columnsVersion: number;
     readonly locale: string;
     readonly hears: readonly HeardKind[];
+    /** Whether the Consumer answers Cell States, which come with each row (ADR-0006). */
+    readonly cellStates?: true;
+    /** Where the Consumer answers a cell's message, which .NET is asked for as the popover opens (ADR-0034): the
+     * number of its judgement, which moves when it hands another, so a message shown is asked again. */
+    readonly cellMessages?: number;
 }
 
 /** The options .NET sets as they are, with no function or object of the browser's in them. */
@@ -90,7 +95,25 @@ export function browserCollector(collected: (held: number) => void): RowCollecto
  */
 export function attach(root: HTMLElement, dotnet: DotNetHandle, json: string, makeCollector = browserCollector): BlazorGrid {
     const init = parsed<WireAttach>(json);
-    const columns = new ColumnSet();
+    // Each answer .NET is asked to give later is numbered, so the user's cancel calls that one off there (ADR-0380).
+    let answers = 0;
+    const asking = <T>(signal: AbortSignal, ask: (number: number) => Promise<T>): Promise<T> => {
+        // Given up before it was asked: .NET is not asked, so no handler of its writes what the user took back.
+        signal.throwIfAborted();
+        answers += 1;
+        const number = answers;
+        const cancel = (): void => { void dotnet.invokeMethodAsync('CancelAnswer', number); };
+        signal.addEventListener('abort', cancel, { once: true });
+        return ask(number).finally(() => { signal.removeEventListener('abort', cancel); });
+    };
+    // Judged by the columns as the grid holds them now, which .NET keeps by their number (ADR-0380 section 3).
+    const verdict: VerdictOf = (row, column, text, signal) => asking(signal, async number => {
+        const answer = await dotnet.invokeMethodAsync('Validate', number, columns.version, row.id, column, text);
+        // Cancelled meanwhile: .NET gave no verdict, and the grid reads none.
+        signal.throwIfAborted();
+        return verdictOf(answer, column);
+    });
+    const columns = new ColumnSet(verdict);
     columns.take(init.options.columns, init.options.columnsVersion);
     const rows = new RowSet(makeCollector, (ids, seen) => { void dotnet.invokeMethodAsync('Release', ids, seen); });
     const sourceOf = (traits: WireSourceTraits, state: WireState): DotNetSource => {
@@ -109,16 +132,17 @@ export function attach(root: HTMLElement, dotnet: DotNetHandle, json: string, ma
         } else if (next.state !== undefined) {
             source.take(next.state);
         }
-        grid.update(gridOptions(next.options, columns, source, heard));
+        grid.update(gridOptions(next.options, columns, source, heard, paint));
     };
 
     const gate = new WriteGate<WireUpdate, WireState>(message => {
         if ('update' in message) update(message.update);
         else source.take(message.state);
     }, held => { rows.discard(held.window, held.seq); });
-    const write = (kind: HeardKind, payload: unknown): void => { void gate.handling(dotnet.invokeMethodAsync('Heard', kind, payload)); };
-    const heard = handlers(dotnet, write);
-    const grid: GridHandle<BlazorRow> = createGrid(root, gridOptions(init.options, columns, source, heard));
+    const write = (kind: HeardKind, payload: unknown): Promise<unknown> => gate.handling(dotnet.invokeMethodAsync('Heard', kind, payload));
+    const heard = handlers(dotnet, write, asking);
+    const paint = cellPaint(dotnet, columns);
+    const grid: GridHandle<BlazorRow> = createGrid(root, gridOptions(init.options, columns, source, heard, paint));
     return Object.freeze({
         update: (text: string) => { gate.receive({ update: parsed<WireUpdate>(text) }); },
         state: (text: string) => { gate.receive({ state: parsed<WireState>(text) }); },
@@ -153,22 +177,34 @@ type Handlers = Required<Pick<GridOptions<BlazorRow>,
     | 'onColumnHidden' | 'onPinnedCountChanged' | 'onEditingChanged' | 'onEditDiscarded' | 'onCellDoubleClick' | 'onLeave' | 'onOverwriteNotice'
     | 'onAction'>>;
 
+type Asking = <T>(signal: AbortSignal, ask: (number: number) => Promise<T>) => Promise<T>;
+
 // One function per event, made once, so the core sees the same handler on every update (ADR-0003). A write of the
-// user's own goes by `write`, which holds what .NET sends until .NET has handled it.
-function handlers(dotnet: DotNetHandle, write: (kind: HeardKind, payload: unknown) => void): Handlers {
+// user's own goes by `write`, which holds what .NET sends until .NET has handled it. An edit and a paste are answered
+// by .NET, which may refuse them: the commit is pending until it has (ADR-0380 sections 2 and 5).
+function handlers(dotnet: DotNetHandle, write: (kind: HeardKind, payload: unknown) => Promise<unknown>, asking: Asking): Handlers {
     const send = (kind: HeardKind, payload: unknown): void => { void dotnet.invokeMethodAsync('Heard', kind, payload); };
     return Object.freeze({
         onSelectionChanged: (selection: GridSelection) => { send('selectionChanged', wireSelection(selection)); },
-        onEdit: intent => {
-            write('edit', { row: intent.row.id, column: intent.column, value: intent.value, seenText: intent.seenText, replacedText: intent.replacedText });
-        },
-        onPaste: intent => {
-            write('paste', {
-                targets: intent.plan.targets, source: intent.plan.source, collapsesSelection: intent.plan.collapsesSelection, values: intent.values,
+        onEdit: intent => asking(intent.signal, async answer => {
+            const answered = await write('edit', {
+                answer, row: intent.row.id, column: intent.column, value: intent.value, seenText: intent.seenText, replacedText: intent.replacedText,
+            });
+            intent.signal.throwIfAborted();
+            const refusal = refusalOf(answered);
+            if (refusal !== undefined) intent.refuse(refusal);
+        }),
+        onPaste: intent => asking(intent.signal, async answer => {
+            const answered = await write('paste', {
+                answer, targets: intent.plan.targets, source: intent.plan.source, collapsesSelection: intent.plan.collapsesSelection, values: intent.values,
                 origins: intent.origins, rowSequenceVersion: intent.rowSequenceVersion, enteredAt: intent.enteredAt, fillSource: intent.fillSource,
             });
-        },
-        onClear: intent => { write('clear', { targets: intent.targets, rowSequenceVersion: intent.rowSequenceVersion }); },
+            intent.signal.throwIfAborted();
+            const refusal = refusalOf(answered);
+            // A paste is refused without a sentence of the grid's: telling the user why is the Consumer's (ADR-0050 item 3).
+            if (refusal !== undefined) intent.refuse();
+        }),
+        onClear: intent => { void write('clear', { targets: intent.targets, rowSequenceVersion: intent.rowSequenceVersion }); },
         onUndo: () => { send('undo', null); },
         onRedo: () => { send('redo', null); },
         onRefused: (refusal: GridRefusal<BlazorRow>) => { send('refused', wireRefusal(refusal)); },
@@ -185,7 +221,58 @@ function handlers(dotnet: DotNetHandle, write: (kind: HeardKind, payload: unknow
     });
 }
 
-function gridOptions(wire: WireOptions, columns: ColumnSet, source: DotNetSource, heard: Handlers): GridOptions<BlazorRow> {
+/** What .NET answered a write of the user's own: `null` where it took it, and where it refused it, the Consumer's
+ * sentence, empty for a paste, which carries none. */
+function refusalOf(answer: unknown): string | undefined {
+    if (answer === null) return undefined;
+    if (typeof answer !== 'string') throw new TypeError('Internal: .NET answered a write with something other than a refusal.');
+    return answer;
+}
+
+/** .NET's Edit Verdict, as `ExGrid.Script` writes it. */
+function verdictOf(answer: unknown, column: string): EditVerdict {
+    if (answer === null) throw new Error(`.NET gave no verdict on column '${column}': its Validate failed, and the component with it.`);
+    if (typeof answer !== 'string') throw new TypeError(`Internal: .NET answered the verdict on column '${column}' with something other than JSON text.`);
+    const verdict = parsed<{ readonly kind: unknown; readonly message?: unknown }>(answer);
+    if (verdict.kind === 'accept') return { kind: 'accept' };
+    if ((verdict.kind === 'flag' || verdict.kind === 'reject') && typeof verdict.message === 'string') return { kind: verdict.kind, message: verdict.message };
+    throw new TypeError(`Internal: .NET answered the verdict on column '${column}' with ${JSON.stringify(verdict)}.`);
+}
+
+type MessageOf = NonNullable<GridOptions<BlazorRow>['cellMessage']>;
+
+interface Paint {
+    readonly cellState: NonNullable<GridOptions<BlazorRow>['cellState']>;
+    /** The message function for the Consumer's judgement numbered `judgement`: the same while the number is, and
+     * another when it moves, which the core hears as another judgement and asks a message it shows again. */
+    cellMessage(judgement: number): MessageOf;
+}
+
+// The display channels (ADR-0003): a cell's state comes with its row, so a row whose states change is another object,
+// and a cell's message is asked of .NET as the popover opens, never while painting (ED-17).
+function cellPaint(dotnet: DotNetHandle, columns: ColumnSet): Paint {
+    let made: { readonly judgement: number; readonly ask: MessageOf } | undefined;
+    const ask: MessageOf = async (row, column) => {
+        const message: unknown = await dotnet.invokeMethodAsync('Message', row.id, column.name);
+        if (message === null) return undefined;
+        if (typeof message !== 'string') throw new TypeError(`Internal: .NET answered the message of column '${column.name}' with something other than text.`);
+        return message;
+    };
+    return Object.freeze({
+        cellState: (row: BlazorRow, column: GridColumn<BlazorRow>): CellState => {
+            if (row.states === undefined) return 'normal';
+            const state = row.states[columns.indexOf(column)];
+            if (state === undefined) throw new Error(`Internal: row ${row.id} came with no Cell State for column '${column.name}'.`);
+            return state;
+        },
+        cellMessage: (judgement: number): MessageOf => {
+            if (made?.judgement !== judgement) made = { judgement, ask: (row, column) => ask(row, column) };
+            return made.ask;
+        },
+    });
+}
+
+function gridOptions(wire: WireOptions, columns: ColumnSet, source: DotNetSource, heard: Handlers, paint: Paint): GridOptions<BlazorRow> {
     const hears = new Set(wire.hears);
     const temporal: unknown = Reflect.get(globalThis, 'Temporal');
     const passed = Object.fromEntries(passedOptions.filter(name => wire[name] !== undefined).map(name => [name, wire[name]]));
@@ -198,6 +285,8 @@ function gridOptions(wire: WireOptions, columns: ColumnSet, source: DotNetSource
         // browser the family serves ships one (ADR-0017); where one does not, the core refuses a filterable Date column
         // by name, as it refuses one given none.
         ...(temporal === undefined ? {} : { temporal: temporal as TemporalLike }), // oxlint-disable-line typescript/no-unsafe-type-assertion -- the core checks it is a Temporal namespace as it takes it
+        ...(wire.cellStates === true ? { cellState: paint.cellState } : {}),
+        ...(wire.cellMessages === undefined ? {} : { cellMessage: paint.cellMessage(wire.cellMessages) }),
         ...(hears.has('selectionChanged') ? { onSelectionChanged: heard.onSelectionChanged } : {}),
         ...(hears.has('edit') ? { onEdit: heard.onEdit } : {}),
         ...(hears.has('paste') ? { onPaste: heard.onPaste } : {}),

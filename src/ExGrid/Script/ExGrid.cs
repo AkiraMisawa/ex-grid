@@ -108,16 +108,17 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
 
     /// <summary>
     /// Hears a Cell Editor's commit (ADR-0034): the Consumer writes the value, and the row it then shows is what the
-    /// cell paints. Without it the grid edits nothing. The intent reaches .NET after the browser has committed, so it
-    /// cannot be refused here: a handler that calls <see cref="GridEditIntent{TRow}.Refuse"/> fails the component with
-    /// a <see cref="NotSupportedException"/> once it returns, and a value the Consumer does not take is answered by the
-    /// row it shows unchanged.
+    /// cell paints. Without it the grid edits nothing. The commit is pending until the handler completes (ADR-0380
+    /// section 5): the editor stands with the text, and every input made meanwhile waits for it. A handler that calls
+    /// <see cref="GridEditIntent{TRow}.Refuse"/> before it completes holds the editor open with its message, as a
+    /// Reject does; the intent's <see cref="GridEditIntent{TRow}.CancellationToken"/> is cancelled when the user
+    /// cancels the commit with Escape.
     /// </summary>
     [Parameter] public EventCallback<GridEditIntent<TRow>> OnEdit { get; set; }
 
     /// <summary>Hears a paste or a fill the grid planned (ADR-0014): the Consumer writes it. Without it the grid
-    /// pastes nothing. As with <see cref="OnEdit"/>, a handler that calls <see cref="GridPasteIntent.Refuse"/> fails the
-    /// component with a <see cref="NotSupportedException"/> once it returns.</summary>
+    /// pastes nothing. As with <see cref="OnEdit"/>, the paste is pending until the handler completes, and one that
+    /// calls <see cref="GridPasteIntent.Refuse"/> before then leaves the Selection where it was (ADR-0050 item 3).</summary>
     [Parameter] public EventCallback<GridPasteIntent> OnPaste { get; set; }
 
     /// <summary>Hears Delete over editable cells (ADR-0035): the Consumer clears them.</summary>
@@ -162,13 +163,36 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
     /// <summary>Hears an Action Column's action pressed (ADR-0020): what it does is the Consumer's.</summary>
     [Parameter] public EventCallback<GridActionEventArgs<TRow>> OnAction { get; set; }
 
+    /// <summary>
+    /// Cell Metadata, asked for by (row, column) and answered as one of the five states the grid understands
+    /// (ADR-0006), as the C# core's <c>CellState</c> is: a Flag's <see cref="CellState.Error"/> paints through it
+    /// (ADR-0034). It is asked for each cell of each row as the row crosses to the browser, so it stays a cheap
+    /// lookup. Hold it in a field and hand over a new one when the metadata changes: the delegate's identity is the
+    /// change signal, and the rows the browser shows are sent again with their states.
+    /// </summary>
+    [Parameter] public CellStateOf<TRow>? CellState { get; set; }
+
+    /// <summary>A cell's message, asked for by (row, column), as the C# core's <c>CellMessageOf</c> is (ADR-0034):
+    /// asked of .NET at the moment a popover would open, once the Focus or the pointer has settled on the cell,
+    /// never while painting (ED-17), and the popover opens once it has answered. Null means nothing opens.</summary>
+    [Parameter] public Func<TRow, GridColumn<TRow>, string?>? CellMessageOf { get; set; }
+
     private ElementReference _root;
     private IJSObjectReference? _module;
     private IJSObjectReference? _grid;
     private DotNetObjectReference<ScriptBridge<TRow>>? _bridge;
     private readonly ScriptRows<TRow> _rows = new();
     private readonly Dictionary<long, CancellationTokenSource> _asked = [];
-    private readonly Queue<(Func<Task> Hand, TaskCompletionSource Done)> _heard = new();
+    private readonly Queue<Heard> _heard = new();
+    private readonly Dictionary<long, CancellationTokenSource> _answers = [];
+    private CellStateOf<TRow>? _sentCellState;
+    private Func<TRow, GridColumn<TRow>, string?>? _sentCellMessage;
+    // Moves when the Consumer hands another judgement, so the browser asks a message it shows again (ADR-0034).
+    private int _judgement;
+    // The declarations sent lately, by their number: a verdict is the column's as the browser held it when the
+    // user committed, whatever the Consumer has declared since (ADR-0380 section 3).
+    private readonly Dictionary<int, IReadOnlyList<GridColumn<TRow>>> _declared = [];
+    private const int DeclarationsKept = 8;
 
     private IGridSource<TRow>? _source;
     private InMemoryGridSource<TRow>? _ownSource;
@@ -206,6 +230,18 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
         if ((Source is null) == (Rows is null))
             throw new InvalidOperationException("ExGrid takes its rows from exactly one of Source and Rows (ADR-0350 section 16).");
         ScriptColumns.Check(Columns);
+        if (!ReferenceEquals(CellState, _sentCellState))
+        {
+            // Another judgement: the rows the browser shows go again, with their states (ADR-0006).
+            _sentCellState = CellState;
+            _stateOwed = true;
+            _judgement += 1;
+        }
+        if (!ReferenceEquals(CellMessageOf, _sentCellMessage))
+        {
+            _sentCellMessage = CellMessageOf;
+            _judgement += 1;
+        }
 
         IGridSource<TRow> source;
         if (Rows is { } rows)
@@ -248,6 +284,8 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
             // Another declaration, or another culture for the formats to write in, is another number, and the rows
             // the browser holds were read by the one before (ADR-0006).
             _columnsVersion += 1;
+            _declared[_columnsVersion] = Columns;
+            _declared.Remove(_columnsVersion - DeclarationsKept);
             _columnsChanged = _toldCulture is not null;
             _toldCulture = culture;
             if (!sameColumns)
@@ -576,7 +614,7 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
             json.WriteNumber("cv", _columnsVersion);
             json.WriteStartArray("window");
             for (var at = from; at < to; at++)
-                _rows.Write(json, window[at - source.WindowStart], Columns, source.RowKey);
+                _rows.Write(json, window[at - source.WindowStart], Columns, source.RowKey, CellState);
             json.WriteEndArray();
             json.WriteNumber("windowStart", to > from ? from : source.WindowStart);
             if (source.TotalCount is { } total)
@@ -643,6 +681,10 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
             }
             json.WriteEndArray();
         }
+        if (CellState is not null)
+            json.WriteBoolean("cellStates", true);
+        if (CellMessageOf is not null)
+            json.WriteNumber("cellMessages", _judgement);
         json.WriteStartArray("hears");
         foreach (var (kind, heard) in Hears())
         {
@@ -765,7 +807,8 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
                 json.WriteNumber("cv", _columnsVersion);
                 json.WriteStartArray("rows");
                 foreach (var row in rows)
-                    _rows.Write(json, row, Columns, source.RowKey);
+                    // Read for a copy or a find, never painted: their states are not asked.
+                    _rows.Write(json, row, Columns, source.RowKey, cellState: null);
                 json.WriteEndArray();
                 json.WriteEndObject();
             }));
@@ -864,27 +907,132 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
 
     internal void Release(long[] ids, long seen) => _rows.Release(ids, seen);
 
+    /// <summary>One thing the browser handed .NET, in its turn: an event, or a question it waits on the answer to.</summary>
+    private sealed record Heard(Func<Task<string?>> Hand, bool Answers, bool SendsState)
+    {
+        public TaskCompletionSource<string?> Done { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+    }
+
     /// <summary>Hears an event the grid raised. It is read as it arrives, so a row it names is the row the browser
     /// meant even if the browser lets that row go before the event's turn comes. Each is handed to the Consumer once
     /// the one before it was, in the order the grid raised them, whatever a handler awaits (the spine's sixth rule).
     /// What the handler wrote to the source crosses before the browser hears the event was handled, so the browser,
     /// which holds what .NET sends while an edit, a paste or a clear is being handled, takes in a Window that holds
     /// the write, never one sent before it (ADR-0142, D1). A handler that throws fails the component as a handler of
-    /// Blazor's own events does, so an error boundary or the host's error UI says so, and the browser is never left
-    /// with the exception.</summary>
-    internal async Task HeardAsync(string kind, JsonElement payload)
+    /// Blazor's own events does, so an error boundary or the host's error UI says so. What .NET answers is an edit's
+    /// or a paste's refusal (ADR-0380 section 5): null where the Consumer took it, and where it refused it, the
+    /// Consumer's sentence, empty for a paste, which carries none. An edit or a paste whose handler failed is
+    /// answered by the failure, so the browser does not take a write the Consumer never made as made.</summary>
+    internal Task<string?> HeardAsync(string kind, JsonElement payload)
     {
-        Func<Task> hand;
+        Func<Task<string?>> hand;
+        var answers = kind is "edit" or "paste";
         try
         {
-            hand = Prepare(kind, payload);
+            hand = kind switch
+            {
+                "edit" => PrepareEdit(payload),
+                "paste" => PreparePaste(payload),
+                _ => Unanswered(Prepare(kind, payload)),
+            };
         }
         catch (Exception ex)
         {
             // An event .NET cannot read fails the component in its turn, as a handler's exception does.
-            hand = () => Task.FromException(ex);
+            hand = () => Task.FromException<string?>(ex);
         }
-        var heard = (Hand: hand, Done: new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously));
+        return InTurnAsync(new Heard(hand, answers, SendsState: true));
+    }
+
+    /// <summary>The verdict on a commit the browser numbered <paramref name="number"/> (ADR-0380 section 5), asked of
+    /// the column's <see cref="GridColumn{TRow}.Validate"/> or <see cref="GridColumn{TRow}.ValidateAsync"/> as the
+    /// browser held it, in the declarations numbered <paramref name="columnsVersion"/>, in its turn among the events,
+    /// against the row the browser holds, and written as the core reads an Edit Verdict. A column declared without a
+    /// verdict accepts; a commit the user cancelled is not judged, and its answer is not read.</summary>
+    internal Task<string?> ValidateAsync(long number, int columnsVersion, long row, string column, string text)
+    {
+        var judged = _rows.RowOf(row);
+        if (!_declared.TryGetValue(columnsVersion, out var declared))
+            throw new InvalidOperationException(FormattableString.Invariant($"Internal: the browser judged a commit by columns numbered {columnsVersion}, which .NET no longer holds."));
+        var judging = declared.FirstOrDefault(each => each.Name == column)
+            ?? throw new InvalidOperationException($"Internal: the browser judged a commit into column '{column}', which its columns did not declare.");
+        return InTurnAsync(new Heard(Answered(number, async cancelled =>
+        {
+            var verdict = judging switch
+            {
+                { Validate: { } now } => now(judged, text),
+                { ValidateAsync: { } later } => await later(judged, text, cancelled),
+                _ => EditVerdict.Accept,
+            };
+            return Json(json =>
+            {
+                json.WriteStartObject();
+                json.WriteString("kind", ScriptJson.Camel(verdict.Kind));
+                if (verdict.Message is { } message)
+                    json.WriteString("message", message);
+                json.WriteEndObject();
+            });
+        }), Answers: true, SendsState: false));
+    }
+
+    /// <summary>A cell's message, asked as the browser's popover would open (ADR-0034), in its turn among the
+    /// events: null where the Consumer has nothing to say, or no longer asks.</summary>
+    internal Task<string?> MessageAsync(long row, string column)
+    {
+        var asked = _rows.RowOf(row);
+        return InTurnAsync(new Heard(() => Task.FromResult(
+            CellMessageOf is { } message && Declared(column) is { } declared ? message(asked, declared) : null),
+            Answers: true, SendsState: false));
+    }
+
+    /// <summary>The user cancelled the commit numbered <paramref name="number"/> with Escape (ADR-0380 section 3).
+    /// One already answered is not held any more, and nothing is left to call off.</summary>
+    internal void CancelAnswer(long number)
+    {
+        if (_answers.TryGetValue(number, out var answering))
+            answering.Cancel();
+    }
+
+    private static Func<Task<string?>> Unanswered(Func<Task> hand) => async () =>
+    {
+        await hand();
+        return null;
+    };
+
+    /// <summary>An answer the browser numbered <paramref name="number"/> and waits on, registered now, as its call
+    /// arrives, so the cancel the browser sends after it finds it whenever its turn comes. One the user cancelled
+    /// before its turn is never asked of the Consumer, and one whose Consumer gives up on the token, as the token
+    /// asks, is answered as cancelled: the browser reads no answer to either.</summary>
+    private Func<Task<string?>> Answered(long number, Func<CancellationToken, Task<string?>> answer)
+    {
+        var answering = new CancellationTokenSource();
+        if (!_answers.TryAdd(number, answering))
+        {
+            answering.Dispose();
+            throw new InvalidOperationException(FormattableString.Invariant($"Internal: the browser numbered two answers {number}."));
+        }
+        return async () =>
+        {
+            try
+            {
+                if (answering.IsCancellationRequested)
+                    return null;
+                return await answer(answering.Token);
+            }
+            catch (OperationCanceledException) when (answering.IsCancellationRequested)
+            {
+                return null;
+            }
+            finally
+            {
+                _answers.Remove(number);
+                answering.Dispose();
+            }
+        };
+    }
+
+    private async Task<string?> InTurnAsync(Heard heard)
+    {
         await InvokeAsync(async () =>
         {
             _heard.Enqueue(heard);
@@ -899,9 +1047,10 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
                     {
                         if (_disposed)
                             continue;
-                        await next.Hand();
-                        if (_attached)
+                        var answer = await next.Hand();
+                        if (next.SendsState && _attached)
                             await SendStateAsync();
+                        next.Done.TrySetResult(answer);
                     }
                     catch (JSDisconnectedException)
                     {
@@ -910,10 +1059,12 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
                     catch (Exception ex)
                     {
                         await DispatchExceptionAsync(ex);
+                        if (next.Answers)
+                            next.Done.TrySetException(ex);
                     }
                     finally
                     {
-                        next.Done.TrySetResult();
+                        next.Done.TrySetResult(null);
                     }
                 }
             }
@@ -922,7 +1073,44 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
                 _hearing = false;
             }
         });
-        await heard.Done.Task;
+        return await heard.Done.Task;
+    }
+
+    // Each intent carries the token the user's cancel cancels (ADR-0380 section 3): a handler that has not written
+    // when it is cancelled writes nothing.
+    private Func<Task<string?>> PrepareEdit(JsonElement payload)
+    {
+        var row = _rows.RowOf(payload.GetProperty("row").GetInt64());
+        var column = Text(payload, "column");
+        var value = Text(payload, "value");
+        var seen = Text(payload, "seenText");
+        var replaced = Text(payload, "replacedText");
+        return Answered(payload.GetProperty("answer").GetInt64(), async cancelled =>
+        {
+            var intent = new GridEditIntent<TRow>(row, column, value) { SeenText = seen, ReplacedText = replaced, CancellationToken = cancelled };
+            await OnEdit.InvokeAsync(intent);
+            return intent.RefusalMessage;
+        });
+    }
+
+    private Func<Task<string?>> PreparePaste(JsonElement payload)
+    {
+        var source = payload.GetProperty("source");
+        var plan = new PastePlan(ScriptJson.Ranges(payload.GetProperty("targets")),
+            new PasteShape(source.GetProperty("rows").GetInt32(), source.GetProperty("columns").GetInt32()),
+            payload.GetProperty("collapsesSelection").GetBoolean());
+        IReadOnlyList<IReadOnlyList<string>> values = [.. payload.GetProperty("values").EnumerateArray().Select(ScriptJson.Texts)];
+        var version = payload.GetProperty("rowSequenceVersion").GetInt32();
+        IReadOnlyList<IReadOnlyList<PasteFieldOrigin>> origins = [.. payload.GetProperty("origins").EnumerateArray()
+            .Select(row => (IReadOnlyList<PasteFieldOrigin>)[.. row.EnumerateArray().Select(ScriptJson.Member<PasteFieldOrigin>)])];
+        var fillSource = ScriptJson.Present(payload, "fillSource", out var fill) ? ScriptJson.Range(fill) : (SelectionRange?)null;
+        var enteredAt = ScriptJson.Present(payload, "enteredAt", out var entered) ? ScriptJson.Cell(entered) : (CellPosition?)null;
+        return Answered(payload.GetProperty("answer").GetInt64(), async cancelled =>
+        {
+            var intent = new GridPasteIntent(plan, values, version, origins, fillSource, enteredAt) { CancellationToken = cancelled };
+            await OnPaste.InvokeAsync(intent);
+            return intent.IsRefused ? "" : null;
+        });
     }
 
     private Func<Task> Prepare(string kind, JsonElement payload)
@@ -933,40 +1121,6 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
             {
                 var selection = ScriptJson.Selection(payload);
                 return () => SelectionChanged.InvokeAsync(selection);
-            }
-            case "edit":
-            {
-                var intent = new GridEditIntent<TRow>(
-                    _rows.RowOf(payload.GetProperty("row").GetInt64()), Text(payload, "column"), Text(payload, "value"))
-                {
-                    SeenText = Text(payload, "seenText"),
-                    ReplacedText = Text(payload, "replacedText"),
-                };
-                return async () =>
-                {
-                    await OnEdit.InvokeAsync(intent);
-                    if (intent.IsRefused)
-                        throw NotRefusable("an edit");
-                };
-            }
-            case "paste":
-            {
-                var source = payload.GetProperty("source");
-                var plan = new PastePlan(ScriptJson.Ranges(payload.GetProperty("targets")),
-                    new PasteShape(source.GetProperty("rows").GetInt32(), source.GetProperty("columns").GetInt32()),
-                    payload.GetProperty("collapsesSelection").GetBoolean());
-                var intent = new GridPasteIntent(plan,
-                    [.. payload.GetProperty("values").EnumerateArray().Select(ScriptJson.Texts)],
-                    payload.GetProperty("rowSequenceVersion").GetInt32(),
-                    [.. payload.GetProperty("origins").EnumerateArray().Select(row => (IReadOnlyList<PasteFieldOrigin>)[.. row.EnumerateArray().Select(ScriptJson.Member<PasteFieldOrigin>)])],
-                    ScriptJson.Present(payload, "fillSource", out var fill) ? ScriptJson.Range(fill) : null,
-                    ScriptJson.Present(payload, "enteredAt", out var entered) ? ScriptJson.Cell(entered) : null);
-                return async () =>
-                {
-                    await OnPaste.InvokeAsync(intent);
-                    if (intent.IsRefused)
-                        throw NotRefusable("a paste");
-                };
             }
             case "clear":
             {
@@ -1057,10 +1211,6 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
     private static string Text(JsonElement json, string name)
         => json.GetProperty(name).GetString() ?? throw new InvalidOperationException($"Internal: the Script Core sent no {name}.");
 
-    private static NotSupportedException NotRefusable(string what) => new(
-        $"The Consumer refused {what}, which ExGrid over the Script Core cannot refuse: the browser committed it before .NET heard it (ADR-0350 section 7). "
-        + "Answer it with the row unchanged instead, and the cell shows what the row holds.");
-
     /// <inheritdoc />
     public async ValueTask DisposeAsync()
     {
@@ -1075,6 +1225,8 @@ public sealed class ExGrid<TRow> : ComponentBase, IAsyncDisposable
         // A question's continuation may run inside Cancel and take itself off the list.
         foreach (var asked in _asked.Values.ToArray())
             asked.Cancel();
+        foreach (var answering in _answers.Values.ToArray())
+            answering.Cancel();
         // While it attaches, the grid it makes is stopped once it is made, and the bridge let go after it.
         if (_attaching)
             return;

@@ -428,3 +428,120 @@ describe('keyboard', () => {
         expect(root.contains(holder)).toBe(true);
     });
 });
+
+// A press on the rows and a key where the keyboard is, as the browser lands them (the core's harness does the same).
+function press(root: HTMLElement, x: number, y: number): void {
+    const viewport = root.querySelector('.ex-viewport');
+    if (viewport === null) throw new Error('The grid draws no viewport.');
+    for (const name of ['mousedown', 'mouseup']) {
+        const event = new MouseEvent(name, { bubbles: true, cancelable: true, button: 0, buttons: name === 'mouseup' ? 0 : 1 });
+        Object.defineProperty(event, 'offsetX', { value: x });
+        Object.defineProperty(event, 'offsetY', { value: y });
+        viewport.dispatchEvent(event);
+        if (name === 'mousedown' && !event.defaultPrevented) root.querySelector<HTMLElement>('.ex-scroller')?.focus();
+    }
+}
+
+function type(text: string): void {
+    for (const character of text) {
+        const target = document.activeElement;
+        if (target === null) throw new Error('Nothing holds the keyboard.');
+        const event = new KeyboardEvent('keydown', { key: character, bubbles: true, cancelable: true });
+        target.dispatchEvent(event);
+        if (!event.defaultPrevented && target instanceof HTMLInputElement && !target.readOnly) {
+            target.setRangeText(character, target.selectionStart ?? 0, target.selectionEnd ?? 0, 'end'); // oxlint-disable-line ex-grid/no-stand-in-default -- a text input that takes text has a selection
+            target.dispatchEvent(new InputEvent('input', { bubbles: true, data: character, inputType: 'insertText' }));
+        }
+    }
+}
+
+function key(name: string): void {
+    const target = document.activeElement;
+    if (target === null) throw new Error('Nothing holds the keyboard.');
+    target.dispatchEvent(new KeyboardEvent('keydown', { key: name, bubbles: true, cancelable: true }));
+}
+
+const turns = async (): Promise<void> => {
+    for (let i = 0; i < 6; i++) await new Promise(resolve => { setTimeout(resolve, 0); });
+};
+
+const editorOf = (root: HTMLElement): HTMLInputElement | null => root.querySelector<HTMLInputElement>('input.ex-editor');
+
+describe('answers .NET gives later (ADR-0380 section 5)', () => {
+    const validated: WireColumn = { ...book, validates: true };
+
+    it('ED-35: a column .NET validates asks .NET by number, and its Reject holds the editor with the text', async () => {
+        const dotnet = new FakeDotNet();
+        const verdicts: ((json: string) => void)[] = [];
+        dotnet.answer = method => (method === 'Validate' ? new Promise(resolve => { verdicts.push(resolve); }) : null);
+        const { root } = mount({ options: options({ columns: [validated, notional], rowHeight: 24, hears: ['edit'] }) }, dotnet);
+        await turns();
+        press(root, 10, 5);
+        type('Delta');
+        key('Enter');
+        await turns();
+        expect(dotnet.calls.filter(call => call.method === 'Validate').map(call => call.args)).toEqual([[1, 1, 1, 'Book', 'Delta']]);
+        expect(root.hasAttribute('data-ex-pending-commit')).toBe(true);
+
+        verdicts[0]?.('{"kind":"reject","message":"Not a book we trade."}');
+        await turns();
+        expect(dotnet.heard('edit')).toEqual([]);
+        expect([editorOf(root)?.value, editorOf(root)?.getAttribute('aria-invalid')]).toEqual(['Delta', 'true']);
+    });
+
+    it('ED-34: Escape while .NET judges calls that answer off there, and the editor stays with the text', async () => {
+        const dotnet = new FakeDotNet();
+        dotnet.answer = method => (method === 'Validate' ? new Promise(() => { /* .NET never answers: the user cancels */ }) : null);
+        const { root } = mount({ options: options({ columns: [validated, notional], rowHeight: 24, hears: ['edit'] }) }, dotnet);
+        await turns();
+        press(root, 10, 5);
+        type('Delta');
+        key('Enter');
+        key('Escape');
+        await turns();
+        expect(dotnet.calls.filter(call => call.method === 'CancelAnswer').map(call => call.args)).toEqual([[1]]);
+        expect(root.hasAttribute('data-ex-pending-commit')).toBe(false);
+        expect(editorOf(root)?.value).toBe('Delta');
+    });
+
+    it('ED-35: an edit .NET refuses holds the editor with the Consumer\'s sentence, and one it takes ends the edit', async () => {
+        const dotnet = new FakeDotNet();
+        dotnet.answer = (method, args) => (method === 'Heard' && args[0] === 'edit'
+            ? (Reflect.get(args[1] as object, 'value') === 'Delta' ? 'Trade is locked.' : null)
+            : null);
+        const { root } = mount({ options: options({ rowHeight: 24, hears: ['edit'] }) }, dotnet);
+        await turns();
+        press(root, 10, 5);
+        type('Delta');
+        key('Enter');
+        await turns();
+        expect(dotnet.heard('edit')).toHaveLength(1);
+        expect(Reflect.get(dotnet.heard('edit')[0] as object, 'answer')).toBe(1);
+        expect([editorOf(root)?.value, root.querySelector('.ex-announce')?.textContent]).toEqual(['Delta', 'Trade is locked.']);
+
+        type('s');
+        key('Enter');
+        await turns();
+        expect(dotnet.heard('edit')).toHaveLength(2);
+        expect(editorOf(root)).toBeNull();
+    });
+
+    it('ED-35: a cell\'s Error comes with its row, and its message is asked of .NET as it opens', async () => {
+        const dotnet = new FakeDotNet();
+        dotnet.answer = (method, args) => (method === 'Message' ? `${String(args[1])} is not a book we trade.` : null);
+        const { root } = mount({
+            options: options({ rowHeight: 24, cellStates: true, cellMessages: 1 }),
+            state: state(1, [rates, { ...credit, s: ['error', 'normal'] }]),
+        }, dotnet);
+        await turns();
+        const cells = root.querySelectorAll('.ex-row')[1]?.querySelectorAll('.ex-cell');
+        expect(cells?.[0]?.classList.contains('ex-state-error')).toBe(true);
+        expect(dotnet.calls.filter(call => call.method === 'Message')).toEqual([]);
+
+        press(root, 10, 29);
+        await new Promise(resolve => { setTimeout(resolve, 350); });
+        await turns();
+        expect(dotnet.calls.filter(call => call.method === 'Message').map(call => call.args)).toEqual([[2, 'Book']]);
+        expect(root.querySelector('.ex-message')?.textContent).toBe('Book is not a book we trade.');
+    });
+});

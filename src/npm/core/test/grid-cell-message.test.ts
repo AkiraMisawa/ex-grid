@@ -62,6 +62,46 @@ describe('a flagged cell\'s message', () => {
         expect(shown(root)).toBeUndefined();
     });
 
+    it('ADR-0380 s5: a message answered later opens once answered, and the grid is not settled until then', async () => {
+        const answers: ((message: string | undefined) => void)[] = [];
+        const { root, told } = mount({
+            columns, rows: trades(20), rowHeight: 24, viewportHeight: 480,
+            cellMessage: () => new Promise<string | undefined>(resolve => { answers.push(resolve); }),
+        });
+        await painted();
+        click(root, 130, 5);
+        await painted();
+        told.clock.advance(300);
+        await painted();
+        expect([answers.length, shown(root), settled(root)]).toEqual([1, undefined, false]);
+
+        answers[0]?.('out of range');
+        await painted();
+        expect([shown(root), settled(root)]).toEqual(['out of range', true]);
+    });
+
+    it('ADR-0380 s5: a message answered after the Focus moved on opens nothing, and the cell reached is asked in its turn', async () => {
+        const answers: ((message: string | undefined) => void)[] = [];
+        const { root, told } = mount({
+            columns, rows: trades(20), rowHeight: 24, viewportHeight: 480,
+            cellMessage: () => new Promise<string | undefined>(resolve => { answers.push(resolve); }),
+        });
+        await painted();
+        click(root, 130, 5);
+        await painted();
+        told.clock.advance(300);
+        key(root, 'ArrowDown');
+        answers[0]?.('out of range');
+        await painted();
+        expect([answers.length, shown(root)]).toEqual([1, undefined]);
+
+        told.clock.advance(300);
+        await painted();
+        answers[1]?.('below the floor');
+        await painted();
+        expect([answers.length, shown(root)]).toEqual([2, 'below the floor']);
+    });
+
     it('ED-17: a run of arrows faster than the delay asks nothing', async () => {
         const { asked, cellMessage } = asking();
         const { root, told } = mount({ columns, rows: trades(20), rowHeight: 24, viewportHeight: 480, cellMessage });

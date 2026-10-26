@@ -1,4 +1,5 @@
 using System.Text.Json;
+using ExGrid.Cells;
 
 namespace ExGrid.Script;
 
@@ -78,8 +79,9 @@ internal sealed class ScriptRows<TRow>
     }
 
     /// <summary>Writes <paramref name="row"/> into the message being written (<see cref="Sending{T}"/>): its id,
-    /// its Row Key where the source has one, each column's value, and each formatted column's text of it.</summary>
-    internal void Write(Utf8JsonWriter json, TRow row, IReadOnlyList<GridColumn<TRow>> columns, Func<TRow, object>? rowKey)
+    /// its Row Key where the source has one, each column's value, each formatted column's text of it, and each
+    /// cell's state where <paramref name="cellState"/> answers one other than Normal for any of them (ADR-0006).</summary>
+    internal void Write(Utf8JsonWriter json, TRow row, IReadOnlyList<GridColumn<TRow>> columns, Func<TRow, object>? rowKey, CellStateOf<TRow>? cellState)
     {
         ArgumentNullException.ThrowIfNull(row);
         var message = _writing ?? throw new InvalidOperationException("Internal: a row written outside a message.");
@@ -111,7 +113,31 @@ internal sealed class ScriptRows<TRow>
             }
             json.WriteEndArray();
         }
+        if (cellState is not null)
+            WriteStates(json, row, columns, cellState);
         json.WriteEndObject();
+    }
+
+    // Left out where every cell is Normal, as the grid paints a row the Consumer answers nothing for.
+    private static void WriteStates(Utf8JsonWriter json, TRow row, IReadOnlyList<GridColumn<TRow>> columns, CellStateOf<TRow> cellState)
+    {
+        CellState[]? states = null;
+        for (var c = 0; c < columns.Count; c++)
+        {
+            var state = cellState(row, columns[c]);
+            if (state is not (CellState.Normal or CellState.Stale or CellState.Missing or CellState.Error or CellState.Modified))
+                throw new ArgumentOutOfRangeException(nameof(cellState), state, $"CellState answered a state the grid does not know for column '{columns[c].Name}' (ADR-0006).");
+            if (state != CellState.Normal)
+                states ??= new CellState[columns.Count];
+            if (states is not null)
+                states[c] = state;
+        }
+        if (states is null)
+            return;
+        json.WriteStartArray("s");
+        foreach (var state in states)
+            json.WriteStringValue(ScriptJson.Camel(state));
+        json.WriteEndArray();
     }
 
     /// <summary>The row the browser named by <paramref name="id"/>. One it no longer holds is a defect of the
