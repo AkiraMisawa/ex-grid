@@ -41,8 +41,9 @@ export function Pivot(): ReactElement {
             <p><code>?trades=1000000</code> pivots a million of the trades instead, or any other count.</p>
             <p>
                 Tick fields in the PivotTable Fields pane, or drag them between Filters, Columns, Rows and Values;
-                drop one back on the list to remove it. The report is one ExGrid: select and copy, and press the button
-                beside an outer Item, or double-click its label, to collapse or expand it.
+                drop one back on the list to remove it, or press a placed field to open its menu. Layout ▾ chooses the
+                subtotals, the grand totals and the report's form. The report is one ExGrid: select and copy, and press
+                the button beside an outer Item, or double-click its label, to collapse or expand it.
             </p>
             <div className="demo-toolbar">
                 <button id="pivot-reset" type="button" onClick={() => { setLayout(demoPivotFirstLayout()); }}>Reset the layout</button>

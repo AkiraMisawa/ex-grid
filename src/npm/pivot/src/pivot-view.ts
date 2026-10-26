@@ -14,14 +14,17 @@ import {
     type FetchingGridSource, type ViewportSize,
 } from '@ex-grid/core';
 import {
-    FetchingPivotSource, LocalPivotReportSource, defaultMaxLeaves, emptyPivotLayout, formatPivotCount, pivotValueCaptions, placementOf,
-    isItemCollapsed, pivotWordIdList, setCollapsed, validateLayout, type PivotDisplayRow, type PivotItemCounts, type PivotLabel, type PivotLayout,
+    FetchingPivotSource, LocalPivotReportSource, chooseLayout, defaultMaxLeaves, emptyPivotLayout, formatPivotCount, isLayoutChosen, isValuesPseudoField,
+    layoutChoiceChanges, pivotLayoutChoices, pivotValueCaptions, placementOf, isItemCollapsed, pivotWordIdList, setCollapsed,
+    validateLayout, type PivotDisplayRow, type PivotEntry, type PivotItemCounts, type PivotLabel, type PivotLayout, type PivotLayoutChoice,
     type PivotReportRefusal, type PivotReportSettings, type PivotReportState, type PivotSlicing, type PivotSource, type PivotToggle,
 } from '@ex-grid/pivot-engine';
-import { FieldListView, type FieldListEdit, type FieldListMove } from './field-list';
-import { elementAt } from './must';
+import { entryMenuCommands, entryOfField } from './entry-menu';
+import { FieldListView, fieldOf, sameEntry, type FieldListEdit, type FieldListMove } from './field-list';
+import { PivotMenuFrame, type PivotMenuCommand } from './menu';
+import { defined, elementAt } from './must';
 import { cellItems, ReportColumns, reportRows, type PivotCellItems } from './report-grid';
-import { PivotScreenWords } from './words';
+import { layoutChoiceId, PivotScreenWords } from './words';
 
 /** A Pivot Layout the user made and the report now shows. */
 export interface PivotLayoutChangedEvent {
@@ -137,6 +140,26 @@ interface Shown {
     readonly question: Question | undefined;
 }
 
+/** The menu open in the pivot: the Layout menu from the Pivot Toolbar, or a placed field's menu in the Field List,
+ * drawn from the layout it was opened on, which it closes on leaving (ADR-0061). One stands at a time. */
+type OpenMenu =
+    | { readonly kind: 'layout'; readonly frame: PivotMenuFrame }
+    | {
+        readonly kind: 'entry';
+        readonly entry: PivotEntry;
+        /** The field the entry stands for; none for Σ Values. */
+        readonly field: string | undefined;
+        readonly against: PivotLayout;
+        readonly frame: PivotMenuFrame;
+    };
+
+// The Layout menu's groups, each headed where it starts, in Excel's order (ADR-0061).
+const layoutHeadings: ReadonlyMap<PivotLayoutChoice, string> = new Map([
+    ['doNotShowSubtotals', 'subtotals'],
+    ['grandTotalsOff', 'grand-totals'],
+    ['compactForm', 'report-layout'],
+]);
+
 // The rows a first answer brings: a screen's worth and more. The grid asks for the rest as it scrolls.
 const firstWindowRows = 200;
 
@@ -192,6 +215,10 @@ export class PivotView {
     readonly #report: HTMLElement;
     readonly #notice: HTMLElement;
     readonly #fieldListToggle: HTMLButtonElement;
+    readonly #layoutAnchor: HTMLElement;
+    readonly #layoutButton: HTMLButtonElement;
+    readonly #layoutLabel: HTMLElement;
+    readonly #backdrop: HTMLElement;
     readonly #sheet: HTMLElement;
     readonly #empty: HTMLElement;
     readonly #gridRoot: HTMLElement;
@@ -229,6 +256,9 @@ export class PivotView {
     #grid: GridHandle<PivotDisplayRow> | undefined;
     #rows: FetchingGridSource<PivotDisplayRow> | undefined;
     #dropRemoveShown = false;
+    #open: OpenMenu | undefined;
+    // A field menu the pane left while it held the keyboard: the keyboard goes to its field's entry once drawn.
+    #keyboardAfterDraw: Extract<OpenMenu, { readonly kind: 'entry' }> | undefined;
     #destroyed = false;
 
     constructor(root: HTMLElement, options: PivotViewOptions, mountGrid: MountGrid) {
@@ -265,7 +295,29 @@ export class PivotView {
         this.#fieldListToggle.className = 'ex-pivot-toolbar-button ex-pivot-field-list-toggle';
         this.#fieldListToggle.setAttribute('data-ex-claims', 'click');
         this.#fieldListToggle.addEventListener('click', () => { this.#setFieldListShown(!this.#fieldListShown); });
-        end.append(this.#fieldListToggle);
+        // Layout ▾ opens the Layout menu under it, over the report, at its right edge; its wrapper is positioned
+        // so the menu needs no position the pivot would have to measure (ADR-0061).
+        this.#layoutAnchor = document.createElement('span');
+        this.#layoutAnchor.className = 'ex-pivot-toolbar-anchor';
+        this.#layoutButton = document.createElement('button');
+        this.#layoutButton.type = 'button';
+        this.#layoutButton.className = 'ex-pivot-toolbar-button ex-pivot-layout-button';
+        this.#layoutButton.setAttribute('data-ex-claims', 'click');
+        this.#layoutButton.setAttribute('aria-haspopup', 'menu');
+        this.#layoutLabel = document.createElement('span');
+        const arrow = document.createElement('span');
+        arrow.className = 'ex-pivot-entry-arrow';
+        arrow.setAttribute('aria-hidden', 'true');
+        arrow.textContent = '▾';
+        this.#layoutButton.append(this.#layoutLabel, arrow);
+        this.#layoutButton.addEventListener('click', () => { this.#toggleLayoutMenu(); });
+        this.#layoutAnchor.append(this.#layoutButton);
+        end.append(this.#layoutAnchor, this.#fieldListToggle);
+        // Under a menu opened from the Pivot Toolbar, a press anywhere else closes it.
+        this.#backdrop = div('ex-pivot-backdrop');
+        this.#backdrop.setAttribute('data-ex-claims', 'click');
+        this.#backdrop.setAttribute('aria-hidden', 'true');
+        this.#backdrop.addEventListener('click', () => { this.#closeMenu('opener'); });
         toolbar.append(start, end);
         this.#notice = div('ex-pivot-refusal-notice');
         this.#notice.setAttribute('role', 'alert');
@@ -293,6 +345,7 @@ export class PivotView {
             edit: edit => { this.#edited(edit); },
             close: () => { this.#setFieldListShown(false); },
             dragging: removable => { this.#paintDropRemove(removable); },
+            menu: entry => { this.#toggleEntryMenu(entry); },
         });
         root.append(this.#report, this.#fieldListBox);
         // A drag that moves on from an Area, anywhere in the pivot, leaves it unmarked; and one that leaves the
@@ -304,6 +357,17 @@ export class PivotView {
             const to = event.relatedTarget;
             if (to instanceof Node && !root.contains(to)) this.#fieldList.leaveTargets();
         }, listening);
+        // A press, or focus coming in, anywhere in the pivot outside an open field menu and its entry dismisses the
+        // menu, and leaves the keyboard where it went (ADR-0061).
+        const outside = (event: Event): void => {
+            const open = this.#open;
+            if (open?.kind !== 'entry') return;
+            const item = open.frame.element.parentNode;
+            if (event.target instanceof Node && item !== null && item.contains(event.target)) return;
+            this.#closeMenu('stay');
+        };
+        root.addEventListener('mousedown', outside, listening);
+        root.addEventListener('focusin', outside, listening);
 
         this.#askCounts();
         if (options.layout !== undefined) this.#ask(options.layout, 'consumer', undefined);
@@ -725,6 +789,156 @@ export class PivotView {
         this.#move(setCollapsed(pane, toggle.field, toggle.item, !toggle.isCollapsed), undefined);
     }
 
+    // ---- Menus (ADR-0061) ------------------------------------------------------------------------------
+
+    #toggleLayoutMenu(): void {
+        if (this.#open?.kind === 'layout') {
+            this.#closeMenu('opener');
+            return;
+        }
+        this.#openMenu({ kind: 'layout', frame: this.#frame('toolbar-end') });
+    }
+
+    #toggleEntryMenu(entry: PivotEntry): void {
+        const open = this.#open;
+        if (open?.kind === 'entry' && sameEntry(open.entry, entry)) {
+            this.#closeMenu('opener');
+            return;
+        }
+        const pane = this.#paneLayout;
+        const field = isValuesPseudoField(entry) ? undefined : fieldOf(pane, entry);
+        this.#openMenu({ kind: 'entry', entry, field, against: pane, frame: this.#frame('field-list') });
+    }
+
+    #frame(place: 'field-list' | 'toolbar-end'): PivotMenuFrame {
+        const frame = new PivotMenuFrame(this.#root.ownerDocument, place, () => { this.#closeMenu('opener'); });
+        // The keyboard leaving a menu for another control — Tab past its last command — closes it, so the Layout
+        // menu's backdrop takes no press meant for that control, and a field menu does not stand open over the pane
+        // once the keyboard left the pivot. A field menu's entry, which toggles it, is inside its bounds.
+        frame.element.addEventListener('focusout', event => {
+            const to = event.relatedTarget;
+            const open = this.#open;
+            if (open?.frame !== frame || !(to instanceof Node)) return;
+            const bounds = open.kind === 'entry' ? frame.element.parentNode : frame.element;
+            if (bounds !== null && !bounds.contains(to)) this.#closeMenu('stay');
+        });
+        return frame;
+    }
+
+    // Opened, its first enabled command takes the keyboard.
+    #openMenu(open: OpenMenu): void {
+        this.#takeDown();
+        this.#open = open;
+        this.#draw();
+        open.frame.takeKeyboard();
+    }
+
+    // Closed by Escape, by its button or by the backdrop, the keyboard goes back to what opened it. Dismissed by a
+    // press or focus elsewhere, it stays where that put it.
+    #closeMenu(keyboard: 'opener' | 'stay'): void {
+        const open = this.#takeDown();
+        if (open === undefined) return;
+        this.#draw();
+        if (keyboard === 'opener') this.#returnKeyboard(open, open.kind === 'entry' ? open.entry : undefined);
+    }
+
+    // Takes the open menu off the page, without drawing.
+    #takeDown(): OpenMenu | undefined {
+        const open = this.#open;
+        this.#open = undefined;
+        open?.frame.element.remove();
+        return open;
+    }
+
+    // The keyboard goes back to the button that opened the menu: Layout ▾, or the entry `entry` names, where the field
+    // the menu was for stands now; a field taken out of the Areas hands it to its tick box in the list.
+    #returnKeyboard(open: OpenMenu, entry: PivotEntry | undefined): void {
+        if (open.kind === 'layout') this.#layoutButton.focus();
+        else if (entry !== undefined) this.#fieldList.focusEntry(entry);
+        else this.#fieldList.focusField(open.field);
+    }
+
+    // Where the field a menu was for stands in the pane's layout now.
+    #entryNow(open: Extract<OpenMenu, { readonly kind: 'entry' }>): PivotEntry | undefined {
+        return entryOfField(this.#paneLayout, open.field, open.entry);
+    }
+
+    // A command closes its menu, does what it says, and hands the keyboard back once the pivot is drawn after it.
+    #command(open: OpenMenu, command: Omit<PivotMenuCommand, 'invoke'>, run: () => PivotEntry | undefined): PivotMenuCommand {
+        return Object.freeze({
+            ...command,
+            invoke: () => {
+                if (this.#open !== open) return;
+                // The frame leaves the page once the keyboard has gone back, so the Layout menu's never passes it through
+                // the page's body (ADR-0061).
+                this.#open = undefined;
+                this.#returnKeyboard(open, run());
+                open.frame.element.remove();
+            },
+        });
+    }
+
+    // The Layout menu (ADR-0061): Excel's Design tab choices, the current one of each group marked, and one that
+    // would change nothing disabled, read from the pane's layout, which a choice is taken against.
+    #layoutCommands(open: OpenMenu): readonly PivotMenuCommand[] {
+        const pane = this.#paneLayout;
+        const words = this.#words;
+        return pivotLayoutChoices.map(choice => {
+            const id = layoutChoiceId(choice);
+            const heading = layoutHeadings.get(choice);
+            return this.#command(open, {
+                id,
+                label: words.word(id),
+                enabled: layoutChoiceChanges(pane, choice),
+                checked: isLayoutChosen(pane, choice),
+                ...(heading === undefined ? {} : { heading: words.word(heading) }),
+            }, () => {
+                this.#move(chooseLayout(pane, choice), undefined);
+                return undefined;
+            });
+        });
+    }
+
+    #entryCaption(entry: PivotEntry, valueCaptions: readonly string[] | undefined): string {
+        if (isValuesPseudoField(entry)) return this.#words.word('values-pseudo-field');
+        if (entry.area === 'values') return elementAt(defined(valueCaptions, 'the Value Fields\' captions'), entry.index);
+        return this.#captionOf(fieldOf(this.#paneLayout, entry));
+    }
+
+    // Each draw draws the open menu again from the pane's layout. A field menu goes when the pane leaves the layout
+    // it was opened on, since its entry may now be another field's, and when the Field List is hidden; the keyboard
+    // it held goes to the entry its field stands at now.
+    #drawMenu(valueCaptions: readonly string[] | undefined): void {
+        const open = this.#open;
+        if (open?.kind === 'entry' && (open.against !== this.#paneLayout || !this.#fieldListShown)) {
+            const held = open.frame.element.contains(this.#root.ownerDocument.activeElement);
+            this.#takeDown();
+            // Hidden with the Field List, the keyboard goes to the toggle that shows it again.
+            if (held && this.#fieldListShown) this.#keyboardAfterDraw = open;
+            else if (held) this.#fieldListToggle.focus();
+        }
+        const shown = this.#open;
+        this.#layoutLabel.textContent = this.#words.word('layout-menu');
+        this.#layoutButton.setAttribute('aria-expanded', shown?.kind === 'layout' ? 'true' : 'false');
+        if (shown?.kind === 'layout') {
+            shown.frame.draw(this.#words.word('layout-menu'), this.#layoutCommands(shown));
+            if (shown.frame.element.parentNode !== this.#layoutAnchor) this.#layoutAnchor.append(shown.frame.element);
+            if (this.#backdrop.parentNode !== this.#root) this.#root.append(this.#backdrop);
+        } else {
+            this.#backdrop.remove();
+        }
+        if (shown?.kind === 'entry') {
+            const { entry } = shown;
+            const commands = entryMenuCommands({ layout: this.#paneLayout, fields: this.#options.source.fields, words: this.#words }, entry);
+            shown.frame.draw(this.#words.fill('field-menu', this.#entryCaption(entry, valueCaptions)), commands.map(({ edit, ...command }) =>
+                this.#command(shown, command, () => {
+                    const made = edit();
+                    this.#edited(made);
+                    return made.entry;
+                })));
+        }
+    }
+
     // ---- Drawing ---------------------------------------------------------------------------------------
 
     #setFieldListShown(shown: boolean): void {
@@ -735,6 +949,8 @@ export class PivotView {
     }
 
     #paintDropRemove(removable: boolean): void {
+        // A drag takes the pane: a field menu open in it goes, as the Razor component's does, drawn below.
+        this.#takeDown();
         this.#dropRemoveShown = removable;
         this.#draw();
     }
@@ -742,6 +958,13 @@ export class PivotView {
     #draw(): void {
         if (this.#destroyed) return;
         const words = this.#words;
+        const layout = this.#paneLayout;
+        const fields = this.#options.source.fields;
+        // The Value Fields' captions, which the Field List and a Values entry's menu say.
+        const valueCaptions = this.#fieldListShown
+            ? pivotValueCaptions(layout, fields, { locale: this.#locale, ...(words.label === undefined ? {} : { label: words.label }) })
+            : undefined;
+        this.#drawMenu(valueCaptions);
         const stretch = this.#options.viewportHeight === 'stretch';
         const width = this.#options.fieldListWidth ?? 300; // oxlint-disable-line ex-grid/no-stand-in-default -- ADR-0061: the Field List's declared default width, as the Razor component's
         // The Geometry Tokens, inline on the root (ADR-0027): the Field List's width and a level's indent.
@@ -771,19 +994,21 @@ export class PivotView {
         }
         this.#fieldListBox.hidden = !this.#fieldListShown;
         this.#fieldListBox.setAttribute('aria-label', words.word('field-list'));
-        if (this.#fieldListShown) {
-            const layout = this.#paneLayout;
-            const fields = this.#options.source.fields;
+        if (valueCaptions !== undefined) {
             this.#fieldList.draw({
                 layout,
                 fields,
-                valueCaptions: pivotValueCaptions(layout, fields, { locale: this.#locale, ...(this.#words.label === undefined ? {} : { label: this.#words.label }) }),
+                valueCaptions,
                 counts: this.#counts,
                 maxLeaves: this.#maxLeaves,
                 locale: this.#locale,
                 words,
+                menu: this.#open?.kind === 'entry' ? { entry: this.#open.entry, frame: this.#open.frame.element } : undefined,
             });
         }
+        const left = this.#keyboardAfterDraw;
+        this.#keyboardAfterDraw = undefined;
+        if (left !== undefined) this.#returnKeyboard(left, this.#entryNow(left));
     }
 }
 

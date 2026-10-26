@@ -242,6 +242,16 @@ was pressed directly after opening the menu, without visiting the report.
 - A dismissal names the menu it was rendered for. A late dismissal cannot close a replacement
   menu or a settings panel, and a pointer dismissal never requests focus back across a circuit.
 
+*(Refined 2026-10-26, with the menus of the Script Core, ADR-0370.)* A command that moves its entry
+takes away the button that opened the menu, so "back to the opener" names where the keyboard goes:
+
+- To the button of the entry its field stands at after the command: in the Area it went to, at the
+  place it landed. A field taken out of the Areas hands the keyboard to its tick box in the list.
+- A field menu that goes because the pane left the layout it was opened on — a refused question, a
+  layout the Consumer handed in — hands the keyboard it held to its field's entry in the same way.
+- The keyboard is never left on `body`. The Razor component still hands it to the entry
+  at the old place, as it did; it takes this rule when it moves onto the Script Core (ADR-0350).
+
 **The Pivot Toolbar's popups** — the report filter band's Filter… and the Layout menu — open
 under it, over the report, with a backdrop that closes them on a press elsewhere.
 
