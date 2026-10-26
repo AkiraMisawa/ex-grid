@@ -265,12 +265,18 @@ export interface FetchFailedEvent {
 
 // @public
 export class FetchingGridSource<Row> implements GridSource<Row> {
+    get cellChangedAt(): CellChangedAt<Row> | undefined;
+    get changeTimesKeptFor(): number;
+    set changeTimesKeptFor(milliseconds: number);
     dispose(): void;
     distinctValues(column: string, signal: AbortSignal): Promise<DistinctValues>;
     static fetch<Row>(fetch: (query: GridQuery, signal: AbortSignal) => Promise<GridPage<Row>>, options?: FetchingSourceOptions<Row>): FetchingGridSource<Row>;
     readonly find?: (request: GridFindRequest, signal: AbortSignal) => Promise<GridFindResult>;
+    get gatherInterval(): number;
+    set gatherInterval(milliseconds: number);
     get marks(): FetchingRowMarks<Row> | undefined;
     needRange(range: RowRange): Promise<void>;
+    notifyChanged(addedKeys?: readonly RowKey[]): void;
     requery(): void;
     get rowKey(): RowKeyOf<Row> | undefined;
     rows(range: RowRange, signal: AbortSignal): Promise<readonly Row[]>;
@@ -317,6 +323,7 @@ export class FetchingRowMarks<Row> implements RowMarks<Row> {
 
 // @public
 export interface FetchingSourceOptions<Row> {
+    readonly clock?: GridClock;
     readonly distinctValues?: (column: string, filter: GridFilter | undefined, signal: AbortSignal) => Promise<DistinctValues>;
     readonly find?: (request: GridFindRequest, query: QueryInForce, signal: AbortSignal) => Promise<GridFindResult>;
     readonly marks?: RowMarkAdapter<Row>;

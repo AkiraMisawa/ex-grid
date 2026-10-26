@@ -73,6 +73,9 @@ public sealed class FetchingGridSource<TRow> : IGridSource<TRow>, IDisposable, I
     private bool _changeWaiting;
     // Whether the question in flight was asked after the data moved on, so its answer carries it.
     private bool _inFlightCarries;
+    // A question that carried a change failed: nothing asks again on its own (ADR-0025), and the next question
+    // asked, a scroll's or a notice's, carries the change, since its answer shows it.
+    private bool _changeUnshown;
     // The order token of the last answer, and whether an answer has landed since the last restart:
     // what the next answer's token is compared with.
     private string? _orderToken;
@@ -608,8 +611,9 @@ public sealed class FetchingGridSource<TRow> : IGridSource<TRow>, IDisposable, I
         // the change — a scroll or a sort as much as a read of the Window for it (ADR-0067: a
         // user's gesture supersedes a question for newer data, and its own question brings the
         // change). One that supersedes a question that carried it carries it on.
-        var carries = _changeWaiting || (_inFlightCarries && _inFlight is not null);
+        var carries = _changeWaiting || _changeUnshown || (_inFlightCarries && _inFlight is not null);
         _inFlightCarries = carries;
+        _changeUnshown = false;
         // Every notice heard so far is carried by it: what its landing lets go of (D6).
         if (carries)
             _noticesAsked = _notices;
@@ -667,10 +671,13 @@ public sealed class FetchingGridSource<TRow> : IGridSource<TRow>, IDisposable, I
             _inFlightNeeded = null;
             IsLoading = false;
             LastError = ex;
+            // Set before anyone hears: a handler that scrolls meanwhile asks the question that carries it.
+            if (carries)
+                _changeUnshown = true;
             StateChanged?.Invoke();
             // A change of data that could not be shown reached the screen as far as gathering is
             // concerned (ADR-0067): the next read waits the interval from here. Nothing retries
-            // it on its own (ADR-0025); the next notice or scroll asks again.
+            // it on its own (ADR-0025); the next notice or scroll asks again, and carries it.
             Landed(carries);
             if (FetchFailed is { } handler)
             {
