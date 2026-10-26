@@ -81,3 +81,5 @@ selection covers, overlaps or touches at either end; the four touching cases in
 too. The moved flag and the in-flight placement rule stand as built. Layer 3,
 `declarations.spec.mjs` in Chrome (macOS): 51 of 51 on the WebAssembly host and 51 of 51 on the
 Server host, the nine DC-45 tests among them, with no console message. Edge was not run here.
+
+2026-10-26: the layer-1 tests this ticket names (`tests/ExSheet.Engine.Tests/ReferenceCycleTests.cs`) moved to the shared cases, `tests/cases/sheet/reference-cycle.json`, which both the C# engine and the Script Core run (ADR-0370 §2). Each test became cases named by the same claim, a run of presses a case per press; the xUnit file keeps only a null text.

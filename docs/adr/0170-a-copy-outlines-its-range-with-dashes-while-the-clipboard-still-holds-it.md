@@ -81,11 +81,28 @@ The event fires for this grid's own write as well. It was measured on Chrome 152
 (2026-10-07): one event per write on both routes, about 7 ms after the `copy` event set its data,
 and just after the asynchronous write resolved. A text field's copy on the same page fires one too.
 
-**Each instance counts the writes of its own copy that are in flight.** The `copy` event route counts
-one when it sets its data. The asynchronous route counts one before it writes, and gives it back if
-the write fails, so the count does not depend on whether the event or the promise is first. An event
-that meets a count above zero takes one and is the grid's own. Any other event is a change, and the
-grid is told.
+**Every grid of a document counts its writes in one ledger, in the order they were made.** The `copy`
+event route counts one when it sets its data. The asynchronous route counts one before it writes, and
+gives it back if the write fails, so the count does not depend on whether the event or the promise is
+first. Each event reports the earliest write still unreported, and every listener reads the same
+answer from the event. A grid keeps its outline when the event reports its own write, or while a
+write of its own is still unreported; any other event is a change, and the grid is told.
+
+*Changed (2026-10-26, CI on PR #339, the React host, Edge).* Each instance first kept a count of its
+own. The event names no writer and comes a while after the write, so when a second grid copied before
+the first grid's event arrived, that late event met the second grid's count and was taken as its own;
+the second grid's own event then met nothing and dropped an outline the clipboard still held (CP-27).
+Which outline survived depended on timing. One ledger per document makes it depend only on the order
+of the writes. It is the one state the instances share, because the event cannot be told apart per
+instance ([ADR-0018](./0018-multiple-instances-must-be-independent.md)). A grid destroyed leaves its
+writes counted, since the grids that remain still hear their changes; once no grid is left to hear,
+the ledger empties.
+
+The order is certain for a write the `copy` event sets, which lands as it is counted. A write by the
+asynchronous route is counted before the browser makes it, so another write counted while it is in
+flight may land on either side of it. Both are then uncertain: neither is outlined when it lands, and
+the change either reports is not taken as its grid's own. The race costs an outline and never leaves
+one standing over what the clipboard does not hold.
 
 A foreign change that arrives while a large asynchronous copy is still being gathered is taken for
 the grid's own write. The grid's own event then arrives with nothing counted and drops the outline,
@@ -124,8 +141,8 @@ tell one grid's write from another's.
 - **JavaScript.** The listener is the clipboard entry of
   [ADR-0021](./0021-javascript-is-allowlisted-not-minimised.md), not a new one: `clipboardchange` is
   the asynchronous Clipboard API's own event, and Blazor has no way to hear it. It is added to
-  `navigator.clipboard` per instance and removed with the instance. Each instance counts its own
-  writes, so two grids stay independent
+  `navigator.clipboard` per instance and removed with the instance. The ledger of writes is the
+  document's (above), so one grid's late event is never taken for another's write
   ([ADR-0018](./0018-multiple-instances-must-be-independent.md)). One grid's copy is a change to the
   other, which is the point. A change crosses to .NET only while the instance has an outline to drop.
   No layout is read, and nothing runs per render.

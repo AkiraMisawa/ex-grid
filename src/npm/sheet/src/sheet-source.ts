@@ -3,8 +3,9 @@
 // places, and its columns are not queryable. Its Row Sequence Version moves only when another Sheet is shown,
 // since that is the only time a position comes to mean another row (ADR-0011).
 
-import type { DistinctValues, GridFilter, GridSource, GridSourceState, QueryColumn, RowRange, SortSpec } from '@ex-grid/core';
+import type { DistinctValues, GridFilter, GridFindRequest, GridFindResult, GridSource, GridSourceState, QueryColumn, RowRange, SortSpec } from '@ex-grid/core';
 import { Sheet, type SheetChange } from '@ex-grid/sheet-engine';
+import { sheetFindStep } from './sheet-find';
 import { SheetRow } from './sheet-row';
 
 /** A Grid Source over the Sheet shown. */
@@ -12,6 +13,8 @@ export class SheetSource implements GridSource<SheetRow> {
     readonly #listeners = new Set<() => void>();
     #sheet: Sheet;
     #version = 0;
+    // The Sheet shown under the version before, which a grid that has not yet taken the newer rows still paints.
+    #before: { readonly version: number; readonly sheet: Sheet } | undefined;
     #state: GridSourceState<SheetRow>;
 
     constructor(sheet: Sheet) {
@@ -70,6 +73,19 @@ export class SheetSource implements GridSource<SheetRow> {
         return kept ?? new SheetRow(this.#sheet, index);
     }
 
+    /** One Find step over the Sheet its Row Sequence Version names (ADR-0055): the one shown, or the one before it,
+     * which a grid that has not yet taken the newer rows still paints, and whose answer it discards by the version
+     * once it has. A step asked under an older version is given up, never answered "not found" about cells nobody
+     * searched. */
+    find(request: GridFindRequest, signal: AbortSignal): Promise<GridFindResult> {
+        signal.throwIfAborted();
+        const before = this.#before;
+        const sheet = request.rowSequenceVersion === this.#version ? this.#sheet
+            : request.rowSequenceVersion === before?.version ? before.sheet : undefined;
+        if (sheet === undefined) return Promise.reject(new DOMException('The step was asked of a Sheet shown before the last one.', 'AbortError'));
+        return Promise.resolve(sheetFindStep(sheet, request));
+    }
+
     distinctValues(_column: string, _signal: AbortSignal): Promise<DistinctValues> {
         return Promise.reject(new Error("A Sheet's columns are not queryable, so they offer no values to filter by (ADR-0046)."));
     }
@@ -77,6 +93,7 @@ export class SheetSource implements GridSource<SheetRow> {
     /** Shows another Sheet, or the same Sheet read whole: every position names a row of it now, so the Row
      * Sequence Version moves (ADR-0011). */
     show(sheet: Sheet): void {
+        this.#before = { version: this.#version, sheet: this.#sheet };
         this.#sheet = sheet;
         this.#version++;
         const { window, windowStart } = this.#state;

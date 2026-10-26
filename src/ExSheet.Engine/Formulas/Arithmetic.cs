@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Numerics;
 
 namespace ExSheet.Engine.Formulas;
 
@@ -38,10 +39,52 @@ internal static class Arithmetic
     /// </summary>
     public static bool ApproximatelyEqual(double a, double b) => a == b || AtFifteenDigits(a) == AtFifteenDigits(b);
 
-    /// <summary>A number rounded to 15 significant digits. .NET formats the exact decimal value
-    /// of the double and rounds a midpoint away from zero.</summary>
-    internal static double AtFifteenDigits(double x) =>
-        double.IsFinite(x) ? double.Parse(x.ToString("E14", CultureInfo.InvariantCulture), CultureInfo.InvariantCulture) : x;
+    /// <summary>
+    /// A number rounded to 15 significant digits, half away from zero on its exact decimal value (ADR-0047),
+    /// as the nearest double: every place the engine reads a number at Excel's precision reads this one.
+    /// </summary>
+    internal static double AtFifteenDigits(double x)
+    {
+        if (!double.IsFinite(x) || x == 0) return x;
+        var (digits, exponent) = FifteenDigits(Math.Abs(x));
+        var rounded = double.Parse($"{digits}E{(exponent - 14).ToString(CultureInfo.InvariantCulture)}", CultureInfo.InvariantCulture);
+        return x < 0 ? -rounded : rounded;
+    }
+
+    /// <summary>
+    /// A positive finite number's 15 significant digits, rounded half away from zero on its exact decimal value
+    /// (ADR-0047), and the power of ten of the first. .NET's own <c>"E14"</c> rounds the exact decimal value too,
+    /// but an exact midpoint to even: 1.000030517578125 (1+2^-15) is 1.00003051757812 there and 1.00003051757813
+    /// here, as the Script Core reads it. The differential run found it (src/npm/sheet-engine/differential/README.md).
+    /// </summary>
+    internal static (string Digits, int Exponent) FifteenDigits(double magnitude)
+    {
+        // A midpoint's exact value has 16 significant digits, the last a 5, so its 17 digits end in 50; few
+        // numbers beside one spell that, and those the exact comparison turns away.
+        var seventeen = magnitude.ToString("E16", CultureInfo.InvariantCulture);
+        if (seventeen[16] == '5' && seventeen[17] == '0')
+        {
+            var sixteen = long.Parse(seventeen[0] + seventeen[2..17], CultureInfo.InvariantCulture);
+            var exponent = int.Parse(seventeen.AsSpan(19), NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture);
+            if (IsExactly(magnitude, sixteen, exponent - 15))
+            {
+                var away = (sixteen / 10) + 1;
+                // 999999999999999.5 rounds to the next power of ten.
+                return away == 1_000_000_000_000_000 ? ("100000000000000", exponent + 1) : (away.ToString(CultureInfo.InvariantCulture), exponent);
+            }
+        }
+        var e14 = magnitude.ToString("E14", CultureInfo.InvariantCulture);
+        return (e14[0] + e14[2..16], int.Parse(e14.AsSpan(17), NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture));
+    }
+
+    /// <summary>Whether <paramref name="x"/> is exactly <paramref name="digits"/> times 10^<paramref name="power"/>.</summary>
+    private static bool IsExactly(double x, long digits, int power)
+    {
+        var (significand, twos) = CorrectlyRounded.Decompose(x);
+        var left = significand * BigInteger.Pow(2, Math.Max(twos, 0)) * BigInteger.Pow(10, Math.Max(-power, 0));
+        var right = digits * BigInteger.Pow(10, Math.Max(power, 0)) * BigInteger.Pow(2, Math.Max(-twos, 0));
+        return left == right;
+    }
 
     private static bool Near(double a, double b, double tolerance)
     {
@@ -66,12 +109,12 @@ internal static class Arithmetic
 
     /// <summary>
     /// <c>a^b</c>, or <see langword="null"/> where it has no real answer (<c>#NUM!</c>). An integer
-    /// exponent is <see cref="Math.Pow"/>, and an exponent of 0.5 is <see cref="Math.Sqrt"/>, the
+    /// exponent is the exact power rounded once (<see cref="PortableMath.PowWhole"/>), and an exponent of 0.5 is <see cref="Math.Sqrt"/>, the
     /// square root correctly rounded: Excel gives <c>=2^0.5</c> as 1.4142135623730951 (ARITH-133,
     /// third run), where e^(0.5 ln 2) is one unit in the last place below it. Any other exponent
-    /// of a positive base is e^(b ln a), as Excel's is: <c>=8^(1/3)</c> is 1.9999999999999998 and
+    /// of a positive base is e^(b ln a), as Excel's is, e^x and ln x each correctly rounded: <c>=8^(1/3)</c> is 1.9999999999999998 and
     /// <c>=27^(1/3)</c> 2.9999999999999996, not the correctly rounded 2 and 3 (observed), so neither
-    /// <see cref="Math.Pow"/> nor e^(b ln a) alone gives every observed answer.
+    /// the correctly rounded power nor e^(b ln a) alone gives every observed answer.
     /// A negative base with an exponent that is not an integer has a real answer when the exponent
     /// is the reciprocal of an odd integer: Excel gives <c>=(-8)^(1/3)</c> as -1.9999999999999998,
     /// which is −e^(ln 8 / 3). Other fractional exponents of a negative base, such as 2/3, are
@@ -79,10 +122,11 @@ internal static class Arithmetic
     /// </summary>
     public static double? Power(double a, double b)
     {
-        if (a == 0 || b == Math.Floor(b)) return Math.Pow(a, b);
-        if (a > 0) return b == 0.5 ? Math.Sqrt(a) : Math.Exp(Math.Log(a) * b);
+        if (b == Math.Floor(b)) return PortableMath.PowWhole(a, b);
+        if (a == 0) return b > 0 ? 0 : double.PositiveInfinity;
+        if (a > 0) return b == 0.5 ? Math.Sqrt(a) : PortableMath.Exp(PortableMath.Log(a) * b);
         var root = 1 / b;
-        if (double.IsFinite(root) && root == Math.Floor(root) && Math.Abs(root % 2) == 1) return -Math.Exp(Math.Log(-a) * b);
+        if (double.IsFinite(root) && root == Math.Floor(root) && Math.Abs(root % 2) == 1) return -PortableMath.Exp(PortableMath.Log(-a) * b);
         return null;
     }
 }

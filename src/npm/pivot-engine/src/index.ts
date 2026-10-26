@@ -9,16 +9,17 @@
  */
 export type { PivotLabel } from './words/pivot-words';
 export {
-    fillWord as fillPivotWord, japanesePivotWords, pivotWordIdList, pivotWordIds, resolveWord as pivotWord, unitedKingdomPivotWords,
+    aggregationNameId as pivotAggregationNameId, captionId as pivotCaptionId, fillWord as fillPivotWord, japanesePivotWords, pivotWordIdList,
+    pivotWordIds, resolveWord as pivotWord, showValuesAsNameId as pivotShowValuesAsNameId, unitedKingdomPivotWords,
 } from './words/pivot-words';
 export { pivotLocales } from './culture/culture-data';
-export { formatPivotCount } from './text/number-text';
+export { formatPivotCount, formatPivotNumber } from './text/number-text';
 export { PivotFormatError, PivotOrderKeyError, PivotVersionError } from './errors';
 export type {
     PivotAggregation, PivotArea, PivotAxis, PivotColumnRole, PivotDatePart, PivotFieldType, PivotItemKind, PivotReportForm, PivotRowRole,
     PivotShowValuesAs, PivotSortDirection,
 } from './layout/pivot-enums';
-export { pivotAggregations, pivotItemKinds } from './layout/pivot-enums';
+export { pivotAggregations, pivotItemKinds, pivotShowValuesAsList } from './layout/pivot-enums';
 export type { PivotItemKey } from './items/item-key';
 export {
     blankItemKey, booleanItemKey, dateItemKey, errorItemKey, itemKeysEqual, numberItemKey, pivotErrorText, pivotItemKey, publicKeyId, textItemKey,
@@ -41,7 +42,7 @@ export {
 export type {
     PivotField, PivotFieldInput, PivotOrderKey, PivotOrderKeyValue, PivotRecordField, PivotRecordFieldInput,
 } from './fields/pivot-field';
-export { datePartField, pivotField, pivotRecordField } from './fields/pivot-field';
+export { datePartField, numberFormatProblem as pivotNumberFormatProblem, pivotField, pivotRecordField } from './fields/pivot-field';
 export type {
     PivotDetailsQuery, PivotFieldItem, PivotItemsQuery, PivotLevelOrder, PivotLevelRule, PivotLevelRuleInput, PivotLevels, PivotLevelWindow,
     PivotLevelWindowInput, PivotPart, PivotQuery, PivotQueryField, PivotQueryInput, PivotQueryValue, PivotWindowStart,

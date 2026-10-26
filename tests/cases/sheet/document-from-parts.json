@@ -1,0 +1,168 @@
+{
+  "about": "What a reader of another format needs from the engine (ADR-0330 §4): a Formula moved as a copy moves it, the names a Formula reads that ExSheet does not know, an error cell's text, and the 1900 date system's serials. Transcribed from ExSheet.Engine.Tests' DocumentFromPartsTests, which keeps the walk over every Error Value, the documents built from their parts, and the engine's own nodes.",
+  "kind": "sheetCalls",
+  "cases": [
+    {
+      "name": "ADR-0330 §4, ADR-0048: a Formula moved as a copy moves it: relative parts move, absolute ones stay, off the Sheet is #REF!: =A1*$A$1+A$1+$A1 by 2, 1",
+      "call": "Entry.parse",
+      "args": ["=A1*$A$1+A$1+$A1", {"culture": "invariant"}],
+      "then": [{"call": "movedBy", "args": [2, 1], "is": {"formula": "=B3*$A$1+B$1+$A3"}}]
+    },
+    {
+      "name": "ADR-0330 §4, ADR-0048: a Formula moved as a copy moves it: relative parts move, absolute ones stay, off the Sheet is #REF!: =SUM(A:A)+SUM(1:1)+SUM($B:$B) by 3, 2",
+      "call": "Entry.parse",
+      "args": ["=SUM(A:A)+SUM(1:1)+SUM($B:$B)", {"culture": "invariant"}],
+      "then": [{"call": "movedBy", "args": [3, 2], "is": {"formula": "=SUM(C:C)+SUM(4:4)+SUM($B:$B)"}}]
+    },
+    {
+      "name": "ADR-0330 §4, ADR-0048: a Formula moved as a copy moves it: relative parts move, absolute ones stay, off the Sheet is #REF!: =Sheet2!B2+A1# by 1, 0",
+      "call": "Entry.parse",
+      "args": ["=Sheet2!B2+A1#", {"culture": "invariant"}],
+      "then": [{"call": "movedBy", "args": [1, 0], "is": {"formula": "=Sheet2!B3+A2#"}}]
+    },
+    {
+      "name": "ADR-0330 §4, ADR-0048: a Formula moved as a copy moves it: relative parts move, absolute ones stay, off the Sheet is #REF!: =A2+1 by -1, 0",
+      "call": "Entry.parse",
+      "args": ["=A2+1", {"culture": "invariant"}],
+      "then": [{"call": "movedBy", "args": [-1, 0], "is": {"formula": "=A1+1"}}]
+    },
+    {
+      "name": "ADR-0330 §4, ADR-0048: a Formula moved as a copy moves it: relative parts move, absolute ones stay, off the Sheet is #REF!: =A1+1 by -1, 0",
+      "call": "Entry.parse",
+      "args": ["=A1+1", {"culture": "invariant"}],
+      "then": [{"call": "movedBy", "args": [-1, 0], "is": {"formula": "=#REF!+1"}}]
+    },
+    {
+      "name": "ADR-0330 §4, ADR-0048: a Formula moved as a copy moves it: relative parts move, absolute ones stay, off the Sheet is #REF!: =SUM(A1:B2) by 0, 0",
+      "call": "Entry.parse",
+      "args": ["=SUM(A1:B2)", {"culture": "invariant"}],
+      "then": [{"call": "movedBy", "args": [0, 0], "is": {"formula": "=SUM(A1:B2)"}}]
+    },
+    {
+      "name": "ADR-0330 §4: a constant moved is itself",
+      "call": "Entry.fromValue",
+      "args": [{"value": 1}],
+      "then": [{"call": "movedBy", "args": [5, 5], "is": {"constant": 1, "formula": null}}]
+    },
+    {
+      "name": "ADR-0330 §4, ADR-0047: the functions a Formula calls outside the declared set, each once, in its order: CUBEVALUE and an add-in",
+      "call": "Entry.parse",
+      "args": ["=SUM(CUBEVALUE(\"x\"),myAddIn(1),cubevalue(2),IF(A1,1,2))", {"culture": "invariant"}],
+      "then": [{"get": "undeclaredFunctions", "is": ["CUBEVALUE", "myAddIn"]}]
+    },
+    {
+      "name": "ADR-0330 §4, ADR-0047: the functions a Formula calls outside the declared set, each once, in its order: none in SUM and LET",
+      "call": "Entry.parse",
+      "args": ["=SUM(A1)+LET(x,1,x)", {"culture": "invariant"}],
+      "then": [{"get": "undeclaredFunctions", "is": []}]
+    },
+    {
+      "name": "ADR-0330 §4, ADR-0047: the functions a Formula calls outside the declared set, each once, in its order: none in a constant",
+      "call": "Entry.fromValue",
+      "args": [{"value": "SUM"}],
+      "then": [{"get": "undeclaredFunctions", "is": []}]
+    },
+    {
+      "name": "ADR-0330 §4, ADR-0181: the names a Formula reads that nothing in it binds; a LET's names are bound: Rate and Other",
+      "call": "Entry.parse",
+      "args": ["=Rate*A1+LET(x,rate,x+Other)+TRUE", {"culture": "invariant"}],
+      "then": [{"get": "unboundNames", "is": ["Rate", "Other"]}]
+    },
+    {
+      "name": "ADR-0330 §4, ADR-0181: the names a Formula reads that nothing in it binds; a LET's names are bound: a LET binds its own",
+      "call": "Entry.parse",
+      "args": ["=LET(x,1,y,x+1,x*y)", {"culture": "invariant"}],
+      "then": [{"get": "unboundNames", "is": []}]
+    },
+    {
+      "name": "ADR-0330 §4, ADR-0181: the names a Formula reads that nothing in it binds; a LET's names are bound: References are no names",
+      "call": "Entry.parse",
+      "args": ["=SUM(A1:B2)", {"culture": "invariant"}],
+      "then": [{"get": "unboundNames", "is": []}]
+    },
+    {
+      "name": "ADR-0330 §4, ADR-0181: the names a Formula reads that nothing in it binds; a LET's names are bound: none in a constant",
+      "call": "Entry.fromValue",
+      "args": [{"value": 1}],
+      "then": [{"get": "unboundNames", "is": []}]
+    },
+    {
+      "name": "ADR-0330 §4: a LAMBDA's parameters are bound in its body, and no name a workbook defines; a name its body reads besides them is not bound: =MAP(A1:A3,LAMBDA(v,v*2))",
+      "call": "Entry.parse",
+      "args": ["=MAP(A1:A3,LAMBDA(v,v*2))", {"culture": "invariant"}],
+      "then": [{"get": "unboundNames", "is": []}]
+    },
+    {
+      "name": "ADR-0330 §4: a LAMBDA's parameters are bound in its body, and no name a workbook defines; a name its body reads besides them is not bound: =REDUCE(0,A1:A3,LAMBDA(acc,v,acc+v))",
+      "call": "Entry.parse",
+      "args": ["=REDUCE(0,A1:A3,LAMBDA(acc,v,acc+v))", {"culture": "invariant"}],
+      "then": [{"get": "unboundNames", "is": []}]
+    },
+    {
+      "name": "ADR-0330 §4: a LAMBDA's parameters are bound in its body, and no name a workbook defines; a name its body reads besides them is not bound: =MAP(A1:A3,LAMBDA(v,v*Rate))",
+      "call": "Entry.parse",
+      "args": ["=MAP(A1:A3,LAMBDA(v,v*Rate))", {"culture": "invariant"}],
+      "then": [{"get": "unboundNames", "is": ["Rate"]}]
+    },
+    {
+      "name": "ADR-0330 §4: a LAMBDA's parameters are bound in its body, and no name a workbook defines; a name its body reads besides them is not bound, a parameter bound only inside its own LAMBDA: =MAP(A1:A3,LAMBDA(v,v*2))+v",
+      "call": "Entry.parse",
+      "args": ["=MAP(A1:A3,LAMBDA(v,v*2))+v", {"culture": "invariant"}],
+      "then": [{"get": "unboundNames", "is": ["v"]}]
+    },
+    {
+      "name": "ADR-0330 §4: a LAMBDA's parameters are bound in its body, and no name a workbook defines; a name its body reads besides them is not bound: =LET(f,LAMBDA(x,x+1),MAP(A1:A2,LAMBDA(y,f(y))))",
+      "call": "Entry.parse",
+      "args": ["=LET(f,LAMBDA(x,x+1),MAP(A1:A2,LAMBDA(y,f(y))))", {"culture": "invariant"}],
+      "then": [{"get": "unboundNames", "is": []}]
+    },
+    {
+      "name": "ADR-0330 §4: an error cell's text is read by the engine's own table, exactly as written, and nothing else: '#GETTING_DATA' is none",
+      "call": "Entry.fromErrorText",
+      "args": ["#GETTING_DATA"],
+      "is": null
+    },
+    {
+      "name": "ADR-0330 §4: an error cell's text is read by the engine's own table, exactly as written, and nothing else: '#CIRC!' is none",
+      "call": "Entry.fromErrorText",
+      "args": ["#CIRC!"],
+      "is": null
+    },
+    {
+      "name": "ADR-0330 §4: an error cell's text is read by the engine's own table, exactly as written, and nothing else: '=NA()' is none",
+      "call": "Entry.fromErrorText",
+      "args": ["=NA()"],
+      "is": null
+    },
+    {
+      "name": "ADR-0330 §4: an error cell's text is read by the engine's own table, exactly as written, and nothing else: '1' is none",
+      "call": "Entry.fromErrorText",
+      "args": ["1"],
+      "is": null
+    },
+    {
+      "name": "ADR-0330 §4: the 1900 date system's serials, Excel's 29 February 1900 included: 1900-01-01",
+      "call": "DateSerial.fromDate",
+      "args": [1900, 1, 1],
+      "is": 1
+    },
+    {
+      "name": "ADR-0330 §4: the 1900 date system's serials, Excel's 29 February 1900 included: 1900-02-29",
+      "call": "DateSerial.fromDate",
+      "args": [1900, 2, 29],
+      "is": 60
+    },
+    {
+      "name": "ADR-0330 §4: the 1900 date system's serials, Excel's 29 February 1900 included: 1900-03-01",
+      "call": "DateSerial.fromDate",
+      "args": [1900, 3, 1],
+      "is": 61
+    },
+    {
+      "name": "ADR-0330 §4: the 1900 date system's serials, Excel's 29 February 1900 included: 2023-03-15",
+      "call": "DateSerial.fromDate",
+      "args": [2023, 3, 15],
+      "is": 45000
+    }
+  ]
+}

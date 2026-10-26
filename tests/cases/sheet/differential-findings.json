@@ -1,0 +1,211 @@
+{
+  "about": "What the differential run against the C# engine found (ADR-0370, section 2, src/npm/sheet-engine/differential/README.md), each written down once fixed, cut to the Formula that shows it.",
+  "kind": "sheet",
+  "culture": "en-US",
+  "cases": [
+    {
+      "name": "ADR-0047: a SUMPRODUCT that overflows is an Error Value, as SUM's is: =SUMPRODUCT(9E+307,10)",
+      "steps": [
+        {
+          "enter": {
+            "ZZ1000": "=SUMPRODUCT(9E+307,10)"
+          },
+          "expect": {
+            "values": {
+              "ZZ1000": {
+                "error": "#NUM!"
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0047: a SUMPRODUCT whose products sum past the largest double is an Error Value: =SUMPRODUCT(A1:A2,B1:B2)",
+      "steps": [
+        {
+          "enter": {
+            "A1": "9E+307",
+            "A2": "9E+307",
+            "B1": "1",
+            "B2": "1",
+            "ZZ1000": "=SUMPRODUCT(A1:A2,B1:B2)"
+          },
+          "expect": {
+            "values": {
+              "ZZ1000": {
+                "error": "#NUM!"
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0047: General rounds a number to 15 significant digits half away from zero on its exact decimal value, an exact midpoint too: =1+2^-15",
+      "steps": [
+        {
+          "enter": {
+            "ZZ1000": "=1+2^-15"
+          },
+          "expect": {
+            "texts": {
+              "ZZ1000": "1.00003051757813"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0047: General rounds an exact midpoint away from zero where the digit before it is even: =1234567890123440+5",
+      "steps": [
+        {
+          "enter": {
+            "ZZ1000": "=1234567890123440+5"
+          },
+          "expect": {
+            "texts": {
+              "ZZ1000": "1.23456789012345E+15"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0047: General rounds an exact midpoint at the first decimal away from zero: =(1E+15+1)/2",
+      "steps": [
+        {
+          "enter": {
+            "ZZ1000": "=(1E+15+1)/2"
+          },
+          "expect": {
+            "texts": {
+              "ZZ1000": "500000000000001"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0047: a number written into text reads at 15 significant digits as General does, an exact midpoint away from zero: =(1+2^-15)&\"\"",
+      "steps": [
+        {
+          "enter": {
+            "ZZ1000": "=(1+2^-15)&\"\""
+          },
+          "expect": {
+            "values": {
+              "ZZ1000": "1.00003051757813"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0047: two numbers compare as they read at 15 significant digits, an exact midpoint away from zero: =1+2^-15=1.00003051757813",
+      "steps": [
+        {
+          "enter": {
+            "ZZ1000": "=1+2^-15=1.00003051757813",
+            "ZZ1001": "=1+2^-15=1.00003051757812"
+          },
+          "expect": {
+            "values": {
+              "ZZ1000": true,
+              "ZZ1001": false
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0047: a number its percent sign scales past the largest double cannot be shown, and TEXT of it is #VALUE!, rather than an engine that throws: =9E+307 in 0.00%",
+      "steps": [
+        {
+          "enter": {
+            "A1": "9E+307",
+            "B1": "=TEXT(A1,\"0.00%\")"
+          }
+        },
+        {
+          "setNumberFormat": {
+            "A1": "0.00%"
+          },
+          "expect": {
+            "displays": {
+              "A1": {
+                "width": null,
+                "text": "",
+                "cannotShow": true,
+                "alignment": "right",
+                "colour": null,
+                "isNumber": true
+              }
+            },
+            "values": {
+              "B1": {
+                "error": "#VALUE!"
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0047: percent signs and thousands commas that cancel scale a number once, so it does not overflow on the way: =LEN(TEXT(1E+305,\"0,,%%%\"))",
+      "steps": [
+        {
+          "enter": {
+            "ZZ1000": "=LEN(TEXT(1E+305,\"0,,%%%\"))"
+          },
+          "expect": {
+            "values": {
+              "ZZ1000": 309
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0047, ADR-0370: each function the platform's math library answers is the exact value rounded once to the nearest double, the same on every platform; at these arguments glibc's answer, V8's, or both are the double on the other side",
+      "steps": [
+        {
+          "enter": {
+            "A1": "=ATAN(3.8946)",
+            "A2": "=ASIN(0.058)",
+            "A3": "=ACOS(0.07)",
+            "A4": "=SINH(-1.87)",
+            "A5": "=COSH(11.22)",
+            "A6": "=TANH(0.9753)",
+            "A7": "=ASINH(-276.51)",
+            "A8": "=ACOSH(140.4172)",
+            "A9": "=ATANH(0.33355)",
+            "A10": "=LOG10(3764.2801)",
+            "A11": "=EXP(22.08)",
+            "A12": "=LN(1471.6697)",
+            "A13": "=POWER(8.882,-21)",
+            "A14": "=ATAN2(82.53,-10.454)"
+          },
+          "expect": {
+            "values": {
+              "A1": 1.3194600791034101,
+              "A2": 0.05803256799222122,
+              "A3": 1.5007390337068462,
+              "A4": -3.16708636873579,
+              "A5": 37303.88738430134,
+              "A6": 0.7510241019350475,
+              "A7": -6.315397436996019,
+              "A8": 5.637752492109522,
+              "A9": 0.346817360091098,
+              "A10": 3.5756819318004998,
+              "A11": 3883489724.956175,
+              "A12": 7.294152885522979,
+              "A13": 1.2057960432215722e-20,
+              "A14": -0.12599806725699064
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

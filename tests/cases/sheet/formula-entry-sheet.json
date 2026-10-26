@@ -1,0 +1,13 @@
+{
+  "about": "A Sheet's completion for the Formula being typed (ADR-0049, ADR-0051): FormulaEntry's (formula-entry.json) with the Sheet's own Linked Tables. Transcribed from ExSheet.Engine.Tests' FormulaEntryTests.",
+  "kind": "sheet",
+  "culture": "en-US",
+  "cases": [
+    {
+      "name": "ADR-0049/0051: a Sheet offers its own Linked Tables",
+      "steps": [
+        {"declareTable": {"name": "Positions", "columns": ["Id", "PV"]}, "expect": {"completions": {"=XLOOKUP(1,Pos|": {"candidates": [{"name": "Positions", "kind": "linkedTable", "insertText": "Positions", "description": null}]}}}}
+      ]
+    }
+  ]
+}

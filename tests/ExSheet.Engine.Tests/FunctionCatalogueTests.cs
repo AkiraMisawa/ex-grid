@@ -10,7 +10,8 @@ namespace ExSheet.Engine.Tests;
 /// <see cref="DeclaredFunction.All"/>, so the catalogue cannot drift from the engine. Every name it
 /// lists, its rows and its list of Excel's functions not in the queue, is one of Excel's functions,
 /// each of which <c>LetTests</c> binds as a <c>LET</c> name where its shape is a name's (ADR-0181,
-/// run 17).
+/// run 17). The Script Core is held to the same catalogue by <c>src/npm/sheet-engine/test/catalogue.test.ts</c>;
+/// the catalogue's own form is checked here.
 /// </summary>
 public class FunctionCatalogueTests
 {

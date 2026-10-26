@@ -207,15 +207,24 @@ class Section {
             case 'date': return this.#formatDate(magnitude, minus, culture);
             case 'literal': return { text: (minus ? '-' : '') + this.#parts.map(p => p.text).join(''), cannotShow: false };
             case 'number':
-            case 'text':
-                return { text: this.#formatDigits(magnitude, minus, culture), cannotShow: false };
+            case 'text': {
+                const digits = this.#formatDigits(magnitude, minus, culture);
+                return digits === undefined ? { text: '', cannotShow: true } : { text: digits, cannotShow: false };
+            }
             default: return unreachableSection(this.kind);
         }
     }
 
-    #formatDigits(magnitude: number, minusGiven: boolean, culture: Culture): string {
+    /**
+     * The number in this section's digits, or `undefined` where its percent signs scale it past the largest double,
+     * which no digits can show: the cell cannot show it and TEXT is `#VALUE!`, as for a date out of range.
+     */
+    #formatDigits(magnitude: number, minusGiven: boolean, culture: Culture): string | undefined {
         let minus = minusGiven;
-        const value = magnitude * powerOfTen(2 * this.percent) / powerOfTen(3 * this.#scale);
+        // One power for both, so percent signs and thousands commas that cancel never overflow or underflow on the way.
+        const shift = 2 * this.percent - 3 * this.#scale;
+        const value = shift >= 0 ? magnitude * powerOfTen(shift) : magnitude / powerOfTen(-shift);
+        if (!Number.isFinite(value)) return undefined;
         let integerDigits: string;
         let fractionDigits: string;
         let exponent = 0;

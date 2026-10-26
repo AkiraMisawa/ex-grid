@@ -1,0 +1,630 @@
+{
+  "about": "Completion's triggers, aligned with Excel (ExSheet ticket 39, ADR-0058 \"Completion, aligned with Excel\", SH-36), as FormulaEntry answers them: an argument's value list before anything is typed, its declarations, the hint beside it, and nothing where a Reference is pointed instead. What a Sheet answers with its own Linked Tables is completion-trigger-sheet.json. Transcribed from ExSheet.Engine.Tests' CompletionTriggerTests.",
+  "kind": "sheetCalls",
+  "cases": [
+    {
+      "name": "ADR-0058: the newly admitted functions offer their documented argument choices: '=VLOOKUP(2,A1:B3,2,'",
+      "call": "FormulaEntry.complete",
+      "args": ["=VLOOKUP(2,A1:B3,2,", 19, []],
+      "is": {"candidates": [{"insertText": "TRUE", "kind": "argumentValue"}, {"insertText": "FALSE", "kind": "argumentValue"}]}
+    },
+    {
+      "name": "ADR-0058: the newly admitted functions offer their documented argument choices: '=HLOOKUP(2,A1:C2,2,'",
+      "call": "FormulaEntry.complete",
+      "args": ["=HLOOKUP(2,A1:C2,2,", 19, []],
+      "is": {"candidates": [{"insertText": "TRUE", "kind": "argumentValue"}, {"insertText": "FALSE", "kind": "argumentValue"}]}
+    },
+    {
+      "name": "ADR-0058: the newly admitted functions offer their documented argument choices: '=MATCH(2,A1:A3,'",
+      "call": "FormulaEntry.complete",
+      "args": ["=MATCH(2,A1:A3,", 15, []],
+      "is": {"candidates": [{"insertText": "1", "kind": "argumentValue"}, {"insertText": "0", "kind": "argumentValue"}, {"insertText": "-1", "kind": "argumentValue"}]}
+    },
+    {
+      "name": "ADR-0058: the newly admitted functions offer their documented argument choices: '=YEARFRAC(A1,A2,'",
+      "call": "FormulaEntry.complete",
+      "args": ["=YEARFRAC(A1,A2,", 16, []],
+      "is": {"candidates": [{"insertText": "0", "kind": "argumentValue"}, {"insertText": "1", "kind": "argumentValue"}, {"insertText": "2", "kind": "argumentValue"}, {"insertText": "3", "kind": "argumentValue"}, {"insertText": "4", "kind": "argumentValue"}]}
+    },
+    {
+      "name": "ADR-0058: the newly admitted functions offer their documented argument choices: '=VLOOKUP(2,A1:B3,2,false'",
+      "call": "FormulaEntry.complete",
+      "args": ["=VLOOKUP(2,A1:B3,2,false", 24, []],
+      "is": {"candidates": [{"insertText": "FALSE", "kind": "argumentValue"}]}
+    },
+    {
+      "name": "ADR-0058: the newly admitted functions offer their documented argument choices: '=VLOOKUP(2,A1:B3,2,F'",
+      "call": "FormulaEntry.complete",
+      "args": ["=VLOOKUP(2,A1:B3,2,F", 20, []],
+      "is": {"candidates": [{"insertText": "TRUE", "kind": "argumentValue"}, {"insertText": "FALSE", "kind": "argumentValue"}]}
+    },
+    {
+      "name": "ADR-0058: the newly admitted functions offer their documented argument choices: '=XLOOKUP(2,A1:A3,B1:B3,,TRUE'",
+      "call": "FormulaEntry.complete",
+      "args": ["=XLOOKUP(2,A1:A3,B1:B3,,TRUE", 28, []],
+      "is": {"candidates": [{"insertText": "0", "kind": "argumentValue"}, {"insertText": "-1", "kind": "argumentValue"}, {"insertText": "1", "kind": "argumentValue"}, {"insertText": "2", "kind": "argumentValue"}, {"insertText": "3", "kind": "argumentValue"}]}
+    },
+    {
+      "name": "ADR-0058, SH-36: XLOOKUP declares match_mode's and search_mode's values with Excel's texts, observed by the Windows runs of 2026-09-27 and 2026-09-30",
+      "call": "DeclaredFunction.find",
+      "args": ["XLOOKUP"],
+      "then": [{"call": "valuesOf", "args": [4], "is": [{"text": "0 - Exact match", "value": "0"}, {"text": "-1 - Exact match or next smaller item", "value": "-1"}, {"text": "1 - Exact match or next larger item", "value": "1"}, {"text": "2 - Wildcard character match", "value": "2"}, {"text": "3 - Regex match", "value": "3"}]}, {"call": "valuesOf", "args": [5], "is": [{"text": "1 - Search first-to-last", "value": "1"}, {"text": "-1 - Search last-to-first", "value": "-1"}, {"text": "2 - Binary search (sorted ascending order)", "value": "2"}, {"text": "-2 - Binary search (sorted descending order)", "value": "-2"}]}]
+    },
+    {
+      "name": "ADR-0058, SH-36: unrestricted arguments do not declare a choice list: XLOOKUP's others",
+      "call": "DeclaredFunction.find",
+      "args": ["XLOOKUP"],
+      "then": [{"call": "valuesOf", "args": [0], "is": []}, {"call": "valuesOf", "args": [1], "is": []}, {"call": "valuesOf", "args": [2], "is": []}, {"call": "valuesOf", "args": [3], "is": []}, {"call": "valuesOf", "args": [6], "is": []}, {"call": "valuesOf", "args": [-1], "is": []}]
+    },
+    {
+      "name": "ADR-0058, ticket 16: SUBTOTAL's list is Excel's, character for character, as the seventeenth Windows run read it (Part B's b4), each writing the number it begins with",
+      "call": "DeclaredFunction.find",
+      "args": ["SUBTOTAL"],
+      "then": [{"call": "valuesOf", "args": [0], "is": [{"text": "1 - AVERAGE", "value": "1"}, {"text": "2 - COUNT", "value": "2"}, {"text": "3 - COUNTA", "value": "3"}, {"text": "4 - MAX", "value": "4"}, {"text": "5 - MIN", "value": "5"}, {"text": "6 - PRODUCT", "value": "6"}, {"text": "7 - STDEV.S", "value": "7"}, {"text": "8 - STDEV.P", "value": "8"}, {"text": "9 - SUM", "value": "9"}, {"text": "10 - VAR.S", "value": "10"}, {"text": "11 - VAR.P", "value": "11"}, {"text": "101 - AVERAGE", "value": "101"}, {"text": "102 - COUNT", "value": "102"}, {"text": "103 - COUNTA", "value": "103"}, {"text": "104 - MAX", "value": "104"}, {"text": "105 - MIN", "value": "105"}, {"text": "106 - PRODUCT", "value": "106"}, {"text": "107 - STDEV.S", "value": "107"}, {"text": "108 - STDEV.P", "value": "108"}, {"text": "109 - SUM", "value": "109"}, {"text": "110 - VAR.S", "value": "110"}, {"text": "111 - VAR.P", "value": "111"}]}]
+    },
+    {
+      "name": "ADR-0058, ticket 16: AGGREGATE's lists are Excel's texts, as the seventeenth Windows run read them (Part B's b4), for the function numbers the engine evaluates, and its third argument lists none",
+      "call": "DeclaredFunction.find",
+      "args": ["AGGREGATE"],
+      "then": [{"call": "valuesOf", "args": [0], "is": [{"text": "1 - AVERAGE", "value": "1"}, {"text": "2 - COUNT", "value": "2"}, {"text": "3 - COUNTA", "value": "3"}, {"text": "4 - MAX", "value": "4"}, {"text": "5 - MIN", "value": "5"}, {"text": "6 - PRODUCT", "value": "6"}, {"text": "7 - STDEV.S", "value": "7"}, {"text": "8 - STDEV.P", "value": "8"}, {"text": "9 - SUM", "value": "9"}, {"text": "10 - VAR.S", "value": "10"}, {"text": "11 - VAR.P", "value": "11"}, {"text": "12 - MEDIAN", "value": "12"}, {"text": "14 - LARGE", "value": "14"}, {"text": "15 - SMALL", "value": "15"}]}, {"call": "valuesOf", "args": [1], "is": [{"text": "0 - Ignore nested SUBTOTAL and AGGREGATE functions", "value": "0"}, {"text": "1 - Ignore hidden rows, nested SUBTOTAL and AGGREGATE functions", "value": "1"}, {"text": "2 - Ignore error values, nested SUBTOTAL and AGGREGATE functions", "value": "2"}, {"text": "3 - Ignore hidden rows, error values, nested SUBTOTAL and AGGREGATE functions", "value": "3"}, {"text": "4 - Ignore nothing", "value": "4"}, {"text": "5 - Ignore hidden rows", "value": "5"}, {"text": "6 - Ignore error values", "value": "6"}, {"text": "7 - Ignore hidden rows and error values", "value": "7"}]}, {"call": "valuesOf", "args": [2], "is": []}]
+    },
+    {
+      "name": "ADR-0058, SH-36: at match_mode the values are listed before anything is typed, with Excel's texts, in Excel's order: '=XLOOKUP(1,A2:A4,B2:B4,,|'",
+      "call": "FormulaEntry.complete",
+      "args": ["=XLOOKUP(1,A2:A4,B2:B4,,", 24, []],
+      "is": {"start": 24, "length": 0, "candidates": [{"name": "0 - Exact match", "kind": "argumentValue"}, {"name": "-1 - Exact match or next smaller item", "kind": "argumentValue"}, {"name": "1 - Exact match or next larger item", "kind": "argumentValue"}, {"name": "2 - Wildcard character match", "kind": "argumentValue"}, {"name": "3 - Regex match", "kind": "argumentValue"}]}
+    },
+    {
+      "name": "ADR-0058, SH-36: at match_mode the values are listed before anything is typed, with Excel's texts, in Excel's order: '=XLOOKUP(1,A2:A4,B2:B4,,|)'",
+      "call": "FormulaEntry.complete",
+      "args": ["=XLOOKUP(1,A2:A4,B2:B4,,)", 24, []],
+      "is": {"start": 24, "length": 0, "candidates": [{"name": "0 - Exact match", "kind": "argumentValue"}, {"name": "-1 - Exact match or next smaller item", "kind": "argumentValue"}, {"name": "1 - Exact match or next larger item", "kind": "argumentValue"}, {"name": "2 - Wildcard character match", "kind": "argumentValue"}, {"name": "3 - Regex match", "kind": "argumentValue"}]}
+    },
+    {
+      "name": "ADR-0058, SH-36: at match_mode the values are listed before anything is typed, with Excel's texts, in Excel's order: '=XLOOKUP(1,A2:A4,B2:B4,,|,1)'",
+      "call": "FormulaEntry.complete",
+      "args": ["=XLOOKUP(1,A2:A4,B2:B4,,,1)", 24, []],
+      "is": {"start": 24, "length": 0, "candidates": [{"name": "0 - Exact match", "kind": "argumentValue"}, {"name": "-1 - Exact match or next smaller item", "kind": "argumentValue"}, {"name": "1 - Exact match or next larger item", "kind": "argumentValue"}, {"name": "2 - Wildcard character match", "kind": "argumentValue"}, {"name": "3 - Regex match", "kind": "argumentValue"}]}
+    },
+    {
+      "name": "ADR-0058, SH-36: at match_mode the values are listed before anything is typed, with Excel's texts, in Excel's order: '=XLOOKUP(1, A2:A4, B2:B4, , |'",
+      "call": "FormulaEntry.complete",
+      "args": ["=XLOOKUP(1, A2:A4, B2:B4, , ", 28, []],
+      "is": {"start": 28, "length": 0, "candidates": [{"name": "0 - Exact match", "kind": "argumentValue"}, {"name": "-1 - Exact match or next smaller item", "kind": "argumentValue"}, {"name": "1 - Exact match or next larger item", "kind": "argumentValue"}, {"name": "2 - Wildcard character match", "kind": "argumentValue"}, {"name": "3 - Regex match", "kind": "argumentValue"}]}
+    },
+    {
+      "name": "ADR-0058, SH-36: at match_mode the values are listed before anything is typed, with Excel's texts, in Excel's order: '=xlookup(1,A2:A4,B2:B4,\"none\",|'",
+      "call": "FormulaEntry.complete",
+      "args": ["=xlookup(1,A2:A4,B2:B4,\"none\",", 30, []],
+      "is": {"start": 30, "length": 0, "candidates": [{"name": "0 - Exact match", "kind": "argumentValue"}, {"name": "-1 - Exact match or next smaller item", "kind": "argumentValue"}, {"name": "1 - Exact match or next larger item", "kind": "argumentValue"}, {"name": "2 - Wildcard character match", "kind": "argumentValue"}, {"name": "3 - Regex match", "kind": "argumentValue"}]}
+    },
+    {
+      "name": "ADR-0058, SH-36: at match_mode the values are listed before anything is typed, with Excel's texts, in Excel's order: '=IF(A1,XLOOKUP(1,A2:A4,B2:B4,,|'",
+      "call": "FormulaEntry.complete",
+      "args": ["=IF(A1,XLOOKUP(1,A2:A4,B2:B4,,", 30, []],
+      "is": {"start": 30, "length": 0, "candidates": [{"name": "0 - Exact match", "kind": "argumentValue"}, {"name": "-1 - Exact match or next smaller item", "kind": "argumentValue"}, {"name": "1 - Exact match or next larger item", "kind": "argumentValue"}, {"name": "2 - Wildcard character match", "kind": "argumentValue"}, {"name": "3 - Regex match", "kind": "argumentValue"}]}
+    },
+    {
+      "name": "ADR-0058, SH-36: at match_mode the values are listed before anything is typed, with Excel's texts, in Excel's order: '=XLOOKUP(SUM(1,2),A2:A4,B2:B4,,|'",
+      "call": "FormulaEntry.complete",
+      "args": ["=XLOOKUP(SUM(1,2),A2:A4,B2:B4,,", 31, []],
+      "is": {"start": 31, "length": 0, "candidates": [{"name": "0 - Exact match", "kind": "argumentValue"}, {"name": "-1 - Exact match or next smaller item", "kind": "argumentValue"}, {"name": "1 - Exact match or next larger item", "kind": "argumentValue"}, {"name": "2 - Wildcard character match", "kind": "argumentValue"}, {"name": "3 - Regex match", "kind": "argumentValue"}]}
+    },
+    {
+      "name": "ADR-0058, SH-36: at search_mode its four values are listed, \"order)\" and all (the ninth Windows run, case 12): '=XLOOKUP(1,A2:A4,B2:B4,,0,|'",
+      "call": "FormulaEntry.complete",
+      "args": ["=XLOOKUP(1,A2:A4,B2:B4,,0,", 26, []],
+      "is": {"candidates": [{"name": "1 - Search first-to-last"}, {"name": "-1 - Search last-to-first"}, {"name": "2 - Binary search (sorted ascending order)"}, {"name": "-2 - Binary search (sorted descending order)"}]}
+    },
+    {
+      "name": "ADR-0058, SH-36: accepting a value writes its number, not its text: '=XLOOKUP(1,A2:A4,B2:B4,,|'",
+      "call": "FormulaEntry.complete",
+      "args": ["=XLOOKUP(1,A2:A4,B2:B4,,", 24, []],
+      "is": {"candidates": [{"insertText": "0", "description": null}, {"insertText": "-1", "description": null}, {"insertText": "1", "description": null}, {"insertText": "2", "description": null}, {"insertText": "3", "description": null}]}
+    },
+    {
+      "name": "ADR-0058 (the tenth Windows run), SH-36: the beginning of a value lists every value, the first to be chosen (Excel does not narrow a value list by prefix), and accepting one replaces what was typed: '=XLOOKUP(1,A2:A4,B2:B4,,-|'",
+      "call": "FormulaEntry.complete",
+      "args": ["=XLOOKUP(1,A2:A4,B2:B4,,-", 25, []],
+      "is": {"start": 24, "length": 1, "candidates": [{"name": "0 - Exact match"}, {"name": "-1 - Exact match or next smaller item"}, {"name": "1 - Exact match or next larger item"}, {"name": "2 - Wildcard character match"}, {"name": "3 - Regex match"}]}
+    },
+    {
+      "name": "ADR-0058 (the tenth Windows run), SH-36: the beginning of a value lists every value, the first to be chosen (Excel does not narrow a value list by prefix), and accepting one replaces what was typed: '=XLOOKUP(1,A2:A4,B2:B4,,0,-|'",
+      "call": "FormulaEntry.complete",
+      "args": ["=XLOOKUP(1,A2:A4,B2:B4,,0,-", 27, []],
+      "is": {"start": 26, "length": 1, "candidates": [{"name": "1 - Search first-to-last"}, {"name": "-1 - Search last-to-first"}, {"name": "2 - Binary search (sorted ascending order)"}, {"name": "-2 - Binary search (sorted descending order)"}]}
+    },
+    {
+      "name": "ADR-0058 (the tenth Windows run), SH-36: the beginning of a value lists every value, the first to be chosen (Excel does not narrow a value list by prefix), and accepting one replaces what was typed: '=XLOOKUP(1,A2:A4,B2:B4,, -|)'",
+      "call": "FormulaEntry.complete",
+      "args": ["=XLOOKUP(1,A2:A4,B2:B4,, -)", 26, []],
+      "is": {"start": 25, "length": 1, "candidates": [{"name": "0 - Exact match"}, {"name": "-1 - Exact match or next smaller item"}, {"name": "1 - Exact match or next larger item"}, {"name": "2 - Wildcard character match"}, {"name": "3 - Regex match"}]}
+    },
+    {
+      "name": "ADR-0058 (Part B of the ninth Windows run, x1; Q49), SH-36: the value list opens only while nothing of the argument stands after the caret; with the caret before a value, or inside one, nothing is listed, and the argument's hint still shows: '=XLOOKUP(1,A2:A4,B2:B4,,|1)'",
+      "call": "FormulaEntry.complete",
+      "args": ["=XLOOKUP(1,A2:A4,B2:B4,,1)", 24, []],
+      "is": null
+    },
+    {
+      "name": "ADR-0058 (Part B of the ninth Windows run, x1; Q49), SH-36: the value list opens only while nothing of the argument stands after the caret; with the caret before a value, or inside one, nothing is listed, and the argument's hint still shows, its hint: '=XLOOKUP(1,A2:A4,B2:B4,,|1)'",
+      "call": "FormulaEntry.hintAt",
+      "args": ["=XLOOKUP(1,A2:A4,B2:B4,,1)", 24],
+      "is": {"function": {"name": "XLOOKUP"}}
+    },
+    {
+      "name": "ADR-0058 (Part B of the ninth Windows run, x1; Q49), SH-36: the value list opens only while nothing of the argument stands after the caret; with the caret before a value, or inside one, nothing is listed, and the argument's hint still shows: '=XLOOKUP(1,A2:A4,B2:B4,,|-1)'",
+      "call": "FormulaEntry.complete",
+      "args": ["=XLOOKUP(1,A2:A4,B2:B4,,-1)", 24, []],
+      "is": null
+    },
+    {
+      "name": "ADR-0058 (Part B of the ninth Windows run, x1; Q49), SH-36: the value list opens only while nothing of the argument stands after the caret; with the caret before a value, or inside one, nothing is listed, and the argument's hint still shows, its hint: '=XLOOKUP(1,A2:A4,B2:B4,,|-1)'",
+      "call": "FormulaEntry.hintAt",
+      "args": ["=XLOOKUP(1,A2:A4,B2:B4,,-1)", 24],
+      "is": {"function": {"name": "XLOOKUP"}}
+    },
+    {
+      "name": "ADR-0058 (Part B of the ninth Windows run, x1; Q49), SH-36: the value list opens only while nothing of the argument stands after the caret; with the caret before a value, or inside one, nothing is listed, and the argument's hint still shows: '=XLOOKUP(1,A2:A4,B2:B4,,-|1)'",
+      "call": "FormulaEntry.complete",
+      "args": ["=XLOOKUP(1,A2:A4,B2:B4,,-1)", 25, []],
+      "is": null
+    },
+    {
+      "name": "ADR-0058 (Part B of the ninth Windows run, x1; Q49), SH-36: the value list opens only while nothing of the argument stands after the caret; with the caret before a value, or inside one, nothing is listed, and the argument's hint still shows, its hint: '=XLOOKUP(1,A2:A4,B2:B4,,-|1)'",
+      "call": "FormulaEntry.hintAt",
+      "args": ["=XLOOKUP(1,A2:A4,B2:B4,,-1)", 25],
+      "is": {"function": {"name": "XLOOKUP"}}
+    },
+    {
+      "name": "ADR-0058 (Part B of the ninth Windows run, x1; Q49), SH-36: the value list opens only while nothing of the argument stands after the caret; with the caret before a value, or inside one, nothing is listed, and the argument's hint still shows: '=XLOOKUP(1,A2:A4,B2:B4,,-|1'",
+      "call": "FormulaEntry.complete",
+      "args": ["=XLOOKUP(1,A2:A4,B2:B4,,-1", 25, []],
+      "is": null
+    },
+    {
+      "name": "ADR-0058 (Part B of the ninth Windows run, x1; Q49), SH-36: the value list opens only while nothing of the argument stands after the caret; with the caret before a value, or inside one, nothing is listed, and the argument's hint still shows, its hint: '=XLOOKUP(1,A2:A4,B2:B4,,-|1'",
+      "call": "FormulaEntry.hintAt",
+      "args": ["=XLOOKUP(1,A2:A4,B2:B4,,-1", 25],
+      "is": {"function": {"name": "XLOOKUP"}}
+    },
+    {
+      "name": "ADR-0058 (Part B of the ninth Windows run, x1; Q49), SH-36: the value list opens only while nothing of the argument stands after the caret; with the caret before a value, or inside one, nothing is listed, and the argument's hint still shows: '=XLOOKUP(1,A2:A4,B2:B4,,| 1)'",
+      "call": "FormulaEntry.complete",
+      "args": ["=XLOOKUP(1,A2:A4,B2:B4,, 1)", 24, []],
+      "is": null
+    },
+    {
+      "name": "ADR-0058 (Part B of the ninth Windows run, x1; Q49), SH-36: the value list opens only while nothing of the argument stands after the caret; with the caret before a value, or inside one, nothing is listed, and the argument's hint still shows, its hint: '=XLOOKUP(1,A2:A4,B2:B4,,| 1)'",
+      "call": "FormulaEntry.hintAt",
+      "args": ["=XLOOKUP(1,A2:A4,B2:B4,, 1)", 24],
+      "is": {"function": {"name": "XLOOKUP"}}
+    },
+    {
+      "name": "ADR-0058 (Part B of the ninth Windows run, x1; Q49), SH-36: the value list opens only while nothing of the argument stands after the caret; with the caret before a value, or inside one, nothing is listed, and the argument's hint still shows: '=XLOOKUP(1,A2:A4,B2:B4,,|1,0)'",
+      "call": "FormulaEntry.complete",
+      "args": ["=XLOOKUP(1,A2:A4,B2:B4,,1,0)", 24, []],
+      "is": null
+    },
+    {
+      "name": "ADR-0058 (Part B of the ninth Windows run, x1; Q49), SH-36: the value list opens only while nothing of the argument stands after the caret; with the caret before a value, or inside one, nothing is listed, and the argument's hint still shows, its hint: '=XLOOKUP(1,A2:A4,B2:B4,,|1,0)'",
+      "call": "FormulaEntry.hintAt",
+      "args": ["=XLOOKUP(1,A2:A4,B2:B4,,1,0)", 24],
+      "is": {"function": {"name": "XLOOKUP"}}
+    },
+    {
+      "name": "ADR-0058 (Part B of the ninth Windows run, x1; Q49), SH-36: the value list opens only while nothing of the argument stands after the caret; with the caret before a value, or inside one, nothing is listed, and the argument's hint still shows: '=XLOOKUP(1,A2:A4,B2:B4,,0,|-2)'",
+      "call": "FormulaEntry.complete",
+      "args": ["=XLOOKUP(1,A2:A4,B2:B4,,0,-2)", 26, []],
+      "is": null
+    },
+    {
+      "name": "ADR-0058 (Part B of the ninth Windows run, x1; Q49), SH-36: the value list opens only while nothing of the argument stands after the caret; with the caret before a value, or inside one, nothing is listed, and the argument's hint still shows, its hint: '=XLOOKUP(1,A2:A4,B2:B4,,0,|-2)'",
+      "call": "FormulaEntry.hintAt",
+      "args": ["=XLOOKUP(1,A2:A4,B2:B4,,0,-2)", 26],
+      "is": {"function": {"name": "XLOOKUP"}}
+    },
+    {
+      "name": "ADR-0058 (Part B of the ninth Windows run, x1; Q49), SH-36: the value list opens only while nothing of the argument stands after the caret; with the caret before a value, or inside one, nothing is listed, and the argument's hint still shows: '=XLOOKUP(1,A2:A4,B2:B4,,0,-|2)'",
+      "call": "FormulaEntry.complete",
+      "args": ["=XLOOKUP(1,A2:A4,B2:B4,,0,-2)", 27, []],
+      "is": null
+    },
+    {
+      "name": "ADR-0058 (Part B of the ninth Windows run, x1; Q49), SH-36: the value list opens only while nothing of the argument stands after the caret; with the caret before a value, or inside one, nothing is listed, and the argument's hint still shows, its hint: '=XLOOKUP(1,A2:A4,B2:B4,,0,-|2)'",
+      "call": "FormulaEntry.hintAt",
+      "args": ["=XLOOKUP(1,A2:A4,B2:B4,,0,-2)", 27],
+      "is": {"function": {"name": "XLOOKUP"}}
+    },
+    {
+      "name": "ADR-0058 (Q49), SH-36: what follows the argument is not of it; a value list still opens with the caret before the comma or the parenthesis that ends it: '=XLOOKUP(1,A2:A4,B2:B4,,|,1)'",
+      "call": "FormulaEntry.complete",
+      "args": ["=XLOOKUP(1,A2:A4,B2:B4,,,1)", 24, []],
+      "is": {"candidates": [{"name": "0 - Exact match"}, {"name": "-1 - Exact match or next smaller item"}, {"name": "1 - Exact match or next larger item"}, {"name": "2 - Wildcard character match"}, {"name": "3 - Regex match"}]}
+    },
+    {
+      "name": "ADR-0058 (Q49), SH-36: what follows the argument is not of it; a value list still opens with the caret before the comma or the parenthesis that ends it: '=XLOOKUP(1,A2:A4,B2:B4,,|)'",
+      "call": "FormulaEntry.complete",
+      "args": ["=XLOOKUP(1,A2:A4,B2:B4,,)", 24, []],
+      "is": {"candidates": [{"name": "0 - Exact match"}, {"name": "-1 - Exact match or next smaller item"}, {"name": "1 - Exact match or next larger item"}, {"name": "2 - Wildcard character match"}, {"name": "3 - Regex match"}]}
+    },
+    {
+      "name": "ADR-0058 (Q49), SH-36: what follows the argument is not of it; a value list still opens with the caret before the comma or the parenthesis that ends it: '=XLOOKUP(1,A2:A4,B2:B4,,-|)'",
+      "call": "FormulaEntry.complete",
+      "args": ["=XLOOKUP(1,A2:A4,B2:B4,,-)", 25, []],
+      "is": {"candidates": [{"name": "0 - Exact match"}, {"name": "-1 - Exact match or next smaller item"}, {"name": "1 - Exact match or next larger item"}, {"name": "2 - Wildcard character match"}, {"name": "3 - Regex match"}]}
+    },
+    {
+      "name": "ADR-0058 (Q49), SH-36: what follows the argument is not of it; a value list still opens with the caret before the comma or the parenthesis that ends it: '=XLOOKUP(1,A2:A4,B2:B4,,0|,1)'",
+      "call": "FormulaEntry.complete",
+      "args": ["=XLOOKUP(1,A2:A4,B2:B4,,0,1)", 25, []],
+      "is": {"candidates": [{"name": "0 - Exact match"}]}
+    },
+    {
+      "name": "ADR-0058 (Q49), SH-36: what follows the argument is not of it; a value list still opens with the caret before the comma or the parenthesis that ends it: '=XLOOKUP(1,A2:A4,B2:B4,,0,|)'",
+      "call": "FormulaEntry.complete",
+      "args": ["=XLOOKUP(1,A2:A4,B2:B4,,0,)", 26, []],
+      "is": {"candidates": [{"name": "1 - Search first-to-last"}, {"name": "-1 - Search last-to-first"}, {"name": "2 - Binary search (sorted ascending order)"}, {"name": "-2 - Binary search (sorted descending order)"}]}
+    },
+    {
+      "name": "ADR-0058 (Q49), SH-36: what follows the argument is not of it; a value list still opens with the caret before the comma or the parenthesis that ends it: '=XLOOKUP(1,A2:A4,B2:B4,,  |)'",
+      "call": "FormulaEntry.complete",
+      "args": ["=XLOOKUP(1,A2:A4,B2:B4,,  )", 26, []],
+      "is": {"candidates": [{"name": "0 - Exact match"}, {"name": "-1 - Exact match or next smaller item"}, {"name": "1 - Exact match or next larger item"}, {"name": "2 - Wildcard character match"}, {"name": "3 - Regex match"}]}
+    },
+    {
+      "name": "ADR-0058 (the tenth Windows run, case 1), SH-36: a value typed whole, with the caret after it, lists that value alone (0 lists 0 - Exact match), and accepting it writes it again over itself: '=XLOOKUP(1,A2:A4,B2:B4,,0|'",
+      "call": "FormulaEntry.complete",
+      "args": ["=XLOOKUP(1,A2:A4,B2:B4,,0", 25, []],
+      "is": {"start": 24, "length": 1, "candidates": [{"name": "0 - Exact match", "kind": "argumentValue", "insertText": "0"}]}
+    },
+    {
+      "name": "ADR-0058 (the tenth Windows run, case 1), SH-36: a value typed whole, with the caret after it, lists that value alone (0 lists 0 - Exact match), and accepting it writes it again over itself: '=XLOOKUP(1,A2:A4,B2:B4,,-1|'",
+      "call": "FormulaEntry.complete",
+      "args": ["=XLOOKUP(1,A2:A4,B2:B4,,-1", 26, []],
+      "is": {"start": 24, "length": 2, "candidates": [{"name": "-1 - Exact match or next smaller item", "kind": "argumentValue", "insertText": "-1"}]}
+    },
+    {
+      "name": "ADR-0058 (the tenth Windows run, case 1), SH-36: a value typed whole, with the caret after it, lists that value alone (0 lists 0 - Exact match), and accepting it writes it again over itself: '=XLOOKUP(1,A2:A4,B2:B4,,3|)'",
+      "call": "FormulaEntry.complete",
+      "args": ["=XLOOKUP(1,A2:A4,B2:B4,,3)", 25, []],
+      "is": {"start": 24, "length": 1, "candidates": [{"name": "3 - Regex match", "kind": "argumentValue", "insertText": "3"}]}
+    },
+    {
+      "name": "ADR-0058 (the tenth Windows run, case 1), SH-36: a value typed whole, with the caret after it, lists that value alone (0 lists 0 - Exact match), and accepting it writes it again over itself: '=XLOOKUP(1,A2:A4,B2:B4,, 1|)'",
+      "call": "FormulaEntry.complete",
+      "args": ["=XLOOKUP(1,A2:A4,B2:B4,, 1)", 26, []],
+      "is": {"start": 25, "length": 1, "candidates": [{"name": "1 - Exact match or next larger item", "kind": "argumentValue", "insertText": "1"}]}
+    },
+    {
+      "name": "ADR-0058 (the tenth Windows run, case 1), SH-36: a value typed whole, with the caret after it, lists that value alone (0 lists 0 - Exact match), and accepting it writes it again over itself: '=XLOOKUP(1,A2:A4,B2:B4,,0,1|'",
+      "call": "FormulaEntry.complete",
+      "args": ["=XLOOKUP(1,A2:A4,B2:B4,,0,1", 27, []],
+      "is": {"start": 26, "length": 1, "candidates": [{"name": "1 - Search first-to-last", "kind": "argumentValue", "insertText": "1"}]}
+    },
+    {
+      "name": "ADR-0058 (the tenth Windows run, case 1), SH-36: a value typed whole, with the caret after it, lists that value alone (0 lists 0 - Exact match), and accepting it writes it again over itself: '=XLOOKUP(1,A2:A4,B2:B4,,0,-2|'",
+      "call": "FormulaEntry.complete",
+      "args": ["=XLOOKUP(1,A2:A4,B2:B4,,0,-2", 28, []],
+      "is": {"start": 26, "length": 2, "candidates": [{"name": "-2 - Binary search (sorted descending order)", "kind": "argumentValue", "insertText": "-2"}]}
+    },
+    {
+      "name": "ADR-0058 (the thirteenth Windows run, Q54; the ninth, Part B), SH-36: a number that is no value of the argument lists nothing (4 at match_mode, 5 at search_mode), and the argument's hint still shows: '=XLOOKUP(1,A2:A4,B2:B4,,4|'",
+      "call": "FormulaEntry.complete",
+      "args": ["=XLOOKUP(1,A2:A4,B2:B4,,4", 25, []],
+      "is": null
+    },
+    {
+      "name": "ADR-0058 (the thirteenth Windows run, Q54; the ninth, Part B), SH-36: a number that is no value of the argument lists nothing (4 at match_mode, 5 at search_mode), and the argument's hint still shows, its hint: '=XLOOKUP(1,A2:A4,B2:B4,,4|'",
+      "call": "FormulaEntry.hintAt",
+      "args": ["=XLOOKUP(1,A2:A4,B2:B4,,4", 25],
+      "is": {"function": {"name": "XLOOKUP"}}
+    },
+    {
+      "name": "ADR-0058 (the thirteenth Windows run, Q54; the ninth, Part B), SH-36: a number that is no value of the argument lists nothing (4 at match_mode, 5 at search_mode), and the argument's hint still shows: '=XLOOKUP(1,A2:A4,B2:B4,,10|'",
+      "call": "FormulaEntry.complete",
+      "args": ["=XLOOKUP(1,A2:A4,B2:B4,,10", 26, []],
+      "is": null
+    },
+    {
+      "name": "ADR-0058 (the thirteenth Windows run, Q54; the ninth, Part B), SH-36: a number that is no value of the argument lists nothing (4 at match_mode, 5 at search_mode), and the argument's hint still shows, its hint: '=XLOOKUP(1,A2:A4,B2:B4,,10|'",
+      "call": "FormulaEntry.hintAt",
+      "args": ["=XLOOKUP(1,A2:A4,B2:B4,,10", 26],
+      "is": {"function": {"name": "XLOOKUP"}}
+    },
+    {
+      "name": "ADR-0058 (the thirteenth Windows run, Q54; the ninth, Part B), SH-36: a number that is no value of the argument lists nothing (4 at match_mode, 5 at search_mode), and the argument's hint still shows: '=XLOOKUP(1,A2:A4,B2:B4,,-2|'",
+      "call": "FormulaEntry.complete",
+      "args": ["=XLOOKUP(1,A2:A4,B2:B4,,-2", 26, []],
+      "is": null
+    },
+    {
+      "name": "ADR-0058 (the thirteenth Windows run, Q54; the ninth, Part B), SH-36: a number that is no value of the argument lists nothing (4 at match_mode, 5 at search_mode), and the argument's hint still shows, its hint: '=XLOOKUP(1,A2:A4,B2:B4,,-2|'",
+      "call": "FormulaEntry.hintAt",
+      "args": ["=XLOOKUP(1,A2:A4,B2:B4,,-2", 26],
+      "is": {"function": {"name": "XLOOKUP"}}
+    },
+    {
+      "name": "ADR-0058 (the thirteenth Windows run, Q54; the ninth, Part B), SH-36: a number that is no value of the argument lists nothing (4 at match_mode, 5 at search_mode), and the argument's hint still shows: '=XLOOKUP(1,A2:A4,B2:B4,,2.5|)'",
+      "call": "FormulaEntry.complete",
+      "args": ["=XLOOKUP(1,A2:A4,B2:B4,,2.5)", 27, []],
+      "is": null
+    },
+    {
+      "name": "ADR-0058 (the thirteenth Windows run, Q54; the ninth, Part B), SH-36: a number that is no value of the argument lists nothing (4 at match_mode, 5 at search_mode), and the argument's hint still shows, its hint: '=XLOOKUP(1,A2:A4,B2:B4,,2.5|)'",
+      "call": "FormulaEntry.hintAt",
+      "args": ["=XLOOKUP(1,A2:A4,B2:B4,,2.5)", 27],
+      "is": {"function": {"name": "XLOOKUP"}}
+    },
+    {
+      "name": "ADR-0058 (the thirteenth Windows run, Q54; the ninth, Part B), SH-36: a number that is no value of the argument lists nothing (4 at match_mode, 5 at search_mode), and the argument's hint still shows: '=XLOOKUP(1,A2:A4,B2:B4,,0,5|'",
+      "call": "FormulaEntry.complete",
+      "args": ["=XLOOKUP(1,A2:A4,B2:B4,,0,5", 27, []],
+      "is": null
+    },
+    {
+      "name": "ADR-0058 (the thirteenth Windows run, Q54; the ninth, Part B), SH-36: a number that is no value of the argument lists nothing (4 at match_mode, 5 at search_mode), and the argument's hint still shows, its hint: '=XLOOKUP(1,A2:A4,B2:B4,,0,5|'",
+      "call": "FormulaEntry.hintAt",
+      "args": ["=XLOOKUP(1,A2:A4,B2:B4,,0,5", 27],
+      "is": {"function": {"name": "XLOOKUP"}}
+    },
+    {
+      "name": "ADR-0058 (the thirteenth Windows run, Q54; the ninth, Part B), SH-36: a number that is no value of the argument lists nothing (4 at match_mode, 5 at search_mode), and the argument's hint still shows: '=XLOOKUP(1,A2:A4,B2:B4,,0,3|'",
+      "call": "FormulaEntry.complete",
+      "args": ["=XLOOKUP(1,A2:A4,B2:B4,,0,3", 27, []],
+      "is": null
+    },
+    {
+      "name": "ADR-0058 (the thirteenth Windows run, Q54; the ninth, Part B), SH-36: a number that is no value of the argument lists nothing (4 at match_mode, 5 at search_mode), and the argument's hint still shows, its hint: '=XLOOKUP(1,A2:A4,B2:B4,,0,3|'",
+      "call": "FormulaEntry.hintAt",
+      "args": ["=XLOOKUP(1,A2:A4,B2:B4,,0,3", 27],
+      "is": {"function": {"name": "XLOOKUP"}}
+    },
+    {
+      "name": "ADR-0058 (Q54), SH-36: a number is read as the grammar reads one, with its sign, and lists the value it is (1.0 is the value 1), so Tab on a number writes that same number or nothing (decided with the user 2026-10-01, not asked of Excel): '=XLOOKUP(1,A2:A4,B2:B4,,1.0|'",
+      "call": "FormulaEntry.complete",
+      "args": ["=XLOOKUP(1,A2:A4,B2:B4,,1.0", 27, []],
+      "is": {"start": 24, "length": 3, "candidates": [{"name": "1 - Exact match or next larger item"}]}
+    },
+    {
+      "name": "ADR-0058 (Q54), SH-36: a number is read as the grammar reads one, with its sign, and lists the value it is (1.0 is the value 1), so Tab on a number writes that same number or nothing (decided with the user 2026-10-01, not asked of Excel): '=XLOOKUP(1,A2:A4,B2:B4,,+1|'",
+      "call": "FormulaEntry.complete",
+      "args": ["=XLOOKUP(1,A2:A4,B2:B4,,+1", 26, []],
+      "is": {"start": 24, "length": 2, "candidates": [{"name": "1 - Exact match or next larger item"}]}
+    },
+    {
+      "name": "ADR-0058 (Q54), SH-36: a number is read as the grammar reads one, with its sign, and lists the value it is (1.0 is the value 1), so Tab on a number writes that same number or nothing (decided with the user 2026-10-01, not asked of Excel): '=XLOOKUP(1,A2:A4,B2:B4,,-0|'",
+      "call": "FormulaEntry.complete",
+      "args": ["=XLOOKUP(1,A2:A4,B2:B4,,-0", 26, []],
+      "is": {"start": 24, "length": 2, "candidates": [{"name": "0 - Exact match"}]}
+    },
+    {
+      "name": "ADR-0058 (Q54), SH-36: a number is read as the grammar reads one, with its sign, and lists the value it is (1.0 is the value 1), so Tab on a number writes that same number or nothing (decided with the user 2026-10-01, not asked of Excel): '=XLOOKUP(1,A2:A4,B2:B4,,1 |'",
+      "call": "FormulaEntry.complete",
+      "args": ["=XLOOKUP(1,A2:A4,B2:B4,,1 ", 26, []],
+      "is": {"start": 24, "length": 2, "candidates": [{"name": "1 - Exact match or next larger item"}]}
+    },
+    {
+      "name": "ADR-0058 (Q54), SH-36: a number is read as the grammar reads one, with its sign, and lists the value it is (1.0 is the value 1), so Tab on a number writes that same number or nothing (decided with the user 2026-10-01, not asked of Excel): '=XLOOKUP(1,A2:A4,B2:B4,,0,-2E0|'",
+      "call": "FormulaEntry.complete",
+      "args": ["=XLOOKUP(1,A2:A4,B2:B4,,0,-2E0", 30, []],
+      "is": {"start": 26, "length": 4, "candidates": [{"name": "-2 - Binary search (sorted descending order)"}]}
+    },
+    {
+      "name": "ADR-0058 (the thirteenth Windows run, Q55; 11a), SH-36: white space after the caret is something of the argument; with the caret before it, nothing is listed, and the hint still shows: '=XLOOKUP(1,A2:A4,B2:B4,,|  )'",
+      "call": "FormulaEntry.complete",
+      "args": ["=XLOOKUP(1,A2:A4,B2:B4,,  )", 24, []],
+      "is": null
+    },
+    {
+      "name": "ADR-0058 (the thirteenth Windows run, Q55; 11a), SH-36: white space after the caret is something of the argument; with the caret before it, nothing is listed, and the hint still shows, its hint: '=XLOOKUP(1,A2:A4,B2:B4,,|  )'",
+      "call": "FormulaEntry.hintAt",
+      "args": ["=XLOOKUP(1,A2:A4,B2:B4,,  )", 24],
+      "is": {"currentArgument": "[match_mode]"}
+    },
+    {
+      "name": "ADR-0058 (the thirteenth Windows run, Q55; 11a), SH-36: white space after the caret is something of the argument; with the caret before it, nothing is listed, and the hint still shows: '=XLOOKUP(1,A2:A4,B2:B4,,|  '",
+      "call": "FormulaEntry.complete",
+      "args": ["=XLOOKUP(1,A2:A4,B2:B4,,  ", 24, []],
+      "is": null
+    },
+    {
+      "name": "ADR-0058 (the thirteenth Windows run, Q55; 11a), SH-36: white space after the caret is something of the argument; with the caret before it, nothing is listed, and the hint still shows, its hint: '=XLOOKUP(1,A2:A4,B2:B4,,|  '",
+      "call": "FormulaEntry.hintAt",
+      "args": ["=XLOOKUP(1,A2:A4,B2:B4,,  ", 24],
+      "is": {"currentArgument": "[match_mode]"}
+    },
+    {
+      "name": "ADR-0058 (the thirteenth Windows run, Q55; 11a), SH-36: white space after the caret is something of the argument; with the caret before it, nothing is listed, and the hint still shows: '=XLOOKUP(1,A2:A4,B2:B4,,| ,1)'",
+      "call": "FormulaEntry.complete",
+      "args": ["=XLOOKUP(1,A2:A4,B2:B4,, ,1)", 24, []],
+      "is": null
+    },
+    {
+      "name": "ADR-0058 (the thirteenth Windows run, Q55; 11a), SH-36: white space after the caret is something of the argument; with the caret before it, nothing is listed, and the hint still shows, its hint: '=XLOOKUP(1,A2:A4,B2:B4,,| ,1)'",
+      "call": "FormulaEntry.hintAt",
+      "args": ["=XLOOKUP(1,A2:A4,B2:B4,, ,1)", 24],
+      "is": {"currentArgument": "[match_mode]"}
+    },
+    {
+      "name": "ADR-0058 (the thirteenth Windows run, Q55; 11a), SH-36: white space after the caret is something of the argument; with the caret before it, nothing is listed, and the hint still shows: '=XLOOKUP(1,A2:A4,B2:B4,, | )'",
+      "call": "FormulaEntry.complete",
+      "args": ["=XLOOKUP(1,A2:A4,B2:B4,,  )", 25, []],
+      "is": null
+    },
+    {
+      "name": "ADR-0058 (the thirteenth Windows run, Q55; 11a), SH-36: white space after the caret is something of the argument; with the caret before it, nothing is listed, and the hint still shows, its hint: '=XLOOKUP(1,A2:A4,B2:B4,, | )'",
+      "call": "FormulaEntry.hintAt",
+      "args": ["=XLOOKUP(1,A2:A4,B2:B4,,  )", 25],
+      "is": {"currentArgument": "[match_mode]"}
+    },
+    {
+      "name": "ADR-0058 (the thirteenth Windows run, Q55; 11a), SH-36: white space after the caret is something of the argument; with the caret before it, nothing is listed, and the hint still shows: '=XLOOKUP(1,A2:A4,B2:B4,,0| )'",
+      "call": "FormulaEntry.complete",
+      "args": ["=XLOOKUP(1,A2:A4,B2:B4,,0 )", 25, []],
+      "is": null
+    },
+    {
+      "name": "ADR-0058 (the thirteenth Windows run, Q55; 11a), SH-36: white space after the caret is something of the argument; with the caret before it, nothing is listed, and the hint still shows, its hint: '=XLOOKUP(1,A2:A4,B2:B4,,0| )'",
+      "call": "FormulaEntry.hintAt",
+      "args": ["=XLOOKUP(1,A2:A4,B2:B4,,0 )", 25],
+      "is": {"currentArgument": "[match_mode]"}
+    },
+    {
+      "name": "ADR-0058 (the thirteenth Windows run, Q55; 11a), SH-36: white space after the caret is something of the argument; with the caret before it, nothing is listed, and the hint still shows: '=XLOOKUP(1,A2:A4,B2:B4,,-| )'",
+      "call": "FormulaEntry.complete",
+      "args": ["=XLOOKUP(1,A2:A4,B2:B4,,- )", 25, []],
+      "is": null
+    },
+    {
+      "name": "ADR-0058 (the thirteenth Windows run, Q55; 11a), SH-36: white space after the caret is something of the argument; with the caret before it, nothing is listed, and the hint still shows, its hint: '=XLOOKUP(1,A2:A4,B2:B4,,-| )'",
+      "call": "FormulaEntry.hintAt",
+      "args": ["=XLOOKUP(1,A2:A4,B2:B4,,- )", 25],
+      "is": {"currentArgument": "[match_mode]"}
+    },
+    {
+      "name": "ADR-0058 (the thirteenth Windows run, Q55; 11a), SH-36: white space after the caret is something of the argument; with the caret before it, nothing is listed, and the hint still shows: '=XLOOKUP(1,A2:A4,B2:B4,,X| )'",
+      "call": "FormulaEntry.complete",
+      "args": ["=XLOOKUP(1,A2:A4,B2:B4,,X )", 25, []],
+      "is": null
+    },
+    {
+      "name": "ADR-0058 (the thirteenth Windows run, Q55; 11a), SH-36: white space after the caret is something of the argument; with the caret before it, nothing is listed, and the hint still shows, its hint: '=XLOOKUP(1,A2:A4,B2:B4,,X| )'",
+      "call": "FormulaEntry.hintAt",
+      "args": ["=XLOOKUP(1,A2:A4,B2:B4,,X )", 25],
+      "is": {"currentArgument": "[match_mode]"}
+    },
+    {
+      "name": "ADR-0058 (the thirteenth Windows run, Q55; 11a), SH-36: white space after the caret is something of the argument; with the caret before it, nothing is listed, and the hint still shows: '=XLOOKUP(1,A2:A4,B2:B4,,0,| )'",
+      "call": "FormulaEntry.complete",
+      "args": ["=XLOOKUP(1,A2:A4,B2:B4,,0, )", 26, []],
+      "is": null
+    },
+    {
+      "name": "ADR-0058 (the thirteenth Windows run, Q55; 11a), SH-36: white space after the caret is something of the argument; with the caret before it, nothing is listed, and the hint still shows, its hint: '=XLOOKUP(1,A2:A4,B2:B4,,0,| )'",
+      "call": "FormulaEntry.hintAt",
+      "args": ["=XLOOKUP(1,A2:A4,B2:B4,,0, )", 26],
+      "is": {"currentArgument": "[search_mode]"}
+    },
+    {
+      "name": "ADR-0058, SH-36: outside a value-list argument nothing is listed for what is not a name: past the call, before what the argument holds, inside a call of its own, or in text that is not a Formula: '=XLOOKUP(1,A2:A4,B2:B4,,(|'",
+      "call": "FormulaEntry.complete",
+      "args": ["=XLOOKUP(1,A2:A4,B2:B4,,(", 25, []],
+      "is": null
+    },
+    {
+      "name": "ADR-0058, SH-36: outside a value-list argument nothing is listed for what is not a name: past the call, before what the argument holds, inside a call of its own, or in text that is not a Formula: '=XLOOKUP(1,A2:A4,B2:B4,,SUM(|'",
+      "call": "FormulaEntry.complete",
+      "args": ["=XLOOKUP(1,A2:A4,B2:B4,,SUM(", 28, []],
+      "is": null
+    },
+    {
+      "name": "ADR-0058, SH-36: outside a value-list argument nothing is listed for what is not a name: past the call, before what the argument holds, inside a call of its own, or in text that is not a Formula: '=XLOOKUP(1,A2:A4,B2:B4,,|0+1)'",
+      "call": "FormulaEntry.complete",
+      "args": ["=XLOOKUP(1,A2:A4,B2:B4,,0+1)", 24, []],
+      "is": null
+    },
+    {
+      "name": "ADR-0058, SH-36: outside a value-list argument nothing is listed for what is not a name: past the call, before what the argument holds, inside a call of its own, or in text that is not a Formula: '=XLOOKUP(1,A2:A4,B2:B4,,0)|'",
+      "call": "FormulaEntry.complete",
+      "args": ["=XLOOKUP(1,A2:A4,B2:B4,,0)", 26, []],
+      "is": null
+    },
+    {
+      "name": "ADR-0058, SH-36: outside a value-list argument nothing is listed for what is not a name: past the call, before what the argument holds, inside a call of its own, or in text that is not a Formula: 'XLOOKUP(1,A2:A4,B2:B4,,|'",
+      "call": "FormulaEntry.complete",
+      "args": ["XLOOKUP(1,A2:A4,B2:B4,,", 23, []],
+      "is": null
+    },
+    {
+      "name": "ADR-0058 / ADR-0051, SH-36: nothing is listed after =, an operator, ( or , at any other argument, so the arrows still point there, a Reference can go there: '=|'",
+      "call": "FormulaEntry.pointAt",
+      "args": ["=", 1],
+      "is": {"start": 1, "length": 0}
+    },
+    {
+      "name": "ADR-0058 / ADR-0051, SH-36: nothing is listed after =, an operator, ( or , at any other argument, so the arrows still point there, a Reference can go there: '=1+|'",
+      "call": "FormulaEntry.pointAt",
+      "args": ["=1+", 3],
+      "is": {"start": 3, "length": 0}
+    },
+    {
+      "name": "ADR-0058 / ADR-0051, SH-36: nothing is listed after =, an operator, ( or , at any other argument, so the arrows still point there, a Reference can go there: '=SUM(|'",
+      "call": "FormulaEntry.pointAt",
+      "args": ["=SUM(", 5],
+      "is": {"start": 5, "length": 0}
+    },
+    {
+      "name": "ADR-0058 / ADR-0051, SH-36: nothing is listed after =, an operator, ( or , at any other argument, so the arrows still point there, a Reference can go there: '=SUM(1,|'",
+      "call": "FormulaEntry.pointAt",
+      "args": ["=SUM(1,", 7],
+      "is": {"start": 7, "length": 0}
+    },
+    {
+      "name": "ADR-0058 / ADR-0051, SH-36: nothing is listed after =, an operator, ( or , at any other argument, so the arrows still point there, a Reference can go there: '=XLOOKUP(|'",
+      "call": "FormulaEntry.pointAt",
+      "args": ["=XLOOKUP(", 9],
+      "is": {"start": 9, "length": 0}
+    },
+    {
+      "name": "ADR-0058 / ADR-0051, SH-36: nothing is listed after =, an operator, ( or , at any other argument, so the arrows still point there, a Reference can go there: '=XLOOKUP(1,|'",
+      "call": "FormulaEntry.pointAt",
+      "args": ["=XLOOKUP(1,", 11],
+      "is": {"start": 11, "length": 0}
+    },
+    {
+      "name": "ADR-0058 / ADR-0051, SH-36: nothing is listed after =, an operator, ( or , at any other argument, so the arrows still point there, a Reference can go there: '=XLOOKUP(1,A2:A4,|'",
+      "call": "FormulaEntry.pointAt",
+      "args": ["=XLOOKUP(1,A2:A4,", 17],
+      "is": {"start": 17, "length": 0}
+    },
+    {
+      "name": "ADR-0058 / ADR-0051, SH-36: nothing is listed after =, an operator, ( or , at any other argument, so the arrows still point there, a Reference can go there: '=XLOOKUP(1,A2:A4,B2:B4,|'",
+      "call": "FormulaEntry.pointAt",
+      "args": ["=XLOOKUP(1,A2:A4,B2:B4,", 23],
+      "is": {"start": 23, "length": 0}
+    },
+    {
+      "name": "ADR-0058 / ADR-0051, SH-36: nothing is listed after =, an operator, ( or , at any other argument, so the arrows still point there, a Reference can go there: '=XLOOKUP(1,A2:A4,B2:B4,,0,1,|'",
+      "call": "FormulaEntry.pointAt",
+      "args": ["=XLOOKUP(1,A2:A4,B2:B4,,0,1,", 28],
+      "is": {"start": 28, "length": 0}
+    },
+    {
+      "name": "ADR-0058 / ADR-0051, SH-36: nothing is listed after =, an operator, ( or , at any other argument, so the arrows still point there, a Reference can go there: '=XLOOKUP(1,A2:A4,B2:B4,,(|'",
+      "call": "FormulaEntry.pointAt",
+      "args": ["=XLOOKUP(1,A2:A4,B2:B4,,(", 25],
+      "is": {"start": 25, "length": 0}
+    },
+    {
+      "name": "ADR-0058 / ADR-0051, SH-36: nothing is listed after =, an operator, ( or , at any other argument, so the arrows still point there, a Reference can go there: '=IF(XLOOKUP(1,A2:A4,B2:B4),|'",
+      "call": "FormulaEntry.pointAt",
+      "args": ["=IF(XLOOKUP(1,A2:A4,B2:B4),", 27],
+      "is": {"start": 27, "length": 0}
+    },
+    {
+      "name": "ADR-0058 / ADR-0051, SH-36: nothing is listed after =, an operator, ( or , at any other argument, so the arrows still point there, a Reference can go there: '=IF(A1,|'",
+      "call": "FormulaEntry.pointAt",
+      "args": ["=IF(A1,", 7],
+      "is": {"start": 7, "length": 0}
+    },
+    {
+      "name": "ADR-0058 / ADR-0051, SH-36: nothing is listed after =, an operator, ( or , at any other argument, so the arrows still point there, a Reference can go there: '=ROUND(A1,|'",
+      "call": "FormulaEntry.pointAt",
+      "args": ["=ROUND(A1,", 10],
+      "is": {"start": 10, "length": 0}
+    },
+    {
+      "name": "ADR-0051 / ADR-0058: the hint sets off match_mode while its values are listed",
+      "call": "FormulaEntry.hintAt",
+      "args": ["=XLOOKUP(1,A2:A4,B2:B4,,", 24],
+      "is": {"argumentIndex": 4, "currentArgument": "[match_mode]"}
+    },
+    {
+      "name": "ADR-0058, SH-36: without the tables' columns, as FormulaEntry.Complete answers with names alone, nothing is listed after Table[",
+      "call": "FormulaEntry.complete",
+      "args": ["=SUM(Positions[", 15, ["Positions"]],
+      "is": null
+    }
+  ]
+}

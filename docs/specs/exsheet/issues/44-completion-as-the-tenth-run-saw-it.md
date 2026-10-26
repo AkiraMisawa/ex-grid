@@ -60,3 +60,5 @@ passed headless on macOS with `--project=chrome`, on WebAssembly and on the Serv
 completion and Point tests beside them (DC-17, DC-19, DC-28, DC-31) and circuit.spec's "a ← typed as
 the completion list is painted": 28 of 28 and 1 of 1 on WebAssembly, 29 of 29 on Server. Edge and
 the full run are CI's.
+
+2026-10-26: the xUnit tests this ticket names (`CompletionTriggerTests`) moved to the shared cases, `tests/cases/sheet/completion-trigger.json` and `completion-trigger-sheet.json`, which both the C# engine and the Script Core run (ADR-0370 §2). Each test became cases named by the same claim; `CompletionTriggerTests` keeps the walk over every declared function, the lists read for one name, and what completion writes read back as its column, each mirrored in `surface.test.ts`.

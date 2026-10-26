@@ -76,6 +76,9 @@ export function fillPivotWord(template: string, ...args: readonly string[]): str
 export function formatPivotCount(count: number, locale: string): string;
 
 // @public
+export function formatPivotNumber(value: number, format: string, locale: string): string;
+
+// @public
 export function isEmptyLayout(layout: PivotLayout): boolean;
 
 // @public
@@ -143,6 +146,9 @@ export function numberItemKey(number: number): PivotItemKey;
 
 // @public
 export type PivotAggregation = 'sum' | 'count' | 'average' | 'max' | 'min' | 'product' | 'countNumbers' | 'stdDev' | 'stdDevp' | 'var' | 'varp';
+
+// @public
+export function pivotAggregationNameId(aggregation: PivotAggregation): string;
 
 // @public
 export const pivotAggregations: readonly PivotAggregation[];
@@ -224,6 +230,9 @@ export type PivotArea = 'filters' | 'columns' | 'rows' | 'values';
 
 // @public
 export type PivotAxis = 'columns' | 'rows';
+
+// @public
+export function pivotCaptionId(aggregation: PivotAggregation): string;
 
 // @public
 export class PivotChangeTimes {
@@ -613,6 +622,9 @@ export type PivotNumber = {
 };
 
 // @public
+export function pivotNumberFormatProblem(format: string): string | undefined;
+
+// @public
 export interface PivotOptions {
     readonly label?: PivotLabel;
     readonly locale?: string;
@@ -961,6 +973,12 @@ export type PivotRowRole = 'item' | 'group' | 'subtotal' | 'grandTotal';
 
 // @public
 export type PivotShowValuesAs = 'noCalculation' | 'percentOfGrandTotal' | 'percentOfColumnTotal' | 'percentOfRowTotal';
+
+// @public
+export const pivotShowValuesAsList: readonly PivotShowValuesAs[];
+
+// @public
+export function pivotShowValuesAsNameId(showValuesAs: PivotShowValuesAs): string;
 
 // @public
 export interface PivotSlicing {

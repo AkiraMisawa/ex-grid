@@ -1,0 +1,445 @@
+{
+  "about": "SIN, COS, TAN, COT, CSC and SEC reproduce every double Excel was observed to return for them (ADR-0047): an angle reduced by pi rounded to the x87's 64-bit significand (FLDPI), as the seventeenth Windows run observed, SIN, COS and TAN the doubles nearest the exact values of the reduced angle and COT, CSC and SEC 1 over them, divided as doubles; the known answers are spikes/exsheet-trig-reduction/compare.py's --known table. Transcribed from ExSheet.Engine.Tests' TrigonometryReductionTests.",
+  "kind": "sheet",
+  "culture": "en-US",
+  "cases": [
+    {
+      "name": "ADR-0047: the seventeenth Windows run's SIN-004, COS-004 and TAN-004, an angle reduced by the x87 pi as Excel reduces it: =SIN(PI())",
+      "steps": [
+        {"enter": {"A1": "=SIN(PI())"}, "expect": {"values": {"A1": 1.22514845490862e-16}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: the seventeenth Windows run's SIN-004, COS-004 and TAN-004, an angle reduced by the x87 pi as Excel reduces it: =COS(PI()/2)",
+      "steps": [
+        {"enter": {"A1": "=COS(PI()/2)"}, "expect": {"values": {"A1": 6.1257422745431e-17}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: the seventeenth Windows run's SIN-004, COS-004 and TAN-004, an angle reduced by the x87 pi as Excel reduces it: =TAN(PI()/2)",
+      "steps": [
+        {"enter": {"A1": "=TAN(PI()/2)"}, "expect": {"values": {"A1": 16324552277619072}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: every other full double the runs observed for the six, to the last bit: =SIN(PI()/2)",
+      "steps": [
+        {"enter": {"A1": "=SIN(PI()/2)"}, "expect": {"values": {"A1": 1}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: every other full double the runs observed for the six, to the last bit: =SIN(30*PI()/180)",
+      "steps": [
+        {"enter": {"A1": "=SIN(30*PI()/180)"}, "expect": {"values": {"A1": 0.49999999999999994}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: every other full double the runs observed for the six, to the last bit: =SIN(RADIANS(30))",
+      "steps": [
+        {"enter": {"A1": "=SIN(RADIANS(30))"}, "expect": {"values": {"A1": 0.49999999999999994}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: every other full double the runs observed for the six, to the last bit: =SIN(2^27-1)",
+      "steps": [
+        {"enter": {"A1": "=SIN(2^27-1)"}, "expect": {"values": {"A1": -0.9559933287726706}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: every other full double the runs observed for the six, to the last bit: =COS(1.047)",
+      "steps": [
+        {"enter": {"A1": "=COS(1.047)"}, "expect": {"values": {"A1": 0.5001710745970701}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: every other full double the runs observed for the six, to the last bit: =COS(60*PI()/180)",
+      "steps": [
+        {"enter": {"A1": "=COS(60*PI()/180)"}, "expect": {"values": {"A1": 0.5000000000000001}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: every other full double the runs observed for the six, to the last bit: =COS(RADIANS(60))",
+      "steps": [
+        {"enter": {"A1": "=COS(RADIANS(60))"}, "expect": {"values": {"A1": 0.5000000000000001}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: every other full double the runs observed for the six, to the last bit: =TAN(0.785)",
+      "steps": [
+        {"enter": {"A1": "=TAN(0.785)"}, "expect": {"values": {"A1": 0.9992039901050427}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: every other full double the runs observed for the six, to the last bit: =TAN(45*PI()/180)",
+      "steps": [
+        {"enter": {"A1": "=TAN(45*PI()/180)"}, "expect": {"values": {"A1": 0.9999999999999999}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: every other full double the runs observed for the six, to the last bit: =TAN(RADIANS(45))",
+      "steps": [
+        {"enter": {"A1": "=TAN(RADIANS(45))"}, "expect": {"values": {"A1": 0.9999999999999999}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: every other full double the runs observed for the six, to the last bit: =COT(30)",
+      "steps": [
+        {"enter": {"A1": "=COT(30)"}, "expect": {"values": {"A1": -0.15611995216165922}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: every other full double the runs observed for the six, to the last bit: =COT(45)",
+      "steps": [
+        {"enter": {"A1": "=COT(45)"}, "expect": {"values": {"A1": 0.6173696237835551}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: every other full double the runs observed for the six, to the last bit: =CSC(15)",
+      "steps": [
+        {"enter": {"A1": "=CSC(15)"}, "expect": {"values": {"A1": 1.5377805615408537}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: every other full double the runs observed for the six, to the last bit: =SEC(45)",
+      "steps": [
+        {"enter": {"A1": "=SEC(45)"}, "expect": {"values": {"A1": 1.9035944074044246}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: every other full double the runs observed for the six, to the last bit: =SEC(30)",
+      "steps": [
+        {"enter": {"A1": "=SEC(30)"}, "expect": {"values": {"A1": 6.482921234962678}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: every other full double the runs observed for the six, to the last bit: =SEC(0)",
+      "steps": [
+        {"enter": {"A1": "=SEC(0)"}, "expect": {"values": {"A1": 1}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: the double nearest the exact value, on every scale below 2^27 (spikes/exsheet-trig-reduction/compare.py --known): SIN, COS, TAN, COT, CSC and SEC of PI()",
+      "steps": [
+        {"enterAll": {"A1": "=SIN(PI())", "B1": "=COS(PI())", "C1": "=TAN(PI())", "D1": "=COT(PI())", "E1": "=CSC(PI())", "F1": "=SEC(PI())"}, "expect": {"values": {"A1": 1.22514845490862e-16, "B1": -1.0, "C1": -1.22514845490862e-16, "D1": -8162276138809536.0, "E1": 8162276138809536.0, "F1": -1.0}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: the double nearest the exact value, on every scale below 2^27 (spikes/exsheet-trig-reduction/compare.py --known): SIN, COS, TAN, COT, CSC and SEC of PI()/2",
+      "steps": [
+        {"enterAll": {"A1": "=SIN(PI()/2)", "B1": "=COS(PI()/2)", "C1": "=TAN(PI()/2)", "D1": "=COT(PI()/2)", "E1": "=CSC(PI()/2)", "F1": "=SEC(PI()/2)"}, "expect": {"values": {"A1": 1.0, "B1": 6.1257422745431e-17, "C1": 1.6324552277619072e+16, "D1": 6.1257422745431e-17, "E1": 1.0, "F1": 1.6324552277619072e+16}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: the double nearest the exact value, on every scale below 2^27 (spikes/exsheet-trig-reduction/compare.py --known): SIN, COS, TAN, COT, CSC and SEC of PI()/4",
+      "steps": [
+        {"enterAll": {"A1": "=SIN(PI()/4)", "B1": "=COS(PI()/4)", "C1": "=TAN(PI()/4)", "D1": "=COT(PI()/4)", "E1": "=CSC(PI()/4)", "F1": "=SEC(PI()/4)"}, "expect": {"values": {"A1": 0.7071067811865475, "B1": 0.7071067811865476, "C1": 0.9999999999999999, "D1": 1.0000000000000002, "E1": 1.4142135623730951, "F1": 1.414213562373095}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: the double nearest the exact value, on every scale below 2^27 (spikes/exsheet-trig-reduction/compare.py --known): SIN, COS, TAN, COT, CSC and SEC of 2*PI()",
+      "steps": [
+        {"enterAll": {"A1": "=SIN(2*PI())", "B1": "=COS(2*PI())", "C1": "=TAN(2*PI())", "D1": "=COT(2*PI())", "E1": "=CSC(2*PI())", "F1": "=SEC(2*PI())"}, "expect": {"values": {"A1": -2.45029690981724e-16, "B1": 1.0, "C1": -2.45029690981724e-16, "D1": -4081138069404768.0, "E1": -4081138069404768.0, "F1": 1.0}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: the double nearest the exact value, on every scale below 2^27 (spikes/exsheet-trig-reduction/compare.py --known): SIN, COS, TAN, COT, CSC and SEC of 3*PI()/2",
+      "steps": [
+        {"enterAll": {"A1": "=SIN(3*PI()/2)", "B1": "=COS(3*PI()/2)", "C1": "=TAN(3*PI()/2)", "D1": "=COT(3*PI()/2)", "E1": "=CSC(3*PI()/2)", "F1": "=SEC(3*PI()/2)"}, "expect": {"values": {"A1": -1.0, "B1": -1.83772268236293e-16, "C1": 5441517425873024.0, "D1": 1.83772268236293e-16, "E1": -1.0, "F1": -5441517425873024.0}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: the double nearest the exact value, on every scale below 2^27 (spikes/exsheet-trig-reduction/compare.py --known): SIN, COS, TAN, COT, CSC and SEC of -PI()",
+      "steps": [
+        {"enterAll": {"A1": "=SIN(-PI())", "B1": "=COS(-PI())", "C1": "=TAN(-PI())", "D1": "=COT(-PI())", "E1": "=CSC(-PI())", "F1": "=SEC(-PI())"}, "expect": {"values": {"A1": -1.22514845490862e-16, "B1": -1.0, "C1": 1.22514845490862e-16, "D1": 8162276138809536.0, "E1": -8162276138809536.0, "F1": -1.0}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: the double nearest the exact value, on every scale below 2^27 (spikes/exsheet-trig-reduction/compare.py --known): SIN, COS, TAN, COT, CSC and SEC of -PI()/2",
+      "steps": [
+        {"enterAll": {"A1": "=SIN(-PI()/2)", "B1": "=COS(-PI()/2)", "C1": "=TAN(-PI()/2)", "D1": "=COT(-PI()/2)", "E1": "=CSC(-PI()/2)", "F1": "=SEC(-PI()/2)"}, "expect": {"values": {"A1": -1.0, "B1": 6.1257422745431e-17, "C1": -1.6324552277619072e+16, "D1": -6.1257422745431e-17, "E1": -1.0, "F1": 1.6324552277619072e+16}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: the double nearest the exact value, on every scale below 2^27 (spikes/exsheet-trig-reduction/compare.py --known): SIN, COS, TAN, COT, CSC and SEC of 0.785",
+      "steps": [
+        {"enterAll": {"A1": "=SIN(0.785)", "B1": "=COS(0.785)", "C1": "=TAN(0.785)", "D1": "=COT(0.785)", "E1": "=CSC(0.785)", "F1": "=SEC(0.785)"}, "expect": {"values": {"A1": 0.706825181105366, "B1": 0.7073882691671998, "C1": 0.9992039901050427, "D1": 1.000796644031489, "E1": 1.4147769869151432, "F1": 1.4136508104344008}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: the double nearest the exact value, on every scale below 2^27 (spikes/exsheet-trig-reduction/compare.py --known): SIN, COS, TAN, COT, CSC and SEC of 1.047",
+      "steps": [
+        {"enterAll": {"A1": "=SIN(1.047)", "B1": "=COS(1.047)", "C1": "=TAN(1.047)", "D1": "=COT(1.047)", "E1": "=CSC(1.047)", "F1": "=SEC(1.047)"}, "expect": {"values": {"A1": 0.8659266112878228, "B1": 0.5001710745970701, "C1": 1.7312608730630805, "D1": 0.5776137008345384, "E1": 1.1548322767362245, "F1": 1.9993159356637809}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: the double nearest the exact value, on every scale below 2^27 (spikes/exsheet-trig-reduction/compare.py --known): SIN, COS, TAN, COT, CSC and SEC of 1",
+      "steps": [
+        {"enterAll": {"A1": "=SIN(1)", "B1": "=COS(1)", "C1": "=TAN(1)", "D1": "=COT(1)", "E1": "=CSC(1)", "F1": "=SEC(1)"}, "expect": {"values": {"A1": 0.8414709848078965, "B1": 0.5403023058681398, "C1": 1.5574077246549023, "D1": 0.6420926159343306, "E1": 1.1883951057781212, "F1": 1.8508157176809255}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: the double nearest the exact value, on every scale below 2^27 (spikes/exsheet-trig-reduction/compare.py --known): SIN, COS, TAN, COT, CSC and SEC of -1",
+      "steps": [
+        {"enterAll": {"A1": "=SIN(-1)", "B1": "=COS(-1)", "C1": "=TAN(-1)", "D1": "=COT(-1)", "E1": "=CSC(-1)", "F1": "=SEC(-1)"}, "expect": {"values": {"A1": -0.8414709848078965, "B1": 0.5403023058681398, "C1": -1.5574077246549023, "D1": -0.6420926159343306, "E1": -1.1883951057781212, "F1": 1.8508157176809255}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: the double nearest the exact value, on every scale below 2^27 (spikes/exsheet-trig-reduction/compare.py --known): SIN, COS, TAN, COT, CSC and SEC of 0.5",
+      "steps": [
+        {"enterAll": {"A1": "=SIN(0.5)", "B1": "=COS(0.5)", "C1": "=TAN(0.5)", "D1": "=COT(0.5)", "E1": "=CSC(0.5)", "F1": "=SEC(0.5)"}, "expect": {"values": {"A1": 0.479425538604203, "B1": 0.8775825618903728, "C1": 0.5463024898437905, "D1": 1.830487721712452, "E1": 2.085829642933488, "F1": 1.139493927324549}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: the double nearest the exact value, on every scale below 2^27 (spikes/exsheet-trig-reduction/compare.py --known): SIN, COS, TAN, COT, CSC and SEC of -2.5",
+      "steps": [
+        {"enterAll": {"A1": "=SIN(-2.5)", "B1": "=COS(-2.5)", "C1": "=TAN(-2.5)", "D1": "=COT(-2.5)", "E1": "=CSC(-2.5)", "F1": "=SEC(-2.5)"}, "expect": {"values": {"A1": -0.5984721441039565, "B1": -0.8011436155469337, "C1": 0.7470222972386603, "D1": 1.3386481283041514, "E1": -1.6709215455586797, "F1": -1.2482156514688179}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: the double nearest the exact value, on every scale below 2^27 (spikes/exsheet-trig-reduction/compare.py --known): SIN, COS, TAN, COT, CSC and SEC of 9",
+      "steps": [
+        {"enterAll": {"A1": "=SIN(9)", "B1": "=COS(9)", "C1": "=TAN(9)", "D1": "=COT(9)", "E1": "=CSC(9)", "F1": "=SEC(9)"}, "expect": {"values": {"A1": 0.4121184852417566, "B1": -0.9111302618846769, "C1": -0.45231565944180985, "D1": -2.210845410999195, "E1": 2.426486643551989, "F1": -1.097537906304962}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: the double nearest the exact value, on every scale below 2^27 (spikes/exsheet-trig-reduction/compare.py --known): SIN, COS, TAN, COT, CSC and SEC of 30",
+      "steps": [
+        {"enterAll": {"A1": "=SIN(30)", "B1": "=COS(30)", "C1": "=TAN(30)", "D1": "=COT(30)", "E1": "=CSC(30)", "F1": "=SEC(30)"}, "expect": {"values": {"A1": -0.9880316240928618, "B1": 0.15425144988758405, "C1": -6.405331196646276, "D1": -0.15611995216165922, "E1": -1.012113353070178, "F1": 6.482921234962678}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: the double nearest the exact value, on every scale below 2^27 (spikes/exsheet-trig-reduction/compare.py --known): SIN, COS, TAN, COT, CSC and SEC of 45",
+      "steps": [
+        {"enterAll": {"A1": "=SIN(45)", "B1": "=COS(45)", "C1": "=TAN(45)", "D1": "=COT(45)", "E1": "=CSC(45)", "F1": "=SEC(45)"}, "expect": {"values": {"A1": 0.8509035245341184, "B1": 0.5253219888177297, "C1": 1.6197751905438615, "D1": 0.6173696237835551, "E1": 1.175221363135749, "F1": 1.9035944074044246}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: the double nearest the exact value, on every scale below 2^27 (spikes/exsheet-trig-reduction/compare.py --known): SIN, COS, TAN, COT, CSC and SEC of 1E-8",
+      "steps": [
+        {"enterAll": {"A1": "=SIN(1E-8)", "B1": "=COS(1E-8)", "C1": "=TAN(1E-8)", "D1": "=COT(1E-8)", "E1": "=CSC(1E-8)", "F1": "=SEC(1E-8)"}, "expect": {"values": {"A1": 1e-08, "B1": 1.0, "C1": 1e-08, "D1": 100000000.0, "E1": 100000000.0, "F1": 1.0}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: the double nearest the exact value, on every scale below 2^27 (spikes/exsheet-trig-reduction/compare.py --known): SIN, COS, TAN, COT, CSC and SEC of 1E-300",
+      "steps": [
+        {"enterAll": {"A1": "=SIN(1E-300)", "B1": "=COS(1E-300)", "C1": "=TAN(1E-300)", "D1": "=COT(1E-300)", "E1": "=CSC(1E-300)", "F1": "=SEC(1E-300)"}, "expect": {"values": {"A1": 1e-300, "B1": 1.0, "C1": 1e-300, "D1": 9.999999999999999e+299, "E1": 9.999999999999999e+299, "F1": 1.0}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: the double nearest the exact value, on every scale below 2^27 (spikes/exsheet-trig-reduction/compare.py --known): SIN, COS, TAN, COT, CSC and SEC of 3.14159265358979",
+      "steps": [
+        {"enterAll": {"A1": "=SIN(3.14159265358979)", "B1": "=COS(3.14159265358979)", "C1": "=TAN(3.14159265358979)", "D1": "=COT(3.14159265358979)", "E1": "=CSC(3.14159265358979)", "F1": "=SEC(3.14159265358979)"}, "expect": {"values": {"A1": 3.2311393144413003e-15, "B1": -1.0, "C1": -3.2311393144413003e-15, "D1": -309488357722796.3, "E1": 309488357722796.3, "F1": -1.0}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: the double nearest the exact value, on every scale below 2^27 (spikes/exsheet-trig-reduction/compare.py --known): SIN, COS, TAN, COT, CSC and SEC of 1.5707963267949",
+      "steps": [
+        {"enterAll": {"A1": "=SIN(1.5707963267949)", "B1": "=COS(1.5707963267949)", "C1": "=TAN(1.5707963267949)", "D1": "=COT(1.5707963267949)", "E1": "=CSC(1.5707963267949)", "F1": "=SEC(1.5707963267949)"}, "expect": {"values": {"A1": 1.0, "B1": -3.49145625605507e-15, "C1": -286413440886090.6, "D1": -3.4914562560550695e-15, "E1": 1.0, "F1": -286413440886090.6}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: the double nearest the exact value, on every scale below 2^27 (spikes/exsheet-trig-reduction/compare.py --known): SIN, COS, TAN, COT, CSC and SEC of 7.85398163397448",
+      "steps": [
+        {"enterAll": {"A1": "=SIN(7.85398163397448)", "B1": "=COS(7.85398163397448)", "C1": "=TAN(7.85398163397448)", "D1": "=COT(7.85398163397448)", "E1": "=CSC(7.85398163397448)", "F1": "=SEC(7.85398163397448)"}, "expect": {"values": {"A1": 1.0, "B1": 2.9708223728275307e-15, "C1": 336607132471616.94, "D1": 2.9708223728275307e-15, "E1": 1.0, "F1": 336607132471616.94}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: the double nearest the exact value, on every scale below 2^27 (spikes/exsheet-trig-reduction/compare.py --known): SIN, COS, TAN, COT, CSC and SEC of 355",
+      "steps": [
+        {"enterAll": {"A1": "=SIN(355)", "B1": "=COS(355)", "C1": "=TAN(355)", "D1": "=COT(355)", "E1": "=CSC(355)", "F1": "=SEC(355)"}, "expect": {"values": {"A1": -3.0144353359482782e-05, "B1": -0.999999999545659, "C1": 3.0144353373178597e-05, "D1": 33173.70877458481, "E1": -33173.70878965699, "F1": -1.000000000454341}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: the double nearest the exact value, on every scale below 2^27 (spikes/exsheet-trig-reduction/compare.py --known): SIN, COS, TAN, COT, CSC and SEC of -710",
+      "steps": [
+        {"enterAll": {"A1": "=SIN(-710)", "B1": "=COS(-710)", "C1": "=TAN(-710)", "D1": "=COT(-710)", "E1": "=CSC(-710)", "F1": "=SEC(-710)"}, "expect": {"values": {"A1": -6.028870669157393e-05, "B1": 0.999999998182636, "C1": -6.028870680114046e-05, "D1": -16586.854372220227, "E1": -16586.85440236458, "F1": 1.000000001817364}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: the double nearest the exact value, on every scale below 2^27 (spikes/exsheet-trig-reduction/compare.py --known): SIN, COS, TAN, COT, CSC and SEC of 103993",
+      "steps": [
+        {"enterAll": {"A1": "=SIN(103993)", "B1": "=COS(103993)", "C1": "=TAN(103993)", "D1": "=COT(103993)", "E1": "=CSC(103993)", "F1": "=SEC(103993)"}, "expect": {"values": {"A1": -1.912933578008433e-05, "B1": 0.9999999998170342, "C1": -1.9129335783584344e-05, "D1": -52275.73039196376, "E1": -52275.73040152843, "F1": 1.0000000001829659}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: the double nearest the exact value, on every scale below 2^27 (spikes/exsheet-trig-reduction/compare.py --known): SIN, COS, TAN, COT, CSC and SEC of 12345678.9",
+      "steps": [
+        {"enterAll": {"A1": "=SIN(12345678.9)", "B1": "=COS(12345678.9)", "C1": "=TAN(12345678.9)", "D1": "=COT(12345678.9)", "E1": "=CSC(12345678.9)", "F1": "=SEC(12345678.9)"}, "expect": {"values": {"A1": -0.8973068124813468, "B1": 0.4414073903714856, "C1": -2.0328314207113283, "D1": -0.4919247065012799, "E1": -1.1144460134373357, "F1": 2.2654808728018954}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: the double nearest the exact value, on every scale below 2^27 (spikes/exsheet-trig-reduction/compare.py --known): SIN, COS, TAN, COT, CSC and SEC of 100000000",
+      "steps": [
+        {"enterAll": {"A1": "=SIN(100000000)", "B1": "=COS(100000000)", "C1": "=TAN(100000000)", "D1": "=COT(100000000)", "E1": "=CSC(100000000)", "F1": "=SEC(100000000)"}, "expect": {"values": {"A1": 0.9316390271103062, "B1": -0.3633850893542029, "C1": -2.56377890674047, "D1": -0.3900492344994667, "E1": 1.0733771030414334, "F1": -2.751901575755819}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: the double nearest the exact value, on every scale below 2^27 (spikes/exsheet-trig-reduction/compare.py --known): SIN, COS, TAN, COT, CSC and SEC of -100000000",
+      "steps": [
+        {"enterAll": {"A1": "=SIN(-100000000)", "B1": "=COS(-100000000)", "C1": "=TAN(-100000000)", "D1": "=COT(-100000000)", "E1": "=CSC(-100000000)", "F1": "=SEC(-100000000)"}, "expect": {"values": {"A1": -0.9316390271103062, "B1": -0.3633850893542029, "C1": 2.56377890674047, "D1": 0.3900492344994667, "E1": -1.0733771030414334, "F1": -2.751901575755819}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: the double nearest the exact value, on every scale below 2^27 (spikes/exsheet-trig-reduction/compare.py --known): SIN, COS, TAN, COT, CSC and SEC of 134217727",
+      "steps": [
+        {"enterAll": {"A1": "=SIN(134217727)", "B1": "=COS(134217727)", "C1": "=TAN(134217727)", "D1": "=COT(134217727)", "E1": "=CSC(134217727)", "F1": "=SEC(134217727)"}, "expect": {"values": {"A1": -0.9559933287726706, "B1": -0.2933884035577216, "C1": 3.258456425611884, "D1": 0.3068937771086555, "E1": -1.0460324041003783, "F1": -3.408451008539125}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: the double nearest the exact value, on every scale below 2^27 (spikes/exsheet-trig-reduction/compare.py --known): SIN, COS, TAN, COT, CSC and SEC of -134217727",
+      "steps": [
+        {"enterAll": {"A1": "=SIN(-134217727)", "B1": "=COS(-134217727)", "C1": "=TAN(-134217727)", "D1": "=COT(-134217727)", "E1": "=CSC(-134217727)", "F1": "=SEC(-134217727)"}, "expect": {"values": {"A1": 0.9559933287726706, "B1": -0.2933884035577216, "C1": -3.258456425611884, "D1": -0.3068937771086555, "E1": 1.0460324041003783, "F1": -3.408451008539125}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: the double nearest the exact value, on every scale below 2^27 (spikes/exsheet-trig-reduction/compare.py --known): SIN, COS, TAN, COT, CSC and SEC of 134217727.5",
+      "steps": [
+        {"enterAll": {"A1": "=SIN(134217727.5)", "B1": "=COS(134217727.5)", "C1": "=TAN(134217727.5)", "D1": "=COT(134217727.5)", "E1": "=CSC(134217727.5)", "F1": "=SEC(134217727.5)"}, "expect": {"values": {"A1": -0.9796209680103136, "B1": 0.20085506972575065, "C1": -4.877252883623486, "D1": -0.20503345302388015, "E1": -1.0208029765135365, "F1": 4.978714260812083}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: Microsoft documents 2^27 for COT, CSC and SEC; the run observed it for all six: SIN",
+      "steps": [
+        {"enterAll": {"A1": "=SIN(2^27)", "A2": "=SIN(-2^27)", "A3": "=SIN(2^27-1)", "A4": "=SIN(-(2^27-1))"}, "expect": {"values": {"A1": {"error": "#NUM!"}, "A2": {"error": "#NUM!"}, "A3": -0.9559933287726706, "A4": 0.9559933287726706}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: Microsoft documents 2^27 for COT, CSC and SEC; the run observed it for all six: COS",
+      "steps": [
+        {"enterAll": {"A1": "=COS(2^27)", "A2": "=COS(-2^27)", "A3": "=COS(2^27-1)", "A4": "=COS(-(2^27-1))"}, "expect": {"values": {"A1": {"error": "#NUM!"}, "A2": {"error": "#NUM!"}, "A3": -0.2933884035577216, "A4": -0.2933884035577216}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: Microsoft documents 2^27 for COT, CSC and SEC; the run observed it for all six: TAN",
+      "steps": [
+        {"enterAll": {"A1": "=TAN(2^27)", "A2": "=TAN(-2^27)", "A3": "=TAN(2^27-1)", "A4": "=TAN(-(2^27-1))"}, "expect": {"values": {"A1": {"error": "#NUM!"}, "A2": {"error": "#NUM!"}, "A3": 3.258456425611884, "A4": -3.258456425611884}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: Microsoft documents 2^27 for COT, CSC and SEC; the run observed it for all six: COT",
+      "steps": [
+        {"enterAll": {"A1": "=COT(2^27)", "A2": "=COT(-2^27)", "A3": "=COT(2^27-1)", "A4": "=COT(-(2^27-1))"}, "expect": {"values": {"A1": {"error": "#NUM!"}, "A2": {"error": "#NUM!"}, "A3": 0.3068937771086555, "A4": -0.3068937771086555}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: Microsoft documents 2^27 for COT, CSC and SEC; the run observed it for all six: CSC",
+      "steps": [
+        {"enterAll": {"A1": "=CSC(2^27)", "A2": "=CSC(-2^27)", "A3": "=CSC(2^27-1)", "A4": "=CSC(-(2^27-1))"}, "expect": {"values": {"A1": {"error": "#NUM!"}, "A2": {"error": "#NUM!"}, "A3": -1.0460324041003783, "A4": 1.0460324041003783}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: Microsoft documents 2^27 for COT, CSC and SEC; the run observed it for all six: SEC",
+      "steps": [
+        {"enterAll": {"A1": "=SEC(2^27)", "A2": "=SEC(-2^27)", "A3": "=SEC(2^27-1)", "A4": "=SEC(-(2^27-1))"}, "expect": {"values": {"A1": {"error": "#NUM!"}, "A2": {"error": "#NUM!"}, "A3": -3.408451008539125, "A4": -3.408451008539125}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: the poles at 0 stay #DIV/0!; SEC(0) and the rest of 0 are exact: =COT(0)",
+      "steps": [
+        {"enter": {"A1": "=COT(0)"}, "expect": {"values": {"A1": {"error": "#DIV/0!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: the poles at 0 stay #DIV/0!; SEC(0) and the rest of 0 are exact: =CSC(0)",
+      "steps": [
+        {"enter": {"A1": "=CSC(0)"}, "expect": {"values": {"A1": {"error": "#DIV/0!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: the poles at 0 stay #DIV/0!; SEC(0) and the rest of 0 are exact: =SIN(0)",
+      "steps": [
+        {"enter": {"A1": "=SIN(0)"}, "expect": {"values": {"A1": 0}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: the poles at 0 stay #DIV/0!; SEC(0) and the rest of 0 are exact: =COS(0)",
+      "steps": [
+        {"enter": {"A1": "=COS(0)"}, "expect": {"values": {"A1": 1}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: the poles at 0 stay #DIV/0!; SEC(0) and the rest of 0 are exact: =TAN(0)",
+      "steps": [
+        {"enter": {"A1": "=TAN(0)"}, "expect": {"values": {"A1": 0}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: the poles at 0 stay #DIV/0!; SEC(0) and the rest of 0 are exact: =SEC(0)",
+      "steps": [
+        {"enter": {"A1": "=SEC(0)"}, "expect": {"values": {"A1": 1}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: Microsoft documents 2^27 for COTH, CSCH and SECH, but Excel answers past it (COTH-002, CSCH-002, SECH-003): =COTH(2^27)",
+      "steps": [
+        {"enter": {"A1": "=COTH(2^27)"}, "expect": {"values": {"A1": 1}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: Microsoft documents 2^27 for COTH, CSCH and SECH, but Excel answers past it (COTH-002, CSCH-002, SECH-003): =COTH(-2^27)",
+      "steps": [
+        {"enter": {"A1": "=COTH(-2^27)"}, "expect": {"values": {"A1": -1}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: Microsoft documents 2^27 for COTH, CSCH and SECH, but Excel answers past it (COTH-002, CSCH-002, SECH-003): =CSCH(2^27)",
+      "steps": [
+        {"enter": {"A1": "=CSCH(2^27)"}, "expect": {"values": {"A1": 0}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: Microsoft documents 2^27 for COTH, CSCH and SECH, but Excel answers past it (COTH-002, CSCH-002, SECH-003): =CSCH(-2^27)",
+      "steps": [
+        {"enter": {"A1": "=CSCH(-2^27)"}, "expect": {"values": {"A1": 0}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: Microsoft documents 2^27 for COTH, CSCH and SECH, but Excel answers past it (COTH-002, CSCH-002, SECH-003): =SECH(2^27)",
+      "steps": [
+        {"enter": {"A1": "=SECH(2^27)"}, "expect": {"values": {"A1": 0}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: Microsoft documents 2^27 for COTH, CSCH and SECH, but Excel answers past it (COTH-002, CSCH-002, SECH-003): =SECH(-2^27)",
+      "steps": [
+        {"enter": {"A1": "=SECH(-2^27)"}, "expect": {"values": {"A1": 0}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: Microsoft documents 2^27 for COTH, CSCH and SECH, but Excel answers past it (COTH-002, CSCH-002, SECH-003): =COTH(1E300)",
+      "steps": [
+        {"enter": {"A1": "=COTH(1E300)"}, "expect": {"values": {"A1": 1}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: Microsoft documents 2^27 for COTH, CSCH and SECH, but Excel answers past it (COTH-002, CSCH-002, SECH-003): =CSCH(1E300)",
+      "steps": [
+        {"enter": {"A1": "=CSCH(1E300)"}, "expect": {"values": {"A1": 0}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: Microsoft documents 2^27 for COTH, CSCH and SECH, but Excel answers past it (COTH-002, CSCH-002, SECH-003): =SECH(1E300)",
+      "steps": [
+        {"enter": {"A1": "=SECH(1E300)"}, "expect": {"values": {"A1": 0}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: Microsoft documents 2^27 for COTH, CSCH and SECH, but Excel answers past it (COTH-002, CSCH-002, SECH-003): =COTH(0)",
+      "steps": [
+        {"enter": {"A1": "=COTH(0)"}, "expect": {"values": {"A1": {"error": "#DIV/0!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: Microsoft documents 2^27 for COTH, CSCH and SECH, but Excel answers past it (COTH-002, CSCH-002, SECH-003): =CSCH(0)",
+      "steps": [
+        {"enter": {"A1": "=CSCH(0)"}, "expect": {"values": {"A1": {"error": "#DIV/0!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: Microsoft documents 2^27 for COTH, CSCH and SECH, but Excel answers past it (COTH-002, CSCH-002, SECH-003): =SECH(0)",
+      "steps": [
+        {"enter": {"A1": "=SECH(0)"}, "expect": {"values": {"A1": 1}}}
+      ]
+    }
+  ]
+}

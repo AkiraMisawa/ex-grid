@@ -83,11 +83,25 @@ export class Told implements BrowserReports {
     /** The writes started and not yet finished. */
     writing = 0;
 
+    #held: Promise<void> | undefined;
+
+    /** Holds every write from now, its flavours in hand, until the function returned lets them be made. */
+    holdWrites(): () => void {
+        const release: (() => void)[] = [];
+        this.#held = new Promise(resolve => { release.push(resolve); });
+        return () => {
+            this.#held = undefined;
+            for (const resolve of release) resolve();
+        };
+    }
+
     async writeClipboard(_element: HTMLElement, flavours: Promise<CopyFlavours | undefined>): Promise<boolean> {
         this.writing += 1;
+        const held = this.#held;
         try {
             const copy = await flavours;
             if (copy === undefined) return false;
+            await held;
             if (this.clipboardRefused) throw new DOMException('Write permission denied.', 'NotAllowedError');
             this.clipboard.push(copy);
             return true;
@@ -98,17 +112,18 @@ export class Told implements BrowserReports {
 
     /** Whether the browser can say the clipboard changed, as Chrome 143 and later can; set before mounting. */
     clipboardWatched = true;
-    #clipboardChange: (() => void) | undefined;
+    #clipboardChange: ((change: object) => void) | undefined;
 
-    observeClipboard(_element: HTMLElement, tell: () => void): (() => void) | undefined {
+    observeClipboard(_element: HTMLElement, tell: (change: object) => void): (() => void) | undefined {
         if (!this.clipboardWatched) return undefined;
         this.#clipboardChange = tell;
         return () => { this.#clipboardChange = undefined; };
     }
 
-    /** The browser reports a change of the clipboard: a write by the grid's own copy, or by anyone else. */
-    clipboardChanged(): void {
-        defined(this.#clipboardChange, 'the clipboard\'s listener')();
+    /** The browser reports a change of the clipboard: a write by the grid's own copy, or by anyone else. Every
+     * grid of the document hears the same change: pass it to each grid's reports to tell them all. */
+    clipboardChanged(change: object = {}): void {
+        defined(this.#clipboardChange, 'the clipboard\'s listener')(change);
     }
 
     get listening(): boolean {
@@ -121,6 +136,16 @@ export async function painted(): Promise<void> {
     await Promise.resolve();
 }
 
+const mounted: { destroy(): void }[] = [];
+
+/**
+ * Destroys every grid mounted since the last call. The grids of a test file share its document, and with it the
+ * clipboard's ledger (ADR-0170): a write one test counted and never heard would answer the next test's change.
+ */
+export function unmountAll(): void {
+    for (const view of mounted.splice(0)) view.destroy();
+}
+
 /** Mounts a grid; `browser` sets what the browser can do before the grid attaches. */
 export function mount<Row>(
     options: GridOptions<Row>, browser: Partial<Pick<Told, 'clipboardWatched'>> = {},
@@ -129,6 +154,7 @@ export function mount<Row>(
     document.body.append(root);
     const told = Object.assign(new Told(), browser);
     const view = new GridView(root, options, told);
+    mounted.push(view);
     told.viewport();
     told.ceiling();
     return { root, view, told };

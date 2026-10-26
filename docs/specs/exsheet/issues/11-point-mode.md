@@ -119,3 +119,5 @@ ends pointing (DC-19/31/34). DC-20 at 150 ms on the Server host: `=1` ↓ commit
 points. Green on both hosts under the built-in Chrome. Under `ExGrid.MudBlazor`'s Chrome the
 pointing-from-the-bar test is left failing by name (`test.fail`): a press into the bar leaves DOM
 focus in the Mud Cell Editor, not the bar (see ticket 18).
+
+2026-10-26: the engine's xUnit tests this ticket names (`FormulaEntryTests`) moved to the shared cases, `tests/cases/sheet/formula-entry.json` and `formula-entry-sheet.json`, which both the C# engine and the Script Core run (ADR-0370 §2). Each test became cases named by the same claim.

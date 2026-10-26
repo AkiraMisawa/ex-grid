@@ -56,3 +56,5 @@ A1). A range typed as far as its colon, or into its second corner, answers its f
 (`=SUM(A1:` and `=SUM(A1:B` colour A1). `=A1:B2:C3` still answers nothing, because it is not a range
 being typed.
 
+
+2026-10-26: the xUnit tests this ticket names (`FormulaReferencesTests`) moved to the shared cases, `tests/cases/sheet/formula-references.json` (`FormulaEntry.References`) and `sheet-references.json` (`Sheet.References`), which both the C# engine and the Script Core run (ADR-0370 §2). Each test became cases named by the same claim; `FormulaReferencesTests` keeps a key's equality, the walk over every prefix and the null arguments, and `surface.test.ts` mirrors the first two.

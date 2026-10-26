@@ -944,12 +944,19 @@ public sealed class NumberFormat : IEquatable<NumberFormat>
         {
             SectionKind.Date => FormatDate(magnitude, minus, culture),
             SectionKind.Literal => ((minus ? "-" : "") + string.Concat(_parts.Select(p => p.Text)), false),
-            _ => (FormatDigits(magnitude, minus, culture), false),
+            _ => FormatDigits(magnitude, minus, culture) is { } digits ? (digits, false) : ("", true),
         };
 
-        private string FormatDigits(double magnitude, bool minus, CultureInfo culture)
+        /// <summary>
+        /// The number in this section's digits, or null where its percent signs scale it past the largest double,
+        /// which no digits can show: the cell cannot show it and TEXT is <c>#VALUE!</c>, as for a date out of range.
+        /// </summary>
+        private string? FormatDigits(double magnitude, bool minus, CultureInfo culture)
         {
-            var value = magnitude * Math.Pow(100, Percent) / Math.Pow(1000, _scale);
+            // One power for both, so percent signs and thousands commas that cancel never overflow or underflow on the way.
+            var shift = 2 * Percent - 3 * _scale;
+            var value = shift >= 0 ? magnitude * PortableMath.PowWhole(10, shift) : magnitude / PortableMath.PowWhole(10, -shift);
+            if (!double.IsFinite(value)) return null;
             string integerDigits;
             string fractionDigits;
             var exponent = 0;
@@ -1096,9 +1103,7 @@ public sealed class NumberFormat : IEquatable<NumberFormat>
         private static (string Integer, string Fraction) Digits(double value, int fractionDigits)
         {
             if (value == 0) return ("", new string('0', fractionDigits));
-            var spelled = value.ToString("E14", CultureInfo.InvariantCulture);
-            var mantissa = spelled[0] + spelled[2..16];
-            var exponent = int.Parse(spelled.AsSpan(17), NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture);
+            var (mantissa, exponent) = Arithmetic.FifteenDigits(value);
             string integer;
             string fraction;
             if (exponent >= 0)
@@ -1119,9 +1124,7 @@ public sealed class NumberFormat : IEquatable<NumberFormat>
         private static (string Integer, string Fraction, int Exponent) Scientific(double value, int fractionDigits)
         {
             if (value == 0) return ("0", new string('0', fractionDigits), 0);
-            var spelled = value.ToString("E14", CultureInfo.InvariantCulture);
-            var mantissa = spelled[0] + spelled[2..16];
-            var exponent = int.Parse(spelled.AsSpan(17), NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture);
+            var (mantissa, exponent) = Arithmetic.FifteenDigits(value);
             var keep = Math.Min(1 + fractionDigits, 15);
             var digits = mantissa[..keep].ToCharArray();
             if (keep < 15 && mantissa[keep] >= '5')

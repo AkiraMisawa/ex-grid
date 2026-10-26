@@ -7,8 +7,9 @@ namespace ExSheet.Engine.Tests;
 
 /// <summary>
 /// The facts of the engine's .NET surface that the shared cases of <c>tests/cases/sheet/</c> cannot state: the process
-/// culture, a null argument, and calls a sheet case does not make (a name asked about, a Sheet made or renamed directly,
-/// two Entries compared). The calls stay here until the cases have a kind that makes them (ADR-0370 section 2).
+/// culture, a null argument, and calls the two surfaces spell differently (a name asked about, a Sheet made or renamed
+/// directly, two Entries compared, a palette colour, a local code), which the Script Core's <c>surface.test.ts</c>
+/// mirrors. Calls both spell alike are <c>sheetCalls</c> cases (<c>engine-surface.json</c>; ADR-0370 section 2).
 /// </summary>
 public class EngineSurfaceTests
 {
@@ -76,19 +77,6 @@ public class EngineSurfaceTests
         Assert.NotEqual(Entry.FromFormula("=A1+1"), Entry.FromFormula("= A1+1"));
     }
 
-    [Theory] // ADR-0047: whole columns and rows are written as Excel writes them
-    [InlineData("B:D", true, false)]
-    [InlineData("3:4", false, true)]
-    [InlineData("A:XFD", true, true)]
-    [InlineData("A1:B2", false, false)]
-    public void Whole_columns_and_rows_parse(string text, bool columns, bool rows)
-    {
-        var range = CellRange.Parse(text);
-
-        Assert.Equal(columns, range.IsWholeColumns);
-        Assert.Equal(rows, range.IsWholeRows);
-    }
-
     [Fact] // ADR-0331: the Sheet shown is one of the Workbook's, and a Sheet of another is refused
     public void Only_a_sheet_of_the_workbook_is_shown()
     {
@@ -97,20 +85,12 @@ public class EngineSurfaceTests
         Assert.Throws<ArgumentException>(() => workbook.Shown = NewSheet());
     }
 
-    [Theory] // ADR-0331: names follow Excel's rules, unique without regard to case, and a Workbook holds at least one Sheet
-    [InlineData("Sheet1|SHEET1")]
-    [InlineData("a:b")]
-    [InlineData("")]
-    public void A_workbook_refuses_names_excel_refuses(string names) =>
-        Assert.Throws<ArgumentException>(() => new Workbook(EnUs, names.Length == 0 ? [] : names.Split('|')));
-
-    [Fact] // ADR-0331: every Sheet is under the Workbook's culture, and a name no Sheet has finds none
-    public void A_workbooks_sheets_share_its_culture_and_a_missing_name_finds_none()
+    [Fact] // ADR-0331: every Sheet is under the Workbook's culture
+    public void A_workbooks_sheets_share_its_culture()
     {
         var workbook = new Workbook(EnUs, ["Inputs", "Totals"]);
 
         Assert.All(workbook.Sheets, s => Assert.Same(workbook.Culture, s.Culture));
-        Assert.Null(workbook.Find("Missing"));
     }
 
     [Fact] // ADR-0331: an edit naming no Sheet of the Workbook is refused, and changes nothing

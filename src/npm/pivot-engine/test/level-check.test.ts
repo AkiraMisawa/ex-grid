@@ -137,7 +137,9 @@ function honest(kind: Kind, seed: number, records: number): { parent: LevelParts
 const kinds: readonly Kind[] = ['exact', 'uniform', 'offset', 'magnitudes', 'mixed', 'nearOne'];
 
 describe('ADR-0370: Level Aggregates are checked against their parent', () => {
-    it('ADR-0370: an honest answer adds up, whatever order and whichever way each group was summed', () => {
+    // Nine hundred answers of up to three thousand numbers: about 2.5 s on a laptop and past Vitest's default 5 s on
+    // a busy CI runner. Its time is not what it checks (performance never gates).
+    it('ADR-0370: an honest answer adds up, whatever order and whichever way each group was summed', { timeout: 60_000 }, () => {
         for (const kind of kinds) {
             for (let seed = 1; seed <= 150; seed++) {
                 const { parent, children } = honest(kind, seed * 7919, 1 + (seed * 37) % 3000);

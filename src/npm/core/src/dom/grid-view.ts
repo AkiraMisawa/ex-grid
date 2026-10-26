@@ -56,6 +56,7 @@ import { rowRange, type RowRange } from '../viewport/row-range';
 import { ViewportBox } from '../viewport/viewport-box';
 import { ViewportGeometry } from '../viewport/viewport-geometry';
 import type { BrowserReports, ViewportReport } from './browser-reports';
+import { ClipboardLedger, type LedgerWrite } from './clipboard-ledger';
 import { ColumnStyles } from './column-styles';
 import { cellBox, editorAway, editorCell, keyFieldBox, opensAnEdit } from './cell-editing';
 import {
@@ -651,12 +652,12 @@ interface GatheredCopy<Row> {
     readonly outline: () => CopiedRange<Row>;
 }
 
-// A write of the grid's own by the asynchronous route (ADR-0170): what was gathered, once in hand; whether it
-// was counted among the writes the browser has yet to report; and whether the write has already ended, after
-// which it is never counted.
+// A write of the grid's own by the asynchronous route (ADR-0170): what was gathered, once in hand; the write as
+// counted in the document's ledger of writes the browser has yet to report, once it is; and whether the write
+// has already ended, after which it is never counted.
 interface OwnWrite<Row> {
     gathered: GatheredCopy<Row> | undefined;
-    counted: boolean;
+    counted: LedgerWrite | undefined;
     ended: boolean;
 }
 
@@ -921,10 +922,11 @@ export class GridView<Row> {
     #onRedo: (() => void) | undefined;
     // A fill key's rows asked of the source, while they are: a newer fill, or the grid destroyed, stops it.
     #fill: AbortController | undefined;
-    // The Copied Range (ADR-0170): the copy outlined, and the writes of this grid's own copies the browser has
-    // yet to report as a change of the clipboard. A browser that cannot report a change outlines nothing.
+    // The Copied Range (ADR-0170): the copy outlined, and the ledger every grid of the document counts the
+    // writes of its copies in, which says whose write a change of the clipboard reports. A browser that cannot
+    // report a change outlines nothing.
     #copied: CopiedRange<Row> | undefined;
-    #ownWrites = 0;
+    readonly #ledger: ClipboardLedger;
     readonly #clipboardWatched: boolean;
 
     // The Selection (ADR-0011, ADR-0012), held under the Row Sequence Version it was made under, and the
@@ -1123,6 +1125,7 @@ export class GridView<Row> {
         instances += 1;
         this.#ids = `ex${instances}-`;
         const doc = root.ownerDocument;
+        this.#ledger = ClipboardLedger.of(doc);
         const element = (tag: string, attributes: Readonly<Record<string, string>>): HTMLElement => {
             const made = doc.createElement(tag);
             for (const [name, value] of Object.entries(attributes)) made.setAttribute(name, value);
@@ -1283,7 +1286,10 @@ export class GridView<Row> {
             );
             const stopClipboard = reports.observeClipboard(root, this.#onClipboardChange);
             this.#clipboardWatched = stopClipboard !== undefined;
-            if (stopClipboard !== undefined) this.#stops.push(stopClipboard);
+            if (stopClipboard !== undefined) {
+                this.#ledger.join(this);
+                this.#stops.push(stopClipboard, () => { this.#ledger.leave(this); });
+            }
             this.#pass();
             drawn = true;
         } finally {
@@ -4326,10 +4332,11 @@ export class GridView<Row> {
             return;
         }
         const { cell } = current;
-        // What the cell paints now is what the editor would open with, what the user sees as they press, and
-        // what the write replaces (ADR-0142).
+        // The replacement is written into what the editor would open with, a Sheet's Entry where it declares one, so
+        // a Formula stays a Formula (ADR-0332 §2); what the cell paints is what the user sees as they press, and what
+        // the write is told it replaces (ADR-0142).
         const painted = this.#paintedTextAt(cell);
-        const text = replacedEntry(painted, this.#findPattern(), held.replaceText);
+        const text = replacedEntry(this.#openingTextAt(cell), this.#findPattern(), held.replaceText);
         if (text === undefined) {
             this.#findStep(false);
             return;
@@ -4498,10 +4505,11 @@ export class GridView<Row> {
             event.preventDefault();
             data.setData('text/plain', text);
             data.setData('text/html', html);
-            // Set here, the write cannot fail: it is the grid's own, and it has landed (ADR-0170).
+            // Set here, the write cannot fail: it is the grid's own, and it has landed (ADR-0170). Made while a
+            // write by the asynchronous route is in flight, it may land on either side of it, and is not outlined.
             if (this.#clipboardWatched) {
-                this.#ownWrites += 1;
-                this.#land(CopiedRange.of(plan, this.#sequence(), columns, windowRowAt(state)));
+                const counted = this.#ledger.count(this);
+                this.#land(counted.uncertain ? undefined : CopiedRange.of(plan, this.#sequence(), columns, windowRowAt(state)));
             }
             return;
         }
@@ -4532,14 +4540,11 @@ export class GridView<Row> {
         const copy = new AbortController();
         // Counted as the grid's own write the moment it is in hand, before the browser writes it, so the change
         // it causes finds it counted (ADR-0170).
-        const own: OwnWrite<Row> = { gathered: undefined, counted: false, ended: false };
+        const own: OwnWrite<Row> = { gathered: undefined, counted: undefined, ended: false };
         const flavours = this.#gatherCopy(plan, this.#state, this.#columns, this.#sequence(), withHeaders, copy.signal).then(gathered => {
             if (gathered === undefined) return undefined;
             own.gathered = gathered;
-            if (this.#clipboardWatched && !own.ended) {
-                this.#ownWrites += 1;
-                own.counted = true;
-            }
+            if (this.#clipboardWatched && !own.ended) own.counted = this.#ledger.count(this, true);
             return gathered.flavours;
         });
         let written: Promise<boolean>;
@@ -4561,14 +4566,14 @@ export class GridView<Row> {
         this.#invalidate();
     }
 
-    // The clipboard changed. A change this grid's own copy made is the one counted; any other — another
-    // application's, another grid's, a text field's — means the clipboard no longer holds what the outline
+    // The clipboard changed. A change this grid's own copy made keeps the outline, and so does one made before
+    // a write of this grid's that the browser has yet to report: what the clipboard holds is about to be this
+    // grid's. Any other — another application's, another grid's later copy, a text field's, or this grid's own
+    // that may have landed on either side of another — means the clipboard may no longer hold what the outline
     // marks (ADR-0170).
-    readonly #onClipboardChange = (): void => {
-        if (this.#ownWrites > 0) {
-            this.#ownWrites -= 1;
-            return;
-        }
+    readonly #onClipboardChange = (change: object): void => {
+        const by = this.#ledger.hear(change);
+        if ((by?.owner === this && !by.uncertain) || this.#ledger.awaits(this)) return;
         if (this.#copied === undefined) return;
         this.#copied = undefined;
         this.#invalidate();
@@ -4616,20 +4621,25 @@ export class GridView<Row> {
         };
         const landed = (wrote: boolean): void => {
             own.ended = true;
-            const { gathered } = own;
+            const { gathered, counted } = own;
+            if (counted !== undefined) {
+                if (wrote) this.#ledger.landed(counted);
+                else this.#ledger.withdraw(counted);
+            }
             // Landed before the Settled Mark is looked at, so the mark never shows the write without its outline.
             // A newer copy superseded this one, and yet its write landed after it: the clipboard holds this
-            // one, which the newer outline would misname, so none stands (ADR-0170).
+            // one, which the newer outline would misname, so none stands (ADR-0170). Nor does one for a write that
+            // may have landed on either side of another.
             if (wrote && gathered !== undefined && this.#clipboardWatched && !this.#destroyed) {
-                this.#land(copy.signal.aborted ? undefined : gathered.outline());
+                this.#land(copy.signal.aborted || counted?.uncertain === true ? undefined : gathered.outline());
             }
             done();
         };
         // oxlint-disable-next-line ex-grid/no-catch -- every rejection is said: a refused write as a refusal, anything else rethrown
         written.then(landed, (error: unknown) => {
             own.ended = true;
-            // Never below none: a change from elsewhere may have taken the count already.
-            if (own.counted && this.#ownWrites > 0) this.#ownWrites -= 1;
+            // A failed write causes no change; a change from elsewhere may have taken its count already.
+            if (own.counted !== undefined) this.#ledger.withdraw(own.counted);
             done();
             if (this.#destroyed || copy.signal.aborted) return;
             // By name, not by class: the error is the grid's window's, which need not be this realm's.

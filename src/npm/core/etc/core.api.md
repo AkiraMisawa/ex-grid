@@ -258,6 +258,9 @@ export interface FilterSpec {
 export type FilterUi = 'condition' | 'valueList' | 'both';
 
 // @public
+export function findMatches(displayedText: string, pattern: GridFindPattern): boolean;
+
+// @public
 export type FindRefusalReason = 'unavailable' | 'notFound' | 'orderChanged' | 'sourceChanged' | 'replaceUnavailable' | 'replaceRefused';
 
 // @public
@@ -928,6 +931,15 @@ export function readGridQueryJson(json: string): GridQuery;
 
 // @public
 export function readGridViewStateJson(json: string, columns: Iterable<string>): GridViewState;
+
+// @public
+export function refusedCells(cells: readonly GridReplaceRefusedCell[], rowSequenceVersion: number): GridReplaceResult;
+
+// @public
+export function replacedCells(count: number, rowSequenceVersion: number): GridReplaceResult;
+
+// @public
+export function replacedEntry(entry: string, pattern: GridFindPattern, replacement: string): string | undefined;
 
 // @public
 export type RowKey = string | number | bigint;
