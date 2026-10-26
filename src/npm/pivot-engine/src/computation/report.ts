@@ -183,7 +183,7 @@ export class ComputationReport {
             const ordered = yield* this.#made.orderedChildren(node);
             order = ordered.map(child => child.id);
             for (let i = 0; i < ordered.length; i++) {
-                yield* this.#layOut(elementAt(ordered, i), i, i === 0 ? pendingFrom : node.level + 1, rows);
+                yield* this.#layOut(elementAt(ordered, i), i, this.#made.childPendingFrom(node, i, pendingFrom), rows);
                 if (this.#pace.spent(1)) yield;
             }
         }
@@ -282,7 +282,7 @@ export class ComputationReport {
                 const parts: Part[] = [];
                 for (let i = 0; i < orderedChildren.length; i++) {
                     // The children as ordered: each the node the cube holds now.
-                    parts.push(yield* this.#updateNode(elementAt(orderedChildren, i), i, i === 0 ? pendingFrom : node.level + 1,
+                    parts.push(yield* this.#updateNode(elementAt(orderedChildren, i), i, this.#made.childPendingFrom(node, i, pendingFrom),
                         forceChildren || (i === 0 && firstLabelChanged)));
                     if (this.#pace.spent(1)) yield;
                 }
@@ -297,7 +297,7 @@ export class ComputationReport {
                     const child = this.#nodes[id];
                     if (child === undefined || child.position >= order.length || order[child.position] !== id) continue;
                     const at = child.position;
-                    const made = yield* this.#updateNode(this.#rowNode(id), at, at === 0 ? pendingFrom : node.level + 1,
+                    const made = yield* this.#updateNode(this.#rowNode(id), at, this.#made.childPendingFrom(node, at, pendingFrom),
                         forceChildren || (at === 0 && firstLabelChanged));
                     children = defined(children, 'a node\'s children as laid out').set(at, made);
                 }

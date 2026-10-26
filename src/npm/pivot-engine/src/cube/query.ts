@@ -345,9 +345,33 @@ export function queryForLayout(layout: PivotLayout, maxLeaves: number = defaultM
 }
 
 /** The question {@link queryForLayout} asks, with the groups the layout shows (ADR-0370 section 3): what
- * ExPivot asks a source that answers Level Aggregates. */
-export function levelQueryForLayout(layout: PivotLayout, maxLeaves: number = defaultMaxLeaves): PivotQuery {
-    return Object.freeze({ ...queryForLayout(layout, maxLeaves), levels: levelsOfLayout(layout) });
+ * ExPivot asks a source that answers Level Aggregates. With a `window`, each row field whose Items show no groups
+ * below them — the innermost, or one collapsed with none toggled — and that the layout sorts by a value shown as it
+ * is computed carries that order, so a set of it too large to answer whole is answered as a Sibling Window; a value
+ * shown as a percentage, a sort by label, or a field with groups shown below it carries none. */
+export function levelQueryForLayout(layout: PivotLayout, maxLeaves: number = defaultMaxLeaves, window?: PivotLevelWindowInput): PivotQuery {
+    const query = queryForLayout(layout, maxLeaves);
+    if (window === undefined) return Object.freeze({ ...query, levels: levelsOfLayout(layout) });
+    const orderOf = (placement: PivotFieldPlacement, level: number): PivotLevelOrder | undefined => {
+        const byValue = placement.sort.byValue;
+        const showsNoGroups = level === layout.rows.length - 1 || (placement.collapsed && placement.toggledItems.length === 0);
+        if (byValue === undefined || !showsNoGroups) return undefined;
+        const shown = layout.values[byValue];
+        if (shown === undefined) throw new Error(`'${placement.field}' is ordered by Value Field ${byValue}, and the layout has ${layout.values.length} (ADR-0060).`);
+        if (shown.showValuesAs !== 'noCalculation') return undefined;
+        return { value: query.values.findIndex(value => value.field === shown.field), aggregation: shown.aggregation, descending: placement.sort.direction === 'descending' };
+    };
+    return pivotQuery({
+        ...query,
+        levels: {
+            rows: layout.rows.map((placement, level) => {
+                const order = orderOf(placement, level);
+                return { collapsed: placement.collapsed, toggledItems: placement.toggledItems, ...(order === undefined ? {} : { order }) };
+            }),
+            columns: layout.columns.map(placement => ({ collapsed: placement.collapsed, toggledItems: placement.toggledItems })),
+            window,
+        },
+    });
 }
 
 /** The Filters that hide something. */

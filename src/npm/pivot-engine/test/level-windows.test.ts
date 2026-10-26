@@ -232,16 +232,6 @@ describe('ADR-0370: the bundled sources answer a sibling set past the limit as a
         expect(answer.refusal?.kind).toBe('tooManyLeaves');
     });
 
-    it('ADR-0370: the TypeScript cube refuses a window by name until it lays one out', async () => {
-        const source = new RecordPivotSource(trades(5, 1500, true), fields);
-        const query = pivotQuery({
-            rows: ['Region', 'Book'], columns: ['Live', 'Trader'], values: [{ field: 'Amount', parts: ['sum'] }], maxLeaves: 200,
-            levels: { rows: [{}, { order: amount('sum', true) }], columns: liveCollapsed, window: { limit: 3 } },
-        });
-        const answer = await source.aggregate(query);
-        expect(answer.windows.length).toBeGreaterThan(0);
-        expect(() => pivotCube(query, answer, fields)).toThrow('The answer holds windows of sibling sets, which this engine does not lay out yet');
-    });
 });
 
 describe('ADR-0370: a question with a window, and an answer that is not its answer', () => {
@@ -307,6 +297,48 @@ describe('ADR-0370: a question with a window, and an answer that is not its answ
             builder.setSum(at, 0, { kind: 'exact', value: decimalFromText('1') });
         }
         expect(builder.build().mismatch(ask(3))).toBe('it answers the 4 siblings under [Region=Text:East] whole, past the window\'s limit of 3');
+    });
+
+    // East's books B0…B(n−1) summing to `sums`, the window showing `from` to `to` − 1 with its margins, each rest
+    // summing its books plus `restOff`.
+    function books(query: PivotQuery, sums: readonly number[], from: number, to: number, restOff = 0): PivotAnswer {
+        const builder = new PivotAnswerBuilder(query, 's');
+        const cell = (at: number, records: number, sum: number): void => {
+            builder.setCounts(at, 0, records, records);
+            builder.setSum(at, 0, { kind: 'exact', value: decimalFromText(String(sum)) });
+        };
+        const n = sums.length;
+        const total = sums.reduce((a, b) => a + b, 0);
+        cell(builder.addCell([], [], n), n, total);
+        cell(builder.addCell([east], [], n), n, total);
+        const window = builder.addWindow([east], from, n - to);
+        sums.forEach((sum, i) => {
+            if (i >= from - 1 && i < to + 1) cell(builder.addCell([east, book(i)], [], 1), 1, sum);
+        });
+        const beyond = (side: 'before' | 'after', sumsBeyond: readonly number[]): void => {
+            if (sumsBeyond.length > 0) cell(builder.addRest(window, side, [], sumsBeyond.length), sumsBeyond.length, sumsBeyond.reduce((a, b) => a + b, 0) + restOff);
+        };
+        beyond('before', sums.slice(0, Math.max(0, from - 1)));
+        beyond('after', sums.slice(to + 1));
+        return builder.build();
+    }
+
+    it('ADR-0370: the cube checks a window against its parent, rests included, and refuses one that does not add up', () => {
+        const asked = ask(3, [{ rows: [east], start: 4 }]);
+        const sums = [9, 8, 7, 6, 5, 4, 3, 2, 1, 0];
+        expect(pivotCube(asked, books(asked, sums, 4, 7), fields).isLevels).toBe(true);
+        expect(() => pivotCube(asked, books(asked, sums, 4, 7, 1), fields))
+            .toThrow("The server's answer for [Region=Text:East] × [] does not add up: its sum of 'Amount' is not what its row groups below compose to");
+    });
+
+    it('ADR-0370: the cube refuses a window whose margin ties with the sibling at its edge', () => {
+        const asked = ask(3, [{ rows: [east], start: 4 }]);
+        expect(books(asked, [9, 8, 7, 5, 5, 4, 3, 2, 1, 0], 4, 7).mismatch(asked)).toBeUndefined();
+        expect(() => pivotCube(asked, books(asked, [9, 8, 7, 5, 5, 4, 3, 2, 1, 0], 4, 7), fields))
+            .toThrow("The server's window under [Region=Text:East] × [] is not where its order puts it: the margin before it, "
+                + '[Region=Text:East, Book=Text:B3] × [], does not sort strictly before [Region=Text:East, Book=Text:B4] × []');
+        expect(() => pivotCube(asked, books(asked, [9, 8, 7, 6, 5, 4, 3, 3, 1, 0], 4, 7), fields))
+            .toThrow('the margin after it, [Region=Text:East, Book=Text:B7] × [], does not sort strictly after [Region=Text:East, Book=Text:B6] × []');
     });
 
     it('ADR-0370: an order a column field says, or one that reads a part not asked for, is refused', () => {
