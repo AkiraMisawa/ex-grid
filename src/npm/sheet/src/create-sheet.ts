@@ -15,7 +15,7 @@ import {
     type ViewportSize,
 } from '@ex-grid/core';
 import {
-    CellAddress, CellFormatChange, CellRange, Culture, Entry, FormulaSyntaxError, SheetEdit, SheetRefusedError, Value, Workbook,
+    CellAddress, CellFormatChange, CellRange, Culture, Entry, FormulaSyntaxError, RepeatedKeyError, SheetEdit, SheetRefusedError, Value, Workbook,
     Sheet, SheetRefusal, type CellFormat, type FillDirection, type HorizontalAlignment, type SheetChange, type SheetDocument, type WorkbookChange, type WorkbookDocument, type WorkbookStep,
 } from '@ex-grid/sheet-engine';
 import { unreachable } from './must';
@@ -91,6 +91,22 @@ export interface SheetHandle {
     undo(): boolean;
     /** Redoes the latest operation undone; false when there is none, which the notice says. */
     redo(): boolean;
+    /**
+     * Declares a Linked Table Formulas read by name, as `ExSheet.DeclareLinkedTableAsync` does (ADR-0049): its readers
+     * show `#GETTING_DATA` until a snapshot is pushed. The declaration is recorded in the document, so
+     * `onWorkbookChanged` hears it when it changes what was declared; declaring the same table again changes nothing.
+     * It is the Consumer's data, not a user's operation, so it is no step on the undo stack. `key` names the column, or
+     * the columns, a row is read by.
+     */
+    declareLinkedTable(name: string, columns: readonly string[], key?: string | readonly string[]): void;
+    /**
+     * Replaces a Linked Table's rows with a whole snapshot, in one step, as `ExSheet.PushLinkedTableAsync` does
+     * (ADR-0049): only the Formulas that read it, and what depends on them, recalculate, and only the rows whose
+     * Values changed repaint. The document never holds a table's rows, so `onWorkbookChanged` hears nothing, and
+     * nothing goes on the undo stack. A snapshot of a keyed table in which a key repeats is refused with the engine's
+     * `RepeatedKeyError`, after the table's readers show `#GETTING_DATA` again.
+     */
+    pushLinkedTable(name: string, rows: Iterable<readonly (Value | undefined)[]>): void;
     /** Stops the Sheet and empties its element. */
     destroy(): void;
 }
@@ -103,6 +119,8 @@ export function createSheet(element: HTMLElement, options: SheetOptions = {}): S
         update: (next: SheetOptions) => { view.update(next); },
         undo: () => view.undo(),
         redo: () => view.redo(),
+        declareLinkedTable: (name: string, columns: readonly string[], key?: string | readonly string[]) => { view.declareLinkedTable(name, columns, key); },
+        pushLinkedTable: (name: string, rows: Iterable<readonly (Value | undefined)[]>) => { view.pushLinkedTable(name, rows); },
         destroy: () => { view.destroy(); },
     });
 }
@@ -240,6 +258,34 @@ class SheetView {
         }
         this.#stepped(stepped);
         return true;
+    }
+
+    declareLinkedTable(name: string, columns: readonly string[], key: string | readonly string[] = []): void {
+        this.#alive();
+        // The engine counts a declaration that declares or replaces a table, and no other: only such a one is
+        // recorded in the document, so only it raises one.
+        const before = this.#workbook.changes;
+        const change = this.#workbook.declareLinkedTable(name, columns, key);
+        this.#changed([change], before !== this.#workbook.changes, false);
+    }
+
+    pushLinkedTable(name: string, rows: Iterable<readonly (Value | undefined)[]>): void {
+        this.#alive();
+        let change: WorkbookChange;
+        try {
+            change = this.#workbook.pushLinkedTable(name, rows);
+        } catch (error) {
+            if (!(error instanceof RepeatedKeyError)) throw error;
+            // The table went back to waiting: its readers show #GETTING_DATA, on every Sheet, and then the Consumer
+            // hears why (ADR-0049). The refusal names what it changed on the Workbook's first Sheet; another Sheet shown
+            // has every row of its Window read again, as the C# Sheet's are.
+            const first = this.#source.sheet === this.#workbook.sheets[0];
+            this.#sheetChanged(first ? [error.change] : [], false);
+            if (!first) this.#source.renewWindow();
+            this.#paintToolbar();
+            throw error;
+        }
+        this.#changed([change], false, false);
     }
 
     // A step taken under an open editor would change the cells, or the Sheet, it commits to: refused, as the C#
@@ -1026,25 +1072,30 @@ class SheetView {
         if (selects !== undefined) this.#select(selects);
     }
 
-    /** What one operation changed across the Workbook: the Sheet shown paints what it changed there. */
-    #changed(changes: readonly WorkbookChange[]): void {
+    /**
+     * What one operation changed across the Workbook: the Sheet shown paints what it changed there, and the document is
+     * raised unless `raiseDocument` is false. A user's own operation ends Format Cells and clears the notice; a
+     * Consumer's programmatic change (`byUser` false: a Linked Table's declaration or snapshot) leaves both standing, as
+     * the C# Sheet's does, since it changes Values and no format Format Cells read.
+     */
+    #changed(changes: readonly WorkbookChange[], raiseDocument = true, byUser = true): void {
         // Format Cells read the cells it was opened over: an operation under it, an undo or a Toolbar press, ends it,
         // so its OK never sets a draft read from formats or places that no longer stand (the spine's sixth rule).
-        this.#endFormatCells();
+        if (byUser) this.#endFormatCells();
         const sheet = this.#source.sheet;
         if (changes.some(change => change.changesSheets) && !this.#workbook.sheets.includes(sheet)) {
             this.#showSheet(this.#workbook.shown);
-            this.#raiseDocument();
+            if (raiseDocument) this.#raiseDocument();
             return;
         }
-        this.#sheetChanged(changes.map(change => change.for(sheet)));
+        this.#sheetChanged(changes.map(change => change.for(sheet)), byUser);
         if (changes.some(change => change.changesSheets)) this.#paintFrame();
         else this.#paintToolbar();
-        this.#raiseDocument();
+        if (raiseDocument) this.#raiseDocument();
     }
 
-    #sheetChanged(changes: readonly SheetChange[]): void {
-        this.#clearNotice();
+    #sheetChanged(changes: readonly SheetChange[], byUser = true): void {
+        if (byUser) this.#clearNotice();
         const edges = this.#edges;
         if (edges !== undefined) for (const change of changes) edges.update(this.#source.sheet, change);
         let options = false;

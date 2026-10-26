@@ -5,12 +5,19 @@
 ```ts
 
 import { ReactElement } from 'react';
+import { Ref } from 'react';
+import { SheetHandle } from '@ex-grid/sheet';
 import { SheetOptions } from '@ex-grid/sheet';
 
 // @public
 export function ExSheet(props: ExSheetProps): ReactElement;
 
 // @public
-export type ExSheetProps = SheetOptions;
+export type ExSheetApi = Omit<SheetHandle, 'update' | 'destroy'>;
+
+// @public
+export type ExSheetProps = SheetOptions & {
+    readonly ref?: Ref<ExSheetApi>;
+};
 
 ```

@@ -266,6 +266,8 @@ ExGrid.Script.ExGrid<TRow>.ExGrid() -> void
 ExGrid.Script.ExGrid<TRow>.FindsHeaders.get -> bool
 ExGrid.Script.ExGrid<TRow>.FindsHeaders.set -> void
 ExGrid.Script.ExGrid<TRow>.FocusAsync() -> System.Threading.Tasks.Task!
+ExGrid.Script.ExGrid<TRow>.HandKeyboardToAsync(Microsoft.AspNetCore.Components.ElementReference control) -> System.Threading.Tasks.Task!
+ExGrid.Script.ExGrid<TRow>.HandKeyboardToAsync(Microsoft.AspNetCore.Components.ElementReference control, bool preventScroll) -> System.Threading.Tasks.Task!
 ExGrid.Script.ExGrid<TRow>.HeaderClickSelects.get -> bool
 ExGrid.Script.ExGrid<TRow>.HeaderClickSelects.set -> void
 ExGrid.Script.ExGrid<TRow>.HeaderGroups.get -> System.Collections.Generic.IReadOnlyList<ExGrid.Columns.HeaderGroup!>?
@@ -319,6 +321,8 @@ ExGrid.Script.ExGrid<TRow>.PasteMaySpill.set -> void
 ExGrid.Script.ExGrid<TRow>.PinnedColumnCount.get -> int
 ExGrid.Script.ExGrid<TRow>.PinnedColumnCount.set -> void
 ExGrid.Script.ExGrid<TRow>.PlaceSelectionAsync(ExGrid.Selection.SelectionRange range, ExGrid.Selection.CellPosition focus, int rowSequenceVersion) -> System.Threading.Tasks.Task<bool>!
+ExGrid.Script.ExGrid<TRow>.ReturnKeyboardAsync() -> System.Threading.Tasks.Task!
+ExGrid.Script.ExGrid<TRow>.ReturnKeyboardAsync(Microsoft.AspNetCore.Components.ElementReference from) -> System.Threading.Tasks.Task!
 ExGrid.Script.ExGrid<TRow>.RowHeight.get -> double?
 ExGrid.Script.ExGrid<TRow>.RowHeight.set -> void
 ExGrid.Script.ExGrid<TRow>.Rows.get -> System.Collections.Generic.IReadOnlyList<TRow!>?

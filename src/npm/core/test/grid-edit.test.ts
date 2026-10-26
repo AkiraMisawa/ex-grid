@@ -156,6 +156,21 @@ describe('the Keyboard Field', () => {
 });
 
 describe('the Cell Editor', () => {
+    it('ADR-0204: the editor a character opens is followed into the window, as the cell an arrow reaches is', async () => {
+        const listener = heard();
+        const { root, told } = mount({ columns, rows: trades(20), rowHeight: 24, viewportHeight: 480, ...listener.options });
+        await painted();
+        press(root, book, rowY(0));
+        await painted();
+        const follows = (): string | null => root.getAttribute('data-ex-follow');
+        const before = follows();
+        key('X');
+        await painted();
+        told.frame();
+        told.clock.advance(0);
+        expect([hasEditor(root), before, follows()]).toEqual([true, '0', '1']);
+    });
+
     it('ED-2 / ED-4: a character opens Overwrite holding it; Enter commits one intent and moves down, and the grid writes nothing', async () => {
         const listener = heard();
         const root = await grid(listener);

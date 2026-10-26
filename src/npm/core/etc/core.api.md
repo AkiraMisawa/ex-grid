@@ -496,6 +496,14 @@ export interface GridCopyRequest {
 }
 
 // @public
+export interface GridDeclaredKeyPress {
+    readonly editOpen: boolean;
+    readonly key: string;
+    readonly rowSequenceVersion: number;
+    readonly selection: GridSelection;
+}
+
+// @public
 export type GridDensity = 'compact' | 'comfortable' | 'standard' | 'excel';
 
 // @public
@@ -600,6 +608,7 @@ export function gridNumberOf(value: SnapshotDecimal): number;
 
 // @public
 export interface GridOptions<Row> extends CellPaintOptions<Row>, FormulaBarOptions<Row> {
+    readonly cellMessage?: (row: Row, column: GridColumn<Row>) => string | undefined;
     readonly columns: readonly GridColumn<Row>[];
     readonly commandLabel?: (id: string) => string | undefined;
     readonly contextCommands?: (context: GridContextMenuContext<Row>) => readonly GridCommand[];
@@ -607,6 +616,7 @@ export interface GridOptions<Row> extends CellPaintOptions<Row>, FormulaBarOptio
     readonly copyAnswerAsync?: (request: GridCopyRequest, signal: AbortSignal) => Promise<GridCopyAnswer>;
     readonly copyCellCap?: number;
     readonly dataEdge?: (from: CellPosition, direction: GridDirection) => CellPosition;
+    readonly declaredKeys?: readonly string[];
     readonly density?: GridDensity;
     readonly findMatch?: (row: Row, column: GridColumn<Row>, pattern: GridFindPattern) => boolean;
     readonly findsHeaders?: boolean;
@@ -626,6 +636,7 @@ export interface GridOptions<Row> extends CellPaintOptions<Row>, FormulaBarOptio
     readonly onColumnHidden?: (column: string) => void;
     readonly onColumnOrderChanged?: (order: readonly string[]) => void;
     readonly onColumnWidthChanged?: (change: GridColumnWidthChange) => void;
+    readonly onDeclaredKey?: (press: GridDeclaredKeyPress) => void;
     readonly onEdit?: (intent: GridEditIntent<Row>) => void | PromiseLike<void>;
     readonly onEditDiscarded?: (reason: EditDiscardReason) => void;
     readonly onEditingChanged?: (open: boolean) => void;
@@ -805,6 +816,16 @@ export type GridReplaceWrite<Row> = {
 } | {
     readonly refusal: string;
 };
+
+// @public
+export class GridRuleset<Row extends object> {
+    get cellMessage(): (row: Row, column: GridColumn<Row>) => string | undefined;
+    get cellState(): (row: Row, column: GridColumn<Row>) => CellState;
+    column(column: string, rule: (row: Row, text: string) => EditVerdict): this;
+    evaluate(rows: Iterable<Row>, columns: readonly GridColumn<Row>[]): void;
+    row(rule: (row: Row) => Iterable<RuleViolation>): this;
+    validatorFor(column: string): ((row: Row, text: string) => EditVerdict) | undefined;
+}
 
 // @public
 export interface GridSelection {
@@ -1182,10 +1203,22 @@ export interface RowRange {
 }
 
 // @public
+export interface RuleViolation {
+    readonly column: string;
+    readonly message: string;
+}
+
+// @public
 export function sameGridFilter(a: GridFilter | undefined, b: GridFilter | undefined): boolean;
 
 // @public
 export function sameGridQuery(a: GridQuery, b: GridQuery): boolean;
+
+// @public
+export const selectionLabelIds: Readonly<{
+    readonly selectedOutsideView: 'selected-outside-view';
+    readonly goToSelection: 'go-to-selection';
+}>;
 
 // @public
 export interface SelectionRange {

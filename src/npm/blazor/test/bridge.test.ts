@@ -404,3 +404,27 @@ describe('the grid', () => {
         expect(cancel?.args[0]).toBe(ask?.args[1]);
     });
 });
+
+describe('keyboard', () => {
+    it('DC-61 / ADR-0070: a control the grid holds the keyboard for is handed it, and the keyboard comes back from it', () => {
+        const { root, grid } = mount();
+        const close = document.createElement('button');
+        document.body.append(close);
+        grid.focus();
+
+        grid.handKeyboardTo(close, false);
+        expect(document.activeElement).toBe(close);
+        grid.returnKeyboard(close);
+        expect(root.contains(document.activeElement)).toBe(true);
+    });
+
+    it('DC-61 / ADR-0070: a control a render removed before the request landed arrives as null, and the keyboard stays', () => {
+        const { root, grid } = mount();
+        grid.focus();
+        const holder = document.activeElement;
+
+        grid.handKeyboardTo(null, false);
+        expect(document.activeElement).toBe(holder);
+        expect(root.contains(holder)).toBe(true);
+    });
+});
