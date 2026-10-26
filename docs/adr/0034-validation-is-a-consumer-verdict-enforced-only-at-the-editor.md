@@ -244,9 +244,17 @@ a "cannot". Who is judging no longer separates the two; what is judged still doe
 
 *(2026-10-26: [ADR-0380](./0380-a-verdict-or-a-refusal-may-be-answered-later-and-the-next-input-waits-for-it.md)
 lets a verdict be a promise. The commit is then pending: the editor stands, and the input behind it waits
-for the answer. A Reject on a domain invariant is legitimate: the Consumer composes the object inside its
-verdict, so the "row-dependent judgements are Flag-tier" convention above no longer follows from the
-verdict having to be immediate. A rule over the whole collection is the subject of ADR-0381.)*
+for the answer. A Reject on a domain invariant is legitimate. The grid still composes no hypothetical row,
+but the Consumer composes the object inside its verdict, from the row and the text it receives. So "row rules
+are Flag-only by construction" above holds for the bundled ruleset's row rules, which run after apply. It no
+longer holds for a verdict. Nor does the "row-dependent judgements are Flag-tier" convention, which rested on
+the verdict having to be immediate. One consequence for a fill: the verdict's single answer was sound only
+while a Reject could not depend on the row. A domain verdict's Accept covers the editor's row alone, and the
+fill's other rows are judged in `onPaste` (ADR-0380 section 4).
+[ADR-0381](./0381-a-rule-over-the-whole-collection-is-judged-after-apply-and-refused-at-the-consumers-save.md)
+adds rules over the whole collection. They are Flag-tier and judged after apply, because the way to a
+valid collection often passes through invalid ones. They are refused at the Consumer's own save, never at
+the editor.)*
 
 ## Consequences
 

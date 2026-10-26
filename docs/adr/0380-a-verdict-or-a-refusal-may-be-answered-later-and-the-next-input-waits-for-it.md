@@ -1,7 +1,7 @@
 # A verdict or a refusal may be answered later, and the next input waits for it
 
-*Decided with the user on 2026-10-26, from the survey of how AG Grid and Apex Grid validate an edit
-(thread "AG Gridとapex-gridの入力検証を調査"). The user's aim is in Context; asked whether the grid's
+*Decided with the user on 2026-10-26, from the survey of how AG Grid and Apex Grid validate an edit,
+made in the same project thread. The user's aim is in Context; asked whether the grid's
 contract judges the candidate row and may answer later, the user chose that over synchronous declarative
 rules only, and over leaving it until after 0.3.0.*
 
@@ -65,22 +65,33 @@ ADR-0050 item 3 has it.
 
 ### 3. While an answer is out, the commit is pending
 
-- **The editor stands, with the text and the keyboard.** The editor carries `aria-busy`, and the root
-  carries a class of its own, painted from Visual Tokens. Nothing is applied, and no Edit Intent is raised
-  until the verdict has accepted or flagged the commit.
+- **The editor stands, with the text and the keyboard, and takes no input of its own.** It keeps DOM
+  focus and its text, and carries `aria-busy` and `readonly`. The root carries a class of its own,
+  painted from Visual Tokens, and a stamp naming the pending commit. Nothing is applied, and no Edit
+  Intent is raised until the verdict has accepted or flagged the commit.
+- **The pending state starts in the commit gesture's own handler.** The Script Core takes the gesture
+  in the browser, synchronously, and marks the commit pending before that handler returns, on every host.
+  So any later input's handler sees it. This includes the next keydown, however fast it follows. On
+  Blazor the answer crosses the circuit, but the pending state never does.
 - **Every input made meanwhile waits in the Input Order**
   ([ADR-0240](./0240-input-to-one-product-instance-is-taken-in-one-order.md) sections 1 and 3). This
-  covers a key, a press, a typed character, and a clipboard key. Each is taken after the answer, against
+  covers a key, a press, a typed character, and a clipboard key. The root's capture listener holds
+  each one: a key's default is prevented, so a character never reaches the read-only field natively, and
+  a composition begun meanwhile is held whole and taken as its text. Each is taken after the answer, against
   what the answer left. Typed fast or slow, `150` Enter `200` Enter therefore ends with the same cells,
   whatever the answer and however late it comes (spine rule 6). Under a Reject, the Enter that followed
   is taken in the still-open editor and asks again, as it would have done after an immediate Reject.
 - **An answer is judged against what the commit was taken against.** A row that left, a Source
   replaced, or an order that moved while the answer was out refuses the commit with ADR-0142's reasons.
   The verdict is not consulted again.
-- **Escape cancels a pending commit: the one input that acts ahead of its turn**, under the terms of
-  ADR-0240 section 12. The `AbortSignal` (C#: `CancellationToken`) handed to the verdict and to `onEdit` is
-  aborted, and the editor stays open with the text. The Escape's own turn then closes nothing. Both
-  outcomes are said aloud: cancelled, or already answered. Without this, a Consumer that never answered
+- **Escape cancels a pending commit: a second input that acts ahead of its turn**, beside ADR-0240
+  section 12's and on its terms. What decides is what the Escape's keydown sees, never when the answer
+  comes. An Escape whose keydown sees the pending stamp cancels. The `AbortSignal` (C#:
+  `CancellationToken`) handed to the verdict and to `onEdit` is aborted, and the editor stays open with
+  the text. The Escape's own turn then closes nothing. If the answer had already come when the Escape's
+  turn arrives, the cancel finds it landed and says so. Both outcomes are said aloud: cancelled, or
+  already answered. An Escape whose keydown sees no stamp is an ordinary key. Since the stamp is set in
+  the commit's own handler (above), an Escape typed after the commit always sees it. Without this, a Consumer that never answered
   would hold the grid, and the grid will not end it on a clock (ADR-0240 section 4).
 
 ### 4. A domain object is judged by the Consumer composing it
@@ -92,9 +103,15 @@ invariant is legitimate.** ADR-0034's "a row-dependent judgement is Flag-tier" w
 such, and its reason was that the verdict had to be cheap and immediate. Under section 1 it need not be.
 The Docs Site's Editing page says so, with an Example of each product: a domain type refusing to be built.
 
-A fill still asks once, against the row the editor was opened on (ADR-0034). A clipboard paste still asks
-no verdict (ED-18). A domain that refuses some rows of a paste or a fill answers in `onPaste`: it applies
-the rest and flags those rows, or refuses the paste whole, now possibly later.
+A fill still asks the verdict once, against the row the editor was opened on (ADR-0034). That single
+question was sound only while a Reject could not depend on the row. **A domain Reject can, so the verdict's
+Accept for the editor's row says nothing about the other rows of a fill.** Those rows are judged where the
+whole target is visible, in `onPaste`, which a fill raises like a paste. A Consumer whose domain judges
+rows applies there only the objects that can exist. For the rest it either refuses the fill whole, now
+possibly later, or keeps their old values and flags them with the text it could not apply (ADR-0034's
+partial apply). It never applies an object that cannot exist. A clipboard paste still asks no verdict
+(ED-18) and is judged the same way in `onPaste`. The Docs Site's domain Example shows a fill over rows
+where some objects cannot exist.
 
 ### 5. Blazor carries it over the circuit, React passes it through
 
@@ -128,6 +145,8 @@ the rest and flags those rows, or refuses the paste whole, now possibly later.
 
 - ADR-0034 gains a dated note: a verdict may be answered later, and a domain Reject is legitimate.
 - ADR-0142's "One commit at a time" holds in the Script Core, with a note.
+- ADR-0240 section 12 gains a note: Escape on a Pending Commit is a second input that acts ahead of its
+  turn, on its terms.
 - ADR-0350 section 7 gains a note: Blazor carries `Validate` and `Refuse` as pending answers.
 - `CONTEXT.md` gains **Pending Commit**.
 - The Definition of Done gains ED-32 to ED-35 (the promise verdict, the waiting input, Escape's cancel,

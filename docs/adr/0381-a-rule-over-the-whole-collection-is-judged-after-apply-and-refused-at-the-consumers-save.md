@@ -1,7 +1,8 @@
 # A rule over the whole collection is judged after apply, and refused at the Consumer's save
 
-*Proposed 2026-10-26 with [ADR-0380](./0380-a-verdict-or-a-refusal-may-be-answered-later-and-the-next-input-waits-for-it.md),
-from the user's question in the same thread. Not yet decided.*
+*Decided with the user on 2026-10-26, beside [ADR-0380](./0380-a-verdict-or-a-refusal-may-be-answered-later-and-the-next-input-waits-for-it.md),
+from the user's question in the same thread. It was proposed there, and the user approved it with
+ADR-0380, saying that the pull request carrying both may merge once reviewed and green.*
 
 ## Context
 
@@ -47,9 +48,11 @@ row can break and fix on its own stays a verdict, and may Reject (ADR-0380 secti
   on screen and one far below is still a breach. It is evaluated by the Consumer after each apply, as
   `Evaluate` is today. The cost is the Consumer's rule, typically one pass grouping by a key. The ruleset
   does not re-run unchanged groups; that optimisation is the rule's own.
-- **Its map is keyed by Row Key once a Row Key is declared** (ADR-0140). An instance key cannot name a row
-  outside the Window, and a Breach names rows wherever they are. Without a Row Key, a set rule is refused when
-  it is added, naming the reason.
+- **A ruleset that holds a set rule is made with a Row Key function**, the same function the Consumer's
+  Source declares (ADR-0140): `new GridRuleset<TRow>(rowKey)`. Its map is then keyed by Row Key, and its
+  state and message lookups read the key of the row they are asked about. An instance key cannot name a
+  row outside the Window, and a Breach names rows wherever they are. `Set` on a ruleset made without one
+  throws, naming the reason.
 - **Every involved cell carries the Breach's message, and the message names the others**: for example,
   "CSA ABC has two discount curves: USD-SOFR on 12 trades, USD-FF on 1 (T-0412)". The words are the
   Consumer's. A row is named by what the Consumer shows (a trade id), never by its position, which a sort
@@ -60,9 +63,13 @@ row can break and fix on its own stays a verdict, and may Reject (ADR-0380 secti
 - **The ruleset answers the breaches it holds**, in an order that does not depend on the Window: count,
   each Breach, and its cells.
 - **The grid gains a step to the next and the previous error cell**, Error being the Cell State a Breach
-  and a Flag both paint. It reaches a cell outside the Window by asking the Source where the row with that
-  Row Key now stands, the way Find reaches a match it has not drawn. A row the Source can no longer find is
-  skipped, and the step says so.
+  and a Flag both paint. The grid knows only the cells it paints, so **the step is asked of the Consumer**,
+  as Find is ([ADR-0055](./0055-find-is-asked-of-the-consumer-like-sort-and-filter.md)): a seam `findError(from, direction)`
+  answered with the position of the next error cell, or none. The bundled ruleset implements it. It looks up
+  each Row Key's position in the Consumer's ordered collection, which it is handed with the rows it
+  evaluates. A Consumer without the ruleset answers from its own errors. A grid without the seam offers no
+  step. It never steps through only the cells it has painted, which would skip every error outside the Window
+  without saying so.
 - **The key and its words are Chrome's**: the built-in Chrome's English, replaceable through its label
   function (ADR-0203), and the MUI and MudBlazor Wrappers' own. The count shows in the status line beside
   the Selection Summary when the Consumer turns it on.
@@ -89,11 +96,11 @@ a live update from a server (ADR-0141), or code. One implementation, as ADR-0034
 ## Consequences
 
 - `CONTEXT.md` gains **Breach**.
-- ADR-0034 gains a note: a rule over the collection is Flag-tier by construction, and refused at the
-  Consumer's save.
+- ADR-0034's note of 2026-10-26 says that a rule over the collection is Flag-tier, and that it is refused
+  at the Consumer's save.
 - `GridRuleset` gains `Set` and Row Key keying, in C#, and the TypeScript ruleset is ported with it. A
   ruleset without a Row Key keeps today's instance keying for column and row rules.
-- The Definition of Done gains criteria for the set rule's marks on rows inside and outside the Window,
-  the message on every involved cell, and the next/previous error step reaching an unpainted row.
+- The Definition of Done gains ED-36 to ED-38: the set rule's marks on every involved cell inside and
+  outside the Window, its message, and the next/previous error step reaching an unpainted row.
 - The Docs Site's Editing page shows the trade example: a CSA moved to a new curve trade by trade, its
   breach marked on every trade and cleared by the last edit, and a save refused while it stands.
