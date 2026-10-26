@@ -164,6 +164,12 @@ criteria inside ExGrid's release (Definition of Done §2).
 - **A Focus column's format that cannot take the figure** — one written as `(int)v` — falls back
   to the figure's own text rather than to nothing. Counts are whole numbers in the invariant
   culture; an unformatted `double` shows ten significant digits, as Excel's status bar does.
+  *(Script Core, 2026-10-26: a TypeScript format takes the column's own values, which are numbers,
+  so it is handed the figure's `number`; it cannot take the exact decimal the C# core hands a
+  decimal column's format. Where a figure was summed exactly and its `number` does not carry it to
+  the ten decimal places its own text keeps — a Sum past 2^53, an Average of such sums — the format
+  would show it rounded, so the figure's own exact text is shown instead. A format that throws a
+  `TypeError` on a `number`, one written for `bigint` values, falls back as `(int)v` does.)*
 - **SM-7 and the format rule were implemented without waiting for the Windows run**, as the user
   asked: an error among the values leaves Count, and the Focus's column's format is used. Both
   stand to be corrected by the run. *(The run, 2026-10-12, corrected SM-7 — Numerical Count stands

@@ -51,6 +51,8 @@ import { Selection, type EdgeAnswer, type GridSelection } from '../selection/sel
 import { nextSort } from '../query/sort';
 import type { GridSource, GridSourceState } from '../source/grid-source';
 import { InMemoryGridSource } from '../source/in-memory-source';
+import type { GridSummaryRequest, GridSummaryResult } from '../summary/grid-summary';
+import { isSummaryFigure, summaryFigureOrder, defaultSummaryFigures, type SummaryFigure } from '../summary/summary-accumulator';
 import { keyOf, type RowKey } from '../source/row-key';
 import { rowRange, type RowRange } from '../viewport/row-range';
 import { ViewportBox } from '../viewport/viewport-box';
@@ -76,6 +78,7 @@ import {
 } from './grid-column';
 import { moveByKey, movingKinds, type KeyReveal } from './key-moves';
 import { selectionLayers, type LayerPiece } from './selection-layers';
+import { rowsMovedUnder, selectsTwoCells, summaryFiguresShown, SummaryBox, SummaryQuestions, type SelectionSummary, type SummaryAnswerer } from './selection-summary';
 import { stylesheetName, stylesheetStamp } from './shipped-stylesheet';
 import { CellPaint, type CellPaintOptions } from './cell-paint';
 import { FormulaBar, formulaBarDeclarations, type FormulaBarDeclarations, type FormulaBarOptions } from './formula-bar';
@@ -346,6 +349,26 @@ export interface GridOptions<Row> extends CellPaintOptions<Row>, FormulaBarOptio
      * and Ctrl+Shift+arrow only; Home and End keep their meaning. An answer off the Focus's line, behind it or
      * outside the grid is refused by name. The grid's edge unless given (ADR-0012). */
     readonly dataEdge?: (from: CellPosition, direction: GridDirection) => CellPosition;
+    /**
+     * The answer to a Selection Summary (ADR-0130): the figures over the cells the request names, in the order it
+     * was read in, or a decline with a reason, never a partial figure; `summaryOf` is the reference for what each
+     * figure is. A `source` that summarises, as `GridSource.from` does, answers through its own `summarize`, and
+     * passing this beside one is refused by name; over `rows` this answers in place of the source the grid makes.
+     * The signal aborts when the selection the request was asked of is gone: its answer is shown nowhere anyway.
+     */
+    readonly onSummarize?: (request: GridSummaryRequest, signal: AbortSignal) => GridSummaryResult | Promise<GridSummaryResult>;
+    /** Whether the grid's own status line shows the Selection Summary (ADR-0130): on unless given, so a grid that
+     * can summarise shows Excel's status-bar figures without being asked. Off: no strip and no figure on the
+     * grid; a Consumer hearing `onSelectionSummaryChanged` is still told, and with nobody hearing either, nothing
+     * is asked. */
+    readonly showSelectionSummary?: boolean;
+    /** The figures the status line shows, Excel's Average, Count and Sum unless given (ADR-0130). Shown in Excel's
+     * order whatever the order given; none, and nothing is asked. */
+    readonly summaryFigures?: readonly SummaryFigure[];
+    /** Hears the Selection Summary as it now stands, after the pass that shows each change (ADR-0130): for a
+     * Consumer that shows the figures elsewhere, such as an application-wide status bar. The grid never writes
+     * them to a live region. */
+    readonly onSelectionSummaryChanged?: (summary: SelectionSummary) => void;
 }
 
 const defaultViewportWidthPx = 800;
@@ -571,6 +594,10 @@ interface Taken<Row> {
     readonly cellPaint: CellPaint<Row>;
     readonly headerClickSelects: boolean;
     readonly dataEdge: EdgeAnswer | undefined;
+    readonly onSummarize: SummaryAnswerer | undefined;
+    readonly showSelectionSummary: boolean;
+    readonly summaryFigures: readonly SummaryFigure[];
+    readonly onSelectionSummaryChanged: ((summary: SelectionSummary) => void) | undefined;
     readonly formulaBar: FormulaBarDeclarations<Row>;
 }
 
@@ -924,7 +951,19 @@ export class GridView<Row> {
     readonly #markBoxes = new WeakMap<Element, boolean>();
     #markPress: { readonly box: Element; readonly pressed: PressedRow<Row> } | undefined;
     #headerMarkPress: { readonly sequence: number; readonly source: unknown } | undefined;
-    #markCountShown: HTMLElement | undefined;
+    // The status line after the rows (ADR-0014): the marks' count and the Selection Summary, standing while either
+    // has its place in it.
+    readonly #status: HTMLElement;
+    #statusShown: readonly HTMLElement[] = [];
+    // The Selection Summary (ADR-0130): who answers it, the figures shown, who hears it, the question in force and
+    // its box, and how many times the rows under a standing selection may have moved.
+    #onSummarize: SummaryAnswerer | undefined;
+    #showSelectionSummary = true;
+    #summaryFigures: readonly SummaryFigure[] = defaultSummaryFigures;
+    #onSelectionSummaryChanged: ((summary: SelectionSummary) => void) | undefined;
+    readonly #summary: SummaryQuestions;
+    readonly #summaryBox: SummaryBox;
+    #summaryRowsStamp = 0;
     #pasteHeard: ((intent: GridPasteIntent) => void) | undefined;
     #pasteMaySpill = false;
     #highlightFocusRow = false;
@@ -1217,6 +1256,13 @@ export class GridView<Row> {
         this.#rowMarks = new GridMarks(doc, () => {
             this.#invalidate();
         });
+        // The status line sits where the C# core's holds it (ADR-0014, ADR-0043, ADR-0130): after the rows, outside
+        // the scroller.
+        this.#status = element('div', { class: 'ex-status', role: 'presentation' });
+        this.#summary = new SummaryQuestions(() => {
+            this.#invalidate();
+        });
+        this.#summaryBox = new SummaryBox(doc);
         this.#bar = new FormulaBar(doc, {
             textTyped: this.#onBarTyped, textFocused: this.#onBarFocused, nameBoxEntered: this.#onNameBoxEntered, nameBoxLeft: this.#onNameBoxLeft,
             nameBoxFocused: this.#onNameBoxFocused,
@@ -1427,6 +1473,7 @@ export class GridView<Row> {
         for (const stop of this.#stops) stop();
         this.#unsubscribe?.();
         this.#rowMarks.destroy();
+        this.#summary.destroy();
         // Every Template cell's content is taken away with the grid (ADR-0020).
         for (const byColumn of this.#templates.values()) {
             for (const mounted of byColumn.values()) this.#unmount(mounted);
@@ -1618,6 +1665,7 @@ export class GridView<Row> {
         if (headerClickSelects === true && onColumnOrderChanged !== undefined) {
             throw new TypeError('headerClickSelects and onColumnOrderChanged both claim a press on a header: declare one of them.');
         }
+        const summary = this.#summaryOptionsOf(options);
         const { copyCellCap = defaultCellCap, pasteByteCap = defaultPasteByteCap } = options;
         const { copyAnswer }: { readonly copyAnswer?: unknown } = options;
         if (copyAnswer !== undefined && typeof copyAnswer !== 'function') throw new TypeError('copyAnswer is a function of the copy asked (ADR-0050, item 9).');
@@ -1660,7 +1708,48 @@ export class GridView<Row> {
             onPinnedCountChanged: options.onPinnedCountChanged, culture, temporal,
             onReplace: options.onReplace, findMatch: options.findMatch, findsHeaders: options.findsHeaders !== false,
             cellPaint: CellPaint.take(options, this.#cellPaint), headerClickSelects: headerClickSelects === true, formulaBar,
-            dataEdge: options.dataEdge,
+            dataEdge: options.dataEdge, ...summary,
+        };
+    }
+
+    // The Selection Summary's options checked (ADR-0130): `onSummarize` beside a source that summarises is refused,
+    // since one of the two would have to silently win, and the figures are taken in Excel's order.
+    #summaryOptionsOf(options: GridOptions<Row>): Pick<Taken<Row>, 'onSummarize' | 'showSelectionSummary' | 'summaryFigures' | 'onSelectionSummaryChanged'> {
+        const { onSummarize, showSelectionSummary, summaryFigures, onSelectionSummaryChanged }: {
+            readonly onSummarize?: unknown; readonly showSelectionSummary?: unknown; readonly summaryFigures?: unknown;
+            readonly onSelectionSummaryChanged?: unknown;
+        } = options;
+        if (onSummarize !== undefined && typeof onSummarize !== 'function') {
+            throw new TypeError('onSummarize is a function of the Selection Summary\'s request and an abort signal (ADR-0130).');
+        }
+        if (onSummarize !== undefined && options.source?.summarize !== undefined) {
+            throw new TypeError('onSummarize was given together with a source that summarises. One of the two would have to silently win; '
+                + 'give the source alone, or a source that does not summarise (ADR-0130).');
+        }
+        if (showSelectionSummary !== undefined && typeof showSelectionSummary !== 'boolean') {
+            throw new TypeError('showSelectionSummary is true or false.');
+        }
+        if (onSelectionSummaryChanged !== undefined && typeof onSelectionSummaryChanged !== 'function') {
+            throw new TypeError('onSelectionSummaryChanged is a function of the Selection Summary.');
+        }
+        let figures = defaultSummaryFigures;
+        if (summaryFigures !== undefined) {
+            if (!Array.isArray(summaryFigures)) throw new TypeError('summaryFigures is a list of figures (ADR-0130).');
+            const given: readonly unknown[] = summaryFigures;
+            const unknown = given.find(figure => typeof figure !== 'string' || !isSummaryFigure(figure));
+            if (unknown !== undefined) {
+                throw new TypeError(`summaryFigures holds ${JSON.stringify(unknown)}, which is none of the figures: ${summaryFigureOrder.join(', ')} (ADR-0130).`);
+            }
+            const ordered = summaryFigureOrder.filter(figure => given.includes(figure));
+            // The same figures as before are the same array, so a Framework Adapter's new one each render asks nothing.
+            figures = sameItems(ordered, this.#summaryFigures) ? this.#summaryFigures : Object.freeze(ordered);
+        }
+        const answer = options.onSummarize;
+        return {
+            onSummarize: answer === undefined ? undefined : async (request, signal) => answer(request, signal),
+            showSelectionSummary: showSelectionSummary !== false,
+            summaryFigures: figures,
+            onSelectionSummaryChanged: options.onSelectionSummaryChanged,
         };
     }
 
@@ -1821,6 +1910,10 @@ export class GridView<Row> {
         this.#cellPaint = taken.cellPaint;
         this.#headerClickSelects = taken.headerClickSelects;
         this.#dataEdge = taken.dataEdge;
+        this.#onSummarize = taken.onSummarize;
+        this.#showSelectionSummary = taken.showSelectionSummary;
+        this.#summaryFigures = taken.summaryFigures;
+        this.#onSelectionSummaryChanged = taken.onSelectionSummaryChanged;
         this.#formulaBarDeclared = taken.formulaBar;
         // A panel over a source that no longer finds closes, as a Cancel: nothing could answer its steps
         // (ADR-0055). One offering Replace where none can land any more offers Find alone (ADR-0332 §2).
@@ -1840,11 +1933,24 @@ export class GridView<Row> {
     }
 
     readonly #onSource = (): void => {
-        const { window, windowStart } = this.#state;
+        const previous = this.#state;
+        const { window, windowStart } = previous;
         this.#state = this.#source.snapshot();
+        this.#noteRowsForSummary(previous);
         this.#userWritesTakenIn(window, windowStart);
         this.#invalidate();
     };
+
+    // Notes whether the rows moved under the figures (ADR-0130). Walked only while a question stands, of this source
+    // and under this order; with none, nothing on screen can be wrong, and the stamp moves so that the next question
+    // asks afresh. A question asked under another order or of another source goes with the Selection (ADR-0011).
+    #noteRowsForSummary(previous: GridSourceState<Row>): void {
+        const question = this.#summary.standing;
+        if (question === undefined || question.binding !== this.#source || question.rowSequenceVersion !== this.#state.rowSequenceVersion
+            || rowsMovedUnder(question.ranges, previous, this.#state)) {
+            this.#summaryRowsStamp += 1;
+        }
+    }
 
     #onScroll(): void {
         // A reveal's repaint is the browser's business: meanwhile the grid stands where the reveal left the
@@ -1915,6 +2021,7 @@ export class GridView<Row> {
         this.#focusEditor();
         this.#raiseRangeIfUncovered();
         this.#raiseSelection();
+        void this.#summary.settle(() => this.#summaryAnswerer, this.#onSelectionSummaryChanged);
         this.#lookSettled();
     }
 
@@ -3130,6 +3237,8 @@ export class GridView<Row> {
         if (visible !== undefined) this.#followUserWriteCells(targets, visible.start, visible.start + visible.count - 1, write);
         const { window, windowStart } = this.#state;
         this.#followUserWriteCells(targets, windowStart, windowStart + window.length - 1, write);
+        // The values summed may move with it (ADR-0130).
+        this.#askSummaryAgain();
         if (write.cellCount > 0) {
             this.#userWrites.push(write);
             if (this.#userWrites.length > userWritesKept) {
@@ -4630,6 +4739,7 @@ export class GridView<Row> {
             this.#refuseFind('notFound');
             return;
         }
+        this.#askSummaryAgain();
         this.#setFindOutcome({ kind: 'replaced', count: result.count });
     }
 
@@ -5948,23 +6058,82 @@ export class GridView<Row> {
         this.#forgetCurrentMatchOffFocus();
         this.#paintHeader();
         this.#paintViewport();
-        this.#paintMarkCount();
+        this.#paintStatus();
         this.#paintMessage();
         this.#paintFormulaBar();
         this.#placePopover();
     }
 
-    // The header's checkbox from the counts the Consumer answers, and the marks' count after the rows, outside
-    // the scroller, standing while it says something (ADR-0043, ADR-0014).
-    #paintMarkCount(): void {
-        const status = this.#rowMarks.marks === undefined ? undefined : this.#rowMarks.paint(id => this.#labelOf(id));
-        if (status === undefined) {
-            this.#markCountShown?.remove();
-            this.#markCountShown = undefined;
-        } else if (status !== this.#markCountShown || !status.isConnected) {
-            this.#root.insertBefore(status, this.#announce);
-            this.#markCountShown = status;
+    // The status line after the rows, outside the scroller (ADR-0014): the header's checkbox and the marks' count
+    // from the counts the Consumer answers, standing while it says something (ADR-0043), and the Selection
+    // Summary, standing whenever the grid can summarise, figures or none, so the strip does not come and go with
+    // every selection (ADR-0130).
+    #paintStatus(): void {
+        const count = this.#rowMarks.marks === undefined ? undefined : this.#rowMarks.paint(id => this.#labelOf(id));
+        this.#reviewSummary();
+        const shown: HTMLElement[] = [];
+        if (count !== undefined) shown.push(count);
+        if (this.#showSelectionSummary && this.canSummarize) {
+            const summary = this.#summary.summary;
+            const focus = this.#held.selection.focus;
+            const column = focus === undefined ? undefined : this.#columns[focus.column]?.column;
+            this.#summaryBox.paint(summary, summaryFiguresShown(summary.result, column), id => this.#labelOf(id));
+            shown.push(this.#summaryBox.element);
         }
+        if (!sameItems(shown, this.#statusShown)) {
+            this.#status.replaceChildren(...shown);
+            this.#statusShown = shown;
+        }
+        if (shown.length === 0) {
+            this.#status.remove();
+        } else if (!this.#status.isConnected) {
+            this.#root.insertBefore(this.#status, this.#announce);
+        }
+    }
+
+    /** Whether anything can answer a Selection Summary (ADR-0130): `onSummarize`, or a source that summarises.
+     * False: no figure ever appears. */
+    get canSummarize(): boolean {
+        return this.#onSummarize !== undefined || this.#source.summarize !== undefined;
+    }
+
+    get #summaryAnswerer(): SummaryAnswerer | undefined {
+        if (this.#onSummarize !== undefined) return this.#onSummarize;
+        const source = this.#source;
+        if (source.summarize === undefined) return undefined;
+        return async (request, signal) => {
+            if (source.summarize === undefined) throw new Error('Internal: a source that summarised no longer does.');
+            return source.summarize(request, signal);
+        };
+    }
+
+    // The question the grid's state asks (ADR-0130), run as the status line paints: a different one from the question
+    // in force clears the figures in this very pass and owes the asking to the pass's end.
+    #reviewSummary(): void {
+        const selection = this.#held.selection;
+        const asks = this.canSummarize && (this.#showSelectionSummary || this.#onSelectionSummaryChanged !== undefined)
+            && this.#summaryFigures.length > 0 && selectsTwoCells(selection.ranges);
+        this.#summary.review(asks ? {
+            ranges: selection.ranges, focus: selection.focus, binding: this.#source, rowSequenceVersion: this.#state.rowSequenceVersion,
+            columns: this.#columnNames, figures: this.#summaryFigures, rowsStamp: this.#summaryRowsStamp,
+        } : undefined);
+    }
+
+    /**
+     * Tells the grid that the values under the selection may have moved where it cannot see them, a change outside
+     * the Window or a recalculation (ADR-0130): the figures clear at once and the question is asked again. Nothing
+     * happens while no figure stands or is being asked for.
+     */
+    refreshSummary(): void {
+        if (this.#destroyed || this.#summary.standing === undefined) return;
+        this.#askSummaryAgain();
+    }
+
+    // The values summed may have moved, an edit the grid handed over or a change it was told of: the next pass clears
+    // the figures and asks again.
+    #askSummaryAgain(): void {
+        this.#summaryRowsStamp += 1;
+        this.#invalidate();
     }
 
     #scrollerStyle(): string {

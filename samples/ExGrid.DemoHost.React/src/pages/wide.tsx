@@ -49,6 +49,9 @@ export function Wide(): ReactElement {
             <ExGrid
                 columns={wideColumns}
                 rows={rows}
+                // The Blazor page pushes its Window and nobody answers a Selection Summary there: no strip here either,
+                // and Ctrl+A over 10⁸ cells asks nothing (ADR-0130).
+                showSelectionSummary={false}
                 rowHeight={28}
                 viewportHeight={600}
                 viewportWidth={900}

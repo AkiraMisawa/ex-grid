@@ -41,6 +41,13 @@ export interface GridHandle<Row> {
     openPopover(content: (context: GridPopoverContext) => HTMLElement, label: string): boolean;
     /** Closes the Consumer's popover where one stands; the keyboard returns to the grid. */
     closePopover(): void;
+    /** Whether anything can answer a Selection Summary (ADR-0130): `onSummarize`, or a source that summarises.
+     * False: no figure ever appears. */
+    readonly canSummarize: boolean;
+    /** Tells the grid that the values under the selection may have moved where it cannot see them, a change
+     * outside the Window or a recalculation (ADR-0130): the figures clear at once and the question is asked
+     * again. Nothing happens while no figure stands or is being asked for. */
+    refreshSummary(): void;
     /** Stops the grid: it hears nothing more and empties its element. A source it was handed stays the
      * Consumer's. */
     destroy(): void;
@@ -62,6 +69,10 @@ export function createGrid<Row>(element: HTMLElement, options: GridOptions<Row>)
         keyName: (event: KeyboardEvent) => view.keyName(event),
         openPopover: (content: (context: GridPopoverContext) => HTMLElement, label: string) => view.openPopover(content, label),
         closePopover: () => { view.closePopover(); },
+        get canSummarize() {
+            return view.canSummarize;
+        },
+        refreshSummary: () => { view.refreshSummary(); },
         destroy: () => { view.destroy(); },
     });
 }

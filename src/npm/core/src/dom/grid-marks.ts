@@ -18,7 +18,6 @@ export class GridMarks<Row> {
     /** The header's checkbox: one element for the grid's life, so a header built again keeps the press made on
      * it. */
     readonly headerBox: HTMLButtonElement;
-    readonly #status: HTMLElement;
     readonly #count: HTMLElement;
     readonly #changed: () => void;
     #marks: RowMarks<Row> | undefined;
@@ -28,14 +27,9 @@ export class GridMarks<Row> {
     constructor(doc: Document, changed: () => void) {
         this.#changed = changed;
         this.headerBox = checkbox(doc, 'ex-mark ex-mark-all');
-        // The count sits where the C# core's status line holds it (ADR-0014, ADR-0043): after the rows, outside
-        // the scroller, standing only while it says something.
-        this.#status = doc.createElement('div');
-        this.#status.className = 'ex-status';
-        this.#status.setAttribute('role', 'presentation');
+        // The count stands in the grid's status line (ADR-0014, ADR-0043) only while it says something.
         this.#count = doc.createElement('span');
         this.#count.className = 'ex-mark-count';
-        this.#status.append(this.#count);
     }
 
     /** Who holds the marks, while a Mark Column is declared. */
@@ -64,7 +58,7 @@ export class GridMarks<Row> {
     /**
      * Writes the header's checkbox and the count from the counts the Consumer answers, never from the Window: a
      * fully marked Window inside a larger result is "some" (ADR-0043, MK-2). Counts not yet known claim neither
-     * none nor all. Answers the count's line while it says something, for the grid to stand after its rows.
+     * none nor all. Answers the count while it says something, for the grid to stand in its status line.
      */
     paint(words: (id: string) => string): HTMLElement | undefined {
         const counts = this.#marks?.counts;
@@ -73,7 +67,7 @@ export class GridMarks<Row> {
         const text = this.#marks === undefined ? undefined : markCountText(counts, words);
         if (text === undefined) return undefined;
         if (this.#count.textContent !== text) this.#count.textContent = text;
-        return this.#status;
+        return this.#count;
     }
 
     /** Stops hearing the marks. */

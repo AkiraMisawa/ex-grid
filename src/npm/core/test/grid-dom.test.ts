@@ -25,8 +25,9 @@ describe('createGrid', () => {
             dir: 'ltr', role: 'grid', 'aria-multiselectable': 'true', 'aria-rowcount': '1001', 'aria-colcount': '2', tabindex: '0',
         });
         expect(root.id).toMatch(/^ex\d+-root$/);
+        // The status line stands after the rows whenever the grid can summarise, as this one's source does (ADR-0130).
         expect([...root.children].map(child => (child.className === '' ? child.tagName : child.className)))
-            .toEqual(['SPAN', 'DIV', 'ex-scroller', 'ex-announce', 'ex-ceiling-probe']);
+            .toEqual(['SPAN', 'DIV', 'ex-scroller', 'ex-status', 'ex-announce', 'ex-ceiling-probe']);
         expect(q(root, '[data-ex-notice]').getAttribute('data-ex-stamp')).toBe(stylesheetStamp);
         expect(q(root, '.ex-scroller').getAttribute('style')).toBe('width: 800px; height: 480px');
         expect(q(root, '.ex-spacer').getAttribute('style')).toBe(`width: 220px; height: ${24 + (1000 * 24)}px`);

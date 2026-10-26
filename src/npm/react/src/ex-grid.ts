@@ -62,6 +62,10 @@ export function ExGrid<Row>(props: ExGridProps<Row>): ReactElement {
         keyName: (event) => mounted(grid.current).keyName(event),
         openPopover: (content, label) => mounted(grid.current).openPopover(content, label),
         closePopover: () => { mounted(grid.current).closePopover(); },
+        get canSummarize() {
+            return mounted(grid.current).canSummarize;
+        },
+        refreshSummary: () => { mounted(grid.current).refreshSummary(); },
     }), []);
     useLayoutEffect(() => () => {
         // The content goes with the grid, and nothing renders for it again.
