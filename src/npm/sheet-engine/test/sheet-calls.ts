@@ -4,7 +4,9 @@
 // each one here, as the Script Core spells it.
 import { CellAddress } from '../src/cell-address';
 import { CellRange } from '../src/cell-range';
+import { serialFromDate } from '../src/date-serial';
 import { DeclaredFunction } from '../src/declared-function';
+import { Entry } from '../src/entry';
 import {
     completeFormula, constantText, cycleReference, formulaHintAt, formulaPointAt, formulaReferences, lookupFinds, lookupText,
     pointedReferenceAt, referenceText, structuredReferenceText,
@@ -18,7 +20,10 @@ type Callable = (...args: unknown[]) => unknown;
 const subjects: Readonly<Record<string, object>> = {
     CellAddress,
     CellRange,
+    // C#'s DateSerial is a static class: its member is the module's function here, under the C# name.
+    DateSerial: { fromDate: serialFromDate },
     DeclaredFunction,
+    Entry,
     // C#'s FormulaEntry is a static class: its members are the module's functions here, under the C# names.
     FormulaEntry: {
         complete: completeFormula,
