@@ -3,7 +3,7 @@
 | Product | Line | Branch |
 |---|---|---|
 | ExGrid | 95.2% | 88.5% |
-| ExSheet | 95.4% | 88.6% |
+| ExSheet | 95.2% | 87.6% |
 | ExPivot | 94.4% | 86.3% |
 | ExChart | 90.7% | 83.4% |
 | ExBoard | 91.7% | 81.8% |
@@ -14,19 +14,19 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/26/2026 - 01:11:27 |
+| Generated on: | 10/26/2026 - 02:15:11 |
 | Parser: | MultiReport (19x Cobertura) |
 | Assemblies: | 16 |
-| Classes: | 1187 |
+| Classes: | 1197 |
 | Files: | 607 |
-| **Line coverage:** | 94.5% (82420 of 87147) |
-| Covered lines: | 82420 |
-| Uncovered lines: | 4727 |
-| Coverable lines: | 87147 |
-| Total lines: | 139279 |
-| **Branch coverage:** | 87.5% (49871 of 56968) |
-| Covered branches: | 49871 |
-| Total branches: | 56968 |
+| **Line coverage:** | 94.5% (82980 of 87797) |
+| Covered lines: | 82980 |
+| Uncovered lines: | 4817 |
+| Coverable lines: | 87797 |
+| Total lines: | 140156 |
+| **Branch coverage:** | 87.2% (50079 of 57418) |
+| Covered branches: | 50079 |
+| Total branches: | 57418 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
@@ -109,8 +109,8 @@
 |ExChart.Components.Svg|50%|25%|
 |ExChart.GridCell|100%||
 |ExChart.GridChart|25%|0%|
-|ExChart.GridChartBridge<TRow>|70.3%|42.3%|
 |ExChart.GridChartBridge<TRow>|46.3%|17.5%|
+|ExChart.GridChartBridge<TRow>|70.3%|42.3%|
 |ExChart.GridChartCommands|62.5%|62.5%|
 |ExChart.GridChartDeclarations<TRow>|100%||
 |ExChart.GridChartSeries|100%||
@@ -524,15 +524,15 @@
 |ExGrid.ViewStateDocument|100%||
 
 </details>
-<details><summary>ExGrid.Data - 94.9%</summary>
+<details><summary>ExGrid.Data - 95%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExGrid.Data**|**94.9%**|**90.5%**|
+|**ExGrid.Data**|**95%**|**90.5%**|
 |ExGrid.Data.AggregateAccumulator|93%|92.4%|
 |ExGrid.Data.AggregateArithmetic|97.8%|95.7%|
 |ExGrid.Data.AggregateResult|86.2%|55.5%|
-|ExGrid.Data.BoardInput|94.6%|82%|
+|ExGrid.Data.BoardInput|96%|82.7%|
 |ExGrid.Data.BoardRefusedException|100%||
 |ExGrid.Data.BooleanColumn|100%||
 |ExGrid.Data.BooleanColumnBuilder|100%|100%|
@@ -834,11 +834,11 @@
 |ExPivot.PivotDetails|100%||
 
 </details>
-<details><summary>ExPivot.Engine - 96.3%</summary>
+<details><summary>ExPivot.Engine - 96.2%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExPivot.Engine**|**96.3%**|**88.9%**|
+|**ExPivot.Engine**|**96.2%**|**88.6%**|
 |ExPivot.Engine.AggregateValue|100%|100%|
 |ExPivot.Engine.AggregationPass|98.5%|95.7%|
 |ExPivot.Engine.AxisNode|87%|80%|
@@ -880,11 +880,13 @@
 |ExPivot.Engine.OrderKeyFailedException|100%||
 |ExPivot.Engine.PartColumns|96.1%|97.3%|
 |ExPivot.Engine.PivotAggregations|93.3%|91.6%|
-|ExPivot.Engine.PivotAnswer|92.8%|75.6%|
+|ExPivot.Engine.PivotAnswer|90.2%|75.3%|
 |ExPivot.Engine.PivotAnswerAxis|100%|83.3%|
-|ExPivot.Engine.PivotAnswerBuilder|94.7%|82%|
+|ExPivot.Engine.PivotAnswerBuilder|94.1%|80.7%|
 |ExPivot.Engine.PivotAnswerBuilder.LeafKey|88.8%|50%|
+|ExPivot.Engine.PivotAnswerRest|100%||
 |ExPivot.Engine.PivotAnswerValues|100%|83.3%|
+|ExPivot.Engine.PivotAnswerWindow|100%||
 |ExPivot.Engine.PivotCellItems|100%|50%|
 |ExPivot.Engine.PivotChangeTimes|100%|95.4%|
 |ExPivot.Engine.PivotComputationResult|100%|100%|
@@ -917,21 +919,28 @@
 |ExPivot.Engine.PivotItemPage|95.8%|60%|
 |ExPivot.Engine.PivotItemPath|100%|100%|
 |ExPivot.Engine.PivotItemsQuery|93.3%|100%|
-|ExPivot.Engine.PivotJson|98%|91.8%|
+|ExPivot.Engine.PivotJson|97.8%|91.5%|
 |ExPivot.Engine.PivotLabelColumn|100%||
 |ExPivot.Engine.PivotLabelSizing|100%|97.5%|
 |ExPivot.Engine.PivotLayout|96.3%|74.2%|
 |ExPivot.Engine.PivotLayoutEdits|94.5%|81.3%|
-|ExPivot.Engine.PivotLayoutJson|97.3%|93.1%|
+|ExPivot.Engine.PivotLayoutJson|97.4%|93.3%|
 |ExPivot.Engine.PivotLeafBound|100%|100%|
-|ExPivot.Engine.PivotLevelAnswers|98.3%|93.6%|
-|ExPivot.Engine.PivotLevelAnswers.CellPath|95.8%|83.3%|
-|ExPivot.Engine.PivotLevelRule|85%|50%|
-|ExPivot.Engine.PivotLevels|69.5%|58.3%|
+|ExPivot.Engine.PivotLevelAnswers|97.1%|91.7%|
+|ExPivot.Engine.PivotLevelAnswers.CellPath|97.4%|85%|
+|ExPivot.Engine.PivotLevelAnswers.Dropped|100%||
+|ExPivot.Engine.PivotLevelAnswers.Merged|100%||
+|ExPivot.Engine.PivotLevelAnswers.PlannedWindow|100%||
+|ExPivot.Engine.PivotLevelAnswers.WindowTree|100%|100%|
+|ExPivot.Engine.PivotLevelOrder|81.2%|40%|
+|ExPivot.Engine.PivotLevelRule|82.6%|62.5%|
+|ExPivot.Engine.PivotLevels|70.3%|56.2%|
+|ExPivot.Engine.PivotLevelWindow|92.5%|76.9%|
+|ExPivot.Engine.PivotLevelWindow.ParentKey|88.8%|50%|
 |ExPivot.Engine.PivotNumber|82.6%|50%|
 |ExPivot.Engine.PivotNumberFormat|85.1%|92.8%|
 |ExPivot.Engine.PivotOptions|80%||
-|ExPivot.Engine.PivotQuery|87.6%|85%|
+|ExPivot.Engine.PivotQuery|89.5%|89%|
 |ExPivot.Engine.PivotQueryField|86.6%|100%|
 |ExPivot.Engine.PivotQueryValue|83.3%|50%|
 |ExPivot.Engine.PivotReport|93.5%|82.4%|
@@ -977,6 +986,7 @@
 |ExPivot.Engine.PivotToggle|100%||
 |ExPivot.Engine.PivotValue|96.7%|100%|
 |ExPivot.Engine.PivotValueField|100%||
+|ExPivot.Engine.PivotWindowStart|76.9%|33.3%|
 |ExPivot.Engine.PivotWords|99.5%|89.6%|
 |ExPivot.Engine.RecordColumns.FieldColumns<TRecord>|100%||
 |ExPivot.Engine.RecordColumns.FieldColumns<TRecord>|89.7%|93.8%|
@@ -1119,11 +1129,11 @@
 |ExSheet.UnderlineItem|100%|100%|
 
 </details>
-<details><summary>ExSheet.Engine - 97.8%</summary>
+<details><summary>ExSheet.Engine - 97.3%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExSheet.Engine**|**97.8%**|**91.8%**|
+|**ExSheet.Engine**|**97.3%**|**90.3%**|
 |ExSheet.Engine.ArgumentHint|100%||
 |ExSheet.Engine.ArgumentValue|100%||
 |ExSheet.Engine.AxisFormat|100%|100%|
@@ -1170,9 +1180,9 @@
 |ExSheet.Engine.Formulas.FormulaText|100%|98.1%|
 |ExSheet.Engine.Formulas.FunctionCall|100%|100%|
 |ExSheet.Engine.Formulas.FunctionDefinition|100%||
-|ExSheet.Engine.Formulas.FunctionLibrary|97.5%|90.8%|
+|ExSheet.Engine.Formulas.FunctionLibrary|95.8%|86.4%|
 |ExSheet.Engine.Formulas.FunctionLibrary.CriteriaRange|79.1%|43.7%|
-|ExSheet.Engine.Formulas.FunctionLibrary.Criterion|100%|86.3%|
+|ExSheet.Engine.Formulas.FunctionLibrary.Criterion|95%|74.6%|
 |ExSheet.Engine.Formulas.FunctionLibrary.DoubleDouble|100%||
 |ExSheet.Engine.Formulas.FunctionLibrary.RowColumnAxis|100%|100%|
 |ExSheet.Engine.Formulas.FunctionLibrary.RowColumnPart|100%|100%|
@@ -1264,7 +1274,7 @@
 |ExSheet.Engine.SheetRefusal|100%||
 |ExSheet.Engine.SheetRefusedException|100%|50%|
 |ExSheet.Engine.SheetStep|100%|50%|
-|ExSheet.Engine.Value|94.2%|79.4%|
+|ExSheet.Engine.Value|91.4%|79.4%|
 |ExSheet.Engine.Workbook|97.6%|92.8%|
 |ExSheet.Engine.Workbook.SheetRename|100%||
 |ExSheet.Engine.WorkbookChange|100%|100%|
