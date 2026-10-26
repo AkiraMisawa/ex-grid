@@ -247,10 +247,15 @@ export interface GridOptions<Row> extends CellPaintOptions<Row>, FormulaBarOptio
      * (ADR-0063). The grid changes nothing: what the gesture means is the Consumer's. While an edit is open a
      * double click is the editor's, and on an Editable cell it opens one. */
     readonly onCellDoubleClick?: (cell: CellPosition) => void;
-    /** Hears the Escape that leaves the grid (ADR-0070): pressed on the grid with nothing left to dismiss, beside
-     * the grid's own way out, which releases Tab (ADR-0012). Each Escape before it still peels only its own layer,
-     * and a held Escape's repeats raise it no more. The Consumer decides what leaving means: closing its dialog,
-     * for one, which may destroy this grid from inside the call. */
+    /**
+     * Hears the Escape that leaves the grid (ADR-0070): pressed on the grid with nothing left to dismiss, raised
+     * beside the grid's own way out, which releases Tab first (ADR-0012): the grid keeps DOM focus, and the next
+     * Tab or Shift+Tab leaves it. What leaving means, closing the Consumer's dialog for one, is the Consumer's,
+     * which may put the keyboard somewhere first. Only the outermost Escape raises it: the one that closes a
+     * popover, cancels an edit, leaves an Interactive cell, removes the Copied Range's outline or returns from a
+     * control inside a cell peels its own layer and nothing else. Raised once per press: a held Escape's repeats
+     * do nothing more (DC-62).
+     */
     readonly onLeave?: () => void;
     /**
      * Hears a column resized by the user (ADR-0016), once per column: a drag on the grip at a header's right
@@ -933,6 +938,8 @@ export class GridView<Row> {
     #onOverwriteNotice: ((notice: GridOverwriteNotice) => void) | undefined;
     #onCellDoubleClick: ((cell: CellPosition) => void) | undefined;
     #leaveHeard: (() => void) | undefined;
+    // Whether the grid answered the Escape now held down, whose repeats it then takes and does nothing with (DC-62).
+    #escapeAnswered = false;
     // The copies the asynchronous route is still writing, each holding the Settled Mark (ADR-0220), and what
     // stops the latest one's reads of the source when another copy supersedes it or the grid is destroyed.
     #clipboardWrites = 0;
@@ -1555,7 +1562,9 @@ export class GridView<Row> {
         if (onCellDoubleClick !== undefined && typeof onCellDoubleClick !== 'function') {
             throw new TypeError('onCellDoubleClick is a function of the cell.');
         }
-        if (onLeave !== undefined && typeof onLeave !== 'function') throw new TypeError('onLeave is a function of nothing.');
+        if (onLeave !== undefined && typeof onLeave !== 'function') {
+            throw new TypeError('onLeave is a function, raised by the Escape that leaves the grid.');
+        }
         if (onColumnWidthChanged !== undefined && typeof onColumnWidthChanged !== 'function') {
             throw new TypeError('onColumnWidthChanged is a function of the width change.');
         }
@@ -2224,13 +2233,25 @@ export class GridView<Row> {
             key: event.key, ctrl: event.ctrlKey, shift: event.shiftKey, alt: event.altKey, meta: event.metaKey,
             metaIsPrimary: this.#metaIsPrimary,
         };
+        const popover = this.#popover;
+        const onGrid = event.target === this.#root || event.target === this.#keyField;
+        const inPopover = popover !== undefined && event.target instanceof Node && popover.element.contains(event.target);
+        const escape = event.key === 'Escape' && !event.ctrlKey && !event.altKey && !event.metaKey;
+        // A held Escape is one press (ADR-0012, refined with ADR-0070): the press peels its one layer, and the
+        // repeats dismiss nothing more, nor end the release of Tab the press made. Otherwise a held key closed a
+        // popover and then cancelled the edit under it, or released Tab and raised onLeave again and again (DC-62).
+        // Only a press the grid answered: one it left to the page, a control or a chord keeps its repeats too, and a
+        // control of the Consumer's in a cell keeps its own whatever brought the keyboard back to it.
+        const inCell = event.target instanceof Element && event.target !== this.#keyField && this.#viewport.contains(event.target);
+        if (!event.repeat) this.#escapeAnswered = false;
+        else if (event.key === 'Escape' && this.#escapeAnswered && !inCell) {
+            this.#taken(event);
+            return;
+        }
         // Escape peels a popover before anything else, from inside it or from the grid (ADR-0012's layering,
         // ADR-0039); the keyboard comes back to the grid.
-        const popover = this.#popover;
-        if (popover !== undefined && event.key === 'Escape' && !event.ctrlKey && !event.altKey && !event.metaKey
-            && !(popover.kind === 'consumer' && popover.frame.innerPopupOpen)
-            && (event.target === this.#root || event.target === this.#keyField
-                || (event.target instanceof Node && popover.element.contains(event.target)))) {
+        if (popover !== undefined && escape && (onGrid || inPopover)
+            && !(popover.kind === 'consumer' && popover.frame.innerPopupOpen)) {
             this.#taken(event);
             this.#closePopover(true);
             return;
@@ -2262,8 +2283,7 @@ export class GridView<Row> {
         // Ctrl+F and Ctrl+H on the grid, or anywhere in a popover of its own, its fields included: the find panel
         // takes the popover's place, and the browser's own find, which sees only the painted rows, stays shut. Taken
         // on every grid, and refused where nothing can search (ADR-0055, ADR-0332 §2).
-        const inPopover = popover !== undefined && event.target instanceof Node && popover.element.contains(event.target);
-        if (event.target === this.#root || event.target === this.#keyField || inPopover) {
+        if (onGrid || inPopover) {
             const { kind } = resolveKey(press);
             if (kind === 'find' || kind === 'replace') {
                 this.#taken(event);
@@ -2275,9 +2295,10 @@ export class GridView<Row> {
         }
         // Escape from a control inside a cell, a Template Column's own, is the way out of that cell and not of
         // the grid (ADR-0020): the keyboard comes back to the grid, and an Interactive cell the pointer walked
-        // away from ends too. Not from a control of a grid nested in a cell, whose own Escape it is.
+        // away from ends too. Not from a control of a grid nested in a cell, whose own Escape it is. A held
+        // Escape's repeats are the control's: the press brought the keyboard back, and they bring nothing more.
         const target = event.target;
-        if (target instanceof Element && target !== this.#keyField && this.#viewport.contains(target)
+        if (!event.repeat && target instanceof Element && target !== this.#keyField && this.#viewport.contains(target)
             && target.closest('.ex-grid') === this.#root && resolveKey(press).kind === 'leave') {
             this.#taken(event);
             this.#interactive = undefined;
@@ -2394,19 +2415,23 @@ export class GridView<Row> {
             // Focus and the keyboard stay. The Copied Range is the last layer before the way out (ADR-0170): with
             // a copy outlined, Escape removes the outline and does nothing else. With nothing left to dismiss it
             // is the way out of Enter and Tab cycling: the keyboard stays and the next Tab leaves the grid.
-            if (this.#interactiveChoice() !== undefined) this.#interactive = undefined;
-            else if (this.#copied === undefined) this.#leave(event.repeat);
+            // An edit still open, reached by an Escape on the root rather than in the editor, is a layer too, and
+            // the one the Escape cancels (ADR-0230): leaving over it would let the Consumer close a dialog on
+            // text nobody committed.
+            if (this.#edit !== undefined) this.#endEdit(undefined);
+            else if (this.#interactiveChoice() !== undefined) this.#interactive = undefined;
+            else if (this.#copied === undefined) this.#leave();
             else this.#copied = undefined;
         } else {
             this.#moveByKey(action, event.key);
         }
     };
 
-    // The Escape with nothing left to dismiss: Tab is released, and a Consumer that hears the way out is told, once
-    // per press (ADR-0070).
-    #leave(repeated: boolean): void {
+    // The Escape with nothing left to dismiss (ADR-0012, ADR-0070): Tab is released first, so a Consumer's handler
+    // that puts the keyboard elsewhere finds the release made, and then the Consumer that listens hears it.
+    #leave(): void {
         this.#tabReleased = true;
-        if (!repeated) this.#leaveHeard?.();
+        this.#leaveHeard?.();
     }
 
     // A key the grid answers: the browser's own meaning is prevented, nothing inside hears it, and the pass
@@ -2414,6 +2439,7 @@ export class GridView<Row> {
     #taken(event: KeyboardEvent): void {
         event.preventDefault();
         event.stopPropagation();
+        if (event.key === 'Escape' && !event.repeat) this.#escapeAnswered = true;
         this.#answered += 1;
         this.#invalidate();
     }
