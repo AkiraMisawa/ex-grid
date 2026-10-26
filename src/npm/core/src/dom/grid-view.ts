@@ -71,6 +71,10 @@ import { resolveColumns, type GridColumn, type ResolvedColumn } from './grid-col
 import { moveByKey, movingKinds, type KeyReveal } from './key-moves';
 import { selectionLayers, type LayerPiece } from './selection-layers';
 import { stylesheetName, stylesheetStamp } from './shipped-stylesheet';
+import { CellPaint, type CellPaintOptions } from './cell-paint';
+import type { ColumnType } from '../query/columns';
+import { checkedAppearance, RowAppearances, type RowAppearance } from '../paint/row-appearances';
+import { hashesWhenOverflowing } from '../columns/overflow-rules';
 
 /** A Viewport axis: a number of pixels the Consumer declares, or `'stretch'`, the parent's (ADR-0028). */
 export type ViewportSize = number | 'stretch';
@@ -91,7 +95,7 @@ export interface GridHeaderGroup {
 }
 
 /** What a grid is drawn from. Rows reach it only through a Grid Source; `rows` is `GridSource.from(rows)`. */
-export interface GridOptions<Row> {
+export interface GridOptions<Row> extends CellPaintOptions<Row> {
     /** The columns, in display order. */
     readonly columns: readonly GridColumn<Row>[];
     /** Where the rows come from. Exactly one of `source` and `rows` is given. */
@@ -276,6 +280,10 @@ export interface GridOptions<Row> {
      * header found is the current match, marked and named in the panel, and the Focus stays where it is. Turn
      * it off where the headers are addresses rather than content. */
     readonly findsHeaders?: boolean;
+    /** A plain click on a column header selects the whole column, and nothing sorts: Excel's meaning, where
+     * ADR-0012 gives the click to sorting (ADR-0050, item 1). Shift+click extends from the Focus's column as
+     * always. Off unless given. */
+    readonly headerClickSelects?: boolean;
 }
 
 const defaultViewportWidthPx = 800;
@@ -372,6 +380,9 @@ interface PaintedRow<Row> {
     readonly current: number;
     /** The painted cells its marks fell on, so a new search repaints only the rows whose marks moved. */
     readonly matched: string;
+    /** The per-cell declarations it was painted under, and its cells' appearance (ADR-0050, item 15). */
+    readonly paint: CellPaint<Row>;
+    readonly appearance: RowAppearance | undefined;
 }
 
 /**
@@ -473,6 +484,8 @@ interface Taken<Row> {
     readonly onReplace: ((request: GridReplaceRequest) => GridReplaceResult | Promise<GridReplaceResult>) | undefined;
     readonly findMatch: ((row: Row, column: GridColumn<Row>, pattern: GridFindPattern) => boolean) | undefined;
     readonly findsHeaders: boolean;
+    readonly cellPaint: CellPaint<Row>;
+    readonly headerClickSelects: boolean;
 }
 
 // The popover standing (ADR-0039, ADR-0040): its element and the commands it shows, and where it stands. The
@@ -899,6 +912,14 @@ export class GridView<Row> {
     #onReplace: ((request: GridReplaceRequest) => GridReplaceResult | Promise<GridReplaceResult>) | undefined;
     #findMatch: ((row: Row, column: GridColumn<Row>, pattern: GridFindPattern) => boolean) | undefined;
     #findsHeaders = true;
+    // The per-cell declarations (ADR-0050, items 6, 7, 11 and 15), the row appearances resolved from them, and
+    // the generated stylesheet their classes name, last in the root (ADR-0071).
+    #cellPaint: CellPaint<Row> = CellPaint.empty();
+    readonly #appearances = new RowAppearances<Row>();
+    #appearanceStyle: HTMLStyleElement | undefined;
+    #appearanceVersion = -1;
+    #appearanceWritten = 0;
+    #headerClickSelects = false;
     readonly #findHeld: FindHeld = { text: '', matchCase: false, wholeCell: false, replaceText: '' };
     #findOutcome: FindOutcome = { kind: 'none' };
     #findStepping: AbortController | undefined;
@@ -1271,6 +1292,15 @@ export class GridView<Row> {
             throw new TypeError(`Column '${dated.column.name}' holds dates, and a date typed into its filter is made with Temporal, `
                 + 'which the grid was not given: pass `temporal`, the browser\'s Temporal or a polyfill\'s (ADR-0350 section 16).');
         }
+        const { headerClickSelects }: { readonly headerClickSelects?: unknown } = options;
+        if (headerClickSelects !== undefined && typeof headerClickSelects !== 'boolean') {
+            throw new TypeError('headerClickSelects is true or false.');
+        }
+        // A press on a header either grabs the column to move it or selects it: both declared, neither meaning
+        // could be honoured without breaking the other's promise (ADR-0050, item 1; ADR-0011).
+        if (headerClickSelects === true && onColumnOrderChanged !== undefined) {
+            throw new TypeError('headerClickSelects and onColumnOrderChanged both claim a press on a header: declare one of them.');
+        }
         const { copyCellCap = defaultCellCap, pasteByteCap = defaultPasteByteCap } = options;
         if (!Number.isSafeInteger(copyCellCap) || copyCellCap < 1) {
             throw new RangeError(`copyCellCap is a whole number of at least one cell, not ${copyCellCap}: the cap may be raised, `
@@ -1302,6 +1332,7 @@ export class GridView<Row> {
             hideColumnMenu: options.hideColumnMenu === true, onColumnHidden: options.onColumnHidden,
             onPinnedCountChanged: options.onPinnedCountChanged, culture, temporal,
             onReplace: options.onReplace, findMatch: options.findMatch, findsHeaders: options.findsHeaders !== false,
+            cellPaint: CellPaint.take(options, this.#cellPaint), headerClickSelects: headerClickSelects === true,
         };
     }
 
@@ -1428,6 +1459,8 @@ export class GridView<Row> {
         this.#onReplace = taken.onReplace;
         this.#findMatch = taken.findMatch;
         this.#findsHeaders = taken.findsHeaders;
+        this.#cellPaint = taken.cellPaint;
+        this.#headerClickSelects = taken.headerClickSelects;
         // A panel over a source that no longer finds closes, as a Cancel: nothing could answer its steps
         // (ADR-0055). One offering Replace where none can land any more offers Find alone (ADR-0332 §2).
         const popover = this.#popover;
@@ -2056,6 +2089,15 @@ export class GridView<Row> {
         return slice < 0 || slice >= this.#state.window.length ? undefined : { row: itemAt(this.#state.window, slice) };
     }
 
+    // The text an edit opens on: the Consumer's where it declares one, as a Sheet's Entry (ADR-0051), and the
+    // value's own otherwise.
+    #openingTextAt(at: CellPosition): string {
+        const declared = this.#cellPaint.editorText;
+        const held = declared === undefined ? undefined : this.#rowAt(at.row);
+        const text = declared === undefined || held === undefined ? undefined : declared(held.row, itemAt(this.#columns, at.column).column);
+        return text ?? this.#paintedTextAt(at);
+    }
+
     // The text a cell paints: what an edit opens on in Caret, and what a commit is told it saw and replaced.
     #paintedTextAt(at: CellPosition): string {
         const held = this.#rowAt(at.row);
@@ -2100,7 +2142,7 @@ export class GridView<Row> {
         const focus = defined(selection.focus, 'the Focus of a Selection that is not empty');
         if (!this.#isEditableCell(focus)) return false;
         this.#apply(selection);
-        this.#startEdit(focus, mode, typed ?? this.#paintedTextAt(focus));
+        this.#startEdit(focus, mode, typed ?? this.#openingTextAt(focus));
         return true;
     }
 
@@ -3979,7 +4021,7 @@ export class GridView<Row> {
         this.#invalidate();
         if (this.#isEditableCell(at)) {
             this.#apply(this.#held.selection.click(at, this.#extent));
-            this.#startEdit(at, 'caret', this.#paintedTextAt(at));
+            this.#startEdit(at, 'caret', this.#openingTextAt(at));
             return;
         }
         this.#onCellDoubleClick?.(at);
@@ -4061,6 +4103,13 @@ export class GridView<Row> {
             x: event.offsetX - this.#scrollLeftPx, y: event.offsetY - this.#bandHeightPx, clientX: event.clientX, clientY: event.clientY,
         };
         this.#setDragging(true);
+        // Where a click selects (ADR-0050, item 1), the press selects at once and its click is the gesture's tail,
+        // never a sort.
+        if (this.#headerClickSelects) {
+            this.#gestureConsumedClick = true;
+            this.#beginHeadingDrag(column, event.shiftKey, this.#toggles(event));
+            return;
+        }
         this.#headerPress = { column, extends: event.shiftKey, toggles: this.#toggles(event) };
         this.#headingDrag = true;
     };
@@ -4784,7 +4833,7 @@ export class GridView<Row> {
         const headerCell = (c: number, pinned: boolean): void => {
             const { column, header: label } = itemAt(this.#columns, c);
             const cell = doc.createElement('div');
-            cell.className = headerClass(column.align, pinned, 'none');
+            cell.className = headerClass(column.headerAlign ?? column.align, pinned, 'none');
             cell.setAttribute('style', tieredStyle(c, pinned ? this.#styles.pinnedCell(c) : this.#styles.cell(c)));
             cell.setAttribute('role', 'columnheader');
             cell.setAttribute('aria-colindex', String(c + 1));
@@ -4812,7 +4861,7 @@ export class GridView<Row> {
                 this.#grips.set(grip, c);
             }
             cells.push(cell);
-            headerCells.push({ element: cell, column: c, align: column.align, pinned });
+            headerCells.push({ element: cell, column: c, align: column.headerAlign ?? column.align, pinned });
         };
         for (let c = 0; c < this.#styles.geometry.pinnedCount; c++) headerCell(c, true);
         const scrollable = this.#scrollable;
@@ -5031,6 +5080,18 @@ export class GridView<Row> {
             const rowKey = this.#source.rowKey;
             const marks = this.#matchMarksNow();
             const found = this.#findCurrent;
+            const paint = this.#cellPaint;
+            const lookup = paint.cellAppearance;
+            const scrollableNow = this.#placeholderMode ? undefined : this.#scrollable;
+            if (lookup !== undefined) {
+                const columns = this.#columns;
+                this.#appearances.begin((row, c) => lookup(row, itemAt(columns, c).column), lookup, paint.edgeBorder, columns,
+                    columns.length, this.#styles.geometry.pinnedCount, scrollableNow);
+            }
+            const rowIn = (at: number): Row | undefined => {
+                const slice = at - windowStart;
+                return slice < 0 || slice >= window.length ? undefined : itemAt(window, slice);
+            };
             for (let index = visible.start; index < visible.start + visible.count; index++) {
                 const slice = index - windowStart;
                 if (slice < 0 || slice >= window.length) {
@@ -5048,8 +5109,10 @@ export class GridView<Row> {
                 const was = this.#painted.get(key);
                 const scrollable = this.#placeholderMode ? undefined : this.#scrollable;
                 const current = marks === undefined || found?.cell.row !== index ? -1 : found.cell.column;
+                const appearance = lookup === undefined ? undefined : this.#appearances.at(index, row, rowIn(index - 1), rowIn(index + 1));
                 if (was !== undefined && !next.has(key) && was.row === row && was.index === index && was.styles === this.#styles
-                    && was.columns === this.#columns && was.placeholder === this.#placeholderMode && sameRange(was.scrollable, scrollable)) {
+                    && was.columns === this.#columns && was.placeholder === this.#placeholderMode && sameRange(was.scrollable, scrollable)
+                    && paint.paintsRowsAs(was.paint) && was.appearance === appearance) {
                     if (was.marks === marks && was.current === current) {
                         next.set(key, was);
                         rows.push(was.element);
@@ -5063,14 +5126,14 @@ export class GridView<Row> {
                         continue;
                     }
                 }
-                const { element, matched } = this.#rowElement(row, index, scrollable, marks, current);
+                const { element, matched } = this.#rowElement(row, index, scrollable, marks, current, appearance);
                 repainted = true;
                 // A key met twice in one Window is painted, never paired: which of the two a later row
                 // continues cannot be told (ADR-0140).
                 if (!next.has(key)) {
                     next.set(key, {
                         element, row, index, styles: this.#styles, columns: this.#columns, placeholder: this.#placeholderMode, scrollable,
-                        marks, current, matched,
+                        marks, current, matched, paint, appearance,
                     });
                 }
                 rows.push(element);
@@ -5078,6 +5141,8 @@ export class GridView<Row> {
         }
         this.#painted = next;
         this.#placeholders = nextPlaceholders;
+        if (this.#cellPaint.cellAppearance !== undefined) this.#appearances.end();
+        this.#paintAppearanceStyle();
         // In order, moving only what is out of place, so a row that stays is not touched (ADR-0003). A
         // selection layer coming or going paints no cell.
         const isLayer = (node: ChildNode): boolean =>
@@ -5131,6 +5196,15 @@ export class GridView<Row> {
         return this.#keyFieldLayer;
     }
 
+    // The Cell Editor's Font and Fill (ADR-0050, item 15): the Consumer's editor appearance where it declares one,
+    // the cell's own otherwise, so the editor reads like the cell it covers. The Borders stay the cell's.
+    #editorLook(cell: CellPosition, openedOn: Row): string | undefined {
+        const declared = this.#cellPaint.editorAppearance ?? this.#cellPaint.cellAppearance;
+        if (declared === undefined) return undefined;
+        const row = this.#rowAt(cell.row)?.row ?? openedOn;
+        return this.#appearances.styles.editorClassFor(checkedAppearance(declared(row, itemAt(this.#columns, cell.column).column)));
+    }
+
     // The Cell Editor (ADR-0010): one input floated over its cell, never inside a row, which would break the
     // rows' skipping (ADR-0003). Over a Pinned Column it rides a sticky anchor as the pinned layer does. A
     // row it followed out of view leaves it open and unseen on the first painted row (ADR-0011).
@@ -5142,7 +5216,9 @@ export class GridView<Row> {
         if (visible !== undefined) {
             const at = editorCell(edit.cell, visible);
             const box = defined(cellBox(at, this.#styles.geometry, this.#metrics.rowHeightPx, visible), 'the box of a cell among the painted rows');
-            setAttribute(element, 'class', editorAway(edit.cell, visible) ? 'ex-editor ex-editor-away' : 'ex-editor');
+            const look = this.#editorLook(edit.cell, edit.openedOn);
+            const base = editorAway(edit.cell, visible) ? 'ex-editor ex-editor-away' : 'ex-editor';
+            setAttribute(element, 'class', look === undefined ? base : `${base} ${look}`);
             setAttribute(element, 'style', box.style);
             setAttribute(element, 'data-ex-cell', `${at.row} ${at.column}`);
         }
@@ -5201,10 +5277,34 @@ export class GridView<Row> {
         return element;
     }
 
+    // The generated stylesheet of a per-cell appearance (ADR-0050, item 15; ADR-0071): one rule per Font, per Fill
+    // colour and per line on each side, added the first time a cell asks for one, last in the root. Written only
+    // when a rule was added.
+    #paintAppearanceStyle(): void {
+        if (!this.#cellPaint.paintsAppearance) {
+            this.#appearanceStyle?.remove();
+            return;
+        }
+        let style = this.#appearanceStyle;
+        if (style === undefined) {
+            style = this.#root.ownerDocument.createElement('style');
+            this.#appearanceStyle = style;
+        }
+        if (style.parentNode !== this.#root || style !== this.#root.lastChild) this.#root.append(style);
+        // Rules are only ever added, so only what was added since is appended: the stylesheet is not parsed whole
+        // again for each new rule.
+        const { version, css } = this.#appearances.styles;
+        if (version !== this.#appearanceVersion) {
+            this.#appearanceVersion = version;
+            style.append(css.slice(this.#appearanceWritten));
+            this.#appearanceWritten = css.length;
+        }
+    }
+
     // A row: the Pinned Columns, then one gap for what is virtualised away to the left, then the scrollable
     // columns on screen (ADR-0004). Mid-fling only the pinned cells are painted, and the row says it is busy.
     #rowElement(row: Row, index: number, scrollable: ColumnRange | undefined, marks: MatchMarks<Row> | undefined,
-        current: number): { readonly element: HTMLElement; readonly matched: string } {
+        current: number, appearance: RowAppearance | undefined): { readonly element: HTMLElement; readonly matched: string } {
         const element = this.#root.ownerDocument.createElement('div');
         element.className = rowClasses({ kind: 'detail', placeholder: this.#placeholderMode });
         element.setAttribute('role', 'row');
@@ -5212,7 +5312,7 @@ export class GridView<Row> {
         if (this.#placeholderMode) element.setAttribute('aria-busy', 'true');
         let matched = '';
         const cell = (c: number, pinned: boolean): HTMLElement => {
-            const painted = this.#cell(row, index, c, pinned, marks, current);
+            const painted = this.#cell(row, index, c, pinned, marks, current, appearance);
             matched += markKey(c, painted.mark);
             return painted.element;
         };
@@ -5243,15 +5343,26 @@ export class GridView<Row> {
     }
 
     #cell(row: Row, index: number, c: number, pinned: boolean, marks: MatchMarks<Row> | undefined,
-        current: number): { readonly element: HTMLElement; readonly mark: MatchMark } {
-        const { column, numeric } = itemAt(this.#columns, c);
+        current: number, appearance: RowAppearance | undefined): { readonly element: HTMLElement; readonly mark: MatchMark } {
+        const { column, numeric: columnNumeric } = itemAt(this.#columns, c);
+        const paint = this.#cellPaint;
         const text = textFor(column, column.value(row));
         const mark = this.#markOf(row, c, marks, current, text);
+        // A cell's own kind and alignment, where the Consumer declares them, over its column's (ADR-0050, items 6
+        // and 7); a bold cell is judged by the bold widths (ADR-0016).
+        const type = paint.cellType === undefined ? column.type : checkedType(paint.cellType(row, column));
+        const numeric = paint.cellType === undefined ? columnNumeric : hashesWhenOverflowing(type);
+        const metrics = appearance?.isBold(c) === true ? this.#metrics.cellMetrics.bold : this.#metrics.cellMetrics;
         // The declared width, not the one put on Device Pixels: an Auto column is exactly as wide as its
         // widest estimate, and rounding it must not hash the value it grew for (ADR-0090).
-        const decision = decideOverflow(column.type, text, this.#styles.geometry.declaredWidthPxOf(c), this.#metrics.cellMetrics);
+        const widthPx = this.#styles.geometry.declaredWidthPxOf(c);
+        const painted = paint.paintedText?.(row, column, metrics.contentWidthPx(widthPx), metrics) ?? text;
+        const decision = decideOverflow(type, painted, widthPx, metrics);
         const cell = this.#root.ownerDocument.createElement('div');
-        cell.className = cellClasses({ numeric, pinned, state: 'normal', align: column.align ?? 'auto', mark }); // oxlint-disable-line ex-grid/no-stand-in-default -- ADR-0006: a column that declares no alignment aligns by its type
+        const align = paint.cellAlign === undefined ? column.align ?? 'auto' : paint.cellAlign(row, column); // oxlint-disable-line ex-grid/no-stand-in-default -- ADR-0006: a column that declares no alignment aligns by its type
+        const base = cellClasses({ numeric, pinned, state: 'normal', align, mark });
+        const own = appearance?.classOf(c);
+        cell.className = own === undefined ? base : `${base} ${own}`;
         cell.setAttribute('style', pinned ? this.#styles.pinnedCell(c) : this.#styles.cell(c));
         cell.setAttribute('role', 'gridcell');
         cell.setAttribute('id', `${this.#ids}r${index}c${c}`);
@@ -5268,6 +5379,18 @@ export class GridView<Row> {
         }
         return { element: cell, mark };
     }
+}
+
+const columnTypes: ReadonlySet<string> = new Set(['text', 'number', 'date', 'boolean']);
+
+/** A cell's kind as `cellType` answered it, checked where it arrives: one that is not a kind is refused by name
+ * rather than painted as some other (ADR-0050, item 6). */
+function checkedType(type: ColumnType): ColumnType {
+    const given: unknown = type;
+    if (typeof given !== 'string' || !columnTypes.has(given)) {
+        throw new TypeError(`cellType answers text, number, date or boolean, not ${String(given)} (ADR-0050, item 6).`);
+    }
+    return type;
 }
 
 /** A painted cell's Match Mark as a row's record of its marks writes it: nothing for none. */
