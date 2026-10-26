@@ -33,7 +33,7 @@ as served, 45 KB under gzip. Measured on 2026-10-03, a minified build of the sam
 
 *(2026-10-26: one file is not committed. `_content/ExGrid/ex-grid-core.min.js`, the Script Core and
 Blazor's bridge to it (ADR-0350 section 7), is bundled from `src/npm` as ExGrid builds, so building ExGrid
-needs Node 22.23.4 or later, and the build installs `src/npm`'s dependencies the first time. The core is in the same
+needs Node (26.12.1, or 22.23.4 or 24.22.1), and the build installs `src/npm`'s dependencies the first time. The core is in the same
 repository and changes with most pull requests: a committed bundle would be stale in each of them, and two
 branches would conflict over its every line. Everything else here holds for it: it is minified with a linked
 map, it answers the SHA-256 of every source it was bundled from as its stamp, the component compares that

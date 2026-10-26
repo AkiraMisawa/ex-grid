@@ -3,7 +3,7 @@
 
   inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
 
-  # Node from a later nixpkgs than the .NET SDK's: the first with Node 22.23.4, the security release
+  # Node from a later nixpkgs than the .NET SDK's: the first with Node 26.12.1, the security release
   # of 2026-10-21 (CVE-2026-111497 and others), which .node-version names for CI. Its own input, so
   # moving Node on does not move the SDK with it.
   inputs.nixpkgs-node = {
@@ -19,7 +19,7 @@
     {
       devShells = forAllSystems (system: pkgs:
         let
-          nodejs = (import nixpkgs-node { inherit system; }).nodejs_22;
+          nodejs = (import nixpkgs-node { inherit system; }).nodejs_26;
           # SDK 10, whose bundled runtime is also the shipped packages' target
           # (ADR-0022), so the gating tests execute on it without a second
           # runtime alongside. (Until 2026-09-25 the target was net8.0 and the
