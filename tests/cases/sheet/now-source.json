@@ -1,0 +1,31 @@
+{
+  "about": "The engine reads the moment from the Workbook's clock once per recalculation, so every NOW in one recalculation answers the same moment (SH-59, ADR-0124). The case's clock moves on a second at each read, so a second read in one recalculation would show in the count and in the Values. Transcribed from ExSheet.Engine.Tests' NowSourceReadTests.",
+  "kind": "sheet",
+  "culture": "en-US",
+  "cases": [
+    {
+      "name": "SH-59, ADR-0124: every NOW in one recalculation answers the one moment read for it",
+      "steps": [
+        {"setClock": {"from": "2026-10-03T18:00:00", "step": 1}},
+        {"enter": {"A1": "=NOW()", "B1": "=NOW()", "C1": "=NOW()+0"}},
+        {"enter": {"Z1": "1"}, "expect": {"clockReads": 1, "values": {"A1": 46298.7500462963, "B1": 46298.7500462963, "C1": 46298.7500462963}}}
+      ]
+    },
+    {
+      "name": "SH-59, ADR-0124: a recalculation of several passes (a spill laid out) still reads the clock once",
+      "steps": [
+        {"setClock": {"from": "2026-10-03T18:00:00", "step": 1}},
+        {"enter": {"A1": "=NOW()", "B1": "=NOW()"}},
+        {"enter": {"D1": "=SEQUENCE(3)"}, "expect": {"clockReads": 1, "values": {"D3": 3, "A1": 46298.75003472222, "B1": 46298.75003472222}}}
+      ]
+    },
+    {
+      "name": "SH-59, ADR-0124: moving the clock on reads it once, and the moment moves with it",
+      "steps": [
+        {"setClock": {"from": "2026-10-03T18:00:00", "step": 1}},
+        {"enter": {"A1": "=NOW()", "B1": "=NOW()"}, "expect": {"values": {"A1": 46298.750023148146}}},
+        {"recalculateVolatile": true, "expect": {"clockReads": 1, "values": {"A1": 46298.75003472222, "B1": 46298.75003472222}}}
+      ]
+    }
+  ]
+}

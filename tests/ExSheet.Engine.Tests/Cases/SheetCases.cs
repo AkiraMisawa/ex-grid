@@ -335,12 +335,13 @@ internal sealed class Run(CultureInfo culture)
 
     private readonly List<WorkbookStep> _done = [];
     private readonly Dictionary<string, string> _pictures = new(StringComparer.Ordinal);
+    private int _clockReads;
     private readonly Dictionary<string, SheetCopy> _copies = new(StringComparer.Ordinal);
 
     private static readonly string[] Verbs =
     [
         "enter", "enterAll", "enterRun", "do", "check", "undo", "redo", "reopen", "remember", "read", "copy",
-        "setNumberFormat", "setAlignment", "declareTable", "pushTable", "setToday", "setSeed", "recalculateVolatile",
+        "setNumberFormat", "setAlignment", "declareTable", "pushTable", "setToday", "setSeed", "setClock", "recalculateVolatile",
     ];
 
     private static readonly string[] Modifiers = ["on", "expect", "note"];
@@ -360,7 +361,7 @@ internal sealed class Run(CultureInfo culture)
             ? Workbook.Find((string)on!) ?? throw new InvalidDataException($"{where}: the Workbook has no Sheet '{(string)on!}'.")
             : Workbook.Shown;
         var expect = step["expect"] as JsonObject;
-        var outcome = new Outcome(sheet);
+        var outcome = new Outcome(sheet) { ClockReadsBefore = _clockReads };
         try
         {
             Act(verb, argument!, sheet, outcome);
@@ -402,6 +403,8 @@ internal sealed class Run(CultureInfo culture)
         public bool Checked { get; set; }
         public SheetRefusal? Refusal { get; set; }
         public WorkbookStep? Step { get; set; }
+        /// <summary>How many times the case's clock had been read before the step.</summary>
+        public int ClockReadsBefore { get; init; }
     }
 
     /// <summary>Whether the innermost frame outside .NET's own libraries is this runner's rather than the engine's.</summary>
@@ -541,6 +544,20 @@ internal sealed class Run(CultureInfo culture)
             case "setSeed":
                 outcome.Change = Workbook.SetSeed(argument is null ? null : ulong.Parse(argument.ToJsonString().Trim('"'), CultureInfo.InvariantCulture)).For(sheet);
                 break;
+            case "setClock":
+            {
+                // A clock that moves on `step` seconds each time it is read, and counts its reads.
+                var clock = argument.AsObject();
+                var at = DateTime.ParseExact((string)clock["from"]!, "yyyy-MM-ddTHH:mm:ss", CultureInfo.InvariantCulture);
+                var seconds = SheetCases.Number(clock["step"]!);
+                Workbook.NowSource = () =>
+                {
+                    _clockReads++;
+                    at = at.AddSeconds(seconds);
+                    return at;
+                };
+                break;
+            }
             case "recalculateVolatile":
                 outcome.Change = Workbook.RecalculateVolatile().For(sheet);
                 break;
@@ -755,6 +772,9 @@ internal sealed class Run(CultureInfo culture)
                 actual = outcome.Refusal is { } refusal
                     ? new JsonObject { ["reason"] = SheetCases.Camel(refusal.Reason), ["saying"] = refusal.Message }
                     : null;
+                break;
+            case "clockReads":
+                actual = _clockReads - outcome.ClockReadsBefore;
                 break;
             case "isUndone":
                 actual = (outcome.Step ?? throw new InvalidDataException($"{where}: no step to read.")).IsUndone;

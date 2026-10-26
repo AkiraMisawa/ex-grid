@@ -299,7 +299,7 @@ function cultureOf(name: string): Culture {
 
 const verbs = new Set([
     'enter', 'enterAll', 'enterRun', 'do', 'check', 'undo', 'redo', 'reopen', 'remember', 'read', 'copy',
-    'setNumberFormat', 'setAlignment', 'declareTable', 'pushTable', 'setToday', 'setSeed', 'recalculateVolatile',
+    'setNumberFormat', 'setAlignment', 'declareTable', 'pushTable', 'setToday', 'setSeed', 'setClock', 'recalculateVolatile',
 ]);
 const modifiers = new Set(['on', 'expect', 'note']);
 
@@ -310,6 +310,8 @@ interface Outcome {
     checked: boolean;
     refusal: SheetRefusal | undefined;
     step: WorkbookStep | undefined;
+    /** How many times the case's clock had been read before the step. */
+    clockReadsBefore: number;
 }
 
 function addresses(of: Iterable<CellAddress>): string[] {
@@ -345,6 +347,7 @@ class Run {
     readonly #done: WorkbookStep[] = [];
     readonly #pictures = new Map<string, string>();
     readonly #copies = new Map<string, SheetCopy>();
+    #clockReads = 0;
 
     constructor(culture: Culture) {
         this.culture = culture;
@@ -367,7 +370,7 @@ class Run {
             sheet = found;
         }
         const expect = step['expect'] === undefined ? undefined : object(step['expect'], 'expect');
-        const outcome: Outcome = { sheet, change: undefined, checked: false, refusal: undefined, step: undefined };
+        const outcome: Outcome = { sheet, change: undefined, checked: false, refusal: undefined, step: undefined, clockReadsBefore: this.#clockReads };
         try {
             this.#act(verb, argument, sheet, outcome);
         } catch (e) { // oxlint-disable-line ex-grid/no-catch -- a refusal a case expects is read, not rethrown
@@ -486,6 +489,22 @@ class Run {
             case 'setSeed':
                 outcome.change = this.workbook.setSeed(argument === null ? undefined : BigInt(typeof argument === 'number' ? argument : text(argument, 'setSeed'))).for(sheet);
                 break;
+            case 'setClock': {
+                // A clock that moves on `step` seconds each time it is read, and counts its reads.
+                const clock = object(argument, 'setClock');
+                const from = text(clock['from'], 'setClock.from');
+                let at = Date.parse(`${from}Z`);
+                if (Number.isNaN(at)) throw new CaseError(`'${from}' is no moment.`);
+                const step = clock['step'];
+                if (typeof step !== 'number') throw new CaseError('setClock.step is a number of seconds.');
+                this.workbook.nowSource = () => {
+                    this.#clockReads++;
+                    at += step * 1000;
+                    const d = new Date(at);
+                    return { year: d.getUTCFullYear(), month: d.getUTCMonth() + 1, day: d.getUTCDate(), hour: d.getUTCHours(), minute: d.getUTCMinutes(), second: d.getUTCSeconds(), millisecond: d.getUTCMilliseconds() };
+                };
+                break;
+            }
             case 'recalculateVolatile':
                 outcome.change = this.workbook.recalculateVolatile().for(sheet);
                 break;
@@ -677,6 +696,9 @@ class Run {
             case 'refusal':
                 if (!outcome.checked) throw new CaseError(`${where}: only a check reads a refusal.`);
                 actual = outcome.refusal === undefined ? null : { reason: outcome.refusal.reason, saying: outcome.refusal.message };
+                break;
+            case 'clockReads':
+                actual = this.#clockReads - outcome.clockReadsBefore;
                 break;
             case 'isUndone':
                 if (outcome.step === undefined) throw new CaseError(`${where}: no step to read.`);
