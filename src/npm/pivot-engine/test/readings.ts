@@ -6,7 +6,7 @@ import { invariantNumbers } from '../src/text/invariant';
 import { formatDouble } from '../src/text/number-text';
 import type { DataSet, Json, JsonObject } from './cases';
 
-const roleLetters = { item: 'i', group: 'g', subtotal: 's', grandTotal: 't' } as const;
+const roleLetters = { item: 'i', group: 'g', subtotal: 's', grandTotal: 't', pending: 'p' } as const;
 
 // One line a row: the role's letter, each label indented two spaces a level with [-] or [+] before an Item
 // with a button, then || and each value as painted, empty for an empty cell.
@@ -16,7 +16,8 @@ function lines(report: PivotReport): string[] {
             const button = label.toggle === undefined ? '' : label.toggle.isCollapsed ? '[+]' : '[-]';
             return ' '.repeat(label.indent * 2) + button + (label.text ?? ''); // oxlint-disable-line ex-grid/no-stand-in-default -- a label with no text reads as nothing in a line, as the C# runner writes it
         });
-        const values = report.valueColumns.map((_, column) => report.valueAt(row, column)?.text ?? ''); // oxlint-disable-line ex-grid/no-stand-in-default -- an empty cell reads as nothing in a line, as the C# runner writes it
+        // A Pending Row has no value to read (ADR-0370 section 3).
+        const values = row.role === 'pending' ? [] : report.valueColumns.map((_, column) => report.valueAt(row, column)?.text ?? ''); // oxlint-disable-line ex-grid/no-stand-in-default -- an empty cell reads as nothing in a line, as the C# runner writes it
         return `${roleLetters[row.role]} ${labels.join(' | ')} || ${values.join(' | ')}`.trimEnd();
     });
 }
