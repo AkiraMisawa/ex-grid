@@ -6,7 +6,9 @@
 // Every move is a question, and only the newest question's answer is shown: a move made while a question is
 // out is taken against the layout that question asks for, and when that question is refused every move taken
 // against it is refused with it, and the pane goes back to the layout the report shows (ADR-0370 section 3,
-// spine rule 6). Nothing waits on a clock.
+// spine rule 6). The one clock it waits on is the redraw interval (ADR-0067): the source's changes of data are
+// gathered, and asked for at most once per interval, which decides when the newest data reaches the screen, never
+// which data it is.
 
 import {
     gridTextGeometry, type GridColumnWidthChange, type GridDensity, type GridHandle, type GridOptions, type GridSelection, type GridTextGeometry,
@@ -18,7 +20,7 @@ import {
     FetchingPivotSource, LocalPivotReportSource, chooseLayout, defaultMaxLeaves, emptyPivotLayout, formatPivotCount, isLayoutChosen, isValuesPseudoField,
     layoutChoiceChanges, pivotLayoutChoices, pivotValueCaptions, placementOf, placementsIn, isItemCollapsed, pivotWord, pivotWordIdList, setCollapsed, setHiddenItems,
     itemKeysEqual, pivotItemKeyId, validateLayout, writePivotLayoutJson, type PivotDisplayRow, type PivotEntry, type PivotFieldPlacement, type PivotItemInfo, type PivotItemCounts, type PivotLabel, type PivotLayout, type PivotLayoutChoice,
-    type PivotReportCopyCell, type PivotReportRefusal, type PivotReportSettings, type PivotReportState, type PivotSlicing, type PivotSource, type PivotToggle,
+    type PivotReportCopyCell, type PivotReportRefusal, type PivotReportSettings, type PivotSourceChanged, type PivotReportState, type PivotSlicing, type PivotSource, type PivotToggle,
     pivotReportDetailsQuery, PivotItemPage, itemsOfPage, type PivotFieldItem,
 } from '@ex-grid/pivot-engine';
 import { detailsEvent, detailsProblemText, type PivotDetailItem, type PivotDetailsView, type PivotShowDetailsEvent } from './details';
@@ -107,6 +109,11 @@ export interface PivotViewOptions {
     /** The most leaves a question may ask the source for (ADR-0066): 200,000 unless given. A layout past it is
      * refused by name, and the report stays on the layout before. */
     readonly maxLeaves?: number;
+    /** How long after a change of data reached the screen the next is asked for, in milliseconds: 250 unless given
+     * (ADR-0067). The source's notices that come meanwhile are gathered and asked for once, so a source that changes
+     * many times a second redraws the report at most once per interval; a notice after a quiet spell is asked for at
+     * once. */
+    readonly redrawInterval?: number;
     /** The report's row height, or the Density's. */
     readonly rowHeight?: number;
     /** The report's Density. */
@@ -127,6 +134,10 @@ export type { MountGrid } from './details-view';
 /** Why a question was asked: a move of the user's, a layout the Consumer handed in, or new data. */
 type Cause = 'user' | 'consumer' | 'data';
 
+/** The redraw interval unless the Consumer gives one, in milliseconds: the Razor component's `DefaultRedrawInterval`
+ * (ADR-0067). */
+const defaultRedrawInterval = 250;
+
 interface Question {
     readonly layout: PivotLayout;
     readonly generation: number;
@@ -142,6 +153,9 @@ interface Question {
     /** The user's moves this question carries: its own, after those of the questions it superseded while they
      * were out, which were taken against them and go with it (ADR-0370 section 3). */
     readonly moves: readonly FieldListMove[];
+    /** Whether it answers changes of data the source told of: those gathered when it was asked, and those the
+     * question it superseded carried (ADR-0067). */
+    readonly carries: boolean;
     /** What it is asked of and under: the rows of its answer are asked of the same, with the same. */
     readonly reportSource: LocalPivotReportSource;
     /** The Pivot Source its report source asks, which Show Details asks for the records behind a cell. */
@@ -250,6 +264,10 @@ function checkedOptions(options: PivotViewOptions): PivotViewOptions {
     if (width !== undefined && (typeof width !== 'number' || !Number.isFinite(width) || width <= 0 || width >= 10_000)) {
         throw new RangeError(`fieldListWidth is a width in pixels above zero, not ${JSON.stringify(width)}.`);
     }
+    const redrawInterval = given['redrawInterval'];
+    if (redrawInterval !== undefined && (typeof redrawInterval !== 'number' || !Number.isFinite(redrawInterval) || redrawInterval < 0)) {
+        throw new RangeError(`redrawInterval is a time in milliseconds of zero or more, not ${JSON.stringify(redrawInterval)} (ADR-0067).`);
+    }
     const maxLeaves = given['maxLeaves'];
     if (maxLeaves !== undefined && (typeof maxLeaves !== 'number' || !Number.isSafeInteger(maxLeaves) || maxLeaves < 1)) {
         throw new RangeError(`maxLeaves is a whole number of at least 1, not ${JSON.stringify(maxLeaves)} (ADR-0066).`);
@@ -343,6 +361,14 @@ export class PivotView {
     #refusal: string | undefined;
     // A Refresh pressed and not yet answered from the Pivot Source asked again.
     #refreshOwed = false;
+    // A change of data no question asked since answers, and the Source Version the latest notice named, if it named
+    // one (ADR-0067). When a change of data last reached the screen, from which the next waits the redraw interval;
+    // the timer that waits; and how to stop hearing the report source's notices.
+    #changed = false;
+    #changedTo: string | undefined;
+    #lastDataShown: number | undefined;
+    #redrawTimer: ReturnType<typeof setTimeout> | undefined;
+    #stopHearing: (() => void) | undefined;
     #fieldListShown: boolean;
     #counts: PivotItemCounts | undefined;
     #countsAsked: AbortController | undefined;
@@ -502,6 +528,8 @@ export class PivotView {
         root.addEventListener('focusin', outside, listening);
 
         this.#askCounts();
+        // Heard once the pivot is whole: a construction that throws leaves no listener on the Consumer's source.
+        this.#hear(this.#reportSource);
         if (options.layout !== undefined) this.#ask(options.layout, 'consumer', []);
         this.#draw();
     }
@@ -555,9 +583,15 @@ export class PivotView {
             // The rows on screen keep reading the report source that answered them until a new answer replaces them.
             const replaced = this.#reportSource;
             this.#reportSource = this.#reportSourceOf(options.source);
+            this.#hear(this.#reportSource);
             this.#release(replaced);
             this.#counts = undefined;
             this.#askCounts();
+        }
+        if (options.redrawInterval !== before.redrawInterval) {
+            // A redraw waiting on the interval before is timed again on the new one.
+            this.#disarmRedraw();
+            this.#scheduleRedraw();
         }
         if (asked !== undefined) {
             this.#ask(asked, consumerLayout !== undefined ? 'consumer' : 'data', []);
@@ -578,6 +612,9 @@ export class PivotView {
         if (this.#destroyed) return;
         this.#destroyed = true;
         this.#listening.abort();
+        this.#stopHearing?.();
+        this.#stopHearing = undefined;
+        this.#disarmRedraw();
         this.#takeDown();
         this.#items.dispose();
         this.#details.destroy();
@@ -621,6 +658,10 @@ export class PivotView {
     // The pane's layout: the pending one while Defer Layout Update is ticked, otherwise the report's.
     get #paneLayout(): PivotLayout {
         return this.#deferred?.layout ?? this.#layoutAhead;
+    }
+
+    get #redrawInterval(): number {
+        return this.#options.redrawInterval ?? defaultRedrawInterval;
     }
 
     get #maxLeaves(): number {
@@ -750,16 +791,22 @@ export class PivotView {
         // A user's move made while a user's question was out was taken against it, and carries its moves on.
         const moves = [...(raise && superseded?.raise === true ? superseded.moves : []), ...moved];
         const generation = ++this.#generation;
+        // Asked of the source as it stands now, a question answers every change of data told before it, and those the
+        // question it superseded carried.
+        const carries = this.#changed || superseded?.carries === true;
+        this.#changed = false;
+        this.#disarmRedraw();
         if (showsNothing(layout) && layout.filters.length === 0) {
             // Nothing to compute: the report is the empty box that says how to start. A layout with fields in Filters
             // alone is asked for still, as the Razor component asks every layout: Filter… lists their Items under its
-            // Report Version (ADR-0066).
+            // Report Version (ADR-0066). Nothing on screen reads the data, so no change of data is owed to it: the next
+            // layout's question is asked of the source as it stands then.
             this.#asked = undefined;
             this.#showLayout(layout, undefined, raise);
             return;
         }
         const question: Question = {
-            layout, generation, controller: new AbortController(), raise, markChanges, refreshData, moves: Object.freeze(moves),
+            layout, generation, controller: new AbortController(), raise, markChanges, refreshData, moves: Object.freeze(moves), carries,
             reportSource: this.#reportSource, source: this.#options.source, settings: this.#settings, locale: this.#locale, maxLeaves: this.#maxLeaves,
             toggled: focusOn,
         };
@@ -785,6 +832,9 @@ export class PivotView {
             this.#asked = undefined;
             this.#refusal = this.#words.failed(error);
             this.#draw();
+            // A failure is said where the user sees it, and asked again only by the next notice, Refresh or move: asking
+            // again on the clock would ask a failing source once per interval.
+            this.#landed(question, undefined, false);
             throw error;
         }
         // Late and superseded: a newer question was asked, and this answers a layout no longer wanted.
@@ -792,11 +842,85 @@ export class PivotView {
         this.#asked = undefined;
         if (update.refusal !== undefined) {
             this.#refuse(update.refusal, question);
+            // The report on screen stays on its layout, and the changes the refused question carried are gathered again
+            // for it: a refusal of the user's move is no reason to leave the totals before them on screen. A refusal of
+            // the layout on screen itself is said, and asked again only by the next notice, Refresh or move.
+            this.#landed(question, undefined, question.layout !== this.#shown.layout);
             return;
         }
         // The data on screen is the Pivot Source's as it is now: the Refresh is paid.
         if (question.refreshData) this.#refreshOwed = false;
         this.#showLayout(question.layout, { answer: update, question }, question.raise);
+        this.#landed(question, update.metadata.sourceVersion, false);
+    }
+
+    // ---- Changes of data (ADR-0067) --------------------------------------------------------------------
+
+    // Hears the report source's notices, and no longer the one before: a source handed over is asked from nothing, and
+    // that question answers whatever was gathered.
+    #hear(reportSource: LocalPivotReportSource): void {
+        this.#stopHearing?.();
+        this.#changed = false;
+        this.#changedTo = undefined;
+        this.#disarmRedraw();
+        this.#stopHearing = reportSource.subscribe(changed => { this.#sourceChanged(reportSource, changed); });
+    }
+
+    // The source's data moved on: gathered, and asked for at once when the last change reached the screen more than
+    // the redraw interval ago and nothing is out, otherwise when that time comes, or when the question out lands. A
+    // notice of the very version on screen, with nothing out and nothing gathered before it, has nothing to bring.
+    #sourceChanged(reportSource: LocalPivotReportSource, changed: PivotSourceChanged): void {
+        if (this.#destroyed || reportSource !== this.#reportSource) return;
+        const { answer, question } = this.#shown;
+        if (!this.#changed && this.#asked === undefined && changed.sourceVersion !== undefined && question?.reportSource === reportSource
+            && answer?.metadata.sourceVersion === changed.sourceVersion) {
+            return;
+        }
+        this.#changed = true;
+        this.#changedTo = changed.sourceVersion;
+        this.#scheduleRedraw();
+    }
+
+    // Asks for the changes gathered no sooner than the redraw interval after the last change reached the screen: at
+    // once when that time has passed, else when it comes. Nothing is asked while a question is out: its landing asks.
+    #scheduleRedraw(): void {
+        if (!this.#changed || this.#asked !== undefined || this.#destroyed) return;
+        const ahead = this.#layoutAhead;
+        if (showsNothing(ahead) && ahead.filters.length === 0) {
+            // Nothing on screen reads the data: the next layout's question is asked of the source as it stands then.
+            this.#changed = false;
+            this.#disarmRedraw();
+            return;
+        }
+        const now = performance.now();
+        const due = this.#lastDataShown === undefined ? now : this.#lastDataShown + this.#redrawInterval;
+        if (due <= now) {
+            this.#ask(ahead, 'data', []);
+            this.#draw();
+            return;
+        }
+        if (this.#redrawTimer !== undefined) return;
+        this.#redrawTimer = setTimeout(() => {
+            this.#redrawTimer = undefined;
+            this.#scheduleRedraw();
+        }, due - now);
+    }
+
+    #disarmRedraw(): void {
+        if (this.#redrawTimer === undefined) return;
+        clearTimeout(this.#redrawTimer);
+        this.#redrawTimer = undefined;
+    }
+
+    // A question landed — answered, refused or failed. One that carried changes of data brought them to the screen, or
+    // found them unshowable, and the next waits the redraw interval from now; the changes gathered meanwhile are asked
+    // for then, unless the answer is already of the version the latest notice named. `regather` gathers again the changes
+    // a question carried and did not bring.
+    #landed(question: Question, version: string | undefined, regather: boolean): void {
+        if (question.carries) this.#lastDataShown = performance.now();
+        if (regather && question.carries) this.#changed = true;
+        if (this.#changed && this.#changedTo !== undefined && version === this.#changedTo) this.#changed = false;
+        this.#scheduleRedraw();
     }
 
     #nextRequestId(): string {
@@ -967,8 +1091,9 @@ export class PivotView {
     // report on screen is asked again under its layout, unless something newer is asked already.
     #reportMoved(answer: PivotReportState): void {
         if (this.#destroyed || this.#shown.answer !== answer || this.#asked !== undefined) return;
-        this.#ask(this.#shown.layout, 'data', []);
-        this.#draw();
+        // A change of data like any other: asked for no sooner than the redraw interval after the last one shown.
+        this.#changed = true;
+        this.#scheduleRedraw();
     }
 
     #drawGrid(): void {

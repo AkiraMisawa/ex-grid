@@ -90,6 +90,7 @@ export interface PivotViewOptions {
     readonly onSelectionChanged?: (event: PivotSelectionChangedEvent) => void;
     readonly onShowDetails?: (event: PivotShowDetailsEvent) => void;
     readonly onShowFieldListChanged?: (event: PivotFieldListShownEvent) => void;
+    readonly redrawInterval?: number;
     readonly rowHeight?: number;
     readonly showFieldList?: boolean;
     readonly slicing?: PivotSlicing;
