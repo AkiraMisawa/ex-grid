@@ -34,13 +34,25 @@ const cellAt = (element: HTMLElement, row: number, column: number): HTMLElement 
 
 const textAt = (element: HTMLElement, row: number, column: number): string | undefined => cellAt(element, row, column)?.textContent ?? undefined; // oxlint-disable-line ex-grid/no-stand-in-default -- a cell not painted reads as missing, which the expectation names
 
+/** The Row Headings' width, as the grid emitted it inline, or none where the band does not stand (ADR-0050). */
+function rowHeadingWidthPx(element: HTMLElement): number {
+    const style = element.querySelector('.ex-row-heading')?.getAttribute('style');
+    if (style === null || style === undefined) return 0;
+    const width = /width: ([\d.]+)px/u.exec(style);
+    if (width?.[1] === undefined) throw new Error(`A Row Heading carries no width: ${style}`);
+    return Number(width[1]);
+}
+
 /** A press on the cell at `row`, `column` of a default Sheet, where the keyboard then is. */
 function press(element: HTMLElement, row: number, column: number): void {
     const viewport = element.querySelector<HTMLElement>('.ex-viewport');
     if (viewport === null) throw new Error('The grid has no viewport.');
+    // The Row Headings stand at the Viewport's left edge, and a press in that band selects a whole row
+    // (ADR-0050): the columns start after it.
+    const headingPx = rowHeadingWidthPx(element);
     for (const type of ['mousedown', 'mouseup']) {
         const event = new MouseEvent(type, { bubbles: true, cancelable: true, button: 0, buttons: type === 'mousedown' ? 1 : 0 });
-        Object.defineProperty(event, 'offsetX', { value: column * 99 + 20 });
+        Object.defineProperty(event, 'offsetX', { value: headingPx + (column * 99) + 20 });
         Object.defineProperty(event, 'offsetY', { value: row * 28 + 5 });
         viewport.dispatchEvent(event);
         if (type === 'mousedown' && !event.defaultPrevented) element.querySelector<HTMLElement>('.ex-scroller')?.focus();
