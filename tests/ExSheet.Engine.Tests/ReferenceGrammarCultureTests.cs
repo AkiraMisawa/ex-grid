@@ -9,11 +9,14 @@ namespace ExSheet.Engine.Tests;
 /// <c>A:A</c>, <c>1:1</c>, a Sheet qualifier, structured references — parses and round-trips in the
 /// invariant syntax in every culture. Each form is entered on a Sheet declared in the culture, with
 /// the thread in it too, then read back: as entered, through a Sheet Document and its JSON, and
-/// written again after a row inserted above it moved what it names.
+/// written again after a row inserted above it moved what it names. Here, under the cultures only .NET holds data for,
+/// with the process in that culture too; the cultures both engines hold are shared cases.
 /// </summary>
 public class ReferenceGrammarCultureTests
 {
-    private static readonly string[] Cultures = ["", "en-US", "de-DE", "fr-FR", "ja-JP", "ar-SA", "tr-TR"];
+    // The cultures only .NET holds data for: the invariant culture, en-US, de-DE, fr-FR and ja-JP are shared cases
+    // (tests/cases/sheet/reference-grammar-culture.json), which the Script Core runs too.
+    private static readonly string[] Cultures = ["ar-SA", "tr-TR"];
 
     /// <summary>
     /// The forms: the Sheet's name, the Formula as typed, as written back, and as written after a row

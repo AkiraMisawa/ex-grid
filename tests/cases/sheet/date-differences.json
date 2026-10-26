@@ -6,13 +6,13 @@
     {
       "name": "ADR-0047: DATEDIF refuses the unresolved year-ignoring and MD domains: =DATEDIF(DATE(2020,1,1),DATE(2022,3,1),\"YD\")",
       "steps": [
-        {"enter": {"ZZ1000": "=DATEDIF(DATE(2020,1,1),DATE(2022,3,1),\"YD\")"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!"}}}}
+        {"enter": {"ZZ1000": "=DATEDIF(DATE(2020,1,1),DATE(2022,3,1),\"YD\")"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
       ]
     },
     {
       "name": "ADR-0047: DATEDIF refuses the unresolved year-ignoring and MD domains: =DATEDIF(1,2,\"MD\")",
       "steps": [
-        {"enter": {"ZZ1000": "=DATEDIF(1,2,\"MD\")"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!"}}}}
+        {"enter": {"ZZ1000": "=DATEDIF(1,2,\"MD\")"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
       ]
     },
     {

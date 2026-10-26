@@ -1,0 +1,184 @@
+{
+  "about": "3D References (ADR-0331 §7, exsheet-workbook ticket 11): Sheet1:Sheet3!B2 reads the same range on every Sheet from the first named to the last in tab order. ThreeDExcelReadingsTests holds every case ticket 12 put to Excel; these are the engine's own around them: recalculation, undo, documents. The setup 'quarters' is a Workbook of Sheet1 to Sheet4 and Summary, with 1, 2, 4 and 8 in B2 of Sheet1 to Sheet4. Transcribed from ExSheet.Engine.Tests' ThreeDReferenceTests.",
+  "kind": "sheet",
+  "culture": "en-US",
+  "setups": {
+    "quarters": [
+      {"enter": {"B2": "1"}, "on": "Sheet1"},
+      {"enter": {"B2": "2"}, "on": "Sheet2"},
+      {"enter": {"B2": "4"}, "on": "Sheet3"},
+      {"enter": {"B2": "8"}, "on": "Sheet4"}
+    ]
+  },
+  "cases": [
+    {
+      "name": "ADR-0331 §7: SUM over Sheet1:Sheet3 adds B2 of each Sheet from the first to the last in tab order",
+      "sheets": ["Sheet1", "Sheet2", "Sheet3", "Sheet4", "Summary"],
+      "setup": "quarters",
+      "steps": [
+        {"enter": {"A1": "=SUM(Sheet1:Sheet3!B2)", "A2": "=SUM(Sheet2:Sheet4!B2,100)", "A3": "=SUM(Sheet3:Sheet1!B2)", "A4": "=SUM(Sheet2:Sheet2!B2)"}, "on": "Summary", "expect": {"values": {"A1": 7, "A2": 114, "A3": 7, "A4": 2}}, "note": "Named last to first, the span is the same Sheets."}
+      ]
+    },
+    {
+      "name": "ADR-0331 §7: a rectangle, whole columns and a span that holds the Formula's own Sheet",
+      "sheets": ["Sheet1", "Sheet2", "Sheet3", "Sheet4", "Summary"],
+      "setup": "quarters",
+      "steps": [
+        {"enter": {"C3": "10"}, "on": "Sheet1"},
+        {"enter": {"B3": "20"}, "on": "Sheet3"},
+        {"enter": {"A1": "=SUM(Sheet1:Sheet3!B2:C3)"}, "on": "Sheet2"},
+        {"enter": {"A1": "=COUNT(Sheet1:Sheet3!B:C)"}, "on": "Sheet4"},
+        {"read": true, "on": "Sheet2", "expect": {"values": {"A1": 37}}},
+        {"read": true, "on": "Sheet4", "expect": {"values": {"A1": 5}}}
+      ]
+    },
+    {
+      "name": "ADR-0331 §7, ticket 12: the functions Excel reads one in across its span",
+      "sheets": ["Sheet1", "Sheet2", "Sheet3", "Sheet4", "Summary"],
+      "setup": "quarters",
+      "steps": [
+        {"enter": {"C2": "text"}, "on": "Sheet2"},
+        {"enter": {"A1": "=AVERAGE(Sheet1:Sheet4!B2)", "A2": "=MIN(Sheet1:Sheet4!B2)", "A3": "=MAX(Sheet1:Sheet4!B2)", "A4": "=COUNT(Sheet1:Sheet4!B2:C2)", "A5": "=COUNTA(Sheet1:Sheet4!B2:C2)", "A6": "=PRODUCT(Sheet1:Sheet4!B2)", "A7": "=VAR.P(Sheet1:Sheet2!B2)", "A8": "=VAR.S(Sheet1:Sheet2!B2)", "A9": "=STDEV.P(Sheet1:Sheet2!B2)", "A10": "=STDEV.S(Sheet1:Sheet2!B2)"}, "on": "Summary", "expect": {"values": {"A1": 3.75, "A2": 1, "A3": 8, "A4": 4, "A5": 5, "A6": 64, "A7": 0.25, "A8": 0.5, "A9": 0.5, "A10": 0.7071067811865476}}}
+      ]
+    },
+    {
+      "name": "ADR-0331 §7: an Error Value on any Sheet of the span is the aggregate's, as in a range of one Sheet",
+      "sheets": ["Sheet1", "Sheet2", "Sheet3", "Sheet4", "Summary"],
+      "setup": "quarters",
+      "steps": [
+        {"enter": {"B2": "=1/0"}, "on": "Sheet3"},
+        {"enter": {"A1": "=SUM(Sheet1:Sheet4!B2)", "A2": "=COUNTA(Sheet1:Sheet4!B2)"}, "on": "Summary", "expect": {"values": {"A1": {"error": "#DIV/0!"}, "A2": 4}}}
+      ]
+    },
+    {
+      "name": "ADR-0331 §7: a change on any Sheet of the span recalculates the Formula, and only a Sheet of it does",
+      "sheets": ["Sheet1", "Sheet2", "Sheet3", "Sheet4", "Summary"],
+      "setup": "quarters",
+      "steps": [
+        {"enter": {"A1": "=SUM(Sheet1:Sheet3!B2)"}, "on": "Summary"},
+        {"enter": {"B2": "20"}, "on": "Sheet2"},
+        {"read": true, "on": "Summary", "expect": {"values": {"A1": 25}}},
+        {"enter": {"B2": "1000"}, "on": "Sheet4"},
+        {"read": true, "on": "Summary", "expect": {"values": {"A1": 25}}},
+        {"enter": {"A1": "=SUM(Sheet1:Sheet3!B2)"}, "on": "Sheet1", "expect": {"values": {"A1": 25}}, "note": "A Formula on a Sheet of its own span reads the others' cells, and a cycle through its own is #CIRC!."},
+        {"enter": {"A1": "=SUM(Sheet1:Sheet3!A1)"}, "on": "Sheet2", "expect": {"values": {"A1": {"error": "#CIRC!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0331 §7, ticket 12: a span naming a Sheet the Workbook does not have is #NAME?, and resolves once it has one",
+      "sheets": ["Sheet1", "Sheet2", "Sheet3", "Sheet4", "Summary"],
+      "setup": "quarters",
+      "steps": [
+        {"enter": {"A1": "=SUM(Sheet1:Sheet9!B2)"}, "on": "Summary", "expect": {"values": {"A1": {"error": "#NAME?"}}}},
+        {"do": {"rename": "Sheet9"}, "on": "Sheet4"},
+        {"read": true, "on": "Summary", "expect": {"values": {"A1": 15}}}
+      ]
+    },
+    {
+      "name": "ADR-0331 §7, ticket 12's answer 6: written as Excel writes it: the ends in tab order and their own names, bare or quoted whole, one Sheet as that Sheet",
+      "sheets": ["Sheet1", "Q1 Sales", "Sheet3"],
+      "steps": [
+        {"enter": {"A1": "=sum('sheet3:q1 sales'!b2)", "A2": "=SUM('Q1 Sales:Sheet3'!$B$2:C3)", "A3": "=SUM(sheet3:Sheet1!B2)", "A4": "=SUM('Sheet1:Sheet3'!B2)", "A5": "=SUM(sheet3:Sheet3!B2)", "A6": "=SUM(Sheet1:Nope!B2)"}, "on": "Sheet1", "expect": {"formulas": {"A1": "=SUM('Q1 Sales:Sheet3'!B2)", "A2": "=SUM('Q1 Sales:Sheet3'!$B$2:C3)", "A3": "=SUM(Sheet1:Sheet3!B2)", "A4": "=SUM(Sheet1:Sheet3!B2)", "A5": "=SUM(Sheet3!B2)", "A6": "=SUM(Sheet1:Nope!B2)"}}, "note": "A name no Sheet has is left as typed: it is #NAME?."}
+      ]
+    },
+    {
+      "name": "ADR-0331 §7, ticket 12's answer 6: a Formula entered into a General cell takes no format from a 3D Reference, typed as one Sheet's or not",
+      "sheets": ["Sheet1", "Sheet2", "Sheet3"],
+      "steps": [
+        {"do": {"setNumberFormat": {"at": "B2", "format": "0%"}}, "on": "Sheet2"},
+        {"enter": {"B2": "50%"}, "on": "Sheet2"},
+        {"do": {"setNumberFormat": {"at": "B2", "format": "0%"}}, "on": "Sheet3"},
+        {"enter": {"B2": "50%"}, "on": "Sheet3"},
+        {"enter": {"A1": "=SUM(Sheet2:Sheet3!B2)", "A2": "=SUM(Sheet2:Sheet2!B2)", "A3": "=SUM(Sheet2!B2)"}, "on": "Sheet1", "expect": {"formulas": {"A2": "=SUM(Sheet2!B2)"}, "numberFormats": {"A1": "General", "A2": "General", "A3": "0%"}}}
+      ]
+    },
+    {
+      "name": "ADR-0331 §7, ADR-0048: a copy shifts a 3D Reference's relative parts, as any Reference's",
+      "sheets": ["Sheet1", "Sheet2", "Sheet3", "Sheet4", "Summary"],
+      "setup": "quarters",
+      "steps": [
+        {"enter": {"B3": "100"}, "on": "Sheet1"},
+        {"enter": {"A1": "=SUM(Sheet1:Sheet3!B2)"}, "on": "Summary"},
+        {"do": {"fill": {"source": "A1", "target": "A1:A2", "direction": "down"}}, "on": "Summary", "expect": {"formulas": {"A2": "=SUM(Sheet1:Sheet3!B3)"}, "values": {"A2": 100}}}
+      ]
+    },
+    {
+      "name": "ADR-0331 §3, §7: a rename rewrites either end of a span",
+      "sheets": ["Sheet1", "Sheet2", "Sheet3", "Sheet4", "Summary"],
+      "setup": "quarters",
+      "steps": [
+        {"enter": {"A1": "=SUM(sheet1:Sheet3!B2)*2"}, "on": "Summary"},
+        {"do": {"rename": "Q1 Sales"}, "on": "Sheet1"},
+        {"do": {"rename": "Q3"}, "on": "Sheet3"},
+        {"read": true, "on": "Summary", "expect": {"formulas": {"A1": "=SUM('Q1 Sales:Q3'!B2)*2"}, "values": {"A1": 14}}},
+        {"do": {"rename": "Q2"}, "on": "Sheet2"},
+        {"read": true, "on": "Summary", "expect": {"formulas": {"A1": "=SUM('Q1 Sales:Q3'!B2)*2"}}, "note": "Renaming a Sheet inside the span changes nothing it holds."}
+      ]
+    },
+    {
+      "name": "ADR-0331 §7: a Workbook Document keeps a 3D Reference, and the Workbook it opens reads it",
+      "sheets": ["Sheet1", "Sheet2", "Sheet3", "Sheet4", "Summary"],
+      "setup": "quarters",
+      "steps": [
+        {"enter": {"A1": "=SUM('Sheet1:Sheet3'!B2)"}, "on": "Summary"},
+        {"reopen": "document"},
+        {"read": true, "on": "Summary", "expect": {"formulas": {"A1": "=SUM(Sheet1:Sheet3!B2)"}, "values": {"A1": 7}}}
+      ]
+    },
+    {
+      "name": "ADR-0331 §3, §7, ticket 12's answer 2: an end moved past the other hands its end inward, and the undo puts the text back",
+      "sheets": ["Sheet1", "Sheet2", "Sheet3", "Sheet4", "Summary"],
+      "setup": "quarters",
+      "steps": [
+        {"enter": {"A1": "=SUM(Sheet1:Sheet3!B2)"}, "on": "Summary"},
+        {"do": {"moveSheet": 3}, "on": "Sheet1", "expect": {"sheets": ["Sheet2", "Sheet3", "Sheet4", "Sheet1", "Summary"]}},
+        {"read": true, "on": "Summary", "expect": {"formulas": {"A1": "=SUM(Sheet2:Sheet3!B2)"}, "values": {"A1": 6}}},
+        {"undo": "last"},
+        {"read": true, "on": "Summary", "expect": {"formulas": {"A1": "=SUM(Sheet1:Sheet3!B2)"}, "values": {"A1": 7}}},
+        {"redo": "last"},
+        {"read": true, "on": "Summary", "expect": {"formulas": {"A1": "=SUM(Sheet2:Sheet3!B2)"}}}
+      ]
+    },
+    {
+      "name": "ADR-0331 §3, §7, ticket 12's answer 2: deleting an end hands it inward, down to one Sheet, then #REF!; each undoes",
+      "sheets": ["Sheet1", "Sheet2", "Sheet3", "Sheet4", "Summary"],
+      "setup": "quarters",
+      "steps": [
+        {"enter": {"A1": "=SUM(Sheet1:Sheet2!B2)*2"}, "on": "Summary"},
+        {"do": {"deleteSheet": true}, "on": "Sheet1"},
+        {"read": true, "on": "Summary", "expect": {"formulas": {"A1": "=SUM(Sheet2!B2)*2"}, "values": {"A1": 4}}},
+        {"do": {"deleteSheet": true}, "on": "Sheet2"},
+        {"read": true, "on": "Summary", "expect": {"formulas": {"A1": "=SUM(#REF!)*2"}}},
+        {"undo": 1},
+        {"undo": 0},
+        {"read": true, "on": "Summary", "expect": {"formulas": {"A1": "=SUM(Sheet1:Sheet2!B2)*2"}, "values": {"A1": 6}}}
+      ]
+    },
+    {
+      "name": "ADR-0331 §7, ticket 12's answer 4: a row inserted on a Sheet of a span recalculates what reads it, the text kept; the undo too",
+      "sheets": ["Sheet1", "Sheet2", "Sheet3", "Sheet4", "Summary"],
+      "setup": "quarters",
+      "steps": [
+        {"enter": {"A1": "=SUM(Sheet1:Sheet3!B2)"}, "on": "Summary"},
+        {"enter": {"A1": "=SUM(Sheet1:Sheet3!B2)"}, "on": "Sheet2"},
+        {"do": {"insertRows": [0]}, "on": "Sheet2", "expect": {"formulas": {"A2": "=SUM(Sheet1:Sheet3!B2)"}, "values": {"A2": 5}}},
+        {"read": true, "on": "Summary", "expect": {"formulas": {"A1": "=SUM(Sheet1:Sheet3!B2)"}, "values": {"A1": 5}}},
+        {"undo": "last", "on": "Sheet2", "expect": {"values": {"A1": 7}}},
+        {"read": true, "on": "Summary", "expect": {"values": {"A1": 7}}}
+      ]
+    },
+    {
+      "name": "ADR-0331 §7, ticket 12's answer 2: a Sheet inserted between the ends is read, and so is one moved there, with no rewrite",
+      "sheets": ["Sheet1", "Sheet2", "Sheet3", "Sheet4", "Summary"],
+      "setup": "quarters",
+      "steps": [
+        {"enter": {"A1": "=SUM(Sheet1:Sheet3!B2)"}, "on": "Summary"},
+        {"do": {"insertSheet": {"name": "New"}}, "on": "Sheet1"},
+        {"enter": {"B2": "100"}, "on": "New"},
+        {"read": true, "on": "Summary", "expect": {"values": {"A1": 107}}},
+        {"do": {"moveSheet": 2}, "on": "Sheet4"},
+        {"read": true, "on": "Summary", "expect": {"values": {"A1": 115}, "formulas": {"A1": "=SUM(Sheet1:Sheet3!B2)"}, "sheets": ["Sheet1", "New", "Sheet4", "Sheet2", "Sheet3", "Summary"]}}
+      ]
+    }
+  ]
+}

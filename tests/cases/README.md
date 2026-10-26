@@ -652,36 +652,48 @@ Excel's own answers: xUnit runs them against `ExSheet.Engine` (`tests/ExSheet.En
 Vitest against `@ex-grid/sheet-engine` (`src/npm/sheet-engine/test/`). Each file of kind `sheet` names its
 `culture` (a .NET culture name, or `invariant`) and may name `setups`, lists of steps a case runs first by
 naming one in `setup`. A case may name its own `culture`, and `sheets` to start from more than one. A case
-goes in green on the C# engine first, and the xUnit test it transcribes is then deleted.
+goes in green on the C# engine first, and the xUnit test it transcribes is then deleted. xUnit runs each case with
+the thread in the case's culture, so that nothing the engine writes or reads leans on a server thread's culture.
 
 A case is a list of steps on a Workbook. A step has one verb, and may name the Sheet it is `on`, a `note`, and
 what to `expect` after it. The verbs: `enter` (each cell typed alone, in order) and `enterAll` (one batch);
 `enterRun`, a `range` typed in one batch from a template naming each cell's row as `{row}` or `{row-1}`; `do`,
-a Sheet Edit done as a step, and `check`, the same edit only checked; `undo` and `redo` of the `last` step or
+a Sheet Edit done as a step, and `check`, the same edit only checked; `doAll`, several edits as one operation,
+each `[sheet, edit]`; `undo` and `redo` of the `last` step or
 of the step at an index among those done; `reopen` from the Workbook's `document` or that document's `json`,
 from `{"sheet": name}` (that one Sheet's Sheet Document, written to JSON and read back), or from a document
 the case writes, `{"sheetJson": text}` or `{"workbookJson": text}`; `remember` a picture of the Workbook by
 name; `read`; `copy` a `range` `as` a name for a later `paste`; `setNumberFormat`, `setAlignment` and
 `setCellFormat` (`ranges` and a `change`) directly, outside any step; `declareTable` and `pushTable` for a
-Linked Table; `setToday`, `setSeed` and `recalculateVolatile`; `setClock`, a clock that starts `from` a
+Linked Table, and `readTable`, its columns by name, or `{"name", "as"}` to hold the snapshot read under a label; `setToday`, `setSeed` and `recalculateVolatile`; `setClock`, a clock that starts `from` a
 moment written `yyyy-MM-ddTHH:mm:ss` and moves on a finite `step` of seconds each time it is read; and
-`getDisplay` of a cell `at` a `width`, so that a width refused is a refusal to expect. An edit is an object
-of one key, the factory, and its arguments, as `SheetEdit` takes them.
+`getDisplay` of a cell `at` a `width`, so that a width refused is a refusal to expect; and `show`, the Sheet
+shown, by its name. Text a step types, and a text a reading of `formulas` or `entryTexts` expects, may be built
+from `{"parts": [...]}`, each part a string or `[string, times]`, for a Formula too long to write out. An edit is an object
+of one key, the factory, and its arguments, as `SheetEdit` takes them; `pasteFields` is the Script Core's name for the
+forms of `PasteText` that take `typed` fields cell by cell, with exact `entries` or without.
 
 An expectation names readings: per cell, `values` (a string is text, a number a double, `true`/`false` a
-Boolean, `null` a Blank, `{"error": "#N/A"}` an Error Value), `displays`, `texts`, `formulas`, `entryTexts`,
-`entries`, `numberFormats`, `alignments`, `fonts`, `fills`, `borders`, `widthOnEntry` and `spilledFrom`; of
-the Sheet, `document`, `columnWidths`, `entryAddresses` and `valueAddresses`; of the step, `change`,
+Boolean, `null` a Blank, `{"error": "#N/A"}` an Error Value, which compares in full, so that one written without
+`"refused": true` is never a refusal), `displays`, `texts`, `formulas`, `entryTexts`,
+`entries`, `numberFormats`, `alignments`, `fonts`, `fills`, `borders`, `widthOnEntry` and `spilledFrom`; per
+range, `cellFormats` (the Cell Formats it shows, each once) and `edgeLines` (the lines along each outer edge),
+each a set written in the ordinal order of its members' JSON text as `JSON.stringify` writes it; of
+the Sheet, `document`, `documentJson` (its Sheet Document's JSON text, which both engines write alike), `columnWidths`, `entryAddresses` and `valueAddresses`; of the step, `change`,
 `changes` (what a step, an undo or a redo changed on each Sheet it reached, by the Sheet's name), `refusal`
-(a `check`'s), `isUndone`, `ranges`, and `clockReads` (how often the step read the clock); of the Workbook,
-`sheets`, `shown`, `workbook` (its `culture`, `today`, `hasVolatileFormulas` and `linkedTables`), and
+(a `check`'s), `isUndone`, `ranges`, `stepSheet` (the Sheet a step was done on or made), `changesSheets`, `sheetsReached` (the Sheets a step, an undo, a
+redo or a push reached, in order), `tableColumns` (what `readTable` read, `null` while the table waits), `heldTables` (each snapshot held, as it stands now), and
+`clockReads` (how often the step read the clock); of the Workbook,
+`sheets`, `shown`, `workbook` (its `culture`, `today`, `seed` as a string of digits, `hasVolatileFormulas`, `linkedTables` and `changes`),
+`workbookJson` (its Workbook Document's JSON text), `copies` (each copy taken, by its name: its `refusal`, its outward
+`text` and `html`, and its `block`, rows of the Entries it holds), and
 `picture` or `pictureNot` against one remembered. An object or a list compares in full where it is written, and a number
 exactly (`-0` apart from `0`) unless it is `{"near", "within"}`.
 
 A step that throws is read as a refusal, `{"refusal": kind, "reason"?, "saying"?}`, by .NET's exception type
 on one side and the Script Core's error on the other: `formulaSyntax` (`FormulaSyntaxException`,
-`FormulaSyntaxError`), `refused` with its `reason` (`SheetRefusedException`, `SheetRefusedError`),
-`repeatedKey`, `document` (`SheetDocumentException`, `SheetDocumentError`), `argument` (`ArgumentException`,
+`FormulaSyntaxError`) with its `reason` and whether it is `beyondLimit`, `refused` with its `reason` (`SheetRefusedException`, `SheetRefusedError`),
+`repeatedKey`, `document` with its `documentVersion` (`SheetDocumentException`, `SheetDocumentError`), `argument` (`ArgumentException`,
 `RangeError`), `format` (`FormatException`, `FormatError`) and `invalidOperation`
 (`InvalidOperationException`, `Error`). What is not the engine refusing is never read as one: the runner's
 own reading of a malformed case, an engine defect, and what JavaScript throws by itself fail the case.

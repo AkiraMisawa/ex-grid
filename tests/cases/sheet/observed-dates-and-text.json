@@ -1,0 +1,1097 @@
+{
+  "about": "The dates before 1 March 1900, SUBSTITUTE's instances, and TEXT's General and empty code, as the seventeenth Windows run observed Excel to answer them (verification/2026-10-11-windows-17/), and serial 0 and 60 under EOMONTH and EDATE, and TEXT's General with a minus sign and under a lone @, as the area passes did (verification/2026-10-12-windows-area/ and -area-2/; ADR-0047, ADR-0120, ADR-0202). An Error Value written without refused is one a Formula catches. Transcribed from ExSheet.Engine.Tests' ObservedDatesAndTextTests.",
+  "kind": "sheet",
+  "culture": "en-US",
+  "cases": [
+    {
+      "name": "ADR-0047 (EOMONTH-008, EDATE-008, observed): EDATE and EOMONTH count months on the real calendar before March 1900: =EOMONTH(31,1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=EOMONTH(31,1)"}, "expect": {"values": {"ZZ1000": 59}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (EOMONTH-008, EDATE-008, observed): EDATE and EOMONTH count months on the real calendar before March 1900: =EDATE(DATE(1900,3,15),-1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=EDATE(DATE(1900,3,15),-1)"}, "expect": {"values": {"ZZ1000": 46}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (EOMONTH-008, EDATE-008, observed): EDATE and EOMONTH count months on the real calendar before March 1900: =EDATE(31,1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=EDATE(31,1)"}, "expect": {"values": {"ZZ1000": 59}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (EOMONTH-008, EDATE-008, observed): EDATE and EOMONTH count months on the real calendar before March 1900: =EOMONTH(DATE(1900,3,1),-1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=EOMONTH(DATE(1900,3,1),-1)"}, "expect": {"values": {"ZZ1000": 59}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (EOMONTH-008, EDATE-008, observed): EDATE and EOMONTH count months on the real calendar before March 1900: =EOMONTH(1,0)",
+      "steps": [
+        {"enter": {"ZZ1000": "=EOMONTH(1,0)"}, "expect": {"values": {"ZZ1000": 31}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (EOMONTH-008, EDATE-008, observed): EDATE and EOMONTH count months on the real calendar before March 1900: =EDATE(46,1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=EDATE(46,1)"}, "expect": {"values": {"ZZ1000": 75}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (EOMONTH-008, EDATE-008, observed): EDATE and EOMONTH count months on the real calendar before March 1900: =EDATE(59,0)",
+      "steps": [
+        {"enter": {"ZZ1000": "=EDATE(59,0)"}, "expect": {"values": {"ZZ1000": 59}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (EOMONTH-008, EDATE-008, observed): EDATE and EOMONTH count months on the real calendar before March 1900: =EOMONTH(59.9,1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=EOMONTH(59.9,1)"}, "expect": {"values": {"ZZ1000": 91}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (EOMONTH-010, EDATE-010, and EOMONTH-012 to 015, EDATE-013 to 015, observed): EDATE and EOMONTH read serial 0 and the day that never existed as DAY and MONTH do: =EOMONTH(0,1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=EOMONTH(0,1)"}, "expect": {"values": {"ZZ1000": 59}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (EOMONTH-010, EDATE-010, and EOMONTH-012 to 015, EDATE-013 to 015, observed): EDATE and EOMONTH read serial 0 and the day that never existed as DAY and MONTH do: =EOMONTH(0,0)",
+      "steps": [
+        {"enter": {"ZZ1000": "=EOMONTH(0,0)"}, "expect": {"values": {"ZZ1000": 31}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (EOMONTH-010, EDATE-010, and EOMONTH-012 to 015, EDATE-013 to 015, observed): EDATE and EOMONTH read serial 0 and the day that never existed as DAY and MONTH do: =EOMONTH(0.75,2)",
+      "steps": [
+        {"enter": {"ZZ1000": "=EOMONTH(0.75,2)"}, "expect": {"values": {"ZZ1000": 91}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (EOMONTH-010, EDATE-010, and EOMONTH-012 to 015, EDATE-013 to 015, observed): EDATE and EOMONTH read serial 0 and the day that never existed as DAY and MONTH do: =EOMONTH(60,0)",
+      "steps": [
+        {"enter": {"ZZ1000": "=EOMONTH(60,0)"}, "expect": {"values": {"ZZ1000": 59}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (EOMONTH-010, EDATE-010, and EOMONTH-012 to 015, EDATE-013 to 015, observed): EDATE and EOMONTH read serial 0 and the day that never existed as DAY and MONTH do: =EOMONTH(60,1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=EOMONTH(60,1)"}, "expect": {"values": {"ZZ1000": 91}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (EOMONTH-010, EDATE-010, and EOMONTH-012 to 015, EDATE-013 to 015, observed): EDATE and EOMONTH read serial 0 and the day that never existed as DAY and MONTH do: =EOMONTH(60.5,-1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=EOMONTH(60.5,-1)"}, "expect": {"values": {"ZZ1000": 31}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (EOMONTH-010, EDATE-010, and EOMONTH-012 to 015, EDATE-013 to 015, observed): EDATE and EOMONTH read serial 0 and the day that never existed as DAY and MONTH do: =EDATE(60,1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=EDATE(60,1)"}, "expect": {"values": {"ZZ1000": 89}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (EOMONTH-010, EDATE-010, and EOMONTH-012 to 015, EDATE-013 to 015, observed): EDATE and EOMONTH read serial 0 and the day that never existed as DAY and MONTH do: =EDATE(60,0)",
+      "steps": [
+        {"enter": {"ZZ1000": "=EDATE(60,0)"}, "expect": {"values": {"ZZ1000": 59}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (EOMONTH-010, EDATE-010, and EOMONTH-012 to 015, EDATE-013 to 015, observed): EDATE and EOMONTH read serial 0 and the day that never existed as DAY and MONTH do: =EDATE(60,12)",
+      "steps": [
+        {"enter": {"ZZ1000": "=EDATE(60,12)"}, "expect": {"values": {"ZZ1000": 425}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (EOMONTH-010, EDATE-010, and EOMONTH-012 to 015, EDATE-013 to 015, observed): EDATE and EOMONTH read serial 0 and the day that never existed as DAY and MONTH do: =EDATE(60,48)",
+      "steps": [
+        {"enter": {"ZZ1000": "=EDATE(60,48)"}, "expect": {"values": {"ZZ1000": 1521}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (EOMONTH-010, EDATE-010, and EOMONTH-012 to 015, EDATE-013 to 015, observed): EDATE and EOMONTH read serial 0 and the day that never existed as DAY and MONTH do: =EDATE(60,-1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=EDATE(60,-1)"}, "expect": {"values": {"ZZ1000": 29}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (EOMONTH-010, EDATE-010, and EOMONTH-012 to 015, EDATE-013 to 015, observed): EDATE and EOMONTH read serial 0 and the day that never existed as DAY and MONTH do: =EDATE(60.9,1.5)",
+      "steps": [
+        {"enter": {"ZZ1000": "=EDATE(60.9,1.5)"}, "expect": {"values": {"ZZ1000": 89}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (EOMONTH-015, observed): EOMONTH from serial 0 to before 1900 is no date: =EOMONTH(0,-1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=EOMONTH(0,-1)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (EOMONTH-015, observed): EOMONTH from serial 0 to before 1900 is no date: =EOMONTH(0.5,-13)",
+      "steps": [
+        {"enter": {"ZZ1000": "=EOMONTH(0.5,-13)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (EDATE-016, observed): from serial 0, day 0 of the month reached is the day before its 1st: =EDATE(0,1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=EDATE(0,1)"}, "expect": {"values": {"ZZ1000": 31}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (EDATE-016, observed): from serial 0, day 0 of the month reached is the day before its 1st: =EDATE(0.99,1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=EDATE(0.99,1)"}, "expect": {"values": {"ZZ1000": 31}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (EDATE-016, observed): from serial 0, day 0 of the month reached is the day before its 1st: =EDATE(0,3)",
+      "steps": [
+        {"enter": {"ZZ1000": "=EDATE(0,3)"}, "expect": {"values": {"ZZ1000": 91}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (EDATE-016, observed): from serial 0, day 0 of the month reached is the day before its 1st: =EDATE(0,4)",
+      "steps": [
+        {"enter": {"ZZ1000": "=EDATE(0,4)"}, "expect": {"values": {"ZZ1000": 121}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (EDATE-016, observed): from serial 0, day 0 of the month reached is the day before its 1st: =EDATE(0.5,12)",
+      "steps": [
+        {"enter": {"ZZ1000": "=EDATE(0.5,12)"}, "expect": {"values": {"ZZ1000": 366}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (EDATE-016, observed): from serial 0, day 0 of the month reached is the day before its 1st: =EDATE(0,14)",
+      "steps": [
+        {"enter": {"ZZ1000": "=EDATE(0,14)"}, "expect": {"values": {"ZZ1000": 425}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (EDATE-016, observed): from serial 0, day 0 of the month reached is the day before its 1st: =EDATE(0,97199)",
+      "steps": [
+        {"enter": {"ZZ1000": "=EDATE(0,97199)"}, "expect": {"values": {"ZZ1000": 2958434}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: EDATE from serial 0 to before 1900 or past 9999 is no date, under every reading that fits: =EDATE(0,-1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=EDATE(0,-1)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: EDATE from serial 0 to before 1900 or past 9999 is no date, under every reading that fits: =EDATE(0.5,-12)",
+      "steps": [
+        {"enter": {"ZZ1000": "=EDATE(0.5,-12)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: EDATE from serial 0 to before 1900 or past 9999 is no date, under every reading that fits: =EDATE(0,97201)",
+      "steps": [
+        {"enter": {"ZZ1000": "=EDATE(0,97201)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: EDATE from serial 0 to before 1900 or past 9999 is no date, under every reading that fits: =EDATE(0,97202)",
+      "steps": [
+        {"enter": {"ZZ1000": "=EDATE(0,97202)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-14, after run 18a: EDATE-018 to 020, observed): day 0 is the day before the 1st by DATE's arithmetic, at January 1900, March 1900 and January 10000 too: =EDATE(0,0)",
+      "steps": [
+        {"enter": {"ZZ1000": "=EDATE(0,0)"}, "expect": {"values": {"ZZ1000": 0}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-14, after run 18a: EDATE-018 to 020, observed): day 0 is the day before the 1st by DATE's arithmetic, at January 1900, March 1900 and January 10000 too: =EDATE(0,2)",
+      "steps": [
+        {"enter": {"ZZ1000": "=EDATE(0,2)"}, "expect": {"values": {"ZZ1000": 60}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-14, after run 18a: EDATE-018 to 020, observed): day 0 is the day before the 1st by DATE's arithmetic, at January 1900, March 1900 and January 10000 too: =EDATE(0.5,2)",
+      "steps": [
+        {"enter": {"ZZ1000": "=EDATE(0.5,2)"}, "expect": {"values": {"ZZ1000": 60}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-14, after run 18a: EDATE-018 to 020, observed): day 0 is the day before the 1st by DATE's arithmetic, at January 1900, March 1900 and January 10000 too: =EDATE(0.9,0)",
+      "steps": [
+        {"enter": {"ZZ1000": "=EDATE(0.9,0)"}, "expect": {"values": {"ZZ1000": 0}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-14, after run 18a: EDATE-018 to 020, observed): day 0 is the day before the 1st by DATE's arithmetic, at January 1900, March 1900 and January 10000 too: =EDATE(0,24)",
+      "steps": [
+        {"enter": {"ZZ1000": "=EDATE(0,24)"}, "expect": {"values": {"ZZ1000": 731}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-14, after run 18a: EDATE-020, observed): January 10000 is past the last year, an Error Value not refused: =EDATE(0,97200)",
+      "steps": [
+        {"enter": {"ZZ1000": "=EDATE(0,97200)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-14, after run 18a: EDATE-020, observed): January 10000 is past the last year, an Error Value not refused: =EDATE(0.25,97200)",
+      "steps": [
+        {"enter": {"ZZ1000": "=EDATE(0.25,97200)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-14, after run 18a): a boolean typed into EOMONTH, EDATE, NETWORKDAYS or WORKDAY as a date or as the months is #VALUE!, an Error Value a Formula catches: =EOMONTH(TRUE,1)",
+      "steps": [
+        {"enter": {"A1": "=EOMONTH(TRUE,1)", "A2": "=IFERROR(EOMONTH(TRUE,1),0)"}, "expect": {"values": {"A1": {"error": "#VALUE!"}, "A2": 0}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-14, after run 18a): a boolean typed into EOMONTH, EDATE, NETWORKDAYS or WORKDAY as a date or as the months is #VALUE!, an Error Value a Formula catches: =EOMONTH(45000,TRUE)",
+      "steps": [
+        {"enter": {"A1": "=EOMONTH(45000,TRUE)", "A2": "=IFERROR(EOMONTH(45000,TRUE),0)"}, "expect": {"values": {"A1": {"error": "#VALUE!"}, "A2": 0}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-14, after run 18a): a boolean typed into EOMONTH, EDATE, NETWORKDAYS or WORKDAY as a date or as the months is #VALUE!, an Error Value a Formula catches: =EDATE(TRUE,1)",
+      "steps": [
+        {"enter": {"A1": "=EDATE(TRUE,1)", "A2": "=IFERROR(EDATE(TRUE,1),0)"}, "expect": {"values": {"A1": {"error": "#VALUE!"}, "A2": 0}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-14, after run 18a): a boolean typed into EOMONTH, EDATE, NETWORKDAYS or WORKDAY as a date or as the months is #VALUE!, an Error Value a Formula catches: =EDATE(45000,TRUE)",
+      "steps": [
+        {"enter": {"A1": "=EDATE(45000,TRUE)", "A2": "=IFERROR(EDATE(45000,TRUE),0)"}, "expect": {"values": {"A1": {"error": "#VALUE!"}, "A2": 0}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-14, after run 18a): a boolean typed into EOMONTH, EDATE, NETWORKDAYS or WORKDAY as a date or as the months is #VALUE!, an Error Value a Formula catches: =EDATE(45000,FALSE)",
+      "steps": [
+        {"enter": {"A1": "=EDATE(45000,FALSE)", "A2": "=IFERROR(EDATE(45000,FALSE),0)"}, "expect": {"values": {"A1": {"error": "#VALUE!"}, "A2": 0}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-14, after run 18a): a boolean typed into EOMONTH, EDATE, NETWORKDAYS or WORKDAY as a date or as the months is #VALUE!, an Error Value a Formula catches: =NETWORKDAYS(TRUE,6)",
+      "steps": [
+        {"enter": {"A1": "=NETWORKDAYS(TRUE,6)", "A2": "=IFERROR(NETWORKDAYS(TRUE,6),0)"}, "expect": {"values": {"A1": {"error": "#VALUE!"}, "A2": 0}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-14, after run 18a): a boolean typed into EOMONTH, EDATE, NETWORKDAYS or WORKDAY as a date or as the months is #VALUE!, an Error Value a Formula catches: =NETWORKDAYS(1,TRUE)",
+      "steps": [
+        {"enter": {"A1": "=NETWORKDAYS(1,TRUE)", "A2": "=IFERROR(NETWORKDAYS(1,TRUE),0)"}, "expect": {"values": {"A1": {"error": "#VALUE!"}, "A2": 0}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-14, after run 18a): a boolean typed into EOMONTH, EDATE, NETWORKDAYS or WORKDAY as a date or as the months is #VALUE!, an Error Value a Formula catches: =WORKDAY(TRUE,1)",
+      "steps": [
+        {"enter": {"A1": "=WORKDAY(TRUE,1)", "A2": "=IFERROR(WORKDAY(TRUE,1),0)"}, "expect": {"values": {"A1": {"error": "#VALUE!"}, "A2": 0}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: EOMONTH from serial 0 is not refused where EDATE's readings part; it reads no day",
+      "steps": [
+        {"enter": {"A1": "=EOMONTH(0,0)", "A2": "=EOMONTH(0,2)", "A3": "=EOMONTH(0,97200)"}, "expect": {"values": {"A1": 31, "A2": 91, "A3": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (EOMONTH-005): a result before 1900 is no date, as a result after 9999 is not: =EDATE(15,-1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=EDATE(15,-1)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (EOMONTH-005): a result before 1900 is no date, as a result after 9999 is not: =EDATE(31,-1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=EDATE(31,-1)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (EOMONTH-005): a result before 1900 is no date, as a result after 9999 is not: =EOMONTH(59,-2)",
+      "steps": [
+        {"enter": {"ZZ1000": "=EOMONTH(59,-2)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (EOMONTH-016, 017, EDATE-017, observed): a start between -1 and 0 is cut down to its day, -1, which is #NUM!: =EOMONTH(-0.5,0)",
+      "steps": [
+        {"enter": {"ZZ1000": "=EOMONTH(-0.5,0)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (EOMONTH-016, 017, EDATE-017, observed): a start between -1 and 0 is cut down to its day, -1, which is #NUM!: =EOMONTH(-0.5,1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=EOMONTH(-0.5,1)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (EOMONTH-016, 017, EDATE-017, observed): a start between -1 and 0 is cut down to its day, -1, which is #NUM!: =EOMONTH(-0.0001,12)",
+      "steps": [
+        {"enter": {"ZZ1000": "=EOMONTH(-0.0001,12)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (EOMONTH-016, 017, EDATE-017, observed): a start between -1 and 0 is cut down to its day, -1, which is #NUM!: =EOMONTH(-0.5,-1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=EOMONTH(-0.5,-1)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (EOMONTH-016, 017, EDATE-017, observed): a start between -1 and 0 is cut down to its day, -1, which is #NUM!: =EDATE(-0.5,1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=EDATE(-0.5,1)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (EOMONTH-016, 017, EDATE-017, observed): a start between -1 and 0 is cut down to its day, -1, which is #NUM!: =EDATE(-0.9999,0)",
+      "steps": [
+        {"enter": {"ZZ1000": "=EDATE(-0.9999,0)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (EOMONTH-016, 017, EDATE-017, observed): a start between -1 and 0 is cut down to its day, -1, which is #NUM!: =EDATE(-0.5,-1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=EDATE(-0.5,-1)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (YEAR-008, MONTH-005, DAY-005, WEEKDAY-008, DAYS-005, NETWORKDAYS-009, WORKDAY-010, EOMONTH-016, EDATE-017, observed): the nine functions the second area pass asked at -0.5 cut a serial between -1 and 0 down to -1, which is #NUM!",
+      "steps": [
+        {"enter": {"ZZ1000": "=YEAR(-0.5)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}},
+        {"enter": {"ZZ1000": "=MONTH(-0.5)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}},
+        {"enter": {"ZZ1000": "=DAY(-0.5)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}},
+        {"enter": {"ZZ1000": "=WEEKDAY(-0.5)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}},
+        {"enter": {"ZZ1000": "=DAYS(1,-0.5)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}},
+        {"enter": {"ZZ1000": "=DAYS(-0.5,1)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}},
+        {"enter": {"ZZ1000": "=NETWORKDAYS(-0.5,6)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}},
+        {"enter": {"ZZ1000": "=NETWORKDAYS(6,-0.5)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}},
+        {"enter": {"ZZ1000": "=WORKDAY(-0.5,1)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}},
+        {"enter": {"ZZ1000": "=EOMONTH(-0.5,0)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}},
+        {"enter": {"ZZ1000": "=EDATE(-0.5,0)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}},
+        {"enter": {"ZZ1000": "=EDATE(-0.5,1)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-14, after run 18a: DATEDIF-048, YEARFRAC-058, HOUR-005, MINUTE-003, SECOND-003): DATEDIF, YEARFRAC and the time parts give #NUM! for a serial between -1 and 0, an Error Value a Formula catches: =DATEDIF(-0.5,1,\"D\")",
+      "steps": [
+        {"enter": {"ZZ1000": "=DATEDIF(-0.5,1,\"D\")"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-14, after run 18a: DATEDIF-048, YEARFRAC-058, HOUR-005, MINUTE-003, SECOND-003): DATEDIF, YEARFRAC and the time parts give #NUM! for a serial between -1 and 0, an Error Value a Formula catches: =DATEDIF(1,-0.5,\"D\")",
+      "steps": [
+        {"enter": {"ZZ1000": "=DATEDIF(1,-0.5,\"D\")"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-14, after run 18a: DATEDIF-048, YEARFRAC-058, HOUR-005, MINUTE-003, SECOND-003): DATEDIF, YEARFRAC and the time parts give #NUM! for a serial between -1 and 0, an Error Value a Formula catches: =DATEDIF(-1E-300,1,\"Y\")",
+      "steps": [
+        {"enter": {"ZZ1000": "=DATEDIF(-1E-300,1,\"Y\")"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-14, after run 18a: DATEDIF-048, YEARFRAC-058, HOUR-005, MINUTE-003, SECOND-003): DATEDIF, YEARFRAC and the time parts give #NUM! for a serial between -1 and 0, an Error Value a Formula catches: =YEARFRAC(-0.5,1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=YEARFRAC(-0.5,1)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-14, after run 18a: DATEDIF-048, YEARFRAC-058, HOUR-005, MINUTE-003, SECOND-003): DATEDIF, YEARFRAC and the time parts give #NUM! for a serial between -1 and 0, an Error Value a Formula catches: =YEARFRAC(1,-0.999)",
+      "steps": [
+        {"enter": {"ZZ1000": "=YEARFRAC(1,-0.999)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-14, after run 18a: DATEDIF-048, YEARFRAC-058, HOUR-005, MINUTE-003, SECOND-003): DATEDIF, YEARFRAC and the time parts give #NUM! for a serial between -1 and 0, an Error Value a Formula catches: =HOUR(-0.5)",
+      "steps": [
+        {"enter": {"ZZ1000": "=HOUR(-0.5)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-14, after run 18a: DATEDIF-048, YEARFRAC-058, HOUR-005, MINUTE-003, SECOND-003): DATEDIF, YEARFRAC and the time parts give #NUM! for a serial between -1 and 0, an Error Value a Formula catches: =MINUTE(-0.5)",
+      "steps": [
+        {"enter": {"ZZ1000": "=MINUTE(-0.5)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-14, after run 18a: DATEDIF-048, YEARFRAC-058, HOUR-005, MINUTE-003, SECOND-003): DATEDIF, YEARFRAC and the time parts give #NUM! for a serial between -1 and 0, an Error Value a Formula catches: =SECOND(-0.5)",
+      "steps": [
+        {"enter": {"ZZ1000": "=SECOND(-0.5)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-14, after run 18a: DATEDIF-048, YEARFRAC-058, HOUR-005, MINUTE-003, SECOND-003): DATEDIF, YEARFRAC and the time parts give #NUM! for a serial between -1 and 0, an Error Value a Formula catches: =SECOND(-0.0001)",
+      "steps": [
+        {"enter": {"ZZ1000": "=SECOND(-0.0001)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-14, after run 18a): HOUR-005's #NUM! is Excel's, so IFERROR catches it",
+      "steps": [
+        {"enter": {"ZZ1000": "=IFERROR(HOUR(-0.5),0)"}, "expect": {"values": {"ZZ1000": 0}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (DATEDIF-045, YEARFRAC-056, MINUTE-002, observed): -1 is #NUM!, and below it by generalisation: =DATEDIF(-1,61,\"D\")",
+      "steps": [
+        {"enter": {"ZZ1000": "=DATEDIF(-1,61,\"D\")"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (DATEDIF-045, YEARFRAC-056, MINUTE-002, observed): -1 is #NUM!, and below it by generalisation: =YEARFRAC(-1,61,1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=YEARFRAC(-1,61,1)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (DATEDIF-045, YEARFRAC-056, MINUTE-002, observed): -1 is #NUM!, and below it by generalisation: =MINUTE(-1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=MINUTE(-1)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (DATEDIF-045, YEARFRAC-056, MINUTE-002, observed): -1 is #NUM!, and below it by generalisation: =HOUR(-1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=HOUR(-1)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (DATEDIF-045, YEARFRAC-056, MINUTE-002, observed): -1 is #NUM!, and below it by generalisation: =SECOND(-1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=SECOND(-1)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (DATEDIF-045, YEARFRAC-056, MINUTE-002, observed): -1 is #NUM!, and below it by generalisation: =HOUR(-1.5)",
+      "steps": [
+        {"enter": {"ZZ1000": "=HOUR(-1.5)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (DATEDIF-045, YEARFRAC-056, MINUTE-002, observed): -1 is #NUM!, and below it by generalisation: =DATEDIF(-2,1,\"D\")",
+      "steps": [
+        {"enter": {"ZZ1000": "=DATEDIF(-2,1,\"D\")"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (EOMONTH-004, EDATE-007): a start of -1 is #NUM!, and one below it too: =EOMONTH(-1,0)",
+      "steps": [
+        {"enter": {"ZZ1000": "=EOMONTH(-1,0)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (EOMONTH-004, EDATE-007): a start of -1 is #NUM!, and one below it too: =EDATE(-1,1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=EDATE(-1,1)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (EOMONTH-004, EDATE-007): a start of -1 is #NUM!, and one below it too: =EOMONTH(-1.5,1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=EOMONTH(-1.5,1)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (EOMONTH-004, EDATE-007): a start of -1 is #NUM!, and one below it too: =EDATE(-1.0001,12)",
+      "steps": [
+        {"enter": {"ZZ1000": "=EDATE(-1.0001,12)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (NETWORKDAYS-005, observed): each serial takes WEEKDAY's day, before March 1900 too: =NETWORKDAYS(30,100)",
+      "steps": [
+        {"enter": {"ZZ1000": "=NETWORKDAYS(30,100)"}, "expect": {"values": {"ZZ1000": 51}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (NETWORKDAYS-005, observed): each serial takes WEEKDAY's day, before March 1900 too: =NETWORKDAYS(100,30)",
+      "steps": [
+        {"enter": {"ZZ1000": "=NETWORKDAYS(100,30)"}, "expect": {"values": {"ZZ1000": -51}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (NETWORKDAYS-005, observed): each serial takes WEEKDAY's day, before March 1900 too: =NETWORKDAYS(0,0)",
+      "steps": [
+        {"enter": {"ZZ1000": "=NETWORKDAYS(0,0)"}, "expect": {"values": {"ZZ1000": 0}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (NETWORKDAYS-005, observed): each serial takes WEEKDAY's day, before March 1900 too: =NETWORKDAYS(1,1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=NETWORKDAYS(1,1)"}, "expect": {"values": {"ZZ1000": 0}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (NETWORKDAYS-005, observed): each serial takes WEEKDAY's day, before March 1900 too: =NETWORKDAYS(6,6)",
+      "steps": [
+        {"enter": {"ZZ1000": "=NETWORKDAYS(6,6)"}, "expect": {"values": {"ZZ1000": 1}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (NETWORKDAYS-005, observed): each serial takes WEEKDAY's day, before March 1900 too: =NETWORKDAYS(60,60)",
+      "steps": [
+        {"enter": {"ZZ1000": "=NETWORKDAYS(60,60)"}, "expect": {"values": {"ZZ1000": 1}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (NETWORKDAYS-005, observed): each serial takes WEEKDAY's day, before March 1900 too: =NETWORKDAYS(0,61)",
+      "steps": [
+        {"enter": {"ZZ1000": "=NETWORKDAYS(0,61)"}, "expect": {"values": {"ZZ1000": 44}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (NETWORKDAYS-005, observed): each serial takes WEEKDAY's day, before March 1900 too: =NETWORKDAYS(30,100,60)",
+      "steps": [
+        {"enter": {"ZZ1000": "=NETWORKDAYS(30,100,60)"}, "expect": {"values": {"ZZ1000": 50}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: a day from serial 0 to 130 is a workday exactly when WEEKDAY puts it from Monday to Friday",
+      "steps": [
+        {"enter": {"A1": "=WEEKDAY(0,2)", "B1": "=NETWORKDAYS(0,0)"}, "expect": {"values": {"A1": 6, "B1": 0}}},
+        {"enter": {"A1": "=WEEKDAY(1,2)", "B1": "=NETWORKDAYS(1,1)"}, "expect": {"values": {"A1": 7, "B1": 0}}},
+        {"enter": {"A1": "=WEEKDAY(2,2)", "B1": "=NETWORKDAYS(2,2)"}, "expect": {"values": {"A1": 1, "B1": 1}}},
+        {"enter": {"A1": "=WEEKDAY(3,2)", "B1": "=NETWORKDAYS(3,3)"}, "expect": {"values": {"A1": 2, "B1": 1}}},
+        {"enter": {"A1": "=WEEKDAY(4,2)", "B1": "=NETWORKDAYS(4,4)"}, "expect": {"values": {"A1": 3, "B1": 1}}},
+        {"enter": {"A1": "=WEEKDAY(5,2)", "B1": "=NETWORKDAYS(5,5)"}, "expect": {"values": {"A1": 4, "B1": 1}}},
+        {"enter": {"A1": "=WEEKDAY(6,2)", "B1": "=NETWORKDAYS(6,6)"}, "expect": {"values": {"A1": 5, "B1": 1}}},
+        {"enter": {"A1": "=WEEKDAY(7,2)", "B1": "=NETWORKDAYS(7,7)"}, "expect": {"values": {"A1": 6, "B1": 0}}},
+        {"enter": {"A1": "=WEEKDAY(8,2)", "B1": "=NETWORKDAYS(8,8)"}, "expect": {"values": {"A1": 7, "B1": 0}}},
+        {"enter": {"A1": "=WEEKDAY(9,2)", "B1": "=NETWORKDAYS(9,9)"}, "expect": {"values": {"A1": 1, "B1": 1}}},
+        {"enter": {"A1": "=WEEKDAY(10,2)", "B1": "=NETWORKDAYS(10,10)"}, "expect": {"values": {"A1": 2, "B1": 1}}},
+        {"enter": {"A1": "=WEEKDAY(11,2)", "B1": "=NETWORKDAYS(11,11)"}, "expect": {"values": {"A1": 3, "B1": 1}}},
+        {"enter": {"A1": "=WEEKDAY(12,2)", "B1": "=NETWORKDAYS(12,12)"}, "expect": {"values": {"A1": 4, "B1": 1}}},
+        {"enter": {"A1": "=WEEKDAY(13,2)", "B1": "=NETWORKDAYS(13,13)"}, "expect": {"values": {"A1": 5, "B1": 1}}},
+        {"enter": {"A1": "=WEEKDAY(14,2)", "B1": "=NETWORKDAYS(14,14)"}, "expect": {"values": {"A1": 6, "B1": 0}}},
+        {"enter": {"A1": "=WEEKDAY(15,2)", "B1": "=NETWORKDAYS(15,15)"}, "expect": {"values": {"A1": 7, "B1": 0}}},
+        {"enter": {"A1": "=WEEKDAY(16,2)", "B1": "=NETWORKDAYS(16,16)"}, "expect": {"values": {"A1": 1, "B1": 1}}},
+        {"enter": {"A1": "=WEEKDAY(17,2)", "B1": "=NETWORKDAYS(17,17)"}, "expect": {"values": {"A1": 2, "B1": 1}}},
+        {"enter": {"A1": "=WEEKDAY(18,2)", "B1": "=NETWORKDAYS(18,18)"}, "expect": {"values": {"A1": 3, "B1": 1}}},
+        {"enter": {"A1": "=WEEKDAY(19,2)", "B1": "=NETWORKDAYS(19,19)"}, "expect": {"values": {"A1": 4, "B1": 1}}},
+        {"enter": {"A1": "=WEEKDAY(20,2)", "B1": "=NETWORKDAYS(20,20)"}, "expect": {"values": {"A1": 5, "B1": 1}}},
+        {"enter": {"A1": "=WEEKDAY(21,2)", "B1": "=NETWORKDAYS(21,21)"}, "expect": {"values": {"A1": 6, "B1": 0}}},
+        {"enter": {"A1": "=WEEKDAY(22,2)", "B1": "=NETWORKDAYS(22,22)"}, "expect": {"values": {"A1": 7, "B1": 0}}},
+        {"enter": {"A1": "=WEEKDAY(23,2)", "B1": "=NETWORKDAYS(23,23)"}, "expect": {"values": {"A1": 1, "B1": 1}}},
+        {"enter": {"A1": "=WEEKDAY(24,2)", "B1": "=NETWORKDAYS(24,24)"}, "expect": {"values": {"A1": 2, "B1": 1}}},
+        {"enter": {"A1": "=WEEKDAY(25,2)", "B1": "=NETWORKDAYS(25,25)"}, "expect": {"values": {"A1": 3, "B1": 1}}},
+        {"enter": {"A1": "=WEEKDAY(26,2)", "B1": "=NETWORKDAYS(26,26)"}, "expect": {"values": {"A1": 4, "B1": 1}}},
+        {"enter": {"A1": "=WEEKDAY(27,2)", "B1": "=NETWORKDAYS(27,27)"}, "expect": {"values": {"A1": 5, "B1": 1}}},
+        {"enter": {"A1": "=WEEKDAY(28,2)", "B1": "=NETWORKDAYS(28,28)"}, "expect": {"values": {"A1": 6, "B1": 0}}},
+        {"enter": {"A1": "=WEEKDAY(29,2)", "B1": "=NETWORKDAYS(29,29)"}, "expect": {"values": {"A1": 7, "B1": 0}}},
+        {"enter": {"A1": "=WEEKDAY(30,2)", "B1": "=NETWORKDAYS(30,30)"}, "expect": {"values": {"A1": 1, "B1": 1}}},
+        {"enter": {"A1": "=WEEKDAY(31,2)", "B1": "=NETWORKDAYS(31,31)"}, "expect": {"values": {"A1": 2, "B1": 1}}},
+        {"enter": {"A1": "=WEEKDAY(32,2)", "B1": "=NETWORKDAYS(32,32)"}, "expect": {"values": {"A1": 3, "B1": 1}}},
+        {"enter": {"A1": "=WEEKDAY(33,2)", "B1": "=NETWORKDAYS(33,33)"}, "expect": {"values": {"A1": 4, "B1": 1}}},
+        {"enter": {"A1": "=WEEKDAY(34,2)", "B1": "=NETWORKDAYS(34,34)"}, "expect": {"values": {"A1": 5, "B1": 1}}},
+        {"enter": {"A1": "=WEEKDAY(35,2)", "B1": "=NETWORKDAYS(35,35)"}, "expect": {"values": {"A1": 6, "B1": 0}}},
+        {"enter": {"A1": "=WEEKDAY(36,2)", "B1": "=NETWORKDAYS(36,36)"}, "expect": {"values": {"A1": 7, "B1": 0}}},
+        {"enter": {"A1": "=WEEKDAY(37,2)", "B1": "=NETWORKDAYS(37,37)"}, "expect": {"values": {"A1": 1, "B1": 1}}},
+        {"enter": {"A1": "=WEEKDAY(38,2)", "B1": "=NETWORKDAYS(38,38)"}, "expect": {"values": {"A1": 2, "B1": 1}}},
+        {"enter": {"A1": "=WEEKDAY(39,2)", "B1": "=NETWORKDAYS(39,39)"}, "expect": {"values": {"A1": 3, "B1": 1}}},
+        {"enter": {"A1": "=WEEKDAY(40,2)", "B1": "=NETWORKDAYS(40,40)"}, "expect": {"values": {"A1": 4, "B1": 1}}},
+        {"enter": {"A1": "=WEEKDAY(41,2)", "B1": "=NETWORKDAYS(41,41)"}, "expect": {"values": {"A1": 5, "B1": 1}}},
+        {"enter": {"A1": "=WEEKDAY(42,2)", "B1": "=NETWORKDAYS(42,42)"}, "expect": {"values": {"A1": 6, "B1": 0}}},
+        {"enter": {"A1": "=WEEKDAY(43,2)", "B1": "=NETWORKDAYS(43,43)"}, "expect": {"values": {"A1": 7, "B1": 0}}},
+        {"enter": {"A1": "=WEEKDAY(44,2)", "B1": "=NETWORKDAYS(44,44)"}, "expect": {"values": {"A1": 1, "B1": 1}}},
+        {"enter": {"A1": "=WEEKDAY(45,2)", "B1": "=NETWORKDAYS(45,45)"}, "expect": {"values": {"A1": 2, "B1": 1}}},
+        {"enter": {"A1": "=WEEKDAY(46,2)", "B1": "=NETWORKDAYS(46,46)"}, "expect": {"values": {"A1": 3, "B1": 1}}},
+        {"enter": {"A1": "=WEEKDAY(47,2)", "B1": "=NETWORKDAYS(47,47)"}, "expect": {"values": {"A1": 4, "B1": 1}}},
+        {"enter": {"A1": "=WEEKDAY(48,2)", "B1": "=NETWORKDAYS(48,48)"}, "expect": {"values": {"A1": 5, "B1": 1}}},
+        {"enter": {"A1": "=WEEKDAY(49,2)", "B1": "=NETWORKDAYS(49,49)"}, "expect": {"values": {"A1": 6, "B1": 0}}},
+        {"enter": {"A1": "=WEEKDAY(50,2)", "B1": "=NETWORKDAYS(50,50)"}, "expect": {"values": {"A1": 7, "B1": 0}}},
+        {"enter": {"A1": "=WEEKDAY(51,2)", "B1": "=NETWORKDAYS(51,51)"}, "expect": {"values": {"A1": 1, "B1": 1}}},
+        {"enter": {"A1": "=WEEKDAY(52,2)", "B1": "=NETWORKDAYS(52,52)"}, "expect": {"values": {"A1": 2, "B1": 1}}},
+        {"enter": {"A1": "=WEEKDAY(53,2)", "B1": "=NETWORKDAYS(53,53)"}, "expect": {"values": {"A1": 3, "B1": 1}}},
+        {"enter": {"A1": "=WEEKDAY(54,2)", "B1": "=NETWORKDAYS(54,54)"}, "expect": {"values": {"A1": 4, "B1": 1}}},
+        {"enter": {"A1": "=WEEKDAY(55,2)", "B1": "=NETWORKDAYS(55,55)"}, "expect": {"values": {"A1": 5, "B1": 1}}},
+        {"enter": {"A1": "=WEEKDAY(56,2)", "B1": "=NETWORKDAYS(56,56)"}, "expect": {"values": {"A1": 6, "B1": 0}}},
+        {"enter": {"A1": "=WEEKDAY(57,2)", "B1": "=NETWORKDAYS(57,57)"}, "expect": {"values": {"A1": 7, "B1": 0}}},
+        {"enter": {"A1": "=WEEKDAY(58,2)", "B1": "=NETWORKDAYS(58,58)"}, "expect": {"values": {"A1": 1, "B1": 1}}},
+        {"enter": {"A1": "=WEEKDAY(59,2)", "B1": "=NETWORKDAYS(59,59)"}, "expect": {"values": {"A1": 2, "B1": 1}}},
+        {"enter": {"A1": "=WEEKDAY(60,2)", "B1": "=NETWORKDAYS(60,60)"}, "expect": {"values": {"A1": 3, "B1": 1}}},
+        {"enter": {"A1": "=WEEKDAY(61,2)", "B1": "=NETWORKDAYS(61,61)"}, "expect": {"values": {"A1": 4, "B1": 1}}},
+        {"enter": {"A1": "=WEEKDAY(62,2)", "B1": "=NETWORKDAYS(62,62)"}, "expect": {"values": {"A1": 5, "B1": 1}}},
+        {"enter": {"A1": "=WEEKDAY(63,2)", "B1": "=NETWORKDAYS(63,63)"}, "expect": {"values": {"A1": 6, "B1": 0}}},
+        {"enter": {"A1": "=WEEKDAY(64,2)", "B1": "=NETWORKDAYS(64,64)"}, "expect": {"values": {"A1": 7, "B1": 0}}},
+        {"enter": {"A1": "=WEEKDAY(65,2)", "B1": "=NETWORKDAYS(65,65)"}, "expect": {"values": {"A1": 1, "B1": 1}}},
+        {"enter": {"A1": "=WEEKDAY(66,2)", "B1": "=NETWORKDAYS(66,66)"}, "expect": {"values": {"A1": 2, "B1": 1}}},
+        {"enter": {"A1": "=WEEKDAY(67,2)", "B1": "=NETWORKDAYS(67,67)"}, "expect": {"values": {"A1": 3, "B1": 1}}},
+        {"enter": {"A1": "=WEEKDAY(68,2)", "B1": "=NETWORKDAYS(68,68)"}, "expect": {"values": {"A1": 4, "B1": 1}}},
+        {"enter": {"A1": "=WEEKDAY(69,2)", "B1": "=NETWORKDAYS(69,69)"}, "expect": {"values": {"A1": 5, "B1": 1}}},
+        {"enter": {"A1": "=WEEKDAY(70,2)", "B1": "=NETWORKDAYS(70,70)"}, "expect": {"values": {"A1": 6, "B1": 0}}},
+        {"enter": {"A1": "=WEEKDAY(71,2)", "B1": "=NETWORKDAYS(71,71)"}, "expect": {"values": {"A1": 7, "B1": 0}}},
+        {"enter": {"A1": "=WEEKDAY(72,2)", "B1": "=NETWORKDAYS(72,72)"}, "expect": {"values": {"A1": 1, "B1": 1}}},
+        {"enter": {"A1": "=WEEKDAY(73,2)", "B1": "=NETWORKDAYS(73,73)"}, "expect": {"values": {"A1": 2, "B1": 1}}},
+        {"enter": {"A1": "=WEEKDAY(74,2)", "B1": "=NETWORKDAYS(74,74)"}, "expect": {"values": {"A1": 3, "B1": 1}}},
+        {"enter": {"A1": "=WEEKDAY(75,2)", "B1": "=NETWORKDAYS(75,75)"}, "expect": {"values": {"A1": 4, "B1": 1}}},
+        {"enter": {"A1": "=WEEKDAY(76,2)", "B1": "=NETWORKDAYS(76,76)"}, "expect": {"values": {"A1": 5, "B1": 1}}},
+        {"enter": {"A1": "=WEEKDAY(77,2)", "B1": "=NETWORKDAYS(77,77)"}, "expect": {"values": {"A1": 6, "B1": 0}}},
+        {"enter": {"A1": "=WEEKDAY(78,2)", "B1": "=NETWORKDAYS(78,78)"}, "expect": {"values": {"A1": 7, "B1": 0}}},
+        {"enter": {"A1": "=WEEKDAY(79,2)", "B1": "=NETWORKDAYS(79,79)"}, "expect": {"values": {"A1": 1, "B1": 1}}},
+        {"enter": {"A1": "=WEEKDAY(80,2)", "B1": "=NETWORKDAYS(80,80)"}, "expect": {"values": {"A1": 2, "B1": 1}}},
+        {"enter": {"A1": "=WEEKDAY(81,2)", "B1": "=NETWORKDAYS(81,81)"}, "expect": {"values": {"A1": 3, "B1": 1}}},
+        {"enter": {"A1": "=WEEKDAY(82,2)", "B1": "=NETWORKDAYS(82,82)"}, "expect": {"values": {"A1": 4, "B1": 1}}},
+        {"enter": {"A1": "=WEEKDAY(83,2)", "B1": "=NETWORKDAYS(83,83)"}, "expect": {"values": {"A1": 5, "B1": 1}}},
+        {"enter": {"A1": "=WEEKDAY(84,2)", "B1": "=NETWORKDAYS(84,84)"}, "expect": {"values": {"A1": 6, "B1": 0}}},
+        {"enter": {"A1": "=WEEKDAY(85,2)", "B1": "=NETWORKDAYS(85,85)"}, "expect": {"values": {"A1": 7, "B1": 0}}},
+        {"enter": {"A1": "=WEEKDAY(86,2)", "B1": "=NETWORKDAYS(86,86)"}, "expect": {"values": {"A1": 1, "B1": 1}}},
+        {"enter": {"A1": "=WEEKDAY(87,2)", "B1": "=NETWORKDAYS(87,87)"}, "expect": {"values": {"A1": 2, "B1": 1}}},
+        {"enter": {"A1": "=WEEKDAY(88,2)", "B1": "=NETWORKDAYS(88,88)"}, "expect": {"values": {"A1": 3, "B1": 1}}},
+        {"enter": {"A1": "=WEEKDAY(89,2)", "B1": "=NETWORKDAYS(89,89)"}, "expect": {"values": {"A1": 4, "B1": 1}}},
+        {"enter": {"A1": "=WEEKDAY(90,2)", "B1": "=NETWORKDAYS(90,90)"}, "expect": {"values": {"A1": 5, "B1": 1}}},
+        {"enter": {"A1": "=WEEKDAY(91,2)", "B1": "=NETWORKDAYS(91,91)"}, "expect": {"values": {"A1": 6, "B1": 0}}},
+        {"enter": {"A1": "=WEEKDAY(92,2)", "B1": "=NETWORKDAYS(92,92)"}, "expect": {"values": {"A1": 7, "B1": 0}}},
+        {"enter": {"A1": "=WEEKDAY(93,2)", "B1": "=NETWORKDAYS(93,93)"}, "expect": {"values": {"A1": 1, "B1": 1}}},
+        {"enter": {"A1": "=WEEKDAY(94,2)", "B1": "=NETWORKDAYS(94,94)"}, "expect": {"values": {"A1": 2, "B1": 1}}},
+        {"enter": {"A1": "=WEEKDAY(95,2)", "B1": "=NETWORKDAYS(95,95)"}, "expect": {"values": {"A1": 3, "B1": 1}}},
+        {"enter": {"A1": "=WEEKDAY(96,2)", "B1": "=NETWORKDAYS(96,96)"}, "expect": {"values": {"A1": 4, "B1": 1}}},
+        {"enter": {"A1": "=WEEKDAY(97,2)", "B1": "=NETWORKDAYS(97,97)"}, "expect": {"values": {"A1": 5, "B1": 1}}},
+        {"enter": {"A1": "=WEEKDAY(98,2)", "B1": "=NETWORKDAYS(98,98)"}, "expect": {"values": {"A1": 6, "B1": 0}}},
+        {"enter": {"A1": "=WEEKDAY(99,2)", "B1": "=NETWORKDAYS(99,99)"}, "expect": {"values": {"A1": 7, "B1": 0}}},
+        {"enter": {"A1": "=WEEKDAY(100,2)", "B1": "=NETWORKDAYS(100,100)"}, "expect": {"values": {"A1": 1, "B1": 1}}},
+        {"enter": {"A1": "=WEEKDAY(101,2)", "B1": "=NETWORKDAYS(101,101)"}, "expect": {"values": {"A1": 2, "B1": 1}}},
+        {"enter": {"A1": "=WEEKDAY(102,2)", "B1": "=NETWORKDAYS(102,102)"}, "expect": {"values": {"A1": 3, "B1": 1}}},
+        {"enter": {"A1": "=WEEKDAY(103,2)", "B1": "=NETWORKDAYS(103,103)"}, "expect": {"values": {"A1": 4, "B1": 1}}},
+        {"enter": {"A1": "=WEEKDAY(104,2)", "B1": "=NETWORKDAYS(104,104)"}, "expect": {"values": {"A1": 5, "B1": 1}}},
+        {"enter": {"A1": "=WEEKDAY(105,2)", "B1": "=NETWORKDAYS(105,105)"}, "expect": {"values": {"A1": 6, "B1": 0}}},
+        {"enter": {"A1": "=WEEKDAY(106,2)", "B1": "=NETWORKDAYS(106,106)"}, "expect": {"values": {"A1": 7, "B1": 0}}},
+        {"enter": {"A1": "=WEEKDAY(107,2)", "B1": "=NETWORKDAYS(107,107)"}, "expect": {"values": {"A1": 1, "B1": 1}}},
+        {"enter": {"A1": "=WEEKDAY(108,2)", "B1": "=NETWORKDAYS(108,108)"}, "expect": {"values": {"A1": 2, "B1": 1}}},
+        {"enter": {"A1": "=WEEKDAY(109,2)", "B1": "=NETWORKDAYS(109,109)"}, "expect": {"values": {"A1": 3, "B1": 1}}},
+        {"enter": {"A1": "=WEEKDAY(110,2)", "B1": "=NETWORKDAYS(110,110)"}, "expect": {"values": {"A1": 4, "B1": 1}}},
+        {"enter": {"A1": "=WEEKDAY(111,2)", "B1": "=NETWORKDAYS(111,111)"}, "expect": {"values": {"A1": 5, "B1": 1}}},
+        {"enter": {"A1": "=WEEKDAY(112,2)", "B1": "=NETWORKDAYS(112,112)"}, "expect": {"values": {"A1": 6, "B1": 0}}},
+        {"enter": {"A1": "=WEEKDAY(113,2)", "B1": "=NETWORKDAYS(113,113)"}, "expect": {"values": {"A1": 7, "B1": 0}}},
+        {"enter": {"A1": "=WEEKDAY(114,2)", "B1": "=NETWORKDAYS(114,114)"}, "expect": {"values": {"A1": 1, "B1": 1}}},
+        {"enter": {"A1": "=WEEKDAY(115,2)", "B1": "=NETWORKDAYS(115,115)"}, "expect": {"values": {"A1": 2, "B1": 1}}},
+        {"enter": {"A1": "=WEEKDAY(116,2)", "B1": "=NETWORKDAYS(116,116)"}, "expect": {"values": {"A1": 3, "B1": 1}}},
+        {"enter": {"A1": "=WEEKDAY(117,2)", "B1": "=NETWORKDAYS(117,117)"}, "expect": {"values": {"A1": 4, "B1": 1}}},
+        {"enter": {"A1": "=WEEKDAY(118,2)", "B1": "=NETWORKDAYS(118,118)"}, "expect": {"values": {"A1": 5, "B1": 1}}},
+        {"enter": {"A1": "=WEEKDAY(119,2)", "B1": "=NETWORKDAYS(119,119)"}, "expect": {"values": {"A1": 6, "B1": 0}}},
+        {"enter": {"A1": "=WEEKDAY(120,2)", "B1": "=NETWORKDAYS(120,120)"}, "expect": {"values": {"A1": 7, "B1": 0}}},
+        {"enter": {"A1": "=WEEKDAY(121,2)", "B1": "=NETWORKDAYS(121,121)"}, "expect": {"values": {"A1": 1, "B1": 1}}},
+        {"enter": {"A1": "=WEEKDAY(122,2)", "B1": "=NETWORKDAYS(122,122)"}, "expect": {"values": {"A1": 2, "B1": 1}}},
+        {"enter": {"A1": "=WEEKDAY(123,2)", "B1": "=NETWORKDAYS(123,123)"}, "expect": {"values": {"A1": 3, "B1": 1}}},
+        {"enter": {"A1": "=WEEKDAY(124,2)", "B1": "=NETWORKDAYS(124,124)"}, "expect": {"values": {"A1": 4, "B1": 1}}},
+        {"enter": {"A1": "=WEEKDAY(125,2)", "B1": "=NETWORKDAYS(125,125)"}, "expect": {"values": {"A1": 5, "B1": 1}}},
+        {"enter": {"A1": "=WEEKDAY(126,2)", "B1": "=NETWORKDAYS(126,126)"}, "expect": {"values": {"A1": 6, "B1": 0}}},
+        {"enter": {"A1": "=WEEKDAY(127,2)", "B1": "=NETWORKDAYS(127,127)"}, "expect": {"values": {"A1": 7, "B1": 0}}},
+        {"enter": {"A1": "=WEEKDAY(128,2)", "B1": "=NETWORKDAYS(128,128)"}, "expect": {"values": {"A1": 1, "B1": 1}}},
+        {"enter": {"A1": "=WEEKDAY(129,2)", "B1": "=NETWORKDAYS(129,129)"}, "expect": {"values": {"A1": 2, "B1": 1}}},
+        {"enter": {"A1": "=WEEKDAY(130,2)", "B1": "=NETWORKDAYS(130,130)"}, "expect": {"values": {"A1": 3, "B1": 1}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (WORKDAY-006 to 009, observed): WORKDAY counts as NETWORKDAYS does, before March 1900 too: =WORKDAY(30,10)",
+      "steps": [
+        {"enter": {"ZZ1000": "=WORKDAY(30,10)"}, "expect": {"values": {"ZZ1000": 44}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (WORKDAY-006 to 009, observed): WORKDAY counts as NETWORKDAYS does, before March 1900 too: =WORKDAY(30,4)",
+      "steps": [
+        {"enter": {"ZZ1000": "=WORKDAY(30,4)"}, "expect": {"values": {"ZZ1000": 34}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (WORKDAY-006 to 009, observed): WORKDAY counts as NETWORKDAYS does, before March 1900 too: =WORKDAY(55,5)",
+      "steps": [
+        {"enter": {"ZZ1000": "=WORKDAY(55,5)"}, "expect": {"values": {"ZZ1000": 62}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (WORKDAY-006 to 009, observed): WORKDAY counts as NETWORKDAYS does, before March 1900 too: =WORKDAY(62,-5)",
+      "steps": [
+        {"enter": {"ZZ1000": "=WORKDAY(62,-5)"}, "expect": {"values": {"ZZ1000": 55}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (WORKDAY-006 to 009, observed): WORKDAY counts as NETWORKDAYS does, before March 1900 too: =WORKDAY(3,-1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=WORKDAY(3,-1)"}, "expect": {"values": {"ZZ1000": 2}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: a WORKDAY before serial 0 is no date: =WORKDAY(2,-1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=WORKDAY(2,-1)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: a WORKDAY before serial 0 is no date: =WORKDAY(30,-30)",
+      "steps": [
+        {"enter": {"ZZ1000": "=WORKDAY(30,-30)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (SUBSTITUTE-005, observed): SUBSTITUTE counts the instances at every character: =SUBSTITUTE(\"aaaa\",\"aa\",\"b\",2)",
+      "steps": [
+        {"enter": {"ZZ1000": "=SUBSTITUTE(\"aaaa\",\"aa\",\"b\",2)"}, "expect": {"values": {"ZZ1000": "aba"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (SUBSTITUTE-005, observed): SUBSTITUTE counts the instances at every character: =SUBSTITUTE(\"aaaa\",\"aa\",\"b\",3)",
+      "steps": [
+        {"enter": {"ZZ1000": "=SUBSTITUTE(\"aaaa\",\"aa\",\"b\",3)"}, "expect": {"values": {"ZZ1000": "aab"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (SUBSTITUTE-005, observed): SUBSTITUTE counts the instances at every character: =SUBSTITUTE(\"aaaa\",\"aa\",\"b\",4)",
+      "steps": [
+        {"enter": {"ZZ1000": "=SUBSTITUTE(\"aaaa\",\"aa\",\"b\",4)"}, "expect": {"values": {"ZZ1000": "aaaa"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (SUBSTITUTE-005, observed): SUBSTITUTE counts the instances at every character: =SUBSTITUTE(\"ababab\",\"abab\",\"x\",2)",
+      "steps": [
+        {"enter": {"ZZ1000": "=SUBSTITUTE(\"ababab\",\"abab\",\"x\",2)"}, "expect": {"values": {"ZZ1000": "abx"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (SUBSTITUTE-005, observed): SUBSTITUTE counts the instances at every character: =SUBSTITUTE(\"Quarter 1, 2011\",\"1\",\"2\",3)",
+      "steps": [
+        {"enter": {"ZZ1000": "=SUBSTITUTE(\"Quarter 1, 2011\",\"1\",\"2\",3)"}, "expect": {"values": {"ZZ1000": "Quarter 1, 2012"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (SUBSTITUTE-001): without instance_num, every occurrence left to right, none overlapping: =SUBSTITUTE(\"aaaa\",\"aa\",\"b\")",
+      "steps": [
+        {"enter": {"ZZ1000": "=SUBSTITUTE(\"aaaa\",\"aa\",\"b\")"}, "expect": {"values": {"ZZ1000": "bb"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (SUBSTITUTE-001): without instance_num, every occurrence left to right, none overlapping: =SUBSTITUTE(\"aaa\",\"aa\",\"b\")",
+      "steps": [
+        {"enter": {"ZZ1000": "=SUBSTITUTE(\"aaa\",\"aa\",\"b\")"}, "expect": {"values": {"ZZ1000": "ba"}}}
+      ]
+    },
+    {
+      "name": "ADR-0120 (TEXTFN-017, observed): TEXT's General is fitted to 11 characters as a cell's General is: =TEXT(1/3,\"General\")",
+      "steps": [
+        {"enter": {"ZZ1000": "=TEXT(1/3,\"General\")"}, "expect": {"values": {"ZZ1000": "0.333333333"}}}
+      ]
+    },
+    {
+      "name": "ADR-0120 (TEXTFN-017, observed): TEXT's General is fitted to 11 characters as a cell's General is: =TEXT(22/7,\"General\")",
+      "steps": [
+        {"enter": {"ZZ1000": "=TEXT(22/7,\"General\")"}, "expect": {"values": {"ZZ1000": "3.142857143"}}}
+      ]
+    },
+    {
+      "name": "ADR-0120 (TEXTFN-017, observed): TEXT's General is fitted to 11 characters as a cell's General is: =TEXT(123456789012,\"General\")",
+      "steps": [
+        {"enter": {"ZZ1000": "=TEXT(123456789012,\"General\")"}, "expect": {"values": {"ZZ1000": "1.23457E+11"}}}
+      ]
+    },
+    {
+      "name": "ADR-0120 (TEXTFN-017, observed): TEXT's General is fitted to 11 characters as a cell's General is: =TEXT(12345678901,\"General\")",
+      "steps": [
+        {"enter": {"ZZ1000": "=TEXT(12345678901,\"General\")"}, "expect": {"values": {"ZZ1000": "12345678901"}}}
+      ]
+    },
+    {
+      "name": "ADR-0120 (TEXTFN-017, observed): TEXT's General is fitted to 11 characters as a cell's General is: =TEXT(0.00001,\"General\")",
+      "steps": [
+        {"enter": {"ZZ1000": "=TEXT(0.00001,\"General\")"}, "expect": {"values": {"ZZ1000": "0.00001"}}}
+      ]
+    },
+    {
+      "name": "ADR-0120 (TEXTFN-017, observed): TEXT's General is fitted to 11 characters as a cell's General is: =TEXT(5,\"General\")",
+      "steps": [
+        {"enter": {"ZZ1000": "=TEXT(5,\"General\")"}, "expect": {"values": {"ZZ1000": "5"}}}
+      ]
+    },
+    {
+      "name": "ADR-0120 (TEXTFN-017, observed): TEXT's General is fitted to 11 characters as a cell's General is: =TEXT(-5,\"General\")",
+      "steps": [
+        {"enter": {"ZZ1000": "=TEXT(-5,\"General\")"}, "expect": {"values": {"ZZ1000": "-5"}}}
+      ]
+    },
+    {
+      "name": "ADR-0120 (TEXTFN-017, observed): TEXT's General is fitted to 11 characters as a cell's General is: =TEXT(-0.5,\"General\")",
+      "steps": [
+        {"enter": {"ZZ1000": "=TEXT(-0.5,\"General\")"}, "expect": {"values": {"ZZ1000": "-0.5"}}}
+      ]
+    },
+    {
+      "name": "ADR-0120 (TEXTFN-017, observed): TEXT's General is fitted to 11 characters as a cell's General is: =TEXT(0.5,\"@\")",
+      "steps": [
+        {"enter": {"ZZ1000": "=TEXT(0.5,\"@\")"}, "expect": {"values": {"ZZ1000": "0.5"}}}
+      ]
+    },
+    {
+      "name": "ADR-0120: TEXT's fitted General takes the Sheet culture's decimal separator",
+      "steps": [
+        {"enter": {"ZZ1000": "=TEXT(1/3,\"General\")"}, "expect": {"values": {"ZZ1000": "0,333333333"}}}
+      ],
+      "culture": "de-DE"
+    },
+    {
+      "name": "ADR-0120 (TEXTFN-025, 029, 030, observed): the minus sign is not one of General's 11 characters: =TEXT(-1/3,\"General\")",
+      "steps": [
+        {"enter": {"ZZ1000": "=TEXT(-1/3,\"General\")"}, "expect": {"values": {"ZZ1000": "-0.333333333"}}}
+      ]
+    },
+    {
+      "name": "ADR-0120 (TEXTFN-025, 029, 030, observed): the minus sign is not one of General's 11 characters: =TEXT(-22/7,\"General\")",
+      "steps": [
+        {"enter": {"ZZ1000": "=TEXT(-22/7,\"General\")"}, "expect": {"values": {"ZZ1000": "-3.142857143"}}}
+      ]
+    },
+    {
+      "name": "ADR-0120 (TEXTFN-025, 029, 030, observed): the minus sign is not one of General's 11 characters: =TEXT(-12345678901,\"General\")",
+      "steps": [
+        {"enter": {"ZZ1000": "=TEXT(-12345678901,\"General\")"}, "expect": {"values": {"ZZ1000": "-12345678901"}}}
+      ]
+    },
+    {
+      "name": "ADR-0120 (TEXTFN-025, 029, 030, observed): the minus sign is not one of General's 11 characters: =TEXT(-123456789012,\"General\")",
+      "steps": [
+        {"enter": {"ZZ1000": "=TEXT(-123456789012,\"General\")"}, "expect": {"values": {"ZZ1000": "-1.23457E+11"}}}
+      ]
+    },
+    {
+      "name": "ADR-0120 (TEXTFN-025, 029, 030, observed): the minus sign is not one of General's 11 characters: =TEXT(-0.00001,\"General\")",
+      "steps": [
+        {"enter": {"ZZ1000": "=TEXT(-0.00001,\"General\")"}, "expect": {"values": {"ZZ1000": "-0.00001"}}}
+      ]
+    },
+    {
+      "name": "ADR-0120 (TEXTFN-025, 029, 030, observed): the minus sign is not one of General's 11 characters: =TEXT(-1E-20,\"General\")",
+      "steps": [
+        {"enter": {"ZZ1000": "=TEXT(-1E-20,\"General\")"}, "expect": {"values": {"ZZ1000": "-1E-20"}}}
+      ]
+    },
+    {
+      "name": "ADR-0120 (TEXTFN-028, 031 to 034, observed): a code of a text section alone shows a number as TEXT's General does: =TEXT(1/3,\"@\")",
+      "steps": [
+        {"enter": {"ZZ1000": "=TEXT(1/3,\"@\")"}, "expect": {"values": {"ZZ1000": "0.333333333"}}}
+      ]
+    },
+    {
+      "name": "ADR-0120 (TEXTFN-028, 031 to 034, observed): a code of a text section alone shows a number as TEXT's General does: =TEXT(-1/3,\"@\")",
+      "steps": [
+        {"enter": {"ZZ1000": "=TEXT(-1/3,\"@\")"}, "expect": {"values": {"ZZ1000": "-0.333333333"}}}
+      ]
+    },
+    {
+      "name": "ADR-0120 (TEXTFN-028, 031 to 034, observed): a code of a text section alone shows a number as TEXT's General does: =TEXT(123456789012,\"@\")",
+      "steps": [
+        {"enter": {"ZZ1000": "=TEXT(123456789012,\"@\")"}, "expect": {"values": {"ZZ1000": "1.23457E+11"}}}
+      ]
+    },
+    {
+      "name": "ADR-0120 (TEXTFN-028, 031 to 034, observed): a code of a text section alone shows a number as TEXT's General does: =TEXT(0.00001,\"@\")",
+      "steps": [
+        {"enter": {"ZZ1000": "=TEXT(0.00001,\"@\")"}, "expect": {"values": {"ZZ1000": "0.00001"}}}
+      ]
+    },
+    {
+      "name": "ADR-0120 (TEXTFN-028, 031 to 034, observed): a code of a text section alone shows a number as TEXT's General does: =TEXT(1/3,\"\"\"x\"\"@\")",
+      "steps": [
+        {"enter": {"ZZ1000": "=TEXT(1/3,\"\"\"x\"\"@\")"}, "expect": {"values": {"ZZ1000": "0.333333333"}}}
+      ]
+    },
+    {
+      "name": "ADR-0120: every number TEXT's General shows under General, it shows under @ alone: 1/3",
+      "steps": [
+        {"enter": {"A1": "=TEXT(1/3,\"General\")", "A2": "=TEXT(1/3,\"@\")"}, "expect": {"values": {"A1": "0.333333333", "A2": "0.333333333"}}}
+      ]
+    },
+    {
+      "name": "ADR-0120: every number TEXT's General shows under General, it shows under @ alone: -1/3",
+      "steps": [
+        {"enter": {"A1": "=TEXT(-1/3,\"General\")", "A2": "=TEXT(-1/3,\"@\")"}, "expect": {"values": {"A1": "-0.333333333", "A2": "-0.333333333"}}}
+      ]
+    },
+    {
+      "name": "ADR-0120: every number TEXT's General shows under General, it shows under @ alone: 2/3",
+      "steps": [
+        {"enter": {"A1": "=TEXT(2/3,\"General\")", "A2": "=TEXT(2/3,\"@\")"}, "expect": {"values": {"A1": "0.666666667", "A2": "0.666666667"}}}
+      ]
+    },
+    {
+      "name": "ADR-0120: every number TEXT's General shows under General, it shows under @ alone: -2/3",
+      "steps": [
+        {"enter": {"A1": "=TEXT(-2/3,\"General\")", "A2": "=TEXT(-2/3,\"@\")"}, "expect": {"values": {"A1": "-0.666666667", "A2": "-0.666666667"}}}
+      ]
+    },
+    {
+      "name": "ADR-0120: every number TEXT's General shows under General, it shows under @ alone: 1E-5",
+      "steps": [
+        {"enter": {"A1": "=TEXT(1E-5,\"General\")", "A2": "=TEXT(1E-5,\"@\")"}, "expect": {"values": {"A1": "0.00001", "A2": "0.00001"}}}
+      ]
+    },
+    {
+      "name": "ADR-0120: every number TEXT's General shows under General, it shows under @ alone: -1E-5",
+      "steps": [
+        {"enter": {"A1": "=TEXT(-1E-5,\"General\")", "A2": "=TEXT(-1E-5,\"@\")"}, "expect": {"values": {"A1": "-0.00001", "A2": "-0.00001"}}}
+      ]
+    },
+    {
+      "name": "ADR-0120: every number TEXT's General shows under General, it shows under @ alone: 12345678901",
+      "steps": [
+        {"enter": {"A1": "=TEXT(12345678901,\"General\")", "A2": "=TEXT(12345678901,\"@\")"}, "expect": {"values": {"A1": "12345678901", "A2": "12345678901"}}}
+      ]
+    },
+    {
+      "name": "ADR-0120: every number TEXT's General shows under General, it shows under @ alone: -12345678901",
+      "steps": [
+        {"enter": {"A1": "=TEXT(-12345678901,\"General\")", "A2": "=TEXT(-12345678901,\"@\")"}, "expect": {"values": {"A1": "-12345678901", "A2": "-12345678901"}}}
+      ]
+    },
+    {
+      "name": "ADR-0120: every number TEXT's General shows under General, it shows under @ alone: 123456789012",
+      "steps": [
+        {"enter": {"A1": "=TEXT(123456789012,\"General\")", "A2": "=TEXT(123456789012,\"@\")"}, "expect": {"values": {"A1": "1.23457E+11", "A2": "1.23457E+11"}}}
+      ]
+    },
+    {
+      "name": "ADR-0120: every number TEXT's General shows under General, it shows under @ alone: -123456789012",
+      "steps": [
+        {"enter": {"A1": "=TEXT(-123456789012,\"General\")", "A2": "=TEXT(-123456789012,\"@\")"}, "expect": {"values": {"A1": "-1.23457E+11", "A2": "-1.23457E+11"}}}
+      ]
+    },
+    {
+      "name": "ADR-0120: every number TEXT's General shows under General, it shows under @ alone: 1E+300",
+      "steps": [
+        {"enter": {"A1": "=TEXT(1E+300,\"General\")", "A2": "=TEXT(1E+300,\"@\")"}, "expect": {"values": {"A1": "1E+300", "A2": "1E+300"}}}
+      ]
+    },
+    {
+      "name": "ADR-0120: every number TEXT's General shows under General, it shows under @ alone: -1E-300",
+      "steps": [
+        {"enter": {"A1": "=TEXT(-1E-300,\"General\")", "A2": "=TEXT(-1E-300,\"@\")"}, "expect": {"values": {"A1": "-1E-300", "A2": "-1E-300"}}}
+      ]
+    },
+    {
+      "name": "ADR-0120: every number TEXT's General shows under General, it shows under @ alone: 0",
+      "steps": [
+        {"enter": {"A1": "=TEXT(0,\"General\")", "A2": "=TEXT(0,\"@\")"}, "expect": {"values": {"A1": "0", "A2": "0"}}}
+      ]
+    },
+    {
+      "name": "ADR-0120: every number TEXT's General shows under General, it shows under @ alone: 0.1+0.2",
+      "steps": [
+        {"enter": {"A1": "=TEXT(0.1+0.2,\"General\")", "A2": "=TEXT(0.1+0.2,\"@\")"}, "expect": {"values": {"A1": "0.3", "A2": "0.3"}}}
+      ]
+    },
+    {
+      "name": "ADR-0120: TEXT's General shows a negative number as its magnitude, with the minus sign before it: 1/3",
+      "steps": [
+        {"enter": {"A1": "=TEXT(1/3,\"General\")", "A2": "=TEXT(-(1/3),\"General\")"}, "expect": {"values": {"A1": "0.333333333", "A2": "-0.333333333"}}}
+      ]
+    },
+    {
+      "name": "ADR-0120: TEXT's General shows a negative number as its magnitude, with the minus sign before it: 2/3",
+      "steps": [
+        {"enter": {"A1": "=TEXT(2/3,\"General\")", "A2": "=TEXT(-(2/3),\"General\")"}, "expect": {"values": {"A1": "0.666666667", "A2": "-0.666666667"}}}
+      ]
+    },
+    {
+      "name": "ADR-0120: TEXT's General shows a negative number as its magnitude, with the minus sign before it: 1/7",
+      "steps": [
+        {"enter": {"A1": "=TEXT(1/7,\"General\")", "A2": "=TEXT(-(1/7),\"General\")"}, "expect": {"values": {"A1": "0.142857143", "A2": "-0.142857143"}}}
+      ]
+    },
+    {
+      "name": "ADR-0120: TEXT's General shows a negative number as its magnitude, with the minus sign before it: 22/7",
+      "steps": [
+        {"enter": {"A1": "=TEXT(22/7,\"General\")", "A2": "=TEXT(-(22/7),\"General\")"}, "expect": {"values": {"A1": "3.142857143", "A2": "-3.142857143"}}}
+      ]
+    },
+    {
+      "name": "ADR-0120: TEXT's General shows a negative number as its magnitude, with the minus sign before it: 1E-5",
+      "steps": [
+        {"enter": {"A1": "=TEXT(1E-5,\"General\")", "A2": "=TEXT(-(1E-5),\"General\")"}, "expect": {"values": {"A1": "0.00001", "A2": "-0.00001"}}}
+      ]
+    },
+    {
+      "name": "ADR-0120: TEXT's General shows a negative number as its magnitude, with the minus sign before it: 1.5E-9",
+      "steps": [
+        {"enter": {"A1": "=TEXT(1.5E-9,\"General\")", "A2": "=TEXT(-(1.5E-9),\"General\")"}, "expect": {"values": {"A1": "1.5E-09", "A2": "-1.5E-09"}}}
+      ]
+    },
+    {
+      "name": "ADR-0120: TEXT's General shows a negative number as its magnitude, with the minus sign before it: 12345678901",
+      "steps": [
+        {"enter": {"A1": "=TEXT(12345678901,\"General\")", "A2": "=TEXT(-(12345678901),\"General\")"}, "expect": {"values": {"A1": "12345678901", "A2": "-12345678901"}}}
+      ]
+    },
+    {
+      "name": "ADR-0120: TEXT's General shows a negative number as its magnitude, with the minus sign before it: 123456789012",
+      "steps": [
+        {"enter": {"A1": "=TEXT(123456789012,\"General\")", "A2": "=TEXT(-(123456789012),\"General\")"}, "expect": {"values": {"A1": "1.23457E+11", "A2": "-1.23457E+11"}}}
+      ]
+    },
+    {
+      "name": "ADR-0120: TEXT's General shows a negative number as its magnitude, with the minus sign before it: 99999999999.5",
+      "steps": [
+        {"enter": {"A1": "=TEXT(99999999999.5,\"General\")", "A2": "=TEXT(-(99999999999.5),\"General\")"}, "expect": {"values": {"A1": "1E+11", "A2": "-1E+11"}}}
+      ]
+    },
+    {
+      "name": "ADR-0120: TEXT's General shows a negative number as its magnitude, with the minus sign before it: 1E+300",
+      "steps": [
+        {"enter": {"A1": "=TEXT(1E+300,\"General\")", "A2": "=TEXT(-(1E+300),\"General\")"}, "expect": {"values": {"A1": "1E+300", "A2": "-1E+300"}}}
+      ]
+    },
+    {
+      "name": "ADR-0120: TEXT's General shows a negative number as its magnitude, with the minus sign before it: 0.1+0.2",
+      "steps": [
+        {"enter": {"A1": "=TEXT(0.1+0.2,\"General\")", "A2": "=TEXT(-(0.1+0.2),\"General\")"}, "expect": {"values": {"A1": "0.3", "A2": "-0.3"}}}
+      ]
+    },
+    {
+      "name": "ADR-0120 (TEXTFN-018, 023, 024, observed): TEXT with an empty code shows a number as empty text, and text and booleans as under a code without a text section: =TEXT(5,\"\")",
+      "steps": [
+        {"enter": {"ZZ1000": "=TEXT(5,\"\")"}, "expect": {"values": {"ZZ1000": ""}}}
+      ]
+    },
+    {
+      "name": "ADR-0120 (TEXTFN-018, 023, 024, observed): TEXT with an empty code shows a number as empty text, and text and booleans as under a code without a text section: =TEXT(A1,\"\")",
+      "steps": [
+        {"enter": {"ZZ1000": "=TEXT(A1,\"\")"}, "expect": {"values": {"ZZ1000": ""}}}
+      ]
+    },
+    {
+      "name": "ADR-0120 (TEXTFN-018, 023, 024, observed): TEXT with an empty code shows a number as empty text, and text and booleans as under a code without a text section: =TEXT(\"12\",\"\")",
+      "steps": [
+        {"enter": {"ZZ1000": "=TEXT(\"12\",\"\")"}, "expect": {"values": {"ZZ1000": ""}}}
+      ]
+    },
+    {
+      "name": "ADR-0120 (TEXTFN-018, 023, 024, observed): TEXT with an empty code shows a number as empty text, and text and booleans as under a code without a text section: =TEXT(\"abc\",\"\")",
+      "steps": [
+        {"enter": {"ZZ1000": "=TEXT(\"abc\",\"\")"}, "expect": {"values": {"ZZ1000": "abc"}}}
+      ]
+    },
+    {
+      "name": "ADR-0120 (TEXTFN-018, 023, 024, observed): TEXT with an empty code shows a number as empty text, and text and booleans as under a code without a text section: =TEXT(TRUE,\"\")",
+      "steps": [
+        {"enter": {"ZZ1000": "=TEXT(TRUE,\"\")"}, "expect": {"values": {"ZZ1000": "TRUE"}}}
+      ]
+    },
+    {
+      "name": "ADR-0120: an Error Value is TEXT's result, whatever the code",
+      "steps": [
+        {"enter": {"ZZ1000": "=TEXT(1/0,\"\")"}, "expect": {"values": {"ZZ1000": {"error": "#DIV/0!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0120, ADR-0202 (TEXTFN-019, 020): fractions and conditions stay outside the cell formats' subset: =TEXT(4.34,\"# ?/?\")",
+      "steps": [
+        {"enter": {"ZZ1000": "=TEXT(4.34,\"# ?/?\")"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0120, ADR-0202 (TEXTFN-019, 020): fractions and conditions stay outside the cell formats' subset: =TEXT(5,\"[<=9]0;0.0\")",
+      "steps": [
+        {"enter": {"ZZ1000": "=TEXT(5,\"[<=9]0;0.0\")"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    }
+  ]
+}
