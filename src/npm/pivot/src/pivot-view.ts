@@ -150,6 +150,9 @@ interface Question {
     readonly maxLeaves: number;
     /** The Item a user's expand or collapse toggled, which keeps the Focus in the report this question brings. */
     readonly toggled: ToggledItem | undefined;
+    /** The pending layout Update applies with this question, or with a question it superseded while it was out: once
+     * shown, the pane holds nothing of it to apply again. */
+    readonly applies: Deferred | undefined;
 }
 
 interface Shown {
@@ -519,16 +522,16 @@ export class PivotView {
             ? options.layout
             : undefined;
         const asked = consumerLayout ?? (sourceMoved ? this.#layoutAhead : undefined);
-        const declared = this.#declared(options.source);
+        const declared = asked !== undefined || sourceMoved ? this.#declared(options.source) : undefined;
         // Checked against the source it will be asked of before anything changes.
-        if (asked !== undefined) validateLayout(asked, declared);
+        if (asked !== undefined && declared !== undefined) validateLayout(asked, declared);
         this.#options = options;
         if (layoutMoved) this.#layoutGiven = options.layout;
         // The Consumer's layout replaces the user's, a pending one too. A pending layout placing a field the new source
         // does not have goes back to the report's, which is checked against it above: the rest of what a layout is
         // checked for does not depend on the source, and the pending one was made by the pane's own edits.
         const pending = this.#deferred?.layout;
-        if (pending !== undefined && (consumerLayout !== undefined || (sourceMoved && !placesOnly(pending, declared)))) {
+        if (pending !== undefined && (consumerLayout !== undefined || (declared !== undefined && sourceMoved && !placesOnly(pending, declared)))) {
             this.#deferred = noneDeferred;
         }
         const densityMoved = options.density !== before.density;
@@ -667,7 +670,7 @@ export class PivotView {
         const deferred = this.#deferred;
         if (deferred !== undefined) {
             const { moved } = edit;
-            // A field moved into an Area again is named once.
+            // A field moved into an Area again replaces its earlier move, so the moves stay as many as the fields.
             const moves = moved === undefined ? deferred.moves
                 : [...deferred.moves.filter(move => move.field !== moved.field || move.area !== moved.area), moved];
             this.#deferred = Object.freeze({ layout: edit.layout, moves: Object.freeze(moves) });
@@ -684,9 +687,13 @@ export class PivotView {
     // it, refused or not. A gesture that would change nothing now asks nothing.
     #reportEdit(edit: (layout: PivotLayout) => PivotLayout | undefined, toggled?: ToggledItem): void {
         const deferred = this.#deferred;
-        if (deferred?.layout !== undefined) this.#deferred = Object.freeze({ ...deferred, layout: edit(deferred.layout) ?? deferred.layout });
         const now = this.#layoutAhead;
         const next = edit(now);
+        if (deferred?.layout !== undefined) {
+            // A pending layout Update is asking for is the report's, and follows it as one.
+            const layout = deferred.layout === now ? next ?? now : edit(deferred.layout) ?? deferred.layout;
+            this.#deferred = Object.freeze({ ...deferred, layout });
+        }
         if (next === undefined || next === now) this.#draw();
         else this.#move(next, [], toggled);
     }
@@ -700,10 +707,11 @@ export class PivotView {
             this.#draw();
             return;
         }
+        const unticked = defined(held, 'Defer Layout Update ticked');
         this.#deferred = undefined;
-        const pending = held?.layout;
-        if (held === undefined || pending === undefined || pending === this.#layoutAhead) this.#draw();
-        else this.#move(pending, held.moves);
+        const pending = unticked.layout;
+        if (pending === undefined || pending === this.#layoutAhead) this.#draw();
+        else this.#move(pending, unticked.moves);
     }
 
     // Update applies the pending layout in one change, and Defer Layout Update stays ticked. The layout stays the
@@ -712,18 +720,18 @@ export class PivotView {
         const held = this.#deferred;
         const pending = held?.layout;
         if (held === undefined || pending === undefined || pending === this.#layoutAhead) return;
-        this.#move(pending, held.moves);
+        this.#move(pending, held.moves, undefined, held);
     }
 
-    #move(layout: PivotLayout, moved: readonly FieldListMove[], toggled?: ToggledItem): void {
+    #move(layout: PivotLayout, moved: readonly FieldListMove[], toggled?: ToggledItem, applies?: Deferred): void {
         // A move after a toggle asks for another report: the Item toggled is no longer the one to follow.
         this.#placing?.();
         this.#refusal = undefined;
-        this.#ask(layout, 'user', moved, toggled);
+        this.#ask(layout, 'user', moved, toggled, applies);
         this.#draw();
     }
 
-    #ask(layout: PivotLayout, asked: Cause, moved: readonly FieldListMove[], toggled?: ToggledItem): void {
+    #ask(layout: PivotLayout, asked: Cause, moved: readonly FieldListMove[], toggled?: ToggledItem, applies?: Deferred): void {
         const superseded = this.#asked;
         superseded?.controller.abort();
         // A layout asked again before its answer came keeps what that question was owed: the user's raises once
@@ -736,7 +744,8 @@ export class PivotView {
         // An Item toggled into the layout keeps the Focus in its report, asked again or not.
         const focusOn = toggled ?? (again ? superseded.toggled : undefined);
         // A user's move made while a user's question was out was taken against it, and carries its moves on.
-        const moves = [...(raise && superseded?.raise === true ? superseded.moves : []), ...moved];
+        const carried = raise && superseded?.raise === true;
+        const moves = [...(carried ? superseded.moves : []), ...moved];
         const generation = ++this.#generation;
         if (showsNothing(layout) && layout.filters.length === 0) {
             // Nothing to compute: the report is the empty box that says how to start. A layout with fields in Filters
@@ -750,6 +759,7 @@ export class PivotView {
             layout, generation, controller: new AbortController(), raise, markChanges, refreshData, moves: Object.freeze(moves),
             reportSource: this.#reportSource, source: this.#options.source, settings: this.#settings, locale: this.#locale, maxLeaves: this.#maxLeaves,
             toggled: focusOn,
+            applies: applies ?? (carried ? superseded.applies : undefined),
         };
         this.#asked = question;
         void this.#run(question);
@@ -795,8 +805,15 @@ export class PivotView {
     #showLayout(layout: PivotLayout, answered: { readonly answer: PivotReportState; readonly question: Question } | undefined, raise: boolean): void {
         const answer = answered?.answer;
         this.#shown = { layout, answer, question: answered?.question };
-        // The pending layout, applied and shown, is the report's own now: nothing is left to apply.
-        if (this.#deferred?.layout === layout) this.#deferred = noneDeferred;
+        // The pending layout, applied and shown, is the report's own now: nothing is left to apply. One the pane built
+        // since Update asked keeps what it holds, but for the moves now shown.
+        const deferred = this.#deferred;
+        const applied = answered?.question.applies;
+        if (deferred !== undefined && (deferred.layout === layout || deferred === applied)) {
+            this.#deferred = noneDeferred;
+        } else if (deferred !== undefined && applied !== undefined) {
+            this.#deferred = Object.freeze({ layout: deferred.layout, moves: Object.freeze(deferred.moves.filter(move => !applied.moves.includes(move))) });
+        }
         this.#showReport(answered);
         if (answer !== undefined && this.#counts !== undefined && this.#counts.sourceVersion !== answer.metadata.sourceVersion) {
             // Counted under another Source Version: asked again, so the marks follow the data (ADR-0370 section 3).

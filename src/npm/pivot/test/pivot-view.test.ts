@@ -49,13 +49,26 @@ function server(): FetchingPivotSource {
 
 /** A source whose answers wait until the test lets each one through, in any order. */
 class HeldSource implements PivotSource {
-    readonly #behind = local();
+    readonly #behind: PivotSource;
     readonly held: (() => void)[] = [];
-    readonly fields = this.#behind.fields;
-    readonly features = this.#behind.features;
+    readonly fields: PivotSource['fields'];
+    readonly features: PivotSource['features'];
+
+    constructor(behind: PivotSource = local()) {
+        this.#behind = behind;
+        this.fields = behind.fields;
+        this.features = behind.features;
+    }
+
+    itemCounts(signal?: AbortSignal): ReturnType<NonNullable<PivotSource['itemCounts']>> {
+        const counts = this.#behind.itemCounts;
+        if (counts === undefined) throw new Error('The source behind counts no Items.');
+        return counts.call(this.#behind, signal);
+    }
 
     aggregate(...args: Parameters<PivotSource['aggregate']>): ReturnType<PivotSource['aggregate']> {
-        return new Promise(resolve => { this.held.push(() => { resolve(this.#behind.aggregate(...args)); }); });
+        // Asked once let through, as a source asks: one whose question was given up meanwhile refuses it then.
+        return new Promise(resolve => { this.held.push(() => { resolve(Promise.resolve().then(() => this.#behind.aggregate(...args))); }); });
     }
 
     details(...args: Parameters<PivotSource['details']>): ReturnType<PivotSource['details']> {
@@ -1451,6 +1464,61 @@ describe('ExPivot\'s Defer Layout Update (ADR-0061)', () => {
         setDeferred(root, false);
         await settled();
         expect(refused).toEqual([['Region'], ['Region']]);
+    });
+
+    it('ADR-0061: a gesture on the report while Update is asked for leaves nothing for Update to apply once both are shown', async () => {
+        const source = new HeldSource();
+        const changed: PivotLayout[] = [];
+        const { root, grid } = mount({ source, layout: byRegion, onLayoutChanged: event => changed.push(event.layout) });
+        await settled();
+        source.held.shift()?.();
+        await settled();
+        setDeferred(root, true);
+        tick(root, 'Desk');
+        updateButton(root).click();
+        await settled();
+        expect(source.held).toHaveLength(1);
+        // The Layout menu's choice, made while Update's question for Desk is out.
+        layoutButton(root).click();
+        command(root, 'Show in Tabular Form').click();
+        for (let round = 0; round < 5; round++) {
+            for (const release of source.held.splice(0).toReversed()) release();
+            await settled();
+        }
+        expect(grid.headers).toEqual(['Region', 'Desk', 'Sum of Amount']);
+        expect(changed).toHaveLength(1);
+        expect(updateButton(root).disabled).toBe(true);
+        setDeferred(root, false);
+        await settled();
+        expect(changed).toHaveLength(1);
+    });
+
+    it('ADR-0370 section 3: a move Update has shown is not named again when a later Update is refused', async () => {
+        const source = new HeldSource(server());
+        const refused: (readonly string[])[] = [];
+        const { root } = mount({ source, layout: createPivotLayout({ values: ['Amount'] }), maxLeaves: 3, onRefused: event => refused.push(event.fields) });
+        await settled();
+        source.held.shift()?.();
+        await settled();
+        setDeferred(root, true);
+        drag(field(root, 'Region'), 'dragstart');
+        drag(area(root, 'rows'), 'dragenter');
+        drag(area(root, 'rows'), 'drop');
+        updateButton(root).click();
+        await settled();
+        // Desk to Columns while Update's question for Region is out.
+        drag(field(root, 'Desk'), 'dragstart');
+        drag(area(root, 'columns'), 'dragenter');
+        drag(area(root, 'columns'), 'drop');
+        for (const release of source.held.splice(0)) release();
+        await settled();
+        expect(refused).toEqual([]);
+        updateButton(root).click();
+        for (let round = 0; round < 5; round++) {
+            for (const release of source.held.splice(0)) release();
+            await settled();
+        }
+        expect(refused).toEqual([['Desk']]);
     });
 
     it('ADR-0061: a new source without a field the pending layout places takes the pane back to the report\'s layout', async () => {

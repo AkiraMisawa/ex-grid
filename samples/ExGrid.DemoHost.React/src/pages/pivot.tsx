@@ -101,8 +101,10 @@ export function Pivot(): ReactElement {
             try {
                 page = await event.records(0, Number.MAX_SAFE_INTEGER);
             } catch (error) {
-                // The records the page showed answered another cell: they go, and the failure is said, and raised.
-                if (asked === detailsAsks.current) setDetails({ caption: `The trades could not be read: ${String(error)}`, trades: [] });
+                // A failure for a cell asked before the newest is nobody's. The newest one's: the records the page
+                // showed answered another cell, so they go, and the failure is said, and raised.
+                if (asked !== detailsAsks.current) return;
+                setDetails({ caption: `The trades could not be read: ${String(error)}`, trades: [] });
                 throw error;
             }
             if (asked !== detailsAsks.current) return;
