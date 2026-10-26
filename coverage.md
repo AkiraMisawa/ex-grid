@@ -14,7 +14,7 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/26/2026 - 07:53:10 |
+| Generated on: | 10/26/2026 - 08:29:41 |
 | Parser: | MultiReport (19x Cobertura) |
 | Assemblies: | 16 |
 | Classes: | 1199 |
@@ -24,8 +24,8 @@
 | Uncovered lines: | 4833 |
 | Coverable lines: | 88212 |
 | Total lines: | 140819 |
-| **Branch coverage:** | 87.2% (50339 of 57718) |
-| Covered branches: | 50339 |
+| **Branch coverage:** | 87.2% (50340 of 57718) |
+| Covered branches: | 50340 |
 | Total branches: | 57718 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
@@ -109,8 +109,8 @@
 |ExChart.Components.Svg|50%|25%|
 |ExChart.GridCell|100%||
 |ExChart.GridChart|25%|0%|
-|ExChart.GridChartBridge<TRow>|70.3%|42.3%|
 |ExChart.GridChartBridge<TRow>|46.3%|17.5%|
+|ExChart.GridChartBridge<TRow>|70.3%|42.3%|
 |ExChart.GridChartCommands|62.5%|62.5%|
 |ExChart.GridChartDeclarations<TRow>|100%||
 |ExChart.GridChartSeries|100%||
