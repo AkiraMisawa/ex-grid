@@ -153,6 +153,12 @@ export function sortsEqual(a: PivotSort, b: PivotSort): boolean {
     return a.direction === b.direction && a.byValue === b.byValue;
 }
 
+/** Whether two Value Fields are one, member by member, as the C# engine's record equality says. */
+export function valueFieldsEqual(a: PivotValueField, b: PivotValueField): boolean {
+    return a.field === b.field && a.aggregation === b.aggregation && a.caption === b.caption && a.showValuesAs === b.showValuesAs
+        && a.numberFormat === b.numberFormat;
+}
+
 function keys(list: readonly PivotItemKey[] | undefined): readonly PivotItemKey[] {
     if (list === undefined) return Object.freeze([]);
     return Object.freeze(list.map(key => pivotItemKey(key.kind, key.value)));

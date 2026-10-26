@@ -1213,6 +1213,9 @@ export function untickField(layout: PivotLayout, field: string): PivotLayout;
 export function validateLayout(layout: PivotLayout, declared: ReadonlyMap<string, unknown>): void;
 
 // @public
+export function valueFieldsEqual(a: PivotValueField, b: PivotValueField): boolean;
+
+// @public
 export function valuesPseudoField(axis: PivotAxis): PivotEntry;
 
 // @public

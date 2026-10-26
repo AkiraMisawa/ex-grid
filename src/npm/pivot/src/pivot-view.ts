@@ -10,12 +10,12 @@
 
 import {
     gridTextGeometry, type GridColumnWidthChange, type GridDensity, type GridHandle, type GridOptions, type GridSelection, type GridTextGeometry,
-    type CellPosition,
+    type CellPosition, type GridCommand, type GridContextMenuContext,
     type FetchingGridSource, type ViewportSize,
 } from '@ex-grid/core';
 import {
     FetchingPivotSource, LocalPivotReportSource, chooseLayout, defaultMaxLeaves, emptyPivotLayout, formatPivotCount, isLayoutChosen, isValuesPseudoField,
-    layoutChoiceChanges, pivotLayoutChoices, pivotValueCaptions, placementOf, placementsIn, isItemCollapsed, pivotWordIdList, setCollapsed,
+    layoutChoiceChanges, pivotLayoutChoices, pivotValueCaptions, placementOf, placementsIn, isItemCollapsed, pivotWord, pivotWordIdList, setCollapsed,
     pivotItemKeyId, validateLayout, type PivotDisplayRow, type PivotEntry, type PivotFieldPlacement, type PivotItemInfo, type PivotItemCounts, type PivotLabel, type PivotLayout, type PivotLayoutChoice,
     type PivotReportRefusal, type PivotReportSettings, type PivotReportState, type PivotSlicing, type PivotSource, type PivotToggle,
     pivotReportDetailsQuery, PivotItemPage, itemsOfPage, type PivotFieldItem,
@@ -31,6 +31,7 @@ import { element } from './dom';
 import { defined, elementAt, unreachable } from './must';
 import { fieldSettingsPanel, valueFieldSettingsPanel, type PivotPanel } from './panels';
 import { cellItems, ReportColumns, reportRows, type PivotCellItems } from './report-grid';
+import { captionOfRemove, removeNamedFieldId, reportMenuCommands, valueFieldAt } from './report-menu';
 import { layoutChoiceId, PivotScreenWords } from './words';
 
 /** A Pivot Layout the user made and the report now shows. */
@@ -197,6 +198,9 @@ const layoutHeadings: ReadonlyMap<PivotLayoutChoice, string> = new Map([
     ['compactForm', 'report-layout'],
 ]);
 
+// The ids of the pivot's own words: a command of the grid's own is not one of them.
+const pivotWordIds: ReadonlySet<string> = new Set(pivotWordIdList());
+
 // The rows a first answer brings: a screen's worth and more. The grid asks for the rest as it scrolls.
 const firstWindowRows = 200;
 
@@ -278,6 +282,8 @@ export class PivotView {
     readonly #slicing: PivotSlicing | undefined;
     #options: PivotViewOptions;
     #words: PivotScreenWords;
+    // The words of the grid's commands, made again when the Consumer's words change.
+    #commandLabel: (id: string) => string | undefined;
     // The text geometry of the report grid's density: what its label widths are estimated under, and a level's indent.
     #geometry: GridTextGeometry;
     #columns: ReportColumns;
@@ -319,6 +325,7 @@ export class PivotView {
         this.#mountGrid = mountGrid;
         this.#slicing = options.slicing;
         this.#words = new PivotScreenWords(options.label);
+        this.#commandLabel = this.#commandLabelOf(options.label);
         this.#geometry = gridTextGeometry(options.density === undefined ? {} : { density: options.density });
         this.#columns = this.#columnsOf(options);
         this.#settings = this.#settingsOf(options);
@@ -475,7 +482,10 @@ export class PivotView {
         if (layoutMoved) this.#layoutGiven = options.layout;
         const densityMoved = options.density !== before.density;
         const settingsMoved = options.locale !== before.locale || options.label !== before.label || densityMoved;
-        if (options.label !== before.label) this.#words = new PivotScreenWords(options.label);
+        if (options.label !== before.label) {
+            this.#words = new PivotScreenWords(options.label);
+            this.#commandLabel = this.#commandLabelOf(options.label);
+        }
         if (densityMoved) this.#geometry = gridTextGeometry(options.density === undefined ? {} : { density: options.density });
         if (options.label !== before.label || densityMoved) this.#columns = this.#columnsOf(options);
         if (settingsMoved) this.#settings = this.#settingsOf(options);
@@ -802,7 +812,7 @@ export class PivotView {
         if (answer === undefined || rows === undefined || question === undefined) return;
         const { locale } = question;
         const { columns, headerGroups, pinnedColumnCount } = this.#columns.of(answer.metadata, this.#userWidths);
-        const { rowHeight, density, label } = this.#options;
+        const { rowHeight, density } = this.#options;
         const options: GridOptions<PivotDisplayRow> = {
             columns,
             headerGroups,
@@ -817,7 +827,8 @@ export class PivotView {
             onColumnWidthChanged: change => { this.#widthChanged(change); },
             onCellDoubleClick: cell => { this.#doubleClicked(cell); },
             onSelectionChanged: selection => { this.#selectionChanged(selection); },
-            ...(label === undefined ? {} : { commandLabel: label }),
+            contextCommands: this.#contextCommands,
+            commandLabel: this.#commandLabel,
             ...(rowHeight === undefined ? {} : { rowHeight }),
             ...(density === undefined ? {} : { density }),
         };
@@ -895,8 +906,7 @@ export class PivotView {
         const rowItems = items(row.rowPath);
         const column = elementAt(metadata.valueColumns, valueColumn);
         const columnItems = items(column.columnPath);
-        const valueField = row.valueField >= 0 ? row.valueField
-            : column.valueField >= 0 ? column.valueField : metadata.layout.values.length === 1 ? 0 : -1;
+        const valueField = valueFieldAt(metadata, row, valueColumn);
         const path = [...rowItems, ...columnItems].map(item => item.item);
         const details = detailsEvent(question.source, pivotReportDetailsQuery(metadata, row, valueColumn), {
             title: words.fill('details-title', path.length === 0 ? words.word('grand-total') : path.join(' / ')),
@@ -910,6 +920,57 @@ export class PivotView {
             return;
         }
         this.#details.open(details, this.#options.detailsView ?? 'tab', question.locale); // oxlint-disable-line ex-grid/no-stand-in-default -- ADR-0059: a tab at the report's foot unless the Consumer asks for the dialog, as the Razor component's DetailsView
+    }
+
+    // The report's commands in the grid's Context Menu (ADR-0036, ADR-0059), for a row of the report on screen.
+    readonly #contextCommands = (context: GridContextMenuContext<PivotDisplayRow>): readonly GridCommand[] => {
+        const { answer, question } = this.#shown;
+        const rows = this.#rows;
+        if (this.#destroyed || answer === undefined || question === undefined || rows === undefined || !rows.snapshot().window.includes(context.row)) {
+            return [];
+        }
+        return reportMenuCommands({
+            metadata: answer.metadata,
+            row: context.row,
+            column: context.column,
+            pane: this.#paneLayout,
+            fieldListShown: this.#fieldListShown,
+            captionOf: field => this.#captionOf(field),
+        }, {
+            // A command that would change nothing now asks nothing.
+            edit: edit => {
+                const now = this.#paneLayout;
+                const next = edit(now);
+                if (next === undefined || next === now) this.#draw();
+                else this.#move(next, undefined);
+            },
+            showDetails: valueColumn => { this.#showDetails(answer, question, context.row, valueColumn); },
+            valueFieldSettings: (valueField, holds) => { this.#openFromReport(valueField, holds); },
+            setFieldListShown: shown => { this.#setFieldListShown(shown); },
+        });
+    };
+
+    // The words of the grid's commands (ADR-0036): the Consumer's, then the pivot's own for its commands; the grid's
+    // own commands keep the grid's English where the Consumer gives none. Made again with the Consumer's words, so the
+    // grid, which holds words by the function they came from, reads them again.
+    #commandLabelOf(label: PivotLabel | undefined): (id: string) => string | undefined {
+        return id => {
+            const own = label?.(id);
+            if (own !== undefined) return own;
+            const caption = captionOfRemove(id);
+            if (caption !== undefined) return this.#words.fill(removeNamedFieldId, caption);
+            return pivotWordIds.has(id) ? pivotWord(id, undefined) : undefined;
+        };
+    }
+
+    // Value Field Settings… from the report opens in the pane, under the Value Field's entry, showing the Field List.
+    // Opened only while the pane holds the Value Field the cell showed there.
+    #openFromReport(valueField: number, holds: (pane: PivotLayout) => boolean): void {
+        const pane = this.#paneLayout;
+        const value = pane.values[valueField];
+        if (value === undefined || !holds(pane)) return;
+        this.#setFieldListShown(true);
+        this.#openPanelAt({ entry: { area: 'values', index: valueField }, field: value.field, against: pane }, 'value-field-settings');
     }
 
     // An outer Item's button pressed, or its label double clicked: the Item is collapsed or expanded (ADR-0063).
@@ -1117,7 +1178,11 @@ export class PivotView {
     }
 
     #openPanel(open: EntrySurface, panel: EntryPanel): void {
-        if (this.#open !== open) return;
+        if (this.#open === open) this.#openPanelAt(open, panel);
+    }
+
+    // A panel opened under a field's entry in the pane: from its menu, or from the report's Context Menu.
+    #openPanelAt(open: AtEntry, panel: EntryPanel): void {
         const document = this.#root.ownerDocument;
         const { entry, against } = open;
         // The panel's OK and Cancel are called once it stands, and act only while it does.
@@ -1126,7 +1191,7 @@ export class PivotView {
             apply: (layout: PivotLayout) => {
                 this.#finish(surface, () => {
                     this.#edited({ layout, against, moved: undefined });
-                    return this.#entryNow(open);
+                    return this.#entryNow(surface);
                 });
             },
             cancel: () => { if (this.#open === surface) this.#close('opener'); },
