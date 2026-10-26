@@ -3,6 +3,7 @@
 // Entries compared, and the package's surface read for a row that can be hidden.
 import { describe, expect, it } from 'vitest';
 import * as engine from '../src/index';
+import { CellRange } from '../src/cell-range';
 import { Culture } from '../src/culture';
 import { Entry } from '../src/entry';
 import { Sheet } from '../src/sheet';
@@ -46,5 +47,17 @@ describe('the engine surface', () => {
                 : []),
         ]);
         expect(names.filter(name => hiding.test(name))).toEqual([]);
+    });
+
+    // ADR-0047: whole columns and rows are written as Excel writes them.
+    it.each([
+        ['B:D', true, false],
+        ['3:4', false, true],
+        ['A:XFD', true, true],
+        ['A1:B2', false, false],
+    ] as const)('reads %s as whole columns %s and whole rows %s', (text, columns, rows) => {
+        const range = CellRange.parse(text);
+        expect(range.isWholeColumns).toBe(columns);
+        expect(range.isWholeRows).toBe(rows);
     });
 });

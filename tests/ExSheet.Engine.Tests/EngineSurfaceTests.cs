@@ -75,4 +75,17 @@ public class EngineSurfaceTests
     {
         Assert.NotEqual(Entry.FromFormula("=A1+1"), Entry.FromFormula("= A1+1"));
     }
+
+    [Theory] // ADR-0047: whole columns and rows are written as Excel writes them
+    [InlineData("B:D", true, false)]
+    [InlineData("3:4", false, true)]
+    [InlineData("A:XFD", true, true)]
+    [InlineData("A1:B2", false, false)]
+    public void Whole_columns_and_rows_parse(string text, bool columns, bool rows)
+    {
+        var range = CellRange.Parse(text);
+
+        Assert.Equal(columns, range.IsWholeColumns);
+        Assert.Equal(rows, range.IsWholeRows);
+    }
 }
