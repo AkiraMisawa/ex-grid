@@ -1761,7 +1761,7 @@ export class GridView<Row> {
             // A declared height this small is the Consumer's defect, said by name; a reported zero is a
             // hidden tab, and paints nothing until the next report (ADR-0013, ADR-0028).
             if (visibleHeightPx <= band && this.#height !== 'stretch') {
-                throw new Error(`A horizontal scrollbar takes ${report?.gutterHeightPx ?? 0}px out of the ${this.#height}px Viewport, ` // oxlint-disable-line ex-grid/no-stand-in-default -- the message names the gutter, 0 until reported
+                throw new Error(`A horizontal scrollbar takes ${report?.gutterHeightPx ?? 0}px out of the ${this.#height - this.#barPx}px Viewport${this.#barPx === 0 ? '' : ` left under the ${this.#barPx}px Formula Bar`}, ` // oxlint-disable-line ex-grid/no-stand-in-default -- the message names the gutter, 0 until reported
                     + `leaving ${visibleHeightPx}px — not enough for the header band's own ${band}px, let alone a row. `
                     + 'Declare a Viewport tall enough to hold its own scrollbar (ADR-0013).');
             }
@@ -3020,15 +3020,18 @@ export class GridView<Row> {
 
     /**
      * A Consumer's placement of the Selection (ADR-0050, item 4): `range` becomes the one range, with the Focus on
-     * `focus`, revealed. Taken against `rowSequenceVersion`, the source's, and refused (false) once that moved, or
+     * `focus`, revealed. Taken against `rowSequenceVersion`, the one the grid reports (an intent's, `data-ex-sequence`),
+     * which is the source's own until the source is replaced; refused (false) once that moved, or
      * while an edit stands; a range outside the grid is refused by name (the spine's sixth rule).
      */
     placeSelection(range: SelectionRange, focus: CellPosition, rowSequenceVersion: number): boolean {
         if (this.#destroyed) throw new Error('This grid was destroyed.');
+        // Changes a live source gathered are the order's before the check, as a commit's are (ADR-0142 D5).
+        this.#source.publishGathered?.();
         this.#reconcileSelection();
         // Checked first: a place outside the grid is the Consumer's mistake, whatever else holds.
         const placed = this.#held.selection.place(range, focus, this.#extent);
-        if (this.#edit !== undefined || rowSequenceVersion !== this.#state.rowSequenceVersion) return false;
+        if (this.#edit !== undefined || rowSequenceVersion !== this.#sequence()) return false;
         // The place is the Selection's now: a menu standing at the old one closes, and a drag ends, so its next
         // move does not reshape the place from the old anchor.
         this.#closePopover(true);
@@ -3049,8 +3052,12 @@ export class GridView<Row> {
     readonly #onBarFocused = (): void => {
         const edit = this.#edit;
         if (edit !== undefined) {
-            edit.surface = 'bar';
-            edit.mode = 'caret';
+            // Only a move from the cell is a new surface; the grid giving the bar its keyboard back keeps the mode
+            // the user chose there with F2.
+            if (edit.surface !== 'bar') {
+                edit.surface = 'bar';
+                edit.mode = 'caret';
+            }
             return;
         }
         // The bar holds the keyboard now: a menu standing closes without taking it back (ADR-0050, item 16).
@@ -3119,6 +3126,17 @@ export class GridView<Row> {
         const declared = this.#formulaBarDeclared;
         const bar = this.#bar;
         if (!declared.shown) {
+            // A band taken away while it holds the keyboard hands it back first: to the editor, where an edit was
+            // typed in the bar, or to the grid, so the next key is not the page's.
+            if (bar.band.contains(this.#root.ownerDocument.activeElement)) {
+                const edit = this.#edit;
+                if (edit !== undefined) {
+                    edit.surface = 'cell';
+                    edit.element.focus({ preventScroll: true });
+                } else {
+                    this.#takeKeyboard();
+                }
+            }
             bar.band.remove();
             return;
         }
@@ -3154,15 +3172,16 @@ export class GridView<Row> {
         let text = '';
         let borrowed = false;
         if (focus !== undefined && held !== undefined) {
-            text = this.#openingTextAt(focus);
+            // Borrowed text, where the Consumer lends any, wins over the cell's own, as the C# core's does: a spilled
+            // cell paints its Value, and the bar shows the Anchor's Formula in its place (ADR-0125).
             const borrow = declared.borrowedText;
-            if (text === '' && borrow !== undefined) {
-                const lent: unknown = borrow(held.row, itemAt(this.#columns, focus.column).column);
-                if (lent !== undefined && typeof lent !== 'string') throw new TypeError(`formulaBarBorrowedText answers text or undefined, not ${typeof lent}.`);
-                if (lent !== undefined && lent !== '') {
-                    text = lent;
-                    borrowed = true;
-                }
+            const lent: unknown = borrow?.(held.row, itemAt(this.#columns, focus.column).column);
+            if (lent !== undefined && typeof lent !== 'string') throw new TypeError(`formulaBarBorrowedText answers text or undefined, not ${typeof lent}.`);
+            if (lent === undefined) {
+                text = this.#openingTextAt(focus);
+            } else {
+                text = lent;
+                borrowed = true;
             }
         }
         const label = declared.nameBoxLabel;

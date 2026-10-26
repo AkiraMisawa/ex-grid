@@ -18,8 +18,9 @@ export interface FormulaBarOptions<Row> {
     /** Hears what was typed into the Name Box when Enter entered it (ADR-0051). The Consumer resolves it, and
      * places the Selection with the handle's `placeSelection` (ADR-0050, item 4). */
     readonly onNameBoxEntered?: (typed: string) => void;
-    /** The text the bar shows dimmed, and read only, for a cell whose own text is empty: on a Sheet, the Formula
-     * of the array a cell is spilled into (ADR-0125). Hold it in a field: its identity is the change signal. */
+    /** The text the bar shows dimmed, and read only, in place of a cell's own, where it answers any: on a Sheet,
+     * the Formula of the array a cell is spilled into (ADR-0125). Hold it in a field: its identity is the change
+     * signal. */
     readonly formulaBarBorrowedText?: (row: Row, column: GridColumn<Row>) => string | undefined;
 }
 
@@ -86,6 +87,10 @@ export class FormulaBar {
     // What the user has typed into the Name Box and not entered: shown in place of the label while it holds the
     // keyboard.
     #typed: string | undefined;
+    // The label the last pass showed, written back when the box is left with text typed and not entered.
+    #label = '';
+    // A press into the Name Box selects its text on focus, and the press's own mouseup would put a caret back.
+    #pressSelecting = false;
 
     constructor(doc: Document, hooks: FormulaBarHooks) {
         this.band = doc.createElement('div');
@@ -110,11 +115,22 @@ export class FormulaBar {
         });
         this.nameBox.addEventListener('input', () => { this.#typed = this.nameBox.value; });
         // A press into the Name Box selects its text, so what is typed replaces the address shown (ADR-0051).
+        this.nameBox.addEventListener('mousedown', () => { this.#pressSelecting = doc.activeElement !== this.nameBox; });
+        this.nameBox.addEventListener('mouseup', event => {
+            if (!this.#pressSelecting) return;
+            this.#pressSelecting = false;
+            event.preventDefault();
+        });
         this.nameBox.addEventListener('focus', () => {
             this.nameBox.select();
             hooks.nameBoxFocused();
         });
-        this.nameBox.addEventListener('blur', () => { this.#typed = undefined; });
+        // Left without Enter: what was typed goes, and the box names the Focus again.
+        this.nameBox.addEventListener('blur', () => {
+            this.#typed = undefined;
+            this.#pressSelecting = false;
+            if (this.nameBox.value !== this.#label) this.nameBox.value = this.#label;
+        });
         this.nameBox.addEventListener('keydown', event => {
             if (event.key !== 'Escape' || event.isComposing) return;
             event.preventDefault();
@@ -135,6 +151,7 @@ export class FormulaBar {
         setStyle(this.nameBox, `width: ${paint.nameBoxWidthPx}px`);
         setAttr(this.nameBox, 'aria-label', paint.nameBoxLabel);
         setAttr(this.text, 'aria-label', paint.textLabel);
+        this.#label = paint.nameBox;
         if (this.#typed === undefined && this.nameBox.value !== paint.nameBox) this.nameBox.value = paint.nameBox;
         // Written only when it differs: a write moves the caret, and the text the user is typing is already there.
         if (this.text.value !== paint.text) this.text.value = paint.text;

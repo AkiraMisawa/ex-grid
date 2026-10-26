@@ -17,7 +17,6 @@ const columns: readonly GridColumn<Trade>[] = [
     { name: 'Notional', type: 'number', value: trade => trade.notional, width: 100 },
 ];
 
-const noText = (_trade: Trade): string => '';
 const rowY = (row: number): number => (row * 24) + 5;
 
 function press(root: HTMLElement, x: number, y: number): void {
@@ -124,9 +123,8 @@ describe('the Formula Bar (ADR-0051)', () => {
         expect(barText(root).value).toBe('Book-0');
     });
 
-    it('ADR-0125: a cell with no text of its own may show the Consumer\'s borrowed text, dimmed and read only', async () => {
+    it('ADR-0125: the Consumer\'s borrowed text, where it lends any, is shown in place of the cell\'s own, dimmed and read only', async () => {
         const { root } = await grid({
-            columns: [{ ...defined(columns[0], 'Book'), value: noText }, defined(columns[1], 'Notional')],
             formulaBarBorrowedText: (trade, column) => (column.name === 'Book' && trade.notional === 2000 ? '=SEQUENCE(3)' : undefined),
         });
         press(root, 10, rowY(2));
@@ -134,7 +132,22 @@ describe('the Formula Bar (ADR-0051)', () => {
         expect([barText(root).value, barText(root).readOnly, barText(root).classList.contains('ex-formula-bar-borrowed')]).toEqual(['=SEQUENCE(3)', true, true]);
         press(root, 10, rowY(1));
         await painted();
-        expect([barText(root).value, barText(root).readOnly, barText(root).classList.contains('ex-formula-bar-borrowed')]).toEqual(['', false, false]);
+        expect([barText(root).value, barText(root).readOnly, barText(root).classList.contains('ex-formula-bar-borrowed')]).toEqual(['Book-1', false, false]);
+    });
+
+    it('ADR-0051: the bar taken away while an edit is typed in it hands the keyboard to the editor over the cell', async () => {
+        const rows = trades(20);
+        const { root, view } = await grid({ rows });
+        press(root, 10, rowY(0));
+        await painted();
+        barText(root).focus();
+        typeInto(barText(root), 'x');
+        await painted();
+        view.update({ columns, rows, rowHeight: 24, viewportHeight: 480, showFormulaBar: false });
+        await painted();
+        expect(root.querySelector('.ex-formula-bar')).toBeNull();
+        expect(document.activeElement).toBe(cellEditor(root));
+        expect(cellEditor(root).value).toBe('Book-0x');
     });
 });
 
@@ -157,6 +170,30 @@ describe('the Name Box (ADR-0051) and placeSelection (ADR-0050, item 4)', () => 
         // Taken against a version that has moved, it is refused, and nothing moves (the spine's sixth rule).
         expect(view.placeSelection(selectionRange(0, 0, 1, 1), { row: 0, column: 0 }, 1)).toBe(false);
         expect(defined(selections.at(-1), 'a Selection').focus).toEqual({ row: 5, column: 1 });
+    });
+
+    it('ADR-0050 item 4: a placement is taken against the version the grid reports, which moves on when the rows are replaced', async () => {
+        const { root, view } = await grid();
+        const reported = (): number => Number(q(root, '.ex-viewport').getAttribute('data-ex-sequence'));
+        const before = reported();
+        view.update({ columns, rows: trades(20), rowHeight: 24, viewportHeight: 480, showFormulaBar: true });
+        await painted();
+        expect(reported()).not.toBe(before);
+        expect(view.placeSelection(selectionRange(1, 0, 1, 1), { row: 1, column: 0 }, before)).toBe(false);
+        expect(view.placeSelection(selectionRange(1, 0, 1, 1), { row: 1, column: 0 }, reported())).toBe(true);
+    });
+
+    it('ADR-0051: the Name Box left without Enter drops what was typed and names the Focus again', async () => {
+        const { root, entered } = await grid();
+        press(root, 10, rowY(3));
+        await painted();
+        const box = nameBox(root);
+        box.focus();
+        box.value = 'ZZ99';
+        box.dispatchEvent(new Event('input', { bubbles: true }));
+        box.blur();
+        expect(box.value).toBe('R4C1');
+        expect(entered).toEqual([]);
     });
 
     it('ADR-0050 item 4: a placement is refused while an edit stands', async () => {
