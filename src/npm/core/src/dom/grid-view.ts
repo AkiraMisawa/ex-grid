@@ -40,14 +40,14 @@ import { defined, itemAt } from '../must';
 import { editingKeysByMode } from '../keys/editing-keys';
 import { canonicalKey, resolveKey, type GridKeyAction, type KeyPress } from '../keys/grid-keys';
 import { cellClasses, type MatchMark } from '../paint/cell-classes';
-import { columnMark } from '../paint/heading-mark-styles';
+import { columnMark, rowMark } from '../paint/heading-mark-styles';
 import { rowClasses, type RowKind } from '../paint/row-classes';
 import { rowMarkHeaderPress, rowMarkHeaderState, type MarkRefusalReason, type RowMarkIntent, type RowMarks } from '../rows/row-marks';
 import { cell as cellPosition, sameCell, type CellPosition, type GridDirection, type GridExtent } from '../selection/cell';
-import { markedColumns, wholeColumnRuns } from '../selection/heading-marks';
+import { markedColumns, markedRows, wholeColumnRuns, wholeRowRuns } from '../selection/heading-marks';
 import { edgeBandRowsPerTick } from '../selection/edge-band';
 import { HeldSelection } from '../selection/held';
-import { bottomRow, fromCorners, rangeCellCount, sameRange as sameSelectionRange, spansEveryColumn, spansEveryRow, type SelectionRange } from '../selection/range';
+import { bottomRow, fromCorners, rangeCellCount, rangeContains, sameRange as sameSelectionRange, spansEveryColumn, spansEveryRow, type SelectionRange } from '../selection/range';
 import { Selection, type EdgeAnswer, type GridSelection } from '../selection/selection';
 import { nextSort } from '../query/sort';
 import type { GridSource, GridSourceState } from '../source/grid-source';
@@ -359,6 +359,23 @@ export interface GridOptions<Row> extends CellPaintOptions<Row>, FormulaBarOptio
      * ADR-0012 gives the click to sorting (ADR-0050, item 1). Shift+click extends from the Focus's column as
      * always. Off unless given. */
     readonly headerClickSelects?: boolean;
+    /**
+     * The Row Headings (ADR-0050, item 1): a band held at the left edge beside the rows, each labelled by this
+     * function, handed the row's position in the whole result, Placeholders included (the row number, on a
+     * Sheet). The band stands outside the column index space: it is never in the Selection, a copy, Ctrl+A or the
+     * Enter/Tab cycle. A press on a heading selects the whole row, Shift extends from the Focus's row, Ctrl adds
+     * or takes the row out, and a drag across the headings selects whole rows; where the header stands too, a
+     * click on the corner where the two meet selects all. None, and there is no band. Asked once per painted row,
+     * so it is as cheap as `rowKind` has to be; a label that changes paints its row again.
+     */
+    readonly rowHeadings?: (row: number) => string;
+    /** The Row Headings' width in pixels (ADR-0050, ADR-0028): geometry, emitted inline. None, and it is estimated
+     * from the Cell Metrics as the wider of the first and the last row's labels, which is the widest for row
+     * numbers. */
+    readonly rowHeadingWidth?: number;
+    /** Takes the whole header band away, so the first row starts at the Viewport's top (ADR-0050, item 1): what a
+     * headerless list asks for. Whole columns stay reachable with Ctrl+Space. Off unless given. */
+    readonly hideHeader?: boolean;
     /** Where Ctrl+arrow stops (ADR-0050, item 2): handed the Focus and the direction, it answers the cell on that
      * line where the data ends, which the grid cannot know since it does not hold the data. Asked on Ctrl+arrow
      * and Ctrl+Shift+arrow only; Home and End keep their meaning. An answer off the Focus's line, behind it or
@@ -508,6 +525,9 @@ interface PaintedRow<Row> {
     /** The Row Kind it was asked under, and whether it wore a stripe (ADR-0024, ADR-0038). */
     readonly rowKind: ((row: Row) => RowKind) | undefined;
     readonly stripe: boolean;
+    /** Its Row Heading's label and style, or none without the band (ADR-0050, item 1). */
+    readonly heading: string | undefined;
+    readonly headingStyle: string | undefined;
 }
 
 /**
@@ -618,6 +638,9 @@ interface Taken<Row> {
     readonly findsHeaders: boolean;
     readonly cellPaint: CellPaint<Row>;
     readonly headerClickSelects: boolean;
+    readonly rowHeadings: ((row: number) => string) | undefined;
+    readonly rowHeadingWidth: number | undefined;
+    readonly hideHeader: boolean;
     readonly dataEdge: EdgeAnswer | undefined;
     readonly onSummarize: SummaryAnswerer | undefined;
     readonly showSelectionSummary: boolean;
@@ -715,6 +738,8 @@ interface RowPaint<Row> {
     readonly appearance: RowAppearance | undefined;
     /** The role it plays, asked once for the row (ADR-0024). */
     readonly kind: RowKind;
+    /** Its Row Heading's label, or none without the band (ADR-0050, item 1). */
+    readonly heading: string | undefined;
 }
 
 /** A reveal's repaint under way (ADR-0012, 2026-10-08): where the reveal left the scroller, and what stops
@@ -861,6 +886,14 @@ function bandHeightPxOf(layout: HeaderGroupLayout, metrics: GridMetrics): number
     return headerRowsOf(layout) * metrics.headerHeightPx;
 }
 
+/** The rows the Heading Mark marks over the Row Headings, and the Selection and extent they were made for. */
+interface RowHeadingMarks {
+    readonly selection: Selection;
+    readonly extent: GridExtent;
+    readonly rows: readonly RowRange[];
+    readonly whole: readonly RowRange[];
+}
+
 /** A header cell as painted, with what its classes are composed from. */
 interface HeaderCell {
     readonly element: HTMLElement;
@@ -930,6 +963,8 @@ export class GridView<Row> {
     readonly #shadeLayer: HTMLElement;
     readonly #pinnedLayer: HTMLElement;
     readonly #selectionLayer: HTMLElement;
+    readonly #rowMarkLayer: HTMLElement;
+    readonly #cornerBox: HTMLElement;
     readonly #metaIsPrimary: boolean;
     readonly #stops: (() => void)[] = [];
 
@@ -1117,7 +1152,7 @@ export class GridView<Row> {
     #paintedHeader: {
         readonly styles: ColumnStyles; readonly columns: readonly ResolvedColumn<Row>[]; readonly scrollable: ColumnRange | undefined;
         readonly sorts: string; readonly layout: HeaderGroupLayout; readonly tierPx: number; readonly grips: boolean;
-        readonly menus: boolean;
+        readonly menus: boolean; readonly headingStyle: string | undefined;
     } | undefined;
     // The tiers of Header Groups as painted, and the leaf row beneath them: the rectangles stand on the
     // column geometry, the layout and the tier height alone, so a scroll or a Sort that rebuilds the leaves
@@ -1140,6 +1175,7 @@ export class GridView<Row> {
     #paintId = 0;
     #layoutStyles: ColumnStyles | undefined;
     #paintedLayers: string | undefined;
+    #paintedRowMarks: readonly string[] = [];
     #visibleWidthPx = 0;
     #visibleHeightPx = 0;
 
@@ -1192,6 +1228,23 @@ export class GridView<Row> {
     #appearanceVersion = -1;
     #appearanceWritten = 0;
     #headerClickSelects = false;
+    // The Row Headings' labels and declared width, and whether the header band stands (ADR-0050, item 1).
+    #rowHeadings: ((row: number) => string) | undefined;
+    #rowHeadingWidth: number | undefined;
+    #hideHeader = false;
+    // The Row Headings' width the column geometry was made with, and the one style string every heading and the
+    // corner are painted with: a new string only when the width moves, so a row compares it without painting.
+    #leadPx = 0;
+    #rowHeadingStyle: string | undefined;
+    // The hidden markers after the painted rows, by position, and every marker ever made, which the pass tells from
+    // a row (ADR-0008); the marked rows' runs, made once per Selection.
+    #headingStates = new Map<number, HTMLElement>();
+    readonly #headingStateElements = new WeakSet<ChildNode>();
+    #rowMarkRuns: RowHeadingMarks | undefined;
+    // The corner where the two Headings meet, while both stand (ADR-0050).
+    #corner: HTMLElement | undefined;
+    // Which Headings a Heading drag runs along (ADR-0050, item 1).
+    #headingAxis: 'columns' | 'rows' = 'columns';
     // The Consumer's answer to where Ctrl+arrow stops (ADR-0050, item 2), or the grid's edge.
     #dataEdge: EdgeAnswer | undefined;
     readonly #findHeld: FindHeld = { text: '', matchCase: false, wholeCell: false, replaceText: '' };
@@ -1276,6 +1329,12 @@ export class GridView<Row> {
         this.#shadeLayer = element('div', { class: 'ex-shade-pinned', 'aria-hidden': 'true' });
         this.#pinnedLayer = element('div', { class: 'ex-selection-pinned', 'aria-hidden': 'true' });
         this.#selectionLayer = element('div', { class: 'ex-selection', 'aria-hidden': 'true' });
+        // The Heading Mark's layer over the Row Headings (ADR-0008, 2026-10-13): a zero-size sticky layer at the
+        // Viewport's left edge, as the Row Headings are, and above them. It stands only while it holds a mark.
+        this.#rowMarkLayer = element('div', { class: 'ex-heading-marks-rows', 'aria-hidden': 'true' });
+        // Where the two Headings meet (ADR-0050, item 1): one element for the grid's life, in the band while the
+        // Row Headings stand. Paint only; the header's own press reads the offsets to know it was pressed.
+        this.#cornerBox = element('div', { class: 'ex-headings-corner', 'aria-hidden': 'true' });
         // The Keyboard Field (ADR-0080): a text field of the grid's own, the Viewport's first child while some
         // column edits, so an IME has somewhere to start on a selected cell. Unseen; its value is the core's.
         this.#keyFieldLayer = element('div', { class: 'ex-key-field-layer' });
@@ -1708,6 +1767,16 @@ export class GridView<Row> {
         if (headerClickSelects === true && onColumnOrderChanged !== undefined) {
             throw new TypeError('headerClickSelects and onColumnOrderChanged both claim a press on a header: declare one of them.');
         }
+        const { rowHeadings, rowHeadingWidth, hideHeader }: {
+            readonly rowHeadings?: unknown; readonly rowHeadingWidth?: unknown; readonly hideHeader?: unknown;
+        } = options;
+        if (rowHeadings !== undefined && typeof rowHeadings !== 'function') {
+            throw new TypeError('rowHeadings is a function of the row\'s position (ADR-0050, item 1).');
+        }
+        if (rowHeadingWidth !== undefined && (typeof rowHeadingWidth !== 'number' || !Number.isFinite(rowHeadingWidth) || rowHeadingWidth <= 0)) {
+            throw new RangeError(`rowHeadingWidth is a finite, positive number of pixels (ADR-0050, ADR-0028), not ${typeof rowHeadingWidth === 'number' ? String(rowHeadingWidth) : typeof rowHeadingWidth}.`);
+        }
+        if (hideHeader !== undefined && typeof hideHeader !== 'boolean') throw new TypeError('hideHeader is true or false.');
         const summary = this.#summaryOptionsOf(options);
         const { copyCellCap = defaultCellCap, pasteByteCap = defaultPasteByteCap } = options;
         const { copyAnswer }: { readonly copyAnswer?: unknown } = options;
@@ -1723,7 +1792,8 @@ export class GridView<Row> {
         const { headerGroups, headerLayout } = this.#layoutOf(options.headerGroups, columns, pinnedColumnCount, columnsChanged);
         // The band comes off the scroll budget, and the refusal names the band (ADR-0032): a Viewport that
         // cannot hold it and one row shows headers and no data, which reads as an empty result.
-        const bandPx = bandHeightPxOf(headerLayout, metrics);
+        // A hidden header takes no band (ADR-0050, item 1).
+        const bandPx = hideHeader === true ? 0 : bandHeightPxOf(headerLayout, metrics);
         const formulaBar = formulaBarDeclarations(options);
         // The Formula Bar takes its band of the declared height as well, and the rows what both leave (ADR-0051).
         const barPx = formulaBar.shown ? metrics.formulaBarHeightPx : 0;
@@ -1731,7 +1801,7 @@ export class GridView<Row> {
             throw new RangeError(`viewportHeight (${height}px) must exceed the Formula Bar's ${barPx}px, the header band's `
                 + `${bandPx}px and one row of ${metrics.rowHeightPx}px: each takes its band of it (ADR-0051, ADR-0028).`);
         }
-        if (headerLayout.tierCount > 0 && height !== 'stretch' && height <= bandPx + metrics.rowHeightPx) {
+        if (headerLayout.tierCount > 0 && hideHeader !== true && height !== 'stretch' && height <= bandPx + metrics.rowHeightPx) {
             throw new RangeError(`viewportHeight (${height}px) must exceed the header band — ${headerRowsOf(headerLayout)} tiers × `
                 + `${metrics.headerHeightPx}px = ${bandPx}px — plus one row of ${metrics.rowHeightPx}px (ADR-0032).`);
         }
@@ -1752,6 +1822,7 @@ export class GridView<Row> {
             onPinnedCountChanged: options.onPinnedCountChanged, culture, temporal,
             onReplace: options.onReplace, findMatch: options.findMatch, findsHeaders: options.findsHeaders !== false,
             cellPaint: CellPaint.take(options, this.#cellPaint), headerClickSelects: headerClickSelects === true, formulaBar,
+            rowHeadings: options.rowHeadings, rowHeadingWidth: options.rowHeadingWidth, hideHeader: hideHeader === true,
             dataEdge: options.dataEdge, ...summary,
         };
     }
@@ -1906,7 +1977,7 @@ export class GridView<Row> {
         this.#headerGroups = taken.headerGroups;
         // Every row's place in the accessibility tree counts the header's rows, so a change in the tiers
         // paints every row again (ADR-0033).
-        if (taken.headerLayout.tierCount !== this.#headerLayout.tierCount) {
+        if (taken.headerLayout.tierCount !== this.#headerLayout.tierCount || taken.hideHeader !== this.#hideHeader) {
             this.#painted = new Map();
             this.#placeholders = new Map();
         }
@@ -1964,6 +2035,13 @@ export class GridView<Row> {
         this.#findsHeaders = taken.findsHeaders;
         this.#cellPaint = taken.cellPaint;
         this.#headerClickSelects = taken.headerClickSelects;
+        if (taken.rowHeadings !== this.#rowHeadings) {
+            this.#rowHeadings = taken.rowHeadings;
+            // A Placeholder wears its position's heading, and is painted again with new labels.
+            this.#placeholders = new Map();
+        }
+        this.#rowHeadingWidth = taken.rowHeadingWidth;
+        this.#hideHeader = taken.hideHeader;
         this.#dataEdge = taken.dataEdge;
         this.#onSummarize = taken.onSummarize;
         this.#showSelectionSummary = taken.showSelectionSummary;
@@ -2112,7 +2190,7 @@ export class GridView<Row> {
 
     // The header band: the header row and a tier per level of Header Groups above it (ADR-0032).
     get #bandHeightPx(): number {
-        return bandHeightPxOf(this.#headerLayout, this.#metrics);
+        return this.#hideHeader ? 0 : bandHeightPxOf(this.#headerLayout, this.#metrics);
     }
 
     // The Formula Bar's band, or nothing while it is off (ADR-0051).
@@ -2129,7 +2207,7 @@ export class GridView<Row> {
 
     // The rows the header stands for in the accessibility tree, ahead of the data rows (ADR-0033).
     get #headerRowCount(): number {
-        return headerRowsOf(this.#headerLayout);
+        return this.#hideHeader ? 0 : headerRowsOf(this.#headerLayout);
     }
 
     #resolve(): void {
@@ -2227,17 +2305,35 @@ export class GridView<Row> {
         const widths = this.#columns.map(({ spec }, c) => spec.resolveWidthPx(itemAt(this.#autoWidths, c)));
         const geometry = this.#styles.geometry;
         const width = Math.max(1, viewportWidthPx);
+        const leadPx = this.#resolveRowHeadingWidth();
         if (geometry.count === widths.length && geometry.requestedPinnedCount === this.#pinnedCount
-            && geometry.viewportWidthPx === width && geometry.devicePixelRatio === this.#devicePixelRatio
+            && geometry.viewportWidthPx === width && geometry.devicePixelRatio === this.#devicePixelRatio && this.#leadPx === leadPx
             && widths.every((px, c) => geometry.declaredWidthPxOf(c) === px)) {
             return;
         }
+        this.#leadPx = leadPx;
         this.#styles = new ColumnStyles(new ColumnGeometry({
             widthsPx: widths,
             pinnedCount: this.#pinnedCount,
             viewportWidthPx: width,
+            leadWidthPx: leadPx,
             ...(this.#devicePixelRatio === undefined ? {} : { devicePixelRatio: this.#devicePixelRatio }),
         }));
+        const style = leadPx === 0 ? undefined : `width: ${this.#styles.geometry.leadWidthPx}px`;
+        if (style !== this.#rowHeadingStyle) {
+            this.#rowHeadingStyle = style;
+            this.#placeholders = new Map();
+        }
+    }
+
+    // The Row Headings' width (ADR-0050, ADR-0028): the Consumer's number where it gave one, otherwise the wider of
+    // the first and the last row's labels as the Cell Metrics estimate a cell's text and padding; none without the
+    // band. Resolved with the column geometry, so a result that grows a digit widens the band.
+    #resolveRowHeadingWidth(): number {
+        if (this.#rowHeadings === undefined) return 0;
+        if (this.#rowHeadingWidth !== undefined) return this.#rowHeadingWidth;
+        const asText = this.#metrics.cellMetrics.for('text');
+        return Math.max(asText.estimatePx(this.#headingAt(0)), asText.estimatePx(this.#headingAt(Math.max(0, this.#totalRows - 1))));
     }
 
     #raiseRangeIfUncovered(): void {
@@ -2961,6 +3057,10 @@ export class GridView<Row> {
         this.#reconcileSelection();
         const at = this.#cellUnder(event);
         if (at === undefined) return;
+        if (this.#inRowHeadings(event)) {
+            this.#pressRowHeading(event, at.row);
+            return;
+        }
         this.#answered += 1;
         // A press past an open editor commits it, as Excel's click-away does; a Reject or a refusal holds it,
         // and the press keeps no meaning of its own: the keyboard stays in the editor (ADR-0034).
@@ -2992,6 +3092,7 @@ export class GridView<Row> {
         }
         // A Heading drag over the header or the cells: only the pointer's column counts (ADR-0050).
         if (this.#headingDrag) {
+            if (!this.#headingHears(event)) return;
             this.#moveHeadingDrag(event);
             return;
         }
@@ -3019,9 +3120,15 @@ export class GridView<Row> {
     readonly #onDragEnd = (event: MouseEvent): void => {
         // Where a Heading drag is released counts as a move: a fast release reaches another column without
         // a move between (ADR-0050, item 1; ADR-0012).
-        if (this.#headingDrag) this.#moveHeadingDrag(event);
+        if (this.#headingDrag && this.#headingHears(event)) this.#moveHeadingDrag(event);
         this.#setDragging(false);
     };
+
+    // Whether a Heading drag takes this move or release: the Column Headings are what one over the header band is
+    // over, so a Row Heading drag learns nothing there, as the C# core refuses it (ADR-0050, item 1).
+    #headingHears(event: MouseEvent): boolean {
+        return this.#headingAxis !== 'rows' || !(event.target instanceof Node && this.#header.contains(event.target));
+    }
 
     // The pointer left the grid: the edge band stops, since outside it no event would contradict a running
     // timer. The drag stands, and the next move without the button ends it (ADR-0008).
@@ -5347,7 +5454,8 @@ export class GridView<Row> {
     // elsewhere the Consumer hears it, with the Focus its presses placed. While an edit is open it is the
     // editor's, and the editor's own takes no part here.
     readonly #onDoubleClick = (event: MouseEvent): void => {
-        if (event.button !== 0 || event.target !== this.#viewport || this.#edit !== undefined) return;
+        // A double click on a Row Heading is two presses on it, and opens nothing (ADR-0050, item 1).
+        if (event.button !== 0 || event.target !== this.#viewport || this.#edit !== undefined || this.#inRowHeadings(event)) return;
         this.#reconcileSelection();
         const at = this.#cellUnder(event);
         if (at === undefined) return;
@@ -5383,6 +5491,9 @@ export class GridView<Row> {
     #forgetHeadingDrag(): void {
         this.#headingDrag = false;
         this.#headerPress = undefined;
+        // Back to the columns' axis, which a press on the header takes without saying so: a drag left on the
+        // rows' would extend the next column's gesture by row (ADR-0050, item 1).
+        this.#headingAxis = 'columns';
         this.#stopEdgeTimer();
     }
 
@@ -5440,6 +5551,8 @@ export class GridView<Row> {
         this.#reconcileSelection();
         const column = this.#headerColumnAt(event);
         if (column === undefined) return;
+        // A new gesture on its own axis, as a press on a Row Heading is: nothing of the last Heading drag stands.
+        this.#forgetHeadingDrag();
         this.#headingPress = {
             x: event.offsetX - this.#scrollLeftPx, y: event.offsetY - this.#bandHeightPx, clientX: event.clientX, clientY: event.clientY,
         };
@@ -5492,6 +5605,12 @@ export class GridView<Row> {
         }
         if (event.button !== 0 || event.target !== this.#header) return;
         this.#reconcileSelection();
+        // The corner where the two Headings meet selects all (ADR-0050), as Ctrl+A does, and puts the Focus on the
+        // top-left cell on screen, as a Heading click puts it on the first row or column on screen (ADR-0052).
+        if (this.#rowHeadingStyle !== undefined && this.#styles.geometry.isInLead(event.offsetX, this.#scrollLeftPx)) {
+            this.#selectAllFromCorner();
+            return;
+        }
         const column = this.#headerColumnAt(event);
         if (column === undefined) return;
         const extent = this.#extent;
@@ -5717,6 +5836,70 @@ export class GridView<Row> {
         return this.#visible?.start ?? 0; // oxlint-disable-line ex-grid/no-stand-in-default -- KB-9: with no row painted the Focus goes on the first row, as the C# core puts it
     }
 
+    #selectAllFromCorner(): void {
+        const extent = this.#extent;
+        if (extent.rowCount <= 0 || extent.columnCount <= 0) return;
+        let all = this.#held.selection.selectAll(extent);
+        const [whole] = all.ranges;
+        const topLeft = this.#firstVisibleCell();
+        if (whole !== undefined && topLeft !== undefined && rangeContains(whole, topLeft)) all = all.place(whole, topLeft, extent);
+        this.#apply(all);
+    }
+
+    // Whether a pointer on the rows is over the Row Headings, which name no column (ADR-0050, item 1).
+    #inRowHeadings(event: MouseEvent): boolean {
+        return this.#rowHeadingStyle !== undefined && this.#styles.geometry.isInLead(event.offsetX, this.#scrollLeftPx);
+    }
+
+    // A press on a Row Heading (ADR-0050, item 1): the whole row, with Shift whole rows from the Focus's, with Ctrl
+    // the row added or taken out, and then a Heading drag whose moves extend by row; a cell drag's would extend by
+    // cell and collapse the whole rows. The band stands outside the column index space, so the Focus lands in the
+    // first column on screen, where the Viewport already is. An open edit commits first (ED-26), and one the edit
+    // holds selects nothing (ADR-0034).
+    #pressRowHeading(event: MouseEvent, row: number): void {
+        this.#answered += 1;
+        this.#invalidate();
+        if (!this.#commitEdit()) {
+            event.preventDefault();
+            return;
+        }
+        this.#forgetHeadingDrag();
+        this.#tabReleased = false;
+        const y = this.#viewportYOf(event);
+        if (y === undefined) return;
+        this.#headingPress = { x: event.offsetX - this.#scrollLeftPx, y, clientX: event.clientX, clientY: event.clientY };
+        this.#setDragging(true);
+        this.#beginRowHeadingDrag(row, event.shiftKey, this.#toggles(event));
+    }
+
+    // The column the Focus lands in when a Row Heading is pressed: the first on screen, so the Viewport does not
+    // move for a press on the band (KB-9).
+    get #firstVisibleColumn(): number {
+        return this.#firstVisibleCell()?.column ?? 0; // oxlint-disable-line ex-grid/no-stand-in-default -- KB-9: with no row painted the Focus goes on the first column, as the C# core puts it
+    }
+
+    // What a press on a Row Heading selects, as #beginHeadingDrag does for a column (ADR-0050, item 1; ADR-0052).
+    #beginRowHeadingDrag(row: number, extendsSelection: boolean, toggles: boolean): void {
+        const extent = this.#extent;
+        if (extent.rowCount <= 0 || extent.columnCount <= 0) {
+            this.#setDragging(false);
+            return;
+        }
+        const current = this.#held.selection;
+        const first = this.#firstVisibleColumn;
+        if (toggles && current.coversRow(row, extent)) {
+            this.#apply(current.toggleRow(row, extent, first));
+            this.#setDragging(false);
+            return;
+        }
+        this.#apply(extendsSelection ? current.extendToRow(row, extent, first)
+            : toggles ? current.toggleRow(row, extent, first)
+                : current.selectRow(row, extent, first));
+        this.#headerPress = undefined;
+        this.#headingAxis = 'rows';
+        this.#headingDrag = true;
+    }
+
     // What a press on a Column Heading selects (ADR-0050, item 1; ADR-0052): the whole column, or with
     // Shift whole columns from the Focus's to this one, and then the drag. With Ctrl the column is added as
     // a new range; or, wholly selected, taken out, and no drag begins.
@@ -5737,6 +5920,7 @@ export class GridView<Row> {
             : toggles ? current.toggleColumn(column, extent, first)
                 : current.selectColumn(column, extent, first));
         this.#headerPress = undefined;
+        this.#headingAxis = 'columns';
         this.#headingDrag = true;
     }
 
@@ -5750,6 +5934,15 @@ export class GridView<Row> {
         const x = press.x + (event.clientX - press.clientX);
         const y = press.y + (event.clientY - press.clientY);
         if (!Number.isFinite(x) || !Number.isFinite(y)) return;
+        // Along the Row Headings only the pointer's row counts, whatever column it is over (ADR-0050, item 1).
+        if (this.#headingAxis === 'rows') {
+            const geometry = this.#geometry;
+            const row = geometry?.rowAt(geometry.contentOffsetAt(this.#scrollTopPx) + y);
+            if (row === undefined) return;
+            if (this.#apply(this.#held.selection.extendToRow(row, this.#extent, this.#firstVisibleColumn))) this.#invalidate();
+            this.#updateEdgeBand(x, y);
+            return;
+        }
         const column = this.#styles.geometry.columnAt(x + this.#scrollLeftPx, this.#scrollLeftPx);
         if (column === undefined) return;
         const pending = this.#headerPress;
@@ -5782,8 +5975,10 @@ export class GridView<Row> {
     #updateEdgeBand(viewportX: number, viewportY: number): void {
         const geometry = this.#geometry;
         if (geometry === undefined || this.#visible === undefined) return;
-        const rows = this.#headingDrag ? 0 : edgeBandRowsPerTick(viewportY, geometry.viewportHeightPx, geometry.rowsPerViewport);
-        const stepXPx = edgeBandRowsPerTick(viewportX, this.#visibleWidthPx, Number.MAX_SAFE_INTEGER) * this.#metrics.rowHeightPx;
+        const columnsOnly = this.#headingDrag && this.#headingAxis === 'columns';
+        const rowsOnly = this.#headingDrag && this.#headingAxis === 'rows';
+        const rows = columnsOnly ? 0 : edgeBandRowsPerTick(viewportY, geometry.viewportHeightPx, geometry.rowsPerViewport);
+        const stepXPx = rowsOnly ? 0 : edgeBandRowsPerTick(viewportX, this.#visibleWidthPx, Number.MAX_SAFE_INTEGER) * this.#metrics.rowHeightPx;
         if (rows === 0 && stepXPx === 0) {
             this.#stopEdgeTimer();
             return;
@@ -5825,9 +6020,9 @@ export class GridView<Row> {
         if (row !== undefined && column !== undefined) {
             const extent = this.#extent;
             const current = this.#held.selection;
-            changed = this.#apply(this.#headingDrag
-                ? current.extendToColumn(column, extent, this.#firstVisibleRow)
-                : current.extendTo(cellPosition(row, column), extent));
+            changed = this.#apply(!this.#headingDrag ? current.extendTo(cellPosition(row, column), extent)
+                : this.#headingAxis === 'rows' ? current.extendToRow(row, extent, this.#firstVisibleColumn)
+                    : current.extendToColumn(column, extent, this.#firstVisibleRow));
         }
         if (moved || changed) this.#invalidate();
     };
@@ -5849,11 +6044,16 @@ export class GridView<Row> {
 
     // Whether a cell is in the DOM now: its row painted with its data, and its column pinned or in the
     // horizontal slice, never mid-fling, when the scrollable cells are skipped (ADR-0004, ADR-0033).
-    #cellIsPainted(position: CellPosition): boolean {
+    // Whether a row is among those painted now, its data in hand: the first half of #cellIsPainted.
+    #rowIsPainted(row: number): boolean {
         const visible = this.#visible;
-        if (visible === undefined || position.row < visible.start || position.row >= visible.start + visible.count) return false;
-        const slice = position.row - this.#state.windowStart;
-        if (slice < 0 || slice >= this.#state.window.length) return false;
+        if (visible === undefined || row < visible.start || row >= visible.start + visible.count) return false;
+        const slice = row - this.#state.windowStart;
+        return slice >= 0 && slice < this.#state.window.length;
+    }
+
+    #cellIsPainted(position: CellPosition): boolean {
+        if (!this.#rowIsPainted(position.row)) return false;
         if (position.column < this.#styles.geometry.pinnedCount) return true;
         const columns = this.#scrollable;
         return !this.#placeholderMode && columns !== undefined
@@ -5976,7 +6176,15 @@ export class GridView<Row> {
             this.#followArmed = undefined;
             return;
         }
-        if (!this.#cellIsPainted(follow.target)) return;
+        if (!this.#cellIsPainted(follow.target)) {
+            // A target whose row is painted and whose column is not is one no later pass will paint on its own: the
+            // reveal moved the axis the Selection grew on and left the other where the user had it, so the Extent of
+            // whole rows is the last column, off to the right for ever (ADR-0052). Rows still on their way are the
+            // other case, and that follow stays armed for the pass that paints them. Dropped rather than kept, or the
+            // Settled Mark would never come back (ADR-0220).
+            if (this.#rowIsPainted(follow.target.row)) this.#followArmed = undefined;
+            return;
+        }
         this.#followArmed = undefined;
         this.#followToken += 1;
         this.#cancelFollow?.();
@@ -6068,6 +6276,28 @@ export class GridView<Row> {
             }
         }
         return this.#shadeHolds ? [this.#shadeLayer, this.#pinnedLayer, this.#selectionLayer] : [this.#pinnedLayer, this.#selectionLayer];
+    }
+
+    // The Heading Mark over the Row Headings (ADR-0008, 2026-10-13): one rectangle per run of marked rows, cut to
+    // the painted rows, on whose right edge the stylesheet draws the line. Over the Headings, as the header's part
+    // is over the header cells, so no row learns the Selection and every row still skips its render (ADR-0003).
+    // The layer is in the DOM only while it holds a rectangle.
+    #paintRowMarks(): readonly HTMLElement[] {
+        const runs = this.#rowHeadingMarks();
+        const visible = this.#visible;
+        const styles = runs === undefined || visible === undefined ? []
+            : runs.rows.flatMap(run => present(rowMark(run, visible, this.#metrics.rowHeightPx, this.#styles.geometry.leadWidthPx)));
+        if (!sameItems(this.#paintedRowMarks, styles)) {
+            this.#paintedRowMarks = styles;
+            const doc = this.#root.ownerDocument;
+            this.#rowMarkLayer.replaceChildren(...styles.map(style => {
+                const made = doc.createElement('div');
+                made.className = 'ex-heading-mark ex-heading-mark-row';
+                made.setAttribute('style', style);
+                return made;
+            }));
+        }
+        return styles.length === 0 ? [] : [this.#rowMarkLayer];
     }
 
     // ---- Painting -------------------------------------------------------------------------------------
@@ -6266,6 +6496,14 @@ export class GridView<Row> {
     }
 
     #paintHeader(): void {
+        // A hidden header is no band at all (ADR-0050, item 1): taken out of the flow, and built again when it
+        // comes back.
+        if (this.#hideHeader) {
+            this.#header.remove();
+            this.#paintedHeader = undefined;
+            return;
+        }
+        if (this.#header.parentNode !== this.#spacer) this.#spacer.prepend(this.#header);
         const painted = this.#paintedHeader;
         const layout = this.#headerLayout;
         const tierPx = this.#metrics.headerHeightPx;
@@ -6277,11 +6515,22 @@ export class GridView<Row> {
         const menus = !this.#hideColumnMenu;
         if (painted !== undefined && painted.styles === this.#styles && painted.columns === this.#columns
             && sameRange(painted.scrollable, this.#scrollable) && painted.sorts === sorts && painted.layout === layout
-            && painted.tierPx === tierPx && painted.grips === grips && painted.menus === menus) {
+            && painted.tierPx === tierPx && painted.grips === grips && painted.menus === menus && painted.headingStyle === this.#rowHeadingStyle) {
             this.#paintHeadingMarks(false);
             return;
         }
-        this.#paintedHeader = { styles: this.#styles, columns: this.#columns, scrollable: this.#scrollable, sorts, layout, tierPx, grips, menus };
+        this.#paintedHeader = {
+            styles: this.#styles, columns: this.#columns, scrollable: this.#scrollable, sorts, layout, tierPx, grips, menus,
+            headingStyle: this.#rowHeadingStyle,
+        };
+        // Where the two Headings meet (ADR-0050): held at the left edge as the Row Headings are, and a click there
+        // selects all. Paint only: the header's own click reads the offsets.
+        const headingStyle = this.#rowHeadingStyle;
+        // One element for the grid's life, as the header's checkbox is (ADR-0043): a band rebuilt by a scroll takes
+        // the corner it had back, and the Heading Mark's class on it is written to the corner that stands.
+        this.#corner = headingStyle === undefined ? undefined : this.#cornerBox;
+        const corner = headingStyle === undefined ? [] : [this.#cornerBox];
+        if (headingStyle !== undefined) this.#cornerBox.setAttribute('style', headingStyle);
         this.#grips = new Map();
         this.#menuButtons = new Map();
         const doc = this.#root.ownerDocument;
@@ -6355,12 +6604,15 @@ export class GridView<Row> {
                 leaves.setAttribute('style', 'display: contents');
                 tiers = { styles: this.#styles, columns: this.#columns, layout, tierPx, rows, leaves, groups };
                 this.#paintedTiers = tiers;
-                header.replaceChildren(...rows, leaves);
+                // Only where the tiers themselves are new: a horizontal scroll paints the leaves alone, and
+                // detaching the tier rows every step would move the band's whole structure (PF-3). The corner comes
+                // and goes with the lead width, which is a new ColumnStyles, so the tiers are new with it.
+                header.replaceChildren(...corner, ...rows, leaves);
             }
             tiers.leaves.replaceChildren(...cells);
         } else {
             this.#paintedTiers = undefined;
-            header.replaceChildren(...cells);
+            header.replaceChildren(...corner, ...cells);
         }
         this.#headerCells = headerCells;
         this.#paintHeadingMarks(true);
@@ -6433,6 +6685,13 @@ export class GridView<Row> {
             || marks.extent.rowCount !== extent.rowCount || marks.extent.columnCount !== extent.columnCount) {
             marks = { selection, extent, columns: markedColumns(selection), whole: wholeColumnRuns(selection, extent) };
             this.#marks = marks;
+        }
+        // The corner is marked while every cell is selected, as Excel marks it (ADR-0008, 2026-10-13).
+        if (this.#corner !== undefined) {
+            const [run] = marks.whole;
+            const everyCell = marks.whole.length === 1 && run?.start === 0 && run.count === extent.columnCount;
+            const className = everyCell ? 'ex-headings-corner ex-headings-corner-marked' : 'ex-headings-corner';
+            if (this.#corner.className !== className) this.#corner.className = className;
         }
         const heightPx = this.#metrics.headerHeightPx;
         const topPx = this.#bandHeightPx - heightPx;
@@ -6535,7 +6794,9 @@ export class GridView<Row> {
         // The stylesheet's default is one header tier; tiers move where the rows begin, so the band's height
         // travels inline (ADR-0032).
         const transform = `transform: translateY(round(nearest, ${topPx}px, var(--ex-dp, 1px)))`;
-        this.#write(viewport, 'viewport', 'style', this.#headerLayout.tierCount === 0 ? transform : `top: ${this.#bandHeightPx}px; ${transform}`);
+        // A hidden header moves where the rows begin too (ADR-0050, item 1).
+        this.#write(viewport, 'viewport', 'style', this.#headerLayout.tierCount === 0 && !this.#hideHeader
+            ? transform : `top: ${this.#bandHeightPx}px; ${transform}`);
         this.#write(viewport, 'viewport', 'data-ex-first-row', visible === undefined ? undefined : String(visible.start));
         this.#write(viewport, 'viewport', 'data-ex-sequence', String(this.#handedVersion()));
         this.#write(viewport, 'viewport', 'data-ex-layout', String(this.#layoutId));
@@ -6545,9 +6806,12 @@ export class GridView<Row> {
         // core's markup stands them (ADR-0080, ADR-0010).
         const field = this.#canEdit ? [this.#paintKeyField()] : [];
         const editor = this.#paintEditor();
-        const rows: HTMLElement[] = [...field, ...layers, ...editor];
+        // The Row Headings' Heading Mark stands above them and below the editor, as the C# core stands it.
+        const rowMarks = this.#paintRowMarks();
+        const rows: HTMLElement[] = [...field, ...layers, ...rowMarks, ...editor];
         const next = new Map<unknown, PaintedRow<Row>>();
         const nextPlaceholders = new Map<number, HTMLElement>();
+        const nextStates = new Map<number, HTMLElement>();
         let repainted = false;
         const doc = viewport.ownerDocument;
         // A control of a Template cell's content holding the keyboard: a row painted again moves its slot,
@@ -6571,6 +6835,20 @@ export class GridView<Row> {
                 this.#appearances.begin((row, c) => lookup(row, itemAt(columns, c).column), lookup, paint.edgeBorder, columns,
                     columns.length, this.#styles.geometry.pinnedCount, scrollableNow);
             }
+            // A hidden marker after every painted row while the Row Headings stand, which the stylesheet paints that
+            // row's heading from (ADR-0008, 2026-10-13): no row learns the Selection, and the markers' count never
+            // moves with its size (ADR-0003).
+            const runs = this.#rowHeadingMarks();
+            const headingState = (index: number): void => {
+                if (runs === undefined) return;
+                let marker = this.#headingStates.get(index);
+                if (marker === undefined) marker = this.#headingStateElement();
+                const className = runsHold(runs.whole, index) ? 'ex-heading-state ex-heading-marked ex-heading-whole'
+                    : runsHold(runs.rows, index) ? 'ex-heading-state ex-heading-marked' : 'ex-heading-state';
+                if (marker.className !== className) marker.className = className;
+                nextStates.set(index, marker);
+                rows.push(marker);
+            };
             const rowIn = (at: number): Row | undefined => {
                 const slice = at - windowStart;
                 return slice < 0 || slice >= window.length ? undefined : itemAt(window, slice);
@@ -6585,6 +6863,7 @@ export class GridView<Row> {
                     }
                     nextPlaceholders.set(index, placeholder);
                     rows.push(placeholder);
+                    headingState(index);
                     continue;
                 }
                 const row = itemAt(window, slice);
@@ -6601,14 +6880,17 @@ export class GridView<Row> {
                 // paints again, so a changed mark paints its row and no other (ADR-0043, MK-4).
                 const marked = this.#rowMarks.isMarked(row);
                 const stripe = this.#stripeAt(index);
+                const headingStyle = this.#rowHeadingStyle;
+                const heading = headingStyle === undefined ? undefined : this.#headingAt(index);
                 if (was !== undefined && !next.has(key) && was.row === row && was.index === index && was.styles === this.#styles
-                    && was.rowKind === this.#rowKind && was.stripe === stripe
+                    && was.rowKind === this.#rowKind && was.stripe === stripe && was.heading === heading && was.headingStyle === headingStyle
                     && was.columns === this.#columns && was.placeholder === this.#placeholderMode && sameRange(was.scrollable, scrollable)
                     && paint.paintsRowsAs(was.paint) && was.appearance === appearance && was.chosen === chosen && was.marked === marked) {
                     if (was.marks === marks && was.current === current) {
                         next.set(key, was);
                         for (const slot of was.slots) used.add(slot);
                         rows.push(was.element);
+                        headingState(index);
                         continue;
                     }
                     // A new search judges the row's cells again, and paints the row again only where its marks
@@ -6617,11 +6899,12 @@ export class GridView<Row> {
                         next.set(key, { ...was, marks, current });
                         for (const slot of was.slots) used.add(slot);
                         rows.push(was.element);
+                        headingState(index);
                         continue;
                     }
                 }
                 const kind = this.#rowKind === undefined ? 'detail' : this.#rowKind(row);
-                const rowPaint: RowPaint<Row> = { key, chosen: chosenHere, marked, used, slots: [], appearance, kind };
+                const rowPaint: RowPaint<Row> = { key, chosen: chosenHere, marked, used, slots: [], appearance, kind, heading };
                 const { element, matched } = this.#rowElement(row, index, scrollable, marks, current, rowPaint, stripe);
                 repainted = true;
                 // A key met twice in one Window is painted, never paired: which of the two a later row
@@ -6630,22 +6913,28 @@ export class GridView<Row> {
                     next.set(key, {
                         element, row, index, styles: this.#styles, columns: this.#columns, placeholder: this.#placeholderMode, scrollable,
                         marks, current, matched, paint, appearance, chosen, slots: rowPaint.slots, marked, rowKind: this.#rowKind, stripe,
+                        heading, headingStyle,
                     });
                 }
                 rows.push(element);
+                headingState(index);
             }
         }
         this.#painted = next;
         this.#placeholders = nextPlaceholders;
+        this.#headingStates = nextStates;
         if (this.#cellPaint.cellAppearance !== undefined) this.#appearances.end();
         this.#paintAppearanceStyle();
         // In order, moving only what is out of place, so a row that stays is not touched (ADR-0003). A
         // selection layer coming or going paints no cell.
         const isLayer = (node: ChildNode): boolean =>
             node === this.#shadeLayer || node === this.#pinnedLayer || node === this.#selectionLayer || node === this.#keyFieldLayer
-            || node === this.#editorPinned || node === this.#edit?.element;
+            || node === this.#rowMarkLayer || node === this.#editorPinned || node === this.#edit?.element
+            || this.#headingStateElements.has(node);
         // The shade layer gone is taken out first, or every row after it would be moved past it.
         if (!layers.includes(this.#shadeLayer)) this.#shadeLayer.remove();
+        // The Heading Mark's layer likewise: a Selection cleared would otherwise move every row past it.
+        if (rowMarks.length === 0) this.#rowMarkLayer.remove();
         if (field.length === 0) {
             // A grid that stopped editing hands the keyboard to its root as the field goes, or DOM focus would
             // fall to the page (ADR-0080). Taken once the field is gone, which the root's focus would hand on.
@@ -6870,7 +7159,53 @@ export class GridView<Row> {
         element.setAttribute('role', 'row');
         element.setAttribute('aria-rowindex', String(this.#headerRowCount + index + 1));
         element.setAttribute('aria-busy', 'true');
+        // A Row Heading is a position's label, so a row that has not arrived still has one (ADR-0050).
+        const style = this.#rowHeadingStyle;
+        if (style !== undefined) element.append(this.#rowHeadingElement(this.#headingAt(index), style));
         return element;
+    }
+
+    // A painted position's Row Heading label (ADR-0050, item 1), refused where the Consumer answers no text: a
+    // heading that read "undefined" would be the band lying about its row.
+    #headingAt(index: number): string {
+        const label = this.#rowHeadings;
+        if (label === undefined) throw new Error('Internal: a Row Heading was asked for with no band.');
+        const text: unknown = label(index);
+        if (typeof text !== 'string') throw new TypeError(`rowHeadings answers a row's label as text, not ${String(text)} (ADR-0050).`);
+        return text;
+    }
+
+    // The Row Heading (ADR-0050): first in its row's flow and held at the left edge by the stylesheet. Paint only,
+    // and hidden from assistive technology: the row's aria-rowindex already says where it is.
+    #rowHeadingElement(label: string, style: string): HTMLElement {
+        const heading = this.#root.ownerDocument.createElement('div');
+        heading.className = 'ex-row-heading';
+        heading.setAttribute('style', style);
+        heading.setAttribute('aria-hidden', 'true');
+        heading.textContent = label;
+        return heading;
+    }
+
+    #headingStateElement(): HTMLElement {
+        const marker = this.#root.ownerDocument.createElement('div');
+        marker.setAttribute('aria-hidden', 'true');
+        this.#headingStateElements.add(marker);
+        return marker;
+    }
+
+    // The rows the Heading Mark marks, made once per Selection and extent, or none while no Row Headings stand
+    // (ADR-0008, 2026-10-13).
+    #rowHeadingMarks(): RowHeadingMarks | undefined {
+        if (this.#rowHeadingStyle === undefined) return undefined;
+        const selection = this.#held.selection;
+        const extent = this.#extent;
+        let marks = this.#rowMarkRuns;
+        if (marks === undefined || marks.selection !== selection
+            || marks.extent.rowCount !== extent.rowCount || marks.extent.columnCount !== extent.columnCount) {
+            marks = { selection, extent, rows: markedRows(selection), whole: wholeRowRuns(selection, extent) };
+            this.#rowMarkRuns = marks;
+        }
+        return marks;
     }
 
     // The generated stylesheet of a per-cell appearance (ADR-0050, item 15; ADR-0071): one rule per Font, per Fill
@@ -6908,6 +7243,9 @@ export class GridView<Row> {
         element.setAttribute('role', 'row');
         element.setAttribute('aria-rowindex', String(this.#headerRowCount + index + 1));
         if (this.#placeholderMode) element.setAttribute('aria-busy', 'true');
+        if (paint.heading !== undefined && this.#rowHeadingStyle !== undefined) {
+            element.append(this.#rowHeadingElement(paint.heading, this.#rowHeadingStyle));
+        }
         this.#rowsPainted.set(element, { row, index });
         let matched = '';
         const cell = (c: number, pinned: boolean): HTMLElement => {

@@ -28,7 +28,7 @@ export const demoPages: readonly DemoPage[] = Object.freeze([
     },
     {
         route: 'cells', title: 'Cells and rows', group: 'Cells and rows',
-        description: 'Template Columns and Action Columns, what the value alone cannot say (ADR-0020); Cell State and Row Kind join as the Script Core comes to them.',
+        description: 'Cell State, Row Kind, Template Columns and Action Columns — what the value alone cannot say (ADR-0006, ADR-0020, ADR-0024).',
     },
     {
         route: 'stripes', title: 'Row Stripes', group: 'Cells and rows',

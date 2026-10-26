@@ -597,6 +597,7 @@ export interface GridOptions<Row> extends CellPaintOptions<Row>, FormulaBarOptio
     readonly headerHeight?: number;
     readonly hideColumnMenu?: boolean;
     readonly hideCopyWithHeaders?: boolean;
+    readonly hideHeader?: boolean;
     readonly highlightFocusRow?: boolean;
     readonly highlightHoverRow?: boolean;
     readonly locale?: string;
@@ -625,6 +626,8 @@ export interface GridOptions<Row> extends CellPaintOptions<Row>, FormulaBarOptio
     readonly pasteByteCap?: number;
     readonly pasteMaySpill?: boolean;
     readonly pinnedColumnCount?: number;
+    readonly rowHeadings?: (row: number) => string;
+    readonly rowHeadingWidth?: number;
     readonly rowHeight?: number;
     readonly rowKind?: (row: Row) => RowKind;
     readonly rows?: readonly Row[];

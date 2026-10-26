@@ -24,8 +24,7 @@ export function markedColumns(selection: Selection): readonly ColumnRange[] {
     return union(selection.ranges.map(range => [range.leftColumn, range.leftColumn + range.columnCount - 1] as const));
 }
 
-/** The marked rows, as runs in row order, or none for an empty Selection. The Script Core paints no Row
- * Headings yet: until it does, the rows' answers are held to the shared cases alone. */
+/** The marked rows, as runs in row order, or none for an empty Selection. */
 export function markedRows(selection: Selection): readonly RowRange[] {
     return rowRunsOf(selection.ranges);
 }
@@ -40,8 +39,7 @@ export function wholeColumnRuns(selection: Selection, extent: GridExtent): reado
     return wholeAxis(selection, extent.columnCount, extent.rowCount, true);
 }
 
-/** The rows covered in full by the Selection's union, as ordered runs (ADR-0008, D1); held to the shared
- * cases alone until the Script Core paints Row Headings. */
+/** The rows covered in full by the Selection's union, as ordered runs (ADR-0008, D1). */
 export function wholeRowRuns(selection: Selection, extent: GridExtent): readonly RowRange[] {
     return wholeAxis(selection, extent.rowCount, extent.columnCount, false);
 }

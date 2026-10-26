@@ -1,6 +1,6 @@
 // The demo's data, as samples/ExGrid.DemoPages/DemoData.cs makes it: the same seeds and the same arithmetic,
 // so the three hosts paint the same values.
-import type { GridColumn } from '@ex-grid/core';
+import type { GridColumn, RowKind } from '@ex-grid/core';
 import { Temporal } from 'temporal-polyfill';
 import { DotNetRandom } from './dotnet-random';
 
@@ -69,12 +69,14 @@ export const wideColumns: readonly GridColumn<DemoWideRow>[] = Object.freeze([
     }),
 ]);
 
-/** A position, as DemoData.cs's DemoPosition, whose Row Kind joins when the Script Core paints one. */
+/** A position, as DemoData.cs's DemoPosition. The Row Kind is stored on the row because this Consumer computed
+ * its own subtotals; the grid is only told the role (ADR-0024). */
 export interface DemoPosition {
     readonly book: string;
     readonly closeOfBusiness: number;
     readonly intraday: number;
     readonly limitUsed: number;
+    readonly kind: RowKind;
 }
 
 /** The positions of the page /cells, as DemoData.Positions builds them: a group row per region and its
@@ -92,12 +94,12 @@ export const demoPositions: readonly DemoPosition[] = Object.freeze((() => {
             const intraday = cob + (index % 3 === 0 ? -420.5 : 318.25);
             groupCob += cob;
             groupIntraday += intraday;
-            return { book: `${region} · ${book}`, closeOfBusiness: cob, intraday, limitUsed: Math.min(1, 0.25 + (index * 0.09)) };
+            return { book: `${region} · ${book}`, closeOfBusiness: cob, intraday, limitUsed: Math.min(1, 0.25 + (index * 0.09)), kind: 'detail' };
         });
-        rows.push({ book: region, closeOfBusiness: groupCob, intraday: groupIntraday, limitUsed: 0 }, ...details);
+        rows.push({ book: region, closeOfBusiness: groupCob, intraday: groupIntraday, limitUsed: 0, kind: 'group' }, ...details);
         totalCob += groupCob;
         totalIntraday += groupIntraday;
     }
-    rows.push({ book: 'All books', closeOfBusiness: totalCob, intraday: totalIntraday, limitUsed: 0 });
+    rows.push({ book: 'All books', closeOfBusiness: totalCob, intraday: totalIntraday, limitUsed: 0, kind: 'total' });
     return rows.map(row => Object.freeze(row));
 })());
