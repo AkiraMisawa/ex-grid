@@ -1,0 +1,1173 @@
+{
+  "about": "The fits a Consumer calls (ADR-0291): least squares, Theil–Sen and a polynomial, in the plotted space or on ln y and ln x, their coefficients, R² and Note, the values they have only over the range they were fitted on, the Level series they hand in, and what they refuse (ADR-0290), from tests/ExChart.Engine.Tests/FittingTests.cs. A coefficient in the plotted space is compared exactly, as both engines do the same arithmetic in the same order; one fitted on a logarithm, or read back through one, is compared within 1e-9, because each language's ln and exp may differ in the last bit.",
+  "kind": "chart",
+  "cases": [
+    {
+      "name": "ADR-0291: least squares recovers an exact line, and its Note names method, equation, R² and n",
+      "curve": {
+        "method": "leastSquares",
+        "x": [
+          1,
+          2,
+          3,
+          4
+        ],
+        "y": [
+          129.7,
+          170.9,
+          212.10000000000002,
+          253.3
+        ]
+      },
+      "expect": [
+        {
+          "at": "slope",
+          "is": 41.2,
+          "near": 1e-09
+        },
+        {
+          "at": "intercept",
+          "is": 88.5,
+          "near": 1e-09
+        },
+        {
+          "at": "rSquared",
+          "is": 1,
+          "near": 1e-12
+        },
+        {
+          "at": "note",
+          "is": "OLS: y = 41.2x + 88.5, R² = 1.00, n = 4"
+        },
+        {
+          "at": "coefficients",
+          "is": [
+            88.50000000000003,
+            41.2
+          ]
+        },
+        {
+          "at": "method",
+          "is": "OLS"
+        },
+        {
+          "at": "degree",
+          "is": 1
+        },
+        {
+          "at": "count",
+          "is": 4
+        },
+        {
+          "at": "from",
+          "is": 1
+        },
+        {
+          "at": "to",
+          "is": 4
+        },
+        {
+          "at": "space",
+          "is": "linear"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0291: one point far off drags least squares and not Theil–Sen",
+      "build": {
+        "ols": {
+          "curve": {
+            "method": "leastSquares",
+            "x": {
+              "run": {
+                "count": 20,
+                "from": 1,
+                "step": 1
+              }
+            },
+            "y": [
+              3,
+              5,
+              7,
+              9,
+              11,
+              13,
+              15,
+              17,
+              19,
+              21,
+              23,
+              25,
+              27,
+              29,
+              31,
+              33,
+              35,
+              37,
+              39,
+              400
+            ]
+          }
+        },
+        "ts": {
+          "curve": {
+            "method": "theilSen",
+            "x": {
+              "run": {
+                "count": 20,
+                "from": 1,
+                "step": 1
+              }
+            },
+            "y": [
+              3,
+              5,
+              7,
+              9,
+              11,
+              13,
+              15,
+              17,
+              19,
+              21,
+              23,
+              25,
+              27,
+              29,
+              31,
+              33,
+              35,
+              37,
+              39,
+              400
+            ]
+          }
+        }
+      },
+      "expect": [
+        {
+          "at": "ts.slope",
+          "is": 2
+        },
+        {
+          "at": "ts.intercept",
+          "is": 1
+        },
+        {
+          "at": "ols.slope",
+          "above": 5
+        },
+        {
+          "at": "ts.note",
+          "startsWith": "Theil–Sen: y = 2x + 1"
+        },
+        {
+          "at": "ts.method",
+          "is": "Theil–Sen"
+        },
+        {
+          "at": "ts.rSquared",
+          "is": 0.07105394699902234
+        },
+        {
+          "at": "ols.coefficients",
+          "is": [
+            -34.90000000000001,
+            7.128571428571431
+          ]
+        },
+        {
+          "at": "ols.rSquared",
+          "is": 0.2435724996992037
+        },
+        {
+          "at": "ols.note",
+          "is": "OLS: y = 7.129x − 34.9, R² = 0.24, n = 20"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0291: a fitted line has values over the range it was fitted on, its ends included, and never beyond",
+      "curve": {
+        "method": "leastSquares",
+        "x": [
+          2,
+          3,
+          5
+        ],
+        "y": [
+          1,
+          2,
+          4
+        ],
+        "at": [
+          1.9,
+          2,
+          4,
+          5,
+          5.1
+        ]
+      },
+      "expect": [
+        {
+          "at": "",
+          "is": [
+            null,
+            1.0000000000000013,
+            3.0000000000000004,
+            4,
+            null
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ADR-0291: a fit's series is a Level sampled over its points' range, away from zero, its Segment named by its Note",
+      "definition": {
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "fit",
+            "name": "OLS",
+            "curve": {
+              "method": "leastSquares",
+              "x": [
+                2,
+                3,
+                5
+              ],
+              "y": [
+                1,
+                2,
+                4
+              ]
+            }
+          }
+        ]
+      },
+      "expect": [
+        {
+          "at": "series.0.id",
+          "is": "fit"
+        },
+        {
+          "at": "series.0.name",
+          "is": "OLS"
+        },
+        {
+          "at": "series.0.kind",
+          "is": "level"
+        },
+        {
+          "at": "series.0.sampler",
+          "is": {
+            "from": 2,
+            "to": 5
+          }
+        },
+        {
+          "at": "series.0.points",
+          "empty": true
+        },
+        {
+          "at": "series.0.fromZero",
+          "is": false
+        },
+        {
+          "at": "series.0.reachesZero",
+          "is": false
+        },
+        {
+          "at": "series.0.segments",
+          "is": [
+            {
+              "from": 2,
+              "to": 5,
+              "method": "OLS: y = 1x − 1, R² = 1.00, n = 3",
+              "extrapolated": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ADR-0291: the fit's Note reaches the chart's Notes through its series",
+      "definition": {
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "o",
+            "name": "Names",
+            "kind": "observation",
+            "points": [
+              [
+                1,
+                2
+              ],
+              [
+                2,
+                4
+              ],
+              [
+                3,
+                7
+              ]
+            ]
+          },
+          {
+            "id": "fit",
+            "name": "OLS",
+            "curve": {
+              "method": "leastSquares",
+              "x": [
+                1,
+                2,
+                3
+              ],
+              "y": [
+                2,
+                4,
+                7
+              ]
+            }
+          }
+        ]
+      },
+      "scene": {
+        "metrics": {
+          "width": 800,
+          "height": 400
+        }
+      },
+      "expect": [
+        {
+          "at": "notes",
+          "mentions": "OLS: y = 2.5x − 0.667, R² = 0.99, n = 3"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0291: a negative intercept is written after a minus sign, each coefficient to three places",
+      "curve": {
+        "method": "leastSquares",
+        "x": [
+          1,
+          2,
+          3
+        ],
+        "y": [
+          2,
+          4,
+          7
+        ]
+      },
+      "expect": [
+        {
+          "at": "note",
+          "is": "OLS: y = 2.5x − 0.667, R² = 0.99, n = 3"
+        },
+        {
+          "at": "coefficients",
+          "is": [
+            -0.6666666666666661,
+            2.5
+          ]
+        },
+        {
+          "at": "rSquared",
+          "is": 0.9868421052631579
+        }
+      ]
+    },
+    {
+      "name": "ADR-0291: a falling line writes its slope negative and its intercept after a plus",
+      "curve": {
+        "method": "leastSquares",
+        "x": [
+          1,
+          2,
+          3
+        ],
+        "y": [
+          7,
+          4,
+          2
+        ]
+      },
+      "expect": [
+        {
+          "at": "note",
+          "is": "OLS: y = -2.5x + 9.333, R² = 0.99, n = 3"
+        },
+        {
+          "at": "coefficients",
+          "is": [
+            9.333333333333332,
+            -2.5000000000000004
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ADR-0291: a polynomial of degree 1 is least squares, named OLS",
+      "curve": {
+        "method": "polynomial",
+        "x": [
+          1,
+          2,
+          3
+        ],
+        "y": [
+          2,
+          4,
+          7
+        ],
+        "degree": 1
+      },
+      "expect": [
+        {
+          "at": "method",
+          "is": "OLS"
+        },
+        {
+          "at": "note",
+          "is": "OLS: y = 2.5x − 0.667, R² = 0.99, n = 3"
+        },
+        {
+          "at": "coefficients",
+          "is": [
+            -0.6666666666666661,
+            2.5
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ADR-0291: a polynomial of degree 0 is the mean, its Note an equation of y alone",
+      "build": {
+        "fit": {
+          "curve": {
+            "method": "polynomial",
+            "x": [
+              1,
+              2,
+              3,
+              4
+            ],
+            "y": [
+              1,
+              2,
+              3,
+              6
+            ],
+            "degree": 0
+          }
+        },
+        "values": {
+          "curve": {
+            "method": "polynomial",
+            "x": [
+              1,
+              2,
+              3,
+              4
+            ],
+            "y": [
+              1,
+              2,
+              3,
+              6
+            ],
+            "degree": 0,
+            "at": [
+              1,
+              2.5,
+              4
+            ]
+          }
+        }
+      },
+      "expect": [
+        {
+          "at": "fit.note",
+          "is": "Least squares: y = 3, R² = 0.00, n = 4"
+        },
+        {
+          "at": "fit.coefficients",
+          "is": [
+            3
+          ]
+        },
+        {
+          "at": "fit.degree",
+          "is": 0
+        },
+        {
+          "at": "fit.slope",
+          "is": 0
+        },
+        {
+          "at": "values",
+          "is": [
+            3,
+            3,
+            3
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ADR-0291: points on a horizontal line are fitted exactly, R² 1, by either method",
+      "build": {
+        "ols": {
+          "curve": {
+            "method": "leastSquares",
+            "x": [
+              1,
+              2,
+              3
+            ],
+            "y": [
+              5,
+              5,
+              5
+            ]
+          }
+        },
+        "ts": {
+          "curve": {
+            "method": "theilSen",
+            "x": [
+              1,
+              2,
+              3
+            ],
+            "y": [
+              5,
+              5,
+              5
+            ]
+          }
+        }
+      },
+      "expect": [
+        {
+          "at": "ols.note",
+          "is": "OLS: y = 0x + 5, R² = 1.00, n = 3"
+        },
+        {
+          "at": "ols.coefficients",
+          "is": [
+            5,
+            0
+          ]
+        },
+        {
+          "at": "ts.note",
+          "is": "Theil–Sen: y = 0x + 5, R² = 1.00, n = 3"
+        },
+        {
+          "at": "ts.rSquared",
+          "is": 1
+        }
+      ]
+    },
+    {
+      "name": "ADR-0291: R² is below zero where a fit does worse than the mean",
+      "curve": {
+        "method": "theilSen",
+        "x": [
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+        "y": [
+          0,
+          0,
+          0,
+          0,
+          100
+        ]
+      },
+      "expect": [
+        {
+          "at": "rSquared",
+          "is": -0.25
+        },
+        {
+          "at": "coefficients",
+          "is": [
+            0,
+            0
+          ]
+        },
+        {
+          "at": "note",
+          "is": "Theil–Sen: y = 0x + 0, R² = -0.25, n = 5"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0291: a power law fitted on ln y vs ln x names its space and is evaluated back in y",
+      "build": {
+        "fit": {
+          "curve": {
+            "method": "leastSquares",
+            "x": [
+              1,
+              2,
+              4,
+              8
+            ],
+            "y": [
+              3,
+              4.242640687119286,
+              6,
+              8.485281374238571
+            ],
+            "space": "logLog"
+          }
+        },
+        "values": {
+          "curve": {
+            "method": "leastSquares",
+            "x": [
+              1,
+              2,
+              4,
+              8
+            ],
+            "y": [
+              3,
+              4.242640687119286,
+              6,
+              8.485281374238571
+            ],
+            "space": "logLog",
+            "at": [
+              5,
+              0.5
+            ]
+          }
+        }
+      },
+      "expect": [
+        {
+          "at": "fit.slope",
+          "is": 0.5,
+          "near": 1e-09
+        },
+        {
+          "at": "fit.intercept",
+          "is": 1.0986122886681098,
+          "near": 1e-09
+        },
+        {
+          "at": "fit.space",
+          "is": "logLog"
+        },
+        {
+          "at": "fit.note",
+          "startsWith": "OLS on ln y vs ln x: ln y = 0.5ln x +"
+        },
+        {
+          "at": "fit.note",
+          "is": "OLS on ln y vs ln x: ln y = 0.5ln x + 1.099, R² = 1.00, n = 4"
+        },
+        {
+          "at": "fit.from",
+          "is": 1
+        },
+        {
+          "at": "fit.to",
+          "is": 8
+        },
+        {
+          "at": "values",
+          "is": [
+            6.708203932499369,
+            null
+          ],
+          "near": 1e-09
+        }
+      ]
+    },
+    {
+      "name": "ADR-0291: Theil–Sen fits a power law on ln y vs ln x as least squares does",
+      "curve": {
+        "method": "theilSen",
+        "x": [
+          1,
+          2,
+          4,
+          8
+        ],
+        "y": [
+          3,
+          4.242640687119286,
+          6,
+          8.485281374238571
+        ],
+        "space": "logLog"
+      },
+      "expect": [
+        {
+          "at": "slope",
+          "is": 0.5,
+          "near": 1e-09
+        },
+        {
+          "at": "intercept",
+          "is": 1.0986122886681098,
+          "near": 1e-09
+        },
+        {
+          "at": "note",
+          "is": "Theil–Sen on ln y vs ln x: ln y = 0.5ln x + 1.099, R² = 1.00, n = 4"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0291: an exponential fitted on ln y vs x names its space and is evaluated back in y",
+      "build": {
+        "fit": {
+          "curve": {
+            "method": "leastSquares",
+            "x": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "y": [
+              2,
+              5.43656365691809,
+              14.7781121978613,
+              40.171073846375336
+            ],
+            "space": "logY"
+          }
+        },
+        "values": {
+          "curve": {
+            "method": "leastSquares",
+            "x": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "y": [
+              2,
+              5.43656365691809,
+              14.7781121978613,
+              40.171073846375336
+            ],
+            "space": "logY",
+            "at": [
+              1.5
+            ]
+          }
+        }
+      },
+      "expect": [
+        {
+          "at": "fit.slope",
+          "is": 1,
+          "near": 1e-09
+        },
+        {
+          "at": "fit.intercept",
+          "is": 0.6931471805599453,
+          "near": 1e-09
+        },
+        {
+          "at": "fit.space",
+          "is": "logY"
+        },
+        {
+          "at": "fit.note",
+          "is": "OLS on ln y vs x: ln y = 1x + 0.693, R² = 1.00, n = 4"
+        },
+        {
+          "at": "values",
+          "is": [
+            8.963378140676129
+          ],
+          "near": 1e-09
+        }
+      ]
+    },
+    {
+      "name": "ADR-0291: a polynomial of degree 9 through ten points passes through every one (PRML §1.1)",
+      "build": {
+        "m9": {
+          "curve": {
+            "method": "polynomial",
+            "x": [
+              0,
+              0.1111111111111111,
+              0.2222222222222222,
+              0.3333333333333333,
+              0.4444444444444444,
+              0.5555555555555556,
+              0.6666666666666666,
+              0.7777777777777778,
+              0.8888888888888888,
+              1
+            ],
+            "y": [
+              -0.07539942475287216,
+              0.5260108028408479,
+              0.9749109569738817,
+              0.9475066403910335,
+              0.3892758114616135,
+              -0.36218536293537124,
+              -0.9098002747043286,
+              -0.8516490701745176,
+              -0.7624076736199066,
+              0.04273666659963138
+            ],
+            "degree": 9
+          }
+        },
+        "at": {
+          "curve": {
+            "method": "polynomial",
+            "x": [
+              0,
+              0.1111111111111111,
+              0.2222222222222222,
+              0.3333333333333333,
+              0.4444444444444444,
+              0.5555555555555556,
+              0.6666666666666666,
+              0.7777777777777778,
+              0.8888888888888888,
+              1
+            ],
+            "y": [
+              -0.07539942475287216,
+              0.5260108028408479,
+              0.9749109569738817,
+              0.9475066403910335,
+              0.3892758114616135,
+              -0.36218536293537124,
+              -0.9098002747043286,
+              -0.8516490701745176,
+              -0.7624076736199066,
+              0.04273666659963138
+            ],
+            "degree": 9,
+            "at": [
+              0,
+              0.1111111111111111,
+              0.2222222222222222,
+              0.3333333333333333,
+              0.4444444444444444,
+              0.5555555555555556,
+              0.6666666666666666,
+              0.7777777777777778,
+              0.8888888888888888,
+              1
+            ]
+          }
+        },
+        "m3": {
+          "curve": {
+            "method": "polynomial",
+            "x": [
+              0,
+              0.1111111111111111,
+              0.2222222222222222,
+              0.3333333333333333,
+              0.4444444444444444,
+              0.5555555555555556,
+              0.6666666666666666,
+              0.7777777777777778,
+              0.8888888888888888,
+              1
+            ],
+            "y": [
+              -0.07539942475287216,
+              0.5260108028408479,
+              0.9749109569738817,
+              0.9475066403910335,
+              0.3892758114616135,
+              -0.36218536293537124,
+              -0.9098002747043286,
+              -0.8516490701745176,
+              -0.7624076736199066,
+              0.04273666659963138
+            ],
+            "degree": 3
+          }
+        }
+      },
+      "expect": [
+        {
+          "at": "m9.degree",
+          "is": 9
+        },
+        {
+          "at": "at",
+          "is": [
+            -0.07539942475287216,
+            0.5260108028408479,
+            0.9749109569738817,
+            0.9475066403910335,
+            0.3892758114616135,
+            -0.36218536293537124,
+            -0.9098002747043286,
+            -0.8516490701745176,
+            -0.7624076736199066,
+            0.04273666659963138
+          ],
+          "near": 1e-06
+        },
+        {
+          "at": "m9.rSquared",
+          "is": 1,
+          "near": 1e-06
+        },
+        {
+          "at": "m9.note",
+          "is": "Least squares: degree 9, R² = 1.00, n = 10"
+        },
+        {
+          "at": "m3.rSquared",
+          "atLeast": 0.8,
+          "atMost": 0.999
+        },
+        {
+          "at": "m3.note",
+          "is": "Least squares: degree 3, R² = 0.97, n = 10"
+        },
+        {
+          "at": "m3.method",
+          "is": "Least squares"
+        },
+        {
+          "at": "m3.coefficients",
+          "is": [
+            -0.16717515622226653,
+            11.407065218885815,
+            -32.92122945728879,
+            21.740176813586967
+          ]
+        },
+        {
+          "at": "m3.rSquared",
+          "is": 0.9707547845806743
+        }
+      ]
+    },
+    {
+      "name": "ADR-0291: a polynomial needs one point more than its degree",
+      "curve": {
+        "method": "polynomial",
+        "x": [
+          0,
+          0.1111111111111111,
+          0.2222222222222222
+        ],
+        "y": [
+          -0.07539942475287216,
+          0.5260108028408479,
+          0.9749109569738817
+        ],
+        "degree": 3
+      },
+      "throws": "argument",
+      "saying": "4 points"
+    },
+    {
+      "name": "ADR-0291: a polynomial needs one different x more than its degree",
+      "curve": {
+        "method": "polynomial",
+        "x": [
+          1,
+          1,
+          2,
+          2
+        ],
+        "y": [
+          1,
+          2,
+          3,
+          4
+        ],
+        "degree": 2
+      },
+      "throws": "argument",
+      "saying": "3 different x"
+    },
+    {
+      "name": "ADR-0291: a polynomial's degree is not below zero",
+      "curve": {
+        "method": "polynomial",
+        "x": [
+          1,
+          2
+        ],
+        "y": [
+          1,
+          2
+        ],
+        "degree": -1
+      },
+      "throws": "outOfRange"
+    },
+    {
+      "name": "ADR-0291: least squares needs two points",
+      "curve": {
+        "method": "leastSquares",
+        "x": [
+          1
+        ],
+        "y": [
+          1
+        ]
+      },
+      "throws": "argument",
+      "saying": "2 points"
+    },
+    {
+      "name": "ADR-0291: each x needs one y",
+      "curve": {
+        "method": "leastSquares",
+        "x": [
+          1,
+          2,
+          3
+        ],
+        "y": [
+          1,
+          2
+        ]
+      },
+      "throws": "argument",
+      "saying": "Each x needs one y"
+    },
+    {
+      "name": "ADR-0291: a point whose x is not a finite number is refused, never dropped",
+      "curve": {
+        "method": "leastSquares",
+        "x": [
+          1,
+          2,
+          "NaN"
+        ],
+        "y": [
+          1,
+          2,
+          3
+        ]
+      },
+      "throws": "argument",
+      "saying": "Point 2 is not a finite number"
+    },
+    {
+      "name": "ADR-0291: a point whose y is not a finite number is refused, never dropped",
+      "curve": {
+        "method": "theilSen",
+        "x": [
+          1,
+          2,
+          3
+        ],
+        "y": [
+          1,
+          "Infinity",
+          3
+        ]
+      },
+      "throws": "argument",
+      "saying": "Point 1 is not a finite number"
+    },
+    {
+      "name": "ADR-0290: a y a logarithm cannot take is refused by name, never dropped",
+      "curve": {
+        "method": "leastSquares",
+        "x": [
+          1,
+          2
+        ],
+        "y": [
+          0,
+          1
+        ],
+        "space": "logY"
+      },
+      "throws": "argument",
+      "saying": [
+        "Point 0",
+        "ln y"
+      ]
+    },
+    {
+      "name": "ADR-0290: an x a logarithm cannot take is refused by name in a power law",
+      "curve": {
+        "method": "leastSquares",
+        "x": [
+          0,
+          1
+        ],
+        "y": [
+          1,
+          2
+        ],
+        "space": "logLog"
+      },
+      "throws": "argument",
+      "saying": [
+        "Point 0",
+        "ln x"
+      ]
+    },
+    {
+      "name": "ADR-0291: Theil–Sen needs two points with different x",
+      "curve": {
+        "method": "theilSen",
+        "x": [
+          1,
+          1
+        ],
+        "y": [
+          1,
+          2
+        ]
+      },
+      "throws": "argument",
+      "saying": "same x"
+    },
+    {
+      "name": "ADR-0291: Theil–Sen weighs every pair, so past its limit it refuses rather than run",
+      "curve": {
+        "method": "theilSen",
+        "x": {
+          "run": {
+            "count": 3001,
+            "from": 0,
+            "step": 1
+          }
+        },
+        "y": {
+          "run": {
+            "count": 3001,
+            "from": 0,
+            "step": 2
+          }
+        }
+      },
+      "throws": "argument",
+      "saying": "3001 points are more than the 3000"
+    }
+  ]
+}

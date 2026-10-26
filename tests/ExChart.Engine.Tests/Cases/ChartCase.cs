@@ -3,6 +3,7 @@ using System.Globalization;
 using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using ExChart.Engine.Fitting;
 
 namespace ExChart.Engine.Tests.Cases;
 
@@ -17,7 +18,7 @@ internal sealed class ChartCase(JsonElement file, JsonElement entry)
 {
     private static readonly string[] Operations =
         ["scene", "drawing", "thin", "through", "tenor", "nice", "steps", "decades", "logSteps", "fit", "horizontal", "candles", "legendMembers", "format", "appearance", "mesh", "slice", "slicePath",
-         "reading", "summary", "csv", "surfaceSummary"];
+         "reading", "summary", "csv", "surfaceSummary", "curve"];
 
     // What a scene is laid out with, which the tooltip and the summary read their scene by.
     private static readonly string[] SceneKeys = ["metrics", "view", "style", "independentScales", "legend"];
@@ -142,6 +143,12 @@ internal sealed class ChartCase(JsonElement file, JsonElement entry)
                     "table" => ChartCsv.WideTable(d, metrics, view),
                     var form => throw new InvalidOperationException($"\"{form}\" is not a form of the files; it is long, wide or table."),
                 };
+            }
+            case "curve":
+            {
+                // A fit a Consumer calls (ADR-0291): the curve, or its values at the positions `at` names.
+                var curve = Fitted(args, "at");
+                return args.TryGetProperty("at", out var at) ? at.EnumerateArray().Select(x => curve.ValueAt(Position(x))).ToList() : curve;
             }
             case "drawing":
             {
@@ -341,6 +348,41 @@ internal sealed class ChartCase(JsonElement file, JsonElement entry)
             : Convert.ToString(v, CultureInfo.InvariantCulture)) + suffix;
     }
 
+    // ---- A fit (ADR-0291) ----
+
+    // A curve fitted by the method the case names, over its points, in the space it names or, where it
+    // names none, in the method's own default. Only a polynomial reads a degree.
+    private static FittedCurve Fitted(JsonElement e, params string[] more)
+    {
+        var method = e.GetProperty("method").GetString();
+        Allow(e, "a curve", [.. CurveKeys, .. method == "polynomial" ? ["degree"] : Array.Empty<string>(), .. more]);
+        var xs = Run(e.GetProperty("x"));
+        var ys = Run(e.GetProperty("y"));
+        FitSpace? space = e.TryGetProperty("space", out var s) ? Enum<FitSpace>(s) : null;
+        return method switch
+        {
+            "leastSquares" => space is { } sp ? Fit.LeastSquares(xs, ys, sp) : Fit.LeastSquares(xs, ys),
+            "theilSen" => space is { } sp ? Fit.TheilSen(xs, ys, sp) : Fit.TheilSen(xs, ys),
+            "polynomial" => space is { } sp
+                ? Fit.Polynomial(xs, ys, e.GetProperty("degree").GetInt32(), sp)
+                : Fit.Polynomial(xs, ys, e.GetProperty("degree").GetInt32()),
+            _ => throw new InvalidOperationException($"\"{method}\" is not a fit; it is leastSquares, theilSen or polynomial."),
+        };
+    }
+
+    private static readonly string[] CurveKeys = ["method", "x", "y", "space"];
+
+    // A fit's xs or ys: numbers, or a run of `count` from `from` by `step`.
+    private static double[] Run(JsonElement e)
+    {
+        if (e.ValueKind == JsonValueKind.Array)
+            return e.EnumerateArray().Select(Number).ToArray();
+        var run = Only(e, "run");
+        Allow(run, "a run", "count", "from", "step");
+        var (from, step) = (Number(run.GetProperty("from")), Number(run.GetProperty("step")));
+        return Enumerable.Range(0, run.GetProperty("count").GetInt32()).Select(i => from + i * step).ToArray();
+    }
+
     private static ChartAxis Axis(JsonElement e)
     {
         Allow(e, "an axis", "values", "title", "scale", "labels", "named", "daysPerYear", "packed");
@@ -356,6 +398,12 @@ internal sealed class ChartCase(JsonElement file, JsonElement entry)
 
     private ChartSeries Series(JsonElement e)
     {
+        // A fit's series, as a Consumer hands it in (ADR-0291): its curve says the rest.
+        if (e.TryGetProperty("curve", out var fitted))
+        {
+            Allow(e, "a fitted series", "id", "name", "curve");
+            return Fitted(fitted).Series(e.GetProperty("id").GetString()!, e.GetProperty("name").GetString()!);
+        }
         Allow(e, "a series", "id", "name", "kind", "step", "axis", "panel", "keys", "fromZero", "interpolated", "segments", "points", "colourBy", "sizeBy",
             "details", "edges", "bars", "mergeTo", "interval", "xInterval", "thinned", "sampler", "format");
         var id = e.GetProperty("id").GetString()!;

@@ -403,6 +403,47 @@ export interface DrawnWhisker {
 }
 
 // @public
+export function fitLeastSquares(xs: readonly number[], ys: readonly number[], space?: FitSpace): FittedCurve;
+
+// @public
+export function fitPolynomial(xs: readonly number[], ys: readonly number[], degree: number, space?: FitSpace): FittedCurve;
+
+// @public
+export type FitSpace = 'linear' | 'logY' | 'logLog';
+
+// @public
+export class FittedCurve {
+    constructor(options: FittedCurveOptions);
+    get coefficients(): readonly number[];
+    get count(): number;
+    get degree(): number;
+    get from(): number;
+    get intercept(): number;
+    get method(): string;
+    get note(): string;
+    get rSquared(): number;
+    series(id: string, name: string): ChartSeriesOptions;
+    get slope(): number;
+    get space(): FitSpace;
+    get to(): number;
+    valueAt(x: number): number | null;
+}
+
+// @public
+export interface FittedCurveOptions {
+    readonly coefficients: readonly number[];
+    readonly count: number;
+    readonly from: number;
+    readonly method: string;
+    readonly rSquared: number;
+    readonly space?: FitSpace;
+    readonly to: number;
+}
+
+// @public
+export function fitTheilSen(xs: readonly number[], ys: readonly number[], space?: FitSpace): FittedCurve;
+
+// @public
 export type HorizontalTick = readonly [position: number, x: number, label: string | null];
 
 // @public
@@ -920,6 +961,9 @@ export interface SurfaceView {
     readonly yaw: number;
     readonly zoom: number;
 }
+
+// @public
+export const theilSenLimit = 3000;
 
 // @public
 export type TickPlacement =

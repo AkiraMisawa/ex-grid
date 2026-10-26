@@ -6,13 +6,14 @@ import { expect } from 'vitest';
 import { appearanceOf } from '../src/appearance';
 import { dayNumber } from '../src/day-numbers';
 import { ChartDefinition, chartAxis, chartSeries } from '../src/definition';
-import { grouped, roundTrip, threeSignificant, upToPlaces } from '../src/invariant-text';
+import { grouped, roundTrip, threeSignificant, twoPlaces, upToPlaces } from '../src/invariant-text';
 import type { ChartMetrics, ChartView } from '../src/metrics';
 import type {
     AppearanceKeys, ChartAxisOptions, ChartEdge, ChartPoint, ChartSeriesOptions, ChartValue, IntervalBound, PixelSummary, PointDetail, PriceBar,
     AxisScale, Segment, SeriesInterval, SeriesKind, SeriesSampler,
 } from '../src/model';
 import { chartCsvLong, chartCsvWide, chartTable } from '../src/csv';
+import { fitLeastSquares, fitPolynomial, fitTheilSen, type FitSpace, type FittedCurve } from '../src/fitting';
 import { candlesOf } from '../src/price-ranges';
 import { readingAt, readingOfEdge, readingOfMark } from '../src/reading';
 import { chartSummary } from '../src/summary';
@@ -43,7 +44,7 @@ export interface ChartFile {
 
 const operations = [
     'scene', 'drawing', 'thin', 'through', 'tenor', 'nice', 'steps', 'decades', 'logSteps', 'fit', 'horizontal', 'candles', 'legendMembers',
-    'format', 'appearance', 'mesh', 'slice', 'slicePath', 'reading', 'summary', 'csv', 'surfaceSummary',
+    'format', 'appearance', 'mesh', 'slice', 'slicePath', 'reading', 'summary', 'csv', 'surfaceSummary', 'curve',
 ] as const;
 
 // What a scene is laid out with, which the tooltip and the summary read their scene by.
@@ -283,6 +284,12 @@ export class ChartCase {
                         throw new Error(`Internal: ${String(form)} is a form and not written.`);
                 }
             }
+            case 'curve': {
+                // A fit a Consumer calls (ADR-0291): the curve, or its values at the positions `at` names.
+                const a = allow(args, 'curve', [...curveKeys(args), 'at']);
+                const fit = fitted(a);
+                return a['at'] === undefined ? fit : list(a['at'], 'at').map(x => fit.valueAt(position(x)));
+            }
             case 'drawing': {
                 const a = allow(args, 'drawing', ['axis', 'series', 'from', 'to', 'pixels', 'quotes']);
                 return drawSeries(chartSeries(this.#series(a['series'])), chartAxis(axis(a['axis'])), {
@@ -463,6 +470,11 @@ export class ChartCase {
     }
 
     #series(given: Json | undefined): ChartSeriesOptions {
+        // A fit's series, as a Consumer hands it in (ADR-0291): its curve says the rest.
+        if (isObject(given) && given['curve'] !== undefined) {
+            const f = allow(given, 'a fitted series', ['id', 'name', 'curve']);
+            return fitted(allow(f['curve'], 'a curve', curveKeys(f['curve']))).series(string(f['id'], 'a series\' id'), string(f['name'], 'a series\' name'));
+        }
         const e = allow(given, 'a series', [
             'id', 'name', 'kind', 'step', 'axis', 'panel', 'keys', 'fromZero', 'interpolated', 'segments', 'points', 'colourBy', 'sizeBy',
             'details', 'edges', 'bars', 'mergeTo', 'interval', 'xInterval', 'thinned', 'sampler', 'format',
@@ -775,6 +787,46 @@ function laidOut(definition: ChartDefinition, a: JsonObject): ChartScene {
         ...optionalPart('independentScales', optional(a, 'independentScales', v => list(v, 'independentScales').map(s => string(s, 'a panel')))),
         ...optionalPart('legend', optional(a, 'legend', legend)),
     });
+}
+
+// ---- A fit (ADR-0291) ----
+
+// What a curve says: its method, its points and its space, and a degree where it is a polynomial.
+function curveKeys(given: Json | undefined): string[] {
+    const keys = ['method', 'x', 'y', 'space'];
+    return isObject(given) && given['method'] === 'polynomial' ? [...keys, 'degree'] : keys;
+}
+
+// A curve fitted by the method the case names, over its points, in the space it names or, where it names
+// none, in the method's own default.
+function fitted(e: JsonObject): FittedCurve {
+    const method = oneOf(e['method'], ['leastSquares', 'theilSen', 'polynomial'], 'fit');
+    const xs = run(e['x'], 'x');
+    const ys = run(e['y'], 'y');
+    const space = optional(e, 'space', v => oneOf<FitSpace>(v, ['linear', 'logY', 'logLog'], 'FitSpace'));
+    switch (method) {
+        case 'leastSquares':
+            return space === undefined ? fitLeastSquares(xs, ys) : fitLeastSquares(xs, ys, space);
+        case 'theilSen':
+            return space === undefined ? fitTheilSen(xs, ys) : fitTheilSen(xs, ys, space);
+        case 'polynomial': {
+            const degree = whole(e['degree'], 'degree');
+            return space === undefined ? fitPolynomial(xs, ys, degree) : fitPolynomial(xs, ys, degree, space);
+        }
+        default:
+            throw new Error(`Internal: ${String(method)} is a fit and not run.`);
+    }
+}
+
+// A fit's xs or ys: numbers, or a run of `count` from `from` by `step`.
+function run(given: Json | undefined, what: string): number[] {
+    if (isList(given)) {
+        return given.map(number);
+    }
+    const r = allow(allow(given, what, ['run'])['run'], 'a run', ['count', 'from', 'step']);
+    const from = number(r['from']);
+    const step = number(r['step']);
+    return Array.from({ length: whole(r['count'], 'count') }, (_, i) => from + i * step);
 }
 
 function axis(given: Json | undefined): ChartAxisOptions {
@@ -1177,6 +1229,10 @@ function format(name: string, v: number): string {
             return threeSignificant(v);
         case 'N0':
             return grouped(v);
+        case '0.###':
+            return upToPlaces(v, 3);
+        case '0.00':
+            return twoPlaces(v);
         default:
             throw new Error(`"${name}" is not a format the engine writes with.`);
     }

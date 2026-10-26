@@ -1,9 +1,10 @@
 /**
  * ExChart in TypeScript (ADR-0370): a chart's definition, checked when it is made, and the scene it is
  * laid out as in CSS pixels — panels, axes, ticks, each series' lines, markers, candles and intervals —
- * what its tooltip, its summary and its files say, and a 3D surface as the mesh its entry draws and the 2D
- * charts its slices are; and its Script Core, `createChart`, which draws a chart as SVG into an element and
- * hears the pointer, the legend and Chart Filters, free of any UI framework. A Framework Adapter mounts it;
+ * what its tooltip, its summary and its files say, the fits and interpolations a Consumer hands in, and a 3D
+ * surface as the mesh its entry draws and the 2D charts its slices are; and its Script Core, `createChart`
+ * and `createSurface`, which draw a chart as SVG into an element and hear the pointer, free of any UI
+ * framework. A Framework Adapter mounts it;
  * the C# engine and this package are held to one another by the shared cases under `tests/cases/chart/`.
  *
  * @packageDocumentation
@@ -38,6 +39,8 @@ export type {
 } from './surface';
 export { surfaceBandCount, surfaceMesh, surfaceSlicePath, surfaceSummary } from './surface-mesh';
 export type { SurfaceColourBar, SurfaceFace, SurfaceMesh, SurfaceMeshNode, SurfaceMeshPoint, SurfaceTick } from './surface-mesh';
+export { FittedCurve, fitLeastSquares, fitPolynomial, fitTheilSen, theilSenLimit } from './fitting';
+export type { FitSpace, FittedCurveOptions } from './fitting';
 export { createChart } from './dom/create-chart';
 export type { ChartHandle } from './dom/create-chart';
 export type { ChartOptions, ChartPointClick, ChartRange, SeriesVisibility } from './dom/chart-element';

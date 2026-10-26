@@ -376,8 +376,8 @@ does a check that says neither `is` nor `throws`, and a case that checks nothing
 ## `chart`
 
 ExChart's layout (ADR-0370, section 2): scales, ticks, Thinning, each Series Kind's steps and gaps, the
-scene and its legend, what its tooltip, its summary and its files say, and the 3D surface, its slices and
-its mesh. Every file of `chart/` is of this kind, run by `tests/ExChart.Engine.Tests/Cases/ChartCase.cs`
+scene and its legend, what its tooltip, its summary and its files say, the fits a Consumer hands in as
+series, and the 3D surface, its slices and its mesh. Every file of `chart/` is of this kind, run by `tests/ExChart.Engine.Tests/Cases/ChartCase.cs`
 and `src/npm/chart/test/chart-case.ts`. A file may say `near`, how far a number may be from what a check
 expects in every case of the file, and `definitions`, named definitions a case refers to by their name.
 
@@ -396,15 +396,18 @@ answer is the definition or the surface itself:
 | `"candles": {series, from, to, period}` | A Price Range's candles merged into a period |
 | `"legendMembers": key` | The series a legend entry stands for |
 | `"appearance": {colourSlots}` | `[looks by series, whether colours repeat]` |
-| `"format": {format, value}` | A number written as the engine writes it with that .NET format (`0.####`, `0.##`, `R`, `G3`, `N0`) |
+| `"format": {format, value}` | A number written as the engine writes it with that .NET format (`0.####`, `0.###`, `0.##`, `0.00`, `R`, `G3`, `N0`) |
 | `"mesh": {}` | What the surface's 3D entry draws (`SurfaceMesh.Of`, `surfaceMesh`) |
 | `"slice": {axis, value}`, `"slicePath": {axis, value}` | A slice as a 2D chart (`null` where the surface holds no such slice), and its line on the surface |
 | `"reading": {metrics, view, style, independentScales, legend, at}` | The tooltip of the scene laid out with the same keys as `scene` (ADR-0270): `at` is `{position, panel, pointerY}` (`ChartReadings.At`, `readingAt`), `{mark}`, an index into the scene's marks (`OfMark`, `readingOfMark`), or `{edge}`, an index into its edge marks (`OfEdge`, `readingOfEdge`). Its `metrics` and `view` are always written, `{}` for the whole chart |
 | `"summary": {metrics, view, style, independentScales, legend, title, description}` | What a screen reader says of that scene (`ChartSummary.Of`, `chartSummary`, ADR-0275) |
+| `"curve": {method, x, y, degree, space, at}` | A fit a Consumer calls (ADR-0291): `method` `leastSquares`, `theilSen` or `polynomial`, which alone reads a `degree` (`Fit.LeastSquares`/`TheilSen`/`Polynomial`, `fitLeastSquares`/`fitTheilSen`/`fitPolynomial`), over the points `x` and `y`, each a list of numbers or a run `{"run": {count, from, step}}`, in the `space` `linear`, `logY` or `logLog`, the method's default where it names none. Answers the fitted curve, or, with `at`, a list of positions, its value at each (`null` outside the range it was fitted on) |
 | `"csv": {form, metrics, view}` | The files (ticket 07): `form` `long` or `wide` answers the CSV, byte-order mark first (`ChartCsv.Long`/`Wide`, `chartCsvLong`/`chartCsvWide`), and `table` the `{header, rows}` "View as table" shows (`WideTable`, `chartTable`) |
 
 A definition, an axis and a series are written as the Script Core's options objects name them, each key
-optional where the options' is; a series that leaves out `kind` declares none. A position is a number or
+optional where the options' is; a series that leaves out `kind` declares none, and a fit's series is
+`{id, name, curve}`, its curve written as the `curve` operation writes one without `at` (`FittedCurve.Series`,
+`FittedCurve.series`). A position is a number or
 `{"date": "yyyy-MM-dd"}`, read as its day number from 0001-01-01. A value is a number or `null`, a gap. A
 point is `[x, y]`, `[x, y, name]`, `{x, y, name, row}`, or a generated run, `{"generate": {count, x:
 {from, step}, y, name, at}}`, whose `y` is a number, `{"line": [a, b]}` (a + b·i), `{"sin": d}` (sin(i/d))
