@@ -319,6 +319,10 @@ interface Outcome {
     workbookChange: WorkbookChange | undefined;
 }
 
+function padded(n: number, width: number): string {
+    return String(n).padStart(width, '0');
+}
+
 function addresses(of: Iterable<CellAddress>): string[] {
     return [...of].map(a => a.toString());
 }
@@ -730,7 +734,7 @@ class Run {
                 // What a step, an undo or a redo changed on each Sheet it reached, by the Sheet's name.
                 const changes = outcome.workbookChange;
                 if (changes === undefined) throw new CaseError(`${where}: only a step, an undo or a redo reads its changes.`);
-                actual = Object.fromEntries(changes.sheets.map(sheet => [sheet.name, changeJson(changes.for(sheet))]));
+                actual = Object.fromEntries(changes.sheets.map(reached => [reached.name, changeJson(changes.for(reached))]));
                 break;
             }
             case 'refusal':
@@ -770,10 +774,9 @@ class Run {
                 break;
             case 'workbook': {
                 const today = this.workbook.today;
-                const pad = (n: number, width: number): string => String(n).padStart(width, '0');
                 actual = {
                     culture: this.workbook.culture.name,
-                    today: today === undefined ? null : `${pad(today.year, 4)}-${pad(today.month, 2)}-${pad(today.day, 2)}`,
+                    today: today === undefined ? null : `${padded(today.year, 4)}-${padded(today.month, 2)}-${padded(today.day, 2)}`,
                     hasVolatileFormulas: this.workbook.hasVolatileFormulas,
                     linkedTables: this.workbook.linkedTables.map(t => ({
                         name: t.name, columns: [...t.columns], keyColumns: [...t.keyColumns], isWaiting: t.isWaiting, rowCount: t.rowCount,
