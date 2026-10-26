@@ -4,13 +4,19 @@ import { StrictMode, useEffect, useState, type ReactElement } from 'react';
 import { createRoot } from 'react-dom/client';
 import '../../ExGrid.DemoPages/wwwroot/app.css';
 import '../../../src/ExGrid/wwwroot/ex-grid.min.css';
+import '../../../src/ExChart/wwwroot/ex-chart.min.css';
 import '../../../src/ExPivot/wwwroot/ex-pivot.min.css';
+import '../../../src/ExSheet/wwwroot/ex-sheet.min.css';
 import { Cells } from './pages/cells';
+import { Chart } from './pages/chart';
+import { ChartCandles } from './pages/chart-candles';
 import { Features } from './pages/features';
 import { Fetch } from './pages/fetch';
 import { FilterPanel } from './pages/filter-panel';
 import { Home } from './pages/home';
+import { Surface } from './pages/surface';
 import { Pivot } from './pages/pivot';
+import { SheetDemo } from './pages/sheet';
 import { Virtual } from './pages/virtual';
 import { Wide } from './pages/wide';
 import { navigateTo, Router } from './router';
@@ -24,7 +30,7 @@ declare global {
 
 window.exDemo = Object.freeze({ navigateTo });
 
-const pages = { '': Home, virtual: Virtual, wide: Wide, fetch: Fetch, features: Features, 'filter-panel': FilterPanel, cells: Cells, pivot: Pivot };
+const pages = { '': Home, virtual: Virtual, wide: Wide, fetch: Fetch, features: Features, 'filter-panel': FilterPanel, cells: Cells, chart: Chart, 'chart-candles': ChartCandles, surface: Surface, pivot: Pivot, sheet: SheetDemo };
 
 /** Present once the page handles events, as Routes.razor's marker is: at once under React. */
 function Interactive(): ReactElement | null {

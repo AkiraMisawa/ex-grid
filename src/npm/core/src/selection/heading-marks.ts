@@ -11,6 +11,7 @@ import type { ColumnRange } from '../columns/column-geometry';
 import type { RowRange } from '../viewport/row-range';
 import { elementAt } from '../must';
 import type { GridExtent } from './cell';
+import type { SelectionRange } from './range';
 import type { Selection } from './selection';
 
 /** A run of marked Headings on one axis: its first index and how many it holds. */
@@ -26,7 +27,12 @@ export function markedColumns(selection: Selection): readonly ColumnRange[] {
 /** The marked rows, as runs in row order, or none for an empty Selection. The Script Core paints no Row
  * Headings yet: until it does, the rows' answers are held to the shared cases alone. */
 export function markedRows(selection: Selection): readonly RowRange[] {
-    return union(selection.ranges.map(range => [range.topRow, range.topRow + range.rowCount - 1] as const));
+    return rowRunsOf(selection.ranges);
+}
+
+/** The rows the given ranges cover, as runs in row order: ranges that overlap or touch are one run. */
+export function rowRunsOf(ranges: readonly SelectionRange[]): readonly RowRange[] {
+    return union(ranges.map(range => [range.topRow, range.topRow + range.rowCount - 1] as const));
 }
 
 /** The columns covered in full by the Selection's union, as ordered runs (ADR-0008, D1). */

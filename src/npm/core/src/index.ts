@@ -17,12 +17,13 @@ export type { ActionRefusalReason, FindRefusalReason, GridRefusal } from './dom/
 export type { GridColumnWidthChange } from './dom/column-gestures';
 export type { GridCommand, GridContextMenuContext } from './dom/grid-command';
 export { gridCommandIds, gridLabelIds } from './chrome/command-ids';
+export { markLabelIds } from './chrome/mark-words';
 export type { CopyRefusalReason, PastePlan, PasteRefusalReason, PasteShape, SourceCell } from './clipboard/clipboard-rules';
 export type { PasteFieldOrigin } from './clipboard/clipboard-parse';
 export type { GridPasteIntent } from './clipboard/paste-intent';
 export type { GridClearIntent } from './clipboard/clear-intent';
 export type { CommitRefusalReason, EditDiscardReason, EditVerdict, GridEditIntent, GridOverwriteNotice } from './cells/edit-intent';
-export { actionColumn } from './dom/grid-column';
+export { actionColumn, markColumn } from './dom/grid-column';
 export type {
     AutoColumnWidth, FixedColumnWidth, GridAction, GridActionEvent, GridColumn, GridColumnWidth, GridTemplate, GridTemplateCell,
 } from './dom/grid-column';
@@ -34,10 +35,12 @@ export type { CellAlign } from './paint/cell-classes';
 export type { GridDensity } from './grid-metrics';
 export { densityText } from './density-text';
 export type { DensityText } from './density-text';
+export { gridHeaderRequiredPx, gridTextGeometry } from './text-geometry';
+export type { GridTextGeometry } from './text-geometry';
 export type { DistinctValues, GridSourceState } from './source/grid-source';
 export type { GridFindRequest, GridFindResult } from './finding/find';
 export type { GridSummaryRequest, GridSummaryResult } from './summary/grid-summary';
-export type { RowMarks } from './rows/row-marks';
+export type { MarkRefusalReason, RowMarkHeaderState, RowMarks } from './rows/row-marks';
 export type { RowRange } from './viewport/row-range';
 export type { RowKeyOf } from './source/row-key';
 export type { GridFilter } from './query/filter';

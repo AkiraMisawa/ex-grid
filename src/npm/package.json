@@ -8,12 +8,15 @@
   "workspaces": [
     "core",
     "chart",
+    "chart-react",
     "data",
     "pivot-engine",
     "pivot",
     "react",
     "pivot-react",
-    "sheet-engine"
+    "sheet-engine",
+    "sheet",
+    "sheet-react"
   ],
   "scripts": {
     "build": "npm run build --workspaces",

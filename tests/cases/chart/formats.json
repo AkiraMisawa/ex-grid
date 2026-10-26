@@ -1,5 +1,5 @@
 {
-  "about": "The invariant number formats the layout writes its labels and Notes in, as .NET writes them (ADR-0370): 0.#### for a tick, R for a value, G3 and N0. Each case formats a number in C# and through the Script Core's writer of that format.",
+  "about": "The invariant number formats the layout writes its labels and Notes in, as .NET writes them (ADR-0370): 0.#### for a tick, R for a value, G3 and N0, and 0.### and 0.00 for a fit's Note. Each case formats a number in C# and through the Script Core's writer of that format.",
   "kind": "chart",
   "cases": [
     {
@@ -207,6 +207,149 @@
         {
           "at": "",
           "is": "2,450"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0370: a coefficient is written to three places, a half going away from zero (0.###)",
+      "format": {
+        "format": "0.###",
+        "value": 2.0005
+      },
+      "expect": [
+        {
+          "at": "",
+          "is": "2.001"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0370: a coefficient keeps fewer places where it has them (0.###)",
+      "format": {
+        "format": "0.###",
+        "value": 0.6666666666666661
+      },
+      "expect": [
+        {
+          "at": "",
+          "is": "0.667"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0370: a large coefficient keeps every whole digit (0.###)",
+      "format": {
+        "format": "0.###",
+        "value": 1234567.8915
+      },
+      "expect": [
+        {
+          "at": "",
+          "is": "1234567.892"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0370: a small negative coefficient is written -0 (0.###)",
+      "format": {
+        "format": "0.###",
+        "value": -0.0004
+      },
+      "expect": [
+        {
+          "at": "",
+          "is": "-0"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0370: R² keeps both places (0.00)",
+      "format": {
+        "format": "0.00",
+        "value": 1
+      },
+      "expect": [
+        {
+          "at": "",
+          "is": "1.00"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0370: R² is rounded, a half going away from zero (0.00)",
+      "format": {
+        "format": "0.00",
+        "value": 0.125
+      },
+      "expect": [
+        {
+          "at": "",
+          "is": "0.13"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0370: R² is taken to fifteen digits before it is rounded (0.00)",
+      "format": {
+        "format": "0.00",
+        "value": 0.004999999999999999
+      },
+      "expect": [
+        {
+          "at": "",
+          "is": "0.01"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0370: a near half below is taken to fifteen digits too (0.00)",
+      "format": {
+        "format": "0.00",
+        "value": 0.995
+      },
+      "expect": [
+        {
+          "at": "",
+          "is": "1.00"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0370: a negative R² keeps its sign (0.00)",
+      "format": {
+        "format": "0.00",
+        "value": -0.25
+      },
+      "expect": [
+        {
+          "at": "",
+          "is": "-0.25"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0370: a negative R² that rounds to nothing is written -0.00 (0.00)",
+      "format": {
+        "format": "0.00",
+        "value": -0.001
+      },
+      "expect": [
+        {
+          "at": "",
+          "is": "-0.00"
+        }
+      ]
+    },
+    {
+      "name": "ADR-0370: a number below the last place is zero (0.00)",
+      "format": {
+        "format": "0.00",
+        "value": 2.5e-17
+      },
+      "expect": [
+        {
+          "at": "",
+          "is": "0.00"
         }
       ]
     }

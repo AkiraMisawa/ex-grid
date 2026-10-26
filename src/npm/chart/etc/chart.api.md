@@ -332,6 +332,15 @@ export const chartWordIds: Readonly<{
     oneMoreSeries: "exchart.tooltip.one-more";
     moreSeries: "exchart.tooltip.more";
     stylesheetNotice: "exchart.notice.stylesheet";
+    resetView: "exchart.surface.reset-view";
+    surface: "exchart.surface";
+    surfaceData: "exchart.surface.data";
+    surfaceRole: "exchart.surface.role";
+    surfaceValue: "exchart.surface.value";
+    quoted: "exchart.surface.quoted";
+    interpolated: "exchart.surface.interpolated";
+    noSliceOnGrid: "exchart.surface.no-slice.grid";
+    noSliceOnMesh: "exchart.surface.no-slice.mesh";
 }>;
 
 // @public
@@ -348,6 +357,9 @@ export interface ColourKey {
 
 // @public
 export function createChart(element: HTMLElement, options: ChartOptions): ChartHandle;
+
+// @public
+export function createSurface(element: HTMLElement, options: SurfaceOptions): SurfaceHandle;
 
 // @public
 export type DateLabel = 'auto' | 'year' | 'yearMonth' | 'date' | 'monthYear' | 'tenor';
@@ -391,7 +403,105 @@ export interface DrawnWhisker {
 }
 
 // @public
+export function fitLeastSquares(xs: readonly number[], ys: readonly number[], space?: FitSpace): FittedCurve;
+
+// @public
+export function fitPolynomial(xs: readonly number[], ys: readonly number[], degree: number, space?: FitSpace): FittedCurve;
+
+// @public
+export type FitSpace = 'linear' | 'logY' | 'logLog';
+
+// @public
+export class FittedCurve {
+    constructor(options: FittedCurveOptions);
+    get coefficients(): readonly number[];
+    get count(): number;
+    get degree(): number;
+    get from(): number;
+    get intercept(): number;
+    get method(): string;
+    get note(): string;
+    get rSquared(): number;
+    series(id: string, name: string): ChartSeriesOptions;
+    get slope(): number;
+    get space(): FitSpace;
+    get to(): number;
+    valueAt(x: number): number | null;
+}
+
+// @public
+export interface FittedCurveOptions {
+    readonly coefficients: readonly number[];
+    readonly count: number;
+    readonly from: number;
+    readonly method: string;
+    readonly rSquared: number;
+    readonly space?: FitSpace;
+    readonly to: number;
+}
+
+// @public
+export function fitTheilSen(xs: readonly number[], ys: readonly number[], space?: FitSpace): FittedCurve;
+
+// @public
 export type HorizontalTick = readonly [position: number, x: number, label: string | null];
+
+// @public
+export class Interpolant1D {
+    constructor(options: Interpolant1DOptions);
+    get evaluate(): (x: number) => number | null;
+    get from(): number;
+    get method(): string;
+    series(id: string, name: string): ChartSeriesOptions;
+    get to(): number;
+    valueAt(x: number): number | null;
+}
+
+// @public
+export interface Interpolant1DOptions {
+    readonly evaluate: (x: number) => number | null;
+    readonly from: number;
+    readonly method: string;
+    readonly to: number;
+}
+
+// @public
+export class Interpolant2D {
+    constructor(options: Interpolant2DOptions);
+    get evaluate(): (x: number, y: number) => number | null;
+    get method(): string;
+    surface(options: InterpolatedSurfaceOptions): SurfaceDefinition;
+    valueAt(x: number, y: number): number | null;
+    get xFrom(): number;
+    get xTo(): number;
+    get yFrom(): number;
+    get yTo(): number;
+}
+
+// @public
+export interface Interpolant2DOptions {
+    readonly evaluate: (x: number, y: number) => number | null;
+    readonly method: string;
+    readonly xFrom: number;
+    readonly xTo: number;
+    readonly yFrom: number;
+    readonly yTo: number;
+}
+
+// @public
+export function interpolateBilinear(xs: readonly number[], ys: readonly number[], z: readonly (readonly (number | null)[])[]): Interpolant2D;
+
+// @public
+export type InterpolatedSurfaceOptions = Omit<SurfaceSampledOptions, 'method' | 'xFrom' | 'xTo' | 'yFrom' | 'yTo' | 'z'>;
+
+// @public
+export function interpolateLinear(xs: readonly number[], ys: readonly number[]): Interpolant1D;
+
+// @public
+export function interpolateNaturalCubicSpline(xs: readonly number[], ys: readonly number[]): Interpolant1D;
+
+// @public
+export function interpolateTriangles(points: readonly MeshPoint[], triangles: readonly SurfaceTriangle[]): Interpolant2D;
 
 // @public
 export interface IntervalBound {
@@ -449,6 +559,13 @@ export type LegendPosition =
 
 // @public
 export type MarkerShape = 'circle' | 'square' | 'diamond' | 'triangle';
+
+// @public
+export interface MeshPoint {
+    readonly x: number;
+    readonly y: number;
+    readonly z: number;
+}
 
 // @public
 export type NamedPosition = readonly [position: number, label: string];
@@ -744,6 +861,14 @@ export interface SurfaceGridOptions extends SurfaceScaleOptions {
 }
 
 // @public
+export interface SurfaceHandle {
+    destroy(): void;
+    download(format: ChartFileFormat): Promise<boolean>;
+    svgText(): string | undefined;
+    update(options: SurfaceOptions): void;
+}
+
+// @public
 export interface SurfaceMesh {
     readonly bar: SurfaceColourBar;
     readonly columns: readonly (readonly number[])[];
@@ -784,6 +909,23 @@ export interface SurfaceNode {
     readonly x: number;
     readonly y: number;
     readonly z: ChartValue | null;
+}
+
+// @public
+export interface SurfaceOptions {
+    readonly definition: SurfaceDefinition;
+    readonly density?: GridDensity;
+    readonly description?: string;
+    readonly fileName?: string;
+    readonly height?: number;
+    readonly label?: ChartLabel;
+    readonly onSliceChanged?: (slice: SurfaceSlice) => void;
+    readonly onViewChanged?: (view: SurfaceView) => void;
+    readonly slice?: SurfaceSlice | null;
+    readonly sliceWidth?: number;
+    readonly title?: string;
+    readonly view?: SurfaceView | null;
+    readonly width?: number;
 }
 
 // @public
@@ -842,6 +984,9 @@ export type SurfaceSliceAxis = 'x' | 'y';
 export function surfaceSlicePath(definition: SurfaceDefinition, slice: SurfaceSlice): readonly (readonly SurfaceMeshPoint[])[];
 
 // @public
+export function surfaceSummary(definition: SurfaceDefinition, title?: string, description?: string): string;
+
+// @public
 export interface SurfaceTick {
     readonly label: string | null;
     readonly value: number;
@@ -880,6 +1025,12 @@ export interface SurfaceView {
     readonly yaw: number;
     readonly zoom: number;
 }
+
+// @public
+export function tenor(years: number): string;
+
+// @public
+export const theilSenLimit = 3000;
 
 // @public
 export type TickPlacement =

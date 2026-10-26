@@ -131,6 +131,9 @@ export interface GridColumn<Row> extends QueryColumn<Row> {
     /** What its cells paint in place of their value's text (ADR-0020). The value is still read for sorting,
      * filtering, Find and copy, never the template; and `####` is not the template's business. */
     readonly template?: GridTemplate<Row>;
+    /** Whether this is the grid's Mark Column (ADR-0043), declared through {@link markColumn}: a checkbox on
+     * every Detail row, and one in the header. At most one per grid. */
+    readonly mark?: boolean;
 }
 
 /** A column with what its declaration resolves to, checked once, where the Consumer handed it over. */
@@ -151,8 +154,10 @@ export interface ResolvedColumn<Row> {
     readonly actions: readonly GridAction[];
     /** What its cells paint, for a Template Column (ADR-0020). */
     readonly template: GridTemplate<Row> | undefined;
-    /** Whether its cells paint their value as text: false for an Action or Template Column, which takes them
-     * out of the overflow decision, the Auto width's observation and Size to fit (ADR-0016). */
+    /** Whether it is the grid's Mark Column (ADR-0043). */
+    readonly mark: boolean;
+    /** Whether its cells paint their value as text: false for an Action, Template or Mark Column, which takes
+     * them out of the overflow decision, the Auto width's observation and Size to fit (ADR-0016). */
     readonly paintsValue: boolean;
 }
 
@@ -164,12 +169,13 @@ export function resolveColumns<Row>(columns: readonly GridColumn<Row>[]): readon
     const given: unknown = columns;
     if (!Array.isArray(given)) throw new TypeError('The columns are an array of columns, in display order.');
     const names = new Set<string>();
+    let marking: string | undefined;
     return Object.freeze(columns.map((column, index) => {
         // Checked as an untyped caller may hand it, where it arrives (CONVENTIONS.md).
-        const { name, value, align, headerAlign, header, type, editable, validate, filterUi, actions, template, queryable }: {
+        const { name, value, align, headerAlign, header, type, editable, validate, filterUi, actions, template, queryable, mark }: {
             readonly name: unknown; readonly value: unknown; readonly align?: unknown; readonly headerAlign?: unknown; readonly header?: unknown; readonly type: unknown;
             readonly editable?: unknown; readonly validate?: unknown; readonly filterUi?: unknown; readonly actions?: unknown;
-            readonly template?: unknown; readonly queryable?: unknown;
+            readonly template?: unknown; readonly queryable?: unknown; readonly mark?: unknown;
         } = column;
         if (typeof name !== 'string' || name === '') {
             throw new TypeError(`The column at ${index} has no name: a column is named by a non-empty string.`);
@@ -210,6 +216,21 @@ export function resolveColumns<Row>(columns: readonly GridColumn<Row>[]): readon
             throw new TypeError(`Column '${name}' carries actions and ${template === undefined ? 'a value to sort and filter by' : 'a template'}: `
                 + 'an Action Column carries no value and paints only its buttons, so it is made by actionColumn (ADR-0020).');
         }
+        if (mark !== undefined && typeof mark !== 'boolean') {
+            throw new TypeError(`Column '${name}': mark is true or false (ADR-0043).`);
+        }
+        if (mark === true && (queryable !== false || actions !== undefined || template !== undefined || editable === true)) {
+            throw new TypeError(`Column '${name}' is a Mark Column and also ${actions !== undefined ? 'carries actions' : template !== undefined
+                ? 'paints a template' : editable === true ? 'edits' : 'carries a value to sort and filter by'}: a Mark Column paints only its `
+                + 'checkboxes, and a Row Mark is not the row\'s data, so it is made by markColumn (ADR-0043).');
+        }
+        if (mark === true) {
+            if (marking !== undefined) {
+                throw new TypeError(`Columns '${marking}' and '${name}' are both Mark Columns. A grid has at most one: the header's "all", `
+                    + 'its state and the count would not say which marks they meant (ADR-0043).');
+            }
+            marking = name;
+        }
         if (editable === true && (actions !== undefined || template !== undefined)) {
             throw new TypeError(`Column '${name}' is editable and paints ${actions === undefined ? 'a template' : 'actions'}: the Cell Editor `
                 + 'opens over a value painted as text, and these cells paint none (ADR-0020).');
@@ -223,7 +244,8 @@ export function resolveColumns<Row>(columns: readonly GridColumn<Row>[]): readon
             filterUi: column.filterUi ?? 'condition', // oxlint-disable-line ex-grid/no-stand-in-default -- ADR-0009: the condition form is the safe default, which never enumerates
             actions: declaredActions,
             template: column.template,
-            paintsValue: actions === undefined && template === undefined,
+            mark: mark === true,
+            paintsValue: actions === undefined && template === undefined && mark !== true,
         });
     }));
 }
@@ -239,6 +261,22 @@ export function actionColumn<Row>(name: string, actions: readonly GridAction[],
     const checked = checkedActions(name, actions);
     return Object.freeze({
         name, type: 'text', value: () => undefined, queryable: false, header, actions: checked,
+        ...(width === undefined ? {} : { width }),
+    });
+}
+
+/**
+ * The Mark Column (ADR-0043): a checkbox on every Detail row, and one in the header that marks every row of the
+ * current result. The marks are the Consumer's: the grid reports each gesture and asks each painted row whether
+ * it is marked, so a grid declaring this column needs someone holding them, its source's marks or the `marks`
+ * option. At most one per grid. Not a boolean field shown as a checkbox: a Row Mark is not the row's data and is
+ * never written to it. Like an Action Column it has no value, so it is unsortable, unfilterable, and copies as
+ * an empty cell. Named `Mark` and headed by nothing unless given.
+ */
+export function markColumn<Row>(options: { readonly name?: string; readonly header?: string; readonly width?: GridColumnWidth } = {}): GridColumn<Row> {
+    const { name = 'Mark', header = '', width } = options;
+    return Object.freeze({
+        name, type: 'text', value: () => undefined, queryable: false, header, mark: true, align: 'center',
         ...(width === undefined ? {} : { width }),
     });
 }
