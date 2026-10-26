@@ -180,8 +180,8 @@ function typedText(node: Json | undefined, what: string): string {
     return list(node['parts'], 'parts').map(part => {
         if (typeof part === 'string') return part;
         const [piece, times] = list(part, 'a part');
-        if (typeof piece !== 'string' || typeof times !== 'number' || list(part, 'a part').length !== 2) {
-            throw new CaseError(`${what}: '${JSON.stringify(part)}' is no part of a text: a string, or [string, times].`);
+        if (typeof piece !== 'string' || typeof times !== 'number' || !Number.isSafeInteger(times) || times < 0 || list(part, 'a part').length !== 2) {
+            throw new CaseError(`${what}: '${JSON.stringify(part)}' is no part of a text: a string, or [string, times] with times a whole number, 0 or more.`);
         }
         return piece.repeat(times);
     }).join('');
@@ -344,6 +344,13 @@ const verbs = new Set([
 const modifiers = new Set(['on', 'expect', 'note']);
 
 /** What a step did, for its readings: the change it reported, the refusal it was checked for, its step. */
+/** A Linked Table's columns, as `linkedTableColumns` answers them. */
+type Columns = readonly (readonly (Value | undefined)[])[];
+
+function columnsJson(columns: Columns | undefined): Json {
+    return columns === undefined ? null : columns.map(c => c.map(encode));
+}
+
 interface Outcome {
     sheet: Sheet;
     change: SheetChange | undefined;
@@ -355,7 +362,7 @@ interface Outcome {
     /** What a step, an undo or a redo changed across the Workbook. */
     workbookChange: WorkbookChange | undefined;
     /** A Linked Table's columns as `readTable` read them (`undefined` while it waits), or `false` when no table was read. */
-    tableColumns: readonly (readonly (Value | undefined)[])[] | undefined | false;
+    tableColumns: Columns | undefined | false;
 }
 
 function padded(n: number, width: number): string {
@@ -407,6 +414,7 @@ class Run {
     readonly #done: WorkbookStep[] = [];
     readonly #pictures = new Map<string, string>();
     readonly #copies = new Map<string, SheetCopy>();
+    readonly #tables = new Map<string, Columns | undefined>();
     #clockReads = 0;
 
     constructor(culture: Culture) {
@@ -501,13 +509,20 @@ class Run {
                 }));
                 this.#done.push(all);
                 outcome.step = all;
+                outcome.sheet = all.sheet;
                 outcome.workbookChange = all.change;
                 outcome.change = all.change.for(all.sheet);
                 break;
             }
             case 'readTable':
-                outcome.tableColumns = this.workbook.linkedTableColumns(text(argument, 'readTable'));
+            {
+                // A table's name, or {"name", "as"}, which also holds the snapshot read under that label.
+                const named = isObject(argument) ? argument : undefined;
+                const columns = this.workbook.linkedTableColumns(text(named === undefined ? argument : named['name'], 'readTable'));
+                outcome.tableColumns = columns;
+                if (named !== undefined) this.#tables.set(text(named['as'], 'as'), columns);
                 break;
+            }
             case 'check':
                 outcome.checked = true;
                 outcome.refusal = this.workbook.check(sheet.name, this.#edit(argument));
@@ -888,9 +903,16 @@ class Run {
             case 'tableColumns': {
                 const columns = outcome.tableColumns;
                 if (columns === false) throw new CaseError(`${where}: only readTable reads a Linked Table's columns.`);
-                actual = columns === undefined ? null : columns.map(c => c.map(encode));
+                actual = columnsJson(columns);
                 break;
             }
+            case 'heldTables':
+                // Each snapshot readTable held, as it stands now.
+                actual = Object.fromEntries(Object.keys(object(expected, key)).map(label => {
+                    if (!this.#tables.has(label)) throw new CaseError(`${where}: no snapshot was held as '${label}'.`);
+                    return [label, columnsJson(this.#tables.get(label))];
+                }));
+                break;
             case 'copies':
                 actual = Object.fromEntries(Object.keys(object(expected, key)).map(name => {
                     const copy = this.#copies.get(name);

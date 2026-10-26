@@ -158,9 +158,9 @@
         {"declareTable": {"name": "Trades", "columns": ["Id", "Amount"], "key": ["Id"]}},
         {"readTable": "trades", "expect": {"tableColumns": null}},
         {"pushTable": {"name": "Trades", "rows": [[1, 10], [2, null]]}},
-        {"readTable": "Trades", "expect": {"tableColumns": [[1, 2], [10, null]]}},
+        {"readTable": {"name": "Trades", "as": "first"}, "expect": {"tableColumns": [[1, 2], [10, null]]}},
         {"pushTable": {"name": "Trades", "rows": [[3, 7]]}},
-        {"readTable": "Trades", "expect": {"tableColumns": [[3], [7]]}},
+        {"readTable": "Trades", "expect": {"tableColumns": [[3], [7]], "heldTables": {"first": [[1, 2], [10, null]]}}},
         {"readTable": "Positions", "expect": {"throws": {"refusal": "invalidOperation"}}},
         {"pushTable": {"name": "Trades", "rows": [[3, null], [3, null]]}, "expect": {"throws": {"refusal": "repeatedKey"}}},
         {"readTable": "Trades", "expect": {"tableColumns": null}}

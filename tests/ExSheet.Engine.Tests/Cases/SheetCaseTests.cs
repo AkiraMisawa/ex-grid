@@ -9,7 +9,11 @@ public class SheetCaseTests
     {
         var rows = new TheoryData<string, string>();
         foreach (var (file, name) in SheetCases.Of("sheet"))
-            rows.Add(file, name);
+        {
+            // Run on a stack of 1 MB instead, by FormulaDepthTests.
+            if (file != FormulaDepthTests.File)
+                rows.Add(file, name);
+        }
         return rows;
     }
 
@@ -17,7 +21,7 @@ public class SheetCaseTests
     public void Sheet_case(string file, string name)
     {
         var (document, entry) = SheetCases.Find(file, name);
-        var differences = SheetCases.Run(document, entry);
+        var differences = SheetCases.RunInCulture(document, entry);
         Assert.True(differences.Count == 0, $"sheet/{file}, \"{name}\":\n  {string.Join("\n  ", differences)}");
     }
 }

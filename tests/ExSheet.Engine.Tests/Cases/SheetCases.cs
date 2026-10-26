@@ -35,6 +35,10 @@ internal static class SheetCases
         }
     }
 
+    /// <summary>The names of the cases of one file.</summary>
+    public static IEnumerable<string> NamesIn(string file) =>
+        Read(Path.Combine(Root, file))["cases"]!.AsArray().Select(entry => (string)entry!["name"]!);
+
     /// <summary>The case of the file named so, and the file it is in.</summary>
     public static (JsonObject File, JsonObject Case) Find(string file, string name)
     {
@@ -69,6 +73,28 @@ internal static class SheetCases
             run.Take(step, $"step {i + 1}");
         }
         return run.Differences;
+    }
+
+    /// <summary>
+    /// Runs the case with the thread in the case's culture (ADR-0047): what the engine writes or reads stays invariant
+    /// whatever culture a server thread is in, and a format or parse that leaked the thread's culture would show here.
+    /// </summary>
+    public static IReadOnlyList<string> RunInCulture(JsonObject file, JsonObject entry)
+    {
+        var culture = Culture((string?)(entry["culture"] ?? file["culture"])
+            ?? throw new InvalidDataException("Neither the case nor its file names a culture."));
+        var (previous, previousUi) = (CultureInfo.CurrentCulture, CultureInfo.CurrentUICulture);
+        CultureInfo.CurrentCulture = culture;
+        CultureInfo.CurrentUICulture = culture;
+        try
+        {
+            return Run(file, entry);
+        }
+        finally
+        {
+            CultureInfo.CurrentCulture = previous;
+            CultureInfo.CurrentUICulture = previousUi;
+        }
     }
 
     internal static CultureInfo Culture(string name) =>
@@ -185,7 +211,10 @@ internal static class SheetCases
 
     /// <summary>Nodes in the ordinal order of their JSON's text, so that a set reads the same from both runners.</summary>
     internal static JsonArray Sorted(IEnumerable<JsonNode> nodes) =>
-        new([.. nodes.OrderBy(n => n.ToJsonString(), StringComparer.Ordinal)]);
+        new([.. nodes.OrderBy(n => n.ToJsonString(Unescaped), StringComparer.Ordinal)]);
+
+    /// <summary>JSON text as JavaScript's <c>JSON.stringify</c> writes it, so that both runners sort a set alike: <c>+</c>, quotes, HTML's characters and non-ASCII written as they are.</summary>
+    private static readonly JsonSerializerOptions Unescaped = new() { Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping };
 
     internal static JsonObject Borders(CellBorders borders) => new()
     {
@@ -210,11 +239,12 @@ internal static class SheetCases
                 case JsonValue piece when piece.GetValueKind() == JsonValueKind.String:
                     text.Append((string)piece!);
                     break;
-                case JsonArray { Count: 2 } repeated when repeated[0] is JsonValue p && p.GetValueKind() == JsonValueKind.String && repeated[1] is JsonValue n && n.GetValueKind() == JsonValueKind.Number:
-                    text.Insert(text.Length, (string)p!, n.GetValue<int>());
+                case JsonArray { Count: 2 } repeated when repeated[0] is JsonValue p && p.GetValueKind() == JsonValueKind.String
+                    && repeated[1] is JsonValue n && n.TryGetValue<int>(out var times) && times >= 0:
+                    text.Insert(text.Length, (string)p!, times);
                     break;
                 default:
-                    throw new InvalidDataException($"'{part?.ToJsonString()}' is no part of a text: a string, or [string, times].");
+                    throw new InvalidDataException($"'{part?.ToJsonString()}' is no part of a text: a string, or [string, times] with times a whole number, 0 or more.");
             }
         }
         return text.ToString();
@@ -395,6 +425,7 @@ internal sealed class Run(CultureInfo culture)
     private readonly Dictionary<string, string> _pictures = new(StringComparer.Ordinal);
     private int _clockReads;
     private readonly Dictionary<string, SheetCopy> _copies = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, IReadOnlyList<IReadOnlyList<Value?>>?> _tables = new(StringComparer.Ordinal);
 
     private static readonly string[] Verbs =
     [
@@ -455,6 +486,13 @@ internal sealed class Run(CultureInfo culture)
     }
 
     /// <summary>What a step did, for its readings: the change it reported, the refusal it was checked for, its step.</summary>
+    /// <summary>A Linked Table's columns as <c>readTable</c> read them: <c>null</c> while it waits.</summary>
+    private sealed record TableRead(IReadOnlyList<IReadOnlyList<Value?>>? Columns);
+
+    private static JsonNode? ColumnsJson(IReadOnlyList<IReadOnlyList<Value?>>? columns) => columns is null
+        ? null
+        : new JsonArray([.. columns.Select(c => (JsonNode)new JsonArray([.. c.Select(SheetCases.Encode)]))]);
+
     private sealed class Outcome(Sheet sheet)
     {
         public Sheet Sheet { get; set; } = sheet;
@@ -467,8 +505,7 @@ internal sealed class Run(CultureInfo culture)
         /// <summary>What a step, an undo or a redo changed across the Workbook.</summary>
         public WorkbookChange? WorkbookChange { get; set; }
         /// <summary>A Linked Table's columns as <c>readTable</c> read them, or <c>null</c> while it waits.</summary>
-        public IReadOnlyList<IReadOnlyList<Value?>>? TableColumns { get; set; }
-        public bool TableRead { get; set; }
+        public TableRead? Table { get; set; }
     }
 
     /// <summary>A Sheet's change as a case reads one.</summary>
@@ -550,14 +587,22 @@ internal sealed class Run(CultureInfo culture)
                 var all = Workbook.Do([.. argument.AsArray().Select(pair => ((string)pair![0]!, Edit(pair[1]!)))]);
                 _done.Add(all);
                 outcome.Step = all;
+                outcome.Sheet = all.Sheet;
                 outcome.WorkbookChange = all.Change;
                 outcome.Change = all.Change.For(all.Sheet);
                 break;
             }
             case "readTable":
-                outcome.TableRead = true;
-                outcome.TableColumns = Workbook.LinkedTableColumns((string)argument!);
+            {
+                // A table's name, or {"name", "as"}, which also holds the snapshot read under that label.
+                var (table, label) = argument is JsonObject named
+                    ? ((string)named["name"]!, (string?)named["as"] ?? throw new InvalidDataException("'readTable' names the snapshot it holds 'as'."))
+                    : ((string)argument!, null);
+                outcome.Table = new TableRead(Workbook.LinkedTableColumns(table));
+                if (label is not null)
+                    _tables[label] = outcome.Table.Columns;
                 break;
+            }
             case "check":
                 outcome.Checked = true;
                 outcome.Refusal = Workbook.Check(sheet.Name, Edit(argument));
@@ -763,9 +808,10 @@ internal sealed class Run(CultureInfo culture)
             case "pasteFields":
             {
                 // The Script Core's name for the two forms of PasteText that take fields cell by cell.
-                List<KeyValuePair<CellAddress, string>> typed = [.. argument["typed"]!.AsObject().Select(p => new KeyValuePair<CellAddress, string>(CellAddress.Parse(p.Key), (string)p.Value!))];
-                return argument["entries"] is JsonObject entries
-                    ? SheetEdit.PasteText(typed, [.. entries.Select(p => new KeyValuePair<CellAddress, Entry?>(CellAddress.Parse(p.Key), Entry(p.Value)))])
+                List<KeyValuePair<CellAddress, string>> typed = [.. argument["typed"]!.AsObject().Select(p => new KeyValuePair<CellAddress, string>(CellAddress.Parse(p.Key),
+                    p.Value is JsonValue field && field.GetValueKind() == JsonValueKind.String ? (string)field! : throw new InvalidDataException($"'{p.Value?.ToJsonString()}' is no typed field.")))];
+                return argument.AsObject().TryGetPropertyValue("entries", out var entries)
+                    ? SheetEdit.PasteText(typed, [.. (entries as JsonObject ?? throw new InvalidDataException("'entries' is an object of cells.")).Select(p => new KeyValuePair<CellAddress, Entry?>(CellAddress.Parse(p.Key), Entry(p.Value)))])
                     : SheetEdit.PasteText(typed);
             }
             case "enterInto":
@@ -965,10 +1011,12 @@ internal sealed class Run(CultureInfo culture)
                 actual = new JsonArray([.. (outcome.WorkbookChange ?? throw new InvalidDataException($"{where}: only a step, an undo, a redo or a push reads the Sheets it reached.")).Sheets.Select(s => (JsonNode)s.Name)]);
                 break;
             case "tableColumns":
-                if (!outcome.TableRead) throw new InvalidDataException($"{where}: only readTable reads a Linked Table's columns.");
-                actual = outcome.TableColumns is { } columns
-                    ? new JsonArray([.. columns.Select(c => (JsonNode)new JsonArray([.. c.Select(SheetCases.Encode)]))])
-                    : null;
+                actual = ColumnsJson((outcome.Table ?? throw new InvalidDataException($"{where}: only readTable reads a Linked Table's columns.")).Columns);
+                break;
+            case "heldTables":
+                // Each snapshot readTable held, as it stands now.
+                actual = new JsonObject([.. expected!.AsObject().Select(p => new KeyValuePair<string, JsonNode?>(p.Key,
+                    ColumnsJson(_tables.TryGetValue(p.Key, out var held) ? held : throw new InvalidDataException($"{where}: no snapshot was held as '{p.Key}'."))))]);
                 break;
             case "copies":
             {

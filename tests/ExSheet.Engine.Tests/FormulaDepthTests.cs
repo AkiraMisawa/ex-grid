@@ -45,23 +45,17 @@ public class FormulaDepthTests
         return text.ToString();
     }
 
-    public static TheoryData<string> DepthCases()
-    {
-        var rows = new TheoryData<string>();
-        foreach (var (file, name) in SheetCases.Of("sheet"))
-        {
-            if (file == "formula-depth.json")
-                rows.Add(name);
-        }
-        return rows;
-    }
+    /// <summary>The shared cases of long and deep Formulas, which run here only, on a small stack.</summary>
+    internal const string File = "formula-depth.json";
+
+    public static TheoryData<string> DepthCases() => [.. SheetCases.NamesIn(File)];
 
     [Theory, MemberData(nameof(DepthCases))] // ADR-0047: what a long chain and a deep nesting compute, or how they are refused, holds on a stack of 1 MB
     public void A_depth_case_holds_on_a_small_stack(string name) => OnSmallStack(() =>
     {
-        var (document, entry) = SheetCases.Find("formula-depth.json", name);
-        var differences = SheetCases.Run(document, entry);
-        Assert.True(differences.Count == 0, $"sheet/formula-depth.json, \"{name}\":\n  {string.Join("\n  ", differences)}");
+        var (document, entry) = SheetCases.Find(File, name);
+        var differences = SheetCases.RunInCulture(document, entry);
+        Assert.True(differences.Count == 0, $"sheet/{File}, \"{name}\":\n  {string.Join("\n  ", differences)}");
     });
 
     [Fact] // ADR-0047: the walks over a parsed Formula loop along a chain — calls, names, Linked Tables and spill shapes

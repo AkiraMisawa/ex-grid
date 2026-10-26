@@ -5,24 +5,24 @@
   "cases": [
     {
       "name": "ADR-0047 (2026-10-10), SH-68: while no row can be hidden, SUBTOTAL's 101 to 111 give what 1 to 11 give, and AGGREGATE's options 1, 3, 5 and 7 what 0, 2, 4 and 6 give",
-      "note": "The day a row can be hidden, this fails: decide with the user how they pass over a hidden or filtered row (ADR-0047's note of 2026-10-10), never by changing these expectations.",
+      "note": "Each step computes the pair side by side and expects both to be the same Value. Where what 1 to 11 or options 0, 2, 4 and 6 give changes, both change together and the expectation moves with them; the day the two of a pair differ, a row can be hidden: decide with the user how they pass over a hidden or filtered row (ADR-0047's note of 2026-10-10), never by making them differ in the expectation.",
       "steps": [
         {"enterAll": {"A1": "1", "A2": "2", "A3": "'3", "A4": "TRUE", "A6": "abc", "A7": "4", "A8": "=1/0"}},
-        {"enter": {"ZZ1000": "=SUBTOTAL(101,A1:A7)"}, "expect": {"values": {"ZZ1000": 2.3333333333333335}}},
-        {"enter": {"ZZ1000": "=SUBTOTAL(102,A1:A7)"}, "expect": {"values": {"ZZ1000": 3}}},
-        {"enter": {"ZZ1000": "=SUBTOTAL(103,A1:A7)"}, "expect": {"values": {"ZZ1000": 6}}},
-        {"enter": {"ZZ1000": "=SUBTOTAL(104,A1:A7)"}, "expect": {"values": {"ZZ1000": 4}}},
-        {"enter": {"ZZ1000": "=SUBTOTAL(105,A1:A7)"}, "expect": {"values": {"ZZ1000": 1}}},
-        {"enter": {"ZZ1000": "=SUBTOTAL(106,A1:A7)"}, "expect": {"values": {"ZZ1000": 8}}},
-        {"enter": {"ZZ1000": "=SUBTOTAL(107,A1:A7)"}, "expect": {"values": {"ZZ1000": 1.5275252316519465}}},
-        {"enter": {"ZZ1000": "=SUBTOTAL(108,A1:A7)"}, "expect": {"values": {"ZZ1000": 1.247219128924647}}},
-        {"enter": {"ZZ1000": "=SUBTOTAL(109,A1:A7)"}, "expect": {"values": {"ZZ1000": 7}}},
-        {"enter": {"ZZ1000": "=SUBTOTAL(110,A1:A7)"}, "expect": {"values": {"ZZ1000": 2.333333333333333}}},
-        {"enter": {"ZZ1000": "=SUBTOTAL(111,A1:A7)"}, "expect": {"values": {"ZZ1000": 1.5555555555555554}}},
-        {"enter": {"ZZ1000": "=AGGREGATE(9,1,A1:A8)"}, "expect": {"values": {"ZZ1000": {"error": "#DIV/0!"}}}},
-        {"enter": {"ZZ1000": "=AGGREGATE(9,3,A1:A8)"}, "expect": {"values": {"ZZ1000": 7}}},
-        {"enter": {"ZZ1000": "=AGGREGATE(9,5,A1:A8)"}, "expect": {"values": {"ZZ1000": {"error": "#DIV/0!"}}}},
-        {"enter": {"ZZ1000": "=AGGREGATE(9,7,A1:A8)"}, "expect": {"values": {"ZZ1000": 7}}}
+        {"enter": {"ZZ1000": "=SUBTOTAL(1,A1:A7)", "ZZ1001": "=SUBTOTAL(101,A1:A7)"}, "expect": {"values": {"ZZ1000": 2.3333333333333335, "ZZ1001": 2.3333333333333335}}},
+        {"enter": {"ZZ1000": "=SUBTOTAL(2,A1:A7)", "ZZ1001": "=SUBTOTAL(102,A1:A7)"}, "expect": {"values": {"ZZ1000": 3, "ZZ1001": 3}}},
+        {"enter": {"ZZ1000": "=SUBTOTAL(3,A1:A7)", "ZZ1001": "=SUBTOTAL(103,A1:A7)"}, "expect": {"values": {"ZZ1000": 6, "ZZ1001": 6}}},
+        {"enter": {"ZZ1000": "=SUBTOTAL(4,A1:A7)", "ZZ1001": "=SUBTOTAL(104,A1:A7)"}, "expect": {"values": {"ZZ1000": 4, "ZZ1001": 4}}},
+        {"enter": {"ZZ1000": "=SUBTOTAL(5,A1:A7)", "ZZ1001": "=SUBTOTAL(105,A1:A7)"}, "expect": {"values": {"ZZ1000": 1, "ZZ1001": 1}}},
+        {"enter": {"ZZ1000": "=SUBTOTAL(6,A1:A7)", "ZZ1001": "=SUBTOTAL(106,A1:A7)"}, "expect": {"values": {"ZZ1000": 8, "ZZ1001": 8}}},
+        {"enter": {"ZZ1000": "=SUBTOTAL(7,A1:A7)", "ZZ1001": "=SUBTOTAL(107,A1:A7)"}, "expect": {"values": {"ZZ1000": 1.5275252316519465, "ZZ1001": 1.5275252316519465}}},
+        {"enter": {"ZZ1000": "=SUBTOTAL(8,A1:A7)", "ZZ1001": "=SUBTOTAL(108,A1:A7)"}, "expect": {"values": {"ZZ1000": 1.247219128924647, "ZZ1001": 1.247219128924647}}},
+        {"enter": {"ZZ1000": "=SUBTOTAL(9,A1:A7)", "ZZ1001": "=SUBTOTAL(109,A1:A7)"}, "expect": {"values": {"ZZ1000": 7, "ZZ1001": 7}}},
+        {"enter": {"ZZ1000": "=SUBTOTAL(10,A1:A7)", "ZZ1001": "=SUBTOTAL(110,A1:A7)"}, "expect": {"values": {"ZZ1000": 2.333333333333333, "ZZ1001": 2.333333333333333}}},
+        {"enter": {"ZZ1000": "=SUBTOTAL(11,A1:A7)", "ZZ1001": "=SUBTOTAL(111,A1:A7)"}, "expect": {"values": {"ZZ1000": 1.5555555555555554, "ZZ1001": 1.5555555555555554}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(9,0,A1:A8)", "ZZ1001": "=AGGREGATE(9,1,A1:A8)"}, "expect": {"values": {"ZZ1000": {"error": "#DIV/0!"}, "ZZ1001": {"error": "#DIV/0!"}}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(9,2,A1:A8)", "ZZ1001": "=AGGREGATE(9,3,A1:A8)"}, "expect": {"values": {"ZZ1000": 7, "ZZ1001": 7}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(9,4,A1:A8)", "ZZ1001": "=AGGREGATE(9,5,A1:A8)"}, "expect": {"values": {"ZZ1000": {"error": "#DIV/0!"}, "ZZ1001": {"error": "#DIV/0!"}}}},
+        {"enter": {"ZZ1000": "=AGGREGATE(9,6,A1:A8)", "ZZ1001": "=AGGREGATE(9,7,A1:A8)"}, "expect": {"values": {"ZZ1000": 7, "ZZ1001": 7}}}
       ]
     },
     {
