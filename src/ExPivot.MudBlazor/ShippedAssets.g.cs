@@ -15,10 +15,10 @@ internal static class ShippedAssets
     internal const string StylesheetPath = "_content/ExPivot.MudBlazor/mud-ex-pivot.min.css";
 
     /// <summary>The first 12 hex digits of the SHA-256 of that file as shipped: the version its address carries.</summary>
-    internal const string StylesheetVersion = "018bc674799c";
+    internal const string StylesheetVersion = "217cc1eba087";
 
     /// <summary>The SHA-256 of <c>Assets/mud-ex-pivot.css</c>, which the shipped file names and answers: its stamp.</summary>
-    internal const string StylesheetStamp = "02df38bd1a1cb8dc1f895f24ddd62c574a3eb7dbd2f25acc7d0eb04765686050";
+    internal const string StylesheetStamp = "c8ed4edf7ebccfe976c251aa675b1ac9c39eb7dac11dd84729ae01576f3e8680";
 
     /// <summary>The source's name, by which the stylesheet's notice rules find this package's notice.</summary>
     internal const string StylesheetName = "mud-ex-pivot.css";
