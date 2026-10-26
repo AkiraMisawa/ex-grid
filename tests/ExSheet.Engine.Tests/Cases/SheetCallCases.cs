@@ -54,7 +54,7 @@ public class SheetCallCaseTests
             CultureInfo.CurrentCulture = CultureInfo.CurrentUICulture = SheetCases.Culture(culture);
         try
         {
-            Hold("call", () => Read(call, args), entry, differences, outermost: true);
+            Hold("call", Prepare(call, args), entry, differences, outermost: true);
         }
         finally
         {
@@ -63,13 +63,18 @@ public class SheetCallCaseTests
         Assert.True(differences.Count == 0, $"sheet/{file}, \"{name}\":\n  {string.Join("\n  ", differences)}");
     }
 
-    private static object? Read(string call, JsonArray? args)
+    /// <summary>
+    /// The call made ready: its member found and its arguments converted, before the reading a refusal is caught in, so
+    /// that the runner's own reading of a case is never taken for the engine refusing.
+    /// </summary>
+    private static Func<object?> Prepare(string call, JsonArray? args)
     {
         if (call.StartsWith("new ", StringComparison.Ordinal))
         {
             var type = SubjectNamed(call[4..]);
             var constructors = type.GetConstructors(BindingFlags.Instance | Visible).Where(Reachable);
-            return Invoke(constructors, args ?? throw new InvalidDataException($"{call} is called with args, [] for none."), (c, a) => ((ConstructorInfo)c).Invoke(a), call);
+            var (constructor, values, _) = Choose(constructors, args ?? throw new InvalidDataException($"{call} is called with args, [] for none."), call);
+            return () => ((ConstructorInfo)constructor).Invoke(BindingFlags.DoNotWrapExceptions, null, values, null);
         }
         var dot = call.IndexOf('.', StringComparison.Ordinal);
         if (dot < 0)
@@ -82,31 +87,39 @@ public class SheetCallCaseTests
 
     private static string Pascal(string member) => char.ToUpperInvariant(member[0]) + member[1..];
 
-    /// <summary>A property read, or a method called, on the instance, or on the type for a static.</summary>
-    private static object? Member(Type type, object? instance, string member, JsonArray? args)
+    /// <summary>A property read, or a method called, on the instance, or on the type for a static, made ready.</summary>
+    private static Func<object?> Member(Type type, object? instance, string member, JsonArray? args)
     {
         var flags = Visible | (instance is null ? BindingFlags.Static : BindingFlags.Instance);
         var name = Pascal(member);
         if (args is null)
         {
             if (type.GetProperty(name, flags) is { } property && property.GetMethod is { } getter && Reachable(getter))
-                return property.GetValue(instance);
+                return () => getter.Invoke(instance, BindingFlags.DoNotWrapExceptions, null, [], null);
             if (type.GetField(name, flags) is { } field && (field.IsPublic || field.IsAssembly))
-                return field.GetValue(instance);
+                return () => field.GetValue(instance);
             throw new InvalidDataException($"{type.Name} has no {member} to read.");
         }
         var methods = type.GetMethods(flags).Where(m => m.Name == name && Reachable(m));
-        return Invoke(methods, args, (m, a) => ((MethodInfo)m).Invoke(instance, a), $"{type.Name}.{member}");
+        var (method, values, outward) = Choose(methods, args, $"{type.Name}.{member}");
+        return () =>
+        {
+            var answer = method.Invoke(instance, BindingFlags.DoNotWrapExceptions, null, values, null);
+            return outward ? (answer is true ? values[^1] : null) : answer;
+        };
     }
 
     /// <summary>
-    /// Calls the first overload whose parameters the arguments convert to. A trailing <c>out</c> parameter the case
-    /// does not write is the answer, as the Script Core's <c>tryParse</c> answers it: what it holds when the method
-    /// answers true, and <c>null</c> when it answers false.
+    /// The one overload whose parameters the arguments convert to, with them converted. An overload that takes them
+    /// without filling a parameter by its default is taken before one that fills some; two that fit alike are the case's
+    /// defect, never a choice left to the order reflection lists them in. A trailing <c>out</c> parameter the case does
+    /// not write is the answer, as the Script Core's <c>tryParse</c> answers it: what it holds when the method answers
+    /// true, and <c>null</c> when it answers false.
     /// </summary>
-    private static object? Invoke(IEnumerable<MethodBase> overloads, JsonArray args, Func<MethodBase, object?[], object?> call, string what)
+    private static (MethodBase Overload, object?[] Values, bool Outward) Choose(IEnumerable<MethodBase> overloads, JsonArray args, string what)
     {
-        foreach (var overload in overloads.OrderBy(o => o.GetParameters().Length))
+        var fitting = new List<(MethodBase Overload, object?[] Values, bool Outward, int Defaults)>();
+        foreach (var overload in overloads)
         {
             var parameters = overload.GetParameters();
             var outward = parameters.Length == args.Count + 1 && parameters[^1].IsOut;
@@ -121,20 +134,16 @@ public class SheetCallCaseTests
                 else if (!TryArgument(args[i], parameters[i].ParameterType, out values[i]))
                     fits = false;
             }
-            if (!fits)
-                continue;
-            try
-            {
-                var answer = call(overload, values);
-                return outward ? (answer is true ? values[^1] : null) : answer;
-            }
-            catch (TargetInvocationException e) when (e.InnerException is { } inner)
-            {
-                System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(inner).Throw();
-                throw;
-            }
+            if (fits)
+                fitting.Add((overload, values, outward, outward ? 0 : parameters.Length - args.Count));
         }
-        throw new InvalidDataException($"{what} takes no arguments {args.ToJsonString()}.");
+        if (fitting.Count == 0)
+            throw new InvalidDataException($"{what} takes no arguments {args.ToJsonString()}.");
+        var fewest = fitting.Min(f => f.Defaults);
+        var chosen = fitting.Where(f => f.Defaults == fewest).ToList();
+        if (chosen.Count > 1)
+            throw new InvalidDataException($"{what} takes {args.ToJsonString()} by {chosen.Count} overloads; tag the arguments so that one fits.");
+        return (chosen[0].Overload, chosen[0].Values, chosen[0].Outward);
     }
 
     /// <summary>An argument as a case writes it, converted to the parameter's type: JSON as it stands, or one of the engine's own values, tagged.</summary>
@@ -164,12 +173,17 @@ public class SheetCallCaseTests
                     value = SheetCases.Culture((string)given!);
                     return true;
                 case "lookup" when type == typeof(Func<string, IReadOnlyList<string>?>):
-                    var map = given!.AsObject();
-                    value = new Func<string, IReadOnlyList<string>?>(n =>
-                        map.FirstOrDefault(p => string.Equals(p.Key, n, StringComparison.OrdinalIgnoreCase)).Value is JsonArray columns
-                            ? [.. columns.Select(c => (string)c!)]
-                            : null);
+                {
+                    // Each name holds a list of text; anything else is the case's defect, read alike by both runners.
+                    var map = given!.AsObject().ToDictionary(
+                        p => p.Key,
+                        p => p.Value is JsonArray held && held.All(c => c?.GetValueKind() == JsonValueKind.String)
+                            ? (IReadOnlyList<string>)[.. held.Select(c => (string)c!)]
+                            : throw new InvalidDataException($"The lookup holds {p.Value?.ToJsonString() ?? "null"} under '{p.Key}': a list of text."),
+                        StringComparer.OrdinalIgnoreCase);
+                    value = new Func<string, IReadOnlyList<string>?>(n => map.TryGetValue(n, out var columns) ? columns : null);
                     return true;
+                }
                 case "value" or "address" or "range" or "culture" or "lookup":
                     return false;
                 default:
@@ -252,11 +266,19 @@ public class SheetCallCaseTests
             throw new InvalidDataException($"An answer of {answer} is read as an object, and the case names none of its members.");
         var read = new JsonObject();
         foreach (var (key, value) in shape)
-            read[key] = Project(Member(answer.GetType(), answer, key, null), value);
+            read[key] = Project(Member(answer.GetType(), answer, key, null)(), value);
         return read;
     }
 
-    private static readonly HashSet<string> Parts = ["call", "get", "args", "is", "throws", "then", "name", "note"];
+    /// <summary>An answer as a difference names it: as a case would write it where that needs no shape, or by its type.</summary>
+    private static string Describe(object? answer) => answer switch
+    {
+        null => "null",
+        Value or CellAddress or CellRange or string or bool or int or long or double or char or Enum => Project(answer, null)!.ToJsonString(),
+        _ => $"an answer of {answer.GetType().Name}",
+    };
+
+        private static readonly HashSet<string> Parts = ["call", "get", "args", "is", "throws", "then", "name", "note"];
 
     /// <summary>Holds the case's expectation of one reading: its answer (<c>is</c>), or its refusal (<c>throws</c>), then the checks on the answer.</summary>
     private static void Hold(string where, Func<object?> read, JsonObject check, List<string> differences, bool outermost = false)
@@ -268,14 +290,14 @@ public class SheetCallCaseTests
         {
             answer = read();
         }
-        catch (Exception e) when (check["throws"] is not null && e is not InvalidDataException)
+        catch (Exception e) when (check["throws"] is not null && Run.IsRefusal(e))
         {
             SheetCases.Compare($"{where}.throws", check["throws"], Run.Thrown(e), differences);
             return;
         }
         if (check["throws"] is not null)
         {
-            differences.Add($"{where}: expected a refusal, got {Project(answer, check["is"])?.ToJsonString() ?? "null"}");
+            differences.Add($"{where}: expected a refusal, got {Describe(answer)}");
             return;
         }
         if (check["is"] is null && !check.ContainsKey("is") && check["then"] is null)
@@ -292,7 +314,7 @@ public class SheetCallCaseTests
                 var args = next.ContainsKey("call")
                     ? next["args"]?.AsArray() ?? throw new InvalidDataException($"{where}.then[{i}]: a call is written with its args, [] for none.")
                     : null;
-                Hold($"{where}.then[{i}]", () => Member(subject.GetType(), subject, member, args), next, differences);
+                Hold($"{where}.then[{i}]", Member(subject.GetType(), subject, member, args), next, differences);
             }
         }
     }

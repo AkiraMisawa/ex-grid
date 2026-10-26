@@ -529,6 +529,12 @@ internal sealed class Run(CultureInfo culture)
     };
 
     /// <summary>Whether the innermost frame outside .NET's own libraries is this runner's rather than the engine's.</summary>
+    /// <summary>Whether the exception is the engine refusing, by a type a case reads as one, and not the runner's own.</summary>
+    internal static bool IsRefusal(Exception e) =>
+        e is FormulaSyntaxException or SheetRefusedException or InvalidOperationException or ArgumentException or FormatException
+            or RepeatedKeyException or SheetDocumentException
+        && !ThrownByTheRunner(e);
+
     private static bool ThrownByTheRunner(Exception e)
     {
         foreach (var frame in new System.Diagnostics.StackTrace(e).GetFrames())

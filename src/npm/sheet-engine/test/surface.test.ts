@@ -1,7 +1,7 @@
 // The calls a shared case does not make, held here as EngineSurfaceTests.cs, CellAddressTests.cs,
 // CompletionTriggerTests.cs and FormulaReferencesTests.cs hold them on ExSheet.Engine (ADR-0370 section 2): a name asked about, a Sheet renamed
 // directly, two Entries or two keys compared, a walk over every column, prefix or declared function, a list read for
-// one name in it, and the package's surface read for a row that can be hidden.
+// one name in it, what one call writes read back by another, and the package's surface read for a row that can be hidden.
 import { describe, expect, it } from 'vitest';
 import * as engine from '../src/index';
 import { CellRange } from '../src/cell-range';
@@ -10,7 +10,7 @@ import { DeclaredFunction } from '../src/declared-function';
 import { Entry } from '../src/entry';
 import { NumberFormat, numberFormatColourRgb } from '../src/number-format';
 import { CellAddress, columnCount } from '../src/cell-address';
-import { formulaReferences } from '../src/formula-entry';
+import { formulaReferences, lookupText, structuredReferenceText } from '../src/formula-entry';
 import { Sheet } from '../src/sheet';
 import { SheetDocument } from '../src/sheet-document';
 import { SheetEdit } from '../src/sheet-edit';
@@ -268,5 +268,45 @@ describe('the engine surface', () => {
         if (completion === undefined) throw new Error(`${marked} lists nothing.`);
         expect(completion.candidates.map(c => c.name)).toContain(listed);
         expect(completion.candidates.filter(c => c.kind === 'argumentValue')).toEqual([]);
+    });
+
+    // ADR-0058 / SH-32: what is written reads the cell it was written for, for a key of each kind (PointedTextTests.cs).
+    it('reads back what a Pointing Scope writes as the pressed cell', () => {
+        const workbook = new Workbook(Culture.of('en-US'));
+        workbook.declareLinkedTable('T', ['Key', 'Rate#', 'PV'], 'Key');
+        workbook.pushLinkedTable('T', [
+            [Value.fromText('R-"5"'), Value.fromNumber(1), Value.fromNumber(10)],
+            [Value.fromNumber(0.1), Value.fromNumber(2), Value.fromNumber(20)],
+            [Value.fromBoolean(true), Value.fromNumber(3), Value.fromNumber(30)],
+            [Value.fromText('1250'), Value.fromNumber(4), Value.fromNumber(40)],
+        ]);
+        const sheet = workbook.shown;
+        const at = CellAddress.parse('ZZ1000');
+        const evaluate = (formula: string): number | undefined => {
+            sheet.enter(at, formula);
+            return sheet.getValue(at)?.number;
+        };
+        expect(evaluate(`=${lookupText('T', 'Key', Value.fromText('R-"5"'), 'PV')}`)).toBe(10);
+        expect(evaluate(`=${lookupText('T', 'Key', Value.fromNumber(0.1), 'Rate#')}`)).toBe(2);
+        expect(evaluate(`=${lookupText('T', 'Key', Value.fromBoolean(true), 'PV')}`)).toBe(30);
+        expect(evaluate(`=${lookupText('T', 'Key', Value.fromText('1250'), 'PV')}`)).toBe(40);
+        expect(evaluate(`=SUM(${structuredReferenceText('T', 'PV')})`)).toBe(100);
+    });
+
+    // ADR-0058 / ADR-0047, SH-36: a column whose name holds a character the grammar reads specially is written escaped,
+    // and reads back as that column (CompletionTriggerTests.cs).
+    it('reads back what completion writes for a column as that column', () => {
+        const workbook = new Workbook(Culture.of('en-US'));
+        const columns = ['Id', 'Rate #1', "O'Brien", '[Old]'];
+        workbook.declareLinkedTable('Positions', columns);
+        const completion = workbook.shown.complete('=SUM(Positions[', 15);
+        if (completion === undefined) throw new Error('Nothing is listed after Positions[.');
+        expect(completion.candidates).toHaveLength(columns.length);
+        completion.candidates.forEach((candidate, i) => {
+            const references = formulaReferences(`=SUM(Positions[${candidate.insertText}])`, 'Sheet1');
+            expect(references).toHaveLength(1);
+            expect(references[0]?.linkedColumn?.table).toBe('Positions');
+            expect(references[0]?.linkedColumn?.column).toBe(columns[i]);
+        });
     });
 });

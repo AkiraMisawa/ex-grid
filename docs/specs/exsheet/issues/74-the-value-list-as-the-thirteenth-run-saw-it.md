@@ -112,4 +112,4 @@ Formula Bar shows `=XLOOKUP(1,A2:A4,B2:B4,,  )`, the spaces kept). Run headless 
 `Table[` at a value-list argument (decision 3) is pinned in layers 1 and 2 only; it is not one of
 the run's cases. Edge and the full run are CI's.
 
-2026-10-26: the xUnit tests this ticket names (`CompletionTriggerTests`) moved to the shared cases, `tests/cases/sheet/completion-trigger.json` and `completion-trigger-sheet.json`, which both the C# engine and the Script Core run (ADR-0370 §2). Each test became cases named by the same claim; `CompletionTriggerTests` keeps the walk over every declared function and the lists read for one name, both mirrored in `surface.test.ts`.
+2026-10-26: the xUnit tests this ticket names (`CompletionTriggerTests`) moved to the shared cases, `tests/cases/sheet/completion-trigger.json` and `completion-trigger-sheet.json`, which both the C# engine and the Script Core run (ADR-0370 §2). Each test became cases named by the same claim; `CompletionTriggerTests` keeps the walk over every declared function, the lists read for one name, and what completion writes read back as its column, each mirrored in `surface.test.ts`.

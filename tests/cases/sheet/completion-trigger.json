@@ -625,30 +625,6 @@
       "call": "FormulaEntry.complete",
       "args": ["=SUM(Positions[", 15, ["Positions"]],
       "is": null
-    },
-    {
-      "name": "ADR-0058 / ADR-0047, SH-36: a column whose name holds a character the grammar reads specially is written escaped, and reads back as that column: 'Id' reads back as 'Id'",
-      "call": "FormulaEntry.references",
-      "args": ["=SUM(Positions[Id])", "Sheet1"],
-      "is": [{"cells": null, "linkedColumn": {"table": "Positions", "column": "Id"}}]
-    },
-    {
-      "name": "ADR-0058 / ADR-0047, SH-36: a column whose name holds a character the grammar reads specially is written escaped, and reads back as that column: \"Rate '#1\" reads back as 'Rate #1'",
-      "call": "FormulaEntry.references",
-      "args": ["=SUM(Positions[Rate '#1])", "Sheet1"],
-      "is": [{"cells": null, "linkedColumn": {"table": "Positions", "column": "Rate #1"}}]
-    },
-    {
-      "name": "ADR-0058 / ADR-0047, SH-36: a column whose name holds a character the grammar reads specially is written escaped, and reads back as that column: \"O''Brien\" reads back as \"O'Brien\"",
-      "call": "FormulaEntry.references",
-      "args": ["=SUM(Positions[O''Brien])", "Sheet1"],
-      "is": [{"cells": null, "linkedColumn": {"table": "Positions", "column": "O'Brien"}}]
-    },
-    {
-      "name": "ADR-0058 / ADR-0047, SH-36: a column whose name holds a character the grammar reads specially is written escaped, and reads back as that column: \"'[Old']\" reads back as '[Old]'",
-      "call": "FormulaEntry.references",
-      "args": ["=SUM(Positions['[Old']])", "Sheet1"],
-      "is": [{"cells": null, "linkedColumn": {"table": "Positions", "column": "[Old]"}}]
     }
   ]
 }

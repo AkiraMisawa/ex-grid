@@ -63,13 +63,13 @@ function argument(node: Json): unknown {
         case 'culture':
             return cultureOf(text(given, 'a culture'));
         case 'lookup': {
-            // A function from a name to what the map holds for it, found without regard to case, or nothing.
-            const map = object(given, 'a lookup');
-            return (name: string) => {
-                const key = Object.keys(map).find(k => k.toUpperCase() === name.toUpperCase());
-                const held = key === undefined ? undefined : map[key];
-                return held === undefined ? undefined : argument(held);
-            };
+            // A function from a name, found without regard to case, to the list of text the map holds for it, or nothing.
+            // Anything but a list of text is the case's defect, read alike by both runners.
+            const map = new Map(Object.entries(object(given, 'a lookup')).map(([name, held]) => {
+                const columns = list(held, `the lookup's '${name}'`).map(c => text(c, `a column of the lookup's '${name}'`));
+                return [name.toUpperCase(), columns] as const;
+            }));
+            return (name: string) => map.get(name.toUpperCase());
         }
         default:
             throw new CaseError(`'${tag}' is no tag an argument takes.`);
@@ -95,11 +95,25 @@ function project(answer: unknown, expected: Json | undefined): Json {
     if (typeof answer === 'object' && shaped) {
         const shape = expected;
         const read: Record<string, Json> = {};
-        for (const key of Object.keys(shape)) read[key] = project((answer as Record<string, unknown>)[key], shape[key]);
+        for (const key of Object.keys(shape)) {
+            // A member the answer does not have is a difference to see, never a null made up for it.
+            if (!(key in answer)) throw new CaseError(`An answer of ${answer.constructor.name} has no ${key} to read.`);
+            read[key] = project((answer as Record<string, unknown>)[key], shape[key]);
+        }
         return read;
     }
     const named = typeof answer === 'object' ? answer.constructor.name : typeof answer;
     throw new CaseError(`An answer of ${named} is read as an object, and the case names none of its members.`);
+}
+
+/** An answer as a difference names it: as a case would write it where that needs no shape, or by its type. */
+function describe(answer: unknown): string {
+    if (answer === undefined || answer === null) return 'null';
+    if (answer instanceof Value || answer instanceof CellAddress || answer instanceof CellRange
+        || typeof answer === 'string' || typeof answer === 'number' || typeof answer === 'boolean') {
+        return JSON.stringify(project(answer, undefined));
+    }
+    return `an answer of ${typeof answer === 'object' ? answer.constructor.name : typeof answer}`;
 }
 
 /** Reads a member of the subject: a property, or a method called with the arguments. */
@@ -128,7 +142,7 @@ function hold(where: string, read: () => unknown, check: JsonObject, differences
         return;
     }
     if (check['throws'] !== undefined) {
-        differences.push(`${where}: expected a refusal, got ${JSON.stringify(project(answer, check['is']))}`);
+        differences.push(`${where}: expected a refusal, got ${describe(answer)}`);
         return;
     }
     if (check['is'] === undefined && check['then'] === undefined) throw new CaseError(`${where} checks nothing.`);

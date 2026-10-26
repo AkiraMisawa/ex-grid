@@ -129,4 +129,4 @@ Tests:
   typed before it, still held, need their place kept too. `pointing-scope.spec.mjs` waits for the
   typed text before it presses, and leaves that case to ticket 35.
 
-2026-10-26: the xUnit tests this ticket names (`PointedTextTests`) moved to the shared cases, `tests/cases/sheet/pointed-text.json` and `pointed-text-reads.json`, which both the C# engine and the Script Core run (ADR-0370 §2). Each test became cases named by the same claim.
+2026-10-26: the xUnit tests this ticket names (`PointedTextTests`) moved to the shared cases, `tests/cases/sheet/pointed-text.json`, which both the C# engine and the Script Core run (ADR-0370 §2). Each test became cases named by the same claim; `PointedTextTests` keeps what is written read back as the pressed cell, mirrored in `surface.test.ts`.

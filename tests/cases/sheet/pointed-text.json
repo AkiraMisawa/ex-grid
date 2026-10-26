@@ -1,5 +1,5 @@
 {
-  "about": "What a Pointing Scope writes (ADR-0058, SH-32's layer 1 half): a pressed cell as the lookup of its row by key, XLOOKUP(<key>, T[<key column>], T[<column>]), with the key written as Excel writes a constant of its kind, and a pressed column as its structured reference; and the row a lookup finds. What is written reads back as the cell it was written for in pointed-text-reads.json. Transcribed from ExSheet.Engine.Tests' PointedTextTests.",
+  "about": "What a Pointing Scope writes (ADR-0058, SH-32's layer 1 half): a pressed cell as the lookup of its row by key, XLOOKUP(<key>, T[<key column>], T[<column>]), with the key written as Excel writes a constant of its kind, and a pressed column as its structured reference; and the row a lookup finds. That what is written reads back as the cell it was written for is held where the two compose, in PointedTextTests and surface.test.ts. Transcribed from ExSheet.Engine.Tests' PointedTextTests.",
   "kind": "sheetCalls",
   "cases": [
     {
@@ -176,31 +176,31 @@
       "is": false
     },
     {
-      "name": "ADR-0058 / SH-32: what is written reads the cell it was written for, for a key of each kind (read back in pointed-text-reads.json): text with quotes",
+      "name": "ADR-0058 / SH-32: what is written reads the cell it was written for, for a key of each kind: text with quotes",
       "call": "FormulaEntry.lookupText",
       "args": ["T", "Key", {"value": "R-\"5\""}, "PV"],
       "is": "XLOOKUP(\"R-\"\"5\"\"\", T[Key], T[PV])"
     },
     {
-      "name": "ADR-0058 / SH-32: what is written reads the cell it was written for, for a key of each kind (read back in pointed-text-reads.json): a number",
+      "name": "ADR-0058 / SH-32: what is written reads the cell it was written for, for a key of each kind: a number",
       "call": "FormulaEntry.lookupText",
       "args": ["T", "Key", {"value": 0.1}, "Rate#"],
       "is": "XLOOKUP(0.1, T[Key], T[Rate'#])"
     },
     {
-      "name": "ADR-0058 / SH-32: what is written reads the cell it was written for, for a key of each kind (read back in pointed-text-reads.json): a boolean",
+      "name": "ADR-0058 / SH-32: what is written reads the cell it was written for, for a key of each kind: a boolean",
       "call": "FormulaEntry.lookupText",
       "args": ["T", "Key", {"value": true}, "PV"],
       "is": "XLOOKUP(TRUE, T[Key], T[PV])"
     },
     {
-      "name": "ADR-0058 / SH-32: what is written reads the cell it was written for, for a key of each kind (read back in pointed-text-reads.json): text of digits",
+      "name": "ADR-0058 / SH-32: what is written reads the cell it was written for, for a key of each kind: text of digits",
       "call": "FormulaEntry.lookupText",
       "args": ["T", "Key", {"value": "1250"}, "PV"],
       "is": "XLOOKUP(\"1250\", T[Key], T[PV])"
     },
     {
-      "name": "ADR-0058 / SH-32: what is written reads the cell it was written for, for a key of each kind (read back in pointed-text-reads.json): a column",
+      "name": "ADR-0058 / SH-32: what is written reads the cell it was written for, for a key of each kind: a column",
       "call": "FormulaEntry.structuredReferenceText",
       "args": ["T", "PV"],
       "is": "T[PV]"

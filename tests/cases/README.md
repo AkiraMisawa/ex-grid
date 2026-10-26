@@ -710,8 +710,8 @@ exactly (`-0` apart from `0`) unless it is `{"near", "within"}`.
 A step that throws is read as a refusal, `{"refusal": kind, "reason"?, "saying"?}`, by .NET's exception type
 on one side and the Script Core's error on the other: `formulaSyntax` (`FormulaSyntaxException`,
 `FormulaSyntaxError`) with its `reason` and whether it is `beyondLimit`, `refused` with its `reason` (`SheetRefusedException`, `SheetRefusedError`),
-`repeatedKey` with its `table`, `keyColumn` and `key` (the columns joined by `, ` and the first column's Value, for a key of several columns), `keyColumns`, `keys`, `firstRow`, `secondRow` and the `valueChanges` of the table's going back to waiting, `document` with its `documentVersion` (`SheetDocumentException`, `SheetDocumentError`), `argument` (`ArgumentException`,
-`RangeError`), `format` (`FormatException`, `FormatError`) and `invalidOperation`
+`repeatedKey` with its `table`, `keyColumn` and `key` (the columns joined by `, ` and the first column's Value, for a key of several columns), `keyColumns`, `keys`, `firstRow`, `secondRow` and the `valueChanges` of the table's going back to waiting, `document` with its `documentVersion` (`SheetDocumentException`, `SheetDocumentError`), `argument` (`ArgumentException` or any type derived from it,
+such as `ArgumentOutOfRangeException`, and `RangeError`: the Script Core has the one type, so a case does not tell them apart), `format` (`FormatException`, `FormatError`) and `invalidOperation`
 (`InvalidOperationException`, `Error`). What is not the engine refusing is never read as one: the runner's
 own reading of a malformed case, an engine defect, and what JavaScript throws by itself fail the case.
 

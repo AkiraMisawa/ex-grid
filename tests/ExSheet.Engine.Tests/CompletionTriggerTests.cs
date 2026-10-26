@@ -8,8 +8,8 @@ namespace ExSheet.Engine.Tests;
 /// Completion's triggers, aligned with Excel (ticket 39, ADR-0058 "Completion, aligned with Excel", SH-36), that a
 /// shared case does not hold: what is listed, where, and what the lists declare is in
 /// <c>tests/cases/sheet/completion-trigger.json</c> and <c>completion-trigger-sheet.json</c>. What stays here, mirrored
-/// in the Script Core's <c>surface.test.ts</c>, is a walk over every declared function, and lists read only for one
-/// name in them, which a case would have to write out whole.
+/// in the Script Core's <c>surface.test.ts</c>, is a walk over every declared function, lists read only for one name
+/// in them, which a case would have to write out whole, and what completion writes read back as the column it names.
 /// </summary>
 public class CompletionTriggerTests
 {
@@ -40,5 +40,22 @@ public class CompletionTriggerTests
 
         Assert.Contains(listed, completion.Candidates.Select(c => c.Name));
         Assert.DoesNotContain(completion.Candidates, c => c.Kind == CompletionKind.ArgumentValue);
+    }
+
+    [Fact] // ADR-0058 / ADR-0047, SH-36: a column whose name holds a character the grammar reads specially is written escaped, and reads back as that column
+    public void A_column_with_special_characters_reads_back_as_that_column()
+    {
+        var sheet = NewSheet();
+        string[] columns = ["Id", "Rate #1", "O'Brien", "[Old]"];
+        sheet.DeclareLinkedTable("Positions", columns);
+
+        var written = sheet.Complete("=SUM(Positions[", 15)!.Candidates.Select(c => c.InsertText).ToArray();
+
+        Assert.Equal(columns.Length, written.Length);
+        foreach (var (insert, column) in written.Zip(columns))
+        {
+            var reference = Assert.Single(FormulaEntry.References($"=SUM(Positions[{insert}])", "Sheet1"));
+            Assert.Equal(new LinkedTableColumn("Positions", column), reference.LinkedColumn);
+        }
     }
 }
