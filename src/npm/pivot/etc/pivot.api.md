@@ -90,7 +90,9 @@ export interface PivotViewOptions {
     readonly label?: PivotLabel;
     readonly layout?: PivotLayout;
     readonly locale?: string;
+    readonly maxColumns?: number;
     readonly maxLeaves?: number;
+    readonly maxRows?: number;
     readonly onFailed?: (event: PivotFailedEvent) => void;
     readonly onLayoutChanged?: (event: PivotLayoutChangedEvent) => void;
     readonly onRefused?: (event: PivotRefusedEvent) => void;

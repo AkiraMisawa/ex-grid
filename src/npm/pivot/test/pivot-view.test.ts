@@ -670,6 +670,17 @@ describe('ExPivot\'s live data (ADR-0067)', () => {
         expect(root.querySelector('.ex-pivot-report')?.classList.contains('ex-pivot-report-stale')).toBe(false);
     });
 
+    it('ADR-0066, ADR-0067: newer data past the report\'s rows leaves a Stale Report that names the cap', async () => {
+        const live = liveServer();
+        const { root, grid } = mount({ source: live.source, layout: byRegion, redrawInterval: 0, maxRows: 3, locale: 'en-US' });
+        await settled();
+        live.move([...trades, { region: 'JP', desk: 'FX', amount: 100 }]);
+        await settled();
+        expect(shownIn(root, '.ex-pivot-stale-message').textContent).toMatch(/: the newest data needs more than 3 rows\.$/u);
+        expect(await grid.texts()).toEqual([['EU', '30'], ['US', '12'], ['Grand Total', '42']]);
+        expect(root.querySelector('.ex-pivot-refusal-notice')?.textContent).toBe('');
+    });
+
     it('ADR-0067: a source that fails on newer data leaves a Stale Report; Retry stays offered while a quiet redraw is out, asks the report again, and keeps the keyboard in the pivot', async () => {
         const live = liveServer();
         const failed: PivotFailedEvent[] = [];
@@ -950,6 +961,25 @@ describe('ExPivot over a server\'s Leaf Aggregates (ADR-0370 section 3)', () => 
         tick(root, 'Desk');
         await settled();
         expect(refused).toEqual(['This layout needs more than 3 cells.']);
+    });
+
+    it('ADR-0066: a layout past the report\'s rows or columns is refused, naming the field moved, and the report stays on the layout before', async () => {
+        const refused: { readonly message: string; readonly fields: readonly string[] }[] = [];
+        const { root, view } = mount({ source: local(), layout: byRegion, maxRows: 3, maxColumns: 2, onRefused: event => refused.push(event) });
+        await settled();
+        tick(root, 'Desk');
+        await settled();
+        drag(field(root, 'Desk'), 'dragstart');
+        drag(area(root, 'columns'), 'dragenter');
+        drag(area(root, 'columns'), 'drop');
+        await settled();
+        expect(refused).toEqual([
+            { message: 'This layout needs more than 3 rows.', fields: ['Desk'] },
+            { message: 'This layout needs more than 2 columns.', fields: ['Desk'] },
+        ]);
+        expect(view.shownLayout).toBe(byRegion);
+        expect(() => mount({ source: local(), maxRows: 0 })).toThrow(/maxRows/);
+        expect(() => mount({ source: local(), maxColumns: 1.5 })).toThrow(/maxColumns/);
     });
 
     it('ADR-0370 section 3: every move taken against a question that is refused is refused with it, and each is named', async () => {
