@@ -87,6 +87,10 @@ class GridStandIn {
         return {
             update: next => { this.options = next; },
             placeSelection: () => { throw new Error('The pivot places no selection.'); },
+            readView: () => { throw new Error('The pivot reads no view.'); },
+            showViewWith: () => { throw new Error('The pivot shows no view.'); },
+            focus: () => { throw new Error('The pivot focuses no grid.'); },
+            keyName: () => { throw new Error('The pivot names no key.'); },
             destroy: () => { this.destroyed = true; },
         };
     };
