@@ -1214,7 +1214,7 @@
         ]
       },
       "throws": "argument",
-      "saying": "Points 0 and 1 lie too far apart"
+      "saying": "Points 0 and 1 lie too far apart in x"
     },
     {
       "name": "ADR-0291: Theil–Sen refuses a pair whose run is no finite number, which would read as a slope of zero",
@@ -1232,7 +1232,43 @@
         ]
       },
       "throws": "argument",
-      "saying": "Points 0 and 1 lie too far apart"
+      "saying": "Points 0 and 1 lie too far apart in x"
+    },
+    {
+      "name": "ADR-0291: Theil–Sen refuses a pair one unit in the last place apart whose slope is no finite number, naming the rise",
+      "curve": {
+        "method": "theilSen",
+        "x": [
+          1,
+          1.0000000000000002,
+          5
+        ],
+        "y": [
+          0,
+          1e+300,
+          2
+        ]
+      },
+      "throws": "argument",
+      "saying": "Points 0 and 1 rise too steeply"
+    },
+    {
+      "name": "ADR-0291: a polynomial over x whose span is no finite number is refused by the span, not as points that do not determine it",
+      "curve": {
+        "method": "leastSquares",
+        "x": [
+          -1e+308,
+          0,
+          1e+308
+        ],
+        "y": [
+          0,
+          1,
+          2
+        ]
+      },
+      "throws": "argument",
+      "saying": "their span is not a finite number"
     },
     {
       "name": "ADR-0291: a polynomial's degree is not below zero",

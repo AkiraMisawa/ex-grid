@@ -20,7 +20,8 @@ export interface FittedCurveOptions {
     readonly method: string;
     /** The polynomial's coefficients from the constant up: for a line, the intercept then the slope. */
     readonly coefficients: readonly number[];
-    /** The share of the variance it explains, in the space it was fitted in; below zero where it does worse than the mean. */
+    /** The share of the variance it explains, in the space it was fitted in; never below zero for least squares, and below
+     * zero for Theil–Sen where it does worse than the mean. */
     readonly rSquared: number;
     /** How many points it was fitted on. */
     readonly count: number;
@@ -74,7 +75,8 @@ export class FittedCurve {
         return this.#coefficients;
     }
 
-    /** The share of the variance it explains, in the space it was fitted in; below zero where it does worse than the mean. */
+    /** The share of the variance it explains, in the space it was fitted in; never below zero for least squares, and below
+     * zero for Theil–Sen where it does worse than the mean. */
     get rSquared(): number {
         return this.#rSquared;
     }
@@ -205,8 +207,11 @@ export function fitTheilSen(xs: readonly number[], ys: readonly number[], space:
                 // A slope past what a double holds would sort to an end and pass as a median or not by chance, and
                 // a run past it reads as a slope of zero, so either is refused by the pair rather than weighed
                 // (spine rule 1).
-                if (!Number.isFinite(run) || !Number.isFinite(between)) {
-                    throw new TypeError(`Points ${String(i)} and ${String(j)} lie too far apart for the slope between them to be a finite number.`);
+                if (!Number.isFinite(run)) {
+                    throw new TypeError(`Points ${String(i)} and ${String(j)} lie too far apart in x for the run between them to be a finite number.`);
+                }
+                if (!Number.isFinite(between)) {
+                    throw new TypeError(`Points ${String(i)} and ${String(j)} rise too steeply for the slope between them to be a finite number.`);
                 }
                 slopes.push(between);
             }
@@ -234,6 +239,11 @@ function fitted(xs: readonly number[], ys: readonly number[], degree: number, sp
     const hi = greatest(x);
     const mid = (lo + hi) / 2;
     const half = Math.max((hi - lo) / 2, Number.MIN_VALUE);
+    // A span past what a double holds makes every centred x zero, which would read as points that do not determine
+    // the polynomial.
+    if (!Number.isFinite(mid) || !Number.isFinite(half)) {
+        throw new TypeError('The points lie too far apart in x for a polynomial: their span is not a finite number.');
+    }
     const n = degree + 1;
     const a: number[] = [];
     for (const xi of x) {
@@ -256,6 +266,9 @@ function fitted(xs: readonly number[], ys: readonly number[], degree: number, sp
 // carry, so a line through large values close together still fits.
 function kept(scaled: readonly number[], c: readonly number[], x: readonly number[], y: readonly number[], mid: number, half: number, degree: number, space: FitSpace): void {
     const tolerance = Math.max(1e-6 * (greatest(y) - least(y)), 64 * Number.EPSILON * greatest(y.map(v => Math.abs(v))));
+    if (!Number.isFinite(tolerance)) {
+        throw overflow();
+    }
     for (const xi of x) {
         let inT = 0;
         let inX = 0;
@@ -264,10 +277,11 @@ function kept(scaled: readonly number[], c: readonly number[], x: readonly numbe
             inT = inT * t + elementAt(scaled, k);
             inX = inX * xi + elementAt(c, k);
         }
-        if (!Number.isFinite(inT) || !Number.isFinite(inX) || !Number.isFinite(tolerance)) {
+        if (!Number.isFinite(inT)) {
             throw overflow();
         }
-        if (!(Math.abs(inT - inX) <= tolerance)) {
+        // Powers of x past what a double holds, where the centred curve is finite, are the same loss.
+        if (!Number.isFinite(inX) || !(Math.abs(inT - inX) <= tolerance)) {
             throw new TypeError(space === 'logLog'
                 // On ln x, dividing x by a constant is what moves the centre to zero.
                 ? `A polynomial of degree ${String(degree)} on ln x near ${roundTrip(mid)} cannot be written in powers of ln x without losing its fit; fit it on x ÷ ${roundTrip(Math.exp(mid))} instead.`
@@ -301,8 +315,12 @@ function curve(method: string, c: readonly number[], x: readonly number[], y: re
         throw overflow();
     }
     const explained = tot === 0 ? (res === 0 ? 1 : 0) : 1 - res / tot;
-    // Least squares with a constant does no worse than the mean, so its R² is never below zero; a value below is
-    // rounding, which would read `R² = -0.00` (Theil–Sen's may truly be below).
+    // Least squares with a constant does no worse than the mean, so its R² is never below zero: a value a hair below
+    // is rounding, which would read `R² = -0.00`, and one further below is a solve that failed, which is refused
+    // rather than shown as 0.00 (Theil–Sen's may truly be below).
+    if (leastSquares && explained < -1e-9) {
+        throw new TypeError('The least-squares solve failed at these values: the fit does worse than their mean.');
+    }
     const rSquared = leastSquares ? Math.max(explained, 0) : explained;
     return new FittedCurve({ method, coefficients: c, rSquared, count: x.length, from: least(xs), to: greatest(xs), space });
 }

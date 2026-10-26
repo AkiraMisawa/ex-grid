@@ -27,7 +27,7 @@ public enum FitSpace
 /// </summary>
 /// <param name="Method">The method's name, such as "OLS" or "Theil–Sen".</param>
 /// <param name="Coefficients">The polynomial's coefficients from the constant up: for a line, the intercept then the slope.</param>
-/// <param name="RSquared">The share of the variance it explains, in the space it was fitted in; below zero where it does worse than the mean.</param>
+/// <param name="RSquared">The share of the variance it explains, in the space it was fitted in; never below zero for least squares, and below zero for Theil–Sen where it does worse than the mean.</param>
 /// <param name="Count">How many points it was fitted on.</param>
 /// <param name="From">The smallest x it was fitted on.</param>
 /// <param name="To">The largest.</param>
@@ -117,8 +117,10 @@ public static class Fit
                     // A slope past what a double holds would sort to an end and pass as a median or not by
                     // chance, and a run past it reads as a slope of zero, so either is refused by the pair
                     // rather than weighed (spine rule 1).
-                    if (!double.IsFinite(run) || !double.IsFinite(between))
-                        throw new ArgumentException($"Points {i} and {j} lie too far apart for the slope between them to be a finite number.");
+                    if (!double.IsFinite(run))
+                        throw new ArgumentException($"Points {i} and {j} lie too far apart in x for the run between them to be a finite number.");
+                    if (!double.IsFinite(between))
+                        throw new ArgumentException($"Points {i} and {j} rise too steeply for the slope between them to be a finite number.");
                     slopes.Add(between);
                 }
         if (slopes.Count == 0) throw new ArgumentException("Every point has the same x: no slope can be fitted.");
@@ -138,6 +140,10 @@ public static class Fit
         // [0, 1] is solved as accurately as degree 1; the coefficients are mapped back afterwards.
         var mid = (x.Min() + x.Max()) / 2;
         var half = Math.Max((x.Max() - x.Min()) / 2, double.Epsilon);
+        // A span past what a double holds makes every centred x zero, which would read as points that do not
+        // determine the polynomial.
+        if (!double.IsFinite(mid) || !double.IsFinite(half))
+            throw new ArgumentException("The points lie too far apart in x for a polynomial: their span is not a finite number.");
         var a = new double[x.Length, degree + 1];
         for (var i = 0; i < x.Length; i++)
         {
@@ -159,6 +165,7 @@ public static class Fit
     private static void Kept(double[] scaled, double[] c, double[] x, double[] y, double mid, double half, int degree, FitSpace space)
     {
         var tolerance = Math.Max(1e-6 * (y.Max() - y.Min()), 64 * Math.ScaleB(1d, -52) * y.Max(v => Math.Abs(v)));
+        if (!double.IsFinite(tolerance)) throw Overflow();
         for (var i = 0; i < x.Length; i++)
         {
             double inT = 0, inX = 0;
@@ -168,8 +175,9 @@ public static class Fit
                 inT = inT * t + scaled[k];
                 inX = inX * x[i] + c[k];
             }
-            if (!double.IsFinite(inT) || !double.IsFinite(inX) || !double.IsFinite(tolerance)) throw Overflow();
-            if (!(Math.Abs(inT - inX) <= tolerance))
+            if (!double.IsFinite(inT)) throw Overflow();
+            // Powers of x past what a double holds, where the centred curve is finite, are the same loss.
+            if (!double.IsFinite(inX) || !(Math.Abs(inT - inX) <= tolerance))
                 throw new ArgumentException(space == FitSpace.LogLog
                     // On ln x, dividing x by a constant is what moves the centre to zero.
                     ? $"A polynomial of degree {degree} on ln x near {R(mid)} cannot be written in powers of ln x without losing its fit; fit it on x ÷ {R(Math.Exp(mid))} instead."
@@ -191,9 +199,15 @@ public static class Fit
         // Sums past what a double holds would read as an R² of 1 or, clamped, of 0.
         if (c.Any(v => !double.IsFinite(v)) || !double.IsFinite(res) || !double.IsFinite(tot)) throw Overflow();
         var r2 = tot == 0 ? (res == 0 ? 1 : 0) : 1 - res / tot;
-        // Least squares with a constant does no worse than the mean, so its R² is never below zero; a value
-        // below is rounding, which would read "R² = -0.00" (Theil–Sen's may truly be below).
-        if (leastSquares) r2 = Math.Max(r2, 0);
+        // Least squares with a constant does no worse than the mean, so its R² is never below zero: a value a
+        // hair below is rounding, which would read "R² = -0.00", and one further below is a solve that failed,
+        // which is refused rather than shown as 0.00 (Theil–Sen's may truly be below).
+        if (leastSquares && r2 < 0)
+        {
+            if (r2 < -1e-9)
+                throw new ArgumentException("The least-squares solve failed at these values: the fit does worse than their mean.");
+            r2 = 0;
+        }
         return new FittedCurve(method, c, r2, x.Length, xs.Min(), xs.Max(), space);
     }
 
