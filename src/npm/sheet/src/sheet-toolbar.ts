@@ -4,7 +4,13 @@
 // to the ends, Enter and Space press one and give the keyboard back to the Sheet, and Escape gives it back. A menu, and a
 // split control's arrow, open their list: Enter or Space on a menu, ↓ or Alt+↓ on either, or a press. A pointer
 // press keeps the keyboard where it is (mousedown's default is prevented), as Excel's ribbon leaves it in the cell.
-// While an edit is open every item is unavailable. The elements wear the C# Sheet's classes, so one stylesheet lays
+// While an edit is open every item is unavailable.
+//
+// The KeyTips take the keyboard to the band, as Excel's Alt takes it to the ribbon: the rows' letters first, a row's
+// letter its items' letters, an item's letters press it, or open its list (Alt, H, H opens the Fill's palette). Letters
+// typed that narrow a level are a level of their own, as Excel's Format menu is behind O. Escape goes back one level,
+// from the rows' letters to the Sheet, as Excel's does (the Windows readings of 2026-10-12, R2); any other key ends
+// them and does nothing, and every key typed while they stand is theirs, its default too. The elements wear the C# Sheet's classes, so one stylesheet lays
 // out both. What an item means is the Sheet's: this draws, and reports what was pressed.
 
 import { preventDefault, setAttr } from './dom-attributes';
@@ -37,13 +43,24 @@ export interface SheetToolbarItem {
     readonly disabledReason: string | undefined;
     /** What a press does; `undefined` for an item that is never pressed, whose `disabledReason` says why. */
     readonly press: (() => void) | undefined;
-    /** For a menu or a split control, what opens its list. */
-    readonly open: (() => void) | undefined;
+    /** For a menu or a split control, what opens its list; `fromKeyTip` when a KeyTip opened it, so Escape there goes
+     * back to the KeyTips. */
+    readonly open: ((fromKeyTip: boolean) => void) | undefined;
+    /** Its KeyTip letters, Excel's Home tab's, or `undefined` for none. */
+    readonly keyTip: string | undefined;
+}
+
+/** A Toolbar Row as one pass shows it. */
+export interface SheetToolbarRow {
+    readonly label: string;
+    /** Its KeyTip letter, a ribbon tab's: the formatting row's is H, Excel's Home. */
+    readonly keyTip: string | undefined;
+    readonly items: readonly (SheetToolbarItem | 'separator')[];
 }
 
 /** What one pass shows: the rows of items, a separator between groups. */
 export interface SheetToolbarPaint {
-    readonly rows: readonly { readonly label: string; readonly items: readonly (SheetToolbarItem | 'separator')[] }[];
+    readonly rows: readonly SheetToolbarRow[];
     readonly rowHeightPx: number;
     readonly name: string;
 }
@@ -82,6 +99,14 @@ interface Drawn {
     readonly buttons: readonly HTMLButtonElement[];
     readonly face: HTMLButtonElement;
     picture: string | undefined;
+    // The KeyTip shown on it, while one is.
+    badge: HTMLElement | undefined;
+}
+
+// The KeyTips standing: the rows' letters, or one row's items' letters; and the letters typed at that level so far.
+interface KeyTips {
+    readonly row: number | undefined;
+    readonly typed: string;
 }
 
 let instances = 0;
@@ -99,6 +124,11 @@ export class SheetToolbar {
     #items: readonly SheetToolbarItem[] = [];
     // The item the keyboard is on while the band holds it: its key, so a repaint keeps it.
     #active: string | undefined;
+    #painted: SheetToolbarPaint | undefined;
+    // The KeyTips while they stand, and the row whose KeyTip opened the list standing, which Escape there goes back to.
+    #keyTips: KeyTips | undefined;
+    #keyTipListRow: number | undefined;
+    readonly #rowBadges = new Map<HTMLElement, HTMLElement>();
 
     constructor(doc: Document, hooks: SheetToolbarHooks) {
         this.#doc = doc;
@@ -115,10 +145,39 @@ export class SheetToolbar {
         this.band.addEventListener('mousedown', preventDefault);
         // The keyboard arriving by Tab lands on the item it last stood on, or on the first that can be pressed.
         this.band.addEventListener('focus', () => {
+            // The KeyTips take it with no item active, as the C# toolbar's do: the letters choose.
+            if (this.#keyTips !== undefined) return;
             if (this.#activeItem() === undefined) this.#active = this.#enabled()[0]?.key;
             this.#showActive();
         });
-        this.band.addEventListener('blur', () => { this.#showActive(); });
+        this.band.addEventListener('blur', () => {
+            // The keyboard left the band, by a press elsewhere or Tab: the KeyTips go with it.
+            if (this.#keyTips !== undefined) this.#showKeyTips(undefined);
+            this.#showActive();
+        });
+    }
+
+    /** Whether the KeyTips stand. */
+    get showsKeyTips(): boolean {
+        return this.#keyTips !== undefined;
+    }
+
+    /** Starts the KeyTips, the rows' letters, and takes the keyboard to the band; false where no row has a letter. */
+    startKeyTips(): boolean {
+        if (this.#painted?.rows.some(row => row.keyTip !== undefined) !== true) return false;
+        this.#keyTipListRow = undefined;
+        this.#showKeyTips({ row: undefined, typed: '' });
+        this.band.focus({ preventScroll: true });
+        return true;
+    }
+
+    /** Escape in a list a KeyTip opened: back to that row's letters, the keyboard on the band. */
+    backToKeyTips(): void {
+        const row = this.#keyTipListRow;
+        this.#keyTipListRow = undefined;
+        if (row === undefined) return;
+        this.#showKeyTips({ row, typed: '' });
+        this.band.focus({ preventScroll: true });
     }
 
     /** The band's height for `rows` rows of `rowHeightPx`. */
@@ -127,12 +186,14 @@ export class SheetToolbar {
     }
 
     paint(paint: SheetToolbarPaint): void {
+        this.#painted = paint;
         setAttr(this.band, 'aria-label', paint.name);
         setAttr(this.band, 'style', `height: ${String(SheetToolbar.heightPx(paint.rows.length, paint.rowHeightPx))}px; --ex-sheet-toolbar-row-height: ${String(paint.rowHeightPx)}px`);
         while (this.#rows.length > paint.rows.length) {
             const row = this.#rows.pop();
             if (row === undefined) break;
             this.#separators.delete(row);
+            this.#rowBadges.delete(row);
             row.remove();
         }
         const items: SheetToolbarItem[] = [];
@@ -146,8 +207,12 @@ export class SheetToolbar {
                 if (item === 'separator') return this.#separator(element, gaps++);
                 items.push(item);
                 shown.add(item.key);
-                return this.#paintItem(item);
+                return this.#paintItem(item, this.#keyTipShown(r, item.keyTip));
             });
+            const tips = this.#keyTips;
+            if (tips !== undefined && tips.row === undefined && row.keyTip !== undefined && row.keyTip.startsWith(tips.typed)) {
+                children.unshift(this.#rowBadge(element, row.keyTip));
+            }
             const current = [...element.children];
             if (current.length !== children.length || children.some((child, i) => current[i] !== child)) element.replaceChildren(...children);
         });
@@ -191,7 +256,28 @@ export class SheetToolbar {
         return separator;
     }
 
-    #paintItem(item: SheetToolbarItem): HTMLElement {
+    // The letters an item shows while its row's KeyTips stand, those that begin with what was typed.
+    #keyTipShown(row: number, letters: string | undefined): string | undefined {
+        const tips = this.#keyTips;
+        return tips?.row === row && letters?.startsWith(tips.typed) === true ? letters : undefined;
+    }
+
+    #rowBadge(row: HTMLElement, letters: string): HTMLElement {
+        const badge = this.#badge(this.#rowBadges.get(row), letters, 'ex-sheet-keytip ex-sheet-row-keytip');
+        this.#rowBadges.set(row, badge);
+        return badge;
+    }
+
+    // A KeyTip's badge, the one kept or a new one, showing `letters`.
+    #badge(kept: HTMLElement | undefined, letters: string, className: string): HTMLElement {
+        const badge = kept ?? this.#doc.createElement('span');
+        setAttr(badge, 'class', className);
+        setAttr(badge, 'aria-hidden', 'true');
+        if (badge.textContent !== letters) badge.textContent = letters;
+        return badge;
+    }
+
+    #paintItem(item: SheetToolbarItem, keyTip: string | undefined): HTMLElement {
         const drawn = this.#drawnOf(item);
         const title = item.disabledReason === undefined ? item.tooltip : `${item.tooltip}: ${item.disabledReason}`;
         setAttr(drawn.face, 'title', title);
@@ -212,6 +298,15 @@ export class SheetToolbar {
         if (drawn.picture !== picture) {
             drawn.picture = picture;
             this.#drawFace(drawn.face, item);
+        }
+        // The KeyTip stands last in the item, over its face, as the C# Chrome draws it.
+        if (keyTip === undefined) {
+            drawn.badge?.remove();
+            drawn.badge = undefined;
+        } else {
+            const badge = this.#badge(drawn.badge, keyTip, 'ex-sheet-keytip');
+            if (badge.parentElement !== drawn.element || drawn.element.lastChild !== badge) drawn.element.append(badge);
+            drawn.badge = badge;
         }
         return drawn.element;
     }
@@ -251,7 +346,7 @@ export class SheetToolbar {
             return made;
         };
         const press = (): void => { this.#pressOf(item.key)?.(); };
-        const open = (): void => { this.#openOf(item.key)?.(); };
+        const open = (): void => { this.#openFromBand(item.key); };
         let drawn: Drawn;
         if (item.kind === 'split') {
             const group = this.#doc.createElement('span');
@@ -262,11 +357,11 @@ export class SheetToolbar {
             arrow.setAttribute('aria-haspopup', 'menu');
             arrow.innerHTML = caret;
             group.append(face, arrow);
-            drawn = { element: group, buttons: [face, arrow], face, picture: undefined };
+            drawn = { element: group, buttons: [face, arrow], face, picture: undefined, badge: undefined };
         } else {
             const face = button(item.kind === 'menu' ? 'ex-sheet-toolbar-item ex-sheet-toolbar-menu' : 'ex-sheet-toolbar-item', item.kind === 'menu' ? open : press);
             if (item.kind === 'menu') face.setAttribute('aria-haspopup', 'menu');
-            drawn = { element: face, buttons: [face], face, picture: undefined };
+            drawn = { element: face, buttons: [face], face, picture: undefined, badge: undefined };
         }
         drawn.element.id = `${this.#prefix}${item.key}`;
         drawn.element.dataset['exKind'] = item.kind;
@@ -280,8 +375,13 @@ export class SheetToolbar {
         return this.#shownItem(key)?.press;
     }
 
-    #openOf(key: string): (() => void) | undefined {
-        return this.#shownItem(key)?.open;
+    // Opens an item's list from a press or the band's keys, not a KeyTip; answers whether the item has one.
+    #openFromBand(key: string): boolean {
+        const open = this.#shownItem(key)?.open;
+        if (open === undefined) return false;
+        this.#keyTipListRow = undefined;
+        open(false);
+        return true;
     }
 
     #shownItem(key: string): SheetToolbarItem | undefined {
@@ -297,7 +397,7 @@ export class SheetToolbar {
     }
 
     #showActive(): void {
-        const active = this.holdsKeyboard ? this.#activeItem() : undefined;
+        const active = this.holdsKeyboard && this.#keyTips === undefined ? this.#activeItem() : undefined;
         for (const [key, drawn] of this.#drawn) drawn.element.classList.toggle('ex-sheet-toolbar-active', key === active?.key);
         if (active === undefined) this.band.removeAttribute('aria-activedescendant');
         else setAttr(this.band, 'aria-activedescendant', `${this.#prefix}${active.key}`);
@@ -305,16 +405,20 @@ export class SheetToolbar {
 
     readonly #onKey = (event: KeyboardEvent): void => {
         if (event.isComposing || event.target !== this.band) return;
+        if (this.#keyTips !== undefined) {
+            event.preventDefault();
+            event.stopPropagation();
+            this.#keyTipKey(event, this.#keyTips);
+            return;
+        }
         if (event.ctrlKey || event.metaKey) return;
         const enabled = this.#enabled();
         const at = enabled.findIndex(item => item.key === this.#active);
         const active = enabled[at];
         // ↓ or Alt+↓ opens a menu's or a split control's list, which takes the keyboard; Alt and nothing else.
         if (event.key === 'ArrowDown') {
-            const open = active === undefined ? undefined : this.#openOf(active.key);
-            if (open === undefined) return;
+            if (active === undefined || !this.#openFromBand(active.key)) return;
             event.preventDefault();
-            open();
             return;
         }
         if (event.altKey) return;
@@ -330,9 +434,7 @@ export class SheetToolbar {
             case 'Enter':
             case ' ': {
                 if (active?.kind === 'menu') {
-                    const open = this.#openOf(active.key);
-                    if (open === undefined) return;
-                    open();
+                    if (!this.#openFromBand(active.key)) return;
                     break;
                 }
                 const press = active === undefined ? undefined : this.#pressOf(active.key);
@@ -347,4 +449,67 @@ export class SheetToolbar {
         }
         event.preventDefault();
     };
+
+    // A key while the KeyTips stand (ADR-0100).
+    #keyTipKey(event: KeyboardEvent, tips: KeyTips): void {
+        if (event.key === 'Escape') {
+            if (tips.typed !== '') this.#showKeyTips({ row: tips.row, typed: '' });
+            else if (tips.row !== undefined) this.#showKeyTips({ row: undefined, typed: '' });
+            else this.#endKeyTips();
+            return;
+        }
+        if (event.key.length !== 1 || event.ctrlKey || event.metaKey || event.altKey) {
+            this.#endKeyTips();
+            return;
+        }
+        const typed = tips.typed + event.key.toUpperCase();
+        const painted = this.#painted;
+        if (painted === undefined) throw new Error('Internal: the KeyTips stand only on a painted band.');
+        const rows = painted.rows;
+        if (tips.row === undefined) {
+            const exact = rows.findIndex(row => row.keyTip === typed);
+            if (exact >= 0) this.#showKeyTips({ row: exact, typed: '' });
+            else if (rows.some(row => row.keyTip?.startsWith(typed) === true)) this.#showKeyTips({ row: undefined, typed });
+            else this.#endKeyTips();
+            return;
+        }
+        const row = rows[tips.row];
+        if (row === undefined) {
+            // A repaint took the row away: its letters went with it.
+            this.#endKeyTips();
+            return;
+        }
+        const items = row.items.filter(item => item !== 'separator');
+        const chosen = items.find(item => item.keyTip === typed);
+        if (chosen === undefined) {
+            if (items.some(item => item.keyTip?.startsWith(typed) === true)) this.#showKeyTips({ row: tips.row, typed });
+            else this.#endKeyTips();
+            return;
+        }
+        this.#showKeyTips(undefined);
+        if (chosen.disabledReason !== undefined) {
+            this.#hooks.giveBack();
+            return;
+        }
+        // Excel's Alt, H, H opens the Fill's palette rather than setting its colour: a list opens.
+        if (chosen.open !== undefined) {
+            this.#keyTipListRow = tips.row;
+            this.#active = chosen.key;
+            chosen.open(true);
+            return;
+        }
+        this.#active = chosen.key;
+        this.#hooks.giveBack();
+        chosen.press?.();
+    }
+
+    #endKeyTips(): void {
+        this.#showKeyTips(undefined);
+        this.#hooks.giveBack();
+    }
+
+    #showKeyTips(tips: KeyTips | undefined): void {
+        this.#keyTips = tips;
+        if (this.#painted !== undefined) this.paint(this.#painted);
+    }
 }

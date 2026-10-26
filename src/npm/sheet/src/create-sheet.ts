@@ -171,7 +171,10 @@ class SheetView {
     // The Borders preset the face sets: the one chosen last, Bottom Border until one is.
     #faceBorder: SheetToolbarBorder = 'bottom';
     // A Toolbar Item's list while it stands in the grid's popover frame, and the Selection it was opened over.
-    #choices: { readonly panel: SheetChoicesPanel; readonly selection: GridSelection } | undefined;
+    #choices: { readonly panel: SheetChoicesPanel; readonly selection: GridSelection; readonly fromKeyTip: boolean } | undefined;
+    // The Alt key went down alone where the toolbar's keys are heard, and its release has not been heard: the release
+    // starts the KeyTips, unless another key went down first, a chord, which is not a KeyTip.
+    #altAlone = false;
     // The category the Number Format menu shows, read once for each Number Format and culture the Focus cell has.
     #shownCategory: { readonly format: NumberFormat; readonly culture: Culture; readonly category: NumberFormatCategory } | undefined;
     // A resize of several whole columns, reported a column at a time: its first step, and the columns still to
@@ -216,6 +219,8 @@ class SheetView {
         // Excel's keys for the Sheet Tabs, heard on the Sheet before its grid hears them, wherever in it the keyboard
         // is, so the browser does not move among its own tabs (ADR-0331 §4).
         element.addEventListener('keydown', this.#onSheetKey, { capture: true });
+        element.addEventListener('keyup', this.#onSheetKeyUp, { capture: true });
+        element.addEventListener('focusout', this.#onSheetFocusOut);
         this.#grid = createGrid(this.#gridElement, gridOptions);
         this.#paintFrame();
     }
@@ -315,6 +320,8 @@ class SheetView {
         this.#grid?.destroy();
         this.#grid = undefined;
         this.#element.removeEventListener('keydown', this.#onSheetKey, { capture: true });
+        this.#element.removeEventListener('keyup', this.#onSheetKeyUp, { capture: true });
+        this.#element.removeEventListener('focusout', this.#onSheetFocusOut);
         this.#element.replaceChildren();
         this.#element.classList.remove('ex-sheet');
         this.#element.removeAttribute('data-ex-input-root');
@@ -768,7 +775,8 @@ class SheetView {
                 // An open edit is the reason over any other, as the C# Sheet's.
                 disabledReason: this.#editing ? words.toolbarWhileEditing : disabledReason,
                 press: act === undefined ? undefined : () => { this.#toolbarPressed(act); },
-                open: list === undefined ? undefined : () => { this.#openChoices(name, list()); },
+                open: list === undefined ? undefined : (fromKeyTip: boolean) => { this.#openChoices(name, list(), fromKeyTip); },
+                keyTip: toolbarKeyTips[key],
             };
         };
         const key = (kind: SheetFormatKey) => (focused: CellFormat): CellFormatChange => sheetFormatChangeFor(kind, focused, this.#source.sheet.culture);
@@ -779,6 +787,7 @@ class SheetView {
         const border = this.#faceBorder;
         return [{
             label: words.toolbarHomeRow,
+            keyTip: 'H',
             items: [
                 item('bold', 'bold', key('bold'), { pressed: format?.font.bold === true, shortcut: 'Ctrl+B' }),
                 item('italic', 'italic', key('italic'), { pressed: format?.font.italic === true, shortcut: 'Ctrl+I' }),
@@ -891,7 +900,7 @@ class SheetView {
     // after it only where nothing took its place. The list reads the Selection and the Sheet it was opened over: a
     // Selection moved, another Sheet shown or an operation run ends it, as each ends Format Cells. An edit open at the
     // opening shows nothing, and the notice says why.
-    #openChoices(title: string, choices: readonly SheetToolbarChoice[]): void {
+    #openChoices(title: string, choices: readonly SheetToolbarChoice[], fromKeyTip: boolean): void {
         const grid = this.#grid;
         const selection = grid?.readView().selection;
         if (grid === undefined || selection === undefined) return;
@@ -915,7 +924,7 @@ class SheetView {
         this.#endChoices();
         this.#clearNotice();
         if (!grid.openPopover(() => panel.element, title)) return;
-        this.#choices = { panel, selection };
+        this.#choices = { panel, selection, fromKeyTip };
         panel.takeKeyboard();
     }
 
@@ -992,6 +1001,7 @@ class SheetView {
     readonly #onSheetKey = (event: KeyboardEvent): void => {
         const grid = this.#grid;
         if (event.isComposing || grid === undefined) return;
+        if (this.#toolbarKey(event)) return;
         const key = grid.keyName(event);
         const step = sheetTabStepOf(key);
         if (step === undefined && key !== sheetTabKeys.insert) {
@@ -1014,6 +1024,55 @@ class SheetView {
         this.#raiseDocument();
         if (onTabs) this.#tabs.focus(sheet);
     };
+
+    // The Sheet Toolbar's keys (ADR-0100), while it is shown: the Alt key alone and F10 start the KeyTips where the grid
+    // takes keys, unless an edit is open; Escape in a list a KeyTip opened goes back to its row's KeyTips, as Excel's
+    // does (R2 (b)). Answers whether the key was one of them.
+    #toolbarKey(event: KeyboardEvent): boolean {
+        if (this.#options.showToolbar !== true) return false;
+        const target = event.target;
+        // While the KeyTips stand every key typed on the band is theirs, a key the Sheet would claim among them.
+        if (this.#toolbar.showsKeyTips && target === this.#toolbar.band) return true;
+        const choices = this.#choices;
+        if (event.key === 'Escape' && choices?.fromKeyTip === true && target instanceof Node && choices.panel.element.contains(target)) {
+            event.preventDefault();
+            event.stopPropagation();
+            this.#endChoices();
+            this.#toolbar.backToKeyTips();
+            return true;
+        }
+        const plain = !event.ctrlKey && !event.metaKey && !event.shiftKey;
+        if (event.key === 'Alt') {
+            this.#altAlone = plain && !this.#editing && this.#takesToolbarKeys(target);
+            return this.#altAlone;
+        }
+        // Any other key between an Alt's press and its release: that Alt is not alone.
+        this.#altAlone = false;
+        if (event.key !== 'F10' || !plain || event.altKey || this.#editing || !this.#takesToolbarKeys(target)) return false;
+        if (!this.#toolbar.startKeyTips()) return false;
+        event.preventDefault();
+        event.stopPropagation();
+        return true;
+    }
+
+    // The Alt key's release, when it went down alone, starts the KeyTips; its default, which would take the keyboard to
+    // the browser's menu, is the KeyTips' too.
+    readonly #onSheetKeyUp = (event: KeyboardEvent): void => {
+        if (event.key !== 'Alt' || !this.#altAlone) return;
+        this.#altAlone = false;
+        if (this.#options.showToolbar !== true || this.#editing || !this.#takesToolbarKeys(event.target)) return;
+        if (this.#toolbar.startKeyTips()) event.preventDefault();
+    };
+
+    // The keyboard leaving where it was between an Alt's press and its release, as Alt+Tab takes it from the page: no
+    // release comes, and a later one is not that Alt's.
+    readonly #onSheetFocusOut = (): void => { this.#altAlone = false; };
+
+    // Where the toolbar's keys are heard: in the grid, outside a panel it opened and the Name Box, whose fields keep their
+    // own keys, as the C# Sheet's declared keys are.
+    #takesToolbarKeys(target: EventTarget | null): boolean {
+        return target instanceof Element && this.#gridElement.contains(target) && target.closest('.ex-popover, .ex-name-box') === null;
+    }
 
     // Excel's formatting keys and its insert and delete keys, on the Selection as the grid holds it at the key (ADR-0071,
     // "Keys"; ADR-0050 item 14), where the grid takes keys: not in the Name Box or a panel the grid opened, whose
@@ -1356,6 +1415,14 @@ const sheetFindMatch = (row: SheetRow, column: GridColumn<SheetRow>, pattern: Gr
 function unreachableColumn(position: number): never {
     throw new Error(`Internal: no column of the request stands at ${String(position)}.`);
 }
+
+// Each Toolbar Item's KeyTip, Excel's Home tab's where Excel has one (ADR-0100; a reading until a Windows run reads them
+// all). Strikethrough has none in Excel, and ExSheet's own is 4. Excel reaches Format Cells… through the Cells group's
+// Format menu, O, then E: ExSheet has no such menu, so its letters are both, O narrowing to it and E running it.
+const toolbarKeyTips: Readonly<Record<SheetToolbarCommand, string>> = {
+    bold: '1', italic: '2', underline: '3', strikethrough: '4', fontColour: 'FC', fill: 'H', borders: 'B',
+    alignLeft: 'AL', alignCenter: 'AC', alignRight: 'AR', numberFormat: 'N', percent: 'P', comma: 'K', formatCells: 'OE',
+};
 
 // Excel's Borders presets, in its list's order, each relative to every selected range as Format Cells' are (ADR-0100).
 const toolbarBorders: readonly SheetToolbarBorder[] = ['bottom', 'top', 'left', 'right', 'none', 'all', 'outside', 'thickOutside'];

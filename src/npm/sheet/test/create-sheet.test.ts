@@ -862,6 +862,76 @@ describe('the Sheet Toolbar (ADR-0100)', () => {
         expect(sheet.workbook.sheets.map(shown => shown.getCellFormat(CellAddress.parse('A1')).fill.isNone)).toEqual([true, true]);
     });
 
+    it('ADR-0100: the Alt key alone shows the rows\' KeyTip; H shows the items\' letters, and 1 presses Bold and gives the keyboard back', async () => {
+        const { element, sheet } = sheetOf({ showToolbar: true, document: documentOf({ A1: 'x' }) });
+        await vi.waitFor(() => { expect(textAt(element, 0, 0)).toBe('x'); });
+        press(element, 0, 0);
+        const grid = document.activeElement;
+        const band = element.querySelector<HTMLElement>('.ex-sheet-toolbar');
+        key('Alt', { altKey: true });
+        const release = new KeyboardEvent('keyup', { key: 'Alt', bubbles: true, cancelable: true });
+        grid?.dispatchEvent(release);
+        expect(release.defaultPrevented).toBe(true);
+        expect(document.activeElement).toBe(band);
+        expect([...element.querySelectorAll('.ex-sheet-keytip')].map(badge => badge.textContent)).toEqual(['H']);
+        key('h');
+        expect([...element.querySelectorAll('.ex-sheet-keytip')].map(badge => badge.textContent)).toEqual([
+            '1', '2', '3', '4', 'FC', 'H', 'B', 'AL', 'AC', 'AR', 'N', 'P', 'K', 'OE',
+        ]);
+        // A typed letter narrows the level: A leaves the alignments' letters; Escape shows them all again.
+        key('a');
+        expect([...element.querySelectorAll('.ex-sheet-keytip')].map(badge => badge.textContent)).toEqual(['AL', 'AC', 'AR']);
+        key('Escape');
+        key('1');
+        expect(sheet.workbook.shown.getCellFormat(CellAddress.parse('A1')).font.bold).toBe(true);
+        expect(document.activeElement).toBe(grid);
+        expect(element.querySelectorAll('.ex-sheet-keytip')).toHaveLength(0);
+        // An Alt that is a chord's starts nothing; F10 starts them too, and a key that is no letter ends them.
+        key('Alt', { altKey: true });
+        key('ArrowDown', { altKey: true });
+        grid?.dispatchEvent(new KeyboardEvent('keyup', { key: 'Alt', bubbles: true, cancelable: true }));
+        expect(document.activeElement).toBe(grid);
+        key('F10');
+        expect(document.activeElement).toBe(band);
+        expect(band?.hasAttribute('aria-activedescendant')).toBe(false);
+        key('ArrowLeft');
+        expect(document.activeElement).toBe(grid);
+        expect(element.querySelectorAll('.ex-sheet-keytip')).toHaveLength(0);
+        // A key the Sheet would claim, typed while they stand, is theirs too: it ends them and sets nothing.
+        key('F10');
+        key('b', { ctrlKey: true });
+        expect(document.activeElement).toBe(grid);
+        expect(sheet.workbook.shown.getCellFormat(CellAddress.parse('A1')).font.bold).toBe(true);
+    });
+
+    it('ADR-0100: Alt, H, H opens the Fill\'s palette; Escape there goes back to the row\'s letters, then to the rows\', then to the Sheet', async () => {
+        const { element } = sheetOf({ showToolbar: true });
+        await vi.waitFor(() => { expect(element.querySelector('.ex-viewport')).not.toBeNull(); });
+        press(element, 0, 0);
+        const grid = document.activeElement;
+        const band = element.querySelector<HTMLElement>('.ex-sheet-toolbar');
+        key('F10');
+        key('h');
+        key('h');
+        const { choice } = choicesOf(element);
+        expect(document.activeElement).toBe(choice('No Fill'));
+        key('Escape');
+        expect(element.querySelector('.ex-sheet-choices')).toBeNull();
+        expect(document.activeElement).toBe(band);
+        expect(element.querySelectorAll('.ex-sheet-keytip')).toHaveLength(14);
+        key('Escape');
+        expect([...element.querySelectorAll('.ex-sheet-keytip')].map(badge => badge.textContent)).toEqual(['H']);
+        key('Escape');
+        expect(document.activeElement).toBe(grid);
+        // O narrows to Format Cells, and E opens it.
+        key('F10');
+        key('h');
+        key('o');
+        expect([...element.querySelectorAll('.ex-sheet-keytip')].map(badge => badge.textContent)).toEqual(['OE']);
+        key('e');
+        expect(element.querySelector('.ex-popover .ex-format-cells')).not.toBeNull();
+    });
+
     it('ADR-0100: while an edit is open every item is unavailable, and says why', async () => {
         const { element } = sheetOf({ showToolbar: true });
         await vi.waitFor(() => { expect(element.querySelector('.ex-viewport')).not.toBeNull(); });
