@@ -1,0 +1,1096 @@
+{
+  "about": "PV, FV, PMT and XNPV give Excel's double, to the bit, at every case Excel was asked (ADR-0047, ADR-0202), PMT by ADR-0047's exception for PMT alone (decided with the user, 2026-10-12): the seventeenth Windows run, the two area passes of 2026-10-12 and run 18a, and the engine's answers by generalisation where no run asked. How each evaluation was found stays in FinancialEvaluationTests.cs. Transcribed from FinancialEvaluationTests.cs.",
+  "kind": "sheet",
+  "culture": "en-US",
+  "cases": [
+    {
+      "name": "ADR-0047/ADR-0202: Excel's doubles as the seventeenth run and the area pass read them; Math.Pow is 4 to 39 units in the last place away: =FV(0.06/12,10,-200,-500,1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=FV(0.06/12,10,-200,-500,1)"}, "expect": {"values": {"ZZ1000": 2581.4033740601185}}}
+      ]
+    },
+    {
+      "name": "ADR-0047/ADR-0202: Excel's doubles as the seventeenth run and the area pass read them; Math.Pow is 4 to 39 units in the last place away: =FV(0.12/12,12,-1000)",
+      "steps": [
+        {"enter": {"ZZ1000": "=FV(0.12/12,12,-1000)"}, "expect": {"values": {"ZZ1000": 12682.503013196976}}}
+      ]
+    },
+    {
+      "name": "ADR-0047/ADR-0202: Excel's doubles as the seventeenth run and the area pass read them; Math.Pow is 4 to 39 units in the last place away: =FV(0.11/12,35,-2000,,1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=FV(0.11/12,35,-2000,,1)"}, "expect": {"values": {"ZZ1000": 82846.24637190055}}}
+      ]
+    },
+    {
+      "name": "ADR-0047/ADR-0202: Excel's doubles as the seventeenth run and the area pass read them; Math.Pow is 4 to 39 units in the last place away: =FV(0.05/12,360,-150)",
+      "steps": [
+        {"enter": {"ZZ1000": "=FV(0.05/12,360,-150)"}, "expect": {"values": {"ZZ1000": 124838.79530422161}}}
+      ]
+    },
+    {
+      "name": "ADR-0047/ADR-0202: Excel's doubles as the seventeenth run and the area pass read them; Math.Pow is 4 to 39 units in the last place away: =PV(0.08/12,12*20,500,,0)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PV(0.08/12,12*20,500,,0)"}, "expect": {"values": {"ZZ1000": -59777.14585118782}}}
+      ]
+    },
+    {
+      "name": "ADR-0047/ADR-0202: Excel's doubles as the seventeenth run and the area pass read them; Math.Pow is 4 to 39 units in the last place away: =PV(0.05,10,-100,1000,1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PV(0.05,10,-100,1000,1)"}, "expect": {"values": {"ZZ1000": 196.8689140236461}}}
+      ]
+    },
+    {
+      "name": "ADR-0047/ADR-0202: Excel's doubles as the seventeenth run and the area pass read them; Math.Pow is 4 to 39 units in the last place away: =PV(0.05/12,37,2500,1000,0)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PV(0.05/12,37,2500,1000,0)"}, "expect": {"values": {"ZZ1000": -86415.16626124813}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: FV-009 and PV-007, the area pass: the payment times the product of 1+rate and the annuity factor: =FV(0.05/12,12,-150,0,1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=FV(0.05/12,12,-150,0,1)"}, "expect": {"values": {"ZZ1000": 1849.5026084246633}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: FV-009 and PV-007, the area pass: the payment times the product of 1+rate and the annuity factor: =PV(0.05/12,12,-150,0,1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PV(0.05/12,12,-150,0,1)"}, "expect": {"values": {"ZZ1000": 1759.484064397425}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: FV-006, FV-007 and PV-005, the area pass: Excel answers an nper that is not a whole number from 0, and these are its doubles: =FV(0.06/12,10.5,-200)",
+      "steps": [
+        {"enter": {"ZZ1000": "=FV(0.06/12,10.5,-200)"}, "expect": {"values": {"ZZ1000": 2150.588229777517}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: FV-006, FV-007 and PV-005, the area pass: Excel answers an nper that is not a whole number from 0, and these are its doubles: =FV(0.06/12,-10,-200)",
+      "steps": [
+        {"enter": {"ZZ1000": "=FV(0.06/12,-10,-200)"}, "expect": {"values": {"ZZ1000": -1946.0823721571962}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: FV-006, FV-007 and PV-005, the area pass: Excel answers an nper that is not a whole number from 0, and these are its doubles: =PV(0.05,10.5,-100)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PV(0.05,10.5,-100)"}, "expect": {"values": {"ZZ1000": 801.7640221710038}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: FV-012, FV-013 and PV-010, the second area pass: a fraction is e^(n ln(1+rate)) with ln and exp correctly rounded, a negative one 1 over the power to its absolute value: =FV(0.06/12,10.25,-200)",
+      "steps": [
+        {"enter": {"ZZ1000": "=FV(0.06/12,10.25,-200)"}, "expect": {"values": {"ZZ1000": 2098.0640302830534}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: FV-012, FV-013 and PV-010, the second area pass: a fraction is e^(n ln(1+rate)) with ln and exp correctly rounded, a negative one 1 over the power to its absolute value: =FV(0.06/12,-10.5,-200)",
+      "steps": [
+        {"enter": {"ZZ1000": "=FV(0.06/12,-10.5,-200)"}, "expect": {"values": {"ZZ1000": -2040.8618907559849}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: PV-010, the second area pass: half a period, by e^(n ln(1+rate)): =PV(0.05,0.5,-100)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PV(0.05,0.5,-100)"}, "expect": {"values": {"ZZ1000": 48.19985410293382}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: FV-016, PV-014 and FV-024, the second area pass: half a period is the square root of 1+rate, as the ^ operator takes it (ARITH-133), and a negative half 1 over it: =FV(0.42,0.5,-100)",
+      "steps": [
+        {"enter": {"ZZ1000": "=FV(0.42,0.5,-100)"}, "expect": {"values": {"ZZ1000": 45.627983043166275}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: FV-016, PV-014 and FV-024, the second area pass: half a period is the square root of 1+rate, as the ^ operator takes it (ARITH-133), and a negative half 1 over it: =PV(0.42,0.5,-100)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PV(0.42,0.5,-100)"}, "expect": {"values": {"ZZ1000": 38.290152786502574}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: FV-016, PV-014 and FV-024, the second area pass: half a period is the square root of 1+rate, as the ^ operator takes it (ARITH-133), and a negative half 1 over it: =FV(0.42,-0.5,-100)",
+      "steps": [
+        {"enter": {"ZZ1000": "=FV(0.42,-0.5,-100)"}, "expect": {"values": {"ZZ1000": -38.29015278650258}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: FV-022 and PV-015, the second area pass: a negative fraction is 1 over the power to its absolute value: =FV(0.06/12,-2.5,-100)",
+      "steps": [
+        {"enter": {"ZZ1000": "=FV(0.06/12,-2.5,-100)"}, "expect": {"values": {"ZZ1000": -247.8287941856272}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: FV-022 and PV-015, the second area pass: a negative fraction is 1 over the power to its absolute value: =PV(0.06/12,-2.5,-100)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PV(0.06/12,-2.5,-100)"}, "expect": {"values": {"ZZ1000": -250.93828076244577}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: FV-014, FV-015 and FV-019, the second area pass: a present value and a payment are the sum as written, not a fused multiply-add: =FV(0.05/12,12,-150,-1000,1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=FV(0.05/12,12,-150,-1000,1)"}, "expect": {"values": {"ZZ1000": 2900.664506306397}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: FV-014, FV-015 and FV-019, the second area pass: a present value and a payment are the sum as written, not a fused multiply-add: =FV(0.03/12,240,-100,-50000,1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=FV(0.03/12,240,-100,-50000,1)"}, "expect": {"values": {"ZZ1000": 123950.02507801351}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: FV-014, FV-015 and FV-019, the second area pass: a present value and a payment are the sum as written, not a fused multiply-add: =FV(0.06/12,10,-150,1000)",
+      "steps": [
+        {"enter": {"ZZ1000": "=FV(0.06/12,10,-150,1000)"}, "expect": {"values": {"ZZ1000": 483.06382918288546}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: FV-020, FV-021 and PV-012, the second area pass: 0 to a negative power is #DIV/0!, as the ^ operator's =0^-1 is (ARITH-042): =FV(-1,-0.5,-100)",
+      "steps": [
+        {"enter": {"ZZ1000": "=FV(-1,-0.5,-100)"}, "expect": {"values": {"ZZ1000": {"error": "#DIV/0!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: FV-020, FV-021 and PV-012, the second area pass: 0 to a negative power is #DIV/0!, as the ^ operator's =0^-1 is (ARITH-042): =FV(-1,-10,-100)",
+      "steps": [
+        {"enter": {"ZZ1000": "=FV(-1,-10,-100)"}, "expect": {"values": {"ZZ1000": {"error": "#DIV/0!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: FV-020, FV-021 and PV-012, the second area pass: 0 to a negative power is #DIV/0!, as the ^ operator's =0^-1 is (ARITH-042): =PV(-1,-10,-100)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PV(-1,-10,-100)"}, "expect": {"values": {"ZZ1000": {"error": "#DIV/0!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: FV-020, FV-021 and PV-012, the second area pass: 0 to a negative power is #DIV/0!, as the ^ operator's =0^-1 is (ARITH-042): =PV(-1,-0.5,-100,1000,1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PV(-1,-0.5,-100,1000,1)"}, "expect": {"values": {"ZZ1000": {"error": "#DIV/0!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: FV-018, the second area pass: no periods at a rate of -1 is 0^0, #NUM!, as the ^ operator's =0^0 is (ARITH-041), where squaring gave 1 and FV 500: =FV(-1,0,-100,-500)",
+      "steps": [
+        {"enter": {"ZZ1000": "=FV(-1,0,-100,-500)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: FV-018, the second area pass: no periods at a rate of -1 is 0^0, #NUM!, as the ^ operator's =0^0 is (ARITH-041), where squaring gave 1 and FV 500: =PV(-1,0,-100,-500)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PV(-1,0,-100,-500)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: FV-018, the second area pass: no periods at a rate of -1 is 0^0, #NUM!, as the ^ operator's =0^0 is (ARITH-041), where squaring gave 1 and FV 500: =(1+-1)^0",
+      "steps": [
+        {"enter": {"ZZ1000": "=(1+-1)^0"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: PV-013, run 18a: at a rate of -1 the growth is 0 and PV divides by it, #DIV/0!; at half a period it is the engine's answer by generalisation: =PV(-1,10,-100)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PV(-1,10,-100)"}, "expect": {"values": {"ZZ1000": {"error": "#DIV/0!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: PV-013, run 18a: at a rate of -1 the growth is 0 and PV divides by it, #DIV/0!; at half a period it is the engine's answer by generalisation: =PV(-1,0.5,-100,1000,1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PV(-1,0.5,-100,1000,1)"}, "expect": {"values": {"ZZ1000": {"error": "#DIV/0!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: PV-013, run 18a: FV multiplies by the growth, 0, and answers: =FV(-1,10,-100)",
+      "steps": [
+        {"enter": {"ZZ1000": "=FV(-1,10,-100)"}, "expect": {"values": {"ZZ1000": 100}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: FV-017 and PV-011, the second area pass: a negative 1+rate has an odd root where 1/nper is odd, as the ^ operator's =(-8)^(1/3) (ARITH-043), and no other fractional power (#NUM!); PMT is #NUM! there too: =FV(-9,1/3,-1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=FV(-9,1/3,-1)"}, "expect": {"values": {"ZZ1000": 0.3333333333333333}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: FV-017 and PV-011, the second area pass: a negative 1+rate has an odd root where 1/nper is odd, as the ^ operator's =(-8)^(1/3) (ARITH-043), and no other fractional power (#NUM!); PMT is #NUM! there too: =PV(-1.5,0.5,-100)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PV(-1.5,0.5,-100)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: FV-017 and PV-011, the second area pass: a negative 1+rate has an odd root where 1/nper is odd, as the ^ operator's =(-8)^(1/3) (ARITH-043), and no other fractional power (#NUM!); PMT is #NUM! there too: =FV(-2,10.5,-100)",
+      "steps": [
+        {"enter": {"ZZ1000": "=FV(-2,10.5,-100)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: FV-017 and PV-011, the second area pass: a negative 1+rate has an odd root where 1/nper is odd, as the ^ operator's =(-8)^(1/3) (ARITH-043), and no other fractional power (#NUM!); PMT is #NUM! there too: =PMT(-2,10.5,100)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PMT(-2,10.5,100)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: FV-017 and PV-011, the second area pass: a negative 1+rate has an odd root where 1/nper is odd, as the ^ operator's =(-8)^(1/3) (ARITH-043), and no other fractional power (#NUM!); PMT is #NUM! there too: =PMT(-9,0.25,100,0,1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PMT(-9,0.25,100,0,1)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: a whole nper at a rate below -1 is still raised by squaring, which does not depend on the base's sign: =FV(-2,3,-1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=FV(-2,3,-1)"}, "expect": {"values": {"ZZ1000": 1}}}
+      ]
+    },
+    {
+      "name": "ADR-0047/ADR-0202: PMT-001 and PMT-003, at the end, are the exact payment rounded once; the doubles' evaluation is 36 to 225 units in the last place from them: =PMT(8%/12,10,10000)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PMT(8%/12,10,10000)"}, "expect": {"values": {"ZZ1000": -1037.0320893591522}}}
+      ]
+    },
+    {
+      "name": "ADR-0047/ADR-0202: PMT-001 and PMT-003, at the end, are the exact payment rounded once; the doubles' evaluation is 36 to 225 units in the last place from them: =PMT(6%/12,18*12,0,50000)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PMT(6%/12,18*12,0,50000)"}, "expect": {"values": {"ZZ1000": -129.08116086799092}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-13, decided with the user): PMT-002 and PMT-008, at the start, are the exact payment at the start rounded once; at PMT-008 Excel's double, -147.95035898410148, is a unit in the last place from it: =PMT(8%/12,10,10000,0,1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PMT(8%/12,10,10000,0,1)"}, "expect": {"values": {"ZZ1000": -1030.1643271779658}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-13, decided with the user): PMT-002 and PMT-008, at the start, are the exact payment at the start rounded once; at PMT-008 Excel's double, -147.95035898410148, is a unit in the last place from it: =PMT(0.1,10,1000,0,2)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PMT(0.1,10,1000,0,2)"}, "expect": {"values": {"ZZ1000": -147.95035898410146}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-13, decided with the user): PMT-008, 014, 015, 025 and 029, the second area pass: the payment at the start is the exact payment at the start rounded once (Python's decimal): =PMT(0.1,10,1000,0,1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PMT(0.1,10,1000,0,1)"}, "expect": {"values": {"ZZ1000": -147.95035898410146}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-13, decided with the user): PMT-008, 014, 015, 025 and 029, the second area pass: the payment at the start is the exact payment at the start rounded once (Python's decimal): =PMT(0.0725/12,12,250000,0,1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PMT(0.0725/12,12,250000,0,1)"}, "expect": {"values": {"ZZ1000": -21530.43001872549}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-13, decided with the user): PMT-008, 014, 015, 025 and 029, the second area pass: the payment at the start is the exact payment at the start rounded once (Python's decimal): =PMT(0.05/12,12,10000,0,1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PMT(0.05/12,12,10000,0,1)"}, "expect": {"values": {"ZZ1000": -852.5226402170999}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-13, decided with the user): PMT-008, 014, 015, 025 and 029, the second area pass: the payment at the start is the exact payment at the start rounded once (Python's decimal): =PMT(0.065/12,60,1000,-5000,1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PMT(0.065/12,60,1000,-5000,1)"}, "expect": {"values": {"ZZ1000": 50.90552130119934}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (2026-10-13, decided with the user): PMT-008, 014, 015, 025 and 029, the second area pass: the payment at the start is the exact payment at the start rounded once (Python's decimal): =PMT(0.06/52,60,1000,-5000,1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PMT(0.06/52,60,1000,-5000,1)"}, "expect": {"values": {"ZZ1000": 63.19727216775628}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: the evaluation found, at inputs no run has asked; spikes/exsheet-financial-evaluation/ computes each exactly: =PMT(-2/12/100,360,125000,20000,0)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PMT(-2/12/100,360,125000,20000,0)"}, "expect": {"values": {"ZZ1000": -326.9633871434769}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: the evaluation found, at inputs no run has asked; spikes/exsheet-financial-evaluation/ computes each exactly: =FV(-2/12/100,360,125000,20000,0)",
+      "steps": [
+        {"enter": {"ZZ1000": "=FV(-2/12/100,360,125000,20000,0)"}, "expect": {"values": {"ZZ1000": -33870696.20924745}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: the evaluation found, at inputs no run has asked; spikes/exsheet-financial-evaluation/ computes each exactly: =PV(-2/12/100,360,125000,20000,0)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PV(-2/12/100,360,125000,20000,0)"}, "expect": {"values": {"ZZ1000": -61763793.24623326}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: the evaluation found, at inputs no run has asked; spikes/exsheet-financial-evaluation/ computes each exactly: =PMT(8/12/100,480,-1000000,1000,1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PMT(8/12/100,480,-1000000,1000,1)"}, "expect": {"values": {"ZZ1000": 6906.785212764483}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: the evaluation found, at inputs no run has asked; spikes/exsheet-financial-evaluation/ computes each exactly: =PV(8/12/100,480,-1000000,1000,1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PV(8/12/100,480,-1000000,1000,1)"}, "expect": {"values": {"ZZ1000": 144779153.72637767}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: the evaluation found, at inputs no run has asked; spikes/exsheet-financial-evaluation/ computes each exactly: =PMT(6/52/100,36,-250000,-1000,1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PMT(6/52/100,36,-250000,-1000,1)"}, "expect": {"values": {"ZZ1000": 7112.69268615947}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: the evaluation found, at inputs no run has asked; spikes/exsheet-financial-evaluation/ computes each exactly: =FV(6/52/100,36,-250000,-1000,1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=FV(6/52/100,36,-250000,-1000,1)"}, "expect": {"values": {"ZZ1000": 9195769.500246907}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: the evaluation found, at inputs no run has asked; spikes/exsheet-financial-evaluation/ computes each exactly: =PV(6/52/100,36,-250000,-1000,1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PV(6/52/100,36,-250000,-1000,1)"}, "expect": {"values": {"ZZ1000": 8821786.639617125}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: the evaluation found, at inputs no run has asked; spikes/exsheet-financial-evaluation/ computes each exactly: =PMT(9/1200/100,1000,-250000,0,0)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PMT(9/1200/100,1000,-250000,0,0)"}, "expect": {"values": {"ZZ1000": 259.501547004884}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: the evaluation found, at inputs no run has asked; spikes/exsheet-financial-evaluation/ computes each exactly: =FV(9/1200/100,1000,-250000,0,0)",
+      "steps": [
+        {"enter": {"ZZ1000": "=FV(9/1200/100,1000,-250000,0,0)"}, "expect": {"values": {"ZZ1000": 259603731.6379252}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: the evaluation found, at inputs no run has asked; spikes/exsheet-financial-evaluation/ computes each exactly: =PV(9/1200/100,1000,-250000,0,0)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PV(9/1200/100,1000,-250000,0,0)"}, "expect": {"values": {"ZZ1000": 240846348.39918622}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: type is a truth value: 2 (PMT-008), 0.5 (PMT-009) and -1 (PMT-010) are each payment at the start, as Excel read them, and 0 is not: PMT(0.1,10,1000,0)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PMT(0.1,10,1000,0,1)", "ZZ1001": "=PMT(0.1,10,1000,0,2)", "ZZ1002": "=PMT(0.1,10,1000,0,-1)", "ZZ1003": "=PMT(0.1,10,1000,0,0.5)", "ZZ1004": "=PMT(0.1,10,1000,0,-0.5)", "ZZ1005": "=PMT(0.1,10,1000,0,0.1)", "ZZ1006": "=PMT(0.1,10,1000,0,0)"}, "expect": {"alike": [["ZZ1000", "ZZ1001", "ZZ1002", "ZZ1003", "ZZ1004", "ZZ1005"]], "values": {"ZZ1000": -147.95035898410146, "ZZ1006": -162.74539488251162}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: type is a truth value: 2 (PMT-008), 0.5 (PMT-009) and -1 (PMT-010) are each payment at the start, as Excel read them, and 0 is not: PV(0.05,10,-100,1000)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PV(0.05,10,-100,1000,1)", "ZZ1001": "=PV(0.05,10,-100,1000,2)", "ZZ1002": "=PV(0.05,10,-100,1000,-1)", "ZZ1003": "=PV(0.05,10,-100,1000,0.5)", "ZZ1004": "=PV(0.05,10,-100,1000,-0.5)", "ZZ1005": "=PV(0.05,10,-100,1000,0.1)", "ZZ1006": "=PV(0.05,10,-100,1000,0)"}, "expect": {"alike": [["ZZ1000", "ZZ1001", "ZZ1002", "ZZ1003", "ZZ1004", "ZZ1005"]], "values": {"ZZ1000": 196.8689140236461, "ZZ1006": 158.26023937772203}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: type is a truth value: 2 (PMT-008), 0.5 (PMT-009) and -1 (PMT-010) are each payment at the start, as Excel read them, and 0 is not: FV(0.06/12,10,-200,-500)",
+      "steps": [
+        {"enter": {"ZZ1000": "=FV(0.06/12,10,-200,-500,1)", "ZZ1001": "=FV(0.06/12,10,-200,-500,2)", "ZZ1002": "=FV(0.06/12,10,-200,-500,-1)", "ZZ1003": "=FV(0.06/12,10,-200,-500,0.5)", "ZZ1004": "=FV(0.06/12,10,-200,-500,-0.5)", "ZZ1005": "=FV(0.06/12,10,-200,-500,0.1)", "ZZ1006": "=FV(0.06/12,10,-200,-500,0)"}, "expect": {"alike": [["ZZ1000", "ZZ1001", "ZZ1002", "ZZ1003", "ZZ1004", "ZZ1005"]], "values": {"ZZ1000": 2581.4033740601185, "ZZ1006": 2571.1753476519607}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: PMT-009, the area pass: a type of 0.5 is not truncated to 0, which would give the payment at the end: =PMT(0.1,10,1000,0,0.5)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PMT(0.1,10,1000,0,0.5)"}, "expect": {"values": {"ZZ1000": -147.95035898410146}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: PMT-009, the area pass: a type of 0.5 is not truncated to 0, which would give the payment at the end: =PMT(0.1,10,1000,0,0)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PMT(0.1,10,1000,0,0)"}, "expect": {"values": {"ZZ1000": -162.74539488251162}}}
+      ]
+    },
+    {
+      "name": "ADR-0047, the exception for PMT (decided with the user, 2026-10-12): PMT-011 and PMT-012, a fractional and a negative nper, are the exact payment rounded once, each one unit in the last place from Excel's double: =PMT(8%/12,10.5,10000)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PMT(8%/12,10.5,10000)"}, "expect": {"values": {"ZZ1000": -989.2729401451878}}}
+      ]
+    },
+    {
+      "name": "ADR-0047, the exception for PMT (decided with the user, 2026-10-12): PMT-011 and PMT-012, a fractional and a negative nper, are the exact payment rounded once, each one unit in the last place from Excel's double: =PMT(8%/12,-10,10000)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PMT(8%/12,-10,10000)"}, "expect": {"values": {"ZZ1000": 970.3654226924855}}}
+      ]
+    },
+    {
+      "name": "ADR-0047, the exception for PMT: the engine's payment, computed with Python's decimal (the exact payment rounded once, at the end and at the start), at inputs no run has asked: =PMT(0.1,0.5,1000)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PMT(0.1,0.5,1000)"}, "expect": {"values": {"ZZ1000": -2148.8088481701516}}}
+      ]
+    },
+    {
+      "name": "ADR-0047, the exception for PMT: the engine's payment, computed with Python's decimal (the exact payment rounded once, at the end and at the start), at inputs no run has asked: =PMT(0.1,-1,1000,0,1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PMT(0.1,-1,1000,0,1)"}, "expect": {"values": {"ZZ1000": 909.0909090909091}}}
+      ]
+    },
+    {
+      "name": "ADR-0047, the exception for PMT: the engine's payment, computed with Python's decimal (the exact payment rounded once, at the end and at the start), at inputs no run has asked: =PMT(-0.3,-0.5,0,20000,0)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PMT(-0.3,-0.5,0,20000,0)"}, "expect": {"values": {"ZZ1000": 30733.20053068151}}}
+      ]
+    },
+    {
+      "name": "ADR-0047, the exception for PMT: the engine's payment, computed with Python's decimal (the exact payment rounded once, at the end and at the start), at inputs no run has asked: =PMT(0.42,-1/3,1000,-5000,0)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PMT(0.42,-1/3,1000,-5000,0)"}, "expect": {"values": {"ZZ1000": -15649.385313401854}}}
+      ]
+    },
+    {
+      "name": "ADR-0047, the exception for PMT: the engine's payment, computed with Python's decimal (the exact payment rounded once, at the end and at the start), at inputs no run has asked: =PMT(-0.3,0.25,1000,20000,0)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PMT(-0.3,0.25,1000,20000,0)"}, "expect": {"values": {"ZZ1000": -73549.37333577585}}}
+      ]
+    },
+    {
+      "name": "ADR-0047, the exception for PMT: the engine's payment, computed with Python's decimal (the exact payment rounded once, at the end and at the start), at inputs no run has asked: =PMT(1E-7,-240.75,10000,0,1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PMT(1E-7,-240.75,10000,0,1)"}, "expect": {"values": {"ZZ1000": 41.53636189198373}}}
+      ]
+    },
+    {
+      "name": "ADR-0047, the exception for PMT: the engine's payment, computed with Python's decimal (the exact payment rounded once, at the end and at the start), at inputs no run has asked: =PMT(1E-7,0.25,10000,0,1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PMT(1E-7,0.25,10000,0,1)"}, "expect": {"values": {"ZZ1000": -39999.99850000012}}}
+      ]
+    },
+    {
+      "name": "ADR-0047, the exception for PMT: the engine's payment, computed with Python's decimal (the exact payment rounded once, at the end and at the start), at inputs no run has asked: =PMT(0.42,-1/3,250000,20000,1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PMT(0.42,-1/3,250000,20000,1)"}, "expect": {"values": {"ZZ1000": 649988.3863764966}}}
+      ]
+    },
+    {
+      "name": "ADR-0047, the exception for PMT: the engine's payment, computed with Python's decimal (the exact payment rounded once, at the end and at the start), at inputs no run has asked: =PMT(-0.3,-1/3,0,20000,1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PMT(-0.3,-1/3,0,20000,1)"}, "expect": {"values": {"ZZ1000": 67893.64337294643}}}
+      ]
+    },
+    {
+      "name": "ADR-0047, the exception for PMT: the engine's payment, computed with Python's decimal (the exact payment rounded once, at the end and at the start), at inputs no run has asked: =PMT(0.05,12,0,0)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PMT(0.05,12,0,0)"}, "expect": {"values": {"ZZ1000": 0}}}
+      ]
+    },
+    {
+      "name": "ADR-0047, the exception for PMT: below a rate of about 1e-15 the payment is held between bounds that decide its double; Python's decimal at 1200 digits, rounded once: =PMT(1E-20,12,1000)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PMT(1E-20,12,1000)"}, "expect": {"values": {"ZZ1000": -83.33333333333333}}}
+      ]
+    },
+    {
+      "name": "ADR-0047, the exception for PMT: below a rate of about 1e-15 the payment is held between bounds that decide its double; Python's decimal at 1200 digits, rounded once: =PMT(1.35964379977615E-261,109.10388740984,-3.72021037548094,0,0)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PMT(1.35964379977615E-261,109.10388740984,-3.72021037548094,0,0)"}, "expect": {"values": {"ZZ1000": 0.034097871888893086}}}
+      ]
+    },
+    {
+      "name": "ADR-0047, the exception for PMT: below a rate of about 1e-15 the payment is held between bounds that decide its double; Python's decimal at 1200 digits, rounded once: =PMT(-1.66782567493401E-214,450.154168942057,13857.7460935048,-0.000477145499331959,0)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PMT(-1.66782567493401E-214,450.154168942057,13857.7460935048,-0.000477145499331959,0)"}, "expect": {"values": {"ZZ1000": -30.784443580579264}}}
+      ]
+    },
+    {
+      "name": "ADR-0047, the exception for PMT: below a rate of about 1e-15 the payment is held between bounds that decide its double; Python's decimal at 1200 digits, rounded once: =PMT(1.47177375994885E-17,410,235.577961475681,16010356.1114486,1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PMT(1.47177375994885E-17,410,235.577961475681,16010356.1114486,1)"}, "expect": {"values": {"ZZ1000": -39050.223632707384}}}
+      ]
+    },
+    {
+      "name": "ADR-0047, the exception for PMT: below a rate of about 1e-15 the payment is held between bounds that decide its double; Python's decimal at 1200 digits, rounded once: =PMT(-1.85280934809099E-24,-145,-55549223.7358894,1.89338060457055E+68,0)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PMT(-1.85280934809099E-24,-145,-55549223.7358894,1.89338060457055E+68,0)"}, "expect": {"values": {"ZZ1000": 1.3057797272900346e+66}}}
+      ]
+    },
+    {
+      "name": "ADR-0047, the exception for PMT: below a rate of about 1e-15 the payment is held between bounds that decide its double; Python's decimal at 1200 digits, rounded once: =PMT(5.7413834832409E-21,10.5,-249.243481190686,17175.8914195337,0)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PMT(5.7413834832409E-21,10.5,-249.243481190686,17175.8914195337,0)"}, "expect": {"values": {"ZZ1000": -1612.0617084136202}}}
+      ]
+    },
+    {
+      "name": "ADR-0047, the exception for PMT: below a rate of about 1e-15 the payment is held between bounds that decide its double; Python's decimal at 1200 digits, rounded once: =PMT(-1.12980118685588E-18,0.5,14939049.7964629,-2167881.96100433,1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PMT(-1.12980118685588E-18,0.5,14939049.7964629,-2167881.96100433,1)"}, "expect": {"values": {"ZZ1000": -25542335.67091714}}}
+      ]
+    },
+    {
+      "name": "ADR-0047, the exception for PMT: below a rate of about 1e-15 the payment is held between bounds that decide its double; Python's decimal at 1200 digits, rounded once: =PMT(0.0001,1.12427561208993E-12,0,2146708.76746529,0)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PMT(0.0001,1.12427561208993E-12,0,2146708.76746529,0)"}, "expect": {"values": {"ZZ1000": -1.9095105132842696e+18}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: PMT-034 to 037, run 18a: #NUM! at a rate of -1 with periods after and before, at -2 with 2 periods and at -9 with a third of one; at the rest of a rate of -1 or below, the engine's answer by generalisation: =PMT(-1,10,1000,500)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PMT(-1,10,1000,500)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: PMT-034 to 037, run 18a: #NUM! at a rate of -1 with periods after and before, at -2 with 2 periods and at -9 with a third of one; at the rest of a rate of -1 or below, the engine's answer by generalisation: =PMT(-1,10.5,1000,500,1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PMT(-1,10.5,1000,500,1)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: PMT-034 to 037, run 18a: #NUM! at a rate of -1 with periods after and before, at -2 with 2 periods and at -9 with a third of one; at the rest of a rate of -1 or below, the engine's answer by generalisation: =PMT(-1,-10,100)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PMT(-1,-10,100)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: PMT-034 to 037, run 18a: #NUM! at a rate of -1 with periods after and before, at -2 with 2 periods and at -9 with a third of one; at the rest of a rate of -1 or below, the engine's answer by generalisation: =PMT(-1,-0.5,100,0,1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PMT(-1,-0.5,100,0,1)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: PMT-034 to 037, run 18a: #NUM! at a rate of -1 with periods after and before, at -2 with 2 periods and at -9 with a third of one; at the rest of a rate of -1 or below, the engine's answer by generalisation: =PMT(-2,2,1000)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PMT(-2,2,1000)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: PMT-034 to 037, run 18a: #NUM! at a rate of -1 with periods after and before, at -2 with 2 periods and at -9 with a third of one; at the rest of a rate of -1 or below, the engine's answer by generalisation: =PMT(-2,3,1000)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PMT(-2,3,1000)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: PMT-034 to 037, run 18a: #NUM! at a rate of -1 with periods after and before, at -2 with 2 periods and at -9 with a third of one; at the rest of a rate of -1 or below, the engine's answer by generalisation: =PMT(-2,10,1000,0,1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PMT(-2,10,1000,0,1)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: PMT-034 to 037, run 18a: #NUM! at a rate of -1 with periods after and before, at -2 with 2 periods and at -9 with a third of one; at the rest of a rate of -1 or below, the engine's answer by generalisation: =PMT(-9,1/3,-1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PMT(-9,1/3,-1)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: PMT-034 to 037, run 18a: #NUM! at a rate of -1 with periods after and before, at -2 with 2 periods and at -9 with a third of one; at the rest of a rate of -1 or below, the engine's answer by generalisation: =PMT(-1.5,10,1000)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PMT(-1.5,10,1000)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: PMT-034 to 037, run 18a: #NUM! at a rate of -1 with periods after and before, at -2 with 2 periods and at -9 with a third of one; at the rest of a rate of -1 or below, the engine's answer by generalisation: =PMT(-9,360,1000,500)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PMT(-9,360,1000,500)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: PMT-038 to 041, 044 and 045, run 18a: where Excel carried a quantity past a double's range, or the growth below 2^-52, it gave the exact payment rounded once: =PMT(1,1100,1000)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PMT(1,1100,1000)"}, "expect": {"values": {"ZZ1000": -1000}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: PMT-038 to 041, 044 and 045, run 18a: where Excel carried a quantity past a double's range, or the growth below 2^-52, it gave the exact payment rounded once: =PMT(1,1020,1000)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PMT(1,1020,1000)"}, "expect": {"values": {"ZZ1000": -1000}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: PMT-038 to 041, 044 and 045, run 18a: where Excel carried a quantity past a double's range, or the growth below 2^-52, it gave the exact payment rounded once: =PMT(0.5,1740,1000)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PMT(0.5,1740,1000)"}, "expect": {"values": {"ZZ1000": -500}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: PMT-038 to 041, 044 and 045, run 18a: where Excel carried a quantity past a double's range, or the growth below 2^-52, it gave the exact payment rounded once: =PMT(1E10,30,1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PMT(1E10,30,1)"}, "expect": {"values": {"ZZ1000": -10000000000.0}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: PMT-038 to 041, 044 and 045, run 18a: where Excel carried a quantity past a double's range, or the growth below 2^-52, it gave the exact payment rounded once: =PMT(-1.64435447903749E-307,283.5,1E-05,0)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PMT(-1.64435447903749E-307,283.5,1E-05,0)"}, "expect": {"values": {"ZZ1000": -3.5273368606701946e-08}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: PMT-038 to 041, 044 and 045, run 18a: where Excel carried a quantity past a double's range, or the growth below 2^-52, it gave the exact payment rounded once: =PMT(-0.5,360,1000,500)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PMT(-0.5,360,1000,500)"}, "expect": {"values": {"ZZ1000": -250}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: where a quantity a reading of PMT computes in doubles passes a double's range or falls below its normal numbers, and Excel was not seen to carry it, PMT refuses (PMT-042, run 18a): =PMT(3,1000.5,1000)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PMT(3,1000.5,1000)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: where a quantity a reading of PMT computes in doubles passes a double's range or falls below its normal numbers, and Excel was not seen to carry it, PMT refuses (PMT-042, run 18a): =PMT(-0.99,160,1000,500)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PMT(-0.99,160,1000,500)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: where a quantity a reading of PMT computes in doubles passes a double's range or falls below its normal numbers, and Excel was not seen to carry it, PMT refuses (PMT-042, run 18a): =PMT(-0.99,160,0,500)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PMT(-0.99,160,0,500)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: where a quantity a reading of PMT computes in doubles passes a double's range or falls below its normal numbers, and Excel was not seen to carry it, PMT refuses (PMT-042, run 18a): =PMT(1,1100,0,1000)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PMT(1,1100,0,1000)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: where a quantity a reading of PMT computes in doubles passes a double's range or falls below its normal numbers, and Excel was not seen to carry it, PMT refuses (PMT-042, run 18a): =PMT(1E-320,0.5,1000)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PMT(1E-320,0.5,1000)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: where a quantity a reading of PMT computes in doubles passes a double's range or falls below its normal numbers, and Excel was not seen to carry it, PMT refuses (PMT-042, run 18a): =PMT(1E-315,10.5,1000)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PMT(1E-315,10.5,1000)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: where a quantity a reading of PMT computes in doubles passes a double's range or falls below its normal numbers, and Excel was not seen to carry it, PMT refuses (PMT-042, run 18a): =PMT(5.1699029180828E-320,0.0907921350606893,-1000,20000)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PMT(5.1699029180828E-320,0.0907921350606893,-1000,20000)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: where a quantity a reading of PMT computes in doubles passes a double's range or falls below its normal numbers, and Excel was not seen to carry it, PMT refuses (PMT-042, run 18a): =PMT(0.05,12,1E-310)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PMT(0.05,12,1E-310)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: where a quantity a reading of PMT computes in doubles passes a double's range or falls below its normal numbers, and Excel was not seen to carry it, PMT refuses (PMT-042, run 18a): =PMT(0.05,12,9E307)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PMT(0.05,12,9E307)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: no periods is #NUM!, at the end (PMT-005) and at the start (PMT-046, run 18a), at any rate: =PMT(0.1,0,1000)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PMT(0.1,0,1000)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: no periods is #NUM!, at the end (PMT-005) and at the start (PMT-046, run 18a), at any rate: =PMT(0.42,0,1000,0,1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PMT(0.42,0,1000,0,1)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: no periods is #NUM!, at the end (PMT-005) and at the start (PMT-046, run 18a), at any rate: =PMT(0.1,0,1000,0,1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PMT(0.1,0,1000,0,1)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: no periods is #NUM!, at the end (PMT-005) and at the start (PMT-046, run 18a), at any rate: =PMT(0,0,1000,0,1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PMT(0,0,1000,0,1)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: no periods is #NUM!, at the end (PMT-005) and at the start (PMT-046, run 18a), at any rate: =PMT(-1,0,1000,0,1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PMT(-1,0,1000,0,1)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: no periods is #NUM!, at the end (PMT-005) and at the start (PMT-046, run 18a), at any rate: =PMT(-2,0,1000,0,1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PMT(-2,0,1000,0,1)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: within the range the readings agree in kind and PMT answers, at the range's edges too; Python's decimal at 1200 digits, rounded once: =PMT(1,1000,1000)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PMT(1,1000,1000)"}, "expect": {"values": {"ZZ1000": -1000}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: within the range the readings agree in kind and PMT answers, at the range's edges too; Python's decimal at 1200 digits, rounded once: =PMT(1E-300,12,1000)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PMT(1E-300,12,1000)"}, "expect": {"values": {"ZZ1000": -83.33333333333333}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: within the range the readings agree in kind and PMT answers, at the range's edges too; Python's decimal at 1200 digits, rounded once: =PMT(-0.5,52,1000,500,1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PMT(-0.5,52,1000,500,1)"}, "expect": {"values": {"ZZ1000": -500.00000000000034}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: where a reading magnifies its own roundings more than 2^6 times, PMT refuses (ExactPayment.Conditioned, the bound kept by decision with the user, 2026-10-13; PMT-047 to PMT-053, run 18a): =PMT(0.1,2,1000,-1210)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PMT(0.1,2,1000,-1210)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: where a reading magnifies its own roundings more than 2^6 times, PMT refuses (ExactPayment.Conditioned, the bound kept by decision with the user, 2026-10-13; PMT-047 to PMT-053, run 18a): =PMT(0.1,1E-17,1000,-1000)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PMT(0.1,1E-17,1000,-1000)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: where a reading magnifies its own roundings more than 2^6 times, PMT refuses (ExactPayment.Conditioned, the bound kept by decision with the user, 2026-10-13; PMT-047 to PMT-053, run 18a): =PMT(1,1,1000,-2000)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PMT(1,1,1000,-2000)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: where a reading magnifies its own roundings more than 2^6 times, PMT refuses (ExactPayment.Conditioned, the bound kept by decision with the user, 2026-10-13; PMT-047 to PMT-053, run 18a): =PMT(-0.5,36.25,-150,0,0)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PMT(-0.5,36.25,-150,0,0)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: where a reading magnifies its own roundings more than 2^6 times, PMT refuses (ExactPayment.Conditioned, the bound kept by decision with the user, 2026-10-13; PMT-047 to PMT-053, run 18a): =PMT(-0.5,52,1000)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PMT(-0.5,52,1000)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: where a reading magnifies its own roundings more than 2^6 times, PMT refuses (ExactPayment.Conditioned, the bound kept by decision with the user, 2026-10-13; PMT-047 to PMT-053, run 18a): =PMT(0.1,-400,1000)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PMT(0.1,-400,1000)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: where a reading magnifies its own roundings more than 2^6 times, PMT refuses (ExactPayment.Conditioned, the bound kept by decision with the user, 2026-10-13; PMT-047 to PMT-053, run 18a): =PMT(1,1000,0,1000)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PMT(1,1000,0,1000)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: where a reading magnifies its own roundings more than 2^6 times, PMT refuses (ExactPayment.Conditioned, the bound kept by decision with the user, 2026-10-13; PMT-047 to PMT-053, run 18a): =PMT(0.1,1E-17,1000,0,1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PMT(0.1,1E-17,1000,0,1)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: where a reading magnifies its own roundings more than 2^6 times, PMT refuses (ExactPayment.Conditioned, the bound kept by decision with the user, 2026-10-13; PMT-047 to PMT-053, run 18a): =PMT(0.1,-5E-17,1000,0,1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PMT(0.1,-5E-17,1000,0,1)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: where a reading magnifies its own roundings more than 2^6 times, PMT refuses (ExactPayment.Conditioned, the bound kept by decision with the user, 2026-10-13; PMT-047 to PMT-053, run 18a): =PMT(-0.999999,1E-12,1000,0,1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PMT(-0.999999,1E-12,1000,0,1)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: where a reading magnifies its own roundings more than 2^6 times, PMT refuses (ExactPayment.Conditioned, the bound kept by decision with the user, 2026-10-13; PMT-047 to PMT-053, run 18a): =PMT(0.1,1E-17,0,0,1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PMT(0.1,1E-17,0,0,1)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: where a reading magnifies its own roundings more than 2^6 times, PMT refuses (ExactPayment.Conditioned, the bound kept by decision with the user, 2026-10-13; PMT-047 to PMT-053, run 18a): =PMT(1000,2,1000,0,1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PMT(1000,2,1000,0,1)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: within the bound PMT answers, the observed payments included (PMT-020's largest factor, 32.4, is the largest among them): =PMT(0.15,12,1000,-5000,1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PMT(0.15,12,1000,-5000,1)"}, "expect": {"values": {"ZZ1000": -10.501648240558218}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: within the bound PMT answers, the observed payments included (PMT-020's largest factor, 32.4, is the largest among them): =PMT(30,3,1000,0,1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PMT(30,3,1000,0,1)"}, "expect": {"values": {"ZZ1000": -967.7744209466264}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: within the bound PMT answers, the observed payments included (PMT-020's largest factor, 32.4, is the largest among them): =PMT(0.1,1E-17,1000,0,0)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PMT(0.1,1E-17,1000,0,0)"}, "expect": {"values": {"ZZ1000": -1.0492058687257069e+20}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: within the bound PMT answers, the observed payments included (PMT-020's largest factor, 32.4, is the largest among them): =PMT(0.05,12,0,0,1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PMT(0.05,12,0,0,1)"}, "expect": {"values": {"ZZ1000": 0}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: no periods is #NUM! (PMT-005) at a rate of -1 too, where the power's 0^0 is #NUM! as well: =PMT(-1,0,1000)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PMT(-1,0,1000)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: past 2^53 every double is a whole number, and how Excel raises 1+rate to one has not been observed; PMT refuses it as PV and FV do: =FV(0.06/12,2^53+2,-200)",
+      "steps": [
+        {"enter": {"ZZ1000": "=FV(0.06/12,2^53+2,-200)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: past 2^53 every double is a whole number, and how Excel raises 1+rate to one has not been observed; PMT refuses it as PV and FV do: =PV(0.06/12,-(2^53+2),-200)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PV(0.06/12,-(2^53+2),-200)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: past 2^53 every double is a whole number, and how Excel raises 1+rate to one has not been observed; PMT refuses it as PV and FV do: =PMT(0.06/12,2^53+2,1000)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PMT(0.06/12,2^53+2,1000)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: XNPV-004, Excel's double, is what e^(x ln(1+rate)) summed from the first value gives",
+      "steps": [
+        {"enterAll": {"A1": "-10000", "A2": "2750", "A3": "2750", "A4": "2750", "A5": "4250", "B1": "39448", "B2": "39522", "B3": "40089", "B4": "40217", "B5": "40327"}},
+        {"enter": {"ZZ1000": "=XNPV(0.12,A1:A5,B1:B5)"}, "expect": {"values": {"ZZ1000": 342.0430874765725}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: XNPV-005, 006, 011 and 013, the second area pass: whole years by squaring, the days over 365, and e^(x ln(1+rate)) with ln and exp correctly rounded otherwise: rate 0.07, 4 values",
+      "steps": [
+        {"enterAll": {"A1": "-10000", "A2": "3000", "A3": "4200", "A4": "6800", "B1": "39448", "B2": "39813", "B3": "40178", "B4": "40543"}},
+        {"enter": {"ZZ1000": "=XNPV(0.07,A1:A4,B1:B4)"}, "expect": {"values": {"ZZ1000": 2023.0065393622904}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: XNPV-005, 006, 011 and 013, the second area pass: whole years by squaring, the days over 365, and e^(x ln(1+rate)) with ln and exp correctly rounded otherwise: rate 0.06, 4 values",
+      "steps": [
+        {"enterAll": {"A1": "-10000", "A2": "3000", "A3": "4200", "A4": "6800", "B1": "39448", "B2": "39813", "B3": "40178", "B4": "40543"}},
+        {"enter": {"ZZ1000": "=XNPV(0.06,A1:A4,B1:B4)"}, "expect": {"values": {"ZZ1000": 2277.5848519247406}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: XNPV-005, 006, 011 and 013, the second area pass: whole years by squaring, the days over 365, and e^(x ln(1+rate)) with ln and exp correctly rounded otherwise: rate 0.05, 2 values",
+      "steps": [
+        {"enterAll": {"A1": "-10000", "A2": "2750", "B1": "39448", "B2": "39549"}},
+        {"enter": {"ZZ1000": "=XNPV(0.05,A1:A2,B1:B2)"}, "expect": {"values": {"ZZ1000": -7286.877809009438}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: XNPV-005, 006, 011 and 013, the second area pass: whole years by squaring, the days over 365, and e^(x ln(1+rate)) with ln and exp correctly rounded otherwise: rate 0.1, 6 values",
+      "steps": [
+        {"enterAll": {"A1": "1000", "A2": "4200", "A3": "-10000", "A4": "3000", "A5": "-1000", "A6": "3250", "B1": "39448", "B2": "41204", "B3": "41007", "B4": "40245", "B5": "40272", "B6": "41174"}},
+        {"enter": {"ZZ1000": "=XNPV(0.1,A1:A6,B1:B6)"}, "expect": {"values": {"ZZ1000": 700.2269770028577}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: whole years where squaring gives what 1+rate is, and days that 365 divides, are answered",
+      "steps": [
+        {"enterAll": {"A1": "-10000", "A2": "3000", "B1": "39448", "B2": "39813"}},
+        {"enter": {"ZZ1000": "=XNPV(0.07,A1:A2,B1:B2)"}, "expect": {"values": {"ZZ1000": -7196.261682242991}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: XNPV-007 to 010, 012, 017, 019 and 020: Excel gave #NUM! at every rate of 0 or below it was asked, which no evaluation gives: rate -1, dates 39448 and 39508",
+      "steps": [
+        {"enterAll": {"A1": "-1000", "A2": "300", "B1": "39448", "B2": "39508"}},
+        {"enter": {"ZZ1000": "=XNPV(-1,A1:A2,B1:B2)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: XNPV-007 to 010, 012, 017, 019 and 020: Excel gave #NUM! at every rate of 0 or below it was asked, which no evaluation gives: rate -1, dates 39448 and 39448",
+      "steps": [
+        {"enterAll": {"A1": "-1000", "A2": "300", "B1": "39448", "B2": "39448"}},
+        {"enter": {"ZZ1000": "=XNPV(-1,A1:A2,B1:B2)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: XNPV-007 to 010, 012, 017, 019 and 020: Excel gave #NUM! at every rate of 0 or below it was asked, which no evaluation gives: rate -1.5, dates 39448 and 39813",
+      "steps": [
+        {"enterAll": {"A1": "-1000", "A2": "300", "B1": "39448", "B2": "39813"}},
+        {"enter": {"ZZ1000": "=XNPV(-1.5,A1:A2,B1:B2)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: XNPV-007 to 010, 012, 017, 019 and 020: Excel gave #NUM! at every rate of 0 or below it was asked, which no evaluation gives: rate -2, dates 39448 and 39508",
+      "steps": [
+        {"enterAll": {"A1": "-1000", "A2": "300", "B1": "39448", "B2": "39508"}},
+        {"enter": {"ZZ1000": "=XNPV(-2,A1:A2,B1:B2)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: XNPV-007 to 010, 012, 017, 019 and 020: Excel gave #NUM! at every rate of 0 or below it was asked, which no evaluation gives: rate -0.5, dates 39448 and 39508",
+      "steps": [
+        {"enterAll": {"A1": "-1000", "A2": "300", "B1": "39448", "B2": "39508"}},
+        {"enter": {"ZZ1000": "=XNPV(-0.5,A1:A2,B1:B2)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: XNPV-007 to 010, 012, 017, 019 and 020: Excel gave #NUM! at every rate of 0 or below it was asked, which no evaluation gives: rate -0.01, dates 39448 and 39508",
+      "steps": [
+        {"enterAll": {"A1": "-1000", "A2": "300", "B1": "39448", "B2": "39508"}},
+        {"enter": {"ZZ1000": "=XNPV(-0.01,A1:A2,B1:B2)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: XNPV-007 to 010, 012, 017, 019 and 020: Excel gave #NUM! at every rate of 0 or below it was asked, which no evaluation gives: rate 0, dates 39448 and 39508",
+      "steps": [
+        {"enterAll": {"A1": "-1000", "A2": "300", "B1": "39448", "B2": "39508"}},
+        {"enter": {"ZZ1000": "=XNPV(0,A1:A2,B1:B2)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: XNPV-007 to 010, 012, 017, 019 and 020: Excel gave #NUM! at every rate of 0 or below it was asked, which no evaluation gives: rate 0, dates 39448 and 39000",
+      "steps": [
+        {"enterAll": {"A1": "-1000", "A2": "300", "B1": "39448", "B2": "39000"}},
+        {"enter": {"ZZ1000": "=XNPV(0,A1:A2,B1:B2)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: XNPV-021 to 026, run 18a: the rate is checked before the values are read, an Error Value among the dates is answered before one among the values at its place, and one among the values before a later date before the first; where the orders those answers leave part, XNPV refuses: rate -0.5, first value #N/A, first date 39448",
+      "steps": [
+        {"enterAll": {"A1": "#N/A", "A2": "2750", "B1": "39448", "B2": "39508"}},
+        {"enter": {"ZZ1000": "=XNPV(-0.5,A1:A2,B1:B2)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: XNPV-021 to 026, run 18a: the rate is checked before the values are read, an Error Value among the dates is answered before one among the values at its place, and one among the values before a later date before the first; where the orders those answers leave part, XNPV refuses: rate -0.5, first value text, first date 39448",
+      "steps": [
+        {"enterAll": {"A1": "text", "A2": "2750", "B1": "39448", "B2": "39508"}},
+        {"enter": {"ZZ1000": "=XNPV(-0.5,A1:A2,B1:B2)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: XNPV-021 to 026, run 18a: the rate is checked before the values are read, an Error Value among the dates is answered before one among the values at its place, and one among the values before a later date before the first; where the orders those answers leave part, XNPV refuses: rate 0, first value #N/A, first date 39448",
+      "steps": [
+        {"enterAll": {"A1": "#N/A", "A2": "2750", "B1": "39448", "B2": "39508"}},
+        {"enter": {"ZZ1000": "=XNPV(0,A1:A2,B1:B2)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: XNPV-021 to 026, run 18a: the rate is checked before the values are read, an Error Value among the dates is answered before one among the values at its place, and one among the values before a later date before the first; where the orders those answers leave part, XNPV refuses: rate 0.09, first value #N/A, first date 40000",
+      "steps": [
+        {"enterAll": {"A1": "#N/A", "A2": "2750", "B1": "40000", "B2": "39508"}},
+        {"enter": {"ZZ1000": "=XNPV(0.09,A1:A2,B1:B2)"}, "expect": {"values": {"ZZ1000": {"error": "#N/A"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: XNPV-021 to 026, run 18a: the rate is checked before the values are read, an Error Value among the dates is answered before one among the values at its place, and one among the values before a later date before the first; where the orders those answers leave part, XNPV refuses: rate 0.09, first value #N/A, first date #DIV/0!",
+      "steps": [
+        {"enterAll": {"A1": "#N/A", "A2": "2750", "B1": "#DIV/0!", "B2": "39508"}},
+        {"enter": {"ZZ1000": "=XNPV(0.09,A1:A2,B1:B2)"}, "expect": {"values": {"ZZ1000": {"error": "#DIV/0!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: XNPV-021 to 026, run 18a: the rate is checked before the values are read, an Error Value among the dates is answered before one among the values at its place, and one among the values before a later date before the first; where the orders those answers leave part, XNPV refuses: rate 0.09, first value #N/A, first date #N/A",
+      "steps": [
+        {"enterAll": {"A1": "#N/A", "A2": "2750", "B1": "#N/A", "B2": "39508"}},
+        {"enter": {"ZZ1000": "=XNPV(0.09,A1:A2,B1:B2)"}, "expect": {"values": {"ZZ1000": {"error": "#N/A"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: XNPV-021 to 026, run 18a: the rate is checked before the values are read, an Error Value among the dates is answered before one among the values at its place, and one among the values before a later date before the first; where the orders those answers leave part, XNPV refuses: rate 0.09, first value #N/A, first date 39448",
+      "steps": [
+        {"enterAll": {"A1": "#N/A", "A2": "2750", "B1": "39448", "B2": "39508"}},
+        {"enter": {"ZZ1000": "=XNPV(0.09,A1:A2,B1:B2)"}, "expect": {"values": {"ZZ1000": {"error": "#N/A"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: XNPV-021 to 026, run 18a: the rate is checked before the values are read, an Error Value among the dates is answered before one among the values at its place, and one among the values before a later date before the first; where the orders those answers leave part, XNPV refuses: rate -0.5, first value #NUM!, first date 39448",
+      "steps": [
+        {"enterAll": {"A1": "#NUM!", "A2": "2750", "B1": "39448", "B2": "39508"}},
+        {"enter": {"ZZ1000": "=XNPV(-0.5,A1:A2,B1:B2)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: XNPV-021 to 026, run 18a: the rate is checked before the values are read, an Error Value among the dates is answered before one among the values at its place, and one among the values before a later date before the first; where the orders those answers leave part, XNPV refuses: rate -0.5, first value -10000, first date 40000",
+      "steps": [
+        {"enterAll": {"A1": "-10000", "A2": "2750", "B1": "40000", "B2": "39508"}},
+        {"enter": {"ZZ1000": "=XNPV(-0.5,A1:A2,B1:B2)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: XNPV-021 to 026, run 18a: the rate is checked before the values are read, an Error Value among the dates is answered before one among the values at its place, and one among the values before a later date before the first; where the orders those answers leave part, XNPV refuses: rate -0.5, first value -10000, first date #N/A",
+      "steps": [
+        {"enterAll": {"A1": "-10000", "A2": "2750", "B1": "#N/A", "B2": "39508"}},
+        {"enter": {"ZZ1000": "=XNPV(-0.5,A1:A2,B1:B2)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: XNPV-021 to 026, run 18a: the rate is checked before the values are read, an Error Value among the dates is answered before one among the values at its place, and one among the values before a later date before the first; where the orders those answers leave part, XNPV refuses: rate 0, first value -10000, first date #N/A",
+      "steps": [
+        {"enterAll": {"A1": "-10000", "A2": "2750", "B1": "#N/A", "B2": "39508"}},
+        {"enter": {"ZZ1000": "=XNPV(0,A1:A2,B1:B2)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: XNPV-021 to 026, run 18a: the rate is checked before the values are read, an Error Value among the dates is answered before one among the values at its place, and one among the values before a later date before the first; where the orders those answers leave part, XNPV refuses: rate 0.09, first value text, first date 39448",
+      "steps": [
+        {"enterAll": {"A1": "text", "A2": "2750", "B1": "39448", "B2": "39508"}},
+        {"enter": {"ZZ1000": "=XNPV(0.09,A1:A2,B1:B2)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: XNPV-027 to 030, run 18a: a rate that is an Error Value is answered first, the dates in order, and the first of two Error Values among the values; where the orders those answers leave part, XNPV refuses",
+      "steps": [
+        {"enterAll": {"A1": "#N/A", "A2": "2750", "A3": "4250", "B1": "39448", "B2": "39508", "B3": "39000"}},
+        {"enter": {"Z1": "=XNPV(1/0,A1:A2,B1:B2)", "Z2": "=XNPV(0.09,A1:A2,B1:B2)"}, "expect": {"values": {"Z1": {"error": "#DIV/0!"}, "Z2": {"error": "#N/A"}}}, "note": "XNPV-027"},
+        {"enter": {"A1": "-10000", "Z3": "=XNPV(1/0,A1:A3,B1:B2)"}, "expect": {"values": {"Z1": {"error": "#DIV/0!"}, "Z3": {"error": "#DIV/0!"}}}, "note": "XNPV-028"},
+        {"enter": {"B2": "#N/A", "Z4": "=XNPV(0.09,A1:A3,B1:B3)", "Z5": "=XNPV(1/0,A1:A3,B1:B3)"}, "expect": {"values": {"Z4": {"error": "#N/A"}, "Z5": {"error": "#VALUE!", "refused": true}}}, "note": "XNPV-029; the rate first #DIV/0!, the dates first #N/A"},
+        {"enter": {"B2": "39508"}, "expect": {"values": {"Z4": {"error": "#NUM!"}}}},
+        {"enter": {"A1": "#N/A", "A2": "#DIV/0!"}, "expect": {"values": {"Z2": {"error": "#N/A"}}}, "note": "XNPV-030"},
+        {"enter": {"A2": "2750", "B2": "#DIV/0!"}, "expect": {"values": {"Z2": {"error": "#VALUE!", "refused": true}}}, "note": "the dates first #DIV/0!, pair by pair #N/A"},
+        {"enter": {"A1": "-10000", "A2": "#N/A", "B2": "39000"}, "expect": {"values": {"Z2": {"error": "#VALUE!", "refused": true}}}, "note": "a date before the first at the place of an Error Value among the values"},
+        {"enter": {"A3": "#N/A"}, "expect": {"values": {"Z4": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: XNPV-024, run 18a: counts that differ (XNPV-003) are checked before the values are read; beside an Error Value among the dates the orders part",
+      "steps": [
+        {"enterAll": {"A1": "#N/A", "A2": "2750", "A3": "4250", "B1": "39448", "B2": "39508"}},
+        {"enter": {"Z1": "=XNPV(0.09,A1:A3,B1:B2)"}, "expect": {"values": {"Z1": {"error": "#NUM!"}}}},
+        {"enter": {"A1": "-10000"}, "expect": {"values": {"Z1": {"error": "#NUM!"}}}},
+        {"enter": {"B2": "#N/A"}, "expect": {"values": {"Z1": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: XNPV-018, run 18a: where the last addition nearly cancels, Excel's double is the sum from the first value, not the sum with Excel's last-addition adjustment, 0",
+      "steps": [
+        {"enterAll": {"A1": "1000", "A2": "-1100", "B1": "39448", "B2": "39813"}},
+        {"enter": {"Z1": "=XNPV(0.1,A1:A2,B1:B2)"}, "expect": {"values": {"Z1": 1.1368683772161603e-13}}},
+        {"enter": {"A2": "-1000"}, "expect": {"values": {"Z1": 90.90909090909099}}}
+      ]
+    },
+    {
+      "name": "ADR-0202, note of 2026-10-12: NPV is undeclared for 0.1.0, #NAME? as IRR is; XNPV stays: =NPV(10%,-10000,3000,4200,6800)",
+      "steps": [
+        {"enter": {"ZZ1000": "=NPV(10%,-10000,3000,4200,6800)"}, "expect": {"values": {"ZZ1000": {"error": "#NAME?", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0202, note of 2026-10-12: NPV is undeclared for 0.1.0, #NAME? as IRR is; XNPV stays: =NPV(-1,1,2)",
+      "steps": [
+        {"enter": {"ZZ1000": "=NPV(-1,1,2)"}, "expect": {"values": {"ZZ1000": {"error": "#NAME?", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: at a rate of 0 no power is raised, so any number of periods is answered: =FV(0,10.5,-100)",
+      "steps": [
+        {"enter": {"ZZ1000": "=FV(0,10.5,-100)"}, "expect": {"values": {"ZZ1000": 1050}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: at a rate of 0 no power is raised, so any number of periods is answered: =PV(0,-2,-100)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PV(0,-2,-100)"}, "expect": {"values": {"ZZ1000": -200}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: at a rate of 0 no power is raised, so any number of periods is answered: =PMT(0,2.5,1000)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PMT(0,2.5,1000)"}, "expect": {"values": {"ZZ1000": -400}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: no periods and a rate leave PV and FV what they were; PMT has nothing to divide (PMT-005): =FV(0.1,0,-100,-500)",
+      "steps": [
+        {"enter": {"ZZ1000": "=FV(0.1,0,-100,-500)"}, "expect": {"values": {"ZZ1000": 500}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: no periods and a rate leave PV and FV what they were; PMT has nothing to divide (PMT-005): =PV(0.1,0,-100,1000)",
+      "steps": [
+        {"enter": {"ZZ1000": "=PV(0.1,0,-100,1000)"}, "expect": {"values": {"ZZ1000": -1000}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: a growth past a double's range is #NUM!, never a number: =FV(1,2000,-1)",
+      "steps": [
+        {"enter": {"ZZ1000": "=FV(1,2000,-1)"}, "expect": {"values": {"ZZ1000": {"error": "#NUM!"}}}}
+      ]
+    }
+  ]
+}
