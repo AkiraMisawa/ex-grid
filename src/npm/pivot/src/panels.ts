@@ -20,6 +20,10 @@ export interface PivotPanel {
     readonly element: HTMLElement;
     /** Gives the keyboard to its first control. */
     takeKeyboard(): void;
+    /** Draws again what it shows of the pivot's state, which the pivot has drawn again. */
+    redraw?(): void;
+    /** Closed: stops what it has asked that is still on its way. */
+    close?(): void;
 }
 
 /** Whom a panel calls back. */
@@ -33,7 +37,8 @@ export interface PanelHandlers {
 // Each panel's radio group is named apart from every other's on the page (ADR-0018).
 let groups = 0;
 
-function element<K extends keyof HTMLElementTagNameMap>(document: Document, tag: K, className?: string): HTMLElementTagNameMap[K] {
+/** A panel's element. */
+export function element<K extends keyof HTMLElementTagNameMap>(document: Document, tag: K, className?: string): HTMLElementTagNameMap[K] {
     const control = made(document, tag, className);
     // A draft's control claims nothing of the pivot's input: holding the keyboard, it is the pivot's own (ADR-0240).
     if (tag === 'input' || tag === 'select') control.setAttribute('data-ex-claims', '');
@@ -48,8 +53,8 @@ function labelled(document: Document, words: string, control: HTMLElement): HTML
     return row;
 }
 
-// OK and Cancel, which claim their click.
-function actions(document: Document, words: PivotScreenWords, ok: () => void, cancel: () => void): { readonly box: HTMLElement; readonly ok: HTMLButtonElement } {
+/** OK and Cancel, which claim their click. */
+export function actions(document: Document, words: PivotScreenWords, ok: () => void, cancel: () => void): { readonly box: HTMLElement; readonly ok: HTMLButtonElement } {
     const box = element(document, 'div', 'ex-pivot-panel-actions');
     const make = (className: string, id: string, pressed: () => void): HTMLButtonElement => {
         const button = element(document, 'button', className);

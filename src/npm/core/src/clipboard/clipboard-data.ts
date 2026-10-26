@@ -48,6 +48,35 @@ export interface CopyValues {
     readonly headerRawAt?: (column: number) => string | undefined;
 }
 
+/** What a copy asks a Consumer that answers copies itself (ADR-0050, item 9): the copy the grid's own rules approved,
+ * whether the declared headers were asked for as a row above the block, and the order its positions are written in,
+ * the source's (ADR-0011). */
+export interface GridCopyRequest {
+    /** The ranges being copied, as the grid's own rules approved them: empty, misaligned and past-the-cap
+     * Selections are refused before a Consumer is asked (ADR-0005). */
+    readonly plan: CopyPlan;
+    /** Whether the copy was asked for with the declared headers as one row above the block (ADR-0036). */
+    readonly withHeaders: boolean;
+    /** The source's Row Sequence Version the positions are written in. */
+    readonly rowSequenceVersion: number;
+}
+
+/** A Consumer's answer to one copy (ADR-0050, item 9): the two flavours to write, exactly as given, or a refusal in
+ * the Consumer's own sentence, which the grid says and writes nothing. */
+export type GridCopyAnswer =
+    | { readonly kind: 'write'; readonly text: string; readonly html: string }
+    | { readonly kind: 'refuse'; readonly sentence: string };
+
+/** `answer` checked as an untyped Consumer may hand it: a write of two texts, or a refusal with something to say. */
+export function checkedCopyAnswer(answer: unknown): GridCopyAnswer {
+    if (typeof answer === 'object' && answer !== null) {
+        const { kind, text, html, sentence }: { readonly kind?: unknown; readonly text?: unknown; readonly html?: unknown; readonly sentence?: unknown } = answer;
+        if (kind === 'write' && typeof text === 'string' && typeof html === 'string') return Object.freeze({ kind, text, html });
+        if (kind === 'refuse' && typeof sentence === 'string' && sentence.trim() !== '') return Object.freeze({ kind, sentence });
+    }
+    throw new TypeError("copyAnswer answers { kind: 'write', text, html } or { kind: 'refuse', sentence } with a sentence to say (ADR-0050, item 9).");
+}
+
 /** Both flavours of one approved copy (ADR-0005). */
 export interface CopyFlavours {
     /** The TSV of the displayed values, for `text/plain`. */

@@ -5,7 +5,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import type { GridHandle, GridOptions, GridSelection } from '@ex-grid/core';
 import {
-    FetchingPivotSource, PivotSourceFeatures, RecordPivotSource, createPivotLayout, japanesePivotWords, pivotRecordField,
+    FetchingPivotSource, PivotItemPage, PivotSourceFeatures, RecordPivotSource, createPivotLayout, japanesePivotWords, pivotRecordField,
     type PivotDisplayRow, type PivotLayout, type PivotSlicing, type PivotSource,
 } from '@ex-grid/pivot-engine';
 import { browserPivotLocale } from '../src/browser-locale';
@@ -963,6 +963,181 @@ describe('ExPivot\'s panels (ADR-0061)', () => {
         expect(options.find(option => option.value === 'average')?.disabled).toBe(true);
         expect(options.find(option => option.value === 'count')?.disabled).toBe(false);
         expect([...panel(root).querySelectorAll('.ex-pivot-not-offered')].map(note => note.textContent)).toContain('The source does not answer Average.');
+    });
+});
+
+/** The open Filter…'s Items, each with whether it is ticked, (Select All) first when listed. */
+function filterItems(root: HTMLElement): readonly string[] {
+    return [...panel(root).querySelectorAll<HTMLLabelElement>('.ex-pivot-item')].map(row => {
+        const box = row.querySelector('input');
+        return `${box?.checked === true ? '☑' : '☐'} ${row.textContent}`;
+    });
+}
+
+function tickItem(root: HTMLElement, label: string): void {
+    const row = [...panel(root).querySelectorAll<HTMLLabelElement>('.ex-pivot-item')].find(item => item.textContent === label);
+    const box = row?.querySelector('input');
+    if (box === undefined || box === null) throw new Error(`Filter… lists no '${label}'.`);
+    box.checked = !box.checked;
+    box.dispatchEvent(new Event('change', { bubbles: true }));
+}
+
+function search(root: HTMLElement): HTMLInputElement {
+    const box = panel(root).querySelector<HTMLInputElement>('input.ex-pivot-search');
+    if (box === null) throw new Error('Filter… has no search.');
+    return box;
+}
+
+/** A source of `count` codes, which records each search of its Items. */
+class ManyCodes implements PivotSource {
+    readonly #behind: RecordPivotSource<{ readonly code: string; readonly amount: number }>;
+    readonly searches: string[] = [];
+
+    constructor(count: number) {
+        const records = Array.from({ length: count }, (_, i) => ({ code: `C${String(i).padStart(5, '0')}`, amount: i }));
+        this.#behind = new RecordPivotSource(records, [
+            pivotRecordField<{ readonly code: string }>({ name: 'Code', type: 'text', value: record => record.code }),
+            pivotRecordField<{ readonly amount: number }>({ name: 'Amount', type: 'number', value: record => record.amount }),
+        ]);
+    }
+
+    get fields(): PivotSource['fields'] {
+        return this.#behind.fields;
+    }
+
+    get features(): PivotSource['features'] {
+        return this.#behind.features;
+    }
+
+    aggregate(...args: Parameters<PivotSource['aggregate']>): ReturnType<PivotSource['aggregate']> {
+        return this.#behind.aggregate(...args);
+    }
+
+    details(...args: Parameters<PivotSource['details']>): ReturnType<PivotSource['details']> {
+        return this.#behind.details(...args);
+    }
+
+    items(...args: Parameters<PivotSource['items']>): ReturnType<PivotSource['items']> {
+        const [query] = args;
+        if (query.search !== undefined) this.searches.push(query.search);
+        return this.#behind.items(...args);
+    }
+}
+
+describe('ExPivot\'s Filter… (ADR-0061, ADR-0066)', () => {
+    it('ADR-0061: Filter… lists the field\'s Items in its order, each ticked while shown, and OK hides those unticked', async () => {
+        const { root, view } = mount({ source: local(), layout: createPivotLayout({ rows: ['Region', 'Desk'], values: ['Amount'] }) });
+        await settled();
+        entryButton(root, 'rows', 1).click();
+        command(root, 'Filter…').click();
+        expect(panel(root).getAttribute('aria-label')).toBe('Filter Desk');
+        expect(document.activeElement).toBe(search(root));
+        await settled();
+        expect(filterItems(root)).toEqual(['☑ (Select All)', '☑ Credit', '☑ FX', '☑ Rates']);
+        tickItem(root, 'FX');
+        expect(filterItems(root)).toEqual(['☐ (Select All)', '☑ Credit', '☐ FX', '☑ Rates']);
+        press(root, 'ex-pivot-ok');
+        expect(root.querySelector('.ex-pivot-popup')).toBeNull();
+        expect(document.activeElement).toBe(entryButton(root, 'rows', 1));
+        await settled();
+        expect(view.shownLayout.rows[1]?.hiddenItems).toEqual([{ kind: 'text', value: 'FX' }]);
+        entryButton(root, 'rows', 1).click();
+        command(root, 'Filter…').click();
+        await settled();
+        expect(filterItems(root)).toEqual(['☐ (Select All)', '☑ Credit', '☐ FX', '☑ Rates']);
+    });
+
+    it('ADR-0060: unticking every Item is refused in the panel, and (Select All) ticks again only the Items the search lists', async () => {
+        const changed: PivotLayout[] = [];
+        const { root } = mount({ source: local(), layout: createPivotLayout({ rows: ['Desk'], values: ['Amount'] }), onLayoutChanged: event => changed.push(event.layout) });
+        await settled();
+        entryButton(root, 'rows', 0).click();
+        command(root, 'Filter…').click();
+        await settled();
+        tickItem(root, '(Select All)');
+        expect(filterItems(root)).toEqual(['☐ (Select All)', '☐ Credit', '☐ FX', '☐ Rates']);
+        expect(panel(root).querySelector('.ex-pivot-refusal')?.textContent).toBe('Select at least one item.');
+        expect(panel(root).querySelector<HTMLButtonElement>('.ex-pivot-ok')?.disabled).toBe(true);
+        typeInto(search(root), 'r');
+        expect(filterItems(root)).toEqual(['☐ (Select All)', '☐ Credit', '☐ Rates']);
+        tickItem(root, '(Select All)');
+        expect(panel(root).querySelector('.ex-pivot-refusal')).toBeNull();
+        typeInto(search(root), '');
+        expect(filterItems(root)).toEqual(['☐ (Select All)', '☑ Credit', '☐ FX', '☑ Rates']);
+        typeInto(search(root), 'zz');
+        expect(panel(root).querySelector('.ex-pivot-note')?.textContent).toBe('No items match.');
+        press(root, 'ex-pivot-cancel');
+        await settled();
+        expect(changed).toHaveLength(0);
+    });
+
+    it('ADR-0066: a field in Filters alone is listed under a report of its own, and the report still says how to start', async () => {
+        const { root, view, grid } = mount({ source: local(), layout: createPivotLayout({ filters: ['Region'] }) });
+        await settled();
+        expect(grid.mounts).toBe(0);
+        entryButton(root, 'filters', 0).click();
+        command(root, 'Filter…').click();
+        await settled();
+        expect(filterItems(root)).toEqual(['☑ (Select All)', '☑ EU', '☑ US']);
+        tickItem(root, 'US');
+        press(root, 'ex-pivot-ok');
+        await settled();
+        expect(view.shownLayout.filters[0]?.hiddenItems).toEqual([{ kind: 'text', value: 'US' }]);
+        expect(root.querySelector('.ex-pivot-empty')?.textContent).toBe('To build a report, choose fields from the PivotTable Fields list.');
+    });
+
+    it('ADR-0066: Items the source cannot list are said why, never listed empty, and asked again when Filter… opens again', async () => {
+        const behind = local();
+        let refusals = 1;
+        const refusing: PivotSource = {
+            fields: behind.fields,
+            features: behind.features,
+            aggregate: (query, signal) => behind.aggregate(query, signal),
+            details: (query, signal) => behind.details(query, signal),
+            items: (query, signal) => refusals-- > 0
+                ? Promise.resolve(PivotItemPage.refused({ kind: 'unknownField', message: 'Desk is not listed here.' }))
+                : behind.items(query, signal),
+        };
+        const { root } = mount({ source: refusing, layout: createPivotLayout({ rows: ['Desk'], values: ['Amount'] }) });
+        await settled();
+        entryButton(root, 'rows', 0).click();
+        command(root, 'Filter…').click();
+        await settled();
+        expect(panel(root).querySelector('.ex-pivot-unavailable')?.textContent).toBe('The source refused to answer: Desk is not listed here.');
+        expect(filterItems(root)).toEqual([]);
+        expect(panel(root).querySelector<HTMLButtonElement>('.ex-pivot-ok')?.disabled).toBe(true);
+        press(root, 'ex-pivot-cancel');
+        entryButton(root, 'rows', 0).click();
+        command(root, 'Filter…').click();
+        await settled();
+        expect(filterItems(root)).toEqual(['☑ (Select All)', '☑ Credit', '☑ FX', '☑ Rates']);
+    });
+
+    it('ADR-0061: past the Items Filter… holds, the list says so, and a search is the source\'s to answer', async () => {
+        const source = new ManyCodes(10_001);
+        const { root } = mount({ source, layout: createPivotLayout({ rows: ['Code'], values: ['Amount'] }) });
+        await settled();
+        entryButton(root, 'rows', 0).click();
+        command(root, 'Filter…').click();
+        await settled();
+        expect(filterItems(root)).toHaveLength(10_001);
+        expect(panel(root).querySelector('.ex-pivot-note')?.textContent).toBe('More than 10,000 items. Search to narrow the list.');
+        typeInto(search(root), 'C1000');
+        expect(panel(root).querySelector('.ex-pivot-loading')?.textContent).toBe('Loading…');
+        await settled();
+        expect(source.searches).toEqual(['C1000']);
+        expect(filterItems(root)).toEqual(['☑ (Select All)', '☑ C10000']);
+        typeInto(search(root), '');
+        // The Item with the keyboard keeps it as the list under the note is drawn again.
+        const box = panel(root).querySelectorAll<HTMLInputElement>('.ex-pivot-item input')[3];
+        box?.focus();
+        tickItem(root, 'C00002');
+        expect(document.activeElement).toBe(box);
+        tickItem(root, 'C00002');
+        typeInto(search(root), 'C1000');
+        await settled();
+        tickItem(root, 'C10000');
+        expect(panel(root).querySelector<HTMLButtonElement>('.ex-pivot-ok')?.disabled).toBe(false);
     });
 });
 

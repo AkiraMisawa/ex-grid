@@ -19,6 +19,7 @@ import { Scatter } from './pages/scatter';
 import { Surface } from './pages/surface';
 import { Pivot } from './pages/pivot';
 import { SheetDemo } from './pages/sheet';
+import { Marks } from './pages/marks';
 import { Virtual } from './pages/virtual';
 import { Wide } from './pages/wide';
 import { navigateTo, Router } from './router';
@@ -32,7 +33,7 @@ declare global {
 
 window.exDemo = Object.freeze({ navigateTo });
 
-const pages = { '': Home, virtual: Virtual, wide: Wide, fetch: Fetch, features: Features, 'filter-panel': FilterPanel, cells: Cells, chart: Chart, 'chart-bridge': ChartBridge, 'chart-candles': ChartCandles, scatter: Scatter, surface: Surface, pivot: Pivot, sheet: SheetDemo };
+const pages = { '': Home, virtual: Virtual, wide: Wide, fetch: Fetch, features: Features, 'filter-panel': FilterPanel, cells: Cells, chart: Chart, 'chart-bridge': ChartBridge, 'chart-candles': ChartCandles, scatter: Scatter, surface: Surface, pivot: Pivot, sheet: SheetDemo, marks: Marks };
 
 /** Present once the page handles events, as Routes.razor's marker is: at once under React. */
 function Interactive(): ReactElement | null {

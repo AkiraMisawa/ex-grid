@@ -9,7 +9,7 @@
 
 import {
     createGrid, formulaBarHeight, refusedCells, replacedCells, type CellPosition, type GridDirection,
-    type GridClearIntent, type GridColumn, type GridColumnWidthChange, type GridDensity, type GridEditIntent, type GridFindPattern, type GridHandle, type GridOptions,
+    type GridClearIntent, type GridCopyAnswer, type GridCopyRequest, type GridColumn, type GridColumnWidthChange, type GridDensity, type GridEditIntent, type GridFindPattern, type GridHandle, type GridOptions,
     type GridReplaceRequest, type GridReplaceResult,
     type GridOverwriteNotice, type GridPasteIntent, type GridRefusal, type GridSelection, type GridViewRead, type EditDiscardReason, type SelectionRange,
     type ViewportSize,
@@ -20,6 +20,7 @@ import {
 } from '@ex-grid/sheet-engine';
 import { unreachable } from './must';
 import { exactNumberFor, isTooNarrowToShow, refusedIn, typedFor } from './sheet-clipboard';
+import { rangeOf, sheetCopyAnswer, type SheetOwnCopy } from './sheet-copy';
 import { appearanceLookup, charactersOfColumn, SheetColumns, sheetCellPaint } from './sheet-columns';
 import { SheetHistory, type SheetOperationStepped } from './sheet-history';
 import { SheetRow } from './sheet-row';
@@ -111,6 +112,10 @@ class SheetView {
     // The Selection the grid last reported, and whether an edit is open there.
     #selection: GridSelection | undefined;
     #editing = false;
+    // The copy last put on the clipboard, whose Entries a paste of exactly it carries (ADR-0048), and the sentence a
+    // copy of the Sheet's own was last refused with (ADR-0049).
+    #ownCopy: SheetOwnCopy | undefined;
+    #copyRefusal: string | undefined;
     // A resize of several whole columns, reported a column at a time: its first step, and the columns still to
     // come, which join that step on the undo stack (FN-12c, ADR-0048).
     #resizing: { readonly first: WorkbookStep; readonly pending: Set<number> } | undefined;
@@ -257,6 +262,7 @@ class SheetView {
             onReplace: this.#onReplace,
             pasteMaySpill: true,
             onEdit: this.#onEdit,
+            copyAnswer: this.#copyAnswer,
             onPaste: this.#onPaste,
             onClear: this.#onClear,
             onUndo: this.#onUndo,
@@ -302,6 +308,21 @@ class SheetView {
         }
     };
 
+    // A copy (ADR-0050 item 9, ADR-0048): the engine copies the range, so the clipboard carries the Values exactly as
+    // the engine gives them however far the range runs beyond the Window, and a copy reaching #GETTING_DATA is
+    // refused in the engine's words (ADR-0049). The Entries of a one-range copy are kept, so that a paste of exactly
+    // this block back into the Sheet carries them.
+    readonly #copyAnswer = (request: GridCopyRequest): GridCopyAnswer => {
+        const { answer, own } = sheetCopyAnswer(this.#source.sheet, request, refusal => this.#words.refused(refusal));
+        if (answer.kind === 'refuse') {
+            // The clipboard still holds the last copy, so the Entries kept for it still stand.
+            this.#copyRefusal = answer.sentence;
+            return answer;
+        }
+        this.#ownCopy = own;
+        return answer;
+    };
+
     readonly #onPaste = (intent: GridPasteIntent): void => {
         // Rows are places, so the order moves only when another Sheet is shown (ADR-0046); an intent written
         // under any other version names positions that mean something else, and is dropped (ADR-0011).
@@ -323,6 +344,13 @@ class SheetView {
         if (intent.enteredAt !== undefined) {
             const at = intent.enteredAt;
             this.#performRefusing(intent, () => SheetEdit.enterInto(intent.plan.targets.map(rangeOf), new CellAddress(at.row, at.column), intent.valueFor(at)));
+            return;
+        }
+        // This Sheet's own copy pasted back (ADR-0048): its Entries, formats and alignment, relative References
+        // shifted by the distance pasted, over each target range the grid approved, as one step on the undo stack.
+        const own = this.#ownCopy;
+        if (own?.isPastedAs(intent.values, intent.origins) === true) {
+            this.#performRefusing(intent, () => SheetEdit.paste(own.block, intent.plan.targets.map(rangeOf)), intent.plan.targets.map(rangeOf));
             return;
         }
         // A Sheet's copy holding a refused cell, marked in its table: refused whole, rather than turn the refusal into
@@ -488,7 +516,13 @@ class SheetView {
     readonly #onRefused = (refusal: GridRefusal): void => {
         switch (refusal.kind) {
             case 'paste': this.#tell(this.#words.pasteRefused(refusal.reason), { saidByGrid: true }); return;
-            case 'copy': this.#tell(this.#words.copyRefused(refusal.reason), { saidByGrid: true }); return;
+            // A refusal of the Sheet's own is in the engine's words, which the grid relayed from the copy answer.
+            case 'copy': {
+                const own = this.#copyRefusal;
+                this.#copyRefusal = undefined;
+                this.#tell(refusal.reason === 'refusedByConsumer' && own !== undefined ? own : this.#words.copyRefused(refusal.reason), { saidByGrid: true });
+                return;
+            }
             case 'commit':
                 this.#tell(this.#words.commitRefused(new CellAddress(refusal.cell.row, refusal.cell.column).toString(), refusal.reason), { saidByGrid: true });
                 return;
@@ -926,12 +960,6 @@ function firstRefusedIn(intent: GridPasteIntent): CellAddress | undefined {
         }
     }
     return undefined;
-}
-
-function rangeOf(range: SelectionRange): CellRange {
-    return new CellRange(
-        new CellAddress(range.topRow, range.leftColumn),
-        new CellAddress(range.topRow + range.rowCount - 1, range.leftColumn + range.columnCount - 1));
 }
 
 function firstTarget(intent: GridPasteIntent): SelectionRange {

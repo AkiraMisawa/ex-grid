@@ -31,6 +31,10 @@ export const demoPages: readonly DemoPage[] = Object.freeze([
         description: 'Template Columns and Action Columns, what the value alone cannot say (ADR-0020); Cell State and Row Kind join as the Script Core comes to them.',
     },
     {
+        route: 'marks', title: 'Row Marks', group: 'Cells and rows',
+        description: 'A Mark Column over 1,000,000 fetched rows: mark all, marks that survive a filter, and an action over them (ADR-0043).',
+    },
+    {
         route: 'filter-panel', title: 'Filter panel', group: 'Interaction',
         description: 'The filter panel\'s value list, Blank entry, search, condition form and TooMany under the built-in Chrome, with the Filter it applied written out (ADR-0009, WR-1).',
     },
