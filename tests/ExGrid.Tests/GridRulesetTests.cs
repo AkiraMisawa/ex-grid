@@ -1,4 +1,5 @@
 using ExGrid.Cells;
+using ExGrid.Selection;
 using ExGrid.Validation;
 using Xunit;
 
@@ -126,4 +127,120 @@ public class GridRulesetTests
         Assert.Equal("a negative notional needs approval", rules.Message(row, Columns()[1]));
     }
 
+    private sealed record Deal(string Id, string Csa, string Curve);
+
+    private static GridColumn<Deal>[] DealColumns() =>
+    [
+        new("Id", ColumnType.Text, r => r.Id),
+        new("Csa", ColumnType.Text, r => r.Csa),
+        new("Curve", ColumnType.Text, r => r.Curve),
+    ];
+
+    // One discount curve per CSA: every trade of a CSA with two curves breaches, and the message names the
+    // other side by trade id, never by position (ADR-0381's example).
+    private static IEnumerable<Breach> OneCurvePerCsa(IReadOnlyList<Deal> deals)
+    {
+        foreach (var csa in deals.GroupBy(d => d.Csa))
+        {
+            var curves = csa.GroupBy(d => d.Curve).OrderByDescending(g => g.Count()).ToList();
+            if (curves.Count < 2)
+                continue;
+            var told = string.Join(", ", curves.Select(g => $"{g.Key} on {string.Join(" ", g.Select(d => d.Id))}"));
+            yield return new Breach("one-curve-per-csa", $"CSA {csa.Key} has {curves.Count} discount curves: {told}.",
+                [.. csa.Select(d => new BreachCell(d.Id, "Curve"))]);
+        }
+    }
+
+    private static GridRuleset<Deal> DealRules() => new GridRuleset<Deal>(d => d.Id).Set(OneCurvePerCsa);
+
+    [Fact] // ADR-0381 / ED-36: every trade of the CSA wears Error, by Row Key, the rows that never changed included
+    public void ED36_a_set_rule_marks_every_cell_its_breach_names_by_row_key()
+    {
+        var rules = DealRules();
+        Deal[] deals = [new("T1", "ABC", "SOFR"), new("T2", "ABC", "SOFR"), new("T3", "ABC", "FF"), new("T4", "XYZ", "FF")];
+
+        rules.Evaluate(deals, DealColumns());
+
+        var curve = DealColumns()[2];
+        Assert.All(deals[..3], d => Assert.Equal(CellState.Error, rules.StateOf(d, curve)));
+        Assert.Equal(CellState.Normal, rules.StateOf(deals[3], curve));
+        Assert.Equal(CellState.Normal, rules.StateOf(deals[0], DealColumns()[1]));
+        // Keyed by Row Key: a new instance of the same trade, the next version a Source hands over, is still marked.
+        Assert.Equal(CellState.Error, rules.StateOf(deals[0] with { }, curve));
+        Assert.Single(rules.Breaches);
+    }
+
+    [Fact] // ADR-0381 / ED-37: each involved cell carries the Breach's message, which names the others, not positions
+    public void ED37_every_involved_cell_carries_the_breach_message()
+    {
+        var rules = DealRules();
+        Deal[] deals = [new("T1", "ABC", "SOFR"), new("T2", "ABC", "SOFR"), new("T3", "ABC", "FF")];
+
+        rules.Evaluate(deals, DealColumns());
+
+        var expected = "CSA ABC has 2 discount curves: SOFR on T1 T2, FF on T3.";
+        Assert.All(deals, d => Assert.Equal(expected, rules.MessageOf(d, DealColumns()[2])));
+        Assert.Equal(expected, Assert.Single(rules.Breaches).Message);
+    }
+
+    [Fact] // ADR-0381 / ED-36: the last edit that restores one curve clears every mark, and the save may go
+    public void ED36_restoring_the_rule_clears_every_mark()
+    {
+        var rules = DealRules();
+        Deal[] broken = [new("T1", "ABC", "SOFR"), new("T2", "ABC", "FF")];
+        rules.Evaluate(broken, DealColumns());
+
+        Deal[] fixedUp = [broken[0], broken[1] with { Curve = "SOFR" }];
+        rules.Evaluate(fixedUp, DealColumns());
+
+        Assert.All(fixedUp, d => Assert.Equal(CellState.Normal, rules.StateOf(d, DealColumns()[2])));
+        Assert.Empty(rules.Breaches);
+    }
+
+    [Fact] // ADR-0381 section 2: a set rule names rows by key, which an instance-keyed ruleset cannot
+    public void A_set_rule_without_a_row_key_throws()
+    {
+        var error = Assert.Throws<InvalidOperationException>(() => new GridRuleset<Deal>().Set(OneCurvePerCsa));
+        Assert.Contains("Row Key", error.Message);
+    }
+
+    [Fact] // ADR-0381, spine rule 1: a Breach naming a key no row has would mark nothing and refuse the save unseen
+    public void A_breach_naming_an_unknown_row_throws()
+    {
+        var rules = new GridRuleset<Deal>(d => d.Id)
+            .Set(_ => [new Breach("ghost", "T9 is wrong.", [new BreachCell("T9", "Curve")])]);
+
+        var error = Assert.Throws<ArgumentException>(() => rules.Evaluate([new Deal("T1", "ABC", "SOFR")], DealColumns()));
+        Assert.Contains("T9", error.Message);
+    }
+
+    [Fact] // ADR-0381 section 3 / ED-38: the step reaches an error far below the Window, in the order the grid shows
+    public void ED38_the_error_step_walks_the_whole_result_in_find_order()
+    {
+        var rules = DealRules();
+        var deals = Enumerable.Range(0, 1000).Select(i => new Deal($"T{i}", $"C{i}", "SOFR")).ToArray();
+        deals[900] = deals[900] with { Csa = "C1", Curve = "FF" };
+        rules.Evaluate(deals, DealColumns());
+        string[] columns = ["Id", "Csa", "Curve"];
+
+        var next = rules.FindError(new GridErrorStepRequest { From = new CellPosition(0, 0), Columns = columns, RowSequenceVersion = 1 }, deals);
+        Assert.True(next.IsFound);
+        Assert.Equal((1, "Curve"), (next.Row, next.Column));
+
+        var after = rules.FindError(new GridErrorStepRequest { From = new CellPosition(1, 2), Columns = columns, RowSequenceVersion = 1 }, deals);
+        Assert.Equal((900, "Curve"), (after.Row, after.Column));
+
+        // It wraps, as Find does, and runs backward.
+        var wrapped = rules.FindError(new GridErrorStepRequest { From = new CellPosition(900, 2), Columns = columns, RowSequenceVersion = 1 }, deals);
+        Assert.Equal((1, "Curve"), (wrapped.Row, wrapped.Column));
+        var back = rules.FindError(new GridErrorStepRequest { From = new CellPosition(1, 2), Backward = true, Columns = columns, RowSequenceVersion = 1 }, deals);
+        Assert.Equal((900, "Curve"), (back.Row, back.Column));
+
+        // A lone error cell finds itself; a hidden column is not stepped to.
+        Deal[] lone = [new("A", "X", "SOFR"), new("B", "X", "FF")];
+        rules.Evaluate(lone, DealColumns());
+        var self = rules.FindError(new GridErrorStepRequest { From = new CellPosition(0, 2), Columns = columns, RowSequenceVersion = 1 }, [lone[0]]);
+        Assert.Equal((0, "Curve"), (self.Row, self.Column));
+        Assert.False(rules.FindError(new GridErrorStepRequest { Columns = ["Id", "Csa"], RowSequenceVersion = 1 }, lone).IsFound);
+    }
 }

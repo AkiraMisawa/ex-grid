@@ -105,6 +105,36 @@
 }];</code></pre>
     </DocsSection>
 
+    <DocsSection Title="Rules over the whole collection">
+        <p>
+            Some rules hold over many rows at once. A trade blotter may require one discount curve per CSA: change one
+            trade's curve and its whole CSA breaks the rule, not that trade alone. Such a rule <strong>never holds the
+            editor</strong>, because the way to a valid collection often passes through invalid ones. Moving a CSA to
+            a new curve trade by trade breaks the rule at the first edit and restores it at the last, and a refusal at
+            the editor would trap the user before the second.
+        </p>
+        <p>
+            So the edit lands. <code>GridRuleset.Set</code> declares the rule, and <code>Evaluate</code> judges it over
+            your whole collection after each apply. Every cell a <strong>Breach</strong> names wears
+            <code>Error</code> with its message, on screen or far below it. A Breach names its rows by Row Key, so a
+            ruleset that holds a set rule is made with the same key function your Source declares, and one made without
+            it throws. Write the message in your users' words, naming the other side by what they see, such as a trade
+            id, never by a row position, which a sort changes. The refusal belongs to your own save: refuse it while
+            <code>Breaches</code> is not empty, as a database checks a deferred constraint at commit.
+        </p>
+        <p>
+            A rule that one row can break and fix on its own stays a column's <code>Validate</code>, and may reject.
+            <code>FindError</code> answers the next or the previous error cell in the order the grid shows, for a step
+            through every error rather than only the painted ones.
+        </p>
+        <DocsExample Title="One discount curve per CSA" Builtin="typeof(CollectionRules)" Mud="typeof(CollectionRulesMud)"
+                     Files="@(["Examples/Grid/CurveTrade.cs"])">
+            Change <code>T-0001</code>'s curve to <code>USD-FF</code>: every trade of CSA ABC is marked, including those
+            you must scroll to, and Save is refused. Select ABC's curves and type <code>USD-FF</code> with
+            <kbd>Ctrl</kbd>+<kbd>Enter</kbd>, or change them one by one: the last edit clears every mark.
+        </DocsExample>
+    </DocsSection>
+
     <DocsSection Title="Bulk changes, Delete and Undo">
         <ul>
             <li>

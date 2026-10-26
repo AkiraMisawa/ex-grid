@@ -1,9 +1,45 @@
 using ExGrid.Cells;
+using ExGrid.Finding;
+using ExGrid.Selection;
 
 namespace ExGrid.Validation;
 
 /// <summary>One rule's complaint about a row: which column wears it, and why.</summary>
 public sealed record RuleViolation(string Column, string Message);
+
+/// <summary>One cell a <see cref="Breach"/> involves: the row by its Row Key (ADR-0140), wherever it
+/// stands, and the column by name.</summary>
+public readonly record struct BreachCell(object RowKey, string Column);
+
+/// <summary>
+/// One set rule's complaint over the whole collection (ADR-0381): the rule's name, the sentence every
+/// involved cell says, and the cells it involves. The message names the other side of the breach in the
+/// Consumer's own words, a trade id rather than a row position, which a sort changes.
+/// </summary>
+public sealed record Breach(string Rule, string Message, IReadOnlyList<BreachCell> Cells);
+
+/// <summary>
+/// One step to the next or the previous error cell (ADR-0381 section 3), asked of the Consumer as a Find
+/// step is (ADR-0055): the grid knows only the cells it paints, so a step through those alone would skip
+/// every error outside the Window without saying so.
+/// </summary>
+public sealed record GridErrorStepRequest
+{
+    /// <summary>Whether this step runs backward: the previous error cell.</summary>
+    public bool Backward { get; init; }
+
+    /// <summary>The Focus the step starts from: it begins at the cell after it (before it, backward) and
+    /// considers it last, so a lone error cell finds itself. Null: from the start (the end, backward).</summary>
+    public CellPosition? From { get; init; }
+
+    /// <summary>The visible columns' names in the grid's current order: position <c>i</c> here is column
+    /// <c>i</c> of <see cref="From"/> and of the answer.</summary>
+    public required IReadOnlyList<string> Columns { get; init; }
+
+    /// <summary>The order the positions were read in (ADR-0011). An answer the grid receives under another
+    /// version is discarded.</summary>
+    public required int RowSequenceVersion { get; init; }
+}
 
 /// <summary>
 /// The bundled ruleset (ADR-0034). <b>Ownership and driving are the Consumer's; the
@@ -20,14 +56,32 @@ public sealed record RuleViolation(string Column, string Message);
 ///
 /// <para>The map is keyed by <b>row instance</b>, and <see cref="Evaluate"/> replaces it
 /// wholesale: the Consumer returns new instances when it applies (ADR-0007), so a map
-/// that accumulated would answer for rows nobody can see.</para>
+/// that accumulated would answer for rows nobody can see. A ruleset made with a Row Key
+/// function is keyed by Row Key instead, which is what lets a <see cref="Set"/> rule name
+/// rows outside the Window (ADR-0381).</para>
 /// </summary>
 public sealed class GridRuleset<TRow> where TRow : class
 {
     private readonly Dictionary<string, Func<TRow, string, EditVerdict>> _columnRules = [];
     private readonly List<Func<TRow, IEnumerable<RuleViolation>>> _rowRules = [];
-    private Dictionary<TRow, Dictionary<string, string>> _violations =
-        new(ReferenceEqualityComparer.Instance as IEqualityComparer<TRow> ?? EqualityComparer<TRow>.Default);
+    private readonly List<Func<IReadOnlyList<TRow>, IEnumerable<Breach>>> _setRules = [];
+    private readonly Func<TRow, object>? _rowKey;
+    private Dictionary<object, Dictionary<string, string>> _violations = new(ReferenceEqualityComparer.Instance);
+    private IReadOnlyList<Breach> _breaches = [];
+
+    /// <summary>A ruleset keyed by row instance, holding column and row rules (ADR-0034).</summary>
+    public GridRuleset()
+    {
+    }
+
+    /// <summary>A ruleset keyed by Row Key (ADR-0381): the same function the Consumer's Source declares
+    /// (ADR-0140). It may hold <see cref="Set"/> rules, whose Breaches name rows by their keys.</summary>
+    public GridRuleset(Func<TRow, object> rowKey)
+    {
+        ArgumentNullException.ThrowIfNull(rowKey);
+        _rowKey = rowKey;
+        _violations = [];
+    }
 
     /// <summary>A rule on one column's committed text, asked at the editor. The intended
     /// split is the ADR's: an unparseable text Rejects, a parseable value a rule dislikes
@@ -49,6 +103,32 @@ public sealed class GridRuleset<TRow> where TRow : class
         return this;
     }
 
+    /// <summary>
+    /// A rule over the whole collection (ADR-0381), judged after apply by <see cref="Evaluate"/> over every
+    /// row it is handed. Flag-tier by construction: the way to a valid collection often passes through
+    /// invalid ones, so it never holds the Cell Editor, and its refusal is the Consumer's own save while
+    /// <see cref="Breaches"/> is not empty. Every cell a Breach names wears <c>Error</c> and its message.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">The ruleset was made without a Row Key function: a
+    /// Breach names rows wherever they stand, which a row instance outside the Window cannot.</exception>
+    public GridRuleset<TRow> Set(Func<IReadOnlyList<TRow>, IEnumerable<Breach>> rule)
+    {
+        ArgumentNullException.ThrowIfNull(rule);
+        if (_rowKey is null)
+        {
+            throw new InvalidOperationException(
+                "A set rule names its rows by Row Key, so the ruleset is made with the Source's Row Key function: "
+                + "new GridRuleset<TRow>(rowKey) (ADR-0381).");
+        }
+        _setRules.Add(rule);
+        return this;
+    }
+
+    /// <summary>The Breaches the last <see cref="Evaluate"/> found, in the order the set rules were declared
+    /// and each rule answered them: an order that does not depend on the Window (ADR-0381 section 3). The
+    /// Consumer's save refuses while this is not empty.</summary>
+    public IReadOnlyList<Breach> Breaches => _breaches;
+
     /// <summary>What a column's <c>Validate</c> is set to, or null where no rule was
     /// declared — which the grid reads as Accept.</summary>
     public Func<TRow, string, EditVerdict>? ValidatorFor(string column)
@@ -57,6 +137,8 @@ public sealed class GridRuleset<TRow> where TRow : class
     /// <summary>
     /// Re-judge the rows, after applying. Called by the Consumer with the rows it now
     /// holds — the Window, or the whole result — and it replaces what was known before.
+    /// A ruleset holding <see cref="Set"/> rules is handed the whole collection: a breach
+    /// between a row on screen and one far below is still a breach (ADR-0381).
     ///
     /// <para>Column rules are re-run here as well as at the editor, on the applied value:
     /// that is what makes a paste and a program-code change wear the same marks as a
@@ -69,9 +151,11 @@ public sealed class GridRuleset<TRow> where TRow : class
         ArgumentNullException.ThrowIfNull(rows);
         ArgumentNullException.ThrowIfNull(columns);
         var declared = columns as IReadOnlyList<GridColumn<TRow>> ?? [.. columns];
-        var next = new Dictionary<TRow, Dictionary<string, string>>(
-            ReferenceEqualityComparer.Instance as IEqualityComparer<TRow> ?? EqualityComparer<TRow>.Default);
-        foreach (var row in rows)
+        var all = rows as IReadOnlyList<TRow> ?? [.. rows];
+        var next = _rowKey is null
+            ? new Dictionary<object, Dictionary<string, string>>(ReferenceEqualityComparer.Instance)
+            : [];
+        foreach (var row in all)
         {
             Dictionary<string, string>? found = null;
             foreach (var column in declared)
@@ -93,9 +177,40 @@ public sealed class GridRuleset<TRow> where TRow : class
                     (found ??= [])[violation.Column] = violation.Message;
             }
             if (found is not null)
-                next[row] = found;
+                next[KeyOf(row)] = found;
+        }
+        var breaches = new List<Breach>();
+        if (_setRules.Count > 0)
+        {
+            // A Breach naming a key no row has would mark nothing, and the save would refuse with no cell to
+            // show why: refused here instead (spine rule 1).
+            var keys = new HashSet<object>(all.Select(KeyOf));
+            foreach (var rule in _setRules)
+            {
+                foreach (var breach in rule(all))
+                {
+                    ArgumentNullException.ThrowIfNull(breach);
+                    ArgumentException.ThrowIfNullOrWhiteSpace(breach.Rule);
+                    ArgumentException.ThrowIfNullOrWhiteSpace(breach.Message);
+                    if (breach.Cells is null || breach.Cells.Count == 0)
+                        throw new ArgumentException($"Breach '{breach.Rule}' involves no cell: a breach names the cells that show it (ADR-0381).");
+                    foreach (var (key, column) in breach.Cells)
+                    {
+                        if (key is null || !keys.Contains(key))
+                            throw new ArgumentException($"Breach '{breach.Rule}' names Row Key '{key}', which no row handed to Evaluate has (ADR-0381).");
+                        ArgumentException.ThrowIfNullOrEmpty(column);
+                        var found = next.TryGetValue(key, out var held) ? held : next[key] = [];
+                        // A cell two rules complain about says both: neither sentence outranks the other.
+                        found[column] = found.TryGetValue(column, out var earlier) && earlier != breach.Message
+                            ? earlier + " " + breach.Message
+                            : breach.Message;
+                    }
+                    breaches.Add(breach);
+                }
+            }
         }
         _violations = next;
+        _breaches = breaches;
         // New instances, deliberately: their identity is what tells the rows that what
         // they are painting has moved.
         State = StateOf;
@@ -117,17 +232,68 @@ public sealed class GridRuleset<TRow> where TRow : class
     /// <inheritdoc cref="State"/>
     public Func<TRow, GridColumn<TRow>, string?> Message { get; private set; } = static (_, _) => null;
 
+    /// <summary>
+    /// The next or the previous error cell (ADR-0381 section 3), for a grid's error step: every cell the
+    /// last <see cref="Evaluate"/> marked, walked in Find's order (ADR-0055) through
+    /// <paramref name="rowsInOrder"/>, the result in the order the grid shows it, which a Consumer reads
+    /// from its Source. A marked row that is not in that order, filtered out, is not stepped to; a marked
+    /// column that is not among the request's, hidden, neither.
+    /// </summary>
+    public GridFindResult FindError(GridErrorStepRequest request, IReadOnlyList<TRow> rowsInOrder)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        ArgumentNullException.ThrowIfNull(rowsInOrder);
+        var columnCount = request.Columns.Count;
+        if (columnCount == 0 || rowsInOrder.Count == 0 || _violations.Count == 0)
+            return GridFindResult.NotFound;
+        long total = (long)rowsInOrder.Count * columnCount;
+        long start = request.From is { } from && from.Row >= 0 && from.Row < rowsInOrder.Count && from.Column >= 0 && from.Column < columnCount
+            ? (long)from.Row * columnCount + from.Column
+            : request.Backward ? 0 : total - 1;
+        // The nearest marked cell past the start, counted in steps the walk would take: one pass over the
+        // rows, never one over every cell.
+        long best = long.MaxValue;
+        var found = GridFindResult.NotFound;
+        for (var row = 0; row < rowsInOrder.Count; row++)
+        {
+            if (!_violations.TryGetValue(KeyOf(rowsInOrder[row]), out var marked))
+                continue;
+            for (var column = 0; column < columnCount; column++)
+            {
+                if (!marked.ContainsKey(request.Columns[column]))
+                    continue;
+                var ordinal = (long)row * columnCount + column;
+                var steps = request.Backward ? start - ordinal : ordinal - start;
+                steps = ((steps % total) + total) % total;
+                // The start itself is considered last, so a lone error cell finds itself.
+                if (steps == 0)
+                    steps = total;
+                if (steps < best)
+                {
+                    best = steps;
+                    found = GridFindResult.Found(row, request.Columns[column]);
+                }
+            }
+        }
+        return found;
+    }
+
+    private object KeyOf(TRow row)
+        => _rowKey is null
+            ? row
+            : _rowKey(row) ?? throw new InvalidOperationException("A row has a null Row Key: a Row Key names a row (ADR-0140).");
+
     /// <summary>The grid's <c>CellState</c> channel — a cheap enum, consulted every
     /// render for every cell (ADR-0034).</summary>
     internal CellState StateOf(TRow row, GridColumn<TRow> column)
-        => _violations.TryGetValue(row, out var found) && found.ContainsKey(column.Name)
+        => _violations.TryGetValue(KeyOf(row), out var found) && found.ContainsKey(column.Name)
             ? CellState.Error
             : CellState.Normal;
 
     /// <summary>The grid's message channel — read for at most one cell at a time, at the
     /// moment a popover opens (ADR-0034).</summary>
     internal string? MessageOf(TRow row, GridColumn<TRow> column)
-        => _violations.TryGetValue(row, out var found) && found.TryGetValue(column.Name, out var message)
+        => _violations.TryGetValue(KeyOf(row), out var found) && found.TryGetValue(column.Name, out var message)
             ? message
             : null;
 }
