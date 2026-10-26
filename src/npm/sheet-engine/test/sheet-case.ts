@@ -917,6 +917,9 @@ class Run {
             case 'valueAddresses':
                 actual = addresses(sheet.valueAddresses);
                 break;
+            case 'recalculationPasses':
+                actual = sheet.recalculationPasses;
+                break;
             case 'sheets':
                 actual = this.workbook.sheets.map(s => s.name);
                 break;

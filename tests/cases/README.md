@@ -682,7 +682,7 @@ refused cell), `displays`, `texts`, `formulas`, `entryTexts`,
 `entries`, `numberFormats`, `alignments`, `fonts`, `fills`, `borders`, `widthOnEntry` and `spilledFrom`; per
 range, `cellFormats` (the Cell Formats it shows, each once), `entryAddressesIn` (its cells that hold an Entry, in row order) and `edgeLines` (the lines along each outer edge),
 each a set written in the ordinal order of its members' JSON text as `JSON.stringify` writes it; of
-the Sheet, `document`, `documentJson` (its Sheet Document's JSON text, which both engines write alike), `columnWidths`, `entryAddresses` and `valueAddresses`; of the step, `change`,
+the Sheet, `document`, `documentJson` (its Sheet Document's JSON text, which both engines write alike), `columnWidths`, `entryAddresses`, `valueAddresses` and `recalculationPasses` (how many passes its last recalculation made, ADR-0124); of the step, `change`,
 `changes` (what a step, an undo or a redo changed on each Sheet it reached, by the Sheet's name), `refusal`
 (a `check`'s), `isUndone`, `ranges`, `stepSheet` (the Sheet a step was done on or made), `changesSheets`, `sheetsReached` (the Sheets a step, an undo, a
 redo or a push reached, in order), `tableColumns` (what `readTable` read, `null` while the table waits), `heldTables` (each snapshot held, as it stands now), and

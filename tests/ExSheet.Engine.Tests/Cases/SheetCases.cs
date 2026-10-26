@@ -1027,6 +1027,9 @@ internal sealed class Run(CultureInfo culture)
             case "valueAddresses":
                 actual = SheetCases.Addresses(sheet.ValueAddresses);
                 break;
+            case "recalculationPasses":
+                actual = sheet.RecalculationPasses;
+                break;
             case "sheets":
                 actual = new JsonArray([.. Workbook.Sheets.Select(s => (JsonNode)s.Name)]);
                 break;
