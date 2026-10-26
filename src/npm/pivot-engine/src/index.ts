@@ -22,7 +22,8 @@ export type {
 export { pivotAggregations, pivotItemKinds, pivotShowValuesAsList } from './layout/pivot-enums';
 export type { PivotItemKey } from './items/item-key';
 export {
-    blankItemKey, booleanItemKey, dateItemKey, errorItemKey, itemKeysEqual, numberItemKey, pivotErrorText, pivotItemKey, textItemKey,
+    blankItemKey, booleanItemKey, dateItemKey, errorItemKey, itemKeysEqual, numberItemKey, pivotErrorText, pivotItemKey, publicKeyId as pivotItemKeyId,
+    textItemKey,
 } from './items/item-key';
 export type {
     PivotFieldPlacement, PivotFieldPlacementInput, PivotLayout, PivotLayoutInput, PivotSort, PivotValueField, PivotValueFieldInput,

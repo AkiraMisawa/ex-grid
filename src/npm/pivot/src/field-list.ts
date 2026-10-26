@@ -90,7 +90,7 @@ interface FieldItem {
 }
 
 /** Text lowered for the search as the pivot's locale lowers it, never as the host's (ADR-0370 section 10). */
-function lowered(text: string, locale: string): string {
+export function lowered(text: string, locale: string): string {
     return locale === 'invariant' ? text.toLowerCase() : text.toLocaleLowerCase(locale);
 }
 
