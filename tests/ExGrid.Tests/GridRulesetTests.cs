@@ -214,6 +214,34 @@ public class GridRulesetTests
         Assert.Contains("T9", error.Message);
     }
 
+    [Fact] // ADR-0381, spine rule 1: a Breach naming a column no declared column is would mark nothing and refuse the save unseen
+    public void A_breach_naming_an_unknown_column_throws()
+    {
+        var rules = new GridRuleset<Deal>(d => d.Id)
+            .Set(_ => [new Breach("typo", "T1 is wrong.", [new BreachCell("T1", "curve")])]);
+
+        var error = Assert.Throws<ArgumentException>(() => rules.Evaluate([new Deal("T1", "ABC", "SOFR")], DealColumns()));
+        Assert.Contains("'curve'", error.Message);
+    }
+
+    [Fact] // ADR-0140 / ADR-0381: two rows under one Row Key would share one set of marks, and one row's would be lost
+    public void Two_rows_under_one_row_key_throw()
+    {
+        var error = Assert.Throws<ArgumentException>(() => DealRules().Evaluate([new Deal("T1", "ABC", "SOFR"), new Deal("T1", "XYZ", "FF")], DealColumns()));
+        Assert.Contains("'T1'", error.Message);
+    }
+
+    [Fact] // ADR-0381 section 3, spine rule 1: a Focus outside the rows handed over means they are not the grid's order
+    public void The_error_step_refuses_a_focus_outside_the_rows_it_was_handed()
+    {
+        var rules = DealRules();
+        Deal[] deals = [new("A", "X", "SOFR"), new("B", "X", "FF")];
+        rules.Evaluate(deals, DealColumns());
+
+        Assert.Throws<ArgumentOutOfRangeException>(() => rules.FindError(
+            new GridErrorStepRequest { From = new CellPosition(120, 0), Columns = ["Id", "Csa", "Curve"], RowSequenceVersion = 1 }, deals));
+    }
+
     [Fact] // ADR-0381 section 3 / ED-38: the step reaches an error far below the Window, in the order the grid shows
     public void ED38_the_error_step_walks_the_whole_result_in_find_order()
     {

@@ -5394,13 +5394,14 @@ export class GridView<Row> {
 
     // An error step's answer, judged against what it was asked under (ADR-0381, ADR-0011, ADR-0142).
     #errorAnswered(request: GridErrorStepRequest, answer: GridFindResult, source: GridSource<Row>): void {
-        if (source !== this.#source || request.rowSequenceVersion !== this.#state.rowSequenceVersion) {
-            this.#sayRefusal(this.#labelOf(errorStepMovedId));
-            return;
-        }
+        // The shape first: a Consumer's defect is the same defect whether or not the rows moved meanwhile.
         const given: unknown = answer;
         if (typeof given !== 'object' || given === null || typeof (given as { readonly found?: unknown }).found !== 'boolean') {
             throw new TypeError('findError answered something other than a Find result: { found: true, row, column } or { found: false } (ADR-0381).');
+        }
+        if (source !== this.#source || request.rowSequenceVersion !== this.#state.rowSequenceVersion) {
+            this.#sayRefusal(this.#labelOf(errorStepMovedId));
+            return;
         }
         const total = this.#totalRows;
         if (answer.found && (!request.columns.includes(answer.column) || !Number.isInteger(answer.row) || answer.row < 0 || answer.row >= total)) {

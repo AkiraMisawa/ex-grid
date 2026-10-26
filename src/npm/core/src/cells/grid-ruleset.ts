@@ -153,11 +153,19 @@ export class GridRuleset<Row extends object> {
         const byKey = new Map<RowKey, Map<string, string>>();
         const byRow = new WeakMap<Row, Map<string, string>>();
         const keyOf = (row: Row): RowKey => checkedKey(defined(rowKey, 'the ruleset\'s Row Key function')(row), 'A row handed to evaluate');
-        const put = (row: Row, found: Map<string, string>): void => {
-            if (rowKey === undefined) byRow.set(row, found);
-            else byKey.set(keyOf(row), found);
+        // Two rows under one key would share one set of marks, and the earlier's would be lost unsaid (ADR-0140:
+        // a Row Key names one row).
+        const keyed = rowKey === undefined ? undefined : all.map(keyOf);
+        const keys = new Set<RowKey>();
+        for (const key of keyed === undefined ? [] : keyed) {
+            if (keys.has(key)) throw new RangeError(`Two rows handed to evaluate have the Row Key ${quoted(key)}: a Row Key names one row (ADR-0140).`);
+            keys.add(key);
+        }
+        const put = (at: number, row: Row, found: Map<string, string>): void => {
+            if (keyed === undefined) byRow.set(row, found);
+            else byKey.set(defined(keyed[at], 'the row\'s key'), found);
         };
-        for (const row of all) {
+        for (const [at, row] of all.entries()) {
             const found = new Map<string, string>();
             for (const column of columns) {
                 const rule = this.#columnRules.get(column.name);
@@ -168,19 +176,22 @@ export class GridRuleset<Row extends object> {
             for (const rule of this.#rowRules) {
                 for (const violation of rule(row)) found.set(violation.column, violation.message);
             }
-            if (found.size > 0) put(row, found);
+            if (found.size > 0) put(at, row, found);
         }
         const breaches: Breach[] = [];
         if (this.#setRules.length > 0) {
-            // A Breach naming a key no row has would mark nothing, and the save would refuse with no cell to show
-            // why: refused here instead (spine rule 1).
-            const keys = new Set(all.map(keyOf));
+            // A Breach naming a key no row has, or a column the grid does not declare, would mark nothing, and the
+            // save would refuse with no cell to show why: refused here instead (spine rule 1).
+            const names = new Set(columns.map(column => column.name));
             for (const rule of this.#setRules) {
                 for (const breach of rule(all)) {
                     const checked = checkedBreach(breach);
                     for (const { rowKey: key, column } of checked.cells) {
                         if (!keys.has(key)) {
                             throw new RangeError(`Breach '${checked.rule}' names Row Key ${quoted(key)}, which no row handed to evaluate has (ADR-0381).`);
+                        }
+                        if (!names.has(column)) {
+                            throw new RangeError(`Breach '${checked.rule}' names the column '${column}', which none of the columns handed to evaluate is (ADR-0381).`);
                         }
                         let found = byKey.get(key);
                         if (found === undefined) {
@@ -196,7 +207,15 @@ export class GridRuleset<Row extends object> {
             }
         }
         this.#breaches = Object.freeze(breaches);
-        const marked = rowKey === undefined ? (row: Row) => byRow.get(row) : (row: Row) => byKey.get(keyOf(row));
+        // The rows a grid paints are mostly the instances handed here: looked up by instance, they spare the
+        // Consumer's key function a call per cell per paint, and a ruleset with nothing marked asks nothing.
+        const handed = new WeakMap<Row, ReadonlyMap<string, string> | undefined>();
+        if (keyed !== undefined) for (const [at, row] of all.entries()) handed.set(row, byKey.get(defined(keyed[at], 'the row\'s key')));
+        const marked = keyed === undefined
+            ? (row: Row) => byRow.get(row)
+            : byKey.size === 0
+                ? () => undefined
+                : (row: Row) => (handed.has(row) ? handed.get(row) : byKey.get(keyOf(row)));
         this.#marked = marked;
         // New functions, deliberately: a grid paints its rows again when the function it was given is another
         // one, and a verdict that changed under the same row instance would otherwise never be painted (ADR-0003).
@@ -213,10 +232,15 @@ export class GridRuleset<Row extends object> {
     findError(request: GridErrorStepRequest, rowsInOrder: readonly Row[]): GridFindResult {
         const { columns, backward, from } = request;
         const total = rowsInOrder.length * columns.length;
+        // A Focus outside the rows handed over means they are not the rows the grid shows, the unfiltered collection
+        // or a shorter page, and an answer read in them would name another row: refused, not walked from the start
+        // (spine rule 1).
+        if (from !== undefined && !(from.row >= 0 && from.row < rowsInOrder.length && from.column >= 0 && from.column < columns.length)) {
+            throw new RangeError(`The error step starts at row ${from.row}, column ${from.column}, outside the ${rowsInOrder.length} rows and `
+                + `${columns.length} columns it was handed: rowsInOrder is the result in the grid's order, read from the Source (ADR-0381).`);
+        }
         if (total === 0) return notFound;
-        const start = from !== undefined && from.row >= 0 && from.row < rowsInOrder.length && from.column >= 0 && from.column < columns.length
-            ? from.row * columns.length + from.column
-            : backward ? 0 : total - 1;
+        const start = from !== undefined ? from.row * columns.length + from.column : backward ? 0 : total - 1;
         // The nearest marked cell past the start, counted in the steps the walk would take: one pass over the rows,
         // never one over every cell.
         let best = Number.POSITIVE_INFINITY;

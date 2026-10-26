@@ -83,8 +83,9 @@ row can break and fix on its own stays a verdict, and may Reject (ADR-0380 secti
 
   *(2026-10-26, decided with the user: **the step is F8 for the next error cell and Shift+F8 for the previous**,
   the keys VS Code and Visual Studio step through problems with. They are claimed only on a grid given
-  `findError`, so a grid without the seam leaves F8 to the page, and a Consumer that declares F8 itself on such a
-  grid keeps it. Excel's F8 is Extend Selection mode, which ExGrid does not take; adopting it later means choosing
+  `findError`, so a grid without the seam leaves F8 to the page, and a Consumer that declares F8 itself on a grid
+  without the seam keeps it. On a grid given `findError`, F8 or Shift+F8 among the declared keys is refused when the
+  grid is made, since the key would mean two things. Excel's F8 is Extend Selection mode, which ExGrid does not take; adopting it later means choosing
   another key for this step.)*
 
 ### 4. Paste, fill and program code reach the same marks

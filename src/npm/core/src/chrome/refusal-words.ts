@@ -80,7 +80,7 @@ export const errorStepMovedId = 'error-step-moved';
 
 /** The built-in English for the error step's words (ADR-0381 section 3). */
 export const errorStepWords: readonly (readonly [string, string])[] = Object.freeze([
-    [errorStepNoneId, 'No cell has an error.'],
+    [errorStepNoneId, 'No error among the rows and columns shown.'],
     [errorStepMovedId, 'The rows moved while the next error was looked for, so the step was set aside. Press F8 again.'],
 ]);
 

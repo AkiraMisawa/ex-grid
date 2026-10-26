@@ -100,6 +100,22 @@ describe('set rules (ADR-0381)', () => {
         expect(() => { empty.evaluate([{ id: 'T1', csa: 'ABC', curve: 'SOFR' }], dealColumns); }).toThrow(TypeError);
     });
 
+    it('ADR-0381, spine rule 1: a Breach naming a column no declared column is throws', () => {
+        const typo = new GridRuleset<Deal>(deal => deal.id).set(() => [{ rule: 'typo', message: 'T1 is wrong.', cells: [{ rowKey: 'T1', column: 'curve' }] }]);
+        expect(() => { typo.evaluate([{ id: 'T1', csa: 'ABC', curve: 'SOFR' }], dealColumns); }).toThrow(/'curve'/);
+    });
+
+    it('ADR-0140 / ADR-0381: two rows under one Row Key throw, rather than share one set of marks', () => {
+        expect(() => { dealRules().evaluate([{ id: 'T1', csa: 'ABC', curve: 'SOFR' }, { id: 'T1', csa: 'XYZ', curve: 'FF' }], dealColumns); }).toThrow(/'T1'/);
+    });
+
+    it('ADR-0381 section 3, spine rule 1: a Focus outside the rows handed over throws, as they are not the grid\'s order', () => {
+        const rules = dealRules();
+        const deals: Deal[] = [{ id: 'A', csa: 'X', curve: 'SOFR' }, { id: 'B', csa: 'X', curve: 'FF' }];
+        rules.evaluate(deals, dealColumns);
+        expect(() => rules.findError(step({ from: { row: 120, column: 0 } }), deals)).toThrow(RangeError);
+    });
+
     it('ED-38: the step walks the whole result in Find\'s order, wraps, runs backward, and a lone error finds itself', () => {
         const rules = dealRules();
         const deals: Deal[] = Array.from({ length: 1000 }, (_, i) => ({ id: `T${i}`, csa: `C${i}`, curve: 'SOFR' }));
@@ -206,7 +222,7 @@ describe('the error step (ADR-0381 section 3)', () => {
         click(none.root, 10, 5);
         key(none.root, 'F8');
         await settle();
-        expect([none.selection().focus, announced(none.root)]).toEqual([{ row: 0, column: 0 }, 'No cell has an error.']);
+        expect([none.selection().focus, announced(none.root)]).toEqual([{ row: 0, column: 0 }, 'No error among the rows and columns shown.']);
 
         let release: ((answer: GridFindResult) => void) | undefined;
         const late = stepping(() => new Promise(resolve => { release = resolve; }));
