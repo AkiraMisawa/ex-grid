@@ -138,6 +138,14 @@ internal static class SheetCases
         {
             case null:
                 return null;
+            case JsonObject { Count: 2 } refused when refused["refused"] is JsonValue flag && flag.GetValueKind() == JsonValueKind.True:
+                // A refusal, as a Consumer holds one read from a refused cell.
+                return (string?)refused["error"] switch
+                {
+                    "#VALUE!" => Value.Refusal,
+                    "#NAME?" => Value.RefusedName,
+                    _ => throw new InvalidDataException($"{refused.ToJsonString()} is no refusal: a refusal is #VALUE! or #NAME?."),
+                };
             case JsonObject error:
                 // The two states of a computation are no Error Value typed, but a case may give one to be refused.
                 if (error.Count != 1)

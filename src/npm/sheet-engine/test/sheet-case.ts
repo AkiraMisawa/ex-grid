@@ -118,6 +118,12 @@ export function decode(node: Json | undefined): Value | undefined {
     if (typeof node === 'string') return Value.fromText(node);
     if (typeof node === 'boolean') return Value.fromBoolean(node);
     if (typeof node === 'number') return Value.fromNumber(node);
+    if (isObject(node) && Object.keys(node).length === 2 && node['refused'] === true) {
+        // A refusal, as a Consumer holds one read from a refused cell.
+        if (node['error'] === '#VALUE!') return Value.refusal;
+        if (node['error'] === '#NAME?') return Value.refusedName;
+        throw new CaseError(`${JSON.stringify(node)} is no refusal: a refusal is #VALUE! or #NAME?.`);
+    }
     if (isObject(node)) {
         // The two states of a computation are no Error Value typed, but a case may give one to be refused.
         const written = node['error'];

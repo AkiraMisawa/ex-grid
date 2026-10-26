@@ -677,7 +677,8 @@ forms of `PasteText` that take `typed` fields cell by cell, with exact `entries`
 
 An expectation names readings: per cell, `values` (a string is text, a number a double, `true`/`false` a
 Boolean, `null` a Blank, `{"error": "#N/A"}` an Error Value, which compares in full, so that one written without
-`"refused": true` is never a refusal), `displays`, `texts`, `formulas`, `entryTexts`,
+`"refused": true` is never a refusal; a Value a case gives written so is a refusal as a Consumer holds one read from a
+refused cell), `displays`, `texts`, `formulas`, `entryTexts`,
 `entries`, `numberFormats`, `alignments`, `fonts`, `fills`, `borders`, `widthOnEntry` and `spilledFrom`; per
 range, `cellFormats` (the Cell Formats it shows, each once), `entryAddressesIn` (its cells that hold an Entry, in row order) and `edgeLines` (the lines along each outer edge),
 each a set written in the ordinal order of its members' JSON text as `JSON.stringify` writes it; of

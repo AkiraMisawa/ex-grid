@@ -10,6 +10,7 @@ import { NumberFormat, numberFormatColourRgb } from '../src/number-format';
 import { CellAddress } from '../src/cell-address';
 import { Sheet } from '../src/sheet';
 import { SheetEdit } from '../src/sheet-edit';
+import { Value } from '../src/value';
 import { Workbook } from '../src/workbook';
 
 describe('the engine surface', () => {
@@ -111,6 +112,19 @@ describe('the engine surface', () => {
         expect(() => SheetEdit.setAutomaticColumnWidth(columns, width)).toThrow(RangeError);
         expect(() => sheet.setAutomaticColumnWidth(columns, width)).toThrow(RangeError);
         expect(sheet.getColumnWidth(1)).toBeUndefined();
+    });
+
+    // ADR-0047 (2026-10-13): a refusal is #VALUE! outside the engine, equal to Excel's own as a Value; a refused cell's
+    // #VALUE! is no constant, which a Formula could catch, and Excel's own #VALUE! is one.
+    it('keeps a refusal equal to #VALUE! and refuses it as a constant', () => {
+        const sheet = new Workbook(Culture.of('en-US')).shown;
+        sheet.enter(CellAddress.parse('B1'), '=MROUND(6.05,0.1)');
+        const refused = sheet.getValue(CellAddress.parse('B1'));
+        if (refused === undefined) throw new Error('B1 holds no Value.');
+        expect(refused.isRefused).toBe(true);
+        expect(refused.equals(Value.fromError('#VALUE!'))).toBe(true);
+        expect(() => Entry.fromValue(refused)).toThrow(RangeError);
+        expect(Entry.fromValue(Value.fromError('#VALUE!')).constant?.error).toBe('#VALUE!');
     });
 
     // ADR-0071, SH-40 (a reading until the eleventh Windows run, case 1): the eight names are Excel's legacy palette.
