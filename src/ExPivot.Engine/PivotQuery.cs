@@ -87,11 +87,37 @@ public sealed class PivotQuery : IEquatable<PivotQuery>
                     $"The question's levels give {value.Rows.Count} row and {value.Columns.Count} column rules, and it places {Rows.Count} row and {Columns.Count} column fields; a field has one rule (ADR-0370 section 3).",
                     nameof(Levels));
             }
+            if (value is not null)
+                CheckOrders(value);
             _levels = value;
         }
     }
 
     private readonly PivotLevels? _levels;
+
+    // A row field's order names a field in Values whose parts its Aggregation reads; a column
+    // field's names none, since only row sets are windowed; a window's parent names an Item of each
+    // row field above the set.
+    private void CheckOrders(PivotLevels levels)
+    {
+        if (levels.Columns.Any(rule => rule.Order is not null))
+            throw new ArgumentException("A column field's rule says no order; only row sets are answered as windows (ADR-0370 section 3).", nameof(Levels));
+        foreach (var rule in levels.Rows)
+        {
+            if (rule.Order is not { } order)
+                continue;
+            if (order.Value >= Values.Count)
+                throw new ArgumentOutOfRangeException(nameof(Levels), $"An order reads value {order.Value}, and the question asks for {Values.Count} values.");
+            var needed = PartsOf(order.Aggregation);
+            if ((Values[order.Value].Parts & needed) != needed)
+                throw new ArgumentException($"An order reads the {PivotLayoutJson.Name(order.Aggregation)} of '{Values[order.Value].Field}', and the question asks for none of its parts (ADR-0370 section 3).", nameof(Levels));
+        }
+        foreach (var start in levels.Window?.Starts ?? [])
+        {
+            if (start.Rows.Count >= levels.Rows.Count)
+                throw new ArgumentOutOfRangeException(nameof(Levels), $"A window's parent names {start.Rows.Count} Items, and the question places {levels.Rows.Count} row fields; its children are a row field's Items (ADR-0370 section 3).");
+        }
+    }
 
     /// <summary>Every placed field — the rows, the columns, then the report filter's.</summary>
     public IEnumerable<PivotQueryField> Placed => Rows.Concat(Columns).Concat(Filters);
@@ -268,10 +294,13 @@ public sealed class PivotLevels : IEquatable<PivotLevels>
     /// <summary>Carries one rule a row field and one a column field.</summary>
     /// <param name="rows">The row fields' rules, outermost first.</param>
     /// <param name="columns">The column fields' rules, outermost first.</param>
-    public PivotLevels(IReadOnlyList<PivotLevelRule>? rows = null, IReadOnlyList<PivotLevelRule>? columns = null)
+    /// <param name="window">The window of the sets ordered by a value; none, and every set is
+    /// answered whole.</param>
+    public PivotLevels(IReadOnlyList<PivotLevelRule>? rows = null, IReadOnlyList<PivotLevelRule>? columns = null, PivotLevelWindow? window = null)
     {
         Rows = PivotQuery.Copy(rows, nameof(rows));
         Columns = PivotQuery.Copy(columns, nameof(columns));
+        Window = window;
     }
 
     /// <summary>The groups a layout shows: each row and column field's collapse state.</summary>
@@ -289,10 +318,14 @@ public sealed class PivotLevels : IEquatable<PivotLevels>
     /// <summary>The column fields' rules, outermost first.</summary>
     public IReadOnlyList<PivotLevelRule> Columns { get; }
 
+    /// <summary>The window of the sets ordered by a value, or null: every set answered whole.</summary>
+    public PivotLevelWindow? Window { get; }
+
     /// <inheritdoc />
     public bool Equals(PivotLevels? other)
         => other is not null
-            && (ReferenceEquals(this, other) || (Rows.SequenceEqual(other.Rows) && Columns.SequenceEqual(other.Columns)));
+            && (ReferenceEquals(this, other)
+                || (Rows.SequenceEqual(other.Rows) && Columns.SequenceEqual(other.Columns) && Equals(Window, other.Window)));
 
     /// <inheritdoc />
     public override bool Equals(object? obj) => Equals(obj as PivotLevels);
@@ -303,11 +336,171 @@ public sealed class PivotLevels : IEquatable<PivotLevels>
         var hash = new HashCode();
         foreach (var rule in Rows.Concat(Columns))
             hash.Add(rule);
+        hash.Add(Window);
         return hash.ToHashCode();
     }
 
-    /// <summary><c>[expanded, collapsed] × [expanded]</c>.</summary>
-    public override string ToString() => $"[{string.Join(", ", Rows)}] × [{string.Join(", ", Columns)}]";
+    /// <summary><c>[expanded, collapsed] × [expanded]</c>, and the window's limit.</summary>
+    public override string ToString()
+        => $"[{string.Join(", ", Rows)}] × [{string.Join(", ", Columns)}]" + (Window is null ? "" : $" {Window}");
+}
+
+/// <summary>
+/// How a row field's Items are ordered among their siblings (ADR-0370 section 3): by a field in
+/// Values under an Aggregation, read at the grand total of the columns, as the report sorts them. A
+/// sibling whose value is not a number follows every number, in either direction. What a window of
+/// a sibling set is cut from.
+/// </summary>
+public sealed class PivotLevelOrder : IEquatable<PivotLevelOrder>
+{
+    /// <summary>Carries one order.</summary>
+    /// <param name="value">The field in Values, by its place in the question's
+    /// <see cref="PivotQuery.Values"/>.</param>
+    /// <param name="aggregation">The Aggregation read of it.</param>
+    /// <param name="descending">Whether the largest comes first.</param>
+    public PivotLevelOrder(int value, PivotAggregation aggregation, bool descending)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(value);
+        if (!Enum.IsDefined(aggregation))
+            throw new ArgumentOutOfRangeException(nameof(aggregation), aggregation, "Unknown PivotAggregation.");
+        Value = value;
+        Aggregation = aggregation;
+        Descending = descending;
+    }
+
+    /// <summary>The field in Values, by its place.</summary>
+    public int Value { get; }
+
+    /// <summary>The Aggregation read of it.</summary>
+    public PivotAggregation Aggregation { get; }
+
+    /// <summary>Whether the largest comes first.</summary>
+    public bool Descending { get; }
+
+    /// <inheritdoc />
+    public bool Equals(PivotLevelOrder? other)
+        => other is not null && Value == other.Value && Aggregation == other.Aggregation && Descending == other.Descending;
+
+    /// <inheritdoc />
+    public override bool Equals(object? obj) => Equals(obj as PivotLevelOrder);
+
+    /// <inheritdoc />
+    public override int GetHashCode() => HashCode.Combine(Value, Aggregation, Descending);
+
+    /// <summary><c>by Sum of value 0, descending</c>.</summary>
+    public override string ToString() => $"by {Aggregation} of value {Value}, {(Descending ? "descending" : "ascending")}";
+}
+
+/// <summary>Where one parent's window starts (ADR-0370 section 3): the parent row group, by its
+/// Items, and the sibling it starts at. Equal when the Items and the place are.</summary>
+public sealed class PivotWindowStart : IEquatable<PivotWindowStart>
+{
+    /// <summary>Carries one start.</summary>
+    /// <param name="rows">The parent's Items, outermost first: none for the grand total.</param>
+    /// <param name="start">The place among the siblings, from 0, of the first one asked for.</param>
+    public PivotWindowStart(IReadOnlyList<PivotItemKey> rows, int start)
+    {
+        ArgumentNullException.ThrowIfNull(rows);
+        if (start < 0)
+            throw new ArgumentOutOfRangeException(nameof(start), $"A window starts at a sibling's place from 0, not {start}.");
+        Rows = PivotQuery.Copy(rows, nameof(rows));
+        Start = start;
+    }
+
+    /// <summary>The parent's Items, outermost first.</summary>
+    public IReadOnlyList<PivotItemKey> Rows { get; }
+
+    /// <summary>The place among the siblings of the first one asked for.</summary>
+    public int Start { get; }
+
+    /// <inheritdoc />
+    public bool Equals(PivotWindowStart? other) => other is not null && Start == other.Start && Rows.SequenceEqual(other.Rows);
+
+    /// <inheritdoc />
+    public override bool Equals(object? obj) => Equals(obj as PivotWindowStart);
+
+    /// <inheritdoc />
+    public override int GetHashCode() => HashCode.Combine(Start, Rows.Count);
+}
+
+/// <summary>
+/// The window of a question's levels (ADR-0370 section 3): a sibling set ordered by a value with
+/// more than <see cref="Limit"/> siblings is answered as a window of them, starting where
+/// <see cref="Starts"/> says for its parent, or at the first, and no further than the limit from the
+/// end; with what lies on either side merged. Equal when the limits are and each parent starts at
+/// the same place.
+/// </summary>
+public sealed class PivotLevelWindow : IEquatable<PivotLevelWindow>
+{
+    /// <summary>Carries a window.</summary>
+    /// <param name="limit">The most siblings a set ordered by a value is answered with whole.</param>
+    /// <param name="starts">Where the windows start, one a parent at most; none when left out.</param>
+    public PivotLevelWindow(int limit, IReadOnlyList<PivotWindowStart>? starts = null)
+    {
+        if (limit < 1)
+            throw new ArgumentOutOfRangeException(nameof(limit), $"A window holds at least one sibling, not {limit}.");
+        Limit = limit;
+        Starts = PivotQuery.Copy(starts, nameof(starts));
+        var parents = new HashSet<ParentKey>();
+        foreach (var start in Starts)
+        {
+            if (!parents.Add(new ParentKey(start.Rows)))
+                throw new ArgumentException("The window starts twice under one parent (ADR-0370 section 3).", nameof(starts));
+        }
+    }
+
+    /// <summary>The most siblings a set ordered by a value is answered with whole.</summary>
+    public int Limit { get; }
+
+    /// <summary>Where the windows start.</summary>
+    public IReadOnlyList<PivotWindowStart> Starts { get; }
+
+    /// <summary>Where the window under a parent starts: at the first sibling when no start names
+    /// it.</summary>
+    internal int StartUnder(IReadOnlyList<PivotItemKey> parent)
+    {
+        var key = new ParentKey(parent);
+        foreach (var start in Starts)
+        {
+            if (new ParentKey(start.Rows).Equals(key))
+                return start.Start;
+        }
+        return 0;
+    }
+
+    /// <inheritdoc />
+    public bool Equals(PivotLevelWindow? other)
+        => other is not null
+            && Limit == other.Limit
+            && Starts.Count == other.Starts.Count
+            && Starts.All(start => other.StartUnder(start.Rows) == start.Start && other.Starts.Any(theirs => new ParentKey(theirs.Rows).Equals(new ParentKey(start.Rows))));
+
+    /// <inheritdoc />
+    public override bool Equals(object? obj) => Equals(obj as PivotLevelWindow);
+
+    /// <inheritdoc />
+    public override int GetHashCode() => HashCode.Combine(Limit, Starts.Count);
+
+    /// <summary><c>window of 50</c>.</summary>
+    public override string ToString()
+        => $"window of {Limit}" + (Starts.Count == 0 ? "" : $" from {string.Join(", ", Starts.Select(s => $"{s.Start} under [{string.Join(", ", s.Rows)}]"))}");
+
+    private readonly struct ParentKey(IReadOnlyList<PivotItemKey> rows) : IEquatable<ParentKey>
+    {
+        private readonly IReadOnlyList<PivotItemKey> _rows = rows;
+
+        public bool Equals(ParentKey other) => _rows.SequenceEqual(other._rows);
+
+        public override bool Equals(object? obj) => obj is ParentKey other && Equals(other);
+
+        public override int GetHashCode()
+        {
+            var hash = new HashCode();
+            foreach (var item in _rows)
+                hash.Add(item);
+            return hash.ToHashCode();
+        }
+    }
 }
 
 /// <summary>
@@ -324,11 +517,14 @@ public sealed class PivotLevelRule : IEquatable<PivotLevelRule>
     /// <summary>Carries one field's rule.</summary>
     /// <param name="collapsed">Whether its Items are collapsed, but for the toggled ones.</param>
     /// <param name="toggledItems">The Items whose state is the other; none when left out.</param>
-    public PivotLevelRule(bool collapsed = false, IReadOnlyList<PivotItemKey>? toggledItems = null)
+    /// <param name="order">How a row field's Items are ordered by a value, for a question with a
+    /// window; none for a field ordered by label, and for a column field.</param>
+    public PivotLevelRule(bool collapsed = false, IReadOnlyList<PivotItemKey>? toggledItems = null, PivotLevelOrder? order = null)
     {
         Collapsed = collapsed;
         ToggledItems = PivotQuery.Copy(toggledItems, nameof(toggledItems));
         _toggled = [.. ToggledItems];
+        Order = order;
     }
 
     /// <summary>Every Item expanded: the rule of a field nothing is collapsed in.</summary>
@@ -349,12 +545,15 @@ public sealed class PivotLevelRule : IEquatable<PivotLevelRule>
     /// <summary>The Items whose state is the other of <see cref="Collapsed"/>.</summary>
     public IReadOnlyList<PivotItemKey> ToggledItems { get; }
 
+    /// <summary>How the Items are ordered by a value, or null: by label.</summary>
+    public PivotLevelOrder? Order { get; }
+
     /// <summary>Whether the groups below <paramref name="item"/> are shown.</summary>
     public bool IsExpanded(PivotItemKey item) => Collapsed == _toggled.Contains(item);
 
     /// <inheritdoc />
     public bool Equals(PivotLevelRule? other)
-        => other is not null && Collapsed == other.Collapsed && _toggled.SetEquals(other._toggled);
+        => other is not null && Collapsed == other.Collapsed && _toggled.SetEquals(other._toggled) && Equals(Order, other.Order);
 
     /// <inheritdoc />
     public override bool Equals(object? obj) => Equals(obj as PivotLevelRule);
@@ -364,7 +563,8 @@ public sealed class PivotLevelRule : IEquatable<PivotLevelRule>
 
     /// <summary><c>expanded</c>, or <c>collapsed (but Text:East)</c>.</summary>
     public override string ToString()
-        => (Collapsed ? "collapsed" : "expanded") + (ToggledItems.Count == 0 ? "" : $" (but {string.Join(", ", ToggledItems)})");
+        => (Collapsed ? "collapsed" : "expanded") + (ToggledItems.Count == 0 ? "" : $" (but {string.Join(", ", ToggledItems)})")
+            + (Order is null ? "" : $", ordered {Order}");
 }
 
 /// <summary>A field in Values as a question carries it (ADR-0066): its name and the parts asked

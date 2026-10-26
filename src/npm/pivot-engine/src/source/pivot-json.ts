@@ -6,17 +6,20 @@
 
 import { decimalText, type SnapshotDecimal } from '@ex-grid/data';
 import { noExtremes, noSum, PartColumns } from '../aggregates/parts';
-import { PivotAnswer, PivotAnswerAxis, answerValues, madeAnswer, type PivotAnswerValues, type PivotNumber, type PivotSourceRefusal, type PivotSourceRefusalKind } from '../cube/answer';
+import {
+    PivotAnswer, PivotAnswerAxis, answerValues, madeAnswer, noWindowing, type PivotAnswerValues, type PivotAnswerWindow, type PivotAnswerWindowing, type PivotNumber,
+    type PivotSourceRefusal, type PivotSourceRefusalKind,
+} from '../cube/answer';
 import {
     partBits, pivotDetailsQuery, pivotItemsQuery, pivotParts, pivotQuery,
-    type PivotDetailsQuery, type PivotFieldItem, type PivotItemsQuery, type PivotLevelRule, type PivotLevelRuleInput, type PivotPart, type PivotQuery,
-    type PivotQueryField, type PivotQueryInput,
+    type PivotDetailsQuery, type PivotFieldItem, type PivotItemsQuery, type PivotLevelOrder, type PivotLevelRule, type PivotLevelRuleInput, type PivotLevels,
+    type PivotLevelWindowInput, type PivotPart, type PivotQuery, type PivotQueryField, type PivotQueryInput,
 } from '../cube/query';
 import { PivotFormatError, PivotVersionError } from '../errors';
 import { pivotField, type PivotField } from '../fields/pivot-field';
 import { dateItemKey, itemKeyText, numberOfText, pivotItemKey, publicKeyId, ticksOfKeyText, type PivotItemKey } from '../items/item-key';
 import { isDecimal } from '../items/record-value';
-import { pivotItemKinds, type PivotFieldType } from '../layout/pivot-enums';
+import { pivotAggregations, pivotItemKinds, type PivotFieldType } from '../layout/pivot-enums';
 import { isArray, isObject, JsonNumber, jsonArray, jsonDouble, jsonObject, jsonString, member, memberNames, namesWrittenTwice, readJson, type Json, type JsonObject } from '../json/json-text';
 import { defined, elementAt } from '../must';
 import { PivotDetailPage, PivotItemCounts, PivotItemPage, type PivotDetailRecord, type PivotDetailValue, type PivotSourceChanged } from './pivot-source';
@@ -91,14 +94,47 @@ function leavesOf(leafCount: number, write: (leaf: number) => string): string {
     return jsonArray(Array.from({ length: leafCount }, (_, leaf) => write(leaf)));
 }
 
-// A field's rule of a question's levels: written only where it is not every Item expanded.
+// A field's rule of a question's levels: written only where it is not every Item expanded and ordered by label.
 function rulesJson(rules: readonly PivotLevelRule[]): string {
     return jsonArray(rules.map(rule => {
         const members: Members = [];
         if (rule.collapsed) members.push(['collapsed', 'true']);
         if (rule.toggledItems.length > 0) members.push(['toggledItems', keysJson(rule.toggledItems)]);
+        if (rule.order !== undefined) {
+            members.push(['order', jsonObject([
+                ['value', String(rule.order.value)], ['aggregation', jsonString(rule.order.aggregation)], ['descending', String(rule.order.descending)],
+            ])]);
+        }
         return jsonObject(members);
     }));
+}
+
+// A question's levels: their rules, and the window when it carries one.
+function levelsJson(levels: PivotLevels): string {
+    const members: Members = [['rows', rulesJson(levels.rows)], ['columns', rulesJson(levels.columns)]];
+    const window = levels.window;
+    if (window !== undefined) {
+        members.push(['window', jsonObject([
+            ['limit', int32Json(window.limit, 'limit')],
+            ['starts', jsonArray(window.starts.map(start => jsonObject([['rows', keysJson(start.rows)], ['start', int32Json(start.start, 'start')]])))],
+        ])]);
+    }
+    return jsonObject(members);
+}
+
+// An answer's windows and each cell's rest code, written only where it has a window.
+function windowingMembers(answer: PivotAnswer, leafCount: number): Members {
+    const windows = answer.windows;
+    if (windows.length === 0) return [];
+    return [
+        ['windows', jsonArray(windows.map(window => jsonObject([
+            ['parent', jsonArray(window.parent.map(String))], ['before', int32Json(window.before, 'before')], ['after', int32Json(window.after, 'after')],
+        ])))],
+        ['rests', leavesOf(leafCount, cell => {
+            const rest = answer.restAt(cell);
+            return rest === undefined ? '-1' : String(2 * rest.window + (rest.side === 'after' ? 1 : 0));
+        })],
+    ];
 }
 
 function valuesJson(values: PivotAnswerValues, leafCount: number, levels: boolean): string {
@@ -375,10 +411,50 @@ function levelsOf(root: JsonObject): Pick<PivotQueryInput, 'levels'> {
     const levels = member(root, 'levels');
     if (levels === undefined) return {};
     if (!isObject(levels)) throw new PivotFormatError("'levels' is an object.");
-    const rules = (name: string): PivotLevelRuleInput[] => objects(levels, name).map(rule => ({
-        collapsed: optionalBool(rule, 'collapsed'), toggledItems: keysOf(rule, 'toggledItems'),
+    const rules = (name: string): PivotLevelRuleInput[] => objects(levels, name).map(rule => {
+        const order = member(rule, 'order');
+        const input = { collapsed: optionalBool(rule, 'collapsed'), toggledItems: keysOf(rule, 'toggledItems') };
+        return order === undefined ? input : { ...input, order: orderOf(order) };
+    });
+    const window = member(levels, 'window');
+    const rows = rules('rows');
+    const columns = rules('columns');
+    return { levels: window === undefined ? { rows, columns } : { rows, columns, window: windowOf(window) } };
+}
+
+function orderOf(order: Json): PivotLevelOrder {
+    if (!isObject(order)) throw new PivotFormatError("'order' is an object.");
+    const aggregation = string(order, 'aggregation');
+    const known = pivotAggregations.find(a => a === aggregation);
+    if (known === undefined) throw new PivotFormatError(`'${aggregation}' is not an Aggregation this reader knows.`);
+    const descending = member(order, 'descending');
+    if (typeof descending !== 'boolean') throw new PivotFormatError("'descending' is true or false, and is required.");
+    return { value: int32(order, 'value'), aggregation: known, descending };
+}
+
+function windowOf(window: Json): PivotLevelWindowInput {
+    if (!isObject(window)) throw new PivotFormatError("'window' is an object.");
+    return {
+        limit: int32(window, 'limit'),
+        starts: objects(window, 'starts').map(start => ({ rows: keysOf(start, 'rows'), start: int32(start, 'start') })),
+    };
+}
+
+// An answer's windows and rest codes: none where it has no window.
+function windowingOf(root: JsonObject, leafCount: number, levels: boolean): PivotAnswerWindowing {
+    if (member(root, 'windows') === undefined) {
+        if (member(root, 'rests') !== undefined) throw new PivotFormatError("The answer has 'rests' and no 'windows' (ADR-0370 section 3).");
+        return noWindowing;
+    }
+    if (!levels) throw new PivotFormatError('An answer of leaves has no window (ADR-0370 section 3).');
+    const windows: PivotAnswerWindow[] = objects(root, 'windows').map(window => Object.freeze({
+        parent: Object.freeze(entries(window, 'parent').map(entry => int32Value(entry, 'parent'))),
+        before: int32(window, 'before'),
+        after: int32(window, 'after'),
     }));
-    return { levels: { rows: rules('rows'), columns: rules('columns') } };
+    if (windows.length === 0) throw new PivotFormatError("'windows' is left out where the answer has none.");
+    const rests = column(root, 'rests', leafCount, entry => int32Value(entry, 'rests'));
+    return Object.freeze({ windows: Object.freeze(windows), rests: Object.freeze(rests) });
 }
 
 // A double: a JSON number, or a named literal.
@@ -538,7 +614,7 @@ export const PivotJson = Object.freeze({
             ['filters', fieldsJson(query.filters)],
             ['values', jsonArray(query.values.map(value => jsonObject([['field', jsonString(value.field)], ['parts', partsJson(value.parts)]])))],
             ['maxLeaves', int32Json(query.maxLeaves, 'maxLeaves')],
-            ...(query.levels === undefined ? [] : [['levels', jsonObject([['rows', rulesJson(query.levels.rows)], ['columns', rulesJson(query.levels.columns)]])] as [string, string]]),
+            ...(query.levels === undefined ? [] : [['levels', levelsJson(query.levels)] as [string, string]]),
         ]);
     },
 
@@ -554,6 +630,7 @@ export const PivotJson = Object.freeze({
             ['columns', axesJson(answer.columns, leafCount)],
             ['records', leavesOf(leafCount, leaf => String(answer.recordsAt(leaf)))],
             ['values', jsonArray(answer.values.map(values => valuesJson(values, leafCount, levels)))],
+            ...windowingMembers(answer, leafCount),
         ]);
     },
 
@@ -647,7 +724,7 @@ export const PivotJson = Object.freeze({
             const rows = axesOf(root, 'rows', records.length, levels);
             const columns = axesOf(root, 'columns', records.length, levels);
             const values = objects(root, 'values').map(element => valuesOf(element, records, levels));
-            return madeAnswer(sourceVersion, rows, columns, records.length, Object.freeze(records), values, levels);
+            return madeAnswer(sourceVersion, rows, columns, records.length, Object.freeze(records), values, levels, windowingOf(root, records.length, levels));
         });
     },
 
