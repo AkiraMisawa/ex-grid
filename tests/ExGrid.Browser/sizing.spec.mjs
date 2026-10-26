@@ -275,9 +275,11 @@ test('dragging the edge of one of several whole columns resizes them all (FN-12c
     await expect(page.locator('#width-status')).toHaveText('Widths: Notional=100;Amount=100;Narrow=100');
 });
 
+// Read in one task: a resize can repaint the header between a locator's query and its evaluation, and a header cell
+// read after it left the document is 0 wide.
 async function headerWidths(page) {
-    return grid(page).locator('.ex-header-cell').evaluateAll((cells) =>
-        Object.fromEntries(cells.map((c) => [c.textContent, c.getBoundingClientRect().width])));
+    return grid(page).evaluate((root) =>
+        Object.fromEntries([...root.querySelectorAll('.ex-header-cell')].map((c) => [c.textContent, c.getBoundingClientRect().width])));
 }
 
 test('columns narrower than a wide box are not stretched, and a resize changes no column width (UX-11b, ADR-0045)', async ({ page }) => {
