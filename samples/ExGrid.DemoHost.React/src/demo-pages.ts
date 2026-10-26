@@ -75,6 +75,10 @@ export const demoPages: readonly DemoPage[] = Object.freeze([
         description: 'A rate-delta report by tenor: desks and curves in Rows, tenors in Columns, ordered ON to 30Y by the page\'s Order Key, with 18M and 1Y6M two Items side by side (ADR-0060).',
     },
     {
+        route: 'pivot-csv', title: 'Pivot over a CSV', group: 'ExPivot',
+        description: 'A CSV read under a declared Schema, and an unknown file under a suggested one once you confirm it: choosing a file, progress, Cancel, a malformed row refused by name, then the pivot (ADR-0064).',
+    },
+    {
         route: 'pivot-db', title: 'Pivot over a database', group: 'ExPivot',
         description: 'The demo API server\'s SQLite trades two ways, side by side: read over Arrow into a Snapshot and pivoted here, and asked of the server\'s Pivot Source, which answers each question\'s Leaf Aggregates in SQL (ADR-0066, ADR-0069, ADR-0370).',
     },

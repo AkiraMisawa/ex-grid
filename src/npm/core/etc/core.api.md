@@ -591,6 +591,7 @@ export interface GridOptions<Row> extends CellPaintOptions<Row>, FormulaBarOptio
     readonly commandLabel?: (id: string) => string | undefined;
     readonly contextCommands?: (context: GridContextMenuContext<Row>) => readonly GridCommand[];
     readonly copyAnswer?: (request: GridCopyRequest) => GridCopyAnswer;
+    readonly copyAnswerAsync?: (request: GridCopyRequest, signal: AbortSignal) => Promise<GridCopyAnswer>;
     readonly copyCellCap?: number;
     readonly dataEdge?: (from: CellPosition, direction: GridDirection) => CellPosition;
     readonly density?: GridDensity;

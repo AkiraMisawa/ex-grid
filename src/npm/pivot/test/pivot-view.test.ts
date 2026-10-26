@@ -3,7 +3,7 @@
 // tested there: here the grid is a stand-in that records what the pivot hands it, and the tests judge what the
 // pivot decides — what it asks, which answer it shows, what the Field List draws and marks, what it refuses.
 import { afterEach, describe, expect, it } from 'vitest';
-import type { CellPosition, GridCommand, GridFindRequest, GridFindResult, GridHandle, GridOptions, GridSelection, SelectionRange } from '@ex-grid/core';
+import type { CellPosition, CopyPlan, GridCommand, GridFindRequest, GridFindResult, GridHandle, GridOptions, GridSelection, SelectionRange } from '@ex-grid/core';
 import {
     FetchingPivotSource, PivotDetailPage, PivotItemPage, PivotSourceFeatures, RecordPivotSource, createPivotLayout, japanesePivotWords, pivotRecordField,
     type PivotDetailRecord, type PivotDisplayRow, type PivotLayout, type PivotReportCopyQuery, type PivotReportCopyResult, type PivotReportMetadata, type PivotReportRange, type PivotReportRefusal,
@@ -495,6 +495,37 @@ async function selected(layout: PivotLayout, ranges: GridSelection['ranges']): P
     grid.current.onSelectionChanged?.({ ranges } as GridSelection); // oxlint-disable-line typescript/consistent-type-assertions -- the pivot reads only the ranges of the selection the core makes
     return said;
 }
+
+/** A copy of one rectangle across the first `columns` value columns of the report's first row. */
+function across(columns: number): CopyPlan {
+    return Object.freeze({
+        segments: [{ topRow: 0, leftColumn: 1, rowCount: 1, columnCount: columns }], orientation: 'vertical', totalRows: 1, totalColumns: columns,
+    });
+}
+
+describe('ExPivot\'s copy (ADR-0152)', () => {
+    it('ADR-0152, ADR-0005: a copy is the report source\'s: a number column Item\'s header as painted in the text, in full in the HTML', async () => {
+        const amounts = [{ region: 'EU', desk: 'Rates', amount: 123456789012.345 }, { region: 'EU', desk: 'FX', amount: 1.23456789012345 }];
+        const { grid } = mount({ source: new RecordPivotSource(amounts, fields), layout: createPivotLayout({ rows: ['Region'], columns: ['Amount'], values: ['Amount'] }) });
+        await settled();
+        const answer = defined(grid.current.copyAnswerAsync, 'the copy answer');
+        const version = defined(grid.current.source, 'the report rows').snapshot().rowSequenceVersion;
+        const copied = await answer({ plan: across(3), withHeaders: true, rowSequenceVersion: version }, new AbortController().signal);
+        if (copied.kind !== 'write') throw new Error(copied.sentence);
+        expect(copied.text.split('\r\n')[0]).toBe('1.23456789\t1.23457E+11\tGrand Total');
+        expect(copied.html).toContain('<th>1.23456789012345</th><th>123456789012.345</th><th>Grand Total</th>');
+        expect(copied.html).toContain('123456789012.345</td>');
+    });
+
+    it('ADR-0152, ADR-0060: a copy asked under an order the report has moved past is refused in ExPivot\'s words', async () => {
+        const { grid } = mount({ source: local(), layout: byRegion });
+        await settled();
+        const answer = defined(grid.current.copyAnswerAsync, 'the copy answer');
+        const version = defined(grid.current.source, 'the report rows').snapshot().rowSequenceVersion;
+        expect(await answer({ plan: across(1), withHeaders: false, rowSequenceVersion: version + 1 }, new AbortController().signal))
+            .toEqual({ kind: 'refuse', sentence: 'The data has changed — refresh.' });
+    });
+});
 
 describe('ExPivot\'s selection (ADR-0340)', () => {
     it('ADR-0340: each selected cell is said with its row\'s Items and, for a value cell, its column\'s, once and in the order selected', async () => {
