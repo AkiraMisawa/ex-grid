@@ -14,19 +14,19 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/25/2026 - 23:50:13 |
+| Generated on: | 10/26/2026 - 00:55:21 |
 | Parser: | MultiReport (19x Cobertura) |
 | Assemblies: | 16 |
 | Classes: | 1187 |
 | Files: | 607 |
-| **Line coverage:** | 94.5% (82384 of 87127) |
-| Covered lines: | 82384 |
+| **Line coverage:** | 94.5% (82404 of 87147) |
+| Covered lines: | 82404 |
 | Uncovered lines: | 4743 |
-| Coverable lines: | 87127 |
-| Total lines: | 139243 |
-| **Branch coverage:** | 87.3% (49741 of 56940) |
-| Covered branches: | 49741 |
-| Total branches: | 56940 |
+| Coverable lines: | 87147 |
+| Total lines: | 139279 |
+| **Branch coverage:** | 87.3% (49764 of 56970) |
+| Covered branches: | 49764 |
+| Total branches: | 56970 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
@@ -1123,7 +1123,7 @@
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExSheet.Engine**|**97.8%**|**91.9%**|
+|**ExSheet.Engine**|**97.8%**|**91.8%**|
 |ExSheet.Engine.ArgumentHint|100%||
 |ExSheet.Engine.ArgumentValue|100%||
 |ExSheet.Engine.AxisFormat|100%|100%|
@@ -1203,7 +1203,7 @@
 |ExSheet.Engine.Formulas.StructuralEdit|100%|91.4%|
 |ExSheet.Engine.Formulas.StructuredReferenceNode|100%||
 |ExSheet.Engine.Formulas.TextNode|100%||
-|ExSheet.Engine.Formulas.TextOrder|100%|97.2%|
+|ExSheet.Engine.Formulas.TextOrder|100%|95.4%|
 |ExSheet.Engine.Formulas.Token|100%||
 |ExSheet.Engine.Formulas.UnaryNode|100%||
 |ExSheet.Engine.Formulas.UnboundNameWalk|85.3%|91.6%|
@@ -1223,7 +1223,7 @@
 |ExSheet.Engine.RangeEdgeLines|100%||
 |ExSheet.Engine.ReferenceCycle|100%||
 |ExSheet.Engine.RepeatedKeyException|100%|88.8%|
-|ExSheet.Engine.Sheet|99.6%|96.4%|
+|ExSheet.Engine.Sheet|99.6%|96.2%|
 |ExSheet.Engine.Sheet.Cell|100%|100%|
 |ExSheet.Engine.Sheet.CellFormatOutcome|100%||
 |ExSheet.Engine.Sheet.CellFormatsOutcome|100%||
@@ -1263,13 +1263,13 @@
 |ExSheet.Engine.SheetEdit.WorkbookEdit.Done|100%||
 |ExSheet.Engine.SheetRefusal|100%||
 |ExSheet.Engine.SheetRefusedException|100%|50%|
-|ExSheet.Engine.SheetStep|100%|100%|
+|ExSheet.Engine.SheetStep|100%|50%|
 |ExSheet.Engine.Value|94.2%|79.4%|
 |ExSheet.Engine.Workbook|97.6%|92.8%|
 |ExSheet.Engine.Workbook.SheetRename|100%||
 |ExSheet.Engine.WorkbookChange|100%|100%|
 |ExSheet.Engine.WorkbookDocument|96.6%|86.5%|
-|ExSheet.Engine.WorkbookStep|100%|50%|
+|ExSheet.Engine.WorkbookStep|100%|100%|
 
 </details>
 <details><summary>ExSheet.MudBlazor - 93.9%</summary>
