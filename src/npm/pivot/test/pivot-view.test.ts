@@ -49,16 +49,10 @@ function server(): FetchingPivotSource {
 
 /** A source whose answers wait until the test lets each one through, in any order. */
 class HeldSource implements PivotSource {
-    readonly #behind: PivotSource;
+    readonly #behind = local();
     readonly held: (() => void)[] = [];
-    readonly fields: PivotSource['fields'];
-    readonly features: PivotSource['features'];
-
-    constructor(behind: PivotSource = local()) {
-        this.#behind = behind;
-        this.fields = behind.fields;
-        this.features = behind.features;
-    }
+    readonly fields = this.#behind.fields;
+    readonly features = this.#behind.features;
 
     aggregate(...args: Parameters<PivotSource['aggregate']>): ReturnType<PivotSource['aggregate']> {
         // Asked once let through, as a source asks: one whose question was given up meanwhile refuses it then.
@@ -1488,7 +1482,7 @@ describe('ExPivot\'s Defer Layout Update (ADR-0061)', () => {
     });
 
     it('ADR-0370 section 3: a move Update has shown is not named again when a later Update is refused', async () => {
-        const source = new HeldSource(server());
+        const source = new HeldSource();
         const refused: (readonly string[])[] = [];
         const { root } = mount({ source, layout: createPivotLayout({ values: ['Amount'] }), maxLeaves: 3, onRefused: event => refused.push(event.fields) });
         await settled();
