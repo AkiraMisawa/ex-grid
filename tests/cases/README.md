@@ -626,3 +626,38 @@ is answered in turn:
 | `{"detailsEach": version}` | The question for the records behind every cell of that Window, resolved from its rows, and its records: a line a cell, `column: the row's Items / the column's / the Hidden Items -> total: each record` |
 
 A report source's refusal is `{"refused": kind, "field", "saying"}`; what it throws is a refusal as above.
+
+## ExSheet's engine, under `sheet/`
+
+The cases of ExSheet's engine (ADR-0370, section 2), beside `ExcelCases` and `ExcelOracle`, which hold
+Excel's own answers: xUnit runs them against `ExSheet.Engine` (`tests/ExSheet.Engine.Tests/Cases/`) and
+Vitest against `@ex-grid/sheet-engine` (`src/npm/sheet-engine/test/`). Each file of kind `sheet` names its
+`culture` (a .NET culture name, or `invariant`) and may name `setups`, lists of steps a case runs first by
+naming one in `setup`. A case may name its own `culture`, and `sheets` to start from more than one. A case
+goes in green on the C# engine first, and the xUnit test it transcribes is then deleted.
+
+A case is a list of steps on a Workbook. A step has one verb, and may name the Sheet it is `on`, a `note`, and
+what to `expect` after it. The verbs: `enter` (each cell typed alone, in order) and `enterAll` (one batch);
+`enterRun`, a `range` typed in one batch from a template naming each cell's row as `{row}` or `{row-1}`; `do`,
+a Sheet Edit done as a step, and `check`, the same edit only checked; `undo` and `redo` of the `last` step or
+of the step at an index among those done; `reopen` from the `document` or its `json`; `remember` a picture
+of the Workbook by name; `read`; `copy` a `range` `as` a name for a later `paste`; `setNumberFormat` and
+`setAlignment` directly, outside any step; `declareTable` and `pushTable` for a Linked Table; `setToday`,
+`setSeed` and `recalculateVolatile`. An edit is an object of one key, the factory, and its arguments, as
+`SheetEdit` takes them.
+
+An expectation names readings: per cell, `values` (a string is text, a number a double, `true`/`false` a
+Boolean, `null` a Blank, `{"error": "#N/A"}` an Error Value), `displays`, `texts`, `formulas`, `entryTexts`,
+`entries`, `numberFormats`, `alignments`, `fonts`, `fills`, `borders`, `widthOnEntry` and `spilledFrom`; of
+the Sheet, `document`, `columnWidths`, `entryAddresses` and `valueAddresses`; of the step, `change`,
+`refusal` (a `check`'s), `isUndone` and `ranges`; of the Workbook, `sheets`, `shown`, and `picture` or
+`pictureNot` against one remembered. An object or a list compares in full where it is written, and a number
+exactly (`-0` apart from `0`) unless it is `{"near", "within"}`.
+
+A step that throws is read as a refusal, `{"refusal": kind, "reason"?, "saying"?}`, by .NET's exception type
+on one side and the Script Core's error on the other: `formulaSyntax` (`FormulaSyntaxException`,
+`FormulaSyntaxError`), `refused` with its `reason` (`SheetRefusedException`, `SheetRefusedError`),
+`repeatedKey`, `document` (`SheetDocumentException`, `SheetDocumentError`), `argument` (`ArgumentException`,
+`RangeError`), `format` (`FormatException`, `FormatError`) and `invalidOperation`
+(`InvalidOperationException`, `Error`). What is not the engine refusing is never read as one: the runner's
+own reading of a malformed case, an engine defect, and what JavaScript throws by itself fail the case.
