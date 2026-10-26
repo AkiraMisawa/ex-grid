@@ -4,14 +4,14 @@
 
 import { ChartSpecRefusedError, readChartSpec, type AxisScale, type ChartRange, type ChartSpecReading } from '@ex-grid/chart';
 import {
-    engineFilterOf, GridViewState, GridViewStateJsonError, InMemoryGridSource, type ColumnViewState, type GridColumn, type GridFilter, type GridSelection,
+    engineFilterOf, GridViewState, GridViewStateJsonError, InMemoryGridSource, sameGridFilter, type ColumnViewState, type GridColumn, type GridFilter, type GridSelection,
 } from '@ex-grid/core';
-import { BoardRefusedError, type BoardInput, type DataShape, type Snapshot } from '@ex-grid/data';
+import { BoardRefusedError, type BoardInput, type DataShape, type Snapshot, type SnapshotKind } from '@ex-grid/data';
 import { pivotItemKeyAt, publicKeyId, SnapshotPivotSource, writePivotLayoutJson, type PivotFieldItem, type PivotLayout } from '@ex-grid/pivot-engine';
 import { BoardChartChange, BoardDiff, BoardGridChange, BoardPivotChange, kindsOf, placed } from './board-diff';
 import { BoardOutput } from './board-output';
 import { refusedAt } from './grid-view-spec';
-import { boardInput, type BoardChartView, type BoardGridView, type BoardLink, type BoardPivotView, type BoardReading } from './board-spec';
+import { declaredInput, type BoardChartView, type BoardGridView, type BoardLink, type BoardPivotView, type BoardReading } from './board-spec';
 import { LinkCondition, narrowedPositions, narrowedSnapshot, valueAt, type BoardValue } from './link-condition';
 import { resized, shapedColumns, shapedRows, type ShapedRow } from './shaped-grid';
 import { declaredChartData } from './snapshot-values';
@@ -59,7 +59,7 @@ export function bindBoard(board: BoardReading, data: Readonly<Record<string, Sna
     const views = board.views.map((view, i): BoundView => {
         switch (view.kind) {
             case 'grid': return new BoundGridView(view, held(bound, view.grid.data), locale, `views[${i}].grid`);
-            case 'pivot': return new BoundPivotView(view, held(bound, view.input), inputOf(board, view.input).shape);
+            case 'pivot': return new BoundPivotView(view, held(bound, view.input), declaredInput(board, view.input).shape);
             case 'chart': return new BoundChartView(view, readChart(view, bound, inputs, `views[${i}].chart`, undefined));
             default: throw new Error(`Internal: ${String(view satisfies never)} is not a view.`);
         }
@@ -89,11 +89,6 @@ export function bindBoard(board: BoardReading, data: Readonly<Record<string, Sna
     return new BoundBoard(board, bound, inputs, views, dropped);
 }
 
-function inputOf(board: BoardReading, name: string): BoardInput {
-    const input = boardInput(board, name);
-    if (input === undefined) throw new Error(`Internal: a view reads input '${name}', which its Board's reader let through undeclared.`);
-    return input;
-}
 
 function held(bound: ReadonlyMap<string, Snapshot>, name: string): Snapshot {
     const snapshot = bound.get(name);
@@ -356,6 +351,7 @@ export class BoundGridView {
     // View State's is the one written, its operands as typed.
     #taggedFilter: GridFilter | undefined;
     #engineSet: GridFilter | undefined;
+    readonly #kinds: ReadonlyMap<string, SnapshotKind>;
 
     /** What kind of view it is. */
     readonly kind = 'grid';
@@ -372,6 +368,7 @@ export class BoundGridView {
     constructor(view: BoardGridView, snapshot: Snapshot, locale: string, path: string) {
         this.view = view;
         this.snapshot = snapshot;
+        this.#kinds = new Map(view.grid.columns.map(column => [column.column, column.kind]));
         const columns = shapedColumns(snapshot, view.grid, locale);
         this.#declared = new Map(columns.map(column => [column.name, column]));
         this.#shown = view.grid.viewState.columns.map(state => ({
@@ -402,8 +399,8 @@ export class BoundGridView {
      * filter its source holds, the filter's operands typed as ExBoard's C# grid types them. */
     get viewState(): GridViewState {
         const { sorts, filter } = this.source.snapshot();
-        const kinds = new Map(this.view.grid.columns.map(column => [column.column, column.kind]));
-        const typed = filter === this.#engineSet ? this.#taggedFilter : taggedFilter(filter, name => kinds.get(name));
+        // The source holds a copy of the filter it was set, so it is compared, not taken by identity.
+        const typed = sameGridFilter(filter, this.#engineSet) ? this.#taggedFilter : taggedFilter(filter, name => this.#kinds.get(name));
         const columns = this.#shown.map(shown => ({ ...shown }));
         return new GridViewState(typed === undefined ? { columns, sorts } : { columns, sorts, filter: typed });
     }
@@ -412,12 +409,12 @@ export class BoundGridView {
     get change(): BoardGridChange | undefined {
         const state = this.viewState;
         if (state.equals(this.view.grid.viewState) && this.#hidden.length === 0) return undefined;
-        const kinds = new Map(this.view.grid.columns.map(column => [column.column, column.kind]));
-        const filtered = (state.filter === undefined ? [] : Object.keys(state.filter.columns)).flatMap(column => {
-            const kind = kinds.get(column);
-            return kind === undefined ? [] : [[column, kind] as const];
-        });
-        return new BoardGridChange(state, this.#hidden, new Map(filtered));
+        const filtered = state.filter === undefined ? [] : Object.keys(state.filter.columns);
+        return new BoardGridChange(state, this.#hidden, new Map(filtered.map(column => {
+            const kind = this.#kinds.get(column);
+            if (kind === undefined) throw new Error(`Internal: the grid filters column '${column}', which it does not show.`);
+            return [column, kind] as const;
+        })));
     }
 
     /** @internal A part of a Diff already fitted to this view ({@link BoardDiff.fitTo}). A filter whose operands the
@@ -625,15 +622,15 @@ export class BoundChartView {
 
     /** What the user changed, or undefined where nothing is. */
     get change(): BoardChartChange | undefined {
-        return this.hiddenSeries.length === 0 && this.range === undefined && this.scale === undefined
-            ? undefined
-            : new BoardChartChange(this.hiddenSeries, this.range, this.scale);
+        const change = new BoardChartChange(this.hiddenSeries, this.range, this.scale);
+        return change.isNone ? undefined : change;
     }
 
     /** A series hidden or shown from the legend (ADR-0271). */
     changeVisibility(key: string, hidden: boolean): void {
         if (this.hiddenSeries.includes(key) === hidden) return;
-        this.hiddenSeries = Object.freeze(new BoardChartChange(hidden ? [...this.hiddenSeries, key] : this.hiddenSeries.filter(k => k !== key)).hiddenSeries);
+        // A part's hidden series are its keys once each, in order.
+        this.hiddenSeries = new BoardChartChange(hidden ? [...this.hiddenSeries, key] : this.hiddenSeries.filter(k => k !== key)).hiddenSeries;
     }
 
     /** The range narrowed, or returned to the whole with undefined (ADR-0273). */

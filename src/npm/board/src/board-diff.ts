@@ -15,7 +15,7 @@ import {
 import {
     PivotFormatError, PivotVersionError, readPivotLayoutJson, writePivotLayoutJson, type PivotLayout,
 } from '@ex-grid/pivot-engine';
-import { boardInput, type BoardGridView, type BoardReading, type BoardView } from './board-spec';
+import { declaredInput, type BoardGridView, type BoardReading, type BoardView } from './board-spec';
 import { members } from './json-members';
 
 const rootKeys = ['version', 'views'];
@@ -258,7 +258,7 @@ export class BoardDiff {
         for (const [id, change] of this.pivots) {
             const view = viewOf(board, id, 'pivot', dropped);
             if (view?.kind !== 'pivot') continue;
-            const declared = inputShape(board, view.input);
+            const declared = declaredInput(board, view.input).shape;
             const misfit = pivotMisfit(change, declared, view.input);
             if (misfit !== undefined) dropped.push(`views.${id}.pivot: ${misfit}`);
             else if (writePivotLayoutJson(change.layout) !== writePivotLayoutJson(view.layout)) {
@@ -288,11 +288,6 @@ export function kindsOf(shape: DataShape, columns: Iterable<string>): BoardColum
     return found;
 }
 
-function inputShape(board: BoardReading, name: string): DataShape {
-    const input = boardInput(board, name);
-    if (input === undefined) throw new Error(`Internal: a view reads input '${name}', which its Board's reader let through undeclared.`);
-    return input.shape;
-}
 
 function pivotMisfit(change: BoardPivotChange, declared: DataShape, input: string): string | undefined {
     for (const field of new Set(placed(change.layout))) {
@@ -336,6 +331,10 @@ function fitGrid(view: BoardGridView, change: BoardGridChange, dropped: string[]
     const placedColumns = new Set([...columns.map(column => column.column), ...hidden]);
     for (const added of view.grid.viewState.columns) {
         if (!placedColumns.has(added.column)) columns.push({ column: added.column, width: added.width, pinned: false });
+    }
+    if (columns.length === 0) {
+        dropped.push(`${path}: none of the columns it shows is shown by view '${view.id}' now, and a grid shows one at least.`);
+        return undefined;
     }
     const sorts: SortSpec[] = [];
     for (const sort of state.sorts) {

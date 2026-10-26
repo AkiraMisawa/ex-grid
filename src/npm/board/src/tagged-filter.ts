@@ -42,8 +42,10 @@ function tagged(value: unknown, kind: SnapshotKind, column: string): ViewStateOp
             return typeof value === 'number' && Number.isSafeInteger(value) ? { type: 'int64', value: BigInt(value) } : refuse();
         }
         case 'decimal': {
-            if (typeof value === 'bigint') return { type: 'decimal', value: { mantissa: value, scale: 0 } };
-            return typeof value === 'number' && Number.isFinite(value) ? { type: 'decimal', value: decimalOfNumber(value) } : refuse();
+            if (typeof value === 'bigint') return held(value, 0) ? { type: 'decimal', value: { mantissa: value, scale: 0 } } : refuse();
+            // The engine compares a number column at C#'s decimal, and refuses a number no Decimal holds.
+            const decimal = typeof value === 'number' && Number.isFinite(value) ? decimalOfNumber(value) : undefined;
+            return decimal === undefined ? refuse() : { type: 'decimal', value: decimal };
         }
         case 'date': {
             const ticks = typeof value === 'object' && value !== null ? ticksOfTemporal(value) : undefined;
@@ -53,12 +55,18 @@ function tagged(value: unknown, kind: SnapshotKind, column: string): ViewStateOp
     }
 }
 
-// A number as the Decimal its shortest text names: 12.5 as 12.5, 1e-7 as 0.0000001.
-function decimalOfNumber(value: number): SnapshotDecimal {
+// A number as the Decimal its shortest text names, 12.5 as 12.5 and 1e-7 as 0.0000001, or undefined where a Decimal
+// holds no such number: more than 28 places, or more than 96 bits of digits.
+function decimalOfNumber(value: number): SnapshotDecimal | undefined {
     const [mantissa = '', exponent = ''] = value.toExponential().split('e');
     const digits = mantissa.replace('.', '').replace('-', '');
     const places = digits.length - 1 - Number(exponent);
-    if (places > 28) throw new TypeError(`${value} has more places than a Decimal holds (28).`);
     const whole = BigInt((value < 0 ? '-' : '') + digits);
-    return places >= 0 ? { mantissa: whole, scale: places } : { mantissa: whole * 10n ** BigInt(-places), scale: 0 };
+    const decimal = places >= 0 ? { mantissa: whole, scale: places } : { mantissa: whole * 10n ** BigInt(-places), scale: 0 };
+    return held(decimal.mantissa, decimal.scale) ? decimal : undefined;
+}
+
+// Whether a .NET decimal holds these digits at this scale.
+function held(mantissa: bigint, scale: number): boolean {
+    return scale <= 28 && (mantissa < 0n ? -mantissa : mantissa) < 2n ** 96n;
 }

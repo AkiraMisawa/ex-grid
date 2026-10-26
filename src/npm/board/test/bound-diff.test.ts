@@ -108,6 +108,21 @@ describe('a bound Board\'s Diff (ADR-0340 Q7)', () => {
         expect(again.source.snapshot().window.map(row => row.at)).toEqual([0, 2]);
     });
 
+    it('raises nothing for a spec\'s own filter, its operands as the spec types them', () => {
+        const filtered = readBoard(JSON.stringify({
+            version: 1, inputs: { trades: { columns: [{ name: 'id', type: 'text' }, { name: 'pnl', type: 'decimal' }] } },
+            views: [{ id: 'blotter', grid: { data: 'trades', columns: [{ column: 'id' }, { column: 'pnl', format: '#,##0.00' }],
+                filter: { columns: { pnl: { combinator: 'And', clauses: [{ operator: 'GreaterThan', value: { type: 'Decimal', value: '1.50' } }] } } } } }],
+            layout: [{ views: ['blotter'] }],
+        }));
+        const trades = boardInput(filtered, 'trades');
+        if (trades === undefined) throw new Error('No input trades.');
+        const bound = bindBoard(filtered, { trades: trades.fromJson('[{"id": "T-1", "pnl": 1}, {"id": "T-2", "pnl": 2}]') });
+
+        expect(bound.diff.isEmpty).toBe(true);
+        expect(view(bound, 'blotter', 'grid').source.snapshot().window.map(row => row.at)).toEqual([1]);
+    });
+
     it('drops by name a filter whose operands the grid cannot compare, and applies the rest', () => {
         const json = '{"version":1,"views":{"blotter":{"grid":{"viewState":{"version":1,"columns":[{"column":"pnl","width":90,"pinned":false},'
             + '{"column":"id","width":"Auto","pinned":false},{"column":"desk","width":"Auto","pinned":false}],"sorts":[],'

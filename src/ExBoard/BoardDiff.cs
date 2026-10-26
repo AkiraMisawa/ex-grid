@@ -250,6 +250,11 @@ public sealed class BoardDiff
         var placed = columns.Select(c => c.Column).Concat(hidden).ToHashSet(StringComparer.Ordinal);
         foreach (var added in view.Grid.ViewState.Columns.Where(c => !placed.Contains(c.Column)))
             columns.Add(new ColumnViewState(added.Column, added.Width));
+        if (columns.Count == 0)
+        {
+            dropped.Add($"{path}: none of the columns it shows is shown by view '{view.Id}' now, and a grid shows one at least.");
+            return null;
+        }
         var sorts = new List<SortSpec>();
         foreach (var sort in state.Sorts)
         {

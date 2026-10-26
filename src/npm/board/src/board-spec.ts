@@ -159,6 +159,13 @@ export function boardInput(board: BoardReading, name: string): BoardInput | unde
     return board.inputs.find(input => input.name === name);
 }
 
+/** @internal The input a view of `board` reads, which the reader has checked the Board declares. */
+export function declaredInput(board: BoardReading, name: string): BoardInput {
+    const input = boardInput(board, name);
+    if (input === undefined) throw new Error(`Internal: a view reads input '${name}', which its Board's reader let through undeclared.`);
+    return input;
+}
+
 /** The view of `board` whose id is `id`, or `undefined`. */
 export function boardView(board: BoardReading, id: string): BoardView | undefined {
     return board.views.find(view => view.id === id);
