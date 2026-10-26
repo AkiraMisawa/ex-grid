@@ -4,10 +4,9 @@
 import { axisTitle } from './csv';
 import type { ChartDefinition } from './definition';
 import { upToPlaces } from './invariant-text';
-import type { ChartView } from './metrics';
 import type { ChartAxis, ChartPoint, ChartSeries, ChartValue } from './model';
-import { defined, elementAt } from './must';
-import { greatest, least } from './numbers';
+import { defined } from './must';
+import { firstBy, greatest, least } from './numbers';
 import { valueRange } from './point-scales';
 import type { ChartScene } from './scene';
 import { toNumber, writePosition, writeValue } from './values';
@@ -15,9 +14,9 @@ import { toNumber, writePosition, writeValue } from './values';
 /**
  * The chart's name, the horizontal axis with its range, each panel's vertical axes with theirs, and each
  * visible series with its maximum, written through its format, then the Consumer's description. The view
- * is the one the scene was built with, which the scene already holds.
+ * is the scene's own: what it hides and the range it shows are already laid out in it.
  */
-export function chartSummary(definition: ChartDefinition, scene: ChartScene, _view: ChartView, title?: string, description?: string): string {
+export function chartSummary(definition: ChartDefinition, scene: ChartScene, title?: string, description?: string): string {
     const axis = definition.axis;
     const parts: string[] = [];
     if (title !== undefined && title.trim() !== '') {
@@ -49,8 +48,8 @@ function series(s: ChartSeries, axis: ChartAxis, scene: ChartScene): string {
         if (seen.length === 0) {
             return `${s.name}: no point in range.`;
         }
-        const low = first(seen, (a, b) => a < b);
-        const high = first(seen, (a, b) => a > b);
+        const low = firstBy(seen, p => toNumber(p.y), (a, b) => a < b);
+        const high = firstBy(seen, p => toNumber(p.y), (a, b) => a > b);
         const xs = seen.map(p => p.x);
         const across = `${writePosition(axis, least(xs))} to ${writePosition(axis, greatest(xs))} across, ${writeValue(s, low.y)} to ${writeValue(s, high.y)} up.`;
         let said = s.edges.length > 0
@@ -74,7 +73,7 @@ function series(s: ChartSeries, axis: ChartAxis, scene: ChartScene): string {
     if (seen.length === 0) {
         return `${s.name}: no value in range.`;
     }
-    const max = first(seen, (a, b) => a > b);
+    const max = firstBy(seen, p => toNumber(p.y), (a, b) => a > b);
     return `${s.name}: maximum ${writeValue(s, max.y)} at ${writePosition(axis, max.x)}.`;
 }
 
@@ -84,7 +83,7 @@ function volume(s: ChartSeries, axis: ChartAxis, scene: ChartScene): string {
     if (seen.length === 0) {
         return `${s.name} volume: no value in range.`;
     }
-    const max = first(seen, (a, b) => a > b);
+    const max = firstBy(seen, p => toNumber(p.y), (a, b) => a > b);
     return `${s.name} volume: maximum ${writeValue(s, max.y)} at ${writePosition(axis, max.x)}.`;
 }
 
@@ -98,14 +97,5 @@ function valued(points: readonly { readonly x: number; readonly y: ChartValue | 
 }
 
 // The first point whose value `before` puts ahead of every other's, as C#'s MinBy and MaxBy take it.
-function first(points: readonly Valued[], before: (a: number, b: number) => boolean): Valued {
-    let best = elementAt(points, 0);
-    for (const p of points) {
-        if (before(toNumber(p.y), toNumber(best.y))) {
-            best = p;
-        }
-    }
-    return best;
-}
 
 const number = (v: number): string => upToPlaces(v, 4);

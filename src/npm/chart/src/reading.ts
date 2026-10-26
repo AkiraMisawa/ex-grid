@@ -3,11 +3,13 @@
 // is only ever one the Consumer handed in or its sampler answered; nothing is read between two points. The
 // port of the C# engine's `ChartReadings`, held to it by the shared cases under tests/cases/chart/.
 import type { ChartDefinition } from './definition';
-import { resolveMetrics, type ChartMetrics, type ChartView } from './metrics';
+import { resolveMetrics, type ChartMetrics } from './metrics';
 import type { ChartAxis, ChartPoint, ChartSeries, ChartValue, SeriesInterval, SeriesLook, StepSide } from './model';
 import { defined, elementAt } from './must';
+import { firstBy } from './numbers';
 import { candlesOf, hasOpen, percentChange, periodStart, wholeBar } from './price-ranges';
 import { yOf, type ChartScene, type PanelScene, type SeriesPiece } from './scene';
+import { segmentAt } from './series-drawing';
 import { invariantText, toNumber, writeObject, writePosition, writeValue, yearsBetween } from './values';
 
 /** One series' line in the tooltip (ADR-0270). */
@@ -39,9 +41,9 @@ export interface ChartReading {
 /**
  * What the tooltip says at `position` in panel `panel` of `scene`, built from `definition` at `metrics`.
  * Past what fits the plot's height, the series nearest `pointerY` are listed and the rest counted. The
- * view is the one the scene was built with, which the scene already holds.
+ * view is the scene's own: what it hides and the range it shows are already laid out in it.
  */
-export function readingAt(definition: ChartDefinition, scene: ChartScene, metrics: ChartMetrics, _view: ChartView, position: number, panel: number,
+export function readingAt(definition: ChartDefinition, scene: ChartScene, metrics: ChartMetrics, position: number, panel: number,
     pointerY: number): ChartReading {
     const p = scene.panels[panel];
     if (p === undefined) {
@@ -166,8 +168,8 @@ function line(s: ChartSeries, piece: SeriesPiece, panel: PanelScene, axis: Chart
     if (thinned !== undefined && s.sampler === undefined) {
         const held = s.points.flatMap(q => (q.x >= thinned.from && q.x <= thinned.to && q.y !== null ? [q.y] : []));
         if (held.length > 1) {
-            const lo = extreme(held, (a, b) => a < b);
-            const hi = extreme(held, (a, b) => a > b);
+            const lo = firstBy(held, toNumber, (a, b) => a < b);
+            const hi = firstBy(held, toNumber, (a, b) => a > b);
             const at = s.kind === 'amountPerPeriod' ? null : y((toNumber(lo) + toNumber(hi)) / 2);
             return make(`${writeValue(s, lo)} – ${writeValue(s, hi)}`,
                 `${String(held.length)} points, ${writePosition(axis, thinned.from)} – ${writePosition(axis, thinned.to)}`, at);
@@ -209,24 +211,14 @@ function line(s: ChartSeries, piece: SeriesPiece, panel: PanelScene, axis: Chart
     return make(writeValue(s, held), note, y(drawn));
 }
 
-// The first of the values that `before` puts ahead of every other, as C#'s MinBy and MaxBy take it.
-function extreme(values: readonly ChartValue[], before: (a: number, b: number) => boolean): ChartValue {
-    let best = elementAt(values, 0);
-    for (const v of values) {
-        if (before(toNumber(v), toNumber(best))) {
-            best = v;
-        }
-    }
-    return best;
-}
 
 // A candle's four values, its change from the previous candle's close and its volume; a merged candle names
 // its period and how many rows it holds (ADR-0300, ADR-0302). In a volume panel, the volume alone.
 function candle(s: ChartSeries, piece: SeriesPiece, panel: PanelScene, scene: ChartScene, axis: ChartAxis, x: number): ReadingLine {
     const vertical = panel.left;
     const plot = panel.plot;
-    const y = (height: number): number | null => (vertical === null ? null
-        : plot.y + plot.height - (vertical.max === vertical.min ? 0.5 : (height - vertical.min) / (vertical.max - vertical.min)) * plot.height);
+    // Through the axis' own scale, as the candle is drawn, so a logarithmic axis reads where it paints.
+    const y = (height: number): number | null => (vertical === null ? null : yOf(vertical, height, plot));
     const make = (value: string | null, note: string | null, at: number | null): ReadingLine => readingLine(s.id, piece.name, piece.look, value, note, at);
     const period = piece.period;
     // The candles as drawn, over the range shown, so the tooltip reads what the plot draws.
@@ -305,7 +297,7 @@ function intervalAt(points: readonly ChartPoint[], x: number, side: StepSide): r
 
 // An interpolated value says so (ADR-0257), with its Segment's method where one covers it.
 function method(s: ChartSeries, x: number): string | null {
-    const g = s.segments.find(k => k.from <= x && x < k.to) ?? s.segments.findLast(k => k.to === x);
+    const g = segmentAt(s, x);
     if (g !== undefined) {
         return g.extrapolated === true ? `${g.method}, extrapolated` : s.interpolated ? `interpolated, ${g.method}` : g.method;
     }

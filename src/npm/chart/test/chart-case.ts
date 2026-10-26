@@ -248,8 +248,6 @@ export class ChartCase {
                 // The tooltip of the scene the case lays out, at a position, over a mark or over an edge.
                 const a = allow(args, 'reading', [...sceneKeys, 'at']);
                 const d = this.#definition(op['definition']);
-                // A reading names the view its scene is laid out with, as the tooltip is always read of one.
-                const v = view(a['view']);
                 const laid = laidOut(d, a);
                 const at = a['at'];
                 if (isObject(at) && at['mark'] !== undefined) {
@@ -259,14 +257,14 @@ export class ChartCase {
                     return readingOfEdge(d, laid, whole(allow(at, 'at', ['edge'])['edge'], 'edge'));
                 }
                 const p = allow(at, 'at', ['position', 'panel', 'pointerY']);
-                return readingAt(d, laid, metrics(a['metrics']), v, position(p['position']), whole(p['panel'], 'panel'), number(p['pointerY']));
+                return readingAt(d, laid, metrics(a['metrics']), position(p['position']), whole(p['panel'], 'panel'), number(p['pointerY']));
             }
             case 'summary': {
                 const a = allow(args, 'summary', [...sceneKeys, 'title', 'description']);
                 const d = this.#definition(op['definition']);
                 const title = optional(a, 'title', t => string(t, 'title'));
                 const description = optional(a, 'description', t => string(t, 'description'));
-                return chartSummary(d, laidOut(d, a), view(a['view']), title, description);
+                return chartSummary(d, laidOut(d, a), title, description);
             }
             case 'csv': {
                 const a = allow(args, 'csv', ['form', 'metrics', 'view']);

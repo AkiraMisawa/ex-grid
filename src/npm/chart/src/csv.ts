@@ -10,7 +10,7 @@ import type { ChartAxis, ChartPoint, ChartSeries, ChartValue, PriceBar, SeriesIn
 import { defined, elementAt, unreachable } from './must';
 import { hasOpen } from './price-ranges';
 import { frameOf, quotesOf } from './scene';
-import { sample } from './series-drawing';
+import { sample, segmentAt } from './series-drawing';
 import { invariantText, writeObject } from './values';
 
 /** A table of what the chart shows: a header and rows of invariant text. */
@@ -247,10 +247,10 @@ function extra(s: ChartSeries, points: readonly ChartPoint[]): Column[] {
 }
 
 function kindOf(s: ChartSeries, x: number): readonly [kind: string, method: string] {
-    const g = s.segments.find(k => k.from <= x && x < k.to) ?? s.segments.findLast(k => k.to === x);
     if (s.kind === 'observation') {
         return ['observed', ''];
     }
+    const g = segmentAt(s, x);
     if (g !== undefined && g.extrapolated === true) {
         return ['extrapolated', g.method];
     }

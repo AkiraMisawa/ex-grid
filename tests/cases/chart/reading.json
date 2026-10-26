@@ -3161,6 +3161,49 @@
       ]
     },
     {
+      "name": "ADR-0300, ADR-0290: on a logarithmic axis a candle is read at the height its close is drawn",
+      "definition": {
+        "axis": {
+          "values": "dates"
+        },
+        "series": [
+          {
+            "id": "idx",
+            "name": "Index",
+            "kind": "priceRange",
+            "bars": {
+              "weekdays": {
+                "count": 3
+              }
+            }
+          }
+        ]
+      },
+      "reading": {
+        "metrics": {
+          "width": 1200,
+          "height": 400
+        },
+        "view": {
+          "yScale": "logarithmic"
+        },
+        "at": {
+          "position": {
+            "date": "2026-01-06"
+          },
+          "panel": 0,
+          "pointerY": 0
+        }
+      },
+      "expect": [
+        {
+          "at": "lines.0.y",
+          "is": 202.34,
+          "near": 0.01
+        }
+      ]
+    },
+    {
       "name": "ADR-0270: past what fits the plot, the nearest series are listed and the rest counted",
       "build": {
         "scene": {

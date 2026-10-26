@@ -217,7 +217,7 @@ export interface ChartSeriesOptions {
 }
 
 // @public
-export function chartSummary(definition: ChartDefinition, scene: ChartScene, _view: ChartView, title?: string, description?: string): string;
+export function chartSummary(definition: ChartDefinition, scene: ChartScene, title?: string, description?: string): string;
 
 // @public
 export interface ChartTable {
@@ -440,7 +440,7 @@ export interface PriceBar {
 }
 
 // @public
-export function readingAt(definition: ChartDefinition, scene: ChartScene, metrics: ChartMetrics, _view: ChartView, position: number, panel: number, pointerY: number): ChartReading;
+export function readingAt(definition: ChartDefinition, scene: ChartScene, metrics: ChartMetrics, position: number, panel: number, pointerY: number): ChartReading;
 
 // @public
 export interface ReadingLine {
