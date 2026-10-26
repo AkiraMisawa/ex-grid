@@ -112,7 +112,12 @@ export interface ChartOptions {
 // The lattice, in CSS pixels, a drag across a scatter is followed on (ADR-0290).
 const dragCell = 4;
 
-let instances = 0;
+// A summary's id, unique on the page even beside another copy of this package: random, as the Razor
+// component's is a GUID.
+function uniqueId(): string {
+    const bytes = crypto.getRandomValues(new Uint8Array(8));
+    return `ex-chart-${Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('')}`;
+}
 
 const svgNs = 'http://www.w3.org/2000/svg';
 
@@ -234,6 +239,7 @@ export class ChartElement {
     #toText: string | null = null;
     #filterError: string | null = null;
     #menu: { readonly x: number; readonly y: number } | null = null;
+    #menuShape: string | null = null;
 
     // The elements the chart keeps between paints.
     readonly #toolbar: HTMLDivElement;
@@ -241,6 +247,11 @@ export class ChartElement {
     readonly #svg: SVGSVGElement;
     readonly #title: SVGTitleElement;
     #filters: HTMLDivElement | null = null;
+    readonly #notice: HTMLDivElement;
+    // The root's own properties the chart sets, so destroy() takes back only those.
+    static readonly #rootProperties = ['width', 'font-size', '--ex-chart-line-height'] as const;
+    // The SVG parts of the scene last drawn, kept while the scene and the angle are the same.
+    #drawn: { readonly built: Built; readonly angle: number; readonly parts: readonly DrawingPart[] } | null = null;
     #menuParts: readonly HTMLElement[] = [];
     #notes: HTMLUListElement | null = null;
     #tableBlock: HTMLElement | null = null;
@@ -255,8 +266,7 @@ export class ChartElement {
 
     constructor(root: HTMLElement, options: ChartOptions) {
         this.#root = root;
-        instances += 1;
-        this.#summaryId = `ex-chart-${String(instances)}`;
+        this.#summaryId = uniqueId();
         this.#options = ChartElement.#checked(options);
 
         root.replaceChildren();
@@ -267,6 +277,7 @@ export class ChartElement {
         notice.setAttribute('data-ex-stamp', stylesheetStamp);
         notice.style.display = 'none';
         root.append(notice);
+        this.#notice = notice;
         this.#toolbar = document.createElement('div');
         this.#toolbar.className = 'ex-chart-toolbar';
         this.#toolbar.setAttribute('role', 'toolbar');
@@ -291,7 +302,7 @@ export class ChartElement {
         listen('pointermove', e => { this.#onMove(e); });
         listen('pointerdown', e => { this.#onDown(e); });
         listen('pointerup', e => { this.#onUp(e); });
-        listen('pointercancel', e => { this.#onUp(e); });
+        listen('pointercancel', () => { this.#onCancel(); });
         listen('pointerleave', () => { this.#onLeave(); });
         listen('click', e => { this.#onClick(e); });
         listen('dblclick', e => { this.#onDoubleClick(e); });
@@ -327,7 +338,9 @@ export class ChartElement {
         }
         this.#root.replaceChildren();
         this.#root.classList.remove('ex-chart');
-        this.#root.removeAttribute('style');
+        for (const property of ChartElement.#rootProperties) {
+            this.#root.style.removeProperty(property);
+        }
     }
 
     /**
@@ -767,10 +780,25 @@ export class ChartElement {
         this.#over = point;
         const index = point === null ? -1 : this.#indexAt(point);
         if (this.#scene.scatter || this.#pressAt !== null) {
+            // A line chart's press that a scatter replaced while it was held ends here too.
+            this.#press = null;
             this.#releaseScatter(index, point === null ? -1 : this.#snap(point.x), point === null ? -1 : this.#snap(point.y));
         } else {
+            this.#pressAt = null;
             this.#release(index);
         }
+    }
+
+    // The browser took the gesture (a system gesture, a scroll): the press is dropped, never released, so
+    // nothing is narrowed or clicked by a pointer that did not let go here.
+    #onCancel(): void {
+        if (this.#press === null && this.#pressAt === null) {
+            return;
+        }
+        this.#press = null;
+        this.#pressAt = null;
+        this.#dragAt = null;
+        this.#paintPointer();
     }
 
     // A drag ends (ADR-0273): narrowed to the positions it began and ended on, unless the drawing it began
@@ -1105,7 +1133,10 @@ export class ChartElement {
 
     #paint(): void {
         const root = this.#root;
-        root.style.cssText = `width:${n(this.#width)}px;font-size:${n(this.#fontSize)}px;--ex-chart-line-height:${n(this.#lineHeight)}px`;
+        // Only the chart's own properties, so a style the Consumer gave the element stays.
+        root.style.setProperty('width', `${n(this.#width)}px`);
+        root.style.setProperty('font-size', `${n(this.#fontSize)}px`);
+        root.style.setProperty('--ex-chart-line-height', `${n(this.#lineHeight)}px`);
         this.#paintToolbar();
         this.#paintFilters();
         this.#paintStage();
@@ -1115,6 +1146,7 @@ export class ChartElement {
     }
 
     #paintToolbar(): void {
+        setText(this.#notice, this.#word(chartWordIds.stylesheetNotice));
         const toolbar = this.#toolbar;
         toolbar.setAttribute('aria-label', this.#name);
         if (toolbar.childElementCount === 0) {
@@ -1160,11 +1192,10 @@ export class ChartElement {
             filters = document.createElement('div');
             filters.className = 'ex-chart-filters';
             filters.setAttribute('role', 'group');
-            const field = (word: string, cls: string, value: string | null): HTMLLabelElement => {
+            const field = (cls: string, value: string | null): HTMLLabelElement => {
                 const label = document.createElement('label');
                 label.className = 'ex-chart-filter';
                 const span = document.createElement('span');
-                span.textContent = word;
                 const input = document.createElement('input');
                 input.className = cls;
                 input.type = 'text';
@@ -1175,13 +1206,18 @@ export class ChartElement {
             const apply = document.createElement('button');
             apply.type = 'button';
             apply.className = 'ex-chart-button ex-chart-apply';
-            filters.append(field(this.#word(chartWordIds.from), 'ex-chart-from', this.#fromText), field(this.#word(chartWordIds.to), 'ex-chart-to', this.#toText), apply);
+            filters.append(field('ex-chart-from', this.#fromText), field('ex-chart-to', this.#toText), apply);
             this.#toolbar.after(filters);
             this.#filters = filters;
         }
         filters.setAttribute('aria-label', this.#word(chartWordIds.filters));
         for (const input of filters.querySelectorAll('input')) {
             input.placeholder = hint;
+        }
+        // The words are written on every paint, so a label changed while the panel is open reaches them.
+        for (const [cls, id] of [['ex-chart-from', chartWordIds.from], ['ex-chart-to', chartWordIds.to]] as const) {
+            const input = found(filters.querySelector(`.${cls}`), `the ${cls} field`);
+            setText(found(input.previousElementSibling, `the ${cls} field's label`), this.#word(id));
         }
         setText(found(filters.querySelector('.ex-chart-apply'), 'the Apply button'), this.#word(chartWordIds.apply));
         const existing = filters.querySelector('.ex-chart-scale');
@@ -1190,13 +1226,11 @@ export class ChartElement {
             scaleField = document.createElement('label');
             scaleField.className = 'ex-chart-filter';
             const span = document.createElement('span');
-            span.textContent = this.#word(chartWordIds.axis);
             const select = document.createElement('select');
             select.className = 'ex-chart-scale';
-            for (const [value, id] of [['Proportional', chartWordIds.proportional], ['Categories', chartWordIds.categories]] as const) {
+            for (const value of ['Proportional', 'Categories']) {
                 const option = document.createElement('option');
                 option.value = value;
-                option.textContent = this.#word(id);
                 select.append(option);
             }
             scaleField.append(span, select);
@@ -1207,6 +1241,10 @@ export class ChartElement {
         }
         const select = scaleField === null ? null : scaleField.querySelector('select');
         if (select !== null) {
+            setText(found(select.previousElementSibling, 'the Axis label'), this.#word(chartWordIds.axis));
+            for (const option of select.options) {
+                setText(option, this.#word(option.value === 'Categories' ? chartWordIds.categories : chartWordIds.proportional));
+            }
             select.value = (this.#scale ?? axis.effectiveScale) === 'categories' ? 'Categories' : 'Proportional';
         }
         let error = filters.querySelector('.ex-chart-filter-error');
@@ -1237,7 +1275,10 @@ export class ChartElement {
         // The parts, each rewritten only when its markup changed, then the band and the guide over them.
         const lh = this.#lineHeight;
         const kept = new Map(this.#parts.map(p => [p.key, p]));
-        const parts = [...drawingParts(scene, lh, this.#angle), this.#bandPart(), this.#guidePart()].map(part => {
+        const drawn = this.#drawn !== null && this.#drawn.built === this.#built && this.#drawn.angle === this.#angle
+            ? this.#drawn : { built: this.#built, angle: this.#angle, parts: drawingParts(scene, lh, this.#angle) };
+        this.#drawn = drawn;
+        const parts = [...drawn.parts, this.#bandPart(), this.#guidePart()].map(part => {
             const old = kept.get(part.key);
             kept.delete(part.key);
             if (old !== undefined && old.markup === part.markup) {
@@ -1374,9 +1415,16 @@ export class ChartElement {
     }
 
     #paintMenu(): void {
+        const at = this.#menu;
+        const commands = this.#menuCommands();
+        // An open menu is kept while it would be drawn the same, so a paint behind it never takes its focus.
+        const shape = at === null ? null : JSON.stringify([at, this.#name, commands.map(c => [c.id, c.label, c.enabled])]);
+        if (shape === this.#menuShape) {
+            return;
+        }
+        this.#menuShape = shape;
         this.#menuParts.forEach(part => { part.remove(); });
         this.#menuParts = [];
-        const at = this.#menu;
         if (at === null) {
             return;
         }
@@ -1390,7 +1438,7 @@ export class ChartElement {
         menu.setAttribute('aria-label', this.#name);
         menu.tabIndex = -1;
         menu.style.cssText = `left:${n(at.x)}px;top:${n(at.y)}px`;
-        for (const command of this.#menuCommands()) {
+        for (const command of commands) {
             const item = document.createElement('button');
             item.type = 'button';
             item.setAttribute('role', 'menuitem');
@@ -1429,6 +1477,10 @@ export class ChartElement {
     #paintTable(): void {
         const shown: ChartTable | 'notice' | null = !this.#tableOpen ? null : this.#thinnedAtSource ? 'notice' : this.#table;
         const caption = this.#options.title === undefined || this.#options.title.trim() === '' ? this.#word(chartWordIds.chartData) : this.#options.title;
+        if (shown === 'notice' && this.#tableShown === 'notice' && this.#tableBlock !== null) {
+            setText(this.#tableBlock, this.#word(chartWordIds.thinnedAtSource));
+            return;
+        }
         if (shown === this.#tableShown && this.#tableBlock?.querySelector('caption')?.textContent === caption) {
             return;
         }

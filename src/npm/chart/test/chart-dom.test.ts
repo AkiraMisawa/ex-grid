@@ -224,6 +224,19 @@ describe('createChart', () => {
         expect(heard).toEqual([]);
     });
 
+    it('ADR-0273: a gesture the browser cancels is dropped, never released', () => {
+        const heard: (ChartRange | null)[] = [];
+        const { root } = mount({ definition: definition(), onRangeChanged: range => { heard.push(range); } });
+        pointer('pointermove', at(root, 0.25));
+        pointer('pointerdown', at(root, 0.25));
+        pointer('pointermove', at(root, 0.75));
+        expect(root.querySelector('.ex-chart-band')).not.toBeNull();
+        pointer('pointercancel', at(root, 0));
+        expect(root.querySelector('.ex-chart-band')).toBeNull();
+        pointer('pointerup', at(root, 0.75));
+        expect(heard).toEqual([]);
+    });
+
     it('ADR-0258: a click names the nearest series that has a value there, at the position clicked', () => {
         const clicks: ChartPointClick[] = [];
         const { root } = mount({ definition: definition(), onPointClick: c => { clicks.push(c); } });
@@ -323,7 +336,7 @@ describe('createChart', () => {
     });
 
     it('ADR-0281: the context menu opens where it was asked for, runs a command and closes; Escape closes it', () => {
-        const { root } = mount({ definition: definition() });
+        const { root, chart } = mount({ definition: definition() });
         hit(root).dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, clientX: 120, clientY: 80, cancelable: true }));
         const menu = q(root, '.ex-chart-menu', HTMLElement);
         expect(menu.getAttribute('style')).toBe('left: 120px; top: 80px;');
@@ -340,7 +353,12 @@ describe('createChart', () => {
         expect(root.querySelector('.ex-chart-table')).not.toBeNull();
         hit(root).dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true }));
         expect(q(root, '[data-ex-command="exchart.table"]').textContent).toBe('Hide table');
-        q(root, '.ex-chart-menu').dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+        // A paint behind the open menu keeps it, and its focus.
+        const open = q(root, '.ex-chart-menu', HTMLElement);
+        chart.update({ definition: definition() });
+        expect(q(root, '.ex-chart-menu')).toBe(open);
+        expect(document.activeElement).toBe(open);
+        open.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
         expect(root.querySelector('.ex-chart-menu')).toBeNull();
     });
 
@@ -401,6 +419,13 @@ describe('createChart', () => {
         chart.update({ definition: definition(), label: id => (id === 'exchart.filters' ? 'Filters' : japaneseChartWords(id)) });
         expect(q(root, '.ex-chart-filters-toggle').textContent).toBe('Filters');
         expect(q(root, '.ex-chart-reset').textContent).toBe('範囲をリセット');
+        expect(q(root, '[data-ex-notice="stylesheet"]').textContent).toBe(japaneseChartWords('exchart.notice.stylesheet'));
+        // Words changed while Chart Filters is open reach its fields too.
+        chart.update({ definition: definition() });
+        click(q(root, '.ex-chart-filters-toggle'));
+        expect(q(root, '.ex-chart-from').previousElementSibling?.textContent).toBe('From');
+        chart.update({ definition: definition(), label: japaneseChartWords });
+        expect(q(root, '.ex-chart-from').previousElementSibling?.textContent).toBe(japaneseChartWords('exchart.filters.from'));
     });
 
     it('ADR-0290: on a scatter the pointer reads the nearest mark, a click raises its row and a rectangle narrows both axes', () => {
@@ -481,10 +506,16 @@ describe('createChart', () => {
         expect(() => createChart(root, { definition: definition(), width: -1 })).toThrow(RangeError);
         // @ts-expect-error -- an untyped caller's handler that is not a function
         expect(() => createChart(root, { definition: definition(), onPointClick: 'no' })).toThrow(TypeError);
-        const { root: drawn, chart } = mount({ definition: definition() });
+        const drawn = document.createElement('div');
+        drawn.style.margin = '8px';
+        document.body.append(drawn);
+        const chart = createChart(drawn, { definition: definition() });
+        expect(drawn.style.width).toBe('800px');
         chart.destroy();
         expect(drawn.childElementCount).toBe(0);
         expect(drawn.className).toBe('');
+        // The chart takes back only what it set: the Consumer's own style stays.
+        expect(drawn.getAttribute('style')).toBe('margin: 8px;');
         expect(() => { chart.update({ definition: definition() }); }).toThrow(Error);
     });
 });
