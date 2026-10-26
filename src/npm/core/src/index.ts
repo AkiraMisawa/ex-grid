@@ -59,3 +59,13 @@ export type { FilterClause, FilterCombinator, FilterOperator } from './query/fil
 export type { GridReplaceResult, GridReplacedRow } from './finding/replace';
 export type { MarksHost } from './source/in-memory-row-marks';
 export type { GridReplaceRefusedCell } from './finding/replace';
+export { FormatCode } from './shaped/format-code';
+export type { FormatCodeReading, FormatCodeValue } from './shaped/format-code';
+export { GridViewState, sameGridFilter, sameGridQuery } from './view-state/view-state';
+export type {
+    ColumnViewState, ColumnViewStateWidth, GridViewStateOptions, ViewStateColumnSource, ViewStateDateTimeKind, ViewStateIntegerType,
+    ViewStateOperand,
+} from './view-state/view-state';
+export {
+    GridViewStateJson, GridViewStateJsonError, readGridQueryJson, readGridViewStateJson, writeGridQueryJson, writeGridViewStateJson,
+} from './view-state/view-state-json';

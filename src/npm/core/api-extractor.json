@@ -2,6 +2,9 @@
 {
   "$schema": "https://developer.microsoft.com/json-schemas/api-extractor/v7/api-extractor.schema.json",
   "mainEntryPointFilePath": "<projectFolder>/temp/types/index.d.ts",
+  // @ex-grid/data is read as it is published, from its build, as tsconfig.build.json reads it.
+  "compiler": { "tsconfigFilePath": "<projectFolder>/tsconfig.build.json" },
+  "bundledPackages": [],
   "apiReport": {
     "enabled": true,
     "reportFolder": "<projectFolder>/etc/",

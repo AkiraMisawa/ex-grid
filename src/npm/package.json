@@ -6,8 +6,8 @@
   "license": "MIT",
   "type": "module",
   "workspaces": [
-    "core",
     "data",
+    "core",
     "chart",
     "pivot-engine",
     "board",

@@ -12,6 +12,7 @@
       "react": ["./node_modules/@types/react/index.d.ts"],
       "react/*": ["./node_modules/@types/react/*"],
       "@ex-grid/core": ["../../src/npm/core/src/index.ts"],
+      "@ex-grid/data": ["../../src/npm/data/src/index.ts"],
       "@ex-grid/react": ["../../src/npm/react/src/index.ts"]
     }
   },

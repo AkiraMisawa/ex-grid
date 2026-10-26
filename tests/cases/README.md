@@ -320,6 +320,48 @@ answer holds, and no other, each `"empty"`, `{"exact": text}` (the decimal, writ
 `{"error": name}` (`divideByZero`, `notANumber`, `errorAmongValues`). `texts` gives the text a figure is shown
 with where no format applies.
 
+## `formatCode`
+
+An Excel number format code in the invariant spelling, as a grid built from a source's shape reads it
+(ADR-0342, ADR-0120), under `shaped/`: run by `tests/ExGrid.Tests/Cases/FormatCodeCaseTests.cs` against
+`FormatCode` and by `src/npm/core/test/format-code.test.ts` against the Script Core's `FormatCode`. A case
+names its `code` and either `refused`, the reason whole (the phrase that completes "the format code …"), or
+`isDate` and `texts`, each a `value`, the `locale` it is written in (`invariant` or a BCP 47 tag, ADR-0370
+section 10) and the text it `is`. A value is written as a Snapshot holds it: a JSON number a double,
+`{"decimal": text}` a decimal, `{"integer": text}` a long and a bigint, `{"double": text}` a double JSON cannot
+hold (`"NaN"`, `"Infinity"`), `{"date": text}` a DateTime and a Date's ticks. The names a date code shows are
+.NET's on Linux, ICU's, which the Script Core keeps in a table for the locales the cases cover.
+
+## `viewStateJson`
+
+The View State's JSON and a Query's (ADR-0207), under `view-state/`: run by
+`tests/ExGrid.Tests/Cases/ViewStateJsonCaseTests.cs` against `GridViewStateJson`, `GridViewState` and
+`GridQuery`'s equality, every case under the run's culture, de-DE and th-TH, and by
+`src/npm/core/test/view-state-json.test.ts` against the Script Core's `GridViewStateJson`, `GridViewState` and
+`sameGridQuery`. The file names the grid's `columns`, the names a View State is read against and read back
+against. A case does one of these:
+
+- `read` (or `readQuery`): JSON text, read. Either `writes`, the text the writer writes for what was read (which
+  reads back equal to it), or `refused`: the `path` the refusal stands at (`$.columns[0].width`, as C#'s
+  `JsonException.Path` says it; `null` where it names none) and the message whole, `says`, or a part of it,
+  `saying`, where the rest is the platform's own words about text that is not JSON.
+- `write` (or `writeQuery`): a View State (or a Query) built from the case, written. Either `writes`, the text
+  byte for byte, which reads back equal to what was built and is written again as the same text; or `refused`,
+  its `kind` (`argument`, `outOfRange`, or `notSupported`: C#'s `NotSupportedException`, the Script Core's
+  plain `Error`) and optionally `saying`.
+- `of`: `{"columns", "pinnedColumnCount", "sorts"}`, the View State a grid is shown under, each column a `name`
+  and optionally a `width`; `writes` or `refused` as for `write`.
+- `construct`: a View State built from the case, which making it refuses; `refused` as for `write`.
+- `equal` (or `equalQuery`): two built View States (or Queries), and whether they `is` the same.
+
+A built View State is `{"columns", "sorts", "filter"?}`, written as the JSON form writes it: each column
+`{"column", "width", "pinned"}`, a width `"Auto"` or a number of pixels; each sort level `{"column",
+"direction"}`; the filter `{"columns", "opaque"?}`, each column's spec `{"combinator"?, "clauses"}` (And where
+it names none), each clause `{"operator", "value"?, "values"?}`, and an operand `{"type", "value", "kind"?}` with
+the value's text, which each runner reads with its own platform's parse. A built Query is `{"range", "sorts",
+"filter"?}`, `"range": "default"` being a range left at its default. `null` builds a missing part, and a number
+where a name belongs the enum value no name names.
+
 ## `calls`
 
 The general kind, for logic that is a value and its members: geometry, metrics, widths. The file names
