@@ -150,7 +150,8 @@ A TypeScript engine is proved in three ways, and none of them runs Excel again:
    4096, while e^x and ln x keep `CorrectlyRounded`'s double-double path; `LOG` to another base, `ACOT`,
    `ACOTH`, `COTH`, `CSCH` and `SECH` are IEEE arithmetic on those. A whole power with |b| at most 64 is
    computed exactly and rounded once; a power whose exponent is not whole is still exp(b·ln a), each step
-   correctly rounded, except a square root. Both engines are held to `tests/cases/sheet/portable-math.json`, 779 answers from
+   correctly rounded, except a square root. The platform's `log2` is read only to tell that a whole power
+   lies far past the doubles' range, where its last bit cannot move the answer. Both engines are held to `tests/cases/sheet/portable-math.json`, 779 answers from
    mpmath at 400 bits, and the run is the gate: CI runs it at seed 20261026, and a last bit apart fails
    it. ADR-0047's "The platform's math library is not used" records the decision and its reasons.)*
 

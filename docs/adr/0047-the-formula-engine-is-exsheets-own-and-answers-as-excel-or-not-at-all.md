@@ -5,8 +5,10 @@ the C# engine's facts as shared cases and a differential run against the C# engi
 doubles, as below.)*
 
 *(2026-10-26, decided with the user: the engine computes `EXP`, `LN`, `ATAN` and the other functions a
-platform's math library answers itself, each the exact value rounded once, and calls no platform's
-library for them. `^` and `POWER` are not one correctly rounded function: a whole power is the exact
+platform's math library answers itself, and no platform's library decides their answers, so each is the same
+double everywhere. e^x, ln x, log10 x, the inverse trigonometric functions and the hyperbolic ones are the
+exact value rounded once; `LOG` to another base, `ACOT`, `ACOTH`, `COTH`, `CSCH` and `SECH` are IEEE
+arithmetic on those. `^` and `POWER` are not one correctly rounded function: a whole power is the exact
 power rounded once, and a power whose exponent is not whole is still e^(b ln a), as observed below, from
 a correctly rounded ln and e^x. See "The platform's math library is not used", at the end.)*
 
