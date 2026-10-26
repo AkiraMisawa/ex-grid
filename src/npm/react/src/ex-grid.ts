@@ -56,6 +56,10 @@ export function ExGrid<Row>(props: ExGridProps<Row>): ReactElement {
     });
     useImperativeHandle(ref, () => ({
         placeSelection: (range, focus, rowSequenceVersion) => mounted(grid.current).placeSelection(range, focus, rowSequenceVersion),
+        readView: () => mounted(grid.current).readView(),
+        showViewWith: (view, rowSequenceVersion) => { mounted(grid.current).showViewWith(view, rowSequenceVersion); },
+        focus: () => { mounted(grid.current).focus(); },
+        keyName: (event) => mounted(grid.current).keyName(event),
     }), []);
     useLayoutEffect(() => () => {
         // The content goes with the grid, and nothing renders for it again.
@@ -68,6 +72,6 @@ export function ExGrid<Row>(props: ExGridProps<Row>): ReactElement {
 }
 
 function mounted<Row>(grid: GridHandle<Row> | undefined): GridHandle<Row> {
-    if (grid === undefined) throw new Error('This ExGrid is not mounted: a grid not drawn places nothing.');
+    if (grid === undefined) throw new Error('This ExGrid is not mounted: a grid not drawn is asked nothing.');
     return grid;
 }

@@ -74,3 +74,5 @@ Every snapshot of a keyed table is checked, and one in which a key repeats is re
 - **`/sheet` and `/sheets`** declare `Positions` with the key `Id`, in the opening documents and, on
   `/sheet`, at start-up too. They build and layers 1 and 2 pass; they were not opened in a browser
   here (layer 3 was not run, as briefed).
+
+2026-10-26: the xUnit tests this ticket names (`LinkedTableTests`) moved to the shared cases, `tests/cases/sheet/linked-table.json`, which both the C# engine and the Script Core run (ADR-0370 §2). Each test became cases named by the same claim; `LinkedTableTests` keeps only what reads the .NET surface.

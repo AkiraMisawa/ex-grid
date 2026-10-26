@@ -42,12 +42,12 @@ import { cellClasses, type MatchMark } from '../paint/cell-classes';
 import { columnMark } from '../paint/heading-mark-styles';
 import { rowClasses } from '../paint/row-classes';
 import { rowMarkHeaderPress, rowMarkHeaderState, type MarkRefusalReason, type RowMarkIntent, type RowMarks } from '../rows/row-marks';
-import { cell as cellPosition, sameCell, type CellPosition, type GridExtent } from '../selection/cell';
+import { cell as cellPosition, sameCell, type CellPosition, type GridDirection, type GridExtent } from '../selection/cell';
 import { markedColumns, wholeColumnRuns } from '../selection/heading-marks';
 import { edgeBandRowsPerTick } from '../selection/edge-band';
 import { HeldSelection } from '../selection/held';
 import { bottomRow, fromCorners, rangeCellCount, sameRange as sameSelectionRange, spansEveryColumn, spansEveryRow, type SelectionRange } from '../selection/range';
-import { Selection, type GridSelection } from '../selection/selection';
+import { Selection, type EdgeAnswer, type GridSelection } from '../selection/selection';
 import { nextSort } from '../query/sort';
 import type { GridSource, GridSourceState } from '../source/grid-source';
 import { InMemoryGridSource } from '../source/in-memory-source';
@@ -84,6 +84,23 @@ import { hashesWhenOverflowing } from '../columns/overflow-rules';
 
 /** A Viewport axis: a number of pixels the Consumer declares, or `'stretch'`, the parent's (ADR-0028). */
 export type ViewportSize = number | 'stretch';
+
+/**
+ * What a reader of the grid looks at (ADR-0331): the Selection, with the Row Sequence Version its positions are
+ * written in, and where the rows and columns are scrolled to. A Consumer that shows several sets of rows in one grid,
+ * one at a time, as a Sheet shows its Sheets behind their tabs, keeps each set's view with `readView` and hands it
+ * back with `showViewWith` when that set is shown again.
+ */
+export interface GridViewRead {
+    /** The Row Sequence Version the Selection's positions are written in. */
+    readonly rowSequenceVersion: number;
+    /** The Selection. */
+    readonly selection: GridSelection;
+    /** The scroller's vertical offset, in pixels. */
+    readonly scrollTopPx: number;
+    /** The scroller's horizontal offset, in pixels. */
+    readonly scrollLeftPx: number;
+}
 
 /**
  * A labelled rectangle over adjacent columns, in a tier above the header row (ADR-0032): colspan and rowspan
@@ -305,6 +322,11 @@ export interface GridOptions<Row> extends CellPaintOptions<Row>, FormulaBarOptio
      * ADR-0012 gives the click to sorting (ADR-0050, item 1). Shift+click extends from the Focus's column as
      * always. Off unless given. */
     readonly headerClickSelects?: boolean;
+    /** Where Ctrl+arrow stops (ADR-0050, item 2): handed the Focus and the direction, it answers the cell on that
+     * line where the data ends, which the grid cannot know since it does not hold the data. Asked on Ctrl+arrow
+     * and Ctrl+Shift+arrow only; Home and End keep their meaning. An answer off the Focus's line, behind it or
+     * outside the grid is refused by name. The grid's edge unless given (ADR-0012). */
+    readonly dataEdge?: (from: CellPosition, direction: GridDirection) => CellPosition;
 }
 
 const defaultViewportWidthPx = 800;
@@ -527,6 +549,7 @@ interface Taken<Row> {
     readonly findsHeaders: boolean;
     readonly cellPaint: CellPaint<Row>;
     readonly headerClickSelects: boolean;
+    readonly dataEdge: EdgeAnswer | undefined;
     readonly formulaBar: FormulaBarDeclarations<Row>;
 }
 
@@ -1062,6 +1085,8 @@ export class GridView<Row> {
     #appearanceVersion = -1;
     #appearanceWritten = 0;
     #headerClickSelects = false;
+    // The Consumer's answer to where Ctrl+arrow stops (ADR-0050, item 2), or the grid's edge.
+    #dataEdge: EdgeAnswer | undefined;
     readonly #findHeld: FindHeld = { text: '', matchCase: false, wholeCell: false, replaceText: '' };
     #findOutcome: FindOutcome = { kind: 'none' };
     #findStepping: AbortController | undefined;
@@ -1078,6 +1103,12 @@ export class GridView<Row> {
     #edge: { readonly x: number; readonly y: number; readonly rows: number; readonly stepXPx: number } | undefined;
     #cancelEdgeTick: (() => void) | undefined;
     #scrollOwed = false;
+    // The views this grid read (readView), each holding the grid's own Selection; the one handed back to be shown
+    // when the grid takes the version it names, in place of the empty Selection a new version leaves (ADR-0331).
+    readonly #viewsRead = new WeakMap<GridViewRead, Selection>();
+    #viewAhead: { readonly selection: Selection; readonly version: number; readonly topPx: number; readonly leftPx: number } | undefined;
+    // Whether the offsets taken from a view are still to be kept inside the rows shown, as the browser keeps them.
+    #viewScrollUnclamped = false;
     #layerInputs: Readonly<Record<string, unknown>> | undefined;
     #shadeHolds = false;
 
@@ -1541,6 +1572,8 @@ export class GridView<Row> {
         }
         const marks = this.#marksOf(options, columns, source);
         const { headerClickSelects }: { readonly headerClickSelects?: unknown } = options;
+        const { dataEdge }: { readonly dataEdge?: unknown } = options;
+        if (dataEdge !== undefined && typeof dataEdge !== 'function') throw new TypeError('dataEdge is a function (ADR-0050, item 2).');
         if (headerClickSelects !== undefined && typeof headerClickSelects !== 'boolean') {
             throw new TypeError('headerClickSelects is true or false.');
         }
@@ -1588,6 +1621,7 @@ export class GridView<Row> {
             onPinnedCountChanged: options.onPinnedCountChanged, culture, temporal,
             onReplace: options.onReplace, findMatch: options.findMatch, findsHeaders: options.findsHeaders !== false,
             cellPaint: CellPaint.take(options, this.#cellPaint), headerClickSelects: headerClickSelects === true, formulaBar,
+            dataEdge: options.dataEdge,
         };
     }
 
@@ -1745,6 +1779,7 @@ export class GridView<Row> {
         this.#findsHeaders = taken.findsHeaders;
         this.#cellPaint = taken.cellPaint;
         this.#headerClickSelects = taken.headerClickSelects;
+        this.#dataEdge = taken.dataEdge;
         this.#formulaBarDeclared = taken.formulaBar;
         // A panel over a source that no longer finds closes, as a Cancel: nothing could answer its steps
         // (ADR-0055). One offering Replace where none can land any more offers Find alone (ADR-0332 §2).
@@ -1924,9 +1959,15 @@ export class GridView<Row> {
             totalRowCount: total,
             scrollRoomPx: Math.max(1, (this.#ceilingPx ?? ViewportGeometry.maxScrollHeightPx) - band),
         });
+        // Offsets from a view of other rows may lie past these rows' end. They are kept inside here, as the browser
+        // keeps the ones written, from the arithmetic and never read back (ADR-0331, ADR-0021).
+        const clampView = this.#viewScrollUnclamped;
+        this.#viewScrollUnclamped = false;
+        if (clampView) this.#scrollTopPx = Math.min(Math.max(this.#scrollTopPx, 0), this.#geometry.maxScrollTopPx);
         this.#visible = this.#geometry.sliceAt(this.#scrollTopPx);
         this.#observeAutoWidths();
         this.#resolveColumnGeometry(visibleWidthPx);
+        if (clampView) this.#scrollLeftPx = Math.min(Math.max(this.#scrollLeftPx, 0), this.#styles.geometry.maxScrollLeftPx);
         this.#scrollable = this.#styles.geometry.scrollableSliceAt(this.#scrollLeftPx, this.#virtualiseColumns);
     }
 
@@ -2021,6 +2062,21 @@ export class GridView<Row> {
         const columnsMoved = !sameItems(names, this.#columnNames);
         const was = this.#held.selection;
         this.#held = columnsMoved ? HeldSelection.empty(version) : this.#held.under(version);
+        // A view handed ahead is taken with the version it names, so the Selection and the version arrive together
+        // and nothing between them meets an empty one (ADR-0331). One that does not fit the rows shown is not.
+        const ahead = this.#viewAhead;
+        if (ahead !== undefined && ahead.version === this.#state.rowSequenceVersion) {
+            this.#viewAhead = undefined;
+            const extent = this.#extent;
+            if (!columnsMoved && ahead.selection.ranges.every(range => bottomRow(range) < extent.rowCount && range.leftColumn + range.columnCount <= extent.columnCount)) {
+                this.#held = HeldSelection.of(version, ahead.selection);
+            }
+            // The offsets come back either way: the browser keeps them inside the rows shown.
+            this.#scrollTopPx = ahead.topPx;
+            this.#scrollLeftPx = ahead.leftPx;
+            this.#scrollOwed = true;
+            this.#viewScrollUnclamped = true;
+        }
         if (!was.isEmpty && this.#held.selection.isEmpty) {
             const interactive = this.#interactive;
             this.#droppedAim = {
@@ -2306,7 +2362,7 @@ export class GridView<Row> {
             else if (this.#copied === undefined) this.#tabReleased = true;
             else this.#copied = undefined;
         } else {
-            this.#moveByKey(action);
+            this.#moveByKey(action, event.key);
         }
     };
 
@@ -2319,7 +2375,7 @@ export class GridView<Row> {
         this.#invalidate();
     }
 
-    #moveByKey(action: GridKeyAction): void {
+    #moveByKey(action: GridKeyAction, key: string): void {
         this.#reconcileSelection();
         const geometry = this.#geometry;
         const visible = this.#visible;
@@ -2328,7 +2384,10 @@ export class GridView<Row> {
         const start = defined(this.#firstVisibleCell(), 'the first cell of painted rows');
         // PageUp and PageDown move by the rows fully visible, at least one (ADR-0012).
         const viewportRows = Math.max(1, Math.floor(geometry.viewportHeightPx / this.#metrics.rowHeightPx));
-        const move = moveByKey(action, this.#held.selection, this.#extent, start, viewportRows);
+        // The Consumer's edge is asked on the arrows only: Home and End resolve to the same moves and keep ADR-0012's
+        // meaning (ADR-0050, item 2).
+        const edge = this.#dataEdge !== undefined && key.startsWith('Arrow') ? this.#dataEdge : undefined;
+        const move = moveByKey(action, this.#held.selection, this.#extent, start, viewportRows, edge);
         if (move === undefined) return;
         this.#apply(move.selection);
         this.#revealOwed = move.reveal;
@@ -2901,7 +2960,7 @@ export class GridView<Row> {
         this.#reconcileSelection();
         if (this.#held.selection.isEmpty) return;
         const action = resolveKey(press);
-        if (movingKinds.has(action.kind)) this.#moveByKey(action);
+        if (movingKinds.has(action.kind)) this.#moveByKey(action, press.key);
     }
 
     /**
@@ -3275,6 +3334,56 @@ export class GridView<Row> {
     }
 
     // ---- The Formula Bar (ADR-0051) ---------------------------------------------------------------------------
+
+    /** A key press in the grid's canonical form (ADR-0012), as this grid reads its own keys. */
+    keyName(event: KeyboardEvent): string {
+        return canonicalKey({
+            key: event.key, ctrl: event.ctrlKey, shift: event.shiftKey, alt: event.altKey, meta: event.metaKey, metaIsPrimary: this.#metaIsPrimary,
+        });
+    }
+
+    /** The view as the grid holds it now (ADR-0331): the Selection with the version it is written in, and the
+     * offsets the grid last knew. */
+    readView(): GridViewRead {
+        if (this.#destroyed) throw new Error('This grid was destroyed.');
+        this.#reconcileSelection();
+        const selection = this.#held.selection;
+        const view: GridViewRead = Object.freeze({
+            rowSequenceVersion: this.#state.rowSequenceVersion, selection, scrollTopPx: this.#scrollTopPx, scrollLeftPx: this.#scrollLeftPx,
+        });
+        this.#viewsRead.set(view, selection);
+        return view;
+    }
+
+    /**
+     * Shows `view`, which this grid read, once the grid takes rows under `rowSequenceVersion`, the source's own, as
+     * a find request names it, since a Consumer knows it before the grid takes the rows (ADR-0331): its Selection in place of the empty one a new version leaves (ADR-0011),
+     * and its offsets. A Consumer that swaps the rows the grid shows hands the view of the rows it brings, under the
+     * version it brings them with, as it brings them: the grid takes both in its next pass. A view
+     * handed later replaces one not yet taken; one whose version the grid never takes is never shown, and a Selection
+     * that does not fit the rows then shown is dropped, as a new version drops any, while the offsets still come back.
+     */
+    showViewWith(view: GridViewRead, rowSequenceVersion: number): void {
+        if (this.#destroyed) throw new Error('This grid was destroyed.');
+        const selection = this.#viewsRead.get(view);
+        if (selection === undefined) throw new TypeError('A view handed back is one this grid read with readView (ADR-0331).');
+        if (!Number.isInteger(rowSequenceVersion)) throw new TypeError('rowSequenceVersion is a whole number.');
+        this.#viewAhead = { selection, version: rowSequenceVersion, topPx: view.scrollTopPx, leftPx: view.scrollLeftPx };
+        this.#invalidate();
+    }
+
+    /** Hands the keyboard to the grid: to the field an open edit is typed in, else to where the grid takes keys
+     * (ADR-0080). For a Consumer's own control beside the grid, such as a Sheet's tabs, that gives it back. */
+    focus(): void {
+        if (this.#destroyed) throw new Error('This grid was destroyed.');
+        const edit = this.#edit;
+        if (edit === undefined) {
+            this.#takeKeyboard();
+            return;
+        }
+        const surface = edit.surface === 'bar' ? this.#bar.text : edit.element;
+        if (surface.isConnected) surface.focus({ preventScroll: true });
+    }
 
     // A press or a key into the bar's text opens an edit on the Focus there, in Caret, its caret where the press
     // put it; an edit standing in the cell moves to the bar, in Caret (ADR-0051).

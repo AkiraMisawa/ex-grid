@@ -49,6 +49,9 @@ export interface FieldListModel {
     readonly locale: string;
     /** The words. */
     readonly words: PivotScreenWords;
+    /** The field menu open in the pane: the entry it was opened on, and its frame, which the pane places under
+     * that entry. */
+    readonly menu: { readonly entry: PivotEntry; readonly frame: HTMLElement } | undefined;
 }
 
 /** Whom the pane calls back. */
@@ -59,6 +62,8 @@ export interface FieldListHandlers {
     readonly close: () => void;
     /** A drag started or ended: the report accepts a placed field dropped on it, which removes it. */
     readonly dragging: (removable: boolean) => void;
+    /** An entry's button was pressed, which opens its menu or closes it (ADR-0061). */
+    readonly menu: (entry: PivotEntry) => void;
 }
 
 /** What is dragged: a field from the list, or an entry of an Area. */
@@ -100,11 +105,13 @@ function element<K extends keyof HTMLElementTagNameMap>(document: Document, tag:
     return made;
 }
 
-function fieldOf(layout: PivotLayout, entry: PivotEntry): string {
+/** The field a placed entry stands for. */
+export function fieldOf(layout: PivotLayout, entry: PivotEntry): string {
     return entry.area === 'values' ? elementAt(layout.values, entry.index).field : elementAt(placementsIn(layout, entry.area), entry.index).field;
 }
 
-function sameEntry(a: PivotEntry, b: PivotEntry): boolean {
+/** Whether two entries name the same place: an Area and an index there, or Σ Values on one axis. */
+export function sameEntry(a: PivotEntry, b: PivotEntry): boolean {
     return a.area === b.area && a.index === b.index;
 }
 
@@ -129,7 +136,9 @@ export class FieldListView {
     #fieldItems = new Map<string, FieldItem>();
     #fieldsDrawnFrom: readonly PivotField[] | undefined;
     #areasDrawnFrom: { readonly layout: PivotLayout; readonly words: PivotScreenWords; readonly captions: string; readonly fields: readonly PivotField[] } | undefined;
-    #entryItems: { readonly entry: PivotEntry; readonly element: HTMLElement; readonly index: number }[] = [];
+    #entryItems: { readonly entry: PivotEntry; readonly element: HTMLElement; readonly button: HTMLButtonElement; readonly index: number }[] = [];
+    // Whether the last press in an entry was on its open menu, from which no drag of the entry starts.
+    #pressedInMenu = false;
 
     constructor(root: HTMLElement, handlers: FieldListHandlers) {
         this.#root = root;
@@ -207,7 +216,23 @@ export class FieldListView {
         this.#dragCaption.textContent = words.word('drag-fields');
         this.#drawFields();
         this.#drawAreas();
+        this.#placeMenu();
         this.#paintDrag();
+    }
+
+    /** Gives the keyboard to the button of the entry drawn at `entry`. */
+    focusEntry(entry: PivotEntry): void {
+        const drawn = this.#entryItems.find(item => sameEntry(item.entry, entry));
+        if (drawn === undefined) throw new Error(`Internal: no entry is drawn at ${entry.area} ${entry.index}.`);
+        drawn.button.focus();
+    }
+
+    /** Gives the keyboard to the tick box of the field named `name`; to the search when the search hides that field,
+     * or when no field is named. */
+    focusField(name: string | undefined): void {
+        const drawn = name === undefined ? undefined : this.#fieldItems.get(name);
+        if (drawn?.item.isConnected === true) drawn.box.focus();
+        else this.#search.focus();
     }
 
     /** Whether a placed field is being dragged, which a drop on the report removes. */
@@ -334,6 +359,9 @@ export class FieldListView {
                 const button = element(document, 'button', 'ex-pivot-entry-button');
                 button.type = 'button';
                 button.setAttribute('data-ex-claims', 'click');
+                button.setAttribute('aria-haspopup', 'menu');
+                button.setAttribute('aria-label', words.fill('field-menu', caption));
+                button.addEventListener('click', () => { this.#handlers.menu(entry); });
                 const text = element(document, 'span', 'ex-pivot-entry-caption');
                 text.textContent = caption;
                 button.append(text);
@@ -342,8 +370,23 @@ export class FieldListView {
                     mark.setAttribute('aria-hidden', 'true');
                     button.append(mark);
                 }
+                const arrow = element(document, 'span', 'ex-pivot-entry-arrow');
+                arrow.setAttribute('aria-hidden', 'true');
+                arrow.textContent = '▾';
+                button.append(arrow);
                 item.append(button);
-                item.addEventListener('dragstart', event => { this.#startDrag(event, { kind: 'entry', entry }); });
+                item.addEventListener('mousedown', event => {
+                    const frame = this.#model?.menu?.frame;
+                    this.#pressedInMenu = frame !== undefined && event.target instanceof Node && frame.contains(event.target);
+                });
+                item.addEventListener('dragstart', event => {
+                    // A press on a command that moves a little is the command's, not a drag of the entry under the menu.
+                    if (this.#pressedInMenu) {
+                        event.preventDefault();
+                        return;
+                    }
+                    this.#startDrag(event, { kind: 'entry', entry });
+                });
                 item.addEventListener('dragend', () => { this.#endDrag(); });
                 item.addEventListener('dragenter', event => {
                     event.stopPropagation();
@@ -355,7 +398,7 @@ export class FieldListView {
                     event.stopPropagation();
                     this.#drop(area, index);
                 });
-                this.#entryItems.push({ entry, element: item, index });
+                this.#entryItems.push({ entry, element: item, button, index });
                 drawn.push(item);
             };
             if (area === 'values') {
@@ -370,6 +413,22 @@ export class FieldListView {
                 }
             }
             entries.replaceChildren(...drawn);
+        }
+    }
+
+    // The open field menu stands under its entry, in the flow, as wide as the pane (ADR-0061); every other entry's
+    // button says its menu is closed.
+    #placeMenu(): void {
+        const { menu } = this.#current;
+        for (const { entry, element: item, button } of this.#entryItems) {
+            const open = menu !== undefined && sameEntry(menu.entry, entry);
+            button.setAttribute('aria-expanded', open ? 'true' : 'false');
+            if (open && menu.frame.parentNode !== item) {
+                // The entries were drawn again under it: the command that held the keyboard keeps it.
+                const held = item.ownerDocument.activeElement;
+                item.append(menu.frame);
+                if (held instanceof HTMLElement && menu.frame.contains(held) && held !== item.ownerDocument.activeElement) held.focus();
+            }
         }
     }
 

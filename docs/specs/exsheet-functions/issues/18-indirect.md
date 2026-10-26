@@ -295,3 +295,5 @@ join's `:` stays as it was: A1 text past the Sheet's edge is `#REF!` whatever co
 branch's own choice: the refusal also takes whole rows and whole columns (`1#:2`, `A#:B`, `R1#:R2`,
 `C1#:C2`) and parts of two kinds in R1C1 style (`R2C2#:R3`), whose readings part the same way (no place,
 or the cells with the `#` passed over).
+
+2026-10-26: the xUnit tests this ticket names (`IndirectTests` and its methods) moved to the shared cases, `tests/cases/sheet/indirect.json`, which both the C# engine and the Script Core run (ADR-0370 §2). Each test became cases named by the same claim.
