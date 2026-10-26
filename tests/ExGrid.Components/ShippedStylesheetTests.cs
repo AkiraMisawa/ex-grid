@@ -1181,7 +1181,7 @@ public class ShippedStylesheetTests
         Assert.Single(Regex.Matches(script, @"addEventListener\('focusout'"));
     }
 
-    [Fact] // DC-60 / FD-1 / ADR-0240 (notes of 2026-10-21 and 2026-10-25): a hold whose wait is met ends at the next key, not at the next frame, and only when nothing is held, nothing is left to do after the wait, and the keyboard arrived
+    [Fact] // DC-60 / FD-1 / ADR-0240 (notes of 2026-10-21, 2026-10-25 and 2026-10-26): a hold whose wait is met ends at the next key, not at the next frame, and only when nothing is held, nothing is left to do after the wait, and the keyboard arrived
     public void ADR0240_a_hold_whose_wait_is_met_ends_at_the_key_not_at_the_next_frame()
     {
         var script = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.js", StringComparison.Ordinal)).Text;
@@ -1203,7 +1203,12 @@ public class ShippedStylesheetTests
         // numbered after it (ExSheet's Ctrl+1, CI on PR #278), the key's own number, never the hand-off's, which a
         // circuit answers on a round trip of its own beside the one the popover's focus takes.
         var answeredAtKey = Regex.Match(script, @"const answeredAtKey = \(\) => \{.*?\n    \};", RegexOptions.Singleline).Value;
-        Assert.Matches(new Regex(@"if \(holdAnswer\.upTo > 0\) \{\s*return inputsAnswered\(holdAnswer\.upTo\);"), answeredAtKey);
+        // Or, once every input before the key is answered, the popover holding the keyboard: the stamp says the key
+        // is answered only once the core's focus call has come back, a round trip after the keyboard arrived on a
+        // circuit (CI on PR #322, the Server host).
+        Assert.Matches(new Regex(@"if \(holdAnswer\.upTo > 0\) \{\s*return inputsAnswered\(holdAnswer\.upTo\) \|\| \(awaitingPopover && popoverFocused\(\)\s*&& popoverOf\(document\.activeElement\) !== holdAnswer\.from && inputsAnswered\(holdAnswer\.upTo - 1\)\);"), answeredAtKey);
+        // A popover the keyboard was already in when the key was typed is not the key's doing.
+        Assert.Contains("holdAnswer = { upTo, input, from: popoverOf(document.activeElement) };", script, StringComparison.Ordinal);
         Assert.Matches(new Regex(@"handOff === 'popover' && holdAnswer\.input > 0 && handOffInput > holdAnswer\.input && stamp !== null\s*&& Number\(stamp\.getAttribute\('data-ex-answered'\)\) >= Math\.max\(holdAnswer\.input, awaitingMove\?\.upTo \?\? 0\);"), answeredAtKey);
         Assert.Contains("const keyInput = inputsSent + 1;\n        const answer = forward(k);", script, StringComparison.Ordinal);
         Assert.Contains("answer.then(() => drain(epoch));", script, StringComparison.Ordinal);

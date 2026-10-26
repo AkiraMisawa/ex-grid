@@ -1408,6 +1408,49 @@
           "is": "3D surface of u over x from 0 to 1 and y from 0 to 1; a mesh of 4 nodes and 2 triangles, from 0 to 2."
         }
       ]
+    },
+    {
+      "name": "ADR-0257, ADR-0275: a surface from an interpolant says its method in its summary",
+      "surface": {
+        "interpolant": {
+          "method": "triangles",
+          "points": [
+            [
+              0,
+              0,
+              9
+            ],
+            [
+              1,
+              0,
+              10
+            ],
+            [
+              0,
+              1,
+              11
+            ]
+          ],
+          "triangles": [
+            [
+              0,
+              1,
+              2
+            ]
+          ]
+        },
+        "xTitle": "Strike",
+        "yTitle": "Tenor",
+        "zTitle": "Volatility",
+        "samples": 5
+      },
+      "surfaceSummary": {},
+      "expect": [
+        {
+          "at": "$",
+          "is": "3D surface of Volatility over Strike from 0 to 1 and Tenor from 0 to 1; 5 by 5 points, from 9 to 11, with 10 holes where the data has no value. Interpolated by the Consumer: linear on triangles (P1)."
+        }
+      ]
     }
   ]
 }

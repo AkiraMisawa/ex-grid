@@ -1,0 +1,444 @@
+// The words ExSheet shows, by id (ADR-0370, section 10): its English, transcribed from the C# package's
+// SheetWords, SheetCommandIds and FormatCellsOffer, and its Japanese. A word with {0} (and {1}, {2}) is a
+// template, its arguments put in by SheetWords.
+//
+// The Japanese is Excel's Japanese edition's where Excel shows the same thing — Format Cells' tabs, categories,
+// alignments, font styles, presets and standard colours (セルの書式設定, 表示形式, ユーザー定義, 外枠, 濃い赤),
+// and the tints of a theme colour as Excel's tooltip names them (白 + 基本色 80%) — and the family's own
+// elsewhere. Excel's names for the 2023 Office theme's colour columns in Japanese, and for its line styles,
+// which its Border tab shows only as pictures, are not read from a Japanese Excel: they are the family's own.
+
+import type { SheetWordId } from './sheet-words';
+
+const editOpenThenTryAgain = 'Press Enter to commit the edit or Escape to cancel it, then try again.';
+const japaneseEditOpenThenTryAgain = 'Enter キーで編集を確定するか Esc キーで取り消してから、もう一度実行してください。';
+
+/** ExSheet's English, for every id: the C# package's words, character for character. */
+export const englishSheetWordTable: Readonly<Record<SheetWordId, string>> = Object.freeze({
+    'formulaUnreadable': "This Formula cannot be read at character {0}: {1}",
+    'addressUnreadable':
+        "'{0}' is not a cell address. Type an address such as D200, a range such as A1:C3, a column such as B:B or a row such as 5:5.",
+    'sheetNotNamed':
+        "Nothing was changed: the Workbook holds {0} Sheets, and the command names none. Name the Sheet it acts on.",
+    'editIsOpen': `Nothing was changed: a cell is being edited. ${editOpenThenTryAgain}`,
+    'saveWhileEditing':
+        "Nothing was saved: a cell is being edited. Press Enter to commit the edit or Escape to cancel it, then save again.",
+    'opening': "Opening a file. Press Escape in the Sheet to cancel.",
+    'openWhileEditing':
+        "Nothing was opened: a cell is being edited. Press Enter to commit the edit or Escape to cancel it, then open the file again.",
+    'opened': "The file was opened.",
+    'openingCancelled': "Nothing was opened: the opening was cancelled. The Workbook is as it was.",
+    'openingRefused': "Nothing was opened, and the Workbook is as it was. {0}",
+    'openingAlreadyLanded': "The file had already opened: Escape cancelled nothing.",
+    'openingNothingToCancel': "There was nothing to cancel: the opening had already ended.",
+    'editDiscardedByOpening': "What was typed was not entered: a file was opened while the cell was being edited.",
+    'formatKeyWhileEditing':
+        `Nothing was formatted: a cell is being edited, and a format applies to whole cells, not to part of the text. ${editOpenThenTryAgain}`,
+    'structureKeyWhileEditing.insert': `Nothing was inserted: a cell is being edited. ${editOpenThenTryAgain}`,
+    'structureKeyWhileEditing.delete': `Nothing was deleted: a cell is being edited. ${editOpenThenTryAgain}`,
+    'structureKeyNeedsWholeRowsOrColumns.insert':
+        "Nothing was inserted: select whole rows (Shift+Space) or whole columns (Ctrl+Space) to insert. A Sheet does not shift cells.",
+    'structureKeyNeedsWholeRowsOrColumns.delete':
+        "Nothing was deleted: select whole rows (Shift+Space) or whole columns (Ctrl+Space) to delete. A Sheet does not shift cells.",
+    'toolbarName': "Formatting",
+    'toolbarWhileEditing': "A cell is being edited. Press Enter to commit the edit or Escape to cancel it first.",
+    'sheetTabsName': "Sheets",
+    'editSheetGone': "The edit was not committed: the Sheet it was typed on is no longer in the Workbook.",
+    'sheetSwitchWhileEditing':
+        `Another Sheet was not shown: a cell is being edited. ${editOpenThenTryAgain} While a Formula is typed, another Sheet can be shown to point at its cells.`,
+    'sheetOperationWhileEditing': `No Sheet was changed: a cell is being edited. ${editOpenThenTryAgain}`,
+    'sheetAdded': "Sheet '{0}' was added.",
+    'sheetRenamed': "Sheet '{0}' was renamed '{1}'.",
+    'sheetDeleted': "Sheet '{0}' was deleted. Ctrl+Z gives it back.",
+    'sheetMoved': "Sheet '{0}' was moved to position {1} of {2}.",
+    'sheetCopied': "Sheet '{0}' was copied as '{1}'.",
+    'sheetNotRenamed': "The Sheet was not renamed: {0}",
+    'newSheetName': "New sheet",
+    'sheetNameField': "Sheet name",
+    'sheetMenuName': "Sheet '{0}'",
+    'onlySheet': "A Workbook holds at least one Sheet.",
+    'sheetGone': "The Sheet is no longer in the Workbook.",
+    'sheetNotChanged': "No Sheet was changed: {0}",
+    'firstSheet': "The Sheet is already the first.",
+    'lastSheet': "The Sheet is already the last.",
+    'commaStyleUnread':
+        "Excel's Comma Style pads each value with * to fill its column, which ExSheet does not read. Use Number with the thousands separator in Format Cells.",
+    'editDiscardedByNewDocument':
+        "What was typed was not entered: another Sheet Document was opened while the cell was being edited.",
+    'editDiscarded.rowLeftTheWindow':
+        "What was typed was not entered: the row being edited was scrolled too far away to be written. Go back to it and type it again.",
+    'editDiscarded.columnsChanged': "What was typed was not entered: the columns changed while the cell was being edited.",
+    'editDiscarded.columnNoLongerEditable': "What was typed was not entered: the cell stopped taking entries while it was being edited.",
+    'editDiscarded.orderMoved':
+        "What was typed was not entered: another Sheet was shown, or another Sheet Document opened, before the typing reached the Sheet, so nothing was written.",
+    'editDiscarded.sourceChanged':
+        "What was typed was not entered: the data the Sheet shows was replaced while it was being typed, so nothing was written.",
+    'pasteReadsDifferently':
+        "Nothing was pasted: '{0}' came as a value no culture changes, and typed under {1} it would not read as that value.",
+    'pasteRefusedFormula':
+        "Nothing was pasted: the copy holds {0}, whose Formula ExSheet refused because it cannot answer it as Excel does. Pasted as a value, its refusal would become an Error Value a Formula can catch. To paste its Formula, copy one range alone, without the headers, and paste it into the Sheet it was copied from.",
+    'summaryRefused':
+        "No figures: ExSheet refused the Formula in {0} with {1} because it cannot answer it as Excel does, so a figure over it would not be Excel's.",
+    'pasteTooNarrowToShow':
+        "Nothing was pasted: the field for {1} is '{0}', which is how the source shows a value too wide for its column. The source column was too narrow to show the value, so the value itself was not copied. Widen the column there and copy again.",
+    'pasteRefused.emptySelection': "Select a cell to paste into.",
+    'pasteRefused.singleCellTarget': "Nothing was pasted: select a range of the copied block's shape.",
+    'pasteRefused.shapeMismatch':
+        "Nothing was pasted: the selection is not a whole multiple of the copied block. Select one cell, or a range the block repeats over exactly.",
+    'pasteRefused.disjointTarget':
+        "Nothing was pasted: a block of several cells cannot be pasted into a selection of several ranges. Select one range.",
+    'pasteRefused.targetNotEditable': "Nothing was pasted: the selection covers cells that cannot be written.",
+    'pasteRefused.tooLarge': "Nothing was pasted: the clipboard holds more than a paste reads at once.",
+    'pasteRefused.unreadable': "Nothing was pasted: the clipboard could not be read. Paste again.",
+    'pasteRefused.cancelled': "Nothing was pasted: the paste was cancelled.",
+    'pasteRefused.spillPastExtent': "Nothing was pasted: the block would run past the Sheet's edge (XFD1048576).",
+    'pasteRefused.nothingToFillFrom': "Nothing was filled: there is no row above the selection, or column to its left, to fill from.",
+    'pasteRefused.multipleRanges': "Nothing was filled: a fill works on one range. Select one range.",
+    'pasteRefused.sourceUnavailable': "Nothing was filled: the cells to fill from could not be read.",
+    'pasteRefused.sourceChanged':
+        "Nothing was entered: the data the Sheet shows was replaced before it landed, so nothing was written. Select the cells again.",
+    'pasteRefused.orderMoved':
+        "Nothing was entered: another Sheet was shown, or another Sheet Document opened, after the cells were selected, so nothing was written. Select the cells again.",
+    'commitRefused.orderMoved':
+        "What was typed was not entered: another Sheet was shown, or another Sheet Document opened, while {0} was being edited, so nothing was written. Press Escape to leave it.",
+    'commitRefused.rowLeftTheWindow':
+        "What was typed was not entered: the row of {0} is not among the rows the Sheet holds now. Bring it back into view and press Enter again, or press Escape to leave it.",
+    'overwritten':
+        "{0} was entered over a change made while it was being edited: it showed {1} when editing began and {2} just before.",
+    'copyRefused.emptySelection': "Select the cells to copy.",
+    'copyRefused.misalignedShape':
+        "Nothing was copied: the selected ranges do not line up into one block. Select ranges that share their rows or their columns.",
+    'copyRefused.tooLarge': "Nothing was copied: the selection holds more cells than a copy carries.",
+    'copyRefused.rowsUnavailable': "Nothing was copied: the rows of the selection could not be read.",
+    'copyRefused.clipboardUnavailable': "Nothing was copied: the browser refused the clipboard, which still holds what it held before.",
+    'copyRefused.refusedByConsumer': "Nothing was copied.",
+    'pointingRefused.severalCells':
+        "Nothing was written: more than one cell was pressed. A Formula reads one row of '{0}' by its key, and a range of cells cannot be written.",
+    'pointingRefused.severalCellsTakenBack':
+        "What the press wrote was taken back: the drag reached another cell. A Formula reads one row of '{0}' by its key, and a range of cells cannot be written.",
+    'pointingRefused.severalColumns':
+        "Nothing was written: more than one column was pressed. A Formula names one column of '{0}' at a time.",
+    'pointingRefused.severalColumnsTakenBack':
+        "What the press wrote was taken back: the drag reached another column. A Formula names one column of '{0}' at a time.",
+    'pointingRefused.headerGroup':
+        "Nothing was written: a Header Group stands over several columns, and a Formula names one column of '{0}' at a time.",
+    'pointingRefused.columnNotInTable': "Nothing was written: the column '{1}' is not a column of the Linked Table '{0}'.",
+    'pointingRefused.noKey':
+        "Nothing was written: '{0}' was declared without a key, so a Formula cannot name one of its rows. Press a column's header to read the whole column.",
+    'pointingRefused.blankKey': "Nothing was written: this row's key in '{0}' is blank, so a Formula cannot name the row.",
+    'pointingRefused.keyIsAnError': "Nothing was written: this row's key in '{0}' is an error, which a lookup never finds.",
+    'pointingRefused.rowNotArrived': "Nothing was written: this row has not arrived yet.",
+    'pointingRefused.tableNotDeclared': "Nothing was written: this Sheet has no Linked Table '{0}' declared.",
+    'pointingRefused.notPointing':
+        "Nothing was written: the Formula no longer stood where a Reference can go when the press arrived.",
+    'pointingRefused.dataEdge':
+        "Nothing was written: Ctrl+arrow goes to the edge of the data, and the grid holds only the rows near those it shows, so where '{0}' ends is not known. Use the arrow alone.",
+    'pointingRefused.cellNotHeld':
+        "Nothing was written: the grid no longer holds the cell of '{0}' pointed at, so the arrow has no cell to move from. Press a cell to point again.",
+    'pointingRefused.columnNotHeld':
+        "Nothing was written: the grid no longer shows the column '{1}' of '{0}' pointed at, so the arrow has no column to move from. Press a cell or a column's header to point again.",
+    'pointingExtendedByKey':
+        "Nothing was written: Shift+arrow points at more than one cell. A Formula reads one row of '{0}' by its key, and a range of cells cannot be written.",
+    'nothingToUndo': "There is nothing to undo.",
+    'nothingToRedo': "There is nothing to redo.",
+    'command.insertRows': "Insert rows above",
+    'command.deleteRows': "Delete rows",
+    'command.insertColumns': "Insert columns to the left",
+    'command.deleteColumns': "Delete columns",
+    'command.formatCells': "Format Cells…",
+    'formatCellsTitle': "Format Cells",
+    'formatCells.tab.number': "Number",
+    'formatCells.tab.alignment': "Alignment",
+    'formatCells.tab.font': "Font",
+    'formatCells.tab.border': "Border",
+    'formatCells.tab.fill': "Fill",
+    'formatCells.category.general': "General",
+    'formatCells.category.number': "Number",
+    'formatCells.category.currency': "Currency",
+    'formatCells.category.accounting': "Accounting",
+    'formatCells.category.date': "Date",
+    'formatCells.category.time': "Time",
+    'formatCells.category.percentage': "Percentage",
+    'formatCells.category.fraction': "Fraction",
+    'formatCells.category.scientific': "Scientific",
+    'formatCells.category.text': "Text",
+    'formatCells.category.special': "Special",
+    'formatCells.category.custom': "Custom",
+    'formatCells.disabled.accounting':
+        "Accounting pads each value with * to fill its column, which ExSheet does not read. Use Currency, or type a code under Custom.",
+    'formatCells.disabled.fraction': "Fractions are not among the format codes ExSheet reads.",
+    'formatCells.disabled.special':
+        "Special's formats depend on the locale, and the phone number's takes a condition, which ExSheet does not read. Type a code under Custom.",
+    'formatCells.noNumberFormatCode': "Type a number format code under Custom.",
+    'formatCells.numberFormatNotRead': "The number format '{0}' is not one ExSheet reads: {1}",
+    'formatCells.notAColour': "'{0}' is not a colour. Type # and six hex digits, such as #1F4E79.",
+    'formatCells.alignment.general': "General",
+    'formatCells.alignment.left': "Left",
+    'formatCells.alignment.center': "Centre",
+    'formatCells.alignment.right': "Right",
+    'formatCells.fontStyle.regular': "Regular",
+    'formatCells.fontStyle.italic': "Italic",
+    'formatCells.fontStyle.bold': "Bold",
+    'formatCells.fontStyle.boldItalic': "Bold Italic",
+    'formatCells.edge.top': "Top",
+    'formatCells.edge.insideHorizontal': "Horizontal",
+    'formatCells.edge.bottom': "Bottom",
+    'formatCells.edge.left': "Left",
+    'formatCells.edge.insideVertical': "Vertical",
+    'formatCells.edge.right': "Right",
+    'formatCells.preset.none': "None",
+    'formatCells.preset.outline': "Outline",
+    'formatCells.preset.inside': "Inside",
+    'formatCells.lineStyle.none': "None",
+    'formatCells.lineStyle.hair': "Hair",
+    'formatCells.lineStyle.dotted': "Dotted",
+    'formatCells.lineStyle.dashDotDot': "Dash-dot-dot",
+    'formatCells.lineStyle.dashDot': "Dash-dot",
+    'formatCells.lineStyle.dashed': "Dashed",
+    'formatCells.lineStyle.thin': "Thin",
+    'formatCells.lineStyle.mediumDashDotDot': "Medium Dash-dot-dot",
+    'formatCells.lineStyle.slantedDashDot': "Slanted Dash-dot",
+    'formatCells.lineStyle.mediumDashDot': "Medium Dash-dot",
+    'formatCells.lineStyle.mediumDashed': "Medium Dashed",
+    'formatCells.lineStyle.medium': "Medium",
+    'formatCells.lineStyle.thick': "Thick",
+    'formatCells.lineStyle.double': "Double",
+    'formatCells.colour.background1': "White, Background 1",
+    'formatCells.colour.text1': "Black, Text 1",
+    'formatCells.colour.background2': "Light Grey, Background 2",
+    'formatCells.colour.text2': "Dark Blue, Text 2",
+    'formatCells.colour.accent1': "Dark Teal, Accent 1",
+    'formatCells.colour.accent2': "Orange, Accent 2",
+    'formatCells.colour.accent3': "Dark Green, Accent 3",
+    'formatCells.colour.accent4': "Turquoise, Accent 4",
+    'formatCells.colour.accent5': "Plum, Accent 5",
+    'formatCells.colour.accent6': "Green, Accent 6",
+    'formatCells.colour.darkRed': "Dark Red",
+    'formatCells.colour.red': "Red",
+    'formatCells.colour.orange': "Orange",
+    'formatCells.colour.yellow': "Yellow",
+    'formatCells.colour.lightGreen': "Light Green",
+    'formatCells.colour.green': "Green",
+    'formatCells.colour.lightBlue': "Light Blue",
+    'formatCells.colour.blue': "Blue",
+    'formatCells.colour.darkBlue': "Dark Blue",
+    'formatCells.colour.purple': "Purple",
+    'formatCells.colourDarker': "Darker {0}%",
+    'formatCells.colourLighter': "Lighter {0}%",
+    'formatCells.colourStep': "{0}, {1}",
+});
+
+/** ExSheet's Japanese, for every id. */
+export const japaneseSheetWordTable: Readonly<Record<SheetWordId, string>> = Object.freeze({
+    'formulaUnreadable': "この数式は {0} 文字目で読み取れません: {1}",
+    'addressUnreadable':
+        "'{0}' はセル番地ではありません。D200 のような番地、A1:C3 のような範囲、B:B のような列、5:5 のような行を入力してください。",
+    'sheetNotNamed':
+        "何も変更されませんでした: ブックには {0} 枚のシートがあり、コマンドはどのシートも指定していません。対象のシートを指定してください。",
+    'editIsOpen': `何も変更されませんでした: セルを編集中です。${japaneseEditOpenThenTryAgain}`,
+    'saveWhileEditing':
+        "何も保存されませんでした: セルを編集中です。Enter キーで編集を確定するか Esc キーで取り消してから、もう一度保存してください。",
+    'opening': "ファイルを開いています。取り消すには、シートで Esc キーを押してください。",
+    'openWhileEditing':
+        "何も開かれませんでした: セルを編集中です。Enter キーで編集を確定するか Esc キーで取り消してから、もう一度ファイルを開いてください。",
+    'opened': "ファイルを開きました。",
+    'openingCancelled': "何も開かれませんでした: ファイルを開く操作は取り消されました。ブックは元のままです。",
+    'openingRefused': "何も開かれず、ブックは元のままです。{0}",
+    'openingAlreadyLanded': "ファイルは既に開かれていました: Esc キーでは何も取り消されませんでした。",
+    'openingNothingToCancel': "取り消すものはありませんでした: ファイルを開く操作は既に終わっていました。",
+    'editDiscardedByOpening': "入力した内容は確定されませんでした: セルの編集中にファイルが開かれました。",
+    'formatKeyWhileEditing':
+        `書式は設定されませんでした: セルを編集中です。書式はセル全体に設定され、文字列の一部には設定されません。${japaneseEditOpenThenTryAgain}`,
+    'structureKeyWhileEditing.insert': `何も挿入されませんでした: セルを編集中です。${japaneseEditOpenThenTryAgain}`,
+    'structureKeyWhileEditing.delete': `何も削除されませんでした: セルを編集中です。${japaneseEditOpenThenTryAgain}`,
+    'structureKeyNeedsWholeRowsOrColumns.insert':
+        "何も挿入されませんでした: 挿入するには、行全体 (Shift+Space) または列全体 (Ctrl+Space) を選択してください。シートではセルをシフトしません。",
+    'structureKeyNeedsWholeRowsOrColumns.delete':
+        "何も削除されませんでした: 削除するには、行全体 (Shift+Space) または列全体 (Ctrl+Space) を選択してください。シートではセルをシフトしません。",
+    'toolbarName': "書式設定",
+    'toolbarWhileEditing': "セルを編集中です。先に Enter キーで編集を確定するか、Esc キーで取り消してください。",
+    'sheetTabsName': "シート",
+    'editSheetGone': "編集は確定されませんでした: 入力したシートはもうブックにありません。",
+    'sheetSwitchWhileEditing':
+        `別のシートは表示されませんでした: セルを編集中です。${japaneseEditOpenThenTryAgain}数式の入力中は、別のシートを表示してそのセルを参照できます。`,
+    'sheetOperationWhileEditing': `シートは変更されませんでした: セルを編集中です。${japaneseEditOpenThenTryAgain}`,
+    'sheetAdded': "シート '{0}' を追加しました。",
+    'sheetRenamed': "シート '{0}' の名前を '{1}' に変更しました。",
+    'sheetDeleted': "シート '{0}' を削除しました。Ctrl+Z で元に戻せます。",
+    'sheetMoved': "シート '{0}' を {2} 枚中 {1} 番目に移動しました。",
+    'sheetCopied': "シート '{0}' を '{1}' としてコピーしました。",
+    'sheetNotRenamed': "シートの名前は変更されませんでした: {0}",
+    'newSheetName': "新しいシート",
+    'sheetNameField': "シート名",
+    'sheetMenuName': "シート '{0}'",
+    'onlySheet': "ブックには少なくとも 1 枚のシートが必要です。",
+    'sheetGone': "そのシートはもうブックにありません。",
+    'sheetNotChanged': "シートは変更されませんでした: {0}",
+    'firstSheet': "このシートは既に先頭にあります。",
+    'lastSheet': "このシートは既に末尾にあります。",
+    'commaStyleUnread':
+        "Excel の桁区切りスタイルは各値を * で埋めて列幅いっぱいに表示しますが、ExSheet はこれを読み取りません。セルの書式設定で、桁区切りを使用する [数値] を使ってください。",
+    'editDiscardedByNewDocument':
+        "入力した内容は確定されませんでした: セルの編集中に別のシート ドキュメントが開かれました。",
+    'editDiscarded.rowLeftTheWindow':
+        "入力した内容は確定されませんでした: 編集中の行が、書き込めないほど遠くまでスクロールされました。その行に戻って、もう一度入力してください。",
+    'editDiscarded.columnsChanged': "入力した内容は確定されませんでした: セルの編集中に列が変わりました。",
+    'editDiscarded.columnNoLongerEditable': "入力した内容は確定されませんでした: 編集中にセルが入力を受け付けなくなりました。",
+    'editDiscarded.orderMoved':
+        "入力した内容は確定されませんでした: 入力がシートに届く前に別のシートが表示されたか、別のシート ドキュメントが開かれたため、何も書き込まれませんでした。",
+    'editDiscarded.sourceChanged':
+        "入力した内容は確定されませんでした: 入力中にシートが表示するデータが置き換えられたため、何も書き込まれませんでした。",
+    'pasteReadsDifferently':
+        "何も貼り付けられませんでした: '{0}' はどのカルチャでも変わらない値として届きましたが、{1} で入力するとその値として読み取られません。",
+    'pasteRefusedFormula':
+        "何も貼り付けられませんでした: コピーには {0} が含まれていますが、その数式は Excel と同じように答えられないため、ExSheet が拒否しました。値として貼り付けると、その拒否が数式で捕捉できるエラー値になってしまいます。数式を貼り付けるには、1 つの範囲だけを見出しなしでコピーし、コピー元のシートに貼り付けてください。",
+    'summaryRefused':
+        "集計なし: {0} の数式は Excel と同じように答えられないため、ExSheet が {1} で拒否しました。その上の集計は Excel の値にならないため、表示しません。",
+    'pasteTooNarrowToShow':
+        "何も貼り付けられませんでした: {1} のフィールドは '{0}' で、これはコピー元が列幅に収まらない値を表示する形です。コピー元の列幅が狭すぎて値を表示できなかったため、値そのものはコピーされていません。コピー元の列幅を広げてから、もう一度コピーしてください。",
+    'pasteRefused.emptySelection': "貼り付け先のセルを選択してください。",
+    'pasteRefused.singleCellTarget': "何も貼り付けられませんでした: コピーしたブロックと同じ形の範囲を選択してください。",
+    'pasteRefused.shapeMismatch':
+        "何も貼り付けられませんでした: 選択範囲がコピーしたブロックの整数倍になっていません。1 つのセルか、ブロックがちょうど繰り返される範囲を選択してください。",
+    'pasteRefused.disjointTarget':
+        "何も貼り付けられませんでした: 複数のセルのブロックは、複数の範囲の選択には貼り付けられません。1 つの範囲を選択してください。",
+    'pasteRefused.targetNotEditable': "何も貼り付けられませんでした: 選択範囲に書き込めないセルが含まれています。",
+    'pasteRefused.tooLarge': "何も貼り付けられませんでした: クリップボードの内容が、1 回の貼り付けで読み取れる量を超えています。",
+    'pasteRefused.unreadable': "何も貼り付けられませんでした: クリップボードを読み取れませんでした。もう一度貼り付けてください。",
+    'pasteRefused.cancelled': "何も貼り付けられませんでした: 貼り付けは取り消されました。",
+    'pasteRefused.spillPastExtent': "何も貼り付けられませんでした: ブロックがシートの端 (XFD1048576) を越えてしまいます。",
+    'pasteRefused.nothingToFillFrom': "何もフィルされませんでした: 選択範囲の上に行がないか、左に列がないため、フィル元がありません。",
+    'pasteRefused.multipleRanges': "何もフィルされませんでした: フィルは 1 つの範囲に対して行います。1 つの範囲を選択してください。",
+    'pasteRefused.sourceUnavailable': "何もフィルされませんでした: フィル元のセルを読み取れませんでした。",
+    'pasteRefused.sourceChanged':
+        "何も入力されませんでした: 反映される前にシートが表示するデータが置き換えられたため、何も書き込まれませんでした。もう一度セルを選択してください。",
+    'pasteRefused.orderMoved':
+        "何も入力されませんでした: セルを選択した後に別のシートが表示されたか、別のシート ドキュメントが開かれたため、何も書き込まれませんでした。もう一度セルを選択してください。",
+    'commitRefused.orderMoved':
+        "入力した内容は確定されませんでした: {0} の編集中に別のシートが表示されたか、別のシート ドキュメントが開かれたため、何も書き込まれませんでした。Esc キーで編集を終了してください。",
+    'commitRefused.rowLeftTheWindow':
+        "入力した内容は確定されませんでした: {0} の行は、シートが現在保持している行にありません。その行を表示してもう一度 Enter キーを押すか、Esc キーで編集を終了してください。",
+    'overwritten':
+        "{0} は編集中に行われた変更の上に入力されました: 編集を始めたときは {1}、直前は {2} と表示されていました。",
+    'copyRefused.emptySelection': "コピーするセルを選択してください。",
+    'copyRefused.misalignedShape':
+        "何もコピーされませんでした: 選択した範囲が 1 つのブロックに並びません。行または列が共通する範囲を選択してください。",
+    'copyRefused.tooLarge': "何もコピーされませんでした: 選択範囲のセル数が、1 回のコピーで運べる数を超えています。",
+    'copyRefused.rowsUnavailable': "何もコピーされませんでした: 選択範囲の行を読み取れませんでした。",
+    'copyRefused.clipboardUnavailable': "何もコピーされませんでした: ブラウザーがクリップボードへのアクセスを拒否しました。クリップボードの内容は以前のままです。",
+    'copyRefused.refusedByConsumer': "何もコピーされませんでした。",
+    'pointingRefused.severalCells':
+        "何も書き込まれませんでした: 複数のセルが押されました。数式は '{0}' の 1 行をキーで読み取ります。セルの範囲は書き込めません。",
+    'pointingRefused.severalCellsTakenBack':
+        "押して書き込んだ内容を取り消しました: ドラッグが別のセルに届きました。数式は '{0}' の 1 行をキーで読み取ります。セルの範囲は書き込めません。",
+    'pointingRefused.severalColumns':
+        "何も書き込まれませんでした: 複数の列が押されました。数式が指定できるのは '{0}' の列 1 つずつです。",
+    'pointingRefused.severalColumnsTakenBack':
+        "押して書き込んだ内容を取り消しました: ドラッグが別の列に届きました。数式が指定できるのは '{0}' の列 1 つずつです。",
+    'pointingRefused.headerGroup':
+        "何も書き込まれませんでした: 見出しグループは複数の列にまたがっています。数式が指定できるのは '{0}' の列 1 つずつです。",
+    'pointingRefused.columnNotInTable': "何も書き込まれませんでした: 列 '{1}' はリンク テーブル '{0}' の列ではありません。",
+    'pointingRefused.noKey':
+        "何も書き込まれませんでした: '{0}' はキーなしで宣言されているため、数式はその行を指定できません。列全体を読み取るには、列の見出しを押してください。",
+    'pointingRefused.blankKey': "何も書き込まれませんでした: この行の '{0}' でのキーは空白のため、数式はこの行を指定できません。",
+    'pointingRefused.keyIsAnError': "何も書き込まれませんでした: この行の '{0}' でのキーはエラー値で、検索で見つかることはありません。",
+    'pointingRefused.rowNotArrived': "何も書き込まれませんでした: この行はまだ届いていません。",
+    'pointingRefused.tableNotDeclared': "何も書き込まれませんでした: このシートにはリンク テーブル '{0}' が宣言されていません。",
+    'pointingRefused.notPointing':
+        "何も書き込まれませんでした: 押した操作が届いたとき、数式は参照を入れられる位置にもうありませんでした。",
+    'pointingRefused.dataEdge':
+        "何も書き込まれませんでした: Ctrl+方向キーはデータの端に移動しますが、グリッドは表示中の行の近くしか保持していないため、'{0}' の終わりがわかりません。方向キーだけを使ってください。",
+    'pointingRefused.cellNotHeld':
+        "何も書き込まれませんでした: 参照していた '{0}' のセルをグリッドがもう保持していないため、方向キーの移動元がありません。もう一度セルを押して参照してください。",
+    'pointingRefused.columnNotHeld':
+        "何も書き込まれませんでした: 参照していた '{0}' の列 '{1}' をグリッドがもう表示していないため、方向キーの移動元がありません。セルか列の見出しを押して、もう一度参照してください。",
+    'pointingExtendedByKey':
+        "何も書き込まれませんでした: Shift+方向キーは複数のセルを指します。数式は '{0}' の 1 行をキーで読み取ります。セルの範囲は書き込めません。",
+    'nothingToUndo': "元に戻す操作はありません。",
+    'nothingToRedo': "やり直す操作はありません。",
+    'command.insertRows': "上に行を挿入",
+    'command.deleteRows': "行の削除",
+    'command.insertColumns': "左に列を挿入",
+    'command.deleteColumns': "列の削除",
+    'command.formatCells': "セルの書式設定…",
+    'formatCellsTitle': "セルの書式設定",
+    'formatCells.tab.number': "表示形式",
+    'formatCells.tab.alignment': "配置",
+    'formatCells.tab.font': "フォント",
+    'formatCells.tab.border': "罫線",
+    'formatCells.tab.fill': "塗りつぶし",
+    'formatCells.category.general': "標準",
+    'formatCells.category.number': "数値",
+    'formatCells.category.currency': "通貨",
+    'formatCells.category.accounting': "会計",
+    'formatCells.category.date': "日付",
+    'formatCells.category.time': "時刻",
+    'formatCells.category.percentage': "パーセンテージ",
+    'formatCells.category.fraction': "分数",
+    'formatCells.category.scientific': "指数",
+    'formatCells.category.text': "文字列",
+    'formatCells.category.special': "その他",
+    'formatCells.category.custom': "ユーザー定義",
+    'formatCells.disabled.accounting':
+        "会計は各値を * で埋めて列幅いっぱいに表示しますが、ExSheet はこれを読み取りません。[通貨] を使うか、[ユーザー定義] で表示形式を入力してください。",
+    'formatCells.disabled.fraction': "分数は、ExSheet が読み取る表示形式に含まれていません。",
+    'formatCells.disabled.special':
+        "その他の表示形式はロケールによって異なり、電話番号の表示形式には条件が含まれますが、ExSheet はこれを読み取りません。[ユーザー定義] で表示形式を入力してください。",
+    'formatCells.noNumberFormatCode': "[ユーザー定義] で表示形式を入力してください。",
+    'formatCells.numberFormatNotRead': "表示形式 '{0}' は ExSheet が読み取る表示形式ではありません: {1}",
+    'formatCells.notAColour': "'{0}' は色ではありません。#1F4E79 のように、# と 16 進数 6 桁を入力してください。",
+    'formatCells.alignment.general': "標準",
+    'formatCells.alignment.left': "左詰め (インデント)",
+    'formatCells.alignment.center': "中央揃え",
+    'formatCells.alignment.right': "右詰め (インデント)",
+    'formatCells.fontStyle.regular': "標準",
+    'formatCells.fontStyle.italic': "斜体",
+    'formatCells.fontStyle.bold': "太字",
+    'formatCells.fontStyle.boldItalic': "太字 斜体",
+    'formatCells.edge.top': "上罫線",
+    'formatCells.edge.insideHorizontal': "内側横罫線",
+    'formatCells.edge.bottom': "下罫線",
+    'formatCells.edge.left': "左罫線",
+    'formatCells.edge.insideVertical': "内側縦罫線",
+    'formatCells.edge.right': "右罫線",
+    'formatCells.preset.none': "なし",
+    'formatCells.preset.outline': "外枠",
+    'formatCells.preset.inside': "内側",
+    'formatCells.lineStyle.none': "なし",
+    'formatCells.lineStyle.hair': "極細線",
+    'formatCells.lineStyle.dotted': "点線",
+    'formatCells.lineStyle.dashDotDot': "二点鎖線",
+    'formatCells.lineStyle.dashDot': "一点鎖線",
+    'formatCells.lineStyle.dashed': "破線",
+    'formatCells.lineStyle.thin': "細線",
+    'formatCells.lineStyle.mediumDashDotDot': "中太二点鎖線",
+    'formatCells.lineStyle.slantedDashDot': "中太斜め一点鎖線",
+    'formatCells.lineStyle.mediumDashDot': "中太一点鎖線",
+    'formatCells.lineStyle.mediumDashed': "中太破線",
+    'formatCells.lineStyle.medium': "中太線",
+    'formatCells.lineStyle.thick': "太線",
+    'formatCells.lineStyle.double': "二重線",
+    'formatCells.colour.background1': "白、背景 1",
+    'formatCells.colour.text1': "黒、テキスト 1",
+    'formatCells.colour.background2': "薄い灰色、背景 2",
+    'formatCells.colour.text2': "濃い青、テキスト 2",
+    'formatCells.colour.accent1': "濃い青緑、アクセント 1",
+    'formatCells.colour.accent2': "オレンジ、アクセント 2",
+    'formatCells.colour.accent3': "濃い緑、アクセント 3",
+    'formatCells.colour.accent4': "ターコイズ、アクセント 4",
+    'formatCells.colour.accent5': "プラム、アクセント 5",
+    'formatCells.colour.accent6': "緑、アクセント 6",
+    'formatCells.colour.darkRed': "濃い赤",
+    'formatCells.colour.red': "赤",
+    'formatCells.colour.orange': "オレンジ",
+    'formatCells.colour.yellow': "黄",
+    'formatCells.colour.lightGreen': "薄い緑",
+    'formatCells.colour.green': "緑",
+    'formatCells.colour.lightBlue': "薄い青",
+    'formatCells.colour.blue': "青",
+    'formatCells.colour.darkBlue': "濃い青",
+    'formatCells.colour.purple': "紫",
+    'formatCells.colourDarker': "黒 + 基本色 {0}%",
+    'formatCells.colourLighter': "白 + 基本色 {0}%",
+    'formatCells.colourStep': "{0}、{1}",
+});

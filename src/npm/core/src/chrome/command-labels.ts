@@ -1,5 +1,6 @@
 import { gridCommandIds, gridLabelIds } from './command-ids';
 import { findPanelWords } from './find-panel-labels';
+import { markWords } from './mark-words';
 import { rowCommandRefusalWords } from './refusal-words';
 
 // The built-in Chrome's English for the core's commands, as the C# core's BuiltInCommandLabels says them
@@ -21,6 +22,7 @@ const words: ReadonlyMap<string, string> = new Map([
     [gridLabelIds.formulaBar, 'Formula Bar'],
     ...findPanelWords,
     ...rowCommandRefusalWords,
+    ...markWords,
 ]);
 
 /**

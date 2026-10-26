@@ -90,6 +90,16 @@ export function upToPlaces(value: number, places: number): string {
 }
 
 /**
+ * C#'s custom format `0.00`: the number taken to fifteen significant digits, rounded to two decimals with
+ * a half going away from zero, both decimals kept. A negative number that rounds to nothing is written
+ * `-0.00`, as .NET writes it.
+ */
+export function twoPlaces(value: number): string {
+    finite(value, '0.00');
+    return twoPlacesMoved(value, 0);
+}
+
+/**
  * C#'s custom format `0.00%`: the number as a percentage — its point moved two places, as .NET moves it,
  * never multiplied — taken to fifteen significant digits, rounded to two decimals with a half going away
  * from zero, both decimals kept. A negative number that rounds to nothing is written `-0.00%`, as .NET
@@ -97,18 +107,23 @@ export function upToPlaces(value: number, places: number): string {
  */
 export function percentTwoPlaces(value: number): string {
     finite(value, '0.00%');
+    return `${twoPlacesMoved(value, 2)}%`;
+}
+
+// The number to fifteen digits, its point moved `shift` places right, written with two decimals.
+function twoPlacesMoved(value: number, shift: number): string {
     const negative = value < 0 || Object.is(value, -0);
     let text = '0.00';
     if (value !== 0) {
         const d = fifteenDigits(value);
-        const r = rounded({ ...d, point: d.point + 2 }, 2);
+        const r = rounded({ ...d, point: d.point + shift }, 2);
         if (r.digits !== '') {
             const whole = r.point <= 0 ? '0' : r.digits.slice(0, r.point).padEnd(r.point, '0');
             const fraction = r.point <= 0 ? '0'.repeat(-r.point) + r.digits : r.digits.slice(r.point);
             text = `${whole}.${fraction.padEnd(2, '0')}`;
         }
     }
-    return `${negative ? '-' : ''}${text}%`;
+    return `${negative ? '-' : ''}${text}`;
 }
 
 // The digits kept up to `places` decimals; the next one rounds the kept ones half away from zero.
