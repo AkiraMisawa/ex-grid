@@ -411,9 +411,11 @@ class SheetView {
             case 'commit':
                 this.#tell(this.#words.commitRefused(new CellAddress(refusal.cell.row, refusal.cell.column).toString(), refusal.reason), { saidByGrid: true });
                 return;
-            // A Sheet offers no Find yet, so Ctrl+F opens nothing (ADR-0055); it has no Action Column to refuse (ADR-0037).
+            // A Sheet offers no Find yet, so Ctrl+F opens nothing (ADR-0055); it has no Action Column (ADR-0037) and no
+            // Mark Column (ADR-0043) to refuse.
             case 'find':
-            case 'action': return;
+            case 'action':
+            case 'mark': return;
             default: unreachable(refusal);
         }
     };
