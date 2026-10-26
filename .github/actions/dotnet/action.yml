@@ -79,7 +79,7 @@ runs:
     # ahead of a build that would otherwise install them itself.
     - uses: actions/setup-node@v7
       with:
-        node-version: 22
+        node-version-file: .node-version
         cache: npm
         cache-dependency-path: src/npm/package-lock.json
     - name: The Script Core's dependencies

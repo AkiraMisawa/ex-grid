@@ -117,6 +117,9 @@ nix develop .#browser -c npx playwright test   # layer 3, from tests/ExGrid.Brow
   `ExGrid.Script.ExGrid` from `src/npm` as it builds (ADR-0350 section 7, ADR-0123's note of 2026-10-26),
   so the default shell carries Node, and the first build runs `npm ci` in `src/npm`. The bundle is not
   committed
+- **Node is 22.23.4, the security release of 2026-10-21.** `.node-version` names it for CI's
+  `setup-node`, and the flake takes it from a later nixpkgs than the SDK's (`nixpkgs-node`). Move both
+  together, and the `engines` ranges with them, when the next security release lands
 - **Flakes only see git-tracked files.** A new file must be `git add`-ed before the build can
   see it (committing is not required)
 - **Do not commit or push unless asked**
