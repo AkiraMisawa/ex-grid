@@ -19,6 +19,10 @@ export const demoPages: readonly DemoPage[] = Object.freeze([
         description: 'GridSource.fetch over a slow server: only the range you land on is painted, stale answers are discarded (ADR-0025).',
     },
     {
+        route: 'grid-live-local', title: 'Live grid in process', group: 'Rows and data',
+        description: 'A million trades held in this process through GridSource.from with a Row Key, amended by the page\'s own timer as Change Batches four times a second; the source gathers them, brings its result up to date from the rows that changed, and marks the cells whose values moved (ADR-0141).',
+    },
+    {
         route: 'wide', title: 'Wide', group: 'Rows and data',
         description: 'Rows and 100 columns virtualised on both axes, with pinned columns; compare with horizontal virtualisation off (ADR-0004).',
     },
