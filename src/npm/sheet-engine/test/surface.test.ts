@@ -1,7 +1,8 @@
 // The calls a sheet case does not make, held here as EngineSurfaceTests.cs holds them on ExSheet.Engine until the
 // shared cases have a kind that makes them (ADR-0370 section 2): a name asked about, a Sheet renamed directly, two
-// Entries compared.
+// Entries compared, and the package's surface read for a row that can be hidden.
 import { describe, expect, it } from 'vitest';
+import * as engine from '../src/index';
 import { Culture } from '../src/culture';
 import { Entry } from '../src/entry';
 import { Sheet } from '../src/sheet';
@@ -26,5 +27,24 @@ describe('the engine surface', () => {
     // ADR-0047: two Formulas that differ only in whitespace are different Entries.
     it('keeps whitespace as part of the Entry', () => {
         expect(Entry.fromFormula('=A1+1').equals(Entry.fromFormula('= A1+1'))).toBe(false);
+    });
+
+    // ADR-0047 (2026-10-10), SH-68: SUBTOTAL's 101 to 111 and AGGREGATE's options 1, 3, 5 and 7 were admitted only while
+    // no row can be hidden, and give what 1 to 11 and options 0, 2, 4 and 6 give (tests/cases/sheet/subtotal.json). The
+    // day the package's surface can hide a row, this fails: open ADR-0047's note of 2026-10-10 and decide with the user
+    // how they pass over a hidden or filtered row. Do not make it pass by changing its expectation.
+    it('has no row that can be hidden while SUBTOTAL and AGGREGATE skip nothing', () => {
+        const hiding = /hid(e|den|ing)|rowheight|visib|filter(ed|s)?row|autofilter|collapse|outline(level|row)/iu;
+        const names = Object.entries(engine).flatMap(([name, exported]) => [
+            name,
+            ...(typeof exported === 'function'
+                ? [
+                      ...Object.getOwnPropertyNames(exported),
+                      // A function that is no class has no prototype to read.
+                      ...(exported.prototype === undefined ? [] : Object.getOwnPropertyNames(exported.prototype)),
+                  ].map(member => `${name}.${member}`)
+                : []),
+        ]);
+        expect(names.filter(name => hiding.test(name))).toEqual([]);
     });
 });
