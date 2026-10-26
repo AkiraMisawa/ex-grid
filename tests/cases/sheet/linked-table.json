@@ -1,0 +1,634 @@
+{
+  "about": "Linked Tables (ADR-0049, ticket 16, SH-16) and a table's key (ADR-0049 2026-09-30, ADR-0058, SH-33): the wait, the snapshot, what a copy and a Sheet Document hold, the declaration and its refusals, and a key that repeats. Transcribed from LinkedTableTests.cs.",
+  "kind": "sheet",
+  "culture": "en-US",
+  "cases": [
+    {
+      "name": "ADR-0049 (SH-16): the first snapshot replaces the wait everywhere it reached",
+      "steps": [
+        {"declareTable": {"name": "Positions", "columns": ["Id", "PV", "Desk"]}},
+        {"enter": {"A1": "=SUM(Positions[PV])", "B1": "=A1*2"}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 21, "FX"]]}, "expect": {"values": {"B1": 42}, "change": {"valueChanges": ["A1", "B1"]}}}
+      ]
+    },
+    {
+      "name": "ADR-0049 (SH-16): an undeclared table name is #NAME?, and declaring it makes its readers wait",
+      "steps": [
+        {"enter": {"A1": "=SUM(Rates[Mid])"}, "expect": {"values": {"A1": {"error": "#NAME?"}}}},
+        {"declareTable": {"name": "Rates", "columns": ["Pair", "Mid"]}, "expect": {"values": {"A1": {"error": "#GETTING_DATA"}}, "change": {"valueChanges": ["A1"]}}}
+      ]
+    },
+    {
+      "name": "ADR-0049 (SH-16): a new snapshot recalculates only the table's readers and what depends on them",
+      "steps": [
+        {"declareTable": {"name": "Positions", "columns": ["Id", "PV", "Desk"]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1001", 100, "Rates"], ["R-4471", 250.5, "FX"], ["R-2002", -50, "Rates"]]}},
+        {"declareTable": {"name": "Rates", "columns": ["Pair", "Mid"]}},
+        {"enter": {"A1": "=SUM(Positions[PV])", "A2": "=A1+1", "A3": "=COUNTA(Rates[Pair])", "A4": "7", "A5": "=A4*2"}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 1, "FX"]]}, "expect": {"change": {"recalculated": ["A1", "A2"]}, "values": {"A2": 2}}}
+      ]
+    },
+    {
+      "name": "ADR-0049 (SH-16): a snapshot replaces the last in one step; no recalculation sees a mix",
+      "note": "Both columns come from the same snapshot, so the difference is always 0.",
+      "steps": [
+        {"declareTable": {"name": "Book", "columns": ["Long", "Short"]}},
+        {"enter": {"A1": "=SUM(Book[Long])-SUM(Book[Short])", "A2": "=COUNT(Book[Long])-COUNT(Book[Short])"}},
+        {"pushTable": {"name": "Book", "rows": [[1, 1]]}, "expect": {"values": {"A1": 0, "A2": 0}}},
+        {"pushTable": {"name": "Book", "rows": [[2, 2], [4, 4]]}, "expect": {"values": {"A1": 0, "A2": 0}}},
+        {"pushTable": {"name": "Book", "rows": [[3, 3], [6, 6], [9, 9]]}, "expect": {"values": {"A1": 0, "A2": 0}}},
+        {"pushTable": {"name": "Book", "rows": [[4, 4], [8, 8], [12, 12], [16, 16]]}, "expect": {"values": {"A1": 0, "A2": 0}}},
+        {"pushTable": {"name": "Book", "rows": [[5, 5], [10, 10], [15, 15], [20, 20], [25, 25]]}, "expect": {"values": {"A1": 0, "A2": 0}}},
+        {"read": true, "expect": {"workbook": {"linkedTables": [{"name": "Book", "rowCount": 5}]}}}
+      ]
+    },
+    {
+      "name": "ADR-0049 (SH-16): a copy reaching a waiting cell is refused, and one that does not is not",
+      "steps": [
+        {"declareTable": {"name": "Positions", "columns": ["Id", "PV", "Desk"]}},
+        {"enter": {"A1": "1", "B2": "=SUM(Positions[PV])"}},
+        {"copy": {"range": "A1:C3", "as": "reaching"}},
+        {"copy": {"range": "A1:A3", "as": "beside"}, "expect": {"copies": {"reaching": {"refusal": "waitingForData", "saying": "B2 is waiting for a Linked Table's data (#GETTING_DATA); a copy would carry a wait that means nothing where it lands.", "text": null, "block": null}, "beside": {"refusal": null}}}}
+      ]
+    },
+    {
+      "name": "ADR-0046/0049: a reader moved by an insertion still reads its table",
+      "steps": [
+        {"declareTable": {"name": "Positions", "columns": ["Id", "PV", "Desk"]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1001", 100, "Rates"], ["R-4471", 250.5, "FX"], ["R-2002", -50, "Rates"]]}},
+        {"enter": {"A1": "=SUM(Positions[PV])"}},
+        {"do": {"insertRows": [0, 1]}},
+        {"pushTable": {"name": "Positions", "rows": [["x", 9, "y"]]}, "expect": {"change": {"recalculated": ["A2"]}, "values": {"A2": 9}}}
+      ]
+    },
+    {
+      "name": "ADR-0048/0049: a Sheet Document holds the Formulas that name a table and its declaration, never its rows",
+      "steps": [
+        {"declareTable": {"name": "Positions", "columns": ["Id", "PV", "Desk"]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1001", 100, "Rates"], ["R-4471", 250.5, "FX"], ["R-2002", -50, "Rates"]]}},
+        {"enter": {"A1": "=SUM(Positions[PV])"}, "expect": {"documentJson": "{\"version\":9,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"linkedTables\":[{\"name\":\"Positions\",\"columns\":[\"Id\",\"PV\",\"Desk\"]}],\"cells\":[{\"at\":\"A1\",\"formula\":\"=SUM(Positions[PV])\"}]}"}}
+      ]
+    },
+    {
+      "name": "ADR-0049: opening a document shows #GETTING_DATA for every reader until the first push, never #NAME?",
+      "steps": [
+        {"declareTable": {"name": "Positions", "columns": ["Id", "PV", "Desk"]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1001", 100, "Rates"], ["R-4471", 250.5, "FX"], ["R-2002", -50, "Rates"]]}},
+        {"enter": {"A1": "=SUM(Positions[PV])", "A2": "=IFERROR(XLOOKUP(\"R-4471\",Positions[Id],Positions[PV]),0)", "A3": "=A1+1"}},
+        {"reopen": "json", "expect": {"values": {"A1": {"error": "#GETTING_DATA"}, "A2": {"error": "#GETTING_DATA"}, "A3": {"error": "#GETTING_DATA"}}, "workbook": {"linkedTables": [{"name": "Positions", "columns": ["Id", "PV", "Desk"], "keyColumns": [], "key": null, "isWaiting": true, "rowCount": 0}]}}},
+        {"pushTable": {"name": "Positions", "rows": [["R-4471", 250.5, "FX"]]}, "expect": {"values": {"A1": 250.5, "A2": 250.5, "A3": 251.5}, "change": {"valueChanges": ["A1", "A2", "A3"]}}}
+      ]
+    },
+    {
+      "name": "ADR-0049, ADR-0047: a column's name holding @ [ ] # or ' is stored escaped, and the stored text reads back as the same reference, again and again: =SUM(Positions[['@PV]])",
+      "steps": [
+        {"declareTable": {"name": "Positions", "columns": ["Id", "@PV"]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 2], ["R-2", 40]]}},
+        {"enter": {"A1": "=SUM(Positions[['@PV]])"}, "expect": {"formulas": {"A1": "=SUM(Positions['@PV])"}, "values": {"A1": 42}}},
+        {"retype": ["A1"], "expect": {"formulas": {"A1": "=SUM(Positions['@PV])"}, "values": {"A1": 42}, "document": {"cells": [{"address": "A1", "entry": {"formula": "=SUM(Positions['@PV])"}}]}}},
+        {"reopen": "json", "expect": {"formulas": {"A1": "=SUM(Positions['@PV])"}, "document": {"cells": [{"address": "A1", "entry": {"formula": "=SUM(Positions['@PV])"}}]}}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 5], ["R-2", 37]]}, "expect": {"values": {"A1": 42}}}
+      ]
+    },
+    {
+      "name": "ADR-0049, ADR-0047: a column's name holding @ [ ] # or ' is stored escaped, and the stored text reads back as the same reference, again and again: =SUM(Positions[[PV'@EOD]])",
+      "steps": [
+        {"declareTable": {"name": "Positions", "columns": ["Id", "PV@EOD"]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 2], ["R-2", 40]]}},
+        {"enter": {"A1": "=SUM(Positions[[PV'@EOD]])"}, "expect": {"formulas": {"A1": "=SUM(Positions[PV'@EOD])"}, "values": {"A1": 42}}},
+        {"retype": ["A1"], "expect": {"formulas": {"A1": "=SUM(Positions[PV'@EOD])"}, "values": {"A1": 42}, "document": {"cells": [{"address": "A1", "entry": {"formula": "=SUM(Positions[PV'@EOD])"}}]}}},
+        {"reopen": "json", "expect": {"formulas": {"A1": "=SUM(Positions[PV'@EOD])"}, "document": {"cells": [{"address": "A1", "entry": {"formula": "=SUM(Positions[PV'@EOD])"}}]}}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 5], ["R-2", 37]]}, "expect": {"values": {"A1": 42}}}
+      ]
+    },
+    {
+      "name": "ADR-0049, ADR-0047: a column's name holding @ [ ] # or ' is stored escaped, and the stored text reads back as the same reference, again and again: =SUM(Positions[['[x']]])",
+      "steps": [
+        {"declareTable": {"name": "Positions", "columns": ["Id", "[x]"]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 2], ["R-2", 40]]}},
+        {"enter": {"A1": "=SUM(Positions[['[x']]])"}, "expect": {"formulas": {"A1": "=SUM(Positions['[x']])"}, "values": {"A1": 42}}},
+        {"retype": ["A1"], "expect": {"formulas": {"A1": "=SUM(Positions['[x']])"}, "values": {"A1": 42}, "document": {"cells": [{"address": "A1", "entry": {"formula": "=SUM(Positions['[x']])"}}]}}},
+        {"reopen": "json", "expect": {"formulas": {"A1": "=SUM(Positions['[x']])"}, "document": {"cells": [{"address": "A1", "entry": {"formula": "=SUM(Positions['[x']])"}}]}}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 5], ["R-2", 37]]}, "expect": {"values": {"A1": 42}}}
+      ]
+    },
+    {
+      "name": "ADR-0049, ADR-0047: a column's name holding @ [ ] # or ' is stored escaped, and the stored text reads back as the same reference, again and again: =SUM(Positions[[a'#b]])",
+      "steps": [
+        {"declareTable": {"name": "Positions", "columns": ["Id", "a#b"]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 2], ["R-2", 40]]}},
+        {"enter": {"A1": "=SUM(Positions[[a'#b]])"}, "expect": {"formulas": {"A1": "=SUM(Positions[a'#b])"}, "values": {"A1": 42}}},
+        {"retype": ["A1"], "expect": {"formulas": {"A1": "=SUM(Positions[a'#b])"}, "values": {"A1": 42}, "document": {"cells": [{"address": "A1", "entry": {"formula": "=SUM(Positions[a'#b])"}}]}}},
+        {"reopen": "json", "expect": {"formulas": {"A1": "=SUM(Positions[a'#b])"}, "document": {"cells": [{"address": "A1", "entry": {"formula": "=SUM(Positions[a'#b])"}}]}}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 5], ["R-2", 37]]}, "expect": {"values": {"A1": 42}}}
+      ]
+    },
+    {
+      "name": "ADR-0049, ADR-0047: a column's name holding @ [ ] # or ' is stored escaped, and the stored text reads back as the same reference, again and again: =SUM(Positions[[it''s]])",
+      "steps": [
+        {"declareTable": {"name": "Positions", "columns": ["Id", "it's"]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 2], ["R-2", 40]]}},
+        {"enter": {"A1": "=SUM(Positions[[it''s]])"}, "expect": {"formulas": {"A1": "=SUM(Positions[it''s])"}, "values": {"A1": 42}}},
+        {"retype": ["A1"], "expect": {"formulas": {"A1": "=SUM(Positions[it''s])"}, "values": {"A1": 42}, "document": {"cells": [{"address": "A1", "entry": {"formula": "=SUM(Positions[it''s])"}}]}}},
+        {"reopen": "json", "expect": {"formulas": {"A1": "=SUM(Positions[it''s])"}, "document": {"cells": [{"address": "A1", "entry": {"formula": "=SUM(Positions[it''s])"}}]}}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 5], ["R-2", 37]]}, "expect": {"values": {"A1": 42}}}
+      ]
+    },
+    {
+      "name": "ADR-0049, ADR-0047: a column's name holding @ [ ] # or ' is stored escaped, and the stored text reads back as the same reference, again and again: =SUM(Positions[['@'['#''']]])",
+      "steps": [
+        {"declareTable": {"name": "Positions", "columns": ["Id", "@[#']"]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 2], ["R-2", 40]]}},
+        {"enter": {"A1": "=SUM(Positions[['@'['#''']]])"}, "expect": {"formulas": {"A1": "=SUM(Positions['@'['#''']])"}, "values": {"A1": 42}}},
+        {"retype": ["A1"], "expect": {"formulas": {"A1": "=SUM(Positions['@'['#''']])"}, "values": {"A1": 42}, "document": {"cells": [{"address": "A1", "entry": {"formula": "=SUM(Positions['@'['#''']])"}}]}}},
+        {"reopen": "json", "expect": {"formulas": {"A1": "=SUM(Positions['@'['#''']])"}, "document": {"cells": [{"address": "A1", "entry": {"formula": "=SUM(Positions['@'['#''']])"}}]}}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 5], ["R-2", 37]]}, "expect": {"values": {"A1": 42}}}
+      ]
+    },
+    {
+      "name": "ADR-0049: declaring the same table again, as a Consumer does at start-up, changes nothing on the live Sheet, whatever the name's case",
+      "steps": [
+        {"declareTable": {"name": "Positions", "columns": ["Id", "PV", "Desk"]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1001", 100, "Rates"], ["R-4471", 250.5, "FX"], ["R-2002", -50, "Rates"]]}},
+        {"enter": {"A1": "=SUM(Positions[PV])"}},
+        {"declareTable": {"name": "positions", "columns": ["Id", "PV", "Desk"]}, "expect": {"change": {"valueChanges": []}, "values": {"A1": 300.5}}}
+      ]
+    },
+    {
+      "name": "ADR-0049: declaring the same table again over a document that carries it changes nothing",
+      "steps": [
+        {"declareTable": {"name": "Positions", "columns": ["Id", "PV", "Desk"]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1001", 100, "Rates"], ["R-4471", 250.5, "FX"], ["R-2002", -50, "Rates"]]}},
+        {"enter": {"A1": "=SUM(Positions[PV])"}},
+        {"reopen": "json"},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 7, "FX"]]}},
+        {"declareTable": {"name": "Positions", "columns": ["Id", "PV", "Desk"]}, "expect": {"change": {"valueChanges": []}, "values": {"A1": 7}, "workbook": {"linkedTables": [{"name": "Positions"}]}}}
+      ]
+    },
+    {
+      "name": "ADR-0049: other columns replace the declaration; the rows held are dropped, readers wait, and a column that is gone is #REF!",
+      "steps": [
+        {"declareTable": {"name": "Positions", "columns": ["Id", "PV", "Desk"]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1001", 100, "Rates"], ["R-4471", 250.5, "FX"], ["R-2002", -50, "Rates"]]}},
+        {"enter": {"A1": "=SUM(Positions[PV])", "A2": "=SUM(Positions[Desk])"}},
+        {"declareTable": {"name": "Positions", "columns": ["Id", "PV", "Book"]}, "expect": {"values": {"A1": {"error": "#GETTING_DATA"}, "A2": {"error": "#GETTING_DATA"}}, "change": {"valueChanges": ["A1", "A2"]}}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 10, "B1"]]}, "expect": {"values": {"A1": 10, "A2": {"error": "#REF!"}}, "workbook": {"linkedTables": [{"columns": ["Id", "PV", "Book"]}]}}}
+      ]
+    },
+    {
+      "name": "ADR-0049: several declarations, a table no Formula reads, and odd column names round-trip in order",
+      "steps": [
+        {"declareTable": {"name": "Rates", "columns": ["Pair", "Mid"]}},
+        {"declareTable": {"name": "Trades", "columns": ["Unit Price", "Qty [lots]", "It's"]}},
+        {"reopen": "json", "expect": {"workbook": {"linkedTables": [{"name": "Rates", "columns": ["Pair", "Mid"]}, {"name": "Trades", "columns": ["Unit Price", "Qty [lots]", "It's"]}]}}}
+      ]
+    },
+    {
+      "name": "ADR-0049 / ADR-0125: after opening, an unknown column is still #REF!, a one-row column still reads as its Value, and a longer one spills",
+      "steps": [
+        {"declareTable": {"name": "One", "columns": ["V"]}},
+        {"enter": {"A1": "=One[Missing]", "A2": "=One[V]*2"}},
+        {"reopen": "json"},
+        {"pushTable": {"name": "One", "rows": [[21]]}, "expect": {"values": {"A1": {"error": "#REF!"}, "A2": 42}}},
+        {"pushTable": {"name": "One", "rows": [[21], [1]]}, "expect": {"values": {"A2": 42, "A3": 2}, "spilledFrom": {"A3": "A2"}}},
+        {"pushTable": {"name": "One", "rows": []}, "expect": {"values": {"A2": {"error": "#VALUE!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0048/0049: a declaration the document cannot hold is refused, as is one in a version 1 document: {\"version\":1,\"culture\":\"en-US\",\"linkedTables\":[{\"name\":\"T\",\"columns\":[\"V\"]}],\"cells\":[]}",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":1,\"culture\":\"en-US\",\"linkedTables\":[{\"name\":\"T\",\"columns\":[\"V\"]}],\"cells\":[]}"}, "expect": {"throws": {"refusal": "document"}}}
+      ]
+    },
+    {
+      "name": "ADR-0048/0049: a declaration the document cannot hold is refused, as is one in a version 1 document: {\"version\":2,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"linkedTables\":{},\"cells\":[]}",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":2,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"linkedTables\":{},\"cells\":[]}"}, "expect": {"throws": {"refusal": "document"}}}
+      ]
+    },
+    {
+      "name": "ADR-0048/0049: a declaration the document cannot hold is refused, as is one in a version 1 document: {\"version\":2,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"linkedTables\":[{\"name\":\"T\"}],\"cells\":[]}",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":2,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"linkedTables\":[{\"name\":\"T\"}],\"cells\":[]}"}, "expect": {"throws": {"refusal": "document"}}}
+      ]
+    },
+    {
+      "name": "ADR-0048/0049: a declaration the document cannot hold is refused, as is one in a version 1 document: {\"version\":2,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"linkedTables\":[{\"columns\":[\"V\"]}],\"cells\":[]}",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":2,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"linkedTables\":[{\"columns\":[\"V\"]}],\"cells\":[]}"}, "expect": {"throws": {"refusal": "document"}}}
+      ]
+    },
+    {
+      "name": "ADR-0048/0049: a declaration the document cannot hold is refused, as is one in a version 1 document: {\"version\":2,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"linkedTables\":[{\"name\":\"T\",\"columns\":[]}],\"cells\":[]}",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":2,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"linkedTables\":[{\"name\":\"T\",\"columns\":[]}],\"cells\":[]}"}, "expect": {"throws": {"refusal": "document"}}}
+      ]
+    },
+    {
+      "name": "ADR-0048/0049: a declaration the document cannot hold is refused, as is one in a version 1 document: {\"version\":2,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"linkedTables\":[{\"name\":\"T\",\"columns\":[\"V\",\"v\"]}],\"cells\":[]}",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":2,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"linkedTables\":[{\"name\":\"T\",\"columns\":[\"V\",\"v\"]}],\"cells\":[]}"}, "expect": {"throws": {"refusal": "document"}}}
+      ]
+    },
+    {
+      "name": "ADR-0048/0049: a declaration the document cannot hold is refused, as is one in a version 1 document: {\"version\":2,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"linkedTables\":[{\"name\":\"T\",\"columns\":[1]}],\"cells\":[]}",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":2,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"linkedTables\":[{\"name\":\"T\",\"columns\":[1]}],\"cells\":[]}"}, "expect": {"throws": {"refusal": "document"}}}
+      ]
+    },
+    {
+      "name": "ADR-0048/0049: a declaration the document cannot hold is refused, as is one in a version 1 document: {\"version\":2,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"linkedTables\":[{\"name\":\"A1\",\"columns\":[\"V\"]}],\"cells\":[]}",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":2,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"linkedTables\":[{\"name\":\"A1\",\"columns\":[\"V\"]}],\"cells\":[]}"}, "expect": {"throws": {"refusal": "document"}}}
+      ]
+    },
+    {
+      "name": "ADR-0048/0049: a declaration the document cannot hold is refused, as is one in a version 1 document: {\"version\":2,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"linkedTables\":[{\"name\":\"T\",\"columns\":[\"V\"],\"rows\":[[1]]}],\"cells\":[]}",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":2,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"linkedTables\":[{\"name\":\"T\",\"columns\":[\"V\"],\"rows\":[[1]]}],\"cells\":[]}"}, "expect": {"throws": {"refusal": "document"}}}
+      ]
+    },
+    {
+      "name": "ADR-0048/0049: a declaration the document cannot hold is refused, as is one in a version 1 document: {\"version\":2,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"linkedTables\":[{\"name\":\"T\",\"columns\":[\"V\"]},{\"name\":\"t\",\"columns\":[\"W\"]}],\"cells\":[]}",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":2,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"linkedTables\":[{\"name\":\"T\",\"columns\":[\"V\"]},{\"name\":\"t\",\"columns\":[\"W\"]}],\"cells\":[]}"}, "expect": {"throws": {"refusal": "document"}}}
+      ]
+    },
+    {
+      "name": "ADR-0049: the declared tables are listed, with whether each is waiting",
+      "steps": [
+        {"declareTable": {"name": "Positions", "columns": ["Id", "PV", "Desk"]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1001", 100, "Rates"], ["R-4471", 250.5, "FX"], ["R-2002", -50, "Rates"]]}},
+        {"declareTable": {"name": "Rates", "columns": ["Pair", "Mid"]}},
+        {"read": true, "expect": {"workbook": {"linkedTables": [{"name": "Positions", "columns": ["Id", "PV", "Desk"], "keyColumns": [], "key": null, "isWaiting": false, "rowCount": 3}, {"name": "Rates", "columns": ["Pair", "Mid"], "keyColumns": [], "key": null, "isWaiting": true, "rowCount": 0}]}}}
+      ]
+    },
+    {
+      "name": "ADR-0049: a name a structured reference cannot carry, or one Excel refuses for a Table, is refused: \"A1\"",
+      "steps": [
+        {"declareTable": {"name": "A1", "columns": ["V"]}, "expect": {"throws": {"refusal": "argument"}, "workbook": {"linkedTables": []}}}
+      ]
+    },
+    {
+      "name": "ADR-0049: a name a structured reference cannot carry, or one Excel refuses for a Table, is refused: \"xfd1048576\"",
+      "steps": [
+        {"declareTable": {"name": "xfd1048576", "columns": ["V"]}, "expect": {"throws": {"refusal": "argument"}, "workbook": {"linkedTables": []}}}
+      ]
+    },
+    {
+      "name": "ADR-0049: a name a structured reference cannot carry, or one Excel refuses for a Table, is refused: \"R1C1\"",
+      "steps": [
+        {"declareTable": {"name": "R1C1", "columns": ["V"]}, "expect": {"throws": {"refusal": "argument"}, "workbook": {"linkedTables": []}}}
+      ]
+    },
+    {
+      "name": "ADR-0049: a name a structured reference cannot carry, or one Excel refuses for a Table, is refused: \"R\"",
+      "steps": [
+        {"declareTable": {"name": "R", "columns": ["V"]}, "expect": {"throws": {"refusal": "argument"}, "workbook": {"linkedTables": []}}}
+      ]
+    },
+    {
+      "name": "ADR-0049: a name a structured reference cannot carry, or one Excel refuses for a Table, is refused: \"c\"",
+      "steps": [
+        {"declareTable": {"name": "c", "columns": ["V"]}, "expect": {"throws": {"refusal": "argument"}, "workbook": {"linkedTables": []}}}
+      ]
+    },
+    {
+      "name": "ADR-0049: a name a structured reference cannot carry, or one Excel refuses for a Table, is refused: \"TRUE\"",
+      "steps": [
+        {"declareTable": {"name": "TRUE", "columns": ["V"]}, "expect": {"throws": {"refusal": "argument"}, "workbook": {"linkedTables": []}}}
+      ]
+    },
+    {
+      "name": "ADR-0049: a name a structured reference cannot carry, or one Excel refuses for a Table, is refused: \"1st\"",
+      "steps": [
+        {"declareTable": {"name": "1st", "columns": ["V"]}, "expect": {"throws": {"refusal": "argument"}, "workbook": {"linkedTables": []}}}
+      ]
+    },
+    {
+      "name": "ADR-0049: a name a structured reference cannot carry, or one Excel refuses for a Table, is refused: \"Has Space\"",
+      "steps": [
+        {"declareTable": {"name": "Has Space", "columns": ["V"]}, "expect": {"throws": {"refusal": "argument"}, "workbook": {"linkedTables": []}}}
+      ]
+    },
+    {
+      "name": "ADR-0049: a name a structured reference cannot carry, or one Excel refuses for a Table, is refused: \"\"",
+      "steps": [
+        {"declareTable": {"name": "", "columns": ["V"]}, "expect": {"throws": {"refusal": "argument"}, "workbook": {"linkedTables": []}}}
+      ]
+    },
+    {
+      "name": "ADR-0049: declarations and snapshots that cannot be read are refused, and change nothing",
+      "steps": [
+        {"declareTable": {"name": "Positions", "columns": ["Id", "PV", "Desk"]}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1001", 100, "Rates"], ["R-4471", 250.5, "FX"], ["R-2002", -50, "Rates"]]}},
+        {"enter": {"A1": "=SUM(Positions[PV])"}},
+        {"declareTable": {"name": "Dup", "columns": ["A", "a"]}, "expect": {"throws": {"refusal": "argument"}}},
+        {"declareTable": {"name": "None", "columns": []}, "expect": {"throws": {"refusal": "argument"}}},
+        {"pushTable": {"name": "Missing", "rows": []}, "expect": {"throws": {"refusal": "invalidOperation"}}},
+        {"pushTable": {"name": "Positions", "rows": [["a", 1]]}, "expect": {"throws": {"refusal": "argument"}}},
+        {"pushTable": {"name": "Positions", "rows": [["a", {"error": "#GETTING_DATA"}, "b"]]}, "expect": {"throws": {"refusal": "argument"}}},
+        {"read": true, "expect": {"values": {"A1": 300.5}, "workbook": {"linkedTables": [{"name": "Positions", "columns": ["Id", "PV", "Desk"], "keyColumns": [], "key": null, "isWaiting": false, "rowCount": 3}]}}}
+      ]
+    },
+    {
+      "name": "ADR-0049 (2026-09-30), SH-33: a keyed table's snapshot in which every key differs is taken",
+      "steps": [
+        {"declareTable": {"name": "Positions", "columns": ["Id", "PV", "Desk"], "key": "Id"}},
+        {"enter": {"A1": "=SUM(Positions[PV])", "A2": "=XLOOKUP(\"R-1\", Positions[Id], Positions[PV])", "A3": "=IFERROR(XLOOKUP(\"R-1\", Positions[Id], Positions[PV]), 0)", "A4": "=A1+1"}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 10, "FX"], ["R-2", 20, "FX"], ["R-10", 30, "FX"]]}, "expect": {"values": {"A1": 60, "A2": 10}, "workbook": {"linkedTables": [{"name": "Positions", "columns": ["Id", "PV", "Desk"], "keyColumns": ["Id"], "key": "Id", "isWaiting": false, "rowCount": 3}]}}}
+      ]
+    },
+    {
+      "name": "ADR-0049 (2026-09-30), SH-33: a repeated key refuses the snapshot by name; the table waits again and no earlier Value is shown",
+      "note": "Neither the earlier snapshot's 30 nor the refused one's Values: every reader waits.",
+      "steps": [
+        {"declareTable": {"name": "Positions", "columns": ["Id", "PV", "Desk"], "key": "Id"}},
+        {"enter": {"A1": "=SUM(Positions[PV])", "A2": "=XLOOKUP(\"R-1\", Positions[Id], Positions[PV])", "A3": "=IFERROR(XLOOKUP(\"R-1\", Positions[Id], Positions[PV]), 0)", "A4": "=A1+1"}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 10, "FX"], ["R-2", 20, "FX"]]}, "expect": {"values": {"A1": 30}}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 11, "FX"], ["R-2", 21, "FX"], ["R-1", 12, "Rates"]]}, "expect": {"throws": {"refusal": "repeatedKey", "saying": "The snapshot of 'Positions' is refused: its key column 'Id' holds \"R-1\" in rows 0 and 2. The table waits for a snapshot in which no key repeats, and every Formula that reads it shows #GETTING_DATA.", "table": "Positions", "keyColumn": "Id", "key": "R-1", "keyColumns": ["Id"], "keys": ["R-1"], "firstRow": 0, "secondRow": 2, "valueChanges": ["A1", "A2", "A3", "A4"]}, "values": {"A1": {"error": "#GETTING_DATA"}, "A2": {"error": "#GETTING_DATA"}, "A4": {"error": "#GETTING_DATA"}}, "workbook": {"linkedTables": [{"isWaiting": true, "rowCount": 0}]}}}
+      ]
+    },
+    {
+      "name": "ADR-0049 (2026-09-30), SH-33: IFERROR(XLOOKUP(…), 0) over a refused table shows #GETTING_DATA, never 0",
+      "steps": [
+        {"declareTable": {"name": "Positions", "columns": ["Id", "PV", "Desk"], "key": "Id"}},
+        {"enter": {"A1": "=SUM(Positions[PV])", "A2": "=XLOOKUP(\"R-1\", Positions[Id], Positions[PV])", "A3": "=IFERROR(XLOOKUP(\"R-1\", Positions[Id], Positions[PV]), 0)", "A4": "=A1+1"}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 10, "FX"]]}, "expect": {"values": {"A3": 10}}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 10, "FX"], ["R-1", 10, "FX"]]}, "expect": {"throws": {"refusal": "repeatedKey"}, "values": {"A3": {"error": "#GETTING_DATA"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0049 (2026-09-30), SH-33: case does not tell keys apart, as it does not for XLOOKUP's exact match",
+      "steps": [
+        {"declareTable": {"name": "Positions", "columns": ["Id", "PV", "Desk"], "key": "Id"}},
+        {"enter": {"A1": "=SUM(Positions[PV])", "A2": "=XLOOKUP(\"R-1\", Positions[Id], Positions[PV])", "A3": "=IFERROR(XLOOKUP(\"R-1\", Positions[Id], Positions[PV]), 0)", "A4": "=A1+1"}},
+        {"pushTable": {"name": "Positions", "rows": [["r-1", 1, "FX"], ["R-1", 2, "FX"]]}, "expect": {"throws": {"refusal": "repeatedKey", "saying": "The snapshot of 'Positions' is refused: its key column 'Id' holds \"r-1\" in row 0 and \"R-1\" in row 1, which XLOOKUP does not tell apart. The table waits for a snapshot in which no key repeats, and every Formula that reads it shows #GETTING_DATA."}, "values": {"A2": {"error": "#GETTING_DATA"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0049 (2026-09-30), SH-33: a number and text of the same digits are two keys, as XLOOKUP tells them apart",
+      "steps": [
+        {"declareTable": {"name": "Codes", "columns": ["Code", "V"], "key": "Code"}},
+        {"enter": {"A1": "=XLOOKUP(1, Codes[Code], Codes[V])", "A2": "=XLOOKUP(\"1\", Codes[Code], Codes[V])"}},
+        {"pushTable": {"name": "Codes", "rows": [[1, 10], ["1", 20], [true, 30], ["TRUE", 40]]}, "expect": {"values": {"A1": 10, "A2": 20}, "workbook": {"linkedTables": [{"rowCount": 4}]}}}
+      ]
+    },
+    {
+      "name": "ADR-0049 (2026-09-30), SH-33: a blank key is not a key; any number of rows may have none",
+      "steps": [
+        {"declareTable": {"name": "Positions", "columns": ["Id", "PV", "Desk"], "key": "Id"}},
+        {"enter": {"A1": "=SUM(Positions[PV])", "A2": "=XLOOKUP(\"R-1\", Positions[Id], Positions[PV])", "A3": "=IFERROR(XLOOKUP(\"R-1\", Positions[Id], Positions[PV]), 0)", "A4": "=A1+1"}},
+        {"pushTable": {"name": "Positions", "rows": [[null, 1, "FX"], ["R-1", 10, "FX"], [null, 2, "FX"], [null, 3, "FX"]]}, "expect": {"values": {"A1": 16, "A2": 10}}}
+      ]
+    },
+    {
+      "name": "ADR-0049 (2026-09-30), SH-33: a key repeats exactly when XLOOKUP's exact match cannot tell the two apart: \"R-1\" and \"r-1\"",
+      "steps": [
+        {"declareTable": {"name": "Keys", "columns": ["Key", "Row"]}},
+        {"declareTable": {"name": "Keyed", "columns": ["Key", "Row"], "key": "Key"}},
+        {"pushTable": {"name": "Keys", "rows": [["r-1", 2]]}},
+        {"enter": {"A1": "=XLOOKUP(B1, Keys[Key], Keys[Row], \"none\")"}},
+        {"do": {"setEntries": {"B1": {"constant": "R-1"}}}, "expect": {"values": {"A1": 2}}},
+        {"pushTable": {"name": "Keyed", "rows": [["R-1", 1], ["r-1", 2]]}, "expect": {"throws": {"refusal": "repeatedKey"}}, "note": "XLOOKUP matches the two, so the key repeats."}
+      ]
+    },
+    {
+      "name": "ADR-0049 (2026-09-30), SH-33: a key repeats exactly when XLOOKUP's exact match cannot tell the two apart: \"Straße\" and \"STRASSE\"",
+      "steps": [
+        {"declareTable": {"name": "Keys", "columns": ["Key", "Row"]}},
+        {"declareTable": {"name": "Keyed", "columns": ["Key", "Row"], "key": "Key"}},
+        {"pushTable": {"name": "Keys", "rows": [["STRASSE", 2]]}},
+        {"enter": {"A1": "=XLOOKUP(B1, Keys[Key], Keys[Row], \"none\")"}},
+        {"do": {"setEntries": {"B1": {"constant": "Straße"}}}, "expect": {"values": {"A1": 2}}},
+        {"pushTable": {"name": "Keyed", "rows": [["Straße", 1], ["STRASSE", 2]]}, "expect": {"throws": {"refusal": "repeatedKey"}}, "note": "XLOOKUP matches the two, so the key repeats."}
+      ]
+    },
+    {
+      "name": "ADR-0049 (2026-09-30), SH-33: a key repeats exactly when XLOOKUP's exact match cannot tell the two apart: \"é\" and \"e\"",
+      "steps": [
+        {"declareTable": {"name": "Keys", "columns": ["Key", "Row"]}},
+        {"declareTable": {"name": "Keyed", "columns": ["Key", "Row"], "key": "Key"}},
+        {"pushTable": {"name": "Keys", "rows": [["e", 2]]}},
+        {"enter": {"A1": "=XLOOKUP(B1, Keys[Key], Keys[Row], \"none\")"}},
+        {"do": {"setEntries": {"B1": {"constant": "é"}}}, "expect": {"values": {"A1": "none"}}},
+        {"pushTable": {"name": "Keyed", "rows": [["é", 1], ["e", 2]]}, "expect": {"workbook": {"linkedTables": [{"name": "Keys"}, {"name": "Keyed", "isWaiting": false, "rowCount": 2}]}}, "note": "XLOOKUP tells the two apart, so the snapshot is taken."}
+      ]
+    },
+    {
+      "name": "ADR-0049 (2026-09-30), SH-33: a key repeats exactly when XLOOKUP's exact match cannot tell the two apart: \"co-op\" and \"coop\"",
+      "steps": [
+        {"declareTable": {"name": "Keys", "columns": ["Key", "Row"]}},
+        {"declareTable": {"name": "Keyed", "columns": ["Key", "Row"], "key": "Key"}},
+        {"pushTable": {"name": "Keys", "rows": [["coop", 2]]}},
+        {"enter": {"A1": "=XLOOKUP(B1, Keys[Key], Keys[Row], \"none\")"}},
+        {"do": {"setEntries": {"B1": {"constant": "co-op"}}}, "expect": {"values": {"A1": "none"}}},
+        {"pushTable": {"name": "Keyed", "rows": [["co-op", 1], ["coop", 2]]}, "expect": {"workbook": {"linkedTables": [{"name": "Keys"}, {"name": "Keyed", "isWaiting": false, "rowCount": 2}]}}, "note": "XLOOKUP tells the two apart, so the snapshot is taken."}
+      ]
+    },
+    {
+      "name": "ADR-0049 (2026-09-30), SH-33: a key repeats exactly when XLOOKUP's exact match cannot tell the two apart: \"R-1\" and \"R-1 \"",
+      "steps": [
+        {"declareTable": {"name": "Keys", "columns": ["Key", "Row"]}},
+        {"declareTable": {"name": "Keyed", "columns": ["Key", "Row"], "key": "Key"}},
+        {"pushTable": {"name": "Keys", "rows": [["R-1 ", 2]]}},
+        {"enter": {"A1": "=XLOOKUP(B1, Keys[Key], Keys[Row], \"none\")"}},
+        {"do": {"setEntries": {"B1": {"constant": "R-1"}}}, "expect": {"values": {"A1": "none"}}},
+        {"pushTable": {"name": "Keyed", "rows": [["R-1", 1], ["R-1 ", 2]]}, "expect": {"workbook": {"linkedTables": [{"name": "Keys"}, {"name": "Keyed", "isWaiting": false, "rowCount": 2}]}}, "note": "XLOOKUP tells the two apart, so the snapshot is taken."}
+      ]
+    },
+    {
+      "name": "ADR-0049 (2026-09-30), SH-33: a key repeats exactly when XLOOKUP's exact match cannot tell the two apart: 1 and \"1\"",
+      "steps": [
+        {"declareTable": {"name": "Keys", "columns": ["Key", "Row"]}},
+        {"declareTable": {"name": "Keyed", "columns": ["Key", "Row"], "key": "Key"}},
+        {"pushTable": {"name": "Keys", "rows": [["1", 2]]}},
+        {"enter": {"A1": "=XLOOKUP(B1, Keys[Key], Keys[Row], \"none\")"}},
+        {"do": {"setEntries": {"B1": {"constant": 1}}}, "expect": {"values": {"A1": "none"}}},
+        {"pushTable": {"name": "Keyed", "rows": [[1, 1], ["1", 2]]}, "expect": {"workbook": {"linkedTables": [{"name": "Keys"}, {"name": "Keyed", "isWaiting": false, "rowCount": 2}]}}, "note": "XLOOKUP tells the two apart, so the snapshot is taken."}
+      ]
+    },
+    {
+      "name": "ADR-0049 (2026-09-30), SH-33: a key repeats exactly when XLOOKUP's exact match cannot tell the two apart: 0.30000000000000004 and 0.3",
+      "steps": [
+        {"declareTable": {"name": "Keys", "columns": ["Key", "Row"]}},
+        {"declareTable": {"name": "Keyed", "columns": ["Key", "Row"], "key": "Key"}},
+        {"pushTable": {"name": "Keys", "rows": [[0.3, 2]]}},
+        {"enter": {"A1": "=XLOOKUP(B1, Keys[Key], Keys[Row], \"none\")"}},
+        {"do": {"setEntries": {"B1": {"constant": 0.30000000000000004}}}, "expect": {"values": {"A1": "none"}}},
+        {"pushTable": {"name": "Keyed", "rows": [[0.30000000000000004, 1], [0.3, 2]]}, "expect": {"workbook": {"linkedTables": [{"name": "Keys"}, {"name": "Keyed", "isWaiting": false, "rowCount": 2}]}}, "note": "XLOOKUP tells the two apart, so the snapshot is taken."}
+      ]
+    },
+    {
+      "name": "ADR-0049 (2026-09-30), SH-33: a key repeats exactly when XLOOKUP's exact match cannot tell the two apart: true and \"TRUE\"",
+      "steps": [
+        {"declareTable": {"name": "Keys", "columns": ["Key", "Row"]}},
+        {"declareTable": {"name": "Keyed", "columns": ["Key", "Row"], "key": "Key"}},
+        {"pushTable": {"name": "Keys", "rows": [["TRUE", 2]]}},
+        {"enter": {"A1": "=XLOOKUP(B1, Keys[Key], Keys[Row], \"none\")"}},
+        {"do": {"setEntries": {"B1": {"constant": true}}}, "expect": {"values": {"A1": "none"}}},
+        {"pushTable": {"name": "Keyed", "rows": [[true, 1], ["TRUE", 2]]}, "expect": {"workbook": {"linkedTables": [{"name": "Keys"}, {"name": "Keyed", "isWaiting": false, "rowCount": 2}]}}, "note": "XLOOKUP tells the two apart, so the snapshot is taken."}
+      ]
+    },
+    {
+      "name": "ADR-0049 (2026-09-30), SH-33: a key repeats exactly when XLOOKUP's exact match cannot tell the two apart: false and false",
+      "steps": [
+        {"declareTable": {"name": "Keys", "columns": ["Key", "Row"]}},
+        {"declareTable": {"name": "Keyed", "columns": ["Key", "Row"], "key": "Key"}},
+        {"pushTable": {"name": "Keys", "rows": [[false, 2]]}},
+        {"enter": {"A1": "=XLOOKUP(B1, Keys[Key], Keys[Row], \"none\")"}},
+        {"do": {"setEntries": {"B1": {"constant": false}}}, "expect": {"values": {"A1": 2}}},
+        {"pushTable": {"name": "Keyed", "rows": [[false, 1], [false, 2]]}, "expect": {"throws": {"refusal": "repeatedKey"}}, "note": "XLOOKUP matches the two, so the key repeats."}
+      ]
+    },
+    {
+      "name": "ADR-0049 (2026-09-30), SH-33: a key repeats exactly when XLOOKUP's exact match cannot tell the two apart: 2 and 2",
+      "steps": [
+        {"declareTable": {"name": "Keys", "columns": ["Key", "Row"]}},
+        {"declareTable": {"name": "Keyed", "columns": ["Key", "Row"], "key": "Key"}},
+        {"pushTable": {"name": "Keys", "rows": [[2, 2]]}},
+        {"enter": {"A1": "=XLOOKUP(B1, Keys[Key], Keys[Row], \"none\")"}},
+        {"do": {"setEntries": {"B1": {"constant": 2}}}, "expect": {"values": {"A1": 2}}},
+        {"pushTable": {"name": "Keyed", "rows": [[2, 1], [2, 2]]}, "expect": {"throws": {"refusal": "repeatedKey"}}, "note": "XLOOKUP matches the two, so the key repeats."}
+      ]
+    },
+    {
+      "name": "ADR-0049 (2026-09-30), SH-33: the key names one of the columns, without regard to case; any other name is refused by name",
+      "steps": [
+        {"declareTable": {"name": "Positions", "columns": ["Id", "PV"], "key": "Book"}, "expect": {"throws": {"refusal": "argument", "saying": "The key 'Book' is not one of the columns of 'Positions'."}}},
+        {"declareTable": {"name": "Rates", "columns": ["Pair", "Mid"], "key": "pair"}, "expect": {"workbook": {"linkedTables": [{"name": "Rates", "keyColumns": ["Pair"], "key": "Pair"}]}}},
+        {"declareTable": {"name": "Empty", "columns": ["V"], "key": ""}, "expect": {"throws": {"refusal": "argument"}, "workbook": {"linkedTables": [{"name": "Rates"}]}}}
+      ]
+    },
+    {
+      "name": "ADR-0049 (2026-09-30), SH-33: a declaration with another key replaces the held one; the rows are dropped and readers wait",
+      "steps": [
+        {"declareTable": {"name": "Positions", "columns": ["Id", "PV", "Desk"], "key": "Id"}},
+        {"enter": {"A1": "=SUM(Positions[PV])", "A2": "=XLOOKUP(\"R-1\", Positions[Id], Positions[PV])", "A3": "=IFERROR(XLOOKUP(\"R-1\", Positions[Id], Positions[PV]), 0)", "A4": "=A1+1"}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 10, "FX"], ["R-2", 20, "FX"]]}},
+        {"declareTable": {"name": "Positions", "columns": ["Id", "PV", "Desk"], "key": "id"}, "expect": {"change": {"valueChanges": []}, "values": {"A1": 30}}},
+        {"declareTable": {"name": "Positions", "columns": ["Id", "PV", "Desk"], "key": "Desk"}, "expect": {"change": {"valueChanges": ["A1", "A2", "A3", "A4"]}, "values": {"A1": {"error": "#GETTING_DATA"}}, "workbook": {"linkedTables": [{"keyColumns": ["Desk"], "key": "Desk"}]}}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 10, "FX"], ["R-2", 20, "FX"]]}, "expect": {"throws": {"refusal": "repeatedKey"}}, "note": "The new key is the one checked: Desk repeats, Id no longer counts."},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 10, "FX"], ["R-1", 20, "Rates"]]}, "expect": {"values": {"A1": 30}}},
+        {"declareTable": {"name": "Positions", "columns": ["Id", "PV", "Desk"]}, "expect": {"values": {"A1": {"error": "#GETTING_DATA"}}, "workbook": {"linkedTables": [{"keyColumns": [], "key": null}]}}}
+      ]
+    },
+    {
+      "name": "ADR-0049 (2026-09-30), ADR-0048, SH-33: the Sheet Document records the key with the declaration, and it opens with it",
+      "steps": [
+        {"declareTable": {"name": "Positions", "columns": ["Id", "PV", "Desk"], "key": "Id"}},
+        {"enter": {"A1": "=SUM(Positions[PV])", "A2": "=XLOOKUP(\"R-1\", Positions[Id], Positions[PV])", "A3": "=IFERROR(XLOOKUP(\"R-1\", Positions[Id], Positions[PV]), 0)", "A4": "=A1+1"}},
+        {"declareTable": {"name": "Rates", "columns": ["Pair", "Mid"]}},
+        {"read": true, "expect": {"documentJson": "{\"version\":9,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"linkedTables\":[{\"name\":\"Positions\",\"columns\":[\"Id\",\"PV\",\"Desk\"],\"key\":\"Id\"},{\"name\":\"Rates\",\"columns\":[\"Pair\",\"Mid\"]}],\"cells\":[{\"at\":\"A1\",\"formula\":\"=SUM(Positions[PV])\"},{\"at\":\"A2\",\"formula\":\"=XLOOKUP(\\u0022R-1\\u0022, Positions[Id], Positions[PV])\"},{\"at\":\"A3\",\"formula\":\"=IFERROR(XLOOKUP(\\u0022R-1\\u0022, Positions[Id], Positions[PV]), 0)\"},{\"at\":\"A4\",\"formula\":\"=A1\\u002B1\"}]}"}},
+        {"reopen": "json", "expect": {"workbook": {"linkedTables": [{"keyColumns": ["Id"], "key": "Id"}, {"keyColumns": [], "key": null}]}}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 1, "FX"], ["R-1", 2, "FX"]]}, "expect": {"throws": {"refusal": "repeatedKey"}}},
+        {"declareTable": {"name": "Positions", "columns": ["Id", "PV", "Desk"], "key": "Id"}, "expect": {"change": {"valueChanges": []}}}
+      ]
+    },
+    {
+      "name": "ADR-0048/0049 (2026-09-30): a document written before keys were recorded still opens, its tables without a key",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":6,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"linkedTables\":[{\"name\":\"Positions\",\"columns\":[\"Id\",\"PV\"]}],\"cells\":[{\"at\":\"A1\",\"formula\":\"=SUM(Positions[PV])\"}]}"}, "expect": {"workbook": {"linkedTables": [{"keyColumns": [], "key": null}]}, "values": {"A1": {"error": "#GETTING_DATA"}}}},
+        {"pushTable": {"name": "Positions", "rows": [["R-1", 1], ["R-1", 2]]}, "expect": {"values": {"A1": 3}}}
+      ]
+    },
+    {
+      "name": "ADR-0048/0049 (2026-09-30): a key the document cannot hold is refused, as is a key in a document before version 7: {\"version\":6,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"linkedTables\":[{\"name\":\"T\",\"columns\":[\"V\"],\"key\":\"V\"}],\"cells\":[]}",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":6,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"linkedTables\":[{\"name\":\"T\",\"columns\":[\"V\"],\"key\":\"V\"}],\"cells\":[]}"}, "expect": {"throws": {"refusal": "document"}}}
+      ]
+    },
+    {
+      "name": "ADR-0048/0049 (2026-09-30): a key the document cannot hold is refused, as is a key in a document before version 7: {\"version\":7,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"linkedTables\":[{\"name\":\"T\",\"columns\":[\"V\"],\"key\":\"W\"}],\"cells\":[]}",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":7,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"linkedTables\":[{\"name\":\"T\",\"columns\":[\"V\"],\"key\":\"W\"}],\"cells\":[]}"}, "expect": {"throws": {"refusal": "document"}}}
+      ]
+    },
+    {
+      "name": "ADR-0048/0049 (2026-09-30): a key the document cannot hold is refused, as is a key in a document before version 7: {\"version\":7,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"linkedTables\":[{\"name\":\"T\",\"columns\":[\"V\"],\"key\":1}],\"cells\":[]}",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":7,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"linkedTables\":[{\"name\":\"T\",\"columns\":[\"V\"],\"key\":1}],\"cells\":[]}"}, "expect": {"throws": {"refusal": "document"}}}
+      ]
+    },
+    {
+      "name": "ADR-0048/0049 (2026-09-30): a key the document cannot hold is refused, as is a key in a document before version 7: {\"version\":7,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"linkedTables\":[{\"name\":\"T\",\"columns\":[\"V\"],\"key\":null}],\"cells\":[]}",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":7,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"linkedTables\":[{\"name\":\"T\",\"columns\":[\"V\"],\"key\":null}],\"cells\":[]}"}, "expect": {"throws": {"refusal": "document"}}}
+      ]
+    },
+    {
+      "name": "ADR-0048/0049 (2026-09-30): a key the document cannot hold is refused, as is a key in a document before version 7: {\"version\":7,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"linkedTables\":[{\"name\":\"T\",\"columns\":[\"V\"],\"key\":\"\"}],\"cells\":[]}",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":7,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"linkedTables\":[{\"name\":\"T\",\"columns\":[\"V\"],\"key\":\"\"}],\"cells\":[]}"}, "expect": {"throws": {"refusal": "document"}}}
+      ]
+    },
+    {
+      "name": "ADR-0058 (amended 2026-10-03): a key of several columns is declared as a list, spelled as the columns are",
+      "steps": [
+        {"declareTable": {"name": "Cds", "columns": ["Entity", "Tenor", "Spread"], "key": ["entity", "TENOR"]}, "expect": {"workbook": {"linkedTables": [{"keyColumns": ["Entity", "Tenor"], "key": null}]}}},
+        {"declareTable": {"name": "Cds", "columns": ["Entity", "Tenor", "Spread"], "key": ["Entity", "Tenor"]}, "expect": {"change": {"valueChanges": []}}}
+      ]
+    },
+    {
+      "name": "ADR-0058 (amended 2026-10-03): a key column that is not a column, or is named twice, is refused: Entity and Desk",
+      "steps": [
+        {"declareTable": {"name": "Cds", "columns": ["Entity", "Tenor", "Spread"], "key": ["Entity", "Desk"]}, "expect": {"throws": {"refusal": "argument"}}}
+      ]
+    },
+    {
+      "name": "ADR-0058 (amended 2026-10-03): a key column that is not a column, or is named twice, is refused: Entity and entity",
+      "steps": [
+        {"declareTable": {"name": "Cds", "columns": ["Entity", "Tenor", "Spread"], "key": ["Entity", "entity"]}, "expect": {"throws": {"refusal": "argument"}}}
+      ]
+    },
+    {
+      "name": "ADR-0058 (amended 2026-10-03): a snapshot in which two rows hold the same Values in every key column is refused, and the table waits",
+      "steps": [
+        {"declareTable": {"name": "Cds", "columns": ["Entity", "Tenor", "Spread"], "key": ["Entity", "Tenor"]}},
+        {"enter": {"A1": "=SUM(Cds[Spread])"}},
+        {"pushTable": {"name": "Cds", "rows": [["ACME", "5Y", 1], ["ACME", "10Y", 2], ["BETA", "5Y", 3]]}, "expect": {"values": {"A1": 6}}},
+        {"pushTable": {"name": "Cds", "rows": [["ACME", "5Y", 1], ["ACME", "10Y", 2], ["acme", "5y", 3]]}, "expect": {"throws": {"refusal": "repeatedKey", "saying": "The snapshot of 'Cds' is refused: its key columns 'Entity', 'Tenor' holds \"ACME\", \"5Y\" in row 0 and \"acme\", \"5y\" in row 2, which its lookup does not tell apart. The table waits for a snapshot in which no key repeats, and every Formula that reads it shows #GETTING_DATA.", "keyColumn": "Entity, Tenor", "key": "ACME", "keyColumns": ["Entity", "Tenor"], "keys": ["ACME", "5Y"], "firstRow": 0, "secondRow": 2}, "values": {"A1": {"error": "#GETTING_DATA"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0058 (amended 2026-10-03): a row with a blank part of its key has no key, as a blank key is none",
+      "steps": [
+        {"declareTable": {"name": "Cds", "columns": ["Entity", "Tenor", "Spread"], "key": ["Entity", "Tenor"]}},
+        {"pushTable": {"name": "Cds", "rows": [["ACME", null, 1], ["ACME", null, 2]]}, "expect": {"workbook": {"linkedTables": [{"isWaiting": false}]}}}
+      ]
+    },
+    {
+      "name": "ADR-0058 (amended 2026-10-03), ADR-0048: a key of several columns is recorded as a list at version 9, and one column still as its name",
+      "steps": [
+        {"declareTable": {"name": "Cds", "columns": ["Entity", "Tenor", "Spread"], "key": ["Entity", "Tenor"]}},
+        {"declareTable": {"name": "Positions", "columns": ["Id", "PV"], "key": "Id"}},
+        {"read": true, "expect": {"documentJson": "{\"version\":9,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"linkedTables\":[{\"name\":\"Cds\",\"columns\":[\"Entity\",\"Tenor\",\"Spread\"],\"key\":[\"Entity\",\"Tenor\"]},{\"name\":\"Positions\",\"columns\":[\"Id\",\"PV\"],\"key\":\"Id\"}],\"cells\":[]}"}},
+        {"reopen": "json", "expect": {"workbook": {"linkedTables": [{"keyColumns": ["Entity", "Tenor"], "key": null}, {"keyColumns": ["Id"], "key": "Id"}]}}}
+      ]
+    },
+    {
+      "name": "ADR-0048: a key of several columns is not part of version 8, and a list of one column is not one: {\"version\":8,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"linkedTables\":[{\"name\":\"T\",\"columns\":[\"A\",\"B\"],\"key\":[\"A\",\"B\"]}],\"cells\":[]}",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":8,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"linkedTables\":[{\"name\":\"T\",\"columns\":[\"A\",\"B\"],\"key\":[\"A\",\"B\"]}],\"cells\":[]}"}, "expect": {"throws": {"refusal": "document"}}}
+      ]
+    },
+    {
+      "name": "ADR-0048: a key of several columns is not part of version 8, and a list of one column is not one: {\"version\":9,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"linkedTables\":[{\"name\":\"T\",\"columns\":[\"A\",\"B\"],\"key\":[\"A\"]}],\"cells\":[]}",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":9,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"linkedTables\":[{\"name\":\"T\",\"columns\":[\"A\",\"B\"],\"key\":[\"A\"]}],\"cells\":[]}"}, "expect": {"throws": {"refusal": "document"}}}
+      ]
+    },
+    {
+      "name": "ADR-0048: a key of several columns is not part of version 8, and a list of one column is not one: {\"version\":9,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"linkedTables\":[{\"name\":\"T\",\"columns\":[\"A\",\"B\"],\"key\":[\"A\",\"C\"]}],\"cells\":[]}",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":9,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"linkedTables\":[{\"name\":\"T\",\"columns\":[\"A\",\"B\"],\"key\":[\"A\",\"C\"]}],\"cells\":[]}"}, "expect": {"throws": {"refusal": "document"}}}
+      ]
+    },
+    {
+      "name": "ADR-0048: a key of several columns is not part of version 8, and a list of one column is not one: {\"version\":9,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"linkedTables\":[{\"name\":\"T\",\"columns\":[\"A\",\"B\"],\"key\":[\"A\",1]}],\"cells\":[]}",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":9,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"linkedTables\":[{\"name\":\"T\",\"columns\":[\"A\",\"B\"],\"key\":[\"A\",1]}],\"cells\":[]}"}, "expect": {"throws": {"refusal": "document"}}}
+      ]
+    }
+  ]
+}
