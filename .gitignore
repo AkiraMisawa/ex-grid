@@ -45,6 +45,9 @@ samples/ExGrid.DemoHost.React/dist/
 # The Script Core's module for Blazor ExGrid, bundled from src/npm as ExGrid builds (ADR-0350 section 7)
 src/ExGrid/wwwroot/ex-grid-core.min.js
 src/ExGrid/wwwroot/ex-grid-core.min.js.map
+# ExPivot's, bundled from src/npm as ExPivot builds (ADR-0370 section 1)
+src/ExPivot/wwwroot/ex-pivot.min.js
+src/ExPivot/wwwroot/ex-pivot.min.js.map
 
 # The Docs Site's React Examples (ADR-0350 section 12): their dependencies, and the frame the Docs project's build
 # writes into the site's static files

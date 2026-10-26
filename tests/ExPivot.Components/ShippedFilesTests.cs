@@ -51,6 +51,18 @@ public class ShippedFilesTests : PivotTestContext
         Assert.Equal(BuiltInCommandLabels.For(ReloadNoticeLabelIds.Stylesheet), notices[1].TextContent);
     }
 
+    [Fact] // ADR-0123 / ADR-0370 s1: the bundled module ExPivot.Script.ExPivot imports answers the stamp the component is built with, at the version its address carries
+    public void The_script_core_module_is_the_one_the_component_was_built_with()
+    {
+        const string module = "ex-pivot.min.js";
+        var stamp = global::ExPivot.Script.ScriptCoreAsset.Stamp;
+        var shipped = File.ReadAllText(ShippedFiles.PathOf("ExPivot", module));
+        Assert.StartsWith($"/*! ex-pivot.js sha256:{stamp} ", shipped, StringComparison.Ordinal);
+        Assert.Contains($"\"{stamp}\"", shipped, StringComparison.Ordinal);
+        Assert.Equal(global::ExPivot.Script.ScriptCoreAsset.Version, ShippedFiles.Version("ExPivot", module));
+        Assert.Contains($"sourceMappingURL={module}.map", shipped, StringComparison.Ordinal);
+    }
+
     /// <summary>A Pivot Chrome that draws nothing of its own.</summary>
     private sealed class BringsNothing : IPivotChrome;
 

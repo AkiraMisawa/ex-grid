@@ -88,6 +88,8 @@ public static class DemoPageList
             "The demo API server's SQLite trades two ways, side by side: read over Arrow into a Snapshot the page pivots, and asked of the server's own Pivot Source, which answers in SQL (ADR-0065, ADR-0066, ADR-0069)."),
         new("pivot-live", "Live pivots", "ExPivot",
             "Change Batches folded into the bundled source by the page's own timer, and a server whose data its live updates keep moving; changed values are marked in both, and a server cut off leaves a Stale Report (ADR-0067, ADR-0068)."),
+        new("script-pivot", "ExPivot over the Script Core", "ExPivot",
+            "Blazor's ExPivot drawn by its TypeScript Script Core: the report, Field List and toolbar in the browser, the trades and their Leaf Aggregates in .NET, asked as PivotJson (ADR-0370 section 1)."),
         new("pivot-risk", "Pivot risk", "ExPivot",
             "A rate-delta report: desks and curves in Rows, tenors in Columns, ordered ON, TN, 1W … 30Y by an Order Key, with 18M and 1Y6M side by side (ADR-0060)."),
         new("chart", "Charts", "ExChart",
