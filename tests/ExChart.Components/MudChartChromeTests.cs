@@ -103,13 +103,13 @@ public class MudChartChromeTests : BunitContext
         cut.Find($".mud-ex-chart-toolbar [data-ex-command='{ChartCommandIds.Filters}']").Click();
 
         await cut.Find(".mud-ex-chart-from input").ChangeAsync(new ChangeEventArgs { Value = "one" });
-        cut.Find(".mud-ex-chart-apply").Click();
+        await cut.Find(".mud-ex-chart-apply").ClickAsync(new MouseEventArgs());
         Assert.Contains("is not a number", cut.Find(".mud-ex-chart-filter-error").TextContent, StringComparison.Ordinal);
         Assert.Empty(ranges);
 
         await cut.Find(".mud-ex-chart-from input").ChangeAsync(new ChangeEventArgs { Value = "1" });
         await cut.Find(".mud-ex-chart-to input").ChangeAsync(new ChangeEventArgs { Value = "2" });
-        cut.Find(".mud-ex-chart-apply").Click();
+        await cut.Find(".mud-ex-chart-apply").ClickAsync(new MouseEventArgs());
         Assert.Equal(new ChartRange(1, 2), Assert.Single(ranges));
         Assert.Empty(cut.FindAll(".mud-ex-chart-filter-error"));
         Assert.False(cut.Find($".mud-ex-chart-toolbar [data-ex-command='{ChartCommandIds.ResetRange}']").HasAttribute("disabled"));

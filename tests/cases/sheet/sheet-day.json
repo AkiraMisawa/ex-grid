@@ -1,0 +1,85 @@
+{
+  "about": "TODAY() answers the Sheet Day, which the engine is given as data and never reads from a clock; until it is given, a Formula that calls TODAY waits (ADR-0121). Transcribed from ExSheet.Engine.Tests' SheetDayTests.",
+  "kind": "sheet",
+  "culture": "en-US",
+  "cases": [
+    {
+      "name": "ADR-0121: before the Sheet Day is known, TODAY waits, and IFERROR does not stand in for it",
+      "steps": [
+        {"enter": {"A1": "=TODAY()", "A2": "=IFERROR(TODAY(),0)", "A3": "=A1+1"}, "expect": {"workbook": {"today": null}, "values": {"A1": {"error": "#GETTING_DATA"}, "A2": {"error": "#GETTING_DATA"}, "A3": {"error": "#GETTING_DATA"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0121: a Formula that calls TODAY waits as a whole, whichever branch it takes, as one reading a waiting Linked Table does",
+      "steps": [
+        {"enter": {"A1": "=IF(TRUE,1,TODAY())"}, "expect": {"values": {"A1": {"error": "#GETTING_DATA"}}}},
+        {"setToday": "2026-10-03", "expect": {"values": {"A1": 1}}}
+      ]
+    },
+    {
+      "name": "ADR-0121: TODAY is the Sheet Day's serial",
+      "steps": [
+        {"setToday": "2026-10-03"},
+        {"enter": {"A1": "=TODAY()", "A2": "=YEAR(TODAY())", "A3": "=DATE(2026,10,3)"}, "expect": {"values": {"A1": 46298, "A2": 2026, "A3": 46298}}}
+      ]
+    },
+    {
+      "name": "ADR-0121: setting the day recalculates the Formulas that call TODAY and what reads them, and nothing else",
+      "steps": [
+        {"enter": {"A1": "=TODAY()", "B1": "=A1+1", "C1": "=1+1"}},
+        {"setToday": "2026-10-03", "expect": {"change": {"recalculated": ["A1", "B1"]}, "values": {"B1": 46299}}},
+        {"setToday": "2026-10-04", "expect": {"change": {"recalculated": ["A1", "B1"]}, "values": {"B1": 46300}}}
+      ]
+    },
+    {
+      "name": "ADR-0121: the day the Sheet already has changes nothing",
+      "steps": [
+        {"enter": {"A1": "=TODAY()"}},
+        {"setToday": "2026-10-03"},
+        {"setToday": "2026-10-03", "expect": {"change": {"recalculated": [], "valueChanges": []}}}
+      ]
+    },
+    {
+      "name": "ADR-0121: a Formula that no longer calls TODAY is no longer recalculated by the day",
+      "steps": [
+        {"enter": {"A1": "=TODAY()"}},
+        {"enter": {"A1": "=5"}},
+        {"setToday": "2026-10-03", "expect": {"change": {"recalculated": []}}}
+      ]
+    },
+    {
+      "name": "ADR-0121: clearing the day makes TODAY wait again",
+      "steps": [
+        {"enter": {"A1": "=TODAY()"}},
+        {"setToday": "2026-10-03"},
+        {"setToday": null, "expect": {"values": {"A1": {"error": "#GETTING_DATA"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0121 / ADR-0048: the Sheet Day is not part of a Sheet Document, so a reopened Sheet waits for its day",
+      "steps": [
+        {"enter": {"A1": "=TODAY()"}},
+        {"setToday": "2026-10-03"},
+        {"reopen": {"sheet": "Sheet1"}, "expect": {"workbook": {"today": null}, "values": {"A1": {"error": "#GETTING_DATA"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0121 / ADR-0047: Excel's dates begin in 1900, and a Sheet Day before that is refused",
+      "steps": [
+        {"setToday": "1899-12-31", "expect": {"throws": {"refusal": "argument"}, "workbook": {"today": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0121: TODAY takes no argument, as Excel's does: =TODAY(1)",
+      "steps": [
+        {"enter": {"A1": "=TODAY(1)"}, "expect": {"throws": {"refusal": "formulaSyntax"}}}
+      ]
+    },
+    {
+      "name": "ADR-0121: TODAY takes no argument, as Excel's does: =TODAY(,)",
+      "steps": [
+        {"enter": {"A1": "=TODAY(,)"}, "expect": {"throws": {"refusal": "formulaSyntax"}}}
+      ]
+    }
+  ]
+}

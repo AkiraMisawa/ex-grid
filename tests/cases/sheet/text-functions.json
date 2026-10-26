@@ -1,0 +1,92 @@
+{
+  "about": "UPPER, LOWER, PROPER and SEARCH through the Sheet beyond what Windows Excel answered in ExcelCases' upper, lower, proper and search (observed 2026-10-03): text outside the admitted alphabet or context is refused (ADR-0047). Transcribed from ExSheet.Engine.Tests' ObservedTextTests.",
+  "kind": "sheet",
+  "culture": "en-US",
+  "cases": [
+    {
+      "name": "ADR-0047: text outside the admitted alphabet or context is refused: =UPPER(\"日本語\")",
+      "steps": [
+        {"enter": {"ZZ1000": "=UPPER(\"日本語\")"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: text outside the admitted alphabet or context is refused: =LOWER(\"Ω\")",
+      "steps": [
+        {"enter": {"ZZ1000": "=LOWER(\"Ω\")"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: text outside the admitted alphabet or context is refused: =LOWER(\"Σa\")",
+      "steps": [
+        {"enter": {"ZZ1000": "=LOWER(\"Σa\")"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: text outside the admitted alphabet or context is refused: =LOWER(\"Σ,\")",
+      "steps": [
+        {"enter": {"ZZ1000": "=LOWER(\"Σ,\")"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: text outside the admitted alphabet or context is refused: =LOWER(\"Σσ\")",
+      "steps": [
+        {"enter": {"ZZ1000": "=LOWER(\"Σσ\")"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: text outside the admitted alphabet or context is refused: =PROPER(\"ΣΣ\")",
+      "steps": [
+        {"enter": {"ZZ1000": "=PROPER(\"ΣΣ\")"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: text outside the admitted alphabet or context is refused: =PROPER(\"Σa\")",
+      "steps": [
+        {"enter": {"ZZ1000": "=PROPER(\"Σa\")"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: text outside the admitted alphabet or context is refused: =SEARCH(\"a\",\"a日本語\")",
+      "steps": [
+        {"enter": {"ZZ1000": "=SEARCH(\"a\",\"a日本語\")"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: text outside the admitted alphabet or context is refused: =SEARCH(\"\",\"a😀\")",
+      "steps": [
+        {"enter": {"ZZ1000": "=SEARCH(\"\",\"a😀\")"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: text functions recalculate from changed References",
+      "steps": [
+        {"enter": {"A1": "straße", "B1": "=UPPER(A1)", "C1": "=LOWER(B1)", "D1": "=PROPER(C1)", "E1": "=SEARCH(\"STR*E\",D1)"}, "expect": {"values": {"D1": "Straße", "E1": 1}}},
+        {"enter": {"A1": "hello-world 42foo o'NEILL"}, "expect": {"values": {"D1": "Hello-World 42Foo O'Neill", "E1": {"error": "#VALUE!"}}, "change": {"recalculated": ["B1", "C1", "D1", "E1"]}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: text functions keep the strict cycle error: UPPER",
+      "steps": [
+        {"enter": {"A1": "=UPPER(A1)"}, "expect": {"values": {"A1": {"error": "#CIRC!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: text functions keep the strict cycle error: LOWER",
+      "steps": [
+        {"enter": {"A1": "=LOWER(A1)"}, "expect": {"values": {"A1": {"error": "#CIRC!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: text functions keep the strict cycle error: PROPER",
+      "steps": [
+        {"enter": {"A1": "=PROPER(A1)"}, "expect": {"values": {"A1": {"error": "#CIRC!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: text functions keep the strict cycle error: SEARCH",
+      "steps": [
+        {"enter": {"A1": "=SEARCH(A1,\"x\")"}, "expect": {"values": {"A1": {"error": "#CIRC!"}}}}
+      ]
+    }
+  ]
+}

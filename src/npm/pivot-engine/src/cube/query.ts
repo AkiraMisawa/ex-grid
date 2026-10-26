@@ -5,6 +5,7 @@
 
 import { pivotItemKey, publicKeyId, type PivotItemKey } from '../items/item-key';
 import type { PivotLayout, PivotFieldPlacement } from '../layout/pivot-layout';
+import { pivotAggregations, type PivotAggregation } from '../layout/pivot-enums';
 import { partExtremes, partProduct, partSum, partVariance, partsOf } from '../aggregates/parts';
 
 /** A part of a Leaf Aggregate beyond the counts, which always travel (ADR-0066). */
@@ -59,6 +60,43 @@ export interface PivotLevelRule {
     readonly collapsed: boolean;
     /** The Items whose state is the other of `collapsed`. */
     readonly toggledItems: readonly PivotItemKey[];
+    /** How a row field's Items are ordered by a value, for a question with a window; none for a field
+     * ordered by label, and for a column field. */
+    readonly order?: PivotLevelOrder;
+}
+
+/**
+ * How a row field's Items are ordered among their siblings (ADR-0370 section 3): by a field in Values under an
+ * Aggregation, read at the grand total of the columns, as the report sorts them. A sibling whose value is not
+ * a number follows every number, in either direction. What a window of a sibling set is cut from.
+ */
+export interface PivotLevelOrder {
+    /** The field in Values, by its place in the question's `values`. */
+    readonly value: number;
+    /** The Aggregation read of it. */
+    readonly aggregation: PivotAggregation;
+    /** Whether the largest comes first. */
+    readonly descending: boolean;
+}
+
+/** Where one parent's window starts: the parent row group, by its Items, and the sibling it starts at. */
+export interface PivotWindowStart {
+    /** The parent's Items, outermost first: none for the grand total. */
+    readonly rows: readonly PivotItemKey[];
+    /** The place among the siblings, from 0, of the first one asked for. */
+    readonly start: number;
+}
+
+/**
+ * The window of a question's levels (ADR-0370 section 3): a sibling set ordered by a value with more than
+ * `limit` siblings is answered as a window of them, starting where `starts` says for its parent, or at the
+ * first, and no further than `limit` from the end; with what lies on either side merged.
+ */
+export interface PivotLevelWindow {
+    /** The most siblings a set ordered by a value is answered with whole. */
+    readonly limit: number;
+    /** Where the windows start, one a parent at most. */
+    readonly starts: readonly PivotWindowStart[];
 }
 
 /**
@@ -72,14 +110,18 @@ export interface PivotLevels {
     readonly rows: readonly PivotLevelRule[];
     /** The column fields' rules, outermost first. */
     readonly columns: readonly PivotLevelRule[];
+    /** The window of the sets ordered by a value; none, and every set is answered whole. */
+    readonly window?: PivotLevelWindow;
 }
 
-/** A rule's settings, each left out taking its default: every Item expanded. */
+/** A rule's settings, each left out taking its default: every Item expanded, ordered by label. */
 export interface PivotLevelRuleInput {
     /** Whether the Items are collapsed, but for the toggled ones. */
     readonly collapsed?: boolean;
     /** The Items whose state is the other. */
     readonly toggledItems?: readonly PivotItemKey[];
+    /** How the Items are ordered by a value. */
+    readonly order?: PivotLevelOrder;
 }
 
 /** A rule, checked and frozen. */
@@ -87,7 +129,37 @@ export function pivotLevelRule(input: PivotLevelRuleInput = {}): PivotLevelRule 
     const collapsed = input.collapsed ?? false; // oxlint-disable-line ex-grid/no-stand-in-default -- a rule left unsaid is every Item expanded
     if (typeof collapsed !== 'boolean') throw new TypeError("A rule's collapse is true or false.");
     const toggled = (input.toggledItems ?? []).map(key => pivotItemKey(key.kind, key.value)); // oxlint-disable-line ex-grid/no-stand-in-default -- a rule that toggles nothing toggles no Item
-    return Object.freeze({ collapsed, toggledItems: Object.freeze(toggled) });
+    if (input.order === undefined) return Object.freeze({ collapsed, toggledItems: Object.freeze(toggled) });
+    return Object.freeze({ collapsed, toggledItems: Object.freeze(toggled), order: levelOrder(input.order) });
+}
+
+function levelOrder(input: PivotLevelOrder): PivotLevelOrder {
+    if (!Number.isSafeInteger(input.value) || input.value < 0) throw new RangeError(`An order names a field in Values by its place, not ${input.value}.`);
+    if (!pivotAggregations.includes(input.aggregation)) throw new RangeError(`'${input.aggregation}' is not an Aggregation.`);
+    if (typeof input.descending !== 'boolean') throw new TypeError("An order's direction is true or false.");
+    return Object.freeze({ value: input.value, aggregation: input.aggregation, descending: input.descending });
+}
+
+/** A window's settings: its limit, and where its windows start, none by default. */
+export interface PivotLevelWindowInput {
+    /** The most siblings a set ordered by a value is answered with whole. */
+    readonly limit: number;
+    /** Where the windows start. */
+    readonly starts?: readonly PivotWindowStart[];
+}
+
+function levelWindow(input: PivotLevelWindowInput): PivotLevelWindow {
+    if (!Number.isSafeInteger(input.limit) || input.limit < 1) throw new RangeError(`A window holds at least one sibling, not ${input.limit}.`);
+    const seen = new Set<string>();
+    const starts = (input.starts ?? []).map(given => { // oxlint-disable-line ex-grid/no-stand-in-default -- a window named nowhere starts every set at its first sibling
+        if (!Number.isSafeInteger(given.start) || given.start < 0) throw new RangeError(`A window starts at a sibling's place from 0, not ${given.start}.`);
+        const rows = given.rows.map(key => pivotItemKey(key.kind, key.value));
+        const id = rows.map(publicKeyId).join('\u0000');
+        if (seen.has(id)) throw new TypeError('The window starts twice under one parent (ADR-0370 section 3).');
+        seen.add(id);
+        return Object.freeze({ rows: Object.freeze(rows), start: given.start });
+    });
+    return Object.freeze({ limit: input.limit, starts: Object.freeze(starts) });
 }
 
 /** Whether the groups below `item` are shown under `rule`. */
@@ -105,18 +177,33 @@ export function levelsOfLayout(layout: PivotLayout): PivotLevels {
     return Object.freeze({ rows: Object.freeze(layout.rows.map(ruleOfPlacement)), columns: Object.freeze(layout.columns.map(ruleOfPlacement)) });
 }
 
+function sameOrder(a: PivotLevelOrder | undefined, b: PivotLevelOrder | undefined): boolean {
+    if (a === undefined || b === undefined) return a === b;
+    return a.value === b.value && a.aggregation === b.aggregation && a.descending === b.descending;
+}
+
 function sameRules(one: readonly PivotLevelRule[], other: readonly PivotLevelRule[]): boolean {
     return one.length === other.length
         && one.every((rule, i) => {
             const theirs = other[i];
-            return theirs !== undefined && rule.collapsed === theirs.collapsed && sameKeys(rule.toggledItems, theirs.toggledItems);
+            return theirs !== undefined && rule.collapsed === theirs.collapsed && sameKeys(rule.toggledItems, theirs.toggledItems)
+                && sameOrder(rule.order, theirs.order);
         });
 }
 
-/** Whether two questions' levels show the same groups: both none, or the same rules. */
+// Two windows' starts are one when each parent starts at the same place, in any order.
+function sameWindow(a: PivotLevelWindow | undefined, b: PivotLevelWindow | undefined): boolean {
+    if (a === undefined || b === undefined) return a === b;
+    const startOf = (window: PivotLevelWindow): Map<string, number> => new Map(window.starts.map(start => [start.rows.map(publicKeyId).join('\u0000'), start.start]));
+    const mine = startOf(a);
+    const theirs = startOf(b);
+    return a.limit === b.limit && mine.size === theirs.size && [...mine].every(([parent, start]) => theirs.get(parent) === start);
+}
+
+/** Whether two questions' levels show the same groups: both none, or the same rules and the same window. */
 export function sameLevels(a: PivotLevels | undefined, b: PivotLevels | undefined): boolean {
     if (a === undefined || b === undefined) return a === b;
-    return sameRules(a.rows, b.rows) && sameRules(a.columns, b.columns);
+    return sameRules(a.rows, b.rows) && sameRules(a.columns, b.columns) && sameWindow(a.window, b.window);
 }
 
 /** The question for a report's Leaf Aggregates. */
@@ -151,8 +238,13 @@ export interface PivotQueryInput {
     readonly values?: readonly (string | { readonly field: string; readonly parts?: readonly PivotPart[] })[];
     /** The cap on leaves; {@link defaultMaxLeaves} when left out. */
     readonly maxLeaves?: number;
-    /** Which groups the report shows, one rule a row and a column field; none when left out. */
-    readonly levels?: { readonly rows?: readonly PivotLevelRuleInput[]; readonly columns?: readonly PivotLevelRuleInput[] };
+    /** Which groups the report shows, one rule a row and a column field, and the window of the sets ordered by a
+     * value; none when left out. */
+    readonly levels?: {
+        readonly rows?: readonly PivotLevelRuleInput[];
+        readonly columns?: readonly PivotLevelRuleInput[];
+        readonly window?: PivotLevelWindowInput;
+    };
 }
 
 function queryField(input: string | { readonly field: string; readonly hiddenItems?: readonly PivotItemKey[] }): PivotQueryField {
@@ -194,14 +286,39 @@ export function pivotQuery(input: PivotQueryInput = {}): PivotQuery {
         asked.add(value.field);
     }
     if (input.levels === undefined) return Object.freeze({ rows, columns, filters, values, maxLeaves });
-    const levels: PivotLevels = Object.freeze({
-        rows: Object.freeze((input.levels.rows ?? []).map(pivotLevelRule)), // oxlint-disable-line ex-grid/no-stand-in-default -- no row field, no rule
-        columns: Object.freeze((input.levels.columns ?? []).map(pivotLevelRule)), // oxlint-disable-line ex-grid/no-stand-in-default -- no column field, no rule
-    });
+    const levelRows = Object.freeze((input.levels.rows ?? []).map(pivotLevelRule)); // oxlint-disable-line ex-grid/no-stand-in-default -- no row field, no rule
+    const levelColumns = Object.freeze((input.levels.columns ?? []).map(pivotLevelRule)); // oxlint-disable-line ex-grid/no-stand-in-default -- no column field, no rule
+    const levels: PivotLevels = Object.freeze(input.levels.window === undefined
+        ? { rows: levelRows, columns: levelColumns }
+        : { rows: levelRows, columns: levelColumns, window: levelWindow(input.levels.window) });
     if (levels.rows.length !== rows.length || levels.columns.length !== columns.length) {
         throw new TypeError(`The question's levels give ${levels.rows.length} row and ${levels.columns.length} column rules, and it places ${rows.length} row and ${columns.length} column fields; a field has one rule (ADR-0370 section 3).`);
     }
+    checkOrders(levels, values);
     return Object.freeze({ rows, columns, filters, values, maxLeaves, levels });
+}
+
+// A row field's order names a field in Values whose parts its Aggregation reads; a column field's names none, since
+// only row sets are windowed; a window's parent names an Item of each row field above the set.
+function checkOrders(levels: PivotLevels, values: readonly PivotQueryValue[]): void {
+    if (levels.columns.some(rule => rule.order !== undefined)) {
+        throw new TypeError("A column field's rule says no order; only row sets are answered as windows (ADR-0370 section 3).");
+    }
+    for (const rule of levels.rows) {
+        const order = rule.order;
+        if (order === undefined) continue;
+        const value = values[order.value];
+        if (value === undefined) throw new RangeError(`An order reads value ${order.value}, and the question asks for ${values.length} values.`);
+        const needed = partsOf(order.aggregation);
+        if ((partBits(value.parts) & needed) !== needed) {
+            throw new TypeError(`An order reads the ${order.aggregation} of '${value.field}', and the question asks for none of its parts (ADR-0370 section 3).`);
+        }
+    }
+    for (const start of levels.window?.starts ?? []) { // oxlint-disable-line ex-grid/no-stand-in-default -- no window starts nowhere
+        if (start.rows.length >= levels.rows.length) {
+            throw new RangeError(`A window's parent names ${start.rows.length} Items, and the question places ${levels.rows.length} row fields; its children are a row field's Items (ADR-0370 section 3).`);
+        }
+    }
 }
 
 function askedOf(p: PivotFieldPlacement): PivotQueryField {
