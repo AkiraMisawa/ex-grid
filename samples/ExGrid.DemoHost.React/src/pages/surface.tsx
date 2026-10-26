@@ -1,5 +1,5 @@
 import { useRef, useState, type ReactElement } from 'react';
-import { SurfaceDefinition, type SurfaceNode, type SurfaceSlice, type SurfaceTriangle, type SurfaceView } from '@ex-grid/chart';
+import { interpolateBilinear, SurfaceDefinition, tenor, type SurfaceNode, type SurfaceSlice, type SurfaceTriangle, type SurfaceView } from '@ex-grid/chart';
 import { ExSurface, type ExSurfaceApi } from '@ex-grid/chart-react';
 import { DemoNav } from '../demo-nav';
 
@@ -22,6 +22,27 @@ function vol(run: number): SurfaceDefinition {
         zFormat: v => `${twoPlaces(Number(v))}%`,
     });
 }
+
+const deltaValues = [10, 25, 50, 75, 90];
+const tenorYears = [7 / 365, 1 / 12, 0.25, 0.5, 1, 2, 5, 10];
+const quotes = vol(0).z;
+
+// The same quotes on years and deltas, interpolated bilinearly by the page and handed in (ADR-0257).
+const interpolated = interpolateBilinear(deltaValues, tenorYears, quotes.map(row => row.map(v => (v === null ? null : Number(v)))))
+    .surface({ xTitle: 'Delta', yTitle: 'Years', zTitle: 'Volatility', samples: 13 });
+
+// Total variance on years placed by their logarithm, on a logarithmic vertical scale (ADR-0312).
+const logVol = SurfaceDefinition.grid({
+    x: { title: 'Delta', values: deltas },
+    y: { title: 'Years', values: tenorYears, format: y => tenor(Number(y)), scale: 'logarithmic' },
+    z: tenorYears.map((years, t) => {
+        const row = quotes[t];
+        if (row === undefined) throw new Error(`The quotes have no row for tenor ${String(t)}.`);
+        return row.map(v => (v === null ? null : round(Number(v) * Number(v) * years / 100, 4)));
+    }),
+    zTitle: 'Total variance',
+    zScale: 'logarithmic',
+});
 
 // A book short volatility and long a little spot: P&L in thousands over spot and volatility shifts.
 const spotShifts = [-10, -5, -2, 0, 2, 5, 10];
@@ -66,7 +87,8 @@ const writeView = (v: SurfaceView): string =>
 
 /** The page /surface of the Blazor hosts (tickets 30 to 34): an FX volatility surface with one hole, which the
  * page turns and slices as a Consumer would, keeping the view and the slice (ADR-0272) and writing the last
- * event raised; then a surface coloured from zero and a mesh of the page's own triangles. */
+ * event raised; then the same quotes interpolated by the page, a surface coloured from zero, a mesh of the
+ * page's own triangles, and logarithmic axes. */
 export function Surface(): ReactElement {
     const [run, setRun] = useState(0);
     const [definition, setDefinition] = useState(() => vol(0));
@@ -118,6 +140,16 @@ export function Surface(): ReactElement {
                 <p id="surface-events">{events}</p>
                 <p id="surface-svg">{svg}</p>
             </section>
+            <section id="interpolated">
+                <h2>Interpolated by the page</h2>
+                <p>
+                    The same quotes on years and deltas, interpolated bilinearly by the page with the chart&apos;s helper
+                    and handed in as a function (ADR-0257). The chart samples it, says the method under the surface and
+                    in the tooltip, draws no dot at an interpolated value, and leaves a hole wherever a cell has a
+                    missing corner: the helper does not reach past the quotes.
+                </p>
+                <ExSurface definition={interpolated} title="EURUSD volatility, bilinear" width={640} height={420} />
+            </section>
             <section id="pnl">
                 <h2>Coloured from zero</h2>
                 <p>
@@ -135,6 +167,11 @@ export function Surface(): ReactElement {
                     triangles.
                 </p>
                 <ExSurface definition={mesh} title="Field" width={640} height={420} />
+            </section>
+            <section id="log">
+                <h2>Logarithmic axes</h2>
+                <p>Tenors placed by their logarithm, and the values on a logarithmic scale (ADR-0312).</p>
+                <ExSurface definition={logVol} title="Variance on years" width={640} height={420} />
             </section>
         </>
     );
