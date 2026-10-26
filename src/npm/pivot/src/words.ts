@@ -2,7 +2,7 @@
 // the engine's English, and an id neither knows painted as itself, a missing word seen, never a blank. The
 // tables are the engine's, so a report's own words and the Field List's come from one place.
 
-import { fillPivotWord, pivotWord, type PivotArea, type PivotLabel, type PivotLayoutChoice } from '@ex-grid/pivot-engine';
+import { fillPivotWord, pivotWord, type PivotArea, type PivotLabel, type PivotLayoutChoice, type PivotSourceRefusal } from '@ex-grid/pivot-engine';
 import { unreachable } from './must';
 
 /** The words of one pivot, under the label function it was given. */
@@ -26,6 +26,17 @@ export class PivotScreenWords {
     /** The template word for `id`, filled as .NET fills one. */
     fill(id: string, ...args: readonly string[]): string {
         return fillPivotWord(this.word(id), ...args);
+    }
+
+    /** What a source that threw says where the user sees it. */
+    failed(error: unknown): string {
+        return this.fill('source-failed', error instanceof Error ? error.message : String(error));
+    }
+
+    /** What a Pivot Source's refusal says where the user sees it: data that moved on under the report asks for a
+     * refresh (ADR-0066), and any other refusal is said in the source's words. */
+    sourceRefused(refusal: PivotSourceRefusal): string {
+        return refusal.kind === 'sourceVersionNotHeld' ? this.word('data-changed') : this.fill('source-refused', refusal.message);
     }
 
     /** An Area's title: `Filters`, `Columns`, `Rows`, `Values`. */

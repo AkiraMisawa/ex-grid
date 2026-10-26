@@ -14,6 +14,7 @@ export {
 } from './words/pivot-words';
 export { pivotLocales } from './culture/culture-data';
 export { formatPivotCount, formatPivotNumber } from './text/number-text';
+export { formatPivotDetailValue } from './text/detail-text';
 export { PivotFormatError, PivotOrderKeyError, PivotVersionError } from './errors';
 export type {
     PivotAggregation, PivotArea, PivotAxis, PivotColumnRole, PivotDatePart, PivotFieldType, PivotItemKind, PivotReportForm, PivotRowRole,

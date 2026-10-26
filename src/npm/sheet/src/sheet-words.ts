@@ -8,7 +8,7 @@
 // A sentence with arguments is a function of them here, and a template by its id: {0}, {1} and {2} stand for
 // its arguments in the order the function takes them, so a language that orders them otherwise moves them.
 
-import type { CommitRefusalReason, CopyRefusalReason, EditDiscardReason, PasteRefusalReason } from '@ex-grid/core';
+import type { CommitRefusalReason, CopyRefusalReason, EditDiscardReason, PasteRefusalReason, PlacementRefusalReason } from '@ex-grid/core';
 import type { BorderLineStyle, CellAddress, Culture, FormulaSyntaxError, HorizontalAlignment, SheetRefusal } from '@ex-grid/sheet-engine';
 import type {
     BorderEdge, BorderPreset, ColourTarget, DisabledNumberFormatCategory, FontStyle, FormatCellsTab, NumberFormatCategory,
@@ -65,6 +65,7 @@ export type SheetWordId =
     | 'pasteTooNarrowToShow'
     | `pasteRefused.${PasteRefusalReason}`
     | `commitRefused.${CommitRefusalReason}`
+    | `placementRefused.${PlacementRefusalReason}`
     | 'overwritten'
     | `copyRefused.${CopyRefusalReason}`
     | `pointingRefused.${PointingRefusalWordCase}`
@@ -419,6 +420,12 @@ export class SheetWords {
      * stands with the typing, and only Escape leaves it. */
     commitRefused(address: string, reason: CommitRefusalReason): string {
         return this.#say(`commitRefused.${reason}`, address);
+    }
+
+    /** A selection the Consumer asked the grid to place, refused because the rows or columns it was taken
+     * against have moved since (ADR-0005): the Selection stands where it was. */
+    placementRefused(reason: PlacementRefusalReason): string {
+        return this.word(`placementRefused.${reason}`);
     }
 
     /** A commit that landed over a cell changed while it was being edited (ADR-0142, LV-11): what it showed when

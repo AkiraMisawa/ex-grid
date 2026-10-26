@@ -76,6 +76,9 @@ export function fillPivotWord(template: string, ...args: readonly string[]): str
 export function formatPivotCount(count: number, locale: string): string;
 
 // @public
+export function formatPivotDetailValue(value: PivotDetailValue, format: string | undefined, locale: string): string;
+
+// @public
 export function formatPivotNumber(value: number, format: string, locale: string): string;
 
 // @public

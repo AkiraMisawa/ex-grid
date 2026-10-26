@@ -18,7 +18,10 @@ import {
     layoutChoiceChanges, pivotLayoutChoices, pivotValueCaptions, placementOf, placementsIn, isItemCollapsed, pivotWordIdList, setCollapsed,
     pivotItemKeyId, validateLayout, type PivotDisplayRow, type PivotEntry, type PivotFieldPlacement, type PivotItemInfo, type PivotItemCounts, type PivotLabel, type PivotLayout, type PivotLayoutChoice,
     type PivotReportRefusal, type PivotReportSettings, type PivotReportState, type PivotSlicing, type PivotSource, type PivotToggle,
+    pivotReportDetailsQuery, PivotItemPage, itemsOfPage, type PivotFieldItem,
 } from '@ex-grid/pivot-engine';
+import { detailsEvent, detailsProblemText, type PivotDetailItem, type PivotDetailsView, type PivotShowDetailsEvent } from './details';
+import { DetailsSheets, type MountGrid } from './details-view';
 import { entryMenuCommands, entryOfField, type EntryMenuCommand, type EntryPanel } from './entry-menu';
 import { FieldListView, fieldOf, sameEntry, type FieldListEdit, type FieldListMove } from './field-list';
 import { ItemFilterPanel, itemsProblemText } from './item-filter';
@@ -108,10 +111,15 @@ export interface PivotViewOptions {
     /** How the report's work shares the thread: a slice of 30 ms between macrotasks unless given (PV-40). Read
      * once, when the pivot is made. */
     readonly slicing?: PivotSlicing;
+    /** Hears Show Details (ADR-0059, ADR-0063): the records behind a value cell double clicked. A Consumer that
+     * listens takes them, and the pivot shows nothing; otherwise they open as `detailsView` says. */
+    readonly onShowDetails?: (event: PivotShowDetailsEvent) => void;
+    /** Where the records open when nobody hears `onShowDetails`: a tab at the report's foot, which covers the report
+     * while it is selected, or a dialog; `tab` unless given. */
+    readonly detailsView?: PivotDetailsView;
 }
 
-/** Draws a grid into an element: ExGrid's `createGrid`, or a layer-2 test's own. */
-export type MountGrid = (element: HTMLElement, options: GridOptions<PivotDisplayRow>) => GridHandle<PivotDisplayRow>;
+export type { MountGrid } from './details-view';
 
 /** Why a question was asked: a move of the user's, a layout the Consumer handed in, or new data. */
 type Cause = 'user' | 'consumer' | 'data';
@@ -133,6 +141,8 @@ interface Question {
     readonly moves: readonly FieldListMove[];
     /** What it is asked of and under: the rows of its answer are asked of the same, with the same. */
     readonly reportSource: LocalPivotReportSource;
+    /** The Pivot Source its report source asks, which Show Details asks for the records behind a cell. */
+    readonly source: PivotSource;
     readonly settings: PivotReportSettings;
     /** The locale its settings carry, which its counts and its report are written in. */
     readonly locale: string;
@@ -213,9 +223,13 @@ function checkedOptions(options: PivotViewOptions): PivotViewOptions {
     }
     const slicing = given['slicing'];
     if (slicing !== undefined && (typeof slicing !== 'object' || slicing === null)) throw new TypeError('slicing is an object.');
-    for (const name of ['onLayoutChanged', 'onRefused', 'onShowFieldListChanged', 'label']) {
+    for (const name of ['onLayoutChanged', 'onRefused', 'onShowFieldListChanged', 'onSelectionChanged', 'onShowDetails', 'label']) {
         const handler = given[name];
         if (handler !== undefined && typeof handler !== 'function') throw new TypeError(`${name} is a function.`);
+    }
+    const detailsView = given['detailsView'];
+    if (detailsView !== undefined && detailsView !== 'tab' && detailsView !== 'dialog') {
+        throw new TypeError(`detailsView is 'tab' or 'dialog', not ${JSON.stringify(detailsView)}.`);
     }
     const locale = given['locale'];
     if (locale !== undefined && (typeof locale !== 'string' || locale === '')) {
@@ -257,6 +271,8 @@ export class PivotView {
     readonly #dropRemove: HTMLElement;
     readonly #fieldListBox: HTMLElement;
     readonly #fieldList: FieldListView;
+    // Show Details' sheets, when the Consumer does not take the records: tabs at the report's foot, or a dialog.
+    readonly #details: DetailsSheets;
     readonly #userWidths = new Map<string, number>();
     // Read once, when the pivot is made: every report source it makes shares the thread the same way.
     readonly #slicing: PivotSlicing | undefined;
@@ -367,13 +383,14 @@ export class PivotView {
         this.#notice = div('ex-pivot-refusal-notice');
         this.#notice.setAttribute('role', 'alert');
         this.#sheet = div('ex-pivot-sheet');
+        // Records covering the report take no drop meant for it.
         this.#sheet.addEventListener('dragover', event => {
-            if (!this.#fieldList.removable) return;
+            if (!this.#fieldList.removable || this.#details.covering) return;
             event.preventDefault();
         });
         this.#sheet.addEventListener('drop', event => {
             event.preventDefault();
-            this.#fieldList.dropOnReport();
+            if (!this.#details.covering) this.#fieldList.dropOnReport();
         });
         this.#empty = div('ex-pivot-empty');
         this.#empty.setAttribute('role', 'status');
@@ -393,6 +410,17 @@ export class PivotView {
             menu: entry => { this.#toggleEntryMenu(entry); },
         });
         root.append(this.#report, this.#fieldListBox);
+        this.#details = new DetailsSheets({
+            document,
+            mountGrid,
+            words: () => this.#words,
+            look: () => ({ rowHeight: this.#options.rowHeight, density: this.#options.density, commandLabel: this.#options.label }),
+            problemText: problem => detailsProblemText(problem, this.#words),
+            changed: () => { this.#draw(); },
+            // The report's grid takes the keyboard back; a report with no grid has the Field List's toggle take it, so
+            // the keyboard stays in the pivot.
+            returnKeyboard: () => { (this.#grid === undefined ? this.#fieldListToggle : this.#gridRoot).focus(); },
+        });
         // A drag that moves on from an Area, anywhere in the pivot, leaves it unmarked; and one that leaves the
         // pivot for an element the browser names. WebKit names none on leaving one element for another, so a
         // leave that names nothing is not taken as one.
@@ -471,6 +499,7 @@ export class PivotView {
             || options.viewportWidth !== before.viewportWidth) {
             this.#drawGrid();
         }
+        if (settingsMoved || options.rowHeight !== before.rowHeight) this.#details.draw();
         this.#draw();
     }
 
@@ -482,6 +511,7 @@ export class PivotView {
         this.#listening.abort();
         this.#takeDown();
         this.#items.dispose();
+        this.#details.destroy();
         this.#generation++;
         this.#asked?.controller.abort();
         this.#asked = undefined;
@@ -597,7 +627,7 @@ export class PivotView {
         }
         const question: Question = {
             layout, generation, controller: new AbortController(), raise, markChanges, refreshData, moves: Object.freeze(moves),
-            reportSource: this.#reportSource, settings: this.#settings, locale: this.#locale, maxLeaves: this.#maxLeaves,
+            reportSource: this.#reportSource, source: this.#options.source, settings: this.#settings, locale: this.#locale, maxLeaves: this.#maxLeaves,
         };
         this.#asked = question;
         void this.#run(question);
@@ -619,7 +649,7 @@ export class PivotView {
         } catch (error) { // oxlint-disable-line ex-grid/no-catch -- a superseded question's failure is nobody's; the newest one's is said where the user sees it and rethrown
             if (!current()) return;
             this.#asked = undefined;
-            this.#refusal = this.#words.fill('source-failed', error instanceof Error ? error.message : String(error));
+            this.#refusal = this.#words.failed(error);
             this.#draw();
             throw error;
         }
@@ -828,14 +858,58 @@ export class PivotView {
 
     // A double click on an outer Item's label expands or collapses it, as Excel's does (ADR-0063).
     #doubleClicked(cell: CellPosition): void {
-        const answer = this.#shown.answer;
+        const { answer, question } = this.#shown;
         const rows = this.#rows;
-        if (answer === undefined || rows === undefined || cell.column >= answer.metadata.labelColumns.length) return;
+        if (answer === undefined || question === undefined || rows === undefined) return;
         const state = rows.snapshot();
         const row = state.window[cell.row - state.windowStart];
         if (row === undefined) return;
+        const labels = answer.metadata.labelColumns.length;
+        if (cell.column >= labels) {
+            this.#showDetails(answer, question, row, cell.column - labels);
+            return;
+        }
+        // A double click on an outer Item's label expands or collapses it, as in Excel.
         const toggle = elementAt(row.labels, cell.column).toggle;
         if (toggle !== undefined) this.#toggled(toggle);
+    }
+
+    // Show Details (ADR-0059, ADR-0063): the records behind a value cell, asked of the Pivot Source the report came
+    // from under its Source Version, so they add up to the cell. An empty cell has none. Resolved now, from the cell
+    // the user acted on: the question names its Items and the Source Version, so a collapse or a sort that follows
+    // leaves it the same question.
+    #showDetails(answer: PivotReportState, question: Question, row: PivotDisplayRow, valueColumn: number): void {
+        if (row.values[valueColumn] === undefined) return;
+        const { metadata } = answer;
+        const words = this.#words;
+        const fields = question.source.fields;
+        const options = { locale: question.locale, ...(words.label === undefined ? {} : { label: words.label }) };
+        // Each Item with its field's caption and its label, by the engine's rule for its field (ADR-0060).
+        const items = (path: readonly PivotFieldItem[]): readonly PivotDetailItem[] => Object.freeze(path.map(step => {
+            const declared = fields.find(field => field.name === step.field);
+            if (declared === undefined) throw new Error(`Internal: the report's field '${step.field}' is not its source's.`);
+            const [info] = itemsOfPage(PivotItemPage.of(metadata.sourceVersion, [step.item], 1), metadata.layout, declared, options);
+            if (info === undefined) throw new Error('Internal: an Item listed is labelled.');
+            return Object.freeze({ field: declared.caption, item: info.label });
+        }));
+        const rowItems = items(row.rowPath);
+        const column = elementAt(metadata.valueColumns, valueColumn);
+        const columnItems = items(column.columnPath);
+        const valueField = row.valueField >= 0 ? row.valueField
+            : column.valueField >= 0 ? column.valueField : metadata.layout.values.length === 1 ? 0 : -1;
+        const path = [...rowItems, ...columnItems].map(item => item.item);
+        const details = detailsEvent(question.source, pivotReportDetailsQuery(metadata, row, valueColumn), {
+            title: words.fill('details-title', path.length === 0 ? words.word('grand-total') : path.join(' / ')),
+            rowItems,
+            columnItems,
+            valueField: valueField < 0 ? undefined : elementAt(metadata.valueCaptions, valueField),
+        });
+        const heard = this.#options.onShowDetails;
+        if (heard !== undefined) {
+            heard(details);
+            return;
+        }
+        this.#details.open(details, this.#options.detailsView ?? 'tab', question.locale); // oxlint-disable-line ex-grid/no-stand-in-default -- ADR-0059: a tab at the report's foot unless the Consumer asks for the dialog, as the Razor component's DetailsView
     }
 
     // An outer Item's button pressed, or its label double clicked: the Item is collapsed or expanded (ADR-0063).
@@ -1292,11 +1366,26 @@ export class PivotView {
         // The report or the box that says why there is none, and over the report, while a placed field is
         // dragged, the mark that a drop there removes it (ADR-0061). Elements come and go rather than hide, since
         // the stylesheet gives the box a display of its own.
-        const dropRemove = answered && this.#dropRemoveShown;
+        // While a details tab is selected its records cover the report, which stays laid out, with its state, and is
+        // not painted: its own header would otherwise paint over the records', and a report nobody sees takes no
+        // keyboard and is not read out (ADR-0059). Records covering it take no drop meant for it.
+        const details = this.#details;
+        const panel = details.panel;
+        this.#sheet.className = panel === undefined ? 'ex-pivot-sheet' : 'ex-pivot-sheet ex-pivot-sheet-covered';
+        const dropRemove = answered && this.#dropRemoveShown && panel === undefined && !details.dialogShown;
         elementAt([...this.#dropRemove.children], 0).textContent = words.word('remove-field');
-        const shownInSheet = [answered ? this.#gridRoot : this.#empty, ...(dropRemove ? [this.#dropRemove] : [])];
+        const shownInSheet = [answered ? this.#gridRoot : this.#empty, ...(dropRemove ? [this.#dropRemove] : []), ...(panel === undefined ? [] : [panel])];
         if (shownInSheet.length !== this.#sheet.children.length || shownInSheet.some((child, i) => this.#sheet.children[i] !== child)) {
             this.#sheet.replaceChildren(...shownInSheet);
+        }
+        // The tabs stand at the report's foot, where Excel's sheet tabs are, while a details tab stands.
+        if (!details.tabsShown) details.tabList.remove();
+        else if (details.tabList.parentNode !== this.#report) this.#report.append(details.tabList);
+        // While the dialog stands, what it covers takes neither the keyboard nor the pointer: it is modal (ADR-0059).
+        this.#report.inert = details.dialogShown;
+        this.#fieldListBox.inert = details.dialogShown;
+        for (const shown of details.dialogElements) {
+            if (shown.parentNode !== this.#root) this.#root.append(shown);
         }
         if (!answered) {
             const pane = this.#paneLayout;

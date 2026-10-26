@@ -595,6 +595,7 @@ export interface GridOptions<Row> extends CellPaintOptions<Row>, FormulaBarOptio
     readonly onEdit?: (intent: GridEditIntent<Row>) => void;
     readonly onEditDiscarded?: (reason: EditDiscardReason) => void;
     readonly onEditingChanged?: (open: boolean) => void;
+    readonly onLeave?: () => void;
     readonly onOverwriteNotice?: (notice: GridOverwriteNotice) => void;
     readonly onPaste?: (intent: GridPasteIntent) => void;
     readonly onPinnedCountChanged?: (count: number) => void;
@@ -707,6 +708,12 @@ export type GridRefusal<Row = unknown> =
 | {
     readonly kind: 'mark';
     readonly reason: MarkRefusalReason;
+}
+/** A Consumer's `placeSelection` that placed nothing, because its positions no longer name the rows they were
+* written for (ADR-0050 item 4, ADR-0011). */
+| {
+    readonly kind: 'placement';
+    readonly reason: PlacementRefusalReason;
 };
 
 // @public
@@ -1003,6 +1010,9 @@ export interface PasteShape {
     readonly columns: number;
     readonly rows: number;
 }
+
+// @public
+export type PlacementRefusalReason = 'orderMoved' | 'sourceChanged' | 'columnsMoved';
 
 // @public
 export function plainDateOf(ticks: bigint): object;
