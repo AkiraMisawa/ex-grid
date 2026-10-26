@@ -7,6 +7,7 @@ import '../../../src/ExGrid/wwwroot/ex-grid.min.css';
 import '../../../src/ExChart/wwwroot/ex-chart.min.css';
 import '../../../src/ExPivot/wwwroot/ex-pivot.min.css';
 import '../../../src/ExSheet/wwwroot/ex-sheet.min.css';
+import { Board } from './pages/board';
 import { Cells } from './pages/cells';
 import { Chart } from './pages/chart';
 import { ChartBridge } from './pages/chart-bridge';
@@ -47,6 +48,7 @@ const pages = { '': Home, virtual: Virtual, wide: Wide, fetch: Fetch, features: 
     pivot: Pivot,
     sheet: SheetDemo,
     marks: Marks,
+    board: Board,
 };
 
 /** Present once the page handles events, as Routes.razor's marker is: at once under React. */

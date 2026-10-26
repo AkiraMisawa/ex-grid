@@ -94,4 +94,8 @@ export const demoPages: readonly DemoPage[] = Object.freeze([
         route: 'chart-showcase/curves', title: 'Curves showcase', group: 'ExChart',
         description: 'The Docs Site\'s Curves Showcase: a CDS curve with its hazard rates as steps, CDS curves charted from rows across tenors, and a rate curve with its interpolation named, switched in the bar (ADR-0280).',
     },
+    {
+        route: 'board', title: 'A Board', group: 'ExBoard',
+        description: 'A Board read from JSON: a blotter, a pivot by trader and a chart by day over one checked input, and a limits grid over a second; the blotter\'s selected rows narrow the other three by desk, and a dropped selection restores them (ADR-0340).',
+    },
 ]);

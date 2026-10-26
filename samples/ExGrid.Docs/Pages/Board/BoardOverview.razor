@@ -192,6 +192,25 @@
             longer fits; <code>bound.diff</code> is what the user has changed since. A Board over a server is not yet bound
             in TypeScript.
         </p>
+        <p>
+            <code>createBoard(element, options)</code> draws a bound Board into an element, as the <code>ExBoard</code>
+            component does: its grids with <code>createGrid</code>, its pivots with <code>createPivot</code> and its
+            charts with <code>createChart</code>, laid out in its rows, with each output's confirm button under its grid.
+            A Board that does not bind draws only its refusal. It raises <code>onOutput</code> on a confirm and
+            <code>onDiff</code> with the whole Board Diff on each change the user makes, and takes the Diff back as
+            <code>diff</code>. A grid showing a date column needs <code>temporal</code>, the Temporal namespace its
+            filter makes dates with. <code>@@ex-grid/board-react</code> is the React component, <code>ExBoard</code>,
+            whose props are those options; given no <code>locale</code>, it takes the browser's first language a pivot
+            writes in.
+        </p>
+        <pre class="docs-code"><code>import { BoardDiff, createBoard } from '@@ex-grid/board';
+
+const handle = createBoard(element, {
+    board, data: { trades }, width: 1000, locale: 'en-US', temporal: Temporal,
+    diff: saved === null ? undefined : BoardDiff.read(saved),   // what the user changed last time
+    onDiff: diff => localStorage.setItem('board', diff.toJson()),
+    onOutput: output => send(output.toJson()),
+});</code></pre>
         <pre class="docs-code"><code>import { bindBoard, boardInput, readBoard } from '@@ex-grid/board';
 
 const board = readBoard(json);                                  // throws a BoardRefusedError naming the path

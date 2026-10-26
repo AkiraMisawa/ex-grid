@@ -20,6 +20,7 @@ import { Snapshot } from '@ex-grid/data';
 import { SnapshotDecimal } from '@ex-grid/data';
 import { SnapshotKind } from '@ex-grid/data';
 import { SnapshotPivotSource } from '@ex-grid/pivot-engine';
+import { TemporalLike } from '@ex-grid/core';
 
 // @public
 export function bindBoard(board: BoardReading, data: Readonly<Record<string, Snapshot>>, options?: BindBoardOptions): BoundBoard;
@@ -89,6 +90,9 @@ export interface BoardDiffReading {
 }
 
 // @public
+export const boardGap = 12;
+
+// @public
 export class BoardGridChange {
     constructor(viewState: GridViewState, hidden: Iterable<string>, kinds?: BoardColumnKinds);
     readonly hidden: readonly string[];
@@ -106,6 +110,13 @@ export interface BoardGridView {
 }
 
 // @public
+export interface BoardHandle {
+    readonly bound: BoundBoard | undefined;
+    destroy(): void;
+    update(options: BoardOptions): void;
+}
+
+// @public
 export function boardInput(board: BoardReading, name: string): BoardInput | undefined;
 
 // @public
@@ -113,6 +124,18 @@ export interface BoardLink {
     readonly from: string;
     readonly on: readonly string[];
     readonly to: readonly string[];
+}
+
+// @public
+export interface BoardOptions {
+    readonly board: BoardReading;
+    readonly data: Readonly<Record<string, Snapshot>>;
+    readonly diff?: BoardDiff | undefined;
+    readonly locale?: string;
+    readonly onDiff?: (diff: BoardDiff) => void;
+    readonly onOutput?: (output: BoardOutput) => void;
+    readonly temporal?: TemporalLike;
+    readonly width?: number;
 }
 
 // @public
@@ -167,6 +190,9 @@ export interface BoardRow {
     readonly cells: readonly BoardCell[];
     readonly height: number;
 }
+
+// @public
+export const boardTitleHeight = 28;
 
 // @public
 export type BoardValue = string | SnapshotDecimal | number | bigint | boolean | null;
@@ -266,6 +292,9 @@ export class BoundPivotView {
 
 // @public
 export type BoundView = BoundGridView | BoundPivotView | BoundChartView;
+
+// @public
+export function createBoard(element: HTMLElement, options: BoardOptions): BoardHandle;
 
 // @public
 export const dateFormat = "yyyy-mm-dd";

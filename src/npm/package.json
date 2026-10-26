@@ -15,6 +15,7 @@
     "board",
     "react",
     "pivot-react",
+    "board-react",
     "sheet-engine",
     "sheet",
     "sheet-react"
