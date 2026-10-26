@@ -667,7 +667,8 @@ Linked Table; `setToday`, `setSeed` and `recalculateVolatile`; `setClock`, a clo
 moment written `yyyy-MM-ddTHH:mm:ss` and moves on a finite `step` of seconds each time it is read; and
 `getDisplay` of a cell `at` a `width`, so that a width refused is a refusal to expect; and `show`, the Sheet
 shown, by its name. An edit is an object
-of one key, the factory, and its arguments, as `SheetEdit` takes them.
+of one key, the factory, and its arguments, as `SheetEdit` takes them; `pasteFields` is the Script Core's name for the
+forms of `PasteText` that take `typed` fields cell by cell, with exact `entries` or without.
 
 An expectation names readings: per cell, `values` (a string is text, a number a double, `true`/`false` a
 Boolean, `null` a Blank, `{"error": "#N/A"}` an Error Value), `displays`, `texts`, `formulas`, `entryTexts`,
@@ -679,7 +680,8 @@ the Sheet, `document`, `documentJson` (its Sheet Document's JSON text, which bot
 (a `check`'s), `isUndone`, `ranges`, `stepSheet` (the Sheet a step was done on or made), `changesSheets`, and
 `clockReads` (how often the step read the clock); of the Workbook,
 `sheets`, `shown`, `workbook` (its `culture`, `today`, `hasVolatileFormulas`, `linkedTables` and `changes`),
-`workbookJson` (its Workbook Document's JSON text), and
+`workbookJson` (its Workbook Document's JSON text), `copies` (each copy taken, by its name: its `refusal`, its outward
+`text` and `html`, and its `block`, rows of the Entries it holds), and
 `picture` or `pictureNot` against one remembered. An object or a list compares in full where it is written, and a number
 exactly (`-0` apart from `0`) unless it is `{"near", "within"}`.
 

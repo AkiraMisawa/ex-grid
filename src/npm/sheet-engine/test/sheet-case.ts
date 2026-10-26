@@ -655,6 +655,13 @@ class Run {
             case 'pasteText':
                 return SheetEdit.pasteText(list(args()['fields'], 'fields').map(r => list(r, 'a row').map(f => text(f, 'a field'))),
                     CellAddress.parse(text(args()['at'], 'at')));
+            case 'pasteFields': {
+                const typed = Object.entries(object(args()['typed'], 'typed')).map(([at, field]) => [CellAddress.parse(at), text(field, 'a field')] as const);
+                const entries = args()['entries'];
+                return SheetEdit.pasteFields(typed, entries === undefined
+                    ? undefined
+                    : Object.entries(object(entries, 'entries')).map(([at, entry]) => [CellAddress.parse(at), entryOf(entry)] as const));
+            }
             case 'enterInto':
                 return SheetEdit.enterInto(list(args()['targets'], 'targets').map(t => CellRange.parse(text(t, 'a target'))),
                     CellAddress.parse(text(args()['at'], 'at')), text(args()['typed'], 'typed'));
@@ -824,6 +831,21 @@ class Run {
                 break;
             case 'shown':
                 actual = this.workbook.shown.name;
+                break;
+            case 'copies':
+                actual = Object.fromEntries(Object.keys(object(expected, key)).map(name => {
+                    const copy = this.#copies.get(name);
+                    if (copy === undefined) throw new CaseError(`${where}: no copy was taken as '${name}'.`);
+                    const block = copy.block;
+                    return [name, {
+                        refusal: copy.refusal === undefined ? null : copy.refusal.reason,
+                        text: copy.text === undefined ? null : copy.text,
+                        html: copy.html === undefined ? null : copy.html,
+                        block: block === undefined
+                            ? null
+                            : Array.from({ length: block.rowCount }, (_, r) => Array.from({ length: block.columnCount }, (_unused, c) => entryJson(block.entryAt(r, c)))),
+                    }];
+                }));
                 break;
             case 'workbook': {
                 const today = this.workbook.today;

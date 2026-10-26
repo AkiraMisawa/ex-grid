@@ -701,6 +701,14 @@ internal sealed class Run(CultureInfo culture)
             case "pasteText":
                 return SheetEdit.PasteText([.. argument["fields"]!.AsArray().Select(r => (IReadOnlyList<string>)[.. r!.AsArray().Select(f => (string)f!)])],
                     CellAddress.Parse((string)argument["at"]!));
+            case "pasteFields":
+            {
+                // The Script Core's name for the two forms of PasteText that take fields cell by cell.
+                List<KeyValuePair<CellAddress, string>> typed = [.. argument["typed"]!.AsObject().Select(p => new KeyValuePair<CellAddress, string>(CellAddress.Parse(p.Key), (string)p.Value!))];
+                return argument["entries"] is JsonObject entries
+                    ? SheetEdit.PasteText(typed, [.. entries.Select(p => new KeyValuePair<CellAddress, Entry?>(CellAddress.Parse(p.Key), Entry(p.Value)))])
+                    : SheetEdit.PasteText(typed);
+            }
             case "enterInto":
                 return SheetEdit.EnterInto([.. argument["targets"]!.AsArray().Select(t => CellRange.Parse((string)t!))],
                     CellAddress.Parse((string)argument["at"]!), (string)argument["typed"]!);
@@ -892,6 +900,26 @@ internal sealed class Run(CultureInfo culture)
             case "shown":
                 actual = Workbook.Shown.Name;
                 break;
+            case "copies":
+            {
+                var each = new JsonObject();
+                foreach (var (name, _) in expected!.AsObject())
+                {
+                    var copy = _copies.TryGetValue(name, out var taken) ? taken : throw new InvalidDataException($"{where}: no copy was taken as '{name}'.");
+                    each[name] = new JsonObject
+                    {
+                        ["refusal"] = copy.Refusal is { } refused ? SheetCases.Camel(refused.Reason) : null,
+                        ["text"] = copy.Text,
+                        ["html"] = copy.Html,
+                        ["block"] = copy.Block is { } block
+                            ? new JsonArray([.. Enumerable.Range(0, block.RowCount).Select(r =>
+                                (JsonNode)new JsonArray([.. Enumerable.Range(0, block.ColumnCount).Select(c => SheetCases.EntryOf(block.EntryAt(r, c)))]))])
+                            : null,
+                    };
+                }
+                actual = each;
+                break;
+            }
             case "workbook":
                 actual = new JsonObject
                 {
