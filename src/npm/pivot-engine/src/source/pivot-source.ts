@@ -36,8 +36,8 @@ export class PivotSourceFeatures {
      * Version. */
     readonly countsItems: boolean;
     /** Whether the source answers a question carrying levels whose leaves pass its cap with the cells of the
-     * groups shown ({@link PivotAnswer.isLevels}, ADR-0370 section 3). No report is asked with levels yet: the
-     * report made from Level Aggregates is still to come. */
+     * groups shown ({@link PivotAnswer.isLevels}, ADR-0370 section 3): a report source over it then asks with the
+     * groups its layout shows, and again when an expand shows groups the answer did not hold. */
     readonly answersLevels: boolean;
 
     /** The features of the Aggregations given, refusing one the engine does not know. */
