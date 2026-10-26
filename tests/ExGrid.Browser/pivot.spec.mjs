@@ -1409,6 +1409,7 @@ async function slowAndFast(page, chrome, ticks, steps, more = {}) {
                     : (active.labels?.[0]?.textContent ?? active.textContent ?? '').trim();
             }),
             menus: await page.getByRole('menu').count(),
+            rows: await entriesOf(page, 'Rows'),
         };
         await setRoundTrip(0);
         await toolbarButton(page, 'Layout').click();
@@ -1469,6 +1470,23 @@ for (const chrome of ['builtin', 'mud']) {
             ]);
             expect(slow.menus).toBe(0);
         });
+    });
+}
+
+for (const chrome of ['builtin', 'mud']) {
+    test(`ADR-0362: a field ticked straight after a command pressed in a field's menu waits for that command, and its press does not dismiss the menu ahead of it (${chrome})`, async ({ page }) => {
+        // Region ▾'s menu is painted a round trip before its first command takes the keyboard, and the press
+        // on Move Down made meanwhile is held, with its click, behind that hand-off. The tick pressed next is
+        // let through for its drag; the pivot heard its press, and the focus its default moved, as they came,
+        // and dismissed the menu ahead of the held click, which then reached a command already gone: never
+        // answered, it held the tick's click behind it for good (CI on Edge, PR #348, 2026-10-26).
+        const slow = await slowAndFast(page, chrome, ['Book'], [
+            (at) => page.mouse.click(at.Region.x, at.Region.y),
+            () => page.getByRole('menu', { name: 'Options for Region' }).getByRole('menuitem', { name: 'Move Down' }).click(),
+            (at) => page.mouse.click(at.Book.x, at.Book.y),
+        ], { Region: (p) => entry(p, 'Region') });
+        expect(slow.rows).toEqual(['Desk', 'Region', 'Book']);
+        expect(slow.menus).toBe(0);
     });
 }
 

@@ -306,7 +306,8 @@ Five questions were put to the user on 2026-10-20; the user took the recommendat
   found by the differential test: numbered as it came, the click went ahead of the keys held from before
   it. Behind an input the gate holds, the press still goes as it comes, but its click is held and numbered
   in its turn, the press takes a place of its own among the held inputs to give the keyboard back to what
-  it pressed, and the keys typed after it are held behind it.)*
+  it pressed, and the keys typed after it are held behind it. Since 2026-10-26, ADR-0362's note of that day,
+  the press itself, its release and the focus its default moves reach the product only in its turn too.)*
 - **The seam reaches a Chrome of the Consumer's** (ticket 06's part for ExPivot): every Pivot Chrome context
   carries `InOrder` and `TakeKeyboard`, and the MudBlazor Wrapper's pivot parts use them as the built-in
   parts do: its buttons claim `click keydown` and press at Enter's keydown, its boxes claim `click`, its

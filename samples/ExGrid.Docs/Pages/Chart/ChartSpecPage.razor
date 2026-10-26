@@ -117,4 +117,16 @@
         </p>
         <DocsExample Builtin="typeof(ChartSourceExample)" Mud="typeof(ChartSourceExampleMud)" Files="@(["Examples/Chart/SourcedTicks.cs"])" />
     </DocsSection>
+
+    <DocsSection Title="From TypeScript">
+        <p>
+            <code>@@ex-grid/chart</code> is ExChart in TypeScript, the package ExChart's React and Blazor packages move onto
+            (ADR-0370), built in this repository and published with 0.3.0. <code>readChartSpec(text, tables)</code> reads a
+            spec against a lookup from a Data Handle to a table (<code>chartDataOf</code> builds one from columns), and
+            <code>answerChartSpec(text, tables, metrics)</code> answers as the tool does: the refusal with its path, or the
+            chart said in words with its thinned pixels and its gaps. Both refuse and say what <code>ChartSpec.Read</code>
+            and <code>ChartSpec.Answer</code> do, in the same words, since both engines run the same cases, under
+            <code>tests/cases/chart/</code>. Reading through Chart Sources is not yet in TypeScript.
+        </p>
+    </DocsSection>
 </DocsPage>

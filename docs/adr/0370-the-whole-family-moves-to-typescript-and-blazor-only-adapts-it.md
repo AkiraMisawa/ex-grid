@@ -16,7 +16,8 @@ moving everything was the fastest, and why a port would need Excel again when th
 already hold Excel's answers. It does not, which section 2 records. The user then chose B. Sections 1, 2,
 3, 4, 6 and 7 changed; the products' UIs moving to Script Cores of their own, the packages' names and
 the Docs Site did not. Section 3's server pivot was settled with the user last, the same day.
-Section 11, and section 10's words, were added with the user after this ADR merged.)*
+Section 11, and section 10's words, were added with the user after this ADR merged, and section 2's
+note on the platform's math library on 2026-10-26.)*
 
 ## Context
 
@@ -138,6 +139,21 @@ A TypeScript engine is proved in three ways, and none of them runs Excel again:
    (ADR-0350 section 16), never by adding doubles; and it computes the doubles in doubles, never more
    exactly than Excel does. The run also reaches `Math` functions near a rounding boundary and number
    to text.
+
+   *(2026-10-26, decided with the user, when the run's first seed found about 250 differences, nearly
+   all the last bit of a math function: **neither engine calls the platform's math library for `EXP`,
+   `LN`, `LOG`, `LOG10`, `POWER` and `^`, `ATAN`, `ASIN`, `ACOS`, `ATAN2` and the hyperbolic functions.**
+   glibc's, the Windows runtime's and V8's each round some arguments differently, and so would Safari's
+   and Firefox's. Both engines compute e^x, ln x, log10 x, atan, atan2, asin, acos, sinh, cosh, tanh,
+   asinh, acosh and atanh as the exact value rounded once to the nearest double, ties to even, in `BigReal` and
+   `PortableMath` (`big-real.ts`, `portable-math.ts`) by Ziv's strategy from 128 bits, doubling up to
+   4096, while e^x and ln x keep `CorrectlyRounded`'s double-double path; `LOG` to another base, `ACOT`,
+   `ACOTH`, `COTH`, `CSCH` and `SECH` are IEEE arithmetic on those. A whole power with |b| at most 64 is
+   computed exactly and rounded once; a power whose exponent is not whole is still exp(b·ln a), each step
+   correctly rounded, except a square root. The platform's `log2` is read only to tell that a whole power
+   lies far past the doubles' range, where its last bit cannot move the answer. Both engines are held to `tests/cases/sheet/portable-math.json`, 779 answers from
+   mpmath at 400 bits, and the run is the gate: CI runs it at seed 20261026, and a last bit apart fails
+   it. ADR-0047's "The platform's math library is not used" records the decision and its reasons.)*
 
 An engine is removed only once it is held: its C# facts are shared cases green in TypeScript, and,
 where it has a differential run, that run has found no difference over a run recorded in the pull

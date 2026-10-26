@@ -247,6 +247,18 @@
         {
           "at": "surface.centre",
           "is": null
+        },
+        {
+          "at": "answer.accepted",
+          "is": true
+        },
+        {
+          "at": "answer.text",
+          "startsWith": "EURUSD volatility, a 3D surface of Volatility over Tenor from 1W to 1Y"
+        },
+        {
+          "at": "answer.text",
+          "has": "with 1 hole"
         }
       ]
     },
@@ -1333,6 +1345,10 @@
         {
           "at": "definition.series.0.xInterval",
           "is": null
+        },
+        {
+          "at": "answer.text",
+          "has": "Bid–Ask"
         }
       ]
     },

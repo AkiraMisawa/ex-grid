@@ -131,3 +131,41 @@ test, and the tests written for this decision, found five orders that ended diff
 - The MudBlazor Wrapper's Field List tick does not keep DOM focus after its click, typed slowly (seen
   2026-10-25). A key typed on it after that goes elsewhere, so the third order is not run under the
   Wrapper. That is the Wrapper's own, and is left to a ticket of its own.
+
+## Note of 2026-10-26: the press's own events wait for its turn too
+
+*Found by CI on Edge, Server host (`pivot-csv.spec.mjs`, PR #348's run), reproduced locally under a 30 ms
+round trip and made certain with the host's answers held.*
+
+The press let through for its drag went on to the product's handlers as it came: its `mousedown`, and the
+`focusin` its default makes. ExPivot's box hears both, and dismisses an open field menu with either
+(ADR-0061). The order was:
+
+- A field's ▾ opens its menu, and the keyboard is handed to its first command a round trip after the menu
+  is painted.
+- Meanwhile a command is pressed. The menu stands inside a Field List entry, which the browser may drag, so
+  the press is let through and its click is held behind the hand-off.
+- A field's tick is pressed. Its `mousedown` and `focusin` reached ExPivot at once, behind every input
+  received so far but ahead of the command's click, which was still held. They dismissed the menu.
+- The command's click was then numbered and handed on. It reached a command already gone, so Blazor dropped
+  it, and its number was never answered. The tick's click, held behind it, never came: the Field List
+  showed the field unticked for good. Typed slowly, the command runs and the tick turns.
+
+**Decision.** While such a press waits for its turn, the product does not hear it. Its default still goes
+on, so the drag starts and DOM focus moves. The script keeps the `mousedown` from going further, holds its
+release behind it as a held press's release is held, and keeps from the product the `focusin` its default
+makes before that release: a `focusin` on the control a press there focuses, the nearest focusable element
+around what was pressed. A focus an earlier input's answer moves meanwhile, elsewhere, goes on as it comes. At the press's turn, once every input sent before it is answered, the `mousedown`
+is handed on as a held press is, told first if its control claims it. Then the keyboard goes back to what was
+pressed, as above. Where it is there already, the kept `focusin` is dispatched on it instead, so the product
+hears that the focus came. A focus moved since by something else is not told again: whatever moved it was
+heard as it moved it.
+
+- **`focusin` is heard on the Input Root in the capture phase**, and on the surfaces joined to it, beside
+  the `focus` and `focusout` heard there already (ADR-0240 section 6). It acts only between such a press and its release, reads
+  the event's target, and reads no layout. It is removed on dispose with the Input Root's other listeners.
+- **A drag started from the press still runs as it comes.** `dragstart` is not held: holding it would take
+  the drag away. ExPivot's `StartDrag` closes an open menu quietly as it starts, ahead of a held input,
+  which is left as it was.
+- `pivot.spec.mjs` gains the order above as a slow-and-fast test under both Chromes. It ended with the pivot
+  never settled on every run before this change.

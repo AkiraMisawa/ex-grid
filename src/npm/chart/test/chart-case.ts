@@ -31,6 +31,7 @@ import { decimalFromText } from '@ex-grid/data';
 import { Temporal } from 'temporal-polyfill';
 import { chartDataOf, type ChartData } from '../src/chart-data';
 import { ChartSpecRefusedError, readChartSpec } from '../src/spec';
+import { answerChartSpec } from '../src/spec-answer';
 
 /** A value as JSON holds it. */
 export type Json = null | boolean | number | string | readonly Json[] | JsonObject;
@@ -1572,7 +1573,8 @@ function has(v: Json, wanted: Json, near: number, where: string): boolean {
 
 // ---- The Chart Spec reader (ADR-0320; ADR-0370, section 3) ----
 
-const specCaseKeys = ['name', 'spec', 'specText', 'tables', 'refused', 'expect'];
+// The reading carries what the tool answers the AI, said at the case's "metrics" or the tool's own 800 by 400.
+const specCaseKeys = ['name', 'spec', 'specText', 'tables', 'metrics', 'refused', 'expect'];
 
 /**
  * Reads a spec case's Chart Spec against its tables. A refused case is held to its refusal here, and
@@ -1615,9 +1617,13 @@ function specAnswer(file: ChartFile, given: JsonObject, name: string): Json | un
         }
         holds(message === undefined ? thrown.message.startsWith(string(startsWith, 'startsWith')) : thrown.message === string(message, 'message'),
             `"${name}": the refusal says "${thrown.message}".`);
+        // The tool answers the AI with the same refusal, and no reading.
+        const told = answerChartSpec(source, lookup, specMetrics(entry));
+        holds(!told.accepted && told.text === thrown.message, `"${name}": the tool answers "${told.text}".`);
         return undefined;
     }
     const reading = readChartSpec(source, lookup);
+    const told = answerChartSpec(source, lookup, specMetrics(entry));
     let definition: Json;
     try {
         definition = plain(reading.definition);
@@ -1627,7 +1633,13 @@ function specAnswer(file: ChartFile, given: JsonObject, name: string): Json | un
         }
         definition = { refused: refusal(error) };
     }
-    return { title: reading.title, definition, surface: plain(reading.surface) };
+    return { title: reading.title, definition, surface: plain(reading.surface), answer: { accepted: told.accepted, text: told.text } };
+}
+
+// The size the tool says the chart at: the case's "metrics", or undefined for the tool's own.
+function specMetrics(entry: JsonObject): ChartMetrics | undefined {
+    const given = entry['metrics'];
+    return given === undefined ? undefined : metrics(given);
 }
 
 // The file's tables by handle, a case's own taking the place of the file's of the same handle.

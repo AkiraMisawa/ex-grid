@@ -153,7 +153,7 @@ public static class ChartSpec
         var parts = new List<string> { ChartSummary.Of(reading.Definition, scene, ChartView.All, reading.Title) };
         var thinned = scene.Panels.SelectMany(p => p.Series).Sum(s => s.Thinned.Count);
         parts.Add(thinned == 0 ? "No pixel holds more than one point."
-            : $"{thinned} {(thinned == 1 ? "pixel holds" : "pixels each hold")} more than one point, and say{(thinned == 1 ? "s" : "")} its range.");
+            : $"{thinned} {(thinned == 1 ? "pixel holds more than one point, and says its range" : "pixels each hold more than one point, and say their range")}.");
         var missing = reading.Definition.Series.Sum(s => s.Points.Count(p => p.Y is null));
         parts.Add(missing == 0 ? "No point is missing." : $"{missing} {(missing == 1 ? "point is" : "points are")} missing, drawn as {(missing == 1 ? "a gap" : "gaps")}.");
         parts.AddRange(scene.Notes.Except(reading.Definition.Notes));

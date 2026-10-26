@@ -3,7 +3,8 @@
  * laid out as in CSS pixels — panels, axes, ticks, each series' lines, markers, candles and intervals —
  * what its tooltip, its summary and its files say, the fits and interpolations a Consumer hands in, and a 3D
  * surface as the mesh its entry draws and the 2D charts its slices are; the Chart Spec, a chart said in JSON as
- * an AI writes it and a Board holds it, read against the tables its Data Handles name (ADR-0320); its Script
+ * an AI writes it and a Board holds it, read against the tables its Data Handles name and answered as the tool an
+ * AI calls answers (ADR-0320); its Script
  * Core, `createChart` and `createSurface`, which draw a chart as SVG into an element and hear the pointer, the
  * legend and Chart Filters, free of any UI framework; and the selection bridge, `GridChartBridge`, which charts
  * a grid's selection from its context menu and keeps the rows it was made from (ADR-0258). A Framework Adapter
@@ -46,6 +47,8 @@ export { chartDataOf } from './chart-data';
 export type { ChartData } from './chart-data';
 export { ChartSpecReading, ChartSpecRefusedError, chartSpecVersion, readChartSpec } from './spec';
 export type { ChartSpecReadingOptions } from './spec';
+export { answerChartSpec } from './spec-answer';
+export type { ChartSpecAnswer } from './spec-answer';
 export type { SurfaceColourBar, SurfaceFace, SurfaceMesh, SurfaceMeshNode, SurfaceMeshPoint, SurfaceTick } from './surface-mesh';
 export { FittedCurve, fitLeastSquares, fitPolynomial, fitTheilSen, theilSenLimit } from './fitting';
 export type { FitSpace, FittedCurveOptions } from './fitting';

@@ -51,8 +51,8 @@ export interface LabelPainter {
     readonly indentPx: number;
     /** The button's accessible name: "Expand East", "Collapse East". */
     readonly toggleName: (toggle: PivotToggle) => string;
-    /** The button pressed: the Item is to be collapsed or expanded. */
-    readonly toggled: (toggle: PivotToggle) => void;
+    /** The button pressed on `row`: the Item is to be collapsed or expanded. */
+    readonly toggled: (toggle: PivotToggle, row: PivotDisplayRow) => void;
 }
 
 /**
@@ -84,7 +84,7 @@ function labelTemplate(index: number, painter: LabelPainter): GridTemplate<Pivot
             made.textContent = toggle.isCollapsed ? '+' : '\u2212';
             const { signal } = listening;
             made.addEventListener('mousedown', event => { event.preventDefault(); }, { signal });
-            made.addEventListener('click', () => { painter.toggled(toggle); }, { signal });
+            made.addEventListener('click', () => { painter.toggled(toggle, cell.row); }, { signal });
             made.addEventListener('dblclick', event => { event.stopPropagation(); }, { signal });
             box.append(made);
             button = made;

@@ -51,6 +51,10 @@ export const demoPages: readonly DemoPage[] = Object.freeze([
         description: 'CDS spreads against leverage beside their grid, with the least-squares and the Theil–Sen line; Old Faithful; and PRML\'s polynomial curve fitting of degree 0, 1, 3 and 9. The nearest point\'s tooltip, a click to the row, a rectangle that narrows both axes, a logarithmic spread axis (ADR-0290, ADR-0291).',
     },
     {
+        route: 'chart-spec', title: 'Charts from a Chart Spec', group: 'ExChart',
+        description: 'An American put\'s 4-step lattice, as two tables a capability would return, drawn from the Chart Spec in the field: coloured by value, sized by the chance of reaching each node, its branches as edges; the tool\'s answer under the field, and a spec with numbers in it refused with its path and reason (ADR-0320, ADR-0321).',
+    },
+    {
         route: 'chart-candles', title: 'Candles and intervals', group: 'ExChart',
         description: 'Ten years of a synthetic index as candles with volume and a moving average: rising hollow and falling filled, merged into months to fit and back to days when narrowed, on calendar time or packed sessions, in three colour conventions; a yield curve with a Bid–Ask band and forecasts with 95% CI whiskers; strategies\' risk and return with intervals both ways (ADR-0300 to ADR-0304).',
     },
@@ -65,5 +69,29 @@ export const demoPages: readonly DemoPage[] = Object.freeze([
     {
         route: 'sheet', title: 'Sheet', group: 'ExSheet',
         description: 'ExSheet drawn by ExGrid: Formulas, editing, paste, Delete, the fill keys and undo, with ?lang=ja for the Sheet\'s Japanese (ADR-0046, ADR-0370).',
+    },
+    {
+        route: 'chart-showcase/exposure', title: 'Exposure profile showcase', group: 'ExChart',
+        description: 'The Docs Site\'s Exposure profile Showcase: a netting set\'s EPE, ENE, CVA and PFE before and after a trade, charted from the grid\'s selection into tabs, CVA per year over its buckets, and a recalculation the charts follow (ADR-0280).',
+    },
+    {
+        route: 'chart-showcase/cds-spread', title: 'CDS spread vs leverage showcase', group: 'ExChart',
+        description: 'The Docs Site\'s CDS spread vs leverage Showcase: two hundred names in a grid beside their scatter, the least-squares and the Theil–Sen line with their coefficients in the Notes, a logarithmic spread switched in the bar, a rectangle that narrows both axes and a click to the row (ADR-0280, ADR-0290, ADR-0291).',
+    },
+    {
+        route: 'chart-showcase/fx-volatility', title: 'FX volatility showcase', group: 'ExChart',
+        description: 'The Docs Site\'s FX volatility Showcase: EURUSD quotes beside the 3D surface made from them, missing quotes filled by the page\'s spline and said so, sliced by a click and saved as SVG or PNG, with the term structure, the smile and the deposits and forwards switched in the bar (ADR-0280).',
+    },
+    {
+        route: 'chart-showcase/equity-index', title: 'Equity index showcase', group: 'ExChart',
+        description: 'The Docs Site\'s Equity index daily bars Showcase: ten years of an index beside its candles, volume and 25-day average, merged into months and back to days, packed or on calendar time, in three colour conventions, a click to the row, and a Bid–Ask band and 95% CI whiskers in a second view (ADR-0280, ADR-0300 to ADR-0304).',
+    },
+    {
+        route: 'chart-showcase/binomial-lattice', title: 'Binomial lattice showcase', group: 'ExChart',
+        description: 'The Docs Site\'s Binomial lattice Showcase: an option priced on a CRR lattice, its nodes in a grid and on a chart coloured by value with early exercise ringed, the lattice price by N against Black–Scholes, and a light/dark switch in the bar (ADR-0280).',
+    },
+    {
+        route: 'chart-showcase/curves', title: 'Curves showcase', group: 'ExChart',
+        description: 'The Docs Site\'s Curves Showcase: a CDS curve with its hazard rates as steps, CDS curves charted from rows across tenors, and a rate curve with its interpolation named, switched in the bar (ADR-0280).',
     },
 ]);

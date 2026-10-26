@@ -71,6 +71,15 @@ is granted and also from the control the hand-off started on. Done from C#, a ro
 keyboard would sit on the Consumer's button meanwhile, and MudBlazor's dialog, saving what held it as it
 opened, would give it back there as it closed.
 
+*(2026-10-26, [ADR-0362](./0362-a-press-let-through-for-its-drag-takes-its-place-among-the-held-inputs.md)'s
+note of that day.)* A press let through for its drag behind an unanswered input is kept from the product's
+handlers until its turn, with its release and the `focusin` its default makes: heard as they came, ExPivot
+dismissed a field menu ahead of a click on that menu's command still held, and the order stalled. The Input
+Root and the surfaces joined to it, which already hear `focus` and `focusout` in the capture phase
+(ADR-0240 section 6), hear `focusin` there too, acting only between such a press and its release. It reads the event's target and no layout,
+sets no timer, and is removed on dispose with the Input Root's other listeners. It is the same entry, not
+a new one.
+
 *(2026-10-11, decided with the user, [ADR-0007](./0007-edits-are-an-overlay-owned-by-the-consumer.md)'s
 note on ST-2: when an untyped editor's row leaves the Window, the editor's listener answers one question,
 whether its field still holds the text it opened with and is not composing, and when it does, starts the

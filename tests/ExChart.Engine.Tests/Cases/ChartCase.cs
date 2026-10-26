@@ -1165,8 +1165,9 @@ internal sealed class ChartCase(JsonElement file, JsonElement entry)
 
     // ---- The Chart Spec reader (ADR-0320; ADR-0370, section 3) ----
 
-    // A spec case reads a Chart Spec against tables, and expects the reading or a refusal at a path.
-    private static readonly string[] SpecCaseKeys = ["name", "spec", "specText", "tables", "refused", "expect"];
+    // A spec case reads a Chart Spec against tables, and expects the reading or a refusal at a path. The reading
+    // carries what the tool answers the AI, said at the case's "metrics" or the tool's own 800 by 400.
+    private static readonly string[] SpecCaseKeys = ["name", "spec", "specText", "tables", "metrics", "refused", "expect"];
 
     private bool IsSpecCase => entry.TryGetProperty("spec", out _) || entry.TryGetProperty("specText", out _);
 
@@ -1194,9 +1195,13 @@ internal sealed class ChartCase(JsonElement file, JsonElement entry)
                 Assert.True(e.Message == message.GetString(), $"\"{Name}\": the refusal says \"{e.Message}\".");
             else
                 Assert.True(e.Message.StartsWith(refused.GetProperty("startsWith").GetString()!, StringComparison.Ordinal), $"\"{Name}\": the refusal says \"{e.Message}\".");
+            // The tool answers the AI with the same refusal, and no reading.
+            var refusal = ChartSpec.Answer(text, Lookup, SpecMetrics());
+            Assert.True(!refusal.Accepted && refusal.Reading is null && refusal.Text == e.Message, $"\"{Name}\": the tool answers \"{refusal.Text}\".");
             return;
         }
         var reading = ChartSpec.Read(text, Lookup);
+        var told = ChartSpec.Answer(text, Lookup, SpecMetrics());
         JsonNode? definition;
         try
         {
@@ -1206,11 +1211,18 @@ internal sealed class ChartCase(JsonElement file, JsonElement entry)
         {
             definition = new JsonObject { ["refused"] = Refusal(e) };
         }
-        var answer = new JsonObject { ["title"] = reading.Title, ["definition"] = definition, ["surface"] = Serialise(reading.Surface) };
+        var answer = new JsonObject
+        {
+            ["title"] = reading.Title, ["definition"] = definition, ["surface"] = Serialise(reading.Surface),
+            ["answer"] = new JsonObject { ["accepted"] = told.Accepted, ["text"] = told.Text },
+        };
         Assert.True(checks.GetArrayLength() > 0, $"\"{Name}\" checks nothing.");
         foreach (var check in checks.EnumerateArray())
             Check(answer, answer, check);
     }
+
+    // The size the tool says the chart at: the case's "metrics", or null for the tool's own.
+    private ChartMetrics? SpecMetrics() => entry.TryGetProperty("metrics", out var metrics) ? Metrics(metrics) : null;
 
     // The file's tables by handle, a case's own taking the place of the file's of the same handle.
     private Dictionary<string, IChartData> SpecTables()
