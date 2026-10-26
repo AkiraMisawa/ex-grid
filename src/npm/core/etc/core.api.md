@@ -227,6 +227,7 @@ export interface GridColumn<Row> extends QueryColumn<Row> {
     readonly editable?: boolean;
     readonly filterUi?: FilterUi;
     readonly header?: string;
+    readonly mark?: boolean;
     readonly template?: GridTemplate<Row>;
     readonly validate?: (row: Row, text: string) => EditVerdict;
     readonly width?: GridColumnWidth;
@@ -360,6 +361,7 @@ export interface GridOptions<Row> {
     readonly highlightFocusRow?: boolean;
     readonly highlightHoverRow?: boolean;
     readonly locale?: string;
+    readonly marks?: RowMarks<Row>;
     readonly onAction?: (event: GridActionEvent<Row>) => void;
     readonly onCellDoubleClick?: (cell: CellPosition) => void;
     readonly onClear?: (intent: GridClearIntent) => void;
@@ -467,6 +469,14 @@ export type GridRefusal<Row = unknown> =
     readonly row: Row | undefined;
     readonly column: string;
     readonly action: string;
+}
+/** A press on a mark that marked nothing and raised no Row Mark intent (ADR-0043's note of 2026-10-09, MK-9):
+* a row's checkbox whose row the Window no longer holds, or that only a position under a moved order names;
+* the header's checkbox pressed under an order that has moved since; or either, made on what a source since
+* replaced painted. */
+| {
+    readonly kind: 'mark';
+    readonly reason: MarkRefusalReason;
 };
 
 // @public
@@ -646,6 +656,24 @@ export interface InMemorySourceOptions<Row> {
 }
 
 // @public
+export function markColumn<Row>(options?: {
+    readonly name?: string;
+    readonly header?: string;
+    readonly width?: GridColumnWidth;
+}): GridColumn<Row>;
+
+// @public
+export const markLabelIds: Readonly<{
+    readonly markRow: 'mark-row';
+    readonly markAllRows: 'mark-all-rows';
+    readonly marked: 'mark-count';
+    readonly markedOutside: 'mark-count-outside-filter';
+}>;
+
+// @public
+export type MarkRefusalReason = 'orderMoved' | 'sourceChanged' | 'rowLeftTheWindow';
+
+// @public
 export interface MarksHost<Row> {
     current(): {
         readonly window: readonly Row[];
@@ -712,6 +740,9 @@ export class RowMarkCounts {
     get markedOutsideResult(): number;
     get rowsInResult(): number;
 }
+
+// @public
+export type RowMarkHeaderState = 'none' | 'some' | 'all';
 
 // @public
 export type RowMarkIntent<Row> = {

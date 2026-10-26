@@ -14,6 +14,7 @@ import { defaultCellCap, pasteShape, planCopy, planFill, planPaste, type CopyPla
 import { GridClearIntent } from '../clipboard/clear-intent';
 import { columnPlaceholder, copyRefusalWords, pasteRefusalWords, rowCommandRefusalId, shapeMismatchMaySpillWords } from '../chrome/refusal-words';
 import { builtInCommandLabel } from '../chrome/command-labels';
+import { markLabelIds } from '../chrome/mark-words';
 import { findOutcomeText, type FindOutcome, type FindPanelRefusedCell } from '../chrome/find-panel-labels';
 import { gridCommandIds } from '../chrome/command-ids';
 import { letterOf, menuLetter, resolveColumnMenuKey, resolveMenuKey } from '../chrome/menu-keys';
@@ -40,6 +41,7 @@ import { canonicalKey, resolveKey, type GridKeyAction, type KeyPress } from '../
 import { cellClasses, type MatchMark } from '../paint/cell-classes';
 import { columnMark } from '../paint/heading-mark-styles';
 import { rowClasses } from '../paint/row-classes';
+import { rowMarkHeaderPress, rowMarkHeaderState, type MarkRefusalReason, type RowMarkIntent, type RowMarks } from '../rows/row-marks';
 import { cell as cellPosition, sameCell, type CellPosition, type GridExtent } from '../selection/cell';
 import { markedColumns, wholeColumnRuns } from '../selection/heading-marks';
 import { edgeBandRowsPerTick } from '../selection/edge-band';
@@ -64,6 +66,7 @@ import type { GridCommand, GridContextMenuContext } from './grid-command';
 import { contextMenuRoomPx, contextMenuStyle, MenuItems, popoverAcross, type MenuKeyTable } from './menu-popover';
 import { FilterPanel } from './filter-panel';
 import { FindPanel, type FindHeld } from './find-panel';
+import { GridMarks, rowMarkBox, rowsSelectedIn } from './grid-marks';
 import { copyValues, gatherRows, windowCovers, windowRowAt } from './grid-copy';
 import { defaultPasteByteCap, exceedsUtf8 } from './grid-paste';
 import type { ActionRefusalReason, GridRefusal } from './grid-refusal';
@@ -137,6 +140,13 @@ export interface GridOptions<Row> {
      * grid moves no keyboard after it: what the action opens is the Consumer's.
      */
     readonly onAction?: (event: GridActionEvent<Row>) => void;
+    /**
+     * Who holds the Row Marks of the Mark Column (ADR-0043): answers whether a row is marked, counts the marks,
+     * and takes each marking gesture. Needed when a Mark Column is declared over `rows`, or over a `source` that
+     * keeps no marks of its own; `GridSource.from` keeps them, and the Consumer reads them from it to act. Given
+     * beside a `source` that keeps its own, it is refused: one of the two would have to silently win.
+     */
+    readonly marks?: RowMarks<Row>;
     /**
      * Hears the one intent each approved paste raises (ADR-0007, ADR-0014): every cell in one notification.
      * The grid writes nothing; the screen changes when the source hands over new row instances. A Consumer
@@ -314,6 +324,16 @@ function isCommand(value: unknown): value is GridCommand {
     return typeof id === 'string' && typeof enabled === 'boolean' && typeof invoke === 'function';
 }
 
+function isRowMarks(value: unknown): value is RowMarks<unknown> {
+    if (typeof value !== 'object' || value === null) return false;
+    const { isMarked, onMarkIntent, setRowKind, subscribe } = value as {
+        readonly isMarked?: unknown; readonly onMarkIntent?: unknown; readonly setRowKind?: unknown; readonly subscribe?: unknown;
+    };
+    // The counts may be undefined while they are not known, but a holder that declares none at all is not one.
+    return typeof isMarked === 'function' && typeof onMarkIntent === 'function' && typeof setRowKind === 'function'
+        && typeof subscribe === 'function' && 'counts' in value;
+}
+
 function isTemporal(value: unknown): value is TemporalLike {
     if (typeof value !== 'object' || value === null) return false;
     const { PlainDate, PlainDateTime, ZonedDateTime } = value as { readonly PlainDate?: unknown; readonly PlainDateTime?: unknown; readonly ZonedDateTime?: unknown };
@@ -386,6 +406,9 @@ interface PaintedRow<Row> {
     readonly chosen: string;
     /** The Template slots it painted (ADR-0020). */
     readonly slots: readonly MountedTemplate<Row>[];
+    /** Whether its Mark Column's checkbox was painted marked (ADR-0043): a changed mark paints this row again
+     * and no other (MK-4). */
+    readonly marked: boolean;
 }
 
 /**
@@ -462,6 +485,8 @@ interface Taken<Row> {
     readonly copyCellCap: number;
     readonly onRefused: ((refusal: GridRefusal<Row>) => void) | undefined;
     readonly onAction: ((event: GridActionEvent<Row>) => void) | undefined;
+    /** Who holds the marks of the Mark Column, while one is declared. */
+    readonly marks: RowMarks<Row> | undefined;
     readonly onPaste: ((intent: GridPasteIntent) => void) | undefined;
     readonly pasteMaySpill: boolean;
     readonly highlightFocusRow: boolean;
@@ -565,6 +590,7 @@ interface PressedButton<Row> {
 interface RowPaint<Row> {
     readonly key: unknown;
     readonly chosen: { readonly column: number; readonly action: number } | undefined;
+    readonly marked: boolean;
     readonly used: Set<MountedTemplate<Row>>;
     readonly slots: MountedTemplate<Row>[];
 }
@@ -806,6 +832,14 @@ export class GridView<Row> {
     // Which action each painted button stands for, by column and position in it.
     readonly #actionButtons = new WeakMap<Element, PressedButton<Row>>();
     #actionPress: ActionPress<Row> | undefined;
+    // The Row Marks (ADR-0043): who holds them, the header's checkbox and the count; every painted row's
+    // checkbox, with whether it was painted marked; and a press on one, from its mousedown until its click, with
+    // the row it was painted in, or on the header's, with the order and source it was made under (MK-9).
+    readonly #rowMarks: GridMarks<Row>;
+    readonly #markBoxes = new WeakMap<Element, boolean>();
+    #markPress: { readonly box: Element; readonly pressed: PressedRow<Row> } | undefined;
+    #headerMarkPress: { readonly sequence: number; readonly source: unknown } | undefined;
+    #markCountShown: HTMLElement | undefined;
     #pasteHeard: ((intent: GridPasteIntent) => void) | undefined;
     #pasteMaySpill = false;
     #highlightFocusRow = false;
@@ -1070,6 +1104,9 @@ export class GridView<Row> {
         // The message a Reject or a refusal holds the editor with (ADR-0034): a tooltip outside the scroller,
         // which the editor is described by. Not a live region: the root's says it once.
         this.#message = element('div', { class: 'ex-message', id: `${this.#ids}message`, role: 'tooltip' });
+        this.#rowMarks = new GridMarks(doc, () => {
+            this.#invalidate();
+        });
         this.#spacer.append(this.#header, this.#viewport);
         this.#scroller.append(this.#spacer);
         const announce = element('div', { class: 'ex-announce', role: 'status' });
@@ -1097,9 +1134,12 @@ export class GridView<Row> {
             this.#viewport.addEventListener('mouseup', this.#onRelease);
             this.#viewport.addEventListener('mousedown', this.#onActionPress);
             this.#viewport.addEventListener('click', this.#onActionClick);
+            this.#viewport.addEventListener('mousedown', this.#onMarkPress);
+            this.#viewport.addEventListener('click', this.#onMarkClick);
             this.#viewport.addEventListener('dblclick', this.#onDoubleClick);
             this.#viewport.addEventListener('contextmenu', this.#onContextMenu);
             root.addEventListener('mousedown', this.#onRootPress, true);
+            root.addEventListener('mouseup', this.#onRootRelease, true);
             root.addEventListener('focus', this.#onFocused, true);
             keyField.addEventListener('input', this.#onKeyFieldInput);
             keyField.addEventListener('compositionstart', this.#onKeyFieldComposing);
@@ -1120,9 +1160,12 @@ export class GridView<Row> {
                 () => { this.#viewport.removeEventListener('mouseup', this.#onRelease); },
                 () => { this.#viewport.removeEventListener('mousedown', this.#onActionPress); },
                 () => { this.#viewport.removeEventListener('click', this.#onActionClick); },
+                () => { this.#viewport.removeEventListener('mousedown', this.#onMarkPress); },
+                () => { this.#viewport.removeEventListener('click', this.#onMarkClick); },
                 () => { this.#viewport.removeEventListener('dblclick', this.#onDoubleClick); },
                 () => { this.#viewport.removeEventListener('contextmenu', this.#onContextMenu); },
                 () => { root.removeEventListener('mousedown', this.#onRootPress, true); },
+                () => { root.removeEventListener('mouseup', this.#onRootRelease, true); },
                 () => { root.removeEventListener('focus', this.#onFocused, true); },
                 () => { keyField.removeEventListener('input', this.#onKeyFieldInput); },
                 () => { keyField.removeEventListener('compositionstart', this.#onKeyFieldComposing); },
@@ -1194,6 +1237,7 @@ export class GridView<Row> {
         this.#popover = undefined;
         for (const stop of this.#stops) stop();
         this.#unsubscribe?.();
+        this.#rowMarks.destroy();
         // Every Template cell's content is taken away with the grid (ADR-0020).
         for (const byColumn of this.#templates.values()) {
             for (const mounted of byColumn.values()) this.#unmount(mounted);
@@ -1370,6 +1414,7 @@ export class GridView<Row> {
             throw new TypeError(`Column '${dated.column.name}' holds dates, and a date typed into its filter is made with Temporal, `
                 + 'which the grid was not given: pass `temporal`, the browser\'s Temporal or a polyfill\'s (ADR-0350 section 16).');
         }
+        const marks = this.#marksOf(options, columns, source);
         const { copyCellCap = defaultCellCap, pasteByteCap = defaultPasteByteCap } = options;
         if (!Number.isSafeInteger(copyCellCap) || copyCellCap < 1) {
             throw new RangeError(`copyCellCap is a whole number of at least one cell, not ${copyCellCap}: the cap may be raised, `
@@ -1390,7 +1435,7 @@ export class GridView<Row> {
         return {
             source, own, rows: options.rows, metrics, declared: options.columns, columns, autoWidths, columnsChanged,
             width, height, pinnedCount: pinnedColumnCount, virtualiseColumns, headerGroups, headerLayout,
-            onSelectionChanged: options.onSelectionChanged, copyCellCap, onRefused: options.onRefused, onAction: options.onAction,
+            onSelectionChanged: options.onSelectionChanged, copyCellCap, onRefused: options.onRefused, onAction: options.onAction, marks,
             onPaste: options.onPaste, pasteMaySpill: options.pasteMaySpill === true, pasteByteCap, onClear: options.onClear,
             highlightFocusRow: options.highlightFocusRow === true, highlightHoverRow: options.highlightHoverRow === true,
             onUndo: options.onUndo, onRedo: options.onRedo,
@@ -1402,6 +1447,33 @@ export class GridView<Row> {
             onPinnedCountChanged: options.onPinnedCountChanged, culture, temporal,
             onReplace: options.onReplace, findMatch: options.findMatch, findsHeaders: options.findsHeaders !== false,
         };
+    }
+
+    // Who holds the marks of the Mark Column, refusing by name what cannot be painted honestly (ADR-0043): marks
+    // given beside a source that keeps its own, and a Mark Column nobody holds marks for.
+    #marksOf(options: GridOptions<Row>, columns: readonly ResolvedColumn<Row>[], source: GridSource<Row>): RowMarks<Row> | undefined {
+        const { marks: given }: { readonly marks?: unknown } = options;
+        if (given !== undefined && !isRowMarks(given)) {
+            throw new TypeError('marks holds the Row Marks: isMarked, counts, onMarkIntent, setRowKind and subscribe (ADR-0043).');
+        }
+        if (given !== undefined && options.source?.marks !== undefined) {
+            throw new TypeError('marks was given together with a source that keeps its own Row Marks. One of the two would have to '
+                + 'silently win; give the source alone, or a source without marks (ADR-0043).');
+        }
+        const column = columns.find(({ mark }) => mark);
+        if (column === undefined) return undefined;
+        // The source the grid makes over `rows` is made again for every new array, and marks it kept would go
+        // with it without a word: the marks then belong to someone who outlives the array.
+        if (options.source === undefined && options.marks === undefined) {
+            throw new TypeError(`Column '${column.column.name}' is a Mark Column over rows the grid holds, which it holds again for every `
+                + 'new array, and the marks would go with them. Give marks, or a source that keeps them, as GridSource.from does (ADR-0043).');
+        }
+        const marks = options.marks ?? source.marks;
+        if (marks === undefined) {
+            throw new TypeError(`Column '${column.column.name}' is a Mark Column, but nobody holds the marks. Give marks, or a source `
+                + 'that keeps them, as GridSource.from does (ADR-0043).');
+        }
+        return marks;
     }
 
     // The Header Groups taken and resolved against the columns' order and the pinned count (ADR-0032): the
@@ -1490,6 +1562,7 @@ export class GridView<Row> {
         this.#copyCellCap = taken.copyCellCap;
         this.#onRefused = taken.onRefused;
         this.#onAction = taken.onAction;
+        this.#rowMarks.bind(taken.marks);
         this.#pasteHeard = taken.onPaste;
         this.#pasteMaySpill = taken.pasteMaySpill;
         this.#highlightFocusRow = taken.highlightFocusRow;
@@ -2110,6 +2183,12 @@ export class GridView<Row> {
         const resolved = itemAt(this.#columns, focus.column);
         const choice = this.#interactiveChoice();
         this.#interactive = undefined;
+        // The Mark Column acts on the Selection's rows, not on the one under the Focus, and needs none of them in
+        // hand: they are named by position (ADR-0043).
+        if (resolved.mark) {
+            this.#markSelectedRows(focus.column);
+            return;
+        }
         const held = this.#rowAt(focus.row);
         if (held === undefined) return;
         const pressed: PressedRow<Row> = { row: held.row, index: focus.row, sequence: this.#sequence(), source: this.#source };
@@ -2132,6 +2211,70 @@ export class GridView<Row> {
         } else if (this.#canEdit) {
             this.#tryOpenEdit('overwrite', ' ');
         }
+    }
+
+    // Space with the Focus in the Mark Column (ADR-0043, MK-1): every row with a selected cell in that column,
+    // once each, as positions under the order the Selection was made in, since past the Window the grid has no
+    // identity to name them by. The marks bring them into line: all marked if any was not.
+    #markSelectedRows(column: number): void {
+        const marks = this.#rowMarks.marks;
+        const ranges = rowsSelectedIn(this.#held.selection.ranges, column);
+        if (marks === undefined || ranges.length === 0) return;
+        this.#raiseMark(marks, { kind: 'positions', ranges, rowSequenceVersion: this.#state.rowSequenceVersion });
+    }
+
+    // One marking gesture, one intent, never one per row (ADR-0043, MK-3). The marks apply it in their own time:
+    // the grid paints what they answer when they say they changed. A failure of theirs is theirs, and reaches
+    // the page as their unhandled rejection rather than a mark the grid pretends was made.
+    #raiseMark(marks: RowMarks<Row>, intent: RowMarkIntent<Row>): void {
+        void marks.onMarkIntent(intent);
+    }
+
+    // A row's checkbox pressed (ADR-0043): its row by identity, wherever an order move has taken it, asked for the
+    // state the checkbox did not show when it was pressed, which is what the gesture was taken against: a mark
+    // the Consumer applied since, by another gesture, does not turn the press around (principle 6). Made on what
+    // a source since replaced painted, or on a row the Window no longer holds, or that only a position under a
+    // moved order names, it marks nothing and is refused once, and said as an action's refusal is (ADR-0043's
+    // note of 2026-10-09, MK-9; ADR-0142, ADR-0160).
+    #pressRowMark(pressed: PressedRow<Row>, marked: boolean): void {
+        const marks = this.#rowMarks.marks;
+        if (marks === undefined) return;
+        if (pressed.source !== this.#source) {
+            this.#refuseRowMark('sourceChanged');
+            return;
+        }
+        this.#source.publishGathered?.();
+        this.#reconcileSelection();
+        const now = this.#pressedRowNow(pressed);
+        if ('refused' in now) {
+            this.#refuseRowMark(now.refused);
+            return;
+        }
+        this.#raiseMark(marks, { kind: 'oneRow', row: now.row, marked });
+    }
+
+    #refuseRowMark(reason: MarkRefusalReason): void {
+        this.#sayRefusal(this.#labelOf(rowCommandRefusalId));
+        this.#onRefused?.({ kind: 'mark', reason });
+    }
+
+    // The header's checkbox pressed (ADR-0043): every Detail row of the current result, as it stands now, marked,
+    // unless all are marked already, which unmarks them; counts not yet known mark. It names the result as it
+    // stood at the press: made on what a source since replaced painted, or under an order that has moved since,
+    // it marks nothing and is refused once, for the Consumer to word (MK-9). A click no press came before, one a
+    // script made, names what the header names now.
+    #pressHeaderMark(press: { readonly sequence: number; readonly source: unknown } | undefined): void {
+        const marks = this.#rowMarks.marks;
+        if (marks === undefined) return;
+        if (press !== undefined && (press.source !== this.#source || press.sequence !== this.#sequence())) {
+            this.#onRefused?.({ kind: 'mark', reason: press.source === this.#source ? 'orderMoved' : 'sourceChanged' });
+            return;
+        }
+        const { counts } = marks;
+        this.#raiseMark(marks, {
+            kind: 'allRows', marked: rowMarkHeaderPress(counts === undefined ? 'some' : rowMarkHeaderState(counts)),
+            rowSequenceVersion: this.#state.rowSequenceVersion,
+        });
     }
 
     // Space aimed with a Selection an order move or a replaced source has dropped since (ADR-0142, LV-12,
@@ -2301,6 +2444,48 @@ export class GridView<Row> {
         return painted === undefined || under === undefined ? undefined : { ...painted, ...under };
     }
 
+    // A press on a row's checkbox (ADR-0043): its default prevented, so it never takes the keyboard, as an action's
+    // button does not, and the row it was painted in noted for its click (MK-9).
+    readonly #onMarkPress = (event: MouseEvent): void => {
+        const box = event.target;
+        if (!(box instanceof Element) || !this.#markBoxes.has(box)) return;
+        event.preventDefault();
+        if (event.button !== 0) return;
+        const pressed = this.#pressedRowOf(box);
+        this.#markPress = pressed === undefined ? undefined : { box, pressed };
+    };
+
+    // The click on a row's checkbox: on the row it was pressed on. A click no press of the pointer came before,
+    // one a script made, is taken on the row as painted now. An open edit is committed first, as for an action.
+    readonly #onMarkClick = (event: MouseEvent): void => {
+        const press = this.#markPress;
+        this.#markPress = undefined;
+        const box = event.target;
+        if (!(box instanceof Element) || !this.#markBoxes.has(box)) return;
+        const pressed = press !== undefined && press.box === box ? press.pressed : this.#pressedRowOf(box);
+        if (pressed === undefined) return;
+        this.#answered += 1;
+        this.#invalidate();
+        if (!this.#commitEdit()) return;
+        this.#pressRowMark(pressed, this.#markBoxes.get(box) !== true);
+    };
+
+    // A press whose checkbox a pass took away before its release, as an action's (#releaseActionPress): answered
+    // at its release over a checkbox, as its click would have been, on the row it was pressed on, by identity
+    // wherever an order move has taken it, or refused (MK-9); ended by a release anywhere else, the platform's
+    // cancel. Unlike an action's, it is not held to the checkbox on the same row: a row's checkbox names its row
+    // by identity, so a press released where it was made, over whatever row an order move put there, is still
+    // the press the user made, whenever the move arrived (principle 6).
+    #releaseMarkPress(event: MouseEvent): void {
+        const press = this.#markPress;
+        const target = event.target;
+        if (press === undefined || target === press.box) return;
+        this.#markPress = undefined;
+        if (press.box.isConnected || !(target instanceof Element) || !this.#markBoxes.has(target)) return;
+        if (!this.#commitEdit()) return;
+        this.#pressRowMark(press.pressed, this.#markBoxes.get(press.box) !== true);
+    }
+
     readonly #onPress = (event: MouseEvent): void => {
         // Only a press on the rows' own box, whose cells take no pointer events: its offsets are the
         // Viewport's, which the arithmetic reads (ADR-0012).
@@ -2357,6 +2542,7 @@ export class GridView<Row> {
         this.#answered += 1;
         this.#invalidate();
         this.#releaseActionPress(event);
+        this.#releaseMarkPress(event);
     };
 
     // A drag ends at its release anywhere on the grid, over the header too; released outside it, the next
@@ -4225,6 +4411,8 @@ export class GridView<Row> {
         // A new press, whose own button, if it is one, is noted after this: one before it whose release went
         // unheard is over.
         this.#actionPress = undefined;
+        this.#markPress = undefined;
+        this.#headerMarkPress = undefined;
         // Ended before the press is marked: the field left says the keyboard has gone (#onFocusLeft).
         if (this.#composing && event.button === 0) this.#keyField.blur();
         this.#keyboardByPress = true;
@@ -4242,6 +4430,15 @@ export class GridView<Row> {
             this.#interactive = undefined;
             this.#invalidate();
         }
+    };
+
+    // A release that will raise no click on the mark pressed ends that press, the platform's cancel: a click that
+    // comes later with no press, a script's or assistive technology's, is then taken as made on the paint it
+    // lands on, never on a press it was not part of (MK-9). A release on the rows is the rows' own to judge
+    // (#releaseMarkPress), since it may stand over the checkbox a pass put in the pressed one's place.
+    readonly #onRootRelease = (event: MouseEvent): void => {
+        if (event.target !== this.#rowMarks.headerBox) this.#headerMarkPress = undefined;
+        if (!(event.target instanceof Node && this.#viewport.contains(event.target))) this.#markPress = undefined;
     };
 
     // The root's keyup: a key the IME took in the Keyboard Field has been told whole, since everything it owed
@@ -4399,6 +4596,13 @@ export class GridView<Row> {
         // standing would eat the next genuine sort.
         this.#gestureConsumedClick = false;
         this.#tabReleased = false;
+        // A press on the header's checkbox is the checkbox's: it neither sorts, selects nor drags, never takes the
+        // keyboard, and notes the order and source it was made under for its click (ADR-0043, MK-9).
+        if (event.target === this.#rowMarks.headerBox) {
+            event.preventDefault();
+            if (event.button === 0) this.#headerMarkPress = { sequence: this.#sequence(), source: this.#source };
+            return;
+        }
         if (event.button !== 0) return;
         // A press on a ▾ is the button's: its click opens the menu, and it neither sorts nor drags. It never takes
         // the keyboard itself: an edit the click cannot commit keeps it in the editor (ADR-0034), and a menu the
@@ -4444,6 +4648,12 @@ export class GridView<Row> {
     readonly #onHeaderClick = (event: MouseEvent): void => {
         this.#answered += 1;
         this.#invalidate();
+        if (event.target === this.#rowMarks.headerBox) {
+            const press = this.#headerMarkPress;
+            this.#headerMarkPress = undefined;
+            if (this.#commitEdit()) this.#pressHeaderMark(press);
+            return;
+        }
         // A Heading drag's click is the gesture's tail, not a sort.
         if (this.#gestureConsumedClick) {
             this.#gestureConsumedClick = false;
@@ -5111,8 +5321,22 @@ export class GridView<Row> {
         this.#forgetCurrentMatchOffFocus();
         this.#paintHeader();
         this.#paintViewport();
+        this.#paintMarkCount();
         this.#paintMessage();
         this.#placePopover();
+    }
+
+    // The header's checkbox from the counts the Consumer answers, and the marks' count after the rows, outside
+    // the scroller, standing while it says something (ADR-0043, ADR-0014).
+    #paintMarkCount(): void {
+        const status = this.#rowMarks.marks === undefined ? undefined : this.#rowMarks.paint(id => this.#labelOf(id));
+        if (status === undefined) {
+            this.#markCountShown?.remove();
+            this.#markCountShown = undefined;
+        } else if (status !== this.#markCountShown || !status.isConnected) {
+            this.#root.insertBefore(status, this.#announce);
+            this.#markCountShown = status;
+        }
     }
 
     #scrollerStyle(): string {
@@ -5162,7 +5386,7 @@ export class GridView<Row> {
             return `${style}; align-self: flex-end; height: ${heightPx}px; line-height: ${heightPx}px`;
         };
         const headerCell = (c: number, pinned: boolean): void => {
-            const { column, header: label } = itemAt(this.#columns, c);
+            const { column, header: label, mark } = itemAt(this.#columns, c);
             const cell = doc.createElement('div');
             cell.className = headerClass(column.align, pinned, 'none');
             cell.setAttribute('style', tieredStyle(c, pinned ? this.#styles.pinnedCell(c) : this.#styles.cell(c)));
@@ -5171,6 +5395,8 @@ export class GridView<Row> {
             // Sorted or not, a column that can be sorted says so (ADR-0033).
             if (column.queryable !== false) cell.setAttribute('aria-sort', this.#ariaSort(column.name));
             cell.textContent = label;
+            // The header's checkbox is one element for the grid's life, moved into the cell built anew (ADR-0043).
+            if (mark) cell.append(this.#rowMarks.headerBox);
             if (menus) {
                 // Pressed, never reached by Tab (ADR-0080): a Tab into the grid would otherwise go through every
                 // column's ▾ before the first cell. Alt+↓ opens it by key (ADR-0044).
@@ -5441,9 +5667,12 @@ export class GridView<Row> {
                 // again for the choice (ADR-0037, ADR-0003).
                 const chosenHere = choice !== undefined && choice.cell.row === index ? { column: choice.cell.column, action: choice.action } : undefined;
                 const chosen = chosenHere === undefined ? '' : `${chosenHere.column}:${chosenHere.action}`;
+                // Asked for every row painted while a Mark Column stands, and part of what decides whether the row
+                // paints again, so a changed mark paints its row and no other (ADR-0043, MK-4).
+                const marked = this.#rowMarks.isMarked(row);
                 if (was !== undefined && !next.has(key) && was.row === row && was.index === index && was.styles === this.#styles
                     && was.columns === this.#columns && was.placeholder === this.#placeholderMode && sameRange(was.scrollable, scrollable)
-                    && was.chosen === chosen) {
+                    && was.chosen === chosen && was.marked === marked) {
                     if (was.marks === marks && was.current === current) {
                         next.set(key, was);
                         for (const slot of was.slots) used.add(slot);
@@ -5459,7 +5688,7 @@ export class GridView<Row> {
                         continue;
                     }
                 }
-                const paint: RowPaint<Row> = { key, chosen: chosenHere, used, slots: [] };
+                const paint: RowPaint<Row> = { key, chosen: chosenHere, marked, used, slots: [] };
                 const { element, matched } = this.#rowElement(row, index, scrollable, marks, current, paint);
                 repainted = true;
                 // A key met twice in one Window is painted, never paired: which of the two a later row
@@ -5467,7 +5696,7 @@ export class GridView<Row> {
                 if (!next.has(key)) {
                     next.set(key, {
                         element, row, index, styles: this.#styles, columns: this.#columns, placeholder: this.#placeholderMode, scrollable,
-                        marks, current, matched, chosen, slots: paint.slots,
+                        marks, current, matched, chosen, slots: paint.slots, marked,
                     });
                 }
                 rows.push(element);
@@ -5775,6 +6004,11 @@ export class GridView<Row> {
         actions.forEach((action, a) => {
             cell.append(this.#actionButton(resolved, action, paint.chosen?.column === c && paint.chosen.action === a ? `${this.#ids}r${index}c${c}a${a}` : undefined));
         });
+        if (resolved.mark) {
+            const box = rowMarkBox(this.#root.ownerDocument, paint.marked, this.#labelOf(markLabelIds.markRow));
+            this.#markBoxes.set(box, paint.marked);
+            cell.append(box);
+        }
         return cell;
     }
 

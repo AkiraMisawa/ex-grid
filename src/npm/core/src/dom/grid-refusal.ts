@@ -1,5 +1,6 @@
 import type { CommitRefusalReason } from '../cells/edit-intent';
 import type { CopyRefusalReason, PasteRefusalReason } from '../clipboard/clipboard-rules';
+import type { MarkRefusalReason } from '../rows/row-marks';
 import type { CellPosition } from '../selection/cell';
 
 /**
@@ -39,4 +40,9 @@ export type GridRefusal<Row = unknown> =
     | {
         readonly kind: 'action'; readonly reason: ActionRefusalReason; readonly row: Row | undefined; readonly column: string;
         readonly action: string;
-    };
+    }
+    /** A press on a mark that marked nothing and raised no Row Mark intent (ADR-0043's note of 2026-10-09, MK-9):
+     * a row's checkbox whose row the Window no longer holds, or that only a position under a moved order names;
+     * the header's checkbox pressed under an order that has moved since; or either, made on what a source since
+     * replaced painted. */
+    | { readonly kind: 'mark'; readonly reason: MarkRefusalReason };
