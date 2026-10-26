@@ -2,6 +2,10 @@
 {
   "$schema": "https://developer.microsoft.com/json-schemas/api-extractor/v7/api-extractor.schema.json",
   "mainEntryPointFilePath": "<projectFolder>/temp/types/index.d.ts",
+  // The build's settings, which read the core as it is published; tsconfig.json reads its sources.
+  "compiler": { "tsconfigFilePath": "<projectFolder>/tsconfig.build.json" },
+  // The core's declarations stay an import of its own, as its JavaScript does.
+  "bundledPackages": [],
   "apiReport": {
     "enabled": true,
     "reportFolder": "<projectFolder>/etc/",

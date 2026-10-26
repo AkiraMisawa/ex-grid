@@ -29,6 +29,8 @@ export { GridSource } from './source/grid-source';
 export type { ColumnType, DateType, QueryColumn } from './query/columns';
 export type { CellAlign } from './paint/cell-classes';
 export type { GridDensity } from './grid-metrics';
+export { densityText } from './density-text';
+export type { DensityText } from './density-text';
 export type { DistinctValues, GridSourceState } from './source/grid-source';
 export type { GridFindRequest, GridFindResult } from './finding/find';
 export type { GridSummaryRequest, GridSummaryResult } from './summary/grid-summary';

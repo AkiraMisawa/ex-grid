@@ -1,0 +1,5 @@
+Product: ExChart
+Kind: Added
+ADR: 0370
+
+`@ex-grid/chart` is ExChart in TypeScript: its layout, held to the C# engine by the cases under `tests/cases/chart/`, and now its Script Core, `createChart(element, options)`, which draws a Chart Definition as SVG into an element to the Razor component's DOM contract and stylesheet. It takes the Razor component's parameters as options (`width`, `height`, `density`, `title`, `description`, `legend`, `axisStyle`, `independentScales`, `colourSlots`, `hiddenSeries`, `range`, `scale`, `yScale`, `fileName`) and raises its events (`onSeriesVisibilityChanged`, `onRangeChanged`, `onScaleChanged`, `onPointClick`), taking back what the user changed as options. The tooltip and its guide, a drag that narrows the range (a rectangle on a scatter), a double-click that returns it, the legend, Chart Filters, View as table, the context menu and the CSV, SVG and PNG saves (`download(format)`) behave as the Razor component's. Its words have ids and English, and its Japanese is chosen in one line with `label: japaneseChartWords`. It is published with 0.3.0.

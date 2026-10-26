@@ -77,9 +77,10 @@ internal static class ChartFiles
         };
     }
 
-    /// <summary>The CSV: every visible series in the range shown, one row a position (ADR-0275's table).</summary>
+    /// <summary>The CSV: every visible series in the range shown, one row a position (ADR-0275's table). Its text
+    /// already begins with the byte-order mark, so it is encoded as it stands, never with a second.</summary>
     internal static byte[] Csv(ChartDefinition definition, ChartMetrics metrics, ChartView view) =>
-        Encoding.UTF8.GetPreamble().Concat(Encoding.UTF8.GetBytes(ChartCsv.Wide(definition, metrics, view))).ToArray();
+        Encoding.UTF8.GetBytes(ChartCsv.Wide(definition, metrics, view));
 
     /// <summary>The SVG text of the drawing as it stands, without the pointer's guide, tooltip or band.</summary>
     internal static async Task<string> SvgAsync(IServiceProvider services, ChartFileDrawing.Input input)
