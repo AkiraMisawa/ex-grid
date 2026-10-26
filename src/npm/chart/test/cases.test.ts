@@ -23,13 +23,16 @@ function read(name: string): ChartFile {
     }
     const near = json['near'];
     const definitions = json['definitions'];
-    if ((near !== undefined && typeof near !== 'number') || (definitions !== undefined && !isObject(definitions))) {
-        throw new Error(`chart/${name} has a near or definitions the runner cannot read.`);
+    const tables = json['tables'];
+    if ((near !== undefined && typeof near !== 'number') || (definitions !== undefined && !isObject(definitions))
+        || (tables !== undefined && !isObject(tables))) {
+        throw new Error(`chart/${name} has a near, definitions or tables the runner cannot read.`);
     }
     return {
         about: json['about'], kind: json['kind'], cases,
         ...(near === undefined ? {} : { near }),
         ...(definitions === undefined ? {} : { definitions }),
+        ...(tables === undefined ? {} : { tables }),
     };
 }
 

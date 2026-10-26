@@ -20,6 +20,10 @@ import { decades, fitLabels, horizontalTicks, logSteps, nice, steps, tenor, type
 import { SurfaceDefinition, type SurfaceAxisOptions, type SurfaceScaleOptions, type SurfaceSlice, type SurfaceValue } from '../src/surface';
 import { surfaceMesh, surfaceSlicePath } from '../src/surface-mesh';
 import { invariantText } from '../src/values';
+import { decimalFromText } from '@ex-grid/data';
+import { Temporal } from 'temporal-polyfill';
+import { chartDataOf, type ChartData } from '../src/chart-data';
+import { ChartSpecRefusedError, readChartSpec } from '../src/spec';
 
 /** A value as JSON holds it. */
 export type Json = null | boolean | number | string | readonly Json[] | JsonObject;
@@ -35,6 +39,8 @@ export interface ChartFile {
     readonly kind: string;
     readonly near?: number;
     readonly definitions?: JsonObject;
+    /** The tables a Chart Spec case reads, by Data Handle. */
+    readonly tables?: JsonObject;
     readonly cases: readonly JsonObject[];
 }
 
@@ -172,6 +178,10 @@ export class ChartCase {
     }
 
     run(): void {
+        if (this.#entry['spec'] !== undefined || this.#entry['specText'] !== undefined) {
+            this.#runSpec();
+            return;
+        }
         const entry = allow(this.#entry, 'the case', caseKeys);
         const throws = entry['throws'];
         if (throws !== undefined) {
@@ -200,6 +210,19 @@ export class ChartCase {
         holds(checks.length > 0, `"${this.#name}" checks nothing.`);
         for (const check of checks) {
             this.#check(subject, subject, check);
+        }
+    }
+
+    // A Chart Spec case (ADR-0320; ADR-0370, section 3): the reading held to the checks, or the refusal to its path.
+    #runSpec(): void {
+        const answer = specAnswer(this.#file, this.#entry, this.#name);
+        if (answer === undefined) {
+            return;
+        }
+        const checks = list(this.#entry['expect'], `"${this.#name}"'s expect`);
+        holds(checks.length > 0, `"${this.#name}" checks nothing.`);
+        for (const check of checks) {
+            this.#check(answer, answer, check);
         }
     }
 
@@ -1348,4 +1371,117 @@ function has(v: Json, wanted: Json, near: number, where: string): boolean {
         return v.includes(string(wanted, 'has'));
     }
     return items(v, where).some(item => matches(wanted, item, near));
+}
+
+// ---- The Chart Spec reader (ADR-0320; ADR-0370, section 3) ----
+
+const specCaseKeys = ['name', 'spec', 'specText', 'tables', 'refused', 'expect'];
+
+/**
+ * Reads a spec case's Chart Spec against its tables. A refused case is held to its refusal here, and
+ * answers `undefined`; any other answers the reading as `{ title, definition, surface }`, the one it is not
+ * `null`, and a surface's definition the refusal reading it throws.
+ */
+function specAnswer(file: ChartFile, given: JsonObject, name: string): Json | undefined {
+    const entry = allow(given, 'the spec case', specCaseKeys);
+    const spec = entry['spec'];
+    const specText = entry['specText'];
+    if ((spec === undefined) === (specText === undefined)) {
+        throw new Error(`"${name}" gives its spec as one of spec and specText.`);
+    }
+    // An object is written again as JSON, its numbers as JavaScript spells them; specText is the spec's text as
+    // it is, for text that is not JSON, or a number whose spelling the reader reads.
+    const source = spec === undefined ? string(specText, 'specText') : JSON.stringify(spec);
+    const tables = specTables(file, entry);
+    const lookup = (handle: string): ChartData | undefined => tables.get(handle);
+    const refused = entry['refused'];
+    if ((refused === undefined) === (entry['expect'] === undefined)) {
+        throw new Error(`"${name}" is either refused or expects a reading.`);
+    }
+    if (refused !== undefined) {
+        const r = allow(refused, 'refused', ['path', 'message', 'startsWith']);
+        let thrown: unknown;
+        try {
+            readChartSpec(source, lookup);
+        } catch (error) { // oxlint-disable-line ex-grid/no-catch -- the refusal the case expects is held to it below
+            thrown = error;
+        }
+        if (!(thrown instanceof ChartSpecRefusedError)) {
+            throw new Error(`"${name}" expected a refusal, and ${thrown === undefined ? 'nothing was thrown' : `${thrown instanceof Error ? thrown.message : 'what is no Error'} was thrown`}.`, { cause: thrown });
+        }
+        const path = string(r['path'], 'path');
+        holds(thrown.path === path, `"${name}": refused at "${thrown.path}", not "${path}": ${thrown.message}`);
+        const message = r['message'];
+        const startsWith = r['startsWith'];
+        if ((message === undefined) === (startsWith === undefined)) {
+            throw new Error(`"${name}"'s refusal says one of message and startsWith.`);
+        }
+        holds(message === undefined ? thrown.message.startsWith(string(startsWith, 'startsWith')) : thrown.message === string(message, 'message'),
+            `"${name}": the refusal says "${thrown.message}".`);
+        return undefined;
+    }
+    const reading = readChartSpec(source, lookup);
+    let definition: Json;
+    try {
+        definition = plain(reading.definition);
+    } catch (error) { // oxlint-disable-line ex-grid/no-catch -- a surface's definition is answered by the refusal it throws, which the case checks
+        if (!(error instanceof Error)) {
+            throw error;
+        }
+        definition = { refused: refusal(error) };
+    }
+    return { title: reading.title, definition, surface: plain(reading.surface) };
+}
+
+// The file's tables by handle, a case's own taking the place of the file's of the same handle.
+function specTables(file: ChartFile, entry: JsonObject): Map<string, ChartData> {
+    const tables = new Map<string, ChartData>();
+    for (const named of [file.tables, entry['tables']]) {
+        if (named === undefined) {
+            continue;
+        }
+        if (!isObject(named)) {
+            throw new Error(`tables is ${text(named)}, not an object of tables by handle.`);
+        }
+        for (const [handle, table] of Object.entries(named)) {
+            if (!isObject(table)) {
+                throw new Error(`The table "${handle}" is ${text(table)}, not an object of columns.`);
+            }
+            tables.set(handle, chartDataOf(Object.entries(table).map(([column, values]) => {
+                // An object's own keys put a whole number first, which would reorder the columns.
+                if (/^(?:0|[1-9]\d*)$/.test(column)) {
+                    throw new Error(`The column "${column}" of "${handle}" is a whole number, whose place in the table the runner cannot keep.`);
+                }
+                return [column, list(values, `the column "${column}"`).map(specCell)] as const;
+            })));
+        }
+    }
+    return tables;
+}
+
+// A table's value, as the C# runner reads it: null, a text, a bool, a number, or one of {"decimal": "1.25"},
+// {"integer": 3} (a bigint), {"date": "yyyy-MM-dd"} (a Temporal.PlainDate), {"dateTime":
+// "yyyy-MM-ddTHH:mm:ss"} (a Temporal.PlainDateTime) and {"double": "NaN" | "Infinity" | "-Infinity"}.
+function specCell(given: Json): unknown {
+    if (given === null || typeof given === 'string' || typeof given === 'boolean' || typeof given === 'number') {
+        return given;
+    }
+    const forms = Object.entries(allow(given, 'a table\'s value', ['decimal', 'integer', 'date', 'dateTime', 'double']));
+    const [form] = forms;
+    if (form === undefined || forms.length !== 1) {
+        throw new Error(`${text(given)} is not one value a table holds.`);
+    }
+    const [kind, value] = form;
+    switch (kind) {
+        case 'decimal':
+            return decimalFromText(string(value, 'a decimal'));
+        case 'integer':
+            return BigInt(whole(value, 'an integer'));
+        case 'date':
+            return Temporal.PlainDate.from(string(value, 'a date'));
+        case 'dateTime':
+            return Temporal.PlainDateTime.from(string(value, 'a date and time'));
+        default:
+            return number(value);
+    }
 }
