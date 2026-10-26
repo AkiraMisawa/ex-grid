@@ -1,0 +1,77 @@
+{
+  "about": "What an edit reports and refuses, what the Cell Editor reopens on, and the Sheet Document's round trip (ADR-0046, ADR-0047, ADR-0048). Transcribed from ExSheet.Engine.Tests' TracerTests.",
+  "kind": "sheet",
+  "culture": "en-US",
+  "cases": [
+    {
+      "name": "ADR-0046/0047: editing A1 updates C1, and the change names exactly the cells whose Values changed",
+      "steps": [
+        {"enter": {"A1": "2", "B1": "3", "C1": "=A1+B1", "A5": "=C1*10", "A9": "7"}},
+        {"enter": {"A1": "4"}, "expect": {"values": {"C1": 7, "A5": 70}, "change": {"valueChanges": ["A1", "C1", "A5"], "rows": [0, 4]}}}
+      ]
+    },
+    {
+      "name": "ADR-0046: an edit whose dependents' Values do not change repaints nothing else",
+      "steps": [
+        {"enter": {"A1": "2", "B3": "=A1*0"}},
+        {"enter": {"A1": "5"}, "expect": {"change": {"valueChanges": ["A1"], "rows": [0]}}}
+      ]
+    },
+    {
+      "name": "ADR-0046: typing the same Entry again is no change",
+      "steps": [
+        {"enter": {"A1": "2"}},
+        {"enter": {"A1": "2"}, "expect": {"change": {"valueChanges": [], "rows": []}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: a Formula that cannot be read is refused, and nothing changes",
+      "steps": [
+        {"enter": {"A1": "=1+1"}},
+        {"enter": {"A1": "=1+"}, "expect": {"throws": {"refusal": "formulaSyntax"}}},
+        {"enter": {"A1": "=(1"}, "expect": {"throws": {"refusal": "formulaSyntax"}}},
+        {"enter": {"A1": "="}, "expect": {"throws": {"refusal": "formulaSyntax"}}},
+        {"read": true, "expect": {"values": {"A1": 2}, "entryTexts": {"A1": "=1+1"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: a batch with one unreadable Formula changes nothing at all",
+      "steps": [
+        {"enterAll": {"A1": "1", "A2": "=*"}, "expect": {"throws": {"refusal": "formulaSyntax"}, "values": {"A1": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0048: the Cell Editor reopens on the Entry, and the Formula is in invariant syntax",
+      "steps": [
+        {"enter": {"C1": "=a1+b1", "A1": "2.5", "A2": "Tokyo"}, "expect": {"entryTexts": {"C1": "=A1+B1", "A1": "2.5", "A2": "Tokyo", "A3": ""}}}
+      ]
+    },
+    {
+      "name": "ADR-0048: text typed with a leading apostrophe reopens with it (its Value is in ExcelCases/typed-constants.json)",
+      "steps": [
+        {"enter": {"A1": "'123"}, "expect": {"entryTexts": {"A1": "'123"}}}
+      ]
+    },
+    {
+      "name": "ADR-0048: clearing a cell makes it blank, and its dependents see 0",
+      "steps": [
+        {"enter": {"A1": "2", "B1": "=A1+1"}},
+        {"enter": {"A1": ""}, "expect": {"values": {"A1": null, "B1": 1}, "entries": {"A1": null}, "change": {"valueChanges": ["A1", "B1"]}}}
+      ]
+    },
+    {
+      "name": "ADR-0048: the Sheet Document round-trips: out, in, the same Entries and Values",
+      "steps": [
+        {"enter": {"A1": "2", "B1": "3", "C1": "=A1+B1", "D1": "Tokyo", "E1": "TRUE", "F1": "#N/A", "XFD1048576": "=C1*2"}},
+        {"remember": "saved"},
+        {"reopen": {"sheet": "Sheet1"}, "expect": {"picture": "saved", "entryAddresses": ["A1", "B1", "C1", "D1", "E1", "F1", "XFD1048576"], "values": {"XFD1048576": 10}}}
+      ]
+    },
+    {
+      "name": "ADR-0048: a Sheet Document holds Entries and never Values",
+      "steps": [
+        {"enter": {"A1": "2", "B1": "=A1*21"}, "expect": {"documentJson": "{\"version\":9,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"cells\":[{\"at\":\"A1\",\"number\":2},{\"at\":\"B1\",\"formula\":\"=A1*21\"}]}"}}
+      ]
+    }
+  ]
+}

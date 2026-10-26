@@ -1,0 +1,148 @@
+{
+  "about": "Copy and paste of Entries inside a Sheet, Values outward, text inward (ADR-0048, ticket 14; SH-14's engine half): a paste writes the whole cell and is one step, a block is a snapshot taken at the copy, a block pastes only over a whole multiple of itself and never past the Sheet's edge, a copy carries its Values outward as shown in the text flavour and unformatted in the HTML one, and pasted text is read as typed, except that what cannot be read as a Formula is text. What each pasted field becomes, and what the repeats write, is in ExcelCases/copy.json. Transcribed from ExSheet.Engine.Tests' ClipboardTests.",
+  "kind": "sheet",
+  "culture": "en-US",
+  "cases": [
+    {
+      "name": "ADR-0048: a paste writes formats and alignment, and a blank cell of the block clears what it lands on",
+      "steps": [
+        {"enter": {"A1": "1.5", "C1": "old", "C2": "old"}},
+        {"setNumberFormat": {"A1": "0.00", "C2": "0%"}},
+        {"setAlignment": {"A2": "center"}},
+        {"copy": {"range": "A1:A2", "as": "block"}},
+        {"do": {"paste": {"copy": "block", "at": "C1"}}, "expect": {"texts": {"C1": "1.50"}, "entries": {"C2": null}, "numberFormats": {"C2": "General"}, "alignments": {"C2": "center"}}}
+      ]
+    },
+    {
+      "name": "ADR-0048: a block holds the Entries as they were at the copy, whatever changes after",
+      "steps": [
+        {"enter": {"A1": "1"}},
+        {"copy": {"range": "A1", "as": "block"}},
+        {"enter": {"A1": "2"}},
+        {"do": {"paste": {"copy": "block", "at": "B1"}}, "expect": {"values": {"B1": 1}, "copies": {"block": {"block": [[{"constant": 1}]]}}}}
+      ]
+    },
+    {
+      "name": "ADR-0048, ADR-0014: a block pastes only over a whole multiple of itself",
+      "steps": [
+        {"enter": {"A1": "1", "A2": "2"}},
+        {"copy": {"range": "A1:A2", "as": "block"}},
+        {"do": {"paste": {"copy": "block", "at": "C1:C3"}}, "expect": {"throws": {"refusal": "argument"}}}
+      ]
+    },
+    {
+      "name": "ADR-0050: a block that would run past the Sheet's edge is refused by name, and nothing changes",
+      "steps": [
+        {"enter": {"A1": "1", "A2": "2"}},
+        {"copy": {"range": "A1:A2", "as": "block"}},
+        {"check": {"paste": {"copy": "block", "at": "C1048576"}}, "expect": {"refusal": {"reason": "blockWouldLeaveSheet"}}},
+        {"do": {"paste": {"copy": "block", "at": "C1048576"}}, "expect": {"throws": {"refusal": "refused", "reason": "blockWouldLeaveSheet"}, "entries": {"C1048576": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-13): a paste is one step, and its undo restores every cell it wrote over",
+      "steps": [
+        {"enter": {"A1": "1", "A2": "=A1+1", "C2": "keep me"}},
+        {"setNumberFormat": {"C1": "0%"}},
+        {"remember": "before"},
+        {"copy": {"range": "A1:A2", "as": "block"}},
+        {"do": {"paste": {"copy": "block", "at": "C1"}}, "expect": {"formulas": {"C2": "=C1+1"}}},
+        {"undo": "last", "expect": {"picture": "before", "values": {"C2": "keep me"}}}
+      ]
+    },
+    {
+      "name": "ADR-0048, ADR-0014: a block pasted over several ranges is one step, shifted for each place, a shared cell written once; its undo restores every cell",
+      "steps": [
+        {"enter": {"A2": "2", "C2": "3", "C3": "4", "B1": "=A1*10", "D3": "keep me?"}},
+        {"remember": "before"},
+        {"copy": {"range": "B1", "as": "block"}},
+        {"do": {"paste": {"copy": "block", "at": ["B2", "D2:D3", "D3"]}}, "expect": {"formulas": {"B2": "=A2*10", "D2": "=C2*10", "D3": "=C3*10"}, "values": {"D3": 40}}},
+        {"undo": "last", "expect": {"picture": "before"}},
+        {"redo": "last", "expect": {"values": {"D2": 30}}}
+      ]
+    },
+    {
+      "name": "ADR-0048, ADR-0014: a paste over several ranges needs one",
+      "steps": [
+        {"enter": {"A1": "1", "A2": "2"}},
+        {"copy": {"range": "A1:A2", "as": "block"}},
+        {"do": {"paste": {"copy": "block", "at": []}}, "expect": {"throws": {"refusal": "argument"}}}
+      ]
+    },
+    {
+      "name": "ADR-0048, ADR-0014: a paste over several ranges takes each a whole multiple of the block",
+      "steps": [
+        {"enter": {"A1": "1", "A2": "2"}},
+        {"copy": {"range": "A1:A2", "as": "block"}},
+        {"do": {"paste": {"copy": "block", "at": ["C1:C4", "E1:E3"]}}, "expect": {"throws": {"refusal": "argument"}}}
+      ]
+    },
+    {
+      "name": "ADR-0048, ADR-0050 item 10: typed fields and exact Entries pasted together are one step; the typed are read as typed, the Entries kept exactly",
+      "steps": [
+        {"enter": {"A1": "old", "B1": "old"}},
+        {"remember": "before"},
+        {"do": {"pasteFields": {"typed": {"A1": "50%", "C1": "=B1*2"}, "entries": {"B1": {"constant": 1.0000000000000002}}}}, "expect": {"texts": {"A1": "50%"}, "values": {"B1": 1.0000000000000002, "C1": 2.0000000000000004}}},
+        {"undo": "last", "expect": {"picture": "before"}}
+      ]
+    },
+    {
+      "name": "ADR-0048, ADR-0005 (SH-14): outward, a copy carries Values: as shown in the text flavour, unformatted in the HTML one",
+      "steps": [
+        {"enter": {"A1": "1234.5", "B1": "=ROUND(A1/0.5,0)", "A2": "a\tb", "B2": "=1/0", "A3": "TRUE", "B3": "say \"hi\""}, "note": "ROUND gives no format on entry (ADR-0047), so B1 goes out in General"},
+        {"setNumberFormat": {"A1": "#,##0.00"}},
+        {"copy": {"range": "A1:C3", "as": "out"}, "expect": {"copies": {"out": {"refusal": null, "text": "1,234.50\t2469\t\r\n\"a\tb\"\t#DIV/0!\t\r\nTRUE\t\"say \"\"hi\"\"\"\t\r\n", "html": "<table xmlns:x=\"urn:schemas-microsoft-com:office:excel\"><tr><td x:num=\"1234.5\" style='mso-number-format:\"\\#\\,\\#\\#0\\.00\"'>1234.5</td><td x:num=\"2469\">2469</td><td></td></tr><tr><td>a\tb</td><td>#DIV/0!</td><td></td></tr><tr><td>TRUE</td><td>say \"hi\"</td><td></td></tr></table>"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0016, ADR-0048: a Value its format cannot show goes out as the Value, never as ####",
+      "steps": [
+        {"enter": {"A1": "-1"}},
+        {"setNumberFormat": {"A1": "yyyy-mm-dd"}},
+        {"copy": {"range": "A1", "as": "out"}, "expect": {"copies": {"out": {"text": "-1\r\n"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-14): inward, a pasted date takes a date format",
+      "steps": [
+        {"do": {"pasteText": {"fields": [["=A1+1", "1,234"], ["9/27/2026", "12%"]], "at": "B1"}}, "expect": {"numberFormats": {"B2": "m/d/yyyy"}}}
+      ]
+    },
+    {
+      "name": "ADR-0048 (observed in Excel): pasted text that cannot be read as a Formula is text; typed, it is still refused",
+      "steps": [
+        {"do": {"pasteFields": {"typed": {"A1": "5", "B1": "=1+"}}}, "expect": {"values": {"A1": 5, "B1": "=1+"}, "entries": {"B1": {"constant": "=1+"}}}},
+        {"undo": "last", "expect": {"entries": {"B1": null}}},
+        {"do": {"enter": {"B1": "=1+"}}, "expect": {"throws": {"refusal": "formulaSyntax"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (third run, TYPED-054), ADR-0048: text Excel reads as a Formula using the intersection operator is refused by name when typed, and pasted it is text",
+      "steps": [
+        {"do": {"enter": {"A1": "-B2 C2"}}, "expect": {"throws": {"refusal": "formulaSyntax", "saying": "The Formula '=-B2 C2' cannot be read at position 5: the intersection operator (a space between two References) is not implemented."}, "entries": {"A1": null}}},
+        {"do": {"pasteFields": {"typed": {"A1": "-B2 C2"}}}, "expect": {"values": {"A1": "-B2 C2"}, "entryTexts": {"A1": "'-B2 C2"}}},
+        {"enter": {"B1": "'-B2 C2"}, "expect": {"values": {"B1": "-B2 C2"}}}
+      ]
+    },
+    {
+      "name": "ADR-0048: an empty field clears its cell",
+      "steps": [
+        {"enter": {"A1": "old"}},
+        {"do": {"pasteText": {"fields": [[""]], "at": "A1"}}, "expect": {"entries": {"A1": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0048: a ragged block of text is refused as an argument",
+      "steps": [
+        {"do": {"pasteText": {"fields": [["a", "b"], ["c"]], "at": "A1"}}, "expect": {"throws": {"refusal": "argument"}}}
+      ]
+    },
+    {
+      "name": "ADR-0050: pasted text that would run past the edge is refused by name",
+      "steps": [
+        {"check": {"pasteText": {"fields": [["1", "2"]], "at": "XFD1"}}, "expect": {"refusal": {"reason": "blockWouldLeaveSheet"}}},
+        {"do": {"pasteText": {"fields": [["1", "2"]], "at": "XFD1"}}, "expect": {"throws": {"refusal": "refused", "reason": "blockWouldLeaveSheet"}}}
+      ]
+    }
+  ]
+}

@@ -1,0 +1,239 @@
+{
+  "about": "VLOOKUP, HLOOKUP and MATCH beyond the observed Windows cases (ADR-0047, ADR-0049, ADR-0125): which duplicate each takes, what each refuses rather than guess, and how each follows the Sheet. The observed cases themselves run through ExSheet.Engine.Tests' ExcelCorpus. Transcribed from ExSheet.Engine.Tests' LegacyLookupTests.",
+  "kind": "sheet",
+  "culture": "en-US",
+  "setups": {
+    "ascending": [
+      {"enterAll": {"A1": "1", "A2": "2", "A3": "2", "A4": "3", "B1": "10", "B2": "20", "B3": "30"}}
+    ]
+  },
+  "cases": [
+    {
+      "name": "ADR-0047 (Windows VLOOKUP, HLOOKUP and MATCH-001, 002): exact takes the first duplicate, ascending approximate the last: =VLOOKUP(2,A1:B4,2,FALSE)",
+      "setup": "ascending",
+      "steps": [
+        {"enter": {"ZZ1000": "=VLOOKUP(2,A1:B4,2,FALSE)"}, "expect": {"values": {"ZZ1000": 20}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (Windows VLOOKUP, HLOOKUP and MATCH-001, 002): exact takes the first duplicate, ascending approximate the last: =VLOOKUP(2,A1:B4,2,TRUE)",
+      "setup": "ascending",
+      "steps": [
+        {"enter": {"ZZ1000": "=VLOOKUP(2,A1:B4,2,TRUE)"}, "expect": {"values": {"ZZ1000": 30}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (Windows VLOOKUP, HLOOKUP and MATCH-001, 002): exact takes the first duplicate, ascending approximate the last: =HLOOKUP(2,TRANSPOSE(A1:B4),2,FALSE)",
+      "setup": "ascending",
+      "steps": [
+        {"enter": {"ZZ1000": "=HLOOKUP(2,TRANSPOSE(A1:B4),2,FALSE)"}, "expect": {"values": {"ZZ1000": 20}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (Windows VLOOKUP, HLOOKUP and MATCH-001, 002): exact takes the first duplicate, ascending approximate the last: =HLOOKUP(2,TRANSPOSE(A1:B4),2,TRUE)",
+      "setup": "ascending",
+      "steps": [
+        {"enter": {"ZZ1000": "=HLOOKUP(2,TRANSPOSE(A1:B4),2,TRUE)"}, "expect": {"values": {"ZZ1000": 30}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (Windows VLOOKUP, HLOOKUP and MATCH-001, 002): exact takes the first duplicate, ascending approximate the last: =MATCH(2,A1:A4,0)",
+      "setup": "ascending",
+      "steps": [
+        {"enter": {"ZZ1000": "=MATCH(2,A1:A4,0)"}, "expect": {"values": {"ZZ1000": 2}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (Windows VLOOKUP, HLOOKUP and MATCH-001, 002): exact takes the first duplicate, ascending approximate the last: =MATCH(2,A1:A4,1)",
+      "setup": "ascending",
+      "steps": [
+        {"enter": {"ZZ1000": "=MATCH(2,A1:A4,1)"}, "expect": {"values": {"ZZ1000": 3}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: an exact lookup refuses Unicode matching Excel was not observed to do: =VLOOKUP(\"é\",A1:B2,2,FALSE)",
+      "steps": [
+        {"enter": {"A1": "é", "B1": "10"}},
+        {"enter": {"ZZ1000": "=VLOOKUP(\"é\",A1:B2,2,FALSE)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: an exact lookup refuses Unicode matching Excel was not observed to do: =HLOOKUP(\"é\",TRANSPOSE(A1:B2),2,FALSE)",
+      "steps": [
+        {"enter": {"A1": "é", "B1": "10"}},
+        {"enter": {"ZZ1000": "=HLOOKUP(\"é\",TRANSPOSE(A1:B2),2,FALSE)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: an exact lookup refuses Unicode matching Excel was not observed to do: =MATCH(\"é\",A1:A2,0)",
+      "steps": [
+        {"enter": {"A1": "é", "B1": "10"}},
+        {"enter": {"ZZ1000": "=MATCH(\"é\",A1:A2,0)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: a lookup refuses a text key beyond the legacy 255-character limit: =VLOOKUP(C1,A1:B2,2,FALSE)",
+      "steps": [
+        {"enter": {"A1": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", "C1": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", "B1": "10"}},
+        {"enter": {"ZZ1000": "=VLOOKUP(C1,A1:B2,2,FALSE)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: a lookup refuses a text key beyond the legacy 255-character limit: =HLOOKUP(C1,TRANSPOSE(A1:B2),2,FALSE)",
+      "steps": [
+        {"enter": {"A1": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", "C1": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", "B1": "10"}},
+        {"enter": {"ZZ1000": "=HLOOKUP(C1,TRANSPOSE(A1:B2),2,FALSE)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: a lookup refuses a text key beyond the legacy 255-character limit: =MATCH(C1,A1:A2,0)",
+      "steps": [
+        {"enter": {"A1": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", "C1": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", "B1": "10"}},
+        {"enter": {"ZZ1000": "=MATCH(C1,A1:A2,0)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: an exact lookup refuses a match after an Error Value, which Excel was not observed to make: =VLOOKUP(2,A1:B2,2,FALSE)",
+      "steps": [
+        {"enter": {"A1": "=NA()", "A2": "2", "B2": "20"}},
+        {"enter": {"ZZ1000": "=VLOOKUP(2,A1:B2,2,FALSE)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: an exact lookup refuses a match after an Error Value, which Excel was not observed to make: =HLOOKUP(2,TRANSPOSE(A1:B2),2,FALSE)",
+      "steps": [
+        {"enter": {"A1": "=NA()", "A2": "2", "B2": "20"}},
+        {"enter": {"ZZ1000": "=HLOOKUP(2,TRANSPOSE(A1:B2),2,FALSE)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: an exact lookup refuses a match after an Error Value, which Excel was not observed to make: =MATCH(2,A1:A2,0)",
+      "steps": [
+        {"enter": {"A1": "=NA()", "A2": "2", "B2": "20"}},
+        {"enter": {"ZZ1000": "=MATCH(2,A1:A2,0)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: a descending MATCH refuses a choice between nearest duplicates Excel was not observed to make",
+      "steps": [
+        {"enter": {"A1": "3", "A2": "2", "A3": "2", "A4": "1"}},
+        {"enter": {"ZZ1000": "=MATCH(1.5,A1:A4,-1)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: changing a lookup's key or target recalculates its dependents",
+      "setup": "ascending",
+      "steps": [
+        {"enter": {"D1": "=VLOOKUP(2,A1:B4,2,FALSE)", "D2": "=D1*2"}, "expect": {"values": {"D1": 20}}},
+        {"enter": {"B2": "25"}, "expect": {"values": {"D1": 25, "D2": 50}}},
+        {"enter": {"A2": "9"}, "expect": {"values": {"D1": 30, "D2": 60}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: a lookup's Reference is rewritten by a structure edit",
+      "setup": "ascending",
+      "steps": [
+        {"enter": {"D1": "=VLOOKUP(2,A1:B4,2,FALSE)"}},
+        {"do": {"insertRows": [1, 1]}, "expect": {"formulas": {"D1": "=VLOOKUP(2,A1:B5,2,FALSE)"}, "values": {"D1": 20}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: a Blank lookup target is a number, even inside another function: =VLOOKUP(3,A1:B4,2,FALSE)=0",
+      "setup": "ascending",
+      "steps": [
+        {"enter": {"ZZ1000": "=VLOOKUP(3,A1:B4,2,FALSE)=0"}, "expect": {"values": {"ZZ1000": true}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: a Blank lookup target is a number, even inside another function: =NOT(ISBLANK(VLOOKUP(3,A1:B4,2,FALSE)))",
+      "setup": "ascending",
+      "steps": [
+        {"enter": {"ZZ1000": "=NOT(ISBLANK(VLOOKUP(3,A1:B4,2,FALSE)))"}, "expect": {"values": {"ZZ1000": true}}}
+      ]
+    },
+    {
+      "name": "ADR-0049: a lookup does not answer for data that has not arrived: =VLOOKUP(1,Keys[Code],1,FALSE)",
+      "steps": [
+        {"declareTable": {"name": "Keys", "columns": ["Code"]}},
+        {"enter": {"ZZ1000": "=VLOOKUP(1,Keys[Code],1,FALSE)"}, "expect": {"values": {"ZZ1000": {"error": "#GETTING_DATA"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0049: a lookup does not answer for data that has not arrived: =HLOOKUP(1,Keys[Code],1,FALSE)",
+      "steps": [
+        {"declareTable": {"name": "Keys", "columns": ["Code"]}},
+        {"enter": {"ZZ1000": "=HLOOKUP(1,Keys[Code],1,FALSE)"}, "expect": {"values": {"ZZ1000": {"error": "#GETTING_DATA"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0049: a lookup does not answer for data that has not arrived: =MATCH(1,Keys[Code],0)",
+      "steps": [
+        {"declareTable": {"name": "Keys", "columns": ["Code"]}},
+        {"enter": {"ZZ1000": "=MATCH(1,Keys[Code],0)"}, "expect": {"values": {"ZZ1000": {"error": "#GETTING_DATA"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0049: a lookup reads a Linked Table's columns: =VLOOKUP(1,Keys[Code],1,FALSE)",
+      "steps": [
+        {"declareTable": {"name": "Keys", "columns": ["Code"]}},
+        {"pushTable": {"name": "Keys", "rows": [[1], [2]]}},
+        {"enter": {"ZZ1000": "=VLOOKUP(1,Keys[Code],1,FALSE)"}, "expect": {"values": {"ZZ1000": 1}}}
+      ]
+    },
+    {
+      "name": "ADR-0049: a lookup reads a Linked Table's columns: =HLOOKUP(1,Keys[Code],2,FALSE)",
+      "steps": [
+        {"declareTable": {"name": "Keys", "columns": ["Code"]}},
+        {"pushTable": {"name": "Keys", "rows": [[1], [2]]}},
+        {"enter": {"ZZ1000": "=HLOOKUP(1,Keys[Code],2,FALSE)"}, "expect": {"values": {"ZZ1000": 2}}}
+      ]
+    },
+    {
+      "name": "ADR-0049: a lookup reads a Linked Table's columns: =MATCH(2,Keys[Code],0)",
+      "steps": [
+        {"declareTable": {"name": "Keys", "columns": ["Code"]}},
+        {"pushTable": {"name": "Keys", "rows": [[1], [2]]}},
+        {"enter": {"ZZ1000": "=MATCH(2,Keys[Code],0)"}, "expect": {"values": {"ZZ1000": 2}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: a lookup does not hide a cycle in its input: =VLOOKUP(1,A1:B2,2,FALSE)",
+      "steps": [
+        {"enter": {"A1": "1", "A2": "=D1", "D1": "=VLOOKUP(1,A1:B2,2,FALSE)"}, "expect": {"values": {"D1": {"error": "#CIRC!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: a lookup does not hide a cycle in its input: =HLOOKUP(1,A1:B2,2,FALSE)",
+      "steps": [
+        {"enter": {"A1": "1", "A2": "=D1", "D1": "=HLOOKUP(1,A1:B2,2,FALSE)"}, "expect": {"values": {"D1": {"error": "#CIRC!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: a lookup does not hide a cycle in its input: =MATCH(1,A1:A2,0)",
+      "steps": [
+        {"enter": {"A1": "1", "A2": "=D1", "D1": "=MATCH(1,A1:A2,0)"}, "expect": {"values": {"D1": {"error": "#CIRC!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0125: a lookup does not silently intersect an array key: =VLOOKUP(A1:A2,A1:B4,2,FALSE)",
+      "setup": "ascending",
+      "steps": [
+        {"enter": {"ZZ1000": "=VLOOKUP(A1:A2,A1:B4,2,FALSE)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0125: a lookup does not silently intersect an array key: =HLOOKUP(A1:A2,TRANSPOSE(A1:B4),2,FALSE)",
+      "setup": "ascending",
+      "steps": [
+        {"enter": {"ZZ1000": "=HLOOKUP(A1:A2,TRANSPOSE(A1:B4),2,FALSE)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0125: a lookup does not silently intersect an array key: =MATCH(A1:A2,A1:A4,0)",
+      "setup": "ascending",
+      "steps": [
+        {"enter": {"ZZ1000": "=MATCH(A1:A2,A1:A4,0)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    }
+  ]
+}

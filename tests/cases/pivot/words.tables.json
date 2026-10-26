@@ -201,6 +201,16 @@
             "japanese": "{0} をフィルターに置くか、先に {0} を絞り込んでください。",
             "unitedKingdom": null
           },
+          "field-item-count": {
+            "english": "{0} items",
+            "japanese": "{0} 個のアイテム",
+            "unitedKingdom": null
+          },
+          "drop-over-cap": {
+            "english": "More than {0} combinations, the most server data allows",
+            "japanese": "組み合わせがサーバーのデータで扱える上限の {0} を超えます",
+            "unitedKingdom": null
+          },
           "aggregation-not-offered": {
             "english": "The source does not answer {0}.",
             "japanese": "ソースは {0} に対応していません。",

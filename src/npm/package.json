@@ -10,8 +10,10 @@
     "core",
     "chart",
     "pivot-engine",
+    "pivot",
     "board",
     "react",
+    "pivot-react",
     "sheet-engine"
   ],
   "scripts": {

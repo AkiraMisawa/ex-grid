@@ -1,0 +1,175 @@
+{
+  "about": "ADR-0047 and the spine's first rule: no Formula the engine accepts can end the process. A chain of operators as long as Excel accepts is computed, and every walk of it loops along the chain; a Formula nested deeper than the engine reads (256 levels of parentheses, signs and calls; 64 of functions, as Excel) is refused on entry, by name and as beyond a limit, never accepted and crashed on. A Formula too long to write out is built from parts. What stays .NET's own (a stack that runs short, and the parser's walks read directly) is in FormulaDepthTests. Transcribed from ExSheet.Engine.Tests' FormulaDepthTests.",
+  "kind": "sheet",
+  "culture": "en-US",
+  "cases": [
+    {
+      "name": "ADR-0047: a chain of 4,095 operators, the most Excel's 8,192 characters hold, is computed, not a crash",
+      "steps": [
+        {"enter": {"A1": {"parts": ["=1", ["+1", 4095]]}}, "expect": {"values": {"A1": 4096}, "entryTexts": {"A1": {"parts": ["=1", ["+1", 4095]]}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: a chain far longer than Excel accepts is computed too; every operator is left-associative",
+      "steps": [
+        {"enter": {"A1": {"parts": ["=1", ["+1", 100000]]}, "A2": {"parts": ["=100", ["-1", 50000]]}, "A3": {"parts": ["=1", ["*1", 50000]]}, "A4": {"parts": ["=1", ["/1", 50000]]}, "A5": {"parts": ["=1", ["^1", 50000]]}, "A6": {"parts": ["=\"a\"", ["&\"\"", 50000]]}, "A7": {"parts": ["=1", ["=1", 50000]]}, "A8": {"parts": ["=1", ["+1*2", 50000]]}}, "note": "A7 is ((1=1)=1)=…: TRUE=1 is FALSE, then FALSE=1 is FALSE. A8's right operands are expressions of their own.", "expect": {"values": {"A1": 100001, "A2": -49900, "A3": 1, "A4": 1, "A5": 1, "A6": "a", "A7": false, "A8": 100001}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: a chain's References are read along it: its Dependents recalculate, and an insertion rewrites them",
+      "steps": [
+        {"enter": {"A1": "2", "B1": {"parts": ["=A1", ["+A1", 5000]]}}, "expect": {"values": {"B1": 10002}}},
+        {"enter": {"A1": "3"}, "expect": {"values": {"B1": 15003}}},
+        {"do": {"insertRows": [0]}, "expect": {"entryTexts": {"B2": {"parts": ["=A2", ["+A2", 5000]]}}, "values": {"B2": 15003}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: the format a Formula gives on entry is read along a long chain: a date plus days is a date",
+      "steps": [
+        {"enter": {"A1": "2026-10-21", "B1": {"parts": ["=A1", ["+1", 50000]]}}, "expect": {"numberFormats": {"B1": "m/d/yyyy"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: Excel accepts 64 levels of nested functions, and so does ExSheet: ABS(",
+      "steps": [
+        {"enter": {"A1": {"parts": ["=", ["ABS(", 64], "-1", [")", 64]]}}, "expect": {"values": {"A1": 1}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: Excel accepts 64 levels of nested functions, and so does ExSheet: IF(TRUE,",
+      "steps": [
+        {"enter": {"A1": {"parts": ["=", ["IF(TRUE,", 64], "1", [")", 64]]}}, "expect": {"values": {"A1": 1}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: Excel accepts 64 levels of nested functions, and so does ExSheet: SUM(1,",
+      "steps": [
+        {"enter": {"A1": {"parts": ["=", ["SUM(1,", 64], "0", [")", 64]]}}, "expect": {"values": {"A1": 64}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: a 65th level of nested functions is refused on entry, as Excel refuses it, with the reason: ABS(",
+      "steps": [
+        {"enter": {"A1": "5"}},
+        {"enter": {"A1": {"parts": ["=", ["ABS(", 65], "1", [")", 65]]}}, "expect": {"throws": {"refusal": "formulaSyntax", "reason": "functions are nested more than 64 levels deep; Excel refuses such a Formula too.", "beyondLimit": true}, "values": {"A1": 5}}, "note": "Nothing changed."}
+      ]
+    },
+    {
+      "name": "ADR-0047: a 65th level of nested functions is refused on entry, as Excel refuses it, with the reason: IF(TRUE,",
+      "steps": [
+        {"enter": {"A1": "5"}},
+        {"enter": {"A1": {"parts": ["=", ["IF(TRUE,", 65], "1", [")", 65]]}}, "expect": {"throws": {"refusal": "formulaSyntax", "reason": "functions are nested more than 64 levels deep; Excel refuses such a Formula too.", "beyondLimit": true}, "values": {"A1": 5}}, "note": "Nothing changed."}
+      ]
+    },
+    {
+      "name": "ADR-0047: a 65th level of nested functions is refused on entry, as Excel refuses it, with the reason: LET(x,",
+      "steps": [
+        {"enter": {"A1": "5"}},
+        {"enter": {"A1": {"parts": ["=", ["LET(x,", 65], "1", [",x)", 65]]}}, "expect": {"throws": {"refusal": "formulaSyntax", "reason": "functions are nested more than 64 levels deep; Excel refuses such a Formula too.", "beyondLimit": true}, "values": {"A1": 5}}, "note": "Nothing changed."}
+      ]
+    },
+    {
+      "name": "ADR-0047: nesting the engine can compute is computed, up to the limit: 254 times '('",
+      "steps": [
+        {"enter": {"A1": {"parts": ["=", ["(", 254], "1", [")", 254]]}}, "expect": {"values": {"A1": 1}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: nesting the engine can compute is computed, up to the limit: 254 times '-'",
+      "steps": [
+        {"enter": {"A1": {"parts": ["=", ["-", 254], "1"]}}, "expect": {"values": {"A1": 1}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: nesting the engine can compute is computed, up to the limit: 126 times '-('",
+      "steps": [
+        {"enter": {"A1": {"parts": ["=", ["-(", 126], "1", [")", 126]]}}, "expect": {"values": {"A1": 1}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: nesting the engine can compute is computed, up to the limit: 126 times '1+('",
+      "steps": [
+        {"enter": {"A1": {"parts": ["=", ["1+(", 126], "1", [")", 126]]}}, "expect": {"values": {"A1": 127}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 and the spine: nesting deeper than the engine computes is refused on entry with its reason, never a crash: 257 times '('",
+      "steps": [
+        {"enter": {"A1": {"parts": ["=", ["(", 257], "1", [")", 257]]}}, "expect": {"throws": {"refusal": "formulaSyntax", "reason": "the Formula is nested more than 256 levels deep (parentheses, signs, functions, and operators within operators); ExSheet cannot compute one so deep.", "beyondLimit": true}, "values": {"A1": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 and the spine: nesting deeper than the engine computes is refused on entry with its reason, never a crash: 257 times '-'",
+      "steps": [
+        {"enter": {"A1": {"parts": ["=", ["-", 257], "1", ["", 257]]}}, "expect": {"throws": {"refusal": "formulaSyntax", "reason": "the Formula is nested more than 256 levels deep (parentheses, signs, functions, and operators within operators); ExSheet cannot compute one so deep.", "beyondLimit": true}, "values": {"A1": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 and the spine: nesting deeper than the engine computes is refused on entry with its reason, never a crash: 257 times '1+('",
+      "steps": [
+        {"enter": {"A1": {"parts": ["=", ["1+(", 257], "1", [")", 257]]}}, "expect": {"throws": {"refusal": "formulaSyntax", "reason": "the Formula is nested more than 256 levels deep (parentheses, signs, functions, and operators within operators); ExSheet cannot compute one so deep.", "beyondLimit": true}, "values": {"A1": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 and the spine: nesting deeper than the engine computes is refused on entry with its reason, never a crash: 257 times '-('",
+      "steps": [
+        {"enter": {"A1": {"parts": ["=", ["-(", 257], "1", [")", 257]]}}, "expect": {"throws": {"refusal": "formulaSyntax", "reason": "the Formula is nested more than 256 levels deep (parentheses, signs, functions, and operators within operators); ExSheet cannot compute one so deep.", "beyondLimit": true}, "values": {"A1": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 and the spine: nesting deeper than the engine computes is refused on entry with its reason, never a crash: 257 times '%'",
+      "steps": [
+        {"enter": {"A1": {"parts": ["=", "1", ["%", 257]]}}, "expect": {"throws": {"refusal": "formulaSyntax", "reason": "the Formula is nested more than 256 levels deep (parentheses, signs, functions, and operators within operators); ExSheet cannot compute one so deep.", "beyondLimit": true}, "values": {"A1": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 and the spine: nesting deeper than the engine computes is refused on entry with its reason, never a crash: 257 times '(1&('",
+      "steps": [
+        {"enter": {"A1": {"parts": ["=", ["(1&(", 257], "1", ["))", 257]]}}, "expect": {"throws": {"refusal": "formulaSyntax", "reason": "the Formula is nested more than 256 levels deep (parentheses, signs, functions, and operators within operators); ExSheet cannot compute one so deep.", "beyondLimit": true}, "values": {"A1": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 and the spine: nesting deeper than the engine computes is refused on entry with its reason, never a crash: 25601 times '('",
+      "steps": [
+        {"enter": {"A1": {"parts": ["=", ["(", 25601], "1", [")", 25601]]}}, "expect": {"throws": {"refusal": "formulaSyntax", "reason": "the Formula is nested more than 256 levels deep (parentheses, signs, functions, and operators within operators); ExSheet cannot compute one so deep.", "beyondLimit": true}, "values": {"A1": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 and the spine: nesting deeper than the engine computes is refused on entry with its reason, never a crash: 25601 times '-'",
+      "steps": [
+        {"enter": {"A1": {"parts": ["=", ["-", 25601], "1", ["", 25601]]}}, "expect": {"throws": {"refusal": "formulaSyntax", "reason": "the Formula is nested more than 256 levels deep (parentheses, signs, functions, and operators within operators); ExSheet cannot compute one so deep.", "beyondLimit": true}, "values": {"A1": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0181 and the spine: a LET name read computes its value there, so a long chain of names counts toward the limit",
+      "steps": [
+        {"enter": {"A1": "=LET(n0_0,1+1,n0_1,n0_0+1,n0_2,n0_1+1,n0_3,n0_2+1,n0_4,n0_3+1,n0_5,n0_4+1,n0_6,n0_5+1,n0_7,n0_6+1,n0_8,n0_7+1,n0_9,n0_8+1,n0_10,n0_9+1,n0_11,n0_10+1,n0_12,n0_11+1,n0_13,n0_12+1,n0_14,n0_13+1,n0_15,n0_14+1,n0_16,n0_15+1,n0_17,n0_16+1,n0_18,n0_17+1,n0_19,n0_18+1,n0_20,n0_19+1,n0_21,n0_20+1,n0_22,n0_21+1,n0_23,n0_22+1,n0_24,n0_23+1,n0_25,n0_24+1,n0_26,n0_25+1,n0_27,n0_26+1,n0_28,n0_27+1,n0_29,n0_28+1,n0_30,n0_29+1,n0_31,n0_30+1,n0_32,n0_31+1,n0_33,n0_32+1,n0_34,n0_33+1,n0_35,n0_34+1,n0_36,n0_35+1,n0_37,n0_36+1,n0_38,n0_37+1,n0_39,n0_38+1,n0_40,n0_39+1,n0_41,n0_40+1,n0_42,n0_41+1,n0_43,n0_42+1,n0_44,n0_43+1,n0_45,n0_44+1,n0_46,n0_45+1,n0_47,n0_46+1,n0_48,n0_47+1,n0_49,n0_48+1,n0_50,n0_49+1,n0_51,n0_50+1,n0_52,n0_51+1,n0_53,n0_52+1,n0_54,n0_53+1,n0_55,n0_54+1,n0_56,n0_55+1,n0_57,n0_56+1,n0_58,n0_57+1,n0_59,n0_58+1,n0_60,n0_59+1,n0_61,n0_60+1,n0_62,n0_61+1,n0_63,n0_62+1,n0_64,n0_63+1,n0_65,n0_64+1,n0_66,n0_65+1,n0_67,n0_66+1,n0_68,n0_67+1,n0_69,n0_68+1,n0_70,n0_69+1,n0_71,n0_70+1,n0_72,n0_71+1,n0_73,n0_72+1,n0_74,n0_73+1,n0_75,n0_74+1,n0_76,n0_75+1,n0_77,n0_76+1,n0_78,n0_77+1,n0_79,n0_78+1,n0_80,n0_79+1,n0_81,n0_80+1,n0_82,n0_81+1,n0_83,n0_82+1,n0_84,n0_83+1,n0_85,n0_84+1,n0_86,n0_85+1,n0_87,n0_86+1,n0_88,n0_87+1,n0_89,n0_88+1,n0_90,n0_89+1,n0_91,n0_90+1,n0_92,n0_91+1,n0_93,n0_92+1,n0_94,n0_93+1,n0_95,n0_94+1,n0_96,n0_95+1,n0_97,n0_96+1,n0_98,n0_97+1,n0_99,n0_98+1,LET(n1_0,n0_99+1,n1_1,n1_0+1,n1_2,n1_1+1,n1_3,n1_2+1,n1_4,n1_3+1,n1_5,n1_4+1,n1_6,n1_5+1,n1_7,n1_6+1,n1_8,n1_7+1,n1_9,n1_8+1,n1_10,n1_9+1,n1_11,n1_10+1,n1_12,n1_11+1,n1_13,n1_12+1,n1_14,n1_13+1,n1_15,n1_14+1,n1_16,n1_15+1,n1_17,n1_16+1,n1_18,n1_17+1,n1_19,n1_18+1,n1_20,n1_19+1,n1_21,n1_20+1,n1_22,n1_21+1,n1_23,n1_22+1,n1_24,n1_23+1,n1_25,n1_24+1,n1_26,n1_25+1,n1_27,n1_26+1,n1_28,n1_27+1,n1_29,n1_28+1,n1_30,n1_29+1,n1_31,n1_30+1,n1_32,n1_31+1,n1_33,n1_32+1,n1_34,n1_33+1,n1_35,n1_34+1,n1_36,n1_35+1,n1_37,n1_36+1,n1_38,n1_37+1,n1_39,n1_38+1,n1_40,n1_39+1,n1_41,n1_40+1,n1_42,n1_41+1,n1_43,n1_42+1,n1_44,n1_43+1,n1_45,n1_44+1,n1_46,n1_45+1,n1_47,n1_46+1,n1_48,n1_47+1,n1_49,n1_48+1,n1_50,n1_49+1,n1_51,n1_50+1,n1_52,n1_51+1,n1_53,n1_52+1,n1_54,n1_53+1,n1_55,n1_54+1,n1_56,n1_55+1,n1_57,n1_56+1,n1_58,n1_57+1,n1_59,n1_58+1,n1_60,n1_59+1,n1_61,n1_60+1,n1_62,n1_61+1,n1_63,n1_62+1,n1_64,n1_63+1,n1_65,n1_64+1,n1_66,n1_65+1,n1_67,n1_66+1,n1_68,n1_67+1,n1_69,n1_68+1,n1_70,n1_69+1,n1_71,n1_70+1,n1_72,n1_71+1,n1_73,n1_72+1,n1_74,n1_73+1,n1_75,n1_74+1,n1_76,n1_75+1,n1_77,n1_76+1,n1_78,n1_77+1,n1_79,n1_78+1,n1_80,n1_79+1,n1_81,n1_80+1,n1_82,n1_81+1,n1_83,n1_82+1,n1_84,n1_83+1,n1_85,n1_84+1,n1_86,n1_85+1,n1_87,n1_86+1,n1_88,n1_87+1,n1_89,n1_88+1,n1_90,n1_89+1,n1_91,n1_90+1,n1_92,n1_91+1,n1_93,n1_92+1,n1_94,n1_93+1,n1_95,n1_94+1,n1_96,n1_95+1,n1_97,n1_96+1,n1_98,n1_97+1,n1_99,n1_98+1,n1_99))"}, "expect": {"values": {"A1": 201}}, "note": "Each LET binds 100 names, each the one before plus 1; nested LETs carry the chain on."},
+        {"enter": {"A2": "=LET(n0_0,1+1,n0_1,n0_0+1,n0_2,n0_1+1,n0_3,n0_2+1,n0_4,n0_3+1,n0_5,n0_4+1,n0_6,n0_5+1,n0_7,n0_6+1,n0_8,n0_7+1,n0_9,n0_8+1,n0_10,n0_9+1,n0_11,n0_10+1,n0_12,n0_11+1,n0_13,n0_12+1,n0_14,n0_13+1,n0_15,n0_14+1,n0_16,n0_15+1,n0_17,n0_16+1,n0_18,n0_17+1,n0_19,n0_18+1,n0_20,n0_19+1,n0_21,n0_20+1,n0_22,n0_21+1,n0_23,n0_22+1,n0_24,n0_23+1,n0_25,n0_24+1,n0_26,n0_25+1,n0_27,n0_26+1,n0_28,n0_27+1,n0_29,n0_28+1,n0_30,n0_29+1,n0_31,n0_30+1,n0_32,n0_31+1,n0_33,n0_32+1,n0_34,n0_33+1,n0_35,n0_34+1,n0_36,n0_35+1,n0_37,n0_36+1,n0_38,n0_37+1,n0_39,n0_38+1,n0_40,n0_39+1,n0_41,n0_40+1,n0_42,n0_41+1,n0_43,n0_42+1,n0_44,n0_43+1,n0_45,n0_44+1,n0_46,n0_45+1,n0_47,n0_46+1,n0_48,n0_47+1,n0_49,n0_48+1,n0_50,n0_49+1,n0_51,n0_50+1,n0_52,n0_51+1,n0_53,n0_52+1,n0_54,n0_53+1,n0_55,n0_54+1,n0_56,n0_55+1,n0_57,n0_56+1,n0_58,n0_57+1,n0_59,n0_58+1,n0_60,n0_59+1,n0_61,n0_60+1,n0_62,n0_61+1,n0_63,n0_62+1,n0_64,n0_63+1,n0_65,n0_64+1,n0_66,n0_65+1,n0_67,n0_66+1,n0_68,n0_67+1,n0_69,n0_68+1,n0_70,n0_69+1,n0_71,n0_70+1,n0_72,n0_71+1,n0_73,n0_72+1,n0_74,n0_73+1,n0_75,n0_74+1,n0_76,n0_75+1,n0_77,n0_76+1,n0_78,n0_77+1,n0_79,n0_78+1,n0_80,n0_79+1,n0_81,n0_80+1,n0_82,n0_81+1,n0_83,n0_82+1,n0_84,n0_83+1,n0_85,n0_84+1,n0_86,n0_85+1,n0_87,n0_86+1,n0_88,n0_87+1,n0_89,n0_88+1,n0_90,n0_89+1,n0_91,n0_90+1,n0_92,n0_91+1,n0_93,n0_92+1,n0_94,n0_93+1,n0_95,n0_94+1,n0_96,n0_95+1,n0_97,n0_96+1,n0_98,n0_97+1,n0_99,n0_98+1,LET(n1_0,n0_99+1,n1_1,n1_0+1,n1_2,n1_1+1,n1_3,n1_2+1,n1_4,n1_3+1,n1_5,n1_4+1,n1_6,n1_5+1,n1_7,n1_6+1,n1_8,n1_7+1,n1_9,n1_8+1,n1_10,n1_9+1,n1_11,n1_10+1,n1_12,n1_11+1,n1_13,n1_12+1,n1_14,n1_13+1,n1_15,n1_14+1,n1_16,n1_15+1,n1_17,n1_16+1,n1_18,n1_17+1,n1_19,n1_18+1,n1_20,n1_19+1,n1_21,n1_20+1,n1_22,n1_21+1,n1_23,n1_22+1,n1_24,n1_23+1,n1_25,n1_24+1,n1_26,n1_25+1,n1_27,n1_26+1,n1_28,n1_27+1,n1_29,n1_28+1,n1_30,n1_29+1,n1_31,n1_30+1,n1_32,n1_31+1,n1_33,n1_32+1,n1_34,n1_33+1,n1_35,n1_34+1,n1_36,n1_35+1,n1_37,n1_36+1,n1_38,n1_37+1,n1_39,n1_38+1,n1_40,n1_39+1,n1_41,n1_40+1,n1_42,n1_41+1,n1_43,n1_42+1,n1_44,n1_43+1,n1_45,n1_44+1,n1_46,n1_45+1,n1_47,n1_46+1,n1_48,n1_47+1,n1_49,n1_48+1,n1_50,n1_49+1,n1_51,n1_50+1,n1_52,n1_51+1,n1_53,n1_52+1,n1_54,n1_53+1,n1_55,n1_54+1,n1_56,n1_55+1,n1_57,n1_56+1,n1_58,n1_57+1,n1_59,n1_58+1,n1_60,n1_59+1,n1_61,n1_60+1,n1_62,n1_61+1,n1_63,n1_62+1,n1_64,n1_63+1,n1_65,n1_64+1,n1_66,n1_65+1,n1_67,n1_66+1,n1_68,n1_67+1,n1_69,n1_68+1,n1_70,n1_69+1,n1_71,n1_70+1,n1_72,n1_71+1,n1_73,n1_72+1,n1_74,n1_73+1,n1_75,n1_74+1,n1_76,n1_75+1,n1_77,n1_76+1,n1_78,n1_77+1,n1_79,n1_78+1,n1_80,n1_79+1,n1_81,n1_80+1,n1_82,n1_81+1,n1_83,n1_82+1,n1_84,n1_83+1,n1_85,n1_84+1,n1_86,n1_85+1,n1_87,n1_86+1,n1_88,n1_87+1,n1_89,n1_88+1,n1_90,n1_89+1,n1_91,n1_90+1,n1_92,n1_91+1,n1_93,n1_92+1,n1_94,n1_93+1,n1_95,n1_94+1,n1_96,n1_95+1,n1_97,n1_96+1,n1_98,n1_97+1,n1_99,n1_98+1,LET(n2_0,n1_99+1,n2_1,n2_0+1,n2_2,n2_1+1,n2_3,n2_2+1,n2_4,n2_3+1,n2_5,n2_4+1,n2_6,n2_5+1,n2_7,n2_6+1,n2_8,n2_7+1,n2_9,n2_8+1,n2_10,n2_9+1,n2_11,n2_10+1,n2_12,n2_11+1,n2_13,n2_12+1,n2_14,n2_13+1,n2_15,n2_14+1,n2_16,n2_15+1,n2_17,n2_16+1,n2_18,n2_17+1,n2_19,n2_18+1,n2_20,n2_19+1,n2_21,n2_20+1,n2_22,n2_21+1,n2_23,n2_22+1,n2_24,n2_23+1,n2_25,n2_24+1,n2_26,n2_25+1,n2_27,n2_26+1,n2_28,n2_27+1,n2_29,n2_28+1,n2_30,n2_29+1,n2_31,n2_30+1,n2_32,n2_31+1,n2_33,n2_32+1,n2_34,n2_33+1,n2_35,n2_34+1,n2_36,n2_35+1,n2_37,n2_36+1,n2_38,n2_37+1,n2_39,n2_38+1,n2_40,n2_39+1,n2_41,n2_40+1,n2_42,n2_41+1,n2_43,n2_42+1,n2_44,n2_43+1,n2_45,n2_44+1,n2_46,n2_45+1,n2_47,n2_46+1,n2_48,n2_47+1,n2_49,n2_48+1,n2_50,n2_49+1,n2_51,n2_50+1,n2_52,n2_51+1,n2_53,n2_52+1,n2_54,n2_53+1,n2_55,n2_54+1,n2_56,n2_55+1,n2_57,n2_56+1,n2_58,n2_57+1,n2_59,n2_58+1,n2_60,n2_59+1,n2_61,n2_60+1,n2_62,n2_61+1,n2_63,n2_62+1,n2_64,n2_63+1,n2_65,n2_64+1,n2_66,n2_65+1,n2_67,n2_66+1,n2_68,n2_67+1,n2_69,n2_68+1,n2_70,n2_69+1,n2_71,n2_70+1,n2_72,n2_71+1,n2_73,n2_72+1,n2_74,n2_73+1,n2_75,n2_74+1,n2_76,n2_75+1,n2_77,n2_76+1,n2_78,n2_77+1,n2_79,n2_78+1,n2_80,n2_79+1,n2_81,n2_80+1,n2_82,n2_81+1,n2_83,n2_82+1,n2_84,n2_83+1,n2_85,n2_84+1,n2_86,n2_85+1,n2_87,n2_86+1,n2_88,n2_87+1,n2_89,n2_88+1,n2_90,n2_89+1,n2_91,n2_90+1,n2_92,n2_91+1,n2_93,n2_92+1,n2_94,n2_93+1,n2_95,n2_94+1,n2_96,n2_95+1,n2_97,n2_96+1,n2_98,n2_97+1,n2_99,n2_98+1,n2_99)))"}, "expect": {"throws": {"refusal": "formulaSyntax", "reason": "the Formula is nested more than 256 levels deep (parentheses, signs, functions, and operators within operators); ExSheet cannot compute one so deep.", "beyondLimit": true}}}
+      ]
+    },
+    {
+      "name": "ADR-0181: the most names one LET binds (LET-029), each read through a call of the one before, are computed",
+      "steps": [
+        {"enter": {"A1": "=LET(x_0,1,x_1,ABS(x_0)+1,x_2,ABS(x_1)+1,x_3,ABS(x_2)+1,x_4,ABS(x_3)+1,x_5,ABS(x_4)+1,x_6,ABS(x_5)+1,x_7,ABS(x_6)+1,x_8,ABS(x_7)+1,x_9,ABS(x_8)+1,x_10,ABS(x_9)+1,x_11,ABS(x_10)+1,x_12,ABS(x_11)+1,x_13,ABS(x_12)+1,x_14,ABS(x_13)+1,x_15,ABS(x_14)+1,x_16,ABS(x_15)+1,x_17,ABS(x_16)+1,x_18,ABS(x_17)+1,x_19,ABS(x_18)+1,x_20,ABS(x_19)+1,x_21,ABS(x_20)+1,x_22,ABS(x_21)+1,x_23,ABS(x_22)+1,x_24,ABS(x_23)+1,x_25,ABS(x_24)+1,x_26,ABS(x_25)+1,x_27,ABS(x_26)+1,x_28,ABS(x_27)+1,x_29,ABS(x_28)+1,x_30,ABS(x_29)+1,x_31,ABS(x_30)+1,x_32,ABS(x_31)+1,x_33,ABS(x_32)+1,x_34,ABS(x_33)+1,x_35,ABS(x_34)+1,x_36,ABS(x_35)+1,x_37,ABS(x_36)+1,x_38,ABS(x_37)+1,x_39,ABS(x_38)+1,x_40,ABS(x_39)+1,x_41,ABS(x_40)+1,x_42,ABS(x_41)+1,x_43,ABS(x_42)+1,x_44,ABS(x_43)+1,x_45,ABS(x_44)+1,x_46,ABS(x_45)+1,x_47,ABS(x_46)+1,x_48,ABS(x_47)+1,x_49,ABS(x_48)+1,x_50,ABS(x_49)+1,x_51,ABS(x_50)+1,x_52,ABS(x_51)+1,x_53,ABS(x_52)+1,x_54,ABS(x_53)+1,x_55,ABS(x_54)+1,x_56,ABS(x_55)+1,x_57,ABS(x_56)+1,x_58,ABS(x_57)+1,x_59,ABS(x_58)+1,x_60,ABS(x_59)+1,x_61,ABS(x_60)+1,x_62,ABS(x_61)+1,x_63,ABS(x_62)+1,x_64,ABS(x_63)+1,x_65,ABS(x_64)+1,x_66,ABS(x_65)+1,x_67,ABS(x_66)+1,x_68,ABS(x_67)+1,x_69,ABS(x_68)+1,x_70,ABS(x_69)+1,x_71,ABS(x_70)+1,x_72,ABS(x_71)+1,x_73,ABS(x_72)+1,x_74,ABS(x_73)+1,x_75,ABS(x_74)+1,x_76,ABS(x_75)+1,x_77,ABS(x_76)+1,x_78,ABS(x_77)+1,x_79,ABS(x_78)+1,x_80,ABS(x_79)+1,x_81,ABS(x_80)+1,x_82,ABS(x_81)+1,x_83,ABS(x_82)+1,x_84,ABS(x_83)+1,x_85,ABS(x_84)+1,x_86,ABS(x_85)+1,x_87,ABS(x_86)+1,x_88,ABS(x_87)+1,x_89,ABS(x_88)+1,x_90,ABS(x_89)+1,x_91,ABS(x_90)+1,x_92,ABS(x_91)+1,x_93,ABS(x_92)+1,x_94,ABS(x_93)+1,x_95,ABS(x_94)+1,x_96,ABS(x_95)+1,x_97,ABS(x_96)+1,x_98,ABS(x_97)+1,x_99,ABS(x_98)+1,x_100,ABS(x_99)+1,x_101,ABS(x_100)+1,x_102,ABS(x_101)+1,x_103,ABS(x_102)+1,x_104,ABS(x_103)+1,x_105,ABS(x_104)+1,x_106,ABS(x_105)+1,x_107,ABS(x_106)+1,x_108,ABS(x_107)+1,x_109,ABS(x_108)+1,x_110,ABS(x_109)+1,x_111,ABS(x_110)+1,x_112,ABS(x_111)+1,x_113,ABS(x_112)+1,x_114,ABS(x_113)+1,x_115,ABS(x_114)+1,x_116,ABS(x_115)+1,x_117,ABS(x_116)+1,x_118,ABS(x_117)+1,x_119,ABS(x_118)+1,x_120,ABS(x_119)+1,x_121,ABS(x_120)+1,x_122,ABS(x_121)+1,x_123,ABS(x_122)+1,x_124,ABS(x_123)+1,x_125,ABS(x_124)+1,x_125)"}, "expect": {"values": {"A1": 126}}}
+      ]
+    },
+    {
+      "name": "ADR-0047, third run: text typed after a sign without '=' that is a Formula past the limits is refused by name, never kept as text: -ABS(",
+      "steps": [
+        {"enter": {"A1": {"parts": ["-", ["ABS(", 65], "1", [")", 65]]}}, "expect": {"throws": {"refusal": "formulaSyntax", "beyondLimit": true}, "values": {"A1": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0047, third run: text typed after a sign without '=' that is a Formula past the limits is refused by name, never kept as text: -(",
+      "steps": [
+        {"enter": {"A1": {"parts": ["-", ["(", 300], "1", [")", 300]]}}, "expect": {"throws": {"refusal": "formulaSyntax", "beyondLimit": true}, "values": {"A1": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0047, third run: text typed after a sign without '=' that is a Formula past the limits is refused by name, never kept as text: +-",
+      "steps": [
+        {"enter": {"A1": {"parts": ["+", ["-", 300], "1"]}}, "expect": {"throws": {"refusal": "formulaSyntax", "beyondLimit": true}, "values": {"A1": null}}}
+      ]
+    }
+  ]
+}

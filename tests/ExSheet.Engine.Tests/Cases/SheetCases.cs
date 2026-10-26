@@ -35,6 +35,10 @@ internal static class SheetCases
         }
     }
 
+    /// <summary>The names of the cases of one file.</summary>
+    public static IEnumerable<string> NamesIn(string file) =>
+        Read(Path.Combine(Root, file))["cases"]!.AsArray().Select(entry => (string)entry!["name"]!);
+
     /// <summary>The case of the file named so, and the file it is in.</summary>
     public static (JsonObject File, JsonObject Case) Find(string file, string name)
     {
@@ -69,6 +73,28 @@ internal static class SheetCases
             run.Take(step, $"step {i + 1}");
         }
         return run.Differences;
+    }
+
+    /// <summary>
+    /// Runs the case with the thread in the case's culture (ADR-0047): what the engine writes or reads stays invariant
+    /// whatever culture a server thread is in, and a format or parse that leaked the thread's culture would show here.
+    /// </summary>
+    public static IReadOnlyList<string> RunInCulture(JsonObject file, JsonObject entry)
+    {
+        var culture = Culture((string?)(entry["culture"] ?? file["culture"])
+            ?? throw new InvalidDataException("Neither the case nor its file names a culture."));
+        var (previous, previousUi) = (CultureInfo.CurrentCulture, CultureInfo.CurrentUICulture);
+        CultureInfo.CurrentCulture = culture;
+        CultureInfo.CurrentUICulture = culture;
+        try
+        {
+            return Run(file, entry);
+        }
+        finally
+        {
+            CultureInfo.CurrentCulture = previous;
+            CultureInfo.CurrentUICulture = previousUi;
+        }
     }
 
     internal static CultureInfo Culture(string name) =>
@@ -174,6 +200,22 @@ internal static class SheetCases
         ? new BorderLine(Enum<BorderLineStyle>(line["style"]!), line["colour"] is { } colour ? ColourOf(colour) : CellColour.Automatic)
         : (string)node! == "none" ? BorderLine.None : throw new InvalidDataException($"{node.ToJsonString()} is no line.");
 
+    internal static JsonObject CellFormatJson(CellFormat format) => new()
+    {
+        ["numberFormat"] = format.NumberFormat.Code,
+        ["alignment"] = Camel(format.Alignment),
+        ["font"] = Font(format.Font),
+        ["fill"] = Fill(format.Fill),
+        ["borders"] = Borders(format.Borders),
+    };
+
+    /// <summary>Nodes in the ordinal order of their JSON's text, so that a set reads the same from both runners.</summary>
+    internal static JsonArray Sorted(IEnumerable<JsonNode> nodes) =>
+        new([.. nodes.OrderBy(n => n.ToJsonString(Unescaped), StringComparer.Ordinal)]);
+
+    /// <summary>JSON text as JavaScript's <c>JSON.stringify</c> writes it, so that both runners sort a set alike: <c>+</c>, quotes, HTML's characters and non-ASCII written as they are.</summary>
+    private static readonly JsonSerializerOptions Unescaped = new() { Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping };
+
     internal static JsonObject Borders(CellBorders borders) => new()
     {
         ["top"] = Line(borders.Top),
@@ -181,6 +223,36 @@ internal static class SheetCases
         ["left"] = Line(borders.Left),
         ["right"] = Line(borders.Right),
     };
+
+    /// <summary>Text a case types: a string, or <c>{"parts": [...]}</c>, each part a string or <c>[string, times]</c>, for a Formula too long to write out.</summary>
+    internal static string Typed(JsonNode? node)
+    {
+        if (node is JsonValue value && value.GetValueKind() == JsonValueKind.String)
+            return (string)value!;
+        if (node is not JsonObject { Count: 1 } built || built["parts"] is not JsonArray parts)
+            throw new InvalidDataException($"'{node?.ToJsonString()}' is no text to type: a string, or {{\"parts\": [...]}}.");
+        var text = new System.Text.StringBuilder();
+        foreach (var part in parts)
+        {
+            switch (part)
+            {
+                case JsonValue piece when piece.GetValueKind() == JsonValueKind.String:
+                    text.Append((string)piece!);
+                    break;
+                case JsonArray { Count: 2 } repeated when repeated[0] is JsonValue p && p.GetValueKind() == JsonValueKind.String
+                    && repeated[1] is JsonValue n && n.TryGetValue<int>(out var times) && times >= 0:
+                    text.Insert(text.Length, (string)p!, times);
+                    break;
+                default:
+                    throw new InvalidDataException($"'{part?.ToJsonString()}' is no part of a text: a string, or [string, times] with times a whole number, 0 or more.");
+            }
+        }
+        return text.ToString();
+    }
+
+    /// <summary>A per-cell reading of texts with each built text (<see cref="Typed"/>) written out; a <c>null</c> stays one.</summary>
+    internal static JsonNode? Texts(JsonNode? expected) =>
+        new JsonObject([.. expected!.AsObject().Select(p => new KeyValuePair<string, JsonNode?>(p.Key, p.Value is JsonObject ? Typed(p.Value) : p.Value?.DeepClone()))]);
 
     internal static JsonNode? EntryOf(Entry? entry) => entry switch
     {
@@ -296,6 +368,12 @@ internal static class SheetCases
                 differences.Add($"{path}: expected {Number(centre).ToString("R", CultureInfo.InvariantCulture)} within {Number(within).ToString("R", CultureInfo.InvariantCulture)}, got {Show(actual)}");
             return;
         }
+        // An Error Value compares in full: one written without "refused" is Excel's own, and a refusal is not it.
+        if (expected is JsonObject error && actual is JsonObject other && error.ContainsKey("error") && other.ContainsKey("error") && error.Count != other.Count)
+        {
+            differences.Add($"{path}: expected {Show(expected)}, got {Show(actual)}");
+            return;
+        }
         switch (expected)
         {
             case JsonObject e when actual is JsonObject a:
@@ -347,11 +425,13 @@ internal sealed class Run(CultureInfo culture)
     private readonly Dictionary<string, string> _pictures = new(StringComparer.Ordinal);
     private int _clockReads;
     private readonly Dictionary<string, SheetCopy> _copies = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, IReadOnlyList<IReadOnlyList<Value?>>?> _tables = new(StringComparer.Ordinal);
 
     private static readonly string[] Verbs =
     [
         "enter", "enterAll", "enterRun", "do", "check", "undo", "redo", "reopen", "remember", "read", "copy",
-        "setNumberFormat", "setAlignment", "declareTable", "pushTable", "setToday", "setSeed", "setClock", "recalculateVolatile", "getDisplay", "setCellFormat",
+        "setNumberFormat", "setAlignment", "declareTable", "pushTable", "setToday", "setSeed", "setClock", "recalculateVolatile", "getDisplay", "setCellFormat", "show",
+        "doAll", "readTable",
     ];
 
     private static readonly string[] Modifiers = ["on", "expect", "note"];
@@ -406,6 +486,13 @@ internal sealed class Run(CultureInfo culture)
     }
 
     /// <summary>What a step did, for its readings: the change it reported, the refusal it was checked for, its step.</summary>
+    /// <summary>A Linked Table's columns as <c>readTable</c> read them: <c>null</c> while it waits.</summary>
+    private sealed record TableRead(IReadOnlyList<IReadOnlyList<Value?>>? Columns);
+
+    private static JsonNode? ColumnsJson(IReadOnlyList<IReadOnlyList<Value?>>? columns) => columns is null
+        ? null
+        : new JsonArray([.. columns.Select(c => (JsonNode)new JsonArray([.. c.Select(SheetCases.Encode)]))]);
+
     private sealed class Outcome(Sheet sheet)
     {
         public Sheet Sheet { get; set; } = sheet;
@@ -417,6 +504,8 @@ internal sealed class Run(CultureInfo culture)
         public int ClockReadsBefore { get; init; }
         /// <summary>What a step, an undo or a redo changed across the Workbook.</summary>
         public WorkbookChange? WorkbookChange { get; set; }
+        /// <summary>A Linked Table's columns as <c>readTable</c> read them, or <c>null</c> while it waits.</summary>
+        public TableRead? Table { get; set; }
     }
 
     /// <summary>A Sheet's change as a case reads one.</summary>
@@ -444,10 +533,10 @@ internal sealed class Run(CultureInfo culture)
 
     private static JsonObject Thrown(Exception e) => e switch
     {
-        FormulaSyntaxException => new JsonObject { ["refusal"] = "formulaSyntax", ["saying"] = e.Message },
+        FormulaSyntaxException f => new JsonObject { ["refusal"] = "formulaSyntax", ["reason"] = f.Reason, ["beyondLimit"] = f.IsBeyondLimit, ["saying"] = e.Message },
         SheetRefusedException r => new JsonObject { ["refusal"] = "refused", ["reason"] = SheetCases.Camel(r.Refusal.Reason), ["saying"] = r.Refusal.Message },
         RepeatedKeyException => new JsonObject { ["refusal"] = "repeatedKey", ["saying"] = e.Message },
-        SheetDocumentException => new JsonObject { ["refusal"] = "document", ["saying"] = e.Message },
+        SheetDocumentException document => new JsonObject { ["refusal"] = "document", ["saying"] = e.Message, ["documentVersion"] = document.DocumentVersion },
         ArgumentException a => new JsonObject { ["refusal"] = "argument", ["saying"] = Saying(a) },
         FormatException => new JsonObject { ["refusal"] = "format", ["saying"] = e.Message },
         _ => new JsonObject { ["refusal"] = "invalidOperation", ["saying"] = e.Message },
@@ -470,10 +559,10 @@ internal sealed class Run(CultureInfo culture)
         {
             case "enter":
                 foreach (var (address, typed) in argument.AsObject())
-                    outcome.Change = sheet.Enter(CellAddress.Parse(address), (string)typed!);
+                    outcome.Change = sheet.Enter(CellAddress.Parse(address), SheetCases.Typed(typed));
                 break;
             case "enterAll":
-                outcome.Change = sheet.Enter([.. argument.AsObject().Select(p => new KeyValuePair<CellAddress, string>(CellAddress.Parse(p.Key), (string)p.Value!))]);
+                outcome.Change = sheet.Enter([.. argument.AsObject().Select(p => new KeyValuePair<CellAddress, string>(CellAddress.Parse(p.Key), SheetCases.Typed(p.Value)))]);
                 break;
             case "enterRun":
             {
@@ -492,6 +581,28 @@ internal sealed class Run(CultureInfo culture)
                 outcome.WorkbookChange = step.Change;
                 outcome.Change = step.Change.ChangesSheets && !Workbook.Sheets.Contains(step.Sheet) ? null : step.Change.For(step.Sheet);
                 break;
+            case "doAll":
+            {
+                // Several edits, each on the Sheet it names, as one operation.
+                var all = Workbook.Do([.. argument.AsArray().Select(pair => ((string)pair![0]!, Edit(pair[1]!)))]);
+                _done.Add(all);
+                outcome.Step = all;
+                outcome.Sheet = all.Sheet;
+                outcome.WorkbookChange = all.Change;
+                outcome.Change = all.Change.For(all.Sheet);
+                break;
+            }
+            case "readTable":
+            {
+                // A table's name, or {"name", "as"}, which also holds the snapshot read under that label.
+                var (table, label) = argument is JsonObject named
+                    ? ((string)named["name"]!, (string?)named["as"] ?? throw new InvalidDataException("'readTable' names the snapshot it holds 'as'."))
+                    : ((string)argument!, null);
+                outcome.Table = new TableRead(Workbook.LinkedTableColumns(table));
+                if (label is not null)
+                    _tables[label] = outcome.Table.Columns;
+                break;
+            }
             case "check":
                 outcome.Checked = true;
                 outcome.Refusal = Workbook.Check(sheet.Name, Edit(argument));
@@ -560,6 +671,11 @@ internal sealed class Run(CultureInfo culture)
             case "declareTable":
             {
                 var table = argument.AsObject();
+                foreach (var (part, _) in table)
+                {
+                    if (part is not ("name" or "columns" or "key"))
+                        throw new InvalidDataException($"'{part}' is no part of a Linked Table declared: name, columns and key.");
+                }
                 var columns = table["columns"]!.AsArray().Select(c => (string)c!).ToList();
                 var change = table["key"] switch
                 {
@@ -574,7 +690,8 @@ internal sealed class Run(CultureInfo culture)
             {
                 var table = argument.AsObject();
                 var rows = table["rows"]!.AsArray().Select(r => (IReadOnlyList<Value?>)[.. r!.AsArray().Select(SheetCases.Decode)]).ToList();
-                outcome.Change = Workbook.PushLinkedTable((string)table["name"]!, rows).For(sheet);
+                outcome.WorkbookChange = Workbook.PushLinkedTable((string)table["name"]!, rows);
+                outcome.Change = outcome.WorkbookChange.For(sheet);
                 break;
             }
             case "setToday":
@@ -607,6 +724,11 @@ internal sealed class Run(CultureInfo culture)
             case "recalculateVolatile":
                 outcome.Change = Workbook.RecalculateVolatile().For(sheet);
                 break;
+            case "show":
+                // The Sheet shown, by its name.
+                Workbook.Shown = Workbook.Find((string)argument!) ?? throw new InvalidDataException($"The Workbook has no Sheet '{(string)argument!}' to show.");
+                outcome.Sheet = Workbook.Shown;
+                break;
             default:
                 throw new InvalidDataException($"'{verb}' is no step.");
         }
@@ -630,7 +752,7 @@ internal sealed class Run(CultureInfo culture)
         switch (name)
         {
             case "enter":
-                return SheetEdit.Enter([.. argument.AsObject().Select(p => new KeyValuePair<CellAddress, string>(CellAddress.Parse(p.Key), (string)p.Value!))]);
+                return SheetEdit.Enter([.. argument.AsObject().Select(p => new KeyValuePair<CellAddress, string>(CellAddress.Parse(p.Key), SheetCases.Typed(p.Value)))]);
             case "setEntries":
                 return SheetEdit.SetEntries([.. argument.AsObject().Select(p => new KeyValuePair<CellAddress, Entry?>(CellAddress.Parse(p.Key), Entry(p.Value)))]);
             case "setNumberFormat":
@@ -683,6 +805,15 @@ internal sealed class Run(CultureInfo culture)
             case "pasteText":
                 return SheetEdit.PasteText([.. argument["fields"]!.AsArray().Select(r => (IReadOnlyList<string>)[.. r!.AsArray().Select(f => (string)f!)])],
                     CellAddress.Parse((string)argument["at"]!));
+            case "pasteFields":
+            {
+                // The Script Core's name for the two forms of PasteText that take fields cell by cell.
+                List<KeyValuePair<CellAddress, string>> typed = [.. argument["typed"]!.AsObject().Select(p => new KeyValuePair<CellAddress, string>(CellAddress.Parse(p.Key),
+                    p.Value is JsonValue field && field.GetValueKind() == JsonValueKind.String ? (string)field! : throw new InvalidDataException($"'{p.Value?.ToJsonString()}' is no typed field.")))];
+                return argument.AsObject().TryGetPropertyValue("entries", out var entries)
+                    ? SheetEdit.PasteText(typed, [.. (entries as JsonObject ?? throw new InvalidDataException("'entries' is an object of cells.")).Select(p => new KeyValuePair<CellAddress, Entry?>(CellAddress.Parse(p.Key), Entry(p.Value)))])
+                    : SheetEdit.PasteText(typed);
+            }
             case "enterInto":
                 return SheetEdit.EnterInto([.. argument["targets"]!.AsArray().Select(t => CellRange.Parse((string)t!))],
                     CellAddress.Parse((string)argument["at"]!), (string)argument["typed"]!);
@@ -724,6 +855,8 @@ internal sealed class Run(CultureInfo culture)
 
     private void Read(string where, string key, JsonNode? expected, Outcome outcome)
     {
+        if (key is "formulas" or "entryTexts")
+            expected = SheetCases.Texts(expected);
         var sheet = outcome.Sheet;
         JsonNode? actual;
         switch (key)
@@ -762,6 +895,28 @@ internal sealed class Run(CultureInfo culture)
                 break;
             case "borders":
                 actual = PerCell(expected, a => SheetCases.Borders(sheet.GetBorders(a)));
+                break;
+            case "cellFormats":
+                // The Cell Formats a range shows, each once, in the order of their JSON's text, as the TS runner orders them.
+                actual = PerRange(expected, r => SheetCases.Sorted(sheet.GetCellFormats(r).Select(SheetCases.CellFormatJson)));
+                break;
+            case "edgeLines":
+                // The lines along each of a range's outer edges, each once, in the order of their JSON's text.
+                actual = PerRange(expected, r => sheet.GetEdgeLines(r) is var lines ? new JsonObject
+                {
+                    ["top"] = SheetCases.Sorted(lines.Top.Select(SheetCases.Line)),
+                    ["bottom"] = SheetCases.Sorted(lines.Bottom.Select(SheetCases.Line)),
+                    ["left"] = SheetCases.Sorted(lines.Left.Select(SheetCases.Line)),
+                    ["right"] = SheetCases.Sorted(lines.Right.Select(SheetCases.Line)),
+                } : null);
+                break;
+            case "workbookJson":
+                // The Workbook Document's JSON as written, which the two engines write alike.
+                actual = Workbook.ToDocument().ToJson();
+                break;
+            case "documentJson":
+                // The Sheet Document's JSON as written, which the two engines write alike.
+                actual = Workbook.ToDocument(sheet.Name).ToJson();
                 break;
             case "document":
                 actual = SheetCases.Document(Workbook.ToDocument(sheet.Name));
@@ -821,6 +976,13 @@ internal sealed class Run(CultureInfo culture)
             case "clockReads":
                 actual = _clockReads - outcome.ClockReadsBefore;
                 break;
+            case "stepSheet":
+                // The Sheet a step was done on, or made: an inserted or copied Sheet is its step's.
+                actual = outcome.Step?.Sheet.Name ?? throw new InvalidDataException($"{where}: no step to read.");
+                break;
+            case "changesSheets":
+                actual = outcome.WorkbookChange?.ChangesSheets ?? throw new InvalidDataException($"{where}: only a step, an undo or a redo reads whether it changed the Sheets.");
+                break;
             case "isUndone":
                 actual = (outcome.Step ?? throw new InvalidDataException($"{where}: no step to read.")).IsUndone;
                 break;
@@ -845,12 +1007,45 @@ internal sealed class Run(CultureInfo culture)
             case "shown":
                 actual = Workbook.Shown.Name;
                 break;
+            case "sheetsReached":
+                actual = new JsonArray([.. (outcome.WorkbookChange ?? throw new InvalidDataException($"{where}: only a step, an undo, a redo or a push reads the Sheets it reached.")).Sheets.Select(s => (JsonNode)s.Name)]);
+                break;
+            case "tableColumns":
+                actual = ColumnsJson((outcome.Table ?? throw new InvalidDataException($"{where}: only readTable reads a Linked Table's columns.")).Columns);
+                break;
+            case "heldTables":
+                // Each snapshot readTable held, as it stands now.
+                actual = new JsonObject([.. expected!.AsObject().Select(p => new KeyValuePair<string, JsonNode?>(p.Key,
+                    ColumnsJson(_tables.TryGetValue(p.Key, out var held) ? held : throw new InvalidDataException($"{where}: no snapshot was held as '{p.Key}'."))))]);
+                break;
+            case "copies":
+            {
+                var each = new JsonObject();
+                foreach (var (name, _) in expected!.AsObject())
+                {
+                    var copy = _copies.TryGetValue(name, out var taken) ? taken : throw new InvalidDataException($"{where}: no copy was taken as '{name}'.");
+                    each[name] = new JsonObject
+                    {
+                        ["refusal"] = copy.Refusal is { } refused ? SheetCases.Camel(refused.Reason) : null,
+                        ["text"] = copy.Text,
+                        ["html"] = copy.Html,
+                        ["block"] = copy.Block is { } block
+                            ? new JsonArray([.. Enumerable.Range(0, block.RowCount).Select(r =>
+                                (JsonNode)new JsonArray([.. Enumerable.Range(0, block.ColumnCount).Select(c => SheetCases.EntryOf(block.EntryAt(r, c)))]))])
+                            : null,
+                    };
+                }
+                actual = each;
+                break;
+            }
             case "workbook":
                 actual = new JsonObject
                 {
                     ["culture"] = Workbook.Culture.Name,
                     ["today"] = Workbook.Today?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
                     ["hasVolatileFormulas"] = Workbook.HasVolatileFormulas,
+                    ["changes"] = Workbook.Changes,
+                    ["seed"] = Workbook.Seed?.ToString(CultureInfo.InvariantCulture),
                     ["linkedTables"] = new JsonArray([.. Workbook.LinkedTables.Select(t => (JsonNode)new JsonObject
                     {
                         ["name"] = t.Name,
@@ -865,6 +1060,14 @@ internal sealed class Run(CultureInfo culture)
                 throw new InvalidDataException($"{where}: '{key}' is no reading.");
         }
         SheetCases.Compare($"{where}.{key}", expected, actual, Differences);
+    }
+
+    private static JsonObject PerRange(JsonNode? expected, Func<CellRange, JsonNode?> read)
+    {
+        var answer = new JsonObject();
+        foreach (var (range, _) in expected!.AsObject())
+            answer[range] = read(CellRange.Parse(range));
+        return answer;
     }
 
     private static JsonObject PerCell(JsonNode? expected, Func<CellAddress, JsonNode?> read)

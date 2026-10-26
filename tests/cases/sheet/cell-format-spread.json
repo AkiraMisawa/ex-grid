@@ -1,0 +1,115 @@
+{
+  "about": "The Cell Formats a range shows, each once (ADR-0071, SH-45): what Format Cells reads to show a part that differs across the Selection, each Border side the cell's own; and the lines drawn along a range's outer edges, which Format Cells shows as drawn (the fourteenth Windows run, case 13). Both are read from what is recorded, so a range of whole columns is answered from its levels. A set is written in the order of its members' JSON text. Transcribed from ExSheet.Engine.Tests' CellFormatSpreadTests.",
+  "kind": "sheet",
+  "culture": "en-US",
+  "cases": [
+    {
+      "name": "ADR-0071 / SH-45: a range that records nothing shows the default, once",
+      "steps": [
+        {"enter": {"B2": "12"}, "expect": {"cellFormats": {"A1:C3": [{"numberFormat": "General", "alignment": "general", "font": {"colour": "Automatic", "bold": false, "italic": false, "underline": false, "strikethrough": false}, "fill": "none", "borders": {"top": "none", "bottom": "none", "left": "none", "right": "none"}}]}}}
+      ]
+    },
+    {
+      "name": "ADR-0071 / SH-45: one cell answers its own Cell Format alone, its column's level under it",
+      "steps": [
+        {"setCellFormat": {"ranges": ["A:A"], "change": {"fill": "#FFFF00"}}},
+        {"setCellFormat": {"ranges": ["A1"], "change": {"bold": true}}},
+        {"read": true, "expect": {"cellFormats": {"A1": [{"numberFormat": "General", "alignment": "general", "font": {"colour": "Automatic", "bold": true, "italic": false, "underline": false, "strikethrough": false}, "fill": "#FFFF00", "borders": {"top": "none", "bottom": "none", "left": "none", "right": "none"}}]}}}
+      ]
+    },
+    {
+      "name": "ADR-0071 / SH-45: a cell of its own beside one that records nothing shows both",
+      "steps": [
+        {"setCellFormat": {"ranges": ["A1"], "change": {"bold": true, "fill": "#FFFF00"}}},
+        {"read": true, "expect": {"cellFormats": {"A1:A2": [{"numberFormat": "General", "alignment": "general", "font": {"colour": "Automatic", "bold": false, "italic": false, "underline": false, "strikethrough": false}, "fill": "none", "borders": {"top": "none", "bottom": "none", "left": "none", "right": "none"}}, {"numberFormat": "General", "alignment": "general", "font": {"colour": "Automatic", "bold": true, "italic": false, "underline": false, "strikethrough": false}, "fill": "#FFFF00", "borders": {"top": "none", "bottom": "none", "left": "none", "right": "none"}}]}}}
+      ]
+    },
+    {
+      "name": "ADR-0071 / SH-45 / principle 5: whole columns are answered from their levels",
+      "steps": [
+        {"setCellFormat": {"ranges": ["B:B"], "change": {"bold": true}}},
+        {"setCellFormat": {"ranges": ["C:C"], "change": {"bold": true}}},
+        {"read": true, "expect": {"cellFormats": {"B:C": [{"numberFormat": "General", "alignment": "general", "font": {"colour": "Automatic", "bold": true, "italic": false, "underline": false, "strikethrough": false}, "fill": "none", "borders": {"top": "none", "bottom": "none", "left": "none", "right": "none"}}]}}}
+      ]
+    },
+    {
+      "name": "ADR-0071 / SH-45: a row's level over a column's shows where they cross, and each alone elsewhere",
+      "steps": [
+        {"setCellFormat": {"ranges": ["B:B"], "change": {"bold": true}}},
+        {"setCellFormat": {"ranges": ["3:3"], "change": {"numberFormat": "0%"}}},
+        {"read": true, "expect": {"cellFormats": {"A2:B3": [{"numberFormat": "0%", "alignment": "general", "font": {"colour": "Automatic", "bold": false, "italic": false, "underline": false, "strikethrough": false}, "fill": "none", "borders": {"top": "none", "bottom": "none", "left": "none", "right": "none"}}, {"numberFormat": "0%", "alignment": "general", "font": {"colour": "Automatic", "bold": true, "italic": false, "underline": false, "strikethrough": false}, "fill": "none", "borders": {"top": "none", "bottom": "none", "left": "none", "right": "none"}}, {"numberFormat": "General", "alignment": "general", "font": {"colour": "Automatic", "bold": false, "italic": false, "underline": false, "strikethrough": false}, "fill": "none", "borders": {"top": "none", "bottom": "none", "left": "none", "right": "none"}}, {"numberFormat": "General", "alignment": "general", "font": {"colour": "Automatic", "bold": true, "italic": false, "underline": false, "strikethrough": false}, "fill": "none", "borders": {"top": "none", "bottom": "none", "left": "none", "right": "none"}}]}}}
+      ]
+    },
+    {
+      "name": "ADR-0071 / SH-45: cells that each record the same thing over a level they cover leave the level unseen",
+      "steps": [
+        {"setCellFormat": {"ranges": ["A:A"], "change": {"fill": "#FFFF00"}}},
+        {"setCellFormat": {"ranges": ["A1:A2"], "change": {"fill": "none", "bold": true}}},
+        {"read": true, "expect": {"cellFormats": {"A1:A2": [{"numberFormat": "General", "alignment": "general", "font": {"colour": "Automatic", "bold": true, "italic": false, "underline": false, "strikethrough": false}, "fill": "none", "borders": {"top": "none", "bottom": "none", "left": "none", "right": "none"}}]}}}
+      ]
+    },
+    {
+      "name": "ADR-0071 / SH-45 (case 11-24): each cell's own sides are answered, not the edge as shown, since Excel's Format Cells shows a thick bottom over a plain cell as an edge that differs",
+      "steps": [
+        {"setCellFormat": {"ranges": ["A1"], "change": {"borders": {"bottom": {"style": "thick"}}}}},
+        {"read": true, "expect": {"cellFormats": {"A2": [{"numberFormat": "General", "alignment": "general", "font": {"colour": "Automatic", "bold": false, "italic": false, "underline": false, "strikethrough": false}, "fill": "none", "borders": {"top": "none", "bottom": "none", "left": "none", "right": "none"}}], "A1:A2": [{"numberFormat": "General", "alignment": "general", "font": {"colour": "Automatic", "bold": false, "italic": false, "underline": false, "strikethrough": false}, "fill": "none", "borders": {"top": "none", "bottom": "none", "left": "none", "right": "none"}}, {"numberFormat": "General", "alignment": "general", "font": {"colour": "Automatic", "bold": false, "italic": false, "underline": false, "strikethrough": false}, "fill": "none", "borders": {"top": "none", "bottom": {"style": "thick", "colour": "Automatic"}, "left": "none", "right": "none"}}]}, "borders": {"A2": {"top": {"style": "thick", "colour": "Automatic"}, "bottom": "none", "left": "none", "right": "none"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0071 (case 14-13): A2 records nothing under A1's thick bottom, and its top edge is drawn thick, so that is the line along it",
+      "steps": [
+        {"setCellFormat": {"ranges": ["A1"], "change": {"borders": {"bottom": {"style": "thick"}}}}},
+        {"read": true, "expect": {"cellFormats": {"A2": [{"numberFormat": "General", "alignment": "general", "font": {"colour": "Automatic", "bold": false, "italic": false, "underline": false, "strikethrough": false}, "fill": "none", "borders": {"top": "none", "bottom": "none", "left": "none", "right": "none"}}]}, "edgeLines": {"A2": {"top": [{"style": "thick", "colour": "Automatic"}], "bottom": ["none"], "left": ["none"], "right": ["none"]}, "A1": {"top": ["none"], "bottom": [{"style": "thick", "colour": "Automatic"}], "left": ["none"], "right": ["none"]}}}}
+      ]
+    },
+    {
+      "name": "ADR-0071 (case 14-13 and the twelfth run): where both cells record a line on the edge, the upper cell's is the one drawn along it, and the left cell's",
+      "steps": [
+        {"setCellFormat": {"ranges": ["B2"], "change": {"borders": {"bottom": {"style": "thick"}, "right": {"style": "thick"}}}}},
+        {"setCellFormat": {"ranges": ["B4"], "change": {"borders": {"top": {"style": "thin", "colour": "#0000FF"}}}}},
+        {"setCellFormat": {"ranges": ["D2"], "change": {"borders": {"left": {"style": "thin", "colour": "#0000FF"}}}}},
+        {"do": {"deleteRows": [2]}, "note": "Row 3 and column C deleted: B3 records its own thin blue top under B2's thick bottom, and C2 its left beside B2's right."},
+        {"do": {"deleteColumns": [2]}, "expect": {"edgeLines": {"B3": {"top": [{"style": "thick", "colour": "Automatic"}], "bottom": ["none"], "left": ["none"], "right": ["none"]}, "C2": {"top": ["none"], "bottom": ["none"], "left": [{"style": "thick", "colour": "Automatic"}], "right": ["none"]}}}}
+      ]
+    },
+    {
+      "name": "ADR-0071 (case 14-13): an edge along which the lines differ answers each of them once",
+      "steps": [
+        {"setCellFormat": {"ranges": ["A1"], "change": {"borders": {"bottom": {"style": "thick"}}}}},
+        {"setCellFormat": {"ranges": ["C3"], "change": {"borders": {"top": {"style": "thin"}}}}},
+        {"read": true, "expect": {"edgeLines": {"A2:B2": {"top": ["none", {"style": "thick", "colour": "Automatic"}], "bottom": ["none"], "left": ["none"], "right": ["none"]}, "B2:C2": {"top": ["none"], "bottom": ["none", {"style": "thin", "colour": "Automatic"}], "left": ["none"], "right": ["none"]}}}}
+      ]
+    },
+    {
+      "name": "ADR-0071 (case 14-13) / principle 5: the left edge of a whole column is answered from the column beside it, and a cell that records its own side is read on its own",
+      "steps": [
+        {"setCellFormat": {"ranges": ["A:A"], "change": {"borders": {"right": {"style": "thick"}}}}},
+        {"read": true, "expect": {"edgeLines": {"B:B": {"top": ["none"], "bottom": ["none"], "left": [{"style": "thick", "colour": "Automatic"}], "right": ["none"]}}}},
+        {"setCellFormat": {"ranges": ["A5"], "change": {"borders": {"right": "none"}}}},
+        {"read": true, "expect": {"edgeLines": {"B:B": {"top": ["none"], "bottom": ["none"], "left": ["none", {"style": "thick", "colour": "Automatic"}], "right": ["none"]}, "B1:B4": {"top": ["none"], "bottom": ["none"], "left": [{"style": "thick", "colour": "Automatic"}], "right": ["none"]}}}}
+      ]
+    },
+    {
+      "name": "ADR-0071 (case 14-13) / principle 5: where every place along the edge records a side of its own, the level beside it shows nowhere",
+      "steps": [
+        {"setCellFormat": {"ranges": ["A:A"], "change": {"borders": {"right": {"style": "thick"}}}}},
+        {"setCellFormat": {"ranges": ["A1:A2"], "change": {"borders": {"right": "none"}}}},
+        {"read": true, "expect": {"edgeLines": {"B1:B2": {"top": ["none"], "bottom": ["none"], "left": ["none"], "right": ["none"]}}}}
+      ]
+    },
+    {
+      "name": "ADR-0071 (case 14-13): the lines along a range's edges are the ones drawn there, over cells, rows, columns and the Sheet's own edges",
+      "note": "Each expectation is the lines Sheet.GetBorders answers cell by cell along that edge, which the deleted xUnit test compared against.",
+      "steps": [
+        {"setCellFormat": {"ranges": ["B:B"], "change": {"borders": {"outline": {"style": "thin"}}}}},
+        {"setCellFormat": {"ranges": ["3:3"], "change": {"fill": "#FFFF00"}}},
+        {"setCellFormat": {"ranges": ["5:5"], "change": {"borders": {"top": {"style": "thin", "colour": "#0000FF"}, "bottom": {"style": "thick"}}}}},
+        {"setCellFormat": {"ranges": ["C4:D6"], "change": {"borders": {"outline": {"style": "thick"}}}}},
+        {"setCellFormat": {"ranges": ["A1"], "change": {"borders": {"top": {"style": "thick"}, "left": {"style": "thin"}}}}},
+        {"setCellFormat": {"ranges": ["E2"], "change": {"bold": true}}},
+        {"setCellFormat": {"ranges": ["XFD7"], "change": {"borders": {"right": {"style": "thick"}}}}},
+        {"read": true, "expect": {"edgeLines": {"A1": {"top": [{"style": "thick", "colour": "Automatic"}], "bottom": ["none"], "left": [{"style": "thin", "colour": "Automatic"}], "right": [{"style": "thin", "colour": "Automatic"}]}, "A1:C3": {"top": ["none", {"style": "thick", "colour": "Automatic"}], "bottom": ["none", {"style": "thick", "colour": "Automatic"}], "left": ["none", {"style": "thin", "colour": "Automatic"}], "right": ["none"]}, "B2:B6": {"top": ["none"], "bottom": ["none"], "left": [{"style": "thin", "colour": "Automatic"}], "right": [{"style": "thick", "colour": "Automatic"}, {"style": "thin", "colour": "Automatic"}]}, "C3:E7": {"top": ["none"], "bottom": ["none"], "left": [{"style": "thick", "colour": "Automatic"}, {"style": "thin", "colour": "Automatic"}], "right": ["none"]}, "D5": {"top": [{"style": "thin", "colour": "#0000FF"}], "bottom": [{"style": "thick", "colour": "Automatic"}], "left": ["none"], "right": [{"style": "thick", "colour": "Automatic"}]}, "B:B": {"top": ["none"], "bottom": ["none"], "left": [{"style": "thin", "colour": "Automatic"}], "right": [{"style": "thick", "colour": "Automatic"}, {"style": "thin", "colour": "Automatic"}]}, "C:D": {"top": ["none"], "bottom": ["none"], "left": [{"style": "thick", "colour": "Automatic"}, {"style": "thin", "colour": "Automatic"}], "right": ["none", {"style": "thick", "colour": "Automatic"}]}, "5:5": {"top": [{"style": "thin", "colour": "#0000FF"}], "bottom": [{"style": "thick", "colour": "Automatic"}], "left": ["none"], "right": ["none"]}, "4:6": {"top": ["none", {"style": "thick", "colour": "Automatic"}], "bottom": ["none", {"style": "thick", "colour": "Automatic"}], "left": ["none"], "right": ["none"]}, "XFC6:XFD8": {"top": [{"style": "thick", "colour": "Automatic"}], "bottom": ["none"], "left": ["none"], "right": ["none", {"style": "thick", "colour": "Automatic"}]}, "A1:XFD1": {"top": ["none", {"style": "thick", "colour": "Automatic"}], "bottom": ["none"], "left": [{"style": "thin", "colour": "Automatic"}], "right": ["none"]}}}}
+      ]
+    }
+  ]
+}

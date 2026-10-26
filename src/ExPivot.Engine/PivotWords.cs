@@ -308,6 +308,11 @@ public static class PivotWords
         ["refused-too-many-combinations"] = "{0} in {1} makes more than {2} combinations, the most server data allows.",
         ["refused-too-many-combinations-counted"] = "{0} ({1} items) in {2} makes more than {3} combinations, the most server data allows.",
         ["refused-too-many-combinations-remedy"] = "Put {0} in Filters, or filter {0} first.",
+        // Beside a field in the Field List, said for its count of Items, {0} the count; and in an Area a
+        // dragged field is over, where the counts bound the layout past the leaf cap, {0} the cap (ADR-0370
+        // section 3).
+        ["field-item-count"] = "{0} items",
+        ["drop-over-cap"] = "More than {0} combinations, the most server data allows",
         ["aggregation-not-offered"] = "The source does not answer {0}.",
         ["source-failed"] = "The source could not answer: {0}",
         ["source-refused"] = "The source refused to answer: {0}",
@@ -516,6 +521,8 @@ public static class PivotWords
         ["refused-too-many-combinations"] = "{1}に {0} を置くと、組み合わせがサーバーのデータで扱える上限の {2} を超えます。",
         ["refused-too-many-combinations-counted"] = "{2}に {0} ({1} 個のアイテム) を置くと、組み合わせがサーバーのデータで扱える上限の {3} を超えます。",
         ["refused-too-many-combinations-remedy"] = "{0} をフィルターに置くか、先に {0} を絞り込んでください。",
+        ["field-item-count"] = "{0} 個のアイテム",
+        ["drop-over-cap"] = "組み合わせがサーバーのデータで扱える上限の {0} を超えます",
         ["aggregation-not-offered"] = "ソースは {0} に対応していません。",
         ["source-failed"] = "ソースから応答を得られませんでした: {0}",
         ["source-refused"] = "ソースが応答を拒否しました: {0}",
