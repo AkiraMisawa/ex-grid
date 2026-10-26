@@ -16,7 +16,7 @@ import {
 import {
     FetchingPivotSource, LocalPivotReportSource, chooseLayout, defaultMaxLeaves, emptyPivotLayout, formatPivotCount, isLayoutChosen, isValuesPseudoField,
     layoutChoiceChanges, pivotLayoutChoices, pivotValueCaptions, placementOf, placementsIn, isItemCollapsed, pivotWord, pivotWordIdList, setCollapsed,
-    pivotItemKeyId, validateLayout, type PivotDisplayRow, type PivotEntry, type PivotFieldPlacement, type PivotItemInfo, type PivotItemCounts, type PivotLabel, type PivotLayout, type PivotLayoutChoice,
+    itemKeysEqual, pivotItemKeyId, validateLayout, type PivotDisplayRow, type PivotEntry, type PivotFieldPlacement, type PivotItemInfo, type PivotItemCounts, type PivotLabel, type PivotLayout, type PivotLayoutChoice,
     type PivotReportRefusal, type PivotReportSettings, type PivotReportState, type PivotSlicing, type PivotSource, type PivotToggle,
     pivotReportDetailsQuery, PivotItemPage, itemsOfPage, type PivotFieldItem,
 } from '@ex-grid/pivot-engine';
@@ -148,6 +148,8 @@ interface Question {
     /** The locale its settings carry, which its counts and its report are written in. */
     readonly locale: string;
     readonly maxLeaves: number;
+    /** The Item a user's expand or collapse toggled, which keeps the Focus in the report this question brings. */
+    readonly toggled: ToggledItem | undefined;
 }
 
 interface Shown {
@@ -156,6 +158,31 @@ interface Shown {
     readonly answer: PivotReportState | undefined;
     /** The question it answered, whose locale the grid writes the report in. */
     readonly question: Question | undefined;
+}
+
+// Keys that change no Selection: a modifier pressed alone, and a key an IME or a dead key takes to compose text.
+const inertKeys: ReadonlySet<string> = new Set(['Shift', 'Control', 'Alt', 'Meta', 'AltGraph', 'CapsLock', 'Process', 'Dead']);
+
+/** An Item expanded or collapsed on a row: the row Items down to it, the last of them the Item, which tell its place
+ * from the same Item's under another parent; and how many gestures the user had made in the report's grid then. */
+interface ToggledItem {
+    readonly path: readonly PivotFieldItem[];
+    readonly gestures: number;
+}
+
+// The label cell of the toggled Item among the rows held: the one that paints its button on the toggled row's path.
+function toggledCell(rows: readonly PivotDisplayRow[], start: number, { path }: ToggledItem): CellPosition | undefined {
+    const toggled = elementAt(path, path.length - 1);
+    for (const [i, row] of rows.entries()) {
+        if (row.rowPath.length < path.length || path.some((step, level) => {
+            const at = elementAt(row.rowPath, level);
+            return at.field !== step.field || !itemKeysEqual(at.item, step.item);
+        })) continue;
+        const column = row.labels.findIndex(label => label.toggle !== undefined && label.toggle.field === toggled.field
+            && itemKeysEqual(label.toggle.item, toggled.item));
+        if (column >= 0) return Object.freeze({ row: start + i, column });
+    }
+    return undefined;
 }
 
 /** What a menu or a panel opened under a field's entry was opened on. */
@@ -317,6 +344,11 @@ export class PivotView {
     readonly #items = new ItemListings(() => { this.#draw(); });
     // A field menu the pane left while it held the keyboard: the keyboard goes to its field's entry once drawn.
     #keyboardAfterDraw: OpenSurface | undefined;
+    // Stops waiting for the first rows of the report a toggled Item keeps the Focus in.
+    #placing: (() => void) | undefined;
+    // The presses, wheels and keys the user has made in the report's grid, counted: a toggled Item keeps the Focus only
+    // while none has come since the toggle (spine rule 6).
+    #gestures = 0;
     #destroyed = false;
 
     constructor(root: HTMLElement, options: PivotViewOptions, mountGrid: MountGrid) {
@@ -432,6 +464,12 @@ export class PivotView {
         // pivot for an element the browser names. WebKit names none on leaving one element for another, so a
         // leave that names nothing is not taken as one.
         const listening = { signal: this.#listening.signal };
+        const gestured = (): void => { this.#gestures++; };
+        this.#gridRoot.addEventListener('pointerdown', gestured, { capture: true, ...listening });
+        this.#gridRoot.addEventListener('wheel', gestured, { capture: true, passive: true, ...listening });
+        this.#gridRoot.addEventListener('keydown', event => {
+            if (!event.isComposing && !inertKeys.has(event.key)) gestured();
+        }, { capture: true, ...listening });
         root.addEventListener('dragenter', event => { this.#fieldList.dragEntered(event.target); }, listening);
         root.addEventListener('dragleave', event => {
             const to = event.relatedTarget;
@@ -526,6 +564,7 @@ export class PivotView {
         this.#asked?.controller.abort();
         this.#asked = undefined;
         this.#countsAsked?.abort();
+        this.#placing?.();
         this.#grid?.destroy();
         this.#grid = undefined;
         this.#rows?.dispose();
@@ -584,7 +623,7 @@ export class PivotView {
         return new ReportColumns(Object.freeze({
             indentPx: this.#indentPx,
             toggleName: (toggle: PivotToggle) => words.fill(toggle.isCollapsed ? 'expand-item' : 'collapse-item', toggle.itemLabel),
-            toggled: (toggle: PivotToggle) => { this.#toggled(toggle); },
+            toggled: (toggle: PivotToggle, row: PivotDisplayRow) => { this.#toggled(toggle, row); },
         }), options.density);
     }
 
@@ -608,13 +647,15 @@ export class PivotView {
         this.#move(edit.layout, edit.moved);
     }
 
-    #move(layout: PivotLayout, moved: FieldListMove | undefined): void {
+    #move(layout: PivotLayout, moved: FieldListMove | undefined, toggled?: ToggledItem): void {
+        // A move after a toggle asks for another report: the Item toggled is no longer the one to follow.
+        this.#placing?.();
         this.#refusal = undefined;
-        this.#ask(layout, 'user', moved);
+        this.#ask(layout, 'user', moved, toggled);
         this.#draw();
     }
 
-    #ask(layout: PivotLayout, asked: Cause, moved: FieldListMove | undefined): void {
+    #ask(layout: PivotLayout, asked: Cause, moved: FieldListMove | undefined, toggled?: ToggledItem): void {
         const superseded = this.#asked;
         superseded?.controller.abort();
         // A layout asked again before its answer came keeps what that question was owed: the user's raises once
@@ -624,6 +665,8 @@ export class PivotView {
         // A question asked while a Refresh is owed asks the Pivot Source again, and marks what changed, whatever asked it.
         const refreshData = this.#refreshOwed;
         const markChanges = asked === 'data' || refreshData || (again && superseded.markChanges);
+        // An Item toggled into the layout keeps the Focus in its report, asked again or not.
+        const focusOn = toggled ?? (again ? superseded.toggled : undefined);
         // A user's move made while a user's question was out was taken against it, and carries its moves on.
         const moves = [...(raise && superseded?.raise === true ? superseded.moves : []), ...(moved === undefined ? [] : [moved])];
         const generation = ++this.#generation;
@@ -638,6 +681,7 @@ export class PivotView {
         const question: Question = {
             layout, generation, controller: new AbortController(), raise, markChanges, refreshData, moves: Object.freeze(moves),
             reportSource: this.#reportSource, source: this.#options.source, settings: this.#settings, locale: this.#locale, maxLeaves: this.#maxLeaves,
+            toggled: focusOn,
         };
         this.#asked = question;
         void this.#run(question);
@@ -773,6 +817,7 @@ export class PivotView {
     // ---- The report ------------------------------------------------------------------------------------
 
     #showReport(answered: { readonly answer: PivotReportState; readonly question: Question } | undefined): void {
+        this.#placing?.();
         this.#rows?.dispose();
         this.#rows = undefined;
         // The rows of the report before read a source that may since have been replaced.
@@ -795,6 +840,40 @@ export class PivotView {
             moved: () => { this.#reportMoved(answer); },
         });
         this.#drawGrid();
+        if (question.toggled !== undefined) this.#placeToggled(question.toggled);
+    }
+
+    // The toggled Item keeps the Focus, as it does in Excel (ADR-0050 item 4): its label cell is selected among the
+    // first rows the grid holds of the report it was toggled into, on the toggled row's path, as the Razor component
+    // finds it among the rows drawn, and under the order those rows came in. A press, a key or a wheel the user turns
+    // in the grid after the toggle, while its question is out or its rows are on their way, is newer than the toggle,
+    // and the toggle places nothing over it (spine rule 6); a modifier pressed alone, or a key composing text, is no
+    // such gesture. Nor does the toggle place anything after a later move, or once another report is shown. A placement the grid refuses leaves the Selection it dropped with the
+    // old report, and the toggled Item is found in no other rows than those first ones: no place, rather than a
+    // late one over what the user did since.
+    #placeToggled(toggled: ToggledItem): void {
+        const rows = this.#rows;
+        const grid = this.#grid;
+        if (rows === undefined || grid === undefined) return;
+        const place = (): void => {
+            if (this.#gestures !== toggled.gestures) {
+                stop();
+                return;
+            }
+            const state = rows.snapshot();
+            if (state.window.length === 0) return;
+            stop();
+            const at = toggledCell(state.window, state.windowStart, toggled);
+            if (at === undefined) return;
+            grid.placeSelection(Object.freeze({ topRow: at.row, leftColumn: at.column, rowCount: 1, columnCount: 1 }), at, state.rowSequenceVersion);
+        };
+        const unsubscribe = rows.subscribe(place);
+        const stop = (): void => {
+            unsubscribe();
+            if (this.#placing === stop) this.#placing = undefined;
+        };
+        this.#placing = stop;
+        place();
     }
 
     // The source answered a Window from another report than the one shown: the data moved on under it, and the
@@ -882,7 +961,7 @@ export class PivotView {
         }
         // A double click on an outer Item's label expands or collapses it, as in Excel.
         const toggle = elementAt(row.labels, cell.column).toggle;
-        if (toggle !== undefined) this.#toggled(toggle);
+        if (toggle !== undefined) this.#toggled(toggle, row);
     }
 
     // Show Details (ADR-0059, ADR-0063): the records behind a value cell, asked of the Pivot Source the report came
@@ -938,11 +1017,11 @@ export class PivotView {
             captionOf: field => this.#captionOf(field),
         }, {
             // A command that would change nothing now asks nothing.
-            edit: edit => {
+            edit: (edit, toggled) => {
                 const now = this.#paneLayout;
                 const next = edit(now);
                 if (next === undefined || next === now) this.#draw();
-                else this.#move(next, undefined);
+                else this.#move(next, undefined, toggled === undefined ? undefined : this.#toggledItemOf(context.row, toggled));
             },
             showDetails: valueColumn => { this.#showDetails(answer, question, context.row, valueColumn); },
             valueFieldSettings: (valueField, holds) => { this.#openFromReport(valueField, holds); },
@@ -978,12 +1057,20 @@ export class PivotView {
     // asks for; where that layout no longer holds the Item as the button painted it, a press already moved it, or
     // its field left the pane, and the press is refused rather than turned into its opposite (spine rule 6). Two
     // presses of one painted button collapse once, as the Razor component's do.
-    #toggled(toggle: PivotToggle): void {
+    // An Item toggled on a row, as it keeps the Focus in the report the toggle brings.
+    #toggledItemOf(row: PivotDisplayRow, toggled: PivotFieldItem): ToggledItem {
+        const level = row.rowPath.findIndex(step => step.field === toggled.field && itemKeysEqual(step.item, toggled.item));
+        if (level < 0) throw new Error(`Internal: the row toggled holds no '${toggled.field}' Item there.`);
+        return Object.freeze({ path: Object.freeze(row.rowPath.slice(0, level + 1)), gestures: this.#gestures });
+    }
+
+    // The Item keeps the Focus in the report the press brings.
+    #toggled(toggle: PivotToggle, row: PivotDisplayRow): void {
         if (this.#destroyed) return;
         const pane = this.#paneLayout;
         const placed = pane.rows.find(placement => placement.field === toggle.field);
         if (placed === undefined || isItemCollapsed(placed, toggle.item) !== toggle.isCollapsed) return;
-        this.#move(setCollapsed(pane, toggle.field, toggle.item, !toggle.isCollapsed), undefined);
+        this.#move(setCollapsed(pane, toggle.field, toggle.item, !toggle.isCollapsed), undefined, this.#toggledItemOf(row, toggle));
     }
 
     // The report asked again of the Pivot Source, under the pane's layout. A move of the user's still out is asked again
