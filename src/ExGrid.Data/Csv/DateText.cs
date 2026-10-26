@@ -122,8 +122,10 @@ internal sealed class DateFormat
     /// </summary>
     public static string? TakenFromToday(string format, CultureInfo culture)
     {
+        // 2007-02-03 falls on the same day of the week as 2001-02-03, so a day's name does not tell the two
+        // apart: only a year does.
         var shown = Write(2001, 2, 3);
-        if (shown != Write(2002, 2, 3))
+        if (shown != Write(2007, 2, 3))
             return null;
         if (shown != Write(2001, 3, 4))
             return "it has a month or a day but no year, so a date read under it would take the year it is read in";
@@ -154,6 +156,9 @@ internal sealed class DateFormat
 
     private static bool HasOffset(string format)
     {
+        // The round-trip format stands for one that ends in K.
+        if (format is "o" or "O")
+            return true;
         var quoted = '\0';
         for (var i = 0; i < format.Length; i++)
         {
