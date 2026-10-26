@@ -189,6 +189,7 @@ export interface MeshPoint {
 /** Straight lines between neighbouring points (ADR-0257); `xs` strictly increasing. */
 export function interpolateLinear(xs: readonly number[], ys: readonly number[]): Interpolant1D {
     check(xs, ys.length, 2);
+    finite(ys);
     const x = [...xs];
     const y = [...ys];
     const first = elementAt(x, 0);
@@ -211,6 +212,7 @@ export function interpolateLinear(xs: readonly number[], ys: readonly number[]):
 /** A natural cubic spline through the points (ADR-0257): zero second derivative at both ends; `xs` strictly increasing. */
 export function interpolateNaturalCubicSpline(xs: readonly number[], ys: readonly number[]): Interpolant1D {
     check(xs, ys.length, 3);
+    finite(ys);
     const x = [...xs];
     const y = [...ys];
     const m = secondDerivatives(x, y);
@@ -238,10 +240,20 @@ export function interpolateNaturalCubicSpline(xs: readonly number[], ys: readonl
  * axes strictly increasing. A cell with a missing corner, `null`, has no value inside (ADR-0274).
  */
 export function interpolateBilinear(xs: readonly number[], ys: readonly number[], z: readonly (readonly (number | null)[])[]): Interpolant2D {
-    check(xs, xs.length, 2);
-    check(ys, ys.length, 2);
+    check(xs, xs.length, 2, 'X position');
+    check(ys, ys.length, 2, 'Y position');
     if (z.length !== ys.length || z.some(r => r.length !== xs.length)) {
         throw new TypeError('The table needs one row per y value, each with one value per x value.');
+    }
+    for (let j = 0; j < z.length; j++) {
+        const row = elementAt(z, j);
+        for (let i = 0; i < row.length; i++) {
+            // Read as what an untyped caller may have handed in: a hole in the list is no number either.
+            const value: unknown = row[i];
+            if (value !== null && (typeof value !== 'number' || !Number.isFinite(value))) {
+                throw new TypeError(`The table's value in row ${String(j)}, column ${String(i)} is not a finite number; a missing value is null.`);
+            }
+        }
     }
     const x = [...xs];
     const y = [...ys];
@@ -290,6 +302,12 @@ export function interpolateTriangles(points: readonly MeshPoint[], triangles: re
             throw new TypeError('A triangle names a point the mesh does not hold.');
         }
     }
+    for (let k = 0; k < points.length; k++) {
+        const q: MeshPoint | undefined = points[k];
+        if (q === undefined || !Number.isFinite(q.x) || !Number.isFinite(q.y) || !Number.isFinite(q.z)) {
+            throw new TypeError(`Point ${String(k)} is not a finite number.`);
+        }
+    }
     const p = points.map(q => Object.freeze({ x: q.x, y: q.y, z: q.z }));
     const t = triangles.map(q => Object.freeze({ a: q.a, b: q.b, c: q.c }));
     return new Interpolant2D({
@@ -320,16 +338,31 @@ export function interpolateTriangles(points: readonly MeshPoint[], triangles: re
 // point on an edge shared by two triangles is never a hole.
 const edge = -1e-12;
 
-function check(xs: readonly number[], count: number, fewest: number): void {
+function check(xs: readonly number[], count: number, fewest: number, position = 'Position'): void {
     if (xs.length !== count) {
         throw new TypeError('Each position needs one value.');
     }
     if (xs.length < fewest) {
         throw new TypeError(`The method needs ${String(fewest)} points at least.`);
     }
+    for (let k = 0; k < xs.length; k++) {
+        if (!Number.isFinite(xs[k])) {
+            throw new TypeError(`${position} ${String(k)} is not a finite number.`);
+        }
+    }
     for (let k = 1; k < xs.length; k++) {
         if (!(elementAt(xs, k - 1) < elementAt(xs, k))) {
             throw new TypeError('The positions must be strictly increasing.');
+        }
+    }
+}
+
+// A value that is no number would spread to every interval a spline or a line reads it in, so it is refused by
+// its place rather than drawn (spine rule 1).
+function finite(ys: readonly number[]): void {
+    for (let k = 0; k < ys.length; k++) {
+        if (!Number.isFinite(ys[k])) {
+            throw new TypeError(`Value ${String(k)} is not a finite number.`);
         }
     }
 }

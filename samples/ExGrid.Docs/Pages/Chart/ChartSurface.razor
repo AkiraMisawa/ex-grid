@@ -31,7 +31,8 @@
             Helpers interpolate a grid of quotes, bilinearly here, into a function the surface samples, so the
             page chooses the method and the surface says it: under the surface and in the tooltip, with no dot
             at an interpolated value. The helper does not reach past the quotes, so a cell with a missing corner
-            stays a hole.
+            stays a hole. A missing quote is <code>null</code>; a position or a quote that is not a finite number
+            is refused by its place when the helper is made, rather than spread over the cells around it.
         </p>
         <p>
             The <MudLink Href="showcase/fx-volatility" Target="_blank">FX volatility showcase</MudLink> marks the

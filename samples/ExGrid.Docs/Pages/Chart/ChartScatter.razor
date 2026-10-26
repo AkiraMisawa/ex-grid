@@ -39,6 +39,13 @@
             their edges as two series and say in the Notes what they assume.
         </p>
         <p>
+            A fit that cannot say its curve honestly is refused when it is made, never handed back: a point that
+            is not a finite number, sums, a span or a slope that overflow a double, a least-squares solve that
+            failed, or a polynomial far from zero (day numbers, say)
+            whose coefficients in powers of x would no longer give the curve fitted. That refusal names the
+            centre to fit about instead, as in "fit it on x − 45005.5".
+        </p>
+        <p>
             Below, the least-squares polynomial of degree M through ten noisy points of sin 2πx. M = 9 passes
             through every point and swings between them: it has learnt the noise.
         </p>

@@ -521,6 +521,41 @@
       ]
     },
     {
+      "name": "ADR-0291: least squares never reads R² below zero, which only rounding gives it, so the Note never says -0.00",
+      "curve": {
+        "method": "polynomial",
+        "x": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6
+        ],
+        "y": [
+          3.32,
+          1.53,
+          2.98,
+          4.28,
+          2.95,
+          9.37,
+          5.57
+        ],
+        "degree": 0
+      },
+      "expect": [
+        {
+          "at": "rSquared",
+          "is": 0
+        },
+        {
+          "at": "note",
+          "is": "Least squares: y = 4.286, R² = 0.00, n = 7"
+        }
+      ]
+    },
+    {
       "name": "ADR-0291: points on a horizontal line are fitted exactly, R² 1, by either method",
       "build": {
         "ols": {
@@ -1007,6 +1042,233 @@
       },
       "throws": "argument",
       "saying": "3 different x"
+    },
+    {
+      "name": "ADR-0291: a polynomial far from zero whose coefficients in x lose its fit is refused, naming where to centre it",
+      "curve": {
+        "method": "polynomial",
+        "x": {
+          "run": {
+            "count": 12,
+            "from": 45000,
+            "step": 1
+          }
+        },
+        "y": [
+          100,
+          101.5,
+          103,
+          101.5,
+          103,
+          104.5,
+          103,
+          104.5,
+          106,
+          104.5,
+          106,
+          107.5
+        ],
+        "degree": 3
+      },
+      "throws": "argument",
+      "saying": [
+        "degree 3 on x near 45005.5",
+        "fit it on x − 45005.5"
+      ]
+    },
+    {
+      "name": "ADR-0291: the same points centred are fitted at that degree",
+      "curve": {
+        "method": "polynomial",
+        "x": {
+          "run": {
+            "count": 12,
+            "from": -5.5,
+            "step": 1
+          }
+        },
+        "y": [
+          100,
+          101.5,
+          103,
+          101.5,
+          103,
+          104.5,
+          103,
+          104.5,
+          106,
+          104.5,
+          106,
+          107.5
+        ],
+        "degree": 3
+      },
+      "expect": [
+        {
+          "at": "degree",
+          "is": 3
+        },
+        {
+          "at": "count",
+          "is": 12
+        }
+      ]
+    },
+    {
+      "name": "ADR-0291: a line through large values close together still fits: rounding the values carry is not a lost fit",
+      "curve": {
+        "method": "leastSquares",
+        "x": {
+          "run": {
+            "count": 10,
+            "from": 0,
+            "step": 1
+          }
+        },
+        "y": [
+          123456789012.37,
+          123456789012.37999,
+          123456789012.39,
+          123456789012.4,
+          123456789012.40999,
+          123456789012.42,
+          123456789012.43,
+          123456789012.44,
+          123456789012.45,
+          123456789012.45999
+        ]
+      },
+      "expect": [
+        {
+          "at": "slope",
+          "is": 0.01,
+          "near": 0.0001
+        },
+        {
+          "at": "count",
+          "is": 10
+        }
+      ]
+    },
+    {
+      "name": "ADR-0291: a power law of a degree that loses its fit names a divisor of x, since on ln x a divisor moves the centre",
+      "curve": {
+        "method": "polynomial",
+        "x": {
+          "run": {
+            "count": 8,
+            "from": 45000,
+            "step": 1
+          }
+        },
+        "y": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8
+        ],
+        "degree": 3,
+        "space": "logLog"
+      },
+      "throws": "argument",
+      "saying": [
+        "degree 3 on ln x near",
+        "fit it on x ÷"
+      ]
+    },
+    {
+      "name": "ADR-0291: a fit that overflows is refused, never handed back with R² NaN",
+      "curve": {
+        "method": "leastSquares",
+        "x": [
+          0,
+          1,
+          2
+        ],
+        "y": [
+          1e+200,
+          -1e+200,
+          1e+200
+        ]
+      },
+      "throws": "argument",
+      "saying": "The fit overflows at these values"
+    },
+    {
+      "name": "ADR-0291: Theil–Sen refuses a pair whose slope is no finite number, rather than sort it by chance",
+      "curve": {
+        "method": "theilSen",
+        "x": [
+          -1e+308,
+          1e+308,
+          0
+        ],
+        "y": [
+          -1e+308,
+          1e+308,
+          1
+        ]
+      },
+      "throws": "argument",
+      "saying": "Points 0 and 1 lie too far apart in x"
+    },
+    {
+      "name": "ADR-0291: Theil–Sen refuses a pair whose run is no finite number, which would read as a slope of zero",
+      "curve": {
+        "method": "theilSen",
+        "x": [
+          -1e+308,
+          1e+308,
+          0
+        ],
+        "y": [
+          -4e+307,
+          4e+307,
+          0
+        ]
+      },
+      "throws": "argument",
+      "saying": "Points 0 and 1 lie too far apart in x"
+    },
+    {
+      "name": "ADR-0291: Theil–Sen refuses a pair one unit in the last place apart whose slope is no finite number, naming the rise",
+      "curve": {
+        "method": "theilSen",
+        "x": [
+          1,
+          1.0000000000000002,
+          5
+        ],
+        "y": [
+          0,
+          1e+300,
+          2
+        ]
+      },
+      "throws": "argument",
+      "saying": "Points 0 and 1 rise too steeply"
+    },
+    {
+      "name": "ADR-0291: a polynomial over x whose span is no finite number is refused by the span, not as points that do not determine it",
+      "curve": {
+        "method": "leastSquares",
+        "x": [
+          -1e+308,
+          0,
+          1e+308
+        ],
+        "y": [
+          0,
+          1,
+          2
+        ]
+      },
+      "throws": "argument",
+      "saying": "their span is not a finite number"
     },
     {
       "name": "ADR-0291: a polynomial's degree is not below zero",

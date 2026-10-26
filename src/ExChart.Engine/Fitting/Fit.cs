@@ -27,7 +27,7 @@ public enum FitSpace
 /// </summary>
 /// <param name="Method">The method's name, such as "OLS" or "Theil–Sen".</param>
 /// <param name="Coefficients">The polynomial's coefficients from the constant up: for a line, the intercept then the slope.</param>
-/// <param name="RSquared">The share of the variance it explains, in the space it was fitted in; below zero where it does worse than the mean.</param>
+/// <param name="RSquared">The share of the variance it explains, in the space it was fitted in; never below zero for least squares, and below zero for Theil–Sen where it does worse than the mean.</param>
 /// <param name="Count">How many points it was fitted on.</param>
 /// <param name="From">The smallest x it was fitted on.</param>
 /// <param name="To">The largest.</param>
@@ -110,7 +110,19 @@ public static class Fit
         var slopes = new List<double>(x.Length * (x.Length - 1) / 2);
         for (var i = 0; i < x.Length; i++)
             for (var j = i + 1; j < x.Length; j++)
-                if (x[i] != x[j]) slopes.Add((y[j] - y[i]) / (x[j] - x[i]));
+                if (x[i] != x[j])
+                {
+                    var run = x[j] - x[i];
+                    var between = (y[j] - y[i]) / run;
+                    // A slope past what a double holds would sort to an end and pass as a median or not by
+                    // chance, and a run past it reads as a slope of zero, so either is refused by the pair
+                    // rather than weighed (spine rule 1).
+                    if (!double.IsFinite(run))
+                        throw new ArgumentException($"Points {i} and {j} lie too far apart in x for the run between them to be a finite number.");
+                    if (!double.IsFinite(between))
+                        throw new ArgumentException($"Points {i} and {j} rise too steeply for the slope between them to be a finite number.");
+                    slopes.Add(between);
+                }
         if (slopes.Count == 0) throw new ArgumentException("Every point has the same x: no slope can be fitted.");
         var slope = Median(slopes);
         var intercept = Median(Enumerable.Range(0, x.Length).Select(i => y[i] - slope * x[i]).ToList());
@@ -128,6 +140,10 @@ public static class Fit
         // [0, 1] is solved as accurately as degree 1; the coefficients are mapped back afterwards.
         var mid = (x.Min() + x.Max()) / 2;
         var half = Math.Max((x.Max() - x.Min()) / 2, double.Epsilon);
+        // A span past what a double holds makes every centred x zero, which would read as points that do not
+        // determine the polynomial.
+        if (!double.IsFinite(mid) || !double.IsFinite(half))
+            throw new ArgumentException("The points lie too far apart in x for a polynomial: their span is not a finite number.");
         var a = new double[x.Length, degree + 1];
         for (var i = 0; i < x.Length; i++)
         {
@@ -136,10 +152,40 @@ public static class Fit
             for (var k = 0; k <= degree; k++, p *= t) a[i, k] = p;
         }
         var scaled = SolveLeastSquares(a, y);
-        return Curve(method, Unscale(scaled, mid, half), x, y, xs, space);
+        var c = Unscale(scaled, mid, half);
+        Kept(scaled, c, x, y, mid, half, degree, space);
+        return Curve(method, c, x, y, xs, space, leastSquares: true);
     }
 
-    private static FittedCurve Curve(string method, double[] c, double[] x, double[] y, IReadOnlyList<double> xs, FitSpace space)
+    // Coefficients in powers of x far from zero cancel one another, and past a degree they no longer say the
+    // curve that was fitted in centred x: the fitted values at the points are compared, and a curve that has
+    // lost them is refused, never handed back as plausible coefficients (spine rule 1). A millionth of the
+    // values' spread is a loss a reader could see; a few dozen units in the last place of the largest value
+    // is rounding the values themselves carry, so a line through large values close together still fits.
+    private static void Kept(double[] scaled, double[] c, double[] x, double[] y, double mid, double half, int degree, FitSpace space)
+    {
+        var tolerance = Math.Max(1e-6 * (y.Max() - y.Min()), 64 * Math.ScaleB(1d, -52) * y.Max(v => Math.Abs(v)));
+        if (!double.IsFinite(tolerance)) throw Overflow();
+        for (var i = 0; i < x.Length; i++)
+        {
+            double inT = 0, inX = 0;
+            var t = (x[i] - mid) / half;
+            for (var k = c.Length - 1; k >= 0; k--)
+            {
+                inT = inT * t + scaled[k];
+                inX = inX * x[i] + c[k];
+            }
+            if (!double.IsFinite(inT)) throw Overflow();
+            // Powers of x past what a double holds, where the centred curve is finite, are the same loss.
+            if (!double.IsFinite(inX) || !(Math.Abs(inT - inX) <= tolerance))
+                throw new ArgumentException(space == FitSpace.LogLog
+                    // On ln x, dividing x by a constant is what moves the centre to zero.
+                    ? $"A polynomial of degree {degree} on ln x near {R(mid)} cannot be written in powers of ln x without losing its fit; fit it on x ÷ {R(Math.Exp(mid))} instead."
+                    : $"A polynomial of degree {degree} on x near {R(mid)} cannot be written in powers of x without losing its fit; fit it on x − {R(mid)} instead.");
+        }
+    }
+
+    private static FittedCurve Curve(string method, double[] c, double[] x, double[] y, IReadOnlyList<double> xs, FitSpace space, bool leastSquares = false)
     {
         var mean = y.Average();
         double res = 0, tot = 0;
@@ -150,9 +196,25 @@ public static class Fit
             res += (y[i] - f) * (y[i] - f);
             tot += (y[i] - mean) * (y[i] - mean);
         }
+        // Sums past what a double holds would read as an R² of 1 or, clamped, of 0.
+        if (c.Any(v => !double.IsFinite(v)) || !double.IsFinite(res) || !double.IsFinite(tot)) throw Overflow();
         var r2 = tot == 0 ? (res == 0 ? 1 : 0) : 1 - res / tot;
+        // Least squares with a constant does no worse than the mean, so its R² is never below zero: a value a
+        // hair below is rounding, which would read "R² = -0.00", and one further below is a solve that failed,
+        // which is refused rather than shown as 0.00 (Theil–Sen's may truly be below).
+        if (leastSquares && r2 < 0)
+        {
+            if (r2 < -1e-9)
+                throw new ArgumentException("The least-squares solve failed at these values: the fit does worse than their mean.");
+            r2 = 0;
+        }
         return new FittedCurve(method, c, r2, x.Length, xs.Min(), xs.Max(), space);
     }
+
+    private static string R(double v) => v.ToString("R", CultureInfo.InvariantCulture);
+
+    private static ArgumentException Overflow() =>
+        new("The fit overflows at these values: its coefficients or its R² are not finite numbers.");
 
     // The points in the space the fit is made in: ln y, and ln x for a power law. A value a logarithm
     // cannot take is refused by name, never dropped (ADR-0290).
@@ -167,8 +229,8 @@ public static class Fit
         for (var i = 0; i < xs.Count; i++)
         {
             if (!double.IsFinite(xs[i]) || !double.IsFinite(ys[i])) throw new ArgumentException($"Point {i} is not a finite number.");
-            if (space != FitSpace.Linear && !(ys[i] > 0)) throw new ArgumentException($"Point {i} has y = {ys[i]}, whose logarithm a fit on ln y cannot take.");
-            if (space == FitSpace.LogLog && !(xs[i] > 0)) throw new ArgumentException($"Point {i} has x = {xs[i]}, whose logarithm a fit on ln x cannot take.");
+            if (space != FitSpace.Linear && !(ys[i] > 0)) throw new ArgumentException($"Point {i} has y = {R(ys[i])}, whose logarithm a fit on ln y cannot take.");
+            if (space == FitSpace.LogLog && !(xs[i] > 0)) throw new ArgumentException($"Point {i} has x = {R(xs[i])}, whose logarithm a fit on ln x cannot take.");
             x[i] = space == FitSpace.LogLog ? Math.Log(xs[i]) : xs[i];
             y[i] = space == FitSpace.Linear ? ys[i] : Math.Log(ys[i]);
         }

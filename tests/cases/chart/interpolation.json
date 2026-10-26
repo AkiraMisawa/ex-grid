@@ -860,7 +860,7 @@
       "saying": "strictly increasing"
     },
     {
-      "name": "ADR-0257: a position that is no number breaks the order",
+      "name": "ADR-0257: a position that is no number is refused by its place",
       "interpolate": {
         "method": "naturalCubicSpline",
         "x": [
@@ -875,7 +875,145 @@
         ]
       },
       "throws": "argument",
-      "saying": "strictly increasing"
+      "saying": "Position 1 is not a finite number"
+    },
+    {
+      "name": "ADR-0257: an infinite position is refused, though it keeps the order",
+      "interpolate": {
+        "method": "linear",
+        "x": [
+          0,
+          1,
+          "Infinity"
+        ],
+        "y": [
+          1,
+          2,
+          3
+        ]
+      },
+      "throws": "argument",
+      "saying": "Position 2 is not a finite number"
+    },
+    {
+      "name": "ADR-0257: a value that is no number is refused by its place, never spread over the spline",
+      "interpolate": {
+        "method": "naturalCubicSpline",
+        "x": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "y": [
+          1,
+          "NaN",
+          3,
+          4
+        ]
+      },
+      "throws": "argument",
+      "saying": "Value 1 is not a finite number"
+    },
+    {
+      "name": "ADR-0257: an infinite value is refused on a line too",
+      "interpolate": {
+        "method": "linear",
+        "x": [
+          0,
+          1
+        ],
+        "y": [
+          1,
+          "-Infinity"
+        ]
+      },
+      "throws": "argument",
+      "saying": "Value 1 is not a finite number"
+    },
+    {
+      "name": "ADR-0257: a bilinear grid names the axis whose position is no number",
+      "interpolate": {
+        "method": "bilinear",
+        "x": [
+          0,
+          1
+        ],
+        "y": [
+          0,
+          "NaN"
+        ],
+        "z": [
+          [
+            0,
+            1
+          ],
+          [
+            2,
+            3
+          ]
+        ]
+      },
+      "throws": "argument",
+      "saying": "Y position 1 is not a finite number"
+    },
+    {
+      "name": "ADR-0257, ADR-0274: a bilinear table's value that is no number is refused; a missing value is null",
+      "interpolate": {
+        "method": "bilinear",
+        "x": [
+          0,
+          1
+        ],
+        "y": [
+          0,
+          1
+        ],
+        "z": [
+          [
+            0,
+            null
+          ],
+          [
+            "NaN",
+            3
+          ]
+        ]
+      },
+      "throws": "argument",
+      "saying": "row 1, column 0 is not a finite number; a missing value is null"
+    },
+    {
+      "name": "ADR-0257: a mesh point that is not a finite number is refused",
+      "interpolate": {
+        "method": "triangles",
+        "points": [
+          [
+            0,
+            0,
+            0
+          ],
+          [
+            1,
+            0,
+            1
+          ],
+          [
+            0,
+            1,
+            "Infinity"
+          ]
+        ],
+        "triangles": [
+          [
+            0,
+            1,
+            2
+          ]
+        ]
+      },
+      "throws": "argument",
+      "saying": "Point 2 is not a finite number"
     },
     {
       "name": "ADR-0257: a bilinear table has one row per y value",
