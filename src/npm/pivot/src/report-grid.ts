@@ -5,7 +5,7 @@
 
 import {
     GridSource, gridHeaderRequiredPx, type FetchingGridSource, type GridColumn, type GridColumnWidth, type GridDensity, type GridHeaderGroup,
-    type GridPage, type GridQuery, type GridSelection, type GridTemplate,
+    type GridFindRequest, type GridFindResult, type GridPage, type GridQuery, type GridSelection, type GridTemplate,
 } from '@ex-grid/core';
 import { decimalText } from '@ex-grid/data';
 import {
@@ -13,6 +13,7 @@ import {
     type PivotReportState, type PivotToggle, type PivotValue,
 } from '@ex-grid/pivot-engine';
 import { elementAt } from './must';
+import { findInReport, withCellText, type ReportFindRead } from './report-find';
 
 /**
  * A value cell's value as the grid holds it: the report's own text is what the cell paints, and the value's
@@ -105,7 +106,7 @@ function labelTemplate(index: number, painter: LabelPainter): GridTemplate<Pivot
 }
 
 function labelColumn(name: string, header: string, index: number, width: GridColumnWidth, painter: LabelPainter): GridColumn<PivotDisplayRow> {
-    return Object.freeze({
+    return withCellText(Object.freeze({
         name,
         header,
         type: 'text',
@@ -115,7 +116,7 @@ function labelColumn(name: string, header: string, index: number, width: GridCol
         queryable: false,
         value: (row: PivotDisplayRow) => elementAt(row.labels, index).text,
         template: labelTemplate(index, painter),
-    });
+    }), row => elementAt(row.labels, index).text ?? ''); // oxlint-disable-line ex-grid/no-stand-in-default -- a label with no text shows nothing, as its Copy reads it
 }
 
 function cellValueOf(value: unknown): string {
@@ -125,7 +126,7 @@ function cellValueOf(value: unknown): string {
 
 function valueColumn(name: string, header: string, index: number, width: GridColumnWidth | undefined): GridColumn<PivotDisplayRow> {
     const values = new WeakMap<PivotDisplayRow, ReportCellValue | undefined>();
-    return Object.freeze({
+    return withCellText(Object.freeze({
         name,
         header,
         type: 'number',
@@ -139,7 +140,7 @@ function valueColumn(name: string, header: string, index: number, width: GridCol
             return cell;
         },
         format: cellValueOf,
-    });
+    }), row => row.values[index]?.text ?? ''); // oxlint-disable-line ex-grid/no-stand-in-default -- a cell with no value shows nothing, as its Copy reads it
 }
 
 /** What the grid is handed for one report: its columns, its Header Groups and how many columns are pinned. */
@@ -254,6 +255,8 @@ export interface ReportRowsRequest {
     readonly nextRequestId: () => string;
     /** Told when a Window came from another report: the report is to be asked again. */
     readonly moved: () => void;
+    /** Told when a Find step over the report cannot go on, before the step is given up (ADR-0332 §1). */
+    readonly findGivenUp: (why: Exclude<ReportFindRead, { readonly kind: 'answered' }>) => void;
 }
 
 /**
@@ -283,9 +286,18 @@ export function reportRows(request: ReportRowsRequest): FetchingGridSource<Pivot
         if (update.metadata.version !== version) throw new ReportMovedError();
         return pageOf(update);
     };
+    // A step that cannot go on is said by the pivot and given up: nothing moves, and nothing claims "no match" for
+    // cells it could not read (ADR-0025). The grid takes an AbortError as a step its Consumer gave up.
+    const find = async (step: GridFindRequest, _query: unknown, signal: AbortSignal): Promise<GridFindResult> => {
+        const read = await findInReport(request.source, answered.metadata, step, signal);
+        if (read.kind === 'answered') return read.answer;
+        request.findGivenUp(read);
+        throw new DOMException('The Find step over the report was given up.', 'AbortError');
+    };
     return GridSource.fetch(fetch, {
         rowKey: reportRowKey,
         readAheadRows: 60,
+        find,
         // A Window of another report is never shown beside this one's rows: the pivot asks again, and the grid
         // stands on what it holds meanwhile. Any other failure is the grid's to say (ADR-0025).
         onFetchFailed: ({ error }) => {

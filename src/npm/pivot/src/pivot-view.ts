@@ -11,7 +11,7 @@
 import {
     gridTextGeometry, type GridColumnWidthChange, type GridDensity, type GridHandle, type GridOptions, type GridSelection, type GridTextGeometry,
     type CellPosition, type GridCommand, type GridContextMenuContext,
-    type FetchingGridSource, type ViewportSize,
+    type FetchingGridSource, type GridRefusal, type ViewportSize,
 } from '@ex-grid/core';
 import {
     FetchingPivotSource, LocalPivotReportSource, chooseLayout, defaultMaxLeaves, emptyPivotLayout, formatPivotCount, isLayoutChosen, isValuesPseudoField,
@@ -31,6 +31,7 @@ import { clearStyle, element, writeStyle } from './dom';
 import { defined, elementAt, unreachable } from './must';
 import { fieldSettingsPanel, valueFieldSettingsPanel, type PivotPanel } from './panels';
 import { cellItems, ReportColumns, reportRows, type PivotCellItems } from './report-grid';
+import { reportMatch, type ReportFindRead } from './report-find';
 import { captionOfRemove, removeNamedFieldId, reportMenuCommands, valueFieldAt } from './report-menu';
 import { layoutChoiceId, PivotScreenWords } from './words';
 
@@ -915,6 +916,7 @@ export class PivotView {
             answered: answer,
             nextRequestId: () => this.#nextRequestId(),
             moved: () => { this.#reportMoved(answer); },
+            findGivenUp: why => { this.#findGivenUp(answer, why); },
         });
         this.#drawGrid();
         if (question.toggled !== undefined) this.#placeToggled(question.toggled);
@@ -984,6 +986,9 @@ export class PivotView {
             onCellDoubleClick: cell => { this.#doubleClicked(cell); },
             onSelectionChanged: selection => { this.#selectionChanged(selection); },
             contextCommands: this.#contextCommands,
+            // Find over the report as shown, and its painted matches marked by the rule it finds by (ADR-0332).
+            findMatch: reportMatch,
+            onRefused: this.#gridRefused,
             commandLabel: this.#commandLabel,
             ...(rowHeight === undefined ? {} : { rowHeight }),
             ...(density === undefined ? {} : { density }),
@@ -991,6 +996,28 @@ export class PivotView {
         if (this.#grid === undefined) this.#grid = this.#mountGrid(this.#gridRoot, options);
         else this.#grid.update(options);
     }
+
+    // A Find step over the report that cannot go on is said on the Pivot Toolbar, while that report is the one shown:
+    // a step over a report since replaced is the grid's to drop, as its source is no longer the grid's (ADR-0332 §1).
+    #findGivenUp(answer: PivotReportState, why: Exclude<ReportFindRead, { readonly kind: 'answered' }>): void {
+        if (this.#destroyed || this.#shown.answer !== answer) return;
+        switch (why.kind) {
+            case 'notHeld': this.#refusal = this.#words.word('find-report-not-held'); break;
+            case 'refused': this.#refusal = this.#words.fill('source-refused', why.refusal.message); break;
+            case 'invalid': this.#refusal = this.#words.word('find-invalid-answer'); break;
+            default: unreachable(why);
+        }
+        this.#draw();
+    }
+
+    // The report grid's refusals: Ctrl+H on a report, which is not written, is said on the Pivot Toolbar in Excel's
+    // words (ADR-0332 §2). The refusals the find panel shows itself are left to it. Held in a field: its identity
+    // reaches the grid.
+    readonly #gridRefused = (refusal: GridRefusal<PivotDisplayRow>): void => {
+        if (this.#destroyed || refusal.kind !== 'find' || refusal.reason !== 'replaceUnavailable') return;
+        this.#refusal = this.#words.word('replace-unavailable');
+        this.#draw();
+    };
 
     // A width the user dragged a column to is the Consumer's to hand back (ADR-0016): the pivot keeps it, by the
     // column's name, for every report that has the column.
