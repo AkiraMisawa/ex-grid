@@ -380,8 +380,18 @@ const answer = await source.aggregate(query, controller.signal);</code></pre>
             <code>@@ex-grid/pivot-react</code>) hears those notices itself and asks the report on screen again, under its
             layout, as the Blazor component does: a notice after a quiet spell at once, and the notices that come within
             <code>redrawInterval</code> of the last change shown (250 ms unless given) gathered into one question, asked
-            when the interval ends. A notice of the version already on screen asks nothing, and a question out is never
-            cancelled by one: its answer is shown, and the changes that came meanwhile are asked for after it.
+            when the interval ends. A notice of the version already on screen asks nothing (unless the report is stale,
+            below), and a question out is never
+            cancelled by one: its answer is shown, and the changes that came meanwhile are asked for after it. Such a
+            question is asked quietly: the pivot is not marked busy for it, so a ticking report does not flicker.
+        </p>
+        <p>
+            Newer data the report cannot show leaves a Stale Report, as on the
+            <a href="expivot/live">Live data</a> page: an answer past <code>maxLeaves</code>, a refusal or a failure of
+            the source keeps the report on the last data it could show, with its numbers muted, and a notice under the
+            Pivot Toolbar says as of when and why, with Retry, which asks the source again. While it is stale, Copy is
+            refused, saying the time the data is as of. The next answer for newer data, or Retry's, ends it. A failure of the
+            source is raised to <code>onFailed</code>; one the notice says is thrown no further.
         </p>
         <pre class="docs-code"><code>const pivot = createPivot(element, {
     source,                       // a SnapshotPivotSource, or a FetchingPivotSource with a transport

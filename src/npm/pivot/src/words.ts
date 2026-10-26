@@ -30,7 +30,12 @@ export class PivotScreenWords {
 
     /** What a source that threw says where the user sees it. */
     failed(error: unknown): string {
-        return this.fill('source-failed', error instanceof Error ? error.message : String(error));
+        return this.fill('source-failed', messageOf(error));
+    }
+
+    /** What a Stale Report says of a source that threw while asked for newer data (ADR-0067). */
+    staleFailed(error: unknown): string {
+        return this.fill('stale-source-failed', messageOf(error));
     }
 
     /** What a Pivot Source's refusal says where the user sees it: data that moved on under the report asks for a
@@ -74,4 +79,9 @@ export function layoutChoiceId(choice: PivotLayoutChoice): string {
         case 'doNotRepeatItemLabels': return 'do-not-repeat-item-labels';
         default: return unreachable(choice);
     }
+}
+
+// What a thrown value says: an Error's message, and anything else as it prints.
+function messageOf(error: unknown): string {
+    return error instanceof Error ? error.message : String(error);
 }

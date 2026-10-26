@@ -59,6 +59,15 @@ export interface PivotRefusedEvent {
     readonly fields: readonly string[];
 }
 
+/** The Pivot Source failed to answer the report's newest question (ADR-0067). */
+export interface PivotFailedEvent {
+    /** What the source threw. */
+    readonly error: unknown;
+    /** Whether the report on screen stays as a Stale Report, whose notice says the failure: such a failure is raised here
+     * and thrown no further. Any other is said in the Pivot Toolbar, and thrown on after it is raised. */
+    readonly stale: boolean;
+}
+
 /** The report's selection, as the grid raised it, and what its cells stand for. */
 export interface PivotSelectionChangedEvent {
     /** The selection of the report grid. */
@@ -86,6 +95,9 @@ export interface PivotViewOptions {
     readonly onLayoutChanged?: (event: PivotLayoutChangedEvent) => void;
     /** Raised when a move is refused, with the sentence the pivot shows. */
     readonly onRefused?: (event: PivotRefusedEvent) => void;
+    /** Raised when the Pivot Source fails to answer the report's newest question, as the Razor component keeps
+     * `LastError`: a live source whose transport is down is heard of here (ADR-0067). */
+    readonly onFailed?: (event: PivotFailedEvent) => void;
     /** The locale numbers, dates and counts are written in and text Items ordered by: a BCP 47 tag, or
      * `invariant`, which the pivot reads unless given (ADR-0370 section 10). A React adapter passes the
      * browser's language. It changes no word. */
@@ -131,8 +143,16 @@ export interface PivotViewOptions {
 
 export type { MountGrid } from './details-view';
 
-/** Why a question was asked: a move of the user's, a layout the Consumer handed in, or new data. */
-type Cause = 'user' | 'consumer' | 'data';
+/** Why a question was asked: a move of the user's, a layout the Consumer handed in, newer data a person or the Consumer
+ * asked for (Refresh, Retry, a new source), or newer data the source told of, which is asked quietly, without the loading
+ * indication, so a live report does not flicker (ADR-0067). */
+type Cause = 'user' | 'consumer' | 'data' | 'live';
+
+/** Whether a question was asked for newer data: its answer marks what changed, and one it cannot show leaves a Stale
+ * Report (ADR-0067). */
+function asksData(cause: Cause): boolean {
+    return cause === 'data' || cause === 'live';
+}
 
 /** The redraw interval unless the Consumer gives one, in milliseconds: the Razor component's `DefaultRedrawInterval`
  * (ADR-0067). */
@@ -156,6 +176,8 @@ interface Question {
     /** Whether it answers changes of data the source told of: those gathered when it was asked, and those the
      * question it superseded carried (ADR-0067). */
     readonly carries: boolean;
+    /** Who asked it: the user's move, the Consumer's layout or settings, Refresh or Retry, or the source's notice. */
+    readonly cause: Cause;
     /** What it is asked of and under: the rows of its answer are asked of the same, with the same. */
     readonly reportSource: LocalPivotReportSource;
     /** The Pivot Source its report source asks, which Show Details asks for the records behind a cell. */
@@ -274,7 +296,7 @@ function checkedOptions(options: PivotViewOptions): PivotViewOptions {
     }
     const slicing = given['slicing'];
     if (slicing !== undefined && (typeof slicing !== 'object' || slicing === null)) throw new TypeError('slicing is an object.');
-    for (const name of ['onLayoutChanged', 'onRefused', 'onShowFieldListChanged', 'onSelectionChanged', 'onShowDetails', 'label']) {
+    for (const name of ['onLayoutChanged', 'onRefused', 'onFailed', 'onShowFieldListChanged', 'onSelectionChanged', 'onShowDetails', 'label']) {
         const handler = given[name];
         if (handler !== undefined && typeof handler !== 'function') throw new TypeError(`${name} is a function.`);
     }
@@ -311,6 +333,12 @@ export class PivotView {
     readonly #mountGrid: MountGrid;
     readonly #report: HTMLElement;
     readonly #notice: HTMLElement;
+    // The Stale Report's live region under the Pivot Toolbar, always present, and the notice it holds while the report
+    // is stale: the sentence, and Retry (ADR-0067).
+    readonly #staleRegion: HTMLElement;
+    readonly #staleNotice: HTMLElement;
+    readonly #staleMessage: HTMLElement;
+    readonly #retryButton: HTMLButtonElement;
     readonly #fieldListToggle: HTMLButtonElement;
     readonly #refreshButton: HTMLButtonElement;
     readonly #layoutAnchor: HTMLElement;
@@ -366,6 +394,15 @@ export class PivotView {
     // the timer that waits; and how to stop hearing the report source's notices.
     #changed = false;
     #changedTo: string | undefined;
+    // The Stale Report (ADR-0067): what happened while the newest data cannot be shown, and when the data the report
+    // shows arrived, which the notice and a refused Copy say.
+    #stale: string | undefined;
+    // Whether what left the report stale was a question that refreshed the Pivot Source, which Retry then asks again
+    // rather than the report alone: asking a source that did not refresh would show its old data as the newest.
+    #staleRetryRefreshes = false;
+    #shownAt = Date.now();
+    // The time of the data shown as last said, and what it was said for: the time, the locale and the day.
+    #asOfSaid: { readonly key: string; readonly text: string } | undefined;
     #lastDataShown: number | undefined;
     #redrawTimer: ReturnType<typeof setTimeout> | undefined;
     #stopHearing: (() => void) | undefined;
@@ -459,6 +496,19 @@ export class PivotView {
         toolbar.append(start, end);
         this.#notice = div('ex-pivot-refusal-notice');
         this.#notice.setAttribute('role', 'alert');
+        // A polite live region, always present, so a notice that appears in it is announced without interrupting the
+        // reader as the Pivot Toolbar's refusal of their own change does. Empty, it takes no room.
+        this.#staleRegion = div('ex-pivot-stale');
+        this.#staleRegion.setAttribute('role', 'status');
+        this.#staleNotice = div('ex-pivot-stale-notice');
+        this.#staleMessage = document.createElement('span');
+        this.#staleMessage.className = 'ex-pivot-stale-message';
+        this.#retryButton = document.createElement('button');
+        this.#retryButton.type = 'button';
+        this.#retryButton.className = 'ex-pivot-retry';
+        this.#retryButton.setAttribute('data-ex-claims', 'click');
+        this.#retryButton.addEventListener('click', () => { this.#retry(); });
+        this.#staleNotice.append(this.#staleMessage, this.#retryButton);
         this.#sheet = div('ex-pivot-sheet');
         // Records covering the report take no drop meant for it.
         this.#sheet.addEventListener('dragover', event => {
@@ -475,7 +525,7 @@ export class PivotView {
         this.#dropRemove = div('ex-pivot-report-drop-remove');
         this.#dropRemove.setAttribute('aria-hidden', 'true');
         this.#dropRemove.append(document.createElement('span'));
-        this.#report.append(toolbar, this.#notice, this.#sheet);
+        this.#report.append(toolbar, this.#notice, this.#staleRegion, this.#sheet);
         this.#fieldListBox = div('ex-pivot-field-list');
         this.#fieldListBox.setAttribute('role', 'region');
         const scroll = div('ex-pivot-field-list-scroll');
@@ -785,7 +835,7 @@ export class PivotView {
         const raise = asked === 'user' || (again && superseded.raise);
         // A question asked while a Refresh is owed asks the Pivot Source again, and marks what changed, whatever asked it.
         const refreshData = this.#refreshOwed;
-        const markChanges = asked === 'data' || refreshData || (again && superseded.markChanges);
+        const markChanges = asksData(asked) || refreshData || (again && superseded.markChanges);
         // An Item toggled into the layout keeps the Focus in its report, asked again or not.
         const focusOn = toggled ?? (again ? superseded.toggled : undefined);
         // A user's move made while a user's question was out was taken against it, and carries its moves on.
@@ -806,7 +856,7 @@ export class PivotView {
             return;
         }
         const question: Question = {
-            layout, generation, controller: new AbortController(), raise, markChanges, refreshData, moves: Object.freeze(moves), carries,
+            layout, generation, controller: new AbortController(), raise, markChanges, refreshData, moves: Object.freeze(moves), carries, cause: asked,
             reportSource: this.#reportSource, source: this.#options.source, settings: this.#settings, locale: this.#locale, maxLeaves: this.#maxLeaves,
             toggled: focusOn,
         };
@@ -830,18 +880,30 @@ export class PivotView {
         } catch (error) { // oxlint-disable-line ex-grid/no-catch -- a superseded question's failure is nobody's; the newest one's is said where the user sees it and rethrown
             if (!current()) return;
             this.#asked = undefined;
-            this.#refusal = this.#words.failed(error);
+            const stale = this.#staleFor(question);
+            if (stale) this.#markStale(this.#words.staleFailed(error), question);
+            else this.#refusal = this.#words.failed(error);
             this.#draw();
-            // A failure is said where the user sees it, and asked again only by the next notice, Refresh or move: asking
-            // again on the clock would ask a failing source once per interval.
+            // A failure is said where the user sees it, and asked again only by the next notice, Refresh, Retry or move:
+            // asking again on the clock would ask a failing source once per interval.
             this.#landed(question, undefined, false);
-            throw error;
+            this.#options.onFailed?.(Object.freeze({ error, stale }));
+            // A failure the Stale Report says is raised and thrown no further, as the Razor component keeps it in
+            // LastError: a live source whose transport is down would otherwise throw once for each notice. Any other is
+            // rethrown.
+            if (!stale) throw error;
+            return;
         }
         // Late and superseded: a newer question was asked, and this answers a layout no longer wanted.
         if (!current()) return;
         this.#asked = undefined;
         if (update.refusal !== undefined) {
-            this.#refuse(update.refusal, question);
+            if (this.#staleFor(question)) {
+                this.#markStale(this.#staleRefusalOf(update.refusal, question), question);
+                this.#draw();
+            } else {
+                this.#refuse(update.refusal, question);
+            }
             // The report on screen stays on its layout, and the changes the refused question carried are gathered again
             // for it: a refusal of the user's move is no reason to leave the totals before them on screen. A refusal of
             // the layout on screen itself is said, and asked again only by the next notice, Refresh or move.
@@ -850,11 +912,67 @@ export class PivotView {
         }
         // The data on screen is the Pivot Source's as it is now: the Refresh is paid.
         if (question.refreshData) this.#refreshOwed = false;
+        // Newer data, or data asked for again, ends a Stale Report; the time of the data shown moves with its version, and
+        // with its source, whose versions are its own.
+        const shown = this.#shown;
+        const newer = shown.answer?.metadata.sourceVersion !== update.metadata.sourceVersion || shown.question?.reportSource !== question.reportSource;
+        if (newer) this.#shownAt = Date.now();
+        if (newer || asksData(question.cause)) {
+            this.#stale = undefined;
+            this.#staleRetryRefreshes = false;
+        }
         this.#showLayout(question.layout, { answer: update, question }, question.raise);
         this.#landed(question, update.metadata.sourceVersion, false);
     }
 
     // ---- Changes of data (ADR-0067) --------------------------------------------------------------------
+
+    // Whether a question that could not be shown leaves a Stale Report rather than a refusal: one the data asked, for the
+    // layout of the report on screen. A move of the user's or the Consumer's is refused, and the pane goes back.
+    #staleFor(question: Question): boolean {
+        return asksData(question.cause) && this.#shown.answer !== undefined && question.layout === this.#shown.layout;
+    }
+
+    #markStale(sentence: string, question: Question): void {
+        this.#stale = sentence;
+        this.#staleRetryRefreshes = question.refreshData;
+    }
+
+    // What a refusal of newer data says, after the time of the data shown. A refusal the report source made itself, and
+    // not the Pivot Source, is its failure to answer, as the Razor component says it.
+    #staleRefusalOf(refusal: PivotReportRefusal, question: Question): string {
+        const source = refusal.sourceRefusal;
+        if (source === undefined) return this.#words.fill('stale-source-failed', refusal.message);
+        if (source.kind === 'tooManyLeaves') return this.#words.fill('stale-too-many-cells', formatPivotCount(source.limit ?? question.maxLeaves, question.locale));
+        return this.#words.fill('stale-source-refused', source.message);
+    }
+
+    // The Stale Report's Retry asks again what failed: Refresh, when that is what failed, otherwise the report's question
+    // of the Pivot Source (ADR-0067). Either asks the Pivot Source itself, as the Razor component's Retry does: a report
+    // source that kept its last answer would give back the data the report already shows, and the notice would go.
+    #retry(): void {
+        if (this.#staleRetryRefreshes) {
+            this.#refresh();
+            return;
+        }
+        this.#refreshOwed = true;
+        this.#refusal = undefined;
+        this.#ask(this.#layoutAhead, 'data', []);
+        this.#draw();
+    }
+
+    // When the data the report shows arrived, in the report's locale: the time, and the date too when it is not today's,
+    // since a time alone would say the report is fresher than it is.
+    #asOf(): string {
+        const at = new Date(this.#shownAt);
+        const today = new Date().toDateString() === at.toDateString();
+        const key = `${this.#shownAt} ${this.#locale} ${today ? 'today' : 'before'}`;
+        if (this.#asOfSaid?.key !== key) {
+            const text = new Intl.DateTimeFormat(this.#locale, today ? { timeStyle: 'medium' } : { dateStyle: 'short', timeStyle: 'medium' }).format(at);
+            this.#asOfSaid = { key, text };
+        }
+        return this.#asOfSaid.text;
+    }
 
     // Hears the report source's notices, and no longer the one before: a source handed over is asked from nothing, and
     // that question answers whatever was gathered.
@@ -872,7 +990,7 @@ export class PivotView {
     #sourceChanged(reportSource: LocalPivotReportSource, changed: PivotSourceChanged): void {
         if (this.#destroyed || reportSource !== this.#reportSource) return;
         const { answer, question } = this.#shown;
-        if (!this.#changed && this.#asked === undefined && changed.sourceVersion !== undefined && question?.reportSource === reportSource
+        if (!this.#changed && this.#asked === undefined && this.#stale === undefined && changed.sourceVersion !== undefined && question?.reportSource === reportSource
             && answer?.metadata.sourceVersion === changed.sourceVersion) {
             return;
         }
@@ -895,7 +1013,7 @@ export class PivotView {
         const now = performance.now();
         const due = this.#lastDataShown === undefined ? now : this.#lastDataShown + this.#redrawInterval;
         if (due <= now) {
-            this.#ask(ahead, 'data', []);
+            this.#ask(ahead, 'live', []);
             this.#draw();
             return;
         }
@@ -1157,6 +1275,9 @@ export class PivotView {
         if (metadata === undefined || source === undefined || rows === undefined || request.rowSequenceVersion !== rows.snapshot().rowSequenceVersion) {
             return refuse(this.#words.word('data-changed'));
         }
+        // A Stale Report shows the data as of its time, and says so beside it; pasted elsewhere, the numbers would lose
+        // that and look current. So Copy is refused, saying as of when, until Retry brings the newest (ADR-0067).
+        if (this.#stale !== undefined) return refuse(this.#words.fill('copy-stale-report', this.#asOf()));
         const { plan } = request;
         const version = metadata.version;
         const answer = await source.copy(Object.freeze({
@@ -1815,6 +1936,36 @@ export class PivotView {
         this.#draw();
     }
 
+    // Whether a question is out under the loading indication: any but the quiet one a source's notice asked.
+    #loading(): boolean {
+        return this.#asked !== undefined && this.#asked.cause !== 'live';
+    }
+
+    // The Stale Report's notice, and the class by which ExPivot's stylesheet mutes the report's numbers (ADR-0067). Retry
+    // is not offered twice at once: while a question a person or the Consumer asked is out, it is the one Retry would
+    // ask. A quiet one for the source's notice leaves Retry offered, or a ticking source would hardly ever let it be
+    // pressed.
+    #drawStale(words: PivotScreenWords): void {
+        const stale = this.#stale !== undefined && this.#shown.answer !== undefined ? this.#stale : undefined;
+        this.#report.classList.toggle('ex-pivot-report-stale', stale !== undefined);
+        // Retry taken away or disabled while it holds the keyboard hands it to the Field List toggle, so the keyboard stays
+        // in the pivot, on a button whose press asks nothing of the source.
+        const held = this.#root.ownerDocument.activeElement === this.#retryButton;
+        const handOn = (): void => { if (held) this.#fieldListToggle.focus(); };
+        if (stale === undefined) {
+            this.#staleNotice.remove();
+            handOn();
+            return;
+        }
+        const message = words.fill('stale-report', this.#asOf(), stale);
+        if (this.#staleMessage.textContent !== message) this.#staleMessage.textContent = message;
+        const retry = words.word('retry');
+        if (this.#retryButton.textContent !== retry) this.#retryButton.textContent = retry;
+        this.#retryButton.disabled = this.#loading();
+        if (this.#retryButton.disabled) handOn();
+        if (this.#staleNotice.parentNode !== this.#staleRegion) this.#staleRegion.append(this.#staleNotice);
+    }
+
     #draw(): void {
         if (this.#destroyed) return;
         const words = this.#words;
@@ -1829,8 +1980,9 @@ export class PivotView {
         const width = this.#options.fieldListWidth ?? 300; // oxlint-disable-line ex-grid/no-stand-in-default -- ADR-0061: the Field List's declared default width, as the Razor component's
         // The Geometry Tokens, inline on the root (ADR-0027): the Field List's width and a level's indent.
         writeStyle(this.#root, `--ex-pivot-field-list-width: ${width}px; --ex-pivot-indent: ${this.#indentPx}px${stretch ? '; height: 100%; flex: 1 1 auto; min-height: 0' : ''}`);
-        if (this.#asked === undefined) this.#root.removeAttribute('aria-busy');
-        else this.#root.setAttribute('aria-busy', 'true');
+        // A question for the newer data the source told of is asked quietly, so a live report is not busy every interval.
+        if (this.#loading()) this.#root.setAttribute('aria-busy', 'true');
+        else this.#root.removeAttribute('aria-busy');
         this.#fieldListToggle.textContent = words.word('field-list-toggle');
         this.#refreshButton.textContent = words.word('refresh');
         if (!this.#options.source.features.canRefresh) {
@@ -1842,6 +1994,7 @@ export class PivotView {
         this.#fieldListToggle.setAttribute('aria-pressed', this.#fieldListShown ? 'true' : 'false');
         if (this.#notice.textContent !== (this.#refusal ?? '')) this.#notice.textContent = this.#refusal ?? ''; // oxlint-disable-line ex-grid/no-stand-in-default -- no refusal is an empty notice, which takes no room
         this.#notice.hidden = this.#refusal === undefined;
+        this.#drawStale(words);
         writeStyle(this.#sheet, stretch ? 'display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0' : '');
         const answered = this.#reportDrawn;
         // The report or the box that says why there is none, and over the report, while a placed field is
