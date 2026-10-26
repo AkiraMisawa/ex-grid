@@ -323,6 +323,16 @@ export class CellTextMetrics {
         return own === undefined ? w.otherWidthPx : own * this.#glyphScale;
     }
 
+    /** Each glyph the table holds, by code point, at the width these metrics charge it: the glyphs a report
+     * source estimating label widths elsewhere is told, as C#'s `ExportGlyphWidths` tells them (ADR-0151). */
+    exportGlyphWidths(): Readonly<Record<number, number>> {
+        const widths: Record<number, number> = {};
+        if (this.#glyphs !== undefined) {
+            for (const point of this.#glyphs.codePoints) widths[point] = this.#widthOf(point);
+        }
+        return Object.freeze(widths);
+    }
+
     /** The width of the text alone, no padding: what an action label's box is measured from (ADR-0020).
      * O(n) over the text, and no layout read (ADR-0021). */
     textWidthPx(text: string): number {
