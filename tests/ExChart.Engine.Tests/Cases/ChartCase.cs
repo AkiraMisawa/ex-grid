@@ -17,7 +17,7 @@ internal sealed class ChartCase(JsonElement file, JsonElement entry)
 {
     private static readonly string[] Operations =
         ["scene", "drawing", "thin", "through", "tenor", "nice", "steps", "decades", "logSteps", "fit", "horizontal", "candles", "legendMembers", "format", "appearance", "mesh", "slice", "slicePath",
-         "reading", "summary", "csv"];
+         "reading", "summary", "csv", "surfaceSummary"];
 
     // What a scene is laid out with, which the tooltip and the summary read their scene by.
     private static readonly string[] SceneKeys = ["metrics", "view", "style", "independentScales", "legend"];
@@ -206,6 +206,11 @@ internal sealed class ChartCase(JsonElement file, JsonElement entry)
                 return Surface(op.GetProperty("surface")).SliceChart(Slice(args));
             case "slicePath":
                 return SurfaceMesh.SlicePath(Surface(op.GetProperty("surface")), Slice(args));
+            case "surfaceSummary":
+                Allow(args, "surfaceSummary", "title", "description");
+                return SurfaceMesh.Summary(Surface(op.GetProperty("surface")),
+                    args.TryGetProperty("title", out var surfaceTitle) ? surfaceTitle.GetString() : null,
+                    args.TryGetProperty("description", out var surfaceDescription) ? surfaceDescription.GetString() : null);
             case "appearance":
                 Allow(args, "appearance", "colourSlots");
                 return Appearance.Of(Definition(op.GetProperty("definition")),

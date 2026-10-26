@@ -15,6 +15,8 @@
       "react-dom/*": ["./node_modules/@types/react-dom/*"],
       "@ex-grid/core": ["../../src/npm/core/src/index.ts"],
       "@ex-grid/react": ["../../src/npm/react/src/index.ts"],
+      "@ex-grid/chart": ["../../src/npm/chart/src/index.ts"],
+      "@ex-grid/chart-react": ["../../src/npm/chart-react/src/index.ts"],
       "@ex-grid/data": ["../../src/npm/data/src/index.ts"],
       "@ex-grid/pivot-engine": ["../../src/npm/pivot-engine/src/index.ts"],
       "@ex-grid/pivot": ["../../src/npm/pivot/src/index.ts"],

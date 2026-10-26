@@ -1248,6 +1248,166 @@
           ]
         }
       ]
+    },
+    {
+      "name": "ADR-0275: the surface is said in words, holes included",
+      "surface": "volHole",
+      "surfaceSummary": {
+        "title": "EURUSD"
+      },
+      "expect": [
+        {
+          "at": "$",
+          "is": "EURUSD, a 3D surface of Volatility over Delta from 10P to 25C and Tenor from 1M to 1Y; 4 by 3 points, from 9.20% to 11.40%, with 1 hole where the data has no value."
+        }
+      ]
+    },
+    {
+      "name": "ADR-0275: without a title the surface is named a 3D surface, and the Consumer's description ends it",
+      "surface": "vol",
+      "surfaceSummary": {
+        "description": "Quoted at the close."
+      },
+      "expect": [
+        {
+          "at": "$",
+          "is": "3D surface of Volatility over Delta from 10P to 25C and Tenor from 1M to 1Y; 4 by 3 points, from 9.20% to 11.40%. Quoted at the close."
+        }
+      ]
+    },
+    {
+      "name": "ADR-0275, ADR-0312: the summary says a logarithmic vertical scale",
+      "surface": {
+        "x": {
+          "title": "Strike",
+          "values": [
+            1,
+            2,
+            3
+          ]
+        },
+        "y": {
+          "title": "Tenor",
+          "values": [
+            "1M",
+            "1Y"
+          ]
+        },
+        "z": [
+          [
+            1,
+            10,
+            100
+          ],
+          [
+            1,
+            10,
+            100
+          ]
+        ],
+        "zTitle": "P&L",
+        "zScale": "logarithmic"
+      },
+      "surfaceSummary": {},
+      "expect": [
+        {
+          "at": "$",
+          "is": "3D surface of P&L over Strike from 1 to 3 and Tenor from 1M to 1Y; 3 by 2 points, from 1 to 100. The vertical scale is logarithmic."
+        }
+      ]
+    },
+    {
+      "name": "ADR-0275, ADR-0310: the summary says colours that diverge from a centre",
+      "surface": {
+        "x": {
+          "title": "Strike",
+          "values": [
+            1,
+            2,
+            3
+          ]
+        },
+        "y": {
+          "title": "Tenor",
+          "values": [
+            "1M",
+            "1Y"
+          ]
+        },
+        "z": [
+          [
+            -1,
+            0,
+            10
+          ],
+          [
+            -1,
+            0,
+            10
+          ]
+        ],
+        "zTitle": "P&L",
+        "centre": 0
+      },
+      "surfaceSummary": {},
+      "expect": [
+        {
+          "at": "$",
+          "is": "3D surface of P&L over Strike from 1 to 3 and Tenor from 1M to 1Y; 3 by 2 points, from -1 to 10. Coloured by distance from 0, below and above."
+        }
+      ]
+    },
+    {
+      "name": "ADR-0275, ADR-0257: the summary names the Consumer's interpolation",
+      "surface": {
+        "x": {
+          "title": "Strike",
+          "values": [
+            1,
+            2,
+            3
+          ]
+        },
+        "y": {
+          "title": "Tenor",
+          "values": [
+            "1M",
+            "1Y"
+          ]
+        },
+        "z": [
+          [
+            1,
+            10,
+            100
+          ],
+          [
+            1,
+            10,
+            100
+          ]
+        ],
+        "zTitle": "P&L",
+        "method": "cubic spline"
+      },
+      "surfaceSummary": {},
+      "expect": [
+        {
+          "at": "$",
+          "is": "3D surface of P&L over Strike from 1 to 3 and Tenor from 1M to 1Y; 3 by 2 points, from 1 to 100. Interpolated by the Consumer: cubic spline."
+        }
+      ]
+    },
+    {
+      "name": "ADR-0275, ADR-0311: the summary of a Consumer's mesh counts its nodes and triangles",
+      "surface": "square",
+      "surfaceSummary": {},
+      "expect": [
+        {
+          "at": "$",
+          "is": "3D surface of u over x from 0 to 1 and y from 0 to 1; a mesh of 4 nodes and 2 triangles, from 0 to 2."
+        }
+      ]
     }
   ]
 }

@@ -8,15 +8,19 @@
 // against it is refused with it, and the pane goes back to the layout the report shows (ADR-0370 section 3,
 // spine rule 6). Nothing waits on a clock.
 
-import type { GridColumnWidthChange, GridDensity, GridHandle, GridOptions, CellPosition, FetchingGridSource, ViewportSize } from '@ex-grid/core';
+import {
+    gridTextGeometry, type GridColumnWidthChange, type GridDensity, type GridHandle, type GridOptions, type GridSelection, type GridTextGeometry,
+    type CellPosition,
+    type FetchingGridSource, type ViewportSize,
+} from '@ex-grid/core';
 import {
     FetchingPivotSource, LocalPivotReportSource, defaultMaxLeaves, emptyPivotLayout, formatPivotCount, pivotValueCaptions, placementOf,
-    pivotWordIdList, setCollapsed, validateLayout, type PivotDisplayRow, type PivotItemCounts, type PivotLabel, type PivotLayout,
-    type PivotReportRefusal, type PivotReportSettings, type PivotReportState, type PivotSlicing, type PivotSource,
+    isItemCollapsed, pivotWordIdList, setCollapsed, validateLayout, type PivotDisplayRow, type PivotItemCounts, type PivotLabel, type PivotLayout,
+    type PivotReportRefusal, type PivotReportSettings, type PivotReportState, type PivotSlicing, type PivotSource, type PivotToggle,
 } from '@ex-grid/pivot-engine';
 import { FieldListView, type FieldListEdit, type FieldListMove } from './field-list';
 import { elementAt } from './must';
-import { reportColumns, reportRows } from './report-grid';
+import { cellItems, ReportColumns, reportRows, type PivotCellItems } from './report-grid';
 import { PivotScreenWords } from './words';
 
 /** A Pivot Layout the user made and the report now shows. */
@@ -38,6 +42,17 @@ export interface PivotRefusedEvent {
     /** The fields the refusal names, in the order they were moved: every move taken against the refused
      * question, which went with it. Empty where it names none. */
     readonly fields: readonly string[];
+}
+
+/** The report's selection, as the grid raised it, and what its cells stand for. */
+export interface PivotSelectionChangedEvent {
+    /** The selection of the report grid. */
+    readonly selection: GridSelection;
+    /** Each selected cell's row and column Items, each cell once, in the order selected (ADR-0340); `undefined`
+     * when the selection reaches a row the grid does not hold drawn now, which is read from no Items rather than
+     * from some of them (spine rule 1), and when no report is shown. A selection dropped over a report is said with
+     * an empty list. */
+    readonly items: readonly PivotCellItems[] | undefined;
 }
 
 /** An ExPivot's options (ADR-0370 section 1): what the Consumer hands, whole, on every update. */
@@ -65,6 +80,9 @@ export interface PivotViewOptions {
     readonly label?: PivotLabel;
     /** Whether the Field List stands beside the report; true unless given. */
     readonly showFieldList?: boolean;
+    /** Raised when the report's selection changes, with what its cells stand for: what a Board reads its links
+     * by (ADR-0340). */
+    readonly onSelectionChanged?: (event: PivotSelectionChangedEvent) => void;
     /** Raised when the user shows or hides the Field List. */
     readonly onShowFieldListChanged?: (event: PivotFieldListShownEvent) => void;
     /** The Field List's width in pixels; 300 unless given. */
@@ -185,6 +203,9 @@ export class PivotView {
     readonly #slicing: PivotSlicing | undefined;
     #options: PivotViewOptions;
     #words: PivotScreenWords;
+    // The text geometry of the report grid's density: what its label widths are estimated under, and a level's indent.
+    #geometry: GridTextGeometry;
+    #columns: ReportColumns;
     #settings: PivotReportSettings;
     #reportSource: LocalPivotReportSource;
     // The report source the rows on screen read their Windows from: the one before a new source's answer lands.
@@ -216,6 +237,8 @@ export class PivotView {
         this.#mountGrid = mountGrid;
         this.#slicing = options.slicing;
         this.#words = new PivotScreenWords(options.label);
+        this.#geometry = gridTextGeometry(options.density === undefined ? {} : { density: options.density });
+        this.#columns = this.#columnsOf(options);
         this.#settings = this.#settingsOf(options);
         this.#fieldListShown = options.showFieldList !== false;
         this.#layoutGiven = options.layout;
@@ -313,8 +336,11 @@ export class PivotView {
         if (asked !== undefined) validateLayout(asked, this.#declared(options.source));
         this.#options = options;
         if (layoutMoved) this.#layoutGiven = options.layout;
-        const settingsMoved = options.locale !== before.locale || options.label !== before.label;
+        const densityMoved = options.density !== before.density;
+        const settingsMoved = options.locale !== before.locale || options.label !== before.label || densityMoved;
         if (options.label !== before.label) this.#words = new PivotScreenWords(options.label);
+        if (densityMoved) this.#geometry = gridTextGeometry(options.density === undefined ? {} : { density: options.density });
+        if (options.label !== before.label || densityMoved) this.#columns = this.#columnsOf(options);
         if (settingsMoved) this.#settings = this.#settingsOf(options);
         if (options.showFieldList !== before.showFieldList) this.#fieldListShown = options.showFieldList !== false;
         if (sourceMoved) {
@@ -381,9 +407,26 @@ export class PivotView {
         return this.#localeOf(this.#options);
     }
 
+    // The report source estimates the label widths under the grid's text geometry, as the Razor component tells it
+    // the grid's Cell Metrics (ADR-0151).
     #settingsOf(options: PivotViewOptions): PivotReportSettings {
         const words = wordsRecord(options.label);
-        return Object.freeze({ locale: this.#localeOf(options), ...(words === undefined ? {} : { words }) });
+        return Object.freeze({ locale: this.#localeOf(options), labelMetrics: this.#geometry, ...(words === undefined ? {} : { words }) });
+    }
+
+    // A level's indent and a button's side: the em of the grid's font, rounded as .NET rounds it, which is what the
+    // report source charges a level (ADR-0151).
+    get #indentPx(): number {
+        return roundHalfToEven(this.#geometry.fullWidthPx);
+    }
+
+    #columnsOf(options: PivotViewOptions): ReportColumns {
+        const words = this.#words;
+        return new ReportColumns(Object.freeze({
+            indentPx: this.#indentPx,
+            toggleName: (toggle: PivotToggle) => words.fill(toggle.isCollapsed ? 'expand-item' : 'collapse-item', toggle.itemLabel),
+            toggled: (toggle: PivotToggle) => { this.#toggled(toggle); },
+        }), options.density);
     }
 
     #localeOf(options: PivotViewOptions): string {
@@ -602,7 +645,7 @@ export class PivotView {
         const question = this.#shown.question;
         if (answer === undefined || rows === undefined || question === undefined) return;
         const { locale } = question;
-        const { columns, headerGroups, pinnedColumnCount } = reportColumns(answer.metadata, this.#userWidths);
+        const { columns, headerGroups, pinnedColumnCount } = this.#columns.of(answer.metadata, this.#userWidths);
         const { rowHeight, density, label } = this.#options;
         const options: GridOptions<PivotDisplayRow> = {
             columns,
@@ -617,6 +660,7 @@ export class PivotView {
             hideColumnMenu: true,
             onColumnWidthChanged: change => { this.#widthChanged(change); },
             onCellDoubleClick: cell => { this.#doubleClicked(cell); },
+            onSelectionChanged: selection => { this.#selectionChanged(selection); },
             ...(label === undefined ? {} : { commandLabel: label }),
             ...(rowHeight === undefined ? {} : { rowHeight }),
             ...(density === undefined ? {} : { density }),
@@ -632,6 +676,30 @@ export class PivotView {
         this.#drawGrid();
     }
 
+    // The grid's selection, said with what its cells stand for, read from the rows the grid holds when it is
+    // raised: each report is a new source, so a selection the grid keeps is over the same report's rows, and one
+    // over another report is dropped and raised again (ADR-0011). The Items are read when first asked for, from
+    // what was held then, so a selection dragged over thousands of cells costs nothing until a Consumer reads it.
+    #selectionChanged(selection: GridSelection): void {
+        const raise = this.#options.onSelectionChanged;
+        if (raise === undefined || this.#destroyed) return;
+        const answer = this.#shown.answer;
+        const state = this.#rows?.snapshot();
+        const metadata = answer?.metadata;
+        let read = false;
+        let items: readonly PivotCellItems[] | undefined;
+        raise(Object.freeze({
+            selection,
+            get items(): readonly PivotCellItems[] | undefined {
+                if (!read) {
+                    read = true;
+                    if (metadata !== undefined && state !== undefined) items = cellItems(selection, metadata, state.window, state.windowStart);
+                }
+                return items;
+            },
+        }));
+    }
+
     // A double click on an outer Item's label expands or collapses it, as Excel's does (ADR-0063).
     #doubleClicked(cell: CellPosition): void {
         const answer = this.#shown.answer;
@@ -641,8 +709,20 @@ export class PivotView {
         const row = state.window[cell.row - state.windowStart];
         if (row === undefined) return;
         const toggle = elementAt(row.labels, cell.column).toggle;
-        if (toggle === undefined) return;
-        this.#move(setCollapsed(this.#paneLayout, toggle.field, toggle.item, !toggle.isCollapsed), undefined);
+        if (toggle !== undefined) this.#toggled(toggle);
+    }
+
+    // An outer Item's button pressed, or its label double clicked: the Item is collapsed or expanded (ADR-0063).
+    // The press does what the button it was taken on said, against the pane's layout, the one the newest question
+    // asks for; where that layout no longer holds the Item as the button painted it, a press already moved it, or
+    // its field left the pane, and the press is refused rather than turned into its opposite (spine rule 6). Two
+    // presses of one painted button collapse once, as the Razor component's do.
+    #toggled(toggle: PivotToggle): void {
+        if (this.#destroyed) return;
+        const pane = this.#paneLayout;
+        const placed = pane.rows.find(placement => placement.field === toggle.field);
+        if (placed === undefined || isItemCollapsed(placed, toggle.item) !== toggle.isCollapsed) return;
+        this.#move(setCollapsed(pane, toggle.field, toggle.item, !toggle.isCollapsed), undefined);
     }
 
     // ---- Drawing ---------------------------------------------------------------------------------------
@@ -665,7 +745,7 @@ export class PivotView {
         const stretch = this.#options.viewportHeight === 'stretch';
         const width = this.#options.fieldListWidth ?? 300; // oxlint-disable-line ex-grid/no-stand-in-default -- ADR-0061: the Field List's declared default width, as the Razor component's
         // The Geometry Tokens, inline on the root (ADR-0027): the Field List's width and a level's indent.
-        this.#root.setAttribute('style', `--ex-pivot-field-list-width: ${width}px; --ex-pivot-indent: 16px${stretch ? '; height: 100%; flex: 1 1 auto; min-height: 0' : ''}`);
+        this.#root.setAttribute('style', `--ex-pivot-field-list-width: ${width}px; --ex-pivot-indent: ${this.#indentPx}px${stretch ? '; height: 100%; flex: 1 1 auto; min-height: 0' : ''}`);
         if (this.#asked === undefined) this.#root.removeAttribute('aria-busy');
         else this.#root.setAttribute('aria-busy', 'true');
         this.#fieldListToggle.textContent = words.word('field-list-toggle');
@@ -705,4 +785,13 @@ export class PivotView {
             });
         }
     }
+}
+
+// .NET's Math.Round, which sends a tie to the even number (CONVENTIONS.md).
+function roundHalfToEven(value: number): number {
+    const floor = Math.floor(value);
+    const diff = value - floor;
+    if (diff < 0.5) return floor;
+    if (diff > 0.5) return floor + 1;
+    return floor % 2 === 0 ? floor : floor + 1;
 }

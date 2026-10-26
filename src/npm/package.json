@@ -9,6 +9,7 @@
     "data",
     "core",
     "chart",
+    "chart-react",
     "pivot-engine",
     "pivot",
     "board",

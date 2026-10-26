@@ -459,6 +459,13 @@ export interface GridHeaderGroup {
 }
 
 // @public
+export function gridHeaderRequiredPx(label: string, options: {
+    readonly density?: GridDensity;
+    readonly menuButton: boolean;
+    readonly sortable: boolean;
+}): number;
+
+// @public
 export const gridLabelIds: Readonly<{
     readonly nameBox: 'name-box';
     readonly formulaBar: 'formula-bar';
@@ -718,6 +725,22 @@ export interface GridTemplateCell<Row> {
     readonly row: Row;
     readonly takeKeyboard: (control: HTMLElement) => void;
 }
+
+// @public
+export interface GridTextGeometry {
+    readonly cellHorizontalPaddingPx: number;
+    readonly digitWidthPx: number;
+    readonly fullWidthPx: number;
+    readonly glyphWidths: Readonly<Record<number, number>>;
+    readonly narrowWidthPx: number;
+    readonly otherWidthPx: number;
+    readonly wideWidthPx: number;
+}
+
+// @public
+export function gridTextGeometry(options?: {
+    readonly density?: GridDensity;
+}): GridTextGeometry;
 
 // @public
 export class GridViewState {
