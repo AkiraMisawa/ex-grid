@@ -1,0 +1,260 @@
+{
+  "about": "Column widths (ADR-0046, SH-22, SH-26): part of the Sheet Document, in characters (ADR-0047), of two kinds, set by the user or widened by an entry, recorded as runs and carried through insertions, deletions and undo. The non-finite widths .NET can pass are in ColumnWidthTests. Transcribed from ExSheet.Engine.Tests' ColumnWidthTests.",
+  "kind": "sheet",
+  "culture": "en-US",
+  "cases": [
+    {
+      "name": "ADR-0046 (SH-22): a width the user never set stays default and is not recorded",
+      "steps": [
+        {"read": true, "expect": {"columnWidths": {"A": null, "XFD": null}, "document": {"columnWidths": []}, "documentJson": "{\"version\":9,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"cells\":[]}"}}
+      ]
+    },
+    {
+      "name": "ADR-0046, ADR-0048 (SH-22): setting a width is one step on every column the range spans, undone and redone exactly",
+      "steps": [
+        {"do": {"setColumnWidth": {"columns": "C:C", "width": 12}}},
+        {"remember": "before"},
+        {"do": {"setColumnWidth": {"columns": "B:D", "width": 20.5}}, "expect": {"columnWidths": {"A": null, "B": {"width": 20.5, "kind": "setByUser"}, "C": {"width": 20.5, "kind": "setByUser"}, "D": {"width": 20.5, "kind": "setByUser"}, "E": null}, "change": {"columns": [1, 2, 3], "rows": [], "valueChanges": []}}},
+        {"remember": "after"},
+        {"undo": "last", "expect": {"picture": "before", "columnWidths": {"C": {"width": 12, "kind": "setByUser"}}, "change": {"columns": [1, 2, 3]}}},
+        {"redo": "last", "expect": {"picture": "after", "change": {"columns": [1, 2, 3]}}}
+      ]
+    },
+    {
+      "name": "ADR-0046: a range's columns are what it sets, as Excel's Range.ColumnWidth sets them",
+      "steps": [
+        {"setColumnWidth": {"columns": "B2:C9", "width": 15}},
+        {"read": true, "expect": {"columnWidths": {"B": {"width": 15, "kind": "setByUser"}, "C": {"width": 15, "kind": "setByUser"}, "D": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0046 (SH-22): putting a column back at the default width records nothing again",
+      "steps": [
+        {"remember": "before"},
+        {"setColumnWidth": {"columns": "B:C", "width": 15}},
+        {"setColumnWidth": {"columns": "B:B", "width": null}, "expect": {"columnWidths": {"B": null, "C": {"width": 15, "kind": "setByUser"}}, "change": {"columns": [1]}}},
+        {"setColumnWidth": {"columns": "C:C", "width": null}, "expect": {"picture": "before"}}
+      ]
+    },
+    {
+      "name": "ADR-0046: setting the width a column already has changes nothing",
+      "steps": [
+        {"setColumnWidth": {"columns": "B:B", "width": 15}},
+        {"setColumnWidth": {"columns": "B:B", "width": 15}, "expect": {"change": {"columns": []}}},
+        {"setColumnWidth": {"columns": "C:C", "width": null}, "expect": {"change": {"columns": []}}}
+      ]
+    },
+    {
+      "name": "ADR-0046: a width is more than 0 and at most Excel's 255 characters; 0 would hide the column, which is not in the first version: 0",
+      "steps": [
+        {"do": {"setColumnWidth": {"columns": "B:B", "width": 0}}, "expect": {"throws": {"refusal": "argument"}}},
+        {"setColumnWidth": {"columns": "B:B", "width": 0}, "expect": {"throws": {"refusal": "argument"}, "columnWidths": {"B": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0046: a width is more than 0 and at most Excel's 255 characters; 0 would hide the column, which is not in the first version: -1",
+      "steps": [
+        {"do": {"setColumnWidth": {"columns": "B:B", "width": -1}}, "expect": {"throws": {"refusal": "argument"}}},
+        {"setColumnWidth": {"columns": "B:B", "width": -1}, "expect": {"throws": {"refusal": "argument"}, "columnWidths": {"B": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0046: a width is more than 0 and at most Excel's 255 characters; 0 would hide the column, which is not in the first version: 255.01",
+      "steps": [
+        {"do": {"setColumnWidth": {"columns": "B:B", "width": 255.01}}, "expect": {"throws": {"refusal": "argument"}}},
+        {"setColumnWidth": {"columns": "B:B", "width": 255.01}, "expect": {"throws": {"refusal": "argument"}, "columnWidths": {"B": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0046: the widest column Excel allows is accepted",
+      "steps": [
+        {"setColumnWidth": {"columns": "B:B", "width": 255}},
+        {"read": true, "expect": {"columnWidths": {"B": {"width": 255, "kind": "setByUser"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0046 (SH-22): inserted columns take the width of the column to their left, as they take its formats; the rest move right",
+      "steps": [
+        {"setColumnWidth": {"columns": "B:B", "width": 20}},
+        {"setColumnWidth": {"columns": "D:D", "width": 30}},
+        {"remember": "before"},
+        {"do": {"insertColumns": [2, 2]}, "expect": {"columnWidths": {"B": {"width": 20, "kind": "setByUser"}, "C": {"width": 20, "kind": "setByUser"}, "D": {"width": 20, "kind": "setByUser"}, "E": null, "F": {"width": 30, "kind": "setByUser"}, "G": null}, "change": {"columns": [2, 3, 5]}}},
+        {"undo": "last", "expect": {"picture": "before", "change": {"columns": [2, 3, 5]}}}
+      ]
+    },
+    {
+      "name": "ADR-0046: a column inserted after a default-width column is at the default width",
+      "steps": [
+        {"setColumnWidth": {"columns": "C:C", "width": 20}},
+        {"do": {"insertColumns": [2]}, "expect": {"columnWidths": {"C": null, "D": {"width": 20, "kind": "setByUser"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0046: columns inserted at A have no column to their left, and take no width",
+      "steps": [
+        {"setColumnWidth": {"columns": "A:A", "width": 20}},
+        {"do": {"insertColumns": [0]}, "expect": {"columnWidths": {"A": null, "B": {"width": 20, "kind": "setByUser"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0046 (SH-22): deleted columns drop their widths, the rest move left, and undoing puts every width back",
+      "steps": [
+        {"setColumnWidth": {"columns": "B:C", "width": 20}},
+        {"setColumnWidth": {"columns": "E:E", "width": 30}},
+        {"remember": "before"},
+        {"do": {"deleteColumns": [1, 2]}, "expect": {"columnWidths": {"B": null, "C": {"width": 30, "kind": "setByUser"}, "E": null}, "change": {"columns": [1, 2, 4]}}},
+        {"undo": "last", "expect": {"picture": "before"}}
+      ]
+    },
+    {
+      "name": "ADR-0046: a width pushed off the right edge by an insertion is dropped, and undoing puts it back",
+      "steps": [
+        {"setColumnWidth": {"columns": "XFD:XFD", "width": 20}},
+        {"remember": "before"},
+        {"do": {"insertColumns": [0]}, "expect": {"document": {"columnWidths": []}}},
+        {"undo": "last", "expect": {"picture": "before"}}
+      ]
+    },
+    {
+      "name": "ADR-0046: inserting or deleting rows leaves the widths alone",
+      "steps": [
+        {"setColumnWidth": {"columns": "B:B", "width": 20}},
+        {"do": {"insertRows": [0, 3]}, "expect": {"change": {"columns": []}}},
+        {"do": {"deleteRows": [0, 2]}, "expect": {"change": {"columns": []}, "columnWidths": {"B": {"width": 20, "kind": "setByUser"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0046, ADR-0048 (SH-22): widths are recorded as runs of adjacent columns and round-trip",
+      "steps": [
+        {"setColumnWidth": {"columns": "B:D", "width": 20}},
+        {"setColumnWidth": {"columns": "E:E", "width": 12.5}},
+        {"setColumnWidth": {"columns": "G:G", "width": 20}},
+        {"enter": {"B2": "1"}, "expect": {"documentJson": "{\"version\":9,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"columnWidths\":[{\"at\":\"B:D\",\"width\":20,\"kind\":\"setByUser\"},{\"at\":\"E:E\",\"width\":12.5,\"kind\":\"setByUser\"},{\"at\":\"G:G\",\"width\":20,\"kind\":\"setByUser\"}],\"cells\":[{\"at\":\"B2\",\"number\":1}]}"}},
+        {"reopen": {"sheetJson": "{\"version\":9,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"columnWidths\":[{\"at\":\"B:D\",\"width\":20,\"kind\":\"setByUser\"},{\"at\":\"E:E\",\"width\":12.5,\"kind\":\"setByUser\"},{\"at\":\"G:G\",\"width\":20,\"kind\":\"setByUser\"}],\"cells\":[{\"at\":\"B2\",\"number\":1}]}"}, "expect": {"columnWidths": {"C": {"width": 20, "kind": "setByUser"}, "E": {"width": 12.5, "kind": "setByUser"}, "F": null}, "documentJson": "{\"version\":9,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"columnWidths\":[{\"at\":\"B:D\",\"width\":20,\"kind\":\"setByUser\"},{\"at\":\"E:E\",\"width\":12.5,\"kind\":\"setByUser\"},{\"at\":\"G:G\",\"width\":20,\"kind\":\"setByUser\"}],\"cells\":[{\"at\":\"B2\",\"number\":1}]}"}}
+      ]
+    },
+    {
+      "name": "ADR-0046: a width set on every column is one run, and reads back",
+      "steps": [
+        {"setColumnWidth": {"columns": "A:XFD", "width": 10}},
+        {"read": true, "expect": {"document": {"columnWidths": [{"first": 0, "last": 16383, "width": 10}]}}},
+        {"reopen": {"sheet": "Sheet1"}, "expect": {"columnWidths": {"XFD": {"width": 10, "kind": "setByUser"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-22): a version 3 document still opens, every column at the default width",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":3,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"columns\":[{\"at\":\"B:B\",\"format\":\"0.00\"}],\"cells\":[]}"}, "expect": {"document": {"columnWidths": []}, "columnWidths": {"B": null}, "documentJson": "{\"version\":9,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"columns\":[{\"at\":\"B:B\",\"format\":\"0.00\"}],\"cells\":[]}"}}
+      ]
+    },
+    {
+      "name": "ADR-0046 (2026-09-28, SH-26): the existing form records a width the user set, marked custom",
+      "steps": [
+        {"do": {"setColumnWidth": {"columns": "B:C", "width": 20}}},
+        {"setColumnWidth": {"columns": "E:E", "width": 12}},
+        {"read": true, "expect": {"columnWidths": {"B": {"width": 20, "kind": "setByUser", "isCustom": true, "isSetByUser": true}, "C": {"width": 20, "kind": "setByUser"}, "E": {"width": 12, "kind": "setByUser"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0046 (2026-09-28, SH-26): a width an entry widened the column to is recorded as widened by entry, marked custom as Excel marks it; undone and redone exactly",
+      "steps": [
+        {"remember": "before"},
+        {"do": {"setAutomaticColumnWidth": {"columns": "B:B", "width": 11}}, "expect": {"change": {"columns": [1]}}},
+        {"setAutomaticColumnWidth": {"columns": "D:D", "width": 12}, "expect": {"change": {"columns": [3]}, "columnWidths": {"B": {"width": 11, "kind": "widenedByEntry", "isCustom": true, "isSetByUser": false}, "D": {"width": 12, "kind": "widenedByEntry"}}}},
+        {"setColumnWidth": {"columns": "D:D", "width": null}},
+        {"undo": "last", "expect": {"picture": "before"}},
+        {"redo": "last", "expect": {"columnWidths": {"B": {"width": 11, "kind": "widenedByEntry"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0046: a width widened by entry has the same limits as any other: 0",
+      "steps": [
+        {"do": {"setAutomaticColumnWidth": {"columns": "B:B", "width": 0}}, "expect": {"throws": {"refusal": "argument"}}},
+        {"setAutomaticColumnWidth": {"columns": "B:B", "width": 0}, "expect": {"throws": {"refusal": "argument"}, "columnWidths": {"B": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0046: a width widened by entry has the same limits as any other: 255.01",
+      "steps": [
+        {"do": {"setAutomaticColumnWidth": {"columns": "B:B", "width": 255.01}}, "expect": {"throws": {"refusal": "argument"}}},
+        {"setAutomaticColumnWidth": {"columns": "B:B", "width": 255.01}, "expect": {"throws": {"refusal": "argument"}, "columnWidths": {"B": null}}}
+      ]
+    },
+    {
+      "name": "ADR-0046 (2026-09-28, SH-26): the user setting a width over one widened by entry makes it the user's, a change even at the same width, and undoing it puts the entry's kind back",
+      "steps": [
+        {"setAutomaticColumnWidth": {"columns": "B:B", "width": 11}},
+        {"do": {"setColumnWidth": {"columns": "B:B", "width": 11}}, "expect": {"columnWidths": {"B": {"width": 11, "kind": "setByUser"}}, "change": {"columns": [1]}}},
+        {"undo": "last", "expect": {"columnWidths": {"B": {"width": 11, "kind": "widenedByEntry"}}, "change": {"columns": [1]}}}
+      ]
+    },
+    {
+      "name": "ADR-0046 (seventeenth Windows run, b10; CW-023): an inserted column takes the width widened by entry of the column to its left as the user's, the column to its left keeps its kind, and undoing and redoing are exact",
+      "steps": [
+        {"setAutomaticColumnWidth": {"columns": "B:B", "width": 11}},
+        {"setColumnWidth": {"columns": "C:C", "width": 20}},
+        {"remember": "before"},
+        {"do": {"insertColumns": [2, 2]}, "expect": {"columnWidths": {"B": {"width": 11, "kind": "widenedByEntry"}, "C": {"width": 11, "kind": "setByUser"}, "D": {"width": 11, "kind": "setByUser"}, "E": {"width": 20, "kind": "setByUser"}}, "change": {"columns": [2, 3, 4]}}},
+        {"remember": "after"},
+        {"undo": "last", "expect": {"picture": "before"}},
+        {"redo": "last", "expect": {"picture": "after"}}
+      ]
+    },
+    {
+      "name": "ADR-0046 (SH-22): an inserted column takes the user's width to its left as the user's, unchanged by the rule for a width widened by entry (CW-024)",
+      "steps": [
+        {"setColumnWidth": {"columns": "B:B", "width": 20}},
+        {"do": {"insertColumns": [2]}, "expect": {"columnWidths": {"B": {"width": 20, "kind": "setByUser"}, "C": {"width": 20, "kind": "setByUser"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0046 (seventeenth Windows run, b10; CW-025): deletion moves every width with its kind, one widened by entry staying widened by entry, and undoing puts both back",
+      "steps": [
+        {"setAutomaticColumnWidth": {"columns": "B:B", "width": 11}},
+        {"setColumnWidth": {"columns": "C:C", "width": 20}},
+        {"setAutomaticColumnWidth": {"columns": "D:D", "width": 12}},
+        {"remember": "before"},
+        {"do": {"deleteColumns": [1]}, "expect": {"columnWidths": {"B": {"width": 20, "kind": "setByUser"}, "C": {"width": 12, "kind": "widenedByEntry"}}}},
+        {"undo": "last", "expect": {"picture": "before", "columnWidths": {"B": {"width": 11, "kind": "widenedByEntry"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0046 (seventeenth Windows run, b10; CW-023): undoing a deletion is not an insertion: the deleted column's width widened by entry comes back of its own kind, not the user's",
+      "steps": [
+        {"setAutomaticColumnWidth": {"columns": "B:C", "width": 11}},
+        {"do": {"deleteColumns": [2]}},
+        {"undo": "last", "expect": {"columnWidths": {"B": {"width": 11, "kind": "widenedByEntry"}, "C": {"width": 11, "kind": "widenedByEntry"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0046 (2026-09-28), ADR-0048: the document records each width's kind, adjacent columns alike in both as one run, and round-trips it",
+      "steps": [
+        {"setAutomaticColumnWidth": {"columns": "B:C", "width": 11}},
+        {"setColumnWidth": {"columns": "D:D", "width": 11}},
+        {"setAutomaticColumnWidth": {"columns": "E:E", "width": 11}},
+        {"read": true, "expect": {"documentJson": "{\"version\":9,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"columnWidths\":[{\"at\":\"B:C\",\"width\":11,\"kind\":\"widenedByEntry\"},{\"at\":\"D:D\",\"width\":11,\"kind\":\"setByUser\"},{\"at\":\"E:E\",\"width\":11,\"kind\":\"widenedByEntry\"}],\"cells\":[]}"}},
+        {"reopen": {"sheetJson": "{\"version\":9,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"columnWidths\":[{\"at\":\"B:C\",\"width\":11,\"kind\":\"widenedByEntry\"},{\"at\":\"D:D\",\"width\":11,\"kind\":\"setByUser\"},{\"at\":\"E:E\",\"width\":11,\"kind\":\"widenedByEntry\"}],\"cells\":[]}"}, "expect": {"columnWidths": {"C": {"width": 11, "kind": "widenedByEntry"}, "D": {"width": 11, "kind": "setByUser"}}, "documentJson": "{\"version\":9,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"columnWidths\":[{\"at\":\"B:C\",\"width\":11,\"kind\":\"widenedByEntry\"},{\"at\":\"D:D\",\"width\":11,\"kind\":\"setByUser\"},{\"at\":\"E:E\",\"width\":11,\"kind\":\"widenedByEntry\"}],\"cells\":[]}"}}
+      ]
+    },
+    {
+      "name": "ADR-0046, ADR-0048: a version 4 document still opens, and every width it recorded is the user's, as version 4 meant",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":4,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"columnWidths\":[{\"at\":\"B:C\",\"width\":20}],\"cells\":[]}"}, "expect": {"document": {"columnWidths": [{"first": 1, "last": 2, "isCustom": true}]}, "columnWidths": {"C": {"width": 20, "kind": "setByUser"}}, "documentJson": "{\"version\":9,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"columnWidths\":[{\"at\":\"B:C\",\"width\":20,\"kind\":\"setByUser\"}],\"cells\":[]}"}}
+      ]
+    },
+    {
+      "name": "ADR-0046 (2026-09-28), ADR-0048: a version 5 document still opens: a custom width is the user's, and any other was widened by entry, as version 5 meant",
+      "steps": [
+        {"reopen": {"sheetJson": "{\"version\":5,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"columnWidths\":[{\"at\":\"B:B\",\"width\":20,\"custom\":true},{\"at\":\"C:C\",\"width\":11,\"custom\":false}],\"cells\":[]}"}, "expect": {"document": {"columnWidths": [{"isCustom": true}, {"isCustom": true}]}, "columnWidths": {"B": {"width": 20, "kind": "setByUser"}, "C": {"width": 11, "kind": "widenedByEntry"}}, "documentJson": "{\"version\":9,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"columnWidths\":[{\"at\":\"B:B\",\"width\":20,\"kind\":\"setByUser\"},{\"at\":\"C:C\",\"width\":11,\"kind\":\"widenedByEntry\"}],\"cells\":[]}"}}
+      ]
+    },
+    {
+      "name": "ADR-0071 case 17: the cells a Number Format may widen a column for are the range's Entries, a whole column's included, and a formatted blank is not one",
+      "steps": [
+        {"enter": {"B2": "1", "B1048576": "=1/3", "C2": "abc"}},
+        {"setNumberFormat": {"B3": "0.00"}},
+        {"read": true, "expect": {"entryAddressesIn": {"B:B": ["B2", "B1048576"], "2:2": ["B2", "C2"], "A1:B3": ["B2"], "B3": []}}}
+      ]
+    }
+  ]
+}

@@ -23,3 +23,14 @@ export const gridCommandIds = Object.freeze({
     /** The Context Menu's copy of the selection with its headers (ADR-0005, ADR-0036). */
     copyWithHeaders: 'copy-with-headers',
 } as const);
+
+/**
+ * The ids of the names the core gives its own fields (ADR-0051, ADR-0203), for assistive technology: a Consumer's
+ * `commandLabel` answers them in its own words, as it answers a command's.
+ */
+export const gridLabelIds = Object.freeze({
+    /** The Formula Bar's Name Box. */
+    nameBox: 'name-box',
+    /** The Formula Bar's text field. */
+    formulaBar: 'formula-bar',
+} as const);

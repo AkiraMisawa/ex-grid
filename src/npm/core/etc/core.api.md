@@ -289,6 +289,14 @@ export type FormatCodeReading = {
 export type FormatCodeValue = SnapshotDecimal | number | bigint;
 
 // @public
+export interface FormulaBarOptions<Row> {
+    readonly formulaBarBorrowedText?: (row: Row, column: GridColumn<Row>) => string | undefined;
+    readonly nameBoxLabel?: (cell: CellPosition) => string;
+    readonly onNameBoxEntered?: (typed: string) => void;
+    readonly showFormulaBar?: boolean;
+}
+
+// @public
 export interface GridAction {
     readonly className?: string;
     readonly label: string;
@@ -438,6 +446,7 @@ export type GridFindResult = {
 // @public
 export interface GridHandle<Row> {
     destroy(): void;
+    placeSelection(range: SelectionRange, focus: CellPosition, rowSequenceVersion: number): boolean;
     update(options: GridOptions<Row>): void;
 }
 
@@ -450,10 +459,16 @@ export interface GridHeaderGroup {
 }
 
 // @public
+export const gridLabelIds: Readonly<{
+    readonly nameBox: 'name-box';
+    readonly formulaBar: 'formula-bar';
+}>;
+
+// @public
 export function gridNumberOf(value: SnapshotDecimal): number;
 
 // @public
-export interface GridOptions<Row> extends CellPaintOptions<Row> {
+export interface GridOptions<Row> extends CellPaintOptions<Row>, FormulaBarOptions<Row> {
     readonly columns: readonly GridColumn<Row>[];
     readonly commandLabel?: (id: string) => string | undefined;
     readonly contextCommands?: (context: GridContextMenuContext<Row>) => readonly GridCommand[];

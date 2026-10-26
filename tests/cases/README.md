@@ -752,9 +752,12 @@ each `[sheet, edit]`; `undo` and `redo` of the `last` step or
 of the step at an index among those done; `reopen` from the Workbook's `document` or that document's `json`,
 from `{"sheet": name}` (that one Sheet's Sheet Document, written to JSON and read back), or from a document
 the case writes, `{"sheetJson": text}` or `{"workbookJson": text}`; `remember` a picture of the Workbook by
-name; `read`; `copy` a `range` `as` a name for a later `paste`; `setNumberFormat`, `setAlignment` and
-`setCellFormat` (`ranges` and a `change`) directly, outside any step; `declareTable` and `pushTable` for a
-Linked Table, and `readTable`, its columns by name, or `{"name", "as"}` to hold the snapshot read under a label; `setToday`, `setSeed` and `recalculateVolatile`; `setClock`, a clock that starts `from` a
+name; `read`; `copy` a `range` `as` a name for a later `paste`; `setNumberFormat`, `setAlignment`,
+`setCellFormat` (`ranges` and a `change`), `setColumnWidth` and `setAutomaticColumnWidth` (`columns` and a `width`,
+`null` written for the default) and `rename` (the new name) directly, outside any step; `retype`, each cell of a list given its
+own Entry text back as the Cell Editor opens it; `declareTable` and `pushTable` for a
+Linked Table, and `readTable`, its columns by name, or `{"name", "as"}` to hold the snapshot read under a label; `setToday`, `setSeed` (a seed, or `{"seed", "changes"}` to set the count of changes with it, `null` written for no seed) and
+`recalculateVolatile`; `setClock`, a clock that starts `from` a
 moment written `yyyy-MM-ddTHH:mm:ss` and moves on a finite `step` of seconds each time it is read; and
 `getDisplay` of a cell `at` a `width`, so that a width refused is a refusal to expect; and `show`, the Sheet
 shown, by its name. Text a step types, and a text a reading of `formulas` or `entryTexts` expects, may be built
@@ -764,11 +767,14 @@ forms of `PasteText` that take `typed` fields cell by cell, with exact `entries`
 
 An expectation names readings: per cell, `values` (a string is text, a number a double, `true`/`false` a
 Boolean, `null` a Blank, `{"error": "#N/A"}` an Error Value, which compares in full, so that one written without
-`"refused": true` is never a refusal), `displays`, `texts`, `formulas`, `entryTexts`,
+`"refused": true` is never a refusal; a Value a case gives written so is a refusal as a Consumer holds one read from a
+refused cell), `displays`, `texts`, `formulas`, `entryTexts`,
 `entries`, `numberFormats`, `alignments`, `fonts`, `fills`, `borders`, `widthOnEntry` and `spilledFrom`; per
-range, `cellFormats` (the Cell Formats it shows, each once) and `edgeLines` (the lines along each outer edge),
-each a set written in the ordinal order of its members' JSON text as `JSON.stringify` writes it; of
-the Sheet, `document`, `documentJson` (its Sheet Document's JSON text, which both engines write alike), `columnWidths`, `entryAddresses` and `valueAddresses`; of the step, `change`,
+range, `cellFormats` (the Cell Formats it shows, each once), `entryAddressesIn` (its cells that hold an Entry, in row order) and `edgeLines` (the lines along each outer edge),
+each a set written in the ordinal order of its members' JSON text as `JSON.stringify` writes it; `alike`, groups of
+cells whose Values are one another's, a refusal alike only to a refusal, where the fact is that two Formulas answer the same
+and not what they answer; of
+the Sheet, `document`, `documentJson` (its Sheet Document's JSON text, which both engines write alike), `columnWidths`, `entryAddresses`, `valueAddresses` and `recalculationPasses` (how many passes its last recalculation made, ADR-0124); of the step, `change`,
 `changes` (what a step, an undo or a redo changed on each Sheet it reached, by the Sheet's name), `refusal`
 (a `check`'s), `isUndone`, `ranges`, `stepSheet` (the Sheet a step was done on or made), `changesSheets`, `sheetsReached` (the Sheets a step, an undo, a
 redo or a push reached, in order), `tableColumns` (what `readTable` read, `null` while the table waits), `heldTables` (each snapshot held, as it stands now), and
