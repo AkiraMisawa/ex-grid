@@ -3,11 +3,12 @@
 // inside its root, and decides nothing.
 
 import { createElement, useLayoutEffect, useRef, type ReactElement } from 'react';
-import { createPivot, type PivotHandle, type PivotViewOptions } from '@ex-grid/pivot';
+import { browserPivotLocale, createPivot, type PivotHandle, type PivotViewOptions } from '@ex-grid/pivot';
 
 /**
  * An ExPivot's props: the Script Core's options, whole. `locale` is the browser's language where not given,
- * read once when the pivot is made (ADR-0370 section 10); the core never reads it on its own.
+ * the first of its languages the pivot writes in, read once when the pivot is made (ADR-0370 section 10); the
+ * core never reads it on its own.
  */
 export type ExPivotProps = PivotViewOptions;
 
@@ -29,7 +30,7 @@ export function ExPivot(props: ExPivotProps): ReactElement {
     useLayoutEffect(() => {
         const root = element.current;
         if (root === null) throw new Error('Internal: React mounted no element for the pivot to draw into.');
-        browserLocale.current ??= navigator.language;
+        browserLocale.current ??= browserPivotLocale(navigator.languages.length > 0 ? navigator.languages : [navigator.language]);
         const options = withLocale(props, browserLocale.current);
         if (pivot.current === undefined) {
             pivot.current = createPivot(root, options);

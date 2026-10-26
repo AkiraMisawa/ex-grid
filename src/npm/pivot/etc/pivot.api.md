@@ -7,8 +7,12 @@
 import type { GridDensity } from '@ex-grid/core';
 import { PivotLabel } from '@ex-grid/pivot-engine';
 import { PivotLayout } from '@ex-grid/pivot-engine';
+import { PivotSlicing } from '@ex-grid/pivot-engine';
 import { PivotSource } from '@ex-grid/pivot-engine';
 import type { ViewportSize } from '@ex-grid/core';
+
+// @public
+export function browserPivotLocale(languages: readonly string[]): string;
 
 // @public
 export function createPivot(element: HTMLElement, options: PivotViewOptions): PivotHandle;
@@ -31,7 +35,7 @@ export interface PivotLayoutChangedEvent {
 
 // @public
 export interface PivotRefusedEvent {
-    readonly field?: string;
+    readonly fields: readonly string[];
     readonly message: string;
 }
 
@@ -48,6 +52,7 @@ export interface PivotViewOptions {
     readonly onShowFieldListChanged?: (event: PivotFieldListShownEvent) => void;
     readonly rowHeight?: number;
     readonly showFieldList?: boolean;
+    readonly slicing?: PivotSlicing;
     readonly source: PivotSource;
     readonly viewportHeight?: ViewportSize;
     readonly viewportWidth?: ViewportSize;

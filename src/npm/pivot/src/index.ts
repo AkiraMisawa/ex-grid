@@ -5,6 +5,7 @@
  *
  * @packageDocumentation
  */
+export { browserPivotLocale } from './browser-locale';
 export { createPivot } from './create-pivot';
 export type { PivotHandle } from './create-pivot';
 export type {

@@ -75,6 +75,19 @@ interface DropAt {
     readonly index: number;
 }
 
+/** A field's item in the list, and the parts of it a redraw changes. */
+interface FieldItem {
+    readonly item: HTMLElement;
+    readonly box: HTMLInputElement;
+    readonly count: HTMLElement;
+    readonly filtered: HTMLElement;
+}
+
+/** Text lowered for the search as the pivot's locale lowers it, never as the host's (ADR-0370 section 10). */
+function lowered(text: string, locale: string): string {
+    return locale === 'invariant' ? text.toLowerCase() : text.toLocaleLowerCase(locale);
+}
+
 interface AreaElements {
     readonly area: HTMLElement;
     readonly entries: HTMLElement;
@@ -112,7 +125,7 @@ export class FieldListView {
     #dropAt: DropAt | undefined;
     // The elements the drag paints, by what they stand for, so a drag repaints classes and never rebuilds the
     // element the browser is dragging.
-    #fieldItems = new Map<string, HTMLElement>();
+    #fieldItems = new Map<string, FieldItem>();
     #fieldsDrawnFrom: readonly PivotField[] | undefined;
     #areasDrawnFrom: { readonly layout: PivotLayout; readonly words: PivotScreenWords; readonly captions: string; readonly fields: readonly PivotField[] } | undefined;
     #entryItems: { readonly entry: PivotEntry; readonly element: HTMLElement; readonly index: number }[] = [];
@@ -171,6 +184,16 @@ export class FieldListView {
         body.append(this.#chooseCaption, this.#search, this.#list, this.#dragCaption, areas);
         pane.append(heading, body);
         root.append(pane);
+        // A drag that moves on from an Area, to the list or out of the pane, leaves that Area unmarked: an Area
+        // hears its own entry first, so what reaches the pane from outside every Area is somewhere else.
+        root.addEventListener('dragenter', event => {
+            const target = event.target;
+            if (!(target instanceof Node) || ![...this.#areas.values()].some(({ area }) => area.contains(target))) this.leaveTargets();
+        });
+        root.addEventListener('dragleave', event => {
+            const to = event.relatedTarget;
+            if (!(to instanceof Node) || !root.contains(to)) this.leaveTargets();
+        });
     }
 
     /** Draws `model`. A drag in progress is dropped when the layout it started on is no longer the pane's. */
@@ -200,6 +223,13 @@ export class FieldListView {
         return this.#drag?.subject.kind === 'entry' && !isValuesPseudoField(this.#drag.subject.entry);
     }
 
+    /** The drag is over no Area of the pane now: none is marked as its target. */
+    leaveTargets(): void {
+        if (this.#dropAt === undefined) return;
+        this.#dropAt = undefined;
+        this.#paintDrag();
+    }
+
     /** A drop on the report: a placed field dragged there is removed, as Excel removes it (ADR-0061). */
     dropOnReport(): void {
         this.#dropOnList();
@@ -211,61 +241,70 @@ export class FieldListView {
 
     #drawFields(): void {
         const model = this.#current;
-        const document = this.#root.ownerDocument;
-        const search = this.#searchText.toLocaleLowerCase();
+        const search = lowered(this.#searchText, model.locale);
         if (this.#fieldsDrawnFrom !== model.fields) {
             this.#fieldItems = new Map();
             this.#fieldsDrawnFrom = model.fields;
         }
         const items = model.fields
-            .filter(field => search === '' || field.caption.toLocaleLowerCase().includes(search))
+            .filter(field => search === '' || lowered(field.caption, model.locale).includes(search))
             .map(field => {
-                // Each field keeps its item while the source's fields are the same: a redraw while it is dragged,
-                // for counts that came in, never takes the element the browser is dragging out of the page.
-                let item = this.#fieldItems.get(field.name);
-                if (item === undefined) {
-                    item = element(document, 'li', 'ex-pivot-field');
-                    item.draggable = true;
-                    item.setAttribute('data-ex-field', field.name);
-                    item.addEventListener('dragstart', event => { this.#startDrag(event, { kind: 'field', field: field.name }); });
-                    item.addEventListener('dragend', () => { this.#endDrag(); });
-                    this.#fieldItems.set(field.name, item);
+                // Each field keeps its elements while the source's fields are the same, and a redraw changes what
+                // they say in place: the item the browser is dragging stays in the page, and the tick box the
+                // user just pressed keeps the keyboard.
+                let drawn = this.#fieldItems.get(field.name);
+                if (drawn === undefined) {
+                    drawn = this.#fieldItem(field);
+                    this.#fieldItems.set(field.name, drawn);
                 }
-                const label = element(document, 'label', 'ex-pivot-field-label');
-                const box = element(document, 'input');
-                box.type = 'checkbox';
-                box.setAttribute('data-ex-claims', 'click');
+                const { item, box, count, filtered } = drawn;
                 box.checked = placesField(model.layout, field.name);
-                box.addEventListener('change', () => { this.#tick(field); });
-                const caption = element(document, 'span', 'ex-pivot-field-caption');
-                caption.textContent = field.caption;
-                label.append(box, caption);
-                const parts: HTMLElement[] = [label];
-                const count = model.counts?.countOf(field.name);
-                if (count !== undefined) {
-                    const written = formatPivotCount(count, model.locale);
-                    const mark = element(document, 'span', 'ex-pivot-field-count');
-                    mark.textContent = written;
+                const counted = model.counts?.countOf(field.name);
+                if (counted === undefined) {
+                    count.remove();
+                } else {
+                    const written = formatPivotCount(counted, model.locale);
+                    count.textContent = written;
                     const said = model.words.fill('field-item-count', written);
-                    mark.title = said;
-                    mark.setAttribute('aria-label', said);
-                    parts.push(mark);
+                    count.title = said;
+                    count.setAttribute('aria-label', said);
+                    if (!count.isConnected) item.insertBefore(count, filtered.isConnected ? filtered : null);
                 }
                 const at = placementOf(model.layout, field.name);
                 if (at !== undefined && elementAt(placementsIn(model.layout, at.area), at.index).hiddenItems.length > 0) {
-                    const filtered = element(document, 'span', 'ex-pivot-filtered-mark');
-                    filtered.setAttribute('role', 'img');
                     const word = model.words.word('filtered');
                     filtered.setAttribute('aria-label', word);
                     filtered.title = word;
-                    parts.push(filtered);
+                    item.append(filtered);
+                } else {
+                    filtered.remove();
                 }
-                item.replaceChildren(...parts);
                 return item;
             });
         if (items.length !== this.#list.children.length || items.some((item, i) => this.#list.children[i] !== item)) {
             this.#list.replaceChildren(...items);
         }
+    }
+
+    #fieldItem(field: PivotField): FieldItem {
+        const document = this.#root.ownerDocument;
+        const item = element(document, 'li', 'ex-pivot-field');
+        item.draggable = true;
+        item.setAttribute('data-ex-field', field.name);
+        const label = element(document, 'label', 'ex-pivot-field-label');
+        const box = element(document, 'input');
+        box.type = 'checkbox';
+        box.setAttribute('data-ex-claims', 'click');
+        box.addEventListener('change', () => { this.#tick(field); });
+        const caption = element(document, 'span', 'ex-pivot-field-caption');
+        caption.textContent = field.caption;
+        label.append(box, caption);
+        item.append(label);
+        const filtered = element(document, 'span', 'ex-pivot-filtered-mark');
+        filtered.setAttribute('role', 'img');
+        item.addEventListener('dragstart', event => { this.#startDrag(event, { kind: 'field', field: field.name }); });
+        item.addEventListener('dragend', () => { this.#endDrag(); });
+        return { item, box, count: element(document, 'span', 'ex-pivot-field-count'), filtered };
     }
 
     #drawAreas(): void {
@@ -437,7 +476,7 @@ export class FieldListView {
         const drag = this.#drag;
         const at = this.#dropAt;
         const model = this.#model;
-        for (const [name, item] of this.#fieldItems) {
+        for (const [name, { item }] of this.#fieldItems) {
             item.classList.toggle('ex-pivot-dragging', drag?.subject.kind === 'field' && drag.subject.field === name);
         }
         for (const { entry, element: item, index } of this.#entryItems) {

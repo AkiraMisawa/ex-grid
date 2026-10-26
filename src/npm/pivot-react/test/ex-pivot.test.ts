@@ -24,16 +24,19 @@ const source = new RecordPivotSource(trades, fields);
 
 afterEach(() => { cleanup(); });
 
+/** The report's work yields to microtasks only, so what a test reads never depends on how fast it ran. */
+const slicing = Object.freeze({ yield: () => Promise.resolve() });
+
+/** Lets every answer already given land: all of it is microtasks, which a macrotask comes after. */
 async function settled(): Promise<void> {
     await act(async () => {
-        for (let i = 0; i < 20; i++) await Promise.resolve();
         await new Promise(resolve => { setTimeout(resolve, 0); });
     });
 }
 
 describe('ExPivot', () => {
     it('ADR-0370 section 1: the element React renders is the pivot\'s root, the report drawn by ExGrid beside the Field List', async () => {
-        const { container } = render(createElement(ExPivot, { source, layout: createPivotLayout({ rows: ['Region'], values: ['Amount'] }) }));
+        const { container } = render(createElement(ExPivot, { source, slicing, layout: createPivotLayout({ rows: ['Region'], values: ['Amount'] }) }));
         const root = container.firstElementChild;
         expect(root?.classList.contains('ex-pivot')).toBe(true);
         expect(root?.querySelector('.ex-pivot-pane-title')?.textContent).toBe('PivotTable Fields');
@@ -43,16 +46,17 @@ describe('ExPivot', () => {
     });
 
     it('ADR-0370 section 1: a render hands the pivot its props, and the same root keeps drawing', async () => {
-        const { container, rerender } = render(createElement(ExPivot, { source, showFieldList: true }));
+        const { container, rerender } = render(createElement(ExPivot, { source, slicing, showFieldList: true }));
         const root = container.firstElementChild;
-        rerender(createElement(ExPivot, { source, showFieldList: false }));
+        rerender(createElement(ExPivot, { source, slicing, showFieldList: false }));
         await settled();
         expect(container.firstElementChild).toBe(root);
         expect(root?.querySelector<HTMLElement>('.ex-pivot-field-list')?.hidden).toBe(true);
     });
 
     it('ADR-0370 section 10: given no locale, the pivot writes counts in the browser\'s language, read once when it is made', async () => {
-        Object.defineProperty(navigator, 'language', { value: 'de-DE', configurable: true });
+        // The browser ranks a language the pivot does not write in first: the next is taken.
+        Object.defineProperty(navigator, 'languages', { value: Object.freeze(['xx-YY', 'de-DE']), configurable: true });
         try {
             const counted = new FetchingPivotSource(source.fields, new PivotSourceFeatures(['sum'], false, true), {
                 aggregate: (query, signal) => source.aggregate(query, signal),
@@ -60,17 +64,17 @@ describe('ExPivot', () => {
                 items: (query, signal) => source.items(query, signal),
                 itemCounts: signal => source.itemCounts(signal),
             });
-            const { container } = render(createElement(ExPivot, { source: counted }));
+            const { container } = render(createElement(ExPivot, { source: counted, slicing }));
             await settled();
             const region = container.querySelector('.ex-pivot-field[data-ex-field="Region"] .ex-pivot-field-count');
             expect(region?.textContent).toBe('1.200');
         } finally {
-            Reflect.deleteProperty(navigator, 'language');
+            Reflect.deleteProperty(navigator, 'languages');
         }
     });
 
     it('ADR-0370 section 1: unmounting destroys the pivot, which empties its root', () => {
-        const { container, unmount } = render(createElement(ExPivot, { source }));
+        const { container, unmount } = render(createElement(ExPivot, { source, slicing }));
         const root = container.firstElementChild;
         unmount();
         expect(root?.childElementCount).toBe(0);

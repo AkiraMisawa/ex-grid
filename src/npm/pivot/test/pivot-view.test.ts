@@ -6,8 +6,9 @@ import { afterEach, describe, expect, it } from 'vitest';
 import type { GridHandle, GridOptions } from '@ex-grid/core';
 import {
     FetchingPivotSource, PivotSourceFeatures, RecordPivotSource, createPivotLayout, japanesePivotWords, pivotRecordField,
-    type PivotDisplayRow, type PivotLayout, type PivotSource,
+    type PivotDisplayRow, type PivotLayout, type PivotSlicing, type PivotSource,
 } from '@ex-grid/pivot-engine';
+import { browserPivotLocale } from '../src/browser-locale';
 import { PivotView, type PivotViewOptions } from '../src/pivot-view';
 
 interface Trade {
@@ -102,6 +103,9 @@ class GridStandIn {
     }
 }
 
+/** The report's work yields to microtasks only, so what a test reads never depends on how fast it ran. */
+const inTurn: PivotSlicing = Object.freeze({ yield: () => Promise.resolve() });
+
 let mounted: PivotView[] = [];
 
 afterEach(() => {
@@ -113,14 +117,14 @@ afterEach(() => {
 function mount(options: PivotViewOptions, grid = new GridStandIn()): { readonly view: PivotView; readonly root: HTMLElement; readonly grid: GridStandIn } {
     const root = document.createElement('div');
     document.body.append(root);
-    const view = new PivotView(root, options, grid.mount);
+    const view = new PivotView(root, { slicing: inTurn, ...options }, grid.mount);
     mounted.push(view);
     return { view, root, grid };
 }
 
-/** Lets every answer already given land. */
+/** Lets every answer already given land: the report's work yields only microtasks here, and the sources
+ * answer with resolved promises, so a macrotask comes after all of it, however long it takes. */
 async function settled(): Promise<void> {
-    for (let i = 0; i < 20; i++) await Promise.resolve();
     await new Promise(resolve => { setTimeout(resolve, 0); });
 }
 
@@ -358,5 +362,125 @@ describe('ExPivot over a server\'s Leaf Aggregates (ADR-0370 section 3)', () => 
         tick(root, 'Desk');
         await settled();
         expect(refused).toEqual(['This layout needs more than 3 cells.']);
+    });
+
+    it('ADR-0370 section 3: every move taken against a question that is refused is refused with it, and each is named', async () => {
+        const refused: { readonly message: string; readonly fields: readonly string[] }[] = [];
+        const { root } = mount({ source: server(), layout: byRegion, maxLeaves: 3, onRefused: event => refused.push(event) });
+        await settled();
+        drag(field(root, 'Desk'), 'dragstart');
+        drag(area(root, 'rows'), 'dragenter');
+        drag(area(root, 'rows'), 'drop');
+        // Before that question is answered, Region is moved to Columns: taken against it, and refused with it.
+        const region = area(root, 'rows').querySelector('.ex-pivot-entry');
+        if (region === null) throw new Error('Rows shows no Region entry.');
+        drag(region, 'dragstart');
+        drag(area(root, 'columns'), 'dragenter');
+        drag(area(root, 'columns'), 'drop');
+        await settled();
+        expect(refused).toEqual([{
+            message: 'Desk (3 items) in Rows makes more than 3 combinations, the most server data allows. Put Desk in Filters, or filter Desk first. '
+                + 'Region (2 items) in Columns makes more than 3 combinations, the most server data allows. Put Region in Filters, or filter Region first.',
+            fields: ['Desk', 'Region'],
+        }]);
+        expect([...area(root, 'rows').querySelectorAll('.ex-pivot-entry-caption')].map(e => e.textContent)).toEqual(['Region']);
+    });
+
+    it('ADR-0061: a drag that moves on from an Area to the list leaves the Area unmarked', async () => {
+        const { root } = mount({ source: server(), layout: createPivotLayout({ rows: ['Region', 'Desk'], values: ['Amount'] }) });
+        await settled();
+        const desk = area(root, 'rows').querySelectorAll('.ex-pivot-entry')[1];
+        if (desk === undefined) throw new Error('Desk stands in Rows.');
+        drag(desk, 'dragstart');
+        drag(area(root, 'columns'), 'dragenter');
+        expect(area(root, 'columns').classList.contains('ex-pivot-drop-target')).toBe(true);
+        drag(root.querySelector('.ex-pivot-fields') ?? root, 'dragenter');
+        expect(area(root, 'columns').classList.contains('ex-pivot-drop-target')).toBe(false);
+        expect(area(root, 'columns').querySelector('.ex-pivot-area-cap')?.textContent).toBe('');
+        drag(desk, 'dragend');
+    });
+
+    it('ADR-0061: the tick box the user pressed keeps the keyboard while the pane is drawn again', async () => {
+        const { root } = mount({ source: local(), layout: byRegion });
+        await settled();
+        const box = field(root, 'Desk').querySelector('input');
+        if (box === null) throw new Error('The field has no tick box.');
+        box.focus();
+        tick(root, 'Desk');
+        await settled();
+        expect(box.checked).toBe(true);
+        expect(root.ownerDocument.activeElement).toBe(box);
+    });
+});
+
+describe('ExPivot\'s options', () => {
+    it('ADR-0059: a layout this pivot raised before, handed back again, is asked for again', async () => {
+        const changed: PivotLayout[] = [];
+        const options: PivotViewOptions = { source: local(), layout: byRegion, onLayoutChanged: event => changed.push(event.layout) };
+        const { root, view } = mount(options);
+        await settled();
+        tick(root, 'Desk');
+        await settled();
+        tick(root, 'Region');
+        await settled();
+        const [both, deskOnly] = changed;
+        if (both === undefined || deskOnly === undefined) throw new Error('Two layouts were raised.');
+        view.update({ ...options, layout: deskOnly });
+        await settled();
+        expect(view.shownLayout).toBe(deskOnly);
+        // An undo: the earlier layout, handed back.
+        view.update({ ...options, layout: both });
+        await settled();
+        expect(view.shownLayout).toBe(both);
+    });
+
+    it('ADR-0059: a layout naming a field the source does not offer is refused, and the pivot stays as it was', async () => {
+        const options: PivotViewOptions = { source: local(), layout: byRegion };
+        const { view } = mount(options);
+        await settled();
+        const wrong = createPivotLayout({ rows: ['Customer'], values: ['Amount'] });
+        expect(() => { view.update({ ...options, layout: wrong }); }).toThrow(/Customer/);
+        expect(() => { view.update({ ...options, layout: wrong }); }).toThrow(/Customer/);
+        view.update(options);
+        await settled();
+        expect(view.shownLayout).toBe(byRegion);
+    });
+
+    it('ADR-0013: a row height handed in reaches the report grid at once', async () => {
+        const options: PivotViewOptions = { source: local(), layout: byRegion };
+        const { view, grid } = mount(options);
+        await settled();
+        view.update({ ...options, rowHeight: 32 });
+        expect(grid.current.rowHeight).toBe(32);
+    });
+
+    it('ADR-0059: a new source leaves the rows on screen readable until its answer replaces them', async () => {
+        const many = Array.from({ length: 1200 }, (_, i): Trade => ({ region: `Region ${i}`, desk: 'Rates', amount: i }));
+        const options: PivotViewOptions = { source: new RecordPivotSource(many, fields), layout: byRegion };
+        const { view, grid } = mount(options);
+        await settled();
+        const before = grid.current.source;
+        if (before === undefined) throw new Error('The grid was handed no source.');
+        const next = new HeldSource();
+        view.update({ ...options, source: next });
+        // Rows past the first answer's are asked of the report source that answered it, and come.
+        const rows = await before.rows({ start: 600, count: 10 }, new AbortController().signal);
+        expect(rows).toHaveLength(10);
+        expect(rows.map(row => row.labels[0]?.text?.slice(0, 7))).toEqual(Array.from({ length: 10 }, () => 'Region '));
+        next.held.splice(0).forEach(release => { release(); });
+        await settled();
+        expect(grid.current.source).not.toBe(before);
+    });
+});
+
+describe('browserPivotLocale', () => {
+    it('ADR-0370 section 10: the first of the browser\'s languages the pivot writes in, or its language without the region', () => {
+        expect(browserPivotLocale(['xx-YY', 'de-DE'])).toBe('de-DE');
+        expect(browserPivotLocale(['es-419'])).toBe('es');
+        expect(browserPivotLocale(['EN-us'])).toBe('en-US');
+    });
+
+    it('ADR-0370 section 10: a browser with none of the pivot\'s languages is refused, saying to pass locale', () => {
+        expect(() => browserPivotLocale(['xx-YY'])).toThrow(/pass locale/);
     });
 });
