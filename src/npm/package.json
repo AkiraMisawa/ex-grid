@@ -10,6 +10,7 @@
     "data",
     "chart",
     "pivot-engine",
+    "board",
     "react"
   ],
   "scripts": {

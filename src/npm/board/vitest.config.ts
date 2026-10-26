@@ -8,6 +8,7 @@ const source = (name: string): string => fileURLToPath(new URL(`../${name}/src/i
 export default defineConfig({
     resolve: {
         alias: {
+            '@ex-grid/chart': source('chart'),
             '@ex-grid/data': source('data'),
             '@ex-grid/pivot-engine': source('pivot-engine'),
         },

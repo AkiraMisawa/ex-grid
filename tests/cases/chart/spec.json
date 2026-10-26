@@ -760,6 +760,14 @@
       }
     },
     {
+      "name": "ADR-0320: a member written twice is refused, never read as whichever came last",
+      "specText": "{ \"version\": 1, \"version\": 2, \"axis\": { \"values\": \"numbers\" }, \"series\": [] }",
+      "refused": {
+        "path": "",
+        "startsWith": "The Chart Spec is not JSON: "
+      }
+    },
+    {
       "name": "ADR-0320: a spec is a JSON object",
       "specText": "[1, 2]",
       "refused": {
