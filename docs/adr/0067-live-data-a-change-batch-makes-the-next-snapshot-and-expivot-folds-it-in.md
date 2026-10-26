@@ -59,7 +59,10 @@ learns it: SignalR, polling, or a message bus (Q57).
   of the data
   ([ADR-0066](./0066-expivot-asks-a-pivot-source-and-a-server-answers-with-leaf-aggregates.md)).
 - **A server that sends only the leaves that changed comes later**, and only if a measurement shows
-  that the whole answer is too slow.
+  that the whole answer is too slow. *(2026-10-26, decided with the user: not the leaves but the records.
+  [ADR-0370](./0370-the-whole-family-moves-to-typescript-and-blazor-only-adapts-it.md) section 3 lets a
+  `PivotSource.Fetch` take a Change Batch of the records the server's data lost and gained, which the
+  TypeScript engine folds into the Leaf Aggregates it holds, asking again whatever it cannot fold exactly.)*
 
 ## What the screen shows
 

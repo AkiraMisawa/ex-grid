@@ -67,6 +67,8 @@ export class FetchingPivotSource implements PivotSource {
     readonly fields: readonly PivotField[];
     itemCounts(signal?: AbortSignal): Promise<PivotItemCounts>;
     items(query: PivotItemsQuery, signal?: AbortSignal): Promise<PivotItemPage>;
+    refresh(): void;
+    subscribe(listener: (changed: PivotSourceChanged) => void): () => void;
 }
 
 // @public
@@ -349,6 +351,7 @@ export interface PivotFetchers {
     readonly details: (query: PivotDetailsQuery, signal?: AbortSignal) => Promise<PivotDetailPage>;
     readonly itemCounts?: (signal?: AbortSignal) => Promise<PivotItemCounts>;
     readonly items: (query: PivotItemsQuery, signal?: AbortSignal) => Promise<PivotItemPage>;
+    readonly subscribe?: (notify: (notice: PivotServerNotice) => void) => () => void;
 }
 
 // @public
@@ -978,6 +981,24 @@ export interface PivotRowLabel {
 export type PivotRowRole = 'item' | 'group' | 'subtotal' | 'grandTotal' | 'pending';
 
 // @public
+export interface PivotServerChangeBatch {
+    readonly added: readonly (readonly PivotDetailValue[])[];
+    readonly from: string;
+    readonly kind: 'changeBatch';
+    readonly removed: readonly (readonly PivotDetailValue[])[];
+    readonly to: string;
+}
+
+// @public
+export interface PivotServerChanged {
+    readonly kind: 'changed';
+    readonly sourceVersion?: string;
+}
+
+// @public
+export type PivotServerNotice = PivotServerChanged | PivotServerChangeBatch;
+
+// @public
 export type PivotShowValuesAs = 'noCalculation' | 'percentOfGrandTotal' | 'percentOfColumnTotal' | 'percentOfRowTotal';
 
 // @public
@@ -1012,6 +1033,8 @@ export interface PivotSource {
     readonly fields: readonly PivotField[];
     itemCounts?(signal?: AbortSignal): Promise<PivotItemCounts>;
     items(query: PivotItemsQuery, signal?: AbortSignal): Promise<PivotItemPage>;
+    refresh?(): void;
+    subscribe?(listener: (changed: PivotSourceChanged) => void): () => void;
 }
 
 // @public

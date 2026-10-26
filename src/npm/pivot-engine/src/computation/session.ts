@@ -24,7 +24,9 @@ import type { ResolvedOptions } from '../report/labels';
 import { ReportBuilder, type PivotReport, type PivotReportRow, type PivotRowKey } from '../report/report';
 import { AggregationPass, chunkRows } from '../source/aggregation-pass';
 import type { FieldBinding } from '../source/binding';
-import { queryRefusal, SnapshotPivotSource, snapshotSourceLink, type PivotSource, type SnapshotSourceLink } from '../source/pivot-source';
+import {
+    queryRefusal, SnapshotPivotSource, snapshotSourceLink, type PivotSource, type SnapshotSourceLink,
+} from '../source/pivot-source';
 import { Slicer, type CheckedSlicing } from '../source/slicing';
 import { ComputationCube } from './cube';
 import { ComputationReport } from './report';
@@ -92,6 +94,10 @@ export class PivotComputationSession {
     #pass: AggregationPass | undefined;
     #bindings: ReadonlyMap<string, FieldBinding> | undefined;
     #computation: ComputationCube | undefined;
+    // How many times a source that cannot name its changes said its data moved on, and how many of those the
+    // cube held was asked after: a held cube older than a notice is not reused.
+    #notices = 0;
+    #noticesAnswered = 0;
     // The report last returned, and its structure: always laid out from the newest cube the session holds, so
     // the data held and the report shown from it are one.
     #report: PivotReport | undefined;
@@ -180,6 +186,7 @@ export class PivotComputationSession {
         let made: { readonly pass: AggregationPass; readonly bindings: ReadonlyMap<string, FieldBinding>; readonly computation: ComputationCube } | undefined;
         let updated = false;
         let answered = false;
+        let noticesAsked = this.#noticesAnswered;
         const held = this.#report;
         const link = this.#link;
         if (request.preferHeld && held !== undefined && holdsAsked(held.cube, layout, query)) {
@@ -234,11 +241,15 @@ export class PivotComputationSession {
                 if (build === undefined) throw new Error('Internal: the cube was made without what its build made.');
                 made = { pass: fresh, bindings: captured.bindings, computation: await aside.run(ComputationCube.create(cube, build, fresh)) };
             }
-        } else if (!request.refreshData && held !== undefined && holdsAsked(held.cube, layout, query)) {
-            // A source that cannot name its changes is asked again only for a refresh (ADR-0153).
+        } else if (!request.refreshData && this.#noticesAnswered === this.#notices && held !== undefined && holdsAsked(held.cube, layout, query)) {
+            // A source that cannot name its changes is asked again for a refresh (ADR-0153), and once it says its
+            // data moved on (ADR-0370 section 3).
             cube = held.cube;
         } else {
             answered = true;
+            noticesAsked = this.#notices;
+            // Refresh goes to the server, past the answer a fetching source folds batches into.
+            if (request.refreshData) source.refresh?.();
             await aside.step();
             let answer = await source.aggregate(query, signal);
             signal?.throwIfAborted();
@@ -288,6 +299,7 @@ export class PivotComputationSession {
         this.#report = report;
         this.#structure = structure;
         this.#layout = layoutName;
+        this.#noticesAnswered = noticesAsked;
         this.#options = request.optionsKey;
         const changes = updated && !relayout;
         return Object.freeze({
@@ -309,6 +321,12 @@ export class PivotComputationSession {
         this.#structure = undefined;
         this.#layout = undefined;
         this.#options = undefined;
+    }
+
+    /** Tells the session that a source that cannot name its changes said its data moved on: the next
+     * computation asks it again rather than lay the held cube out. */
+    sourceMoved(): void {
+        this.#notices++;
     }
 
     /** Stops hearing changes and lets the computation go; the Pivot Source stays. */
