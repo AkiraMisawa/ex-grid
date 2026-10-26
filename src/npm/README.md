@@ -7,7 +7,7 @@ One directory per package:
 | Directory | Package | What it is |
 |---|---|---|
 | `core/` | `@ex-grid/core` | The Script Core: the grid's state and what each input means, free of any UI framework |
-| `chart/` | `@ex-grid/chart` | ExChart's layout: scales, ticks, Thinning, each Series Kind's steps and gaps, the scene a chart is drawn from, what its tooltip, its summary and its files say, the fits a Consumer hands in as series, and the 3D surface with its slices and mesh, held to the C# engine by the shared cases of `tests/cases/chart/` ([ADR-0370](../../docs/adr/0370-the-whole-family-moves-to-typescript-and-blazor-only-adapts-it.md), section 2) |
+| `chart/` | `@ex-grid/chart` | ExChart's layout: scales, ticks, Thinning, each Series Kind's steps and gaps, the scene a chart is drawn from, what its tooltip, its summary and its files say, the fits and interpolations a Consumer hands in, and the 3D surface with its slices and mesh, held to the C# engine by the shared cases of `tests/cases/chart/` ([ADR-0370](../../docs/adr/0370-the-whole-family-moves-to-typescript-and-blazor-only-adapts-it.md), section 2) |
 | `data/` | `@ex-grid/data` | The Snapshot in TypeScript, read from and written to Apache Arrow as `ExGrid.Data.Arrow` does, on the same cases (ADR-0370, section 3) |
 | `sheet-engine/` | `@ex-grid/sheet-engine` | ExSheet's engine in TypeScript: the Workbook and its Sheets, Excel's formulas and functions, number formats, Cell Formats, edits with undo, documents and the typing aids, held to ExSheet.Engine's cases and Excel's recorded answers (ADR-0370, section 2) |
 

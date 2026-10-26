@@ -4,6 +4,7 @@ using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using ExChart.Engine.Fitting;
+using ExChart.Engine.Interpolation;
 
 namespace ExChart.Engine.Tests.Cases;
 
@@ -18,7 +19,7 @@ internal sealed class ChartCase(JsonElement file, JsonElement entry)
 {
     private static readonly string[] Operations =
         ["scene", "drawing", "thin", "through", "tenor", "nice", "steps", "decades", "logSteps", "fit", "horizontal", "candles", "legendMembers", "format", "appearance", "mesh", "slice", "slicePath",
-         "reading", "summary", "csv", "surfaceSummary", "curve"];
+         "reading", "summary", "csv", "surfaceSummary", "curve", "interpolate"];
 
     // What a scene is laid out with, which the tooltip and the summary read their scene by.
     private static readonly string[] SceneKeys = ["metrics", "view", "style", "independentScales", "legend"];
@@ -150,6 +151,19 @@ internal sealed class ChartCase(JsonElement file, JsonElement entry)
                 var curve = Fitted(args, "at");
                 return args.TryGetProperty("at", out var at) ? at.EnumerateArray().Select(x => curve.ValueAt(Position(x))).ToList() : curve;
             }
+            case "interpolate":
+            {
+                // An interpolation a Consumer calls (ADR-0257): the interpolant, or its values where `at` names.
+                var interpolant = Interpolant(args, "at");
+                if (!args.TryGetProperty("at", out var at))
+                    return interpolant;
+                return interpolant switch
+                {
+                    Interpolant1D curve => at.EnumerateArray().Select(x => curve.ValueAt(Position(x))).ToList(),
+                    Interpolant2D surface => at.EnumerateArray().Select(p => surface.ValueAt(Number(p[0]), Number(p[1]))).ToList(),
+                    _ => throw new InvalidOperationException("Internal: an interpolant is a curve or a surface."),
+                };
+            }
             case "drawing":
             {
                 Allow(args, "drawing", "axis", "series", "from", "to", "pixels", "quotes");
@@ -248,10 +262,10 @@ internal sealed class ChartCase(JsonElement file, JsonElement entry)
         if (e.ValueKind == JsonValueKind.String)
             e = file.GetProperty("definitions").GetProperty(e.GetString()!);
         Allow(e, "a surface", "x", "y", "z", "zTitle", "zFormat", "method", "interpolated", "notes", "points", "xTitle", "yTitle", "nodes", "triangles",
-            "xScale", "yScale", "sampled", "zScale", "centre");
-        var forms = new[] { "z", "points", "nodes", "sampled" }.Where(k => e.TryGetProperty(k, out _)).ToList();
+            "xScale", "yScale", "sampled", "zScale", "centre", "interpolant", "samples");
+        var forms = new[] { "z", "points", "nodes", "sampled", "interpolant" }.Where(k => e.TryGetProperty(k, out _)).ToList();
         if (forms.Count != 1)
-            throw new InvalidOperationException($"\"{Name}\": a surface is one of a grid, points, nodes and a sampled function, not {forms.Count}.");
+            throw new InvalidOperationException($"\"{Name}\": a surface is one of a grid, points, nodes, a sampled function and an interpolant, not {forms.Count}.");
         // A key another form reads would be passed over here, and the case would test nothing by it.
         Allow(e, $"\"{Name}\"'s {forms[0]} surface", [.. SurfaceCommonKeys, .. SurfaceFormKeys[forms[0]]]);
         var zTitle = Text(e, "zTitle") ?? "";
@@ -275,6 +289,12 @@ internal sealed class ChartCase(JsonElement file, JsonElement entry)
                 e.GetProperty("xTitle").GetString()!, e.GetProperty("yTitle").GetString()!, zTitle, zFormat: zFormat,
                 xScale: e.TryGetProperty("xScale", out var xs) ? Enum<AxisScale>(xs) : AxisScale.Proportional,
                 yScale: e.TryGetProperty("yScale", out var ys) ? Enum<AxisScale>(ys) : AxisScale.Proportional, notes: notes),
+            "interpolant" => SurfaceDefinition.Sampled(
+                Interpolant(e.GetProperty("interpolant")) as Interpolant2D ?? throw new InvalidOperationException($"\"{Name}\": a surface interpolates in two dimensions."),
+                e.GetProperty("xTitle").GetString()!, e.GetProperty("yTitle").GetString()!, zTitle,
+                samples: e.TryGetProperty("samples", out var samples) ? samples.GetInt32() : 25, zFormat: zFormat,
+                xScale: e.TryGetProperty("xScale", out var ixs) ? Enum<AxisScale>(ixs) : AxisScale.Categories,
+                yScale: e.TryGetProperty("yScale", out var iys) ? Enum<AxisScale>(iys) : AxisScale.Categories),
             _ => Sampled(e, zTitle, zFormat),
         };
         if (e.TryGetProperty("zScale", out var zScale)) surface = surface with { ZScale = Enum<AxisScale>(zScale) };
@@ -291,6 +311,7 @@ internal sealed class ChartCase(JsonElement file, JsonElement entry)
         ["points"] = ["points", "xTitle", "yTitle"],
         ["nodes"] = ["nodes", "triangles", "xTitle", "yTitle", "xScale", "yScale", "notes"],
         ["sampled"] = ["sampled", "xTitle", "yTitle"],
+        ["interpolant"] = ["interpolant", "xTitle", "yTitle", "samples", "xScale", "yScale"],
     };
 
     // A function sampled over a rectangle: a constant, or a plane [a, b, c], a + b·x + c·y.
@@ -383,6 +404,35 @@ internal sealed class ChartCase(JsonElement file, JsonElement entry)
         return Enumerable.Range(0, run.GetProperty("count").GetInt32()).Select(i => from + i * step).ToArray();
     }
 
+    // ---- An interpolation (ADR-0257) ----
+
+    // A curve through `x` and `y` (linear, naturalCubicSpline), a surface on a grid (bilinear: `x`, `y` and
+    // the rows `z`), or a surface on a Consumer's triangles (`points` [x, y, z] and `triangles` [a, b, c]).
+    private static object Interpolant(JsonElement e, params string[] more)
+    {
+        var method = e.GetProperty("method").GetString();
+        string[] keys = method switch
+        {
+            "linear" or "naturalCubicSpline" => ["x", "y"],
+            "bilinear" => ["x", "y", "z"],
+            "triangles" => ["points", "triangles"],
+            _ => throw new InvalidOperationException($"\"{method}\" is not an interpolation; it is linear, naturalCubicSpline, bilinear or triangles."),
+        };
+        Allow(e, "an interpolant", ["method", .. keys, .. more]);
+        double[] Numbers(string key) => e.GetProperty(key).EnumerateArray().Select(Number).ToArray();
+        return method switch
+        {
+            "linear" => Interpolate.Linear(Numbers("x"), Numbers("y")),
+            "naturalCubicSpline" => Interpolate.NaturalCubicSpline(Numbers("x"), Numbers("y")),
+            "bilinear" => Interpolate.Bilinear(Numbers("x"), Numbers("y"),
+                e.GetProperty("z").EnumerateArray()
+                    .Select(r => (IReadOnlyList<double?>)r.EnumerateArray().Select(v => v.ValueKind == JsonValueKind.Null ? (double?)null : Number(v)).ToList()).ToList()),
+            _ => Interpolate.Triangles(
+                e.GetProperty("points").EnumerateArray().Select(p => (Number(p[0]), Number(p[1]), Number(p[2]))).ToList(),
+                e.GetProperty("triangles").EnumerateArray().Select(t => (t[0].GetInt32(), t[1].GetInt32(), t[2].GetInt32())).ToList()),
+        };
+    }
+
     private static ChartAxis Axis(JsonElement e)
     {
         Allow(e, "an axis", "values", "title", "scale", "labels", "named", "daysPerYear", "packed");
@@ -399,6 +449,13 @@ internal sealed class ChartCase(JsonElement file, JsonElement entry)
     private ChartSeries Series(JsonElement e)
     {
         // A fit's series, as a Consumer hands it in (ADR-0291): its curve says the rest.
+        // An interpolated curve's series, as a Consumer hands it in (ADR-0257).
+        if (e.TryGetProperty("interpolant", out var interpolant))
+        {
+            Allow(e, "an interpolated series", "id", "name", "interpolant");
+            return (Interpolant(interpolant) as Interpolant1D ?? throw new InvalidOperationException($"\"{Name}\": a series interpolates in one dimension."))
+                .Series(e.GetProperty("id").GetString()!, e.GetProperty("name").GetString()!);
+        }
         if (e.TryGetProperty("curve", out var fitted))
         {
             Allow(e, "a fitted series", "id", "name", "curve");

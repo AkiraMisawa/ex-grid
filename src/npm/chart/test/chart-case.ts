@@ -14,6 +14,9 @@ import type {
 } from '../src/model';
 import { chartCsvLong, chartCsvWide, chartTable } from '../src/csv';
 import { fitLeastSquares, fitPolynomial, fitTheilSen, type FitSpace, type FittedCurve } from '../src/fitting';
+import {
+    Interpolant1D, Interpolant2D, interpolateBilinear, interpolateLinear, interpolateNaturalCubicSpline, interpolateTriangles,
+} from '../src/interpolation';
 import { candlesOf } from '../src/price-ranges';
 import { readingAt, readingOfEdge, readingOfMark } from '../src/reading';
 import { chartSummary } from '../src/summary';
@@ -45,6 +48,7 @@ export interface ChartFile {
 const operations = [
     'scene', 'drawing', 'thin', 'through', 'tenor', 'nice', 'steps', 'decades', 'logSteps', 'fit', 'horizontal', 'candles', 'legendMembers',
     'format', 'appearance', 'mesh', 'slice', 'slicePath', 'reading', 'summary', 'csv', 'surfaceSummary', 'curve',
+    'interpolate',
 ] as const;
 
 // What a scene is laid out with, which the tooltip and the summary read their scene by.
@@ -284,6 +288,22 @@ export class ChartCase {
                         throw new Error(`Internal: ${String(form)} is a form and not written.`);
                 }
             }
+            case 'interpolate': {
+                // An interpolation a Consumer calls (ADR-0257): the interpolant, or its values where `at` names.
+                const a = allow(args, 'interpolate', [...interpolantKeys(args), 'at']);
+                const made = interpolant(a);
+                if (a['at'] === undefined) {
+                    return made;
+                }
+                const positions = list(a['at'], 'at');
+                if (made instanceof Interpolant1D) {
+                    return positions.map(x => made.valueAt(position(x)));
+                }
+                return positions.map(p => {
+                    const [x, y] = list(p, 'a point');
+                    return made.valueAt(number(x), number(y));
+                });
+            }
             case 'curve': {
                 // A fit a Consumer calls (ADR-0291): the curve, or its values at the positions `at` names.
                 const a = allow(args, 'curve', [...curveKeys(args), 'at']);
@@ -411,12 +431,12 @@ export class ChartCase {
     #surface(given: Json | undefined): SurfaceDefinition {
         const e = allow(this.#named(given), 'a surface', [
             'x', 'y', 'z', 'zTitle', 'zFormat', 'method', 'interpolated', 'notes', 'points', 'xTitle', 'yTitle', 'nodes', 'triangles',
-            'xScale', 'yScale', 'sampled', 'zScale', 'centre',
+            'xScale', 'yScale', 'sampled', 'zScale', 'centre', 'interpolant', 'samples',
         ]);
         const forms = [...surfaceFormKeys.keys()].filter(k => e[k] !== undefined);
         const [form] = forms;
         if (form === undefined || forms.length !== 1) {
-            throw new Error(`"${this.#name}": a surface is one of a grid, points, nodes and a sampled function, not ${String(forms.length)}.`);
+            throw new Error(`"${this.#name}": a surface is one of a grid, points, nodes, a sampled function and an interpolant, not ${String(forms.length)}.`);
         }
         // A key another form reads would be passed over here, and the case would test nothing by it.
         const formKeys = surfaceFormKeys.get(form);
@@ -464,12 +484,33 @@ export class ChartCase {
                     ...optionalPart('xScale', optional(e, 'xScale', v => oneOf(v, scales, 'AxisScale'))),
                     ...optionalPart('yScale', optional(e, 'yScale', v => oneOf(v, scales, 'AxisScale'))),
                 });
+            case 'interpolant': {
+                const made = interpolant(allow(e['interpolant'], 'an interpolant', interpolantKeys(e['interpolant'])));
+                if (!(made instanceof Interpolant2D)) {
+                    throw new Error(`"${this.#name}": a surface interpolates in two dimensions.`);
+                }
+                return made.surface({
+                    ...titles(), ...common,
+                    ...optionalPart('samples', optional(e, 'samples', v => whole(v, 'samples'))),
+                    ...optionalPart('xScale', optional(e, 'xScale', v => oneOf(v, scales, 'AxisScale'))),
+                    ...optionalPart('yScale', optional(e, 'yScale', v => oneOf(v, scales, 'AxisScale'))),
+                });
+            }
             default:
                 return sampledSurface(e['sampled'], titles(), common);
         }
     }
 
     #series(given: Json | undefined): ChartSeriesOptions {
+        // An interpolated curve's series, as a Consumer hands it in (ADR-0257).
+        if (isObject(given) && given['interpolant'] !== undefined) {
+            const f = allow(given, 'an interpolated series', ['id', 'name', 'interpolant']);
+            const made = interpolant(allow(f['interpolant'], 'an interpolant', interpolantKeys(f['interpolant'])));
+            if (!(made instanceof Interpolant1D)) {
+                throw new Error(`"${this.#name}": a series interpolates in one dimension.`);
+            }
+            return made.series(string(f['id'], 'a series\' id'), string(f['name'], 'a series\' name'));
+        }
         // A fit's series, as a Consumer hands it in (ADR-0291): its curve says the rest.
         if (isObject(given) && given['curve'] !== undefined) {
             const f = allow(given, 'a fitted series', ['id', 'name', 'curve']);
@@ -789,6 +830,52 @@ function laidOut(definition: ChartDefinition, a: JsonObject): ChartScene {
     });
 }
 
+// ---- An interpolation (ADR-0257) ----
+
+const interpolations = ['linear', 'naturalCubicSpline', 'bilinear', 'triangles'] as const;
+
+// What an interpolant says: its method, and a curve's `x` and `y`, a grid's `x`, `y` and `z`, or a mesh's
+// `points` and `triangles`.
+function interpolantKeys(given: Json | undefined): string[] {
+    const method = oneOf(isObject(given) ? given['method'] : undefined, interpolations, 'interpolation');
+    switch (method) {
+        case 'linear':
+        case 'naturalCubicSpline':
+            return ['method', 'x', 'y'];
+        case 'bilinear':
+            return ['method', 'x', 'y', 'z'];
+        case 'triangles':
+            return ['method', 'points', 'triangles'];
+        default:
+            throw new Error(`Internal: ${String(method)} is an interpolation and has no keys.`);
+    }
+}
+
+function interpolant(e: JsonObject): Interpolant1D | Interpolant2D {
+    const method = oneOf(e['method'], interpolations, 'interpolation');
+    const numbers = (key: string): number[] => list(e[key], key).map(number);
+    switch (method) {
+        case 'linear':
+            return interpolateLinear(numbers('x'), numbers('y'));
+        case 'naturalCubicSpline':
+            return interpolateNaturalCubicSpline(numbers('x'), numbers('y'));
+        case 'bilinear':
+            return interpolateBilinear(numbers('x'), numbers('y'), list(e['z'], 'z').map(r => list(r, 'a row of z').map(v => (v === null ? null : number(v)))));
+        case 'triangles':
+            return interpolateTriangles(
+                list(e['points'], 'points').map(p => {
+                    const [x, y, z] = list(p, 'a point');
+                    return { x: number(x), y: number(y), z: number(z) };
+                }),
+                list(e['triangles'], 'triangles').map(t => {
+                    const [a, b, c] = list(t, 'a triangle');
+                    return { a: whole(a, 'a corner'), b: whole(b, 'a corner'), c: whole(c, 'a corner') };
+                }));
+        default:
+            throw new Error(`Internal: ${String(method)} is an interpolation and not run.`);
+    }
+}
+
 // ---- A fit (ADR-0291) ----
 
 // What a curve says: its method, its points and its space, and a degree where it is a polynomial.
@@ -1102,6 +1189,7 @@ const surfaceFormKeys: ReadonlyMap<string, readonly string[]> = new Map([
     ['points', ['points', 'xTitle', 'yTitle']],
     ['nodes', ['nodes', 'triangles', 'xTitle', 'yTitle', 'xScale', 'yScale', 'notes']],
     ['sampled', ['sampled', 'xTitle', 'yTitle']],
+    ['interpolant', ['interpolant', 'xTitle', 'yTitle', 'samples', 'xScale', 'yScale']],
 ]);
 
 function surfaceAxis(given: Json | undefined): SurfaceAxisOptions {

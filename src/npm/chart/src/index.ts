@@ -4,8 +4,8 @@
  * what its tooltip, its summary and its files say, the fits and interpolations a Consumer hands in, and a 3D
  * surface as the mesh its entry draws and the 2D charts its slices are; and its Script Core, `createChart`
  * and `createSurface`, which draw a chart as SVG into an element and hear the pointer, free of any UI
- * framework. A Framework Adapter mounts it;
- * the C# engine and this package are held to one another by the shared cases under `tests/cases/chart/`.
+ * framework. A Framework Adapter mounts it; the C# engine and this package are held to one another by the
+ * shared cases under `tests/cases/chart/`.
  *
  * @packageDocumentation
  */
@@ -18,6 +18,7 @@ export { ChartDefinition } from './definition';
 export type { ChartDefinitionOptions } from './definition';
 export { ChartRefusedError } from './values';
 export type { Box, ChartMetrics, ChartView } from './metrics';
+export { tenor } from './ticks';
 export type { AxisStyle, DateLabel, TickPlacement } from './ticks';
 export type { Bounds, DrawnMarker, DrawnPoint, DrawnWhisker } from './series-drawing';
 export type { DrawnEdge } from './edges';
@@ -41,6 +42,10 @@ export { surfaceBandCount, surfaceMesh, surfaceSlicePath, surfaceSummary } from 
 export type { SurfaceColourBar, SurfaceFace, SurfaceMesh, SurfaceMeshNode, SurfaceMeshPoint, SurfaceTick } from './surface-mesh';
 export { FittedCurve, fitLeastSquares, fitPolynomial, fitTheilSen, theilSenLimit } from './fitting';
 export type { FitSpace, FittedCurveOptions } from './fitting';
+export {
+    Interpolant1D, Interpolant2D, interpolateBilinear, interpolateLinear, interpolateNaturalCubicSpline, interpolateTriangles,
+} from './interpolation';
+export type { InterpolatedSurfaceOptions, Interpolant1DOptions, Interpolant2DOptions, MeshPoint } from './interpolation';
 export { createChart } from './dom/create-chart';
 export type { ChartHandle } from './dom/create-chart';
 export type { ChartOptions, ChartPointClick, ChartRange, SeriesVisibility } from './dom/chart-element';
