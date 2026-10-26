@@ -477,6 +477,43 @@ describe('ExPivot\'s Field List', () => {
 });
 
 describe('ExPivot over a server\'s Leaf Aggregates (ADR-0370 section 3)', () => {
+    it('ADR-0066: Refresh is offered by a source that can be asked again, and asks it again under the layout on screen', async () => {
+        let behind = local();
+        const source = new FetchingPivotSource(behind.fields, new PivotSourceFeatures(['sum', 'count'], true, false), {
+            aggregate: (query, signal) => behind.aggregate(query, signal),
+            details: (query, signal) => behind.details(query, signal),
+            items: (query, signal) => behind.items(query, signal),
+        });
+        const { root, grid } = mount({ source, layout: byRegion });
+        await settled();
+        expect(await grid.texts()).toEqual([['EU', '30'], ['US', '12'], ['Grand Total', '42']]);
+        behind = new RecordPivotSource([...trades, { region: 'US', desk: 'FX', amount: 100 }], fields);
+        const refresh = root.querySelector<HTMLButtonElement>('.ex-pivot-toolbar-end .ex-pivot-refresh-button');
+        expect(refresh?.textContent).toBe('Refresh');
+        refresh?.click();
+        await settled();
+        expect(await grid.texts()).toEqual([['EU', '30'], ['US', '112'], ['Grand Total', '142']]);
+        const { root: other } = mount({ source: local(), layout: byRegion });
+        expect(other.querySelector('.ex-pivot-refresh-button')).toBeNull();
+    });
+
+    it('ADR-0066, spine rule 6: a move made while a Refresh is out is answered from the source asked again, never from the data before it', async () => {
+        let behind = local();
+        const source = new FetchingPivotSource(behind.fields, new PivotSourceFeatures(['sum', 'count'], true, false), {
+            aggregate: (query, signal) => behind.aggregate(query, signal),
+            details: (query, signal) => behind.details(query, signal),
+            items: (query, signal) => behind.items(query, signal),
+        });
+        const { root, grid } = mount({ source, layout: byRegion });
+        await settled();
+        behind = new RecordPivotSource([...trades, { region: 'US', desk: 'FX', amount: 100 }], fields);
+        root.querySelector<HTMLButtonElement>('.ex-pivot-refresh-button')?.click();
+        entryButton(root, 'rows', 0).click();
+        command(root, 'Sort Z to A').click();
+        await settled();
+        expect(await grid.texts()).toEqual([['US', '112'], ['EU', '30'], ['Grand Total', '142']]);
+    });
+
     it('ADR-0370 section 3: a source that counts its Items has each count written beside its field, in the pivot\'s locale', async () => {
         const { root } = mount({ source: server(), locale: 'de-DE' });
         await settled();

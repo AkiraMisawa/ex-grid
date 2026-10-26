@@ -125,6 +125,9 @@ interface Question {
     readonly raise: boolean;
     /** Whether the answer marks what changed: new data, or the user's layout asked again under new data. */
     readonly markChanges: boolean;
+    /** Whether the Pivot Source is asked again rather than answered from what the report source holds: while a Refresh
+     * is owed. */
+    readonly refreshData: boolean;
     /** The user's moves this question carries: its own, after those of the questions it superseded while they
      * were out, which were taken against them and go with it (ADR-0370 section 3). */
     readonly moves: readonly FieldListMove[];
@@ -239,6 +242,7 @@ export class PivotView {
     readonly #report: HTMLElement;
     readonly #notice: HTMLElement;
     readonly #fieldListToggle: HTMLButtonElement;
+    readonly #refreshButton: HTMLButtonElement;
     readonly #layoutAnchor: HTMLElement;
     readonly #toolbarStart: HTMLElement;
     // The report filter band (ADR-0061): each report filter's elements, kept while it stands in Filters.
@@ -278,6 +282,8 @@ export class PivotView {
     #generation = 0;
     #requests = 0;
     #refusal: string | undefined;
+    // A Refresh pressed and not yet answered from the Pivot Source asked again.
+    #refreshOwed = false;
     #fieldListShown: boolean;
     #counts: PivotItemCounts | undefined;
     #countsAsked: AbortController | undefined;
@@ -323,6 +329,12 @@ export class PivotView {
         this.#band = div('ex-pivot-filters');
         this.#band.setAttribute('role', 'group');
         const end = div('ex-pivot-toolbar-end');
+        // Refresh asks the Pivot Source again, offered only by a source that can be asked again (ADR-0066).
+        this.#refreshButton = document.createElement('button');
+        this.#refreshButton.type = 'button';
+        this.#refreshButton.className = 'ex-pivot-toolbar-button ex-pivot-refresh-button';
+        this.#refreshButton.setAttribute('data-ex-claims', 'click');
+        this.#refreshButton.addEventListener('click', () => { this.#refresh(); });
         this.#fieldListToggle = document.createElement('button');
         this.#fieldListToggle.type = 'button';
         this.#fieldListToggle.className = 'ex-pivot-toolbar-button ex-pivot-field-list-toggle';
@@ -441,6 +453,8 @@ export class PivotView {
         if (settingsMoved) this.#settings = this.#settingsOf(options);
         if (options.showFieldList !== before.showFieldList) this.#fieldListShown = options.showFieldList !== false;
         if (sourceMoved) {
+            // A new source is asked from nothing: no Refresh is owed to it.
+            this.#refreshOwed = false;
             // The rows on screen keep reading the report source that answered them until a new answer replaces them.
             const replaced = this.#reportSource;
             this.#reportSource = this.#reportSourceOf(options.source);
@@ -567,7 +581,9 @@ export class PivotView {
         // shown and names its moves if refused, and new data's changes are marked.
         const again = superseded?.layout === layout;
         const raise = asked === 'user' || (again && superseded.raise);
-        const markChanges = asked === 'data' || (again && superseded.markChanges);
+        // A question asked while a Refresh is owed asks the Pivot Source again, and marks what changed, whatever asked it.
+        const refreshData = this.#refreshOwed;
+        const markChanges = asked === 'data' || refreshData || (again && superseded.markChanges);
         // A user's move made while a user's question was out was taken against it, and carries its moves on.
         const moves = [...(raise && superseded?.raise === true ? superseded.moves : []), ...(moved === undefined ? [] : [moved])];
         const generation = ++this.#generation;
@@ -580,7 +596,7 @@ export class PivotView {
             return;
         }
         const question: Question = {
-            layout, generation, controller: new AbortController(), raise, markChanges, moves: Object.freeze(moves),
+            layout, generation, controller: new AbortController(), raise, markChanges, refreshData, moves: Object.freeze(moves),
             reportSource: this.#reportSource, settings: this.#settings, locale: this.#locale, maxLeaves: this.#maxLeaves,
         };
         this.#asked = question;
@@ -598,6 +614,7 @@ export class PivotView {
                 window: Object.freeze({ start: 0, count: firstWindowRows }),
                 maxLeaves: question.maxLeaves,
                 markChanges: question.markChanges,
+                refreshData: question.refreshData,
             }), question.controller.signal);
         } catch (error) { // oxlint-disable-line ex-grid/no-catch -- a superseded question's failure is nobody's; the newest one's is said where the user sees it and rethrown
             if (!current()) return;
@@ -613,6 +630,8 @@ export class PivotView {
             this.#refuse(update.refusal, question);
             return;
         }
+        // The data on screen is the Pivot Source's as it is now: the Refresh is paid.
+        if (question.refreshData) this.#refreshOwed = false;
         this.#showLayout(question.layout, { answer: update, question }, question.raise);
     }
 
@@ -830,6 +849,18 @@ export class PivotView {
         const placed = pane.rows.find(placement => placement.field === toggle.field);
         if (placed === undefined || isItemCollapsed(placed, toggle.item) !== toggle.isCollapsed) return;
         this.#move(setCollapsed(pane, toggle.field, toggle.item, !toggle.isCollapsed), undefined);
+    }
+
+    // The report asked again of the Pivot Source, under the pane's layout. A move of the user's still out is asked again
+    // with it, and stays the user's.
+    #refresh(): void {
+        // Owed until an answer from the Pivot Source asked again lands: a move made meanwhile, or a layout with nothing
+        // to compute, does not answer it from the data before it.
+        this.#refreshOwed = true;
+        this.#refusal = undefined;
+        this.#askCounts();
+        this.#ask(this.#paneLayout, 'data', undefined);
+        this.#draw();
     }
 
     // ---- Menus and panels (ADR-0061) -------------------------------------------------------------------
@@ -1246,6 +1277,13 @@ export class PivotView {
         if (this.#asked === undefined) this.#root.removeAttribute('aria-busy');
         else this.#root.setAttribute('aria-busy', 'true');
         this.#fieldListToggle.textContent = words.word('field-list-toggle');
+        this.#refreshButton.textContent = words.word('refresh');
+        if (!this.#options.source.features.canRefresh) {
+            // A source that cannot be refreshed takes the button away; the keyboard it held goes to the toggle beside it.
+            const held = this.#root.ownerDocument.activeElement === this.#refreshButton;
+            this.#refreshButton.remove();
+            if (held) this.#fieldListToggle.focus();
+        } else if (this.#refreshButton.parentNode === null) this.#fieldListToggle.before(this.#refreshButton);
         this.#fieldListToggle.setAttribute('aria-pressed', this.#fieldListShown ? 'true' : 'false');
         if (this.#notice.textContent !== (this.#refusal ?? '')) this.#notice.textContent = this.#refusal ?? ''; // oxlint-disable-line ex-grid/no-stand-in-default -- no refusal is an empty notice, which takes no room
         this.#notice.hidden = this.#refusal === undefined;
