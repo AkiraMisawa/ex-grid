@@ -25,6 +25,8 @@ export { writeArrowSnapshot } from './arrow/writer';
 export type { CsvColumn, CsvEncoding, CsvSchema, CsvSeparator } from './csv/schema';
 export { csvExcelFalse, csvExcelTrue, csvIsoDateFormats } from './csv/schema';
 export { readCsvSnapshot } from './csv/csv-read';
+export type { CsvColumnSuggestion, CsvDoubt, CsvMark, CsvSuggestion, CsvSuggestionOptions } from './csv/suggest';
+export { suggestCsvSchema } from './csv/suggest';
 export type { JsonObject, JsonValue } from './json';
 export { JsonNumber, JsonTextError, isJsonArray, isJsonObject, jsonMember, jsonMemberNames, jsonRawText, readJsonText } from './json';
 export { jsonDoubleText, jsonStringText, writeJsonText } from './json-write';

@@ -167,3 +167,62 @@ export function dateCulture(locale: string | undefined): DateCulture {
     dateCultures.set(locale, culture);
     return culture;
 }
+
+/** The languages whose cultures .NET gives a semicolon as their list separator, and those it gives one that is
+ * neither a semicolon nor a comma (Arabic script's). .NET on ICU keeps Windows' list separators in a table of
+ * its own, not in CLDR, so `Intl` cannot say them; these are .NET 10's, by language, with the cultures that
+ * differ from their language's below. */
+const semicolonLanguages = new Set((
+    'af agq ak am ar asa ast az bas be bem bez bg bm br brx bs ca ce cgg cs cy da dav de dje dsb dua dyo dz ebu ' +
+    'ee el eo es et eu ewo ff fi fil fo fr fur fy ga gd gl gsw guz gv ha haw hr hsb hu ia id ig ii is it jgo ' +
+    'jmc jv ka kab kam kde kea khq ki kk kkj kl kln ks ksb ksf ksh kw ky lag lb lg lkt ln lo lrc lt lu luo luy ' +
+    'lv mas mer mfe mg mgh mgo mk ml mn ms mt mua my mzn naq nb nd nds nl nmg nn nnh no nso nus nyn oc om os pl ' +
+    'prg ps pt rm rn ro rof ru rw rwk sah saq sbp sd se seh ses sg shi si sk sl smn sn so sq sr st sv sw te teo ' +
+    'tg ti tk tn to tr tt twq tzm uk ur uz vai vun wae wo xh xog yav yi yo zgh zu').split(' '));
+
+const otherListLanguages = new Set(['fa', 'ku', 'nqo']);
+
+/** The cultures whose list separator is not their language's: a comma, or a semicolon. */
+const listSeparatorExceptions = new Map<string, ',' | ';'>([
+    ...(
+        'ar-EH bm-ML es-BZ es-EA es-IC es-MX es-US fa-AF ff-Adlm ff-Adlm-BF ff-Adlm-CM ff-Adlm-GH ff-Adlm-GM ' +
+        'ff-Adlm-GN ff-Adlm-GW ff-Adlm-LR ff-Adlm-MR ff-Adlm-NE ff-Adlm-NG ff-Adlm-SL ff-Adlm-SN ff-Latn-BF ' +
+        'ff-Latn-CM ff-Latn-GH ff-Latn-GM ff-Latn-GN ff-Latn-GW ff-Latn-LR ff-Latn-MR ff-Latn-NE ff-Latn-NG ' +
+        'ff-Latn-SL ga-GB ha-GH ha-NE ha-NG it-VA jv-ID kk-Cyrl kk-Cyrl-KZ ks-Deva ks-Deva-IN ku-TR ms-ID oc-ES ' +
+        'prg-PL ps-PK sd-Deva sd-Deva-IN sn-ZW tg-TJ tzm-MA yi-UA zgh-MA').split(' ').map(name => [name.toLowerCase(), ','] as const),
+    ...(
+        'bo-IN en-ID ko-KP ne-IN pa-Arab pa-Arab-PK ta-LK ta-MY ta-SG zh-Hans-HK zh-Hans-MO').split(' ').map(name => [name.toLowerCase(), ';'] as const),
+]);
+
+/** The character `locale` separates the items of a list with, as .NET's `TextInfo.ListSeparator` gives it, when
+ * it is a comma or a semicolon; `undefined` when it is another (Arabic script's). The invariant culture's is a
+ * comma. A tag .NET holds no culture for is taken by its language, where .NET would give a comma. */
+export function listSeparatorOf(locale: string | undefined): ',' | ';' | undefined {
+    if (locale === undefined) return ',';
+    // A culture is named by its language, script and region; extensions and variants name none .NET holds.
+    const { language, script, region } = new Intl.Locale(locale);
+    const names = [[language, script, region], [language, region], [language, script]]
+        .map(parts => parts.filter(each => each !== undefined).join('-').toLowerCase());
+    for (const name of names) {
+        const exception = listSeparatorExceptions.get(name);
+        if (exception !== undefined) return exception;
+    }
+    if (otherListLanguages.has(language)) return undefined;
+    return semicolonLanguages.has(language) ? ';' : ',';
+}
+
+/** Whether `locale` writes a short date with its day before its month, as .NET's `ShortDatePattern` does, which
+ * .NET on ICU takes from the same CLDR pattern `Intl`'s short date style writes. The invariant culture's
+ * (`MM/dd/yyyy`) has the month first. */
+export function dayFirst(locale: string | undefined): boolean {
+    if (locale === undefined) return false;
+    const known = daysFirst.get(locale);
+    if (known !== undefined) return known;
+    const parts = new Intl.DateTimeFormat(locale, { dateStyle: 'short', timeZone: 'UTC' }).formatToParts(0);
+    const first = parts.find(each => each.type === 'day' || each.type === 'month' || each.type === 'year');
+    const answer = first?.type === 'day';
+    daysFirst.set(locale, answer);
+    return answer;
+}
+
+const daysFirst = new Map<string, boolean>();

@@ -73,6 +73,17 @@ export interface CsvColumn {
 }
 
 // @public
+export interface CsvColumnSuggestion {
+    readonly column: CsvColumn;
+    readonly examples: readonly string[];
+    readonly isUnclear: boolean;
+    readonly marks: readonly CsvMark[];
+}
+
+// @public
+export type CsvDoubt = 'empty' | 'leadingZeros' | 'bothSeparators' | 'ambiguousSeparator' | 'mixedDateFormats' | 'dayOrMonth' | 'mixedKinds' | 'blankText' | 'couldBeBoolean' | 'tooLong' | 'headerName' | 'separator' | 'header' | 'fieldCount';
+
+// @public
 export type CsvEncoding = 'utf-8' | 'shift-jis';
 
 // @public
@@ -83,6 +94,12 @@ export const csvExcelTrue: readonly string[];
 
 // @public
 export const csvIsoDateFormats: readonly string[];
+
+// @public
+export interface CsvMark {
+    readonly doubt: CsvDoubt;
+    readonly note: string;
+}
 
 // @public
 export interface CsvSchema {
@@ -96,6 +113,25 @@ export interface CsvSchema {
 
 // @public
 export type CsvSeparator = 'comma' | 'tab' | 'semicolon';
+
+// @public
+export interface CsvSuggestion {
+    readonly columns: readonly CsvColumnSuggestion[];
+    readonly isUnclear: boolean;
+    readonly marks: readonly CsvMark[];
+    readonly sampledRows: number;
+    readonly schema: CsvSchema;
+}
+
+// @public
+export interface CsvSuggestionOptions {
+    readonly culture?: string;
+    readonly encoding?: CsvEncoding;
+    readonly hasHeader?: boolean;
+    readonly rows?: number;
+    readonly separator?: CsvSeparator;
+    readonly signal?: AbortSignal;
+}
 
 // @public
 export interface DataShape {
@@ -284,6 +320,9 @@ export interface SnapshotReadOptions {
     readonly sliceBudgetMs?: number;
     readonly yield?: () => Promise<void>;
 }
+
+// @public
+export function suggestCsvSchema(file: Uint8Array | ArrayBuffer | Blob, options?: CsvSuggestionOptions): Promise<CsvSuggestion>;
 
 // @public
 export interface TemporalPlainDateLike {
