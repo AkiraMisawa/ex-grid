@@ -4,7 +4,7 @@
 |---|---|---|
 | ExGrid | 95.3% | 88.6% |
 | ExSheet | 95.2% | 87.5% |
-| ExPivot | 94.4% | 86.5% |
+| ExPivot | 94.5% | 86.5% |
 | ExChart | 91.8% | 86.2% |
 | ExBoard | 93.8% | 86.9% |
 | Data | 94.6% | 90.1% |
@@ -14,19 +14,19 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/26/2026 - 20:38:08 |
+| Generated on: | 10/26/2026 - 20:49:23 |
 | Parser: | MultiReport (19x Cobertura) |
 | Assemblies: | 16 |
-| Classes: | 1199 |
+| Classes: | 1200 |
 | Files: | 609 |
-| **Line coverage:** | 94.7% (83605 of 88232) |
-| Covered lines: | 83605 |
-| Uncovered lines: | 4627 |
-| Coverable lines: | 88232 |
-| Total lines: | 140874 |
-| **Branch coverage:** | 87.7% (50679 of 57742) |
-| Covered branches: | 50679 |
-| Total branches: | 57742 |
+| **Line coverage:** | 94.7% (83697 of 88328) |
+| Covered lines: | 83697 |
+| Uncovered lines: | 4631 |
+| Coverable lines: | 88328 |
+| Total lines: | 141028 |
+| **Branch coverage:** | 87.7% (50719 of 57790) |
+| Covered branches: | 50719 |
+| Total branches: | 57790 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
@@ -919,7 +919,7 @@
 |ExPivot.Engine.PivotItemPage|95.8%|60%|
 |ExPivot.Engine.PivotItemPath|100%|100%|
 |ExPivot.Engine.PivotItemsQuery|93.3%|100%|
-|ExPivot.Engine.PivotJson|97.8%|91.5%|
+|ExPivot.Engine.PivotJson|97.5%|91%|
 |ExPivot.Engine.PivotLabelColumn|100%||
 |ExPivot.Engine.PivotLabelSizing|100%|97.5%|
 |ExPivot.Engine.PivotLayout|96.3%|74.2%|
@@ -976,6 +976,7 @@
 |ExPivot.Engine.PivotReportWindow|100%||
 |ExPivot.Engine.PivotRowKey|98%|82.3%|
 |ExPivot.Engine.PivotRowLabel|100%||
+|ExPivot.Engine.PivotServerChangeBatch|100%|83.3%|
 |ExPivot.Engine.PivotSlicing|100%|60%|
 |ExPivot.Engine.PivotSort|100%||
 |ExPivot.Engine.PivotSource|100%|94%|
@@ -992,8 +993,8 @@
 |ExPivot.Engine.RecordColumns.FieldColumns<TRecord>|89.7%|93.8%|
 |ExPivot.Engine.RecordColumns<TRecord>|91.5%|94.1%|
 |ExPivot.Engine.RecordColumns<TRecord>|90%|90%|
-|ExPivot.Engine.RecordPivotSource<TRecord>|100%|100%|
 |ExPivot.Engine.RecordPivotSource<TRecord>|94.1%|56.2%|
+|ExPivot.Engine.RecordPivotSource<TRecord>|100%|100%|
 |ExPivot.Engine.ReportBuilder|99.8%|99.6%|
 |ExPivot.Engine.ReportBuilder.ChildOrder|100%|100%|
 |ExPivot.Engine.ReportBuilder.CollapseState|100%|100%|
