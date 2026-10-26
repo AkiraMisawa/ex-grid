@@ -6,7 +6,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import type { CellPosition, GridCommand, GridFindRequest, GridFindResult, GridHandle, GridOptions, GridSelection, SelectionRange } from '@ex-grid/core';
 import {
     FetchingPivotSource, PivotDetailPage, PivotItemPage, PivotSourceFeatures, RecordPivotSource, createPivotLayout, japanesePivotWords, pivotRecordField,
-    type PivotDetailRecord, type PivotDisplayRow, type PivotLayout, type PivotReportCopyQuery, type PivotReportCopyResult, type PivotReportMetadata, type PivotReportRefusal,
+    type PivotDetailRecord, type PivotDisplayRow, type PivotLayout, type PivotReportCopyQuery, type PivotReportCopyResult, type PivotReportMetadata, type PivotReportRange, type PivotReportRefusal,
     type PivotReportSource, type PivotSlicing,
     type PivotSource,
 } from '@ex-grid/pivot-engine';
@@ -1980,9 +1980,31 @@ describe('ExPivot\'s Find over the report (ADR-0332, ADR-0333)', () => {
         expect(await findInReport(copyingWith(() => ({ version: 'v1', blocks: [], refusal: refusalOf('sourceRefused') })), metadata, request, signal))
             .toEqual({ kind: 'refused', refusal: refusalOf('sourceRefused') });
         expect(await findInReport(answered('v2', rowsAsked), metadata, request, signal)).toEqual({ kind: 'invalid' });
-        expect(await findInReport(answered('v1', () => cells), metadata, request, signal)).toEqual({ kind: 'invalid' });
+        expect(await findInReport(answered('v1', () => cells.slice(1)), metadata, request, signal)).toEqual({ kind: 'invalid' });
         expect(await findInReport(answered('v1', rowsAsked), metadata, request, signal))
             .toEqual({ kind: 'answered', answer: { found: true, row: 0, column: 'L' } });
+    });
+
+    it('ADR-0332 §1: a step from the start reads the report once, from its first row, and a selection\'s step only its rows', async () => {
+        const metadata = { version: 'v1', rowCount: 100, labelColumns: [{ name: 'L' }], valueColumns: [] } as unknown as PivotReportMetadata;
+        const asked: PivotReportRange[] = [];
+        const source = copyingWith(query => {
+            const range = elementAt(query.ranges, 0);
+            asked.push(range);
+            const rows = Array.from({ length: range.bottom - range.top + 1 }, (_, i) => [{ text: range.top + i === 70 ? 'x' : 'y', isNumber: false }]);
+            return { version: 'v1', blocks: [{ headers: ['L'], rows }] };
+        });
+        const request: GridFindRequest = Object.freeze({
+            text: 'x', matchCase: false, wholeCell: false, backward: false, columns: ['L'], rowSequenceVersion: 0,
+        });
+        const signal = new AbortController().signal;
+        expect(await findInReport(source, metadata, request, signal)).toEqual({ kind: 'answered', answer: { found: true, row: 70, column: 'L' } });
+        expect(asked).toEqual([{ top: 0, left: 0, bottom: 99, right: 0 }]);
+        asked.length = 0;
+        const scope = [Object.freeze({ topRow: 60, leftColumn: 0, rowCount: 20, columnCount: 1 })];
+        expect(await findInReport(source, metadata, { ...request, from: cellAt(60, 0), scope }, signal))
+            .toEqual({ kind: 'answered', answer: { found: true, row: 70, column: 'L' } });
+        expect(asked).toEqual([{ top: 61, left: 0, bottom: 79, right: 0 }]);
     });
 });
 

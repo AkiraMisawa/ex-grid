@@ -30,8 +30,8 @@ import { PivotMenuFrame, type PivotMenuCommand } from './menu';
 import { clearStyle, element, writeStyle } from './dom';
 import { defined, elementAt, unreachable } from './must';
 import { fieldSettingsPanel, valueFieldSettingsPanel, type PivotPanel } from './panels';
-import { cellItems, ReportColumns, reportRows, type PivotCellItems } from './report-grid';
-import { reportMatch, type ReportFindRead } from './report-find';
+import { cellItems, ReportColumns, reportMatch, reportRows, type PivotCellItems } from './report-grid';
+import type { ReportFindGivenUp } from './report-find';
 import { captionOfRemove, removeNamedFieldId, reportMenuCommands, valueFieldAt } from './report-menu';
 import { layoutChoiceId, PivotScreenWords } from './words';
 
@@ -916,7 +916,7 @@ export class PivotView {
             answered: answer,
             nextRequestId: () => this.#nextRequestId(),
             moved: () => { this.#reportMoved(answer); },
-            findGivenUp: why => { this.#findGivenUp(answer, why); },
+            findGivenUp: why => this.#findGivenUp(answer, why),
         });
         this.#drawGrid();
         if (question.toggled !== undefined) this.#placeToggled(question.toggled);
@@ -998,9 +998,9 @@ export class PivotView {
     }
 
     // A Find step over the report that cannot go on is said on the Pivot Toolbar, while that report is the one shown:
-    // a step over a report since replaced is the grid's to drop, as its source is no longer the grid's (ADR-0332 §1).
-    #findGivenUp(answer: PivotReportState, why: Exclude<ReportFindRead, { readonly kind: 'answered' }>): void {
-        if (this.#destroyed || this.#shown.answer !== answer) return;
+    // a step over a report since replaced is the grid's to refuse, as its source is no longer the grid's (ADR-0332 §1).
+    #findGivenUp(answer: PivotReportState, why: ReportFindGivenUp): boolean {
+        if (this.#destroyed || this.#shown.answer !== answer) return false;
         switch (why.kind) {
             case 'notHeld': this.#refusal = this.#words.word('find-report-not-held'); break;
             case 'refused': this.#refusal = this.#words.fill('source-refused', why.refusal.message); break;
@@ -1008,6 +1008,7 @@ export class PivotView {
             default: unreachable(why);
         }
         this.#draw();
+        return true;
     }
 
     // The report grid's refusals: Ctrl+H on a report, which is not written, is said on the Pivot Toolbar in Excel's

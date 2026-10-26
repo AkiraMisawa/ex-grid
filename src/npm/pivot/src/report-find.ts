@@ -6,8 +6,8 @@
 // match: a search never changes the report's shape. The cells outside the Window are read from the report source
 // by the Report Version on screen, as Copy reads them, in blocks, so a step that finds early stops reading.
 
-import { findMatches, type GridColumn, type GridFindPattern, type GridFindRequest, type GridFindResult } from '@ex-grid/core';
-import type { PivotDisplayRow, PivotReportCopyBlock, PivotReportMetadata, PivotReportRefusal, PivotReportSource } from '@ex-grid/pivot-engine';
+import { findMatches, type GridFindRequest, type GridFindResult } from '@ex-grid/core';
+import type { PivotReportCopyBlock, PivotReportMetadata, PivotReportRefusal, PivotReportSource } from '@ex-grid/pivot-engine';
 import { elementAt } from './must';
 
 // How many cells one read of the report asks for: a step that finds early stops reading, and a remote report is
@@ -23,6 +23,9 @@ export type ReportFindRead =
     | { readonly kind: 'refused'; readonly refusal: PivotReportRefusal }
     /** The source answered another version or range than it was asked. */
     | { readonly kind: 'invalid' };
+
+/** A step that cannot go on, and why. */
+export type ReportFindGivenUp = Exclude<ReportFindRead, { readonly kind: 'answered' }>;
 
 const notFound: ReportFindRead = Object.freeze({ kind: 'answered', answer: Object.freeze({ found: false }) });
 const notHeld: ReportFindRead = Object.freeze({ kind: 'notHeld' });
@@ -53,15 +56,27 @@ export async function findInReport(
     const names = Object.freeze(read.map(column => column.name));
     const blockRows = Math.max(1, Math.floor(findBlockCells / names.length));
 
+    // The rows a block may hold: within the scope's rows when there is one, so no block reads past them.
+    const first = scope === undefined ? 0 : Math.max(0, Math.min(...scope.map(range => range.topRow)));
+    const last = scope === undefined ? rows - 1 : Math.min(rows - 1, Math.max(...scope.map(range => range.topRow + range.rowCount - 1)));
+    // The Focus's row is visited twice: first past the Focus, last up to it and on it.
+    const visited = (visit: number, position: number): boolean => {
+        if (visit === 0) return backward ? position < startColumn : position > startColumn;
+        if (visit === rows) return backward ? position >= startColumn : position <= startColumn;
+        return true;
+    };
+
     let block: PivotReportCopyBlock | undefined;
     let blockTop = 0;
     for (let visit = 0; visit <= rows; visit++) {
         signal.throwIfAborted();
         const row = (((startRow + step * visit) % rows) + rows) % rows;
-        if (scope !== undefined && !scope.some(range => row >= range.topRow && row < range.topRow + range.rowCount)) continue;
+        if (row < first || row > last || (scope !== undefined && !scope.some(range => row >= range.topRow && row < range.topRow + range.rowCount))) continue;
+        // A row with no cell left to look at is not read: the Focus at the end of the last row, a step from the start.
+        if (!read.some(({ position }) => visited(visit, position))) continue;
         if (block === undefined || row < blockTop || row >= blockTop + block.rows.length) {
-            const top = backward ? Math.max(0, row - blockRows + 1) : row;
-            const bottom = backward ? row : Math.min(rows - 1, row + blockRows - 1);
+            const top = backward ? Math.max(first, row - blockRows + 1) : row;
+            const bottom = backward ? row : Math.min(last, row + blockRows - 1);
             const answer = await source.copy(Object.freeze({
                 version: metadata.version,
                 columns: names,
@@ -83,9 +98,7 @@ export async function findInReport(
         for (let k = 0; k < read.length; k++) {
             const index = backward ? read.length - 1 - k : k;
             const { name, position } = elementAt(read, index);
-            // The Focus's row is visited twice: first past the Focus, last up to it and on it.
-            if (visit === 0 && (backward ? position >= startColumn : position <= startColumn)) continue;
-            if (visit === rows && (backward ? position < startColumn : position > startColumn)) continue;
+            if (!visited(visit, position)) continue;
             if (scope !== undefined && !scope.some(range => row >= range.topRow && row < range.topRow + range.rowCount
                 && position >= range.leftColumn && position < range.leftColumn + range.columnCount)) continue;
             if (findMatches(elementAt(cells, index).text, request)) {
@@ -94,24 +107,4 @@ export async function findInReport(
         }
     }
     return notFound;
-}
-
-// Each report column's displayed text, as the report grid's cells show it and its Copy reads it.
-const cellTexts = new WeakMap<GridColumn<PivotDisplayRow>, (row: PivotDisplayRow) => string>();
-
-/** Declares `column`'s displayed text, which the Match Mark judges it by. */
-export function withCellText(column: GridColumn<PivotDisplayRow>, text: (row: PivotDisplayRow) => string): GridColumn<PivotDisplayRow> {
-    cellTexts.set(column, text);
-    return column;
-}
-
-/**
- * The Match Mark's rule over the report (ADR-0332 §4): the reference rule over a cell's displayed text, the one
- * `findInReport` finds by, so the mark and the step agree. One function for every pivot: its identity reaches
- * the grid (ADR-0003).
- */
-export function reportMatch(row: PivotDisplayRow, column: GridColumn<PivotDisplayRow>, pattern: GridFindPattern): boolean {
-    const text = cellTexts.get(column);
-    if (text === undefined) throw new Error(`Internal: the report column '${column.name}' declares no displayed text.`);
-    return findMatches(text(row), pattern);
 }

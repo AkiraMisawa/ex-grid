@@ -466,6 +466,19 @@ describe('Find and Replace (ADR-0055, ADR-0332)', () => {
         await vi.waitFor(() => { expect(nameBox(element).value).toBe('C5'); });
     });
 
+    it('ADR-0332 §4: while the panel holds a search, the painted cells it finds wear the Match Mark, by the rule the step finds by', async () => {
+        const { element } = sheetOf({ document: documentOf({ A1: 'apple', B3: '=40+2', C5: '42 apples' }) });
+        await vi.waitFor(() => { expect(textAt(element, 2, 1)).toBe('42'); });
+        press(element, 0, 0);
+        key('f', { ctrlKey: true });
+        await vi.waitFor(() => { expect(element.querySelector('.ex-popover-find')).not.toBeNull(); });
+        typeInFind(element, 'input.ex-find-field', '42');
+        await vi.waitFor(() => { expect(element.querySelectorAll('.ex-viewport .ex-match-mark')).toHaveLength(2); });
+        expect(cellAt(element, 2, 1)?.className).toMatch(/ex-match-mark/);
+        expect(cellAt(element, 4, 2)?.className).toMatch(/ex-match-mark/);
+        expect(cellAt(element, 0, 0)?.className).not.toMatch(/ex-match-mark/);
+    });
+
     it('ADR-0332 §3: Replace All rewrites the Entries that match, Formulas included, as one step on the undo stack', async () => {
         const { element, sheet } = sheetOf({ document: documentOf({ A1: '2', A2: '=A1*10', B1: 'rate 2' }) });
         await vi.waitFor(() => { expect(textAt(element, 1, 0)).toBe('20'); });
