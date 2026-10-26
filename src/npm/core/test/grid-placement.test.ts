@@ -167,17 +167,22 @@ describe('a placement of the Selection', () => {
         expect(listener.refusals).toEqual([{ kind: 'placement', reason: 'columnsMoved' }]);
     });
 
-    it('ADR-0050, ADR-0142: after the source is replaced, a request carries the new source\'s own version', async () => {
+    it('ADR-0050, ADR-0142: after the source is replaced, a request carries the new source\'s own version, not the one the grid writes', async () => {
         const listener = heard();
         const options: GridOptions<Trade> = { columns, source: GridSource.from(trades(20)), rowHeight: 24, viewportHeight: 480, ...listener.options };
-        const { view } = mount(options);
+        const { root, view } = mount(options);
         await painted();
         const next = GridSource.from(trades(30));
         view.update({ ...options, source: next });
         await painted();
+        // The version the grid writes moves on past a change of source; a Consumer reads the source's own.
+        const written = Number(q(root, '.ex-viewport').getAttribute('data-ex-sequence'));
+        expect(written).not.toBe(next.snapshot().rowSequenceVersion);
+        expect(view.placeSelection(range(25, 0, 1, 1), { row: 25, column: 0 }, written)).toBe(false);
         expect(view.placeSelection(range(25, 0, 1, 1), { row: 25, column: 0 }, next.snapshot().rowSequenceVersion)).toBe(true);
         await painted();
-        expect([listener.refusals, defined(listener.selections.at(-1), 'the Selection heard').focus]).toEqual([[], { row: 25, column: 0 }]);
+        expect([listener.refusals, defined(listener.selections.at(-1), 'the Selection heard').focus])
+            .toEqual([[{ kind: 'placement', reason: 'orderMoved' }], { row: 25, column: 0 }]);
     });
 
     it('ADR-0050: a grid with no rows has no cell to place on, and says so', async () => {

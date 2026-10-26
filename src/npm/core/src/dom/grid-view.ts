@@ -1285,6 +1285,8 @@ export class GridView<Row> {
      */
     placeSelection(range: SelectionRange, focus: CellPosition, rowSequenceVersion: number): boolean {
         if (this.#destroyed) throw new Error('This grid was destroyed: a grid destroyed places nothing.');
+        // Changes a live source gathered are the order's before the check, as a commit's are (ADR-0142 D5).
+        this.#source.publishGathered?.();
         // The source's own version, which is the one a Consumer reads; the grid's written one carries an offset
         // past every change of source.
         if (rowSequenceVersion !== this.#state.rowSequenceVersion) {
@@ -1304,7 +1306,10 @@ export class GridView<Row> {
         this.#answered += 1;
         this.#invalidate();
         if (!this.#commitEdit()) return false;
+        // A menu standing at the old place closes, and a drag ends, so its next move does not reshape the place
+        // from the old anchor.
         this.#closePopover(true);
+        this.#setDragging(false);
         this.#interactive = undefined;
         // The commit's intent may have moved the order or handed over another source: the positions name other
         // rows now (ADR-0011, ADR-0142).
@@ -1324,6 +1329,7 @@ export class GridView<Row> {
         if (this.#apply(this.#held.selection.place(range, focus, this.#extent))) {
             this.#revealOwed = { target: focus, extending: undefined, rowStart: false, stepRows: 0 };
             this.#revealHeaderOwed = undefined;
+            this.#followArmed = { focus, target: focus };
         }
         return true;
     }
