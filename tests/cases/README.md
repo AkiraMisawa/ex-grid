@@ -691,7 +691,7 @@ the Sheet, `document`, `documentJson` (its Sheet Document's JSON text, which bot
 redo or a push reached, in order), `tableColumns` (what `readTable` read, `null` while the table waits), `heldTables` (each snapshot held, as it stands now), and
 `clockReads` (how often the step read the clock); of the Workbook,
 `sheets`, `shown`, `workbook` (its `culture`, `today`, `seed` as a string of digits, `hasVolatileFormulas`, `linkedTables` and `changes`),
-`workbookJson` (its Workbook Document's JSON text), `copies` (each copy taken, by its name: its `refusal`, its outward
+`workbookJson` (its Workbook Document's JSON text), `copies` (each copy taken, by its name: its `refusal` and the words it is `saying`, its outward
 `text` and `html`, and its `block`, rows of the Entries it holds), and
 `picture` or `pictureNot` against one remembered. An object or a list compares in full where it is written, and a number
 exactly (`-0` apart from `0`) unless it is `{"near", "within"}`.
@@ -699,7 +699,7 @@ exactly (`-0` apart from `0`) unless it is `{"near", "within"}`.
 A step that throws is read as a refusal, `{"refusal": kind, "reason"?, "saying"?}`, by .NET's exception type
 on one side and the Script Core's error on the other: `formulaSyntax` (`FormulaSyntaxException`,
 `FormulaSyntaxError`) with its `reason` and whether it is `beyondLimit`, `refused` with its `reason` (`SheetRefusedException`, `SheetRefusedError`),
-`repeatedKey`, `document` with its `documentVersion` (`SheetDocumentException`, `SheetDocumentError`), `argument` (`ArgumentException`,
+`repeatedKey` with its `table`, `keyColumns`, `keys`, `firstRow`, `secondRow` and the `valueChanges` of the table's going back to waiting, `document` with its `documentVersion` (`SheetDocumentException`, `SheetDocumentError`), `argument` (`ArgumentException`,
 `RangeError`), `format` (`FormatException`, `FormatError`) and `invalidOperation`
 (`InvalidOperationException`, `Error`). What is not the engine refusing is never read as one: the runner's
 own reading of a malformed case, an engine defect, and what JavaScript throws by itself fail the case.

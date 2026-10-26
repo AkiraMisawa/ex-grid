@@ -403,7 +403,12 @@ function thrown(e: unknown): JsonObject {
     if (e instanceof CaseError) throw e;
     if (e instanceof FormulaSyntaxError) return { refusal: 'formulaSyntax', reason: e.reason, beyondLimit: e.isBeyondLimit, saying: e.message };
     if (e instanceof SheetRefusedError) return { refusal: 'refused', reason: e.refusal.reason, saying: e.refusal.message };
-    if (e instanceof RepeatedKeyError) return { refusal: 'repeatedKey', saying: e.message };
+    if (e instanceof RepeatedKeyError) {
+        return {
+            refusal: 'repeatedKey', saying: e.message, table: e.table, keyColumns: [...e.keyColumns], keys: e.keys.map(encode),
+            firstRow: e.firstRow, secondRow: e.secondRow, valueChanges: addresses(e.change.valueChanges),
+        };
+    }
     if (e instanceof SheetDocumentError) return { refusal: 'document', saying: e.message, documentVersion: orNull(e.documentVersion) };
     if (e instanceof FormatError) return { refusal: 'format', saying: e.message };
     if (e instanceof RangeError && e.message !== 'Maximum call stack size exceeded') return { refusal: 'argument', saying: e.message };
@@ -970,6 +975,7 @@ class Run {
                     const block = copy.block;
                     return [name, {
                         refusal: copy.refusal === undefined ? null : copy.refusal.reason,
+                        saying: copy.refusal === undefined ? null : copy.refusal.message,
                         text: copy.text === undefined ? null : copy.text,
                         html: copy.html === undefined ? null : copy.html,
                         block: block === undefined

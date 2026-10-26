@@ -162,6 +162,12 @@ describe('the engine surface', () => {
         expect(sheet.getNumberFormat(a1).code).toBe('d-mmm');
     });
 
+    // ADR-0049, ADR-0331 §9: a table is never undeclared: the Workbook, which holds the tables, has no API for it.
+    it('has no way to undeclare a Linked Table', () => {
+        const names = Object.getOwnPropertyNames(Workbook.prototype).filter(n => n.includes('LinkedTable') || n.includes('linkedTable') || /undeclare/iu.test(n));
+        expect(names.toSorted()).toEqual(['declareLinkedTable', 'linkedTableColumns', 'linkedTables', 'pushLinkedTable']);
+    });
+
     // ADR-0071, SH-40 (a reading until the eleventh Windows run, case 1): the eight names are Excel's legacy palette.
     it.each([
         ['black', 0x000000],

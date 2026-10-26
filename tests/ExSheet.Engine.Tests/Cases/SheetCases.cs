@@ -544,7 +544,12 @@ internal sealed class Run(CultureInfo culture)
     {
         FormulaSyntaxException f => new JsonObject { ["refusal"] = "formulaSyntax", ["reason"] = f.Reason, ["beyondLimit"] = f.IsBeyondLimit, ["saying"] = e.Message },
         SheetRefusedException r => new JsonObject { ["refusal"] = "refused", ["reason"] = SheetCases.Camel(r.Refusal.Reason), ["saying"] = r.Refusal.Message },
-        RepeatedKeyException => new JsonObject { ["refusal"] = "repeatedKey", ["saying"] = e.Message },
+        RepeatedKeyException k => new JsonObject
+        {
+            ["refusal"] = "repeatedKey", ["saying"] = Saying(k), ["table"] = k.Table,
+            ["keyColumns"] = new JsonArray([.. k.KeyColumns.Select(c => (JsonNode)c)]), ["keys"] = new JsonArray([.. k.Keys.Select(v => SheetCases.Encode(v))]),
+            ["firstRow"] = k.FirstRow, ["secondRow"] = k.SecondRow, ["valueChanges"] = SheetCases.Addresses(k.Change.ValueChanges),
+        },
         SheetDocumentException document => new JsonObject { ["refusal"] = "document", ["saying"] = e.Message, ["documentVersion"] = document.DocumentVersion },
         ArgumentException a => new JsonObject { ["refusal"] = "argument", ["saying"] = Saying(a) },
         FormatException => new JsonObject { ["refusal"] = "format", ["saying"] = e.Message },
@@ -1082,6 +1087,7 @@ internal sealed class Run(CultureInfo culture)
                     each[name] = new JsonObject
                     {
                         ["refusal"] = copy.Refusal is { } refused ? SheetCases.Camel(refused.Reason) : null,
+                        ["saying"] = copy.Refusal?.Message,
                         ["text"] = copy.Text,
                         ["html"] = copy.Html,
                         ["block"] = copy.Block is { } block
