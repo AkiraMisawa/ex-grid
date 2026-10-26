@@ -616,6 +616,7 @@ export interface GridOptions<Row> extends CellPaintOptions<Row>, FormulaBarOptio
     readonly onSelectionChanged?: (selection: GridSelection) => void;
     readonly onSelectionSummaryChanged?: (summary: SelectionSummary) => void;
     readonly onSummarize?: (request: GridSummaryRequest, signal: AbortSignal) => GridSummaryResult | Promise<GridSummaryResult>;
+    readonly onSummaryFiguresChanged?: (figures: readonly SummaryFigure[]) => void;
     readonly onUndo?: () => void;
     readonly pasteByteCap?: number;
     readonly pasteMaySpill?: boolean;
@@ -1209,6 +1210,7 @@ export const summaryLabelIds: Readonly<{
     readonly max: 'summary-max';
     readonly sum: 'summary-sum';
     readonly pending: 'summary-pending';
+    readonly menu: 'summary-menu';
 }>;
 
 // @public

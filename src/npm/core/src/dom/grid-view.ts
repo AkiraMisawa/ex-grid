@@ -14,6 +14,7 @@ import { defaultCellCap, pasteShape, planCopy, planFill, planPaste, type CopyPla
 import { GridClearIntent } from '../clipboard/clear-intent';
 import { columnPlaceholder, copyRefusalWords, pasteRefusalWords, rowCommandRefusalId, shapeMismatchMaySpillWords } from '../chrome/refusal-words';
 import { builtInCommandLabel } from '../chrome/command-labels';
+import { summaryLabelIds } from '../chrome/summary-words';
 import { markLabelIds } from '../chrome/mark-words';
 import { findOutcomeText, type FindOutcome, type FindPanelRefusedCell } from '../chrome/find-panel-labels';
 import { gridCommandIds, gridLabelIds } from '../chrome/command-ids';
@@ -78,6 +79,7 @@ import {
 } from './grid-column';
 import { moveByKey, movingKinds, type KeyReveal } from './key-moves';
 import { selectionLayers, type LayerPiece } from './selection-layers';
+import { SummaryMenu, toggledFigures } from './summary-menu';
 import { rowsMovedUnder, selectsTwoCells, summaryFiguresShown, SummaryBox, SummaryQuestions, type SelectionSummary, type SummaryAnswerer } from './selection-summary';
 import { stylesheetName, stylesheetStamp } from './shipped-stylesheet';
 import { CellPaint, type CellPaintOptions } from './cell-paint';
@@ -369,6 +371,11 @@ export interface GridOptions<Row> extends CellPaintOptions<Row>, FormulaBarOptio
      * Consumer that shows the figures elsewhere, such as an application-wide status bar. The grid never writes
      * them to a live region. */
     readonly onSelectionSummaryChanged?: (summary: SelectionSummary) => void;
+    /** Hears a change of figures made on the status line (ADR-0130): given, a right-click there opens Excel's menu
+     * of the six figures, each ticked while shown, and a press on one reports the figures with it ticked or
+     * unticked, in Excel's order. The grid holds no choice: the figures stay as `summaryFigures` says until the
+     * Consumer hands the new ones back. Not given, the right-click is the browser's. */
+    readonly onSummaryFiguresChanged?: (figures: readonly SummaryFigure[]) => void;
 }
 
 const defaultViewportWidthPx = 800;
@@ -598,6 +605,7 @@ interface Taken<Row> {
     readonly showSelectionSummary: boolean;
     readonly summaryFigures: readonly SummaryFigure[];
     readonly onSelectionSummaryChanged: ((summary: SelectionSummary) => void) | undefined;
+    readonly onSummaryFiguresChanged: ((figures: readonly SummaryFigure[]) => void) | undefined;
     readonly formulaBar: FormulaBarDeclarations<Row>;
 }
 
@@ -608,7 +616,11 @@ interface Taken<Row> {
 // The find panel stands in the grid's top right under the header, and holds no commands (ADR-0055).
 // A Consumer's popover stands under the header band, centred across the grid (ADR-0050, item 16).
 type OpenPopover = MenuPopover | { readonly kind: 'find'; readonly element: HTMLElement; readonly panel: FindPanel }
-    | { readonly kind: 'consumer'; readonly element: HTMLElement; readonly frame: ConsumerPopoverFrame; readonly opening: object };
+    | {
+        readonly kind: 'consumer'; readonly element: HTMLElement; readonly frame: ConsumerPopoverFrame; readonly opening: object;
+        // The grid's own contents in the frame, the figures menu, which the Consumer's closePopover leaves alone.
+        readonly own: boolean;
+    };
 
 type MenuPopover = {
     readonly element: HTMLElement;
@@ -961,6 +973,11 @@ export class GridView<Row> {
     #showSelectionSummary = true;
     #summaryFigures: readonly SummaryFigure[] = defaultSummaryFigures;
     #onSelectionSummaryChanged: ((summary: SelectionSummary) => void) | undefined;
+    #onSummaryFiguresChanged: ((figures: readonly SummaryFigure[]) => void) | undefined;
+    // The figures menu while it stands, or since it last did (ADR-0130), and the figures it last reported, until the
+    // Consumer hands others back.
+    #summaryMenu: SummaryMenu | undefined;
+    #summaryChoice: readonly SummaryFigure[] | undefined;
     readonly #summary: SummaryQuestions;
     readonly #summaryBox: SummaryBox;
     #summaryRowsStamp = 0;
@@ -1263,6 +1280,8 @@ export class GridView<Row> {
             this.#invalidate();
         });
         this.#summaryBox = new SummaryBox(doc);
+        this.#summaryBox.element.addEventListener('contextmenu', this.#onSummaryContextMenu);
+        this.#stops.push(() => { this.#summaryBox.element.removeEventListener('contextmenu', this.#onSummaryContextMenu); });
         this.#bar = new FormulaBar(doc, {
             textTyped: this.#onBarTyped, textFocused: this.#onBarFocused, nameBoxEntered: this.#onNameBoxEntered, nameBoxLeft: this.#onNameBoxLeft,
             nameBoxFocused: this.#onNameBoxFocused,
@@ -1713,10 +1732,11 @@ export class GridView<Row> {
 
     // The Selection Summary's options checked (ADR-0130): `onSummarize` beside a source that summarises is refused,
     // since one of the two would have to silently win, and the figures are taken in Excel's order.
-    #summaryOptionsOf(options: GridOptions<Row>): Pick<Taken<Row>, 'onSummarize' | 'showSelectionSummary' | 'summaryFigures' | 'onSelectionSummaryChanged'> {
-        const { onSummarize, showSelectionSummary, summaryFigures, onSelectionSummaryChanged }: {
+    #summaryOptionsOf(options: GridOptions<Row>): Pick<Taken<Row>,
+        'onSummarize' | 'showSelectionSummary' | 'summaryFigures' | 'onSelectionSummaryChanged' | 'onSummaryFiguresChanged'> {
+        const { onSummarize, showSelectionSummary, summaryFigures, onSelectionSummaryChanged, onSummaryFiguresChanged }: {
             readonly onSummarize?: unknown; readonly showSelectionSummary?: unknown; readonly summaryFigures?: unknown;
-            readonly onSelectionSummaryChanged?: unknown;
+            readonly onSelectionSummaryChanged?: unknown; readonly onSummaryFiguresChanged?: unknown;
         } = options;
         if (onSummarize !== undefined && typeof onSummarize !== 'function') {
             throw new TypeError('onSummarize is a function of the Selection Summary\'s request and an abort signal (ADR-0130).');
@@ -1730,6 +1750,9 @@ export class GridView<Row> {
         }
         if (onSelectionSummaryChanged !== undefined && typeof onSelectionSummaryChanged !== 'function') {
             throw new TypeError('onSelectionSummaryChanged is a function of the Selection Summary.');
+        }
+        if (onSummaryFiguresChanged !== undefined && typeof onSummaryFiguresChanged !== 'function') {
+            throw new TypeError('onSummaryFiguresChanged is a function of the figures chosen (ADR-0130).');
         }
         let figures = defaultSummaryFigures;
         if (summaryFigures !== undefined) {
@@ -1749,6 +1772,7 @@ export class GridView<Row> {
             showSelectionSummary: showSelectionSummary !== false,
             summaryFigures: figures,
             onSelectionSummaryChanged: options.onSelectionSummaryChanged,
+            onSummaryFiguresChanged: options.onSummaryFiguresChanged,
         };
     }
 
@@ -1911,8 +1935,10 @@ export class GridView<Row> {
         this.#dataEdge = taken.dataEdge;
         this.#onSummarize = taken.onSummarize;
         this.#showSelectionSummary = taken.showSelectionSummary;
+        if (taken.summaryFigures !== this.#summaryFigures) this.#summaryChoice = undefined;
         this.#summaryFigures = taken.summaryFigures;
         this.#onSelectionSummaryChanged = taken.onSelectionSummaryChanged;
+        this.#onSummaryFiguresChanged = taken.onSummaryFiguresChanged;
         this.#formulaBarDeclared = taken.formulaBar;
         // A panel over a source that no longer finds closes, as a Cancel: nothing could answer its steps
         // (ADR-0055). One offering Replace where none can land any more offers Find alone (ADR-0332 §2).
@@ -4049,6 +4075,12 @@ export class GridView<Row> {
         if (typeof content !== 'function') throw new TypeError("A Consumer's popover's content is a function that makes its element (ADR-0050, item 16).");
         if (typeof label !== 'string' || label.trim() === '') throw new TypeError("A Consumer's popover is named in the Consumer's words: its label is not empty (ADR-0033).");
         if (this.#edit !== undefined) return false;
+        this.#standFrame(content, label, false);
+        return true;
+    }
+
+    // Stands contents in the popover frame, the Consumer's or the grid's own, in place of any popover that stands.
+    #standFrame(content: (context: GridPopoverContext) => HTMLElement, label: string, own: boolean): void {
         // The context speaks for this opening only: once another popover stands, its close closes nothing.
         const opening = {};
         const standing = (): ConsumerPopoverFrame | undefined => {
@@ -4067,18 +4099,17 @@ export class GridView<Row> {
         // The contents may have opened another popover as they were made: this one takes its place.
         this.#closePopover(false);
         const frame = new ConsumerPopoverFrame(this.#root.ownerDocument, label, contents, this.#answer);
-        this.#popover = { kind: 'consumer', element: frame.element, frame, opening };
+        this.#popover = { kind: 'consumer', element: frame.element, frame, opening, own };
         this.#placePopover();
         this.#scroller.after(frame.element);
         frame.focusFirst();
         this.#answer();
-        return true;
     }
 
     /** Closes a Consumer's popover where one stands (ADR-0050, item 16); the keyboard returns to the grid. */
     closePopover(): void {
         if (this.#destroyed) throw new Error('This grid was destroyed.');
-        if (this.#popover?.kind !== 'consumer') return;
+        if (this.#popover?.kind !== 'consumer' || this.#popover.own) return;
         this.#closePopover(true);
         this.#answer();
     }
@@ -6073,6 +6104,35 @@ export class GridView<Row> {
         this.#placePopover();
     }
 
+    // A right-click on the status line opens the figures menu where a Consumer hears the choice (ADR-0130), and is
+    // the browser's otherwise. The grid's popover frame holds it, so it closes as any popover does.
+    // An open edit commits first, as for the Context Menu (ADR-0036), and one held by a Reject keeps the keyboard.
+    readonly #onSummaryContextMenu = (event: MouseEvent): void => {
+        if (this.#destroyed || this.#onSummaryFiguresChanged === undefined) return;
+        event.preventDefault();
+        event.stopPropagation();
+        this.#answer();
+        if (!this.#commitEdit()) return;
+        const menu = new SummaryMenu(this.#root.ownerDocument, figure => { this.#toggleSummaryFigure(menu, figure); });
+        menu.paint(this.#summaryFigures, id => this.#labelOf(id), this.#commandLabel);
+        this.#standFrame(() => menu.element, this.#labelOf(summaryLabelIds.menu), true);
+        this.#summaryMenu = menu;
+        this.#summaryChoice = undefined;
+    };
+
+    // A press in the figures menu reports the figures with that one ticked or unticked. Presses come faster than a
+    // Consumer may hand the figures back, so each builds on the choice last reported until the Consumer hands figures
+    // that differ from the ones shown: two presses report the same choices however the Consumer is timed (the spine's
+    // sixth rule).
+    #toggleSummaryFigure(menu: SummaryMenu, figure: SummaryFigure): void {
+        this.#answer();
+        const heard = this.#onSummaryFiguresChanged;
+        if (!menu.standing || heard === undefined) return;
+        const choice = toggledFigures(this.#summaryChoice ?? this.#summaryFigures, figure);
+        this.#summaryChoice = choice;
+        heard(choice);
+    }
+
     // The status line after the rows, outside the scroller (ADR-0014): the header's checkbox and the marks' count
     // from the counts the Consumer answers, standing while it says something (ADR-0043), and the Selection
     // Summary, standing whenever the grid can summarise, figures or none, so the strip does not come and go with
@@ -6087,7 +6147,20 @@ export class GridView<Row> {
             const focus = this.#held.selection.focus;
             const column = focus === undefined ? undefined : this.#columns[focus.column]?.column;
             this.#summaryBox.paint(summary, summaryFiguresShown(summary.result, column), id => this.#labelOf(id));
+            this.#summaryBox.claimMenu(this.#onSummaryFiguresChanged !== undefined);
             shown.push(this.#summaryBox.element);
+        }
+        // The menu's ticks are the figures handed back, which a press on it does not change by itself. It goes with
+        // the line it was opened on, or with the Consumer that heard it, rather than stand with presses that do nothing.
+        const menu = this.#summaryMenu;
+        if (menu?.standing !== true) {
+            this.#summaryMenu = undefined;
+        } else if (this.#onSummaryFiguresChanged === undefined || !shown.includes(this.#summaryBox.element)) {
+            this.#summaryMenu = undefined;
+            const popover = this.#popover;
+            if (popover?.kind === 'consumer' && popover.element.contains(menu.element)) this.#closePopover(true);
+        } else {
+            menu.paint(this.#summaryFigures, id => this.#labelOf(id), this.#commandLabel);
         }
         if (!sameItems(shown, this.#statusShown)) {
             this.#status.replaceChildren(...shown);

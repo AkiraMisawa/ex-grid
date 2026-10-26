@@ -299,6 +299,13 @@ export class SummaryBox {
         this.element.className = 'ex-summary';
     }
 
+    /** Marks the box as a control of the grid's own whose right-click the grid takes, while it does (ADR-0240). */
+    claimMenu(claimed: boolean): void {
+        if (claimed === this.element.hasAttribute('data-ex-claims')) return;
+        if (claimed) this.element.setAttribute('data-ex-claims', 'contextmenu');
+        else this.element.removeAttribute('data-ex-claims');
+    }
+
     /** Writes the summary into the box. */
     paint(summary: SelectionSummary, shown: readonly SummaryFigureShown[], words: (id: string) => string): void {
         const status = summary.status;

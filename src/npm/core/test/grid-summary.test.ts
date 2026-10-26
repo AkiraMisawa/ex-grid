@@ -288,3 +288,96 @@ describe('The rows under a Selection Summary', () => {
         expect(landed).toBe(0);
     });
 });
+
+const rightClick = (target: HTMLElement): MouseEvent => {
+    const event = new MouseEvent('contextmenu', { bubbles: true, cancelable: true, button: 2 });
+    target.dispatchEvent(event);
+    return event;
+};
+const menuItems = (root: HTMLElement): HTMLButtonElement[] => [...root.querySelectorAll<HTMLButtonElement>('.ex-summary-menu [role=menuitemcheckbox]')];
+const ticks = (root: HTMLElement): [string, string | null][] =>
+    menuItems(root).map(item => [item.textContent.replace('✓', ''), item.getAttribute('aria-checked')]);
+
+function press(name: string): void {
+    document.activeElement?.dispatchEvent(new KeyboardEvent('keydown', { key: name, bubbles: true, cancelable: true }));
+}
+
+describe('The figures menu', () => {
+    it('SM-9 / ADR-0130: a right-click on the status line opens Excel\'s six figures, ticked while shown; a press reports the choice in Excel\'s order, and the ticks follow the figures handed back', async () => {
+        const chosen: (readonly string[])[] = [];
+        const options: GridOptions<Trade> = {
+            columns, source: GridSource.from(trades(10)), rowHeight: 24,
+            onSummaryFiguresChanged: choice => { chosen.push(choice); },
+        };
+        const { root, view } = mount(options);
+        await painted();
+        expect(box(root).getAttribute('data-ex-claims')).toBe('contextmenu');
+        expect(rightClick(box(root)).defaultPrevented).toBe(true);
+        await painted();
+        const menu = q(root, '.ex-popover-consumer .ex-summary-menu');
+        expect([menu.getAttribute('role'), menu.getAttribute('aria-label'), q(root, '.ex-popover-consumer').getAttribute('aria-label')])
+            .toEqual(['menu', 'Status bar figures', 'Status bar figures']);
+        expect(ticks(root)).toEqual([
+            ['Average', 'true'], ['Count', 'true'], ['Numerical Count', 'false'], ['Min', 'false'], ['Max', 'false'], ['Sum', 'true'],
+        ]);
+        expect(document.activeElement).toBe(menuItems(root)[0]);
+
+        menuItems(root)[3]?.click();
+        menuItems(root)[0]?.click();
+        await painted();
+        // The grid holds no choice, and the menu stays. Two presses before the figures come back build one on the
+        // other, however the Consumer is timed.
+        expect(chosen).toEqual([['average', 'count', 'min', 'sum'], ['count', 'min', 'sum']]);
+        expect(ticks(root).map(([, checked]) => checked)).toEqual(['true', 'true', 'false', 'false', 'false', 'true']);
+
+        view.update({ ...options, summaryFigures: ['min', 'count', 'sum'] });
+        await painted();
+        expect(ticks(root).map(([, checked]) => checked)).toEqual(['false', 'true', 'false', 'true', 'false', 'true']);
+
+        // A menu's keys step through the items and wrap.
+        press('ArrowUp');
+        expect(document.activeElement).toBe(menuItems(root)[5]);
+        press('Home');
+        press('ArrowDown');
+        expect(document.activeElement).toBe(menuItems(root)[1]);
+
+        // Escape closes it as any popover, and the keyboard is back on the grid.
+        document.activeElement?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+        await painted();
+        expect([root.querySelector('.ex-summary-menu'), root.contains(document.activeElement)]).toEqual([null, true]);
+    });
+
+    it('ADR-0130, ADR-0036: an open edit commits before the menu opens, and the menu goes once nobody hears the choice', async () => {
+        const edits: string[] = [];
+        const options: GridOptions<Trade> = {
+            columns: [{ name: 'Book', type: 'text', value: trade => trade.book, width: 120, editable: true }],
+            source: GridSource.from(trades(10)), rowHeight: 24,
+            onEdit: intent => { edits.push(intent.value); },
+            onSummaryFiguresChanged: () => undefined,
+        };
+        const { root, view } = mount(options);
+        await painted();
+        expect(view.placeSelection(selectionRange(1, 0, 1, 1), cell(1, 0), view.readView().rowSequenceVersion)).toBe(true);
+        await painted();
+        view.focus();
+        document.activeElement?.dispatchEvent(new KeyboardEvent('keydown', { key: 'X', bubbles: true, cancelable: true }));
+        await painted();
+        expect(root.querySelector('.ex-editor')).not.toBeNull();
+        rightClick(box(root));
+        await painted();
+        expect([edits, root.querySelector('.ex-editor'), menuItems(root).length]).toEqual([['X'], null, 6]);
+
+        const { onSummaryFiguresChanged: _withdrawn, ...withdrawn } = options;
+        view.update(withdrawn);
+        await painted();
+        expect([root.querySelector('.ex-summary-menu'), root.contains(document.activeElement)]).toEqual([null, true]);
+    });
+
+    it('ADR-0130: with nobody hearing a change of figures, the right-click on the status line is the browser\'s', async () => {
+        const { root } = mount({ columns, source: GridSource.from(trades(10)), rowHeight: 24 });
+        await painted();
+        expect([box(root).hasAttribute('data-ex-claims'), rightClick(box(root)).defaultPrevented]).toEqual([false, false]);
+        await painted();
+        expect(root.querySelector('.ex-summary-menu')).toBeNull();
+    });
+});

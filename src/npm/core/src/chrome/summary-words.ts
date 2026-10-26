@@ -17,6 +17,8 @@ export const summaryLabelIds = Object.freeze({
     sum: 'summary-sum',
     /** What the line says while the question is out. */
     pending: 'summary-pending',
+    /** The name of the status line's menu of figures. */
+    menu: 'summary-menu',
 } as const);
 
 /** The id of a figure's name. */
@@ -33,4 +35,5 @@ export const summaryWords: readonly (readonly [string, string])[] = Object.freez
     [summaryLabelIds.max, 'Max'],
     [summaryLabelIds.sum, 'Sum'],
     [summaryLabelIds.pending, 'Calculating…'],
+    [summaryLabelIds.menu, 'Status bar figures'],
 ]);
