@@ -27,7 +27,7 @@ import { FieldListView, fieldOf, sameEntry, type FieldListEdit, type FieldListMo
 import { ItemFilterPanel, itemsProblemText } from './item-filter';
 import { ItemListings, pendingFirst, searchItems, type FieldItems, type ItemsUnder } from './items';
 import { PivotMenuFrame, type PivotMenuCommand } from './menu';
-import { element } from './dom';
+import { clearStyle, element, writeStyle } from './dom';
 import { defined, elementAt, unreachable } from './must';
 import { fieldSettingsPanel, valueFieldSettingsPanel, type PivotPanel } from './panels';
 import { cellItems, ReportColumns, reportRows, type PivotCellItems } from './report-grid';
@@ -583,7 +583,7 @@ export class PivotView {
         this.#root.replaceChildren();
         this.#root.classList.remove('ex-pivot');
         this.#root.removeAttribute('data-ex-input-root');
-        this.#root.removeAttribute('style');
+        clearStyle(this.#root);
         this.#root.removeAttribute('aria-busy');
     }
 
@@ -1552,7 +1552,7 @@ export class PivotView {
         const stretch = this.#options.viewportHeight === 'stretch';
         const width = this.#options.fieldListWidth ?? 300; // oxlint-disable-line ex-grid/no-stand-in-default -- ADR-0061: the Field List's declared default width, as the Razor component's
         // The Geometry Tokens, inline on the root (ADR-0027): the Field List's width and a level's indent.
-        this.#root.setAttribute('style', `--ex-pivot-field-list-width: ${width}px; --ex-pivot-indent: ${this.#indentPx}px${stretch ? '; height: 100%; flex: 1 1 auto; min-height: 0' : ''}`);
+        writeStyle(this.#root, `--ex-pivot-field-list-width: ${width}px; --ex-pivot-indent: ${this.#indentPx}px${stretch ? '; height: 100%; flex: 1 1 auto; min-height: 0' : ''}`);
         if (this.#asked === undefined) this.#root.removeAttribute('aria-busy');
         else this.#root.setAttribute('aria-busy', 'true');
         this.#fieldListToggle.textContent = words.word('field-list-toggle');
@@ -1566,7 +1566,7 @@ export class PivotView {
         this.#fieldListToggle.setAttribute('aria-pressed', this.#fieldListShown ? 'true' : 'false');
         if (this.#notice.textContent !== (this.#refusal ?? '')) this.#notice.textContent = this.#refusal ?? ''; // oxlint-disable-line ex-grid/no-stand-in-default -- no refusal is an empty notice, which takes no room
         this.#notice.hidden = this.#refusal === undefined;
-        this.#sheet.setAttribute('style', stretch ? 'display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0' : '');
+        writeStyle(this.#sheet, stretch ? 'display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0' : '');
         const answered = this.#reportDrawn;
         // The report or the box that says why there is none, and over the report, while a placed field is
         // dragged, the mark that a drop there removes it (ADR-0061). Elements come and go rather than hide, since
@@ -1595,7 +1595,7 @@ export class PivotView {
         if (!answered) {
             this.#empty.textContent = words.word(this.#asked !== undefined && !showsNothing(this.#layoutAhead) ? 'loading' : 'empty-report');
             const height = this.#options.viewportHeight ?? 400; // oxlint-disable-line ex-grid/no-stand-in-default -- ADR-0028: the report's declared default height, as the Razor component's
-            this.#empty.setAttribute('style', height === 'stretch' ? 'flex: 1 1 auto; min-height: 0' : `height: ${height}px`);
+            writeStyle(this.#empty, height === 'stretch' ? 'flex: 1 1 auto; min-height: 0' : `height: ${height}px`);
         }
         this.#fieldListBox.hidden = !this.#fieldListShown;
         this.#fieldListBox.setAttribute('aria-label', words.word('field-list'));

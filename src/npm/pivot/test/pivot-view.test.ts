@@ -276,6 +276,20 @@ describe('ExPivot\'s report', () => {
         expect(String(value)).toBe('30');
     });
 
+    it('ADR-0027: a style the page set on the root stays through a redraw, until the pivot\'s own geometry changes', async () => {
+        const options: PivotViewOptions = { source: local(), layout: byRegion };
+        const { root, view } = mount(options);
+        await settled();
+        root.style.height = '260px';
+        tick(root, 'Desk');
+        await settled();
+        expect(root.style.height).toBe('260px');
+        expect(root.style.getPropertyValue('--ex-pivot-field-list-width')).toBe('300px');
+        view.update({ ...options, fieldListWidth: 200 });
+        expect(root.style.getPropertyValue('--ex-pivot-field-list-width')).toBe('200px');
+        expect(root.style.height).toBe('');
+    });
+
     it('ADR-0059: with nothing placed, the report says how to start and no grid stands', async () => {
         const { root, grid } = mount({ source: local() });
         await settled();
