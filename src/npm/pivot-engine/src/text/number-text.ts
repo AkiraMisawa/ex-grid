@@ -9,7 +9,7 @@
 // again half up, under a custom format, as .NET does. A decimal's are its own, rounded half away from zero.
 
 import type { SnapshotDecimal } from '@ex-grid/data';
-import type { NumberCulture } from '../culture/culture-data';
+import { cultureOf, type NumberCulture } from '../culture/culture-data';
 import { PivotFormatError } from '../errors';
 
 /** The digits of a number: `0.d1d2d3… × 10^scale`, as .NET's NumberBuffer holds them. */
@@ -713,4 +713,15 @@ function customFormat(buffer: NumberBuffer, format: string, culture: NumberCultu
     }
     if (buffer.negative && section === 0 && buffer.scale === 0 && text.length > 0) text = culture.negativeSign + text;
     return text;
+}
+
+/**
+ * A count written as the report writes a whole number in `locale`, a BCP 47 tag or `invariant`, with its
+ * group separators: `1,020,000` in en-US, `1.020.000` in de-DE, as C#'s `count.ToString("N0", culture)`
+ * writes it. The Field List writes a field's count of Items with it, and the leaf cap's refusal its figures
+ * (ADR-0370 section 3). A count that is not a whole number of at least 0 is refused.
+ */
+export function formatPivotCount(count: number, locale: string): string {
+    if (!Number.isSafeInteger(count) || count < 0) throw new RangeError(`A count is a whole number of at least 0, not ${count}.`);
+    return formatDouble(count, 'N0', cultureOf(locale).data.number);
 }

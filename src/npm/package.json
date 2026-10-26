@@ -10,7 +10,9 @@
     "chart",
     "data",
     "pivot-engine",
-    "react"
+    "pivot",
+    "react",
+    "pivot-react"
   ],
   "scripts": {
     "build": "npm run build --workspaces",

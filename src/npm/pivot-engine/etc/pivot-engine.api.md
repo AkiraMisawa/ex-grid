@@ -69,6 +69,12 @@ export class FetchingPivotSource implements PivotSource {
 }
 
 // @public
+export function fillPivotWord(template: string, ...args: readonly string[]): string;
+
+// @public
+export function formatPivotCount(count: number, locale: string): string;
+
+// @public
 export function isEmptyLayout(layout: PivotLayout): boolean;
 
 // @public
@@ -981,6 +987,9 @@ export interface PivotValue {
 }
 
 // @public
+export function pivotValueCaptions(layout: PivotLayout, fields: readonly PivotField[], options?: PivotOptions): readonly string[];
+
+// @public
 export interface PivotValueField {
     readonly aggregation: PivotAggregation;
     readonly caption?: string;
@@ -1002,6 +1011,9 @@ export interface PivotValueFieldInput {
 export class PivotVersionError extends Error {
     constructor(message: string);
 }
+
+// @public
+export function pivotWord(id: string, label: PivotLabel | undefined): string;
 
 // @public
 export function pivotWordIdList(): readonly string[];

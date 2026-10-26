@@ -30,4 +30,8 @@ export const demoPages: readonly DemoPage[] = Object.freeze([
         route: 'filter-panel', title: 'Filter panel', group: 'Interaction',
         description: 'The filter panel\'s value list, Blank entry, search, condition form and TooMany under the built-in Chrome, with the Filter it applied written out (ADR-0009, WR-1).',
     },
+    {
+        route: 'pivot', title: 'Pivot', group: 'ExPivot',
+        description: 'Excel\'s PivotTable drawn by ExGrid: Month as a part of the trade date, the Fields pane with drag and drop, saving the layout, and Excel\'s Japanese words (ADR-0059, ADR-0060, ADR-0061).',
+    },
 ]);

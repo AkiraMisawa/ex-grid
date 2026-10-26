@@ -254,6 +254,8 @@
 .ex-pivot-field-label { display: flex; align-items: center; gap: 6px; flex: 1 1 auto; min-width: 0; cursor: inherit; }
 .ex-pivot-field-caption { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ex-pivot-dragging { opacity: 0.5; }
+/* A field's count of Items, beside its name, where a server's source counted them (ADR-0370 section 3). */
+.ex-pivot-field-count { flex: none; color: var(--ex-pivot-muted-color, GrayText); font-size: 0.85em; font-variant-numeric: tabular-nums; }
 .ex-pivot-filtered-mark::before { content: "\25BF"; color: var(--ex-pivot-accent-color, Highlight); }
 
 /* The four Areas, two by two as Excel's default pane has them, one above another when narrow. */
@@ -270,6 +272,12 @@
     background: var(--ex-pivot-area-background, Canvas);
 }
 .ex-pivot-area.ex-pivot-drop-target { outline: 2px solid var(--ex-pivot-drop-color, Highlight); outline-offset: -2px; }
+/* A target where the counts bound the layout a drop would make past the leaf cap, while a field is dragged
+   over it (ADR-0370 section 3): a hint, never a refusal, so it is drawn dashed in its own colour and says the
+   cap in words; the drop is still asked. Empty, the words take no room. */
+.ex-pivot-area.ex-pivot-drop-over-cap { outline: 2px dashed var(--ex-pivot-over-cap-color, Mark); }
+.ex-pivot-area-cap:empty { display: none; }
+.ex-pivot-area-cap { padding: 2px 6px; font-size: 0.85em; color: var(--ex-pivot-refusal-color, CanvasText); }
 .ex-pivot-area-title {
     padding: 2px 6px;
     font-size: 0.9em;
@@ -403,6 +411,7 @@
 
 @media (forced-colors: active) {
     .ex-pivot-area.ex-pivot-drop-target, .ex-pivot-fields.ex-pivot-drop-remove { outline-color: Highlight; }
+    .ex-pivot-area.ex-pivot-drop-over-cap { outline-color: Mark; }
     .ex-pivot-entry.ex-pivot-drop-before { box-shadow: 0 -2px 0 Highlight; }
     .ex-pivot-report-stale > .ex-pivot-sheet > .ex-grid .ex-cell-numeric { color: GrayText; }
 }
