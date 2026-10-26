@@ -2,6 +2,7 @@ import { useState, type ReactElement } from 'react';
 import { ChartDefinition, type ChartPointClick, type ChartRange, type ChartSeriesOptions, type ChartValue, type PriceBar } from '@ex-grid/chart';
 import { ExChart } from '@ex-grid/chart-react';
 import { DemoNav } from '../demo-nav';
+import { dotNetRound } from '../dotnet-math';
 import { DotNetRandom } from '../dotnet-random';
 
 // The day number of 1970-01-01, counted from 0001-01-01 as a C# DateOnly counts it.
@@ -10,7 +11,7 @@ const msPerDay = 86_400_000;
 
 const dayOf = (year: number, month: number, day: number): number => Date.UTC(year, month - 1, day) / msPerDay + epochDay;
 const isoDay = (day: number): string => new Date((day - epochDay) * msPerDay).toISOString().slice(0, 10);
-const round2 = (v: number): number => Math.round(v * 100) / 100;
+const round2 = (v: number): number => dotNetRound(v, 2);
 
 const twoPlaces = new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const price = (v: ChartValue): string => twoPlaces.format(v);
@@ -30,7 +31,7 @@ function index(): PriceBar[] {
         const next = open * (1 + move);
         const high = Math.max(open, next) * (1 + random.nextDouble() * 0.008);
         const low = Math.min(open, next) * (1 - random.nextDouble() * 0.008);
-        const volume = Math.round(1_000_000 * (0.6 + random.nextDouble()) * (Math.abs(move) > 0.05 ? 4 : 1));
+        const volume = dotNetRound(1_000_000 * (0.6 + random.nextDouble()) * (Math.abs(move) > 0.05 ? 4 : 1), 0);
         bars.push({ x: day, open: round2(open), high: round2(high), low: round2(low), close: round2(next), volume });
         close = next;
     }

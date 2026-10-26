@@ -448,7 +448,6 @@ internal sealed class ChartCase(JsonElement file, JsonElement entry)
 
     private ChartSeries Series(JsonElement e)
     {
-        // A fit's series, as a Consumer hands it in (ADR-0291): its curve says the rest.
         // An interpolated curve's series, as a Consumer hands it in (ADR-0257).
         if (e.TryGetProperty("interpolant", out var interpolant))
         {
@@ -456,6 +455,7 @@ internal sealed class ChartCase(JsonElement file, JsonElement entry)
             return (Interpolant(interpolant) as Interpolant1D ?? throw new InvalidOperationException($"\"{Name}\": a series interpolates in one dimension."))
                 .Series(e.GetProperty("id").GetString()!, e.GetProperty("name").GetString()!);
         }
+        // A fit's series, as a Consumer hands it in (ADR-0291): its curve says the rest.
         if (e.TryGetProperty("curve", out var fitted))
         {
             Allow(e, "a fitted series", "id", "name", "curve");

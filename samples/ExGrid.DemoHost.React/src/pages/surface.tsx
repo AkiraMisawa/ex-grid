@@ -2,12 +2,12 @@ import { useRef, useState, type ReactElement } from 'react';
 import { interpolateBilinear, SurfaceDefinition, tenor, type SurfaceNode, type SurfaceSlice, type SurfaceTriangle, type SurfaceView } from '@ex-grid/chart';
 import { ExSurface, type ExSurfaceApi } from '@ex-grid/chart-react';
 import { DemoNav } from '../demo-nav';
+import { dotNetRound } from '../dotnet-math';
 
 const deltas = ['10P', '25P', 'ATM', '25C', '10C'] as const;
 const tenors = ['1W', '1M', '3M', '6M', '1Y', '2Y', '5Y', '10Y'] as const;
 const smile = [1.6, 0.5, 0, 0.3, 1.1] as const;
 
-const round = (v: number, digits: number): number => Math.round(v * 10 ** digits) / 10 ** digits;
 const twoPlaces = (v: number): string => v.toFixed(2);
 
 // A smile over a term structure, deterministic, and moved a little by each run; no value at 25C 5Y.
@@ -17,7 +17,7 @@ function vol(run: number): SurfaceDefinition {
         x: { title: 'Delta', values: deltas },
         y: { title: 'Tenor', values: tenors },
         z: tenors.map((tenor, t) => smile.map((wing, i) => (deltas[i] === '25C' && tenor === '5Y'
-            ? null : round(term(t) + wing * (1 + 0.1 * t) + run * 0.2, 2)))),
+            ? null : dotNetRound(term(t) + wing * (1 + 0.1 * t) + run * 0.2, 2)))),
         zTitle: 'Volatility',
         zFormat: v => `${twoPlaces(Number(v))}%`,
     });
@@ -38,7 +38,7 @@ const logVol = SurfaceDefinition.grid({
     z: tenorYears.map((years, t) => {
         const row = quotes[t];
         if (row === undefined) throw new Error(`The quotes have no row for tenor ${String(t)}.`);
-        return row.map(v => (v === null ? null : round(Number(v) * Number(v) * years / 100, 4)));
+        return row.map(v => (v === null ? null : dotNetRound(Number(v) * Number(v) * years / 100, 4)));
     }),
     zTitle: 'Total variance',
     zScale: 'logarithmic',
@@ -50,7 +50,7 @@ const volShifts = [-4, -2, 0, 2, 4];
 const pnl = SurfaceDefinition.grid({
     x: { title: 'Spot shift %', values: spotShifts, scale: 'proportional' },
     y: { title: 'Vol shift', values: volShifts, scale: 'proportional' },
-    z: volShifts.map(v => spotShifts.map(s => round(12 * s - 3 * s * s - 40 * v, 1))),
+    z: volShifts.map(v => spotShifts.map(s => dotNetRound(12 * s - 3 * s * s - 40 * v, 1))),
     zTitle: 'P&L (k)',
     centre: 0,
 });
@@ -62,9 +62,9 @@ function lattice(): SurfaceDefinition {
     for (let j = 0; j <= 4; j++) {
         for (let i = 0; i <= 4; i++) {
             const inner = i > 0 && i < 4 && j > 0 && j < 4;
-            const x = round(i / 4 + (inner ? 0.04 * (((i + 2 * j) % 3) - 1) : 0), 4);
-            const y = round(j / 4 + (inner ? 0.04 * (((2 * i + j) % 3) - 1) : 0), 4);
-            nodes.push({ x, y, z: round(Math.sin(Math.PI * x) * Math.cos(Math.PI * y), 4) });
+            const x = dotNetRound(i / 4 + (inner ? 0.04 * (((i + 2 * j) % 3) - 1) : 0), 4);
+            const y = dotNetRound(j / 4 + (inner ? 0.04 * (((2 * i + j) % 3) - 1) : 0), 4);
+            nodes.push({ x, y, z: dotNetRound(Math.sin(Math.PI * x) * Math.cos(Math.PI * y), 4) });
         }
     }
     const triangles: SurfaceTriangle[] = [];
