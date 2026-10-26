@@ -842,6 +842,9 @@ export type SurfaceSliceAxis = 'x' | 'y';
 export function surfaceSlicePath(definition: SurfaceDefinition, slice: SurfaceSlice): readonly (readonly SurfaceMeshPoint[])[];
 
 // @public
+export function surfaceSummary(definition: SurfaceDefinition, title?: string, description?: string): string;
+
+// @public
 export interface SurfaceTick {
     readonly label: string | null;
     readonly value: number;

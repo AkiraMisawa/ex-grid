@@ -21,7 +21,7 @@ import { drawSeries, marker, seriesDrawing, type DrawnPoint, type SeriesDrawing 
 import { thin, thinnedThrough } from '../src/thinning';
 import { decades, fitLabels, horizontalTicks, logSteps, nice, steps, tenor, type AxisStyle } from '../src/ticks';
 import { SurfaceDefinition, type SurfaceAxisOptions, type SurfaceScaleOptions, type SurfaceSlice, type SurfaceValue } from '../src/surface';
-import { surfaceMesh, surfaceSlicePath } from '../src/surface-mesh';
+import { surfaceMesh, surfaceSlicePath, surfaceSummary } from '../src/surface-mesh';
 import { invariantText } from '../src/values';
 
 /** A value as JSON holds it. */
@@ -43,7 +43,7 @@ export interface ChartFile {
 
 const operations = [
     'scene', 'drawing', 'thin', 'through', 'tenor', 'nice', 'steps', 'decades', 'logSteps', 'fit', 'horizontal', 'candles', 'legendMembers',
-    'format', 'appearance', 'mesh', 'slice', 'slicePath', 'reading', 'summary', 'csv',
+    'format', 'appearance', 'mesh', 'slice', 'slicePath', 'reading', 'summary', 'csv', 'surfaceSummary',
 ] as const;
 
 // What a scene is laid out with, which the tooltip and the summary read their scene by.
@@ -366,6 +366,11 @@ export class ChartCase {
                 return this.#surface(op['surface']).sliceChart(slice(args));
             case 'slicePath':
                 return surfaceSlicePath(this.#surface(op['surface']), slice(args));
+            case 'surfaceSummary': {
+                const a = allow(args, 'surfaceSummary', ['title', 'description']);
+                return surfaceSummary(this.#surface(op['surface']), optional(a, 'title', t => string(t, 'title')),
+                    optional(a, 'description', t => string(t, 'description')));
+            }
             default:
                 throw new Error(`Internal: ${String(key)} is listed and not run.`);
         }

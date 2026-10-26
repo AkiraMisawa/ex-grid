@@ -36,7 +36,7 @@ export type {
     SurfaceAxisOptions, SurfaceGridOptions, SurfaceNode, SurfacePoint, SurfacePointsOptions, SurfaceSampledOptions, SurfaceScaleOptions,
     SurfaceSlice, SurfaceSliceAxis, SurfaceTriangle, SurfaceTrianglesOptions, SurfaceValue, SurfaceView,
 } from './surface';
-export { surfaceBandCount, surfaceMesh, surfaceSlicePath } from './surface-mesh';
+export { surfaceBandCount, surfaceMesh, surfaceSlicePath, surfaceSummary } from './surface-mesh';
 export type { SurfaceColourBar, SurfaceFace, SurfaceMesh, SurfaceMeshNode, SurfaceMeshPoint, SurfaceTick } from './surface-mesh';
 export { createChart } from './dom/create-chart';
 export type { ChartHandle } from './dom/create-chart';
