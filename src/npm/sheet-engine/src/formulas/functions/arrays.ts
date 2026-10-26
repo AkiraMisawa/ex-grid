@@ -7,7 +7,7 @@ import { compareValues } from '../evaluator';
 import type { FunctionCall } from '../function-definition';
 import { Operand } from '../operand';
 import { ValueArray } from '../value-array';
-import { numberArgument, scalarArgument } from './shared';
+import { numberArgument, numberResult, scalarArgument } from './shared';
 
 /**
  * An argument read whole as an array, or its Error Value as the failure. A kept blank refuses the Formula
@@ -341,7 +341,7 @@ export function transpose(call: FunctionCall): Operand {
 /**
  * SUMPRODUCT: the sum of the products of its arrays' corresponding Values, the arrays all of one size, or
  * `#VALUE!`. Inside an array anything but a number counts as 0, as Microsoft documents, so a kept blank is 0
- * whichever way it is read; an Error Value is the result.
+ * whichever way it is read; an Error Value is the result, and a sum past the largest double is `#NUM!`.
  */
 export function sumProduct(call: FunctionCall): Operand {
     const arrays: ValueArray[] = [];
@@ -366,5 +366,5 @@ export function sumProduct(call: FunctionCall): Operand {
             sum += product;
         }
     }
-    return Operand.of(Value.fromNumber(sum));
+    return numberResult(sum);
 }

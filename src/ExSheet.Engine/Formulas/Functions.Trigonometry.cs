@@ -29,7 +29,7 @@ internal static partial class FunctionLibrary
         if (call.Has(1) && !TryNumber(call, 1, out @base, out failure)) return failure;
         if (number <= 0 || @base <= 0) return Operand.Of(ErrorValue.Num);
         if (@base == 1) return Operand.Of(ErrorValue.Div0);
-        var result = @base == 10 ? Math.Log10(number) : Math.Log(number) / Math.Log(@base);
+        var result = @base == 10 ? PortableMath.Log10(number) : PortableMath.Log(number) / PortableMath.Log(@base);
         return Operand.Of(Evaluator.Number(result));
     }
 
@@ -219,13 +219,13 @@ internal static partial class FunctionLibrary
     /// COTH: the hyperbolic cotangent; at 0 <c>#DIV/0!</c>. Microsoft documents a limit of 2^27 on the
     /// argument, but Excel answers past it: <c>COTH(2^27)</c> is 1 (COTH-002).
     /// </summary>
-    private static Operand Coth(FunctionCall call) => Hyperbolic(call, n => 1 / Math.Tanh(n), zeroIsDiv0: true);
+    private static Operand Coth(FunctionCall call) => Hyperbolic(call, n => 1 / PortableMath.Tanh(n), zeroIsDiv0: true);
 
     /// <summary>CSCH: 1/SINH; at 0 <c>#DIV/0!</c>; past what SINH holds, 0, as Excel's (CSCH-002, CSCH-004).</summary>
-    private static Operand Csch(FunctionCall call) => Hyperbolic(call, n => 1 / Math.Sinh(n), zeroIsDiv0: true);
+    private static Operand Csch(FunctionCall call) => Hyperbolic(call, n => 1 / PortableMath.Sinh(n), zeroIsDiv0: true);
 
     /// <summary>SECH: 1/COSH; past what COSH holds, 0, as Excel's (SECH-003).</summary>
-    private static Operand Sech(FunctionCall call) => Hyperbolic(call, n => 1 / Math.Cosh(n));
+    private static Operand Sech(FunctionCall call) => Hyperbolic(call, n => 1 / PortableMath.Cosh(n));
 
     /// <summary>A hyperbolic function of any number; where it has a pole at 0, 0 is <c>#DIV/0!</c>.</summary>
     private static Operand Hyperbolic(FunctionCall call, Func<double, double> function, bool zeroIsDiv0 = false)
@@ -238,15 +238,15 @@ internal static partial class FunctionLibrary
     // ---- ASIN, ACOS, ATAN, ATAN2, ACOT -----------------------------------------------------------
 
     /// <summary>ASIN: a number outside -1 to 1 is <c>#NUM!</c>.</summary>
-    private static Operand Asin(FunctionCall call) => Bounded(call, n => Math.Abs(n) <= 1, Math.Asin);
+    private static Operand Asin(FunctionCall call) => Bounded(call, n => Math.Abs(n) <= 1, PortableMath.Asin);
 
     /// <summary>ACOS: a number outside -1 to 1 is <c>#NUM!</c>.</summary>
-    private static Operand Acos(FunctionCall call) => Bounded(call, n => Math.Abs(n) <= 1, Math.Acos);
+    private static Operand Acos(FunctionCall call) => Bounded(call, n => Math.Abs(n) <= 1, PortableMath.Acos);
 
-    private static Operand Atan(FunctionCall call) => Bounded(call, _ => true, Math.Atan);
+    private static Operand Atan(FunctionCall call) => Bounded(call, _ => true, PortableMath.Atan);
 
     /// <summary>ACOT: an angle from 0 to pi.</summary>
-    private static Operand Acot(FunctionCall call) => Bounded(call, _ => true, n => Math.PI / 2 - Math.Atan(n));
+    private static Operand Acot(FunctionCall call) => Bounded(call, _ => true, n => Math.PI / 2 - PortableMath.Atan(n));
 
     /// <summary>
     /// ATAN2: the angle of the point (<c>x_num</c>, <c>y_num</c>), above -pi and up to pi. Excel takes
@@ -257,33 +257,33 @@ internal static partial class FunctionLibrary
         if (!TryNumber(call, 0, out var x, out var failure)) return failure;
         if (!TryNumber(call, 1, out var y, out failure)) return failure;
         if (x == 0 && y == 0) return Operand.Of(ErrorValue.Div0);
-        return Operand.Of(Evaluator.Number(Math.Atan2(y, x)));
+        return Operand.Of(Evaluator.Number(PortableMath.Atan2(y, x)));
     }
 
     // ---- SINH, COSH, TANH, ASINH, ACOSH, ATANH, ACOTH --------------------------------------------
 
     /// <summary>SINH: past what a double holds, <c>#NUM!</c>.</summary>
-    private static Operand Sinh(FunctionCall call) => Bounded(call, _ => true, Math.Sinh);
+    private static Operand Sinh(FunctionCall call) => Bounded(call, _ => true, PortableMath.Sinh);
 
     /// <summary>COSH: past what a double holds, <c>#NUM!</c>.</summary>
-    private static Operand Cosh(FunctionCall call) => Bounded(call, _ => true, Math.Cosh);
+    private static Operand Cosh(FunctionCall call) => Bounded(call, _ => true, PortableMath.Cosh);
 
-    private static Operand Tanh(FunctionCall call) => Bounded(call, _ => true, Math.Tanh);
+    private static Operand Tanh(FunctionCall call) => Bounded(call, _ => true, PortableMath.Tanh);
 
-    private static Operand Asinh(FunctionCall call) => Bounded(call, _ => true, Math.Asinh);
+    private static Operand Asinh(FunctionCall call) => Bounded(call, _ => true, PortableMath.Asinh);
 
     /// <summary>ACOSH: a number below 1 is <c>#NUM!</c>.</summary>
-    private static Operand Acosh(FunctionCall call) => Bounded(call, n => n >= 1, Math.Acosh);
+    private static Operand Acosh(FunctionCall call) => Bounded(call, n => n >= 1, PortableMath.Acosh);
 
     /// <summary>ATANH: a number not strictly between -1 and 1 is <c>#NUM!</c>.</summary>
-    private static Operand Atanh(FunctionCall call) => Bounded(call, n => Math.Abs(n) < 1, Math.Atanh);
+    private static Operand Atanh(FunctionCall call) => Bounded(call, n => Math.Abs(n) < 1, PortableMath.Atanh);
 
     /// <summary>
     /// ACOTH: ½·ln((x+1)/(x−1)), for an absolute value above 1. Microsoft's page names both
     /// <c>#NUM!</c> and <c>#VALUE!</c> for a smaller one; Excel gives <c>#NUM!</c> (ACOTH-003, observed
     /// by the seventeenth Windows run).
     /// </summary>
-    private static Operand Acoth(FunctionCall call) => Bounded(call, n => Math.Abs(n) > 1, n => 0.5 * Math.Log((n + 1) / (n - 1)));
+    private static Operand Acoth(FunctionCall call) => Bounded(call, n => Math.Abs(n) > 1, n => 0.5 * PortableMath.Log((n + 1) / (n - 1)));
 
     // ---- DEGREES, RADIANS ------------------------------------------------------------------------
 

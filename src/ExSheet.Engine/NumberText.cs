@@ -21,7 +21,7 @@ internal static class NumberText
     /// decimal separator, and scientific notation for very large and very small magnitudes. It is
     /// the number as a text concatenation or the Cell Editor writes it, not fitted to any width.
     /// </summary>
-    public static string General(double number, CultureInfo culture) => number.ToString("G15", culture);
+    public static string General(double number, CultureInfo culture) => Formulas.Arithmetic.AtFifteenDigits(number).ToString("G15", culture);
 
     /// <summary>The most characters, not counting a minus sign, that a number written into text takes in full (<see cref="Written"/>).</summary>
     internal const int WrittenLongest = 20;
@@ -45,9 +45,8 @@ internal static class NumberText
     public static string Written(double number, CultureInfo culture, int longest = WrittenLongest)
     {
         if (number == 0) return "0";
-        var e14 = Math.Abs(number).ToString("E14", CultureInfo.InvariantCulture);
-        var digits = (e14[0] + e14[2..16]).TrimEnd('0');
-        var exponent = int.Parse(e14.AsSpan(17), NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture);
+        var (fifteen, exponent) = Formulas.Arithmetic.FifteenDigits(Math.Abs(number));
+        var digits = fifteen.TrimEnd('0');
         var fullLength = exponent < 0
             ? 2 + (-exponent - 1) + digits.Length
             : Math.Max(digits.Length, exponent + 1) + (digits.Length > exponent + 1 ? 1 : 0);
@@ -100,9 +99,7 @@ internal static class NumberText
 
         // Fifteen significant digits (ADR-0047), rounded again from there.
         var magnitude = Math.Abs(number);
-        var e14 = magnitude.ToString("E14", CultureInfo.InvariantCulture);
-        var digits = e14[0] + e14[2..16];
-        var exponent = int.Parse(e14.AsSpan(17), NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture);
+        var (digits, exponent) = Formulas.Arithmetic.FifteenDigits(magnitude);
 
         var fixedForm = Decimal(digits, exponent, limit);
         var scientific = Scientific(digits, exponent, limit);

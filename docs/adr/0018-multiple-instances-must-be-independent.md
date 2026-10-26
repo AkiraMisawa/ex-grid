@@ -59,6 +59,12 @@ theme per page, with no way to give instances different appearances.
 The spike's `window.bench = { _fps: null, ... }` is a single global, and a second grid calling it
 breaks the first. **Make it a module and return a handle per root.**
 
+One thing is shared, because the browser cannot say it per instance: the writes to the clipboard
+that a `clipboardchange` has yet to report are counted once per document, in the order every grid
+made them ([ADR-0170](./0170-a-copy-outlines-its-range-with-dashes-while-the-clipboard-still-holds-it.md),
+2026-10-26). An instance reads from it only whose write an event reports; its writes stay counted
+after it goes, for the grids that still hear their changes.
+
 ## 4. Do not let popovers escape the root
 
 The filter panel and column menu float above the grid, but the root is an `overflow: auto` scroll
@@ -189,7 +195,7 @@ this ADR rules out:
   joined implicitly, and a grid in no Scope is untouched.
 - **The key capture stays on each root** (section 1). The keyboard stays with the Sheet that points.
   The grid pointed at receives no key.
-- **The script shares no state between instances** (section 3). A grid that is pointed at learns from
+- **The script shares no state between instances** (section 3, the clipboard's ledger aside). A grid that is pointed at learns from
   its own render which root to tell of a press, and it tells that root by one DOM event
   ([ADR-0021](./0021-javascript-is-allowlisted-not-minimised.md), note of 2026-09-30).
 - **When the keyboard leaves the Sheet that points, the Scope stops pointing**, and section 6 applies

@@ -725,3 +725,13 @@ export function formatPivotCount(count: number, locale: string): string {
     if (!Number.isSafeInteger(count) || count < 0) throw new RangeError(`A count is a whole number of at least 0, not ${count}.`);
     return formatDouble(count, 'N0', cultureOf(locale).data.number);
 }
+
+/**
+ * A number written in a number format in `locale`, as C#'s `value.ToString(format, culture)` writes it: what a
+ * Value Field's number format makes of a figure, which Value Field Settings… shows as its sample (ADR-0061).
+ * A format .NET cannot format a number with throws a `PivotFormatError`; `pivotNumberFormatProblem` says so
+ * first.
+ */
+export function formatPivotNumber(value: number, format: string, locale: string): string {
+    return formatDouble(value, format, cultureOf(locale).data.number);
+}

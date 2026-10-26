@@ -2,14 +2,14 @@
 // Layer 2 (ADR-0350 section 13): a copy from the grid (ADR-0005). The browser's copy command fires the copy
 // event on the root; a Selection the Window holds is written on the event, one past it by the asynchronous
 // route, and a refused one writes nothing and is said by name.
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import { Temporal } from 'temporal-polyfill';
 import { defined } from '../src/must';
 import type { GridColumn } from '../src/dom/grid-column';
 import type { GridRefusal } from '../src/dom/grid-refusal';
 import type { GridPage } from '../src/source/fetching-source';
 import { GridSource } from '../src/source/grid-source';
-import { mount, painted, q, trades, type Trade } from './grid-harness';
+import { mount, painted, q, trades, unmountAll, type Trade } from './grid-harness';
 
 interface Dated extends Trade {
     readonly confirmed: boolean;
@@ -61,6 +61,8 @@ function heard(): { readonly refusals: GridRefusal[]; readonly onRefused: (refus
 }
 
 const settle = (): Promise<void> => new Promise(resolve => { setTimeout(resolve, 0); });
+
+afterEach(unmountAll);
 
 describe('a copy from the grid', () => {
     it('ADR-0005 CP-4/CP-5: a Selection the Window holds is written on the copy event, the shown text and the raw value, never ####', async () => {
@@ -300,6 +302,99 @@ describe('the Copied Range', () => {
         told.clipboardChanged();
         await painted();
         expect(dashes(root)).toEqual([]);
+    });
+
+    it('ADR-0170 CP-27: a change heard late is the earliest write of any grid, so the second grid\'s outline outlives the first\'s report', async () => {
+        const first = mount({ columns, rows: dated(100), rowHeight: 24, viewportHeight: 480, temporal: Temporal });
+        const second = mount({ columns, rows: dated(100), rowHeight: 24, viewportHeight: 480, temporal: Temporal });
+        await painted();
+        press(first.root, 10, rowY(0));
+        copy(first.root);
+        press(second.root, 10, rowY(0));
+        copy(second.root);
+        await painted();
+
+        // Every listener of the document hears the same change; the first reports the first grid's write.
+        const changed = (): void => {
+            const change = {};
+            first.told.clipboardChanged(change);
+            second.told.clipboardChanged(change);
+        };
+        changed();
+        await painted();
+        expect([dashes(first.root).length, dashes(second.root).length]).toEqual([1, 1]);
+
+        changed();
+        await painted();
+        expect([dashes(first.root).length, dashes(second.root).length]).toEqual([0, 1]);
+    });
+
+    it('ADR-0170 CP-27: a grid destroyed leaves its writes counted while another grid hears their changes, and none once no grid is left', async () => {
+        const options = { columns, rows: dated(100), rowHeight: 24, viewportHeight: 480, temporal: Temporal } as const;
+        const first = mount(options);
+        const second = mount(options);
+        await painted();
+        press(first.root, 10, rowY(0));
+        copy(first.root);
+        press(second.root, 10, rowY(0));
+        copy(second.root);
+        first.view.destroy();
+        second.told.clipboardChanged();
+        second.told.clipboardChanged();
+        await painted();
+        expect(dashes(second.root)).toHaveLength(1);
+
+        // The last grid goes with its write unreported: nobody hears that change, and it is not counted for the next.
+        copy(second.root);
+        second.view.destroy();
+        const third = mount(options);
+        await painted();
+        press(third.root, 10, rowY(0));
+        copy(third.root);
+        third.told.clipboardChanged();
+        await painted();
+        expect(dashes(third.root)).toHaveLength(1);
+        third.told.clipboardChanged();
+        await painted();
+        expect(dashes(third.root)).toEqual([]);
+    });
+
+    it('ADR-0170 CP-27: a copy made while another grid\'s write is in flight may land on either side of it, and neither is outlined', async () => {
+        const answers: ((page: GridPage<Dated>) => void)[] = [];
+        const all = dated(5000);
+        const source = GridSource.fetch<Dated>(() => new Promise(resolve => { answers.push(resolve); }), { readAheadRows: 0 });
+        const far = mount({ columns, source, rowHeight: 24, viewportHeight: 480, temporal: Temporal });
+        const near = mount({ columns, rows: dated(100), rowHeight: 24, viewportHeight: 480, temporal: Temporal });
+        await painted();
+        defined(answers.shift(), 'the first question')({ rows: all.slice(0, 40), start: 0, totalCount: 5000 });
+        await settle();
+        press(far.root, 10, rowY(0));
+        key(far.root, 'ArrowDown', { ctrlKey: true, shiftKey: true });
+        await painted();
+        answers.length = 0;
+        const write = far.told.holdWrites();
+        copy(far.root);
+        await painted();
+        defined(answers.shift(), 'the copy\'s question')({ rows: all, start: 0, totalCount: 5000 });
+        await settle();
+        expect([far.told.writing, far.told.clipboard.length]).toEqual([1, 0]);
+
+        // Gathered and counted, not yet written: the other grid's copy lands in the meantime.
+        press(near.root, 10, rowY(0));
+        copy(near.root);
+        await painted();
+        expect(dashes(near.root)).toEqual([]);
+        write();
+        await settle();
+        const changed = (): void => {
+            const change = {};
+            far.told.clipboardChanged(change);
+            near.told.clipboardChanged(change);
+        };
+        changed();
+        changed();
+        await painted();
+        expect([far.told.clipboard.length, dashes(far.root), dashes(near.root)]).toEqual([1, [], []]);
     });
 
     it('ADR-0170 CP-29/CP-30: a copied cell that comes to read otherwise drops the outline; a row replaced with the same copied text keeps it', async () => {

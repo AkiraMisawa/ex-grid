@@ -109,3 +109,5 @@ inferred; from the Formula Bar `=RO` offers ROUND, inside the box, with `num_dig
 Green on both hosts. One race seen on the Server host and reported, not pinned: the list is
 painted by one message and the key listener is told it is open by the next, so a ← pressed
 between the two is gated as Overwrite's and swallowed.
+
+2026-10-26: the engine's xUnit tests this ticket names (`FormulaEntryTests`) moved to the shared cases, `tests/cases/sheet/formula-entry.json` and `formula-entry-sheet.json`, which both the C# engine and the Script Core run (ADR-0370 §2). Each test became cases named by the same claim.

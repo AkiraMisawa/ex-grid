@@ -816,6 +816,156 @@ describe('ExPivot\'s menus (ADR-0061)', () => {
     });
 });
 
+function panel(root: HTMLElement): HTMLElement {
+    const frame = root.querySelector<HTMLElement>('.ex-pivot-popup[role="dialog"]');
+    if (frame === null) throw new Error('No panel is open.');
+    return frame;
+}
+
+function choose(select: HTMLSelectElement | undefined, value: string): void {
+    if (select === undefined) throw new Error('The panel has no such list.');
+    select.value = value;
+    select.dispatchEvent(new Event('change', { bubbles: true }));
+}
+
+function typeInto(input: HTMLInputElement | undefined, text: string): void {
+    if (input === undefined) throw new Error('The panel has no such field.');
+    input.value = text;
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+}
+
+/** The open panel's `index`th text field. */
+function panelText(root: HTMLElement, index = 0): HTMLInputElement | undefined {
+    return panel(root).querySelectorAll<HTMLInputElement>('input.ex-pivot-text')[index];
+}
+
+/** The open panel's `index`th list. */
+function panelList(root: HTMLElement, index = 0): HTMLSelectElement | undefined {
+    return panel(root).querySelectorAll<HTMLSelectElement>('.ex-pivot-select')[index];
+}
+
+function press(root: HTMLElement, className: string): void {
+    const button = panel(root).querySelector<HTMLButtonElement>(`.${className}`);
+    if (button === null) throw new Error(`The panel has no ${className}.`);
+    button.click();
+}
+
+describe('ExPivot\'s panels (ADR-0061)', () => {
+    it('ADR-0061: Field Settings… opens in its menu\'s place, takes the keyboard, and OK applies its subtotals and order', async () => {
+        const { root, view } = mount({ source: local(), layout: createPivotLayout({ rows: ['Region', 'Desk'], values: ['Amount'] }) });
+        await settled();
+        entryButton(root, 'rows', 0).click();
+        command(root, 'Field Settings…').click();
+        const frame = panel(root);
+        expect(root.querySelector('.ex-pivot-popup[role="menu"]')).toBeNull();
+        expect(frame.parentElement).toBe(entryButton(root, 'rows', 0).parentElement);
+        expect(frame.getAttribute('aria-label')).toBe('Field Settings…');
+        expect(frame.querySelector('.ex-pivot-panel-title')?.textContent).toBe('Region');
+        const radios = frame.querySelectorAll<HTMLInputElement>('input[type="radio"]');
+        expect(document.activeElement).toBe(radios[0]);
+        const sorts = panelList(root);
+        expect([...frame.querySelectorAll('.ex-pivot-select option')].map(option => option.textContent)).toEqual([
+            'Ascending (A to Z) by label', 'Descending (Z to A) by label', 'Ascending by Sum of Amount', 'Descending by Sum of Amount',
+        ]);
+        radios[1]?.click();
+        choose(sorts, '3');
+        press(root, 'ex-pivot-ok');
+        expect(root.querySelector('.ex-pivot-popup')).toBeNull();
+        expect(document.activeElement).toBe(entryButton(root, 'rows', 0));
+        await settled();
+        const region = view.shownLayout.rows[0];
+        expect(region?.subtotals).toBe(false);
+        expect(region?.sort).toEqual({ direction: 'descending', byValue: 0 });
+    });
+
+    it('ADR-0061: Cancel and Escape drop the draft and hand the keyboard back to the entry', async () => {
+        const changed: PivotLayout[] = [];
+        const { root } = mount({ source: local(), layout: byRegion, onLayoutChanged: event => changed.push(event.layout) });
+        await settled();
+        entryButton(root, 'rows', 0).click();
+        command(root, 'Field Settings…').click();
+        panel(root).querySelectorAll<HTMLInputElement>('input[type="radio"]')[1]?.click();
+        press(root, 'ex-pivot-cancel');
+        expect(root.querySelector('.ex-pivot-popup')).toBeNull();
+        expect(document.activeElement).toBe(entryButton(root, 'rows', 0));
+        entryButton(root, 'rows', 0).click();
+        command(root, 'Field Settings…').click();
+        panel(root).dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+        expect(root.querySelector('.ex-pivot-popup')).toBeNull();
+        expect(document.activeElement).toBe(entryButton(root, 'rows', 0));
+        await settled();
+        expect(changed).toHaveLength(0);
+    });
+
+    it('ADR-0061: OK with nothing changed asks nothing, and the entry pressed under a panel opens its menu in the panel\'s place', async () => {
+        const changed: PivotLayout[] = [];
+        const { root } = mount({ source: local(), layout: byRegion, onLayoutChanged: event => changed.push(event.layout) });
+        await settled();
+        entryButton(root, 'values', 0).click();
+        command(root, 'Value Field Settings…').click();
+        press(root, 'ex-pivot-ok');
+        expect(root.querySelector('.ex-pivot-popup')).toBeNull();
+        expect(document.activeElement).toBe(entryButton(root, 'values', 0));
+        entryButton(root, 'values', 0).click();
+        command(root, 'Value Field Settings…').click();
+        entryButton(root, 'values', 0).click();
+        expect(root.querySelector('.ex-pivot-popup[role="dialog"]')).toBeNull();
+        expect(menu(root).getAttribute('aria-label')).toBe('Options for Sum of Amount');
+        await settled();
+        expect(changed).toHaveLength(0);
+    });
+
+    it('ADR-0061: in Value Field Settings… a caption the user has not written follows the Aggregation, and OK applies them', async () => {
+        const { root, view } = mount({ source: local(), layout: byRegion });
+        await settled();
+        entryButton(root, 'values', 0).click();
+        command(root, 'Value Field Settings…').click();
+        const frame = panel(root);
+        const caption = panelText(root);
+        expect(document.activeElement).toBe(caption);
+        expect(caption?.value).toBe('Sum of Amount');
+        choose(panelList(root), 'average');
+        expect(caption?.value).toBe('Average of Amount');
+        expect(frame.querySelector('.ex-pivot-sample')?.textContent).toBe('Sample: -1234.5678');
+        typeInto(panelText(root, 1), '#,##0.0');
+        expect(frame.querySelector('.ex-pivot-sample')?.textContent).toBe('Sample: -1,234.6');
+        choose(panelList(root, 1), 'percentOfGrandTotal');
+        press(root, 'ex-pivot-ok');
+        await settled();
+        expect(view.shownLayout.values[0]).toEqual({ field: 'Amount', aggregation: 'average', showValuesAs: 'percentOfGrandTotal', numberFormat: '#,##0.0' });
+        expect(document.activeElement).toBe(entryButton(root, 'values', 0));
+    });
+
+    it('ADR-0061: a caption another field holds is refused in the panel, which stays open with the draft', async () => {
+        const changed: PivotLayout[] = [];
+        const { root } = mount({ source: local(), layout: byRegion, onLayoutChanged: event => changed.push(event.layout) });
+        await settled();
+        entryButton(root, 'values', 0).click();
+        command(root, 'Value Field Settings…').click();
+        typeInto(panelText(root), 'Region');
+        press(root, 'ex-pivot-ok');
+        expect(panel(root).querySelector('.ex-pivot-refusal')?.textContent).toBe('PivotTable field name already exists.');
+        expect(panel(root).querySelector<HTMLInputElement>('input.ex-pivot-text')?.value).toBe('Region');
+        typeInto(panelText(root), 'Total');
+        expect(panel(root).querySelector('.ex-pivot-refusal')).toBeNull();
+        typeInto(panelText(root, 1), 'N31');
+        expect(panel(root).querySelector('.ex-pivot-sample')?.textContent).toBe('This number format cannot be used.');
+        await settled();
+        expect(changed).toHaveLength(0);
+    });
+
+    it('ADR-0066: an Aggregation the source does not answer is offered disabled, with the reason', async () => {
+        const { root } = mount({ source: server(), layout: byRegion });
+        await settled();
+        entryButton(root, 'values', 0).click();
+        command(root, 'Value Field Settings…').click();
+        const options = [...panel(root).querySelectorAll<HTMLOptionElement>('.ex-pivot-select option')];
+        expect(options.find(option => option.value === 'average')?.disabled).toBe(true);
+        expect(options.find(option => option.value === 'count')?.disabled).toBe(false);
+        expect([...panel(root).querySelectorAll('.ex-pivot-not-offered')].map(note => note.textContent)).toContain('The source does not answer Average.');
+    });
+});
+
 describe('ExPivot\'s options', () => {
     it('ADR-0059: a layout this pivot raised is never asked for when handed back, and a copy of an earlier one is', async () => {
         const changed: PivotLayout[] = [];

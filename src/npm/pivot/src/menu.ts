@@ -23,6 +23,28 @@ export interface PivotMenuCommand {
  * button's right edge. */
 export type PivotMenuPlace = 'field-list' | 'toolbar-end';
 
+/**
+ * ExPivot's frame around a menu or a panel (ADR-0061), as the Razor component's PivotPopupFrame draws it: where it
+ * stands is its class, and Escape pressed anywhere in it calls `escape` and goes no further, so a dialog the
+ * Consumer put the pivot in does not close on it too. It claims nothing of the pivot's input (ADR-0240 section 6).
+ */
+export function popupFrame(document: Document, place: PivotMenuPlace, role: 'menu' | 'dialog', escape: () => void): HTMLDivElement {
+    const frame = document.createElement('div');
+    frame.className = place === 'toolbar-end' ? 'ex-pivot-popup ex-pivot-popup-overlay ex-pivot-popup-end' : 'ex-pivot-popup';
+    frame.setAttribute('role', role);
+    // A press on its padding, its text or a disabled command gives the frame the keyboard, so Escape stays inside it
+    // without another Tab stop (ADR-0061).
+    frame.tabIndex = -1;
+    frame.setAttribute('data-ex-claims', '');
+    frame.addEventListener('keydown', event => {
+        if (event.key !== 'Escape' || event.ctrlKey || event.altKey || event.metaKey) return;
+        event.preventDefault();
+        event.stopPropagation();
+        escape();
+    });
+    return frame;
+}
+
 interface DrawnCommand {
     readonly button: HTMLButtonElement;
     readonly mark: HTMLElement | undefined;
@@ -47,20 +69,7 @@ export class PivotMenuFrame {
     #drawn = new Map<string, DrawnCommand>();
 
     constructor(document: Document, place: PivotMenuPlace, escape: () => void) {
-        this.element = document.createElement('div');
-        this.element.className = place === 'toolbar-end' ? 'ex-pivot-popup ex-pivot-popup-overlay ex-pivot-popup-end' : 'ex-pivot-popup';
-        this.element.setAttribute('role', 'menu');
-        // A press on its padding or on a disabled command gives the frame the keyboard, so Escape stays inside it
-        // without another Tab stop; and the frame claims nothing of the pivot's input (ADR-0061, ADR-0240 section 6).
-        this.element.tabIndex = -1;
-        this.element.setAttribute('data-ex-claims', '');
-        this.element.addEventListener('keydown', event => {
-            if (event.key !== 'Escape' || event.ctrlKey || event.altKey || event.metaKey) return;
-            // The menu's Escape is the menu's: a dialog the Consumer put the pivot in does not close on it too.
-            event.preventDefault();
-            event.stopPropagation();
-            escape();
-        });
+        this.element = popupFrame(document, place, 'menu', escape);
         this.#menu = document.createElement('div');
         this.#menu.className = 'ex-pivot-menu';
         this.#menu.setAttribute('role', 'none');

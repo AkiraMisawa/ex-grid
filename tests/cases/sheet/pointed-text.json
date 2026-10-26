@@ -1,0 +1,209 @@
+{
+  "about": "What a Pointing Scope writes (ADR-0058, SH-32's layer 1 half): a pressed cell as the lookup of its row by key, XLOOKUP(<key>, T[<key column>], T[<column>]), with the key written as Excel writes a constant of its kind, and a pressed column as its structured reference; and the row a lookup finds. That what is written reads back as the cell it was written for is held where the two compose, in PointedTextTests and surface.test.ts. Transcribed from ExSheet.Engine.Tests' PointedTextTests.",
+  "kind": "sheetCalls",
+  "cases": [
+    {
+      "name": "ADR-0058 / SH-32: text is written in double quotes, with any quote inside doubled: 'R-4471'",
+      "call": "FormulaEntry.constantText",
+      "args": [{"value": "R-4471"}],
+      "is": "\"R-4471\""
+    },
+    {
+      "name": "ADR-0058 / SH-32: text is written in double quotes, with any quote inside doubled: 'R-\"5\"'",
+      "call": "FormulaEntry.constantText",
+      "args": [{"value": "R-\"5\""}],
+      "is": "\"R-\"\"5\"\"\""
+    },
+    {
+      "name": "ADR-0058 / SH-32: text is written in double quotes, with any quote inside doubled: ''",
+      "call": "FormulaEntry.constantText",
+      "args": [{"value": ""}],
+      "is": "\"\""
+    },
+    {
+      "name": "ADR-0058 / SH-32: text is written in double quotes, with any quote inside doubled: 'TRUE'",
+      "call": "FormulaEntry.constantText",
+      "args": [{"value": "TRUE"}],
+      "is": "\"TRUE\""
+    },
+    {
+      "name": "ADR-0058 / SH-32: a number is written in the invariant form the engine writes a number constant in, whatever the thread's culture: 1250",
+      "culture": "de-DE",
+      "call": "FormulaEntry.constantText",
+      "args": [{"value": 1250}],
+      "is": "1250"
+    },
+    {
+      "name": "ADR-0058 / SH-32: a number is written in the invariant form the engine writes a number constant in, whatever the thread's culture: -0.5",
+      "culture": "de-DE",
+      "call": "FormulaEntry.constantText",
+      "args": [{"value": -0.5}],
+      "is": "-0.5"
+    },
+    {
+      "name": "ADR-0058 / SH-32: a number is written in the invariant form the engine writes a number constant in, whatever the thread's culture: 318.25",
+      "culture": "de-DE",
+      "call": "FormulaEntry.constantText",
+      "args": [{"value": 318.25}],
+      "is": "318.25"
+    },
+    {
+      "name": "ADR-0058 / SH-32: a number is written in the invariant form the engine writes a number constant in, whatever the thread's culture: 100000000000000000000",
+      "culture": "de-DE",
+      "call": "FormulaEntry.constantText",
+      "args": [{"value": 1e+20}],
+      "is": "100000000000000000000"
+    },
+    {
+      "name": "ADR-0058 / SH-32: a number is written in the invariant form the engine writes a number constant in, whatever the thread's culture: 0",
+      "culture": "de-DE",
+      "call": "FormulaEntry.constantText",
+      "args": [{"value": 0}],
+      "is": "0"
+    },
+    {
+      "name": "ADR-0058 / SH-32: a boolean is written TRUE or FALSE, and an Error Value not at all: TRUE",
+      "call": "FormulaEntry.constantText",
+      "args": [{"value": true}],
+      "is": "TRUE"
+    },
+    {
+      "name": "ADR-0058 / SH-32: a boolean is written TRUE or FALSE, and an Error Value not at all: FALSE",
+      "call": "FormulaEntry.constantText",
+      "args": [{"value": false}],
+      "is": "FALSE"
+    },
+    {
+      "name": "ADR-0058 / SH-32: a boolean is written TRUE or FALSE, and an Error Value not at all: #N/A",
+      "call": "FormulaEntry.constantText",
+      "args": [{"value": {"error": "#N/A"}}],
+      "is": null
+    },
+    {
+      "name": "ADR-0058 / SH-32: a pressed column is its structured reference, escaped as the engine writes one back: Positions[PV]",
+      "call": "FormulaEntry.structuredReferenceText",
+      "args": ["Positions", "PV"],
+      "is": "Positions[PV]"
+    },
+    {
+      "name": "ADR-0058 / SH-32: a pressed column is its structured reference, escaped as the engine writes one back: Positions[Market Value]",
+      "call": "FormulaEntry.structuredReferenceText",
+      "args": ["Positions", "Market Value"],
+      "is": "Positions[Market Value]"
+    },
+    {
+      "name": "ADR-0058 / SH-32: a pressed column is its structured reference, escaped as the engine writes one back: Rates[Rate'#]",
+      "call": "FormulaEntry.structuredReferenceText",
+      "args": ["Rates", "Rate#"],
+      "is": "Rates[Rate'#]"
+    },
+    {
+      "name": "ADR-0058 / SH-32: a pressed column is its structured reference, escaped as the engine writes one back: an empty column is refused",
+      "call": "FormulaEntry.structuredReferenceText",
+      "args": ["Positions", ""],
+      "throws": {"refusal": "argument"}
+    },
+    {
+      "name": "ADR-0058 / SH-32: a pressed cell is the lookup of its row by key, the key column and the pressed column: a text key",
+      "call": "FormulaEntry.lookupText",
+      "args": ["Positions", "Id", {"value": "R-4471"}, "PV"],
+      "is": "XLOOKUP(\"R-4471\", Positions[Id], Positions[PV])"
+    },
+    {
+      "name": "ADR-0058 / SH-32: a pressed cell is the lookup of its row by key, the key column and the pressed column: a number key",
+      "call": "FormulaEntry.lookupText",
+      "args": ["Cds", "Code", {"value": 42}, "Spread"],
+      "is": "XLOOKUP(42, Cds[Code], Cds[Spread])"
+    },
+    {
+      "name": "ADR-0058 / SH-32: a pressed cell is the lookup of its row by key, the key column and the pressed column: an Error Value is no key",
+      "call": "FormulaEntry.lookupText",
+      "args": ["Positions", "Id", {"value": {"error": "#N/A"}}, "PV"],
+      "throws": {"refusal": "argument"}
+    },
+    {
+      "name": "ADR-0058 / SH-34: the row a lookup finds is the one whose key XLOOKUP's exact match cannot tell from it: the same text",
+      "call": "FormulaEntry.lookupFinds",
+      "args": [{"value": "R-4471"}, {"value": "R-4471"}],
+      "is": true
+    },
+    {
+      "name": "ADR-0058 / SH-34: the row a lookup finds is the one whose key XLOOKUP's exact match cannot tell from it: text without regard to case, as XLOOKUP reads it",
+      "call": "FormulaEntry.lookupFinds",
+      "args": [{"value": "r-4471"}, {"value": "R-4471"}],
+      "is": true
+    },
+    {
+      "name": "ADR-0058 / SH-34: the row a lookup finds is the one whose key XLOOKUP's exact match cannot tell from it: other text",
+      "call": "FormulaEntry.lookupFinds",
+      "args": [{"value": "R-4471"}, {"value": "R-4472"}],
+      "is": false
+    },
+    {
+      "name": "ADR-0058 / SH-34: the row a lookup finds is the one whose key XLOOKUP's exact match cannot tell from it: the number 1250 and the text 1250 are two keys",
+      "call": "FormulaEntry.lookupFinds",
+      "args": [{"value": 1250}, {"value": "1250"}],
+      "is": false
+    },
+    {
+      "name": "ADR-0058 / SH-34: the row a lookup finds is the one whose key XLOOKUP's exact match cannot tell from it: the same number",
+      "call": "FormulaEntry.lookupFinds",
+      "args": [{"value": 0.1}, {"value": 0.1}],
+      "is": true
+    },
+    {
+      "name": "ADR-0058 / SH-34: the row a lookup finds is the one whose key XLOOKUP's exact match cannot tell from it: the same boolean",
+      "call": "FormulaEntry.lookupFinds",
+      "args": [{"value": true}, {"value": true}],
+      "is": true
+    },
+    {
+      "name": "ADR-0058 / SH-34: the row a lookup finds is the one whose key XLOOKUP's exact match cannot tell from it: a boolean and a number",
+      "call": "FormulaEntry.lookupFinds",
+      "args": [{"value": true}, {"value": 1}],
+      "is": false
+    },
+    {
+      "name": "ADR-0058 / SH-34: the row a lookup finds is the one whose key XLOOKUP's exact match cannot tell from it: a blank is not a key",
+      "call": "FormulaEntry.lookupFinds",
+      "args": [{"value": ""}, null],
+      "is": false
+    },
+    {
+      "name": "ADR-0058 / SH-34: the row a lookup finds is the one whose key XLOOKUP's exact match cannot tell from it: an Error Value matches nothing",
+      "call": "FormulaEntry.lookupFinds",
+      "args": [{"value": {"error": "#N/A"}}, {"value": {"error": "#N/A"}}],
+      "is": false
+    },
+    {
+      "name": "ADR-0058 / SH-32: what is written reads the cell it was written for, for a key of each kind: text with quotes",
+      "call": "FormulaEntry.lookupText",
+      "args": ["T", "Key", {"value": "R-\"5\""}, "PV"],
+      "is": "XLOOKUP(\"R-\"\"5\"\"\", T[Key], T[PV])"
+    },
+    {
+      "name": "ADR-0058 / SH-32: what is written reads the cell it was written for, for a key of each kind: a number",
+      "call": "FormulaEntry.lookupText",
+      "args": ["T", "Key", {"value": 0.1}, "Rate#"],
+      "is": "XLOOKUP(0.1, T[Key], T[Rate'#])"
+    },
+    {
+      "name": "ADR-0058 / SH-32: what is written reads the cell it was written for, for a key of each kind: a boolean",
+      "call": "FormulaEntry.lookupText",
+      "args": ["T", "Key", {"value": true}, "PV"],
+      "is": "XLOOKUP(TRUE, T[Key], T[PV])"
+    },
+    {
+      "name": "ADR-0058 / SH-32: what is written reads the cell it was written for, for a key of each kind: text of digits",
+      "call": "FormulaEntry.lookupText",
+      "args": ["T", "Key", {"value": "1250"}, "PV"],
+      "is": "XLOOKUP(\"1250\", T[Key], T[PV])"
+    },
+    {
+      "name": "ADR-0058 / SH-32: what is written reads the cell it was written for, for a key of each kind: a column",
+      "call": "FormulaEntry.structuredReferenceText",
+      "args": ["T", "PV"],
+      "is": "T[PV]"
+    }
+  ]
+}

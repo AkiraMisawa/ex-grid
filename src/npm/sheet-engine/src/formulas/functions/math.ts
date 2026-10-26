@@ -7,6 +7,7 @@ import { approximatelyEqual, atFifteenDigits, power as powerOf } from '../arithm
 import { between, unitOf } from '../draws';
 import type { FunctionCall } from '../function-definition';
 import { Operand } from '../operand';
+import * as portable from '../portable-math';
 import { roundAt } from '../rounding';
 import { collectNumbers, numberArgument, numberOrFailure, numberResult, scalarArgument, sortNumbers } from './shared';
 
@@ -254,21 +255,21 @@ export function signFunction(call: FunctionCall): Operand {
 /** EXP: e to the number; past what a double holds, `#NUM!`. */
 export function exp(call: FunctionCall): Operand {
     const number = numberArgument(call, 0);
-    return number instanceof Operand ? number : numberResult(Math.exp(number));
+    return number instanceof Operand ? number : numberResult(portable.exp(number));
 }
 
 /** LN: a number not above 0 is `#NUM!`. */
 export function ln(call: FunctionCall): Operand {
     const number = numberArgument(call, 0);
     if (number instanceof Operand) return number;
-    return number <= 0 ? Operand.ofError('#NUM!') : Operand.of(Value.fromNumber(Math.log(number)));
+    return number <= 0 ? Operand.ofError('#NUM!') : Operand.of(Value.fromNumber(portable.log(number)));
 }
 
 /** LOG10: a number not above 0 is `#NUM!`. */
 export function log10(call: FunctionCall): Operand {
     const number = numberArgument(call, 0);
     if (number instanceof Operand) return number;
-    return number <= 0 ? Operand.ofError('#NUM!') : Operand.of(Value.fromNumber(Math.log10(number)));
+    return number <= 0 ? Operand.ofError('#NUM!') : Operand.of(Value.fromNumber(portable.log10(number)));
 }
 
 export function pi(): Operand {

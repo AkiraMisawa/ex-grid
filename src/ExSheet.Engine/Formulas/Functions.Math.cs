@@ -269,20 +269,20 @@ internal static partial class FunctionLibrary
 
     /// <summary>EXP: e to the number; past what a double holds, <c>#NUM!</c>.</summary>
     private static Operand Exp(FunctionCall call) =>
-        TryNumber(call, 0, out var number, out var failure) ? Operand.Of(Evaluator.Number(Math.Exp(number))) : failure;
+        TryNumber(call, 0, out var number, out var failure) ? Operand.Of(Evaluator.Number(PortableMath.Exp(number))) : failure;
 
     /// <summary>LN: a number not above 0 is <c>#NUM!</c>.</summary>
     private static Operand Ln(FunctionCall call)
     {
         if (!TryNumber(call, 0, out var number, out var failure)) return failure;
-        return number <= 0 ? Operand.Of(ErrorValue.Num) : Operand.Of(Value.FromNumber(Math.Log(number)));
+        return number <= 0 ? Operand.Of(ErrorValue.Num) : Operand.Of(Value.FromNumber(PortableMath.Log(number)));
     }
 
     /// <summary>LOG10: a number not above 0 is <c>#NUM!</c>.</summary>
     private static Operand Log10(FunctionCall call)
     {
         if (!TryNumber(call, 0, out var number, out var failure)) return failure;
-        return number <= 0 ? Operand.Of(ErrorValue.Num) : Operand.Of(Value.FromNumber(Math.Log10(number)));
+        return number <= 0 ? Operand.Of(ErrorValue.Num) : Operand.Of(Value.FromNumber(PortableMath.Log10(number)));
     }
 
     private static Operand Pi(FunctionCall call) => Operand.Of(Value.FromNumber(Math.PI));

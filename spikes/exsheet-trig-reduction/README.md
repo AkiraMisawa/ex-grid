@@ -11,7 +11,7 @@ Run from any directory with Python 3, standard library only:
 ```sh
 python3 spikes/exsheet-trig-reduction/compare.py            # the tallies below; 20000 seeded arguments
 python3 spikes/exsheet-trig-reduction/compare.py 100000     # more seeded arguments
-python3 spikes/exsheet-trig-reduction/compare.py --known    # the known answers TrigonometryReductionTests pins
+python3 spikes/exsheet-trig-reduction/compare.py --known    # the known answers tests/cases/sheet/trigonometry-reduction.json pins
 ```
 
 `results.txt` is the output of the first, on the platform it names.

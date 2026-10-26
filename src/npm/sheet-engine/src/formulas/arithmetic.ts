@@ -3,6 +3,7 @@
 // subtraction that nearly cancels is 0, and so is SUM's last addition; a comparison of two numbers is made at
 // Excel's precision; and a power is e^(b ln a), not the correctly rounded one, except a square root.
 import { formatExponential } from '../dotnet';
+import { exp, log, powWhole } from './portable-math';
 
 /** 2^-49: a final addition whose operands are closer than this, relative to each, is 0. */
 export const cancelTolerance = 1 / 562949953421312;
@@ -38,16 +39,17 @@ export function finalAdd(a: number, b: number): number {
 }
 
 /**
- * `a^b`, or `undefined` where it has no real answer (`#NUM!`). An integer exponent is `Math.Pow`, and an
- * exponent of 0.5 is the square root, correctly rounded (ARITH-133). Any other exponent of a positive base is
- * e^(b ln a), as Excel's is: `=8^(1/3)` is 1.9999999999999998. A negative base with an exponent that is the
+ * `a^b`, or `undefined` where it has no real answer (`#NUM!`). An integer exponent is the exact power rounded
+ * once, and an exponent of 0.5 is the square root, correctly rounded (ARITH-133). Any other exponent of a positive
+ * base is e^(b ln a), as Excel's is, e^x and ln x each correctly rounded: `=8^(1/3)` is 1.9999999999999998. A negative base with an exponent that is the
  * reciprocal of an odd integer has a real answer, −e^(ln(−a) b); other fractional exponents of a negative base
  * are `#NUM!`.
  */
 export function power(a: number, b: number): number | undefined {
-    if (a === 0 || b === Math.floor(b)) return Math.pow(a, b);
-    if (a > 0) return b === 0.5 ? Math.sqrt(a) : Math.exp(Math.log(a) * b);
+    if (b === Math.floor(b)) return powWhole(a, b);
+    if (a === 0) return b > 0 ? 0 : Infinity;
+    if (a > 0) return b === 0.5 ? Math.sqrt(a) : exp(log(a) * b);
     const root = 1 / b;
-    if (Number.isFinite(root) && root === Math.floor(root) && Math.abs(root % 2) === 1) return -Math.exp(Math.log(-a) * b);
+    if (Number.isFinite(root) && root === Math.floor(root) && Math.abs(root % 2) === 1) return -exp(log(-a) * b);
     return undefined;
 }

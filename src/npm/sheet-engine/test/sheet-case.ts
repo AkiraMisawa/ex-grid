@@ -31,21 +31,21 @@ export type Json = null | boolean | number | string | readonly Json[] | { readon
 /** An object of a case. */
 export type JsonObject = { readonly [key: string]: Json };
 
-function isObject(value: Json | undefined): value is JsonObject {
+export function isObject(value: Json | undefined): value is JsonObject {
     return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-function object(value: Json | undefined, what: string): JsonObject {
+export function object(value: Json | undefined, what: string): JsonObject {
     if (!isObject(value)) throw new CaseError(`${what} is not an object.`);
     return value;
 }
 
-function text(value: Json | undefined, what: string): string {
+export function text(value: Json | undefined, what: string): string {
     if (typeof value !== 'string') throw new CaseError(`${what} is not text.`);
     return value;
 }
 
-function list(value: Json | undefined, what: string): readonly Json[] {
+export function list(value: Json | undefined, what: string): readonly Json[] {
     if (!Array.isArray(value)) throw new CaseError(`${what} is not a list.`);
     return value as readonly Json[];
 }
@@ -338,7 +338,7 @@ export function compare(where: string, expected: Json | undefined, actual: Json 
     }
 }
 
-function cultureOf(name: string): Culture {
+export function cultureOf(name: string): Culture {
     return name === 'invariant' ? Culture.invariant : Culture.of(name);
 }
 
@@ -392,14 +392,14 @@ function changeJson(change: SheetChange): JsonObject {
 }
 
 /** A case the runner cannot read: the case's defect, never a refusal it can expect. */
-class CaseError extends Error {}
+export class CaseError extends Error {}
 
 /**
  * A refusal as a case expects it, in the words the C# runner uses for .NET's exception types. What is not the
  * engine refusing is thrown on: the runner's own `CaseError`, an engine defect (`Internal: …`), and what
  * JavaScript throws by itself (a plain `TypeError`, the call stack running out).
  */
-function thrown(e: unknown): JsonObject {
+export function thrown(e: unknown): JsonObject {
     if (e instanceof CaseError) throw e;
     if (e instanceof FormulaSyntaxError) return { refusal: 'formulaSyntax', reason: e.reason, beyondLimit: e.isBeyondLimit, saying: e.message };
     if (e instanceof SheetRefusedError) return { refusal: 'refused', reason: e.refusal.reason, saying: e.refusal.message };
@@ -878,6 +878,28 @@ class Run {
                 break;
             case 'spilledFrom':
                 actual = perCell(a => orNull(sheet.spilledFrom(a)?.toString()));
+                break;
+            case 'completions':
+                // Per text being typed, its caret marked |, the Sheet's completion there: what it replaces and each candidate.
+                actual = Object.fromEntries(Object.keys(object(expected, key)).map(marked => {
+                    const caret = marked.indexOf('|');
+                    if (caret < 0 || marked.includes('|', caret + 1)) throw new CaseError(`'${marked}' marks no caret: one | is the caret.`);
+                    const completion = sheet.complete(marked.slice(0, caret) + marked.slice(caret + 1), caret);
+                    return [marked, completion === undefined ? null : {
+                        start: completion.start,
+                        length: completion.length,
+                        candidates: completion.candidates.map(c => ({ name: c.name, kind: c.kind, insertText: c.insertText, description: orNull(c.description) })),
+                    }];
+                }));
+                break;
+            case 'references':
+                // Per text being edited, the References the Sheet answers in it: each span, and its cells or its Linked Table's column.
+                actual = Object.fromEntries(Object.keys(object(expected, key)).map(t => [t, sheet.references(t).map(r => ({
+                    start: r.start,
+                    length: r.length,
+                    cells: orNull(r.cells?.toString()),
+                    linkedColumn: r.linkedColumn === undefined ? null : { table: r.linkedColumn.table, column: r.linkedColumn.column },
+                }))]));
                 break;
             case 'columnWidths':
                 actual = Object.fromEntries(Object.keys(object(expected, key)).map(column => {
