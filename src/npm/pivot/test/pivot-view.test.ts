@@ -60,12 +60,6 @@ class HeldSource implements PivotSource {
         this.features = behind.features;
     }
 
-    itemCounts(signal?: AbortSignal): ReturnType<NonNullable<PivotSource['itemCounts']>> {
-        const counts = this.#behind.itemCounts;
-        if (counts === undefined) throw new Error('The source behind counts no Items.');
-        return counts.call(this.#behind, signal);
-    }
-
     aggregate(...args: Parameters<PivotSource['aggregate']>): ReturnType<PivotSource['aggregate']> {
         // Asked once let through, as a source asks: one whose question was given up meanwhile refuses it then.
         return new Promise(resolve => { this.held.push(() => { resolve(Promise.resolve().then(() => this.#behind.aggregate(...args))); }); });
