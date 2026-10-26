@@ -121,6 +121,12 @@ export interface PivotViewOptions {
     /** The most leaves a question may ask the source for (ADR-0066): 200,000 unless given. A layout past it is
      * refused by name, and the report stays on the layout before. */
     readonly maxLeaves?: number;
+    /** The most rows a report may have (ADR-0066): Excel's 1,048,576 unless given. A layout past it is refused, and
+     * newer data past it leaves a Stale Report. */
+    readonly maxRows?: number;
+    /** The most columns a report may have, its label columns included (ADR-0066): Excel's 16,384 unless given. A layout
+     * past it is refused, and newer data past it leaves a Stale Report. */
+    readonly maxColumns?: number;
     /** How long after a change of data reached the screen the next is asked for, in milliseconds: 250 unless given
      * (ADR-0067). The source's notices that come meanwhile are gathered and asked for once, so a source that changes
      * many times a second redraws the report at most once per interval; a notice after a quiet spell is asked for at
@@ -158,6 +164,10 @@ function asksData(cause: Cause): boolean {
  * (ADR-0067). */
 const defaultRedrawInterval = 250;
 
+/** Excel's own limits on a worksheet's rows and columns, the report's caps unless given (ADR-0066). */
+const excelRows = 1_048_576;
+const excelColumns = 16_384;
+
 interface Question {
     readonly layout: PivotLayout;
     readonly generation: number;
@@ -186,6 +196,9 @@ interface Question {
     /** The locale its settings carry, which its counts and its report are written in. */
     readonly locale: string;
     readonly maxLeaves: number;
+    /** The caps on the report's rows and columns it is shown under (ADR-0066). */
+    readonly maxRows: number;
+    readonly maxColumns: number;
     /** The Item a user's expand or collapse toggled, which keeps the Focus in the report this question brings. */
     readonly toggled: ToggledItem | undefined;
 }
@@ -290,9 +303,11 @@ function checkedOptions(options: PivotViewOptions): PivotViewOptions {
     if (redrawInterval !== undefined && (typeof redrawInterval !== 'number' || !Number.isFinite(redrawInterval) || redrawInterval < 0)) {
         throw new RangeError(`redrawInterval is a time in milliseconds of zero or more, not ${JSON.stringify(redrawInterval)} (ADR-0067).`);
     }
-    const maxLeaves = given['maxLeaves'];
-    if (maxLeaves !== undefined && (typeof maxLeaves !== 'number' || !Number.isSafeInteger(maxLeaves) || maxLeaves < 1)) {
-        throw new RangeError(`maxLeaves is a whole number of at least 1, not ${JSON.stringify(maxLeaves)} (ADR-0066).`);
+    for (const name of ['maxLeaves', 'maxRows', 'maxColumns']) {
+        const cap = given[name];
+        if (cap !== undefined && (typeof cap !== 'number' || !Number.isSafeInteger(cap) || cap < 1)) {
+            throw new RangeError(`${name} is a whole number of at least 1, not ${JSON.stringify(cap)} (ADR-0066).`);
+        }
     }
     const slicing = given['slicing'];
     if (slicing !== undefined && (typeof slicing !== 'object' || slicing === null)) throw new TypeError('slicing is an object.');
@@ -645,7 +660,7 @@ export class PivotView {
         }
         if (asked !== undefined) {
             this.#ask(asked, consumerLayout !== undefined ? 'consumer' : 'data', []);
-        } else if (settingsMoved || options.maxLeaves !== before.maxLeaves) {
+        } else if (settingsMoved || capsOf(options) !== capsOf(before)) {
             this.#ask(this.#layoutAhead, 'consumer', []);
         }
         if (options.rowHeight !== before.rowHeight || options.density !== before.density || options.viewportHeight !== before.viewportHeight
@@ -716,6 +731,14 @@ export class PivotView {
 
     get #maxLeaves(): number {
         return this.#options.maxLeaves ?? defaultMaxLeaves;
+    }
+
+    get #maxRows(): number {
+        return this.#options.maxRows ?? excelRows;
+    }
+
+    get #maxColumns(): number {
+        return this.#options.maxColumns ?? excelColumns;
     }
 
     get #locale(): string {
@@ -858,7 +881,7 @@ export class PivotView {
         const question: Question = {
             layout, generation, controller: new AbortController(), raise, markChanges, refreshData, moves: Object.freeze(moves), carries, cause: asked,
             reportSource: this.#reportSource, source: this.#options.source, settings: this.#settings, locale: this.#locale, maxLeaves: this.#maxLeaves,
-            toggled: focusOn,
+            maxRows: this.#maxRows, maxColumns: this.#maxColumns, toggled: focusOn,
         };
         this.#asked = question;
         void this.#run(question);
@@ -881,7 +904,7 @@ export class PivotView {
             if (!current()) return;
             this.#asked = undefined;
             const stale = this.#staleFor(question);
-            if (stale) this.#markStale(this.#words.staleFailed(error), question);
+            if (stale) this.#markStale(this.#words.staleFailed(error), question.refreshData);
             else this.#refusal = this.#words.failed(error);
             this.#draw();
             // A failure is said where the user sees it, and asked again only by the next notice, Refresh, Retry or move:
@@ -899,7 +922,7 @@ export class PivotView {
         this.#asked = undefined;
         if (update.refusal !== undefined) {
             if (this.#staleFor(question)) {
-                this.#markStale(this.#staleRefusalOf(update.refusal, question), question);
+                this.#markStale(this.#staleRefusalOf(update.refusal, question), question.refreshData);
                 this.#draw();
             } else {
                 this.#refuse(update.refusal, question);
@@ -908,6 +931,23 @@ export class PivotView {
             // for it: a refusal of the user's move is no reason to leave the totals before them on screen. A refusal of
             // the layout on screen itself is said, and asked again only by the next notice, Refresh or move.
             this.#landed(question, undefined, question.layout !== this.#shown.layout);
+            return;
+        }
+        const broken = capBrokenBy(update.metadata, question);
+        if (broken !== undefined) {
+            // An answer past the report's caps is not shown (ADR-0066): newer data under the layout on screen leaves a
+            // Stale Report, and a layout is refused, naming the moves it held. Either way the version is the one the
+            // source told of, so it is not asked for again until the data moves on.
+            const cap = formatPivotCount(broken.cap, question.locale);
+            // The source answered, so a Refresh it carried is paid, and Retry asks the report again.
+            if (question.refreshData) this.#refreshOwed = false;
+            if (this.#staleFor(question)) {
+                this.#markStale(this.#words.fill(broken.stale, cap), false);
+                this.#draw();
+            } else {
+                this.#sayRefused(this.#words.fill(broken.refusal, cap), heldFields(heldMoves(question)));
+            }
+            this.#landed(question, update.metadata.sourceVersion, question.layout !== this.#shown.layout);
             return;
         }
         // The data on screen is the Pivot Source's as it is now: the Refresh is paid.
@@ -933,9 +973,9 @@ export class PivotView {
         return asksData(question.cause) && this.#shown.answer !== undefined && question.layout === this.#shown.layout;
     }
 
-    #markStale(sentence: string, question: Question): void {
+    #markStale(sentence: string, retryRefreshes: boolean): void {
         this.#stale = sentence;
-        this.#staleRetryRefreshes = question.refreshData;
+        this.#staleRetryRefreshes = retryRefreshes;
     }
 
     // What a refusal of newer data says, after the time of the data shown. A refusal the report source made itself, and
@@ -1071,17 +1111,18 @@ export class PivotView {
     // Defer Layout Update is ticked, is the user's work in the pane, and stays, as the Razor component keeps it.
     #refuse(refusal: PivotReportRefusal, question: Question): void {
         const { message, fields } = this.#sentenceFor(refusal, question);
+        this.#sayRefused(message, fields);
+    }
+
+    #sayRefused(message: string, fields: readonly string[]): void {
         this.#refusal = message;
         this.#draw();
         this.#options.onRefused?.(Object.freeze({ message, fields: Object.freeze(fields) }));
     }
 
     #sentenceFor(refusal: PivotReportRefusal, question: Question): { readonly message: string; readonly fields: readonly string[] } {
-        // The moves the refused layout still holds: a field moved and then taken out again is not in it.
-        // A field may stand in Values as well as in an axis, so a move is known by its field and its Area.
-        const held = question.moves.filter((move, i, all) => all.findLastIndex(later => later.field === move.field && later.area === move.area) === i
-            && holdsMove(question.layout, move));
-        const named = [...new Set(held.map(move => move.field))];
+        const held = heldMoves(question);
+        const named = heldFields(held);
         const source = refusal.sourceRefusal;
         if (source?.kind !== 'tooManyLeaves') return { message: refusal.message, fields: refusal.field === undefined ? named : [refusal.field] };
         // A source that names no limit stopped at the cap it was asked with (ADR-0066).
@@ -1208,7 +1249,9 @@ export class PivotView {
     // The source answered a Window from another report than the one shown: the data moved on under it, and the
     // report on screen is asked again under its layout, unless something newer is asked already.
     #reportMoved(answer: PivotReportState): void {
-        if (this.#destroyed || this.#shown.answer !== answer || this.#asked !== undefined) return;
+        // A Stale Report is not asked again for it: the newest data is what it could not show, and asking again would
+        // break the same cap once per interval while the reader scrolls. Retry and the source's next notice ask.
+        if (this.#destroyed || this.#shown.answer !== answer || this.#asked !== undefined || this.#stale !== undefined) return;
         // A change of data like any other: asked for no sooner than the redraw interval after the last one shown.
         this.#changed = true;
         this.#scheduleRedraw();
@@ -2052,6 +2095,33 @@ export class PivotView {
 interface Deferred {
     readonly layout: PivotLayout;
     readonly moves: readonly FieldListMove[];
+}
+
+// The moves a refused question's layout still holds: a field moved and then taken out again is not in it. A field may
+// stand in Values as well as in an axis, so a move is known by its field and its Area.
+function heldMoves(question: Question): readonly FieldListMove[] {
+    return question.moves.filter((move, i, all) => all.findLastIndex(later => later.field === move.field && later.area === move.area) === i
+        && holdsMove(question.layout, move));
+}
+
+// The fields a refusal names: those of the moves its layout still holds, each once.
+function heldFields(held: readonly FieldListMove[]): readonly string[] {
+    return [...new Set(held.map(move => move.field))];
+}
+
+// The caps a pivot's options set, each as it applies, so a cap given as its default asks nothing again.
+function capsOf(options: PivotViewOptions): string {
+    return `${options.maxLeaves ?? defaultMaxLeaves} ${options.maxRows ?? excelRows} ${options.maxColumns ?? excelColumns}`;
+}
+
+// The cap a report breaks, or none (ADR-0066): its rows, or its columns with the label columns, past the question's —
+// with the word that refuses a layout for it and the word that says newer data broke it.
+function capBrokenBy(metadata: PivotReportState['metadata'], question: Question): { readonly refusal: string; readonly stale: string; readonly cap: number } | undefined {
+    if (metadata.rowCount > question.maxRows) return { refusal: 'refused-too-many-rows', stale: 'stale-too-many-rows', cap: question.maxRows };
+    if (metadata.labelColumns.length + metadata.valueColumns.length > question.maxColumns) {
+        return { refusal: 'refused-too-many-columns', stale: 'stale-too-many-columns', cap: question.maxColumns };
+    }
+    return undefined;
 }
 
 // Whether `layout` holds the field a move put in its Area.

@@ -158,7 +158,8 @@
         <p>
             <code>Caps</code> (<code>PivotCaps</code>) refuses, by name, a layout whose report is too large to read:
             more than 200,000 leaves, or more rows or columns than Excel's 1,048,576 and 16,384. The report on screen
-            stays, and the Pivot Toolbar says why.
+            stays, and the Pivot Toolbar says why. ExPivot drawn by the Script Core takes the same caps as
+            <code>maxLeaves</code>, <code>maxRows</code> and <code>maxColumns</code>.
         </p>
         <p>
             Over server data the leaves grow with the product of the placed fields' Items, not with the records, so a
