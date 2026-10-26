@@ -14,19 +14,19 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/26/2026 - 23:13:21 |
+| Generated on: | 10/26/2026 - 23:56:53 |
 | Parser: | MultiReport (19x Cobertura) |
 | Assemblies: | 16 |
-| Classes: | 1218 |
+| Classes: | 1221 |
 | Files: | 616 |
-| **Line coverage:** | 94.3% (84293 of 89378) |
-| Covered lines: | 84293 |
-| Uncovered lines: | 5085 |
-| Coverable lines: | 89378 |
-| Total lines: | 142742 |
-| **Branch coverage:** | 87.5% (50936 of 58206) |
-| Covered branches: | 50936 |
-| Total branches: | 58206 |
+| **Line coverage:** | 94.3% (84417 of 89505) |
+| Covered lines: | 84417 |
+| Uncovered lines: | 5088 |
+| Coverable lines: | 89505 |
+| Total lines: | 142954 |
+| **Branch coverage:** | 87.5% (51015 of 58296) |
+| Covered branches: | 51015 |
+| Total branches: | 58296 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
@@ -403,8 +403,8 @@
 |ExGrid.Components.SummaryFiguresMenu|80%|85.7%|
 |ExGrid.DisplayText|100%|87.5%|
 |ExGrid.FetchedShapedGrid|90.9%||
-|ExGrid.FetchingGridSource<TRow>|84.3%|76%|
-|ExGrid.FetchingGridSource<TRow>|96.8%|86%|
+|ExGrid.FetchingGridSource<TRow>|84.6%|77%|
+|ExGrid.FetchingGridSource<TRow>|96.8%|86.1%|
 |ExGrid.FilterClause|100%||
 |ExGrid.FilterDocument|100%||
 |ExGrid.FilterEquality|93.7%|82.8%|
@@ -533,8 +533,11 @@
 |ExGrid.Summarizing.SelectionSummary|100%||
 |ExGrid.Summarizing.SummaryFigureOrder|100%|50%|
 |ExGrid.Summarizing.SummaryFigureOrder.Entry|100%||
-|ExGrid.Validation.GridRuleset<TRow>|0%||
-|ExGrid.Validation.GridRuleset<TRow>|100%|92.1%|
+|ExGrid.Validation.Breach|100%||
+|ExGrid.Validation.BreachCell|100%||
+|ExGrid.Validation.GridErrorStepRequest|80%||
+|ExGrid.Validation.GridRuleset<TRow>|33.3%||
+|ExGrid.Validation.GridRuleset<TRow>|98.8%|88.7%|
 |ExGrid.Validation.RuleViolation|100%||
 |ExGrid.ViewportBox|100%|100%|
 |ExGrid.ViewportGeometry|100%|97.9%|
@@ -1011,8 +1014,8 @@
 |ExPivot.Engine.RecordColumns.FieldColumns<TRecord>|89.7%|93.8%|
 |ExPivot.Engine.RecordColumns<TRecord>|91.5%|94.1%|
 |ExPivot.Engine.RecordColumns<TRecord>|90%|90%|
-|ExPivot.Engine.RecordPivotSource<TRecord>|100%|100%|
 |ExPivot.Engine.RecordPivotSource<TRecord>|94.1%|56.2%|
+|ExPivot.Engine.RecordPivotSource<TRecord>|100%|100%|
 |ExPivot.Engine.ReportBuilder|99.8%|99.6%|
 |ExPivot.Engine.ReportBuilder.ChildOrder|100%|100%|
 |ExPivot.Engine.ReportBuilder.CollapseState|100%|100%|
