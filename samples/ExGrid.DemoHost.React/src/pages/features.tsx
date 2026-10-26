@@ -1,8 +1,8 @@
-import { useCallback, useMemo, useRef, useState, type ReactElement } from 'react';
+import { useCallback, useMemo, useRef, useState, useSyncExternalStore, type ReactElement } from 'react';
 import {
-    declinedSummary, GridSource, summaryOf, type CommitRefusalReason, type EditDiscardReason, type GridClearIntent, type GridColumn, type GridColumnWidthChange,
+    declinedSummary, GridRuleset, GridSource, summaryOf, type CommitRefusalReason, type EditDiscardReason, type GridClearIntent, type GridColumn, type GridColumnWidthChange,
     type GridCommand, type GridContextMenuContext, type GridEditIntent, type GridHeaderGroup, type GridOverwriteNotice, type GridPasteIntent,
-    type GridRefusal, type GridReplaceRequest, type GridReplaceResult, type GridSummaryRequest, type GridSummaryResult,
+    type EditVerdict, type GridRefusal, type GridReplaceRequest, type GridReplaceResult, type GridSummaryRequest, type GridSummaryResult,
 } from '@ex-grid/core';
 import { ExGrid } from '@ex-grid/react';
 import { Temporal } from 'temporal-polyfill';
@@ -29,20 +29,26 @@ const isoDate = (value: unknown): string => (value as Temporal.PlainDateTime).to
 // places, so they are written here.
 const twoPlaces = (value: unknown): string => (value as number).toFixed(2);
 
+// The Blazor page's rule on Notional, held by the bundled ruleset (ADR-0034): what does not parse is rejected and the
+// editor holds, and a negative value is applied and flagged. Which is which is this side's convention.
+function notionalRule(_row: DemoTrade, text: string): EditVerdict {
+    const value = parsedNumber(text);
+    if (value === undefined) return { kind: 'reject', message: `'${text}' is not a number` };
+    return value < 0 ? { kind: 'flag', message: 'a negative notional needs approval' } : { kind: 'accept' };
+}
+
+// The page's ruleset: the Notional column's editor asks its rule, and the rows are judged by the same one after
+// every change. One page shows it at a time, and each judgement replaces the last whole.
+const rules = new GridRuleset<DemoTrade>().column('Notional', notionalRule);
+const notionalValidate = rules.validatorFor('Notional');
+if (notionalValidate === undefined) throw new Error('The ruleset holds the rule on Notional.');
+
 const columns: readonly GridColumn<DemoTrade>[] = Object.freeze([
     // Book and Trader offer their values and a condition, as on the Blazor page (ADR-0009).
     { name: 'Book', type: 'text', value: (t: DemoTrade) => t.book, width: 110, filterUi: 'both' },
     { name: 'Trader', type: 'text', value: (t: DemoTrade) => t.trader, width: 120, editable: true, filterUi: 'both' },
-    // The Blazor page's rule on Notional: what does not parse is rejected, and a negative value is flagged
-    // (ADR-0034).
-    {
-        name: 'Notional', type: 'number', value: (t: DemoTrade) => t.notional, width: 140, format: twoPlaces, editable: true,
-        validate: (_row: DemoTrade, text: string) => {
-            const value = parsedNumber(text);
-            if (value === undefined) return { kind: 'reject', message: `'${text}' is not a number` } as const;
-            return value < 0 ? { kind: 'flag', message: 'a negative notional needs approval' } as const : { kind: 'accept' } as const;
-        },
-    },
+    // The verdict seam, wired to the ruleset's rule (ADR-0034).
+    { name: 'Notional', type: 'number', value: (t: DemoTrade) => t.notional, width: 140, format: twoPlaces, editable: true, validate: notionalValidate },
     // Deliberately too narrow for its values: what #### looks like, and what the clipboard must never
     // receive (ADR-0016, CP-5). The label is the full word, so the header's own ellipsis is the real thing.
     { name: 'Narrow', type: 'number', value: (t: DemoTrade) => t.notional, width: 48, format: twoPlaces },
@@ -240,6 +246,14 @@ export function Features(): ReactElement {
     const late = useQuery('late') === '1';
     const source = useMemo(() => GridSource.from(rows), []);
     const second = useMemo(() => GridSource.from(rows.slice(0, 20)), []);
+    // The rows judged again whenever they change, so a paste, a fill or an undo wears the marks a typed edit does;
+    // the ruleset answers the grid's two channels, the Cell State and the message (ADR-0034).
+    const subscribe = useMemo(() => source.subscribe.bind(source), [source]);
+    const held = useSyncExternalStore(subscribe, () => source.snapshot().window);
+    const judged = useMemo(() => {
+        rules.evaluate(held, columns);
+        return { cellState: rules.cellState, cellMessage: rules.cellMessage };
+    }, [held]);
     const [editStatus, setEditStatus] = useState('—');
     const [clearStatus, setClearStatus] = useState('—');
     const [historyStatus, setHistoryStatus] = useState('—');
@@ -484,6 +498,8 @@ export function Features(): ReactElement {
                 temporal={Temporal}
                 onRefused={onRefused}
                 onEdit={onEdit}
+                cellState={judged.cellState}
+                cellMessage={judged.cellMessage}
                 onEditDiscarded={onEditDiscarded}
                 onOverwriteNotice={onOverwriteNotice}
                 onClear={onClear}

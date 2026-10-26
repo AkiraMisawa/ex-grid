@@ -16,6 +16,7 @@ import { columnPlaceholder, copyRefusalWords, pasteRefusalWords, rowCommandRefus
 import { builtInCommandLabel } from '../chrome/command-labels';
 import { summaryLabelIds } from '../chrome/summary-words';
 import { markLabelIds } from '../chrome/mark-words';
+import { selectionLabelIds } from '../chrome/selection-words';
 import { findOutcomeText, type FindOutcome, type FindPanelRefusedCell } from '../chrome/find-panel-labels';
 import { gridCommandIds, gridLabelIds } from '../chrome/command-ids';
 import { letterOf, menuLetter, resolveColumnMenuKey, resolveMenuKey } from '../chrome/menu-keys';
@@ -48,7 +49,7 @@ import { cell as cellPosition, sameCell, type CellPosition, type GridDirection, 
 import { markedColumns, markedRows, wholeColumnRuns, wholeRowRuns } from '../selection/heading-marks';
 import { edgeBandRowsPerTick } from '../selection/edge-band';
 import { HeldSelection } from '../selection/held';
-import { bottomRow, fromCorners, rangeCellCount, rangeContains, sameRange as sameSelectionRange, spansEveryColumn, spansEveryRow, type SelectionRange } from '../selection/range';
+import { bottomRow, fromCorners, rangeCellCount, rangeContains, rightColumn, sameRange as sameSelectionRange, spansEveryColumn, spansEveryRow, type SelectionRange } from '../selection/range';
 import { Selection, type EdgeAnswer, type GridSelection } from '../selection/selection';
 import { nextSort } from '../query/sort';
 import type { GridSource, GridSourceState } from '../source/grid-source';
@@ -216,6 +217,14 @@ export interface GridOptions<Row> extends CellPaintOptions<Row>, FormulaBarOptio
      * painted again; it goes when the pointer leaves the grid or the rows move under it. Off unless given,
      * and while off the grid does not hear the pointer move at all. */
     readonly highlightHoverRow?: boolean;
+    /**
+     * Why a cell wears its Cell State, asked of the Consumer for one cell at a time (ADR-0034): once the Focus has
+     * stood on it for 300 ms, or the pointer has come to rest over it as long, never while painting. The answer
+     * is shown below the cell until the Focus moves or the pointer leaves the grid; `undefined` or an empty
+     * sentence shows nothing. While an edit is open its own message outranks it. While this is not given the
+     * grid does not hear the pointer move for it.
+     */
+    readonly cellMessage?: (row: Row, column: GridColumn<Row>) => string | undefined;
     /** Paints a Row Stripe on every second row of the result (ADR-0038), appearance only and off unless given.
      * Counted by the row's position in the whole result, so a stripe stays with its row while scrolling and on a
      * Placeholder; Row Kind and Cell State paint over it, and the overlays above it. The colour is
@@ -496,6 +505,10 @@ const defaultViewportHeightPx = 600;
  * a Selection before it is announced (ADR-0033). */
 const settleDelayMs = 150;
 
+/** How long the Focus must stand on a cell, or the pointer rest over it, before its message opens (ADR-0034): the
+ * intent to read, which is not the stillness the settle measures, so a number of its own. */
+const popoverDelayMs = 300;
+
 /** How often a drag held in an edge band scrolls a step (ADR-0008). */
 const edgeScrollTickMs = 50;
 
@@ -628,6 +641,7 @@ interface Taken<Row> {
     readonly pasteMaySpill: boolean;
     readonly highlightFocusRow: boolean;
     readonly highlightHoverRow: boolean;
+    readonly cellMessage: ((row: Row, column: GridColumn<Row>) => string | undefined) | undefined;
     readonly stripeRows: boolean;
     readonly rowKind: ((row: Row) => RowKind) | undefined;
     readonly pasteByteCap: number;
@@ -1054,6 +1068,9 @@ export class GridView<Row> {
     // The status line after the rows (ADR-0014): the marks' count and the Selection Summary, standing while either
     // has its place in it.
     readonly #status: HTMLElement;
+    // The off-screen indicator's sentence and its button (ADR-0014), one each for the grid's life.
+    readonly #offScreen: HTMLElement;
+    readonly #goToSelection: HTMLElement;
     #statusShown: readonly HTMLElement[] = [];
     // The Selection Summary (ADR-0130): who answers it, the figures shown, who hears it, the question in force and
     // its box, and how many times the rows under a standing selection may have moved.
@@ -1077,6 +1094,13 @@ export class GridView<Row> {
     #rowKind: ((row: Row) => RowKind) | undefined;
     // The row under the pointer, while the hover band is on and the pointer is over a row (ADR-0029).
     #hoverRow: number | undefined;
+    // A flagged cell's message (ADR-0034): the Consumer's question, the cell the Focus waits on and the timer that
+    // opens it, the pointer's rest timer, and the message shown, which is for one cell at a time.
+    #cellMessage: ((row: Row, column: GridColumn<Row>) => string | undefined) | undefined;
+    #cancelMessage: (() => void) | undefined;
+    #cancelRest: (() => void) | undefined;
+    #restAt: { readonly x: number; readonly y: number; readonly movedAt: number } | undefined;
+    #shownMessage: { readonly cell: CellPosition; readonly text: string; readonly row: Row; readonly column: string } | undefined;
     #pasteByteCap = defaultPasteByteCap;
     #editHeard: ((intent: GridEditIntent<Row>) => void) | undefined;
     #onEditingChanged: ((open: boolean) => void) | undefined;
@@ -1392,6 +1416,9 @@ export class GridView<Row> {
         // The status line sits where the C# core's holds it (ADR-0014, ADR-0043, ADR-0130): after the rows, outside
         // the scroller.
         this.#status = element('div', { class: 'ex-status', role: 'presentation' });
+        this.#offScreen = element('span', {});
+        this.#goToSelection = element('button', { type: 'button', 'data-ex-claims': 'click' });
+        this.#goToSelection.addEventListener('click', this.#onGoToSelection);
         this.#summary = new SummaryQuestions(() => {
             this.#invalidate();
         });
@@ -1477,6 +1504,8 @@ export class GridView<Row> {
                 () => { root.removeEventListener('mouseleave', this.#onLeave); },
                 () => { root.removeEventListener('mousemove', this.#onHover); },
                 () => { root.removeEventListener('mouseleave', this.#dropHover); },
+                () => { root.removeEventListener('mousemove', this.#onRestMove); },
+                () => { root.removeEventListener('mouseleave', this.#onRestLeave); },
                 () => { root.removeEventListener('copy', this.#onCopy); },
                 () => { root.removeEventListener('paste', this.#onPaste); },
                 reports.observeViewport(this.#scroller, report => {
@@ -1593,6 +1622,8 @@ export class GridView<Row> {
         this.#cancelSettle?.();
         this.#cancelAnnounce?.();
         this.#cancelFollow?.();
+        this.#cancelMessage?.();
+        this.#cancelRest?.();
         this.#repaint?.cancel();
         this.#stopEdgeTimer();
         this.#stopHighlightTimer();
@@ -1719,6 +1750,10 @@ export class GridView<Row> {
         }
         if (highlightHoverRow !== undefined && typeof highlightHoverRow !== 'boolean') {
             throw new TypeError('highlightHoverRow is true or false.');
+        }
+        const { cellMessage }: { readonly cellMessage?: unknown } = options;
+        if (cellMessage !== undefined && typeof cellMessage !== 'function') {
+            throw new TypeError('cellMessage is a function of the row and the column (ADR-0034).');
         }
         const { stripeRows, rowKind }: { readonly stripeRows?: unknown; readonly rowKind?: unknown } = options;
         if (stripeRows !== undefined && typeof stripeRows !== 'boolean') throw new TypeError('stripeRows is true or false.');
@@ -1850,6 +1885,7 @@ export class GridView<Row> {
             marks,
             onPaste: options.onPaste, pasteMaySpill: options.pasteMaySpill === true, pasteByteCap, onClear: options.onClear,
             highlightFocusRow: options.highlightFocusRow === true, highlightHoverRow: options.highlightHoverRow === true,
+            cellMessage: options.cellMessage,
             stripeRows: options.stripeRows === true, rowKind: options.rowKind,
             onUndo: options.onUndo, onRedo: options.onRedo,
             onEdit: options.onEdit, onEditingChanged: options.onEditingChanged, onEditDiscarded: options.onEditDiscarded,
@@ -2049,6 +2085,34 @@ export class GridView<Row> {
                 this.#hoverRow = undefined;
             }
         }
+        if (taken.cellMessage !== this.#cellMessage) {
+            const heard = this.#cellMessage !== undefined;
+            this.#cellMessage = taken.cellMessage;
+            // The pointer is heard for a rest only while somebody asks why (ADR-0021's fifth entry); a message
+            // opened before goes with the question.
+            if (taken.cellMessage === undefined) {
+                this.#root.removeEventListener('mousemove', this.#onRestMove);
+                this.#root.removeEventListener('mouseleave', this.#onRestLeave);
+                this.#closeMessage();
+                this.#cancelMessage?.();
+                this.#cancelMessage = undefined;
+                this.#dropRest();
+            } else if (!heard) {
+                this.#root.addEventListener('mousemove', this.#onRestMove);
+                this.#root.addEventListener('mouseleave', this.#onRestLeave);
+                // The Focus may already stand on a cell with something to say: it is asked as a Focus arriving is.
+                this.#scheduleMessage(this.#held.selection.focus);
+            } else {
+                // Another function is another judgement (a ruleset evaluated again): what stands is asked again, and
+                // goes if the cell has nothing more to say (ADR-0034).
+                const shown = this.#shownMessage;
+                if (shown !== undefined) {
+                    this.#closeMessage();
+                    this.#showMessageAt(shown.cell);
+                    this.#invalidate();
+                }
+            }
+        }
         this.#pasteByteCap = taken.pasteByteCap;
         this.#clearHeard = taken.onClear;
         this.#onUndo = taken.onUndo;
@@ -2147,6 +2211,8 @@ export class GridView<Row> {
         // The user scrolled away from a move whose cell is not painted yet: the page no longer follows it
         // (ADR-0204).
         this.#followArmed = undefined;
+        // A pointer at rest is over another cell now: the rest is waited for again from the next movement (ADR-0034).
+        this.#dropRest();
         // The rows moved under a still pointer: the band would stand on a row the pointer is no longer over. It
         // goes, and the next movement brings it back. Panning sideways moves no row under it.
         if (top !== this.#scrollTopPx) this.#dropHover();
@@ -2214,7 +2280,8 @@ export class GridView<Row> {
     // holds no row waits on the browser to grow the box, which nothing the grid does brings, so it is not owed.
     #lookSettled(): void {
         this.#showSettled(!this.#passOwed && this.#cancelSettle === undefined && this.#cancelAnnounce === undefined
-            && this.#repaint === undefined && (this.#followArmed === undefined || this.#visible === undefined)
+            && this.#repaint === undefined && this.#cancelMessage === undefined
+            && (this.#followArmed === undefined || this.#visible === undefined)
             && this.#cancelFollow === undefined
             && this.#clipboardWrites === 0 && this.#viewportReport !== undefined && this.#ceilingPx !== undefined
             && !(this.#popover?.kind === 'column' && this.#popover.panel?.fetching === true)
@@ -2479,7 +2546,10 @@ export class GridView<Row> {
     #raiseSelection(): void {
         const selection = this.#held.selection;
         if (selection === this.#raised) return;
+        const before = this.#raised.focus;
         this.#raised = selection;
+        const { focus } = selection;
+        if (before === undefined ? focus !== undefined : focus === undefined || !sameCell(before, focus)) this.#scheduleMessage(focus);
         this.#scheduleAnnouncement(selection);
         this.#onSelectionChanged?.(selection);
     }
@@ -3207,6 +3277,101 @@ export class GridView<Row> {
         this.#invalidate();
     };
 
+    // ---- A flagged cell's message (ADR-0034) -----------------------------------------------------------------
+
+    // The Focus moved: a message open belongs to the cell left and goes at once, and the cell reached is asked
+    // about only once the Focus has stood on it for the delay, so a run of arrows across flagged cells asks
+    // nothing. Until the delay has run the grid is not settled: whether a message opens is known only then.
+    #scheduleMessage(target: CellPosition | undefined): void {
+        if (this.#closeMessage()) this.#invalidate();
+        this.#cancelMessage?.();
+        this.#cancelMessage = undefined;
+        if (this.#cellMessage === undefined || target === undefined) return;
+        this.#cancelMessage = this.#reports.clock.setTimer(() => { this.#onMessageSettled(target); }, popoverDelayMs);
+    }
+
+    #onMessageSettled(target: CellPosition): void {
+        this.#cancelMessage = undefined;
+        if (this.#destroyed) return;
+        this.#showMessageAt(target);
+        this.#lookSettled();
+    }
+
+    // The pointer is heard only for its rest (ADR-0021's fifth entry): each move puts the rest off, and only a
+    // pointer stopped over the rows asks about the cell under it. Over the header, a control of its own or the
+    // message itself nothing is asked, and what is open stands. A move records where and when; the one timer
+    // waits out what is left of the delay, so a pointer crossing the grid arms nothing per event.
+    readonly #onRestMove = (event: MouseEvent): void => {
+        if (event.target !== this.#viewport) {
+            this.#dropRest();
+            return;
+        }
+        this.#restAt = { x: event.offsetX, y: event.offsetY, movedAt: this.#reports.clock.now() };
+        this.#cancelRest ??= this.#reports.clock.setTimer(this.#onRestWaited, popoverDelayMs);
+    };
+
+    readonly #onRestWaited = (): void => {
+        this.#cancelRest = undefined;
+        const at = this.#restAt;
+        if (at === undefined || this.#destroyed) return;
+        const still = this.#reports.clock.now() - at.movedAt;
+        if (still < popoverDelayMs) {
+            this.#cancelRest = this.#reports.clock.setTimer(this.#onRestWaited, popoverDelayMs - still);
+            return;
+        }
+        this.#restAt = undefined;
+        this.#onRest(at.x, at.y);
+    };
+
+    #dropRest(): void {
+        this.#cancelRest?.();
+        this.#cancelRest = undefined;
+        this.#restAt = undefined;
+    }
+
+    #onRest(x: number, y: number): void {
+        if (this.#cellMessage === undefined || this.#edit !== undefined || this.#dragging) return;
+        // Over a Row Heading there is no cell (ADR-0050, item 1).
+        if (this.#rowHeadingStyle !== undefined && this.#styles.geometry.isInLead(x, this.#scrollLeftPx)) return;
+        const cell = this.#cellAt(x, y);
+        const shown = this.#shownMessage;
+        if (cell === undefined || (shown !== undefined && sameCell(shown.cell, cell))) return;
+        // What was open belonged to the cell the pointer left, whether or not this one has anything to say.
+        if (this.#closeMessage()) this.#invalidate();
+        this.#showMessageAt(cell);
+    }
+
+    // Leaving the grid takes the message with it, whichever way it opened.
+    readonly #onRestLeave = (): void => {
+        this.#dropRest();
+        if (this.#closeMessage()) this.#invalidate();
+    };
+
+    // The one place the Consumer is asked why (ADR-0034), never on the painting path, and only for the cell settled
+    // on. While an edit is open its own message outranks it, and mid-drag a message would sit under the release.
+    #showMessageAt(target: CellPosition): void {
+        const ask = this.#cellMessage;
+        if (ask === undefined || this.#edit !== undefined || this.#dragging || target.column >= this.#columns.length) return;
+        const held = this.#rowAt(target.row);
+        if (held === undefined) return;
+        const { column } = itemAt(this.#columns, target.column);
+        // From an untyped caller anything; a message that is not text would be painted as something it is not.
+        const said: unknown = ask(held.row, column);
+        if (said === undefined || said === '') return;
+        if (typeof said !== 'string') {
+            throw new TypeError(`Column '${column.name}': cellMessage answers a sentence or undefined, not ${typeof said} (ADR-0034).`);
+        }
+        this.#shownMessage = { cell: target, text: said, row: held.row, column: column.name };
+        this.#invalidate();
+    }
+
+    // Whether a message was open, which it no longer is.
+    #closeMessage(): boolean {
+        if (this.#shownMessage === undefined) return false;
+        this.#shownMessage = undefined;
+        return true;
+    }
+
     // ---- The Cell Editor (ADR-0010, ADR-0034, ADR-0142) ------------------------------------------------------
 
     // Whether typing can open an edit here: some column edits and somebody hears the intent (ADR-0080). A grid
@@ -3300,8 +3465,16 @@ export class GridView<Row> {
     }
 
     #startEdit(at: CellPosition, mode: OpenEdit<Row>['mode'], text: string, surface: OpenEdit<Row>['surface'] = 'cell'): void {
-        // An edit opening ends the Copied Range, as an edit ends Excel's copy mode (ADR-0170).
+        // An edit opening ends the Copied Range, as an edit ends Excel's copy mode (ADR-0170), and a flagged cell's
+        // message, which the editor's own outranks from here on (ADR-0034).
         this.#copied = undefined;
+        this.#closeMessage();
+        // Opening the editor is followed as reaching its cell is (ADR-0204): the page brings it into the window at
+        // the nearest edge once it is painted, while the keyboard is still this grid's.
+        // Only the cell's own editor, painted: a Formula Bar edit is typed where the user already is, and an editor
+        // opened away from a row scrolled out of the Viewport has no cell in the page to bring in.
+        const focus = this.#held.selection.focus;
+        if (surface === 'cell' && focus !== undefined && sameCell(focus, at) && this.#cellIsPainted(at)) this.#followArmed = { focus, target: at };
         const element = this.#root.ownerDocument.createElement('input');
         element.className = 'ex-editor';
         element.value = text;
@@ -6178,11 +6351,16 @@ export class GridView<Row> {
     // The cell under a pointer on the Viewport, by arithmetic on its offsets (ADR-0012): rows counted from
     // the row painted first, columns from the content's left edge.
     #cellUnder(event: MouseEvent): CellPosition | undefined {
+        return this.#cellAt(event.offsetX, event.offsetY);
+    }
+
+    // The cell at a pair of offsets into the Viewport, whose top edge is the first painted row's.
+    #cellAt(x: number, y: number): CellPosition | undefined {
         const geometry = this.#geometry;
         const visible = this.#visible;
         if (geometry === undefined || visible === undefined) return undefined;
-        const row = geometry.rowAt(event.offsetY + geometry.offsetPxOf(visible.start));
-        const column = this.#styles.geometry.columnAt(event.offsetX, this.#scrollLeftPx);
+        const row = geometry.rowAt(y + geometry.offsetPxOf(visible.start));
+        const column = this.#styles.geometry.columnAt(x, this.#scrollLeftPx);
         return row === undefined || column === undefined ? undefined : cellPosition(row, column);
     }
 
@@ -6565,7 +6743,7 @@ export class GridView<Row> {
     #paintStatus(): void {
         const count = this.#rowMarks.marks === undefined ? undefined : this.#rowMarks.paint(id => this.#labelOf(id));
         this.#reviewSummary();
-        const shown: HTMLElement[] = [];
+        const shown: HTMLElement[] = [...this.#offScreenStatus()];
         if (count !== undefined) shown.push(count);
         if (this.#showSelectionSummary && this.canSummarize) {
             const summary = this.#summary.summary;
@@ -6597,6 +6775,41 @@ export class GridView<Row> {
             this.#root.insertBefore(this.#status, this.#announce);
         }
     }
+
+    // The off-screen indicator (ADR-0014, ADR-0015): a Selection none of whose rectangles meets what is painted is
+    // said, with its size, so a paste into it is never made unseen and unannounced, and a button brings it back.
+    // Judged against the offset the scroller is going to (ADR-0012), and with no row data.
+    #offScreenStatus(): readonly HTMLElement[] {
+        const { ranges } = this.#held.selection;
+        if (ranges.length === 0 || this.#selectionInView(ranges)) return [];
+        const cells = ranges.reduce((sum, range) => sum + rangeCellCount(range), 0);
+        const said = this.#labelOf(selectionLabelIds.selectedOutsideView).replaceAll('{count}', String(cells));
+        if (this.#offScreen.textContent !== said) this.#offScreen.textContent = said;
+        const go = this.#labelOf(selectionLabelIds.goToSelection);
+        if (this.#goToSelection.textContent !== go) this.#goToSelection.textContent = go;
+        return [this.#offScreen, this.#goToSelection];
+    }
+
+    // Whether any rectangle meets the painted rows and, on them, a pinned column or the painted slice of the others.
+    #selectionInView(ranges: readonly SelectionRange[]): boolean {
+        const visible = this.#visible;
+        if (visible === undefined) return false;
+        const pinned = this.#styles.geometry.pinnedCount;
+        const scrollable = this.#scrollable;
+        return ranges.some(range => range.topRow < visible.start + visible.count && bottomRow(range) >= visible.start
+            && (range.leftColumn < pinned
+                || (scrollable !== undefined && range.leftColumn < scrollable.start + scrollable.count && rightColumn(range) >= scrollable.start)));
+    }
+
+    // Go to selection: the Focus is revealed, and the keyboard is the grid's again (ADR-0014).
+    readonly #onGoToSelection = (): void => {
+        const focus = this.#held.selection.focus;
+        if (this.#destroyed || focus === undefined) return;
+        this.#revealOwed = { target: focus, extending: undefined, rowStart: false, stepRows: 0 };
+        this.#revealHeaderOwed = undefined;
+        this.#takeKeyboard();
+        this.#invalidate();
+    };
 
     /** Whether anything can answer a Selection Summary (ADR-0130): `onSummarize`, or a source that summarises.
      * False: no figure ever appears. */
@@ -7273,22 +7486,28 @@ export class GridView<Row> {
         return [element];
     }
 
-    // The message an editor is held with (ADR-0034): below its cell, never over the value it complains about,
-    // and only while that cell is painted.
+    // The message an editor is held with, or the one a flagged cell says while no edit is open (ADR-0034): below
+    // its cell, never over the value it complains about, and only while that cell is painted.
     #paintMessage(): void {
         const edit = this.#edit;
         const geometry = this.#geometry;
         const visible = this.#visible;
-        const error = edit?.error;
-        if (edit === undefined || error === undefined || geometry === undefined || visible === undefined || editorAway(edit.cell, visible)) {
+        // A message names the row and the column it was asked about: rows or columns moved under it take it away, as
+        // the Focus moving does, rather than leave it under a cell it does not describe.
+        const shown = this.#shownMessage;
+        if (shown !== undefined && (this.#rowAt(shown.cell.row)?.row !== shown.row || this.#columns[shown.cell.column]?.column.name !== shown.column)) {
+            this.#shownMessage = undefined;
+        }
+        const said = edit === undefined ? this.#shownMessage : edit.error === undefined ? undefined : { cell: edit.cell, text: edit.error };
+        if (said === undefined || geometry === undefined || visible === undefined || editorAway(said.cell, visible)) {
             this.#message.remove();
             return;
         }
         const width = Math.min(messageMaxWidthPx, this.#visibleWidthPx);
-        const left = Math.min(Math.max(0, this.#cellLeftPx(edit.cell.column)), Math.max(0, this.#visibleWidthPx - width));
-        const top = this.#bandHeightPx + geometry.viewportTopPxOf(edit.cell.row, this.#scrollTopPx) + this.#metrics.rowHeightPx;
+        const left = Math.min(Math.max(0, this.#cellLeftPx(said.cell.column)), Math.max(0, this.#visibleWidthPx - width));
+        const top = this.#bandHeightPx + geometry.viewportTopPxOf(said.cell.row, this.#scrollTopPx) + this.#metrics.rowHeightPx;
         setAttribute(this.#message, 'style', this.#underBar(`left: ${left}px; top: ${top}px; max-width: ${width}px`));
-        if (this.#message.textContent !== error) this.#message.textContent = error;
+        if (this.#message.textContent !== said.text) this.#message.textContent = said.text;
         if (this.#message.parentNode !== this.#root) this.#scroller.after(this.#message);
     }
 
