@@ -320,6 +320,18 @@ answer holds, and no other, each `"empty"`, `{"exact": text}` (the decimal, writ
 `{"error": name}` (`divideByZero`, `notANumber`, `errorAmongValues`). `texts` gives the text a figure is shown
 with where no format applies.
 
+## `formatCode`
+
+An Excel number format code in the invariant spelling, as a grid built from a source's shape reads it
+(ADR-0342, ADR-0120), under `shaped/`: run by `tests/ExGrid.Tests/Cases/FormatCodeCaseTests.cs` against
+`FormatCode` and by `src/npm/core/test/format-code.test.ts` against the Script Core's `FormatCode`. A case
+names its `code` and either `refused`, the reason whole (the phrase that completes "the format code …"), or
+`isDate` and `texts`, each a `value`, the `locale` it is written in (`invariant` or a BCP 47 tag, ADR-0370
+section 10) and the text it `is`. A value is written as a Snapshot holds it: a JSON number a double,
+`{"decimal": text}` a decimal, `{"integer": text}` a long and a bigint, `{"double": text}` a double JSON cannot
+hold (`"NaN"`, `"Infinity"`), `{"date": text}` a DateTime and a Date's ticks. The names a date code shows are
+.NET's on Linux, ICU's, which the Script Core keeps in a table for the locales the cases cover.
+
 ## `calls`
 
 The general kind, for logic that is a value and its members: geometry, metrics, widths. The file names

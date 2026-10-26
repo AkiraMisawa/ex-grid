@@ -58,3 +58,5 @@ export type { FilterClause, FilterCombinator, FilterOperator } from './query/fil
 export type { GridReplaceResult, GridReplacedRow } from './finding/replace';
 export type { MarksHost } from './source/in-memory-row-marks';
 export type { GridReplaceRefusedCell } from './finding/replace';
+export { FormatCode } from './shaped/format-code';
+export type { FormatCodeReading, FormatCodeValue } from './shaped/format-code';

@@ -4,6 +4,8 @@
 
 ```ts
 
+import type { SnapshotDecimal } from '@ex-grid/data';
+
 // @public
 export type AggregateErrorKind = 'divideByZero' | 'notANumber' | 'errorAmongValues';
 
@@ -174,6 +176,24 @@ export interface FixedColumnWidth {
     readonly minPx?: number;
     readonly px: number;
 }
+
+// @public
+export class FormatCode {
+    get code(): string;
+    format(value: FormatCodeValue, locale: string): string;
+    get isDate(): boolean;
+    static tryParse(code: string): FormatCodeReading;
+}
+
+// @public
+export type FormatCodeReading = {
+    readonly format: FormatCode;
+} | {
+    readonly reason: string;
+};
+
+// @public
+export type FormatCodeValue = SnapshotDecimal | number | bigint;
 
 // @public
 export interface GridChangeBatch<Row> {

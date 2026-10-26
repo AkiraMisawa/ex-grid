@@ -6,9 +6,9 @@
   "license": "MIT",
   "type": "module",
   "workspaces": [
+    "data",
     "core",
     "chart",
-    "data",
     "pivot-engine",
     "react"
   ],

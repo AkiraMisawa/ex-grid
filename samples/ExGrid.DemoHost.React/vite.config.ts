@@ -9,6 +9,7 @@ export default defineConfig({
     resolve: {
         alias: {
             '@ex-grid/core': at('../../src/npm/core/src/index.ts'),
+            '@ex-grid/data': at('../../src/npm/data/src/index.ts'),
             '@ex-grid/react': at('../../src/npm/react/src/index.ts'),
         },
         // The adapter's source sits outside this folder; one React for both, or its hooks see two.
