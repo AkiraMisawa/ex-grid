@@ -12,7 +12,7 @@
 
 import type { BorderLine, BorderLineStyle, CellColour } from '@ex-grid/sheet-engine';
 import { CellFill } from '@ex-grid/sheet-engine';
-import { automaticColour } from './cell-colour';
+import { automaticColour, paintOf } from './cell-colour';
 import type { FormatCellsDraft } from './format-cells-draft';
 import { formatCellsOffer, isDisabledCategory, type BorderEdge, type ColourTarget, type FormatCellsTab, type PaletteSwatch } from './format-cells-offer';
 import { unreachable } from './must';
@@ -51,11 +51,6 @@ function strokeOf(style: BorderLineStyle): { readonly width: string; readonly da
         case 'none': case 'thin': case 'double': return { width: '1', dashes: undefined };
         default: return unreachable(style);
     }
-}
-
-// A colour as the preview and the swatches paint it: Automatic is the Ink of the text around it.
-function paintOf(colour: CellColour): string {
-    return colour.isAutomatic ? 'currentColor' : colour.toString();
 }
 
 // An edge shows its line; one whose cells' sides differ reads mixed, as Excel reads its button.

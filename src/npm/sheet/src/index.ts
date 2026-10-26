@@ -29,7 +29,7 @@ export { sheetTabKeys, sheetTabKeysDeclared, sheetTabStepOf } from './sheet-tab-
 export { widensAsAHomeTabButtonDoes, widensAsAKeyDoes, widensAsFormatCellsOkDoes } from './sheet-widening';
 export {
     sheetWordIdList, sheetWords, SheetWords,
-    type FormatCellsLabel, type FormatCellsRefusal, type PointingRefusalWordCase, type SheetLabel, type SheetToolbarCommand, type SheetWordId, type SheetWordsChoice,
+    type FormatCellsLabel, type FormatCellsRefusal, type PointingRefusalWordCase, type SheetLabel, type SheetToolbarBorder, type SheetToolbarCommand, type SheetWordId, type SheetWordsChoice,
 } from './sheet-words';
 export {
     GridPointedAt, PointingScope, type GridPointArrow, type GridPointDashes, type GridPointedPress, type GridPointedPressKind,

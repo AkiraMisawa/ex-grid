@@ -15,10 +15,10 @@ import {
     type ViewportSize,
 } from '@ex-grid/core';
 import {
-    CellAddress, CellFormatChange, CellRange, Culture, Entry, FormulaSyntaxError, RepeatedKeyError, SheetEdit, SheetRefusedError, Value, Workbook,
-    Sheet, SheetRefusal, type CellFormat, type FillDirection, type HorizontalAlignment, type SheetChange, type SheetDocument, type WorkbookChange, type WorkbookDocument, type WorkbookStep,
+    BorderChange, BorderLine, CellAddress, CellFill, CellFormatChange, CellRange, Culture, Entry, NumberFormat, FormulaSyntaxError, RepeatedKeyError, SheetEdit, SheetRefusedError, Value, Workbook,
+    Sheet, SheetRefusal, type CellColour, type CellFormat, type FillDirection, type HorizontalAlignment, type SheetChange, type SheetDocument, type WorkbookChange, type WorkbookDocument, type WorkbookStep,
 } from '@ex-grid/sheet-engine';
-import { unreachable } from './must';
+import { elementAt, unreachable } from './must';
 import { exactNumberFor, isTooNarrowToShow, refusedIn, typedFor } from './sheet-clipboard';
 import { rangeOf, sheetCopyAnswer, type SheetOwnCopy } from './sheet-copy';
 import { appearanceLookup, charactersOfColumn, SheetColumns, sheetCellPaint } from './sheet-columns';
@@ -28,15 +28,20 @@ import { planSheetReplace, positionsOf, sheetCellMatches } from './sheet-find';
 import { SheetSource } from './sheet-source';
 import { readNameBoxPlace } from './name-box-text';
 import { SheetEdges } from './sheet-edges';
-import { SheetWords, type SheetLabel, type SheetToolbarCommand } from './sheet-words';
+import { SheetWords, type SheetLabel, type SheetToolbarBorder, type SheetToolbarCommand } from './sheet-words';
 import { SheetTabs } from './sheet-tabs';
 import { SheetToolbar, type SheetToolbarIcon, type SheetToolbarItem, type SheetToolbarPaint } from './sheet-toolbar';
+import { SheetChoicesPanel, type SheetToolbarChoice } from './sheet-choices';
+import { automaticColour, colourFromRgb, paintOf } from './cell-colour';
+import {
+    currencyCode, dateTypes, defaultPlaces, numberCode, percentageCode, recogniseNumberFormat, scientificCode, timeTypes,
+} from './number-format-codes';
 import { sheetTabKeys, sheetTabStepOf } from './sheet-tab-keys';
 import { sheetFormatChangeFor, sheetFormatKeyOf, type SheetFormatKey } from './sheet-format-keys';
 import { sheetStructureEditFor, sheetStructureKeyOf, type SheetStructureKey } from './sheet-structure-keys';
 import { widensAsAHomeTabButtonDoes, widensAsAKeyDoes, widensAsFormatCellsOkDoes } from './sheet-widening';
 import { FormatCellsDraft } from './format-cells-draft';
-import type { FormatCellsTab } from './format-cells-offer';
+import { formatCellsOffer, isDisabledCategory, type FormatCellsTab, type NumberFormatCategory } from './format-cells-offer';
 import { FormatCellsPanel } from './format-cells-panel';
 
 /** What a Sheet is drawn with. */
@@ -159,6 +164,16 @@ class SheetView {
         readonly ranges: readonly CellRange[];
     } | undefined;
     #formatCellsTab: FormatCellsTab = 'number';
+    // What each colour control's face sets: the colour chosen last from its list, red for the Font and yellow for the
+    // Fill until one is, as Excel's start (ADR-0100). Taking the colour away is not kept.
+    #faceFontColour: CellColour = colourFromRgb(0xFF0000);
+    #faceFill: CellColour = colourFromRgb(0xFFFF00);
+    // The Borders preset the face sets: the one chosen last, Bottom Border until one is.
+    #faceBorder: SheetToolbarBorder = 'bottom';
+    // A Toolbar Item's list while it stands in the grid's popover frame, and the Selection it was opened over.
+    #choices: { readonly panel: SheetChoicesPanel; readonly selection: GridSelection } | undefined;
+    // The category the Number Format menu shows, read once for each Number Format and culture the Focus cell has.
+    #shownCategory: { readonly format: NumberFormat; readonly culture: Culture; readonly category: NumberFormatCategory } | undefined;
     // A resize of several whole columns, reported a column at a time: its first step, and the columns still to
     // come, which join that step on the undo stack (FN-12c, ADR-0048).
     #resizing: { readonly first: WorkbookStep; readonly pending: Set<number> } | undefined;
@@ -586,6 +601,7 @@ class SheetView {
         // by the Name Box or a Consumer, ends it. The notice of the Selection it opened over, which the grid gives after
         // its paint, is no move.
         if (this.#formatCells?.selection.equals(selection) === false) this.#endFormatCells();
+        if (this.#choices?.selection.equals(selection) === false) this.#endChoices();
         // A Selection the grid dropped, as another Sheet is shown, is no move of the user's: the notice stands.
         if (selection.isEmpty) return;
         // The user moved on: what the notice said is behind them, unless it was told by the gesture that moved.
@@ -731,24 +747,36 @@ class SheetView {
     }
 
     // The default row, Excel's Home tab's commands in its order (ADR-0100), each item's state the Focus cell's as the
-    // grid holds it now. While an edit is open every item is unavailable, and says why. The colour, Borders and Number
-    // Format lists follow.
+    // grid holds it now. While an edit is open every item is unavailable, and says why.
     #toolbarRows(): SheetToolbarPaint['rows'] {
         const focus = this.#grid?.readView().selection.focus;
         const format = focus === undefined ? undefined : this.#source.sheet.getCellFormat(new CellAddress(focus.row, focus.column));
         const words = this.#words;
-        const item = (key: SheetToolbarCommand, icon: SheetToolbarIcon, act: ((focused: CellFormat) => CellFormatChange) | 'formatCells' | undefined,
-            { pressed, shortcut, disabledReason }: { readonly pressed?: boolean; readonly shortcut?: string; readonly disabledReason?: string } = {}): SheetToolbarItem => {
+        const item = (key: SheetToolbarCommand, icon: SheetToolbarIcon | undefined, act: ((focused: CellFormat) => CellFormatChange) | 'formatCells' | undefined,
+            { pressed, shortcut, disabledReason, list, text, swatch }: {
+                readonly pressed?: boolean; readonly shortcut?: string; readonly disabledReason?: string;
+                // A split control's list, or a menu's, which has no `act`.
+                readonly list?: () => readonly SheetToolbarChoice[]; readonly text?: string; readonly swatch?: CellColour;
+            } = {}): SheetToolbarItem => {
             const name = words.toolbarItem(key);
+            const kind = list === undefined ? (pressed === undefined ? 'button' : 'toggle') : (act === undefined ? 'menu' : 'split');
             return {
-                key, kind: pressed === undefined ? 'button' : 'toggle', name, icon, pressed: pressed === true,
+                key, kind, name, icon, pressed: pressed === true, text,
                 tooltip: shortcut === undefined ? name : words.toolbarItemWithShortcut(name, shortcut),
+                swatch: swatch === undefined ? undefined : paintOf(swatch),
+                moreName: kind === 'split' ? words.toolbarMore(name) : undefined,
                 // An open edit is the reason over any other, as the C# Sheet's.
                 disabledReason: this.#editing ? words.toolbarWhileEditing : disabledReason,
                 press: act === undefined ? undefined : () => { this.#toolbarPressed(act); },
+                open: list === undefined ? undefined : () => { this.#openChoices(name, list()); },
             };
         };
         const key = (kind: SheetFormatKey) => (focused: CellFormat): CellFormatChange => sheetFormatChangeFor(kind, focused, this.#source.sheet.culture);
+        const culture = this.#source.sheet.culture;
+        const shown = format === undefined ? 'general' : this.#categoryOf(format.numberFormat, culture);
+        const fontColour = this.#faceFontColour;
+        const fill = this.#faceFill;
+        const border = this.#faceBorder;
         return [{
             label: words.toolbarHomeRow,
             items: [
@@ -757,10 +785,40 @@ class SheetView {
                 item('underline', 'underline', key('underline'), { pressed: format?.font.underline === true, shortcut: 'Ctrl+U' }),
                 item('strikethrough', 'strikethrough', key('strikethrough'), { pressed: format?.font.strikethrough === true, shortcut: 'Ctrl+5' }),
                 'separator',
+                item('fontColour', 'fontColour', () => new CellFormatChange({ fontColour }), {
+                    swatch: fontColour,
+                    list: () => this.#colourChoices(words.toolbarAutomatic,
+                        format === undefined || format.font.colour.isAutomatic ? undefined : format.font.colour,
+                        chosen => {
+                            // Taking the colour away is not kept: the face goes on setting the last colour chosen.
+                            if (!chosen.isAutomatic) this.#faceFontColour = chosen;
+                            return new CellFormatChange({ fontColour: chosen });
+                        }),
+                }),
+                item('fill', 'fill', () => new CellFormatChange({ fill: CellFill.solid(fill) }), {
+                    swatch: fill,
+                    list: () => this.#colourChoices(words.toolbarNoFill, format?.fill.colour, chosen => {
+                        if (chosen.isAutomatic) return new CellFormatChange({ fill: CellFill.none });
+                        this.#faceFill = chosen;
+                        return new CellFormatChange({ fill: CellFill.solid(chosen) });
+                    }),
+                }),
+                'separator',
+                item('borders', 'borders', () => new CellFormatChange({ borders: borderPresets[border] }), {
+                    list: () => toolbarBorders.map(preset => this.#choice(words.toolbarBorder(preset), () => {
+                        this.#faceBorder = preset;
+                        this.#formatFromFocus(() => new CellFormatChange({ borders: borderPresets[preset] }), widensAsAHomeTabButtonDoes);
+                    })),
+                }),
+                'separator',
                 item('alignLeft', 'alignLeft', align('left'), { pressed: format?.alignment === 'left' }),
                 item('alignCenter', 'alignCenter', align('center'), { pressed: format?.alignment === 'center' }),
                 item('alignRight', 'alignRight', align('right'), { pressed: format?.alignment === 'right' }),
                 'separator',
+                item('numberFormat', undefined, undefined, {
+                    text: words.categoryName(shown),
+                    list: () => this.#numberFormatChoices(shown),
+                }),
                 item('percent', 'percent', key('percent'), { shortcut: 'Ctrl+Shift+%' }),
                 // Excel's Comma Style pads with `*`, as Accounting does, which ExSheet does not read: shown, and disabled
                 // with the reason, rather than set as something else under Excel's name.
@@ -769,6 +827,105 @@ class SheetView {
                 item('formatCells', 'formatCells', 'formatCells', { shortcut: 'Ctrl+1' }),
             ],
         }];
+    }
+
+    #categoryOf(format: NumberFormat, culture: Culture): NumberFormatCategory {
+        const known = this.#shownCategory;
+        if (known?.format === format && known.culture === culture) return known.category;
+        const category = recogniseNumberFormat(format, culture).category;
+        this.#shownCategory = { format, culture, category };
+        return category;
+    }
+
+    // A choice of a Toolbar Item's list that sets a format, as the item's face does.
+    #choice(label: string, choose: () => void, { swatch, selected = false, disabledReason, opensPopover = false }: {
+        readonly swatch?: CellColour; readonly selected?: boolean; readonly disabledReason?: string; readonly opensPopover?: boolean;
+    } = {}): SheetToolbarChoice {
+        return { label, swatch: swatch === undefined ? undefined : paintOf(swatch), selected, disabledReason, opensPopover, choose };
+    }
+
+    // A colour control's list: the choice that takes the colour away, then the Office theme's colours and the ten
+    // standard ones, as Format Cells offers them, the Focus cell's own marked (`undefined` where it has none). Each
+    // sets through the Home tab buttons' widening.
+    #colourChoices(takenAway: string, focus: CellColour | undefined, changeOf: (chosen: CellColour) => CellFormatChange): SheetToolbarChoice[] {
+        const set = (chosen: CellColour) => (): void => { this.#formatFromFocus(() => changeOf(chosen), widensAsAHomeTabButtonDoes); };
+        const swatches = [...formatCellsOffer.themeColours.flat(), ...formatCellsOffer.standardColours];
+        return [
+            // Automatic, which the Fill's change reads as No Fill.
+            this.#choice(takenAway, set(automaticColour()), { selected: focus === undefined }),
+            ...swatches.map(swatch => this.#choice(this.#words.swatchName(swatch), set(swatch.colour), {
+                swatch: swatch.colour, selected: focus?.equals(swatch.colour) === true,
+            })),
+        ];
+    }
+
+    // The Number Format list: Excel's categories in Excel's order, each setting what Format Cells' Number tab sets when
+    // the category is chosen with its defaults. Accounting and Fraction are shown disabled with Format Cells' reasons,
+    // Special is not on Excel's ribbon list, and More Number Formats… opens Format Cells.
+    #numberFormatChoices(shown: NumberFormatCategory): SheetToolbarChoice[] {
+        const culture = this.#source.sheet.culture;
+        const choices: SheetToolbarChoice[] = [];
+        for (const { category } of formatCellsOffer.categories) {
+            if (category === 'special') continue;
+            if (category === 'custom') {
+                choices.push(this.#choice(this.#words.toolbarMoreNumberFormats, () => { this.#openFormatCells(); }, { opensPopover: true }));
+                continue;
+            }
+            const label = this.#words.categoryName(category);
+            if (isDisabledCategory(category)) {
+                choices.push(this.#choice(label, () => { throw new Error(`Internal: ${category} cannot be chosen, and the list makes no choice it shows disabled.`); },
+                    { disabledReason: this.#words.categoryDisabled(category) }));
+                continue;
+            }
+            const numberFormat = numberFormatFor(category, culture);
+            choices.push(this.#choice(label, () => {
+                this.#formatFromFocus(() => new CellFormatChange({ numberFormat }), widensAsAHomeTabButtonDoes);
+            }, { selected: category === shown }));
+        }
+        return choices;
+    }
+
+    // A Toolbar Item's list, in the grid's popover frame (ADR-0100, ADR-0050 item 16), the keyboard on the choice the
+    // Focus cell has. A choice closes the frame, which gives the keyboard back to the grid, and is then made; one that
+    // opens a popover in the list's place is made first, so what it opens takes the frame, and the list is closed
+    // after it only where nothing took its place. The list reads the Selection and the Sheet it was opened over: a
+    // Selection moved, another Sheet shown or an operation run ends it, as each ends Format Cells. An edit open at the
+    // opening shows nothing, and the notice says why.
+    #openChoices(title: string, choices: readonly SheetToolbarChoice[]): void {
+        const grid = this.#grid;
+        const selection = grid?.readView().selection;
+        if (grid === undefined || selection === undefined) return;
+        if (this.#editing) {
+            this.#tell(this.#words.toolbarWhileEditing);
+            return;
+        }
+        const panel: SheetChoicesPanel = new SheetChoicesPanel(this.#element.ownerDocument, title, choices, {
+            chosen: choice => {
+                if (this.#choices?.panel !== panel) return;
+                if (!choice.opensPopover) this.#endChoices();
+                else this.#choices = undefined;
+                if (this.#editing) this.#tell(this.#words.toolbarWhileEditing);
+                else choice.choose();
+                if (this.#gridElement.contains(panel.element)) grid.closePopover();
+                // The face sets what was chosen last, though the choice changed nothing.
+                this.#paintToolbar();
+            },
+        });
+        this.#endFormatCells();
+        this.#endChoices();
+        this.#clearNotice();
+        if (!grid.openPopover(() => panel.element, title)) return;
+        this.#choices = { panel, selection };
+        panel.takeKeyboard();
+    }
+
+    // Ends a Toolbar Item's list where it stands: the grid's popover closes and gives the keyboard back. One the grid
+    // already closed, by Escape or a press elsewhere, has left its frame, and only the record goes.
+    #endChoices(): void {
+        const standing = this.#choices;
+        if (standing === undefined) return;
+        this.#choices = undefined;
+        if (this.#gridElement.contains(standing.panel.element)) this.#grid?.closePopover();
     }
 
     // A Toolbar Item pressed: its change of the Focus cell's format on the Selection, widening as Excel's Home tab
@@ -1081,7 +1238,10 @@ class SheetView {
     #changed(changes: readonly WorkbookChange[], raiseDocument = true, byUser = true): void {
         // Format Cells read the cells it was opened over: an operation under it, an undo or a Toolbar press, ends it,
         // so its OK never sets a draft read from formats or places that no longer stand (the spine's sixth rule).
-        if (byUser) this.#endFormatCells();
+        if (byUser) {
+            this.#endFormatCells();
+            this.#endChoices();
+        }
         const sheet = this.#source.sheet;
         if (changes.some(change => change.changesSheets) && !this.#workbook.sheets.includes(sheet)) {
             this.#showSheet(this.#workbook.shown);
@@ -1113,8 +1273,10 @@ class SheetView {
     }
 
     #showSheet(sheet: Sheet): void {
-        // Format Cells read the Sheet it was opened over: another shown, or this one opened again, ends it.
+        // Format Cells read the Sheet it was opened over: another shown, or this one opened again, ends it, and so does
+        // a Toolbar Item's list.
         this.#endFormatCells();
+        this.#endChoices();
         const grid = this.#grid;
         const leaving = this.#source.sheet;
         if (grid !== undefined && leaving !== sheet) this.#views.set(leaving, grid.readView());
@@ -1193,6 +1355,36 @@ const sheetFindMatch = (row: SheetRow, column: GridColumn<SheetRow>, pattern: Gr
 
 function unreachableColumn(position: number): never {
     throw new Error(`Internal: no column of the request stands at ${String(position)}.`);
+}
+
+// Excel's Borders presets, in its list's order, each relative to every selected range as Format Cells' are (ADR-0100).
+const toolbarBorders: readonly SheetToolbarBorder[] = ['bottom', 'top', 'left', 'right', 'none', 'all', 'outside', 'thickOutside'];
+const thinLine = new BorderLine('thin');
+const borderPresets: Readonly<Record<SheetToolbarBorder, BorderChange>> = {
+    bottom: new BorderChange({ bottom: thinLine }),
+    top: new BorderChange({ top: thinLine }),
+    left: new BorderChange({ left: thinLine }),
+    right: new BorderChange({ right: thinLine }),
+    none: BorderChange.none,
+    all: new BorderChange({ top: thinLine, bottom: thinLine, left: thinLine, right: thinLine, insideHorizontal: thinLine, insideVertical: thinLine }),
+    outside: BorderChange.outline(thinLine),
+    thickOutside: BorderChange.outline(new BorderLine('thick')),
+};
+
+// What Format Cells' Number tab writes when the category is chosen with its defaults (ADR-0100), as the C# Sheet's
+// Number Format list sets it.
+function numberFormatFor(category: Exclude<NumberFormatCategory, 'accounting' | 'fraction' | 'special' | 'custom'>, culture: Culture): NumberFormat {
+    switch (category) {
+        case 'general': return NumberFormat.general;
+        case 'number': return NumberFormat.parse(numberCode(2, false, 0));
+        case 'currency': return NumberFormat.parse(currencyCode(defaultPlaces(category, culture), 0, culture));
+        case 'date': return NumberFormat.parse(elementAt(dateTypes, 0));
+        case 'time': return NumberFormat.parse(elementAt(timeTypes, 0));
+        case 'percentage': return NumberFormat.parse(percentageCode(2));
+        case 'scientific': return NumberFormat.parse(scientificCode(2));
+        case 'text': return NumberFormat.parse('@');
+        default: return unreachable(category);
+    }
 }
 
 // An alignment item's change: the alignment, or General where the Focus cell has it, as Excel's buttons do (ADR-0100).
