@@ -1,0 +1,155 @@
+{
+  "about": "The criteria functions beyond Windows Excel's observations in ExcelCases' sumif, sumifs, countif, countifs, averageif, averageifs, maxifs, minifs and countblank (ADR-0047): their dependencies, and the domains they refuse. Transcribed from ExSheet.Engine.Tests' CriteriaFunctionTests.",
+  "kind": "sheet",
+  "culture": "en-US",
+  "cases": [
+    {
+      "name": "ADR-0047: the effective SUMIF result range, its extension included, is a dependency",
+      "steps": [
+        {"enter": {"A4": "1", "B4": "40", "D1": "=SUMIF(A1:A4,1,B1:B2)"}, "expect": {"values": {"D1": 40}}},
+        {"enter": {"B4": "80"}, "expect": {"values": {"D1": 80}, "change": {"recalculated": ["D1"]}}},
+        {"enter": {"B5": "90"}, "expect": {"change": {"recalculated": []}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: a cycle in an implicit result footprint taints even a row that does not match",
+      "steps": [
+        {"enter": {"A4": "1", "B4": "=D1", "D1": "=SUMIF(A1:A4,2,B1:B2)"}, "expect": {"values": {"D1": {"error": "#CIRC!"}}}},
+        {"enter": {"B4": "40"}, "expect": {"values": {"D1": 0}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: absent cells count, without building a dense array of the Sheet",
+      "steps": [
+        {"enter": {"A2": "=\"\"", "A3": "1", "C1": "=COUNTIF(A:A,\"=\")", "C2": "=COUNTBLANK(A:A)", "C3": "=COUNTIFS(A:A,\"=\",B:B,\"=\")"}, "expect": {"values": {"C1": 1048574, "C2": 1048575, "C3": 1048574}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: an incomplete criteria pair is refused on entry: =SUMIFS(A1:A2,B1:B2)",
+      "steps": [
+        {"enter": {"E1": "=SUMIFS(A1:A2,B1:B2)"}, "expect": {"throws": {"refusal": "formulaSyntax"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: an incomplete criteria pair is refused on entry: =SUMIFS(A1:A2,B1:B2,1,C1:C2)",
+      "steps": [
+        {"enter": {"E1": "=SUMIFS(A1:A2,B1:B2,1,C1:C2)"}, "expect": {"throws": {"refusal": "formulaSyntax"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: an incomplete criteria pair is refused on entry: =COUNTIFS(A1:A2,1,B1:B2)",
+      "steps": [
+        {"enter": {"E1": "=COUNTIFS(A1:A2,1,B1:B2)"}, "expect": {"throws": {"refusal": "formulaSyntax"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: an incomplete criteria pair is refused on entry: =AVERAGEIFS(A1:A2,B1:B2,1,C1:C2)",
+      "steps": [
+        {"enter": {"E1": "=AVERAGEIFS(A1:A2,B1:B2,1,C1:C2)"}, "expect": {"throws": {"refusal": "formulaSyntax"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: unobserved collation and numeric spellings return no plausible count (en-US: 'a' against '>a')",
+      "culture": "en-US",
+      "steps": [
+        {"do": {"setEntries": {"A1": {"constant": "a"}, "B1": {"constant": ">a"}}}},
+        {"enter": {"ZZ1000": "=COUNTIF(A1,B1)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: unobserved collation and numeric spellings return no plausible count (en-US: 'a' against '>')",
+      "culture": "en-US",
+      "steps": [
+        {"do": {"setEntries": {"A1": {"constant": "a"}, "B1": {"constant": ">"}}}},
+        {"enter": {"ZZ1000": "=COUNTIF(A1,B1)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: unobserved collation and numeric spellings return no plausible count (en-US: 'a' against '>TRUE')",
+      "culture": "en-US",
+      "steps": [
+        {"do": {"setEntries": {"A1": {"constant": "a"}, "B1": {"constant": ">TRUE"}}}},
+        {"enter": {"ZZ1000": "=COUNTIF(A1,B1)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: unobserved collation and numeric spellings return no plausible count (en-US: 'é' against 'é')",
+      "culture": "en-US",
+      "steps": [
+        {"do": {"setEntries": {"A1": {"constant": "é"}, "B1": {"constant": "é"}}}},
+        {"enter": {"ZZ1000": "=COUNTIF(A1,B1)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: unobserved collation and numeric spellings return no plausible count (en-US: 'a' against '1%')",
+      "culture": "en-US",
+      "steps": [
+        {"do": {"setEntries": {"A1": {"constant": "a"}, "B1": {"constant": "1%"}}}},
+        {"enter": {"ZZ1000": "=COUNTIF(A1,B1)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: unobserved collation and numeric spellings return no plausible count (en-US: 'a' against '1/2')",
+      "culture": "en-US",
+      "steps": [
+        {"do": {"setEntries": {"A1": {"constant": "a"}, "B1": {"constant": "1/2"}}}},
+        {"enter": {"ZZ1000": "=COUNTIF(A1,B1)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: unobserved collation and numeric spellings return no plausible count (en-US: 'a' against '$1')",
+      "culture": "en-US",
+      "steps": [
+        {"do": {"setEntries": {"A1": {"constant": "a"}, "B1": {"constant": "$1"}}}},
+        {"enter": {"ZZ1000": "=COUNTIF(A1,B1)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: unobserved collation and numeric spellings return no plausible count (en-US: 'a' against '1,5')",
+      "culture": "en-US",
+      "steps": [
+        {"do": {"setEntries": {"A1": {"constant": "a"}, "B1": {"constant": "1,5"}}}},
+        {"enter": {"ZZ1000": "=COUNTIF(A1,B1)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: unobserved collation and numeric spellings return no plausible count (de-DE: '1.5' against '1.5')",
+      "culture": "de-DE",
+      "steps": [
+        {"do": {"setEntries": {"A1": {"constant": "1.5"}, "B1": {"constant": "1.5"}}}},
+        {"enter": {"ZZ1000": "=COUNTIF(A1,B1)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: unobserved collation and numeric spellings return no plausible count (de-DE: '1.5' against '1')",
+      "culture": "de-DE",
+      "steps": [
+        {"do": {"setEntries": {"A1": {"constant": "1.5"}, "B1": {"constant": "1"}}}},
+        {"enter": {"ZZ1000": "=COUNTIF(A1,B1)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: unobserved collation and numeric spellings return no plausible count (en-US: '1.0000000000000001' against '1')",
+      "culture": "en-US",
+      "steps": [
+        {"do": {"setEntries": {"A1": {"constant": "1.0000000000000001"}, "B1": {"constant": "1"}}}},
+        {"enter": {"ZZ1000": "=COUNTIF(A1,B1)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: unobserved collation and numeric spellings return no plausible count (en-US: 'a' against '1.0000000000000001')",
+      "culture": "en-US",
+      "steps": [
+        {"do": {"setEntries": {"A1": {"constant": "a"}, "B1": {"constant": "1.0000000000000001"}}}},
+        {"enter": {"ZZ1000": "=COUNTIF(A1,B1)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: Excel's long-criteria matching is not inferred from short strings: criteria longer than 255 characters are refused",
+      "steps": [
+        {"enter": {"A1": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}},
+        {"enter": {"ZZ1000": "=COUNTIF(A1,A1)"}, "expect": {"values": {"ZZ1000": {"error": "#VALUE!"}}}}
+      ]
+    }
+  ]
+}

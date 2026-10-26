@@ -489,11 +489,16 @@ internal sealed class Run(CultureInfo culture)
                 break;
             }
             case "reopen":
-                Workbook = (string)argument! switch
+                Workbook = argument switch
                 {
-                    "document" => Workbook.Open(Workbook.ToDocument()),
-                    "json" => Workbook.Open(WorkbookDocument.FromJson(Workbook.ToDocument().ToJson())),
-                    var other => throw new InvalidDataException($"'{other}' is no way to reopen a Workbook."),
+                    // One Sheet saved as a Sheet Document, opened as a Workbook of that one Sheet.
+                    JsonObject one => Workbook.Open(Workbook.ToDocument((string)one["sheet"]!)),
+                    _ => (string)argument! switch
+                    {
+                        "document" => Workbook.Open(Workbook.ToDocument()),
+                        "json" => Workbook.Open(WorkbookDocument.FromJson(Workbook.ToDocument().ToJson())),
+                        var other => throw new InvalidDataException($"'{other}' is no way to reopen a Workbook."),
+                    },
                 };
                 outcome.Sheet = Workbook.Shown;
                 break;
@@ -803,6 +808,22 @@ internal sealed class Run(CultureInfo culture)
                 break;
             case "shown":
                 actual = Workbook.Shown.Name;
+                break;
+            case "workbook":
+                actual = new JsonObject
+                {
+                    ["culture"] = Workbook.Culture.Name,
+                    ["today"] = Workbook.Today?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+                    ["hasVolatileFormulas"] = Workbook.HasVolatileFormulas,
+                    ["linkedTables"] = new JsonArray([.. Workbook.LinkedTables.Select(t => (JsonNode)new JsonObject
+                    {
+                        ["name"] = t.Name,
+                        ["columns"] = new JsonArray([.. t.Columns.Select(c => (JsonNode)c)]),
+                        ["keyColumns"] = new JsonArray([.. t.KeyColumns.Select(c => (JsonNode)c)]),
+                        ["isWaiting"] = t.IsWaiting,
+                        ["rowCount"] = t.RowCount,
+                    })]),
+                };
                 break;
             default:
                 throw new InvalidDataException($"{where}: '{key}' is no reading.");

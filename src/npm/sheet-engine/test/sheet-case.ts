@@ -433,7 +433,9 @@ class Run {
                 break;
             }
             case 'reopen':
-                if (argument === 'document') this.workbook = Workbook.open(this.workbook.toDocument());
+                // One Sheet saved as a Sheet Document, opened as a Workbook of that one Sheet.
+                if (isObject(argument)) this.workbook = Workbook.open(this.workbook.toSheetDocument(text(argument['sheet'], 'reopen.sheet')));
+                else if (argument === 'document') this.workbook = Workbook.open(this.workbook.toDocument());
                 else if (argument === 'json') this.workbook = Workbook.open(WorkbookDocument.fromJson(this.workbook.toDocument().toJson()));
                 else throw new CaseError(`'${JSON.stringify(argument)}' is no way to reopen a Workbook.`);
                 outcome.sheet = this.workbook.shown;
@@ -734,6 +736,19 @@ class Run {
             case 'shown':
                 actual = this.workbook.shown.name;
                 break;
+            case 'workbook': {
+                const today = this.workbook.today;
+                const pad = (n: number, width: number): string => String(n).padStart(width, '0');
+                actual = {
+                    culture: this.workbook.culture.name,
+                    today: today === undefined ? null : `${pad(today.year, 4)}-${pad(today.month, 2)}-${pad(today.day, 2)}`,
+                    hasVolatileFormulas: this.workbook.hasVolatileFormulas,
+                    linkedTables: this.workbook.linkedTables.map(t => ({
+                        name: t.name, columns: [...t.columns], keyColumns: [...t.keyColumns], isWaiting: t.isWaiting, rowCount: t.rowCount,
+                    })),
+                };
+                break;
+            }
             default:
                 throw new CaseError(`${where}: '${key}' is no reading.`);
         }
