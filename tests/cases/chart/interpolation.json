@@ -1,0 +1,1044 @@
+{
+  "about": "The interpolations a Consumer calls (ADR-0257): linear and a natural cubic spline through points, bilinear on a grid and linear on a Consumer's triangles, each naming its method and having no value outside its points, the Interpolated Level series a curve hands in and the sampled surface a surface does (ADR-0274), and what they refuse, from tests/ExChart.Engine.Tests/InterpolationTests.cs. Every value is compared exactly: both engines do the same arithmetic in the same order.",
+  "kind": "chart",
+  "cases": [
+    {
+      "name": "ADR-0257: a linear interpolant names its method, and has no value outside its points",
+      "build": {
+        "curve": {
+          "interpolate": {
+            "method": "linear",
+            "x": [
+              1,
+              2,
+              4
+            ],
+            "y": [
+              10,
+              20,
+              0
+            ]
+          }
+        },
+        "values": {
+          "interpolate": {
+            "method": "linear",
+            "x": [
+              1,
+              2,
+              4
+            ],
+            "y": [
+              10,
+              20,
+              0
+            ],
+            "at": [
+              1.5,
+              3,
+              2.2,
+              1,
+              4,
+              0.999,
+              4.001
+            ]
+          }
+        }
+      },
+      "expect": [
+        {
+          "at": "curve",
+          "is": {
+            "method": "linear",
+            "from": 1,
+            "to": 4
+          }
+        },
+        {
+          "at": "values",
+          "is": [
+            15,
+            10,
+            18,
+            10,
+            0,
+            null,
+            null
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ADR-0257: a natural cubic spline passes through its points, and stops at the ends",
+      "build": {
+        "curve": {
+          "interpolate": {
+            "method": "naturalCubicSpline",
+            "x": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "y": [
+              0,
+              1,
+              8,
+              27
+            ]
+          }
+        },
+        "values": {
+          "interpolate": {
+            "method": "naturalCubicSpline",
+            "x": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "y": [
+              0,
+              1,
+              8,
+              27
+            ],
+            "at": [
+              0,
+              1,
+              2,
+              3,
+              -0.5,
+              3.5
+            ]
+          }
+        },
+        "between": {
+          "interpolate": {
+            "method": "naturalCubicSpline",
+            "x": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "y": [
+              0,
+              1,
+              8,
+              27
+            ],
+            "at": [
+              0.5,
+              1.5,
+              2.5,
+              2.9
+            ]
+          }
+        }
+      },
+      "expect": [
+        {
+          "at": "curve",
+          "is": {
+            "method": "natural cubic spline",
+            "from": 0,
+            "to": 3
+          }
+        },
+        {
+          "at": "values",
+          "is": [
+            0,
+            1,
+            8,
+            27,
+            null,
+            null
+          ]
+        },
+        {
+          "at": "between",
+          "is": [
+            0.2,
+            3.1499999999999995,
+            16.45,
+            24.822799999999997
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ADR-0257: on points of a straight line, the natural spline is that line",
+      "interpolate": {
+        "method": "naturalCubicSpline",
+        "x": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "y": [
+          1,
+          2,
+          3,
+          4
+        ],
+        "at": [
+          1.5
+        ]
+      },
+      "expect": [
+        {
+          "at": "",
+          "is": [
+            2.5
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ADR-0257: the curve as a series is declared Interpolated, sampled over its range, with a Segment named by its method",
+      "definition": {
+        "axis": {
+          "values": "numbers"
+        },
+        "series": [
+          {
+            "id": "zero",
+            "name": "Zero rate",
+            "interpolant": {
+              "method": "linear",
+              "x": [
+                0,
+                1
+              ],
+              "y": [
+                1,
+                2
+              ]
+            }
+          }
+        ]
+      },
+      "expect": [
+        {
+          "at": "series.0.id",
+          "is": "zero"
+        },
+        {
+          "at": "series.0.name",
+          "is": "Zero rate"
+        },
+        {
+          "at": "series.0.kind",
+          "is": "level"
+        },
+        {
+          "at": "series.0.interpolated",
+          "is": true
+        },
+        {
+          "at": "series.0.segments",
+          "is": [
+            {
+              "from": 0,
+              "to": 1,
+              "method": "linear",
+              "extrapolated": false
+            }
+          ]
+        },
+        {
+          "at": "series.0.sampler",
+          "is": {
+            "from": 0,
+            "to": 1
+          }
+        },
+        {
+          "at": "series.0.points",
+          "empty": true
+        }
+      ]
+    },
+    {
+      "name": "ADR-0257, ADR-0274: bilinear inside a cell; a cell with a missing corner stays a hole",
+      "build": {
+        "surface": {
+          "interpolate": {
+            "method": "bilinear",
+            "x": [
+              0,
+              1,
+              2
+            ],
+            "y": [
+              0,
+              1
+            ],
+            "z": [
+              [
+                0,
+                1,
+                2
+              ],
+              [
+                10,
+                null,
+                12
+              ]
+            ]
+          }
+        },
+        "holes": {
+          "interpolate": {
+            "method": "bilinear",
+            "x": [
+              0,
+              1,
+              2
+            ],
+            "y": [
+              0,
+              1
+            ],
+            "z": [
+              [
+                0,
+                1,
+                2
+              ],
+              [
+                10,
+                null,
+                12
+              ]
+            ],
+            "at": [
+              [
+                0.5,
+                0.5
+              ],
+              [
+                1.5,
+                0.5
+              ],
+              [
+                2,
+                0
+              ],
+              [
+                0,
+                0
+              ],
+              [
+                2.5,
+                0.5
+              ]
+            ]
+          }
+        },
+        "whole": {
+          "interpolate": {
+            "method": "bilinear",
+            "x": [
+              0,
+              1
+            ],
+            "y": [
+              0,
+              1
+            ],
+            "z": [
+              [
+                0,
+                2
+              ],
+              [
+                10,
+                12
+              ]
+            ],
+            "at": [
+              [
+                0.5,
+                0.5
+              ]
+            ]
+          }
+        }
+      },
+      "expect": [
+        {
+          "at": "surface",
+          "is": {
+            "method": "bilinear",
+            "xFrom": 0,
+            "xTo": 2,
+            "yFrom": 0,
+            "yTo": 1
+          }
+        },
+        {
+          "at": "holes",
+          "is": [
+            null,
+            null,
+            null,
+            null,
+            null
+          ]
+        },
+        {
+          "at": "whole",
+          "is": [
+            6
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ADR-0257: bilinear reads the cell a point lies in, on uneven axes, its far edges included",
+      "interpolate": {
+        "method": "bilinear",
+        "x": [
+          0,
+          1,
+          3
+        ],
+        "y": [
+          0,
+          1,
+          2
+        ],
+        "z": [
+          [
+            0,
+            2,
+            6
+          ],
+          [
+            10,
+            12,
+            16
+          ],
+          [
+            20,
+            22,
+            26.5
+          ]
+        ],
+        "at": [
+          [
+            0.5,
+            0.5
+          ],
+          [
+            2,
+            1.5
+          ],
+          [
+            3,
+            2
+          ],
+          [
+            0.3,
+            1.7
+          ],
+          [
+            3.1,
+            1
+          ]
+        ]
+      },
+      "expect": [
+        {
+          "at": "",
+          "is": [
+            6,
+            19.125,
+            26.5,
+            17.6,
+            null
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ADR-0257: linear on triangles (P1) is the plane of the triangle the point lies in, and nothing outside the mesh",
+      "build": {
+        "surface": {
+          "interpolate": {
+            "method": "triangles",
+            "points": [
+              [
+                0,
+                0,
+                0
+              ],
+              [
+                1,
+                0,
+                1
+              ],
+              [
+                0,
+                1,
+                2
+              ]
+            ],
+            "triangles": [
+              [
+                0,
+                1,
+                2
+              ]
+            ]
+          }
+        },
+        "values": {
+          "interpolate": {
+            "method": "triangles",
+            "points": [
+              [
+                0,
+                0,
+                0
+              ],
+              [
+                1,
+                0,
+                1
+              ],
+              [
+                0,
+                1,
+                2
+              ]
+            ],
+            "triangles": [
+              [
+                0,
+                1,
+                2
+              ]
+            ],
+            "at": [
+              [
+                0.25,
+                0.25
+              ],
+              [
+                1,
+                0
+              ],
+              [
+                0,
+                1
+              ],
+              [
+                0.5,
+                0.5
+              ],
+              [
+                0.1,
+                0.7
+              ],
+              [
+                0.8,
+                0.8
+              ]
+            ]
+          }
+        }
+      },
+      "expect": [
+        {
+          "at": "surface",
+          "is": {
+            "method": "linear on triangles (P1)",
+            "xFrom": 0,
+            "xTo": 1,
+            "yFrom": 0,
+            "yTo": 1
+          }
+        },
+        {
+          "at": "values",
+          "is": [
+            0.75,
+            1,
+            2,
+            1.5,
+            1.5,
+            null
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ADR-0257: a triangle with no area is passed over for the next that holds the point",
+      "interpolate": {
+        "method": "triangles",
+        "points": [
+          [
+            0,
+            0,
+            0
+          ],
+          [
+            1,
+            0,
+            1
+          ],
+          [
+            2,
+            0,
+            2
+          ],
+          [
+            0,
+            1,
+            3
+          ]
+        ],
+        "triangles": [
+          [
+            0,
+            1,
+            2
+          ],
+          [
+            0,
+            1,
+            3
+          ]
+        ],
+        "at": [
+          [
+            0.25,
+            0.25
+          ]
+        ]
+      },
+      "expect": [
+        {
+          "at": "",
+          "is": [
+            1
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ADR-0257, ADR-0274: a surface from an interpolant is sampled, named by its method, and a hole where it has no value",
+      "build": {
+        "surface": {
+          "surface": {
+            "interpolant": {
+              "method": "triangles",
+              "points": [
+                [
+                  0,
+                  0,
+                  9
+                ],
+                [
+                  1,
+                  0,
+                  10
+                ],
+                [
+                  0,
+                  1,
+                  11
+                ]
+              ],
+              "triangles": [
+                [
+                  0,
+                  1,
+                  2
+                ]
+              ]
+            },
+            "xTitle": "Strike",
+            "yTitle": "Tenor",
+            "zTitle": "Volatility",
+            "samples": 5
+          }
+        },
+        "mesh": {
+          "surface": {
+            "interpolant": {
+              "method": "triangles",
+              "points": [
+                [
+                  0,
+                  0,
+                  9
+                ],
+                [
+                  1,
+                  0,
+                  10
+                ],
+                [
+                  0,
+                  1,
+                  11
+                ]
+              ],
+              "triangles": [
+                [
+                  0,
+                  1,
+                  2
+                ]
+              ]
+            },
+            "xTitle": "Strike",
+            "yTitle": "Tenor",
+            "zTitle": "Volatility",
+            "samples": 5
+          },
+          "mesh": {}
+        }
+      },
+      "expect": [
+        {
+          "at": "surface.method",
+          "is": "linear on triangles (P1)"
+        },
+        {
+          "at": "surface.x.values",
+          "is": [
+            0,
+            0.25,
+            0.5,
+            0.75,
+            1
+          ]
+        },
+        {
+          "at": "surface.y.values",
+          "is": [
+            0,
+            0.25,
+            0.5,
+            0.75,
+            1
+          ]
+        },
+        {
+          "at": "surface.z.0.0",
+          "is": 9
+        },
+        {
+          "at": "surface.z.4.4",
+          "is": null
+        },
+        {
+          "at": "surface.z",
+          "is": [
+            [
+              9,
+              9.25,
+              9.5,
+              9.75,
+              10
+            ],
+            [
+              9.5,
+              9.75,
+              10,
+              10.25,
+              null
+            ],
+            [
+              10,
+              10.25,
+              10.5,
+              null,
+              null
+            ],
+            [
+              10.5,
+              10.75,
+              null,
+              null,
+              null
+            ],
+            [
+              11,
+              null,
+              null,
+              null,
+              null
+            ]
+          ]
+        },
+        {
+          "at": "surface.allNotes",
+          "has": "Interpolated by the Consumer: linear on triangles (P1)."
+        },
+        {
+          "at": "mesh.nodes",
+          "each": [
+            {
+              "at": "interpolated",
+              "is": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ADR-0257: each position needs one value",
+      "interpolate": {
+        "method": "linear",
+        "x": [
+          1,
+          2,
+          3
+        ],
+        "y": [
+          1,
+          2
+        ]
+      },
+      "throws": "argument",
+      "saying": "Each position needs one value"
+    },
+    {
+      "name": "ADR-0257: a line needs two points",
+      "interpolate": {
+        "method": "linear",
+        "x": [
+          1
+        ],
+        "y": [
+          1
+        ]
+      },
+      "throws": "argument",
+      "saying": "2 points"
+    },
+    {
+      "name": "ADR-0257: a natural cubic spline needs three points",
+      "interpolate": {
+        "method": "naturalCubicSpline",
+        "x": [
+          1,
+          2
+        ],
+        "y": [
+          1,
+          2
+        ]
+      },
+      "throws": "argument",
+      "saying": "3 points"
+    },
+    {
+      "name": "ADR-0257: positions are strictly increasing",
+      "interpolate": {
+        "method": "linear",
+        "x": [
+          0,
+          0,
+          1
+        ],
+        "y": [
+          1,
+          2,
+          3
+        ]
+      },
+      "throws": "argument",
+      "saying": "strictly increasing"
+    },
+    {
+      "name": "ADR-0257: a position that is no number breaks the order",
+      "interpolate": {
+        "method": "naturalCubicSpline",
+        "x": [
+          0,
+          "NaN",
+          1
+        ],
+        "y": [
+          1,
+          2,
+          3
+        ]
+      },
+      "throws": "argument",
+      "saying": "strictly increasing"
+    },
+    {
+      "name": "ADR-0257: a bilinear table has one row per y value",
+      "interpolate": {
+        "method": "bilinear",
+        "x": [
+          0,
+          1
+        ],
+        "y": [
+          0,
+          1
+        ],
+        "z": [
+          [
+            0,
+            1
+          ]
+        ]
+      },
+      "throws": "argument",
+      "saying": "one row per y value"
+    },
+    {
+      "name": "ADR-0257: each row of a bilinear table has one value per x value",
+      "interpolate": {
+        "method": "bilinear",
+        "x": [
+          0,
+          1
+        ],
+        "y": [
+          0,
+          1
+        ],
+        "z": [
+          [
+            0,
+            1
+          ],
+          [
+            2
+          ]
+        ]
+      },
+      "throws": "argument",
+      "saying": "one value per x value"
+    },
+    {
+      "name": "ADR-0257: a bilinear grid's y values are strictly increasing",
+      "interpolate": {
+        "method": "bilinear",
+        "x": [
+          0,
+          1
+        ],
+        "y": [
+          1,
+          0
+        ],
+        "z": [
+          [
+            0,
+            1
+          ],
+          [
+            2,
+            3
+          ]
+        ]
+      },
+      "throws": "argument",
+      "saying": "strictly increasing"
+    },
+    {
+      "name": "ADR-0257: a mesh needs a triangle",
+      "interpolate": {
+        "method": "triangles",
+        "points": [
+          [
+            0,
+            0,
+            0
+          ],
+          [
+            1,
+            0,
+            1
+          ],
+          [
+            0,
+            1,
+            2
+          ]
+        ],
+        "triangles": []
+      },
+      "throws": "argument",
+      "saying": "needs a triangle"
+    },
+    {
+      "name": "ADR-0257: a triangle names only points the mesh holds",
+      "interpolate": {
+        "method": "triangles",
+        "points": [
+          [
+            0,
+            0,
+            0
+          ],
+          [
+            1,
+            0,
+            1
+          ],
+          [
+            0,
+            1,
+            2
+          ]
+        ],
+        "triangles": [
+          [
+            0,
+            1,
+            3
+          ]
+        ]
+      },
+      "throws": "argument",
+      "saying": "does not hold"
+    },
+    {
+      "name": "ADR-0257: a triangle's corner is never a negative index",
+      "interpolate": {
+        "method": "triangles",
+        "points": [
+          [
+            0,
+            0,
+            0
+          ],
+          [
+            1,
+            0,
+            1
+          ],
+          [
+            0,
+            1,
+            2
+          ]
+        ],
+        "triangles": [
+          [
+            -1,
+            1,
+            2
+          ]
+        ]
+      },
+      "throws": "argument",
+      "saying": "does not hold"
+    }
+  ]
+}

@@ -2,6 +2,7 @@ import { useState, type ReactElement } from 'react';
 import { ChartDefinition, type ChartRange, type ChartSeriesOptions, type SeriesVisibility } from '@ex-grid/chart';
 import { ExChart } from '@ex-grid/chart-react';
 import { DemoNav } from '../demo-nav';
+import { dotNetRound } from '../dotnet-math';
 
 // The day number of 1970-01-01, counted from 0001-01-01 as a C# DateOnly counts it.
 const epochDay = 719_162;
@@ -26,7 +27,7 @@ function exposure(run: number): ChartDefinition {
     const days = Array.from({ length: 121 }, (_, m) => monthDay(m));
     // A hump that peaks near year three, deterministic, and moved a little by each run.
     const hump = (m: number, scale: number): number =>
-        Math.round(100 * (scale * Math.sin(Math.PI * Math.min(m, 120) / 120) * (1 + 0.6 * Math.exp(-(((m - 36) / 18) ** 2))) + run * 0.25)) / 100;
+        dotNetRound(scale * Math.sin(Math.PI * Math.min(m, 120) / 120) * (1 + 0.6 * Math.exp(-(((m - 36) / 18) ** 2))) + run * 0.25, 2);
     const series = (id: string, name: string, panel: string, key: string, value: (m: number) => number): ChartSeriesOptions => ({
         id, name, kind: 'level', panel, keys: { colour: key },
         points: days.map((x, m) => ({ x, y: value(m) })),
