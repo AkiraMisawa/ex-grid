@@ -54,6 +54,9 @@ class Mounted<O> {
     }
 }
 
+/** A member of a handle the Board never calls. */
+const unused = (what: string) => () => { throw new Error(`The Board does not ${what}.`); };
+
 class StandIns implements BoardMounts {
     readonly grids: Mounted<GridOptions<ShapedRow>>[] = [];
     readonly pivots: Mounted<PivotViewOptions>[] = [];
@@ -62,7 +65,16 @@ class StandIns implements BoardMounts {
     readonly grid = (element: HTMLElement, options: GridOptions<ShapedRow>): GridHandle<ShapedRow> => {
         const made = new Mounted(element, options);
         this.grids.push(made);
-        return made.handle();
+        return {
+            ...made.handle(),
+            placeSelection: unused('place a selection'),
+            readView: unused('read a grid\'s view'),
+            showViewWith: unused('hand a grid a view'),
+            focus: unused('hand a grid the keyboard'),
+            keyName: unused('name a grid\'s keys'),
+            openPopover: unused('open a grid\'s popover'),
+            closePopover: unused('close a grid\'s popover'),
+        };
     };
 
     readonly pivot = (element: HTMLElement, options: PivotViewOptions): PivotHandle => {
