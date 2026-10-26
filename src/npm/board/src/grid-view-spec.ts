@@ -1,7 +1,9 @@
 // A Board's grid view read (ADR-0342): C#'s GridViewSpec, with the View State's reader from @ex-grid/core reading
 // the widths, the pinning, the sort and the filter, so that a Board's grid and a saved view never mean two things.
 
-import { FormatCode, GridViewStateJsonError, GridViewStateJson, readGridViewStateJson, type GridViewState } from '@ex-grid/core';
+import {
+    FormatCode, GridViewStateJsonError, GridViewStateJson, readGridViewStateJson, type ColumnType, type GridViewState,
+} from '@ex-grid/core';
 import {
     BoardRefusedError, isJsonArray, isJsonObject, jsonMember, jsonRawText, shapeColumn, type DataShape, type JsonValue, type SnapshotKind,
 } from '@ex-grid/data';
@@ -103,9 +105,7 @@ export function readGridViewSpec(spec: JsonValue, inputs: (name: string) => Data
         viewState = readGridViewStateJson(view, shape.columns.map(column => column.name));
     } catch (error) {
         if (!(error instanceof GridViewStateJsonError)) throw error;
-        const jsonPath = error.path;
-        const where = jsonPath !== undefined && jsonPath.length > 1 && jsonPath.startsWith('$.') ? jsonPath.slice(2) : '';
-        throw new BoardRefusedError(where === '' ? path : at(where), error.message);
+        throw refusedAt(error, path);
     }
     for (const shown of viewState.columns) {
         if ('px' in shown.width && shown.width.px < leastWidth) {
@@ -114,6 +114,26 @@ export function readGridViewSpec(spec: JsonValue, inputs: (name: string) => Data
         }
     }
     return Object.freeze({ data, columns: Object.freeze(columns), viewState });
+}
+
+/** The View State's refusal as a Board's, its JSON path (`$.filter…`) made a path under the grid's, `path`. */
+export function refusedAt(error: GridViewStateJsonError, path: string): BoardRefusedError {
+    const jsonPath = error.path;
+    const where = jsonPath !== undefined && jsonPath.length > 1 && jsonPath.startsWith('$.') ? jsonPath.slice(2) : '';
+    return new BoardRefusedError(where === '' ? path : path === '' ? where : `${path}.${where}`, error.message);
+}
+
+/** The type the grid's engine compares a column of `kind` as. */
+export function columnTypeOf(kind: SnapshotKind): ColumnType {
+    switch (kind) {
+        case 'text': return 'text';
+        case 'boolean': return 'boolean';
+        case 'date': return 'date';
+        case 'decimal':
+        case 'double':
+        case 'integer': return 'number';
+        default: throw new Error(`Internal: ${String(kind satisfies never)} is not a kind.`);
+    }
 }
 
 function checkFormat(name: string, kind: SnapshotKind, format: string | undefined, path: string): void {

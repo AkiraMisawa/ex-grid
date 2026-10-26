@@ -3,11 +3,11 @@
 // only by the user's confirm (Q6). A Board over sources held on a server (ADR-0343 to ADR-0345) is not yet here.
 
 import { ChartSpecRefusedError, readChartSpec, type ChartSpecReading } from '@ex-grid/chart';
-import { InMemoryGridSource, type GridColumn, type GridColumnWidth, type GridSelection } from '@ex-grid/core';
+import { engineFilterOf, GridViewStateJsonError, InMemoryGridSource, type GridColumn, type GridColumnWidth, type GridSelection } from '@ex-grid/core';
 import { BoardRefusedError, type BoardInput, type Snapshot } from '@ex-grid/data';
 import { pivotItemKeyAt, publicKeyId, SnapshotPivotSource, type PivotFieldItem, type PivotLayout } from '@ex-grid/pivot-engine';
 import { BoardOutput } from './board-output';
-import { engineFilter } from './engine-filter';
+import { columnTypeOf, refusedAt } from './grid-view-spec';
 import type { BoardChartView, BoardGridView, BoardLink, BoardPivotView, BoardReading } from './board-spec';
 import { LinkCondition, narrowedPositions, narrowedSnapshot, valueAt, type BoardValue } from './link-condition';
 import { resized, shapedColumns, shapedRows, type ShapedRow } from './shaped-grid';
@@ -331,7 +331,13 @@ export class BoundGridView {
             }
         });
         this.source.setSorts(view.grid.viewState.sorts);
-        this.source.setFilter(engineFilter(view.grid.viewState.filter, view.grid.columns, `${path}.filter`));
+        const kinds = new Map(view.grid.columns.map(column => [column.column, columnTypeOf(column.kind)]));
+        try {
+            this.source.setFilter(engineFilterOf(view.grid.viewState.filter, name => kinds.get(name)));
+        } catch (error) {
+            if (!(error instanceof GridViewStateJsonError)) throw error;
+            throw refusedAt(error, path);
+        }
     }
 
     /** How many leading columns are pinned. */

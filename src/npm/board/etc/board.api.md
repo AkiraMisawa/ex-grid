@@ -231,9 +231,6 @@ export interface PivotCellItems {
 }
 
 // @public
-export function plainDateTimeOf(ticks: bigint): object;
-
-// @public
 export function readBoard(json: string): BoardReading;
 
 // @public

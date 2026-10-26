@@ -65,6 +65,7 @@ export type { GridReplaceRefusedCell } from './finding/replace';
 export { FormatCode } from './shaped/format-code';
 export type { FormatCodeReading, FormatCodeValue } from './shaped/format-code';
 export { GridViewState, sameGridFilter, sameGridQuery } from './view-state/view-state';
+export { engineFilterOf, exactDigits, gridNumberOf, plainDateTimeOf, significantDigits } from './view-state/engine-values';
 export type {
     ColumnViewState, ColumnViewStateWidth, GridViewStateOptions, ViewStateColumnSource, ViewStateDateTimeKind, ViewStateIntegerType,
     ViewStateOperand,

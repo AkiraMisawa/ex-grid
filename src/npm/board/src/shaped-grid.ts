@@ -1,10 +1,9 @@
 // A grid built from a source's shape (ADR-0342): C#'s ShapedGrid over a Snapshot. Each column the spec shows reads
 // its value from the Snapshot's row and writes it through its format code, the kind's default where it writes none.
 
-import { FormatCode, type GridColumn, type GridColumnWidth } from '@ex-grid/core';
+import { exactDigits, FormatCode, gridNumberOf, plainDateTimeOf, significantDigits, type GridColumn, type GridColumnWidth } from '@ex-grid/core';
 import { BoardRefusedError, ticksOfTemporal, type Snapshot, type SnapshotColumn } from '@ex-grid/data';
 import type { GridViewSpecReading, ShapedColumn } from './grid-view-spec';
-import { exactDigits, gridNumberOf, plainDateTimeOf, significantDigits } from './snapshot-values';
 
 /** The format of an Integer column that writes none. */
 export const integerFormat = '#,##0';

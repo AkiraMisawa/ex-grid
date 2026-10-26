@@ -4,7 +4,7 @@
 
 ```ts
 
-import type { SnapshotDecimal } from '@ex-grid/data';
+import { SnapshotDecimal } from '@ex-grid/data';
 
 // @public
 export function actionColumn<Row>(name: string, actions: readonly GridAction[], options?: {
@@ -124,10 +124,16 @@ export type EditVerdict = {
 };
 
 // @public
+export function engineFilterOf(filter: GridFilter | undefined, typeOf: (column: string) => ColumnType | undefined): GridFilter | undefined;
+
+// @public
 export interface ExactDecimal {
     readonly mantissa: bigint;
     readonly scale: number;
 }
+
+// @public
+export const exactDigits = 15;
 
 // @public
 export interface FetchFailedEvent {
@@ -380,6 +386,9 @@ export interface GridHeaderGroup {
     readonly tier?: number;
     readonly tierSpan?: number;
 }
+
+// @public
+export function gridNumberOf(value: SnapshotDecimal): number;
 
 // @public
 export interface GridOptions<Row> {
@@ -748,6 +757,9 @@ export interface PasteShape {
 }
 
 // @public
+export function plainDateTimeOf(ticks: bigint): object;
+
+// @public
 export interface QueryColumn<Row> {
     readonly dateType?: DateType;
     readonly format?: (value: unknown) => string;
@@ -832,6 +844,9 @@ export interface SelectionRange {
     readonly rowCount: number;
     readonly topRow: number;
 }
+
+// @public
+export function significantDigits(value: SnapshotDecimal): number;
 
 // @public
 export type SortDirection = 'ascending' | 'descending';
