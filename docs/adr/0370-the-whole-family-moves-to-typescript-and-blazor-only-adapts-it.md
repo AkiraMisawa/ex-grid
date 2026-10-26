@@ -142,16 +142,17 @@ A TypeScript engine is proved in three ways, and none of them runs Excel again:
 
    *(2026-10-26, decided with the user, when the run's first seed found about 250 differences, nearly
    all the last bit of a math function: **neither engine calls the platform's math library for `EXP`,
-   `LN`, `LOG10`, `POWER`, `ATAN`, `ASIN`, `ACOS`, `ATAN2` and the hyperbolic functions.** glibc's, the
-   Windows runtime's and V8's each round some arguments differently, and so would Safari's and
-   Firefox's. Both engines compute each one as its exact value rounded once to the nearest double, ties
-   to even, in `BigReal`/`PortableMath` (`big-real.ts`/`portable-math.ts`) by Ziv's strategy from 128
-   bits, doubling up to 4096, while e^x and ln x keep `CorrectlyRounded`'s double-double path. A whole
-   power with |b| at most 64 is computed exactly and rounded once; a power whose exponent is not whole is
-   still exp(b·ln a), each step correctly rounded. Both engines are held to
-   `tests/cases/sheet/portable-math.json`, 779 answers from mpmath at 400 bits, and the run is the gate:
-   CI runs it at seed 20261026, and a last bit apart fails it. ADR-0047's "The platform's math library
-   is not used" records the decision and its reasons.)*
+   `LN`, `LOG`, `LOG10`, `POWER` and `^`, `ATAN`, `ASIN`, `ACOS`, `ATAN2` and the hyperbolic functions.**
+   glibc's, the Windows runtime's and V8's each round some arguments differently, and so would Safari's
+   and Firefox's. Both engines compute e^x, ln x, log10 x, the inverse trigonometric and the hyperbolic
+   functions as the exact value rounded once to the nearest double, ties to even, in `BigReal` and
+   `PortableMath` (`big-real.ts`, `portable-math.ts`) by Ziv's strategy from 128 bits, doubling up to
+   4096, while e^x and ln x keep `CorrectlyRounded`'s double-double path; `LOG` to another base, `ACOT`,
+   `COTH`, `CSCH` and `SECH` are IEEE arithmetic on those. A whole power with |b| at most 64 is computed
+   exactly and rounded once; a power whose exponent is not whole is still exp(b·ln a), each step
+   correctly rounded. Both engines are held to `tests/cases/sheet/portable-math.json`, 779 answers from
+   mpmath at 400 bits, and the run is the gate: CI runs it at seed 20261026, and a last bit apart fails
+   it. ADR-0047's "The platform's math library is not used" records the decision and its reasons.)*
 
 An engine is removed only once it is held: its C# facts are shared cases green in TypeScript, and,
 where it has a differential run, that run has found no difference over a run recorded in the pull

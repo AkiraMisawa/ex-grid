@@ -48,6 +48,9 @@ internal static class ExactPayment
     private static readonly Dyadic Most = Dyadic.One.Scale(1022);
     private static readonly Dyadic Half = Dyadic.One.Scale(-1);
 
+    /// <summary>The double nearest ln 2, JavaScript's <c>Math.LN2</c>.</summary>
+    private const double Ln2 = 0.6931471805599453;
+
     /// <summary>
     /// The exact payment at the end, or at the start, rounded once, or null
     /// where PMT refuses (the remarks above). The caller has answered or refused a rate of 0, a rate of -1 or
@@ -61,8 +64,9 @@ internal static class ExactPayment
         var fv = Dyadic.Of(future);
         var sum = pv + fv;
         if (!Fits(r) || !Fits(pv) || !Fits(fv) || !Fits(sum)) return null;
-        // log2 of the growth, estimated in doubles: far outside the range, the enclosures would be vast.
-        if (!(Math.Abs(periods * Math.Log2(1 + rate)) <= 1100)) return null;
+        // The growth's logarithm, estimated in doubles: past 2^1100 either way the enclosures would be vast. ln is the
+        // correctly rounded one, not the platform's, so a growth near the line is refused alike everywhere (ADR-0047).
+        if (!(Math.Abs(periods * CorrectlyRounded.Log(1 + rate)) <= 1100 * Ln2)) return null;
         for (var bits = FirstBits; bits <= MostBits; bits *= 2)
         {
             var (growth, lessOne) = Growth(r, onePlusRate, periods, bits);

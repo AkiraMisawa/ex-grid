@@ -23,10 +23,12 @@
         answer: see <a href="exsheet/formulas#supported-functions">Formulas</a>.
     </p>
     <p class="docs-muted">
-        The functions a platform's math library would answer (EXP, LN, LOG, LOG10, POWER with a whole power, the
-        trigonometric and the hyperbolic functions) are computed by the engine itself. Each gives the exact value rounded
-        once to the nearest double, so a workbook shows the same last digit in every browser and on the server, where
-        each library rounds a few arguments its own way.
+        The functions a platform's math library would answer (EXP, LN, LOG, LOG10, POWER, the trigonometric and the
+        hyperbolic functions) are computed by the engine itself, so a workbook shows the same last digit in every browser
+        and on the server, where each library rounds a few arguments its own way. EXP, LN, LOG10, a whole POWER, ASIN, ACOS,
+        ATAN, ATAN2 and the hyperbolic functions give the exact value rounded once to the nearest double; LOG to another
+        base, ACOT, COTH, CSCH and SECH are computed from those, SIN, COS and TAN reduce the angle as Excel does, and a
+        POWER that is not whole is e^(b ln a), as Excel's is.
     </p>
 
     @foreach (var (category, functions) in FunctionCatalogue.Supported)
