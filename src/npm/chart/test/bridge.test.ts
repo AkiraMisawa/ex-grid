@@ -104,15 +104,18 @@ function columnSeries(chart: GridChart, index: number): ColumnSeries {
 }
 
 /** A bridge over the fixture's rows, held by an in-memory source as a grid holds them. */
-function bridgeOver(f: Fixture, more: { readonly targets?: readonly ChartTarget[]; readonly placed?: GridSelectionPlacement[]; readonly refused?: string[] } = {}): GridChartBridge<Day> {
+function bridgeOver(f: Fixture, more: {
+    readonly targets?: readonly ChartTarget[]; readonly placed?: GridSelectionPlacement[]; readonly refused?: string[];
+    readonly grants?: boolean;
+} = {}): GridChartBridge<Day> {
     const source = GridSource.from(f.rows);
-    const { targets = [], placed = [], refused = [] } = more;
+    const { targets = [], placed = [], refused = [], grants = true } = more;
     return new GridChartBridge<Day>({
         declarations: f.declarations(),
         grid: () => ({ columns, headerGroups: groups, source }),
         targets: () => targets,
         onRefused: why => { refused.push(why); },
-        placeSelection: placement => { placed.push(placement); return true; },
+        placeSelection: placement => { placed.push(placement); return grants; },
     });
 }
 
@@ -326,6 +329,14 @@ describe('the selection bridge (ADR-0251, ADR-0258)', () => {
         expect(placed).toEqual([{ range: r(1, 3, 1, 1), focus: { row: 1, column: 3 }, rowSequenceVersion: 0 }]);
         expect(await bridge.showCellInGrid({ rowKey: keyOf(day(1)), column: 'gone' })).toBe(false);
         expect(refused).toEqual(['gone is not among the grid\'s columns.']);
+    });
+
+    it('ADR-0258, M3-Q6: a placement the grid refuses is said, never a click that silently does nothing', async () => {
+        const f = new Fixture();
+        const refused: string[] = [];
+        const bridge = bridgeOver(f, { refused, grants: false });
+        expect(await bridge.showCellInGrid({ rowKey: keyOf(day(1)), column: 'ene' })).toBe(false);
+        expect(refused).toEqual(['The grid did not move its Focus to that point: its rows or columns changed, or an open edit held it.']);
     });
 
     it('ADR-0258: the menu\'s command charts the selection and hands the chart over, or says why it did not', async () => {

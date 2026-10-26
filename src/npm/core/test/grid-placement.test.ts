@@ -95,6 +95,8 @@ describe('a placement of the Selection', () => {
         expect(() => view.placeSelection(range(19, 0, 2, 1), { row: 19, column: 0 }, 0)).toThrow(RangeError);
         expect(() => view.placeSelection(range(0, 1, 1, 2), { row: 0, column: 1 }, 0)).toThrow(RangeError);
         expect(() => view.placeSelection(range(0, 0, 2, 1), { row: 3, column: 0 }, 0)).toThrow(/inside the range/);
+        // Whatever else holds: a stale version does not hide the Consumer's mistake behind a refusal.
+        expect(() => view.placeSelection(range(19, 0, 2, 1), { row: 19, column: 0 }, 7)).toThrow(RangeError);
         await painted();
         expect([listener.selections, listener.refusals]).toEqual([[], []]);
     });

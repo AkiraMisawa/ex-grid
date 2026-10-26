@@ -294,6 +294,7 @@ export interface GridColumn<Row> extends QueryColumn<Row> {
     readonly filterUi?: FilterUi;
     readonly header?: string;
     readonly headerAlign?: CellAlign;
+    readonly mark?: boolean;
     readonly template?: GridTemplate<Row>;
     readonly validate?: (row: Row, text: string) => EditVerdict;
     readonly width?: GridColumnWidth;
@@ -413,6 +414,13 @@ export interface GridHeaderGroup {
 }
 
 // @public
+export function gridHeaderRequiredPx(label: string, options: {
+    readonly density?: GridDensity;
+    readonly menuButton: boolean;
+    readonly sortable: boolean;
+}): number;
+
+// @public
 export const gridLabelIds: Readonly<{
     readonly nameBox: 'name-box';
     readonly formulaBar: 'formula-bar';
@@ -435,6 +443,7 @@ export interface GridOptions<Row> extends CellPaintOptions<Row>, FormulaBarOptio
     readonly highlightFocusRow?: boolean;
     readonly highlightHoverRow?: boolean;
     readonly locale?: string;
+    readonly marks?: RowMarks<Row>;
     readonly onAction?: (event: GridActionEvent<Row>) => void;
     readonly onCellDoubleClick?: (cell: CellPosition) => void;
     readonly onClear?: (intent: GridClearIntent) => void;
@@ -542,6 +551,14 @@ export type GridRefusal<Row = unknown> =
     readonly row: Row | undefined;
     readonly column: string;
     readonly action: string;
+}
+/** A press on a mark that marked nothing and raised no Row Mark intent (ADR-0043's note of 2026-10-09, MK-9):
+* a row's checkbox whose row the Window no longer holds, or that only a position under a moved order names;
+* the header's checkbox pressed under an order that has moved since; or either, made on what a source since
+* replaced painted. */
+| {
+    readonly kind: 'mark';
+    readonly reason: MarkRefusalReason;
 }
 /** A Consumer's `placeSelection` that placed nothing, because its positions no longer name the rows they were
 * written for (ADR-0050 item 4, ADR-0011). */
@@ -677,6 +694,22 @@ export interface GridTemplateCell<Row> {
 }
 
 // @public
+export interface GridTextGeometry {
+    readonly cellHorizontalPaddingPx: number;
+    readonly digitWidthPx: number;
+    readonly fullWidthPx: number;
+    readonly glyphWidths: Readonly<Record<number, number>>;
+    readonly narrowWidthPx: number;
+    readonly otherWidthPx: number;
+    readonly wideWidthPx: number;
+}
+
+// @public
+export function gridTextGeometry(options?: {
+    readonly density?: GridDensity;
+}): GridTextGeometry;
+
+// @public
 export class InMemoryGridSource<Row> implements GridSource<Row> {
     apply(batch: GridChangeBatch<Row>): void;
     get cellChangedAt(): CellChangedAt<Row> | undefined;
@@ -725,6 +758,24 @@ export interface InMemorySourceOptions<Row> {
     readonly clock?: GridClock;
     readonly rowKey?: RowKeyOf<Row>;
 }
+
+// @public
+export function markColumn<Row>(options?: {
+    readonly name?: string;
+    readonly header?: string;
+    readonly width?: GridColumnWidth;
+}): GridColumn<Row>;
+
+// @public
+export const markLabelIds: Readonly<{
+    readonly markRow: 'mark-row';
+    readonly markAllRows: 'mark-all-rows';
+    readonly marked: 'mark-count';
+    readonly markedOutside: 'mark-count-outside-filter';
+}>;
+
+// @public
+export type MarkRefusalReason = 'orderMoved' | 'sourceChanged' | 'rowLeftTheWindow';
 
 // @public
 export interface MarksHost<Row> {
@@ -796,6 +847,9 @@ export class RowMarkCounts {
     get markedOutsideResult(): number;
     get rowsInResult(): number;
 }
+
+// @public
+export type RowMarkHeaderState = 'none' | 'some' | 'all';
 
 // @public
 export type RowMarkIntent<Row> = {

@@ -1287,22 +1287,23 @@ export class GridView<Row> {
         if (this.#destroyed) throw new Error('This grid was destroyed: a grid destroyed places nothing.');
         // Changes a live source gathered are the order's before the check, as a commit's are (ADR-0142 D5).
         this.#source.publishGathered?.();
+        const extent = this.#extent;
+        if (extent.rowCount === 0 || extent.columnCount === 0) {
+            throw new RangeError(`The grid has no cells to place a Selection on (${String(extent.rowCount)} rows × ${String(extent.columnCount)} columns) (ADR-0050).`);
+        }
+        // Checked first, and before anything changes: a place outside the grid is the Consumer's mistake, whatever
+        // else holds, and commits nothing.
+        this.#held.selection.place(range, focus, extent);
         // The source's own version, which is the one a Consumer reads; the grid's written one carries an offset
         // past every change of source.
         if (rowSequenceVersion !== this.#state.rowSequenceVersion) {
             this.#onRefused?.({ kind: 'placement', reason: 'orderMoved' });
             return false;
         }
-        const extent = this.#extent;
-        if (extent.rowCount === 0 || extent.columnCount === 0) {
-            throw new RangeError(`The grid has no cells to place a Selection on (${String(extent.rowCount)} rows × ${String(extent.columnCount)} columns) (ADR-0050).`);
-        }
         // The source and the columns the request was made under: the version alone cannot tell a replaced source
         // (ADR-0142), and column positions name other columns once the columns move (ADR-0011).
         const source = this.#source;
         const names = this.#columns.map(({ column }) => column.name);
-        // Checked before anything changes: a request that names cells the grid does not have commits nothing.
-        this.#held.selection.place(range, focus, extent);
         this.#answered += 1;
         this.#invalidate();
         if (!this.#commitEdit()) return false;
@@ -1326,7 +1327,14 @@ export class GridView<Row> {
             return false;
         }
         this.#reconcileSelection();
-        if (this.#apply(this.#held.selection.place(range, focus, this.#extent))) {
+        // The commit may have changed how many rows there are under the same order, as a fetching source's total
+        // can: a place that no longer fits names rows that are not there, which the order moving says.
+        const now = this.#extent;
+        if (range.topRow + range.rowCount > now.rowCount || range.leftColumn + range.columnCount > now.columnCount) {
+            this.#onRefused?.({ kind: 'placement', reason: 'orderMoved' });
+            return false;
+        }
+        if (this.#apply(this.#held.selection.place(range, focus, now))) {
             this.#revealOwed = { target: focus, extending: undefined, rowStart: false, stepRows: 0 };
             this.#revealHeaderOwed = undefined;
             this.#followArmed = { focus, target: focus };

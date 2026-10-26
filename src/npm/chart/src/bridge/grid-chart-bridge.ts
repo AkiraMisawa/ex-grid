@@ -80,8 +80,8 @@ export interface GridChartBridgeOptions<Row> {
     readonly onRefused?: (why: string) => void;
     /**
      * Places the Selection and the Focus on a cell and scrolls the grid to it, as C#'s `PlaceSelectionAsync`
-     * does, answering whether it was placed. The Script Core's grid has no such member yet, so the Consumer
-     * supplies it; without it `showInGrid` refuses to be asked.
+     * does, answering whether it was placed: the grid's `placeSelection`, reached through its handle (or
+     * `ExGridApi` under React), which the bridge does not hold. Without it `showInGrid` refuses to be asked.
      */
     readonly placeSelection?: (placement: GridSelectionPlacement) => boolean | Promise<boolean>;
 }
@@ -224,17 +224,22 @@ export class GridChartBridge<Row> {
                 : `${cell.column} is not among the grid's columns.`);
             return false;
         }
-        return place(Object.freeze({
+        const placed = await place(Object.freeze({
             range: Object.freeze({ topRow: row, leftColumn: column, rowCount: 1, columnCount: 1 }),
             focus: Object.freeze({ row, column }),
             rowSequenceVersion: g.rowSequenceVersion,
         }));
+        if (!placed) this.#refuse('The grid did not move its Focus to that point: its rows or columns changed, or an open edit held it.');
+        return placed;
     }
 
     #state(): BridgeGridState<Row> | undefined {
         const grid = this.#options.grid();
         if (grid === undefined) return undefined;
         const { source } = grid;
+        // Changes a live source gathered are the order's before it is read, as the grid publishes them before it
+        // compares a placement (ADR-0142 D5): read without them, a position taken now would be refused by chance.
+        source.publishGathered?.();
         const snapshot = source.snapshot();
         return {
             columns: grid.columns,
