@@ -341,7 +341,7 @@ internal sealed class Run(CultureInfo culture)
     private static readonly string[] Verbs =
     [
         "enter", "enterAll", "enterRun", "do", "check", "undo", "redo", "reopen", "remember", "read", "copy",
-        "setNumberFormat", "setAlignment", "declareTable", "pushTable", "setToday", "setSeed", "setClock", "recalculateVolatile",
+        "setNumberFormat", "setAlignment", "declareTable", "pushTable", "setToday", "setSeed", "setClock", "recalculateVolatile", "getDisplay",
     ];
 
     private static readonly string[] Modifiers = ["on", "expect", "note"];
@@ -543,6 +543,10 @@ internal sealed class Run(CultureInfo culture)
                 break;
             case "setSeed":
                 outcome.Change = Workbook.SetSeed(argument is null ? null : ulong.Parse(argument.ToJsonString().Trim('"'), CultureInfo.InvariantCulture)).For(sheet);
+                break;
+            case "getDisplay":
+                // A display asked for, so that a width refused is a refusal the step can expect.
+                _ = sheet.GetDisplay(CellAddress.Parse((string)argument["at"]!), SheetCases.Number(argument["width"]!));
                 break;
             case "setClock":
             {

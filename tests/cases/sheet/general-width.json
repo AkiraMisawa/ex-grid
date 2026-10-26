@@ -1,0 +1,76 @@
+{
+  "about": "The API around General fitting its column (ADR-0047, SH-20). What Excel shows at each width is in ExcelCases' general-width; these pin what is the engine's own. Transcribed from ExSheet.Engine.Tests' GeneralWidthTests.",
+  "kind": "sheet",
+  "culture": "en-US",
+  "cases": [
+    {
+      "name": "ADR-0047: the width changes only the text; the Value, and the unfitted display, stay whole",
+      "steps": [
+        {"enter": {"A1": "=1/3"}, "expect": {"displays": {"A1": {"width": 8.43, "text": "0.333333"}}, "texts": {"A1": "0.333333333333333"}, "values": {"A1": 0.3333333333333333}}}
+      ]
+    },
+    {
+      "name": "ADR-0016/0047: what General cannot fit is ####, reported as a number that cannot show",
+      "steps": [
+        {"enter": {"A1": "123456789"}, "expect": {"displays": {"A1": {"width": 4, "cannotShow": true, "isNumber": true, "text": "", "alignment": "right"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: a column holds its whole characters; a round trip through pixels may land a hair below a whole number (width 8.43)",
+      "steps": [
+        {"enter": {"A1": "123456789"}, "expect": {"displays": {"A1": {"width": 8.43, "text": "1.23E+08"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: a column holds its whole characters; a round trip through pixels may land a hair below a whole number (width 8.99)",
+      "steps": [
+        {"enter": {"A1": "123456789"}, "expect": {"displays": {"A1": {"width": 8.99, "text": "1.23E+08"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: a column holds its whole characters; a round trip through pixels may land a hair below a whole number (width 8.9999999999)",
+      "steps": [
+        {"enter": {"A1": "123456789"}, "expect": {"displays": {"A1": {"width": 8.9999999999, "text": "123456789"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: a column holds its whole characters; a round trip through pixels may land a hair below a whole number (width 9)",
+      "steps": [
+        {"enter": {"A1": "123456789"}, "expect": {"displays": {"A1": {"width": 9, "text": "123456789"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: a width is a finite number of characters (-1)",
+      "steps": [
+        {"enter": {"A1": "1"}},
+        {"getDisplay": {"at": "A1", "width": -1}, "expect": {"throws": {"refusal": "argument"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: a width is a finite number of characters (NaN)",
+      "steps": [
+        {"enter": {"A1": "1"}},
+        {"getDisplay": {"at": "A1", "width": "NaN"}, "expect": {"throws": {"refusal": "argument"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: a width is a finite number of characters (Infinity)",
+      "steps": [
+        {"enter": {"A1": "1"}},
+        {"getDisplay": {"at": "A1", "width": "Infinity"}, "expect": {"throws": {"refusal": "argument"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: text, booleans and Error Values are never fitted",
+      "steps": [
+        {"enter": {"A1": "TRUE", "A2": "=1/0"}, "expect": {"displays": {"A1": {"width": 1, "text": "TRUE", "cannotShow": false}, "A2": {"width": 1, "text": "#DIV/0!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: a blank cell needs no width and shows nothing at any width",
+      "steps": [
+        {"read": true, "expect": {"widthOnEntry": {"A1": null}, "displays": {"A1": {"width": 0, "text": ""}}}}
+      ]
+    }
+  ]
+}

@@ -1,0 +1,131 @@
+{
+  "about": "Whitespace in a Formula (ADR-0047): kept where Excel keeps it, dropped where Excel drops it on entry, and refused where Excel refuses it. Transcribed from ExSheet.Engine.Tests' FormulaWhitespaceTests.",
+  "kind": "sheet",
+  "culture": "en-US",
+  "cases": [
+    {
+      "name": "ADR-0047: a Formula keeps the whitespace it was typed with before its tokens, as Excel does: \"= 1 + 2\"",
+      "steps": [
+        {"enter": {"C5": "= 1 + 2"}, "expect": {"entryTexts": {"C5": "= 1 + 2"}}},
+        {"reopen": "json", "expect": {"entryTexts": {"C5": "= 1 + 2"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: a Formula keeps the whitespace it was typed with before its tokens, as Excel does: \"=A1 + B1\"",
+      "steps": [
+        {"enter": {"C5": "=A1 + B1"}, "expect": {"entryTexts": {"C5": "=A1 + B1"}}},
+        {"reopen": "json", "expect": {"entryTexts": {"C5": "=A1 + B1"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: a Formula keeps the whitespace it was typed with before its tokens, as Excel does: \"=SUM( A1:A3, 4 )\"",
+      "steps": [
+        {"enter": {"C5": "=SUM( A1:A3, 4 )"}, "expect": {"entryTexts": {"C5": "=SUM( A1:A3, 4 )"}}},
+        {"reopen": "json", "expect": {"entryTexts": {"C5": "=SUM( A1:A3, 4 )"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: a Formula keeps the whitespace it was typed with before its tokens, as Excel does: \"=IF(A1 > 0,\\n  A1,\\n  0)\"",
+      "steps": [
+        {"enter": {"C5": "=IF(A1 > 0,\n  A1,\n  0)"}, "expect": {"entryTexts": {"C5": "=IF(A1 > 0,\n  A1,\n  0)"}}},
+        {"reopen": "json", "expect": {"entryTexts": {"C5": "=IF(A1 > 0,\n  A1,\n  0)"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: a Formula keeps the whitespace it was typed with before its tokens, as Excel does: \"=  -A1%\"",
+      "steps": [
+        {"enter": {"C5": "=  -A1%"}, "expect": {"entryTexts": {"C5": "=  -A1%"}}},
+        {"reopen": "json", "expect": {"entryTexts": {"C5": "=  -A1%"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: a Formula keeps the whitespace it was typed with before its tokens, as Excel does: \"=\\\"a  b\\\" & \\\" c\\\"\"",
+      "steps": [
+        {"enter": {"C5": "=\"a  b\" & \" c\""}, "expect": {"entryTexts": {"C5": "=\"a  b\" & \" c\""}}},
+        {"reopen": "json", "expect": {"entryTexts": {"C5": "=\"a  b\" & \" c\""}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: a Formula keeps the whitespace it was typed with before its tokens, as Excel does: \"= Positions[PV]\"",
+      "steps": [
+        {"enter": {"C5": "= Positions[PV]"}, "expect": {"entryTexts": {"C5": "= Positions[PV]"}}},
+        {"reopen": "json", "expect": {"entryTexts": {"C5": "= Positions[PV]"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (observed in Excel): whitespace at the end, and before a comma, is dropped on entry: \"=A1+1  \"",
+      "steps": [
+        {"enter": {"C5": "=A1+1  "}, "expect": {"formulas": {"C5": "=A1+1"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (observed in Excel): whitespace at the end, and before a comma, is dropped on entry: \"= Positions[PV] \"",
+      "steps": [
+        {"enter": {"C5": "= Positions[PV] "}, "expect": {"formulas": {"C5": "= Positions[PV]"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (observed in Excel): whitespace at the end, and before a comma, is dropped on entry: \"=SUM( A1:A3 , 4 )\"",
+      "steps": [
+        {"enter": {"C5": "=SUM( A1:A3 , 4 )"}, "expect": {"formulas": {"C5": "=SUM( A1:A3, 4 )"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (observed in Excel): whitespace at the end, and before a comma, is dropped on entry: \"= sum( a1 , $b$2 )\"",
+      "steps": [
+        {"enter": {"C5": "= sum( a1 , $b$2 )"}, "expect": {"formulas": {"C5": "= SUM( A1, $B$2 )"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (observed in Excel): whitespace at the end, and before a comma, is dropped on entry: \"=A1+1\\n\"",
+      "steps": [
+        {"enter": {"C5": "=A1+1\n"}, "expect": {"formulas": {"C5": "=A1+1"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (observed in Excel): whitespace at the end, and before a comma, is dropped on entry: \"=IF(A1\\n, 1, 0)\"",
+      "steps": [
+        {"enter": {"C5": "=IF(A1\n, 1, 0)"}, "expect": {"formulas": {"C5": "=IF(A1, 1, 0)"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (observed in Excel): a tab between tokens is refused, as are the other space characters: \"=\\tA1\\t*\\t2\"",
+      "steps": [
+        {"enter": {"C5": "=\tA1\t*\t2"}, "expect": {"throws": {"refusal": "formulaSyntax"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (observed in Excel): a tab between tokens is refused, as are the other space characters: \"=A1\\u00a0+1\"",
+      "steps": [
+        {"enter": {"C5": "=A1 +1"}, "expect": {"throws": {"refusal": "formulaSyntax"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: a tab inside quoted text is the text's own",
+      "steps": [
+        {"enter": {"C5": "=\"a\tb\""}, "expect": {"formulas": {"C5": "=\"a\tb\""}, "values": {"C5": "a\tb"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047 (observed in Excel): a Reference a deletion makes #REF! takes the whitespace before it",
+      "steps": [
+        {"enter": {"A5": "1", "B1": "=  A5  *  C1 "}},
+        {"do": {"deleteRows": [4]}, "expect": {"formulas": {"B1": "=#REF!  *  C1"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047/0048: undoing a structural edit puts back the Formula's text exactly",
+      "steps": [
+        {"enter": {"A5": "1", "B1": "= A5 + 1"}},
+        {"do": {"deleteRows": [4]}, "expect": {"formulas": {"B1": "=#REF! + 1"}}},
+        {"undo": "last", "expect": {"formulas": {"B1": "= A5 + 1"}}}
+      ]
+    },
+    {
+      "name": "ADR-0047: two Formulas that differ only in whitespace are different Entries",
+      "steps": [
+        {"enter": {"B1": "=A1+1", "B2": "= A1+1"}, "expect": {"entries": {"B1": {"formula": "=A1+1"}, "B2": {"formula": "= A1+1"}}}}
+      ]
+    }
+  ]
+}

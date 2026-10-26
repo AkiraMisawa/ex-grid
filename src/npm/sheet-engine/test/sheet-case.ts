@@ -299,7 +299,7 @@ function cultureOf(name: string): Culture {
 
 const verbs = new Set([
     'enter', 'enterAll', 'enterRun', 'do', 'check', 'undo', 'redo', 'reopen', 'remember', 'read', 'copy',
-    'setNumberFormat', 'setAlignment', 'declareTable', 'pushTable', 'setToday', 'setSeed', 'setClock', 'recalculateVolatile',
+    'setNumberFormat', 'setAlignment', 'declareTable', 'pushTable', 'setToday', 'setSeed', 'setClock', 'recalculateVolatile', 'getDisplay',
 ]);
 const modifiers = new Set(['on', 'expect', 'note']);
 
@@ -489,6 +489,12 @@ class Run {
             case 'setSeed':
                 outcome.change = this.workbook.setSeed(argument === null ? undefined : BigInt(typeof argument === 'number' ? argument : text(argument, 'setSeed'))).for(sheet);
                 break;
+            case 'getDisplay': {
+                // A display asked for, so that a width refused is a refusal the step can expect.
+                const asked = object(argument, 'getDisplay');
+                sheet.getDisplay(CellAddress.parse(text(asked['at'], 'getDisplay.at')), caseNumber(asked['width'], 'getDisplay.width'));
+                break;
+            }
             case 'setClock': {
                 // A clock that moves on `step` seconds each time it is read, and counts its reads.
                 const clock = object(argument, 'setClock');
