@@ -204,6 +204,17 @@ describe('a grid view (ADR-0342)', () => {
         expect(desks(bound, 'blotter')).toEqual(['Rates', 'Rates']);
     });
 
+    it('refuses a filter on a column it does not show, and one comparing a decimal with text, naming the column\'s filter', () => {
+        const hidden = withGrid('{"data": "trades", "columns": [{"column": "desk"}], "filter": {"columns": {"month": {"combinator": "And", '
+            + '"clauses": [{"operator": "Equals", "value": {"type": "String", "value": "Oct"}}]}}}}');
+        expect(() => bindBoard(hidden, data(hidden))).toThrow(expect.objectContaining({
+            path: "views[0].grid.filter.columns['month']", message: "The filter is on column 'month', which the grid does not show.",
+        }));
+        const pnl = withGrid('{"data": "trades", "columns": [{"column": "pnl", "format": "#,##0"}], "filter": {"columns": {"pnl": {"combinator": "And", '
+            + '"clauses": [{"operator": "Equals", "value": {"type": "String", "value": "1"}}]}}}}');
+        expect(() => bindBoard(pnl, data(pnl))).toThrow("Column 'pnl' is number, and its filter compares it with a string.");
+    });
+
     it('refuses a sort by a column it does not show, and a filter compared with another type, naming the path', () => {
         const sorted = withGrid('{"data": "trades", "columns": [{"column": "desk"}], "sorts": [{"column": "day", "direction": "Ascending"}]}');
         expect(() => bindBoard(sorted, data(sorted))).toThrow(expect.objectContaining({ path: 'views[0].grid.sorts[0]' }));

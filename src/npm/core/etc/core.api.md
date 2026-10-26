@@ -4,7 +4,7 @@
 
 ```ts
 
-import { SnapshotDecimal } from '@ex-grid/data';
+import type { SnapshotDecimal } from '@ex-grid/data';
 
 // @public
 export function actionColumn<Row>(name: string, actions: readonly GridAction[], options?: {
@@ -124,7 +124,7 @@ export type EditVerdict = {
 };
 
 // @public
-export function engineFilterOf(filter: GridFilter | undefined, typeOf: (column: string) => ColumnType | undefined): GridFilter | undefined;
+export function engineFilterOf(filter: GridFilter | undefined, columnOf: (column: string) => FilteredColumn | undefined): GridFilter | undefined;
 
 // @public
 export interface ExactDecimal {
@@ -133,7 +133,7 @@ export interface ExactDecimal {
 }
 
 // @public
-export const exactDigits = 15;
+export const exactDecimalDigits = 15;
 
 // @public
 export interface FetchFailedEvent {
@@ -183,6 +183,9 @@ export interface FilterClause {
 
 // @public
 export type FilterCombinator = 'and' | 'or';
+
+// @public
+export type FilteredColumn = Pick<QueryColumn<never>, 'type' | 'dateType'>;
 
 // @public
 export type FilterOperator = 'equals' | 'notEquals' | 'greaterThan' | 'greaterThanOrEqual' | 'lessThan' | 'lessThanOrEqual' | 'contains' | 'doesNotContain' | 'startsWith' | 'endsWith' | 'in' | 'isBlank' | 'isNotBlank';
@@ -725,6 +728,9 @@ export interface InMemorySourceOptions<Row> {
 }
 
 // @public
+export function instantOf(ticks: bigint, offsetMinutes: number): object;
+
+// @public
 export interface MarksHost<Row> {
     current(): {
         readonly window: readonly Row[];
@@ -755,6 +761,9 @@ export interface PasteShape {
     readonly columns: number;
     readonly rows: number;
 }
+
+// @public
+export function plainDateOf(ticks: bigint): object;
 
 // @public
 export function plainDateTimeOf(ticks: bigint): object;

@@ -1,7 +1,7 @@
 // A grid built from a source's shape (ADR-0342): C#'s ShapedGrid over a Snapshot. Each column the spec shows reads
 // its value from the Snapshot's row and writes it through its format code, the kind's default where it writes none.
 
-import { exactDigits, FormatCode, gridNumberOf, plainDateTimeOf, significantDigits, type GridColumn, type GridColumnWidth } from '@ex-grid/core';
+import { exactDecimalDigits, FormatCode, gridNumberOf, plainDateTimeOf, significantDigits, type GridColumn, type GridColumnWidth } from '@ex-grid/core';
 import { BoardRefusedError, ticksOfTemporal, type Snapshot, type SnapshotColumn } from '@ex-grid/data';
 import type { GridViewSpecReading, ShapedColumn } from './grid-view-spec';
 
@@ -70,9 +70,9 @@ function shapedColumn(shown: ShapedColumn, held: SnapshotColumn, rowCount: numbe
         case 'decimal': {
             for (let row = 0; row < rowCount; row++) {
                 const value = held.valueAt(row);
-                if (value !== null && significantDigits(value) > exactDigits) {
+                if (value !== null && significantDigits(value) > exactDecimalDigits) {
                     throw new BoardRefusedError(shown.column, `Column '${shown.column}' holds a value of ${significantDigits(value)} significant digits, `
-                        + `and a grid shows a number to ${exactDigits}; it would be shown rounded.`);
+                        + `and a grid shows a number to ${exactDecimalDigits}; it would be shown rounded.`);
                 }
             }
             const code = parsed(shown, required(shown));

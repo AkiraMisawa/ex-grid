@@ -2,7 +2,7 @@
 // the widths, the pinning, the sort and the filter, so that a Board's grid and a saved view never mean two things.
 
 import {
-    FormatCode, GridViewStateJsonError, GridViewStateJson, readGridViewStateJson, type ColumnType, type GridViewState,
+    FormatCode, GridViewStateJsonError, GridViewStateJson, readGridViewStateJson, type GridViewState,
 } from '@ex-grid/core';
 import {
     BoardRefusedError, isJsonArray, isJsonObject, jsonMember, jsonRawText, shapeColumn, type DataShape, type JsonValue, type SnapshotKind,
@@ -121,19 +121,6 @@ export function refusedAt(error: GridViewStateJsonError, path: string): BoardRef
     const jsonPath = error.path;
     const where = jsonPath !== undefined && jsonPath.length > 1 && jsonPath.startsWith('$.') ? jsonPath.slice(2) : '';
     return new BoardRefusedError(where === '' ? path : path === '' ? where : `${path}.${where}`, error.message);
-}
-
-/** The type the grid's engine compares a column of `kind` as. */
-export function columnTypeOf(kind: SnapshotKind): ColumnType {
-    switch (kind) {
-        case 'text': return 'text';
-        case 'boolean': return 'boolean';
-        case 'date': return 'date';
-        case 'decimal':
-        case 'double':
-        case 'integer': return 'number';
-        default: throw new Error(`Internal: ${String(kind satisfies never)} is not a kind.`);
-    }
 }
 
 function checkFormat(name: string, kind: SnapshotKind, format: string | undefined, path: string): void {

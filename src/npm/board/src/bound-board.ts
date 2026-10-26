@@ -3,11 +3,11 @@
 // only by the user's confirm (Q6). A Board over sources held on a server (ADR-0343 to ADR-0345) is not yet here.
 
 import { ChartSpecRefusedError, readChartSpec, type ChartSpecReading } from '@ex-grid/chart';
-import { engineFilterOf, GridViewStateJsonError, InMemoryGridSource, type GridColumn, type GridColumnWidth, type GridSelection } from '@ex-grid/core';
+import { engineFilterOf, GridViewStateJsonError, InMemoryGridSource, type GridColumn, type GridColumnWidth, type GridFilter, type GridSelection } from '@ex-grid/core';
 import { BoardRefusedError, type BoardInput, type Snapshot } from '@ex-grid/data';
 import { pivotItemKeyAt, publicKeyId, SnapshotPivotSource, type PivotFieldItem, type PivotLayout } from '@ex-grid/pivot-engine';
 import { BoardOutput } from './board-output';
-import { columnTypeOf, refusedAt } from './grid-view-spec';
+import { refusedAt } from './grid-view-spec';
 import type { BoardChartView, BoardGridView, BoardLink, BoardPivotView, BoardReading } from './board-spec';
 import { LinkCondition, narrowedPositions, narrowedSnapshot, valueAt, type BoardValue } from './link-condition';
 import { resized, shapedColumns, shapedRows, type ShapedRow } from './shaped-grid';
@@ -331,9 +331,14 @@ export class BoundGridView {
             }
         });
         this.source.setSorts(view.grid.viewState.sorts);
-        const kinds = new Map(view.grid.columns.map(column => [column.column, columnTypeOf(column.kind)]));
+        this.source.setFilter(this.#engineFilter(view.grid.viewState.filter, path));
+    }
+
+    // The spec's filter as the engine compares it, against the columns the grid is built with; a refusal named under
+    // the grid's path. Only the conversion is in the try: a refusal of the source's own is not the spec's.
+    #engineFilter(filter: GridFilter | undefined, path: string): GridFilter | undefined {
         try {
-            this.source.setFilter(engineFilterOf(view.grid.viewState.filter, name => kinds.get(name)));
+            return engineFilterOf(filter, name => this.#declared.get(name));
         } catch (error) {
             if (!(error instanceof GridViewStateJsonError)) throw error;
             throw refusedAt(error, path);
