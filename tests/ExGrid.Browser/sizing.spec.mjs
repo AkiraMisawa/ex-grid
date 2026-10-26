@@ -10,6 +10,9 @@ test.beforeEach(async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.goto('/sizing');
     await expect(grid(page).locator('.ex-row').first()).toBeVisible();
+    // The tests read the headers' boxes, and a header band painted before the widths are all told is built again
+    // once they are: read only the band that stands (ADR-0220).
+    await settled(grid(page));
 });
 
 function grid(page) {

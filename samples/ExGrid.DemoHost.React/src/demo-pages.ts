@@ -35,6 +35,30 @@ export const demoPages: readonly DemoPage[] = Object.freeze([
         description: 'Stripes decided from each row\'s position in the whole result, so they stay with the row as it scrolls (ADR-0038).',
     },
     {
+        route: 'tones', title: 'Tone and Cell State', group: 'Cells and rows',
+        description: 'A tone rule\'s gains and losses in a theme\'s colours, and a Cell State that outranks them on the same cell (ADR-0006, ADR-0029).',
+    },
+    {
+        route: 'appearance', title: 'Cell appearance', group: 'Cells and rows',
+        description: 'A per-cell Font, Fill and Borders as Excel paints them; bold judged by bold widths, italic never cut (ADR-0050, ADR-0071).',
+    },
+    {
+        route: 'sizing', title: 'Sizing', group: 'Layout',
+        description: 'Column width gestures and a box that narrows until pinning is suspended (ADR-0016, ADR-0045).',
+    },
+    {
+        route: 'stretch', title: 'Stretch', group: 'Layout',
+        description: 'A Viewport that takes its parent\'s box: a sized box, the rest of a flex column, a box that follows the window, and a parent with no height (ADR-0028).',
+    },
+    {
+        route: 'density', title: 'Density', group: 'Layout',
+        description: 'A density preset changed while the grid is on screen: rows, header band and Selection follow the resolved Grid Metrics together (ADR-0027, ADR-0028).',
+    },
+    {
+        route: 'lifecycle', title: 'Lifecycle', group: 'Layout',
+        description: 'Mount and dispose a grid repeatedly; nothing it attached stays behind (ADR-0018, ADR-0021).',
+    },
+    {
         route: 'marks', title: 'Row Marks', group: 'Cells and rows',
         description: 'A Mark Column over 1,000,000 fetched rows: mark all, marks that survive a filter, and an action over them (ADR-0043).',
     },
