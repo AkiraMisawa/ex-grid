@@ -1,0 +1,63 @@
+@page "/script-grid"
+@using global::ExGrid.Script
+
+<DemoNav />
+
+<h1>ExGrid over the Script Core</h1>
+
+<p>
+    The grid below is <code>ExGrid.Script.ExGrid</code>: Blazor's Framework Adapter over
+    <code>@@ex-grid/core</code> (ADR-0350 section 7). The keys, the Selection, the clipboard and the
+    editor are the Script Core's, in the browser, on both hosting models; the rows, their order and
+    what an edit does to them stay in .NET, behind <code>GridSource.From</code>. Sort or filter from
+    the header menu, select a range, edit a Book, and each notification is written out below.
+</p>
+
+<ExGrid.Script.ExGrid TRow="DemoTrade"
+                     Source="_source"
+                     Columns="Columns"
+                     ViewportHeight="360"
+                     ViewportWidth="720"
+                     PinnedColumnCount="1"
+                     StripeRows="true"
+                     SelectionChanged="OnSelectionChanged"
+                     OnEdit="OnEdit"
+                     OnRefused="OnRefused" />
+
+<p>
+    <span id="script-selection" role="status">Selection: @_selection</span><br />
+    <span id="script-edit" role="status">Edit: @_edit</span><br />
+    <span id="script-refused" role="status">Refused: @_refused</span>
+</p>
+
+@code {
+    private static readonly GridColumn<DemoTrade>[] Columns =
+    [
+        new("Book", ColumnType.Text, r => r.Book, editable: true),
+        new("Trader", ColumnType.Text, r => r.Trader),
+        new("Notional", ColumnType.Number, r => r.Notional),
+        new("TradeDate", ColumnType.Date, r => r.TradeDate, header: "Trade date"),
+        new("Confirmed", ColumnType.Boolean, r => r.Confirmed),
+    ];
+
+    private readonly InMemoryGridSource<DemoTrade> _source = GridSource.From(DemoData.Window(1_000, 7));
+
+    private string _selection = "none";
+    private string _edit = "none";
+    private string _refused = "none";
+
+    private void OnSelectionChanged(GridSelection selection)
+        => _selection = selection.IsEmpty ? "none" : $"{selection.Ranges.Count} range(s), Focus at row {selection.Focus.Row}, column {selection.Focus.Column}";
+
+    private void OnEdit(GridEditIntent<DemoTrade> intent)
+    {
+        var row = intent.Row;
+        _source.ReplaceRow(row, new DemoTrade
+        {
+            Id = row.Id, Book = intent.Value, Trader = row.Trader, Notional = row.Notional, TradeDate = row.TradeDate, Confirmed = row.Confirmed,
+        });
+        _edit = $"{intent.Column} of {row.Book} set to {intent.Value}";
+    }
+
+    private void OnRefused(GridRefusal<DemoTrade> refusal) => _refused = refusal.ToString();
+}

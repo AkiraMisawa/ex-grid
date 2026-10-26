@@ -20,8 +20,10 @@
           ];
         in
         {
+        # Node too: ExGrid's build bundles the Script Core's module from src/npm
+        # (ADR-0350 section 7), so `dotnet build` runs it.
         default = pkgs.mkShell {
-          packages = [ dotnet ];
+          packages = [ dotnet pkgs.nodejs ];
           shellHook = ''
             # Child processes (the test host) resolve frameworks from DOTNET_ROOT;
             # without it they follow the muxer's real path into the SDK-only store

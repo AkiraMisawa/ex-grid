@@ -12,6 +12,7 @@ One directory per package:
 | `board/` | `@ex-grid/board` | ExBoard's Script Core: the Board Spec's reader, held to ExBoard's by the shared cases of `tests/cases/board/`, a grid built from an input's shape, a Board bound to Snapshots, its links narrowing the views they reach and its outputs raised by a confirm, its Board Diff, and `createBoard`, which draws it with the family's grids, pivots and charts (ADR-0370, section 3) |
 | `board-react/` | `@ex-grid/board-react` | ExBoard's React adapter: `ExBoard`, which mounts `createBoard` in a React tree (ADR-0370, section 1) |
 | `sheet-engine/` | `@ex-grid/sheet-engine` | ExSheet's engine in TypeScript: the Workbook and its Sheets, Excel's formulas and functions, number formats, Cell Formats, edits with undo, documents and the typing aids, held to ExSheet.Engine's cases and Excel's recorded answers (ADR-0370, section 2) |
+| `blazor/` | `@ex-grid/blazor` (private) | Blazor's ExGrid in the browser: the bridge between `ExGrid.Script.ExGrid` in .NET and the core, bundled with the core into the `ex-grid-core.min.js` the ExGrid NuGet package ships as ExGrid builds; never published to npm (ADR-0350 section 7). Its value text is held to the C# half by the shared cases of `tests/cases/blazor/` |
 
 `@ex-grid/react` and `@ex-grid/mui` join it as they are built (ADR-0350, sections 3 and 11).
 

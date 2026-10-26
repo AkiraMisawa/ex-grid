@@ -43,6 +43,29 @@
         </DocsExample>
     </DocsSection>
 
+    <DocsSection Title="A grid drawn in the browser">
+        <p>
+            Blazor's ExGrid is moving onto the same TypeScript core as React's, after which only the rows, their
+            order and what an intent does to them stay in .NET. <code>ExGrid.Script.ExGrid</code> is that grid,
+            beside the one above while the move is under way: the keys, the Selection, the clipboard and the
+            editor run in the browser on both hosting models, so on Blazor Server a key or a drag no longer
+            crosses the circuit. It takes the same <code>GridColumn</code>s and <code>IGridSource</code>, and its
+            parameters and events are named as the core's are. Edit a Book below: the commit reaches
+            <code>OnEdit</code> after the browser has made it, so your handler answers with the row the source
+            then holds, and cannot refuse it.
+        </p>
+        <DocsExample Builtin="typeof(ScriptCoreGrid)" Files="@(["Examples/Data/Trade.cs"])" />
+        <p>
+            Not carried yet, and refused by name when a column declares it: Template Columns, <code>Validate</code>,
+            Tone and Row Marks, and a refusal from <code>OnEdit</code> or <code>OnPaste</code>. Find and the
+            Selection Summary are not offered yet either: Ctrl+F is refused, and no summary is drawn. Use the grid
+            above for those until they arrive. The browser is sent the rows around the ones in view, a few
+            screens either side, and asks for more as it scrolls, so a source that holds a million rows sends a
+            few hundred. The script it runs is bundled into the package, at an address that changes with its
+            content, as ExGrid's own script is.
+        </p>
+    </DocsSection>
+
     <DocsSection Title="The parts of a grid">
         <p>
             These pages and the API name the parts of a grid as the list under the figure does. Header Groups

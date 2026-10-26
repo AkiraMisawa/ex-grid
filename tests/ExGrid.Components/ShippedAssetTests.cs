@@ -135,6 +135,7 @@ public class ShippedAssetTests
         {
             var expected = Directory.EnumerateFiles(AssetSources.Folder(package))
                 .Select(file => MinifiedName(Path.GetFileName(file)))
+                .Concat(package == "ExGrid" ? [ScriptCoreModule] : [])
                 .SelectMany(name => new[] { name, $"{name}.map" })
                 .Order(StringComparer.Ordinal);
             var served = Directory.EnumerateFiles(Wwwroot(package))
@@ -142,5 +143,24 @@ public class ShippedAssetTests
                 .Order(StringComparer.Ordinal);
             Assert.Equal(expected, served);
         }
+    }
+
+    /// <summary>The Script Core's module, which ExGrid's build bundles from <c>src/npm</c> rather than from an
+    /// <c>Assets</c> source (ADR-0123's note of 2026-10-26).</summary>
+    private const string ScriptCoreModule = "ex-grid-core.min.js";
+
+    [Fact] // ADR-0123 / ADR-0350 s7: the bundled module answers the stamp the component is built with, at the version its address carries
+    public void The_script_core_module_is_the_one_the_component_was_built_with()
+    {
+        var stamp = global::ExGrid.Script.ScriptCoreAsset.Stamp;
+        var module = Path.Combine(Wwwroot("ExGrid"), ScriptCoreModule);
+        var shipped = File.ReadAllText(module);
+        var banner = Banner.Match(shipped);
+        Assert.True(banner.Success, $"{module} does not open with the banner src/npm/scripts/build-blazor.mjs writes");
+        Assert.Equal("ex-grid-core.js", banner.Groups["name"].Value);
+        Assert.Equal(stamp, banner.Groups["hash"].Value);
+        Assert.Contains($"\"{stamp}\"", shipped, StringComparison.Ordinal);
+        Assert.Equal(global::ExGrid.Script.ScriptCoreAsset.Version, HashOf(shipped)[..12]);
+        Assert.Contains($"sourceMappingURL={ScriptCoreModule}.map", shipped, StringComparison.Ordinal);
     }
 }

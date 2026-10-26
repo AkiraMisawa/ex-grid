@@ -32,6 +32,8 @@ public static class DemoPageList
             "A live Window over the demo API server's trades through GridSource.Fetch: its hub says the trades changed, the source reads its Window again by Row Key, and the cells whose values moved are marked for a moment (ADR-0068, ADR-0069, ADR-0141)."),
         new("grid-live-local", "Live grid in process", "Rows and data",
             "A million trades held in this process through GridSource.From with a Row Key, amended by the page's own timer as Change Batches four times a second; the source gathers them, brings its result up to date from the rows that changed, and marks the cells whose values moved (ADR-0141)."),
+        new("script-grid", "ExGrid over the Script Core", "Rows and data",
+            "Blazor's ExGrid drawn by the TypeScript Script Core: keys, Selection and editor in the browser, rows and edits in .NET (ADR-0350 section 7)."),
         new("cells", "Cells and rows", "Cells and rows",
             "Cell State, Row Kind, Template Columns and Action Columns — what the value alone cannot say (ADR-0006, ADR-0020, ADR-0024)."),
         new("marks", "Row Marks", "Cells and rows",
