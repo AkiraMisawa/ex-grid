@@ -125,6 +125,8 @@ class GridStandIn {
             closePopover: () => { throw new Error('The pivot closes no popover.'); },
             canSummarize: false,
             refreshSummary: () => { throw new Error('The pivot refreshes no summary.'); },
+            returnKeyboard: () => { throw new Error('The pivot returns no grid\'s keyboard.'); },
+            handKeyboardTo: () => { throw new Error('The pivot hands no grid\'s keyboard on.'); },
         });
         // A details grid stands in a details panel or the dialog; the report's in the report's sheet.
         if (element.closest('.ex-pivot-details-panel, .ex-pivot-dialog') !== null) {

@@ -3746,6 +3746,51 @@ export class GridView<Row> {
         if (surface.isConnected) surface.focus({ preventScroll: true });
     }
 
+    /**
+     * The keyboard back to the grid from something of the Consumer's that held it over the grid and goes away, a
+     * dialog, a panel, a tab (DC-61, ADR-0070), or from a Chrome's frame outside it (ADR-0071): to the field an
+     * open edit is typed in, else to the Keyboard Field, else the root (ADR-0080). Granted only while the keyboard
+     * is still this grid's, DOM focus inside its root or on nothing, and not on the Formula Bar or the Name Box,
+     * where the user is typing (ADR-0021): a control or a grid the user has moved to keeps it (ADR-0018). `from`,
+     * the frame that holds the keyboard as it goes, widens the condition to DOM focus on it or inside it, so the
+     * frame gives the keyboard back before it is removed (ADR-0050 item 16, note of 2026-10-12). It moves neither
+     * the Focus nor the Selection and scrolls nothing. Once the grid is gone, it does nothing.
+     */
+    returnKeyboard(from?: Element): void {
+        if (from !== undefined && !(from instanceof Element)) throw new TypeError('returnKeyboard is handed the frame that holds the keyboard.');
+        if (this.#destroyed) return;
+        const active = this.#root.ownerDocument.activeElement;
+        const fromFrame = from !== undefined && active !== null && from.contains(active);
+        if (!fromFrame && (!this.#keyboardHere() || this.#onOwnField())) return;
+        this.focus();
+    }
+
+    /**
+     * Hands the keyboard the grid holds on to a control of the Consumer's own (DC-61, ADR-0070): the first control
+     * of a frame or a tab opened from the grid, a dialog's Close, in place of the control's own `focus()`. A
+     * container names its first enabled text field, its text selected, or else its first enabled control, and one
+     * holding neither is refused with a RangeError. Granted under `returnKeyboard`'s condition, so a press the user
+     * made meanwhile keeps the keyboard where it put it. It moves neither the Focus nor the Selection and paints
+     * nothing; the control scrolls into view unless `preventScroll` says not to. Once the grid is gone, the control
+     * takes the keyboard by its own focus.
+     */
+    handKeyboardTo(control: HTMLElement, options?: { readonly preventScroll?: boolean }): void {
+        if (!(control instanceof HTMLElement)) throw new TypeError('handKeyboardTo is handed the element that takes the keyboard.');
+        // A control taken away since has nothing to hand the keyboard to.
+        if (!control.isConnected) return;
+        const { target, field } = keyboardTargetIn(control, 'handKeyboardTo');
+        if (!this.#destroyed && (!this.#keyboardHere() || this.#onOwnField())) return;
+        target.focus({ preventScroll: options?.preventScroll === true });
+        field?.select();
+    }
+
+    // DOM focus on the Formula Bar's text or the Name Box, the fields of the grid's own beside the rows that hold
+    // the keyboard while the user types in them: a hand-back leaves it there (ADR-0021, widened 2026-09-28).
+    #onOwnField(): boolean {
+        const active = this.#root.ownerDocument.activeElement;
+        return active !== null && (active === this.#bar.text || active === this.#bar.nameBox);
+    }
+
     // A press or a key into the bar's text opens an edit on the Focus there, in Caret, its caret where the press
     // put it; an edit standing in the cell moves to the bar, in Caret (ADR-0051).
     readonly #onBarFocused = (): void => {
@@ -7057,11 +7102,7 @@ export class GridView<Row> {
         if (!this.#viewport.contains(control)) {
             throw new RangeError('takeKeyboard is handed a control inside its own cell: this grid hands the keyboard only within its rows.');
         }
-        const field = control.matches(focusableControls) ? undefined : control.querySelector<HTMLInputElement | HTMLTextAreaElement>(textFields);
-        const target = control.matches(focusableControls) ? control : field ?? control.querySelector<HTMLElement>(focusableControls);
-        if (target === null) {
-            throw new RangeError('takeKeyboard is handed an element that takes no keyboard and holds no enabled control that does.');
-        }
+        const { target, field } = keyboardTargetIn(control, 'takeKeyboard');
         // Only while the keyboard is still the grid's (ADR-0204).
         if (!this.#keyboardHere()) return;
         target.focus({ preventScroll: true });
@@ -7426,10 +7467,26 @@ function isUnmount(value: unknown): value is () => void {
 }
 
 /** What takes the keyboard of itself, and the text fields a container hands it to first (ADR-0037). */
-const focusableControls = 'input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), '
-    + 'button:not([disabled]), a[href], [tabindex]';
-const textFields = 'input:not([disabled]):is(:not([type]), [type="text"], [type="search"], [type="email"], [type="tel"], [type="url"], '
-    + '[type="password"], [type="number"]), textarea:not([disabled])';
+// What takes the keyboard for an element a Consumer names, as the C# core's script finds it (boxTarget): the
+// element itself when it is a control; else its first enabled text field, one with a caret, not read-only and
+// not a design system's combobox; else its first enabled control, a read-only input such as that combobox among
+// them, and no other input that is not a text field, nor an element taken out of the tab order.
+const ownControl = 'input, textarea, select, button, a[href], [tabindex]';
+const textFields = 'input:not([disabled]):not([readonly]):not([role="combobox"]):is(:not([type]), [type="text"], [type="search"], '
+    + '[type="url"], [type="tel"], [type="password"]), textarea:not([disabled]):not([readonly]):not([role="combobox"])';
+const otherControls = 'input[readonly]:not([disabled]):not([type="hidden"]), button:not([disabled]), select:not([disabled]), a[href], '
+    + '[tabindex]:not([tabindex="-1"])';
+
+/** The element inside `control` that takes the keyboard for it, by the rule above: a text field found inside it
+ * has its text selected. One that holds none is refused, naming `asker`. */
+function keyboardTargetIn(control: HTMLElement, asker: string): { readonly target: HTMLElement; readonly field: HTMLInputElement | HTMLTextAreaElement | undefined } {
+    if (control.matches(ownControl)) return { target: control, field: undefined };
+    const field = control.querySelector<HTMLInputElement | HTMLTextAreaElement>(textFields);
+    if (field !== null) return { target: field, field };
+    const target = control.querySelector<HTMLElement>(otherControls);
+    if (target === null) throw new RangeError(`${asker} is handed an element that takes no keyboard and holds no enabled control that does.`);
+    return { target, field: undefined };
+}
 
 /** A painted cell's Match Mark as a row's record of its marks writes it: nothing for none. */
 function markKey(column: number, mark: MatchMark): string {

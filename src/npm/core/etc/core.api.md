@@ -548,11 +548,15 @@ export interface GridHandle<Row> {
     closePopover(): void;
     destroy(): void;
     focus(): void;
+    handKeyboardTo(control: HTMLElement, options?: {
+        readonly preventScroll?: boolean;
+    }): void;
     keyName(event: KeyboardEvent): string;
     openPopover(content: (context: GridPopoverContext) => HTMLElement, label: string): boolean;
     placeSelection(range: SelectionRange, focus: CellPosition, rowSequenceVersion: number): boolean;
     readView(): GridViewRead;
     refreshSummary(): void;
+    returnKeyboard(from?: Element): void;
     showViewWith(view: GridViewRead, rowSequenceVersion: number): void;
     update(options: GridOptions<Row>): void;
 }
