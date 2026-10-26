@@ -1,0 +1,361 @@
+{
+  "about": "What a Fill Intent writes (ADR-0050, ticket 15, SH-15): the handle's series and copies, whole columns and rows, the fill keys Ctrl+D and Ctrl+R, and Ctrl+Enter's typed text written into a range, each one step. Transcribed from ExSheet.Engine.Tests' FillTests.",
+  "kind": "sheet",
+  "culture": "en-US",
+  "cases": [
+    {
+      "name": "ADR-0050: one line that cannot be filled refuses the whole fill",
+      "steps": [
+        { "enter": { "A1": "x", "B1": "Item 1" } },
+        { "check": { "fill": { "source": "A1:B1", "target": "A2:B3", "direction": "down" } }, "expect": { "refusal": { "reason": "fillPatternNotSupported", "saying": "B1 holds 'Item 1', text Excel would continue as a series; ExSheet refuses the fill rather than fill it with copies." } } }
+      ]
+    },
+    {
+      "name": "ADR-0050: a day or month name is recognised in either case, composed or decomposed, and through invisible characters (de-DE)",
+      "culture": "de-DE",
+      "steps": [
+        { "enter": { "A1": "Ma\u0308rz", "B1": "mon\u00ADtag", "C1": "\u200BJANUAR", "D1": "Marz" } },
+        { "check": { "fill": { "source": "A1", "target": "A2", "direction": "down" } }, "expect": { "refusal": { "reason": "fillPatternNotSupported" } } },
+        { "check": { "fill": { "source": "B1", "target": "B2", "direction": "down" } }, "expect": { "refusal": { "reason": "fillPatternNotSupported" } } },
+        { "check": { "fill": { "source": "C1", "target": "C2", "direction": "down" } }, "expect": { "refusal": { "reason": "fillPatternNotSupported" } } },
+        { "check": { "fill": { "source": "D1", "target": "D2", "direction": "down" } }, "expect": { "refusal": null } }
+      ]
+    },
+    {
+      "name": "ADR-0050: formats and alignment repeat from the source",
+      "steps": [
+        { "enter": { "A1": "1", "A2": "2" } },
+        { "setNumberFormat": { "A1": "0.00" } },
+        { "setAlignment": { "A2": "center" } },
+        { "do": { "fill": { "source": "A1:A2", "target": "A3:A4", "direction": "down" } }, "expect": { "texts": { "A3": "3.00" }, "alignments": { "A4": "center" } } }
+      ]
+    },
+    {
+      "name": "ADR-0050: a target that does not extend the source along one axis is refused (a gap)",
+      "steps": [
+        { "enter": { "A1": "1", "A2": "2" } },
+        { "check": { "fill": { "source": "A1:A2", "target": "A4:A5", "direction": "down" } }, "expect": { "refusal": { "reason": "fillShapeNotSupported" } } }
+      ]
+    },
+    {
+      "name": "ADR-0050: a target that does not extend the source along one axis is refused (beside it)",
+      "steps": [
+        { "enter": { "A1": "1", "A2": "2" } },
+        { "check": { "fill": { "source": "A1:A2", "target": "B1:B2", "direction": "down" } }, "expect": { "refusal": { "reason": "fillShapeNotSupported" } } }
+      ]
+    },
+    {
+      "name": "ADR-0050: a target that does not extend the source along one axis is refused (narrower)",
+      "steps": [
+        { "enter": { "A1": "1", "A2": "2" } },
+        { "check": { "fill": { "source": "A1:B2", "target": "A3:A4", "direction": "down" } }, "expect": { "refusal": { "reason": "fillShapeNotSupported" } } }
+      ]
+    },
+    {
+      "name": "ADR-0050: a target that does not extend the source along one axis is refused (the other way)",
+      "steps": [
+        { "enter": { "A1": "1", "A2": "2" } },
+        { "check": { "fill": { "source": "B2", "target": "B3", "direction": "up" } }, "expect": { "refusal": { "reason": "fillShapeNotSupported" } } }
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-13): a fill is one step, and its undo restores what it wrote over",
+      "steps": [
+        { "enter": { "A1": "1", "A2": "2", "A3": "old" } },
+        { "remember": "before" },
+        { "do": { "fill": { "source": "A1:A2", "target": "A3:A6", "direction": "down" } } },
+        { "undo": "last", "expect": { "picture": "before" } }
+      ]
+    },
+    {
+      "name": "ADR-0050 item 5: column C filled right two columns, as the readings of 2026-10-12 (R5) observed Excel fill it",
+      "note": "Observed (R5, (3)): the lone number goes on as a series, text is copied, =ROW() is filled as a Formula, and the last row is filled too; D2 stays empty. C9 is blank, and a blank is copied as every fill copies one: D9's text is gone (by generalisation from every other fill; R5's target held nothing).",
+      "steps": [
+        { "enter": { "C1": "1", "C3": "a", "C20": "=ROW()", "C1048576": "z", "D9": "old" } },
+        { "remember": "before" },
+        {
+          "do": { "fill": { "source": "C1:C1048576", "target": "D1:E1048576", "direction": "right" } },
+          "expect": {
+            "texts": { "D1": "2", "E1": "3", "D3": "a", "E3": "a", "E20": "20", "D1048576": "z", "E1048576": "z" },
+            "entries": { "D2": null, "D9": null, "F1": null },
+            "formulas": { "D20": "=ROW()" }
+          }
+        },
+        { "undo": "last", "expect": { "picture": "before" } }
+      ]
+    },
+    {
+      "name": "ADR-0050 item 5: one cell's handle copies a lone number, as R5's control observed Excel copy C5's",
+      "steps": [
+        { "enter": { "C5": "1" } },
+        { "do": { "fill": { "source": "C5", "target": "C6:C7", "direction": "down" } }, "expect": { "texts": { "C6": "1", "C7": "1" } } }
+      ]
+    },
+    {
+      "name": "ADR-0050 item 5 (2026-10-14, after run 18a, fill-handle-axis 4): C1:C2 of two numbers dragged right copies each, 1 1 and 5 5",
+      "steps": [
+        { "enter": { "C1": "1", "C2": "5" } },
+        { "do": { "fill": { "source": "C1:C2", "target": "D1:E2", "direction": "right" } }, "expect": { "texts": { "D1": "1", "E1": "1", "D2": "5", "E2": "5" } } }
+      ]
+    },
+    {
+      "name": "ADR-0050 item 5 (2026-10-14, after run 18a, fill-handle-axis 4): the one number of a source of several cells that holds nothing else goes on by one (right)",
+      "steps": [
+        { "enter": { "C1": "1" } },
+        { "do": { "fill": { "source": "C1:C2", "target": "D1:E2", "direction": "right" } }, "expect": { "texts": { "D1": "2", "E1": "3" }, "entries": { "D2": null, "E2": null } } }
+      ]
+    },
+    {
+      "name": "ADR-0050 item 5 (2026-10-14, after run 18a, fill-handle-axis 4): the one number of a source of several cells that holds nothing else goes on by one (down, by generalisation)",
+      "steps": [
+        { "enter": { "C1": "1" } },
+        { "do": { "fill": { "source": "C1:D1", "target": "C2:D3", "direction": "down" } }, "expect": { "texts": { "C2": "2", "C3": "3" }, "entries": { "D2": null, "D3": null } } }
+      ]
+    },
+    {
+      "name": "ADR-0050 item 5 (2026-10-14, after run 18a, fill-handle-axis 4): the one number of a source of several cells that holds nothing else goes on by one (left, by generalisation)",
+      "steps": [
+        { "enter": { "C1": "1" } },
+        { "do": { "fill": { "source": "C1:C2", "target": "A1:B2", "direction": "left" } }, "expect": { "texts": { "B1": "0", "A1": "-1" }, "entries": { "A2": null, "B2": null } } }
+      ]
+    },
+    {
+      "name": "ADR-0050 item 5 (2026-10-14, after run 18a, fill-handle-axis 5): columns B:C with B1 1 and C1 empty, dragged right to E, give D1 2 and an empty E1",
+      "steps": [
+        { "enter": { "B1": "1" } },
+        { "do": { "fill": { "source": "B:C", "target": "D:E", "direction": "right" } }, "expect": { "texts": { "D1": "2" }, "entries": { "E1": null } } }
+      ]
+    },
+    {
+      "name": "ADR-0050 item 5 (2026-10-14, after run 18a): a single number in a line of any other source of several cells is refused, not copied (number, blank, number)",
+      "steps": [
+        { "enter": { "C1": "1", "C3": "3" } },
+        { "check": { "fill": { "source": "C1:C3", "target": "D1:E3", "direction": "right" } }, "expect": { "refusal": { "reason": "fillPatternNotSupported" } } }
+      ]
+    },
+    {
+      "name": "ADR-0050 item 5 (2026-10-14, after run 18a): a single number in a line of any other source of several cells is refused, not copied (number, text)",
+      "steps": [
+        { "enter": { "C1": "1", "C2": "a" } },
+        { "check": { "fill": { "source": "C1:C3", "target": "D1:E3", "direction": "right" } }, "expect": { "refusal": { "reason": "fillPatternNotSupported" } } }
+      ]
+    },
+    {
+      "name": "ADR-0050 item 5 (2026-10-14, after run 18a): a single number in a line of any other source of several cells is refused, not copied (number, Boolean)",
+      "steps": [
+        { "enter": { "C1": "1", "C2": "TRUE" } },
+        { "check": { "fill": { "source": "C1:C3", "target": "D1:E3", "direction": "right" } }, "expect": { "refusal": { "reason": "fillPatternNotSupported" } } }
+      ]
+    },
+    {
+      "name": "ADR-0050 item 5: row 3 filled down two rows, as the readings of 2026-10-12 (R5, (4)) observed Excel fill it",
+      "steps": [
+        { "enter": { "A3": "1", "C3": "a", "H3": "=COLUMN()", "XFD3": "z" } },
+        {
+          "do": { "fill": { "source": "A3:XFD3", "target": "A4:XFD5", "direction": "down" } },
+          "expect": { "texts": { "A4": "2", "A5": "3", "C5": "a", "H5": "8", "XFD5": "z" }, "formulas": { "H4": "=COLUMN()" }, "entries": { "B4": null } }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0050 item 5: filled left or up, a whole axis's lone number counts back by one (by generalisation from R5's right and down)",
+      "steps": [
+        { "enter": { "C1": "5" } },
+        { "do": { "fill": { "source": "C1:C1048576", "target": "A1:B1048576", "direction": "left" } }, "expect": { "texts": { "B1": "4", "A1": "3" } } }
+      ]
+    },
+    {
+      "name": "ADR-0050 item 5 / ADR-0035: Ctrl+R over whole columns copies, never a series, as the keys do over any range",
+      "steps": [
+        { "enter": { "C1": "1" } },
+        { "do": { "fillCopy": { "source": "C1:C1048576", "target": "D1:D1048576", "direction": "right" } }, "expect": { "texts": { "D1": "1" } } }
+      ]
+    },
+    {
+      "name": "ADR-0050 item 5 / ADR-0047: a whole column's format is written as each target column's own, never into its million cells",
+      "note": "One run, C to E, bold, and D's yellow written over with C's none: what writing each of their cells would show, recorded on the columns. The cells that hold something are written, and record no format their column gives them.",
+      "steps": [
+        { "enter": { "C1": "1", "C1048576": "z" } },
+        { "do": { "setCellFormat": { "ranges": ["C:C"], "change": { "bold": true } } } },
+        { "do": { "setCellFormat": { "ranges": ["D:D"], "change": { "fill": "#FFFF00" } } } },
+        { "remember": "before" },
+        {
+          "do": { "fill": { "source": "C1:C1048576", "target": "D1:E1048576", "direction": "right" } },
+          "expect": {
+            "document": {
+              "columns": [{ "first": 2, "last": 4, "font": { "colour": "Automatic", "bold": true, "italic": false, "underline": false, "strikethrough": false }, "fill": null }],
+              "cells": [
+                { "address": "C1", "font": null }, { "address": "D1", "font": null }, { "address": "E1", "font": null },
+                { "address": "C1048576", "font": null }, { "address": "D1048576", "font": null }, { "address": "E1048576", "font": null }
+              ]
+            },
+            "fonts": { "E500": { "bold": true } },
+            "fills": { "D500": "none" }
+          }
+        },
+        { "remember": "done" },
+        { "undo": "last", "expect": { "picture": "before" } },
+        { "redo": "last", "expect": { "picture": "done" } }
+      ]
+    },
+    {
+      "name": "ADR-0050 item 5 / ADR-0047: a whole row's format is written as each target row's own",
+      "steps": [
+        { "enter": { "A3": "1" } },
+        { "do": { "setCellFormat": { "ranges": ["3:3"], "change": { "italic": true } } } },
+        {
+          "do": { "fill": { "source": "A3:XFD3", "target": "A4:XFD5", "direction": "down" } },
+          "expect": { "document": { "rows": [{ "first": 2, "last": 4 }], "cellAddresses": ["A3", "A4", "A5"] }, "fonts": { "XFD5": { "italic": true } } }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0050 item 5 / ADR-0047: under the target column's new format, a row's format and a cell's own still show as writing each cell would show them",
+      "note": "Row 7's font shows over column D's as over column C's. C1's own Number Format is carried to D1. D2 held a format of its own, and C2 holds nothing: D2 takes C2's, as every blank is copied.",
+      "steps": [
+        { "enter": { "C1": "1" } },
+        { "do": { "setCellFormat": { "ranges": ["C:C"], "change": { "bold": true } } } },
+        { "do": { "setCellFormat": { "ranges": ["7:7"], "change": { "italic": true } } } },
+        { "do": { "setCellFormat": { "ranges": ["C1"], "change": { "numberFormat": "0.00" } } } },
+        { "do": { "setCellFormat": { "ranges": ["D2"], "change": { "underline": true } } } },
+        {
+          "do": { "fill": { "source": "C1:C1048576", "target": "D1:D1048576", "direction": "right" } },
+          "expect": {
+            "fonts": {
+              "C7": { "colour": "Automatic", "bold": true, "italic": true, "underline": false, "strikethrough": false },
+              "D7": { "colour": "Automatic", "bold": true, "italic": true, "underline": false, "strikethrough": false },
+              "C2": { "colour": "Automatic", "bold": true, "italic": false, "underline": false, "strikethrough": false },
+              "D2": { "colour": "Automatic", "bold": true, "italic": false, "underline": false, "strikethrough": false }
+            },
+            "texts": { "D1": "2.00" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ADR-0050 item 5: the source column's format reaches the rows that hold nothing, as it reaches every row it shows on",
+      "steps": [
+        { "enter": { "A1": "a", "A3": "c" } },
+        { "do": { "setCellFormat": { "ranges": ["A:A"], "change": { "bold": true } } } },
+        { "do": { "fill": { "source": "A1:A3", "target": "B1:B3", "direction": "right" } }, "expect": { "fonts": { "B2": { "bold": true }, "B4": { "bold": false } } } }
+      ]
+    },
+    {
+      "name": "ADR-0050 item 5: a blank row filled over a target column's format writes the source's format over it, as the rows that hold something do",
+      "steps": [
+        { "enter": { "A1": "a", "A3": "c" } },
+        { "do": { "setCellFormat": { "ranges": ["B:B"], "change": { "bold": true } } } },
+        { "do": { "fill": { "source": "A1:A3", "target": "B1:B3", "direction": "right" } }, "expect": { "fonts": { "B1": { "bold": false }, "B2": { "bold": false }, "B4": { "bold": true } } } }
+      ]
+    },
+    {
+      "name": "ADR-0050 item 5: down, a target row's format is written over in the blank columns too",
+      "steps": [
+        { "enter": { "A1": "a", "C1": "c" } },
+        { "do": { "setCellFormat": { "ranges": ["2:2"], "change": { "bold": true } } } },
+        { "do": { "fill": { "source": "A1:C1", "target": "A2:C2", "direction": "down" } }, "expect": { "fonts": { "B2": { "bold": false }, "D2": { "bold": true } } } }
+      ]
+    },
+    {
+      "name": "ADR-0050 item 5 / ADR-0035, SH-23: Ctrl+D copies a Formula down with its relative References shifted",
+      "steps": [
+        { "enter": { "A1": "1", "A2": "2", "A3": "3", "B1": "=A1*10+$A$1" } },
+        { "do": { "fillCopy": { "source": "B1", "target": "B2:B3", "direction": "down" } }, "expect": { "formulas": { "B2": "=A2*10+$A$1" }, "texts": { "B3": "31" } } }
+      ]
+    },
+    {
+      "name": "ADR-0050 item 5 / ADR-0035, SH-23: Ctrl+R copies across, shifting columns",
+      "steps": [
+        { "enter": { "A1": "1", "B1": "2", "A2": "=A1*10" } },
+        { "do": { "fillCopy": { "source": "A2", "target": "B2", "direction": "right" } }, "expect": { "texts": { "B2": "20" } } }
+      ]
+    },
+    {
+      "name": "ADR-0050 item 5, SH-23: what the handle would continue or refuse, a fill key copies, as Excel's Ctrl+D does (a date)",
+      "steps": [
+        { "enter": { "A1": "9/26/2026" } },
+        { "check": { "fillCopy": { "source": "A1", "target": "A2:A3", "direction": "down" } }, "expect": { "refusal": null } },
+        { "do": { "fillCopy": { "source": "A1", "target": "A2:A3", "direction": "down" } }, "expect": { "texts": { "A3": "9/26/2026" } } }
+      ]
+    },
+    {
+      "name": "ADR-0050 item 5, SH-23: what the handle would continue or refuse, a fill key copies, as Excel's Ctrl+D does (text with a number)",
+      "steps": [
+        { "enter": { "A1": "Item 1" } },
+        { "check": { "fillCopy": { "source": "A1", "target": "A2:A3", "direction": "down" } }, "expect": { "refusal": null } },
+        { "do": { "fillCopy": { "source": "A1", "target": "A2:A3", "direction": "down" } }, "expect": { "texts": { "A3": "Item 1" } } }
+      ]
+    },
+    {
+      "name": "ADR-0050 item 5, SH-23: what the handle would continue or refuse, a fill key copies, as Excel's Ctrl+D does (a number)",
+      "steps": [
+        { "enter": { "A1": "5" } },
+        { "check": { "fillCopy": { "source": "A1", "target": "A2:A3", "direction": "down" } }, "expect": { "refusal": null } },
+        { "do": { "fillCopy": { "source": "A1", "target": "A2:A3", "direction": "down" } }, "expect": { "texts": { "A3": "5" } } }
+      ]
+    },
+    {
+      "name": "ADR-0048 (SH-13): a fill by key is one step, and its undo restores what it wrote over",
+      "steps": [
+        { "enter": { "A1": "=B1", "A2": "old", "A3": "older" } },
+        { "remember": "before" },
+        { "do": { "fillCopy": { "source": "A1", "target": "A2:A3", "direction": "down" } } },
+        { "undo": "last", "expect": { "picture": "before" } }
+      ]
+    },
+    {
+      "name": "ADR-0050 item 5 (2026-09-28), SH-27: a Formula is read as entered in its cell, and every other cell takes it shifted by its offset from there",
+      "steps": [
+        { "do": { "enterInto": { "targets": ["B2:C3"], "at": "C3", "typed": "=B2+$A$1" } }, "expect": { "formulas": { "C3": "=B2+$A$1", "B2": "=A1+$A$1", "C2": "=B1+$A$1", "B3": "=A2+$A$1" } } }
+      ]
+    },
+    {
+      "name": "ADR-0050 item 5 (2026-09-28), SH-27: a Reference shifted off the Sheet is #REF!, as the fill keys make it",
+      "steps": [
+        { "do": { "enterInto": { "targets": ["A1:A2"], "at": "A2", "typed": "=A1" } }, "expect": { "formulas": { "A2": "=A1" }, "texts": { "A1": "#REF!" } } }
+      ]
+    },
+    {
+      "name": "ADR-0050 item 5 (2026-09-28), SH-27: a signed Formula (-A1) is a Formula too, and shifts",
+      "steps": [
+        { "enter": { "A1": "1", "A2": "2" } },
+        { "do": { "enterInto": { "targets": ["B1:B2"], "at": "B1", "typed": "-A1" } }, "expect": { "texts": { "B2": "-2" } } }
+      ]
+    },
+    {
+      "name": "ADR-0050 item 5 (2026-09-28), SH-27: text that is not a Formula is written into every cell as typed",
+      "steps": [
+        { "do": { "enterInto": { "targets": ["A1:B1", "D4"], "at": "A1", "typed": "A1" } }, "expect": { "texts": { "A1": "A1", "B1": "A1", "D4": "A1" } } }
+      ]
+    },
+    {
+      "name": "ADR-0050 item 5 (2026-09-28), SH-27: the entered cell's format is not copied, as Excel's Ctrl+Enter does not copy it",
+      "steps": [
+        { "setNumberFormat": { "A1": "0.00" } },
+        { "enter": { "C1": "1", "D1": "1" } },
+        { "do": { "enterInto": { "targets": ["A1:B1"], "at": "A1", "typed": "=C1" } }, "expect": { "texts": { "A1": "1.00", "B1": "1" } } }
+      ]
+    },
+    {
+      "name": "ADR-0048, SH-27: a Ctrl+Enter over a range is one step, and its undo restores what it wrote over",
+      "steps": [
+        { "enter": { "A1": "old", "A2": "older" } },
+        { "remember": "before" },
+        { "do": { "enterInto": { "targets": ["A1:B2"], "at": "A1", "typed": "=C1" } } },
+        { "undo": "last", "expect": { "picture": "before" } }
+      ]
+    },
+    {
+      "name": "ADR-0034 / TYPED-054: a typed Formula that cannot be read is refused, and nothing is written",
+      "steps": [
+        { "do": { "enterInto": { "targets": ["A1:A2"], "at": "A1", "typed": "=1+" } }, "expect": { "throws": { "refusal": "formulaSyntax" }, "entries": { "A2": null } } }
+      ]
+    },
+    {
+      "name": "SH-27: the cell the text was entered in lies in the range it is written into",
+      "steps": [
+        { "do": { "enterInto": { "targets": ["A1:A2"], "at": "B1", "typed": "1" } }, "expect": { "throws": { "refusal": "argument" } } }
+      ]
+    }
+  ]
+}

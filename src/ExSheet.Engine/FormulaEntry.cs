@@ -751,7 +751,7 @@ public static partial class FormulaEntry
 
     /// <summary>What may follow the colon of a range still being typed: nothing yet, or the start of
     /// a cell's address (<c>B</c>, <c>$B$</c>, <c>B1</c> before the grammar reads it whole).</summary>
-    [GeneratedRegex(@"^\$?[A-Za-z]{0,3}\$?[0-9]{0,7}$", RegexOptions.CultureInvariant)]
+    [GeneratedRegex(@"^\$?[A-Za-z]{0,3}\$?[0-9]{0,7}\z", RegexOptions.CultureInvariant)]
     private static partial Regex SecondCornerBegun();
 
     private static bool IsFormula(string text, int caret)
@@ -776,10 +776,10 @@ public static partial class FormulaEntry
         return next is null || next.Kind is TokenKind.Close or TokenKind.Comma or TokenKind.Operator;
     }
 
-    [GeneratedRegex(@"^[A-Za-z_\\][A-Za-z0-9_.]*$", RegexOptions.CultureInvariant)]
+    [GeneratedRegex(@"^[A-Za-z_\\][A-Za-z0-9_.]*\z", RegexOptions.CultureInvariant)]
     private static partial Regex NamePattern();
 
-    [GeneratedRegex(@"^\$?[A-Za-z]{1,3}\$?[1-9][0-9]{0,6}(?::\$?[A-Za-z]{1,3}\$?[1-9][0-9]{0,6})?$", RegexOptions.CultureInvariant)]
+    [GeneratedRegex(@"^\$?[A-Za-z]{1,3}\$?[1-9][0-9]{0,6}(?::\$?[A-Za-z]{1,3}\$?[1-9][0-9]{0,6})?\z", RegexOptions.CultureInvariant)]
     private static partial Regex PointedPattern();
 
     private enum TokenKind

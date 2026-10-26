@@ -206,13 +206,25 @@ foreach (var row in rows)
 return answer.Build();</code></pre>
         <p>
             The bundled sources answer Level Aggregates too, without declaring them, and the TypeScript engine's answer
-            is theirs cell for cell, so a server built on one has nothing to write. ExPivot does not lay a report out
-            from them yet: either engine's cube refuses an answer of cells by name, and the report made from them, with
-            that check, comes with the TypeScript engine in 0.3.0, which is why there is no Example here. In
+            is theirs cell for cell, so a server built on one has nothing to write. In
             <code>@@ex-grid/pivot-engine</code> they are <code>levelQueryForLayout</code>, the fourth argument of
             <code>PivotSourceFeatures</code>, the builder's <code>addCell</code> and <code>setLevelSum</code>, and an
             answer's <code>isLevels</code>; <code>PivotJson</code> carries a question's <code>levels</code> and a level
             answer's cells, each double sum with its <code>absoluteSum</code>.
+        </p>
+        <p>
+            The TypeScript engine lays a report out from them. Its cube takes every total as the server answered it and
+            checks each set of groups shown below an expanded one against it: the records exactly, and the parts within
+            the rounding their order allows. A set that does not add up refuses the whole answer, naming the group
+            (<em>The server's answer for [Region=Text:EU] × [] does not add up: its sum of 'Amount' is not what its row
+            groups below compose to</em>), and no figure from it is shown. The report is the report the leaves make, to the
+            last bit: subtotals, grand totals, Show Values As and sorting by value are computed in the browser from the
+            same parts. A <code>LocalPivotReportSource</code> over a <code>FetchingPivotSource</code> that declares
+            <code>answersLevels</code> asks every question with the groups its layout shows, and a cube made from Level
+            Aggregates (<code>cube.isLevels</code>) holds only those, so an expand asks the server again, one round trip,
+            where a cube of leaves already holds it; a collapse of groups it holds is laid out from it. <code>ExPivot.Engine</code>'s cube still refuses an
+            answer of cells by name, and ExPivot moves onto the TypeScript engine in 0.3.0, which is why there is no
+            Example here.
         </p>
     </DocsSection>
 

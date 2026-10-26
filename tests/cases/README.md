@@ -418,10 +418,10 @@ does a check that says neither `is` nor `throws`, and a case that checks nothing
 ## `chart`
 
 ExChart's layout (ADR-0370, section 2): scales, ticks, Thinning, each Series Kind's steps and gaps, the
-scene and its legend, and the 3D surface, its slices and its mesh. Every file of `chart/` is of this kind, run by
-`tests/ExChart.Engine.Tests/Cases/ChartCase.cs` and `src/npm/chart/test/chart-case.ts`. A file may say
-`near`, how far a number may be from what a check expects in every case of the file, and `definitions`,
-named definitions a case refers to by their name.
+scene and its legend, what its tooltip, its summary and its files say, and the 3D surface, its slices and
+its mesh. Every file of `chart/` is of this kind, run by `tests/ExChart.Engine.Tests/Cases/ChartCase.cs`
+and `src/npm/chart/test/chart-case.ts`. A file may say `near`, how far a number may be from what a check
+expects in every case of the file, and `definitions`, named definitions a case refers to by their name.
 
 A case names one operation, or several under `"build": {name: operation}`, each answer then read under
 its name. An operation is one key, beside a `definition` or a `surface` where it reads one; with none, the
@@ -441,6 +441,9 @@ answer is the definition or the surface itself:
 | `"format": {format, value}` | A number written as the engine writes it with that .NET format (`0.####`, `0.##`, `R`, `G3`, `N0`) |
 | `"mesh": {}` | What the surface's 3D entry draws (`SurfaceMesh.Of`, `surfaceMesh`) |
 | `"slice": {axis, value}`, `"slicePath": {axis, value}` | A slice as a 2D chart (`null` where the surface holds no such slice), and its line on the surface |
+| `"reading": {metrics, view, style, independentScales, legend, at}` | The tooltip of the scene laid out with the same keys as `scene` (ADR-0270): `at` is `{position, panel, pointerY}` (`ChartReadings.At`, `readingAt`), `{mark}`, an index into the scene's marks (`OfMark`, `readingOfMark`), or `{edge}`, an index into its edge marks (`OfEdge`, `readingOfEdge`). Its `metrics` and `view` are always written, `{}` for the whole chart |
+| `"summary": {metrics, view, style, independentScales, legend, title, description}` | What a screen reader says of that scene (`ChartSummary.Of`, `chartSummary`, ADR-0275) |
+| `"csv": {form, metrics, view}` | The files (ticket 07): `form` `long` or `wide` answers the CSV, byte-order mark first (`ChartCsv.Long`/`Wide`, `chartCsvLong`/`chartCsvWide`), and `table` the `{header, rows}` "View as table" shows (`WideTable`, `chartTable`) |
 
 A definition, an axis and a series are written as the Script Core's options objects name them, each key
 optional where the options' is; a series that leaves out `kind` declares none. A position is a number or
@@ -718,3 +721,38 @@ is answered in turn:
 | `{"detailsEach": version}` | The question for the records behind every cell of that Window, resolved from its rows, and its records: a line a cell, `column: the row's Items / the column's / the Hidden Items -> total: each record` |
 
 A report source's refusal is `{"refused": kind, "field", "saying"}`; what it throws is a refusal as above.
+
+## ExSheet's engine, under `sheet/`
+
+The cases of ExSheet's engine (ADR-0370, section 2), beside `ExcelCases` and `ExcelOracle`, which hold
+Excel's own answers: xUnit runs them against `ExSheet.Engine` (`tests/ExSheet.Engine.Tests/Cases/`) and
+Vitest against `@ex-grid/sheet-engine` (`src/npm/sheet-engine/test/`). Each file of kind `sheet` names its
+`culture` (a .NET culture name, or `invariant`) and may name `setups`, lists of steps a case runs first by
+naming one in `setup`. A case may name its own `culture`, and `sheets` to start from more than one. A case
+goes in green on the C# engine first, and the xUnit test it transcribes is then deleted.
+
+A case is a list of steps on a Workbook. A step has one verb, and may name the Sheet it is `on`, a `note`, and
+what to `expect` after it. The verbs: `enter` (each cell typed alone, in order) and `enterAll` (one batch);
+`enterRun`, a `range` typed in one batch from a template naming each cell's row as `{row}` or `{row-1}`; `do`,
+a Sheet Edit done as a step, and `check`, the same edit only checked; `undo` and `redo` of the `last` step or
+of the step at an index among those done; `reopen` from the `document` or its `json`; `remember` a picture
+of the Workbook by name; `read`; `copy` a `range` `as` a name for a later `paste`; `setNumberFormat` and
+`setAlignment` directly, outside any step; `declareTable` and `pushTable` for a Linked Table; `setToday`,
+`setSeed` and `recalculateVolatile`. An edit is an object of one key, the factory, and its arguments, as
+`SheetEdit` takes them.
+
+An expectation names readings: per cell, `values` (a string is text, a number a double, `true`/`false` a
+Boolean, `null` a Blank, `{"error": "#N/A"}` an Error Value), `displays`, `texts`, `formulas`, `entryTexts`,
+`entries`, `numberFormats`, `alignments`, `fonts`, `fills`, `borders`, `widthOnEntry` and `spilledFrom`; of
+the Sheet, `document`, `columnWidths`, `entryAddresses` and `valueAddresses`; of the step, `change`,
+`refusal` (a `check`'s), `isUndone` and `ranges`; of the Workbook, `sheets`, `shown`, and `picture` or
+`pictureNot` against one remembered. An object or a list compares in full where it is written, and a number
+exactly (`-0` apart from `0`) unless it is `{"near", "within"}`.
+
+A step that throws is read as a refusal, `{"refusal": kind, "reason"?, "saying"?}`, by .NET's exception type
+on one side and the Script Core's error on the other: `formulaSyntax` (`FormulaSyntaxException`,
+`FormulaSyntaxError`), `refused` with its `reason` (`SheetRefusedException`, `SheetRefusedError`),
+`repeatedKey`, `document` (`SheetDocumentException`, `SheetDocumentError`), `argument` (`ArgumentException`,
+`RangeError`), `format` (`FormatException`, `FormatError`) and `invalidOperation`
+(`InvalidOperationException`, `Error`). What is not the engine refusing is never read as one: the runner's
+own reading of a malformed case, an engine defect, and what JavaScript throws by itself fail the case.

@@ -1,7 +1,7 @@
 {
   "name": "@ex-grid/chart",
   "version": "0.0.0-dev",
-  "description": "ExChart's layout in TypeScript: scales, ticks, Thinning, Series Kind steps and gaps, and the scene a chart is drawn from, free of any UI framework.",
+  "description": "ExChart's layout in TypeScript: scales, ticks, Thinning, Series Kind steps and gaps, the scene a chart is drawn from, and what its tooltip, its summary and its files say, free of any UI framework.",
   "license": "MIT",
   "repository": {
     "type": "git",

@@ -11,7 +11,8 @@
     "chart",
     "pivot-engine",
     "board",
-    "react"
+    "react",
+    "sheet-engine"
   ],
   "scripts": {
     "build": "npm run build --workspaces",

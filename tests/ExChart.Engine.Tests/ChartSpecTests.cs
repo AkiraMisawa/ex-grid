@@ -96,33 +96,5 @@ public class ChartSpecToolTests
     }
 }
 
-
-public class ChartSpecEdgeTests
-{
-    private static readonly ChartData Nodes = ChartData.Of(
-        ("id", new object?[] { 0, 1, 2 }), ("step", new object?[] { 0, 1, 1 }), ("price", new object?[] { 100m, 90m, 110m }),
-        ("probability", new object?[] { 1m, 0.5m, null }), ("exercise", new object?[] { "no", "yes", "no" }));
-
-    private static readonly ChartData Links = ChartData.Of(("from", new object?[] { "0", "0" }), ("to", new object?[] { "1", "2" }));
-
-    private static IChartData? Tables(string h) => h switch { "nodes" => Nodes, "links" => Links, _ => null };
-
-    private const string Spec = """
-        { "version": 1, "axis": { "values": "numbers", "title": "Step" },
-          "series": [ { "id": "t", "name": "Tree", "kind": "observation", "data": "nodes", "x": "step", "y": "price", "key": "id",
-                        "tooltip": ["probability"], "edges": { "data": "links", "from": "from", "to": "to" } } ] }
-        """;
-
-    [Fact] // ADR-0321: a node's tooltip and the table say the columns the spec names, and no other (what is read: spec-edges.json)
-    public void A_nodes_tooltip_says_the_columns_the_spec_names()
-    {
-        var d = ChartSpec.Read(Spec, Tables).Definition;
-        var scene = ChartScene.Build(d, new ChartMetrics(600, 400));
-        var mark = scene.Marks.ToList().FindIndex(m => m.Point == 1);
-        var note = ChartReadings.OfMark(d, scene, mark).Lines[0].Note;
-        Assert.Contains("probability 0.5", note);
-        Assert.DoesNotContain("exercise", note);
-        Assert.Contains("probability has no value", ChartReadings.OfMark(d, scene, scene.Marks.ToList().FindIndex(m => m.Point == 2)).Lines[0].Note);
-        Assert.Contains("probability", ChartCsv.WideTable(d, new ChartMetrics(600, 400)).Header);
-    }
-}
+// The tree of ADR-0321, its nodes and edges, is read by the shared cases of tests/cases/chart/spec-edges.json, and what its
+// tooltip and its table say by reading.json and csv.json.

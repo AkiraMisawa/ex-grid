@@ -16,7 +16,11 @@ namespace ExChart.Engine.Tests.Cases;
 internal sealed class ChartCase(JsonElement file, JsonElement entry)
 {
     private static readonly string[] Operations =
-        ["scene", "drawing", "thin", "through", "tenor", "nice", "steps", "decades", "logSteps", "fit", "horizontal", "candles", "legendMembers", "format", "appearance", "mesh", "slice", "slicePath"];
+        ["scene", "drawing", "thin", "through", "tenor", "nice", "steps", "decades", "logSteps", "fit", "horizontal", "candles", "legendMembers", "format", "appearance", "mesh", "slice", "slicePath",
+         "reading", "summary", "csv"];
+
+    // What a scene is laid out with, which the tooltip and the summary read their scene by.
+    private static readonly string[] SceneKeys = ["metrics", "view", "style", "independentScales", "legend"];
 
     private static readonly string[] CaseKeys = ["name", "build", "definition", "surface", "throws", "saying", "expect", .. Operations];
 
@@ -99,13 +103,50 @@ internal sealed class ChartCase(JsonElement file, JsonElement entry)
         switch (key)
         {
             case "scene":
+                Allow(args, "scene", SceneKeys);
+                return Scene(Definition(op.GetProperty("definition")), args);
+            case "reading":
             {
-                Allow(args, "scene", "metrics", "view", "style", "independentScales", "legend");
-                return ChartScene.Build(Definition(op.GetProperty("definition")), Metrics(args.GetProperty("metrics")),
-                    args.TryGetProperty("view", out var view) ? View(view) : null,
-                    args.TryGetProperty("style", out var style) ? Style(style) : null,
-                    args.TryGetProperty("independentScales", out var independent) ? independent.EnumerateArray().Select(s => s.GetString()!).ToHashSet() : null,
-                    args.TryGetProperty("legend", out var legend) ? Legend(legend) : null);
+                // The tooltip of the scene the case lays out, at a position, over a mark or over an edge.
+                Allow(args, "reading", [.. SceneKeys, "at"]);
+                var d = Definition(op.GetProperty("definition"));
+                // A reading names the view its scene is laid out with, as the tooltip is always read of one.
+                var view = View(args.GetProperty("view"));
+                var scene = Scene(d, args);
+                var at = args.GetProperty("at");
+                if (at.TryGetProperty("mark", out var mark))
+                {
+                    Allow(at, "at", "mark");
+                    return ChartReadings.OfMark(d, scene, mark.GetInt32());
+                }
+                if (at.TryGetProperty("edge", out var edge))
+                {
+                    Allow(at, "at", "edge");
+                    return ChartReadings.OfEdge(d, scene, edge.GetInt32());
+                }
+                Allow(at, "at", "position", "panel", "pointerY");
+                return ChartReadings.At(d, scene, Metrics(args.GetProperty("metrics")), view, Position(at.GetProperty("position")),
+                    at.GetProperty("panel").GetInt32(), Number(at.GetProperty("pointerY")));
+            }
+            case "summary":
+            {
+                Allow(args, "summary", [.. SceneKeys, "title", "description"]);
+                var d = Definition(op.GetProperty("definition"));
+                return ChartSummary.Of(d, Scene(d, args), View(args.GetProperty("view")), Text(args, "title"), Text(args, "description"));
+            }
+            case "csv":
+            {
+                Allow(args, "csv", "form", "metrics", "view");
+                var d = Definition(op.GetProperty("definition"));
+                var metrics = Metrics(args.GetProperty("metrics"));
+                var view = View(args.GetProperty("view"));
+                return args.GetProperty("form").GetString() switch
+                {
+                    "long" => ChartCsv.Long(d, metrics, view),
+                    "wide" => ChartCsv.Wide(d, metrics, view),
+                    "table" => ChartCsv.WideTable(d, metrics, view),
+                    var form => throw new InvalidOperationException($"\"{form}\" is not a form of the files; it is long, wide or table."),
+                };
             }
             case "drawing":
             {
@@ -173,6 +214,14 @@ internal sealed class ChartCase(JsonElement file, JsonElement entry)
                 throw new InvalidOperationException($"Internal: {key} is listed and not run.");
         }
     }
+
+    // The scene a case lays out: its metrics, and its view, style, independent panels and legend where it names them.
+    private static ChartScene Scene(ChartDefinition definition, JsonElement args) =>
+        ChartScene.Build(definition, Metrics(args.GetProperty("metrics")),
+            args.TryGetProperty("view", out var view) ? View(view) : null,
+            args.TryGetProperty("style", out var style) ? Style(style) : null,
+            args.TryGetProperty("independentScales", out var independent) ? independent.EnumerateArray().Select(s => s.GetString()!).ToHashSet() : null,
+            args.TryGetProperty("legend", out var legend) ? Legend(legend) : null);
 
     private ChartDefinition Definition(JsonElement e)
     {

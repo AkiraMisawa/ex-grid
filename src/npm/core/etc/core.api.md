@@ -7,6 +7,15 @@
 import type { SnapshotDecimal } from '@ex-grid/data';
 
 // @public
+export function actionColumn<Row>(name: string, actions: readonly GridAction[], options?: {
+    readonly header?: string;
+    readonly width?: GridColumnWidth;
+}): GridColumn<Row>;
+
+// @public
+export type ActionRefusalReason = 'rowLeftTheWindow' | 'orderMoved' | 'sourceChanged';
+
+// @public
 export type AggregateErrorKind = 'divideByZero' | 'notANumber' | 'errorAmongValues';
 
 // @public
@@ -213,6 +222,20 @@ export type FormatCodeReading = {
 export type FormatCodeValue = SnapshotDecimal | number | bigint;
 
 // @public
+export interface GridAction {
+    readonly className?: string;
+    readonly label: string;
+    readonly name: string;
+}
+
+// @public
+export interface GridActionEvent<Row> {
+    readonly action: string;
+    readonly column: string;
+    readonly row: Row;
+}
+
+// @public
 export interface GridChangeBatch<Row> {
     readonly added?: readonly Row[];
     readonly changed?: readonly Row[];
@@ -236,10 +259,12 @@ export interface GridClock {
 
 // @public
 export interface GridColumn<Row> extends QueryColumn<Row> {
+    readonly actions?: readonly GridAction[];
     readonly align?: CellAlign;
     readonly editable?: boolean;
     readonly filterUi?: FilterUi;
     readonly header?: string;
+    readonly template?: GridTemplate<Row>;
     readonly validate?: (row: Row, text: string) => EditVerdict;
     readonly width?: GridColumnWidth;
 }
@@ -372,6 +397,7 @@ export interface GridOptions<Row> {
     readonly highlightFocusRow?: boolean;
     readonly highlightHoverRow?: boolean;
     readonly locale?: string;
+    readonly onAction?: (event: GridActionEvent<Row>) => void;
     readonly onCellDoubleClick?: (cell: CellPosition) => void;
     readonly onClear?: (intent: GridClearIntent) => void;
     readonly onColumnHidden?: (column: string) => void;
@@ -384,7 +410,7 @@ export interface GridOptions<Row> {
     readonly onPaste?: (intent: GridPasteIntent) => void;
     readonly onPinnedCountChanged?: (count: number) => void;
     readonly onRedo?: () => void;
-    readonly onRefused?: (refusal: GridRefusal) => void;
+    readonly onRefused?: (refusal: GridRefusal<Row>) => void;
     readonly onReplace?: (request: GridReplaceRequest) => GridReplaceResult | Promise<GridReplaceResult>;
     readonly onSelectionChanged?: (selection: GridSelection) => void;
     readonly onUndo?: () => void;
@@ -444,7 +470,7 @@ export interface GridQuery {
 }
 
 // @public
-export type GridRefusal =
+export type GridRefusal<Row = unknown> =
 /** A copy that wrote nothing: the reason names the rule it hit (ADR-0005, ADR-0011). */
     {
     readonly kind: 'copy';
@@ -469,6 +495,15 @@ export type GridRefusal =
 | {
     readonly kind: 'find';
     readonly reason: FindRefusalReason;
+}
+/** An action press that raised nothing (ADR-0020, ADR-0142): the action named, in the column named, on
+* `row` while the Window still holds it and `undefined` where it does not (ADR-0160). */
+| {
+    readonly kind: 'action';
+    readonly reason: ActionRefusalReason;
+    readonly row: Row | undefined;
+    readonly column: string;
+    readonly action: string;
 };
 
 // @public
@@ -585,6 +620,17 @@ export type GridSummaryResult = {
     readonly kind: 'declined';
     readonly reason: string;
 };
+
+// @public
+export type GridTemplate<Row> = (slot: HTMLElement, cell: GridTemplateCell<Row>) => () => void;
+
+// @public
+export interface GridTemplateCell<Row> {
+    readonly column: string;
+    readonly focusRequest: number;
+    readonly row: Row;
+    readonly takeKeyboard: (control: HTMLElement) => void;
+}
 
 // @public
 export class GridViewState {
