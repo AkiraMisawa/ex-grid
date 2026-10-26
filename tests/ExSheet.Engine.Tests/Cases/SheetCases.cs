@@ -706,8 +706,14 @@ internal sealed class Run(CultureInfo culture)
                 outcome.Change = Workbook.SetToday(argument is null ? null : DateOnly.ParseExact((string)argument!, "yyyy-MM-dd", CultureInfo.InvariantCulture)).For(sheet);
                 break;
             case "setSeed":
-                outcome.Change = Workbook.SetSeed(argument is null ? null : ulong.Parse(argument.ToJsonString().Trim('"'), CultureInfo.InvariantCulture)).For(sheet);
+            {
+                // A seed, or {"seed", "changes"}: the seed and the count of changes together.
+                static ulong? Seed(JsonNode? node) => node is null ? null : ulong.Parse(node.ToJsonString().Trim('"'), CultureInfo.InvariantCulture);
+                outcome.Change = (argument is JsonObject both
+                    ? Workbook.SetSeed(Seed(both["seed"]), both["changes"]!.GetValue<long>())
+                    : Workbook.SetSeed(Seed(argument))).For(sheet);
                 break;
+            }
             case "getDisplay":
                 // A display asked for, so that a width refused is a refusal the step can expect.
                 _ = sheet.GetDisplay(CellAddress.Parse((string)argument["at"]!), SheetCases.Number(argument["width"]!));

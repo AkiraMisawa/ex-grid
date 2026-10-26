@@ -666,7 +666,8 @@ the case writes, `{"sheetJson": text}` or `{"workbookJson": text}`; `remember` a
 name; `read`; `copy` a `range` `as` a name for a later `paste`; `setNumberFormat`, `setAlignment`,
 `setCellFormat` (`ranges` and a `change`), `setColumnWidth` and `setAutomaticColumnWidth` (`columns` and a `width`)
 directly, outside any step; `declareTable` and `pushTable` for a
-Linked Table, and `readTable`, its columns by name, or `{"name", "as"}` to hold the snapshot read under a label; `setToday`, `setSeed` and `recalculateVolatile`; `setClock`, a clock that starts `from` a
+Linked Table, and `readTable`, its columns by name, or `{"name", "as"}` to hold the snapshot read under a label; `setToday`, `setSeed` (a seed, or `{"seed", "changes"}` to set the count of changes with it) and
+`recalculateVolatile`; `setClock`, a clock that starts `from` a
 moment written `yyyy-MM-ddTHH:mm:ss` and moves on a finite `step` of seconds each time it is read; and
 `getDisplay` of a cell `at` a `width`, so that a width refused is a refusal to expect; and `show`, the Sheet
 shown, by its name. Text a step types, and a text a reading of `formulas` or `entryTexts` expects, may be built

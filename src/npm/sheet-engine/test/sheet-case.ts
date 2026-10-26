@@ -612,9 +612,15 @@ class Run {
                 outcome.change = this.workbook.setToday({ year: Number(match[1]), month: Number(match[2]), day: Number(match[3]) }).for(sheet);
                 break;
             }
-            case 'setSeed':
-                outcome.change = this.workbook.setSeed(argument === null ? undefined : BigInt(typeof argument === 'number' ? argument : text(argument, 'setSeed'))).for(sheet);
+            case 'setSeed': {
+                // A seed, or {"seed", "changes"}: the seed and the count of changes together.
+                const seedOf = (node: Json | undefined): bigint | undefined =>
+                    node === null || node === undefined ? undefined : BigInt(typeof node === 'number' ? node : text(node, 'setSeed'));
+                outcome.change = (isObject(argument)
+                    ? this.workbook.setSeed(seedOf(argument['seed']), integer(argument['changes'], 'changes'))
+                    : this.workbook.setSeed(seedOf(argument))).for(sheet);
                 break;
+            }
             case 'getDisplay': {
                 // A display asked for, so that a width refused is a refusal the step can expect.
                 const asked = object(argument, 'getDisplay');

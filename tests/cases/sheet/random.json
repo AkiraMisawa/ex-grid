@@ -1,0 +1,335 @@
+{
+  "about": "RAND and RANDBETWEEN (ADR-0180, docs/specs/exsheet-functions ticket 15, SH-66): each draw a function of the Seed, the cell, the call's place in its Formula and the count of changes since the Workbook was opened. Excel's own numbers cannot be matched, since its generator is not documented, so these are the contract Excel documents and was seen to keep, with seed 42. A property of many draws is computed by the Sheet itself, in a cell beside them; where a fact is that draws agree or differ, the draws are written as both engines draw them, and the cases say which agree. The observations with one outcome are in ExcelCases/rand.json and randbetween.json. Transcribed from ExSheet.Engine.Tests' RandomTests.",
+  "kind": "sheet",
+  "culture": "en-US",
+  "cases": [
+    {
+      "name": "ADR-0180, SH-66: every draw of RAND lies in [0,1), and they spread over it (RAND-001's 128 recalculations)",
+      "note": "Each tenth of [0,1) holds some of 512 draws, and none holds most of them.",
+      "steps": [
+        {"setSeed": 42},
+        {"enterRun": {"range": "A1:A512", "typed": "=RAND()"}},
+        {"enter": {"B1": "=AND(MIN(A1:A512)>=0,MAX(A1:A512)<1)", "B2": "=ROWS(UNIQUE(A1:A512))", "C1": "=COUNTIFS(A1:A512,\">=\"&0/10,A1:A512,\"<\"&1/10)", "C2": "=COUNTIFS(A1:A512,\">=\"&1/10,A1:A512,\"<\"&2/10)", "C3": "=COUNTIFS(A1:A512,\">=\"&2/10,A1:A512,\"<\"&3/10)", "C4": "=COUNTIFS(A1:A512,\">=\"&3/10,A1:A512,\"<\"&4/10)", "C5": "=COUNTIFS(A1:A512,\">=\"&4/10,A1:A512,\"<\"&5/10)", "C6": "=COUNTIFS(A1:A512,\">=\"&5/10,A1:A512,\"<\"&6/10)", "C7": "=COUNTIFS(A1:A512,\">=\"&6/10,A1:A512,\"<\"&7/10)", "C8": "=COUNTIFS(A1:A512,\">=\"&7/10,A1:A512,\"<\"&8/10)", "C9": "=COUNTIFS(A1:A512,\">=\"&8/10,A1:A512,\"<\"&9/10)", "C10": "=COUNTIFS(A1:A512,\">=\"&9/10,A1:A512,\"<\"&10/10)", "D1": "=AND(MIN(C1:C10)>=20,MAX(C1:C10)<=90)"}, "expect": {"values": {"B1": true, "B2": 512, "D1": true}}}
+      ]
+    },
+    {
+      "name": "ADR-0180, SH-66: RANDBETWEEN draws a whole number between its bounds, both bounds drawn (RANDBETWEEN-001, 003): 1 to 3",
+      "steps": [
+        {"setSeed": 42},
+        {"enterRun": {"range": "A1:A64", "typed": "=RANDBETWEEN(1,3)"}},
+        {"enterRun": {"range": "C1:C64", "typed": "=A{row}-INT(A{row})"}},
+        {"enter": {"B1": "=MAX(C1:C64)", "B2": "=MIN(A1:A64)", "B3": "=MAX(A1:A64)", "B4": "=ROWS(UNIQUE(A1:A64))"}, "expect": {"values": {"B1": 0, "B2": 1, "B3": 3, "B4": 3}}}
+      ]
+    },
+    {
+      "name": "ADR-0180, SH-66: RANDBETWEEN draws a whole number between its bounds, both bounds drawn (RANDBETWEEN-001, 003): -3 to -1",
+      "steps": [
+        {"setSeed": 42},
+        {"enterRun": {"range": "A1:A64", "typed": "=RANDBETWEEN(-3,-1)"}},
+        {"enterRun": {"range": "C1:C64", "typed": "=A{row}-INT(A{row})"}},
+        {"enter": {"B1": "=MAX(C1:C64)", "B2": "=MIN(A1:A64)", "B3": "=MAX(A1:A64)", "B4": "=ROWS(UNIQUE(A1:A64))"}, "expect": {"values": {"B1": 0, "B2": -3, "B3": -1, "B4": 3}}}
+      ]
+    },
+    {
+      "name": "ADR-0180, SH-66: RANDBETWEEN draws a whole number between its bounds, both bounds drawn (RANDBETWEEN-001, 003): -1 to 1",
+      "steps": [
+        {"setSeed": 42},
+        {"enterRun": {"range": "A1:A64", "typed": "=RANDBETWEEN(-1,1)"}},
+        {"enterRun": {"range": "C1:C64", "typed": "=A{row}-INT(A{row})"}},
+        {"enter": {"B1": "=MAX(C1:C64)", "B2": "=MIN(A1:A64)", "B3": "=MAX(A1:A64)", "B4": "=ROWS(UNIQUE(A1:A64))"}, "expect": {"values": {"B1": 0, "B2": -1, "B3": 1, "B4": 3}}}
+      ]
+    },
+    {
+      "name": "ADR-0180, SH-66: RANDBETWEEN draws a whole number between its bounds, both bounds drawn (RANDBETWEEN-001, 003): 0 to 0",
+      "steps": [
+        {"setSeed": 42},
+        {"enterRun": {"range": "A1:A64", "typed": "=RANDBETWEEN(0,0)"}},
+        {"enterRun": {"range": "C1:C64", "typed": "=A{row}-INT(A{row})"}},
+        {"enter": {"B1": "=MAX(C1:C64)", "B2": "=MIN(A1:A64)", "B3": "=MAX(A1:A64)", "B4": "=ROWS(UNIQUE(A1:A64))"}, "expect": {"values": {"B1": 0, "B2": 0, "B3": 0, "B4": 1}}}
+      ]
+    },
+    {
+      "name": "ADR-0180, SH-66: the bounds at 2^53 are drawn exactly, past which a double no longer holds every whole number",
+      "steps": [
+        {"setSeed": 42},
+        {"enterRun": {"range": "A1:A32", "typed": "=RANDBETWEEN(-2^53,2^53)"}},
+        {"enter": {"B1": "=AND(MIN(A1:A32)>=-2^53,MAX(A1:A32)<=2^53)", "B2": "=RANDBETWEEN(2^53,2^53)", "B3": "=RANDBETWEEN(1,2^53+2)"}, "expect": {"values": {"B1": true, "B2": 9007199254740992, "B3": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0180: RANDBETWEEN reads a numeric string as its number, and a blank Reference as 0 (RANDBETWEEN-010, 011)",
+      "steps": [
+        {"setSeed": 42},
+        {"enterRun": {"range": "A1:A32", "typed": "=RANDBETWEEN(\"1\",3)"}},
+        {"enterRun": {"range": "B1:B32", "typed": "=RANDBETWEEN(Z1,3)"}},
+        {"enter": {"C1": "=AND(MIN(A1:A32)>=1,MAX(A1:A32)<=3)", "C2": "=AND(MIN(B1:B32)>=0,MAX(B1:B32)<=3)", "C3": "=COUNTIF(B1:B32,0)>0"}, "expect": {"values": {"C1": true, "C2": true, "C3": true}}}
+      ]
+    },
+    {
+      "name": "ADR-0180: a fractional bound and a bound past 2^53 are refused; a boolean is #VALUE! as observed, in a cell as typed: =RANDBETWEEN(1.5,3)",
+      "steps": [
+        {"setSeed": 42},
+        {"enter": {"Z2": "TRUE", "A1": "=RANDBETWEEN(1.5,3)"}, "expect": {"values": {"A1": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0180: a fractional bound and a bound past 2^53 are refused; a boolean is #VALUE! as observed, in a cell as typed: =RANDBETWEEN(1,2.5)",
+      "steps": [
+        {"setSeed": 42},
+        {"enter": {"Z2": "TRUE", "A1": "=RANDBETWEEN(1,2.5)"}, "expect": {"values": {"A1": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0180: a fractional bound and a bound past 2^53 are refused; a boolean is #VALUE! as observed, in a cell as typed: =RANDBETWEEN(1,1E+16)",
+      "steps": [
+        {"setSeed": 42},
+        {"enter": {"Z2": "TRUE", "A1": "=RANDBETWEEN(1,1E+16)"}, "expect": {"values": {"A1": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0180: a fractional bound and a bound past 2^53 are refused; a boolean is #VALUE! as observed, in a cell as typed: =RANDBETWEEN(-1E+16,1)",
+      "steps": [
+        {"setSeed": 42},
+        {"enter": {"Z2": "TRUE", "A1": "=RANDBETWEEN(-1E+16,1)"}, "expect": {"values": {"A1": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0180: a fractional bound and a bound past 2^53 are refused; a boolean is #VALUE! as observed, in a cell as typed: =RANDBETWEEN(Z2,3)",
+      "steps": [
+        {"setSeed": 42},
+        {"enter": {"Z2": "TRUE", "A1": "=RANDBETWEEN(Z2,3)"}, "expect": {"values": {"A1": {"error": "#VALUE!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0180: a fractional bound and a bound past 2^53 are refused; a boolean is #VALUE! as observed, in a cell as typed: =RANDBETWEEN(1,Z2)",
+      "steps": [
+        {"setSeed": 42},
+        {"enter": {"Z2": "TRUE", "A1": "=RANDBETWEEN(1,Z2)"}, "expect": {"values": {"A1": {"error": "#VALUE!"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0180: a fractional bound and a bound past 2^53 are refused; a boolean is #VALUE! as observed, in a cell as typed: =RANDBETWEEN(Z3:Z4,3)",
+      "steps": [
+        {"setSeed": 42},
+        {"enter": {"Z2": "TRUE", "A1": "=RANDBETWEEN(Z3:Z4,3)"}, "expect": {"values": {"A1": {"error": "#VALUE!", "refused": true}}}}
+      ]
+    },
+    {
+      "name": "ADR-0180, SH-66: two calls are two draws, in one Formula and in two cells",
+      "steps": [
+        {"setSeed": 42},
+        {"enter": {"A1": "=RAND()", "A2": "=RAND()", "B1": "=RAND()=RAND()", "B2": "=RAND()-RAND()<>0", "B3": "=A1<>A2"}, "expect": {"values": {"B1": false, "B2": true, "B3": true}}}
+      ]
+    },
+    {
+      "name": "ADR-0180, ADR-0181, SH-66: a LET binding is one draw however often it is read (LET-017, LET-018)",
+      "steps": [
+        {"setSeed": 42},
+        {"enter": {"A1": "=LET(x,RAND(),x-x)", "A2": "=LET(x,RAND(),x=x)", "A3": "=LET(x,RANDBETWEEN(1,1000000),y,x,x-y)", "A4": "=LET(x,RAND(),y,RAND(),x=y)"}, "expect": {"values": {"A1": 0, "A2": true, "A3": 0, "A4": false}}}
+      ]
+    },
+    {
+      "name": "ADR-0180, SH-66: everything that reads a draw in one recalculation reads the same Value, and follows it at each change",
+      "steps": [
+        {"setSeed": 42},
+        {"enter": {"A1": "=RAND()", "B1": "=A1*2", "C1": "=B1-A1-A1", "D1": "=B1=A1*2"}, "expect": {"values": {"C1": 0, "D1": true}}},
+        {"enter": {"Z9": "0"}, "expect": {"values": {"C1": 0, "D1": true}}},
+        {"enter": {"Z9": "1"}, "expect": {"values": {"C1": 0, "D1": true}}},
+        {"enter": {"Z9": "2"}, "expect": {"values": {"C1": 0, "D1": true}}},
+        {"enter": {"Z9": "3"}, "expect": {"values": {"C1": 0, "D1": true}}},
+        {"enter": {"Z9": "4"}, "expect": {"values": {"C1": 0, "D1": true}}}
+      ]
+    },
+    {
+      "name": "ADR-0180, SH-66, SH-17: the same Entries, seed and count of changes give the same draws, whatever order the cells were entered and computed in: entered forward",
+      "note": "The three cases expect the same Values.",
+      "steps": [
+        {"enter": {"A1": "=RAND()"}},
+        {"enter": {"A2": "=RANDBETWEEN(1,100)"}},
+        {"enter": {"A3": "=A1+A2"}},
+        {"enter": {"A4": "=LET(x,RAND(),x*2)"}},
+        {"enter": {"A5": "=RAND()+RAND()"}},
+        {"setSeed": {"seed": 42, "changes": 7}, "expect": {"values": {"A1": 0.385285389296535, "A2": 100, "A3": 100.38528538929654, "A4": 1.9603902619194438, "A5": 1.2378439362185407}}}
+      ]
+    },
+    {
+      "name": "ADR-0180, SH-66, SH-17: the same Entries, seed and count of changes give the same draws, whatever order the cells were entered and computed in: entered backward",
+      "note": "The three cases expect the same Values.",
+      "steps": [
+        {"enter": {"A5": "=RAND()+RAND()"}},
+        {"enter": {"A4": "=LET(x,RAND(),x*2)"}},
+        {"enter": {"A3": "=A1+A2"}},
+        {"enter": {"A2": "=RANDBETWEEN(1,100)"}},
+        {"enter": {"A1": "=RAND()"}},
+        {"setSeed": {"seed": 42, "changes": 7}, "expect": {"values": {"A1": 0.385285389296535, "A2": 100, "A3": 100.38528538929654, "A4": 1.9603902619194438, "A5": 1.2378439362185407}}}
+      ]
+    },
+    {
+      "name": "ADR-0180, SH-66, SH-17: the same Entries, seed and count of changes give the same draws, whatever order the cells were entered and computed in: entered at once",
+      "note": "The three cases expect the same Values.",
+      "steps": [
+        {"enterAll": {"A1": "=RAND()", "A2": "=RANDBETWEEN(1,100)", "A3": "=A1+A2", "A4": "=LET(x,RAND(),x*2)", "A5": "=RAND()+RAND()"}},
+        {"setSeed": {"seed": 42, "changes": 7}, "expect": {"values": {"A1": 0.385285389296535, "A2": 100, "A3": 100.38528538929654, "A4": 1.9603902619194438, "A5": 1.2378439362185407}}}
+      ]
+    },
+    {
+      "name": "ADR-0180, SH-66: another seed or another count draws otherwise",
+      "note": "A1 is the first case's 42-and-7 draw only under that seed and count.",
+      "steps": [
+        {"enterAll": {"A1": "=RAND()", "A2": "=RANDBETWEEN(1,100)", "A3": "=A1+A2", "A4": "=LET(x,RAND(),x*2)", "A5": "=RAND()+RAND()"}},
+        {"setSeed": {"seed": 43, "changes": 7}, "expect": {"values": {"A1": 0.2693512200274153}}},
+        {"setSeed": {"seed": 42, "changes": 8}, "expect": {"values": {"A1": 0.8686679028186594}}}
+      ]
+    },
+    {
+      "name": "ADR-0180, SH-66: a change draws again; the clock, a format and a seed's own recalculation do not",
+      "steps": [
+        {"setSeed": 42},
+        {"setClock": {"from": "2026-10-11T09:00:00", "step": 60}},
+        {"setToday": "2026-10-11"},
+        {"enter": {"A1": "=RAND()", "B1": "=NOW()+TODAY()"}, "expect": {"values": {"A1": 0.7788339680754898}}},
+        {"recalculateVolatile": true},
+        {"setToday": "2026-10-12"},
+        {"do": {"setNumberFormat": {"at": "A1", "format": "0.00"}}},
+        {"do": {"setColumnWidth": {"columns": "A:A", "width": 20}}, "expect": {"values": {"A1": 0.7788339680754898}}},
+        {"enter": {"Z1": "x"}, "expect": {"values": {"A1": 0.08193086953680107}}}
+      ]
+    },
+    {
+      "name": "ADR-0180, SH-66: each kind of change counts once: an edit, an insertion, a deletion, an undo, a redo, a snapshot, a declaration, a rename; and nothing else counts",
+      "steps": [
+        {"setSeed": 42},
+        {"declareTable": {"name": "Rates", "columns": ["Pair", "Spot"]}},
+        {"enter": {"A1": "=RAND()"}, "expect": {"workbook": {"changes": 2}}},
+        {"enter": {"B1": "1"}, "expect": {"workbook": {"changes": 3}}, "note": "+1"},
+        {"enterAll": {"B2": "2", "B3": "3"}, "expect": {"workbook": {"changes": 4}}, "note": "+1"},
+        {"enter": {"B1": "1"}, "expect": {"workbook": {"changes": 4}}, "note": "+0: nothing changed"},
+        {"do": {"insertRows": [5]}, "expect": {"workbook": {"changes": 5}}, "note": "+1"},
+        {"undo": "last", "expect": {"workbook": {"changes": 6}}, "note": "+1: an inverse insertion and the cells put back are one change"},
+        {"redo": "last", "expect": {"workbook": {"changes": 7}}, "note": "+1"},
+        {"do": {"deleteRows": [8]}, "expect": {"workbook": {"changes": 8}}, "note": "+1"},
+        {"do": {"fill": {"source": "B1", "target": "B1:B4", "direction": "down"}}, "expect": {"workbook": {"changes": 9}}, "note": "+1"},
+        {"undo": "last", "expect": {"workbook": {"changes": 10}}, "note": "+1"},
+        {"pushTable": {"name": "Rates", "rows": [["EURUSD", 1.08]]}, "expect": {"workbook": {"changes": 11}}, "note": "+1"},
+        {"pushTable": {"name": "Rates", "rows": [["EURUSD", 1.08]]}, "expect": {"workbook": {"changes": 12}}, "note": "+1: the same rows again are a refresh, as Excel's"},
+        {"declareTable": {"name": "Fx", "columns": ["Pair"]}, "expect": {"workbook": {"changes": 13}}, "note": "+1: a new declaration"},
+        {"declareTable": {"name": "Fx", "columns": ["Pair"]}, "expect": {"workbook": {"changes": 13}}, "note": "+0: the same one again"},
+        {"declareTable": {"name": "Fx", "columns": ["Pair", "Spot"], "key": "Pair"}, "expect": {"workbook": {"changes": 14}}, "note": "+1: one that replaces it"},
+        {"do": {"rename": "Prices"}, "expect": {"workbook": {"changes": 15}}, "note": "+1"},
+        {"undo": "last", "expect": {"workbook": {"changes": 16}}, "note": "+1"},
+        {"redo": "last", "expect": {"workbook": {"changes": 17}}, "note": "+1"},
+        {"do": {"rename": "Prices"}, "expect": {"workbook": {"changes": 17}}, "note": "+0: the same name"},
+        {"do": {"setNumberFormat": {"at": "A1:B4", "format": "0.00"}}, "expect": {"workbook": {"changes": 17}}, "note": "+0"},
+        {"do": {"setColumnWidth": {"columns": "A:B", "width": 12}}, "expect": {"workbook": {"changes": 17}}, "note": "+0"},
+        {"recalculateVolatile": true, "expect": {"workbook": {"changes": 17}}, "note": "+0"},
+        {"setToday": "2026-10-11", "expect": {"workbook": {"changes": 17}}, "note": "+0"},
+        {"setSeed": 43, "expect": {"workbook": {"changes": 17}}, "note": "+0"}
+      ]
+    },
+    {
+      "name": "ADR-0180, ADR-0048: a paste over several ranges, and one of typed fields with exact Entries, is one change, and so is its undo and its redo",
+      "steps": [
+        {"setSeed": 42},
+        {"enter": {"A1": "=RAND()", "B1": "=ROW()"}},
+        {"copy": {"range": "B1", "as": "block"}, "expect": {"workbook": {"changes": 2}}},
+        {"do": {"paste": {"copy": "block", "at": ["B2", "D2:D5", "F1"]}}, "expect": {"workbook": {"changes": 3}}, "note": "+1"},
+        {"undo": "last", "expect": {"workbook": {"changes": 4}}, "note": "+1"},
+        {"redo": "last", "expect": {"workbook": {"changes": 5}}, "note": "+1"},
+        {"do": {"pasteFields": {"typed": {"C1": "50%", "C2": "=C1*2"}, "entries": {"C3": {"constant": 0.30000000000000004}}}}, "expect": {"workbook": {"changes": 6}}, "note": "+1"},
+        {"undo": "last", "expect": {"workbook": {"changes": 7}}, "note": "+1"},
+        {"redo": "last", "expect": {"workbook": {"changes": 8}}, "note": "+1"}
+      ]
+    },
+    {
+      "name": "ADR-0180 (2026-10-11): declaring a Linked Table, or replacing its declaration, is a change and draws again, whether or not a Formula reads the table",
+      "steps": [
+        {"setSeed": 42},
+        {"enter": {"A1": "=RAND()"}, "expect": {"values": {"A1": 0.7341710652083572}}},
+        {"declareTable": {"name": "Rates", "columns": ["Pair", "Spot"]}, "expect": {"values": {"A1": 0.7788339680754898}}, "note": "draws again"},
+        {"declareTable": {"name": "Rates", "columns": ["Pair", "Spot"]}, "expect": {"values": {"A1": 0.7788339680754898}}, "note": "the same declaration: the same draw"},
+        {"declareTable": {"name": "Rates", "columns": ["Pair", "Spot", "Asof"]}, "expect": {"values": {"A1": 0.08193086953680107}}, "note": "draws again"}
+      ]
+    },
+    {
+      "name": "ADR-0180, the seventeenth Windows run's b3: a snapshot draws again whatever its rows, the same rows pushed again included, as each of Excel's refreshes drew again with the file unchanged",
+      "steps": [
+        {"setSeed": 42},
+        {"declareTable": {"name": "Rates", "columns": ["Pair", "Spot"], "key": "Pair"}},
+        {"enter": {"A1": "=RAND()", "B1": "=SUM(Rates[Spot])"}, "expect": {"values": {"A1": 0.08193086953680107}}},
+        {"pushTable": {"name": "Rates", "rows": [["EURUSD", 1.08], ["USDJPY", 150]]}, "expect": {"values": {"A1": 0.3633981653496534}}},
+        {"pushTable": {"name": "Rates", "rows": [["EURUSD", 1.08], ["USDJPY", 150]]}, "expect": {"values": {"A1": 0.8552315007336788}}, "note": "unchanged data: a refresh still draws again"},
+        {"pushTable": {"name": "Rates", "rows": [["EURUSD", 1.08], ["USDJPY", 150]]}, "expect": {"values": {"A1": 0.14277424775873881, "B1": {"near": 151.08, "within": 1e-10}}}},
+        {"pushTable": {"name": "Rates", "rows": [["EURUSD", 1.08], ["USDJPY", 151]]}, "expect": {"values": {"A1": 0.385285389296535, "B1": {"near": 152.08, "within": 1e-10}}}},
+        {"declareTable": {"name": "Rates", "columns": ["Pair", "Spot"], "key": "Pair"}, "expect": {"values": {"A1": 0.385285389296535}}, "note": "the same declaration again is no refresh: nothing changed"}
+      ]
+    },
+    {
+      "name": "ADR-0180 (2026-10-11), the seventeenth Windows run's b2: renaming the Sheet is a change, and so are its undo and redo, as Excel drew again on the rename and its undo; INDIRECT still reads by the Sheet's name",
+      "steps": [
+        {"setSeed": 42},
+        {"enter": {"A1": "=RAND()", "A2": "=RANDBETWEEN(1,1000000)", "B1": "7", "C1": "=INDIRECT(\"Prices!B1\")+RAND()*0"}, "expect": {"values": {"A1": 0.3633981653496534, "A2": 518604, "C1": {"error": "#REF!"}}, "workbook": {"changes": 4}}},
+        {"do": {"rename": "Prices"}, "expect": {"values": {"A1": 0.3998813665621632, "A2": 931873, "C1": 7}, "workbook": {"changes": 5}}, "note": "INDIRECT's text names the Sheet now"},
+        {"undo": "last", "expect": {"values": {"A1": 0.14277424775873881, "A2": 522557, "C1": {"error": "#REF!"}}, "workbook": {"changes": 6}, "sheets": ["Sheet1"]}},
+        {"redo": "last", "expect": {"values": {"A1": 0.11849676584806546, "A2": 688974, "C1": 7}, "workbook": {"changes": 7}}},
+        {"do": {"rename": "Costs"}, "expect": {"values": {"A1": 0.37965926758355584, "A2": 233304, "C1": {"error": "#REF!"}}, "workbook": {"changes": 8}}}
+      ]
+    },
+    {
+      "name": "ADR-0180: a rename to the name the Sheet already has changes nothing, so it draws nothing, nor does its undo or redo",
+      "steps": [
+        {"setSeed": 42},
+        {"enter": {"A1": "=RAND()"}, "expect": {"values": {"A1": 0.7341710652083572}, "workbook": {"changes": 1}}},
+        {"do": {"rename": "Sheet1"}, "expect": {"change": {"valueChanges": []}}},
+        {"undo": "last"},
+        {"redo": "last"},
+        {"read": true, "expect": {"values": {"A1": 0.7341710652083572}, "workbook": {"changes": 1}}}
+      ]
+    },
+    {
+      "name": "ADR-0180, the seventeenth Windows run's b1: an undo and a redo are changes like any other, so the Values they bring back draw anew, never an earlier draw, as Excel's did each time",
+      "steps": [
+        {"setSeed": 42},
+        {"enter": {"A1": "=RAND()"}, "expect": {"values": {"A1": 0.7341710652083572}}},
+        {"do": {"enter": {"B1": "1"}}, "expect": {"values": {"A1": 0.7788339680754898}}},
+        {"undo": "last", "expect": {"entries": {"B1": null}, "values": {"A1": 0.08193086953680107}}},
+        {"redo": "last", "expect": {"values": {"B1": 1, "A1": 0.3633981653496534}}},
+        {"undo": "last", "expect": {"entries": {"B1": null}, "values": {"A1": 0.8552315007336788}}},
+        {"redo": "last", "expect": {"values": {"B1": 1, "A1": 0.14277424775873881}}}
+      ]
+    },
+    {
+      "name": "ADR-0180, SH-66: a Sheet whose seed was never set waits, whichever branch the Formula takes, and draws once it is given one",
+      "steps": [
+        {"enter": {"A1": "=RAND()", "A2": "=IF(TRUE,1,RANDBETWEEN(1,6))", "A3": "=IFERROR(RAND(),0)", "A4": "=A1*2", "B1": "=AND(A1>=0,A1<1)", "B2": "=A4=A1*2"}, "expect": {"workbook": {"seed": null}, "values": {"A1": {"error": "#GETTING_DATA"}, "A2": {"error": "#GETTING_DATA"}, "A3": {"error": "#GETTING_DATA"}, "A4": {"error": "#GETTING_DATA"}}}},
+        {"setSeed": 42, "expect": {"values": {"B1": true, "A2": 1, "B2": true}}},
+        {"setSeed": null, "expect": {"values": {"A1": {"error": "#GETTING_DATA"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0180, ADR-0048, SH-66: the Sheet Document records neither seed nor draw, and a Sheet opened from one counts its changes from 0",
+      "steps": [
+        {"setSeed": 42},
+        {"enter": {"A1": "=RAND()", "B1": "1"}, "expect": {"documentJson": "{\"version\":9,\"culture\":\"en-US\",\"name\":\"Sheet1\",\"cells\":[{\"at\":\"A1\",\"formula\":\"=RAND()\"},{\"at\":\"B1\",\"number\":1}]}"}},
+        {"reopen": {"sheet": "Sheet1"}, "expect": {"workbook": {"changes": 0, "seed": null}, "values": {"A1": {"error": "#GETTING_DATA"}}}}
+      ]
+    },
+    {
+      "name": "ADR-0180, SH-17: a document's Values computed by the engine alone, given the same seed and count of changes, equal the Sheet's own",
+      "steps": [
+        {"setSeed": 42},
+        {"enter": {"A1": "=RAND()", "A2": "=RANDBETWEEN(1,6)+A1"}},
+        {"do": {"insertRows": [0]}},
+        {"enter": {"B1": "=LET(x,RAND(),x*100)"}, "expect": {"workbook": {"changes": 4}}},
+        {"remember": "own"},
+        {"reopen": {"sheet": "Sheet1"}},
+        {"setSeed": {"seed": 42, "changes": 4}, "expect": {"picture": "own"}}
+      ]
+    },
+    {
+      "name": "ADR-0180: the count of changes is never negative",
+      "steps": [
+        {"setSeed": {"seed": 42, "changes": -1}, "expect": {"throws": {"refusal": "argument"}}}
+      ]
+    }
+  ]
+}
