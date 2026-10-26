@@ -715,6 +715,21 @@ against a **Refusal**, which judges the operation
 ([ADR-0034](./docs/adr/0034-validation-is-a-consumer-verdict-enforced-only-at-the-editor.md)).
 _Avoid_: validation result, error (that is a Cell State), refusal (that judges the operation)
 
+**Pending Commit**:
+A commit whose Edit Verdict, or whose Edit Intent's refusal, the Consumer has not answered yet. The
+Cell Editor stands with the text, nothing is applied, and every input made meanwhile waits to be taken
+after the answer, against what the answer left; Escape alone acts ahead of its turn and cancels it
+([ADR-0380](./docs/adr/0380-a-verdict-or-a-refusal-may-be-answered-later-and-the-next-input-waits-for-it.md)).
+_Avoid_: loading, validating, async edit
+
+**Breach**:
+One rule's complaint over the whole collection, not one row: its message and the cells it involves,
+named by Row Key and column, wherever those rows stand. It is judged after apply, painted as Error on
+every cell it names, and refused at the Consumer's own save, never at the Cell Editor, because the way
+to a valid collection often passes through invalid ones
+([ADR-0381](./docs/adr/0381-a-rule-over-the-whole-collection-is-judged-after-apply-and-refused-at-the-consumers-save.md)).
+_Avoid_: violation (that is one row's), constraint error, conflict
+
 **Context Menu**:
 The menu a secondary click opens over the grid. Its items are Commands the core decides and the
 Consumer extends, and Chrome only lays them out — the same ownership the column menu has. A
