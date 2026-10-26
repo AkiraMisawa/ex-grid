@@ -243,6 +243,9 @@ export interface FixedColumnWidth {
 }
 
 // @public
+export function formulaBarHeight(density: GridDensity, rowHeight?: number): number;
+
+// @public
 export interface FormulaBarOptions<Row> {
     readonly formulaBarBorrowedText?: (row: Row, column: GridColumn<Row>) => string | undefined;
     readonly nameBoxLabel?: (cell: CellPosition) => string;
@@ -401,7 +404,11 @@ export type GridFindResult = {
 // @public
 export interface GridHandle<Row> {
     destroy(): void;
+    focus(): void;
+    keyName(event: KeyboardEvent): string;
     placeSelection(range: SelectionRange, focus: CellPosition, rowSequenceVersion: number): boolean;
+    readView(): GridViewRead;
+    showViewWith(view: GridViewRead, rowSequenceVersion: number): void;
     update(options: GridOptions<Row>): void;
 }
 
@@ -432,6 +439,7 @@ export interface GridOptions<Row> extends CellPaintOptions<Row>, FormulaBarOptio
     readonly commandLabel?: (id: string) => string | undefined;
     readonly contextCommands?: (context: GridContextMenuContext<Row>) => readonly GridCommand[];
     readonly copyCellCap?: number;
+    readonly dataEdge?: (from: CellPosition, direction: GridDirection) => CellPosition;
     readonly density?: GridDensity;
     readonly findMatch?: (row: Row, column: GridColumn<Row>, pattern: GridFindPattern) => boolean;
     readonly findsHeaders?: boolean;
@@ -702,6 +710,14 @@ export interface GridTextGeometry {
 export function gridTextGeometry(options?: {
     readonly density?: GridDensity;
 }): GridTextGeometry;
+
+// @public
+export interface GridViewRead {
+    readonly rowSequenceVersion: number;
+    readonly scrollLeftPx: number;
+    readonly scrollTopPx: number;
+    readonly selection: GridSelection;
+}
 
 // @public
 export class InMemoryGridSource<Row> implements GridSource<Row> {
