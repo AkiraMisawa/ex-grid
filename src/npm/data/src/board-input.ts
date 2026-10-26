@@ -288,8 +288,8 @@ function decimalOfNumber(raw: string): SnapshotDecimal | undefined {
     let digits = (whole + fraction).replace(/^0+(?=\d)/u, '');
     let places = fraction.length - Number(exponent);
     // A decimal has at most 29 digits, so an exponent past them is refused before its zeros are written out.
-    if (places < -29) return undefined;
     if (/^0+$/u.test(digits)) return canonicalDecimal(0n, 0);
+    if (places < -29) return undefined;
     while (places > 0 && digits.endsWith('0')) {
         digits = digits.slice(0, -1);
         places--;
