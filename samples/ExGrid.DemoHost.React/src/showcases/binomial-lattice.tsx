@@ -305,7 +305,7 @@ export function BinomialLatticeShowcase(): ReactElement {
                                 width={chartWidth} height={convergenceHeight} />
                         </div>
                         <div className="xs-panel xs-bin-grid">
-                            <ExGrid columns={columns} source={priced.source} viewportHeight={320} viewportWidth="stretch" />
+                            <ExGrid hideColumnMenu columns={columns} source={priced.source} viewportHeight={320} viewportWidth="stretch" />
                         </div>
                     </div>
                 </div>

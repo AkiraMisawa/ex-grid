@@ -102,7 +102,7 @@ export function CdsSpreadShowcase(): ReactElement {
                 {refusal === undefined ? null : <p className="xs-refusal" role="alert">{refusal}</p>}
                 <div className="xs-side">
                     <div className="xs-panel xs-side-grid">
-                        <ExGrid ref={grid} columns={columns} source={source} viewportHeight={470} viewportWidth="stretch" />
+                        <ExGrid ref={grid} hideColumnMenu columns={columns} source={source} viewportHeight={470} viewportWidth="stretch" />
                     </div>
                     <div className="xs-panel">
                         <ExChart definition={definition} title={title} fileName={title} width={680} height={440}

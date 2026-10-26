@@ -86,4 +86,8 @@ export const demoPages: readonly DemoPage[] = Object.freeze([
         route: 'chart-showcase/binomial-lattice', title: 'Binomial lattice showcase', group: 'ExChart',
         description: 'The Docs Site\'s Binomial lattice Showcase: an option priced on a CRR lattice, its nodes in a grid and on a chart coloured by value with early exercise ringed, the lattice price by N against Black–Scholes, and a light/dark switch in the bar (ADR-0280).',
     },
+    {
+        route: 'chart-showcase/curves', title: 'Curves showcase', group: 'ExChart',
+        description: 'The Docs Site\'s Curves Showcase: a CDS curve with its hazard rates as steps, CDS curves charted from rows across tenors, and a rate curve with its interpolation named, switched in the bar (ADR-0280).',
+    },
 ]);

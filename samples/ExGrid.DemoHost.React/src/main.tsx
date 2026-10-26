@@ -25,6 +25,7 @@ import { Wide } from './pages/wide';
 import { navigateTo, Router } from './router';
 import { BinomialLatticeShowcase } from './showcases/binomial-lattice';
 import { CdsSpreadShowcase } from './showcases/cds-spread';
+import { CurvesShowcase } from './showcases/curves';
 import { EquityIndexShowcase } from './showcases/equity-index';
 import { ExposureShowcase } from './showcases/exposure';
 import { FxVolatilityShowcase } from './showcases/fx-volatility';
@@ -41,7 +42,7 @@ window.exDemo = Object.freeze({ navigateTo });
 const pages = { '': Home, virtual: Virtual, wide: Wide, fetch: Fetch, features: Features, 'filter-panel': FilterPanel, cells: Cells, chart: Chart, 'chart-bridge': ChartBridge, 'chart-candles': ChartCandles, scatter: Scatter, surface: Surface,
     'chart-showcase/exposure': ExposureShowcase, 'chart-showcase/cds-spread': CdsSpreadShowcase,
     'chart-showcase/fx-volatility': FxVolatilityShowcase, 'chart-showcase/equity-index': EquityIndexShowcase,
-    'chart-showcase/binomial-lattice': BinomialLatticeShowcase,
+    'chart-showcase/binomial-lattice': BinomialLatticeShowcase, 'chart-showcase/curves': CurvesShowcase,
     pivot: Pivot,
     sheet: SheetDemo,
     marks: Marks,

@@ -118,7 +118,7 @@ function SurfaceView(): ReactElement {
             </p>
             <div className="xs-fx-row">
                 <div className="xs-panel xs-fx-quotes">
-                    <ExGrid columns={quoteColumns} source={quoteSource} headerGroups={quoteGroups} pinnedColumnCount={1}
+                    <ExGrid hideColumnMenu columns={quoteColumns} source={quoteSource} headerGroups={quoteGroups} pinnedColumnCount={1}
                         viewportHeight={344} viewportWidth="stretch" temporal={Temporal} />
                 </div>
                 <div className="xs-panel">
@@ -204,7 +204,7 @@ function ForwardsView(): ReactElement {
                 pips, the outright less spot.
             </p>
             <div className="xs-panel">
-                <ExGrid columns={forwardColumns} source={forwardSource} headerGroups={forwardGroups} pinnedColumnCount={1}
+                <ExGrid hideColumnMenu columns={forwardColumns} source={forwardSource} headerGroups={forwardGroups} pinnedColumnCount={1}
                     viewportHeight={300} viewportWidth="stretch" temporal={Temporal} />
             </div>
             <div className="xs-panel">

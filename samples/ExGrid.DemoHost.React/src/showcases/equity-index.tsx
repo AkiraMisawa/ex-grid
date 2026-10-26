@@ -152,7 +152,7 @@ function BarsView(): ReactElement {
             </div>
             <div className="xs-side">
                 <div className="xs-panel xs-side-grid">
-                    <ExGrid ref={grid} columns={columns} source={source} pinnedColumnCount={1}
+                    <ExGrid ref={grid} hideColumnMenu columns={columns} source={source} pinnedColumnCount={1}
                         viewportHeight={520} viewportWidth="stretch" temporal={Temporal} />
                 </div>
                 <div className={`xs-panel xs-candles-${colours}`}>

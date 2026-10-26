@@ -126,7 +126,7 @@ export function ExposureShowcase(): ReactElement {
                     each bucket, drawn per year over its bucket; a Diff that crosses zero gets a panel of its own.
                 </p>
                 <div className="xs-panel">
-                    <ExGrid ref={grid} columns={columns} source={source} headerGroups={groups} pinnedColumnCount={1}
+                    <ExGrid ref={grid} hideColumnMenu columns={columns} source={source} headerGroups={groups} pinnedColumnCount={1}
                         contextCommands={bridge.commands} commandLabel={gridChartCommandLabel}
                         viewportHeight={260} viewportWidth="stretch" temporal={Temporal} />
                 </div>
