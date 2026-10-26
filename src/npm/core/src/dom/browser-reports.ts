@@ -44,9 +44,10 @@ export interface BrowserReports {
      * it held; a write the browser refuses rejects with the browser's error.
      */
     writeClipboard(element: HTMLElement, flavours: Promise<CopyFlavours | undefined>): Promise<boolean>;
-    /** Hears each change of the clipboard, by any write, the grid's own included (ADR-0170): `undefined`
-     * where the browser cannot say the clipboard changed, and the grid then outlines no copy. */
-    observeClipboard(element: HTMLElement, tell: () => void): (() => void) | undefined;
+    /** Hears each change of the clipboard, by any write, the grid's own included (ADR-0170), told with the change
+     * itself, which every grid of the document hears alike: `undefined` where the browser cannot say the
+     * clipboard changed, and the grid then outlines no copy. */
+    observeClipboard(element: HTMLElement, tell: (change: object) => void): (() => void) | undefined;
 }
 
 /**
@@ -146,7 +147,7 @@ export const browserReports: BrowserReports = Object.freeze({
             throw error;
         });
     },
-    observeClipboard(element: HTMLElement, tell: () => void): (() => void) | undefined {
+    observeClipboard(element: HTMLElement, tell: (change: object) => void): (() => void) | undefined {
         const view = element.ownerDocument.defaultView;
         if (view === null) throw new Error('The grid\'s element is in a document with no window: it has no clipboard.');
         // A browser before Chrome 143 has no clipboardchange, and an insecure context no clipboard at all.
@@ -154,7 +155,7 @@ export const browserReports: BrowserReports = Object.freeze({
         if (typeof Reflect.get(view, 'ClipboardChangeEvent') !== 'function' || typeof clipboard?.addEventListener !== 'function') {
             return undefined;
         }
-        const heard = (): void => { tell(); };
+        const heard = (change: Event): void => { tell(change); };
         clipboard.addEventListener('clipboardchange', heard);
         return () => { clipboard.removeEventListener('clipboardchange', heard); };
     },

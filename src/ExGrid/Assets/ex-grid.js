@@ -112,6 +112,41 @@ export function focusBox(element) {
     return document.activeElement === target;
 }
 
+// Whose write a change of the clipboard reports (ADR-0170). The browser says only that the clipboard
+// changed, to every listener of the page at once, and says it a while after the write: the change can be
+// heard after a second grid has copied. Counted per grid, the first grid's late change was taken by the
+// second as its own, and the second grid's own change then dropped its outline (CP-27 on the React host,
+// whose core counted the same way). Every grid of the page therefore counts its writes here, in the
+// order they were made, and each change reports the earliest write still unreported, once for every
+// listener that hears it. A write by the asynchronous route is counted before the browser makes it, and
+// one counted before it lands may land on either side of it: both are uncertain, and neither is taken as
+// its grid's own. Once no grid is left to hear a change, nothing is counted.
+const clipboardLedger = { pending: [], heard: new WeakMap(), listeners: new Set() };
+const countWrite = (owner, inFlight) => {
+    const write = { owner, inFlight, uncertain: false };
+    for (const crossed of clipboardLedger.pending) {
+        if (crossed.inFlight) {
+            crossed.uncertain = true;
+            write.uncertain = true;
+        }
+    }
+    clipboardLedger.pending.push(write);
+    return write;
+};
+const writeReported = (change) => {
+    if (!clipboardLedger.heard.has(change)) {
+        clipboardLedger.heard.set(change, clipboardLedger.pending.shift() ?? null);
+    }
+    return clipboardLedger.heard.get(change);
+};
+const withdrawWrite = (write) => {
+    write.inFlight = false;
+    const at = clipboardLedger.pending.indexOf(write);
+    if (at >= 0) {
+        clipboardLedger.pending.splice(at, 1);
+    }
+};
+
 /**
  * @param {HTMLElement} root the instance's root element — where keys are captured, so a
  *   grid without focus hears nothing (ADR-0018)
@@ -5227,11 +5262,11 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         // In flight until written or refused, the copy holds the Settled Mark (showSettled).
         clipboardWrites += 1;
         lookSettled();
-        let counted = false;
+        let counted = null;
+        let ended = false;
         const payload = answer.then((p) => {
-            if (p && clipboardWatched) {
-                ownWrites += 1;
-                counted = true;
+            if (p && clipboardWatched && !ended) {
+                counted = countWrite(ownWrites, true);
             }
             return p;
         });
@@ -5244,9 +5279,17 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         return navigator.clipboard.write([new ClipboardItem({
             'text/plain': flavour('text/plain', 'text'),
             'text/html': flavour('text/html', 'html'),
-        })]).then(() => payload.then(copyLanded), (error) => {
+        })]).then(() => payload.then((p) => {
+            ended = true;
             if (counted) {
-                ownWrites -= 1;
+                counted.inFlight = false;
+            }
+            // A write that may have landed on either side of another is not outlined.
+            copyLanded(counted?.uncertain ? null : p);
+        }), (error) => {
+            ended = true;
+            if (counted) {
+                withdrawWrite(counted);
             }
             // A refusal from the core: nothing landed, which is the refusing grid's
             // contract (ADR-0005), and the reason has already been raised (OnCopyRefused
@@ -5264,13 +5307,16 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // The Copied Range (ADR-0170): the grid outlines what it copied while the clipboard still
     // holds it, and only a browser that says when the clipboard changed lets it know that. Without
     // clipboardchange no landing is reported, so no outline is drawn. Each instance counts the
-    // writes of its own copy that the event has yet to report: an event that finds one counted is
-    // that write, and any other is a change — another application's, another grid's, a text
+    // writes of its own copy that the event has yet to report: an event that reports one of them, or
+    // comes while one is still to be reported, leaves the outline, and any other is a change — another application's, another grid's, a text
     // field's — which drops the outline. A change crosses to .NET only while there may be an
-    // outline to drop. The listener is the clipboard entry of ADR-0021, not a new one.
+    // outline to drop. The count is the page's, shared by every grid (clipboardLedger), because the
+    // event says nothing of whose write it reports. The listener is the clipboard entry of ADR-0021,
+    // not a new one.
     const clipboardWatched = typeof globalThis.ClipboardChangeEvent === 'function'
         && typeof navigator.clipboard?.addEventListener === 'function';
-    let ownWrites = 0;
+    const ownWrites = {};
+    const awaitsWrite = () => clipboardLedger.pending.some((write) => write.owner === ownWrites);
     let outlined = false;
     const copyLanded = (payload) => {
         if (!clipboardWatched || !core || !payload || !payload.landing) {
@@ -5283,9 +5329,9 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             }
         });
     };
-    const onClipboardChange = () => {
-        if (ownWrites > 0) {
-            ownWrites -= 1;
+    const onClipboardChange = (change) => {
+        const by = writeReported(change);
+        if ((by?.owner === ownWrites && !by.uncertain) || awaitsWrite()) {
             return;
         }
         if (!outlined || !core) {
@@ -5355,8 +5401,10 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             event.clipboardData.setData('text/plain', payload.text);
             event.clipboardData.setData('text/html', payload.html);
             // Set here, the write cannot fail: it is the grid's own, and it has landed (ADR-0170).
-            if (clipboardWatched) {
-                ownWrites += 1;
+            // Made while a write by the asynchronous route is in flight, it may land on either side of it,
+            // and is not outlined.
+            if (clipboardWatched && countWrite(ownWrites, false).uncertain) {
+                return;
             }
             copyLanded(payload);
             return;
@@ -5519,6 +5567,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     root.addEventListener('paste', onPaste);
     if (clipboardWatched) {
         navigator.clipboard.addEventListener('clipboardchange', onClipboardChange);
+        clipboardLedger.listeners.add(ownWrites);
     }
     root.addEventListener('copy', onHeldClipboard, true);
     root.addEventListener('cut', onHeldClipboard, true);
@@ -6330,6 +6379,11 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             root.removeEventListener('copy', onCopy);
             if (clipboardWatched) {
                 navigator.clipboard.removeEventListener('clipboardchange', onClipboardChange);
+                // Its writes still cause their changes, which the grids that remain hear.
+                clipboardLedger.listeners.delete(ownWrites);
+                if (clipboardLedger.listeners.size === 0) {
+                    clipboardLedger.pending.length = 0;
+                }
             }
             root.removeEventListener('paste', onPaste);
             root.removeEventListener('copy', onHeldClipboard, true);
